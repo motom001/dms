@@ -21,7 +21,7 @@ The editor is built in the order in which you create a folder type: **Basics →
 ## Basics {#grunddaten}
 
 - **Name** – this is what the view in the Library is called, e.g. "Contract". It can be changed at any time.
-- **Key** – a fixed, technical name, e.g. `vertrag`. It is suggested from the name, can be changed when creating and is **fixed** after the first save. [Links via folder type and field values](direktlinks.md) and scripts via the [interface](api.md) can use it – so they stay valid even if the folder type is renamed. The system types are called `benutzer`, `rolle` and `post` (up to 0.40, *Post* was still *E-Mail* with the key `email`).
+- **Key** – a fixed, technical name, e.g. `vertrag`. It is suggested from the name, can be changed when creating and is **fixed** after the first save. [Links via folder type and field values](direktlinks.md) and scripts via the [interface](api.md) can use it – so they stay valid even if the folder type is renamed. The system types are called `benutzer`, `rolle` and `post` (up to 0.40, *Post* was still *E-Mail* with the key `email`). Folder types from [packages](pakete.md) have the identifier `package:key`, e.g. `basis:person` (up to 0.228 `basis_person`, #1084); your own folder types one without a colon, at most 60 characters.
 - **Description** – is shown above the list and helps with classification.
 - **Can be created from post** – then the folder type can be chosen when someone takes over a document from the post and is asked: *Where does this belong?* More under [Taking over documents](#dokument-ubernehmen).
 - **How to recognise it** – a short sentence, at most 300 characters. More under [Taking over documents](#dokument-ubernehmen).

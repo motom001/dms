@@ -11,11 +11,11 @@
  */
 import type { Feld } from './model';
 import { t } from './texte';
+import { SCHLUESSEL } from './kennungen';
 
 /** Am Verweisfeld: `feld` ist ein anderes Verweisfeld dieser Mappe, `zielFeld` ein Verweisfeld der Mappe, auf die es zeigt. */
 export interface FolgtAus { feld: string; zielFeld: string }
 
-const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 
 /** Eingabe (Editor, Paket, Schnittstelle) bereinigen; ungültig = keine Angabe. */
 export function bereinigeFolgtAus(e: unknown): FolgtAus | undefined {

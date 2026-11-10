@@ -1,0 +1,15 @@
+art: minor
+
+## Neu
+
+- **Herausgeber an Paketen**: Neben dem Namen steht, wer ein Paket herausgibt, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber (#1084).
+- **Längere, sprechende Kennungen**: Paket-Ids bis 40 Zeichen, Kennungen von Mappentypen, Feldern und Registern bis 60; Ergänzungen tragen einen Punkt in der Id, z. B. `texterkennung.fra` (#1084).
+
+## Geändert
+
+- **Mappentypen aus Paketen heißen `paket:schluessel`**, z. B. `basis:person` statt `basis_person` – in der API, in Links, in der Suche und im Vollexport. Das Update stellt alle Kennungen um; eigene Mappentypen, Rechte, Ansichten und Automatisierungen bleiben, wie sie sind. Ältere gespeicherte Links mit `typ=basis_…` bitte neu kopieren (#1084).
+- Zusatzsprachen der Texterkennung ziehen mit ihrem nächsten Update auf die neue Id um (`texterkennung.fra` statt `texterkennung_fra`) – dieselbe Installation, kein zweites Paket (#1084).
+
+## Behoben
+
+- Die Einrichtungsdatei nimmt Paket-Ids mit Unterstrich an, z. B. `texterkennung_fra` (#1084).

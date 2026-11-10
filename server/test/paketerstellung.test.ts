@@ -55,7 +55,7 @@ async function quelle(version?: string) {
   const q = dms(version);
   await hochladenUndInstallieren(q.p, basis16Zip);
   const typen = await q.d.listeTypen();
-  const org = typen.find((t) => t.schluessel === 'basis_organisation')!;
+  const org = typen.find((t) => t.schluessel === 'basis:organisation')!;
   const benutzer = typen.find((t) => t.system === 'benutzer')!;
   const ablageort = (await q.d.ablageortTyp())!;
   const vertragId = '11111111-1111-4111-8111-111111111111';
@@ -296,7 +296,7 @@ describe('Paket selbst erstellen (#374)', () => {
     for (const k of ['vertrag', 'zahlung'] as const) {
       const quell = k === 'vertrag' ? q.vertrag : q.zahlung;
       const ziel = zt.find((t) => t.id === paket.typen[k])!;
-      assert.equal(ziel.schluessel, `familie_vertraege_${k}`);
+      assert.equal(ziel.schluessel, `familie_vertraege:${k}`);
       assert.deepEqual(bild(ziel, zt), bild(qt.find((t) => t.id === quell.id)!, qt), k);
     }
     const qs = await q.d.listeSichten(), zs = await z.d.listeSichten();
@@ -343,7 +343,7 @@ describe('Paket selbst erstellen (#374)', () => {
     assert.equal(n.version, '1.1.0');
     assert.ok((await z.d.listeTypen()).find((t) => t.id === n.typen.vertrag)!.felder.some((f) => f.key === 'kundennummer'));
     assert.ok((await z.d.listeSichten()).some((x) => x.name === 'Zahlungen'));
-    assert.equal((await z.d.listeTypen()).filter((t) => t.schluessel?.startsWith('familie_vertraege_')).length, 2);
+    assert.equal((await z.d.listeTypen()).filter((t) => t.schluessel?.startsWith('familie_vertraege:')).length, 2);
   });
 
   it('Version, nötige Ablago-Version und Lizenz werden ausgewählt (#651)', async () => {

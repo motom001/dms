@@ -23,6 +23,7 @@
 import { AUSGANGSSPRACHE, EINGEBAUTE_SPRACHEN, ohneMehrzahl, platzhalter, type Sprachdatei } from './sprache';
 import { BESCHRIFTUNG_MAX, SPRACHKENNUNG } from './beschriftung';
 import { t } from './texte';
+import { SCHLUESSEL } from './kennungen';
 
 /** Ab dieser Version installiert Ablago Sprachpakete; Pakete schreiben `dms: ">=0.203.0"`. */
 export const DMS_SPRACHPAKETE_AB = '0.203.0';
@@ -71,7 +72,6 @@ export interface SprachBeschriftung {
 }
 
 const VERSION = /^\d+\.\d+\.\d+$/;
-const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 /** Steuerzeichen außer Zeilenumbruch und Tabulator. */
 // eslint-disable-next-line no-control-regex -- Steuerzeichen in Sprachpaketen sind genau das, was hier gesucht wird

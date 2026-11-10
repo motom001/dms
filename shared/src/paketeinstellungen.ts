@@ -1,4 +1,5 @@
 import { t } from './texte';
+import { SCHLUESSEL } from './kennungen';
 /**
  * Einstellungen von Paketen (#197): Das Paket beschreibt sie im Manifest (code.einstellungen,
  * code.aktionen; Format: motom001/dms-registry), das DMS baut daraus ein Formular, prüft und speichert.
@@ -82,7 +83,6 @@ export type GeheimEingabe = string | { behalten: true } | null;
 /** Einträge einer Liste tragen eine feste Id, damit Geheimnisse beim Sortieren beim richtigen Eintrag bleiben. */
 export const EINTRAG_ID = '_id';
 
-const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));

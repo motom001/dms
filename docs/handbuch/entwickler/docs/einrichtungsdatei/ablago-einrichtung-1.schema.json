@@ -97,9 +97,9 @@
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 64,
-            "pattern": "^[a-z0-9][a-z0-9-]*$"
+            "pattern": "^[a-z][a-z0-9_]{1,39}(?:\\.[a-z][a-z0-9_]{0,19})?$"
           },
           "beispiele": {
             "type": "boolean",

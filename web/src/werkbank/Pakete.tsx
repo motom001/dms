@@ -1,7 +1,8 @@
-import { Knopf } from '../bausteine';
+import { HakenFeld, Knopf } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { PAKET_ID } from '../../../shared/src/kennungen';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -90,7 +91,8 @@ export function usePakete(offen: boolean) {
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
     const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));
-    const kp = k?.katalog?.pakete.find((p) => p.id === id);
+    // Umgezogen (#1084): unter der neuen Id, die die installierte unter `ersetzt` nennt.
+    const kp = k?.katalog?.pakete.find((p) => p.id === id) ?? k?.katalog?.pakete.find((p) => p.ersetzt?.includes(id));
     return kp && k ? { kp, url: k.url, offiziell: k.offiziell } : undefined;
   };
   /** Hat ein Katalog ein Paket mit derselben Id wie ein selbst erstelltes (#652)? */
@@ -104,7 +106,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
   const installiert = z.stand?.installiert ?? [];
   const quelleOffen = new URLSearchParams(location.search).get('quelle');
   const verfuegbar = (z.kataloge?.liste ?? [])
-    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id)).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
+    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
   const neuer = (id: string) => z.updates?.find((u) => u.id === id);
   const [hochFehler, setHochFehler] = useState<string>();
   async function hochladen(f: File | undefined) {
@@ -158,7 +160,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
           ))}
           {installiert.map((p) => (
             <li key={p.id}><Link to={`/werkbank/pakete/${p.id}`} className={`eintrag werk ${offen === p.id ? 'an' : ''}`}>
-              <span className="titel">{p.name} {neuer(p.id) && <span className="chip warn" title={t('werkbank.pakete.neuere-version-in-der')}>{neuer(p.id)!.neu}</span>}{p.einstellungenNoetig && <> <span className="chip warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>{t('werkbank.pakete.einstellungen-noetig')}</span></>}</span>
+              <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} geprueft={p.herausgeberGeprueft} /> {neuer(p.id) && <span className="chip warn" title={t('werkbank.pakete.neuere-version-in-der')}>{neuer(p.id)!.neu}</span>}{p.einstellungenNoetig && <> <span className="chip warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>{t('werkbank.pakete.einstellungen-noetig')}</span></>}</span>
               <span className="unter">{t('werkbank.pakete.version', { version: p.version, herkunftText: herkunftText(p.herkunft) })}</span>
             </Link></li>
           ))}
@@ -172,7 +174,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
           <ul className="mappenliste">
             {verfuegbar.map(({ p, url, offiziell }) => (
               <li key={`${url}|${p.id}`}><Link to={`/werkbank/pakete/${p.id}${offiziell ? '' : `?quelle=${encodeURIComponent(url)}`}`} className={`eintrag werk ${offen === p.id && (offiziell ? !quelleOffen : quelleOffen === url) ? 'an' : ''}`}>
-                <span className="titel">{p.name}{!offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url })}>{host(url)}</span></>}</span>
+                <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} geprueft={offiziell} />{!offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url })}>{host(url)}</span></>}</span>
                 <span className="unter">{p.aktuell} · {p.beschreibung}</span>
               </Link></li>
             ))}
@@ -295,7 +297,7 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
 export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
   const d = useDaten();
   const [id, version] = wert.split('@');
-  const gueltig = /^[a-z][a-z0-9_]{1,19}$/.test(id ?? '') && (!version || /^\d+\.\d+\.\d+$/.test(version));
+  const gueltig = PAKET_ID.test(id ?? '') && (!version || /^\d+\.\d+\.\d+$/.test(version));
   const [vorschau, setVorschau] = useState<PaketVorschau | null>(null);
   const [meldung, setMeldung] = useState<Meldung>();
   // Neu installieren (#405): im gemeinsamen Ablauf – dafür der offizielle Katalog (Abhängigkeiten, Ergänzungen).
@@ -348,7 +350,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
           los={async (x) => {
             try {
-              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, x.automatisierungen) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
               await z.laden(); await d.neuLaden(); await z.abrufen(false);
               geheZu(`/werkbank/pakete/${r.id}`);
             } catch (e) { setMeldung(alsMeldung(e)); }
@@ -397,7 +399,7 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
   const p = u.vorschau.paket;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf"><p className="ueber">{t('werkbank.pakete.hochgeladenes-paket')}</p><h1>{p.name} {p.version}</h1><p className="leise">{p.beschreibung}</p></div>
+      <div className="mappenkopf"><p className="ueber">{t('werkbank.pakete.hochgeladenes-paket')}</p><h1>{p.name} {p.version}<Herausgeber wer={p.herausgeber} geprueft={p.herausgeberGeprueft} /></h1><p className="leise">{p.beschreibung}</p></div>
       <MeldungBox m={meldung} />
       <section className="blatt">
         <dl className="eigenschaften">
@@ -492,7 +494,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     <div className="einspaltig">
       <div className="mappenkopf">
         <p className="ueber">{t('werkbank.pakete.paket')}{!offiziell && <> · <span className="chip warn">{t('werkbank.pakete.nicht-vom-ablago-projekt')}</span></>}</p>
-        <h1>{inst?.name ?? kp!.name}</h1>
+        <h1>{inst?.name ?? kp!.name}<Herausgeber wer={inst?.herausgeber ?? kp?.herausgeber} geprueft={inst ? inst.herausgeberGeprueft : offiziell} /></h1>
         <p className="leise">{inst?.beschreibung ?? kp?.beschreibung}</p>
       </div>
       <MeldungBox m={meldung} />
@@ -577,7 +579,12 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       {vorschau && (
         <VorschauBlock v={vorschau} warnung={offiziell || vorschau.pruefung?.bestaetigen === false ? null : t('werkbank.pakete.aus-dem-katalog', { wert: String(inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle) })} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
-            if (vorschau.update) { const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, x.automatisierungen); return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version }); }
+            if (vorschau.update) {
+              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt });
+              // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
+              if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);
+              return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version });
+            }
             const r = await api.paketInstallieren({ id, version: vorschau.paket.version, quelle, ...x });
             return t('werkbank.pakete.ist-installiert', { name: r.name, version: r.version });
           })} />
@@ -691,7 +698,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   v: PaketVorschau; warnung: string | null; abbrechen(): void; titel?: string; abbrechenText?: string;
   /** Herkunft schon vorher bestätigt (Sammeldatei): kein zweiter Haken. */
   herkunftBestaetigt?: boolean;
-  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; automatisierungen: string[] }): Promise<void>;
+  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[] }): Promise<void>;
 }) {
   // Mitgelieferte Automatisierungen (#712): Vorgabe ja, abgewählte bleiben aus.
   const neueAutos = (v.automatisierungen ?? []).filter((a) => a.neu);
@@ -704,6 +711,9 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   const [rechteOk, setRechteOk] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const rechteFehlen = !!v.laeufer?.bestaetigen && !rechteOk;
+  // Erstmals ein Herausgeber an einem Bestandspaket (#1084): eigener Haken, sonst kein Update.
+  const [herausgeberOk, setHerausgeberOk] = useState(false);
+  const herausgeberFehlt = !!v.herausgeberBestaetigen && !herausgeberOk;
   const fehlend = v.abhaengigkeiten.filter((a) => !a.installiert);
   const konflikt = v.typen.some((eintrag) => !eintrag.vorhanden && eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase())
     || v.sichten.some((s) => !s.vorhanden && !s.ausgelassen && s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase());
@@ -713,7 +723,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   const bestaetigen = pruefWarnung !== null && !herkunftBestaetigt;
   return (
     <section className="blatt" aria-label={t('werkbank.pakete.vorschau')}>
-      <h2 className="h3">{titel ?? (v.update ? t('werkbank.pakete.update-auf', { version: v.paket.version }) : t('werkbank.pakete.vorschau-2', { name: v.paket.name, version: v.paket.version }))}</h2>
+      <h2 className="h3">{titel ?? (v.update ? t('werkbank.pakete.update-auf', { version: v.paket.version }) : t('werkbank.pakete.vorschau-2', { name: v.paket.name, version: v.paket.version }))}<Herausgeber wer={v.paket.herausgeber} geprueft={v.paket.herausgeberGeprueft} /></h2>
       <HerkunftZeile p={v.pruefung} />
       {bestaetigen && (
         <div className="hinweis warn" role="alert">
@@ -798,9 +808,14 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           ))}
         </fieldset>
       )}
+      {v.herausgeberBestaetigen && (
+        <div className="hinweis warn">
+          <HakenFeld beschriftung={t('werkbank.pakete.herausgeber-bestaetigen', { herausgeber: v.herausgeberBestaetigen })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld>
+        </div>
+      )}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen}
-          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
+        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt}
+          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
           {laeuft ? (v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')) : v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
         </button>
         <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>
@@ -833,4 +848,13 @@ function LizenzAngabe({ lizenz }: { lizenz: string }) {
   if (art === 'frei') return <>{lizenz}</>;
   return <>{art === 'keine' || lizenz === KEINE_LIZENZ ? tx('pakete.erstellen.lizenz.keine') : lizenz.replace(/^LicenseRef-/, '').replace(/-/g, ' ')}
     <small className="leise" style={{ display: 'block' }}>{tx(art === 'keine' ? 'pakete.vorschau.lizenz.keine' : 'pakete.vorschau.lizenz.eigen')}</small></>;
+}
+
+/**
+ * Herausgeber neben dem Namen (#1084): „Verträge · app.ablago“, immer vollständig (nie gekürzt – sonst sähe
+ * app.ablago-community wie app.ablago aus). Nicht belegte als „Herausgeber laut Paket: … – nicht geprüft“.
+ */
+function Herausgeber({ wer, geprueft }: { wer?: string | null; geprueft?: boolean }) {
+  if (!wer) return null;
+  return <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {geprueft ? wer : t('werkbank.pakete.herausgeber-ungeprueft', { wer })}</span>;
 }

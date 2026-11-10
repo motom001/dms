@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { HakenFeld } from '../bausteine';
 import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
 import type { EinstellungFeld } from '../../../shared/src/paketeinstellungen';
 import { api, ApiFehler, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api';
@@ -305,6 +306,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
   const anzahlAn = Object.values(angehakt).reduce((n, l) => n + l.length, 0);
   const [herkunftOk, setHerkunftOk] = useState(false);
   const [rechteOk, setRechteOk] = useState(false);
+  // Erstmals gesetzte Herausgeber von Bestandspaketen (#1084): ein eigener Haken.
+  const [herausgeberOk, setHerausgeberOk] = useState(false);
+  const erstmals = pk.filter((p) => p.vorschau.herausgeberBestaetigen);
   const [adresseOk, setAdresseOk] = useState(false);
   const mitEinstellungen = pk.filter((p) => p.einstellungen.length > 0);
   const [werte, setWerte] = useState<Record<string, Record<string, unknown>>>(() => Object.fromEntries(mitEinstellungen.map((p) => [p.id, Object.fromEntries(p.einstellungen.map((f) => [f.schluessel, null]))])));
@@ -322,6 +326,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
   const fehlt = [
     plan.herkunftBestaetigen && !herkunftOk ? t('pakete.ablauf.fehlt.herkunft') : '',
     plan.rechte.bestaetigen && !rechteOk ? t('pakete.ablauf.fehlt.rechte') : '',
+    erstmals.length && !herausgeberOk ? t('pakete.ablauf.fehlt.herausgeber') : '',
     leereNamen || nochKonflikt ? t('pakete.ablauf.fehlt.namen') : '',
     offenePflicht.length ? t('pakete.ablauf.fehlt.einstellungen', { namen: offenePflicht.map((p) => p.name).join(', ') }) : '',
     adressen.length && !adresseOk ? t('pakete.ablauf.fehlt.adresse') : '',
@@ -333,7 +338,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
 
   const antworten = (): AblaufInstallation => ({
     ...eingabe(), namen, sichtNamen, beispiele: beispielPakete.map((p) => p.id), automatisierungen: angehakt,
-    ...(herkunftOk ? { bestaetigt: true } : {}), ...(rechteOk ? { rechteStand: plan.rechte.stand } : {}),
+    ...(herkunftOk ? { bestaetigt: true } : {}), ...(rechteOk ? { rechteStand: plan.rechte.stand } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}),
     einstellungen: Object.fromEntries(Object.entries(werte).filter(([id]) => !spaeter.includes(id))), spaeter, ...(adresseOk ? { adresseBestaetigt: true } : {}),
   });
 
@@ -398,7 +403,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           <p className="leise">{t('pakete.ablauf.rechte.text', { anzahl: mitCode.length })}</p>
           {mitCode.map((p) => (
             <div key={p.schluessel} className="pa-rechte">
-              <h3 className="klein">{p.name} {p.version}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
+              <h3 className="klein">{p.name} {p.version}{p.vorschau.paket.herausgeber && <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {p.vorschau.paket.herausgeberGeprueft ? p.vorschau.paket.herausgeber : t('werkbank.pakete.herausgeber-ungeprueft', { wer: p.vorschau.paket.herausgeber })}</span>}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
               <ul className="klein">
                 {p.vorschau.laeufer!.rechte.map((r) => (
                   <li key={r.text}>{r.text} <Hilfe ort={r.hilfe} />{r.unter && <ul>{r.unter.map((u) => <li key={u.text}>{u.text} <Hilfe ort={u.hilfe} /></li>)}</ul>}</li>
@@ -408,6 +413,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             </div>
           ))}
           {mitCode.some((p) => p.vorschau.laeufer!.rechte.some((r) => r.hilfe === 'pakete.recht.adresse')) && <p className="klein">{t('pakete.ablauf.adresse.hinweis')}</p>}
+          {erstmals.length > 0 && (
+            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.herausgeber.ja', { liste: erstmals.map((p) => `${p.name}: ${p.vorschau.herausgeberBestaetigen}`).join(', ') })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld></div>
+          )}
           {plan.rechte.bestaetigen && (
             <div className="hinweis warn"><label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{t('pakete.ablauf.rechte.ja')}</span></label></div>
           )}
@@ -513,7 +521,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
         ].filter(Boolean).join(' · ')}</p>
         <ol className="pa-reihe klein">
           {pk.map((p) => (
-            <li key={p.schluessel}><strong>{p.name}</strong> {p.version}{p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
+            <li key={p.schluessel}><strong>{p.name}</strong> {p.version}{p.vorschau.paket.herausgeber ? ` · ${p.vorschau.paket.herausgeber}` : ''}{p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
               {!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}
               {p.ergaenzt && <span className="leise"> – {t('pakete.ablauf.ergaenzt', { name: pk.find((x) => x.id === p.ergaenzt!.paket)?.name ?? p.ergaenzt.paket })}</span>}
               {p.vorschau.hinweise.length > 0 && <ul className="leise">{p.vorschau.hinweise.map((h) => <li key={h}>{h}</li>)}</ul>}

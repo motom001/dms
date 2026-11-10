@@ -139,6 +139,9 @@ export class ZugriffDienst {
       for (const vw of liste) {
         if (vw === ALLE_TYPEN) { for (const t of typen) if (t.system !== 'benutzer') ids.add(t.id); continue; }
         const [pk, sl] = vw.includes(':') ? vw.split(':') : [paketId, vw];
+        // Ohne Prüfung des Herausgebers (#1084): Eine Paket-Id gehört je Ablage genau einem Herausgeber – Installation
+        // und Update derselben Id von einem anderen lehnt die Paketverwaltung ab, und Abhängigkeiten prüfen ihn. So
+        // zeigt `paket:typ` immer auf das eine installierte Paket, dessen Herausgeber schon feststeht.
         // dms:benutzer lehnt liesCode ab; hier trotzdem nie auflösen (Pakete sehen keine Benutzer). dms:post seit #435.
         const id = pk === 'dms' ? (sl === 'ablageort' ? ablageort : sl === 'rolle' ? dms.rolle.id : sl === 'post' ? dms.post.id : null)
           : pakete.find((x) => x.id === pk)?.typen[sl];

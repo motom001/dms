@@ -239,7 +239,10 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     assert.deepEqual(ev.map((e) => [e.daten.dokument, e.daten.text]), [[scan, false]]);
     assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng']);
     await d.kern.repo.speicherePaket({ ...paket('texterkennung_fra'), abhaengigkeiten: { texterkennung: '>=2.0.0' } });
-    assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra'], 'Sprach-Zusatzpaket');
+    assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra'], 'Sprach-Zusatzpaket (bisherige Id)');
+    // #1084: Ergänzung mit Punkt.
+    await d.kern.repo.speicherePaket({ ...paket('texterkennung.tur'), abhaengigkeiten: { texterkennung: '>=2.0.0' } });
+    assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra', 'tur'], 'Sprach-Zusatzpaket mit Punkt');
   });
 
   it('Update (#459): vorhandener Volltext – auch von der früheren eingebauten Texterkennung – bleibt; Wartende gehen an das Paket', async () => {

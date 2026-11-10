@@ -1,4 +1,4 @@
-# Mappentyp Organisation. Das DMS legt ihn als basis_organisation an; angezeigt wird „Organisation“.
+# Mappentyp Organisation. Das DMS legt ihn als basis:organisation an; angezeigt wird „Organisation“.
 - schluessel: organisation
   name: Organisation
   beschreibung: Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.

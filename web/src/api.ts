@@ -846,9 +846,9 @@ export const api = {
   /** Mehrere Pakete in einem Ablauf (#405): Plan ohne zu speichern, dann alles mit einem Knopf. */
   paketAblaufPlan: (e: AblaufEingabe) => anfrage<AblaufPlan<PaketVorschau>>('POST', '/api/werkbank/pakete/ablauf/plan', e),
   paketAblaufInstallieren: (e: AblaufInstallation) => anfrage<AblaufErgebnis>('POST', '/api/werkbank/pakete/ablauf/installieren', e),
-  paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; automatisierungen?: string[]; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
+  paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen?: string[]; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
   paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>>('POST', '/api/werkbank/pakete/updates'),
-  paketAktualisieren: (id: string, version?: string, bestaetigt?: boolean, rechteBestaetigt?: boolean, automatisierungen?: string[]) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version, bestaetigt, rechteBestaetigt, automatisierungen }),
+  paketAktualisieren: (id: string, version?: string, bestaetigt?: boolean, rechteBestaetigt?: boolean, mehr: { automatisierungen?: string[]; herausgeberBestaetigt?: boolean } = {}) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version, bestaetigt, rechteBestaetigt, ...mehr }),
   paketLaeufer: () => anfrage<PaketlaeuferStand | null>('GET', '/api/werkbank/pakete/laeufer'),
   /* Vektoren (#442) */
   vektorStand: () => anfrage<VektorStand>('GET', '/api/werkbank/vektoren'),
@@ -1123,8 +1123,12 @@ export interface BeispielBehalten { id: string; titel: string; grund: 'geaendert
 
 /** Vorschau einer Paketinstallation bzw. eines Updates (#188). */
 export interface PaketVorschau {
-  paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
+  paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null; herausgeber?: string | null; herausgeberGeprueft?: boolean };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
+  /** Umzug (#1084): frühere Id, von der das Update die Installation auf die neue zieht. */
+  umzug?: string | null;
+  /** Erstmals gesetzter Herausgeber (#1084): nur mit Bestätigung (herausgeberBestaetigt). */
+  herausgeberBestaetigen?: string | null;
   /** Was die Signatur über die Herkunft sagt (#594). */
   pruefung?: HerkunftPruefung | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;

@@ -1,6 +1,7 @@
 {
   "angehalten.bremse": "Paused: more than {anzahl} runs in one minute. Check the trigger and switch the automation on again.",
   "angehalten.wiederherstellung": "Paused after a restore. Check the automation and switch it on again.",
+  "angehalten.typ-unbekannt": "Paused: the folder type “{typ}” doesn’t exist in this Library. Without it the automation would run on all folder types – it stays off until the type exists or you adjust it.",
   "fassung.fehlt": "This version doesn’t exist (any more).",
   "karte.aufgabe.als-aufgabe": "Task",
   "karte.aufgabe.als-benachrichtigung": "Notification",

@@ -27,7 +27,7 @@ Die Adresse im Browser bleibt der Link, auch wenn eine Mappe geöffnet ist oder 
 
 | Teil | Bedeutung |
 | --- | --- |
-| `typ=rechnung` | **Kennung** des Mappentyps (siehe [Mappentypen](mappentypen.md#grunddaten)). Auch der **Name** geht (Groß- und Kleinschreibung zählen nicht) – aber nur die Kennung bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt die Kennung. |
+| `typ=rechnung` | **Kennung** des Mappentyps (siehe [Mappentypen](mappentypen.md#grunddaten)). Auch der **Name** geht (Groß- und Kleinschreibung zählen nicht) – aber nur die Kennung bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt die Kennung. Mappentypen aus Paketen: `typ=basis:person` (bis 0.228 `basis_person` – solche älteren Links bitte neu kopieren, #1084). |
 | `rechnungsnummer=A-2020-11380` | **Kennung** eines Feldes und der Wert: „ist gleich“. |
 | `betrag.groesser=100` | Feld mit **Operator**. |
 | `sortierung=-rechnungsdatum` | Reihenfolge der Trefferliste; `-` = absteigend. Ohne: nach Titel. |

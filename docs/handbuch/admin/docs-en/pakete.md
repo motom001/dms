@@ -33,7 +33,7 @@ Before creating anything, Ablago checks:
 - whether all **dependencies** are installed and in a fitting version,
 - whether the downloaded archive matches the **checksum (SHA-256)** in the catalogue. If it doesn't, Ablago installs nothing.
 
-Creation uses the same functions as in the Workbench, with all validation rules. The keys get the package prefix (`<package>_<key>`) so that packages don't get in each other's way; Ablago resolves links to other packages' folder types. **If something fails, Ablago undoes everything** – nothing is left half-created.
+Creation uses the same functions as in the Workbench, with all validation rules. Folder types from packages have the [identifier](mappentypen.md) `package:key`, e.g. `basis:person` – so packages don't get in each other's way, even if the package ID and the key contain an underscore themselves (up to Ablago 0.228 it was `basis_person`; during the update Ablago converted all identifiers, #1084). Your own folder types have an identifier without a colon. Ablago resolves links to other packages' folder types. **If something fails, Ablago undoes everything** – nothing is left half-created.
 
 ### Installing several packages in one step { #mehrere-pakete-in-einem-schritt-installieren }
 
@@ -94,9 +94,19 @@ The Ablago project **signs** the official catalogue (from Ablago 0.141.0). Becau
 
 **Older versions:** Ablago 0.141.0 to 0.144.1 only know test keys. As soon as the Ablago project signs the catalogue with its real keys, they show "Signature invalid" for the official catalogue – then update Ablago. The fingerprints of the real keys are in the [security policy](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
+### Publisher { #herausgeber }
+
+Next to a package's name is its **publisher** (#1084), e.g. "Contracts · app.ablago" – in the list, in the catalogue, in the preview and in the installation flow. The publisher is a reversed domain: the official packages have `app.ablago`, packages from other providers their domain, e.g. `org.example`.
+
+- **No replacement by others:** if a package is already installed, Ablago doesn't accept a package with the same ID from a **different** publisher – neither as installation nor as update, not even uploaded. The message reads something like "Another package “vertraege” from app.ablago is already installed …". If you really want to switch, remove the installed package first.
+- **`app.ablago` only official:** Ablago only installs a package that claims to be `app.ablago` (or `app.ablago.…`) from the official catalogue, from a bundle file with its signature or as a file whose checksum is listed there.
+- **Other publishers are not verified:** Ablago shows them as "Publisher according to the package: org.example – not verified" – only the package itself says so. For a further catalogue with its own key, Ablago binds the publisher to that key; it won't take an update with a different key. The publisher is always shown in full.
+- **Add-ons and dependencies:** a package with a dot in its ID (e.g. `texterkennung.fra`) must come from the same publisher as the package before the dot. A dependency only counts if the installed package comes from the same publisher or from the Ablago project – a foreign "basis" never replaces the official one.
+- **Older packages** don't name a publisher yet. Then the publisher of their catalogue applies: from the official catalogue that's `app.ablago` – the Ablago project publishes all packages there, and only its signature proves it. For other sources it is unknown; then, as before, the protection is that updates only come from the same source. If such a package names a publisher for the first time with an update, the preview asks explicitly ("From this update on, … counts as the publisher of this package"); without the tick there is no update. After that this publisher applies.
+
 ## Installed packages { #installierte-pakete }
 
-Per package Ablago remembers version, **origin** (the catalogue), when and by whom it was installed or updated and which folder types and views belong to it. These details are part of the [backup](sicherung.md) and of the [full export](export.md) (`struktur/pakete.json`). Installing, updating and removing are in the log.
+Per package Ablago remembers version, **origin** (the catalogue), **publisher**, when and by whom it was installed or updated and which folder types and views belong to it. These details are part of the [backup](sicherung.md) and of the [full export](export.md) (`struktur/pakete.json`). Installing, updating and removing are in the log.
 
 ## Examples { #beispiele }
 
@@ -120,6 +130,8 @@ An update **only adds**:
 - new fields and tabs on existing folder types.
 
 It **deletes nothing** and **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so.
+
+**New ID (move, #1084):** if a package renames its ID – for instance the additional languages of text recognition from `texterkennung_fra` to `texterkennung.fra` –, this appears as an ordinary update of the installed package. The preview says "The package is now called …". Afterwards it is there under the new ID, with all folder types, folders, settings and data; no second package is created. This only works from the same source and the same publisher. By the way, an ID with a dot always means: the package **extends** the package before the dot.
 
 ## Converting text into links { #text-in-verweise-umwandeln }
 

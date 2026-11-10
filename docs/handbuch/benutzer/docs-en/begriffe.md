@@ -74,7 +74,7 @@ What may be in a text field – email, phone, website, IBAN or postcode. New and
 See also: [Field](#feld), [Field kind](#feldart).
 
 <a id="kennung"></a>**Identifier** (*Kennung*) · ✗ technical term · administrators  
-The fixed, technical name of a field, tab, folder type or number sequence, e.g. vertragsnummer. After saving it stays the same, so that saved values, links and packages fit.
+The fixed, technical name of a field, tab, folder type or number sequence, e.g. vertragsnummer (up to 60 characters). After saving it stays the same, so that saved values, links and packages fit. Folder types from packages have the identifier package:identifier, e.g. basis:person (#1084); your own folder types one without a colon.
 
 <a id="ablage"></a>**Library** (*Ablage*) · ✓ everyday word · everyone  
 The work area for all users – with views, lists and folders. At the same time the word for the whole installation, at home as at work ("name of your Library", "Library id"); one installation is one Library.  
@@ -313,7 +313,7 @@ See also: [Workbench](#werkbank).
 
 <a id="paket"></a>**Package** (*Paket*) · ~ with explanation · administrators  
 An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing.  
-See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Package runner](#paket-laufer).
+See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Package runner](#paket-laufer), [Publisher](#herausgeber).
 
 <a id="paketkatalog"></a>**Package catalogue** (*Paketkatalog*) · ~ with explanation · administrators  
 The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue"). Further catalogues are entered in expert mode under "Further sources".  
@@ -325,6 +325,10 @@ See also: [Package](#paket), [Service account](#dienstkonto).
 
 <a id="berechtigungen"></a>**Permissions** (*Berechtigungen*) · ✓ everyday word · administrators  
 Who may do what. On the folder type – create, read, edit, delete, see passwords – with a default plus rules; on the view – see, create, export – inherited by the sub-views. They don't apply to administrators.
+
+<a id="herausgeber"></a>**Publisher** (*Herausgeber*) · ~ with explanation · administrators  
+Who publishes a package, as a reversed domain, e.g. app.ablago for the official packages (#1084). It is shown next to the name, e.g. "Contracts · app.ablago". Ablago never replaces an installed package with one of the same ID from a different publisher.  
+See also: [Package](#paket), [Package catalogue](#paketkatalog).
 
 <a id="region"></a>**Region** · ~ with explanation · administrators  
 Where the Library is at home – country, state and time zone (Workbench → Settings → Region). Public holidays, "today" for deadlines and all times of reminders, schedules and the Daily summary follow it.  

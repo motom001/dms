@@ -188,13 +188,13 @@ function faelle(pg: boolean) {
       assert.deepEqual(k.katalog.pakete.map((x) => x.id), ['basis']);
       const v = await p.vorschau({ id: 'basis', version: '1.0.0' });
       assert.equal(v.dmsOk, true);
-      assert.deepEqual(v.typen.map((t) => [t.dmsSchluessel, t.name, t.konflikt]), [['basis_organisation', 'Organisation', null]]);
+      assert.deepEqual(v.typen.map((t) => [t.dmsSchluessel, t.name, t.konflikt]), [['basis:organisation', 'Organisation', null]]);
       assert.deepEqual(v.sichten.map((s) => s.name), ['Organisationen', 'Versicherungen', 'Banken', 'Behörden', 'Ärzte und Praxen']);
       assert.equal(v.beispiele, 2);
       const inst = await p.installiere({ id: 'basis', version: '1.0.0', beispiele: true }, ICH);
       assert.equal(inst.version, '1.0.0');
       assert.deepEqual(inst.herkunft, { art: 'katalog', url: KATALOG });
-      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'basis_organisation')!;
+      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'basis:organisation')!;
       assert.equal(typ.id, inst.typen.organisation);
       assert.deepEqual(typ.register.map((r) => r.key), ['stammdaten', 'kontakt', 'anschrift', 'dokumente', 'protokoll']);
       const sichten = await d.listeSichten();
@@ -437,7 +437,7 @@ function faelle(pg: boolean) {
       const inst = await p.installiere({ id: 'basis' }, ICH);
       const a = (await d.ablageortTyp())!;
       assert.equal(a.id, inst.typen.ablageort);
-      assert.equal(a.schluessel, 'basis_ablageort');
+      assert.equal(a.schluessel, 'basis:ablageort');
       assert.deepEqual(a.register.map((r) => r.name), ['Allgemein', 'Enthält', 'Liegt hier', 'Fotos']);
       assert.deepEqual(a.register.find((r) => r.key === 'enthaelt')!.quellen, [{ typId: a.id, feldKey: 'liegt_in' }]);
       assert.equal(a.felder.find((f) => f.key === 'liegt_in')!.zielTyp, a.id);
@@ -450,7 +450,7 @@ function faelle(pg: boolean) {
       await assert.rejects(p.hochladen(Buffer.from('kein zip'), ICH), /kein gültiges ZIP/);
       const h = await p.hochladen(archiv(basis), ICH);
       assert.equal(h.vorschau.paket.id, 'basis');
-      assert.equal(h.vorschau.typen[0].dmsSchluessel, 'basis_organisation');
+      assert.equal(h.vorschau.typen[0].dmsSchluessel, 'basis:organisation');
       assert.deepEqual((await p.vorschau({ upload: h.upload })).sichten.length, 5);
       await assert.rejects(p.installiere({ upload: h.upload }, ICH), /nicht vom Ablago-Projekt geprüft/);
       const inst = await p.installiere({ upload: h.upload, bestaetigt: true, beispiele: true }, ICH);
@@ -467,7 +467,7 @@ function faelle(pg: boolean) {
       assert.equal(n.version, '1.1.0');
       assert.equal(n.installiert, inst.installiert);
       assert.ok((await d.listeTypen()).find((t) => t.id === n.typen.organisation)!.felder.some((f) => f.key === 'steuernummer'));
-      assert.equal((await d.listeTypen()).filter((t) => t.schluessel === 'basis_organisation').length, 1);
+      assert.equal((await d.listeTypen()).filter((t) => t.schluessel === 'basis:organisation').length, 1);
     });
 
     it('Sammeldatei: prüft alles vorher, ordnet nach Abhängigkeiten, installiert Paket für Paket (#461)', async () => {

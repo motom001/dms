@@ -18,11 +18,14 @@ export interface SpracheInfo {
   name: string;
   /** Konfiguration der PostgreSQL-Volltextsuche (Wortstämme); „simple“, wenn es keine gibt. */
   pg: string;
-  /** Zusatzpaket des Pakets Texterkennung mit dieser Sprache (#459; Deutsch und Englisch stecken im Paket selbst). */
+  /**
+   * Zusatzpaket des Pakets Texterkennung mit dieser Sprache (#459; Deutsch und Englisch stecken im Paket selbst). Seit
+   * #1084 heißt es `texterkennung.<kennung>` (Ergänzung mit Punkt) statt `texterkennung_<kennung>`.
+   */
   paket: string;
 }
 
-const info = (name: string, code: string, pg: string): SpracheInfo => ({ name, pg, paket: `texterkennung_${code}` });
+const info = (name: string, code: string, pg: string): SpracheInfo => ({ name, pg, paket: `texterkennung.${code}` });
 
 /** Sprachen, die die Erkennung unterscheidet (Tesseract-Kennung → Angaben). */
 export const TEXTSPRACHEN: Record<string, SpracheInfo> = {

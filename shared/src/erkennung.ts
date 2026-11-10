@@ -19,6 +19,7 @@ import type { Betrag, Feld, Feldtyp, Mappentyp, Wert } from './model';
 import { formatFehler, type Feldformat } from './feldformate';
 import { leseProzent, leseZeitraum, ZEITRAUM_ANZAHL_MAX, ZEITRAUM_EINHEITEN } from './feldarten';
 import { t } from './texte';
+import { PAKET_ID_TEIL } from './kennungen';
 
 /* ---------- Feld-Eigenschaft ---------- */
 
@@ -170,7 +171,7 @@ export const AUS_DOKUMENT_STANDARD = t('gemeinsam.erkennung.aus-dokument-ausfuel
 export const BESCHRIFTUNG_MAX = 40;
 /** Die eingebaute Erkennung (Muster, #336/#391) – Standard. */
 export const ENGINE_EINGEBAUT = 'eingebaut';
-const ENGINE = /^(eingebaut|[a-z][a-z0-9_]{1,19})$/;
+const ENGINE = new RegExp(`^(eingebaut|${PAKET_ID_TEIL})$`);
 export function liesAusDokument(v: unknown): AusDokument | null {
   if (!v || typeof v !== 'object') return null;
   const o = v as Record<string, unknown>;

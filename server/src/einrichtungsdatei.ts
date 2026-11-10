@@ -2,6 +2,7 @@ import { Document, isMap, isScalar, isSeq, LineCounter, parseDocument, type Node
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
 import { HANDBUCH_BASIS } from '../../shared/src/hilfe';
 import { EINRICHTUNG_FORMAT, PLAN_VERBINDUNGEN, VERWEIS_MUSTER, type DateiFehler, type Einrichtungsplan, type PlanMail } from '../../shared/src/einrichtungsplan';
+import { PAKET_ID } from '../../shared/src/kennungen';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 import { EINRICHTUNGSDATEI_MAX as DATEI_MAX, KB } from './grenzen';
@@ -64,7 +65,8 @@ export const SCHEMA: Schema = {
       items: {
         type: 'object', additionalProperties: false, required: ['id'],
         properties: {
-          id: { type: 'string', minLength: 1, maxLength: 64, pattern: '^[a-z0-9][a-z0-9-]*$' },
+          // Paket-Id wie im Manifest (#1084, kennungen.ts) – bis 0.x stand hier ein Muster ohne „_“.
+          id: { type: 'string', minLength: 2, maxLength: 64, pattern: PAKET_ID.source },
           beispiele: { type: 'boolean', description: t('meldungen.einrichtungsdatei.beispiel-mappen-des-pakets') },
           automatisierungen: {
             type: 'object', description: t('meldungen.einrichtungsdatei.mitgelieferte-automatisierungen'),

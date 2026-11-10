@@ -15,6 +15,7 @@ import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 import { datumsformat } from './region';
 import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumText, type Zeitraum } from './feldarten';
 import { t, t as tx } from './texte';
+import { SCHLUESSEL, TYP_KENNUNG } from './kennungen';
 import { gebietsschema, registrierteSprachen, textNur } from './sprache';
 import { optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
 export { zeitzone } from './region';
@@ -210,7 +211,10 @@ export interface Register {
 
 export interface MappentypDaten {
   name: string;
-  /** Fester Schlüssel (#145): nach dem Anlegen unveränderlich, z. B. für sprechende Links. */
+  /**
+   * Feste Kennung (#145): nach dem Anlegen unveränderlich, z. B. für sprechende Links. Eigene Typen haben einen
+   * Schlüssel ohne Präfix (`rechnung`), Typen aus Paketen `paket:schluessel` (#1084, z. B. `basis:person`).
+   */
   schluessel?: string;
   beschreibung: string;
   /** Vorlage für den Titel einer Mappe, z. B. „{verwendungszweck} vom {zahlungsdatum}“. Leer = erstes Textfeld. */
@@ -264,6 +268,8 @@ export interface Mappentyp extends MappentypDaten {
   id: string;
   erstellt: string;
   geaendert: string;
+  /** Paket, aus dem der Typ stammt (#1084) – der Teil vor dem Doppelpunkt der Kennung; fehlt bei eigenen Typen. */
+  paket?: string;
   /** Systemmappentyp (Benutzer, Rolle): lässt sich erweitern, aber nicht löschen. */
   system?: Systemtyp | null;
   /** Berechtigungen (#123): Grundeinstellung und Regeln; fehlt = alles erteilt. Nur für Administratoren geliefert. */
@@ -601,7 +607,8 @@ export const istOk = (p: Pruefergebnis) => p.allgemein.length === 0 && Object.ke
 
 /* ---------------------------------------------------------------- */
 
-export const SCHLUESSEL_MUSTER = /^[a-z][a-z0-9_]{0,39}$/;
+/** Kennung von Feld, Register und eigenem Mappentyp (#1084: bis 60 Zeichen, kennungen.ts). */
+export const SCHLUESSEL_MUSTER = SCHLUESSEL;
 
 export function istLeer(v: unknown): boolean {
   if (v == null || v === '') return true;
@@ -674,7 +681,7 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
   else if (ctx.namenAndererTypen.some((n) => n.trim().toLowerCase() === name.toLowerCase()))
     melde(p, 'grunddaten', t('gemeinsam.model.es-gibt-bereits-einen', { name }));
   if (mappentypDaten.schluessel !== undefined) {
-    if (!SCHLUESSEL_MUSTER.test(mappentypDaten.schluessel)) melde(p, 'grunddaten', t('gemeinsam.model.kennung-des-mappentyps-nur'));
+    if (!TYP_KENNUNG.test(mappentypDaten.schluessel)) melde(p, 'grunddaten', t('gemeinsam.model.kennung-des-mappentyps-nur'));
     else if ((ctx.schluesselAndererTypen ?? []).includes(mappentypDaten.schluessel)) melde(p, 'grunddaten', t('gemeinsam.model.die-kennung-hat-schon', { schluessel: mappentypDaten.schluessel }));
   }
   if (!Array.isArray(mappentypDaten.felder)) {

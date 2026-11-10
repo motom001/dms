@@ -330,6 +330,11 @@ function umzugFuer(d: AutomatisierungDaten): string | null {
 }
 const UMZUG_IDS = new Set<string>([UMZUG_VERTRETUNG, ...Object.values(UMZUG)]);
 
+/** Id einer mitgelieferten Automatisierung – nach einem Umzug (#1084, `ersetzt`) die aus der früheren Paket-Id. */
+function paketAutomatisierungId(p: InstalliertesPaket, schluessel: string, vorhanden: Automatisierung[]): string {
+  return [p.id, ...(p.ersetzt ?? [])].map((k) => uuidAus(`paket|${k}|${schluessel}`)).find((k) => vorhanden.some((a) => a.id === k)) ?? uuidAus(`paket|${p.id}|${schluessel}`);
+}
+
 export class Automatisierungen {
   private uhr: ReturnType<typeof setInterval> | null = null;
   private zeitplanLauf: Promise<void> | null = null;
@@ -374,6 +379,13 @@ export class Automatisierungen {
    * (fristenUebernehmen), ersetzt die mitgelieferte sie, solange sie unverändert ist (an/aus bleibt); ist sie geändert,
    * bleibt sie und die mitgelieferte entsteht nicht – so erinnert nie etwas doppelt.
    */
+  /** Mitgelieferte Automatisierung mit unbekanntem Mappentyp (#1084): angehalten statt auf alle Typen. */
+  private haltOhneTyp(paket: string, x: PaketAutomatisierung, typId: (vw: unknown) => string | null): Angehalten | null {
+    if (typeof x.wenn.typ !== 'string' || !x.wenn.typ || typId(x.wenn.typ)) return null;
+    log.warn('Mitgelieferte Automatisierung angehalten: Mappentyp unbekannt', { paket, automatisierung: x.schluessel, typ: x.wenn.typ });
+    return { grund: 'fehlerhaft', text: t('automatisierung.angehalten.typ-unbekannt', { typ: x.wenn.typ }), zeit: this.iso() };
+  }
+
   async ausPaket(p: InstalliertesPaket, liste: PaketAutomatisierung[], ein: string[] = []): Promise<number> {
     const pakete = await this.d.dienst.kern.repo.listePakete();
     const typId = (vw: unknown): string | null => {
@@ -385,13 +397,17 @@ export class Automatisierungen {
     const ids = new Set<string>();
     let neu = 0;
     for (const x of liste) {
-      const id = uuidAus(`paket|${p.id}|${x.schluessel}`);
+      // Nach einem Umzug (#1084) behält eine mitgelieferte Automatisierung ihre Id aus der früheren Paket-Id.
+      const id = paketAutomatisierungId(p, x.schluessel, vorhanden);
       ids.add(id);
       const d = bereinigeAutomatisierung({ name: x.name, beschreibung: x.beschreibung, wenn: { ...x.wenn, typ: typId(x.wenn.typ) }, und: x.und, dann: x.dann });
       d.reihenfolge = REIHENFOLGE.paket;
+      // Unbekannter Mappentyp (#1084, Sicherheit A): geschlossen statt offen – ohne Typ liefe sie auf alle; sie hält an.
+      const halt = this.haltOhneTyp(p.id, x, typId);
       const da = vorhanden.find((a) => a.id === id);
       if (da) {
         if (da.geaendertVon === null) await this.d.repo.speichere(id, { ...d, aktiv: da.aktiv }, null, da.version);
+        if (halt) await this.d.repo.setze(id, { angehalten: halt });
         continue;
       }
       let aktiv = ein.includes(x.schluessel);
@@ -401,7 +417,7 @@ export class Automatisierungen {
         if (alt && alt.geaendertVon !== null) { log.info('Mitgelieferte Automatisierung nicht angelegt: die übernommene Erinnerung wurde geändert', { paket: p.id, automatisierung: x.schluessel, bleibt: alt.id }); continue; }
         if (alt) { aktiv = alt.aktiv; await this.d.repo.loesche(alt.id); }
       }
-      const a: Automatisierung = { ...d, id, aktiv, angehalten: null, herkunft: 'paket', paketId: p.id, version: 1, erstellt: this.iso(), erstelltVon: null, geaendert: this.iso(), geaendertVon: null };
+      const a: Automatisierung = { ...d, id, aktiv: aktiv && !halt, angehalten: halt, herkunft: 'paket', paketId: p.id, version: 1, erstellt: this.iso(), erstelltVon: null, geaendert: this.iso(), geaendertVon: null };
       try { await this.d.repo.lege(a); neu++; } catch { /* ein anderer Server war schneller */ }
     }
     // Nicht mehr mitgeliefert: weg, wenn aus und unverändert – übernommene Erinnerungen am Feld bleiben.

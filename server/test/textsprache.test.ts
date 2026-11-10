@@ -64,8 +64,8 @@ describe('Spracherkennung (#395)', () => {
 describe('Einstellung und Werkbank (#395)', () => {
   it('schlägt Sprach-Zusatzpakete des Pakets Texterkennung für erkannte Sprachen vor (#459)', () => {
     assert.deepEqual(sprachvorschlaege({ deu: 40, fra: 12, tur: 3, xyz: 9 }, ['deu', 'eng']), [
-      { sprache: 'fra', anzahl: 12, paket: 'texterkennung_fra' },
-      { sprache: 'tur', anzahl: 3, paket: 'texterkennung_tur' },
+      { sprache: 'fra', anzahl: 12, paket: 'texterkennung.fra' },
+      { sprache: 'tur', anzahl: 3, paket: 'texterkennung.tur' },
     ]);
   });
 

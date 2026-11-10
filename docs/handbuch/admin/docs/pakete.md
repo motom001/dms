@@ -33,7 +33,7 @@ Vor dem Anlegen prüft Ablago:
 - ob alle **Abhängigkeiten** installiert sind und in einer passenden Version,
 - ob das heruntergeladene Archiv zur **Prüfsumme (SHA-256)** im Katalog passt. Passt sie nicht, installiert Ablago nichts.
 
-Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Die Kennungen bekommen das Paket-Präfix (`<paket>_<schluessel>`), damit sich Pakete nicht in die Quere kommen; Verweise auf Mappentypen anderer Pakete löst Ablago auf. **Scheitert etwas, nimmt Ablago alles zurück** – es bleibt nichts halb angelegt.
+Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Mappentypen aus Paketen haben die [Kennung](mappentypen.md) `paket:schluessel`, z. B. `basis:person` – so kommen sich Pakete nicht in die Quere, auch wenn Paket-Id und Kennung selbst einen Unterstrich enthalten (bis Ablago 0.228 hieß es `basis_person`; beim Update hat Ablago alle Kennungen umgestellt, #1084). Eigene Mappentypen haben eine Kennung ohne Doppelpunkt. Verweise auf Mappentypen anderer Pakete löst Ablago auf. **Scheitert etwas, nimmt Ablago alles zurück** – es bleibt nichts halb angelegt.
 
 ### Mehrere Pakete in einem Schritt installieren { #mehrere-pakete-in-einem-schritt-installieren }
 
@@ -94,9 +94,19 @@ Das Ablago-Projekt **signiert** den offiziellen Katalog (ab Ablago 0.141.0). Wei
 
 **Ältere Versionen:** Ablago 0.141.0 bis 0.144.1 kennen nur Testschlüssel. Sobald das Ablago-Projekt den Katalog mit seinen echten Schlüsseln signiert, zeigen sie beim offiziellen Katalog „Signatur ungültig“ – aktualisiere dann Ablago. Die Fingerabdrücke der echten Schlüssel stehen in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
+### Herausgeber { #herausgeber }
+
+Neben dem Namen eines Pakets steht sein **Herausgeber** (#1084), z. B. „Verträge · app.ablago“ – in der Liste, im Katalog, in der Vorschau und im Installationsablauf. Der Herausgeber ist eine umgedrehte Domain: Die offiziellen Pakete haben `app.ablago`, Pakete anderer Anbieter deren Domain, z. B. `org.example`.
+
+- **Kein Ersatz durch Fremde:** Ist ein Paket schon installiert, nimmt Ablago kein Paket mit derselben Id von einem **anderen** Herausgeber – weder als Installation noch als Update, auch nicht hochgeladen. Die Meldung lautet etwa „Ein anderes Paket „vertraege“ von app.ablago ist schon installiert …“. Willst du wirklich wechseln, entferne zuerst das installierte Paket.
+- **`app.ablago` nur offiziell:** Ein Paket, das sich als `app.ablago` (oder `app.ablago.…`) ausgibt, installiert Ablago nur aus dem offiziellen Katalog, aus einer Sammeldatei mit dessen Signatur oder als Datei, deren Prüfsumme dort steht.
+- **Andere Herausgeber sind nicht geprüft:** Ablago zeigt sie als „Herausgeber laut Paket: org.example – nicht geprüft“ – das Paket sagt es nur selbst. Bei einem weiteren Katalog mit eigenem Schlüssel bindet Ablago den Herausgeber an diesen Schlüssel; ein Update mit anderem Schlüssel nimmt es nicht. Angezeigt wird der Herausgeber immer vollständig.
+- **Ergänzungen und Abhängigkeiten:** Ein Paket mit Punkt in der Id (z. B. `texterkennung.fra`) muss vom selben Herausgeber sein wie das Paket vor dem Punkt. Eine Abhängigkeit zählt nur, wenn das installierte Paket vom selben Herausgeber oder vom Ablago-Projekt stammt – ein fremdes „basis“ ersetzt nie das offizielle.
+- **Ältere Pakete** nennen noch keinen Herausgeber. Dann gilt der Herausgeber ihres Katalogs: Aus dem offiziellen Katalog ist das `app.ablago` – alle Pakete dort gibt das Ablago-Projekt heraus, und nur seine Signatur belegt es. Bei anderen Quellen ist er unbekannt; dann schützt wie bisher, dass Updates nur aus derselben Quelle kommen. Nennt ein solches Paket mit einem Update zum ersten Mal einen Herausgeber, fragt die Vorschau ausdrücklich nach („Ab diesem Update gilt … als Herausgeber dieses Pakets“); ohne den Haken gibt es kein Update. Danach gilt dieser Herausgeber.
+
 ## Installierte Pakete
 
-Je Paket merkt sich Ablago Version, **Herkunft** (der Katalog), wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Ansichten dazugehören. Diese Angaben sind Teil der [Sicherung](sicherung.md) und des [Vollexports](export.md) (`struktur/pakete.json`). Installieren, Aktualisieren und Entfernen stehen im Protokoll.
+Je Paket merkt sich Ablago Version, **Herkunft** (der Katalog), **Herausgeber**, wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Ansichten dazugehören. Diese Angaben sind Teil der [Sicherung](sicherung.md) und des [Vollexports](export.md) (`struktur/pakete.json`). Installieren, Aktualisieren und Entfernen stehen im Protokoll.
 
 ## Beispiele { #beispiele }
 
@@ -120,6 +130,8 @@ Ein Update **ergänzt nur**:
 - neue Felder und Register bei vorhandenen Mappentypen.
 
 Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
+
+**Neue Id (Umzug, #1084):** Benennt ein Paket seine Id um – etwa die Zusatzsprachen der Texterkennung von `texterkennung_fra` auf `texterkennung.fra` –, erscheint das als gewöhnliches Update des installierten Pakets. Die Vorschau sagt „Das Paket heißt jetzt …“. Danach steht es unter der neuen Id da, mit allen Mappentypen, Mappen, Einstellungen und Daten; ein zweites Paket entsteht nicht. Das geht nur aus derselben Quelle und vom selben Herausgeber. Eine Id mit Punkt heißt übrigens immer: Das Paket **ergänzt** das Paket vor dem Punkt.
 
 ## Text in Verweise umwandeln { #text-in-verweise-umwandeln }
 

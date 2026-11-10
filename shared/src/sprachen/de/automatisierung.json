@@ -1,6 +1,7 @@
 {
   "angehalten.bremse": "Angehalten: mehr als {anzahl} Läufe in einer Minute. Prüfe den Auslöser und schalte die Automatisierung wieder ein.",
   "angehalten.wiederherstellung": "Angehalten nach einer Wiederherstellung. Prüfe die Automatisierung und schalte sie wieder ein.",
+  "angehalten.typ-unbekannt": "Angehalten: Den Mappentyp „{typ}“ gibt es in dieser Ablage nicht. Ohne ihn liefe die Automatisierung auf alle Mappentypen – sie bleibt aus, bis der Typ da ist oder du sie anpasst.",
   "fassung.fehlt": "Diese Version gibt es nicht (mehr).",
   "karte.aufgabe.als-aufgabe": "Aufgabe",
   "karte.aufgabe.als-benachrichtigung": "Benachrichtigung",

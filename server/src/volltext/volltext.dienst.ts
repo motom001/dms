@@ -140,8 +140,10 @@ export class VolltextDienst {
     const alle = await this.repo.listePakete();
     const p = alle.filter((x) => hatSchnittstelle(x.laeufer, 'dms:texterkennung')).sort((a, b) => a.id.localeCompare(b.id))[0];
     if (!p) return null;
-    // Sprachen (#459): Deutsch und Englisch im Paket, weitere aus Zusatzpaketen „<paket>_<kennung>“, die von ihm abhängen.
-    const zusatz = alle.filter((x) => p.id in (x.abhaengigkeiten ?? {})).map((x) => new RegExp(`^${p.id}_([a-z]{3})$`).exec(x.id)?.[1]).filter((x): x is string => !!x);
+    // Sprachen (#459): Deutsch und Englisch im Paket, weitere aus Zusatzpaketen „<paket>.<kennung>“ (#1084; bis zum Umzug
+    // im Katalog „<paket>_<kennung>“), die von ihm abhängen.
+    const zusatz = alle.filter((x) => p.id in (x.abhaengigkeiten ?? {}) && (x.id.startsWith(`${p.id}.`) || x.id.startsWith(`${p.id}_`)))
+      .map((x) => /^([a-z]{3})$/.exec(x.id.slice(p.id.length + 1))?.[1]).filter((x): x is string => !!x);
     return { id: p.id, name: p.name, version: p.version, sprachen: [...new Set(['deu', 'eng', ...zusatz])] };
   }
 

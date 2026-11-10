@@ -7,6 +7,7 @@ import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallOhneLeserecht, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
+import { teileKennung } from '../../shared/src/kennungen';
 import { SPRACHE_MARKE, spracheAusInfo } from '../../shared/src/textsprache';
 import { teilenAb, type Seitensprache } from '../../shared/src/seitensprachen';
 import { ausschnittAus } from './repo-pg';
@@ -172,19 +173,26 @@ export function speicherRepo(): Repo {
     return so.absteigend ? -r : r;
   };
 
+  // Paket der Kennung (#1084): wie in PostgreSQL getrennt – abgeleitet aus `paket:schluessel`, nie aus der Eingabe.
+  const ohnePaket = <T extends object>(d: T): T => { const rest = { ...d } as T & { paket?: string }; delete rest.paket; return rest; };
+  const mitPaket = (t: Mappentyp): Mappentyp => {
+    const p = t.schluessel ? teileKennung(t.schluessel).paket : null;
+    if (p) t.paket = p; else delete t.paket;
+    return t;
+  };
   return {
     async listeTypen() { return [...typen.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async holeTyp(id) { const t = typen.get(id); return t && kopie(t); },
     async legeTypAn(id, d: MappentypDaten, system) {
-      const t: Mappentyp = { id, ...kopie(d), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
-      typen.set(id, t);
+      const t: Mappentyp = { id, ...ohnePaket(kopie(d)), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
+      typen.set(id, mitPaket(t));
       return kopie(t);
     },
     async aendereTyp(id, d, erwartet) {
       const alt = typen.get(id)!;
       if (erwartet !== undefined && alt.geaendert !== erwartet) throw new KonfigurationVeraltet();
-      const t: Mappentyp = { ...alt, ...kopie(d), schluessel: alt.schluessel ?? d.schluessel, ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: standWeiter(alt.geaendert) };
-      typen.set(id, t);
+      const t: Mappentyp = { ...alt, ...ohnePaket(kopie(d)), paket: alt.paket, schluessel: alt.schluessel ?? d.schluessel, ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: standWeiter(alt.geaendert) };
+      typen.set(id, mitPaket(t));
       const refKeys = new Set(t.felder.filter((f) => f.typ === 'referenz').map((f) => f.key));
       for (const m of mappen.values()) if (m.typId === id) verweise.set(m.id, (verweise.get(m.id) ?? []).filter((v) => refKeys.has(v.feldKey)));
       return kopie(t);
@@ -225,6 +233,17 @@ export function speicherRepo(): Repo {
     async listePakete() { return [...pakete.values()].map(kopie).sort((a, b) => a.id.localeCompare(b.id)); },
     async speicherePaket(p) { pakete.set(p.id, kopie(p)); },
     async loeschePaket(id) { pakete.delete(id); },
+    async benennePaketUm(alt, neu) {
+      const p = pakete.get(alt);
+      if (p) { pakete.delete(alt); pakete.set(neu, { ...p, id: neu }); }
+      for (const x of pakete.values()) if (alt in x.abhaengigkeiten) { x.abhaengigkeiten[neu] = x.abhaengigkeiten[alt]; delete x.abhaengigkeiten[alt]; }
+      const c = paketCode.get(alt); if (c) { paketCode.delete(alt); paketCode.set(neu, c); }
+      const s = sprachpakete.get(alt); if (s) { sprachpakete.delete(alt); sprachpakete.set(neu, s); }
+      for (const x of sprachpakete.values()) if (x.beschriftungen[alt]) { x.beschriftungen[neu] = x.beschriftungen[alt]; delete x.beschriftungen[alt]; }
+      for (const e of ereignisse.values()) if (e.paketId === alt) e.paketId = neu;
+      for (const g of synonymListe) if (g.quelle === alt) g.quelle = neu;
+      for (const t of typen.values()) if (t.paket === alt && t.schluessel) { t.schluessel = `${neu}:${teileKennung(t.schluessel).schluessel}`; mitPaket(t); }
+    },
     async speicherePaketCode(id, dateien) { paketCode.set(id, dateien.map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) }))); },
     async paketCode(id) { return (paketCode.get(id) ?? []).map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) })); },
     async loeschePaketCode(id) { paketCode.delete(id); },
@@ -493,6 +512,7 @@ export function speicherRepo(): Repo {
     async lesbare(ids, lesen) { return new Set(ids.filter((id) => mappen.has(id) && lesbar(lesen, mappen.get(id)!, zaehl))); },
     async inKlauseln(ids, klauseln) { return new Set(ids.filter((id) => mappen.has(id) && inSicht(mappen.get(id)!, klauseln, zaehl))); },
     async zaehleAusdruck(typId, x) { return [...mappen.values()].filter((m) => m.typId === typId && werte(x, m, zaehl)).length; },
+    async setzeTypKennung(typId, kennung) { const t = typen.get(typId); if (t) { t.schluessel = kennung; mitPaket(t); } },
     async setzeTypSchluessel(typId, schluessel) { const t = typen.get(typId); if (t && !t.schluessel) t.schluessel = schluessel; },
     async setzeBerechtigungen(typId, rw) { const t = typen.get(typId)!; t.berechtigungen = rw ? kopie(rw) : null; t.geaendert = standWeiter(t.geaendert); return kopie(t); },
     async listeSichten() { return [...sichten.values()].map(kopie).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de')); },

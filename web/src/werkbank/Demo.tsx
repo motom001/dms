@@ -150,7 +150,7 @@ export function DemoPanel() {
       )}
 
       {/* Ein früherer Ablageort des Kerns (#168, #883) zählt hier nicht als eigener Mappentyp. */}
-      {!d.typen.some((mappentyp) => !mappentyp.system && mappentyp.schluessel !== 'ablageort') ? (
+      {!d.typen.some((mappentyp) => !mappentyp.system && mappentyp.schluessel !== 'ablageort' && mappentyp.schluessel !== 'basis:ablageort') ? (
         <div className="blatt">
           <h2 className="h3">{t('werkbank.demo.beispiel-mappentypen')}</h2>
           <p className="leise">{t('werkbank.demo.vertragspartner-vertrag-rechnung-und')}</p>

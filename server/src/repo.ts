@@ -232,6 +232,13 @@ export interface Repo {
   /** Anlegen oder ersetzen (gleiche Id). */
   speicherePaket(p: InstalliertesPaket): Promise<void>;
   loeschePaket(id: string): Promise<void>;
+  /**
+   * Umzug auf eine neue Paket-Id (#1084, Manifest `ersetzt`, z. B. texterkennung_fra → texterkennung.fra): dieselbe
+   * Installation unter neuer Id – Eintrag, Abhängigkeiten anderer Pakete, Code, Sprachtexte, Ereignisse, Wortlisten,
+   * Herkunft der Mappentypen, Vektoren, mitgelieferte Automatisierungen und Dienstkonto (PostgreSQL in einer
+   * Transaktion). Einstellungen zieht die Paketverwaltung über die Einstellungen um.
+   */
+  benennePaketUm(alt: string, neu: string): Promise<void>;
   /** Code eines Pakets (#338): code/modul.wasm und code/daten/…; ersetzt den bisherigen ganz. */
   speicherePaketCode(paketId: string, dateien: Array<{ name: string; inhalt: Buffer }>): Promise<void>;
   paketCode(paketId: string): Promise<Array<{ name: string; inhalt: Buffer }>>;
@@ -393,6 +400,11 @@ export interface Repo {
   setzeBerechtigungen(typId: string, rw: Regelwerk | null): Promise<Mappentyp>;
   /** Schlüssel nachtragen (#145; nur für Typen ohne). */
   setzeTypSchluessel(typId: string, schluessel: string): Promise<void>;
+  /**
+   * Kennung eines vorhandenen Typs setzen (#1084), Paket und Schlüssel aus `paket:schluessel` (bzw. ohne Paket) – nur
+   * für die Paketverwaltung: Übernahme des früheren Ablageorts durch Basis (#883) und deren Rücknahme.
+   */
+  setzeTypKennung(typId: string, kennung: string): Promise<void>;
 
   listeSichten(): Promise<Sicht[]>;
   legeSichtAn(id: string, d: SichtDaten): Promise<Sicht>;
@@ -704,6 +716,8 @@ export interface Repo {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Adresse eines Dienstkontos (#338) – mit Haushalt, weil die Adresse über alle Haushalte eindeutig ist (benutzer_email_uq). */
+export const dienstEmail = (paketId: string, haushaltId: string) => `paket-${paketId}.${haushaltId}@dienst.invalid`;
 export const istUuid = (s: unknown): s is string => typeof s === 'string' && UUID.test(s);
 
 /** Nummern ziehen beim Anlegen (#171): Feld → Kreis, Tag des Ziehens. */

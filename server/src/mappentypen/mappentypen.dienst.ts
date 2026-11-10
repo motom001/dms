@@ -11,6 +11,7 @@ import { empfaengerFelder } from '../../../shared/src/fristen';
 import { istOffen, rechteUebersicht, systemSperre, type Recht, type Regelwerk } from '../../../shared/src/rechte';
 import { liesAusDokument, type AusDokument } from '../../../shared/src/erkennung';
 import type { StempelTyp } from '../../../shared/src/stempel';
+import { teileKennung } from '../../../shared/src/kennungen';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
@@ -107,7 +108,8 @@ export class MappentypenDienst {
   }
 
   /** Mappentyp anlegen bzw. ändern; die Stempel-Einstellung (#394) liegt daneben in den Einstellungen. */
-  async legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.legeTypAnIntern(e)); }
+  /** ausPaket (#1084): Id des Pakets, das den Typ anlegt – nur dann darf die Kennung `paket:schluessel` lauten. */
+  async legeTypAn(eingabe: unknown, ausPaket?: string): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.legeTypAnIntern(e, ausPaket)); }
   async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.aendereTypIntern(id, e)); }
   private async mitStempelEingabe(eingabe: unknown, f: (e: unknown) => Promise<Mappentyp>): Promise<Mappentyp> {
     const hat = !!eingabe && typeof eingabe === 'object' && 'stempel' in eingabe;
@@ -144,11 +146,18 @@ export class MappentypenDienst {
     protokoll.modul('werkbank').info('Erkennung am Mappentyp eingestellt', { typ: typId, ...teil });
   }
 
-  private async legeTypAnIntern(eingabe: unknown): Promise<Mappentyp> {
+  /** Kennungen mit Paket (`paket:schluessel`, #1084) vergibt nur die Paketverwaltung – sonst könnte ein eigener Typ einem Paket die Kennung wegnehmen. */
+  private static pruefePaketKennung(schluessel: string | undefined, ausPaket?: string) {
+    if (!schluessel?.includes(':') || teileKennung(schluessel).paket === ausPaket) return;
+    throw new Fachfehler(422, t('meldungen.dienst.kennung-mit-paket', { schluessel }), { allgemein: [t('meldungen.dienst.kennung-mit-paket', { schluessel })], felder: {} });
+  }
+
+  private async legeTypAnIntern(eingabe: unknown, ausPaket?: string): Promise<Mappentyp> {
     const roh = (eingabe ?? {}) as { id?: unknown };
     // Die Oberfläche darf die Id vorgeben, damit ein neuer Typ auf sich selbst verweisen kann.
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
     const d = bereinigeTyp(eingabe);
+    MappentypenDienst.pruefePaketKennung(d.schluessel, ausPaket);
     // Schlüssel (#145): ohne Angabe aus dem Namen, eindeutig.
     if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
     await this.pruefeTyp(d, id);
@@ -177,6 +186,7 @@ export class MappentypenDienst {
     // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
     festigeDarstellung(d);
     // Der Schlüssel ist fest (#145); fehlt er noch, gilt der eingegebene bzw. einer aus dem Namen.
+    if (!alt.schluessel) MappentypenDienst.pruefePaketKennung(d.schluessel);
     d.schluessel = alt.schluessel ?? d.schluessel ?? freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).filter((t) => t.id !== id).map((t) => t.schluessel ?? ''));
     await this.pruefeTyp(d, id);
     // Berechtigungen (#142) gegen die neuen Felder prüfen, bevor etwas gespeichert ist.

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import { KEINE_ABWESENHEIT, type Abwesenheit, type Benutzer, type Rolle, type Sitzung, type Vertretung } from '../../shared/src/model';
-import { istUuid } from './repo';
+import { dienstEmail, istUuid } from './repo';
 import { ohneWarten } from './repo-pg';
 import { staendeAusZeile, standSpalten } from './lesespeicher';
 
@@ -24,7 +24,8 @@ export function zuletztListe(roh: unknown): ZuletztEintrag[] {
 /** Wer dieselbe Mappe gleich wieder öffnet oder ändert, schreibt höchstens einmal je Minute (#615). */
 export const ZULETZT_RUHE_MS = 60_000;
 
-export const dienstEmail = (paketId: string, haushaltId: string) => `paket-${paketId}.${haushaltId}@dienst.invalid`;
+/** Adresse eines Dienstkontos; steht in repo.ts, weil auch der Umzug einer Paket-Id (#1084) sie braucht. */
+export { dienstEmail };
 /** Adresse eines Systemkontos (#673), ebenso nie zustellbar. */
 export const systemEmail = (kennung: string, haushaltId: string) => `${kennung}.${haushaltId}@system.invalid`;
 

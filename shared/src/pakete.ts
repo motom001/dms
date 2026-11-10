@@ -10,6 +10,7 @@ import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
+import { hauptpaket, istHerausgeber, PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://catalog.ablago.app/katalog.json';
@@ -18,7 +19,8 @@ export const KATALOG_SEITE = 'https://catalog.ablago.app/';
 /** Die Registry selbst – Quellen, Regeln, Vorlage. */
 export const REGISTRY = 'https://github.com/motom001/dms-registry';
 
-export const PAKET_ID = /^[a-z][a-z0-9_]{1,19}$/;
+/** Muster der Paket-Id (#1084: bis 40 Zeichen, optional ein Punkt-Zusatz) – zentral in kennungen.ts. */
+export { PAKET_ID };
 export const VERSION = /^\d+\.\d+\.\d+$/;
 
 /**
@@ -105,6 +107,31 @@ export function liesErgaenzt(v: unknown, abhaengigkeiten: Record<string, unknown
   return fehler.length ? { ergaenzt: null, fehler } : { ergaenzt: { paket, ...(gruppe ? { gruppe } : {}) }, fehler };
 }
 
+/**
+ * Punkt in der Id (#1084): `<hauptpaket>.<zusatz>` heißt „ergänzt das Hauptpaket“ – das Paket muss dann
+ * `ergaenzt: <hauptpaket>` angeben. Liefert den Fehler oder null.
+ */
+export function punktIdFehler(id: string, ergaenzt: Ergaenzung | null | undefined): string | null {
+  const haupt = hauptpaket(id);
+  return haupt && ergaenzt?.paket !== haupt ? t('gemeinsam.pakete.punkt-id-ohne-ergaenzt', { id, haupt }) : null;
+}
+
+/** Höchstens so viele frühere Ids (#1084). */
+export const ERSETZT_MAX = 5;
+/**
+ * Ersetzte Ids eines Pakets (#1084, Manifest `ersetzt`): Ein Update unter neuer Id zieht die Installation unter einer
+ * dieser Ids um, statt ein zweites Paket anzulegen – z. B. `texterkennung.fra` mit `ersetzt: texterkennung_fra`. Ein
+ * Text oder eine Liste von Paket-Ids, nicht die eigene.
+ */
+export function liesErsetzt(v: unknown, id: string): { ersetzt: string[]; fehler: string[] } {
+  if (v === undefined || v === null) return { ersetzt: [], fehler: [] };
+  const liste = typeof v === 'string' ? [v] : Array.isArray(v) ? v : null;
+  if (!liste || liste.some((x) => typeof x !== 'string' || !PAKET_ID.test(x) || x === id || x === 'dms') || liste.length > ERSETZT_MAX) {
+    return { ersetzt: [], fehler: [t('gemeinsam.pakete.ersetzt-ungueltig', { max: ERSETZT_MAX })] };
+  }
+  return { ersetzt: [...new Set(liste as string[])], fehler: [] };
+}
+
 /** Ein Angebot zum Mitinstallieren (#405): Ergänzung eines Pakets aus dem Katalog. */
 export interface ErgaenzungAngebot { id: string; name: string; version: string; beschreibung: string; gruppe: string | null; code: boolean }
 
@@ -115,7 +142,8 @@ export interface ErgaenzungAngebot { id: string; name: string; version: string; 
 export function ergaenzungenVon(k: Katalog, basis: string, dms: string, installiert: Array<{ id: string }> = []): ErgaenzungAngebot[] {
   const erg: ErgaenzungAngebot[] = [];
   for (const p of k.pakete) {
-    if (p.id === basis || installiert.some((x) => x.id === p.id)) continue;
+    // Unter einer früheren Id installiert (#1084, `ersetzt`) zählt wie installiert – es kommt als Update.
+    if (p.id === basis || installiert.some((x) => x.id === p.id || p.ersetzt?.includes(x.id))) continue;
     const v = [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => dmsPasst(dms, x.dms));
     if (v?.ergaenzt?.paket === basis) erg.push({ id: p.id, name: p.name, version: v.version, beschreibung: p.beschreibung, gruppe: v.ergaenzt.gruppe ?? null, code: v.code });
   }
@@ -129,6 +157,10 @@ export interface KatalogPaket {
   versionen: KatalogVersion[];
   /** Anzeige wie im Katalog (#645, dms-registry #84/#98): Lucide-Name, Sprachkürzel, Kategorien – optional. */
   symbol?: string; kuerzel?: string; kategorien?: string[];
+  /** Herausgeber (#1084, dms-registry #173) als umgedrehte Domain, z. B. `app.ablago`; fehlt in älteren Katalogen. */
+  herausgeber?: string;
+  /** Ersetzte Ids dieses Pakets (#1084, Manifest `ersetzt`), z. B. texterkennung_fra für texterkennung.fra. */
+  ersetzt?: string[];
 }
 export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[] }
 
@@ -173,6 +205,14 @@ export interface InstalliertesPaket {
   id: string; name: string; version: string; beschreibung: string; lizenz: string;
   autor: { name: string; github: string };
   herkunft: Herkunft;
+  /** Herausgeber (#1084), umgedrehte Domain wie `app.ablago`; fehlt bei älteren Installationen (dann gilt der des Katalogs). */
+  herausgeber?: string;
+  /** Herausgeber belegt (offizieller Katalog bzw. Schlüssel eines signierten Katalogs); sonst „laut Paket, nicht geprüft“. */
+  herausgeberGeprueft?: boolean;
+  /** Fingerabdruck des signierten weiteren Katalogs, an den der Herausgeber gebunden ist (Sicherheit C). */
+  herausgeberSchluessel?: string;
+  /** Ersetzte Ids dieser Installation (#1084), z. B. texterkennung_fra nach dem Umzug auf texterkennung.fra. */
+  ersetzt?: string[];
   installiert: string; installiertVon: string | null;
   aktualisiert: string | null; aktualisiertVon: string | null;
   /** Schlüssel der mitgelieferten Automatisierungen dieser Version (#712) – bei einem Update stehen nur neue zur Wahl. */
@@ -356,7 +396,11 @@ export function liesKatalog(j: unknown): Katalog {
       }))
       .sort((a, b) => vergleicheVersion(b.version, a.version));
     if (!versionen.length) continue;
+    const roh = p as unknown as Record<string, unknown>;
+    const ersetzt = liesErsetzt(roh.ersetzt, p.id).ersetzt;
     pakete.push({
+      ...(istHerausgeber(roh.herausgeber) ? { herausgeber: roh.herausgeber } : {}),
+      ...(ersetzt.length ? { ersetzt } : {}),
       id: p.id, name: text(p.name) || p.id, beschreibung: text(p.beschreibung),
       autor: { name: text(p.autor?.name), github: text(p.autor?.github) }, lizenz: text(p.lizenz),
       aktuell: VERSION.test(text(p.aktuell)) ? p.aktuell : versionen[0].version, versionen,
@@ -571,7 +615,6 @@ export const veralteteVerweise = (liste: Iterable<string>): string[] => [...new 
 export const DMS_POST_RECHT_AB = '0.94.0';
 
 const SPRACHEN = ['rust', 'go', 'c', 'assemblyscript', 'javascript'];
-const TYPVERWEIS_ODER_ALLE = /^(\*|([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39})$/;
 
 /**
  * Die eine Größengrenze für Pakete (#644): das Archiv beim Herunterladen, Hochladen, in der Sammeldatei und beim
@@ -856,6 +899,8 @@ export interface AblaufInstallation extends AblaufEingabe {
   spaeter?: string[];
   /** Dienst-Adressen in den Einstellungen bestätigt. */
   adresseBestaetigt?: boolean;
+  /** Erstmals gesetzte Herausgeber von Bestandspaketen bestätigt (#1084) – ein Haken für alle. */
+  herausgeberBestaetigt?: boolean;
 }
 export interface AblaufPaket<V> {
   /** Paket-Id (Katalog) bzw. Upload-Kennung (Sammeldatei). */
