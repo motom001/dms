@@ -173,6 +173,11 @@ jobs:
           git fetch -q --depth 1 origin "$BASIS"
           node --test .github/werkzeuge/ausnahmen-zaehlen.test.mjs
           node .github/werkzeuge/ausnahmen-zaehlen.mjs "$BASIS"
+      # Feste Farben nur in web/src/tokens.css (#966); jeder Fund erscheint als Anmerkung an der Zeile.
+      - name: Keine festen Farben
+        run: |
+          node --test .github/werkzeuge/farben-pruefen.test.mjs
+          node .github/werkzeuge/farben-pruefen.mjs
       - run: npm ci --no-audit --no-fund
       - name: Abhängigkeiten (dependency-cruiser)
         run: npm run lint:abh

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useDaten } from '../daten';
-import { designCss, GRUNDLAGEN, palette, rettungsweg, wendeAn, type Design, type Grundlage } from '../design';
+import { designCss, GRUNDLAGEN, MARKE, palette, rettungsweg, wendeAn, type Design, type Grundlage } from '../design';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { logoUrl, Marke } from '../Marke';
@@ -47,7 +47,7 @@ export function Farbfelder({ d }: { d: Pick<Design, 'primaer' | 'sekundaer' | 'g
   );
 }
 
-const LEER: Omit<Design, 'id' | 'logo'> = { name: '', grundlage: 'automatisch', primaer: '#1F4E79', sekundaer: '#2B7656', css: '', schriftzug: null };
+const LEER: Omit<Design, 'id' | 'logo'> = { name: '', grundlage: 'automatisch', primaer: MARKE.blau, sekundaer: MARKE.gruen, css: '', schriftzug: null };
 
 export function DesignEditor({ id }: { id: string }) {
   const d = useDaten();

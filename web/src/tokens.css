@@ -1,11 +1,27 @@
 /* Gestaltungswerte (#965): Farben, Schrift, Rundung und Marke als Variablen, hell und dunkel. Wird vor basis.css und styles.css geladen (main.tsx).
-   Nur Werte hier – die Regeln stehen in basis.css (Elemente ohne Klassen) und styles.css (alles Übrige). */
+   Nur Werte hier – die Regeln stehen in basis.css (Elemente ohne Klassen) und styles.css (alles Übrige).
+   Feste Farben gibt es nur hier (#966, Prüfung: .github/werkzeuge/farben-pruefen.mjs). Der Dunkelmodus steht nur hier:
+   im Block @media (prefers-color-scheme: dark); Designs (design.ts) lesen beide Blöcke aus dieser Datei. */
 :root {
   --grund: #ECEFF3; --flaeche: #FFFFFF; --senke: #F5F6F8; --tinte: #17202B; --leise: #5A6475;
   --linie: #D8DDE4; --linie-stark: #C3CAD4;
   --akzent: #1F4E79; --akzent-tinte: #FFFFFF; --akzent-zart: #E4EAEF;
   --gruen: #2B7656; --gruen-zart: #E1F0E8;
   --schlecht: #B42318; --schlecht-zart: #FBE9E7; --warn: #835700; --warn-zart: #FAF0D9;
+  /* Schrift auf vollen Status-Flächen (Knopf „Löschen“, Vertretungsbanner). */
+  --schlecht-tinte: #FFFFFF; --warn-tinte: #FFFFFF;
+  /* Verwaltungsmodus (#819): kräftiger roter Balken, in beiden Modi gleich. */
+  --verwaltung: #A61B1B; --verwaltung-tinte: #FFFFFF;
+  /* Schatten unter schwebenden Flächen und Schleier hinter Dialogen. */
+  --schatten-zart: rgb(15 23 42 / .12); --schatten: rgb(15 23 42 / .18); --schatten-stark: rgb(15 23 42 / .28);
+  --schleier: rgb(0 0 0 / .35); --schleier-stark: rgb(0 0 0 / .45);
+  /* Nummer auf einem Seitenbild (Handy-Seitenwahl). */
+  --bildmarke: rgb(0 0 0 / .65); --bildmarke-tinte: #FFFFFF;
+  /* Papier: Dokumente, Vorschaubilder und QR-Code bleiben auch im Dunkeln weiß, Markierungen darauf ebenso. */
+  --papier: #FFFFFF; --papier-auswahl: rgb(31 78 121 / .28); --papier-wort: rgb(30 90 200 / .7); --schwaerzung: #000000;
+  /* Felder beim Übernehmen (#934): je Feld eine Farbe für Rahmen und Nummer. */
+  --markierung-1: #D9480F; --markierung-2: #1971C2; --markierung-3: #2F9E44;
+  --markierung-4: #9C36B5; --markierung-5: #C2255C; --markierung-6: #0C8599; --markierung-tinte: #FFFFFF;
   --schrift: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --r: 8px;
@@ -19,6 +35,9 @@
     --akzent: #8DB8E0; --akzent-tinte: #111111; --akzent-zart: #1B2B3C;
     --gruen: #6CC39B; --gruen-zart: #18302A;
     --schlecht: #F28B82; --schlecht-zart: #3A1F1E; --warn: #E3B655; --warn-zart: #34291A;
+    --schlecht-tinte: #111111; --warn-tinte: #111111;
+    --schatten-zart: rgb(0 0 0 / .3); --schatten: rgb(0 0 0 / .45); --schatten-stark: rgb(0 0 0 / .55);
+    --schleier: rgb(0 0 0 / .55); --schleier-stark: rgb(0 0 0 / .65);
     --marke-hell: none; --marke-dunkel: block;
     color-scheme: dark;
   }

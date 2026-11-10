@@ -11,6 +11,7 @@ Two tools check the code before it reaches `main` (#899): **ESLint** for typical
 | `npm run lint:abh` | check dependencies (dependency-cruiser, a few seconds) |
 | `npm run lint:zaehlen` | count the lists of existing violations against `main` – exactly the CI check |
 | `npm run lint:umtragen` | after a move: rewrite the lists, drop orphaned entries, then count |
+| `npm run lint:farben` | [no fixed colours](#farben) outside `tokens.css` |
 | `npm run abhaengigkeitsbild` | regenerate the [dependency graph](#abhaengigkeitsbild) |
 
 The tools are fixed versions (without `^`) under `devDependencies` in the root folder and do not go into the image: there, `npm ci --omit=dev --workspace server` installs only the server's runtime packages.
@@ -66,6 +67,22 @@ For both lists: **the total must never rise.** In a pull request, CI counts them
 The workflow **Bestandslisten aufräumen** (`.github/workflows/ausnahmen-aufraeumen.yml`) runs after every push to `main`: `eslint --prune-suppressions` drops entries that no longer occur in the code, and dependency-cruiser rewrites its list. If anything changes, it creates the branch `ausnahmen-aufraeumen` and opens a pull request – or updates the open one.
 
 By a GitHub rule, pull requests created with the `GITHUB_TOKEN` do not start any workflows; the required checks are then missing. So: **close this pull request once and reopen it** – then all checks run as usual. It needs no release note, as it only changes the two lists.
+
+## Colours from tokens { #farben }
+
+Colours live only in **`web/src/tokens.css`** (#966) – as variables with meaningful names, light in the `:root` block and dark in the `@media (prefers-color-scheme: dark)` block. Dark mode therefore has exactly one place; the designs (Workbench → Designs, `web/src/design.ts`) also read both blocks from this file and only put their own primary and secondary colours on top. `styles.css`, `basis.css` and the interface code never contain a colour value, always `var(--name)`; semi-transparent shades are made with `color-mix(in srgb, var(--name) 16%, transparent)`.
+
+| Token | For |
+| --- | --- |
+| `--grund`, `--flaeche`, `--senke`, `--tinte`, `--leise`, `--linie`, `--linie-stark` | page, surfaces, text and lines |
+| `--akzent`, `--gruen`, `--schlecht`, `--warn` with `-zart` and `-tinte` | colour, soft background, text on the full colour |
+| `--verwaltung`, `--verwaltung-tinte` | red bar in administration mode |
+| `--schatten-zart`, `--schatten`, `--schatten-stark`, `--schleier`, `--schleier-stark` | shadows of floating surfaces, veil behind dialogs |
+| `--papier`, `--papier-auswahl`, `--papier-wort`, `--schwaerzung`, `--markierung-1` … `-6` | documents and marks on them – they stay as on paper in the dark, too |
+
+A new token always gets a light **and** a dark value (or deliberately the same one, as for paper). Text on its surface must reach at least 4.5:1 in both modes; `server/test/tokens.test.ts` checks this for the pairs.
+
+**Check:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) looks in `web/src/**/*.css` except `tokens.css` for hex values, `rgb()`/`hsl()` and the like, and named colours such as `white`; in `*.ts(x)` for colour values in strings. CI runs it in the job **stil**; every finding is an error. Exceptions need a reason on the same line – `/* farbe-erlaubt: printing is always black on white */` – or, for whole files, an entry with a reason in `AUSNAHMEN` in the script (today: `design.ts` with the values for high contrast, the sample documents of the stamp preview).
 
 ## Dependencies between the parts { #abhaengigkeiten-pruefen }
 
