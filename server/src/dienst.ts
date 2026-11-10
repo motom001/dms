@@ -2083,7 +2083,7 @@ export class Dienst {
     if (this.inAnfrage()) {
       let mitRecht = true;
       try { mitRecht = (await this.repo.faelleOhneLeserecht({ offen: true, mappeIds: ids })).some((f) => f.leserechtSeit); } catch { /* dann sofort */ }
-      if (!mitRecht) { this.nachDerAntwort(abgleichen); return; }
+      if (!mitRecht) { void this.nachDerAntwort(abgleichen); return; }
     }
     await abgleichen();
   }

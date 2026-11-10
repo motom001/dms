@@ -26,7 +26,7 @@ async function aufbau() {
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
   /** Aufgabe ohne Empfänger, wie sie Post ohne „Für“ oder eine Frist ohne Zuständige anlegt. */
-  const ohne = async (mappeId: string, text: string) => { const a = await repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: null, art: 'manuell', text, erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null }); d.stand.erhoehe(); return a; };
+  const ohne = async (mappeId: string, text: string) => { const a = await repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: null, art: 'manuell', text, erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null }); void d.stand.erhoehe(); return a; };
   return { d, konten, t, ohne, admin, lena, jonas, A: { id: admin.id, rolle: 'admin' }, L: { id: lena.id, rolle: 'mitglied' }, J: { id: jonas.id, rolle: 'mitglied' } };
 }
 

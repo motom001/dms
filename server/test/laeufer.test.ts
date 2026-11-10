@@ -491,11 +491,11 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await new Promise((r) => setTimeout(r, 400)); // Aufruf läuft (Endlosschleife)
     await d.kern.repo.loeschePaket('schleife');
     await d.kern.repo.loescheEreignisse('schleife');
-    l.codeGeaendert();
+    void l.codeGeaendert();
     await warte(async () => !(await l.uebersicht()).laeuft);
     // Neues Paket: die Zustellung darf nicht mehr am alten Aufruf hängen.
     await installiere(d, 'echo', ECHO);
-    l.codeGeaendert();
+    void l.codeGeaendert();
     await warte(async () => (await l.uebersicht()).laeuft);
     await d.ereignis('dokument.hochgeladen', { dokument: 'd2' }); await d.ereignisse.verteile();
     await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);

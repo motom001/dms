@@ -11,6 +11,6 @@ const V: Record<string, (...a: never[]) => unknown> = {
   absturz: () => process.exit(3),
 };
 
-parentPort!.on('message', async (a: Auftrag) => {
+parentPort!.on('message', (a: Auftrag) => void (async () => {
   try { parentPort!.postMessage({ id: a.id, ok: true, ergebnis: await V[a.vorgang](...(alsBuffer(a.args) as never[])) }); } catch (e) { parentPort!.postMessage({ id: a.id, ok: false, fehler: fehlerDaten(e) }); }
-});
+})());

@@ -91,13 +91,28 @@ function insBild(el: HTMLElement | null) {
 }
 
 /**
+ * Ein neues Ergebnis ins Bild holen – nur, wenn es sich nach dem ersten Zeichnen ändert. Ein Ergebnis, das beim Öffnen
+ * der Seite schon dasteht (von außen, z. B. ein fertiger Auftrag), ist nichts Neues: Sonst rollte die Seite gleich nach
+ * dem Laden von selbst dorthin – auf der Musterseite sanft bis zum Bereich „Knopf“, mitten in die Messung der
+ * Rauchtests (#1027).
+ */
+function useInsBild(ref: { current: HTMLElement | null }, anlass: unknown) {
+  // Der Wert beim ersten Zeichnen (auch beim doppelten Effekt im StrictMode der Entwicklung): kein Anlass zum Rollen.
+  const vorher = useRef(anlass);
+  useEffect(() => {
+    if (anlass && anlass !== vorher.current) insBild(ref.current);
+    vorher.current = anlass;
+  }, [anlass, ref]);
+}
+
+/**
  * Ergebnisbereich am Knopf: steht immer im Dokument (leer, ohne Platz), damit Screenreader ein neues Ergebnis ansagen
  * (`role="status"`, `aria-live="polite"`). In einer Knopfreihe (`.knoepfe`) steht es unter allen Knöpfen der Reihe,
  * sonst direkt unter dem Knopf.
  */
 export function Ergebnis({ wert, id, className }: { wert?: KnopfErgebnis | null; id?: string; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => { if (wert) insBild(ref.current); }, [wert]);
+  useInsBild(ref, wert);
   return (
     <span ref={ref} id={id} role="status" aria-live="polite" data-ergebnis={wert?.art} className={klassen(s.ergebnis, wert && s[wert.art], className)}>
       {wert && <><Symbol name={SYMBOL[wert.art]} className={s.ergebnissymbol} /><span>{wert.text}</span></>}
@@ -108,11 +123,11 @@ export function Ergebnis({ wert, id, className }: { wert?: KnopfErgebnis | null;
 /**
  * Ausführliches Ergebnis unter einem Knopf, das kein einzelner Satz ist (z. B. eine Prüfliste oder Text mit
  * Einzelheiten): steht immer im Dokument (`aria-live`), rollt sanft ins Bild, wenn sich `anlass` ändert und es nicht
- * ganz zu sehen ist. Für einfache Ergebnisse genügt der Knopf selbst (Rückgabe `KnopfErgebnis`).
+ * ganz zu sehen ist (nicht schon beim ersten Zeichnen). Für einfache Ergebnisse genügt der Knopf selbst (Rückgabe `KnopfErgebnis`).
  */
 export function ErgebnisBlock({ anlass, className, children }: { anlass: unknown; className?: string; children?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (anlass) insBild(ref.current); }, [anlass]);
+  useInsBild(ref, anlass);
   return <div ref={ref} aria-live="polite" className={klassen(s.block, className)}>{children}</div>;
 }
 
