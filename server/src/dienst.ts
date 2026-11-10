@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  kannAusPost, darfLoeschen, istLeer, sortierbar, MAX_AUSWAHL, MAX_DATEIGROESSE,
+  kannAusPost, darfLoeschen, istLeer, MAX_AUSWAHL, MAX_DATEIGROESSE,
   ABRUF_ART, type Abrufweg, type Abruffassung, type Modusspur, type Kontorolle, type Systemkonto, verweiseVon,
   AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Register, type Wert, type Werte,
 } from '../../shared/src/model';
@@ -8,8 +8,7 @@ import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
-import { istVerklemmung } from './db';
-import { EIGENE_MAPPEN, fingerabdruck, Haushaltsstand, MINDESTENS_MS, mitFavoriten, NUR_FAVORITEN, zeitabhaengig, ZAEHLT_FUER_TERMINE, Zaehlerspeicher, type Gueltigkeit } from './zaehlerspeicher';
+import { EIGENE_MAPPEN, fingerabdruck, Haushaltsstand, MINDESTENS_MS, mitFavoriten, NUR_FAVORITEN, ZAEHLT_FUER_TERMINE, Zaehlerspeicher, type Gueltigkeit } from './zaehlerspeicher';
 import { jeAnfrage } from './lesespeicher';
 import { speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { rechteMessen } from './messung';
@@ -22,12 +21,10 @@ import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
-import { istUuid, KonfigurationVeraltet, type DokumentImPapierkorb, type FristKandidat, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SeitenAnfrage, type SortierungIntern } from './repo';
-import { suchbegriffe, vorschlagAus, type Varianten } from '../../shared/src/suche';
-import { ausgangAus, bereinigeBeschriftungen, type TypTeile } from '../../shared/src/beschriftung';
+import { istUuid, type DokumentImPapierkorb, type FristKandidat, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis } from './repo';
 import {
-  auswahlKlausel, setzeEigeneWerte, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen, zeigtAlleTypen,
-  type Aufloesung, type Bedingung, type Klausel, type Sicht, type SichtDaten,
+  filterFuer, heuteIn, klauselnFuer, verschiebe, 
+  type Aufloesung, type Bedingung, type Klausel, type Sicht, 
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
 import { aufbewahrenBis, datumText, inFrist } from '../../shared/src/archiv';
@@ -54,21 +51,15 @@ import { analysiere as schwaerzAnalyse, schwaerze, seitenbild as schwaerzSeitenb
 import { bereicheVon, findeBegriff, findeMuster, geschwaerztName, istMuster, kannSchwaerzen, MUSTER, pruefeBegriffe, pruefeBereiche, SCHWAERZEN_MAX_SEITEN, stellenText, type Bereich } from '../../shared/src/schwaerzen';
 import { analysiere, ergebnisText, istStufe, MIN_ERSPARNIS, STANDARD_STUFE, stufeAus, STUFEN, verkleinere, type Analyse, type Stufe } from './verkleinern';
 import { geltenderStempel, liesStempelTyp, liesVorlagen, NEUER_STEMPEL, WEBDAV_VORLAGE, pruefeVorlage, stempelAus, StempelFehler, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_VORLAGEN_MAX, stempelDatum, wunschAus, type GeltenderStempel, type StempelTyp, type StempelVorlage, type StempelWunsch } from '../../shared/src/stempel';
-import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
-import { liesDirektlink } from '../../shared/src/direktlink';
-import { erkenneSprache, istTextsprache, SPRACHE_MARKE, sprachname, spracheZuInfo, TEXTSPRACHEN } from '../../shared/src/textsprache';
-import { dokumentsprachen, MAX_SEITENSPRACHEN, seitentexte, seitenZusammensetzen, SEITENVORSCHUB, SPRACHEN_JE_SEITE, zeichenzahl, type Seitensprache } from '../../shared/src/seitensprachen';
-import { ALLE_TYPEN, INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, PAKET_TEXT, PAKET_VOLLTEXT, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type BeispielStand } from '../../shared/src/pakete';
-import { INFO_TEXTEBENE, infoWartet, NICHT_GESPEICHERT } from '../../shared/src/volltext';
-import { erkenneBildtyp, infoFassung, kernTyp, type FassungInfo } from '../../shared/src/dateiumwandlung';
+import { alleSichtRechte } from '../../shared/src/sichtrechte';
+import { INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type BeispielStand } from '../../shared/src/pakete';
+import { erkenneBildtyp, kernTyp, type FassungInfo } from '../../shared/src/dateiumwandlung';
 import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from './dateiumwandlung';
 import { PaketVolltext } from './paketvolltext';
 import type { ArchivAblage, ArchivAnbindung, Archivfassung } from './archivfassung';
 import type { EntsperrenAnbindung, PdfEntsperren } from './entsperren';
-import { archivfassungName, pruefeWoerter } from '../../shared/src/archivfassung';
-import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET, infoVolltextPaket, VOLLTEXT_ZEICHEN_MAX } from '../../shared/src/paketvolltext';
+import { archivfassungName } from '../../shared/src/archivfassung';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
-import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { AusDokument } from '../../shared/src/erkennung';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
@@ -81,16 +72,15 @@ import { Eingang, shaVon } from './hochladen';
 import { EREIGNISKATALOG, VERALTETE_EREIGNISSE, type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis, type Katalogeintrag } from '../../shared/src/ereignisse';
 import { datumDe, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, folgetermine, istDatum, naechsterTermin, type Erinnerung, type Termin, type TermineAntwort } from '../../shared/src/fristen';
 import { zeitraumProblem } from '../../shared/src/kalender';
-import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
 import { feiertageZwischen, type Bundesland } from '../../shared/src/feiertage';
-import { kontoRegelwerk, bereinigeRegelwerk, istOffen, kopiereRegel, kurz, leseAusdruck, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte } from '../../shared/src/rechte';
+import { rechteUebersicht, type Regelwerk, type Mappenquelle, type Recht, type Rechte } from '../../shared/src/rechte';
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { SucheDienst } from './suche';
 import { NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff, type BenutzerGespiegelt } from './kern';
 import { Systemausstattung } from './systemausstattung';
-import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, liesStand, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TYP_TEILE, TypPakete, type Benutzerspiegel } from './mappentypen';
+import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
 export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
 export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
@@ -101,6 +91,16 @@ export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_
 import { dateiname, DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, erkenneAnzeigbar, FehlendeDateien, GeschuetztePdfs, type TexterkennungAnbindung } from './dokumente';
 export { erkenneAnzeigbar };
 export type { TexterkennungAnbindung };
+import { sortierungAus, SichtenDienst, type Zaehlerzahlen } from './sichten/sichten.dienst';
+import { SichtenVerwaltung } from './sichten/verwalten';
+import { Systemsichten } from './sichten/systemsichten';
+export { sortierungAus };
+export type { Zaehlerzahlen };
+import { BerechtigungenDienst } from './berechtigungen/berechtigungen.dienst';
+import { type EreignisAufruf, VOLLTEXT_MAX, VolltextDienst, type VolltextMeldung } from './volltext/volltext.dienst';
+import { VolltextAusPaketen } from './volltext/aus-paketen';
+export { VOLLTEXT_MAX };
+export type { EreignisAufruf, VolltextMeldung };
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
@@ -120,11 +120,7 @@ export interface DokumentImKorb extends DokumentImPapierkorb { art: 'dokument'; 
 /** Aufgelöste Post im Papierkorb (#936): in welche Mappe; `da` = die Mappe gibt es noch. */
 export interface AufgeloestIn { id: string; typId: string; titel: string; da: boolean }
 /** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
-/** Antwort eines Pakets auf einen Aufruf eines Ereignisses (#636). rc: Rückgabewert des Pakets; beginn: Start des Aufrufs (ms). */
-export interface EreignisAufruf { ok: boolean; text: string; fehler: string | null; rc: number | null; beginn: number }
 export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
-/** Zähler-Endpunkt (#625): nur Zahlen, keine Inhalte. */
-export interface Zaehlerzahlen { neuePost: number; zuErledigen: number; ueberfaellig: number }
 
 
 /** Ein Konto, das kein Mensch ist (#673), für Werkbank → Benutzer. */
@@ -151,8 +147,6 @@ interface Versandteil { m: Mappe; plan: GeltenderStempel | null; angaben: Versan
 
 /** Startseite (#918): der nächste Termin erst in so vielen Tagen gesucht, nur ohne Treffer im ganzen Jahr. */
 export const NAECHSTER_TERMIN_ERST_TAGE = 31;
-/** Obergrenze für geschriebenen Volltext (Zeichen). */
-export const VOLLTEXT_MAX = VOLLTEXT_ZEICHEN_MAX;
 /** Wert eines Mehrfachverweises als Liste. */
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 
@@ -195,19 +189,6 @@ export interface DienstOptionen {
   zustand?: Kurzzustand;
 }
 
-const SYSTEMSORTIERUNG: Record<string, SortierungIntern['art']> = {
-  _titel: 'titel', _typ: 'typ', _erstellt: 'erstellt', _geaendert: 'geaendert', _erstelltVon: 'erstelltVon', _geaendertVon: 'geaendertVon',
-};
-/** Sortierung aus Spalte und Richtung; unbekannte oder nicht sortierbare Spalten → nach Titel. */
-export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappentyp): SortierungIntern | undefined {
-  if (!spalte) return undefined;
-  if (SYSTEMSORTIERUNG[spalte]) return { art: SYSTEMSORTIERUNG[spalte], absteigend };
-  const f = typ?.felder.find((x) => x.key === spalte);
-  if (!f || !sortierbar(spalte, typ)) return undefined;
-  const art = f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'datum' || f.typ === 'janein' ? f.typ : 'text';
-  return { art, key: f.key, absteigend };
-}
-
 /** Dateiname ohne Pfadanteile und Steuerzeichen. */
 /** Automatisch verkleinern (#393): Einstellung in der Werkbank → Systemzustand; Standard aus. */
 export interface VerkleinernEinstellung { automatisch: boolean; abMb: number; stufe: Stufe }
@@ -241,23 +222,6 @@ function pruefwertVon(werte: unknown): string {
 }
 
 /* ---------- Fachlogik ---------- */
-
-/** Ereignis „Volltext fertig“ (#458): wer den Volltext geliefert hat und ob es Text gibt. */
-export interface VolltextMeldung {
-  /** kern: Textebene bzw. eingebaute Texterkennung; paket: ein Paket; api: über die Schnittstelle; kopie: von einem anderen Dokument übernommen. */
-  quelle: 'kern' | 'paket' | 'api' | 'kopie';
-  /** Nennenswerter Text vorhanden? */
-  text: boolean;
-  mime?: string; seiten?: number | null;
-  /** Ausdrücklich neu erzeugen (Werkbank „für alle“, „erneut“ am Dokument): das Paket erkennt auch Dokumente mit Text neu. */
-  neu?: boolean;
-  /** Bei quelle paket: welches. */
-  paket?: string;
-  /** Gemischte PDFs (#458): Seiten (ab 1) ohne Textebene – eine Texterkennung erkennt nur diese und hängt sie an. */
-  seitenOhneText?: number[];
-  /** Umgewandelte Datei (#577): Typ des Originals; `mime` ist dann der Typ der Fassung. */
-  original?: string;
-}
 
 /**
  * Alltags-Benutzer für Aufgaben ohne Empfänger (#719): aktiver Mensch. Seit #818 auch eine Person mit Verwaltungsrecht –
@@ -296,28 +260,10 @@ export class Dienst {
   readonly mappenstand = new Haushaltsstand(ZAEHLT_FUER_TERMINE, undefined, { ohne: NUR_FAVORITEN, art: EIGENE_MAPPEN });
   /** Termine (#528, #725): derselbe Stand (#742). */
   get fristenstand() { return this.stand; }
-  /**
-   * Zahlen der Ablage, die nicht von der Person abhängen (#742): je Typ und je Ansicht. Schlüssel ist der
-   * Fingerabdruck genau der Eingaben der Zählung (Lesefilter, Klauseln der sichtbaren Ansichten, Verwaltungsmodus) –
-   * wer dieselben Eingaben hat, bekommt dieselbe Zahl; anders geht es nicht.
-   */
-  private readonly bestand = new Zaehlerspeicher<Awaited<ReturnType<Repo['zaehleBestand']>>>(this.mappenstand);
-  /** Dasselbe, wenn der Lesefilter Favoriten meint (#918): dann am Haushaltsstand. */
-  private readonly bestandFav = new Zaehlerspeicher<Awaited<ReturnType<Repo['zaehleBestand']>>>(this.stand);
-  /** Zahlen der Person (#742): Eingang, Favoriten, Papierkorb – je Person und Lesefilter. */
-  private readonly persoenlich = new Zaehlerspeicher<Awaited<ReturnType<Repo['zaehlePersoenlich']>>>(this.stand);
   /** Termine (#528, #725): Zwischenspeicher je Benutzer, Rechte und Zeitraum. */
   private readonly termineSpeicher = new Zaehlerspeicher<Termin[]>(this.mappenstand);
   /** Termine „nur Favoriten“ (bzw. ein Lesefilter mit Favoriten): am Haushaltsstand (#918). */
   private readonly termineFavSpeicher = new Zaehlerspeicher<Termin[]>(this.stand);
-  /**
-   * Zahl der Treffer einer Liste (#918): je Anfrage ohne Blatt und Reihenfolge (Ansicht bzw. Bedingungen, Lesefilter,
-   * Suche) – genau, ohne Mindestgültigkeit: gilt nur bei gleichem Mappenstand (mit Favoriten: Haushaltsstand).
-   */
-  private readonly trefferSpeicher = new Zaehlerspeicher<number>(this.mappenstand);
-  private readonly trefferFavSpeicher = new Zaehlerspeicher<number>(this.stand);
-  /** Zähler-Endpunkt (#625): „neue Post für mich bzw. ohne Für“ je Benutzer und Rechte, wie die Zahlen der Ansichten. */
-  private readonly neuePostSpeicher = new Zaehlerspeicher<number>(this.stand);
   /** Mindestgültigkeit der Zahlen bei Anfragen nach Änderungen anderer (#742); Tests stellen sie auf 0. */
   mindestensMs = MINDESTENS_MS;
   /** Gültigkeit für die laufende Anfrage: in einer Anfrage mit Person kurz, sonst (Hintergrund) immer frisch. */
@@ -366,6 +312,18 @@ export class Dienst {
   readonly dokumentVersionen: DokumentVersionen;
   /** Suche (#964): unscharfe Suche, gleichbedeutende Wörter, Vektoren und ähnliche Dokumente. */
   readonly suche: SucheDienst;
+  /** Sichten verwalten (#38, #148, #1076). */
+  readonly sichtenVerwaltung: SichtenVerwaltung;
+  /** Mitgelieferte Sichten: Post, Favoriten (#192, #725, #1076). */
+  readonly systemsichten: Systemsichten;
+  /** Sichten seitenweise und gezählt (#512, #742, #918, #1076). */
+  readonly sichten: SichtenDienst;
+  /** Berechtigungen in der Werkbank (#123–#127, #1076). */
+  readonly berechtigungen: BerechtigungenDienst;
+  /** Volltext aus Paketen (#614, #1076). */
+  readonly volltextAusPaketen: VolltextAusPaketen;
+  /** Volltext (#45, #458, #1076). */
+  readonly volltexte: VolltextDienst;
   /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
   readonly systemausstattung: Systemausstattung;
 
@@ -406,6 +364,7 @@ export class Dienst {
     });
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
+    ({ verwalten: this.sichtenVerwaltung, systemsichten: this.systemsichten, sichten: this.sichten, berechtigungen: this.berechtigungen, ausPaketen: this.volltextAusPaketen, volltext: this.volltexte } = this.baueSichtenUndVolltext());
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
       mappentypen: { sichereSystemtypen: () => this.systemtypen.sichereSystemtypen() },
@@ -453,6 +412,23 @@ export class Dienst {
       pruefeArchivDokument: (id, was) => this.pruefeArchivDokument(id, was),
     });
     return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen };
+  }
+
+  /** Sichten, Berechtigungen und Volltext (#1076): die Klassen in sichten/, berechtigungen/ und volltext/. */
+  private baueSichtenUndVolltext() {
+    const verwalten = new SichtenVerwaltung(this.kern, this.rechtepruefung, { konten: () => this.konten });
+    const systemsichten = new Systemsichten(this.kern);
+    const sichten = new SichtenDienst(this.kern, { rechte: this.rechtepruefung, mappen: this.mappen, suche: this.suche, verwalten, systemsichten }, {
+      gueltigkeit: () => this.gueltigkeit(), siehtOhneEmpfaenger: (ich) => this.siehtOhneEmpfaenger(ich),
+      ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich), termine: (z, q) => this.termine(z, q),
+    }, { stand: this.stand, mappenstand: this.mappenstand });
+    const berechtigungen = new BerechtigungenDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
+    const ausPaketen = new VolltextAusPaketen(this.kern, { dokumente: this.dokumente, archiv: this.dokumentArchiv }, { paketVolltext: () => this.paketVolltext });
+    const volltext = new VolltextDienst(this.kern, { dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, ausPaketen }, {
+      ereignis: (art, daten, von) => this.ereignis(art, daten, von), auftraege: this.auftraege, paketVolltext: () => this.paketVolltext,
+      sicherungAufgegeben: (paket, name, fehler) => this.sicherungAufgegeben?.(paket, name, fehler), sicherungAntwort: (paket, name, r) => this.sicherungAntwort?.(paket, name, r),
+    });
+    return { verwalten, systemsichten, sichten, berechtigungen, ausPaketen, volltext };
   }
 
   /**
@@ -505,28 +481,10 @@ export class Dienst {
   readonly fragen: FragenAnDieAblage;
   /** Inhalte übersetzen auf Knopfdruck (#732): Paket mit dms:uebersetzen, Zwischenspeicher im Kurzzustand. */
   readonly uebersetzung: Uebersetzung;
-  private volltextHoerer: Array<(e: { dokument: string; mappe: string }) => Promise<void>> = [];
-  /** Internes Ereignis „Volltext fertig“ abonnieren (#336). */
-  beiVolltextFertig(f: (e: { dokument: string; mappe: string }) => Promise<void>) { this.volltextHoerer.push(f); }
-  /**
-   * Ereignis „Volltext fertig“ (#336, #442, #458): Der Volltext eines Dokuments steht fest – aus der Textebene bzw.
-   * der eingebauten Texterkennung (quelle kern), von einem Paket, über die API oder übernommen. Für Pakete
-   * `volltext.fertig` – auch ohne Text (`text: false`), dann aber nur für Pakete, die das kennen
-   * (kenntVolltextOhneText). Wer den Text geschrieben hat (`von`), bekommt es nicht zurück. Die internen Hörer
-   * (Erkennung #336) laufen nur mit Text; ihre Fehler landen nur im Protokoll.
-   */
-  async volltextFertig(e: { dokument: string; mappe: string }, m: VolltextMeldung = { quelle: 'kern', text: true }, von?: string | null): Promise<void> {
-    const daten = { dokument: e.dokument, mappe: e.mappe, quelle: m.quelle, text: m.text, ...(m.mime ? { mime: m.mime } : {}), ...(m.seiten !== undefined ? { seiten: m.seiten } : {}), ...(m.neu ? { neu: true } : {}), ...(m.paket ? { paket: m.paket } : {}), ...(m.seitenOhneText?.length ? { seitenOhneText: m.seitenOhneText } : {}), ...(m.original ? { original: m.original, fassung: true } : {}) };
-    // Einmal in den Ausgangskorb (#724): Automatisierungen, Pakete (#442, #458: z. B. „KI lokal – Ähnlichkeit“ rechnet den
-    // Vektor, das Paket Texterkennung erkennt Scans) und – unter altem Namen – Pakete mit texterkennung.fertig.
-    await this.ereignis('volltext.fertig', { ...daten, typ: await this.typVon(e.mappe) }, von);
-    // Archivfassung (#631): erst jetzt, wenn der Volltext feststeht. Neuer Text (Paket, API, neu erzeugen) heißt neu.
-    void this.archivNachVolltext(e.dokument, !!m.neu || m.quelle === 'paket' || m.quelle === 'api');
-    if (!m.text) return;
-    for (const h of this.volltextHoerer) {
-      try { await h(e); } catch (x) { protokoll.modul('ablage').warn('Nach dem Volltext gestört', { dokument: e.dokument, fehler: (x as Error).message }); }
-    }
-  }
+
+  /** Ereignis „Volltext fertig“ (#336, #458; volltext/volltext.dienst.ts). */
+  beiVolltextFertig(f: (e: { dokument: string; mappe: string }) => Promise<void>) { this.volltexte.beiVolltextFertig(f); }
+  volltextFertig(e: { dokument: string; mappe: string }, m?: VolltextMeldung, von?: string | null): Promise<void> { return this.volltexte.volltextFertig(e, m, von); }
 
   /* ---------- Suche (#964: in suche/suche.dienst.ts) ---------- */
 
@@ -637,11 +595,7 @@ export class Dienst {
   archivAnbindung(ablage: ArchivAblage): ArchivAnbindung { return this.dokumentArchiv.archivAnbindung(ablage); }
   private archivNachVolltext(id: string, neu?: boolean) { return this.dokumentArchiv.archivNachVolltext(id, neu); }
 
-  /**
-   * Der Kern hat den Volltext ausgelassen (#946), z. B. eine E-Mail ohne Paket, das ihren Text liefert: Für E-Mails
-   * steht er damit fest (leer) – sie gehen trotzdem an das Paket für die Archivfassung. Andere Dokumente nicht.
-   */
-  volltextAusgelassen(id: string) { return this.archivNachVolltext(id); }
+  volltextAusgelassen(id: string) { return this.volltexte.volltextAusgelassen(id); }
 
   archivPaketDa(typen: string[]): Promise<number> { return this.dokumentArchiv.archivPaketDa(typen); }
   setzeArchivfassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentArchiv.setzeArchivfassung(z, id, sha, inhalt); }
@@ -650,346 +604,34 @@ export class Dienst {
   archivStand() { return this.dokumentArchiv.archivStand(); }
   private mitArchivStand(docs: Dokument[]): Promise<Dokument[]> { return this.dokumentArchiv.mitArchivStand(docs); }
 
-  /* ---------- Volltext aus Paketen (#614) ---------- */
+  /* ---------- Volltext aus Paketen (#614, volltext/aus-paketen.ts) ---------- */
 
-  /**
-   * Ein Paket mit dms:volltext ist neu installiert (oder kann neue Dateitypen): Alle Dokumente dieser Typen ohne Text
-   * gehen durch die Warteschlange des Volltexts – und damit an das Paket. Dokumente mit Text bleiben, wie sie sind
-   * (z. B. Text einer früheren Version des Pakets).
-   */
-  async volltextPaketDa(typen: string[]): Promise<number> {
-    if (!typen.length) return 0;
-    // Dateitypen so, wie sie an den Dokumenten stehen (Groß- und Kleinschreibung wie vom Browser).
-    const klein = new Set(typen.map((m) => m.toLowerCase()));
-    const vorhanden = Object.keys(await this.repo.dokumentTypen()).filter((m) => klein.has(m.toLowerCase()));
-    const docs = new Set((await this.repo.dokumenteMitTyp(vorhanden)).map((d) => d.id));
-    if (!docs.size) return 0;
-    const mtypen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-    const ids = (await this.repo.volltextKandidaten('ohne')).filter((d) => docs.has(d.id) && Dienst.volltextAn(mtypen.get(d.typId), d.registerKey)).map((d) => d.id);
-    if (!ids.length) return 0;
-    await this.repo.ocrEinreihen(ids);
-    this.ocr?.anstossen();
-    protokoll.modul('texterkennung').info('Paket für Volltext installiert – vorhandene Dateien ohne Text gehen an das Paket', { typen, dokumente: ids.length });
-    return ids.length;
-  }
+  volltextPaketDa(typen: string[]): Promise<number> { return this.volltextAusPaketen.volltextPaketDa(typen); }
+  paketWegFuerDateien(paket: { name: string }, typen: string[]): Promise<number> { return this.volltextAusPaketen.paketWegFuerDateien(paket, typen); }
+  pruefeVolltextRecht(z: Zugriff, id: string): Promise<void> { return this.volltextAusPaketen.pruefeVolltextRecht(z, id); }
 
-  /**
-   * Ein Paket mit dms:volltext oder dms:umwandeln ist entfernt (Frage 49/51): Dokumente seiner Dateitypen, die noch
-   * auf dieses Paket warteten, warten nicht mehr. Ohne Text gehen sie erneut durch die Warteschlange – dort steht dann
-   * „kein Paket für diesen Dateityp“ (oder ein anderes zuständiges Paket übernimmt); mit Text von vorher bleibt der Text
-   * stehen und der Stand wird *fertig*.
-   */
-  async paketWegFuerDateien(paket: { name: string }, typen: string[]): Promise<number> {
-    if (!typen.length) return 0;
-    const klein = new Set(typen.map((m) => m.toLowerCase()));
-    const vorhanden = Object.keys(await this.repo.dokumentTypen()).filter((m) => klein.has(m.toLowerCase()));
-    const marke = `(Paket ${paket.name})`;
-    const wartend = (await this.repo.dokumenteMitTyp(vorhanden)).filter((d) => d.ocr?.stand === 'paket' && (d.ocr.info ?? '').includes(marke));
-    if (!wartend.length) return 0;
-    const ohne: string[] = [];
-    for (const d of wartend) {
-      const text = await this.repo.volltext(d.id);
-      if (text && text.replace(/\s/g, '').length >= 20) await this.repo.ocrSetze(d.id, { stand: 'fertig', info: t('pakete.volltext.paket-entfernt', { paket: paket.name }), seiten: d.ocr?.seiten ?? null });
-      else ohne.push(d.id);
-    }
-    if (ohne.length) { await this.repo.ocrEinreihen(ohne); this.ocr?.anstossen(); }
-    protokoll.modul('texterkennung').info('Paket entfernt – wartende Dokumente zurückgesetzt', { paket: paket.name, dokumente: wartend.length, ohneText: ohne.length });
-    return wartend.length;
-  }
+  /* ---------- Volltext (#45, volltext/volltext.dienst.ts) ---------- */
 
-  /**
-   * Darf dieses Dienstkonto den Volltext (bzw. die Sprache) des Dokuments schreiben (#614)? Mit „Dokumente schreiben“
-   * immer (wie bisher, z. B. Paket Texterkennung); mit nur „lesen“ und dms:volltext nur für Dateitypen, für die das
-   * Paket zuständig ist. Sonst 403.
-   */
-  async pruefeVolltextRecht(z: Zugriff, id: string): Promise<void> {
-    if (!z.paket || z.paket.dokumente === 'schreiben') return;
-    if (!z.paket.schnittstellen?.includes('dms:volltext')) throw new Fachfehler(403, t('meldungen.dienst.dieses-paket-darf-das'));
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (!(await this.paketVolltext.darfSchreiben(z.paket.id, d))) throw new Fachfehler(403, t('pakete.volltext.typ-fremd', { typ: d.mime }));
-  }
-
-  /**
-   * Nach dem Ereignis „Datei braucht Volltext“ (#614): Hat das Paket keinen Volltext geschrieben (z. B. verschlüsselte
-   * Datei), wartet das Dokument nicht länger – sein Grund steht daran. Vorhandener Text (etwa von vorher) bleibt; gibt
-   * der Läufer auf: Fehler.
-   */
-  private async nachVolltextEreignis(paket: string, e: { daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) {
-    const id = typeof e.daten.dokument === 'string' ? e.daten.dokument : '';
-    if (!id || (!r.ok && !r.aufgegeben)) return;
-    this.paketVolltext.erledigt(id);
-    const d = await this.repo.holeDokument(id);
-    if (!d || d.ocr?.stand !== 'paket' || !(d.ocr.info ?? '').startsWith(INFO_VOLLTEXT_PAKET)) return;
-    // Inzwischen eine neue Version: Für die gibt es ein eigenes Ereignis.
-    if (typeof e.daten.sha256 === 'string' && e.daten.sha256 !== d.sha256) return;
-    const p = (await this.repo.listePakete()).find((x) => x.id === paket);
-    const grund = (r.ok ? r.text : r.fehler ?? '').trim().replace(/\s+/g, ' ').slice(0, 300);
-    const text = await this.repo.volltext(d.id);
-    const mitText = !!text && text.replace(/\s/g, '').length >= 20;
-    const info = r.ok ? `${INFO_VOLLTEXT_DURCH} ${p?.name ?? paket}: ${grund || t('meldungen.dienst.kein-volltext-geliefert')}` : `${INFO_VOLLTEXT_DURCH} ${p?.name ?? paket} fehlgeschlagen${grund ? `: ${grund}` : ''}`;
-    await this.repo.ocrSetze(d.id, { stand: !r.ok ? 'fehler' : mitText ? 'fertig' : 'ausgelassen', info: info.slice(0, 500), seiten: d.ocr.seiten ?? null });
-    // Archivfassung (#631): mit Text; E-Mails (#946) auch ohne – ihr Volltext steht jetzt fest.
-    if (r.ok) void this.archivNachVolltext(d.id, e.daten.neu === true);
-  }
-
-  /* ---------- Volltext (#45) ---------- */
-
-  /** Erzeugt dieses Dokumentenregister einen Volltext? (Standard: ja) */
-  private static volltextAn(typ: Mappentyp | undefined, registerKey: string) {
-    const r = typ?.register.find((x) => x.key === registerKey);
-    return !r || r.art !== 'dokumente' || r.volltext !== false;
-  }
-
-  /** Volltext für vorhandene Dokumente nachholen (Werkbank → Wartungsoperationen). */
-  async volltextNachholen(): Promise<number> {
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-    const ids = (await this.repo.ocrOhneVolltext()).filter((d) => Dienst.volltextAn(typen.get(d.typId), d.registerKey)).map((d) => d.id);
-    await this.repo.ocrEinreihen(ids);
-    if (ids.length) protokoll.modul('werkbank').info('Volltext für vorhandene Dokumente nachholen', { dokumente: ids.length });
-    this.ocr?.anstossen();
-    return ids.length;
-  }
-
-  /** Texterkennung für ein Dokument erneut versuchen – ausdrücklich neu (#458): auch ein Paket erkennt dann neu. */
-  async texterkennungErneut(id: string) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (this.ocr?.neuErkennen) await this.ocr.neuErkennen(id);
-    else { await this.repo.ocrEinreihen([id]); this.ocr?.anstossen(); }
-    return (await this.repo.holeDokument(id))!;
-  }
-
-  /** Das installierte Paket, das die Texterkennung übernimmt (#458, dms:texterkennung); bei mehreren das erste nach Id. */
-  async texterkennungPaket(): Promise<{ id: string; name: string; version: string; sprachen: string[] } | null> {
-    const alle = await this.repo.listePakete();
-    const p = alle.filter((x) => hatSchnittstelle(x.laeufer, 'dms:texterkennung')).sort((a, b) => a.id.localeCompare(b.id))[0];
-    if (!p) return null;
-    // Sprachen (#459): Deutsch und Englisch im Paket, weitere aus Zusatzpaketen „<paket>_<kennung>“, die von ihm abhängen.
-    const zusatz = alle.filter((x) => p.id in (x.abhaengigkeiten ?? {})).map((x) => new RegExp(`^${p.id}_([a-z]{3})$`).exec(x.id)?.[1]).filter((x): x is string => !!x);
-    return { id: p.id, name: p.name, version: p.version, sprachen: [...new Set(['deu', 'eng', ...zusatz])] };
-  }
-
-  /**
-   * Ein Paket für die Texterkennung ist neu installiert (#459): Dokumente, die darauf warteten (Stand paket, „kein
-   * Paket installiert“), gehen wie neue Dokumente durch Textebene und Paket.
-   */
-  async texterkennungPaketDa(): Promise<number> {
-    const ids: string[] = [];
-    for (let von = 0; ; von += 200) {
-      const r = await this.repo.ocrAuftraege({ stand: 'paket', von, anzahl: 200 });
-      // Wer auf den Volltext eines Pakets mit dms:volltext wartet (#614), wartet weiter auf dieses.
-      ids.push(...r.eintraege.filter((e) => !(e.dokument.ocr?.info ?? '').startsWith(INFO_VOLLTEXT_PAKET)).map((e) => e.dokument.id));
-      if (r.eintraege.length < 200) break;
-    }
-    if (!ids.length) return 0;
-    await this.repo.loescheOffeneEreignisse('volltext.fertig', ids).catch(() => 0);
-    await this.repo.ocrEinreihen(ids);
-    this.ocr?.anstossen();
-    protokoll.modul('texterkennung').info('Paket für die Texterkennung installiert – wartende Dokumente gehen an das Paket', { dokumente: ids.length });
-    return ids.length;
-  }
-
-  /** Wie viele Dokumente „Volltext neu erzeugen“ beträfe (#458) – für die Rückfrage. */
-  async volltextNeuAnzahl(umfang: unknown): Promise<{ umfang: 'ohne' | 'alle'; anzahl: number }> {
-    const u = umfang === 'alle' ? 'alle' : 'ohne';
-    return { umfang: u, anzahl: (await this.volltextNeuIds(u)).length };
-  }
-  private async volltextNeuIds(umfang: 'ohne' | 'alle'): Promise<string[]> {
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-    return (await this.repo.volltextKandidaten(umfang)).filter((d) => Dienst.volltextAn(typen.get(d.typId), d.registerKey)).map((d) => d.id);
-  }
-
-  /**
-   * „Volltext neu erzeugen“ (#458, Werkbank → Wartungsoperationen): für Dokumente ohne Text bzw. für alle – wie bei
-   * einem neuen Dokument: Textebene neu lesen, dann Ereignis an die Pakete. „alle“ ist ein ausdrückliches Neu
-   * (`neu: true`): das Paket erkennt dann auch Dokumente mit Text neu. Läuft als Auftrag mit Fortschritt, abbrechbar.
-   */
-  volltextNeu(umfang: unknown, von: string) {
-    const u = umfang === 'alle' ? 'alle' : 'ohne';
-    const jetzt = this.ocr?.jetzt?.bind(this.ocr);
-    if (!jetzt) throw new Fachfehler(404, t('meldungen.dienst.die-texterkennung-ist-nicht'));
-    const titel = u === 'alle' ? t('meldungen.dienst.volltext-neu-erzeugen-alle') : t('meldungen.dienst.volltext-neu-erzeugen-dokumente');
-    return this.auftraege.starte('volltext-neu', titel, async (fortschritt, signal) => {
-      const ids = await this.volltextNeuIds(u);
-      protokoll.modul('werkbank').info('Volltext neu erzeugen', { umfang: u, dokumente: ids.length, von });
-      let fertig = 0;
-      fortschritt(0, ids.length);
-      for (const id of ids) {
-        if (signal?.aborted) break;
-        try { await jetzt(id, { neu: u === 'alle', signal }); } catch (e) { protokoll.modul('texterkennung').warn('Volltext neu erzeugen: Dokument übersprungen', { id, fehler: (e as Error).message }); }
-        fortschritt(++fertig, ids.length);
-      }
-      const paket = await this.texterkennungPaket();
-      return { umfang: u, dokumente: ids.length, erledigt: fertig, abgebrochen: !!signal?.aborted, paket: paket?.name ?? null };
-    }, [{ key: 'dokumente', name: 'Textebene lesen und an die Texterkennung geben', einheit: 'Dokumente' }], { abbrechbar: true });
-  }
-
-  /**
-   * Fortschritt einer Fortsetzung (#458): Gibt das Paket in `weiter` einen kurzen Text `fortschritt` mit (z. B.
-   * „Seite 20 von 64“), steht er am wartenden Dokument.
-   */
-  async texterkennungFortschritt(paket: string, e: { art: string; daten: Record<string, unknown> }, weiter: Record<string, unknown>): Promise<void> {
-    if (e.art === 'datei.volltext' && typeof e.daten.dokument === 'string' && typeof weiter.fortschritt === 'string') {
-      // Volltext aus Paketen (#614): Fortschritt am wartenden Dokument, wie bei der Texterkennung.
-      const d = await this.repo.holeDokument(e.daten.dokument);
-      const vp = d ? await this.paketVolltext.paketFuer(d.mime) : null;
-      if (!d || !vp || vp.id !== paket || d.ocr?.stand !== 'paket' || !(d.ocr.info ?? '').startsWith(INFO_VOLLTEXT_PAKET)) return;
-      await this.repo.ocrSetze(d.id, { stand: 'paket', info: `${infoVolltextPaket(vp)} – ${weiter.fortschritt.replace(/\s+/g, ' ').slice(0, 80)}`, seiten: d.ocr.seiten ?? null });
-      return;
-    }
-    if (e.art !== 'volltext.fertig' || typeof e.daten.dokument !== 'string' || typeof weiter.fortschritt !== 'string') return;
-    const p = await this.texterkennungPaket();
-    if (!p || p.id !== paket) return;
-    const d = await this.repo.holeDokument(e.daten.dokument);
-    if (!d || d.ocr?.stand !== 'paket') return;
-    await this.repo.ocrSetze(d.id, { stand: 'paket', info: `${infoWartet(p)} – ${weiter.fortschritt.replace(/\s+/g, ' ').slice(0, 80)}`, seiten: d.ocr.seiten ?? null });
-  }
+  private static volltextAn(typ: Mappentyp | undefined, registerKey: string) { return VolltextDienst.volltextAn(typ, registerKey); }
+  volltextNachholen(): Promise<number> { return this.volltexte.volltextNachholen(); }
+  texterkennungErneut(id: string) { return this.volltexte.texterkennungErneut(id); }
+  texterkennungPaket() { return this.volltexte.texterkennungPaket(); }
+  texterkennungPaketDa(): Promise<number> { return this.volltexte.texterkennungPaketDa(); }
+  volltextNeuAnzahl(umfang: unknown) { return this.volltexte.volltextNeuAnzahl(umfang); }
+  volltextNeu(umfang: unknown, von: string) { return this.volltexte.volltextNeu(umfang, von); }
+  texterkennungFortschritt(...a: Parameters<VolltextDienst['texterkennungFortschritt']>) { return this.volltexte.texterkennungFortschritt(...a); }
 
   /** Sicherung außer Haus (#585): ein Paket hat das Ereignis sicherung.fertig aufgegeben (index.ts verbindet mit der Sicherung). */
   sicherungAufgegeben?: (paket: string, name: string, fehler: string | null | undefined) => Promise<void>;
   /** Sicherung außer Haus (#636): Antwort des Pakets auf einen Aufruf von sicherung.fertig (index.ts verbindet mit der Sicherung). */
   sicherungAntwort?: (paket: string, name: string, r: EreignisAufruf) => Promise<void>;
 
-  /** Antwort eines Pakets auf jeden einzelnen Aufruf eines Ereignisses, auch Fortsetzungen und Fehlschläge (#636). */
-  async nachEreignisAufruf(paket: string, e: { art: string; daten: Record<string, unknown> }, r: EreignisAufruf): Promise<void> {
-    if (e.art === 'sicherung.fertig' && typeof e.daten.name === 'string') await this.sicherungAntwort?.(paket, e.daten.name, r);
-  }
-
-  /**
-   * Ergebnis eines Ereignisses „Volltext fertig“ beim Paket für die Texterkennung (#458, aus dem Paket-Läufer):
-   * Hat das Paket zugestellt bekommen, aber keinen Volltext geschrieben (z. B. Mappentyp nicht gewählt, Text aus dem
-   * PDF reicht), wartet das Dokument nicht länger – es behält den Text aus dem PDF. Hat es aufgegeben: Fehler.
-   */
-  async nachTexterkennungsEreignis(paket: string, e: { art: string; daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }): Promise<void> {
-    if (e.art === 'datei.umwandeln') return this.nachUmwandlungsEreignis(paket, e, r);
-    if (e.art === 'datei.archivfassung') return this.archiv?.nachEreignis(paket, e, r);
-    if (e.art === 'datei.volltext') return this.nachVolltextEreignis(paket, e, r);
-    // Sicherung außer Haus (#585): Aufgegeben heißt „fehlgeschlagen“ (endgültig) – auch wenn das Paket es nicht mehr melden konnte.
-    if (e.art === 'sicherung.fertig') { if (r.aufgegeben && typeof e.daten.name === 'string') await this.sicherungAufgegeben?.(paket, e.daten.name, r.fehler); return; }
-    if (e.art !== 'volltext.fertig' || typeof e.daten.dokument !== 'string') return;
-    const p = await this.texterkennungPaket();
-    if (!p || p.id !== paket) return;
-    const d = await this.repo.holeDokument(e.daten.dokument);
-    if (!d || d.ocr?.stand !== 'paket') return;
-    if (!r.ok && !r.aufgegeben) return;
-    const grund = (r.ok ? r.text : r.fehler ?? '').trim().replace(/\s+/g, ' ').slice(0, 200);
-    const text = await this.repo.volltext(d.id);
-    const mitText = !!text && text.replace(/\s/g, '').length >= 20;
-    const info = r.ok
-      ? t('meldungen.dienst.paket', { wert: mitText ? INFO_TEXTEBENE : t('meldungen.dienst.ohne-text'), name: p.name, wert2: grund ? `: ${grund}` : ': nichts zu tun' })
-      : t('meldungen.dienst.texterkennung-durch-paket', { name: p.name, wert: grund ? `: ${grund}` : '' });
-    await this.repo.ocrSetze(d.id, { stand: r.ok ? 'fertig' : 'fehler', info: info.slice(0, 500), seiten: d.ocr.seiten ?? null });
-    // Der Text aus dem PDF bleibt – jetzt steht der Volltext fest (#631).
-    if (r.ok) void this.archivNachVolltext(d.id, e.daten.neu === true);
-  }
-
-  async volltext(id: string) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const text = await this.repo.volltext(id);
-    // Seiten mit ihrer Sprache (#579), wenn das DMS sie kennt (mehrsprachig oder gemischtes PDF).
-    const s = text ? await this.repo.seitensprachen(id) : null;
-    const seiten = s && text ? seitentexte(text, s).map((t, i) => ({ seite: i + 1, sprachen: s[i].sprachen, text: t })) : null;
-    return { dokument: d, text, seiten };
-  }
-
-  /**
-   * Volltext schreiben (#338, für die Texterkennung als Paket): ersetzt den Volltext eines Dokuments.
-   * Die Herkunft steht in ocr.info und in der Historie der Mappe; die eingebaute Texterkennung
-   * überschreibt diesen Text danach nicht mehr von selbst (nur „Texterkennung erneut“).
-   */
-  async schreibeVolltext(id: string, eingabe: unknown, von: { id: string; herkunft: string; paket: boolean; ausgelesen?: boolean }) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    if (typeof e.text !== 'string') throw new Fachfehler(422, t('meldungen.dienst.text-fehlt'));
-    if (e.text.length > VOLLTEXT_MAX) throw new Fachfehler(413, t('meldungen.dienst.der-text-ist-zu', { VOLLTEXT_MAX }));
-    const seiten = Number.isInteger(e.seiten) && (e.seiten as number) > 0 ? e.seiten as number : null;
-    // Nur Text eines Pakets schützt vor der eingebauten Texterkennung (PAKET_TEXT); über die API gesetzter nicht.
-    // Die Herkunft darf die Sprachmarke nicht vortäuschen (#395); die erkannte Sprache hängt am Ende an.
-    const herkunft = von.herkunft.split(SPRACHE_MARKE.trim()).join('Sprache:');
-    // Aus der umgewandelten Fassung (#577): Das Paket hat die Fassung gelesen, nicht das Original.
-    const fassung = !kernTyp(d.mime) ? await this.umwandlung?.info(d.sha256) : null;
-    const info = ((von.paket ? `${von.ausgelesen ? PAKET_VOLLTEXT : PAKET_TEXT}${herkunft}` : `Volltext ${herkunft}`).slice(0, 200) + (fassung ? ` – ${infoFassung(fassung.paket)}` : '')).slice(0, 300);
-    let text = e.text.replace(/\u0000/g, '');
-    // Sprache (#400): angegeben (z. B. vom Paket Texterkennung) oder erkannt; sie bestimmt die Wortstämme der Suche.
-    if (e.sprache !== undefined && e.sprache !== null && !istTextsprache(e.sprache)) throw new Fachfehler(422, t('meldungen.dienst.sprache-unbekannt-erlaubt-oder', { keys: Object.keys(TEXTSPRACHEN).join(', ') }));
-    const angegeben = istTextsprache(e.sprache) ? e.sprache : null;
-    // Sprache je Seite (#579): Seiten im Text durch Seitenvorschub (\f) getrennt, dazu je Seite ihre Sprache(n) –
-    // oder ohne Angabe erkennt das DMS sie. Gespeichert wird der Text wie bisher (Seiten mit Leerzeile getrennt).
-    const seitenAngabe = sprachlisten(e.seitensprachen);
-    const weitereAngabe = e.weitere === undefined || e.weitere === null ? undefined : sprachliste(e.weitere, 'weitere');
-    let mehr: { weitere?: string[]; seitensprachen?: Seitensprache[] } = {};
-    let haupt: string | null = null;
-    let seitenzahl = seiten;
-    if (seitenAngabe || text.includes(SEITENVORSCHUB)) {
-      const teile = text.split(SEITENVORSCHUB);
-      if (seitenAngabe && seitenAngabe.length !== teile.length) throw new Fachfehler(422, t('meldungen.dienst.seitensprachen-eintraege-der-text', { seitenAngabe: seitenAngabe.length, teile: teile.length }));
-      if (teile.length > MAX_SEITENSPRACHEN) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-seiten', { MAX_SEITENSPRACHEN }));
-      const z = seitenZusammensetzen(teile.map((t, i) => ({ text: t, sprachen: seitenAngabe?.[i] ?? null })));
-      text = z.text;
-      seitenzahl ??= teile.length;
-      const ds = dokumentsprachen(z.seiten, zeichenzahl(z.text));
-      haupt = angegeben ?? ds.sprache;
-      const alle = [ds.sprache, ...ds.weitere].filter((k): k is string => !!k && k !== haupt);
-      if (alle.length) mehr = { weitere: alle, seitensprachen: z.seiten };
-    } else if (weitereAngabe?.length) mehr = { weitere: weitereAngabe };
-    if (mehr.weitere && weitereAngabe) mehr.weitere = [...new Set([...mehr.weitere, ...weitereAngabe])];
-    // Wortpositionen (#631): je Seite (wie im Text durch \f getrennt) die Wörter mit Lage – für die Archivfassung.
-    let woerter: ReturnType<typeof pruefeWoerter> | null | undefined;
-    if (e.woerter !== undefined && e.woerter !== null) {
-      try { woerter = pruefeWoerter(e.woerter, e.text.split(SEITENVORSCHUB).length); } catch (f) { throw new Fachfehler(422, t('pakete.archiv.woerter', { grund: (f as Error).message })); }
-    } else if (e.woerter === null || (von.paket && (kernTyp(d.mime) || !!fassung))) woerter = null;
-    const sprache = angegeben ? { sprache: angegeben, konfidenz: 1 } : haupt ? { sprache: haupt, konfidenz: 1 } : erkenneSprache(text);
-    if (mehr.weitere) mehr.weitere = mehr.weitere.filter((k) => k !== sprache?.sprache);
-    const vermerk = angegeben || haupt ? `${SPRACHE_MARKE}${sprache!.sprache}` : sprache ? spracheZuInfo(sprache) : '';
-    // Vor dem Stand: Wer den fertigen Volltext sieht (Archivfassung), findet die passenden Wortpositionen. Ein Paket
-    // ohne Wortpositionen (ältere Texterkennung) nimmt die alten mit weg – sie gehörten zu einem anderen Text.
-    if (woerter !== undefined && this.archiv) await this.archiv.speichereWoerter(d.sha256, woerter, von.herkunft).catch((f: Error) => protokoll.modul('archivfassung').warn('Wortpositionen nicht gespeichert', { dokument: id, fehler: f.message }));
-    try {
-      await this.repo.ocrSetze(id, { stand: 'fertig', text, seiten: seitenzahl ?? d.ocr?.seiten ?? null, info: info + vermerk, sprache: sprache && istTextsprache(sprache.sprache) ? sprache.sprache : null, ...mehr });
-    } catch (f) {
-      if (!istVerklemmung(f)) throw f;
-      // Auch nach den Wiederholungen nicht gespeichert (#575): sichtbar am Dokument, und der Absender erfährt es (503).
-      protokoll.modul('ablage').error('Volltext nicht gespeichert', { dokument: id, herkunft: von.herkunft, fehler: (f as Error).message });
-      await this.repo.ocrSetze(id, { stand: 'fehler', info: `${NICHT_GESPEICHERT} (${(f as Error).message})`.slice(0, 500), seiten: d.ocr?.seiten ?? null }).catch(() => {});
-      throw new Fachfehler(503, t('meldungen.dienst.die-datenbank-war-ausgelastet'));
-    }
-    await this.notiere(d.mappeId, von.id, 'volltext', { dokument: d.name, text: info });
-    protokoll.modul('ablage').info('Volltext geschrieben', { dokument: id, zeichen: e.text.length, herkunft: von.herkunft });
-    // Volltext aus einem Paket (#614): Das Dokument darf danach wieder gemeldet werden.
-    this.paketVolltext.erledigt(id);
-    // Das schreibende Paket bekommt sein eigenes Ergebnis nicht zurück (#458: sonst erkennte es endlos neu).
-    const paketId = von.paket ? this.paketKonten.get(von.id) : undefined;
-    await this.volltextFertig({ dokument: id, mappe: d.mappeId }, { quelle: von.paket ? 'paket' : 'api', text: text.replace(/\s/g, '').length > 0, mime: fassung?.mime ?? d.mime, ...(fassung ? { original: d.mime } : {}), seiten: seitenzahl ?? d.ocr?.seiten ?? null, ...(paketId ? { paket: paketId } : {}) }, von.id);
-    return (await this.repo.holeDokument(id))!;
-  }
-
-  /**
-   * Sprache eines Dokuments setzen (#400, API v1): bestimmt die Wortstämme der Volltextsuche. null = keine Angabe
-   * (Deutsch). Der Suchindex des Dokuments entsteht dabei neu.
-   */
-  async setzeDokumentSprache(id: string, eingabe: unknown, von: { id: string; wer: string }) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const x = (eingabe ?? {}) as { sprache?: unknown; weitere?: unknown };
-    const s = x.sprache;
-    if (s !== null && !istTextsprache(s)) throw new Fachfehler(422, t('meldungen.dienst.sprache-unbekannt-erlaubt-oder', { keys: Object.keys(TEXTSPRACHEN).join(', ') }));
-    // Weitere Sprachen (#579): ohne Angabe bleiben sie; mit Angabe gelten sie fürs ganze Dokument.
-    const weitere = x.weitere === undefined ? undefined : x.weitere === null ? [] : sprachliste(x.weitere, 'weitere').filter((k) => k !== s);
-    await this.repo.setzeDokumentSprache(id, s, weitere);
-    const auch = weitere?.length ? t('meldungen.dienst.enthaelt-auch', { map: weitere.map(sprachname).join(', ') }) : '';
-    await this.notiere(d.mappeId, von.id, 'volltext', { dokument: d.name, text: t('meldungen.dienst.sprache', { wert: s ? sprachname(s) : t('meldungen.dienst.ohne-angabe'), auch, wer: von.wer }) });
-    protokoll.modul('ablage').info('Sprache eines Dokuments gesetzt', { dokument: id, sprache: s, ...(weitere ? { weitere } : {}) });
-    return (await this.repo.holeDokument(id))!;
-  }
-
-  /** Hinweis „Post teilen?“ wegklicken (#579): gilt für alle, bis das Dokument einen neuen Volltext bekommt. */
-  async teilenHinweisAus(id: string) {
-    if (!(await this.repo.teilenHinweisAus(id))) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return (await this.repo.holeDokument(id))!;
-  }
+  nachEreignisAufruf(paket: string, e: { art: string; daten: Record<string, unknown> }, r: EreignisAufruf): Promise<void> { return this.volltexte.nachEreignisAufruf(paket, e, r); }
+  nachTexterkennungsEreignis(...a: Parameters<VolltextDienst['nachTexterkennungsEreignis']>) { return this.volltexte.nachTexterkennungsEreignis(...a); }
+  volltext(id: string) { return this.volltexte.volltext(id); }
+  schreibeVolltext(...a: Parameters<VolltextDienst['schreibeVolltext']>) { return this.volltexte.schreibeVolltext(...a); }
+  setzeDokumentSprache(...a: Parameters<VolltextDienst['setzeDokumentSprache']>) { return this.volltexte.setzeDokumentSprache(...a); }
+  teilenHinweisAus(id: string) { return this.volltexte.teilenHinweisAus(id); }
 
   private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
 
@@ -2162,273 +1804,14 @@ export class Dienst {
   verweisende(id: string, typId: string, feldKey: string, z?: Zugriff) { return this.mappen.verweisende(id, typId, feldKey, z); }
   holeMappe(id: string, z?: Zugriff) { return this.mappen.holeMappe(id, z); }
 
-  /* ---------- Sichten: seitenweise und gezählt ---------- */
+  /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
 
-  /**
-   * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
-   * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
-   */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; link?: unknown; eigene?: unknown; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown; gesamt?: unknown }, z?: Zugriff, grenze = 500) {
-    // Berechtigungen (#124): nur lesbare Mappen; der Eingang zeigt Aufgaben auch zu nicht lesbaren – ohne Inhalt.
-    const lesen = z?.lesen ?? null;
-    const von = Math.max(0, Math.floor(Number(q.von) || 0));
-    const anzahl = Math.min(grenze, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
-    const suche = text(q.suche).slice(0, 200) || undefined;
-    // Auch im Volltext der Dokumente (#45) und in Notizen (#55) suchen.
-    const volltext = q.volltext === true || q.volltext === 'true' || undefined;
-    const notizen = q.notizen === true || q.notizen === 'true' || undefined;
-    // Mappentypen und Auflösung (Rollen, heute) hat der Zugriff schon gelesen (#615); ein Dienstkonto kennt nur seine Typen.
-    const typen = z?.typen && !z.paket ? z.typen : new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const aufloesung = () => (z?.a && z.ich?.id === ich.id ? Promise.resolve(z.a) : this.aufloesung(ich.id));
-    const sichten = await this.repo.listeSichten();
-    // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
-    const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
-    // „feld:<typId>:<feldKey>“ (#172): Auswahl für ein Referenzfeld – Zieltyp mit dem Auswahlfilter des Felds.
-    const auswahl = String(q.sicht ?? '').startsWith('feld:') ? (() => {
-      const [, typId, key] = String(q.sicht).split(':');
-      const f = typen.get(typId)?.felder.find((x) => x.key === key && x.typ === 'referenz');
-      const ziel = f ? typen.get(f.zielTyp ?? '') : undefined;
-      if (!f || !ziel) throw new Fachfehler(404, t('meldungen.dienst.dieses-verweisfeld-gibt-es'));
-      // Werte der Mappe, die gerade ausgefüllt wird (#173).
-      let eigene: Werte = {};
-      try { const w = JSON.parse(text(q.eigene).slice(0, 8000) || '{}'); if (w && typeof w === 'object' && !Array.isArray(w)) eigene = w; } catch { /* ohne */ }
-      return { f, ziel, eigene };
-    })() : null;
-    // Verborgene Sichten (#148) gibt es für den Benutzer nicht; ihre Mappen fehlen auch in der Elternsicht.
-    const verborgen = this.verborgeneSichten(sichten, z);
-    const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht && !verborgen.has(x.id));
-    // Sprechender Link (#98): „link“ mit den Parametern des Links in `link`.
-    const gelesen = q.sicht === 'link' ? liesDirektlink(new URLSearchParams(text(q.link).slice(0, 4000)), [...typen.values()]) : null;
-    if (gelesen && !gelesen.ok) throw new Fachfehler(422, gelesen.fehler.join(' '));
-    const link = gelesen?.ok ? gelesen.link : null;
-    // Erweiterte Suche (#199): „suche“ mit den Parametern der Suche in `link`; Rechte wie bei Sichten über `lesen`.
-    const erweitert = q.sicht === 'suche' ? abfrageAus(liesSuche(new URLSearchParams(text(q.link).slice(0, 8000))), [...typen.values()]) : null;
-    if (erweitert?.fehler.length) throw new Fachfehler(422, erweitert.fehler.join(' '));
-    // Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt.
-    const fest = q.sicht === 'eingang' || q.sicht === 'favoriten';
-    const einTyp = erweitert ? (erweitert.typen.length === 1 ? erweitert.typen[0] : undefined) : link ? link.typ : fest ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id, typen.keys()); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
-    const sortierung = link && !text(q.sortierung)
-      ? (link.sortierung ? sortierungAus(link.sortierung.spalte, link.sortierung.absteigend, einTyp) : undefined)
-      : sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
-    // Unscharfe Suche (#356): Varianten (gleichbedeutende Wörter, ohne Bindestrich) für Suche und Volltextfilter.
-    const textfilter = erweitert?.volltext ?? undefined;
-    const varianten = await this.suchVarianten([suche, textfilter?.text]);
-    const anfrage: SeitenAnfrage = q.sicht === 'eingang'
-      ? { eingang: { benutzerId: ich.id, admin: await this.siehtOhneEmpfaenger(ich) }, suche, volltext, notizen, von, anzahl, sortierung, lesen: suche ? lesen : null }
-      : q.sicht === 'favoriten'
-        ? { favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung, lesen }
-      : erweitert
-        ? {
-            klauseln: [{ typen: (erweitert.typen.length ? erweitert.typen : [...typen.values()]).map((t) => t.id), filter: filterFuer(erweitert, erweitert.typen, await aufloesung()) }],
-            textfilter, suche, volltext, notizen, von, anzahl, sortierung, lesen }
-      : link
-        ? { klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await aufloesung()) }], suche, volltext, notizen, von, anzahl, sortierung, lesen }
-      : auswahl
-        ? { klauseln: [auswahlKlausel(setzeEigeneWerte(auswahl.f.auswahlFilter ?? [], auswahl.eigene), auswahl.ziel, await aufloesung())], suche, volltext, notizen, von, anzahl, sortierung, lesen }
-      : sicht
-        ? { klauseln: klauselnFuer(sichten, sicht.id, typen, await aufloesung(), verborgen), suche, volltext, notizen, von, anzahl, sortierung, lesen }
-        : { typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung, lesen };
-    // Beim Blättern ohne Suche (#740): die Zahl vom ersten Blatt statt noch einmal zu zählen.
-    const bekannt = Number(q.gesamt);
-    const gesamt = von > 0 && !suche && !textfilter && Number.isInteger(bekannt) && bekannt >= 0 ? bekannt : undefined;
-    let r = gesamt !== undefined ? await this.repo.seite({ ...anfrage, varianten, gesamt }) : await this.seiteMitZahl(anfrage, varianten);
-    // Ohne genauen Treffer (#356): mit ähnlichen Wörtern aus dem Wörterverzeichnis noch einmal – genaue Treffer gehen so
-    // immer vor; „Meintest du …?“ schlägt die Suche mit dem besten ähnlichen Wort vor.
-    let unscharf: { statt: string; vorschlag: string | null; begriffe: Record<string, string[]> } | null = null;
-    const gesucht = suche ?? textfilter?.text;
-    if (r.gesamt === 0 && gesucht && await this.unscharfAn()) {
-      const begriffe = suchbegriffe(gesucht);
-      const aehnlich = begriffe ? await this.repo.aehnlicheWoerter(begriffe, 5) : {};
-      if (Object.keys(aehnlich).length) {
-        const r2 = await this.repo.seite({ ...anfrage, varianten, aehnlich });
-        if (r2.gesamt > 0) {
-          r = r2;
-          // „Meintest du …?“ nur, wenn der Vorschlag selbst etwas findet, das der Benutzer lesen darf – das
-          // Wörterverzeichnis kennt auch Wörter aus Mappen, die er nicht sehen darf (ohne Lesefilter: alles lesbar).
-          let vorschlag = vorschlagAus(begriffe!, aehnlich);
-          if (vorschlag && anfrage.lesen) {
-            const probe: SeitenAnfrage = suche ? { ...anfrage, suche: vorschlag } : { ...anfrage, textfilter: { ...textfilter!, text: vorschlag } };
-            if (!(await this.repo.gibtTreffer(probe))) vorschlag = null;
-          }
-          unscharf = { statt: gesucht, vorschlag, begriffe: aehnlich };
-        }
-      }
-    }
-    if (q.sicht === 'eingang' && lesen) {
-      const ok = await this.repo.lesbare(r.mappen.map((m) => m.id), lesen);
-      r.mappen = r.mappen.map((m) => (ok.has(m.id) ? m : { id: m.id, typId: m.typId, werte: {}, titel: NICHT_SICHTBAR, erstellt: m.erstellt, erstelltVon: null, geaendert: m.geaendert, geaendertVon: null, verborgen: true }));
-    }
-    const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
-    // Eingang (#54): je Mappe, was für mich zu tun ist.
-    const aufgaben: Record<string, string> = {};
-    if (q.sicht === 'eingang' && r.mappen.length) {
-      const offen = await this.repo.offeneAufgaben({ benutzerId: ich.id, admin: await this.siehtOhneEmpfaenger(ich), mappeIds: r.mappen.map((m) => m.id) });
-      // #798: automatische Aufgaben an Mappen ohne Leserecht nur mit Hinweis.
-      for (const a of await this.ohneLeserechtText(offen, new Set(r.mappen.filter((m) => !m.verborgen).map((m) => m.id)), ich.id)) {
-        aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
-      }
-    }
-    // Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen,
-    // auf der ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen.
-    const aehnlich = erweitert && !erweitert.bedingungen.length && suche && volltext && von === 0
-      ? await this.aehnlicheZurSuche(z, suche, { typen: erweitert.typen.length ? new Set(erweitert.typen.map((t) => t.id)) : null, ohneMappen: new Set(r.mappen.map((m) => m.id)) })
-      : [];
-    return {
-      gesamt: r.gesamt, von, mappen: r.mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
-      ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
-      ...(aehnlich.length ? { aehnlich } : {}),
-      ...(unscharf ? { unscharf } : {}),
-      /** Welche Mappen dieser Seite Favoriten des Benutzers sind (#62). */
-      favoriten: [...await this.repo.favoritenVon(ich.id, r.mappen.map((m) => m.id))],
-      /** Favorit = Abo (#422): Favoriten und eigene Mappen, die andere seit dem letzten Sehen geändert haben. */
-      geaendert: await this.persoenlichAn(ich.id, 'geaenderte_hervorheben')
-        ? [...await this.repo.geaendertVonAnderen(ich.id, r.mappen.filter((m) => !m.verborgen).map((m) => m.id), ABO_ARTEN)] : [],
-      /** In der Favoritenliste und Ansichten mit „ist mein Favorit“ (#725): Favoriten ohne Benachrichtigung (#422). */
-      ...(q.sicht === 'favoriten' || sicht?.bedingungen.some((x) => x.art === 'favorit') ? { stumm: [...await this.repo.stummeFavoriten(ich.id, r.mappen.map((m) => m.id))] } : {}),
-    };
-  }
-
-  /**
-   * Eine Seite mit der Zahl der Treffer aus dem Zwischenspeicher (#918): Die Zahl gilt je Anfrage ohne Blatt und
-   * Reihenfolge – Ansicht bzw. Bedingungen, Lesefilter, Suche samt Varianten, Eingang oder Favoriten der Person – und nur
-   * bei gleichem Mappenstand (mit Favoriten: Haushaltsstand), ohne Mindestgültigkeit: Sie bleibt genau. Einmal gezählt,
-   * holt jede weitere Anfrage nur die Seite. Nicht zwischengespeichert wird die Suche in Dokumenten und Notizen: Deren
-   * Texte (Texterkennung, Notizen) ändern keinen Stand.
-   */
-  private async seiteMitZahl(anfrage: SeitenAnfrage, varianten: Varianten) {
-    const inhalte = (!!anfrage.suche && (!!anfrage.volltext || !!anfrage.notizen)) || !!anfrage.textfilter?.text.trim();
-    if (inhalte) return this.repo.seite({ ...anfrage, varianten });
-    const { von: _von, anzahl: _anzahl, sortierung: _sortierung, gesamt: _gesamt, zahl: _zahl, ...was } = anfrage;
-    const speicher = mitFavoriten(was) ? this.trefferFavSpeicher : this.trefferSpeicher;
-    let r: Awaited<ReturnType<Repo['seite']>> | undefined;
-    const z = await speicher.hole(fingerabdruck({ v: 1, ...was, varianten }), async () => {
-      r = await this.repo.seite({ ...anfrage, varianten });
-      return { wert: r.gesamt, zeitabhaengig: zeitabhaengig(anfrage.klauseln) };
-    });
-    return r ?? this.repo.seite({ ...anfrage, varianten, zahl: z.wert });
-  }
-
-  /**
-   * Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers.
-   * Zwischengespeichert je Benutzer und Rechte (#512), solange sich am Haushalt nichts ändert
-   * (`Haushaltsstand`); zeitabhängige Ansichten laufen nach Minuten bzw. um Mitternacht ab. Ob der
-   * Zwischenspeicher traf, steht im Header Server-Timing (`zs`).
-   */
-  async zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) {
-    const lesen = zg?.lesen ?? null;
-    const alleSichten = await this.repo.listeSichten();
-    // Verborgene Sichten (#148): kein Zähler, und ihre Mappen zählen auch in der Elternsicht nicht.
-    const verborgen = this.verborgeneSichten(alleSichten, zg);
-    const a = zg?.a && zg.ich.id === ich.id ? zg.a : await this.aufloesung(ich.id);
-    const ohneEmpfaenger = await this.siehtOhneEmpfaenger(ich);
-    const sichten = alleSichten.filter((x) => !verborgen.has(x.id));
-    const typen = zg?.typen && !zg.paket ? zg.typen : new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const klauseln = sichten.map((x) => klauselnFuer(alleSichten, x.id, typen, a, verborgen));
-    const zeitabh = alleSichten.some((x) => zeitabhaengig(x.bedingungen));
-    // Ansichten, deren Bedingungen die Person selbst meinen (z. B. „ist mein Favorit“), zählen bei ihren eigenen Zahlen;
-    // alle anderen gemeinsam für alle mit denselben Eingaben.
-    const eigen = sichten.map((_, i) => JSON.stringify(klauseln[i]).includes(ich.id));
-    const gemeinsam = sichten.map((x, i) => ({ id: x.id, k: klauseln[i], i })).filter((x) => !eigen[x.i]);
-    const persoenlich = sichten.map((x, i) => ({ id: x.id, k: klauseln[i], i })).filter((x) => eigen[x.i]);
-    // Rechte-Fingerabdruck (#742): genau die Eingaben der Zählung. Der Lesefilter enthält die Rechte samt Rollen und
-    // Leserecht auf Zeit (wo eine Regel die Person selbst meint, steht ihre Id darin); die Klauseln enthalten Rollen
-    // und „heute“, wo eine Ansicht sie nutzt. Der Verwaltungsmodus (alles lesen) steht zusätzlich darin. Gleiche
-    // Eingaben, gleiche Abfrage, gleiche Zahl – wer etwas anderes lesen darf, hat einen anderen Schlüssel.
-    const admin = !!zg?.admin || (!zg && ich.rolle === 'admin');
-    const bestandSchluessel = fingerabdruck({ v: 2, admin, lesen, sichten: gemeinsam.map((x) => [x.id, x.k]) });
-    const ichSchluessel = `${ich.id}|${ohneEmpfaenger ? 'o' : ''}|${fingerabdruck({ v: 2, admin, lesen, sichten: persoenlich.map((x) => [x.id, x.k]) })}`;
-    const beginn = performance.now();
-    const g = this.gueltigkeit();
-    // #918: Der Mappenstand genügt, solange der Lesefilter keine Favoriten meint (die Ansichten mit „ist mein Favorit“
-    // zählen bei den Zahlen der Person).
-    const bestand = mitFavoriten(lesen) ? this.bestandFav : this.bestand;
-    const [b, p] = await Promise.all([
-      bestand.hole(bestandSchluessel, async () => ({ wert: await this.repo.zaehleBestand(gemeinsam.map((x) => x.k), lesen), zeitabhaengig: zeitabh }), g),
-      this.persoenlich.hole(ichSchluessel, async () => ({ wert: await this.repo.zaehlePersoenlich(ich.id, ohneEmpfaenger, lesen, persoenlich.map((x) => x.k)), zeitabhaengig: zeitabh }), g),
-    ]);
-    // Server-Timing `zs`: die teure Zählung über alle Mappen; die Zahlen der Person sind kleine Zählungen.
-    const k = kontext.getStore();
-    if (k) k.zwischenspeicher = { art: b.art, ms: performance.now() - beginn };
-    const n = new Map<string, number>([...gemeinsam.map((x, i) => [x.id, b.wert.sichten[i]] as const), ...persoenlich.map((x, i) => [x.id, p.wert.sichten[i]] as const)]);
-    return {
-      typen: Object.fromEntries(b.wert.typen), eingang: p.wert.eingang, favoriten: p.wert.favoriten,
-      sichten: Object.fromEntries(sichten.map((x) => [x.id, n.get(x.id) ?? 0])),
-      // Papierkorb (#43): eigene gelöschte Mappen.
-      papierkorb: p.wert.papierkorb,
-      ...await this.zaehlerRahmen(),
-    };
-  }
-
-  /**
-   * Was die Ablage ohne Zählen sofort braucht (#512): Tage im Papierkorb (0 = aus) und die Sicht
-   * „Neue Post“. Die Oberfläche lädt das vorab, die Zahlen danach.
-   */
-  async zaehlerRahmen() {
-    // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
-    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht(), favoritenSicht: await this.favoritenSicht() };
-  }
-
-  /**
-   * Zähler-Endpunkt (#625, GET /api/v1/ich/zaehler): nur Zahlen, in den Rechten des Benutzers, ohne Titel,
-   * Namen oder Inhalte – für Hausautomatisierung, Anzeigen und Clients.
-   *
-   * - neuePost: Post im Stand „Neu“, deren „Für“ der Benutzer ist oder leer ist, und die er lesen darf.
-   * - zuErledigen: wie „Zu erledigen“ in der Ablage (Mappen mit offenen Aufgaben für ihn).
-   * - ueberfaellig: eigene offene Fristen, Erinnerungen und Aufgaben mit Datum vor heute.
-   *
-   * „anstehend“ gibt es seit #725 nicht mehr: Automatisierungen legen Aufgaben zum richtigen Zeitpunkt an.
-   *
-   * Alle Zahlen kommen aus den Zwischenspeichern von #512 und #528. Der Stand liegt in der Datenbank
-   * (`zaehlerstaende`): Er zählt hoch, sobald die Zahlen beim Abruf anders sind als beim letzten – das übersteht
-   * Neustarts und gilt für alle Server gleich. Das ETag ist Stand und Hash der Zahlen; gleiche Zahlen, gleiches ETag.
-   */
-  async zaehlerAbruf(z: Zugriff): Promise<{ zahlen: Zaehlerzahlen; stand: number; geaendert: string; etag: string }> {
-    const ansichten = await this.zaehler(z.ich, z);
-    const heute = heuteIn();
-    const t = await this.termine(z, { von: heute, bis: heute });
-    const ueberfaellig = t.eintraege.filter((e) => e.faellig && e.datum < heute).length;
-    const zahlen: Zaehlerzahlen = { neuePost: await this.neuePostFuer(z), zuErledigen: ansichten.eingang, ueberfaellig };
-    // Meist unverändert: dann nur lesen, nichts schreiben.
-    const abdruck = fingerabdruck({ v: 1, ich: z.ich.id, zahlen });
-    const da = await this.repo.zaehlerstand(z.ich.id);
-    const s = da?.abdruck === abdruck ? da : await this.repo.setzeZaehlerstand(z.ich.id, abdruck);
-    return { zahlen, stand: s.stand, geaendert: s.geaendert, etag: `"z${s.stand}-${s.abdruck}"` };
-  }
-
-  /**
-   * Stand der Ablage für die Oberfläche (#919, `GET /api/ablage/stand`): ein kurzer Fingerabdruck, kein Inhalt. Die
-   * Startseite und die Zähler der Seitenleiste fragen ihn alle 10–15 s ab und laden nur neu, wenn er sich geändert hat.
-   *
-   * Billig: Haushaltsstand (Zahlen, auch Favoriten und Erinnerungen) und Mappenstand (#918) kommen in einer Anfrage aus
-   * der Abfrage der Sitzung (`standSpalten`), keine weitere Datenbankabfrage. Dazu, was für die Person zählt: das
-   * Datum (zeitabhängige Ansichten und Termine wechseln um Mitternacht) und die wirksame Rolle (Verwaltungsmodus sieht
-   * mehr). Nicht die Zähler dieses Prozesses – bei mehreren Prozessen wechselte der Wert sonst je nach Prozess.
-   * „Nachhinken ja, falsch nie“: Er ändert sich höchstens zu oft, nie zu selten für Änderungen über das Repo.
-   */
-  async ablageStand(ich: { rolle: string }): Promise<string> {
-    const [zahlen, mappen] = await Promise.all([this.stand.aktuell(), this.mappenstand.aktuell()]);
-    return fingerabdruck({ v: 1, zahlen, mappen, heute: heuteIn(), rolle: ich.rolle });
-  }
-
-  /** Webhooks (#627): nach jeder Änderung, die Zahlen der Ansichten oder die Termine ändern kann. */
-  beiAenderung(f: () => void) { this.stand.beiAenderung(f); }
-
-  /** Neue Post für den Benutzer (#625): Stand „Neu“ und „Für“ ist er selbst oder leer; nur lesbare Post. */
-  private async neuePostFuer(z: Zugriff): Promise<number> {
-    const post = [...z.typen.values()].find((t) => t.system === 'post');
-    if (!post) return 0;
-    const schluessel = `${z.ich.id}|${z.ich.rolle}|${fingerabdruck({ lesen: z.lesen, rollen: z.a.meineRollen, post: post.id })}`;
-    const r = await this.neuePostSpeicher.hole(schluessel, async () => {
-      const neu = { art: 'feld' as const, feld: 'stand', op: 'einerVon' as const, wert: { art: 'fest' as const, wert: [POST_STAND.neu] } };
-      const klausel = (fuer: Bedingung) => ({ typen: [post.id], filter: filterFuer({ bedingungen: [neu, fuer] }, [post], z.a) });
-      const [n] = await this.repo.zaehleKlauseln([[
-        klausel({ art: 'feld', feld: 'fuer', op: 'zeigtAuf', wert: { art: 'ich' } }),
-        klausel({ art: 'feld', feld: 'fuer', op: 'leer' }),
-      ]], z.lesen);
-      return { wert: n, zeitabhaengig: false };
-    }, this.gueltigkeit());
-    return r.wert;
-  }
+  seite(...a: Parameters<SichtenDienst['seite']>) { return this.sichten.seite(...a); }
+  zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) { return this.sichten.zaehler(ich, zg); }
+  zaehlerRahmen() { return this.sichten.zaehlerRahmen(); }
+  zaehlerAbruf(z: Zugriff) { return this.sichten.zaehlerAbruf(z); }
+  ablageStand(ich: { rolle: string }): Promise<string> { return this.sichten.ablageStand(ich); }
+  beiAenderung(f: () => void) { this.sichten.beiAenderung(f); }
 
   /* ---------- Favoriten (#62) ---------- */
 
@@ -2559,323 +1942,38 @@ export class Dienst {
   paketeAmTyp(typId: string) { return this.typpakete.paketeAmTyp(typId); }
   setzePaketVerwehrt(typId: string, paketId: string, verwehrt: boolean, von: string | null): Promise<void> { return this.typpakete.setzePaketVerwehrt(typId, paketId, verwehrt, von); }
 
-  /* ---------- Berechtigungen in der Werkbank (#123, #125) ---------- */
+  /* ---------- Berechtigungen in der Werkbank (#123, #125, berechtigungen/berechtigungen.dienst.ts) ---------- */
 
-  /** Aktive Benutzer, für die Regeln gelten – alle; nur der Verwaltungsmodus hebt sie auf (#818). */
-  private async regelBenutzer(): Promise<Benutzer[]> {
-    return this.konten?.benutzer ? (await this.konten.benutzer()).filter((b) => b.aktiv) : [];
-  }
+  berechtigungenListe() { return this.berechtigungen.berechtigungenListe(); }
+  niemandLesbar(typ: Mappentyp, rw: Regelwerk): Promise<number> { return this.berechtigungen.niemandLesbar(typ, rw); }
 
-  /** Übersicht: je Mappentyp Grundeinstellung und Anzahl Regeln. */
-  async berechtigungenListe() {
-    const typen = await this.repo.listeTypen();
-    return typen.map((t) => ({ typId: t.id, name: t.name, system: t.system ?? null, berechtigungen: regelwerkVon(t) }));
-  }
+  setzeBerechtigungen(typId: string, eingabe: unknown, bestaetigt: boolean): Promise<{ typ: Mappentyp; niemand: number }> { return this.berechtigungen.setzeBerechtigungen(typId, eingabe, bestaetigt); }
 
-  /** Wie viele Mappen dieses Typs könnte mit diesem Regelwerk kein normaler Benutzer lesen? */
-  async niemandLesbar(typ: Mappentyp, rw: Regelwerk): Promise<number> {
-    const benutzer = await this.regelBenutzer();
-    if (!benutzer.length) return 0;
-    const t = { ...typ, berechtigungen: rw };
-    const teile: Ausdruck[] = [];
-    for (const b of benutzer) {
-      const a = await this.aufloesung(b.id);
-      teile.push(leseAusdruck(t, { id: b.id, rollen: a.meineRollen }, a));
-    }
-    const x = nicht(oder(...teile));
-    return x.k === 'falsch' ? 0 : this.repo.zaehleAusdruck(typ.id, x);
-  }
+  private static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) { BerechtigungenDienst.protokolliereBerechtigungen(typ, niemand); }
 
-  /** Regelwerk speichern; mit Warnung, wenn danach Mappen niemand mehr lesen kann (#125). */
-  async setzeBerechtigungen(typId: string, eingabe: unknown, bestaetigt: boolean): Promise<{ typ: Mappentyp; niemand: number }> {
-    const typ = await this.repo.holeTyp(typId);
-    if (!typ) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
-    const { rw, niemand } = await this.pruefeBerechtigungen(typ, eingabe, bestaetigt);
-    const neu = await this.repo.setzeBerechtigungen(typId, istOffen(rw) ? null : rw);
-    Dienst.protokolliereBerechtigungen(neu, niemand);
-    return { typ: neu, niemand };
-  }
+  private berechtigungenAusEingabe(typ: Mappentyp, eingabe: unknown): Promise<{ rw: Regelwerk; niemand: number } | null> { return this.berechtigungen.berechtigungenAusEingabe(typ, eingabe); }
 
-  /** Regeln prüfen (Probleme → 422) und warnen, wenn Mappen danach niemand mehr lesen könnte (409 ohne Bestätigung). */
-  private async pruefeBerechtigungen(typ: Mappentyp, eingabe: unknown, bestaetigt: boolean): Promise<{ rw: Regelwerk; niemand: number }> {
-    const rw = bereinigeRegelwerk(eingabe);
-    const probleme = rw.regeln.map((r) => regelProblem(r, typ)).filter((x): x is string => !!x);
-    if (probleme.length) throw new Fachfehler(422, t('meldungen.dienst.berechtigungen', { probleme: probleme.join(' ') }), { gruende: probleme, berechtigungen: true });
-    const niemand = await this.niemandLesbar(typ, rw);
-    if (niemand && !bestaetigt) {
-      throw new Fachfehler(409, t('meldungen.dienst.mappen-vom-typ-koennte', { anzahl: niemand, name: typ.name }), { niemand });
-    }
-    return { rw, niemand };
-  }
+  kopiereRegel(typId: string, regelId: string, ziele: unknown): Promise<{ kopiert: number; ausgelassen: number }> { return this.berechtigungen.kopiereRegel(typId, regelId, ziele); }
 
-  private static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) {
-    const rw = typ.berechtigungen;
-    protokoll.modul('werkbank').warn('Berechtigungen geändert', {
-      typ: typ.name, grund: rw?.grund ?? 'erteilt', regeln: rw?.regeln.length ?? 0,
-      liste: rw?.regeln.map((x, i) => `${i + 1}. ${x.name} ${kurz(x.dann)}${x.stopp ? ' ■' : ''}`).join(' · ') || undefined,
-      ...(niemand ? { niemandLesbar: niemand } : {}),
-    });
-  }
+  testlauf(e: { mappeId?: unknown; benutzerId?: unknown; berechtigungen?: unknown }) { return this.berechtigungen.testlauf(e); }
+  laufwerkMappe(id: string, z: Zugriff) { return this.berechtigungen.laufwerkMappe(id, z); }
 
-  /**
-   * Berechtigungen mit dem Mappentyp speichern (#142): `berechtigungen` in der Eingabe (fehlt = unverändert),
-   * `bestaetigt` für die Rückfrage „niemand kann lesen“. Geprüft wird gegen die neuen Felder – vor dem Speichern.
-   */
-  private async berechtigungenAusEingabe(typ: Mappentyp, eingabe: unknown): Promise<{ rw: Regelwerk; niemand: number } | null> {
-    const e = (eingabe ?? {}) as { berechtigungen?: unknown; bestaetigt?: unknown };
-    if (e.berechtigungen === undefined) return null;
-    const r = await this.pruefeBerechtigungen(typ, e.berechtigungen, e.bestaetigt === true);
-    return JSON.stringify(istOffen(r.rw) ? null : r.rw) === JSON.stringify(typ.berechtigungen ?? null) ? null : r;
-  }
+  /* ---------- Sichten verwalten (#38, sichten/verwalten.ts) ---------- */
 
-  /** Eine Regel in andere Mappentypen kopieren (ans Ende); Feldbedingungen nur, wo das Feld passt. */
-  async kopiereRegel(typId: string, regelId: string, ziele: unknown): Promise<{ kopiert: number; ausgelassen: number }> {
-    const typ = await this.repo.holeTyp(typId);
-    const regel = typ ? regelwerkVon(typ).regeln.find((r) => r.id === regelId) : undefined;
-    if (!typ || !regel) throw new Fachfehler(404, t('meldungen.dienst.diese-regel-gibt-es'));
-    let kopiert = 0; let ausgelassen = 0;
-    for (const id of (Array.isArray(ziele) ? ziele : []).map(String)) {
-      const ziel = id === typId ? undefined : await this.repo.holeTyp(id);
-      if (!ziel) continue;
-      const k = kopiereRegel(regel, ziel);
-      if (!k.regel.wenn.length) { ausgelassen += k.ausgelassen; continue; }
-      const rw = regelwerkVon(ziel);
-      await this.repo.setzeBerechtigungen(ziel.id, { grund: rw.grund, regeln: [...rw.regeln, k.regel] });
-      kopiert++; ausgelassen += k.ausgelassen;
-    }
-    return { kopiert, ausgelassen };
-  }
+  listeSichten(z?: Zugriff): Promise<Sicht[]> { return this.sichtenVerwaltung.listeSichten(z); }
+  verborgeneSichten(alle: Sicht[], z?: Zugriff): Set<string> { return this.sichtenVerwaltung.verborgeneSichten(alle, z); }
+  sichtTestlauf(e: unknown): Promise<unknown> { return this.sichtenVerwaltung.sichtTestlauf(e); }
+  legeSichtAn(e: unknown): Promise<Sicht> { return this.sichtenVerwaltung.legeSichtAn(e); }
+  aendereSicht(id: string, e: unknown): Promise<Sicht> { return this.sichtenVerwaltung.aendereSicht(id, e); }
+  private static konfigurationKonflikt(art: 'typ' | 'sicht', aktuell?: string): Fachfehler { return SichtenVerwaltung.konfigurationKonflikt(art, aktuell); }
+  loescheSicht(id: string): Promise<void> { return this.sichtenVerwaltung.loescheSicht(id); }
+  ordneSichten(elternId: unknown, ids: unknown): Promise<Sicht[]> { return this.sichtenVerwaltung.ordneSichten(elternId, ids); }
+  verschiebeSicht(id: string, elternId: unknown, stelle: unknown): Promise<Sicht[]> { return this.sichtenVerwaltung.verschiebeSicht(id, elternId, stelle); }
 
-  /** Testlauf (#125): Mappe und Benutzer → CRUDP mit der Spur durch die Regeln (auch für einen ungespeicherten Entwurf). */
-  async testlauf(e: { mappeId?: unknown; benutzerId?: unknown; berechtigungen?: unknown }) {
-    const m = istUuid(e.mappeId) ? await this.repo.holeMappe(e.mappeId) : undefined;
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const person = this.konten?.benutzer ? (await this.konten.benutzer()).find((x) => x.id === e.benutzerId) : undefined;
-    // Systemkonten und Paket-Benutzer (#710): auswählbar nur hier, damit man ihre Rechte nachprüfen kann.
-    const b = person ?? (this.konten?.ohneMensch ? (await this.konten.ohneMensch()).find((x) => x.id === e.benutzerId && x.art) : undefined);
-    if (!b) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
-    const gespeichert = await this.repo.holeTyp(m.typId);
-    if (!gespeichert) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-dieser-mappe'));
-    const typ = e.berechtigungen === undefined ? gespeichert : { ...gespeichert, berechtigungen: bereinigeRegelwerk(e.berechtigungen) };
-    const mappe = { id: m.id, titel: m.titel ?? '', typId: m.typId };
-    if (b.art) {
-      // Wie im Zugriff solcher Konten: Rolle „Systemkonto“ bzw. „Paket“, nur Regeln, die diese Rolle nennen (#673).
-      const konto = b.art === 'system' ? 'systemkonto' as const : 'paket' as const;
-      const rolleId = (await this.kern.system()).kontorollen.get(konto)!;
-      const a = await this.aufloesung(b.id);
-      const name = b.art === 'dienst' ? `Paket: ${(await this.repo.listePakete()).find((p) => p.id === b.paketId)?.name ?? b.name}` : b.name;
-      const z = await this.zugriff(b);
-      const bestaetigt = !!z.typen.get(m.typId);
-      const erg = rechteAnMappe(kontoRegelwerk(typ, rolleId), m, { id: b.id, rollen: [rolleId] }, a, await this.mappenquelle(b.id, [m.id]));
-      // Wie rechteAn: Systemkonten sehen nie Passwörter; Pakete nie über die bei der Installation bestätigten Rechte hinaus.
-      const w = erg.wirksam;
-      const s = !!z.paket?.schreiben.has(m.typId);
-      erg.wirksam = !bestaetigt ? { ...NICHTS } : z.paket ? { C: w.C && s, R: w.R, U: w.U && s, D: false, P: false } : { ...w, P: false };
-      return { ...erg, admin: false, konto, ...(bestaetigt ? {} : { unbestaetigt: true }), mappe, benutzer: { id: b.id, name } };
-    }
-    const a = await this.aufloesung(b.id);
-    const erg = rechteAnMappe(typ, m, { id: b.id, rollen: a.meineRollen }, a, await this.mappenquelle(b.id, [m.id]));
-    // Leserecht auf Zeit (#798) mit seinem Grund: wirkt nur, wo die Regeln kein Lesen erlauben – und nur Lesen.
-    const z = b.rolle === 'admin' ? undefined : (await this.repo.leserechteAufZeit(b.id)).find((x) => x.mappeId === m.id);
-    const regulaer = erg.wirksam.R;
-    if (z && !regulaer) erg.wirksam = { ...erg.wirksam, R: true };
-    return {
-      ...erg, admin: b.rolle === 'admin', mappe, benutzer: { id: b.id, name: b.name || b.email },
-      ...(z ? { aufZeit: { aufgabe: z.aufgabentext, seit: z.seit, von: z.von ? await this.name(z.von) : null, wirkt: !regulaer } } : {}),
-    };
-  }
+  sichtVorschau(ich: { id: string }, id: unknown, e: unknown): Promise<{ anzahl: number }> { return this.sichtenVerwaltung.sichtVorschau(ich, id, e); }
 
-  /**
-   * WebDAV-Laufwerk (#346): eine Mappe mit Lesen-Recht – Typ, Dokumente und die verknüpften Mappen
-   * (Verweise in beide Richtungen, nur lesbare). Ohne Notizen, Aufgaben und Historie.
-   */
-  async laufwerkMappe(id: string, z: Zugriff) {
-    const mappe = await this.pruefeRecht(z, id, 'R');
-    const typ = z.typen.get(mappe.typId) ?? await this.repo.holeTyp(mappe.typId);
-    const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
-    const rueck = await this.repo.rueckverweise(id);
-    const bezuege = await this.repo.bezuege([...new Set([...ziele, ...rueck.map((r) => r.quelleId)])].filter((x) => x !== id));
-    const lesbar = await this.lesbare(z, [...bezuege.keys()]);
-    const verknuepft = [...bezuege].filter(([k]) => lesbar.has(k)).map(([mid, x]) => ({ id: mid, titel: x.titel, typId: x.typId }));
-    return { mappe, typ, dokumente: await this.repo.listeDokumente(id), verknuepft };
-  }
-
-  /* ---------- Sichten verwalten (#38) ---------- */
-
-  /**
-   * Sichten für die Ablage (#148): Administratoren alle mit Regeln; Benutzer nur die sichtbaren,
-   * mit ihren Rechten daran und ohne die Regeln selbst.
-   */
-  async listeSichten(z?: Zugriff): Promise<Sicht[]> {
-    const alle = await this.repo.listeSichten();
-    if (!z || z.admin) return alle;
-    const rechte = alleSichtRechte(alle, z.wer, false);
-    return alle.filter((s) => rechte.get(s.id)?.R).map(({ berechtigungen: _b, ...s }) => ({ ...s, rechte: rechte.get(s.id)! }));
-  }
-
-  /** Ids der Sichten, die ein Benutzer nicht sehen darf (#148); Administratoren und ohne Zugriff: keine. */
-  verborgeneSichten(alle: Sicht[], z?: Zugriff): Set<string> {
-    if (!z || z.admin) return new Set();
-    const rechte = alleSichtRechte(alle, z.wer, false);
-    return new Set(alle.filter((s) => !rechte.get(s.id)?.R).map((s) => s.id));
-  }
-
-  /** Testlauf an einer Sicht (#148), auch mit ungespeicherten Regeln und Elternsicht. */
-  async sichtTestlauf(e: unknown): Promise<unknown> {
-    const x = (e ?? {}) as { sichtId?: unknown; benutzerId?: unknown; berechtigungen?: unknown; elternId?: unknown };
-    const alle = await this.repo.listeSichten();
-    const id = istUuid(x.sichtId) && alle.some((s) => s.id === x.sichtId) ? x.sichtId : randomUUID();
-    const b = this.konten?.benutzer ? (await this.konten.benutzer()).find((y) => y.id === x.benutzerId) : undefined;
-    if (!b) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
-    const elternId = istUuid(x.elternId) && alle.some((s) => s.id === x.elternId) && !waereKreis(alle, id, x.elternId) ? x.elternId : null;
-    const alt = alle.find((s) => s.id === id);
-    const probe: Sicht[] = [...alle.filter((s) => s.id !== id), {
-      ...(alt ?? { name: t('meldungen.dienst.neue-ansicht'), beschreibung: '', position: 0, typen: [], bedingungen: [], erstellt: '', geaendert: '' }),
-      id, elternId, berechtigungen: bereinigeSichtRegelwerk(x.berechtigungen),
-    }];
-    const a = await this.aufloesung(b.id);
-    if (b.rolle === 'admin') return { admin: true, benutzer: { id: b.id, name: b.name || b.email }, kette: [] };
-    const kette = sichtTestlauf(probe, id, { id: b.id, rollen: a.meineRollen });
-    return { admin: false, benutzer: { id: b.id, name: b.name || b.email }, kette, wirksam: kette.at(-1)?.stand };
-  }
-
-  private async bereinigeSicht(e: unknown, id: string, alle: Sicht[]): Promise<SichtDaten> {
-    const x = (e ?? {}) as Record<string, unknown>;
-    const name = ausgangAus(x.beschriftungen, 'name', text(x.name)).slice(0, 80);
-    if (!name) throw new Fachfehler(422, t('meldungen.dienst.bitte-einen-namen-fuer'));
-    const elternId = istUuid(x.elternId) ? x.elternId : null;
-    if (elternId && !alle.some((s) => s.id === elternId)) throw new Fachfehler(422, t('meldungen.dienst.die-gewaehlte-elternsicht-gibt'));
-    if (waereKreis(alle, id, elternId)) throw new Fachfehler(422, t('meldungen.dienst.eine-ansicht-kann-nicht'));
-    const vorhanden = new Set((await this.repo.listeTypen()).map((t) => t.id));
-    const gewaehlt = [...new Set((Array.isArray(x.typen) ? x.typen : []).map(String))];
-    // „Alle Mappentypen“ (#725) steht allein; sonst nur vorhandene Typen.
-    const typen = gewaehlt.includes(ALLE_TYPEN) ? [ALLE_TYPEN] : gewaehlt.filter((t) => vorhanden.has(t));
-    const geschwister = kinderVon(alle.filter((s) => s.id !== id), elternId);
-    // Ohne Stelle: bleibt die Elternsicht, bleibt auch die Stelle (#917) – sonst ans Ende der neuen Ebene.
-    const bisher = alle.find((s) => s.id === id);
-    const position = Number.isFinite(Number(x.position)) && x.position !== null && x.position !== undefined
-      ? Math.trunc(Number(x.position))
-      : bisher && bisher.elternId === elternId ? bisher.position : (geschwister.at(-1)?.position ?? 0) + 10;
-    // Trefferliste (#75): nur der Schlüssel; passt er nicht (mehr), gilt der Standard und die Werkbank zeigt es an.
-    const trefferliste = text(x.trefferliste).slice(0, 40) || null;
-    // Berechtigungen (#148): fehlt die Angabe, bleiben sie, wie sie sind.
-    const berechtigungen: SichtRegelwerk | null = 'berechtigungen' in x ? bereinigeSichtRegelwerk(x.berechtigungen) : alle.find((s) => s.id === id)?.berechtigungen ?? null;
-    const probleme = (berechtigungen?.regeln ?? []).map((r) => sichtRegelProblem(r, !!elternId)).filter((p): p is string => !!p);
-    if (probleme.length) throw new Fachfehler(422, t('meldungen.dienst.berechtigungen', { probleme: probleme.join(' ') }), { gruende: probleme, berechtigungen: true });
-    // Symbol (#428): nur Namen aus der festen Auswahl; fehlt die Angabe, bleibt es, wie es ist.
-    const symbol = 'symbol' in x ? ansichtSymbol(x.symbol) : alle.find((s) => s.id === id)?.symbol ?? null;
-    // Beschriftungen je Sprache (#728): fehlt die Angabe, bleiben sie, wie sie sind.
-    const beschriftungen = 'beschriftungen' in x ? bereinigeBeschriftungen<TypTeile>(x.beschriftungen, TYP_TEILE) : alle.find((s) => s.id === id)?.beschriftungen;
-    return { name, beschreibung: ausgangAus(x.beschriftungen, 'beschreibung', text(x.beschreibung)).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen), trefferliste, berechtigungen, symbol, beschriftungen };
-  }
-
-  async legeSichtAn(e: unknown): Promise<Sicht> {
-    const alle = await this.repo.listeSichten();
-    const id = randomUUID();
-    return this.repo.legeSichtAn(id, await this.bereinigeSicht(e, id, alle));
-  }
-
-  /**
-   * Ansicht ändern. Gleichzeitig bearbeiten (#917): Mit `stand` (ihr `geaendert`, wie gelesen) speichert Ablago nur,
-   * wenn seitdem niemand die Ansicht geändert hat – sonst 409 und nichts geht verloren. Ohne `stand` keine Prüfung.
-   */
-  async aendereSicht(id: string, e: unknown): Promise<Sicht> {
-    const alle = await this.repo.listeSichten();
-    const alt = alle.find((s) => s.id === id);
-    if (!alt) throw new Fachfehler(404, t('meldungen.dienst.diese-ansicht-gibt-es'));
-    const stand = liesStand((e as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
-    if (stand !== undefined && alt.geaendert !== stand) throw Dienst.konfigurationKonflikt('sicht', alt.geaendert);
-    const d = await this.bereinigeSicht(e, id, alle);
-    try { return await this.repo.aendereSicht(id, d, stand); }
-    catch (f) { if (f instanceof KonfigurationVeraltet) throw Dienst.konfigurationKonflikt('sicht'); throw f; }
-  }
-
-  /** 409 „Jemand hat … inzwischen geändert“ (#917) für Mappentyp bzw. Ansicht; `aktuell` = der Stand jetzt. */
-  private static konfigurationKonflikt(art: 'typ' | 'sicht', aktuell?: string): Fachfehler {
-    return new Fachfehler(409, t(art === 'typ' ? 'meldungen.dienst.typ-konflikt' : 'meldungen.dienst.sicht-konflikt'), { konflikt: true, ...(aktuell ? { stand: aktuell } : {}) });
-  }
-
-  /** Untersichten rücken eine Ebene nach oben, an die Stelle der gelöschten. */
-  async loescheSicht(id: string): Promise<void> {
-    const alle = await this.repo.listeSichten();
-    const s = alle.find((x) => x.id === id);
-    if (!s) throw new Fachfehler(404, t('meldungen.dienst.diese-ansicht-gibt-es'));
-    // Neue Reihenfolge der Ebene: Geschwister davor, die Kinder, Geschwister danach.
-    const ebene = kinderVon(alle, s.elternId).flatMap((g) => (g.id === id ? kinderVon(alle, id) : [g]));
-    for (const [i, g] of ebene.entries()) {
-      if (g.elternId !== s.elternId || g.position !== (i + 1) * 10) await this.repo.setzeSichtOrt(g.id, s.elternId, (i + 1) * 10);
-    }
-    await this.repo.loescheSicht(id);
-  }
-
-  /** Reihenfolge unter Geschwistern setzen: Ids in der gewünschten Reihenfolge. */
-  async ordneSichten(elternId: unknown, ids: unknown): Promise<Sicht[]> {
-    const alle = await this.repo.listeSichten();
-    const eltern = istUuid(elternId) ? elternId : null;
-    const geschwister = kinderVon(alle, eltern);
-    const liste = Array.isArray(ids) ? ids.map(String) : [];
-    if (liste.length !== geschwister.length || !geschwister.every((g) => liste.includes(g.id))) throw new Fachfehler(422, t('meldungen.dienst.die-reihenfolge-muss-genau'));
-    for (const [i, sid] of liste.entries()) {
-      const g = geschwister.find((x) => x.id === sid)!;
-      if (g.position !== (i + 1) * 10) await this.repo.setzeSichtOrt(sid, g.elternId, (i + 1) * 10);
-    }
-    return this.repo.listeSichten();
-  }
-
-  /**
-   * Sicht verschieben (Drag & Drop, #73): unter `elternId` (null = oberste Ebene) an die Stelle `stelle`
-   * (0 = zuerst). Untersichten wandern mit; Kreise sind unmöglich.
-   */
-  async verschiebeSicht(id: string, elternId: unknown, stelle: unknown): Promise<Sicht[]> {
-    const alle = await this.repo.listeSichten();
-    const s = alle.find((x) => x.id === id);
-    if (!s) throw new Fachfehler(404, t('meldungen.dienst.diese-ansicht-gibt-es'));
-    const eltern = istUuid(elternId) ? elternId : null;
-    if (eltern && !alle.some((x) => x.id === eltern)) throw new Fachfehler(422, t('meldungen.dienst.die-gewaehlte-elternsicht-gibt'));
-    if (waereKreis(alle, id, eltern)) throw new Fachfehler(422, t('meldungen.dienst.eine-ansicht-kann-nicht'));
-    const geschwister = kinderVon(alle.filter((x) => x.id !== id), eltern);
-    const n = Number(stelle);
-    const i = Number.isFinite(n) ? Math.max(0, Math.min(geschwister.length, Math.trunc(n))) : geschwister.length;
-    const neu = [...geschwister.slice(0, i), s, ...geschwister.slice(i)];
-    for (const [j, g] of neu.entries()) {
-      const position = (j + 1) * 10;
-      if (g.id === id ? g.elternId !== eltern || g.position !== position : g.position !== position) {
-        await this.repo.setzeSichtOrt(g.id, g.id === id ? eltern : g.elternId, position);
-      }
-    }
-    return this.repo.listeSichten();
-  }
-
-  /** Anzahl Treffer einer (noch nicht gespeicherten) Sicht – für die Vorschau in der Werkbank. */
-  async sichtVorschau(ich: { id: string }, id: unknown, e: unknown): Promise<{ anzahl: number }> {
-    const alle = await this.repo.listeSichten();
-    const sid = istUuid(id) && alle.some((s) => s.id === id) ? id : randomUUID();
-    const d = await this.bereinigeSicht(e, sid, alle);
-    const probe: Sicht[] = [...alle.filter((s) => s.id !== sid), { ...d, id: sid, erstellt: '', geaendert: '' }];
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const [anzahl] = await this.repo.zaehleKlauseln([klauselnFuer(probe, sid, typen, await this.aufloesung(ich.id))]);
-    return { anzahl };
-  }
-
-  /**
-   * Eigene Sicht für einen Mappentyp, mit der Id des Typs (Lesezeichen bleiben gültig), auf der
-   * obersten Ebene angehängt. Benutzer und Rolle stehen dabei immer am Ende.
-   */
-  private async sichtFuerTyp(t: Mappentyp) {
-    const alle = await this.repo.listeSichten();
-    if (alle.some((s) => s.id === t.id)) return;
-    const SYSTEM_AB = 100_000;
-    const oben = kinderVon(alle, null).map((s) => s.position);
-    const position = t.system
-      ? Math.max(SYSTEM_AB, ...oben) + 10
-      : Math.max(0, ...oben.filter((p) => p < SYSTEM_AB)) + 10;
-    await this.repo.legeSichtAn(t.id, { name: t.name, beschreibung: t.beschreibung, elternId: null, position, typen: [t.id], bedingungen: [] });
-  }
-
-  async belegung(typId: string) {
-    if (!(await this.repo.holeTyp(typId))) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
-    return this.repo.belegung(typId);
-  }
+  private sichtFuerTyp(t: Mappentyp) { return this.sichtenVerwaltung.sichtFuerTyp(t); }
+  belegung(typId: string) { return this.sichtenVerwaltung.belegung(typId); }
 
   /* ---------- Passung: passt eine Mappe zur aktuellen Definition? ---------- */
 
@@ -3143,12 +2241,7 @@ export class Dienst {
   rechteVorschau(id: string, eingabe: unknown, z: Zugriff): Promise<Rechte> { return this.mappenEingaben.rechteVorschau(id, eingabe, z); }
   aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> { return this.mappen.aendereMappe(id, eingabe, benutzerId, z, anlass); }
   legeMappenAn(liste: NeueMappe[]) { return this.mappen.legeMappenAn(liste); }
-  /** Nach Massenläufen (#367): Statistik der Datenbank auffrischen; ein Fehler dabei ist nur ein Hinweis. */
-  async aktualisiereStatistik() {
-    const t = Date.now();
-    try { await this.repo.aktualisiereStatistik(); protokoll.modul('datenbank').info('Statistik aufgefrischt (ANALYZE)', { ms: Date.now() - t }); }
-    catch (e) { protokoll.modul('datenbank').warn('Statistik ließ sich nicht auffrischen (ANALYZE)', { fehler: (e as Error).message }); }
-  }
+  aktualisiereStatistik() { return this.sichten.aktualisiereStatistik(); }
 
   /**
    * Ob und warum nicht eine Mappe gelöscht werden kann (#79). Dieselbe Prüfung nutzt das Löschen,
@@ -3345,11 +2438,7 @@ export class Dienst {
     return pruefeAlle(this.ausgangsrechte(ich, z), ausgang, ids);
   }
 
-  /** Alle Treffer einer Sicht mit Suche (#149): nur die Ids der lesbaren Mappen, höchstens MAX_AUSWAHL. */
-  async trefferIds(ich: { id: string; rolle: string }, q: Parameters<Dienst['seite']>[1], z?: Zugriff): Promise<{ ids: string[]; gesamt: number }> {
-    const s = await this.seite(ich, { ...q, von: 0, anzahl: MAX_AUSWAHL }, z, MAX_AUSWAHL);
-    return { ids: s.mappen.filter((m) => !m.verborgen).map((m) => m.id), gesamt: s.gesamt };
-  }
+  trefferIds(...a: Parameters<SichtenDienst['trefferIds']>) { return this.sichten.trefferIds(...a); }
 
   /**
    * Mehrere Mappen löschen (#150): je Mappe das Recht D am Mappentyp; Verweise innerhalb der Auswahl halten
@@ -3454,73 +2543,10 @@ export class Dienst {
   vermerkeVerwaltungsmodus(alltag: { id: string; rolle: string; name?: string; email?: string }, ids: string[], was: Modusspur): Promise<Set<string>> { return this.systemtypen.vermerkeVerwaltungsmodus(alltag, ids, was); }
   imVerwaltungsmodus(max?: number) { return this.systemtypen.imVerwaltungsmodus(max); }
 
-  /**
-   * Sichten für Post (#192), einmal angelegt: „Neue Post“ ganz oben (Stand „Neu“), unter „Post“
-   * „Eingegangen“ und „Versendet“. Löscht der Administrator sie, kommen sie nicht wieder.
-   */
-  private async sicherePostSichten(post: Mappentyp) {
-    const merk = this.einstellungen ? ((await this.einstellungen.lies('post')) as { sichten?: boolean; neu?: string } | null) : null;
-    if (merk?.sichten) return;
-    const alle = await this.repo.listeSichten();
-    const typSicht = alle.find((s) => s.id === post.id);
-    if (typSicht && (typSicht.name === 'E-Mail' || typSicht.name === 'E-Mail (System)')) {
-      await this.repo.aendereSicht(typSicht.id, { ...typSicht, name: post.name, beschreibung: post.beschreibung });
-    }
-    const bed = (feld: string, wert: string) => [{ art: 'feld' as const, feld, op: 'einerVon' as const, wert: { art: 'fest' as const, wert: [wert] } }];
-    let neu = alle.find((s) => s.typen.length === 1 && s.typen[0] === post.id && s.bedingungen.some((b) => b.art === 'feld' && b.feld === 'stand'));
-    if (!neu) {
-      const oben = kinderVon(alle, null).map((s) => s.position);
-      neu = await this.repo.legeSichtAn(randomUUID(), {
-        name: t('meldungen.dienst.neue-post'), beschreibung: t('meldungen.dienst.post-die-noch-niemand'), elternId: null,
-        position: Math.min(10, ...oben) - 10, typen: [post.id], bedingungen: bed('stand', POST_STAND.neu), symbol: 'inbox',
-      });
-    }
-    if (typSicht && !kinderVon(alle, typSicht.id).length) {
-      await this.repo.legeSichtAn(randomUUID(), { name: 'Eingegangen', beschreibung: t('meldungen.dienst.post-die-in-ablago'), elternId: typSicht.id, position: 10, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.eingehend) });
-      await this.repo.legeSichtAn(randomUUID(), { name: 'Versendet', beschreibung: t('meldungen.dienst.aus-ablago-verschickte-e'), elternId: typSicht.id, position: 20, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.ausgehend) });
-    }
-    await this.einstellungen?.schreibe('post', { sichten: true, neu: neu.id });
-    protokoll.modul('werkbank').info('Ansichten für Post angelegt', { neu: neu.id });
-  }
-
-  /**
-   * Mitgelieferte Ansicht „Favoriten“ (#725): alle Mappentypen, Bedingung „ist mein Favorit“, ganz oben unter
-   * „Neue Post“. Einmal angelegt; löscht der Administrator sie, kommt sie nicht wieder (die Favoriten selbst
-   * bleiben, der Stern an der Mappe auch).
-   */
-  private async sichereFavoritenSicht() {
-    if (!this.einstellungen) return;
-    const merk = (await this.einstellungen.lies('favoriten_sicht')) as { id?: string } | null;
-    if (merk?.id) return;
-    const alle = await this.repo.listeSichten();
-    let s = alle.find((x) => zeigtAlleTypen(x) && x.bedingungen.length === 1 && x.bedingungen[0].art === 'favorit');
-    if (!s) {
-      // Direkt unter „Neue Post“, sonst ganz oben.
-      const postId = await this.neuePostSicht();
-      const post = alle.find((x) => x.id === postId);
-      const oben = kinderVon(alle, null).map((x) => x.position);
-      s = await this.repo.legeSichtAn(randomUUID(), {
-        name: 'Favoriten', beschreibung: t('meldungen.dienst.deine-mappen-mit-stern'), elternId: null,
-        position: post ? post.position + 1 : Math.min(10, ...oben) - 10, typen: [ALLE_TYPEN], bedingungen: [{ art: 'favorit' }], symbol: 'star',
-      });
-      protokoll.modul('werkbank').info('Ansicht „Favoriten“ angelegt', { sicht: s.id });
-    }
-    await this.einstellungen.schreibe('favoriten_sicht', { id: s.id });
-  }
-
-  /** Id der mitgelieferten Ansicht „Favoriten“ (#725), solange es sie gibt. */
-  async favoritenSicht(): Promise<string | null> {
-    const merk = this.einstellungen ? ((await this.einstellungen.lies('favoriten_sicht')) as { id?: string } | null) : null;
-    if (!merk?.id) return null;
-    return (await this.repo.listeSichten()).some((x) => x.id === merk.id) ? merk.id : null;
-  }
-
-  /** Id der Sicht „Neue Post“ (#192), damit die Oberfläche ihre Zahl hervorhebt. */
-  async neuePostSicht(): Promise<string | null> {
-    const merk = this.einstellungen ? ((await this.einstellungen.lies('post')) as { neu?: string } | null) : null;
-    const alle = await this.repo.listeSichten();
-    return alle.find((s) => s.id === merk?.neu)?.id ?? null;
-  }
+  private sicherePostSichten(post: Mappentyp) { return this.systemsichten.sicherePostSichten(post); }
+  private sichereFavoritenSicht() { return this.systemsichten.sichereFavoritenSicht(); }
+  favoritenSicht(): Promise<string | null> { return this.systemsichten.favoritenSicht(); }
+  neuePostSicht(): Promise<string | null> { return this.systemsichten.neuePostSicht(); }
 
   /* ---------- Post (#192) ---------- */
 
@@ -6142,16 +5168,4 @@ export class Dienst {
   versionen(id: string) { return this.dokumentVersionen.versionen(id); }
   versionInhalt(id: string, nummer: number) { return this.dokumentVersionen.versionInhalt(id, nummer); }
   private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) { return this.dokumentVersionen.beruehre(mappeId, typ, benutzerId); }
-}
-
-/** Liste von Sprachkennungen prüfen (#579): nur bekannte, ohne doppelte, höchstens alle Sprachen des DMS. */
-function sprachliste(x: unknown, feld: string, max = Object.keys(TEXTSPRACHEN).length): string[] {
-  if (!Array.isArray(x) || x.length > max || !x.every(istTextsprache)) throw new Fachfehler(422, `${feld}: Liste bekannter Sprachen erwartet (${Object.keys(TEXTSPRACHEN).join(', ')}), höchstens ${max}.`);
-  return [...new Set(x as string[])];
-}
-/** Seitensprachen eines Pakets (#579): je Seite null (das DMS erkennt sie) oder ein bis zwei Sprachen. */
-function sprachlisten(x: unknown): Array<string[] | null> | undefined {
-  if (x === undefined || x === null) return undefined;
-  if (!Array.isArray(x) || !x.length || x.length > MAX_SEITENSPRACHEN) throw new Fachfehler(422, t('meldungen.dienst.seitensprachen-liste-mit-einem', { MAX_SEITENSPRACHEN }));
-  return x.map((e, i) => (e === null ? null : sprachliste(e, `seitensprachen[${i}]`, SPRACHEN_JE_SEITE)));
 }
