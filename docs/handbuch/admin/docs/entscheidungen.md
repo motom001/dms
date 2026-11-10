@@ -30,7 +30,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Passwörter** mit scrypt aus Node (keine native Bibliothek). **Sitzungen** als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).
 - **Schutz vor fremden Seiten:** Ändernde Anfragen brauchen den Header `X-DMS`, den nur die eigene Oberfläche setzt; dazu `SameSite=Lax`.
 - **E-Mail optional:** Ohne SMTP zeigt die Benutzerverwaltung die Links zum Kopieren an.
-- **Routen zentral** in `server/src/routen.ts`, jede mit Zugriffsstufe (offen, angemeldet, admin).
+- **Routen je Fachbereich** in `server/src/<fach>/<fach>.routen.ts`, an einer Stelle zusammengeführt in `server/src/routen.ts` (#960), jede mit Zugriffsstufe (offen, angemeldet, admin).
 
 ## Ablage
 
