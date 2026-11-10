@@ -11,11 +11,11 @@
 # Geht etwas schief: ohne diese Datei starten – dann rechnet wieder nur der Prozessor.
 services:
   ollama:
-    image: dms-beispiel/ollama-intel:0.40.13
+    image: dms-beispiel/ollama-intel:0.40.15
     pull_policy: build
     build:
       dockerfile_inline: |
-        FROM ollama/ollama:0.40.13
+        FROM ollama/ollama:0.40.15
         RUN apt-get update \
          && apt-get install -y --no-install-recommends mesa-vulkan-drivers \
          && rm -rf /var/lib/apt/lists/*
