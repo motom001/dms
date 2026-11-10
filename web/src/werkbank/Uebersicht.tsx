@@ -4,7 +4,7 @@ import { Link } from '../ort';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
-import { sicherungsHinweise } from './Sicherung';
+import { sicherungsHinweise, useVerwaltetVerschluesselung } from './Sicherung';
 import { exportHinweise } from './Vollexport';
 import { bereichPasst, GRUPPEN, type Gruppe } from '../../../shared/src/werkbankansicht';
 import { variablenHinweis } from '../../../shared/src/umgebungsvariablen';
@@ -38,7 +38,7 @@ export interface Hinweis {
 }
 
 /** Alle Meldungen der Übersicht, ungeordnet; `ordneMeldungen` sortiert sie und trennt die akzeptierten ab (#816). */
-export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
+export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hinweis[] {
   const h: Hinweis[] = [];
   const tr = u.tresor;
   // Notfallzugang (#108): bis er umbenannt oder deaktiviert ist.
@@ -86,7 +86,7 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
     for (const x of eo.umbenennen) h.push({ schluessel: `eingangsordner.umbenennen:${x.neu}`, art: 'warn', text: <><strong>{t('werkbank.eingangsordner.umbenennen', { alt: x.alt, neu: x.neu })}</strong> {t('werkbank.eingangsordner.umbenennen.text')}</>, ziel: '/werkbank/eingangsordner#personen', knopf: t('werkbank.uebersicht.eingangsordner.zum-ordner') });
   }
   // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort. Das Notfallblatt führt zur Verschlüsselung (#993).
-  if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: x.ziel ?? '/werkbank/sicherung', knopf: x.knopf ?? t('werkbank.uebersicht.zur-sicherung') });
+  if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung, mitNotfallblatt)) h.push({ ...x, ziel: x.ziel ?? '/werkbank/sicherung', knopf: x.knopf ?? t('werkbank.uebersicht.zur-sicherung') });
   // Export-Ordner (#797): im Sicherungsordner, oder Exporte beim Update von dort verschoben.
   if (u.exporte) for (const x of exportHinweise(u.exporte)) h.push({ ...x, ziel: '/werkbank/vollexport', knopf: t('werkbank.export.knopf') });
   // #128: API-Schlüssel gehören zu normalen Benutzern.
@@ -140,7 +140,8 @@ export function useUebersicht() {
     try { const s = await api.uebersicht(); setStand(s); setAkzeptiert(s.akzeptiert ?? {}); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
-  const geordnet = useMemo(() => (stand ? ordneMeldungen(hinweiseAus(stand), akzeptiert) : null), [stand, akzeptiert]);
+  const mitNotfallblatt = useVerwaltetVerschluesselung();
+  const geordnet = useMemo(() => (stand ? ordneMeldungen(hinweiseAus(stand, mitNotfallblatt), akzeptiert) : null), [stand, akzeptiert, mitNotfallblatt]);
   // Behoben oder schwerer geworden (#816): Die Akzeptanz gilt nicht mehr – einmal je Stand an den Server melden.
   const gemeldet = useRef<WerkbankUebersicht | null>(null);
   useEffect(() => {

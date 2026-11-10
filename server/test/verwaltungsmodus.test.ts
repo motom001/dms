@@ -356,6 +356,11 @@ describe('Neues seit 0.188 im Modell von #818', () => {
     assert.equal((await x.rufe(als, 'GET', '/api/konto/dokument-passwoerter')).statusCode, 403);
   });
 
+  it('Notfallblatt (Schlüssel aller Sicherungen) nur mit „Verschlüsselung“, nicht mit „Sicherung“ (#993)', () => {
+    assert.deepEqual(bereicheDerRoute('GET', '/api/werkbank/notfallblatt'), ['verschluesselung']);
+    assert.equal(heikleHandlung('GET', '/api/werkbank/notfallblatt', null), 'schluessel');
+  });
+
   it('E-Mail-Versand über OAuth (#813) an- und abmelden braucht eine frische Anmeldung', () => {
     for (const p of ['/api/werkbank/betrieb/mail/oauth/start', '/api/werkbank/betrieb/mail/oauth/geraet', '/api/werkbank/betrieb/mail/oauth/abmelden']) {
       assert.equal(heikleHandlung('POST', p, {}), 'mailversand', p);

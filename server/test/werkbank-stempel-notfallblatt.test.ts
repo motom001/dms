@@ -31,6 +31,7 @@ const { StempelListe, StempelEditor } = await lade('werkbank/Stempel.tsx');
 const { SicherungPanel, sicherungsHinweise } = await lade('werkbank/Sicherung.tsx');
 const { Notfallblatt } = await lade('werkbank/Verschluesselung.tsx');
 const { hinweiseAus } = await lade('werkbank/Uebersicht.tsx');
+const { Ctx: KontoCtx } = await lade('konto-kontext.ts');
 const { STANDARD_VORLAGEN } = await import('../../shared/src/stempel');
 
 const zeichne = (el: React.ReactElement) => renderToStaticMarkup(h(DatenProvider, null, el));
@@ -87,31 +88,61 @@ const stand = (nb: Record<string, unknown>) => ({
   plan: { aktiv: true, uhrzeit: '02:00', haeufigkeit: 'taeglich', wochentag: 1, aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 }, mindestFreiGB: 1, aktivSeit: null },
   speicher: { dateienBytes: 1, dateien: 1, datenbankBytes: 1, sicherungenBytes: 1, anzahl: 0, frei: 10 ** 10, gesamt: 10 ** 11, hochrechnung: { stueck: 1, bytes: 1 }, mindestBytes: 1, knapp: false },
 });
-const sicherung = (nb: Record<string, unknown>) => renderToStaticMarkup(h(SicherungPanel, { z: { stand: stand(nb), fehler: undefined, laden: async () => {}, setStand: () => {} } }));
+/** Mit Konto im Verwaltungsmodus: `bereiche` null = Gesamte Verwaltung, sonst die Liste (#818). */
+const sicherung = (nb: Record<string, unknown>, bereiche: string[] | null = ['sicherung'], plan?: Record<string, unknown>) => {
+  const st = stand(nb);
+  if (plan) Object.assign(st.plan, plan);
+  const panel = h(SicherungPanel, { z: { stand: st, fehler: undefined, laden: async () => {}, setStand: () => {} } });
+  return renderToStaticMarkup(h(KontoCtx.Provider, { value: { verwaltungsmodus: { bereiche } } }, panel));
+};
+const NB_FAELLE = [['fehlt', { aktuell: false, am: null, grund: 'fehlt' }], ['veraltet', { aktuell: false, grund: 'schluessel' }], ['Notfallcode benutzt', { aktuell: false, grund: 'benutzt' }]] as const;
 
-describe('Notfallblatt nur unter Verschlüsselung (#993)', () => {
+describe('Notfallblatt nur unter Verschlüsselung (#993, Thomas 10.11.2026)', () => {
   it('Sicherung hat keinen Abschnitt „Notfallblatt“ und keinen Knopf zum Herunterladen', () => {
-    const html = sicherung({});
-    assert.ok(!html.includes('id="notfallblatt"'));
-    assert.ok(!html.includes('/api/werkbank/notfallblatt'));
-    // Die Zeile im Zustand bleibt – als Link zur Verschlüsselung.
-    assert.match(html, /href="\/werkbank\/verschluesselung#notfallblatt"[^>]*>Notfallblatt heruntergeladen/);
-    assert.ok(!html.includes('Zum Notfallblatt'), 'ohne Grund kein Hinweis');
+    for (const bereiche of [['sicherung'], ['sicherung', 'verschluesselung'], null]) {
+      const html = sicherung({}, bereiche);
+      assert.ok(!html.includes('id="notfallblatt"'));
+      assert.ok(!html.includes('/api/werkbank/notfallblatt'));
+      assert.ok(!html.includes('Zum Notfallblatt'), 'ohne Grund kein Hinweis');
+    }
   });
 
-  for (const [fall, nb] of [['fehlt', { aktuell: false, am: null, grund: 'fehlt' }], ['veraltet', { aktuell: false, grund: 'schluessel' }], ['Notfallcode benutzt', { aktuell: false, grund: 'benutzt' }]] as const) {
-    it(`Sicherung: Hinweis mit „Zum Notfallblatt“, wenn es ${fall}`, () => {
-      const html = sicherung(nb);
+  it('nur „Sicherung“: das Notfallblatt kommt gar nicht vor', () => {
+    for (const [, nb] of [['aktuell', {}], ...NB_FAELLE] as const) {
+      const html = sicherung(nb as Record<string, unknown>);
+      assert.ok(!/notfallblatt/i.test(html.replace(/id="[^"]*"/g, '')), html);
+      const hinweise = sicherungsHinweise(zustand(nb as Record<string, unknown>), false) as Array<{ schluessel: string }>;
+      assert.ok(!hinweise.some((x) => x.schluessel === 'sicherung.notfallblatt'));
+    }
+  });
+
+  for (const [fall, nb] of NB_FAELLE) {
+    it(`mit „Verschlüsselung“: Hinweis mit „Zum Notfallblatt“, wenn es ${fall}`, () => {
+      const html = sicherung(nb, ['sicherung', 'verschluesselung']);
       assert.match(html, /<a[^>]*href="\/werkbank\/verschluesselung#notfallblatt"[^>]*>Zum Notfallblatt<\/a>/);
       assert.ok(!html.includes('/api/werkbank/notfallblatt'), 'Herunterladen nur unter Verschlüsselung');
-      const hinweis = sicherungsHinweise(zustand(nb)).find((x: { schluessel: string }) => x.schluessel === 'sicherung.notfallblatt');
+      const hinweis = sicherungsHinweise(zustand(nb), true).find((x: { schluessel: string }) => x.schluessel === 'sicherung.notfallblatt');
       assert.equal(hinweis?.ziel, '/werkbank/verschluesselung#notfallblatt');
     });
   }
 
-  it('Übersicht: der Hinweis führt zur Verschlüsselung, andere Sicherungshinweise zur Sicherung', () => {
+  it('Zeitplan ohne aktuelles Notfallblatt: neutraler Satz, Link nur mit „Verschlüsselung“', () => {
+    const satz = 'Erst möglich, wenn die Verschlüsselung fertig eingerichtet ist';
+    const ohne = sicherung({ aktuell: false, am: null, grund: 'fehlt' }, ['sicherung'], { aktiv: false });
+    assert.ok(ohne.includes(satz));
+    assert.ok(ohne.includes('Du hast keine Berechtigung, die Verschlüsselung zu verwalten.'));
+    assert.ok(!ohne.includes('Zur Verschlüsselung'));
+    const mit = sicherung({ aktuell: false, am: null, grund: 'fehlt' }, null, { aktiv: false });
+    assert.ok(mit.includes(satz));
+    assert.match(mit, /<a[^>]*href="\/werkbank\/verschluesselung#notfallblatt"[^>]*>Zur Verschlüsselung<\/a>/);
+    assert.ok(!mit.includes('keine Berechtigung'));
+  });
+
+  it('Übersicht: Hinweis zum Notfallblatt nur mit „Verschlüsselung“, dann zur Verschlüsselung', () => {
     const u = { sicherung: { ...zustand({ aktuell: false, grund: 'benutzt' }), zuAlt: true }, aufgaben: { offen: 0, ohneEmpfaenger: 0 } };
-    const hw = hinweiseAus(u) as Array<{ schluessel: string; ziel: string; knopf: string }>;
+    const ohne = hinweiseAus(u, false) as Array<{ schluessel: string; ziel: string; knopf: string }>;
+    assert.ok(!ohne.some((x) => x.schluessel === 'sicherung.notfallblatt'));
+    const hw = hinweiseAus(u, true) as Array<{ schluessel: string; ziel: string; knopf: string }>;
     const nb = hw.find((x) => x.schluessel === 'sicherung.notfallblatt')!;
     assert.equal(nb.ziel, '/werkbank/verschluesselung#notfallblatt');
     assert.equal(nb.knopf, 'Zum Notfallblatt');
