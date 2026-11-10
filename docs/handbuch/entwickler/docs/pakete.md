@@ -6,6 +6,23 @@ Pakete erweitern Ablago um fertige Mappentypen, Ansichten und Beispiel-Mappen. A
 
 Alle offiziellen Pakete liegen im Repository **[motom001/dms-registry](https://github.com/motom001/dms-registry)**, ein Ordner je Paket unter `pakete/<id>/`. Dort gelten dieselben Regeln wie in Ablago: erst ein Issue als User Story, umgesetzt wird nach dem Label `freigegeben`. Die Regeln für Pakete (Lizenzen, Verbotenes, Namen) stehen in [REGELN.md](https://github.com/motom001/dms-registry/blob/main/REGELN.md).
 
+## Paketarten und gleiche Kennungen { #paketarten }
+
+Bevor du ein Paket anlegst, klär seine **Art** – die Regeln dazu stehen in [REGELN.md, „Paketarten“](https://github.com/motom001/dms-registry/blob/main/REGELN.md#paketarten) (dms-registry #157):
+
+- **Grundlagen-Paket** Basis (Organisation, Person, Ablageort) – immer dabei, alle Vorlagen-Pakete hängen davon ab.
+- **Vorlagen-Pakete** bringen Mappentypen, Ansichten und Automatisierungen für einen Bereich (Haushalt, Fahrzeuge, Verträge, Rechnungen). Sie dürfen Code mitbringen, der **nur ihre eigenen Mappentypen** pflegt, z. B. Status und Fristen berechnen.
+- **Funktions-Pakete** bringen Code für alle Mappen, aber keine Mappentypen (Texterkennung, PDF/A, KI).
+- **Ergänzungen** erweitern genau ein anderes Paket (`ergaenzt`) und ändern weder dessen Typen noch Rechte.
+- **Sprachen** und **Automatisierungs-Pakete** bringen nur Texte bzw. nur Automatisierungen.
+
+Zwei Regeln halten die Pakete zusammen:
+
+- **Ein Mappentyp lebt in genau einem Paket.** Andere Pakete verweisen darauf (`vertraege:vertrag`) und nennen es unter `abhaengigkeiten`.
+- **Gleiche Kennungen für gleiche Bedeutung** – `von`, `an`, `betrag`, `datum`, `betrifft`, `steuerjahr`, `zustaendig`, `verbleib_original` … (Liste in [REGELN.md, „Gleiche Kennungen“](https://github.com/motom001/dms-registry/blob/main/REGELN.md#gleiche-kennungen)). Dann zeigen Trefferlisten und Ansichten über mehrere Mappentypen dieselben Spalten. Die Beschriftung darf je Typ sprechen („Anbieter“, „Rechnungssteller“), die Kennung nicht. `pruefen.py` weist bei neuen Feldern auf Abweichungen hin.
+
+**Text-Vorlagen** (z. B. ein Kündigungsschreiben) bringt ein Paket nur als Markdown unter `inhalt/vorlagen/` mit: kein HTML, keine Bilder, Links nur `https:`, keine Passwortfelder als Platzhalter. `pruefen.py` lehnt anderes ab, und Ablago prüft beim Installieren dasselbe (#1038, #1040).
+
 ## Ein Paket anlegen
 
 ```sh
