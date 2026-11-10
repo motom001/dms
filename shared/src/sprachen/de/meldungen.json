@@ -1710,5 +1710,10 @@
   "verwaltung.netz-abgelehnt": "Netz abgelehnt: {anzahl} × {methode} {host} – die Adresse ist nicht erlaubt",
   "verwaltung.netz-ohne-antwort": "keine Antwort",
   "prozess.ungueltige-methode": "Ungültige Methode – erlaubt sind nur Großbuchstaben, z. B. GET oder POST.",
-  "paketerstellung.feldarten": "Feldarten Zeitraum und Prozent, negative Beträge"
+  "paketerstellung.feldarten": "Feldarten Zeitraum und Prozent, negative Beträge",
+  "dienst.anzeige-abschnitt": "Abschnitt „{name}“: {problem}",
+  "dienst.merkmal-ja-nein": "Das Merkmal „{merkmal}“ ist ja oder nein (true oder false).",
+  "paketerstellung.anzeige-mappe": "{wo}: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+  "paketerstellung.ansicht-merkmal": "Ansicht „{name}“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+  "einrichtungsdatei.beruflich": "Die Ablage wird auch beruflich genutzt (Merkmal „beruflich genutzt“, Vorgabe nein): Mappentypen zeigen dann ihre beruflichen Felder und Abschnitte, die Werkbank startet mit der Vorlage „Betrieb“."
 }

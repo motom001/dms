@@ -91,6 +91,28 @@ Bei Mappentypen aus einem **Paket** ändert ein Update das Ausblenden nicht – 
 
 Steht in einem ausgeblendeten Feld ein Wert, der nach einer späteren Änderung am Feld nicht mehr passt, hält er das Speichern der Mappe nicht auf – ändern lässt er sich in der Mappe ja nicht. Wer ihn über die Schnittstelle ändert, muss die Regeln des Felds einhalten.
 
+### Anzeigen, wenn … { #anzeigen-wenn }
+
+Ein Mappentyp soll für Lena einfach bleiben und im Betrieb trotzdem alles können – ohne zweiten Mappentyp für dieselbe Sache. Dafür legst du an einem **Feld** oder an einem **Abschnitt** (unter dem Feldregister, **Anzeigen, wenn …**) fest, wann es zu sehen ist. Beispiele: Abschnitt *Miete* nur bei Vertragsart *Miete*, Abschnitt *Abschluss* nur, wenn die Ablage [beruflich genutzt](nutzung.md) wird.
+
+Bedingungen kommen aus demselben Baukasten wie bei [Ansichten](sichten.md#bedingungen):
+
+- **Ablage wird beruflich genutzt** – das [Merkmal der Ablage](nutzung.md);
+- **Feldwert der Mappe** – gleich, ist einer von, leer, nicht leer und die übrigen Vergleiche der Feldart, mit festen Werten (bei Datum auch „heute“);
+- **Verweis zeigt auf eine bestimmte Mappe** – ein Verweisfeld mit „zeigt auf“, z. B. Vertragsart *Miete*;
+- **Verweis zeigt auf eine Mappe vom Typ …** – z. B. „*betrifft* ist ein Fahrzeug“; sinnvoll bei Verweisen auf Mappen verschiedener Typen.
+
+Jede Bedingung lässt sich umkehren (**trifft nicht zu**); bei mehreren wählst du **alle zutreffen** oder **eine davon zutrifft**. Ohne Bedingung ist alles zu sehen. Eine Bedingung schaut nie auf das eigene Feld bzw. auf Felder des eigenen Abschnitts – es ließe sich sonst nicht mehr einblenden. Bedingungen auf den angemeldeten Benutzer gibt es hier nicht: Was zu sehen ist, hängt nicht davon ab, wer die Mappe ansieht.
+
+- **Abschnitt ausgeblendet** → alle Felder bis zum nächsten Abschnitt sind ausgeblendet; der nächste Abschnitt erscheint wieder normal.
+- Die Mappe reagiert **sofort beim Ausfüllen**: Wählt jemand Vertragsart *Miete*, erscheint der Abschnitt *Miete*. Das gilt in der Mappe, beim Anlegen und bei **Dokument übernehmen**.
+- **Werte bleiben gespeichert.** Wechselt die Vertragsart von *Miete* auf *Strom*, verschwindet der Abschnitt, seine Werte nicht. An seiner Stelle steht eine ruhige Zeile: „Abschnitt Miete ist ausgeblendet – 3 Werte bleiben gespeichert · anzeigen“. **anzeigen** holt ihn für diese Mappe zurück (mit dem Hinweis „gerade ausgeblendet“).
+- **Pflicht** ist ein Feld nur, solange es zu sehen ist. Der Server prüft das beim Speichern selbst, mit derselben Auswertung wie die Oberfläche – auch über die [Schnittstelle](api.md).
+
+**Ausblenden ist Ordnung, kein Schutz.** Bedingungen gelten nur für die Anzeige im Formular. Schnittstelle, [Vollexport](export.md), [Sicherung](sicherung.md) und [Auskunft](datenschutz.md) zeigen alle Werte, ebenso Spalten in Ansichten und Trefferlisten und der Titel der Mappe. [Berechtigungen](berechtigungen.md), die Freigabe für [KI-Dienste](#ki-dienste), die [Erkennung](#erkennung) und [Automatisierungen](automatisierungen.md) hängen nie davon ab, ob ein Feld gerade zu sehen ist. Was geheim bleiben soll, regeln die Berechtigungen.
+
+Im Editor trägt ein Feld bzw. Abschnitt mit Bedingung ein Auge und den Satz „nur bei …“ – so wunderst du dich nicht, warum ein Feld in einer Mappe fehlt. Bedingungen, die nicht (mehr) passen – etwa weil ihr Feld entfernt wurde –, zeigt der Editor rot; gespeichert wird erst, wenn sie stimmen. Pakete bringen die Einstellung mit (`anzeigen` am Feld und am Abschnitt); „zeigt auf eine bestimmte Mappe“ geht in Paketen erst, wenn sie mitgelieferte Mappen fest benennen können – bis dahin lässt **Paket erstellen** solche Bedingungen mit Hinweis weg.
+
 ### Beschriftungen je Sprache { #beschriftungen-je-sprache }
 
 Name und Beschreibung des Mappentyps, Bezeichnung und Hilfetext jedes Felds sowie die Namen von Registern und Trefferlisten kannst du in mehreren Sprachen pflegen. Neben jedem dieser Texte steht ein kleiner Sprachumschalter (**DE · EN**). Unter **DE** bearbeitest du den Ausgangstext, unter einer anderen Sprache die Beschriftung dafür. Bleibt sie leer, sieht man dort den deutschen Text. Ein Punkt am Umschalter zeigt, dass eine Beschriftung noch fehlt. Unter dem Namen steht zum Beispiel „12 von 14 Beschriftungen auf Englisch“ – das ist nur ein Hinweis, gespeichert wird trotzdem.
@@ -337,7 +359,7 @@ Ohne Abschnitte legt die Mappe die Felder eines Registers in ein Raster – so v
 
 Einen Abschnitt verschiebst du mit den Pfeilen, per **Alt+↑/↓** am Griff **⠿** oder durch Ziehen auf ein Feld – er beginnt dann vor diesem Feld. Ein Abschnitt hängt an seinem ersten Feld: Verschiebst du das Feld unter **Felder**, wandert er mit; ziehst du das Feld auf ein anderes Register, beginnt der Abschnitt beim nächsten Feld. Die Überschrift lässt sich wie Namen übersetzen ([Beschriftungen je Sprache](#beschriftungen-je-sprache)).
 
-Abschnitte sind **nur Darstellung**: Die Feldliste bleibt; Export, PDF der Angaben, Druck und Schnittstelle zeigen immer alles, auch was in eingeklappten Abschnitten steht. In schmaler Ansicht (Handy) steht ein Feld je Zeile; Abschnitte zeigen dort nur ihre Überschrift, ein Umbruch ohne Überschrift wirkt nicht. Die Schnittstelle liefert die Abschnitte am Register (`abschnitte: [{ vor, titel, eingeklappt }]`), damit Apps sie als gruppierte Liste zeigen können. Pakete bringen sie mit; ein Update ergänzt Abschnitte nur an Registern, die noch keine haben.
+Abschnitte sind **nur Darstellung**: Die Feldliste bleibt; Export, PDF der Angaben, Druck und Schnittstelle zeigen immer alles, auch was in eingeklappten Abschnitten steht. In schmaler Ansicht (Handy) steht ein Feld je Zeile; Abschnitte zeigen dort nur ihre Überschrift, ein Umbruch ohne Überschrift wirkt nicht. Die Schnittstelle liefert die Abschnitte am Register (`abschnitte: [{ vor, titel, eingeklappt }]`), damit Apps sie als gruppierte Liste zeigen können. Pakete bringen sie mit; ein Update ergänzt Abschnitte nur an Registern, die noch keine haben. Ob ein Abschnitt zu sehen ist, kann von einer Bedingung abhängen: [Anzeigen, wenn …](#anzeigen-wenn).
 
 **Verknüpfungsregister als Tabelle:** Hakst du eine Quelle an, kannst du daneben eine [Trefferliste](#trefferlisten) des Quelltyps wählen. Das Register zeigt die verweisenden Mappen dann als Tabelle mit deren Spalten (z. B. beim Vertragspartner die Rechnungen mit Betrag, Datum und *bezahlt*). Ohne Auswahl – oder wenn es die Liste nicht mehr gibt – bleibt es bei der einfachen Liste der Titel.
 

@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { istOk, kannAusPost, pruefeMappentyp, freierSchluessel, systemfelder, type Mappentyp, type MappentypDaten, type Systemtyp } from '../../../shared/src/model';
 import { festigeDarstellung } from '../../../shared/src/darstellung';
+import { abschnittName, anzeigeProblemeVon } from '../../../shared/src/anzeige';
 import { auswahlProbleme, kinderVon } from '../../../shared/src/sichten';
 import { empfaengerFelder } from '../../../shared/src/fristen';
 import { istOffen, rechteUebersicht, systemSperre, type Recht, type Regelwerk } from '../../../shared/src/rechte';
@@ -89,6 +90,19 @@ export class MappentypenDienst {
       nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
       auswahlProbleme: (bed, felder, eigene) => auswahlProbleme(bed, { felder }, eigene),
     });
+    // Anzeigen, wenn … (#1033): Bedingungen auf Felder dieses Typs; ein Abschnitt nie auf eigene Felder.
+    for (const [wo, liste] of Object.entries(anzeigeProblemeVon(d, (x) => x === eigeneId || alle.some((y) => y.id === x)))) {
+      if (wo.startsWith('feld:')) {
+        const i = d.felder.findIndex((f) => `feld:${f.key}` === wo);
+        (p.felder[String(i)] ??= []).push(...liste);
+      } else {
+        const [rk, vor] = wo.slice('abschnitt:'.length).split('.');
+        const r = d.register.find((x) => x.key === rk);
+        const a = r?.abschnitte?.find((x) => x.vor === vor);
+        const name = a ? abschnittName(a, d) : vor;
+        p.allgemein.push(...liste.map((x) => t('meldungen.dienst.anzeige-abschnitt', { name, problem: x })));
+      }
+    }
     if (!istOk(p)) throw new Fachfehler(422, t('meldungen.dienst.der-mappentyp-ist-so'), p);
   }
 

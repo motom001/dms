@@ -3,10 +3,11 @@ import { api, type WerkbankAnsichtStand } from '../api';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
-  ansichtAus, BEREICHE, expertenBereiche, fuerAlle, GRUPPEN, inVorlage, nurImExpertenmodus, OHNE_EINSTELLUNG, sichtbar, VORLAGEN, type Gruppe, type Vorlage,
+  ansichtAus, BEREICHE, expertenBereiche, fuerAlle, GRUPPEN, inVorlage, nurImExpertenmodus, OHNE_EINSTELLUNG, sichtbar, VORLAGEN, vorlageFuer, type Gruppe, type Vorlage,
 } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
 import { Kopf } from './Kopf';
+import { useDaten } from '../daten';
 
 /**
  * Werkbank anpassen (#281): welche Bereiche in der Leiste stehen.
@@ -31,7 +32,10 @@ export interface BereichZustand { warn?: string | number }
 
 export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustand: Record<string, BereichZustand> }) {
   const s = z.stand;
-  const [vorlage, setVorlage] = useState<Vorlage>('haushalt');
+  const d = useDaten();
+  // Vorgabe der Vorlage (#1032): beruflich genutzt → Betrieb, sonst Haushalt.
+  const vorgabe = vorlageFuer({ beruflich: !!d.zaehler.merkmale?.beruflich });
+  const [vorlage, setVorlage] = useState<Vorlage>(vorgabe);
   const [alle, setAlle] = useState<Set<string>>(new Set());
   const [ich, setIch] = useState<Set<string>>(new Set());
   const [experte, setExperte] = useState(false);
@@ -90,7 +94,9 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
           <legend className="h3">{t('konten.verwaltende.ansicht.vorlage')}</legend>
           {(Object.keys(VORLAGEN) as Vorlage[]).map((v) => (
             <label key={v} className="haken"><input type="radio" name="vorlage" value={v} checked={vorlage === v} onChange={() => waehleVorlage(v)} />
-              <span><strong>{VORLAGEN[v].name}</strong> <span className="leise">– {VORLAGEN[v].text}</span></span></label>
+              <span><strong>{VORLAGEN[v].name}</strong> <span className="leise">– {VORLAGEN[v].text}</span>
+                {/* Vorgabe aus dem Merkmal „beruflich genutzt“ (#1032, #987). */}
+                {v === vorgabe && <> <small className="chip">{t('werkbank.ansicht.vorgabe-nutzung')}</small></>}</span></label>
           ))}
         </fieldset>
         {/* Expertenmodus (#356): Bereiche, die die Vorlage nur für Fortgeschrittene vorsieht – je Administrator. */}

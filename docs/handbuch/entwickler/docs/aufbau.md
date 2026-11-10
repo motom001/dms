@@ -312,7 +312,9 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 ## Werkbank (#1078) { #werkbank }
 
-`server/src/werkbank/werkbank.dienst.ts` mit `WerkbankDienst` (`dienst.werkbank`, Schicht 3, nur der Kern): die Ansicht der Werkbank (#281, `werkbankAnsicht`, `setzeWerkbankAnsicht`).
+`server/src/werkbank/werkbank.dienst.ts` mit `WerkbankDienst` (`dienst.werkbank`, Schicht 3, nur der Kern): die Ansicht der Werkbank (#281, `werkbankAnsicht`, `setzeWerkbankAnsicht`) und die Merkmale der Ablage (#1032, `merkmale`, `setzeMerkmale`; Einstellung `merkmale`). Gelesen werden die Merkmale überall über `kern.merkmale()` – auch in `zugriff.aufloesung` für die Bedingungen von Rechten, Ansichten und Automatisierungen.
+
+**Anzeige-Bedingungen (#1033):** Die Auswertung steht in `shared/src/anzeige.ts` (`anzeigestand`, `pruefeMitAnzeige`) und gilt für Oberfläche und Server gleich – Pflicht prüfen `mappen/eingaben.ts` (Speichern) und `mappentypen/passung.ts` (Passung) damit, das Formular nutzt sie über `web/src/ablage/anzeige.ts`. Die Bedingungen bauen auf dem Baukasten der Ansichten (`sichten.ts`) auf; nichts außer der Anzeige im Formular hängt an ihnen.
 
 ## Was in dienst.ts bleibt (#1078) { #dienst-rest }
 

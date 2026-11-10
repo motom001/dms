@@ -40,14 +40,20 @@ export const HEIKLE_BEREICHE: ReadonlySet<string> = new Set([
  */
 export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall';
 
-const BEKANNT = new Set(BEREICHE.map((b) => b.pfad));
+/**
+ * Bereiche nur für „Gesamte Verwaltung“: Sie lassen sich nicht einzeln vergeben. Nutzung (#1032) ändert, was alle
+ * Mappentypen zeigen und mit welcher Vorlage die Werkbank startet – das gehört zur ganzen Verwaltung.
+ */
+export const NUR_GESAMT_BEREICHE: ReadonlySet<string> = new Set(['nutzung']);
+
+const BEKANNT = new Set(BEREICHE.map((b) => b.pfad).filter((p) => !NUR_GESAMT_BEREICHE.has(p)));
 
 /** Bereinigt eine Eingabe: nur bekannte Bereiche, ohne Doppelte; „Gesamte Verwaltung“ steht allein. */
 export function liesVerwaltung(v: unknown): Verwaltungsrecht {
   if (!Array.isArray(v)) return [];
   const x = v.filter((s): s is string => typeof s === 'string');
   if (x.includes(GESAMT)) return [GESAMT];
-  return BEREICHE.map((b) => b.pfad).filter((p) => x.includes(p));
+  return BEREICHE.map((b) => b.pfad).filter((p) => BEKANNT.has(p) && x.includes(p));
 }
 
 type MitRecht = { verwaltung?: Verwaltungsrecht | null; art?: string } | null | undefined;
@@ -76,6 +82,7 @@ export interface Verwaltungsast { gruppe: Gruppe; name: string; bereiche: Array<
 export function verwaltungsbaum(): Verwaltungsast[] {
   const aeste = new Map<Gruppe, Verwaltungsast>();
   for (const b of BEREICHE) {
+    if (NUR_GESAMT_BEREICHE.has(b.pfad)) continue;
     const ast = aeste.get(b.gruppe) ?? { gruppe: b.gruppe, name: GRUPPEN[b.gruppe], bereiche: [] };
     ast.bereiche.push({ pfad: b.pfad, heikel: HEIKLE_BEREICHE.has(b.pfad) });
     aeste.set(b.gruppe, ast);

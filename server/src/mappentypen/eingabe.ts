@@ -8,6 +8,7 @@ import {
 } from '../../../shared/src/model';
 import { ausgangAus, bereinigeBeschriftungen, ergaenzeBeschriftungen, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from '../../../shared/src/beschriftung';
 import { bereinigeAbschnitte, festigeDarstellung } from '../../../shared/src/darstellung';
+import { bereinigeAnzeige } from '../../../shared/src/anzeige';
 import { bereinigeFolgtAus } from '../../../shared/src/folgtaus';
 import { HEUTE, type Feldformat } from '../../../shared/src/feldformate';
 import { bereinigeAuswahlfilter } from '../../../shared/src/sichten';
@@ -94,6 +95,8 @@ export function bereinigeFeld(e: unknown): Feld {
     ...mitBeschriftungen(bereinigeBeschriftungen<FeldTeile>(f.beschriftungen, FELD_TEILE, typ === 'auswahl' ? optionen : undefined)),
     // Ausgeblendet (#655): nur gespeichert, wenn an; Pflicht hebt festigeDarstellung auf.
     ...(f.ausgeblendet === true ? { ausgeblendet: true } : {}),
+    // Anzeigen, wenn … (#1033): nur mit mindestens einer Bedingung; ob sie passen, prüft der Dienst beim Speichern.
+    ...(bereinigeAnzeige(f.anzeigen) ? { anzeigen: bereinigeAnzeige(f.anzeigen) } : {}),
   };
 }
 
@@ -245,7 +248,7 @@ export function behalteErkennung(roh: unknown, d: MappentypDaten, alt: Pick<Mapp
   };
 }
 /**
- * Darstellung behalten (#655, #890): Wer einen Mappentyp ohne `ausgeblendet` an Feld bzw. Register oder ohne `abschnitte`
+ * Darstellung behalten (#655, #890, #1033): Wer einen Mappentyp ohne `ausgeblendet` bzw. `anzeigen` an Feld bzw. Register oder ohne `abschnitte`
  * an einem Feldregister speichert (z. B. ein älteres Programm über die API), behält die bisherigen Angaben. Abschnitte
  * vor Feldern, die nicht mehr auf dem Register liegen, fallen weg.
  */
@@ -254,8 +257,12 @@ export function behalteDarstellung(roh: unknown, d: MappentypDaten, alt: Pick<Ma
   const quelle = (liste: unknown, key: string) => (Array.isArray(liste) ? liste : []).find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key) as Record<string, unknown> | undefined;
   const felder = d.felder.map((f) => {
     const q = quelle(r.felder, f.key);
-    if (q && 'ausgeblendet' in q) return f;
-    return alt.felder.find((y) => y.key === f.key)?.ausgeblendet ? { ...f, ausgeblendet: true } : f;
+    const vorher = alt.felder.find((y) => y.key === f.key);
+    let neu = f;
+    if (!(q && 'ausgeblendet' in q) && vorher?.ausgeblendet) neu = { ...neu, ausgeblendet: true };
+    // Anzeigen, wenn … (#1033): Wer es nicht nennt (älteres Programm), behält die bisherige Regel.
+    if (!(q && 'anzeigen' in q) && vorher?.anzeigen) neu = { ...neu, anzeigen: vorher.anzeigen };
+    return neu;
   });
   const register = d.register.map((x) => {
     const q = quelle(r.register, x.key);

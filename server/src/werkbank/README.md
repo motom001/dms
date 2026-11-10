@@ -1,10 +1,12 @@
 # Werkbank (#1078)
 
-**Zweck:** Was die Werkbank selbst einstellt und nicht zu einem anderen Fachbereich gehört. Bisher nur die Ansicht
-(#281): welche Vorlage die Installation zeigt und was jede Person für sich ein- oder ausblendet – reine Navigation,
-keine Funktion wird abgeschaltet. Schicht 3 (nicht in `SCHICHTEN` genannt).
+**Zweck:** Was die Werkbank selbst einstellt und nicht zu einem anderen Fachbereich gehört: die Ansicht (#281) –
+welche Vorlage die Installation zeigt und was jede Person für sich ein- oder ausblendet, reine Navigation, keine
+Funktion wird abgeschaltet – und die Merkmale der Ablage (#1032, „beruflich genutzt“; Werkbank → Nutzung). Schicht 3
+(nicht in `SCHICHTEN` genannt).
 
-- `werkbank.dienst.ts` – `WerkbankDienst`: `werkbankAnsicht`, `setzeWerkbankAnsicht`.
+- `werkbank.dienst.ts` – `WerkbankDienst`: `werkbankAnsicht`, `setzeWerkbankAnsicht`, `merkmale`, `setzeMerkmale`
+  (Vorlage folgt dem Merkmal, solange die Leiste unverändert ist). Gelesen werden die Merkmale über `kern.merkmale()`.
 - `index.ts` – die einzige Tür. `werkbank.routen.ts` (Routen, #960) holt `routen.ts` direkt; die Routen fragen
   die übrigen Bereiche wie bisher über den Dienst.
 

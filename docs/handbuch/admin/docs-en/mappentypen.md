@@ -91,6 +91,28 @@ For folder types from a **package**, an update doesn’t change what you hid –
 
 If a hidden field holds a value that no longer fits after a later change to the field, it doesn’t stop the folder from being saved – it can’t be changed in the folder after all. Anyone changing it through the API has to follow the field’s rules.
 
+### Show if … { #anzeigen-wenn }
+
+A folder type should stay simple for Lena and still do everything in a business – without a second folder type for the same thing. For this, set on a **field** or a **section** (under the field tab, **Show if …**) when it is shown. Examples: section *Rent* only for contract type *Rent*, section *Accounting* only if the Library is [used for work](nutzung.md).
+
+Conditions come from the same toolkit as for [views](sichten.md#bedingungen):
+
+- **Library is also used for work** – the [Library attribute](nutzung.md);
+- **Field value of the folder** – equal, is one of, empty, not empty and the other comparisons of the field type, with fixed values (for dates also “today”);
+- **Reference points to a particular folder** – a reference field with “points to”, e.g. contract type *Rent*;
+- **Reference points to a folder of type …** – e.g. “*concerns* is a vehicle”; useful for references to folders of different types.
+
+Each condition can be reversed (**does not apply**); with several you choose **all apply** or **one of them applies**. Without a condition everything is shown. A condition never looks at its own field or at fields of its own section – otherwise it could never be shown again. Conditions on the signed-in user don’t exist here: what is shown doesn’t depend on who is looking at the folder.
+
+- **Section hidden** → all fields up to the next section are hidden; the next section appears normally again.
+- The folder reacts **immediately while filling in**: when someone picks contract type *Rent*, the section *Rent* appears. This applies in the folder, when creating one and in **Take over document**.
+- **Values stay saved.** If the contract type changes from *Rent* to *Electricity*, the section disappears, its values don’t. In its place there is a quiet line: “Section Rent is hidden – 3 values stay saved · show”. **show** brings it back for this folder (marked “currently hidden”).
+- A field is **required** only while it is shown. The server checks this itself when saving, with the same evaluation as the interface – also through the [API](api.md).
+
+**Hiding is for tidiness, not protection.** Conditions only apply to what the form shows. API, [full export](export.md), [backup](sicherung.md) and [data access requests](datenschutz.md) show all values, as do columns in views and result lists and the folder’s title. [Permissions](berechtigungen.md), the approval for [AI services](#ki-dienste), [recognition](#erkennung) and [automations](automatisierungen.md) never depend on whether a field is currently shown. What must stay secret is set by the permissions.
+
+In the editor, a field or section with a condition carries an eye and the sentence “only if …” – so you won’t wonder why a field is missing in a folder. Conditions that no longer fit – for example because their field was removed – are shown in red; saving only works once they are right. Packages bring the setting along (`anzeigen` on the field and the section); “points to a particular folder” only works in packages once they can name bundled folders by a fixed key – until then **Create package** leaves such conditions out with a note.
+
 ### Labels per language { #beschriftungen-je-sprache }
 
 Name and description of the folder type, label and help text of every field, and the names of tabs and result lists can be maintained in several languages. Next to each of these texts is a small language switch (**DE · EN**). Under **DE** you edit the source text, under another language the label for it. If it stays empty, the German text is shown there. A dot on the switch shows that a label is still missing. Below the name it says, for example, "12 of 14 labels in English" – that is only a notice; saving still works.
@@ -337,7 +359,7 @@ Without sections the folder puts the fields of a tab into a grid – as many sid
 
 Move a section with the arrows, with **Alt+↑/↓** on the handle **⠿** or by dragging it onto a field – it then starts before that field. A section is tied to its first field: if you move the field under **Fields**, the section moves with it; if you drag the field to another tab, the section starts at the next field. The heading can be translated like names ([labels per language](#beschriftungen-je-sprache)).
 
-Sections are **display only**: the list of fields stays; export, the PDF with the details, printing and the API always show everything, including what is in collapsed sections. In a narrow view (phone) there is one field per row; sections only show their heading there, and a break without a heading has no effect. The API returns the sections on the tab (`abschnitte: [{ vor, titel, eingeklappt }]`) so apps can show them as a grouped list. Packages bring them along; an update only adds sections to tabs that have none yet.
+Sections are **display only**: the list of fields stays; export, the PDF with the details, printing and the API always show everything, including what is in collapsed sections. In a narrow view (phone) there is one field per row; sections only show their heading there, and a break without a heading has no effect. The API returns the sections on the tab (`abschnitte: [{ vor, titel, eingeklappt }]`) so apps can show them as a grouped list. Packages bring them along; an update only adds sections to tabs that have none yet. Whether a section is shown can depend on a condition: [Show if …](#anzeigen-wenn).
 
 **Links tab as a table:** if you tick a source, you can choose a [result list](#trefferlisten) of the source type next to it. The tab then shows the linking folders as a table with its columns (e.g. for the contract partner the invoices with amount, date and *paid*). Without a choice – or if the list no longer exists – it stays a simple list of titles.
 

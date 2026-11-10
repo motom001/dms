@@ -3114,5 +3114,17 @@
   "uebersetzen.abfluss.titel": "Send texts to a service?",
   "uebersetzen.abfluss.text": "“{paket}” doesn’t translate on the device: every text someone has translated is sent to {ziele}. Whoever translates sees this on the result.",
   "uebersetzen.abfluss.ja": "Confirm and choose",
-  "pakete.abschnitte": "Sections in {map}"
+  "pakete.abschnitte": "Sections in {map}",
+  "sichten.ablage": "Library",
+  "bereich.nutzung.name": "Use",
+  "bereich.nutzung.wann": "whether the Library is also used for work – folder types then show their work-related fields and sections",
+  "bereich.nutzung.auch": "work|private|business|self-employed|attribute",
+  "nutzung.lade": "Loading …",
+  "nutzung.einleitung": "What this Library is used for. Folder types can show fields and sections depending on it (“Show if …”) – so a folder type stays simple in a purely private Library and can still do everything in a business.",
+  "nutzung.beruflich": "The Library is also used for work",
+  "nutzung.beruflich.hinweis": "For example when self-employed, in a club or in a business. Applies to the whole Library, not per person.",
+  "nutzung.ordnung": "Hiding is for tidiness, not protection: values of hidden fields stay saved and appear in the API, exports and data access requests. Who may see what is set by the permissions.",
+  "nutzung.vorlage": "Matching Workbench template: {vorlage}. It follows the attribute as long as nobody has adjusted the sidebar.",
+  "nutzung.gespeichert": "Saved. Folders now show what belongs to this setting.",
+  "ansicht.vorgabe-nutzung": "matches the use"
 }

@@ -1,0 +1,6 @@
+art: minor
+
+## Neu
+
+- **Ablage-Merkmal „beruflich genutzt“** (#1032): In Werkbank → Ablage aufbauen → Nutzung legst du einmal fest, ob die Ablage auch beruflich genutzt wird (Vorgabe nein, ändern nur mit „Gesamte Verwaltung“). Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Berechtigungen, Ansichten und Automatisierungen können darauf schauen, und die Werkbank-Vorlage folgt ihm (beruflich → Betrieb). Einrichtungsdatei, Vollexport, Sicherung und Schnittstelle (`GET /api/v1/merkmale`) kennen es.
+- **„Anzeigen, wenn …“ an Feldern und Abschnitten** (#1033): Ein Feld oder Abschnitt erscheint nur, wenn seine Bedingungen zutreffen – etwa Abschnitt „Miete“ nur bei Vertragsart Miete oder „Abschluss“ nur beruflich. Bedingungen auf Feldwerte, Verweise (auf eine bestimmte Mappe oder eine Mappe vom Typ …) und das Merkmal der Ablage, umkehrbar, „alle“ oder „eine davon“. Die Mappe reagiert sofort beim Ausfüllen – auch beim Anlegen und bei „Dokument übernehmen“. Werte ausgeblendeter Felder bleiben gespeichert, eine ruhige Zeile sagt es („… 3 Werte bleiben gespeichert · anzeigen“), und Pflicht ist nur, was zu sehen ist. Ausblenden ist Ordnung, kein Schutz: Export, Auskunft, Schnittstelle, Spalten und Titel zeigen alle Werte. Pakete bringen die Einstellung mit.

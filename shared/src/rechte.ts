@@ -9,7 +9,8 @@
  * Für Administratoren gelten die Regeln nicht (#128).
  */
 import { istLeer, type Mappe, type Mappentyp } from './model';
-import { bedingungsProblem, bereinigeBedingungen, erfuellt, filterFuer, type Aufloesung, type Bedingung, type Filter, type Zaehlquelle } from './sichten';
+import { bedingungsProblem, bereinigeBedingungen, erfuellt, filterFuer, merkmalTrifft, type Aufloesung, type Bedingung, type Filter, type Zaehlquelle } from './sichten';
+import { istMerkmal, merkmalText, type Merkmal } from './merkmale';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
 
@@ -33,6 +34,8 @@ export type RegelBedingung = { nicht?: boolean } & (
   | { art: 'aufgabe' }
   /** Die Mappe ist die Benutzer-Mappe des aktuellen Benutzers (Typ Benutzer). */
   | { art: 'eigeneMappe' }
+  /** Merkmal der Ablage (#1032), z. B. „Ablage wird beruflich genutzt“ – gilt für alle Mappen gleich. */
+  | { art: 'merkmal'; merkmal: Merkmal }
 );
 
 export interface Regel {
@@ -120,6 +123,7 @@ function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Auflo
     case 'rolle': x = bool(b.rollen.some((r) => wer.rollen.includes(r))); break;
     case 'aufgabe': x = { k: 'filter', f: { art: 'aufgabe', benutzer: wer.id } }; break;
     case 'eigeneMappe': x = { k: 'filter', f: { art: 'id', ids: [wer.id] } }; break;
+    case 'merkmal': x = bool(merkmalTrifft({ merkmal: b.merkmal }, a.merkmale)); break;
     case 'feld': {
       if (bedingungsProblem(b.bedingung, [typ])) { x = FALSCH; break; }
       const [f] = filterFuer({ bedingungen: [b.bedingung] }, [typ], a);
@@ -305,6 +309,7 @@ function bereinigeBedingung(e: unknown): RegelBedingung | null {
     case 'rolle': return { ...n, art: 'rolle', rollen: ids(x.rollen) };
     case 'aufgabe': return { ...n, art: 'aufgabe' };
     case 'eigeneMappe': return { ...n, art: 'eigeneMappe' };
+    case 'merkmal': return istMerkmal(x.merkmal) ? { ...n, art: 'merkmal', merkmal: x.merkmal } : null;
     case 'feld': {
       const [b] = bereinigeBedingungen([x.bedingung]);
       return b && b.art === 'feld' ? { ...n, art: 'feld', bedingung: b } : null;
@@ -350,6 +355,7 @@ export function beschreibeRegelBedingung(b: RegelBedingung, namen: { benutzer(id
     case 'rolle': { const rolle = oderListe(b.rollen.map(namen.rolle)); return n ? t('gemeinsam.rechte.rolle-nicht', { rolle }) : t('gemeinsam.rechte.rolle-hat', { rolle }); }
     case 'aufgabe': return n ? t('gemeinsam.rechte.aufgabe-keine') : t('gemeinsam.rechte.aufgabe-eine');
     case 'eigeneMappe': return n ? t('gemeinsam.rechte.eigene-nicht') : t('gemeinsam.rechte.eigene');
+    case 'merkmal': return merkmalText(b.merkmal, n);
     case 'feld': return n ? t('gemeinsam.rechte.feld-nicht', { bedingung: namen.feld(b.bedingung) }) : namen.feld(b.bedingung);
   }
 }

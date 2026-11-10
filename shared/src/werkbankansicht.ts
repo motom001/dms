@@ -54,6 +54,9 @@ type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'al
  */
 const EINTRAEGE: Eintrag[] = [
   // Ablage aufbauen (#717): erst Fertiges, dann Feinarbeit, zum Schluss, was auf allem aufbaut.
+  // Nutzung (#1032): privat oder auch beruflich – bestimmt, was Mappentypen zeigen; darum vorn bei „Ablage aufbauen“
+  // (Einstellungen hat schon sieben Bereiche). Nur für „Gesamte Verwaltung“ (verwaltungsrecht.ts).
+  { pfad: 'nutzung', gruppe: 'ablage', in: H },
   { pfad: 'pakete', gruppe: 'ablage', in: H },
   { pfad: 'typen', gruppe: 'ablage', in: H },
   { pfad: 'sichten', gruppe: 'ablage', in: H },
@@ -147,6 +150,13 @@ export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[
  * Vorlage nur für Fortgeschrittene vorsieht (`Bereich.experte`). Kein Recht, nur die Leiste.
  */
 export interface EigeneAnsicht { ein: string[]; experte?: boolean }
+
+/**
+ * Vorgabe der Vorlage aus dem Merkmal „beruflich genutzt“ (#1032): beruflich → Organisation (Selbständig/Betrieb),
+ * sonst Haushalt. Die Vorlage bleibt eine Einstellung der Werkbank (künftig je Person, #987); das Merkmal gilt für die
+ * Ablage und gibt nur die Vorgabe.
+ */
+export const vorlageFuer = (m: { beruflich: boolean }): Vorlage => (m.beruflich ? 'organisation' : 'haushalt');
 
 /** Ohne Einstellung bleibt alles sichtbar – so ändert sich für bestehende Installationen nichts. */
 export const OHNE_EINSTELLUNG: WerkbankAnsicht = { vorlage: 'alles', ein: [], aus: [] };

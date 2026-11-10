@@ -342,6 +342,8 @@ function undProbleme(u: UndKarte, typ: Mappentyp | null, k: Kontextdaten): strin
   if (u.art === 'gruppe') return u.karten.flatMap((x) => undProbleme(x, typ, k));
   if (u.art === 'ansicht') return k.sichten.some((s) => s.id === u.sicht) ? [] : [t('gemeinsam.automatisierung.die-ansicht-der-bedingung')];
   if (u.art === 'favorit') { const p = empfaengerProblem(u.von, typ, k); return p ? [p] : []; }
+  // Merkmal der Ablage (#1032): braucht weder Mappentyp noch Mappe.
+  if (u.bedingung.art === 'merkmal') { const p = bedingungsProblem(u.bedingung, []); return p ? [p] : []; }
   if (!typ) return [t('gemeinsam.automatisierung.bedingungen-auf-felder-brauchen')];
   const p = bedingungsProblem(u.bedingung, [typ]);
   return p ? [p] : [];

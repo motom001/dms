@@ -28,6 +28,9 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/uebersicht*', JEDER),
   R('GET', '/api/werkbank/ansicht', JEDER),
   R('PUT', '/api/werkbank/ansicht', NUR_GESAMT),
+  // Merkmale der Ablage (#1032): lesen alle, die verwalten (Werkbank → Nutzung); ändern nur „Gesamte Verwaltung“.
+  R('GET', '/api/werkbank/merkmale', JEDER),
+  R('PUT', '/api/werkbank/merkmale', NUR_GESAMT),
   R('*', '/api/werkbank/auftrag*', JEDER),
   R('GET', '/api/rollen', JEDER),
   // Wer gerade auch im Verwaltungsmodus ist (#921): Hinweis oben in der Werkbank für alle im Modus.

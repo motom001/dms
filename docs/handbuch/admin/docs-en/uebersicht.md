@@ -5,7 +5,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
-| **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md) |
+| **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Webhooks](webhooks.md), [Search and full text](texterkennung.md) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
@@ -164,6 +164,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 <!-- bereiche:wofuer -->
 | Area | What for | In the preset |
 | --- | --- | --- |
+| [Use](nutzung.md) | Whether the Library is also used for work – folder types then show their work-related fields and sections | Household, Business |
 | [Packages](pakete.md) | Install ready-made folder types and views | Household, Business |
 | [Folder types](mappentypen.md) | Build your own kinds of folders | Household, Business |
 | [Views](sichten.md) | Arrange the collections on the left in the library | Household, Business |

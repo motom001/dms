@@ -49,6 +49,11 @@ export interface Einrichtungsplan {
     /** Beispiel-Mappentypen laden. */
     beispiele: boolean;
     mail: PlanMail | null;
+    /**
+     * Merkmal „beruflich genutzt“ (#1032); fehlt = nein. Der Assistent fragt es mit #1045 ab, bis dahin kommt es nur aus
+     * der Datei und steht in der Zusammenfassung.
+     */
+    beruflich?: boolean;
   };
 }
 

@@ -34,7 +34,7 @@ A branch, office, practice or outpost of an organisation – with its own addres
 See also: [Organisation](#organisation), [Person](#person).
 
 <a id="bedingung"></a>**Condition** (*Bedingung*) · ~ with explanation · administrators  
-A view's filter on field values, counts, deadlines or personal things, e.g. a field equal to "current user" or "is my favourite".
+A view's filter on field values, counts, deadlines, personal things or the Library attribute, e.g. a field equal to "current user", "is my favourite" or "Library is also used for work".
 
 <a id="standardwert"></a>**Default value** (*Standardwert*) · ~ with explanation · administrators  
 The prefilled value of a field when creating a folder, also with placeholders such as a number sequence.
@@ -118,6 +118,10 @@ See also: [Unique](#eindeutig).
 <a id="trefferliste"></a>**Result list** (*Trefferliste*) · ✗ technical term · administrators  
 Sets which columns a list shows. A folder type has one or more result lists; one of them is the default. A view or a links tab chooses one of them, otherwise the default applies. If a view shows several folder types, only result lists with the same identifier in all of them can be chosen, with the common columns.
 
+<a id="anzeigen-wenn"></a>**Show if …** (*Anzeigen, wenn …*) · ~ with explanation · administrators  
+Setting on a field or section of a folder type – the folder only shows it when the conditions apply, e.g. section "Rent" only for contract type rent. A hidden section hides all fields up to the next section. Hiding is for tidiness, not protection – values stay saved and appear in the API, exports and data access requests; a field is only required while it is shown.  
+See also: [Condition](#bedingung), [Used for work](#beruflich-genutzt), [Folder type](#mappentyp).
+
 <a id="ablageort"></a>**Storage location** (*Ablageort*) · ✓ everyday word · everyone  
 A place where paper is kept – e.g. a binder, a box, a safe deposit box or "destroyed". Storage locations lie inside each other ("at home › study cupboard › red binder"). The folder type comes with the Basis package.  
 See also: [Whereabouts of original documents](#verbleib-originaldokumente), [Folder type](#mappentyp).
@@ -145,6 +149,10 @@ See also: [Tip](#tipp), [Discover Ablago](#ablago-entdecken).
 
 <a id="eindeutig"></a>**Unique** (*Eindeutig*) · ~ with explanation · administrators  
 A field value that may occur only once in this folder type, e.g. an invoice number.
+
+<a id="beruflich-genutzt"></a>**Used for work** (*Beruflich genutzt*) · ✓ everyday word · administrators  
+The one attribute of the Library – the Library is also used for work (self-employed, club, business). Default no. Folder types then show their work-related fields and sections; permissions, views and automations can look at it. Applies to the whole Library, not per person; set it in Workbench → Use.  
+See also: [Show if …](#anzeigen-wenn), [Condition](#bedingung).
 
 <a id="version"></a>**Version** · ✓ everyday word · everyone  
 A document can have several versions. Replacing creates a new version; the older ones stay underneath and can be restored. Only in tabs with versioning. Not to be confused with the version of Ablago.  

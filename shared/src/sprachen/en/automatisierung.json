@@ -286,5 +286,6 @@
   "ui.karte.dann.anmeldeschutz.sammel": "Digest of the locks before today",
   "ui.karte.dann.anmeldeschutz.konto": "Account lock immediately to everyone who manages sign-in protection",
   "ui.karte.dann.anmeldeschutz.sammel.text": "Email to everyone who manages sign-in protection, only if there were locks since the last report (When card “Schedule”).",
-  "ui.karte.dann.anmeldeschutz.konto.text": "Email to everyone who manages sign-in protection, at most once a day per account (When card “User account locked”)."
+  "ui.karte.dann.anmeldeschutz.konto.text": "Email to everyone who manages sign-in protection, at most once a day per account (When card “User account locked”).",
+  "ui.karte.und.merkmal": "Library is also used for work"
 }

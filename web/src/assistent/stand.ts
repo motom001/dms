@@ -17,7 +17,7 @@ export type Ansicht = Sammelschritt | 'zusammenfassung';
 export interface MailSammlung { aktiv: boolean; host: string; port: number; verbindung: PlanVerbindung; benutzer: string; absender: string; selbstsigniert: boolean; /** Im Formular ein Passwort eingegeben (der Wert selbst nur im Speicher). */ mitPasswort: boolean }
 
 /** Ausführen bei „Jetzt einrichten“: in dieser Reihenfolge, jede Stufe einzeln wiederholbar. */
-export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'mail', 'beispiele', 'pakete'] as const;
+export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'beispiele', 'pakete'] as const;
 export type Stufe = (typeof STUFEN)[number];
 export interface StufeStand { zustand: 'wartet' | 'laeuft' | 'fertig' | 'ausgelassen' | 'fehler'; meldung?: string }
 export interface Lauf {
@@ -40,7 +40,8 @@ export interface Sammlung {
   pakete: PaketWahl | null;
   /** Aus einer Datei, noch nicht bestätigt (#806). */
   paketeVorgabe: PlanPaket[] | null;
-  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null };
+  /** beruflich (#1032): bis #1045 nur aus einer Datei (#806), steht dann in der Zusammenfassung. */
+  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean };
   /** Schritte, die schon einmal mit „Weiter“ verlassen wurden. */
   besucht: Ansicht[];
   ansicht: Ansicht;
@@ -141,6 +142,7 @@ export function planAus(s: Sammlung, db: PlanDatenbank | null = s.datenbank): Ei
       : s.paketeVorgabe ?? (s.besucht.includes('pakete') ? [] : null),
     optional: {
       adresse: s.optional.adresse.trim() || null, bundesland: s.optional.bundesland || null, beispiele: s.optional.beispiele,
+      ...(s.optional.beruflich ? { beruflich: true } : {}),
       mail: m ? { aktiv: m.aktiv, host: m.host.trim(), port: m.port, verbindung: m.verbindung, benutzer: m.benutzer.trim(), absender: m.absender.trim(), selbstsigniert: m.selbstsigniert, ...(s.verweise.mail ? { passwort: s.verweise.mail } : {}) } : null,
     },
   };
@@ -156,6 +158,7 @@ export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
     paketeVorgabe: p.pakete,
     optional: {
       adresse: p.optional.adresse ?? '', bundesland: p.optional.bundesland ?? '', beispiele: p.optional.beispiele,
+      ...(p.optional.beruflich ? { beruflich: true } : {}),
       mail: m ? { aktiv: m.aktiv, host: m.host, port: m.port, verbindung: m.verbindung, benutzer: m.benutzer, absender: m.absender, selbstsigniert: m.selbstsigniert, mitPasswort: false } : null,
     },
     besucht: ['ablage', 'konto', ...(p.pakete ? ['pakete' as const] : []), 'optional'],

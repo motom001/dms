@@ -13,6 +13,7 @@ import { regelwerkVon } from './rechte';
 import { ausgangAus, bereinigeBeschriftungen, feldLabel, listenName, sichtName, type AbschnittTeile } from './beschriftung';
 import type { Sicht } from './sichten';
 import { t } from './texte';
+import { bereinigeAnzeige } from './anzeige';
 
 /* ---------- Ausblenden (#655) ---------- */
 
@@ -47,6 +48,8 @@ export const sichtbareRegister = <R extends { ausgeblendet?: boolean }>(register
  */
 export function festigeDarstellung(d: Pick<MappentypDaten, 'felder' | 'register'>): string[] {
   for (const f of d.felder) if (f.ausgeblendet && f.system) delete f.ausgeblendet;
+  // Anzeige-Bedingungen (#1033) nie an Systemfeldern – die gehören immer dazu.
+  for (const f of d.felder) if (f.anzeigen && f.system) delete f.anzeigen;
   for (const r of d.register) if (r.ausgeblendet && !registerAusblendbar(r, d.felder)) delete r.ausgeblendet;
   const aus = ausgeblendeteFelder(d);
   const aufgehoben: string[] = [];
@@ -67,6 +70,9 @@ export function bereinigeAbschnitte(roh: unknown, feldKeys: string[]): Abschnitt
     if (!feldKeys.includes(vor) || aus.some((a) => a.vor === vor)) continue;
     const titel = ausgangAus(o.beschriftungen, 'titel', typeof o.titel === 'string' ? o.titel : '').replace(/\s+/g, ' ').trim().slice(0, ABSCHNITT_TITEL_MAX);
     const a: Abschnitt = { vor };
+    // Anzeigen, wenn … (#1033): auch an Abschnitten ohne Überschrift.
+    const anzeigen = bereinigeAnzeige(o.anzeigen);
+    if (anzeigen) a.anzeigen = anzeigen;
     if (titel) {
       a.titel = titel;
       if (o.eingeklappt === true) a.eingeklappt = true;

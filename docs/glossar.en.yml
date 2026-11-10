@@ -108,7 +108,13 @@ begriffe:
     beschreibung: Sets which columns a list shows. A folder type has one or more result lists; one of them is the default. A view or a links tab chooses one of them, otherwise the default applies. If a view shows several folder types, only result lists with the same identifier in all of them can be chosen, with the common columns.
   Bedingung:
     begriff: Condition
-    beschreibung: A view's filter on field values, counts, deadlines or personal things, e.g. a field equal to "current user" or "is my favourite".
+    beschreibung: A view's filter on field values, counts, deadlines, personal things or the Library attribute, e.g. a field equal to "current user", "is my favourite" or "Library is also used for work".
+  Anzeigen, wenn …:
+    begriff: Show if …
+    beschreibung: Setting on a field or section of a folder type – the folder only shows it when the conditions apply, e.g. section "Rent" only for contract type rent. A hidden section hides all fields up to the next section. Hiding is for tidiness, not protection – values stay saved and appear in the API, exports and data access requests; a field is only required while it is shown.
+  Beruflich genutzt:
+    begriff: Used for work
+    beschreibung: The one attribute of the Library – the Library is also used for work (self-employed, club, business). Default no. Folder types then show their work-related fields and sections; permissions, views and automations can look at it. Applies to the whole Library, not per person; set it in Workbench → Use.
   Favoriten:
     begriff: Favourites
     beschreibung: Folders a user has marked with the star. The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite).

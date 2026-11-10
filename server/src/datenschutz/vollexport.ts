@@ -26,7 +26,7 @@ export class VollexportQuellen {
   private maskiereBezuege(...a: Parameters<ZugriffDienst['maskiereBezuege']>) { return this.teile.rechte.maskiereBezuege(...a); }
 
   /** Datenquelle für den Vollexport; Benutzer, Designs und Protokoll kommen von außen. */
-  vollexportQuelle(e: { mandant: string; version: string; benutzer: ExportQuelle['benutzer']; designs: ExportQuelle['designs']; protokoll: ExportQuelle['protokoll']; region?: ExportQuelle['region']; z?: Zugriff }): ExportQuelle {
+  vollexportQuelle(e: { mandant: string; version: string; benutzer: ExportQuelle['benutzer']; designs: ExportQuelle['designs']; protokoll: ExportQuelle['protokoll']; region?: ExportQuelle['region']; merkmale?: ExportQuelle['merkmale']; z?: Zugriff }): ExportQuelle {
     const r = this.repo;
     const { z, ...x } = e;
     const bezugCache = new Map<string, MappenBezug | undefined>();

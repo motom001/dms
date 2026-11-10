@@ -8,6 +8,7 @@ import {
   ZAEHLVERGLEICHE, auswahlProbleme, OPS_EIGENES_FELD, passendeEigeneFelder, type Bedingung, type Bedingungsfeld, type Feldbedingung, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
 } from '../../../shared/src/sichten';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
+import { merkmalText } from '../../../shared/src/merkmale';
 import { api } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
@@ -372,9 +373,11 @@ function TrefferlistenWahl({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f
 /* ---------- Bedingungen ---------- */
 
 type Ziel = { wert: 'feld'; feld: Bedingungsfeld } | { wert: 'dokumente' | 'verknuepfungen'; register: string; name: string }
-  | { wert: 'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' | 'frist' };
-const ZIEL_GESAMT: Record<'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' | 'frist', string> = {
+  | { wert: 'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' | 'frist' | 'merkmal' | 'merkmalNicht' };
+const ZIEL_GESAMT: Record<'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' | 'frist' | 'merkmal' | 'merkmalNicht', string> = {
   dokumenteGesamt: t('werkbank.sichten.dokumente-insgesamt'), verknuepfungenGesamt: t('werkbank.sichten.verknuepfungen-insgesamt'), favorit: t('werkbank.sichten.ist-mein-favorit'), frist: t('werkbank.sichten.hat-frist-in-den'),
+  // Merkmal der Ablage (#1032).
+  merkmal: merkmalText('beruflich'), merkmalNicht: merkmalText('beruflich', true),
 };
 
 /** Register, die alle Typen der Sicht mit gleichem Schlüssel und gleicher Art haben (#66). */
@@ -399,15 +402,17 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
     ...gemeinsameRegister(typen),
     { wert: 'favorit' },
     { wert: 'frist' },
+    { wert: 'merkmal' }, { wert: 'merkmalNicht' },
   ];
   const zielKey = (z: Ziel) => (z.wert === 'feld' ? `feld:${z.feld.key}` : 'register' in z ? `${z.wert}:${z.register}` : z.wert);
-  const bKey = (b: Bedingung) => (b.art === 'feld' ? `feld:${b.feld}` : b.art === 'dokumente' || b.art === 'verknuepfungen' ? `${b.art}:${b.register}` : b.art);
+  const bKey = (b: Bedingung) => (b.art === 'feld' ? `feld:${b.feld}` : b.art === 'dokumente' || b.art === 'verknuepfungen' ? `${b.art}:${b.register}` : b.art === 'merkmal' && b.nicht ? 'merkmalNicht' : b.art);
   const zielName = (z: Ziel) => (z.wert === 'feld' ? z.feld.label : 'register' in z ? t('werkbank.sichten.in', { wert: z.wert === 'dokumente' ? t('werkbank.sichten.dokumente') : t('werkbank.sichten.verknuepfungen'), name: z.name }) : ZIEL_GESAMT[z.wert]);
   const setze = (i: number, b: Bedingung) => setE((x) => ({ ...x, bedingungen: x.bedingungen.map((y, j) => (j === i ? b : y)) }));
   const weg = (i: number) => setE((x) => ({ ...x, bedingungen: x.bedingungen.filter((_, j) => j !== i) }));
   const neu = (z: Ziel): Bedingung => (z.wert === 'feld'
     ? { art: 'feld', feld: z.feld.key, op: OPERATOREN_JE_ART[z.feld.art][0] }
     : z.wert === 'favorit' ? { art: 'favorit' }
+    : z.wert === 'merkmal' || z.wert === 'merkmalNicht' ? { art: 'merkmal', merkmal: 'beruflich', ...(z.wert === 'merkmalNicht' ? { nicht: true } : {}) }
     : z.wert === 'frist' ? { art: 'frist', feld: null, tage: 30 }
     : 'register' in z ? { art: z.wert, register: z.register, vergleich: z.wert === 'dokumente' ? 'gleich' : 'mehr', anzahl: 0 }
     : { art: z.wert, vergleich: z.wert === 'dokumenteGesamt' ? 'gleich' : 'mehr', anzahl: 0 });
@@ -433,14 +438,15 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
                           {!ziel && <option value="">{t('werkbank.sichten.fehlt-2', { wert: b.art === 'feld' ? b.feld : 'register' in b ? b.register : b.art })}</option>}
                           <optgroup label={t('werkbank.sichten.felder')}>{ziele.filter((z) => z.wert === 'feld' && !z.feld.key.startsWith('_') && (!aus.has(z.feld.key) || zielKey(z) === bKey(b))).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
                           <optgroup label={t('werkbank.sichten.systemwerte')}>{ziele.filter((z) => z.wert === 'feld' && z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
-                          <optgroup label={t('werkbank.sichten.anzahl')}>{ziele.filter((z) => z.wert !== 'feld' && z.wert !== 'favorit' && z.wert !== 'frist').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{zielName(z)}</option>)}</optgroup>
+                          <optgroup label={t('werkbank.sichten.anzahl')}>{ziele.filter((z) => z.wert !== 'feld' && z.wert !== 'favorit' && z.wert !== 'frist' && z.wert !== 'merkmal' && z.wert !== 'merkmalNicht').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{zielName(z)}</option>)}</optgroup>
                           <optgroup label={t('werkbank.sichten.fristen')}><option value="frist">{ZIEL_GESAMT.frist}</option></optgroup>
                           <optgroup label={t('werkbank.sichten.persoenlich')}><option value="favorit">{ZIEL_GESAMT.favorit}</option></optgroup>
+                          <optgroup label={t('werkbank.sichten.ablage')}><option value="merkmal">{ZIEL_GESAMT.merkmal}</option><option value="merkmalNicht">{ZIEL_GESAMT.merkmalNicht}</option></optgroup>
                         </select>
                         {b.art === 'feld' && ziel?.wert === 'feld'
                           ? <FeldBedingung b={b} feld={ziel.feld} setze={(n) => setze(i, n)} titel={titel} merke={merke} />
                           : b.art === 'frist' ? <FristBedingung b={b} typen={typen} setze={(n) => setze(i, n)} />
-                          : b.art !== 'feld' && b.art !== 'favorit' && <>
+                          : b.art !== 'feld' && b.art !== 'favorit' && b.art !== 'merkmal' && <>
                               <select aria-label={t('werkbank.sichten.vergleich')} value={b.vergleich} onChange={(x) => setze(i, { ...b, vergleich: x.target.value as Zaehlvergleich })}>
                                 {Object.entries(ZAEHLVERGLEICHE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                               </select>

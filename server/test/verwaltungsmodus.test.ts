@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, describe, it } from 'node:test';
 import { BEREICHE } from '../../shared/src/werkbankansicht';
-import { darfBereich, darfVerwalten, GESAMT, hatGesamt, liesVerwaltung, verwaltungsbaum } from '../../shared/src/verwaltungsrecht';
+import { darfBereich, darfVerwalten, GESAMT, hatGesamt, liesVerwaltung, NUR_GESAMT_BEREICHE, verwaltungsbaum } from '../../shared/src/verwaltungsrecht';
 import { NICHTS } from '../../shared/src/rechte';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -87,9 +87,12 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     // Dienst- und Systemkonten bekommen nie ein Verwaltungsrecht – auch nicht, wenn eines gespeichert wäre.
     assert.equal(darfVerwalten({ art: 'dienst', verwaltung: ['*'] }), false);
     assert.equal(hatGesamt({ art: 'system', verwaltung: ['*'] }), false);
-    // Der Baum entsteht aus BEREICHE: jede Route der ersten Ebene genau einmal, Gruppen gliedern nur.
+    // Der Baum entsteht aus BEREICHE: jede Route der ersten Ebene genau einmal, Gruppen gliedern nur. Bereiche nur für
+    // „Gesamte Verwaltung“ (Nutzung, #1032) lassen sich nicht einzeln vergeben.
     const baum = verwaltungsbaum();
-    assert.deepEqual(baum.flatMap((a) => a.bereiche.map((b) => b.pfad)).sort(), BEREICHE.map((b) => b.pfad).sort());
+    assert.deepEqual(baum.flatMap((a) => a.bereiche.map((b) => b.pfad)).sort(), BEREICHE.map((b) => b.pfad).filter((p) => !NUR_GESAMT_BEREICHE.has(p)).sort());
+    assert.equal(darfBereich({ verwaltung: ['nutzung'] }, 'nutzung'), false);
+    assert.equal(darfBereich({ verwaltung: ['*'] }, 'nutzung'), true);
     const heikel = baum.flatMap((a) => a.bereiche).filter((b) => b.heikel).map((b) => b.pfad).sort();
     assert.deepEqual(heikel, ['anbindung', 'anmeldeschutz', 'automatisierungen', 'betrieb', 'pakete', 'sicherung', 'typen', 'verschluesselung', 'vollexport']);
   });

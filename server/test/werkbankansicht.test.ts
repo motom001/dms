@@ -180,7 +180,8 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
   it('#354, #717, #725: sechs Gruppen nach Aufgaben, je höchstens 7 Bereiche', () => {
     assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
-    assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen']);
+    // Nutzung (#1032) vorn bei „Ablage aufbauen“: Sie bestimmt, was die Mappentypen zeigen.
+    assert.deepEqual(je('ablage'), ['nutzung', 'pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen']);
     assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'webhooks', 'texterkennung']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb']);
@@ -200,7 +201,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     for (const p of ['aufgaben', 'verschluesselung', 'papierkorb', 'webdav']) assert.equal(werkbankUmleitung(p), null, p);
     // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung (dazu Region, #726, und Sprachen, #729).
     assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
-      ['aufgaben', 'benutzer', 'betrieb', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav', 'webhooks']);
+      ['aufgaben', 'benutzer', 'betrieb', 'nutzung', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav', 'webhooks']);
   });
 
   it('#354 Nacharbeit, #668: Datenschutz-Auskünfte und Löschkonzept unter „Benutzer und Sicherheit“, alte Adresse leitet um', () => {

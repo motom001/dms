@@ -1,4 +1,5 @@
 import { AuswahlFilter } from '../werkbank/Sichten';
+import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
@@ -33,7 +34,7 @@ import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
-import { abfangen } from '../bausteine';
+import { abfangen, Knopf } from '../bausteine';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = t('mappentypen.editor.das-wird-erst-mit');
@@ -48,7 +49,7 @@ type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: str
   /** Ausblenden (#655) hat „Pflicht“ aufgehoben – Hinweis am Feld, bis gespeichert ist. */
   _pflichtWeg?: boolean };
 /** Abschnitt im Entwurf (#890): `vor` ist die _uid des Felds, damit ein neuer Schlüssel nichts kaputt macht. */
-interface EntwurfAbschnitt { _uid: string; vor: string; titel: string; eingeklappt?: boolean; beschriftungen?: Abschnitt['beschriftungen'] }
+interface EntwurfAbschnitt { _uid: string; vor: string; titel: string; eingeklappt?: boolean; beschriftungen?: Abschnitt['beschriftungen']; anzeigen?: Abschnitt['anzeigen'] }
 /** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
 type EntwurfRegister = Omit<Register, 'felder' | 'abschnitte'> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean; abschnitte?: EntwurfAbschnitt[] };
 /** Trefferliste im Entwurf (#75): Spalten als _titel usw. bzw. feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
@@ -87,7 +88,7 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, abschnitte: _a, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 /** Abschnitte eines gespeicherten Registers für den Entwurf (#890): `vor` über die _uid der Felder. */
 const entwurfAbschnitte = (r: Register, felder: EntwurfFeld[]): EntwurfAbschnitt[] | undefined => (r.art !== 'felder' ? undefined
-  : (r.abschnitte ?? []).flatMap((a) => { const f = felder.find((x) => x.key === a.vor); return f ? [{ _uid: neueId(), vor: f._uid, titel: a.titel ?? '', ...(a.eingeklappt ? { eingeklappt: true } : {}), ...(a.beschriftungen ? { beschriftungen: a.beschriftungen } : {}) }] : []; }));
+  : (r.abschnitte ?? []).flatMap((a) => { const f = felder.find((x) => x.key === a.vor); return f ? [{ _uid: neueId(), vor: f._uid, titel: a.titel ?? '', ...(a.eingeklappt ? { eingeklappt: true } : {}), ...(a.beschriftungen ? { beschriftungen: a.beschriftungen } : {}), ...(a.anzeigen ? { anzeigen: a.anzeigen } : {}) }] : []; }));
 
 /**
  * Ein Feld verlässt sein Register (entfernt oder umgezogen, #890): Ein Abschnitt, der mit ihm begann, beginnt jetzt mit
@@ -327,14 +328,15 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     const daten = {
       ...ohneListen, beschriftungen: e.beschriftungen ?? null,
       // Ausgeblendet (#655) immer mitschicken – ohne die Angabe behielte der Server den bisherigen Wert.
-      felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, _pflichtWeg, ...rest }) => ({ ...rest, beschriftungen: rest.beschriftungen ?? null, ausgeblendet: !!rest.ausgeblendet })),
+      // Anzeigen, wenn … (#1033) genauso: null entfernt die Regel.
+      felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, _pflichtWeg, ...rest }) => ({ ...rest, beschriftungen: rest.beschriftungen ?? null, ausgeblendet: !!rest.ausgeblendet, anzeigen: rest.anzeigen ?? null })),
       register: e.register.map(({ _uid, _neu, _schluesselGetippt, abschnitte, ...r }) => {
         const felder = e.felder.filter((f) => f._register === r.key);
         // Abschnitte (#890) als Feldschlüssel; nur vor Feldern dieses Registers, Reihenfolge der Felder.
         const ab = (abschnitte ?? []).flatMap((a) => {
           const f = felder.find((x) => x._uid === a.vor);
           const titel = a.titel.trim();
-          return f ? [{ vor: f.key, ...(titel ? { titel, ...(a.eingeklappt ? { eingeklappt: true } : {}), beschriftungen: a.beschriftungen ?? null } : {}) }] : [];
+          return f ? [{ vor: f.key, ...(titel ? { titel, ...(a.eingeklappt ? { eingeklappt: true } : {}), beschriftungen: a.beschriftungen ?? null } : {}), ...(a.anzeigen ? { anzeigen: a.anzeigen } : {}) }] : [];
         });
         return { ...(r.art === 'felder' ? { ...r, felder: felder.map((f) => f.key), abschnitte: ab } : r), beschriftungen: r.beschriftungen ?? null, ausgeblendet: !!r.ausgeblendet };
       }),
@@ -660,7 +662,7 @@ function FeldZeile(p: {
           <span className="flabel">{f.label || t('mappentypen.editor.ohne-bezeichnung')}{f.pflicht && <span className="pflicht">*</span>}</span>
           <code className="fkey">{f.key}</code>
           <span className="ftyp">{FELDTYPEN[f.typ]}</span>
-          {chips.length > 0 && <span className="chips">{chips.map((c) => <span key={c} className="chip">{c}</span>)}</span>}
+          {(chips.length > 0 || f.anzeigen) && <span className="chips">{chips.map((c) => <span key={c} className="chip">{c}</span>)}<AnzeigeChip regel={f.anzeigen} typ={{ felder: p.alleFelder }} /></span>}
         </button>
         <div className="feldaktionen">
           <button type="button" className="symbol" disabled={i === 0} onClick={() => p.verschiebe(-1)} aria-label={t('mappentypen.editor.feld-nach-oben')}>↑</button>
@@ -707,6 +709,8 @@ function FeldZeile(p: {
             {(f.typ === 'text' || f.typ === 'zahl') && <div className="eigenschaft unten">{haken('eindeutig', t('mappentypen.editor.eindeutig'), t('mappentypen.editor.wert-darf-je-mappentyp'))}</div>}
             {standard}
           </div>
+          {/* Anzeigen, wenn … (#1033): nie an Systemfeldern. */}
+          {!f.system && <AnzeigeEditor regel={f.anzeigen} setze={(anzeigen) => setze({ anzeigen })} typ={{ felder: p.alleFelder }} eigene={[f.key]} typen={p.typen} />}
           {besonders && <><h3 className="zwischen">{t('mappentypen.editor.eigenschaften-fuer', { FELDTYPEN: FELDTYPEN[f.typ] })}</h3>{besonders}</>}
           {ERKENNUNG_FELDTYPEN.includes(f.typ) && <ErkennungEditor f={f} id={id} setze={setze} />}
           {WIEDERFINDEN_FELDTYPEN.includes(f.typ) && <WiederfindenEditor f={f} setze={setze} />}
@@ -1000,7 +1004,7 @@ function RegisterEditor({ e, setE, feldAblage, klappe, ausblendenFragen }: {
                   <button type="button" className="symbol" onClick={abfangen(() => entferne(i))} aria-label={t('mappentypen.editor.register-entfernen-2', { name: r.name })} title={t('mappentypen.editor.register-entfernen-3', { ERST_BEIM_SPEICHERN })}>×</button>
                 </div>
               </div>
-              {r.art === 'felder' && (anzahl ? <Feldaufteilung r={r} felder={e.felder.filter((f) => f._register === r.key)} setze={(abschnitte) => setzeReg(i, { abschnitte })} ansage={setAnsage} />
+              {r.art === 'felder' && (anzahl ? <Feldaufteilung r={r} felder={e.felder.filter((f) => f._register === r.key)} alle={e.felder} typen={d.typen} setze={(abschnitte) => setzeReg(i, { abschnitte })} ansage={setAnsage} />
                 : <p className="leise klein">{t('mappentypen.editor.noch-keine-felder-2')}</p>)}
               {/* Ausblenden (#655): nicht bei Dokumentenregistern und Registern mit Systemfeldern. */}
               {(() => {
@@ -1081,8 +1085,24 @@ function RegisterEditor({ e, setE, feldAblage, klappe, ausblendenFragen }: {
  * dünne Linie mit Titel (auf Wunsch eingeklappt), ohne Überschrift nur als Umbruch. Abschnitte lassen sich hinzufügen,
  * verschieben (Pfeile, Alt+Pfeiltasten am Griff, Ziehen) und entfernen; die Reihenfolge der Felder bestimmt „Felder“.
  */
-function Feldaufteilung({ r, felder, setze, ansage }: { r: EntwurfRegister; felder: EntwurfFeld[]; setze: (a: EntwurfAbschnitt[]) => void; ansage: (text: string) => void }) {
+function Feldaufteilung({ r, felder, alle, typen, setze, ansage }: {
+  r: EntwurfRegister; felder: EntwurfFeld[]; setze: (a: EntwurfAbschnitt[]) => void; ansage: (text: string) => void;
+  /** Anzeigen, wenn … (#1033): alle Felder des Typs (Bedingungen dürfen auf jedes schauen) und die Mappentypen. */
+  alle: EntwurfFeld[]; typen: Mappentyp[];
+}) {
   const abschnitte = (r.abschnitte ?? []).filter((a) => felder.some((f) => f._uid === a.vor));
+  const [bedingungOffen, setBedingungOffen] = useState<string | null>(null);
+  const typTeil = { felder: alle.map((x) => ({ key: x.key, label: x.label || x.key, typ: x.typ, optionen: x.optionen, zielTyp: x.zielTyp, mehrfach: x.mehrfach }) as Feld) };
+  /** Felder des Abschnitts: ab seinem Feld bis vor den nächsten Abschnitt – auf die darf seine Bedingung nicht schauen. */
+  const eigeneVon = (a: EntwurfAbschnitt) => {
+    const start = felder.findIndex((f) => f._uid === a.vor);
+    const aus: string[] = [];
+    for (let j = start; j >= 0 && j < felder.length; j++) {
+      if (j > start && abschnitte.some((x) => x.vor === felder[j]._uid)) break;
+      aus.push(felder[j].key);
+    }
+    return aus;
+  };
   const frei = (uid: string, ausser?: string) => !abschnitte.some((a) => a.vor === uid && a._uid !== ausser);
   const name = (a: EntwurfAbschnitt) => a.titel.trim() || t('mappentypen.darstellung.umbruch');
   const feldName = (f: EntwurfFeld) => f.label || f.key;
@@ -1139,11 +1159,20 @@ function Feldaufteilung({ r, felder, setze, ansage }: { r: EntwurfRegister; feld
                   <label className="haken klein" title={a.titel.trim() ? undefined : t('mappentypen.darstellung.eingeklappt-nur-mit-titel')}>
                     <input type="checkbox" checked={!!a.eingeklappt && !!a.titel.trim()} disabled={!a.titel.trim()} onChange={(ev) => setzeA(a._uid, { eingeklappt: ev.target.checked || undefined })} />
                     <span>{t('mappentypen.darstellung.eingeklappt')}</span></label>
+                  {/* Anzeigen, wenn … (#1033): Symbol und Satz am Abschnitt, Bearbeiten darunter. */}
+                  <AnzeigeChip regel={a.anzeigen} typ={typTeil} />
+                  <Knopf art="link" groesse="klein" aria-expanded={bedingungOffen === a._uid} onClick={() => setBedingungOffen(bedingungOffen === a._uid ? null : a._uid)}>
+                    {t('mappentypen.anzeige.am-abschnitt')}</Knopf>
                   <div className="feldaktionen">
                     <button type="button" className="symbol" disabled={!ziel(a, -1)} onClick={() => schiebe(a, -1)} aria-label={t('mappentypen.darstellung.nach-oben', { name: name(a) })}>↑</button>
                     <button type="button" className="symbol" disabled={!ziel(a, 1)} onClick={() => schiebe(a, 1)} aria-label={t('mappentypen.darstellung.nach-unten', { name: name(a) })}>↓</button>
                     <button type="button" className="symbol" onClick={() => { setze(abschnitte.filter((x) => x._uid !== a._uid)); ansage(t('mappentypen.darstellung.entfernt', { name: name(a) })); }} aria-label={t('mappentypen.darstellung.entfernen', { name: name(a) })}>×</button>
                   </div>
+                </li>
+              )}
+              {a && bedingungOffen === a._uid && (
+                <li className="abschnittanzeige">
+                  <AnzeigeEditor regel={a.anzeigen} setze={(anzeigen) => setzeA(a._uid, { anzeigen })} typ={typTeil} eigene={eigeneVon(a)} typen={typen} />
                 </li>
               )}
               <li {...ze} className={`aufteilungsfeld ${f.ausgeblendet ? 'ausgeblendet' : ''} ${ze.className}`}>

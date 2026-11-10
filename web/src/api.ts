@@ -22,6 +22,7 @@ import type { EntdeckenStand } from '../../shared/src/entdecken';
 import type { DateiFehler, Einrichtungsplan, Planprobleme } from '../../shared/src/einrichtungsplan';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstellt, SelbstErstelltDetail } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
+import type { Merkmale } from '../../shared/src/merkmale';
 import type { FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Erinnerung, Termin, TermineAntwort } from '../../shared/src/fristen';
@@ -306,6 +307,8 @@ export interface Zaehler {
   neuePost?: string | null;
   /** #725: Id der mitgelieferten Ansicht „Favoriten“; null = gelöscht (dann gilt die feste Liste). */
   favoritenSicht?: string | null;
+  /** Merkmale der Ablage (#1032) für die Anzeige-Bedingungen im Formular (#1033); fehlt bei älteren Servern. */
+  merkmale?: Merkmale;
 }
 /** Eine Mappe im Papierkorb (#43). */
 /** Einzelnes Dokument im Papierkorb (#344). mappe: da · papierkorb (erst die Mappe wiederherstellen) · weg. */
@@ -659,7 +662,7 @@ export const api = {
   /** Werkbank (#921): wer außer mir gerade im Verwaltungsmodus ist (Name und Beginn), nur im Verwaltungsmodus. */
   geradeImModus: () => stilleAnfrage<Array<{ name: string; seit: string }>>('/api/werkbank/gerade-im-modus'),
   /** Ohne Zählen (#512): Papierkorb-Tage und „Neue Post“ – vor den Zahlen. */
-  sichtenRahmen: () => anfrage<Pick<Zaehler, 'papierkorbTage' | 'neuePost' | 'favoritenSicht'>>('GET', '/api/sichten/rahmen'),
+  sichtenRahmen: () => anfrage<Pick<Zaehler, 'papierkorbTage' | 'neuePost' | 'favoritenSicht' | 'merkmale'>>('GET', '/api/sichten/rahmen'),
   /* Sichten verwalten (#38) */
   sichtDefinitionen: () => anfrage<Sicht[]>('GET', '/api/sichten/definitionen'),
   sichtAnlegen: (s: Partial<SichtDaten>) => anfrage<Sicht>('POST', '/api/sichten/definitionen', s),
@@ -940,6 +943,9 @@ export const api = {
   postfaecher: () => anfrage<PostfachAnsicht[]>('GET', '/api/werkbank/postfaecher'),
   region: () => anfrage<RegionStand>('GET', '/api/werkbank/region'),
   regionSetzen: (e: Partial<Region>) => anfrage<RegionStand>('PUT', '/api/werkbank/region', e),
+  /** Merkmale der Ablage (#1032): lesen alle, die verwalten; ändern nur „Gesamte Verwaltung“. */
+  merkmale: () => anfrage<Merkmale>('GET', '/api/werkbank/merkmale'),
+  setzeMerkmale: (e: Partial<Merkmale>) => anfrage<Merkmale>('PUT', '/api/werkbank/merkmale', e),
   sprachen: () => anfrage<SprachenStand>('GET', '/api/werkbank/sprachen'),
   sprachenSetzen: (e: Partial<SprachenStand['einstellung']>) => anfrage<SprachenStand>('PUT', '/api/werkbank/sprachen', e),
   uebersetzenStand: () => anfrage<UebersetzenStand>('GET', '/api/werkbank/uebersetzen'),
