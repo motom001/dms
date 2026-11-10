@@ -1,5 +1,5 @@
 /**
- * Protokoll des Umzugs der Kennungen (#1084, Sicherheit A): Migration 093 merkt sich je Haushalt, welche Kennung von
+ * Protokoll des Umzugs der Kennungen (#1084, Sicherheit A): Migration 094 merkt sich je Haushalt, welche Kennung von
  * `<paket>_<schluessel>` auf `paket:schluessel` umgestellt wurde. Beim nächsten Start schreibt Ablago je Kennung eine
  * Zeile alt → neu und eine Zusammenfassung ins Systemprotokoll und vergisst die Liste – so lässt sich nachvollziehen,
  * was die Migration getan hat.

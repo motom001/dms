@@ -1,5 +1,5 @@
 /**
- * Kennungen eindeutig (#1084): Muster und Längen, `paket:schluessel` statt `<paket>_<schluessel>`, Umzug (Migration 093)
+ * Kennungen eindeutig (#1084): Muster und Längen, `paket:schluessel` statt `<paket>_<schluessel>`, Umzug (Migration 094)
  * ohne Alias – Zuordnung aus den installierten Paketen, Rechte-Regeln, Ansichten und Automatisierungen bleiben gleich.
  */
 import assert from 'node:assert/strict';
@@ -95,7 +95,7 @@ describe('Kennungen (#1084)', () => {
   });
 });
 
-describe('Migration 093 (#1084) – PostgreSQL', () => {
+describe('Migration 094 (#1084) – PostgreSQL', () => {
   it('zieht <paket>_<schluessel> über die Paket-Einträge um; Rechte-Regeln, Ansichten, Automatisierungen bleiben gleich', async () => {
     if (!process.env.TEST_DATABASE_URL) return;
     const db = await eigeneDatenbank('kennungen');
@@ -131,7 +131,7 @@ describe('Migration 093 (#1084) – PostgreSQL', () => {
     await sql`CREATE UNIQUE INDEX mappentypen_schluessel_uq ON mappentypen (haushalt_id, schluessel) WHERE schluessel IS NOT NULL`;
     const alt = await sql`SELECT id, paket, schluessel FROM mappentypen WHERE id = ${pflanze.id}`;
     assert.deepEqual([alt[0].paket, alt[0].schluessel], [null, 'haus_garten_pflanze'], 'alte, doppeldeutige Form');
-    await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '093_typ_kennungen.sql'), 'utf8')));
+    await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '094_typ_kennungen.sql'), 'utf8')));
     const k = new Map((await sql`SELECT id, paket, schluessel FROM mappentypen`).map((r) => [r.id as string, typKennung(r.paket as string | null, r.schluessel as string)]));
     assert.equal(k.get(pflanze.id), 'haus:garten_pflanze', 'laut Paket haus – nicht haus_garten:pflanze');
     assert.equal(k.get(beet.id), 'haus_garten:beet');
@@ -152,7 +152,7 @@ describe('Migration 093 (#1084) – PostgreSQL', () => {
     assert.equal(typ.schluessel, 'haus:garten_pflanze');
     assert.equal(typ.paket, 'haus');
     // Ein zweites Mal ändert nichts (wiederholbar), und haus_garten:pflanze ist jetzt frei.
-    await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '093_typ_kennungen.sql'), 'utf8')));
+    await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '094_typ_kennungen.sql'), 'utf8')));
     const neu = await d.legeTypAn({ name: 'Pflanze (Garten)', schluessel: 'haus_garten:pflanze', felder: [], register: reg }, 'haus_garten');
     assert.equal(neu.schluessel, 'haus_garten:pflanze');
     await assert.rejects(d.legeTypAn({ name: 'Doppelt', schluessel: 'haus:garten_pflanze', felder: [], register: reg }, 'haus'), status(422));

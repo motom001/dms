@@ -456,7 +456,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const { cp } = await import('node:fs/promises');
     // Quelle auf dem Stand vor #1084: nur die Migrationen bis 092.
     const vorher = await mkdtemp(join(tmpdir(), 'dms-wh-mig-'));
-    for (const f of (await readdir(MIGRATIONEN)).filter((x) => x.endsWith('.sql') && x < '093')) await cp(join(MIGRATIONEN, f), join(vorher, f));
+    for (const f of (await readdir(MIGRATIONEN)).filter((x) => x.endsWith('.sql') && x < '094')) await cp(join(MIGRATIONEN, f), join(vorher, f));
     const q = await system(dbs[6], { mitSchluessel: true, migrationen: vorher });
     const [a, b, c] = ['00000000-0000-4000-8000-00000000a084', '00000000-0000-4000-8000-00000000b084', '00000000-0000-4000-8000-00000000c084'];
     const reg = q.sql.json([{ key: 'r', name: 'R', art: 'felder' }]);
@@ -472,7 +472,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       (${HAUSHALT}, 'haus', '1.0.0', ${q.sql.json({ id: 'haus', typen: { garten_pflanze: a } })}),
       (${HAUSHALT}, 'haus_garten', '1.0.0', ${q.sql.json({ id: 'haus_garten', typen: { beet: b } })})`;
     const meta = (await (await q.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
-    assert.ok(meta.migrationen.every((x) => x < '093'), 'Sicherung im alten Stand');
+    assert.ok(meta.migrationen.every((x) => x < '094'), 'Sicherung im alten Stand');
     const name = meta.datei.replace('.dms-sicherung', '');
     const z = await system(dbs[7]);
     await cp(q.sicherung.ordner, z.sicherung.ordner, { recursive: true });

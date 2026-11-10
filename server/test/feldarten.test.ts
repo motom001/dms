@@ -1,6 +1,6 @@
 /**
  * Feldarten Zeitraum und Prozent, negative Beträge (#1035): Lesen und Anzeigen (de, en), Prüfen, Speichern, Titel,
- * Sortieren, Bedingungen, Suche, Erkennung, Export, Paketformat und Migration 093. Personas und Werte sind erfunden.
+ * Sortieren, Bedingungen, Suche, Erkennung, Export, Paketformat und Migration 094. Personas und Werte sind erfunden.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -319,7 +319,7 @@ describe('Paketformat (#1035)', () => {
   });
 });
 
-describe('Zeitraum, Prozent und Migration 093 – PostgreSQL (#1035)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
+describe('Zeitraum, Prozent und Migration 094 – PostgreSQL (#1035)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   const H = '00000000-0000-4000-8000-000000000001';
 
   it('Sortieren und Bedingungen in SQL wie im Arbeitsspeicher', async () => {
@@ -330,7 +330,7 @@ describe('Zeitraum, Prozent und Migration 093 – PostgreSQL (#1035)', { skip: !
     } finally { await db.ende(); }
   });
 
-  it('Migration 093: Betragsfelder mit gespeicherten negativen Beträgen erlauben sie weiter, andere bleiben', async () => {
+  it('Migration 094: Betragsfelder mit gespeicherten negativen Beträgen erlauben sie weiter, andere bleiben', async () => {
     const db = await eigeneDatenbank('betrag_negativ');
     const { pgRepo } = await import('../src/repo-pg');
     try {
