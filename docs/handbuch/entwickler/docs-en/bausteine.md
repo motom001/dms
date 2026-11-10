@@ -18,7 +18,7 @@ All building blocks are in `web/src/bausteine/`:
 ## Rules { #regeln }
 
 - **Named variants instead of switches.** A checkbox is `HakenFeld`, not `Feld art="haken"`. Each variant stays small and understandable; there is no god component with twenty switches.
-- **New code strict, existing code when touched.** New pages use the building blocks. Existing pages are converted by whoever changes them anyway – no big rewrite.
+- **New code strict, existing code when touched.** New pages use the building blocks. Existing pages are converted by whoever changes them anyway – no big rewrite. ESLint watches this: `ablago/bausteine` reports every raw `<button>` and every input without a field frame outside `web/src/bausteine/`; the existing code is frozen ([Style and dependencies](stil.md#regeln)).
 - **Same look, same meaning.** A building block decides spacing, type, colours and states. A page does not override them; if something is missing, the building block gets a new variant.
 - **Accessibility belongs in the building block.** `id`, `htmlFor`, `aria-describedby` and the like are set by the building block; whoever uses it does not have to think about them.
 - **Light and dark, desktop and phone.** Every state is readable in both appearances and at phone width; hover and keyboard focus are visible.

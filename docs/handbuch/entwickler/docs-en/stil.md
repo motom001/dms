@@ -32,6 +32,7 @@ The settings are in `eslint.config.js` (flat config, ESLint 10). The basis is th
 | `@typescript-eslint/no-misused-promises` | on | – |
 | `@typescript-eslint/no-explicit-any` | on | – |
 | `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps` | on (interface) | – |
+| `ablago/bausteine` | on (`web/src/**/*.tsx` except `web/src/bausteine/`) | – |
 | `@eslint-community/eslint-comments/require-description` | on | – |
 
 Lengths are counted without blank lines and comments – explanations in the code should cost nothing.
@@ -40,6 +41,7 @@ Lengths are counted without blank lines and comments – explanations in the cod
 - **Route files (`*.routen.ts`, #960):** each handler is measured on its own. Only the outer registration function is exempt – an exported top-level function that registers the handlers. If the routes are a list at module level, each handler counts on its own anyway.
 - **Tests (`server/test/`):** without `max-lines` and `max-lines-per-function`, otherwise the same rules. `test()`, `describe()` and `it()` from `node:test` do not count as "not awaited".
 - **Tool scripts** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/rauchtest/*.mjs`): only ESLint's basic rules, without type information.
+- **Building blocks (`ablago/bausteine`, #968):** in the interface a raw `<button>` is an error – use `Knopf`. `<input>`, `<select>` and `<textarea>` are errors when they are not inside `Feld`, `HakenFeld` or `FeldGruppe`. Exempt are invisible inputs (`type="hidden"`, `type="file"`) and the building blocks themselves under `web/src/bausteine/`. For cases the building blocks deliberately do not cover (search field without a visible label, input in a table cell, see [Field](bausteine-feld.md#wann)), an exception with a reason in the code applies. The existing code when the rule was switched on is in `eslint-suppressions.json`.
 - **Promises in the interface:** `onClick={async () => …}` reports `no-misused-promises`, because React does not wait for the promise and an error would go unnoticed. Better: `onClick={() => void speichern()}` with its own `try`/`catch` in `speichern`.
 
 ### Exceptions in the code { #ausnahmen-im-code }
@@ -60,6 +62,7 @@ For both lists: **the total must never rise.** In a pull request, CI counts them
 
 - **Moving is allowed.** If a function moves to another file (for example when splitting `routen.ts`), its entry moves with it: `npm run lint:umtragen` rewrites the lists and drops what no longer occurs. The total stays the same – the check is green.
 - **Adding is not.** New or changed code that breaks a rule is fixed, not listed. `lint:umtragen` would include it, but then the number grows and CI reports for which rule.
+- **Switching on a new rule.** Whoever introduces a rule freezes only its existing violations: `npx eslint --suppress-rule <rule> --pass-on-unpruned-suppressions .` – the other entries stay as they are. The total rises without the code getting worse; `ausnahmen-zaehlen.mjs` therefore leaves the new rule out and shows its entries as “neue Regel … (Ausgangspunkt)”. A rule is new if it has no entry in the base **and** its name (`'rule'`) is newly added to `eslint.config.js` – so it shows up in the pull request, and a rule that has long been on without entries cannot be frozen silently. From the next state on, its entries count like any others.
 - **Fewer is welcome.** Whoever simplifies a function can shrink the list right away with `npx eslint --prune-suppressions .` – otherwise the workflow below does it.
 
 ### Cleaning up on main { #aufraeumen }

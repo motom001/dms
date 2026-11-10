@@ -18,7 +18,7 @@ Alle Bausteine stehen unter `web/src/bausteine/`:
 ## Regeln { #regeln }
 
 - **Benannte Varianten statt Schalter.** Ein Haken ist `HakenFeld`, nicht `Feld art="haken"`. Jede Variante bleibt klein und verständlich; es gibt keine Gottkomponente mit zwanzig Schaltern.
-- **Neues streng, Bestand beim Anfassen.** Neue Seiten nehmen die Bausteine. Bestehende Seiten stellt um, wer sie ohnehin ändert – kein Großumbau.
+- **Neues streng, Bestand beim Anfassen.** Neue Seiten nehmen die Bausteine. Bestehende Seiten stellt um, wer sie ohnehin ändert – kein Großumbau. ESLint wacht darüber: `ablago/bausteine` meldet jedes rohe `<button>` und jede Eingabe ohne Feldrahmen außerhalb von `web/src/bausteine/`; der Bestand ist eingefroren ([Stil und Abhängigkeiten](stil.md#regeln)).
 - **Gleiches Aussehen, gleiche Bedeutung.** Ein Baustein entscheidet Abstände, Schrift, Farben und Zustände. Eine Seite überschreibt sie nicht; fehlt etwas, bekommt der Baustein eine neue Variante.
 - **Barrierefreiheit gehört in den Baustein.** `id`, `htmlFor`, `aria-describedby` und Co. setzt der Baustein; wer ihn benutzt, muss daran nicht denken.
 - **Hell und dunkel, Desktop und Handy.** Jeder Zustand ist in beiden Darstellungen und in Handybreite lesbar; Hover und Tastaturfokus sind sichtbar.
