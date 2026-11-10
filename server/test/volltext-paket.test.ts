@@ -74,10 +74,10 @@ async function aufbau(mitPaket = true) {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
     void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
   };
-  if (mitPaket) await d.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
+  if (mitPaket) await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
   // Ein älteres Paket (z. B. für Vektoren) kennt nur Ereignisse mit Text; ein Paket von vor 0.133.0 hört auf texterkennung.fertig.
-  await d.speicherePaket(paket('vektor', { dms: '>=0.120.0' }));
-  await d.speicherePaket(paket('alt', { dms: '>=0.88.0', ereignisse: ['texterkennung.fertig'] }));
+  await d.kern.repo.speicherePaket(paket('vektor', { dms: '>=0.120.0' }));
+  await d.kern.repo.speicherePaket(paket('alt', { dms: '>=0.88.0', ereignisse: ['texterkennung.fertig'] }));
   const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
@@ -231,14 +231,14 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     await warte(async () => (await repo.holeDokument(mitText))!.ocr?.stand === 'fertig');
     assert.equal((await d.volltext(mitText)).text, TEXT);
     // Paket kommt: Wartende gehen wie neue Dokumente durch Textebene und Paket.
-    await d.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
+    await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
     alsScan(true);
     assert.equal(await d.texterkennungPaketDa(), 1);
     await warte(async () => (await repo.holeDokument(scan))!.ocr?.info === infoWartet({ name: 'Texterkennung' }));
     const ev = (await ereignisse()).filter((e) => e.paketId === 'texterkennung');
     assert.deepEqual(ev.map((e) => [e.daten.dokument, e.daten.text]), [[scan, false]]);
     assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng']);
-    await d.speicherePaket({ ...paket('texterkennung_fra'), abhaengigkeiten: { texterkennung: '>=2.0.0' } });
+    await d.kern.repo.speicherePaket({ ...paket('texterkennung_fra'), abhaengigkeiten: { texterkennung: '>=2.0.0' } });
     assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra'], 'Sprach-Zusatzpaket');
   });
 
@@ -332,7 +332,7 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
       await sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Test') ON CONFLICT DO NOTHING`;
       const repo = pgRepo(sql, H);
       const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      await d.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
+      await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
       const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
       const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
       const hoch = async (n: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name: n, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;

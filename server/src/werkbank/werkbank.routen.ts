@@ -148,14 +148,14 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         notfallcodeBenutzt: x.notfallcode ? (await sicher(() => x.notfallcode!.offen()))?.map((n) => ({ id: n.id, benutzerId: n.benutzerId, name: n.name, am: n.am })) ?? [] : [],
         // Zweite Person mit Verwaltungsrecht empfehlen (#821, Konzept Punkt 7): nach der Einrichtung, solange nur eine
         // Person verwalten darf und niemand „Nein, danke“ gewählt hat.
-        zweitePerson: (await sicher(async () => !(await dienst.einstellungenSpeicher?.lies(ZWEITE_ABGELEHNT))
+        zweitePerson: (await sicher(async () => !(await dienst.kern.einstellungen?.lies(ZWEITE_ABGELEHNT))
           && !(x.einrichtung && (await x.einrichtung.stand()).offen)
           && (await konten.listeBenutzer()).filter((p) => istPerson(p) && p.aktiv && darfVerwalten(p)).length === 1)) ?? false,
         wartung: x.wartung?.oeffentlich() ?? null,
         // Sicherung (#105): fehlgeschlagen, zu alt, Speicherort, Notfallblatt.
         sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
         // Export-Ordner (#797): liegt im Sicherungsordner; Exporte beim Update aus dem Sicherungsordner verschoben.
-        exporte: x.exporte ? { pfad: x.exporte.pfad, imSicherungsordner: x.exporte.imSicherungsordner, umzug: await sicher(() => umzugHinweis(dienst.einstellungenSpeicher)) ?? null } : null,
+        exporte: x.exporte ? { pfad: x.exporte.pfad, imSicherungsordner: x.exporte.imSicherungsordner, umzug: await sicher(() => umzugHinweis(dienst.kern.einstellungen)) ?? null } : null,
         // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
         speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
         // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
@@ -189,7 +189,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
         postfachAnmeldung: x.postfaecher ? await sicher(() => x.postfaecher!.anmeldungFehlt()) ?? [] : [],
         // Bewusst akzeptierte Meldungen (#816): wer, wann, Begründung; die Übersicht stellt sie unten zusammen.
-        akzeptiert: await sicher(() => akzeptierteMeldungen(dienst.einstellungenSpeicher)) ?? {},
+        akzeptiert: await sicher(() => akzeptierteMeldungen(dienst.kern.einstellungen)) ?? {},
       }));
     } },
     // Im Verwaltungsmodus angesehen (#820): Person, Mappe, Zeit – nur für „Gesamte Verwaltung“ (verwaltungsbereiche.ts).
@@ -199,8 +199,8 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       return ok(liste.map((e) => ({ ...e, person: e.benutzerId ? namen.get(e.benutzerId) ?? '' : '' })));
     } },
     // „Zur Kenntnis genommen“ (#816): nur gelbe Warnungen und Hinweise, im Protokoll mit Benutzer und Begründung.
-    { methode: 'POST', pfad: '/api/werkbank/uebersicht/akzeptieren', zugang: 'admin', handler: async (a) => ok(await meldungAkzeptieren(dienst.einstellungenSpeicher, b(a), ich(a).name || ich(a).email)) },
-    { methode: 'POST', pfad: '/api/werkbank/uebersicht/aufheben', zugang: 'admin', handler: async (a) => ok(await akzeptanzAufheben(dienst.einstellungenSpeicher, b(a), ich(a).name || ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/uebersicht/akzeptieren', zugang: 'admin', handler: async (a) => ok(await meldungAkzeptieren(dienst.kern.einstellungen, b(a), ich(a).name || ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/uebersicht/aufheben', zugang: 'admin', handler: async (a) => ok(await akzeptanzAufheben(dienst.kern.einstellungen, b(a), ich(a).name || ich(a).email)) },
     /*
      * Hinweise, die man einmal abschließt (#821, #815): „Nein, danke“ zur zweiten Person mit Verwaltungsrecht gilt
      * dauerhaft; „Gelesen“ beim benutzten Notfallcode. Beides nur „Gesamte Verwaltung“ (nur sie sieht die Hinweise).
@@ -215,7 +215,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       }
       if (!hatGesamt(ich(a))) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
       if (k === 'verwaltung.zweite-person') {
-        const e = dienst.einstellungenSpeicher;
+        const e = dienst.kern.einstellungen;
         if (!e) throw new Fachfehler(500, t('werkbank.uebersicht.akzeptiert.ohne-speicher'));
         await e.schreibe(ZWEITE_ABGELEHNT, { von: ich(a).name || ich(a).email, am: new Date().toISOString() });
         L.werkbank.info('Empfehlung „zweite Person mit Verwaltungsrecht“ abgelehnt', { meldung: k, von: ich(a).email });

@@ -91,6 +91,7 @@ import { setzeLasttestModus } from './protokollsammlung';
 import { teileArbeit, UPLOAD_ALTER_MS } from './aufteilung';
 import { Fernlaeufer } from './laeufer/fern';
 import type { PaketLaeufer } from './pakete';
+import { paketEinstellungen, paketSpeicher, setzePaketSpeicher } from './pakete/pakete.einstellungen';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -315,7 +316,7 @@ dienst.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id
 konten.verbindeZustand(zustandDb);
 // Sprachpakete (#731): ihre Sprachen kommen dazu, sobald die Pakete lesbar sind; danach lädt der SprachDienst sie mit.
 const personenMitSprache = async (k: string) => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false && b.sprache === k).length;
-const sprachpakete = new Sprachpakete({ pakete: () => dienst.listePakete(), sprachpakete: () => dienst.sprachpakete(), personen: personenMitSprache });
+const sprachpakete = new Sprachpakete({ pakete: () => dienst.kern.repo.listePakete(), sprachpakete: () => dienst.kern.repo.sprachpakete(), personen: personenMitSprache });
 sprachen.pakete = sprachpakete;
 await sprachen.lade().catch((e) => log.warn(`Sprachpakete nicht lesbar: ${(e as Error).message}`));
 // Texterkennung im Hintergrund (#45); dieselbe Datenbank, eigener Messbereich.
@@ -492,7 +493,7 @@ const paketlaeufer: Paketlaeufer | null = !leiter ? null : new Paketlaeufer({
     return { status: r.statusCode, kopf: Object.fromEntries(Object.entries(r.headers).map(([k, v]) => [k, String(v)])), body: r.rawPayload };
   },
   einstellungen: (id): Promise<Record<string, unknown>> => pakete.einstellungenFuerPaket(id).catch(() => ({})),
-  speicher: { lies: (id) => dienst.paketSpeicher(id), schreibe: (id, w) => dienst.setzePaketSpeicher(id, w) },
+  speicher: { lies: (id) => paketSpeicher(dienst.kern, id), schreibe: (id, w) => setzePaketSpeicher(dienst.kern, id, w) },
   pausiert: () => wartung.aktiv,
 });
 const fernlaeufer = paketlaeufer ? null : new Fernlaeufer(verbund, dienst);
@@ -535,8 +536,8 @@ texterkennung.paket = () => dienst.texterkennungPaket();
 // Sicherung außer Haus (#585): Pakete mit dms:sicherung-lesen bekommen jede fertige Sicherung (Ereignis sicherung.fertig),
 // lesen die verschlüsselte Datei in Stücken und melden je Sicherung zurück. Adresse: die bestätigte aus den Einstellungen.
 sicherung.extern = {
-  pakete: async () => Promise.all((await dienst.listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:sicherung-lesen')).map(async (p) => {
-    const werte = p.einstellungen ? (await dienst.paketEinstellungen(p.id))?.werte ?? {} : {};
+  pakete: async () => Promise.all((await dienst.kern.repo.listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:sicherung-lesen')).map(async (p) => {
+    const werte = p.einstellungen ? (await paketEinstellungen(dienst.kern, p.id))?.werte ?? {} : {};
     const adresse = p.einstellungen ? adressfelder(p.einstellungen).map((f) => werte[f.schluessel]).find((v): v is string => typeof v === 'string' && !!v) ?? null : null;
     return { id: p.id, name: p.name, adresse };
   })),

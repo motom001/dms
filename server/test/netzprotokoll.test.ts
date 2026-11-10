@@ -135,8 +135,8 @@ describe('Netzaufrufe im Protokoll (#807): echter Paket-Läufer', () => {
     offen.push(l);
     const manifest = `schema: 1\nid: ki_probe\nname: KI Probe\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.124.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  rechte: { schnittstellen: ["dms:antworten"] }\n  einstellungen:\n    - abschnitt: Dienst\n      felder:\n        - { schluessel: dienst, name: Dienst-Adresse, typ: adresse }\n`;
     const p = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest)], ['code/modul.wasm', wasm]]));
-    await d.speicherePaketCode('ki_probe', p.code!.dateien);
-    await d.speicherePaket({ id: 'ki_probe', name: 'KI Probe', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, einstellungen: p.einstellungen, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+    await d.kern.repo.speicherePaketCode('ki_probe', p.code!.dateien);
+    await d.kern.repo.speicherePaket({ id: 'ki_probe', name: 'KI Probe', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, einstellungen: p.einstellungen, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
     await l.start();
     await warte(() => !!d.fragen.anbieter?.paket());
     const seit = protokoll.eintraege({ max: 1 })[0]?.nr ?? 0;
@@ -174,8 +174,8 @@ describe('Netzaufrufe im Protokoll (#807): echter Paket-Läufer', () => {
     const vorher = anfragen;
     const boese = stromModul(JSON.stringify({ methode: 'GET /v1/x HTTP/1.1\r\nX-Boese: 1', url: `${adresse}/chat/completions?x=1` }), '{"text":"ok"}');
     const p2 = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest.replace(/ki_probe/g, 'ki_boese').replace('KI Probe', 'KI Boese'))], ['code/modul.wasm', boese]]));
-    await d.speicherePaketCode('ki_boese', p2.code!.dateien);
-    await d.speicherePaket({ id: 'ki_boese', name: 'KI Boese', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, einstellungen: p2.einstellungen, laeufer: { ...p2.code!.info, modul: { sha256: 'y', groesse: boese.length } } });
+    await d.kern.repo.speicherePaketCode('ki_boese', p2.code!.dateien);
+    await d.kern.repo.speicherePaket({ id: 'ki_boese', name: 'KI Boese', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, einstellungen: p2.einstellungen, laeufer: { ...p2.code!.info, modul: { sha256: 'y', groesse: boese.length } } });
     await l.codeGeaendert();
     let geladen = false;
     await warte(() => { void l.uebersicht().then((u) => { geladen = !!u.pakete.find((x) => x.id === 'ki_boese')?.geladen; }); return geladen; });

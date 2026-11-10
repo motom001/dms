@@ -252,7 +252,7 @@ describe('Dienst-Adresse (#444): bestätigen und speichern', () => {
     const neu: string[] = [];
     const p = new Paketverwaltung(d, { version: () => '0.124.0', abruf: async () => { throw new Error('offline'); }, laeufer: { aktion: async () => '', codeGeaendert: () => { neu.push('x'); } } });
     const b = liesBeschreibung({ einstellungen: [{ abschnitt: 'Dienst', felder: [{ schluessel: 'dienst', name: 'Dienst-Adresse', typ: 'adresse' }, { schluessel: 'modell', name: 'Modell', typ: 'text' }] }] }).beschreibung!;
-    await d.speicherePaket({ id: 'ki_assistent', name: 'KI-Assistent', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: '', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, einstellungen: b });
+    await d.kern.repo.speicherePaket({ id: 'ki_assistent', name: 'KI-Assistent', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: '', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, einstellungen: b });
     const ich = { id: null, email: 'lena@example.org' };
     await assert.rejects(p.speichereEinstellungen('ki_assistent', { werte: { dienst: 'http://ollama:11434/v1', modell: 'klein' } }, ich),
       (e: Fachfehler) => e.status === 409 && /Adresse bestätigen/.test(e.message) && JSON.stringify(e.details).includes('http://ollama:11434/v1'));
@@ -332,8 +332,8 @@ describe('Frag deine Ablage (#444): echter Paket-Läufer', () => {
     offen.push(l);
     const manifest = `schema: 1\nid: ki_probe\nname: KI Probe\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.124.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  rechte: { schnittstellen: ["dms:antworten"] }\n  einstellungen:\n    - abschnitt: Dienst\n      felder:\n        - { schluessel: dienst, name: Dienst-Adresse, typ: adresse }\n`;
     const p = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest)], ['code/modul.wasm', wasm]]));
-    await d.speicherePaketCode('ki_probe', p.code!.dateien);
-    await d.speicherePaket({ id: 'ki_probe', name: 'KI Probe', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, einstellungen: p.einstellungen, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+    await d.kern.repo.speicherePaketCode('ki_probe', p.code!.dateien);
+    await d.kern.repo.speicherePaket({ id: 'ki_probe', name: 'KI Probe', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, einstellungen: p.einstellungen, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
     await l.start();
     await warte(() => !!d.fragen.anbieter?.paket());
     assert.deepEqual(d.fragen.anbieter!.paket(), { id: 'ki_probe', name: 'KI Probe' });

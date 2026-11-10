@@ -162,7 +162,7 @@ describe('Unbekannte Felder werden ignoriert (#635)', () => {
     const s = alsSammel(await p.hochladenDatei(sammeldatei([basisMitMehr], true), ICH));
     assert.deepEqual(s.pakete.map((x) => `${x.id}@${x.version}:${x.stand}`), ['basis@1.0.0:neu']);
     assert.equal((await p.installiere({ upload: s.pakete[0].upload, bestaetigt: true }, ICH)).id, 'basis');
-    assert.equal((await d.listePakete()).length, 1);
+    assert.equal((await d.kern.repo.listePakete()).length, 1);
   });
 
   it('Sammeldatei mit signiertem katalog.json voller unbekannter Felder: Signatur über die rohen Bytes gilt', async () => {

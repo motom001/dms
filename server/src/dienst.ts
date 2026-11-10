@@ -75,7 +75,6 @@ import { vorgaben } from '../../shared/src/paketeinstellungen';
 import { liesPdfA, textebeneWoerter } from './pdf';
 import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET, infoVolltextPaket, katalogVolltext, VOLLTEXT_ZEICHEN_MAX } from '../../shared/src/paketvolltext';
 import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from './vektoren';
-import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
@@ -100,8 +99,7 @@ import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugriff } from './kern';
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
-import * as E from './pakete/pakete.einstellungen';
-import type { PaketQuelleEintrag } from './pakete/pakete.einstellungen';
+import { paketEinstellungen } from './pakete/pakete.einstellungen';
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/pakete.einstellungen';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
@@ -1453,7 +1451,7 @@ export class Dienst {
       ablage,
       pakete: () => this.repo.listePakete(),
       einstellung: async (paket, k) => {
-        const w = (await this.paketEinstellungen(paket))?.werte ?? {};
+        const w = (await paketEinstellungen(this.kern, paket))?.werte ?? {};
         if (k in w) return w[k];
         const p = (await this.repo.listePakete()).find((x) => x.id === paket);
         return p?.einstellungen ? vorgaben(p.einstellungen)[k] : undefined;
@@ -4619,25 +4617,8 @@ export class Dienst {
     return this.werkbankAnsicht(wer);
   }
 
-  /* ---------- Pakete (#188): Ablage der installierten Pakete; die Logik steckt in pakete.ts ---------- */
+  /* ---------- Pakete (#188): die Logik steckt in pakete.ts; die Ablage ruft das Repo des Kerns bzw. pakete/pakete.einstellungen.ts (#961) ---------- */
 
-  listePakete() { return this.repo.listePakete(); }
-  /** Einstellungen für Bausteine neben dem Dienst (#712: Automatisierungen merken, welche Fristen übernommen sind). */
-  get einstellungenSpeicher(): Einstellungen | undefined { return this.einstellungen; }
-  speicherePaketCode(id: string, dateien: Array<{ name: string; inhalt: Buffer }>) { return this.repo.speicherePaketCode(id, dateien); }
-  paketCode(id: string) { return this.repo.paketCode(id); }
-  loeschePaketCode(id: string) { return this.repo.loeschePaketCode(id); }
-  /** Sprachpakete (#731): Texte und Beschriftungen. */
-  speichereSprachpaket(id: string, d: import('./repo').SprachpaketDaten) { return this.repo.speichereSprachpaket(id, d); }
-  sprachpakete() { return this.repo.sprachpakete(); }
-  loescheSprachpaket(id: string) { return this.repo.loescheSprachpaket(id); }
-  loescheEreignisse(id: string) { return this.repo.loescheEreignisse(id); }
-  /** Ereignisse für Pakete (#338). */
-  faelligeEreignisse(n: number) { return this.repo.faelligeEreignisse(n); }
-  ereignisZugestellt(id: string) { return this.repo.ereignisZugestellt(id); }
-  ereignisDaten(id: string, daten: Record<string, unknown>) { return this.repo.ereignisDaten(id, daten); }
-  ereignisFehlgeschlagen(id: string, fehler: string, naechster: Date | null) { return this.repo.ereignisFehlgeschlagen(id, fehler, naechster); }
-  ereignisStand() { return this.repo.ereignisStand(); }
   /** Wird beim Anlegen eines Ereignisses aufgerufen (der Läufer stellt dann gleich zu). */
   ereignisWecker: (() => void) | null = null;
   /** Dienstkonten der Pakete (Benutzer-Id → Paket-Id), vom Paket-Läufer gepflegt (Kern). */
@@ -4763,24 +4744,7 @@ export class Dienst {
       protokoll.modul('werkbank').error('Auftrag an Paket nicht gespeichert', { art, paket, fehler: (e as Error).message });
     }
   }
-  speicherePaket(p: InstalliertesPaket) { return this.repo.speicherePaket(p); }
-  loeschePaket(id: string) { return this.repo.loeschePaket(id); }
 
-  /** Ablage der Pakete in den Einstellungen (pakete/pakete.einstellungen.ts). */
-  paketQuellen(): Promise<PaketQuelleEintrag[]> { return E.paketQuellen(this.kern); }
-  setzePaketQuellen(liste: PaketQuelleEintrag[]) { return E.setzePaketQuellen(this.kern, liste); }
-  paketKatalogStaende(): Promise<Record<string, string>> { return E.paketKatalogStaende(this.kern); }
-  setzePaketKatalogStand(url: string, stand: string) { return E.setzePaketKatalogStand(this.kern, url, stand); }
-  paketUmwandlungen(): Promise<unknown[]> { return E.paketUmwandlungen(this.kern); }
-  setzePaketUmwandlungen(liste: unknown[]) { return E.setzePaketUmwandlungen(this.kern, liste); }
-  paketEntwuerfe(): Promise<PaketEntwurf[]> { return E.paketEntwuerfe(this.kern); }
-  setzePaketEntwuerfe(liste: PaketEntwurf[]) { return E.setzePaketEntwuerfe(this.kern, liste); }
-  paketArchive(id: string): Promise<unknown> { return E.paketArchive(this.kern, id); }
-  setzePaketArchive(id: string, liste: unknown[] | null) { return E.setzePaketArchive(this.kern, id, liste); }
-  paketEinstellungen(id: string) { return E.paketEinstellungen(this.kern, id); }
-  setzePaketEinstellungen(id: string, v: Parameters<typeof E.setzePaketEinstellungen>[2]) { return E.setzePaketEinstellungen(this.kern, id, v); }
-  paketSpeicher(id: string): Promise<Record<string, string>> { return E.paketSpeicher(this.kern, id); }
-  setzePaketSpeicher(id: string, werte: Record<string, string> | null) { return E.setzePaketSpeicher(this.kern, id, werte); }
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
   verschluesselePaketGeheimnis(text: string): string {
     if (!this.tresor?.bereit) throw new Fachfehler(409, t('meldungen.dienst.fuer-geheimnisse-fehlt-der'));
@@ -5775,7 +5739,7 @@ export class Dienst {
   }
 
   private async ablageortId(): Promise<string | undefined> {
-    const basis = (await this.listePakete()).find((p) => p.id === 'basis')?.typen.ablageort;
+    const basis = (await this.repo.listePakete()).find((p) => p.id === 'basis')?.typen.ablageort;
     if (basis && (await this.repo.holeTyp(basis))) return basis;
     return (await this.frueherAblageortTyp())?.id;
   }
@@ -5787,7 +5751,7 @@ export class Dienst {
   async frueherAblageortTyp(): Promise<Mappentyp | undefined> {
     const merk = (await this.einstellungen?.lies('ablageort')) as { id?: string } | null | undefined;
     const id = merk?.id ?? (this.einstellungen ? undefined : (await this.repo.listeTypen()).find((t) => !t.system && t.schluessel === 'ablageort')?.id);
-    if (!id || (await this.listePakete()).some((p) => Object.values(p.typen).includes(id))) return undefined;
+    if (!id || (await this.repo.listePakete()).some((p) => Object.values(p.typen).includes(id))) return undefined;
     return this.repo.holeTyp(id);
   }
 

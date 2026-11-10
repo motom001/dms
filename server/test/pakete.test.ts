@@ -204,7 +204,7 @@ function faelle(pg: boolean) {
       const ADMIN = { id: ICH.id, rolle: 'admin' };
       assert.equal((await d.seite(ADMIN, { sicht: oben.id })).gesamt, 2);
       assert.deepEqual((await d.seite(ADMIN, { sicht: inst.sichten.aerzte })).mappen.map((m) => m.titel), ['Praxis Dr. Beispiel']);
-      assert.equal((await d.listePakete()).length, 1);
+      assert.equal((await d.kern.repo.listePakete()).length, 1);
 
       // Der Administrator ändert selbst: Name, ein eigenes Feld. Das Update überschreibt das nicht.
       await d.aendereTyp(typ.id, { ...typ, name: 'Firma', felder: [...typ.felder.map((f) => (f.key === 'name' ? { ...f, erkennung: { art: 'name' as const, hinweis: 'eigener' } } : f)), { key: 'notiz', label: 'Notiz', typ: 'text' }] });
@@ -240,7 +240,7 @@ function faelle(pg: boolean) {
       await p.entferne('basis', ICH);
       assert.ok(!(await d.listeTypen()).some((t) => t.id === typ.id));
       assert.ok(!(await d.listeSichten()).some((s) => Object.values(neu.sichten).includes(s.id)));
-      assert.deepEqual(await d.listePakete(), []);
+      assert.deepEqual(await d.kern.repo.listePakete(), []);
     });
 
     it('Paket über der gemeinsamen Grenze wird verständlich abgelehnt, ohne es zu laden (#644)', async () => {
@@ -270,7 +270,7 @@ function faelle(pg: boolean) {
       const v = await p.vorschau({ id: 'vertraege' });
       assert.deepEqual(v.abhaengigkeiten, [{ id: 'basis', bereich: '^1.0.0', installiert: null, ok: false, verfuegbar: '1.0.0' }]);
       const inst = await p.installiere({ id: 'vertraege', mitAbhaengigkeiten: true }, ICH);
-      const pakete = await d.listePakete();
+      const pakete = await d.kern.repo.listePakete();
       assert.deepEqual(pakete.map((x) => x.id), ['basis', 'vertraege']);
       const typen = await d.listeTypen();
       const vertrag = typen.find((t) => t.id === inst.typen.vertrag)!;
@@ -297,7 +297,7 @@ function faelle(pg: boolean) {
       await assert.rejects(p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' }, beispiele: true }, ICH), /Beispiel/);
       assert.equal((await d.listeTypen()).length, typen);
       assert.equal((await d.listeSichten()).length, sichten);
-      assert.deepEqual(await d.listePakete(), []);
+      assert.deepEqual(await d.kern.repo.listePakete(), []);
       const ok = await p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' } }, ICH);
       assert.equal((await d.listeTypen()).find((t) => t.id === ok.typen.organisation)!.name, 'Organisation (Basis)');
     });
@@ -333,7 +333,7 @@ function faelle(pg: boolean) {
       const { d, p } = await aufbau([{ dateien: b1 }, { dateien: vertraegeMitBeispielen }]);
       await p.katalog();
       const inst = await p.installiere({ id: 'vertraege', beispiele: true, mitAbhaengigkeiten: true }, ICH);
-      const pakete = await d.listePakete();
+      const pakete = await d.kern.repo.listePakete();
       const bas = pakete.find((x) => x.id === 'basis')!;
       assert.ok(bas.beispiele?.stadtwerke, 'Beispiele der Abhängigkeit kamen mit und sind gemerkt');
       assert.ok(inst.beispiele?.strom);
@@ -493,7 +493,7 @@ function faelle(pg: boolean) {
       // Ein einzelnes Paket geht weiter über denselben Weg.
       const einzeln = await p.hochladenDatei(archiv(basis11), ICH);
       assert.ok('upload' in einzeln && einzeln.vorschau.update);
-      assert.ok((await d.listePakete()).length === 2);
+      assert.ok((await d.kern.repo.listePakete()).length === 2);
     });
 
     it('Sammeldatei: verändert, unvollständig oder mit fremden Dateien – nichts wird angenommen (#461)', async () => {

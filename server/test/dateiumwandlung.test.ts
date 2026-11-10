@@ -82,10 +82,10 @@ async function aufbau(o: { mitPaket?: boolean; mitTexterkennung?: boolean; mitHo
   d.verbindeUmwandlung(u, vorschau);
   vorschau.fassung = (sha) => u.lies(sha);
   t.umwandlung = { lies: (sha) => u.lies(sha), paketFuer: (m) => u.paketFuer(m), anfordern: (x) => u.anfordern(x), gesperrt: (sha) => u.gesperrt(sha) };
-  if (o.mitPaket !== false) await d.speicherePaket(paket('bildformate', o.mitNetz ? { ...MANIFEST_CODE, netz: ['https://umwandler.example.org/v1'] } : MANIFEST_CODE));
-  if (o.mitTexterkennung) await d.speicherePaket(texterkennungPaket());
+  if (o.mitPaket !== false) await d.kern.repo.speicherePaket(paket('bildformate', o.mitNetz ? { ...MANIFEST_CODE, netz: ['https://umwandler.example.org/v1'] } : MANIFEST_CODE));
+  if (o.mitTexterkennung) await d.kern.repo.speicherePaket(texterkennungPaket());
   // Ein Paket, das nur „Volltext fertig“ hört (z. B. für Vektoren) – damit das Ereignis im Ausgangskorb landet.
-  if (o.mitHoerer) await d.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
+  if (o.mitHoerer) await d.kern.repo.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
   const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
@@ -289,7 +289,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     const a = await x.hoch('a.tif', TIFF);
     const b = await x.hoch('b.tif', Buffer.concat([TIFF, Buffer.from('b')]));
     assert.equal((await x.dok(a)).ocr?.stand, 'ausgelassen');
-    await x.d.speicherePaket(paket('bildformate', MANIFEST_CODE));
+    await x.d.kern.repo.speicherePaket(paket('bildformate', MANIFEST_CODE));
     assert.equal(await x.d.umwandelPaketDa(['image/tiff']), 2);
     assert.equal((await x.dok(a)).ocr?.info, `${INFO_UMWANDLUNG} (Paket Bildformate)`, 'wartet jetzt sichtbar');
     assert.deepEqual((await x.ereignisse('datei.umwandeln')).map((e) => e.daten.dokument).sort(), [a, b].sort());
@@ -315,7 +315,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
 describe('Dateien umwandeln (#577): API für Pakete', () => {
   it('PUT /dokumente/{id}/fassung: Paket mit dms:umwandeln und Lesen genügt; ohne das Recht 403; GET liefert die Fassung', async () => {
     const x = await aufbau();
-    await x.d.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
+    await x.d.kern.repo.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
     const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(x.d, konten, { apiSchluessel: schluessel });
@@ -325,7 +325,7 @@ describe('Dateien umwandeln (#577): API für Pakete', () => {
       assert.ok(r, `${methode} ${pfad}`);
       const a = { body, params, query, ip: '127.0.0.1' } as unknown as Anfrage;
       // Wie der Läufer: das Recht des Schlüssels aus dem Manifest (dms:umwandeln braucht „lesen und schreiben“).
-      const key = await schluessel.fuerDienstkonto(konto, schluesselRecht((await x.d.listePakete()).find((y) => y.id === paketId)!.laeufer!));
+      const key = await schluessel.fuerDienstkonto(konto, schluesselRecht((await x.d.kern.repo.listePakete()).find((y) => y.id === paketId)!.laeufer!));
       await pruefeZugang(r as Route, a, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
       return r.handler(a);
     };
@@ -339,7 +339,7 @@ describe('Dateien umwandeln (#577): API für Pakete', () => {
     await assert.rejects(rufe('nurlesen', 'PUT', '/api/v1/dokumente/:id/fassung', { id }, pdf, { sha256: sha }), /darf nur lesen/);
     await assert.rejects(rufe('nurlesen', 'PUT', '/api/v1/dokumente/:id/vorschaubild', { id }, png(4, 4), { sha256: sha }), /darf nur lesen/);
     // Auch mit „lesen und schreiben“ (z. B. weil es Mappen schreiben darf): ohne dms:umwandeln nicht.
-    await x.d.speicherePaket(paket('schreiber', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], schreiben: ['*'], dokumente: 'lesen' } }, 'Schreiber'));
+    await x.d.kern.repo.speicherePaket(paket('schreiber', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], schreiben: ['*'], dokumente: 'lesen' } }, 'Schreiber'));
     await assert.rejects(rufe('schreiber', 'PUT', '/api/v1/dokumente/:id/fassung', { id }, pdf, { sha256: sha }), /hat das Recht „dms:umwandeln“ nicht/);
     const g = await rufe('bildformate', 'GET', '/api/v1/dokumente/:id/fassung', { id }, undefined);
     const datei = (g as unknown as { datei: { name: string; mime: string; koepfe: Record<string, string> } }).datei;

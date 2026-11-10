@@ -145,7 +145,7 @@ function faelle(pg: boolean) {
       const p = new Paketverwaltung(d, { version: () => '0.120.0', abruf: katalog([personen, autos10, autos11]), katalogUrl: KATALOG });
       const u = new Umwandlung(d);
       await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
-      const pakete = await d.listePakete();
+      const pakete = await d.kern.repo.listePakete();
       const personTyp = pakete.find((x) => x.id === 'personen')!.typen.person;
       const autoTyp = pakete.find((x) => x.id === 'autos')!.typen.auto;
       const kontoTyp = pakete.find((x) => x.id === 'autos')!.typen.konto;
@@ -274,8 +274,8 @@ function faelle(pg: boolean) {
       const p = new Paketverwaltung(d, { version: () => '0.120.0', abruf: katalog([personen, autos10, autos11]), katalogUrl: KATALOG });
       const u = new Umwandlung(d);
       await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
-      const pk = (await d.listePakete()).find((x) => x.id === 'personen')!.typen.person;
-      const autoTyp = (await d.listePakete()).find((x) => x.id === 'autos')!.typen.auto;
+      const pk = (await d.kern.repo.listePakete()).find((x) => x.id === 'personen')!.typen.person;
+      const autoTyp = (await d.kern.repo.listePakete()).find((x) => x.id === 'autos')!.typen.auto;
       const a = await d.legeMappeAn({ typId: autoTyp, werte: { bez: 'Golf', halter: 'Tom Muster' } }, ICH.id);
       await p.aktualisiere('autos', {}, ICH);
       // Die Person bekommt ein weiteres Pflichtfeld: Anlegen scheitert, die Mappe bleibt unverändert.

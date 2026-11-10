@@ -166,7 +166,7 @@ async function aufbau(o: { repo?: Repo; personen?: (k: string) => number; abruf?
   const d = new Dienst(o.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const einst = speicherEinstellungen();
   const sprachen = new SprachDienst(einst);
-  const sp = new Sprachpakete({ pakete: () => d.listePakete(), sprachpakete: () => d.sprachpakete(), personen: async (k) => o.personen?.(k) ?? 0 });
+  const sp = new Sprachpakete({ pakete: () => d.kern.repo.listePakete(), sprachpakete: () => d.kern.repo.sprachpakete(), personen: async (k) => o.personen?.(k) ?? 0 });
   sprachen.pakete = sp;
   await sprachen.lade();
   const haken: SprachpaketHaken = {
@@ -282,8 +282,8 @@ describe('Sprachpaket installieren und nutzen (#731)', () => {
       return true;
     });
     await p.entferne('sprache_fr', ICH, false, true);
-    assert.equal((await d.listePakete()).length, 0);
-    assert.deepEqual(await d.sprachpakete(), []);
+    assert.equal((await d.kern.repo.listePakete()).length, 0);
+    assert.deepEqual(await d.kern.repo.sprachpakete(), []);
     assert.ok(!sp.kennungen().includes('fr'));
     const e = await sprachen.lies();
     assert.equal(e.standard, 'de');
@@ -292,7 +292,7 @@ describe('Sprachpaket installieren und nutzen (#731)', () => {
     const x = await aufbau();
     await installiereHochgeladen(x.p, fr());
     await x.p.entferne('sprache_fr', ICH);
-    assert.deepEqual(await x.d.sprachpakete(), []);
+    assert.deepEqual(await x.d.kern.repo.sprachpakete(), []);
   });
 
   it('Werkbank → Sprachen: installierte Sprachpakete mit Abdeckung, Version und Nutzung', async () => {
@@ -341,7 +341,7 @@ describe('Sprachpakete in PostgreSQL (#731)', { skip: !process.env.TEST_DATABASE
     // Installieren mit PostgreSQL.
     const { p, d } = await aufbau({ repo: repo as never });
     await installiereHochgeladen(p, fr({}, {}, { id: 'sprache_fr2', kennung: 'it', name: 'Italiano' }));
-    assert.equal((await d.sprachpakete()).find((x) => x.paketId === 'sprache_fr2')?.kennung, 'it');
+    assert.equal((await d.kern.repo.sprachpakete()).find((x) => x.paketId === 'sprache_fr2')?.kennung, 'it');
     await repo.loescheSprachpaket('sprache_fr');
     assert.equal((await repo.sprachpakete()).length, 1);
   });

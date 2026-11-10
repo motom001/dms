@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
 import { artVon, bestandAus, GEHEIM_ARTEN, verschluesselteIn, type Fundstelle } from '../src/geheimnisse';
+import { paketEinstellungen, setzePaketEinstellungen } from '../src/pakete/pakete.einstellungen';
 
 const g = (n: number | string) => `dms1$geheim-${n}`;
 
@@ -140,7 +141,7 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     // Gemerktes Passwort für Dokumente (#827, wie PdfEntsperren.merke).
     await einst.schreibe(`dokpasswoerter_${anna.id}`, { eintraege: [{ id: 'd1', name: 'Gehaltsabrechnung', passwort: v('lohn-geheim'), erstellt: new Date().toISOString(), zuletzt: null }] });
     // Paket-Einstellung vom Typ Geheimnis.
-    await dienst.setzePaketEinstellungen('konten', { werte: { token: dienst.verschluesselePaketGeheimnis('paket-geheim'), liste: [{ id: 'e1', pw: dienst.verschluesselePaketGeheimnis('listen-geheim') }] } });
+    await setzePaketEinstellungen(dienst.kern, 'konten', { werte: { token: dienst.verschluesselePaketGeheimnis('paket-geheim'), liste: [{ id: 'e1', pw: dienst.verschluesselePaketGeheimnis('listen-geheim') }] } });
 
     // Webhook (#627): Geheimnis für die Signatur.
     await sql`INSERT INTO webhooks (id, haushalt_id, benutzer_id, name, url, geheimnis) VALUES (gen_random_uuid(), ${HAUSHALT}, ${anna.id}, 'Homey', 'http://homey.home.arpa/x', ${v('whsec_geheim')})`;
@@ -180,7 +181,7 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     assert.equal(e((await oidc.einstellung()).clientSecret), 'oidc-geheim');
     assert.equal(e(((await einst.lies(`zweifaktor_${anna.id}`)) as { geheimnis: string }).geheimnis), 'JBSWY3DPEHPK3PXP');
     assert.equal(e(((await einst.lies(`dokpasswoerter_${anna.id}`)) as { eintraege: Array<{ passwort: string }> }).eintraege[0].passwort), 'lohn-geheim');
-    const paket = (await dienst.paketEinstellungen('konten'))!.werte as { token: string; liste: Array<{ pw: string }> };
+    const paket = (await paketEinstellungen(dienst.kern, 'konten'))!.werte as { token: string; liste: Array<{ pw: string }> };
     assert.equal(e(paket.token), 'paket-geheim');
     assert.equal(e(paket.liste[0].pw), 'listen-geheim');
     await dienst.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);

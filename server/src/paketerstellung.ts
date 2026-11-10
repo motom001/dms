@@ -33,6 +33,7 @@ import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
+import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } from './pakete/pakete.einstellungen';
 
 const log = protokoll.modul('werkbank');
 
@@ -611,7 +612,7 @@ export class Paketerstellung {
 
   /** Was es zur Auswahl gibt, gemerkte Entwürfe und Vorschläge für den nächsten Export. */
   async stand(): Promise<ErstellenStand> {
-    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.listeTypen(), await this.d.listeSichten(), await this.d.listePakete(), await this.dmsTypen(), await this.d.paketEntwuerfe()];
+    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.listeTypen(), await this.d.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
     const herkunft = (map: (p: InstalliertesPaket) => Record<string, string>, id: string) => {
       const p = pakete.find((x) => Object.values(map(x)).includes(id));
       return p ? { id: p.id, name: p.name, version: p.version } : null;
@@ -663,8 +664,8 @@ export class Paketerstellung {
     }
     return {
       dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}),
-      typen, sichten: await this.d.listeSichten(), pakete: await this.d.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.sucheStand()).synonyme,
-      dmsVersion: this.o.version(), entwurf: (await this.d.paketEntwuerfe()).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await this.d.paketEntwuerfe(), jetzt: new Date(),
+      typen, sichten: await this.d.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.sucheStand()).synonyme,
+      dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };
   }
 
@@ -715,13 +716,13 @@ export class Paketerstellung {
   }
 
   private async archive(id: string): Promise<GemerktesArchiv[]> {
-    const v = await this.d.paketArchive(id);
+    const v = await paketArchive(this.d.kern, id);
     return Array.isArray(v) ? v.filter((x): x is GemerktesArchiv => !!x && typeof x.version === 'string' && typeof x.zip === 'string') : [];
   }
 
   /** Selbst erstellte Pakete für die Paketverwaltung (#652), zuletzt erstellte zuerst. */
   async selbstErstellt(): Promise<SelbstErstellt[]> {
-    const liste = [...await this.d.paketEntwuerfe()].sort((a, b) => b.exportiert.localeCompare(a.exportiert));
+    const liste = [...await paketEntwuerfe(this.d.kern)].sort((a, b) => b.exportiert.localeCompare(a.exportiert));
     return Promise.all(liste.map(async (e) => this.kurz(e, await this.archive(e.id))));
   }
   private kurz(e: PaketEntwurf, archive: GemerktesArchiv[]): SelbstErstellt {
@@ -733,7 +734,7 @@ export class Paketerstellung {
 
   /** Was damals erstellt wurde und was sich seitdem geändert hat (#652). */
   async selbstErstelltDetail(id: string): Promise<SelbstErstelltDetail> {
-    const e = (await this.d.paketEntwuerfe()).find((x) => x.id === id);
+    const e = (await paketEntwuerfe(this.d.kern)).find((x) => x.id === id);
     if (!e) throw new Fachfehler(404, t('meldungen.paketerstellung.dieses-selbst-erstellte-paket'));
     const [typen, sichten] = [await this.d.listeTypen(), await this.d.listeSichten()];
     return {
@@ -753,10 +754,10 @@ export class Paketerstellung {
 
   /** „Aus der Liste nehmen“ (#652): vergisst Entwurf und gemerkte Archive – Mappentypen und Ansichten bleiben. */
   async ausListeNehmen(id: string, von: Handelnder): Promise<SelbstErstellt[]> {
-    const alle = await this.d.paketEntwuerfe();
+    const alle = await paketEntwuerfe(this.d.kern);
     if (!alle.some((x) => x.id === id)) throw new Fachfehler(404, t('meldungen.paketerstellung.dieses-selbst-erstellte-paket'));
-    await this.d.setzePaketEntwuerfe(alle.filter((x) => x.id !== id));
-    await this.d.setzePaketArchive(id, null);
+    await setzePaketEntwuerfe(this.d.kern, alle.filter((x) => x.id !== id));
+    await setzePaketArchive(this.d.kern, id, null);
     log.info('Selbst erstelltes Paket aus der Liste genommen', { von: von.email, paket: id });
     return this.selbstErstellt();
   }
@@ -767,7 +768,7 @@ export class Paketerstellung {
    */
   async erstelle(eingabe: unknown, von: Handelnder): Promise<SelbstErstellt & { name: string; datei: string; bytes: number }> {
     const r = await this.exportiere(eingabe, von);
-    const e = (await this.d.paketEntwuerfe()).find((x) => r.name.startsWith(`${x.id}-`))!;
+    const e = (await paketEntwuerfe(this.d.kern)).find((x) => r.name.startsWith(`${x.id}-`))!;
     return { ...this.kurz(e, await this.archive(e.id)), datei: r.name, bytes: r.daten.length };
   }
 
@@ -783,14 +784,14 @@ export class Paketerstellung {
       verlauf: daten.entwurf ? [{ version: daten.entwurf.version, datum: daten.entwurf.exportiert.slice(0, 10), text: daten.entwurf.aenderungen || t('meldungen.paketerstellung.aus-ablago-exportiert') }, ...daten.entwurf.verlauf].filter((v) => vergleicheVersion(v.version, e.version.trim()) < 0).slice(0, 50) : [],
       exportiert: daten.jetzt.toISOString(), von: von.email,
     };
-    const rest = (await this.d.paketEntwuerfe()).filter((x) => x.id !== id);
-    await this.d.setzePaketEntwuerfe([entwurf, ...rest].slice(0, ENTWUERFE_MAX));
+    const rest = (await paketEntwuerfe(this.d.kern)).filter((x) => x.id !== id);
+    await setzePaketEntwuerfe(this.d.kern, [entwurf, ...rest].slice(0, ENTWUERFE_MAX));
     // Archiv merken (#652), damit „Als ZIP herunterladen“ später genau diese Version liefert.
     if (zip.length <= ARCHIV_MERKEN_MAX) {
       const alt = (await this.archive(id)).filter((a) => a.version !== entwurf.version);
-      await this.d.setzePaketArchive(id, [{ version: entwurf.version, erstellt: entwurf.exportiert, zip: zip.toString('base64') }, ...alt].slice(0, ARCHIVE_JE_PAKET));
+      await setzePaketArchive(this.d.kern, id, [{ version: entwurf.version, erstellt: entwurf.exportiert, zip: zip.toString('base64') }, ...alt].slice(0, ARCHIVE_JE_PAKET));
     }
-    for (const weg of rest.length + 1 > ENTWUERFE_MAX ? rest.slice(ENTWUERFE_MAX - 1) : []) await this.d.setzePaketArchive(weg.id, null);
+    for (const weg of rest.length + 1 > ENTWUERFE_MAX ? rest.slice(ENTWUERFE_MAX - 1) : []) await setzePaketArchive(this.d.kern, weg.id, null);
     log.info('Paket erstellt', { von: von.email, paket: id, version: entwurf.version, typen: bau.inhalt.typen.length, sichten: bau.inhalt.sichten.length, beispiele: bau.inhalt.beispiele, abhaengigkeiten: Object.keys(bau.abhaengigkeiten) });
     return { name: `${id}-${entwurf.version}.zip`, daten: zip };
   }

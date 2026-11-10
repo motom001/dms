@@ -67,7 +67,7 @@ async function aufbau(o: { repo?: Repo; konto?: KontoRepo; zustand?: Kurzzustand
     pakete: () => [...geladen.values()].map((p) => ({ id: p.id, name: p.name, version: p.version, netz: p.laeufer!.netz.length > 0 })),
     uebersetze: async (p, e) => { eingaenge.push({ paket: p, e }); return { text: antwort(e), ms: 2 }; },
   };
-  for (const p of geladen.values()) await d.speicherePaket(p);
+  for (const p of geladen.values()) await d.kern.repo.speicherePaket(p);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const route = (mt: string, p: string) => tabelle.find((r) => r.methode === mt && r.pfad === p)!;
@@ -179,7 +179,7 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     assert.equal(x.eingaenge.length, 1, 'kein zweiter Aufruf');
     // Neue Version des Pakets: neu übersetzt, die alte Übersetzung ist weg.
     x.geladen.set('lokal', paket('lokal', [], '1.1.0'));
-    await x.d.speicherePaket(x.geladen.get('lokal')!);
+    await x.d.kern.repo.speicherePaket(x.geladen.get('lokal')!);
     assert.equal((await x.uebersetze(x.lena, q)).gespeichert, undefined);
     assert.equal(x.eingaenge.length, 2);
     const eintraege = await x.d.kurzzustand.liste(ZWISCHENSPEICHER, `${x.m.id}|`);
@@ -311,8 +311,8 @@ describe('Inhalte übersetzen (#732): Test-Paket im echten Paket-Läufer', () =>
     const x = await aufbau();
     const wasm = festesErgebnis(JSON.stringify({ text: 'Dear Mrs Example, your application has been approved.', von: 'de' }));
     const p = liesPaket(new Map([['manifest.yaml', Buffer.from(MANIFEST)], ['code/modul.wasm', wasm]]));
-    await x.d.speicherePaketCode('uebersetzer_test', p.code!.dateien);
-    await x.d.speicherePaket({ ...paket('uebersetzer_test'), name: 'Übersetzer (Test)', laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+    await x.d.kern.repo.speicherePaketCode('uebersetzer_test', p.code!.dateien);
+    await x.d.kern.repo.speicherePaket({ ...paket('uebersetzer_test'), name: 'Übersetzer (Test)', laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
     const l = new Paketlaeufer({ dienst: x.d, konten: x.konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => ({}), speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 5, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });
     laeufer.push(l);
     await l.start();
