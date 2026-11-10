@@ -91,14 +91,11 @@ export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_
 import { dateiname, DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, erkenneAnzeigbar, FehlendeDateien, GeschuetztePdfs, type TexterkennungAnbindung } from './dokumente';
 export { erkenneAnzeigbar };
 export type { TexterkennungAnbindung };
-import { sortierungAus, SichtenDienst, type Zaehlerzahlen } from './sichten/sichten.dienst';
-import { SichtenVerwaltung } from './sichten/verwalten';
-import { Systemsichten } from './sichten/systemsichten';
+import { SichtenDienst, SichtenVerwaltung, sortierungAus, Systemsichten, type Zaehlerzahlen } from './sichten';
 export { sortierungAus };
 export type { Zaehlerzahlen };
-import { BerechtigungenDienst } from './berechtigungen/berechtigungen.dienst';
-import { type EreignisAufruf, VOLLTEXT_MAX, VolltextDienst, type VolltextMeldung } from './volltext/volltext.dienst';
-import { VolltextAusPaketen } from './volltext/aus-paketen';
+import { BerechtigungenDienst } from './berechtigungen';
+import { type EreignisAufruf, VOLLTEXT_MAX, VolltextAusPaketen, VolltextDienst, type VolltextMeldung } from './volltext';
 export { VOLLTEXT_MAX };
 export type { EreignisAufruf, VolltextMeldung };
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
