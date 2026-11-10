@@ -763,7 +763,7 @@ export class Dienst {
   typenFuer(z: Zugriff) { return this.mappentypen.typenFuer(z); }
   ausPostZiele(z?: Zugriff): Promise<Mappentyp[]> { return this.mappentypen.ausPostZiele(z); }
   rechteUebersicht(z: Zugriff) { return this.mappentypen.rechteUebersicht(z); }
-  legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.legeTypAn(eingabe); }
+  legeTypAn(eingabe: unknown, ausPaket?: string): Promise<Mappentyp> { return this.mappentypen.legeTypAn(eingabe, ausPaket); }
   aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.aendereTyp(id, eingabe); }
   ausDokumentVon(typId: string): Promise<AusDokument | null> { return this.mappentypen.ausDokumentVon(typId); }
   loescheTyp(id: string): Promise<void> { return this.mappentypen.loescheTyp(id); }

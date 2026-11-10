@@ -408,7 +408,8 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   };
   for (const mappentyp of typen) {
     const ms = jeTyp.get(mappentyp.id) ?? [];
-    const dateiname = sichererName(mappentyp.schluessel || mappentyp.name, 60);
+    // Kennung `paket:schluessel` (#1084): im Dateinamen mit Punkt statt Doppelpunkt (Windows kennt keinen Doppelpunkt).
+    const dateiname = sichererName(mappentyp.schluessel?.replace(':', '.') || mappentyp.name, 130);
     // CSV und JSON Lines: alle Felder, Verweise als Id und Titel.
     const kopf = ['id', 'titel', 'angelegt', 'angelegt_von', 'geaendert', 'geaendert_von', ...(mappentyp.archiv ? ['aufbewahren_bis'] : []),
       ...mappentyp.felder.flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];

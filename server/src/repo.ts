@@ -393,6 +393,11 @@ export interface Repo {
   setzeBerechtigungen(typId: string, rw: Regelwerk | null): Promise<Mappentyp>;
   /** Schlüssel nachtragen (#145; nur für Typen ohne). */
   setzeTypSchluessel(typId: string, schluessel: string): Promise<void>;
+  /**
+   * Kennung eines vorhandenen Typs setzen (#1084), Paket und Schlüssel aus `paket:schluessel` (bzw. ohne Paket) – nur
+   * für die Paketverwaltung: Übernahme des früheren Ablageorts durch Basis (#883) und deren Rücknahme.
+   */
+  setzeTypKennung(typId: string, kennung: string): Promise<void>;
 
   listeSichten(): Promise<Sicht[]>;
   legeSichtAn(id: string, d: SichtDaten): Promise<Sicht>;

@@ -22,7 +22,7 @@ import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
-import { PAKET_ID_TEIL, SCHLUESSEL, TYPVERWEIS } from '../../shared/src/kennungen';
+import { PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst, PaketQuelleEintrag } from './dienst';
@@ -280,6 +280,21 @@ const typverweise = (typen: PaketTyp[], sichten: PaketSicht[]) => [
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));
 
+/**
+ * Kennung der alten Form `<paket>_<schluessel>` (vor #1084) in die neue `paket:schluessel` – für ältere Pakete und
+ * Dateien, die so noch auf Typen anderer Pakete zeigen (z. B. `fremde_typen`). Die Zuordnung kommt aus den installierten
+ * Paketen (ihren Schlüsseln), nie aus dem Teilen am Unterstrich: `haus_garten_pflanze` kann `haus:garten_pflanze` wie
+ * `haus_garten:pflanze` heißen. Passt nichts genau, bleibt die Kennung, wie sie ist.
+ */
+export function neueKennung(kennung: string, installierte: Array<Pick<InstalliertesPaket, 'id' | 'typen'>>): string {
+  if (kennung.includes(':')) return kennung;
+  const treffer = installierte.flatMap((p) => Object.keys(p.typen).filter((k) => `${p.id}_${k}` === kennung).map((k) => typKennung(p.id, k)));
+  return treffer.length === 1 ? treffer[0] : kennung;
+}
+/** Mappentyp zu einer Kennung aus einem Paket (`fremde_typen`, #656) – auch in der alten Form (neueKennung). */
+const fremderTyp = (kennung: string, typen: Mappentyp[], installierte: Array<Pick<InstalliertesPaket, 'id' | 'typen'>>) =>
+  typen.find((t) => t.schluessel === kennung) ?? typen.find((t) => t.schluessel === neueKennung(kennung, installierte));
+
 /** Liest Manifest und Inhalte aus den Dateien eines Archivs; wirft mit allen Fehlern auf einmal. */
 export function liesPaket(roh: Map<string, Buffer>): Paket {
   // Ein Ordner davor (z. B. beim selbst gepackten ZIP) stört nicht.
@@ -372,7 +387,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       typen: Array.isArray(s.typen) ? s.typen.map(str) : [], trefferliste: s.trefferliste ? str(s.trefferliste) : undefined,
       ...(s.fremde_typen !== undefined ? { fremdeTypen: (Array.isArray(s.fremde_typen) ? s.fremde_typen : []).map((f, j): FremderTyp => {
         const k = istObjekt(f) ? str(f.kennung) : '';
-        if (!SCHLUESSEL.test(k)) fehler.push(t('meldungen.pakete.sichten-fremde-typen-ungueltige', { wert: i + 1, wert2: j + 1, k }));
+        if (!TYP_KENNUNG.test(k)) fehler.push(t('meldungen.pakete.sichten-fremde-typen-ungueltige', { wert: i + 1, wert2: j + 1, k }));
         return { kennung: k, name: istObjekt(f) ? str(f.name).trim() || k : k };
       }) } : {}),
       // Symbol (#428): unbekannte Namen (Paket für eine neuere Version) heißen „ohne Symbol“, kein Fehler.
@@ -1462,7 +1477,8 @@ export class Paketverwaltung {
     const ueb = await this.uebernahme(paket, ich);
     if (ueb) hinweise.push(t('meldungen.pakete.ablageort-uebernommen', { name: ueb.name }));
     const typPlaene = await Promise.all(paket.typen.map(async (paketTyp): Promise<TypPlan> => {
-      const dmsSchluessel = `${m.id}_${paketTyp.schluessel}`;
+      // Kennung im DMS (#1084): Paket und Schlüssel getrennt, nach außen `paket:schluessel` – eindeutig auch bei „_“ in beiden.
+      const dmsSchluessel = typKennung(m.id, paketTyp.schluessel);
       const vorhandenId = ich?.typen[paketTyp.schluessel] ?? ueb?.typen[paketTyp.schluessel];
       const vorhanden = vorhandenId ? typen.find((x) => x.id === vorhandenId) : undefined;
       if (vorhanden) {
@@ -1495,13 +1511,13 @@ export class Paketverwaltung {
     for (const s of nachEltern(paket.sichten)) {
       if (s.eltern && ausgelassen.has(s.eltern)) { ausgelassen.set(s.schluessel, `Ansicht „${s.name}“ wird nicht installiert: Sie steht unter „${paket.sichten.find((x) => x.schluessel === s.eltern)?.name ?? s.eltern}“, die nicht installiert wird.`); continue; }
       const fremd = s.fremdeTypen ?? [];
-      const fehlt = fremd.filter((f) => !typen.some((t) => t.schluessel === f.kennung));
+      const fehlt = fremd.filter((f) => !fremderTyp(f.kennung, typen, installierte));
       if (fremd.length && fehlt.length === fremd.length && !(s.typen ?? []).length) ausgelassen.set(s.schluessel, `Ansicht „${s.name}“ wird nicht installiert: Den Mappentyp ${fehlt.map((f) => `„${f.name}“`).join(', ')} gibt es in dieser Installation nicht.`);
     }
     for (const g of ausgelassen.values()) hinweise.push(g);
     const sichtPlaene = paket.sichten.map((s): SichtPlan => {
       if (ausgelassen.has(s.schluessel) && !ich?.sichten[s.schluessel]) return { schluessel: s.schluessel, name: s.name, eltern: s.eltern ?? null, vorhanden: false, konflikt: null, vorschlag: null, ausgelassen: ausgelassen.get(s.schluessel)! };
-      const ohne = (s.fremdeTypen ?? []).filter((f) => !typen.some((t) => t.schluessel === f.kennung)).map((f) => f.name);
+      const ohne = (s.fremdeTypen ?? []).filter((f) => !fremderTyp(f.kennung, typen, installierte)).map((f) => f.name);
       if (ohne.length && !ich?.sichten[s.schluessel]) hinweise.push(t('meldungen.pakete.ansicht-kommt-ohne-den', { name: s.name, map: ohne.map((n) => `„${n}“`).join(', ') }));
       const vorhandenId = ich?.sichten[s.schluessel] ?? ueb?.sichten[s.schluessel];
       const vorhanden = vorhandenId ? sichten.find((x) => x.id === vorhandenId) : undefined;
@@ -1634,7 +1650,7 @@ export class Paketverwaltung {
         ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
       const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => ziel(q.typ, nurAngelegt) === null));
       const name = plan.typen.find((x) => x.schluessel === t.schluessel)!.name;
-      return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: `${m.id}_${t.schluessel}`, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}), sichtAnlegen: false } };
+      return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}), sichtAnlegen: false } };
     };
     // Zurückrollen: angelegte Mappen, Sichten, Typen; geänderte Typen auf den alten Stand.
     const mappen: string[] = [];
@@ -1643,7 +1659,9 @@ export class Paketverwaltung {
     const geaendert: Mappentyp[] = [];
     // Abschnitte aus dem Update (#890) je Typ: gehören zum Paketstand (#653), nicht zu den eigenen Änderungen.
     const abschnittRegister = new Map<string, Set<string>>();
+    const kennungZurueck = new Map<string, string>();
     const zurueck = async () => {
+      for (const [id, k] of kennungZurueck) await this.d.kern.repo.setzeTypKennung(id, k).catch(() => {});
       await this.d.entferneMappenEndgueltig(mappen).catch(() => {});
       for (const s of [...neueSichten].reverse()) await this.d.loescheSicht(s).catch(() => {});
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
@@ -1670,7 +1688,7 @@ export class Paketverwaltung {
         const i = rest.findIndex((t) => !eingabe(t, true).unvollstaendig);
         const paketTyp = rest.splice(i < 0 ? 0 : i, 1)[0];
         const x = eingabe(paketTyp, true);
-        try { await this.d.legeTypAn(x.daten); } catch (f) { throw new Fachfehler((f as Fachfehler).status ?? 422, t('meldungen.pakete.mappentyp', { name: x.daten.name, meldungen: meldungen(f) })); }
+        try { await this.d.legeTypAn(x.daten, m.id); } catch (f) { throw new Fachfehler((f as Fachfehler).status ?? 422, t('meldungen.pakete.mappentyp', { name: x.daten.name, meldungen: meldungen(f) })); }
         angelegt.add(paketTyp.schluessel);
         typMap[paketTyp.schluessel] = ids.get(paketTyp.schluessel)!;
         if (x.unvollstaendig) nachtragen.push(paketTyp);
@@ -1706,6 +1724,13 @@ export class Paketverwaltung {
         geaendert.push(aktuell);
         try { await this.d.aendereTyp(aktuell.id, { ...aktuell, ...typAngabenNeu(paketTyp, aktuell), felder, register, beschriftungen: besch.typ.beschriftungen ?? null }); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: aktuell.name, meldungen: meldungen(f) })); }
       }
+      // Übernahme (#883): Der frühere Ablageort gehört jetzt dem Paket und heißt wie dessen Typ (#1084: basis:ablageort).
+      for (const [s, id] of Object.entries(ueb?.typen ?? {})) {
+        const vorKennung = vorher.get(id)?.schluessel;
+        if (vorKennung === typKennung(m.id, s)) continue;
+        await this.d.kern.repo.setzeTypKennung(id, typKennung(m.id, s));
+        if (vorKennung) kennungZurueck.set(id, vorKennung);
+      }
       // 3. Neue Sichten, Elternsichten zuerst, am Ende ihrer Ebene.
       for (const s of nachEltern(paket.sichten)) {
         const sp = plan.sichten.find((x) => x.schluessel === s.schluessel)!;
@@ -1716,7 +1741,7 @@ export class Paketverwaltung {
         const position = Math.max(0, ...kinderVon(alle, elternId).map((x) => x.position)) + 10;
         // „*“ (#725): Ansicht über alle Mappentypen – bleibt, wie es ist.
         const jetzt = await this.d.listeTypen();
-        const fremd = (s.fremdeTypen ?? []).map((f) => jetzt.find((t) => t.schluessel === f.kennung)?.id).filter((x): x is string => !!x);
+        const fremd = (s.fremdeTypen ?? []).map((f) => fremderTyp(f.kennung, jetzt, installierte)?.id).filter((x): x is string => !!x);
         const typen = [...new Set([...(s.typen ?? []).map((x) => (x === ALLE_TYPEN ? ALLE_TYPEN : ziel(x, false)!)).filter(Boolean), ...fremd])];
         if (!typen.length && (s.fremdeTypen ?? []).length) continue;
         try {

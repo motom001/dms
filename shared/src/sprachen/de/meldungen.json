@@ -315,6 +315,7 @@
   "dienst.mappen_one": "Mappe",
   "dienst.mappen_other": "Mappen",
   "dienst.die-kennung-hat-schon": "Die Kennung „{schluessel}“ hat schon der Nummernkreis „{name}“.",
+  "dienst.kennung-mit-paket": "Die Kennung „{schluessel}“ enthält einen Doppelpunkt – so heißen nur Mappentypen aus Paketen (paket:schluessel). Wähle eine Kennung ohne Doppelpunkt.",
   "dienst.diesen-nummernkreis-gibt-es": "Diesen Nummernkreis gibt es nicht.",
   "dienst.kennung-kleinbuchstaben-ziffern-und": "Kennung: Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben (höchstens 40 Zeichen).",
   "dienst.der-nummernkreis-braucht-einen": "Der Nummernkreis braucht einen Namen.",

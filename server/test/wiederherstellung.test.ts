@@ -21,7 +21,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   type Sql = any;
   let haupt: Sql;
   const offen: Sql[] = [];
-  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`];
+  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`, `dms_wh_kennq_${process.pid}`, `dms_wh_kennz_${process.pid}`];
   const urlVon = (db: string) => { const u = new URL(url!); u.pathname = `/${db}`; return u.toString(); };
 
   before(async () => {
@@ -36,7 +36,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   });
 
   /** Ein DMS wie im Betrieb: Datenbank, Dateien, Schlüssel, Sicherung, Wiederherstellung. */
-  async function system(db: string, opt: { mitDaten?: boolean; mitSchluessel?: boolean } = {}) {
+  async function system(db: string, opt: { mitDaten?: boolean; mitSchluessel?: boolean; migrationen?: string } = {}) {
     const { verbinde, migriere } = await import('../src/db');
     const { pgRepo } = await import('../src/repo-pg');
     const { Dienst } = await import('../src/dienst');
@@ -49,7 +49,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const { Wiederherstellung } = await import('../src/wiederherstellung');
     const sql = verbinde(urlVon(db));
     offen.push(sql);
-    await migriere(sql, MIGRATIONEN, () => {});
+    await migriere(sql, opt.migrationen ?? MIGRATIONEN, () => {});
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     const wurzel = await mkdtemp(join(tmpdir(), `dms-wh-${db}-`));
     const einstellungen = pgEinstellungen(sql, HAUSHALT);
@@ -451,5 +451,35 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(ohne.schluesselNoetig, true);
     const mit = await x.w.abgleich(name, altText);
     assert.deepEqual(mit.probleme, []);
+  });
+  it('ältere Sicherung mit Kennungen <paket>_<schluessel> kommt in der neuen Form an – Zuordnung aus den Paketen (#1084)', async () => {
+    const { cp } = await import('node:fs/promises');
+    // Quelle auf dem Stand vor #1084: nur die Migrationen bis 092.
+    const vorher = await mkdtemp(join(tmpdir(), 'dms-wh-mig-'));
+    for (const f of (await readdir(MIGRATIONEN)).filter((x) => x.endsWith('.sql') && x < '093')) await cp(join(MIGRATIONEN, f), join(vorher, f));
+    const q = await system(dbs[6], { mitSchluessel: true, migrationen: vorher });
+    const [a, b, c] = ['00000000-0000-4000-8000-00000000a084', '00000000-0000-4000-8000-00000000b084', '00000000-0000-4000-8000-00000000c084'];
+    const reg = q.sql.json([{ key: 'r', name: 'R', art: 'felder' }]);
+    const tl = q.sql.json([{ key: 'standard', name: 'Standard', standard: true, spalten: [] }]);
+    await q.sql`INSERT INTO mappentypen (id, haushalt_id, name, schluessel, register, trefferlisten) VALUES
+      (${a}, ${HAUSHALT}, 'Pflanze', 'haus_garten_pflanze', ${reg}, ${tl}), (${b}, ${HAUSHALT}, 'Beet', 'haus_garten_beet', ${reg}, ${tl}),
+      (${c}, ${HAUSHALT}, 'Eigen', 'garten_pflanze', ${reg}, ${tl})`;
+    await q.sql`INSERT INTO pakete (haushalt_id, id, version, daten) VALUES
+      (${HAUSHALT}, 'haus', '1.0.0', ${q.sql.json({ id: 'haus', typen: { garten_pflanze: a } })}),
+      (${HAUSHALT}, 'haus_garten', '1.0.0', ${q.sql.json({ id: 'haus_garten', typen: { beet: b } })})`;
+    const meta = (await (await q.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
+    assert.ok(meta.migrationen.every((x) => x < '093'), 'Sicherung im alten Stand');
+    const name = meta.datei.replace('.dms-sicherung', '');
+    const z = await system(dbs[7]);
+    await cp(q.sicherung.ordner, z.sicherung.ordner, { recursive: true });
+    await z.w.starte({ name, schluessel: q.tresor.alsText()! }, null);
+    const lauf = await warte(z.w);
+    assert.equal(lauf.status, 'neustart', JSON.stringify(lauf, null, 1));
+    await new Promise((r) => setTimeout(r, 1700));
+    const neu = await frisch(dbs[7]);
+    const typen = await neu`SELECT id::text, paket, schluessel FROM mappentypen WHERE id = ANY(${[a, b, c]}::uuid[]) ORDER BY id`;
+    assert.deepEqual(typen.map((r: Record<string, unknown>) => [r.id, r.paket, r.schluessel]), [
+      [a, 'haus', 'garten_pflanze'], [b, 'haus_garten', 'beet'], [c, null, 'garten_pflanze'],
+    ], 'haus_garten_pflanze gehört laut Paket zu haus, nicht zu haus_garten; der eigene Typ bleibt');
   });
 });

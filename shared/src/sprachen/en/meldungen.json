@@ -315,6 +315,7 @@
   "dienst.mappen_one": "folder",
   "dienst.mappen_other": "folders",
   "dienst.die-kennung-hat-schon": "The number sequence “{name}” already has the key “{schluessel}”.",
+  "dienst.kennung-mit-paket": "The key “{schluessel}” contains a colon – only folder types from packages are named like that (package:key). Choose a key without a colon.",
   "dienst.diesen-nummernkreis-gibt-es": "This number sequence doesn’t exist.",
   "dienst.kennung-kleinbuchstaben-ziffern-und": "Key: lower-case letters, digits and _, starting with a letter (at most 40 characters).",
   "dienst.der-nummernkreis-braucht-einen": "The number sequence needs a name.",

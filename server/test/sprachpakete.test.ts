@@ -229,7 +229,7 @@ describe('Sprachpaket installieren und nutzen (#731)', () => {
       if (reihenfolge === 'basis-zuerst') await installiereHochgeladen(p, basis);
       await installiereHochgeladen(p, fr());
       if (reihenfolge === 'sprache-zuerst') await installiereHochgeladen(p, basis);
-      const typ = (await d.listeTypen()).find((x) => x.schluessel === 'basis_organisation')!;
+      const typ = (await d.listeTypen()).find((x) => x.schluessel === 'basis:organisation')!;
       assert.equal(typ.beschriftungen?.fr?.name, 'Organisme', reihenfolge);
       assert.equal(typ.felder.find((f) => f.key === 'art')?.beschriftungen?.fr?.optionen?.Bank, 'Banque');
       assert.equal(typ.felder.find((f) => f.key === 'name')?.beschriftungen?.fr?.label, 'Nom');

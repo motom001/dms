@@ -19,6 +19,7 @@ import { feldweise, istUuid, KonfigurationVeraltet, StandVeraltet, WOERTER_JE_LA
 import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
+import { teileKennung, typKennung } from '../../shared/src/kennungen';
 /** Sprachmarke im Hinweis der Texterkennung (#395) samt Konfidenz, zum Ersetzen (#400). */
 const log = protokoll.modul('texterkennung');
 const SPRACHE_INFO_SQL = ' · Sprache: [a-z_]{3,10}( \\(\\d{1,3} %\\))?';
@@ -38,7 +39,9 @@ const alsLink = (r: Record<string, unknown>): AuskunftLinkIntern => ({
 const alsTyp = (r: Zeile): Mappentyp => ({
   id: r.id as string,
   name: r.name as string,
-  ...(r.schluessel ? { schluessel: r.schluessel as string } : {}),
+  // Paket und Schlüssel getrennt gespeichert (#1084), nach außen `paket:schluessel`.
+  ...(r.schluessel ? { schluessel: typKennung(r.paket as string | null, r.schluessel as string) } : {}),
+  ...(r.paket ? { paket: r.paket as string } : {}),
   beschreibung: r.beschreibung as string,
   titelVorlage: r.titel_vorlage as string,
   felder: r.felder as Mappentyp['felder'],
@@ -713,9 +716,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return r ? alsTyp(r) : undefined;
     },
     async legeTypAn(id, d: MappentypDaten, system) {
+      const k = d.schluessel ? teileKennung(d.schluessel) : { paket: null, schluessel: null };
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.schluessel ?? null}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
+        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${k.paket}, ${k.schluessel}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
           ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null}, ${d.archiv ? json(sql, d.archiv) : null}, ${d.beschriftungen ? json(sql, d.beschriftungen) : null},
           ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''})
         RETURNING *`;
@@ -728,8 +732,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           const [a] = await tx`SELECT geaendert FROM mappentypen WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
           if (a && iso(a.geaendert) !== erwartet) throw new KonfigurationVeraltet();
         }
+        // Die Kennung ist fest (#145); fehlt sie noch, gilt die neue – Paket und Schlüssel zusammen (#1084).
+        const k = d.schluessel ? teileKennung(d.schluessel) : { paket: null, schluessel: null };
         const [r] = await tx`
-          UPDATE mappentypen SET name = ${d.name}, schluessel = coalesce(schluessel, ${d.schluessel ?? null}), beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
+          UPDATE mappentypen SET name = ${d.name}, paket = CASE WHEN schluessel IS NULL THEN ${k.paket} ELSE paket END, schluessel = coalesce(schluessel, ${k.schluessel}), beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
             felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
             erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, archiv = ${d.archiv ? json(sql, d.archiv) : null},
             beschriftungen = ${d.beschriftungen ? json(sql, d.beschriftungen) : null}, aus_post = ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, erkennbar_an = ${d.erkennbarAn ?? ''},
@@ -1373,6 +1379,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       if (!istUuid(typId)) return 0;
       const [r] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND ${ausdruckSql(sql, x)}`;
       return r.n as number;
+    },
+    async setzeTypKennung(typId, kennung) {
+      const k = teileKennung(kennung);
+      await sql`UPDATE mappentypen SET paket = ${k.paket}, schluessel = ${k.schluessel} WHERE haushalt_id = ${haushaltId} AND id = ${typId}`;
     },
     async setzeTypSchluessel(typId, schluessel) {
       await sql`UPDATE mappentypen SET schluessel = ${schluessel} WHERE haushalt_id = ${haushaltId} AND id = ${typId} AND schluessel IS NULL`;
