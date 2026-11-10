@@ -192,6 +192,30 @@ export class Kern {
     return typeof e?.tage === 'number' ? e.tage : PAPIERKORB_STANDARD_TAGE;
   }
 
+  /** Je Mappentyp-Id die Pakete, denen der Admin diesen Typ verwehrt hat (Einstellung, Teil der Sicherung). */
+  async paketVerwehrt(): Promise<Record<string, string[]>> {
+    const v = await this.einstellungen?.lies('paket_verwehrt');
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([, x]) => Array.isArray(x)).map(([k, x]) => [k, (x as unknown[]).map(String)]));
+  }
+
+  async ablageortId(): Promise<string | undefined> {
+    const basis = (await this.repo.listePakete()).find((p) => p.id === 'basis')?.typen.ablageort;
+    if (basis && (await this.repo.holeTyp(basis))) return basis;
+    return (await this.frueherAblageortTyp())?.id;
+  }
+
+  /**
+   * Der Ablageort, den der Kern vor #883 angelegt hat – solange ihn kein Paket übernommen hat. Gemerkt über seine Id in
+   * den Einstellungen (ohne Einstellungen, z. B. in Tests: über die Kennung `ablageort`).
+   */
+  async frueherAblageortTyp(): Promise<Mappentyp | undefined> {
+    const merk = (await this.einstellungen?.lies('ablageort')) as { id?: string } | null | undefined;
+    const id = merk?.id ?? (this.einstellungen ? undefined : (await this.repo.listeTypen()).find((t) => !t.system && t.schluessel === 'ablageort')?.id);
+    if (!id || (await this.repo.listePakete()).some((p) => Object.values(p.typen).includes(id))) return undefined;
+    return this.repo.holeTyp(id);
+  }
+
   private sichern?: Promise<SystemIds>;
 
   /**
