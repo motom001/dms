@@ -1,8 +1,5 @@
 {
   "server/src/ablago.ts": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 4
-    },
     "max-lines": {
       "count": 1
     }
