@@ -88,7 +88,7 @@ export class Einrichtung {
   /** Solange niemand eingerichtet ist: Code nötig (falls ein Code bereitsteht). */
   async pruefeCode(code: unknown) {
     if (!(await this.d.konten.einrichtungNoetig())) throw new Fachfehler(409, t('meldungen.einrichtung.die-einrichtung-ist-bereits'));
-    this.d.code?.pruefe(code);
+    await this.d.code?.pruefeGeteilt(code);
   }
   get codeNoetig() { return !!this.d.code?.aktiv; }
 

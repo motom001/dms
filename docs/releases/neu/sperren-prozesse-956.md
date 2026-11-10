@@ -1,0 +1,5 @@
+art: patch
+
+## Sicherheit
+
+- **Fehlversuche vorab gezählt, für alle Prozesse** (#956, Punkt 3): Abruf-Links einer Auskunft, das Entsperren geschützter PDFs, die erneute Bestätigung für gemerkte Passwörter und der Einrichtungscode zählen jeden Versuch jetzt **vor** der Prüfung, atomar in der Datenbank. Gleichzeitige Anfragen, auch auf mehrere Prozesse verteilt, kommen so nicht mehr an der Grenze vorbei. Ein richtiger Code nimmt seinen Versuch zurück. Der Einrichtungscode zählte bisher je Prozess, jetzt für alle zusammen: 10 Fehlversuche sperren bis 10 Minuten nach dem ersten.

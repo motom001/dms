@@ -2,6 +2,7 @@ import { randomInt, timingSafeEqual, createHash } from 'node:crypto';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Fachfehler } from './fehler';
+import type { Kurzzustand } from './kurzzustand';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
 
@@ -21,6 +22,8 @@ export const CODE_DATEI = 'EINRICHTUNGSCODE';
 const ZEICHEN = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const MAX_FEHLVERSUCHE = 10;
 const SPERRE_MS = 10 * 60_000;
+/** Art im Kurzzustand für die Fehlversuche (#956). */
+const FEHLER = 'einrichtungscode-fehler';
 const log = protokoll.modul('system');
 
 export function neuerCode(): string {
@@ -34,6 +37,8 @@ export class Einrichtungscode {
   private code: string | null = null;
   private fehlversuche = 0;
   private gesperrtBis = 0;
+  /** Mehrere Prozesse (#956): Fehlversuche in der Datenbank, für alle zusammen; ohne nur in diesem Prozess. */
+  private zustand: Kurzzustand | null = null;
 
   constructor(readonly ordner: string, private jetzt: () => number = Date.now, readonly abgeschaltet = false) {}
   get datei() { return join(this.ordner, CODE_DATEI); }
@@ -62,7 +67,7 @@ export class Einrichtungscode {
 
   /**
    * Weitere Prozesse (#745): den Code, den der Leiter bereitgestellt hat, still aus der Datei übernehmen – ohne ihn neu
-   * zu erzeugen oder ins Protokoll zu schreiben. Die Fehlversuche zählt jeder Prozess für sich.
+   * zu erzeugen oder ins Protokoll zu schreiben. Die Fehlversuche zählen alle Prozesse zusammen, sobald `teileZaehler` die Datenbank gibt (#956).
    */
   async uebernimm(): Promise<void> {
     if (this.abgeschaltet || this.code) return;
@@ -89,6 +94,31 @@ export class Einrichtungscode {
       throw new Fachfehler(403, typeof eingabe === 'string' && eingabe ? t('meldungen.einrichtungscode.der-einrichtungscode-stimmt-nicht') : t('meldungen.einrichtungscode.bitte-den-einrichtungscode-eingeben'));
     }
     this.fehlversuche = 0;
+  }
+
+  /** Fehlversuche ab jetzt über alle Prozesse zählen (#956) – sobald die Datenbank da ist. */
+  teileZaehler(z: Kurzzustand) { this.zustand = z; }
+
+  /**
+   * Wie `pruefe`, aber mit Zählern für alle Prozesse (#956), wenn `teileZaehler` aufgerufen wurde: Der Versuch wird
+   * vorab gezählt, ein richtiger Code nimmt die Zähler zurück. 10 Fehlversuche in 10 Minuten sperren bis zum Ende
+   * dieses Fensters. Ohne Datenbank (Einrichtungsmodus) wie `pruefe`.
+   */
+  async pruefeGeteilt(eingabe: unknown) {
+    if (!this.zustand) return this.pruefe(eingabe);
+    if (this.abgeschaltet) return;
+    if (!this.code) throw new Fachfehler(409, t('meldungen.einrichtungscode.die-einrichtung-ist-bereits'));
+    const { anzahl } = await this.zustand.zaehle(FEHLER, 'code', SPERRE_MS);
+    if (anzahl > MAX_FEHLVERSUCHE) {
+      await this.zustand.erhoehe(FEHLER, 'code', -1);
+      throw new Fachfehler(429, t('meldungen.einrichtungscode.zu-viele-falsche-einrichtungscodes'));
+    }
+    const ok = typeof eingabe === 'string' && norm(eingabe).length === 12 && timingSafeEqual(hash(eingabe), hash(this.code));
+    if (!ok) {
+      if (anzahl === MAX_FEHLVERSUCHE) log.warn('Einrichtungscode: zu viele Fehlversuche, gesperrt bis 10 Minuten nach dem ersten');
+      throw new Fachfehler(403, typeof eingabe === 'string' && eingabe ? t('meldungen.einrichtungscode.der-einrichtungscode-stimmt-nicht') : t('meldungen.einrichtungscode.bitte-den-einrichtungscode-eingeben'));
+    }
+    await this.zustand.loesche(FEHLER, 'code');
   }
 
   /** Nach dem Anlegen des Administrators: Code ist wertlos, Datei weg. */

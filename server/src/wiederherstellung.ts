@@ -90,7 +90,7 @@ export interface WiederherstellungsQuellen {
   /** Gehört die Sicherung zu einem anderen Mandanten: dessen Id für den Neustart übernehmen (#119). */
   mandantUebernehmen?: (id: string) => Promise<void>;
   /** Einrichtungscode prüfen (frisches System, #119); wirft bei falschem Code. */
-  pruefeCode?: (code: unknown) => void;
+  pruefeCode?: (code: unknown) => void | Promise<void>;
   anAdmins?: (betreff: import('./mail').MailText, text: import('./mail').MailText) => Promise<void>;
   jetzt?: () => Date;
 }
@@ -129,7 +129,7 @@ export class Wiederherstellung {
   async pruefeZugang(admin: boolean, einrichtungscode?: unknown) {
     if (await this.q.einrichtungNoetig()) {
       // Frisches System (#119): nur mit dem Einrichtungscode.
-      this.q.pruefeCode?.(einrichtungscode);
+      await this.q.pruefeCode?.(einrichtungscode);
       return 'frisch' as const;
     }
     if (!admin) throw new Fachfehler(403, t('meldungen.wiederherstellung.das-geht-nur-im'));
