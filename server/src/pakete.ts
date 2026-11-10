@@ -925,7 +925,7 @@ export class Paketverwaltung {
 
   /** Mappentypen des DMS, auf die Pakete verweisen dürfen (#310): Kennung → Typ. `ablageort` ist der Alias (#883). */
   private async dmsTypen(): Promise<Map<string, Mappentyp>> {
-    const s = await this.d.sichereSystem();
+    const s = await this.d.kern.system();
     const a = await this.d.ablageortTyp();
     return new Map<string, Mappentyp>([['benutzer', s.benutzer], ['rolle', s.rolle], ...(a ? [['ablageort', a] as [string, Mappentyp]] : [])]);
   }

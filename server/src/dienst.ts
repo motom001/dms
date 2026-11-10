@@ -97,6 +97,7 @@ import { ALLES, hatKontoRegeln, kontoRegelwerk, RECHTE_LISTE, kurzStandard, syst
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugriff } from './kern';
+import { Systemausstattung } from './systemausstattung/systemausstattung.ablauf';
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/pakete.einstellungen';
@@ -765,6 +766,8 @@ export class Dienst {
 
   /** Der Kern (#961): Repo, Transaktion, Ereignisse, Historie und Löschprotokoll schreiben. */
   readonly kern: Kern;
+  /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
+  readonly systemausstattung: Systemausstattung;
 
   constructor(private grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
     // Stand aus der Datenbank (#742), sonst nur dieser Prozess (speicherRepo in Tests).
@@ -775,7 +778,13 @@ export class Dienst {
       this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
     }
     this.grundRepo = this.stand.umhuelle(grundRepo, this.mappenstand);
-    this.kern = new Kern({ repo: this.grundRepo, dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), systemAnlegen: () => this.sichereSystemJetzt(), zugriff: (ich) => this.zugriff(ich) });
+    this.kern = new Kern({ repo: this.grundRepo, dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.zugriff(ich) });
+    // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
+    this.systemausstattung = new Systemausstattung(this.kern, {
+      mappentypen: { sichereSystemtypen: () => this.sichereSystemtypen() },
+      sichten: { sichtFuerTyp: (typ) => this.sichtFuerTyp(typ), sichereFavoritenSicht: () => this.sichereFavoritenSicht() },
+      post: { sicherePostSichten: (post) => this.sicherePostSichten(post) },
+    });
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
@@ -1943,7 +1952,7 @@ export class Dienst {
 
   /** Ein aktiver Benutzer (seine Benutzer-Mappe), sonst 422. */
   private async pruefeEmpfaenger(id: unknown): Promise<string> {
-    const { benutzer } = await this.sichereSystem();
+    const { benutzer } = await this.kern.system();
     const m = istUuid(id) ? await this.repo.holeMappe(id) : undefined;
     if (!m || m.typId !== benutzer.id) throw new Fachfehler(422, t('meldungen.dienst.bitte-einen-benutzer-als'));
     if (m.werte.aktiv === false) throw new Fachfehler(422, t('meldungen.dienst.dieser-benutzer-ist-deaktiviert'));
@@ -1968,7 +1977,7 @@ export class Dienst {
     const vorher = new Set(erwaehnungen(altText));
     const jetzt = new Set(erwaehnungen(neuText));
     if (!vorher.size && !jetzt.size) return;
-    const { benutzer } = await this.sichereSystem();
+    const { benutzer } = await this.kern.system();
     const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'erwaehnung' && a.feldKey === quelle.key);
     // #137: nur Benutzer, die der Erwähnende sehen darf.
     const sichtbar = von ? await this.sichtbarFuer(von, [...jetzt]) : new Set(jetzt);
@@ -2064,7 +2073,7 @@ export class Dienst {
   async abwesenheitGeaendert(b: Benutzer, alt: Abwesenheit, von: string | null, wegen?: string) {
     const neu = b.abwesenheit;
     if (!neu || JSON.stringify(neu) === JSON.stringify(alt)) return;
-    const { benutzer: typ } = await this.sichereSystem();
+    const { benutzer: typ } = await this.kern.system();
     const m = await this.repo.holeMappe(b.id);
     if (!m || m.typId !== typ.id) return;
     const name = b.name || b.email;
@@ -2727,7 +2736,7 @@ export class Dienst {
     } catch (x) {
       throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
     }
-    const { post: typ } = await this.sichereSystem();
+    const { post: typ } = await this.kern.system();
     const id = randomUUID();
     await this.schreibeSystemMappe(typ, id, {
       betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum: heuteIn(), bezug: ids, ...(nachricht.trim() ? { nachricht } : {}),
@@ -2877,7 +2886,7 @@ export class Dienst {
     } catch (x) {
       throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
     }
-    const { post: typ } = await this.sichereSystem();
+    const { post: typ } = await this.kern.system();
     const id = randomUUID();
     const datum = heuteIn();
     await this.schreibeSystemMappe(typ, id, {
@@ -4172,7 +4181,7 @@ export class Dienst {
     if (b.art) {
       // Wie im Zugriff solcher Konten: Rolle „Systemkonto“ bzw. „Paket“, nur Regeln, die diese Rolle nennen (#673).
       const konto = b.art === 'system' ? 'systemkonto' as const : 'paket' as const;
-      const rolleId = (await this.sichereSystem()).kontorollen.get(konto)!;
+      const rolleId = (await this.kern.system()).kontorollen.get(konto)!;
       const a = await this.aufloesung(b.id);
       const name = b.art === 'dienst' ? `Paket: ${(await this.repo.listePakete()).find((p) => p.id === b.paketId)?.name ?? b.name}` : b.name;
       const z = await this.zugriff(b);
@@ -5717,10 +5726,10 @@ export class Dienst {
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
   /**
-   * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen (Kern, `system()`).
-   * Läuft beim Start und vor jedem Spiegeln; gleichzeitige Aufrufe teilen sich einen Lauf.
+   * Legt die Systemausstattung an, soweit sie fehlt, und schlägt sie nach (#963: `systemausstattung.sicherstellen()`).
+   * Läuft beim Start; wer nur Ids braucht, nimmt `kern.system()`.
    */
-  sichereSystem(): Promise<SystemIds> { return this.kern.system(); }
+  sichereSystem(): Promise<SystemIds> { return this.systemausstattung.sicherstellen(); }
 
   /**
    * Ablageort (#168, #883): Seit #883 bringt ihn das Paket Basis mit (`basis:ablageort`); der Kern legt keinen mehr an.
@@ -5729,7 +5738,6 @@ export class Dienst {
    * Paketen zeigt eine Zeit lang auf diesen Typ (Alias).
    */
   async ablageortTyp(): Promise<Mappentyp | undefined> {
-    await this.sichereSystem();
     const id = await this.ablageortId();
     return id ? this.repo.holeTyp(id) : undefined;
   }
@@ -5739,7 +5747,13 @@ export class Dienst {
   /** Der Ablageort, den der Kern vor #883 angelegt hat (Kern). */
   frueherAblageortTyp(): Promise<Mappentyp | undefined> { return this.kern.frueherAblageortTyp(); }
 
-  private async sichereSystemJetzt() {
+  /**
+   * Systemausstattung, Schritt der Mappentypen (#963): Systemtypen „Rolle“, „Benutzer“ und „Post“ (#26, #27, #192)
+   * samt Systemfeldern und Beschriftungen, Systemrollen und Kontorollen; `neu` = die eben angelegten Typen (ihre
+   * Ansichten legt danach die Systemausstattung an).
+   */
+  private async sichereSystemtypen(): Promise<{ post: Mappentyp; neu: Mappentyp[] }> {
+    const neu: Mappentyp[] = [];
     const typen = await this.repo.listeTypen();
     let rolle = typen.find((t) => t.system === 'rolle');
     let benutzer = typen.find((t) => t.system === 'benutzer');
@@ -5758,7 +5772,7 @@ export class Dienst {
         ],
         trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true,
       }, 'rolle');
-      await this.sichtFuerTyp(rolle);
+      neu.push(rolle);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: rolle.name });
     }
     if (!benutzer) {
@@ -5772,7 +5786,7 @@ export class Dienst {
         ],
         trefferliste: ['name', 'email', 'rollen', 'aktiv'], erstellenErlaubt: false, loeschenErlaubt: false,
       }, 'benutzer');
-      await this.sichtFuerTyp(benutzer);
+      neu.push(benutzer);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
     }
     if (!post) {
@@ -5787,39 +5801,29 @@ export class Dienst {
         ],
         trefferliste: POST_SPALTEN, erstellenErlaubt: false, loeschenErlaubt: true,
       }, 'post');
-      await this.sichtFuerTyp(post);
+      neu.push(post);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: post.name });
     }
     post = await this.wandleZuPost(post, rolle.id, benutzer.id);
-    await this.sicherePostSichten(post);
-    await this.sichereFavoritenSicht();
     benutzer = await this.ergaenzeSystemfelder(benutzer, rolle.id);
-    const systemrollen = new Map<keyof typeof ROLLEN, string>();
     for (const r of Object.keys(ROLLEN) as Array<keyof typeof ROLLEN>) {
       const kennung = systemrolleKennung(r);
-      let m = await this.repo.holeSystemMappe(kennung);
-      if (!m) {
-        const name = (await this.repo.findeDoppelt(rolle.id, 'name', ROLLEN[r])) ? `${ROLLEN[r]} (System)` : ROLLEN[r];
-        m = await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
-      }
-      systemrollen.set(r, m.id);
+      if (await this.repo.holeSystemMappe(kennung)) continue;
+      const name = (await this.repo.findeDoppelt(rolle.id, 'name', ROLLEN[r])) ? `${ROLLEN[r]} (System)` : ROLLEN[r];
+      await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
     }
     // Systemrollen für Konten, die kein Mensch sind (#673): Systemkonto und Paket – nur in Regeln am Mappentyp, nie an Menschen vergeben.
-    const kontorollen = new Map<Kontorolle, string>();
     for (const r of Object.keys(KONTOROLLEN) as Kontorolle[]) {
       const kennung = kontorolleKennung(r);
-      let m = await this.repo.holeSystemMappe(kennung);
-      if (!m) {
-        const name = (await this.repo.findeDoppelt(rolle.id, 'name', KONTOROLLEN[r])) ? `${KONTOROLLEN[r]} (System)` : KONTOROLLEN[r];
-        m = await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
-      }
-      kontorollen.set(r, m.id);
+      if (await this.repo.holeSystemMappe(kennung)) continue;
+      const name = (await this.repo.findeDoppelt(rolle.id, 'name', KONTOROLLEN[r])) ? `${KONTOROLLEN[r]} (System)` : KONTOROLLEN[r];
+      await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
     }
     await this.loeseFruehereAdminrolle(benutzer);
     rolle = await this.beschrifteSystemtyp(rolle, rolle.id, benutzer.id);
     benutzer = await this.beschrifteSystemtyp(benutzer, rolle.id, benutzer.id);
     post = await this.beschrifteSystemtyp(post, rolle.id, benutzer.id);
-    return { benutzer, rolle, post, systemrollen, kontorollen };
+    return { post, neu };
   }
 
   /**
@@ -6014,7 +6018,7 @@ export class Dienst {
    * `alt` (Teilen, #445): Werte der Ausgangspost – Verweise, die dort schon stehen (z. B. „Für“), gelten nicht als neu.
    */
   async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID(), alt: Werte = {}): Promise<Mappe> {
-    const { post: typ } = await this.sichereSystem();
+    const { post: typ } = await this.kern.system();
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
     const e = (eingabe ?? {}) as Record<string, unknown>;
     const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || t('meldungen.dienst.neue-post');
@@ -6422,7 +6426,7 @@ export class Dienst {
   async spiegleBenutzer(b: Benutzer, von: string | null = null) {
     // Liegt die Mappe im Papierkorb, bleibt sie dort (der Benutzer ist bis zum Leeren deaktiviert).
     if (await this.repo.holeAusPapierkorb(b.id)) return;
-    const { benutzer: typ, systemrollen } = await this.sichereSystem();
+    const { benutzer: typ, systemrollen } = await this.kern.system();
     const alt = await this.repo.holeMappe(b.id);
     // Neuer Benutzer (#506): Vorgabe „Favoriten benachrichtigen“ aus der Werkbank – nur, wenn sie aus ist.
     if (!alt && b.art !== 'dienst' && !(await this.favoritenFreigabe()).vorgabe) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
@@ -6455,7 +6459,7 @@ export class Dienst {
   async pruefeRollen(eingabe: unknown): Promise<string[]> {
     if (!Array.isArray(eingabe)) throw new Fachfehler(422, t('meldungen.dienst.rollen-als-liste-angeben'));
     const ids = [...new Set(eingabe.map(String))];
-    const { rolle, systemrollen, kontorollen } = await this.sichereSystem();
+    const { rolle, systemrollen, kontorollen } = await this.kern.system();
     const typVon = await this.repo.typenVon(ids.filter(istUuid));
     if (ids.some((id) => typVon.get(id) !== rolle.id)) throw new Fachfehler(422, t('meldungen.dienst.mindestens-eine-dieser-rollen'));
     const system = new Set(systemrollen.values());
@@ -6467,7 +6471,7 @@ export class Dienst {
   /** Weitere (fachliche) Rollen eines Benutzers setzen – nur aus der Benutzerverwaltung. */
   async setzeRollen(benutzerId: string, eingabe: unknown, von: string | null = null) {
     const ids = await this.pruefeRollen(eingabe);
-    const { benutzer: typ, systemrollen } = await this.sichereSystem();
+    const { benutzer: typ, systemrollen } = await this.kern.system();
     const m = await this.repo.holeMappe(benutzerId);
     if (!m || m.typId !== typ.id) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
     const system = new Set(systemrollen.values());
@@ -6477,7 +6481,7 @@ export class Dienst {
 
   /** Alle Rollen für die Auswahl in der Benutzerverwaltung; Systemrollen zuerst. */
   async listeRollen(mitKonten = false) {
-    const { rolle, kontorollen } = await this.sichereSystem();
+    const { rolle, kontorollen } = await this.kern.system();
     const konto = new Set(kontorollen.values());
     return (await this.repo.listeMappen(rolle.id))
       // Systemkonto und Paket (#673) vergibt niemand an Menschen – in Benutzerverwaltung und Freigaben nicht zur Wahl.
@@ -6530,7 +6534,7 @@ export class Dienst {
 
   /** Was eine Automatisierung prüfen muss: Mappentypen, Ansichten, Benutzer (ohne Systemkonten), Rollen. */
   async automatisierungKontext() {
-    const { benutzer, kontorollen } = await this.sichereSystem();
+    const { benutzer, kontorollen } = await this.kern.system();
     const konto = new Set(kontorollen.values());
     const [typen, sichten, rollen, leute] = await Promise.all([this.repo.listeTypen(), this.repo.listeSichten(), this.listeRollen(), this.repo.listeMappen(benutzer.id)]);
     return {
@@ -6541,7 +6545,7 @@ export class Dienst {
 
   /** Aktive Benutzer, die eine Rolle haben (Empfänger „Rolle“ einer Automatisierung). */
   async mitgliederDerRolle(rolleId: string): Promise<string[]> {
-    const { benutzer } = await this.sichereSystem();
+    const { benutzer } = await this.kern.system();
     return (await this.repo.listeMappen(benutzer.id)).filter((m) => m.werte.aktiv !== false && alsListe(m.werte.rollen).includes(rolleId)).map((m) => m.id);
   }
 
@@ -6580,7 +6584,7 @@ export class Dienst {
    * Administratoren (null). Wirft nur, wenn `id` kein Benutzer ist; ein deaktivierter Empfänger bricht nichts ab.
    */
   async aufgabenEmpfaenger(id: string): Promise<{ an: string | null; ueber: string[] }> {
-    const { benutzer } = await this.sichereSystem();
+    const { benutzer } = await this.kern.system();
     const m = istUuid(id) ? await this.repo.holeMappe(id) : undefined;
     if (!m || m.typId !== benutzer.id) throw new Fachfehler(422, t('meldungen.dienst.bitte-einen-benutzer-als'));
     const { ziel, abwesende } = await this.empfaengerAufloesen(id);
@@ -6665,7 +6669,7 @@ export class Dienst {
 
   /** Weitere (nicht System-)Rollen je Benutzer. */
   async weitereRollen(): Promise<Map<string, string[]>> {
-    const { benutzer, systemrollen } = await this.sichereSystem();
+    const { benutzer, systemrollen } = await this.kern.system();
     const system = new Set(systemrollen.values());
     return new Map((await this.repo.listeMappen(benutzer.id)).map((m) => [m.id, alsListe(m.werte.rollen).filter((r) => !system.has(r))]));
   }
@@ -7059,7 +7063,7 @@ export class Dienst {
 
   /* ---------- Eingangskanäle (#195) ---------- */
 
-  async postTyp() { return (await this.sichereSystem()).post; }
+  async postTyp() { return (await this.kern.system()).post; }
 
   /** Historien-Eintrag eines Eingangskanals (#196), z. B. nicht übernommene Anhänge. */
   async notiereSystem(mappeId: string, system: string, text: string) { await this.notiere(mappeId, null, 'uebernommen', { system, text }); }
@@ -8272,7 +8276,7 @@ export class Dienst {
    * Aufrufers. Benutzer und Rollen sind ohne Angabe von `ohneTypen` ausgenommen.
    */
   async baum(startId: string, eingabe: unknown, z: Zugriff): Promise<Baum> {
-    const sys = await this.sichereSystem();
+    const sys = await this.kern.system();
     const opt = bereinigeBaumOptionen(eingabe, { ...BAUM_STANDARD, ohneTypen: [sys.benutzer.id, sys.rolle.id] });
     return sammleBaum(this.baumQuelle(z), startId, opt);
   }
@@ -8287,7 +8291,7 @@ export class Dienst {
    * (📎, z. B. Ansprechpartner), stehen als Blatt da – bei ihnen wird nur der Verweis entfernt.
    */
   async loeschVorschau(startId: string, eingabe: unknown, z: Zugriff): Promise<LoeschVorschau> {
-    const sys = await this.sichereSystem();
+    const sys = await this.kern.system();
     const ohne = new Set([sys.benutzer.id, sys.rolle.id]);
     const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
     const opt = bereinigeBaumOptionen({ tiefe: e.tiefe, max: e.max }, { ...BAUM_STANDARD, tiefe: LOESCH_TIEFE, richtungen: ['verwiesenVon'], seitwaerts: false, ohneTypen: [...ohne], nurZugehoerigkeit: true });
@@ -8471,7 +8475,7 @@ export class Dienst {
   async datenschutz(): Promise<Datenschutz> { return liesDatenschutz(await this.einstellungen?.lies('datenschutz')); }
 
   async setzeDatenschutz(eingabe: unknown, von: string): Promise<Datenschutz> {
-    const sys = await this.sichereSystem();
+    const sys = await this.kern.system();
     const typen = new Set((await this.repo.listeTypen()).filter((t) => t.id !== sys.benutzer.id && t.id !== sys.rolle.id).map((t) => t.id));
     const d = liesDatenschutz(eingabe);
     d.typen = Object.fromEntries(Object.entries(d.typen).filter(([id]) => typen.has(id)));
@@ -8519,7 +8523,7 @@ export class Dienst {
   async auskunftVorschau(e: unknown, z: Zugriff): Promise<AuskunftVorschau> {
     const o = (e ?? {}) as Record<string, unknown>;
     const mappeId = String(o.mappeId ?? '');
-    const sys = await this.sichereSystem();
+    const sys = await this.kern.system();
     const ohne = new Set([sys.benutzer.id, sys.rolle.id]);
     const baum = await this.baum(mappeId, { tiefe: o.tiefe, richtungen: o.richtungen, max: 1000, seitwaerts: false, ohneTypen: [...ohne], nurZugehoerigkeit: true }, z);
     const im = new Set(baum.knoten.map((k) => k.id));
@@ -8584,7 +8588,7 @@ export class Dienst {
       passwort: () => null,
     };
     // Herkunft (Kanal der Post) und Speicherdauer (Archivmodus) für das Deckblatt.
-    const post = (await this.sichereSystem()).post;
+    const post = (await this.kern.system()).post;
     const kanaele: Record<string, number> = {};
     for (const m of jeTyp.get(post.id) ?? []) { const k = auswahlText(m.werte.kanal) || 'unbekannt'; kanaele[k] = (kanaele[k] ?? 0) + 1; }
     const dokumente = (await this.repo.dokumenteVon(a.mappen)).filter((d) => dok.has(d.id));
