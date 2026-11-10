@@ -2,7 +2,7 @@
 
 Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es noch kein Tag gibt. Die Nummer vergibt seit #952 der Merge, nicht der Pull Request.
 
-1. **Pull Request** mit einem **Notizschnipsel** `docs/releases/neu/<name>.md` statt einer Versionsnummer (Aufbau unten, [Versionsnummer beim Merge](#versionsnummer-beim-merge)). Die CI prüft im Job `pruefen`: Wer das Programm ändert (`server/`, `web/`, `shared/` ohne Tests, `Dockerfile`, `docker/`), bringt genau einen Schnipsel mit.
+1. **Pull Request** mit einem **Notizschnipsel** `docs/releases/neu/<name>.md` statt einer Versionsnummer (Aufbau unten, [Versionsnummer beim Merge](#versionsnummer-beim-merge)). Die CI prüft im Job `rauchtests` (Teil von `pruefen`): Wer das Programm ändert (`server/`, `web/`, `shared/` ohne Tests, `Dockerfile`, `docker/`), bringt genau einen Schnipsel mit.
 2. Nach dem Merge vergibt **version.yml** (*Version vergeben*) die nächste Nummer: höchste `art` der neuen Schnipsel, drei `package.json`, Schnipsel zusammengefasst nach `docs/releases/v<version>.md`, Schnipsel gelöscht. Das steht als eigener Commit „Version X.Y.Z“ auf `main`, mit `Pull-Request: #…` im Text.
 3. Auf diesen Commit hin baut **image.yml** (*Prüfen und Image bauen*) **zwei Images** nativ für amd64 und arm64 und pusht sie: `ghcr.io/motom001/dms:<version>` und `ghcr.io/motom001/dms-komplett:<version>`.
 4. Danach ruft image.yml **release.yml** auf. Der Workflow legt das Tag `v<version>` und das GitHub-Release an. Den Text übernimmt er aus `docs/releases/v<version>.md`; fehlt die Datei, nimmt er die Commit-Überschriften seit dem vorigen Tag.

@@ -16,9 +16,68 @@ permissions:
   contents: read
 
 jobs:
-  pruefen:
+  # Server-Tests in drei Teilen parallel (#1056): Jeder Teil hat seine eigene PostgreSQL und seinen IMAP-Testserver;
+  # `node --test --test-shard` verteilt die Testdateien fest. Die Quarantäne (#900) wertet jeder Teil für sich aus.
+  tests:
+    name: tests (${{ matrix.teil }}/3)
     runs-on: ubuntu-latest
-    # Ein hängender Test soll die Reihe nicht stundenlang blockieren (sonst läuft der Job bis 6 h).
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        teil: [1, 2, 3]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dms
+          POSTGRES_PASSWORD: dms
+          POSTGRES_DB: dms_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dms -d dms_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      # poppler und qpdf (#45, #459): dieselben Werkzeuge wie im Image – ohne Texterkennung (die ist ein Paket).
+      # Erst ohne „apt-get update“ (#905), nur wenn das scheitert mit – das Update dauert mal 10 s, mal über 3 Minuten.
+      - name: poppler und qpdf installieren
+        run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
+      # IMAP-Testserver für die Postfächer (#196); fehlt das Image, laufen die übrigen Tests trotzdem.
+      - name: IMAP-Testserver (GreenMail) starten
+        run: |
+          if docker run -d --name greenmail -p 3025:3025 -p 3143:3143 \
+               -e GREENMAIL_OPTS='-Dgreenmail.setup.test.smtp -Dgreenmail.setup.test.imap -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=dms:geheim@dms.test -Dgreenmail.verbose=false' \
+               greenmail/standalone:2.1.15 >/dev/null; then echo "IMAP_TEST_HOST=127.0.0.1" >> "$GITHUB_ENV"
+          else echo "::warning::GreenMail nicht verfügbar – IMAP-Test übersprungen"; fi
+      # Jede Testdatei mit PostgreSQL legt sich eine eigene Datenbank an (#900, test/hilfe-db.ts).
+      # Quarantäne (#900): Tests aus server/test/quarantaene.json laufen mit, brechen aber nicht ab; ihr Ergebnis
+      # steht in der Zusammenfassung. Steht einer über seine Fälligkeit hinaus darin, scheitert der Schritt.
+      - name: Tests (inklusive PostgreSQL)
+        shell: bash
+        run: |
+          set -o pipefail
+          status=0
+          npm run test:teil -w server 2>&1 | tee test.log || status=$?
+          node --import tsx server/test/quarantaene.ts test.log "$status" || {
+            # Fehlschläge als Anmerkungen ausgeben, damit sie ohne Log-Zugriff sichtbar sind.
+            # Fehlschläge als Anmerkungen ausgeben (die Job-Logs sind nicht überall abrufbar).
+            grep -n -B2 -A30 "^ *not ok" test.log | head -120 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error::/'
+            echo
+            exit 1
+          }
+        env:
+          TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
+          TEST_TEIL: ${{ matrix.teil }}/3
+
+  # Alles außer den Server-Tests (#1056): Release-Notiz, Sicherheitslücken, Typen, Bau, Rauchtests – parallel zu „tests“.
+  # Die Rauchtests legen ihre Datenbank im PostgreSQL dieses Jobs an.
+  rauchtests:
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
       postgres:
@@ -62,33 +121,8 @@ jobs:
       # Erst ohne „apt-get update“ (#905), nur wenn das scheitert mit – das Update dauert mal 10 s, mal über 3 Minuten.
       - name: poppler und qpdf installieren
         run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
-      # IMAP-Testserver für die Postfächer (#196); fehlt das Image, laufen die übrigen Tests trotzdem.
-      - name: IMAP-Testserver (GreenMail) starten
-        run: |
-          if docker run -d --name greenmail -p 3025:3025 -p 3143:3143 \
-               -e GREENMAIL_OPTS='-Dgreenmail.setup.test.smtp -Dgreenmail.setup.test.imap -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=dms:geheim@dms.test -Dgreenmail.verbose=false' \
-               greenmail/standalone:2.1.15 >/dev/null; then echo "IMAP_TEST_HOST=127.0.0.1" >> "$GITHUB_ENV"
-          else echo "::warning::GreenMail nicht verfügbar – IMAP-Test übersprungen"; fi
       - name: Typen prüfen
         run: npm run typecheck
-      # Jede Testdatei mit PostgreSQL legt sich eine eigene Datenbank an (#900, test/hilfe-db.ts).
-      # Quarantäne (#900): Tests aus server/test/quarantaene.json laufen mit, brechen aber nicht ab; ihr Ergebnis
-      # steht in der Zusammenfassung. Steht einer über seine Fälligkeit hinaus darin, scheitert der Schritt.
-      - name: Tests (inklusive PostgreSQL)
-        shell: bash
-        run: |
-          set -o pipefail
-          status=0
-          npm test 2>&1 | tee test.log || status=$?
-          node --import tsx server/test/quarantaene.ts test.log "$status" || {
-            # Fehlschläge als Anmerkungen ausgeben, damit sie ohne Log-Zugriff sichtbar sind.
-            # Fehlschläge als Anmerkungen ausgeben (die Job-Logs sind nicht überall abrufbar).
-            grep -n -B2 -A30 "^ *not ok" test.log | head -120 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error::/'
-            echo
-            exit 1
-          }
-        env:
-          TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
       # Der offizielle Katalog unter seiner echten Adresse: erreichbar, nur https, Signatur gültig (#688).
       - name: Offizieller Katalog erreichbar und signiert
         run: node --import tsx server/werkzeuge/katalog-erreichbar.ts
@@ -177,6 +211,22 @@ jobs:
           path: ${{ runner.temp }}/rauchtest-fehler
           if-no-files-found: ignore
           retention-days: 7
+
+
+  # Sammel-Job (#1056): Der Name „pruefen“ ist Pflichtprüfung im Ruleset „main schützen“, und „version“/„image“ warten
+  # auf ihn. Grün nur, wenn alle Teile der Tests und die Rauchtests grün sind.
+  pruefen:
+    runs-on: ubuntu-latest
+    needs: [tests, rauchtests]
+    if: always()
+    steps:
+      - name: Alle Teile grün?
+        env:
+          TESTS: ${{ needs.tests.result }}
+          RAUCHTESTS: ${{ needs.rauchtests.result }}
+        run: |
+          echo "tests: $TESTS · rauchtests: $RAUCHTESTS"
+          [ "$TESTS" = success ] && [ "$RAUCHTESTS" = success ]
 
   # Stil und Abhängigkeiten (#899), parallel zu „pruefen“: ESLint (mit Typinformation) und dependency-cruiser.
   # Bestand steht in eslint-suppressions.json bzw. .dependency-cruiser-known-violations.json und meldet sich nicht;
