@@ -36,13 +36,14 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `mappen/` | Mappen, Historie, Papierkorb |
 | `dokumente/` | Dokumente, Fassungen, Inhalte |
 
-Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu – als Erstes `suche/suche.dienst.ts` ([Suche](#suche), #964). In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen.
+Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu – als Erstes `suche/suche.dienst.ts` ([Suche](#suche), #964). Jeder Fachordner mit `*.dienst.ts` hat eine `index.ts` als Tür und eine von Hand geschriebene `README.md` (20–40 Zeilen); das prüft die CI im Job **stil** (`.github/werkzeuge/fachordner-pruefen.mjs`). Welche Ordner was einbinden dürfen, regeln die [Schichten](#schichten). In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen – von außen über `pakete/index.ts` (neben `pakete.ts` als `./pakete/index` importiert).
 
 Daneben, ohne Routen:
 
 | Ordner in `server/src/` | Inhalt |
 |---|---|
 | `kern/` | der [Kern](#kern) (#961) |
+| `zugriff/` | [Rechte prüfen](#zugriff) (#1072) |
 | `systemausstattung/` | die [Systemausstattung](#systemausstattung) (#963) |
 | `http/` | Hilfen der HTTP-Schicht – nur für Routen |
 | `pdf/`, `arbeit/` | [PDF-Stelle](#pdf-stelle), [Arbeiter-Pool](#arbeiter-pool) |
@@ -64,6 +65,7 @@ Daneben, ohne Routen:
 `server/src/kern/` enthält, was **alle** Fachbereiche brauchen, mit einer Tür (`kern/index.ts`). Der Dienst baut ihn und reicht ihn als `dienst.kern` weiter; Bausteine wie die Pakete nehmen künftig nur den Kern statt des ganzen Dienstes.
 
 - `kern.repo` – das Repo; in einer Transaktion des Kerns deren Repo. Bei jedem Aufruf neu holen, nie zwischenspeichern – sonst schreibt ein Paket neben der Transaktion vorbei.
+- `kern.repoOhneTransaktion` – das Repo außerhalb jeder Transaktion (#1072, vorher `grundRepo` über Anschlüsse). Nur für das, was über Transaktionen hinweg gilt und nie zu einer Änderung gehört: Zwischenspeicher (Vektoren der Suche), den Ereignisverteiler, Nachläufe im Hintergrund.
 - `inTransaktion`, `inEinemZug` (wiederholt bei Verklemmung), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
 - `ereignis(art, daten, von?)` in den Ausgangskorb, `mitAusloeser`, `ohneEreignisse`.
 - `anlaesse` – die [Anschlusspunkte](#anschlusspunkte) für das Sofortige (#962, `kern/anlaesse.ts`).
@@ -71,7 +73,7 @@ Daneben, ohne Routen:
 - `historie.schreibe(…)` (`kern/historie.ts`) und `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Lesen** bleibt bei Mappen bzw. Löschen.
 - `einstellungen`, `dateien`, `stand`.
 
-**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst bleibt Fassade mit einzeiligen Weiterleitungen. Was der Kern noch nicht selbst bildet (Zugriff, den Rückfall der Systemausstattung), bekommt er beim Zusammenbau vom Dienst.
+**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst bleibt Fassade mit einzeiligen Weiterleitungen. Was der Kern nicht selbst bildet (den Zugriff – das ist [Rechte prüfen](#zugriff), eine Schicht darüber –, den Rückfall der Systemausstattung), bekommt er beim Zusammenbau vom Dienst.
 
 ### Systemausstattung (#963) { #systemausstattung }
 
@@ -105,9 +107,31 @@ Anlass → Empfänger (der Reihe nach; Fachbereich.Aufgabe):
 Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielaufteilung): `server/src/suche/suche.dienst.ts` mit der Klasse `SucheDienst` – unscharfe Suche (Tippfehler, gleichbedeutende Wörter, Wörterverzeichnis), Vektoren zu Dokumenten und ähnliche Dokumente. Der Dienst baut ihn als `dienst.suche` und behält für jede Methode eine einzeilige Weiterleitung; `dienst.vektorAnbieter` reicht an `dienst.suche.vektorAnbieter` durch.
 
 - **Tür:** `suche/index.ts`; die Routen (`suche.routen.ts`) holt nur `routen.ts` direkt.
-- **Bekommt den Kern**, nicht den ganzen Dienst, dazu einen `SucheAnschluss`: `grundRepo` (der Zwischenspeicher der Vektoren gilt über Transaktionen hinweg), `lesbare` und `pruefeRecht` (Schicht „zugriff“, bis sie ein eigenes Modul ist, im Dienst) und `konten` (Dienstkonto eines Pakets).
-- **Nur abwärts:** Die Suche importiert sich selbst, den Kern, `shared/`, die Basis und `vektoren.ts` – geprüft mit `suche-nur-abwaerts` und `suche-nur-ueber-index` ([Regeln](stil.md#abhaengigkeiten-pruefen)).
+- **Bekommt den Kern**, nicht den ganzen Dienst (für den Zwischenspeicher der Vektoren `kern.repoOhneTransaktion`), dazu die [Rechteprüfung](#zugriff) (`lesbare`, `pruefeRecht`) und einen `SucheAnschluss` mit `konten` (Dienstkonto eines Pakets).
+- **Nur abwärts:** Die Suche (Schicht 3) importiert sich selbst, tiefere Fachordner und den Kern (je über `index.ts`), `shared/`, die Basis und `vektoren.ts` – geprüft mit der Regel `fachordner` ([Regeln](stil.md#abhaengigkeiten-pruefen)). `vektoren.ts` bleibt außerhalb von `suche/`, weil auch der Paket-Läufer damit die Vektoren eines Pakets liest.
 - **Noch im Dienst:** `vektorNachlauf` (braucht die KI-Sperre der Pakete) und die Suche in der Mappenliste (`listeMappen`).
+
+## Rechte prüfen (#1072) { #zugriff }
+
+`server/src/zugriff/zugriff.dienst.ts` mit der Klasse `ZugriffDienst` prüft, wer was darf – an einer Stelle: `zugriff(ich)` einmal je Anfrage (Menschen nach den Regeln am Mappentyp, Dienstkonten der Pakete nach den bestätigten Rechten, Systemkonten nach ihrer Rolle, Leserechte auf Zeit), `rechteAn`, `rechteAnVielen`, `pruefeRecht`, `lesbare`, `mitPasswortRecht`, `sichtbarFuer`, `kannLesen`, `wasSieht`, `mappeVon`. Der Dienst baut ihn als `dienst.rechtepruefung` und behält für jede Methode eine einzeilige Weiterleitung.
+
+- **Tür:** `zugriff/index.ts` (dazu `maskiert` und `NICHT_SICHTBAR` für Titel nicht lesbarer Mappen).
+- **Bekommt den Kern** und einen `ZugriffAnschluss` vom Dienst: `kiSperre` (KI-Einstellung der Pakete) und `konten`.
+- **Schicht 1:** importiert nur sich selbst, den Kern, `shared/`, die Basis und `messung.ts`. Fachordner darüber bekommen den `ZugriffDienst` beim Zusammenbau (wie die Suche) und importieren ihn über `zugriff/index.ts`. Der Kern bindet ihn nicht ein; `kern.zugriff(ich)` ruft, was der Dienst hereinreicht.
+- **Noch im Dienst:** die Werkbank der Berechtigungen (künftig `berechtigungen/`), `regulaerSichtbarFuer` und `paketSiehtNicht`.
+
+### Schichten { #schichten }
+
+Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutzen (Kreisläufe verbietet `kein-kreislauf`). Die Liste steht zentral in `.dependency-cruiser.cjs` (`SCHICHTEN`) – ein Ordner, den es noch nicht gibt, ist damit schon eingeordnet:
+
+| Schicht | Fachordner |
+|---|---|
+| 0 | `kern/` – nur sich selbst, `shared/` und die Basis |
+| 1 | `zugriff/` |
+| 2 | `mappentypen/`, `mappen/`, `dokumente/` |
+| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `post/`, `aufgaben/` …) |
+
+Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
 
 ## Abhängigkeiten { #abhaengigkeiten }
 

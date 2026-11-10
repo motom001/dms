@@ -3,13 +3,12 @@
  *
  * - Keine Kreisläufe (nur Importe, die zur Laufzeit zählen; reine Typ-Importe nicht).
  * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/. Ausnahme: server/test/.
- * - Ordner mit index.ts nur über index.ts (heute pdf/ und arbeit/).
- * - Schichten „nur abwärts“ (#961): Der Kern (server/src/kern/) bindet nur sich selbst, shared/ und die Basis ein
- *   (BASIS unten) – nie den Dienst, Routen oder Fachordner. Von außen nur über kern/index.ts.
+ * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme).
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
  *   Sicherheit): Fachlogik bekommt den Benutzer übergeben und liest ihn nicht selbst aus der Anfrage.
- * - Fachordner mit eigener Fachlogik (#964, Probelauf: suche/) nur über ihre index.ts (Routen holt routen.ts direkt);
- *   sie binden nur sich selbst, den Kern, shared/ und die Basis ein – keinen anderen Fachbereich, nie den Dienst.
+ * - Eine Regel für alle Fachordner (#1072, `fachordner`; vorher je Ordner zwei, #961/#964): von außen nur über ihre
+ *   index.ts, Schichten nur abwärts (SCHICHTEN unten). Routen (*.routen.ts) gehören zur HTTP-Schicht: routen.ts holt
+ *   sie direkt, und sie dürfen den Dienst und ihren eigenen Fachordner einbinden.
  *
  * Bestand: .dependency-cruiser-known-violations.json (wie eslint-suppressions.json: die Zahl darf nie steigen,
  * .github/werkzeuge/ausnahmen-zaehlen.mjs). Das Abhängigkeitsbild fürs Entwicklerhandbuch: `npm run abhaengigkeitsbild`.
@@ -19,6 +18,67 @@
  * Fehler, Grenzen. Diese Module binden selbst keinen Dienst und keinen Fachbereich ein.
  */
 const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen';
+/**
+ * Was Fachordner außer Kern und BASIS einbinden dürfen (#1072): Messung der Rechteprüfung, Vektoren lesen (auch der
+ * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool.
+ */
+const WERKZEUGE = { dateien: 'messung|vektoren', ordner: 'pdf|arbeit' };
+
+/**
+ * Schichten der Fachordner unter server/src/ (#1072, Zielaufteilung): Aufrufe nur abwärts, in derselben Schicht
+ * erlaubt (Kreisläufe verbietet `kein-kreislauf`). Jeder Ordner, der hier nicht steht und nicht technisch ist
+ * (TECHNIK), gehört zu Schicht 3 – auch einer, den es noch nicht gibt. Ein Ordner wechselt die Schicht nur hier.
+ */
+const SCHICHTEN = [
+  ['kern'], // 0: Repo, Transaktion, Ereignisse, Historie und Löschprotokoll schreiben (#961)
+  ['zugriff'], // 1: Rechte prüfen (#1072)
+  ['mappentypen', 'mappen', 'dokumente'], // 2
+  // 3: alle übrigen Fachordner (berechtigungen, sichten, suche, volltext, pdf-Fachlogik, ausgang, aufgaben, post …)
+];
+/** Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. */
+const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer'];
+
+/**
+ * Die Regel `fachordner` (#1072) – einmal beschrieben, für jeden Fachordner. dependency-cruiser kann Schichten nicht
+ * vergleichen, daher eine Prüfung „nur über index.ts“ und je Schicht eine Prüfung „nur abwärts“, alle unter dem Namen
+ * `fachordner`. Der Kern (Schicht 0) bindet nur sich selbst, shared/ und die BASIS ein, keine WERKZEUGE.
+ */
+function fachordner() {
+  const name = 'fachordner';
+  const genannt = SCHICHTEN.flat();
+  const nichtFach = [...TECHNIK, ...genannt].join('|');
+  const regeln = [{
+    name,
+    severity: 'error',
+    comment: 'Einen Fachordner nur über seine index.ts einbinden (#1072). Ausnahme: Routen (*.routen.ts), die routen.ts sammelt.',
+    // $1: Ordner der importierenden Datei (für Dateien außerhalb von Ordnern ihr Name, für Tests „server“ usw.).
+    from: { path: '^(?:server/src/)?([^/]+)' },
+    to: {
+      path: `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/(?!index\\.ts$)`,
+      pathNot: ['^server/src/$1/', '\\.routen\\.ts$'],
+    },
+  }];
+  for (let i = 0; i <= SCHICHTEN.length; i++) {
+    const hier = i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN[i].join('|')})/` : `^server/src/(?!(?:${nichtFach})/)[^/]+/`;
+    const erlaubt = i === 0
+      ? ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`]
+      : [
+        i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN.slice(0, i + 1).flat().join('|')})/` : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
+        `^server/src/(${WERKZEUGE.ordner})/`,
+        `^server/src/(${BASIS}|${WERKZEUGE.dateien})\\.ts$`,
+      ];
+    regeln.push({
+      name,
+      severity: 'error',
+      comment: i === 0
+        ? 'Der Kern ruft keinen Fachbereich auf (#961): nur sich selbst, shared/ und die Basis – nie dienst.ts, Routen oder Fachordner.'
+        : `Schicht ${i} ruft nur nach unten (#1072): Fachordner bis Schicht ${i}, Kern, shared/, Basis und Werkzeuge – nie dienst.ts oder Dateien darüber. Routen (*.routen.ts) sind ausgenommen.`,
+      from: { path: hier, pathNot: '\\.routen\\.ts$' },
+      to: { path: '^server/src/', pathNot: erlaubt },
+    });
+  }
+  return regeln;
+}
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -66,49 +126,13 @@ module.exports = {
       to: { path: '^server/src/arbeit/(?!index\\.ts$)' },
     },
     {
-      name: 'kern-nur-abwaerts',
-      severity: 'error',
-      comment: 'Der Kern ruft keinen Fachbereich auf (#961): er bindet nur sich selbst, shared/ und die Basis ein – nie dienst.ts, Routen oder Fachordner.',
-      from: { path: '^server/src/kern/' },
-      to: { path: '^server/src/', pathNot: ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`] },
-    },
-    {
-      name: 'kern-nur-ueber-index',
-      severity: 'error',
-      comment: 'Den Kern (#961) nur über kern/index.ts einbinden.',
-      from: { path: '^(server|shared|web)/', pathNot: '^server/src/kern/' },
-      to: { path: '^server/src/kern/(?!index\\.ts$)' },
-    },
-    {
       name: 'routen-hilfen-nur-in-routen',
       severity: 'error',
       comment: 'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
       from: { path: '^(server|shared|web)/', pathNot: ['\\.routen\\.ts$', '^server/src/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'] },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
     },
-    {
-      name: 'suche-nur-ueber-index',
-      severity: 'error',
-      comment: 'Die Suche (#964) nur über suche/index.ts einbinden. Ausnahme: routen.ts sammelt die Routen (suche.routen.ts).',
-      from: { path: '^(server|shared|web)/', pathNot: ['^server/src/suche/', '^server/src/routen\\.ts$'] },
-      to: { path: '^server/src/suche/(?!index\\.ts$)' },
-    },
-    {
-      name: 'suche-nur-abwaerts',
-      severity: 'error',
-      comment: 'Die Suche (#964, Schicht 3) ruft nur nach unten: sich selbst, den Kern, shared/, die Basis und vektoren.ts – nie dienst.ts oder einen anderen Fachbereich. Routen (suche.routen.ts) sind ausgenommen.',
-      from: { path: '^server/src/suche/', pathNot: '\\.routen\\.ts$' },
-      to: { path: '^server/src/', pathNot: ['^server/src/(suche|kern)/', `^server/src/(${BASIS}|vektoren)\\.ts$`] },
-    },
-    // Später (wenn die Fachbereiche eigene Module mit index.ts haben): ein Fachbereich nutzt einen anderen nur über
-    // dessen index.ts. FACH = Liste der Fachordner, z. B. 'mappen|mappentypen|dokumente'.
-    // {
-    //   name: 'fach-nur-ueber-index',
-    //   severity: 'error',
-    //   comment: 'Ein Fachbereich nutzt einen anderen nur über dessen index.ts.',
-    //   from: { path: `^server/src/(${FACH})/` },
-    //   to: { path: `^server/src/(${FACH})/(?!index\\.ts$)`, pathNot: '^server/src/$1/' },
-    // },
+    ...fachordner(),
   ],
   options: {
     includeOnly: '^(server/(src|test)|web/src|shared/src)/',

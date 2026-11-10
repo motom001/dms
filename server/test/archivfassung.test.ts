@@ -33,7 +33,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { Texterkennung, type Engine } from '../src/texterkennung';
 import { vollexport } from '../src/vollexport';
-import { setzePaketEinstellungen } from '../src/pakete/pakete.einstellungen';
+import { setzePaketEinstellungen } from '../src/pakete/index';
 
 after(() => beendeArbeiter());
 

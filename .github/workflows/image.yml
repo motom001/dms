@@ -259,6 +259,11 @@ jobs:
         run: |
           node --test .github/werkzeuge/farben-pruefen.test.mjs
           node .github/werkzeuge/farben-pruefen.mjs
+      # Jeder Fachordner mit *.dienst.ts hat index.ts und README.md (#1072); was darin steht, prüft niemand.
+      - name: Fachordner mit Tür und README
+        run: |
+          node --test .github/werkzeuge/fachordner-pruefen.test.mjs
+          node .github/werkzeuge/fachordner-pruefen.mjs
       - run: npm ci --no-audit --no-fund
       - name: Abhängigkeiten (dependency-cruiser)
         run: npm run lint:abh

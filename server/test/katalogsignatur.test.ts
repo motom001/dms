@@ -21,7 +21,7 @@ import { PROJEKT_SCHLUESSEL } from '../src/projektschluessel';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { oeffentlichPem, signatur, TEST_PROJEKT, TEST_SEED } from './katalogschluessel';
-import { paketKatalogStaende, paketQuellen } from '../src/pakete/pakete.einstellungen';
+import { paketKatalogStaende, paketQuellen } from '../src/pakete/index';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
 const OFFIZIELL = 'https://katalog.test/katalog.json';

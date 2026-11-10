@@ -10,7 +10,7 @@ import { Dienst } from '../src/dienst';
 import { speicherDateien } from '../src/dateispeicher';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { speicherRepo } from '../src/repo-speicher';
-import { paketSpeicher, setzePaketSpeicher } from '../src/pakete/pakete.einstellungen';
+import { paketSpeicher, setzePaketSpeicher } from '../src/pakete/index';
 import { eigeneDatenbank } from './hilfe-db';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';

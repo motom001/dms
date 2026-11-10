@@ -36,7 +36,7 @@ import { gebietsschema } from '../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ARCHIV_MAX, ENTPACKT_MAX, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX } from './grenzen';
-import { paketEinstellungen, paketKatalogStaende, paketQuellen, setzePaketEinstellungen, setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher } from './pakete/pakete.einstellungen';
+import { paketEinstellungen, paketKatalogStaende, paketQuellen, setzePaketEinstellungen, setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher } from './pakete/index';
 
 const log = protokoll.modul('werkbank');
 

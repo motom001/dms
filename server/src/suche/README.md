@@ -10,17 +10,18 @@
 
 **Abhängigkeiten**
 
-- Bekommt den **Kern** (`repo`, `einstellungen`, `zugriff`) und einen `SucheAnschluss` vom Dienst: `grundRepo` (das Repo
-  außerhalb jeder Transaktion – der Zwischenspeicher der Vektoren gilt über Transaktionen hinweg), `lesbare` und
-  `pruefeRecht` (Schicht „zugriff“, noch im Dienst) und `konten` (Dienstkonto eines Pakets für `aehnlicheTypen`).
-- Importiert nur sich selbst, den Kern (über `kern/index.ts`), `shared/`, die Basis und `vektoren.ts`. Geprüft mit
-  `npm run lint:abh` (`suche-nur-abwaerts`, `suche-nur-ueber-index` in `.dependency-cruiser.cjs`).
+- Bekommt den **Kern** (`repo`, `repoOhneTransaktion` für den Zwischenspeicher der Vektoren, der über Transaktionen
+  hinweg gilt, `einstellungen`, `zugriff`), die **Rechteprüfung** (`ZugriffDienst` aus `zugriff/index.ts`: `lesbare`,
+  `pruefeRecht`) und einen `SucheAnschluss` vom Dienst: `konten` (Dienstkonto eines Pakets für `aehnlicheTypen`).
+- Schicht 3: importiert nur sich selbst, tiefere Fachordner und den Kern (je über `index.ts`), `shared/`, die Basis und
+  `vektoren.ts`. Geprüft mit `npm run lint:abh` (Regel `fachordner` in `.dependency-cruiser.cjs`).
 - Wer sucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen) oder `dienst.suche.…`.
 
 **Regeln**
 
-- Kein anderer Fachbereich wird importiert. Braucht die Suche etwas von dort, kommt es über den Anschluss herein.
-- `kern.repo` bei jedem Aufruf neu holen; nur Zwischenspeicher, die über Transaktionen hinweg gelten, nehmen `grundRepo`.
+- Nie den Dienst, Rechte nur über `zugriff/`. Was die Suche sonst vom Dienst braucht, kommt über den Anschluss herein.
+- `kern.repo` bei jedem Aufruf neu holen; nur Zwischenspeicher, die über Transaktionen hinweg gelten, nehmen
+  `kern.repoOhneTransaktion`.
 - Neuer Code hier ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `max-params` von `aehnlicheTypen`).
 - Noch im Dienst, weil sie andere Fachbereiche brauchen: `vektorNachlauf` (KI-Sperre der Pakete, Ereignis-Wecker) und
   die Suche in der Mappenliste (`listeMappen`: Varianten, Vorschlag, ähnliche Treffer).

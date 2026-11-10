@@ -14,7 +14,7 @@ import { Fachfehler } from './fehler';
 import type { Handelnder } from './pakete';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
-import { paketUmwandlungen, setzePaketUmwandlungen } from './pakete/pakete.einstellungen';
+import { paketUmwandlungen, setzePaketUmwandlungen } from './pakete/index';
 
 const log = protokoll.modul('werkbank');
 /** So viele Vorgänge bleiben zum Rückgängigmachen gespeichert. */

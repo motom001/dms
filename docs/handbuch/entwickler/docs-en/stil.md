@@ -12,6 +12,7 @@ Two tools check the code before it reaches `main` (#899): **ESLint** for typical
 | `npm run lint:zaehlen` | count the lists of existing violations against `main` – exactly the CI check |
 | `npm run lint:umtragen` | after a move: rewrite the lists, drop orphaned entries, then count |
 | `npm run lint:farben` | [no fixed colours](#farben) outside `tokens.css` |
+| `node .github/werkzeuge/fachordner-pruefen.mjs` | every subject folder with a `*.dienst.ts` has `index.ts` and `README.md` (#1072) |
 | `npm run abhaengigkeitsbild` | regenerate the [dependency graph](#abhaengigkeitsbild) |
 
 The tools are fixed versions (without `^`) under `devDependencies` in the root folder and do not go into the image: there, `npm ci --omit=dev --workspace server` installs only the server's runtime packages.
@@ -97,11 +98,10 @@ A new token always gets a light **and** a dark value (or deliberately the same o
 - **No cycles** between files (type-only imports do not count).
 - **`shared/`** imports neither `server/` nor `web/` – the code runs in both.
 - **`web/`** never imports `server/`, **`server/`** never `web/`. Exception: tests under `server/test/`.
-- **Only via `index.ts`:** folders with an `index.ts` can only be reached from outside through it – today the [PDF module](aufbau.md#pdf-stelle) `server/src/pdf/` (except for `arbeit/vorgaenge.ts`, which runs the operations in the worker thread) and `server/src/arbeit/`.
-- **Core downwards only** (#961, `kern-nur-abwaerts`): `server/src/kern/` imports only itself, `shared/` and the base (`BASIS` in the file: repo, database, log, texts, settings, files, counters, errors, limits) – never `dienst.ts`, routes or subject folders. From outside only via `kern/index.ts` (`kern-nur-ueber-index`). See [core](aufbau.md#kern).
+- **Technical folders only via `index.ts`:** the [PDF module](aufbau.md#pdf-stelle) `server/src/pdf/` (except for `arbeit/vorgaenge.ts`, which runs the operations in the worker thread) and `server/src/arbeit/`.
+- **Subject folders** (#1072, one rule `fachordner` for all, previously two per folder): from outside only via their `index.ts` – tests included –, and [layers](aufbau.md#schichten) downwards only. The layers are kept in one place in `SCHICHTEN` (core 0, `zugriff` 1, `mappentypen`/`mappen`/`dokumente` 2, all others 3, future ones too), the folders without business logic in `TECHNIK`. The core imports only itself, `shared/` and the base (`BASIS` in the file: repo, database, log, texts, settings, files, counters, errors, limits); higher layers also lower subject folders and the tools (`WERKZEUGE`: `messung.ts`, `vektoren.ts`, `pdf/`, `arbeit/`) – never `dienst.ts`. Routes (`*.routen.ts`) are exempt: `routen.ts` fetches them directly, and they may import the service and their own subject folder. See [core](aufbau.md#kern), [checking permissions](aufbau.md#zugriff).
 - **HTTP layer helpers only in routes** (#961, `routen-hilfen-nur-in-routen`): `http/routen-hilfen.ts` and `http/routen-kontext.ts` are imported only by `*.routen.ts` and `routen.ts`. Business logic gets the user passed in instead of reading it from the request itself (for example with `ich(a)`).
-- **Search downwards only and only via `index.ts`** (#964, `suche-nur-abwaerts`, `suche-nur-ueber-index`): `server/src/suche/` imports only itself, the core, `shared/`, the base and `vektoren.ts` – no other subject area, never `dienst.ts` (routes excepted). From outside only via `suche/index.ts`; `routen.ts` fetches the routes directly. See [search](aufbau.md#suche).
-- **Prepared:** "subject areas only via `index.ts`" for all subject folders is in the file as a comment and becomes active as soon as the remaining subject folders have their own modules with `index.ts`.
+- **Door and description:** every subject folder with a `*.dienst.ts` needs `index.ts` and a hand-written `README.md` (`.github/werkzeuge/fachordner-pruefen.mjs`, **stil** job). Nobody checks what the README says; there is no generated part.
 
 ### Dependency graph { #abhaengigkeitsbild }
 

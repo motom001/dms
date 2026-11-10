@@ -95,11 +95,11 @@ import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { SucheDienst } from './suche';
 import { maskiert, NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff, type BenutzerGespiegelt } from './kern';
-import { Systemausstattung } from './systemausstattung/systemausstattung.ablauf';
+import { Systemausstattung } from './systemausstattung';
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
-import { paketEinstellungen } from './pakete/pakete.einstellungen';
-export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/pakete.einstellungen';
+import { paketEinstellungen } from './pakete/index';
+export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
 function inReihenfolge<T extends { id: string }>(liste: T[], ids: string[]): T[] {
