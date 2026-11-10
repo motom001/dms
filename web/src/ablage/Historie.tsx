@@ -32,8 +32,11 @@ function kurz(e: Historieneintrag, typ?: Pick<Mappentyp, 'felder'>): string {
   return '';
 }
 
-/** Einzelheiten eines Eintrags und ein kurzer Hinweis, wie viel dahintersteckt; null = nichts aufzuklappen. */
-function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, typ?: Pick<Mappentyp, 'felder'>): { hinweis: string; inhalt: ReactNode } | null {
+/**
+ * Einzelheiten eines Eintrags und ein kurzer Hinweis, wie viel dahintersteckt; null = nichts aufzuklappen.
+ * Exportiert für den Test (#1010).
+ */
+export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, typ?: Pick<Mappentyp, 'felder'>): { hinweis: string; inhalt: ReactNode } | null {
   const d = e.daten;
   if (d.aenderungen?.length) {
     const n = d.aenderungen.length;
@@ -92,11 +95,17 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, typ?: P
       };
     }
     case 'zugeordnet': {
-      // Post (#192): Link zur Zielmappe bzw. zur Post.
+      // Post (#192): Link zur Zielmappe bzw. zur Post. Aufgelöst mit abgetrenntem Teil (#936, #1010): dazu der Link
+      // zur neuen Post; sie hat den Typ der aufgelösten Post.
       const ziel = str(d.ziel) ?? str(d.post);
       const typ = str(d.zielTyp) ?? str(d.postTyp);
-      if (!ziel || !typ) return null;
-      return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <p className="einzeln"><Link to={`/ablage/${typ}/${ziel}`} className="verweis">{str(d.ziel) ? t('ablage.historie.mappe-oeffnen') : t('ablage.historie.post-oeffnen')}</Link></p> };
+      const abgetrennt = d.aufgeloest === true ? str(d.abgetrennt) : undefined;
+      const abgetrenntTyp = str(d.postTyp) ?? emailTyp;
+      const links: { zu: string; text: string }[] = [];
+      if (ziel && typ) links.push({ zu: `/ablage/${typ}/${ziel}`, text: str(d.ziel) ? t('ablage.historie.mappe-oeffnen') : t('ablage.historie.post-oeffnen') });
+      if (abgetrennt && abgetrenntTyp) links.push({ zu: `/ablage/${abgetrenntTyp}/${abgetrennt}`, text: t('ablage.historie.abgetrennte-post-oeffnen') });
+      if (!links.length) return null;
+      return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <ul className="einzeln">{links.map((l) => <li key={l.zu}><Link to={l.zu} className="verweis">{l.text}</Link></li>)}</ul> };
     }
     case 'aufgabe': {
       const text = str(d.aufgabentext);
@@ -246,11 +255,6 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, typ?: P
           </dl>
         ),
       };
-    }
-    case 'zugeordnet': {
-      // Aufgelöst mit abgetrenntem Teil (#936): Link zur neuen Post.
-      if (d.aufgeloest !== true || !str(d.abgetrennt) || !emailTyp) return null;
-      return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <p className="einzeln"><Link to={`/ablage/${emailTyp}/${str(d.abgetrennt)}`} className="verweis">{t('ablage.historie.abgetrennte-post-oeffnen')}</Link></p> };
     }
     case 'wiederhergestellt': {
       const n = typeof d.verweiseEntfallen === 'number' ? d.verweiseEntfallen : 0;

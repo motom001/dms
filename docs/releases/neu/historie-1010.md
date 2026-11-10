@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- **Historie: Link zur abgetrennten Post** (#1010): Wird eine Post aufgelöst und dabei ein Teil abgetrennt, zeigt der Eintrag in der Historie der Zielmappe jetzt neben dem Link zur Post auch „Abgetrennte Post öffnen“.
