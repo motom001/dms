@@ -1,0 +1,9 @@
+art: minor
+
+## Neu
+
+- **Feldart „Tabelle“** (#1030): Zwischen den Feldern einer Mappe stehen die Mappen eines anderen Typs, die auf sie verweisen – etwa an der Rechnung ihre Positionen – mit den Spalten einer Trefferliste, sortiert wie dort, je 50 mit „weitere anzeigen“, am Handy als Liste. Darunter „+ Position“ (Beschriftung am Mappentyp) öffnet die neue Mappe im Fenster, der Verweis ist schon gesetzt. Nur lesbare Mappen, auch in der Zahl; „+ Neu“ nur mit Anlegerecht, der Server prüft es. Kein eigener Wert, keine Summen. Pakete bringen Tabellen mit (`typ: tabelle`, `quelle`), „Paket erstellen“ nimmt sie mit. Neuer Baustein „Tabelle“.
+
+## Geändert
+
+- **Schnittstelle** (#1030): Feldart `tabelle` mit `quelle` (`typId`, `feldKey`, `trefferliste`, `neu`) am Feld; `GET /api/v1/mappen/{id}/tabelle/{feld}` liefert die Zeilen – nur lesbare Mappen, je 50, mit den Werten der Spalten.

@@ -45,6 +45,20 @@ function mitAltemZiel<T extends Pick<Mappentyp, 'felder'>>(t: T): T {
   return { ...t, felder: t.felder.map((f) => { const alt = jedeMappe(f) ? BELIEBIGER_TYP : einzigesZiel(f); return f.typ === 'referenz' && alt ? { ...f, zielTyp: alt } : f; }) };
 }
 
+/**
+ * Tabellen (#1030) anderer Typen, die Mappen dieses Typs über eines seiner Verweisfelder zeigen: Das Feld muss bleiben
+ * und weiter auf ihren Typ zeigen – sonst stünde dort eine Tabelle ohne Quelle. Je Tabelle ohne Quelle eine Meldung.
+ */
+function gebrauchteQuellen(d: MappentypDaten, eigeneId: string, alle: Mappentyp[]): string[] {
+  return alle.filter((x) => x.id !== eigeneId).flatMap((andere) => andere.felder.filter((x) => x.typ === 'tabelle' && x.quelle?.typId === eigeneId).flatMap((f) => {
+    const v = d.felder.find((x) => x.key === f.quelle!.feldKey);
+    return !v || v.typ !== 'referenz' || !zielErlaubt(v, andere.id) ? [t('meldungen.tabelle.quelle-gebraucht', { feld: v?.label || f.quelle!.feldKey, tabelle: f.label, typ: andere.name })] : [];
+  }));
+}
+/** Tabellen (#1030) eines Typs, die Mappen vom Typ `id` zeigen – sie halten das Löschen dieses Typs auf. */
+const tabellenAuf = (mappentyp: Mappentyp, id: string): string[] =>
+  mappentyp.felder.filter((f) => f.typ === 'tabelle' && f.quelle?.typId === id).map((f) => t('meldungen.tabelle.typ-gebraucht', { name: mappentyp.name, label: f.label }));
+
 export class MappentypenDienst {
   constructor(private readonly kern: Kern, private readonly anschluss: MappentypenAnschluss) {}
 
@@ -101,6 +115,7 @@ export class MappentypenDienst {
       schluesselAndererTypen: alle.filter((t) => t.id !== eigeneId && t.schluessel).map((t) => t.schluessel!),
       existiertTyp: (id) => alle.some((t) => t.id === id),
       felderVon: (id) => alle.find((t) => t.id === id)?.felder,
+      typVon: (id) => alle.find((t) => t.id === id),
       nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
       auswahlProbleme: (bed, felder, eigene) => auswahlProbleme(bed, { felder }, eigene),
     });
@@ -117,6 +132,7 @@ export class MappentypenDienst {
         p.allgemein.push(...liste.map((x) => t('meldungen.dienst.anzeige-abschnitt', { name, problem: x })));
       }
     }
+    p.allgemein.push(...gebrauchteQuellen(d, eigeneId, alle));
     if (!istOk(p)) throw new Fachfehler(422, t('meldungen.dienst.der-mappentyp-ist-so'), p);
   }
 
@@ -269,6 +285,7 @@ export class MappentypenDienst {
         else gruende.push(t('meldungen.dienst.das-feld-verweist-auf', { name: mappentyp.name, label: f.label }));
       }
       if (anders) herausnehmen.push(mappentyp);
+      gruende.push(...tabellenAuf(mappentyp, id));
     }
     if (gruende.length) throw new Fachfehler(409, t('meldungen.dienst.dieser-mappentyp-kann-noch'), { gruende });
     for (const mt of herausnehmen) {

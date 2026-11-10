@@ -144,6 +144,10 @@ See also: [Folder type](#mappentyp).
 <a id="register"></a>**Tab** (*Register*) · ~ with explanation · everyone  
 A divider in a folder, e.g. General (with fields), Documents, Links or History. Notes and History are fixed tabs of every folder.
 
+<a id="tabelle"></a>**Table** (*Tabelle*) · ✓ everyday word · everyone  
+Field kind without a value of its own – shows, between the fields of a folder, the folders of another type that link to it, with the columns of a results list, e.g. the items of an invoice; below it "+ New" (such as "+ Item"). Only folders you may read; no totals.  
+See also: [Field kind](#feldart), [Tab](#register), [Result list](#trefferliste), [Link (field)](#verweis).
+
 <a id="zieltyp"></a>**Target type** (*Zieltyp*) · ~ with explanation · administrators  
 A folder type whose folders a link may point to; a link has one or several. With "all of the same type", several chosen folders stay with the type of the first one. Packages can also bring optional target types – types of another package that Ablago adds as soon as it is installed.  
 See also: [Link (field)](#verweis), [Folder type](#mappentyp).

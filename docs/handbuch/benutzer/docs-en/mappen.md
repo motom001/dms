@@ -72,12 +72,17 @@ Which fields recognition fills in is set by the administrator on the folder type
 | Choice list | choose a value (or several) from the list |
 | Link | search for and choose another folder (see below) |
 | Password | type it in; it is stored encrypted (see below) |
+| Table | nothing to enter – it shows folders that belong here, such as the items of an invoice (see below) |
 
 Some text fields have a **format**: email, phone, website, IBAN or postcode. On the phone the matching keyboard then appears, and Ablago rejects obviously wrong entries – such as letters in a phone number – with a hint about what to do. Next to an email address, phone number or website there is a button with which you write, call or open the page straight away. An IBAN is shown in groups of four; a German postcode has exactly 5 digits; for other countries you enter the country. Some date fields have limits; a birthday, for example, may not be in the future. What is already saved stays until you change the field.
 
 **Fields that grow with you:** some fields and sections only appear when they fit – if you choose the contract type *Rent*, for example, the section *Rent* appears straight away. If you later choose something else, it disappears again, but the values you entered don’t: in its place it says “Section Rent is hidden – 3 values stay saved · **show**”. A click on *show* brings it back. Hidden fields are not required. This is only tidiness in the form: exports and data access requests contain all values. What is shown when is set by the administration on the folder type.
 
 **Calculated fields:** A package works out some values itself, for example *Cancel by* or the *status* of a contract. You cannot change such fields; underneath it says "calculated by Verträge". Change the details they come from instead (start, term, notice period …) – the package then calculates again. If it says "no longer calculated", the package no longer calculates it; the value stays until the administration releases the field.
+
+**Tables between the fields:** Some folders show a table in the middle of their fields, for example the *items* of an invoice. Each row is a folder of its own; a click opens it. With **+ Item** below the table you add a new one – it opens in a small window and already belongs to this invoice; after saving it appears in the table. With many rows, **Show more** fetches the next 50. On a phone there is a list with the first two columns instead of the table. You only see the rows you may read, and **+ Item** only if you may create such folders. The table does not add up totals; for a new invoice you add items after saving.
+
+![Invoice with the table Items and "+ Item"](bilder/mappe-tabelle.png)
 
 **Notes from packages:** Above the tabs there may be a yellow note from a package, for example "Rechnungen · The items add up to €118.40, the invoice says €120.80". The name of the package is always in front. Such a note never stops you saving; the package removes it again as soon as it no longer applies.
 

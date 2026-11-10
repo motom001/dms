@@ -854,6 +854,30 @@ async function main() {
   await s.getByRole('tab', { name: /Rechnungen/ }).click();
   await s.locator('.verweistabelle table').waitFor();
   await bild(s, 'verknuepfungen-tabelle');
+  // Feldart Tabelle (#1030): die Positionen einer Rechnung zwischen den Feldern, darunter „+ Position“.
+  {
+    const r = (await api('GET', '/api/typen')).find((t) => t.id === rechnung.id);
+    const pos = await api('POST', '/api/typen', { name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', beschriftungen: { en: { name: 'Invoice item' } },
+      trefferliste: ['nr', 'beschreibung', 'menge', 'einzelpreis'], felder: [
+        { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true, verweisart: 'zugehoerigkeit', beschriftungen: { en: { label: 'Invoice' } } },
+        { key: 'nr', label: 'Nr.', typ: 'zahl', beschriftungen: { en: { label: 'No.' } } },
+        { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true, beschriftungen: { en: { label: 'Description' } } },
+        { key: 'menge', label: 'Menge', typ: 'zahl', beschriftungen: { en: { label: 'Quantity' } } },
+        { key: 'einzelpreis', label: 'Einzelpreis', typ: 'betrag', waehrung: 'EUR', beschriftungen: { en: { label: 'Unit price' } } },
+      ] });
+    const reg = r.register.find((x) => x.art === 'felder');
+    await api('PUT', `/api/typen/${rechnung.id}`, { ...r, trefferliste: undefined,
+      felder: [...r.felder, { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: pos.id, feldKey: 'rechnung', neu: '+ Position' }, beschriftungen: { en: { label: 'Items', neu: '+ Item' } } }],
+      register: r.register.map((x) => (x === reg ? { ...x, felder: [...(x.felder ?? []), 'positionen'], abschnitte: [...(x.abschnitte ?? []), { vor: 'positionen', titel: 'Positionen', beschriftungen: { en: { titel: 'Items' } } }] } : x)) });
+    for (const [nr, beschreibung, menge, betrag] of [[1, 'Wartung Heizung', 1, 149], [2, 'Dichtungssatz', 2, 18.5], [3, 'Anfahrt', 1, 35]]) {
+      await api('POST', '/api/mappen', { typId: pos.id, werte: { rechnung: d.rechnung.id, nr, beschreibung, menge, einzelpreis: { betrag, waehrung: 'EUR' } } });
+    }
+    await geheZu(s, `/ablage/${rechnung.id}/${d.rechnung.id}`);
+    const tabelle = s.locator('[data-anker="mappe.tabellenfeld:positionen"]');
+    await tabelle.locator('table tbody tr').nth(2).waitFor();
+    await tabelle.scrollIntoViewIfNeeded();
+    await bild(s, 'mappe-tabelle');
+  }
   // Mappe löschen (#423): Auf die Stadtwerke verweisen Verträge – „Warum ist Löschen gesperrt?“ am gesperrten Knopf (#648).
   await s.getByRole('button', { name: w('Warum ist Löschen gesperrt?') }).click();
   await s.locator('.loeschwahl-begruendung').waitFor();

@@ -7,6 +7,7 @@ import { vonAussenFuellbar } from '../../../shared/src/berechnet';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { anzeigestand, hatAnzeige, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
+import { wertfelder } from '../../../shared/src/tabelle';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
 import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgtaus';
 import { einzigesZiel, type Feld, type Feldkonflikt, formatiere, gemeinsameFelder, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte, zieleVon, zielTypenAus } from '../../../shared/src/model';
@@ -26,11 +27,13 @@ const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
 /** Nur Werte zu bekannten Feldern; leere Eingaben werden zu null. */
 export function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, verschluessele: (k: string) => string = keinSchluessel): Werte {
   const roh = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
-  const bekannt = new Set(typ.felder.map((f) => f.key));
+  // Tabellen (#1030) haben keinen Wert: Was unter ihrer Kennung gesendet wird, fällt weg; Gespeichertes (ein früheres
+  // Feld gleicher Kennung) bleibt wie bei entfernten Feldern.
+  const bekannt = new Set(wertfelder(typ.felder).map((f) => f.key));
   const werte: Werte = {};
   // Werte aus entfernten Feldern bleiben erhalten.
   for (const [k, v] of Object.entries(bisher)) if (!bekannt.has(k)) werte[k] = v;
-  for (const f of typ.felder) {
+  for (const f of wertfelder(typ.felder)) {
     if (f.typ === 'passwort') { werte[f.key] = passwortWert(roh[f.key], f.key in roh, bisher[f.key], verschluessele); continue; }
     const v = f.key in roh ? roh[f.key] : bisher[f.key];
     werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : gleicheArtAn(f, v as Werte[string]);

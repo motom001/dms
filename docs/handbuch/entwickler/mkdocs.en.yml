@@ -78,6 +78,7 @@ nav:
       - Field: bausteine-feld.md
       - Button: bausteine-knopf.md
       - Inputs with a unit: bausteine-einheit.md
+      - Table: bausteine-tabelle.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

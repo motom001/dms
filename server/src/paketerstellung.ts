@@ -32,6 +32,7 @@ import { ARCHIV_MAX, BASIS_ABLAGEORT_AB, beispielDateiart, DMS_TYPEN, DMS_VERWEI
 import { protokoll } from './protokoll';
 import { typBild, typUnterschiede, type TypUnterschiede } from '../../shared/src/typvergleich';
 import { wiederfindenVorgabe } from '../../shared/src/erkennung';
+import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
@@ -57,6 +58,7 @@ export const MINDEST_FUNKTIONEN = {
   erkennung: { ab: '0.113.0', grund: t('meldungen.paketerstellung.erkennung-an-feldern-aus') },
   feldformate: { ab: '0.121.0', grund: t('meldungen.paketerstellung.feldformate-und-datumsgrenzen') },
   feldarten: { ab: FELDARTEN_AB, grund: t('meldungen.paketerstellung.feldarten') },
+  tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -327,6 +329,19 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     return bedingungen.length ? { modus: r.modus, bedingungen } : undefined;
   };
 
+  /**
+   * Tabelle (#1030) fürs Paket: Typ als Verweis wie bei ziel; Pakete bringen je Typ nur die Standard-Trefferliste mit.
+   * Fehlt der Typ im Paket, steht er unter „mit aufnehmen“ (wie bei Verweisen) – ohne ihn gibt es kein Paket.
+   */
+  const tabelleInsPaket = (x: Record<string, unknown>, f: Feld, wo: string) => {
+    const quelle = f.typ === 'tabelle' ? f.quelle : undefined;
+    if (!quelle) return;
+    const typ = ziel(quelle.typId, wo);
+    const quelltyp = typById.get(quelle.typId);
+    if (quelle.trefferliste && quelltyp && standardliste(quelltyp).key !== quelle.trefferliste) hinweis(t('meldungen.paketerstellung.tabelle-liste', { wo, name: quelltyp.name }));
+    if (typ) x.quelle = ohneLeere({ typ, feld: quelle.feldKey, neu: quelle.neu });
+  };
+
   // 3. Mappentypen
   const paketTypen = eigene.map((mappentyp) => {
     const wo = (was: string) => `„${mappentyp.name}“ → ${was}`;
@@ -336,6 +351,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
       // berechnetVon (#1034) gehört dem Paket mit Code, das den Typ mitbringt – ein selbst erstelltes Paket rechnet nichts.
       const { zielTypen, zielOptional, system: _s, auswahlFilter, frist, standard, ausText: _a, anzeigen, ...rest } = f as Feld;
       delete (rest as Partial<Feld>).berechnetVon;
+      // Tabelle (#1030): die Quelle als Typverweis (tabelleInsPaket), nicht mit der Id dieser Installation.
+      delete (rest as Partial<Feld>).quelle;
       const x: Record<string, unknown> = ohneLeere(rest as Record<string, unknown>);
       const az = anzeigeFuersPaket(anzeigen, wo(`Feld „${f.label}“`));
       if (az) x.anzeigen = az;
@@ -358,6 +375,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
         if (mitId(auswahlFilter)) hinweis(`${wo(`Feld „${f.label}“`)}: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.`);
         else x.auswahlFilter = auswahlFilter;
       }
+      tabelleInsPaket(x, f, wo(`Feld „${f.label}“`));
       if (x.ziel === undefined) delete x.ziel;
       // Zum Wiederfinden (#938): Ohne die Angabe leitet Ablago sie bei Feldern mit „Aus Dokument füllen“ ab – ein
       // ausdrückliches false hält fest, dass der Haken hier aus ist.
@@ -542,6 +560,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => 'format' in f || 'landFeld' in f || (f.typ === 'datum' && ('min' in f || 'max' in f))))) genutzt.push('feldformate');
   // Zeitraum, Prozent und negative Beträge (#1035): Ältere Ablago machten aus unbekannten Feldarten Text.
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'zeitraum' || f.typ === 'prozent' || f.negativ === true))) genutzt.push('feldarten');
+  if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
   const mindest = mindestversion(genutzt);
   const optionen = dmsOptionen(mindest.version, d.dmsVersion);
   const unten = untergrenze(dms);

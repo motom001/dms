@@ -27,6 +27,8 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       L.ablage.debug('Ansicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
       return ok(klartext ? { ...s, mappen: await entschluessele(a, s.mappen.filter((m) => !m.verborgen), klartext) } : s);
     } },
+    // Feldart Tabelle (#1030): verweisende Mappen seitenweise – nur lesbare, auch in der Zahl.
+    { methode: 'GET', pfad: '/api/mappen/:id/tabelle/:feld', zugang: 'angemeldet', handler: async (a) => ok(await dienst.tabelle(a.params.id, a.params.feld, a.query, await zg(a))) },
     // Favoriten (#62)
     { methode: 'PUT', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.setzeFavorit(ich(a), a.params.id, true)); } },
     { methode: 'DELETE', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFavorit(ich(a), a.params.id, false)) },

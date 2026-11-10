@@ -22,6 +22,7 @@ import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
@@ -128,9 +129,18 @@ export interface Manifest {
  * `zielOptional` nennt Typen anderer Pakete als `paket:schluessel`, von denen das Paket nicht abhängt – Ablago nimmt
  * sie auf, sobald es sie gibt. Ein Verweisfeld darf auch nur `zielOptional` haben.
  */
-export interface PaketFeld extends Partial<Feld> { key: string; label: string; typ: Feld['typ']; ziel?: string | string[]; zielOptional?: string[];
+export interface PaketFeld extends Omit<Partial<Feld>, 'quelle'> { key: string; label: string; typ: Feld['typ']; ziel?: string | string[]; zielOptional?: string[];
   /** Berechnet (#1034): nur der Code dieses Pakets schreibt den Wert; Ablago speichert es als `berechnetVon`. */
-  berechnet?: boolean }
+  berechnet?: boolean;
+  /**
+   * Tabelle (#1030): Mappen vom Typ `typ` (Typverweis wie bei `ziel`), die über `feld` hierher verweisen; Spalten aus der
+   * Trefferliste `trefferliste` (in Paketen nur „standard“) und „+ Neu“ mit der Beschriftung `neu`.
+   */
+  quelle?: PaketTabellenquelle }
+/** Quelle einer Tabelle im Paket (#1030) – Schreibweise des Registry-Schemas (`schema/inhalt.schema.json`). */
+export interface PaketTabellenquelle { typ: string; feld: string; trefferliste?: string; neu?: string }
+/** Typverweis der Quelle einer Tabelle (#1030), sonst nichts. */
+const tabellenTyp = (f: Pick<PaketFeld, 'typ' | 'quelle'>): string[] => (f.typ === 'tabelle' && f.quelle?.typ ? [str(f.quelle.typ)] : []);
 /** Die festen Ziele eines Paketfelds als Liste (#1036): `ziel` einzeln oder als Liste. */
 export const paketZiele = (f: Pick<PaketFeld, 'ziel'>): string[] => (Array.isArray(f.ziel) ? f.ziel.map(str) : f.ziel ? [str(f.ziel)] : []);
 /**
@@ -340,7 +350,7 @@ const istDmsVerweis = (vw: string) => vw.startsWith(DMS_PRAEFIX);
 /** Alle Typverweise eines Pakets: Felder, Quellen der Verknüpfungsregister, Typen der Ansichten. */
 const typverweise = (typen: PaketTyp[], sichten: PaketSicht[]) => [
   // Optionale Ziele (#1036) zählen nicht: Von ihnen hängt das Paket gerade nicht ab.
-  ...typen.flatMap((t) => [...t.felder.flatMap((f) => paketZiele(f)), ...t.register.flatMap((r) => (r.quellen ?? []).map((q) => q.typ))]),
+  ...typen.flatMap((t) => [...t.felder.flatMap((f) => [...paketZiele(f), ...tabellenTyp(f)]), ...t.register.flatMap((r) => (r.quellen ?? []).map((q) => q.typ))]),
   ...sichten.flatMap((s) => (s.typen ?? []).filter((t) => t !== ALLE_TYPEN)),
 ];
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -446,6 +456,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       else if (f.berechnet === true && f.typ === 'passwort') fehler.push(`${wo}: Feld „${f.key}“: Passwortfelder lassen sich nicht berechnen.`);
       // Ältere Pakete hätten berechnetVon selbst setzen können – das vergibt nur Ablago.
       delete (f as Partial<Feld>).berechnetVon;
+      fehler.push(...tabellenFehler(f, `${wo}: Feld „${f.key}“`));
       // Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText.
       const roh = f as unknown as Record<string, unknown>;
       if (roh.aus_text !== undefined) {
@@ -552,6 +563,19 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     return g.woerter;
   }).filter((g) => g.length);
   if (wortlisten.length > WORTLISTEN_MAX) fehler.push(t('meldungen.pakete.wortlisten-hoechstens-gruppen', { WORTLISTEN_MAX }));
+  // Tabellen (#1030) auf eigene Typen: Das Feld der Quelle gibt es und es verweist auf den Typ mit der Tabelle – wie bei
+  // Verknüpfungsregistern; Typen anderer Pakete prüft Ablago beim Anlegen.
+  for (const ty of typen) {
+    for (const f of ty.felder.filter((x) => x.typ === 'tabelle' && x.quelle && TYPVERWEIS.test(str(x.quelle.typ)))) {
+      const vw = str(f.quelle!.typ);
+      if (vw.includes(':') && !vw.startsWith(`${str(m.id)}:`)) continue;
+      const quelltyp = typen.find((x) => x.schluessel === vw.split(':').pop());
+      const v = quelltyp?.felder.find((x) => x.key === f.quelle!.feld);
+      const zeigt = !!v && v.typ === 'referenz' && paketZiele(v).concat(v.zielOptional ?? []).some((z) => z === ty.schluessel || z === `${str(m.id)}:${ty.schluessel}`);
+      if (!quelltyp) fehler.push(t('meldungen.pakete.tabelle-typ', { typ: ty.name, feld: f.key, quelle: vw }));
+      else if (!zeigt) fehler.push(t('meldungen.pakete.tabelle-feld', { typ: ty.name, feld: f.key, quelle: vw, quellfeld: f.quelle!.feld }));
+    }
+  }
   const doppelt = (l: string[]) => l.filter((x, i) => l.indexOf(x) !== i);
   for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(t('meldungen.pakete.mappentypen-kennung-doppelt', { s }));
   for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(t('meldungen.pakete.sichten-kennung-doppelt', { s }));
@@ -857,8 +881,32 @@ function nachEltern(sichten: PaketSicht[]): PaketSicht[] {
  */
 function ohneZiele(t: Mappentyp, weg: Set<string>): Feld[] {
   const rest = (f: Feld) => zieleVon(f).filter((z) => !weg.has(z) || z === t.id);
-  return t.felder.flatMap((f) => (f.typ !== 'referenz' || rest(f).length === zieleVon(f).length ? [f]
+  // Tabellen (#1030) auf Typen aus `weg` gehen mit (sie haben keinen Wert).
+  return t.felder.flatMap((f) => (f.typ === 'tabelle' ? (f.quelle && weg.has(f.quelle.typId) && f.quelle.typId !== t.id ? [] : [f])
+    : f.typ !== 'referenz' || rest(f).length === zieleVon(f).length ? [f]
     : rest(f).length || f.zielOptional?.length ? [{ ...f, zielTypen: rest(f) }] : []));
+}
+
+/**
+ * Feldart Tabelle (#1030) im Paket: `quelle` nur bei `typ: tabelle` und dort Pflicht – mit Typverweis, Feldkennung,
+ * Trefferliste (nur „standard“, Pakete bringen eine Trefferliste je Typ mit) und „+ Neu“ (höchstens 40 Zeichen). Eine
+ * Tabelle hat keinen Wert: nie Pflicht, nie berechnet.
+ */
+function tabellenFehler(f: PaketFeld, wo: string): string[] {
+  const q = f.quelle as unknown;
+  if (f.typ !== 'tabelle') return q === undefined ? [] : [`${wo}: quelle gibt es nur bei Tabellen (typ: tabelle).`];
+  if (!istObjekt(q)) return [`${wo}: Eine Tabelle braucht quelle: { typ, feld } – den Mappentyp und das Verweisfeld, über das seine Mappen hierher verweisen.`];
+  const fehler: string[] = [];
+  const erlaubt = new Set(['typ', 'feld', 'trefferliste', 'neu']);
+  for (const k of Object.keys(q)) if (!erlaubt.has(k)) fehler.push(`${wo}: quelle kennt „${k}“ nicht (möglich: typ, feld, trefferliste, neu).`);
+  if (!TYPVERWEIS.test(str(q.typ))) fehler.push(`${wo}: quelle.typ „${str(q.typ)}“ ist kein gültiger Mappentyp-Verweis.`);
+  else if (istDmsVerweis(str(q.typ))) fehler.push(`${wo}: quelle.typ – eine Tabelle zeigt Mappen eines Typs aus einem Paket, nicht „${str(q.typ)}“.`);
+  if (!SCHLUESSEL.test(str(q.feld))) fehler.push(`${wo}: quelle.feld „${str(q.feld)}“ ist keine gültige Feldkennung.`);
+  if (q.trefferliste !== undefined && q.trefferliste !== 'standard') fehler.push(`${wo}: quelle.trefferliste – Pakete bringen je Typ eine Trefferliste mit; möglich ist nur „standard“.`);
+  if (q.neu !== undefined && (typeof q.neu !== 'string' || !q.neu.trim() || q.neu.length > TABELLE_NEU_MAX)) fehler.push(`${wo}: quelle.neu ist ein Text mit höchstens ${TABELLE_NEU_MAX} Zeichen, z. B. „+ Position“.`);
+  if (f.pflicht) fehler.push(`${wo}: Eine Tabelle hat keinen eigenen Wert und kann keine Pflicht sein.`);
+  if (f.berechnet === true) fehler.push(`${wo}: Eine Tabelle hat keinen eigenen Wert und lässt sich nicht berechnen.`);
+  return fehler;
 }
 
 /** Bedingung aus dem Paket in die Form der Werkbank. */
@@ -1955,11 +2003,14 @@ export class Paketverwaltung {
     };
     const eingabe = (t: PaketTyp, nurAngelegt: boolean) => {
       const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
-      const offen = new Set(t.felder.filter((f) => paketZiele(f).some((z) => !(eigen(z) && z.split(':').pop() === t.schluessel) && ziel(z, nurAngelegt) === null)).map((f) => f.key));
-      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, zielOptional: opt, berechnet, ...f }) => {
+      // Tabellen (#1030) auf einen Typ, den es noch nicht gibt, kommen im zweiten Durchgang – wie Verweise.
+      const offen = new Set(t.felder.filter((f) => [...paketZiele(f), ...tabellenTyp(f)].some((z) => !(eigen(z) && z.split(':').pop() === t.schluessel) && ziel(z, nurAngelegt) === null)).map((f) => f.key));
+      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, zielOptional: opt, berechnet, quelle: q, ...f }) => {
         const ziele = [...paketZiele({ ziel: z }).map((x) => ziel(x, false)!), ...(opt ?? []).map(optional).filter((x): x is string => !!x)];
+        // Tabelle (#1030): Typverweis → Id; „standard“ ist die Standard-Trefferliste (Pakete bringen nur sie mit).
+        const quelle = f.typ === 'tabelle' && q ? { typId: ziel(str(q.typ), false)!, feldKey: str(q.feld), ...(q.neu ? { neu: str(q.neu) } : {}) } : undefined;
         // Berechnet (#1034): gehört dem Paket, das den Typ mitbringt; null gibt ein Feld frei, das das Paket nicht mehr berechnet.
-        return { ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}), berechnetVon: berechnet === true ? m.id : null };
+        return { ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}), ...(quelle ? { quelle } : {}), berechnetVon: berechnet === true ? m.id : null };
       });
       const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}),
         ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
@@ -2008,6 +2059,8 @@ export class Paketverwaltung {
         typMap[paketTyp.schluessel] = ids.get(paketTyp.schluessel)!;
         if (x.unvollstaendig) nachtragen.push(paketTyp);
       }
+      // Tabellen (#1030) zuletzt: Ihre Quelle braucht das Verweisfeld des anderen Typs, das vielleicht erst hier dazukommt.
+      nachtragen.sort((a, b) => Number(a.felder.some((f) => f.typ === 'tabelle')) - Number(b.felder.some((f) => f.typ === 'tabelle')));
       for (const paketTyp of nachtragen) {
         try { await this.d.aendereTyp(ids.get(paketTyp.schluessel)!, eingabe(paketTyp, false).daten, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: paketTyp.name, meldungen: meldungen(f) })); }
       }
@@ -2701,6 +2754,14 @@ export class Paketverwaltung {
     return { entfernt: b.unveraendert.length, behalten: b.geaendert.map(({ typId: _t, ...g }) => g) };
   }
 
+  /** Tabellen (#1030) der Typen aus `bleibt` entfernen, die Mappen anderer Typen aus `bleibt` zeigen; true, wenn es welche gab. */
+  private async ohneTabellenAuf(typen: Mappentyp[], bleibt: Set<string>): Promise<boolean> {
+    const weg = (t: Mappentyp, f: Feld) => f.typ === 'tabelle' && !!f.quelle && bleibt.has(f.quelle.typId) && f.quelle.typId !== t.id;
+    const betroffen = typen.filter((x) => bleibt.has(x.id) && x.felder.some((f) => weg(x, f)));
+    for (const t of betroffen) await this.d.aendereTyp(t.id, { ...t, felder: t.felder.filter((f) => !weg(t, f)) });
+    return betroffen.length > 0;
+  }
+
   /**
    * Paket entfernen. Unveränderte Beispiel-Mappen (#878) gehen samt Dokumenten mit; geänderte bleiben – in eigenen
    * Mappentypen verhindern sie das Entfernen und stehen in den Gründen, in fremden bleiben sie und stehen im Ergebnis.
@@ -2734,7 +2795,7 @@ export class Paketverwaltung {
     for (const sid of Object.values(p.sichten).filter((x) => sichten.some((s) => s.id === x)).sort((a, b) => tiefe(b) - tiefe(a))) await this.d.loescheSicht(sid);
     let offen = [...typIds];
     for (let runde = 0; offen.length; runde++) {
-      const typen = await this.d.listeTypen();
+      let typen = await this.d.listeTypen();
       offen = offen.filter((t) => typen.some((x) => x.id === t));
       const fehler: string[] = [];
       const vorher = offen.length;
@@ -2746,6 +2807,8 @@ export class Paketverwaltung {
       // Kein Fortschritt: Typen des Pakets verweisen im Kreis aufeinander – diese Verweise zuerst lösen.
       if (offen.length === vorher) {
         const bleibt = new Set(offen);
+        // Tabellen (#1030) zuerst: Solange eine Tabelle Mappen eines Typs über ein Feld zeigt, darf das Feld nicht weg.
+        if (await this.ohneTabellenAuf(typen, bleibt)) typen = await this.d.listeTypen();
         for (const t of typen.filter((x) => bleibt.has(x.id))) {
           const felder = ohneZiele(t, bleibt);
           if (felder.length === t.felder.length && felder.every((f, i) => f === t.felder[i])) continue;

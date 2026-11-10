@@ -107,6 +107,14 @@ begriffe:
     nicht_verwenden: [Dauer (als Feldart), Periode, Intervall]
     verwandt: [Feldart, Frist]
     code: zeitraum, Zeitraum, shared/src/feldarten.ts
+  - begriff: Tabelle
+    bereich: grundbegriffe
+    beschreibung: Feldart ohne eigenen Wert – zeigt zwischen den Feldern einer Mappe die Mappen eines anderen Typs, die auf sie verweisen, mit den Spalten einer Trefferliste, z. B. an der Rechnung ihre Positionen; darunter „+ Neu“ (etwa „+ Position“). Nur Mappen, die man lesen darf; keine Summen.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Unterformular, Liste (als Feldart), Positionstabelle]
+    verwandt: [Feldart, Register, Trefferliste, Verweis]
+    code: tabelle, Feld.quelle, shared/src/tabelle.ts
   - begriff: Prozent
     bereich: grundbegriffe
     beschreibung: Feldart für einen Prozentsatz, z. B. den Steuersatz „19 %“ – mit Nachkommastellen, frei wählbar (auch ausländische Sätze). „19“, „19 %“ und „19,0“ bedeuten dasselbe.

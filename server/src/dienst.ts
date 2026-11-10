@@ -778,6 +778,7 @@ export class Dienst {
   /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
 
   seite(...a: Parameters<SichtenDienst['seite']>) { return this.sichten.seite(...a); }
+  tabelle(...a: Parameters<SichtenDienst['tabelle']>) { return this.sichten.tabelle(...a); }
   zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) { return this.sichten.zaehler(ich, zg); }
   zaehlerRahmen() { return this.sichten.zaehlerRahmen(); }
   zaehlerAbruf(z: Zugriff) { return this.sichten.zaehlerAbruf(z); }

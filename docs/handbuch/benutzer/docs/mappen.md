@@ -72,12 +72,17 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |
 | Passwort | eintippen; gespeichert wird es verschlüsselt (siehe unten) |
+| Tabelle | nichts einzugeben – sie zeigt Mappen, die hierher gehören, etwa die Positionen einer Rechnung (siehe unten) |
 
 Manche Textfelder haben ein **Format**: E-Mail, Telefon, Internetseite, IBAN oder PLZ. Am Handy erscheint dann die passende Tastatur, und offensichtlich falsche Angaben – etwa Buchstaben in einer Telefonnummer – lehnt Ablago mit einem Hinweis ab, was zu tun ist. Neben einer E-Mail-Adresse, Telefonnummer oder Internetseite steht ein Knopf, mit dem du gleich schreibst, anrufst oder die Seite öffnest. Eine IBAN steht in Vierergruppen; eine deutsche PLZ hat genau 5 Ziffern, für andere Länder trägst du das Land ein. Manche Datumsfelder haben Grenzen, ein Geburtstag darf zum Beispiel nicht in der Zukunft liegen. Was schon gespeichert ist, bleibt, bis du das Feld änderst.
 
 **Felder, die mitwachsen:** Manche Felder und Abschnitte erscheinen erst, wenn sie passen – wählst du etwa die Vertragsart *Miete*, erscheint gleich der Abschnitt *Miete*. Wählst du später etwas anderes, verschwindet er wieder, die eingetragenen Werte aber nicht: An seiner Stelle steht „Abschnitt Miete ist ausgeblendet – 3 Werte bleiben gespeichert · **anzeigen**“. Ein Klick auf *anzeigen* holt ihn zurück. Ausgeblendete Felder sind nicht Pflicht. Das ist nur Ordnung im Formular: Export und Auskunft enthalten alle Werte. Was wann zu sehen ist, stellt die Verwaltung am Mappentyp ein.
 
 **Ausgerechnete Felder:** Manche Werte rechnet ein Paket selbst aus, etwa *Kündigen bis* oder den *Status* eines Vertrags. Solche Felder kannst du nicht ändern; darunter steht „berechnet von Verträge“. Ändere stattdessen die Angaben, aus denen sie entstehen (Beginn, Laufzeit, Kündigungsfrist …) – das Paket rechnet dann neu. Steht „nicht mehr berechnet“ da, rechnet das Paket nicht mehr; der Wert bleibt, bis die Verwaltung das Feld freigibt.
+
+**Tabellen zwischen den Feldern:** Manche Mappen zeigen mitten in den Feldern eine Tabelle, etwa die *Positionen* einer Rechnung. Jede Zeile ist eine eigene Mappe; ein Klick öffnet sie. Mit **+ Position** unter der Tabelle legst du eine neue an – sie öffnet sich in einem kleinen Fenster und gehört schon zu dieser Rechnung; nach dem Speichern steht sie in der Tabelle. Bei vielen Zeilen holt **weitere anzeigen** die nächsten 50. Am Handy steht statt der Tabelle eine Liste mit den ersten zwei Spalten. Du siehst nur die Zeilen, die du lesen darfst, und **+ Position** nur, wenn du solche Mappen anlegen darfst. Summen rechnet die Tabelle nicht; bei einer neuen Rechnung legst du Positionen nach dem Speichern an.
+
+![Rechnung mit der Tabelle Positionen und „+ Position“](bilder/mappe-tabelle.png)
 
 **Hinweise von Paketen:** Über den Registern kann ein gelber Hinweis eines Pakets stehen, etwa „Rechnungen · Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €“. Vorne steht immer der Name des Pakets. Ein solcher Hinweis hält dich nie vom Speichern ab; das Paket nimmt ihn wieder weg, sobald er nicht mehr zutrifft.
 

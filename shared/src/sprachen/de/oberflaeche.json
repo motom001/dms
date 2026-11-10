@@ -331,5 +331,17 @@
   "muster.hinweis.einzahl": "Bei 1 steht die Einheit in der Einzahl.",
   "muster.hinweis.prozent": "„19“, „19 %“ und „19,0“ ergeben dasselbe.",
   "muster.fehler.zeitraum": "Bitte eine ganze Zahl eintragen, zum Beispiel 3.",
-  "muster.fehler.prozent": "Bitte eine Zahl eintragen, zum Beispiel 7,5."
+  "muster.fehler.prozent": "Bitte eine Zahl eintragen, zum Beispiel 7,5.",
+  "muster.tabelle.titel": "Tabelle",
+  "muster.tabelle.text": "Zeilen mit Spalten, jede führt zu einer Seite. Breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten; ohne Zeilen ein ruhiger Satz.",
+  "muster.tabelle.breit": "Breit",
+  "muster.tabelle.schmal": "Schmal (Handy)",
+  "muster.tabelle.nr": "Nr.",
+  "muster.tabelle.beschreibung": "Beschreibung",
+  "muster.tabelle.menge": "Menge",
+  "muster.tabelle.preis": "Einzelpreis",
+  "muster.tabelle.zeile1": "Ölfilter",
+  "muster.tabelle.zeile2": "Inspektion",
+  "muster.tabelle.neu": "+ Position",
+  "muster.tabelle.leer": "Noch keine Positionen"
 }

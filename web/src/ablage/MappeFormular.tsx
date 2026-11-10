@@ -43,6 +43,8 @@ import { farbeVon, liesNutzlast, useBruecke, ziehtWert } from './bruecke';
 import { altesFeldAusblenden } from '../../../shared/src/umwandlung';
 import { enthaeltId, ersteId } from '../../../shared/src/folgtaus';
 import { VerweisFenster } from './VerweisFenster';
+import { Tabellenfeld } from './Tabellenfeld';
+import { wertfelder } from '../../../shared/src/tabelle';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -828,7 +830,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const anzeigeNamen = { typ: typNameAus(d.typen), mappe: (id: string) => titelOder(bekannt[id]?.titel) };
     const nurBei = (r2: Parameters<typeof beschreibeAnzeige>[0]) => beschreibeAnzeige(r2, typ, anzeigeNamen);
     // Ausgeblendetes Feld mit Wert (#1033): ruhige Zeile statt der Eingabe; aufgedeckt mit dem Satz „nur bei …“.
-    const eingabe = (f: Feld) => (anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)
+    // Tabelle (#1030): verweisende Mappen zwischen den Feldern – kein Wert, keine Eingabe; „+ Neu“ im Fenster (#935).
+    // Steht die Tabelle gleich unter einer gleichlautenden Abschnittsüberschrift („Positionen“), genügt die eine.
+    const tabelle = (f: Feld, ueber?: string) => <Tabellenfeld key={f.key} feld={f} mappe={mappe} nurLesen={nurLesen || !!imFenster} ohneUeberschrift={!!ueber && ueber === feldLabel(f)}
+      neuesFormular={(ziel, v, fertig) => <Formular typ={ziel} start={startMitVerweis(ziel, v)} sicht={ziel.id} kopf={(w, b) => <FensterKopf typ={ziel} werte={w} bekannt={b} />} imFenster={fertig} />} />;
+    const eingabe = (f: Feld, ueber?: string) => (f.typ === 'tabelle' && !(anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)) ? tabelle(f, ueber) : anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)
       ? <AusgeblendetZeile key={f.key} text={t('ablage.anzeige.feld', { feld: feldLabel(f) })} anzeigen={() => decke(`f:${f.key}`)} />
       : feldEingabe(f, anz.felder.has(f.key) ? <p className="anzeigehinweis leise klein"><Symbol name="auge-aus" /> {t('ablage.anzeige.gerade-aus', { bedingung: nurBei(f.anzeigen) })}</p> : undefined));
     const feldEingabe = (f: Feld, anzeige?: ReactNode) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
@@ -851,10 +857,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
             return <AusgeblendetZeile key={a.vor} text={t('ablage.anzeige.abschnitt', { name: abschnittName(a, typ), anzahl: n })} anzeigen={() => decke(`a:${r.key}.${a.vor}`)} />;
           }
           const gerade = a && abschnittAufgedeckt(a) ? <p className="anzeigehinweis leise klein"><Symbol name="auge-aus" /> {t('ablage.anzeige.gerade-aus', { bedingung: nurBei(a.anzeigen) })}</p> : null;
-          if (!a?.titel) return <div key={a?.vor ?? '_'} className={`formular${a ? ' nach-umbruch' : ''}`}>{gerade}{g.felder.map(eingabe)}</div>;
+          if (!a?.titel) return <div key={a?.vor ?? '_'} className={`formular${a ? ' nach-umbruch' : ''}`}>{gerade}{g.felder.map((f) => eingabe(f))}</div>;
           const offen = abschnittOffen(r, a);
           const id = `abschnitt-${r.key}-${a.vor}`;
-          const gefuellt = g.felder.filter((f) => !istLeer(ausRoh(f, roh[f.key]))).length;
+          // Tabellen (#1030) haben keinen Wert und zählen nicht mit.
+          const mitWerten = wertfelder(g.felder);
+          const gefuellt = mitWerten.filter((f) => !istLeer(ausRoh(f, roh[f.key]))).length;
           const mitFehler = g.felder.filter((f) => fehler?.felder[f.key]).length;
           return (
             <section key={a.vor} className={`feldabschnitt${offen ? ' offen' : ''}`} aria-labelledby={`${id}-kopf`}>
@@ -862,11 +870,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
                 <button type="button" id={`${id}-kopf`} aria-expanded={offen} aria-controls={id} onClick={() => umschaltenAbschnitt(r, a)}>
                   <Symbol name="pfeil-rechts" />
                   <span className="abschnitttitel">{abschnittTitel(a)}</span>
-                  {!offen && <span className="leise klein"><span aria-hidden="true">· </span>{t('ablage.abschnitt.ausgefuellt', { gefuellt, anzahl: g.felder.length })}</span>}
+                  {!offen && mitWerten.length > 0 && <span className="leise klein"><span aria-hidden="true">· </span>{t('ablage.abschnitt.ausgefuellt', { gefuellt, anzahl: mitWerten.length })}</span>}
                   {mitFehler > 0 && <span className="fehlerpunkt" title={t('ablage.mappeformular.felder-mit-fehler', { anzahl: mitFehler })}>{mitFehler}</span>}
                 </button>
               </h3>
-              <div id={id} className="formular" hidden={!offen}>{gerade}{g.felder.map(eingabe)}</div>
+              <div id={id} className="formular" hidden={!offen}>{gerade}{g.felder.map((f, i) => eingabe(f, i === 0 ? abschnittTitel(a) : undefined))}</div>
             </section>
           );
         })}</div>
@@ -1601,6 +1609,14 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
         </VerweisFenster>}
       </>} />
   );
+}
+
+/** Startwerte einer neuen Mappe aus „+ Neu“ unter einer Tabelle (#1030): Vorgaben des Typs, das Verweisfeld zeigt hierher. */
+function startMitVerweis(typ: Mappentyp, v: { feldKey: string; mappeId: string }): RohWerte {
+  const r = standardRoh(typ);
+  const f = typ.felder.find((x) => x.key === v.feldKey && x.typ === 'referenz');
+  if (f) r[f.key] = f.mehrfach ? [v.mappeId] : v.mappeId;
+  return r;
 }
 
 /** Kopf der neuen Mappe im Fenster (#935): Typ und Titel, wie er nach dem Speichern heißt. */

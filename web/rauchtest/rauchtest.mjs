@@ -242,8 +242,26 @@ async function vorbereiten(cookie) {
   // Eine Automatisierung für die Dreiteilung der Werkbank (#1063): Ihre Bearbeitung ist länger als das Fenster.
   const vertrag = (await api('GET', '/api/typen', { cookie })).daten.find((x) => x.name === 'Vertrag');
   await api('POST', '/api/werkbank/automatisierungen', { cookie, body: { name: 'Rauchtest Vertrag angelegt', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [{ id: 's', art: 'stopp' }] } });
+  // Feldart Tabelle (#1030): Auftrag mit Positionen – eigene Typen, damit die Beispiele unverändert bleiben.
+  daten.tabelle = await tabellenDaten(cookie);
   const einladung = (await api('POST', '/api/benutzer',{ cookie, body: { email: JONAS.email, name: JONAS.name, rolle: 'mitglied', rollen: [] } })).daten;
   await api('POST', '/api/konto/passwort-setzen', { body: { schluessel: einladung.link.split('/passwort/')[1], passwort: JONAS.passwort } });
+}
+
+/** Typen „Auftrag“ mit Tabelle „Positionen“ und „Auftragsposition“, ein Auftrag mit zwei Positionen (#1030). */
+async function tabellenDaten(cookie) {
+  const auftrag = (await api('POST', '/api/typen', { cookie, body: { name: 'Auftrag', schluessel: 'auftrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Auftragsnummer', typ: 'text', pflicht: true }] } })).daten;
+  const position = (await api('POST', '/api/typen', { cookie, body: { name: 'Auftragsposition', schluessel: 'auftragsposition', titelVorlage: '{nr}. {beschreibung}', trefferliste: ['nr', 'beschreibung', 'menge', 'preis'], felder: [
+    { key: 'auftrag', label: 'Auftrag', typ: 'referenz', zielTypen: [auftrag.id], pflicht: true, verweisart: 'zugehoerigkeit' },
+    { key: 'nr', label: 'Nr.', typ: 'zahl' }, { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true },
+    { key: 'menge', label: 'Menge', typ: 'zahl' }, { key: 'preis', label: 'Einzelpreis', typ: 'betrag', waehrung: 'EUR' },
+  ] } })).daten;
+  await api('PUT', `/api/typen/${auftrag.id}`, { cookie, body: { ...auftrag, felder: [...auftrag.felder, { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: position.id, feldKey: 'auftrag', neu: '+ Position' } }] } });
+  const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: auftrag.id, werte: { nr: 'A-1' } } })).daten;
+  for (const [nr, beschreibung, menge, betrag] of [[1, 'Ölfilter', 2, 12], [2, 'Inspektion', 1, 189.9]]) {
+    await api('POST', '/api/mappen', { cookie, body: { typId: position.id, werte: { auftrag: mappe.id, nr, beschreibung, menge, preis: { betrag, waehrung: 'EUR' } } } });
+  }
+  return { auftrag, position, mappe };
 }
 
 /* ---------- Desktop ---------- */
@@ -532,6 +550,36 @@ rauchtest('Handy: Fenster „+ … anlegen“ passt auf den Bildschirm (#935)', 
   await keineWaagerechteRolle(s);
   await s.keyboard.press('Escape');
   await fenster.waitFor({ state: 'detached' });
+});
+
+rauchtest('Tabelle: Positionen zwischen den Feldern, „+ Position“ im Fenster (#1030)', { als: LENA }, async (s) => {
+  const { auftrag, mappe } = daten.tabelle;
+  await s.goto(BASIS + `/ablage/${auftrag.id}/${mappe.id}`);
+  const tabelle = s.getByRole('table', { name: 'Positionen' });
+  await tabelle.getByRole('link', { name: '1' }).waitFor();
+  assert.deepEqual(await tabelle.getByRole('columnheader').allTextContents(), ['Nr.', 'Beschreibung', 'Menge', 'Einzelpreis']);
+  assert.equal(await tabelle.getByRole('row').count(), 3);
+  // „+ Position“: Knopfart Anlegen (#989), öffnet das Fenster mit dem Verweis auf diesen Auftrag.
+  const neu = s.getByRole('button', { name: '+ Position' });
+  assert.equal(await neu.getAttribute('data-knopf'), 'anlegen');
+  await neu.click();
+  const fenster = s.getByRole('dialog', { name: 'Auftragsposition anlegen' });
+  await fenster.getByText('A-1').first().waitFor();
+  await fenster.getByRole('textbox', { name: 'Beschreibung*' }).fill('Bremsen vorne');
+  await fenster.getByRole('button', { name: /speichern/i }).click();
+  await fenster.waitFor({ state: 'detached' });
+  await tabelle.getByRole('cell', { name: 'Bremsen vorne', exact: true }).waitFor();
+  await s.getByRole('status').filter({ hasText: 'angelegt' }).waitFor();
+});
+
+rauchtest('Handy: Tabelle als Liste mit den ersten zwei Spalten (#1030)', { handy: true, als: LENA }, async (s) => {
+  const { auftrag, mappe } = daten.tabelle;
+  await s.goto(BASIS + `/ablage/${auftrag.id}/${mappe.id}`);
+  const liste = s.getByRole('list', { name: 'Positionen' });
+  await liste.getByRole('listitem').first().waitFor();
+  assert.equal(await s.getByRole('table', { name: 'Positionen' }).count(), 0);
+  assert.match(await liste.getByRole('listitem').filter({ hasText: 'Ölfilter' }).textContent(), /^1\s*Beschreibung:\s*Ölfilter$/);
+  await keineWaagerechteRolle(s);
 });
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */

@@ -65,6 +65,8 @@ export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   person: ['zeigtAuf', 'leer'],
   // Passwörter taugen nicht für Bedingungen (#46).
   passwort: [],
+  // Tabellen (#1030) haben keinen Wert.
+  tabelle: [],
 };
 
 /** Operatoren für ein Feld: „zeigt auf Mappe vom Typ …“ nur bei Verweisen mit mehreren Zieltypen (#1036). */
@@ -221,7 +223,8 @@ const SYSTEMFELDER: Bedingungsfeld[] = [
 export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedingungsfeld[] {
   if (!typen.length) return SYSTEMFELDER;
   const [erster, ...rest] = typen;
-  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && !jedeMappe(f) && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(g, f)))));
+  // Passwörter und Tabellen (#1030, ohne Wert) taugen nicht für Bedingungen.
+  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && f.typ !== 'tabelle' && !jedeMappe(f) && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(g, f)))));
   return [...gemeinsam.map((f) => ({ key: f.key, label: feldLabel(f), art: f.typ as Feldart, feld: f })), ...SYSTEMFELDER];
 }
 

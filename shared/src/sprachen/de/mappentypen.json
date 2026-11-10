@@ -380,5 +380,18 @@
   "editor.zieltyp-suchen": "Mappentyp hinzufügen …",
   "editor.keine-weiteren-typen": "Keine weiteren Mappentypen.",
   "editor.zieltyp-entfernen": "Mappentyp „{name}“ entfernen",
-  "editor.ziele-optional": "Kommt dazu, sobald installiert: {typen}"
+  "editor.ziele-optional": "Kommt dazu, sobald installiert: {typen}",
+  "tabelle.typ": "Zeigt Mappen vom Typ",
+  "tabelle.typ-hilfe": "Mappentypen mit einem Verweisfeld auf diesen Typ – wie bei einem Verknüpfungsregister.",
+  "tabelle.feld": "die über dieses Feld hierher verweisen",
+  "tabelle.feld-hilfe": "Zum Beispiel „Rechnung“ an der Rechnungsposition.",
+  "tabelle.liste": "Spalten aus Trefferliste",
+  "tabelle.liste-hilfe": "Spalten und Reihenfolge wie in dieser Trefferliste des anderen Typs; Passwortfelder nie.",
+  "tabelle.liste-standard": "Standard-Trefferliste",
+  "tabelle.waehlen": "Bitte wählen …",
+  "tabelle.neu": "Beschriftung von „+ Neu“",
+  "tabelle.neu-hilfe": "Steht unter der Tabelle, zum Beispiel „+ Position“. Nur wer den anderen Typ anlegen darf, sieht den Knopf.",
+  "tabelle.ohne-wert": "Eine Tabelle hat keinen eigenen Wert: Sie zeigt die Mappen nur an – nicht im Export, nicht in Bedingungen, ohne Summen.",
+  "tabelle.keine-quelle": "Noch verweist kein Feld auf diesen Typ. Lege erst beim anderen Mappentyp ein Verweisfeld auf diesen an (zum Beispiel „Rechnung“ an der Rechnungsposition).",
+  "tabelle.verwendet": "Tabelle {link}"
 }

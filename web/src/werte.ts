@@ -1,4 +1,5 @@
 import { kreisVon } from '../../shared/src/nummernkreis';
+import { wertfelder } from '../../shared/src/tabelle';
 import { istPasswortWert, leseZahl, type Betrag, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import {  } from './sprache';
 import { istZeitraum, leseProzent, leseZeitraum, type Zeitraum, type Zeitraumeinheit } from '../../shared/src/feldarten';
@@ -79,13 +80,14 @@ export function ausRoh(f: Feld, r: Roh | undefined): Wert {
 
 export function rohAusWerten(mappentyp: Mappentyp, werte: Werte): RohWerte {
   const r: RohWerte = {};
-  for (const f of mappentyp.felder) r[f.key] = zuRoh(f, werte[f.key]);
+  // Tabellen (#1030) haben keinen Wert – nichts zu bearbeiten, nichts zu senden.
+  for (const f of wertfelder(mappentyp.felder)) r[f.key] = zuRoh(f, werte[f.key]);
   return r;
 }
 
 export function standardRoh(mappentyp: Mappentyp): RohWerte {
   const r: RohWerte = {};
-  for (const f of mappentyp.felder) {
+  for (const f of wertfelder(mappentyp.felder)) {
     const s = f.standard;
     if (f.typ === 'janein') r[f.key] = s === true || s === 'true';
     else if (f.typ === 'passwort') r[f.key] = leeresPasswort;
@@ -101,6 +103,6 @@ export function standardRoh(mappentyp: Mappentyp): RohWerte {
 
 export function werteAusRoh(mappentyp: Mappentyp, r: RohWerte): Werte {
   const w: Werte = {};
-  for (const f of mappentyp.felder) w[f.key] = ausRoh(f, r[f.key]);
+  for (const f of wertfelder(mappentyp.felder)) w[f.key] = ausRoh(f, r[f.key]);
   return w;
 }

@@ -16,12 +16,12 @@ export interface TypBild {
 }
 
 /** Eigenschaften eines Felds, die eine inhaltliche Änderung sind (Name extra, damit „umbenannt“ lesbar wird). */
-const FELD = ['typ', 'pflicht', 'eindeutig', 'hilfe', 'standard', 'minLen', 'maxLen', 'muster', 'min', 'max', 'nachkomma', 'waehrung', 'optionen', 'mehrfach', 'zielTyp', 'zielTypen', 'gleicherTyp', 'zielOptional', 'verweisart', 'frist', 'auswahlFilter', 'folgtAus', 'erkennung', 'format', 'landFeld', 'beschriftungen', 'ausgeblendet'] as const;
+const FELD = ['typ', 'pflicht', 'eindeutig', 'hilfe', 'standard', 'minLen', 'maxLen', 'muster', 'min', 'max', 'nachkomma', 'waehrung', 'optionen', 'mehrfach', 'zielTyp', 'zielTypen', 'gleicherTyp', 'zielOptional', 'verweisart', 'frist', 'auswahlFilter', 'folgtAus', 'erkennung', 'format', 'landFeld', 'beschriftungen', 'ausgeblendet', 'quelle'] as const;
 const NAMEN: Record<string, string> = {
   typ: 'Art', pflicht: 'Pflicht', eindeutig: 'eindeutig', hilfe: t('gemeinsam.typvergleich.hilfetext'), standard: 'Vorgabe', minLen: 'Mindestlänge', maxLen: 'Höchstlänge', muster: 'Muster',
   min: 'Untergrenze', max: 'Obergrenze', nachkomma: 'Nachkommastellen', waehrung: 'Währung', optionen: 'Auswahlwerte', mehrfach: 'Mehrfachauswahl', zielTyp: 'Ziel', zielTypen: 'Ziel', gleicherTyp: t('gemeinsam.typvergleich.gleicher-typ'), zielOptional: t('gemeinsam.typvergleich.ziel-optional'),
   verweisart: 'Verweisart', frist: 'Frist', auswahlFilter: 'Auswahlfilter', folgtAus: t('gemeinsam.typvergleich.folgt-aus'), erkennung: 'Aus Dokument füllen', format: 'Format', landFeld: t('gemeinsam.typvergleich.land-feld'), beschriftungen: t('gemeinsam.typvergleich.beschriftungen'),
-  name: 'Name', art: 'Art', felder: 'Felder', quellen: 'Quellen',
+  name: 'Name', art: 'Art', felder: 'Felder', quellen: 'Quellen', quelle: t('gemeinsam.typvergleich.tabelle'),
   ausgeblendet: t('gemeinsam.typvergleich.ausgeblendet'), abschnitte: t('gemeinsam.typvergleich.abschnitte'),
 };
 /** Leere Werte (undefined, null, false, '', []) gelten als „nicht gesetzt“ – Speichern ohne Änderung zählt nicht. */

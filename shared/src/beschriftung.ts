@@ -24,7 +24,9 @@ export interface AbschnittTeile { titel?: string }
 /** Name und Beschreibung eines Mappentyps bzw. einer Ansicht; beim Mappentyp auch „Woran man ihn erkennt“ (#937). */
 export interface TypTeile { name?: string; beschreibung?: string; erkennbarAn?: string }
 /** Bezeichnung, Hilfetext und Beschriftung der Optionen (fester Wert → Text) eines Felds. */
-export interface FeldTeile { label?: string; hilfe?: string; optionen?: Record<string, string> }
+export interface FeldTeile { label?: string; hilfe?: string; optionen?: Record<string, string>;
+  /** Tabelle (#1030): Beschriftung von „+ Neu“, z. B. „+ Item“. */
+  neu?: string }
 
 /**
  * Sprachen, in denen sich Beschriftungen pflegen lassen: die in der Werkbank erlaubten (#729, Werkbank → Sprachen).
