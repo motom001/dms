@@ -1,0 +1,5 @@
+# Commits, die nur Code verschieben (Umzüge, Etappe 14). `git blame` überspringt sie,
+# wenn `git config blame.ignoreRevsFile .git-blame-ignore-revs` gesetzt ist; GitHub liest die Datei von selbst.
+
+# #965 tokens.css und basis.css aus styles.css herausgelöst
+490ed74c5f9f7f756c2ff77b79dbcef8dcee487e
