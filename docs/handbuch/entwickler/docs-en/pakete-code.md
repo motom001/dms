@@ -766,7 +766,7 @@ code:
 
     Without `extern` the return value counts: **2** means `fehlgeschlagen` and final, another error `laeuft` with the text from `dms.ergebnis` as `grund` – the runner repeats in both cases. A success without `extern` doesn't change the state.
 
-    Up to 0.158.0 packages reported via `PUT /sicherungen/{name}/extern` (same fields). That still works during the transition, also with the read-only key, and is dropped with the version after next.
+    Up to 0.158.0 packages reported via `PUT /sicherungen/{name}/extern` (same fields). That still works during the transition, also with the read-only key, and is dropped with Ablago 1.0.0.
 
     **Workbench → Backup** shows the state per backup ("local ✓ · off-site ✓ checked"), the overview a notice on errors or when no newer copy has arrived for more than 2 days. If the runner gives up the event after all repetitions, the core itself sets `fehlgeschlagen` (final).
 

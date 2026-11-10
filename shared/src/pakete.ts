@@ -561,7 +561,8 @@ export const DMS_RECHTE_TYPEN: Record<string, string> = { ablageort: 'Ablageort'
 /**
  * Veraltete Verweise (#883): Den Ablageort bringt seit Ablago 0.212 das Paket Basis mit. `dms:ablageort` gilt eine Zeit
  * lang weiter als Alias für `basis:ablageort` – in Inhalten wie in `code.rechte` – und zeigt auf den Ablageort von Basis
- * bzw. den früheren des Kerns. Die Paketprüfung gibt dazu einen Hinweis. Der Alias entfällt mit Ablago 1.0.0.
+ * bzw. den früheren des Kerns. Die Paketprüfung gibt dazu einen Hinweis. Der Alias entfällt mit Ablago 1.0.0
+ * (server/src/uebergaenge.ts, #902).
  */
 export const DMS_ALIAS: Record<string, string> = { ablageort: 'basis:ablageort' };
 /** Veraltete `dms:…`-Verweise aus einer Liste (je einmal), z. B. ["dms:ablageort"]. */
