@@ -74,7 +74,7 @@ export class Uebersetzung {
   /** Installierte Pakete mit dms:uebersetzen; `laeuft`: der Läufer hat es fehlerfrei geladen. */
   private async pakete(): Promise<Array<{ p: InstalliertesPaket; laeuft: boolean; netz: string[] | null }>> {
     const geladen = new Set((this.anbieter?.pakete() ?? []).map((x) => x.id));
-    return (await this.d.listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:uebersetzen'))
+    return (await this.repo().listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:uebersetzen'))
       .sort((a, b) => a.id.localeCompare(b.id)).map((p) => ({ p, laeuft: geladen.has(p.id), netz: netzZiele(p) }));
   }
 

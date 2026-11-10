@@ -158,7 +158,7 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
       register: typ.register.map((r) => (r.felder ? { ...r, felder: r.felder.filter((k) => !neu.includes(k) || k === 'vertreter') } : r)) });
     const m = await intern.repo.holeMappe(ben.id);
     await intern.repo.aendereMappe(ben.id, { name: m.werte.name, email: m.werte.email, rollen: m.werte.rollen, aktiv: true, vertreter: 'Onkel Willi' }, [], null);
-    intern.sichern = undefined;
+    intern.kern.sichern = undefined;
     const { benutzer } = await d.sichereSystem();
     assert.equal(benutzer.felder.find((f) => f.key === 'vertreter_alt')?.label, 'Mein Vertreter');
     assert.equal(benutzer.felder.find((f) => f.key === 'vertreter')?.typ, 'referenz');

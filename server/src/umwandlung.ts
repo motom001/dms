@@ -14,6 +14,7 @@ import { Fachfehler } from './fehler';
 import type { Handelnder } from './pakete';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
+import { paketUmwandlungen, setzePaketUmwandlungen } from './pakete/pakete.einstellungen';
 
 const log = protokoll.modul('werkbank');
 /** So viele Vorgänge bleiben zum Rückgängigmachen gespeichert. */
@@ -156,7 +157,7 @@ export class Umwandlung {
       await this.d.aendereTyp(t2.id, { ...t2, felder, titelVorlage, trefferlisten, trefferliste: (trefferlisten.find((l) => l.standard) ?? trefferlisten[0])?.spalten ?? [], register });
     }
     v.rueckgaengig = { zeit: new Date().toISOString(), von: von.email, zurueck, ausgelassen: ausgelassen.length };
-    await this.d.setzePaketUmwandlungen(alle);
+    await setzePaketUmwandlungen(this.d.kern, alle);
     log.info('Paket-Update: Umwandlung rückgängig gemacht', { von: von.email, paket: v.paket, vorgang: v.id, mappen: zurueck, ausgelassen: ausgelassen.length, personenBehalten: behalten.length });
     return { zurueck, ausgelassen, personenBehalten: behalten.length };
   }
@@ -164,7 +165,7 @@ export class Umwandlung {
   /* ---------- intern ---------- */
 
   private async paket(id: string) {
-    const p = (await this.d.listePakete()).find((x) => x.id === id);
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('pakete.umwandeln.fehler.paket', { id }));
     return p;
   }
@@ -252,10 +253,10 @@ export class Umwandlung {
   }
 
   private async vorgaenge(): Promise<Umwandlungsvorgang[]> {
-    return (await this.d.paketUmwandlungen()).filter((v): v is Umwandlungsvorgang => !!v && typeof v === 'object' && typeof (v as Umwandlungsvorgang).id === 'string');
+    return (await paketUmwandlungen(this.d.kern)).filter((v): v is Umwandlungsvorgang => !!v && typeof v === 'object' && typeof (v as Umwandlungsvorgang).id === 'string');
   }
 
   private async speichere(v: Umwandlungsvorgang) {
-    await this.d.setzePaketUmwandlungen([v, ...(await this.vorgaenge())].slice(0, VORGAENGE_MAX));
+    await setzePaketUmwandlungen(this.d.kern, [v, ...(await this.vorgaenge())].slice(0, VORGAENGE_MAX));
   }
 }

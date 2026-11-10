@@ -36,6 +36,7 @@ import { gebietsschema } from '../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ARCHIV_MAX, ENTPACKT_MAX, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX } from './grenzen';
+import { paketEinstellungen, paketKatalogStaende, paketQuellen, setzePaketEinstellungen, setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher } from './pakete/pakete.einstellungen';
 
 const log = protokoll.modul('werkbank');
 
@@ -956,7 +957,7 @@ export class Paketverwaltung {
 
   /** Offizieller Katalog und weitere Adressen aus den Einstellungen. */
   async quellen(): Promise<Quelle[]> {
-    const weitere = (await this.d.paketQuellen()).filter((q) => q.url !== this.katalogUrl);
+    const weitere = (await paketQuellen(this.d.kern)).filter((q) => q.url !== this.katalogUrl);
     return [{ url: this.katalogUrl, offiziell: true, aktiv: true }, ...weitere.map(({ schluessel, gesperrt, ...q }) => ({
       ...q, offiziell: false, fingerabdruck: schluessel?.fingerabdruck ?? null, gesperrt: gesperrt ? { fingerabdruck: gesperrt.fingerabdruck, seit: gesperrt.am } : null,
     }))];
@@ -983,14 +984,14 @@ export class Paketverwaltung {
     try { u = new URL(String(e.url ?? '').trim()); } catch { throw new Fachfehler(422, 'Bitte eine vollständige Adresse eingeben, z. B. https://example.org/katalog.json.'); }
     if (u.protocol !== 'https:') throw new Fachfehler(422, t('meldungen.pakete.kataloge-gehen-nur-ueber'));
     const url = u.toString();
-    const liste = await this.d.paketQuellen();
+    const liste = await paketQuellen(this.d.kern);
     if (url === this.katalogUrl || liste.some((q) => q.url === url)) throw new Fachfehler(409, t('meldungen.pakete.diese-adresse-ist-schon'));
     if (liste.length >= 20) throw new Fachfehler(422, t('meldungen.pakete.hoechstens-20-weitere-kataloge'));
     // Eigener Schlüssel (#594): nur nach Bestätigung des Fingerabdrucks, nie stillschweigend.
     const k = await this.schluesselVon(url);
     if (k) Paketverwaltung.fingerabdruckBestaetigt(k.s, e);
     const am = new Date().toISOString();
-    await this.d.setzePaketQuellen([...liste, { url, aktiv: true, von: von.email, am, ...(k ? { schluessel: { pem: k.s.pem, fingerabdruck: k.s.fingerabdruck, von: von.email, am } } : {}) }]);
+    await setzePaketQuellen(this.d.kern, [...liste, { url, aktiv: true, von: von.email, am, ...(k ? { schluessel: { pem: k.s.pem, fingerabdruck: k.s.fingerabdruck, von: von.email, am } } : {}) }]);
     log.warn('Paketquelle hinzugefügt', { von: von.email, url, schluessel: k ? k.s.fingerabdruck : 'ohne Schlüssel' });
     return this.quellen();
   }
@@ -1001,7 +1002,7 @@ export class Paketverwaltung {
    */
   async quelleSchluessel(e: { url?: unknown; fingerabdruck?: unknown }, von: Handelnder): Promise<Quelle[]> {
     const url = String(e.url ?? '');
-    const q = (await this.d.paketQuellen()).find((x) => x.url === url);
+    const q = (await paketQuellen(this.d.kern)).find((x) => x.url === url);
     if (!q) throw new Fachfehler(404, t('meldungen.pakete.diese-quelle-gibt-es'));
     const k = await this.schluesselVon(url);
     if (!k) throw new Fachfehler(404, t('pakete.herkunft.fehler.keinschluessel', { url }));
@@ -1013,25 +1014,25 @@ export class Paketverwaltung {
   }
 
   private async aendereQuelle(url: string, aenderung: Partial<PaketQuelleEintrag>) {
-    const liste = await this.d.paketQuellen();
-    await this.d.setzePaketQuellen(liste.map((q) => (q.url === url ? { ...q, ...aenderung } : q)));
+    const liste = await paketQuellen(this.d.kern);
+    await setzePaketQuellen(this.d.kern, liste.map((q) => (q.url === url ? { ...q, ...aenderung } : q)));
   }
 
   async quelleSchalten(e: { url?: unknown; aktiv?: unknown }, von: Handelnder): Promise<Quelle[]> {
     const url = String(e.url ?? '');
-    const liste = await this.d.paketQuellen();
+    const liste = await paketQuellen(this.d.kern);
     if (!liste.some((q) => q.url === url)) throw new Fachfehler(404, t('meldungen.pakete.diese-quelle-gibt-es'));
     const aktiv = e.aktiv === true;
-    await this.d.setzePaketQuellen(liste.map((q) => (q.url === url ? { ...q, aktiv } : q)));
+    await setzePaketQuellen(this.d.kern, liste.map((q) => (q.url === url ? { ...q, aktiv } : q)));
     this.kataloge.delete(url);
     log.warn(aktiv ? 'Paketquelle eingeschaltet' : 'Paketquelle abgeschaltet', { von: von.email, url });
     return this.quellen();
   }
 
   async quelleEntfernen(url: string, von: Handelnder): Promise<Quelle[]> {
-    const liste = await this.d.paketQuellen();
+    const liste = await paketQuellen(this.d.kern);
     if (!liste.some((q) => q.url === url)) throw new Fachfehler(404, t('meldungen.pakete.diese-quelle-gibt-es'));
-    await this.d.setzePaketQuellen(liste.filter((q) => q.url !== url));
+    await setzePaketQuellen(this.d.kern, liste.filter((q) => q.url !== url));
     this.kataloge.delete(url);
     log.warn('Paketquelle entfernt', { von: von.email, url });
     return this.quellen();
@@ -1075,7 +1076,7 @@ export class Paketverwaltung {
       }
       return { art: 'projekt', offiziell: true, stand, ...(nurTestschluessel(this.o.projektSchluessel) ? { test: true } : {}), bestaetigen: false };
     }
-    const q = (await this.d.paketQuellen()).find((x) => x.url === url);
+    const q = (await paketQuellen(this.d.kern)).find((x) => x.url === url);
     if (!q?.schluessel) return { art: 'unsigniert', offiziell: false, bestaetigen: true };
     if (q.gesperrt) throw new Fachfehler(409, t('pakete.herkunft.fehler.gesperrt', { url, fingerabdruck: q.gesperrt.fingerabdruck }), { gesperrt: true });
     let schluessel = liesSchluessel(q.schluessel.pem);
@@ -1117,13 +1118,13 @@ export class Paketverwaltung {
   private async stand(url: string, katalog: Katalog, online: boolean): Promise<string | null> {
     const zeit = zeitVon(katalog.erstellt);
     if (Number.isNaN(zeit)) return null;
-    const gesehen = (await this.d.paketKatalogStaende())[url];
+    const gesehen = (await paketKatalogStaende(this.d.kern))[url];
     if (gesehen && zeit < zeitVon(gesehen)) {
       if (!online) return katalog.erstellt;
       log.warn('Älterer signierter Katalog abgelehnt', { url, stand: katalog.erstellt, gesehen });
       throw new Fachfehler(502, t('pakete.herkunft.fehler.zurueck', { url, stand: zeitText(katalog.erstellt), gesehen: zeitText(gesehen) }));
     }
-    if (!gesehen || zeit > zeitVon(gesehen)) await this.d.setzePaketKatalogStand(url, katalog.erstellt);
+    if (!gesehen || zeit > zeitVon(gesehen)) await setzePaketKatalogStand(this.d.kern, url, katalog.erstellt);
     return katalog.erstellt;
   }
 
@@ -1152,8 +1153,8 @@ export class Paketverwaltung {
       const a = p.sprache ? this.o.sprachen?.abdeckung?.(p.sprache.kennung) : null;
       return a == null ? p : { ...p, spracheAbdeckung: a };
     };
-    return Promise.all((await this.d.listePakete()).map(async (p) => (p.einstellungen
-      ? { ...p, einstellungenNoetig: fehlendePflicht(p.einstellungen, (await this.d.paketEinstellungen(p.id))?.werte ?? {}).length > 0 }
+    return Promise.all((await this.d.kern.repo.listePakete()).map(async (p) => (p.einstellungen
+      ? { ...p, einstellungenNoetig: fehlendePflicht(p.einstellungen, (await paketEinstellungen(this.d.kern, p.id))?.werte ?? {}).length > 0 }
       : mitSprache(p))));
   }
 
@@ -1264,7 +1265,7 @@ export class Paketverwaltung {
     // Gültig signierter Stand: merken, wenn er neuer ist (ohne Internet wird nichts abgelehnt, nur angezeigt).
     if (signiert.katalog) await this.stand(this.katalogUrl, signiert.katalog, false);
     const am = new Date().toISOString();
-    const installierte = await this.d.listePakete();
+    const installierte = await this.d.kern.repo.listePakete();
     const pakete: SammelPaket[] = [];
     const nichtImKatalog: string[] = [];
     for (const { e, paket } of reihenfolge) {
@@ -1384,7 +1385,7 @@ export class Paketverwaltung {
    */
   private async plane(paket: Paket, v?: KatalogVersion, katalog?: Katalog, namen: Record<string, string> = {}, sichtNamen: Record<string, string> = {}, geplant?: { typen: Set<string>; sichten: Set<string> }): Promise<Vorschau> {
     const m = paket.manifest;
-    const installierte = await this.d.listePakete();
+    const installierte = await this.d.kern.repo.listePakete();
     const ich = installierte.find((p) => p.id === m.id) ?? null;
     const typen = await this.d.listeTypen();
     const sichten = await this.d.listeSichten();
@@ -1539,7 +1540,7 @@ export class Paketverwaltung {
     if (geladen.pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(geladen.pruefung);
     const { paket, v } = geladen;
     const id = paket.manifest.id;
-    const alt = (await this.d.listePakete()).find((p) => p.id === id) ?? null;
+    const alt = (await this.d.kern.repo.listePakete()).find((p) => p.id === id) ?? null;
     if (alt) {
       // Ein hochgeladenes Paket aktualisiert man durch erneutes Hochladen einer höheren Version.
       if (!hoch) throw new Fachfehler(409, t('meldungen.pakete.ist-schon-installiert-aktualisieren', { name: alt.name }));
@@ -1579,7 +1580,7 @@ export class Paketverwaltung {
    */
   private async lege(paket: Paket, herkunft: InstalliertesPaket['herkunft'], v: KatalogVersion | undefined, plan: Vorschau, beispiele: boolean, von: Handelnder, alt: InstalliertesPaket | null, ein: string[] = []): Promise<InstalliertesPaket> {
     const m = paket.manifest;
-    const installierte = await this.d.listePakete();
+    const installierte = await this.d.kern.repo.listePakete();
     const vorher = new Map((await this.d.listeTypen()).map((t) => [t.id, t] as const));
     // Übernahme des früheren Ablageorts (#883): gleiche Id, gilt als vorhanden (die Vorschau zählt ihn genauso).
     const ueb = await this.uebernahme(paket, alt);
@@ -1628,16 +1629,16 @@ export class Paketverwaltung {
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
       for (const t of geaendert) await this.d.aendereTyp(t.id, t).catch(() => {});
     };
-    const alteEinstellungen = await this.d.paketEinstellungen(m.id);
+    const alteEinstellungen = await paketEinstellungen(this.d.kern, m.id);
     let einstellungenGeschrieben = false;
     // Wortlisten (#356): ersetzen die des Pakets; bei einem Fehler kommen die alten zurück.
     const alteWortlisten = alt ? await this.d.paketSynonyme(m.id) : [];
     let wortlistenGeschrieben = false;
     // Code (#403): Der alte Code kommt bei einem Fehler zurück – sonst liefe das alte Paket mit dem neuen Modul.
-    const alterCode = alt?.laeufer ? await this.d.paketCode(m.id) : [];
+    const alterCode = alt?.laeufer ? await this.d.kern.repo.paketCode(m.id) : [];
     let codeGeschrieben = false;
     // Sprachpaket (#731): Die alten Texte kommen bei einem Fehler zurück.
-    const alteSprache = alt?.sprache ? (await this.d.sprachpakete()).find((x) => x.paketId === m.id) ?? null : null;
+    const alteSprache = alt?.sprache ? (await this.d.kern.repo.sprachpakete()).find((x) => x.paketId === m.id) ?? null : null;
     let spracheGeschrieben = false;
     const typMap: Record<string, string> = { ...(alt?.typen ?? {}), ...ueb?.typen };
     const sichtMap: Record<string, string> = { ...(alt?.sichten ?? {}), ...ueb?.sichten };
@@ -1756,9 +1757,9 @@ export class Paketverwaltung {
       if (paket.einstellungen) {
         const vorher = alteEinstellungen ?? { werte: {} };
         const { werte } = ueberfuehre(paket.einstellungen, alteEinstellungen ? vorher.werte : {});
-        await this.d.setzePaketEinstellungen(m.id, { ...vorher, werte });
+        await setzePaketEinstellungen(this.d.kern, m.id, { ...vorher, werte });
         einstellungenGeschrieben = true;
-      } else if (alteEinstellungen && alt) { await this.d.setzePaketEinstellungen(m.id, null); einstellungenGeschrieben = true; }
+      } else if (alteEinstellungen && alt) { await setzePaketEinstellungen(this.d.kern, m.id, null); einstellungenGeschrieben = true; }
       if (paket.wortlisten.length || alteWortlisten.length) { wortlistenGeschrieben = true; await this.d.setzePaketSynonyme(m.id, paket.wortlisten); }
       const jetzt = new Date().toISOString();
       // Paketstand der Mappentypen (#653): neue Typen so, wie sie angelegt wurden; beim Update bleibt der alte Stand,
@@ -1800,13 +1801,13 @@ export class Paketverwaltung {
       };
       // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.
       if (paket.code || alt?.laeufer) codeGeschrieben = true;
-      if (paket.code) await this.d.speicherePaketCode(m.id, paket.code.dateien);
-      else if (alt?.laeufer) await this.d.loeschePaketCode(m.id);
+      if (paket.code) await this.d.kern.repo.speicherePaketCode(m.id, paket.code.dateien);
+      else if (alt?.laeufer) await this.d.kern.repo.loeschePaketCode(m.id);
       // Sprachpaket (#731): Texte und Beschriftungen neben dem Eintrag; ersetzt die der alten Version.
       if (paket.sprache || alt?.sprache) spracheGeschrieben = true;
-      if (paket.sprache) await this.d.speichereSprachpaket(m.id, { kennung: paket.sprache.angabe.kennung, texte: paket.sprache.texte, beschriftungen: paket.sprache.beschriftungen });
-      else if (alt?.sprache) await this.d.loescheSprachpaket(m.id);
-      await this.d.speicherePaket(datensatz);
+      if (paket.sprache) await this.d.kern.repo.speichereSprachpaket(m.id, { kennung: paket.sprache.angabe.kennung, texte: paket.sprache.texte, beschriftungen: paket.sprache.beschriftungen });
+      else if (alt?.sprache) await this.d.kern.repo.loescheSprachpaket(m.id);
+      await this.d.kern.repo.speicherePaket(datensatz);
       if (ueb) log.info('Ablageort an das Paket übergeben', { paket: m.id, typ: ueb.name, ansichten: Object.keys(ueb.sichten).length });
       // #712: mitgelieferte Automatisierungen – aus, außer denen, die beim Installieren angehakt wurden (nach dem
       // Speichern, damit Typen und Herkunft stimmen).
@@ -1839,9 +1840,9 @@ export class Paketverwaltung {
       return datensatz;
     } catch (f) {
       await zurueck();
-      if (codeGeschrieben) await (alterCode.length ? this.d.speicherePaketCode(m.id, alterCode) : this.d.loeschePaketCode(m.id)).catch((e) => log.error('Paket: alten Code nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
-      if (spracheGeschrieben) await (alteSprache ? this.d.speichereSprachpaket(m.id, alteSprache) : this.d.loescheSprachpaket(m.id)).catch((e) => log.error('Sprachpaket: alte Texte nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
-      if (einstellungenGeschrieben) await this.d.setzePaketEinstellungen(m.id, alteEinstellungen).catch(() => {});
+      if (codeGeschrieben) await (alterCode.length ? this.d.kern.repo.speicherePaketCode(m.id, alterCode) : this.d.kern.repo.loeschePaketCode(m.id)).catch((e) => log.error('Paket: alten Code nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
+      if (spracheGeschrieben) await (alteSprache ? this.d.kern.repo.speichereSprachpaket(m.id, alteSprache) : this.d.kern.repo.loescheSprachpaket(m.id)).catch((e) => log.error('Sprachpaket: alte Texte nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
+      if (einstellungenGeschrieben) await setzePaketEinstellungen(this.d.kern, m.id, alteEinstellungen).catch(() => {});
       if (wortlistenGeschrieben) await this.d.setzePaketSynonyme(m.id, alteWortlisten).catch(() => {});
       throw f;
     }
@@ -1852,7 +1853,7 @@ export class Paketverwaltung {
     const erg = [];
     const quellen = await this.quellen();
     const geholt = new Map<string, Katalog | null>();
-    for (const p of await this.d.listePakete()) {
+    for (const p of await this.d.kern.repo.listePakete()) {
       if (p.herkunft.art !== 'katalog') continue;
       const url = p.herkunft.url;
       if (!quellen.some((q) => q.url === url && q.aktiv)) continue;
@@ -1866,7 +1867,7 @@ export class Paketverwaltung {
 
   /** Update aus der Quelle des Pakets: ergänzt nur – neue Typen, Felder, Register, Sichten. */
   async aktualisiere(id: string, e: { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; automatisierungen?: string[] }, von: Handelnder): Promise<InstalliertesPaket> {
-    const alt = (await this.d.listePakete()).find((p) => p.id === id);
+    const alt = (await this.d.kern.repo.listePakete()).find((p) => p.id === id);
     if (!alt) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
     if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, t('meldungen.pakete.ein-hochgeladenes-paket'));
     const quelle = await this.erlaubt(alt.herkunft.url);
@@ -1895,7 +1896,7 @@ export class Paketverwaltung {
   async ablaufPlan(e: AblaufEingabe): Promise<AblaufPlan<Vorschau>> { return (await this.ablaufIntern(e)).plan; }
 
   private async ablaufIntern(e: AblaufEingabe, namen: Record<string, Record<string, string>> = {}, sichtNamen: Record<string, Record<string, string>> = {}) {
-    const installierte = await this.d.listePakete();
+    const installierte = await this.d.kern.repo.listePakete();
     const dms = this.o.version();
     const probleme: string[] = [];
     type Teil = { schluessel: string; paket: Paket; v?: KatalogVersion; katalog?: Katalog; herkunft: InstalliertesPaket['herkunft']; gewaehlt: boolean; fuer: string[]; pruefung: HerkunftPruefung; upload?: string };
@@ -1983,7 +1984,7 @@ export class Paketverwaltung {
   /** Werte, mit denen ein Paket nach der Installation startet: Vorgaben, ggf. behaltene Werte (wie lege). */
   private async startwerte(paket: Paket): Promise<Record<string, unknown>> {
     if (!paket.einstellungen) return {};
-    const alt = await this.d.paketEinstellungen(paket.manifest.id);
+    const alt = await paketEinstellungen(this.d.kern, paket.manifest.id);
     return ueberfuehre(paket.einstellungen, alt?.werte ?? {}).werte;
   }
 
@@ -1997,7 +1998,7 @@ export class Paketverwaltung {
   /** Auswahl für Verweise in Einstellungen; paket: für Mappentyp-Verweise ohne Präfix. */
   private async verweisquelle(paket: string | null): Promise<Verweisquelle & { anzeige: AblaufPlan<Vorschau>['auswahl'] }> {
     const typen = await this.d.listeTypen();
-    const installierte = await this.d.listePakete();
+    const installierte = await this.d.kern.repo.listePakete();
     const dmsTypen = await this.dmsTypen();
     const anzeige = {
       typen: typen.map((x) => ({ id: x.id, name: x.name, felder: x.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
@@ -2080,7 +2081,7 @@ export class Paketverwaltung {
       if (an) { erg.nichtInstalliert.push({ id: p.id, name: p.name, version: p.version, grund: t('pakete.ablauf.braucht.gescheitert', { name: plan.pakete.find((y) => y.id === an)?.name ?? an }) }); continue; }
       const x = teile[i];
       try {
-        const alt = (await this.d.listePakete()).find((y) => y.id === p.id) ?? null;
+        const alt = (await this.d.kern.repo.listePakete()).find((y) => y.id === p.id) ?? null;
         // Frisch planen: Die Pakete davor sind jetzt installiert (Verweise, Namen).
         const vorschau = await this.plane(x.paket, x.v, x.katalog ?? await this.offiziell(), namen[p.id] ?? {}, sichtNamen[p.id] ?? {});
         if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
@@ -2109,7 +2110,7 @@ export class Paketverwaltung {
   /* ---------- Einstellungen (#197) ---------- */
 
   private async beschreibungVon(id: string) {
-    const p = (await this.d.listePakete()).find((x) => x.id === id);
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
     if (!p.einstellungen) throw new Fachfehler(404, t('meldungen.pakete.hat-keine-einstellungen', { name: p.name }));
     return { p, b: p.einstellungen };
@@ -2118,7 +2119,7 @@ export class Paketverwaltung {
   /** Alles, was es zur Auswahl gibt: Mappentypen mit Feldern, Benutzer, Rollen, Sichten. */
   private async auswahl(p: InstalliertesPaket) {
     const typen = await this.d.listeTypen();
-    const installierte = await this.d.listePakete();
+    const installierte = await this.d.kern.repo.listePakete();
     const dmsTypen = await this.dmsTypen();
     return {
       typen: typen.map((t) => ({ id: t.id, name: t.name, felder: t.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
@@ -2145,7 +2146,7 @@ export class Paketverwaltung {
 
   async einstellungen(id: string) {
     const { p, b } = await this.beschreibungVon(id);
-    const gespeichert = (await this.d.paketEinstellungen(id)) ?? { werte: {} };
+    const gespeichert = (await paketEinstellungen(this.d.kern, id)) ?? { werte: {} };
     const q = await this.auswahl(p);
     return {
       beschreibung: b, werte: this.maskiere(b, gespeichert.werte), fehlend: fehlendePflicht(b, gespeichert.werte),
@@ -2157,7 +2158,7 @@ export class Paketverwaltung {
   /** Speichern: prüfen (Typ, Pflicht, Auswahl, Verweise), Geheimnisse verschlüsseln, Protokoll ohne Werte von Geheimnissen. */
   async speichereEinstellungen(id: string, eingabe: unknown, von: Handelnder) {
     const { p, b } = await this.beschreibungVon(id);
-    const alt = (await this.d.paketEinstellungen(id)) ?? { werte: {} };
+    const alt = (await paketEinstellungen(this.d.kern, id)) ?? { werte: {} };
     const q = await this.auswahl(p);
     const r = pruefeWerte(b, (eingabe as { werte?: unknown } | null)?.werte ?? eingabe, { ...q, benutzer: q.benutzer.map((x) => x.id), rollen: q.rollen.map((x) => x.id), sichten: q.sichten.map((x) => x.id) });
     // Geheimnisse: neu → verschlüsseln, behalten → alter Wert (bei Listen über die Id des Eintrags), null → weg.
@@ -2183,7 +2184,7 @@ export class Paketverwaltung {
     if (adressen.length && (eingabe as { adresseBestaetigt?: unknown } | null)?.adresseBestaetigt !== true) {
       throw new Fachfehler(409, t('meldungen.pakete.bitte-die-adresse-bestaetigen', { name: p.name, map: adressen.map((f) => String(r.werte[f.schluessel])).join(', ') }), { adresse: adressen.map((f) => ({ feld: f.name, wert: r.werte[f.schluessel] })) });
     }
-    await this.d.setzePaketEinstellungen(id, { ...alt, werte: r.werte });
+    await setzePaketEinstellungen(this.d.kern, id, { ...alt, werte: r.werte });
     if (geaendert.length) {
       log.info(`Einstellungen von Paket ${p.name} geändert (Felder ${geaendert.join(', ')})`, { von: von.email, paket: id, felder: geaendert });
       for (const f of adressfelder(b).filter((x) => geaendert.includes(x.schluessel))) {
@@ -2202,7 +2203,7 @@ export class Paketverwaltung {
   /** Einstellungen im Klartext – nur für das eigene Paket über den Paket-Läufer, nie über die API. */
   async einstellungenFuerPaket(id: string): Promise<Record<string, unknown>> {
     const { b } = await this.beschreibungVon(id);
-    const w = structuredClone((await this.d.paketEinstellungen(id))?.werte ?? {});
+    const w = structuredClone((await paketEinstellungen(this.d.kern, id))?.werte ?? {});
     const klar = (f: EinstellungFeld, v: unknown) => (f.typ === 'geheim' && typeof v === 'string' ? this.d.entschluessele(v) : v);
     for (const f of abschnittsfelder(b)) w[f.schluessel] = klar(f, w[f.schluessel]);
     for (const l of listen(b)) for (const e of (Array.isArray(w[l.schluessel]) ? w[l.schluessel] as Record<string, unknown>[] : [])) for (const f of l.felder) e[f.schluessel] = klar(f, e[f.schluessel]);
@@ -2211,8 +2212,8 @@ export class Paketverwaltung {
 
   /** Statusbereich: schreibt nur das Paket (über den Läufer); in der Oberfläche schreibgeschützt. */
   async setzeStatus(id: string, status: { letzterLauf: string | null; meldungen: string[] }) {
-    const alt = (await this.d.paketEinstellungen(id)) ?? { werte: {} };
-    await this.d.setzePaketEinstellungen(id, { ...alt, status: { letzterLauf: status.letzterLauf, meldungen: status.meldungen.slice(-20).map((m) => String(m).slice(0, 500)) } });
+    const alt = (await paketEinstellungen(this.d.kern, id)) ?? { werte: {} };
+    await setzePaketEinstellungen(this.d.kern, id, { ...alt, status: { letzterLauf: status.letzterLauf, meldungen: status.meldungen.slice(-20).map((m) => String(m).slice(0, 500)) } });
   }
 
   /** Aktion aus dem Manifest ausführen; die Antwort des Pakets als Text, mit Zeitgrenze. */
@@ -2220,7 +2221,7 @@ export class Paketverwaltung {
     const { p, b } = await this.beschreibungVon(id);
     const a = b.aktionen.find((x) => x.schluessel === schluessel);
     if (!a) throw new Fachfehler(404, t('meldungen.pakete.diese-aktion-gibt-es'));
-    const fehlend = fehlendePflicht(b, (await this.d.paketEinstellungen(id))?.werte ?? {});
+    const fehlend = fehlendePflicht(b, (await paketEinstellungen(this.d.kern, id))?.werte ?? {});
     if (fehlend.length) return { ok: false, text: t('meldungen.pakete.einstellungen-noetig', { fehlend: fehlend.join(', ') }) };
     if (!this.o.laeufer) return { ok: false, text: t('meldungen.pakete.pakete-mit-code-laufen') };
     log.info(`Aktion „${a.name}“ von Paket ${p.name}`, { von: von.email, paket: id, aktion: schluessel });
@@ -2241,9 +2242,9 @@ export class Paketverwaltung {
    * Pakete (z. B. das gerade installierte); ohne: alle. Liefert die Zahl ergänzter Texte.
    */
   async sprachBeschriftungen(nur?: string[]): Promise<number> {
-    const sprachen = (await this.d.sprachpakete()).filter((s) => Object.keys(s.beschriftungen).length);
+    const sprachen = (await this.d.kern.repo.sprachpakete()).filter((s) => Object.keys(s.beschriftungen).length);
     if (!sprachen.length) return 0;
-    const pakete = (await this.d.listePakete()).filter((p) => !nur || nur.includes(p.id));
+    const pakete = (await this.d.kern.repo.listePakete()).filter((p) => !nur || nur.includes(p.id));
     let anzahl = 0;
     for (const s of sprachen) {
       for (const p of pakete) {
@@ -2291,14 +2292,14 @@ export class Paketverwaltung {
    * keine Beispiele mehr.
    */
   async beispieleEntfernen(id: string, von: Handelnder): Promise<{ entfernt: number; behalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }> }> {
-    const p = (await this.d.listePakete()).find((x) => x.id === id);
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
     const b = await this.d.pruefeBeispiele(p.beispielMappen ?? []);
     if (b.unveraendert.length) await this.d.entferneBeispielMappen(b.unveraendert, von.id);
     const weg = new Set(b.unveraendert);
     const { beispielMappen: _bm, beispiele: alteSchluessel, ...rest } = p;
     const schluessel = Object.fromEntries(Object.entries(alteSchluessel ?? {}).filter(([, mid]) => !weg.has(mid)));
-    await this.d.speicherePaket({ ...rest, ...(Object.keys(schluessel).length ? { beispiele: schluessel } : {}) });
+    await this.d.kern.repo.speicherePaket({ ...rest, ...(Object.keys(schluessel).length ? { beispiele: schluessel } : {}) });
     log.info('Beispiele eines Pakets entfernt', { von: von.email, paket: id, entfernt: b.unveraendert.length, behalten: b.geaendert.length });
     return { entfernt: b.unveraendert.length, behalten: b.geaendert.map(({ typId: _t, ...g }) => g) };
   }
@@ -2308,7 +2309,7 @@ export class Paketverwaltung {
    * Mappentypen verhindern sie das Entfernen und stehen in den Gründen, in fremden bleiben sie und stehen im Ergebnis.
    */
   async entferne(id: string, von: Handelnder, behalten = false, spracheBestaetigt = false): Promise<{ beispieleBehalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }> }> {
-    const alle = await this.d.listePakete();
+    const alle = await this.d.kern.repo.listePakete();
     const p = alle.find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
     if (p.sprache && !spracheBestaetigt) {
@@ -2356,22 +2357,22 @@ export class Paketverwaltung {
         }
       }
     }
-    await this.d.loeschePaket(id);
+    await this.d.kern.repo.loeschePaket(id);
     await this.d.setzePaketSynonyme(id, []);
     // Sprachpaket (#731): Texte weg, Sprache aus der Einstellung, alle Prozesse laden neu. Beschriftungen an Mappentypen
     // bleiben – wie andere Beschriftungen einer nicht erlaubten Sprache stören sie nicht und gelten bei einer Neuinstallation.
     if (p.sprache) {
-      await this.d.loescheSprachpaket(id);
+      await this.d.kern.repo.loescheSprachpaket(id);
       await Promise.resolve(this.o.sprachen?.entfernt(p.sprache.kennung)).catch((e: Error) => log.warn('Sprache nicht aus der Einstellung genommen', { paket: id, fehler: e.message }));
     }
     // #712: mitgelieferte Automatisierungen, die aus und unverändert sind, gehen mit; geänderte bleiben (rot, wenn ihr Typ fehlt).
     await this.d.paketAutomatisierungen?.(p, []).catch((e: Error) => log.warn('Automatisierungen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
-    if (p.laeufer) { await this.d.loeschePaketCode(id); await this.d.loescheEreignisse(id); await this.d.setzePaketSpeicher(id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
+    if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
     // Volltext und Umwandeln (Frage 51): Was noch auf dieses Paket wartete, wartet nicht mehr.
     const wartetAuf = [...(hatSchnittstelle(p.laeufer, 'dms:volltext') ? p.laeufer?.volltext ?? [] : []), ...(hatSchnittstelle(p.laeufer, 'dms:umwandeln') ? p.laeufer?.umwandeln ?? [] : [])];
     if (wartetAuf.length) await this.d.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
-    if (!behalten) await this.d.setzePaketEinstellungen(id, null);
+    if (!behalten) await setzePaketEinstellungen(this.d.kern, id, null);
     log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten, beispieleEntfernt: bsp.unveraendert.length });
     return { beispieleBehalten: bsp.geaendert.filter((g) => !eigeneTypen.has(g.typId)).map(({ typId: _t, ...g }) => g) };
   }

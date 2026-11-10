@@ -161,7 +161,7 @@ function faelle(pg: boolean) {
       const kaputt = mitBeispielen('- typ: vertrag\n  werte: { nr: A-1 }\n  dokumente:\n    - { datei: beispiele/heizung/wartungsvertrag.pdf }\n- typ: vertrag\n  werte: { nr: A-1 }\n');
       await assert.rejects(installiere(p, { ...kaputt, 'inhalt/mappentypen.yaml': TYPEN.replace('{ key: nr, label: Nummer, typ: text, pflicht: true }', '{ key: nr, label: Nummer, typ: text, pflicht: true, eindeutig: true }') }), /Beispiel/);
       assert.ok(!(await d.listeTypen()).some((t) => t.schluessel?.startsWith('demo_')), 'keine Typen übrig');
-      assert.deepEqual(await d.listePakete(), []);
+      assert.deepEqual(await d.kern.repo.listePakete(), []);
       await assert.rejects(dateien.lies(createHashHex(DATEIEN['inhalt/beispiele/heizung/wartungsvertrag.pdf'] as Buffer)), 'Datei der zurückgenommenen Mappe ist weg');
     });
 
@@ -197,7 +197,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(r.behalten.map((b) => [b.titel, b.grund]).sort(), [['Heizungsbau Beispiel GmbH', 'verwiesen'], ['WV-2023-17', 'geaendert']]);
       assert.ok(!(await d.gibtMappe(strom.id)), 'unverändertes Beispiel samt Dokument weg');
       assert.ok(await d.gibtMappe(wartung.id) && await d.gibtMappe(firma.id));
-      const nachher = (await d.listePakete()).find((x) => x.id === 'demo')!;
+      const nachher = (await d.kern.repo.listePakete()).find((x) => x.id === 'demo')!;
       assert.equal(nachher.beispielMappen, undefined, 'das Paket merkt sich keine Beispiele mehr');
       assert.deepEqual(Object.keys(nachher.beispiele ?? {}).sort(), ['heizung', 'wartung'], 'Schlüssel der gebliebenen bleiben für Verweise');
       assert.deepEqual(await p.beispieleEntfernen('demo', ICH), { entfernt: 0, behalten: [] });

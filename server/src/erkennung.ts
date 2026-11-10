@@ -137,7 +137,7 @@ export class Erkennung {
   /** Installierte Pakete mit dms:erkennen (auch, wenn der Läufer sie gerade nicht geladen hat). */
   private async erkennPakete(): Promise<Array<{ id: string; name: string; netz: boolean; laeuft: boolean }>> {
     const geladen = new Set((this.anbieter?.pakete() ?? []).map((p) => p.id));
-    return (await this.d.listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:erkennen'))
+    return (await this.repo().listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:erkennen'))
       .map((p) => ({ id: p.id, name: p.name, netz: hatNetz(p.laeufer), laeuft: geladen.has(p.id) }));
   }
 

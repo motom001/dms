@@ -33,6 +33,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { Texterkennung, type Engine } from '../src/texterkennung';
 import { vollexport } from '../src/vollexport';
+import { setzePaketEinstellungen } from '../src/pakete/pakete.einstellungen';
 
 after(() => beendeArbeiter());
 
@@ -127,8 +128,8 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   const a = new Archivfassung(d.archivAnbindung(ablage));
   d.verbindeArchivfassung(a);
   // Texterkennung als Paket: Bilder warten auf sie; sie schreibt den Volltext mit Wortpositionen.
-  await d.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
-  if (o.mitPaket !== false) await d.speicherePaket(o.paket ?? pdfaPaket());
+  await d.kern.repo.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
+  if (o.mitPaket !== false) await d.kern.repo.speicherePaket(o.paket ?? pdfaPaket());
   const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
@@ -151,7 +152,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
     const r = tabelle.find((y) => y.methode === methode && y.pfad === pfad)!;
     assert.ok(r, `${methode} ${pfad}`);
     const anfrage = { body, params, query, ip: '127.0.0.1' } as unknown as Anfrage;
-    const key = await schluessel.fuerDienstkonto(konto, schluesselRecht((await d.listePakete()).find((y) => y.id === paketId)!.laeufer!));
+    const key = await schluessel.fuerDienstkonto(konto, schluesselRecht((await d.kern.repo.listePakete()).find((y) => y.id === paketId)!.laeufer!));
     await pruefeZugang(r as Route, anfrage, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
     return r.handler(anfrage);
   };
@@ -260,13 +261,13 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.equal(wp.seiten[0].woerter[0][0], 'Stromrechnung');
     assert.deepEqual(await x.laeufer(), ['PDF/A-2b']);
     // „PDFs mit Text“ abgewählt: ein weiteres PDF mit Text bekommt keine – ruhig „ausgelassen – laut Einstellung“.
-    await x.d.setzePaketEinstellungen('pdfa', { werte: { pdf_text: false } });
+    await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { pdf_text: false } });
     const b = await x.hoch('kontoauszug.pdf', await pdf({ text: `${TEXT} Kontoauszug` }));
     await warte(async () => (await x.a.stand(await x.dok(b)))?.stand === 'ausgelassen');
     assert.deepEqual(await x.offen(), []);
     assert.match(String((await x.a.stand(await x.dok(b)))!.info), /laut Einstellung bekommen PDFs mit Text keine Archivfassung/);
     // Wieder angekreuzt: der Bestand mit Text kommt dazu (wie nach dem Speichern der Einstellung).
-    await x.d.setzePaketEinstellungen('pdfa', { werte: { pdf_text: true } });
+    await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { pdf_text: true } });
     assert.equal(await x.d.archivPaketDa([PDF]), 1);
     // Schon gültiges PDF/A: gilt selbst als Archivfassung, kein Ereignis, keine zweite Datei.
     await x.laeufer();
@@ -281,7 +282,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
 
   it('Auswahl (#660): „Fotos und Bilder“ und „Gescannte PDFs“ abgewählt lassen diese aus, nachträglich angekreuzt werden sie nachgeholt', async () => {
     const x = await aufbau();
-    await x.d.setzePaketEinstellungen('pdfa', { werte: { bilder: false, pdf_scan: false } });
+    await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { bilder: false, pdf_scan: false } });
     const woerter: Array<[string, number, number, number, number]> = [['Stromrechnung', 0.1, 0.1, 0.3, 0.05]];
     const bild = await x.hoch('foto.png', png(40, 20), 'image/png');
     await x.d.schreibeVolltext(bild, { text: 'Stromrechnung', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
@@ -297,7 +298,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.equal((await x.offen())[0].daten.textebene, 'voll');
     await x.laeufer();
     // Bilder wieder angekreuzt: das Foto wird nachgeholt, der Scan bleibt ausgelassen.
-    await x.d.setzePaketEinstellungen('pdfa', { werte: { bilder: true, pdf_scan: false } });
+    await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { bilder: true, pdf_scan: false } });
     assert.equal(await x.d.archivPaketDa(['image/png', PDF]), 1);
     const [e] = await x.offen();
     assert.equal(e.daten.mime, 'image/png');
@@ -320,7 +321,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await fehler(await pdf({ pdfa: {}, uri: 'https://zaehlpixel.example.org/p.gif' }), 422, /Aktionen, die etwas starten|externen Inhalt/);
     await fehler(await pdf({ pdfa: {} }), 409, /andere Datei/, 'a'.repeat(64));
     // Ein Paket ohne das Recht: 403.
-    await x.d.speicherePaket(paket('fremd', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Fremd'));
+    await x.d.kern.repo.speicherePaket(paket('fremd', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Fremd'));
     await assert.rejects(x.rufe('fremd', 'PUT', '/api/v1/dokumente/:id/archivfassung', { id }, await pdf({ pdfa: {} }), { sha256: String(e.daten.sha256) }), (f: { status?: number }) => f.status === 403);
     // Der Grund der letzten Ablehnung steht am Dokument und in der Werkbank – auch nach dem Ergebnis des Pakets.
     await x.repo.ereignisZugestellt(e.id);
@@ -416,7 +417,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     const b1 = await y.hoch('a.pdf', await pdf({ text: TEXT }));
     await y.hoch('b.pdf', await pdf({ text: `${TEXT} zwei` }));
     await new Promise((r) => setTimeout(r, 200));
-    await y.d.speicherePaket(pdfaPaket());
+    await y.d.kern.repo.speicherePaket(pdfaPaket());
     assert.equal(await y.d.archivPaketDa([PDF]), 2);
     assert.equal((await y.offen()).length, 2);
     // Löschen: Archivfassung, Stand und Wortpositionen mit weg.
@@ -636,7 +637,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
 
   it('mit Office und E-Mail: die Mail wartet wie bisher auf den Volltext und wird danach gemeldet', async () => {
     const x = await aufbau({ paket: mailPaket() });
-    await x.d.speicherePaket(officePaket());
+    await x.d.kern.repo.speicherePaket(officePaket());
     const id = await x.hoch('Auftragsbestätigung.eml', mail(), EML);
     assert.equal((await x.dok(id)).ocr?.stand, 'paket');
     await new Promise((r) => setTimeout(r, 100));
@@ -650,7 +651,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
 
   it('Auswahl emails aus: „ausgelassen – laut Einstellung“; später angekreuzt: Ablago holt die Mails nach', async () => {
     const x = await aufbau({ paket: mailPaket() });
-    await x.d.setzePaketEinstellungen('pdfa', { werte: { emails: false } });
+    await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { emails: false } });
     const eml = await x.hoch('Auftragsbestätigung.eml', mail(), EML);
     const oct = await x.hoch('Kündigung.eml', mail('Kündigungsbestätigung'), OCTET);
     await warte(async () => (await x.a.stand(await x.dok(eml)))?.stand === 'ausgelassen' && (await x.a.stand(await x.dok(oct)))?.stand === 'ausgelassen');
@@ -663,7 +664,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
     assert.equal((await x.offen())[0].daten.mime, 'image/png');
     await x.laeufer();
     // Wieder angekreuzt: beide Mails kommen nach (auch die als octet-stream mit Endung).
-    await x.d.setzePaketEinstellungen('pdfa', { werte: { emails: true } });
+    await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { emails: true } });
     assert.equal(await x.d.archivPaketDa(MANIFEST_MAIL.archivfassung.typen), 2);
     assert.deepEqual((await x.offen()).map((y) => y.daten.name).sort(), ['Auftragsbestätigung.eml', 'Kündigung.eml']);
   });

@@ -170,23 +170,23 @@ describe('Paket-Läufer: Nacharbeiten (#403)', () => {
     const installiere = async (version: string, wasm: Buffer) => { const { upload } = await p.hochladen(zip(version, wasm), ICH); return p.installiere({ upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };
     const NEU = modul({ ereignis: [0x41, 1] });
     // Neuinstallation scheitert beim Speichern des Eintrags: kein Code bleibt zurück.
-    const speichere = d.speicherePaket.bind(d);
+    const speichere = d.kern.repo.speicherePaket.bind(d.kern.repo);
     let scheitern = true;
-    d.speicherePaket = async (x) => { if (scheitern) throw new Error('Platte voll'); return speichere(x); };
+    d.kern.repo.speicherePaket = async (x) => { if (scheitern) throw new Error('Platte voll'); return speichere(x); };
     await assert.rejects(installiere('1.0.0', ECHO), /Platte voll/);
-    assert.deepEqual(await d.paketCode('wechsel'), []);
+    assert.deepEqual(await d.kern.repo.paketCode('wechsel'), []);
     scheitern = false;
     await installiere('1.0.0', ECHO);
-    assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, ECHO);
+    assert.deepEqual((await d.kern.repo.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, ECHO);
     // Update scheitert nach dem Speichern des neuen Codes: altes Modul zurück, alter Eintrag bleibt.
     scheitern = true;
     await assert.rejects(installiere('1.1.0', NEU), /Platte voll/);
-    assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, ECHO, 'alter Code wiederhergestellt');
-    assert.equal((await d.listePakete()).find((x) => x.id === 'wechsel')?.version, '1.0.0');
+    assert.deepEqual((await d.kern.repo.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, ECHO, 'alter Code wiederhergestellt');
+    assert.equal((await d.kern.repo.listePakete()).find((x) => x.id === 'wechsel')?.version, '1.0.0');
     assert.equal(geaendert.length, 1, 'der Läufer lädt nach dem gescheiterten Update nichts neu');
     scheitern = false;
     await installiere('1.1.0', NEU);
-    assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, NEU);
+    assert.deepEqual((await d.kern.repo.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, NEU);
   });
 });
 
@@ -271,8 +271,8 @@ describe('Paket-Läufer (#338): Ablauf', () => {
   }
   async function installiere(d: Dienst, id: string, wasm: Buffer, rechte?: string) {
     const p = liesPaket(archiv(id, wasm, rechte));
-    await d.speicherePaketCode(id, p.code!.dateien);
-    await d.speicherePaket({ id, name: p.manifest.name, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+    await d.kern.repo.speicherePaketCode(id, p.code!.dateien);
+    await d.kern.repo.speicherePaket({ id, name: p.manifest.name, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
   }
   const warte = async (f: () => Promise<boolean> | boolean, ms = 10_000) => { const ende = Date.now() + ms; while (!(await f())) { if (Date.now() > ende) throw new Error('Zeit abgelaufen'); await new Promise((r) => setTimeout(r, 50)); } };
 
@@ -287,7 +287,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.deepEqual(await konten.listeBenutzer(), [], 'nicht in der Benutzerliste');
     await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     await d.ereignis('post.angelegt', { mappe: 'm1' }); await d.ereignisse.verteile();
-    await warte(async () => (await d.ereignisStand()).echo?.zugestellt === 1);
+    await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);
     const u1 = await l.uebersicht();
     const echo = u1.pakete[0];
     assert.equal(echo.aufrufe, 1, 'nur das abonnierte Ereignis');
@@ -305,7 +305,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await l.start();
     await warte(async () => (await l.uebersicht()).laeuft);
     await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
-    await warte(async () => (await d.ereignisStand()).weiter?.zugestellt === 1);
+    await warte(async () => (await d.kern.repo.ereignisStand()).weiter?.zugestellt === 1);
     const p = (await l.uebersicht()).pakete[0];
     assert.equal(p.aufrufe, 4, 'erster Aufruf und drei Fortsetzungen');
     assert.ok(p.protokoll.some((x) => /nach 3 Fortsetzungen beendet/.test(x.text)), JSON.stringify(p.protokoll));
@@ -324,13 +324,13 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const { d, l } = await aufbau();
     await installiere(d, 'basis', ECHO);
     const z = liesPaket(new Map([...archiv('zusatz', ECHO), ['code/daten/fra.traineddata', Buffer.from('FRA')]]));
-    await d.speicherePaketCode('zusatz', z.code!.dateien);
-    const datensatz = (await d.listePakete()).find((p) => p.id === 'basis')!;
-    await d.speicherePaket({ ...datensatz, id: 'zusatz', name: 'Zusatz', abhaengigkeiten: { basis: '>=1.0.0' }, laeufer: { ...datensatz.laeufer!, daten: ['daten/fra.traineddata'] } });
+    await d.kern.repo.speicherePaketCode('zusatz', z.code!.dateien);
+    const datensatz = (await d.kern.repo.listePakete()).find((p) => p.id === 'basis')!;
+    await d.kern.repo.speicherePaket({ ...datensatz, id: 'zusatz', name: 'Zusatz', abhaengigkeiten: { basis: '>=1.0.0' }, laeufer: { ...datensatz.laeufer!, daten: ['daten/fra.traineddata'] } });
     const gesendet: Array<{ art: string; pakete?: Array<{ id: string; daten: Array<{ name: string }> }> }> = [];
     const x = l as unknown as { sende(m: unknown): void; pakete: unknown; sendePakete(): Promise<void> };
     x.sende = (m) => { gesendet.push(m as never); };
-    x.pakete = await d.listePakete();
+    x.pakete = await d.kern.repo.listePakete();
     await x.sendePakete();
     const basis = gesendet[0].pakete!.find((p) => p.id === 'basis')!;
     assert.deepEqual(basis.daten.map((x) => x.name), ['zusatz/fra.traineddata']);
@@ -489,8 +489,8 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await warte(async () => (await l.uebersicht()).laeuft);
     await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     await new Promise((r) => setTimeout(r, 400)); // Aufruf läuft (Endlosschleife)
-    await d.loeschePaket('schleife');
-    await d.loescheEreignisse('schleife');
+    await d.kern.repo.loeschePaket('schleife');
+    await d.kern.repo.loescheEreignisse('schleife');
     l.codeGeaendert();
     await warte(async () => !(await l.uebersicht()).laeuft);
     // Neues Paket: die Zustellung darf nicht mehr am alten Aufruf hängen.
@@ -498,14 +498,14 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     l.codeGeaendert();
     await warte(async () => (await l.uebersicht()).laeuft);
     await d.ereignis('dokument.hochgeladen', { dokument: 'd2' }); await d.ereignisse.verteile();
-    await warte(async () => (await d.ereignisStand()).echo?.zugestellt === 1);
+    await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);
     // Eigene Änderungen: was das Dienstkonto von echo hochlädt, meldet das DMS echo nicht.
     const konto = (await konten.listeDienstkonten()).find((b) => b.paketId === 'echo')!;
     const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
     await d.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
     await new Promise((r) => setTimeout(r, 300));
-    assert.equal((await d.ereignisStand()).echo.offen + (await d.ereignisStand()).echo.zugestellt, 1, 'kein Ereignis für die eigene Änderung');
+    assert.equal((await d.kern.repo.ereignisStand()).echo.offen + (await d.kern.repo.ereignisStand()).echo.zugestellt, 1, 'kein Ereignis für die eigene Änderung');
   });
 
   it('Ausgangskorb: ein wartendes Ereignis hält spätere desselben Pakets zurück', async () => {
@@ -514,12 +514,12 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await d.ereignis('dokument.hochgeladen', { n: 1 }); await d.ereignisse.verteile();
     await new Promise((r) => setTimeout(r, 5));
     await d.ereignis('dokument.hochgeladen', { n: 2 }); await d.ereignisse.verteile();
-    const [e1] = await d.faelligeEreignisse(10);
+    const [e1] = await d.kern.repo.faelligeEreignisse(10);
     assert.equal(e1.daten.n, 1);
-    await d.ereignisFehlgeschlagen(e1.id, 'x', new Date(Date.now() + 60_000));
-    assert.deepEqual(await d.faelligeEreignisse(10), [], 'Nr. 2 wartet auf die Wiederholung von Nr. 1');
-    await d.ereignisFehlgeschlagen(e1.id, 'x', null);
-    assert.deepEqual((await d.faelligeEreignisse(10)).map((e) => e.daten.n), [2], 'aufgegeben: Nr. 2 ist dran');
+    await d.kern.repo.ereignisFehlgeschlagen(e1.id, 'x', new Date(Date.now() + 60_000));
+    assert.deepEqual(await d.kern.repo.faelligeEreignisse(10), [], 'Nr. 2 wartet auf die Wiederholung von Nr. 1');
+    await d.kern.repo.ereignisFehlgeschlagen(e1.id, 'x', null);
+    assert.deepEqual((await d.kern.repo.faelligeEreignisse(10)).map((e) => e.daten.n), [2], 'aufgegeben: Nr. 2 ist dran');
   });
 
   it('läuft mit niedrigerer Priorität, auch die Fäden der Aufrufe (#893)', async () => {
@@ -532,7 +532,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.ok(faedenVon(pid).length > 1, 'mehrere Fäden im Läufer');
     assert.deepEqual([...new Set(faedenVon(pid).map((tid) => getPriority(tid)))], [ziel], 'alle Fäden des Läufers');
     await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
-    await warte(async () => (await d.ereignisStand()).eins?.zugestellt === 1);
+    await warte(async () => (await d.kern.repo.ereignisStand()).eins?.zugestellt === 1);
     assert.deepEqual([...new Set(faedenVon(pid).map((tid) => getPriority(tid)))], [ziel], 'auch nach einem Aufruf');
     assert.equal(getPriority(process.pid), ziel - hintergrundNice(), 'der Hauptfaden des DMS bleibt');
   });
@@ -540,8 +540,8 @@ describe('Paket-Läufer (#338): Ablauf', () => {
   it('lädt bei einer Änderung nur das geänderte Modul; Zustand nach Installation und nach Absturz (#403)', async () => {
     const { d, l } = await aufbau();
     const gelesen: string[] = [];
-    const lies = d.paketCode.bind(d);
-    d.paketCode = async (id: string) => { gelesen.push(id); return lies(id); };
+    const lies = d.kern.repo.paketCode.bind(d.kern.repo);
+    d.kern.repo.paketCode = async (id: string) => { gelesen.push(id); return lies(id); };
     await installiere(d, 'eins', ECHO);
     await installiere(d, 'zwei', ECHO);
     await l.start();
@@ -557,7 +557,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.deepEqual(gelesen, ['drei'], 'nur das neue Paket aus der Datenbank');
     // Die anderen laufen mit ihrem behaltenen Modul weiter.
     await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
-    await warte(async () => { const e = await d.ereignisStand(); return e.eins?.zugestellt === 1 && e.zwei?.zugestellt === 1 && e.drei?.zugestellt === 1; });
+    await warte(async () => { const e = await d.kern.repo.ereignisStand(); return e.eins?.zugestellt === 1 && e.zwei?.zugestellt === 1 && e.drei?.zugestellt === 1; });
     // Absturz: Zustand „neustart“ mit Zeit, danach „neu gestartet nach Absturz“; nach dem Neustart wieder alle Module.
     gelesen.length = 0;
     (l as unknown as { kind: { kill(s: string): void } }).kind.kill('SIGKILL');
@@ -586,7 +586,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     for (const { l } of [zeit, speicher]) await warte(async () => (await l.uebersicht()).pakete.every((p) => p.fehlgeschlagen === 1));
     assert.match((await zeit.l.uebersicht()).pakete.find((p) => p.id === 'schleife')!.letzte[0].text, /Zeitgrenze/);
     assert.match((await speicher.l.uebersicht()).pakete.find((p) => p.id === 'gierig')!.letzte[0].text, /Abbruch im Modul|Speicher/);
-    assert.equal((await zeit.d.ereignisStand()).schleife.offen, 1, 'wird später wiederholt');
+    assert.equal((await zeit.d.kern.repo.ereignisStand()).schleife.offen, 1, 'wird später wiederholt');
   });
 });
 
@@ -632,8 +632,8 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     laeufer.push(l);
     const installiere = async (id: string, wasm: Buffer, rechte: string, ereignisse = '[volltext.fertig]') => {
       const p = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest(id, rechte, ereignisse))], ['code/modul.wasm', wasm]]));
-      await d.speicherePaketCode(id, p.code!.dateien);
-      await d.speicherePaket({ id, name: `Probe ${id}`, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+      await d.kern.repo.speicherePaketCode(id, p.code!.dateien);
+      await d.kern.repo.speicherePaket({ id, name: `Probe ${id}`, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
     };
     /** Ein Aufruf der API v1 mit dem Schlüssel eines Dienstkontos – wie ein Paket. */
     const rufe = async (paket: string, methode: string, pfad: string, params: Record<string, string>, body: unknown = {}, query: Record<string, string> = {}) => {
@@ -742,19 +742,19 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
     const d4 = (await x.d.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
     await x.d.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
-    assert.equal((await x.d.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');
+    assert.equal((await x.d.kern.repo.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');
     await x.l.start();
-    await warte(async () => (await x.d.ereignisStand()).ki?.offen === 0);
+    await warte(async () => (await x.d.kern.repo.ereignisStand()).ki?.offen === 0);
     // Bestand: die anderen 3 Dokumente (Volltext vor der Installation) holt die Nachberechnung.
     await x.l.nachberechnen();
     assert.equal((await x.d.vektorStand()).modell, 'probe/8', 'Modell beim Paket erfragt');
-    const offen = (await x.d.ereignisStand()).ki?.offen ?? 0;
-    const zugestellt = (await x.d.ereignisStand()).ki?.zugestellt ?? 0;
+    const offen = (await x.d.kern.repo.ereignisStand()).ki?.offen ?? 0;
+    const zugestellt = (await x.d.kern.repo.ereignisStand()).ki?.zugestellt ?? 0;
     assert.ok(offen + zugestellt >= 4, `${offen} offen, ${zugestellt} zugestellt`);
     // Solange etwas offen ist, kommt nichts dazu; das Paket hier schreibt keine Vektoren – der nächste Durchgang pausiert.
-    await warte(async () => (await x.d.ereignisStand()).ki?.offen === 0);
+    await warte(async () => (await x.d.kern.repo.ereignisStand()).ki?.offen === 0);
     await x.l.nachberechnen();
-    assert.equal((await x.d.ereignisStand()).ki?.offen, 0, 'nach einem vollständigen Durchgang Pause');
+    assert.equal((await x.d.kern.repo.ereignisStand()).ki?.offen, 0, 'nach einem vollständigen Durchgang Pause');
   });
 });
 

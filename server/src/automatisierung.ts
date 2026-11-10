@@ -375,7 +375,7 @@ export class Automatisierungen {
    * bleibt sie und die mitgelieferte entsteht nicht – so erinnert nie etwas doppelt.
    */
   async ausPaket(p: InstalliertesPaket, liste: PaketAutomatisierung[], ein: string[] = []): Promise<number> {
-    const pakete = await this.d.dienst.listePakete();
+    const pakete = await this.d.dienst.kern.repo.listePakete();
     const typId = (vw: unknown): string | null => {
       if (typeof vw !== 'string' || !vw) return null;
       const [pk, sl] = vw.includes(':') ? vw.split(':') : [p.id, vw];
@@ -421,12 +421,12 @@ export class Automatisierungen {
    * bringen die Pakete mit (aus, beim Installieren wählbar) bzw. legt man selbst an. Die Werkbank sagt, was umgezogen ist.
    */
   async fristenUebernehmen(): Promise<number> {
-    const einstSp = this.d.dienst.einstellungenSpeicher;
+    const einstSp = this.d.dienst.kern.einstellungen;
     if (await einstSp?.lies('fristen_umzug')) return 0;
     const k = await this.kontext();
-    const pakete = await this.d.dienst.listePakete();
+    const pakete = await this.d.dienst.kern.repo.listePakete();
     const alle = await this.d.repo.liste();
-    const einst = this.d.dienst.einstellungenSpeicher;
+    const einst = this.d.dienst.kern.einstellungen;
     const schon = new Set<string>(((await einst?.lies('fristen_uebernommen')) as string[] | null) ?? []);
     const vorher = schon.size;
     let neu = 0;
@@ -477,7 +477,7 @@ export class Automatisierungen {
    * sind. Eine frische Installation bekommt sie über das Paket (im Einrichtungsassistenten vorausgewählt).
    */
   async benachrichtigungenUebernehmen(): Promise<number> {
-    const einst = this.d.dienst.einstellungenSpeicher;
+    const einst = this.d.dienst.kern.einstellungen;
     if (!einst || await einst.lies('benachrichtigungen_umzug')) return 0;
     const k = await this.kontext();
     let neu = 0;
@@ -506,14 +506,14 @@ export class Automatisierungen {
 
   /** Hinweis „umgezogen“ (#712) gelesen – verschwindet aus der Werkbank. */
   async umzugGesehen(): Promise<void> {
-    const einst = this.d.dienst.einstellungenSpeicher;
+    const einst = this.d.dienst.kern.einstellungen;
     const u = (await einst?.lies('fristen_umzug')) as { am: string; anzahl: number; gesehen: boolean } | null;
     if (u && !u.gesehen) await einst?.schreibe('fristen_umzug', { ...u, gesehen: true });
   }
 
   /** Was beim Update aus Erinnerungen am Feld wurde (#712); null, wenn nichts oder schon gesehen. */
   async umzug(): Promise<{ am: string; anzahl: number } | null> {
-    const u = (await this.d.dienst.einstellungenSpeicher?.lies('fristen_umzug')) as { am: string; anzahl: number; gesehen: boolean } | null;
+    const u = (await this.d.dienst.kern.einstellungen?.lies('fristen_umzug')) as { am: string; anzahl: number; gesehen: boolean } | null;
     return u && !u.gesehen && u.anzahl > 0 ? { am: u.am, anzahl: u.anzahl } : null;
   }
 
@@ -1044,7 +1044,7 @@ export class Automatisierungen {
   private async zeitplanKarten(ort: { datum: string; uhr: string }) {
     const alle = (await this.d.repo.liste()).filter((a) => a.aktiv && !a.angehalten && a.wenn.art === 'zeitplan');
     if (!alle.length) return;
-    const einst = this.d.dienst.einstellungenSpeicher;
+    const einst = this.d.dienst.kern.einstellungen;
     const roh = ((await einst?.lies('aufgaben_mail')) ?? {}) as { bundesland?: unknown };
     const bundesland = istBundesland(roh.bundesland) ? roh.bundesland : null;
     const merker = (schluessel: string): Merker => {

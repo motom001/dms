@@ -60,9 +60,9 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
     void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu });
   };
-  if (o.mitPaket !== false) await d.speicherePaket(office());
+  if (o.mitPaket !== false) await d.kern.repo.speicherePaket(office());
   // Ein Paket, das nur „Volltext fertig“ hört (z. B. für Vektoren).
-  await d.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
+  await d.kern.repo.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
   const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
@@ -223,7 +223,7 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     // Der Browser schickt den Typ mit Großbuchstaben, das Manifest nennt ihn klein.
     const makro = await x.hoch('makro.docm', Buffer.concat([DOCX, Buffer.from('m')]), 'application/vnd.ms-word.document.macroEnabled.12');
     assert.equal((await x.dok(a)).ocr?.stand, 'ausgelassen');
-    await x.d.speicherePaket(office());
+    await x.d.kern.repo.speicherePaket(office());
     assert.equal(await x.d.volltextPaketDa([WORD, EML, DOCM]), 3);
     await x.fertig(a); await x.fertig(b); await x.fertig(makro);
     assert.deepEqual((await x.ereignisse('datei.volltext')).map((e) => e.daten.dokument).sort(), [a, b, makro].sort());
@@ -237,9 +237,9 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
 describe('Volltext aus Paketen (#614): API für Pakete', () => {
   it('nur dms:volltext und Lesen: Volltext und Sprache für die eigenen Dateitypen; sonst 403; Dokumente ändern nie', async () => {
     const x = await aufbau();
-    await x.d.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
+    await x.d.kern.repo.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
     // Bestehende Pakete mit Schreibrecht (Texterkennung) bleiben, wie sie sind.
-    await x.d.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
+    await x.d.kern.repo.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
     const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(x.d, konten, { apiSchluessel: schluessel });
@@ -249,7 +249,7 @@ describe('Volltext aus Paketen (#614): API für Pakete', () => {
       const r = tabelle.find((y) => y.methode === methode && y.pfad === pfad)!;
       assert.ok(r, `${methode} ${pfad}`);
       const a = { body, params, query, ip: '127.0.0.1' } as unknown as Anfrage;
-      const key = await schluessel.fuerDienstkonto(konto, schluesselRecht((await x.d.listePakete()).find((y) => y.id === paketId)!.laeufer!));
+      const key = await schluessel.fuerDienstkonto(konto, schluesselRecht((await x.d.kern.repo.listePakete()).find((y) => y.id === paketId)!.laeufer!));
       await pruefeZugang(r as Route, a, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
       return r.handler(a);
     };
@@ -328,7 +328,7 @@ describe('Paket entfernt (Frage 51)', () => {
     await x.d.texterkennungErneut(b);
     await x.fertig(b);
     assert.equal((await x.dok(b)).ocr?.stand, 'paket');
-    await x.d.loeschePaket('office_email');
+    await x.d.kern.repo.loeschePaket('office_email');
     assert.equal(await x.d.paketWegFuerDateien(office(), [WORD]), 2);
     await x.fertig(a);
     const da = await x.dok(a);

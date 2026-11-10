@@ -244,7 +244,7 @@ export class Paketlaeufer implements PaketLaeufer {
   }
 
   private async synchronisiereJetzt() {
-    const alle = await this.o.dienst.listePakete();
+    const alle = await this.o.dienst.kern.repo.listePakete();
     this.pakete = alle.filter((p) => p.laeufer?.modul);
     // Dienstkonten: je Paket mit Code eins; für entfernte ausschalten.
     for (const p of this.pakete) {
@@ -278,12 +278,12 @@ export class Paketlaeufer implements PaketLaeufer {
       const zusaetze = this.pakete.filter((q) => q.id !== p.id && p.id in (q.abhaengigkeiten ?? {}) && q.laeufer?.daten?.length);
       const stand = JSON.stringify([p.version, p.laeufer!.modul, p.laeufer!.daten ?? [], p.laeufer!.netz, adressen, p.aktualisiert ?? p.installiert, zusaetze.map((q) => [q.id, q.version, q.laeufer!.daten, q.aktualisiert ?? q.installiert])]);
       if (this.gesendet.get(p.id) === stand) { behalten.push(p.id); gesendet.set(p.id, stand); continue; }
-      const code = await this.o.dienst.paketCode(p.id);
+      const code = await this.o.dienst.kern.repo.paketCode(p.id);
       const modul = code.find((d) => d.name === 'modul.wasm');
       if (!modul) { this.ladefehler.set(p.id, 'Der Code fehlt (nach einer Wiederherstellung bitte das Paket neu installieren).'); continue; }
       const daten = code.filter((d) => d.name.startsWith('daten/')).map((d) => ({ name: d.name.slice('daten/'.length), inhalt: new Uint8Array(d.inhalt) }));
       for (const q of zusaetze) {
-        for (const d of await this.o.dienst.paketCode(q.id)) if (d.name.startsWith('daten/')) daten.push({ name: `${q.id}/${d.name.slice('daten/'.length)}`, inhalt: new Uint8Array(d.inhalt) });
+        for (const d of await this.o.dienst.kern.repo.paketCode(q.id)) if (d.name.startsWith('daten/')) daten.push({ name: `${q.id}/${d.name.slice('daten/'.length)}`, inhalt: new Uint8Array(d.inhalt) });
       }
       liste.push({ id: p.id, version: p.version, modul: new Uint8Array(modul.inhalt), daten, netz: p.laeufer!.netz, adressen });
       gesendet.set(p.id, stand);
@@ -460,7 +460,7 @@ export class Paketlaeufer implements PaketLaeufer {
         this.nachlauf.set(paket, n);
       }
       if (Date.now() < n.pauseBis) return;
-      if (((await this.o.dienst.ereignisStand())[paket]?.offen ?? 0) > 0) return;
+      if (((await this.o.dienst.kern.repo.ereignisStand())[paket]?.offen ?? 0) > 0) return;
       const ids = await this.o.dienst.vektorNachlauf(paket, n.modell, NACHLAUF_JE_RUNDE, n.nach);
       if (ids.length) n.nach = ids[ids.length - 1];
       else { n.nach = null; n.pauseBis = Date.now() + NACHLAUF_PAUSE_MS; }
@@ -557,7 +557,7 @@ export class Paketlaeufer implements PaketLaeufer {
     if (this.holend || !this.laeuft()) return;
     this.holend = true;
     try {
-      const liste = await this.o.dienst.faelligeEreignisse(50);
+      const liste = await this.o.dienst.kern.repo.faelligeEreignisse(50);
       const jePaket = new Map<string, typeof liste>();
       for (const e of liste) jePaket.set(e.paketId, [...(jePaket.get(e.paketId) ?? []), e]);
       for (const [paket, es] of jePaket) {
@@ -576,7 +576,7 @@ export class Paketlaeufer implements PaketLaeufer {
   private async stellePaketZu(paket: string, es: PaketEreignis[]): Promise<void> {
     for (const e of es) {
       if (!this.laeuft()) return; // Wartung oder Läufer weg: später, ohne Versuch
-      if (!this.pakete.some((p) => p.id === paket)) { await this.o.dienst.ereignisFehlgeschlagen(e.id, t('meldungen.verwaltung.das-paket-hat-keinen'), null); continue; }
+      if (!this.pakete.some((p) => p.id === paket)) { await this.o.dienst.kern.repo.ereignisFehlgeschlagen(e.id, t('meldungen.verwaltung.das-paket-hat-keinen'), null); continue; }
       // Antwort jedes Aufrufs (#636): z. B. Stand der Kopie außer Haus – das Paket meldet ihn, statt selbst zu schreiben.
       const antwort = (r: Ergebnis, beginn: number) => r.ohneVersuch ? Promise.resolve() :
         this.o.dienst.nachEreignisAufruf(paket, e, { ok: r.ok, text: r.text, fehler: r.fehler, rc: r.rc, beginn }).catch((f) => log.warn('Paket-Läufer: Antwort des Pakets nicht übernommen', { paket, art: e.art, fehler: (f as Error).message }));
@@ -589,7 +589,7 @@ export class Paketlaeufer implements PaketLaeufer {
         const max = this.o.weiterMax ?? WEITER_MAX;
         if (abschnitt > max) { this.notiere(paket, { stufe: 2, text: t('meldungen.verwaltung.ereignis-nach-fortsetzungen-beendet', { max }) }); break; }
         e.daten = { ...e.daten, weiter, abschnitt };
-        await this.o.dienst.ereignisDaten(e.id, e.daten);
+        await this.o.dienst.kern.repo.ereignisDaten(e.id, e.daten);
         await this.o.dienst.texterkennungFortschritt(paket, e, weiter).catch(() => {});
         if (!this.laeuft()) return;
         beginn = Date.now();
@@ -599,10 +599,10 @@ export class Paketlaeufer implements PaketLaeufer {
       // Texterkennung als Paket (#458): Dokument wartet nicht länger, wenn das Paket fertig ist oder aufgibt.
       const nachher = (x: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) =>
         this.o.dienst.nachTexterkennungsEreignis(paket, e, x).catch((f) => log.warn('Paket-Läufer: Stand der Texterkennung nicht nachgetragen', { paket, fehler: (f as Error).message }));
-      if (r.ok) { await this.o.dienst.ereignisZugestellt(e.id); await nachher({ ok: true, text: r.text }); continue; }
+      if (r.ok) { await this.o.dienst.kern.repo.ereignisZugestellt(e.id); await nachher({ ok: true, text: r.text }); continue; }
       if (r.ohneVersuch) return;
       const w = WARTEN_MIN[e.versuche];
-      await this.o.dienst.ereignisFehlgeschlagen(e.id, r.fehler ?? 'Fehler', w === undefined ? null : new Date(Date.now() + w * 60_000));
+      await this.o.dienst.kern.repo.ereignisFehlgeschlagen(e.id, r.fehler ?? 'Fehler', w === undefined ? null : new Date(Date.now() + w * 60_000));
       if (w === undefined) { log.error(`Paket ${paket}: Ereignis aufgegeben`, { paket, art: e.art, fehler: r.fehler }); await nachher({ ok: false, text: '', fehler: r.fehler, aufgegeben: true }); continue; }
       return; // spätere Ereignisse dieses Pakets warten auf die Wiederholung (Reihenfolge)
     }
@@ -610,7 +610,7 @@ export class Paketlaeufer implements PaketLaeufer {
 
   /** Für die Werkbank: Stand je Paket mit Code. */
   async uebersicht(): Promise<{ laeuft: boolean; pausiert: boolean; zustand: LaeuferZustand; absturz: string | null; grenzen: Grenzen; pakete: PaketStand[] }> {
-    const ereignisse = await this.o.dienst.ereignisStand();
+    const ereignisse = await this.o.dienst.kern.repo.ereignisStand();
     const laeuft = !!this.kind && this.bereit;
     const zustand: LaeuferZustand = this.o.pausiert?.() ? 'pausiert' : laeuft ? 'bereit' : !this.pakete.length ? 'aus' : !this.kind && this.absturz ? 'neustart' : 'startet';
     return {

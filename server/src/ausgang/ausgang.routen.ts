@@ -22,7 +22,7 @@ export function exportRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/export', zugang: 'admin', handler: async () => {
       const ziel = exportZiel();
       const typen = await dienst.listeTypen();
-      return ok({ ordner: ziel, tage: EXPORT_TAGE, imSicherungsordner: !!x.exporte?.imSicherungsordner, volume: x.exporte?.volume ?? null, umzug: await umzugHinweis(dienst.einstellungenSpeicher), exporte: await exporteIn(ziel), abschaetzung: await dienst.exportAbschaetzung(), frei: await freierPlatz(ziel), kontakte: kontaktVorschlaege(typen), persoenlich: await dienst.persoenlicherExportErlaubt() });
+      return ok({ ordner: ziel, tage: EXPORT_TAGE, imSicherungsordner: !!x.exporte?.imSicherungsordner, volume: x.exporte?.volume ?? null, umzug: await umzugHinweis(dienst.kern.einstellungen), exporte: await exporteIn(ziel), abschaetzung: await dienst.exportAbschaetzung(), frei: await freierPlatz(ziel), kontakte: kontaktVorschlaege(typen), persoenlich: await dienst.persoenlicherExportErlaubt() });
     } },
     { methode: 'POST', pfad: '/api/werkbank/export', zugang: 'admin', handler: async (a) => {
       const e = (a.body ?? {}) as { passwoerter?: unknown; passwoerterBestaetigt?: unknown; protokolle?: unknown; kontakte?: unknown };
@@ -50,7 +50,7 @@ export function exportRouten(k: RoutenKontext): Route[] {
       }, VOLLEXPORT_PHASEN)), 202);
     } },
     // #797: Hinweis „Exporte aus dem Sicherungsordner verschoben“ gelesen.
-    { methode: 'POST', pfad: '/api/werkbank/export/umzug-gesehen', zugang: 'admin', handler: async () => { await umzugGesehen(dienst.einstellungenSpeicher); return ok(null); } },
+    { methode: 'POST', pfad: '/api/werkbank/export/umzug-gesehen', zugang: 'admin', handler: async () => { await umzugGesehen(dienst.kern.einstellungen); return ok(null); } },
     { methode: 'POST', pfad: '/api/werkbank/export/:name/pruefen', zugang: 'admin', handler: async (a) => ok(await pruefeExport(exportOrdner(exportZiel(), a.params.name))) },
     { methode: 'DELETE', pfad: '/api/werkbank/export/:name', zugang: 'admin', handler: async (a) => {
       await loescheExport(exportOrdner(exportZiel(), a.params.name));

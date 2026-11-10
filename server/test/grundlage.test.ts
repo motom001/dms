@@ -169,17 +169,17 @@ describe('Ein Ereigniskatalog, ein Ausgangskorb, eine Regel für Wiederholungen 
   it('Dokument hochgeladen: ein Ereignis im Ausgangskorb, Pakete bekommen es mit Dateinamen über die Zustellung', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const t = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-    await d.speicherePaket({ id: 'echo', name: 'Echo', version: '1.0.0', beschreibung: '', typen: {}, sichten: {}, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), laeufer: { sprache: 'wasm', ereignisse: ['dokument.hochgeladen'], rechte: { lesen: [], schreiben: [], dokumente: 'keine' }, netz: [] } } as never);
+    await d.kern.repo.speicherePaket({ id: 'echo', name: 'Echo', version: '1.0.0', beschreibung: '', typen: {}, sichten: {}, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), laeufer: { sprache: 'wasm', ereignisse: ['dokument.hochgeladen'], rechte: { lesen: [], schreiben: [], dokumente: 'keine' }, netz: [] } } as never);
     const katalog: string[] = [];
     d.ereignisse.abonniere('test', async (e) => { katalog.push(e.art); });
     const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } });
     await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo'), null);
     await d.ereignisse.verteile();
     assert.equal(katalog.filter((a) => a === 'dokument.hochgeladen').length, 1, 'genau einmal');
-    const [z] = (await d.faelligeEreignisse(10)).filter((x) => x.art === 'dokument.hochgeladen');
+    const [z] = (await d.kern.repo.faelligeEreignisse(10)).filter((x) => x.art === 'dokument.hochgeladen');
     assert.equal(z.paketId, 'echo');
     assert.equal(z.daten.name, 'brief.txt');
     await d.ereignisse.verteile();
-    assert.equal((await d.faelligeEreignisse(10)).filter((x) => x.art === 'dokument.hochgeladen').length, 1, 'keine doppelte Zustellung');
+    assert.equal((await d.kern.repo.faelligeEreignisse(10)).filter((x) => x.art === 'dokument.hochgeladen').length, 1, 'keine doppelte Zustellung');
   });
 });

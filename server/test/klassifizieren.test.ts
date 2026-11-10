@@ -75,8 +75,8 @@ async function aufbau() {
   const dokAlt = await dok(alteRechnung.id, 'alt.pdf', 'Rechnung Wartung 2025');
   const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
   const brief = await dok(post.id, 'rechnung.pdf', BRIEF);
-  await d.speicherePaket(paket('ki_assistent', 'KI-Assistent', ASSISTENT));
-  await d.speicherePaket(paket('ki_aehnlich', 'KI lokal – Ähnlichkeit', AEHNLICH));
+  await d.kern.repo.speicherePaket(paket('ki_assistent', 'KI-Assistent', ASSISTENT));
+  await d.kern.repo.speicherePaket(paket('ki_aehnlich', 'KI lokal – Ähnlichkeit', AEHNLICH));
   const A = await d.zugriff({ id: lena.id, rolle: 'admin' });
   const eingaenge: Array<{ paket: string; e: Record<string, unknown> }> = [];
   const antworten: Record<string, (e: Record<string, unknown>) => Promise<string>> = {

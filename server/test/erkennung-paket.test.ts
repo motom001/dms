@@ -67,8 +67,8 @@ async function aufbau() {
     pakete: () => [{ id: 'ki', name: 'Erkennung ki', netz: false }, { id: 'wolke', name: 'Erkennung wolke', netz: true }],
     erkenne: async (_p, e) => { eingaenge.push(e); return { text: await antwort(), ms: 3 }; },
   };
-  await d.speicherePaket(paket('ki'));
-  await d.speicherePaket(paket('wolke', ['https://anbieter.example/v1']));
+  await d.kern.repo.speicherePaket(paket('ki'));
+  await d.kern.repo.speicherePaket(paket('wolke', ['https://anbieter.example/v1']));
   return { d, konten, A, person, organisation, eingaenge, setzeAntwort: (f: () => Promise<string>) => { antwort = f; } };
 }
 
@@ -197,8 +197,8 @@ describe('Aus Dokument ausfüllen per Paket (#511): echter Paket-Läufer', () =>
     const wasm = festesErgebnis(JSON.stringify({ vorname: { wert: 'Jonas', sicherheit: 'hoch' }, funktion: { wert: 'Bauleiter' } }));
     const manifest = 'schema: 1\nid: erkenner\nname: Erkenner\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.125.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  rechte: { schnittstellen: ["dms:erkennen"] }\n';
     const p = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest)], ['code/modul.wasm', wasm]]));
-    await x.d.speicherePaketCode('erkenner', p.code!.dateien);
-    await x.d.speicherePaket({ ...paket('erkenner'), name: 'Erkenner', laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+    await x.d.kern.repo.speicherePaketCode('erkenner', p.code!.dateien);
+    await x.d.kern.repo.speicherePaket({ ...paket('erkenner'), name: 'Erkenner', laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
     const l = new Paketlaeufer({ dienst: x.d, konten: x.konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => ({}), speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 5, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });
     laeufer.push(l);
     await l.start();

@@ -165,11 +165,11 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('Ereignisse (#404): teilen, zusammenfügen und Post teilen melden jedes neue Dokument – nicht die eigenen eines Pakets', async () => {
     const { d, m, doc } = await aufbau(false);
-    await d.speicherePaket({ id: 'ocr', name: 'OCR', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: '', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
+    await d.kern.repo.speicherePaket({ id: 'ocr', name: 'OCR', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: '', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
     const neue = async () => {
       await d.ereignisse.verteile();
-      const liste = await d.faelligeEreignisse(100);
-      for (const e of liste) await d.ereignisZugestellt(e.id);
+      const liste = await d.kern.repo.faelligeEreignisse(100);
+      for (const e of liste) await d.kern.repo.ereignisZugestellt(e.id);
       return liste.map((e) => `${e.art}:${e.art === 'post.angelegt' ? e.daten.mappe : e.daten.dokument}`);
     };
     // Teilen in einer Mappe ohne Versionierung: alle drei Teile sind neue Dokumente.

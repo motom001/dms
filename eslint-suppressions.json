@@ -131,7 +131,7 @@
       "count": 18
     },
     "complexity": {
-      "count": 32
+      "count": 31
     },
     "max-depth": {
       "count": 2
@@ -230,6 +230,11 @@
   },
   "server/src/http/routen-kontext.ts": {
     "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/kern/loeschprotokoll.ts": {
+    "complexity": {
       "count": 1
     }
   },

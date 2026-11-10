@@ -161,12 +161,12 @@ function faelle(pg: boolean) {
         assert.ok(r.rechte.some((z) => z.startsWith('Grund_fra: kein Zugriff auf Netzwerk')), r.rechte.join('\n'));
         return true;
       });
-      assert.deepEqual(await d.listePakete(), []);
+      assert.deepEqual(await d.kern.repo.listePakete(), []);
       const erg = await p.ablaufInstallieren({ pakete: ['grund_fra', 'grund_ita'], rechteStand: plan.rechte.stand }, ICH);
       assert.deepEqual(erg.installiert.map((x) => x.id), ['grund', 'grund_fra', 'grund_ita']);
       assert.equal(erg.fehler, null);
       // Jedes Paket behält seine eigenen Rechte (eigenes Dienstkonto im Läufer).
-      const inst = await d.listePakete();
+      const inst = await d.kern.repo.listePakete();
       assert.deepEqual(inst.map((x) => [x.id, x.laeufer?.rechte.dokumente]), [['grund', 'lesen'], ['grund_fra', 'keine'], ['grund_ita', 'keine']]);
       assert.equal((await p.installierte()).find((x) => x.id === 'grund_fra')!.version, '1.0.0', 'jede Sprache bleibt ein eigenes Paket mit eigener Version');
     });
@@ -179,7 +179,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(plan.pakete.map((x) => x.id), ['grund_ita'], 'das Grundpaket ist da und kommt nicht noch einmal');
       const erg = await p.ablaufInstallieren({ pakete: ['grund_ita'], rechteStand: plan.rechte.stand }, ICH);
       assert.deepEqual(erg.installiert.map((x) => x.id), ['grund_ita']);
-      assert.deepEqual((await d.listePakete()).map((x) => x.id).sort(), ['grund', 'grund_ita']);
+      assert.deepEqual((await d.kern.repo.listePakete()).map((x) => x.id).sort(), ['grund', 'grund_ita']);
       const noch = await p.ablaufPlan({ pakete: ['grund'] });
       assert.match(noch.probleme.join(), /schon installiert/);
       await assert.rejects(p.ablaufInstallieren({ pakete: ['grund'] }, ICH), fehlerMit(409, /schon installiert/));
@@ -199,7 +199,7 @@ function faelle(pg: boolean) {
         assert.ok(r.rechte.some((z) => /Grund: Dokumente lesen und Volltext schreiben/.test(z)));
         return true;
       });
-      assert.deepEqual(await d.listePakete(), []);
+      assert.deepEqual(await d.kern.repo.listePakete(), []);
       const neu = await p.ablaufPlan({ pakete: ['grund_fra'] });
       const erg = await p.ablaufInstallieren({ pakete: ['grund_fra'], rechteStand: neu.rechte.stand }, ICH);
       assert.deepEqual(erg.installiert.map((x) => `${x.id}@${x.version}`), ['grund@1.1.0', 'grund_fra@1.0.0']);
@@ -228,7 +228,7 @@ function faelle(pg: boolean) {
       // Dienst-Adresse ohne Bestätigung: 409, nichts installiert.
       const einstellungen = { dienst: { adresse: 'http://ollama:11434/v1', modell: 'klein' } };
       await assert.rejects(p.ablaufInstallieren({ pakete: ['basis', 'kontakte', 'dienst', 'grund'], rechteStand: plan.rechte.stand, namen, einstellungen }, ICH), fehlerMit(409, /Dienst-Adressen bestätigen.*ollama/));
-      assert.deepEqual(await d.listePakete(), []);
+      assert.deepEqual(await d.kern.repo.listePakete(), []);
       const erg = await p.ablaufInstallieren({ pakete: ['basis', 'kontakte', 'dienst', 'grund'], rechteStand: plan.rechte.stand, namen, einstellungen, adresseBestaetigt: true, beispiele: ['kontakte'] }, ICH);
       assert.deepEqual(erg.installiert.map((x) => [x.id, x.einstellungen]), [['basis', 'keine'], ['kontakte', 'keine'], ['dienst', 'fertig'], ['grund', 'keine']]);
       const inst = await p.installierte();
@@ -271,7 +271,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(erg.fehlgeschlagen.map((x) => x.id), ['dritte']);
       assert.equal(erg.fehler?.id, 'dritte');
       assert.deepEqual(erg.nichtInstalliert.map((x) => [x.id, x.grund]), [['sechs', 'braucht „Kontakte“, das sich nicht installieren ließ']]);
-      assert.deepEqual((await d.listePakete()).map((x) => x.id).sort(), ['drei', 'eins', 'fuenf', 'zwei']);
+      assert.deepEqual((await d.kern.repo.listePakete()).map((x) => x.id).sort(), ['drei', 'eins', 'fuenf', 'zwei']);
     });
 
     it('ein Paket lässt sich nicht laden: nur es und was es braucht fallen weg, die übrigen lassen sich installieren (#646)', async () => {
@@ -289,7 +289,7 @@ function faelle(pg: boolean) {
       const erg = await p.ablaufInstallieren({ pakete: wahl, rechteStand: plan.rechte.stand }, ICH);
       assert.deepEqual(erg.installiert.map((x) => x.id).sort(), ['eins', 'fuenf']);
       assert.deepEqual(erg.nichtInstalliert.map((x) => x.id), ['gross', 'nutzt']);
-      assert.deepEqual((await d.listePakete()).map((x) => x.id).sort(), ['eins', 'fuenf']);
+      assert.deepEqual((await d.kern.repo.listePakete()).map((x) => x.id).sort(), ['eins', 'fuenf']);
     });
 
     it('Fehler bei einem Paket: es ist zurückgenommen, die davor bleiben, was es braucht, kommt nicht dran', async () => {
@@ -304,7 +304,7 @@ function faelle(pg: boolean) {
       assert.equal(erg.fehler?.id, 'kontakte');
       assert.match(erg.fehler!.meldung, /Beispiel/);
       assert.deepEqual(erg.nichtInstalliert.map((x) => x.id), ['grund_fra']);
-      assert.deepEqual((await d.listePakete()).map((x) => x.id), ['grund']);
+      assert.deepEqual((await d.kern.repo.listePakete()).map((x) => x.id), ['grund']);
       assert.equal((await d.listeTypen()).length, typenVorher, 'vom gescheiterten Paket bleibt kein Mappentyp');
     });
   });
@@ -334,7 +334,7 @@ describe('Sammeldatei im selben Ablauf (#405, #461)', () => {
     await assert.rejects(p.ablaufInstallieren({ uploads, rechteStand: plan.rechte.stand }, ICH), fehlerMit(409, /Herkunft bestätigen/));
     const erg = await p.ablaufInstallieren({ uploads, rechteStand: plan.rechte.stand, bestaetigt: true }, ICH);
     assert.deepEqual(erg.installiert.map((x) => x.id), ['grund', 'grund_fra', 'grund_ita']);
-    assert.deepEqual((await d.listePakete()).map((x) => x.herkunft.art), ['hochgeladen', 'hochgeladen', 'hochgeladen']);
+    assert.deepEqual((await d.kern.repo.listePakete()).map((x) => x.herkunft.art), ['hochgeladen', 'hochgeladen', 'hochgeladen']);
     await assert.rejects(p.ablaufPlan({ uploads }), fehlerMit(410, /abgelaufen/), 'Upload-Kennungen gelten nur bis zur Installation');
   });
 });

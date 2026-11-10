@@ -21,6 +21,7 @@ import { PROJEKT_SCHLUESSEL } from '../src/projektschluessel';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { oeffentlichPem, signatur, TEST_PROJEKT, TEST_SEED } from './katalogschluessel';
+import { paketKatalogStaende, paketQuellen } from '../src/pakete/pakete.einstellungen';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
 const OFFIZIELL = 'https://katalog.test/katalog.json';
@@ -203,7 +204,7 @@ describe('Offizieller Katalog mit Signatur (#594)', () => {
     await p.katalog();
     offiziell([basis, basis11], iso(1));
     assert.equal((await p.katalog()).katalog.pakete[0].aktuell, '1.1.0');
-    assert.equal((await d.paketKatalogStaende())[OFFIZIELL], iso(1));
+    assert.equal((await paketKatalogStaende(d.kern))[OFFIZIELL], iso(1));
     await p.katalog();
     offiziell([basis], iso(2));
     await assert.rejects(p.katalog(), /älteren Stand/);
@@ -237,7 +238,7 @@ describe('Sammeldatei mit signiertem Katalog (#594)', () => {
     assert.equal(s.pakete[0].vorschau.pruefung?.art, 'projekt');
     const inst = await p.installiere({ upload: s.pakete[0].upload }, ICH);
     assert.equal(inst.herkunft.art, 'hochgeladen');
-    assert.equal((await d.paketKatalogStaende())[OFFIZIELL], stand);
+    assert.equal((await paketKatalogStaende(d.kern))[OFFIZIELL], stand);
   });
 
   it('älter als 90 Tage: Hinweis; Archiv nicht im Katalog: dafür Bestätigung', async () => {
@@ -297,7 +298,7 @@ describe('Eigener Katalog mit eigenem Schlüssel (#594)', () => {
     const { p, d } = await eigen();
     const fp = await fingerabdruckAus(p.quelleHinzufuegen({ url: EIGEN }, ICH));
     assert.equal(fp, liesSchluessel(oeffentlichPem(TEST_SEED.anbieter)).fingerabdruck);
-    assert.equal((await d.paketQuellen()).length, 0, 'nicht stillschweigend übernommen');
+    assert.equal((await paketQuellen(d.kern)).length, 0, 'nicht stillschweigend übernommen');
     await assert.rejects(p.quelleHinzufuegen({ url: EIGEN, fingerabdruck: 'abcd' }, ICH), /anderen Fingerabdruck/);
     const quellen = await p.quelleHinzufuegen({ url: EIGEN, fingerabdruck: fp }, ICH);
     assert.equal(quellen[1].fingerabdruck, fp);

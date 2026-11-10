@@ -56,8 +56,8 @@ async function aufbau(repo: Repo = speicherRepo()) {
   };
   const kniebrief = await dok(befund.id, 'knie.pdf', 'Diagnose: Meniskusriss im Knie. Versicherung zahlt die Behandlung.');
   const stromrechnung = await dok(strom.id, 'strom.pdf', 'Ihre Versicherung und Ihr Stromvertrag: Abschlag 80 Euro im Monat.');
-  await d.speicherePaket(paket('wolke', code(WOLKE)));
-  await d.speicherePaket(paket('imhaus', code(IM_HAUS)));
+  await d.kern.repo.speicherePaket(paket('wolke', code(WOLKE)));
+  await d.kern.repo.speicherePaket(paket('imhaus', code(IM_HAUS)));
   const L = await d.zugriff({ id: lena.id, rolle: 'admin' });
   const alsPaket = (id: string) => d.zugriff({ id: `konto-${id}`, rolle: 'mitglied', art: 'dienst', paketId: id });
   return { d, repo, konten, lena, gesundheit, vertrag, befund, strom, kniebrief, stromrechnung, L, alsPaket };
@@ -130,7 +130,7 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
 
   it('Paket mit Netz, nur „Dokument hochgeladen“, ohne Rechte: nichts aus gesperrten Typen, auch kein Dateiname', async () => {
     const x = await aufbau();
-    await x.d.speicherePaket(paket('melder', code({ rechte: {}, ereignisse: ['dokument.hochgeladen'], netz: ['https://melder.example.org/v1'] })));
+    await x.d.kern.repo.speicherePaket(paket('melder', code({ rechte: {}, ereignisse: ['dokument.hochgeladen'], netz: ['https://melder.example.org/v1'] })));
     await x.d.setzeKiTyp(x.vertrag.id, true, null);
     const hoch = (m: string, name: string) => x.d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), x.lena.id);
     await hoch(x.befund.id, 'roentgen-knie.pdf');
@@ -145,7 +145,7 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
 
   it('„Wohin gehört das?“ (#939): Ein KI-Paket mit dms:klassifizieren bekommt Text aus allen zugelassenen Typen – auch ohne Leserecht', async () => {
     const x = await aufbau();
-    await x.d.speicherePaket(paket('sortierer', code({ rechte: { schnittstellen: ['dms:klassifizieren'] }, netz: ['https://ki.example.org/v1'] })));
+    await x.d.kern.repo.speicherePaket(paket('sortierer', code({ rechte: { schnittstellen: ['dms:klassifizieren'] }, netz: ['https://ki.example.org/v1'] })));
     await x.d.setzeKiTyp(x.vertrag.id, true, null);
     assert.deepEqual((await x.d.kiUebersicht()).pakete.find((p) => p.id === 'sortierer')?.bekommt, [x.vertrag.id], 'zugelassene Typen, nicht der gesperrte');
   });
@@ -205,7 +205,7 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     const g = (await r('PUT', '/api/werkbank/ki-typen/:typId').handler(a({ typId: x.gesundheit.id }, { zugelassen: true }))).body as { typen: Array<{ id: string; zugelassen: boolean }> };
     assert.equal(g.typen.find((t) => t.id === x.gesundheit.id)!.zugelassen, true);
     // Nach dem Update (Migration 092) steht „hinweis“ in der Einstellung – die Übersicht zeigt ihn, „Verstanden“ nimmt ihn weg.
-    await x.d.einstellungenSpeicher!.schreibe('ki_typen', { zugelassen: [x.gesundheit.id], hinweis: true });
+    await x.d.kern.einstellungen!.schreibe('ki_typen', { zugelassen: [x.gesundheit.id], hinweis: true });
     const u1 = (await r('GET', '/api/werkbank/uebersicht').handler(a({}))).body as { kiTypen?: { pakete: Array<{ id: string }> } | null };
     assert.deepEqual(u1.kiTypen?.pakete.map((p) => p.id), ['wolke']);
     await r('POST', '/api/werkbank/uebersicht/erledigt').handler(a({}, { schluessel: 'ki.typen' }));
