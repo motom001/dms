@@ -20,9 +20,9 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
 
 - Jede Klasse bekommt den **Kern**; `MappenDienst`, `MappenEingaben` und `MappenArchiv` dazu die Rechteprüfung
   (`ZugriffDienst`). `MappenDienst` bekommt die übrigen Klassen als `MappenTeile`.
-- Was noch im Dienst liegt, kommt über einen Anschluss herein: Konten, Aufgaben ohne Leserecht, Archivfassung und
-  PDF-Schutz am Dokument, Datenschutz, `loeschPruefung`, `meldeVerknuepft`, Schlüssel (`verschluessele`, Tresor),
-  Aufkleber, Aufträge, fehlende Dateien.
+- Was noch im Dienst liegt oder über ihn kommt, kommt über einen Anschluss herein: Konten, Aufgaben ohne Leserecht,
+  Archivfassung, PDF-Schutz und fehlende Dateien (aus `dokumente/`, #1075), Datenschutz, `loeschPruefung`,
+  `meldeVerknuepft`, Schlüssel (`verschluessele`, Tresor), Aufkleber, Aufträge.
 - Importiert nur sich selbst, Kern, Rechteprüfung und Mappentypen (je über `index.ts`), `shared/` und die Basis –
   geprüft mit `npm run lint:abh` (Regel `fachordner`, Schicht 2 in `SCHICHTEN`).
 - Wer Mappen braucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen).

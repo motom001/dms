@@ -151,9 +151,27 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `archiv.ts` | `MappenArchiv` (`dienst.mappenArchiv`) | Archivnummer (#345), Archivmodus (#212: `darfWeg`, `archivVorschau`), `pruefeDateien` |
 
 - **Tür:** `mappen/index.ts`; die Routen (`mappen.routen.ts`) holt nur `routen.ts` direkt. Die Eingabe-Hilfen der Mappentypen bleiben in `mappentypen/eingabe.ts`.
-- **Bekommt den Kern**, `MappenDienst`, `MappenEingaben` und `MappenArchiv` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Konten, Aufgaben ohne Leserecht, Archivfassung und PDF-Schutz, Datenschutz, `loeschPruefung`, `meldeVerknuepft`, Schlüssel, Aufkleber, Aufträge).
+- **Bekommt den Kern**, `MappenDienst`, `MappenEingaben` und `MappenArchiv` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt oder über ihn kommt (Konten, Aufgaben ohne Leserecht, Archivfassung und PDF-Schutz aus den [Dokumenten](#dokumente), Datenschutz, `loeschPruefung`, `meldeVerknuepft`, Schlüssel, Aufkleber, Aufträge).
 - **Sofortiges:** `legeMappeAn` und `aendereMappe` melden am Ende ihrer Transaktion `kern.anlaesse.mappeGeaendert` – die [Anschlusspunkte](#anschlusspunkte) und ihre Reihenfolge sind unverändert.
 - **Noch im Dienst:** Notizen schreiben, Löschen und Papierkorb, Aufgaben und Fristen, `meldeVerknuepft`.
+
+## Dokumente (#1075) { #dokumente }
+
+`server/src/dokumente/` (Schicht 2) bündelt alles rund um die Dateien an einer Mappe – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`baueDokumente()`) und behält für jede Methode eine einzeilige Weiterleitung:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `dokumente.dienst.ts` | `DokumenteDienst` (`dienst.dokumente`) | `ladeHoch`, `loescheDokument`, `holeDokument`, `dokumentInhalt`, `textAusDatei`, Texterkennung und Vorschaubilder anbinden, `neueDateien`, `raeumeAuf`; `dateiname`, `erkenneAnzeigbar` |
+| `versionen.ts` | `DokumentVersionen` (`dienst.dokumentVersionen`) | `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion`, `versionen`, `versionInhalt`, `beruehre` |
+| `umwandeln.ts` | `DokumentUmwandlung` (`dienst.dokumentUmwandlung`) | Dateien umwandeln (#577): `nachFassung`, `umwandelPaketDa`, `setzeFassung`, `fassungVon`, `umwandlungStand` |
+| `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | Archivfassung (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `archivStand` |
+| `geschuetzte-pdf.ts` | `GeschuetztePdfs` (`dienst.geschuetztePdfs`) | geschützte PDFs (#827): `entsperreDokument`, `nachEntsperren`, `mitPdfSchutz` |
+| `fehlende-dateien.ts` | `FehlendeDateien` (`dienst.dateienFehlen`) | fehlende Dateien (#877): `merkeFehlendeDatei`, `fehlendeDateien`, `dokumenteOhneDatei`, `pruefeVorhanden` |
+
+- **Tür:** `dokumente/index.ts`; die Routen (`dokumente.routen.ts`) holt nur `routen.ts` direkt. Die Technik der Fassungen (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) bleibt außerhalb und ist für Fachordner ein Werkzeug (siehe [Schichten](#schichten)).
+- **Bekommt den Kern** und die Teile dieses Ordners, die eine Klasse ruft, und je Klasse einen Anschluss für das, was noch im Dienst liegt oder im Kreis liefe (Ereignis und Titel über die Fassade, Archivmodus, Verkleinern, Volltext, Aufträge an Pakete, Paket-Einstellungen, Mappentypen, Texterkennung).
+- **Reihenfolge:** `ladeHoch` schreibt Historie, „zuletzt geändert“, Dokument, Volltext und `dokument.hochgeladen` in einer Transaktion, Vorschau, Umwandeln und Entsperren laufen danach; `nachFassung`, `nachEntsperren`, `archivNachVolltext` und `nachNeuerVersion` sind unverändert und werden an denselben Stellen gerufen.
+- **Noch im Dienst:** Volltext (`volltextFertig`, `volltextAusgelassen`), PDF bearbeiten, Verkleinern und Schwärzen, `entsperrtZu`.
 
 ### Schichten { #schichten }
 
@@ -166,7 +184,7 @@ Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutze
 | 2 | `mappentypen/`, `mappen/`, `dokumente/` |
 | 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `post/`, `aufgaben/` …) |
 
-Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
+Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
 
 ## Abhängigkeiten { #abhaengigkeiten }
 
