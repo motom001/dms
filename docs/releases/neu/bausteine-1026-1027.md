@@ -1,0 +1,6 @@
+art: patch
+
+## Geändert
+
+- **Eingabefelder besser zu erkennen** (#1026): Der Rand von Eingaben, Auswahllisten und der Farbwahl ist kräftiger und erreicht hell, dunkel und bei hohem Kontrast mindestens 3:1 gegen den Hintergrund. Gesperrte Felder bleiben grau mit schwächerem Rand.
+- **Am Handy leichter zu treffen** (#1027): Knöpfe, Eingaben, Haken und das Hilfe-„?“ in Formularen haben am Touch-Bildschirm eine Tippfläche von mindestens 44 × 44 Pixeln; kleine Knöpfe und das „?“ sehen dabei aus wie bisher. Mit der Maus ändert sich nichts.
