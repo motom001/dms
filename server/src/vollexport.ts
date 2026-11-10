@@ -10,7 +10,7 @@ import type { Zelle } from './xlsx';
 import { aufbewahrenBis } from '../../shared/src/archiv';
 import { EXPORT_TAGE } from '../../shared/src/auskunft';
 import { kernTyp } from '../../shared/src/dateiumwandlung';
-import { auswahlText, istLeer, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
+import { auswahlText, istLeer, mehrereZiele, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
 import { istZeitraum, zeitraumIso } from '../../shared/src/feldarten';
 import type { Erinnerung } from '../../shared/src/fristen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
@@ -413,12 +413,14 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
     const dateiname = sichererName(mappentyp.schluessel ? kennungAlsDateiname(mappentyp.schluessel) : mappentyp.name, 130);
     // CSV und JSON Lines: alle Felder, Verweise als Id und Titel.
     const kopf = ['id', 'titel', 'angelegt', 'angelegt_von', 'geaendert', 'geaendert_von', ...(mappentyp.archiv ? ['aufbewahren_bis'] : []),
-      ...mappentyp.felder.flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];
+      // Verweise mit mehreren Zieltypen (#1036): dazu der Mappentyp jeder Mappe (Kennung, sonst Name).
+      ...mappentyp.felder.flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`, ...(mehrereZiele(f) ? [`${f.key}_typ`] : [])] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];
+    const typVonMappe = (id: string) => { const x = typVon.get(alleMappen.get(id)?.typId ?? ''); return x ? x.schluessel ?? x.name : ''; };
     const csvZeileVon = (m: Mappe) => [m.id, m.titel ?? '', m.erstellt, m.erstelltVon ?? '', m.geaendert, m.geaendertVon ?? '', ...(mappentyp.archiv ? [aufbewahrenBis(mappentyp.archiv, m) ?? ''] : []),
       ...mappentyp.felder.flatMap((f) => {
         const v = m.werte[f.key];
         if (f.typ === 'passwort') return [istLeer(v) ? '' : '(gesetzt)'];
-        if (f.typ === 'referenz') { const ids = Array.isArray(v) ? v.map(String) : v ? [String(v)] : []; return [ids.join(' | '), ids.map(titel).join(' | ')]; }
+        if (f.typ === 'referenz') { const ids = Array.isArray(v) ? v.map(String) : v ? [String(v)] : []; return [ids.join(' | '), ids.map(titel).join(' | '), ...(mehrereZiele(f) ? [ids.map(typVonMappe).join(' | ')] : [])]; }
         if (f.typ === 'betrag') { const x = v && typeof v === 'object' ? v as { betrag?: unknown; waehrung?: unknown } : {}; return [x.betrag == null ? '' : String(x.betrag), String(x.waehrung ?? '')]; }
         return [zelle(v)];
       })];
@@ -577,7 +579,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | --- | --- |
 | \`manifest.json\` | Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht |
 | \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter) |
-| \`daten/<typ>.csv\` | je Mappentyp eine Tabelle: eine Zeile je Mappe, eine Spalte je Feldschlüssel; Verweise als Id und \`_titel\` |
+| \`daten/<typ>.csv\` | je Mappentyp eine Tabelle: eine Zeile je Mappe, eine Spalte je Feldschlüssel; Verweise als Id und \`_titel\`, bei mehreren Zieltypen dazu \`_typ\` |
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |
 | \`daten/verweise.csv\` | Mappe → Feld → Mappe |

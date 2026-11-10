@@ -58,6 +58,10 @@ A rule means: **if** all conditions apply, **then** set these permissions.
 
 Every condition can be reversed with **not**. Several conditions of one rule must **all** apply; for "or" you create two rules.
 
+#### Points to a folder of type … { #zeigt-auf-mappe-vom-typ }
+
+For a link field with [several target types](mappentypen.md#mehrere-zieltypen), **Field of the folder** also has **points to a folder of type …**, e.g. "*concerns* points to a folder of type vehicle". This condition stays **closed when in doubt**: if the field points to a folder whose type the person may not see, the rule counts as **not met if it grants permissions** and as **met if it withdraws them** – also with **not**. That way permissions give nothing away the person may not see, and open nothing up through a type they don't know. They may see a type if the rules let them read any folders of it at all (reading granted through such a condition doesn't count here). The [test run](#testlauf) works out the same.
+
 !!! tip "Permissions that depend on the content"
     If someone changes a field that their permissions depend on (for instance "Responsible"), Ablago asks before saving if they would thereby withdraw their own reading or editing.
 

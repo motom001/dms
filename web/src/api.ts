@@ -826,7 +826,7 @@ export const api = {
   /** Folgt aus (#886): was aus den Quellen in `werte` folgt – je Feld die Mappe oder null. */
   folgen: (typId: string, werte: Werte) => anfrage<{ felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> }>('POST', '/api/mappen/folgen', { typId, werte }),
   /** Auswahlfilter am Referenzfeld (#172): wie viele Mappen passen? */
-  auswahlZaehlen: (zielTyp: string, bedingungen: Feldbedingung[]) => anfrage<{ passen: number; gesamt: number; probleme: string[] }>('POST', '/api/werkbank/auswahlfilter/zaehlen', { zielTyp, bedingungen }),
+  auswahlZaehlen: (zielTypen: string[], bedingungen: Feldbedingung[]) => anfrage<{ passen: number; gesamt: number; probleme: string[] }>('POST', '/api/werkbank/auswahlfilter/zaehlen', { zielTypen, bedingungen }),
   /* Nummernkreise (#171) */
   nummernkreise: () => anfrage<NummernkreisAnsicht[]>('GET', '/api/werkbank/nummernkreise'),
   /* Paketverwaltung (#188, #189) */

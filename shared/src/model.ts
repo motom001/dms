@@ -73,8 +73,24 @@ export interface Feld {
   /** Auswahl: die festen Werte (#728) – gespeichert wird der Wert, gezeigt die Beschriftung (`beschriftungen`). */
   optionen?: string[];
   mehrfach?: boolean;
-  /** Referenz: Id des Ziel-Mappentyps (darf der eigene sein → Hierarchie). */
-  zielTyp?: string;
+  /**
+   * Referenz: Ids der Ziel-Mappentypen (#1036; bis dahin ein einzelner Typ `zielTyp`) – einer oder mehrere, der eigene
+   * darf dabei sein (Hierarchie). `['*']` (BELIEBIGER_TYP) = jede Mappe, nur an Systemfeldern. Gelesen immer über
+   * {@link zieleVon}, {@link zielErlaubt} und {@link einzigesZiel}; ältere Daten mit `zielTyp` gleicht
+   * {@link normalisiereZiele} an (Migration 095, Eingaben, Sicherungen, Einrichtungsdateien).
+   */
+  zielTypen?: string[];
+  /**
+   * Referenz mit mehreren Zieltypen und „mehrere Mappen erlaubt“ (#1036): alle gewählten Mappen vom selben Typ – ist
+   * die erste ein Fahrzeug, dürfen die weiteren nur Fahrzeuge sein. Prüft der Server beim Speichern.
+   */
+  gleicherTyp?: boolean;
+  /**
+   * Referenz aus einem Paket (#1036, `ziel_optional`): Kennungen `paket:schluessel` von Zieltypen aus Paketen, von denen
+   * das Paket nicht abhängt. Ablago nimmt jeden davon in `zielTypen` auf, sobald es ihn gibt – auch, wenn das andere
+   * Paket erst später installiert wird – und lässt das Feld stehen, solange keiner da ist.
+   */
+  zielOptional?: string[];
   verweisart?: Verweisart;
   /** Systemfeld eines Systemmappentyps: nicht entfernbar, Datentyp und Eigenschaften fest (vom Server gesetzt). */
   system?: boolean;
@@ -289,8 +305,8 @@ export const systemrolleKennung = (r: keyof typeof ROLLEN) => `rolle:${r}`;
 export const FRUEHERE_ADMINROLLE = 'rolle:admin';
 export const istSystemrolle = (m: Pick<Mappe, 'systemKennung'> | undefined) => !!m?.systemKennung?.startsWith('rolle:');
 
-/** Ziel eines Referenzfelds, das auf Mappen jedes Typs zeigen darf – nur für Systemfelder (Post → Zugeordnet zu, #58, #192). */
-export const BELIEBIGER_TYP = '*';
+import { BELIEBIGER_TYP, gemeinsameFelder, jedeMappe, zieleVon, zielErlaubt } from './verweisziele';
+export { BELIEBIGER_TYP, ZIELTYPEN_MAX, einzigesZiel, gemeinsameFelder, gleicheZiele, jedeMappe, mehrereZiele, normalisiereZiele, zielErlaubt, zieleVon, zielTypenAus } from './verweisziele';
 
 /* ---------- Post (#192): alles, was hinein- oder hinausgeht ---------- */
 
@@ -349,8 +365,8 @@ function systemfelderRoh(s: Systemtyp, rolleTypId: string, benutzerTypId = ''): 
     { key: 'datum', label: l('datum'), typ: 'datum', system: true },
     { key: 'absender', label: l('absender'), typ: 'text', system: true },
     { key: 'an', label: l('an'), typ: 'text', system: true },
-    { key: 'fuer', label: l('fuer'), typ: 'referenz', zielTyp: benutzerTypId, verweisart: 'bezug', system: true, hilfe: h('fuer') },
-    { key: 'bezug', label: l('bezug'), typ: 'referenz', mehrfach: true, zielTyp: BELIEBIGER_TYP, verweisart: 'bezug', system: true, hilfe: h('bezug') },
+    { key: 'fuer', label: l('fuer'), typ: 'referenz', zielTypen: [benutzerTypId], verweisart: 'bezug', system: true, hilfe: h('fuer') },
+    { key: 'bezug', label: l('bezug'), typ: 'referenz', mehrfach: true, zielTypen: [BELIEBIGER_TYP], verweisart: 'bezug', system: true, hilfe: h('bezug') },
     { key: 'nachricht', label: l('nachricht'), typ: 'langtext', system: true },
   ];
   if (s === 'rolle') return [
@@ -359,13 +375,13 @@ function systemfelderRoh(s: Systemtyp, rolleTypId: string, benutzerTypId = ''): 
   return [
     { key: 'name', label: l('name'), typ: 'text', pflicht: true, system: true },
     { key: 'email', label: l('email'), typ: 'text', pflicht: true, eindeutig: true, system: true },
-    { key: 'rollen', label: l('rollen'), typ: 'referenz', mehrfach: true, zielTyp: rolleTypId, verweisart: 'bezug', system: true, hilfe: h('rollen') },
+    { key: 'rollen', label: l('rollen'), typ: 'referenz', mehrfach: true, zielTypen: [rolleTypId], verweisart: 'bezug', system: true, hilfe: h('rollen') },
     { key: 'aktiv', label: l('aktiv'), typ: 'janein', system: true },
     // Abwesenheit (#78): gespiegelt aus Profil bzw. Benutzerverwaltung; „Abwesend“ = wirkt gerade.
     { key: 'abwesend', label: l('abwesend'), typ: 'janein', system: true, hilfe: h('abwesend') },
     { key: 'abwesend_von', label: l('abwesend_von'), typ: 'datum', system: true },
     { key: 'abwesend_bis', label: l('abwesend_bis'), typ: 'datum', system: true },
-    { key: 'vertreter', label: l('vertreter'), typ: 'referenz', zielTyp: benutzerTypId, verweisart: 'bezug', system: true, hilfe: h('vertreter') },
+    { key: 'vertreter', label: l('vertreter'), typ: 'referenz', zielTypen: [benutzerTypId], verweisart: 'bezug', system: true, hilfe: h('vertreter') },
   ];
 }
 
@@ -663,7 +679,7 @@ function pruefeRegister(mappentypDaten: MappentypDaten, ctx: TypKontext, p: Prue
       for (const q of r.quellen ?? []) {
         const felder = q.typId === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(q.typId);
         const f = felder?.find((x) => x.key === q.feldKey);
-        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId && f.zielTyp !== BELIEBIGER_TYP)) melde(p, 'register', t('gemeinsam.model.register-eine-quelle-verweist', { name }));
+        if (!f || f.typ !== 'referenz' || !zielErlaubt(f, ctx.eigeneId)) melde(p, 'register', t('gemeinsam.model.register-eine-quelle-verweist', { name }));
       }
     }
   }
@@ -706,14 +722,18 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
     else if (istIndexplatzhalter(f.key)) m.push(t('gemeinsam.model.kennung-ist-fuer-den', { key: f.key, INDEXPLATZHALTER: INDEXPLATZHALTER[f.key as Indexplatzhalter] }));
     gesehen.add(f.key);
     if (f.typ === 'referenz') {
-      if (!f.zielTyp) m.push(t('gemeinsam.model.ziel-mappentyp-auswaehlen'));
-      else if (f.zielTyp === BELIEBIGER_TYP) { if (!f.system) m.push(t('gemeinsam.model.ziel-mappentyp-auswaehlen')); }
-      else if (f.zielTyp !== ctx.eigeneId && !ctx.existiertTyp(f.zielTyp)) m.push(t('gemeinsam.model.der-ziel-mappentyp-existiert'));
+      // Ziele (#1036): ein oder mehrere Mappentypen; nur aus einem Paket mit optionalen Zielen darf die Liste (noch) leer sein.
+      const ziele = zieleVon(f);
+      if (jedeMappe(f)) { if (!f.system) m.push(t('gemeinsam.model.ziel-mappentyp-auswaehlen')); }
+      else if (!ziele.length) { if (!f.zielOptional?.length) m.push(t('gemeinsam.model.ziel-mappentyp-auswaehlen')); }
+      else if (ziele.some((z) => z !== ctx.eigeneId && !ctx.existiertTyp(z))) m.push(t('gemeinsam.model.der-ziel-mappentyp-existiert'));
       else if (f.auswahlFilter?.length && ctx.auswahlProbleme) {
-        // Auswahlfilter (#172): Bedingungen gegen die Felder des Zieltyps.
-        const ziel = f.zielTyp === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(f.zielTyp);
-        if (ziel) for (const x of ctx.auswahlProbleme(f.auswahlFilter, ziel, { felder: mappentypDaten.felder, feldKey: f.key })) m.push(`Auswahlfilter: ${x}`);
+        // Auswahlfilter (#172): Bedingungen gegen die Felder des Zieltyps – bei mehreren gegen die Felder, die alle haben.
+        const listen = ziele.map((z) => (z === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(z)));
+        if (listen.every(Boolean)) for (const x of ctx.auswahlProbleme(f.auswahlFilter, gemeinsameFelder(listen as Feld[][]), { felder: mappentypDaten.felder, feldKey: f.key })) m.push(`Auswahlfilter: ${x}`);
       }
+      // „Alle vom selben Typ“ (#1036) nur mit mehreren Mappen; mit (noch) einem Zieltyp schadet es nicht – optionale können kommen.
+      if (f.gleicherTyp && !f.mehrfach) m.push(t('gemeinsam.model.gleicher-typ-nur-mehrfach'));
       // Folgt aus (#886): Quelle und Zielfeld gibt es und sie passen; Kreise meldet die Prüfung unten.
       if (f.folgtAus) m.push(...folgtAusProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     }
@@ -822,7 +842,9 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
         const ids = Array.isArray(v) ? v : [v];
         if (!f.mehrfach && Array.isArray(v)) { fehler(f.key, t('gemeinsam.model.nur-ein-verweis-erlaubt')); break; }
         if (ids.some((id) => typeof id !== 'string' || ctx.typVon(id) === undefined)) fehler(f.key, t('gemeinsam.model.verweist-auf-eine-mappe'));
-        else if (f.zielTyp !== BELIEBIGER_TYP && ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, t('gemeinsam.model.verweist-auf-eine-mappe-2'));
+        else if (ids.some((id) => !zielErlaubt(f, ctx.typVon(id as string)))) fehler(f.key, t('gemeinsam.model.verweist-auf-eine-mappe-2'));
+        // „Alle vom selben Typ“ (#1036): wie die erste Mappe.
+        else if (f.gleicherTyp && f.mehrfach && new Set(ids.map((id) => ctx.typVon(id as string))).size > 1) fehler(f.key, t('gemeinsam.model.gleicher-typ'));
         break;
       }
     }

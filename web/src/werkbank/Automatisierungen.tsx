@@ -7,7 +7,7 @@ import {
 } from '../../../shared/src/automatisierung';
 import { EREIGNISKATALOG, ereignisSchluessel, type Ereignisgruppe } from '../../../shared/src/ereignisse';
 import { VORLAUF_EINHEITEN, WIEDERHOLUNGEN, type VorlaufEinheit } from '../../../shared/src/fristen';
-import type { Mappentyp } from '../../../shared/src/model';
+import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
 import { api, type Bezuege } from '../api';
 import { MappenWahl } from '../ablage/MappeFormular';
@@ -548,7 +548,7 @@ function undKurz(u: UndKarte, typ: Mappentyp | null, k: Kontextdaten, titelVon: 
 
 function EmpfaengerWahl({ e, typ, k, setze, wenn }: { e: Empfaenger; typ: Mappentyp | null; k: Kontextdaten; setze: (e: Empfaenger) => void; wenn?: WennKarte }) {
   const benutzerTyp = k.typen.find((x) => x.system === 'benutzer');
-  const felder = (typ?.felder ?? []).filter((f) => f.typ === 'referenz' && (!f.zielTyp || f.zielTyp === benutzerTyp?.id));
+  const felder = (typ?.felder ?? []).filter((f) => f.typ === 'referenz' && ((!zieleVon(f).length && !jedeMappe(f)) || einzigesZiel(f) === benutzerTyp?.id));
   const ausEreignis = wenn ? PERSONEN_IM_EREIGNIS[wenn.art] ?? [] : [];
   const wert = e.art === 'feld' ? `feld:${e.feld}` : e.art === 'ereignis' ? `ereignis:${e.feld}` : e.art === 'ersteller' ? 'ersteller:' : `${e.art}:${e.id}`;
   return (

@@ -7,6 +7,7 @@
  * Ersteller der Mappe. Ändert sich das Datum oder wird es leer, erledigt sich die Aufgabe selbst.
  */
 import type { Feld, Mappe, Mappentyp } from './model';
+import { einzigesZiel } from './verweisziele';
 import { verschiebe } from './sichten';
 import { t } from './texte';
 
@@ -55,7 +56,7 @@ export const fristFelder = (typ: Pick<Mappentyp, 'felder'>): Feld[] => typ.felde
 
 /** Benutzerfelder, die als Empfänger taugen: Referenz auf den Typ Benutzer, einfach. */
 export const empfaengerFelder = (typ: Pick<Mappentyp, 'felder'>, benutzerTypId: string | undefined): Feld[] =>
-  typ.felder.filter((f) => f.typ === 'referenz' && !f.mehrfach && !!benutzerTypId && f.zielTyp === benutzerTypId);
+  typ.felder.filter((f) => f.typ === 'referenz' && !f.mehrfach && !!benutzerTypId && einzigesZiel(f) === benutzerTypId);
 
 /** Ab wann die Frist im Eingang steht. */
 export const fristAb = (datum: string, f: FristEinstellung) => verschiebe(datum, -f.vorlauf, f.einheit);

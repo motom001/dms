@@ -20,7 +20,7 @@ import {
   KANDIDATEN_MAX, KLASSIFIZIEREN_HINWEIS, KLASSIFIZIEREN_TEXT_MAX, klassifizierSchema, kurzText, pruefeKlassifizierung, verbindeWege,
   type Kandidat, type Klassbeleg, type Klassifizierung as Ergebnis, type Wegstand,
 } from '../../shared/src/klassifizierung';
-import type { MappenBezug, Mappentyp } from '../../shared/src/model';
+import { zieleVon, type MappenBezug, type Mappentyp } from '../../shared/src/model';
 import type { Dienst, Zugriff } from './dienst';
 import type { Erkennung } from './erkennung';
 import { Fachfehler } from './fehler';
@@ -162,7 +162,7 @@ export class Klassifizierung {
     const belege: Array<Klassbeleg & { typId: string }> = [];
     const treffer = a.treffer.filter((x) => !x.unsicher);
     for (const tr of treffer) {
-      const zeigen = ziele.flatMap((zt) => zt.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === tr.typId && zt.id !== tr.typId).slice(0, 1).map((f) => ({ zt, f })));
+      const zeigen = ziele.flatMap((zt) => zt.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(tr.typId) && zt.id !== tr.typId).slice(0, 1).map((f) => ({ zt, f })));
       if (!zeigen.length) continue;
       const stark = tr.belege.some((b) => b.stark);
       const merkmal = tr.belege.find((b) => b.stark) ?? tr.belege[0];

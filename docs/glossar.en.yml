@@ -84,7 +84,10 @@ begriffe:
     beschreibung: A document can have several versions. Replacing creates a new version; the older ones stay underneath and can be restored. Only in tabs with versioning. Not to be confused with the version of Ablago.
   Verweis:
     begriff: Link (field)
-    beschreibung: A field that points to other folders, e.g. from an invoice to the contract.
+    beschreibung: A field that points to other folders, e.g. from an invoice to the contract. It can point to folders of one or several folder types (e.g. "concerns" to vehicle, flat or contract).
+  Zieltyp:
+    begriff: Target type
+    beschreibung: A folder type whose folders a link may point to; a link has one or several. With "all of the same type", several chosen folders stay with the type of the first one. Packages can also bring optional target types – types of another package that Ablago adds as soon as it is installed.
   Verknüpfungen:
     begriff: Links (tab)
     beschreibung: The tab that shows all folders linking to this folder – the opposite direction of the link.

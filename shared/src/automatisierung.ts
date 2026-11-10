@@ -15,6 +15,7 @@
 import { EREIGNISKATALOG, KATALOG_ARTEN, OHNE_WENN, type KatalogArt } from './ereignisse';
 import { VORLAUF_EINHEITEN, type VorlaufEinheit } from './fristen';
 import type { Feld, Mappentyp } from './model';
+import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
 import { bedingungsProblem, bereinigeBedingungen, verschiebe, type Bedingung, type Sicht } from './sichten';
 import { t } from './texte';
 
@@ -335,7 +336,7 @@ function empfaengerProblem(e: Empfaenger, typ: Mappentyp | null, k: Kontextdaten
   const f = feldIn(typ, e.feld);
   if (!f) return t('gemeinsam.automatisierung.das-feld-gibt-es', { feld: e.feld });
   const benutzerTyp = k.typen.find((t) => t.system === 'benutzer');
-  return f.typ === 'referenz' && (!f.zielTyp || f.zielTyp === benutzerTyp?.id) ? null : t('gemeinsam.automatisierung.verweist-nicht-auf-benutzer', { label: f.label });
+  return f.typ === 'referenz' && (!zieleVon(f).length && !jedeMappe(f) || einzigesZiel(f) === benutzerTyp?.id) ? null : t('gemeinsam.automatisierung.verweist-nicht-auf-benutzer', { label: f.label });
 }
 
 function undProbleme(u: UndKarte, typ: Mappentyp | null, k: Kontextdaten): string[] {

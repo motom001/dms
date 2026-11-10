@@ -61,7 +61,7 @@ Bedingungen gelten für die eigenen Mappentypen der Ansicht und **alle zusammen*
 | Datum | wie Zahl, dazu **im Zeitraum** (Jahr oder Monat) |
 | Ja/Nein | ja, nein (leer zählt als nein) |
 | Auswahlliste | ist einer von, ist leer, ist nicht leer |
-| Verweis | zeigt auf (eine oder mehrere bestimmte Mappen), ist leer, ist nicht leer |
+| Verweis | zeigt auf (eine oder mehrere bestimmte Mappen), ist leer, ist nicht leer; bei [mehreren Zieltypen](mappentypen.md#mehrere-zieltypen) auch *zeigt auf Mappe vom Typ …* (einer oder mehrere der Zieltypen) |
 
 Dazu die **Systemwerte**: *angelegt am* und *zuletzt geändert am* (wie Datum) sowie *angelegt von* und *zuletzt geändert von* (zeigt auf einen Benutzer).
 

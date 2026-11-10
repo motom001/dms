@@ -169,12 +169,20 @@ begriffe:
     code: DokumentVersion
   - begriff: Verweis
     bereich: grundbegriffe
-    beschreibung: Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag.
+    beschreibung: Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag. Es kann auf Mappen eines oder mehrerer Mappentypen zeigen (z. B. „betrifft“ auf Fahrzeug, Wohnung oder Vertrag).
     einsteiger: erklaeren
     begegnet: alle
     nicht_verwenden: [Referenz, Link, Relation]
-    verwandt: [Verknüpfungen, Verweisart]
-    code: referenz, Feld.zielTyp
+    verwandt: [Verknüpfungen, Verweisart, Zieltyp]
+    code: referenz, Feld.zielTypen
+  - begriff: Zieltyp
+    bereich: grundbegriffe
+    beschreibung: Ein Mappentyp, auf dessen Mappen ein Verweis zeigen darf; ein Verweis hat einen oder mehrere. Mit „alle vom selben Typ“ bleiben mehrere gewählte Mappen beim Typ der ersten. Aus Paketen gibt es auch optionale Zieltypen – Typen eines anderen Pakets, die Ablago aufnimmt, sobald es installiert ist.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Zielklasse, Referenztyp]
+    verwandt: [Verweis, Mappentyp]
+    code: Feld.zielTypen, Feld.gleicherTyp, Feld.zielOptional, zielOptional (Paket)
   - begriff: Verknüpfungen
     bereich: grundbegriffe
     beschreibung: Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.

@@ -274,10 +274,10 @@ function faelle(pg: boolean) {
       assert.deepEqual(pakete.map((x) => x.id), ['basis', 'vertraege']);
       const typen = await d.listeTypen();
       const vertrag = typen.find((t) => t.id === inst.typen.vertrag)!;
-      assert.equal(vertrag.felder.find((f) => f.key === 'partner')!.zielTyp, pakete[0].typen.organisation);
-      assert.equal(vertrag.felder.find((f) => f.key === 'letzte')!.zielTyp, inst.typen.zahlung);
+      assert.equal(vertrag.felder.find((f) => f.key === 'partner')!.zielTypen?.[0], pakete[0].typen.organisation);
+      assert.equal(vertrag.felder.find((f) => f.key === 'letzte')!.zielTypen?.[0], inst.typen.zahlung);
       assert.deepEqual(vertrag.register.find((r) => r.key === 'zahlungen')!.quellen, [{ typId: inst.typen.zahlung, feldKey: 'vertrag' }]);
-      assert.equal(typen.find((t) => t.id === inst.typen.zahlung)!.felder.find((f) => f.key === 'vertrag')!.zielTyp, vertrag.id);
+      assert.equal(typen.find((t) => t.id === inst.typen.zahlung)!.felder.find((f) => f.key === 'vertrag')!.zielTypen?.[0], vertrag.id);
       await assert.rejects(p.entferne('basis', ICH), (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('braucht'));
       await p.entferne('vertraege', ICH);
       await p.entferne('basis', ICH);
@@ -378,8 +378,8 @@ function faelle(pg: boolean) {
       assert.ok(v.hinweise.some((h) => /„dms:ablageort“ ist veraltet.*„basis:ablageort“/.test(h)), v.hinweise.join(' | '));
       const ok = await p.installiere({ id: 'ordnerpaket' }, ICH);
       const urkunde = (await d.listeTypen()).find((t) => t.id === ok.typen.urkunde)!;
-      assert.equal(urkunde.felder.find((f) => f.key === 'verbleib_original')!.zielTyp, ablageort.id);
-      assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTyp, (await d.sichereSystem()).benutzer.id);
+      assert.equal(urkunde.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], ablageort.id);
+      assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTypen?.[0], (await d.sichereSystem()).benutzer.id);
       assert.deepEqual((await d.listeSichten()).find((s) => s.id === ok.sichten.orte)!.typen.sort(), [ablageort.id, urkunde.id].sort());
       // Unbekannter DMS-Typ und reservierte Id: schon beim Lesen abgelehnt.
       const falsch = { ...ordnerpaket, 'inhalt/mappentypen.yaml': ordnerpaket['inhalt/mappentypen.yaml'].replace('dms:benutzer', 'dms:post') };
@@ -416,7 +416,7 @@ function faelle(pg: boolean) {
       assert.equal(await d.frueherAblageortTyp(), undefined, 'kein früherer mehr');
       // Pakete mit basis:ablageort zeigen auf denselben Typ.
       const o = await p.installiere({ id: 'ordnerpaket' }, ICH);
-      assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTyp, a.id);
+      assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);
       // Herkunft „Basis“: Erneute Vorschau übernimmt nichts mehr.
       assert.ok(!(await p.vorschau({ id: 'basis' })).hinweise.some((h) => /übernimmt das Paket/.test(h)));
     });
@@ -440,9 +440,9 @@ function faelle(pg: boolean) {
       assert.equal(a.schluessel, 'basis:ablageort');
       assert.deepEqual(a.register.map((r) => r.name), ['Allgemein', 'Enthält', 'Liegt hier', 'Fotos']);
       assert.deepEqual(a.register.find((r) => r.key === 'enthaelt')!.quellen, [{ typId: a.id, feldKey: 'liegt_in' }]);
-      assert.equal(a.felder.find((f) => f.key === 'liegt_in')!.zielTyp, a.id);
+      assert.equal(a.felder.find((f) => f.key === 'liegt_in')!.zielTypen?.[0], a.id);
       const o = await p.installiere({ id: 'ordnerpaket' }, ICH);
-      assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTyp, a.id);
+      assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);
     });
 
     it('Paket hochladen: Prüfung, Bestätigung, Herkunft, Update durch erneutes Hochladen (#189)', async () => {

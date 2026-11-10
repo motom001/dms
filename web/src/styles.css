@@ -493,6 +493,15 @@ a.textknopf { text-decoration: none; }
 .wahlliste button { text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
 .wahlliste button:hover, .wahlliste button:focus-visible { background: var(--akzent-zart); outline: none; }
 .wahlliste p { margin: 6px 10px; }
+/* Vorschläge nach Gruppe (#1036), z. B. je Mappentyp: Überschrift ohne Anzahl. */
+.wahlliste .wahlgruppe-ohne { display: contents; }
+.wahlliste .wahlgruppe { display: flex; flex-direction: column; }
+.wahlliste .wahlgruppe + .wahlgruppe { border-top: 1px solid var(--linie); margin-top: 4px; padding-top: 4px; }
+.wahlliste .wahlgruppe-titel { margin: 4px 10px 2px; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; color: var(--leise); text-transform: none; }
+/* Mappentyp an einem gewählten Verweis (#1036): Symbol der Ansicht des Typs und sein Name, damit gleiche Titel unterscheidbar sind. */
+.typmarke { display: inline-flex; align-items: center; gap: 4px; color: var(--leise); font-size: calc(11.5px * var(--skala, 1)); margin-left: 6px; white-space: nowrap; }
+.typmarke .sym { width: 14px; height: 14px; }
+.zieltypen-offen { margin: 4px 0 0; }
 
 /* Als anderer Benutzer agieren */
 .vertretungsbanner, .hinweisbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-left)); font-size: calc(13.5px * var(--skala, 1)); }

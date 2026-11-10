@@ -105,6 +105,8 @@ Gibt es die Mappe noch nicht, öffnet **+ … anlegen** unter dem Feld ein klein
 
 **Felder, die aus einem anderen folgen:** Manche Verweise ergeben sich aus einem anderen – wählst du bei einer Person die Niederlassung, füllt sich die Organisation, zu der sie gehört, und darunter steht „aus Niederlassung“. Das geschieht nur, wenn das Feld leer ist; steht schon eine andere Organisation darin, fragt Ablago „Organisation ändern?“. Trägst du von Hand eine andere Organisation ein, fragt Ablago, ob die Niederlassung geleert werden soll – mit **Behalten** bleibt sie, und am Feld steht der gelbe Hinweis. Welche Felder so zusammenhängen, legt der Administrator fest.
 
+**Felder mit mehreren Mappentypen:** Manche Felder verweisen auf Mappen verschiedener Typen – etwa *betrifft* an einer Rechnung auf das Auto, die Heizung, die Wohnung oder einen Vertrag. Die Vorschläge stehen dann nach Typ gruppiert (z. B. *Fahrzeug*, *Wohnung*), und in jeder Gruppe stehen die Mappen oben, die du zuletzt geöffnet hast. Neben jeder gewählten Mappe steht ihr Typ mit Symbol, damit du „Golf“ (Fahrzeug) und „Golf“ (Vertrag) auseinanderhältst. **+ … anlegen** gibt es für jeden Typ, in dem du anlegen darfst. Steht am Feld *alle vom selben Typ*, bietet Ablago nach der ersten Mappe nur noch Mappen ihres Typs an. Mappen, die du nicht sehen darfst, stehen wie überall nur als „(nicht sichtbar)“ da – ohne Titel und ohne Typ.
+
 Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 ## Ändern

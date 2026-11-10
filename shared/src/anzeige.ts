@@ -20,7 +20,7 @@
  */
 import { feldLabel, abschnittTitel, typName } from './beschriftung';
 import { istMerkmal, merkmalText, type Merkmale } from './merkmale';
-import { BELIEBIGER_TYP, istLeer, pruefeMappe, standardRegister, type Abschnitt, type Anzeigebedingung, type Anzeigeregel, type Feld, type Mappe, type MappenKontext, type Mappentyp, type MappentypDaten, type Pruefergebnis, type Register, type Werte } from './model';
+import { einzigesZiel, istLeer, jedeMappe, zielErlaubt, pruefeMappe, standardRegister, type Abschnitt, type Anzeigebedingung, type Anzeigeregel, type Feld, type Mappe, type MappenKontext, type Mappentyp, type MappentypDaten, type Pruefergebnis, type Register, type Werte } from './model';
 import { bedingungsProblem, bereinigeBedingungen, beschreibeBedingung, erfuellt, filterFuer, heuteIn, merkmalTrifft } from './sichten';
 import { t } from './texte';
 
@@ -94,7 +94,8 @@ export function anzeigeBedingungProblem(b: Anzeigebedingung, typ: TypTeil, eigen
 
 function verweistypProblem(b: { typ: string }, f: Feld, existiertTyp?: (id: string) => boolean): string | null {
   if (f.typ !== 'referenz') return t('gemeinsam.anzeige.kein-verweis', { feld: feldLabel(f) });
-  if (f.zielTyp && f.zielTyp !== BELIEBIGER_TYP && f.zielTyp !== b.typ) return t('gemeinsam.anzeige.anderer-typ', { feld: feldLabel(f) });
+  // Mehrere Zieltypen (#1036): „zeigt auf Mappe vom Typ …“ für jeden davon; bei genau einem Typ ist die Bedingung fest.
+  if (!jedeMappe(f) && !zielErlaubt(f, b.typ)) return t('gemeinsam.anzeige.anderer-typ', { feld: feldLabel(f) });
   if (existiertTyp && !existiertTyp(b.typ)) return t('gemeinsam.anzeige.typ-fehlt');
   return null;
 }
@@ -153,12 +154,14 @@ export function anzeigeBedingungTrifft(b: Anzeigebedingung, typ: TypTeil, werte:
   if (b.art === 'merkmal') ja = merkmalTrifft({ merkmal: b.merkmal }, k.merkmale);
   else if (b.art === 'verweistyp') {
     const f = typ.felder.find((x) => x.key === b.feld)!;
-    const fest = f.zielTyp && f.zielTyp !== BELIEBIGER_TYP ? f.zielTyp : null;
+    // Genau ein Zieltyp: jede gewählte Mappe ist davon. Sonst der Typ der Mappe – für nicht sichtbare unbekannt (#1036).
+    const fest = einzigesZiel(f) ?? null;
     ja = alsListe(werte[b.feld]).some((id) => (fest ?? k.typVon?.(id)) === b.typ);
   } else {
     const filter = filterFuer({ bedingungen: [b.bedingung] }, [alsTyp(typ)], { heute: k.heute ?? heuteIn(), ich: '', meineRollen: [] });
     const m = { id: '', typId: '', titel: '', werte, erstellt: '', geaendert: '' } as unknown as Mappe;
-    ja = erfuellt(m, filter, KEINE_ZAEHLUNG);
+    // „zeigt auf Mappe vom Typ …“ (#1036) über die Typen, die die Oberfläche kennt (nicht sichtbare: keiner).
+    ja = erfuellt(m, filter, { ...KEINE_ZAEHLUNG, ...(k.typVon ? { typVon: k.typVon } : {}) });
   }
   return b.nicht ? !ja : ja;
 }

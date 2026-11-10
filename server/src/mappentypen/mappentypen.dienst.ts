@@ -3,7 +3,7 @@
  * Typ fürs Profil, Erkennung am Typ. Schicht 2 – bekommt den Kern, nicht den ganzen Dienst.
  */
 import { randomUUID } from 'node:crypto';
-import { istOk, kannAusPost, pruefeMappentyp, freierSchluessel, systemfelder, type Mappentyp, type MappentypDaten, type Systemtyp } from '../../../shared/src/model';
+import { istOk, kannAusPost, pruefeMappentyp, freierSchluessel, systemfelder, zielErlaubt, zieleVon, BELIEBIGER_TYP, einzigesZiel, jedeMappe, type Mappentyp, type MappentypDaten, type Systemtyp } from '../../../shared/src/model';
 import { festigeDarstellung } from '../../../shared/src/darstellung';
 import { abschnittName, anzeigeProblemeVon } from '../../../shared/src/anzeige';
 import { auswahlProbleme, kinderVon } from '../../../shared/src/sichten';
@@ -35,6 +35,15 @@ export interface MappentypenAnschluss {
   konfigurationKonflikt(art: 'typ', aktuell?: string): Fachfehler;
 }
 
+/**
+ * Schnittstelle (#1036): Verweisfelder mit genau einem Zieltyp (oder „jede Mappe“) nennen ihn zusätzlich wie bisher in
+ * `zielTyp` – Clients, die `zielTypen` noch nicht kennen, arbeiten so weiter. Veraltet; bei mehreren Zieltypen fehlt es.
+ */
+function mitAltemZiel<T extends Pick<Mappentyp, 'felder'>>(t: T): T {
+  if (!t.felder.some((f) => f.typ === 'referenz')) return t;
+  return { ...t, felder: t.felder.map((f) => { const alt = jedeMappe(f) ? BELIEBIGER_TYP : einzigesZiel(f); return f.typ === 'referenz' && alt ? { ...f, zielTyp: alt } : f; }) };
+}
+
 export class MappentypenDienst {
   constructor(private readonly kern: Kern, private readonly anschluss: MappentypenAnschluss) {}
 
@@ -51,7 +60,7 @@ export class MappentypenDienst {
 
   /** Mappentypen für einen Benutzer: Administratoren mit Regeln, alle anderen ohne – dafür „darf anlegen“ (#126). */
   async typenFuer(z: Zugriff) {
-    const typen = await this.mitStempel([...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')));
+    const typen = (await this.mitStempel([...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')))).map(mitAltemZiel);
     if (z.admin) return typen;
     return typen.map(({ berechtigungen, ...t }) => ({ ...t, berechtigungen: null, darfAnlegen: rechteUebersicht({ ...t, berechtigungen }, z.wer, z.a).C !== 'nie' }));
   }
@@ -75,7 +84,7 @@ export class MappentypenDienst {
       r.quellen = (r.quellen ?? []).filter((q) => {
         const felder = q.typId === eigeneId ? d.felder : alle.find((t) => t.id === q.typId)?.felder;
         const f = felder?.find((x) => x.key === q.feldKey);
-        return f?.typ === 'referenz' && (f.zielTyp === eigeneId || f.zielTyp === '*');
+        return f?.typ === 'referenz' && zielErlaubt(f, eigeneId);
       });
     }
     // Fristen (#129): Empfängerfeld nur, wenn es ein einfaches Benutzerfeld dieses Typs ist.
@@ -240,11 +249,25 @@ export class MappentypenDienst {
     if (n) gruende.push(t('meldungen.dienst.mappen-gehoeren-zu-diesem', { anzahl: n }));
     const imKorb = (await this.repo.papierkorb({ typId: id })).length;
     if (imKorb) gruende.push(t('meldungen.dienst.mappen-dieses-typs-liegen', { anzahl: imKorb }));
+    // Mehrere Zieltypen (#1036): Ist der Typ nur einer von mehreren Zielen – oder ein optionales Ziel aus einem Paket –,
+    // nimmt das Löschen ihn dort heraus (Mappen dieses Typs gibt es dann keine mehr, also auch keine Verweise darauf).
+    // Ein Feld, das allein auf ihn zeigt, hält das Löschen auf wie bisher.
+    const herausnehmen: Mappentyp[] = [];
     for (const mappentyp of await this.repo.listeTypen()) {
       if (mappentyp.id === id) continue;
-      for (const f of mappentyp.felder) if (f.typ === 'referenz' && f.zielTyp === id) gruende.push(t('meldungen.dienst.das-feld-verweist-auf', { name: mappentyp.name, label: f.label }));
+      let anders = false;
+      for (const f of mappentyp.felder) {
+        if (f.typ !== 'referenz' || !zieleVon(f).includes(id)) continue;
+        if (zieleVon(f).length > 1 || (eintrag.schluessel && f.zielOptional?.includes(eintrag.schluessel))) anders = true;
+        else gruende.push(t('meldungen.dienst.das-feld-verweist-auf', { name: mappentyp.name, label: f.label }));
+      }
+      if (anders) herausnehmen.push(mappentyp);
     }
     if (gruende.length) throw new Fachfehler(409, t('meldungen.dienst.dieser-mappentyp-kann-noch'), { gruende });
+    for (const mt of herausnehmen) {
+      const felder = mt.felder.map((f) => (f.typ === 'referenz' && zieleVon(f).includes(id) ? { ...f, zielTypen: zieleVon(f).filter((z) => z !== id) } : f));
+      await this.repo.aendereTyp(mt.id, { ...mt, felder });
+    }
     await this.repo.loescheTyp(id);
     // Aus den Sichten entfernen; Sichten, die nur diesen Typ hatten und keine Kinder, verschwinden mit.
     const alle = await this.repo.listeSichten();

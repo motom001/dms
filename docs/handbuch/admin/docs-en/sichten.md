@@ -61,7 +61,7 @@ Conditions apply to the view's own folder types, and **all together** (AND). Bel
 | Date | like number, plus **in the period** (year or month) |
 | Yes/No | yes, no (empty counts as no) |
 | Choice list | is one of, is empty, is not empty |
-| Link | points to (one or more specific folders), is empty, is not empty |
+| Link | points to (one or more specific folders), is empty, is not empty; with [several target types](mappentypen.md#mehrere-zieltypen) also *points to a folder of type …* (one or more of the target types) |
 
 Plus the **system values**: *created on* and *last changed on* (like date) as well as *created by* and *last changed by* (points to a user).
 

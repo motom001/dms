@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { anzeigeBedingungProblem, beschreibeAnzeige, beschreibeAnzeigeBedingung, typNameAus, ANZEIGE_BEDINGUNGEN_MAX, type Anzeigebedingung, type Anzeigeregel } from '../../../shared/src/anzeige';
 import { feldLabel } from '../../../shared/src/beschriftung';
 import { merkmalName } from '../../../shared/src/merkmale';
-import { BELIEBIGER_TYP, type Feld, type Mappentyp } from '../../../shared/src/model';
+import { jedeMappe, zielErlaubt, zieleVon, type Feld, type Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, OPERATOREN_JE_ART } from '../../../shared/src/sichten';
 import { FeldGruppe, Knopf } from '../bausteine';
 import { useDaten } from '../daten';
@@ -52,7 +52,8 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
     if (art === 'merkmal') return { ...n, art: 'merkmal', merkmal: 'beruflich' };
     if (art === 'verweistyp') {
       const f = typ.felder.find((x) => x.key === key);
-      const fest = f?.zielTyp && f.zielTyp !== BELIEBIGER_TYP ? f.zielTyp : typen.find((x) => !x.system)?.id;
+      // Mehrere Zieltypen (#1036): der erste davon; bei „jede Mappe“ der erste eigene Typ.
+      const fest = (f ? zieleVon(f)[0] : undefined) ?? typen.find((x) => !x.system)?.id;
       return { ...n, art: 'verweistyp', feld: key, typ: fest ?? '' };
     }
     const f = felder.find((x) => x.key === key);
@@ -99,7 +100,7 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
                   {b.art === 'verweistyp' && (
                     <select aria-label={t('mappentypen.anzeige.typ')} value={b.typ} onChange={(x) => setzeB(i, { ...b, typ: x.target.value })}>
                       {!typen.some((x) => x.id === b.typ) && <option value={b.typ}>–</option>}
-                      {typen.filter((x) => !vf?.zielTyp || vf.zielTyp === BELIEBIGER_TYP || x.id === vf.zielTyp).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                      {typen.filter((x) => !vf || jedeMappe(vf) || !zieleVon(vf).length || zielErlaubt(vf, x.id)).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
                     </select>
                   )}
                   <Knopf art="link" groesse="klein" onClick={() => setzeListe(bedingungen.filter((_, j) => j !== i))}>{t('mappentypen.anzeige.entfernen')}</Knopf>

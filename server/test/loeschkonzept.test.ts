@@ -37,7 +37,7 @@ const basis = (typen: LoeschkonzeptQuelle['typen'], ds = DATENSCHUTZ_STANDARD): 
 describe('Löschkonzept (#469)', () => {
   const kunde = { id: 'k', name: 'Kunde', felder: [{ key: 'name', label: 'Name', typ: 'text' as const }] };
   const rechnung = { id: 'r', name: 'Rechnung', archiv: { jahre: 8, stichtag: 'datum' }, felder: [
-    { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' as const }, { key: 'kunde', label: 'Kunde', typ: 'referenz' as const, zielTyp: 'k' },
+    { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' as const }, { key: 'kunde', label: 'Kunde', typ: 'referenz' as const, zielTypen: ['k'] },
   ] };
   const haus = { id: 'h', name: 'Haus', felder: [{ key: 'adresse', label: 'Adresse', typ: 'text' as const }] };
   const benutzer = { id: 'b', name: 'Benutzer', system: 'benutzer' as const, felder: [] };
@@ -70,7 +70,7 @@ describe('Löschkonzept (#469)', () => {
 
   it('nennt je Mappentyp eine Lücke mit Grund: angekreuzt oder über ein Verweisfeld (#664)', () => {
     const person = { id: 'p', name: 'Person', felder: [{ key: 'name', label: 'Name', typ: 'text' as const }] };
-    const konto = { id: 'ko', name: 'Konto', felder: [{ key: 'inhaber', label: 'Inhaber', typ: 'referenz' as const, zielTyp: 'p' }] };
+    const konto = { id: 'ko', name: 'Konto', felder: [{ key: 'inhaber', label: 'Inhaber', typ: 'referenz' as const, zielTypen: ['p'] }] };
     const q = basis([person, konto, haus], { ...DATENSCHUTZ_STANDARD, verantwortlicher: 'Muster GmbH', typen: { p: { person: true, zweck: '' } } });
     const l = luecken(q);
     assert.equal(l.length, 2, 'je Mappentyp genau eine Zeile, Haus fehlt');

@@ -6,6 +6,7 @@
  * Treffer und die aller Kinder (ohne Doppelte). Server und Oberfläche teilen diese Datei.
  */
 import type { SichtRechte, SichtRegelwerk } from './sichtrechte';
+import { gleicheZiele, jedeMappe, zielErlaubt, zieleVon } from './verweisziele';
 import { GEMISCHTE_SPALTEN, istLeer, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, type Feld, type Feldtyp, type Mappe, type Mappentyp, type Quelle } from './model';
 import { datumsformat } from './region';
 import { ALLE_TYPEN } from './pakete';
@@ -37,6 +38,8 @@ export const OPERATOREN = {
   imZeitraum: t('gemeinsam.sichten.im-zeitraum'),
   einerVon: t('gemeinsam.sichten.ist-einer-von'),
   zeigtAuf: t('gemeinsam.sichten.zeigt-auf'),
+  /** Verweisfeld mit mehreren Zieltypen (#1036): zeigt auf (mindestens) eine Mappe eines dieser Mappentypen. */
+  zeigtAufTyp: t('gemeinsam.sichten.zeigt-auf-typ'),
   ja: 'ja',
   nein: 'nein',
   leer: t('gemeinsam.sichten.ist-leer'),
@@ -58,11 +61,15 @@ export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   zeit: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'imZeitraum'],
   janein: ['ja', 'nein'],
   auswahl: ['einerVon', 'leer', 'nichtLeer'],
-  referenz: ['zeigtAuf', 'leer', 'nichtLeer'],
+  referenz: ['zeigtAuf', 'zeigtAufTyp', 'leer', 'nichtLeer'],
   person: ['zeigtAuf', 'leer'],
   // Passwörter taugen nicht für Bedingungen (#46).
   passwort: [],
 };
+
+/** Operatoren für ein Feld: „zeigt auf Mappe vom Typ …“ nur bei Verweisen mit mehreren Zieltypen (#1036). */
+export const operatorenFuer = (f: Pick<Bedingungsfeld, 'art' | 'feld'>): Operator[] =>
+  OPERATOREN_JE_ART[f.art].filter((o) => o !== 'zeigtAufTyp' || (!!f.feld && zieleVon(f.feld).length > 1));
 
 export const EINHEITEN = { tage: 'Tage', wochen: 'Wochen', monate: 'Monate', jahre: 'Jahre' } as const;
 export type Einheit = keyof typeof EINHEITEN;
@@ -214,7 +221,7 @@ const SYSTEMFELDER: Bedingungsfeld[] = [
 export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedingungsfeld[] {
   if (!typen.length) return SYSTEMFELDER;
   const [erster, ...rest] = typen;
-  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && f.zielTyp !== '*' && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || g.zielTyp === f.zielTyp))));
+  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && !jedeMappe(f) && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(g, f)))));
   return [...gemeinsam.map((f) => ({ key: f.key, label: feldLabel(f), art: f.typ as Feldart, feld: f })), ...SYSTEMFELDER];
 }
 
@@ -223,7 +230,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
   if (b.art === 'feld') {
     const f = bedingungsfelder(typen).find((x) => x.key === b.feld);
     if (!f) return t('gemeinsam.sichten.das-feld-gibt-es', { feld: b.feld, wert: typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr') });
-    if (!OPERATOREN_JE_ART[f.art].includes(b.op)) return t('gemeinsam.sichten.passt-nicht-zum-feld', { wert: OPERATOREN[b.op] ?? b.op, label: f.label });
+    if (!operatorenFuer(f).includes(b.op)) return t('gemeinsam.sichten.passt-nicht-zum-feld', { wert: OPERATOREN[b.op] ?? b.op, label: f.label });
     const brauchtWert = !['leer', 'nichtLeer', 'ja', 'nein'].includes(b.op);
     if (brauchtWert && !b.wert) return t('gemeinsam.sichten.bei-fehlt-der-vergleichswert', { label: f.label });
     if ((b.op === 'zwischen' || b.op === 'ausserhalb') && !b.bis) return t('gemeinsam.sichten.bei-fehlt-der-zweite', { label: f.label });
@@ -234,6 +241,12 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (f.art === 'zeitraum' && [b.wert, b.bis].some((w) => w?.art === 'fest' && Number.isNaN(zeitraumWert(w.wert)))) return t('gemeinsam.feldarten.bedingung-zeitraum', { label: f.label });
     if (b.wert?.art === 'eigenesFeld' || b.bis?.art === 'eigenesFeld') return t('gemeinsam.sichten.werte-aus-der-eigenen');
     if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return t('gemeinsam.sichten.rollen-des-aktuellen-benutzers-2', { label: f.label });
+    // „zeigt auf Mappe vom Typ …“ (#1036): fest gewählte Zieltypen des Felds.
+    if (b.op === 'zeigtAufTyp') {
+      const w = b.wert?.art === 'fest' && Array.isArray(b.wert.wert) ? b.wert.wert : null;
+      if (!w?.length) return t('gemeinsam.sichten.typ-waehlen', { label: f.label });
+      if (w.some((x) => !zielErlaubt(f.feld!, x))) return t('gemeinsam.sichten.typ-kein-ziel', { label: f.label });
+    }
     return null;
   }
   if (b.art === 'favorit') return null;
@@ -269,6 +282,11 @@ export interface Aufloesung {
   meineRollen: string[];
   /** Merkmale der Ablage (#1032); fehlt = keine (privat). */
   merkmale?: Merkmale;
+  /**
+   * Mappentypen, die die Person überhaupt sehen darf (#1036) – für Rechte-Regeln „zeigt auf Mappe vom Typ …“, die im
+   * Zweifel geschlossen bleiben (rechte.ts). Fehlt = ohne diese Einschränkung (Administratoren, Ansichten, Tests).
+   */
+  sichtbareTypen?: string[];
 }
 
 /** Trifft eine Merkmal-Bedingung zu? Ohne Angabe gilt die Ablage als privat (#1032). */
@@ -282,6 +300,11 @@ export type Filter =
   /** quellen [] = alle Rückverweise; quellenJeTyp: je Mappentyp die Quellen seines Registers (#66). */
   | { art: 'verknuepfungen'; quellen: Quelle[]; quellenJeTyp?: Record<string, Quelle[]>; vergleich: Zaehlvergleich; anzahl: number }
   | { art: 'favorit'; benutzer: string }
+  /**
+   * Verweisfeld `key` zeigt auf (mindestens) eine Mappe, deren Typ einer von `typen` ist (#1036) – mit `ausser` eine,
+   * deren Typ keiner davon ist (für Rechte-Regeln: „Typ der Zielmappe nicht sichtbar“).
+   */
+  | { art: 'zieltyp'; key: string; typen: string[]; ausser?: boolean }
   /** Berechtigungen (#123): offene Aufgabe für diesen Benutzer an der Mappe. */
   | { art: 'aufgabe'; benutzer: string }
   /** Berechtigungen (#123): die Mappe ist eine dieser (z. B. die eigene Benutzer-Mappe). */
@@ -351,7 +374,9 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
     if (bedingungsProblem(b, typen)) continue;
     if (b.art === 'feld') {
       const f = felder.find((x) => x.key === b.feld)!;
-      if (b.op === 'imZeitraum') {
+      if (b.op === 'zeigtAufTyp') {
+        erg.push({ art: 'zieltyp', key: f.key, typen: wertVon(b.wert, f.art, a) as string[] });
+      } else if (b.op === 'imZeitraum') {
         const [von, bis] = wertVon(b.wert, f.art, a) as [string, string];
         erg.push({ art: 'feld', key: f.key, feldart: f.art, op: 'zwischen', a: von, b: bis });
       } else {
@@ -409,6 +434,8 @@ export interface Zaehlquelle {
   verknuepfungen(mappeId: string, quellen: Quelle[]): number;
   favorit?(mappeId: string, benutzer: string): boolean;
   aufgabe?(mappeId: string, benutzer: string): boolean;
+  /** Typ einer verwiesenen Mappe (#1036, „zeigt auf Mappe vom Typ …“); fehlt oder unbekannt = trifft nicht zu. */
+  typVon?(mappeId: string): string | undefined;
 }
 
 function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown {
@@ -424,6 +451,8 @@ function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown 
   return v ?? null;
 }
 
+const alsIds = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : istLeer(v) ? [] : [String(v)]);
+
 function zaehltWie(n: number, v: Zaehlvergleich, soll: number) {
   return v === 'mehr' ? n > soll : v === 'weniger' ? n < soll : n === soll;
 }
@@ -435,6 +464,10 @@ export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
     if (f.art === 'favorit') return !!z.favorit?.(m.id, f.benutzer);
     if (f.art === 'aufgabe') return !!z.aufgabe?.(m.id, f.benutzer);
     if (f.art === 'id') return f.ids.includes(m.id);
+    if (f.art === 'zieltyp') {
+      const soll = new Set(f.typen);
+      return alsIds(m.werte[f.key]).some((id) => { const typ = z.typVon?.(id); return typ !== undefined && soll.has(typ) !== !!f.ausser; });
+    }
     if (f.art === 'frist') {
       return f.felder.some((x) => {
         const d = m.werte[x.key];
@@ -533,7 +566,7 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
 }
 
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
-export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id, eigeneNamen?: Record<string, string>): string {
+export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id, eigeneNamen?: Record<string, string>, typNameVon?: (id: string) => string | undefined): string {
   if (b.art === 'favorit') return t('gemeinsam.sichten.ist-mein-favorit');
   if (b.art === 'merkmal') return merkmalText(b.merkmal, b.nicht);
   if (b.art === 'frist') {
@@ -559,6 +592,8 @@ export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: 
       case 'eigenesFeld': return t('gemeinsam.sichten.dieser-mappe', { wert: eigeneNamen?.[w.feld] ?? w.feld });
       case 'fest': {
         const v = w.wert;
+        // „zeigt auf Mappe vom Typ …“ (#1036): Namen der Mappentypen.
+        if (b.op === 'zeigtAufTyp') return (Array.isArray(v) ? v : [String(v)]).map((x) => `„${typNameVon?.(String(x)) ?? typen.find((y) => y.id === x)?.name ?? x}“`).join(' oder ');
         if (f?.art === 'referenz' || f?.art === 'person') return (Array.isArray(v) ? v : [String(v)]).map((x) => `„${titelVon(String(x))}“`).join(' oder ');
         // Auswahl (#728): gespeichert ist der feste Wert, gezeigt die Beschriftung.
         if (Array.isArray(v)) return v.map((x) => `„${f?.art === 'auswahl' && f.feld ? optionText(f.feld, String(x)) : x}“`).join(', ');
@@ -644,7 +679,7 @@ export const OPS_EIGENES_FELD: Operator[] = ['gleich', 'enthaelt', 'kleiner', 'g
 const TEXTARTEN = ['text', 'langtext', 'formatiert'];
 
 /** Felder der eigenen Mappe, deren Wert zu dieser Bedingung passt (#173). */
-export function passendeEigeneFelder(b: Pick<Feldbedingung, 'feld' | 'op'>, zielFelder: Feld[], eigene: Array<Pick<Feld, 'key' | 'label' | 'typ' | 'optionen' | 'zielTyp' | 'mehrfach'>>, feldKey: string) {
+export function passendeEigeneFelder(b: Pick<Feldbedingung, 'feld' | 'op'>, zielFelder: Feld[], eigene: Array<Pick<Feld, 'key' | 'label' | 'typ' | 'optionen' | 'zielTypen' | 'mehrfach'>>, feldKey: string) {
   const ziel = bedingungsfelder([{ felder: zielFelder }]).find((x) => x.key === b.feld);
   if (!ziel || !OPS_EIGENES_FELD.includes(b.op)) return [];
   return eigene.filter((e) => {
@@ -654,7 +689,7 @@ export function passendeEigeneFelder(b: Pick<Feldbedingung, 'feld' | 'op'>, ziel
       case 'enthaelt': return TEXTARTEN.includes(ziel.art) && e.typ === 'text';
       case 'kleiner': case 'groesser': return (ziel.art === 'zahl' || ziel.art === 'betrag') ? e.typ === 'zahl' : (ziel.art === 'datum' || ziel.art === 'zeit') && e.typ === 'datum';
       case 'einerVon': return ziel.art === 'auswahl' && e.typ === 'auswahl' && (e.optionen ?? []).every((o) => (ziel.feld?.optionen ?? []).includes(o));
-      case 'zeigtAuf': return ziel.art === 'referenz' && e.typ === 'referenz' && !!e.zielTyp && e.zielTyp === ziel.feld?.zielTyp;
+      case 'zeigtAuf': return ziel.art === 'referenz' && e.typ === 'referenz' && !!e.zielTypen?.length && !!ziel.feld && gleicheZiele(e, ziel.feld);
       default: return false;
     }
   });
@@ -703,9 +738,12 @@ export function setzeEigeneWerte(bed: Feldbedingung[], werte: Record<string, unk
 /** Hängt der Filter von Feldern der eigenen Mappe ab? Welche? */
 export const eigeneFelderIm = (bed: Feldbedingung[] | undefined) => [...new Set((bed ?? []).flatMap((b) => (b.wert?.art === 'eigenesFeld' ? [b.wert.feld] : [])))];
 
-/** Klausel für „passende Mappen des Zieltyps“; Bedingungen mit Problem zählen nicht. */
-export function auswahlKlausel(bed: Feldbedingung[], ziel: Mappentyp, a: Aufloesung): Klausel {
-  return { typen: [ziel.id], filter: filterFuer({ bedingungen: bed }, [ziel], a) };
+/**
+ * Klausel für „passende Mappen der Zieltypen“; Bedingungen mit Problem zählen nicht. Bei mehreren Zieltypen (#1036)
+ * gelten die Bedingungen über die Felder, die alle haben (wie in Ansichten über mehrere Typen).
+ */
+export function auswahlKlausel(bed: Feldbedingung[], ziele: Mappentyp[], a: Aufloesung): Klausel {
+  return { typen: ziele.map((z) => z.id), filter: filterFuer({ bedingungen: bed }, ziele, a) };
 }
 
 /** Was sich eindeutig aus dem Filter ergibt (z. B. Art = Arzt) – zum Vorbelegen beim Anlegen. */

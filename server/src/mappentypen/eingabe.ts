@@ -3,8 +3,8 @@
  * Trefferlisten, Archivmodus, Beschriftungen; was beim Ändern bleibt, wenn die Eingabe es nicht nennt.
  */
 import {
-  ERKENNBAR_AN_MAX, FELDTYPEN, istHistoriengruppe, istSystemspalte, leseZahl, REGISTERARTEN, schluesselAus, standardRegister,
-  type Feld, type MappentypDaten, type Quelle, type Register, type Trefferliste,
+  BELIEBIGER_TYP, einzigesZiel, ERKENNBAR_AN_MAX, FELDTYPEN, istHistoriengruppe, istSystemspalte, leseZahl, REGISTERARTEN, schluesselAus, standardRegister,
+  ZIELTYPEN_MAX, zielTypenAus, type Feld, type MappentypDaten, type Quelle, type Register, type Trefferliste,
 } from '../../../shared/src/model';
 import { ausgangAus, bereinigeBeschriftungen, ergaenzeBeschriftungen, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from '../../../shared/src/beschriftung';
 import { bereinigeAbschnitte, festigeDarstellung } from '../../../shared/src/darstellung';
@@ -16,7 +16,7 @@ import { bereinigeFrist } from '../../../shared/src/fristen';
 import { JAHRE_MAX } from '../../../shared/src/archiv';
 import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennung';
 import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
-import { SCHLUESSEL } from '../../../shared/src/kennungen';
+import { SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -54,6 +54,10 @@ export function bereinigeFeld(e: unknown): Feld {
   const std = f.standard;
   // Auswahl (#728): die festen Werte, jeder einmal; gespeicherte Mappen behalten ihren Wert.
   const optionen = Array.isArray(f.optionen) ? [...new Set(f.optionen.map(text).filter(Boolean))] : [];
+  // Ziele (#1036): neu `zielTypen`, sonst wie bisher `zielTyp` – Clients und Dateien älterer Versionen gelten weiter.
+  const ziele = zielTypenAus(Array.isArray(f.zielTypen) ? f.zielTypen : f.zielTyp);
+  const optional = Array.isArray(f.zielOptional)
+    ? [...new Set(f.zielOptional.map(text).filter((k) => k.includes(':') && TYP_KENNUNG.test(k)))].slice(0, ZIELTYPEN_MAX) : [];
   return {
     key: text(f.key),
     // Deutsch ist der Ausgangstext; `beschriftungen.de.label` (z. B. aus einem Paket) gilt als Bezeichnung.
@@ -75,11 +79,16 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(typ === 'betrag' && f.negativ === true ? { negativ: true } : {}),
     optionen,
     mehrfach: !!f.mehrfach && (typ === 'auswahl' || typ === 'referenz'),
-    zielTyp: typ === 'referenz' ? text(f.zielTyp) : '',
-    // Auswahlfilter (#172): nur an Referenzfeldern mit festem Zieltyp.
-    ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeAuswahlfilter(f.auswahlFilter).length ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) } : {}),
-    // Folgt aus (#886): nur an Verweisfeldern mit festem Zieltyp; geprüft wird im Mappentyp.
-    ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeFolgtAus(f.folgtAus) ? { folgtAus: bereinigeFolgtAus(f.folgtAus) } : {}),
+    // Ziele (#1036): `zielTypen` (ein oder mehrere Mappentypen); die alte Form `zielTyp` wird gelesen, nie geschrieben.
+    ...(typ === 'referenz' ? { zielTypen: ziele } : {}),
+    // „Alle vom selben Typ“ (#1036): nur mit mehreren Mappen; die Prüfung meldet, wenn es nur einen Zieltyp gibt.
+    ...(typ === 'referenz' && f.gleicherTyp === true ? { gleicherTyp: true } : {}),
+    // Optionale Zieltypen aus Paketen (#1036): Kennungen „paket:schluessel“, die (noch) fehlen dürfen.
+    ...(typ === 'referenz' && optional.length ? { zielOptional: optional } : {}),
+    // Auswahlfilter (#172): nur an Referenzfeldern mit festen Zieltypen (bei mehreren über die gemeinsamen Felder).
+    ...(typ === 'referenz' && ziele.length && !ziele.includes(BELIEBIGER_TYP) && bereinigeAuswahlfilter(f.auswahlFilter).length ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) } : {}),
+    // Folgt aus (#886): nur an Verweisfeldern mit genau einem Zieltyp; geprüft wird im Mappentyp.
+    ...(typ === 'referenz' && einzigesZiel({ zielTypen: ziele }) && bereinigeFolgtAus(f.folgtAus) ? { folgtAus: bereinigeFolgtAus(f.folgtAus) } : {}),
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),

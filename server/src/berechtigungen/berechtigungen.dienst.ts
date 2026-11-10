@@ -3,8 +3,9 @@
  * speichern und prüfen, „niemand kann lesen“, Regel kopieren, Testlauf, WebDAV-Laufwerk. Schicht 2 – bekommt den Kern
  * und die Rechteprüfung, nicht den ganzen Dienst.
  */
-import { type Benutzer, type Mappentyp, verweiseVon } from '../../../shared/src/model';
-import { type Ausdruck, bereinigeRegelwerk, istOffen, kontoRegelwerk, kopiereRegel, kurz, leseAusdruck, nicht, NICHTS, oder, type Recht, rechteAn as rechteAnMappe, regelProblem, type Regelwerk, regelwerkVon } from '../../../shared/src/rechte';
+import { type Benutzer, type Mappe, type Mappentyp, verweiseVon } from '../../../shared/src/model';
+import type { Aufloesung } from '../../../shared/src/sichten';
+import { type Ausdruck, bereinigeRegelwerk, istOffen, kontoRegelwerk, kopiereRegel, kurz, leseAusdruck, mitSichtbarenTypen, nicht, NICHTS, oder, type Recht, rechteAn as rechteAnMappe, regelProblem, type Regelwerk, regelwerkVon, type Wer } from '../../../shared/src/rechte';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
@@ -24,7 +25,13 @@ export class BerechtigungenDienst {
   private get repo(): Repo { return this.kern.repo; }
   private get konten() { return this.anschluss.konten(); }
   private aufloesung(benutzerId: string) { return this.rechte.aufloesung(benutzerId); }
-  private mappenquelle(benutzerId: string, mappeIds: string[]) { return this.rechte.mappenquelle(benutzerId, mappeIds); }
+  /** Mit den Typen der verwiesenen Mappen (#1036), wenn `typ` Regeln „zeigt auf Mappe vom Typ …“ hat. */
+  private async mappenquelle(benutzerId: string, typ: Mappentyp, m: Mappe) { return this.rechte.mappenquelle(benutzerId, [m.id], await this.rechte.zieltypen([typ], [m])); }
+  /** Wie im Zugriff (#1036): die Typen, die die Person sieht – mit dem Entwurf der Regeln statt der gespeicherten. */
+  private async sichtbar(typ: Mappentyp, wer: Wer, a: Aufloesung, konto?: string) {
+    const alle = (await this.repo.listeTypen()).map((x) => (x.id === typ.id ? typ : x));
+    return mitSichtbarenTypen(konto ? alle.map((x) => kontoRegelwerk(x, konto)) : alle, wer, a);
+  }
   private zugriff(ich: Zugreifender) { return this.rechte.zugriff(ich); }
   private pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht) { return this.rechte.pruefeRecht(z, id, recht); }
   private lesbare(z: Zugriff | undefined, ids: string[]) { return this.rechte.lesbare(z, ids); }
@@ -50,8 +57,9 @@ export class BerechtigungenDienst {
     const t = { ...typ, berechtigungen: rw };
     const teile: Ausdruck[] = [];
     for (const b of benutzer) {
-      const a = await this.aufloesung(b.id);
-      teile.push(leseAusdruck(t, { id: b.id, rollen: a.meineRollen }, a));
+      const roh = await this.aufloesung(b.id);
+      const wer = { id: b.id, rollen: roh.meineRollen };
+      teile.push(leseAusdruck(t, wer, await this.sichtbar(t, wer, roh)));
     }
     const x = nicht(oder(...teile));
     return x.k === 'falsch' ? 0 : this.repo.zaehleAusdruck(typ.id, x);
@@ -133,19 +141,20 @@ export class BerechtigungenDienst {
       // Wie im Zugriff solcher Konten: Rolle „Systemkonto“ bzw. „Paket“, nur Regeln, die diese Rolle nennen (#673).
       const konto = b.art === 'system' ? 'systemkonto' as const : 'paket' as const;
       const rolleId = (await this.kern.system()).kontorollen.get(konto)!;
-      const a = await this.aufloesung(b.id);
+      const a = await this.sichtbar(typ, { id: b.id, rollen: [rolleId] }, await this.aufloesung(b.id), rolleId);
       const name = b.art === 'dienst' ? `Paket: ${(await this.repo.listePakete()).find((p) => p.id === b.paketId)?.name ?? b.name}` : b.name;
       const z = await this.zugriff(b);
       const bestaetigt = !!z.typen.get(m.typId);
-      const erg = rechteAnMappe(kontoRegelwerk(typ, rolleId), m, { id: b.id, rollen: [rolleId] }, a, await this.mappenquelle(b.id, [m.id]));
+      const erg = rechteAnMappe(kontoRegelwerk(typ, rolleId), m, { id: b.id, rollen: [rolleId] }, a, await this.mappenquelle(b.id, kontoRegelwerk(typ, rolleId), m));
       // Wie rechteAn: Systemkonten sehen nie Passwörter; Pakete nie über die bei der Installation bestätigten Rechte hinaus.
       const w = erg.wirksam;
       const s = !!z.paket?.schreiben.has(m.typId);
       erg.wirksam = !bestaetigt ? { ...NICHTS } : z.paket ? { C: w.C && s, R: w.R, U: w.U && s, D: false, P: false } : { ...w, P: false };
       return { ...erg, admin: false, konto, ...(bestaetigt ? {} : { unbestaetigt: true }), mappe, benutzer: { id: b.id, name } };
     }
-    const a = await this.aufloesung(b.id);
-    const erg = rechteAnMappe(typ, m, { id: b.id, rollen: a.meineRollen }, a, await this.mappenquelle(b.id, [m.id]));
+    const roh = await this.aufloesung(b.id);
+    const a = await this.sichtbar(typ, { id: b.id, rollen: roh.meineRollen }, roh);
+    const erg = rechteAnMappe(typ, m, { id: b.id, rollen: a.meineRollen }, a, await this.mappenquelle(b.id, typ, m));
     // Leserecht auf Zeit (#798) mit seinem Grund: wirkt nur, wo die Regeln kein Lesen erlauben – und nur Lesen.
     const z = b.rolle === 'admin' ? undefined : (await this.repo.leserechteAufZeit(b.id)).find((x) => x.mappeId === m.id);
     const regulaer = erg.wirksam.R;

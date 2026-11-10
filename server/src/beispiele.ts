@@ -15,7 +15,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
   const ablageort = await dienst.ablageortTyp();
   if ((await dienst.listeTypen()).some((t) => !t.system && t.id !== ablageort?.id)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
   // Verbleib Originaldokumente (#168): gleiche Kennung in allen Mappentypen mit Papier – für gemeinsame Listen und Bedingungen.
-  const verbleib: Feld[] = ablageort ? [feld('verbleib_original', 'Verbleib Originaldokumente', 'referenz', { zielTyp: ablageort.id, verweisart: 'bezug', hilfe: 'Wo das Papier liegt – oder „vernichtet“' })] : [];
+  const verbleib: Feld[] = ablageort ? [feld('verbleib_original', 'Verbleib Originaldokumente', 'referenz', { zielTypen: [ablageort.id], verweisart: 'bezug', hilfe: 'Wo das Papier liegt – oder „vernichtet“' })] : [];
   const id = { partner: randomUUID(), vertrag: randomUUID(), rechnung: randomUUID(), zahlung: randomUUID() };
 
   const typen = {
@@ -42,7 +42,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
       felder: [
         feld('bezeichnung', 'Bezeichnung', 'text', { pflicht: true, hilfe: 'z. B. Stromvertrag Haus', maxLen: 120 }),
-        feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTyp: id.partner, verweisart: 'zugehoerigkeit' }),
+        feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTypen: [id.partner], verweisart: 'zugehoerigkeit' }),
         feld('vertragsnummer', 'Vertragsnummer', 'text', { eindeutig: true, maxLen: 60 }),
         feld('beginn', 'Vertragsbeginn', 'datum'),
         feld('kuendigung_bis', 'Kündigung bis', 'datum', { hilfe: 'Letzter Tag, an dem die Kündigung eingehen muss',
@@ -62,8 +62,8 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
       felder: [
         feld('rechnungsnummer', 'Rechnungsnummer', 'text', { pflicht: true, maxLen: 60 }),
-        feld('aussteller', 'Aussteller', 'referenz', { zielTyp: id.partner, verweisart: 'bezug' }),
-        feld('vertrag', 'Vertrag', 'referenz', { zielTyp: id.vertrag, verweisart: 'zugehoerigkeit', hilfe: 'Leer lassen bei einer einmaligen Rechnung' }),
+        feld('aussteller', 'Aussteller', 'referenz', { zielTypen: [id.partner], verweisart: 'bezug' }),
+        feld('vertrag', 'Vertrag', 'referenz', { zielTypen: [id.vertrag], verweisart: 'zugehoerigkeit', hilfe: 'Leer lassen bei einer einmaligen Rechnung' }),
         feld('vertragsnummer_gedruckt', 'Vertragsnummer laut Rechnung', 'text', { hilfe: 'So wie sie auf der Rechnung steht', maxLen: 60 }),
         feld('rechnungsdatum', 'Rechnungsdatum', 'datum', { pflicht: true }),
         feld('betrag', 'Rechnungsbetrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
@@ -81,7 +81,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
         feld('verwendungszweck', 'Verwendungszweck', 'text', { pflicht: true, maxLen: 140 }),
         feld('zahlungsdatum', 'Zahlungsdatum', 'datum', { pflicht: true }),
         feld('betrag', 'Betrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
-        feld('rechnungen', 'Für Rechnungen', 'referenz', { zielTyp: id.rechnung, verweisart: 'zugehoerigkeit', mehrfach: true }),
+        feld('rechnungen', 'Für Rechnungen', 'referenz', { zielTypen: [id.rechnung], verweisart: 'zugehoerigkeit', mehrfach: true }),
       ],
     },
   };

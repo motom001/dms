@@ -81,8 +81,8 @@ The work area for all users – with views, lists and folders. At the same time 
 See also: [Workbench](#werkbank), [View](#ansicht).
 
 <a id="verweis"></a>**Link (field)** (*Verweis*) · ~ with explanation · everyone  
-A field that points to other folders, e.g. from an invoice to the contract.  
-See also: [Links (tab)](#verknupfungen), [Link kind](#verweisart).
+A field that points to other folders, e.g. from an invoice to the contract. It can point to folders of one or several folder types (e.g. "concerns" to vehicle, flat or contract).  
+See also: [Links (tab)](#verknupfungen), [Link kind](#verweisart), [Target type](#zieltyp).
 
 <a id="verweisart"></a>**Link kind** (*Verweisart*) · ~ with explanation · administrators  
 Whether a link is a belonging ("belongs to", e.g. an invoice to the contract) or only a reference (e.g. the issuer). The folder shows the kind on the link and in the links tab.  
@@ -135,6 +135,10 @@ See also: [Folder type](#mappentyp).
 
 <a id="register"></a>**Tab** (*Register*) · ~ with explanation · everyone  
 A divider in a folder, e.g. General (with fields), Documents, Links or History. Notes and History are fixed tabs of every folder.
+
+<a id="zieltyp"></a>**Target type** (*Zieltyp*) · ~ with explanation · administrators  
+A folder type whose folders a link may point to; a link has one or several. With "all of the same type", several chosen folders stay with the type of the first one. Packages can also bring optional target types – types of another package that Ablago adds as soon as it is installed.  
+See also: [Link (field)](#verweis), [Folder type](#mappentyp).
 
 <a id="tipp"></a>**Tip** (*Tipp*) · ✓ everyday word · everyone  
 One sentence showing what else you can do in Ablago – at most one a day as a quiet line on the start page; the sentence leads to the place or starts a tour. Hide it with ×, switch it off completely in My account.  

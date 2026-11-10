@@ -115,8 +115,27 @@ function wenn(bed: Ausdruck, dann: Ausdruck, sonst: Ausdruck): Ausdruck {
   return { k: 'wenn', bed, dann, sonst };
 }
 
+/**
+ * Wie eine Bedingung im Zweifel ausgeht (#1036): `geben` – die Regel erteilt ein Recht, im Zweifel trifft sie nicht zu;
+ * `nehmen` – sie entzieht eines, im Zweifel trifft sie zu.
+ */
+export type Zweifel = 'geben' | 'nehmen';
+/** Zweifel für ein Recht einer Regel: wie die Regel es setzt; ohne Wirkung für dieses Recht wie beim Erteilen. */
+const zweifelFuer = (r: Regel, recht: Recht): Zweifel => (r.dann[recht] === 'entziehen' ? 'nehmen' : 'geben');
+
+/**
+ * „zeigt auf Mappe vom Typ …“ (#1036) im Zweifel geschlossen: Zeigt das Feld auf eine Mappe, deren Typ die Person nicht
+ * sehen darf (`a.sichtbareTypen`), trifft eine gebende Regel nicht zu und eine nehmende zu – nach einem „nicht“, damit
+ * die Verneinung den Zweifel nicht umdreht. So verraten Rechte nicht, von welchem Typ eine unsichtbare Zielmappe ist.
+ */
+function imZweifel(x: Ausdruck, b: RegelBedingung, a: Aufloesung, zweifel: Zweifel): Ausdruck {
+  if (b.art !== 'feld' || b.bedingung.op !== 'zeigtAufTyp' || !a.sichtbareTypen) return x;
+  const fremd: Ausdruck = { k: 'filter', f: { art: 'zieltyp', key: b.bedingung.feld, typen: a.sichtbareTypen, ausser: true } };
+  return zweifel === 'geben' ? und(x, nicht(fremd)) : oder(x, fremd);
+}
+
 /** Bedingung einer Regel → Ausdruck; Bedingungen über den Benutzer sind dabei schon entschieden. */
-function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Aufloesung): Ausdruck {
+function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Aufloesung, zweifel: Zweifel = 'geben'): Ausdruck {
   let x: Ausdruck;
   switch (b.art) {
     case 'benutzer': x = bool(b.benutzer.includes(wer.id)); break;
@@ -131,7 +150,7 @@ function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Auflo
       break;
     }
   }
-  return b.nicht ? nicht(x) : x;
+  return imZweifel(b.nicht ? nicht(x) : x, b, a, zweifel);
 }
 
 /**
@@ -143,11 +162,13 @@ export function rechtAusdruck(typ: Mappentyp, recht: Recht, wer: Wer, a: Aufloes
   let e = bool(rw.grund[recht]);
   let aktiv: Ausdruck = WAHR;
   for (const r of rw.regeln) {
-    let bed = und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a))));
+    const zweifel = zweifelFuer(r, recht);
+    let bed = und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a, zweifel))));
     bed = und(aktiv, bed);
     const w = r.dann[recht];
     if (w) e = wenn(bed, bool(w === 'erteilen'), e);
-    if (r.stopp) aktiv = und(aktiv, nicht(und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a))))));
+    // Stopp im Zweifel wie beim Erteilen (trifft nicht zu): dieselbe Seite wie in rechteAn.
+    if (r.stopp) aktiv = und(aktiv, nicht(und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a, 'geben'))))));
     if (aktiv.k === 'falsch') break;
   }
   return e;
@@ -156,6 +177,22 @@ export function rechtAusdruck(typ: Mappentyp, recht: Recht, wer: Wer, a: Aufloes
 /** Lesen als Ausdruck – Grundlage für jeden Filter in Listen, Zählern und Suche. */
 export function leseAusdruck(typ: Mappentyp, wer: Wer, a: Aufloesung): Ausdruck {
   return rechtAusdruck(typ, 'R', wer, a);
+}
+
+/** Hat einer dieser Typen eine Rechte-Regel „zeigt auf Mappe vom Typ …“ (#1036)? */
+export const nutztZieltypRegeln = (typen: Array<Pick<Mappentyp, 'berechtigungen'>>) =>
+  typen.some((t) => regelwerkVon(t).regeln.some((r) => r.wenn.some((b) => b.art === 'feld' && b.bedingung.op === 'zeigtAufTyp')));
+
+/**
+ * Auflösung mit den Mappentypen, die die Person sehen darf (#1036): ein Typ, dessen Leserecht nicht für jede Mappe
+ * „nein“ ist. Zuerst so gerechnet, als sähe sie keinen Zieltyp (am stärksten geschlossen) – so hängt die Antwort nicht
+ * an sich selbst, und ein Typ, den sie nur über eine solche Regel sähe, gilt als nicht sichtbar. Ohne solche Regeln
+ * bleibt die Auflösung, wie sie ist.
+ */
+export function mitSichtbarenTypen(typen: Mappentyp[], wer: Wer, a: Aufloesung): Aufloesung {
+  if (!nutztZieltypRegeln(typen)) return a;
+  const vorab: Aufloesung = { ...a, sichtbareTypen: [] };
+  return { ...a, sichtbareTypen: typen.filter((t) => leseAusdruck(t, wer, vorab).k !== 'falsch').map((t) => t.id) };
 }
 
 /** Lesefilter je Typ für das Repo; null = ohne Einschränkung (Administrator oder alles offen). */
@@ -222,16 +259,19 @@ export function rechteAn(typ: Mappentyp, m: Mappe, wer: Wer, a: Aufloesung, z: M
   let gestoppt = false;
   for (const regel of rw.regeln) {
     if (gestoppt) { spur.push({ regel: regel.id, name: regel.name, traf: null, gesetzt: {}, stopp: regel.stopp, bedingungen: [], stand: { ...r } }); continue; }
-    const bedingungen = regel.wenn.map((b) => (neu && b.art === 'aufgabe' ? !!b.nicht : werte(bedingungAusdruck(b, typ, wer, a), m, z)));
+    // Im Zweifel geschlossen (#1036): je nach Wirkung kann dieselbe Regel für das Erteilen nicht und für das Entziehen
+    // doch zutreffen. Spur und Stopp zeigen die Seite des Erteilens, wenn die Regel etwas erteilt, sonst die des Entziehens.
+    const trifft = (zweifel: Zweifel) => regel.wenn.map((b) => (neu && b.art === 'aufgabe' ? !!b.nicht : werte(bedingungAusdruck(b, typ, wer, a, zweifel), m, z)));
+    const geben = trifft('geben');
+    const nehmen = regel.wenn.some((b) => b.art === 'feld' && b.bedingung.op === 'zeigtAufTyp') ? trifft('nehmen') : geben;
+    const bedingungen = Object.values(regel.dann).includes('erteilen') || !Object.values(regel.dann).length ? geben : nehmen;
     const traf = bedingungen.every(Boolean);
     const gesetzt: Partial<Record<Recht, Wirkung>> = {};
-    if (traf) {
-      for (const k of RECHTE_LISTE) {
-        const w = regel.dann[k];
-        if (w) { r[k] = w === 'erteilen'; gesetzt[k] = w; }
-      }
-      if (regel.stopp) gestoppt = true;
+    for (const k of RECHTE_LISTE) {
+      const w = regel.dann[k];
+      if (w && (w === 'erteilen' ? geben : nehmen).every(Boolean)) { r[k] = w === 'erteilen'; gesetzt[k] = w; }
     }
+    if (geben.every(Boolean) && regel.stopp) gestoppt = true;
     spur.push({ regel: regel.id, name: regel.name, traf, gesetzt, stopp: regel.stopp, bedingungen, stand: { ...r } });
   }
   return { rechte: r, wirksam: wirksamVon(r, typ), spur, grund };

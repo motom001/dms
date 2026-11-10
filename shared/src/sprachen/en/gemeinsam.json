@@ -982,5 +982,13 @@
   "anzeige.und": " and ",
   "anzeige.nur-bei": "only if {bedingung}",
   "anzeige.abschnitt-ab": "Section from “{feld}”",
-  "anzeige.wert-waehlen": "For “{feld}” please choose at least one value."
+  "anzeige.wert-waehlen": "For “{feld}” please choose at least one value.",
+  "model.gleicher-typ": "All folders must be of the same folder type.",
+  "model.gleicher-typ-nur-mehrfach": "“All of the same type” only works with “several folders allowed”.",
+  "sichten.zeigt-auf-typ": "points to a folder of type",
+  "sichten.typ-waehlen": "Choose at least one folder type for “{label}”.",
+  "sichten.typ-kein-ziel": "“{label}” does not refer to folders of this type – the condition would never apply.",
+  "typvergleich.gleicher-typ": "all of the same type",
+  "typvergleich.ziel-optional": "optional target types",
+  "erweitertesuche.vom-typ": "(of type {typen})"
 }

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { grenzeAlsTag, ibanGruppen, pruefeFormate } from '../../shared/src/feldformate';
-import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
+import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, zieleVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import type { Zeitraum } from '../../shared/src/feldarten';
 import { dokumentRegister, MAX_DEMO, MAX_DEMO_DOKUMENTE, mengenWarnung, nichtErzeugbar, pflichtGrund, schaetzeMenge, verteilung, type NichtErzeugbar } from '../../shared/src/demodaten';
 import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
@@ -125,8 +125,10 @@ function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: S
     // Passwörter nie in Demo-Daten (#46).
     case 'passwort': return undefined;
     case 'referenz': {
-      const pool = pools.get(f.zielTyp ?? '') ?? [];
-      if (!pool.length) return undefined;
+      // Mehrere Zieltypen (#1036): ein Typ mit Mappen, bei „alle vom selben Typ“ für alle Verweise derselbe.
+      const mit = zieleVon(f).filter((z) => (pools.get(z) ?? []).length);
+      if (!mit.length) return undefined;
+      const pool = f.gleicherTyp ? pools.get(eins(mit))! : mit.flatMap((z) => pools.get(z)!);
       if (!f.mehrfach) return eins(pool);
       return [...new Set(Array.from({ length: 1 + zufall(3) }, () => eins(pool)))];
     }
@@ -138,7 +140,7 @@ function reihenfolge(typen: Mappentyp[]): Mappentyp[] {
   const fertig: Mappentyp[] = [];
   const rest = [...typen];
   while (rest.length) {
-    const i = rest.findIndex((t) => t.felder.every((f) => f.typ !== 'referenz' || f.zielTyp === t.id || !rest.some((r) => r.id === f.zielTyp)));
+    const i = rest.findIndex((t) => t.felder.every((f) => f.typ !== 'referenz' || zieleVon(f).every((z) => z === t.id || !rest.some((r) => r.id === z))));
     fertig.push(...rest.splice(i < 0 ? 0 : i, 1)); // bei Kreisen: einfach weiter
   }
   return fertig;

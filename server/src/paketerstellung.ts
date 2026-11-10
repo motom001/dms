@@ -218,7 +218,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     for (const [s, tid] of Object.entries(p.typen)) typPaket.set(tid, { p, s });
     for (const [s, sid] of Object.entries(p.sichten)) sichtPaket.set(sid, { p, s });
   }
-  const geaendert = (t: Mappentyp) => { const h = typPaket.get(t.id); return !!h && aenderung(t, h.p).geaendert; };
+  const geaendert = (t: Mappentyp) => { const h = typPaket.get(t.id); return !!h && aenderung(t, h.p, (id) => typById.get(id)?.schluessel).geaendert; };
   const einmal = new Set<string>();
   const hinweis = (h: string) => { if (!einmal.has(h)) { einmal.add(h); hinweise.push(h); } };
   const abhaengig = (p: InstalliertesPaket) => {
@@ -332,12 +332,19 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     const wo = (was: string) => `„${mappentyp.name}“ → ${was}`;
     const felder = mappentyp.felder.filter((f) => !f.system).map((f) => {
       // ausText (#534) gehört zu einem Update aus der Registry, nicht in ein selbst erstelltes Paket.
-      const { zielTyp, system: _s, auswahlFilter, frist, standard, ausText: _a, anzeigen, ...rest } = f as Feld;
+      const { zielTypen, zielOptional, system: _s, auswahlFilter, frist, standard, ausText: _a, anzeigen, ...rest } = f as Feld;
       const x: Record<string, unknown> = ohneLeere(rest as Record<string, unknown>);
       const az = anzeigeFuersPaket(anzeigen, wo(`Feld „${f.label}“`));
       if (az) x.anzeigen = az;
-      if (f.typ === 'referenz') x.ziel = ziel(zielTyp, wo(`Feld „${f.label}“`)) ?? undefined;
-      else delete x.verweisart;
+      if (f.typ === 'referenz') {
+        // Mehrere Zieltypen (#1036): `ziel` einzeln oder als Liste. Optionale Ziele bleiben optional – auch die, die es hier
+        // schon gibt; von ihnen soll das Paket nicht abhängen.
+        const opt = new Set(zielOptional ?? []);
+        const fest = (zielTypen ?? []).filter((id) => !opt.has(typById.get(id)?.schluessel ?? ''));
+        const ziele = fest.map((id) => ziel(id, wo(`Feld „${f.label}“`))).filter((z): z is string => !!z);
+        x.ziel = ziele.length > 1 ? ziele : ziele[0];
+        if (opt.size) x.zielOptional = [...opt];
+      } else delete x.verweisart;
       if (frist) x.frist = ohneLeere(frist as unknown as Record<string, unknown>);
       if (standard !== undefined && standard !== null && standard !== '') {
         if (kreisImStandard(standard)) hinweis(`${wo(`Feld „${f.label}“`)}: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.`);
@@ -421,10 +428,16 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
       return ziel(tid, `Ansicht „${s.name}“`);
     }).filter((t): t is string => !!t);
     if (fremd.length) fremdeTypen = true;
-    const bedingungen = s.bedingungen.flatMap((b: Bedingung) => {
+    const bedingungen = s.bedingungen.flatMap((b: Bedingung): Array<{ feld: string; operator: string; wert?: unknown }> => {
       // Merkmal der Ablage (#1032): kennt das Paketformat der Ansichten (noch) nicht.
       if (b.art === 'merkmal') { hinweis(t('meldungen.paketerstellung.ansicht-merkmal', { name: s.name })); return []; }
       if (b.art !== 'feld') { hinweis(t('meldungen.paketerstellung.ansicht-bedingungen-auf-anzahlen', { name: s.name })); return []; }
+      // „zeigt auf Mappe vom Typ …“ (#1036): Mappentypen als Typverweis statt Id.
+      if (b.op === 'zeigtAufTyp') {
+        const ids = b.wert?.art === 'fest' && Array.isArray(b.wert.wert) ? b.wert.wert : [];
+        const typen = ids.map((id) => ziel(id, `Ansicht „${s.name}“`)).filter((x): x is string => !!x);
+        return typen.length ? [{ feld: b.feld, operator: b.op, wert: typen }] : [];
+      }
       const w = (b.op === 'zwischen' || b.op === 'ausserhalb') && b.bis ? [fest(b.wert), fest(b.bis)] : fest(b.wert);
       if (mitId(w)) { hinweis(t('meldungen.paketerstellung.ansicht-eine-bedingung-nennt', { name: s.name })); return []; }
       return [w === undefined ? { feld: b.feld, operator: b.op } : { feld: b.feld, operator: b.op, wert: w }];
@@ -621,9 +634,9 @@ export function liesEingabe(x: unknown): PaketErstellenEingabe {
  * Weicht ein Typ aus einem Paket von dessen Stand ab (#653)? Mit gespeichertem Paketstand inhaltlich (Speichern ohne
  * Änderung zählt nicht), sonst – bei älteren Installationen – wie bisher nach der Zeit, ohne Einzelheiten.
  */
-export function aenderung(t: Mappentyp, p: InstalliertesPaket): { geaendert: boolean; unterschiede: TypUnterschiede | null } {
+export function aenderung(t: Mappentyp, p: InstalliertesPaket, kennungVon?: (typId: string) => string | undefined): { geaendert: boolean; unterschiede: TypUnterschiede | null } {
   const stand = p.typStand?.[t.id];
-  if (stand) { const u = typUnterschiede(stand, typBild(t)); return { geaendert: !!u, unterschiede: u }; }
+  if (stand) { const u = typUnterschiede(stand, typBild(t, kennungVon)); return { geaendert: !!u, unterschiede: u }; }
   return { geaendert: t.geaendert > (p.aktualisiert ?? p.installiert), unterschiede: null };
 }
 
@@ -651,7 +664,7 @@ export class Paketerstellung {
     return {
       typen: typen.filter((t) => !t.system && !dmsTypen.has(t.id)).map((t) => {
         const p = pakete.find((x) => Object.values(x.typen).includes(t.id));
-        const a = p ? aenderung(t, p) : { geaendert: false, unterschiede: null };
+        const a = p ? aenderung(t, p, (id) => typen.find((x) => x.id === id)?.schluessel) : { geaendert: false, unterschiede: null };
         return { id: t.id, name: t.name, beschreibung: t.beschreibung ?? '', paket: herkunft((x) => x.typen, t.id), geaendert: a.geaendert, ...(a.geaendert ? { unterschiede: a.unterschiede } : {}) };
       }).sort((a, b) => a.name.localeCompare(b.name, 'de')),
       sichten: sichten.map((s) => ({ id: s.id, name: s.name, elternId: s.elternId ?? null, paket: herkunft((x) => x.sichten, s.id) })),

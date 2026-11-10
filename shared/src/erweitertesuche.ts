@@ -9,6 +9,7 @@
  * - feld.von / feld.bis: Datum, Zahl, Betrag, Prozent, Zeitraum („3 Monate“ oder P3M; eins darf fehlen)
  * - feld=wert: mehrfach bei Verweisen und Auswahllisten (= ist einer von); Ja/Nein: ja oder nein; Text: enthält
  * - feld.leer=1 bzw. feld.nichtleer=1
+ * - feld.typ=<Mappentyp>: Verweis mit mehreren Zieltypen (#1036) zeigt auf eine Mappe dieses Typs, mehrfach (= einer von)
  * - volltext=…, in=dokumente / in=notizen (ohne „in“: beide)
  * Zwischen den Feldern gilt UND, innerhalb eines Feldes ODER. Server und Oberfläche teilen diese Datei.
  */
@@ -31,6 +32,8 @@ export interface Feldeingabe {
   /** Verweise, Auswahl (mehrere = ODER); Text und Ja/Nein: ein Wert. */
   werte?: string[];
   leer?: 'leer' | 'nichtLeer';
+  /** Verweis mit mehreren Zieltypen (#1036): zeigt auf eine Mappe eines dieser Typen (Schlüssel, Name oder Id). */
+  typen?: string[];
 }
 export interface Suchformular {
   /** Schlüssel (oder Namen/Ids) der Mappentypen, wie in der Adresse. */
@@ -68,7 +71,7 @@ export function suchfelder(typen: Mappentyp[]): Bedingungsfeld[] {
 
 /** Hat die Eingabe überhaupt einen Wert? */
 export function istGesetzt(e: Feldeingabe | undefined): boolean {
-  return !!e && (!!e.leer || !!e.von?.trim() || !!e.bis?.trim() || !!e.werte?.some((w) => w.trim()));
+  return !!e && (!!e.leer || !!e.von?.trim() || !!e.bis?.trim() || !!e.werte?.some((w) => w.trim()) || !!e.typen?.some((w) => w.trim()));
 }
 
 /* ---------- Schnellwahl für Datumsfelder ---------- */
@@ -106,6 +109,17 @@ const VERBOTENE_NAMEN = new Set(['__proto__', 'constructor', 'prototype']);
 
 export type Suchparameter = Iterable<[string, string]>;
 
+/** Ein Parameter „feld.zusatz=w“ in die Eingabe des Felds. */
+function setzeZusatz(e: Feldeingabe, zusatz: string, w: string) {
+  if (zusatz === 'von') e.von = w;
+  else if (zusatz === 'bis') e.bis = w;
+  else if (zusatz === 'leer') { if (w !== '0') e.leer = 'leer'; }
+  else if (zusatz === 'nichtleer') { if (w !== '0') e.leer = 'nichtLeer'; }
+  // Verweis mit mehreren Zieltypen (#1036): „feld.typ=…“, jeder einmal.
+  else if (zusatz === 'typ') { if (w && !(e.typen ??= []).includes(w)) e.typen.push(w.slice(0, 200)); }
+  else if (zusatz === '' || zusatz === 'wert') { if (w) (e.werte ??= []).push(w.slice(0, 500)); }
+}
+
 /** Liest die Adresse in ein Formular; was nicht passt, merkt erst `abfrageAus`. */
 export function liesSuche(parameter: Suchparameter): Suchformular {
   const f = leeresFormular();
@@ -121,16 +135,16 @@ export function liesSuche(parameter: Suchparameter): Suchformular {
     const [key, zusatz] = punkt > 0 ? [k.slice(0, punkt), k.slice(punkt + 1).toLowerCase()] : [k, ''];
     // Namen aus der Adresse nie als Eigenschaften von Object.prototype benutzen (#292).
     if (!key || VERBOTENE_NAMEN.has(key)) continue;
-    const e = Object.hasOwn(f.felder, key) ? f.felder[key] : (f.felder[key] = {});
-    if (zusatz === 'von') e.von = w;
-    else if (zusatz === 'bis') e.bis = w;
-    else if (zusatz === 'leer') { if (w !== '0') e.leer = 'leer'; }
-    else if (zusatz === 'nichtleer') { if (w !== '0') e.leer = 'nichtLeer'; }
-    else if (zusatz === '' || zusatz === 'wert') { if (w) (e.werte ??= []).push(w.slice(0, 500)); }
+    setzeZusatz(Object.hasOwn(f.felder, key) ? f.felder[key] : (f.felder[key] = {}), zusatz, w);
   }
   if (ortGesetzt) { f.inDokumenten = orte.includes('dokumente'); f.inNotizen = orte.includes('notizen'); }
   for (const [k, e] of Object.entries(f.felder)) if (!istGesetzt(e)) delete f.felder[k];
   return f;
+}
+
+/** Nicht leere Werte einer Liste als Parameter `name` anhängen. */
+function haengeAn(p: URLSearchParams, name: string, werte: string[] | undefined) {
+  for (const w of werte ?? []) if (w.trim()) p.append(name, w.trim());
 }
 
 /** Formular → Parameter der Adresse (ohne „?“); leere Felder fallen weg. */
@@ -143,7 +157,8 @@ export function alsParameter(f: Suchformular): URLSearchParams {
     if (e.leer) { p.append(`${key}.${e.leer === 'leer' ? 'leer' : 'nichtleer'}`, '1'); continue; }
     if (e.von?.trim()) p.append(`${key}.von`, e.von.trim());
     if (e.bis?.trim()) p.append(`${key}.bis`, e.bis.trim());
-    for (const w of e.werte ?? []) if (w.trim()) p.append(name, w.trim());
+    haengeAn(p, name, e.werte);
+    haengeAn(p, `${key}.typ`, e.typen);
   }
   if (f.volltext.trim()) {
     p.append('volltext', f.volltext.trim());
@@ -228,22 +243,17 @@ export function abfrageAus(f: Suchformular, alleTypen: Mappentyp[]): Abfrage {
       if (von !== undefined && bis !== undefined && von > bis) { fehler.push(t('gemeinsam.erweitertesuche.bei-liegt-von-nach', { name })); continue; }
       b = { art: 'feld', feld: key, op: 'zwischen', wert: { art: 'fest', wert: von ?? min }, bis: { art: 'fest', wert: bis ?? max } };
     } else {
-      const werte = [...new Set((e.werte ?? []).map((w) => w.trim()).filter(Boolean))];
-      if (!werte.length) continue;
-      if (art === 'verweis' || art === 'person') b = { art: 'feld', feld: key, op: 'zeigtAuf', wert: { art: 'fest', wert: werte } };
-      else if (art === 'auswahl') {
-        // Fester Wert oder seine Beschriftung (#728) – gesucht wird immer mit dem festen Wert.
-        const f = feld.feld ?? { optionen: [] };
-        const gueltig = werte.map((w) => wertZuOption(f, w)).filter((o): o is string => !!o);
-        const falsch = werte.filter((w) => !wertZuOption(f, w));
-        if (falsch.length) { fehler.push(t('gemeinsam.erweitertesuche.gibt-es-in-der', { falsch: falsch[0], name })); continue; }
-        b = { art: 'feld', feld: key, op: 'einerVon', wert: { art: 'fest', wert: gueltig } };
-      } else if (art === 'janein') {
-        const w = werte[0].toLowerCase();
-        if (!['ja', 'nein'].includes(w)) { fehler.push(t('gemeinsam.erweitertesuche.bei-geht-nur-ja', { name })); continue; }
-        b = { art: 'feld', feld: key, op: w as 'ja' | 'nein' };
-      } else b = { art: 'feld', feld: key, op: 'enthaelt', wert: { art: 'fest', wert: werte[0] } };
+      const r = werteBedingung(key, feld, art, e.werte ?? [], name);
+      if (typeof r === 'string') { fehler.push(r); continue; }
+      b = r;
     }
+    // Verweis mit mehreren Zieltypen (#1036): „zeigt auf eine Mappe vom Typ …“ als weitere Bedingung (UND).
+    if (!e.leer && art === 'verweis' && e.typen?.length) {
+      const tb = zieltypBedingung(key, e.typen, typen, alleTypen);
+      if (typeof tb === 'string') { fehler.push(tb); continue; }
+      if (tb) bedingungen.push(tb);
+    }
+    if (!b) continue;
     const problem = bedingungsProblem(b, typen);
     if (problem) { fehler.push(problem); continue; }
     bedingungen.push(b);
@@ -251,6 +261,42 @@ export function abfrageAus(f: Suchformular, alleTypen: Mappentyp[]): Abfrage {
   const text = f.volltext.trim();
   const volltext = text && (f.inDokumenten || f.inNotizen) ? { text, dokumente: f.inDokumenten, notizen: f.inNotizen } : null;
   return { typen, bedingungen, volltext, entfallen, fehler };
+}
+
+/** Verweis, Person, Auswahl, Ja/Nein und Text: die Werte als Bedingung; ein Text ist ein Fehler, null = keine Werte. */
+function werteBedingung(key: string, feld: Bedingungsfeld, art: Eingabeart, roh: string[], name: string): Bedingung | string | null {
+  const werte = [...new Set(roh.map((w) => w.trim()).filter(Boolean))];
+  if (!werte.length) return null;
+  if (art === 'verweis' || art === 'person') return { art: 'feld', feld: key, op: 'zeigtAuf', wert: { art: 'fest', wert: werte } };
+  if (art === 'auswahl') {
+    // Fester Wert oder seine Beschriftung (#728) – gesucht wird immer mit dem festen Wert.
+    const f = feld.feld ?? { optionen: [] };
+    const falsch = werte.filter((w) => !wertZuOption(f, w));
+    if (falsch.length) return t('gemeinsam.erweitertesuche.gibt-es-in-der', { falsch: falsch[0], name });
+    return { art: 'feld', feld: key, op: 'einerVon', wert: { art: 'fest', wert: werte.map((w) => wertZuOption(f, w)!) } };
+  }
+  if (art === 'janein') {
+    const w = werte[0].toLowerCase();
+    return ['ja', 'nein'].includes(w) ? { art: 'feld', feld: key, op: w as 'ja' | 'nein' } : t('gemeinsam.erweitertesuche.bei-geht-nur-ja', { name });
+  }
+  return { art: 'feld', feld: key, op: 'enthaelt', wert: { art: 'fest', wert: werte[0] } };
+}
+
+/** „feld.typ=…“ (#1036) → Bedingung „zeigt auf Mappe vom Typ …“; ein Text ist ein Fehler, null = nichts gewählt. */
+function zieltypBedingung(key: string, eingabe: string[], typen: Mappentyp[], alleTypen: Mappentyp[]): Bedingung | string | null {
+  const wahl = [...new Set(eingabe.map((w) => w.trim()).filter(Boolean))];
+  if (!wahl.length) return null;
+  const ids = wahl.map((w) => typImLink(w, alleTypen)?.id);
+  const fehlt = ids.findIndex((x) => !x);
+  if (fehlt >= 0) return t('gemeinsam.erweitertesuche.den-mappentyp-gibt-es', { name: wahl[fehlt] });
+  const b: Bedingung = { art: 'feld', feld: key, op: 'zeigtAufTyp', wert: { art: 'fest', wert: ids as string[] } };
+  return bedingungsProblem(b, typen) ?? b;
+}
+
+/** „(vom Typ …)“ für den Chip eines Verweisfelds mit Typwahl (#1036). */
+function typText(e: Feldeingabe, alleTypen: Mappentyp[]): string {
+  const typen = (e.typen ?? []).map((w) => typImLink(w, alleTypen)?.name ?? w);
+  return typen.length ? t('gemeinsam.erweitertesuche.vom-typ', { typen: typen.join(', ') }) : '';
 }
 
 /** Prozent (#1035) wie eine Zahl, „7 %“ geht auch; null = keine Zahl. */
@@ -303,7 +349,8 @@ export function chipsVon(f: Suchformular, alleTypen: Mappentyp[], titelVon: (id:
     } else {
       const werte = (e.werte ?? []).filter((w) => w.trim());
       const namen = art === 'verweis' ? werte.map(titelVon) : art === 'person' ? werte.map(person) : werte;
-      text = art === 'text' ? `${feld.label} enthält „${werte[0]}“` : `${feld.label}: ${namen.join(', ')}`;
+      // Mehrere Zieltypen (#1036): „vom Typ …“ dazu.
+      text = art === 'text' ? `${feld.label} enthält „${werte[0]}“` : [namen.length ? `${feld.label}: ${namen.join(', ')}` : feld.label, art === 'verweis' ? typText(e, alleTypen) : ''].filter(Boolean).join(' ');
     }
     chips.push({ key, text });
   }

@@ -59,7 +59,7 @@ Every field has a **label** (changeable), a **key** (fixed once saved) and a **f
 | Date | [earliest, latest](#formate-und-datumsgrenzen) (fixed or "today"), Is a deadline |
 | Yes/No | – |
 | Choice list | the choice values (one per line), multiple choice, [labels of the values](#beschriftungen-je-sprache) |
-| Link | target folder type, kind of link, several folders allowed |
+| Link | target folder types (one or several), kind of link, several folders allowed, all of the same type |
 | Password | – (stored encrypted, see below) |
 
 For all of them: **Required field** and a **help text** that is shown below the field when filling it in (in the field editor right next to the label); most folder types also have a **default value** for new folders. **Unique** means: the value may exist only once in this folder type – upper and lower case don't count.
@@ -184,13 +184,24 @@ Ablago stores the values under the key, and the [interface](api.md) uses it. Tha
 
 A field of the field kind **Link** points to folders of another folder type (or the same one – that's how hierarchies such as house → heating → heat pump arise). Choose:
 
-- **Target folder type** – what is linked to, e.g. *Contract partner*. *User* and *Role* are possible too, e.g. for a field "Responsible".
+- **Target folder types** – what is linked to, e.g. *Contract partner*. *User* and *Role* are possible too, e.g. for a field "Responsible". You can choose **several** folder types: an invoice then *concerns* the car, the heating, the flat or a contract in **one** field, instead of having a field of its own for each kind. Choose the types one after another in the field; **Remove** takes one out again.
 - **Multiple** – whether several folders can be chosen.
+- **All of the same type** – only with *Several folders allowed* and several target types: if the first folder chosen is a vehicle, the others may only be vehicles. Ablago checks this when saving, also via the [interface](api.md).
 - **Kind of link:**
     - **Belonging** – "belongs to": the invoice belongs to the contract. Counts later in evaluations such as "everything about the house".
     - **Reference** – "has to do with": the invoice comes from this issuer. Just a link.
 
     The kind of link also decides when **deleting with linked folders** and for the **access copy** ([Data protection in Ablago](datenschutz.md#mit-verknupften-mappen-loschen)): only what hangs on via **belonging** is deleted along with it and handed over completely. If, for example, a contract is to go with its contract partner, set the field *Contract partner* in the contract to belonging (that is the case with the sample folder types).
+
+#### Several target types { #mehrere-zieltypen }
+
+- **When filling in**, the folders are offered grouped by type, the search covers all target types, and within each group the folders the person opened most recently come first. Chosen folders show their type with a symbol (that of the type's view), so that "Golf" (vehicle) and "Golf" (contract) can be told apart. **+ Create …** is there for each type the person may create folders in.
+- **Folders that aren't visible** appear as "(not visible)", as with one target type – without title and without type; the groups give no count.
+- **When saving**, Ablago checks that every linked folder has one of the target types (and that *All of the same type* holds). Existing fields with one target type stay as they are.
+- **In views, permissions, the advanced search and "Show if …"** such fields have the condition **points to a folder of type …**, e.g. "*concerns* points to a folder of type vehicle" ([views](sichten.md), [permissions](berechtigungen.md#zeigt-auf-mappe-vom-typ)).
+- **Choice filters** (next section) work on the fields all target types have in common (same key and field kind). **Follows from** and converting from a text field ([packages](pakete.md)) only work with exactly one target type.
+- **Deleting a target type:** if it is one of several, Ablago takes it out of the field when deleting it. If it is the only one, the field prevents the deletion as before.
+- **From packages**, target types can come that the package doesn't depend on (*optional*, e.g. *Invoice › concerns* → vehicle when the package Vehicles is installed). Ablago adds such a type as soon as it exists – also when the other package only comes later. The editor shows "Added as soon as it is installed: …" below. If the type is missing, the field stays anyway; if it has no target type at all yet, the form says the types come with another package.
 
 #### Restricting the choice { #auswahl-einschranken }
 
@@ -439,4 +450,4 @@ At the very bottom you decide whether the folder type **may go to AI services** 
 
 ## Deleting a folder type { #mappentyp-loschen }
 
-**Delete folder type** only works as long as there are no folders of this folder type – including none in the [bin](papierkorb.md) – and no other folder type links to it. Otherwise Ablago names the reasons. [System folder types](#systemmappentypen-benutzer-rolle-und-post) can never be deleted.
+**Delete folder type** only works as long as there are no folders of this folder type – including none in the [bin](papierkorb.md) – and no other folder type links to it alone (if it is one of [several target types](#mehrere-zieltypen), Ablago takes it out there). Otherwise Ablago names the reasons. [System folder types](#systemmappentypen-benutzer-rolle-und-post) can never be deleted.

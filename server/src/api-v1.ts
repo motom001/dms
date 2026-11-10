@@ -1,10 +1,10 @@
 import { ERKENNUNGSARTEN } from '../../shared/src/erkennung';
 import { FELDFORMATE } from '../../shared/src/feldformate';
-import { ABSCHNITT_TITEL_MAX, FELDTYPEN, HERKUNFT, HISTORIENGRUPPEN, REGISTERARTEN, type Benutzer } from '../../shared/src/model';
+import { ABSCHNITT_TITEL_MAX, FELDTYPEN, HERKUNFT, HISTORIENGRUPPEN, REGISTERARTEN, ZIELTYPEN_MAX, type Benutzer } from '../../shared/src/model';
 import { TEXTSPRACHEN } from '../../shared/src/textsprache';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../shared/src/anzeige';
 import { MERKMALE } from '../../shared/src/merkmale';
-import { SCHLUESSEL } from '../../shared/src/kennungen';
+import { SCHLUESSEL, TYP_KENNUNG } from '../../shared/src/kennungen';
 import { Fachfehler } from './fehler';
 import type { Anfrage, Antwort, Route } from './routen';
 import { t } from './sprache';
@@ -376,7 +376,12 @@ const SCHEMAS: Record<string, Schema> = {
       negativ: { type: 'boolean', description: 'Nur bei typ=betrag (#1035): negative Beträge erlaubt (Gutschrift, Erstattung). Fehlt = nein – dann gilt ≥ 0.' },
       standard: { oneOf: [{ type: 'string' }, { type: 'boolean' }], nullable: true, description: 'Standardwert für neue Mappen. Zeitraum (#1035) als P3M oder „3 Monate“ (gespeichert P3M), Prozent als Zahl („19“).' }, muster: { type: 'string' }, optionen: { type: 'array', items: { type: 'string' }, description: 'Bei typ=auswahl: die festen Werte (#728). In der Mappe steht immer der feste Wert – auch über die API lesen und schreiben; die Beschriftung je Sprache steht in beschriftungen.<sprache>.optionen.' },
       system: { type: 'boolean', readOnly: true, description: 'Systemfeld eines Systemmappentyps: nicht entfernbar, nur Bezeichnung und Hilfetext änderbar' },
-      mehrfach: { type: 'boolean' }, zielTyp: { ...uuid, description: 'Bei typ=referenz: Id des Ziel-Mappentyps' }, verweisart: { type: 'string', enum: ['zugehoerigkeit', 'bezug'] }, waehrung: { type: 'string' },
+      mehrfach: { type: 'boolean' },
+      zielTypen: { type: 'array', maxItems: ZIELTYPEN_MAX, items: { type: 'string' }, description: 'Bei typ=referenz (#1036): Ids der Ziel-Mappentypen – einer oder mehrere; ["*"] = jede Mappe (nur Systemfelder). Beim Speichern prüft Ablago, dass jede verwiesene Mappe einen dieser Typen hat. Leer nur, wenn zielOptional etwas nennt.' },
+      zielTyp: { ...uuid, deprecated: true, description: 'Veraltet (#1036), statt dessen zielTypen. Beim Lesen bei genau einem Zieltyp (oder "*") gesetzt, bei mehreren nicht; beim Schreiben gilt es nur ohne zielTypen.' },
+      gleicherTyp: { type: 'boolean', description: 'Bei typ=referenz mit mehrfach (#1036): alle gewählten Mappen vom selben Mappentyp – ist die erste ein Fahrzeug, dürfen die weiteren nur Fahrzeuge sein. Prüft Ablago beim Speichern.' },
+      zielOptional: { type: 'array', maxItems: ZIELTYPEN_MAX, items: { type: 'string', pattern: TYP_KENNUNG.source }, description: 'Bei typ=referenz (#1036, aus Paketen): Kennungen paket:schluessel von Zieltypen anderer Pakete, von denen das Paket nicht abhängt. Sobald es einen davon gibt, steht seine Id in zielTypen.' },
+      verweisart: { type: 'string', enum: ['zugehoerigkeit', 'bezug'] }, waehrung: { type: 'string' },
       folgtAus: { type: 'object', nullable: true, required: ['feld', 'zielFeld'], description: 'Bei typ=referenz (#886): Das Feld folgt aus einem anderen Verweisfeld dieser Mappe (feld, nur eine Mappe) über ein Verweisfeld der Mappe, auf die es zeigt (zielFeld, nur eine Mappe, auf denselben Zieltyp). Beispiel Person: organisation folgt aus niederlassung → organisation. Beim Anlegen und Ändern füllt Ablago ein leeres Feld, wenn die Quelle neu gesetzt oder geändert wird und die Anfrage das Feld nicht selbst nennt (auch nicht als null) – nur mit Mappen, die der Schlüssel lesen darf; ein vorhandener Wert wird nie überschrieben. Keine Kreise.', properties: { feld: { type: 'string' }, zielFeld: { type: 'string' } } },
       erkennung: { type: 'object', nullable: true, description: 'Aus Dokument füllen (#336, #391; bis #938 „Für die Erkennung nutzen“); vorhanden = an. Nur bei Text, Langtext, Zahl, Betrag, Datum, Auswahl, Verweis, Zeitraum und Prozent. art: was im Feld steht (fehlt = aus Feldart und Bezeichnung), hinweis: Erkennungshinweis, z. B. „Muster 100-####“ (# = Ziffer).', properties: { art: { type: 'string', enum: Object.keys(ERKENNUNGSARTEN) }, hinweis: { type: 'string', maxLength: 300 } } },
       wiederfinden: { type: 'boolean', description: 'Zum Wiederfinden nutzen (#938): Über diesen Wert findet Ablago vorhandene Mappen in Dokumenten wieder (z. B. Kundennummer, Vertragsnummer, Rechnungsnummer, Kennzeichen) – für Vorschläge mit Belegen und die Warnung vor Doppelten. Unabhängig von eindeutig. Nur bei Text, Zahl und Verweis; ohne die Angabe bleibt beim Speichern der bisherige Wert.' },

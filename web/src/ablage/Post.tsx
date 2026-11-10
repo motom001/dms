@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { auswahlText, darfErstellen, formatiere, POST_STAND, type Feld, type Mappe, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, formatiere, jedeMappe, POST_STAND, zielErlaubt, type Feld, type Mappe, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
 import { api, type MappeDetails, type PostErkennung } from '../api';
 import { artVon } from '../../../shared/src/erkennung';
 import { betreffFeld } from '../../../shared/src/uebernehmen';
@@ -169,7 +169,7 @@ export function vorschlagFuer(ziel: Mappentyp, post: Werte, e?: PostErkennung | 
     const art = artVon(f);
     if (art === 'betrag' && f.typ === 'betrag' && e.angaben.betrag) v[f.key] = e.angaben.betrag.wert;
     else if (art === 'nummer' && f.typ === 'text') { const n = e.angaben.nummern.find((x) => stamm(x.label) && (stamm(x.label) === stamm(f.label) || stamm(x.label) === stamm(f.key))); if (n) v[f.key] = n.wert; }
-    else if (art === 'verweis' && absender && f.zielTyp === absender.typId) v[f.key] = f.mehrfach ? [absender.mappeId] : absender.mappeId;
+    else if (art === 'verweis' && absender && zielErlaubt(f, absender.typId) && !jedeMappe(f)) v[f.key] = f.mehrfach ? [absender.mappeId] : absender.mappeId;
   }
   return v;
 }

@@ -10,6 +10,7 @@
  * Reine Funktionen für Server, Oberfläche und Tests; Texte über `t()`.
  */
 import type { Feld } from './model';
+import { einzigesZiel } from './verweisziele';
 import { t } from './texte';
 import { SCHLUESSEL } from './kennungen';
 
@@ -26,17 +27,18 @@ export function bereinigeFolgtAus(e: unknown): FolgtAus | undefined {
   return SCHLUESSEL.test(feld) && SCHLUESSEL.test(zielFeld) ? { feld, zielFeld } : undefined;
 }
 
-/** Felder, aus denen `f` folgen kann: andere Verweisfelder dieser Mappe mit einem Wert und festem Zieltyp. */
+/** Felder, aus denen `f` folgen kann: andere Verweisfelder dieser Mappe mit einem Wert und genau einem Zieltyp. */
 export function moeglicheQuellen(felder: Feld[], f: Pick<Feld, 'key'>): Feld[] {
-  return felder.filter((x) => x.key !== f.key && x.typ === 'referenz' && !x.mehrfach && !!x.zielTyp && x.zielTyp !== '*');
+  return felder.filter((x) => x.key !== f.key && x.typ === 'referenz' && !x.mehrfach && !!einzigesZiel(x));
 }
 
 /**
  * Verweisfelder im Ziel der Quelle, die auf denselben Mappentyp zeigen wie `f` (mit einem Wert).
  * `zielFelder`: die Felder des Mappentyps, auf den die Quelle zeigt.
  */
-export function moeglicheZielFelder(zielFelder: Feld[], f: Pick<Feld, 'zielTyp'>): Feld[] {
-  return zielFelder.filter((x) => x.typ === 'referenz' && !x.mehrfach && !!f.zielTyp && x.zielTyp === f.zielTyp);
+export function moeglicheZielFelder(zielFelder: Feld[], f: Pick<Feld, 'zielTypen'>): Feld[] {
+  const z = einzigesZiel(f);
+  return zielFelder.filter((x) => x.typ === 'referenz' && !x.mehrfach && !!z && einzigesZiel(x) === z);
 }
 
 /**
@@ -47,17 +49,18 @@ export function moeglicheZielFelder(zielFelder: Feld[], f: Pick<Feld, 'zielTyp'>
 export function folgtAusProbleme(felder: Feld[], f: Feld, felderVon: (typId: string) => Feld[] | undefined): string[] {
   const fa = f.folgtAus;
   if (!fa) return [];
-  if (f.typ !== 'referenz' || !f.zielTyp || f.zielTyp === '*') return [t('gemeinsam.folgtaus.nur-verweis')];
+  // Nur mit genau einem Zieltyp (#1036): Bei mehreren stünde nicht fest, welches Feld des Ziels gemeint ist.
+  if (f.typ !== 'referenz' || !einzigesZiel(f)) return [t('gemeinsam.folgtaus.nur-verweis')];
   const quelle = felder.find((x) => x.key === fa.feld);
   if (!quelle) return [t('gemeinsam.folgtaus.quelle-fehlt', { feld: fa.feld })];
   if (quelle.key === f.key) return [t('gemeinsam.folgtaus.nicht-aus-sich')];
-  if (quelle.typ !== 'referenz' || !quelle.zielTyp || quelle.zielTyp === '*') return [t('gemeinsam.folgtaus.quelle-kein-verweis', { feld: quelle.label || quelle.key })];
+  if (quelle.typ !== 'referenz' || !einzigesZiel(quelle)) return [t('gemeinsam.folgtaus.quelle-kein-verweis', { feld: quelle.label || quelle.key })];
   if (quelle.mehrfach) return [t('gemeinsam.folgtaus.quelle-mehrfach', { feld: quelle.label || quelle.key })];
-  const ziel = felderVon(quelle.zielTyp);
+  const ziel = felderVon(einzigesZiel(quelle)!);
   if (!ziel) return [];
   const zf = ziel.find((x) => x.key === fa.zielFeld);
   if (!zf) return [t('gemeinsam.folgtaus.zielfeld-fehlt', { feld: fa.zielFeld, quelle: quelle.label || quelle.key })];
-  if (zf.typ !== 'referenz' || zf.mehrfach || zf.zielTyp !== f.zielTyp) return [t('gemeinsam.folgtaus.zielfeld-passt-nicht', { feld: zf.label || zf.key })];
+  if (zf.typ !== 'referenz' || zf.mehrfach || einzigesZiel(zf) !== einzigesZiel(f)) return [t('gemeinsam.folgtaus.zielfeld-passt-nicht', { feld: zf.label || zf.key })];
   return [];
 }
 
