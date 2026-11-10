@@ -305,5 +305,20 @@
   "muster.knopf.ergebnis.gut": "Checked – nothing new found.",
   "muster.knopf.ergebnis.fehler": "The server isn't answering. Please check the address and port.",
   "muster.knopf.ergebnis.info": "Connecting to postfach.example.org …",
-  "muster.knopf.ausprobieren": "Click: the button shows “working”, then the result or the error below it."
+  "muster.knopf.ausprobieren": "Click: the button shows “working”, then the result or the error below it.",
+  "einheit.einheit": "Unit",
+  "einheit.einheit-von": "Unit of “{name}”",
+  "muster.einheit.titel": "Inputs with a unit",
+  "muster.einheit.text": "Period and percentage: number and unit on one line, singular and plural to match the number, the number pad on phones.",
+  "muster.einheit.zeitraum": "Period",
+  "muster.einheit.einzahl": "Singular",
+  "muster.einheit.prozent": "Percentage",
+  "muster.beschriftung.kuendigungsfrist": "Notice period",
+  "muster.beschriftung.laufzeit": "Term",
+  "muster.beschriftung.steuersatz": "Tax rate",
+  "muster.beschriftung.ermaessigt": "Reduced rate",
+  "muster.hinweis.einzahl": "With 1 the unit is singular.",
+  "muster.hinweis.prozent": "“19”, “19%” and “19.0” mean the same.",
+  "muster.fehler.zeitraum": "Please enter a whole number, for example 3.",
+  "muster.fehler.prozent": "Please enter a number, for example 7.5."
 }

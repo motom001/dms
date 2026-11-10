@@ -53,7 +53,9 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 | Langtext | Mindest- und Höchstlänge |
 | Formatierter Text | Mindest- und Höchstlänge (siehe unten) |
 | Zahl | Minimum, Maximum, Nachkommastellen, eindeutig |
-| Betrag | Minimum, Maximum, Standardwährung |
+| Betrag | Minimum, Maximum, Standardwährung, [Negative Beträge erlauben](#zeitraum-prozent-negativ) |
+| Zeitraum | – (Zahl und Einheit, siehe [unten](#zeitraum-prozent-negativ)) |
+| Prozent | Minimum, Maximum, Nachkommastellen |
 | Datum | [Frühestens, Spätestens](#formate-und-datumsgrenzen) (fest oder „heute“), Ist eine Frist |
 | Ja/Nein | – |
 | Auswahlliste | die Auswahlwerte (einer pro Zeile), Mehrfachauswahl, [Beschriftung der Werte](#beschriftungen-je-sprache) |
@@ -63,6 +65,16 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
+
+### Zeitraum, Prozent und negative Beträge { #zeitraum-prozent-negativ }
+
+Für Verträge und Rechnungen gibt es drei Dinge, die so eingetragen werden, wie sie auf dem Papier stehen:
+
+- **Zeitraum** – eine ganze Zahl (0 bis 9999) und eine Einheit: Tage, Wochen, Monate oder Jahre. Gut für *Kündigungsfrist* „3 Monate“ oder *Laufzeit* „24 Monate“. Ablago zeigt Einzahl und Mehrzahl richtig („1 Monat“, „3 Monate“) – auch in der [Titel-Vorlage](#titel-einer-mappe) und auf Englisch. Die Einheit bleibt, wie eingetragen; sortiert und verglichen wird nach der Länge (ein Monat zählt dabei 30,4375 Tage, ein Jahr 365,25 – so sind 12 Monate gleich 1 Jahr). Der Standardwert lässt sich als „3 Monate“ eintragen.
+- **Prozent** – eine Zahl mit Nachkommastellen, frei wählbar (auch ausländische Steuersätze). „19“, „19 %“ und „19,0“ ergeben dasselbe; angezeigt wird „19 %“. Minimum, Maximum und Nachkommastellen wie bei einer Zahl.
+- **Negative Beträge** – am Betragsfeld **Negative Beträge erlauben** anhaken, z. B. für *Gutschrift* oder *Erstattung*. Vorgabe ist aus: Dann darf der Betrag nicht unter 0 liegen. Ist der Haken an, steht beim Ausfüllen unter dem Feld „Gutschrift oder Erstattung? Mit Minus eintragen.“, und in Trefferlisten steht ein deutliches Minuszeichen (−25,00 €). Betragsfelder, in denen beim Update schon ein negativer Betrag stand, haben den Haken von selbst.
+
+Alle drei kennen [Bedingungen](sichten.md), die erweiterte Suche, Direktlinks, Export und Pakete. Im [Vollexport](export.md) steht ein Zeitraum als `P3M` (ISO 8601), Prozent als Zahl.
 
 ### Felder ausblenden statt löschen { #felder-ausblenden }
 
@@ -115,7 +127,7 @@ Mit dem Haken **Aus Dokument füllen** an einem Feld darf der Knopf [Aus Dokumen
 
 Hat ein Mappentyp gar kein Feld mit diesem Haken, füllt sie alle Felder, deren Art sie aus der Bezeichnung erkennt. Verweisfelder schlagen eine vorhandene Mappe des Zieltyps vor, die im Text steht – an ihren Feldern mit [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen), sonst am Titel.
 
-Geeignet sind Text, Langtext, Zahl, Betrag, Datum, Auswahlliste und Verweis – Passwortfelder nie. Ist der Haken an, wählst du optional **Was steht im Feld?** (Name oder Firma, Nummer, IBAN, E-Mail-Adresse, Telefon, Straße, PLZ, Ort …). Ohne Angabe schließt Ablago es aus Feldart, Kennung und Bezeichnung („Kundennummer“ → Nummer, „E-Mail“ → E-Mail-Adresse); was es erkannt hat, steht in der Auswahl hinter *automatisch*. Der **Erkennungshinweis** ist ein freier Text, z. B. „Kundennummer oben rechts, Muster 100-####“ – ein Muster nach dem Wort *Muster* (`#` = Ziffer, `A` = Großbuchstabe) sucht die Erkennung gezielt.
+Geeignet sind Text, Langtext, Zahl, Betrag, Datum, Auswahlliste, Verweis, Zeitraum und Prozent – Passwortfelder nie. Einen Zeitraum sucht die Erkennung zuerst neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“), sonst nimmt sie den ersten im Text (mit geringer Sicherheit); ebenso den Prozentsatz („19 % MwSt.“). Ist der Haken an, wählst du optional **Was steht im Feld?** (Name oder Firma, Nummer, IBAN, E-Mail-Adresse, Telefon, Straße, PLZ, Ort …). Ohne Angabe schließt Ablago es aus Feldart, Kennung und Bezeichnung („Kundennummer“ → Nummer, „E-Mail“ → E-Mail-Adresse); was es erkannt hat, steht in der Auswahl hinter *automatisch*. Der **Erkennungshinweis** ist ein freier Text, z. B. „Kundennummer oben rechts, Muster 100-####“ – ein Muster nach dem Wort *Muster* (`#` = Ziffer, `A` = Großbuchstabe) sucht die Erkennung gezielt.
 
 Die Pakete der Registry (z. B. *Basis*) setzen den Haken selbst. Bei einem Update übernimmt Ablago ihn nur an Feldern, an denen du noch nichts eingestellt hast; die Vorschau nennt sie unter „Aus Dokument füllen“.
 

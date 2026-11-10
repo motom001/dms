@@ -11,6 +11,7 @@ import { aufbewahrenBis } from '../../shared/src/archiv';
 import { EXPORT_TAGE } from '../../shared/src/auskunft';
 import { kernTyp } from '../../shared/src/dateiumwandlung';
 import { auswahlText, istLeer, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
+import { istZeitraum, zeitraumIso } from '../../shared/src/feldarten';
 import type { Erinnerung } from '../../shared/src/fristen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Sicht } from '../../shared/src/sichten';
@@ -189,7 +190,12 @@ function falte(z: string): string {
 function zelle(v: unknown): string {
   if (v === null || v === undefined) return '';
   if (Array.isArray(v)) return v.map(String).join(' | ');
-  if (typeof v === 'object') return 'betrag' in (v as object) ? String((v as { betrag: unknown }).betrag ?? '') : JSON.stringify(v);
+  if (typeof v === 'object') {
+    if ('betrag' in (v as object)) return String((v as { betrag: unknown }).betrag ?? '');
+    // Zeitraum (#1035) nach ISO 8601: P3M = 3 Monate.
+    if (istZeitraum(v)) return zeitraumIso(v);
+    return JSON.stringify(v);
+  }
   return String(v);
 }
 /** Passwortfelder nie im Klartext: nur „gesetzt“. */
@@ -581,6 +587,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 
 - Text: UTF-8. CSV nach RFC 4180 mit Komma und BOM (Excel erkennt so UTF-8).
 - Datum: \`JJJJ-MM-TT\`, Zeitpunkte ISO 8601 in UTC. Zahlen mit Punkt. Beträge: Spalte \`<feld>\` und \`<feld>_waehrung\`.
+- Zeiträume nach ISO 8601 (\`P3M\` = 3 Monate, \`P14D\`, \`P2W\`, \`P1Y\`), in JSON als \`{ "anzahl": 3, "einheit": "monate" }\`. Prozent als Zahl (\`19\` für 19 %).
 - Ids: UUID. Mehrfachwerte in CSV mit \` | \` getrennt; in JSON als Liste.
 - Passwortfelder stehen nie in den Daten (nur „gesetzt“).
 

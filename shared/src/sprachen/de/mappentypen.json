@@ -337,5 +337,10 @@
   "darstellung.entfernt": "„{name}“ entfernt.",
   "darstellung.entfernen": "„{name}“ entfernen",
   "darstellung.abschnitt-hinzufuegen": "+ Abschnitt",
-  "bereich.ki": "KI-Dienste"
+  "bereich.ki": "KI-Dienste",
+  "editor.chip.negativ": "auch negativ",
+  "editor.negativ": "Negative Beträge erlauben",
+  "editor.negativ-hilfe": "Für Gutschriften und Erstattungen; das Formular zeigt dann „Mit Minus eintragen“.",
+  "editor.zeitraum-hilfe": "Eine ganze Zahl und eine Einheit (Tage, Wochen, Monate, Jahre), zum Beispiel „3 Monate“. Sortiert wird nach der Länge.",
+  "editor.zeitraum-standard": "z. B. 3 Monate"
 }

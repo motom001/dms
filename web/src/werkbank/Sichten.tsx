@@ -23,7 +23,8 @@ import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { KnopfLink, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
+import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 
 /**
  * Sichten verwalten (#38) mit Bedingungen (#40, #41): Baum links, Bearbeitung rechts.
@@ -494,7 +495,8 @@ export function FeldBedingung({ b, feld, setze, titel, merke }: {
     if (op === 'zeigtAuf') return feld.art === 'person' || zielSystem(feld) === 'benutzer' ? { art: 'ich' } : { art: 'fest', wert: [] };
     if (op === 'einerVon') return { art: 'fest', wert: [] };
     if (datum) return { art: 'heute', versatz: 0, einheit: 'tage' };
-    return { art: 'fest', wert: feld.art === 'zahl' || feld.art === 'betrag' ? 0 : '' };
+    if (feld.art === 'zeitraum') return { art: 'fest', wert: 'P3M' };
+    return { art: 'fest', wert: feld.art === 'zahl' || feld.art === 'betrag' || feld.art === 'prozent' ? 0 : '' };
   };
   const zielSystem = (f: Bedingungsfeld) => (f.feld?.zielTyp ? d.typ(f.feld.zielTyp)?.system ?? null : null);
   const wechsleOp = (op: Operator) => {
@@ -523,7 +525,12 @@ export function FeldBedingung({ b, feld, setze, titel, merke }: {
 
 function Einzelwert({ feld, w, setze }: { feld: Bedingungsfeld; w?: WertAngabe; setze: (w: WertAngabe) => void }) {
   const datum = feld.art === 'datum' || feld.art === 'zeit';
-  const zahl = feld.art === 'zahl' || feld.art === 'betrag';
+  const zahl = feld.art === 'zahl' || feld.art === 'betrag' || feld.art === 'prozent';
+  // Zeitraum (#1035): Zahl und Einheit, gespeichert als P3M; verglichen wird in Tagen.
+  if (feld.art === 'zeitraum') {
+    const roh = zeitraumRohAus(w?.art === 'fest' ? String(w.wert) : 'P3M');
+    return <ZeitraumEingabe aria-label={t('werkbank.sichten.wert')} wert={roh} setze={(r) => setze({ art: 'fest', wert: `P${r.anzahl.trim()}${ISO_EINHEIT[r.einheit]}` })} />;
+  }
   if (datum) {
     const art: WertArt = w?.art === 'fest' ? 'fest' : 'heute';
     return (
@@ -540,6 +547,14 @@ function Einzelwert({ feld, w, setze }: { feld: Bedingungsfeld; w?: WertAngabe; 
   const v = w?.art === 'fest' ? w.wert : '';
   return <input aria-label={t('werkbank.sichten.wert')} className={zahl ? 'kurz' : ''} inputMode={zahl ? 'decimal' : undefined} value={String(v)}
     onChange={(x) => setze({ art: 'fest', wert: zahl ? (x.target.value === '' ? '' : Number(x.target.value.replace(',', '.'))) as number : x.target.value })} />;
+}
+
+const ISO_EINHEIT: Record<Zeitraumeinheit, string> = { tage: 'D', wochen: 'W', monate: 'M', jahre: 'Y' };
+/** Vergleichswert „P3M“ als Anzahl und Einheit; was halb getippt ist („P M“), bleibt sichtbar. */
+function zeitraumRohAus(s: string): ZeitraumRoh {
+  const m = /^P(.*)([DWMY])$/.exec(s);
+  const einheit = (Object.keys(ISO_EINHEIT) as Zeitraumeinheit[]).find((k) => ISO_EINHEIT[k] === m?.[2]) ?? 'monate';
+  return { anzahl: m?.[1] ?? '', einheit };
 }
 
 function Versatz({ w, setze, einheiten }: { w: WertAngabe; setze: (w: WertAngabe) => void; einheiten?: boolean }) {

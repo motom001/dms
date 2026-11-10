@@ -67,5 +67,6 @@
   "verweis.unpassend.titel": "Stays valid; only what matches the selection can be chosen anew.",
   "verweis.aendern": "Change",
   "verweis.entfernen": "Remove link “{titel}”",
-  "verweis.entfernen.ohne": "Remove link"
+  "verweis.entfernen.ohne": "Remove link",
+  "eingabe.betrag-negativ": "Credit note or refund? Enter it with a minus."
 }

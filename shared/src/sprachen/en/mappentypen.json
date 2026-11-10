@@ -337,5 +337,10 @@
   "darstellung.entfernt": "“{name}” removed.",
   "darstellung.entfernen": "Remove “{name}”",
   "darstellung.abschnitt-hinzufuegen": "+ Section",
-  "bereich.ki": "AI services"
+  "bereich.ki": "AI services",
+  "editor.chip.negativ": "negative allowed",
+  "editor.negativ": "Allow negative amounts",
+  "editor.negativ-hilfe": "For credit notes and refunds; the form then shows “Enter it with a minus”.",
+  "editor.zeitraum-hilfe": "A whole number and a unit (days, weeks, months, years), for example “3 months”. Sorted by length.",
+  "editor.zeitraum-standard": "e.g. 3 months"
 }

@@ -1,3 +1,4 @@
+import { rechtsbuendig } from '../../../shared/src/feldarten';
 import { sichtBeschreibung, sichtName, typBeschreibung, typName } from '../../../shared/src/beschriftung';
 import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -575,7 +576,7 @@ function Tabelle(p: {
   const alleGeladen = !!p.wahl && geladen.length > 0 && geladen.every((m) => p.wahl!.gewaehlt.has(m.id));
   const einige = !!p.wahl && !alleGeladen && geladen.some((m) => p.wahl!.gewaehlt.has(m.id));
   const aktiv = p.sortierung ?? { spalte: '_titel', absteigend: false };
-  const rechts = (k: string) => { const f = p.spaltenTyp?.felder.find((x) => x.key === k); return f?.typ === 'zahl' || f?.typ === 'betrag'; };
+  const rechts = (k: string) => rechtsbuendig(p.spaltenTyp?.felder.find((x) => x.key === k)?.typ);
   // Datum, Ja/Nein und Zeitstempel nicht umbrechen; Texte dürfen umbrechen, damit die Tabelle in die Liste passt.
   const kurz = (k: string) => { const f = p.spaltenTyp?.felder.find((x) => x.key === k); return k === '_erstellt' || k === '_geaendert' || f?.typ === 'datum' || f?.typ === 'janein'; };
   return (

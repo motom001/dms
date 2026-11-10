@@ -5,10 +5,10 @@
 import { zipPuffer } from './zip';
 import { zeitzone } from '../../shared/src/region';
 
-/** Eine Zelle: Text, Zahl, Ja/Nein, Datum (JJJJ-MM-TT), Zeitpunkt (ISO) oder Betrag. */
+/** Eine Zelle: Text, Zahl, Ja/Nein, Datum (JJJJ-MM-TT), Zeitpunkt (ISO), Betrag oder Prozent (19 für 19 %, #1035). */
 export type Zelle =
   | string | number | boolean | null
-  | { datum: string } | { zeitpunkt: string } | { betrag: number; waehrung: string };
+  | { datum: string } | { zeitpunkt: string } | { betrag: number; waehrung: string } | { prozent: number };
 
 const xml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
   // In XML 1.0 verbotene Steuerzeichen entfernen.
@@ -39,9 +39,10 @@ export function xlsxAus(blatt: string, kopf: string[], zeilen: Zelle[][]): Buffe
     '<numFmt numFmtId="164" formatCode="DD.MM.YYYY"/>', '<numFmt numFmtId="165" formatCode="DD.MM.YYYY HH:MM"/>',
     ...waehrungen.map((w, i) => `<numFmt numFmtId="${166 + i}" formatCode="${xml(`#,##0.00 "${symbol(w)}";-#,##0.00 "${symbol(w)}"`)}"/>`),
   ];
-  // Stile: 0 normal, 1 fett (Kopf), 2 Datum, 3 Datum+Zeit, 4+i Währung i.
+  // Stile: 0 normal, 1 fett (Kopf), 2 Datum, 3 Datum+Zeit, 4 Prozent (eingebautes Format 10 „0,00 %“), 5+i Währung i.
   const xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>', '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"/>',
     '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/>', '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/>',
+    '<xf numFmtId="10" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/>',
     ...waehrungen.map((_, i) => `<xf numFmtId="${166 + i}" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/>`)];
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="${numFmts.length}">${numFmts.join('')}</numFmts>
@@ -58,7 +59,9 @@ export function xlsxAus(blatt: string, kopf: string[], zeilen: Zelle[][]): Buffe
     if (typeof c === 'string') return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xml(c.slice(0, 32767))}</t></is></c>`;
     if ('datum' in c) { const n = seriell(c.datum); return n === null ? '' : `<c r="${ref}" s="2"><v>${n}</v></c>`; }
     if ('zeitpunkt' in c) { const n = seriell(c.zeitpunkt, true); return n === null ? '' : `<c r="${ref}" s="3"><v>${n}</v></c>`; }
-    return `<c r="${ref}" s="${4 + waehrungen.indexOf(c.waehrung)}"><v>${c.betrag}</v></c>`;
+    // Prozent (#1035): Excel rechnet mit 0,19 für 19 % – so lässt sich damit weiterrechnen.
+    if ('prozent' in c) return Number.isFinite(c.prozent) ? `<c r="${ref}" s="4"><v>${Number((c.prozent / 100).toPrecision(15))}</v></c>` : '';
+    return `<c r="${ref}" s="${5 + waehrungen.indexOf(c.waehrung)}"><v>${c.betrag}</v></c>`;
   };
   const reihen = [
     `<row r="1">${kopf.map((k, i) => `<c r="${spalte(i)}1" t="inlineStr" s="1"><is><t xml:space="preserve">${xml(k)}</t></is></c>`).join('')}</row>`,

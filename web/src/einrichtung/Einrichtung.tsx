@@ -32,6 +32,7 @@ import { optionText, type Beschriftungen, type TypTeile } from '../../../shared/
 import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
 import { abfangen } from '../bausteine';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
@@ -152,6 +153,14 @@ function kopieVon(mappentyp: Mappentyp, typen: Mappentyp[]): Entwurf {
   };
 }
 
+/** Standardwert im Editor: ein gespeicherter Zeitraum (P3M) lesbar als „3 Monate“ (#1035), sonst wie getippt. */
+function standardAnzeige(f: Pick<Feld, 'typ' | 'standard'>): string {
+  const s = String(f.standard ?? '');
+  if (f.typ === 'zeitraum' && /^P\d+[DWMY]$/.test(s)) { const z = leseZeitraum(s); if (z) return zeitraumText(z); }
+  if (f.typ === 'prozent' && /^-?\d+(\.\d+)?$/.test(s)) return s.replace('.', ',');
+  return s;
+}
+
 /** Für die Vorschau, solange es keine Mappe gibt. */
 function beispielWerte(felder: Feld[]): Werte {
   const w: Werte = {};
@@ -159,6 +168,8 @@ function beispielWerte(felder: Feld[]): Werte {
     switch (f.typ) {
       case 'zahl': w[f.key] = 42; break;
       case 'betrag': w[f.key] = { betrag: 123.45, waehrung: f.waehrung || 'EUR' }; break;
+      case 'zeitraum': w[f.key] = { anzahl: 3, einheit: 'monate' }; break;
+      case 'prozent': w[f.key] = 19; break;
       case 'datum': w[f.key] = new Date().toISOString().slice(0, 10); break;
       case 'janein': w[f.key] = true; break;
       case 'auswahl': w[f.key] = f.optionen?.[0] ?? ''; break;
@@ -576,12 +587,13 @@ function FeldZeile(p: {
   if (f.typ === 'datum' && f.min) chips.push(t('felder.editor.chip.min', { datum: grenzeText(f.min) }));
   if (f.typ === 'datum' && f.max) chips.push(t('felder.editor.chip.max', { datum: grenzeText(f.max) }));
   if (f.typ === 'datum' && f.frist) chips.push(t('felder.editor.chip.frist'));
+  if (f.typ === 'betrag' && f.negativ) chips.push(t('mappentypen.editor.chip.negativ'));
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
     <label className="eigenschaft" htmlFor={id(prop)}><span>{label}</span>
       <input id={id(prop)} inputMode="decimal" placeholder={platzhalter} value={f[prop]} onChange={(e) => setze({ [prop]: e.target.value } as Partial<EntwurfFeld>)} /></label>
   );
-  const haken = (prop: 'pflicht' | 'eindeutig' | 'mehrfach', label: string, hilfe: string) => (
+  const haken = (prop: 'pflicht' | 'eindeutig' | 'mehrfach' | 'negativ', label: string, hilfe: string) => (
     <label className="haken"><input type="checkbox" checked={!!f[prop]} onChange={(e) => setze({ [prop]: e.target.checked })} /><span><span className="haken-titel">{label}</span><small className="hilfe">{hilfe}</small></span></label>
   );
 
@@ -591,9 +603,12 @@ function FeldZeile(p: {
     {f.typ === 'text' && <label className="eigenschaft" htmlFor={id('muster')}><span>{tn('mappentypen.editor.muster', { klein: <small>{t('mappentypen.editor.regulaerer-ausdruck')}</small> })}</span><input id={id('muster')} className="mono" placeholder="z. B. [A-Z]{2}-\d+" value={f.muster ?? ''} onChange={(e) => setze({ muster: e.target.value })} /></label>}
     {f.typ === 'text' && <FormatEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} />}
   </div>;
-  else if (f.typ === 'zahl') besonders = <div className="raster">{zahl('min', t('mappentypen.editor.minimum'), t('mappentypen.editor.leer.keins'))}{zahl('max', t('mappentypen.editor.maximum'), t('mappentypen.editor.leer.keins'))}{zahl('nachkomma', t('mappentypen.editor.nachkommastellen'), t('mappentypen.editor.leer.beliebig'))}</div>;
+  else if (f.typ === 'zahl' || f.typ === 'prozent') besonders = <div className="raster">{zahl('min', t('mappentypen.editor.minimum'), t('mappentypen.editor.leer.keins'))}{zahl('max', t('mappentypen.editor.maximum'), t('mappentypen.editor.leer.keins'))}{zahl('nachkomma', t('mappentypen.editor.nachkommastellen'), t('mappentypen.editor.leer.beliebig'))}</div>;
   else if (f.typ === 'betrag') besonders = <div className="raster">{zahl('min', t('mappentypen.editor.minimum'), t('mappentypen.editor.leer.keins'))}{zahl('max', t('mappentypen.editor.maximum'), t('mappentypen.editor.leer.keins'))}
-    <label className="eigenschaft" htmlFor={id('waehrung')}><span>{t('mappentypen.editor.standardwaehrung')}</span><input id={id('waehrung')} className="mono" maxLength={3} value={f.waehrung ?? 'EUR'} onChange={(e) => setze({ waehrung: e.target.value.toUpperCase() })} /></label></div>;
+    <label className="eigenschaft" htmlFor={id('waehrung')}><span>{t('mappentypen.editor.standardwaehrung')}</span><input id={id('waehrung')} className="mono" maxLength={3} value={f.waehrung ?? 'EUR'} onChange={(e) => setze({ waehrung: e.target.value.toUpperCase() })} /></label>
+    {/* Negative Beträge (#1035): Vorgabe aus, also wie bisher ≥ 0. */}
+    <div className="eigenschaft unten">{haken('negativ', t('mappentypen.editor.negativ'), t('mappentypen.editor.negativ-hilfe'))}</div></div>;
+  else if (f.typ === 'zeitraum') besonders = <p className="leise klein">{t('mappentypen.editor.zeitraum-hilfe')}</p>;
   else if (f.typ === 'auswahl') besonders = <div className="raster">
     <label className="eigenschaft" htmlFor={id('optionen')}><span>{tn('mappentypen.editor.auswahlwerte', { klein: <small>{t('mappentypen.editor.einer-pro-zeile')}</small> })}</span>
       <textarea id={id('optionen')} rows={4} defaultValue={(f.optionen ?? []).join('\n')} onBlur={(e) => setze({ optionen: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} /></label>
@@ -627,8 +642,8 @@ function FeldZeile(p: {
   </>;
 
   let standard = null;
-  if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert' || f.typ === 'zahl' || f.typ === 'betrag')
-    standard = <label className="eigenschaft" htmlFor={id('std')}><span>{tn('mappentypen.editor.standardwert', { wert: f.typ === 'text' && <small>{kreisImStandard(f.standard) ? t('mappentypen.editor.nummernkreis-das-feld-wird') : t('mappentypen.editor.oder-nummernkreis-schluessel')}</small> })}</span><input id={id('std')} placeholder={t('mappentypen.editor.leer')} value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
+  if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert' || f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'prozent' || f.typ === 'zeitraum')
+    standard = <label className="eigenschaft" htmlFor={id('std')}><span>{tn('mappentypen.editor.standardwert', { wert: f.typ === 'text' ? <small>{kreisImStandard(f.standard) ? t('mappentypen.editor.nummernkreis-das-feld-wird') : t('mappentypen.editor.oder-nummernkreis-schluessel')}</small> : f.typ === 'zeitraum' && <small>{t('mappentypen.editor.zeitraum-standard')}</small> })}</span><input id={id('std')} placeholder={t('mappentypen.editor.leer')} value={standardAnzeige(f)} onChange={(e) => setze({ standard: e.target.value })} /></label>;
   else if (f.typ === 'datum')
     standard = <label className="eigenschaft" htmlFor={id('std')}><span>{t('mappentypen.editor.standardwert-2')}</span><input id={id('std')} type="date" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
   else if (f.typ === 'janein')

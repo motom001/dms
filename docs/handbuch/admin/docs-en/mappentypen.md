@@ -53,7 +53,9 @@ Every field has a **label** (changeable), a **key** (fixed once saved) and a **f
 | Long text | minimum and maximum length |
 | Formatted text | minimum and maximum length (see below) |
 | Number | minimum, maximum, decimal places, unique |
-| Amount | minimum, maximum, default currency |
+| Amount | minimum, maximum, default currency, [allow negative amounts](#zeitraum-prozent-negativ) |
+| Period | – (number and unit, see [below](#zeitraum-prozent-negativ)) |
+| Percentage | minimum, maximum, decimal places |
 | Date | [earliest, latest](#formate-und-datumsgrenzen) (fixed or "today"), Is a deadline |
 | Yes/No | – |
 | Choice list | the choice values (one per line), multiple choice, [labels of the values](#beschriftungen-je-sprache) |
@@ -63,6 +65,16 @@ Every field has a **label** (changeable), a **key** (fixed once saved) and a **f
 For all of them: **Required field** and a **help text** that is shown below the field when filling it in (in the field editor right next to the label); most folder types also have a **default value** for new folders. **Unique** means: the value may exist only once in this folder type – upper and lower case don't count.
 
 If the default value of a text field contains `{nummernkreis:<key>}`, every new folder gets a consecutive number from this [number sequence](nummernkreise.md); the field is then read-only.
+
+### Period, percentage and negative amounts { #zeitraum-prozent-negativ }
+
+For contracts and invoices there are three things you enter just as they are on paper:
+
+- **Period** – a whole number (0 to 9999) and a unit: days, weeks, months or years. Good for a *notice period* of "3 months" or a *term* of "24 months". Ablago shows singular and plural correctly ("1 month", "3 months") – in the [title template](#titel-einer-mappe) too, and in German. The unit stays as entered; sorting and comparing go by length (a month counts as 30.4375 days, a year as 365.25 – so 12 months equal 1 year). The default value can be entered as "3 months".
+- **Percentage** – a number with decimals, freely chosen (foreign tax rates too). "19", "19%" and "19.0" mean the same; it is shown as "19%". Minimum, maximum and decimal places as for a number.
+- **Negative amounts** – tick **Allow negative amounts** on the amount field, e.g. for a *credit note* or *refund*. The default is off: the amount may then not be below 0. With the tick, the form shows "Credit note or refund? Enter it with a minus." below the field, and lists show a clear minus sign (−£25.00). Amount fields that already held a negative amount at the update have the tick set automatically.
+
+All three work with [conditions](sichten.md), the advanced search, direct links, export and packages. In the [full export](export.md) a period is written as `P3M` (ISO 8601), a percentage as a number.
 
 ### Hiding fields instead of deleting them { #felder-ausblenden }
 
@@ -115,7 +127,7 @@ With the tick **Fill from document** on a field, the button [Fill in from docume
 
 If a folder type has no field with this tick at all, it fills all fields whose kind it recognises from the label. Link fields suggest an existing folder of the target type that is in the text – by its fields with [Use to find existing folders](#zum-wiederfinden-nutzen), otherwise by its title.
 
-Suitable are text, long text, number, amount, date, choice list and link – password fields never. If the tick is on, you optionally choose **What is in the field?** (name or company, number, IBAN, email address, phone, street, postcode, town …). Without an entry, Ablago infers it from field kind, key and label ("Kundennummer" → number, "E-Mail" → email address); what it recognised is shown in the selection after *automatic*. The **recognition hint** is a free text, e.g. "Customer number at the top right, pattern 100-####" – a pattern after the word *pattern* (`#` = digit, `A` = capital letter) is searched for specifically by recognition.
+Suitable are text, long text, number, amount, date, choice list, link, period and percentage – password fields never. Recognition looks for a period next to the field's label first ("Notice period: 3 months"), otherwise it takes the first one in the text (with low confidence); the same for a percentage ("19% VAT"). If the tick is on, you optionally choose **What is in the field?** (name or company, number, IBAN, email address, phone, street, postcode, town …). Without an entry, Ablago infers it from field kind, key and label ("Kundennummer" → number, "E-Mail" → email address); what it recognised is shown in the selection after *automatic*. The **recognition hint** is a free text, e.g. "Customer number at the top right, pattern 100-####" – a pattern after the word *pattern* (`#` = digit, `A` = capital letter) is searched for specifically by recognition.
 
 The registry's packages (e.g. *Basis*) set the tick themselves. On an update, Ablago only takes it over on fields where you haven't set anything yet; the preview names them under "Fill from document".
 

@@ -11,6 +11,15 @@ import { datumsformat } from './region';
 import { ALLE_TYPEN } from './pakete';
 import { t } from './texte';
 import { feldLabel, optionText } from './beschriftung';
+import { istZeitraum, leseProzent, leseZeitraum, zeitraumTage, zeitraumText } from './feldarten';
+
+/** Arten, die als Zahl verglichen werden – Zeitraum in Tagen (#1035). */
+export const istZahlvergleich = (art: Feldart) => art === 'zahl' || art === 'betrag' || art === 'prozent' || art === 'zeitraum';
+/** Fester Vergleichswert eines Zeitraums („P3M“, „3 Monate“) in Tagen; NaN = keiner. */
+export function zeitraumWert(v: unknown): number {
+  const z = leseZeitraum(v);
+  return z ? zeitraumTage(z) : NaN;
+}
 
 /* ---------- Bedingungen ---------- */
 
@@ -41,6 +50,9 @@ export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   formatiert: ['enthaelt', 'leer', 'nichtLeer'],
   zahl: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
   betrag: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
+  // Zeitraum und Prozent (#1035): wie Zahlen; ein Zeitraum zählt dabei in Tagen (feldarten.ts).
+  prozent: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
+  zeitraum: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
   datum: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'imZeitraum', 'leer', 'nichtLeer'],
   zeit: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'imZeitraum'],
   janein: ['ja', 'nein'],
@@ -213,6 +225,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (b.wert && (b.wert.art === 'jahr' || b.wert.art === 'monat') && b.op !== 'imZeitraum') return t('gemeinsam.sichten.jahr-und-monat-gehen');
     if (b.wert && (b.wert.art === 'ich' || b.wert.art === 'meineRollen') && b.op !== 'zeigtAuf') return t('gemeinsam.sichten.geht-nur-mit-zeigt', { DYNAMISCH: DYNAMISCH[b.wert.art] });
     if (b.wert?.art === 'heute' && f.art !== 'datum' && f.art !== 'zeit') return t('gemeinsam.sichten.heute-geht-nur-bei');
+    if (f.art === 'zeitraum' && [b.wert, b.bis].some((w) => w?.art === 'fest' && Number.isNaN(zeitraumWert(w.wert)))) return t('gemeinsam.feldarten.bedingung-zeitraum', { label: f.label });
     if (b.wert?.art === 'eigenesFeld' || b.bis?.art === 'eigenesFeld') return t('gemeinsam.sichten.werte-aus-der-eigenen');
     if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return t('gemeinsam.sichten.rollen-des-aktuellen-benutzers-2', { label: f.label });
     return null;
@@ -302,13 +315,17 @@ function wertVon(w: WertAngabe | undefined, feldart: Feldart, a: Aufloesung): un
     case 'meineRollen': return a.meineRollen;
     case 'jahr': case 'monat': return zeitraum(w, a.heute);
     case 'eigenesFeld': return undefined;
-    case 'fest': {
-      const v = w.wert;
-      if (feldart === 'zahl' || feldart === 'betrag') return typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
-      if (feldart === 'referenz' || feldart === 'person' || feldart === 'auswahl') return Array.isArray(v) ? v.map(String) : [String(v)];
-      return v;
-    }
+    case 'fest': return festerWert(w.wert, feldart);
   }
+}
+
+/** Fester Vergleichswert, wie das Repo ihn vergleicht: Zahl, Prozent, Zeitraum in Tagen (#1035), Liste oder wie er ist. */
+function festerWert(v: string | number | boolean | string[], feldart: Feldart): unknown {
+  if (feldart === 'zahl' || feldart === 'betrag') return typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
+  if (feldart === 'prozent') return leseProzent(v) ?? NaN;
+  if (feldart === 'zeitraum') return zeitraumWert(v);
+  if (feldart === 'referenz' || feldart === 'person' || feldart === 'auswahl') return Array.isArray(v) ? v.map(String) : [String(v)];
+  return v;
 }
 
 /**
@@ -388,6 +405,7 @@ function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown 
   }
   const v = m.werte[f.key];
   if (f.feldart === 'betrag') return v && typeof v === 'object' && !Array.isArray(v) ? (v as { betrag: number }).betrag : null;
+  if (f.feldart === 'zeitraum') return istZeitraum(v) ? zeitraumTage(v) : null;
   return v ?? null;
 }
 
@@ -425,7 +443,7 @@ export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
       case 'enthaelt': return !leer && String(v).toLowerCase().includes(String(f.a ?? '').toLowerCase());
     }
     if (leer) return false;
-    const num = f.feldart === 'zahl' || f.feldart === 'betrag';
+    const num = istZahlvergleich(f.feldart);
     const x = num ? Number(v) : String(v);
     const a = num ? Number(f.a) : String(f.a ?? '');
     const b = num ? Number(f.b) : String(f.b ?? '');
@@ -527,6 +545,8 @@ export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: 
         // Auswahl (#728): gespeichert ist der feste Wert, gezeigt die Beschriftung.
         if (Array.isArray(v)) return v.map((x) => `„${f?.art === 'auswahl' && f.feld ? optionText(f.feld, String(x)) : x}“`).join(', ');
         if (f?.art === 'datum' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v.split('-').reverse().join('.');
+        // Zeitraum (#1035): gespeichert „P3M“, gezeigt „3 Monate“.
+        if (f?.art === 'zeitraum') { const z = leseZeitraum(v); if (z) return zeitraumText(z); }
         return typeof v === 'string' ? `„${v}“` : String(v).replace('.', ',');
       }
     }

@@ -111,7 +111,8 @@ So funktioniert das Formular:
 - **Mappentypen**: Du wählst sie genauso wie mehrere Mappen in einem [Verweisfeld](mappen.md#auf-andere-mappen-verweisen) – tippen, Vorschlag wählen (oder **Enter** für den ersten). Die gewählten Mappentypen stehen **unter** dem Suchfeld, jeder mit **Entfernen**; das Suchfeld bleibt dabei auf einer Höhe mit *Volltext* daneben. Angeboten werden nur Mappentypen, die du lesen darfst. Wählst du keinen, sucht Ablago in allen – dann gibt es nur die allgemeinen Felder (angelegt am/von, geändert am/von).
 - **Bedingungen**: Anfangs steht kein Feld da. Mit **+ Bedingung** wählst du ein Feld; angeboten werden die Felder, die **alle gewählten Mappentypen gemeinsam** haben. Das Kreuz rechts entfernt die Bedingung wieder. Jedes Feld bekommt die passende Eingabe:
     - **Datum**: von–bis in einer Zeile; eins von beiden darf leer bleiben. Unter **Zeitraum …** gibt es „dieses Jahr“, „letztes Jahr“, „letzte 12 Monate“, „dieser Monat“ und „letzter Monat“.
-    - **Zahl, Betrag**: von–bis.
+    - **Zahl, Betrag, Prozent**: von–bis.
+    - **Zeitraum**: von–bis als Text, z. B. „1 Monat“ bis „6 Monate“; verglichen wird nach der Länge.
     - **Verweis** (z. B. Vertragspartner): mehrere Mappen – die Mappe muss auf **eine davon** zeigen.
     - **Auswahlliste**: mehrere Werte – einer davon muss passen.
     - **Ja/Nein**: ja, nein oder egal.
@@ -158,7 +159,7 @@ In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schrit
 
 **Exportieren …** gibt Mappen aus der Ansicht heraus – die Auswahl oder, ohne Auswahl bzw. auf Wunsch, alle Treffer (mit deiner Suche und Sortierung):
 
-- **Excel (.xlsx)** – eine Tabelle, in der Datum und Beträge echte Werte sind: Excel kann danach sortieren und rechnen.
+- **Excel (.xlsx)** – eine Tabelle, in der Datum, Beträge und Prozent echte Werte sind: Excel kann danach sortieren und rechnen. Ein Zeitraum steht als Text („3 Monate“).
 - **CSV** – dieselbe Tabelle für jede Tabellenkalkulation, im deutschen Format (Semikolon, Datum TT.MM.JJJJ, Beträge mit Komma).
 - **ZIP mit Dokumenten** – die Tabelle als Excel und CSV und je Mappe ein Ordner mit ihren Dokumenten.
 - **PDF** – je Mappe eine Seite mit ihren Feldern und der Liste der Dokumente, wahlweise vorne eine Übersicht als Tabelle. PDF-Dokumente werden danach eingebunden, Bilder (JPEG, PNG) als eigene Seite; andere Dateien werden nur genannt.

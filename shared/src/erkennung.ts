@@ -17,6 +17,7 @@
 import { optionTexte, wertZuOption } from './beschriftung';
 import type { Betrag, Feld, Feldtyp, Mappentyp, Wert } from './model';
 import { formatFehler, type Feldformat } from './feldformate';
+import { leseProzent, leseZeitraum, ZEITRAUM_ANZAHL_MAX, ZEITRAUM_EINHEITEN } from './feldarten';
 import { t } from './texte';
 
 /* ---------- Feld-Eigenschaft ---------- */
@@ -40,6 +41,8 @@ export const ERKENNUNGSARTEN = {
   ort: 'Ort',
   datum: 'Datum',
   betrag: 'Betrag',
+  zeitraum: 'Zeitraum',
+  prozent: 'Prozent',
   verweis: t('gemeinsam.erkennung.passende-mappe-verweis'),
   auswahl: t('gemeinsam.erkennung.auswahlwert-der-im-text'),
 } as const;
@@ -55,16 +58,18 @@ export interface FeldErkennung {
 export const ERKENNUNG_HINWEIS_MAX = 300;
 
 /** Feldarten, die sich für die Erkennung eignen (Passwörter nie, Ja/Nein und formatierter Text nicht). */
-export const ERKENNUNG_FELDTYPEN: readonly Feldtyp[] = ['text', 'langtext', 'zahl', 'betrag', 'datum', 'auswahl', 'referenz'];
+export const ERKENNUNG_FELDTYPEN: readonly Feldtyp[] = ['text', 'langtext', 'zahl', 'betrag', 'datum', 'auswahl', 'referenz', 'zeitraum', 'prozent'];
 
 /** Welche Arten zu welcher Feldart passen. */
 export function artenFuer(typ: Feldtyp): Erkennungsart[] {
   if (typ === 'datum') return ['datum'];
   if (typ === 'betrag') return ['betrag'];
+  if (typ === 'zeitraum') return ['zeitraum'];
+  if (typ === 'prozent') return ['prozent'];
   if (typ === 'zahl') return ['nummer', 'plz', 'hausnummer', 'betrag'];
   if (typ === 'referenz') return ['verweis'];
   if (typ === 'auswahl') return ['auswahl'];
-  if (typ === 'text' || typ === 'langtext') return (Object.keys(ERKENNUNGSARTEN) as Erkennungsart[]).filter((a) => !['datum', 'betrag', 'verweis', 'auswahl'].includes(a));
+  if (typ === 'text' || typ === 'langtext') return (Object.keys(ERKENNUNGSARTEN) as Erkennungsart[]).filter((a) => !['datum', 'betrag', 'verweis', 'auswahl', 'zeitraum', 'prozent'].includes(a));
   return [];
 }
 
@@ -90,6 +95,8 @@ export function artVon(f: Pick<Feld, 'key' | 'label' | 'typ'> & { erkennung?: Fe
   if (f.erkennung?.art && artenFuer(f.typ).includes(f.erkennung.art)) return f.erkennung.art;
   if (f.typ === 'datum') return 'datum';
   if (f.typ === 'betrag') return 'betrag';
+  if (f.typ === 'zeitraum') return 'zeitraum';
+  if (f.typ === 'prozent') return 'prozent';
   if (f.typ === 'referenz') return 'verweis';
   if (f.typ === 'auswahl') return 'auswahl';
   if (f.typ !== 'text' && f.typ !== 'langtext' && f.typ !== 'zahl') return null;
@@ -180,7 +187,7 @@ export function liesAusDokument(v: unknown): AusDokument | null {
 export const ERKENNEN_HINWEIS = [
   t('gemeinsam.erkennung.du-liest-angaben-aus'),
   'Antworte nur mit einem JSON-Objekt nach dem mitgeschickten JSON Schema: je Feld { "wert": …, "sicherheit": "hoch" | "mittel" | "niedrig", "fundstelle": "wörtlicher Ausschnitt aus dem Text, in dem der Wert steht" }.',
-  'Lass Felder weg, deren Wert nicht im Text steht – rate nicht. Datum als JJJJ-MM-TT, Betrag als { "betrag": Zahl, "waehrung": "EUR" }, Auswahl nur aus den erlaubten Werten.',
+  'Lass Felder weg, deren Wert nicht im Text steht – rate nicht. Datum als JJJJ-MM-TT, Betrag als { "betrag": Zahl, "waehrung": "EUR" }, Zeitraum als { "anzahl": ganze Zahl, "einheit": "tage" | "wochen" | "monate" | "jahre" }, Prozent als Zahl (19 für 19 %), Auswahl nur aus den erlaubten Werten.',
   t('gemeinsam.erkennung.der-text-ist-daten'),
 ].join(' ');
 /** Beschriftung des Knopfs; null = ausgeblendet. Systemtypen (Benutzer, Rolle, Post) haben keinen. */
@@ -698,6 +705,35 @@ export function musterAusHinweis(hinweis: string | undefined): RegExp | null {
   return new RegExp(`(?<![A-Za-z0-9])${re}(?![A-Za-z0-9])`);
 }
 
+/** Zeitraum im Text: „3 Monate“, „14 Tagen“, „1 Jahr“, „6 months“ – nicht „Monatsende“. */
+const ZEITRAUM_IM_TEXT = /(?<![\d,.])(\d{1,4})\s?(Tag(?:e|en)?|Wochen?|Monat(?:e|en)?|Jahr(?:e|en)?|days?|weeks?|months?|years?)(?![\wÄÖÜäöüß])/gi;
+/** Prozentangabe im Text: „19 %“, „7,5%“. */
+const PROZENT_IM_TEXT = /(?<![\d,.])(\d{1,3}(?:[.,]\d{1,3})?)\s?%/g;
+
+/**
+ * Wert zu einem Feld im Text (#1035): steht die Bezeichnung des Felds in einer Zeile („Kündigungsfrist“), zählt der
+ * erste Treffer in dieser oder der nächsten Zeile (Sicherheit mittel); sonst der erste im ganzen Text (niedrig) – auf
+ * einer Rechnung steht meist nur ein Steuersatz.
+ */
+function naheBeschriftung<T>(text: string, f: Pick<Feld, 'key' | 'label'>, muster: RegExp, lies: (m: RegExpExecArray) => T | null): Fund<T> | null {
+  const funde: Array<{ wert: T; i: number; laenge: number }> = [];
+  for (const m of text.matchAll(new RegExp(muster.source, muster.flags))) {
+    const wert = lies(m as RegExpExecArray);
+    if (wert !== null) funde.push({ wert, i: m.index ?? 0, laenge: m[0].length });
+  }
+  if (!funde.length) return null;
+  const woerter = [...new Set(klein(`${f.label} ${f.key.replace(/_/g, ' ')}`).split(/[^a-z0-9]+/).filter((w) => w.length >= 4))];
+  let anfang = 0;
+  const zeilen = text.split('\n').map((z) => { const a = anfang; anfang += z.length + 1; return { a, e: anfang, z }; });
+  for (let n = 0; n < zeilen.length; n++) {
+    if (!woerter.some((w) => klein(zeilen[n].z).includes(w))) continue;
+    const bis = (zeilen[n + 1] ?? zeilen[n]).e;
+    const x = funde.find((y) => y.i >= zeilen[n].a && y.i < bis);
+    if (x) return { wert: x.wert, sicherheit: 'mittel', fundstelle: ausschnitt(text, x.i, x.laenge) };
+  }
+  return { wert: funde[0].wert, sicherheit: 'niedrig', fundstelle: ausschnitt(text, funde[0].i, funde[0].laenge) };
+}
+
 /**
  * Vorschläge für die Felder eines Typs aus den gefundenen Angaben (ohne Verweise – die gleicht der Server
  * mit vorhandenen Mappen ab). Werte sind schon im Format der Feldart (Datum ISO, Betrag mit Währung).
@@ -728,6 +764,9 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
       case 'fax': { const x = erste(a.fax); if (x) { benutzt.add(x.wert); setze(f, x.wert, x); } break; }
       case 'datum': if (a.datum) setze(f, a.datum.wert, a.datum); break;
       case 'betrag': if (a.betrag) setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag); break;
+      // Zeitraum und Prozent (#1035): am liebsten neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“).
+      case 'zeitraum': { const z = naheBeschriftung(text, f, ZEITRAUM_IM_TEXT, (m) => leseZeitraum(`${m[1]} ${m[2]}`) ?? null); if (z) setze(f, z.wert, z); break; }
+      case 'prozent': { const x = naheBeschriftung(text, f, PROZENT_IM_TEXT, (m) => { const n = leseProzent(m[1]); return n != null && Number.isFinite(n) && n <= 100 ? n : null; }); if (x) setze(f, x.wert, x); break; }
       case 'vorname': fund(p?.vorname, p, 'mittel'); break;
       case 'nachname': fund(p?.nachname, p, 'mittel'); break;
       case 'funktion': fund(p?.funktion, p, 'mittel'); break;
@@ -767,7 +806,8 @@ function wertSchema(f: Feld): Record<string, unknown> {
   switch (f.typ) {
     case 'datum': return { type: 'string', format: 'date' };
     case 'betrag': return { type: 'object', properties: { betrag: { type: 'number' }, waehrung: { type: 'string', pattern: '^[A-Z]{3}$' } }, required: ['betrag'] };
-    case 'zahl': return { type: 'number', ...(typeof f.min === 'number' ? { minimum: f.min } : {}), ...(typeof f.max === 'number' ? { maximum: f.max } : {}) };
+    case 'zahl': case 'prozent': return { type: 'number', ...(typeof f.min === 'number' ? { minimum: f.min } : {}), ...(typeof f.max === 'number' ? { maximum: f.max } : {}) };
+    case 'zeitraum': return { type: 'object', properties: { anzahl: { type: 'integer', minimum: 0, maximum: ZEITRAUM_ANZAHL_MAX }, einheit: { enum: [...ZEITRAUM_EINHEITEN] } }, required: ['anzahl', 'einheit'], additionalProperties: false };
     case 'janein': return { type: 'boolean' };
     case 'auswahl': return f.mehrfach ? { type: 'array', items: { enum: f.optionen ?? [] } } : { enum: f.optionen ?? [] };
     case 'referenz': return f.mehrfach ? { type: 'array', items: { type: 'string', format: 'uuid' } } : { type: 'string', format: 'uuid' };
@@ -830,6 +870,14 @@ export function pruefeVorschlaege(pick: Pick<Mappentyp, 'felder'>, antwort: unkn
         const b = w as Record<string, unknown> | null;
         gut = b && typeof b === 'object' && typeof b.betrag === 'number' && Number.isFinite(b.betrag) ? { betrag: Math.round(b.betrag * 100) / 100, waehrung: typeof b.waehrung === 'string' && /^[A-Z]{3}$/.test(b.waehrung) ? b.waehrung : (f.waehrung || 'EUR') } : undefined;
         if (gut && ((typeof f.min === 'number' && (gut as Betrag).betrag < f.min) || (typeof f.max === 'number' && (gut as Betrag).betrag > f.max))) gut = undefined;
+        // Negativ nur, wenn das Feld es erlaubt (#1035).
+        if (gut && !f.negativ && (gut as Betrag).betrag < 0) gut = undefined;
+        break;
+      }
+      case 'zeitraum': gut = leseZeitraum(w) ?? undefined; break;
+      case 'prozent': {
+        const n = leseProzent(w);
+        gut = n != null && Number.isFinite(n) && (typeof f.min !== 'number' || n >= f.min) && (typeof f.max !== 'number' || n <= f.max) ? n : undefined;
         break;
       }
       case 'zahl': gut = typeof w === 'number' && Number.isFinite(w) && (typeof f.min !== 'number' || w >= f.min) && (typeof f.max !== 'number' || w <= f.max) ? w : undefined; break;

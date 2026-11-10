@@ -13,6 +13,7 @@ import { kreisImStandard, kreisVon } from './nummernkreis';
 import { folgtAusKreis, folgtAusProbleme } from './folgtaus';
 import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 import { datumsformat } from './region';
+import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumText, type Zeitraum } from './feldarten';
 import { t, t as tx } from './texte';
 import { gebietsschema, registrierteSprachen, textNur } from './sprache';
 import { optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
@@ -31,6 +32,10 @@ export const FELDTYPEN = {
   referenz: 'Verweis',
   /** Verschlüsselt gespeichert (#46); nie in Titel, Trefferliste, Suche, Protokoll oder Demo-Daten. */
   passwort: 'Passwort',
+  /** Zahl und Einheit (#1035): „3 Monate“, gespeichert als `{ anzahl, einheit }` (feldarten.ts). */
+  zeitraum: 'Zeitraum',
+  /** Prozentsatz (#1035): „19 %“, gespeichert als Zahl 19 (feldarten.ts). */
+  prozent: 'Prozent',
 } as const;
 export type Feldtyp = keyof typeof FELDTYPEN;
 
@@ -54,11 +59,16 @@ export interface Feld {
   maxLen?: number | null;
   /** Regulärer Ausdruck, muss den ganzen Text treffen. */
   muster?: string;
-  /** Zahl und Betrag: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT. */
+  /** Zahl, Betrag und Prozent: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT. */
   min?: number | string | null;
   max?: number | string | null;
   nachkomma?: number | null;
   waehrung?: string;
+  /**
+   * Betrag (#1035): negative Beträge erlaubt (Gutschrift, Erstattung). Fehlt = aus – dann gilt wie bisher ≥ 0; das
+   * Formular zeigt den Hinweis „mit Minus eintragen“ nur, wenn es an ist.
+   */
+  negativ?: boolean;
   /** Auswahl: die festen Werte (#728) – gespeichert wird der Wert, gezeigt die Beschriftung (`beschriftungen`). */
   optionen?: string[];
   mehrfach?: boolean;
@@ -394,13 +404,14 @@ export function sortierbar(spalte: string, t?: Pick<Mappentyp, 'felder'>): boole
 export interface Sortierung { spalte: string; absteigend: boolean }
 
 export interface Betrag { betrag: number; waehrung: string }
+export type { Zeitraum } from './feldarten';
 /**
  * Wert eines Passwortfelds (#46), wie ihn Oberfläche und API sehen: nie das Passwort selbst.
  * - gesetzt/lesbar: kommt vom Server (lesbar = false, wenn der Schlüssel dazu fehlt)
  * - neu: zum Speichern eines neuen Passworts; entfernen: zum Löschen
  */
 export interface PasswortWert { gesetzt?: boolean; lesbar?: boolean; neu?: string; entfernen?: boolean }
-export type Wert = string | number | boolean | Betrag | string[] | PasswortWert | null;
+export type Wert = string | number | boolean | Betrag | Zeitraum | string[] | PasswortWert | null;
 export const istPasswortWert = (v: unknown): v is PasswortWert =>
   !!v && typeof v === 'object' && !Array.isArray(v) && ('gesetzt' in v || 'neu' in v || 'entfernen' in v);
 export type Werte = Record<string, Wert>;
@@ -570,6 +581,8 @@ export function istLeer(v: unknown): boolean {
     const b = (v as Betrag).betrag;
     return b == null || (b as unknown) === '';
   }
+  // Zeitraum (#1035): ohne Anzahl leer, auch wenn eine Einheit gewählt ist.
+  if (hatZeitraumform(v)) return v.anzahl == null || v.anzahl === '';
   return false;
 }
 
@@ -670,8 +683,12 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push(t('gemeinsam.model.mindestens-einen-auswahlwert'));
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
       m.push(t('gemeinsam.model.mindestlaenge-ist-groesser-als'));
-    if ((f.typ === 'zahl' || f.typ === 'betrag') && typeof f.min === 'number' && typeof f.max === 'number' && f.min > f.max)
+    if ((f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'prozent') && typeof f.min === 'number' && typeof f.max === 'number' && f.min > f.max)
       m.push(t('gemeinsam.model.minimum-ist-groesser-als'));
+    // Betrag (#1035): Ein Minimum unter 0 verlangt „negative Beträge erlauben“.
+    if (f.typ === 'betrag' && !f.negativ && typeof f.min === 'number' && f.min < 0) m.push(t('gemeinsam.feldarten.minimum-negativ'));
+    if (f.typ === 'zeitraum' && f.standard != null && f.standard !== '' && !istZeitraum(leseZeitraum(f.standard))) m.push(t('gemeinsam.feldarten.standard-zeitraum'));
+    if (f.typ === 'prozent' && f.standard != null && f.standard !== '' && !Number.isFinite(leseProzent(f.standard))) m.push(t('gemeinsam.feldarten.standard-prozent'));
     // Format und Datumsgrenzen (#535).
     m.push(...pruefeFormatDefinition(f, mappentypDaten.felder));
     if (f.typ === 'text' && f.muster) {
@@ -727,12 +744,15 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
         break;
       }
       case 'zahl':
+      case 'prozent':
       case 'betrag': {
         const x = f.typ === 'betrag' ? (v as Betrag)?.betrag : v;
-        if (typeof x !== 'number' || !Number.isFinite(x)) { fehler(f.key, f.typ === 'betrag' ? t('gemeinsam.model.kein-gueltiger-betrag') : t('gemeinsam.model.keine-gueltige-zahl')); break; }
-        if (typeof f.min === 'number' && x < f.min) fehler(f.key, t('gemeinsam.model.mindestens', { min: f.min.toLocaleString(gebietsschema()) }));
+        if (typeof x !== 'number' || !Number.isFinite(x)) { fehler(f.key, f.typ === 'betrag' ? t('gemeinsam.model.kein-gueltiger-betrag') : f.typ === 'prozent' ? t('gemeinsam.feldarten.kein-prozent') : t('gemeinsam.model.keine-gueltige-zahl')); break; }
+        // Negativer Betrag (#1035) nur, wenn das Feld es erlaubt – Vorgabe wie bisher ≥ 0.
+        if (f.typ === 'betrag' && !f.negativ && x < 0) fehler(f.key, t('gemeinsam.feldarten.betrag-nicht-negativ'));
+        else if (typeof f.min === 'number' && x < f.min) fehler(f.key, t('gemeinsam.model.mindestens', { min: f.min.toLocaleString(gebietsschema()) }));
         else if (typeof f.max === 'number' && x > f.max) fehler(f.key, t('gemeinsam.model.hoechstens', { max: f.max.toLocaleString(gebietsschema()) }));
-        else if (f.typ === 'zahl' && f.nachkomma != null && (String(x).split('.')[1] ?? '').length > f.nachkomma)
+        else if ((f.typ === 'zahl' || f.typ === 'prozent') && f.nachkomma != null && (String(x).split('.')[1] ?? '').length > f.nachkomma)
           fehler(f.key, t('gemeinsam.model.hoechstens-nachkommastellen', { nachkomma: f.nachkomma }));
         if (f.typ === 'betrag' && !p.felder[f.key] && !/^[A-Z]{3}$/.test((v as Betrag).waehrung ?? ''))
           fehler(f.key, t('gemeinsam.model.waehrung-als-dreistelliger-code'));
@@ -740,6 +760,10 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
       }
       case 'datum':
         if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) fehler(f.key, t('gemeinsam.model.kein-gueltiges-datum'));
+        break;
+      case 'zeitraum':
+        // Gespeichert immer als { anzahl, einheit } (#1035); Texte wie „3 Monate“ gleicht bereinigeWerte vorher an.
+        if (!istZeitraum(v)) fehler(f.key, t('gemeinsam.feldarten.kein-zeitraum', { max: ZEITRAUM_ANZAHL_MAX }));
         break;
       case 'janein':
         if (typeof v !== 'boolean') fehler(f.key, t('gemeinsam.model.ja-oder-nein-erwartet'));
@@ -1144,6 +1168,9 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     }
     case 'janein': return v ? t('gemeinsam.model.ja') : t('gemeinsam.model.nein');
     case 'zahl': return typeof v === 'number' ? v.toLocaleString(gebietsschema(), { maximumFractionDigits: f.nachkomma ?? 10 }) : String(v);
+    // Zeitraum und Prozent (#1035): „3 Monate“, „19 %“.
+    case 'zeitraum': return istZeitraum(v) ? zeitraumText(v) : '';
+    case 'prozent': return typeof v === 'number' ? prozentText(v, f.nachkomma) : String(v);
     // Fester Wert → Beschriftung in der Sprache des Benutzers (#728); gespeichert bleibt der Wert.
     case 'auswahl': return (Array.isArray(v) ? v : [v]).map((x) => optionText(f, String(x))).join(', ');
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
@@ -1159,7 +1186,8 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
 export function leseZahl(s: unknown): number | null {
   if (s == null) return null;
   if (typeof s === 'number') return s;
-  let t = String(s).trim().replace(/\s/g, '');
+  // Auch mit Minuszeichen (U+2212), wie Ablago negative Beträge zeigt (#1035).
+  let t = String(s).trim().replace(/\s/g, '').replace(/\u2212/g, '-');
   if (t === '') return null;
   if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
   const n = Number(t);

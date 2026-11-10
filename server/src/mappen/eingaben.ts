@@ -4,6 +4,7 @@
  * Bearbeiten (#609). Die Eingabe-Hilfen der Mappentypen liegen in mappentypen/eingabe.ts. Schicht 2.
  */
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
+import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
 import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgtaus';
 import { type Feld, type Feldkonflikt, formatiere, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, pruefeMappe, verweiseVon, type Verweiskonflikt, type Wert, type Werte } from '../../../shared/src/model';
@@ -30,10 +31,20 @@ export function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte =
   for (const f of typ.felder) {
     if (f.typ === 'passwort') { werte[f.key] = passwortWert(roh[f.key], f.key in roh, bisher[f.key], verschluessele); continue; }
     const v = f.key in roh ? roh[f.key] : bisher[f.key];
-    werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : (v as Werte[string]);
+    werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : gleicheArtAn(f, v as Werte[string]);
   }
   // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
   return gleicheFormateAn(typ, werte, bisher);
+}
+
+/**
+ * Zeitraum und Prozent (#1035) in die gespeicherte Form bringen: „3 Monate“, „P3M“ oder `{ anzahl: "3", … }` →
+ * `{ anzahl: 3, einheit: 'monate' }`; „19 %“ oder „19,0“ → 19. Was sich nicht lesen lässt, bleibt – die Prüfung meldet es.
+ */
+function gleicheArtAn(f: Feld, v: Wert): Wert {
+  if (f.typ === 'zeitraum') return leseZeitraum(v) ?? v;
+  if (f.typ === 'prozent' && typeof v === 'string') { const n = leseProzent(v); return n != null && Number.isFinite(n) ? n : v; }
+  return v;
 }
 
 /** Felder, die eine Anfrage selbst setzt – auch leer. „Folgt aus“ (#886) füllt sie nicht. */

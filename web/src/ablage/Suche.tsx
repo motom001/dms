@@ -171,7 +171,8 @@ function Feldsuche({ feld, e, setze, merke, weg }: { feld: Bedingungsfeld; e: Fe
   const leerArten = (['leer', 'nichtLeer'] as const).filter((o) => kannLeer(feld, o));
   const werte = e.werte ?? [];
   let eingabe: React.ReactNode = null;
-  if (art === 'datum' || art === 'zahl') {
+  if (art === 'datum' || art === 'zahl' || art === 'zeitraum') {
+    // Zeitraum (#1035): von–bis als Text („1 Monat“ – „6 Monate“).
     const typ = art === 'datum' ? 'date' : 'text';
     eingabe = (
       <div className="vonbis">

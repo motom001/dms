@@ -16,7 +16,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { liesWortgruppe } from '../../shared/src/suche';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
-import { istLeer, MAX_DATEIGROESSE, type Abschnitt, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
+import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, type Abschnitt, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
 import { bereinigeAbschnitte } from '../../shared/src/darstellung';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
@@ -329,6 +329,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     for (const f of felder) {
       if (!SCHLUESSEL.test(str(f.key))) fehler.push(`${wo}: Feld mit ungültiger Kennung „${str(f.key)}“.`);
       if (f.ziel !== undefined && !TYPVERWEIS.test(str(f.ziel))) fehler.push(`${wo}: Feld „${f.key}“ verweist ungültig auf „${str(f.ziel)}“.`);
+      // Feldart (#1035): Unbekanntes nicht still zu Text machen – meist braucht das Paket eine neuere Ablago-Version.
+      if (f.typ !== undefined && !Object.hasOwn(FELDTYPEN, str(f.typ))) fehler.push(`${wo}: Feld „${f.key}“ hat die unbekannte Feldart „${str(f.typ)}“ (möglich: ${Object.keys(FELDTYPEN).join(', ')}).`);
+      if (f.negativ !== undefined && (f.typ !== 'betrag' || typeof f.negativ !== 'boolean')) fehler.push(`${wo}: Feld „${f.key}“: negativ gibt es nur bei Beträgen (typ: betrag), als true oder false.`);
       // Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText.
       const roh = f as unknown as Record<string, unknown>;
       if (roh.aus_text !== undefined) {
@@ -543,6 +546,8 @@ function formatNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array<{ k
     if (f.typ === 'datum' && (istDatumsgrenze(f.min) || istDatumsgrenze(f.max)) && g.min == null && g.max == null) {
       return [{ key: g.key, label: g.label, vorgaben: { ...(istDatumsgrenze(f.min) ? { min: f.min } : {}), ...(istDatumsgrenze(f.max) ? { max: f.max } : {}) } }];
     }
+    // Negative Beträge (#1035): Ein Update darf sie erlauben (lockert nur), nie wieder verbieten.
+    if (f.typ === 'betrag' && f.negativ === true && !g.negativ) return [{ key: g.key, label: g.label, vorgaben: { negativ: true } }];
     return [];
   });
 }
@@ -1724,7 +1729,7 @@ export class Paketverwaltung {
           const werte: Record<string, unknown> = {};
           for (const [k, w] of Object.entries(b.werte)) {
             const f = felder.find((x) => x.key === k);
-            // Beträge dürfen im Paket als Zahl stehen.
+            // Beträge dürfen im Paket als Zahl stehen; Zeiträume als P3M oder { anzahl, einheit } gleicht bereinigeWerte an (#1035).
             if (f?.typ === 'betrag' && typeof w === 'number') werte[k] = { betrag: w, waehrung: f.waehrung || 'EUR' };
             else if (Array.isArray(w) && w.some(istBeispielVerweis)) { const l = (await Promise.all(w.map(aufloesen))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
             else if (istBeispielVerweis(w)) { const z = await aufloesen(w); if (z) werte[k] = f?.mehrfach ? [z] : z; }

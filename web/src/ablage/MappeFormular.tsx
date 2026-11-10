@@ -8,11 +8,13 @@ import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
 import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
 import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, titelAus, VERWEISARTEN, verweisAusText, type Verweiskonflikt, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
+import { rechtsbuendig } from '../../../shared/src/feldarten';
+import { ProzentEingabe, ZeitraumEingabe } from '../bausteine';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
-import { ausRoh, leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
+import { ausRoh, leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte, type RohZeitraum } from '../werte';
 import { titelOder } from '../seiten';
 import { Mehrfachauswahl } from './Mehrfachauswahl';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
@@ -85,6 +87,8 @@ function belegeVor(typ: Mappentyp, start: RohWerte, werte: Record<string, unknow
     const f = typ.felder.find((x) => x.key === k);
     if (!f || f.typ === 'passwort' || f.typ === 'betrag' || f.ausgeblendet) continue;
     if (f.typ === 'janein' && typeof v === 'boolean') start[k] = v;
+    // Zeitraum und Prozent (#1035): „P3M“, { anzahl, einheit } bzw. eine Zahl.
+    else if (f.typ === 'zeitraum' || (f.typ === 'prozent' && typeof v === 'number')) start[k] = zuRoh(f, v as Wert);
     else if (Array.isArray(v) && f.mehrfach) start[k] = v.map(String);
     else if (typeof v === 'string' && !f.mehrfach) start[k] = v;
   }
@@ -1044,7 +1048,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
             {/* Wer nur liest, sieht die Markierung am Feld, aber keine Aufforderung (#887). */}
             {unpassend?.includes(x) && <> <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>{unpassendText(typFelder, gruende?.[x] ?? [])}</span></>}</li>)}</ul>
         : f.typ === 'janein' ? (roh ? t('ablage.mappeformular.ja') : t('ablage.mappeformular.nein')) : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
-        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span>
+        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'zeitraum' || f.typ === 'prozent' || f.typ === 'betrag' ? formatiere(f, ausRoh(f, roh)) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span>
         : f.typ === 'text' && f.format ? <FormatWert f={f} wert={String(roh ?? '')} /> : String(roh ?? '')
     }</div>;
     return (
@@ -1066,11 +1070,20 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
     case 'zahl':
       ctl = <input id={id} inputMode="decimal" value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />;
       break;
+    case 'prozent':
+      // Prozent (#1035): „19“, „19 %“ und „19,0“ ergeben dasselbe.
+      ctl = <ProzentEingabe id={id} wert={String(roh ?? '')} setze={setze} aria-invalid={fehler ? true : undefined} />;
+      break;
+    case 'zeitraum':
+      // Zeitraum (#1035): Zahl und Einheit, „1 Monat“ / „3 Monate“.
+      ctl = <ZeitraumEingabe id={id} wert={(roh ?? { anzahl: '', einheit: 'monate' }) as RohZeitraum} setze={setze} aria-invalid={fehler ? true : undefined} />;
+      break;
     case 'betrag': {
       const b = (roh ?? { betrag: '', waehrung: 'EUR' }) as RohBetrag;
       ctl = (
         <div className="betrag">
-          <input id={id} inputMode="decimal" placeholder="0,00" value={b.betrag} onChange={(e) => setze({ ...b, betrag: e.target.value })} />
+          <input id={id} inputMode="decimal" placeholder={f.negativ ? '-0,00' : '0,00'} value={b.betrag} onChange={(e) => setze({ ...b, betrag: e.target.value })}
+            aria-describedby={f.negativ ? `${id}-negativ` : undefined} />
           <input aria-label={t('ablage.mappeformular.waehrung')} className="mono" maxLength={3} value={b.waehrung} onChange={(e) => setze({ ...b, waehrung: e.target.value.toUpperCase() })} />
         </div>
       );
@@ -1144,6 +1157,8 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       {zusatz}
       {ue.unter}
       {f.hilfe && <span className="hilfe">{feldHilfe(f)}</span>}
+      {/* Negativer Betrag (#1035): nur, wenn das Feld ihn erlaubt. */}
+      {f.typ === 'betrag' && f.negativ && <span className="hilfe" id={`${id}-negativ`}>{t('felder.eingabe.betrag-negativ')}</span>}
       {fehler && <p className="fehlertext">{fehler}</p>}
     </div>
   );
@@ -1343,7 +1358,7 @@ function VerweisTabelle({ mappeId, typ, feldKey, spalten, anzahl }: { mappeId: s
   useEffect(() => { api.verweisende(mappeId, typ.id, feldKey).then(setDaten, (e: Error) => setFehler(e.message)); }, [mappeId, typ.id, feldKey, anzahl, d.stand]);
   if (fehler) return <p className="fehlertext klein">{fehler}</p>;
   if (!daten) return <p className="leise klein">{t('ablage.mappeformular.lade')}</p>;
-  const rechts = (k: string) => { const f = typ.felder.find((x) => x.key === k); return f?.typ === 'zahl' || f?.typ === 'betrag'; };
+  const rechts = (k: string) => rechtsbuendig(typ.felder.find((x) => x.key === k)?.typ);
   return (
     <div className="trefferliste verweistabelle">
       <table>

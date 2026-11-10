@@ -66,3 +66,4 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | --- | --- |
 | [Field](bausteine-feld.md) | Frame for every input: label, input, error, hint, help icon |
 | [Button](bausteine-knopf.md) | Every button: kinds create, main, secondary, danger, link; disabled with a reason, “working”, result and error at the button |
+| [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |

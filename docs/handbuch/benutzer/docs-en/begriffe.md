@@ -99,6 +99,14 @@ The personal settings of the signed-in user – one click on your own name at th
 A company, authority, bank, practice, club or other body you deal with. Folder type from the package Basis; other packages link to it (contract partner, insurer, bank …).  
 See also: [Branch](#niederlassung), [Person](#person).
 
+<a id="prozent"></a>**Percentage** (*Prozent*) · ✓ everyday word · everyone  
+Field kind for a percentage, e.g. the tax rate "19%" – with decimals, freely chosen (foreign rates too). "19", "19%" and "19.0" mean the same.  
+See also: [Field kind](#feldart).
+
+<a id="zeitraum"></a>**Period** (*Zeitraum*) · ✓ everyday word · everyone  
+Field kind for a length of time made of a whole number and a unit – days, weeks, months or years, e.g. the notice period "3 months" or the term "1 year". Sorted and compared by length. Not to be confused with "in period" in date conditions (year, month).  
+See also: [Field kind](#feldart), [Deadline](#frist).
+
 <a id="person"></a>**Person** · ✓ everyday word · everyone  
 A human you deal with – contact person, doctor, landlord, relatives. Folder type from the package Basis (from 1.1.0). A person is **not a user** and can't sign in.  
 See also: [User](#benutzer), [Organisation](#organisation), [Branch](#niederlassung).
@@ -174,6 +182,10 @@ Assigning post to an existing or new folder. The documents move into the folder'
 
 <a id="kanal"></a>**Channel** (*Kanal*) · ✗ technical term · everyone  
 How post came into Ablago or went out. Ablago sets Uploaded, email, Folder (intake folder) and API itself; Scan, Import and WebDAV can be chosen by hand in the list.
+
+<a id="gutschrift"></a>**Credit note** (*Gutschrift*) · ✓ everyday word · everyone  
+An amount you get back (also a refund) – in Ablago an amount with a minus, e.g. "−£25.00". This only works for amount fields where the administrator has ticked "Allow negative amounts"; the field then says "Enter it with a minus".  
+See also: [Field](#feld).
 
 <a id="frist"></a>**Deadline** (*Frist*) · ✓ everyday word · everyone  
 A task that arises from a date field with a lead time, e.g. "Cancel by …".  
@@ -443,4 +455,4 @@ See also: [Version](#version).
 
 Which German words are still being discussed, which questions have been decided and which words the German texts avoid is listed on the [German page](../../begriffe/). It concerns the German wording.
 
-*As of: 2026-11-08*
+*As of: 2026-11-10*

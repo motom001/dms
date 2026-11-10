@@ -9,6 +9,7 @@
  * Gespeichert wird nichts davon; im Protokoll steht nur, dass gefragt wurde (Anzahl, Dauer), nie der Inhalt.
  */
 import { auswahlText, type Feld, type Mappe, type Mappentyp } from '../../shared/src/model';
+import { istZeitraum, prozentText, zeitraumText } from '../../shared/src/feldarten';
 import { ausschnittUm, ausschnitteAlsText, AUSSCHNITT_MAX, FRAGE_MAX, FRAGEN_STANDARD, frageWoerter, KI_HINWEIS, liesAntwort, liesVerlauf, pruefeGrenzen, saeubere, type FrageAusschnitt, type FragenGrenzen, type FrageZeile } from '../../shared/src/fragen';
 import type { Dienst, Zugriff } from './dienst';
 import type { Einstellungen } from './einstellungen';
@@ -126,6 +127,7 @@ export class FragenAnDieAblage {
 
   private wertText(f: Feld, v: unknown, titel: (id: string) => string | null): string {
     if (v === null || v === undefined || v === '' || f.typ === 'passwort') return '';
+    if (NEUE_ARTEN.has(f.typ)) return neueArtText(f, v);
     if (typeof v === 'string' && v.startsWith('dms1$')) return '';
     switch (f.typ) {
       case 'referenz': return (Array.isArray(v) ? v : [v]).map((id) => titel(String(id))).filter(Boolean).join(', ');
@@ -184,4 +186,11 @@ export class FragenAnDieAblage {
       this.laufend.delete(z.ich.id);
     }
   }
+}
+
+const NEUE_ARTEN = new Set<Feld['typ']>(['zeitraum', 'prozent']);
+/** Zeitraum und Prozent (#1035) lesbar: „3 Monate“, „19 %“. */
+function neueArtText(f: Feld, v: unknown): string {
+  if (f.typ === 'zeitraum') return istZeitraum(v) ? zeitraumText(v) : '';
+  return typeof v === 'number' ? prozentText(v, f.nachkomma) : '';
 }
