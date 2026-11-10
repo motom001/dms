@@ -15,6 +15,7 @@ import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { typName } from '../../../shared/src/beschriftung';
+import { knopfAussehen } from '../bausteine';
 
 /**
  * Post (#192): „+ Post“ in den Sichten mit Post und die Leiste an einer Post-Mappe (Stand, Zuordnen, Erledigt).
@@ -27,7 +28,7 @@ export function PostKnopf() {
   const eingabe = useRef<HTMLInputElement>(null);
   return (
     <>
-      <button type="button" className="knopf gruen klein" onClick={() => eingabe.current?.click()} title={t('ablage.post.dateien-auswaehlen-sie-kommen')}>
+      <button type="button" {...knopfAussehen({ art: 'anlegen', groesse: 'klein' })} onClick={() => eingabe.current?.click()} title={t('ablage.post.dateien-auswaehlen-sie-kommen')}>
         {t('ablage.post.post')}</button>
       {/* Am Handy bietet die Auswahl auch die Kamera an. */}
       <input ref={eingabe} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; neuePost(f); }} />

@@ -18,6 +18,7 @@ import { rueckfrage } from '../rueckfrage';
 import { SystemkontenGruppe, SystemkontoKennzeichen } from './Systemkonten';
 import { SYSTEMKONTEN_AUF } from '../../../shared/src/systemkonten';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 const datumZeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : t('werkbank.benutzer.noch-nie'));
 const status = (b: Benutzer) => (!b.aktiv ? { text: t('werkbank.benutzer.status.deaktiviert'), art: '' } : !b.hatPasswort ? { text: t('werkbank.benutzer.status.eingeladen'), art: 'warn' } : { text: t('werkbank.benutzer.status.aktiv'), art: 'gut' });
@@ -68,7 +69,7 @@ export function BenutzerListe({ liste: alle, offen, alltag }: { liste: Benutzer[
   return (
     <>
       <Listenkopf titel={t('werkbank.benutzer.benutzer')} hilfe="werkbank.benutzer" beschreibung={<>{t('werkbank.benutzer.gerade-aktiv-in-den', { wert: t('werkbank.verwaltungsrecht.liste'), aktiv, AKTIV_MINUTEN })}</>}>
-        <Link to="/werkbank/benutzer/neu" className="knopf primaer klein">{t('werkbank.benutzer.neu')}</Link>
+        <KnopfLink to="/werkbank/benutzer/neu" art="anlegen" groesse="klein">{t('werkbank.benutzer.neu')}</KnopfLink>
       </Listenkopf>
       {deaktiviert.length > 0 && (
         <label className="haken klein"><input type="checkbox" checked={zeigeDeaktivierte} onChange={(e) => d.setzeEinstellung('benutzer_deaktivierte', e.target.checked || null)} />

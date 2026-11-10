@@ -53,6 +53,7 @@ import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
 import { istOffen } from '../../../shared/src/auskunft';
 import { useBeiWiederErreichbar } from '../erreichbar';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Umgezogen (#717, #725): /werkbank/darfweg → aufbewahrung, /werkbank/suche → texterkennung#suche,
@@ -361,7 +362,7 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
   return (
     <>
       <Listenkopf titel={t('werkbank.werkbank.mappentypen')} hilfe="werkbank.typen" beschreibung={t('werkbank.werkbank.welche-arten-von-mappen')}>
-        <Link to="/werkbank/typen/neu" className="knopf primaer klein">{t('werkbank.werkbank.neu')}</Link>
+        <KnopfLink to="/werkbank/typen/neu" art="anlegen" groesse="klein">{t('werkbank.werkbank.neu')}</KnopfLink>
       </Listenkopf>
       {!d.typen.length
         ? <p className="leise leerliste">{t('werkbank.werkbank.noch-keine-mappentypen')}</p>

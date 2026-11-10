@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Knopf, type KnopfErgebnis } from '../bausteine';
 import { api, type EingangEinstellung, type EingangKnoten, type EingangStand, type EingangUeberblick, type EingangWarnung } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -93,8 +94,11 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
     setSendet(true);
     try { const r = await api.eingangsordnerPersonen(); z.setStand(r.stand); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.personen.angelegt', { anzahl: r.angelegt.length }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
-  async function jetzt() {
-    try { const r = await api.eingangsordnerPruefen(); z.setStand(r.stand); setMeldung({ art: 'gut', text: r.uebernommen ? t('werkbank.eingangsordner.dateien-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.eingangsordner.geprueft-nichts-fertiges-gefunden') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  // „Jetzt prüfen“ (#986): Ergebnis und Fehler stehen am Knopf, nicht oben auf der Seite.
+  async function jetzt(): Promise<KnopfErgebnis> {
+    const r = await api.eingangsordnerPruefen();
+    z.setStand(r.stand);
+    return { art: 'gut', text: r.uebernommen ? t('werkbank.eingangsordner.dateien-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.eingangsordner.geprueft-nichts-fertiges-gefunden') };
   }
   return (
     <div className="einspaltig">
@@ -135,7 +139,7 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
             <input id="eingang-warn-dateien" type="number" min={0} value={e.warnDateien ?? 100} onChange={(x) => setE({ ...e, warnDateien: Number(x.target.value) })} /></label>
         </div>
         <div className="knoepfe">
-          <button type="button" className="knopf" onClick={() => void jetzt()}>{t('werkbank.eingangsordner.jetzt-pruefen')}</button>
+          <Knopf onClick={jetzt} laeuftText={t('werkbank.eingangsordner.prueft')}>{t('werkbank.eingangsordner.jetzt-pruefen')}</Knopf>
         </div>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.eingangsordner.einstellungen')} sendet={sendet} />
       </form>

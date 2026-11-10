@@ -1,5 +1,5 @@
 import { HANDBUCH_NAME, HILFE, handbuchUrl, hilfeUrl, type Handbuch, type Hilfeort } from '../../shared/src/hilfe';
-import { useKontoOptional } from './konto';
+import { useKontoOptional } from './konto-kontext';
 import { t } from './sprache';
 
 /**

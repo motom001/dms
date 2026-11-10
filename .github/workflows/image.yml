@@ -114,10 +114,14 @@ jobs:
       # Rauchtests für die Oberfläche (#897): die wichtigsten Wege einmal im Browser, gegen das eben gebaute Ablago –
       # gestartet wie im Workflow „Handbuch“: ohne Datenbank-Anbindung, der erste Test geht den Assistenten durch und
       # legt dabei die eigene Datenbank dms_rauchtest im PostgreSQL dieses Jobs an.
+      # Mit leerem Eingangsordner (#986): Der Rauchtest prüft „Jetzt prüfen“ in Werkbank → Eingangsordner.
       - name: Ablago für die Rauchtests starten
-        run: nohup node server/dist/index.js > "$RUNNER_TEMP/rauchtest-dms.log" 2>&1 &
+        run: |
+          mkdir -p "$RUNNER_TEMP/rauchtest-eingang"
+          nohup node server/dist/index.js > "$RUNNER_TEMP/rauchtest-dms.log" 2>&1 &
         env:
           DMS_DATENWURZEL: ${{ runner.temp }}/rauchtest-daten
+          DMS_EINGANG: ${{ runner.temp }}/rauchtest-eingang
           PORT: '3000'
           DMS_VERSION: rauchtest
       # Dieselbe feste Playwright-Version wie im Workflow „Handbuch“ (#289), nur Chromium. Die Rechner von GitHub

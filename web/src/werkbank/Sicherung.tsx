@@ -1,3 +1,4 @@
+import { Knopf } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { heikelHerunterladen } from '../verwaltungsmodus';
 import { Symbol } from '../Symbol';
@@ -164,6 +165,7 @@ function StandZeile({ s }: { s: SicherungStand }) {
 
 export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [prueft, setPrueft] = useState<string>();
   const handbuch = useHandbuch();
   const s = z.stand;
   if (z.fehler) return <div className="hinweis schlecht"><p>{z.fehler}</p></div>;
@@ -180,6 +182,11 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
     setMeldung(undefined);
     try { await f(); await z.laden(); if (gut) setMeldung({ art: 'gut', text: gut }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
+  // „Prüfen“ (#986): läuft und Fehler in der Zeile; das Ergebnis steht danach in der Spalte „Geprüft“.
+  const pruefKnopf = (name: string, moeglich: boolean) => (
+    <Knopf art="link" gesperrt={(laeuft && prueft !== name) || !moeglich} laeuft={laeuft && prueft === name} laeuftText={t('werkbank.sicherung.prueft')}
+      onClick={async () => { setPrueft(name); await api.sicherungPruefen(name); await z.laden(); }}>{t('werkbank.sicherung.pruefen')}</Knopf>
+  );
 
   return (
     <div className="einspaltig">
@@ -203,10 +210,11 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
           </div>
         ) : (
           <>
+            <p className="leise">{t('werkbank.sicherung.ablago-laeuft-dabei-weiter')}</p>
+            <div className="knoepfe"><Knopf art="haupt" gesperrt={!s.zustand.schluessel} onClick={() => tu(() => api.sicherungJetzt())}>{t('werkbank.sicherung.jetzt-sichern')}</Knopf></div>
+            {/* Ergebnis unter dem Knopf (#986). */}
             {lauf?.status === 'fehler' && <p className="fehlertext" role="alert">{tn('werkbank.sicherung.fehlgeschlagen-2', { titel: lauf.titel, fehler: lauf.fehler })}</p>}
             {lauf?.status === 'fertig' && lauf.art === 'sicherung' && <p className="gutertext" role="status">{t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}</p>}
-            <p className="leise">{t('werkbank.sicherung.ablago-laeuft-dabei-weiter')}</p>
-            <div className="knoepfe"><button className="knopf primaer" disabled={!s.zustand.schluessel} onClick={() => void tu(() => api.sicherungJetzt())}>{t('werkbank.sicherung.jetzt-sichern')}</button></div>
           </>
         )}
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
@@ -236,7 +244,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td>{x.pruefung ? <span className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`} title={t('werkbank.sicherung.geprueft', { zeit: zeit(x.pruefung.am) })}>{x.pruefung.ok ? t('werkbank.sicherung.unveraendert') : t('werkbank.sicherung.weicht-ab')}</span> : <span className="leise">–</span>}</td>
                 <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? t('werkbank.sicherung.in-ordnung') : t('werkbank.sicherung.fehler')}</span> : <span className="leise">–</span>}</td>
                 <td className="kurz">
-                  <button type="button" className="textknopf" disabled={laeuft || (!x.meta && !x.schlank)} onClick={() => void tu(() => api.sicherungPruefen(x.name))}>{t('werkbank.sicherung.pruefen')}</button>{' · '}
+                  {pruefKnopf(x.name, !!(x.meta || x.schlank))}{' · '}
                   <button type="button" className="textknopf" disabled={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</button>
                 </td>
               </tr>
@@ -377,10 +385,11 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
           <select value={plan.wochentag} onChange={(e) => setPlan({ ...plan, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((text, i) => <option key={text} value={i + 1}>{text}</option>)}</select></label>
         <label className="eigenschaft"><span>{t('werkbank.sicherung.uhrzeit')}</span><input type="time" value={plan.uhrzeit} onChange={(e) => setPlan({ ...plan, uhrzeit: e.target.value })} /></label>
       </div>
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf" disabled={!sicherungen || laeuft || gesperrt} onClick={() => void tu(() => api.probeStarten())}>{laeuft ? t('werkbank.sicherung.probe-laeuft') : t('werkbank.sicherung.jetzt-probeweise-wiederherstellen')}</button>
+        <Knopf gesperrt={!sicherungen || gesperrt} laeuft={laeuft} laeuftText={t('werkbank.sicherung.probe-laeuft')} onClick={() => tu(() => api.probeStarten())}>{t('werkbank.sicherung.jetzt-probeweise-wiederherstellen')}</Knopf>
       </div>
+      {/* Ergebnis unter dem Knopf (#986): darüber verschiebt sich nichts. */}
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.sicherung.probe-zeitplan')} sendet={sendet} />
     </form>
   );

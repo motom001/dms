@@ -1,3 +1,4 @@
+import { Knopf } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
@@ -120,8 +121,9 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
     <>
       <Listenkopf titel={t('werkbank.pakete.pakete')} hilfe="werkbank.pakete" beschreibung={t('werkbank.pakete.fertige-mappentypen-und-ansichten')} />
       <div className="knoepfe">
-        <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.abrufen()}>{z.laedt ? t('werkbank.pakete.frage-ab') : t('werkbank.pakete.katalog-abrufen')}</button>
-        {installiert.length > 0 && <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.pruefen()}>{t('werkbank.pakete.auf-neue-versionen-pruefen')}</button>}
+        {/* „läuft“ am jeweiligen Knopf (#986); das Ergebnis ist die Liste darunter, ein Fehler steht über der Liste. */}
+        <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={() => z.abrufen()}>{t('werkbank.pakete.katalog-abrufen')}</Knopf>
+        {installiert.length > 0 && <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={z.pruefen}>{t('werkbank.pakete.auf-neue-versionen-pruefen')}</Knopf>}
         <Link to={`/werkbank/pakete/${ERSTELLEN}`} className={`knopf klein ${offen === ERSTELLEN ? 'an' : ''}`}>{t('werkbank.pakete.paket-erstellen')}</Link>
         <Link to={`/werkbank/pakete/${SAMMEL}`} className={`knopf klein ${offen === SAMMEL ? 'an' : ''}`}>{t('werkbank.pakete.ohne-internet')}</Link>
       </div>

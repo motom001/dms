@@ -1,5 +1,6 @@
 import { t, tn } from '../sprache';
 import { Kopf } from './Kopf';
+import { Knopf } from '../bausteine';
 import { useCallback, useEffect, useState } from 'react';
 import { api, type WartungWerkbank } from '../api';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
@@ -130,29 +131,30 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
         {s.stufe === 'aus' && (schiene.fehler
           ? <p className="fehlertext" role="status">{schiene.fehler}</p>
           : <p className="leise" role="status">{schiene.satz}</p>)}
-        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe">
           {s.stufe === 'aus' && (
-            <button className="knopf primaer" disabled={laeuft || !!schiene.fehler} onClick={() => {
+            <Knopf art="haupt" gesperrt={laeuft || !!schiene.fehler} onClick={() => {
               const ab = new Date(beginn);
-              void tu(() => api.wartungEin({ ...eingabe, beginn: ab.toISOString() }), t('werkbank.wartungsmodus.wartung-angekuendigt-alle-anderen', { wann: wann(ab) }));
-            }}>{t('werkbank.wartungsmodus.wartung-ankuendigen')}</button>
+              return tu(() => api.wartungEin({ ...eingabe, beginn: ab.toISOString() }), t('werkbank.wartungsmodus.wartung-angekuendigt-alle-anderen', { wann: wann(ab) }));
+            }}>{t('werkbank.wartungsmodus.wartung-ankuendigen')}</Knopf>
           )}
-          {s.stufe === 'aktiv' && <button className="knopf" disabled={laeuft} onClick={() => void tu(() => api.wartungEin({ ...eingabe, vorlauf: 0 }), t('werkbank.wartungsmodus.text-und-ende-uebernommen'))}>{t('werkbank.wartungsmodus.text-und-ende-uebernehmen')}</button>}
+          {s.stufe === 'aktiv' && <Knopf gesperrt={laeuft} onClick={() => tu(() => api.wartungEin({ ...eingabe, vorlauf: 0 }), t('werkbank.wartungsmodus.text-und-ende-uebernommen'))}>{t('werkbank.wartungsmodus.text-und-ende-uebernehmen')}</Knopf>}
           {s.stufe !== 'aus' && (
-            <button className="knopf gefahr-rand" disabled={laeuft} onClick={async () => {
+            <Knopf art="gefahr" gesperrt={laeuft} onClick={async () => {
               if (!(await rueckfrage({ titel: t('werkbank.wartungsmodus.alle-jetzt-abmelden'), text: andere ? t('werkbank.wartungsmodus.andere-sitzungen-werden-sofort', { anzahl: andere }) : t('werkbank.wartungsmodus.die-wartung-beginnt-sofort'), ja: t('werkbank.wartungsmodus.alle-abmelden'), gefahr: true }))) return;
-              void tu(() => api.wartungJetzt(), t('werkbank.wartungsmodus.alle-anderen-sind-abgemeldet'));
-            }}>{t('werkbank.wartungsmodus.alle-jetzt-abmelden-2')}</button>
+              await tu(() => api.wartungJetzt(), t('werkbank.wartungsmodus.alle-anderen-sind-abgemeldet'));
+            }}>{t('werkbank.wartungsmodus.alle-jetzt-abmelden-2')}</Knopf>
           )}
-          {s.stufe !== 'aus' && <button className="knopf" disabled={laeuft} onClick={() => void tu(() => api.wartungAus(), t('werkbank.wartungsmodus.wartungsmodus-beendet-alle-koennen'))}>{t('werkbank.wartungsmodus.wartung-beenden')}</button>}
+          {s.stufe !== 'aus' && <Knopf gesperrt={laeuft} onClick={() => tu(() => api.wartungAus(), t('werkbank.wartungsmodus.wartungsmodus-beendet-alle-koennen'))}>{t('werkbank.wartungsmodus.wartung-beenden')}</Knopf>}
         </div>
+        {/* Ergebnis unter den Knöpfen (#986): darüber verschiebt sich nichts. */}
+        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         {s.stufe === 'aus' && (
           <div className="wm-sofort" id="sofort">
-            <button className="knopf gefahr" disabled={laeuft} onClick={async () => {
+            <Knopf art="gefahr" gesperrt={laeuft} onClick={async () => {
               if (!(await rueckfrage({ titel: t('werkbank.wartungsmodus.jetzt-sofort-sperren'), text: t('werkbank.wartungsmodus.alle-anderen-sitzungen-werden'), ja: t('werkbank.wartungsmodus.jetzt-sofort-sperren-2'), gefahr: true }))) return;
-              void tu(() => api.wartungEin({ ...eingabe, sofort: true }), t('werkbank.wartungsmodus.sofort-gesperrt-alle-anderen'));
-            }}>{t('werkbank.wartungsmodus.jetzt-sofort-sperren-2')}</button>
+              await tu(() => api.wartungEin({ ...eingabe, sofort: true }), t('werkbank.wartungsmodus.sofort-gesperrt-alle-anderen'));
+            }}>{t('werkbank.wartungsmodus.jetzt-sofort-sperren-2')}</Knopf>
             <p className="leise klein">{tn('werkbank.wartungsmodus.fuer-notfaelle-z-b', { hilfe: <Hilfe ort="wartungsmodus.sofort" /> })}</p>
           </div>
         )}

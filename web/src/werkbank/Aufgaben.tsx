@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { AUFGABENARTEN, formatiere, type Aufgabe, type Aufgabenart } from '../../../shared/src/model';
 import { FAELLIGKEITEN, filterAktiv, filterInAdresse, filtereAufgaben, type AufgabenFilter, type Faelligkeit } from '../../../shared/src/aufgabenfilter';
+import { Knopf, type KnopfErgebnis } from '../bausteine';
 import { api, type MailEinstellung, type MappeDetails } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
@@ -151,9 +152,10 @@ function Zusammenfassung({ z, mailAn }: { z: AufgabenZustand; mailAn?: boolean }
     setSendet(true);
     try { z.setMail(await api.aufgabenMailSpeichern(e)); setMeldung({ art: 'gut', text: t('werkbank.aufgaben.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
-  async function senden() {
-    try { const r = await api.aufgabenMailSenden(); setMeldung({ art: 'gut', text: r.verschickt ? t('werkbank.aufgaben.mails-verschickt', { anzahl: r.verschickt }) : t('werkbank.aufgaben.niemand-hat-gerade-offene') }); }
-    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  // „Jetzt senden“ (#986): Ergebnis und Fehler stehen am Knopf.
+  async function senden(): Promise<KnopfErgebnis> {
+    const r = await api.aufgabenMailSenden();
+    return { art: 'gut', text: r.verschickt ? t('werkbank.aufgaben.mails-verschickt', { anzahl: r.verschickt }) : t('werkbank.aufgaben.niemand-hat-gerade-offene') };
   }
   // Auf- und zuklappen (#415), je Benutzer gemerkt; zugeklappt steht der Stand in der Kopfzeile.
   const zu = d.einstellungen[ZUSAMMENFASSUNG_ZU] === true;
@@ -180,7 +182,7 @@ function Zusammenfassung({ z, mailAn }: { z: AufgabenZustand; mailAn?: boolean }
       <p className="leise klein">{e.bundesland ? t('werkbank.region.aufgaben.mit', { land: BUNDESLAENDER[e.bundesland as keyof typeof BUNDESLAENDER] ?? e.bundesland }) : t('werkbank.region.aufgaben.ohne')} <Link to="/werkbank/region">{t('werkbank.region.aufgaben.link')}</Link></p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf klein" onClick={() => void senden()}>{t('werkbank.aufgaben.jetzt-senden')}</button>
+        <Knopf groesse="klein" onClick={senden} laeuftText={t('werkbank.aufgaben.sendet')}>{t('werkbank.aufgaben.jetzt-senden')}</Knopf>
       </div>
       </div>
       {(!zu || ent.geaendert) && <Speicherleiste ent={ent} gegenstand={t('werkbank.aufgaben.zusammenfassung')} sendet={sendet} />}

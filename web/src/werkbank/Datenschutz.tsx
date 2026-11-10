@@ -24,6 +24,7 @@ import { falte } from '../../../shared/src/suche';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Datenschutz (#396): Auskunft nach Art. 15 DSGVO als ZIP.
@@ -66,7 +67,7 @@ export function AuskuenfteListe({ z, offen }: { z: DatenschutzZustand; offen?: s
   return (
     <>
       <Listenkopf titel={bereichName('auskuenfte')} hilfe="werkbank.auskunft" beschreibung={t('werkbank.auskunft.liste.beschreibung')}>
-        <Link to="/werkbank/auskuenfte/neu" className="knopf gruen klein">{t('werkbank.auskunft.liste.neu')}</Link>
+        <KnopfLink to="/werkbank/auskuenfte/neu" art="anlegen" groesse="klein">{t('werkbank.auskunft.liste.neu')}</KnopfLink>
       </Listenkopf>
       <div className="zeile-umbruch listenfilter">
         <span className="segmente" role="group">

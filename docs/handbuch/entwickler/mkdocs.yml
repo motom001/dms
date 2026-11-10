@@ -81,6 +81,7 @@ nav:
   - Gestaltung und Bausteine:
       - Überblick: bausteine.md
       - Feld: bausteine-feld.md
+      - Knopf: bausteine-knopf.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md

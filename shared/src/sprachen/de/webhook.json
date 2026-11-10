@@ -40,7 +40,7 @@
   "profil.titel": "Sofort melden (Webhooks)",
   "profil.text": "Ablago meldet an eine Adresse, sobald sich deine Zahlen ändern: neue Post, Zu erledigen, anstehende und überfällige Fristen. So reagiert deine Hausautomatisierung (Homey, Node-RED, ioBroker …) sofort. Gemeldet werden nur Zahlen – keine Titel, Absender oder Inhalte. Mehrere Änderungen kurz hintereinander kommen als eine Meldung (höchstens eine je 30 Sekunden).",
   "profil.keine": "Noch keine Webhooks.",
-  "profil.neu": "Neuen Webhook anlegen",
+  "profil.neu": "+ Neuer Webhook",
   "profil.name": "Name",
   "profil.name.beispiel": "z. B. „Homey“",
   "profil.adresse": "Adresse des Empfängers",

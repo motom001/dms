@@ -23,6 +23,7 @@ import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Sichten verwalten (#38) mit Bedingungen (#40, #41): Baum links, Bearbeitung rechts.
@@ -96,7 +97,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
   return (
     <>
       <Listenkopf titel={t('werkbank.sichten.ansichten')} hilfe="werkbank.sichten" beschreibung={t('werkbank.sichten.was-die-ablage-links')}>
-        <Link to="/werkbank/sichten/neu" className="knopf primaer klein">{t('werkbank.sichten.neu')}</Link>
+        <KnopfLink to="/werkbank/sichten/neu" art="anlegen" groesse="klein">{t('werkbank.sichten.neu')}</KnopfLink>
       </Listenkopf>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       {hinweis && <div className="hinweis info"><p>{hinweis}</p><button type="button" className="textknopf klein" onClick={() => setHinweis(undefined)}>{t('werkbank.sichten.ausblenden')}</button></div>}

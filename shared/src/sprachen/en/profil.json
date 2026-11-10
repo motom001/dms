@@ -157,7 +157,7 @@
   "apischluessel.programme-die-ihn-nutzen": "Programs that use it can then no longer get in.",
   "apischluessel.loeschen": "Delete",
   "apischluessel.noch-keine-schluessel": "No keys yet.",
-  "apischluessel.neuen-schluessel-erzeugen": "Create new key",
+  "apischluessel.neuen-schluessel-erzeugen": "+ New key",
   "apischluessel.erzeugen": "Create",
   "apischluessel.z-b-scanner-buero": "e.g. “Office scanner”",
   "apischluessel.name": "Name {klein}",

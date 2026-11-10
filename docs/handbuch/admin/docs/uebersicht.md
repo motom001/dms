@@ -34,7 +34,9 @@ Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar blei
 - **Esc** im Formular wirkt wie Verwerfen. Hast du etwas geändert, fragt Ablago vorher nach.
 - Klickst du mit ungespeicherten Änderungen einen anderen Eintrag oder Bereich an oder schließt den Tab, fragt Ablago nach, ob du die Änderungen verwerfen willst.
 
-Knöpfe wie **Verbindung testen** oder **Jetzt prüfen** stehen darüber im Formular; links in der Leiste steht, wo es das gibt, **Löschen** bzw. **Entfernen**.
+Knöpfe wie **Verbindung testen** oder **Jetzt prüfen** stehen darüber im Formular; links in der Leiste steht, wo es das gibt, **Löschen** bzw. **Entfernen**. Solange so ein Knopf arbeitet, zeigt er „Läuft …“; das Ergebnis steht direkt darunter, nicht oben auf der Seite.
+
+Zum **Anlegen** steht in jeder Liste oben rechts der grüne Knopf **+ Neu** – in der Werkbank wie in der Ablage.
 
 ## Übersicht
 

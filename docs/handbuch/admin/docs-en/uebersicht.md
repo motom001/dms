@@ -34,7 +34,9 @@ Every form ends with the same bar, which stays visible at the bottom when scroll
 - **Esc** in the form acts like Discard. If you have changed something, Ablago asks first.
 - If you click another entry or area with unsaved changes or close the tab, Ablago asks whether you want to discard the changes.
 
-Buttons such as **Test connection** or **Check now** are above it in the form; on the left of the bar, where it exists, is **Delete** or **Remove**.
+Buttons such as **Test connection** or **Check now** are above it in the form; on the left of the bar, where it exists, is **Delete** or **Remove**. While such a button is working it shows “Working …”; the result appears right below it, not at the top of the page.
+
+To **create** something, every list has the green **+ New** button at the top right – in the Workbench as in the Library.
 
 ## Overview {#ubersicht}
 

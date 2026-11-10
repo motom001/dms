@@ -27,7 +27,7 @@ Alle Bausteine stehen unter `web/src/bausteine/`:
 
 Die Musterseite unter **`/muster`** zeigt jeden Baustein in jedem Zustand – zum Ansehen, Ausprobieren und Vergleichen. Oben rechts lässt sich die Darstellung umschalten (automatisch, hell, dunkel, hoher Kontrast); die Wahl steht in der Adresse (`/muster?darstellung=dunkel`).
 
-![Musterseite mit dem Bereich „Feld“: jeder Zustand in einer eigenen Karte](bilder/muster-hell.png){ loading=lazy }
+![Musterseite mit den Bereichen „Feld“ und „Knopf“: jeder Zustand in einer eigenen Karte](bilder/muster-hell.png){ loading=lazy }
 
 Es gibt sie nur
 
@@ -49,3 +49,4 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | Baustein | Wofür |
 | --- | --- |
 | [Feld](bausteine-feld.md) | Rahmen für jedes Eingabeelement: Beschriftung, Eingabe, Hinweis, Fehler, Hilfesymbol |
+| [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Anlegen, Haupt, Neben, Gefahr, Link; gesperrt mit Grund, „läuft“, Ergebnis und Fehler am Knopf |
