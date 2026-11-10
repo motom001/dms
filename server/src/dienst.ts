@@ -96,7 +96,7 @@ import { feiertageZwischen, type Bundesland } from '../../shared/src/feiertage';
 import { ALLES, hatKontoRegeln, kontoRegelwerk, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
-import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugriff } from './kern';
+import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugriff, type BenutzerGespiegelt } from './kern';
 import { Systemausstattung } from './systemausstattung/systemausstattung.ablauf';
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
@@ -476,7 +476,7 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
 /** Für die Benutzerverwaltung: Benutzer-Mappen anlegen, nachziehen und entfernen. */
 export interface Benutzerspiegel {
   /** Legt die Mappe des Benutzers an oder zieht sie nach (Name, E-Mail, Systemrolle, aktiv). */
-  aktualisiere(b: Benutzer, von?: string | null): Promise<void>;
+  aktualisiere(b: Benutzer, von?: string | null, abwesenheit?: BenutzerGespiegelt['abwesenheit']): Promise<void>;
   /** Entfernt die Mappe; wirft, wenn noch etwas auf sie verweist. */
   entferne(id: string): Promise<void>;
   /** Ist der Papierkorb an (#43)? Dann wird ein Benutzer deaktiviert und seine Mappe kommt in den Papierkorb. */
@@ -487,8 +487,6 @@ export interface Benutzerspiegel {
   offeneAufgaben?(id: string): Promise<number>;
   /** Alle offenen Aufgaben eines Benutzers an einen anderen geben (#78); Anzahl. */
   aufgabenUebergeben?(id: string, an: string, von: string | null): Promise<number>;
-  /** Abwesenheit geändert: Protokoll an der Benutzer-Mappe und Aufgabe „Vertretung“ (#78). */
-  abwesenheitGeaendert?(b: Benutzer, alt: Abwesenheit, von: string | null, wegen?: string): Promise<void>;
 }
 
 /** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
@@ -785,6 +783,7 @@ export class Dienst {
       sichten: { sichtFuerTyp: (typ) => this.sichtFuerTyp(typ), sichereFavoritenSicht: () => this.sichereFavoritenSicht() },
       post: { sicherePostSichten: (post) => this.sicherePostSichten(post) },
     });
+    this.schliesseEmpfaengerAn();
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
@@ -804,6 +803,47 @@ export class Dienst {
     // Volltext aus Paketen (#614): zuständige Pakete mit dms:volltext, Ereignis datei.volltext an genau dieses.
     this.paketVolltext = new PaketVolltext({ pakete: () => this.repo.listePakete(), melde: (paket, daten) => this.auftrag(paket, 'datei.volltext', daten) });
   }
+  /**
+   * Anschlusspunkte (#962): alle sofortigen Empfänger an dieser einen Stelle, in fester Reihenfolge (Test:
+   * anlaesse.test.ts, Liste im Entwicklerhandbuch). Eine andere Reihenfolge ist ein eigener Pull Request. Die Empfänger
+   * rufen ihre Methoden über `this`, damit Tests sie ersetzen können.
+   */
+  private schliesseEmpfaengerAn() {
+    const a = this.kern.anlaesse;
+    // Mappe angelegt bzw. geändert: Passung → Erwähnungen → Fristen → Post-Aufgaben.
+    a.mappeGeaendert.anmelden('mappentypen.passung', async (e) => {
+      // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
+      if (!e.angelegt) await this.passungsAufgaben([{ id: e.mappe.id, problem: null }]);
+      if (e.typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(e.typ);
+    });
+    a.mappeGeaendert.anmelden('aufgaben.erwaehnungen', async (e) => { if (!e.demo) await this.pruefeErwaehnungen(e.typ, e.mappe.id, e.alt, e.neu, e.von); });
+    // Fristen (#129): neues Datum → „Frist erreicht“, verschobenes oder leeres → alte erledigt.
+    a.mappeGeaendert.anmelden('aufgaben.fristen', async (e) => {
+      if (e.angelegt && (e.demo || !fristFelder(e.typ).length)) return;
+      await this.fristenAbgleichen({ mappeIds: [e.mappe.id] });
+    });
+    // Post (#192): „Für“ und Stand bestimmen die Aufgabe „Post für dich“.
+    a.mappeGeaendert.anmelden('post.aufgaben', async (e) => { if (!e.angelegt && e.typ.system === 'post') await this.postAufgaben(e.mappe.id, e.von); });
+    // Mappentyp geändert: Ansicht umbenennen → Titel → Passung → Fristen.
+    a.typGeaendert.anmelden('sichten.umbenennen', async ({ alt, typ }) => {
+      // Die Sicht, die für diesen Typ entstanden ist, heißt weiter wie er – solange sie niemand umbenannt hat.
+      const eigene = (await this.repo.listeSichten()).find((x) => x.id === typ.id);
+      if (eigene && eigene.name === alt.name && alt.name !== typ.name) await this.repo.aendereSicht(typ.id, { ...eigene, name: typ.name });
+    });
+    // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
+    a.typGeaendert.anmelden('mappen.titel', async ({ typ }) => { await this.aktualisiereTitel((await this.repo.listeMappen(typ.id)).map((m) => m.id)); });
+    a.typGeaendert.anmelden('mappentypen.passung', async ({ typ }) => { await this.pruefePassung(typ.id); });
+    // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
+    a.typGeaendert.anmelden('aufgaben.fristen', async ({ typ }) => { await this.fristenAbgleichen({ typId: typ.id }); });
+    // Neue Mappentypen bekommen eine eigene Sicht (#38), außer der Administrator wählt das ab.
+    a.typAngelegt.anmelden('sichten.eigeneSicht', async ({ typ, sicht }) => { if (sicht) await this.sichtFuerTyp(typ); });
+    // Abwesenheit (#78): Historie an der Benutzer-Mappe, Ereignisse, Aufgaben mit Anlass „Abwesenheit“.
+    a.benutzerGespiegelt.anmelden('aufgaben.abwesenheit', async ({ benutzer, von, abwesenheit }) => {
+      if (abwesenheit) await this.abwesenheitGeaendert(benutzer, abwesenheit.vorher, von, abwesenheit.wegen);
+    });
+    a.schliessen();
+  }
+
   /** Volltext aus Paketen (#614, paketvolltext.ts); die Texterkennung meldet darüber (index.ts). */
   readonly paketVolltext: PaketVolltext;
 
@@ -3304,11 +3344,14 @@ export class Dienst {
     if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
     await this.pruefeTyp(d, id);
     const rechte = await this.berechtigungenAusEingabe({ ...d, id, erstellt: '', geaendert: '', berechtigungen: null }, eingabe);
-    let typ = await this.repo.legeTypAn(id, d);
-    if (rechte) { typ = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw); Dienst.protokolliereBerechtigungen(typ, 0); }
-    // Neue Mappentypen bekommen eine eigene Sicht (#38), außer der Administrator wählt das ab.
-    if ((roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false) await this.sichtFuerTyp(typ);
-    return typ;
+    // In einer Transaktion (#962): Typ, Berechtigungen und die sofortigen Empfänger (eigene Sicht) ganz oder gar nicht.
+    return this.inEinemZug(async () => {
+      let typ = await this.repo.legeTypAn(id, d);
+      if (rechte) typ = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
+      await this.kern.anlaesse.typAngelegt.melde({ typ, sicht: (roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false });
+      if (rechte) this.kern.danach(() => Dienst.protokolliereBerechtigungen(typ, 0));
+      return typ;
+    });
   }
 
   /**
@@ -3335,23 +3378,18 @@ export class Dienst {
       const name = alt.register.find((r) => r.key === key)?.name ?? key;
       throw new Fachfehler(409, t('meldungen.dienst.im-register-liegen-noch', { anzahl: n, name }));
     }
-    let typ: Mappentyp;
-    try { typ = await this.repo.aendereTyp(id, d, stand); }
-    catch (f) { if (f instanceof KonfigurationVeraltet) throw Dienst.konfigurationKonflikt('typ'); throw f; }
-    // Die Sicht, die für diesen Typ entstanden ist, heißt weiter wie er – solange sie niemand umbenannt hat.
-    const eigene = (await this.repo.listeSichten()).find((x) => x.id === id);
-    if (eigene && eigene.name === alt.name && alt.name !== typ.name) await this.repo.aendereSicht(id, { ...eigene, name: typ.name });
-    // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
-    await this.aktualisiereTitel((await this.repo.listeMappen(id)).map((m) => m.id));
-    await this.pruefePassung(id);
-    // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
-    await this.fristenAbgleichen({ typId: id });
-    if (rechte) {
+    // In einer Transaktion (#962): Typ, Ansicht, Titel, Passung, Fristen und Berechtigungen ganz oder gar nicht. Vorher
+    // lief jeder Schritt für sich – ein Fehler mittendrin ließ einen halb nachgezogenen Typ zurück.
+    return this.inEinemZug(async () => {
+      let typ: Mappentyp;
+      try { typ = await this.repo.aendereTyp(id, d, stand); }
+      catch (f) { if (f instanceof KonfigurationVeraltet) throw Dienst.konfigurationKonflikt('typ'); throw f; }
+      await this.kern.anlaesse.typGeaendert.melde({ alt, typ });
+      if (!rechte) return typ;
       const mit = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
-      Dienst.protokolliereBerechtigungen(mit, rechte.niemand);
+      this.kern.danach(() => Dienst.protokolliereBerechtigungen(mit, rechte.niemand));
       return mit;
-    }
-    return typ;
+    });
   }
 
   /**
@@ -5088,17 +5126,15 @@ export class Dienst {
     await this.pruefeAuswahlfilter(typ, werte, {}, benutzerId);
     await this.pruefeWerte(typ, werte, undefined, undefined, z);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
-    // In einer Transaktion (#743): Mappe, Titel, Historie, Ereignisse und Fristen ganz oder gar nicht.
+    // In einer Transaktion (#743): Mappe, Titel, Historie, Ereignisse und die sofortigen Empfänger (#962) ganz oder gar nicht.
     const { m, titel } = await this.inEinemZug(async () => {
       const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo, null, nummern.length ? { felder: nummern, jetzt: new Date() } : undefined);
       if (!demo) {
         await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, m.werte) });
         await this.meldeVerknuepft(typ, m.id, {}, m.werte, benutzerId);
-        await this.pruefeErwaehnungen(typ, m.id, {}, werte, benutzerId);
       }
       const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
-      if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
-      if (!demo && fristFelder(typ).length) await this.fristenAbgleichen({ mappeIds: [m.id] });
+      await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: m, alt: {}, neu: werte, von: benutzerId, angelegt: true, demo });
       return { m, titel };
     });
     const hinweis = z ? await this.hinweisDanach(z, m.id) : undefined;
@@ -5374,7 +5410,7 @@ export class Dienst {
       ? titelAus(typ, w, (x) => titel.get(x) || t('meldungen.dienst.ohne-titel'), index) : undefined);
   }
 
-  /** Ein Versuch, in einer Transaktion (#743): Werte, Titel, Historie, Ereignisse, Passung, Fristen ganz oder gar nicht. */
+  /** Ein Versuch, in einer Transaktion (#743): Werte, Titel, Historie, Ereignisse und die sofortigen Empfänger (#962) ganz oder gar nicht. */
   private async aendereMappeEinmal(id: string, eingabe: unknown, benutzerId: string | null, z: Zugriff | undefined, anlass: Record<string, unknown> | undefined): Promise<Mappe> {
     const m = z ? await this.pruefeRecht(z, id, 'U') : await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
@@ -5411,20 +5447,14 @@ export class Dienst {
     const neu = await this.repo.aendereMappe(id, werte, [], benutzerId, { basis: m.werte, verweise: (w) => verweiseVon(typ, w), titel: titelFuer, ...(stand ? { stand: m.geaendert } : {}) });
     if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen, stand: neu.geaendert });
     await this.meldeVerknuepft(typ, id, m.werte, neu.werte, benutzerId);
-    // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
-    await this.passungsAufgaben([{ id, problem: null }]);
-    await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);
     // Titel (#743): stand er schon im UPDATE, nur noch die Mappen nachziehen, die auf diese verweisen (wenn er sich
     // geändert hat); sonst wie bisher.
     const vorab = titelFuer(neu.werte);
     let titel = neu.titel;
     if (vorab === undefined || vorab !== neu.titel) titel = (await this.aktualisiereTitel([id])).get(id);
     else if (vorab !== m.titel) await this.aktualisiereTitel(await this.repo.quellenVon([id]));
-    if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
-    // Fristen (#129): neues Datum → neue Aufgabe, verschobenes oder leeres → alte erledigt.
-    await this.fristenAbgleichen({ mappeIds: [id] });
-    // Post (#192): „Für“ und Stand bestimmen die Aufgabe „Neue Post“.
-    if (typ.system === 'post') await this.postAufgaben(id, benutzerId);
+    // Passung, Erwähnungen, Fristen, Post-Aufgaben (#962).
+    await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: neu, alt: m.werte, neu: werte, von: benutzerId, angelegt: false, demo: false });
     return { ...neu, titel };
   }
 
@@ -6423,7 +6453,7 @@ export class Dienst {
   }
 
   /** Mappe eines Benutzers anlegen oder nachziehen. Weitere Rollen bleiben, die Systemrolle folgt dem Konto. */
-  async spiegleBenutzer(b: Benutzer, von: string | null = null) {
+  async spiegleBenutzer(b: Benutzer, von: string | null = null, abwesenheit?: BenutzerGespiegelt['abwesenheit']) {
     // Liegt die Mappe im Papierkorb, bleibt sie dort (der Benutzer ist bis zum Leeren deaktiviert).
     if (await this.repo.holeAusPapierkorb(b.id)) return;
     const { benutzer: typ, systemrollen } = await this.kern.system();
@@ -6435,17 +6465,21 @@ export class Dienst {
     const system = new Set(systemrollen.values());
     const weitere = alt ? alsListe(alt.werte.rollen).filter((r) => !system.has(r)) : [];
     const ab = b.abwesenheit;
-    // Ereigniskatalog (#670): Benutzer deaktiviert bzw. wieder aktiviert (die Mappe folgt dem Konto).
-    if (alt && alt.werte.aktiv !== b.aktiv) await this.ereignis(b.aktiv ? 'benutzer.aktiviert' : 'benutzer.deaktiviert', { benutzer: b.id }, von);
-    // Abwesenheit (#78): „abwesend“ = wirkt heute; Zeitraum nur, solange sie an ist; der Vertreter auch nach dem Deaktivieren.
-    await this.schreibeSystemMappe(typ, b.id, {
-      ...(alt?.werte ?? {}),
-      // Systemrolle ist für jeden Menschen „Mitglied“ (#818: die Systemrolle „Administrator“ ist entfallen).
-      name: b.name || b.email, email: b.email, rollen: [systemrollen.get('mitglied')!, ...weitere], aktiv: b.aktiv,
-      abwesend: abwesenheitWirkt(ab, heuteIn()),
-      abwesend_von: ab?.an ? ab.von : null, abwesend_bis: ab?.an ? ab.bis : null,
-      vertreter: ab?.vertreterId && (ab.an || !b.aktiv) ? ab.vertreterId : null,
-    }, von);
+    // In einer Transaktion (#962): Benutzer-Mappe, Ereignis und die sofortigen Empfänger (Abwesenheit) ganz oder gar nicht.
+    await this.inEinemZug(async () => {
+      // Ereigniskatalog (#670): Benutzer deaktiviert bzw. wieder aktiviert (die Mappe folgt dem Konto).
+      if (alt && alt.werte.aktiv !== b.aktiv) await this.ereignis(b.aktiv ? 'benutzer.aktiviert' : 'benutzer.deaktiviert', { benutzer: b.id }, von);
+      // Abwesenheit (#78): „abwesend“ = wirkt heute; Zeitraum nur, solange sie an ist; der Vertreter auch nach dem Deaktivieren.
+      await this.schreibeSystemMappe(typ, b.id, {
+        ...(alt?.werte ?? {}),
+        // Systemrolle ist für jeden Menschen „Mitglied“ (#818: die Systemrolle „Administrator“ ist entfallen).
+        name: b.name || b.email, email: b.email, rollen: [systemrollen.get('mitglied')!, ...weitere], aktiv: b.aktiv,
+        abwesend: abwesenheitWirkt(ab, heuteIn()),
+        abwesend_von: ab?.an ? ab.von : null, abwesend_bis: ab?.an ? ab.bis : null,
+        vertreter: ab?.vertreterId && (ab.an || !b.aktiv) ? ab.vertreterId : null,
+      }, von);
+      await this.kern.anlaesse.benutzerGespiegelt.melde({ benutzer: b, von, ...(abwesenheit ? { abwesenheit } : {}) });
+    });
   }
 
   /** Beim Start: alle Benutzer haben ihre Mappe, und sie stimmt mit dem Konto überein. */
@@ -6687,10 +6721,9 @@ export class Dienst {
 
   benutzerspiegel(): Benutzerspiegel {
     return {
-      aktualisiere: (b, von) => this.spiegleBenutzer(b, von ?? null),
+      aktualisiere: (b, von, abwesenheit) => this.spiegleBenutzer(b, von ?? null, abwesenheit),
       offeneAufgaben: async (id) => (await this.repo.offeneAufgaben({ benutzerId: id })).filter((a) => a.empfaengerId === id).length,
       aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von),
-      abwesenheitGeaendert: (b, alt, von, wegen) => this.abwesenheitGeaendert(b, alt, von, wegen),
       entferne: (id) => this.entferneBenutzerMappe(id),
       papierkorbAn: async () => (await this.kern.papierkorbTage()) > 0,
       inPapierkorb: async (id, von) => {

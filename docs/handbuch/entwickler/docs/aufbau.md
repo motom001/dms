@@ -66,6 +66,7 @@ Daneben, ohne Routen:
 - `kern.repo` – das Repo; in einer Transaktion des Kerns deren Repo. Bei jedem Aufruf neu holen, nie zwischenspeichern – sonst schreibt ein Paket neben der Transaktion vorbei.
 - `inTransaktion`, `inEinemZug` (wiederholt bei Verklemmung), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
 - `ereignis(art, daten, von?)` in den Ausgangskorb, `mitAusloeser`, `ohneEreignisse`.
+- `anlaesse` – die [Anschlusspunkte](#anschlusspunkte) für das Sofortige (#962, `kern/anlaesse.ts`).
 - `system()` – Benutzer-, Rollen- und Post-Typ und die Systemrollen **nur nachschlagen** (#963; fehlt etwas, legt der Rückfall die [Systemausstattung](#systemausstattung) an), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `paketVerwehrt()`, `ablageortId()`, `liesGanz(sha)`.
 - `historie.schreibe(…)` (`kern/historie.ts`) und `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Lesen** bleibt bei Mappen bzw. Löschen.
 - `einstellungen`, `dateien`, `stand`.
@@ -79,6 +80,25 @@ Daneben, ohne Routen:
 - **Beim Start** (`dienst.gleicheBenutzerAb`, nur der Leiter) und damit nach jeder Wiederherstellung, die neu startet.
 - **Als Rückfall**: Findet `kern.system()` nicht alles, ruft es `systemausstattung.anlegen()` – für Wege ohne Start (Tests, Wiederherstellung, Demo entfernen). Gleichzeitige Aufrufe teilen sich einen Lauf.
 - Wer nur Ids braucht, nimmt `kern.system()`; `dienst.sichereSystem()` ist die Fassade für `sicherstellen()`. Die Ids merkt sich der Kern nur, wenn er sie außerhalb einer Transaktion nachgeschlagen hat.
+
+### Anschlusspunkte (#962) { #anschlusspunkte }
+
+Was **sofort** zu einer Änderung gehört – in derselben Transaktion, ein Fehler rollt alles zurück –, läuft über die typisierten Anschlusspunkte in `server/src/kern/anlaesse.ts`: `kern.anlaesse.mappeGeaendert`, `typGeaendert`, `typAngelegt`, `benutzerGespiegelt`. Wer ändert, ruft `melde(…)`; was **später** geschehen darf (mindestens einmal, mit Wiederholung, Fehler nur im Protokoll), geht wie bisher mit `kern.ereignis(…)` in den Ausgangskorb.
+
+- **Anmelden an einer Stelle:** `Dienst.schliesseEmpfaengerAn()` beim Zusammenbau, in fester Reihenfolge; danach ist die Liste zu. Eine andere Reihenfolge ist ein eigener Pull Request (Test `server/test/anlaesse.test.ts`).
+- **Der Reihe nach:** Der `EventEmitter` dient nur als Liste der Empfänger; `melde()` wartet jeden mit `for … await` ab. `emit()` ist verboten und wirft.
+- **Nur in einer Transaktion:** `melde()` wirft außerhalb von `inTransaktion`/`inEinemZug`. Ein Empfänger darf einen anderen Anlass melden (Tiefe höchstens 2), nie den, dessen Empfänger gerade läuft.
+- **Empfänger** tun nur Datenbank-Arbeit über `kern.repo` und `kern.danach(…)` – bei einer Verklemmung wiederholt `inEinemZug` die ganze Änderung samt Empfängern. Keine Zwischenspeicher, Mails oder Dateien direkt.
+- **Sofort** wurden nur die Empfänger, die vorher schon direkt gerufen wurden. Alles Neue geht in den Ausgangskorb.
+
+Anlass → Empfänger (der Reihe nach; Fachbereich.Aufgabe):
+
+<!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->
+- `mappeGeaendert` → 1. `mappentypen.passung` 2. `aufgaben.erwaehnungen` 3. `aufgaben.fristen` 4. `post.aufgaben`
+- `typGeaendert` → 1. `sichten.umbenennen` 2. `mappen.titel` 3. `mappentypen.passung` 4. `aufgaben.fristen`
+- `typAngelegt` → 1. `sichten.eigeneSicht`
+- `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
+<!-- anlaesse:ende -->
 
 ## Abhängigkeiten { #abhaengigkeiten }
 

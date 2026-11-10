@@ -66,6 +66,7 @@ Alongside, without routes:
 - `kern.repo` – the repo; inside a transaction of the core, that transaction's repo. Fetch it on every call, never keep it – otherwise a package writes past the transaction.
 - `inTransaktion`, `inEinemZug` (retries on deadlock), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
 - `ereignis(art, daten, von?)` into the outbox, `mitAusloeser`, `ohneEreignisse`.
+- `anlaesse` – the [hook points](#anschlusspunkte) for what happens immediately (#962, `kern/anlaesse.ts`).
 - `system()` – **only looks up** the user, role and post folder types and the system roles (#963; if something is missing, the fallback creates the [system setup](#systemausstattung)), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `paketVerwehrt()`, `ablageortId()`, `liesGanz(sha)`.
 - `historie.schreibe(…)` (`kern/historie.ts`) and `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Reading** stays with folders and deletion respectively.
 - `einstellungen`, `dateien`, `stand`.
@@ -79,6 +80,25 @@ Alongside, without routes:
 - **At start-up** (`dienst.gleicheBenutzerAb`, leader only) and so after every restore, which restarts.
 - **As a fallback**: if `kern.system()` does not find everything, it calls `systemausstattung.anlegen()` – for paths without a start (tests, restore, removing demo data). Concurrent calls share one run.
 - Whoever only needs ids uses `kern.system()`; `dienst.sichereSystem()` is the facade for `sicherstellen()`. The core keeps the ids only if it looked them up outside a transaction.
+
+### Hook points (#962) { #anschlusspunkte }
+
+What belongs to a change **immediately** – in the same transaction, an error rolls everything back – runs through the typed hook points in `server/src/kern/anlaesse.ts`: `kern.anlaesse.mappeGeaendert`, `typGeaendert`, `typAngelegt`, `benutzerGespiegelt`. Whoever changes something calls `melde(…)`; what may happen **later** (at least once, with retries, errors only in the log) still goes into the outbox with `kern.ereignis(…)`.
+
+- **Registered in one place:** `Dienst.schliesseEmpfaengerAn()` when assembling, in a fixed order; after that the list is closed. A different order is a pull request of its own (test `server/test/anlaesse.test.ts`).
+- **One after the other:** the `EventEmitter` only serves as the list of receivers; `melde()` awaits each with `for … await`. `emit()` is forbidden and throws.
+- **Only inside a transaction:** `melde()` throws outside `inTransaktion`/`inEinemZug`. A receiver may report another occasion (depth at most 2), never the one whose receiver is running.
+- **Receivers** only do database work via `kern.repo` and `kern.danach(…)` – on a deadlock `inEinemZug` repeats the whole change including the receivers. No caches, mails or files directly.
+- **Immediate** are only the receivers that were already called directly before. Anything new goes into the outbox.
+
+Occasion → receivers (in order; subject area.task):
+
+<!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->
+- `mappeGeaendert` → 1. `mappentypen.passung` 2. `aufgaben.erwaehnungen` 3. `aufgaben.fristen` 4. `post.aufgaben`
+- `typGeaendert` → 1. `sichten.umbenennen` 2. `mappen.titel` 3. `mappentypen.passung` 4. `aufgaben.fristen`
+- `typAngelegt` → 1. `sichten.eigeneSicht`
+- `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
+<!-- anlaesse:ende -->
 
 ## Dependencies { #abhaengigkeiten }
 

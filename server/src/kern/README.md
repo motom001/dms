@@ -6,6 +6,9 @@
   `nachDerAntwort`, `ereignis` (Ausgangskorb), `system()` (Systemtypen nur nachschlagen, #963), `typen()`,
   `zugriff(ich)`, `name`, `papierkorbTage`, `paketVerwehrt`, `ablageortId`, `liesGanz`; `einstellungen`, `dateien`,
   `stand`.
+- `anlaesse.ts` – Anschlusspunkte (#962) `mappeGeaendert`, `typGeaendert`, `typAngelegt`, `benutzerGespiegelt`: was
+  sofort, in derselben Transaktion, zu einer Änderung gehört. Empfänger meldet nur der Dienst beim Zusammenbau an;
+  `melde()` nur in einer Transaktion, kein `emit()`. Regeln im Kopf der Datei.
 - `historie.ts` – Historie einer Mappe **schreiben** (`kern.historie.schreibe`). Lesen bleibt bei den Mappen.
 - `loeschprotokoll.ts` – Löschprotokoll **schreiben** (`kern.loeschprotokoll.schreibe` samt Einträgen). Lesen bleibt
   beim Löschen.

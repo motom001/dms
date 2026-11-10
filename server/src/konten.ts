@@ -104,8 +104,9 @@ export class Konten {
   private get mailer(): Mailer | null { return typeof this.mailQuelle === 'function' ? this.mailQuelle() : this.mailQuelle; }
   private get appUrl(): string { return typeof this.adresse === 'function' ? this.adresse() : this.adresse; }
 
-  private async spiegle(b: Benutzer, von: string | null = null) {
-    if (this.spiegel) await this.spiegel.aktualisiere(b, von);
+  /** Benutzer-Mappe nachziehen; `abwesenheit` (#962), wenn sich die Abwesenheit geändert hat – dann in derselben Transaktion. */
+  private async spiegle(b: Benutzer, von: string | null = null, abwesenheit?: { vorher: Abwesenheit; wegen?: string }) {
+    if (this.spiegel) await this.spiegel.aktualisiere(b, von, abwesenheit);
     return b;
   }
 
@@ -712,8 +713,7 @@ export class Konten {
     } else if (a.an || !b.aktiv) throw new Fachfehler(422, t('meldungen.konten.bitte-einen-vertreter-waehlen'));
     const alt = b.abwesenheit ?? KEINE_ABWESENHEIT;
     const neu = await this.repo.setzeAbwesenheit(id, a);
-    await this.spiegle(neu, ich.id);
-    await this.spiegel?.abwesenheitGeaendert?.(neu, alt, ich.id);
+    await this.spiegle(neu, ich.id, { vorher: alt });
     return neu;
   }
 
@@ -736,8 +736,7 @@ export class Konten {
       if (!a) continue;
       if (a.an && a.bis && a.bis < heute) {
         const neu = await this.repo.setzeAbwesenheit(b.id, { ...a, an: false, von: null, bis: null });
-        await this.spiegle(neu);
-        await this.spiegel?.abwesenheitGeaendert?.(neu, a, null, t('meldungen.konten.zeitraum-bis-abgelaufen', { reverse: a.bis.split('-').reverse().join('.') }));
+        await this.spiegle(neu, null, { vorher: a, wegen: t('meldungen.konten.zeitraum-bis-abgelaufen', { reverse: a.bis.split('-').reverse().join('.') }) });
       } else if (a.an) await this.spiegle(b);
     }
   }

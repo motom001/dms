@@ -12,6 +12,7 @@ import type { Haushaltsstand } from '../zaehlerspeicher';
 import { beiVerklemmungWiederholen } from '../db';
 import { kontext, protokoll } from '../protokoll';
 import { t } from '../sprache';
+import { Anlaesse } from './anlaesse';
 import { Historie } from './historie';
 import { Loeschprotokoll } from './loeschprotokoll';
 
@@ -78,7 +79,8 @@ export interface KernOptionen {
 
 /**
  * Der Kern (#961): was alle Fachbereiche brauchen – Repo und Transaktion, Arbeit nach der Antwort, Ereignisse in den
- * Ausgangskorb, Systemtypen nachschlagen, Historie und Löschprotokoll schreiben. Er ruft keinen Fachbereich auf.
+ * Ausgangskorb, Anschlusspunkte für das Sofortige (#962), Systemtypen nachschlagen, Historie und Löschprotokoll
+ * schreiben. Er ruft keinen Fachbereich auf.
  */
 export class Kern {
   readonly dateien: Dateispeicher;
@@ -92,6 +94,8 @@ export class Kern {
   readonly historie = new Historie(this);
   /** Löschprotokoll schreiben (#470). */
   readonly loeschprotokoll = new Loeschprotokoll(this);
+  /** Anschlusspunkte (#962): was sofort, in derselben Transaktion, zu einer Änderung gehört (`kern/anlaesse.ts`). */
+  readonly anlaesse = new Anlaesse(() => this.inEigenerTransaktion());
   private readonly grundRepo: Repo;
   private readonly wecke: () => void;
   private readonly ausstatten: () => Promise<void>;
