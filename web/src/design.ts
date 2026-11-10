@@ -6,6 +6,8 @@
  */
 import { cssOhneSpitzeKlammer } from '../../shared/src/maskieren';
 import { t } from './sprache';
+import tokensCss from './tokens.css?raw';
+import { tokenPaletten, type Palette } from './tokens';
 export type Grundlage = 'automatisch' | 'hell' | 'dunkel' | 'kontrast';
 export interface Design {
   id: string; name: string; grundlage: Grundlage; primaer: string; sekundaer: string; css: string;
@@ -15,23 +17,17 @@ export interface Design {
 }
 export const GRUNDLAGEN: Record<Grundlage, string> = { automatisch: t('oberflaeche.design.automatisch-nach-geraet'), hell: t('oberflaeche.design.hell'), dunkel: t('oberflaeche.design.dunkel'), kontrast: t('oberflaeche.design.hoher-kontrast') };
 
-type Palette = Record<string, string>;
-/** Markenfarben aus dms-website/marke/ (#699). */
-export const MARKE = { blau: '#1F4E79', blauDunkel: '#8DB8E0' } as const;
-const NEUTRAL: Record<'hell' | 'dunkel' | 'kontrast', Palette> = {
-  hell: {
-    grund: '#ECEFF3', flaeche: '#FFFFFF', senke: '#F5F6F8', tinte: '#17202B', leise: '#5A6475', linie: '#D8DDE4', 'linie-stark': '#C3CAD4',
-    schlecht: '#B42318', 'schlecht-zart': '#FBE9E7', warn: '#835700', 'warn-zart': '#FAF0D9',
-  },
-  dunkel: {
-    grund: '#11151B', flaeche: '#1A2029', senke: '#151A22', tinte: '#E5E9EF', leise: '#98A2B2', linie: '#2B3340', 'linie-stark': '#3A4452',
-    schlecht: '#F28B82', 'schlecht-zart': '#3A1F1E', warn: '#E3B655', 'warn-zart': '#34291A',
-  },
-  kontrast: {
-    grund: '#FFFFFF', flaeche: '#FFFFFF', senke: '#F0F0F0', tinte: '#000000', leise: '#262626', linie: '#6B6B6B', 'linie-stark': '#000000',
-    schlecht: '#A00000', 'schlecht-zart': '#FFE5E5', warn: '#6B4300', 'warn-zart': '#FFF1D6',
-  },
+/** Markenfarben aus dms-website/marke/ (#699); Grün ist die Sekundärfarbe des Standard-Designs. */
+export const MARKE = { blau: '#1F4E79', blauDunkel: '#8DB8E0', gruen: '#2B7656' } as const;
+
+// Hell und dunkel stehen nur in tokens.css (#966).
+const TOKENS = tokenPaletten(tokensCss);
+// Hoher Kontrast gibt es nur als Design: hell mit eigenen, kräftigeren Grundwerten.
+const KONTRAST: Palette = {
+  grund: '#FFFFFF', flaeche: '#FFFFFF', senke: '#F0F0F0', tinte: '#000000', leise: '#262626', linie: '#6B6B6B', 'linie-stark': '#000000',
+  schlecht: '#A00000', 'schlecht-zart': '#FFE5E5', warn: '#6B4300', 'warn-zart': '#FFF1D6',
 };
+const NEUTRAL: Record<'hell' | 'dunkel' | 'kontrast', Palette> = { hell: TOKENS.hell, dunkel: TOKENS.dunkel, kontrast: { ...TOKENS.hell, ...KONTRAST } };
 
 const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex = (c: number[]) => `#${c.map((x) => Math.round(Math.max(0, Math.min(255, x))).toString(16).padStart(2, '0')).join('')}`.toUpperCase();

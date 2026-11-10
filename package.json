@@ -20,12 +20,14 @@
     "lint": "eslint --pass-on-unpruned-suppressions .",
     "lint:abh": "depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --ignore-known",
     "lint:zaehlen": "node .github/werkzeuge/ausnahmen-zaehlen.mjs",
+    "lint:farben": "node .github/werkzeuge/farben-pruefen.mjs",
     "lint:umtragen": "eslint --suppress-all --pass-on-unpruned-suppressions . && eslint --prune-suppressions . && depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json && node .github/werkzeuge/ausnahmen-zaehlen.mjs",
     "abhaengigkeitsbild": "node .github/werkzeuge/abhaengigkeitsbild.mjs"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
     "@eslint/js": "10.0.1",
+    "axe-core": "4.14.0",
     "dependency-cruiser": "18.7.2",
     "eslint": "10.14.0",
     "eslint-plugin-react-hooks": "7.1.1",
