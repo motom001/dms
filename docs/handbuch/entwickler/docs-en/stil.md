@@ -100,7 +100,8 @@ A new token always gets a light **and** a dark value (or deliberately the same o
 - **Only via `index.ts`:** folders with an `index.ts` can only be reached from outside through it – today the [PDF module](aufbau.md#pdf-stelle) `server/src/pdf/` (except for `arbeit/vorgaenge.ts`, which runs the operations in the worker thread) and `server/src/arbeit/`.
 - **Core downwards only** (#961, `kern-nur-abwaerts`): `server/src/kern/` imports only itself, `shared/` and the base (`BASIS` in the file: repo, database, log, texts, settings, files, counters, errors, limits) – never `dienst.ts`, routes or subject folders. From outside only via `kern/index.ts` (`kern-nur-ueber-index`). See [core](aufbau.md#kern).
 - **HTTP layer helpers only in routes** (#961, `routen-hilfen-nur-in-routen`): `http/routen-hilfen.ts` and `http/routen-kontext.ts` are imported only by `*.routen.ts` and `routen.ts`. Business logic gets the user passed in instead of reading it from the request itself (for example with `ich(a)`).
-- **Prepared:** "subject areas only via `index.ts`" is in the file as a comment and becomes active as soon as the subject folders have their own modules with `index.ts`.
+- **Search downwards only and only via `index.ts`** (#964, `suche-nur-abwaerts`, `suche-nur-ueber-index`): `server/src/suche/` imports only itself, the core, `shared/`, the base and `vektoren.ts` – no other subject area, never `dienst.ts` (routes excepted). From outside only via `suche/index.ts`; `routen.ts` fetches the routes directly. See [search](aufbau.md#suche).
+- **Prepared:** "subject areas only via `index.ts`" for all subject folders is in the file as a comment and becomes active as soon as the remaining subject folders have their own modules with `index.ts`.
 
 ### Dependency graph { #abhaengigkeitsbild }
 

@@ -12,3 +12,6 @@
 # #961 Kern und Paket-Einstellungen
 b3f557c4cfc0b6816a3ab4bc2d05133c5e72dff7
 b978043d19f88db9e59a9159a15daef853951224
+
+# #963 Kern: paketVerwehrt, ablageortId
+49ee044e9abb05f215a9382b64e89e963d753ce2

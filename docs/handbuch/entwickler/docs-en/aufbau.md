@@ -36,7 +36,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
 
-The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves. `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings.
+The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves – first `suche/suche.dienst.ts` ([search](#suche), #964). `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings.
 
 Alongside, without routes:
 
@@ -55,7 +55,7 @@ Alongside, without routes:
 - **Settings** are stored as JSON per key in the table `einstellungen`. `null` deletes an entry.
 - **Recognising the home network** (#595): whether an address is in the home network is decided only by `shared/src/heimnetz.ts` (`imHeimnetz`, list `HEIMNETZ_ENDUNGEN` with `.local`, `.lan`, `.internal`, `.home.arpa`). Kind `ausnahme` (strict) allows `http://` without TLS – sign-in via a provider, endpoints of mailboxes with an own provider; kind `hinweis` (wider, e.g. also `.fritz.box`, 100.64/10) only serves suggestions such as "retrieval link or email", never a security exception. New places use this function instead of a list of their own. "Same computer" (only `localhost`) is a different question and stays at its places.
 - **Help:** every ? symbol in the interface points to a place in the manual. The table for this is in `shared/src/hilfe.ts`, and CI checks that every anchor exists – since #730 in the German and the English manual. The functions take the person's language as an optional last parameter (`handbuchOnlineUrl(handbuch, seite, sprache?)`); without it, the interface's current language applies (`sprache()` from `shared/src/sprache.ts`).
-- **Rows written by many and deadlocks** (#575): triggers that make many transactions write into the same rows (e.g. counters per word with `INSERT … ON CONFLICT DO UPDATE`) deadlock under load – every transaction locks its rows in a different order, PostgreSQL cancels one (deadlock). Pattern: the trigger only appends to an inbox without a unique key, a background run takes it over under a lock and in a fixed order (word index: `suchwoerter_eingang`, `dms_woerter_einarbeiten`, `Dienst.woerterEinarbeiten`, migration 052). What can still be cancelled and mustn't get lost runs via `beiVerklemmungWiederholen` (`server/src/db.ts`, repeats on 40P01/40001) – as a transaction of its own or `sql.begin` (inside a transaction a savepoint). Test: `server/test/verklemmung.test.ts`.
+- **Rows written by many and deadlocks** (#575): triggers that make many transactions write into the same rows (e.g. counters per word with `INSERT … ON CONFLICT DO UPDATE`) deadlock under load – every transaction locks its rows in a different order, PostgreSQL cancels one (deadlock). Pattern: the trigger only appends to an inbox without a unique key, a background run takes it over under a lock and in a fixed order (word index: `suchwoerter_eingang`, `dms_woerter_einarbeiten`, `SucheDienst.woerterEinarbeiten`, migration 052). What can still be cancelled and mustn't get lost runs via `beiVerklemmungWiederholen` (`server/src/db.ts`, repeats on 40P01/40001) – as a transaction of its own or `sql.begin` (inside a transaction a savepoint). Test: `server/test/verklemmung.test.ts`.
 - **Backup and restore** back up all tables except the content of `sitzungen` and `schema_migrationen` (`OHNE_INHALT` in `server/src/datenbankabzug.ts`). A new table is automatically included. Data outside the database needs a thought: where is it, and does it come along?
 
 
@@ -99,6 +99,15 @@ Occasion → receivers (in order; subject area.task):
 - `typAngelegt` → 1. `sichten.eigeneSicht`
 - `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
 <!-- anlaesse:ende -->
+
+## Search (#964) { #suche }
+
+The first subject area with its own business logic in its subject folder (trial run of the target structure): `server/src/suche/suche.dienst.ts` with the class `SucheDienst` – fuzzy search (typos, words with the same meaning, word index), vectors for documents and similar documents. The service builds it as `dienst.suche` and keeps a one-line forward for every method; `dienst.vektorAnbieter` passes through to `dienst.suche.vektorAnbieter`.
+
+- **Door:** `suche/index.ts`; only `routen.ts` fetches the routes (`suche.routen.ts`) directly.
+- **Gets the core**, not the whole service, plus a `SucheAnschluss`: `grundRepo` (the vector cache is valid across transactions), `lesbare` and `pruefeRecht` (layer "zugriff", in the service until it is a module of its own) and `konten` (service account of a package).
+- **Downwards only:** search imports itself, the core, `shared/`, the base and `vektoren.ts` – checked with `suche-nur-abwaerts` and `suche-nur-ueber-index` ([rules](stil.md#abhaengigkeiten-pruefen)).
+- **Still in the service:** `vektorNachlauf` (needs the AI block of the packages) and the search in the folder list (`listeMappen`).
 
 ## Dependencies { #abhaengigkeiten }
 
