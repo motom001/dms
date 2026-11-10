@@ -23,7 +23,7 @@ describe('Zwischenspeicher der Zahlen (#512)', () => {
     assert.deepEqual(await zs.hole('a', zaehle(false)), { wert: 1, art: 'neu' });
     assert.deepEqual(await zs.hole('a', zaehle(false)), { wert: 1, art: 'treffer' });
     assert.deepEqual(await zs.hole('b', zaehle(false)), { wert: 2, art: 'neu' }, 'je Benutzer/Rechte ein eigener Eintrag');
-    stand.erhoehe();
+    void stand.erhoehe();
     assert.deepEqual(await zs.hole('a', zaehle(false)), { wert: 3, art: 'neu' }, 'neuer Stand');
     jetzt += ZEITABHAENGIG_MS + 1;
     assert.equal((await zs.hole('a', zaehle(false))).art, 'treffer', 'ohne Zeitbezug gilt er länger');

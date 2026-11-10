@@ -30,11 +30,6 @@
       "count": 1
     }
   },
-  "server/src/arbeit/arbeitsfaden.ts": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
   "server/src/archivfassung.ts": {
     "complexity": {
       "count": 1
@@ -124,9 +119,6 @@
     }
   },
   "server/src/dienst.ts": {
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 18
     },
@@ -658,11 +650,6 @@
       "count": 1
     }
   },
-  "server/test/admin-aufgaben.test.ts": {
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    }
-  },
   "server/test/archiv-protokoll.test.ts": {
     "no-useless-assignment": {
       "count": 1
@@ -718,15 +705,7 @@
       "count": 1
     }
   },
-  "server/test/hilfen-arbeitsfaden.ts": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
   "server/test/laeufer.test.ts": {
-    "@typescript-eslint/no-floating-promises": {
-      "count": 2
-    },
     "max-params": {
       "count": 1
     }
@@ -826,11 +805,6 @@
   },
   "server/test/wiederherstellung.test.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/test/zaehlerspeicher.test.ts": {
-    "@typescript-eslint/no-floating-promises": {
       "count": 1
     }
   },

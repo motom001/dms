@@ -11,7 +11,8 @@ import { senkePrioritaet } from '../hintergrund';
 senkePrioritaet();
 
 const port = parentPort!;
-port.on('message', async (a: Auftrag) => {
+// Fehler fängt der Vorgang selbst ab und schickt sie als Antwort zurück; `void`, weil `on` kein Promise erwartet (#1011).
+port.on('message', (a: Auftrag) => void (async () => {
   let antwort: Antwort;
   try {
     const f = (VORGAENGE as Record<string, (...x: unknown[]) => unknown>)[a.vorgang];
@@ -21,4 +22,4 @@ port.on('message', async (a: Auftrag) => {
     antwort = { id: a.id, ok: false, fehler: fehlerDaten(e) };
   }
   try { port.postMessage(antwort); } catch (e) { port.postMessage({ id: a.id, ok: false, fehler: fehlerDaten(e) } satisfies Antwort); }
-});
+})());
