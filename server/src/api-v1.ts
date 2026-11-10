@@ -1,6 +1,7 @@
 import { ERKENNUNGSARTEN } from '../../shared/src/erkennung';
 import { FELDFORMATE } from '../../shared/src/feldformate';
-import { ABSCHNITT_TITEL_MAX, FELDTYPEN, HERKUNFT, HISTORIENGRUPPEN, REGISTERARTEN, ZIELTYPEN_MAX, type Benutzer } from '../../shared/src/model';
+import { ABSCHNITT_TITEL_MAX, FELDTYPEN, feldtypName, HERKUNFT, HISTORIENGRUPPEN, REGISTERARTEN, ZIELTYPEN_MAX, type Benutzer, type Feldtyp } from '../../shared/src/model';
+import { inSprache } from '../../shared/src/sprache';
 import { TEXTSPRACHEN } from '../../shared/src/textsprache';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../shared/src/anzeige';
 import { MERKMALE } from '../../shared/src/merkmale';
@@ -370,13 +371,17 @@ const beschriftungen = (teile: Record<string, unknown>) => ({ type: 'object', nu
 const zeit = { type: 'string', format: 'date-time' };
 const weitereRollen = { type: 'array', items: uuid, description: 'Weitere (fachliche) Rollen: Ids von Rollen-Mappen, ohne die Systemrolle Mitglied' };
 
+/** Feldarten (#1094): feste Kennung, dazu die Namen der Oberfläche auf Deutsch und Englisch aus den Sprachdateien. */
+const FELDART_BESCHREIBUNG = `Feldart als feste Kennung, in jeder Sprache gleich. Namen in der Oberfläche (de / en): ${(Object.keys(FELDTYPEN) as Feldtyp[])
+  .map((k) => `${k} = ${inSprache('de', () => feldtypName(k))} / ${inSprache('en', () => feldtypName(k))}`).join('; ')}.`;
+
 const SCHEMAS: Record<string, Schema> = {
   Fehler: { type: 'object', required: ['fehler'], properties: { fehler: { type: 'string', description: 'Meldung auf Deutsch' }, details: { description: 'Je nach Fehler, z. B. Prüfergebnis bei 422' } } },
   Pruefergebnis: { type: 'object', properties: { allgemein: { type: 'array', items: { type: 'string' } }, felder: { type: 'object', additionalProperties: { type: 'array', items: { type: 'string' } }, description: 'Meldungen je Feldschlüssel' } } },
   Feld: {
     type: 'object', required: ['key', 'label', 'typ'],
     properties: {
-      key: { type: 'string', pattern: SCHLUESSEL.source }, label: { type: 'string' }, typ: { type: 'string', enum: Object.keys(FELDTYPEN) },
+      key: { type: 'string', pattern: SCHLUESSEL.source }, label: { type: 'string' }, typ: { type: 'string', enum: Object.keys(FELDTYPEN), description: FELDART_BESCHREIBUNG },
       pflicht: { type: 'boolean' }, eindeutig: { type: 'boolean' }, hilfe: { type: 'string' }, minLen: { type: 'integer' }, maxLen: { type: 'integer' },
       min: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Zahl, Betrag und Prozent: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT – frühestes erlaubtes Datum' },
       max: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Zahl, Betrag und Prozent: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT – spätestes erlaubtes Datum, z. B. heute für einen Geburtstag' }, nachkomma: { type: 'integer', description: 'Zahl und Prozent: höchstens so viele Nachkommastellen' },

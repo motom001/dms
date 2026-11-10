@@ -39,6 +39,12 @@ export const FELDTYPEN = {
   prozent: 'Prozent',
 } as const;
 export type Feldtyp = keyof typeof FELDTYPEN;
+/**
+ * Name einer Feldart in der Sprache des Lesers (#1094), aus `gemeinsam.model.feldart.<kennung>`. Die Werte in
+ * `FELDTYPEN` sind nur die deutschen Ausgangsnamen; der Test sprachdateien-feldarten prüft, dass jede Feldart in
+ * de und en einen Namen hat. Die Kennung (`text`, `betrag` …) bleibt in API, Paketen und Daten immer gleich.
+ */
+export const feldtypName = (typ: Feldtyp) => t.frei(`gemeinsam.model.feldart.${typ}`);
 
 export const VERWEISARTEN = {
   zugehoerigkeit: 'Zugehörigkeit',
