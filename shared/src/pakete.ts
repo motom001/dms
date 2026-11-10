@@ -10,7 +10,7 @@ import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
-import { PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
+import { hauptpaket, istHerausgeber, PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://catalog.ablago.app/katalog.json';
@@ -107,6 +107,31 @@ export function liesErgaenzt(v: unknown, abhaengigkeiten: Record<string, unknown
   return fehler.length ? { ergaenzt: null, fehler } : { ergaenzt: { paket, ...(gruppe ? { gruppe } : {}) }, fehler };
 }
 
+/**
+ * Punkt in der Id (#1084): `<hauptpaket>.<zusatz>` heißt „ergänzt das Hauptpaket“ – das Paket muss dann
+ * `ergaenzt: <hauptpaket>` angeben. Liefert den Fehler oder null.
+ */
+export function punktIdFehler(id: string, ergaenzt: Ergaenzung | null | undefined): string | null {
+  const haupt = hauptpaket(id);
+  return haupt && ergaenzt?.paket !== haupt ? t('gemeinsam.pakete.punkt-id-ohne-ergaenzt', { id, haupt }) : null;
+}
+
+/** Höchstens so viele frühere Ids (#1084). */
+export const FRUEHER_MAX = 5;
+/**
+ * Frühere Ids eines Pakets (#1084, Manifest `frueher`): Ein Update unter neuer Id zieht die Installation unter einer
+ * dieser Ids um, statt ein zweites Paket anzulegen – z. B. `texterkennung.fra` mit `frueher: texterkennung_fra`. Ein
+ * Text oder eine Liste von Paket-Ids, nicht die eigene.
+ */
+export function liesFrueher(v: unknown, id: string): { frueher: string[]; fehler: string[] } {
+  if (v === undefined || v === null) return { frueher: [], fehler: [] };
+  const liste = typeof v === 'string' ? [v] : Array.isArray(v) ? v : null;
+  if (!liste || liste.some((x) => typeof x !== 'string' || !PAKET_ID.test(x) || x === id || x === 'dms') || liste.length > FRUEHER_MAX) {
+    return { frueher: [], fehler: [t('gemeinsam.pakete.frueher-ungueltig', { max: FRUEHER_MAX })] };
+  }
+  return { frueher: [...new Set(liste as string[])], fehler: [] };
+}
+
 /** Ein Angebot zum Mitinstallieren (#405): Ergänzung eines Pakets aus dem Katalog. */
 export interface ErgaenzungAngebot { id: string; name: string; version: string; beschreibung: string; gruppe: string | null; code: boolean }
 
@@ -131,6 +156,10 @@ export interface KatalogPaket {
   versionen: KatalogVersion[];
   /** Anzeige wie im Katalog (#645, dms-registry #84/#98): Lucide-Name, Sprachkürzel, Kategorien – optional. */
   symbol?: string; kuerzel?: string; kategorien?: string[];
+  /** Herausgeber (#1084, dms-registry #173) als umgedrehte Domain, z. B. `app.ablago`; fehlt in älteren Katalogen. */
+  herausgeber?: string;
+  /** Frühere Ids dieses Pakets (#1084, Manifest `frueher`), z. B. texterkennung_fra für texterkennung.fra. */
+  frueher?: string[];
 }
 export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[] }
 
@@ -175,6 +204,8 @@ export interface InstalliertesPaket {
   id: string; name: string; version: string; beschreibung: string; lizenz: string;
   autor: { name: string; github: string };
   herkunft: Herkunft;
+  /** Herausgeber (#1084), umgedrehte Domain wie `app.ablago`; fehlt bei älteren Installationen (dann gilt der des Katalogs). */
+  herausgeber?: string;
   installiert: string; installiertVon: string | null;
   aktualisiert: string | null; aktualisiertVon: string | null;
   /** Schlüssel der mitgelieferten Automatisierungen dieser Version (#712) – bei einem Update stehen nur neue zur Wahl. */
@@ -358,7 +389,11 @@ export function liesKatalog(j: unknown): Katalog {
       }))
       .sort((a, b) => vergleicheVersion(b.version, a.version));
     if (!versionen.length) continue;
+    const roh = p as unknown as Record<string, unknown>;
+    const frueher = liesFrueher(roh.frueher, p.id).frueher;
     pakete.push({
+      ...(istHerausgeber(roh.herausgeber) ? { herausgeber: roh.herausgeber } : {}),
+      ...(frueher.length ? { frueher } : {}),
       id: p.id, name: text(p.name) || p.id, beschreibung: text(p.beschreibung),
       autor: { name: text(p.autor?.name), github: text(p.autor?.github) }, lizenz: text(p.lizenz),
       aktuell: VERSION.test(text(p.aktuell)) ? p.aktuell : versionen[0].version, versionen,

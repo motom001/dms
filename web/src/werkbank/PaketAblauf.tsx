@@ -398,7 +398,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           <p className="leise">{t('pakete.ablauf.rechte.text', { anzahl: mitCode.length })}</p>
           {mitCode.map((p) => (
             <div key={p.schluessel} className="pa-rechte">
-              <h3 className="klein">{p.name} {p.version}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
+              <h3 className="klein">{p.name} {p.version}{p.vorschau.paket.herausgeber && <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {p.vorschau.paket.herausgeber}</span>}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
               <ul className="klein">
                 {p.vorschau.laeufer!.rechte.map((r) => (
                   <li key={r.text}>{r.text} <Hilfe ort={r.hilfe} />{r.unter && <ul>{r.unter.map((u) => <li key={u.text}>{u.text} <Hilfe ort={u.hilfe} /></li>)}</ul>}</li>
@@ -513,7 +513,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
         ].filter(Boolean).join(' · ')}</p>
         <ol className="pa-reihe klein">
           {pk.map((p) => (
-            <li key={p.schluessel}><strong>{p.name}</strong> {p.version}{p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
+            <li key={p.schluessel}><strong>{p.name}</strong> {p.version}{p.vorschau.paket.herausgeber ? ` · ${p.vorschau.paket.herausgeber}` : ''}{p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
               {!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}
               {p.ergaenzt && <span className="leise"> – {t('pakete.ablauf.ergaenzt', { name: pk.find((x) => x.id === p.ergaenzt!.paket)?.name ?? p.ergaenzt.paket })}</span>}
               {p.vorschau.hinweise.length > 0 && <ul className="leise">{p.vorschau.hinweise.map((h) => <li key={h}>{h}</li>)}</ul>}
