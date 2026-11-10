@@ -114,6 +114,19 @@ export class AbrufBremse {
     await this.zustand.zaehle(FEHLER, bereich, this.o.sperreMs, { gleitend: true });
   }
 
+  /**
+   * Vor der Code-Prüfung (#956): den Versuch vorab als Fehlversuch zählen – atomar in der Datenbank, für alle
+   * Prozesse. So kommen gleichzeitige Anfragen (auch auf mehrere Prozesse verteilt) nicht an der Grenze vorbei.
+   * null = gesperrt. War der Code richtig oder wurde gar nicht geprüft, nimmt `zurueck` den Versuch zurück.
+   */
+  async versuch(bereich: string): Promise<{ zurueck(): Promise<void> } | null> {
+    const { anzahl } = await this.zustand.zaehle(FEHLER, bereich, this.o.sperreMs, { gleitend: true });
+    let weg = false;
+    const zurueck = async () => { if (!weg) { weg = true; await this.zustand.erhoehe(FEHLER, bereich, -1); } };
+    if (anzahl > this.o.fehlerMax) { await zurueck(); return null; }
+    return { zurueck };
+  }
+
   /** Belegt einen Platz für eine Code-Prüfung; null, wenn alle belegt sind. Freigeben genau einmal. */
   belege(): (() => void) | null {
     if (this.laufend >= this.o.gleichzeitig) return null;

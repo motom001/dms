@@ -255,6 +255,8 @@ if (mandant.hinweis) log.warn(mandant.hinweis);
 // Zustand zwischen Anfragen (#744): Fehlversuche, Sperren, Einmal-Tickets und Merker für alle Prozesse und Server
 // derselben Datenbank. Das Lebenszeichen sagt, ob dieser Prozess allein an der Datenbank ist (z. B. für die Texterkennung).
 const zustandDb = pgKurzzustand(sql, cfg.haushalt);
+// Fehlversuche beim Einrichtungscode über alle Prozesse (#956).
+einrichtungscode.teileZaehler(zustandDb);
 // Mehrere Prozesse (#745): Das Lebenszeichen hält nur der Leiter – „allein“ heißt dann: kein anderer Leiter (anderer
 // Server) an dieser Datenbank. Startet der Leiter nach einem Absturz neu, sind die Aufträge der Texterkennung seine.
 const lebt = leiter ? await lebenszeichen(sql, cfg.haushalt) : { allein: false, ende: async () => {} };
@@ -358,7 +360,7 @@ const wiederherstellung = new Wiederherstellung({
   neustart: () => { log.warn('Neustart nach der Wiederherstellung'); ganzBeenden('Neustart nach der Wiederherstellung'); },
   // Gehört die Sicherung zu einem anderen Mandanten, gilt nach dem Neustart dessen Id (#119).
   mandantUebernehmen: async (id) => { await schreibeAnbindung(ordner.geheim, { ...db, mandant: id }); },
-  pruefeCode: (c) => einrichtungscode.pruefe(c),
+  pruefeCode: (c) => einrichtungscode.pruefeGeteilt(c),
   anAdmins: anVerwaltendeVon('sicherung'),
 });
 sicherung.sperre = () => wiederherstellung.laeuft();

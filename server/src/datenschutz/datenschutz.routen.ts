@@ -129,13 +129,15 @@ export function abrufRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/abruf', zugang: 'offen', handler: async (a) => {
       const o = (a.body ?? {}) as Record<string, unknown>;
       const bereich = ipBereich(a.ip);
-      if (await abrufBremse.gesperrt(bereich)) throw new Fachfehler(429, await abrufText('abruf.fehler.zuviele'));
-      // Code-Prüfungen (scrypt) nur mit freiem Platz der Bremse: Parallele Anfragen kommen so weder an den
-      // Zählern vorbei noch lasten sie den Server aus.
+      // Versuch vorab zählen (#956), über alle Prozesse; Code-Prüfungen (scrypt) nur mit freiem Platz der Bremse.
+      // Parallele Anfragen kommen so weder an den Zählern vorbei noch lasten sie den Server aus.
+      const v = await abrufBremse.versuch(bereich);
+      if (!v) throw new Fachfehler(429, await abrufText('abruf.fehler.zuviele'));
       const r = await dienst.auskunftAbrufPruefen(o.schluessel, o.code, () => abrufBremse.belege());
+      // Nur ein falscher Code bleibt als Fehlversuch stehen.
+      if (r.art !== 'falsch') await v.zurueck();
       if (r.art === 'beschaeftigt') throw new Fachfehler(429, await abrufText('abruf.fehler.zuviele'));
       if (r.art === 'falsch') {
-        await abrufBremse.fehlschlag(bereich);
         L.datenschutz.warn('Abruf einer Auskunft fehlgeschlagen', { ip: kuerzeIp(a.ip), ...(r.link ? { link: r.link.id } : {}) });
         throw new Fachfehler(403, await abrufText('abruf.fehler.falsch'));
       }

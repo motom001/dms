@@ -225,7 +225,6 @@ export class PdfEntsperren {
   }
 
   /** Falsche Versuche im laufenden Fenster. */
-  private async falscheVersuche(art: string, schluessel: string): Promise<number> { return (await this.zustand.lies(art, schluessel))?.anzahl ?? 0; }
   /** Einen falschen Versuch zählen (atomar, für alle Prozesse); liefert die Zahl im Fenster. */
   private async falsch(art: string, schluessel: string): Promise<number> { return (await this.zustand.zaehle(art, schluessel, VERSUCHE_MS)).anzahl; }
 
@@ -244,12 +243,13 @@ export class PdfEntsperren {
         return { pdfSchutz: await this.stand(d), gemerkt: false };
       }
       const schluessel = `${konto}|${d.sha256}`;
-      if ((await this.falscheVersuche(VERSUCHE, schluessel)) >= VERSUCHE_MAX) throw new Fachfehler(429, t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }));
+      // Versuch vorab zählen (#956): atomar für alle Prozesse, bevor das Passwort geprüft wird.
+      const n = await this.falsch(VERSUCHE, schluessel);
+      if (n > VERSUCHE_MAX) { await this.zustand.erhoehe(VERSUCHE, schluessel, -1); throw new Fachfehler(429, t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 })); }
       const pw = passwortAus(passwort);
       let klar: Buffer;
       try { klar = await entsperrePdf(await this.o.datei(d.sha256), pw); } catch (e) {
-        if (!(e instanceof FalschesPasswort)) throw e;
-        const n = await this.falsch(VERSUCHE, schluessel);
+        if (!(e instanceof FalschesPasswort)) { await this.zustand.erhoehe(VERSUCHE, schluessel, -1); throw e; }
         log.info('Falsches Passwort für ein geschütztes PDF', { dokument: d.id, versuch: n });
         const uebrig = VERSUCHE_MAX - n;
         throw new Fachfehler(422, uebrig > 0 ? t('mappen.entsperren.falsch', { anzahl: uebrig }) : t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }));
@@ -413,11 +413,12 @@ export class PdfEntsperren {
    */
   async bestaetige(konto: string, sitzung: string | undefined, pruefe: () => Promise<void>): Promise<string> {
     if (!sitzung) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.nur-browser'));
-    if ((await this.falscheVersuche(BESTAETIG_VERSUCHE, konto)) >= VERSUCHE_MAX) throw new Fachfehler(429, t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }));
-    try { await pruefe(); } catch (e) {
-      await this.falsch(BESTAETIG_VERSUCHE, konto);
-      throw e;
+    // Versuch vorab zählen (#956): sonst kämen gleichzeitige Anfragen alle an der Grenze vorbei.
+    if ((await this.falsch(BESTAETIG_VERSUCHE, konto)) > VERSUCHE_MAX) {
+      await this.zustand.erhoehe(BESTAETIG_VERSUCHE, konto, -1);
+      throw new Fachfehler(429, t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }));
     }
+    await pruefe();
     await this.zustand.loesche(BESTAETIG_VERSUCHE, konto);
     const bis = this.jetzt() + BESTAETIGUNG_MS;
     await this.zustand.setze(BESTAETIGT, hashe(sitzung), null, bis);
