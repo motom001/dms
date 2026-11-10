@@ -5,3 +5,4 @@ export { MappenTitel } from './titel';
 export { HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE, MappenHistorie } from './historie';
 export { keinSchluessel, Passwortfelder, type PasswortfelderAnschluss } from './passwortfelder';
 export { ARCHIV_PRAEFIX, archivnummerAus, MappenArchiv, type MappenArchivAnschluss } from './archiv';
+export { MappenNotizen, type NotizenAnschluss } from './notizen';

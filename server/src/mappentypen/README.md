@@ -37,7 +37,8 @@ Passung der Mappen und Pakete am Typ. Schicht 2 der Zielaufteilung – über Ker
 - `kern.repo` bei jedem Aufruf neu holen (Getter `repo`) – in einer Transaktion sieht es deren Änderungen.
 - Über den Anschluss: Stempel am Typ (`mitStempel` seit #1077 in `ausgang/`, `pruefeStempelTyp`/`setzeStempelTyp` in
   `pdf-bearbeiten/`), Berechtigungen am Typ (`berechtigungenAusEingabe`, seit #1076 in `berechtigungen/`), Titel und
-  Archivkreis (seit #1074 in `mappen/`). Noch im Dienst: `ausPostZiele` (#937).
+  Archivkreis (seit #1074 in `mappen/`). Seit #1078 hier: `ausPostZiele` (#937) und die KI-Freigabe
+  (`ki-typen.ts`, `KiTypen`, #796).
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: drei `complexity` und ein
   `no-unused-vars` in `eingabe.ts`, ein `no-unused-vars` in `mappentypen.dienst.ts`, ein `max-lines-per-function` in
   `systemtypen.ts`).

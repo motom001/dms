@@ -22,7 +22,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `mappentypen/` | folder types, their archive, permissions |
 | `werkbank/` | Workbench overview, designs, region, languages, log, admin mode |
 | `ausgang/` | export (Workbench and My account); since #1077 the [routes to the outside](#ausgang) |
-| `datenschutz/` | data subject requests, deletion concept, retrieval page |
+| `datenschutz/` | data subject requests, deletion concept, retrieval page; since #1078 [data protection](#datenschutz) |
 | `pakete/` | packages, catalogue, package settings |
 | `suche/` | search, Ask your archive |
 | `wartung/` | maintenance mode |
@@ -32,7 +32,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `automatisierung/` | automations |
 | `webhooks/` | webhooks (Workbench and My account) |
 | `sichten/` | views, folder lists, start page |
-| `aufgaben/` | tasks |
+| `aufgaben/` | tasks; since #1078 the [tasks](#aufgaben) |
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
 
@@ -110,7 +110,7 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `suche/index.ts`; only `routen.ts` fetches the routes (`suche.routen.ts`) directly.
 - **Gets the core**, not the whole service (`kern.repoOhneTransaktion` for the vector cache), plus [permission checking](#zugriff) (`lesbare`, `pruefeRecht`) and a `SucheAnschluss` with `konten` (service account of a package).
 - **Downwards only:** search (layer 3) imports itself, lower subject folders and the core (each via `index.ts`), `shared/`, the base and `vektoren.ts` – checked with the rule `fachordner` ([rules](stil.md#abhaengigkeiten-pruefen)). `vektoren.ts` stays outside `suche/` because the package runner also reads a package's vectors with it.
-- **Still in the service:** `vektorNachlauf` (needs the AI block of the packages) and the search in the folder list (`listeMappen`).
+- **Still in the service:** the search in the folder list (`listeMappen`). Since #1078 `vektorNachlauf` lives with the [events](#ereignisse).
 
 
 ## Checking permissions (#1072) { #zugriff }
@@ -120,7 +120,7 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `zugriff/index.ts` (plus `maskiert` and `NICHT_SICHTBAR` for titles of folders the user cannot read).
 - **Gets the core** and a `ZugriffAnschluss` from the service: `kiSperre` (AI setting of packages) and `konten`.
 - **Layer 1:** imports only itself, the core, `shared/`, the base and `messung.ts`. Subject folders above get the `ZugriffDienst` when assembled (like search) and import it via `zugriff/index.ts`. The core does not import it; `kern.zugriff(ich)` calls what the service passes in.
-- **Still in the service:** `regulaerSichtbarFuer` (belongs to the tasks). Since #1076 the Workbench pages for permissions live in [permissions](#berechtigungen). Since #1073 `paketSiehtNicht` lives with the [folder types](#mappentypen) (`pakete-am-typ.ts`).
+- Since #1078 `regulaerSichtbarFuer` lives with the [tasks](#aufgaben) (`ohne-leserecht.ts`). Since #1076 the Workbench pages for permissions live in [permissions](#berechtigungen). Since #1073 `paketSiehtNicht` lives with the [folder types](#mappentypen) (`pakete-am-typ.ts`).
 
 ## Folder types (#1073) { #mappentypen }
 
@@ -137,7 +137,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 - **Door:** `mappentypen/index.ts`; only `routen.ts` loads the routes (`mappentypen.routen.ts`) directly.
 - **Gets the core**, `TypPakete` and `Systemtypen` also the [permission check](#zugriff), and per class a connector for what is still in the service (stamp, recognition and permissions on the type, tasks, titles, jobs, writing system folders).
-- **Still in the service:** `ausPostZiele` (#937). Since #1077 the stamp on the type (`mitStempel`) is worked out by [outgoing](#ausgang), checking and saving it by the stamp templates in [editing PDFs](#pdf-bearbeiten) – both through the connector. Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
+- Since #1078 `ausPostZiele` (#937) lives in `mappentypen.dienst.ts`, the AI approval of folder types (#796) in `ki-typen.ts` (`KiTypen`, `dienst.ki`). Since #1077 the stamp on the type (`mitStempel`) is worked out by [outgoing](#ausgang), checking and saving it by the stamp templates in [editing PDFs](#pdf-bearbeiten) – both through the connector. Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
 
 ## Folders (#1074) { #mappen }
 
@@ -155,7 +155,7 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `mappen/index.ts`; only `routen.ts` loads the routes (`mappen.routen.ts`) directly. The input helpers for folder types stay in `mappentypen/eingabe.ts`.
 - **Gets the core**, `MappenDienst`, `MappenEingaben` and `MappenArchiv` also the [permission check](#zugriff), and per class a connector for what is still in the service or comes through it (accounts, tasks without read permission, archive version and PDF protection from the [documents](#dokumente), data protection, `loeschPruefung`, `meldeVerknuepft`, key, labels, jobs).
 - **Immediate work:** `legeMappeAn` and `aendereMappe` report `kern.anlaesse.mappeGeaendert` at the end of their transaction – the [hook points](#anschlusspunkte) and their order are unchanged.
-- **Still in the service:** writing notes, deleting and the Bin, tasks and deadlines, `meldeVerknuepft`.
+- Since #1078 writing notes lives in `notizen.ts` (`MappenNotizen`, `dienst.mappenNotizen`; mentions and translations through the connector). Deleting and the Bin live in [deleting](#loeschen), tasks and deadlines in [tasks](#aufgaben), `meldeVerknuepft` with the [events](#ereignisse) – all still through the connector.
 
 ## Documents (#1075) { #dokumente }
 
@@ -173,7 +173,7 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `dokumente/index.ts`; only `routen.ts` loads the routes (`dokumente.routen.ts`) directly. The technology of the versions (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) stays outside and is a tool for subject folders (see [layers](#schichten)).
 - **Gets the core** and the classes of this folder it calls, and per class a connector for what is still in the service or would run in a circle (event and titles via the facade, archive mode, shrinking, full text, jobs for packages, package settings, folder types, text recognition).
 - **Order:** `ladeHoch` writes history, “last changed”, document, full text and `dokument.hochgeladen` in one transaction; preview, converting and unlocking run afterwards. `nachFassung`, `nachEntsperren`, `archivNachVolltext` and `nachNeuerVersion` are unchanged and called from the same places.
-- **Still in the service:** `entsperrtZu`. Since #1077 editing PDFs, shrinking and redacting live in [editing PDFs](#pdf-bearbeiten). Since #1076 the documents call the [full text](#volltext) (`volltextFertig`, `volltextAn`) through their connector on the service.
+- Since #1078 `entsperrtZu` lives in `geschuetzte-pdf.ts`. Since #1077 editing PDFs, shrinking and redacting live in [editing PDFs](#pdf-bearbeiten). Since #1076 the documents call the [full text](#volltext) (`volltextFertig`, `volltextAn`) through their connector on the service.
 
 ## Views (#1076) { #sichten }
 
@@ -257,6 +257,68 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Why a folder of its own:** `pdf/` is exempt from the `fachordner` rule (`TECHNIK`), runs in the worker pool and is imported by the documents (layer 2). Classes with core, folders and documents there would have weakened the rule and built a cycle through `pdf/index.ts`.
 - **Gets the core**, checking permissions, folders and documents. Post (new post when splitting, system folder, “post for you”) comes through the connector on the service – `post/` appends photos with `pdfVon`, the other way round would run in a circle.
 
+## Events (#1078) { #ereignisse }
+
+`server/src/ereignisse/` (**layer 2**) passes on what the core raises – the outbox itself (`kern.ereignis`) belongs to the core:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `ereignisse.dienst.ts` | `EreignisseDienst` (`dienst.ereignisseDienst`) | `neueAufgabe`, `meldeVerknuepft` (#670), `ereignisAnPakete` (#686 only with read permission, #796 AI block), `auftrag`, `vektorNachlauf` (#442) |
+| `automatisierung.ts` | `Automatisierungshilfen` (`dienst.automatisierungshilfen`) | `automatisierungKontext`, `mitgliederDerRolle`, `trifftTeile`, `lesbareTitel`, `datumVon`, `mappenMitDatum` (#674, #712) |
+
+- **Why layer 2:** many need the events, folders and documents too; they themselves need only the core, the [permission check](#zugriff) and the packages on the folder type including the AI approval ([folder types](#mappentypen)). Text recognition ([full text](#volltext)) and roles ([post](#post)) come through the connector.
+- The service registers the `pakete` consumer with the distributor; raising events and the package runner's wake-up go through the facade.
+- **Door:** `ereignisse/index.ts`, imported as `ereignisse/index` – next to the folder lies `ereignisse.ts` (the catalogue's distributor), as with `pakete/index`.
+
+## Tasks (#1078) { #aufgaben }
+
+`server/src/aufgaben/` (layer 3) bundles everything around To dos; the service builds the classes (`baueAufgaben()`) and keeps a one-line forward for each method:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `aufgaben.dienst.ts` | `AufgabenDienst` (`dienst.aufgaben`) | `pruefeEmpfaenger`, mentions (#56, #81), approval for favourites (#506), `aufgabeAusAutomatisierung` (#676, #724), `erledigeNachAnlass` |
+| `vertretung.ts` | `AufgabenVertretung` (`dienst.vertretung`) | deputies (#78), assign, complete, pass on (also in bulk, #415), `abwesenheitGeaendert`, `meineAufgaben` |
+| `ohne-leserecht.ts` | `OhneLeserecht` (`dienst.ohneLeserecht`) | tasks for people without read permission, cases, temporary read permission (#798, #958) |
+| `fristen.ts` | `Fristen` (`dienst.fristen`) | deadlines, reminders, dates with their cache, follow-up date (#129–#133, #528, #725) |
+| `ohne-empfaenger.ts` | `OhneEmpfaenger` (`dienst.ohneEmpfaenger`) | everyday user (#719), notifying favourites (#422) |
+
+- **Gets the core** and `AufgabenTeile` (permission check, history and folders, events, roles from [post](#post) and each other); through the connector the event (facade), accounts and the validity of the counts.
+- The receivers at the [connection points](#anschlusspunkte) are unchanged; they call `pruefeErwaehnungen`, `fristenAbgleichen` and `abwesenheitGeaendert` through the facade.
+
+## Deleting (#1078) { #loeschen }
+
+`server/src/loeschen/` (layer 3); the service builds the classes (`baueLoeschen()`):
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `loeschen.dienst.ts` | `LoeschenDienst` (`dienst.loeschen`) | `loeschPruefung` (#79), `loescheMappe`, `loescheMappen` (#150), `entferneMappenEndgueltig` |
+| `papierkorb.ts` | `Papierkorb` (`dienst.papierkorbVerwaltung`) | Bin (#43, #344, #936): restore, delete permanently, empty, clean up |
+| `loeschprotokoll.ts` | `LoeschprotokollVerwaltung` (`dienst.loeschprotokollVerwaltung`) | reading and managing the deletion log (#470); it is **written** in the [core](#kern) |
+| `mit-verknuepften.ts` | `MitVerknuepften` (`dienst.mitVerknuepften`) | [tree](#baum-uber-verweise) and deleting with linked folders (#396, #424) |
+| `beispiele.ts` | `BeispielMappen` (`dienst.beispielMappen`) | example folders from packages (#878) |
+
+- **Gets the core** and `LoeschenTeile` (permission check, fit, history, documents, outgoing, views, system folders and each other); event and `aktualisiereTitel` through the facade, accounts through the connector.
+
+## Data protection (#1078) { #datenschutz }
+
+`server/src/datenschutz/` (layer 3); the service builds the classes (`baueDatenschutz()`):
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `datenschutz.dienst.ts` | `DatenschutzDienst` (`dienst.datenschutzDienst`) | subject access request under Art. 15 GDPR (#396, #472, #668), demo data (#248) |
+| `vollexport.ts` | `VollexportQuellen` (`dienst.vollexport`) | data sources for the full export (#254) and personal export (#255) |
+| `zustellen.ts` | `AuskunftZustellen` (`dienst.auskunftZustellen`) | e-mail and retrieval links with retrieval code (#455), "Export my data" |
+
+- **Gets the core** and `DatenschutzTeile` (permission check, folders, documents, views, events, tasks, deleting and each other); accounts, short-term state, vault and the export of automations through the connector.
+
+## Workbench (#1078) { #werkbank }
+
+`server/src/werkbank/werkbank.dienst.ts` with `WerkbankDienst` (`dienst.werkbank`, layer 3, only the core): the Workbench view (#281, `werkbankAnsicht`, `setzeWerkbankAnsicht`).
+
+## What stays in dienst.ts (#1078) { #dienst-rest }
+
+After #1078 `dienst.ts` contains only forwards and the assembly: the fields of the classes, the constructor with the `baue…()` methods, `schliesseEmpfaengerAn()`, the `verbinde…` methods, the fields set by start-up or tests (`mindestensMs`, `sicherungAufgegeben`, `systemkonten`, `ereignisWecker` …), the event distributor and the vault (`schluesselWechseln`, `verschluesselePaketGeheimnis`, `entschluessele`).
+
 ### Layers { #schichten }
 
 Subject folders only call downwards; within the same layer they may use each other (`kein-kreislauf` forbids cycles). The list is kept in one place in `.dependency-cruiser.cjs` (`SCHICHTEN`) – a folder that does not exist yet is already placed:
@@ -265,10 +327,10 @@ Subject folders only call downwards; within the same layer they may use each oth
 |---|---|
 | 0 | `kern/` – only itself, `shared/` and the base |
 | 1 | `zugriff/` |
-| 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/` |
-| 3 | all other subject folders (`suche/`, `sichten/`, `volltext/`, `post/`, `ausgang/`, `pdf-bearbeiten/`, `aufgaben/` …) |
+| 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/`, `ereignisse/` (#1078) |
+| 3 | all other subject folders (`suche/`, `sichten/`, `volltext/`, `post/`, `ausgang/`, `pdf-bearbeiten/`, `aufgaben/`, `loeschen/`, `datenschutz/`, `werkbank/` …) |
 
-Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), the technology for post, outgoing and editing PDFs (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
+Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), the technology for post, outgoing and editing PDFs (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), the technology for deleting and data protection (`baum.ts`, `schriftstueck.ts`, `auskunft.ts`, `vollexport.ts`, `abruf.ts`, `passwort.ts`, `tresor.ts` – only `istVerschluesselt`, the service passes the key in –, #1078), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
 
 ## Dependencies { #abhaengigkeiten }
 

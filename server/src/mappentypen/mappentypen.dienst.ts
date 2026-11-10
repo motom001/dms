@@ -3,7 +3,7 @@
  * Typ fürs Profil, Erkennung am Typ. Schicht 2 – bekommt den Kern, nicht den ganzen Dienst.
  */
 import { randomUUID } from 'node:crypto';
-import { istOk, pruefeMappentyp, freierSchluessel, systemfelder, type Mappentyp, type MappentypDaten, type Systemtyp } from '../../../shared/src/model';
+import { istOk, kannAusPost, pruefeMappentyp, freierSchluessel, systemfelder, type Mappentyp, type MappentypDaten, type Systemtyp } from '../../../shared/src/model';
 import { festigeDarstellung } from '../../../shared/src/darstellung';
 import { auswahlProbleme, kinderVon } from '../../../shared/src/sichten';
 import { empfaengerFelder } from '../../../shared/src/fristen';
@@ -247,5 +247,16 @@ export class MappentypenDienst {
       if (korb) gruende.push(`${eintrag.name}: ${korb} im Papierkorb.`);
     }
     return gruende;
+  }
+
+  /**
+   * „Wohin gehört das?“ (#937): Mappentypen, die man aus Post anlegen kann – mit dem Haken „Kann aus Post angelegt
+   * werden“ (Vorgabe: mit Dokumentenregister), nie Systemtypen, und nur solche, in denen die Person anlegen darf.
+   * Grundlage für die Seite „Dokument übernehmen“ (#934) und die Klassifizierung (#939).
+   */
+  async ausPostZiele(z?: Zugriff): Promise<Mappentyp[]> {
+    const typen = z ? [...z.typen.values()] : await this.repo.listeTypen();
+    return typen.filter((x) => kannAusPost(x) && (!z || z.admin || (z.paket ? z.paket.schreiben.has(x.id) : rechteUebersicht(x, z.wer, z.a).C !== 'nie')))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'));
   }
 }

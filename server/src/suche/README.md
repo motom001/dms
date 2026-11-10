@@ -23,7 +23,7 @@
 - `kern.repo` bei jedem Aufruf neu holen; nur Zwischenspeicher, die über Transaktionen hinweg gelten, nehmen
   `kern.repoOhneTransaktion`.
 - Neuer Code hier ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `max-params` von `aehnlicheTypen`).
-- Noch im Dienst, weil sie andere Fachbereiche brauchen: `vektorNachlauf` (KI-Sperre der Pakete, Ereignis-Wecker) und
+- `vektorNachlauf` liegt seit #1078 in `ereignisse/`. Noch im Dienst, weil sie andere Fachbereiche braucht:
   die Suche in der Mappenliste (`listeMappen`: Varianten, Vorschlag, ähnliche Treffer).
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Suche*.

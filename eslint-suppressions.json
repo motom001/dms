@@ -41,6 +41,30 @@
       "count": 1
     }
   },
+  "server/src/aufgaben/fristen.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "server/src/aufgaben/ohne-leserecht.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/aufgaben/vertretung.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
   "server/src/aufteilung.ts": {
     "max-lines-per-function": {
       "count": 1
@@ -128,6 +152,25 @@
       "count": 1
     }
   },
+  "server/src/datenschutz/datenschutz.dienst.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/datenschutz/zustellen.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 4
+    }
+  },
   "server/src/demo.ts": {
     "complexity": {
       "count": 2
@@ -140,25 +183,7 @@
     }
   },
   "server/src/dienst.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 8
-    },
-    "complexity": {
-      "count": 8
-    },
-    "max-depth": {
-      "count": 1
-    },
     "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "max-params": {
-      "count": 1
-    },
-    "no-useless-assignment": {
       "count": 1
     }
   },
@@ -218,6 +243,11 @@
   "server/src/ereignisse.ts": {
     "max-depth": {
       "count": 2
+    }
+  },
+  "server/src/ereignisse/ereignisse.dienst.ts": {
+    "complexity": {
+      "count": 1
     }
   },
   "server/src/erkennung.ts": {
@@ -316,6 +346,19 @@
   "server/src/laeufer/webassembly.d.ts": {
     "@typescript-eslint/no-unsafe-function-type": {
       "count": 2
+    }
+  },
+  "server/src/loeschen/loeschen.dienst.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/loeschen/mit-verknuepften.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/mappen/eingaben.ts": {
