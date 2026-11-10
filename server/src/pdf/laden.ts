@@ -13,11 +13,10 @@ import { PDFDocument, type LoadOptions } from 'pdf-lib';
 import { Fachfehler } from '../fehler';
 import { eigenerPuffer } from './puffer';
 import { t } from '../sprache';
+import { MB, OBJEKTSTROEME_MAX, OBJEKTSTROM_MAX } from '../grenzen';
 
-/** Höchstens so viel darf ein einzelner Objekt- oder Querverweis-Strom entpackt groß sein. */
-export const OBJEKTSTROM_MAX = 64 * 1024 * 1024;
-/** Höchstens so viel alle zusammen. */
-export const OBJEKTSTROEME_MAX = 256 * 1024 * 1024;
+export { OBJEKTSTROM_MAX };
+export { OBJEKTSTROEME_MAX };
 
 const latin1 = new TextDecoder('latin1');
 const STREAM = Buffer.from('stream');

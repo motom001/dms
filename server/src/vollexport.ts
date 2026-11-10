@@ -19,6 +19,7 @@ import { Fachfehler } from './fehler';
 import type { PapierkorbEintrag } from './repo';
 import { alsZeile, LOESCH_SPALTEN, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { t } from './sprache';
+import { EXPORT_STUECK_ZEICHEN as STUECK_ZEICHEN } from './grenzen';
 
 /**
  * Vollexport aller Daten in offenen Formaten (#254): ein Ordner, lesbar ohne das DMS.
@@ -168,8 +169,6 @@ async function pause() {
   await new Promise<void>((r) => setImmediate(r));
   letztePause = performance.now();
 }
-/** So viele Zeichen, dann ein Stück an den Schreibstrom. */
-const STUECK_ZEICHEN = 64 * 1024;
 const json = (x: unknown) => Buffer.from(JSON.stringify(x, null, 2) + '\n', 'utf8');
 
 /** iCalendar: Text maskieren und Zeilen auf 75 Oktette falten. */

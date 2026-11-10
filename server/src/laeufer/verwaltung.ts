@@ -23,6 +23,7 @@ import type { AnLaeufer, Grenzen, NetzEintrag, VomLaeufer } from './prozess';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
 import { t } from '../sprache';
+import { GB, KB, MB, PAKET_SPEICHER_MAX as SPEICHER_MAX, WEITER_MAX_BYTES } from '../grenzen';
 
 const log = protokoll.modul('werkbank');
 
@@ -31,8 +32,7 @@ export const STANDARD_GRENZEN: Grenzen = { speicherMB: 256, sekunden: 120, paral
 const WARTEN_MIN = WIEDERHOLEN_MIN;
 /** Höchstens so viele Fortsetzungen je Ereignis (#458) – danach gilt es als zugestellt. */
 export const WEITER_MAX = 500;
-/** Größe der Daten einer Fortsetzung (JSON) höchstens – sie stehen im Ausgangskorb der Datenbank. */
-export const WEITER_MAX_BYTES = 4 * 1024 * 1024;
+export { WEITER_MAX_BYTES };
 
 /**
  * Fortsetzung eines Ereignisses (#458): Antwortet ein Paket mit `{"weiter": {…}}` (Ergebnis als JSON, Code 0), ist es
@@ -48,7 +48,6 @@ export function liesWeiter(text: string): Record<string, unknown> | null {
   } catch { return null; }
 }
 
-const SPEICHER_MAX = 64 * 1024;
 const LETZTE = 20;
 /** Nachberechnung der Vektoren (#442): alle so viele ms höchstens so viele Dokumente – nur, wenn das Paket nichts offen hat. */
 const NACHLAUF_MS = 30_000;
@@ -63,7 +62,7 @@ const PROTOKOLL_MAX = 50;
 /** „0 B“, „512 B“, „3,4 KB“, „12,1 MB“ – in der Sprache der Oberfläche. */
 export function bytesText(n: number): string {
   const z = (x: number) => x.toLocaleString(gebietsschema(), { maximumFractionDigits: 1 });
-  return n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${z(n / 1024)} KB` : n < 1024 ** 3 ? `${z(n / 1024 / 1024)} MB` : `${z(n / 1024 ** 3)} GB`;
+  return n < KB ? `${n} B` : n < MB ? `${z(n / KB)} KB` : n < GB ? `${z(n / MB)} MB` : `${z(n / GB)} GB`;
 }
 
 /** Text eines Netzaufrufs im Protokoll des Pakets (#807): Anzahl, Methode, Host, Status, Bytes – nie Inhalte. */
@@ -368,7 +367,7 @@ export class Paketlaeufer implements PaketLaeufer {
       const werte = await this.o.speicher.lies(paket);
       if (q.art === 'speicher_lesen') return q.schluessel in werte ? { status: 200, body: new TextEncoder().encode(werte[q.schluessel]) } : t(404, '');
       const neu = { ...werte, [q.schluessel.slice(0, 200)]: new TextDecoder().decode(q.wert) };
-      if (JSON.stringify(neu).length > SPEICHER_MAX) return t(413, `Der Speicher eines Pakets ist auf ${SPEICHER_MAX / 1024} KB begrenzt.`);
+      if (JSON.stringify(neu).length > SPEICHER_MAX) return t(413, `Der Speicher eines Pakets ist auf ${SPEICHER_MAX / KB} KB begrenzt.`);
       await this.o.speicher.schreibe(paket, neu);
       return t(200, '');
     }

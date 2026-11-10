@@ -35,15 +35,13 @@ import { abdeckung, anzahlTexte, BESCHRIFTUNGEN_ORDNER, liesSprachangabe, liesSp
 import { gebietsschema } from '../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { ARCHIV_MAX, ENTPACKT_MAX, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX } from './grenzen';
 
 const log = protokoll.modul('werkbank');
 
 /* ---------- ZIP lesen ---------- */
 
-/** Höchstens so groß ist ein Paket-Archiv – die gemeinsame Grenze aus shared (#644). */
-export const ARCHIV_MAX = PAKET_MAX;
-/** Entpackt höchstens – ohne code/; dafür gilt CODE_MAX (#403, geprüft in liesCode). */
-const ENTPACKT_MAX = 20 * 1024 * 1024;
+export { ARCHIV_MAX };
 const DATEIEN_MAX = 500;
 
 /** Obergrenzen beim Entpacken; budget wird über mehrere Archive geteilt (Sammeldatei, #461). */
@@ -93,7 +91,7 @@ export function liesZip(buf: Buffer, grenzen: ZipGrenzen = PAKET_GRENZEN): Map<s
     if (gesamt > grenzen.entpackt) throw new Fachfehler(422, t('meldungen.pakete.das-archiv-ist-entpackt'));
     if (beispiele > PAKET_MAX) throw new Fachfehler(422, t('meldungen.pakete.beispiel-dokumente-zu-gross', { max: inMB(PAKET_MAX) }));
     // Grobe Obergrenze gegen ZIP-Bomben; die genaue Meldung zu code/ kommt aus liesCode.
-    if (code > 2 * CODE_MAX) throw new Fachfehler(422, t('meldungen.pakete.die-dateien-unter-code', { wert: CODE_MAX / 1048576 }));
+    if (code > 2 * CODE_MAX) throw new Fachfehler(422, t('meldungen.pakete.die-dateien-unter-code', { wert: CODE_MAX / MB }));
     if (grenzen.budget && (grenzen.budget.rest -= usize) < 0) throw new Fachfehler(422, t('meldungen.pakete.die-pakete-der-sammeldatei'));
     if (lokal + 30 > buf.length || buf.readUInt32LE(lokal) !== 0x04034b50) throw kaputt();
     const start = lokal + 30 + buf.readUInt16LE(lokal + 26) + buf.readUInt16LE(lokal + 28);
@@ -825,7 +823,8 @@ export interface Quelle {
 export interface Abruf { url: string; offiziell: boolean; katalog: Katalog | null; fehler: string | null; pruefung?: HerkunftPruefung | null }
 
 /** Ein hochgeladenes, geprüftes Paket, bis es installiert wird (höchstens 30 Minuten). */
-interface Hochgeladen { paket: Paket; von: Handelnder; am: string; zeit: number; pruefung: HerkunftPruefung }
+/** `bytes`: Größe des Archivs – danach richtet sich die Obergrenze im Arbeitsspeicher (#901). */
+interface Hochgeladen { paket: Paket; von: Handelnder; am: string; zeit: number; pruefung: HerkunftPruefung; bytes?: number }
 /** Woher ein Upload stammt: einzeln hochgeladen oder aus einer Sammeldatei; das Archiv liest beides gleich (PAKET_GRENZEN). */
 type UploadArt = 'einzeln' | 'sammel';
 
@@ -833,8 +832,9 @@ const TAG_MS = 86_400_000;
 /** Datei neben einem Katalog, z. B. katalog.sig neben katalog.json. */
 const daneben = (url: string, datei: string) => new URL(datei, url).href;
 const UPLOAD_GUELTIG = 30 * 60_000;
-/** Katalog, Signatur und Schlüssel: höchstens 10 MB (wie vor #644). */
-export const KLEIN_MAX = 10 * 1024 * 1024;
+/** So oft fliegen abgelaufene Uploads heraus, auch wenn niemand mehr hochlädt (#901). */
+const UPLOAD_AUFRAEUMEN_MS = 5 * 60_000;
+export { KLEIN_MAX };
 
 /* ---------- Sammeldatei (#461) ---------- */
 
@@ -844,11 +844,8 @@ export const KLEIN_MAX = 10 * 1024 * 1024;
  */
 export const SAMMEL_VERZEICHNIS = 'sammeldatei.json';
 const SAMMEL_LIESMICH = 'LIESMICH.txt';
-/** Höchstens so groß ist eine Sammeldatei; so viele Pakete; entpackt alle Pakete zusammen höchstens. */
-export const SAMMEL_MAX = 2 * PAKET_MAX;
+export { SAMMEL_MAX };
 export const SAMMEL_PAKETE_MAX = 50;
-const SAMMEL_ENTPACKT_MAX = 4 * PAKET_MAX;
-const VERZEICHNIS_MAX = 1024 * 1024;
 
 export interface SammelEintrag { id: string; version: string; name: string; archiv: string; sha256: string; groesse: number; gewaehlt: boolean }
 export interface SammelVerzeichnis { format: 1; erstellt: string; quelle: string; katalog: string; dms: string | null; pakete: SammelEintrag[] }
@@ -921,7 +918,9 @@ export class Paketverwaltung {
   private kataloge = new Map<string, { katalog: Katalog; pruefung: HerkunftPruefung; zeit: number }>();
   private uploads = new Map<string, Hochgeladen>();
 
-  constructor(private d: Dienst, private o: PaketOptionen) {}
+  constructor(private d: Dienst, private o: PaketOptionen) {
+    setInterval(() => { void this.raeumeUploadsAuf(); }, UPLOAD_AUFRAEUMEN_MS).unref();
+  }
 
   /** Mappentypen des DMS, auf die Pakete verweisen dürfen (#310): Kennung → Typ. `ablageort` ist der Alias (#883). */
   private async dmsTypen(): Promise<Map<string, Mappentyp>> {
@@ -1299,18 +1298,47 @@ export class Paketverwaltung {
 
   /** Upload merken: im Arbeitsspeicher und – bei mehreren Prozessen – im Upload-Ordner; Abgelaufenes fliegt dabei raus. */
   private async merkeUpload(token: string, u: Hochgeladen, archiv: Buffer, art: UploadArt) {
-    for (const [k, x] of this.uploads) if (Date.now() - x.zeit > UPLOAD_GUELTIG) this.uploads.delete(k);
-    this.uploads.set(token, u);
+    await this.raeumeUploadsAuf();
+    this.behalte(token, { ...u, bytes: archiv.length });
     const ordner = this.o.uploadOrdner;
     if (!ordner) return;
     await mkdir(ordner, { recursive: true, mode: 0o700 });
-    for (const n of await readdir(ordner).catch(() => [] as string[])) {
-      const s = await stat(join(ordner, n)).catch(() => null);
-      if (s && Date.now() - s.mtimeMs > UPLOAD_GUELTIG) await rm(join(ordner, n), { force: true });
-    }
     await writeFile(this.uploadDatei(token, 'zip'), archiv, { mode: 0o600 });
     await writeFile(this.uploadDatei(token, 'json'), JSON.stringify({ von: u.von, am: u.am, zeit: u.zeit, pruefung: u.pruefung, art }), { mode: 0o600 });
   }
+
+  /**
+   * Abgelaufene Uploads aus dem Arbeitsspeicher und dem Upload-Ordner entfernen (#901) – beim Hochladen und alle fünf
+   * Minuten, damit nicht installierte Pakete nicht liegen bleiben, bis jemand das nächste hochlädt.
+   */
+  async raeumeUploadsAuf() {
+    for (const [k, x] of this.uploads) if (Date.now() - x.zeit > UPLOAD_GUELTIG) this.uploads.delete(k);
+    const ordner = this.o.uploadOrdner;
+    if (!ordner) return;
+    for (const n of await readdir(ordner).catch(() => [] as string[])) {
+      const s = await stat(join(ordner, n)).catch(() => null);
+      if (s && Date.now() - s.mtimeMs > UPLOAD_GUELTIG) await rm(join(ordner, n), { force: true }).catch(() => {});
+    }
+  }
+
+  /**
+   * Upload im Arbeitsspeicher halten, zusammen höchstens UPLOADS_SPEICHER_MAX (#901): Darüber fallen die ältesten heraus.
+   * Mit Upload-Ordner liegen sie dort weiter und werden bei Bedarf neu gelesen, sonst muss man sie neu hochladen.
+   */
+  private behalte(token: string, u: Hochgeladen) {
+    this.uploads.delete(token);
+    this.uploads.set(token, u);
+    let summe = 0;
+    for (const x of this.uploads.values()) summe += x.bytes ?? 0;
+    for (const [k, x] of this.uploads) {
+      if (summe <= UPLOADS_SPEICHER_MAX || k === token) break;
+      this.uploads.delete(k);
+      summe -= x.bytes ?? 0;
+    }
+  }
+
+  /** Belegter Arbeitsspeicher der Uploads (für Tests und Systemzustand). */
+  uploadsBytes(): number { let n = 0; for (const x of this.uploads.values()) n += x.bytes ?? 0; return n; }
 
   /** Upload vergessen (installiert): auch die Dateien. */
   private async vergissUpload(token: string) {
@@ -1333,8 +1361,8 @@ export class Paketverwaltung {
     } catch { throw abgelaufen(); }
     if (Date.now() - angaben.zeit > UPLOAD_GUELTIG) throw abgelaufen();
     const paket = liesPaket(liesZip(archiv, PAKET_GRENZEN));
-    const neu: Hochgeladen = { paket, von: angaben.von, am: angaben.am, zeit: angaben.zeit, pruefung: angaben.pruefung };
-    this.uploads.set(k, neu);
+    const neu: Hochgeladen = { paket, von: angaben.von, am: angaben.am, zeit: angaben.zeit, pruefung: angaben.pruefung, bytes: archiv.length };
+    this.behalte(k, neu);
     return neu;
   }
 

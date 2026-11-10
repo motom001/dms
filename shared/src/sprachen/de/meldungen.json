@@ -787,6 +787,7 @@
   "http.arbeit-nach-der-antwort": "Arbeit nach der Antwort fehlgeschlagen",
   "http.interner-fehler-bei": "Interner Fehler bei {method} {split}",
   "http.interner-fehler-anfrage-details": "Interner Fehler (Anfrage {id}). Details stehen im Protokoll.",
+  "http.keine-datei-erwartet": "Diese Adresse nimmt keine Datei als Körper an.",
   "http.ohne-verwaltungsrecht": "ohne Verwaltungsrecht",
   "http.im-verwaltungsmodus": " (im Verwaltungsmodus)",
   "http.diese-schnittstelle-gibt-es": "Diese Schnittstelle gibt es nicht.",

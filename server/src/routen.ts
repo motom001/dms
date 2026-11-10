@@ -92,6 +92,7 @@ import { istMaschinell, istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD,
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
 import { RegionDienst } from './region';
 import { gebietsschema } from '../../shared/src/sprache';
+import { FEHLERMELDUNG_KOERPER_MAX, GB, KOERPER_SPIELRAUM, LOGO_MAX, MB, PLATZ_RESERVE, VORSCHLAG_DATEI_MAX } from './grenzen';
 
 const L = {
   konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
@@ -266,15 +267,15 @@ async function prozessZeilen(x: RoutenExtras, frage: 'prozess.stand' | 'prozess.
     zeilen.push({ nr: 0, pid: v.primaer, rolle: 'haupt', speicher: liesPss(dateiLeser, v.primaer) ?? r, cpu: null, schleifeP99: null, anfragen: null });
   }
   for (const p of alle) {
-    rss += p.wert ? p.wert.rssMb * 1024 ** 2 : liesRss(dateiLeser, p.pid) ?? 0;
+    rss += p.wert ? p.wert.rssMb * MB : liesRss(dateiLeser, p.pid) ?? 0;
     zeilen.push({
-      nr: p.nr, pid: p.pid, rolle: p.leiter ? 'leiter' : 'anfragen', speicher: liesPss(dateiLeser, p.pid) ?? (p.wert ? p.wert.rssMb * 1024 ** 2 : null),
+      nr: p.nr, pid: p.pid, rolle: p.leiter ? 'leiter' : 'anfragen', speicher: liesPss(dateiLeser, p.pid) ?? (p.wert ? p.wert.rssMb * MB : null),
       cpu: p.wert?.cpu ?? null, schleifeP99: p.wert?.schleife?.p99 ?? null, anfragen: p.wert?.anfragen.laufend ?? null,
     });
   }
   // Summe für den Lasttest: Pss (geteilte Seiten anteilig – die Summe der RSS zählte den Code jedes Prozesses voll).
   const pss = zeilen.every((z) => z.speicher !== null) ? zeilen.reduce((n, z) => n + z.speicher!, 0) : rss;
-  return { zeilen, staende: alle.map((p) => p.wert), halde: Object.fromEntries(alle.map((p) => [p.nr, p.wert?.heapMb ?? null])), rssMb: Math.round(rss / 1024 ** 2), speicherMb: Math.round(pss / 1024 ** 2) };
+  return { zeilen, staende: alle.map((p) => p.wert), halde: Object.fromEntries(alle.map((p) => [p.nr, p.wert?.heapMb ?? null])), rssMb: Math.round(rss / MB), speicherMb: Math.round(pss / MB) };
 }
 
 /**
@@ -288,8 +289,8 @@ async function engpassStand(x: RoutenExtras, p: Awaited<ReturnType<typeof prozes
   else { x.poolmessung?.an(); pool = x.poolmessung?.stand() ?? null; }
   const pids = p ? p.zeilen.map((z) => z.pid) : [process.pid];
   // Je Prozess: Pss (sonst RSS) und davon die Halde von V8 (heapUsed) – zeigt, ob Daten oder Puffer wachsen.
-  const speicher = p ? p.zeilen.map((z) => ({ nr: z.nr, rolle: z.rolle, mb: z.speicher === null ? null : Math.round(z.speicher / 1024 ** 2), haldeMb: p.halde[z.nr] ?? null }))
-    : [{ nr: 1, rolle: 'leiter' as const, mb: Math.round((liesPss(dateiLeser, process.pid) ?? process.memoryUsage().rss) / 1024 ** 2), haldeMb: Math.round(process.memoryUsage().heapUsed / 1024 ** 2) }];
+  const speicher = p ? p.zeilen.map((z) => ({ nr: z.nr, rolle: z.rolle, mb: z.speicher === null ? null : Math.round(z.speicher / MB), haldeMb: p.halde[z.nr] ?? null }))
+    : [{ nr: 1, rolle: 'leiter' as const, mb: Math.round((liesPss(dateiLeser, process.pid) ?? process.memoryUsage().rss) / MB), haldeMb: Math.round(process.memoryUsage().heapUsed / MB) }];
   return {
     pool, klassenMs: KLASSEN_MS,
     verbindungen: x.verbindungen?.aufteilung ? { gesamt: x.verbindungen.aufteilung.gesamt, leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere } : null,
@@ -684,7 +685,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     frei: async () => (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.frei ?? null,
     mindest: async () => {
       const grenze = (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.grenzBytes ?? 0;
-      const sich = x.sicherung ? (await x.sicherung.plan()).mindestFreiGB * 1024 ** 3 : 0;
+      const sich = x.sicherung ? (await x.sicherung.plan()).mindestFreiGB * GB : 0;
       return Math.max(grenze, sich);
     },
   } : undefined;
@@ -1248,7 +1249,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return leer;
     } },
     // Logo je Design (#72): hochladen als rohe Bytes, entfernen, ausliefern (ohne Anmeldung nur das des Standard-Designs).
-    { methode: 'PUT', pfad: '/api/designs/:id/logo', zugang: 'admin', roh: 1024 * 1024 + 1024, handler: async (a) => {
+    { methode: 'PUT', pfad: '/api/designs/:id/logo', zugang: 'admin', roh: LOGO_MAX + KOERPER_SPIELRAUM, handler: async (a) => {
       const d = await designs().setzeLogo(a.params.id, a.body);
       L.werkbank.info('Logo eines Designs geändert', { design: d.name, bytes: d.logo?.groesse });
       return ok(d);
@@ -1292,7 +1293,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const s = await dienst.exportAbschaetzung();
       const frei = await freierPlatz(ziel);
       // Grob: Dokumente plus ein Zuschlag für Tabellen und PDFs.
-      if (frei !== null && frei < s.bytes * 1.1 + 50 * 1024 ** 2) throw new Fachfehler(507, t('meldungen.routen.zu-wenig-platz-am', { round: Math.round(frei / 1024 ** 2), round2: Math.round((s.bytes * 1.1 + 50 * 1024 ** 2) / 1024 ** 2) }));
+      if (frei !== null && frei < s.bytes * 1.1 + PLATZ_RESERVE) throw new Fachfehler(507, t('meldungen.routen.zu-wenig-platz-am', { round: Math.round(frei / MB), round2: Math.round((s.bytes * 1.1 + PLATZ_RESERVE) / MB) }));
       const kontakte = e.kontakte && typeof e.kontakte === 'object' ? e.kontakte as ExportOptionen['kontakte'] : undefined;
       const quelle = dienst.vollexportQuelle({
         mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion(),
@@ -1306,7 +1307,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       else L.werkbank.info('Vollexport gestartet', { von, protokolle: e.protokolle === true });
       return ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('vollexport', 'Vollexport', async (f) => {
         const r = await vollexport(quelle, ziel, { passwoerter: e.passwoerter === true, protokolle: e.protokolle === true, kontakte }, f);
-        L.werkbank.info('Vollexport fertig', { von, name: r.name, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2), mappen: r.mappen });
+        L.werkbank.info('Vollexport fertig', { von, name: r.name, dateien: r.dateien, mb: Math.round(r.bytes / MB), mappen: r.mappen });
         return r;
       }, VOLLEXPORT_PHASEN)), 202);
     } },
@@ -1353,7 +1354,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         try {
           for (const alt of await exporteIn(ziel)) await loescheExport(exportOrdner(ziel, alt.name));
           const r = await vollexport(quelle, ziel, { passwoerter: e.passwoerter === true });
-          L.konto.info('„Meine Daten exportieren“ fertig', { benutzer: id, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2) });
+          L.konto.info('„Meine Daten exportieren“ fertig', { benutzer: id, dateien: r.dateien, mb: Math.round(r.bytes / MB) });
         } catch (x2) { zustand.fehler = (x2 as Error).message; L.konto.error('„Meine Daten exportieren“ fehlgeschlagen', { benutzer: id, fehler: zustand.fehler }); }
         finally {
           if (zustand.fehler) await dienst.kurzzustand.setze(EXPORT_FEHLER, id, zustand.fehler, Date.now() + 7 * 24 * 3600_000).catch(() => {});
@@ -1557,7 +1558,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Paket selbst erstellen (#374): Auswahl, Prüfung, Export als .zip im Format der Registry.
     { methode: 'GET', pfad: '/api/werkbank/pakete/erstellen', zugang: 'admin', handler: async () => ok(await paketerstellung.stand()) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/erstellen/pruefen', zugang: 'admin', handler: async (a) => ok(await paketerstellung.pruefe(a.body)) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/erstellen/letzte', zugang: 'admin', lesend: true, roh: ARCHIV_MAX + 1024, handler: async (a) => ok(paketerstellung.liesLetzteVersion(a.body)) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/erstellen/letzte', zugang: 'admin', lesend: true, roh: ARCHIV_MAX + KOERPER_SPIELRAUM, handler: async (a) => ok(paketerstellung.liesLetzteVersion(a.body)) },
     // „Paket erstellen“ (#652): erstellt, ohne herunterzuladen; selbst erstellte Pakete in der Paketverwaltung.
     { methode: 'POST', pfad: '/api/werkbank/pakete/erstellen/anlegen', zugang: 'admin', handler: async (a) => ok(await paketerstellung.erstelle(a.body, wer(a))) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/selbst', zugang: 'admin', handler: async () => ok(await paketerstellung.selbstErstellt()) },
@@ -1572,7 +1573,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return { datei: { inhalt: r.daten, name: r.name, mime: 'application/zip', anzeigen: false, groesse: r.daten.length } };
     } },
     // Ein Paket (höchstens PAKET_MAX, #644) oder eine Sammeldatei mit mehreren Paketen (#461, höchstens SAMMEL_MAX).
-    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: SAMMEL_MAX + 1024, handler: async (a) => ok(await pakete.hochladenDatei(a.body, wer(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: SAMMEL_MAX + KOERPER_SPIELRAUM, handler: async (a) => ok(await pakete.hochladenDatei(a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a)))) },
     // Mehrere Pakete in einem Ablauf (#405): Plan (nichts wird gespeichert) und Installation mit allen Antworten.
@@ -1760,7 +1761,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         vertretung: !!a.sitzungsDaten?.vertretungId,
       });
     } },
-    { methode: 'POST', pfad: '/api/konto/fehlermeldung', zugang: 'angemeldet', roh: 30 * 1024 * 1024, handler: async (a) => ok(await meldungen().melde(ich(a).id, b(a)), 201) },
+    { methode: 'POST', pfad: '/api/konto/fehlermeldung', zugang: 'angemeldet', roh: FEHLERMELDUNG_KOERPER_MAX, handler: async (a) => ok(await meldungen().melde(ich(a).id, b(a)), 201) },
     { methode: 'GET', pfad: '/api/werkbank/fehlermeldungen', zugang: 'admin', handler: async (a) => ok(await meldungen().liste(a.query.erledigt !== undefined)) },
     { methode: 'GET', pfad: '/api/werkbank/fehlermeldungen/:id', zugang: 'admin', handler: async (a) => ok(await meldungen().hole(a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/fehlermeldungen/:id/bilder/:nr', zugang: 'admin', handler: async (a) => {
@@ -2106,11 +2107,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const schlimmste = p?.staende.filter((z): z is Prozessstand => !!z?.schleife).sort((a, b) => b.schleife!.p99 - a.schleife!.p99)[0];
       return ok({
         schleife: schlimmste?.schleife ?? (w ? { median: w.median, p99: w.p99, max: w.max } : null), schleifeWarnung: s?.warnungSeit ?? null,
-        speicherMb: p ? p.speicherMb : Math.round(m.rss / 1024 ** 2), ...(p ? { rssMb: p.rssMb } : {}), heapMb: Math.round(m.heapUsed / 1024 ** 2),
+        speicherMb: p ? p.speicherMb : Math.round(m.rss / MB), ...(p ? { rssMb: p.rssMb } : {}), heapMb: Math.round(m.heapUsed / MB),
         ...(p ? { prozesse: p.zeilen } : {}),
         // Ganzer Container (#696): so viel zeigt die NAS an – mit PostgreSQL (dms-komplett) und Dateizwischenspeicher.
         // #895: dazu Grenze und Kerne – die Lasttest-Seite zeigt CPU und Speicher in Prozent wie die Auslastung.
-        container: (() => { const c = x.systemlast?.container(); const r = x.systemlast?.rahmen(); const mb = (v: number | null | undefined) => (v == null ? null : Math.round(v / 1024 ** 2)); return c && c.aktuell !== null ? { mb: mb(c.aktuell), spitzeMb: mb(c.spitze), programmeMb: mb(c.programme), zwischenspeicherMb: mb(c.zwischenspeicher), datenbankMb: mb(c.datenbank), ...(r ? { grenzeMb: mb(r.grenze), ohneGrenze: r.ohneGrenze, kerne: r.kerne, kerneBegrenzt: r.kerneBegrenzt } : {}) } : null; })(),
+        container: (() => { const c = x.systemlast?.container(); const r = x.systemlast?.rahmen(); const mb = (v: number | null | undefined) => (v == null ? null : Math.round(v / MB)); return c && c.aktuell !== null ? { mb: mb(c.aktuell), spitzeMb: mb(c.spitze), programmeMb: mb(c.programme), zwischenspeicherMb: mb(c.zwischenspeicher), datenbankMb: mb(c.datenbank), ...(r ? { grenzeMb: mb(r.grenze), ohneGrenze: r.ohneGrenze, kerne: r.kerne, kerneBegrenzt: r.kerneBegrenzt } : {}) } : null; })(),
         datenbank: v ? { verbindungen: x.verbindungen?.aufteilung?.gesamt ?? v.max, jeProzess: v.max, wartenJetzt: jetzt === null ? null : Math.round(jetzt * 10) / 10, wartenP95: v.p95, wartenMax: v.hoechstens } : null,
         anfragen: x.ueberlast?.stand() ?? null,
         arbeiter: arbeiterStand(),
@@ -2358,7 +2359,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/klassifizieren', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.klassifizierung.klassifiziere(b(a), await zg(a))) },
     // „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps aus Text, Dokumenten oder einer Datei.
     { methode: 'POST', pfad: '/api/typen/:id/vorschlaege', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerTyp(a.params.id, b(a), await zg(a))) },
-    { methode: 'POST', pfad: '/api/typen/:id/vorschlaege/datei', zugang: 'angemeldet', lesend: true, roh: 30 * 1024 * 1024, handler: async (a) => {
+    { methode: 'POST', pfad: '/api/typen/:id/vorschlaege/datei', zugang: 'angemeldet', lesend: true, roh: VORSCHLAG_DATEI_MAX, handler: async (a) => {
       const z = await zg(a);
       if (!Buffer.isBuffer(a.body) || !a.body.length) throw new Fachfehler(422, t('meldungen.routen.die-datei-ist-leer'));
       // Erst Zugriff prüfen, dann die (teure) Texterkennung.
@@ -2543,11 +2544,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     // Dateien umwandeln (#577): Fassung und Vorschaubild schreiben nur Pakete mit dms:umwandeln, die das Dokument lesen
     // dürfen (das Original bleibt unverändert, deshalb genügt Lesen); ansehen darf die Fassung, wer das Dokument liest.
-    { methode: 'PUT', pfad: '/api/dokumente/:id/fassung', zugang: 'angemeldet', roh: FASSUNG_MAX_BYTES + 1024, handler: async (a) => {
+    { methode: 'PUT', pfad: '/api/dokumente/:id/fassung', zugang: 'angemeldet', roh: FASSUNG_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeFassung(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
-    { methode: 'PUT', pfad: '/api/dokumente/:id/vorschaubild', zugang: 'angemeldet', roh: VORSCHAUBILD_MAX_BYTES + 1024, handler: async (a) => {
+    { methode: 'PUT', pfad: '/api/dokumente/:id/vorschaubild', zugang: 'angemeldet', roh: VORSCHAUBILD_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeVorschaubild(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
@@ -2573,7 +2574,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     // Archivfassung (PDF/A, #631): ablegen nur Pakete mit dms:archivfassung, die das Dokument lesen dürfen (das Original
     // bleibt unverändert); ansehen, wer das Dokument liest. Wortpositionen ebenso mit Lesen (ohne weiteres Recht).
-    { methode: 'PUT', pfad: '/api/dokumente/:id/archivfassung', zugang: 'angemeldet', roh: ARCHIVFASSUNG_MAX_BYTES + 1024, handler: async (a) => {
+    { methode: 'PUT', pfad: '/api/dokumente/:id/archivfassung', zugang: 'angemeldet', roh: ARCHIVFASSUNG_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeArchivfassung(await zg(a), a.params.id, a.query.sha256, a.body));
     } },

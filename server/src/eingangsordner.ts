@@ -8,6 +8,7 @@ import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
+import { GB } from './grenzen';
 
 /**
  * Eingangsordner (#195): Das DMS prüft einen Ordner (im Container /eingang) regelmäßig und macht
@@ -82,7 +83,7 @@ export function eingangWarnungen(u: Pick<EingangUeberblick, 'dateien' | 'bytes' 
   const w: EingangWarnung[] = [];
   const tage = e.warnTage ?? EINGANG_STANDARD.warnTage!, gb = e.warnGb ?? EINGANG_STANDARD.warnGb!, dateien = e.warnDateien ?? EINGANG_STANDARD.warnDateien!;
   if (tage > 0 && u.aeltester && jetzt - Date.parse(u.aeltester) > tage * 86_400_000) w.push('alt');
-  if (gb > 0 && u.bytes > gb * 1024 ** 3) w.push('groesse');
+  if (gb > 0 && u.bytes > gb * GB) w.push('groesse');
   if (u.fehler > 0) w.push('fehler');
   if (dateien > 0 && u.dateien > dateien) w.push('anzahl');
   return w;

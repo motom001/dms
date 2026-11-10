@@ -32,6 +32,7 @@ import { typBild, typUnterschiede, type TypUnterschiede } from '../../shared/src
 import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
+import { ARCHIV_MERKEN_MAX, MB } from './grenzen';
 
 const log = protokoll.modul('werkbank');
 
@@ -114,7 +115,6 @@ const mitId = (v: unknown) => ID.test(JSON.stringify(v) ?? '');
 const ENTWUERFE_MAX = 20;
 /** Gemerkte Archive je selbst erstelltem Paket (#652): die letzten Versionen, je höchstens 5 MB (Einstellung, in der Sicherung). */
 const ARCHIVE_JE_PAKET = 10;
-const ARCHIV_MERKEN_MAX = 5 * 1024 * 1024;
 type GemerktesArchiv = { version: string; erstellt: string; zip: string };
 const BEISPIELMAPPEN_MAX = 200;
 

@@ -13,6 +13,7 @@ import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { t } from './sprache';
 import { EINGEBAUTE_SPRACHEN, setzeSprache } from '../../shared/src/sprache';
 import { spracheAusKopf } from '../../shared/src/sprachwahl';
+import { EINRICHTUNG_KOERPER_MAX } from './grenzen';
 
 /**
  * Einrichtungsmodus (#119): Das DMS läuft ohne erreichbare Datenbank und liefert nur den
@@ -52,7 +53,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
   const ergebnis = new Promise<Anbindung>((r) => { fertig = r; });
   let beendet = false;
 
-  const app = Fastify({ trustProxy: o.proxy ?? false, bodyLimit: 64 * 1024 });
+  const app = Fastify({ trustProxy: o.proxy ?? false, bodyLimit: EINRICHTUNG_KOERPER_MAX });
   app.setErrorHandler((e: unknown, _req, reply) => {
     if (e instanceof Fachfehler) return reply.code(e.status).send({ fehler: e.message, details: e.details });
     const err = e as Error & { statusCode?: number };

@@ -27,6 +27,28 @@ Browser ── HTTP ──▶ Ablago-Container (Node.js) ──▶ PostgreSQL-Co
 | dms-komplett | Dasselbe Image mit PostgreSQL 17 (Alpine-Paket) im selben Container; Datenbank im Ordner `/data/postgres` | Ablago und Datenbank in einem Container |
 | Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main`, jeder Pull Request, jedes Versions-Tag und einmal pro Woche |
 
+## Grenzen { #grenzen }
+
+Wie groß etwas höchstens sein darf. Ablago prüft jede Grenze, bevor es die Daten verarbeitet; was größer ist, lehnt es mit einer Meldung ab (meist „413 – zu groß“). Im Quelltext stehen alle Grenzen an einer Stelle: `server/src/grenzen.ts`.
+
+| Was | Höchstens |
+| --- | --- |
+| Dokument hochladen, ersetzen oder fotografieren | 100 MB |
+| Datei für „Aus Dokument ausfüllen“ ohne Ablage | 30 MB |
+| Texterkennung und Vorschau von Office-Dateien | 100 MB je Datei; größere bekommen keinen Volltext bzw. keine Vorschau |
+| Anhänge einer E-Mail zusammen | 50 MB |
+| Paket (Archiv und alle Dateien unter `code/` zusammen) | 128 MB |
+| Sammeldatei | 256 MB, höchstens 50 Pakete |
+| Katalog, Signatur und Schlüssel einer Paketquelle | 10 MB |
+| Hochgeladene, noch nicht installierte Pakete | 30 Minuten; im Arbeitsspeicher zusammen 512 MB, darüber fallen die ältesten heraus |
+| Fassung, Archivfassung und Vorschaubild von Paketen | 50 MB, 100 MB, 5 MB |
+| Fehlermeldung (mit Bildschirmfoto und Anhängen) | 30 MB, das Bildschirmfoto 10 MB |
+| Logo eines Designs | 1 MB |
+| Einrichtungsdatei | 64 KB |
+| Alle anderen Anfragen (Formulare, Einstellungen) | 2 MB; eine Datei nehmen sie gar nicht an |
+
+Ein Reverse-Proxy davor braucht eine eigene Grenze, die etwas darüber liegt, für nginx `client_max_body_size 260m;` (mit Sammeldateien) bzw. `130m` (ohne), siehe [Installation](installation.md#hinter-einem-reverse-proxy).
+
 ## Viele gleichzeitige Anfragen { #last }
 
 Ein Haushalt hat 2–6 Benutzer, ein Kleinbetrieb 10–20. Ein Benutzer löst selbst schon mehrere Anfragen gleichzeitig aus (die Ablage öffnen sind 6–10), dazu kommen WebDAV-Programme, Pakete und Skripte. **100 gleichzeitige Anfragen** – etwa 10–15 Personen, die im selben Moment klicken – sind die realistische Obergrenze; dafür ist Ablago ausgelegt und wird regelmäßig gemessen (Lasttest in drei Stufen, #544, #563). Was welches Gerät verkraftet, steht unter [Was Ablago verkraftet](verkraftet.md); selbst messen kannst du mit dem [Lasttest](lasttest.md). Mehr kommt im Betrieb kaum vor, etwa bei einem falsch eingestellten WebDAV-Programm.

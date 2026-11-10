@@ -42,6 +42,7 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
 import type { PdfaBefund } from './pdf';
+import { MB } from './grenzen';
 
 const log = protokoll.modul('archivfassung');
 
@@ -172,7 +173,7 @@ const mitText = (s: { woerter: Wort[] } | undefined | null) => !!s && s.woerter.
  */
 export async function pruefeArchivfassung(inhalt: unknown, lies: (pdf: Buffer) => Promise<PdfaBefund>): Promise<{ seiten: number; pdfa: PdfaKennung }> {
   if (!Buffer.isBuffer(inhalt) || !inhalt.length) throw new Fachfehler(422, t('pakete.archiv.leer'));
-  if (inhalt.length > ARCHIVFASSUNG_MAX_BYTES) throw new Fachfehler(413, t('pakete.archiv.gross', { mb: ARCHIVFASSUNG_MAX_BYTES / 1048576 }));
+  if (inhalt.length > ARCHIVFASSUNG_MAX_BYTES) throw new Fachfehler(413, t('pakete.archiv.gross', { mb: ARCHIVFASSUNG_MAX_BYTES / MB }));
   if (inhalt.subarray(0, 5).toString('latin1') !== '%PDF-') throw new Fachfehler(415, t('pakete.archiv.typ'));
   return bewertePdfA(await lies(inhalt));
 }

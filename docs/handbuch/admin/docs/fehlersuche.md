@@ -122,7 +122,7 @@ Wie die Bausteine zusammenhängen, beschreibt [Technik](technik.md).
     Das ist die Adresse des Reverse-Proxys: Ablago glaubt seinen Angaben nicht. Unter **Technik** nachsehen, was bei `TRUST_PROXY` steht. Hat der Proxy eine öffentliche Adresse, kann `TRUST_PROXY` auf diese Adresse oder auf `true` gesetzt werden – mehr unter [Was der Proxy Ablago mitteilt](installation.md#was-der-proxy-dem-dms-mitteilt).
 
 ??? question "Hochladen großer Dateien bricht ab."
-    Den Reverse-Proxy größere Anfragen erlauben, z. B. bei nginx `client_max_body_size 130m;`. Ablago nimmt Dokumente bis 100 MB und Pakete bis 128 MB an; die Grenze im Proxy sollte etwas darüber liegen.
+    Den Reverse-Proxy größere Anfragen erlauben, z. B. bei nginx `client_max_body_size 260m;`. Ablago nimmt Dokumente bis 100 MB, Pakete bis 128 MB und Sammeldateien bis 256 MB an; die Grenze im Proxy sollte etwas darüber liegen. Alle Grenzen: [Technik → Grenzen](technik.md#grenzen).
 
 ??? question "Die Oberfläche ist nach einer Design-Änderung unbedienbar."
     `?design=standard` an die Adresse hängen, siehe [Designs](designs.md#eigenes-css).

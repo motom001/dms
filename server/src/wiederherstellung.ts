@@ -18,6 +18,7 @@ import { liesKopf, liesSicherung, sha256Von, ZWECK } from './sicherungsformat';
 import { entschluesseleMit, fingerabdruck, istPruefwort, leiteAb, schluesselAusText } from './tresor';
 import { STATISTIK_SPALTEN } from './repo-pg';
 import { t } from './sprache';
+import { GB, PLATZ_RESERVE } from './grenzen';
 
 /**
  * Wiederherstellen einer Sicherung (#107) und Probe-Wiederherstellung (#109).
@@ -321,8 +322,8 @@ export class Wiederherstellung {
     try {
       const f = await statfs(this.q.dateiWurzel);
       const frei = f.bavail * f.bsize;
-      if (frei < m.groessen.dateienBytes * 1.05 + 50 * 1024 * 1024) {
-        throw new Fachfehler(507, t('meldungen.wiederherstellung.zu-wenig-platz-fuer', { replace: (frei / 1024 ** 3).toFixed(1).replace('.', ','), replace2: (m.groessen.dateienBytes / 1024 ** 3).toFixed(1).replace('.', ',') }));
+      if (frei < m.groessen.dateienBytes * 1.05 + PLATZ_RESERVE) {
+        throw new Fachfehler(507, t('meldungen.wiederherstellung.zu-wenig-platz-fuer', { replace: (frei / GB).toFixed(1).replace('.', ','), replace2: (m.groessen.dateienBytes / GB).toFixed(1).replace('.', ',') }));
       }
     } catch (e) { if (e instanceof Fachfehler) throw e; }
   }

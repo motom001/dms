@@ -38,6 +38,7 @@ import { anfrageStufe, dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, 
 import { mitSprache, setzeAnfrageSprache, t, tDe } from './sprache';
 import { erlaubteSprachen } from '../../shared/src/beschriftung';
 import { spracheAusKopf } from '../../shared/src/sprachwahl';
+import { JSON_KOERPER_MAX, MB } from './grenzen';
 
 /** zeit (#477): Zeitpunkte der Anfrage (performance.now()) für Server-Timing. */
 type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean; zeit?: { eingang: number; start?: number; ende?: number; senden?: number }; nachher?: () => void };
@@ -167,7 +168,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     // Eine Zeile je Anfrage schreiben wir selbst (onResponse), mit Benutzer und Modul.
     disableRequestLogging: true,
     genReqId: () => randomBytes(4).toString('hex'),
-    bodyLimit: 2 * 1024 * 1024,
+    bodyLimit: JSON_KOERPER_MAX,
     trustProxy: opt.proxy ?? false,
   });
 
@@ -228,7 +229,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     return nutzlast;
   });
 
-  // Datei-Uploads kommen als rohe Bytes (application/octet-stream).
+  // Datei-Uploads kommen als rohe Bytes (application/octet-stream) – nur an Routen mit `roh` (#901).
+  const istDateiKoerper = (req: FastifyRequest) => String(req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase() === 'application/octet-stream';
   app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
 
   const anfrageAus = (req: FastifyRequest): Anfrage => ({
@@ -248,6 +250,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
       method: r.methode,
       url: r.pfad,
       ...(r.roh ? { bodyLimit: r.roh } : {}),
+      // Dateien als Körper nur, wo die Route eine eigene Grenze nennt (#901): Sonst gälte still die Grenze für JSON.
+      ...(!r.roh ? { preParsing: async (req: FastifyRequest) => { if (istDateiKoerper(req)) throw new Fachfehler(415, t('meldungen.http.keine-datei-erwartet')); } } : {}),
       ...(r.ohneHead ? { exposeHeadRoute: false } : {}),
       // Große Uploads (#683): Anmeldung und Rolle prüfen, **bevor** der Körper (bis zu 256 MB) gelesen wird –
       // sonst hält jede Anfrage ohne Anmeldung den ganzen Körper im Speicher, bis die 401 kommt.
@@ -358,7 +362,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
       // Der Parser reicht den Körper als Strom durch – dafür wirkt `bodyLimit` nicht (Fastify zählt nur, was es
       // selbst liest). Begrenzt wird in webdav.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
       // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
-      for (const url of ['/webdav', '/webdav/*']) bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + 1024 * 1024, handler });
+      for (const url of ['/webdav', '/webdav/*']) bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + MB, handler });
       // Windows fragt beim Verbinden manchmal erst OPTIONS auf „/“: dort dieselben DAV-Köpfe (ausgeschaltet 404).
       bereich.route({ method: 'OPTIONS', url: '/', handler: async (req: FastifyRequest, reply: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any -- Antwort im WebDAV-Bereich mit eigenen HTTP-Methoden, die Typen von Fastify passen dort nicht
         const r = await wd.anfrage({ methode: 'OPTIONS', url: '/webdav/', ip: req.ip, kopf: () => undefined, koerper: null });

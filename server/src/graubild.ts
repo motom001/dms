@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
+import { AUSGABE_KLEIN } from './grenzen';
 
 export const DPI_MIN = 72;
 export const DPI_MAX = 400;
@@ -33,7 +34,7 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
     await writeFile(join(dir, 'q.pdf'), pdf);
     await new Promise<void>((ok, fehler) => {
       execFile('pdftoppm', [...(farbe ? [] : ['-gray']), '-r', String(dpi), '-f', String(nr), '-l', String(nr), '-singlefile', join(dir, 'q.pdf'), join(dir, 's')],
-        { timeout: ZEIT_MS, maxBuffer: 1 << 20 }, (e, _o, err) => {
+        { timeout: ZEIT_MS, maxBuffer: AUSGABE_KLEIN }, (e, _o, err) => {
           if (!e) return ok();
           if ((e as NodeJS.ErrnoException).code === 'ENOENT') return fehler(new Fachfehler(503, t('meldungen.graubild.pdftoppm-fehlt-seiten-lassen')));
           fehler(/Wrong page range|first page/i.test(String(err)) ? new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr })) : new Fachfehler(422, t('meldungen.graubild.die-seite-laesst-sich', { wert: String(err).trim().slice(0, 200) || e.message })));

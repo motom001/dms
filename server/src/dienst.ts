@@ -97,6 +97,7 @@ import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
 import { feiertageZwischen, type Bundesland } from '../../shared/src/feiertage';
 import { ALLES, hatKontoRegeln, kontoRegelwerk, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 import { gebietsschema } from '../../shared/src/sprache';
+import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
 function inReihenfolge<T extends { id: string }>(liste: T[], ids: string[]): T[] {
@@ -554,8 +555,7 @@ export interface KontenHaken {
 export const PAPIERKORB_STANDARD_TAGE = 30;
 /** Post auflösen (#936): „Aus Post … angelegt“ nur, wenn dieselbe Person die Mappe höchstens so lange vorher angelegt hat. */
 const AUFLOESEN_FRIST_MS = 60 * 60 * 1000;
-/** Anhänge einer E-Mail zusammen höchstens (#58); die Oberfläche warnt schon ab 20 MB. */
-export const EMAIL_MAX_ANHAENGE = 50_000_000;
+export { EMAIL_MAX_ANHAENGE };
 export const EMAIL_MAX_EMPFAENGER = 20;
 /** Höchstens so viele Mappen in einer E-Mail (#151). */
 export const EMAIL_MAX_MAPPEN = 100;
@@ -895,7 +895,7 @@ export class Dienst {
         for (const e of teil) { i ??= new Vektorindex(e.vektor.length); if (e.vektor.length === i.dimension) i.setze(e.dokumentId, e.mappeId, e.vektor); }
       }).then(() => {
         this.vektorGeladen.add(modell);
-        if (i) protokoll.modul('ablage').info('Vektoren geladen', { modell, anzahl: i.anzahl, ms: Date.now() - t, mb: Math.round(i.bytes / 1048576) });
+        if (i) protokoll.modul('ablage').info('Vektoren geladen', { modell, anzahl: i.anzahl, ms: Date.now() - t, mb: Math.round(i.bytes / MB) });
         return i;
       });
       x.catch(() => { this.vektorIndizes.delete(modell); this.vektorGeladen.delete(modell); });
@@ -8233,7 +8233,7 @@ export class Dienst {
   private async automatischVerkleinert(ein: Eingang, name: string) {
     if (erkenneAnzeigbar(ein.kopf) !== 'application/pdf') return null;
     const e = await this.verkleinernEinstellung();
-    if (!e.automatisch || ein.groesse < e.abMb * 1024 * 1024) return null;
+    if (!e.automatisch || ein.groesse < e.abMb * MB) return null;
     try {
       const r = await verkleinere(await ein.puffer(), e.stufe);
       if (!r.lohnt) return null;
@@ -8254,7 +8254,7 @@ export class Dienst {
     const ab = Number(f.ab ?? 2);
     if (!Number.isFinite(ab) || ab < 0 || ab > 100) throw new Fachfehler(422, t('meldungen.dienst.ab-0-bis-100'));
     const stufe = f.stufe === undefined || f.stufe === '' ? STANDARD_STUFE : stufeAus(f.stufe) ?? STANDARD_STUFE;
-    const docs = await this.repo.grossePdfs(Math.round(ab * 1024 * 1024), GROSSE_MAX);
+    const docs = await this.repo.grossePdfs(Math.round(ab * MB), GROSSE_MAX);
     const bezuege = await this.repo.bezuege([...new Set(docs.map((d) => d.mappeId))]);
     const eintraege = [];
     for (const [i, d] of docs.entries()) {
@@ -8949,7 +8949,7 @@ export class Dienst {
       mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, historie: n.historie, ohneNotizen: n.ohneNotizen, ...(n.erwaehnungen ? { erwaehnungen: n.erwaehnungen } : {}),
       ...(d.gruende.length ? { gruende: d.gruende } : {}), verschluesselt: !!d.passwort, auskunft: info.id,
     });
-    protokoll.modul('datenschutz').info('Auskunft erstellt', { mappeId: d.start.id, mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, ohneNotizen: n.ohneNotizen, verschluesselt: !!d.passwort, mb: Math.round(info.bytes / 1024 ** 2), von: von.email });
+    protokoll.modul('datenschutz').info('Auskunft erstellt', { mappeId: d.start.id, mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, ohneNotizen: n.ohneNotizen, verschluesselt: !!d.passwort, mb: Math.round(info.bytes / MB), von: von.email });
   }
 
   /** Frist (#396): Aufgabe „Auskunft an … bis <Eingang + 1 Monat>“ am Betroffenen, für den Administrator. */
@@ -9018,8 +9018,8 @@ export class Dienst {
     } catch (x) {
       throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
     }
-    await this.notiere(stand.mappeId, ich.id, 'auskunft', { text: t('meldungen.dienst.auskunft-per-e-mail', { an: an.join(', '), max: Math.max(1, Math.round(stand.bytes / 1024)) }), zustellung: 'email', an, betreff, auskunft: stand.id, bytes: stand.bytes });
-    protokoll.modul('datenschutz').info('Auskunft per E-Mail gesendet', { mappeId: stand.mappeId, empfaenger: an.length, mb: Math.round(stand.bytes / 1024 ** 2), von: ich.email });
+    await this.notiere(stand.mappeId, ich.id, 'auskunft', { text: t('meldungen.dienst.auskunft-per-e-mail', { an: an.join(', '), max: Math.max(1, Math.round(stand.bytes / KB)) }), zustellung: 'email', an, betreff, auskunft: stand.id, bytes: stand.bytes });
+    protokoll.modul('datenschutz').info('Auskunft per E-Mail gesendet', { mappeId: stand.mappeId, empfaenger: an.length, mb: Math.round(stand.bytes / MB), von: ich.email });
     return { an };
   }
 

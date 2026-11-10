@@ -24,6 +24,7 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { ausnahmeArt, Buendel, Protokollsammlung, rohAus, type Rohmeldung, type Sammelstand } from './protokollsammlung';
 import { dateiLeser, liesCgroup, type Leser } from './systemlast';
+import { GB, HALDE_MIN_MB, MB, SPEICHER_JE_PROZESS, SPEICHER_RESERVE } from './grenzen';
 
 export const PROZESSE_MAX = 16;
 /**
@@ -42,8 +43,8 @@ export const PROZESSE_MIT_DATENBANK_MAX = 2;
  * Richtwert Arbeitsspeicher je Prozess (#874) und Reserve für PostgreSQL, Dateizwischenspeicher und System. NAS (#576):
  * ein Prozess bis 1,3 GB, vier Prozesse bis 3,3 GB (mit Speichern 3,7 GB) – rund 1 GB je Prozess ist großzügig gerechnet.
  */
-export const SPEICHER_JE_PROZESS = 1024 ** 3;
-export const SPEICHER_RESERVE = 1024 ** 3;
+export { SPEICHER_JE_PROZESS };
+export { SPEICHER_RESERVE };
 
 export interface ProzessEinstellung {
   anzahl: number;
@@ -69,12 +70,12 @@ export interface ProzessEinstellung {
  * begrenzt `haldeLeiter` (#891). Der Hauptprozess (nur Leitung) bleibt ohne Grenze.
  * null: ein Prozess oder schon von Hand gesetzt (`NODE_OPTIONS` bzw. Argumente von Node.js) – dann bleibt es dabei.
  */
-export const HALDE_MIN_MB = 1024;
+export { HALDE_MIN_MB };
 export const HALDE_MAX_MB = 1536;
 export function haldeJeProzess(e: Pick<ProzessEinstellung, 'anzahl' | 'speicher'>, gesetzt: string[] = [...process.execArgv, process.env.NODE_OPTIONS ?? '']): number | null {
   if (e.anzahl <= 1 || gesetzt.some((a) => a.includes('--max-old-space-size'))) return null;
   if (e.speicher === null) return HALDE_MAX_MB;
-  const anteil = (e.speicher - SPEICHER_RESERVE) / e.anzahl / 1024 ** 2;
+  const anteil = (e.speicher - SPEICHER_RESERVE) / e.anzahl / MB;
   return Math.max(HALDE_MIN_MB, Math.min(HALDE_MAX_MB, Math.floor(anteil * 0.6)));
 }
 

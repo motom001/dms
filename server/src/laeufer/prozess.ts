@@ -14,6 +14,7 @@ import { MessageChannel, Worker } from 'node:worker_threads';
 import type { ArbeiterDaten, ArbeiterMeldung, Hostanfrage, Hostantwort } from './arbeiter';
 import { ladeArgumente, pruefeModul, SEITE, type Modulpruefung } from './modul';
 import { t } from '../sprache';
+import { MB, NETZ_LANG_AB, NETZ_MAX } from '../grenzen';
 
 export interface Grenzen { speicherMB: number; sekunden: number; parallel: number }
 /** adressen: bestätigte Dienst-Adressen aus den Einstellungen (#444) – auch http, z. B. ein Ollama im Heimnetz. */
@@ -73,7 +74,6 @@ export function netzSammler(): { log: NetzLog; liste(): NetzEintrag[] } {
   };
 }
 
-const NETZ_MAX = 10 * 1024 * 1024;
 const NETZ_MS = 30_000;
 
 interface Geladen { info: PaketImLaeufer; modul: WebAssembly.Module | null; pruefung: Modulpruefung | null; fehler: string | null; daten: Map<string, Uint8Array> }
@@ -99,7 +99,7 @@ function lade(liste: PaketImLaeufer[], behalten: string[] = []) {
     neu.set(p.id, { info: p, modul, pruefung, fehler, daten: new Map(p.daten.map((d) => [d.name, d.inhalt])) });
   }
   pakete = neu;
-  sende({ art: 'geladen', pakete: [...neu.values()].map((g) => ({ id: g.info.id, fehler: g.fehler, speicherMinMB: g.pruefung ? Math.ceil(g.pruefung.speicherMin * SEITE / 1048576) : null })) });
+  sende({ art: 'geladen', pakete: [...neu.values()].map((g) => ({ id: g.info.id, fehler: g.fehler, speicherMinMB: g.pruefung ? Math.ceil(g.pruefung.speicherMin * SEITE / MB) : null })) });
 }
 
 /** Liegt url unter der Adresse e (gleicher Ursprung, gleicher Pfad oder darunter)? */
@@ -138,7 +138,7 @@ async function netz(g: Geladen, json: string, body: Uint8Array | undefined, stro
   // Stück für Stück: Die ganze Antwort darf so lange dauern wie der Aufruf; jedes Stück höchstens NETZ_MS.
   const ende = new AbortController();
   // Hochladen in Teilen (#585, z. B. ein Stück einer Sicherung): ab 1 MB Körper darf die Anfrage so lange dauern wie der Aufruf.
-  const lang = (body?.length ?? 0) > 1024 * 1024;
+  const lang = (body?.length ?? 0) > NETZ_LANG_AB;
   const uhr = setTimeout(() => ende.abort(new Error('Zeitgrenze erreicht')), strom ? strom.ms : lang ? grenzen.sekunden * 1000 : NETZ_MS);
   uhr.unref?.();
   let r: Response;
@@ -196,7 +196,7 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
   const kanal = new MessageChannel();
   const signal = new SharedArrayBuffer(4);
   const sig = new Int32Array(signal);
-  const daten: ArbeiterDaten = { modul: g.modul, pruefung: g.pruefung, speicherSeiten: Math.floor(grenzen.speicherMB * 1048576 / SEITE), eingang: a.eingang, signal, port: kanal.port2, warten: grenzen.sekunden * 1000 };
+  const daten: ArbeiterDaten = { modul: g.modul, pruefung: g.pruefung, speicherSeiten: Math.floor(grenzen.speicherMB * MB / SEITE), eingang: a.eingang, signal, port: kanal.port2, warten: grenzen.sekunden * 1000 };
   const url = new URL(import.meta.url.endsWith('.ts') ? './arbeiter.ts' : './arbeiter.mjs', import.meta.url);
   // Worker-Heap klein (die Daten liegen im WebAssembly-Speicher), Stapel groß (Tesseract rekursiert tief).
   let w: Worker;
@@ -225,7 +225,7 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
     if (m.art === 'log') { sende({ art: 'log', paket: a.paket, stufe: m.stufe, text: m.text }); return; }
     if (m.art === 'teil') { if (!fertig) sende({ art: 'teil', nr: a.nr, paket: a.paket, text: m.text }); return; }
     // Fehlercode mit Text in ergebnis (#444): Der Text ist die Meldung (z. B. „KI-Dienst nicht erreichbar“).
-    if (m.art === 'ende') { schluss({ ok: !m.fehler && m.rc === 0, rc: m.rc, text: m.ergebnis, speicherMB: Math.round(m.speicher / 1048576), fehler: m.fehler ?? (m.rc === 0 ? null : m.ergebnis.trim() ? m.ergebnis.trim().slice(0, 500) : t('meldungen.prozess.das-paket-meldet-fehler', { rc: String(m.rc) })) }); return; }
+    if (m.art === 'ende') { schluss({ ok: !m.fehler && m.rc === 0, rc: m.rc, text: m.ergebnis, speicherMB: Math.round(m.speicher / MB), fehler: m.fehler ?? (m.rc === 0 ? null : m.ergebnis.trim() ? m.ergebnis.trim().slice(0, 500) : t('meldungen.prozess.das-paket-meldet-fehler', { rc: String(m.rc) })) }); return; }
     const q = m.anfrage;
     if (q.art === 'netz') {
       // Eine neue Anfrage schließt eine noch offene Antwort.

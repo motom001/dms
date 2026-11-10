@@ -36,6 +36,7 @@ import { Fachfehler } from './fehler';
 import { hashe, speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
+import { KB } from './grenzen';
 
 const log = protokoll.modul('dokumente');
 
@@ -99,7 +100,7 @@ async function mitDatei<T>(pdf: Buffer, f: (ein: string, dir: string) => Promise
  * verschlüsseltes PDF muss das Wort im Trailer bzw. im Querverweis-Strom tragen, und der ist nie gepackt.
  */
 export async function schutzVon(pdf: Buffer): Promise<PdfSchutzArt | null> {
-  if (pdf.subarray(0, 1024).indexOf('%PDF-') < 0 || pdf.indexOf(ENCRYPT) < 0) return null;
+  if (pdf.subarray(0, KB).indexOf('%PDF-') < 0 || pdf.indexOf(ENCRYPT) < 0) return null;
   // qpdf --requires-password: 0 = Passwort nötig, 3 = verschlüsselt ohne Passwort zum Öffnen, 2 = nicht verschlüsselt.
   const r = await mitDatei(pdf, (ein) => qpdf(['--requires-password', ein], null, 30_000));
   return r.code === 0 ? 'passwort' : r.code === 3 ? 'rechte' : null;

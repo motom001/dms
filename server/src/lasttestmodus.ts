@@ -12,6 +12,7 @@ import { protokoll } from './protokoll';
 import type { ProxyVertrauen } from './proxy';
 import type { Speicherart } from './speicherart';
 import { standKennung } from './system';
+import { MODUS_KOERPER_MAX } from './grenzen';
 
 /**
  * Lasttest-Modus (#612): Mit DMS_LASTTEST=klein|mittel|gross|extrem|alle startet das DMS wie immer, aber nur intern
@@ -285,7 +286,7 @@ export class Lasttestmodus {
   }
 
   private async oeffneSeite(): Promise<void> {
-    const app = Fastify({ trustProxy: this.o.proxy ?? false, bodyLimit: 16 * 1024 });
+    const app = Fastify({ trustProxy: this.o.proxy ?? false, bodyLimit: MODUS_KOERPER_MAX });
     this.app = app;
     app.setErrorHandler((e: unknown, _req, reply) => {
       if (e instanceof Fachfehler) return reply.code(e.status).send({ fehler: e.message });

@@ -6,6 +6,7 @@ import { Fachfehler } from './fehler';
 import type { SeitenWahl } from './pdf';
 import { t } from './sprache';
 import { anteilVon } from './zwischenspeicher';
+import { AUSGABE_MITTEL } from './grenzen';
 
 /**
  * PDF bearbeiten (#335): Seiten drehen, löschen, umsortieren, teilen, zusammenfügen – im Server, ohne
@@ -81,7 +82,7 @@ export class Seitenbilder {
 
 function starte(cmd: string, args: string[], ms: number): Promise<void> {
   return new Promise((ok, fehler) => {
-    execFile(cmd, args, { timeout: ms, maxBuffer: 16 * 1024 * 1024 }, (e, _out, err) => {
+    execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_MITTEL }, (e, _out, err) => {
       if (!e) { ok(); return; }
       const f = e as NodeJS.ErrnoException & { killed?: boolean };
       fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange.` : String(err || f.message).trim().split('\n').slice(-2).join(' ')));

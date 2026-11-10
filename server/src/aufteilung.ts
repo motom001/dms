@@ -35,6 +35,7 @@ import type { Tresor } from './tresor';
 import type { Ueberlastschutz } from './ueberlast';
 import type { Vorschaubilder } from './vorschau';
 import type { Wiederherstellung, Wiederherstellungslauf } from './wiederherstellung';
+import { MB } from './grenzen';
 
 const log = protokoll.modul('system');
 
@@ -105,7 +106,7 @@ export function prozessstand(o: Pick<TeilungsDeps, 'messung' | 'ueberlast' | 've
   const w = s.aktuell && (s.aktuell.seitSekunden >= 5 || !s.vorher) ? s.aktuell : s.vorher ?? s.aktuell;
   const v = o.verbindungen.stand();
   return {
-    rssMb: Math.round(m.rss / 1024 ** 2), heapMb: Math.round(m.heapUsed / 1024 ** 2), cpu: cpuJetzt(),
+    rssMb: Math.round(m.rss / MB), heapMb: Math.round(m.heapUsed / MB), cpu: cpuJetzt(),
     schleife: w ? { median: w.median, p99: w.p99, max: w.max } : null, schleifeWarnung: s.warnungSeit,
     anfragen: o.ueberlast.stand(), verbindungen: { max: v.max, median: v.median, p95: v.p95 },
   };

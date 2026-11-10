@@ -27,6 +27,7 @@ import { hatSchnittstelle, type InstalliertesPaket } from '../../shared/src/pake
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
+import { AUSGABE_KLEIN, MB } from './grenzen';
 
 const log = protokoll.modul('umwandlung');
 
@@ -172,7 +173,7 @@ async function pdfSeiten(inhalt: Buffer): Promise<number | null> {
   try {
     await writeFile(join(dir, 'f.pdf'), inhalt);
     return await new Promise<number | null>((ok, fehler) => {
-      execFile('pdfinfo', [join(dir, 'f.pdf')], { timeout: 30_000, maxBuffer: 1 << 20 }, (e, out, err) => {
+      execFile('pdfinfo', [join(dir, 'f.pdf')], { timeout: 30_000, maxBuffer: AUSGABE_KLEIN }, (e, out, err) => {
         if (e && (e as NodeJS.ErrnoException).code === 'ENOENT') { ok(null); return; }
         const n = Number(/^Pages:\s+(\d+)/m.exec(String(out))?.[1]);
         if (e || !n) { fehler(new Fachfehler(422, t('pakete.fassung.pdf', { grund: String(err || (e as Error | null)?.message || '').trim().split('\n')[0].slice(0, 200) }))); return; }
@@ -185,7 +186,7 @@ async function pdfSeiten(inhalt: Buffer): Promise<number | null> {
 /** Fassung prüfen: Typ am Inhalt, Größe, Bildpunkte bzw. Seiten. Liefert den Typ und ggf. die Seitenzahl. */
 export async function pruefeFassung(inhalt: unknown): Promise<{ mime: string; seiten: number | null }> {
   if (!Buffer.isBuffer(inhalt) || !inhalt.length) throw new Fachfehler(422, t('pakete.fassung.leer'));
-  if (inhalt.length > FASSUNG_MAX_BYTES) throw new Fachfehler(413, t('pakete.fassung.gross', { mb: FASSUNG_MAX_BYTES / 1048576 }));
+  if (inhalt.length > FASSUNG_MAX_BYTES) throw new Fachfehler(413, t('pakete.fassung.gross', { mb: FASSUNG_MAX_BYTES / MB }));
   const mime = fassungsTyp(inhalt);
   if (!mime) throw new Fachfehler(415, t('pakete.fassung.typ'));
   if (mime !== 'application/pdf') {
@@ -316,7 +317,7 @@ export class Dateiumwandlung {
     await this.zustaendig(paket, d);
     Dateiumwandlung.pruefeStand(d, sha);
     if (!Buffer.isBuffer(inhalt) || !inhalt.length) throw new Fachfehler(422, t('pakete.fassung.leer'));
-    if (inhalt.length > VORSCHAUBILD_MAX_BYTES) throw new Fachfehler(413, t('pakete.vorschaubild.gross', { mb: VORSCHAUBILD_MAX_BYTES / 1048576 }));
+    if (inhalt.length > VORSCHAUBILD_MAX_BYTES) throw new Fachfehler(413, t('pakete.vorschaubild.gross', { mb: VORSCHAUBILD_MAX_BYTES / MB }));
     const mime = fassungsTyp(inhalt);
     if (mime !== 'image/png' && mime !== 'image/jpeg') throw new Fachfehler(415, t('pakete.vorschaubild.typ'));
     const g = bildGroesse(inhalt, mime);

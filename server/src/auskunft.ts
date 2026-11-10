@@ -31,6 +31,7 @@ import { ZIP_MAX, zipGroesse, zipStrom, type ZipEintrag } from './zip';
 import { zeitzone } from '../../shared/src/region';
 import { mitSprache, t } from './sprache';
 import { gebietsschema, sprache } from '../../shared/src/sprache';
+import { KB, MB } from './grenzen';
 
 export interface AuskunftDaten {
   start: { id: string; titel: string; typ: string };
@@ -176,7 +177,7 @@ function uebersichtHtmlRoh(d: AuskunftDaten, x: { jetzt: Date; dokumente: Array<
   const doks = new Map<string, typeof x.dokumente>();
   for (const dk of x.dokumente) doks.set(dk.mappeId, [...doks.get(dk.mappeId) ?? [], dk]);
   const link = (p: string) => p.split('/').map(encodeURIComponent).join('/');
-  const kb = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024)).toLocaleString(gebietsschema())} KB` : `${(b / 1024 / 1024).toLocaleString(gebietsschema(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`);
+  const kb = (b: number) => (b < MB ? `${Math.max(1, Math.round(b / KB)).toLocaleString(gebietsschema())} KB` : `${(b / MB).toLocaleString(gebietsschema(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`);
   const abschnitte = d.typen.map((mappentyp) => {
     const ms = d.mappen.filter((m) => m.typId === mappentyp.id);
     return `<h2>${esc(mappentyp.name)} <small>(${ms.length})</small></h2>\n${ms.map((m) => {

@@ -18,6 +18,7 @@ import { liesBbox, popplerDrehungen } from './schwaerzen';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
 import { t } from '../sprache';
+import { AUSGABE_ARCHIV } from '../grenzen';
 
 /** Was der Kern an einem PDF findet – Bewertung und Meldungen macht archivfassung.ts. */
 export interface PdfaBefund {
@@ -111,7 +112,7 @@ export async function liesPdfA(inhalt: Uint8Array): Promise<PdfaBefund> {
 
 function starte(befehl: string, args: string[]): Promise<string> {
   return new Promise((ok, fehler) => {
-    execFile(befehl, args, { timeout: 5 * 60_000, maxBuffer: 256 << 20 }, (e, aus, err) => {
+    execFile(befehl, args, { timeout: 5 * 60_000, maxBuffer: AUSGABE_ARCHIV }, (e, aus, err) => {
       if (!e) return ok(String(aus));
       const x = new Error(String(err).trim().slice(0, 300) || e.message) as NodeJS.ErrnoException;
       x.code = (e as NodeJS.ErrnoException).code;
