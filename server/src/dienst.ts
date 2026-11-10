@@ -100,6 +100,9 @@ import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugriff } from './kern';
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
+import * as E from './pakete/pakete.einstellungen';
+import type { PaketQuelleEintrag } from './pakete/pakete.einstellungen';
+export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/pakete.einstellungen';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
 function inReihenfolge<T extends { id: string }>(liste: T[], ids: string[]): T[] {
@@ -118,12 +121,8 @@ export interface DokumentImKorb extends DokumentImPapierkorb { art: 'dokument'; 
 /** Aufgelöste Post im Papierkorb (#936): in welche Mappe; `da` = die Mappe gibt es noch. */
 export interface AufgeloestIn { id: string; typId: string; titel: string; da: boolean }
 /** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
-/** Bestätigter bzw. neuer (gesperrter) Schlüssel eines eigenen Katalogs (#594). */
 /** Antwort eines Pakets auf einen Aufruf eines Ereignisses (#636). rc: Rückgabewert des Pakets; beginn: Start des Aufrufs (ms). */
 export interface EreignisAufruf { ok: boolean; text: string; fehler: string | null; rc: number | null; beginn: number }
-export interface KatalogSchluessel { pem: string; fingerabdruck: string; von: string | null; am: string }
-/** Eine weitere Katalogquelle (#189) mit Schlüssel des Anbieters (#594). */
-export interface PaketQuelleEintrag { url: string; aktiv: boolean; von: string | null; am: string; schluessel?: KatalogSchluessel | null; gesperrt?: KatalogSchluessel | null }
 export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
 /** Zähler-Endpunkt (#625): nur Zahlen, keine Inhalte. */
 export interface Zaehlerzahlen { neuePost: number; zuErledigen: number; ueberfaellig: number }
@@ -4767,77 +4766,21 @@ export class Dienst {
   speicherePaket(p: InstalliertesPaket) { return this.repo.speicherePaket(p); }
   loeschePaket(id: string) { return this.repo.loeschePaket(id); }
 
-  /**
-   * Weitere Katalogadressen (#189), global; der offizielle Katalog steht nicht darin. Mit bestätigtem
-   * Schlüssel des Anbieters bzw. Sperre nach einem Schlüsselwechsel (#594).
-   */
-  async paketQuellen(): Promise<PaketQuelleEintrag[]> {
-    const v = await this.einstellungen?.lies('paket_kataloge');
-    const schluessel = (x: unknown) => (x && typeof x === 'object' && typeof (x as { fingerabdruck?: unknown }).fingerabdruck === 'string' ? x as never : null);
-    return Array.isArray(v) ? v.filter((q) => q && typeof q.url === 'string').map((q) => ({
-      url: q.url, aktiv: q.aktiv !== false, von: q.von ?? null, am: String(q.am ?? ''),
-      schluessel: schluessel(q.schluessel), gesperrt: schluessel(q.gesperrt),
-    })) : [];
-  }
-  async setzePaketQuellen(liste: PaketQuelleEintrag[]) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe('paket_kataloge', liste.length ? liste : null);
-  }
-  /** Neuester gesehener Stand (`erstellt`) je signiertem Katalog (#594) – gegen das Zurückdrehen auf ältere Kataloge. */
-  async paketKatalogStaende(): Promise<Record<string, string>> {
-    const v = await this.einstellungen?.lies('paket_katalog_staende');
-    return v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).filter(([, x]) => typeof x === 'string')) as Record<string, string> : {};
-  }
-  async setzePaketKatalogStand(url: string, stand: string) {
-    if (!this.einstellungen) return;
-    await this.einstellungen.schreibe('paket_katalog_staende', { ...(await this.paketKatalogStaende()), [url]: stand });
-  }
-
-  /** Umwandlungen Text → Verweis nach Paket-Updates (#534): die letzten Vorgänge zum Rückgängigmachen (Einstellung, Teil der Sicherung). */
-  async paketUmwandlungen(): Promise<unknown[]> {
-    const v = await this.einstellungen?.lies('paket_umwandlungen');
-    return Array.isArray(v) ? v : [];
-  }
-  async setzePaketUmwandlungen(liste: unknown[]) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe('paket_umwandlungen', liste.length ? liste : null);
-  }
-
-  /** Selbst erstellte Pakete (#374): Angaben des letzten Exports je Paket-Id (Einstellung, Teil der Sicherung). */
-  async paketEntwuerfe(): Promise<PaketEntwurf[]> {
-    const v = await this.einstellungen?.lies('paket_entwuerfe');
-    return Array.isArray(v) ? v.filter((e) => e && typeof e.id === 'string' && typeof e.version === 'string').map((e) => ({ typen: [], sichten: [], beispiele: [], schluessel: {}, verlauf: [], aenderungen: '', ...e })) : [];
-  }
-  async setzePaketEntwuerfe(liste: PaketEntwurf[]) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe('paket_entwuerfe', liste.length ? liste : null);
-  }
-
-  /** Gemerkte Archive selbst erstellter Pakete (#652): je Paket-Id eine Einstellung (Teil der Sicherung). */
-  async paketArchive(id: string): Promise<unknown> { return (await this.einstellungen?.lies(`paket_erstellt_${id}`)) ?? null; }
-  async setzePaketArchive(id: string, liste: unknown[] | null) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe(`paket_erstellt_${id}`, liste?.length ? liste : null);
-  }
-
-  /** Paket-Einstellungen (#197): je Paket getrennt in den Einstellungen (Teil der Sicherung, Schlüsselwechsel inklusive). */
-  async paketEinstellungen(id: string): Promise<{ werte: Record<string, unknown>; status?: { letzterLauf: string | null; meldungen: string[] } } | null> {
-    const v = await this.einstellungen?.lies(`paket:${id}`);
-    return v && typeof v === 'object' ? v as { werte: Record<string, unknown> } : null;
-  }
-  async setzePaketEinstellungen(id: string, v: { werte: Record<string, unknown>; status?: { letzterLauf: string | null; meldungen: string[] } } | null) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe(`paket:${id}`, v);
-  }
-  /** Kleiner eigener Speicher eines Pakets mit Code (#338), getrennt von den Einstellungen. */
-  async paketSpeicher(id: string): Promise<Record<string, string>> {
-    const v = await this.einstellungen?.lies(`paketspeicher:${id}`);
-    return v && typeof v === 'object' ? v as Record<string, string> : {};
-  }
-  async setzePaketSpeicher(id: string, werte: Record<string, string> | null) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe(`paketspeicher:${id}`, werte);
-  }
+  /** Ablage der Pakete in den Einstellungen (pakete/pakete.einstellungen.ts). */
+  paketQuellen(): Promise<PaketQuelleEintrag[]> { return E.paketQuellen(this.kern); }
+  setzePaketQuellen(liste: PaketQuelleEintrag[]) { return E.setzePaketQuellen(this.kern, liste); }
+  paketKatalogStaende(): Promise<Record<string, string>> { return E.paketKatalogStaende(this.kern); }
+  setzePaketKatalogStand(url: string, stand: string) { return E.setzePaketKatalogStand(this.kern, url, stand); }
+  paketUmwandlungen(): Promise<unknown[]> { return E.paketUmwandlungen(this.kern); }
+  setzePaketUmwandlungen(liste: unknown[]) { return E.setzePaketUmwandlungen(this.kern, liste); }
+  paketEntwuerfe(): Promise<PaketEntwurf[]> { return E.paketEntwuerfe(this.kern); }
+  setzePaketEntwuerfe(liste: PaketEntwurf[]) { return E.setzePaketEntwuerfe(this.kern, liste); }
+  paketArchive(id: string): Promise<unknown> { return E.paketArchive(this.kern, id); }
+  setzePaketArchive(id: string, liste: unknown[] | null) { return E.setzePaketArchive(this.kern, id, liste); }
+  paketEinstellungen(id: string) { return E.paketEinstellungen(this.kern, id); }
+  setzePaketEinstellungen(id: string, v: Parameters<typeof E.setzePaketEinstellungen>[2]) { return E.setzePaketEinstellungen(this.kern, id, v); }
+  paketSpeicher(id: string): Promise<Record<string, string>> { return E.paketSpeicher(this.kern, id); }
+  setzePaketSpeicher(id: string, werte: Record<string, string> | null) { return E.setzePaketSpeicher(this.kern, id, werte); }
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
   verschluesselePaketGeheimnis(text: string): string {
     if (!this.tresor?.bereit) throw new Fachfehler(409, t('meldungen.dienst.fuer-geheimnisse-fehlt-der'));
