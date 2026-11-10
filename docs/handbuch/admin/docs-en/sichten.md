@@ -56,7 +56,8 @@ Conditions apply to the view's own folder types, and **all together** (AND). Bel
 | --- | --- |
 | Text | is equal to (ignoring case), contains, is empty, is not empty |
 | Long text, formatted text | contains, is empty, is not empty |
-| Number, amount | is equal to, less than, greater than, between, outside of, is empty, is not empty |
+| Number, amount, percentage | is equal to, less than, greater than, between, outside of, is empty, is not empty |
+| Period | like number; the value to compare is a number and unit (e.g. *greater than 2 months*), compared by length |
 | Date | like number, plus **in the period** (year or month) |
 | Yes/No | yes, no (empty counts as no) |
 | Choice list | is one of, is empty, is not empty |

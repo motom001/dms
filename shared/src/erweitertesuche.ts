@@ -6,7 +6,7 @@
  *     &vertragspartner=<Id>&vertragspartner=<Id>&volltext=Backofen&in=dokumente&in=notizen
  *
  * - typ: Schlüssel (oder Name) eines Mappentyps, mehrfach; ohne = alle lesbaren Typen, nur Systemfelder
- * - feld.von / feld.bis: Datum, Zahl, Betrag (eins darf fehlen)
+ * - feld.von / feld.bis: Datum, Zahl, Betrag, Prozent, Zeitraum („3 Monate“ oder P3M; eins darf fehlen)
  * - feld=wert: mehrfach bei Verweisen und Auswahllisten (= ist einer von); Ja/Nein: ja oder nein; Text: enthält
  * - feld.leer=1 bzw. feld.nichtleer=1
  * - volltext=…, in=dokumente / in=notizen (ohne „in“: beide)
@@ -18,6 +18,7 @@ import type { Mappentyp } from './model';
 import { bedingungsfelder, bedingungsProblem, OPERATOREN_JE_ART, verschiebe, type Bedingung, type Bedingungsfeld } from './sichten';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
+import { leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumIso, zeitraumTage, zeitraumText } from './feldarten';
 
 export const SUCHE_PFAD = '/ablage/suche';
 /** Parameter mit fester Bedeutung; gleichnamige Felder erreicht man mit „feld.wert“. */
@@ -42,11 +43,13 @@ export interface Suchformular {
 export const leeresFormular = (): Suchformular => ({ typen: [], felder: {}, volltext: '', inDokumenten: true, inNotizen: true });
 
 /** Welche Eingabe ein Feld bekommt – ohne dass man einen Operator wählt. */
-export type Eingabeart = 'datum' | 'zahl' | 'verweis' | 'person' | 'auswahl' | 'janein' | 'text';
+export type Eingabeart = 'datum' | 'zahl' | 'zeitraum' | 'verweis' | 'person' | 'auswahl' | 'janein' | 'text';
 export function eingabeart(f: Bedingungsfeld): Eingabeart | null {
   switch (f.art) {
     case 'datum': case 'zeit': return 'datum';
-    case 'zahl': case 'betrag': return 'zahl';
+    case 'zahl': case 'betrag': case 'prozent': return 'zahl';
+    // Zeitraum (#1035): von–bis als Text („1 Monat“ – „6 Monate“), verglichen in Tagen.
+    case 'zeitraum': return 'zeitraum';
     case 'referenz': return 'verweis';
     case 'person': return 'person';
     case 'auswahl': return 'auswahl';
@@ -209,10 +212,12 @@ export function abfrageAus(f: Suchformular, alleTypen: Mappentyp[]): Abfrage {
     if (e.leer) {
       if (!kannLeer(feld, e.leer)) { fehler.push(t('gemeinsam.erweitertesuche.kann-nicht-sein', { name, wert: e.leer === 'leer' ? t('gemeinsam.erweitertesuche.leer') : t('gemeinsam.erweitertesuche.nicht-leer') })); continue; }
       b = { art: 'feld', feld: key, op: e.leer };
+    } else if (art === 'zeitraum') {
+      b = zeitraumBedingung(key, feld.label, e, fehler); if (!b) continue;
     } else if (art === 'datum' || art === 'zahl') {
       const lies = (s: string | undefined) => {
         if (!s?.trim()) return undefined;
-        const v = art === 'datum' ? datumAus(s) : zahlAus(s);
+        const v = art === 'datum' ? datumAus(s) : feld.art === 'prozent' ? prozentAus(s) : zahlAus(s);
         if (v === null) fehler.push(t('gemeinsam.erweitertesuche.ist-fuer', { s: s.trim(), wert: art === 'datum' ? t('gemeinsam.erweitertesuche.kein-datum') : t('gemeinsam.erweitertesuche.keine-zahl'), name }));
         return v;
       };
@@ -248,6 +253,26 @@ export function abfrageAus(f: Suchformular, alleTypen: Mappentyp[]): Abfrage {
   return { typen, bedingungen, volltext, entfallen, fehler };
 }
 
+/** Prozent (#1035) wie eine Zahl, „7 %“ geht auch; null = keine Zahl. */
+function prozentAus(s: string): number | null {
+  const n = leseProzent(s);
+  return n === null || Number.isNaN(n) ? null : n;
+}
+
+/** Zeitraum von–bis (#1035) als „zwischen“ mit P3M-Werten; offene Grenze 0 Tage bzw. 9999 Jahre. null = gilt nicht. */
+function zeitraumBedingung(key: string, label: string, e: Feldeingabe, fehler: string[]): Bedingung | null {
+  const lies = (s: string | undefined) => {
+    if (!s?.trim()) return undefined;
+    const z = leseZeitraum(s);
+    if (!z) fehler.push(t('gemeinsam.feldarten.bedingung-zeitraum', { label }));
+    return z ?? null;
+  };
+  const von = lies(e.von), bis = lies(e.bis);
+  if (von === null || bis === null || (von === undefined && bis === undefined)) return null;
+  if (von && bis && zeitraumTage(von) > zeitraumTage(bis)) { fehler.push(t('gemeinsam.erweitertesuche.bei-liegt-von-nach', { name: `„${label}“` })); return null; }
+  return { art: 'feld', feld: key, op: 'zwischen', wert: { art: 'fest', wert: von ? zeitraumIso(von) : 'P0D' }, bis: { art: 'fest', wert: bis ? zeitraumIso(bis) : `P${ZEITRAUM_ANZAHL_MAX}Y` } };
+}
+
 /* ---------- Chips über der Trefferliste ---------- */
 
 const zahlText = (s: string, betrag: boolean) => {
@@ -270,8 +295,9 @@ export function chipsVon(f: Suchformular, alleTypen: Mappentyp[], titelVon: (id:
     const art = eingabeart(feld);
     let text: string;
     if (e.leer) text = `${feld.label} ${e.leer === 'leer' ? t('gemeinsam.erweitertesuche.ist-leer') : t('gemeinsam.erweitertesuche.ist-nicht-leer')}`;
-    else if (art === 'datum' || art === 'zahl') {
-      const z = (s: string) => (art === 'datum' ? datumText(s) : zahlText(s, feld.art === 'betrag'));
+    else if (art === 'datum' || art === 'zahl' || art === 'zeitraum') {
+      const z = (s: string) => (art === 'datum' ? datumText(s) : art === 'zeitraum' ? (() => { const x = leseZeitraum(s); return x ? zeitraumText(x) : s; })()
+        : feld.art === 'prozent' ? (() => { const n = leseProzent(s); return n === null || Number.isNaN(n) ? s : prozentText(n); })() : zahlText(s, feld.art === 'betrag'));
       const von = e.von?.trim(), bis = e.bis?.trim();
       text = `${feld.label} ${von && bis ? `${z(von)}–${z(bis)}` : von ? `ab ${z(von)}` : `bis ${z(bis!)}`}`;
     } else {

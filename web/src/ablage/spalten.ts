@@ -3,6 +3,7 @@ import { altesTextfeldVon, formatiere, istLeer, istSystemspalte, SYSTEMSPALTEN, 
 import type { Bezuege } from '../api';
 import { titelOder } from '../seiten';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { mitMinus, rechtsbuendig } from '../../../shared/src/feldarten';
 
 /** Spalten von Trefferlisten: Überschrift und Zelleninhalt (Ablage und Verknüpfungsregister). */
 export function spaltenName(k: string, typ?: Mappentyp): string {
@@ -26,6 +27,8 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
   const alt = typ && f ? altesTextfeldVon(typ, f) : undefined;
   if (alt && istLeer(m.werte[k]) && !istLeer(m.werte[alt.key])) return formatiere(alt, m.werte[alt.key]);
   const text = f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
+  // Zahlen, Beträge, Prozent (#1035): ein negatives mit echtem Minuszeichen – deutlich, nicht nur über die Farbe.
+  if (rechtsbuendig(f?.typ)) return mitMinus(text);
   // Formatierter Text (#53) in Listen: ohne Formatierung, gekürzt.
   return f?.typ === 'formatiert' && text.length > 140 ? `${text.slice(0, 137).trimEnd()} …` : text;
 }

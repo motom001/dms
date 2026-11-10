@@ -4,7 +4,8 @@ import { alsText } from '../../shared/src/markdown';
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallEnde, type FallOhneLeserecht, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
-import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
+import { istZahlvergleich, type Filter, type Klausel, type Sicht, type SichtDaten } from '../../shared/src/sichten';
+import { TAGE_JE_EINHEIT } from '../../shared/src/feldarten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
 import { fristMonat, type Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
@@ -255,6 +256,15 @@ const alsSicht = (r: Zeile): Sicht => ({
 
 type Teil = postgres.PendingQuery<postgres.Row[]> | postgres.Fragment;
 
+/**
+ * Länge eines Zeitraums in Tagen (#1035) wie `zeitraumTage` in shared/src/feldarten.ts: Monat 30,4375, Jahr 365,25
+ * Tage. Ohne Zahl oder mit unbekannter Einheit NULL.
+ */
+function zeitraumTageSql(sql: Sql, werte: Teil, k: string) {
+  const t = TAGE_JE_EINHEIT;
+  return sql`(CASE WHEN jsonb_typeof(${werte} -> ${k}::text -> 'anzahl') = 'number' THEN (${werte} -> ${k}::text ->> 'anzahl')::numeric * (CASE ${werte} -> ${k}::text ->> 'einheit' WHEN 'tage' THEN ${t.tage}::numeric WHEN 'wochen' THEN ${t.wochen}::numeric WHEN 'monate' THEN ${t.monate}::numeric WHEN 'jahre' THEN ${t.jahre}::numeric END) END)`;
+}
+
 /** Wert eines Feldes als vergleichbarer SQL-Ausdruck; ungültige Werte werden NULL. */
 function ausdruck(sql: Sql, f: Extract<Filter, { art: 'feld' }>) {
   const k = f.key;
@@ -267,6 +277,8 @@ function ausdruck(sql: Sql, f: Extract<Filter, { art: 'feld' }>) {
   switch (f.feldart) {
     case 'zahl': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
     case 'betrag': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text -> 'betrag') = 'number' THEN (mappen.werte -> ${k}::text ->> 'betrag')::numeric END)`;
+    case 'prozent': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
+    case 'zeitraum': return zeitraumTageSql(sql, sql`mappen.werte`, k);
     case 'datum': return sql`(CASE WHEN mappen.werte ->> ${k}::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN (mappen.werte ->> ${k}::text)::date END)`;
     default: return sql`nullif(mappen.werte ->> ${k}::text, '')`;
   }
@@ -275,7 +287,7 @@ function ausdruck(sql: Sql, f: Extract<Filter, { art: 'feld' }>) {
 function feldBedingung(sql: Sql, f: Extract<Filter, { art: 'feld' }>): Teil {
   const k = f.key;
   const x = ausdruck(sql, f);
-  const zahl = f.feldart === 'zahl' || f.feldart === 'betrag';
+  const zahl = istZahlvergleich(f.feldart);
   const datum = f.feldart === 'datum' || f.feldart === 'zeit';
   const wert = (v: unknown) => (zahl ? sql`${Number(v)}::numeric` : datum ? sql`${String(v)}::date` : sql`${String(v ?? '')}`);
   const liste = (v: unknown) => (Array.isArray(v) ? v.map(String) : v == null ? [] : [String(v)]);
@@ -673,8 +685,11 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       : so.art === 'erstelltVon' ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.erstellt_von)`
       : so.art === 'geaendertVon' ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.geaendert_von)`
       : so.art === 'typ' ? sql`(SELECT lower(t.name) FROM mappentypen t WHERE t.id = mappen.typ_id)`
-      : so.art === 'zahl' || so.art === 'janein' ? sql`(werte -> ${k}::text)`
+      // Zahl und Prozent (#1035) als Zahl: Ein gespeichertes null (JSON) stünde sonst vor allen Zahlen statt zuletzt.
+      : so.art === 'zahl' ? sql`(CASE WHEN jsonb_typeof(werte -> ${k}::text) = 'number' THEN (werte ->> ${k}::text)::numeric END)`
+      : so.art === 'janein' ? sql`(werte -> ${k}::text)`
       : so.art === 'betrag' ? sql`((werte -> ${k}::text ->> 'betrag')::numeric)`
+      : so.art === 'zeitraum' ? zeitraumTageSql(sql, sql`werte`, k)
       : so.art === 'datum' ? sql`(werte ->> ${k}::text)`
       : sql`lower(werte ->> ${k}::text)`;
     // Leere Werte zuletzt. erstellt und geaendert sind nie leer (NOT NULL), ohne „NULLS LAST“ liest PostgreSQL ihren

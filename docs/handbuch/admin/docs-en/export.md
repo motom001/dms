@@ -72,7 +72,7 @@ dms-export-2026-10-31-14-05-00/
 ## Formats {#formate}
 
 - **Text** UTF-8; **CSV** according to RFC 4180 with comma and BOM (Excel recognises UTF-8); multiple values separated by ` | `.
-- **Date** `YYYY-MM-DD`, points in time ISO 8601 in UTC; **numbers** with a point; **amounts** as columns `<field>` and `<field>_waehrung`.
+- **Date** `YYYY-MM-DD`, points in time ISO 8601 in UTC; **numbers** with a point; **amounts** as columns `<field>` and `<field>_waehrung`; **periods** as ISO 8601 (`P3M` = 3 months; in JSON `{ "anzahl": 3, "einheit": "monate" }`); **percentages** as a number (`19` for 19%).
 - **Ids** as UUID; **links** twice: as id (`<field>`) and as title (`<field>_titel`).
 - **JSON Lines**: one folder or one entry per line, lossless.
 - **Documents in the original**, not converted; older versions under `Versionen/` (`v1 Rechnung.pdf`). If a package has [converted](texterkennung.md#andere-dateitypen) a file (e.g. a TIFF scan into a PDF), the version lies next to it as `<file>.fassung.pdf` (or `.png`, `.jpg`); `dokumente.csv` names it in the column `fassung` (since 0.140.1).

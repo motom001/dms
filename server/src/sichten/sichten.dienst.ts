@@ -35,7 +35,7 @@ export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappent
   if (SYSTEMSORTIERUNG[spalte]) return { art: SYSTEMSORTIERUNG[spalte], absteigend };
   const f = typ?.felder.find((x) => x.key === spalte);
   if (!f || !sortierbar(spalte, typ)) return undefined;
-  const art = f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'datum' || f.typ === 'janein' ? f.typ : 'text';
+  const art = f.typ === 'prozent' ? 'zahl' : f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'zeitraum' || f.typ === 'datum' || f.typ === 'janein' ? f.typ : 'text';
   return { art, key: f.key, absteigend };
 }
 

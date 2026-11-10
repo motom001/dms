@@ -56,7 +56,7 @@ Ein Feldwert, der in diesem Mappentyp nur einmal vorkommen darf, z. B. eine Rech
 Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).
 
 <a id="feld"></a>**Feld** · ~ mit Erklärung · alle  
-Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis oder Passwort.  
+Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis, Passwort, Zeitraum oder Prozent.  
 Siehe auch: [Feldart](#feldart), [Pflichtfeld](#pflichtfeld), [Standardwert](#standardwert).
 
 <a id="feldart"></a>**Feldart** · ~ mit Erklärung · Administratoren  
@@ -102,6 +102,10 @@ Siehe auch: [Benutzer](#benutzer), [Organisation](#organisation), [Niederlassung
 <a id="pflichtfeld"></a>**Pflichtfeld** · ✓ Alltagswort · alle  
 Ein Feld, das ausgefüllt sein muss, bevor die Mappe gespeichert werden kann.  
 Siehe auch: [Eindeutig](#eindeutig).
+
+<a id="prozent"></a>**Prozent** · ✓ Alltagswort · alle  
+Feldart für einen Prozentsatz, z. B. den Steuersatz „19 %“ – mit Nachkommastellen, frei wählbar (auch ausländische Sätze). „19“, „19 %“ und „19,0“ bedeuten dasselbe.  
+Siehe auch: [Feldart](#feldart).
 
 <a id="register"></a>**Register** · ~ mit Erklärung · alle  
 Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen und Historie sind feste Register jeder Mappe.
@@ -154,6 +158,10 @@ Siehe auch: [Verweis](#verweis).
 Der Arbeitsbereich der Administratoren. Hier werden Mappentypen, Ansichten, Benutzer und Einstellungen gepflegt und Ablago betrieben.  
 Siehe auch: [Ablage](#ablage), [Administrator](#administrator), [Werkbank anpassen](#werkbank-anpassen).
 
+<a id="zeitraum"></a>**Zeitraum** · ✓ Alltagswort · alle  
+Feldart für eine Dauer aus ganzer Zahl und Einheit – Tage, Wochen, Monate oder Jahre, z. B. die Kündigungsfrist „3 Monate“ oder die Laufzeit „1 Jahr“. Sortiert und verglichen wird nach der Länge. Nicht zu verwechseln mit „im Zeitraum“ bei Datumsbedingungen (Jahr, Monat).  
+Siehe auch: [Feldart](#feldart), [Frist](#frist).
+
 ## Arbeiten in der Ablage
 
 <a id="abwesenheit"></a>**Abwesenheit** · ✓ Alltagswort · alle  
@@ -189,6 +197,10 @@ Text mit Überschriften, Listen und Hervorhebungen (Markdown) – als Feldart un
 <a id="frist"></a>**Frist** · ✓ Alltagswort · alle  
 Eine Aufgabe, die aus einem Datumsfeld mit Vorlauf entsteht, z. B. „Kündigen bis …“.  
 Siehe auch: [Erinnerung](#erinnerung), [Zu erledigen](#zu-erledigen).
+
+<a id="gutschrift"></a>**Gutschrift** · ✓ Alltagswort · alle  
+Ein Betrag, den man zurückbekommt (auch Erstattung) – in Ablago ein Betrag mit Minus, z. B. „−25,00 €“. Das geht nur bei Betragsfeldern, an denen der Administrator „Negative Beträge erlauben“ angehakt hat; dort steht der Hinweis „Mit Minus eintragen“.  
+Siehe auch: [Feld](#feld).
 
 <a id="historie"></a>**Historie** · ✓ Alltagswort · alle  
 Die Geschichte einer Mappe – Änderungen vorher und nachher, Dokumente, Papierkorb, Notizen, Aufgaben. Das technische Betriebsprotokoll heißt dagegen „Protokoll“.
@@ -549,6 +561,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
 | Format | Validierung, Datentyp | `Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts` |
 | Gemeldete Fehler | Fehlermeldungen | – |
+| Gutschrift | – | `Feld.negativ` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
@@ -567,6 +580,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis_person` |
 | Post | Posteingang, Inbox | – |
 | Probelauf | Trockenlauf, trocken | `trocken` |
+| Prozent | – | `prozent, shared/src/feldarten.ts` |
 | Regel | – | `Regel` |
 | Region | Standort, Gebietsschema, Locale | `region` |
 | Register | Tab, Reiter | `Register` |
@@ -591,8 +605,9 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Woran man ihn erkennt | – | `Mappentyp.erkennbarAn` |
+| Zeitraum | Dauer (als Feldart), Periode, Intervall | `zeitraum, Zeitraum, shared/src/feldarten.ts` |
 | Zu erledigen | Eingang, Inbox, Posteingang, Anstehend | `eingang` |
 | Zum Wiederfinden nutzen | – | `Feld.wiederfinden` |
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 
-*Stand: 2026-11-08*
+*Stand: 2026-11-10*

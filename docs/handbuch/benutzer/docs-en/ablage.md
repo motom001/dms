@@ -111,7 +111,8 @@ This is how the form works:
 - **Folder types**: you choose them in the same way as several folders in a [link field](mappen.md#auf-andere-mappen-verweisen) – type, choose a suggestion (or **Enter** for the first one). The chosen folder types appear **below** the search field, each with **Remove**; the search field stays level with *Full text* next to it. Only folder types you may read are offered. If you choose none, Ablago searches all of them – then there are only the general fields (created on/by, changed on/by).
 - **Conditions**: at first there is no field. With **+ Condition** you choose a field; the fields that **all chosen folder types have in common** are offered. The cross on the right removes the condition again. Each field gets the matching input:
     - **Date**: from–to in one line; either may stay empty. Under **Period …** there are "this year", "last year", "last 12 months", "this month" and "last month".
-    - **Number, amount**: from–to.
+    - **Number, amount, percentage**: from–to.
+    - **Period**: from–to as text, e.g. "1 month" to "6 months"; compared by length.
     - **Link** (e.g. contract partner): several folders – the folder must point to **one of them**.
     - **Choice list**: several values – one of them must match.
     - **Yes/no**: yes, no or either.
@@ -158,7 +159,7 @@ In a view's list you select several folders to handle them in one step.
 
 **Export …** passes folders out of the view – the selection or, without a selection or if you wish, all hits (with your search and sorting):
 
-- **Excel (.xlsx)** – a table in which dates and amounts are real values: Excel can sort and calculate with them afterwards.
+- **Excel (.xlsx)** – a table in which dates, amounts and percentages are real values: Excel can sort and calculate with them afterwards. A period is written as text ("3 months").
 - **CSV** – the same table for any spreadsheet program, in German format (semicolon, date DD.MM.YYYY, amounts with a decimal comma).
 - **ZIP with documents** – the table as Excel and CSV and one folder per folder with its documents.
 - **PDF** – one page per folder with its fields and the list of documents, optionally with an overview table at the front. PDF documents are then included, images (JPEG, PNG) as a separate page; other files are only named.

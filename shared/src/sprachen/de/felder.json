@@ -67,5 +67,6 @@
   "verweis.unpassend.titel": "Bleibt gültig; neu wählen lässt sich nur, was zur Auswahl passt.",
   "verweis.aendern": "Ändern",
   "verweis.entfernen": "Verweis „{titel}“ entfernen",
-  "verweis.entfernen.ohne": "Verweis entfernen"
+  "verweis.entfernen.ohne": "Verweis entfernen",
+  "eingabe.betrag-negativ": "Gutschrift oder Erstattung? Mit Minus eintragen."
 }

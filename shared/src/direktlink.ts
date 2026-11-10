@@ -15,6 +15,7 @@ import { optionText, wertZuOption } from './beschriftung';
 import { istIndexplatzhalter, sortierbar, istSystemspalte, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from './model';
 import { bedingungsfelder, bedingungsProblem, beschreibeBedingung, OPERATOREN, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld, type Einheit, type Operator, type WertAngabe } from './sichten';
 import { t } from './texte';
+import { istZeitraum, leseProzent, leseZeitraum, zeitraumIso } from './feldarten';
 
 export const LINK_PFAD = '/ablage/link';
 /** Parameter mit fester Bedeutung; gleichnamige Felder erreicht man mit „feld.operator“. */
@@ -90,6 +91,15 @@ function wertAus(f: Bedingungsfeld, op: Operator, roh: string): WertAngabe | str
     case 'zahl': case 'betrag': {
       const n = zahl(s);
       return n === null ? t('gemeinsam.direktlink.ist-keine-zahl-fuer', { s, name }) : { art: 'fest', wert: n };
+    }
+    // Prozent und Zeitraum (#1035): „19“ oder „19 %“; „P3M“ oder „3 Monate“ (gespeichert als P3M).
+    case 'prozent': {
+      const n = leseProzent(s);
+      return n === null || Number.isNaN(n) ? t('gemeinsam.direktlink.ist-keine-zahl-fuer', { s, name }) : { art: 'fest', wert: n };
+    }
+    case 'zeitraum': {
+      const z = leseZeitraum(s);
+      return z ? { art: 'fest', wert: zeitraumIso(z) } : t('gemeinsam.feldarten.bedingung-zeitraum', { label: f.label });
     }
     case 'auswahl': {
       const optionen = f.feld?.optionen ?? [];
@@ -212,7 +222,8 @@ function linkwert(typ: Mappentyp, key: string, m: Mappe): { name: string; wert: 
   const reserviert = (LINK_PARAMETER as readonly string[]).includes(key);
   switch (f.typ) {
     case 'text': return { name: reserviert ? `${key}.gleich` : key, wert: String(v) };
-    case 'zahl': return typeof v === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(v) } : null;
+    case 'zahl': case 'prozent': return typeof v === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(v) } : null;
+    case 'zeitraum': return istZeitraum(v) ? { name: reserviert ? `${key}.gleich` : key, wert: zeitraumIso(v) } : null;
     case 'betrag': {
       const b = v as { betrag?: unknown };
       return typeof b?.betrag === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(b.betrag) } : null;

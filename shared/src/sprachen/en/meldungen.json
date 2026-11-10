@@ -1709,5 +1709,6 @@
   "verwaltung.netz-aufruf": "Network: {anzahl} × {methode} {host} – {status}, {hin} sent, {zurueck} received",
   "verwaltung.netz-abgelehnt": "Network blocked: {anzahl} × {methode} {host} – the address is not allowed",
   "verwaltung.netz-ohne-antwort": "no response",
-  "prozess.ungueltige-methode": "Invalid method – only capital letters are allowed, e.g. GET or POST."
+  "prozess.ungueltige-methode": "Invalid method – only capital letters are allowed, e.g. GET or POST.",
+  "paketerstellung.feldarten": "Field types period and percentage, negative amounts"
 }

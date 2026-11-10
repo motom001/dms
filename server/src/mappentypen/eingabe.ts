@@ -14,6 +14,7 @@ import { bereinigeAuswahlfilter } from '../../../shared/src/sichten';
 import { bereinigeFrist } from '../../../shared/src/fristen';
 import { JAHRE_MAX } from '../../../shared/src/archiv';
 import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennung';
+import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -59,7 +60,7 @@ export function bereinigeFeld(e: unknown): Feld {
     pflicht: !!f.pflicht,
     eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl'),
     hilfe: ausgangAus(f.beschriftungen, 'hilfe', text(f.hilfe)),
-    standard: std == null || std === '' || typ === 'passwort' ? null : typeof std === 'boolean' ? std : String(std),
+    standard: std == null || std === '' || typ === 'passwort' ? null : typeof std === 'boolean' ? std : standardText(typ, std),
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
@@ -68,6 +69,8 @@ export function bereinigeFeld(e: unknown): Feld {
     max: typ === 'datum' ? datumsgrenze(f.max) : zahlOderNull(f.max),
     nachkomma: zahlOderNull(f.nachkomma),
     waehrung: typ === 'betrag' ? (text(f.waehrung) || 'EUR').toUpperCase().slice(0, 3) : undefined,
+    // Negative Beträge (#1035): nur gespeichert, wenn an; Vorgabe wie bisher ≥ 0.
+    ...(typ === 'betrag' && f.negativ === true ? { negativ: true } : {}),
     optionen,
     mehrfach: !!f.mehrfach && (typ === 'auswahl' || typ === 'referenz'),
     zielTyp: typ === 'referenz' ? text(f.zielTyp) : '',
@@ -92,6 +95,16 @@ export function bereinigeFeld(e: unknown): Feld {
     // Ausgeblendet (#655): nur gespeichert, wenn an; Pflicht hebt festigeDarstellung auf.
     ...(f.ausgeblendet === true ? { ausgeblendet: true } : {}),
   };
+}
+
+/**
+ * Standardwert als Text (#1035): Zeitraum in der kurzen Schreibweise (`P3M` statt „3 Monate“ – gilt in jeder Sprache),
+ * Prozent als Zahl („19 %“ → „19“). Was sich nicht lesen lässt, bleibt stehen, damit die Prüfung es meldet.
+ */
+function standardText(typ: Feld['typ'], std: unknown): string {
+  if (typ === 'zeitraum') { const z = leseZeitraum(std); if (z) return zeitraumIso(z); }
+  if (typ === 'prozent') { const n = leseProzent(std); if (n != null && Number.isFinite(n)) return String(n); }
+  return String(std);
 }
 
 /** Datumsgrenze (#535) aus einer Eingabe: leer = keine, sonst getrimmt („Heute“ → „heute“). */

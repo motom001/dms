@@ -69,6 +69,8 @@ export function zeile(m: Mappe, spalten: string[], q: Quelle): { text: string[];
 function wert(f: Feld, v: unknown, text: string): Zelle {
   switch (f.typ) {
     case 'zahl': return typeof v === 'number' ? v : text;
+    // Prozent als echte Prozentzahl, Zeitraum als Text „3 Monate“ (#1035).
+    case 'prozent': return typeof v === 'number' ? { prozent: v } : text;
     case 'betrag': { const b = v as { betrag?: number; waehrung?: string }; return typeof b?.betrag === 'number' ? { betrag: b.betrag, waehrung: b.waehrung || 'EUR' } : null; }
     case 'datum': return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? { datum: v } : text;
     case 'janein': return text;

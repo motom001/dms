@@ -12,6 +12,7 @@ import { teilenAb, type Seitensprache } from '../../shared/src/seitensprachen';
 import { ausschnittAus } from './repo-pg';
 import { aehnlichkeit, AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, woerterIn, type Varianten } from '../../shared/src/suche';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
+import { istZeitraum, zeitraumTage } from '../../shared/src/feldarten';
 import { feldweise, KonfigurationVeraltet, StandVeraltet, type AuskunftLinkIntern, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern, type Synonymgruppe, type Verweis } from './repo';
 import { passt as passtLoesch, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { t } from './sprache';
@@ -156,6 +157,7 @@ export function speicherRepo(): Repo {
       case 'geaendertVon': return m.geaendertVon;
       case 'typ': return typen.get(m.typId)?.name.toLowerCase() ?? null;
       case 'betrag': return v && typeof v === 'object' && 'betrag' in v ? (v as { betrag: number }).betrag : null;
+      case 'zeitraum': return istZeitraum(v) ? zeitraumTage(v) : null;
       case 'zahl': case 'janein': return v == null || v === '' ? null : (v as number | boolean);
       default: return v == null || v === '' ? null : String(v).toLowerCase();
     }

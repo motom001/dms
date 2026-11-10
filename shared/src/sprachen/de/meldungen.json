@@ -1709,5 +1709,6 @@
   "verwaltung.netz-aufruf": "Netz: {anzahl} × {methode} {host} – {status}, {hin} hin, {zurueck} zurück",
   "verwaltung.netz-abgelehnt": "Netz abgelehnt: {anzahl} × {methode} {host} – die Adresse ist nicht erlaubt",
   "verwaltung.netz-ohne-antwort": "keine Antwort",
-  "prozess.ungueltige-methode": "Ungültige Methode – erlaubt sind nur Großbuchstaben, z. B. GET oder POST."
+  "prozess.ungueltige-methode": "Ungültige Methode – erlaubt sind nur Großbuchstaben, z. B. GET oder POST.",
+  "paketerstellung.feldarten": "Feldarten Zeitraum und Prozent, negative Beträge"
 }

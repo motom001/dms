@@ -64,7 +64,9 @@ Which fields recognition fills in is set by the administrator on the folder type
 | Text, long text | freely; some texts have a maximum length or must be unique |
 | Formatted text | with a toolbar: bold, italic, heading, list, numbered list, quote, link; **@** mentions someone (see below) |
 | Number | with a decimal separator, e.g. `12,5` |
-| Amount | number and currency, e.g. `98,00 EUR` |
+| Amount | number and currency, e.g. `98,00 EUR`; a credit note or refund with a minus (`-25,00`) – this works where the field says "Enter it with a minus" |
+| Period | number and unit, e.g. `3` and *months* for a notice period |
+| Percentage | the number, e.g. `19` or `7,5` – "19%" works too |
 | Date | via the calendar or as a date |
 | Yes/no | tick the box |
 | Choice list | choose a value (or several) from the list |

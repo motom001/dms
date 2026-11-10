@@ -56,7 +56,8 @@ Bedingungen gelten für die eigenen Mappentypen der Ansicht und **alle zusammen*
 | --- | --- |
 | Text | ist gleich (ohne Groß-/Kleinschreibung), enthält, ist leer, ist nicht leer |
 | Langtext, formatierter Text | enthält, ist leer, ist nicht leer |
-| Zahl, Betrag | ist gleich, kleiner als, größer als, zwischen, außerhalb von, ist leer, ist nicht leer |
+| Zahl, Betrag, Prozent | ist gleich, kleiner als, größer als, zwischen, außerhalb von, ist leer, ist nicht leer |
+| Zeitraum | wie Zahl; der Vergleichswert ist Zahl und Einheit (z. B. *größer als 2 Monate*), verglichen nach der Länge |
 | Datum | wie Zahl, dazu **im Zeitraum** (Jahr oder Monat) |
 | Ja/Nein | ja, nein (leer zählt als nein) |
 | Auswahlliste | ist einer von, ist leer, ist nicht leer |

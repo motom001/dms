@@ -63,7 +63,8 @@ export interface AuskunftLinkIntern extends AuskunftLink { schluessel: string; c
 export interface Kante { quelleId: string; feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
 export interface SortierungIntern {
-  art: 'titel' | 'typ' | 'erstellt' | 'geaendert' | 'erstelltVon' | 'geaendertVon' | 'text' | 'zahl' | 'betrag' | 'datum' | 'janein';
+  /** Prozent sortiert wie Zahl; Zeitraum nach seiner Länge in Tagen (#1035). */
+  art: 'titel' | 'typ' | 'erstellt' | 'geaendert' | 'erstelltVon' | 'geaendertVon' | 'text' | 'zahl' | 'betrag' | 'zeitraum' | 'datum' | 'janein';
   key?: string;
   absteigend: boolean;
 }

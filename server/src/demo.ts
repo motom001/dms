@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { grenzeAlsTag, ibanGruppen, pruefeFormate } from '../../shared/src/feldformate';
 import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
+import type { Zeitraum } from '../../shared/src/feldarten';
 import { dokumentRegister, MAX_DEMO, MAX_DEMO_DOKUMENTE, mengenWarnung, nichtErzeugbar, pflichtGrund, schaetzeMenge, verteilung, type NichtErzeugbar } from '../../shared/src/demodaten';
 import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
 import { NACHNAMEN, ORTE, STRASSEN, VORNAMEN } from './demo-text';
@@ -99,6 +100,12 @@ function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: S
     case 'betrag': {
       const min = typeof f.min === 'number' ? f.min : 5, max = typeof f.max === 'number' ? f.max : Math.max(min + 100, 2500);
       return { betrag: Number(zwischen(min, max).toFixed(2)), waehrung: f.waehrung || 'EUR' };
+    }
+    // Zeitraum und Prozent (#1035): übliche Fristen und Steuersätze.
+    case 'zeitraum': return { ...eins<Zeitraum>([{ anzahl: 14, einheit: 'tage' }, { anzahl: 4, einheit: 'wochen' }, { anzahl: 1, einheit: 'monate' }, { anzahl: 3, einheit: 'monate' }, { anzahl: 1, einheit: 'jahre' }, { anzahl: 2, einheit: 'jahre' }]) };
+    case 'prozent': {
+      const auswahl = [7, 19, 0, 2.5, 5].filter((x) => (typeof f.min !== 'number' || x >= f.min) && (typeof f.max !== 'number' || x <= f.max));
+      return auswahl.length ? eins(auswahl) : typeof f.min === 'number' ? f.min : undefined;
     }
     case 'datum': {
       const s = `${f.key} ${f.label}`.toLowerCase();

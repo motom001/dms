@@ -22,7 +22,7 @@
 # Neue Begriffe kommen mit dem Release hierher (Qualitätskontrolle).
 # Die Personas: docs/handbuch/entwickler/docs/personas.md
 
-stand: '2026-11-08'
+stand: '2026-11-10'
 
 begriffe:
 
@@ -79,7 +79,7 @@ begriffe:
     code: Systemtyp
   - begriff: Feld
     bereich: grundbegriffe
-    beschreibung: Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis oder Passwort.
+    beschreibung: Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis, Passwort, Zeitraum oder Prozent.
     einsteiger: erklaeren
     begegnet: alle
     verwandt: [Feldart, Pflichtfeld, Standardwert]
@@ -99,6 +99,28 @@ begriffe:
     nicht_verwenden: [Validierung, Datentyp]
     verwandt: [Feld, Feldart]
     code: Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts
+  - begriff: Zeitraum
+    bereich: grundbegriffe
+    beschreibung: Feldart für eine Dauer aus ganzer Zahl und Einheit – Tage, Wochen, Monate oder Jahre, z. B. die Kündigungsfrist „3 Monate“ oder die Laufzeit „1 Jahr“. Sortiert und verglichen wird nach der Länge. Nicht zu verwechseln mit „im Zeitraum“ bei Datumsbedingungen (Jahr, Monat).
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Dauer (als Feldart), Periode, Intervall]
+    verwandt: [Feldart, Frist]
+    code: zeitraum, Zeitraum, shared/src/feldarten.ts
+  - begriff: Prozent
+    bereich: grundbegriffe
+    beschreibung: Feldart für einen Prozentsatz, z. B. den Steuersatz „19 %“ – mit Nachkommastellen, frei wählbar (auch ausländische Sätze). „19“, „19 %“ und „19,0“ bedeuten dasselbe.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Feldart]
+    code: prozent, shared/src/feldarten.ts
+  - begriff: Gutschrift
+    bereich: ablage
+    beschreibung: Ein Betrag, den man zurückbekommt (auch Erstattung) – in Ablago ein Betrag mit Minus, z. B. „−25,00 €“. Das geht nur bei Betragsfeldern, an denen der Administrator „Negative Beträge erlauben“ angehakt hat; dort steht der Hinweis „Mit Minus eintragen“.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Feld]
+    code: Feld.negativ
   - begriff: Kennung
     bereich: grundbegriffe
     beschreibung: Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.

@@ -305,5 +305,20 @@
   "muster.knopf.ergebnis.gut": "Geprüft – nichts Neues gefunden.",
   "muster.knopf.ergebnis.fehler": "Der Server antwortet nicht. Bitte Adresse und Port prüfen.",
   "muster.knopf.ergebnis.info": "Verbinde mit postfach.example.org …",
-  "muster.knopf.ausprobieren": "Klicken: Der Knopf zeigt „läuft“, danach das Ergebnis bzw. den Fehler darunter."
+  "muster.knopf.ausprobieren": "Klicken: Der Knopf zeigt „läuft“, danach das Ergebnis bzw. den Fehler darunter.",
+  "einheit.einheit": "Einheit",
+  "einheit.einheit-von": "Einheit von „{name}“",
+  "muster.einheit.titel": "Eingaben mit Einheit",
+  "muster.einheit.text": "Zeitraum und Prozent: Zahl und Einheit in einer Zeile, Einzahl und Mehrzahl passend zur Anzahl, am Handy die Zifferntastatur.",
+  "muster.einheit.zeitraum": "Zeitraum",
+  "muster.einheit.einzahl": "Einzahl",
+  "muster.einheit.prozent": "Prozent",
+  "muster.beschriftung.kuendigungsfrist": "Kündigungsfrist",
+  "muster.beschriftung.laufzeit": "Laufzeit",
+  "muster.beschriftung.steuersatz": "Steuersatz",
+  "muster.beschriftung.ermaessigt": "Ermäßigter Satz",
+  "muster.hinweis.einzahl": "Bei 1 steht die Einheit in der Einzahl.",
+  "muster.hinweis.prozent": "„19“, „19 %“ und „19,0“ ergeben dasselbe.",
+  "muster.fehler.zeitraum": "Bitte eine ganze Zahl eintragen, zum Beispiel 3.",
+  "muster.fehler.prozent": "Bitte eine Zahl eintragen, zum Beispiel 7,5."
 }

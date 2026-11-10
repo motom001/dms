@@ -12,6 +12,8 @@ import { optionTexte } from './beschriftung';
 import { artVon, type Erkennungsart } from './erkennung';
 import { vorlageFelder, wirksameVorlage, type Betrag, type Feld, type Mappentyp, type Wert } from './model';
 import { kreisVon } from './nummernkreis';
+import { istZeitraum, leseProzent, leseZeitraum, zeitraumText } from './feldarten';
+import { inSprache } from './sprache';
 import { bereicheVon, findeBegriff, type Bereich, type SchwaerzSeite } from './schwaerzen';
 
 const MONATE: Record<string, number> = {
@@ -45,9 +47,31 @@ export function textformen(f: Pick<Feld, 'typ' | 'beschriftungen'>, w: Wert): st
     return [`${t}. ${MONATSNAMEN[mo - 1]} ${j}`, `${zwei(t)}.${zwei(mo)}.${j}`, `${t}.${mo}.${j}`, w, `${zwei(t)}.${zwei(mo)}.${String(j).slice(2)}`];
   }
   if (f.typ === 'betrag' && typeof w === 'object' && typeof (w as Betrag).betrag === 'number') return betragTexte((w as Betrag).betrag);
+  if (f.typ === 'zeitraum' || f.typ === 'prozent') return textformenNeu(f.typ, w);
   if (f.typ === 'zahl' && typeof w === 'number') return [...new Set([String(w), String(w).replace('.', ','), ...(Number.isInteger(w) ? [] : betragTexte(w))])];
   if (f.typ === 'auswahl' && typeof w === 'string') return [...new Set([w, ...optionTexte(f, w)])].sort((a, b) => b.length - a.length);
   return [String(w)];
+}
+
+/** Zeitraum und Prozent (#1035), wie sie im Dokument stehen: „3 Monate“, „3 Monaten“, „3 months“; „19 %“, „19%“. */
+function textformenNeu(typ: 'zeitraum' | 'prozent', w: Wert): string[] {
+  if (typ === 'prozent') {
+    if (typeof w !== 'number') return [];
+    const z = String(w).replace('.', ',');
+    return [...new Set([`${z} %`, `${z}%`, `${w} %`, `${w}%`, z, String(w)])];
+  }
+  if (!istZeitraum(w)) return [];
+  const de = inSprache('de', () => zeitraumText(w));
+  // Dativ: „nach 3 Monaten“, aber „1 Monat“.
+  const dativ = w.anzahl !== 1 && /e$/.test(de) ? `${de}n` : de;
+  return [...new Set([dativ, de, inSprache('en', () => zeitraumText(w))])].sort((a, b) => b.length - a.length);
+}
+
+/** Text vom Dokument als Zeitraum („3 Monaten.“) bzw. Prozent („19 %“, #1035); null = passt nicht. */
+function neuerWertAusText(typ: 'zeitraum' | 'prozent', roh: string): Wert | null {
+  if (typ === 'zeitraum') return leseZeitraum(roh.replace(/[:,;.]+$/, '')) ?? null;
+  const n = leseProzent(roh);
+  return n != null && Number.isFinite(n) ? n : null;
 }
 
 /** Kern einer Fundstelle aus der Erkennung: ohne „… “ am Anfang und „ …“ am Ende. */
@@ -121,6 +145,7 @@ export function wertAusText(f: Pick<Feld, 'typ' | 'optionen' | 'beschriftungen' 
     case 'langtext': case 'formatiert': return f.maxLen ? roh.slice(0, f.maxLen) : roh;
     case 'datum': return datumAusText(roh);
     case 'zahl': return zahlAusText(roh);
+    case 'prozent': case 'zeitraum': return neuerWertAusText(f.typ, roh);
     case 'betrag': {
       const n = zahlAusText(roh);
       if (n === null) return null;

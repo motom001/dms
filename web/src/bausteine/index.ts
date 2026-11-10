@@ -5,4 +5,5 @@
  * start.tsx, und nur im Entwicklungsmodus und im Testbau.
  */
 export { Feld, FeldGruppe, HakenFeld, type FeldEingabe, type FeldGruppeProps, type FeldProps, type FeldVerknuepfung } from './feld/Feld';
+export { ProzentEingabe, ZeitraumEingabe, type ProzentEingabeProps, type ZeitraumEingabeProps, type ZeitraumRoh } from './einheit/Einheit';
 export { abfangen, Ergebnis, ErgebnisBlock, Knopf, KnopfLink, fehlerText, istKnopfErgebnis, knopfAussehen, type KnopfArt, type KnopfErgebnis, type KnopfGroesse, type KnopfLinkProps, type KnopfProps } from './knopf/Knopf';

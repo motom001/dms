@@ -64,7 +64,9 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 | Text, Langtext | frei; manche Texte haben eine Höchstlänge oder müssen eindeutig sein |
 | Formatierter Text | mit Werkzeugleiste: fett, kursiv, Überschrift, Liste, nummerierte Liste, Zitat, Link; **@** erwähnt jemanden (siehe unten) |
 | Zahl | mit Komma, z. B. `12,5` |
-| Betrag | Zahl und Währung, z. B. `98,00 EUR` |
+| Betrag | Zahl und Währung, z. B. `98,00 EUR`; eine Gutschrift oder Erstattung mit Minus (`-25,00`) – das geht, wo unter dem Feld „Mit Minus eintragen“ steht |
+| Zeitraum | Zahl und Einheit, z. B. `3` und *Monate* für eine Kündigungsfrist |
+| Prozent | die Zahl, z. B. `19` oder `7,5` – „19 %“ geht auch |
 | Datum | über den Kalender oder als Datum |
 | Ja/Nein | Haken setzen |
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |

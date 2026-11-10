@@ -1,0 +1,12 @@
+/* Eingaben mit Einheit (#1035): Zahl und Einheit in einer Zeile. Nur Werte aus tokens.css; die Eingaben selbst kommen
+   aus basis.css (Hover, Fokus und Fehler aus dem Feldrahmen, wenn sie in einem stehen). */
+.einheit { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.zeitraum > input { width: 7ch; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.zeitraum > select { min-width: 0; }
+.prozent > input { width: 9ch; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.zeichen { color: var(--leise); }
+
+/* Am Handy (#1027): Eingabe und Auswahl mindestens 44 px hoch, auch außerhalb eines Feldrahmens. */
+@media (pointer: coarse) {
+  .einheit > input, .einheit > select { min-height: 44px; }
+}

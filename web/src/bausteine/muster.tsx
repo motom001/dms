@@ -6,6 +6,7 @@ import { t } from '../sprache';
 import { Feld } from './feld/Feld';
 import { FeldMuster } from './feld/muster';
 import { KnopfMuster } from './knopf/muster';
+import { EinheitMuster } from './einheit/muster';
 import s from './muster.module.css';
 
 /**
@@ -20,6 +21,7 @@ interface Musterbereich { id: string; titel: () => string; text: () => string; M
 const BAUSTEINE: Musterbereich[] = [
   { id: 'feld', titel: () => t('oberflaeche.muster.feld.titel'), text: () => t('oberflaeche.muster.feld.text'), Muster: FeldMuster },
   { id: 'knopf', titel: () => t('oberflaeche.muster.knopf.titel'), text: () => t('oberflaeche.muster.knopf.text'), Muster: KnopfMuster },
+  { id: 'einheit', titel: () => t('oberflaeche.muster.einheit.titel'), text: () => t('oberflaeche.muster.einheit.text'), Muster: EinheitMuster },
 ];
 
 const DARSTELLUNGEN = Object.keys(GRUNDLAGEN) as Grundlage[];

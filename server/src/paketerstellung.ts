@@ -37,6 +37,11 @@ import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } 
 
 const log = protokoll.modul('werkbank');
 
+/**
+ * Ab dieser Version kennt Ablago die Feldarten Zeitraum und Prozent und negative Beträge (#1035). Beim Einreihen auf die
+ * Version setzen, mit der sie erscheinen.
+ */
+export const FELDARTEN_AB = '0.227.0';
 /** Ab dieser Version verstehen DMS Verweise zwischen Beispielen (#347). */
 const BEISPIELVERWEISE_AB = '0.79.0';
 /**
@@ -49,6 +54,7 @@ export const MINDEST_FUNKTIONEN = {
   beispielVerweise: { ab: BEISPIELVERWEISE_AB, grund: t('meldungen.paketerstellung.verweise-zwischen-beispielen') },
   erkennung: { ab: '0.113.0', grund: t('meldungen.paketerstellung.erkennung-an-feldern-aus') },
   feldformate: { ab: '0.121.0', grund: t('meldungen.paketerstellung.feldformate-und-datumsgrenzen') },
+  feldarten: { ab: FELDARTEN_AB, grund: t('meldungen.paketerstellung.feldarten') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -497,6 +503,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (wortlisten.length) genutzt.push('wortlisten');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => 'erkennung' in f))) genutzt.push('erkennung');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => 'format' in f || 'landFeld' in f || (f.typ === 'datum' && ('min' in f || 'max' in f))))) genutzt.push('feldformate');
+  // Zeitraum, Prozent und negative Beträge (#1035): Ältere Ablago machten aus unbekannten Feldarten Text.
+  if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'zeitraum' || f.typ === 'prozent' || f.negativ === true))) genutzt.push('feldarten');
   const mindest = mindestversion(genutzt);
   const optionen = dmsOptionen(mindest.version, d.dmsVersion);
   const unten = untergrenze(dms);
