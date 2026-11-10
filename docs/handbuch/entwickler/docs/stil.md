@@ -12,6 +12,7 @@ Zwei Werkzeuge prüfen den Code, bevor er nach `main` kommt (#899): **ESLint** f
 | `npm run lint:zaehlen` | Bestandslisten gegen `main` zählen – genau die Prüfung der CI |
 | `npm run lint:umtragen` | nach einem Umzug: Bestand neu schreiben, Verwaistes streichen, dann zählen |
 | `npm run lint:farben` | [keine festen Farben](#farben) außerhalb von `tokens.css` |
+| `node .github/werkzeuge/fachordner-pruefen.mjs` | jeder Fachordner mit `*.dienst.ts` hat `index.ts` und `README.md` (#1072) |
 | `npm run abhaengigkeitsbild` | [Abhängigkeitsbild](#abhaengigkeitsbild) neu erzeugen |
 
 Die Werkzeuge sind feste Versionen (ohne `^`) unter `devDependencies` im Wurzelordner und kommen nicht ins Image: Dort installiert `npm ci --omit=dev --workspace server` nur die Laufzeit-Pakete des Servers.
@@ -97,11 +98,10 @@ Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewu
 - **Keine Kreisläufe** zwischen Dateien (reine Typ-Importe zählen nicht).
 - **`shared/`** importiert weder `server/` noch `web/` – der Code läuft in beiden.
 - **`web/`** importiert nie `server/`, **`server/`** nie `web/`. Ausnahme: Tests unter `server/test/`.
-- **Nur über `index.ts`:** Ordner mit einer `index.ts` sind von außen nur über diese erreichbar – heute die [PDF-Stelle](aufbau.md#pdf-stelle) `server/src/pdf/` (außer für `arbeit/vorgaenge.ts`, das die Vorgänge im Arbeiter-Faden ausführt) und `server/src/arbeit/`.
-- **Kern nur abwärts** (#961, `kern-nur-abwaerts`): `server/src/kern/` importiert nur sich selbst, `shared/` und die Basis (`BASIS` in der Datei: Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler, Fehler, Grenzen) – nie `dienst.ts`, Routen oder Fachordner. Von außen nur über `kern/index.ts` (`kern-nur-ueber-index`). Siehe [Kern](aufbau.md#kern).
+- **Technik nur über `index.ts`:** die [PDF-Stelle](aufbau.md#pdf-stelle) `server/src/pdf/` (außer für `arbeit/vorgaenge.ts`, das die Vorgänge im Arbeiter-Faden ausführt) und `server/src/arbeit/`.
+- **Fachordner** (#1072, eine Regel `fachordner` für alle, vorher je Ordner zwei): von außen nur über ihre `index.ts` – auch aus Tests –, und [Schichten](aufbau.md#schichten) nur abwärts. Die Schichten stehen zentral in `SCHICHTEN` (Kern 0, `zugriff` 1, `mappentypen`/`mappen`/`dokumente` 2, alle übrigen 3, auch künftige), die Ordner ohne Fachlogik in `TECHNIK`. Der Kern importiert nur sich selbst, `shared/` und die Basis (`BASIS` in der Datei: Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler, Fehler, Grenzen); höhere Schichten dazu tiefere Fachordner und die Werkzeuge (`WERKZEUGE`: `messung.ts`, `vektoren.ts`, `pdf/`, `arbeit/`) – nie `dienst.ts`. Routen (`*.routen.ts`) sind ausgenommen: `routen.ts` holt sie direkt, und sie dürfen den Dienst und ihren eigenen Fachordner einbinden. Siehe [Kern](aufbau.md#kern), [Rechte prüfen](aufbau.md#zugriff).
 - **Hilfen der HTTP-Schicht nur in Routen** (#961, `routen-hilfen-nur-in-routen`): `http/routen-hilfen.ts` und `http/routen-kontext.ts` importieren nur `*.routen.ts` und `routen.ts`. Fachlogik bekommt den Benutzer übergeben, statt ihn selbst aus der Anfrage zu lesen (etwa mit `ich(a)`).
-- **Suche nur abwärts und nur über `index.ts`** (#964, `suche-nur-abwaerts`, `suche-nur-ueber-index`): `server/src/suche/` importiert nur sich selbst, den Kern, `shared/`, die Basis und `vektoren.ts` – keinen anderen Fachbereich, nie `dienst.ts` (Routen ausgenommen). Von außen nur über `suche/index.ts`; die Routen holt `routen.ts` direkt. Siehe [Suche](aufbau.md#suche).
-- **Vorbereitet:** „Fachbereiche nur über `index.ts`“ für alle Fachordner steht als Kommentar in der Datei und wird aktiv, sobald die übrigen Fachordner eigene Module mit `index.ts` haben.
+- **Tür und Beschreibung:** Jeder Fachordner mit `*.dienst.ts` braucht `index.ts` und eine von Hand geschriebene `README.md` (`.github/werkzeuge/fachordner-pruefen.mjs`, Job **stil**). Was in der README steht, prüft niemand; einen erzeugten Teil gibt es nicht.
 
 ### Abhängigkeitsbild { #abhaengigkeitsbild }
 

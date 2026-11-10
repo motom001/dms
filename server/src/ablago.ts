@@ -91,7 +91,7 @@ import { setzeLasttestModus } from './protokollsammlung';
 import { teileArbeit, UPLOAD_ALTER_MS } from './aufteilung';
 import { Fernlaeufer } from './laeufer/fern';
 import type { PaketLaeufer } from './pakete';
-import { paketEinstellungen, paketSpeicher, setzePaketSpeicher } from './pakete/pakete.einstellungen';
+import { paketEinstellungen, paketSpeicher, setzePaketSpeicher } from './pakete/index';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;

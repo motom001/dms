@@ -36,13 +36,14 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
 
-The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves – first `suche/suche.dienst.ts` ([search](#suche), #964). `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings.
+The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves – first `suche/suche.dienst.ts` ([search](#suche), #964). Every subject folder with a `*.dienst.ts` has an `index.ts` as its door and a hand-written `README.md` (20–40 lines); CI checks this in the **stil** job (`.github/werkzeuge/fachordner-pruefen.mjs`). Which folders may import what is set by the [layers](#schichten). `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings – from outside via `pakete/index.ts` (imported as `./pakete/index` next to `pakete.ts`).
 
 Alongside, without routes:
 
 | Folder in `server/src/` | Contents |
 |---|---|
 | `kern/` | the [core](#kern) (#961) |
+| `zugriff/` | [checking permissions](#zugriff) (#1072) |
 | `systemausstattung/` | the [system setup](#systemausstattung) (#963) |
 | `http/` | helpers of the HTTP layer – for routes only |
 | `pdf/`, `arbeit/` | [PDF module](#pdf-stelle), [worker pool](#arbeiter-pool) |
@@ -64,6 +65,7 @@ Alongside, without routes:
 `server/src/kern/` holds what **all** subject areas need, with one door (`kern/index.ts`). The service builds it and passes it on as `dienst.kern`; building blocks such as packages will in future take only the core instead of the whole service.
 
 - `kern.repo` – the repo; inside a transaction of the core, that transaction's repo. Fetch it on every call, never keep it – otherwise a package writes past the transaction.
+- `kern.repoOhneTransaktion` – the repo outside any transaction (#1072, previously `grundRepo` via hooks). Only for what is valid across transactions and never belongs to a change: caches (the search's vectors), the event dispatcher, background follow-up work.
 - `inTransaktion`, `inEinemZug` (retries on deadlock), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
 - `ereignis(art, daten, von?)` into the outbox, `mitAusloeser`, `ohneEreignisse`.
 - `anlaesse` – the [hook points](#anschlusspunkte) for what happens immediately (#962, `kern/anlaesse.ts`).
@@ -71,7 +73,7 @@ Alongside, without routes:
 - `historie.schreibe(…)` (`kern/historie.ts`) and `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Reading** stays with folders and deletion respectively.
 - `einstellungen`, `dateien`, `stand`.
 
-**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). The service stays a facade with one-line forwards. What the core does not build itself yet (access, the fallback of the system setup), it gets from the service when it is assembled.
+**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). The service stays a facade with one-line forwards. What the core does not build itself (access – that is [checking permissions](#zugriff), one layer above –, the fallback of the system setup), it gets from the service when it is assembled.
 
 ### System setup (#963) { #systemausstattung }
 
@@ -105,9 +107,32 @@ Occasion → receivers (in order; subject area.task):
 The first subject area with its own business logic in its subject folder (trial run of the target structure): `server/src/suche/suche.dienst.ts` with the class `SucheDienst` – fuzzy search (typos, words with the same meaning, word index), vectors for documents and similar documents. The service builds it as `dienst.suche` and keeps a one-line forward for every method; `dienst.vektorAnbieter` passes through to `dienst.suche.vektorAnbieter`.
 
 - **Door:** `suche/index.ts`; only `routen.ts` fetches the routes (`suche.routen.ts`) directly.
-- **Gets the core**, not the whole service, plus a `SucheAnschluss`: `grundRepo` (the vector cache is valid across transactions), `lesbare` and `pruefeRecht` (layer "zugriff", in the service until it is a module of its own) and `konten` (service account of a package).
-- **Downwards only:** search imports itself, the core, `shared/`, the base and `vektoren.ts` – checked with `suche-nur-abwaerts` and `suche-nur-ueber-index` ([rules](stil.md#abhaengigkeiten-pruefen)).
+- **Gets the core**, not the whole service (`kern.repoOhneTransaktion` for the vector cache), plus [permission checking](#zugriff) (`lesbare`, `pruefeRecht`) and a `SucheAnschluss` with `konten` (service account of a package).
+- **Downwards only:** search (layer 3) imports itself, lower subject folders and the core (each via `index.ts`), `shared/`, the base and `vektoren.ts` – checked with the rule `fachordner` ([rules](stil.md#abhaengigkeiten-pruefen)). `vektoren.ts` stays outside `suche/` because the package runner also reads a package's vectors with it.
 - **Still in the service:** `vektorNachlauf` (needs the AI block of the packages) and the search in the folder list (`listeMappen`).
+
+
+## Checking permissions (#1072) { #zugriff }
+
+`server/src/zugriff/zugriff.dienst.ts` with the class `ZugriffDienst` checks who may do what – in one place: `zugriff(ich)` once per request (people by the rules on the folder type, package service accounts by their confirmed permissions, system accounts by their role, read access for a limited time), `rechteAn`, `rechteAnVielen`, `pruefeRecht`, `lesbare`, `mitPasswortRecht`, `sichtbarFuer`, `kannLesen`, `wasSieht`, `mappeVon`. The service builds it as `dienst.rechtepruefung` and keeps a one-line forward for every method.
+
+- **Door:** `zugriff/index.ts` (plus `maskiert` and `NICHT_SICHTBAR` for titles of folders the user cannot read).
+- **Gets the core** and a `ZugriffAnschluss` from the service: `kiSperre` (AI setting of packages) and `konten`.
+- **Layer 1:** imports only itself, the core, `shared/`, the base and `messung.ts`. Subject folders above get the `ZugriffDienst` when assembled (like search) and import it via `zugriff/index.ts`. The core does not import it; `kern.zugriff(ich)` calls what the service passes in.
+- **Still in the service:** the Workbench pages for permissions (later `berechtigungen/`), `regulaerSichtbarFuer` and `paketSiehtNicht`.
+
+### Layers { #schichten }
+
+Subject folders only call downwards; within the same layer they may use each other (`kein-kreislauf` forbids cycles). The list is kept in one place in `.dependency-cruiser.cjs` (`SCHICHTEN`) – a folder that does not exist yet is already placed:
+
+| Layer | Subject folders |
+|---|---|
+| 0 | `kern/` – only itself, `shared/` and the base |
+| 1 | `zugriff/` |
+| 2 | `mappentypen/`, `mappen/`, `dokumente/` |
+| 3 | all other subject folders (`suche/`, `sichten/`, `post/`, `aufgaben/` …) |
+
+Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
 
 ## Dependencies { #abhaengigkeiten }
 

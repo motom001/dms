@@ -123,7 +123,7 @@
       "count": 18
     },
     "complexity": {
-      "count": 31
+      "count": 29
     },
     "max-depth": {
       "count": 2
@@ -642,6 +642,11 @@
   },
   "server/src/xlsx.ts": {
     "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/src/zugriff/zugriff.dienst.ts": {
+    "complexity": {
       "count": 1
     }
   },

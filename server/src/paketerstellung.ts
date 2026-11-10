@@ -33,7 +33,7 @@ import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
-import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } from './pakete/pakete.einstellungen';
+import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } from './pakete/index';
 
 const log = protokoll.modul('werkbank');
 

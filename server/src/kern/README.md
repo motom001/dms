@@ -2,7 +2,8 @@
 
 **Zweck:** Was alle Fachbereiche des Servers brauchen, an einer Stelle – damit Fachbereiche nur nach unten rufen.
 
-- `kern.ts` – `Kern`: Repo (in einer Transaktion deren Repo), `inTransaktion`, `inEinemZug`, `danach`,
+- `kern.ts` – `Kern`: Repo (in einer Transaktion deren Repo; `repoOhneTransaktion` nur für Zwischenspeicher und
+  Hintergrund, siehe Kommentar), `inTransaktion`, `inEinemZug`, `danach`,
   `nachDerAntwort`, `ereignis` (Ausgangskorb), `system()` (Systemtypen nur nachschlagen, #963), `typen()`,
   `zugriff(ich)`, `name`, `papierkorbTage`, `paketVerwehrt`, `ablageortId`, `liesGanz`; `einstellungen`, `dateien`,
   `stand`.
@@ -19,8 +20,8 @@
 - In den Kern kommt nur, was **alle** brauchen. Neues nur mit Begründung im Pull Request.
 - Der Kern importiert **nichts** aus `dienst.ts`, Routen, `http/` oder Fachordnern – nur sich selbst, `shared/` und die
   Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler). Geprüft mit `npm run lint:abh`
-  (`kern-nur-abwaerts`, `kern-nur-ueber-index` in `.dependency-cruiser.cjs`).
-- Was er noch nicht selbst kann (Zugriff bilden; Systemtypen anlegen als Rückfall, wenn beim Nachschlagen etwas
+  (Regel `fachordner`, Schicht 0, in `.dependency-cruiser.cjs`).
+- Was er nicht selbst kann (Zugriff bilden – das ist `zugriff/`, Schicht 1; Systemtypen anlegen als Rückfall, wenn beim Nachschlagen etwas
   fehlt – das Anlegen selbst ist die Systemausstattung, `server/src/systemausstattung/`), bekommt er beim Zusammenbau.
 - `kern.repo` bei jedem Aufruf neu holen, nie zwischenspeichern: Nur so landet, was ein Fachbereich in einer
   Transaktion schreibt, auch in dieser Transaktion.

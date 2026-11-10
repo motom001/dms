@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
 import { artVon, bestandAus, GEHEIM_ARTEN, verschluesselteIn, type Fundstelle } from '../src/geheimnisse';
-import { paketEinstellungen, setzePaketEinstellungen } from '../src/pakete/pakete.einstellungen';
+import { paketEinstellungen, setzePaketEinstellungen } from '../src/pakete/index';
 
 const g = (n: number | string) => `dms1$geheim-${n}`;
 
