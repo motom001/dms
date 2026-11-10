@@ -1007,5 +1007,16 @@
   "sichten.typ-kein-ziel": "„{label}“ zeigt nicht auf Mappen dieses Typs – die Bedingung träfe nie zu.",
   "typvergleich.gleicher-typ": "alle vom selben Typ",
   "typvergleich.ziel-optional": "optionale Zieltypen",
-  "erweitertesuche.vom-typ": "(vom Typ {typen})"
+  "erweitertesuche.vom-typ": "(vom Typ {typen})",
+  "tabelle.typ-waehlen": "Tabelle: Wähle den Mappentyp, dessen Mappen sie zeigt.",
+  "tabelle.typ-fehlt": "Tabelle: Den gewählten Mappentyp gibt es nicht mehr.",
+  "tabelle.feld-waehlen": "Tabelle: Wähle das Verweisfeld, über das die Mappen hierher verweisen.",
+  "tabelle.feld-verweist-nicht": "Tabelle: Das Feld „{feld}“ verweist nicht auf diesen Mappentyp.",
+  "tabelle.liste-fehlt": "Tabelle: Die gewählte Trefferliste gibt es nicht mehr – wähle eine andere oder den Standard.",
+  "tabelle.neu-zu-lang": "Tabelle: Die Beschriftung von „+ Neu“ darf höchstens {max} Zeichen lang sein.",
+  "tabelle.kein-wert": "Eine Tabelle hat keinen eigenen Wert – sie kann weder Pflicht noch eindeutig sein.",
+  "tabelle.nicht-im-titel": "Tabellen haben keinen Wert und können nicht in der Titel-Vorlage stehen: {map}.",
+  "tabelle.keine-spalte": "Eine Tabelle kann keine Spalte einer Trefferliste sein.",
+  "tabelle.neu": "+ {typ}",
+  "typvergleich.tabelle": "Tabelle"
 }

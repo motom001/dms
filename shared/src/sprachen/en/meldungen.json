@@ -1743,5 +1743,12 @@
   "berechnet.hinweis.html": "A note is text only – no HTML (< > and &…;).",
   "berechnet.hinweis.markdown": "A note is text only – no Markdown.",
   "berechnet.hinweis.link": "A note contains no links or addresses.",
-  "pakete.berechnet-ohne-schreiben": "Folder type “{typ}”: {felder} are calculated – for that the package needs code with code.rechte.schreiben on this folder type."
+  "pakete.berechnet-ohne-schreiben": "Folder type “{typ}”: {felder} are calculated – for that the package needs code with code.rechte.schreiben on this folder type.",
+  "tabelle.gibt-es-nicht": "This folder has no such table.",
+  "tabelle.quelle-gebraucht": "The field “{feld}” is needed by the table “{tabelle}” in “{typ}”: it shows folders of this type through this field. Remove the table first or choose another field there.",
+  "tabelle.typ-gebraucht": "The table “{label}” in “{name}” shows folders of this type.",
+  "pakete.tabelle-typ": "mappentypen: “{typ}” → field “{feld}”: the table shows folders of the type “{quelle}”, which the package does not include.",
+  "pakete.tabelle-feld": "mappentypen: “{typ}” → field “{feld}”: the field “{quellfeld}” of “{quelle}” is not a link field pointing to this type – the table only shows folders that link here through such a field.",
+  "paketerstellung.tabelle": "Field type table",
+  "paketerstellung.tabelle-liste": "{wo}: the table shows another results list of “{name}” – only the default results list goes into the package; there the table shows its columns."
 }

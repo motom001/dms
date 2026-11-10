@@ -1,0 +1,4 @@
+/* Feldart Tabelle (#1030) in der Mappe: über die ganze Breite des Feldrasters, mit eigener Überschrift. */
+.feld { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.titel { font-size: calc(13px * var(--skala, 1)); font-weight: 600; color: var(--leise); margin: 0; }
+.unsichtbar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

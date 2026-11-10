@@ -61,6 +61,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 | Auswahlliste | die Auswahlwerte (einer pro Zeile), Mehrfachauswahl, [Beschriftung der Werte](#beschriftungen-je-sprache) |
 | Verweis | Ziel-Mappentypen (einer oder mehrere), Art des Verweises, mehrere Mappen erlaubt, alle vom selben Typ |
 | Passwort | – (wird verschlüsselt gespeichert, siehe unten) |
+| Tabelle | zeigt Mappen vom Typ …, die über Feld … hierher verweisen; Spalten aus Trefferliste …; Beschriftung von „+ Neu“ (siehe [unten](#tabelle)) |
 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
@@ -75,6 +76,27 @@ Für Verträge und Rechnungen gibt es drei Dinge, die so eingetragen werden, wie
 - **Negative Beträge** – am Betragsfeld **Negative Beträge erlauben** anhaken, z. B. für *Gutschrift* oder *Erstattung*. Vorgabe ist aus: Dann darf der Betrag nicht unter 0 liegen. Ist der Haken an, steht beim Ausfüllen unter dem Feld „Gutschrift oder Erstattung? Mit Minus eintragen.“, und in Trefferlisten steht ein deutliches Minuszeichen (−25,00 €). Betragsfelder, in denen beim Update schon ein negativer Betrag stand, haben den Haken von selbst.
 
 Alle drei kennen [Bedingungen](sichten.md), die erweiterte Suche, Direktlinks, Export und Pakete. Im [Vollexport](export.md) steht ein Zeitraum als `P3M` (ISO 8601), Prozent als Zahl.
+
+### Tabelle: verweisende Mappen zwischen den Feldern { #tabelle }
+
+Eine **Tabelle** zeigt mitten im Feldregister die Mappen eines anderen Typs, die auf diese Mappe verweisen – etwa an der *Rechnung* ihre *Positionen*, am *Projekt* seine *Aufgaben*. Sie hat dieselbe Quelle wie ein [Verknüpfungsregister](#register), steht aber zwischen den Feldern statt auf einem eigenen Register.
+
+![Rechnung mit der Tabelle Positionen](bilder/mappe-tabelle.png)
+
+Am Feld stellst du ein:
+
+- **Zeigt Mappen vom Typ** und **die über dieses Feld hierher verweisen** – zur Wahl stehen nur Verweisfelder, die auf diesen Mappentyp zeigen (bei der *Rechnungsposition* etwa *Rechnung*). Gibt es noch keines, legst du es zuerst beim anderen Typ an.
+- **Spalten aus Trefferliste** – die Spalten und ihre Reihenfolge kommen aus einer [Trefferliste](#trefferlisten) des anderen Typs; ohne Auswahl aus seiner Standard-Trefferliste. Passwortfelder sind nie eine Spalte.
+- **Beschriftung von „+ Neu“** – z. B. „+ Position“, je Sprache übersetzbar; leer heißt es „+ Rechnungsposition“.
+- Bezeichnung (z. B. *Positionen*), Hilfetext, Register, **Ausblenden** und **Anzeigen, wenn …** wie bei jedem Feld; mit einem [Abschnitt](#abschnitte) davor bekommt die Tabelle eine eigene Zeile mit Überschrift.
+
+In der Mappe stehen die Zeilen sortiert wie in der Trefferliste des anderen Typs, je 50 mit **weitere anzeigen**; ein Klick öffnet die Mappe. Ohne Zeilen steht ein ruhiger Satz („Noch keine Positionen“). Am Handy ist die Tabelle eine Liste mit den ersten zwei Spalten. **+ Position** unter der Tabelle öffnet die neue Mappe im Fenster, der Verweis auf diese Mappe ist schon gesetzt; nach dem Speichern steht sie in der Tabelle.
+
+**Rechte.** Die Zeilen sind Mappen: Jede Person sieht nur die Zeilen, die sie lesen darf – auch die Zahl („weitere anzeigen“) zählt keine anderen mit. Verweise in den Spalten auf Mappen, die sie nicht lesen darf, stehen als „nicht sichtbare Mappe“ da. **+ Neu** sieht nur, wer den anderen Typ anlegen darf; beim Speichern prüft Ablago das Anlegerecht und dass die Person diese Mappe lesen darf, auch über die [Schnittstelle](api.md).
+
+**Kein eigener Wert.** Eine Tabelle ist reine Darstellung wie ein Abschnitt: Sie steht nicht in den Werten der Mappe, nicht im [Export](export.md) und [Vollexport](export.md), nicht in Bedingungen, Spalten oder der Titel-Vorlage und ist nie Pflicht. Summen rechnet sie nicht – das ist Sache von Paketen, etwa *Rechnungen*, das prüft, ob die Positionen zum Betrag passen. Werte direkt in der Tabelle ändern geht nicht; dafür die Mappe öffnen.
+
+Solange eine Tabelle Mappen eines Typs zeigt, lässt sich dieser Typ nicht löschen und sein Verweisfeld nicht entfernen; Ablago nennt dann die Tabelle. Pakete bringen Tabellen mit (`typ: tabelle` mit `quelle`, siehe Entwicklerhandbuch).
 
 ### Felder ausblenden statt löschen { #felder-ausblenden }
 

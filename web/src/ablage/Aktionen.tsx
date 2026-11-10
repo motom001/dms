@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { createPortal } from 'react-dom';
-import { formatiere, standardRegister, type Mappentyp } from '../../../shared/src/model';
+import { formatiere, standardRegister, type Feld, type Mappentyp } from '../../../shared/src/model';
 import { ausgeblendeteFelder, sichtbareRegister } from '../../../shared/src/darstellung';
 import { api, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
@@ -169,7 +169,8 @@ export function Druckansicht({ typ, details, fertig }: { typ: Mappentyp; details
       <h1>{titelOder(mappe.titel)}</h1>
       <p className="klein">{t('ablage.aktionen.angelegt-von-zuletzt-geaendert', { zeit: zeit(mappe.erstellt), person: d.person(mappe.erstelltVon), zeit2: zeit(mappe.geaendert), person2: d.person(mappe.geaendertVon) })}</p>
       {register.filter((r) => r.art === 'felder').map((r) => {
-        const felder = (r.felder ?? []).filter((k) => !aus.has(k)).map((k) => typ.felder.find((f) => f.key === k)).filter((f) => !!f);
+        // Tabellen (#1030) haben keinen Wert; ihre Mappen druckt jede für sich.
+        const felder = (r.felder ?? []).filter((k) => !aus.has(k)).map((k) => typ.felder.find((f) => f.key === k)).filter((f): f is Feld => !!f && f.typ !== 'tabelle');
         return (
           <section key={r.key}>
             {register.filter((x) => x.art === 'felder').length > 1 && <h2>{r.name}</h2>}

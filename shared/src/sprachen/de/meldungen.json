@@ -1743,5 +1743,12 @@
   "berechnet.hinweis.html": "Ein Hinweis ist nur Text – ohne HTML (< > und &…;).",
   "berechnet.hinweis.markdown": "Ein Hinweis ist nur Text – ohne Markdown.",
   "berechnet.hinweis.link": "Ein Hinweis enthält keine Links oder Adressen.",
-  "pakete.berechnet-ohne-schreiben": "Mappentyp „{typ}“: {felder} sind berechnet – dafür braucht das Paket Code mit code.rechte.schreiben auf diesen Mappentyp."
+  "pakete.berechnet-ohne-schreiben": "Mappentyp „{typ}“: {felder} sind berechnet – dafür braucht das Paket Code mit code.rechte.schreiben auf diesen Mappentyp.",
+  "tabelle.gibt-es-nicht": "Diese Tabelle gibt es an der Mappe nicht.",
+  "tabelle.quelle-gebraucht": "Das Feld „{feld}“ braucht die Tabelle „{tabelle}“ in „{typ}“: Sie zeigt Mappen dieses Typs über dieses Feld. Entferne erst die Tabelle oder wähle dort ein anderes Feld.",
+  "tabelle.typ-gebraucht": "Die Tabelle „{label}“ in „{name}“ zeigt Mappen dieses Typs.",
+  "pakete.tabelle-typ": "mappentypen: „{typ}“ → Feld „{feld}“: Die Tabelle zeigt Mappen vom Typ „{quelle}“, den das Paket nicht mitbringt.",
+  "pakete.tabelle-feld": "mappentypen: „{typ}“ → Feld „{feld}“: Das Feld „{quellfeld}“ von „{quelle}“ ist kein Verweisfeld auf diesen Typ – die Tabelle zeigt nur Mappen, die über ein solches Feld hierher verweisen.",
+  "paketerstellung.tabelle": "Feldart Tabelle",
+  "paketerstellung.tabelle-liste": "{wo}: Die Tabelle zeigt eine andere Trefferliste von „{name}“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten."
 }

@@ -5,6 +5,7 @@
 import { feldLabel, registerName, typName } from '../../shared/src/beschriftung';
 import { formatiere, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, type Dokument, type Feld, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { spaltenDerSicht } from '../../shared/src/sichten';
+import { wertfelder } from '../../shared/src/tabelle';
 import type { Zelle } from './xlsx';
 import { mappenPdfZeichnen, type PdfMappenSeite } from './pdf';
 import { zeitzone } from '../../shared/src/region';
@@ -25,7 +26,8 @@ export function exportSpalten(typen: Mappentyp[], art: Spaltenart, trefferliste?
   } else s = [];
   if (!s.length) {
     const felder: string[] = [];
-    for (const t of typen) for (const f of t.felder) if (!felder.includes(f.key)) felder.push(f.key);
+    // Tabellen (#1030) haben keinen Wert – keine Spalte.
+    for (const t of typen) for (const f of wertfelder(t.felder)) if (!felder.includes(f.key)) felder.push(f.key);
     s = ['_titel', ...(typen.length > 1 ? ['_typ'] : []), ...felder, '_erstellt', '_erstelltVon', '_geaendert', '_geaendertVon'];
   }
   if (!s.includes('_titel')) s = ['_titel', ...s];

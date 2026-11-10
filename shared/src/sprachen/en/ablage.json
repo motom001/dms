@@ -1258,5 +1258,9 @@
   "anzeige.gerade-aus": "Currently hidden ({bedingung}) – the values stay saved.",
   "suche.vom-typ": "points to a folder of type",
   "paket-hinweis.titel": "Notes from packages",
-  "paket-hinweis.marke-titel": "Note from the package {paket} – not from Ablago"
+  "paket-hinweis.marke-titel": "Note from the package {paket} – not from Ablago",
+  "tabelle.leer": "No {name} yet",
+  "tabelle.nach-dem-speichern": "You can add {name} after saving – with “{neu}” below the table.",
+  "tabelle.weitere": "Show {anzahl} more (of {gesamt})",
+  "tabelle.angelegt": "“{titel}” created."
 }

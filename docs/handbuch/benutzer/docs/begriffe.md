@@ -137,6 +137,10 @@ Die Vorbelegung eines Feldes beim Anlegen einer Mappe, auch mit Platzhaltern wie
 Ein Mappentyp, den Ablago selbst mitbringt – Benutzer, Rolle und Post.  
 Siehe auch: [Mappentyp](#mappentyp).
 
+<a id="tabelle"></a>**Tabelle** · ✓ Alltagswort · alle  
+Feldart ohne eigenen Wert – zeigt zwischen den Feldern einer Mappe die Mappen eines anderen Typs, die auf sie verweisen, mit den Spalten einer Trefferliste, z. B. an der Rechnung ihre Positionen; darunter „+ Neu“ (etwa „+ Position“). Nur Mappen, die man lesen darf; keine Summen.  
+Siehe auch: [Feldart](#feldart), [Register](#register), [Trefferliste](#trefferliste), [Verweis](#verweis).
+
 <a id="tipp"></a>**Tipp** · ✓ Alltagswort · alle  
 Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens einer am Tag als leise Zeile auf der Startseite; der Satz führt an die Stelle oder startet einen Rundgang. Mit × ausblenden, in Mein Konto ganz abschalten.  
 Siehe auch: [Rundgang](#rundgang), [Ablago entdecken](#ablago-entdecken).
@@ -620,6 +624,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Systemmappentyp | – | `Systemtyp` |
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
 | Systemzustand | Systemumgebung | – |
+| Tabelle | Unterformular, Liste (als Feldart), Positionstabelle | `tabelle, Feld.quelle, shared/src/tabelle.ts` |
 | Texterkennung | OCR (in der Oberfläche) | `OcrStand` |
 | Tipp | Hinweis (für Tipps), Hilfe-Tipp | `Tipp, tipps.yaml` |
 | Trefferliste | – | `Trefferliste` |

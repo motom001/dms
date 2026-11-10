@@ -1007,5 +1007,16 @@
   "sichten.typ-kein-ziel": "“{label}” does not refer to folders of this type – the condition would never apply.",
   "typvergleich.gleicher-typ": "all of the same type",
   "typvergleich.ziel-optional": "optional target types",
-  "erweitertesuche.vom-typ": "(of type {typen})"
+  "erweitertesuche.vom-typ": "(of type {typen})",
+  "tabelle.typ-waehlen": "Table: choose the folder type whose folders it shows.",
+  "tabelle.typ-fehlt": "Table: the chosen folder type no longer exists.",
+  "tabelle.feld-waehlen": "Table: choose the link field through which the folders link here.",
+  "tabelle.feld-verweist-nicht": "Table: the field “{feld}” does not link to this folder type.",
+  "tabelle.liste-fehlt": "Table: the chosen results list no longer exists – choose another one or the default.",
+  "tabelle.neu-zu-lang": "Table: the “+ New” label may be at most {max} characters long.",
+  "tabelle.kein-wert": "A table has no value of its own – it cannot be required or unique.",
+  "tabelle.nicht-im-titel": "Tables have no value and cannot appear in the title template: {map}.",
+  "tabelle.keine-spalte": "A table cannot be a column of a results list.",
+  "tabelle.neu": "+ {typ}",
+  "typvergleich.tabelle": "Table"
 }

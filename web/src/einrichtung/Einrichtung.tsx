@@ -1,5 +1,6 @@
 import { AuswahlFilter } from '../werkbank/Sichten';
 import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
+import { TabellenEditor } from './Tabelle';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
@@ -181,6 +182,8 @@ function beispielWerte(felder: Feld[]): Werte {
       case 'auswahl': w[f.key] = f.optionen?.[0] ?? ''; break;
       case 'referenz': w[f.key] = 'beispiel'; break;
       case 'passwort': w[f.key] = null; break;
+      // Tabelle (#1030): kein Wert.
+      case 'tabelle': break;
       default: w[f.key] = f.label || f.key;
     }
   }
@@ -347,7 +350,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
         return { ...(r.art === 'felder' ? { ...r, felder: felder.map((f) => f.key), abschnitte: ab } : r), beschriftungen: r.beschriftungen ?? null, ausgeblendet: !!r.ausgeblendet };
       }),
       trefferlisten: listen.map(({ _uid, _neu, ...l }) => ({
-        ...l, beschriftungen: l.beschriftungen ?? null, spalten: l.spalten.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k && f.typ !== 'passwort').map((f) => f.key) : [k])),
+        ...l, beschriftungen: l.beschriftungen ?? null, spalten: l.spalten.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k && f.typ !== 'passwort' && f.typ !== 'tabelle').map((f) => f.key) : [k])),
       })),
     };
     try {
@@ -544,7 +547,9 @@ function VerwendetIn({ typ }: { typ: Mappentyp }) {
   const felder = d.typen.filter((mappentyp) => mappentyp.id !== typ.id).flatMap((mappentyp) => mappentyp.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(typ.id)).map((f) => ({ t: mappentyp, f })));
   const register = d.typen.filter((mappentyp) => mappentyp.id !== typ.id)
     .flatMap((mappentyp) => mappentyp.register.filter((r) => r.art === 'verknuepfungen' && r.quellen?.some((q) => q.typId === typ.id)).map((r) => ({ t: mappentyp, r })));
-  const leer = !sichten.length && !felder.length && !register.length;
+  // Tabellen (#1030) anderer Typen, die Mappen dieses Typs zeigen.
+  const tabellen = d.typen.filter((mappentyp) => mappentyp.id !== typ.id).flatMap((mappentyp) => mappentyp.felder.filter((f) => f.typ === 'tabelle' && f.quelle?.typId === typ.id).map((f) => ({ t: mappentyp, f })));
+  const leer = !sichten.length && !felder.length && !register.length && !tabellen.length;
   return (
     <div className="verwendet">
       <h3 className="zwischen">{t('mappentypen.editor.verwendet-in')}</h3>
@@ -553,6 +558,7 @@ function VerwendetIn({ typ }: { typ: Mappentyp }) {
           {sichten.map((s) => <li key={s.id}>{tn('mappentypen.editor.ansicht', { link: <Link to={`/werkbank/sichten/${s.id}`} className="verweis">{s.name}</Link> })}</li>)}
           {felder.map(({ t: mappentyp, f }) => <li key={`${mappentyp.id}-${f.key}`}>{tn('mappentypen.editor.feld-2', { link: <Link to={`/werkbank/typen/${mappentyp.id}#felder`} className="verweis">{mappentyp.name} › {f.label || f.key}</Link> })}</li>)}
           {register.map(({ t: mappentyp, r }) => <li key={`${mappentyp.id}-${r.key}`}>{tn('mappentypen.editor.verknuepfungsregister', { link: <Link to={`/werkbank/typen/${mappentyp.id}#register`} className="verweis">{mappentyp.name} › {r.name}</Link> })}</li>)}
+          {tabellen.map(({ t: mappentyp, f }) => <li key={`t-${mappentyp.id}-${f.key}`}>{tn('mappentypen.tabelle.verwendet', { link: <Link to={`/werkbank/typen/${mappentyp.id}#felder`} className="verweis">{mappentyp.name} › {f.label || f.key}</Link> })}</li>)}
         </ul>
       )}
     </div>
@@ -592,6 +598,7 @@ function FeldZeile(p: {
   if (f.ausgeblendet || p.registerAusgeblendet) chips.push(t('mappentypen.darstellung.chip.ausgeblendet'));
   if (f.eindeutig && (f.typ === 'text' || f.typ === 'zahl')) chips.push('eindeutig');
   if (f.typ === 'referenz') chips.push(`→ ${zielName}`, VERWEISARTEN[f.verweisart ?? 'bezug']);
+  if (f.typ === 'tabelle' && f.quelle?.typId) chips.push(`← ${zielNameVon(f.quelle.typId)}`);
   if (f.typ === 'auswahl') chips.push(t('mappentypen.editor.werte', { zahl: (f.optionen ?? []).length }));
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
   if (f.typ === 'referenz' && f.mehrfach && f.gleicherTyp) chips.push(t('mappentypen.editor.chip.gleicher-typ'));
@@ -636,6 +643,8 @@ function FeldZeile(p: {
   </div>;
   else if (f.typ === 'datum') besonders = <><DatumGrenzen f={f} id={id} setze={setze} /><FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} /></>;
   else if (f.typ === 'passwort') besonders = <p className="leise klein">{t('mappentypen.editor.wird-verschluesselt-gespeichert-und')}</p>;
+  // Tabelle (#1030): Quelle wie ein Verknüpfungsregister, Spalten aus einer Trefferliste des anderen Typs, „+ Neu“.
+  else if (f.typ === 'tabelle') besonders = <TabellenEditor f={f} id={id} eigeneId={p.eigeneId} eigenerName={p.eigenerName} typen={p.typen} eigeneFelder={p.alleFelder} setze={setze} />;
   else if (f.typ === 'referenz') besonders = <><div className="raster">
     <div className="eigenschaft"><label htmlFor={id('ziel')}>{t('mappentypen.editor.verweist-auf-mappen-vom')}</label>
       {jedeMappe(f) ? <p className="leise">{t('mappentypen.editor.jede-mappe')}</p>
@@ -728,9 +737,10 @@ function FeldZeile(p: {
           </div>
           <div className="raster">
             {/* Ausgeblendete Felder (#655) können nicht Pflicht sein – sonst ließe sich keine Mappe speichern. */}
-            <div className="eigenschaft unten">{f.ausgeblendet || p.registerAusgeblendet || berechnetVon
+            {/* Tabellen (#1030) haben keinen Wert – nie Pflicht. */}
+            {f.typ !== 'tabelle' && <div className="eigenschaft unten">{f.ausgeblendet || p.registerAusgeblendet || berechnetVon
               ? <label className="haken"><input type="checkbox" checked={false} disabled /><span><span className="haken-titel">{t('mappentypen.editor.pflichtfeld')}</span><small className="hilfe">{berechnetVon ? t('mappentypen.berechnet.nie-pflicht') : f._pflichtWeg ? t('mappentypen.darstellung.pflicht-aufgehoben') : t('mappentypen.darstellung.nie-pflicht')}</small></span></label>
-              : haken('pflicht', t('mappentypen.editor.pflichtfeld'), t('mappentypen.editor.mappe-laesst-sich-ohne'))}</div>
+              : haken('pflicht', t('mappentypen.editor.pflichtfeld'), t('mappentypen.editor.mappe-laesst-sich-ohne'))}</div>}
             <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={!!f.ausgeblendet} onChange={(ev) => p.ausblenden(ev.target.checked)} />
               <span><span className="haken-titel">{t('mappentypen.darstellung.ausblenden')}</span><small className="hilfe">{p.registerAusgeblendet && !f.ausgeblendet ? t('mappentypen.darstellung.register-ausgeblendet') : t('mappentypen.darstellung.ausblenden-hilfe')}</small></span></label></div>
             {(f.typ === 'text' || f.typ === 'zahl') && <div className="eigenschaft unten">{haken('eindeutig', t('mappentypen.editor.eindeutig'), t('mappentypen.editor.wert-darf-je-mappentyp'))}</div>}
@@ -911,7 +921,7 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
       <div className="chipwahl">
         <span className="leise klein">{t('mappentypen.editor.einsetzen')}</span>
         {/* Passwörter nie im Titel (#46). */}
-        {felder.filter((f) => f.typ !== 'passwort').map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
+        {felder.filter((f) => f.typ !== 'passwort' && f.typ !== 'tabelle').map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
         {Object.entries(INDEXPLATZHALTER).map(([k, name]) => (
           <button key={k} type="button" className="chipknopf index" title={t('mappentypen.editor.indexwert-datum-an-dem', { k, wert: k === 'angelegt' ? t('mappentypen.editor.angelegt') : t('mappentypen.editor.zuletzt-geaendert') })} onClick={() => einsetzen(k)}>{name}</button>
         ))}
@@ -1285,11 +1295,11 @@ function TrefferlisteEditor({ e, setE, klappe }: { e: Entwurf; setE: (f: (x: Ent
 
 /** Spalten einer Trefferliste: auswählen und anordnen. */
 function Spaltenwahl({ e, spalten, name, setze }: { e: Entwurf; spalten: string[]; name: (k: string) => string; setze: (eintrag: string[]) => void }) {
-  // Spalten gelöschter Felder und Passwortfelder (#46) fallen weg.
-  const liste = spalten.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k && f.typ !== 'passwort'));
+  // Spalten gelöschter Felder, Passwortfelder (#46) und Tabellen (#1030, ohne Wert) fallen weg.
+  const liste = spalten.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k && f.typ !== 'passwort' && f.typ !== 'tabelle'));
   const verfuegbar = [
     // Ausgeblendete Felder (#655) nicht als neue Spalte; schon gewählte bleiben.
-    ...e.felder.filter((f) => f.typ !== 'passwort' && !f.ausgeblendet && !e.register.some((r) => r.ausgeblendet && r.key === f._register)).map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
+    ...e.felder.filter((f) => f.typ !== 'passwort' && f.typ !== 'tabelle' && !f.ausgeblendet && !e.register.some((r) => r.ausgeblendet && r.key === f._register)).map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
     ...(Object.keys(SYSTEMSPALTEN) as Systemspalte[]).filter((k) => k !== '_typ').map((k) => ({ k, n: SYSTEMSPALTEN[k] })),
   ].filter((x) => !liste.includes(x.k));
   const [ansage, setAnsage] = useState('');

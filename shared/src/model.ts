@@ -16,6 +16,7 @@ import { datumsformat } from './region';
 import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumText, type Zeitraum } from './feldarten';
 import { t, t as tx } from './texte';
 import { SCHLUESSEL, TYP_KENNUNG } from './kennungen';
+import { tabellenProbleme } from './tabelle';
 import { gebietsschema, registrierteSprachen, textNur } from './sprache';
 import { optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
 export { zeitzone } from './region';
@@ -37,6 +38,11 @@ export const FELDTYPEN = {
   zeitraum: 'Zeitraum',
   /** Prozentsatz (#1035): „19 %“, gespeichert als Zahl 19 (feldarten.ts). */
   prozent: 'Prozent',
+  /**
+   * Tabelle (#1030): die Mappen eines anderen Typs, die über ein Verweisfeld hierher verweisen, als Tabelle zwischen den
+   * Feldern. Kein eigener Wert – reine Darstellung wie ein Abschnitt (tabelle.ts).
+   */
+  tabelle: 'Tabelle',
 } as const;
 export type Feldtyp = keyof typeof FELDTYPEN;
 /**
@@ -148,6 +154,11 @@ export interface Feld {
    * Setzen kann es nur die Paketverwaltung, entfernen („Feld wieder freigeben“) der Administrator. Nie Pflicht.
    */
   berechnetVon?: string;
+  /**
+   * Tabelle (#1030): Mappen vom Typ `typId`, die über `feldKey` hierher verweisen, mit den Spalten der Trefferliste
+   * `trefferliste` (fehlt = Standard) und der Beschriftung `neu` für „+ Neu“. Nur bei `typ: 'tabelle'`.
+   */
+  quelle?: import('./tabelle').Tabellenquelle;
 }
 
 /**
@@ -468,7 +479,7 @@ export const GEMISCHTE_SPALTEN: Systemspalte[] = ['_titel', '_typ', '_erstelltVo
 export function sortierbar(spalte: string, t?: Pick<Mappentyp, 'felder'>): boolean {
   if (istSystemspalte(spalte)) return true;
   const f = t?.felder.find((x) => x.key === spalte);
-  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort';
+  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort' && f.typ !== 'tabelle';
 }
 export interface Sortierung { spalte: string; absteigend: boolean }
 
@@ -669,6 +680,8 @@ export interface TypKontext {
   nummernkreise?: string[];
   /** Felder eines anderen Typs (für Quellen von Verknüpfungsregistern). */
   felderVon?: (typId: string) => Feld[] | undefined;
+  /** Felder und Trefferlisten eines anderen Typs (Tabelle, #1030); fehlt: aus `felderVon` ohne eigene Trefferlisten. */
+  typVon?: (typId: string) => Pick<Mappentyp, 'felder' | 'trefferlisten' | 'trefferliste'> | undefined;
 }
 
 /** Allgemeine Meldung mit Bereich des Editors (#144). */
@@ -707,6 +720,14 @@ function pruefeRegister(mappentypDaten: MappentypDaten, ctx: TypKontext, p: Prue
   if (ohne.length && reg.some((r) => r.art === 'felder')) melde(p, 'register', t('gemeinsam.model.diese-felder-liegen-auf', { map: ohne.map((f) => f.label || f.key).join(', ') }));
 }
 
+/** Tabellen (#1030) haben keinen Wert – weder im Titel noch als Spalte einer Trefferliste. */
+function pruefeTabellenOhneWert(mappentypDaten: MappentypDaten, p: Pruefergebnis) {
+  const istT = (k: string) => mappentypDaten.felder.some((f) => f.key === k && f.typ === 'tabelle');
+  const imTitel = vorlageFelder(mappentypDaten.titelVorlage ?? '').filter(istT);
+  if (imTitel.length) melde(p, 'titel', t('gemeinsam.tabelle.nicht-im-titel', { map: imTitel.map((k) => `{${k}}`).join(', ') }));
+  if ([...(mappentypDaten.trefferliste ?? []), ...(mappentypDaten.trefferlisten ?? []).flatMap((l) => l.spalten)].some(istT)) melde(p, 'trefferlisten', t('gemeinsam.tabelle.keine-spalte'));
+}
+
 export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext): Pruefergebnis {
   const p: Pruefergebnis = { allgemein: [], felder: {} };
   const name = (mappentypDaten.name ?? '').trim();
@@ -725,6 +746,7 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
   if (unbekannt.length) melde(p, 'titel', t('gemeinsam.model.die-titel-vorlage-nennt', { map: unbekannt.map((k) => `{${k}}`).join(', ') }));
   const geheim = vorlageFelder(mappentypDaten.titelVorlage ?? '').filter((k) => mappentypDaten.felder.some((f) => f.key === k && f.typ === 'passwort'));
   if (geheim.length) melde(p, 'titel', t('gemeinsam.model.passwortfelder-duerfen-nicht-im', { map: geheim.map((k) => `{${k}}`).join(', ') }));
+  pruefeTabellenOhneWert(mappentypDaten, p);
   for (const x of pruefeTitelFilter({ felder: mappentypDaten.felder, titelVorlage: mappentypDaten.titelVorlage ?? '' })) melde(p, 'titel', x);
   if ((mappentypDaten.trefferliste ?? []).some((k) => mappentypDaten.felder.some((f) => f.key === k && f.typ === 'passwort'))) melde(p, 'trefferlisten', t('gemeinsam.model.passwortfelder-koennen-keine-spalte'));
   pruefeRegister(mappentypDaten, ctx, p);
@@ -753,6 +775,14 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
       if (f.gleicherTyp && !f.mehrfach) m.push(t('gemeinsam.model.gleicher-typ-nur-mehrfach'));
       // Folgt aus (#886): Quelle und Zielfeld gibt es und sie passen; Kreise meldet die Prüfung unten.
       if (f.folgtAus) m.push(...folgtAusProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
+    }
+    // Tabelle (#1030): Quelle wie bei einem Verknüpfungsregister – das Feld des anderen Typs muss hierher verweisen.
+    if (f.typ === 'tabelle') {
+      m.push(...tabellenProbleme(f, {
+        eigeneId: ctx.eigeneId, zielErlaubt, listen: trefferlistenVon,
+        typ: (id) => (id === ctx.eigeneId ? mappentypDaten : ctx.typVon?.(id) ?? (ctx.felderVon?.(id) ? { felder: ctx.felderVon(id)! } : undefined)),
+      }));
+      if (f.pflicht || f.eindeutig) m.push(t('gemeinsam.tabelle.kein-wert'));
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push(t('gemeinsam.model.mindestens-einen-auswahlwert'));
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
@@ -1253,6 +1283,8 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'auswahl': return (Array.isArray(v) ? v : [v]).map((x) => optionText(f, String(x))).join(', ');
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
     case 'passwort': return istPasswortWert(v) && !v.gesetzt && !v.neu ? '' : '••••••••';
+    // Tabelle (#1030): kein eigener Wert.
+    case 'tabelle': return '';
     case 'formatiert': return alsText(String(v));
     // IBAN in Vierergruppen (#535), auch gespeicherte ohne Leerzeichen.
     case 'text': return f.format === 'iban' && typeof v === 'string' && /^[A-Za-z]{2}\d{2}[A-Za-z0-9 ]+$/.test(v.trim()) ? ibanGruppen(v) : String(v);

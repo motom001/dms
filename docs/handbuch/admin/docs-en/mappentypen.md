@@ -61,6 +61,7 @@ Every field has a **label** (changeable), a **key** (fixed once saved) and a **f
 | Choice list | the choice values (one per line), multiple choice, [labels of the values](#beschriftungen-je-sprache) |
 | Link | target folder types (one or several), kind of link, several folders allowed, all of the same type |
 | Password | – (stored encrypted, see below) |
+| Table | shows folders of the type … that link here through field …; columns from results list …; label of "+ New" (see [below](#tabelle)) |
 
 For all of them: **Required field** and a **help text** that is shown below the field when filling it in (in the field editor right next to the label); most folder types also have a **default value** for new folders. **Unique** means: the value may exist only once in this folder type – upper and lower case don't count.
 
@@ -75,6 +76,27 @@ For contracts and invoices there are three things you enter just as they are on 
 - **Negative amounts** – tick **Allow negative amounts** on the amount field, e.g. for a *credit note* or *refund*. The default is off: the amount may then not be below 0. With the tick, the form shows "Credit note or refund? Enter it with a minus." below the field, and lists show a clear minus sign (−£25.00). Amount fields that already held a negative amount at the update have the tick set automatically.
 
 All three work with [conditions](sichten.md), the advanced search, direct links, export and packages. In the [full export](export.md) a period is written as `P3M` (ISO 8601), a percentage as a number.
+
+### Table: linking folders between the fields { #tabelle }
+
+A **table** shows, in the middle of a fields tab, the folders of another type that link to this folder – for example the *items* of an *invoice*, or the *tasks* of a *project*. It has the same source as a [links tab](#register), but sits between the fields instead of on a tab of its own.
+
+![Invoice with the table Items](bilder/mappe-tabelle.png)
+
+On the field you set:
+
+- **Shows folders of the type** and **that link here through this field** – only link fields pointing to this folder type can be chosen (on the *invoice item*, for example, *Invoice*). If there is none yet, add it to the other type first.
+- **Columns from results list** – the columns and their order come from a [results list](#trefferlisten) of the other type; without a choice from its default results list. Password fields are never a column.
+- **Label of "+ New"** – e.g. "+ Item", translatable per language; empty means "+ Invoice item".
+- Label (e.g. *Items*), help text, tab, **Hide** and **Show when …** as for any field; with a [section](#abschnitte) before it the table gets a row of its own with a heading.
+
+In the folder the rows are sorted as in the results list of the other type, 50 at a time with **Show more**; a click opens the folder. Without rows there is a quiet sentence ("No Items yet"). On a phone the table is a list with the first two columns. **+ Item** below the table opens the new folder in a window, with the link to this folder already set; after saving it appears in the table.
+
+**Permissions.** The rows are folders: everybody sees only the rows they may read – the count ("Show more") does not include any others either. Links in the columns to folders they may not read show as "folder not visible". Only people who may create the other type see **+ New**; when saving, Ablago checks the create permission and that the person may read this folder, also via the [API](api.md).
+
+**No value of its own.** A table is pure presentation like a section: it is not part of the folder's values, not in the [export](export.md) and full export, not in conditions, columns or the title template, and never required. It does not add up totals – that is up to packages, such as *Invoices*, which checks whether the items match the amount. Editing values directly in the table is not possible; open the folder for that.
+
+As long as a table shows folders of a type, that type cannot be deleted and its link field cannot be removed; Ablago then names the table. Packages can include tables (`typ: tabelle` with `quelle`, see the developer manual).
 
 ### Hiding fields instead of deleting them { #felder-ausblenden }
 

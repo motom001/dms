@@ -20,6 +20,7 @@ import { fingerabdruck, type Gueltigkeit, type Haushaltsstand, mitFavoriten, Zae
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import type { Systemsichten } from './systemsichten';
 import type { SichtenVerwaltung } from './verwalten';
+import { tabellenSeite } from './tabelle';
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 
@@ -105,6 +106,15 @@ export class SichtenDienst {
   private termine(z: Zugriff, q: { von?: unknown; bis?: unknown }) { return this.anschluss.termine(z, q); }
 
   /* ---------- Sichten: seitenweise und gezählt ---------- */
+
+  /** Feldart Tabelle (#1030): eine Seite der verweisenden Mappen an einer Mappe – nur lesbare, auch in der Zahl (tabelle.ts). */
+  tabelle(id: string, feldKey: string, q: Parameters<typeof tabellenSeite>[3], z?: Zugriff) {
+    return tabellenSeite({
+      repo: () => this.repo, rechte: this.teile.rechte, sortierungAus,
+      // Ein Dienstkonto eines Pakets kennt nur die Typen, die es lesen darf – fehlt der andere, bleibt die Tabelle leer.
+      typen: async (zz) => zz?.typen ?? new Map((await this.repo.listeTypen()).map((x) => [x.id, x] as const)),
+    }, id, feldKey, q, z);
+  }
 
   /**
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,

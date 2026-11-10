@@ -24,4 +24,5 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 | --- | --- |
 | `Feld`, `HakenFeld`, `FeldGruppe` | Rahmen für Eingaben: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol, `aria` |
 | `Knopf`, `KnopfLink`, `knopfAussehen` | Knöpfe: Arten Anlegen, Haupt, Neben, Gefahr, Link; gesperrt mit Grund, „läuft“, Ergebnis am Knopf, Fehler aus asynchronen Handlern |
+| `Tabelle` | Zeilen mit Spalten, jede führt zu einer Seite (#1030): breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten; leer ein ruhiger Satz |
 | `ZeitraumEingabe`, `ProzentEingabe` | Eingaben mit Einheit (#1035): Zahl und Einheit („3 Monate“, Einzahl/Mehrzahl), Zahl mit „%“ – im Feldrahmen oder mit eigener Beschriftung |

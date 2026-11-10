@@ -1,0 +1,27 @@
+/* Baustein Tabelle (#1030): breit eine Tabelle, schmal eine Liste. Nur Werte aus tokens.css. */
+.tabelle { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tabelle table { width: 100%; border-collapse: collapse; font-size: calc(13px * var(--skala, 1)); }
+.tabelle thead th { text-align: left; font-weight: 600; color: var(--leise); padding: 6px 10px; border-bottom: 1px solid var(--linie-stark); white-space: nowrap; }
+.tabelle td { padding: 7px 10px; line-height: 1.35; border-bottom: 1px solid var(--linie); }
+.tabelle th:first-child, .tabelle td:first-child { padding-left: 0; }
+.tabelle tbody tr { cursor: pointer; }
+.tabelle tbody tr:hover { background: var(--senke); }
+.tabelle td a, .liste a { color: inherit; font-weight: 600; text-decoration: none; }
+.tabelle td a:hover, .liste a:hover { text-decoration: underline; }
+.tabelle td a:focus-visible, .liste a:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.rechts { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tabelle thead th.rechts { text-align: right; }
+
+.liste { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linie); }
+.liste li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--linie); cursor: pointer; min-width: 0; }
+.haupt { overflow-wrap: anywhere; }
+.neben { color: var(--leise); font-size: calc(13px * var(--skala, 1)); overflow-wrap: anywhere; }
+.unsichtbar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.leer { color: var(--leise); margin: 0; }
+.fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+
+/* Am Handy (#1027): Verweise mit einer Tippfläche von mindestens 44 × 44 px – auch eine kurze Nummer wie „1“. */
+@media (pointer: coarse) {
+  .tabelle td a, .liste a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+}

@@ -12,6 +12,7 @@ import { EXPORT_TAGE } from '../../shared/src/auskunft';
 import { kernTyp } from '../../shared/src/dateiumwandlung';
 import { auswahlText, istLeer, mehrereZiele, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
 import { istZeitraum, zeitraumIso } from '../../shared/src/feldarten';
+import { wertfelder } from '../../shared/src/tabelle';
 import type { Erinnerung } from '../../shared/src/fristen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Sicht } from '../../shared/src/sichten';
@@ -415,10 +416,11 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
     // CSV und JSON Lines: alle Felder, Verweise als Id und Titel.
     const kopf = ['id', 'titel', 'angelegt', 'angelegt_von', 'geaendert', 'geaendert_von', ...(mappentyp.archiv ? ['aufbewahren_bis'] : []),
       // Verweise mit mehreren Zieltypen (#1036): dazu der Mappentyp jeder Mappe (Kennung, sonst Name).
-      ...mappentyp.felder.flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`, ...(mehrereZiele(f) ? [`${f.key}_typ`] : [])] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];
+      // Tabellen (#1030) haben keinen Wert – keine Spalte.
+      ...wertfelder(mappentyp.felder).flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`, ...(mehrereZiele(f) ? [`${f.key}_typ`] : [])] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];
     const typVonMappe = (id: string) => { const x = typVon.get(alleMappen.get(id)?.typId ?? ''); return x ? x.schluessel ?? x.name : ''; };
     const csvZeileVon = (m: Mappe) => [m.id, m.titel ?? '', m.erstellt, m.erstelltVon ?? '', m.geaendert, m.geaendertVon ?? '', ...(mappentyp.archiv ? [aufbewahrenBis(mappentyp.archiv, m) ?? ''] : []),
-      ...mappentyp.felder.flatMap((f) => {
+      ...wertfelder(mappentyp.felder).flatMap((f) => {
         const v = m.werte[f.key];
         if (f.typ === 'passwort') return [istLeer(v) ? '' : '(gesetzt)'];
         if (f.typ === 'referenz') { const ids = Array.isArray(v) ? v.map(String) : v ? [String(v)] : []; return [ids.join(' | '), ids.map(titel).join(' | '), ...(mehrereZiele(f) ? [ids.map(typVonMappe).join(' | ')] : [])]; }

@@ -17,6 +17,7 @@ import { JAHRE_MAX } from '../../../shared/src/archiv';
 import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennung';
 import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
 import { PAKET_ID, SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
+import { TABELLE_NEU_MAX, type Tabellenquelle } from '../../../shared/src/tabelle';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -28,7 +29,7 @@ function zahlOderNull(v: unknown): number | null {
 }
 
 /** Teile, die sich je Sprache beschriften lassen (#728). */
-const FELD_TEILE = ['label', 'hilfe', 'optionen'] as const satisfies ReadonlyArray<keyof FeldTeile>;
+const FELD_TEILE = ['label', 'hilfe', 'optionen', 'neu'] as const satisfies ReadonlyArray<keyof FeldTeile>;
 const NAMENS_TEILE = ['name'] as const satisfies ReadonlyArray<keyof NamensTeile>;
 export const TYP_TEILE = ['name', 'beschreibung'] as const satisfies ReadonlyArray<keyof TypTeile>;
 /** Am Mappentyp zusätzlich „Woran man ihn erkennt“ (#937); Ansichten haben das nicht. */
@@ -63,10 +64,11 @@ export function bereinigeFeld(e: unknown): Feld {
     // Deutsch ist der Ausgangstext; `beschriftungen.de.label` (z. B. aus einem Paket) gilt als Bezeichnung.
     label: ausgangAus(f.beschriftungen, 'label', text(f.label)),
     typ,
-    pflicht: !!f.pflicht,
+    // Tabelle (#1030): kein Wert – nie Pflicht, kein Standard.
+    pflicht: !!f.pflicht && typ !== 'tabelle',
     eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl'),
     hilfe: ausgangAus(f.beschriftungen, 'hilfe', text(f.hilfe)),
-    standard: std == null || std === '' || typ === 'passwort' ? null : typeof std === 'boolean' ? std : standardText(typ, std),
+    standard: std == null || std === '' || typ === 'passwort' || typ === 'tabelle' ? null : typeof std === 'boolean' ? std : standardText(typ, std),
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
@@ -107,9 +109,19 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(f.ausgeblendet === true ? { ausgeblendet: true } : {}),
     // Anzeigen, wenn … (#1033): nur mit mindestens einer Bedingung; ob sie passen, prüft der Dienst beim Speichern.
     ...(bereinigeAnzeige(f.anzeigen) ? { anzeigen: bereinigeAnzeige(f.anzeigen) } : {}),
+    // Tabelle (#1030): Quelle wie beim Verknüpfungsregister, dazu die Beschriftung von „+ Neu“; geprüft im Mappentyp.
+    ...(typ === 'tabelle' ? { quelle: bereinigeTabellenquelle(f.quelle) } : {}),
     // Berechnet (#1034): Id des Pakets; ob es die Angabe setzen darf, entscheidet behalteBerechnet.
-    ...(typ !== 'passwort' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
+    ...(typ !== 'passwort' && typ !== 'tabelle' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
   };
+}
+
+/** Quelle einer Tabelle (#1030): Typ, Verweisfeld, Trefferliste und „+ Neu“ – Texte gekürzt, Leeres weg. */
+function bereinigeTabellenquelle(e: unknown): Tabellenquelle {
+  const q = (e && typeof e === 'object' ? e : {}) as Record<string, unknown>;
+  const liste = text(q.trefferliste).slice(0, 40);
+  const neu = text(q.neu).replace(/\s+/g, ' ').trim().slice(0, TABELLE_NEU_MAX);
+  return { typId: text(q.typId), feldKey: text(q.feldKey), ...(liste ? { trefferliste: liste } : {}), ...(neu ? { neu } : {}) };
 }
 
 /**
@@ -194,10 +206,10 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
   return reg;
 }
 
-/** Nur bekannte Spalten, jede einmal; Spalten entfernter Felder und Passwortfelder fallen still weg. */
+/** Nur bekannte Spalten, jede einmal; Spalten entfernter Felder, Passwortfelder und Tabellen (#1030) fallen still weg. */
 function bereinigeSpalten(e: unknown, felder: Feld[]): string[] {
   return [...new Set((Array.isArray(e) ? e : []).map(text))]
-    .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort'));
+    .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort' && f.typ !== 'tabelle'));
 }
 
 /**

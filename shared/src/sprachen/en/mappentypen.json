@@ -380,5 +380,18 @@
   "editor.zieltyp-suchen": "Add a folder type …",
   "editor.keine-weiteren-typen": "No further folder types.",
   "editor.zieltyp-entfernen": "Remove folder type “{name}”",
-  "editor.ziele-optional": "Added as soon as it is installed: {typen}"
+  "editor.ziele-optional": "Added as soon as it is installed: {typen}",
+  "tabelle.typ": "Shows folders of the type",
+  "tabelle.typ-hilfe": "Folder types with a link field pointing to this type – as for a links tab.",
+  "tabelle.feld": "that link here through this field",
+  "tabelle.feld-hilfe": "For example “Invoice” on the invoice item.",
+  "tabelle.liste": "Columns from results list",
+  "tabelle.liste-hilfe": "Columns and order as in this results list of the other type; never password fields.",
+  "tabelle.liste-standard": "Default results list",
+  "tabelle.waehlen": "Please choose …",
+  "tabelle.neu": "Label of “+ New”",
+  "tabelle.neu-hilfe": "Shown below the table, for example “+ Item”. Only people who may create the other type see the button.",
+  "tabelle.ohne-wert": "A table has no value of its own: it only shows the folders – not in exports, not in conditions, without totals.",
+  "tabelle.keine-quelle": "No field links to this type yet. First add a link field pointing to this type in the other folder type (for example “Invoice” on the invoice item).",
+  "tabelle.verwendet": "Table {link}"
 }

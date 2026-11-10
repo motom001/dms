@@ -83,6 +83,7 @@ nav:
       - Feld: bausteine-feld.md
       - Knopf: bausteine-knopf.md
       - Eingaben mit Einheit: bausteine-einheit.md
+      - Tabelle: bausteine-tabelle.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md
