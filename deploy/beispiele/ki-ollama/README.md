@@ -28,4 +28,4 @@ Ollama hat keine Anmeldung: Wer die Adresse erreicht, kann fragen, Modelle laden
 
 ## Aktualisieren
 
-Die Ollama-Version steht fest (`ollama/ollama:0.40.13`) – in `docker-compose.yml` (zweimal), `intel-grafik.yml` und `amd.yml`. Für eine neue Version die Nummer in allen drei Dateien ändern und neu starten (`docker compose pull && docker compose up -d`). Die CI prüft, dass überall dieselbe Nummer steht. Neue Versionen schlägt Dependabot jede Woche als Pull Request für `docker-compose.yml` vor; `amd.yml` und `intel-grafik.yml` kommen im selben Pull Request von Hand dazu – die Probe nennt den Befehl dafür.
+Die Ollama-Version steht fest (`ollama/ollama:0.40.15`) – in `docker-compose.yml` (zweimal), `intel-grafik.yml` und `amd.yml`. Für eine neue Version die Nummer in allen drei Dateien ändern und neu starten (`docker compose pull && docker compose up -d`). Die CI prüft, dass überall dieselbe Nummer steht. Neue Versionen schlägt Dependabot jede Woche als Pull Request für `docker-compose.yml` vor; `amd.yml` und `intel-grafik.yml` kommen im selben Pull Request von Hand dazu – die Probe nennt den Befehl dafür.

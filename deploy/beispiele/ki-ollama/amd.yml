@@ -6,7 +6,7 @@
 # Für AMD-Karten, die ROCm nicht kennt, statt dieser Datei intel-grafik.yml probieren (Vulkan, Versuch).
 services:
   ollama:
-    image: ollama/ollama:0.40.13-rocm
+    image: ollama/ollama:0.40.15-rocm
     devices:
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri
