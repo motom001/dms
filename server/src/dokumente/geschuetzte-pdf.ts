@@ -3,6 +3,7 @@
  * Volltext, Archivfassung und Historie, Schutz je Dokument. Schicht 2.
  */
 import type { FassungInfo } from '../../../shared/src/dateiumwandlung';
+import { createHash } from 'node:crypto';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
 import type { EntsperrenAnbindung, PdfEntsperren } from '../entsperren';
 import { Fachfehler } from '../fehler';
@@ -43,6 +44,12 @@ export class GeschuetztePdfs {
   entsperren?: PdfEntsperren;
   verbindeEntsperren(e: PdfEntsperren) { this.entsperren = e; }
   get pdfEntsperren() { return this.entsperren; }
+
+  /** Inhalt der entsperrten Fassung zum Inhalt einer Datei (Stempel, Verkleinern, #827); null ohne. */
+  entsperrtZu = async (inhalt: Buffer): Promise<Buffer | null> => {
+    if (!this.entsperren || inhalt.subarray(0, 5).toString('latin1') !== '%PDF-') return null;
+    return (await this.entsperren.fassung(createHash('sha256').update(inhalt).digest('hex')))?.inhalt ?? null;
+  };
 
   /** Was PdfEntsperren vom Dienst braucht (#827) – für index.ts und Tests. */
   entsperrenAnbindung(o: Omit<EntsperrenAnbindung, 'datei' | 'dokumenteMitSha' | 'nachEntsperren'>): EntsperrenAnbindung {
