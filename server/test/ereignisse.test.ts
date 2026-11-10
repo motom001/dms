@@ -9,8 +9,13 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
+import { eigeneDatenbank } from './hilfe-db';
+
+const url = process.env.TEST_DATABASE_URL;
+const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
 /** Uhr vorstellen (Bündelung, Wiederholung), danach zurück. */
 async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {
@@ -19,10 +24,18 @@ async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {
   try { return await f(); } finally { Date.now = echt; }
 }
 
-async function aufbau() {
-  const repo = speicherRepo();
+/** Mit TEST_DATABASE_URL zusätzlich gegen PostgreSQL (eigene Datenbank je Aufruf, #900). */
+async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
+  const { pgRepo } = await import('../src/repo-pg');
+  const { pgKontoRepo } = await import('../src/konto-repo');
+  const sql = (await eigeneDatenbank('ereignisse')).sql;
+  return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };
+}
+
+async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
+  const repo = repos?.repo ?? speicherRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
@@ -195,6 +208,35 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     const da = (await spaeter(30 * 60_000, () => repo.faelligeEreignisse(100))).filter((e) => e.paketId === 'kuendigen').map((e) => e.daten.mappe);
     assert.ok(da.includes(offen.id));
     assert.ok(!da.includes(geheim.id), 'Mappe, die das Paket nicht lesen darf: kein Ereignis');
+  });
+
+  it('#958: mappe.geloescht nur an Pakete, die die Mappe lesen durften – geprüft mit der Mappe im Papierkorb', async () => {
+    for (const repos of [undefined, ...(url ? [await pgRepos()] : [])]) {
+      const { d, repo, konten, admin, vertrag, verteile } = await aufbau(repos);
+      const code = { sprache: 'c', ereignisse: ['mappe.geloescht'], mappentypen: ['basis:vertrag'], rechte: { lesen: ['basis:vertrag'] } };
+      const basis: InstalliertesPaket = {
+        id: 'basis', name: 'Basis', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'T', github: 't' }, dms: '>=0.1.0',
+        herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null,
+        typen: { vertrag: vertrag.id }, sichten: {}, abhaengigkeiten: {}, code: false, einstellungen: undefined,
+      };
+      await repo.speicherePaket(basis);
+      await repo.speicherePaket({ ...basis, id: 'kuendigen', name: 'Kündigen', typen: {}, code: true, laeufer: liesCode(code).code! });
+      await konten.dienstkonto('kuendigen', 'Kündigen');
+      const paketRolle = (await d.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
+      await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
+      const offen = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+      const geheim = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
+      const weg = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
+      await d.loescheMappe(offen.id, admin.id);
+      await d.loescheMappe(geheim.id, admin.id);
+      await d.loescheMappe(weg.id, admin.id);
+      assert.equal(await repo.holeMappe(geheim.id), undefined, 'im Papierkorb');
+      // Papierkorb schon geleert, bevor verteilt wird: Das Leserecht lässt sich nicht mehr prüfen – nichts zustellen.
+      await repo.leerePapierkorb([weg.id]);
+      await verteile();
+      const da = (await spaeter(30 * 60_000, () => repo.faelligeEreignisse(100))).filter((e) => e.paketId === 'kuendigen' && e.art === 'mappe.geloescht').map((e) => e.daten.mappe);
+      assert.deepEqual(da, [offen.id], 'nur die Mappe, die das Paket lesen durfte');
+    }
   });
 
   it('Frist erreicht: zum Erinnerungszeitpunkt und am Tag selbst je genau einmal', async () => {

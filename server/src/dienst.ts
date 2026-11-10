@@ -2338,7 +2338,8 @@ export class Dienst {
   /**
    * Automatische Aufgaben zu Mappen, die der Empfänger nicht lesen darf (#798): Statt des Textes steht nur „Aufgabe zu
    * einer Mappe, die du nicht sehen darfst – frag …“ (wer die Mappe angelegt hat, sonst ein Administrator); die
-   * Fälligkeit bleibt. Von Hand geschriebene Texte (Zugewiesen, Erinnerung – von einem Menschen) bleiben sichtbar.
+   * Fälligkeit bleibt – außer bei Fristen und Aufgaben zu einem Datumsfeld: Deren Datum ist ein Wert der Mappe und fällt
+   * samt Feld weg (#958). Von Hand geschriebene Texte (Zugewiesen, Erinnerung – von einem Menschen) bleiben sichtbar.
    * `lesbar`: die Mappen, die er lesen darf. Gilt für „Zu erledigen“, die Mappe ohne Leserecht und die Tägliche Zusammenfassung.
    */
   private async ohneLeserechtText<T extends Aufgabe>(liste: T[], lesbar: Set<string>, ich: string): Promise<T[]> {
@@ -2353,7 +2354,10 @@ export class Dienst {
       const e = ersteller.get(id);
       text.set(id, e && e !== ich && menschen.has(e) ? t('mappen.aufgabe.ohne-leserecht', { name: await this.name(e) }) : t('mappen.aufgabe.ohne-leserecht.admin'));
     }
-    return liste.map((a) => (lesbar.has(a.mappeId) || vonHand(a) ? a : { ...a, text: text.get(a.mappeId)! }));
+    // #958: Bei Fristen (und Aufgaben zu einem Datumsfeld) sind Datum und Feld Werte der Mappe – ohne Leserecht weg.
+    const ausFeld = (a: Aufgabe) => a.art === 'frist' || a.anlass?.art === 'datum';
+    const ohneFeld = (a: T): T => (ausFeld(a) ? { ...a, datum: null, feldKey: null, anlass: null } : a);
+    return liste.map((a) => (lesbar.has(a.mappeId) ? a : ohneFeld(vonHand(a) ? a : { ...a, text: text.get(a.mappeId)! })));
   }
 
   /** Zugriff eines anderen Benutzers, etwa für Platzhalter mit den Rechten des Empfängers (#795); kein Mensch: null. */
@@ -3939,15 +3943,19 @@ export class Dienst {
   /* ---------- Pakete am Mappentyp (#686) ---------- */
 
   /**
-   * Darf der Benutzer dieses Pakets die Mappe (bzw. Mappen dieses Typs, wenn es sie nicht mehr gibt) lesen? null = ja,
+   * Darf der Benutzer dieses Pakets die Mappe (auch im Papierkorb; ohne Mappe: Mappen dieses Typs) lesen? null = ja,
    * sonst der Grund fürs Protokoll. Wird je Zustellung neu gebildet – Rechteänderungen wirken sofort.
    */
   private async paketSiehtNicht(p: InstalliertesPaket, typId: string, mappeId: string | null): Promise<string | null> {
     const konto = (await this.konten?.dienstkonten?.())?.find((b) => b.paketId === p.id);
     const z = await this.zugriff({ id: konto?.id ?? `paket:${p.id}`, rolle: 'mitglied', art: 'dienst', paketId: p.id });
     if (!z.typen.has(typId)) return (await this.paketVerwehrt())[typId]?.includes(p.id) ? t('meldungen.dienst.mappentyp-fuer-dieses-paket') : (await this.kiSperre(p))(typId) ? t('meldungen.dienst.ki-nicht-zugelassen') : t('meldungen.dienst.kein-leserecht-am-mappentyp');
-    const m = mappeId ? await this.repo.holeMappe(mappeId) : null;
-    if (m && !(await this.rechteAn(z, m)).R) return t('meldungen.dienst.kein-leserecht-an-dieser');
+    if (!mappeId) return null;
+    // #958: Nach dem Löschen liegt die Mappe im Papierkorb – geprüft wird mit ihren Werten von dort. Gibt es sie gar
+    // nicht mehr (Papierkorb schon geleert), lässt sich das Leserecht nicht prüfen: dann nicht zustellen.
+    const m = (await this.repo.holeMappe(mappeId)) ?? (await this.repo.holeAusPapierkorb(mappeId));
+    if (!m) return t('meldungen.dienst.diese-mappe-gibt-es');
+    if (!(await this.rechteAn(z, m)).R) return t('meldungen.dienst.kein-leserecht-an-dieser');
     return null;
   }
 

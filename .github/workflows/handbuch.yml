@@ -352,7 +352,9 @@ jobs:
           path: site
           retention-days: 3
 
-  # Über GitHub Actions veröffentlichen (#846). Immer nur ein Lauf zur Zeit; ein neuerer wartet.
+  # Über GitHub Actions veröffentlichen (#846). Immer nur ein Lauf zur Zeit (#898): Die Gruppe „pages“ ohne
+  # cancel-in-progress bricht ein laufendes Deployment nie ab; ein neuerer Lauf wartet, und von mehreren wartenden
+  # behält GitHub nur den neuesten – veröffentlicht wird also immer der neueste Stand.
   veroeffentlichen:
     needs: bauen
     # Aufgerufen aus image.yml (inputs.ref gesetzt) oder von Hand auf main – nie bei PRs oder einem einfachen Push.
@@ -366,7 +368,7 @@ jobs:
       cancel-in-progress: false
     environment:
       name: github-pages
-      url: ${{ steps.bereitstellen.outputs.page_url }}
+      url: ${{ steps.bereitstellen.outputs.page_url || steps.nochmal.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -382,5 +384,15 @@ jobs:
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: seite
+      # Lehnt GitHub ab („in progress deployment“, etwa ein Deployment von außerhalb dieser Gruppe) oder läuft die Zeit
+      # ab: nach einer Pause genau ein zweiter Versuch (#898). Erst wenn auch der scheitert, wird der Lauf rot.
       - id: bereitstellen
+        continue-on-error: true
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Pause vor dem zweiten Versuch
+        if: steps.bereitstellen.outcome == 'failure'
+        run: sleep 90
+      - id: nochmal
+        name: Zweiter Versuch
+        if: steps.bereitstellen.outcome == 'failure'
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
