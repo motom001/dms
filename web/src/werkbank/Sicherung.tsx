@@ -11,6 +11,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
+import { useKontoOptional } from '../konto-kontext';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
@@ -76,7 +77,8 @@ export interface SicherungsHinweis {
   /** Eigenes Ziel statt der Sicherung (#993: Notfallblatt → Verschlüsselung) mit Text für den Knopf. */
   ziel?: string; knopf?: string;
 }
-export function sicherungsHinweise(z: SicherungsZustand): SicherungsHinweis[] {
+/** `mitNotfallblatt`: nur wer die Verschlüsselung verwaltet, erfährt hier vom Notfallblatt (#993, Thomas 10.11.2026). */
+export function sicherungsHinweise(z: SicherungsZustand, mitNotfallblatt: boolean): SicherungsHinweis[] {
   const h: SicherungsHinweis[] = [];
   if (!z.schluessel) return h; // Ohne Schlüssel weist schon die Verschlüsselung darauf hin.
   if (z.fehler) h.push({ schluessel: 'sicherung.fehler', datum: z.fehler.am, art: 'schlecht', text: <><strong>{t('werkbank.sicherung.die-letzte-sicherung-ist')}</strong> ({zeit(z.fehler.am)}): {z.fehler.grund}</> });
@@ -85,7 +87,7 @@ export function sicherungsHinweise(z: SicherungsZustand): SicherungsHinweis[] {
   // Seit #815 auch: Der Notfallcode darauf wurde benutzt, oder das Blatt stammt aus der Zeit vor dem Notfallcode.
   const nb = z.notfallblatt;
   // Das Notfallblatt selbst steht unter Verschlüsselung (#993) – der Hinweis führt dorthin.
-  if (!nb.aktuell && (z.letzte || z.planAktiv || nb.am)) h.push({ schluessel: 'sicherung.notfallblatt', art: 'warn', ziel: NOTFALLBLATT_SEITE, knopf: t('werkbank.sicherung.zum-notfallblatt'), text: nb.grund === 'benutzt' || nb.grund === 'ohne-code'
+  if (mitNotfallblatt && !nb.aktuell && (z.letzte || z.planAktiv || nb.am)) h.push({ schluessel: 'sicherung.notfallblatt', art: 'warn', ziel: NOTFALLBLATT_SEITE, knopf: t('werkbank.sicherung.zum-notfallblatt'), text: nb.grund === 'benutzt' || nb.grund === 'ohne-code'
     ? <NotfallblattGrund n={nb} />
     : <>{tn('werkbank.sicherung.ohne-den-schluessel-darauf', { b: <strong>{nb.am ? t('werkbank.sicherung.das-notfallblatt-gehoert-zu') : t('werkbank.sicherung.das-notfallblatt-fehlt')}</strong> })}</> });
   // Probe-Wiederherstellung (#109): Ampel.
@@ -160,32 +162,39 @@ function AusserHaus({ x, handbuch }: { x: ExternZustand | null | undefined; hand
 }
 
 /** Stand in einer Zeile (#366: früher die mittlere Spalte). */
-function StandZeile({ s }: { s: SicherungStand }) {
+function StandZeile({ s, mitNotfallblatt }: { s: SicherungStand; mitNotfallblatt: boolean }) {
   const z = s.zustand;
   const teile: ReactNode[] = [
     <>{tn('werkbank.sicherung.letzte-sicherung', { wert: z.letzte ? zeit(z.letzte.ende) : t('werkbank.sicherung.noch-keine'), wert2: (z.fehler || z.zuAlt) && <span className="fehlertext"> ({z.fehler ? t('werkbank.sicherung.fehlgeschlagen') : t('werkbank.sicherung.zu-alt')})</span> })}</>,
     t('werkbank.sicherung.sicherungen', { anzahl: s.liste.length, bytes: bytes(s.speicher.sicherungenBytes) }),
     s.plan.aktiv ? t('werkbank.sicherung.naechste-uhr', { wert: s.plan.haeufigkeit === 'taeglich' ? t('werkbank.sicherung.taeglich') : TAGE[s.plan.wochentag], uhrzeit: s.plan.uhrzeit }) : t('werkbank.sicherung.zeitplan-aus'),
     <>{s.speicher.frei === null ? t('werkbank.sicherung.platz-nicht-feststellbar') : t('werkbank.sicherung.frei', { bytes: bytes(s.speicher.frei) })}{s.speicher.knapp && <span className="fehlertext"> {' '}{t('werkbank.sicherung.knapp')}</span>}</>,
-    // #993: als Link zum Notfallblatt unter Verschlüsselung.
-    z.notfallblatt.aktuell && z.notfallblatt.am
+    // #993: als Link zum Notfallblatt unter Verschlüsselung – nur, wer sie verwaltet.
+    ...(mitNotfallblatt ? [z.notfallblatt.aktuell && z.notfallblatt.am
       ? <Link to={NOTFALLBLATT_SEITE} className="verweis">{t('werkbank.sicherung.notfallblatt-heruntergeladen', { zeit: zeit(z.notfallblatt.am) })}</Link>
-      : <Link to={NOTFALLBLATT_SEITE} className="verweis fehlertext">{t('werkbank.sicherung.notfallblatt-fehlt')}</Link>,
+      : <Link to={NOTFALLBLATT_SEITE} className="verweis fehlertext">{t('werkbank.sicherung.notfallblatt-fehlt')}</Link>] : []),
     ...(z.extern?.ziele.length ? [<>{z.extern.letzte ? t('werkbank.sicherung.extern.zeile', { datum: zeit(z.extern.letzte.stand.am) }) : t('werkbank.sicherung.extern.zeile.keine')}{(z.extern.fehler || z.extern.zuAlt) && <span className="fehlertext"> ({z.extern.fehler ? t('werkbank.sicherung.extern.kurz.fehler') : t('werkbank.sicherung.extern.kurz.alt')})</span>}</>] : []),
   ];
   return <p className="klein standzeile">{teile.map((x, i) => <span key={i}>{i > 0 && ' · '}{x}</span>)}</p>;
+}
+
+/** Verwaltet die Person die Verschlüsselung (oder alles)? Nur dann erfährt sie hier vom Notfallblatt (#993). */
+export function useVerwaltetVerschluesselung(): boolean {
+  const b = useKontoOptional()?.verwaltungsmodus.bereiche;
+  return b === null || (b?.includes('verschluesselung') ?? false);
 }
 
 export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [prueft, setPrueft] = useState<string>();
   const handbuch = useHandbuch();
+  const mitNotfallblatt = useVerwaltetVerschluesselung();
   const s = z.stand;
   if (z.fehler) return <div className="hinweis schlecht"><p>{z.fehler}</p></div>;
   if (!s) return <p className="leise">{t('werkbank.sicherung.lade')}</p>;
   const lauf = s.lauf;
   const laeuft = lauf?.status === 'laeuft';
-  const hinweise = sicherungsHinweise(s.zustand);
+  const hinweise = sicherungsHinweise(s.zustand, mitNotfallblatt);
   // Sicherungen mit einem früheren Schlüssel (#47).
   const alte = s.liste.filter((x) => x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck);
   // Spalte „Wo“ (#585), sobald es ein Ziel außer Haus gibt oder eine Sicherung schon einen Stand hat.
@@ -212,7 +221,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       <section className="blatt" id="jetzt">
         <h2 className="h3">{t('werkbank.sicherung.jetzt-sichern')}</h2>
-        <StandZeile s={s} />
+        <StandZeile s={s} mitNotfallblatt={mitNotfallblatt} />
         {laeuft ? (
           <div className="stapel">
             <p><strong>{lauf!.titel}</strong> – {lauf!.schritt}</p>
@@ -267,7 +276,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       {s.zustand.probe && <Probe stand={s.zustand.probe} lauf={s.probe ?? null} sicherungen={s.liste.some((x) => x.meta)} gesperrt={laeuft} neuLaden={() => void z.laden()} />}
 
-      <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} notfallblatt={s.zustand.notfallblatt.aktuell} gespeichert={() => void z.laden()} />
+      <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} notfallblatt={s.zustand.notfallblatt.aktuell} mitNotfallblatt={mitNotfallblatt} gespeichert={() => void z.laden()} />
 
       <section className="blatt" id="speicher">
         <h2 className="h3">{t('werkbank.sicherung.speicherplatz')} <Hilfe ort="sicherung.speicher" /></h2>
@@ -296,7 +305,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   );
 }
 
-function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; notfallblatt: boolean; gespeichert(): void }) {
+function Zeitplan({ plan, notfallblatt, mitNotfallblatt, gespeichert }: { plan: SicherungsPlan; notfallblatt: boolean; mitNotfallblatt: boolean; gespeichert(): void }) {
   const [p, setP] = useState(plan);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
@@ -312,8 +321,9 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
     <form className="blatt" id="zeitplan" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">{t('werkbank.sicherung.zeitplan-und-aufbewahrung')} <Hilfe ort="sicherung.zeitplan" /></h2>
       <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>{t('werkbank.sicherung.automatisch-sichern')}</span></label>
-      {/* Herunterladen nur unter Verschlüsselung (#993): hier ein Link dorthin. */}
-      {!notfallblatt && !p.aktiv && <p className="leise klein">{tn('werkbank.sicherung.erst-einschaltbar-wenn-du', { link: <Link to={NOTFALLBLATT_SEITE} className="knopf klein">{t('werkbank.sicherung.zum-notfallblatt')}</Link> })}</p>}
+      {/* #993 (Thomas 10.11.2026): ohne das Wort „Notfallblatt“; der Link nur für die, die die Verschlüsselung verwalten. */}
+      {!notfallblatt && !p.aktiv && <p className="leise klein">{t('werkbank.sicherung.erst-wenn-verschluesselung-fertig')}{' '}
+        {mitNotfallblatt ? <Link to={NOTFALLBLATT_SEITE} className="knopf klein">{t('werkbank.sicherung.zur-verschluesselung')}</Link> : t('werkbank.sicherung.keine-berechtigung-verschluesselung')}</p>}
       <div className="raster">
         <label className="eigenschaft"><span>{t('werkbank.sicherung.haeufigkeit')}</span>
           <select value={p.haeufigkeit} onChange={(e) => setP({ ...p, haeufigkeit: e.target.value as SicherungsPlan['haeufigkeit'] })}><option value="taeglich">{t('werkbank.sicherung.taeglich')}</option><option value="woechentlich">{t('werkbank.sicherung.woechentlich')}</option></select></label>
