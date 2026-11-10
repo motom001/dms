@@ -11,8 +11,8 @@
  * Hier stehen nur die Regel und die Meldungen; Lesen und Exportrecht löst der Dienst auf (`Dienst.mitnehmbar`,
  * `Dienst.pruefeAusgang`). So können die einzelnen Wege nicht auseinanderlaufen.
  */
-import { Fachfehler } from './fehler';
-import { t } from './sprache';
+import { Fachfehler } from '../fehler';
+import { t } from '../sprache';
 
 export const AUSGAENGE = ['herunterladen', 'email', 'export', 'webdav'] as const;
 export type Ausgang = typeof AUSGAENGE[number];
