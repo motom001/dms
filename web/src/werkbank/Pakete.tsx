@@ -91,7 +91,8 @@ export function usePakete(offen: boolean) {
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
     const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));
-    const kp = k?.katalog?.pakete.find((p) => p.id === id);
+    // Umgezogen (#1084): unter der neuen Id, die die installierte unter `frueher` nennt.
+    const kp = k?.katalog?.pakete.find((p) => p.id === id) ?? k?.katalog?.pakete.find((p) => p.frueher?.includes(id));
     return kp && k ? { kp, url: k.url, offiziell: k.offiziell } : undefined;
   };
   /** Hat ein Katalog ein Paket mit derselben Id wie ein selbst erstelltes (#652)? */
@@ -105,7 +106,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
   const installiert = z.stand?.installiert ?? [];
   const quelleOffen = new URLSearchParams(location.search).get('quelle');
   const verfuegbar = (z.kataloge?.liste ?? [])
-    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id)).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
+    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.frueher?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
   const neuer = (id: string) => z.updates?.find((u) => u.id === id);
   const [hochFehler, setHochFehler] = useState<string>();
   async function hochladen(f: File | undefined) {
@@ -578,7 +579,12 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       {vorschau && (
         <VorschauBlock v={vorschau} warnung={offiziell || vorschau.pruefung?.bestaetigen === false ? null : t('werkbank.pakete.aus-dem-katalog', { wert: String(inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle) })} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
-            if (vorschau.update) { const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, x.automatisierungen); return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version }); }
+            if (vorschau.update) {
+              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, x.automatisierungen);
+              // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
+              if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);
+              return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version });
+            }
             const r = await api.paketInstallieren({ id, version: vorschau.paket.version, quelle, ...x });
             return t('werkbank.pakete.ist-installiert', { name: r.name, version: r.version });
           })} />

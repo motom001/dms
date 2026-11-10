@@ -21,7 +21,7 @@ import { bereinigeAbschnitte } from '../../shared/src/darstellung';
 import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
-import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesFrueher, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { istHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
@@ -120,6 +120,8 @@ export interface Manifest {
   ergaenzt?: Ergaenzung;
   /** Herausgeber (#1084) als umgedrehte Domain, z. B. `app.ablago`; fehlt bei älteren Paketen (dann gilt standardHerausgeber). */
   herausgeber?: string;
+  /** Frühere Ids (#1084): Ein Update zieht die Installation unter einer davon auf diese Id um (z. B. texterkennung_fra). */
+  frueher?: string[];
 }
 export interface PaketFeld extends Partial<Feld> { key: string; label: string; typ: Feld['typ']; ziel?: string }
 export interface PaketRegister {
@@ -293,6 +295,19 @@ export function neueKennung(kennung: string, installierte: Array<Pick<Installier
   const treffer = installierte.flatMap((p) => Object.keys(p.typen).filter((k) => `${p.id}_${k}` === kennung).map((k) => typKennung(p.id, k)));
   return treffer.length === 1 ? treffer[0] : kennung;
 }
+/**
+ * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `frueher` nennt – so
+ * findet ein Update von texterkennung_fra das umgezogene texterkennung.fra.
+ */
+export function katalogPaketZu(k: Katalog, id: string): KatalogPaket | undefined {
+  const nach = k.pakete.filter((p) => p.frueher?.includes(id));
+  return k.pakete.find((p) => p.id === id) ?? (nach.length === 1 ? nach[0] : undefined);
+}
+/** Gleiche Quelle (#1084): derselbe Katalog oder beide hochgeladen – Voraussetzung für einen Umzug auf eine neue Id. */
+/** Installiertes Paket unter einer früheren Id des Manifests (#1084, `frueher`); das erste, wenn es mehrere gäbe. */
+const installierteFrueher = (installierte: InstalliertesPaket[], m: Manifest) => installierte.find((p) => m.frueher?.includes(p.id));
+const gleicheQuelle = (a: InstalliertesPaket['herkunft'], b: InstalliertesPaket['herkunft']) => (a.art === 'katalog' ? b.art === 'katalog' && a.url === b.url : b.art === 'hochgeladen');
+
 /** Mappentyp zu einer Kennung aus einem Paket (`fremde_typen`, #656) – auch in der alten Form (neueKennung). */
 const fremderTyp = (kennung: string, typen: Mappentyp[], installierte: Array<Pick<InstalliertesPaket, 'id' | 'typen'>>) =>
   typen.find((t) => t.schluessel === kennung) ?? typen.find((t) => t.schluessel === neueKennung(kennung, installierte));
@@ -327,6 +342,12 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   // Ergänzung eines anderen Pakets (#405): steht auch unter abhaengigkeiten.
   const erg = liesErgaenzt(m.ergaenzt, abh);
   fehler.push(...erg.fehler.map((f) => `manifest.yaml: ${f}`));
+  // Punkt in der Id (#1084): ergänzt das Hauptpaket – dann muss `ergaenzt` es nennen (die Registry prüft dasselbe).
+  const punkt = erg.fehler.length ? null : punktIdFehler(str(m.id), erg.ergaenzt);
+  if (punkt) fehler.push(`manifest.yaml: ${punkt}`);
+  // Frühere Ids (#1084): Umzug statt Neuinstallation.
+  const fr = liesFrueher(m.frueher, str(m.id));
+  fehler.push(...fr.fehler.map((f) => `manifest.yaml: ${f}`));
   // Herausgeber (#1084): umgedrehte Domain. Fehlt er (ältere Pakete), gilt der Herausgeber des Katalogs (standardHerausgeber).
   if (m.herausgeber !== undefined && !istHerausgeber(m.herausgeber)) fehler.push(t('meldungen.pakete.manifest-yaml-herausgeber', { wert: str(m.herausgeber) }));
   // Sprachpaket (#731): nur Texte – kein Code, keine Mappentypen, keine anderen Dateien.
@@ -488,6 +509,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       ...(m.code !== undefined ? { code: m.code } : {}),
       ...(erg.ergaenzt ? { ergaenzt: erg.ergaenzt } : {}),
       ...(istHerausgeber(m.herausgeber) ? { herausgeber: m.herausgeber } : {}),
+      ...(fr.frueher.length ? { frueher: fr.frueher } : {}),
     },
     typen, sichten, beispiele, wortlisten, automatisierungen, readme: dateien.get('README.md')?.toString('utf8') ?? '', einstellungen: einst.beschreibung, code,
     sprache, ...(beispielDateien.size ? { beispielDateien } : {}),
@@ -672,6 +694,8 @@ export interface Vorschau {
     herausgeber: string | null };
   dmsVersion: string; dmsOk: boolean;
   installiert: string | null; update: boolean;
+  /** Umzug (#1084): Das Update zieht die Installation von dieser früheren Id auf die neue um; sonst null. */
+  umzug: string | null;
   /** Herkunft des installierten Pakets (bei einem Update). */
   herkunft: InstalliertesPaket['herkunft'] | null;
   /** Was die Signatur über die Herkunft dieses Pakets sagt (#594); Zeile „Herkunft“ in der Vorschau. */
@@ -1221,9 +1245,10 @@ export class Paketverwaltung {
   }
 
   /** Paket einer Version aus einem Katalog holen und gegen die Prüfsumme prüfen. */
-  async lade(id: string, version?: string, quelle?: string): Promise<{ paket: Paket; kp: KatalogPaket; v: KatalogVersion; url: string; katalog: Katalog; pruefung: HerkunftPruefung }> {
+  /** umzug (#1084): Fehlt die Id im Katalog, gilt das Paket, das sie unter `frueher` nennt (Update unter neuer Id). */
+  async lade(id: string, version?: string, quelle?: string, umzug = false): Promise<{ paket: Paket; kp: KatalogPaket; v: KatalogVersion; url: string; katalog: Katalog; pruefung: HerkunftPruefung }> {
     const { katalog, url, pruefung } = await this.aktuellerKatalog(quelle);
-    const kp = katalog.pakete.find((p) => p.id === id);
+    const kp = umzug ? katalogPaketZu(katalog, id) : katalog.pakete.find((p) => p.id === id);
     if (!kp) throw new Fachfehler(404, t('meldungen.pakete.das-paket-gibt-es', { id }));
     const v = version ? kp.versionen.find((x) => x.version === version) : kp.versionen.find((x) => x.version === kp.aktuell) ?? kp.versionen[0];
     if (!v) throw new Fachfehler(404, t('meldungen.pakete.version-von-gibt-es', { version: String(version), name: kp.name }));
@@ -1233,7 +1258,7 @@ export class Paketverwaltung {
     catch (e) { throw new Fachfehler(502, t('meldungen.pakete.das-paket-laesst-sich-2', { message: (e as Error).message })); }
     if (createHash('sha256').update(daten).digest('hex') !== v.sha256) throw new Fachfehler(422, t('meldungen.pakete.die-pruefsumme-von-passt', { name: kp.name, version: v.version }));
     const paket = liesPaket(liesZip(daten));
-    if (paket.manifest.id !== id || paket.manifest.version !== v.version) throw new Fachfehler(422, t('meldungen.pakete.das-archiv-enthaelt-statt', { id: paket.manifest.id, version: paket.manifest.version, id2: id, version2: v.version }));
+    if (paket.manifest.id !== kp.id || paket.manifest.version !== v.version || (kp.id !== id && !paket.manifest.frueher?.includes(id))) throw new Fachfehler(422, t('meldungen.pakete.das-archiv-enthaelt-statt', { id: paket.manifest.id, version: paket.manifest.version, id2: kp.id, version2: v.version }));
     return { paket, kp, v, url, katalog, pruefung };
   }
 
@@ -1437,7 +1462,7 @@ export class Paketverwaltung {
   /** Vorschau: was angelegt bzw. ergänzt wird, Namenskonflikte, Version und Abhängigkeiten, Herkunft (#594). */
   async vorschau(e: { id?: string; version?: string; quelle?: string; upload?: string }): Promise<Vorschau> {
     if (e.upload) { const u = await this.hochgeladen(e.upload); return mitPruefung(await this.plane(u.paket, undefined, await this.offiziell(), {}, {}, undefined, { herkunft: { art: 'hochgeladen', von: u.von.email, am: u.am }, pruefung: u.pruefung }), u.pruefung); }
-    const { paket, v, katalog, pruefung, url } = await this.lade(String(e.id), e.version ? String(e.version) : undefined, e.quelle ? String(e.quelle) : undefined);
+    const { paket, v, katalog, pruefung, url } = await this.lade(String(e.id), e.version ? String(e.version) : undefined, e.quelle ? String(e.quelle) : undefined, true);
     return mitPruefung(await this.plane(paket, v, katalog, {}, {}, undefined, { herkunft: { art: 'katalog', url }, pruefung }), pruefung);
   }
 
@@ -1448,7 +1473,9 @@ export class Paketverwaltung {
   private async plane(paket: Paket, v?: KatalogVersion, katalog?: Katalog, namen: Record<string, string> = {}, sichtNamen: Record<string, string> = {}, geplant?: { typen: Set<string>; sichten: Set<string> }, quelle?: PlanQuelle): Promise<Vorschau> {
     const m = paket.manifest;
     const installierte = await this.d.kern.repo.listePakete();
-    const ich = installierte.find((p) => p.id === m.id) ?? null;
+    // Umzug (#1084): Unter der neuen Id noch nicht da, aber unter einer früheren – dann ist es ein Update dieser Installation.
+    const ich = installierte.find((p) => p.id === m.id) ?? installierteFrueher(installierte, m) ?? null;
+    const umzug = ich && ich.id !== m.id ? ich.id : null;
     const typen = await this.d.listeTypen();
     const sichten = await this.d.listeSichten();
     const probleme: string[] = [];
@@ -1467,10 +1494,13 @@ export class Paketverwaltung {
     }
     const fremd = ich ? this.andererHerausgeber(m, ich, quelle) : null;
     if (fremd) { probleme.push(fremd); fehlercodes.push('anderer-herausgeber'); }
+    // Umzug (#1084) nur aus derselben Quelle – sonst könnte ein beliebiges Paket mit `frueher` eine Installation übernehmen.
+    if (umzug && quelle && !gleicheQuelle(ich!.herkunft, quelle.herkunft)) { probleme.push(t('meldungen.pakete.umzug-andere-quelle', { alt: umzug, neu: m.id })); fehlercodes.push('umzug-quelle'); }
+    else if (umzug) hinweise.push(t('meldungen.pakete.umzug', { alt: umzug, neu: m.id }));
     // Sprachpaket (#731): je Sprache ein Paket; was zu dieser Version nicht passt, fällt weg (Hinweis).
     const sp = paket.sprache;
     if (sp) {
-      const anderes = installierte.find((p) => p.id !== m.id && p.sprache?.kennung === sp.angabe.kennung);
+      const anderes = installierte.find((p) => p.id !== m.id && p.id !== umzug && p.sprache?.kennung === sp.angabe.kennung);
       if (anderes) { probleme.push(t('meldungen.sprachpakete.schon-da', { name: anderes.name, kennung: sp.angabe.kennung })); fehlercodes.push('sprache-schon-da'); }
       if (sp.uebergangen.length) hinweise.push(t('meldungen.sprachpakete.uebergangen', { anzahl: sp.uebergangen.length }));
       if (VERSION.test(dmsVersion) && vergleicheVersion(sp.angabe.ablago, dmsVersion) < 0) hinweise.push(t('meldungen.sprachpakete.aelter', { ablago: sp.angabe.ablago, version: dmsVersion }));
@@ -1571,7 +1601,7 @@ export class Paketverwaltung {
     });
     return {
       paket: { id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor, dms: m.dms, abhaengigkeiten: m.abhaengigkeiten, readme: v?.readme ?? null, changelog: v?.changelog ?? null, quelle: v?.quelle ?? null, herausgeber },
-      dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich,
+      dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich, umzug,
       herkunft: ich?.herkunft ?? null,
       pruefung: null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), probleme, fehlercodes, hinweise,
@@ -1610,7 +1640,8 @@ export class Paketverwaltung {
     if (geladen.pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(geladen.pruefung);
     const { paket, v } = geladen;
     const id = paket.manifest.id;
-    const alt = (await this.d.kern.repo.listePakete()).find((p) => p.id === id) ?? null;
+    const installiertJetzt = await this.d.kern.repo.listePakete();
+    const alt = installiertJetzt.find((p) => p.id === id) ?? installierteFrueher(installiertJetzt, paket.manifest) ?? null;
     const herkunft: InstalliertesPaket['herkunft'] = hoch ? { art: 'hochgeladen', von: hoch.von.email, am: hoch.am } : { art: 'katalog', url: quelle! };
     if (alt) {
       // Herausgeber (#1084) zuerst: Dieselbe Id von jemand anderem ist kein Update, gleich aus welcher Quelle.
@@ -1652,6 +1683,46 @@ export class Paketverwaltung {
    * Bei einem Fehler wird alles zurückgenommen.
    */
   private async lege(paket: Paket, herkunft: InstalliertesPaket['herkunft'], v: KatalogVersion | undefined, plan: Vorschau, beispiele: boolean, von: Handelnder, alt: InstalliertesPaket | null, ein: string[] = []): Promise<InstalliertesPaket> {
+    // Umzug (#1084): erst die Installation auf die neue Id ziehen – danach ist es ein gewöhnliches Update. Scheitert es,
+    // kommt die alte Id zurück.
+    const umzugVon = alt && alt.id !== paket.manifest.id ? alt.id : null;
+    if (!umzugVon) return this.legeIntern(paket, herkunft, v, plan, beispiele, von, alt, ein);
+    await this.zieheUm(umzugVon, paket.manifest.id);
+    try {
+      const neu = await this.legeIntern(paket, herkunft, v, plan, beispiele, von, { ...alt!, id: paket.manifest.id, frueher: [...new Set([...(alt!.frueher ?? []), umzugVon])] }, ein);
+      log.info('Paket umgezogen', { von: von.email, paket: neu.id, vorher: umzugVon });
+      return neu;
+    } catch (f) {
+      await this.zieheUm(paket.manifest.id, umzugVon).catch((e: Error) => log.error('Umzug nicht zurückgenommen', { paket: paket.manifest.id, vorher: umzugVon, fehler: e.message }));
+      throw f;
+    }
+  }
+
+  /**
+   * Paket-Id umziehen (#1084): Datenbank (Repo.benennePaketUm) und die Einstellungen, die die Id nennen – Einstellungen
+   * und Speicher des Pakets, „Pakete verwehrt“ am Mappentyp und die Erkennung per Paket („Aus Dokument ausfüllen“).
+   */
+  private async zieheUm(alt: string, neu: string) {
+    await this.d.kern.repo.benennePaketUm(alt, neu);
+    const e = this.d.kern.einstellungen;
+    if (!e) return;
+    for (const vor of ['paket:', 'paketspeicher:']) {
+      const w = await e.lies(`${vor}${alt}`);
+      if (w === null || w === undefined) continue;
+      await e.schreibe(`${vor}${neu}`, w);
+      await e.schreibe(`${vor}${alt}`, null);
+    }
+    const verwehrt = await e.lies('paket_verwehrt');
+    if (verwehrt && typeof verwehrt === 'object' && !Array.isArray(verwehrt) && JSON.stringify(verwehrt).includes(JSON.stringify(alt))) {
+      await e.schreibe('paket_verwehrt', Object.fromEntries(Object.entries(verwehrt as Record<string, unknown>).map(([k, l]) => [k, Array.isArray(l) ? l.map((x) => (x === alt ? neu : x)) : l])));
+    }
+    const erk = await e.lies('erkennung_typen');
+    if (erk && typeof erk === 'object' && !Array.isArray(erk) && JSON.stringify(erk).includes(JSON.stringify(alt))) {
+      await e.schreibe('erkennung_typen', Object.fromEntries(Object.entries(erk as Record<string, { ausDokument?: { engine?: string } }>).map(([k, x]) => [k, x?.ausDokument?.engine === alt ? { ...x, ausDokument: { ...x.ausDokument, engine: neu } } : x])));
+    }
+  }
+
+  private async legeIntern(paket: Paket, herkunft: InstalliertesPaket['herkunft'], v: KatalogVersion | undefined, plan: Vorschau, beispiele: boolean, von: Handelnder, alt: InstalliertesPaket | null, ein: string[] = []): Promise<InstalliertesPaket> {
     const m = paket.manifest;
     const installierte = await this.d.kern.repo.listePakete();
     const vorher = new Map((await this.d.listeTypen()).map((t) => [t.id, t] as const));
@@ -1874,6 +1945,8 @@ export class Paketverwaltung {
         herkunft,
         // Herausgeber (#1084): einmal gespeichert, gilt er für alle weiteren Updates.
         ...(plan.paket.herausgeber ? { herausgeber: plan.paket.herausgeber } : alt?.herausgeber ? { herausgeber: alt.herausgeber } : {}),
+        // Frühere Ids (#1084): für mitgelieferte Automatisierungen und spätere Updates unter dieser Id.
+        ...(() => { const f = [...new Set([...(alt?.frueher ?? []), ...(m.frueher ?? [])])].filter((x) => x !== m.id); return f.length ? { frueher: f } : {}; })(),
         // Nötige DMS-Version (#458): bestimmt u. a., ob das Paket „Volltext fertig“ auch ohne Text bekommt.
         ...(m.dms ? { dms: m.dms } : {}),
         installiert: alt?.installiert ?? jetzt, installiertVon: alt ? alt.installiertVon : von.email,
@@ -1948,7 +2021,9 @@ export class Paketverwaltung {
       const url = p.herkunft.url;
       if (!quellen.some((q) => q.url === url && q.aktiv)) continue;
       if (!geholt.has(url)) geholt.set(url, await this.katalog(url).then((k) => k.katalog, (e) => { if (url === this.katalogUrl) throw e; return null; }));
-      const kp = geholt.get(url)?.pakete.find((x) => x.id === p.id);
+      // Umgezogen (#1084): Das Update kommt unter der neuen Id, die die alte unter `frueher` nennt.
+      const k = geholt.get(url);
+      const kp = k ? katalogPaketZu(k, p.id) : undefined;
       const v = kp?.versionen.find((x) => x.version === kp.aktuell) ?? kp?.versionen[0];
       if (v && vergleicheVersion(v.version, p.version) > 0) erg.push({ id: p.id, installiert: p.version, neu: v.version, changelog: v.changelog, quelle: url });
     }
@@ -1961,7 +2036,7 @@ export class Paketverwaltung {
     if (!alt) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
     if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, t('meldungen.pakete.ein-hochgeladenes-paket'));
     const quelle = await this.erlaubt(alt.herkunft.url);
-    const { paket, v, katalog, pruefung } = await this.lade(id, e.version ? String(e.version) : undefined, quelle);
+    const { paket, v, katalog, pruefung } = await this.lade(id, e.version ? String(e.version) : undefined, quelle, true);
     if (pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(pruefung);
     const plan = await this.plane(paket, v, katalog, {}, {}, undefined, { herkunft: alt.herkunft, pruefung });
     const fehlen = plan.abhaengigkeiten.filter((a) => !a.installiert);
@@ -1969,7 +2044,7 @@ export class Paketverwaltung {
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
     Paketverwaltung.rechteBestaetigen(plan, e);
     const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, schluesselListe(e.automatisierungen));
-    log.info('Paket aktualisiert', { von: von.email, paket: id, vorher: alt.version, version: neu.version, pruefung: pruefung.art, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
+    log.info('Paket aktualisiert', { von: von.email, paket: id, ...(plan.umzug ? { neueId: neu.id } : {}), vorher: alt.version, version: neu.version, pruefung: pruefung.art, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
     return neu;
   }
 
@@ -2024,7 +2099,9 @@ export class Paketverwaltung {
       const { katalog, url, pruefung } = await this.aktuellerKatalog(e.quelle ? String(e.quelle) : undefined);
       herkunft = pruefung;
       // Neu installiert wird hier nur, was fehlt – Updates gehen über „Aktualisieren“.
-      for (const id of ids) { const da = installierte.find((x) => x.id === id); if (da) probleme.push(t('pakete.ablauf.fehler.schon', { name: da.name, version: da.version })); }
+      // Umgezogen (#1084): Unter einer früheren Id installiert zählt als schon installiert – das Update zieht es um.
+      const schonDa = (id: string) => installierte.find((x) => x.id === id) ?? installierte.find((x) => katalog.pakete.find((p) => p.id === id)?.frueher?.includes(x.id));
+      for (const id of ids) { const da = schonDa(id); if (da) probleme.push(t('pakete.ablauf.fehler.schon', { name: da.name, version: da.version })); }
       // Herausgeber (#1084): Ist die Id schon von jemand anderem installiert, sagt der Plan das ausdrücklich.
       for (const id of ids) {
         const da = installierte.find((x) => x.id === id);
@@ -2032,7 +2109,7 @@ export class Paketverwaltung {
         const fremd = da && kp ? this.andererHerausgeber({ id, herausgeber: kp.herausgeber } as Manifest, da, { herkunft: { art: 'katalog', url }, pruefung }) : null;
         if (fremd) probleme.push(fremd);
       }
-      const aus = auswahlMitAbhaengigkeiten(katalog, ids.filter((id) => !installierte.some((x) => x.id === id)), dms, installierte, versionen);
+      const aus = auswahlMitAbhaengigkeiten(katalog, ids.filter((id) => !schonDa(id)), dms, installierte, versionen);
       probleme.push(...aus.probleme);
       // Lässt sich ein Paket nicht laden, fällt nur es weg – und was es braucht (#646); die übrigen bleiben im Plan.
       const nichtLadbar: string[] = [];
@@ -2178,7 +2255,8 @@ export class Paketverwaltung {
       if (an) { erg.nichtInstalliert.push({ id: p.id, name: p.name, version: p.version, grund: t('pakete.ablauf.braucht.gescheitert', { name: plan.pakete.find((y) => y.id === an)?.name ?? an }) }); continue; }
       const x = teile[i];
       try {
-        const alt = (await this.d.kern.repo.listePakete()).find((y) => y.id === p.id) ?? null;
+        const jetzt = await this.d.kern.repo.listePakete();
+        const alt = jetzt.find((y) => y.id === p.id) ?? installierteFrueher(jetzt, x.paket.manifest) ?? null;
         // Frisch planen: Die Pakete davor sind jetzt installiert (Verweise, Namen).
         const vorschau = await this.plane(x.paket, x.v, x.katalog ?? await this.offiziell(), namen[p.id] ?? {}, sichtNamen[p.id] ?? {}, undefined, { herkunft: x.herkunft, pruefung: x.pruefung });
         if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });

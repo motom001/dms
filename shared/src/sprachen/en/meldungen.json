@@ -939,6 +939,8 @@
   "pakete.manifest-yaml-herausgeber": "manifest.yaml: herausgeber “{wert}” is not a reversed domain – e.g. org.example (lower-case letters, digits and hyphens, at least two parts with a dot, at most 100 characters).",
   "pakete.herausgeber-nicht-offiziell": "The package names {herausgeber} as its publisher – only the official packages are named like that. But it doesn’t come from the official catalogue; Ablago won’t install it.",
   "pakete.anderer-herausgeber": "Another package “{id}” from {alt} is already installed ({name}). This one comes from {neu} – Ablago won’t replace the installed package. If you want to switch, remove the installed one first.",
+  "pakete.umzug": "The package is now called “{neu}” (previously “{alt}”). The update moves the installation – folder types, settings and data stay, no second package is created.",
+  "pakete.umzug-andere-quelle": "“{neu}” would take over the installed package “{alt}”, but comes from a different source. Moving to a new ID only works from the same source (the same catalogue, or uploaded again).",
   "pakete.herausgeber-unbekannt": "an unknown publisher",
   "pakete.manifest-yaml-die-id": "manifest.yaml: the ID “dms” is reserved for references to Ablago’s folder types.",
   "pakete.manifest-yaml-ungueltige-version": "manifest.yaml: invalid version (e.g. 1.0.0).",

@@ -232,6 +232,13 @@ export interface Repo {
   /** Anlegen oder ersetzen (gleiche Id). */
   speicherePaket(p: InstalliertesPaket): Promise<void>;
   loeschePaket(id: string): Promise<void>;
+  /**
+   * Umzug auf eine neue Paket-Id (#1084, Manifest `frueher`, z. B. texterkennung_fra → texterkennung.fra): dieselbe
+   * Installation unter neuer Id – Eintrag, Abhängigkeiten anderer Pakete, Code, Sprachtexte, Ereignisse, Wortlisten,
+   * Herkunft der Mappentypen, Vektoren, mitgelieferte Automatisierungen und Dienstkonto (PostgreSQL in einer
+   * Transaktion). Einstellungen zieht die Paketverwaltung über die Einstellungen um.
+   */
+  benennePaketUm(alt: string, neu: string): Promise<void>;
   /** Code eines Pakets (#338): code/modul.wasm und code/daten/…; ersetzt den bisherigen ganz. */
   speicherePaketCode(paketId: string, dateien: Array<{ name: string; inhalt: Buffer }>): Promise<void>;
   paketCode(paketId: string): Promise<Array<{ name: string; inhalt: Buffer }>>;

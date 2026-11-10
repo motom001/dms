@@ -939,6 +939,8 @@
   "pakete.manifest-yaml-herausgeber": "manifest.yaml: herausgeber „{wert}“ ist keine umgedrehte Domain – z. B. org.example (Kleinbuchstaben, Ziffern und Bindestriche, mindestens zwei Teile mit Punkt, höchstens 100 Zeichen).",
   "pakete.herausgeber-nicht-offiziell": "Das Paket nennt als Herausgeber {herausgeber} – so heißen nur die offiziellen Pakete. Es stammt aber nicht aus dem offiziellen Katalog; Ablago installiert es nicht.",
   "pakete.anderer-herausgeber": "Ein anderes Paket „{id}“ von {alt} ist schon installiert ({name}). Dieses stammt von {neu} – Ablago ersetzt das installierte Paket nicht. Willst du wechseln, entferne zuerst das installierte.",
+  "pakete.umzug": "Das Paket heißt jetzt „{neu}“ (bisher „{alt}“). Das Update zieht die Installation um – Mappentypen, Einstellungen und Daten bleiben, es entsteht kein zweites Paket.",
+  "pakete.umzug-andere-quelle": "„{neu}“ würde das installierte Paket „{alt}“ übernehmen, kommt aber aus einer anderen Quelle. Ein Umzug auf eine neue Id geht nur aus derselben Quelle (demselben Katalog bzw. wieder hochgeladen).",
   "pakete.herausgeber-unbekannt": "einem unbekannten Herausgeber",
   "pakete.manifest-yaml-die-id": "manifest.yaml: Die Id „dms“ ist für Verweise auf Mappentypen von Ablago reserviert.",
   "pakete.manifest-yaml-ungueltige-version": "manifest.yaml: ungültige Version (z. B. 1.0.0).",

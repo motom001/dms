@@ -142,7 +142,8 @@ export interface ErgaenzungAngebot { id: string; name: string; version: string; 
 export function ergaenzungenVon(k: Katalog, basis: string, dms: string, installiert: Array<{ id: string }> = []): ErgaenzungAngebot[] {
   const erg: ErgaenzungAngebot[] = [];
   for (const p of k.pakete) {
-    if (p.id === basis || installiert.some((x) => x.id === p.id)) continue;
+    // Unter einer früheren Id installiert (#1084, `frueher`) zählt wie installiert – es kommt als Update.
+    if (p.id === basis || installiert.some((x) => x.id === p.id || p.frueher?.includes(x.id))) continue;
     const v = [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => dmsPasst(dms, x.dms));
     if (v?.ergaenzt?.paket === basis) erg.push({ id: p.id, name: p.name, version: v.version, beschreibung: p.beschreibung, gruppe: v.ergaenzt.gruppe ?? null, code: v.code });
   }
@@ -206,6 +207,8 @@ export interface InstalliertesPaket {
   herkunft: Herkunft;
   /** Herausgeber (#1084), umgedrehte Domain wie `app.ablago`; fehlt bei älteren Installationen (dann gilt der des Katalogs). */
   herausgeber?: string;
+  /** Frühere Ids dieser Installation (#1084), z. B. texterkennung_fra nach dem Umzug auf texterkennung.fra. */
+  frueher?: string[];
   installiert: string; installiertVon: string | null;
   aktualisiert: string | null; aktualisiertVon: string | null;
   /** Schlüssel der mitgelieferten Automatisierungen dieser Version (#712) – bei einem Update stehen nur neue zur Wahl. */

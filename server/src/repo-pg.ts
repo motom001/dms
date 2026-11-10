@@ -20,6 +20,7 @@ import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/sr
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
 import { teileKennung, typKennung } from '../../shared/src/kennungen';
+import { dienstEmail } from './konto-repo';
 /** Sprachmarke im Hinweis der Texterkennung (#395) samt Konfidenz, zum Ersetzen (#400). */
 const log = protokoll.modul('texterkennung');
 const SPRACHE_INFO_SQL = ' · Sprache: [a-z_]{3,10}( \\(\\d{1,3} %\\))?';
@@ -850,6 +851,23 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         ON CONFLICT (haushalt_id, id) DO UPDATE SET version = EXCLUDED.version, daten = EXCLUDED.daten`;
     },
     async loeschePaket(id) { await sql`DELETE FROM pakete WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
+    async benennePaketUm(alt, neu) {
+      await sql.begin(async (tx) => {
+        await tx`UPDATE pakete SET id = ${neu}, daten = jsonb_set(daten, '{id}', to_jsonb(${neu}::text)) WHERE haushalt_id = ${haushaltId} AND id = ${alt}`;
+        await tx`UPDATE pakete SET daten = jsonb_set(daten, '{abhaengigkeiten}', ((daten->'abhaengigkeiten') - ${alt}::text) || jsonb_build_object(${neu}::text, daten->'abhaengigkeiten'->${alt}::text))
+          WHERE haushalt_id = ${haushaltId} AND jsonb_typeof(daten->'abhaengigkeiten') = 'object' AND daten->'abhaengigkeiten' ? ${alt}::text`;
+        await tx`UPDATE paket_code SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
+        await tx`UPDATE paket_sprachen SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
+        await tx`UPDATE paket_sprachen SET paketbeschriftungen = (paketbeschriftungen - ${alt}::text) || jsonb_build_object(${neu}::text, paketbeschriftungen->${alt}::text)
+          WHERE haushalt_id = ${haushaltId} AND paketbeschriftungen ? ${alt}::text`;
+        await tx`UPDATE paket_ereignisse SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
+        await tx`UPDATE synonyme SET quelle = ${neu} WHERE haushalt_id = ${haushaltId} AND quelle = ${alt}`;
+        await tx`UPDATE mappentypen SET paket = ${neu} WHERE haushalt_id = ${haushaltId} AND paket = ${alt}`;
+        await tx`UPDATE vektoren SET paket = ${neu} WHERE haushalt_id = ${haushaltId} AND paket = ${alt}`;
+        await tx`UPDATE automatisierungen SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
+        await tx`UPDATE benutzer SET paket_id = ${neu}, email = ${dienstEmail(neu, haushaltId)} WHERE haushalt_id = ${haushaltId} AND art = 'dienst' AND paket_id = ${alt}`;
+      });
+    },
     async speicherePaketCode(id, dateien) {
       await sql.begin(async (tx) => {
         await tx`DELETE FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;

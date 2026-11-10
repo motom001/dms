@@ -233,6 +233,17 @@ export function speicherRepo(): Repo {
     async listePakete() { return [...pakete.values()].map(kopie).sort((a, b) => a.id.localeCompare(b.id)); },
     async speicherePaket(p) { pakete.set(p.id, kopie(p)); },
     async loeschePaket(id) { pakete.delete(id); },
+    async benennePaketUm(alt, neu) {
+      const p = pakete.get(alt);
+      if (p) { pakete.delete(alt); pakete.set(neu, { ...p, id: neu }); }
+      for (const x of pakete.values()) if (alt in x.abhaengigkeiten) { x.abhaengigkeiten[neu] = x.abhaengigkeiten[alt]; delete x.abhaengigkeiten[alt]; }
+      const c = paketCode.get(alt); if (c) { paketCode.delete(alt); paketCode.set(neu, c); }
+      const s = sprachpakete.get(alt); if (s) { sprachpakete.delete(alt); sprachpakete.set(neu, s); }
+      for (const x of sprachpakete.values()) if (x.beschriftungen[alt]) { x.beschriftungen[neu] = x.beschriftungen[alt]; delete x.beschriftungen[alt]; }
+      for (const e of ereignisse.values()) if (e.paketId === alt) e.paketId = neu;
+      for (const g of synonymListe) if (g.quelle === alt) g.quelle = neu;
+      for (const t of typen.values()) if (t.paket === alt && t.schluessel) { t.schluessel = `${neu}:${teileKennung(t.schluessel).schluessel}`; mitPaket(t); }
+    },
     async speicherePaketCode(id, dateien) { paketCode.set(id, dateien.map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) }))); },
     async paketCode(id) { return (paketCode.get(id) ?? []).map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) })); },
     async loeschePaketCode(id) { paketCode.delete(id); },

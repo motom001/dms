@@ -385,7 +385,8 @@ export class Automatisierungen {
     const ids = new Set<string>();
     let neu = 0;
     for (const x of liste) {
-      const id = uuidAus(`paket|${p.id}|${x.schluessel}`);
+      // Nach einem Umzug (#1084) behält eine mitgelieferte Automatisierung ihre Id aus der früheren Paket-Id.
+      const id = [p.id, ...(p.frueher ?? [])].map((k) => uuidAus(`paket|${k}|${x.schluessel}`)).find((k) => vorhanden.some((a) => a.id === k)) ?? uuidAus(`paket|${p.id}|${x.schluessel}`);
       ids.add(id);
       const d = bereinigeAutomatisierung({ name: x.name, beschreibung: x.beschreibung, wenn: { ...x.wenn, typ: typId(x.wenn.typ) }, und: x.und, dann: x.dann });
       d.reihenfolge = REIHENFOLGE.paket;

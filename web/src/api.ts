@@ -1125,6 +1125,8 @@ export interface BeispielBehalten { id: string; titel: string; grund: 'geaendert
 export interface PaketVorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null; herausgeber?: string | null };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
+  /** Umzug (#1084): frühere Id, von der das Update die Installation auf die neue zieht. */
+  umzug?: string | null;
   /** Was die Signatur über die Herkunft sagt (#594). */
   pruefung?: HerkunftPruefung | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
