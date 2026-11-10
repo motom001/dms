@@ -10,6 +10,7 @@
     "start": "node --enable-source-maps dist/index.js",
     "typecheck": "tsc -p .",
     "test": "node --import tsx --import ./test/lader.mjs --test --test-reporter=tap test/*.test.ts",
+    "test:teil": "node --import tsx --import ./test/lader.mjs --test --test-reporter=tap --test-shard=$TEST_TEIL test/*.test.ts",
     "test:datei": "node --import tsx --import ./test/lader.mjs --test --test-reporter=spec"
   },
   "dependencies": {
