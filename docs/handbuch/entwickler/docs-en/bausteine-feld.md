@@ -44,12 +44,12 @@ If the input does not take the links as props (its own component that passes the
 
 | State | How it comes about | How it looks |
 | --- | --- | --- |
-| empty, filled | value of the input | border in `--linie-stark` |
+| empty, filled | value of the input | border in `--rand-eingabe` (at least 3:1, #1026) |
 | mouse over | – | border in `--leise` (not when disabled or read only) |
 | keyboard focus | – | border and focus ring in `--akzent` |
 | error | `fehler` set | border and message in `--schlecht`, warning icon; the focus ring then also in `--schlecht` |
 | error with hint | `fehler` and `hinweis` set | message directly below the input, the hint below it |
-| disabled | `disabled` on the input | surface `--senke`, text `--leise`, no hover |
+| disabled | `disabled` on the input | surface `--senke`, text `--leise`, weaker border `--linie-stark`, no hover |
 | read only | `readOnly` on the input | surface `--senke`, dashed border, text easy to read and select |
 | optional | `optional` | “(optional)” in `--leise` after the label |
 

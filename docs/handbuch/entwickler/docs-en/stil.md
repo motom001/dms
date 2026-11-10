@@ -74,13 +74,14 @@ Colours live only in **`web/src/tokens.css`** (#966) – as variables with meani
 
 | Token | For |
 | --- | --- |
-| `--grund`, `--flaeche`, `--senke`, `--tinte`, `--leise`, `--linie`, `--linie-stark` | page, surfaces, text and lines |
+| `--grund`, `--flaeche`, `--senke`, `--tinte`, `--leise`, `--linie`, `--linie-stark` | page, surfaces, text and lines (`--linie-stark` for dividers and card borders) |
+| `--rand-eingabe` | border of inputs, selects and the colour picker – at least 3:1 against `--flaeche` and `--senke` (WCAG 1.4.11, #1026) |
 | `--akzent`, `--gruen`, `--schlecht`, `--warn` with `-zart` and `-tinte` | colour, soft background, text on the full colour |
 | `--verwaltung`, `--verwaltung-tinte` | red bar in administration mode |
 | `--schatten-zart`, `--schatten`, `--schatten-stark`, `--schleier`, `--schleier-stark` | shadows of floating surfaces, veil behind dialogs |
 | `--papier`, `--papier-auswahl`, `--papier-wort`, `--schwaerzung`, `--markierung-1` … `-6` | documents and marks on them – they stay as on paper in the dark, too |
 
-A new token always gets a light **and** a dark value (or deliberately the same one, as for paper). Text on its surface must reach at least 4.5:1 in both modes; `server/test/tokens.test.ts` checks this for the pairs.
+A new token always gets a light **and** a dark value (or deliberately the same one, as for paper). Text on its surface must reach at least 4.5:1 in both modes, the border of inputs (`--rand-eingabe`) at least 3:1 against `--flaeche` and `--senke` – in high contrast, too; `server/test/tokens.test.ts` checks this for the pairs.
 
 **Check:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) looks in `web/src/**/*.css` except `tokens.css` for hex values, `rgb()`/`hsl()` and the like, and named colours such as `white`; in `*.ts(x)` for colour values in strings. CI runs it in the job **stil**; every finding is an error. Exceptions need a reason on the same line – `/* farbe-erlaubt: printing is always black on white */` – or, for whole files, an entry with a reason in `AUSNAHMEN` in the script (today: `design.ts` with the values for high contrast, the sample documents of the stamp preview).
 

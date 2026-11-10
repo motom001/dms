@@ -23,8 +23,9 @@ export const MARKE = { blau: '#1F4E79', blauDunkel: '#8DB8E0', gruen: '#2B7656' 
 // Hell und dunkel stehen nur in tokens.css (#966).
 const TOKENS = tokenPaletten(tokensCss);
 // Hoher Kontrast gibt es nur als Design: hell mit eigenen, kräftigeren Grundwerten.
+// Rand der Eingaben (#1026): 7:1 auf Weiß – kräftiger als hell, aber heller als --leise, damit Hover (--leise) stärker bleibt.
 const KONTRAST: Palette = {
-  grund: '#FFFFFF', flaeche: '#FFFFFF', senke: '#F0F0F0', tinte: '#000000', leise: '#262626', linie: '#6B6B6B', 'linie-stark': '#000000',
+  grund: '#FFFFFF', flaeche: '#FFFFFF', senke: '#F0F0F0', tinte: '#000000', leise: '#262626', linie: '#6B6B6B', 'linie-stark': '#000000', 'rand-eingabe': '#595959',
   schlecht: '#A00000', 'schlecht-zart': '#FFE5E5', warn: '#6B4300', 'warn-zart': '#FFF1D6',
 };
 const NEUTRAL: Record<'hell' | 'dunkel' | 'kontrast', Palette> = { hell: TOKENS.hell, dunkel: TOKENS.dunkel, kontrast: { ...TOKENS.hell, ...KONTRAST } };

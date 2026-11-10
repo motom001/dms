@@ -20,7 +20,8 @@
 
 .gruppeninhalt { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 
-/* Textartige Eingaben: Hover und Fokus sichtbar, hell und dunkel (#968, Hinweis aus der Prüfung). */
+/* Textartige Eingaben: Hover und Fokus sichtbar, hell und dunkel (#968, Hinweis aus der Prüfung). Hover (--leise) ist
+   deutlich stärker als der Ruhezustand (--rand-eingabe, #1026): hell 6,0 statt 3,3:1, dunkel 6,4 statt 3,2:1. */
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea) { transition: border-color .12s; }
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):hover:not(:disabled, [readonly]) { border-color: var(--leise); }
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { border-color: var(--akzent); outline: 2px solid var(--akzent); outline-offset: 1px; }
@@ -33,8 +34,8 @@
 .fehlerhaft :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { outline-color: var(--schlecht); }
 .fehlerhaft :where(input[type="checkbox"], input[type="radio"]) { outline: 1px solid var(--schlecht); outline-offset: 1px; }
 
-/* Gesperrt: grau, ohne Hover. Nur lesen: Wert gut lesbar, aber erkennbar nicht änderbar (gestrichelter Rahmen). */
-.feld :where(select, textarea):disabled { background: var(--senke); color: var(--leise); }
+/* Gesperrt: grau mit schwächerem Rand (basis.css, #1026), ohne Hover. Nur lesen: Wert gut lesbar, aber erkennbar nicht
+   änderbar (gestrichelter Rahmen in der Stärke der Eingaben). */
 .feld :where(input, select, textarea):disabled { cursor: not-allowed; }
 .feld :where(input, textarea)[readonly] { background: var(--senke); border-style: dashed; }
 
