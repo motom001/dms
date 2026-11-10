@@ -1,0 +1,25 @@
+/* Gestaltungswerte (#965): Farben, Schrift, Rundung und Marke als Variablen, hell und dunkel. Wird vor basis.css und styles.css geladen (main.tsx).
+   Nur Werte hier – die Regeln stehen in basis.css (Elemente ohne Klassen) und styles.css (alles Übrige). */
+:root {
+  --grund: #ECEFF3; --flaeche: #FFFFFF; --senke: #F5F6F8; --tinte: #17202B; --leise: #5A6475;
+  --linie: #D8DDE4; --linie-stark: #C3CAD4;
+  --akzent: #1F4E79; --akzent-tinte: #FFFFFF; --akzent-zart: #E4EAEF;
+  --gruen: #2B7656; --gruen-zart: #E1F0E8;
+  --schlecht: #B42318; --schlecht-zart: #FBE9E7; --warn: #835700; --warn-zart: #FAF0D9;
+  --schrift: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 8px;
+  --marke-hell: block; --marke-dunkel: none;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #11151B; --flaeche: #1A2029; --senke: #151A22; --tinte: #E5E9EF; --leise: #98A2B2;
+    --linie: #2B3340; --linie-stark: #3A4452;
+    --akzent: #8DB8E0; --akzent-tinte: #111111; --akzent-zart: #1B2B3C;
+    --gruen: #6CC39B; --gruen-zart: #18302A;
+    --schlecht: #F28B82; --schlecht-zart: #3A1F1E; --warn: #E3B655; --warn-zart: #34291A;
+    --marke-hell: none; --marke-dunkel: block;
+    color-scheme: dark;
+  }
+}

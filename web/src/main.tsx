@@ -1,3 +1,5 @@
+import './tokens.css';
+import './basis.css';
 import './styles.css';
 import { browserSprache, gemerkteSprache, ladeSprache, t } from './sprache';
 import { beobachteVeraltet, selbstNeuLaden } from './veraltet';
