@@ -290,6 +290,10 @@ See also: [Customise the workbench](#werkbank-anpassen), [Household](#haushalt).
 Tick in the basics of a folder type (#937). Only folder types with it can be chosen under "Where does this belong?" when a document is taken over from the post – for everyone who may create folders there. On by default for folder types with a documents tab; never for system folder types.  
 See also: [Folder type](#mappentyp), [Post](#post), [How to recognise it](#woran-man-ihn-erkennt).
 
+<a id="beim-auswahlen-ubernehmen"></a>**Copy when selected** (*Beim Auswählen übernehmen*) · ~ with explanation · administrators  
+Setting on a link field (#1037) – pairs "field of the referenced folder → field of this folder". When a folder is chosen, Ablago suggests its values in empty fields, marked "suggested from …" (e.g. the notice period from the contract type). Never overwrites, never passwords, only values you may read.  
+See also: [Fill from document](#aus-dokument-fullen).
+
 <a id="werkbank-anpassen"></a>**Customise the workbench** (*Werkbank anpassen*) · ~ with explanation · administrators  
 Sets which areas are on the left of the workbench – following a template ("Household", "Business" or "Everything") and with exceptions. Hiding doesn't switch anything off. New installations start with "Household"; installations from before this setting show everything.  
 See also: [Workbench](#werkbank), [Overview](#ubersicht), [Business](#betrieb).

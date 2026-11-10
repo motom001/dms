@@ -24,6 +24,7 @@ import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type 
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { bereinigeAutomatisierung, zeitplanText } from '../../shared/src/automatisierung';
+import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
@@ -490,6 +491,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       ...(typeof t.ausPost === 'boolean' ? { ausPost: t.ausPost } : {}),
       ...(typeof t.erkennbarAn === 'string' && t.erkennbarAn.trim() ? { erkennbarAn: t.erkennbarAn.trim() } : {}) };
   });
+  // Beim Auswählen übernehmen (#1037): braucht alle Typen des Pakets.
+  fehler.push(...vorbelegenFehler(typen, str(m.id)));
   const sichten = liste('sichten').map((s, i): PaketSicht => {
     if (!SCHLUESSEL.test(str(s.schluessel))) fehler.push(t('meldungen.pakete.sichten-ungueltige-kennung', { wert: i + 1 }));
     if (!str(s.name).trim()) fehler.push(t('meldungen.pakete.sichten-name-fehlt', { wert: i + 1 }));
@@ -730,6 +733,18 @@ function wiederfindenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Arr
     return g && liesWiederfinden(f.wiederfinden, f.typ) && !g.wiederfinden ? [{ key: g.key, label: g.label }] : [];
   });
 }
+/**
+ * Beim Auswählen übernehmen (#1037) bei einem Update: Paare des Pakets an vorhandenen Verweisfeldern (gleiche Kennung),
+ * an denen der Administrator noch keine eingestellt hat – nur Paare, deren Zielfeld es danach gibt.
+ */
+function vorbelegenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array<{ key: string; label: string; vorbelegen: NonNullable<Feld['vorbelegen']> }> {
+  const danach = new Set([...vorhanden.felder.map((f) => f.key), ...t.felder.map((f) => f.key)]);
+  return t.felder.flatMap((f) => {
+    const g = vorhanden.felder.find((x) => x.key === f.key && x.typ === 'referenz');
+    const paare = (f.vorbelegen ?? []).filter((p) => danach.has(p.nach));
+    return f.typ === 'referenz' && g && !g.vorbelegen?.length && paare.length ? [{ key: g.key, label: g.label, vorbelegen: paare }] : [];
+  });
+}
 /** Angaben am Typ (#937), die das Paket vorgibt und die der Administrator noch nicht eingestellt hat. */
 function typAngabenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'ausPost' | 'erkennbarAn'>): { ausPost?: boolean; erkennbarAn?: string } {
   return {
@@ -828,6 +843,8 @@ export interface TypPlan {
   erkennung?: string[];
   /** Bei Update (#938): vorhandene Felder, die das Paket jetzt „zum Wiederfinden“ markiert (nur wo der Haken noch fehlt). */
   wiederfinden?: string[];
+  /** Bei Update (#1037): vorhandene Verweisfelder, die jetzt „beim Auswählen übernehmen“ (nur wo noch nichts eingestellt ist). */
+  vorbelegen?: string[];
   /** Bei Update (#937): Das Paket gibt „Kann aus Post angelegt werden“ bzw. „Woran man ihn erkennt“ vor, wo noch nichts eingestellt ist. */
   typAngaben?: boolean;
   /** Bei Update (#534): Verweisfelder mit aus_text und wie viele Angaben im alten Textfeld danach umgewandelt werden können. */
@@ -963,6 +980,53 @@ function tabellenFehler(f: PaketFeld, wo: string): string[] {
   if (q.neu !== undefined && (typeof q.neu !== 'string' || !q.neu.trim() || q.neu.length > TABELLE_NEU_MAX)) fehler.push(`${wo}: quelle.neu ist ein Text mit höchstens ${TABELLE_NEU_MAX} Zeichen, z. B. „+ Position“.`);
   if (f.pflicht) fehler.push(`${wo}: Eine Tabelle hat keinen eigenen Wert und kann keine Pflicht sein.`);
   if (f.berechnet === true) fehler.push(`${wo}: Eine Tabelle hat keinen eigenen Wert und lässt sich nicht berechnen.`);
+  return fehler;
+}
+
+/** Ein Paar von `vorbelegen` (#1037) im Paket: Zielfeld in `ty`, Quellfeld in jedem Zieltyp `ziele` aus diesem Paket. */
+function paarFehler(p: { von: string; nach: string }, { f, ty, ziele, wo, alsFeld }: { f: PaketFeld; ty: PaketTyp; ziele: PaketTyp[]; wo: string; alsFeld: (f: PaketFeld) => Feld }): string[] {
+  const nach = ty.felder.find((x) => x.key === p.nach);
+  if (!nach) return [`${wo}: nach „${p.nach}“ – dieses Feld gibt es im Typ nicht.`];
+  if (nach.key === f.key) return [`${wo}: nach „${p.nach}“ ist das Verweisfeld selbst.`];
+  if (nach.typ === 'passwort' || nach.typ === 'tabelle') return [`${wo}: nach „${p.nach}“ – in Passwortfelder und Tabellen wird nie übernommen.`];
+  if (nach.berechnet === true) return [`${wo}: nach „${p.nach}“ ist berechnet – den Wert schreibt nur der Code des Pakets.`];
+  return ziele.flatMap((z) => {
+    const von = z.felder.find((x) => x.key === p.von);
+    if (!von) return [`${wo}: von „${p.von}“ – dieses Feld gibt es im Typ „${z.schluessel}“ nicht.`];
+    if (von.typ === 'passwort') return [`${wo}: von „${p.von}“ ist ein Passwortfeld – Passwörter werden nie übernommen.`];
+    return passtZusammen(alsFeld(von), alsFeld(nach)) ? [] : [`${wo}: „${z.schluessel}.${p.von}“ passt nicht zu „${p.nach}“ (gleiche Feldart nötig, Text auch in Langtext; Auswahlwerte und Ziele müssen enthalten sein).`];
+  });
+}
+
+/**
+ * Beim Auswählen übernehmen (#1037) im Paket: `vorbelegen: [{ von, nach }]` nur an Verweisfeldern, als Liste von Paaren
+ * mit Feldkennungen. `nach` ist ein Feld desselben Typs (nicht das Verweisfeld, kein Passwort, keine Tabelle, nicht
+ * berechnet); `von` gibt es in jedem Zieltyp aus diesem Paket mit passender Feldart (passtZusammen). Zieltypen aus
+ * Abhängigkeiten prüft Ablago beim Anlegen des Mappentyps (pruefeMappentyp); optionale Ziele übergehen ein fehlendes Feld.
+ * Bereinigt `vorbelegen` an jedem Feld, damit nur von und nach ankommen.
+ */
+function vorbelegenFehler(typen: PaketTyp[], paketId: string): string[] {
+  const fehler: string[] = [];
+  const eigen = (vw: string) => (!vw.includes(':') ? vw : vw.startsWith(`${paketId}:`) ? vw.slice(paketId.length + 1) : null);
+  // Verweise in der Schreibweise des Pakets vergleichbar machen: eigene Typen ohne Paket-Id.
+  const alsFeld = (f: PaketFeld): Feld => ({ ...f, zielTypen: paketZiele(f).map((z) => eigen(z) ?? z) } as Feld);
+  for (const ty of typen) {
+    for (const f of ty.felder) {
+      const roh = (f as unknown as Record<string, unknown>).vorbelegen;
+      if (roh === undefined) continue;
+      const wo = `mappentypen „${ty.schluessel}“: Feld „${f.key}“: vorbelegen`;
+      if (f.typ !== 'referenz') { fehler.push(`${wo} gibt es nur bei Verweisfeldern (typ: referenz).`); delete f.vorbelegen; continue; }
+      if (!Array.isArray(roh) || !roh.every((x) => istObjekt(x) && SCHLUESSEL.test(str(x.von)) && SCHLUESSEL.test(str(x.nach)) && Object.keys(x).every((k) => k === 'von' || k === 'nach'))) {
+        fehler.push(`${wo} ist eine Liste von Paaren { von: <Feld des Ziels>, nach: <Feld dieses Typs> }.`); delete f.vorbelegen; continue;
+      }
+      if (roh.length > VORBELEGEN_MAX) fehler.push(`${wo}: höchstens ${VORBELEGEN_MAX} Paare.`);
+      const paare = bereinigeVorbelegen(roh);
+      if (paare.length !== roh.length) fehler.push(`${wo}: Jedes Feld dieses Typs darf nur einmal unter nach stehen.`);
+      const ziele = paketZiele(f).map(eigen).filter((x): x is string => !!x).map((s) => typen.find((x) => x.schluessel === s)).filter((x): x is PaketTyp => !!x);
+      for (const p of paare) fehler.push(...paarFehler(p, { f, ty, ziele, wo, alsFeld }));
+      f.vorbelegen = paare;
+    }
+  }
   return fehler;
 }
 
@@ -1804,6 +1868,7 @@ export class Paketverwaltung {
           neueRegister: paketTyp.register.filter((r) => !vorhanden.register.some((g) => g.key === r.key)).map((r) => r.name),
           erkennung: erkennungNeu(paketTyp, vorhanden).map((f) => f.label),
           wiederfinden: wiederfindenNeu(paketTyp, vorhanden).map((f) => f.label),
+          vorbelegen: vorbelegenNeu(paketTyp, vorhanden).map((f) => f.label),
           typAngaben: Object.keys(typAngabenNeu(paketTyp, vorhanden)).length > 0,
           umwandeln: await umwandelbar(paketTyp),
           formate: formatNeu(paketTyp, vorhanden).map((f) => f.label),
@@ -2068,7 +2133,9 @@ export class Paketverwaltung {
         // Tabelle (#1030): Typverweis → Id; „standard“ ist die Standard-Trefferliste (Pakete bringen nur sie mit).
         const quelle = f.typ === 'tabelle' && q ? { typId: ziel(str(q.typ), false)!, feldKey: str(q.feld), ...(q.neu ? { neu: str(q.neu) } : {}) } : undefined;
         // Berechnet (#1034): gehört dem Paket, das den Typ mitbringt; null gibt ein Feld frei, das das Paket nicht mehr berechnet.
-        return { ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}), ...(quelle ? { quelle } : {}), berechnetVon: berechnet === true ? m.id : null };
+        // Beim Auswählen übernehmen (#1037): Zielfelder, die erst im zweiten Durchgang kommen, auch erst dann.
+        const vorbelegen = f.vorbelegen?.filter((p) => !offen.has(p.nach));
+        return { ...f, ...(vorbelegen ? { vorbelegen } : {}), wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}), ...(quelle ? { quelle } : {}), berechnetVon: berechnet === true ? m.id : null };
       });
       const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}),
         ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
@@ -2128,19 +2195,21 @@ export class Paketverwaltung {
         // Berechnete Felder (#1034): Das Update gilt auch für vorhandene Felder – neu berechnet oder nicht mehr.
         const vorab = p.vorhanden ? vorher.get(ids.get(paketTyp.schluessel)!) : undefined;
         const berechnetNeu = vorab ? berechnetAenderung(paketTyp, vorab, m.id) : new Map<string, string | null>();
-        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length && !p.wiederfinden?.length && !p.typAngaben && !p.formate?.length && !p.beschriftungen && !p.abschnitte?.length && !berechnetNeu.size)) continue;
+        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length && !p.wiederfinden?.length && !p.vorbelegen?.length && !p.typAngaben && !p.formate?.length && !p.beschriftungen && !p.abschnitte?.length && !berechnetNeu.size)) continue;
         const aktuell = vorher.get(ids.get(paketTyp.schluessel)!)!;
         const neu = eingabe(paketTyp, false).daten;
         // Erkennung (#336): Markierung des Pakets an vorhandene Felder, an denen der Administrator nichts eingestellt hat.
         const markiert = new Map(erkennungNeu(paketTyp, aktuell).map((f) => [f.key, f.erkennung]));
         // Zum Wiederfinden (#938) und die Angaben am Typ (#937) genauso: nur, wo noch nichts eingestellt ist.
         const wiederfinden = new Set(wiederfindenNeu(paketTyp, aktuell).map((f) => f.key));
+        // Beim Auswählen übernehmen (#1037) genauso: nur an Verweisfeldern ohne eigene Paare.
+        const vorbelegen = new Map(vorbelegenNeu(paketTyp, aktuell).map((f) => [f.key, f.vorbelegen] as const));
         // Formate und Datumsgrenzen (#535) genauso: nur an Feldern ohne eigene Einstellung.
         const vorgaben = new Map(formatNeu(paketTyp, aktuell).map((f) => [f.key, f.vorgaben]));
         // Beschriftungen (#728) genauso: ergänzt, was der Administrator noch nicht beschriftet hat.
         const besch = beschriftungenNeu(paketTyp, aktuell);
         // Ausblenden (#655): Was der Administrator ausgeblendet hat, bleibt so; was das Update neu bringt, ist sichtbar.
-        const felder = [...besch.typ.felder.map((f) => ({ ...f, ...(markiert.has(f.key) ? { erkennung: markiert.get(f.key) } : {}), ...(wiederfinden.has(f.key) ? { wiederfinden: true } : {}), ...vorgaben.get(f.key), ...(berechnetNeu.has(f.key) ? { berechnetVon: berechnetNeu.get(f.key) } : {}) })), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key)).map(({ ausgeblendet: _a, ...f }) => f)];
+        const felder = [...besch.typ.felder.map((f) => ({ ...f, ...(markiert.has(f.key) ? { erkennung: markiert.get(f.key) } : {}), ...(wiederfinden.has(f.key) ? { wiederfinden: true } : {}), ...(vorbelegen.has(f.key) ? { vorbelegen: vorbelegen.get(f.key) } : {}), ...vorgaben.get(f.key), ...(berechnetNeu.has(f.key) ? { berechnetVon: berechnetNeu.get(f.key) } : {}) })), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key)).map(({ ausgeblendet: _a, ...f }) => f)];
         // Abschnitte (#890) nur an Feldregistern, die noch keine haben.
         const abschnitte = new Map(abschnitteNeu(paketTyp, aktuell, (r) => [...(r.felder ?? []), ...neueFelderAuf(paketTyp, aktuell, r)]).map((r) => [r.key, r.abschnitte] as const));
         if (abschnitte.size) abschnittRegister.set(aktuell.id, new Set(abschnitte.keys()));

@@ -686,6 +686,12 @@ export interface Vorschlag {
   fundstelle: string;
   /** Wo die Fundstelle im Dokument liegt (#939): Dokument, Seite und Rahmen (relativ zur Seite, 0…1). Fehlt = nicht gefunden. */
   stelle?: { dokument: string; bereiche: Array<{ seite: number; x: number; y: number; b: number; h: number }> };
+  /**
+   * Beim Auswählen übernehmen (#1037): Der Wert kommt nicht aus dem Dokument, sondern aus der Mappe `mappe`, die für das
+   * Verweisfeld `feld` vorgeschlagen ist (z. B. Kündigungsfrist aus der Vertragsart). Die Oberfläche trägt ihn nur in ein
+   * leeres Feld ein und ersetzt ihn, solange er unverändert ist, wenn man eine andere Mappe wählt.
+   */
+  aus?: { feld: string; mappe: string };
 }
 export type Vorschlaege = Record<string, Vorschlag>;
 

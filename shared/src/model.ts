@@ -11,6 +11,7 @@ import { LEER, liesFilter, ohneLeereTeile, PLATZHALTER_MIT_FILTERN, pruefeFilter
 import { alsText } from './markdown';
 import { kreisImStandard, kreisVon } from './nummernkreis';
 import { folgtAusKreis, folgtAusProbleme } from './folgtaus';
+import { vorbelegenProbleme } from './vorbelegen';
 import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 import { datumsformat } from './region';
 import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumText, type Zeitraum } from './feldarten';
@@ -115,6 +116,12 @@ export interface Feld {
    * Organisation aus Niederlassung → Organisation. Füllt nur ein leeres Feld (Vorbelegung, keine Sperre).
    */
   folgtAus?: import('./folgtaus').FolgtAus;
+  /**
+   * Referenzfeld (#1037): „beim Auswählen übernehmen“ – Paare „Feld der verwiesenen Mappe (`von`) → Feld dieser Mappe
+   * (`nach`)“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor (vorbelegen.ts); nie überschreiben,
+   * nie Passwörter, nie berechnete Felder, nur Werte, die die Person lesen darf. Gleiche Schreibweise im Paketformat.
+   */
+  vorbelegen?: import('./vorbelegen').Vorbelegung[];
   /**
    * „Aus Dokument füllen“ (#336, #391; bis #938 „Für die Erkennung nutzen“): vorhanden = an, mit Art und
    * Erkennungshinweis. Der Name im Code bleibt `erkennung` – gespeicherte Daten und Pakete ändern sich nicht.
@@ -776,6 +783,8 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
       // Folgt aus (#886): Quelle und Zielfeld gibt es und sie passen; Kreise meldet die Prüfung unten.
       if (f.folgtAus) m.push(...folgtAusProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     }
+    // Beim Auswählen übernehmen (#1037): Felder gibt es und sie passen zusammen; nie aus oder in Passwortfelder.
+    if (f.vorbelegen?.length) m.push(...vorbelegenProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     // Tabelle (#1030): Quelle wie bei einem Verknüpfungsregister – das Feld des anderen Typs muss hierher verweisen.
     if (f.typ === 'tabelle') {
       m.push(...tabellenProbleme(f, {

@@ -1780,6 +1780,7 @@
   "pakete.neu": "neu: {wert}",
   "pakete.aus-dokument-fuellen": "„Aus Dokument füllen“: {map}",
   "pakete.zum-wiederfinden": "„Zum Wiederfinden nutzen“: {map}",
+  "pakete.vorbelegen": "„Beim Auswählen übernehmen“: {map}",
   "pakete.dokument-uebernehmen": "„Kann aus Post angelegt werden“ bzw. „Woran man ihn erkennt“",
   "pakete.keine-aenderung": "keine Änderung",
   "pakete.hast-du-geloescht-bleibt": "{name}: hast du gelöscht – bleibt weg.",

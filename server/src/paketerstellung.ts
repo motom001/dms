@@ -33,6 +33,7 @@ import { protokoll } from './protokoll';
 import { typBild, typUnterschiede, type TypUnterschiede } from '../../shared/src/typvergleich';
 import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
+import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
@@ -59,6 +60,7 @@ export const MINDEST_FUNKTIONEN = {
   feldformate: { ab: '0.121.0', grund: t('meldungen.paketerstellung.feldformate-und-datumsgrenzen') },
   feldarten: { ab: FELDARTEN_AB, grund: t('meldungen.paketerstellung.feldarten') },
   tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
+  vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -67,6 +69,16 @@ export type MindestFunktion = keyof typeof MINDEST_FUNKTIONEN;
 /** Minor-Versionen, die es nie gab (übersprungen); erscheinen nicht in der Auswahl. */
 const NIE_ERSCHIENEN = new Set(['0.157.0']);
 const DMS_ANGABE = /^>=(\d+)\.(\d+)\.0$/;
+
+/**
+ * Beim Auswählen übernehmen (#1037) ins Paket: Paare aus Feldkennungen, so wie sie sind – ohne Ziel und ohne Zielfeld
+ * im Paket (Systemfelder kommen nicht mit) fallen sie weg.
+ */
+function vorbelegenInsPaket(x: Record<string, unknown>, f: Feld, typ: Mappentyp) {
+  delete x.vorbelegen;
+  const paare = (f.typ === 'referenz' ? f.vorbelegen ?? [] : []).filter((p) => typ.felder.some((g) => g.key === p.nach && !g.system));
+  if (paare.length && (x.ziel !== undefined || x.zielOptional)) x.vorbelegen = paare.map(({ von, nach }) => ({ von, nach }));
+}
 
 /** Mindestversion aus den benutzten Funktionen: höchste Untergrenze und die Gründe dafür. */
 export function mindestversion(genutzt: Iterable<MindestFunktion>): { version: string; gruende: string[] } {
@@ -376,6 +388,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
         else x.auswahlFilter = auswahlFilter;
       }
       tabelleInsPaket(x, f, wo(`Feld „${f.label}“`));
+      vorbelegenInsPaket(x, f, mappentyp);
       if (x.ziel === undefined) delete x.ziel;
       // Zum Wiederfinden (#938): Ohne die Angabe leitet Ablago sie bei Feldern mit „Aus Dokument füllen“ ab – ein
       // ausdrückliches false hält fest, dass der Haken hier aus ist.
@@ -561,6 +574,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   // Zeitraum, Prozent und negative Beträge (#1035): Ältere Ablago machten aus unbekannten Feldarten Text.
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'zeitraum' || f.typ === 'prozent' || f.negativ === true))) genutzt.push('feldarten');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
+  if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length))) genutzt.push('vorbelegen');
   const mindest = mindestversion(genutzt);
   const optionen = dmsOptionen(mindest.version, d.dmsVersion);
   const unten = untergrenze(dms);

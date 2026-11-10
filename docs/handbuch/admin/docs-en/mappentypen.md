@@ -235,7 +235,7 @@ A field of the field kind **Link** points to folders of another folder type (or 
 - **Folders that aren't visible** appear as "(not visible)", as with one target type – without title and without type; the groups give no count.
 - **When saving**, Ablago checks that every linked folder has one of the target types (and that *All of the same type* holds). Existing fields with one target type stay as they are.
 - **In views, permissions, the advanced search and "Show if …"** such fields have the condition **points to a folder of type …**, e.g. "*concerns* points to a folder of type vehicle" ([views](sichten.md), [permissions](berechtigungen.md#zeigt-auf-mappe-vom-typ)).
-- **Choice filters** (next section) work on the fields all target types have in common (same key and field kind). **Follows from** and converting from a text field ([packages](pakete.md)) only work with exactly one target type.
+- **Choice filters** (next section) work on the fields all target types have in common (same key and field kind). **Follows from** and converting from a text field ([packages](pakete.md)) only work with exactly one target type. **Copy when selected** applies per target type that has the field ([below](#vorbelegen)).
 - **Deleting a target type:** if it is one of several, Ablago takes it out of the field when deleting it. If it is the only one, the field prevents the deletion as before.
 - **From packages**, target types can come that the package doesn't depend on (*optional*, e.g. *Invoice › concerns* → vehicle when the package Vehicles is installed). Ablago adds such a type as soon as it exists – also when the other package only comes later. The editor shows "Added as soon as it is installed: …" below. If the type is missing, the field stays anyway; if it has no target type at all yet, the form says the types come with another package.
 
@@ -269,6 +269,20 @@ Some links follow from another one: a branch belongs to exactly one organisation
 - **The same everywhere:** in the interface, via the [API](api.md) (Ablago fills in on saving if the request doesn't name the field itself) and with **Fill in from document** – if Ablago recognises the branch, the organisation comes along as a suggestion.
 - When saving the folder type Ablago checks: both fields exist, the source is a link field with **one** folder, the value points to the same folder type as this field, and no field follows from another in a circle. Chains work (contact → organisation, contract → contact).
 - In [packages](pakete.md) the property is called `folgtAus: { feld: niederlassung, zielFeld: organisation }` (from Ablago 0.225).
+
+#### Copy when selected { #vorbelegen }
+
+Some folders carry typical details: a *contract type* "Mobile" knows the usual notice period, an *insurance type* the payment interval. Under **Copy when selected** you set pairs on the link field – *field of the referenced folder* → *into this field*, for instance *Notice period* → *Notice period*. **+ Copy a field** suggests fields with the same key first. The field then shows the chip "copies 3 fields".
+
+- **Empty fields only:** when someone chooses a contract type, Ablago suggests its values in the empty fields, marked "suggested from Contract type Mobile" (as in the setup assistant). Anything already there stays – nothing is ever overwritten silently. Every suggestion can be changed or cleared again with **Take back**.
+- **Another folder chosen before saving:** suggestions of the folder chosen before that are still unchanged are replaced by those of the new one – so no mobile notice period sticks to an electricity contract. Whatever the person typed or changed stays.
+- **Wherever you choose:** when creating and editing, with "+ New" from the referenced folder, with **Fill in from document** and on the page **Take over document**. If Ablago recognises the contract type in the document, its values come along as suggestions; if a value is in the document itself (such as the notice period), the document wins.
+- **Only what the person may read:** Ablago fetches the values with the person's rights – if they may not read the contract type, nothing comes; a copied link to a folder they may not read is left out. **Password fields** can be neither source nor target, **calculated fields** ([above](#berechnete-felder)) never get a suggestion. Values from the contract type never go to an [AI package](pakete.md#ki-dienste), not even during recognition.
+- **Matching fields:** both fields have the same field kind (text also into long text); multiple values only into fields with several values; for choices every option of the source must exist in the target, for links every target type. A value that would not be valid in the target (too long, unknown option) is not suggested. "Show if …" applies: a field that would be hidden with the new values gets nothing.
+- **Several target types:** a pair applies to every target type that has the field (same key); types without it skip it. You can choose from the fields of all target types.
+- **Saving fills nothing by itself:** these are suggestions in the interface. Folders saved via the [API](api.md) stay as the request sends them.
+- When saving the folder type Ablago checks: the fields exist, they fit together, none is a password field, each target field appears only once.
+- In [packages](pakete.md) the property is called `vorbelegen: [{ von: kuendigungsfrist, nach: kuendigungsfrist }]` (from Ablago 0.234).
 
 Nobody can delete a folder that is still linked to.
 

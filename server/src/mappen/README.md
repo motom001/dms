@@ -6,7 +6,7 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
 
 - `mappen.dienst.ts` – `MappenDienst`: `holeMappe`, `legeMappeAn`, `aendereMappe` (Transaktion je Versuch, #609,
   #743), `verweisende`, Notizen lesen (#55), Favoriten und „gesehen“ (#62, #422), persönliche Einstellungen.
-- `eingaben.ts` – `MappenEingaben`: `pruefeWerte`, Formate (#535), Auswahlfilter (#172, #173), „folgt aus“ (#886),
+- `eingaben.ts` – `MappenEingaben`: `pruefeWerte`, Formate (#535), Auswahlfilter (#172, #173), „folgt aus“ (#886), „beim Auswählen übernehmen“ (#1037, nur Vorschläge mit den Rechten der Person),
   Verweisziele, `rechteVorschau`/`hinweisDanach` (#126), `feldkonflikte` (#609); `bereinigeWerte` (Modulebene).
   Nicht verwechseln mit `mappentypen/eingabe.ts` (Eingaben für Mappentypen).
 - `titel.ts` – `MappenTitel`: `aktualisiereTitel`, `titelVorab` (#743), Nachziehen beim Start, „Absender bereinigen“.

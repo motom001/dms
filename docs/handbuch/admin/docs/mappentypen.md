@@ -235,7 +235,7 @@ Ein Feld der Feldart **Verweis** zeigt auf Mappen eines anderen Mappentyps (oder
 - **Nicht sichtbare Mappen** stehen wie bei einem Zieltyp als „(nicht sichtbar)“ da – ohne Titel und ohne Typ; die Gruppen nennen keine Anzahl.
 - **Beim Speichern** prüft Ablago, dass jede verwiesene Mappe einen der Zieltypen hat (und *Alle vom selben Typ* gilt). Bestehende Felder mit einem Zieltyp bleiben, wie sie sind.
 - **In Ansichten, Rechten, der erweiterten Suche und „Anzeigen, wenn …“** gibt es für solche Felder die Bedingung **zeigt auf Mappe vom Typ …**, z. B. „*betrifft* zeigt auf Mappe vom Typ Fahrzeug“ ([Ansichten](sichten.md), [Berechtigungen](berechtigungen.md#zeigt-auf-mappe-vom-typ)).
-- **Auswahlfilter** (nächster Abschnitt) gehen über die Felder, die alle Zieltypen gemeinsam haben (gleiche Kennung und Feldart). **Folgt aus** und das Umwandeln aus einem Textfeld ([Pakete](pakete.md)) gehen nur mit genau einem Zieltyp.
+- **Auswahlfilter** (nächster Abschnitt) gehen über die Felder, die alle Zieltypen gemeinsam haben (gleiche Kennung und Feldart). **Folgt aus** und das Umwandeln aus einem Textfeld ([Pakete](pakete.md)) gehen nur mit genau einem Zieltyp. **Beim Auswählen übernehmen** gilt je Zieltyp, der das Feld hat ([unten](#vorbelegen)).
 - **Löschen eines Zieltyps:** Ist er einer von mehreren, nimmt Ablago ihn beim Löschen aus dem Feld heraus. Ist er der einzige, verhindert das Feld das Löschen wie bisher.
 - **Aus Paketen** können Zieltypen kommen, von denen das Paket nicht abhängt (*optional*, z. B. *Rechnung › betrifft* → Fahrzeug, wenn das Paket Fahrzeuge installiert ist). Ablago nimmt so einen Typ auf, sobald es ihn gibt – auch, wenn das andere Paket erst später kommt. Im Editor steht darunter „Kommt dazu, sobald installiert: …“. Fehlt der Typ, bleibt das Feld trotzdem; hat es noch gar keinen Zieltyp, sagt das Formular, dass die Typen mit einem anderen Paket kommen.
 
@@ -269,6 +269,20 @@ Manche Verweise ergeben sich aus einem anderen: Eine Niederlassung gehört zu ge
 - **Überall gleich:** in der Oberfläche, über die [Schnittstelle](api.md) (Ablago füllt beim Speichern, wenn die Anfrage das Feld nicht selbst nennt) und bei **Aus Dokument ausfüllen** – erkennt Ablago die Niederlassung, kommt die Organisation als Vorschlag dazu.
 - Beim Speichern des Mappentyps prüft Ablago: Beide Felder gibt es, die Quelle ist ein Verweisfeld mit **einer** Mappe, die Angabe zeigt auf denselben Mappentyp wie dieses Feld, und kein Feld folgt im Kreis aus einem anderen. Ketten gehen (Ansprechpartner → Organisation, Vertrag → Ansprechpartner).
 - In [Paketen](pakete.md) heißt die Eigenschaft `folgtAus: { feld: niederlassung, zielFeld: organisation }` (ab Ablago 0.225).
+
+#### Beim Auswählen übernehmen { #vorbelegen }
+
+Manche Mappen bringen typische Angaben mit: Eine *Vertragsart* „Mobilfunk“ kennt die übliche Kündigungsfrist, eine *Versicherungsart* die Zahlweise. Unter **Beim Auswählen übernehmen** legst du am Verweisfeld Paare fest – *Feld der verwiesenen Mappe* → *in dieses Feld*, etwa *Kündigungsfrist* → *Kündigungsfrist*. **+ Feld übernehmen** schlägt zuerst gleichnamige Felder vor. Am Feld steht dann der Chip „übernimmt 3 Felder“.
+
+- **Nur leere Felder:** Wählt jemand eine Vertragsart, schlägt Ablago deren Werte in den leeren Feldern vor, markiert mit „vorgeschlagen aus Vertragsart Mobilfunk“ (wie im Einrichtungsassistenten). Was schon drinsteht, bleibt – still überschrieben wird nie. Jeder Vorschlag lässt sich ändern oder mit **Zurücknehmen** wieder leeren.
+- **Andere Mappe gewählt, noch nicht gespeichert:** Vorschläge der vorher gewählten Mappe, die noch unverändert dastehen, ersetzt Ablago durch die der neuen – so bleibt keine Mobilfunk-Frist an einem Stromvertrag hängen. Was die Person selbst eingetragen oder geändert hat, bleibt.
+- **Überall, wo man auswählt:** beim Anlegen und Bearbeiten, mit „+ Neu“ aus der verwiesenen Mappe heraus, bei **Aus Dokument ausfüllen** und auf der Seite **Dokument übernehmen**. Erkennt Ablago die Vertragsart im Dokument, kommen ihre Werte als Vorschlag dazu; steht ein Wert im Dokument selbst (etwa die Frist), gilt der aus dem Dokument.
+- **Nur, was die Person lesen darf:** Die Werte holt Ablago mit den Rechten der Person – darf sie die Vertragsart nicht lesen, kommt nichts; zeigt ein übernommener Verweis auf eine Mappe, die sie nicht lesen darf, fällt er weg. **Passwortfelder** stehen weder als Quelle noch als Ziel zur Wahl, **berechnete Felder** ([oben](#berechnete-felder)) bekommen nie einen Vorschlag. Werte aus der Vertragsart gehen nie an ein [KI-Paket](pakete.md#ki-dienste), auch nicht bei der Erkennung.
+- **Passende Felder:** Beide Felder haben dieselbe Feldart (Text auch in Langtext); Mehrfachwerte nur in Felder mit mehreren Werten; bei Auswahl muss es jede Option der Quelle auch im Ziel geben, bei Verweisen jeden Zieltyp. Ein Wert, der im Ziel nicht gültig wäre (zu lang, unbekannte Option), wird nicht vorgeschlagen. „Anzeigen, wenn …“ gilt: Ein Feld, das mit den neuen Werten nicht zu sehen ist, bekommt nichts.
+- **Mehrere Zieltypen:** Ein Paar gilt für jeden Zieltyp, der das Feld hat (gleiche Kennung); Typen ohne das Feld übergehen es. Zur Wahl stehen die Felder aller Zieltypen.
+- **Speichern füllt nichts von selbst:** Es sind Vorschläge in der Oberfläche. Über die [Schnittstelle](api.md) gespeicherte Mappen bleiben, wie die Anfrage sie schickt.
+- Beim Speichern des Mappentyps prüft Ablago: Die Felder gibt es, sie passen zusammen, keines ist ein Passwortfeld, jedes Zielfeld kommt nur einmal vor.
+- In [Paketen](pakete.md) heißt die Eigenschaft `vorbelegen: [{ von: kuendigungsfrist, nach: kuendigungsfrist }]` (ab Ablago 0.234).
 
 Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.
 

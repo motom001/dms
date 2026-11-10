@@ -91,6 +91,8 @@ export function typenArchivRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
     // Folgt aus (#886): was aus den gewählten Quellen folgt – die Oberfläche füllt damit leere Felder und fragt bei Abweichung.
     { methode: 'POST', pfad: '/api/mappen/folgen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.folgen(a.body, await zg(a))) },
+    // Beim Auswählen übernehmen (#1037): Werte der gewählten Mappe als Vorschlag für leere Felder – nur, was die Person lesen darf.
+    { methode: 'POST', pfad: '/api/mappen/vorbelegen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.vorbelegen(a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
   ];
 }

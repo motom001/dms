@@ -331,6 +331,7 @@
   "dienst.bitte-die-markierten-felder-2": "Please check the marked fields.",
   "dienst.unbekannter-mappentyp": "Unknown folder type.",
   "dienst.folgt-aus": "from {feld}",
+  "dienst.vorbelegen-aus": "suggested from {feld} {titel}",
   "dienst.benutzer-legt-ein-administrator": " Users are created by an administrator in user management.",
   "dienst.mappen-vom-typ-lassen": "Folders of the type “{name}” can’t be created in the library.{wert}",
   "dienst.mappen-vom-typ-mit": "You may not create folders of the type “{name}” with these details.",
@@ -1755,5 +1756,6 @@
   "pakete.tabelle-typ": "mappentypen: “{typ}” → field “{feld}”: the table shows folders of the type “{quelle}”, which the package does not include.",
   "pakete.tabelle-feld": "mappentypen: “{typ}” → field “{feld}”: the field “{quellfeld}” of “{quelle}” is not a link field pointing to this type – the table only shows folders that link here through such a field.",
   "paketerstellung.tabelle": "Field type table",
+  "paketerstellung.vorbelegen": "“Copy when selected” on reference fields",
   "paketerstellung.tabelle-liste": "{wo}: the table shows another results list of “{name}” – only the default results list goes into the package; there the table shows its columns."
 }

@@ -40,6 +40,9 @@ begriffe:
   Zum Wiederfinden nutzen:
     begriff: Use to find existing folders
     beschreibung: Tick on a field (#938) – Ablago uses this value to find existing folders again in a document, e.g. customer number, contract number, invoice number or registration number. This results in suggestions with evidence ("How Ablago recognises it") and the warning if a folder already exists. Independent of "Unique".
+  Beim Auswählen übernehmen:
+    begriff: Copy when selected
+    beschreibung: Setting on a link field (#1037) – pairs "field of the referenced folder → field of this folder". When a folder is chosen, Ablago suggests its values in empty fields, marked "suggested from …" (e.g. the notice period from the contract type). Never overwrites, never passwords, only values you may read.
   Feld:
     begriff: Field
     beschreibung: A detail in a folder, e.g. the contract number. Every field has a field kind – text, long text, formatted text, number, amount, date, yes/no, choice list, link or password.

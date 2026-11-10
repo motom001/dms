@@ -295,6 +295,10 @@ Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist (Werkbank → Benu
 Haken an einem Feld (#938, früher „Für die Erkennung nutzen“) – der Knopf „Aus Dokument ausfüllen“ darf dieses Feld aus einem Foto oder Dokument als Vorschlag füllen. Mit Art („Was steht im Feld?“) und Erkennungshinweis.  
 Siehe auch: [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen).
 
+<a id="beim-auswahlen-ubernehmen"></a>**Beim Auswählen übernehmen** · ~ mit Erklärung · Administratoren  
+Einstellung an einem Verweisfeld (#1037) – Paare „Feld der verwiesenen Mappe → Feld dieser Mappe“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor, markiert „vorgeschlagen aus …“ (z. B. Kündigungsfrist aus der Vertragsart). Nie überschreiben, nie Passwörter, nur Werte, die man lesen darf.  
+Siehe auch: [Aus Dokument füllen](#aus-dokument-fullen).
+
 <a id="benutzer"></a>**Benutzer** · ✓ Alltagswort · alle  
 Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe in Ablago. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.
 
@@ -583,6 +587,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Auftrag | Job | `Auftrag` |
 | Aus Dokument füllen | Für die Erkennung nutzen (alter Name) | `Feld.erkennung` |
 | Bedingung | – | `Bedingung` |
+| Beim Auswählen übernehmen | Vorbelegen (in der Oberfläche), Erben | `Feld.vorbelegen` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechnetes Feld | Formelfeld, berechnete Spalte, automatisches Feld | `Feld.berechnetVon, berechnet (Paket)` |
 | Berechtigungen | Permissions | `Rechte` |

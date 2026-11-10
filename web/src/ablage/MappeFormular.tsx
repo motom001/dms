@@ -392,6 +392,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const bekanntRef = useRef(bekannt); bekanntRef.current = bekannt;
   /** Felder, die sich aus ihrer Quelle gefüllt haben (#886) – markiert „aus …“, solange der Wert so bleibt. */
   const [gefolgt, setGefolgt] = useState<Record<string, { quelle: string; wert: string }>>({});
+  /**
+   * Beim Auswählen übernehmen (#1037): Felder, in die eine gewählte Mappe einen Wert vorgeschlagen hat – markiert
+   * „vorgeschlagen aus …“, solange der Wert so bleibt. `feld`/`mappe`: woher; `vorher`: der leere Wert davor.
+   */
+  const [vorbelegt, setVorbelegt] = useState<Record<string, Vorbelegt>>({});
+  const vorbelegtRef = useRef(vorbelegt); vorbelegtRef.current = vorbelegt;
   const werteGeaendert = JSON.stringify(roh) !== basis;
   // Hat sich die Mappe anderswo geändert (z. B. „Datum auf … setzen“, #130) und ist hier nichts ungespeichert: übernehmen.
   const startJson = JSON.stringify(start);
@@ -412,7 +418,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     return undefined;
   };
   const verwerfen = () => {
-    setKonflikt(undefined); setRoh(JSON.parse(vorschlagStart && !mappe ? startJson : basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({});
+    setKonflikt(undefined); setRoh(JSON.parse(vorschlagStart && !mappe ? startJson : basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({}); setVorbelegt({});
     // Seite „Dokument übernehmen“ (#934): zurück auf die Vorschläge aus dem Dokument.
     if (vorschlagStart) setVorschlagRunde((n) => n + 1);
   };
@@ -490,7 +496,64 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setRoh((r) => ({ ...r, [k]: v }));
     if (fehler?.felder[k]) setFehler((f) => f && { ...f, felder: Object.fromEntries(Object.entries(f.felder).filter(([x]) => x !== k)) });
     void folge(k, v);
+    void vorbelege(k, v);
   };
+
+  /**
+   * Beim Auswählen übernehmen (#1037) nach einer Eingabe im Verweisfeld `k` (von Hand, über „folgt aus“ oder die Brücke).
+   * Erst fallen die Vorschläge der vorher gewählten Mappe weg, die noch unverändert dastehen – so bleibt kein
+   * „Mobilfunk: 3 Monate“ an einem Stromvertrag hängen; selbst getippte Werte bleiben. Dann schlägt die neue Mappe ihre
+   * Werte vor: nur in leere, sichtbare, beschreibbare Felder, markiert und änderbar. Die Werte liefert der Server mit den
+   * Rechten der Person (nur lesbare Mappen, nie Passwörter, nie berechnete Felder).
+   */
+  async function vorbelege(k: string, v: Roh) {
+    const f = typ.felder.find((x) => x.key === k);
+    if (!f || f.typ !== 'referenz' || !f.vorbelegen?.length || nurLesen) return;
+    const id = ersteId(ausRoh(f, v));
+    vorbelegungAufheben(k, id);
+    if (!id || Object.values(vorbelegtRef.current).some((e) => e.feld === k && e.mappe === id)) return;
+    const r = await api.vorbelegen(typ.id, k, id).catch(() => null);
+    if (r && ersteId(ausRoh(f, rohRef.current[k])) === id) vorbelegungEintragen(f, id, r);
+  }
+  /** Unveränderte Vorschläge aus dem Verweisfeld `k`, die nicht von der Mappe `id` stammen, wieder leeren (#1037). */
+  function vorbelegungAufheben(k: string, id: string) {
+    const alt = Object.entries(vorbelegtRef.current).filter(([, e]) => e.feld === k && e.mappe !== id);
+    if (!alt.length) return;
+    const zurueck = Object.fromEntries(alt.filter(([n, e]) => gleichRoh(rohRef.current[n], e.wert)).map(([n, e]) => [n, e.vorher] as const));
+    const vorher = vorbelegtRef.current;
+    rohRef.current = { ...rohRef.current, ...zurueck };
+    setRoh((x) => ({ ...x, ...Object.fromEntries(Object.entries(zurueck).filter(([n]) => gleichRoh(x[n], vorher[n]?.wert))) }));
+    const ohne = Object.fromEntries(Object.entries(vorher).filter(([n]) => !alt.some(([a]) => a === n)));
+    vorbelegtRef.current = ohne;
+    setVorbelegt(ohne);
+  }
+  /** Vorschläge der Mappe `id` in leere, sichtbare, beschreibbare Felder eintragen und markieren (#1037). */
+  function vorbelegungEintragen(f: Feld, id: string, r: Awaited<ReturnType<typeof api.vorbelegen>>) {
+    for (const [b, x] of Object.entries(r.bezuege)) merke(b, x);
+    const neu = leereVorschlaege(typ, r.felder, rohRef.current, (n) => geschuetzt[n] === undefined && !ausgeblendet.has(n));
+    // Anzeigen, wenn … (#1033): mit den neuen Werten zusammen – „Verlängert sich um“ zeigt sich erst mit „Danach“.
+    const mitNeuen: Bezuege = { ...bekanntRef.current, ...r.bezuege, [id]: { titel: r.titel, typId: r.typId } };
+    const sicht = anzeigeImFormular(typ, { ...rohRef.current, ...neu }, { merkmale, bekannt: mitNeuen });
+    for (const n of Object.keys(neu)) if (sicht.verborgen.has(n)) delete neu[n];
+    if (!Object.keys(neu).length) return;
+    const text = t('ablage.vorbelegen.aus', { feld: feldLabel(f), titel: titelOder(r.titel) });
+    const marken = Object.fromEntries(Object.entries(neu).map(([n, w]) => [n, { feld: f.key, mappe: id, wert: w, vorher: rohRef.current[n] ?? leerRoh(typ, n), text }] as const));
+    rohRef.current = { ...rohRef.current, ...neu };
+    setRoh((x) => ({ ...x, ...leereVorschlaege(typ, neu, x, () => true, false) }));
+    vorbelegtRef.current = { ...vorbelegtRef.current, ...marken };
+    setVorbelegt((x) => ({ ...x, ...marken }));
+    oeffneAbschnitte(Object.keys(neu));
+  }
+  function vorbelegungZuruecknehmen(k: string) {
+    const e = vorbelegt[k];
+    if (e) setRoh((x) => ({ ...x, [k]: e.vorher }));
+    setVorbelegt((x) => Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)));
+  }
+  // Neue Mappe mit schon gewähltem Verweis (z. B. „+ Neu“ aus der Vertragsart): gleich vorschlagen, einmal beim Öffnen.
+  useEffect(() => {
+    if (mappe || vorschlagStart || nurLesen) return;
+    for (const f of typ.felder) if (f.typ === 'referenz' && f.vorbelegen?.length && ersteId(ausRoh(f, start[f.key]))) void vorbelege(f.key, start[f.key]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Öffnen einer neuen Mappe
 
   /**
    * Folgt aus (#886) nach einer Eingabe von Hand (Auswahl, Ziehen, Anklicken) – nie beim Öffnen und nie durch
@@ -528,8 +591,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         setRoh((x) => ({ ...x, [z.key]: neu }));
         setGefolgt((g) => ({ ...g, [z.key]: { quelle: k, wert: soll } }));
         oeffneAbschnitte([z.key]);
-        // Eine Kette (a aus b, b aus c) füllt sich weiter.
+        // Eine Kette (a aus b, b aus c) füllt sich weiter – und schlägt vor, was die gefolgte Mappe mitbringt (#1037).
         void folge(z.key, neu, false);
+        void vorbelege(z.key, neu);
       }
     }
     const qf = vonHand && f.folgtAus ? typ.felder.find((x) => x.key === f.folgtAus!.feld && x.typ === 'referenz') : undefined;
@@ -554,19 +618,24 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     for (const [k, v] of Object.entries(r.vorschlaege)) {
       const f = typ.felder.find((x) => x.key === k);
       // Ausgeblendete Felder (#655) bekommen nichts – den Vorschlag sähe niemand.
-      if (!f || geschuetzt[k] !== undefined || ausgeblendet.has(k)) continue;
+      if (!f || geschuetzt[k] !== undefined || ausgeblendet.has(k) || v.aus) continue;
       const vorschlag = zuRoh(f, v.wert);
       if (istLeer(ausRoh(f, roh[k]))) { werte[k] = vorschlag; neu[k] = { ...v, art: 'eingetragen', vorher: roh[k] }; }
       else if (JSON.stringify(roh[k]) !== JSON.stringify(vorschlag)) neu[k] = { ...v, art: 'alternative' };
     }
+    // Beim Auswählen übernehmen (#1037): Werte aus einer vorgeschlagenen Mappe.
+    const vb = vorbelegtAusVorschlaegen(typ, r, roh, werte, (k) => geschuetzt[k] === undefined && !ausgeblendet.has(k));
+    Object.assign(werte, vb.werte);
+    const marken = vb.marken;
     for (const [id, b] of Object.entries(r.bezuege)) merke(id, b);
     setRoh((x) => ({ ...x, ...werte }));
     setVorschlaege(neu);
+    setVorbelegt((x) => ({ ...x, ...marken }));
     // Abschnitte mit Vorschlägen klappen auf (#890).
-    oeffneAbschnitte(Object.keys(neu));
+    oeffneAbschnitte([...Object.keys(neu), ...Object.keys(marken)]);
     setAdNeu(Object.fromEntries(Object.entries(r.neu).filter(([k]) => istLeer(ausRoh(typ.felder.find((x) => x.key === k)!, roh[k])))));
     if (ablegen && dateien.length) setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: ablegen }))]);
-    const n = Object.values(neu).filter((v) => v.art === 'eingetragen').length;
+    const n = Object.values(neu).filter((v) => v.art === 'eingetragen').length + Object.keys(marken).length;
     const alt = Object.values(neu).filter((v) => v.art === 'alternative').length;
     const teile = [n ? t('ablage.mappeformular.felder-als-vorschlag-eingetragen', { anzahl: n }) : '', alt ? t('ablage.mappeformular.alternativen-zu-ausgefuellten', { anzahl: alt }) : ''].filter(Boolean);
     // Erkennung per Paket (#511): womit erkannt wurde bzw. warum die eingebaute übernahm.
@@ -600,8 +669,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!mappe) setBasis(JSON.stringify({ ...roh, ...werte }));
   }, [vorschlagStart, vorschlagRunde]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschläge nur in einer neuen Runde übernehmen, nicht bei jeder Eingabe
   // Die Brücke setzt Werte vom Dokument und zeigt Felder; über Refs immer mit dem aktuellen Stand.
-  const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge });
-  anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge };
+  const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege });
+  anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege };
   useEffect(() => bruecke?.anschliessen({
     setze(k, wert, bezug) {
       const a = anschluss.current;
@@ -614,8 +683,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       const roh = f.mehrfach && Array.isArray(alt) && Array.isArray(neu) ? [...new Set([...alt as string[], ...neu as string[]])] : neu;
       setRoh((r) => ({ ...r, [k]: roh }));
       a.setFehler((x) => x && x.felder[k] ? { ...x, felder: Object.fromEntries(Object.entries(x.felder).filter(([y]) => y !== k)) } : x);
-      // Folgt aus (#886): wie bei einer Eingabe von Hand.
+      // Folgt aus (#886) und beim Auswählen übernehmen (#1037): wie bei einer Eingabe von Hand.
       void a.folge(k, roh);
+      void a.vorbelege(k, roh);
     },
     zeige(k) {
       const a = anschluss.current;
@@ -661,7 +731,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const v = altesFeld(f);
     const g = gefolgt[f.key];
     const q = g && enthaeltId(ausRoh(f, roh[f.key]), g.wert) ? typ.felder.find((x) => x.key === g.quelle) : undefined;
-    const zusatz = <>{vorschlagAm(f)}{q && <p className="ad-hinweis folgt"><span className="chip">{t('ablage.folgen.aus', { feld: feldLabel(q) })}</span></p>}</>;
+    // Beim Auswählen übernehmen (#1037): gleiche Kennzeichnung wie im Einrichtungsassistenten, solange der Wert so bleibt.
+    const vb = vorbelegt[f.key];
+    const vorbelegtHier = vb && JSON.stringify(roh[f.key] ?? null) === JSON.stringify(vb.wert ?? null);
+    const zusatz = <>{vorschlagAm(f)}{q && <p className="ad-hinweis folgt"><span className="chip">{t('ablage.folgen.aus', { feld: feldLabel(q) })}</span></p>}
+      {vorbelegtHier && !nurLesen && <p className="ad-hinweis vorbelegt"><span className="chip">{vb.text}</span> <Knopf art="link" groesse="klein" onClick={() => vorbelegungZuruecknehmen(f.key)}>{t('ablage.mappeformular.zuruecknehmen')}</Knopf></p>}</>;
     if (!v || istLeer(mappe?.werte[f.key])) return zusatz;
     return <>{zusatz}<small className="hilfe">{t('pakete.formular.alttext', { feld: v.label })}</small></>;
   }
@@ -767,7 +841,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
-    setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({});
+    setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({}); setVorbelegt({});
     // Fenster „+ … anlegen“ (#935): die neue Mappe geht ans Verweisfeld; die Mappe dahinter bleibt, wie sie ist.
     if (imFenster && gespeichert) { await d.neuLaden(); setSendet(false); imFenster.gespeichert(gespeichert); return; }
     if (!offen.length && !nichtEntfernt.length) loeseWache();
@@ -1084,6 +1158,45 @@ function Konfliktfrage({ konflikt, ich, sendet, waehle, speichern, abbrechen }: 
       </div>
     </div>
   );
+}
+
+/** Beim Auswählen übernehmen (#1037): ein vorgeschlagener Wert aus der Mappe `mappe` im Verweisfeld `feld`. */
+interface Vorbelegt { feld: string; mappe: string; wert: Roh; vorher: Roh; text: string }
+
+/** Leerer Rohwert des Felds `k` (für „Zurücknehmen“). */
+const leerRoh = (typ: Mappentyp, k: string): Roh => { const f = typ.felder.find((x) => x.key === k); return f ? zuRoh(f, null) : ''; };
+/** Gleicher Rohwert (leer = null)? */
+const gleichRoh = (a: Roh | undefined, b: Roh | undefined) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/**
+ * Beim Auswählen übernehmen (#1037): von den Werten `werte` nur die für Felder, die in `roh` leer sind und `frei` – als
+ * Rohwert fürs Formular (`umwandeln`) oder so, wie sie sind.
+ */
+function leereVorschlaege(typ: Mappentyp, werte: Record<string, Wert | Roh>, roh: RohWerte, frei: (k: string) => boolean, umwandeln = true): RohWerte {
+  const aus: RohWerte = {};
+  for (const [k, w] of Object.entries(werte)) {
+    const f = typ.felder.find((x) => x.key === k);
+    if (f && frei(k) && istLeer(ausRoh(f, roh[k]))) aus[k] = umwandeln ? zuRoh(f, w as Wert) : w as Roh;
+  }
+  return aus;
+}
+
+/**
+ * Beim Auswählen übernehmen (#1037) aus „Aus Dokument ausfüllen“: Vorschläge mit `aus` (Werte einer vorgeschlagenen
+ * Mappe) nur in leere Felder und nur, wenn das Verweisfeld danach auf diese Mappe zeigt – nicht bei einer Alternative.
+ */
+function vorbelegtAusVorschlaegen(typ: Mappentyp, r: TypVorschlaege, roh: RohWerte, werte: RohWerte, frei: (k: string) => boolean): { werte: RohWerte; marken: Record<string, Vorbelegt> } {
+  const neu: RohWerte = {};
+  const marken: Record<string, Vorbelegt> = {};
+  for (const [k, v] of Object.entries(r.vorschlaege)) {
+    const f = typ.felder.find((x) => x.key === k);
+    const q = v.aus ? typ.felder.find((x) => x.key === v.aus!.feld) : undefined;
+    if (!f || !q || !v.aus || !frei(k) || !istLeer(ausRoh(f, roh[k]))) continue;
+    if (ersteId(ausRoh(q, q.key in werte ? werte[q.key] : roh[q.key])) !== v.aus.mappe) continue;
+    neu[k] = zuRoh(f, v.wert);
+    marken[k] = { feld: q.key, mappe: v.aus.mappe, wert: neu[k], vorher: roh[k] ?? zuRoh(f, null), text: v.fundstelle };
+  }
+  return { werte: neu, marken };
 }
 
 /** Ein Vorschlag aus „Aus Dokument ausfüllen“ (#391) am Feld. */
