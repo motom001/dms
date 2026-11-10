@@ -27,7 +27,7 @@ The address in the browser stays the link, even when a folder is open or the lis
 
 | Part | Meaning |
 | --- | --- |
-| `typ=rechnung` | **identifier** of the folder type (see [Folder types](mappentypen.md#grunddaten)). The **name** works too (upper and lower case don't matter) – but only the identifier stays valid if the folder type is renamed. "Copy link" uses the identifier. |
+| `typ=rechnung` | **identifier** of the folder type (see [Folder types](mappentypen.md#grunddaten)). The **name** works too (upper and lower case don't matter) – but only the identifier stays valid if the folder type is renamed. "Copy link" uses the identifier. Folder types from packages: `typ=basis:person` (up to 0.226 `basis_person` – please copy such older links again, #1084). |
 | `rechnungsnummer=A-2020-11380` | **identifier** of a field and the value: "is equal". |
 | `betrag.groesser=100` | field with an **operator**. |
 | `sortierung=-rechnungsdatum` | order of the result list; `-` = descending. Without: by title. |

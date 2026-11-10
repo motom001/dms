@@ -52,7 +52,7 @@ dms-export-2026-10-31-14-05-00/
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
   struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Benutzer (ohne Passwörter)
   daten/
-    <typ>.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Kennung eines Felds
+    <typ>.csv  .jsonl  .xlsx   je Mappentyp (Kennung, aus Paketen paket.schluessel): eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe
     dokumente.csv          alle Dokumente und älteren Versionen mit Pfad im Export
     notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,

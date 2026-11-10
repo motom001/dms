@@ -123,7 +123,7 @@ begriffe:
     code: Feld.negativ
   - begriff: Kennung
     bereich: grundbegriffe
-    beschreibung: Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.
+    beschreibung: Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer (bis 60 Zeichen). Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen. Mappentypen aus Paketen haben die Kennung Paket:Kennung, z. B. basis:person (#1084); eigene Mappentypen eine ohne Doppelpunkt.
     einsteiger: fachwort
     begegnet: admin
     nicht_verwenden: [Schlüssel (für Felder), Key]
@@ -258,7 +258,7 @@ begriffe:
     einsteiger: alltag
     begegnet: alle
     verwandt: [Verbleib Originaldokumente, Mappentyp]
-    code: basis_ablageort
+    code: basis:ablageort
   - begriff: Verbleib Originaldokumente
     bereich: grundbegriffe
     beschreibung: Das Feld an einer Mappe, das auf den Ablageort des Papiers zeigt. In allen Mappentypen mit derselben Kennung, damit gemeinsame Listen und Ansichten funktionieren.
@@ -438,14 +438,14 @@ begriffe:
     begegnet: alle
     verwandt: [Benutzer, Organisation, Niederlassung]
     nicht_verwenden: [Kontakt (als Mappentyp), Benutzer (für Kontakte)]
-    code: basis_person
+    code: basis:person
   - begriff: Organisation
     bereich: grundbegriffe
     beschreibung: Firma, Behörde, Bank, Praxis, Verein oder andere Stelle, mit der man zu tun hat. Mappentyp aus dem Paket Basis; andere Pakete verweisen darauf (Vertragspartner, Versicherer, Bank …).
     einsteiger: alltag
     begegnet: alle
     verwandt: [Niederlassung, Person]
-    code: basis_organisation
+    code: basis:organisation
   - begriff: Niederlassung
     bereich: grundbegriffe
     beschreibung: Filiale, Zweigstelle, Praxis oder Außenstelle einer Organisation – mit eigener Anschrift und eigenem Telefon. Mappentyp aus dem Paket Basis (ab 1.1.0); gehört zu genau einer Organisation.
@@ -453,7 +453,7 @@ begriffe:
     begegnet: alle
     verwandt: [Organisation, Person]
     nicht_verwenden: [Standort (verwechselbar mit Ablageort), Filiale (als Mappentyp – ist eine der Arten)]
-    code: basis_niederlassung
+    code: basis:niederlassung
   - begriff: Kann aus Post angelegt werden
     bereich: werkbank
     beschreibung: Haken in den Grunddaten eines Mappentyps (#937). Nur Mappentypen damit stehen beim Übernehmen eines Dokuments aus der Post unter „Wohin gehört das?“ zur Wahl – für alle, die dort Mappen anlegen dürfen. Vorgabe an bei Mappentypen mit Dokumentenregister; Systemmappentypen nie.
@@ -579,8 +579,16 @@ begriffe:
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Plugin, Erweiterung, App, Modul]
-    verwandt: [Paketkatalog, Expertenmodus, Paket-Läufer]
+    verwandt: [Paketkatalog, Expertenmodus, Paket-Läufer, Herausgeber]
     code: InstalliertesPaket
+  - begriff: Herausgeber
+    bereich: werkbank
+    beschreibung: Wer ein Paket herausgibt, als umgedrehte Domain, z. B. app.ablago für die offiziellen Pakete (#1084). Steht neben dem Namen, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher]
+    verwandt: [Paket, Paketkatalog]
+    code: herausgeber, InstalliertesPaket.herausgeber
   - begriff: Paketkatalog
     bereich: werkbank
     beschreibung: Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.

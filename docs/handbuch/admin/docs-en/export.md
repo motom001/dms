@@ -54,7 +54,7 @@ dms-export-2026-10-31-14-05-00/
   manifest.json          format version, counts, size and SHA-256 of every file, where every table is
   struktur/              Folder types, views, number sequences, packages (pakete.json), designs, users (without passwords)
   daten/
-    <typ>.csv  .jsonl  .xlsx   per folder type: one row per folder, one column per field identifier
+    <typ>.csv  .jsonl  .xlsx   per folder type (identifier, from packages package.key): one row per folder, one column per field identifier
     verweise.csv           folder → field → folder
     dokumente.csv          all documents and older versions with path in the export
     notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,

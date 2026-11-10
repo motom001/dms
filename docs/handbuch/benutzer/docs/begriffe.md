@@ -79,7 +79,7 @@ Was in einem Textfeld stehen darf – E-Mail, Telefon, Internetseite, IBAN oder 
 Siehe auch: [Feld](#feld), [Feldart](#feldart).
 
 <a id="kennung"></a>**Kennung** · ✗ Fachwort · Administratoren  
-Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.
+Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer (bis 60 Zeichen). Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen. Mappentypen aus Paketen haben die Kennung Paket:Kennung, z. B. basis:person (#1084); eigene Mappentypen eine ohne Doppelpunkt.
 
 <a id="mappe"></a>**Mappe** · ✓ Alltagswort · alle  
 Die Grundeinheit von Ablago, wie eine Pappmappe im Regal. Sie fasst Angaben, Dokumente und Verweise zu einem Ding zusammen, z. B. zu einem Vertrag, einer Rechnung oder einem Vertragspartner.  
@@ -307,6 +307,10 @@ Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 <a id="fehler-nachstellen"></a>**Fehler nachstellen** · ~ mit Erklärung · Administratoren  
 Ein Administrator arbeitet vorübergehend unter dem Konto eines anderen Benutzers, um einen Fehler zu sehen. Zurück geht es mit „Zurück zum eigenen Konto“.
 
+<a id="herausgeber"></a>**Herausgeber** · ~ mit Erklärung · Administratoren  
+Wer ein Paket herausgibt, als umgedrehte Domain, z. B. app.ablago für die offiziellen Pakete (#1084). Steht neben dem Namen, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber.  
+Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
+
 <a id="kann-aus-post-angelegt-werden"></a>**Kann aus Post angelegt werden** · ~ mit Erklärung · Administratoren  
 Haken in den Grunddaten eines Mappentyps (#937). Nur Mappentypen damit stehen beim Übernehmen eines Dokuments aus der Post unter „Wohin gehört das?“ zur Wahl – für alle, die dort Mappen anlegen dürfen. Vorgabe an bei Mappentypen mit Dokumentenregister; Systemmappentypen nie.  
 Siehe auch: [Mappentyp](#mappentyp), [Post](#post), [Woran man ihn erkennt](#woran-man-ihn-erkennt).
@@ -316,7 +320,7 @@ Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 202
 
 <a id="paket"></a>**Paket** · ~ mit Erklärung · Administratoren  
 Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.  
-Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer).
+Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer), [Herausgeber](#herausgeber).
 
 <a id="paket-laufer"></a>**Paket-Läufer** · ✗ Fachwort · Fortgeschrittene  
 Der Teil von Ablago, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Netzwerk und Internet erreicht der Code nur unter den Adressen, die das Paket nennt – die Vorschau zeigt das als „kein Zugriff auf Netzwerk und Internet“ oder „Zugriff auf Netzwerk/Internet nur zu …“. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.  
@@ -540,7 +544,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Begriff | nicht verwenden | im Code |
 |---|---|---|
 | Ablage | Haushalt (für die Installation), Mandant (in der Oberfläche) | `mandant, haushalt_id` |
-| Ablageort | – | `basis_ablageort` |
+| Ablageort | – | `basis:ablageort` |
 | Ablago | Ablago DMS, ABLAGO, „das DMS“ für das eigene Programm | – |
 | Abwesenheit | – | `Abwesenheit` |
 | Administrator | Admin (in der Oberfläche) | – |
@@ -572,6 +576,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Format | Validierung, Datentyp | `Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts` |
 | Gemeldete Fehler | Fehlermeldungen | – |
 | Gutschrift | – | `Feld.negativ` |
+| Herausgeber | Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher | `herausgeber, InstalliertesPaket.herausgeber` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
@@ -580,14 +585,14 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Mappentyp | Typ (allein), Vorlage, Klasse | `Mappentyp` |
 | Mein Konto | Profil | – |
 | Meine Daten exportieren | Persönlicher Export | – |
-| Niederlassung | Standort (verwechselbar mit Ablageort), Filiale (als Mappentyp – ist eine der Arten) | `basis_niederlassung` |
+| Niederlassung | Standort (verwechselbar mit Ablageort), Filiale (als Mappentyp – ist eine der Arten) | `basis:niederlassung` |
 | Notiz | – | `Notiz` |
 | Nummernkreis | – | `Nummernkreis` |
-| Organisation | – | `basis_organisation` |
+| Organisation | – | `basis:organisation` |
 | Paket | Plugin, Erweiterung, App, Modul | `InstalliertesPaket` |
 | Paket-Läufer | Code im Paket-Läufer, Plugin-Host | `Paketlaeufer, PaketLaeufer` |
 | Paketkatalog | – | `Katalog, OFFIZIELLER_KATALOG` |
-| Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis_person` |
+| Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis:person` |
 | Post | Posteingang, Inbox | – |
 | Probelauf | Trockenlauf, trocken | `trocken` |
 | Prozent | – | `prozent, shared/src/feldarten.ts` |
