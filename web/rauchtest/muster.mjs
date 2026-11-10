@@ -64,6 +64,10 @@ export const TIPP_AUSNAHMEN = {};
  * Rückgabe: Zeilen „Beschreibung: gemessen“ für jedes zu kleine Element (leer = alles gut).
  */
 export async function tippflaechenPruefen(seite) {
+  // Erst messen, wenn alle Stylesheets geladen sind (#1027): Die Musterseite kommt als eigener Teil nach, ihr CSS
+  // manchmal einen Augenblick nach dem Inhalt – dann maß die Prüfung die Auswahlliste noch ohne Handy-Regeln (18 px).
+  await seite.waitForFunction(() => [...document.querySelectorAll('link[rel="stylesheet"]')].every((l) => l.sheet) && document.readyState === 'complete');
+  await seite.evaluate(() => document.fonts.ready);
   const elemente = await seite.evaluate((ausnahmen) => {
     const AUSWAHL = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])';
     const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !Object.keys(ausnahmen).some((a) => el.matches(a)));
