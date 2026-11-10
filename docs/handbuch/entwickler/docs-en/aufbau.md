@@ -14,6 +14,29 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 
 - **Repos twice:** every data access interface exists for PostgreSQL (`repo-pg.ts`, `pg…` functions) and for memory (`repo-speicher.ts`, `speicher…`). Most tests run quickly in memory; the tests with `TEST_DATABASE_URL` cover PostgreSQL. New functions need both, and both must behave the same.
 - **Routes** are kept per subject area in `server/src/<fach>/<fach>.routen.ts` (#960, e.g. `dokumente/dokumente.routen.ts`), each with `zugang: 'offen' | 'angemeldet' | 'admin'`. Each file exports functions `…Routen(k)` that receive the services and shared helpers via the parameter `k` (`http/routen-kontext.ts`; helpers without services in `http/routen-hilfen.ts`). `routen()` in `server/src/routen.ts` calls them in a fixed order (`BEREICHE`) and still holds the types (`Route`, `Anfrage`, `Antwort`), `pruefeZugang` and the check of package permissions; the test `routen-liste.test.ts` counts the routes and checks `zugang` and duplicates. Two features are added: `api: true` makes a route part of the public API (sign-in also with an API key); `konsole: true` only allows it via the command `dms` in the container. The public API for programs is under `/api/v1` (`api-v1.ts`, OpenAPI).
+
+| Folder in `server/src/` | Routes for |
+|---|---|
+| `anmeldung/` | sign-in, two-factor, password, setup, emergency access |
+| `konten/` | users, roles, deputies, API keys |
+| `mappentypen/` | folder types, their archive, permissions |
+| `werkbank/` | Workbench overview, designs, region, languages, log, admin mode |
+| `ausgang/` | export (Workbench and My account) |
+| `datenschutz/` | data subject requests, deletion concept, retrieval page |
+| `pakete/` | packages, catalogue, package settings |
+| `suche/` | search, Ask your archive |
+| `wartung/` | maintenance mode |
+| `sicherung/` | backup, restore, emergency sheet, keys |
+| `system/` | operation, system status, connection, sign-in protection, inbox folder, WebDAV, error reports |
+| `post/` | mailboxes and other inbound channels |
+| `automatisierung/` | automations |
+| `webhooks/` | webhooks (Workbench and My account) |
+| `sichten/` | views, folder lists, start page |
+| `aufgaben/` | tasks |
+| `mappen/` | folders, history, recycle bin |
+| `dokumente/` | documents, versions, contents |
+
+The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves.
 - **Workbench routes** (`zugang: 'admin'`, #818/#819) only work in **administration mode** (state of the session, `Konten.modusPruefen`) and only with permission for their area. Every new route needs an entry in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – otherwise only people with "Full administration" may use it, and the test `verwaltungsmodus.test.ts` fails. Sensitive actions that require a fresh sign-in are listed there in `heikleHandlung`. `benutzer.rolle` is the request's **effective** role (`admin` only in the mode); the stored permission is in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API keys never get `admin`.
 - **Public links without sign-in** so far only exist for an access copy's retrieval page (#455, `server/src/abruf.ts`, `web/src/abruf.tsx`): key only in the fragment (`/abruf#…`), in the database only hashes (SHA-256 for the key, scrypt for the code), failed attempts in sign-in protection per IP and on the link, download via a one-time ticket. Further sharing links should follow this pattern. In addition there is the **emergency access** `/notfall` (#815, `server/src/notfallcode.ts`, `web/src/notfall.tsx`): emergency code from the emergency sheet only as a scrypt hash (table `notfallcode`), redeemed in one transaction with the new password, default "home network only" with the real address behind a proxy (`istHeimnetz`), 30 s lock per address range, accounts only after the right code, notification before every change.
 - **Migrations** are numbered SQL files in `server/migrations/`. They run at start-up in one transaction and are never changed afterwards, always supplemented by a new one.

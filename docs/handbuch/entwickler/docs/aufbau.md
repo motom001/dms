@@ -14,6 +14,29 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 
 - **Repos doppelt:** Jede Datenzugriffs-Schnittstelle gibt es für PostgreSQL (`repo-pg.ts`, `pg…`-Funktionen) und für den Arbeitsspeicher (`repo-speicher.ts`, `speicher…`). Die meisten Tests laufen schnell im Arbeitsspeicher, die Tests mit `TEST_DATABASE_URL` decken PostgreSQL ab. Neue Funktionen brauchen beides, und beide müssen sich gleich verhalten.
 - **Routen** stehen je Fachbereich in `server/src/<fach>/<fach>.routen.ts` (#960, z. B. `dokumente/dokumente.routen.ts`), je mit `zugang: 'offen' | 'angemeldet' | 'admin'`. Jede Datei exportiert Funktionen `…Routen(k)`, die die Dienste und gemeinsamen Hilfen über den Parameter `k` bekommen (`http/routen-kontext.ts`; Hilfen ohne Dienste in `http/routen-hilfen.ts`). `routen()` in `server/src/routen.ts` ruft sie in fester Reihenfolge auf (`BEREICHE`) und enthält weiter die Typen (`Route`, `Anfrage`, `Antwort`), `pruefeZugang` und die Prüfung der Paketrechte; der Test `routen-liste.test.ts` zählt die Routen und prüft `zugang` und Doppelte. Zwei Merkmale kommen dazu: `api: true` macht eine Route zum Teil der öffentlichen API (Anmeldung auch mit API-Schlüssel); `konsole: true` erlaubt sie nur über den Befehl `dms` im Container. Die öffentliche API für Programme liegt unter `/api/v1` (`api-v1.ts`, OpenAPI).
+
+| Ordner in `server/src/` | Routen für |
+|---|---|
+| `anmeldung/` | Anmelden, Zwei-Faktor, Passwort, Einrichtung, Notfallzugang |
+| `konten/` | Benutzer, Rollen, Vertretung, API-Schlüssel |
+| `mappentypen/` | Mappentypen, ihr Archiv, Berechtigungen |
+| `werkbank/` | Werkbank-Übersicht, Designs, Region, Sprachen, Protokoll, Verwaltungsmodus |
+| `ausgang/` | Export (Werkbank und Mein Konto) |
+| `datenschutz/` | Auskünfte, Löschkonzept, Abrufseite |
+| `pakete/` | Pakete, Katalog, Paket-Einstellungen |
+| `suche/` | Suche, Frag deine Ablage |
+| `wartung/` | Wartungsmodus |
+| `sicherung/` | Sicherung, Wiederherstellen, Notfallblatt, Schlüssel |
+| `system/` | Betrieb, Systemzustand, Anbindung, Anmeldeschutz, Eingangsordner, WebDAV, Fehlermeldungen |
+| `post/` | Postfächer und andere Eingangskanäle |
+| `automatisierung/` | Automatisierungen |
+| `webhooks/` | Webhooks (Werkbank und Mein Konto) |
+| `sichten/` | Ansichten, Mappenlisten, Startseite |
+| `aufgaben/` | Aufgaben |
+| `mappen/` | Mappen, Historie, Papierkorb |
+| `dokumente/` | Dokumente, Fassungen, Inhalte |
+
+Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu.
 - **Werkbank-Routen** (`zugang: 'admin'`, #818/#819) gehen nur im **Verwaltungsmodus** (Zustand der Sitzung, `Konten.modusPruefen`) und nur mit Recht auf ihren Bereich. Jede neue Route braucht einen Eintrag in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – sonst dürfen sie nur Personen mit „Gesamte Verwaltung“, und der Test `verwaltungsmodus.test.ts` schlägt fehl. Heikle Handlungen mit Pflicht zur frischen Anmeldung stehen dort in `heikleHandlung`. `benutzer.rolle` ist die **wirksame** Rolle der Anfrage (`admin` nur im Modus); das gespeicherte Recht steht in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API-Schlüssel bekommen nie `admin`.
 - **Öffentliche Links ohne Anmeldung** gibt es bisher nur für die Abrufseite einer Auskunft (#455, `server/src/abruf.ts`, `web/src/abruf.tsx`): Schlüssel nur im Fragment (`/abruf#…`), in der Datenbank nur Hashes (SHA-256 für den Schlüssel, scrypt für den Code), Fehlversuche im Anmeldeschutz je IP und am Link, Download über ein Einmal-Ticket. Weitere Freigabelinks sollten diesem Muster folgen. Dazu kommt der **Notfallzugang** `/notfall` (#815, `server/src/notfallcode.ts`, `web/src/notfall.tsx`): Notfallcode vom Notfallblatt nur als scrypt-Hash (Tabelle `notfallcode`), Einlösen in einer Transaktion mit dem neuen Passwort, Vorgabe „nur Heimnetz“ mit der echten Adresse hinter einem Proxy (`istHeimnetz`), 30 s Sperre je Adressbereich, Konten erst nach richtigem Code, Benachrichtigung vor jeder Änderung.
 - **Migrationen** sind nummerierte SQL-Dateien in `server/migrations/`. Sie laufen beim Start in einer Transaktion und werden nie nachträglich geändert, sondern immer durch eine neue ergänzt.
