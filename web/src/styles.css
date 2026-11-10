@@ -1,41 +1,6 @@
 /* Gestaltung: Werkbank mit Ablage-Leiste links und Blättern rechts.
    Akzent Ablago-Blau #1F4E79 (dunkel #8DB8E0, wie ablago.app; #699) für Einrichtung, Grün für die Arbeit mit Mappen. */
-:root {
-  --grund: #ECEFF3; --flaeche: #FFFFFF; --senke: #F5F6F8; --tinte: #17202B; --leise: #5A6475;
-  --linie: #D8DDE4; --linie-stark: #C3CAD4;
-  --akzent: #1F4E79; --akzent-tinte: #FFFFFF; --akzent-zart: #E4EAEF;
-  --gruen: #2B7656; --gruen-zart: #E1F0E8;
-  --schlecht: #B42318; --schlecht-zart: #FBE9E7; --warn: #835700; --warn-zart: #FAF0D9;
-  --schrift: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --r: 8px;
-  --marke-hell: block; --marke-dunkel: none;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --grund: #11151B; --flaeche: #1A2029; --senke: #151A22; --tinte: #E5E9EF; --leise: #98A2B2;
-    --linie: #2B3340; --linie-stark: #3A4452;
-    --akzent: #8DB8E0; --akzent-tinte: #111111; --akzent-zart: #1B2B3C;
-    --gruen: #6CC39B; --gruen-zart: #18302A;
-    --schlecht: #F28B82; --schlecht-zart: #3A1F1E; --warn: #E3B655; --warn-zart: #34291A;
-    --marke-hell: none; --marke-dunkel: block;
-    color-scheme: dark;
-  }
-}
 
-* { box-sizing: border-box; }
-/* iPhone (#60): Seite nie breiter als der Bildschirm; keine automatische Schriftvergrößerung im Querformat. */
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-html, body { max-width: 100%; overflow-x: clip; }
-body { margin: 0; background: var(--grund); color: var(--tinte); font: calc(14px * var(--skala, 1))/1.45 var(--schrift); }
-h1, h2, h3 { margin: 0; line-height: 1.2; text-wrap: balance; }
-h1 { font-size: calc(24px * var(--skala, 1)); font-weight: 700; letter-spacing: -0.015em; }
-.h3, h3 { font-size: calc(15px * var(--skala, 1)); font-weight: 700; }
-p { margin: 0; }
-button, input, select, textarea { font: inherit; color: inherit; }
-code, .mono { font-family: var(--mono); font-size: calc(12.5px * var(--skala, 1)); }
-:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 .sr { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; white-space: nowrap; clip-path: inset(50%); }
 .leise { color: var(--leise); }
 .ueber { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.08em; color: var(--leise); font-weight: 600; }
@@ -71,30 +36,12 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .blattkopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .blattkopf .leise { font-size: calc(12.5px * var(--skala, 1)); max-width: 60ch; }
 
-/* Bedienelemente */
-input, select, textarea { width: 100%; min-width: 0; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: 6px; padding: 7px 9px; }
-textarea { resize: vertical; }
-input:disabled { background: var(--senke); color: var(--leise); }
-input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 2px 0 0; flex: none; accent-color: var(--akzent); }
-/* Schieberegler (#365): nativ, mit Akzentfarbe; am Handy hoch genug zum Greifen. */
-input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--akzent); min-height: 32px; cursor: pointer; }
-input[type="range"]:disabled { background: transparent; cursor: default; }
 .regler { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .regler > span { display: flex; justify-content: space-between; gap: 8px; font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
 .regler > span output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
 .regler small { font-weight: 400; color: var(--leise); }
 fieldset.mischung { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px 12px; margin: 0; min-width: 0; }
 fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
-/* iPhone (#174): Safari auf iOS zeichnet Datums- und Zeitfelder als eigenes Bedienelement mit
-   fester Mindestbreite – sie ragten über den Kasten hinaus. Nur auf iOS (-webkit-touch-callout gibt
-   es nur dort) wie ein normales Eingabefeld behandeln: volle Breite, gleiche Höhe, linksbündig. */
-@supports (-webkit-touch-callout: none) {
-  input[type="date"], input[type="time"], input[type="datetime-local"] {
-    -webkit-appearance: none; appearance: none; display: block; max-width: 100%;
-    min-height: calc(1.45em + 16px); text-align: left;
-  }
-  input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value, input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
-}
 .knopf { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
 .knopf:not(.primaer):not(.gruen):hover:not(:disabled) { background: var(--senke); }
 .knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
@@ -145,10 +92,6 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 /* In einer Spalte (Flex-Spalte) nicht in die Höhe wachsen – sonst stehen wenige Treffer weit unten (#33). */
 .spalte > .suche { flex: none; }
 .tabellenrahmen { overflow-x: auto; border: 1px solid var(--linie); border-radius: var(--r); }
-table { border-collapse: collapse; width: 100%; font-size: calc(13.5px * var(--skala, 1)); }
-th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--linie); vertical-align: top; }
-thead th { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); font-weight: 600; background: var(--senke); white-space: nowrap; }
-tbody tr:last-child > * { border-bottom: 0; }
 .ziffern { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Formular einer Mappe */
@@ -514,10 +457,6 @@ a.textknopf { text-decoration: none; }
 @media (min-width: 821px) and (max-width: 1100px) {
   .drei { grid-template-columns: 180px minmax(220px, 300px) minmax(0, 1fr); }
 }
-progress { width: 100%; height: 8px; appearance: none; border: 0; border-radius: 999px; background: var(--linie); overflow: hidden; }
-progress::-webkit-progress-bar { background: var(--linie); border-radius: 999px; }
-progress::-webkit-progress-value { background: var(--akzent); border-radius: 999px; }
-progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 
 /* Seitenweise Liste */
 .listenzahl { margin: -4px 0 0; }

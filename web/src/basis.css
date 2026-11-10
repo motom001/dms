@@ -1,0 +1,40 @@
+/* Grundregeln (#965): Elemente ohne eigene Klassen – Seite, Überschriften, Formularfelder, Tabellen, Fortschrittsbalken.
+   Wird nach tokens.css und vor styles.css geladen (main.tsx), damit styles.css alles hier gezielt überschreiben kann. */
+* { box-sizing: border-box; }
+/* iPhone (#60): Seite nie breiter als der Bildschirm; keine automatische Schriftvergrößerung im Querformat. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { max-width: 100%; overflow-x: clip; }
+body { margin: 0; background: var(--grund); color: var(--tinte); font: calc(14px * var(--skala, 1))/1.45 var(--schrift); }
+h1, h2, h3 { margin: 0; line-height: 1.2; text-wrap: balance; }
+h1 { font-size: calc(24px * var(--skala, 1)); font-weight: 700; letter-spacing: -0.015em; }
+.h3, h3 { font-size: calc(15px * var(--skala, 1)); font-weight: 700; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+code, .mono { font-family: var(--mono); font-size: calc(12.5px * var(--skala, 1)); }
+:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+/* Bedienelemente */
+input, select, textarea { width: 100%; min-width: 0; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: 6px; padding: 7px 9px; }
+textarea { resize: vertical; }
+input:disabled { background: var(--senke); color: var(--leise); }
+input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 2px 0 0; flex: none; accent-color: var(--akzent); }
+/* Schieberegler (#365): nativ, mit Akzentfarbe; am Handy hoch genug zum Greifen. */
+input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--akzent); min-height: 32px; cursor: pointer; }
+input[type="range"]:disabled { background: transparent; cursor: default; }
+/* iPhone (#174): Safari auf iOS zeichnet Datums- und Zeitfelder als eigenes Bedienelement mit
+   fester Mindestbreite – sie ragten über den Kasten hinaus. Nur auf iOS (-webkit-touch-callout gibt
+   es nur dort) wie ein normales Eingabefeld behandeln: volle Breite, gleiche Höhe, linksbündig. */
+@supports (-webkit-touch-callout: none) {
+  input[type="date"], input[type="time"], input[type="datetime-local"] {
+    -webkit-appearance: none; appearance: none; display: block; max-width: 100%;
+    min-height: calc(1.45em + 16px); text-align: left;
+  }
+  input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value, input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+}
+table { border-collapse: collapse; width: 100%; font-size: calc(13.5px * var(--skala, 1)); }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--linie); vertical-align: top; }
+thead th { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); font-weight: 600; background: var(--senke); white-space: nowrap; }
+tbody tr:last-child > * { border-bottom: 0; }
+progress { width: 100%; height: 8px; appearance: none; border: 0; border-radius: 999px; background: var(--linie); overflow: hidden; }
+progress::-webkit-progress-bar { background: var(--linie); border-radius: 999px; }
+progress::-webkit-progress-value { background: var(--akzent); border-radius: 999px; }
+progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
