@@ -766,7 +766,7 @@ code:
 
     Ohne `extern` zählt der Rückgabewert: **2** heißt `fehlgeschlagen` und endgültig, ein anderer Fehler `laeuft` mit dem Text aus `dms.ergebnis` als `grund` – der Läufer wiederholt in beiden Fällen. Ein Erfolg ohne `extern` ändert den Stand nicht.
 
-    Bis 0.158.0 meldeten Pakete per `PUT /sicherungen/{name}/extern` (gleiche Felder). Das geht im Übergang noch, auch mit dem Leseschlüssel, und fällt mit der übernächsten Fassung weg.
+    Bis 0.158.0 meldeten Pakete per `PUT /sicherungen/{name}/extern` (gleiche Felder). Das geht im Übergang noch, auch mit dem Leseschlüssel, und entfällt mit Ablago 1.0.0.
 
     **Werkbank → Sicherung** zeigt den Stand je Sicherung („lokal ✓ · extern ✓ geprüft“), die Übersicht einen Hinweis bei Fehlern oder wenn seit mehr als 2 Tagen keine neuere Kopie ankam. Gibt der Läufer das Ereignis nach allen Wiederholungen auf, setzt der Kern selbst `fehlgeschlagen` (endgültig).
 

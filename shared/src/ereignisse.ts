@@ -90,7 +90,8 @@ export type PaketKatalogArt = { [K in KatalogArt]: (typeof EREIGNISKATALOG)[K] e
 /**
  * Veraltete Namen, die Pakete noch abonnieren dürfen (Übergang, #724): Der Kern meldet nur das neue Ereignis; wer den
  * alten Namen abonniert hat, bekommt es beim Zustellen unter diesem Namen – `texterkennung.fertig` nur für den
- * Volltext der eingebauten Texterkennung (`quelle: kern`), wie vor 0.133.0.
+ * Volltext der eingebauten Texterkennung (`quelle: kern`), wie vor 0.133.0. Entfällt mit Ablago 1.0.0
+ * (server/src/uebergaenge.ts, #902).
  */
 export const VERALTETE_EREIGNISSE = { 'texterkennung.fertig': 'volltext.fertig' } as const satisfies Record<string, KatalogArt>;
 /** Ereignisse, die Webhooks melden können (heute nur die Zahlen, #627). */

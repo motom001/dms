@@ -185,6 +185,7 @@ function planAus(o: Roh): Einrichtungsplan {
 /**
  * Ältere Dateien (0.191, 0.192): `administrator` gilt als `konto`, `erster-benutzer` fällt mit Hinweis weg. Liefert das
  * umgestellte Objekt und, unter welchem Namen der Abschnitt in der Datei steht (für Zeile und Feld der Fehler).
+ * Entfällt mit Ablago 1.0.0 (uebergaenge.ts, #902).
  */
 function aelter(wert: unknown): { wert: unknown; kontoIn: string; hinweise: string[] } {
   if (!wert || typeof wert !== 'object' || Array.isArray(wert)) return { wert, kontoIn: 'konto', hinweise: [] };
