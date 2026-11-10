@@ -115,6 +115,7 @@ function beispielPdf(zeile) {
  * Konsole und der Seite, fehlgeschlagene Anfragen und Antworten ab 400; am Ende muss die Liste leer sein.
  *
  * optionen.erwartet: Antworten, die zu diesem Weg gehören – je { status, pfad: RegExp }.
+ * optionen.neustart: Pfade, bei denen eine abgelehnte Verbindung erwartet ist, weil Ablago gerade neu startet.
  * Nicht als Fehler zählen:
  *   - „Failed to load resource“ in der Konsole: Chromium meldet so jede Antwort ab 400 – die prüft der Test selbst
  *     (mit den erwarteten Ausnahmen);
@@ -132,7 +133,13 @@ function rauchtest(name, optionen, ablauf) {
     const fehler = [];
     k.on('console', (m) => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) fehler.push(`Konsole: ${m.text()}`); });
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
-    k.on('requestfailed', (r) => { if (r.failure()?.errorText !== 'net::ERR_ABORTED') fehler.push(`Anfrage fehlgeschlagen: ${r.method()} ${r.url()} (${r.failure()?.errorText})`); });
+    k.on('requestfailed', (r) => {
+      const text = r.failure()?.errorText;
+      if (text === 'net::ERR_ABORTED') return;
+      // Während eines erwarteten Neustarts lauscht kurz niemand auf dem Port (optionen.neustart: Pfade, z. B. der Status).
+      if (text === 'net::ERR_CONNECTION_REFUSED' && (optionen.neustart ?? []).some((p) => p.test(new URL(r.url()).pathname))) return;
+      fehler.push(`Anfrage fehlgeschlagen: ${r.method()} ${r.url()} (${r.failure()?.errorText})`);
+    });
     k.on('response', (r) => {
       if (r.status() < 400 || !r.url().startsWith(BASIS)) return;
       const pfad = new URL(r.url()).pathname;
@@ -170,6 +177,8 @@ rauchtest('Einrichtung: Assistent im Browser', {
   einrichtung: true,
   // Nach „Übernehmen und weiter“ startet Ablago mit der Datenbank neu; bis dahin antwortet der Status mit 503.
   erwartet: [{ status: 503, pfad: /^\/api\/konto\/status$/ }],
+  // … und zwischen Beenden und Start lehnt der Port die Verbindung kurz ab.
+  neustart: [/^\/api\/konto\/status$/],
 }, async (s, k) => {
   await warteAufAblago();
   await s.goto(BASIS + '/');
