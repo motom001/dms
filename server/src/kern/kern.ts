@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
-import type { Kontorolle, Mappentyp, Rolle } from '../../../shared/src/model';
+import { KONTOROLLEN, kontorolleKennung, ROLLEN, systemrolleKennung, type Kontorolle, type Mappentyp, type Rolle } from '../../../shared/src/model';
 import type { Aufloesung } from '../../../shared/src/sichten';
 import type { Lesefilter, Wer } from '../../../shared/src/rechte';
 import type { PaketCode, Schnittstelle } from '../../../shared/src/pakete';
@@ -12,6 +12,7 @@ import type { Haushaltsstand } from '../zaehlerspeicher';
 import { beiVerklemmungWiederholen } from '../db';
 import { kontext, protokoll } from '../protokoll';
 import { t } from '../sprache';
+import { Anlaesse } from './anlaesse';
 import { Historie } from './historie';
 import { Loeschprotokoll } from './loeschprotokoll';
 
@@ -67,15 +68,19 @@ export interface KernOptionen {
   stand: Haushaltsstand;
   /** Verteiler des Ereigniskatalogs wecken (ereignisse.ts). */
   wecke: () => void;
-  /** Systemtypen anlegen, falls sie fehlen (bis #963 im Dienst). */
-  systemAnlegen: () => Promise<SystemIds>;
+  /**
+   * Rückfall (#963): die Systemausstattung anlegen, wenn beim Nachschlagen etwas fehlt – für Wege ohne Start (Tests,
+   * Wiederherstellung, Demo entfernen). Beim Start legt sie `systemausstattung.sicherstellen()` ausdrücklich an.
+   */
+  ausstatten: () => Promise<void>;
   /** Zugriff bilden (Schicht „zugriff“; bis dahin im Dienst). */
   zugriff: (ich: Zugreifender) => Promise<Zugriff>;
 }
 
 /**
  * Der Kern (#961): was alle Fachbereiche brauchen – Repo und Transaktion, Arbeit nach der Antwort, Ereignisse in den
- * Ausgangskorb, Systemtypen nachschlagen, Historie und Löschprotokoll schreiben. Er ruft keinen Fachbereich auf.
+ * Ausgangskorb, Anschlusspunkte für das Sofortige (#962), Systemtypen nachschlagen, Historie und Löschprotokoll
+ * schreiben. Er ruft keinen Fachbereich auf.
  */
 export class Kern {
   readonly dateien: Dateispeicher;
@@ -89,9 +94,11 @@ export class Kern {
   readonly historie = new Historie(this);
   /** Löschprotokoll schreiben (#470). */
   readonly loeschprotokoll = new Loeschprotokoll(this);
+  /** Anschlusspunkte (#962): was sofort, in derselben Transaktion, zu einer Änderung gehört (`kern/anlaesse.ts`). */
+  readonly anlaesse = new Anlaesse(() => this.inEigenerTransaktion());
   private readonly grundRepo: Repo;
   private readonly wecke: () => void;
-  private readonly systemAnlegen: () => Promise<SystemIds>;
+  private readonly ausstatten: () => Promise<void>;
   private readonly zugriffBilden: (ich: Zugreifender) => Promise<Zugriff>;
 
   constructor(o: KernOptionen) {
@@ -100,7 +107,7 @@ export class Kern {
     this.einstellungen = o.einstellungen;
     this.stand = o.stand;
     this.wecke = o.wecke;
-    this.systemAnlegen = o.systemAnlegen;
+    this.ausstatten = o.ausstatten;
     this.zugriffBilden = o.zugriff;
   }
 
@@ -192,15 +199,44 @@ export class Kern {
     return typeof e?.tage === 'number' ? e.tage : PAPIERKORB_STANDARD_TAGE;
   }
 
-  private sichern?: Promise<SystemIds>;
+  /** Je Mappentyp-Id die Pakete, denen der Admin diesen Typ verwehrt hat (Einstellung, Teil der Sicherung). */
+  async paketVerwehrt(): Promise<Record<string, string[]>> {
+    const v = await this.einstellungen?.lies('paket_verwehrt');
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([, x]) => Array.isArray(x)).map(([k, x]) => [k, (x as unknown[]).map(String)]));
+  }
+
+  /** Id des Ablageorts (#168, #883): von Basis mitgebracht, sonst der frühere des Kerns – nur nachschlagen. */
+  async ablageortId(): Promise<string | undefined> {
+    const basis = (await this.repo.listePakete()).find((p) => p.id === 'basis')?.typen.ablageort;
+    if (basis && (await this.repo.holeTyp(basis))) return basis;
+    return (await this.frueherAblageortTyp())?.id;
+  }
 
   /**
-   * Die Systemtypen „Benutzer“, „Rolle“ und „Post“ und die Systemrollen nachschlagen. Fehlen sie noch, legt sie der
-   * erste Aufruf an (`systemAnlegen`); gleichzeitige Aufrufe teilen sich einen Lauf.
+   * Der Ablageort, den der Kern vor #883 angelegt hat – solange ihn kein Paket übernommen hat. Gemerkt über seine Id in
+   * den Einstellungen (ohne Einstellungen, z. B. in Tests: über die Kennung `ablageort`).
+   */
+  async frueherAblageortTyp(): Promise<Mappentyp | undefined> {
+    const merk = (await this.einstellungen?.lies('ablageort')) as { id?: string } | null | undefined;
+    const id = merk?.id ?? (this.einstellungen ? undefined : (await this.repo.listeTypen()).find((t) => !t.system && t.schluessel === 'ablageort')?.id);
+    if (!id || (await this.repo.listePakete()).some((p) => Object.values(p.typen).includes(id))) return undefined;
+    return this.repo.holeTyp(id);
+  }
+
+  /** Ids der Systemausstattung, einmal nachgeschlagen (nur außerhalb einer Transaktion gemerkt). */
+  private systemIds?: Promise<SystemIds>;
+
+  /**
+   * Die Systemtypen „Benutzer“, „Rolle“ und „Post“ und die Systemrollen nachschlagen (#963) – legt nichts an. Fehlt
+   * etwas, legt es der Rückfall `ausstatten` an (Wege ohne Start); gleichzeitige Aufrufe teilen sich einen Lauf.
+   * Gemerkt werden nur Ids, die außerhalb einer Transaktion nachgeschlagen wurden: Was eine Transaktion selbst anlegt,
+   * kann noch zurückgerollt werden.
    */
   system(): Promise<SystemIds> {
-    this.sichern ??= this.systemAnlegen().catch((e) => { this.sichern = undefined; throw e; });
-    return this.sichern.then(async (s) => ({
+    const ids = this.systemIds ?? this.schlageSystemNach();
+    if (!this.systemIds && !this.inEigenerTransaktion()) this.systemIds = ids.catch((e: unknown) => { this.systemIds = undefined; throw e; });
+    return ids.then(async (s) => ({
       // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
       benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
       rolle: (await this.repo.holeTyp(s.rolle.id)) ?? s.rolle,
@@ -208,6 +244,38 @@ export class Kern {
       systemrollen: s.systemrollen,
       kontorollen: s.kontorollen,
     }));
+  }
+
+  /** Gemerkte Ids vergessen – nach dem Anlegen der Systemausstattung (#963). */
+  vergissSystem(): void { this.systemIds = undefined; }
+
+  private async schlageSystemNach(): Promise<SystemIds> {
+    const da = await this.findeSystem();
+    if (da) return da;
+    await this.ausstatten();
+    const neu = await this.findeSystem();
+    if (!neu) throw new Error('Systemausstattung unvollständig: Systemtypen oder Systemrollen fehlen nach dem Anlegen');
+    return neu;
+  }
+
+  /** Systemtypen und Systemrollen, wie sie in der Datenbank stehen; null, wenn etwas fehlt. */
+  private async findeSystem(): Promise<SystemIds | null> {
+    const typen = await this.repo.listeTypen();
+    const [benutzer, rolle, post] = (['benutzer', 'rolle', 'post'] as const).map((x) => typen.find((t) => t.system === x));
+    if (!benutzer || !rolle || !post) return null;
+    const systemrollen = new Map<Rolle, string>();
+    for (const r of Object.keys(ROLLEN) as Array<keyof typeof ROLLEN>) {
+      const m = await this.repo.holeSystemMappe(systemrolleKennung(r));
+      if (!m) return null;
+      systemrollen.set(r, m.id);
+    }
+    const kontorollen = new Map<Kontorolle, string>();
+    for (const r of Object.keys(KONTOROLLEN) as Kontorolle[]) {
+      const m = await this.repo.holeSystemMappe(kontorolleKennung(r));
+      if (!m) return null;
+      kontorollen.set(r, m.id);
+    }
+    return { benutzer, rolle, post, systemrollen, kontorollen };
   }
 
   /* ---------- Ereigniskatalog (#670) ---------- */

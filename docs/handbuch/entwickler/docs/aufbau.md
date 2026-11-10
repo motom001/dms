@@ -43,6 +43,7 @@ Daneben, ohne Routen:
 | Ordner in `server/src/` | Inhalt |
 |---|---|
 | `kern/` | der [Kern](#kern) (#961) |
+| `systemausstattung/` | die [Systemausstattung](#systemausstattung) (#963) |
 | `http/` | Hilfen der HTTP-Schicht – nur für Routen |
 | `pdf/`, `arbeit/` | [PDF-Stelle](#pdf-stelle), [Arbeiter-Pool](#arbeiter-pool) |
 | `laeufer/` | Paket-Läufer |
@@ -65,11 +66,39 @@ Daneben, ohne Routen:
 - `kern.repo` – das Repo; in einer Transaktion des Kerns deren Repo. Bei jedem Aufruf neu holen, nie zwischenspeichern – sonst schreibt ein Paket neben der Transaktion vorbei.
 - `inTransaktion`, `inEinemZug` (wiederholt bei Verklemmung), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
 - `ereignis(art, daten, von?)` in den Ausgangskorb, `mitAusloeser`, `ohneEreignisse`.
-- `system()` – Benutzer-, Rollen- und Post-Typ und die Systemrollen nachschlagen (legt sie beim ersten Mal noch an; Trennung in #963), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `liesGanz(sha)`.
+- `anlaesse` – die [Anschlusspunkte](#anschlusspunkte) für das Sofortige (#962, `kern/anlaesse.ts`).
+- `system()` – Benutzer-, Rollen- und Post-Typ und die Systemrollen **nur nachschlagen** (#963; fehlt etwas, legt der Rückfall die [Systemausstattung](#systemausstattung) an), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `paketVerwehrt()`, `ablageortId()`, `liesGanz(sha)`.
 - `historie.schreibe(…)` (`kern/historie.ts`) und `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Lesen** bleibt bei Mappen bzw. Löschen.
 - `einstellungen`, `dateien`, `stand`.
 
-**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst bleibt Fassade mit einzeiligen Weiterleitungen. Was der Kern noch nicht selbst bildet (Zugriff, das Anlegen der Systemtypen), bekommt er beim Zusammenbau vom Dienst.
+**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst bleibt Fassade mit einzeiligen Weiterleitungen. Was der Kern noch nicht selbst bildet (Zugriff, den Rückfall der Systemausstattung), bekommt er beim Zusammenbau vom Dienst.
+
+### Systemausstattung (#963) { #systemausstattung }
+
+`server/src/systemausstattung/` legt an, was jede Ablage braucht: die Systemtypen „Rolle“, „Benutzer“ und „Post“ mit Systemfeldern und Beschriftungen, die Systemrollen und die mitgelieferten Ansichten. Es ist ein Ablauf **über** den Fachbereichen: `sicherstellen()` ruft nacheinander Mappentypen (Typen und Rollen), Ansichten (eigene Ansicht eines eben angelegten Typs), Post (Ansichten der Post) und Ansichten („Favoriten“); die Schritte bekommt es beim Zusammenbau vom Dienst. Jeder Schritt legt nur an, was fehlt.
+
+- **Beim Start** (`dienst.gleicheBenutzerAb`, nur der Leiter) und damit nach jeder Wiederherstellung, die neu startet.
+- **Als Rückfall**: Findet `kern.system()` nicht alles, ruft es `systemausstattung.anlegen()` – für Wege ohne Start (Tests, Wiederherstellung, Demo entfernen). Gleichzeitige Aufrufe teilen sich einen Lauf.
+- Wer nur Ids braucht, nimmt `kern.system()`; `dienst.sichereSystem()` ist die Fassade für `sicherstellen()`. Die Ids merkt sich der Kern nur, wenn er sie außerhalb einer Transaktion nachgeschlagen hat.
+
+### Anschlusspunkte (#962) { #anschlusspunkte }
+
+Was **sofort** zu einer Änderung gehört – in derselben Transaktion, ein Fehler rollt alles zurück –, läuft über die typisierten Anschlusspunkte in `server/src/kern/anlaesse.ts`: `kern.anlaesse.mappeGeaendert`, `typGeaendert`, `typAngelegt`, `benutzerGespiegelt`. Wer ändert, ruft `melde(…)`; was **später** geschehen darf (mindestens einmal, mit Wiederholung, Fehler nur im Protokoll), geht wie bisher mit `kern.ereignis(…)` in den Ausgangskorb.
+
+- **Anmelden an einer Stelle:** `Dienst.schliesseEmpfaengerAn()` beim Zusammenbau, in fester Reihenfolge; danach ist die Liste zu. Eine andere Reihenfolge ist ein eigener Pull Request (Test `server/test/anlaesse.test.ts`).
+- **Der Reihe nach:** Der `EventEmitter` dient nur als Liste der Empfänger; `melde()` wartet jeden mit `for … await` ab. `emit()` ist verboten und wirft.
+- **Nur in einer Transaktion:** `melde()` wirft außerhalb von `inTransaktion`/`inEinemZug`. Ein Empfänger darf einen anderen Anlass melden (Tiefe höchstens 2), nie den, dessen Empfänger gerade läuft.
+- **Empfänger** tun nur Datenbank-Arbeit über `kern.repo` und `kern.danach(…)` – bei einer Verklemmung wiederholt `inEinemZug` die ganze Änderung samt Empfängern. Keine Zwischenspeicher, Mails oder Dateien direkt.
+- **Sofort** wurden nur die Empfänger, die vorher schon direkt gerufen wurden. Alles Neue geht in den Ausgangskorb.
+
+Anlass → Empfänger (der Reihe nach; Fachbereich.Aufgabe):
+
+<!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->
+- `mappeGeaendert` → 1. `mappentypen.passung` 2. `aufgaben.erwaehnungen` 3. `aufgaben.fristen` 4. `post.aufgaben`
+- `typGeaendert` → 1. `sichten.umbenennen` 2. `mappen.titel` 3. `mappentypen.passung` 4. `aufgaben.fristen`
+- `typAngelegt` → 1. `sichten.eigeneSicht`
+- `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
+<!-- anlaesse:ende -->
 
 ## Abhängigkeiten { #abhaengigkeiten }
 
@@ -418,7 +447,7 @@ Neben Menschen (`benutzer.art = 'person'`) gibt es zwei Arten von Konten, die si
 
 - **Anlegen:** `Konten.systemkonto(kennung)` beim Start (`ablago.ts`), idempotent; in PostgreSQL schützt der Index `benutzer_systemkonto` vor einem zweiten Konto, auch bei zwei Servern (Migration 059).
 - **Nie benutzbar:** `holeHash`, `listeBenutzer`, `anzahlBenutzer` sehen nur Menschen; `benutzerZu` (Sitzung) und `benutzerMitId` (API-Schlüssel) lehnen Systemkonten ab; Benutzerverwaltung und „Als Benutzer anmelden“ kennen sie nicht (`person()`). `personen()` liefert sie nur für Namen (`aktiv: false`, `art`).
-- **Rollen:** Die Rollen-Mappen `rolle:systemkonto` und `rolle:paket` legt `sichereSystem()` an (`kontorollen`). `listeRollen()` liefert sie nur mit `mitKonten`, `pruefeRollen()` lehnt sie ab.
+- **Rollen:** Die Rollen-Mappen `rolle:systemkonto` und `rolle:paket` legt die [Systemausstattung](#systemausstattung) an (`kontorollen` in `kern.system()`). `listeRollen()` liefert sie nur mit `mitKonten`, `pruefeRollen()` lehnt sie ab.
 - **Zugriff:** `Dienst.zugriff(konto)` setzt `wer.rollen = [Kontorolle]` und schneidet die Mappentypen mit `kontoRegelwerk(typ, rolleId)` (`shared/src/rechte.ts`) zu: Grundeinstellung „alles“, nur Regeln, die die Rolle nennen (`nenntRolle`). So sperrt ein strenger Standard für Mitglieder keine Automatisierung aus, ein Administrator kann aber gezielt einschränken. Für Pakete wird das Ergebnis mit den bestätigten Rechten geschnitten. `Dienst.systemZugriff('automatisierung')` liefert den Zugriff des Systemkontos (für den Motor der Automatisierungen, #674).
 - **Werkbank:** Systemkonten sind nie `admin`; welche Werkbank-Aktionen eine Karte darf, entscheidet die Karte selbst (#677).
 - **Oberfläche:** Werkbank → Benutzer, Abschnitt „Systemkonten“ (`GET /api/benutzer/systemkonten`, nur Administratoren).

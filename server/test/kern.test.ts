@@ -1,9 +1,10 @@
 /**
- * Kern (#961): Transaktion, Repo der Transaktion und Systemtypen nachschlagen. Pakete schreiben über `kern.repo` –
+ * Kern (#961): Transaktion, Repo der Transaktion und Systemtypen nachschlagen (#963: nur nachschlagen, Anlegen in der
+ * Systemausstattung). Pakete schreiben über `kern.repo` –
  * in einer Transaktion des Kerns also in deren Repo und nicht daneben.
  */
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Dienst } from '../src/dienst';
 import { speicherDateien } from '../src/dateispeicher';
@@ -41,6 +42,64 @@ describe('Kern (#961)', () => {
     assert.equal(a.benutzer.id, b.benutzer.id);
     assert.equal((await d.sichereSystem()).post.id, a.post.id, 'die Fassade schlägt dasselbe nach');
     assert.equal((await d.kern.typen()).get(a.rolle.id)?.system, 'rolle');
+  });
+
+  it('system() schlägt nur nach (#963): ist alles da, legt es nichts an und ändert nichts', async () => {
+    const repo = speicherRepo();
+    const d = new Dienst(repo, speicherDateien(), {});
+    const vorher = await d.sichereSystem();
+    const spur: string[] = [];
+    const neu = new Dienst(new Proxy(repo, {
+      get(ziel, prop, e) {
+        const w = Reflect.get(ziel, prop, e);
+        if (typeof w !== 'function' || typeof prop !== 'string') return w;
+        if (/^(lege|aendere|setze|schreibe|loesche)/.test(prop)) spur.push(prop);
+        return w.bind(ziel);
+      },
+    }), speicherDateien(), {});
+    const anlegen = mock.method(neu.systemausstattung, 'anlegen');
+    const s = await neu.kern.system();
+    assert.equal(s.benutzer.id, vorher.benutzer.id);
+    assert.equal(s.post.id, vorher.post.id);
+    assert.deepEqual([...s.systemrollen], [...vorher.systemrollen]);
+    assert.deepEqual([...s.kontorollen], [...vorher.kontorollen]);
+    assert.equal(anlegen.mock.callCount(), 0, 'kein Rückfall');
+    assert.deepEqual(spur, [], 'nichts geschrieben');
+  });
+
+  it('Rückfall (#963): fehlt etwas, legt system() die Ausstattung einmal an – Schritte in fester Reihenfolge', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), {});
+    const spur: string[] = [];
+    const a = d.systemausstattung as unknown as { schritte: Record<string, Record<string, (...x: unknown[]) => Promise<unknown>>> };
+    for (const [bereich, schritte] of Object.entries(a.schritte)) {
+      for (const [name, f] of Object.entries(schritte)) schritte[name] = async (...x: unknown[]) => { spur.push(`${bereich}.${name}`); return f(...x); };
+    }
+    const [x, y] = await Promise.all([d.kern.system(), d.kern.system()]);
+    assert.equal(x.rolle.id, y.rolle.id);
+    assert.deepEqual(spur, [
+      'mappentypen.sichereSystemtypen', 'sichten.sichtFuerTyp', 'sichten.sichtFuerTyp', 'sichten.sichtFuerTyp',
+      'post.sicherePostSichten', 'sichten.sichereFavoritenSicht',
+    ]);
+    // Die eigenen Ansichten der Systemtypen gibt es; ein zweites Sicherstellen legt keine neuen an.
+    const sichten = (await d.listeSichten()).length;
+    spur.length = 0;
+    await d.systemausstattung.sicherstellen();
+    assert.deepEqual(spur, ['mappentypen.sichereSystemtypen', 'post.sicherePostSichten', 'sichten.sichereFavoritenSicht']);
+    assert.equal((await d.listeSichten()).length, sichten);
+  });
+
+  it('sicherstellen() (#963): eine gelöschte Ansicht eines Systemtyps kommt nicht wieder; system() merkt sich nichts aus einer Transaktion', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), {});
+    const s = await d.sichereSystem();
+    await d.kern.repo.loescheSicht(s.benutzer.id);
+    await d.systemausstattung.sicherstellen();
+    assert.equal((await d.listeSichten()).some((x) => x.id === s.benutzer.id), false);
+    // In einer Transaktion nachgeschlagen: nicht gemerkt (sie könnte zurückgerollt werden).
+    const frisch = new Dienst(d.kern.repo, speicherDateien(), {});
+    await frisch.kern.inTransaktion(() => frisch.kern.system());
+    assert.equal((frisch.kern as unknown as { systemIds?: unknown }).systemIds, undefined);
+    await frisch.kern.system();
+    assert.ok((frisch.kern as unknown as { systemIds?: unknown }).systemIds);
   });
 
   it('Pakete schreiben in einer Transaktion des Kerns in deren Repo und rollen mit zurück (PostgreSQL)', { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' }, async () => {

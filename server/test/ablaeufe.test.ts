@@ -342,5 +342,66 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal(wirft.mock.callCount(), 1);
       assert.deepEqual(await stand(), vorher);
     });
+
+    /**
+     * Mappentyp ändern (#962): läuft jetzt in einer Transaktion. Der letzte Empfänger von „Typ geändert“
+     * (`aufgaben.fristen` → `fristenAbgleichen`) wirft – Typ, Ansicht, Titel und Passung stehen wie vorher.
+     */
+    it('Mappentyp ändern: wirft ein Empfänger, bleiben Typ, Ansicht, Titel, Passung, Historie und Ereignisse wie vorher', async () => {
+      const { sql, d, lena, jonas, vertrag } = await aufbau();
+      const a = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', nummer: 'V-1', kuendigung: in_(40), verantwortlich: jonas.id } }, lena.id);
+      const b = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Abwasser', nummer: 'V-1' } }, jonas.id);
+      const stand = async () => {
+        const [z] = await sql`SELECT
+          (SELECT count(*) FROM historie)::int AS historie,
+          (SELECT count(*) FROM ereignisse)::int AS ereignisse,
+          (SELECT count(*) FROM aufgaben)::int AS aufgaben,
+          (SELECT json_agg(json_build_object('id', id, 'titel', titel, 'problem', problem) ORDER BY id) FROM mappen WHERE typ_id = ${vertrag.id}) AS mappen`;
+        const typ = (await d.listeTypen()).find((x) => x.id === vertrag.id)!;
+        return { ...z, name: typ.name, felder: typ.felder, sicht: (await d.listeSichten()).find((x) => x.id === vertrag.id)?.name };
+      };
+      const vorher = await stand();
+      const t = (await d.listeTypen()).find((x) => x.id === vertrag.id)!;
+      const wirft = mock.method(d, 'fristenAbgleichen', async () => { throw new Error('Empfänger wirft'); });
+      try {
+        // Name (Ansicht heißt mit), Titel-Vorlage, Nummer eindeutig (Passung), Vorlauf 8 Wochen (Frist) auf einmal.
+        await assert.rejects(d.aendereTyp(vertrag.id, {
+          ...t, name: 'Verträge', titelVorlage: '{name} ({nummer})',
+          felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f.key === 'kuendigung' ? { ...f, frist: { ...f.frist!, vorlauf: 8 } } : f)),
+        }), /Empfänger wirft/);
+      } finally { wirft.mock.restore(); }
+      assert.equal(wirft.mock.callCount(), 1, 'der Empfänger lief in der Transaktion');
+      assert.deepEqual(await stand(), vorher);
+      // Ohne den Fehler geht dasselbe durch.
+      await d.aendereTyp(vertrag.id, { ...t, name: 'Verträge', felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f)) });
+      assert.equal((await d.listeSichten()).find((x) => x.id === vertrag.id)?.name, 'Verträge');
+      for (const m of [a, b]) assert.match(String((await d.holeMappe(m.id)).mappe.problem), /Vertragsnummer/);
+    });
+
+    /**
+     * Benutzer spiegeln (#962): Benutzer-Mappe und Abwesenheit laufen jetzt in einer Transaktion. Das Konto selbst
+     * steht in der Kontentabelle und ist schon gespeichert – das nächste Spiegeln (stündlich, beim Start) zieht die
+     * Mappe nach.
+     */
+    it('Benutzer spiegeln: wirft ein Empfänger, bleiben Benutzer-Mappe, Historie und Ereignisse wie vorher', async () => {
+      const { sql, d, konten, lena, jonas, konto } = await aufbau();
+      const stand = async () => {
+        const [z] = await sql`SELECT
+          (SELECT count(*) FROM historie WHERE mappe_id = ${lena.id})::int AS historie,
+          (SELECT count(*) FROM ereignisse)::int AS ereignisse`;
+        return { ...z, werte: (await d.holeMappe(lena.id)).mappe.werte };
+      };
+      const vorher = await stand();
+      const wirft = mock.method(d, 'abwesenheitGeaendert', async () => { throw new Error('Empfänger wirft'); });
+      try {
+        await assert.rejects(konten.setzeAbwesenheit(await konto(lena.id), lena.id, { an: true, vertreterId: jonas.id }), /Empfänger wirft/);
+      } finally { wirft.mock.restore(); }
+      assert.equal(wirft.mock.callCount(), 1, 'der Empfänger lief in der Transaktion');
+      assert.deepEqual(await stand(), vorher);
+      assert.equal((await konto(lena.id)).abwesenheit?.an, true, 'das Konto ist gespeichert (außerhalb der Transaktion)');
+      // Das nächste Spiegeln zieht die Mappe nach.
+      await d.gleicheBenutzerAb(await konten.listeBenutzer());
+      assert.equal((await d.holeMappe(lena.id)).mappe.werte.abwesend, true);
+    });
   });
 });

@@ -43,6 +43,7 @@ Alongside, without routes:
 | Folder in `server/src/` | Contents |
 |---|---|
 | `kern/` | the [core](#kern) (#961) |
+| `systemausstattung/` | the [system setup](#systemausstattung) (#963) |
 | `http/` | helpers of the HTTP layer – for routes only |
 | `pdf/`, `arbeit/` | [PDF module](#pdf-stelle), [worker pool](#arbeiter-pool) |
 | `laeufer/` | package runner |
@@ -65,11 +66,39 @@ Alongside, without routes:
 - `kern.repo` – the repo; inside a transaction of the core, that transaction's repo. Fetch it on every call, never keep it – otherwise a package writes past the transaction.
 - `inTransaktion`, `inEinemZug` (retries on deadlock), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
 - `ereignis(art, daten, von?)` into the outbox, `mitAusloeser`, `ohneEreignisse`.
-- `system()` – look up the user, role and post folder types and the system roles (still creates them the first time; split in #963), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `liesGanz(sha)`.
+- `anlaesse` – the [hook points](#anschlusspunkte) for what happens immediately (#962, `kern/anlaesse.ts`).
+- `system()` – **only looks up** the user, role and post folder types and the system roles (#963; if something is missing, the fallback creates the [system setup](#systemausstattung)), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `paketVerwehrt()`, `ablageortId()`, `liesGanz(sha)`.
 - `historie.schreibe(…)` (`kern/historie.ts`) and `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Reading** stays with folders and deletion respectively.
 - `einstellungen`, `dateien`, `stand`.
 
-**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). The service stays a facade with one-line forwards. What the core does not build itself yet (access, creating the system types), it gets from the service when it is assembled.
+**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). The service stays a facade with one-line forwards. What the core does not build itself yet (access, the fallback of the system setup), it gets from the service when it is assembled.
+
+### System setup (#963) { #systemausstattung }
+
+`server/src/systemausstattung/` creates what every library needs: the system folder types “Role”, “User” and “Post” with their system fields and labels, the system roles and the views that ship with Ablago. It is a flow **above** the subject areas: `sicherstellen()` calls, one after the other, folder types (types and roles), views (own view of a type just created), post (the post views) and views (“Favourites”); it gets these steps from the service when it is assembled. Each step only creates what is missing.
+
+- **At start-up** (`dienst.gleicheBenutzerAb`, leader only) and so after every restore, which restarts.
+- **As a fallback**: if `kern.system()` does not find everything, it calls `systemausstattung.anlegen()` – for paths without a start (tests, restore, removing demo data). Concurrent calls share one run.
+- Whoever only needs ids uses `kern.system()`; `dienst.sichereSystem()` is the facade for `sicherstellen()`. The core keeps the ids only if it looked them up outside a transaction.
+
+### Hook points (#962) { #anschlusspunkte }
+
+What belongs to a change **immediately** – in the same transaction, an error rolls everything back – runs through the typed hook points in `server/src/kern/anlaesse.ts`: `kern.anlaesse.mappeGeaendert`, `typGeaendert`, `typAngelegt`, `benutzerGespiegelt`. Whoever changes something calls `melde(…)`; what may happen **later** (at least once, with retries, errors only in the log) still goes into the outbox with `kern.ereignis(…)`.
+
+- **Registered in one place:** `Dienst.schliesseEmpfaengerAn()` when assembling, in a fixed order; after that the list is closed. A different order is a pull request of its own (test `server/test/anlaesse.test.ts`).
+- **One after the other:** the `EventEmitter` only serves as the list of receivers; `melde()` awaits each with `for … await`. `emit()` is forbidden and throws.
+- **Only inside a transaction:** `melde()` throws outside `inTransaktion`/`inEinemZug`. A receiver may report another occasion (depth at most 2), never the one whose receiver is running.
+- **Receivers** only do database work via `kern.repo` and `kern.danach(…)` – on a deadlock `inEinemZug` repeats the whole change including the receivers. No caches, mails or files directly.
+- **Immediate** are only the receivers that were already called directly before. Anything new goes into the outbox.
+
+Occasion → receivers (in order; subject area.task):
+
+<!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->
+- `mappeGeaendert` → 1. `mappentypen.passung` 2. `aufgaben.erwaehnungen` 3. `aufgaben.fristen` 4. `post.aufgaben`
+- `typGeaendert` → 1. `sichten.umbenennen` 2. `mappen.titel` 3. `mappentypen.passung` 4. `aufgaben.fristen`
+- `typAngelegt` → 1. `sichten.eigeneSicht`
+- `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
+<!-- anlaesse:ende -->
 
 ## Dependencies { #abhaengigkeiten }
 
@@ -417,7 +446,7 @@ Besides people (`benutzer.art = 'person'`) there are two kinds of accounts that 
 
 - **Creation:** `Konten.systemkonto(kennung)` at start-up (`ablago.ts`), idempotent; in PostgreSQL the index `benutzer_systemkonto` prevents a second account, even with two servers (migration 059).
 - **Never usable:** `holeHash`, `listeBenutzer`, `anzahlBenutzer` only see people; `benutzerZu` (session) and `benutzerMitId` (API key) reject system accounts; user management and "Sign in as user" don't know them (`person()`). `personen()` only returns them for names (`aktiv: false`, `art`).
-- **Roles:** the role folders `rolle:systemkonto` and `rolle:paket` are created by `sichereSystem()` (`kontorollen`). `listeRollen()` only returns them with `mitKonten`, `pruefeRollen()` rejects them.
+- **Roles:** the role folders `rolle:systemkonto` and `rolle:paket` are created by the [system setup](#systemausstattung) (`kontorollen` in `kern.system()`). `listeRollen()` only returns them with `mitKonten`, `pruefeRollen()` rejects them.
 - **Access:** `Dienst.zugriff(konto)` sets `wer.rollen = [account role]` and trims the folder types with `kontoRegelwerk(typ, rolleId)` (`shared/src/rechte.ts`): default "everything", only rules that name the role (`nenntRolle`). So a strict default for members doesn't lock out an automation, but an administrator can restrict it on purpose. For packages the result is intersected with the confirmed rights. `Dienst.systemZugriff('automatisierung')` returns the system account's access (for the automation engine, #674).
 - **Workbench:** system accounts are never `admin`; which Workbench actions a card allows is up to the card itself (#677).
 - **Interface:** Workbench → Users, section "System accounts" (`GET /api/benutzer/systemkonten`, administrators only).
