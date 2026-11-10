@@ -161,6 +161,12 @@ jobs:
       # Dieselbe feste Playwright-Version wie im Workflow „Handbuch“ (#289), nur Chromium. Die Rechner von GitHub
       # bringen die Bibliotheken für Chromium mit; nur wenn der Browser so nicht startet, kommen sie per apt dazu –
       # höchstens 5 Minuten je Versuch, dann ein zweiter (die apt-Installation hängt gelegentlich).
+      # Browser zwischenspeichern (#1059), wie im Workflow „Handbuch“.
+      - name: Browser aus dem Zwischenspeicher
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-chromium
       - name: Playwright für die Rauchtests installieren
         working-directory: web/rauchtest
         shell: bash
@@ -303,11 +309,6 @@ jobs:
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
-      # Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid (#179) und den Raspberry Pi (#578): starten, Ablago antwortet,
-      # Assistent beginnt ohne Datenbankschritt.
-      - name: Vorlagen probehalber installieren
-        if: matrix.plattform == 'linux/amd64'
-        run: deploy/vorlagen-probe.sh dms:probe
       # Einrichtungsskript für den Raspberry Pi (#578); shellcheck ist auf den GitHub-Rechnern vorinstalliert.
       - name: Einrichtungsskript prüfen
         if: matrix.plattform == 'linux/amd64'
@@ -322,14 +323,34 @@ jobs:
           push: false
           tags: dms-komplett:probe
           cache-from: type=gha,scope=${{ matrix.plattform }}
-      - name: dms-komplett probehalber installieren
-        run: deploy/komplett-probe.sh dms-komplett:probe
-      # Update-Test (#714): vom bisherigen :stabil (bis es das gibt: vom letzten Release) auf diesen Stand.
-      - name: Update vom bisherigen Stand
-        if: matrix.plattform == 'linux/amd64'
+      # Probe-Installationen gleichzeitig (#1059) – sie sind voneinander unabhängig (eigene Ports, Namen, Ordner):
+      # - Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid (#179) und den Raspberry Pi (#578): starten, Ablago
+      #   antwortet, Assistent beginnt ohne Datenbankschritt (nur amd64);
+      # - dms-komplett (#208) auf beiden Architekturen;
+      # - Update-Test (#714): vom bisherigen :stabil (bis es das gibt: vom letzten Release) auf diesen Stand (nur amd64).
+      # Jede Probe schreibt ihr eigenes Protokoll; es erscheint danach in einer eigenen Gruppe. Eine gescheiterte Probe
+      # lässt den Schritt scheitern.
+      - name: Probe-Installationen (gleichzeitig)
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/werkzeuge/update-test.sh "$(.github/werkzeuge/stabil-bisher.sh dms-komplett)" dms-komplett:probe
+          AMD64: ${{ matrix.plattform == 'linux/amd64' }}
+        run: |
+          d="$RUNNER_TEMP/probe"; mkdir -p "$d"
+          namen=(); pids=()
+          starte() { local n=$1; shift; "$@" > "$d/$n.log" 2>&1 & namen+=("$n"); pids+=($!); }
+          if [ "$AMD64" = true ]; then
+            starte vorlagen deploy/vorlagen-probe.sh dms:probe
+            starte update .github/werkzeuge/update-test.sh "$(.github/werkzeuge/stabil-bisher.sh dms-komplett)" dms-komplett:probe
+          fi
+          starte komplett deploy/komplett-probe.sh dms-komplett:probe
+          fehler=0
+          for i in "${!namen[@]}"; do
+            if wait "${pids[$i]}"; then zustand=ok; else zustand=FEHLER; fehler=1; fi
+            echo "::group::${namen[$i]} – $zustand"; cat "$d/${namen[$i]}.log"; echo "::endgroup::"
+            [ "$zustand" = ok ] || echo "::error title=Probe ${namen[$i]}::gescheitert, Protokoll in der Gruppe „${namen[$i]}“"
+          done
+          exit $fehler
       # Bekannte Sicherheitslücken in den Systempaketen (#220): kritisch mit Korrektur → Fehler.
       # Eine Architektur genügt, die Pakete sind dieselben.
       - name: Trivy installieren
