@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  darfErstellen, kannAusPost, darfLoeschen, formatiere, geschuetzteFelder, istLeer, istPasswortWert, sortierbar, istOk, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe,
-  ABRUF_ART, type Abrufweg, type Abruffassung, historienartenVon, historiengruppenVon, type Modusspur, type Kontorolle, type Systemkonto, freierSchluessel, titelAus, verweiseVon, verweisAusText,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Verweiskonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Register, type Wert, type Werte,
+  kannAusPost, darfLoeschen, istLeer, sortierbar, MAX_AUSWAHL, MAX_DATEIGROESSE,
+  ABRUF_ART, type Abrufweg, type Abruffassung, type Modusspur, type Kontorolle, type Systemkonto, verweiseVon,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Register, type Wert, type Werte,
 } from '../../shared/src/model';
 import { DateiFehlt, type Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -17,22 +17,20 @@ import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
 import { bilderZuPdf, fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
 import { bildSeitePdf } from './pdf';
-import { aufkleberPdf, ETIKETTEN, type Etikett } from './aufkleber';
+import { aufkleberPdf, ETIKETTEN } from './aufkleber';
 import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
-import { istUuid, KonfigurationVeraltet, StandVeraltet, type DokumentImPapierkorb, type FristKandidat, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SeitenAnfrage, type SortierungIntern } from './repo';
+import { istUuid, KonfigurationVeraltet, type DokumentImPapierkorb, type FristKandidat, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SeitenAnfrage, type SortierungIntern } from './repo';
 import { suchbegriffe, vorschlagAus, type Varianten } from '../../shared/src/suche';
 import { ausgangAus, bereinigeBeschriftungen, type TypTeile } from '../../shared/src/beschriftung';
-import { ausgeblendeteFelder } from '../../shared/src/darstellung';
 import {
-  auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, setzeEigeneWerte, erfuellt, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen, zeigtAlleTypen,
+  auswahlKlausel, setzeEigeneWerte, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen, zeigtAlleTypen,
   type Aufloesung, type Bedingung, type Klausel, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
-import { enthaeltId, ersteId, folgeReihenfolge } from '../../shared/src/folgtaus';
-import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
+import { aufbewahrenBis, datumText, inFrist } from '../../shared/src/archiv';
 import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
 import { BAUM_STANDARD, bereinigeBaumOptionen, verweisartVon, type Baum } from '../../shared/src/baum';
@@ -44,7 +42,7 @@ import { alsZeile, liesAnlass, liesFilter, LOESCH_MAX, LOESCH_SPALTEN, LOESCHGRU
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
-import { kreisVon, type Nummernkreis } from '../../shared/src/nummernkreis';
+import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, type Zelle } from './xlsx';
 import { arbeite } from './arbeit';
 import { schriftstueckPdf } from './schriftstueck';
@@ -74,33 +72,34 @@ import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET, infoVolltextPaket, katalogVol
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { AusDokument } from '../../shared/src/erkennung';
-import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../shared/src/feldformate';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
 import { favoritenErlaubt, freigabeZumSpeichern, liesFavoritenFreigabe, type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
-import { tagIn, zeitzone } from '../../shared/src/region';
+import { zeitzone } from '../../shared/src/region';
 import { Eingang, shaVon } from './hochladen';
 import { EREIGNISKATALOG, VERALTETE_EREIGNISSE, type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis, type Katalogeintrag } from '../../shared/src/ereignisse';
 import { datumDe, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, folgetermine, istDatum, naechsterTermin, type Erinnerung, type Termin, type TermineAntwort } from '../../shared/src/fristen';
 import { zeitraumProblem } from '../../shared/src/kalender';
 import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
 import { feiertageZwischen, type Bundesland } from '../../shared/src/feiertage';
-import { kontoRegelwerk, RECHTE_LISTE, kurzStandard, bereinigeRegelwerk, istOffen, kopiereRegel, kurz, leseAusdruck, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte } from '../../shared/src/rechte';
+import { kontoRegelwerk, bereinigeRegelwerk, istOffen, kopiereRegel, kurz, leseAusdruck, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte } from '../../shared/src/rechte';
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { SucheDienst } from './suche';
-import { maskiert, NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
+import { NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff, type BenutzerGespiegelt } from './kern';
 import { Systemausstattung } from './systemausstattung';
-import { ARCHIV_KREIS, behalteBeschriftungen, bereinigeFeld, bereinigeTyp, liesStand, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TYP_TEILE, TypPakete, type Benutzerspiegel } from './mappentypen';
+import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, liesStand, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TYP_TEILE, TypPakete, type Benutzerspiegel } from './mappentypen';
 export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
 export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
+import { bereinigeWerte, keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenTitel, Passwortfelder } from './mappen';
+export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
@@ -153,10 +152,6 @@ interface Versandteil { m: Mappe; plan: GeltenderStempel | null; angaben: Versan
 export const NAECHSTER_TERMIN_ERST_TAGE = 31;
 /** Obergrenze für geschriebenen Volltext (Zeichen). */
 export const VOLLTEXT_MAX = VOLLTEXT_ZEICHEN_MAX;
-/** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
-
-const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
-
 /** Wert eines Mehrfachverweises als Liste. */
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 
@@ -184,7 +179,6 @@ export { EMAIL_MAX_ANHAENGE };
 export const EMAIL_MAX_EMPFAENGER = 20;
 /** Höchstens so viele Mappen in einer E-Mail (#151). */
 export const EMAIL_MAX_MAPPEN = 100;
-export const HISTORIE_STANDARD_TAGE = 365;
 /** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung. */
 export const SAMMEL_MAX = 1000;
 export const SAMMEL_WEITERGABE = 'weitergabe';
@@ -243,14 +237,6 @@ function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: 
   return eintrag.join(', ') || t('meldungen.dienst.seiten-umsortiert');
 }
 
-/** Barcode-Präfix der Archivnummern (#345); der Kreis: ARCHIV_KREIS (mappentypen/nummernkreise.ts). */
-export const ARCHIV_PRAEFIX = 'DMS-ASN:';
-/** Eingabe → Archivnummer (Präfix aus dem Barcode weg, ohne Rand); leer → null. */
-export function archivnummerAus(v: unknown): string | null {
-  const t = String(v ?? '').trim().replace(/^DMS-ASN:/i, '').trim();
-  return t || null;
-}
-
 function dateiname(v: unknown): string {
   // eslint-disable-next-line no-control-regex -- Steuerzeichen aus Dateinamen entfernen ist der Zweck
   const s = text(v).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim();
@@ -273,51 +259,6 @@ export function erkenneAnzeigbar(b: Buffer): string | null {
   if (kopf.startsWith('RIFF') && kopf.slice(8, 12) === 'WEBP') return 'image/webp';
   return null;
 }
-
-/** Nur Werte zu bekannten Feldern; leere Eingaben werden zu null. */
-/**
- * Passwortfeld (#46): neues Passwort verschlüsseln, entfernen oder das bisherige behalten.
- * - { neu: '…' } oder ein Text: neues Passwort
- * - null, '' oder { entfernen: true }: entfernen
- * - fehlt oder { gesetzt: true } (so, wie die Oberfläche es bekam): unverändert
- */
-function passwortWert(eingabe: unknown, hatEingabe: boolean, bisher: unknown, verschluessele: (k: string) => string): Werte[string] {
-  // Ohne Eingabe oder unverändert durchgereicht (System, z. B. beim Nachziehen einer Benutzer-Mappe): behalten.
-  if (!hatEingabe || (eingabe === bisher && eingabe !== undefined)) return (bisher ?? null) as Werte[string];
-  if (eingabe === null || eingabe === '') return null;
-  if (typeof eingabe === 'string') {
-    if (eingabe.startsWith('dms1$')) throw new Fachfehler(422, t('meldungen.dienst.verschluesselte-werte-lassen-sich'));
-    return verschluessele(eingabe.slice(0, 1000));
-  }
-  if (istPasswortWert(eingabe)) {
-    if (eingabe.entfernen) return null;
-    if (typeof eingabe.neu === 'string' && eingabe.neu !== '') return verschluessele(eingabe.neu.slice(0, 1000));
-    return (eingabe.gesetzt ? bisher ?? null : null) as Werte[string];
-  }
-  throw new Fachfehler(422, t('meldungen.dienst.ungueltiger-wert-fuer-ein'));
-}
-
-function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, verschluessele: (k: string) => string = keinSchluessel): Werte {
-  const roh = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
-  const bekannt = new Set(typ.felder.map((f) => f.key));
-  const werte: Werte = {};
-  // Werte aus entfernten Feldern bleiben erhalten.
-  for (const [k, v] of Object.entries(bisher)) if (!bekannt.has(k)) werte[k] = v;
-  for (const f of typ.felder) {
-    if (f.typ === 'passwort') { werte[f.key] = passwortWert(roh[f.key], f.key in roh, bisher[f.key], verschluessele); continue; }
-    const v = f.key in roh ? roh[f.key] : bisher[f.key];
-    werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : (v as Werte[string]);
-  }
-  // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
-  return gleicheFormateAn(typ, werte, bisher);
-}
-
-/** Felder, die eine Anfrage selbst setzt – auch leer. „Folgt aus“ (#886) füllt sie nicht. */
-const gesendeteFelder = (w: unknown) => new Set(w && typeof w === 'object' && !Array.isArray(w) ? Object.keys(w) : []);
-
-const keinSchluessel = (): never => {
-  throw new Fachfehler(409, t('meldungen.dienst.passwoerter-lassen-sich-erst'));
-};
 
 /* ---------- Fachlogik ---------- */
 
@@ -354,8 +295,6 @@ export interface VolltextMeldung {
  */
 export const taugtAlsAufgabenEmpfaenger = (b: Benutzer) => b.aktiv && !b.art;
 
-/** Höchstens so viele Einträge der Historie auf einer Seite (#800). */
-export const HISTORIE_SEITE_MAX = 1000;
 const ABRUF_PRUEFUNG = 'abruf-pruefung';
 /** Belegung einer Code-Prüfung am Abruf-Link: endet spätestens nach dieser Zeit (scrypt dauert Bruchteile davon). */
 const ABRUF_PRUEFUNG_MS = 60_000;
@@ -434,6 +373,18 @@ export class Dienst {
   readonly nummernkreise: Nummernkreise;
   /** Systemtypen, Benutzer-Mappen, Spur im Verwaltungsmodus (#1073). */
   readonly systemtypen: Systemtypen;
+  /** Historie der Mappen lesen, Abrufe (#57, #800, #1074). */
+  readonly mappenHistorie: MappenHistorie;
+  /** Titel der Mappen (#1074). */
+  readonly mappenTitel: MappenTitel;
+  /** Eingaben an Mappen prüfen (#1074). */
+  readonly mappenEingaben: MappenEingaben;
+  /** Passwortfelder (#46, #1074). */
+  readonly passwortfelder: Passwortfelder;
+  /** Archivnummern und Archivmodus (#345, #212, #1074). */
+  readonly mappenArchiv: MappenArchiv;
+  /** Mappen (#1074): anlegen, ändern, holen, Notizen, Favoriten. */
+  readonly mappen: MappenDienst;
   /** Suche (#964): unscharfe Suche, gleichbedeutende Wörter, Vektoren und ähnliche Dokumente. */
   readonly suche: SucheDienst;
   /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
@@ -460,6 +411,19 @@ export class Dienst {
     this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
       schreibeSystemMappe: (typ, id, e, von, kennung) => this.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
       spiegleBenutzer: (b, von, abwesenheit) => this.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
+    });
+    this.mappenHistorie = new MappenHistorie(this.kern);
+    this.mappenTitel = new MappenTitel(this.kern, this.mappenHistorie);
+    this.mappenEingaben = new MappenEingaben(this.kern, this.rechtepruefung, { verschluessele: (k) => this.verschluessele(k) });
+    this.passwortfelder = new Passwortfelder(this.kern, this.mappenHistorie, { tresor: () => this.tresor, istVerschluesselt });
+    this.mappenArchiv = new MappenArchiv(this.kern, this.rechtepruefung, this.mappenHistorie, {
+      aufkleber: { ETIKETTEN, aufkleberPdf }, auftraege: this.auftraege, schreibeFehlendeDateien: (shas) => this.schreibeFehlendeDateien(shas),
+    });
+    this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben }, {
+      konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
+      mitArchivStand: (d) => this.mitArchivStand(d), mitPdfSchutz: (d) => this.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
+      loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids),
     });
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
@@ -1298,60 +1262,10 @@ export class Dienst {
 
   /* ---------- Passwortfelder (#46) ---------- */
 
-  /** Lassen sich gerade Passwörter speichern? */
-  get passwoerterMoeglich() { return !!this.tresor?.bereit; }
-
-  /** Passwortfelder, die mit dem vorhandenen Schlüssel nicht lesbar sind (für die Werkbank). */
-  async unlesbarePasswoerter(): Promise<Betroffen[]> {
-    const out: Betroffen[] = [];
-    for (const mappentyp of await this.repo.listeTypen()) {
-      const felder = mappentyp.felder.filter((f) => f.typ === 'passwort');
-      if (!felder.length) continue;
-      for (const m of await this.repo.listeMappen(mappentyp.id)) {
-        for (const f of felder) {
-          const v = m.werte[f.key];
-          if (istVerschluesselt(v) && !this.tresor?.lesbar(v)) out.push({ bereich: mappentyp.name, was: `${m.titel || t('meldungen.dienst.mappe-ohne-titel')}: ${f.label}`, wo: t('meldungen.dienst.in-der-ablage-neu') });
-        }
-      }
-    }
-    return out;
-  }
-
-  /** Klartext eines Passworts zum Anzeigen; jeder Aufruf steht im Protokoll (ohne den Wert). */
-  async zeigePasswort(mappeId: string, feldKey: string, benutzerId: string | null = null): Promise<{ wert: string }> {
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const typ = await this.repo.holeTyp(m.typId);
-    const f = typ?.felder.find((x) => x.key === feldKey && x.typ === 'passwort');
-    if (!f) throw new Fachfehler(404, t('meldungen.dienst.dieses-passwortfeld-gibt-es'));
-    const v = m.werte[f.key];
-    if (!istVerschluesselt(v)) throw new Fachfehler(404, t('meldungen.dienst.in-diesem-feld-ist'));
-    const klar = this.tresor?.entschluessele(v) ?? null;
-    if (klar === null) throw new Fachfehler(409, t('meldungen.dienst.dieses-passwort-ist-nicht'));
-    protokoll.modul('ablage').info('Passwort angezeigt', { mappe: m.titel || m.id, mappeId: m.id, feld: f.label });
-    await this.notiere(m.id, benutzerId, 'passwort_angezeigt', { feld: f.label });
-    return { wert: klar };
-  }
-
-  /**
-   * Für die API mit dem Recht „Passwörter lesen“: Passwörter einer oder mehrerer Mappen
-   * im Klartext; je Mappe ein Protokolleintrag (ohne die Werte).
-   */
-  async entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string, benutzerId: string | null = null): Promise<T[]> {
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-    const historie: Parameters<Repo['historieSchreibe']>[0] = [];
-    const ergebnis = mappen.map((m) => {
-      const felder = typen.get(m.typId)?.felder.filter((f) => f.typ === 'passwort' && istVerschluesselt(m.werte[f.key])) ?? [];
-      if (!felder.length) return m;
-      const werte = { ...m.werte };
-      for (const f of felder) werte[f.key] = this.tresor?.entschluessele(werte[f.key] as string) ?? null;
-      protokoll.modul('ablage').info('Passwörter über die API abgerufen', { mappe: m.titel || m.id, mappeId: m.id, felder: felder.map((f) => f.label).join(', '), schluessel: wer });
-      historie.push({ mappeId: m.id, benutzerId, art: 'passwort_angezeigt', daten: { feld: felder.map((f) => f.label).join(', '), api: wer } });
-      return { ...m, werte };
-    });
-    await this.repo.historieSchreibe(historie);
-    return ergebnis;
-  }
+  get passwoerterMoeglich() { return this.passwortfelder.passwoerterMoeglich; }
+  unlesbarePasswoerter(): Promise<Betroffen[]> { return this.passwortfelder.unlesbarePasswoerter(); }
+  zeigePasswort(mappeId: string, feldKey: string, benutzerId: string | null = null): Promise<{ wert: string }> { return this.passwortfelder.zeigePasswort(mappeId, feldKey, benutzerId); }
+  entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string, benutzerId: string | null = null): Promise<T[]> { return this.passwortfelder.entschluesselePasswoerter<T>(mappen, wer, benutzerId); }
 
   /* ---------- Aufgaben (#54) und Erwähnungen (#56) ---------- */
 
@@ -2065,18 +1979,9 @@ export class Dienst {
 
   /* ---------- Notizen (#55) ---------- */
 
-  private static notiztext(e: unknown): string {
-    const text2 = typeof e === 'string' ? e.replace(/\r\n?/g, '\n').trim() : '';
-    if (!text2) throw new Fachfehler(422, t('meldungen.dienst.die-notiz-ist-leer'));
-    if (text2.length > NOTIZ_MAX) throw new Fachfehler(422, t('meldungen.dienst.eine-notiz-darf-hoechstens', { NOTIZ_MAX: NOTIZ_MAX.toLocaleString(gebietsschema()) }));
-    return text2;
-  }
-  private static vorschau(t: string) { const x = alsText(t); return x.length > 80 ? `${x.slice(0, 77)} …` : x; }
-
-  async notizen(mappeId: string): Promise<Notiz[]> {
-    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    return this.repo.notizen(mappeId);
-  }
+  private static notiztext(e: unknown): string { return MappenDienst.notiztext(e); }
+  private static vorschau(t: string) { return MappenDienst.vorschau(t); }
+  notizen(mappeId: string): Promise<Notiz[]> { return this.mappen.notizen(mappeId); }
 
   /* ---------- E-Mail aus der Mappe (#58) ---------- */
 
@@ -2348,22 +2253,12 @@ export class Dienst {
 
   /* ---------- Änderungshistorie (#57) ---------- */
 
-  /** Ein Eintrag in die Historie einer Mappe (Kern). */
-  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) { return this.kern.historie.schreibe(mappeId, benutzerId, art, daten); }
+  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) { return this.mappenHistorie.notiere(mappeId, benutzerId, art, daten); }
 
   /* ---------- Favorit = Abo (#422) ---------- */
 
-  /**
-   * Persönliche Einstellung (Vorgabe an): „favoriten_benachrichtigen“ bzw. „geaenderte_hervorheben“ = false schaltet ab.
-   * Benachrichtigen nur, wenn die Werkbank es für den Benutzer erlaubt (#506); seine Einstellung bleibt dabei gespeichert.
-   */
-  /** Persönliche Einstellungen eines Benutzers (#678: Zeitplan „für jeden Benutzer“ mit Uhrzeit aus dem Profil). */
-  async persoenlicheEinstellungen(benutzerId: string): Promise<Record<string, unknown>> { return (await this.konten?.einstellungen?.(benutzerId)) ?? {}; }
-
-  private async persoenlichAn(benutzerId: string, schluessel: string): Promise<boolean> {
-    if (schluessel === 'favoriten_benachrichtigen' && !(await this.favoritenBenachrichtigungErlaubt(benutzerId))) return false;
-    return (await this.konten?.einstellungen?.(benutzerId))?.[schluessel] !== false;
-  }
+  persoenlicheEinstellungen(benutzerId: string): Promise<Record<string, unknown>> { return this.mappen.persoenlicheEinstellungen(benutzerId); }
+  private persoenlichAn(benutzerId: string, schluessel: string): Promise<boolean> { return this.mappen.persoenlichAn(benutzerId, schluessel); }
 
   /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506) ---------- */
 
@@ -2498,114 +2393,13 @@ export class Dienst {
     return n;
   }
 
-  /**
-   * Mappen gesehen (#422): geöffnet oder „Alle als gesehen markieren“. Die Hervorhebung verschwindet, und eine
-   * offene Benachrichtigung „Geändert“ erledigt sich – die nächste Änderung bringt wieder eine.
-   */
-  /** `aufgaben`: alle Aufgaben dieser Mappen, wenn sie schon gelesen sind (#615, „Mappe öffnen“). */
-  async gesehen(ich: { id: string }, mappeIds: unknown, aufgaben?: Aufgabe[]) {
-    const ids = (Array.isArray(mappeIds) ? mappeIds : [mappeIds]).filter((x): x is string => istUuid(x)).slice(0, 1000);
-    if (!ids.length) return;
-    await this.repo.merkeGesehen(ich.id, ids);
-    const offen = aufgaben ? aufgaben.filter((x) => !x.erledigt && ids.includes(x.mappeId)) : await this.repo.offeneAufgaben({ mappeIds: ids });
-    for (const a of offen.filter((x) => x.art === 'aenderung' && x.empfaengerId === ich.id)) {
-      await this.repo.erledigeAufgabe(a.id, ich.id);
-    }
-  }
-
-  /** Je Favorit „bei Änderungen benachrichtigen“ (#422, Schalter in der Favoritenliste). */
-  async setzeFavoritBenachrichtigen(ich: { id: string }, mappeId: string, an: unknown) {
-    if (!(await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId)) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-ist-kein'));
-    await this.repo.setzeFavoritBenachrichtigen(ich.id, mappeId, an !== false);
-    return { benachrichtigen: an !== false };
-  }
-
-  /** Was sich zwischen zwei Ständen geändert hat – lesbar, wie es zu diesem Zeitpunkt aussah. */
-  private async aenderungen(typ: Mappentyp, alt: Werte, neu: Werte): Promise<Feldaenderung[]> {
-    const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-    const felder = typ.felder.filter((f) => !gleich(alt[f.key], neu[f.key]) && !(istLeer(alt[f.key]) && istLeer(neu[f.key])));
-    if (!felder.length) return [];
-    const ids = felder.filter((f) => f.typ === 'referenz').flatMap((f) => [alt[f.key], neu[f.key]].flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))).map(String).filter(istUuid);
-    const titel = await this.repo.titelVon(ids);
-    const lesbar = (f: Feld, v: Werte[string] | undefined) => {
-      const text2 = formatiere(f, v, (id) => titel.get(id) || t('meldungen.dienst.ohne-titel'));
-      return text2.length > 500 ? `${text2.slice(0, 497)} …` : text2;
-    };
-    // Altes Textfeld neben seinem Verweis (#534): „Halter (Text)“ statt zweimal „Halter“.
-    const label = (f: Feld) => (verweisAusText(typ, f) ? t('pakete.historie.alttext', { label: f.label }) : f.label);
-    return felder.map((f) => (f.typ === 'passwort'
-      ? { feld: f.key, label: label(f), geheim: true }
-      : { feld: f.key, label: label(f), alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
-  }
-
-  /**
-   * Historie einer Mappe (auch im Papierkorb). Ohne Angaben alle Einträge (wie bisher, auch für die API). #800: Mit
-   * `register` nur, was dieses Register „Historie“ zeigt (seine Einstellung, sonst die Vorauswahl; ein unbekanntes
-   * Register zeigt alles); mit `max` (1–1000) eine Seite, mit `vor` (Id des letzten Eintrags) die nächste.
-   */
-  async historie(mappeId: string, o: { register?: unknown; max?: unknown; vor?: unknown } = {}): Promise<Historieneintrag[]> {
-    const m = (await this.repo.holeMappe(mappeId)) ?? (await this.repo.holeAusPapierkorb(mappeId));
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const zahl = (v: unknown) => (v === undefined || v === null || v === '' ? undefined : Number(v));
-    const max = zahl(o.max), vor = zahl(o.vor);
-    if (max !== undefined && (!Number.isInteger(max) || max < 1 || max > HISTORIE_SEITE_MAX)) throw new Fachfehler(422, t('meldungen.dienst.historie-max', { max: HISTORIE_SEITE_MAX }));
-    if (vor !== undefined && !Number.isSafeInteger(vor)) throw new Fachfehler(422, t('meldungen.dienst.historie-vor'));
-    let arten: string[] | undefined;
-    if (typeof o.register === 'string' && o.register) {
-      const reg = (await this.repo.holeTyp(m.typId))?.register.find((r) => r.key === o.register && r.art === 'protokoll');
-      if (reg) arten = historienartenVon(historiengruppenVon(reg));
-    }
-    return this.repo.historie(mappeId, { ...(arten ? { arten } : {}), ...(max ? { max } : {}), ...(vor !== undefined ? { vor } : {}) });
-  }
-
-  /** Rauschen unterdrücken (#800): derselbe Abruf wird nacheinander geprüft und geschrieben, nicht gleichzeitig doppelt. */
-  private readonly abrufeLaufend = new Map<string, Promise<boolean>>();
-
-  /**
-   * Abruf einer Datei in die Historie (#800): in der Oberfläche heruntergeladen, mit einem API-Schlüssel oder über das
-   * WebDAV-Laufwerk abgerufen – mit Wer, Wann, Weg, Datei und Fassung. Ruft dieselbe Person dieselbe Datei (und
-   * Fassung) auf demselben Weg am selben Kalendertag (Zeitzone der Ablage) noch einmal ab, bleibt es bei einem
-   * Eintrag: Vorschaubilder und das mehrfache Lesen durch Explorer oder Office zählen so nur einmal. Ein Abruf an
-   * einem späteren Tag bekommt einen eigenen Eintrag. Liefert, ob ein Eintrag geschrieben wurde.
-   */
-  async notiereAbruf(x: { dokumentId: string; benutzerId: string | null; weg: Abrufweg; fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; schluessel?: string | null; datei?: string }): Promise<boolean> {
-    const art = ABRUF_ART[x.weg];
-    const fassung = x.fassung ?? 'original';
-    const version = x.version ?? null;
-    const k = [x.dokumentId, x.benutzerId ?? '', art, fassung, version ?? ''].join('|');
-    const vorher = this.abrufeLaufend.get(k);
-    const lauf = (vorher ?? Promise.resolve(false)).catch(() => false).then(async () => {
-      const d = await this.repo.holeDokument(x.dokumentId);
-      if (!d) return false;
-      const jetzt = new Date();
-      // Seit 26 Stunden über den Index der Mappe; „derselbe Tag“ entscheidet dann der Kalendertag in der Zeitzone.
-      const letzter = await this.repo.letzterAbruf(d.mappeId, art, x.benutzerId, d.id, fassung, version, new Date(jetzt.getTime() - 26 * 3600_000).toISOString());
-      if (letzter && tagIn(new Date(letzter)) === tagIn(jetzt)) return false;
-      await this.notiere(d.mappeId, x.benutzerId, art, {
-        dokument: d.name, dokumentId: d.id, weg: x.weg, fassung,
-        ...(version !== null ? { version } : {}), ...(x.gestempelt ? { gestempelt: true } : {}),
-        ...(x.schluessel ? { schluessel: x.schluessel } : {}), ...(x.datei && x.datei !== d.name ? { datei: x.datei } : {}),
-      });
-      return true;
-    });
-    this.abrufeLaufend.set(k, lauf);
-    try { return await lauf; } finally { if (this.abrufeLaufend.get(k) === lauf) this.abrufeLaufend.delete(k); }
-  }
-
-  /** Wie lange die Historie endgültig gelöschter Mappen bleibt (Tage). */
-  async historieTage(): Promise<number> {
-    const e = this.einstellungen ? ((await this.einstellungen.lies('historie')) as { tage?: number } | null) : null;
-    return typeof e?.tage === 'number' ? e.tage : HISTORIE_STANDARD_TAGE;
-  }
-
-  async setzeHistorieTage(eingabe: unknown): Promise<number> {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    const tage = Number(eingabe);
-    if (!Number.isInteger(tage) || tage < 0 || tage > 36500) throw new Fachfehler(422, t('meldungen.dienst.bitte-eine-ganze-zahl'));
-    await this.einstellungen.schreibe('historie', { tage });
-    protokoll.modul('werkbank').info('Aufbewahrung der Historie gelöschter Mappen geändert', { tage });
-    return tage;
-  }
+  gesehen(ich: { id: string }, mappeIds: unknown, aufgaben?: Aufgabe[]) { return this.mappen.gesehen(ich, mappeIds, aufgaben); }
+  setzeFavoritBenachrichtigen(ich: { id: string }, mappeId: string, an: unknown) { return this.mappen.setzeFavoritBenachrichtigen(ich, mappeId, an); }
+  private aenderungen(typ: Mappentyp, alt: Werte, neu: Werte): Promise<Feldaenderung[]> { return this.mappenHistorie.aenderungen(typ, alt, neu); }
+  historie(mappeId: string, o: { register?: unknown; max?: unknown; vor?: unknown } = {}): Promise<Historieneintrag[]> { return this.mappenHistorie.historie(mappeId, o); }
+  notiereAbruf(x: { dokumentId: string; benutzerId: string | null; weg: Abrufweg; fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; schluessel?: string | null; datei?: string }): Promise<boolean> { return this.mappenHistorie.notiereAbruf(x); }
+  historieTage(): Promise<number> { return this.mappenHistorie.historieTage(); }
+  setzeHistorieTage(eingabe: unknown): Promise<number> { return this.mappenHistorie.setzeHistorieTage(eingabe); }
 
   listeTypen() { return this.mappentypen.listeTypen(); }
 
@@ -2629,82 +2423,11 @@ export class Dienst {
   private typErkennungen() { return this.mappentypen.typErkennungen(); }
   loescheTyp(id: string): Promise<void> { return this.mappentypen.loescheTyp(id); }
 
-  listeMappen(typId?: string) { return this.repo.listeMappen(typId); }
-  /** Schlank für viele Mappen (Demo-Daten, #248). */
-  mappenKurz() { return this.repo.mappenKurz(); }
-  feldwerte(typId: string, key: string) { return this.repo.feldwerte(typId, key); }
-
-  /**
-   * Verweisende Mappen eines Typs über ein Feld, vollständig (für die Tabelle im
-   * Verknüpfungsregister, #75): höchstens 1000, nach Titel sortiert.
-   */
-  async verweisende(id: string, typId: string, feldKey: string, z?: Zugriff) {
-    await this.pruefeRecht(z, id, 'R');
-    const rv = (await this.repo.rueckverweise(id)).filter((r) => r.quelleTypId === typId && r.feldKey === feldKey);
-    const sichtbar = await this.lesbare(z, rv.map((r) => r.quelleId));
-    const ids = [...new Set(rv.map((r) => r.quelleId))].filter((x) => sichtbar.has(x));
-    const mappen = (await this.repo.holeMappen(ids.slice(0, 1000))).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
-    const typ = await this.repo.holeTyp(typId);
-    const ziele = typ ? mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)) : [];
-    return { gesamt: ids.length, mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)) };
-  }
-
-  async holeMappe(id: string, z?: Zugriff) {
-    // Aufgaben der Mappe nur einmal lesen (#615): für die Regel „mit Aufgabe“, für die Antwort und fürs Gesehen.
-    // Mappe und Aufgaben gleichzeitig (#741).
-    const [mappe, aufgaben] = await Promise.all([this.repo.holeMappe(id), this.repo.aufgabenVon(id)]);
-    if (!mappe) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    // Berechtigungen (#124): ohne Lesen nur die eigenen offenen Aufgaben – zum Erledigen oder Weitergeben.
-    const rechte = z ? await this.rechteAn(z, mappe, false, aufgaben) : null;
-    if (z && rechte && !rechte.R) {
-      // #798: automatische Aufgaben nur mit Hinweis und Fälligkeit; von Hand geschriebene mit Text.
-      const meine = await this.ohneLeserechtText(aufgaben.filter((x) => !x.erledigt && x.empfaengerId === z.ich.id), new Set(), z.ich.id);
-      throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es-2'), { verborgen: true, aufgaben: meine });
-    }
-    // Mappentypen hat der Zugriff schon gelesen (#615); ein Dienstkonto kennt nur seine – dann wie bisher.
-    const alleTypen = z?.typen && !z.paket ? [...z.typen.values()] : undefined;
-    const typ = (alleTypen ? z!.typen.get(mappe.typId) : undefined) ?? await this.repo.holeTyp(mappe.typId);
-    const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
-    // Was nur noch von der Mappe abhängt, gleichzeitig (#741) – erst nach der Prüfung des Leserechts.
-    const [alleRueck, roheBezuege, dokumente, notizen, erinnerungen, unpassend, datenschutz] = await Promise.all([
-      this.repo.rueckverweise(id), this.repo.bezuege(ziele),
-      this.repo.listeDokumente(id).then((d) => this.mitArchivStand(d)).then((d) => this.mitPdfSchutz(d)),
-      this.repo.notizen(id), this.repo.erinnerungen({ mappeId: id }),
-      this.verweiskonflikte(typ, mappe.werte, z?.ich.id ?? '', alleTypen && z?.a ? { typen: alleTypen, a: z.a } : undefined, z),
-      z?.admin ? this.datenschutz() : Promise.resolve(null),
-    ]);
-    // Lesbar (#124, #126): verweisende und verwiesene Mappen in einem Zugriff.
-    const sichtbar = await this.lesbare(z, [...alleRueck.map((r) => r.quelleId), ...roheBezuege.keys()]);
-    const rueckverweise = alleRueck.filter((r) => sichtbar.has(r.quelleId));
-    const p = await this.loeschPruefung(mappe, typ, alleRueck, alleTypen);
-    // Verweisende Mappen, die man nicht sehen darf: nur ihre Anzahl (#126).
-    const fremd = p.fremd.map((r) => (sichtbar.has(r.quelleId) ? r : { ...r, titel: NICHT_SICHTBAR, verborgen: true }));
-    return {
-      mappe,
-      rueckverweise,
-      /** Wirksame Rechte des Benutzers an dieser Mappe (#126). */
-      rechte: rechte ?? { C: true, R: true, U: true, D: true, P: true },
-      /** Ob „Mappe löschen“ geht, sonst warum nicht (#79). */
-      loeschbar: p.ok ? { ok: true } : { ok: false, grund: p.grund, rueckverweise: fremd },
-      dokumente,
-      /** Notizen an der Mappe (#55). */
-      notizen,
-      /** Aufgaben an der Mappe, offene zuerst (#54). */
-      aufgaben,
-      /** Noch nicht fällige Erinnerungen (#131). */
-      erinnerungen,
-      /** Titel und Typ der Mappen, auf die diese verweist (nicht lesbare ohne Titel). */
-      bezuege: maskiert(roheBezuege, sichtbar),
-      /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */
-      unpassend: unpassend.unpassend,
-      /** Dasselbe je Verweisfeld mit den eigenen Feldern, mit denen es nicht zusammenpasst (#887). */
-      konflikte: unpassend.konflikte,
-      /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
-      aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
-      /** Auskunft nach Art. 15 DSGVO (#396): Administratoren, Mappentyp „betrifft eine Person“. */
-      ...(z?.admin && datenschutz?.typen[mappe.typId]?.person ? { auskunft: true } : {}),
-    };
-  }
+  listeMappen(typId?: string) { return this.mappen.listeMappen(typId); }
+  mappenKurz() { return this.mappen.mappenKurz(); }
+  feldwerte(typId: string, key: string) { return this.mappen.feldwerte(typId, key); }
+  verweisende(id: string, typId: string, feldKey: string, z?: Zugriff) { return this.mappen.verweisende(id, typId, feldKey, z); }
+  holeMappe(id: string, z?: Zugriff) { return this.mappen.holeMappe(id, z); }
 
   /* ---------- Sichten: seitenweise und gezählt ---------- */
 
@@ -2976,17 +2699,8 @@ export class Dienst {
 
   /* ---------- Favoriten (#62) ---------- */
 
-  /** Persönlich: ändert weder „zuletzt geändert“ noch das Protokoll der Mappe. */
-  async setzeFavorit(ich: { id: string }, mappeId: string, an: boolean) {
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const schon = an && (await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId);
-    await this.repo.setzeFavorit(ich.id, mappeId, an);
-    if (an && !schon) await this.ereignis('favorit.neu', { benutzer: ich.id, mappe: mappeId, typ: m.typId }, ich.id);
-    return { favorit: an };
-  }
-
-  async istFavorit(ich: { id: string }, mappeId: string) { return (await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId); }
+  setzeFavorit(ich: { id: string }, mappeId: string, an: boolean) { return this.mappen.setzeFavorit(ich, mappeId, an); }
+  istFavorit(ich: { id: string }, mappeId: string) { return this.mappen.istFavorit(ich, mappeId); }
 
   /* ---------- Berechtigungen (#123–#127) ---------- */
 
@@ -3437,86 +3151,13 @@ export class Dienst {
   private passungFuer(typ: Mappentyp, ids: string[]) { return this.passung.passungFuer(typ, ids); }
   passungNachziehen(fortschritt?: (fertig: number, gesamt: number) => void): Promise<number> { return this.passung.passungNachziehen(fortschritt); }
 
-  private async titel(m: Mappe): Promise<string> {
-    return m.titel || titelAus(await this.repo.holeTyp(m.typId), m.werte, undefined, m) || t('meldungen.dienst.ohne-titel');
-  }
+  private titel(m: Mappe): Promise<string> { return this.mappenTitel.titel(m); }
 
   /* ---------- Titel ---------- */
 
-  /**
-   * Berechnet die gespeicherten Titel der angegebenen Mappen neu. Ändert sich ein Titel,
-   * werden die Mappen nachgezogen, die auf sie verweisen (deren Titel kann ihn enthalten).
-   * Bei Verweisen im Kreis endet das nach einigen Runden.
-   */
-  async aktualisiereTitel(ids: string[]): Promise<Map<string, string>> {
-    const neu = new Map<string, string>();
-    if (!ids.length) return neu;
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    let offen = [...new Set(ids)];
-    for (let runde = 0; offen.length && runde < 6; runde++) {
-      const geaendert: Array<{ id: string; titel: string }> = [];
-      for (let i = 0; i < offen.length; i += 2000) {
-        const mappen = await this.repo.holeMappen(offen.slice(i, i + 2000));
-        const ziele = mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
-        const gespeichert = await this.repo.titelVon(ziele.filter((z) => !neu.has(z)));
-        const titelVon = (z: string) => neu.get(z) || gespeichert.get(z) || t('meldungen.dienst.ohne-titel');
-        for (const m of mappen) {
-          const t = titelAus(typen.get(m.typId), m.werte, titelVon, m);
-          neu.set(m.id, t);
-          if (t !== m.titel) geaendert.push({ id: m.id, titel: t });
-        }
-      }
-      await this.repo.setzeTitel(geaendert);
-      offen = geaendert.length ? await this.repo.quellenVon(geaendert.map((g) => g.id)) : [];
-    }
-    return neu;
-  }
-
-  /** Beim Start: Titel berechnen, die noch fehlen (z. B. nach dem Update auf eine Version mit gespeicherten Titeln). */
-  /**
-   * Die Haken „Neue Mappen erlauben“ und „Löschen erlauben“ in die Berechtigungen überführen (#146),
-   * ohne dass Benutzer danach mehr dürfen: Standard C bzw. D ✗, Regeln verlieren genau dieses ✓.
-   */
-  async hakenUeberfuehren(): Promise<number> {
-    let n = 0;
-    for (const t of await this.repo.listeTypen()) {
-      if (t.system || (t.erstellenErlaubt !== false && t.loeschenErlaubt !== false)) continue;
-      const rw = structuredClone(regelwerkVon(t));
-      const ohneC = t.erstellenErlaubt === false; const ohneD = t.loeschenErlaubt === false;
-      if (ohneC) rw.grund.C = false;
-      if (ohneD) rw.grund.D = false;
-      const geaendert: string[] = [];
-      for (const r of rw.regeln) {
-        if (ohneC && r.dann.C === 'erteilen') { delete r.dann.C; geaendert.push(`${r.name}: ohne +C`); }
-        if (ohneD && r.dann.D === 'erteilen') { delete r.dann.D; geaendert.push(`${r.name}: ohne +D`); }
-      }
-      // Regeln, die danach nichts mehr tun, fallen weg.
-      const weg = rw.regeln.filter((r) => !RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp).map((r) => r.name);
-      rw.regeln = rw.regeln.filter((r) => RECHTE_LISTE.some((k) => r.dann[k]) || r.stopp);
-      await this.repo.aendereTyp(t.id, { ...t, erstellenErlaubt: true, loeschenErlaubt: true });
-      await this.repo.setzeBerechtigungen(t.id, istOffen(rw) ? null : rw);
-      protokoll.modul('werkbank').warn('Haken „Neue Mappen/Löschen erlauben“ in die Berechtigungen übernommen', {
-        typ: t.name, standard: kurzStandard(rw.grund), ...(geaendert.length ? { regeln: geaendert.join(' · ') } : {}), ...(weg.length ? { entfallen: weg.join(', ') } : {}),
-      });
-      n++;
-    }
-    return n;
-  }
-
-  /** Schlüssel für Mappentypen ohne (nach dem Update auf 0.31, #145): Systemtypen zuerst, dann aus dem Namen. */
-  async typSchluesselNachziehen(): Promise<number> {
-    const typen = await this.repo.listeTypen();
-    const vergeben = new Set(typen.map((t) => t.schluessel ?? '').filter(Boolean));
-    let n = 0;
-    for (const t of typen.filter((x) => !x.schluessel).sort((a, b) => Number(!a.system) - Number(!b.system))) {
-      const k = freierSchluessel(t.system ?? t.name, vergeben);
-      vergeben.add(k);
-      await this.repo.setzeTypSchluessel(t.id, k);
-      n++;
-    }
-    if (n) protokoll.modul('werkbank').info('Kennungen für Mappentypen vergeben', { anzahl: n });
-    return n;
-  }
+  aktualisiereTitel(ids: string[]): Promise<Map<string, string>> { return this.mappenTitel.aktualisiereTitel(ids); }
+  hakenUeberfuehren(): Promise<number> { return this.mappenTitel.hakenUeberfuehren(); }
+  typSchluesselNachziehen(): Promise<number> { return this.mappenTitel.typSchluesselNachziehen(); }
 
   /* ---------- Ansicht der Werkbank (#281): nur Navigation, keine Funktion wird abgeschaltet ---------- */
 
@@ -3754,485 +3395,21 @@ export class Dienst {
   nummernVorschau(typId: string, feldKey: string, jetzt?: Date) { return this.nummernkreise.nummernVorschau(typId, feldKey, jetzt); }
   nummernNachtragen(typId: string, feldKey: string, von: string) { return this.nummernkreise.nummernNachtragen(typId, feldKey, von); }
 
-  /**
-   * Wartung „Absender bereinigen“ (#494): Bis 0.99 bekam eingehende Post ohne Absender den Namen dessen,
-   * der sie angelegt hat (beim Eingangsordner „Eingangsordner“). Gesucht wird eingehende Post aus
-   * Hochladen, API, WebDAV und Eingangsordner, deren Absender genau so lautet. Postfach-Abrufe und
-   * versendete Post bleiben außen vor – dort kommt der Absender aus der E-Mail bzw. ist richtig.
-   */
-  async absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> {
-    const typ = (await this.kern.system()).post;
-    const kanaele = new Set<string>([POST_KANAL.hochgeladen, POST_KANAL.api, POST_KANAL.webdav, POST_KANAL.ordner]);
-    const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend
-      && kanaele.has(auswahlText(m.werte.kanal)) && typeof m.werte.absender === 'string' && m.werte.absender.trim() !== '');
-    const namen = new Map<string, string>();
-    const posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> = [];
-    for (const m of kandidaten) {
-      const absender = String(m.werte.absender).trim();
-      let passt = auswahlText(m.werte.kanal) === POST_KANAL.ordner && absender === 'Eingangsordner';
-      if (!passt && m.erstelltVon) {
-        if (!namen.has(m.erstelltVon)) namen.set(m.erstelltVon, await this.kern.name(m.erstelltVon));
-        passt = absender === namen.get(m.erstelltVon);
-      }
-      if (passt) posten.push({ id: m.id, titel: m.titel ?? '', absender, kanal: auswahlText(m.werte.kanal), erstellt: m.erstellt });
-    }
-    posten.sort((a, b) => b.erstellt.localeCompare(a.erstellt));
-    return { posten };
-  }
-
-  /** Absender der gewählten Posts leeren (#494) – nur, wenn sie noch zur Vorschau passen; mit Eintrag in der Historie. */
-  async absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> {
-    const gewaehlt = new Set(Array.isArray(ids) ? ids.map(String) : []);
-    if (!gewaehlt.size) throw new Fachfehler(422, t('meldungen.dienst.bitte-mindestens-eine-post'));
-    const typ = (await this.kern.system()).post;
-    const passend = (await this.absenderVorschau()).posten.filter((p) => gewaehlt.has(p.id));
-    for (const p of passend) {
-      const m = await this.repo.holeMappe(p.id);
-      if (!m) continue;
-      const werte = { ...m.werte, absender: null };
-      await this.inTransaktion(async () => {
-        const neu = await this.repo.aendereMappe(m.id, werte, [], von.id, { basis: m.werte, verweise: (w) => verweiseVon(typ, w) });
-        await this.notiere(m.id, von.id, 'geaendert', {
-          stand: neu.geaendert,
-          aenderungen: await this.aenderungen(typ, m.werte, werte),
-          text: t('meldungen.dienst.absender-bereinigt-wartung-er'),
-        });
-      });
-      await this.aktualisiereTitel([m.id]);
-    }
-    protokoll.modul('werkbank').info('Absender bereinigt', { von: von.email, anzahl: passend.length });
-    return { bereinigt: passend.length };
-  }
-
-  async titelNachziehen(): Promise<number> {
-    const ids = await this.repo.ohneTitel();
-    await this.aktualisiereTitel(ids);
-    return ids.length;
-  }
-
-  /**
-   * Beim Start (#663): Bis 0.159 hieß die Mappe eines deaktivierten Benutzers „… (ehemalig)“. Diese Titel
-   * aus der Vorlage neu berechnen – samt Mappen, deren Titel den Namen enthält. Danach findet sich nichts mehr.
-   */
-  async ehemaligZuruecksetzen(): Promise<number> {
-    const typ = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
-    if (!typ) return 0;
-    const ids = (await this.repo.listeMappen(typ.id)).filter((m) => m.werte.aktiv === false && / \(ehemalig\)$/.test(m.titel ?? '')).map((m) => m.id);
-    if (ids.length) await this.aktualisiereTitel(ids);
-    return ids.length;
-  }
-
-  /**
-   * Werte vor dem Speichern prüfen. „Bereits vergeben“ (#743): alle eindeutigen Felder in einer Abfrage über den Index;
-   * liegt der gleiche Wert in einer Mappe, die der Benutzer nicht lesen darf, nennt die Meldung ihren Titel nicht.
-   */
-  private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string, alt?: Werte, z?: Zugriff) {
-    const ids = [...new Set(verweiseVon(typ, werte).map((v) => v.zielId))].filter(istUuid);
-    const typen = await this.repo.typenVon(ids);
-    const doppelt = new Map<string, string>();
-    const eindeutig = typ.felder.filter((f) => f.eindeutig && !istLeer(werte[f.key]) && (f.typ === 'text' || f.typ === 'zahl'));
-    if (eindeutig.length) {
-      const funde = await this.repo.findeDoppelte(typ.id, eindeutig.map((f) => ({ mappeId: eigeneId ?? null, feldKey: f.key, wert: String(werte[f.key]) })));
-      const lesbar = await this.lesbare(z, [...new Set([...funde.values()].map((d) => d.id))]);
-      for (const f of eindeutig) {
-        const d = funde.get(`${eigeneId ?? ''}|${f.key}`);
-        if (d) doppelt.set(f.key, lesbar.has(d.id) ? d.titel || 'Ohne Titel' : '');
-      }
-    }
-    const p = pruefeMappe(typ, werte, { typVon: (id) => typen.get(id), doppelt: (k) => doppelt.get(k) });
-    // Formate und Datumsgrenzen (#535): beim Bearbeiten nur, was sich ändert – der Bestand bleibt gültig.
-    for (const [k, m] of Object.entries(pruefeFormate(typ, werte, alt))) p.felder[k] ??= m;
-    // Ausgeblendete Felder (#655): Was dort unverändert steht, hält das Speichern nicht auf – sehen kann es hier keiner.
-    if (alt) {
-      const aus = ausgeblendeteFelder(typ);
-      for (const k of Object.keys(p.felder)) if (aus.has(k) && JSON.stringify(werte[k] ?? null) === JSON.stringify(alt[k] ?? null)) delete p.felder[k];
-    }
-    if (!istOk(p)) {
-      const namen = Object.keys(p.felder).map((k) => typ.felder.find((f) => f.key === k)?.label ?? k);
-      throw new Fachfehler(422, namen.length ? t('meldungen.dienst.bitte-die-markierten-felder', { namen: namen.join(', ') }) : t('meldungen.dienst.bitte-die-markierten-felder-2'), p);
-    }
-  }
-
-  /**
-   * Angaben, die nicht zum Format bzw. zu den Datumsgrenzen passen (#535) – je Mappentyp und Feld, für die
-   * Werkbank (Wartungsoperationen). Gespeichert bleiben sie gültig; beim nächsten Ändern des Felds müssen sie passen.
-   */
-  async unpassendeFormate(): Promise<Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }>> {
-    const heute = heuteIn();
-    const aus = [];
-    for (const typ of await this.repo.listeTypen()) {
-      if (!typ.felder.some(hatVorgaben)) continue;
-      const funde = unpassendeAngaben(typ, await this.repo.listeMappen(typ.id), heute);
-      if (!funde.length) continue;
-      const titel = new Map((await this.repo.holeMappen([...new Set(funde.map((f) => f.mappeId))])).map((m) => [m.id, m.titel || t('meldungen.dienst.ohne-titel')] as const));
-      const felder = typ.felder.flatMap((f) => {
-        const je = funde.filter((x) => x.feldKey === f.key);
-        return je.length ? [{ key: f.key, label: f.label, anzahl: je.length, mappen: je.slice(0, 200).map((x) => ({ id: x.mappeId, titel: titel.get(x.mappeId) ?? t('meldungen.dienst.ohne-titel'), wert: x.wert.slice(0, 120), grund: x.grund })) }] : [];
-      });
-      aus.push({ typId: typ.id, typ: typ.name, felder });
-    }
-    return aus;
-  }
-
-  async legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> {
-    const e = (eingabe ?? {}) as { id?: unknown; typId?: unknown; werte?: unknown };
-    const typ = istUuid(e.typId) ? await this.repo.holeTyp(e.typId) : undefined;
-    if (!typ) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
-    if (!darfErstellen(typ)) throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-lassen', { name: typ.name, wert: typ.system === 'benutzer' ? t('meldungen.dienst.benutzer-legt-ein-administrator') : '' }));
-    const werte = bereinigeWerte(typ, e.werte, {}, this.verschluessele);
-    // Berechtigungen (#123): Anlegen wird mit den eingegebenen Werten geprüft.
-    if (z && !z.admin) {
-      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: z.ich.id, geaendert: new Date().toISOString(), geaendertVon: z.ich.id };
-      if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-mit', { name: typ.name }));
-    }
-    // Nummernkreise (#171): Eingaben zählen nicht; die Nummer zieht das Repo beim Anlegen.
-    const nummern = typ.felder.flatMap((f) => { const k = kreisVon(f); return k ? [{ feldKey: f.key, kreis: k }] : []; });
-    for (const n of nummern) delete werte[n.feldKey];
-    if (nummern.length) {
-      const da = new Set((await this.repo.listeNummernkreise()).map((k) => k.schluessel));
-      const fehlt = nummern.find((n) => !da.has(n.kreis));
-      if (fehlt) throw new Fachfehler(409, t('meldungen.dienst.den-nummernkreis-fuer-gibt', { kreis: fehlt.kreis, label: String(typ.felder.find((f) => f.key === fehlt.feldKey)?.label) }));
-    }
-    // Folgt aus (#886): leere Felder füllen sich aus ihrer Quelle – was die Anfrage selbst setzt, bleibt.
-    await this.folgeFuellen(typ, werte, {}, gesendeteFelder(e.werte), z);
-    await this.pruefeVerweisziele(z, typ, werte, {});
-    await this.pruefeAuswahlfilter(typ, werte, {}, benutzerId);
-    await this.pruefeWerte(typ, werte, undefined, undefined, z);
-    const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
-    // In einer Transaktion (#743): Mappe, Titel, Historie, Ereignisse und die sofortigen Empfänger (#962) ganz oder gar nicht.
-    const { m, titel } = await this.inEinemZug(async () => {
-      const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo, null, nummern.length ? { felder: nummern, jetzt: new Date() } : undefined);
-      if (!demo) {
-        await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, m.werte) });
-        await this.meldeVerknuepft(typ, m.id, {}, m.werte, benutzerId);
-      }
-      const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
-      await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: m, alt: {}, neu: werte, von: benutzerId, angelegt: true, demo });
-      return { m, titel };
-    });
-    const hinweis = z ? await this.hinweisDanach(z, m.id) : undefined;
-    return { ...m, titel, ...(hinweis ? { hinweis } : {}) };
-  }
-
-  /**
-   * Auswahlfilter (#172): neue Verweise müssen den Filter des Felds erfüllen; bisherige bleiben
-   * gültig, auch wenn sie inzwischen nicht mehr passen.
-   */
-  private async pruefeAuswahlfilter(typ: Mappentyp, werte: Werte, alt: Werte, benutzerId: string | null) {
-    const mitFilter = typ.felder.filter((f) => f.typ === 'referenz' && f.auswahlFilter?.length);
-    if (!mitFilter.length) return;
-    const ids = (w: unknown) => (Array.isArray(w) ? w : w ? [w] : []).map(String).filter(istUuid);
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const a = await this.aufloesung(benutzerId ?? '');
-    const fehler: Record<string, string[]> = {};
-    for (const f of mitFilter) {
-      const vorher = new Set(ids(alt[f.key]));
-      const neu = ids(werte[f.key]).filter((x) => !vorher.has(x));
-      const ziel = typen.get(f.zielTyp ?? '');
-      if (!neu.length || !ziel) continue;
-      // Werte aus der eigenen Mappe (#173): die, die gespeichert werden sollen.
-      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter!, werte), ziel, a);
-      const falsch = (await this.repo.holeMappen(neu)).filter((m) => m.typId !== ziel.id || !erfuellt(m, k.filter, KEINE_ZAEHLUNG));
-      if (falsch.length) fehler[f.key] = [t('meldungen.dienst.passt-nicht-zur-auswahl', { map: falsch.map((m) => `„${m.titel || t('meldungen.dienst.ohne-titel')}“`).join(', ') })];
-    }
-    if (Object.keys(fehler).length) throw new Fachfehler(422, t('meldungen.dienst.bitte-die-markierten-felder-2'), { allgemein: [], felder: fehler });
-  }
-
-  /**
-   * Verweise, die nicht (mehr) zu dieser Mappe passen – für den Hinweis am Feld und die Zeile über den Registern (#172,
-   * #886, #887): je Verweisfeld die unpassenden Mappen (`unpassend`) und je Feld die eigenen Felder, mit denen es nicht
-   * zusammenpasst (`konflikte`). Bestehende Werte bleiben gültig – das ist nur ein Hinweis.
-   */
-  private async verweiskonflikte(typ: Mappentyp | undefined, werte: Werte, benutzerId: string, schon?: { typen: Mappentyp[]; a: Aufloesung }, z?: Zugriff): Promise<{ unpassend: Record<string, string[]>; konflikte: Verweiskonflikt[] }> {
-    const felder = typ?.felder.filter((f) => f.typ === 'referenz' && (f.auswahlFilter?.length || typ.felder.some((x) => x.folgtAus?.feld === f.key))) ?? [];
-    if (!typ || !felder.length) return { unpassend: {}, konflikte: [] };
-    const typen = new Map((schon?.typen ?? await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const a = schon?.a ?? await this.aufloesung(benutzerId);
-    const unpassend: Record<string, string[]> = {};
-    const konflikte: Verweiskonflikt[] = [];
-    for (const f of felder) {
-      const ids = (Array.isArray(werte[f.key]) ? werte[f.key] as string[] : werte[f.key] ? [String(werte[f.key])] : []).filter(istUuid);
-      if (!ids.length) continue;
-      const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, typen.get(f.zielTyp ?? ''), a, z);
-      const falsch = ids.filter((id) => gruende[id]);
-      if (!falsch.length) continue;
-      unpassend[f.key] = falsch;
-      const eigene = [...new Set(falsch.flatMap((id) => gruende[id]))];
-      konflikte.push({ feld: f.key, eigeneFelder: eigene, ...(falsch.some((id) => !gruende[id].length) ? { regel: true } : {}), ids: falsch });
-    }
-    return { unpassend, konflikte };
-  }
-
-  /**
-   * Passen gewählte Mappen eines Verweisfelds zu den übrigen Werten dieser Mappe (#172, #173, #886, #887)? Je unpassender
-   * Mappe die eigenen Felder, mit denen sie nicht zusammenpasst: Felder, aus denen der Auswahlfilter Werte nimmt, und
-   * Felder, die aus diesem Feld folgen und etwas anderes enthalten. Eine leere Liste heißt: passt nur nicht zu den festen
-   * Bedingungen des Auswahlfilters. Was folgt, zählt nur mit Mappen, die die Person lesen darf.
-   */
-  private async verweisGruende(typ: Mappentyp, f: Feld, mappen: Mappe[], werte: Werte, ziel: Mappentyp | undefined, a: Aufloesung, z?: Zugriff): Promise<Record<string, string[]>> {
-    const gruende: Record<string, string[]> = {};
-    const dazu = (id: string, k?: string) => { const g = (gruende[id] ??= []); if (k && !g.includes(k)) g.push(k); };
-    if (ziel && f.auswahlFilter?.length) {
-      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter, werte), ziel, a);
-      const eigene = f.auswahlFilter.filter((b) => b.wert?.art === 'eigenesFeld');
-      for (const m of mappen) {
-        if (m.typId === ziel.id && erfuellt(m, k.filter, KEINE_ZAEHLUNG)) continue;
-        dazu(m.id);
-        for (const b of eigene) {
-          const kb = auswahlKlausel(setzeEigeneWerte([b], werte), ziel, a);
-          if (!erfuellt(m, kb.filter, KEINE_ZAEHLUNG)) dazu(m.id, (b.wert as { feld: string }).feld);
-        }
-      }
-    }
-    const folgen = typ.felder.filter((x) => x.typ === 'referenz' && x.folgtAus?.feld === f.key && !istLeer(werte[x.key]));
-    if (folgen.length) {
-      const lesbar = await this.lesbare(z, mappen.map((m) => m.id));
-      for (const m of mappen) {
-        if (!lesbar.has(m.id) || m.typId !== f.zielTyp) continue;
-        for (const x of folgen) {
-          const soll = ersteId(m.werte[x.folgtAus!.zielFeld]);
-          if (istUuid(soll) && !enthaeltId(werte[x.key], soll)) dazu(m.id, x.key);
-        }
-      }
-    }
-    return gruende;
-  }
-
-  /** Auswahlfilter (#172, #173) und „folgt aus“ (#886) beim Ausfüllen: welche der gewählten Mappen passen nicht, und womit nicht? */
-  async auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) {
-    const x = (e ?? {}) as { typId?: unknown; feldKey?: unknown; ids?: unknown; werte?: unknown };
-    const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
-    const f = typ?.felder.find((y) => y.key === x.feldKey && y.typ === 'referenz');
-    const ziel = f ? await this.repo.holeTyp(f.zielTyp ?? '') : undefined;
-    // Nur Mappen, die man lesen darf – sonst verriete die Antwort etwas über ihre Werte.
-    const roh = (Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid).slice(0, 200);
-    const lesbar = await this.lesbare(z, roh);
-    const ids = roh.filter((id) => lesbar.has(id));
-    const leer = { unpassend: [] as string[], gruende: {} as Record<string, string[]> };
-    if (!typ || !f || !ziel || !ids.length || !(f.auswahlFilter?.length || typ.felder.some((y) => y.folgtAus?.feld === f.key))) return leer;
-    const werte = x.werte && typeof x.werte === 'object' ? x.werte as Werte : {};
-    const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, ziel, await this.aufloesung(benutzerId), z);
-    return { unpassend: ids.filter((id) => gruende[id]), gruende };
-  }
-
-  /**
-   * Folgt aus (#886) beim Speichern: Ein leeres Verweisfeld mit „folgt aus“ füllt sich aus dem Ziel seiner Quelle – nur,
-   * wenn die Quelle neu gesetzt oder geändert ist, die Anfrage das Feld nicht selbst setzt (auch nicht leer) und die
-   * Person beide Mappen lesen darf. Was schon drinsteht, überschreibt das nie; hat das Ziel keinen Wert, bleibt alles.
-   */
-  private async folgeFuellen(typ: Mappentyp, werte: Werte, alt: Werte, gesendet: Set<string>, z?: Zugriff): Promise<void> {
-    for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
-      if (gesendet.has(f.key) || !istLeer(werte[f.key])) continue;
-      const q = ersteId(werte[quelle.key]);
-      if (!istUuid(q) || q === ersteId(alt[quelle.key])) continue;
-      const m = await this.folgeWert(quelle, zielFeld, f, q, z);
-      if (m) werte[f.key] = f.mehrfach ? [m.id] : m.id;
-    }
-  }
-
-  /** Was aus der Quelle folgt: die Mappe im Feld `zielFeld` der Mappe `q` – vom passenden Typ und für die Person lesbar. */
-  private async folgeWert(quelle: Feld, zielFeld: string, f: Feld, q: string, z?: Zugriff): Promise<Mappe | null> {
-    const m = await this.repo.holeMappe(q);
-    if (!m || m.typId !== quelle.zielTyp) return null;
-    const id = ersteId(m.werte[zielFeld]);
-    if (!istUuid(id)) return null;
-    const ziel = await this.repo.holeMappe(id);
-    if (!ziel || ziel.typId !== f.zielTyp) return null;
-    const lesbar = await this.lesbare(z, [q, id]);
-    return lesbar.has(q) && lesbar.has(id) ? ziel : null;
-  }
-
-  /**
-   * Folgt aus (#886) für die Oberfläche: Was folgt aus den Quellen in `werte`? Je Feld mit „folgt aus“, dessen Quelle
-   * einen Wert hat, die Mappe (mit Titel) oder null (das Ziel hat keinen Wert oder ist nicht lesbar).
-   */
-  async folgen(e: unknown, z?: Zugriff) {
-    const x = (e ?? {}) as { typId?: unknown; werte?: unknown };
-    const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
-    if (!typ || (z && !z.admin && z.typen && !z.typen.has(typ.id))) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
-    const werte = x.werte && typeof x.werte === 'object' ? x.werte as Werte : {};
-    const felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> = {};
-    for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
-      const q = ersteId(werte[quelle.key]);
-      if (!istUuid(q)) continue;
-      const m = await this.folgeWert(quelle, zielFeld, f, q, z);
-      felder[f.key] = m ? { quelle: quelle.key, wert: m.id, titel: m.titel ?? '', typId: m.typId } : { quelle: quelle.key, wert: null };
-    }
-    return { felder };
-  }
-
-  /**
-   * Folgt aus (#886) beim Ausfüllen aus Dokumenten: Hat die Erkennung eine Quelle vorgeschlagen, kommt für das Feld, das
-   * daraus folgt, ein Vorschlag dazu (wenn es selbst keinen hat) – mit derselben Sicherheit und „aus …“ als Fundstelle.
-   */
-  async folgeVorschlaege(typ: Mappentyp, v: { vorschlaege: Record<string, { wert: Wert; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string }>; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, z?: Zugriff): Promise<void> {
-    for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
-      if (v.vorschlaege[f.key]) continue;
-      const vq = v.vorschlaege[quelle.key];
-      const q = ersteId(vq?.wert);
-      if (!vq || !istUuid(q)) continue;
-      const m = await this.folgeWert(quelle, zielFeld, f, q, z);
-      if (!m) continue;
-      v.vorschlaege[f.key] = { wert: f.mehrfach ? [m.id] : m.id, sicherheit: vq.sicherheit, fundstelle: t('meldungen.dienst.folgt-aus', { feld: quelle.label || quelle.key }) };
-      v.bezuege[m.id] = { titel: m.titel ?? '', typId: m.typId };
-      delete v.neu[f.key];
-    }
-  }
-
-  /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen des Zieltyps passen? */
-  async zaehleAuswahl(e: unknown, benutzerId: string) {
-    const x = (e ?? {}) as { zielTyp?: unknown; bedingungen?: unknown };
-    const ziel = istUuid(x.zielTyp) ? await this.repo.holeTyp(x.zielTyp) : undefined;
-    if (!ziel) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-ziel-mappentyp'));
-    // Bedingungen mit Werten der eigenen Mappe (#173) zählen hier nicht – die Mappe gibt es noch nicht.
-    const bed = setzeEigeneWerte(bereinigeAuswahlfilter(x.bedingungen), {});
-    const [passen] = await this.repo.zaehleKlauseln([[auswahlKlausel(bed, ziel, await this.aufloesung(benutzerId))]], null);
-    return { passen, gesamt: await this.repo.zaehleMappen(ziel.id), probleme: auswahlProbleme(bed, ziel) };
-  }
-
-  /** Verweise nur auf Mappen, die man sehen darf (#124, #137); bisherige Ziele bleiben erlaubt. */
-  private async pruefeVerweisziele(z: Zugriff | undefined, typ: Mappentyp, werte: Werte, alt: Werte) {
-    if (!z || z.admin || !z.lesen) return;
-    const vorher = new Set(verweiseVon(typ, alt).map((v) => v.zielId));
-    const neu = [...new Set(verweiseVon(typ, werte).map((v) => v.zielId))].filter((x) => istUuid(x) && !vorher.has(x));
-    if (!neu.length) return;
-    const ok = await this.repo.lesbare(neu, z.lesen);
-    if (neu.some((x) => !ok.has(x))) throw new Fachfehler(422, t('meldungen.dienst.ein-verweis-zeigt-auf'));
-  }
-
-  /** Nach dem Speichern: Hat man sich selbst das Bearbeiten oder Lesen entzogen? (#126) */
-  private async hinweisDanach(z: Zugriff, id: string): Promise<string | undefined> {
-    if (z.admin) return undefined;
-    const m = await this.repo.holeMappe(id);
-    if (!m) return undefined;
-    const r = await this.rechteAn(z, m);
-    if (!r.R) return t('meldungen.dienst.gespeichert-diese-mappe-kannst');
-    if (!r.U) return t('meldungen.dienst.gespeichert-diese-mappe-kannst-2');
-    return undefined;
-  }
-
-  /** Vor dem Speichern (#126): welche Rechte hätte man mit diesen Werten? */
-  async rechteVorschau(id: string, eingabe: unknown, z: Zugriff): Promise<Rechte> {
-    const m = await this.pruefeRecht(z, id, 'U');
-    const typ = z.typen.get(m.typId);
-    if (!typ) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-dieser-mappe'));
-    const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte, this.verschluessele);
-    return this.rechteAn(z, { ...m, werte });
-  }
-
-  /**
-   * Gleichzeitig bearbeiten (#609): übergebene Felder, die seit `stand` geändert wurden (laut Historie, Einträge
-   * mit `stand`) und die die Eingabe jetzt anders setzen will. Gleicher Wert ist kein Konflikt.
-   */
-  private async feldkonflikte(typ: Mappentyp, m: Mappe, werte: Werte, gesendet: string[], stand: string): Promise<Feldkonflikt[]> {
-    const seit = new Map<string, Historieneintrag>();
-    // Neueste zuerst: je Feld zählt die letzte Änderung.
-    for (const h of await this.repo.historie(m.id)) {
-      if (h.art !== 'geaendert' || typeof h.daten.stand !== 'string' || h.daten.stand <= stand) continue;
-      for (const a of h.daten.aenderungen ?? []) if (!seit.has(a.feld)) seit.set(a.feld, h);
-    }
-    const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null) || (istLeer(a as Werte[string]) && istLeer(b as Werte[string]));
-    const felder = typ.felder.filter((f) => gesendet.includes(f.key) && seit.has(f.key) && !gleich(werte[f.key], m.werte[f.key]));
-    if (!felder.length) return [];
-    const ids = felder.filter((f) => f.typ === 'referenz').flatMap((f) => [werte[f.key], m.werte[f.key]].flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))).map(String).filter(istUuid);
-    const titel = await this.repo.titelVon(ids);
-    const lesbar = (f: Feld, v: Werte[string] | undefined) => (f.typ === 'passwort' ? '' : formatiere(f, v, (x) => titel.get(x) || t('meldungen.dienst.ohne-titel')).slice(0, 500));
-    const liste: Feldkonflikt[] = [];
-    for (const f of felder) {
-      const h = seit.get(f.key)!;
-      liste.push({
-        feld: f.key, label: f.label, deins: lesbar(f, werte[f.key]), aktuell: lesbar(f, m.werte[f.key]),
-        ...(f.typ === 'passwort' ? { geheim: true } : { wert: m.werte[f.key] ?? null }),
-        von: h.benutzerId, name: h.benutzerId ? await this.kern.name(h.benutzerId) : t('mappen.konflikt.system'), zeit: h.zeit,
-      });
-    }
-    return liste;
-  }
-
-  /**
-   * Mappe ändern. Übergebene Felder ersetzen die bisherigen, nicht übergebene bleiben (#609: auch wenn sie
-   * inzwischen jemand anderes geändert hat – geschrieben wird feldweise auf den aktuellen Stand).
-   * `eingabe.stand` (optional, „zuletzt geändert“ beim Lesen): Hat seitdem jemand ein übergebenes Feld
-   * geändert und soll es jetzt anders lauten, kommt 409 mit den Feldern (`Mappenkonflikt`) statt Überschreiben.
-   * `anlass`: steht zusätzlich im Eintrag der Historie, z. B. die Umwandlung nach einem Paket-Update (#534).
-   */
-  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> {
-    // Schreibt zwischen Lesen und Schreiben jemand anderes, noch einmal von vorn (#609). In einer eigenen Transaktion
-    // (#743) auch nach einer Verklemmung – die Transaktion ist dann ganz zurückgerollt.
-    const eigene = !this.kern.inEigenerTransaktion();
-    for (let versuch = 1; ; versuch++) {
-      try {
-        const neu = await this.inTransaktion(() => this.aendereMappeEinmal(id, eingabe, benutzerId, z, anlass));
-        const hinweis = z ? await this.hinweisDanach(z, id) : undefined;
-        return { ...neu, ...(hinweis ? { hinweis } : {}) };
-      } catch (e) { if (!(e instanceof StandVeraltet || (eigene && istVerklemmung(e))) || versuch >= 5) throw e; }
-    }
-  }
-
-  /**
-   * Titel einer Mappe, bevor sie geschrieben wird (#743): mit den Titeln der Mappen, auf die die Werte verweisen.
-   * Die Funktion liefert undefined, wenn die geschriebenen Werte auf eine Mappe verweisen, deren Titel nicht vorab
-   * gelesen wurde (jemand hat inzwischen einen Verweis gesetzt) – dann rechnet `aktualisiereTitel` danach wie bisher.
-   */
-  private async titelVorab(typ: Mappentyp, werte: Werte, m: Mappe): Promise<(w: Werte) => string | undefined> {
-    const ziele = [...new Set([...verweiseVon(typ, werte), ...verweiseVon(typ, m.werte)].map((v) => v.zielId))];
-    const titel = await this.repo.titelVon(ziele.filter(istUuid));
-    // „Zuletzt geändert“ im Titel ({geaendert}) zeigt den Tag des Speicherns.
-    const index = { ...m, geaendert: new Date().toISOString() };
-    return (w) => (verweiseVon(typ, w).every((v) => titel.has(v.zielId) || !istUuid(v.zielId))
-      ? titelAus(typ, w, (x) => titel.get(x) || t('meldungen.dienst.ohne-titel'), index) : undefined);
-  }
-
-  /** Ein Versuch, in einer Transaktion (#743): Werte, Titel, Historie, Ereignisse und die sofortigen Empfänger (#962) ganz oder gar nicht. */
-  private async aendereMappeEinmal(id: string, eingabe: unknown, benutzerId: string | null, z: Zugriff | undefined, anlass: Record<string, unknown> | undefined): Promise<Mappe> {
-    const m = z ? await this.pruefeRecht(z, id, 'U') : await this.repo.holeMappe(id);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const typ = await this.repo.holeTyp(m.typId);
-    if (!typ) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-dieser-mappe'));
-    const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as { werte?: unknown; stand?: unknown };
-    const stand = liesStand(e.stand);
-    const werte = bereinigeWerte(typ, e.werte, m.werte, this.verschluessele);
-    // Stand (#609): Hat sich seitdem ein Feld geändert, das diese Eingabe anders setzen will? Dann fragen.
-    if (stand && stand !== m.geaendert) {
-      const gesendet = e.werte && typeof e.werte === 'object' ? Object.keys(e.werte) : [];
-      const konflikte = await this.feldkonflikte(typ, m, werte, gesendet, stand);
-      if (konflikte.length) {
-        const k: Mappenkonflikt = { stand: m.geaendert, konflikte };
-        throw new Fachfehler(409, t('mappen.konflikt.fehler', { felder: konflikte.map((x) => `„${x.label}“`).join(', ') }), k);
-      }
-    }
-    // Geschützte Felder (Benutzer, Name einer Systemrolle) ändert nur das System.
-    for (const [k, grund] of Object.entries(geschuetzteFelder(typ, m))) {
-      if (JSON.stringify(werte[k] ?? null) !== JSON.stringify(m.werte[k] ?? null)) {
-        throw new Fachfehler(403, t('meldungen.dienst.laesst-sich-hier-nicht', { wert: typ.felder.find((f) => f.key === k)?.label ?? k, grund }));
-      }
-    }
-    await this.folgeFuellen(typ, werte, m.werte, gesendeteFelder(e.werte), z);
-    await this.pruefeVerweisziele(z, typ, werte, m.werte);
-    await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
-    await this.pruefeWerte(typ, werte, id, m.werte, z);
-    const aenderungen = await this.aenderungen(typ, m.werte, werte);
-    // Archivmodus (#212): eine neue Frist steht in der Historie.
-    const bisAlt = aufbewahrenBis(typ.archiv, m), bisNeu = aufbewahrenBis(typ.archiv, { ...m, werte });
-    if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: t('meldungen.dienst.aufbewahren-bis'), alt: bisAlt ? datumText(bisAlt) : '', neu: bisNeu ? datumText(bisNeu) : '' });
-    // Feldweise (#609); mit Stand nur, wenn sich die Mappe seit dem Lesen oben nicht geändert hat.
-    const titelFuer = await this.titelVorab(typ, werte, m);
-    const neu = await this.repo.aendereMappe(id, werte, [], benutzerId, { basis: m.werte, verweise: (w) => verweiseVon(typ, w), titel: titelFuer, ...(stand ? { stand: m.geaendert } : {}) });
-    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen, stand: neu.geaendert });
-    await this.meldeVerknuepft(typ, id, m.werte, neu.werte, benutzerId);
-    // Titel (#743): stand er schon im UPDATE, nur noch die Mappen nachziehen, die auf diese verweisen (wenn er sich
-    // geändert hat); sonst wie bisher.
-    const vorab = titelFuer(neu.werte);
-    let titel = neu.titel;
-    if (vorab === undefined || vorab !== neu.titel) titel = (await this.aktualisiereTitel([id])).get(id);
-    else if (vorab !== m.titel) await this.aktualisiereTitel(await this.repo.quellenVon([id]));
-    // Passung, Erwähnungen, Fristen, Post-Aufgaben (#962).
-    await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: neu, alt: m.werte, neu: werte, von: benutzerId, angelegt: false, demo: false });
-    return { ...neu, titel };
-  }
-
-  /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */
-  legeMappenAn(liste: NeueMappe[]) { return this.repo.legeMappenAn(liste); }
+  absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> { return this.mappenTitel.absenderVorschau(); }
+  absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> { return this.mappenTitel.absenderBereinigen(ids, von); }
+  titelNachziehen(): Promise<number> { return this.mappenTitel.titelNachziehen(); }
+  ehemaligZuruecksetzen(): Promise<number> { return this.mappenTitel.ehemaligZuruecksetzen(); }
+  private pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string, alt?: Werte, z?: Zugriff) { return this.mappenEingaben.pruefeWerte(typ, werte, eigeneId, alt, z); }
+  unpassendeFormate(): Promise<Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }>> { return this.mappenEingaben.unpassendeFormate(); }
+  legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> { return this.mappen.legeMappeAn(eingabe, benutzerId, demo, z); }
+  auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) { return this.mappenEingaben.auswahlPruefen(e, benutzerId, z); }
+  folgen(e: unknown, z?: Zugriff) { return this.mappenEingaben.folgen(e, z); }
+  folgeVorschlaege(typ: Mappentyp, v: { vorschlaege: Record<string, { wert: Wert; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string }>; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, z?: Zugriff): Promise<void> { return this.mappenEingaben.folgeVorschlaege(typ, v, z); }
+  zaehleAuswahl(e: unknown, benutzerId: string) { return this.mappenEingaben.zaehleAuswahl(e, benutzerId); }
+  private pruefeVerweisziele(z: Zugriff | undefined, typ: Mappentyp, werte: Werte, alt: Werte) { return this.mappenEingaben.pruefeVerweisziele(z, typ, werte, alt); }
+  rechteVorschau(id: string, eingabe: unknown, z: Zugriff): Promise<Rechte> { return this.mappenEingaben.rechteVorschau(id, eingabe, z); }
+  aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> { return this.mappen.aendereMappe(id, eingabe, benutzerId, z, anlass); }
+  legeMappenAn(liste: NeueMappe[]) { return this.mappen.legeMappenAn(liste); }
   /** Nach Massenläufen (#367): Statistik der Datenbank auffrischen; ein Fehler dabei ist nur ein Hinweis. */
   async aktualisiereStatistik() {
     const t = Date.now();
@@ -6645,56 +5822,10 @@ export class Dienst {
 
   /* ---------- Archivnummer (#345) ---------- */
 
-  /** Der Nummernkreis der Archivnummern; entsteht beim ersten Gebrauch („A-000001“), Muster in der Werkbank änderbar. */
-  async archivKreis(): Promise<Nummernkreis> {
-    const da = (await this.repo.listeNummernkreise()).find((k) => k.schluessel === ARCHIV_KREIS);
-    return da ?? this.repo.speichereNummernkreis({ schluessel: ARCHIV_KREIS, name: 'Archivnummer', muster: 'A-{zaehler:6}', start: 1 });
-  }
-
-  /** Archivnummer am Dokument setzen oder entfernen (leer); eindeutig je Haushalt. */
-  async setzeArchivnummer(id: string, eingabe: unknown, von: string | null): Promise<Dokument> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const nr = archivnummerAus(eingabe);
-    if (nr && nr.length > 40) throw new Fachfehler(422, t('meldungen.dienst.die-archivnummer-ist-zu'));
-    if (nr && /\s/.test(nr)) throw new Fachfehler(422, t('meldungen.dienst.die-archivnummer-darf-keine'));
-    if ((d.archivnummer ?? null) === nr) return d;
-    if (!(await this.repo.setzeArchivnummer(id, nr))) {
-      throw new Fachfehler(409, t('meldungen.dienst.die-archivnummer-hat-schon', { nr: String(nr) }));
-    }
-    await this.notiere(d.mappeId, von, 'archivnummer', { dokument: d.name, text: nr ? `${d.name}: ${nr}` : `${d.name}: entfernt`, alt: d.archivnummer ?? null, neu: nr });
-    protokoll.modul('dokumente').info(nr ? 'Archivnummer gesetzt' : 'Archivnummer entfernt', { id, nr, vorher: d.archivnummer ?? undefined });
-    return (await this.repo.holeDokument(id))!;
-  }
-
-  /** Dokument zu einer Archivnummer (auch mit Präfix aus dem Barcode); nur, wenn die Mappe lesbar ist. */
-  async findeArchivnummer(eingabe: unknown, z?: Zugriff) {
-    const nr = archivnummerAus(eingabe);
-    const d = nr ? await this.repo.findeArchivnummer(nr) : undefined;
-    const m = d ? await this.repo.holeMappe(d.mappeId) : undefined;
-    if (!d || !m || !(await this.lesbare(z, [m.id])).has(m.id)) throw new Fachfehler(404, t('meldungen.dienst.zur-archivnummer-gibt-es', { wert: nr ?? '' }));
-    return { dokument: d, mappeId: m.id, typId: m.typId, titel: m.titel ?? '' };
-  }
-
-  /**
-   * Aufkleberbogen (#345): `anzahl` neue Nummern aus dem Kreis „Archivnummer“ ziehen – gedruckte Nummern
-   * gelten als vergeben – und als PDF für das gewählte Etikettenformat ab Feld `start`.
-   */
-  async archivAufkleber(eingabe: unknown, von: string) {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const anzahl = Number(e.anzahl ?? 0);
-    const etikett = String(e.etikett ?? '48x25') as Etikett;
-    const start = Number(e.start ?? 1);
-    if (!(etikett in ETIKETTEN)) throw new Fachfehler(422, t('meldungen.dienst.unbekanntes-etikettenformat'));
-    const f = ETIKETTEN[etikett];
-    if (!Number.isInteger(anzahl) || anzahl < 1 || anzahl > 500) throw new Fachfehler(422, t('meldungen.dienst.bitte-1-bis-500'));
-    if (!Number.isInteger(start) || start < 1 || start > f.spalten * f.zeilen) throw new Fachfehler(422, t('meldungen.dienst.das-startfeld-muss-zwischen', { wert: f.spalten * f.zeilen }));
-    await this.archivKreis();
-    const nummern = await this.repo.zieheNummern(ARCHIV_KREIS, anzahl, new Date());
-    const pdf = await aufkleberPdf(nummern, etikett, start, ARCHIV_PRAEFIX);
-    protokoll.modul('werkbank').info('Aufkleber mit Archivnummern erzeugt', { von, anzahl, erste: nummern[0], letzte: nummern[nummern.length - 1], etikett });
-    return { pdf, erste: nummern[0], letzte: nummern[nummern.length - 1] };
-  }
+  archivKreis(): Promise<Nummernkreis> { return this.mappenArchiv.archivKreis(); }
+  setzeArchivnummer(id: string, eingabe: unknown, von: string | null): Promise<Dokument> { return this.mappenArchiv.setzeArchivnummer(id, eingabe, von); }
+  findeArchivnummer(eingabe: unknown, z?: Zugriff) { return this.mappenArchiv.findeArchivnummer(eingabe, z); }
+  archivAufkleber(eingabe: unknown, von: string) { return this.mappenArchiv.archivAufkleber(eingabe, von); }
 
   /* ---------- Vollexport (#254) ---------- */
 
@@ -7380,60 +6511,10 @@ export class Dienst {
 
   /* ---------- Archivmodus (#212) ---------- */
 
-  private async pruefeArchivDokument(mappeId: string, was: string) {
-    const m = await this.repo.holeMappe(mappeId);
-    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
-    const bis = m ? aufbewahrenBis(typ?.archiv, m) : null;
-    if (inFrist(bis)) throw new Fachfehler(409, t('meldungen.dienst.aufbewahrungspflicht-bis-dokumente', { datumText: datumText(bis!), was }), { aufbewahrenBis: bis });
-  }
-
-  /** Vorschau beim Einschalten: wie viele Mappen betroffen, wie viele schon „darf weg“. */
-  async archivVorschau(typId: string, e: unknown) {
-    const typ = istUuid(typId) ? await this.repo.holeTyp(typId) : undefined;
-    const archiv = bereinigeTyp({ felder: typ?.felder ?? [], archiv: e }).archiv;
-    if (!archiv) throw new Fachfehler(422, t('meldungen.dienst.bitte-eine-frist-von', { JAHRE_MAX }));
-    const mappen = typ ? await this.repo.listeMappen(typ.id) : [];
-    return { mappen: mappen.length, darfWeg: mappen.filter((m) => !inFrist(aufbewahrenBis(archiv, m))).length };
-  }
-
-  /** „Darf weg“: Mappen in Typen mit Archivmodus, deren Frist abgelaufen ist. Gelöscht wird nichts automatisch. */
-  async darfWeg() {
-    const erg: Array<{ id: string; typId: string; typ: string; titel: string; aufbewahrenBis: string }> = [];
-    for (const t of (await this.repo.listeTypen()).filter((x) => x.archiv)) {
-      for (const m of await this.repo.listeMappen(t.id)) {
-        const bis = aufbewahrenBis(t.archiv, m);
-        if (bis && !inFrist(bis)) erg.push({ id: m.id, typId: t.id, typ: t.name, titel: m.titel ?? '', aufbewahrenBis: bis });
-      }
-    }
-    return erg.sort((a, b) => a.aufbewahrenBis.localeCompare(b.aufbewahrenBis) || a.titel.localeCompare(b.titel, 'de'));
-  }
-
-  /** Integrität (#212): jede Datei gegen ihren Prüfwert; als Auftrag im Hintergrund. */
-  pruefeDateien(von: string) {
-    return this.auftraege.starte('dateien-pruefen', 'Alle Dateien prüfen', async (fortschritt) => {
-      const alle = await this.repo.alleDateien();
-      const shas = [...new Set(alle.map((x) => x.sha256))];
-      const abweichungen: Array<{ sha256: string; grund: string; dokumente: typeof alle }> = [];
-      const fehlend: string[] = [];
-      for (const [i, sha] of shas.entries()) {
-        let grund: string | null = null;
-        try {
-          const s = await this.dateien.lies(sha);
-          const h = createHash('sha256');
-          if (Buffer.isBuffer(s)) h.update(s); else for await (const teil of s) h.update(teil as Buffer);
-          if (h.digest('hex') !== sha) grund = t('meldungen.dienst.inhalt-veraendert');
-        } catch { grund = t('meldungen.dienst.datei-fehlt'); fehlend.push(sha); }
-        if (grund) abweichungen.push({ sha256: sha, grund, dokumente: alle.filter((x) => x.sha256 === sha) });
-        fortschritt(i + 1, shas.length);
-      }
-      // Hinweis der Übersicht (#877): Die Prüfung kennt jetzt alle fehlenden Dateien.
-      await this.schreibeFehlendeDateien(fehlend).catch(() => {});
-      const log = protokoll.modul('werkbank');
-      if (abweichungen.length) log.error('Dateien prüfen: Abweichungen gefunden', { von, dateien: shas.length, abweichungen: abweichungen.length, erste: abweichungen[0].dokumente[0]?.name });
-      else log.info('Dateien prüfen: alle in Ordnung', { von, dateien: shas.length });
-      return { dateien: shas.length, abweichungen };
-    }, [{ key: 'dateien', name: 'Dateien prüfen', einheit: 'Dateien' }]);
-  }
+  private pruefeArchivDokument(mappeId: string, was: string) { return this.mappenArchiv.pruefeArchivDokument(mappeId, was); }
+  archivVorschau(typId: string, e: unknown) { return this.mappenArchiv.archivVorschau(typId, e); }
+  darfWeg() { return this.mappenArchiv.darfWeg(); }
+  pruefeDateien(von: string) { return this.mappenArchiv.pruefeDateien(von); }
 
   /* ---------- Fehlende Dateien (#877) ---------- */
 

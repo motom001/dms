@@ -136,7 +136,25 @@ The first subject area with its own business logic in its subject folder (trial 
 
 - **Door:** `mappentypen/index.ts`; only `routen.ts` loads the routes (`mappentypen.routen.ts`) directly.
 - **Gets the core**, `TypPakete` and `Systemtypen` also the [permission check](#zugriff), and per class a connector for what is still in the service (stamp, recognition and permissions on the type, tasks, titles, jobs, writing system folders).
-- **Still in the service:** the stamp on the type (`mitStempel`), `berechtigungenAusEingabe`, `ausPostZiele` (#937) and `titel`.
+- **Still in the service:** the stamp on the type (`mitStempel`), `berechtigungenAusEingabe` and `ausPostZiele` (#937). Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
+
+## Folders (#1074) { #mappen }
+
+`server/src/mappen/` (layer 2) gathers what makes up a single folder – one class per topic, each getting the core; the service builds them and keeps a one-line forward for every method:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `mappen.dienst.ts` | `MappenDienst` (`dienst.mappen`) | `holeMappe`, `legeMappeAn`, `aendereMappe`, `verweisende`, `listeMappen`, `notizen`, `setzeFavorit`, `gesehen`, `persoenlicheEinstellungen` |
+| `eingaben.ts` | `MappenEingaben` (`dienst.mappenEingaben`) | `pruefeWerte`, `unpassendeFormate`, selection filters, “follows from” (`folgen`, `folgeVorschlaege`), `rechteVorschau`, `feldkonflikte`; `bereinigeWerte` |
+| `titel.ts` | `MappenTitel` (`dienst.mappenTitel`) | `aktualisiereTitel`, `titelVorab`, `titelNachziehen` and further maintenance at start-up, `absenderBereinigen` |
+| `historie.ts` | `MappenHistorie` (`dienst.mappenHistorie`) | `historie`, `notiereAbruf`, `historieTage`; `notiere` writes via `kern.historie` |
+| `passwortfelder.ts` | `Passwortfelder` (`dienst.passwortfelder`) | `zeigePasswort`, `entschluesselePasswoerter`, `unlesbarePasswoerter` |
+| `archiv.ts` | `MappenArchiv` (`dienst.mappenArchiv`) | archive number (#345), archive mode (#212: `darfWeg`, `archivVorschau`), `pruefeDateien` |
+
+- **Door:** `mappen/index.ts`; only `routen.ts` loads the routes (`mappen.routen.ts`) directly. The input helpers for folder types stay in `mappentypen/eingabe.ts`.
+- **Gets the core**, `MappenDienst`, `MappenEingaben` and `MappenArchiv` also the [permission check](#zugriff), and per class a connector for what is still in the service (accounts, tasks without read permission, archive version and PDF protection, data protection, `loeschPruefung`, `meldeVerknuepft`, key, labels, jobs).
+- **Immediate work:** `legeMappeAn` and `aendereMappe` report `kern.anlaesse.mappeGeaendert` at the end of their transaction – the [hook points](#anschlusspunkte) and their order are unchanged.
+- **Still in the service:** writing notes, deleting and the Bin, tasks and deadlines, `meldeVerknuepft`.
 
 ### Layers { #schichten }
 

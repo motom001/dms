@@ -135,7 +135,25 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 - **Tür:** `mappentypen/index.ts`; die Routen (`mappentypen.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, `TypPakete` und `Systemtypen` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Stempel, Erkennung und Berechtigungen am Typ, Aufgaben, Titel, Aufträge, Systemmappen schreiben).
-- **Noch im Dienst:** Stempel am Typ (`mitStempel`), `berechtigungenAusEingabe`, `ausPostZiele` (#937) und `titel`.
+- **Noch im Dienst:** Stempel am Typ (`mitStempel`), `berechtigungenAusEingabe` und `ausPostZiele` (#937). `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
+
+## Mappen (#1074) { #mappen }
+
+`server/src/mappen/` (Schicht 2) bündelt, was eine einzelne Mappe ausmacht – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie und behält für jede Methode eine einzeilige Weiterleitung:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `mappen.dienst.ts` | `MappenDienst` (`dienst.mappen`) | `holeMappe`, `legeMappeAn`, `aendereMappe`, `verweisende`, `listeMappen`, `notizen`, `setzeFavorit`, `gesehen`, `persoenlicheEinstellungen` |
+| `eingaben.ts` | `MappenEingaben` (`dienst.mappenEingaben`) | `pruefeWerte`, `unpassendeFormate`, Auswahlfilter, „folgt aus“ (`folgen`, `folgeVorschlaege`), `rechteVorschau`, `feldkonflikte`; `bereinigeWerte` |
+| `titel.ts` | `MappenTitel` (`dienst.mappenTitel`) | `aktualisiereTitel`, `titelVorab`, `titelNachziehen` und weitere Wartung beim Start, `absenderBereinigen` |
+| `historie.ts` | `MappenHistorie` (`dienst.mappenHistorie`) | `historie`, `notiereAbruf`, `historieTage`; `notiere` schreibt über `kern.historie` |
+| `passwortfelder.ts` | `Passwortfelder` (`dienst.passwortfelder`) | `zeigePasswort`, `entschluesselePasswoerter`, `unlesbarePasswoerter` |
+| `archiv.ts` | `MappenArchiv` (`dienst.mappenArchiv`) | Archivnummer (#345), Archivmodus (#212: `darfWeg`, `archivVorschau`), `pruefeDateien` |
+
+- **Tür:** `mappen/index.ts`; die Routen (`mappen.routen.ts`) holt nur `routen.ts` direkt. Die Eingabe-Hilfen der Mappentypen bleiben in `mappentypen/eingabe.ts`.
+- **Bekommt den Kern**, `MappenDienst`, `MappenEingaben` und `MappenArchiv` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Konten, Aufgaben ohne Leserecht, Archivfassung und PDF-Schutz, Datenschutz, `loeschPruefung`, `meldeVerknuepft`, Schlüssel, Aufkleber, Aufträge).
+- **Sofortiges:** `legeMappeAn` und `aendereMappe` melden am Ende ihrer Transaktion `kern.anlaesse.mappeGeaendert` – die [Anschlusspunkte](#anschlusspunkte) und ihre Reihenfolge sind unverändert.
+- **Noch im Dienst:** Notizen schreiben, Löschen und Papierkorb, Aufgaben und Fristen, `meldeVerknuepft`.
 
 ### Schichten { #schichten }
 
