@@ -64,10 +64,6 @@ export const TIPP_AUSNAHMEN = {};
  * Rückgabe: Zeilen „Beschreibung: gemessen“ für jedes zu kleine Element (leer = alles gut).
  */
 export async function tippflaechenPruefen(seite) {
-  // Erst messen, wenn alle Stylesheets geladen sind (#1027): Die Musterseite kommt als eigener Teil nach, ihr CSS
-  // manchmal einen Augenblick nach dem Inhalt – dann maß die Prüfung die Auswahlliste noch ohne Handy-Regeln (18 px).
-  await seite.waitForFunction(() => [...document.querySelectorAll('link[rel="stylesheet"]')].every((l) => l.sheet) && document.readyState === 'complete');
-  await seite.evaluate(() => document.fonts.ready);
   const elemente = await seite.evaluate((ausnahmen) => {
     const AUSWAHL = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])';
     const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !Object.keys(ausnahmen).some((a) => el.matches(a)));
@@ -75,28 +71,28 @@ export async function tippflaechenPruefen(seite) {
     return alle.length;
   }, TIPP_AUSNAHMEN);
   const zuKlein = [];
-  // axe rollt beim Prüfen; erst oben anfangen.
+  // Oben anfangen (die Seite selbst rollt nicht, das prüft musterAufnehmen vorher).
   await seite.evaluate(() => scrollTo(0, 0));
   for (let i = 0; i < elemente; i++) {
     const el = seite.locator(`[data-tippnr="${i}"]`);
     // Ins Bild holen und warten, bis das Element drei Bilder lang ruhig steht und die Trefferprüfung es in seiner
     // Mitte findet: Am Handy rollt Chromium nebenläufig, gleich danach trifft elementFromPoint oft noch eine andere
     // Stelle (höchstens 120 Bilder).
-    await el.evaluate((e) => new Promise((fertig) => {
+    const stand = await el.evaluate((e) => new Promise((fertig) => {
       e.scrollIntoView({ block: 'center', inline: 'center' });
       let n = 0, ruhig = 0, vorher = null;
       const pruefe = () => {
         const b = e.getBoundingClientRect();
-        const stand = `${b.left},${b.top},${scrollX},${scrollY}`;
-        ruhig = stand === vorher ? ruhig + 1 : 0;
-        vorher = stand;
+        const jetzt = `${Math.round(b.left)},${Math.round(b.top)} bei ${Math.round(scrollX)},${Math.round(scrollY)}`;
+        ruhig = jetzt === vorher ? ruhig + 1 : 0;
+        vorher = jetzt;
         const h = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
         const trifft = h && (h === e || e.contains(h) || h.closest('label')?.control === e);
-        if (++n > 120 || (ruhig >= 3 && trifft)) fertig(); else requestAnimationFrame(pruefe);
+        if (++n > 120 || (ruhig >= 3 && trifft)) fertig(jetzt); else requestAnimationFrame(pruefe);
       };
       requestAnimationFrame(pruefe);
     }));
-    const r = await el.evaluate((ziel, mass) => {
+    const r = await el.evaluate((ziel, [mass, stand]) => {
       /** Gehört ein getroffener Punkt zum Element? Direkt, als Kind, oder über eine Beschriftung (label → control). */
       const gehoert = (h) => !!h && (ziel === h || ziel.contains(h) || h.closest('label')?.control === ziel);
       // Element samt Beschriftungen (ein Haken schaltet auch über sein label).
@@ -126,8 +122,13 @@ export async function tippflaechenPruefen(seite) {
       const name = (ziel.getAttribute('aria-label') || ziel.textContent || ziel.getAttribute('title') || '').replace(/\s+/g, ' ').trim().slice(0, 40);
       const art = ziel.tagName.toLowerCase() + (ziel.type && ziel.tagName === 'INPUT' ? `[${ziel.type}]` : '');
       const ort = ziel.closest('[data-zustand]')?.dataset.zustand ?? ziel.closest('section, header, nav')?.id ?? '';
-      return { voll, text: `${ort ? `${ort} › ` : ''}${art}${name ? ` „${name}“` : ''}: Tippfläche etwa ${Math.round(breit)} × ${Math.round(hoch)} px` };
-    }, TIPPFLAECHE);
+      const was = `${ort ? `${ort} › ` : ''}${art}${name ? ` „${name}“` : ''}`;
+      // Hat sich die Seite seit dem Warten bewegt, gilt die Messung nicht: lieber das sagen als eine falsche Größe.
+      const e = ziel.getBoundingClientRect();
+      const jetzt = `${Math.round(e.left)},${Math.round(e.top)} bei ${Math.round(scrollX)},${Math.round(scrollY)}`;
+      if (jetzt !== stand) return { voll: false, text: `${was}: Seite hat sich während der Messung bewegt (Element und Rollstand ${stand} → ${jetzt})` };
+      return { voll, text: `${was}: Tippfläche etwa ${Math.round(breit)} × ${Math.round(hoch)} px` };
+    }, [TIPPFLAECHE, stand]);
     if (!r.voll) zuKlein.push(r.text);
   }
   await seite.evaluate(() => { document.querySelectorAll('[data-tippnr]').forEach((e) => delete e.dataset.tippnr); scrollTo(0, 0); });
@@ -172,6 +173,10 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
       await s.locator('[data-zustand="fokus"]').waitFor();
       await s.evaluate(() => document.fonts.ready);
       if (pruefen) verstoesse.push(...(await axePruefen(s)).map((v) => `${a.name}: ${v}`));
+      // Die Seite rollt nach dem Laden nicht von selbst (#1027): Früher holte jedes Ergebnis, das schon beim Öffnen am
+      // Knopf stand, sich sanft ins Bild – die Seite rollte dann noch während der Messung der Tippflächen.
+      const gerollt = await s.evaluate(() => Math.round(scrollY));
+      if (pruefen && gerollt !== 0) verstoesse.push(`${a.name}: Seite rollt nach dem Laden von selbst (${gerollt} px nach unten)`);
       // Handybreite: nie waagerecht rollen.
       const { breit, sicht } = await s.evaluate(() => ({ breit: document.documentElement.scrollWidth, sicht: document.documentElement.clientWidth }));
       if (pruefen && breit > sicht) verstoesse.push(`${a.name}: Seite breiter als der Bildschirm (${breit} > ${sicht} px)`);

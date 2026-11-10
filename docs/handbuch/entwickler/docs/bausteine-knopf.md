@@ -85,7 +85,7 @@ ESLint prüft das streng (`@typescript-eslint/no-misused-promises`, `no-floating
 
 ## Ergebnis am Knopf { #ergebnis }
 
-Ein Ergebnis steht **dort, wo geklickt wurde** (Muster B2 im Musterkatalog, #986): direkt unter dem Knopf; in einer Knopfreihe (`<div className="knoepfe">`) unter allen Knöpfen der Reihe, damit die Knöpfe nebeneinander stehen bleiben. Darüber verschiebt sich nichts. Liegt die Stelle nicht ganz im sichtbaren Bereich, rollt die Seite sanft dorthin (bei „Bewegung reduzieren“ ohne Animation). Der Ergebnisbereich steht immer im Dokument (`role="status"`, leer ohne Platz), damit Screenreader ein neues Ergebnis ansagen.
+Ein Ergebnis steht **dort, wo geklickt wurde** (Muster B2 im Musterkatalog, #986): direkt unter dem Knopf; in einer Knopfreihe (`<div className="knoepfe">`) unter allen Knöpfen der Reihe, damit die Knöpfe nebeneinander stehen bleiben. Darüber verschiebt sich nichts. Liegt die Stelle nicht ganz im sichtbaren Bereich, rollt die Seite bei einem neuen Ergebnis sanft dorthin (bei „Bewegung reduzieren“ ohne Animation); ein Ergebnis, das beim Öffnen der Seite schon dasteht, holt die Seite nicht dorthin (#1027). Der Ergebnisbereich steht immer im Dokument (`role="status"`, leer ohne Platz), damit Screenreader ein neues Ergebnis ansagen.
 
 Für mehr als einen Satz – eine Prüfliste, ein Text mit Einzelheiten – gehört das Ergebnis in einen `ErgebnisBlock` direkt unter die Knopfreihe:
 

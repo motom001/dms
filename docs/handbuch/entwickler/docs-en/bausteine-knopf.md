@@ -85,7 +85,7 @@ ESLint checks this strictly (`@typescript-eslint/no-misused-promises`, `no-float
 
 ## Result at the button { #ergebnis }
 
-A result appears **where the click happened** (pattern B2 in the pattern catalogue, #986): right below the button; in a row of buttons (`<div className="knoepfe">`) below all buttons of the row, so the buttons stay side by side. Nothing above it moves. If the place isn't fully in view, the page scrolls gently there (without animation with “reduce motion”). The result area is always in the document (`role="status"`, empty without taking space), so screen readers announce a new result.
+A result appears **where the click happened** (pattern B2 in the pattern catalogue, #986): right below the button; in a row of buttons (`<div className="knoepfe">`) below all buttons of the row, so the buttons stay side by side. Nothing above it moves. If the place isn't fully in view, the page scrolls gently there when a new result arrives (without animation with “reduce motion”); a result that is already there when the page opens doesn't move the page (#1027). The result area is always in the document (`role="status"`, empty without taking space), so screen readers announce a new result.
 
 For more than one sentence – a check list, a text with details – the result goes into an `ErgebnisBlock` right below the row of buttons:
 
