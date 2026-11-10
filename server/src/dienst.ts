@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  darfErstellen, ERKENNBAR_AN_MAX, kannAusPost, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
-  REGISTERARTEN, REGISTERNAMEN, ABRUF_ART, type Abrufweg, type Abruffassung, historienartenVon, historiengruppenVon, istHistoriengruppe, SYSTEMTYPEN, ROLLEN, FRUEHERE_ADMINROLLE, type Modusspur, KONTOROLLEN, kontorolleKennung, type Kontorolle, type Systemkonto, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemBeschriftung, systemrolleKennung, titelAus, verweiseVon, verweisAusText,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Verweiskonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Systemtyp, type Wert, type Werte,
+  darfErstellen, kannAusPost, darfLoeschen, formatiere, geschuetzteFelder, istLeer, istPasswortWert, sortierbar, istOk, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe,
+  ABRUF_ART, type Abrufweg, type Abruffassung, historienartenVon, historiengruppenVon, type Modusspur, type Kontorolle, type Systemkonto, freierSchluessel, titelAus, verweiseVon, verweisAusText,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Verweiskonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Register, type Wert, type Werte,
 } from '../../shared/src/model';
 import { DateiFehlt, type Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -24,15 +24,14 @@ import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, KonfigurationVeraltet, StandVeraltet, type DokumentImPapierkorb, type FristKandidat, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SeitenAnfrage, type SortierungIntern } from './repo';
 import { suchbegriffe, vorschlagAus, type Varianten } from '../../shared/src/suche';
-import { ausgangAus, bereinigeBeschriftungen, ergaenzeBeschriftungen, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
-import { inSprache } from '../../shared/src/sprache';
-import { ausgeblendeteFelder, bereinigeAbschnitte, festigeDarstellung } from '../../shared/src/darstellung';
+import { ausgangAus, bereinigeBeschriftungen, type TypTeile } from '../../shared/src/beschriftung';
+import { ausgeblendeteFelder } from '../../shared/src/darstellung';
 import {
   auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, setzeEigeneWerte, erfuellt, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen, zeigtAlleTypen,
   type Aufloesung, type Bedingung, type Klausel, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
-import { bereinigeFolgtAus, enthaeltId, ersteId, folgeReihenfolge } from '../../shared/src/folgtaus';
+import { enthaeltId, ersteId, folgeReihenfolge } from '../../shared/src/folgtaus';
 import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
 import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
@@ -45,7 +44,7 @@ import { alsZeile, liesAnlass, liesFilter, LOESCH_MAX, LOESCH_SPALTEN, LOESCHGRU
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
-import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
+import { kreisVon, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, type Zelle } from './xlsx';
 import { arbeite } from './arbeit';
 import { schriftstueckPdf } from './schriftstueck';
@@ -74,8 +73,8 @@ import { liesPdfA, textebeneWoerter } from './pdf';
 import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET, infoVolltextPaket, katalogVolltext, VOLLTEXT_ZEICHEN_MAX } from '../../shared/src/paketvolltext';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
-import { liesAusDokument, liesFeldErkennung, liesWiederfinden, type AusDokument } from '../../shared/src/erkennung';
-import { gleicheFormateAn, hatVorgaben, HEUTE, pruefeFormate, unpassendeAngaben, type Feldformat } from '../../shared/src/feldformate';
+import type { AusDokument } from '../../shared/src/erkennung';
+import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../shared/src/feldformate';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
@@ -85,17 +84,25 @@ import { Ereignisverteiler } from './ereignisse';
 import { tagIn, zeitzone } from '../../shared/src/region';
 import { Eingang, shaVon } from './hochladen';
 import { EREIGNISKATALOG, VERALTETE_EREIGNISSE, type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis, type Katalogeintrag } from '../../shared/src/ereignisse';
-import { bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, folgetermine, istDatum, naechsterTermin, type Erinnerung, type Termin, type TermineAntwort } from '../../shared/src/fristen';
-import { tageZwischen, zeitraumProblem } from '../../shared/src/kalender';
+import { datumDe, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, folgetermine, istDatum, naechsterTermin, type Erinnerung, type Termin, type TermineAntwort } from '../../shared/src/fristen';
+import { zeitraumProblem } from '../../shared/src/kalender';
 import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
 import { feiertageZwischen, type Bundesland } from '../../shared/src/feiertage';
-import { kontoRegelwerk, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, istOffen, kopiereRegel, kurz, leseAusdruck, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte } from '../../shared/src/rechte';
+import { kontoRegelwerk, RECHTE_LISTE, kurzStandard, bereinigeRegelwerk, istOffen, kopiereRegel, kurz, leseAusdruck, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte } from '../../shared/src/rechte';
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { SucheDienst } from './suche';
 import { maskiert, NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff, type BenutzerGespiegelt } from './kern';
 import { Systemausstattung } from './systemausstattung';
+import { MappentypenDienst } from './mappentypen/mappentypen.dienst';
+import { TypPakete } from './mappentypen/pakete-am-typ';
+import { Passung } from './mappentypen/passung';
+import { Nummernkreise, ARCHIV_KREIS } from './mappentypen/nummernkreise';
+import { Systemtypen, type Benutzerspiegel } from './mappentypen/systemtypen';
+import { bereinigeFeld, bereinigeTyp, behalteBeschriftungen, liesStand, TYP_TEILE } from './mappentypen/eingabe';
+export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
+export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
@@ -154,303 +161,9 @@ export const VOLLTEXT_MAX = VOLLTEXT_ZEICHEN_MAX;
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
 
 const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
-function zahlOderNull(v: unknown): number | null {
-  const n = leseZahl(v);
-  return n == null || Number.isNaN(n) ? null : n;
-}
-
-/** Teile, die sich je Sprache beschriften lassen (#728). */
-const FELD_TEILE = ['label', 'hilfe', 'optionen'] as const satisfies ReadonlyArray<keyof FeldTeile>;
-const NAMENS_TEILE = ['name'] as const satisfies ReadonlyArray<keyof NamensTeile>;
-const TYP_TEILE = ['name', 'beschreibung'] as const satisfies ReadonlyArray<keyof TypTeile>;
-/** Am Mappentyp zusätzlich „Woran man ihn erkennt“ (#937); Ansichten haben das nicht. */
-const MAPPENTYP_TEILE = [...TYP_TEILE, 'erkennbarAn'] as const satisfies ReadonlyArray<keyof TypTeile>;
-/** Beschriftungen oder nichts – leere Angaben werden nicht gespeichert. */
-const mitBeschriftungen = <T extends object>(b: T | undefined): { beschriftungen?: T } => (b ? { beschriftungen: b } : {});
-/**
- * Standard-Beschriftungen eines Systemfelds ergänzen (#729): Was der Administrator schon beschriftet hat, bleibt; Bezeichnung
- * und Hilfetext anderer Sprachen nur, solange der deutsche Text der Standard ist.
- */
-function mitSystemBeschriftung(f: Feld, s: Feld): { beschriftungen?: Beschriftungen<FeldTeile> } {
-  const std = structuredClone(s.beschriftungen ?? {}) as Record<string, FeldTeile>;
-  for (const e of Object.values(std)) {
-    if (f.label && f.label !== s.label) delete e.label;
-    if (f.hilfe && f.hilfe !== s.hilfe) delete e.hilfe;
-  }
-  return mitBeschriftungen(ergaenzeBeschriftungen(f.beschriftungen, std));
-}
-
-export function bereinigeFeld(e: unknown): Feld {
-  const f = (e ?? {}) as Record<string, unknown>;
-  const typ = (text(f.typ) in FELDTYPEN ? text(f.typ) : 'text') as Feld['typ'];
-  const std = f.standard;
-  // Auswahl (#728): die festen Werte, jeder einmal; gespeicherte Mappen behalten ihren Wert.
-  const optionen = Array.isArray(f.optionen) ? [...new Set(f.optionen.map(text).filter(Boolean))] : [];
-  return {
-    key: text(f.key),
-    // Deutsch ist der Ausgangstext; `beschriftungen.de.label` (z. B. aus einem Paket) gilt als Bezeichnung.
-    label: ausgangAus(f.beschriftungen, 'label', text(f.label)),
-    typ,
-    pflicht: !!f.pflicht,
-    eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl'),
-    hilfe: ausgangAus(f.beschriftungen, 'hilfe', text(f.hilfe)),
-    standard: std == null || std === '' || typ === 'passwort' ? null : typeof std === 'boolean' ? std : String(std),
-    minLen: zahlOderNull(f.minLen),
-    maxLen: zahlOderNull(f.maxLen),
-    muster: text(f.muster),
-    // Datum (#535): „heute“ oder ein Datum; ungültige Angaben bleiben stehen, damit die Prüfung sie meldet.
-    min: typ === 'datum' ? datumsgrenze(f.min) : zahlOderNull(f.min),
-    max: typ === 'datum' ? datumsgrenze(f.max) : zahlOderNull(f.max),
-    nachkomma: zahlOderNull(f.nachkomma),
-    waehrung: typ === 'betrag' ? (text(f.waehrung) || 'EUR').toUpperCase().slice(0, 3) : undefined,
-    optionen,
-    mehrfach: !!f.mehrfach && (typ === 'auswahl' || typ === 'referenz'),
-    zielTyp: typ === 'referenz' ? text(f.zielTyp) : '',
-    // Auswahlfilter (#172): nur an Referenzfeldern mit festem Zieltyp.
-    ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeAuswahlfilter(f.auswahlFilter).length ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) } : {}),
-    // Folgt aus (#886): nur an Verweisfeldern mit festem Zieltyp; geprüft wird im Mappentyp.
-    ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeFolgtAus(f.folgtAus) ? { folgtAus: bereinigeFolgtAus(f.folgtAus) } : {}),
-    verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
-    // Fristen (#129): nur an Datumsfeldern.
-    ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
-    // Aus Dokument füllen (#336, #938; früher „Für die Erkennung nutzen“): Art und Erkennungshinweis; nur bei geeigneten Feldarten.
-    ...(liesFeldErkennung(f.erkennung, typ) ? { erkennung: liesFeldErkennung(f.erkennung, typ) } : {}),
-    // Zum Wiederfinden nutzen (#938): nur Text, Zahl und Verweis.
-    ...(liesWiederfinden(f.wiederfinden, typ) ? { wiederfinden: true } : {}),
-    // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
-    ...(typ === 'referenz' && /^[a-z][a-z0-9_]{0,39}$/.test(text(f.ausText)) && text(f.ausText) !== text(f.key) ? { ausText: text(f.ausText) } : {}),
-    // Feldformat (#535): nur an Textfeldern; das Land-Feld nur beim Format PLZ.
-    ...(typ === 'text' && text(f.format) ? { format: text(f.format) as Feldformat } : {}),
-    ...(typ === 'text' && text(f.format) === 'plz' && text(f.landFeld) ? { landFeld: text(f.landFeld) } : {}),
-    // Beschriftungen je Sprache (#728): Bezeichnung, Hilfetext und – bei Auswahl – die Optionen.
-    ...mitBeschriftungen(bereinigeBeschriftungen<FeldTeile>(f.beschriftungen, FELD_TEILE, typ === 'auswahl' ? optionen : undefined)),
-    // Ausgeblendet (#655): nur gespeichert, wenn an; Pflicht hebt festigeDarstellung auf.
-    ...(f.ausgeblendet === true ? { ausgeblendet: true } : {}),
-  };
-}
-
-/** Datumsgrenze (#535) aus einer Eingabe: leer = keine, sonst getrimmt („Heute“ → „heute“). */
-function datumsgrenze(v: unknown): string | null {
-  const x = v == null ? '' : String(v).trim();
-  return !x ? null : x.toLowerCase() === HEUTE ? HEUTE : x;
-}
-
-export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
-  if (!Array.isArray(e) || !e.length) return standardRegister(felder);
-  const bekannt = new Set(felder.map((f) => f.key));
-  const reg = e.map((x: Record<string, unknown>): Register => {
-    const art = (String(x?.art) in REGISTERARTEN ? x.art : 'felder') as Register['art'];
-    const name = ausgangAus(x?.beschriftungen, 'name', text(x?.name));
-    const r: Register = { key: text(x?.key) || schluesselAus(name), name, art, ...mitBeschriftungen(bereinigeBeschriftungen<NamensTeile>(x?.beschriftungen, NAMENS_TEILE)) };
-    if (art === 'felder') r.felder = (Array.isArray(x?.felder) ? x.felder.map(text) : []).filter((k) => bekannt.has(k));
-    // Ausgeblendet (#655): ob es bei diesem Register geht, prüft festigeDarstellung.
-    if (x?.ausgeblendet === true) r.ausgeblendet = true;
-    if (art === 'verknuepfungen') {
-      r.quellen = (Array.isArray(x?.quellen) ? x.quellen : [])
-        .map((q: Record<string, unknown>): Quelle => ({ typId: text(q?.typId), feldKey: text(q?.feldKey), ...(text(q?.trefferliste) ? { trefferliste: text(q?.trefferliste).slice(0, 40) } : {}) }))
-        .filter((q) => q.typId && q.feldKey);
-    }
-    // Volltext (#45): nur das Abschalten wird gespeichert; Standard ist an.
-    if (art === 'dokumente' && x?.volltext === false) r.volltext = false;
-    // Historie (#800): welche Gruppen das Register zeigt – nur bekannte, jede einmal; fehlt = Vorauswahl.
-    if (art === 'protokoll' && Array.isArray(x?.zeigt)) r.zeigt = [...new Set(x.zeigt.filter(istHistoriengruppe))];
-    // Versionierung (#194): Standard aus; „nur die letzten N“ ab 2, leer = alle.
-    if (art === 'dokumente' && x?.versionierung === true) {
-      r.versionierung = true;
-      const n = Math.trunc(Number(x.versionenBehalten));
-      if (x.versionenBehalten != null && x.versionenBehalten !== '' && Number.isFinite(n) && n >= 2) r.versionenBehalten = Math.min(n, 1000);
-    }
-    return r;
-  });
-  // Felder ohne Register landen auf dem ersten Feldregister.
-  const erstes = reg.find((r) => r.art === 'felder');
-  if (erstes) {
-    const vergeben = new Set(reg.flatMap((r) => r.felder ?? []));
-    for (const f of felder) if (!vergeben.has(f.key)) erstes.felder!.push(f.key);
-  }
-  // Abschnitte (#890): nur in Feldregistern, nur vor eigenen Feldern; leer = keine (nichts gespeichert).
-  reg.forEach((r, i) => {
-    if (r.art !== 'felder') return;
-    const a = bereinigeAbschnitte((e[i] as Record<string, unknown> | undefined)?.abschnitte, r.felder ?? []);
-    if (a?.length) r.abschnitte = a;
-  });
-  return reg;
-}
-
-/** Nur bekannte Spalten, jede einmal; Spalten entfernter Felder und Passwortfelder fallen still weg. */
-function bereinigeSpalten(e: unknown, felder: Feld[]): string[] {
-  return [...new Set((Array.isArray(e) ? e : []).map(text))]
-    .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort'));
-}
-
-/**
- * Trefferlisten (#75): mindestens eine, Schlüssel eindeutig, genau eine ist Standard.
- * Die ältere Angabe `trefferliste` (nur Spalten) ersetzt – falls angegeben – die Spalten der Standardliste.
- */
-export function bereinigeTrefferlisten(t: Record<string, unknown>, felder: Feld[]): { trefferlisten: Trefferliste[]; trefferliste: string[] } {
-  const roh = Array.isArray(t.trefferlisten) ? (t.trefferlisten as Array<Record<string, unknown>>) : [];
-  const listen: Trefferliste[] = [];
-  for (const x of roh) {
-    const name = ausgangAus(x?.beschriftungen, 'name', text(x?.name)).slice(0, 80) || 'Trefferliste';
-    let key = (text(x?.key) || schluesselAus(name) || 'liste').slice(0, 40);
-    for (let i = 2; listen.some((l) => l.key === key); i++) key = `${(text(x?.key) || schluesselAus(name) || 'liste').slice(0, 36)}_${i}`;
-    listen.push({ key, name, spalten: bereinigeSpalten(x?.spalten, felder), ...(x?.standard === true ? { standard: true } : {}), ...mitBeschriftungen(bereinigeBeschriftungen<NamensTeile>(x?.beschriftungen, NAMENS_TEILE)) });
-  }
-  if (!listen.length) listen.push({ key: 'standard', name: 'Standard', spalten: [], standard: true });
-  const std = listen.find((l) => l.standard) ?? listen[0];
-  for (const l of listen) { if (l === std) l.standard = true; else delete l.standard; }
-  if (Array.isArray(t.trefferliste) && (!roh.length || JSON.stringify(t.trefferliste) !== JSON.stringify(std.spalten))) {
-    // Nur die alte Form angegeben, oder sie weicht ab (z. B. { ...typ, trefferliste: [...] } über die API).
-    std.spalten = bereinigeSpalten(t.trefferliste, felder);
-  }
-  return { trefferlisten: listen, trefferliste: std.spalten };
-}
-
-export function bereinigeTyp(e: unknown): MappentypDaten {
-  const t = (e ?? {}) as Record<string, unknown>;
-  const felder = Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [];
-  // Archivmodus (#212): Frist 1–30 Jahre, Stichtag ein Feldschlüssel oder null (Anlagedatum).
-  const a = t.archiv && typeof t.archiv === 'object' ? t.archiv as Record<string, unknown> : null;
-  const jahre = a ? Math.trunc(Number(a.jahre)) : 0;
-  const archiv = a && jahre >= 1 && jahre <= JAHRE_MAX ? { jahre, stichtag: text(a.stichtag) || null } : null;
-  const register = bereinigeRegister(t.register, felder);
-  // Im Archivmodus ist die Versionierung Pflicht, und ältere Versionen bleiben bis zum Fristende.
-  if (archiv) for (const r of register) if (r.art === 'dokumente') { r.versionierung = true; delete r.versionenBehalten; }
-  // Ausblenden (#655): nur, wo es geht; ausgeblendete Felder sind nie Pflicht.
-  festigeDarstellung({ felder, register });
-  return {
-    name: ausgangAus(t.beschriftungen, 'name', text(t.name)),
-    ...(text(t.schluessel) ? { schluessel: text(t.schluessel) } : {}),
-    beschreibung: ausgangAus(t.beschriftungen, 'beschreibung', text(t.beschreibung)),
-    // Name, Beschreibung und „Woran man ihn erkennt“ je Sprache (#728, #937); undefined = keine (die Datenbank speichert NULL).
-    beschriftungen: kuerzeErkennbarAn(bereinigeBeschriftungen<TypTeile>(t.beschriftungen, MAPPENTYP_TEILE)),
-    // Kann aus Post angelegt werden (#937): ja, nein oder null = Vorgabe (an mit Dokumentenregister).
-    ausPost: typeof t.ausPost === 'boolean' ? t.ausPost : null,
-    // Woran man ihn erkennt (#937): kurz, für die Klassifizierung.
-    erkennbarAn: ausgangAus(t.beschriftungen, 'erkennbarAn', text(t.erkennbarAn)).replace(/\s+/g, ' ').trim().slice(0, ERKENNBAR_AN_MAX),
-    // Altes Format: titelFeld → Vorlage {feld}
-    titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
-    felder,
-    register,
-    ...bereinigeTrefferlisten(t, felder),
-    archiv,
-    // Die Haken „Neue Mappen/Löschen erlauben“ gibt es nicht mehr (#146): das regeln die Berechtigungen.
-    erstellenErlaubt: true,
-    loeschenErlaubt: true,
-  };
-}
-
-/** „Woran man ihn erkennt“ (#937) auch in anderen Sprachen höchstens ERKENNBAR_AN_MAX Zeichen. */
-function kuerzeErkennbarAn(b: Beschriftungen<TypTeile> | undefined): Beschriftungen<TypTeile> | undefined {
-  if (!b) return b;
-  for (const x of Object.values(b)) if (x?.erkennbarAn) x.erkennbarAn = x.erkennbarAn.replace(/\s+/g, ' ').trim().slice(0, ERKENNBAR_AN_MAX);
-  return b;
-}
-
-/**
- * Angaben behalten, die eine Eingabe nicht nennt (#937, #938): Wer einen Mappentyp ohne `ausPost` bzw. `erkennbarAn`
- * speichert (z. B. ein älteres Programm über die API), behält die bisherigen; ebenso je Feld `wiederfinden`.
- */
-export function behalteErkennung(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'ausPost' | 'erkennbarAn' | 'felder'>): MappentypDaten {
-  const r = (roh ?? {}) as Record<string, unknown>;
-  const rohFelder = Array.isArray(r.felder) ? r.felder as unknown[] : [];
-  const felder = d.felder.map((f) => {
-    const q = rohFelder.find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === f.key) as Record<string, unknown> | undefined;
-    if (q && 'wiederfinden' in q) return f;
-    const vorher = alt.felder.find((y) => y.key === f.key && y.typ === f.typ);
-    return vorher?.wiederfinden ? { ...f, wiederfinden: true } : f;
-  });
-  return {
-    ...d, felder,
-    ...('ausPost' in r ? {} : { ausPost: alt.ausPost ?? null }),
-    ...('erkennbarAn' in r || hatErkennbarAnBeschriftung(r.beschriftungen) ? {} : { erkennbarAn: alt.erkennbarAn ?? '' }),
-  };
-}
-/**
- * Darstellung behalten (#655, #890): Wer einen Mappentyp ohne `ausgeblendet` an Feld bzw. Register oder ohne `abschnitte`
- * an einem Feldregister speichert (z. B. ein älteres Programm über die API), behält die bisherigen Angaben. Abschnitte
- * vor Feldern, die nicht mehr auf dem Register liegen, fallen weg.
- */
-export function behalteDarstellung(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'felder' | 'register'>): MappentypDaten {
-  const r = (roh ?? {}) as Record<string, unknown>;
-  const quelle = (liste: unknown, key: string) => (Array.isArray(liste) ? liste : []).find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key) as Record<string, unknown> | undefined;
-  const felder = d.felder.map((f) => {
-    const q = quelle(r.felder, f.key);
-    if (q && 'ausgeblendet' in q) return f;
-    return alt.felder.find((y) => y.key === f.key)?.ausgeblendet ? { ...f, ausgeblendet: true } : f;
-  });
-  const register = d.register.map((x) => {
-    const q = quelle(r.register, x.key);
-    const vorher = alt.register.find((y) => y.key === x.key && y.art === x.art);
-    let neu = x;
-    if (!(q && 'ausgeblendet' in q) && vorher?.ausgeblendet) neu = { ...neu, ausgeblendet: true };
-    if (x.art === 'felder' && !(q && 'abschnitte' in q) && vorher?.abschnitte?.length) {
-      const a = bereinigeAbschnitte(vorher.abschnitte, x.felder ?? []);
-      if (a?.length) neu = { ...neu, abschnitte: a };
-    }
-    return neu;
-  });
-  const erg = { ...d, felder, register };
-  festigeDarstellung(erg);
-  return erg;
-}
-const hatErkennbarAnBeschriftung = (b: unknown) => !!b && typeof b === 'object' && Object.values(b as Record<string, unknown>).some((x) => !!x && typeof x === 'object' && 'erkennbarAn' in x && (x as Record<string, unknown>).erkennbarAn != null);
-
-/**
- * Beschriftungen behalten (#728): Wer einen Mappentyp ohne die Angabe `beschriftungen` speichert (z. B. ein älteres
- * Programm über die API), löscht damit keine – je Typ, Feld, Register und Trefferliste bleiben dann die bisherigen.
- * Wer sie mitgibt (auch leer oder null), setzt sie neu.
- */
-export function behalteBeschriftungen(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'beschriftungen' | 'felder' | 'register' | 'trefferlisten'>): MappentypDaten {
-  const r = (roh ?? {}) as Record<string, unknown>;
-  const hat = (x: unknown) => !!x && typeof x === 'object' && 'beschriftungen' in x;
-  const nachKey = <T extends { key: string; beschriftungen?: unknown }>(neu: T[], rohe: unknown, vorher: T[] | undefined): T[] => {
-    const liste = Array.isArray(rohe) ? rohe : [];
-    return neu.map((x) => {
-      const quelle = liste.find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === x.key);
-      if (hat(quelle)) return x;
-      const a = vorher?.find((y) => y.key === x.key);
-      return a?.beschriftungen ? { ...x, beschriftungen: a.beschriftungen } : x;
-    });
-  };
-  const felder = nachKey(d.felder, r.felder, alt.felder).map((f) => {
-    // Beschriftungen entfernter Optionen fallen weg.
-    if (!f.beschriftungen) return f;
-    const b = bereinigeBeschriftungen<FeldTeile>(f.beschriftungen, FELD_TEILE, f.typ === 'auswahl' ? f.optionen : undefined);
-    const { beschriftungen: _b, ...rest } = f;
-    return b ? { ...rest, beschriftungen: b } : rest;
-  });
-  return {
-    ...d,
-    ...(hat(r) ? {} : { beschriftungen: alt.beschriftungen }),
-    felder,
-    register: nachKey(d.register, r.register, alt.register),
-    ...(d.trefferlisten ? { trefferlisten: nachKey(d.trefferlisten, r.trefferlisten, alt.trefferlisten) } : {}),
-  };
-}
 
 /** Wert eines Mehrfachverweises als Liste. */
-/** Post (#192): Beschreibung und Spalten der Standard-Trefferliste. */
-const POST_BESCHREIBUNG = t('meldungen.dienst.alles-was-in-ablago');
-const POST_SPALTEN = ['datum', 'stand', 'kanal', 'absender'];
-
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
-
-/** Für die Benutzerverwaltung: Benutzer-Mappen anlegen, nachziehen und entfernen. */
-export interface Benutzerspiegel {
-  /** Legt die Mappe des Benutzers an oder zieht sie nach (Name, E-Mail, Systemrolle, aktiv). */
-  aktualisiere(b: Benutzer, von?: string | null, abwesenheit?: BenutzerGespiegelt['abwesenheit']): Promise<void>;
-  /** Entfernt die Mappe; wirft, wenn noch etwas auf sie verweist. */
-  entferne(id: string): Promise<void>;
-  /** Ist der Papierkorb an (#43)? Dann wird ein Benutzer deaktiviert und seine Mappe kommt in den Papierkorb. */
-  papierkorbAn?(): Promise<boolean>;
-  /** Legt die Mappe in den Papierkorb; wirft, wenn noch etwas auf sie verweist. */
-  inPapierkorb?(id: string, von: string | null): Promise<void>;
-  /** Anzahl offener Aufgaben eines Benutzers (ohne die der Administratoren) – Deaktivieren nur ohne (#77). */
-  offeneAufgaben?(id: string): Promise<number>;
-  /** Alle offenen Aufgaben eines Benutzers an einen anderen geben (#78); Anzahl. */
-  aufgabenUebergeben?(id: string, an: string, von: string | null): Promise<number>;
-}
 
 /** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
 export interface KontenHaken {
@@ -535,8 +248,7 @@ function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: 
   return eintrag.join(', ') || t('meldungen.dienst.seiten-umsortiert');
 }
 
-/** Kreis und Barcode-Präfix der Archivnummern (#345). */
-export const ARCHIV_KREIS = 'archivnummer';
+/** Barcode-Präfix der Archivnummern (#345); der Kreis: ARCHIV_KREIS (mappentypen/nummernkreise.ts). */
 export const ARCHIV_PRAEFIX = 'DMS-ASN:';
 /** Eingabe → Archivnummer (Präfix aus dem Barcode weg, ohne Rand); leer → null. */
 export function archivnummerAus(v: unknown): string | null {
@@ -588,14 +300,6 @@ function passwortWert(eingabe: unknown, hatEingabe: boolean, bisher: unknown, ve
     return (eingabe.gesetzt ? bisher ?? null : null) as Werte[string];
   }
   throw new Fachfehler(422, t('meldungen.dienst.ungueltiger-wert-fuer-ein'));
-}
-
-/** Stand einer Änderung (#609): „zuletzt geändert“ als ISO-Zeitpunkt; fehlt = ohne Prüfung. */
-function liesStand(v: unknown, fehler: 'mappen.konflikt.standUngueltig' | 'meldungen.dienst.stand-ungueltig' = 'mappen.konflikt.standUngueltig'): string | undefined {
-  if (v === undefined || v === null || v === '') return undefined;
-  const ms = typeof v === 'string' ? Date.parse(v) : NaN;
-  if (!Number.isFinite(ms)) throw new Fachfehler(422, t(fehler));
-  return new Date(ms).toISOString();
 }
 
 function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, verschluessele: (k: string) => string = keinSchluessel): Werte {
@@ -655,10 +359,6 @@ export interface VolltextMeldung {
  */
 export const taugtAlsAufgabenEmpfaenger = (b: Benutzer) => b.aktiv && !b.art;
 
-/** Dieselbe fremde Mappe im Verwaltungsmodus innerhalb so vieler Minuten nur einmal in der Historie (#820). */
-export const MODUSSPUR_MINUTEN = 10;
-/** Arten im Kurzzustand (#744). */
-const MODUSSPUR = 'modusspur';
 /** Höchstens so viele Einträge der Historie auf einer Seite (#800). */
 export const HISTORIE_SEITE_MAX = 1000;
 const ABRUF_PRUEFUNG = 'abruf-pruefung';
@@ -729,6 +429,16 @@ export class Dienst {
   readonly kern: Kern;
   /** Rechte prüfen (#1072): Zugriff bilden, Rechte an Mappen, lesbare Mappen. */
   readonly rechtepruefung: ZugriffDienst;
+  /** Mappentypen (#1073): anlegen, ändern, löschen, prüfen. */
+  readonly mappentypen: MappentypenDienst;
+  /** Pakete am Mappentyp (#686, #1073). */
+  readonly typpakete: TypPakete;
+  /** Passung der Mappen zu ihrem Typ (#1073). */
+  readonly passung: Passung;
+  /** Nummernkreise (#171, #1073). */
+  readonly nummernkreise: Nummernkreise;
+  /** Systemtypen, Benutzer-Mappen, Spur im Verwaltungsmodus (#1073). */
+  readonly systemtypen: Systemtypen;
   /** Suche (#964): unscharfe Suche, gleichbedeutende Wörter, Vektoren und ähnliche Dokumente. */
   readonly suche: SucheDienst;
   /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
@@ -744,10 +454,22 @@ export class Dienst {
     }
     this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.zugriff(ich) });
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.kiSperre(p), konten: () => this.konten });
+    this.mappentypen = new MappentypenDienst(this.kern, {
+      mitStempel: (typen) => this.mitStempel(typen), pruefeStempelTyp: (v) => this.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.setzeStempelTyp(id, st),
+      erkennung: () => this.erkennung, berechtigungenAusEingabe: (typ, e) => this.berechtigungenAusEingabe(typ, e),
+      protokolliereBerechtigungen: (typ, n) => Dienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => Dienst.konfigurationKonflikt(art, aktuell),
+    });
+    this.typpakete = new TypPakete(this.kern, this.rechtepruefung, { kiSperre: (p) => this.kiSperre(p), konten: () => this.konten });
+    this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.passungsAufgaben(liste) });
+    this.nummernkreise = new Nummernkreise(this.kern, { archivKreis: () => this.archivKreis(), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), auftraege: this.auftraege });
+    this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
+      schreibeSystemMappe: (typ, id, e, von, kennung) => this.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
+      spiegleBenutzer: (b, von, abwesenheit) => this.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
+    });
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
-      mappentypen: { sichereSystemtypen: () => this.sichereSystemtypen() },
+      mappentypen: { sichereSystemtypen: () => this.systemtypen.sichereSystemtypen() },
       sichten: { sichtFuerTyp: (typ) => this.sichtFuerTyp(typ), sichereFavoritenSicht: () => this.sichereFavoritenSicht() },
       post: { sicherePostSichten: (post) => this.sicherePostSichten(post) },
     });
@@ -2890,14 +2612,9 @@ export class Dienst {
     return tage;
   }
 
-  listeTypen() { return this.repo.listeTypen(); }
+  listeTypen() { return this.mappentypen.listeTypen(); }
 
-  /** Mappentypen für einen Benutzer: Administratoren mit Regeln, alle anderen ohne – dafür „darf anlegen“ (#126). */
-  async typenFuer(z: Zugriff) {
-    const typen = await this.mitStempel([...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')));
-    if (z.admin) return typen;
-    return typen.map(({ berechtigungen, ...t }) => ({ ...t, berechtigungen: null, darfAnlegen: rechteUebersicht({ ...t, berechtigungen }, z.wer, z.a).C !== 'nie' }));
-  }
+  typenFuer(z: Zugriff) { return this.mappentypen.typenFuer(z); }
 
   /**
    * „Wohin gehört das?“ (#937): Mappentypen, die man aus Post anlegen kann – mit dem Haken „Kann aus Post angelegt
@@ -2910,182 +2627,12 @@ export class Dienst {
       .sort((a, b) => a.name.localeCompare(b.name, 'de'));
   }
 
-  /** Profil (#126): je Mappentyp, welche Rechte man hat – „immer“, „nie“ oder „je nach Mappe“. */
-  async rechteUebersicht(z: Zugriff) {
-    return [...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')).map((t) => ({
-      typId: t.id, name: t.name,
-      rechte: z.admin ? Object.fromEntries((['C', 'R', 'U', 'D', 'P'] as Recht[]).map((k) => [k, (k === 'C' && systemSperre(t).C) || (k === 'D' && systemSperre(t).D) ? 'nie' : 'immer'])) : rechteUebersicht(t, z.wer, z.a),
-    }));
-  }
-
-  private async pruefeTyp(d: MappentypDaten, eigeneId: string) {
-    if (d.archiv?.stichtag && d.felder.find((f) => f.key === d.archiv!.stichtag)?.typ !== 'datum') {
-      throw new Fachfehler(422, t('meldungen.dienst.archivmodus-der-stichtag-muss'), { allgemein: [t('meldungen.dienst.archivmodus-der-stichtag-muss')], felder: {} });
-    }
-    const alle = await this.repo.listeTypen();
-    // Quellen von Verknüpfungsregistern, deren Feld es nicht mehr gibt, still entfernen.
-    for (const r of d.register) {
-      if (r.art !== 'verknuepfungen') continue;
-      r.quellen = (r.quellen ?? []).filter((q) => {
-        const felder = q.typId === eigeneId ? d.felder : alle.find((t) => t.id === q.typId)?.felder;
-        const f = felder?.find((x) => x.key === q.feldKey);
-        return f?.typ === 'referenz' && (f.zielTyp === eigeneId || f.zielTyp === '*');
-      });
-    }
-    // Fristen (#129): Empfängerfeld nur, wenn es ein einfaches Benutzerfeld dieses Typs ist.
-    const benutzerTyp = alle.find((t) => t.system === 'benutzer')?.id;
-    const taugt = new Set(empfaengerFelder(d, benutzerTyp).map((f) => f.key));
-    for (const f of d.felder) if (f.frist?.empfaengerFeld && !taugt.has(f.frist.empfaengerFeld)) f.frist.empfaengerFeld = null;
-    const p = pruefeMappentyp(d, {
-      eigeneId,
-      namenAndererTypen: alle.filter((t) => t.id !== eigeneId).map((t) => t.name),
-      schluesselAndererTypen: alle.filter((t) => t.id !== eigeneId && t.schluessel).map((t) => t.schluessel!),
-      existiertTyp: (id) => alle.some((t) => t.id === id),
-      felderVon: (id) => alle.find((t) => t.id === id)?.felder,
-      nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
-      auswahlProbleme: (bed, felder, eigene) => auswahlProbleme(bed, { felder }, eigene),
-    });
-    if (!istOk(p)) throw new Fachfehler(422, t('meldungen.dienst.der-mappentyp-ist-so'), p);
-  }
-
-  /** Mappentyp anlegen bzw. ändern; die Stempel-Einstellung (#394) liegt daneben in den Einstellungen. */
-  async legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.legeTypAnIntern(e)); }
-  async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.aendereTypIntern(id, e)); }
-  private async mitStempelEingabe(eingabe: unknown, f: (e: unknown) => Promise<Mappentyp>): Promise<Mappentyp> {
-    const hat = !!eingabe && typeof eingabe === 'object' && 'stempel' in eingabe;
-    const st = hat ? await this.pruefeStempelTyp((eingabe as { stempel: unknown }).stempel) : undefined;
-    // „Aus Dokument ausfüllen“ (#391): Beschriftung bzw. ausgeblendet – liegt wie der Stempel in den Einstellungen.
-    const hatAd = !!eingabe && typeof eingabe === 'object' && 'ausDokument' in eingabe;
-    // Erkennung per Paket (#511): vor dem Speichern prüfen (Paket da, Datenabfluss bestätigt).
-    if (hatAd) await this.erkennung.pruefeTypWahl(liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument));
-    const t = await f(eingabe);
-    if (hat) await this.setzeStempelTyp(t.id, st ?? null);
-    if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
-    // Post automatisch zuordnen (#337), Standard aus.
-    if (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe) await this.setzeTypErkennung(t.id, { auto: (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system });
-    return (await this.mitStempel([t]))[0];
-  }
-
-  /** „Aus Dokument ausfüllen“ eines Mappentyps (#391, #511): Beschriftung, ausgeblendet, Erkennung. */
-  async ausDokumentVon(typId: string): Promise<AusDokument | null> { return (await this.typErkennungen())[typId]?.ausDokument ?? null; }
-
-  /** Einstellungen der Erkennung je Mappentyp (#391, #337): Einstellung erkennung_typen, Typ-Id → Angaben. */
-  private async typErkennungen(): Promise<Record<string, { ausDokument?: AusDokument | null; auto?: boolean }>> {
-    const v = await this.einstellungen?.lies('erkennung_typen');
-    return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, { ausDokument?: AusDokument | null; auto?: boolean }> : {};
-  }
-  private async setzeTypErkennung(typId: string, teil: { ausDokument?: AusDokument | null; auto?: boolean }) {
-    if (!this.einstellungen) return;
-    const alle = await this.typErkennungen();
-    const neu = { ...(alle[typId] ?? {}), ...teil };
-    if (!neu.ausDokument) delete neu.ausDokument;
-    if (!neu.auto) delete neu.auto;
-    if (JSON.stringify(neu) === JSON.stringify(alle[typId] ?? {})) return;
-    if (Object.keys(neu).length) alle[typId] = neu; else delete alle[typId];
-    await this.einstellungen.schreibe('erkennung_typen', Object.keys(alle).length ? alle : null);
-    protokoll.modul('werkbank').info('Erkennung am Mappentyp eingestellt', { typ: typId, ...teil });
-  }
-
-  private async legeTypAnIntern(eingabe: unknown): Promise<Mappentyp> {
-    const roh = (eingabe ?? {}) as { id?: unknown };
-    // Die Oberfläche darf die Id vorgeben, damit ein neuer Typ auf sich selbst verweisen kann.
-    const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
-    const d = bereinigeTyp(eingabe);
-    // Schlüssel (#145): ohne Angabe aus dem Namen, eindeutig.
-    if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
-    await this.pruefeTyp(d, id);
-    const rechte = await this.berechtigungenAusEingabe({ ...d, id, erstellt: '', geaendert: '', berechtigungen: null }, eingabe);
-    // In einer Transaktion (#962): Typ, Berechtigungen und die sofortigen Empfänger (eigene Sicht) ganz oder gar nicht.
-    return this.inEinemZug(async () => {
-      let typ = await this.repo.legeTypAn(id, d);
-      if (rechte) typ = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
-      await this.kern.anlaesse.typAngelegt.melde({ typ, sicht: (roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false });
-      if (rechte) this.kern.danach(() => Dienst.protokolliereBerechtigungen(typ, 0));
-      return typ;
-    });
-  }
-
-  /**
-   * Gleichzeitig bearbeiten (#917): Mit `stand` (`geaendert` des Typs, wie gelesen) speichert Ablago nur, wenn seitdem
-   * niemand den Typ geändert hat – sonst 409, nichts wird überschrieben. Ohne `stand` keine Prüfung (wie bisher).
-   */
-  private async aendereTypIntern(id: string, eingabe: unknown): Promise<Mappentyp> {
-    const alt = await this.repo.holeTyp(id);
-    if (!alt) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
-    const stand = liesStand((eingabe as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
-    if (stand !== undefined && alt.geaendert !== stand) throw Dienst.konfigurationKonflikt('typ', alt.geaendert);
-    let d = behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt);
-    if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
-    // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
-    festigeDarstellung(d);
-    // Der Schlüssel ist fest (#145); fehlt er noch, gilt der eingegebene bzw. einer aus dem Namen.
-    d.schluessel = alt.schluessel ?? d.schluessel ?? freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).filter((t) => t.id !== id).map((t) => t.schluessel ?? ''));
-    await this.pruefeTyp(d, id);
-    // Berechtigungen (#142) gegen die neuen Felder prüfen, bevor etwas gespeichert ist.
-    const rechte = await this.berechtigungenAusEingabe({ ...alt, ...d }, eingabe);
-    const bleiben = new Set(d.register.filter((r) => r.art === 'dokumente').map((r) => r.key));
-    for (const [key, n] of await this.repo.dokumenteJeRegister(id)) {
-      if (bleiben.has(key)) continue;
-      const name = alt.register.find((r) => r.key === key)?.name ?? key;
-      throw new Fachfehler(409, t('meldungen.dienst.im-register-liegen-noch', { anzahl: n, name }));
-    }
-    // In einer Transaktion (#962): Typ, Ansicht, Titel, Passung, Fristen und Berechtigungen ganz oder gar nicht. Vorher
-    // lief jeder Schritt für sich – ein Fehler mittendrin ließ einen halb nachgezogenen Typ zurück.
-    return this.inEinemZug(async () => {
-      let typ: Mappentyp;
-      try { typ = await this.repo.aendereTyp(id, d, stand); }
-      catch (f) { if (f instanceof KonfigurationVeraltet) throw Dienst.konfigurationKonflikt('typ'); throw f; }
-      await this.kern.anlaesse.typGeaendert.melde({ alt, typ });
-      if (!rechte) return typ;
-      const mit = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
-      this.kern.danach(() => Dienst.protokolliereBerechtigungen(mit, rechte.niemand));
-      return mit;
-    });
-  }
-
-  /**
-   * Systemtypen: Systemfelder müssen bleiben und behalten ihre feste Definition;
-   * Bezeichnung und Hilfetext darf der Administrator ändern. Benutzer-Mappen entstehen
-   * und verschwinden nur über die Benutzerverwaltung.
-   */
-  private async mitSystemfeldern(d: MappentypDaten, system: Systemtyp): Promise<MappentypDaten> {
-    const typen = await this.repo.listeTypen();
-    const soll = systemfelder(system, typen.find((t) => t.system === 'rolle')?.id ?? '', typen.find((t) => t.system === 'benutzer')?.id ?? '');
-    const fehlen = soll.filter((s) => !d.felder.some((f) => f.key === s.key));
-    if (fehlen.length) throw new Fachfehler(422, t('meldungen.dienst.systemfelder-lassen-sich-nicht', { map: fehlen.map((f) => f.label).join(', ') }));
-    const felder = d.felder.map((f) => {
-      const s = soll.find((x) => x.key === f.key);
-      // Beschriftungen je Sprache (#728) darf der Administrator wie Bezeichnung und Hilfetext setzen.
-      return s ? { ...s, label: f.label || s.label, hilfe: f.hilfe || s.hilfe, ...mitSystemBeschriftung(f, s) } : f;
-    });
-    // Systemtypen (#937): nie aus Post anzulegen, kein „Woran man ihn erkennt“.
-    const ohneErkennbar = d.beschriftungen ? Object.fromEntries(Object.entries(d.beschriftungen).map(([k, v]) => { const { erkennbarAn: _e, ...rest } = v ?? {}; return [k, rest]; })) : undefined;
-    return { ...d, felder, ausPost: false, erkennbarAn: '', beschriftungen: ohneErkennbar, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : system === 'post' ? { erstellenErlaubt: false } : {}) };
-  }
-
-  async loescheTyp(id: string): Promise<void> {
-    const eintrag = await this.repo.holeTyp(id);
-    if (!eintrag) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
-    if (eintrag.system) throw new Fachfehler(409, t('meldungen.dienst.ist-ein-systemmappentyp-er', { name: eintrag.name }));
-    const gruende: string[] = [];
-    const n = await this.repo.zaehleMappen(id);
-    if (n) gruende.push(t('meldungen.dienst.mappen-gehoeren-zu-diesem', { anzahl: n }));
-    const imKorb = (await this.repo.papierkorb({ typId: id })).length;
-    if (imKorb) gruende.push(t('meldungen.dienst.mappen-dieses-typs-liegen', { anzahl: imKorb }));
-    for (const mappentyp of await this.repo.listeTypen()) {
-      if (mappentyp.id === id) continue;
-      for (const f of mappentyp.felder) if (f.typ === 'referenz' && f.zielTyp === id) gruende.push(t('meldungen.dienst.das-feld-verweist-auf', { name: mappentyp.name, label: f.label }));
-    }
-    if (gruende.length) throw new Fachfehler(409, t('meldungen.dienst.dieser-mappentyp-kann-noch'), { gruende });
-    await this.repo.loescheTyp(id);
-    // Aus den Sichten entfernen; Sichten, die nur diesen Typ hatten und keine Kinder, verschwinden mit.
-    const alle = await this.repo.listeSichten();
-    for (const x of alle.filter((v) => v.typen.includes(id))) {
-      const typen = x.typen.filter((t) => t !== id);
-      if (!typen.length && !kinderVon(alle, x.id).length) await this.repo.loescheSicht(x.id);
-      else await this.repo.aendereSicht(x.id, { ...x, typen });
-    }
-  }
+  rechteUebersicht(z: Zugriff) { return this.mappentypen.rechteUebersicht(z); }
+  legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.legeTypAn(eingabe); }
+  aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.aendereTyp(id, eingabe); }
+  ausDokumentVon(typId: string): Promise<AusDokument | null> { return this.mappentypen.ausDokumentVon(typId); }
+  private typErkennungen() { return this.mappentypen.typErkennungen(); }
+  loescheTyp(id: string): Promise<void> { return this.mappentypen.loescheTyp(id); }
 
   listeMappen(typId?: string) { return this.repo.listeMappen(typId); }
   /** Schlank für viele Mappen (Demo-Daten, #248). */
@@ -3470,22 +3017,7 @@ export class Dienst {
 
   /* ---------- Pakete am Mappentyp (#686) ---------- */
 
-  /**
-   * Darf der Benutzer dieses Pakets die Mappe (auch im Papierkorb; ohne Mappe: Mappen dieses Typs) lesen? null = ja,
-   * sonst der Grund fürs Protokoll. Wird je Zustellung neu gebildet – Rechteänderungen wirken sofort.
-   */
-  private async paketSiehtNicht(p: InstalliertesPaket, typId: string, mappeId: string | null): Promise<string | null> {
-    const konto = (await this.konten?.dienstkonten?.())?.find((b) => b.paketId === p.id);
-    const z = await this.zugriff({ id: konto?.id ?? `paket:${p.id}`, rolle: 'mitglied', art: 'dienst', paketId: p.id });
-    if (!z.typen.has(typId)) return (await this.paketVerwehrt())[typId]?.includes(p.id) ? t('meldungen.dienst.mappentyp-fuer-dieses-paket') : (await this.kiSperre(p))(typId) ? t('meldungen.dienst.ki-nicht-zugelassen') : t('meldungen.dienst.kein-leserecht-am-mappentyp');
-    if (!mappeId) return null;
-    // #958: Nach dem Löschen liegt die Mappe im Papierkorb – geprüft wird mit ihren Werten von dort. Gibt es sie gar
-    // nicht mehr (Papierkorb schon geleert), lässt sich das Leserecht nicht prüfen: dann nicht zustellen.
-    const m = (await this.repo.holeMappe(mappeId)) ?? (await this.repo.holeAusPapierkorb(mappeId));
-    if (!m) return t('meldungen.dienst.diese-mappe-gibt-es');
-    if (!(await this.rechteAn(z, m)).R) return t('meldungen.dienst.kein-leserecht-an-dieser');
-    return null;
-  }
+  private paketSiehtNicht(p: InstalliertesPaket, typId: string, mappeId: string | null): Promise<string | null> { return this.typpakete.paketSiehtNicht(p, typId, mappeId); }
 
   /**
    * Ein Ereignis ging wegen der KI-Sperre nicht an das Paket (#796): Wartet das Dokument auf die Texterkennung dieses
@@ -3582,43 +3114,8 @@ export class Dienst {
     return this.kiUebersicht();
   }
 
-  /**
-   * Pakete mit Code, die Mappen dieses Typs lesen dürften (bestätigte Rechte), samt ob sie Ereignisse dazu abonniert
-   * haben und ob der Admin ihnen den Typ verwehrt hat – für den Abschnitt „Pakete“ im Mappentyp-Editor.
-   */
-  async paketeAmTyp(typId: string): Promise<Array<{ id: string; name: string; ereignisse: boolean; schreiben: boolean; verwehrt: boolean }>> {
-    const typ = await this.repo.holeTyp(typId);
-    if (!typ) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
-    if (typ.system === 'benutzer') return [];
-    const [pakete, typen, verwehrt] = [await this.repo.listePakete(), await this.repo.listeTypen(), await this.paketVerwehrt()];
-    const erg: Array<{ id: string; name: string; ereignisse: boolean; schreiben: boolean; verwehrt: boolean }> = [];
-    for (const p of pakete) {
-      const l = p.laeufer;
-      if (!l) continue;
-      const auf = await this.typverweise(p.id, pakete, typen);
-      if (!auf(l.rechte.lesen).has(typId)) continue;
-      erg.push({
-        id: p.id, name: p.name, schreiben: auf(l.rechte.schreiben).has(typId), verwehrt: !!verwehrt[typId]?.includes(p.id),
-        ereignisse: l.ereignisse.some((e) => MAPPEN_EREIGNISSE.includes(e)) && auf(l.mappentypen ?? []).has(typId),
-      });
-    }
-    return erg.sort((a, b) => a.name.localeCompare(b.name, 'de'));
-  }
-
-  /** Einem Paket einen Mappentyp verwehren bzw. wieder erlauben; wirkt sofort (Lesen, Schreiben, Ereignisse). */
-  async setzePaketVerwehrt(typId: string, paketId: string, verwehrt: boolean, von: string | null): Promise<void> {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    const am = await this.paketeAmTyp(typId);
-    const p = am.find((x) => x.id === paketId);
-    if (!p) throw new Fachfehler(404, t('meldungen.dienst.dieses-paket-darf-mappen'));
-    const alle = await this.paketVerwehrt();
-    const liste = new Set(alle[typId] ?? []);
-    if (verwehrt) liste.add(paketId); else liste.delete(paketId);
-    if (liste.size) alle[typId] = [...liste].sort(); else delete alle[typId];
-    await this.einstellungen.schreibe('paket_verwehrt', Object.keys(alle).length ? alle : null);
-    const typ = await this.repo.holeTyp(typId);
-    protokoll.modul('werkbank').info(verwehrt ? 'Paket den Mappentyp verwehrt' : 'Paket den Mappentyp wieder erlaubt', { paket: paketId, typ: typ?.name ?? typId, von });
-  }
+  paketeAmTyp(typId: string) { return this.typpakete.paketeAmTyp(typId); }
+  setzePaketVerwehrt(typId: string, paketId: string, verwehrt: boolean, von: string | null): Promise<void> { return this.typpakete.setzePaketVerwehrt(typId, paketId, verwehrt, von); }
 
   /* ---------- Berechtigungen in der Werkbank (#123, #125) ---------- */
 
@@ -3940,74 +3437,10 @@ export class Dienst {
 
   /* ---------- Passung: passt eine Mappe zur aktuellen Definition? ---------- */
 
-  /** Prüft alle Mappen eines Typs (nach einer Änderung des Typs) und speichert das Ergebnis. */
-  async pruefePassung(typId: string): Promise<number> {
-    const typ = await this.repo.holeTyp(typId);
-    if (!typ) return 0;
-    const mappen = await this.repo.listeMappen(typId);
-    const typVon = await this.repo.typenVon(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)).filter(istUuid));
-    // Eindeutige Felder: gleiche Werte im Arbeitsspeicher suchen statt je Mappe in der Datenbank.
-    const gleiche = new Map<string, Map<string, Mappe[]>>();
-    for (const f of typ.felder) {
-      if (!f.eindeutig || (f.typ !== 'text' && f.typ !== 'zahl')) continue;
-      const nachWert = new Map<string, Mappe[]>();
-      for (const m of mappen) {
-        if (istLeer(m.werte[f.key])) continue;
-        const w = String(m.werte[f.key]).trim().toLowerCase();
-        nachWert.set(w, [...(nachWert.get(w) ?? []), m]);
-      }
-      gleiche.set(f.key, nachWert);
-    }
-    const ergebnis = mappen.map((m) => {
-      const p = pruefeMappe(typ, m.werte, {
-        typVon: (id) => typVon.get(id),
-        doppelt: (k, v) => {
-          const andere = gleiche.get(k)?.get(String(v).trim().toLowerCase())?.find((x) => x.id !== m.id);
-          return andere ? andere.titel || t('meldungen.dienst.ohne-titel') : undefined;
-        },
-      });
-      return { id: m.id, problem: ersterGrund(typ, p), alt: m.problem ?? null, passtAlt: m.passt };
-    });
-    const geaendert = ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem }));
-    await this.repo.setzePassung(geaendert);
-    // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
-    await this.passungsAufgaben(geaendert);
-    return ergebnis.filter((e) => e.problem).length;
-  }
-
-  /**
-   * Nach dem Speichern einer Mappe: Andere Mappen desselben Typs, die bisher nicht passten,
-   * können jetzt passen (z. B. weil ein doppelter Wert geändert wurde). Das sind meist wenige.
-   */
-  private async pruefeUnpassende(typ: Mappentyp) {
-    const ids = await this.repo.unpassende(typ.id);
-    if (ids.length) await this.passungFuer(typ, ids);
-  }
-
-  /** Prüft einzelne Mappen eines Typs gegen seine Definition und speichert das Ergebnis. */
-  private async passungFuer(typ: Mappentyp, ids: string[]) {
-    const liste: Array<{ id: string; problem: string | null }> = [];
-    const mappen = await this.repo.holeMappen(ids);
-    // In einem Zug statt je Mappe (#743): Typen der Verweisziele und „Bereits vergeben“ über den Index.
-    const typen = await this.repo.typenVon([...new Set(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)))].filter(istUuid));
-    const eindeutig = typ.felder.filter((f) => f.eindeutig && (f.typ === 'text' || f.typ === 'zahl'));
-    const funde = await this.repo.findeDoppelte(typ.id, mappen.flatMap((m) => eindeutig.filter((f) => !istLeer(m.werte[f.key])).map((f) => ({ mappeId: m.id, feldKey: f.key, wert: String(m.werte[f.key]) }))));
-    for (const m of mappen) {
-      const doppelt = (k: string) => { const d = funde.get(`${m.id}|${k}`); return d ? d.titel || t('meldungen.dienst.ohne-titel') : undefined; };
-      const problem = ersterGrund(typ, pruefeMappe(typ, m.werte, { typVon: (id) => typen.get(id), doppelt }));
-      if (problem !== m.problem) liste.push({ id: m.id, problem });
-    }
-    await this.repo.setzePassung(liste);
-    await this.passungsAufgaben(liste);
-  }
-
-  /** Beim Start: Passung für Typen nachholen, deren Mappen noch nie geprüft wurden. */
-  async passungNachziehen(fortschritt: (fertig: number, gesamt: number) => void = () => {}): Promise<number> {
-    const typen = await this.repo.typenOhnePassung();
-    // Fortschritt für die Startseite (#802).
-    for (const [i, t] of typen.entries()) { fortschritt(i, typen.length); await this.pruefePassung(t); }
-    return typen.length;
-  }
+  pruefePassung(typId: string): Promise<number> { return this.passung.pruefePassung(typId); }
+  private pruefeUnpassende(typ: Mappentyp) { return this.passung.pruefeUnpassende(typ); }
+  private passungFuer(typ: Mappentyp, ids: string[]) { return this.passung.passungFuer(typ, ids); }
+  passungNachziehen(fortschritt?: (fertig: number, gesamt: number) => void): Promise<number> { return this.passung.passungNachziehen(fortschritt); }
 
   private async titel(m: Mappe): Promise<string> {
     return m.titel || titelAus(await this.repo.holeTyp(m.typId), m.werte, undefined, m) || t('meldungen.dienst.ohne-titel');
@@ -4250,23 +3683,7 @@ export class Dienst {
   }
   entschluessele(wert: string): string | null { return this.tresor?.entschluessele(wert) ?? null; }
 
-  /** Warum Mappentypen nicht weg dürfen: Mappen oder Papierkorb-Einträge. Leer = frei. */
-  async belegteTypen(ids: string[], ohne: string[] = []): Promise<string[]> {
-    const gruende: string[] = [];
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    // Mappen, die ohnehin mitgehen (#878: unveränderte Beispiele), zählen nicht.
-    const mitgehend = new Map<string, number>();
-    for (const m of await this.repo.holeMappen(ohne)) mitgehend.set(m.typId, (mitgehend.get(m.typId) ?? 0) + 1);
-    for (const id of ids) {
-      const eintrag = typen.get(id);
-      if (!eintrag) continue;
-      const n = await this.repo.zaehleMappen(id) - (mitgehend.get(id) ?? 0);
-      if (n) gruende.push(`${eintrag.name}: ${n} ${t('meldungen.dienst.mappen', { anzahl: n })}.`);
-      const korb = (await this.repo.papierkorb({ typId: id })).length;
-      if (korb) gruende.push(`${eintrag.name}: ${korb} im Papierkorb.`);
-    }
-    return gruende;
-  }
+  belegteTypen(ids: string[], ohne: string[] = []): Promise<string[]> { return this.mappentypen.belegteTypen(ids, ohne); }
 
   /** Nur für das Zurückrollen einer fehlgeschlagenen Paketinstallation: Mappen ohne Papierkorb entfernen (mit Dateien, #878). */
   async entferneMappenEndgueltig(ids: string[]) {
@@ -4335,106 +3752,12 @@ export class Dienst {
 
   /* ---------- Nummernkreise (#171) ---------- */
 
-  /** Felder, die einen Kreis nutzen: „Mappentyp · Feld“. */
-  private async kreisVerwendung(): Promise<Map<string, Array<{ typId: string; typ: string; feldKey: string; feld: string }>>> {
-    const v = new Map<string, Array<{ typId: string; typ: string; feldKey: string; feld: string }>>();
-    for (const t of await this.repo.listeTypen()) for (const f of t.felder) {
-      const k = kreisVon(f);
-      if (k) v.set(k, [...(v.get(k) ?? []), { typId: t.id, typ: t.name, feldKey: f.key, feld: f.label }]);
-    }
-    return v;
-  }
-
-  async listeNummernkreise(jetzt = new Date()) {
-    await this.archivKreis(); // Archivnummern (#345): der Kreis ist immer da
-    const v = await this.kreisVerwendung();
-    const d = datumIn(jetzt);
-    return (await this.repo.listeNummernkreise()).map((k) => {
-      const n = naechste(k, d);
-      return { ...k, naechste: n.nummer, naechsterZaehler: n.zaehler, zeitraum: n.zeitraum, neubeginn: neubeginn(k.muster), verwendet: v.get(k.schluessel) ?? [] };
-    });
-  }
-
-  async speichereNummernkreis(e: unknown, von: string) {
-    const x = (e ?? {}) as Record<string, unknown>;
-    const schluessel = text(x.schluessel).toLowerCase();
-    const name = text(x.name).slice(0, 80);
-    const muster = String(x.muster ?? '').trim();
-    const start = Number(x.start ?? 1);
-    const vorhanden = (await this.repo.listeNummernkreise()).find((k) => k.schluessel === schluessel);
-    if (x.neu === true && vorhanden) throw new Fachfehler(409, t('meldungen.dienst.die-kennung-hat-schon', { schluessel, name: vorhanden.name }));
-    if (x.neu !== true && !vorhanden) throw new Fachfehler(404, t('meldungen.dienst.diesen-nummernkreis-gibt-es'));
-    if (!KREIS_SCHLUESSEL.test(schluessel)) throw new Fachfehler(422, t('meldungen.dienst.kennung-kleinbuchstaben-ziffern-und'));
-    if (!name) throw new Fachfehler(422, t('meldungen.dienst.der-nummernkreis-braucht-einen'));
-    const fm = pruefeMuster(muster);
-    if (fm) throw new Fachfehler(422, fm);
-    if (!Number.isSafeInteger(start) || start < 0) throw new Fachfehler(422, t('meldungen.dienst.der-startwert-muss-eine'));
-    const k = await this.repo.speichereNummernkreis({ schluessel, name, muster, start });
-    protokoll.modul('werkbank').info(vorhanden ? 'Nummernkreis geändert' : 'Nummernkreis angelegt', { von, schluessel, muster, start, ...(vorhanden && vorhanden.muster !== muster ? { musterVorher: vorhanden.muster } : {}) });
-    return k;
-  }
-
-  async loescheNummernkreis(schluessel: string, von: string) {
-    if (schluessel === ARCHIV_KREIS) throw new Fachfehler(409, t('meldungen.dienst.den-nummernkreis-der-archivnummern'));
-    const v = (await this.kreisVerwendung()).get(schluessel);
-    if (v?.length) throw new Fachfehler(409, t('meldungen.dienst.der-nummernkreis-wird-noch', { map: v.map((x) => `${x.typ} · ${x.feld}`).join(', ') }));
-    await this.repo.loescheNummernkreis(schluessel);
-    protokoll.modul('werkbank').info('Nummernkreis gelöscht', { von, schluessel });
-  }
-
-  /** Zählerstand setzen (#171): `naechster` ist der Zähler der nächsten Nummer im aktuellen Zeitraum. */
-  async setzeZaehler(schluessel: string, e: unknown, von: string, jetzt = new Date()) {
-    const naechster = Number((e as { naechster?: unknown })?.naechster);
-    if (!Number.isSafeInteger(naechster) || naechster < 0) throw new Fachfehler(422, t('meldungen.dienst.der-zaehlerstand-muss-eine'));
-    const k = (await this.repo.listeNummernkreise()).find((x) => x.schluessel === schluessel);
-    if (!k) throw new Fachfehler(404, t('meldungen.dienst.diesen-nummernkreis-gibt-es'));
-    const vorher = naechste(k, datumIn(jetzt));
-    const neu = await this.repo.setzeZaehler(schluessel, vorher.zeitraum, naechster - 1);
-    protokoll.modul('werkbank').warn('Zählerstand eines Nummernkreises gesetzt', { von, schluessel, zeitraum: vorher.zeitraum, vorher: vorher.zaehler, naechster });
-    return neu;
-  }
-
-  /** Wartung (#171): Mappen eines Typs ohne Nummer – Anzahl und welche Nummern entstehen. */
-  async nummernVorschau(typId: string, feldKey: string, jetzt = new Date()) {
-    const { kreis, ohne } = await this.ohneNummer(typId, feldKey);
-    if (!ohne.length) return { anzahl: 0, von: null, bis: null };
-    const d = datumIn(jetzt);
-    const n = naechste(kreis, d);
-    const bis = naechste({ ...kreis, staende: { ...kreis.staende, [n.zeitraum]: n.zaehler + ohne.length - 2 } }, d);
-    return { anzahl: ohne.length, von: n.nummer, bis: ohne.length === 1 ? n.nummer : bis.nummer };
-  }
-
-  private async ohneNummer(typId: string, feldKey: string): Promise<{ typ: Mappentyp; kreis: Nummernkreis; ohne: Mappe[] }> {
-    const typ = await this.repo.holeTyp(typId);
-    const f = typ?.felder.find((x) => x.key === feldKey);
-    const k = f ? kreisVon(f) : null;
-    if (!typ || !f || !k) throw new Fachfehler(422, t('meldungen.dienst.dieses-feld-nutzt-keinen'));
-    const kreis = (await this.repo.listeNummernkreise()).find((x) => x.schluessel === k);
-    if (!kreis) throw new Fachfehler(409, t('meldungen.dienst.den-nummernkreis-gibt-es', { k }));
-    const ohne = (await this.repo.listeMappen(typId)).filter((m) => istLeer(m.werte[feldKey]))
-      .sort((a, b) => a.erstellt.localeCompare(b.erstellt) || a.id.localeCompare(b.id));
-    return { typ, kreis, ohne };
-  }
-
-  /** Wartung (#171): Nummern nachträglich vergeben, in der Reihenfolge des Anlegens; als Auftrag. */
-  nummernNachtragen(typId: string, feldKey: string, von: string) {
-    return this.auftraege.starte('nummern', 'Nummern nachträglich vergeben', async (fortschritt) => {
-      const { typ, ohne } = await this.ohneNummer(typId, feldKey);
-      const label = typ.felder.find((f) => f.key === feldKey)!.label;
-      let vergeben = 0; let erste: string | null = null; let letzte: string | null = null;
-      for (const [i, m] of ohne.entries()) {
-        const nr = await this.repo.vergebeNummer(m.id, feldKey, kreisVon(typ.felder.find((f) => f.key === feldKey)!)!, new Date());
-        if (nr) {
-          vergeben++; erste ??= nr; letzte = nr;
-          await this.notiere(m.id, null, 'geaendert', { aenderungen: [{ feld: feldKey, label, neu: nr }] satisfies Feldaenderung[] });
-        }
-        fortschritt(i + 1, ohne.length);
-      }
-      await this.aktualisiereTitel(ohne.map((m) => m.id));
-      protokoll.modul('werkbank').info('Nummern nachträglich vergeben', { von, typ: typ.name, feld: label, vergeben, erste, letzte });
-      return { vergeben, erste, letzte };
-    }, [{ key: 'nummern', name: 'Nummern vergeben', einheit: 'Mappen' }]);
-  }
+  listeNummernkreise(jetzt?: Date) { return this.nummernkreise.listeNummernkreise(jetzt); }
+  speichereNummernkreis(e: unknown, von: string) { return this.nummernkreise.speichereNummernkreis(e, von); }
+  loescheNummernkreis(schluessel: string, von: string) { return this.nummernkreise.loescheNummernkreis(schluessel, von); }
+  setzeZaehler(schluessel: string, e: unknown, von: string, jetzt?: Date) { return this.nummernkreise.setzeZaehler(schluessel, e, von, jetzt); }
+  nummernVorschau(typId: string, feldKey: string, jetzt?: Date) { return this.nummernkreise.nummernVorschau(typId, feldKey, jetzt); }
+  nummernNachtragen(typId: string, feldKey: string, von: string) { return this.nummernkreise.nummernNachtragen(typId, feldKey, von); }
 
   /**
    * Wartung „Absender bereinigen“ (#494): Bis 0.99 bekam eingehende Post ohne Absender den Namen dessen,
@@ -5216,212 +4539,15 @@ export class Dienst {
    */
   sichereSystem(): Promise<SystemIds> { return this.systemausstattung.sicherstellen(); }
 
-  /**
-   * Ablageort (#168, #883): Seit #883 bringt ihn das Paket Basis mit (`basis:ablageort`); der Kern legt keinen mehr an.
-   * Ältere Ablagen haben noch den Ablageort, den der Kern früher anlegte – Basis übernimmt ihn beim Installieren bzw.
-   * Aktualisieren mit gleicher Id. Ohne Basis und ohne früheren Ablageort gibt es keinen (gewollt). `dms:ablageort` in
-   * Paketen zeigt eine Zeit lang auf diesen Typ (Alias).
-   */
-  async ablageortTyp(): Promise<Mappentyp | undefined> {
-    const id = await this.ablageortId();
-    return id ? this.repo.holeTyp(id) : undefined;
-  }
+  ablageortTyp(): Promise<Mappentyp | undefined> { return this.systemtypen.ablageortTyp(); }
 
   private ablageortId(): Promise<string | undefined> { return this.kern.ablageortId(); }
 
   /** Der Ablageort, den der Kern vor #883 angelegt hat (Kern). */
   frueherAblageortTyp(): Promise<Mappentyp | undefined> { return this.kern.frueherAblageortTyp(); }
 
-  /**
-   * Systemausstattung, Schritt der Mappentypen (#963): Systemtypen „Rolle“, „Benutzer“ und „Post“ (#26, #27, #192)
-   * samt Systemfeldern und Beschriftungen, Systemrollen und Kontorollen; `neu` = die eben angelegten Typen (ihre
-   * Ansichten legt danach die Systemausstattung an).
-   */
-  private async sichereSystemtypen(): Promise<{ post: Mappentyp; neu: Mappentyp[] }> {
-    const neu: Mappentyp[] = [];
-    const typen = await this.repo.listeTypen();
-    let rolle = typen.find((t) => t.system === 'rolle');
-    let benutzer = typen.find((t) => t.system === 'benutzer');
-    let post = typen.find((t) => t.system === 'post');
-    const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
-    // Feste Schlüssel der Systemtypen (#145): benutzer, rolle, post.
-    const sk = (k: string) => freierSchluessel(k, typen.map((t) => t.schluessel ?? ''));
-    const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
-    if (!rolle) {
-      rolle = await this.repo.legeTypAn(ids.rolle, {
-        name: frei(SYSTEMTYPEN.rolle), schluessel: sk('rolle'), beschreibung: t('meldungen.dienst.rollen-die-benutzer-haben'), titelVorlage: '{name}',
-        felder: systemfelder('rolle', ids.rolle),
-        register: [
-          { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: ['name'] },
-          { key: 'benutzer', name: REGISTERNAMEN.benutzer, art: 'verknuepfungen', quellen: [{ typId: ids.benutzer, feldKey: 'rollen' }] },
-        ],
-        trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true,
-      }, 'rolle');
-      neu.push(rolle);
-      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: rolle.name });
-    }
-    if (!benutzer) {
-      benutzer = await this.repo.legeTypAn(ids.benutzer, {
-        name: frei(SYSTEMTYPEN.benutzer), schluessel: sk('benutzer'), beschreibung: t('meldungen.dienst.die-benutzer-dieser-installation'), titelVorlage: '{name}',
-        felder: systemfelder('benutzer', rolle.id, ids.benutzer),
-        register: [
-          { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: ['name', 'email', 'rollen', 'aktiv', 'abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'] },
-          { key: 'dokumente', name: REGISTERNAMEN.dokumente, art: 'dokumente' },
-          { key: 'verknuepfungen', name: REGISTERNAMEN.verknuepfungen, art: 'verknuepfungen', quellen: [] },
-        ],
-        trefferliste: ['name', 'email', 'rollen', 'aktiv'], erstellenErlaubt: false, loeschenErlaubt: false,
-      }, 'benutzer');
-      neu.push(benutzer);
-      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
-    }
-    if (!post) {
-      // Post (#192): alles, was hinein- oder hinausgeht; ersetzt den früheren Typ E-Mail (#58).
-      post = await this.repo.legeTypAn(randomUUID(), {
-        name: frei(SYSTEMTYPEN.post), schluessel: sk('post'), beschreibung: POST_BESCHREIBUNG, titelVorlage: '{betreff}',
-        felder: systemfelder('post', rolle.id, benutzer.id),
-        register: [
-          { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: systemfelder('post', rolle.id, benutzer.id).map((f) => f.key) },
-          { key: 'dokumente', name: REGISTERNAMEN.dokumente, art: 'dokumente' },
-          { key: 'protokoll', name: REGISTERNAMEN.historie, art: 'protokoll' },
-        ],
-        trefferliste: POST_SPALTEN, erstellenErlaubt: false, loeschenErlaubt: true,
-      }, 'post');
-      neu.push(post);
-      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: post.name });
-    }
-    post = await this.wandleZuPost(post, rolle.id, benutzer.id);
-    benutzer = await this.ergaenzeSystemfelder(benutzer, rolle.id);
-    for (const r of Object.keys(ROLLEN) as Array<keyof typeof ROLLEN>) {
-      const kennung = systemrolleKennung(r);
-      if (await this.repo.holeSystemMappe(kennung)) continue;
-      const name = (await this.repo.findeDoppelt(rolle.id, 'name', ROLLEN[r])) ? `${ROLLEN[r]} (System)` : ROLLEN[r];
-      await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
-    }
-    // Systemrollen für Konten, die kein Mensch sind (#673): Systemkonto und Paket – nur in Regeln am Mappentyp, nie an Menschen vergeben.
-    for (const r of Object.keys(KONTOROLLEN) as Kontorolle[]) {
-      const kennung = kontorolleKennung(r);
-      if (await this.repo.holeSystemMappe(kennung)) continue;
-      const name = (await this.repo.findeDoppelt(rolle.id, 'name', KONTOROLLEN[r])) ? `${KONTOROLLEN[r]} (System)` : KONTOROLLEN[r];
-      await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
-    }
-    await this.loeseFruehereAdminrolle(benutzer);
-    rolle = await this.beschrifteSystemtyp(rolle, rolle.id, benutzer.id);
-    benutzer = await this.beschrifteSystemtyp(benutzer, rolle.id, benutzer.id);
-    post = await this.beschrifteSystemtyp(post, rolle.id, benutzer.id);
-    return { post, neu };
-  }
-
-  /**
-   * Beschriftungen der Systemmappentypen (#729): Name, Beschreibung, Register und Systemfelder auf Englisch (und in
-   * installierten Sprachen) – bei jedem Start ergänzt, nie überschrieben. Eigene Namen des Administrators bleiben ohne
-   * fremde Beschriftung, damit dort nicht plötzlich der Standardname erscheint.
-   */
-  private async beschrifteSystemtyp(typ: Mappentyp, rolleId: string, benutzerId: string): Promise<Mappentyp> {
-    const system = typ.system;
-    if (!system) return typ;
-    const soll = systemfelder(system, rolleId, benutzerId);
-    const felder = typ.felder.map((f) => { const x = f.system ? soll.find((y) => y.key === f.key) : undefined; return x ? { ...f, ...mitSystemBeschriftung(f, x) } : f; });
-    const BESCHREIBUNG: Record<string, string> = { rolle: 'meldungen.dienst.rollen-die-benutzer-haben', benutzer: 'meldungen.dienst.die-benutzer-dieser-installation', post: 'meldungen.dienst.alles-was-in-ablago' };
-    const tb = systemBeschriftung<TypTeile>({
-      ...(typ.name === SYSTEMTYPEN[system] ? { name: `gemeinsam.model.systemtyp.${system}` } : {}),
-      ...(typ.beschreibung === inSprache('de', () => t.frei(BESCHREIBUNG[system])) ? { beschreibung: BESCHREIBUNG[system] } : {}),
-    });
-    const REG: Record<string, keyof typeof REGISTERNAMEN> = { allgemein: 'allgemein', dokumente: 'dokumente', verknuepfungen: 'verknuepfungen', benutzer: 'benutzer', protokoll: 'historie' };
-    const register = typ.register.map((r) => {
-      const k = REG[r.key];
-      const b = k && r.name === REGISTERNAMEN[k] ? systemBeschriftung<NamensTeile>({ name: `gemeinsam.model.register.${k}` }) : undefined;
-      return b ? { ...r, ...mitBeschriftungen(ergaenzeBeschriftungen(r.beschriftungen, b)) } : r;
-    });
-    const beschriftungen = ergaenzeBeschriftungen(typ.beschriftungen, tb);
-    const neu = { ...typ, felder, register, ...mitBeschriftungen(beschriftungen) };
-    if (JSON.stringify(neu) === JSON.stringify(typ)) return typ;
-    return this.repo.aendereTyp(typ.id, { ...neu, trefferlisten: trefferlistenVon(neu), trefferliste: undefined });
-  }
-
-  /**
-   * Umstellung #818: Die Systemrolle „Administrator“ entfällt. Ihre Mappe verliert die Kennung und wird eine
-   * gewöhnliche Rolle ohne Mitglieder – so bleiben Regeln gültig, die sie nennen; ohne solche Regeln kann man sie
-   * löschen. Einmalig beim ersten Start nach dem Update.
-   */
-  private async loeseFruehereAdminrolle(benutzerTyp: Mappentyp) {
-    const alt = await this.repo.holeSystemMappe(FRUEHERE_ADMINROLLE);
-    if (!alt) return;
-    for (const m of await this.repo.listeMappen(benutzerTyp.id)) {
-      const rollen = alsListe(m.werte.rollen);
-      if (rollen.includes(alt.id)) await this.schreibeSystemMappe(benutzerTyp, m.id, { ...m.werte, rollen: rollen.filter((r) => r !== alt.id) }, null);
-    }
-    await this.repo.setzeSystemKennung(alt.id, null);
-    protokoll.modul('werkbank').warn('Systemrolle „Administrator“ aufgelöst: jetzt eine gewöhnliche Rolle ohne Mitglieder', { rolle: alt.titel || String(alt.werte.name ?? '') });
-  }
-
-  /**
-   * Spur im Verwaltungsmodus (#820): Für jede Mappe, die die Person mit ihren Alltagsrechten (`alltag`, ohne Modus)
-   * nicht lesen dürfte, steht in der Historie „im Verwaltungsmodus“ mit `was` – nicht löschbar. Dieselbe Mappe kurz
-   * hintereinander (`MODUSSPUR_MINUTEN`) nur einmal je Person und Art. Liefert die betroffenen Mappen.
-   */
-  async vermerkeVerwaltungsmodus(alltag: { id: string; rolle: string; name?: string; email?: string }, ids: string[], was: Modusspur): Promise<Set<string>> {
-    const z = await this.zugriff({ id: alltag.id, rolle: 'mitglied' });
-    const lesbar = await this.lesbare(z, ids);
-    const fremd = [...new Set(ids)].filter((id) => !lesbar.has(id));
-    if (!fremd.length) return new Set();
-    // „Kurz hintereinander nur einmal“ (#744): Merker in der Datenbank – wer ihn anlegt, schreibt den Eintrag, auch wenn
-    // dieselbe Person gleichzeitig über zwei Prozesse kommt.
-    const belegt = await this.kurzzustand.belegeAlle(MODUSSPUR, fremd.map((id) => `${alltag.id}|${id}|${was}`), MODUSSPUR_MINUTEN * 60_000);
-    const neu = fremd.filter((id) => belegt.has(`${alltag.id}|${id}|${was}`));
-    if (neu.length) {
-      const titel = new Map((await this.repo.holeMappen(neu)).map((m) => [m.id, m.titel ?? '']));
-      await this.repo.historieSchreibe(neu.map((id) => ({ mappeId: id, benutzerId: alltag.id, art: 'verwaltungsmodus' as const, daten: { was, titel: titel.get(id) ?? '' } })));
-      protokoll.modul('ablage').warn('Im Verwaltungsmodus: fremde Mappe', { was, anzahl: neu.length, von: alltag.email ?? alltag.id, imVerwaltungsmodus: true });
-    }
-    return new Set(fremd);
-  }
-
-  /** Werkbank (#820): „Im Verwaltungsmodus angesehen“ – Person, Mappe, Zeit; neueste zuerst. */
-  async imVerwaltungsmodus(max = 500) {
-    const liste = await this.repo.historieArt('verwaltungsmodus', max);
-    // Typ für den Link in die Ablage; endgültig gelöschte Mappen bleiben in der Liste, nur ohne Link.
-    const typ = new Map((await this.repo.holeMappen([...new Set(liste.map((h) => h.mappeId))])).map((m) => [m.id, m.typId]));
-    return liste.map((h) => ({
-      id: h.id, zeit: h.zeit, mappeId: h.mappeId, typId: typ.get(h.mappeId) ?? null, benutzerId: h.benutzerId, was: String(h.daten.was ?? 'angesehen'), titel: String(h.daten.titel ?? ''),
-    }));
-  }
-
-  /**
-   * Aus dem früheren Typ E-Mail (#58) wird Post (#192). Die Migration 031 hat Kennung, Schlüssel und
-   * Werte umgestellt; hier folgt die Definition: Systemfelder mit ihrer festen Form (z. B. „Zugeordnet zu“
-   * mehrfach), neue Felder, Name und Register, solange der Administrator sie nicht geändert hat.
-   * Läuft bei jedem Start und ändert nur, was noch nicht passt.
-   */
-  private async wandleZuPost(mappentyp: Mappentyp, rolleId: string, benutzerId: string): Promise<Mappentyp> {
-    const soll = systemfelder('post', rolleId, benutzerId);
-    // Alte Standardbezeichnungen weichen den neuen; eigene des Administrators bleiben.
-    const alteNamen: Record<string, string[]> = { an: ['An'], bezug: ['Bezug'] };
-    const alteHilfen = [t('meldungen.dienst.wer-die-e-mail'), t('meldungen.dienst.die-mappe-aus-der')];
-    let geaendert = false;
-    const felder = mappentyp.felder.map((f) => {
-      const s = soll.find((x) => x.key === f.key);
-      if (!s || !f.system) return f;
-      const label = alteNamen[f.key]?.includes(f.label) ? s.label : f.label || s.label;
-      const hilfe = !f.hilfe || alteHilfen.includes(f.hilfe) ? s.hilfe : f.hilfe;
-      const neu: Feld = { ...s, label, ...(hilfe ? { hilfe } : {}), ...mitSystemBeschriftung({ ...f, label, hilfe }, s) };
-      if (!hilfe) delete neu.hilfe;
-      if (JSON.stringify(neu) !== JSON.stringify(f)) geaendert = true;
-      return neu;
-    });
-    const altName = mappentyp.name === 'E-Mail' || mappentyp.name === 'E-Mail (System)';
-    const register = mappentyp.register.map((r) => (r.art === 'dokumente' && r.name === 'Anhänge' ? { ...r, name: 'Dokumente' } : r));
-    const altListe = JSON.stringify(standardliste(mappentyp).spalten) === JSON.stringify(['datum', 'an', 'bezug']);
-    if (geaendert || altName || JSON.stringify(register) !== JSON.stringify(mappentyp.register) || altListe || mappentyp.beschreibung === 'Aus Ablago verschickte E-Mails mit Anhängen') {
-      const typen = await this.repo.listeTypen();
-      const name = altName ? (typen.some((x) => x.id !== mappentyp.id && x.name.trim().toLowerCase() === 'post') ? t('meldungen.dienst.post-system') : 'Post') : mappentyp.name;
-      const beschreibung = mappentyp.beschreibung === 'Aus Ablago verschickte E-Mails mit Anhängen' ? POST_BESCHREIBUNG : mappentyp.beschreibung;
-      const trefferlisten = altListe ? trefferlistenVon(mappentyp).map((l) => (l.standard ? { ...l, spalten: POST_SPALTEN } : l)) : trefferlistenVon(mappentyp);
-      mappentyp = await this.repo.aendereTyp(mappentyp.id, { ...mappentyp, name, beschreibung, felder, register, trefferlisten, trefferliste: undefined });
-      protokoll.modul('werkbank').info('Systemmappentyp Post nachgezogen', { typ: mappentyp.name });
-    }
-    // Neue Systemfelder (Stand, Kanal, Richtung, Für) ergänzen – wie bei jedem Systemtyp.
-    return this.ergaenzeSystemfelder(mappentyp, rolleId, benutzerId);
-  }
+  vermerkeVerwaltungsmodus(alltag: { id: string; rolle: string; name?: string; email?: string }, ids: string[], was: Modusspur): Promise<Set<string>> { return this.systemtypen.vermerkeVerwaltungsmodus(alltag, ids, was); }
+  imVerwaltungsmodus(max?: number) { return this.systemtypen.imVerwaltungsmodus(max); }
 
   /**
    * Sichten für Post (#192), einmal angelegt: „Neue Post“ ganz oben (Stand „Neu“), unter „Post“
@@ -5846,48 +4972,6 @@ export class Dienst {
     await this.leiteUm(a);
   }
 
-  /**
-   * Neue Systemfelder einer Version (z. B. Abwesenheit, #78) in einen vorhandenen Systemtyp aufnehmen.
-   * Hat der Administrator schon ein eigenes Feld mit diesem Schlüssel, wird seines umbenannt
-   * (z. B. vertreter → vertreter_alt) – samt Werten, Register, Trefferlisten und Titel-Vorlage.
-   */
-  private async ergaenzeSystemfelder(t: Mappentyp, rolleId: string, benutzerId = t.id): Promise<Mappentyp> {
-    if (!t.system) return t;
-    const soll = systemfelder(t.system, rolleId, benutzerId);
-    const fehlen = soll.filter((x) => !t.felder.some((f) => f.key === x.key && f.system));
-    if (!fehlen.length) return t;
-    const felder = [...t.felder];
-    const register = structuredClone(t.register);
-    let trefferlisten = trefferlistenVon(t);
-    let titelVorlage = t.titelVorlage;
-    const umbenannt: Array<[string, string]> = [];
-    for (const x of fehlen) {
-      const i = felder.findIndex((f) => f.key === x.key);
-      if (i >= 0) {
-        let neu = `${x.key}_alt`;
-        for (let n = 2; felder.some((f) => f.key === neu); n++) neu = `${x.key}_alt${n}`;
-        felder[i] = { ...felder[i], key: neu };
-        for (const r of register) if (r.felder) r.felder = r.felder.map((k) => (k === x.key ? neu : k));
-        trefferlisten = trefferlisten.map((l) => ({ ...l, spalten: l.spalten.map((k) => (k === x.key ? neu : k)) }));
-        titelVorlage = titelVorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`);
-        umbenannt.push([x.key, neu]);
-      }
-      felder.push(x);
-      const allgemein = register.find((r) => r.art === 'felder');
-      if (allgemein) allgemein.felder = [...(allgemein.felder ?? []), x.key];
-    }
-    const neuTyp = await this.repo.aendereTyp(t.id, { ...t, felder, register, trefferlisten, trefferliste: undefined, titelVorlage });
-    if (umbenannt.length) {
-      for (const m of await this.repo.listeMappen(t.id)) {
-        const werte = { ...m.werte };
-        for (const [alt, neu] of umbenannt) if (alt in werte) { werte[neu] = werte[alt]; delete werte[alt]; }
-        await this.repo.aendereMappe(m.id, werte, [], null, { basis: m.werte, verweise: (w) => verweiseVon(neuTyp, w) });
-      }
-      protokoll.modul('werkbank').warn('Eigene Felder wegen neuer Systemfelder umbenannt', { typ: t.name, felder: umbenannt.map(([a, b]) => `${a} → ${b}`).join(', ') });
-    }
-    protokoll.modul('werkbank').info('Systemfelder ergänzt', { typ: t.name, felder: fehlen.map((f) => f.label).join(', ') });
-    return neuTyp;
-  }
 
   /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */
   private async schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null): Promise<Mappe> {
@@ -6156,41 +5240,9 @@ export class Dienst {
     return (await this.repo.listeMappen(typId)).filter((m) => m.werte[feld] === datum && !m.demo).map((m) => m.id);
   }
 
-  /** Weitere (nicht System-)Rollen je Benutzer. */
-  async weitereRollen(): Promise<Map<string, string[]>> {
-    const { benutzer, systemrollen } = await this.kern.system();
-    const system = new Set(systemrollen.values());
-    return new Map((await this.repo.listeMappen(benutzer.id)).map((m) => [m.id, alsListe(m.werte.rollen).filter((r) => !system.has(r))]));
-  }
-
-  /** Benutzer werden deaktiviert statt gelöscht; gelöscht wird nur, worauf nichts verweist. */
-  async entferneBenutzerMappe(id: string) {
-    const m = await this.repo.holeMappe(id);
-    if (!m) return;
-    const fremd: Rueckverweis[] = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
-    if (fremd.length) {
-      throw new Fachfehler(409, t('meldungen.dienst.auf-diesen-benutzer-verweisen', { anzahl: fremd.length }), { rueckverweise: fremd });
-    }
-    await this.loescheMappeIntern(id, await this.repo.holeTyp(m.typId));
-  }
-
-  benutzerspiegel(): Benutzerspiegel {
-    return {
-      aktualisiere: (b, von, abwesenheit) => this.spiegleBenutzer(b, von ?? null, abwesenheit),
-      offeneAufgaben: async (id) => (await this.repo.offeneAufgaben({ benutzerId: id })).filter((a) => a.empfaengerId === id).length,
-      aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von),
-      entferne: (id) => this.entferneBenutzerMappe(id),
-      papierkorbAn: async () => (await this.kern.papierkorbTage()) > 0,
-      inPapierkorb: async (id, von) => {
-        const m = await this.repo.holeMappe(id);
-        if (!m) return;
-        const fremd = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
-        if (fremd.length) throw new Fachfehler(409, t('meldungen.dienst.auf-diesen-benutzer-verweisen', { anzahl: fremd.length }), { rueckverweise: fremd });
-        await this.repo.legeInPapierkorb(id, von);
-        await this.notiere(id, von, 'papierkorb');
-      },
-    };
-  }
+  weitereRollen(): Promise<Map<string, string[]>> { return this.systemtypen.weitereRollen(); }
+  entferneBenutzerMappe(id: string) { return this.systemtypen.entferneBenutzerMappe(id); }
+  benutzerspiegel(): Benutzerspiegel { return this.systemtypen.benutzerspiegel(); }
 
   /* ---------- Papierkorb (#43) ---------- */
 
