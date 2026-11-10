@@ -279,6 +279,16 @@ Will ein Update andere Adressen, fragt Ablago erneut.
 
 **„Mappentyp vorschlagen („Wohin gehört das?“) – nur aus dem Anfang des Dokuments und der Liste der Mappentypen, die Ablago mitgibt (dms:klassifizieren)“** – Das Paket schlägt auf der Seite *Dokument übernehmen* vor, zu welchem Mappentyp neue Post gehört (siehe [Wohin gehört das? durch Pakete](#wohin-gehoert-das)). Es bekommt nur den Anfang des Dokuments und Name, Kurzbeschreibung und „Woran man ihn erkennt“ der Mappentypen, die in Frage kommen und für KI-Dienste zugelassen sind – keine Mappen. Was es liefert, prüft Ablago und zeigt es nur als Vorschlag.
 
+#### Hinweise an Mappen setzen { #recht-hinweise }
+
+**„Setzt Hinweise an Mappen, die es schreiben darf (z. B. „Die Positionen ergeben 118,40 €“) – nur Text, immer mit dem Namen des Pakets; Speichern hindern sie nie (dms:hinweise)“** – Seit Version 0.231. Das Paket kann an Mappen, die es [anlegen und ändern](#recht-mappen-anlegen-und-andern) darf, kurze Hinweise setzen und wieder entfernen, etwa wenn die Positionen einer Rechnung nicht zum Betrag passen. Sie stehen gelb in der Hinweiszeile über den Registern, immer mit dem Namen des Pakets davor – nie rot und nie so, dass sie wie eine Meldung von Ablago aussehen. Ablago nimmt nur Text an: kein HTML, kein Markdown, keine Links, höchstens 300 Zeichen und höchstens 3 Hinweise je Paket und Mappe. Ein Hinweis ändert die Mappe nicht (kein „zuletzt geändert“, kein Eintrag in der Historie) und hält niemanden vom Speichern ab. Entfernst du das Paket, gehen seine Hinweise mit.
+
+#### Berechnete Felder { #recht-berechnet }
+
+**„Berechnet Felder, die nur dieses Paket schreibt (in Ablago nur lesbar): *Mappentyp: Felder*“** – Seit Version 0.231. Die genannten Felder sind in der Mappe nur lesbar; ihren Wert schreibt nur das Paket (siehe [Berechnete Felder](mappentypen.md#berechnete-felder)). Dafür braucht es das Recht [Mappen anlegen und ändern](#recht-mappen-anlegen-und-andern) auf den eigenen Mappentyp.
+
+Hat ein Paket berechnete Felder oder setzt es Hinweise, steht zusätzlich da: **„Schreibt Werte und Hinweise, die alle sehen, die die Mappe lesen – auch, wenn das Paket sie aus Mappen errechnet, die nicht jeder sehen darf“**. Ein Paket mit Leserecht auf andere Mappentypen könnte so etwas aus Mappen, die eine Person nicht sehen darf, an eine Mappe schreiben, die sie sehen darf. Verhindern lässt sich das technisch nicht – das gilt für jedes Schreibrecht. Bestätige solche Pakete deshalb nur, wenn du ihnen das zutraust; welche Mappen ein Paket liest, steht unter [Mappen lesen](#recht-mappen-lesen).
+
 #### Inhalte übersetzen { #recht-uebersetzen }
 
 **„Inhalte übersetzen – auf Knopfdruck bekommt das Paket einen einzelnen Text (Feld, Notiz oder Volltext), den die Person lesen darf, und gibt die Übersetzung zurück; ändern oder speichern kann es nichts (dms:uebersetzen)“** – Seit Version 0.204. Das Paket übersetzt, wenn jemand **Übersetzung anzeigen** drückt (siehe [Sprachen → Inhalte übersetzen](sprachen.md#inhalte-ubersetzen)). Es bekommt dabei nur diesen einen Text und die Sprachen – keine Rechte an Mappen oder Dokumenten. Darf das Paket außerdem ins Netz, nimmt Ablago es nur, wenn du es ausdrücklich wählst und den Datenabfluss bestätigst.

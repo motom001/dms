@@ -78,6 +78,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   suchwoerter: t('meldungen.vollexport.nicht-enthalten-woerterverzeichnis'),
   suchwoerter_eingang: t('meldungen.vollexport.nicht-enthalten-neue-woerter'),
   fristtermine: t('meldungen.vollexport.nicht-enthalten-fristtermine'),
+  mappen_hinweise: t('meldungen.vollexport.nicht-enthalten-hinweise'),
   vektoren: t('meldungen.vollexport.nicht-enthalten-vektoren-zu'),
   gesehen: t('meldungen.vollexport.nicht-enthalten-wann-ein'),
   zaehlerstaende: t('meldungen.vollexport.nicht-enthalten-stand-der'),

@@ -10,9 +10,12 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
   Verweisziele, `rechteVorschau`/`hinweisDanach` (#126), `feldkonflikte` (#609); `bereinigeWerte` (Modulebene).
   Nicht verwechseln mit `mappentypen/eingabe.ts` (Eingaben für Mappentypen).
 - `titel.ts` – `MappenTitel`: `aktualisiereTitel`, `titelVorab` (#743), Nachziehen beim Start, „Absender bereinigen“.
-- `historie.ts` – `MappenHistorie`: `historie` lesen (#800), `notiereAbruf`, Aufbewahrung; `notiere` schreibt über
+- `historie.ts` – `MappenHistorie`: `historie` lesen (#800), `notiereAbruf`, `notiereBerechnet` (#1034, je Mappe und Tag ein Eintrag), Aufbewahrung; `notiere` schreibt über
   `kern.historie`.
 - `passwortfelder.ts` – `Passwortfelder` (#46): `zeigePasswort`, `entschluesselePasswoerter`, `unlesbarePasswoerter`.
+- `berechnet.ts` – berechnete Felder (#1034): `pruefeBerechnete` – die eine Prüfstelle in `legeMappeAn`/`aendereMappe`,
+  nur das Paket aus `berechnetVon` schreibt (sonst 400 mit Paketnamen).
+- `hinweise.ts` – `MappenHinweise` (#1034): Hinweise von Paketen setzen, entfernen und mit der Mappe lesen.
 - `archiv.ts` – `MappenArchiv`: Archivnummer (#345) mit Aufkleberbogen, Archivmodus (#212), „Alle Dateien prüfen“.
 - `index.ts` – die einzige Tür. `mappen.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 

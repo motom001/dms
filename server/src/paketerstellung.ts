@@ -330,9 +330,12 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   // 3. Mappentypen
   const paketTypen = eigene.map((mappentyp) => {
     const wo = (was: string) => `„${mappentyp.name}“ → ${was}`;
+    for (const f of mappentyp.felder.filter((x) => x.berechnetVon && !x.system)) hinweis(t('meldungen.paketerstellung.berechnet-weg', { wo: wo(`Feld „${f.label}“`) }));
     const felder = mappentyp.felder.filter((f) => !f.system).map((f) => {
       // ausText (#534) gehört zu einem Update aus der Registry, nicht in ein selbst erstelltes Paket.
+      // berechnetVon (#1034) gehört dem Paket mit Code, das den Typ mitbringt – ein selbst erstelltes Paket rechnet nichts.
       const { zielTypen, zielOptional, system: _s, auswahlFilter, frist, standard, ausText: _a, anzeigen, ...rest } = f as Feld;
+      delete (rest as Partial<Feld>).berechnetVon;
       const x: Record<string, unknown> = ohneLeere(rest as Record<string, unknown>);
       const az = anzeigeFuersPaket(anzeigen, wo(`Feld „${f.label}“`));
       if (az) x.anzeigen = az;

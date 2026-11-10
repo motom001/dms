@@ -77,6 +77,10 @@ Manche Textfelder haben ein **Format**: E-Mail, Telefon, Internetseite, IBAN ode
 
 **Felder, die mitwachsen:** Manche Felder und Abschnitte erscheinen erst, wenn sie passen – wählst du etwa die Vertragsart *Miete*, erscheint gleich der Abschnitt *Miete*. Wählst du später etwas anderes, verschwindet er wieder, die eingetragenen Werte aber nicht: An seiner Stelle steht „Abschnitt Miete ist ausgeblendet – 3 Werte bleiben gespeichert · **anzeigen**“. Ein Klick auf *anzeigen* holt ihn zurück. Ausgeblendete Felder sind nicht Pflicht. Das ist nur Ordnung im Formular: Export und Auskunft enthalten alle Werte. Was wann zu sehen ist, stellt die Verwaltung am Mappentyp ein.
 
+**Ausgerechnete Felder:** Manche Werte rechnet ein Paket selbst aus, etwa *Kündigen bis* oder den *Status* eines Vertrags. Solche Felder kannst du nicht ändern; darunter steht „berechnet von Verträge“. Ändere stattdessen die Angaben, aus denen sie entstehen (Beginn, Laufzeit, Kündigungsfrist …) – das Paket rechnet dann neu. Steht „nicht mehr berechnet“ da, rechnet das Paket nicht mehr; der Wert bleibt, bis die Verwaltung das Feld freigibt.
+
+**Hinweise von Paketen:** Über den Registern kann ein gelber Hinweis eines Pakets stehen, etwa „Rechnungen · Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €“. Vorne steht immer der Name des Pakets. Ein solcher Hinweis hält dich nie vom Speichern ab; das Paket nimmt ihn wieder weg, sobald er nicht mehr zutrifft.
+
 ### Formatierter Text
 
 Manche längeren Texte lassen sich formatieren. Über dem Feld steht eine kleine **Werkzeugleiste**: Markiere Text und klicke auf **F** (fett), *K* (kursiv), eine Überschrift, eine Liste, eine nummerierte Liste, ein Zitat oder einen Link. Mit **Schreiben** und **Vorschau** wechselst du zwischen Eingabe und fertiger Ansicht. Im Feld steht dann eine einfache Schreibweise, z. B. `**fett**` – das ist richtig so. **Vorschau** zeigt, wie es aussieht.

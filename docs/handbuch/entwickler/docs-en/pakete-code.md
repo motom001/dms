@@ -19,6 +19,7 @@ Besides events and the [API v1](#nutzliche-endpunkte-der-api-v1), the core offer
 | `dms:archivfassung` | 0.149.0 | storing a searchable PDF/A for documents with finished full text – with word positions, only with "read documents" | **[Storing an archive version](#archivfassung)** – event, word positions, acceptance, limits |
 | `dms:sicherung-lesen` | 0.142.0 | reading every backup encrypted and copying it off-site, reporting the state in the answer (read-only key) | **[Off-site backup](#sicherung-ausser-haus)** – event, reading in pieces, feedback |
 | `dms:klassifizieren` | 0.226.0 | suggesting a folder type for "Where does this belong?" – from the start of the document and the list of candidates; without network access also from the types of similar documents | **[Suggest a folder type](#klassifizieren)** – call, answer, checks, similarity |
+| `dms:hinweise` | 0.231.0 | setting and removing notes on folders the package may change (e.g. “The items add up to €118.40”) – text only, with the package's name, they never stop saving | **[Calculated fields and notes](#berechnet-und-hinweise)** |
 | `dms:uebersetzen` | 0.204.0 | translating one text (field, note, full text) at the press of a button – the core reads it with the person's permissions | **[Translate content](#inhalte-ubersetzen)** – call, sections, answer, cache |
 
 ## How code runs in Ablago { #so-lauft-code-im-dms }
@@ -57,7 +58,7 @@ code:
   ```
 
 - **Documents:** `lesen` allows reading documents (file, full text, pages as images), `schreiben` additionally uploading, replacing and setting the full text. Documents only exist in folders the package may read.
-- **The core's interfaces (`schnittstellen`):** additional permissions for interfaces at which the core only stores, compares or passes on (overview: [The core's interfaces](#schnittstellen)). There are `dms:vektoren` (since 0.120.0, needs `dokumente: lesen`) – see [Vectors and similarity](#vektoren-und-ahnlichkeit) –, `dms:antworten` (since 0.124.0) – see [Answering questions](#fragen-beantworten) –, `dms:erkennen` (since 0.125.0) – see [Recognition: field description and answer](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (since 0.133.0, needs `dokumente: schreiben`) – see [Taking over text recognition](#texterkennung) –, `dms:umwandeln` (since 0.137.0, needs `dokumente: lesen`, `code.umwandeln` and the event `datei.umwandeln`) – see [Converting files](#dateien-umwandeln) –, `dms:sicherung-lesen` (since 0.142.0, needs the event `sicherung.fertig`) – see [Off-site backup](#sicherung-ausser-haus) – `dms:volltext` (since 0.145.0, needs `dokumente: lesen`, `code.volltext` and the event `datei.volltext`) – see [Supplying full text](#volltext-liefern) – `dms:uebersetzen` (since 0.204.0, needs nothing else) – see [Translate content](#inhalte-ubersetzen) – and `dms:klassifizieren` (since 0.226.0, needs nothing else) – see [Suggest a folder type](#klassifizieren).
+- **The core's interfaces (`schnittstellen`):** additional permissions for interfaces at which the core only stores, compares or passes on (overview: [The core's interfaces](#schnittstellen)). There are `dms:vektoren` (since 0.120.0, needs `dokumente: lesen`) – see [Vectors and similarity](#vektoren-und-ahnlichkeit) –, `dms:antworten` (since 0.124.0) – see [Answering questions](#fragen-beantworten) –, `dms:erkennen` (since 0.125.0) – see [Recognition: field description and answer](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (since 0.133.0, needs `dokumente: schreiben`) – see [Taking over text recognition](#texterkennung) –, `dms:umwandeln` (since 0.137.0, needs `dokumente: lesen`, `code.umwandeln` and the event `datei.umwandeln`) – see [Converting files](#dateien-umwandeln) –, `dms:sicherung-lesen` (since 0.142.0, needs the event `sicherung.fertig`) – see [Off-site backup](#sicherung-ausser-haus) – `dms:volltext` (since 0.145.0, needs `dokumente: lesen`, `code.volltext` and the event `datei.volltext`) – see [Supplying full text](#volltext-liefern) – `dms:uebersetzen` (since 0.204.0, needs nothing else) – see [Translate content](#inhalte-ubersetzen) – `dms:klassifizieren` (since 0.226.0, needs nothing else) – see [Suggest a folder type](#klassifizieren) – and `dms:hinweise` (since 0.231.0, needs `schreiben`) – see [Calculated fields and notes](#berechnet-und-hinweise).
 - **File types for converting (`code.umwandeln`, since 0.137.0):** only with `dms:umwandeln` – the MIME types the package is responsible for, e.g. `[image/tiff, image/webp]`. The core reads PDF, JPEG and PNG itself; they aren't allowed here. At most 20.
 - **File types for the full text (`code.volltext`, since 0.145.0):** only with `dms:volltext` – the MIME types for which the package supplies the full text, e.g. `[message/rfc822, text/plain]`. PDF, JPEG and PNG aren't allowed. At most 40.
 - **Folder types for events (`code.mappentypen`, since 0.153.0):** required as soon as the package subscribes to one of the folder events `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` or `frist.erreicht` – and only allowed then. It contains the keys of **its own** folder types (without prefix, e.g. `[vertrag]`) and – since 0.166.0 – links to **other** folder types as in `code.rechte` (`basis:organisation`, `dms:post`) or `*` for all the package may read (only with `code.rechte.lesen: ["*"]`). The package must be allowed to read every type named. A package with this states `dms: ">=0.153.0"`, with other packages' types or `*` `dms: ">=0.166.0"`.
@@ -254,6 +255,33 @@ A package that **may use the network** (`code.netz` or a service address) and **
 The package doesn't need to do anything and isn't told the reason. Whoever computes in the house without network (`netz: []`, no service address) isn't affected. The off-site copy (`dms:sicherung-lesen`) doesn't count as an AI package: it only gets the encrypted backup.
 
 A module that imports `netz_strom`, `netz_weiter` or `teil` only loads from Ablago 0.124.0 – older ones reject it ("The module requires something unknown"). Then state `dms: ">=0.124.0"`.
+
+## Calculated fields and notes { #berechnet-und-hinweise }
+
+Since Ablago 0.231 (#1034) a package can **calculate** fields of its folder type and set **notes** on folders – for example *Verträge* (status, cancel by) and *Rechnungen* (checking the sum). Both go through the [API v1](#nutzliche-endpunkte-der-api-v1) with the package's service account.
+
+**Calculated fields** (`berechnet: true` on the field, see [package format](pakete.md#paketformat-verbindlich)):
+
+- Write with `PUT /mappen/{id}` (only the calculated fields that change) – and **already when creating** with `POST /mappen`. Send `stand` along: if a person has changed one of the fields sent in the meantime, you get 409 and nothing is overwritten – then calculate again with the next event.
+- The package goes through **the same checks** as anyone else: rights (write access to the type, rules for the role "Package"), the form (field kind, length, formats, date limits; 422), editing at the same time (409) and everything else a folder type requires. It only writes to **its own** calculated fields; Ablago refuses calculated fields of other packages with 400 – ordinary fields work with the write right as before.
+- Ablago refuses all other ways (the interface in the browser, people's API keys, other packages, automations, "Fill in from document", recognition) with **400**, with the package's name in the message and `details.berechnet: [{ feld, label, paket, paketName }]`.
+- **History:** if the package only changes calculated fields, Ablago combines this into one entry per folder and calendar day ("Calculated by the package …"); per field the value from the start of the day stays as "before". The event `mappe.geaendert` still comes every time. So calculate **only when something differs** and do not write what is already there – otherwise every write wakes up other packages and automations.
+- **No longer calculated:** without code or without write access to the type (e.g. after an update) the last value stays and the field shows "no longer calculated"; the administrator can release it. `GET /typen` shows `berechnung: { <package>: { name, aktiv } }` on the folder type.
+
+**Notes** (`code.rechte.schnittstellen: [dms:hinweise]`, needs `schreiben`):
+
+```text
+PUT    /mappen/{id}/hinweise/{schluessel}   { "text": "The items add up to €118.40, the invoice says €120.80." }
+DELETE /mappen/{id}/hinweise/{schluessel}
+```
+
+- The **key** belongs to the package (lower case, letters, digits, `_`); the same package replaces its note under the same key, other packages have their own. The package comes from the service account, never from the request.
+- Only on folders the package may **change**; others: 403 or 404.
+- **Text only:** no HTML (`<`, `>`, `&…;`), no Markdown (`**`, `` ` ``, `[…](…)`, list and heading marks at the start), no links or addresses (`https:`, `www.`), at most **300 characters**; line breaks become spaces. At most **3 notes per package and folder**. Otherwise 400 with the reason (`details.grund`: `leer`, `lang`, `html`, `markdown`, `link`).
+- One sentence on what to do, e.g. "The items add up to €118.40, the invoice says €120.80 – please check the items." No warning signs, no capitals for emphasis: Ablago shows the note in yellow with the package's name in front, never in red.
+- Notes do not change the folder (no `geaendert`, no history, no event) and never stop saving. `DELETE` also works if the note does not exist. They are read with the folder: `GET /mappen/{id}` → `hinweise: [{ paket, paketName, schluessel, text, gesetzt }]`. If the package is removed, its notes go with it.
+
+The rights preview names both: "Calculates fields that only this package writes …", "Sets notes on folders …" and "Writes values and notes that everyone who can read the folder sees" – values the package works out from other folders are seen by everyone who may read the folder. So only read what the calculation really needs.
 
 ## Building with C (wasi-sdk) { #bauen-mit-c-wasi-sdk }
 

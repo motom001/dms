@@ -98,7 +98,7 @@ export type ApiAufruf = (a: { methode: string; pfad: string; kopf: Record<string
  * Haus (#585, dms:sicherung-lesen) lesen nur: Ihren Stand melden sie in der Antwort auf das Ereignis (#636). Was es genau darf, prüft die Route je Recht.
  */
 export const schluesselRecht = (c: PaketCode): 'lesen' | 'schreiben' =>
-  c.rechte.schreiben.length || c.rechte.dokumente === 'schreiben' || hatSchnittstelle(c, 'dms:vektoren') || hatSchnittstelle(c, 'dms:umwandeln') || hatSchnittstelle(c, 'dms:volltext') || hatSchnittstelle(c, 'dms:archivfassung') ? 'schreiben' : 'lesen';
+  c.rechte.schreiben.length || c.rechte.dokumente === 'schreiben' || hatSchnittstelle(c, 'dms:vektoren') || hatSchnittstelle(c, 'dms:hinweise') || hatSchnittstelle(c, 'dms:umwandeln') || hatSchnittstelle(c, 'dms:volltext') || hatSchnittstelle(c, 'dms:archivfassung') ? 'schreiben' : 'lesen';
 
 export interface LaeuferOptionen {
   dienst: Dienst;

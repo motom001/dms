@@ -37,6 +37,7 @@ import { Feld, HakenFeld, FeldGruppe } from '../bausteine';
 | `Feld` | Text, Zahl, Datum, Auswahlliste, mehrzeilig, Passwort | genau ein Element |
 | `HakenFeld` | ein einzelner Haken (Ja/Nein) | `<input type="checkbox">` – steht vor der Beschriftung |
 | `FeldGruppe` | mehrere Eingaben unter einer Beschriftung: Haken einer Mehrfachauswahl, Optionsknöpfe, gesetztes Geheimnis mit Knöpfen | beliebig viele, jede mit eigener Beschriftung |
+| `NurLesenFeld` | ein Wert, der sich hier nicht ändern lässt: berechnet von einem Paket (#1034), zusammengesetzt (#1050), geschützt | keine – der Wert als Inhalt, die Herkunft (`herkunft`, mit `symbol`) darunter |
 
 Braucht die Eingabe die Verknüpfung nicht als Props (eine eigene Komponente, die sie an ein inneres Element weitergibt), übergibt man eine Funktion: `<Feld …>{(v) => <ZahlEingabe v={v} … />}</Feld>`. `v` enthält `id`, `aria-describedby` und `aria-invalid`.
 
@@ -51,6 +52,7 @@ Braucht die Eingabe die Verknüpfung nicht als Props (eine eigene Komponente, di
 | Fehler mit Hinweis | `fehler` und `hinweis` gesetzt | Meldung direkt unter der Eingabe, der Hinweis darunter |
 | gesperrt | `disabled` an der Eingabe | Fläche `--senke`, Schrift `--leise`, schwächerer Rahmen `--linie-stark`, kein Hover |
 | nur lesen | `readOnly` an der Eingabe | Fläche `--senke`, gestrichelter Rahmen, Schrift gut lesbar und markierbar |
+| berechnet, zusammengesetzt, geschützt | `NurLesenFeld` mit `herkunft` | wie „nur lesen“ (Fläche `--senke`, gestrichelter Rahmen in `--rand-eingabe`), darunter die Herkunft mit Symbol in `--leise` – ein Aussehen, nur der Satz unterscheidet sich („berechnet von Verträge“, „nicht mehr berechnet …“, „setzt sich zusammen aus …“) |
 | optional | `optional` | „(optional)“ in `--leise` hinter der Beschriftung |
 
 ![Maus über dem Feld „Ort“, Tastaturfokus im Feld „Straße“ – hell](bilder/muster-feld-fokus.png){ loading=lazy }

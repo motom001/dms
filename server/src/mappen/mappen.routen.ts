@@ -91,6 +91,9 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     } },
     // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
     { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'P'); return ok(await dienst.zeigePasswort(a.params.id, a.params.feld, ich(a).id)); } },
+    // Hinweise von Paketen (#1034): nur Dienstkonten mit dms:hinweise; das Paket ergibt sich aus dem Konto.
+    { methode: 'PUT', pfad: '/api/mappen/:id/hinweise/:schluessel', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappenHinweise.setze(await zg(a), a.params.id, a.params.schluessel, b(a))) },
+    { methode: 'DELETE', pfad: '/api/mappen/:id/hinweise/:schluessel', zugang: 'angemeldet', handler: async (a) => { await dienst.mappenHinweise.entferne(await zg(a), a.params.id, a.params.schluessel); return leer; } },
     // Vor dem Speichern (#126): Rechte mit den neuen Werten – für die Warnung beim Selbst-Entziehen.
     { methode: 'POST', pfad: '/api/mappen/:id/rechte-vorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.rechteVorschau(a.params.id, a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {

@@ -471,6 +471,7 @@ export const SCHNITTSTELLEN = {
   'dms:archivfassung': t('gemeinsam.pakete.archivfassung-pdf-a-ablegen'),
   'dms:uebersetzen': t('gemeinsam.pakete.inhalte-uebersetzen'),
   'dms:klassifizieren': t('gemeinsam.pakete.mappentyp-vorschlagen'),
+  'dms:hinweise': t('gemeinsam.pakete.hinweise-setzen'),
 } as const;
 export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
 /** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
@@ -482,7 +483,7 @@ export const DMS_VEKTOREN_AB = '0.120.0';
  */
 export const DMS_ANTWORTEN_AB = '0.124.0';
 /** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
-export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren' };
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren', 'dms:hinweise': 'pakete.recht.hinweise' };
 /**
  * Ab dieser Version (#585) kennt das DMS das Ereignis `sicherung.fertig` und die Schnittstelle `dms:sicherung-lesen`:
  * Ein Paket liest die verschlüsselte Sicherung in Stücken, kopiert sie außer Haus und meldet je Sicherung zurück.
@@ -687,6 +688,8 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   const schnittstellen = liste(r.schnittstellen, 'code.rechte.schnittstellen');
   for (const s of schnittstellen) if (!(s in SCHNITTSTELLEN)) fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-gibt', { s, keys: Object.keys(SCHNITTSTELLEN).join(', ') }));
   if (schnittstellen.includes('dms:vektoren') && dokumente === 'keine') fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-dms'));
+  // Hinweise an Mappen (#1034): nur an Mappen, die das Paket auch schreiben darf.
+  if (schnittstellen.includes('dms:hinweise') && !schreiben.length) fehler.push(t('gemeinsam.pakete.code-hinweise-braucht-schreiben'));
   // Dateien umwandeln (#577): zuständige Dateitypen, nur mit dms:umwandeln, Lesen von Dokumenten und dem Ereignis.
   const umwandeln = liste(x.umwandeln, 'code.umwandeln').map((m) => m.toLowerCase());
   const willUmwandeln = schnittstellen.includes('dms:umwandeln');
@@ -823,8 +826,18 @@ export const EREIGNIS_HILFE: Record<EreignisArt, Hilfeort> = {
 /** Ein Punkt der Rechte-Liste in der Vorschau (#449): Text, Handbuch-Stelle, ggf. Unterliste (Ereignisse). */
 export interface RechtePunkt { text: string; hilfe: Hilfeort; unter?: Array<{ text: string; hilfe: Hilfeort }> }
 
-/** Rechte und Netzwerkzugriff für die Rückfrage bei der Installation (#338, #449): je Recht ein Punkt, Ereignisse als Unterliste. */
-export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string): RechtePunkt[] {
+/**
+ * Berechnete Felder eines Pakets (#1034) für die Rechte-Vorschau: je Mappentyp (lesbarer Name) die Bezeichnungen der
+ * Felder mit `berechnet: true`.
+ */
+export interface BerechneteFelder { typ: string; felder: string[] }
+
+/**
+ * Rechte und Netzwerkzugriff für die Rückfrage bei der Installation (#338, #449): je Recht ein Punkt, Ereignisse als
+ * Unterliste. `berechnet` (#1034): Felder, die das Paket berechnet – sie und Hinweise (`dms:hinweise`) stehen als eigene
+ * Punkte da, dazu der Satz, dass alle sie sehen, die die Mappe lesen (Ergänzung Sicherheit).
+ */
+export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string, berechnet: BerechneteFelder[] = []): RechtePunkt[] {
   const eintrag = (l: string[]) => l.map((v) => (v === ALLE_TYPEN ? t('gemeinsam.pakete.alle-mappentypen') : typName(v))).join(', ');
   const z: RechtePunkt[] = [];
   if (c.rechte.lesen.length) z.push({ text: t('gemeinsam.pakete.mappen-lesen', { lesen: eintrag(c.rechte.lesen) }), hilfe: 'pakete.recht.lesen' });
@@ -834,6 +847,11 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string)
   // Archivfassung (#631) ebenso.
   const typen = (s: Schnittstelle) => (s === 'dms:umwandeln' ? c.umwandeln : s === 'dms:volltext' ? c.volltext : s === 'dms:archivfassung' ? c.archivfassung?.typen : undefined);
   for (const s of c.rechte.schnittstellen ?? []) z.push({ text: `${SCHNITTSTELLEN[s]} (${s})${typen(s)?.length ? `: ${[...new Set(typen(s)!.map(dateitypName))].join(', ')}` : ''}`, hilfe: SCHNITTSTELLE_HILFE[s] });
+  // Berechnete Felder (#1034): je Mappentyp die Felder, die nur das Paket schreibt.
+  const mitFeldern = berechnet.filter((b) => b.felder.length);
+  if (mitFeldern.length) z.push({ text: t('gemeinsam.pakete.berechnet-felder', { felder: mitFeldern.map((b) => `${b.typ}: ${b.felder.join(', ')}`).join('; ') }), hilfe: 'pakete.recht.berechnet' });
+  // Ein Weg über Mappen hinweg (Ergänzung Sicherheit): Was das Paket schreibt, sieht jeder, der die Mappe lesen darf.
+  if (mitFeldern.length || hatSchnittstelle(c, 'dms:hinweise')) z.push({ text: t('gemeinsam.pakete.berechnet-sichtbar'), hilfe: 'pakete.recht.berechnet' });
   z.push({ text: netzText(c.netz, (c.adressen ?? []).map((a) => a.name)), hilfe: c.adressen?.length ? 'pakete.recht.adresse' : 'pakete.recht.netz' });
   // KI-Dienst (#796): Inhalte nur aus Mappentypen, die für KI-Dienste zugelassen sind.
   if (istKiPaket(c)) z.push({ text: t('gemeinsam.pakete.ki-nur-zugelassene'), hilfe: 'pakete.ki' });

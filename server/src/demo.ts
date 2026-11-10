@@ -305,7 +305,8 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
       const werte: Werte = {};
       let unmoeglich = '';
       for (const f of t.felder) {
-        if (!f.pflicht && z.chance(0.2)) continue;
+        // Berechnete Felder (#1034) füllt ihr Paket, nicht der Demo-Generator.
+        if (f.berechnetVon || (!f.pflicht && z.chance(0.2))) continue;
         const w = wertFuer(f, ok + 1, pools, vergeben.get(f.key) ?? new Set());
         if (w === undefined) { if (f.pflicht) unmoeglich = pflichtGrund(f.label, f.typ === 'referenz' ? 'verweis' : f.typ === 'passwort' ? 'passwort' : f.eindeutig ? 'eindeutig' : 'sonst'); continue; }
         werte[f.key] = w;

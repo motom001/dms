@@ -33,6 +33,10 @@ Deleted folders. They can be restored until the set number of days has passed.
 A branch, office, practice or outpost of an organisation – with its own address and phone. Folder type from the package Basis (from 1.1.0); belongs to exactly one organisation.  
 See also: [Organisation](#organisation), [Person](#person).
 
+<a id="berechnetes-feld"></a>**Calculated field** (*Berechnetes Feld*) · ~ with explanation · everyone  
+A field whose value a package works out, e.g. "Cancel by" or the status of a contract. In the folder it is read-only, with "calculated by …" and the name of the package underneath. If the package no longer calculates it, the last value stays ("no longer calculated") until the administrator releases the field again.  
+See also: [Field](#feld), [Package](#paket), [Note from a package](#hinweis-von-paketen).
+
 <a id="bedingung"></a>**Condition** (*Bedingung*) · ~ with explanation · administrators  
 A view's filter on field values, counts, deadlines, personal things or the Library attribute, e.g. a field equal to "current user", "is my favourite" or "Library is also used for work".
 
@@ -94,6 +98,10 @@ See also: [Link (field)](#verweis).
 
 <a id="mein-konto"></a>**My account** (*Mein Konto*) · ✓ everyday word · everyone  
 The personal settings of the signed-in user – one click on your own name at the top right, then "My account". We describe paths the way you click, e.g. "My account → Security → API keys".
+
+<a id="hinweis-von-paketen"></a>**Note from a package** (*Hinweis von Paketen*) · ✓ everyday word · everyone  
+A short sentence that a package sets on a folder, e.g. "The items add up to €118.40, the invoice says €120.80". It appears in yellow in the notes line above the tabs, always with the name of the package, and never stops you saving.  
+See also: [Calculated field](#berechnetes-feld), [Package](#paket).
 
 <a id="organisation"></a>**Organisation** · ✓ everyday word · everyone  
 A company, authority, bank, practice, club or other body you deal with. Folder type from the package Basis; other packages link to it (contract partner, insurer, bank …).  

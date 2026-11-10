@@ -25,6 +25,36 @@ export class MappenHistorie {
   /** Ein Eintrag in die Historie einer Mappe (Kern). */
   notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) { return this.kern.historie.schreibe(mappeId, benutzerId, art, daten); }
 
+  /**
+   * Berechnete Werte in die Historie (#1034, „kein Rauschen“). Regel: Ändert das Paket, das die Felder berechnet, nur
+   * berechnete Felder, gibt es dafür je Mappe und Kalendertag (Zeitzone der Ablage) **einen** Eintrag. Weitere Änderungen
+   * desselben Tags kommen in diesen Eintrag – je Feld bleibt der Wert vom Tagesbeginn als „vorher“, „nachher“ ist der
+   * neueste; was am Ende des Tags wieder wie am Morgen ist, fällt heraus (ohne verbleibende Felder fällt der Eintrag
+   * weg). So erscheinen reine Datums-Folgen – Status „kündbar ab …“, „Laufzeit in Monaten“ nach dem täglichen Lauf –
+   * höchstens einmal am Tag, nie einzeln je Lauf. Änderungen durch Menschen, durch andere Pakete und gemischte
+   * Änderungen (berechnete und andere Felder) bekommen wie bisher je Speichern einen Eintrag. Das Ereignis
+   * „Mappe geändert“ gibt es trotzdem bei jeder Änderung – Automatisierungen und andere Pakete erfahren davon.
+   */
+  async notiereBerechnet(mappeId: string, typId: string, benutzerId: string | null, x: { paketName: string; aenderungen: Feldaenderung[]; stand: string }): Promise<void> {
+    const { paketName, aenderungen, stand } = x;
+    const jetzt = new Date();
+    const letzter = await this.repo.letzteBerechnung(mappeId, benutzerId, new Date(jetzt.getTime() - 26 * 3600_000).toISOString());
+    if (!letzter || tagIn(new Date(letzter.zeit)) !== tagIn(jetzt)) {
+      await this.notiere(mappeId, benutzerId, 'geaendert', { aenderungen, berechnet: true, text: t('meldungen.berechnet.historie', { paket: paketName }), stand });
+      return;
+    }
+    const je = new Map<string, Feldaenderung>(((letzter.daten.aenderungen ?? []) as Feldaenderung[]).map((a) => [a.feld, a]));
+    for (const a of aenderungen) {
+      const vorher = je.get(a.feld);
+      je.set(a.feld, vorher ? { ...a, alt: vorher.alt } : a);
+    }
+    const bleiben = [...je.values()].filter((a) => a.geheim || a.alt !== a.neu);
+    await this.repo.historieDatenErsetzen(letzter.id, bleiben.length ? { ...letzter.daten, aenderungen: bleiben, stand } : null);
+    // Ereigniskatalog (#670): wie beim neuen Eintrag – nur mit Ids und Feldschlüsseln.
+    const felder = [...new Set(aenderungen.map((a) => a.feld).filter((f) => !f.startsWith('_')))].sort();
+    if (felder.length) await this.kern.ereignis('mappe.geaendert', { mappe: mappeId, typ: typId, felder }, benutzerId);
+  }
+
   /** Was sich zwischen zwei Ständen geändert hat – lesbar, wie es zu diesem Zeitpunkt aussah. */
   async aenderungen(typ: Mappentyp, alt: Werte, neu: Werte): Promise<Feldaenderung[]> {
     const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);

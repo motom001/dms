@@ -113,6 +113,20 @@ Each condition can be reversed (**does not apply**); with several you choose **a
 
 In the editor, a field or section with a condition carries an eye and the sentence “only if …” – so you won’t wonder why a field is missing in a folder. Conditions that no longer fit – for example because their field was removed – are shown in red; saving only works once they are right. Packages bring the setting along (`anzeigen` on the field and the section); “points to a particular folder” only works in packages once they can name bundled folders by a fixed key – until then **Create package** leaves such conditions out with a note.
 
+### Calculated fields { #berechnete-felder }
+
+Some packages work out themselves what follows from the details – the package *Verträge* (contracts), for example, works out *Cancel by*, *Status* or *Per month*. The package brings such fields in its folder type as **calculated** (in the package format `berechnet: true`).
+
+- **Read-only in the folder:** The value sits in the frame of a field that cannot be changed, with "calculated by Verträge" underneath. So nobody overwrites a worked-out value by accident.
+- **Only the package writes:** Ablago only lets the package that calculates the value change it – through the interface, with the rights you confirmed when installing it, and with the same checks as any other change. Anyone else who writes – the interface in the browser, a script through the [API](api.md), another package, an [automation](automatisierungen.md) "Change field" – gets an error message with the name of the package. **Fill in from document**, [recognition](#erkennung), "follows from" and the demo generator leave calculated fields out.
+- **Never required:** The package writes the value, not whoever creates the folder.
+- **Rights preview:** When installing, the confirmation names the fields the package calculates and that everyone who may read the folder sees the values (see [Calculated fields](pakete.md#recht-berechnet)).
+- **History without noise:** Changes the package makes to calculated fields appear in **one** entry per folder and day ("Calculated by the package Verträge – all changes of a day in one entry"). A status that only changes because of the date therefore appears at most once a day; what is back to the morning's value in the evening drops out of the entry. Changes made by people still appear one by one.
+
+**No longer calculated.** If you remove the package or it no longer calculates (an update without code or without write access to the folder type), the last value stays. The field shows "no longer calculated" and remains read-only, so nobody thinks the value is still kept up to date. In the editor the field then offers **Release field again**: after saving, the value can be changed by hand in the folder again. Only someone who may change folder types can release it. If a later update of the package brings the field as calculated again, it calculates again; if an update drops it, the field is free.
+
+You cannot make a field calculated yourself – that only works with a package that brings code. A package made with **Create package** takes calculated fields along as ordinary fields.
+
 ### Labels per language { #beschriftungen-je-sprache }
 
 Name and description of the folder type, label and help text of every field, and the names of tabs and result lists can be maintained in several languages. Next to each of these texts is a small language switch (**DE · EN**). Under **DE** you edit the source text, under another language the label for it. If it stays empty, the German text is shown there. A dot on the switch shows that a label is still missing. Below the name it says, for example, "12 of 14 labels in English" – that is only a notice; saving still works.

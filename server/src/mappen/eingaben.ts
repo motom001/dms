@@ -3,6 +3,7 @@
  * #173), „folgt aus“ (#886), Verweisziele, Rechte vor und nach dem Speichern (#126), Konflikte beim gleichzeitigen
  * Bearbeiten (#609). Die Eingabe-Hilfen der Mappentypen liegen in mappentypen/eingabe.ts. Schicht 2.
  */
+import { vonAussenFuellbar } from '../../../shared/src/berechnet';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { anzeigestand, hatAnzeige, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
@@ -245,7 +246,8 @@ export class MappenEingaben {
    */
   async folgeFuellen(typ: Mappentyp, werte: Werte, alt: Werte, gesendet: Set<string>, z?: Zugriff): Promise<void> {
     for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
-      if (gesendet.has(f.key) || !istLeer(werte[f.key])) continue;
+      // Berechnete Felder (#1034) füllt nur ihr Paket.
+      if (gesendet.has(f.key) || !istLeer(werte[f.key]) || !vonAussenFuellbar(f)) continue;
       const q = ersteId(werte[quelle.key]);
       if (!istUuid(q) || q === ersteId(alt[quelle.key])) continue;
       const m = await this.folgeWert(quelle, zielFeld, f, q, z);

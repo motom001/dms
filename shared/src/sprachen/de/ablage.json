@@ -1256,5 +1256,7 @@
   "anzeige.feld": "{feld} ist ausgeblendet – der Wert bleibt gespeichert",
   "anzeige.anzeigen": "anzeigen",
   "anzeige.gerade-aus": "Gerade ausgeblendet ({bedingung}) – die Werte bleiben gespeichert.",
-  "suche.vom-typ": "zeigt auf eine Mappe vom Typ"
+  "suche.vom-typ": "zeigt auf eine Mappe vom Typ",
+  "paket-hinweis.titel": "Hinweise von Paketen",
+  "paket-hinweis.marke-titel": "Hinweis vom Paket {paket} – nicht von Ablago"
 }

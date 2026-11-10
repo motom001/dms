@@ -22,6 +22,7 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
+import { Symbol } from '../Symbol';
 import { t, t as tx, tn } from '../sprache';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../shared/src/stempel';
@@ -49,7 +50,9 @@ type Zahlprop = (typeof ZAHLEN)[number];
 /** Feld im Bearbeitungszustand: Zahlen als getippter Text, Merker für neue Felder. */
 type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean; _register: string;
   /** Ausblenden (#655) hat „Pflicht“ aufgehoben – Hinweis am Feld, bis gespeichert ist. */
-  _pflichtWeg?: boolean };
+  _pflichtWeg?: boolean;
+  /** „Feld wieder freigeben“ (#1034): beim Speichern `berechnetVon: null`. */
+  _freigeben?: boolean };
 /** Abschnitt im Entwurf (#890): `vor` ist die _uid des Felds, damit ein neuer Schlüssel nichts kaputt macht. */
 interface EntwurfAbschnitt { _uid: string; vor: string; titel: string; eingeklappt?: boolean; beschriftungen?: Abschnitt['beschriftungen']; anzeigen?: Abschnitt['anzeigen'] }
 /** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
@@ -331,7 +334,8 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       ...ohneListen, beschriftungen: e.beschriftungen ?? null,
       // Ausgeblendet (#655) immer mitschicken – ohne die Angabe behielte der Server den bisherigen Wert.
       // Anzeigen, wenn … (#1033) genauso: null entfernt die Regel.
-      felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, _pflichtWeg, ...rest }) => ({ ...rest, beschriftungen: rest.beschriftungen ?? null, ausgeblendet: !!rest.ausgeblendet, anzeigen: rest.anzeigen ?? null })),
+      // Feld wieder freigeben (#1034): ausdrücklich null; sonst bleibt „berechnet“, wie es ist.
+      felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, _pflichtWeg, _freigeben, ...rest }) => ({ ...rest, beschriftungen: rest.beschriftungen ?? null, ausgeblendet: !!rest.ausgeblendet, anzeigen: rest.anzeigen ?? null, ...(_freigeben ? { berechnetVon: null } : {}) })),
       register: e.register.map(({ _uid, _neu, _schluesselGetippt, abschnitte, ...r }) => {
         const felder = e.felder.filter((f) => f._register === r.key);
         // Abschnitte (#890) als Feldschlüssel; nur vor Feldern dieses Registers, Reihenfolge der Felder.
@@ -467,6 +471,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
                 ? void ausblendenFragen([f._uid], t('mappentypen.darstellung.feld-ausblenden', { label: f.label || f.key }), (x) => ({ ...x, felder: x.felder.map((g) => (g._uid === f._uid ? { ...g, ausgeblendet: true } : g)) }))
                 : setE((x) => ({ ...x, felder: x.felder.map((g) => (g._uid === f._uid ? { ...g, ausgeblendet: undefined, _pflichtWeg: undefined } : g)) })))}
               registerAusgeblendet={!!e.register.find((r) => r.key === f._register)?.ausgeblendet}
+              berechnung={typ?.berechnung}
               setze={(patch) => {
                 const p = { ...patch };
                 if ('label' in p && f._neu && !f._schluesselGetippt) p.key = eindeutigerSchluessel(schluesselAus(p.label ?? ''), i);
@@ -566,6 +571,8 @@ function FeldZeile(p: {
   ausblenden(an: boolean): void;
   /** Das Register des Felds ist ausgeblendet – dann ist es das Feld auch. */
   registerAusgeblendet: boolean;
+  /** Berechnete Felder (#1034): je Paket Name und ob es noch rechnet. */
+  berechnung?: Mappentyp['berechnung'];
   zieh: { className: string }; griff: React.ReactNode;
 }) {
   const { f, i, offen, fehler, setze } = p;
@@ -577,6 +584,11 @@ function FeldZeile(p: {
 
   const chips: string[] = [];
   if (f.system) chips.push(t('mappentypen.editor.system'));
+  // Berechnet (#1034): von welchem Paket – oder „nicht mehr berechnet“.
+  const berechnetVon = f.berechnetVon && !f._freigeben ? f.berechnetVon : undefined;
+  const bInfo = berechnetVon ? p.berechnung?.[berechnetVon] : undefined;
+  const bPaket = bInfo?.name ?? berechnetVon ?? '';
+  if (berechnetVon) chips.push(bInfo?.aktiv === false ? t('mappentypen.berechnet.chip-nicht-mehr') : t('mappentypen.berechnet.chip', { paket: bPaket }));
   if (f.ausgeblendet || p.registerAusgeblendet) chips.push(t('mappentypen.darstellung.chip.ausgeblendet'));
   if (f.eindeutig && (f.typ === 'text' || f.typ === 'zahl')) chips.push('eindeutig');
   if (f.typ === 'referenz') chips.push(`→ ${zielName}`, VERWEISARTEN[f.verweisart ?? 'bezug']);
@@ -682,6 +694,13 @@ function FeldZeile(p: {
         <div className="feldeditor">
           {fehler && <div className="hinweis schlecht"><p>{fehler.join(' ')}</p></div>}
           {f.system && <p className="leise klein">{t('mappentypen.editor.systemfeld-bezeichnung-hilfetext-und')}</p>}
+          {/* Berechnet (#1034): nur das Paket schreibt den Wert; freigeben erst, wenn es nicht mehr rechnet. */}
+          {berechnetVon && <div className={`hinweis ${bInfo?.aktiv === false ? 'warn' : 'info'} berechnetinfo`} data-anker="mappentyp.berechnet">
+            <p><Symbol name="rechnen" /> {bInfo?.aktiv === false ? t('mappentypen.berechnet.nicht-mehr', { paket: bPaket }) : t('mappentypen.berechnet.aktiv', { paket: bPaket })} <Hilfe ort="mappentyp.berechnet" /></p>
+            {bInfo?.aktiv === false && <p><Knopf art="neben" groesse="klein" onClick={() => setze({ _freigeben: true })}>{t('mappentypen.berechnet.freigeben')}</Knopf></p>}
+          </div>}
+          {f.berechnetVon && f._freigeben && <div className="hinweis info berechnetinfo"><p>{t('mappentypen.berechnet.wird-freigegeben')}{' '}
+            <Knopf art="link" groesse="klein" onClick={() => setze({ _freigeben: undefined })}>{t('mappentypen.berechnet.rueckgaengig')}</Knopf></p></div>}
           <div className="raster">
             <div className="eigenschaft"><span><label htmlFor={id('label')}>{t('mappentypen.editor.bezeichnung')}</label></span>
               <SprachText id={id('label')} wert={f.label} placeholder={t('mappentypen.editor.z-b-kuendigung-bis')} autoFocus={f._neu} teil="label" beschriftungen={f.beschriftungen}
@@ -709,8 +728,8 @@ function FeldZeile(p: {
           </div>
           <div className="raster">
             {/* Ausgeblendete Felder (#655) können nicht Pflicht sein – sonst ließe sich keine Mappe speichern. */}
-            <div className="eigenschaft unten">{f.ausgeblendet || p.registerAusgeblendet
-              ? <label className="haken"><input type="checkbox" checked={false} disabled /><span><span className="haken-titel">{t('mappentypen.editor.pflichtfeld')}</span><small className="hilfe">{f._pflichtWeg ? t('mappentypen.darstellung.pflicht-aufgehoben') : t('mappentypen.darstellung.nie-pflicht')}</small></span></label>
+            <div className="eigenschaft unten">{f.ausgeblendet || p.registerAusgeblendet || berechnetVon
+              ? <label className="haken"><input type="checkbox" checked={false} disabled /><span><span className="haken-titel">{t('mappentypen.editor.pflichtfeld')}</span><small className="hilfe">{berechnetVon ? t('mappentypen.berechnet.nie-pflicht') : f._pflichtWeg ? t('mappentypen.darstellung.pflicht-aufgehoben') : t('mappentypen.darstellung.nie-pflicht')}</small></span></label>
               : haken('pflicht', t('mappentypen.editor.pflichtfeld'), t('mappentypen.editor.mappe-laesst-sich-ohne'))}</div>
             <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={!!f.ausgeblendet} onChange={(ev) => p.ausblenden(ev.target.checked)} />
               <span><span className="haken-titel">{t('mappentypen.darstellung.ausblenden')}</span><small className="hilfe">{p.registerAusgeblendet && !f.ausgeblendet ? t('mappentypen.darstellung.register-ausgeblendet') : t('mappentypen.darstellung.ausblenden-hilfe')}</small></span></label></div>

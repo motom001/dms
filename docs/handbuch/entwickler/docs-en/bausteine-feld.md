@@ -37,6 +37,7 @@ import { Feld, HakenFeld, FeldGruppe } from '../bausteine';
 | `Feld` | text, number, date, drop-down list, multi-line, password | exactly one element |
 | `HakenFeld` | a single checkbox (yes/no) | `<input type="checkbox">` – sits before the label |
 | `FeldGruppe` | several inputs under one label: checkboxes of a multiple choice, radio buttons, a stored secret with buttons | any number, each with its own label |
+| `NurLesenFeld` | a value that cannot be changed here: calculated by a package (#1034), combined (#1050), protected | none – the value as content, its origin (`herkunft`, with `symbol`) underneath |
 
 If the input does not take the links as props (its own component that passes them on to an inner element), pass a function: `<Feld …>{(v) => <ZahlEingabe v={v} … />}</Feld>`. `v` contains `id`, `aria-describedby` and `aria-invalid`.
 
@@ -51,6 +52,7 @@ If the input does not take the links as props (its own component that passes the
 | error with hint | `fehler` and `hinweis` set | message directly below the input, the hint below it |
 | disabled | `disabled` on the input | surface `--senke`, text `--leise`, weaker border `--linie-stark`, no hover |
 | read only | `readOnly` on the input | surface `--senke`, dashed border, text easy to read and select |
+| calculated, combined, protected | `NurLesenFeld` with `herkunft` | like “read only” (surface `--senke`, dashed border in `--rand-eingabe`), with the origin and an icon in `--leise` underneath – one look, only the sentence differs (“calculated by Verträge”, “no longer calculated …”, “made up of …”) |
 | optional | `optional` | “(optional)” in `--leise` after the label |
 
 ![Mouse over the field “Town”, keyboard focus in the field “Street” – light](bilder/muster-feld-fokus.png){ loading=lazy }

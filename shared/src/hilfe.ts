@@ -86,6 +86,8 @@ export const HILFE = {
   'pakete.recht.erkennen': admin('pakete/', 'dem Recht „Felder aus Dokumenten vorschlagen“', 'recht-erkennen'),
   'pakete.recht.uebersetzen': admin('pakete/', 'dem Recht „Inhalte übersetzen“', 'recht-uebersetzen'),
   'pakete.recht.klassifizieren': admin('pakete/', 'dem Recht „Mappentyp vorschlagen“', 'recht-klassifizieren'),
+  'pakete.recht.hinweise': admin('pakete/', 'dem Recht „Hinweise an Mappen setzen“', 'recht-hinweise'),
+  'pakete.recht.berechnet': admin('pakete/', 'berechneten Feldern', 'recht-berechnet'),
   'pakete.klassifizieren': admin('pakete/', 'dem Vorschlag „Wohin gehört das?“ durch Pakete', 'wohin-gehoert-das'),
   'werkbank.uebersetzen': admin('sprachen/', 'Inhalte übersetzen', 'inhalte-ubersetzen'),
   'pakete.recht.texterkennung': admin('pakete/', 'dem Recht „Texterkennung übernehmen“', 'recht-texterkennung'),
@@ -132,6 +134,7 @@ export const HILFE = {
   'werkbank.nutzung': admin('nutzung/', 'Nutzung'),
   // Anzeigen, wenn … (#1033) am Feld und am Abschnitt.
   'mappentyp.anzeigen': admin('mappentypen/', 'Anzeigen, wenn …', 'anzeigen-wenn'),
+  'mappentyp.berechnet': admin('mappentypen/', 'Berechnete Felder', 'berechnete-felder'),
   'werkbank.sprachen': admin('sprachen/', 'Sprachen'),
   'werkbank.anmeldeschutz': admin('anmeldeschutz/', 'Anmeldeschutz'),
   'werkbank.anbieter': admin('anmeldeschutz/', 'Anmeldung über einen Anbieter', 'anmeldung-uber-einen-anbieter-openid-connect'),

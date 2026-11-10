@@ -16,7 +16,7 @@ import { bereinigeFrist } from '../../../shared/src/fristen';
 import { JAHRE_MAX } from '../../../shared/src/archiv';
 import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennung';
 import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
-import { SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
+import { PAKET_ID, SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -107,7 +107,33 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(f.ausgeblendet === true ? { ausgeblendet: true } : {}),
     // Anzeigen, wenn … (#1033): nur mit mindestens einer Bedingung; ob sie passen, prüft der Dienst beim Speichern.
     ...(bereinigeAnzeige(f.anzeigen) ? { anzeigen: bereinigeAnzeige(f.anzeigen) } : {}),
+    // Berechnet (#1034): Id des Pakets; ob es die Angabe setzen darf, entscheidet behalteBerechnet.
+    ...(typ !== 'passwort' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
   };
+}
+
+/**
+ * Berechnete Felder (#1034): `berechnetVon` setzt nur die Paketverwaltung (`ausPaket`, Id des Pakets, das den Typ
+ * mitbringt) – über die Werkbank oder die Schnittstelle lässt sich kein Feld zum berechneten machen. Was schon berechnet
+ * ist, bleibt es, auch wenn die Eingabe die Angabe nicht nennt (älteres Programm, Kopie des Typs aus der Oberfläche).
+ * „Feld wieder freigeben“: die Angabe ausdrücklich leer (`berechnetVon: null`) – das darf, wer Mappentypen ändern darf
+ * (die Route verlangt das), und das Paket selbst bei einem Update, das das Feld nicht mehr berechnet.
+ */
+export function behalteBerechnet(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'felder'> | undefined, ausPaket?: string): MappentypDaten {
+  const r = (roh ?? {}) as Record<string, unknown>;
+  const quelle = (key: string) => (Array.isArray(r.felder) ? r.felder : []).find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key) as Record<string, unknown> | undefined;
+  const felder = d.felder.map((f) => {
+    const { berechnetVon: neu, ...ohne } = f;
+    const vorher = alt?.felder.find((y) => y.key === f.key)?.berechnetVon;
+    if (f.system || f.typ === 'passwort') return ohne;
+    // Nie Pflicht: Den Wert schreibt nur das Paket, nicht wer die Mappe anlegt.
+    if (vorher) {
+      const q = quelle(f.key);
+      return q && 'berechnetVon' in q && !text(q.berechnetVon) ? ohne : { ...ohne, pflicht: false, berechnetVon: vorher };
+    }
+    return neu && ausPaket && neu === ausPaket ? { ...f, pflicht: false } : ohne;
+  });
+  return { ...d, felder };
 }
 
 /**

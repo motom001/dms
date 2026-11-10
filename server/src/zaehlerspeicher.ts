@@ -115,6 +115,8 @@ export const OHNE_FOLGEN = new Set<string>([
   'fragenFundstellen', 'historieArt',
   // #936: Wohin eine Post aufgelöst wurde (nur lesend).
   'aufgeloesteIn',
+  // Hinweise von Paketen (#1034) stehen nur an der Mappe, gebündelte berechnete Werte nur in ihrer Historie.
+  'hinweise', 'setzeHinweis', 'loescheHinweis', 'loescheHinweiseVon', 'letzteBerechnung', 'historieDatenErsetzen',
 ]);
 
 /**

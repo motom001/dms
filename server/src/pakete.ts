@@ -128,9 +128,26 @@ export interface Manifest {
  * `zielOptional` nennt Typen anderer Pakete als `paket:schluessel`, von denen das Paket nicht abhängt – Ablago nimmt
  * sie auf, sobald es sie gibt. Ein Verweisfeld darf auch nur `zielOptional` haben.
  */
-export interface PaketFeld extends Partial<Feld> { key: string; label: string; typ: Feld['typ']; ziel?: string | string[]; zielOptional?: string[] }
+export interface PaketFeld extends Partial<Feld> { key: string; label: string; typ: Feld['typ']; ziel?: string | string[]; zielOptional?: string[];
+  /** Berechnet (#1034): nur der Code dieses Pakets schreibt den Wert; Ablago speichert es als `berechnetVon`. */
+  berechnet?: boolean }
 /** Die festen Ziele eines Paketfelds als Liste (#1036): `ziel` einzeln oder als Liste. */
 export const paketZiele = (f: Pick<PaketFeld, 'ziel'>): string[] => (Array.isArray(f.ziel) ? f.ziel.map(str) : f.ziel ? [str(f.ziel)] : []);
+/**
+ * Berechnete Felder nach einem Update (#1034): je vorhandenem Feld des Typs, dessen Angabe sich ändert, die neue –
+ * die Paket-Id (jetzt berechnet) oder null (berechnet das Paket nicht mehr; der letzte Wert bleibt, das Feld ist frei).
+ * Felder, die ein anderes Paket berechnet, und Felder, die das Paket nicht (mehr) nennt, bleiben, wie sie sind.
+ */
+export function berechnetAenderung(t: Pick<PaketTyp, 'felder'>, aktuell: Pick<Mappentyp, 'felder'>, paketId: string): Map<string, string | null> {
+  const r = new Map<string, string | null>();
+  for (const g of aktuell.felder) {
+    const f = t.felder.find((x) => x.key === g.key);
+    if (!f) continue;
+    if (f.berechnet === true && g.berechnetVon !== paketId && !g.berechnetVon) r.set(g.key, paketId);
+    else if (f.berechnet !== true && g.berechnetVon === paketId) r.set(g.key, null);
+  }
+  return r;
+}
 export interface PaketRegister {
   key: string; name: string; art: Register['art']; felder?: string[]; quellen?: Array<{ typ: string; feld: string }>; volltext?: boolean; beschriftungen?: Beschriftungen<NamensTeile>;
   /** Abschnitte im Feldregister (#890): `{ vor, titel?, eingeklappt?, beschriftungen? }`; ältere Ablago ignorieren sie. */
@@ -423,6 +440,12 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       // Feldart (#1035): Unbekanntes nicht still zu Text machen – meist braucht das Paket eine neuere Ablago-Version.
       if (f.typ !== undefined && !Object.hasOwn(FELDTYPEN, str(f.typ))) fehler.push(`${wo}: Feld „${f.key}“ hat die unbekannte Feldart „${str(f.typ)}“ (möglich: ${Object.keys(FELDTYPEN).join(', ')}).`);
       if (f.negativ !== undefined && (f.typ !== 'betrag' || typeof f.negativ !== 'boolean')) fehler.push(`${wo}: Feld „${f.key}“: negativ gibt es nur bei Beträgen (typ: betrag), als true oder false.`);
+      // Berechnet (#1034): true oder false; nie Pflicht, nie Passwort. Das Schreibrecht prüft der Abschnitt zum Code unten.
+      if (f.berechnet !== undefined && typeof f.berechnet !== 'boolean') fehler.push(`${wo}: Feld „${f.key}“: berechnet ist true oder false.`);
+      else if (f.berechnet === true && f.pflicht) fehler.push(`${wo}: Feld „${f.key}“: Ein berechnetes Feld ist nie Pflicht – den Wert schreibt das Paket, nicht wer die Mappe anlegt.`);
+      else if (f.berechnet === true && f.typ === 'passwort') fehler.push(`${wo}: Feld „${f.key}“: Passwortfelder lassen sich nicht berechnen.`);
+      // Ältere Pakete hätten berechnetVon selbst setzen können – das vergibt nur Ablago.
+      delete (f as Partial<Feld>).berechnetVon;
       // Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText.
       const roh = f as unknown as Record<string, unknown>;
       if (roh.aus_text !== undefined) {
@@ -543,6 +566,13 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   fehler.push(...cl.fehler.map((f) => (f.startsWith('code/:') ? f.slice('code/: '.length) : `manifest.yaml: ${f}`)));
   // Mappen-Ereignisse (#670): Schlüssel ohne Präfix sind eigene Mappentypen; fremde (paket:typ, dms:post) und „*“ seit #686.
   for (const k of cl.code?.mappentypen ?? []) if (k !== '*' && !k.includes(':') && !typen.some((t) => t.schluessel === k)) fehler.push(t('meldungen.pakete.manifest-yaml-code-mappentypen', { k }));
+  // Berechnete Felder (#1034): Den Wert schreibt der Code – er muss den eigenen Mappentyp schreiben dürfen.
+  for (const ty of typen) {
+    const felder = ty.felder.filter((f) => f.berechnet === true);
+    if (!felder.length) continue;
+    const darf = (cl.code?.rechte.schreiben ?? []).some((v) => v === '*' || v === ty.schluessel || v === `${str(m.id)}:${ty.schluessel}`);
+    if (!darf) fehler.push(t('meldungen.pakete.berechnet-ohne-schreiben', { typ: ty.name, felder: felder.map((f) => `„${f.label}“`).join(', ') }));
+  }
   let code: PaketCodeTeil | null = null;
   if (cl.code) {
     const modul = dateien.get('code/modul.wasm');
@@ -1725,7 +1755,8 @@ export class Paketverwaltung {
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), probleme, fehlercodes, hinweise,
       automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
-      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
+      // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
+      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) }))), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
   }
@@ -1925,9 +1956,10 @@ export class Paketverwaltung {
     const eingabe = (t: PaketTyp, nurAngelegt: boolean) => {
       const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
       const offen = new Set(t.felder.filter((f) => paketZiele(f).some((z) => !(eigen(z) && z.split(':').pop() === t.schluessel) && ziel(z, nurAngelegt) === null)).map((f) => f.key));
-      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, zielOptional: opt, ...f }) => {
+      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, zielOptional: opt, berechnet, ...f }) => {
         const ziele = [...paketZiele({ ziel: z }).map((x) => ziel(x, false)!), ...(opt ?? []).map(optional).filter((x): x is string => !!x)];
-        return { ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}) };
+        // Berechnet (#1034): gehört dem Paket, das den Typ mitbringt; null gibt ein Feld frei, das das Paket nicht mehr berechnet.
+        return { ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}), berechnetVon: berechnet === true ? m.id : null };
       });
       const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}),
         ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
@@ -1977,12 +2009,15 @@ export class Paketverwaltung {
         if (x.unvollstaendig) nachtragen.push(paketTyp);
       }
       for (const paketTyp of nachtragen) {
-        try { await this.d.aendereTyp(ids.get(paketTyp.schluessel)!, eingabe(paketTyp, false).daten); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: paketTyp.name, meldungen: meldungen(f) })); }
+        try { await this.d.aendereTyp(ids.get(paketTyp.schluessel)!, eingabe(paketTyp, false).daten, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: paketTyp.name, meldungen: meldungen(f) })); }
       }
       // 2. Update: vorhandene Typen um neue Felder und Register ergänzen – sonst nichts ändern.
       for (const paketTyp of paket.typen) {
         const p = plan.typen.find((x) => x.schluessel === paketTyp.schluessel)!;
-        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length && !p.wiederfinden?.length && !p.typAngaben && !p.formate?.length && !p.beschriftungen && !p.abschnitte?.length)) continue;
+        // Berechnete Felder (#1034): Das Update gilt auch für vorhandene Felder – neu berechnet oder nicht mehr.
+        const vorab = p.vorhanden ? vorher.get(ids.get(paketTyp.schluessel)!) : undefined;
+        const berechnetNeu = vorab ? berechnetAenderung(paketTyp, vorab, m.id) : new Map<string, string | null>();
+        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length && !p.wiederfinden?.length && !p.typAngaben && !p.formate?.length && !p.beschriftungen && !p.abschnitte?.length && !berechnetNeu.size)) continue;
         const aktuell = vorher.get(ids.get(paketTyp.schluessel)!)!;
         const neu = eingabe(paketTyp, false).daten;
         // Erkennung (#336): Markierung des Pakets an vorhandene Felder, an denen der Administrator nichts eingestellt hat.
@@ -1994,7 +2029,7 @@ export class Paketverwaltung {
         // Beschriftungen (#728) genauso: ergänzt, was der Administrator noch nicht beschriftet hat.
         const besch = beschriftungenNeu(paketTyp, aktuell);
         // Ausblenden (#655): Was der Administrator ausgeblendet hat, bleibt so; was das Update neu bringt, ist sichtbar.
-        const felder = [...besch.typ.felder.map((f) => ({ ...f, ...(markiert.has(f.key) ? { erkennung: markiert.get(f.key) } : {}), ...(wiederfinden.has(f.key) ? { wiederfinden: true } : {}), ...vorgaben.get(f.key) })), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key)).map(({ ausgeblendet: _a, ...f }) => f)];
+        const felder = [...besch.typ.felder.map((f) => ({ ...f, ...(markiert.has(f.key) ? { erkennung: markiert.get(f.key) } : {}), ...(wiederfinden.has(f.key) ? { wiederfinden: true } : {}), ...vorgaben.get(f.key), ...(berechnetNeu.has(f.key) ? { berechnetVon: berechnetNeu.get(f.key) } : {}) })), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key)).map(({ ausgeblendet: _a, ...f }) => f)];
         // Abschnitte (#890) nur an Feldregistern, die noch keine haben.
         const abschnitte = new Map(abschnitteNeu(paketTyp, aktuell, (r) => [...(r.felder ?? []), ...neueFelderAuf(paketTyp, aktuell, r)]).map((r) => [r.key, r.abschnitte] as const));
         if (abschnitte.size) abschnittRegister.set(aktuell.id, new Set(abschnitte.keys()));
@@ -2005,7 +2040,7 @@ export class Paketverwaltung {
         });
         for (const r of neu.register) if (!register.some((g) => g.key === r.key)) { const { ausgeblendet: _a, ...ohne } = r as Register; register.push(ohne); }
         geaendert.push(aktuell);
-        try { await this.d.aendereTyp(aktuell.id, { ...aktuell, ...typAngabenNeu(paketTyp, aktuell), felder, register, beschriftungen: besch.typ.beschriftungen ?? null }); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: aktuell.name, meldungen: meldungen(f) })); }
+        try { await this.d.aendereTyp(aktuell.id, { ...aktuell, ...typAngabenNeu(paketTyp, aktuell), felder, register, beschriftungen: besch.typ.beschriftungen ?? null }, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: aktuell.name, meldungen: meldungen(f) })); }
       }
       // Übernahme (#883): Der frühere Ablageort gehört jetzt dem Paket und heißt wie dessen Typ (#1084: basis:ablageort).
       for (const [s, id] of Object.entries(ueb?.typen ?? {})) {
@@ -2719,8 +2754,8 @@ export class Paketverwaltung {
         }
       }
     }
-    await this.d.kern.repo.loeschePaket(id);
-    await this.d.setzePaketSynonyme(id, []);
+    // Hinweise (#1034) gehen mit; berechnete Felder in Typen, die bleiben, behalten ihren letzten Wert.
+    await Promise.all([this.d.kern.repo.loeschePaket(id), this.d.setzePaketSynonyme(id, []), this.d.kern.repo.loescheHinweiseVon(id)]);
     // Sprachpaket (#731): Texte weg, Sprache aus der Einstellung, alle Prozesse laden neu. Beschriftungen an Mappentypen
     // bleiben – wie andere Beschriftungen einer nicht erlaubten Sprache stören sie nicht und gelten bei einer Neuinstallation.
     if (p.sprache) {

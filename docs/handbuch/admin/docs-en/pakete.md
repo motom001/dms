@@ -277,6 +277,16 @@ If an update wants other addresses, Ablago asks again.
 
 **"Suggest a folder type ("Where does this belong?") – only from the start of the document and the list of folder types that Ablago provides (dms:klassifizieren)"** – on the page *Take over document*, the package suggests which folder type new post belongs to (see [Where does this belong? by packages](#wohin-gehoert-das)). It only gets the start of the document and the name, short description and "How to recognise it" of the folder types that come into question and are allowed for AI services – no folders. Ablago checks what it supplies and only shows it as a suggestion.
 
+#### Set notes on folders { #recht-hinweise }
+
+**"Sets notes on folders it may change (e.g. "The items add up to €118.40") – text only, always with the package's name; they never stop you saving (dms:hinweise)"** – Since version 0.231. The package can set and remove short notes on folders it may [create and change](#recht-mappen-anlegen-und-andern), for example when the items of an invoice do not match the amount. They appear in yellow in the notes line above the tabs, always with the name of the package in front – never in red and never so that they look like a message from Ablago. Ablago only accepts text: no HTML, no Markdown, no links, at most 300 characters and at most 3 notes per package and folder. A note does not change the folder (no "last changed", no history entry) and never stops anyone saving. If you remove the package, its notes go with it.
+
+#### Calculated fields { #recht-berechnet }
+
+**"Calculates fields that only this package writes (read-only in Ablago): *folder type: fields*"** – Since version 0.231. The fields named are read-only in the folder; only the package writes their value (see [Calculated fields](mappentypen.md#berechnete-felder)). For that it needs the right [create and change folders](#recht-mappen-anlegen-und-andern) on its own folder type.
+
+If a package has calculated fields or sets notes, the confirmation also says: **"Writes values and notes that everyone who can read the folder sees – even if the package works them out from folders not everyone may see"**. A package with read access to other folder types could in this way write something from folders a person may not see onto a folder that person may see. Technically this cannot be prevented – that applies to every write right. So only confirm such packages if you trust them with that; which folders a package reads is listed under [Read folders](#recht-mappen-lesen).
+
 #### Translate content { #recht-uebersetzen }
 
 **"Translate content – at the press of a button the package gets a single text (field, note or full text) the person may read and returns the translation; it can’t change or store anything (dms:uebersetzen)"** – since version 0.204. The package translates when someone presses **Show translation** (see [Languages → Translate content](sprachen.md#inhalte-ubersetzen)). It only gets this one text and the languages – no permissions on folders or documents. If the package may also access the network, Ablago only uses it if you choose it explicitly and confirm the data transfer.

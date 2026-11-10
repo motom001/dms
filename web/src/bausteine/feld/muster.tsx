@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { t } from '../../sprache';
-import { Feld, FeldGruppe, HakenFeld } from './Feld';
+import { Feld, FeldGruppe, HakenFeld, NurLesenFeld } from './Feld';
 import s from '../muster.module.css';
 
 /**
@@ -68,6 +68,25 @@ export function FeldMuster() {
       </Karte>
       <Karte zustand="nur-lesen" titel={t('oberflaeche.muster.zustand.nur-lesen')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.angelegt')}><input type="text" readOnly value="Jonas Beispiel" /></Feld>
+      </Karte>
+      {/* Ein Aussehen für alles, was sich nicht ändern lässt (#1034, Hinweis Qualität) – nur die Herkunft unterscheidet sich. */}
+      <Karte zustand="berechnet" titel={t('oberflaeche.muster.zustand.berechnet')}>
+        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.status')} herkunft={t('felder.berechnet.von', { paket: 'Verträge' })} symbol="rechnen">
+          {t('oberflaeche.muster.wert.status')}
+        </NurLesenFeld>
+      </Karte>
+      <Karte zustand="nicht-mehr-berechnet" titel={t('oberflaeche.muster.zustand.nicht-mehr-berechnet')}>
+        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.kuendigen-bis')} herkunft={t('felder.berechnet.nicht-mehr', { paket: 'Verträge' })} symbol="rechnen">
+          14.02.2028
+        </NurLesenFeld>
+      </Karte>
+      <Karte zustand="zusammengesetzt" titel={t('oberflaeche.muster.zustand.zusammengesetzt')}>
+        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.bezeichnung')} herkunft={t('oberflaeche.muster.hinweis.zusammengesetzt')} symbol="link">
+          {t('oberflaeche.muster.wert.bezeichnung')}
+        </NurLesenFeld>
+      </Karte>
+      <Karte zustand="geschuetzt" titel={t('oberflaeche.muster.zustand.geschuetzt')}>
+        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.email')} herkunft={t('oberflaeche.muster.hinweis.geschuetzt')}>lena@example.org</NurLesenFeld>
       </Karte>
       <Karte zustand="auswahl" titel={t('oberflaeche.muster.zustand.auswahl')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.mappentyp')}>
