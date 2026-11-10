@@ -152,9 +152,27 @@ The first subject area with its own business logic in its subject folder (trial 
 | `archiv.ts` | `MappenArchiv` (`dienst.mappenArchiv`) | archive number (#345), archive mode (#212: `darfWeg`, `archivVorschau`), `pruefeDateien` |
 
 - **Door:** `mappen/index.ts`; only `routen.ts` loads the routes (`mappen.routen.ts`) directly. The input helpers for folder types stay in `mappentypen/eingabe.ts`.
-- **Gets the core**, `MappenDienst`, `MappenEingaben` and `MappenArchiv` also the [permission check](#zugriff), and per class a connector for what is still in the service (accounts, tasks without read permission, archive version and PDF protection, data protection, `loeschPruefung`, `meldeVerknuepft`, key, labels, jobs).
+- **Gets the core**, `MappenDienst`, `MappenEingaben` and `MappenArchiv` also the [permission check](#zugriff), and per class a connector for what is still in the service or comes through it (accounts, tasks without read permission, archive version and PDF protection from the [documents](#dokumente), data protection, `loeschPruefung`, `meldeVerknuepft`, key, labels, jobs).
 - **Immediate work:** `legeMappeAn` and `aendereMappe` report `kern.anlaesse.mappeGeaendert` at the end of their transaction – the [hook points](#anschlusspunkte) and their order are unchanged.
 - **Still in the service:** writing notes, deleting and the Bin, tasks and deadlines, `meldeVerknuepft`.
+
+## Documents (#1075) { #dokumente }
+
+`server/src/dokumente/` (layer 2) gathers everything about the files in a folder – one class per topic, each getting the core; the service builds them (`baueDokumente()`) and keeps a one-line forward for every method:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `dokumente.dienst.ts` | `DokumenteDienst` (`dienst.dokumente`) | `ladeHoch`, `loescheDokument`, `holeDokument`, `dokumentInhalt`, `textAusDatei`, connecting text recognition and previews, `neueDateien`, `raeumeAuf`; `dateiname`, `erkenneAnzeigbar` |
+| `versionen.ts` | `DokumentVersionen` (`dienst.dokumentVersionen`) | `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion`, `versionen`, `versionInhalt`, `beruehre` |
+| `umwandeln.ts` | `DokumentUmwandlung` (`dienst.dokumentUmwandlung`) | converting files (#577): `nachFassung`, `umwandelPaketDa`, `setzeFassung`, `fassungVon`, `umwandlungStand` |
+| `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | archive version (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `archivStand` |
+| `geschuetzte-pdf.ts` | `GeschuetztePdfs` (`dienst.geschuetztePdfs`) | protected PDFs (#827): `entsperreDokument`, `nachEntsperren`, `mitPdfSchutz` |
+| `fehlende-dateien.ts` | `FehlendeDateien` (`dienst.dateienFehlen`) | missing files (#877): `merkeFehlendeDatei`, `fehlendeDateien`, `dokumenteOhneDatei`, `pruefeVorhanden` |
+
+- **Door:** `dokumente/index.ts`; only `routen.ts` loads the routes (`dokumente.routen.ts`) directly. The technology of the versions (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) stays outside and is a tool for subject folders (see [layers](#schichten)).
+- **Gets the core** and the classes of this folder it calls, and per class a connector for what is still in the service or would run in a circle (event and titles via the facade, archive mode, shrinking, full text, jobs for packages, package settings, folder types, text recognition).
+- **Order:** `ladeHoch` writes history, “last changed”, document, full text and `dokument.hochgeladen` in one transaction; preview, converting and unlocking run afterwards. `nachFassung`, `nachEntsperren`, `archivNachVolltext` and `nachNeuerVersion` are unchanged and called from the same places.
+- **Still in the service:** full text (`volltextFertig`, `volltextAusgelassen`), editing PDFs, shrinking and redacting, `entsperrtZu`.
 
 ### Layers { #schichten }
 
@@ -167,7 +185,7 @@ Subject folders only call downwards; within the same layer they may use each oth
 | 2 | `mappentypen/`, `mappen/`, `dokumente/` |
 | 3 | all other subject folders (`suche/`, `sichten/`, `post/`, `aufgaben/` …) |
 
-Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
+Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
 
 ## Dependencies { #abhaengigkeiten }
 

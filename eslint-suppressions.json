@@ -120,10 +120,10 @@
   },
   "server/src/dienst.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 15
+      "count": 14
     },
     "complexity": {
-      "count": 24
+      "count": 22
     },
     "max-depth": {
       "count": 2
@@ -132,10 +132,10 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 5
+      "count": 4
     },
     "max-params": {
-      "count": 6
+      "count": 5
     },
     "no-control-regex": {
       "count": 1
@@ -152,6 +152,27 @@
       "count": 1
     },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/dokumente/dokumente.dienst.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/dokumente/umwandeln.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/dokumente/versionen.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "max-params": {
       "count": 1
     }
   },
