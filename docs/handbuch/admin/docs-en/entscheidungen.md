@@ -30,7 +30,7 @@ Briefly recorded so that later changes know why something is the way it is.
 - **Passwords** with scrypt from Node (no native library). **Sessions** as an HttpOnly cookie, in the database only as a SHA-256 hash. The same applies to invitation and password links (invitation 7 days, reset 1 hour, each usable only once).
 - **Protection against outside pages:** changing requests need the header `X-DMS`, which only Ablago's own interface sets; plus `SameSite=Lax`.
 - **Email optional:** without SMTP, user management shows the links to copy.
-- **Routes centrally** in `server/src/routen.ts`, each with an access level (open, signed in, admin).
+- **Routes per subject area** in `server/src/<fach>/<fach>.routen.ts`, brought together in one place in `server/src/routen.ts` (#960), each with an access level (open, signed in, admin).
 
 ## Library {#ablage}
 

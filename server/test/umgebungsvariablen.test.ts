@@ -68,7 +68,7 @@ describe('DATABASE_URL vom Image oder aus der Compose-Datei (#805)', () => {
     return Object.fromEntries(aus.split('\n').filter((z) => z.includes('=')).map((z) => [z.slice(0, z.indexOf('=')), z.slice(z.indexOf('=') + 1)]));
   }
 
-  /** Was die Werkbank-Übersicht zu DATABASE_URL meldet (wie in routen.ts). */
+  /** Was die Werkbank-Übersicht zu DATABASE_URL meldet (wie in werkbank/werkbank.routen.ts). */
   function hinweis(env: Record<string, string | undefined>, laufend = ausUrl(INTERN)!) {
     const variante = process.env.DMS_VARIANTE;
     try {

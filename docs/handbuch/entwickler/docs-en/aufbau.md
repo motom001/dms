@@ -13,7 +13,30 @@ docs/glossar.yml  glossary – the one source for all terms (the page "Terms" is
 Ablago is a **modular monolith**: one process, one database. Server and interface are together in one image – as `dms` or, with PostgreSQL in the same container, as `dms-komplett`. The identifiers in the code are German. Important patterns:
 
 - **Repos twice:** every data access interface exists for PostgreSQL (`repo-pg.ts`, `pg…` functions) and for memory (`repo-speicher.ts`, `speicher…`). Most tests run quickly in memory; the tests with `TEST_DATABASE_URL` cover PostgreSQL. New functions need both, and both must behave the same.
-- **Routes** are collected in `server/src/routen.ts`, each with `zugang: 'offen' | 'angemeldet' | 'admin'`. Two features are added: `api: true` makes a route part of the public API (sign-in also with an API key); `konsole: true` only allows it via the command `dms` in the container. The public API for programs is under `/api/v1` (`api-v1.ts`, OpenAPI).
+- **Routes** are kept per subject area in `server/src/<fach>/<fach>.routen.ts` (#960, e.g. `dokumente/dokumente.routen.ts`), each with `zugang: 'offen' | 'angemeldet' | 'admin'`. Each file exports functions `…Routen(k)` that receive the services and shared helpers via the parameter `k` (`http/routen-kontext.ts`; helpers without services in `http/routen-hilfen.ts`). `routen()` in `server/src/routen.ts` calls them in a fixed order (`BEREICHE`) and still holds the types (`Route`, `Anfrage`, `Antwort`), `pruefeZugang` and the check of package permissions; the test `routen-liste.test.ts` counts the routes and checks `zugang` and duplicates. Two features are added: `api: true` makes a route part of the public API (sign-in also with an API key); `konsole: true` only allows it via the command `dms` in the container. The public API for programs is under `/api/v1` (`api-v1.ts`, OpenAPI).
+
+| Folder in `server/src/` | Routes for |
+|---|---|
+| `anmeldung/` | sign-in, two-factor, password, setup, emergency access |
+| `konten/` | users, roles, deputies, API keys |
+| `mappentypen/` | folder types, their archive, permissions |
+| `werkbank/` | Workbench overview, designs, region, languages, log, admin mode |
+| `ausgang/` | export (Workbench and My account) |
+| `datenschutz/` | data subject requests, deletion concept, retrieval page |
+| `pakete/` | packages, catalogue, package settings |
+| `suche/` | search, Ask your archive |
+| `wartung/` | maintenance mode |
+| `sicherung/` | backup, restore, emergency sheet, keys |
+| `system/` | operation, system status, connection, sign-in protection, inbox folder, WebDAV, error reports |
+| `post/` | mailboxes and other inbound channels |
+| `automatisierung/` | automations |
+| `webhooks/` | webhooks (Workbench and My account) |
+| `sichten/` | views, folder lists, start page |
+| `aufgaben/` | tasks |
+| `mappen/` | folders, history, recycle bin |
+| `dokumente/` | documents, versions, contents |
+
+The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves.
 - **Workbench routes** (`zugang: 'admin'`, #818/#819) only work in **administration mode** (state of the session, `Konten.modusPruefen`) and only with permission for their area. Every new route needs an entry in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – otherwise only people with "Full administration" may use it, and the test `verwaltungsmodus.test.ts` fails. Sensitive actions that require a fresh sign-in are listed there in `heikleHandlung`. `benutzer.rolle` is the request's **effective** role (`admin` only in the mode); the stored permission is in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API keys never get `admin`.
 - **Public links without sign-in** so far only exist for an access copy's retrieval page (#455, `server/src/abruf.ts`, `web/src/abruf.tsx`): key only in the fragment (`/abruf#…`), in the database only hashes (SHA-256 for the key, scrypt for the code), failed attempts in sign-in protection per IP and on the link, download via a one-time ticket. Further sharing links should follow this pattern. In addition there is the **emergency access** `/notfall` (#815, `server/src/notfallcode.ts`, `web/src/notfall.tsx`): emergency code from the emergency sheet only as a scrypt hash (table `notfallcode`), redeemed in one transaction with the new password, default "home network only" with the real address behind a proxy (`istHeimnetz`), 30 s lock per address range, accounts only after the right code, notification before every change.
 - **Migrations** are numbered SQL files in `server/migrations/`. They run at start-up in one transaction and are never changed afterwards, always supplemented by a new one.
@@ -197,7 +220,7 @@ The maintainer decides between a, b and c. Here is what has been checked for it 
 
 The server delivers files with `dateiKoepfe` (`routen.ts`): everything except PDF with a strict Content-Security-Policy including `sandbox`. PDFs need the browser's built-in viewer and don't get this policy – that's why the browser **never sees the original** when it displays a PDF:
 
-- `fuerAnzeige()` in `routen.ts` takes effect for every answer with `anzeigen: true` and `application/pdf` without an API key – i.e. when viewing in the interface: `GET /api/dokumente/:id/inhalt`, `…/versionen/:nummer/inhalt`, `…/fassung` and `…/archivfassung` (each without `herunterladen`).
+- `fuerAnzeige()` in `http/routen-kontext.ts` takes effect for every answer with `anzeigen: true` and `application/pdf` without an API key – i.e. when viewing in the interface: `GET /api/dokumente/:id/inhalt`, `…/versionen/:nummer/inhalt`, `…/fassung` and `…/archivfassung` (each without `herunterladen`).
 - `pdfanzeige.ts` fetches the cleaned copy from the PDF place (`pdf/anzeige.ts`, in the worker pool) and keeps it in memory per SHA-256 of the content (at most 256 MB, oldest out first; failures aren't remembered).
 - Removed are JavaScript (`/JS`, name tree `JavaScript`), automatic actions (`/OpenAction`, `/AA`), the actions `SubmitForm`, `Launch`, `ImportData`, `GoToR`, `GoToE`, media actions, XFA forms, embedded files (`/EF`, `EmbeddedFiles`, streams `/EmbeddedFile`) and annotations for file attachments and media. Links (`URI`) and jumps within the document stay.
 - If the PDF can't be cleaned (encrypted, damaged), a short text comes (`text/plain`, with sandbox) with `X-DMS-Anzeige: nur-herunterladen`; otherwise `X-DMS-Anzeige: bereinigt` is in the header.
@@ -327,8 +350,8 @@ New texts for third parties go as keys into both `dritte.json` files – no `anr
 | --- | --- | --- |
 | Data protection request: Deckblatt.pdf, Uebersicht.html, LIESMICH.md (#396) | `server/src/auskunft.ts` | `auskunft.*` (suggested rights: `rechteStandard`) |
 | Email with the request as a ZIP, email with the retrieval link (#455) | `auskunftMail` in `shared/src/auskunft.ts` | `mail.*` |
-| Retrieval page `/abruf` and its messages (#455) | `web/src/abruf.tsx`, `GET /api/abruf/anrede`, `/api/abruf` in `routen.ts` | `abruf.*` |
-| Emergency access `/notfall` (#815) | `web/src/notfall.tsx`, `/api/notfall*` in `routen.ts`, `server/src/notfallcode.ts` | `konten.notfall.*` |
+| Retrieval page `/abruf` and its messages (#455) | `web/src/abruf.tsx`, `GET /api/abruf/anrede`, `/api/abruf` in `datenschutz/datenschutz.routen.ts` | `abruf.*` |
+| Emergency access `/notfall` (#815) | `web/src/notfall.tsx`, `/api/notfall*` in `anmeldung/anmeldung.routen.ts`, `server/src/notfallcode.ts` | `konten.notfall.*` |
 | Emails with folders and documents (#58, #151) | – | none: the user writes the text, only the subject without a form of address is preset |
 
 ## Tree via links {#baum-uber-verweise}
@@ -594,7 +617,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 - **Numbers only.** The response never contains titles, names, senders or content – not even in future fields. The OpenAPI schema `Zaehlerstand` has `additionalProperties: false`; the test `server/test/zaehler-api.test.ts` checks the keys and that no texts slip through.
 - **Where the numbers come from.** `zuErledigen` is `eingang` from `Dienst.zaehler` (#512), `ueberfaellig` counts your own overdue entries from `Dienst.termine` (#528, #725; `anstehend` was dropped with #725), `neuePost` counts post with the status "New" and "For" = me or empty via `zaehleKlauseln` – with its own `Zaehlerspeicher` keyed to the household version. All within the user's rights (read filter); nothing is recomputed for the endpoint as long as nothing in the household changes.
 - **Version in the database** (table `zaehlerstaende`, migration 056). For each request the server builds a hash of the numbers (`fingerabdruck`), compares it with the stored one and only increments `stand` if they differ (`Repo.setzeZaehlerstand`, an `INSERT … ON CONFLICT DO UPDATE … WHERE abdruck IS DISTINCT FROM …`: concurrent requests count a change once). Unchanged means: read only. The household version from #512 only lives in memory and starts at 0 after every restart – so it isn't suitable as an ETag. The ETag is `"z<stand>-<hash>"`: the same ETag means the same numbers, even after a restart or a restore.
-- **ETag and 304.** `passtEtag` (`routen.ts`) understands lists, `W/…` and `*`. A route sets its own headers via `Antwort.koepfe`; it reads request headers via `Anfrage.kopf(name)`. `Cache-Control: private, no-cache` instead of `no-store`, so that programs may revalidate.
+- **ETag and 304.** `passtEtag` (`http/routen-hilfen.ts`) understands lists, `W/…` and `*`. A route sets its own headers via `Antwort.koepfe`; it reads request headers via `Anfrage.kopf(name)`. `Cache-Control: private, no-cache` instead of `no-store`, so that programs may revalidate.
 - **Key level "counters only"** (`recht = 'zaehler'`, `NUR_ZAEHLER` and `ZAEHLER_PFAD` in `apischluessel.ts`). `pruefeZugang` only lets it through to `GET /api/v1/ich/zaehler`; every other route under `/api/v1` and – explicitly – every internal route with such a key in the header gets `403` (`api.schluessel.nur-zaehler`), and so does the drive (`webdav.ts`). "Read passwords" doesn't exist for this level. A new interface that accepts API keys must reject this level in the same way.
 - **Limits.** The overload protection (#544) counts these requests too. There is no limit per key; a request answered from the cache costs a few milliseconds. If Ablago runs on several servers, each has its own cache (as with #512, at most 5 or 30 minutes old) – until then two servers may briefly return different numbers, and the version then increments more often than necessary.
 
