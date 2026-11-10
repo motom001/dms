@@ -100,17 +100,29 @@ jobs:
           PORT: '3000'
           DMS_VERSION: handbuch
 
+      # Browser je Playwright-Version zwischenspeichern (#1059): spart den Download in jedem Bilder-Job.
+      - name: Browser aus dem Zwischenspeicher
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.teil == 'mobil' && 'chromium-webkit' || 'chromium' }}
       # Chromium für die Bilder und die Prüfungen, WebKit zusätzlich für die iPhone-Prüfung (#174, #489).
       - name: Playwright installieren
         working-directory: docs/handbuch/screenshots
         run: |
           npm install --no-audit --no-fund --no-save playwright@1.64.1  # feste Version (#289)
-          # Die Installation hängt bei GitHub gelegentlich (apt der Browser-Abhängigkeiten): höchstens 5 Minuten, dann
-          # ein zweiter Versuch – statt dass der ganze Job erst an seiner Zeitgrenze abbricht.
+          browser="chromium ${{ matrix.teil == 'mobil' && 'webkit' || '' }}"
+          # Erst nur die Browser (aus dem Zwischenspeicher oder Download, #1059); die Systembibliotheken nur, wenn ein
+          # Browser so nicht startet – wie bei den Rauchtests. Die Rechner von GitHub bringen sie für Chromium meist mit.
+          timeout 300 npx playwright install $browser || { echo "::warning::Download der Browser hing oder scheiterte – zweiter Versuch"; timeout 300 npx playwright install $browser; }
+          startet() { node -e "const p = require('playwright'); Promise.all(process.argv.slice(1).map((b) => p[b].launch().then((x) => x.close()))).then(() => process.exit(0), () => process.exit(1))" $browser; }
+          if startet; then exit 0; fi
+          echo "::notice::Browser starten nicht – Bibliotheken per apt nachinstallieren"
+          # Die Installation hängt bei GitHub gelegentlich (apt): höchstens 8 Minuten, dann ein zweiter Versuch.
           for versuch in 1 2; do
-            timeout 480 npx playwright install --with-deps chromium ${{ matrix.teil == 'mobil' && 'webkit' || '' }} && break
+            timeout 480 npx playwright install-deps $browser && break
             [ "$versuch" = 2 ] && exit 1
-            echo "::warning::Playwright-Installation hing oder scheiterte – zweiter Versuch"
+            echo "::warning::Installation der Bibliotheken hing oder scheiterte – zweiter Versuch"
             # timeout beendet nur npx; ein hängendes apt-get hielte sonst die Sperre von dpkg fest.
             sudo pkill -x apt-get || true; sudo pkill -x dpkg || true; sleep 5
             sudo dpkg --configure -a || true
