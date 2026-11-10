@@ -6,7 +6,8 @@
  * Bilder (feste Namen, das Entwicklerhandbuch bindet sie über bilder/<name>.png ein):
  *   muster-hell, muster-dunkel, muster-handy, muster-handy-dunkel – die ganze Seite;
  *   muster-feld, muster-feld-dunkel – der Bereich „Feld“;
- *   muster-feld-fokus, muster-feld-fokus-dunkel – Maus über einem Feld, Tastaturfokus im nächsten.
+ *   muster-feld-fokus, muster-feld-fokus-dunkel – Maus über einem Feld, Tastaturfokus im nächsten;
+ *   muster-knopf, muster-knopf-dunkel – der Bereich „Knopf“ (#968) mit allen Arten und Zuständen, Hover und Fokus stehend.
  *
  * axe-core kommt aus den Abhängigkeiten im Wurzelordner (devDependency, exakt gepinnt). Playwright bringt der
  * Aufrufer mit (browser); dieses Modul lädt es nicht selbst.
@@ -87,6 +88,9 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         const suffix = a.schema === 'dark' ? '-dunkel' : '';
         await foto(s.locator('#feld'), `muster-feld${suffix}`);
         await foto(s, `muster-feld-fokus${suffix}`, { fullPage: true, clip: await hoverUndFokus(s) });
+        await s.mouse.move(0, 0);
+        await s.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
+        await foto(s.locator('#knopf'), `muster-knopf${suffix}`);
       }
     } finally {
       await k.close();

@@ -1,3 +1,4 @@
+import { Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
 import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -144,7 +145,7 @@ export function TechnikPanel({ t: eintrag, abschnitt }: { t: TechnikZustand; abs
         <h2 className="h3">{t('werkbank.technik.neuere-versionen')}</h2>
         {release && <p>{tn('werkbank.technik.was-sich-seit-deiner', { version, link: <a className="verweis" href={handbuch('admin', 'neu/')} target="_blank" rel="noreferrer">{t('werkbank.technik.neu-in-dieser-version')}</a>, link2: <a className="verweis" href="https://github.com/motom001/dms/releases" target="_blank" rel="noreferrer">{t('werkbank.technik.alle-releases')}</a>, link3: <a className="verweis" href={`https://github.com/motom001/dms/compare/v${version}...main`} target="_blank" rel="noreferrer">{tn('werkbank.technik.alle-aenderungen-seit', { version })}</a> })}</p>}
         <p className="leise">{t('werkbank.technik.fragt-github-ablago-endoflife')}</p>
-        <div className="knoepfe"><button className="knopf" disabled={laeuft} onClick={() => void pruefen()}>{laeuft ? t('werkbank.technik.pruefe') : eintrag.abgleich ? t('werkbank.technik.erneut-pruefen') : t('werkbank.technik.jetzt-pruefen')}</button></div>
+        <div className="knoepfe"><Knopf laeuft={laeuft} laeuftText={t('werkbank.technik.pruefe')} onClick={pruefen}>{eintrag.abgleich ? t('werkbank.technik.erneut-pruefen') : t('werkbank.technik.jetzt-pruefen')}</Knopf></div>
         {fehler && fehler !== t('werkbank.technik.kopieren-nicht-moeglich-der') && <p className="fehlertext">{fehler}</p>}
         {eintrag.abgleich && (
           <>

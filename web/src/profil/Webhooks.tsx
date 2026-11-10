@@ -7,6 +7,7 @@ import { rueckfrage } from '../rueckfrage';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { knopfAussehen } from '../bausteine';
 
 /**
  * Webhooks im eigenen Profil (#627): Das DMS meldet geänderte Zahlen (neue Post, Zu erledigen, Fristen) sofort an
@@ -91,7 +92,7 @@ export function WebhooksBlatt() {
       {stand && !stand.webhooks.length && !neu && <p className="leise">{t('webhook.profil.keine')}</p>}
       {stand && (
         <details className="neuerschluessel">
-          <summary className="knopf">{t('webhook.profil.neu')}</summary>
+          <summary {...knopfAussehen({ art: 'anlegen' })}>{t('webhook.profil.neu')}</summary>
           <WebhookFormular ziele={stand.ziele} admin={admin} senden={(name, url) => aktion(async () => { const r = await api.webhookAnlegen({ name, url }); setNeu({ name: r.name, geheimnis: r.geheimnis }); })} />
         </details>
       )}

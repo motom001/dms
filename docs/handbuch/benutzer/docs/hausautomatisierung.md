@@ -47,7 +47,7 @@ Mit einem **Webhook** meldet sich Ablago bei deiner Hausautomatisierung, sobald 
 
 **Dann du:**
 
-1. Öffne **Mein Konto → Benachrichtigungen → Sofort melden (Webhooks)** und wähle **Neuen Webhook anlegen**.
+1. Öffne **Mein Konto → Benachrichtigungen → Sofort melden (Webhooks)** und wähle **+ Neuer Webhook**.
 2. Gib einen **Namen** (z. B. „Node-RED“) und die **Adresse des Empfängers** ein, z. B. `http://192.168.178.20:1880/dms`.
 3. Kopiere das **Geheimnis** (es beginnt mit `whsec_`) und trag es beim Empfänger ein – es ist nur jetzt ganz zu sehen. Damit prüft der Empfänger, dass die Meldung wirklich von Ablago kommt.
 4. Gleich danach kommt eine erste Meldung mit deinen aktuellen Zahlen. Mit **Probe senden** schickst du jederzeit eine weitere; darunter siehst du, ob sie angekommen ist.

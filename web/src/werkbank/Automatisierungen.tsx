@@ -21,6 +21,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungen (#675): Mitte die Liste (Name, Kurzform, an/aus, letzter Lauf,
@@ -114,7 +115,7 @@ export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZusta
   return (
     <>
       <Listenkopf titel={t('automatisierung.ui.titel')} hilfe="werkbank.automatisierungen" beschreibung={t('automatisierung.ui.beschreibung')}>
-        <Link to="/werkbank/automatisierungen/neu" className="knopf primaer klein">{t('automatisierung.ui.neu')}</Link>
+        <KnopfLink to="/werkbank/automatisierungen/neu" art="anlegen" groesse="klein">{t('automatisierung.ui.neu')}</KnopfLink>
       </Listenkopf>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}

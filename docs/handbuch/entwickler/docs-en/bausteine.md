@@ -27,7 +27,7 @@ All building blocks are in `web/src/bausteine/`:
 
 The pattern page at **`/muster`** shows every building block in every state – to look at, try out and compare. At the top right you can switch the appearance (automatic, light, dark, high contrast); the choice is kept in the address (`/muster?darstellung=dunkel`).
 
-![Pattern page with the “Field” section: every state in its own card](bilder/muster-hell.png){ loading=lazy }
+![Pattern page with the “Field” and “Button” sections: every state in its own card](bilder/muster-hell.png){ loading=lazy }
 
 It only exists
 
@@ -49,3 +49,4 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | Building block | Purpose |
 | --- | --- |
 | [Field](bausteine-feld.md) | Frame for every input: label, input, hint, error, help icon |
+| [Button](bausteine-knopf.md) | Every button: kinds create, main, secondary, danger, link; disabled with a reason, “working”, result and error at the button |

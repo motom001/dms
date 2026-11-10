@@ -137,7 +137,7 @@ In der Mitte stehen alle Auskünfte mit Person, Datum und **Zustand**:
 | *abgerufen* | Die Person hat die Auskunft über den Abruf-Link geholt. |
 | *gelöscht* | Die Datei ist weg (heruntergeladen, abgelaufen oder gelöscht). Der Eintrag bleibt als **Nachweis** – ohne Datei. |
 
-Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Vorgabe ist der Filter **Offen**; **Alle** zeigt auch Zugestelltes und Gelöschtes, das Suchfeld filtert nach der Person. Oben steht **+ Neue Auskunft**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
+Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Vorgabe ist der Filter **Offen**; **Alle** zeigt auch Zugestelltes und Gelöschtes, das Suchfeld filtert nach der Person. Oben rechts steht **+ Neu**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
 
 Wählst du eine Auskunft, steht rechts alles an einer Stelle: **Angaben** (Person, Erstellt, Antwortfrist, Inhalt), **Zustellen …**, **Herunterladen** und **Löschen** (der Nachweis bleibt), die **Abruf-Links** mit Zustand und **Zurückziehen** und der **Verlauf** – erstellt, zugestellt, abgerufen, falscher Code. Der Verlauf kommt aus der Historie der Person und enthält nur Zahlen, keine Inhalte.
 

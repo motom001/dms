@@ -13,6 +13,8 @@
   /* Verwaltungsmodus (#819): kräftiger roter Balken, in beiden Modi gleich. */
   --verwaltung: #A61B1B; --verwaltung-tinte: #FFFFFF;
   /* Schatten unter schwebenden Flächen und Schleier hinter Dialogen. */
+  /* Knopf beim Darüberfahren (#968): volle Flächen (Haupt, Anlegen, Gefahr) hell etwas dunkler, dunkel etwas heller. */
+  --knopf-hover: brightness(.88);
   --schatten-zart: rgb(15 23 42 / .12); --schatten: rgb(15 23 42 / .18); --schatten-stark: rgb(15 23 42 / .28);
   --schleier: rgb(0 0 0 / .35); --schleier-stark: rgb(0 0 0 / .45);
   /* Nummer auf einem Seitenbild (Handy-Seitenwahl). */
@@ -36,6 +38,7 @@
     --gruen: #6CC39B; --gruen-zart: #18302A;
     --schlecht: #F28B82; --schlecht-zart: #3A1F1E; --warn: #E3B655; --warn-zart: #34291A;
     --schlecht-tinte: #111111; --warn-tinte: #111111;
+    --knopf-hover: brightness(1.15);
     --schatten-zart: rgb(0 0 0 / .3); --schatten: rgb(0 0 0 / .45); --schatten-stark: rgb(0 0 0 / .55);
     --schleier: rgb(0 0 0 / .55); --schleier-stark: rgb(0 0 0 / .65);
     --marke-hell: none; --marke-dunkel: block;

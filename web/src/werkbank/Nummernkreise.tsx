@@ -10,6 +10,7 @@ import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Nummernkreise (#171): fortlaufende Nummern für Textfelder.
@@ -31,7 +32,7 @@ export function NummernkreiseListe({ z, offen }: { z: NummernkreisZustand; offen
   return (
     <>
       <Listenkopf titel={t('werkbank.nummernkreise.nummernkreise')} hilfe="werkbank.nummernkreise" beschreibung={t('werkbank.nummernkreise.fortlaufende-nummern-fuer-felder')}>
-        <Link to="/werkbank/nummernkreise/neu" className="knopf gruen klein">{t('werkbank.nummernkreise.neu')}</Link>
+        <KnopfLink to="/werkbank/nummernkreise/neu" art="anlegen" groesse="klein">{t('werkbank.nummernkreise.neu')}</KnopfLink>
       </Listenkopf>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {!z.liste ? <p className="leise">{t('werkbank.nummernkreise.lade')}</p> : !z.liste.length ? <p className="leise leerliste">{t('werkbank.nummernkreise.noch-kein-nummernkreis')}</p> : (

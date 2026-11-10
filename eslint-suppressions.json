@@ -1429,7 +1429,7 @@
   },
   "web/src/werkbank/PaketEinstellungen.tsx": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "web/src/werkbank/PaketErstellen.tsx": {
@@ -1519,7 +1519,7 @@
   },
   "web/src/werkbank/Wartungsmodus.tsx": {
     "@typescript-eslint/no-misused-promises": {
-      "count": 5
+      "count": 3
     },
     "complexity": {
       "count": 1

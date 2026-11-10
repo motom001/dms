@@ -683,9 +683,113 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 1
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 8, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.equal(bilder.length, 10, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
+});
+
+// Baustein Knopf (#968, #1011): Ein asynchroner Handler zeigt „läuft“ (aria-busy, Breite bleibt), danach das Ergebnis
+// unter dem Knopf; ein Fehler landet am Knopf statt in der Konsole.
+test('Baustein Knopf: läuft, Ergebnis und Fehler am Knopf (#968)', { timeout: 60_000 }, async () => {
+  await warteAufAblago();
+  const k = await browser.newContext({ ...DESKTOP, locale: 'de-DE' });
+  const fehler = [];
+  k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
+  try {
+    const s = await k.newPage();
+    await s.goto(BASIS + '/muster#knopf');
+    const karte = s.locator('[data-zustand="knopf-ausprobieren"]');
+    const pruefen = karte.getByRole('button', { name: 'Jetzt prüfen' });
+    const breite = (await pruefen.boundingBox()).width;
+    await pruefen.click();
+    await karte.locator('button[aria-busy="true"]').waitFor();
+    assert.equal(Math.round((await pruefen.boundingBox()).width), Math.round(breite), 'Der Knopf behält beim Laufen seine Breite');
+    await pruefen.click({ force: true }); // zweiter Klick während „läuft“: darf nichts auslösen
+    const gut = karte.locator('[role="status"][data-ergebnis="gut"]');
+    await gut.waitFor();
+    assert.equal(await karte.locator('[role="status"][data-ergebnis]').count(), 1, 'Ein Klick, ein Ergebnis');
+    await karte.getByRole('button', { name: 'Verbindung testen' }).click();
+    await karte.locator('[role="status"][data-ergebnis="schlecht"]').getByText('Der Server antwortet nicht').waitFor();
+  } finally {
+    await k.close();
+  }
+  assert.deepEqual(fehler, [], 'Fehler im Browser beim Knopf');
+});
+
+/* ---------- Knöpfe in Listen und Ergebnisse am Knopf (#989, #986) ---------- */
+
+/**
+ * Anlege-Knöpfe auf der Seite (#989): sichtbare Knöpfe und Wege, deren Text mit „+ Neu“ beginnt, und alles mit
+ * data-knopf="anlegen". Rückgabe: Texte aller gefundenen und die ohne Knopfart „Anlegen“.
+ */
+async function anlegeKnoepfe(s) {
+  return s.evaluate(() => {
+    const sichtbar = (el) => el.getClientRects().length > 0;
+    const text = (el) => el.textContent.replace(/\s+/g, ' ').trim();
+    const alle = [...document.querySelectorAll('a, button, summary, [data-knopf="anlegen"]')].filter(sichtbar)
+      .filter((el) => el.dataset.knopf === 'anlegen' || /^\+ ?Neu/.test(text(el)));
+    return { alle: alle.map(text), ohneArt: alle.filter((el) => el.dataset.knopf !== 'anlegen').map(text) };
+  });
+}
+
+rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als: LENA }, async (s) => {
+  const gefunden = [];
+  const ohneArt = [];
+  const pruefe = async (pfad) => {
+    const r = await anlegeKnoepfe(s);
+    gefunden.push(...r.alle.map((x) => `${pfad}: ${x}`));
+    ohneArt.push(...r.ohneArt.map((x) => `${pfad}: ${x}`));
+  };
+  // Ablage: eine Ansicht mit „+ Neu“ und das Menü „+ Neu“ oben.
+  await s.goto(BASIS + '/ablage/start');
+  await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
+  await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: '+ Neu' }).waitFor();
+  await pruefe('Ablage → Vertrag');
+  // Mein Konto: API-Schlüssel und Webhooks.
+  for (const b of ['sicherheit', 'benachrichtigungen']) {
+    await s.goto(BASIS + `/profil/${b}`);
+    await s.getByRole('heading', { level: 1 }).first().waitFor();
+    await s.waitForLoadState('networkidle');
+    await pruefe(`Mein Konto → ${b}`);
+  }
+  // Werkbank: alle Listen mit „+ Neu“.
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const elemente = s.getByRole('region', { name: 'Elemente' });
+  for (const b of ['typen', 'sichten', 'benutzer', 'designs', 'automatisierungen', 'nummernkreise', 'postfaecher', 'auskuenfte']) {
+    await s.goto(BASIS + `/werkbank/${b}`);
+    await elemente.getByRole('heading', { level: 1 }).first().waitFor();
+    await s.waitForLoadState('networkidle');
+    await pruefe(`Werkbank → ${b}`);
+  }
+  assert.deepEqual(ohneArt, [], `Anlege-Knöpfe ohne Knopfart „Anlegen“:\n${ohneArt.join('\n')}`);
+  // Die Erkennung selbst: In der Werkbank stehen mindestens Mappentypen, Ansichten, Benutzer und Designs.
+  assert.ok(gefunden.filter((x) => x.startsWith('Werkbank')).length >= 4, `Zu wenige Anlege-Knöpfe gefunden: ${gefunden.join(' | ')}`);
+  assert.ok(gefunden.some((x) => x.startsWith('Ablage')), 'Kein „+ Neu“ in der Ablage gefunden');
+});
+
+// Eingangsordner (#986): „Jetzt prüfen“ steht unten im Block „Einstellungen“; das Ergebnis erscheint direkt unter dem
+// Knopf – auch wenn die Seite dorthin gerollt ist –, nicht oben auf der Seite. Braucht einen Eingangsordner
+// (DMS_EINGANG, im Workflow ein leerer Ordner).
+rauchtest('Eingangsordner: „Jetzt prüfen“ – Ergebnis unter dem Knopf (#986)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/eingangsordner');
+  const knopf = s.getByRole('button', { name: 'Jetzt prüfen' });
+  await knopf.or(s.getByText('Es ist kein Eingangsordner eingebunden')).first().waitFor();
+  assert.ok(await knopf.isVisible(), 'Kein Eingangsordner eingebunden – DMS_EINGANG auf einen vorhandenen Ordner setzen');
+  await knopf.scrollIntoViewIfNeeded();
+  const vorher = await s.evaluate(() => scrollY);
+  await knopf.click();
+  const ergebnis = s.locator('[role="status"][data-ergebnis]').filter({ hasText: /Geprüft|übernommen/ });
+  await ergebnis.waitFor();
+  const k = await knopf.boundingBox();
+  const e = await ergebnis.boundingBox();
+  assert.ok(e.y >= k.y + k.height - 1, `Ergebnis steht unter dem Knopf (Knopf unten ${k.y + k.height}, Ergebnis oben ${e.y})`);
+  assert.ok(e.y - (k.y + k.height) < 80, 'Ergebnis steht direkt unter dem Knopf');
+  assert.ok(e.y + e.height <= (s.viewportSize()?.height ?? 900) && e.y >= 0, 'Ergebnis ist zu sehen, ohne zu rollen');
+  assert.ok(Math.abs((await s.evaluate(() => scrollY)) - vorher) < 200, 'Die Seite springt nicht');
+  assert.equal(await s.locator('.einspaltig > .hinweis').filter({ hasText: /Geprüft – nichts/ }).count(), 0, 'Kein Ergebnis oben auf der Seite');
 });
 
 /* ---------- Hilfen ---------- */

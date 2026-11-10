@@ -76,6 +76,7 @@ nav:
   - Design and building blocks:
       - Overview: bausteine.md
       - Field: bausteine-feld.md
+      - Button: bausteine-knopf.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

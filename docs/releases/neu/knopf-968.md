@@ -1,0 +1,7 @@
+art: patch
+
+## Geändert
+
+- **Knöpfe zeigen gleich, was sie tun** (#968): Während ein Knopf arbeitet, steht „Läuft …“ auf ihm; er bleibt an seinem Platz, behält seine Breite und nimmt keinen zweiten Klick an. Geht etwas schief, steht die Meldung direkt am Knopf statt nirgends. Ist ein Knopf gesperrt, steht der Grund darunter (z. B. „Erst speichern, dann abrufen.“). Beim Darüberfahren und mit der Tastatur sieht man bei jeder Knopfart deutlich, wo man ist – hell und dunkel.
+- **„+ Neu“ überall gleich** (#989): Der Knopf zum Anlegen oben rechts in einer Liste ist in Werkbank, Ablage und Mein Konto grün und heißt „+ Neu“ – auch bei Mappentypen, Ansichten, Benutzern, Designs, Automatisierungen und Datenschutz-Auskünften. In Mein Konto heißen die Knöpfe „+ Neuer Schlüssel“ und „+ Neuer Webhook“.
+- **Ergebnis direkt am Knopf** (#986): „Jetzt prüfen“, „Verbindung testen“, „Jetzt abrufen“, „Jetzt senden“, „Prüfen“ und die Aktionen eines Pakets zeigen ihr Ergebnis direkt unter dem Knopf statt oben auf der Seite – im Eingangsordner, bei Postfächern, E-Mail-Versand, Anmeldung über einen Anbieter, Datenbank-Anbindung, Zusammenfassung der Aufgaben, Sicherung, Vollexport, Dateien prüfen, Wartungsmodus, Versionen und Texterkennung. Die Seite springt nicht mehr; Screenreader sagen das Ergebnis an.

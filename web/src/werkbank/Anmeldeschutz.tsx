@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Knopf, type KnopfErgebnis } from '../bausteine';
 import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
@@ -182,11 +183,13 @@ function AnbieterBlatt() {
     try { setMeldung({ art: 'gut', text: await f() }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   const speichern = () => tu(async () => { uebernehmen(await api.anbieterSetzen({ ...e!, clientSecret: e!.clientSecret || undefined })); return t('werkbank.anmeldeschutz.gespeichert'); });
-  const pruefen = () => tu(async () => {
+  // „Verbindung prüfen“ (#986): Ergebnis und Fehler stehen am Knopf.
+  const pruefen = async (): Promise<KnopfErgebnis> => {
+    setMeldung(undefined);
     uebernehmen(await api.anbieterSetzen({ ...e!, aktiv: stand!.aktiv, clientSecret: e!.clientSecret || undefined }));
     const r = await api.anbieterPruefen();
-    return t('werkbank.anmeldeschutz.verbindung-klappt-schluessel', { anzahl: r.schluessel, aussteller: r.aussteller, wert: r.abmelden ? t('werkbank.anmeldeschutz.abmelden-beim-anbieter-moeglich') : t('werkbank.anmeldeschutz.ohne-abmelden-beim-anbieter') });
-  });
+    return { art: 'gut', text: t('werkbank.anmeldeschutz.verbindung-klappt-schluessel', { anzahl: r.schluessel, aussteller: r.aussteller, wert: r.abmelden ? t('werkbank.anmeldeschutz.abmelden-beim-anbieter-moeglich') : t('werkbank.anmeldeschutz.ohne-abmelden-beim-anbieter') }) };
+  };
   if (!stand || !e) return <div className="blatt"><h2 className="h3">{t('werkbank.anmeldeschutz.anmeldung-ueber-einen-anbieter')}</h2>{meldung ? <p className="fehlertext">{meldung.text}</p> : <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p>}</div>;
   const feld = (k: 'aussteller' | 'clientId' | 'knopf' | 'adminGruppe' | 'gruppenClaim', titel: ReactNode, platzhalter = '') => (
     <label className="eigenschaft"><span>{titel}</span><input id={`oidc-${k}`} value={e[k]} placeholder={platzhalter} onChange={(x) => setE({ ...e, [k]: x.target.value })} /></label>
@@ -216,7 +219,7 @@ function AnbieterBlatt() {
       <label className="haken"><input id="oidc-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>{t('werkbank.anmeldeschutz.eingeschaltet-knopf-auf-der')}</span></label>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf" disabled={sendet || !e.aussteller} onClick={() => void pruefen()}>{t('werkbank.anmeldeschutz.verbindung-pruefen')}</button>
+        <Knopf gesperrt={sendet || !e.aussteller} onClick={pruefen} laeuftText={t('werkbank.anmeldeschutz.prueft')}>{t('werkbank.anmeldeschutz.verbindung-pruefen')}</Knopf>
       </div>
       <Speicherleiste ent={ent} gegenstand={t('werkbank.anmeldeschutz.anbieter')} sendet={sendet}
         links={stand.secretGesetzt && <button type="button" className="textknopf gefahr" disabled={sendet} onClick={() => void tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return t('werkbank.anmeldeschutz.client-secret-geloescht'); })}>{t('werkbank.anmeldeschutz.secret-loeschen')}</button>} />

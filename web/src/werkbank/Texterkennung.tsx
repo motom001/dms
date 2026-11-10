@@ -1,3 +1,4 @@
+import { Knopf, type KnopfErgebnis } from '../bausteine';
 import { Kopf } from './Kopf';
 import { DateienPruefen } from './Archiv';
 import { NummernNachtragen } from './Nummernkreise';
@@ -27,8 +28,9 @@ import { gebietsschema } from '../../../shared/src/sprache';
 export function useTexterkennung(aktiv: boolean) {
   const [stand, setStand] = useState<OcrStatus | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async (werkzeugeNeu = false) => {
-    try { setStand(await api.texterkennung(werkzeugeNeu)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+  /** Lädt den Stand; Rückgabe: der Fehler, falls es nicht geklappt hat (für „Erneut prüfen“ am Knopf, #986). */
+  const laden = useCallback(async (werkzeugeNeu = false): Promise<string | undefined> => {
+    try { setStand(await api.texterkennung(werkzeugeNeu)); setFehler(undefined); return undefined; } catch (e) { setFehler((e as Error).message); return (e as Error).message; }
   }, []);
   // Solange etwas wartet oder läuft, alle paar Sekunden auffrischen.
   const offen = !!stand && (stand.zaehler.wartet > 0 || stand.zaehler.laeuft > 0 || (stand.zaehler.paket ?? 0) > 0);
@@ -123,7 +125,10 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
         <dl className="eigenschaften">
           <dt>{tx('volltext.werkbank.poppler')}</dt><dd>{w.pdftotext && w.pdftoppm ? tx('volltext.werkbank.poppler.da') : <span className="fehlertext">{tx('volltext.werkbank.poppler.fehlt')}</span>}</dd>
         </dl>
-        <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => void eintrag.laden(true)}>{t('werkbank.texterkennung.erneut-pruefen')}</button></div>
+        <div className="knoepfe"><Knopf groesse="klein" laeuftText={t('werkbank.texterkennung.prueft')} onClick={async (): Promise<KnopfErgebnis> => {
+          const f = await eintrag.laden(true);
+          return f ? { art: 'schlecht', text: f } : { art: 'gut', text: t('werkbank.texterkennung.werkzeuge-geprueft') };
+        }}>{t('werkbank.texterkennung.erneut-pruefen')}</Knopf></div>
       </section>
 
       <Auftraege t={eintrag} />

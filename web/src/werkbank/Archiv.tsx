@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ErgebnisBlock, Knopf } from '../bausteine';
 import { api, type Auftrag } from '../api';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
@@ -72,7 +73,6 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
 /** Wartung (#212): jede Datei gegen ihren Prüfwert. */
 export function DateienPruefen() {
   const [auftrag, setAuftrag] = useState<Auftrag | null>(null);
-  const [fehler, setFehler] = useState<string>();
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
     const timer = setInterval(() => void api.auftrag().then(setAuftrag), 1000);
@@ -84,13 +84,16 @@ export function DateienPruefen() {
     <section className="blatt" id="dateien">
       <h2 className="h3">{tn('werkbank.archiv.alle-dateien-pruefen', { hilfe: <Hilfe ort="werkbank.dateienpruefen" /> })}</h2>
       <p className="leise">{t('werkbank.archiv.liest-jede-gespeicherte-datei')}</p>
-      {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag, t('werkbank.archiv.dateien'))}</p>}
-      {e && (e.abweichungen.length
-        ? <div className="hinweis schlecht"><p>{t('werkbank.archiv.von-dateien-weichen-ab', { abweichungen: e.abweichungen.length, dateien: e.dateien })}</p>
-            <ul>{e.abweichungen.map((a) => <li key={a.sha256}>{a.grund}: {a.dokumente.map((x, i) => <span key={i}>{i > 0 && ', '}<Link to={`/ablage/eingang/${x.mappeId}`} className="verweis">{x.name}</Link>{x.version > 1 ? t('werkbank.archiv.version', { version: x.version }) : ''}</span>)}</li>)}</ul></div>
-        : <p className="gutertext" role="status">{t('werkbank.archiv.alle-dateien-sind-in', { dateien: e.dateien })}</p>)}
-      {(fehler || auftrag?.status === 'fehler') && <p className="fehlertext">{fehler ?? auftrag?.fehler}</p>}
-      <div className="knoepfe"><button type="button" className="knopf primaer" disabled={auftrag?.status === 'laeuft'} onClick={() => void api.dateienPruefen().then(setAuftrag).catch((x) => setFehler((x as Error).message))}>{t('werkbank.archiv.jetzt-pruefen')}</button></div>
+      <div className="knoepfe"><Knopf art="haupt" laeuft={auftrag?.status === 'laeuft'} onClick={async () => setAuftrag(await api.dateienPruefen())}>{t('werkbank.archiv.jetzt-pruefen')}</Knopf></div>
+      {/* Fortschritt und Ergebnis unter dem Knopf (#986): darüber verschiebt sich nichts. */}
+      <ErgebnisBlock anlass={auftrag?.status === 'laeuft' ? null : auftrag}>
+        {auftrag?.status === 'laeuft' && <p className="leise">{fortschrittText(auftrag, t('werkbank.archiv.dateien'))}</p>}
+        {e && (e.abweichungen.length
+          ? <div className="hinweis schlecht"><p>{t('werkbank.archiv.von-dateien-weichen-ab', { abweichungen: e.abweichungen.length, dateien: e.dateien })}</p>
+              <ul>{e.abweichungen.map((a) => <li key={a.sha256}>{a.grund}: {a.dokumente.map((x, i) => <span key={i}>{i > 0 && ', '}<Link to={`/ablage/eingang/${x.mappeId}`} className="verweis">{x.name}</Link>{x.version > 1 ? t('werkbank.archiv.version', { version: x.version }) : ''}</span>)}</li>)}</ul></div>
+          : <p className="gutertext">{t('werkbank.archiv.alle-dateien-sind-in', { dateien: e.dateien })}</p>)}
+        {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
+      </ErgebnisBlock>
     </section>
   );
 }

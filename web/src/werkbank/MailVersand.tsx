@@ -1,3 +1,4 @@
+import { ErgebnisBlock, Knopf } from '../bausteine';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
 import { absenderVorschlag, anbieterFuerAdresse, domainVon, MAIL_ANBIETER, OAUTH_VERSAND_SERVER, type MailAnbieter } from '../../../shared/src/mailanbieter';
 import { PLAN_VERBINDUNGEN } from '../../../shared/src/einrichtungsplan';
@@ -177,7 +178,7 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
   const vor = (f: Feld) => vorgeschlagen.has(f) && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>;
   const domain = domainVon(adresse);
   const ergebnis = probe && (
-    <div className={`hinweis ${probe.ok ? 'gut' : 'schlecht'}`} role="status"><p>{probe.ok && probe.was === 'pruefen' ? `${t('werkbank.mail.geprueft')} ${probe.meldung}` : probe.meldung}</p>
+    <div className={`hinweis ${probe.ok ? 'gut' : 'schlecht'}`}><p>{probe.ok && probe.was === 'pruefen' ? `${t('werkbank.mail.geprueft')} ${probe.meldung}` : probe.meldung}</p>
       {probe.technisch && <details className="klein"><summary>{t('werkbank.mail.antwort-server')}</summary><p className="mono">{probe.technisch}</p></details>}</div>
   );
 
@@ -201,10 +202,11 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
       </div>
       <div className="knoepfe">
         {/* Prüfen und Testmail brauchen eine Anmeldung – im Assistenten erst danach in der Werkbank (#803). */}
-        {!assistent && <button type="button" className="knopf" disabled={!!laeuft || !m.host} onClick={() => void teste('pruefen')}>{laeuft === 'pruefen' ? t('werkbank.mail.pruefe') : t('werkbank.mail.pruefen')}</button>}
+        {!assistent && <Knopf gesperrt={(!!laeuft && laeuft !== 'pruefen') || !m.host} laeuft={laeuft === 'pruefen'} laeuftText={t('werkbank.mail.pruefe')} onClick={() => teste('pruefen')}>{t('werkbank.mail.pruefen')}</Knopf>}
         {sucht && <span className="leise klein" role="status">{t('werkbank.mail.sucht')}</span>}
       </div>
-      {probe?.was === 'pruefen' && ergebnis}
+      {/* Ergebnis direkt unter dem Knopf (#986), angesagt und bei Bedarf ins Bild gerollt. */}
+      {!assistent && <ErgebnisBlock anlass={probe?.was === 'pruefen' && probe}>{probe?.was === 'pruefen' && ergebnis}</ErgebnisBlock>}
 
       {/* Was der Assistent vorschlägt – alles sichtbar, nichts Verstecktes. */}
       {(m.host || suche) && (
@@ -251,10 +253,10 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
         <label className="eigenschaft"><span>{t('werkbank.mail.testmail-an')} {vorgeschlagen.has('an') && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>}</span>
           <input type="email" value={an} onChange={(e) => { setAn(e.target.value); setVorgeschlagen((v) => { const n = new Set(v); n.delete('an'); return n; }); }} /></label>
         <div className="eigenschaft unten"><div className="knoepfe">
-          <button type="button" className="knopf" disabled={!!laeuft || !m.host || !an} onClick={() => void teste('testmail')}>{laeuft === 'testmail' ? t('werkbank.mail.sende') : t('werkbank.mail.testmail')}</button>
+          <Knopf gesperrt={(!!laeuft && laeuft !== 'testmail') || !m.host || !an} laeuft={laeuft === 'testmail'} laeuftText={t('werkbank.mail.sende')} onClick={() => teste('testmail')}>{t('werkbank.mail.testmail')}</Knopf>
         </div></div>
       </div></>}
-      {probe?.was === 'testmail' && ergebnis}
+      {!assistent && <ErgebnisBlock anlass={probe?.was === 'testmail' && probe}>{probe?.was === 'testmail' && ergebnis}</ErgebnisBlock>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </>
   );

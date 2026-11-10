@@ -8,6 +8,7 @@ import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf, KnopfLink, type KnopfErgebnis } from '../bausteine';
 
 /**
  * Werkbank → Postfächer (#196): Mails per IMAP abholen, jede Mail wird neue Post.
@@ -78,7 +79,7 @@ export function PostfaecherListe({ z, offen }: { z: PostfachZustand; offen?: str
   return (
     <>
       <Listenkopf titel={t('werkbank.postfaecher.postfaecher')} hilfe="werkbank.postfaecher" beschreibung={t('werkbank.postfaecher.mails-abholen-jede-mail')}>
-        <Link to="/werkbank/postfaecher/neu" className="knopf gruen klein">{t('werkbank.postfaecher.neu')}</Link>
+        <KnopfLink to="/werkbank/postfaecher/neu" art="anlegen" groesse="klein">{t('werkbank.postfaecher.neu')}</KnopfLink>
       </Listenkopf>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {!offen && rueckkehr && <div className={`hinweis ${rueckkehr.art}`} role="status"><p>{rueckkehr.text}</p></div>}
@@ -123,21 +124,24 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
       if (!vorhanden) { loeseWache(); geheZu(`/werkbank/postfaecher/${l[l.length - 1].id}`, true); }
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
-  async function testen() {
+  // „Verbindung testen“ und „Jetzt abrufen“ (#986): Ergebnis und Fehler stehen unter den Knöpfen, nicht oben.
+  async function testen(): Promise<KnopfErgebnis> {
     // Gespeichertes Geheimnis nur an den gespeicherten Server (#358) – der Server lehnt es sonst ebenso ab.
     if (vorhanden && !gleicherServer(e, vorhanden) && (e.anmeldung === 'oauth' || !e.passwort)) {
-      setMeldung({ art: 'schlecht', text: e.anmeldung === 'oauth'
+      return { art: 'schlecht', text: e.anmeldung === 'oauth'
         ? t('werkbank.postfaecher.server-port-oder-verschluesselung')
-        : t('werkbank.postfaecher.server-port-oder-verschluesselung-2') });
-      return;
+        : t('werkbank.postfaecher.server-port-oder-verschluesselung-2') };
     }
-    setMeldung({ art: 'info', text: t('werkbank.postfaecher.verbinde') });
-    try { const r = await api.postfachTesten({ ...eingabe, id: vorhanden?.id }); setMeldung({ art: r.ok ? 'gut' : 'schlecht', text: r.text }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    const r = await api.postfachTesten({ ...eingabe, id: vorhanden?.id });
+    return { art: r.ok ? 'gut' : 'schlecht', text: r.text };
   }
-  async function abrufen() {
+  async function abrufen(): Promise<KnopfErgebnis | undefined> {
     if (!vorhanden) return;
-    setMeldung({ art: 'info', text: t('werkbank.postfaecher.rufe-ab') });
-    try { const r = await api.postfachAbrufen(vorhanden.id); setMeldung({ art: 'gut', text: r.uebernommen ? t('werkbank.postfaecher.mails-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.postfaecher.keine-neuen-mails') }); await z.laden(); await d.neuLaden(); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); await z.laden(); }
+    try {
+      const r = await api.postfachAbrufen(vorhanden.id);
+      await d.neuLaden();
+      return { art: 'gut', text: r.uebernommen ? t('werkbank.postfaecher.mails-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.postfaecher.keine-neuen-mails') };
+    } finally { await z.laden(); }
   }
   async function loeschen() {
     if (!vorhanden || !(await rueckfrage({ titel: t('werkbank.postfaecher.postfach-entfernen', { name: vorhanden.name }), text: t('werkbank.postfaecher.die-mails-im-postfach'), ja: t('werkbank.postfaecher.entfernen'), gefahr: true }))) return;
@@ -206,8 +210,8 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
             <label className="haken"><input id="pf-unsicher" type="checkbox" checked={bestaetigt} onChange={(x) => setBestaetigt(x.target.checked)} /><span>{t('werkbank.postfaecher.trotzdem-ohne-verschluesselung')}</span></label></div>
         )}
         <div className="knoepfe">
-          <button type="button" className="knopf" onClick={() => void testen()}>{t('werkbank.postfaecher.verbindung-testen')}</button>
-          {vorhanden && <button type="button" className="knopf" disabled={ent.geaendert} title={ent.geaendert ? t('werkbank.postfaecher.erst-speichern') : undefined} onClick={() => void abrufen()}>{t('werkbank.postfaecher.jetzt-abrufen')}</button>}
+          <Knopf onClick={testen} laeuftText={t('werkbank.postfaecher.verbinde')}>{t('werkbank.postfaecher.verbindung-testen')}</Knopf>
+          {vorhanden && <Knopf gesperrt={ent.geaendert && t('werkbank.postfaecher.erst-speichern')} onClick={abrufen} laeuftText={t('werkbank.postfaecher.rufe-ab')}>{t('werkbank.postfaecher.jetzt-abrufen')}</Knopf>}
         </div>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.postfaecher.postfach')} sendet={sendet}
           links={vorhanden && <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{t('werkbank.postfaecher.postfach-entfernen-2')}</button>} />

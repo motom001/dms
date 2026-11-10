@@ -137,7 +137,7 @@ In the middle are all access copies with person, date and **status**:
 | *retrieved* | The person has fetched the access copy via the retrieval link. |
 | *deleted* | The file is gone (downloaded, expired or deleted). The entry stays as **proof** – without the file. |
 
-As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). The default is the filter **Open**; **All** also shows delivered and deleted ones, and the search field filters by person. At the top is **+ New access copy**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
+As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). The default is the filter **Open**; **All** also shows delivered and deleted ones, and the search field filters by person. At the top right is **+ New**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
 
 If you choose an access copy, everything is in one place on the right: **Details** (person, created, response deadline, content), **Deliver …**, **Download** and **Delete** (the proof stays), the **retrieval links** with status and **Withdraw**, and the **history** – created, delivered, retrieved, wrong code. The history comes from the person's history and only contains numbers, no content.
 

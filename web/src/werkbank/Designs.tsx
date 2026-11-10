@@ -8,6 +8,7 @@ import { logoUrl, Marke } from '../Marke';
 import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -19,7 +20,7 @@ export function DesignListe({ offen }: { offen?: string }) {
   return (
     <>
       <Listenkopf titel={t('werkbank.designs.designs')} hilfe="werkbank.designs" beschreibung={t('werkbank.designs.farben-und-eigenes-css')}>
-        <Link to="/werkbank/designs/neu" className="knopf primaer klein">{t('werkbank.designs.neu')}</Link>
+        <KnopfLink to="/werkbank/designs/neu" art="anlegen" groesse="klein">{t('werkbank.designs.neu')}</KnopfLink>
       </Listenkopf>
       <ul className="mappenliste">
         {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">{t('werkbank.designs.neues-design')}</span><span className="unter">{t('werkbank.designs.noch-nicht-gespeichert')}</span></span></li>}

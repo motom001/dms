@@ -47,7 +47,7 @@ With a **webhook**, Ablago reports to your home automation as soon as your numbe
 
 **Then you:**
 
-1. Open **My account → Notifications → Report instantly (webhooks)** and choose **Create new webhook**.
+1. Open **My account → Notifications → Report instantly (webhooks)** and choose **+ New webhook**.
 2. Enter a **name** (e.g. "Node-RED") and the **address of the receiver**, e.g. `http://192.168.178.20:1880/dms`.
 3. Copy the **secret** (it begins with `whsec_`) and enter it at the receiver – it is only shown in full now. With it, the receiver checks that the message really comes from Ablago.
 4. Right after that, a first message arrives with your current numbers. With **Send test** you send another one at any time; below it you see whether it arrived.

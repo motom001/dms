@@ -1,0 +1,53 @@
+/* Knopf (#968): Zustände des Bausteins. Grundform und Farben je Art kommen aus styles.css (.knopf, .primaer, .gruen,
+   .gefahr, .textknopf) – so gelten Designs und Stellen wie „Knopf in einer Karte“ weiter. Hier steht, was der Baustein
+   selbst festlegt: Hover und Fokus für jede Art, gesperrt mit Grund, „läuft“ und das Ergebnis am Knopf.
+   Nur Werte aus tokens.css; hell und dunkel über die Tokens (--knopf-hover ist hell dunkler, dunkel heller).
+   .vorschauhover und .vorschaufokus nutzt nur die Musterseite, um Hover und Fokus stehend zu zeigen. */
+.baustein { transition: filter .12s, background-color .12s, border-color .12s; }
+
+/* Hover: sichtbar für alle Arten, hell und dunkel – nie bei gesperrt oder „läuft“. */
+.baustein[data-knopf="neben"]:is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { background: var(--senke); border-color: var(--leise); }
+.baustein:is([data-knopf="haupt"], [data-knopf="anlegen"], [data-knopf="gefahr"]):is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { filter: var(--knopf-hover); }
+.baustein[data-knopf="link"]:is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { text-decoration: underline; }
+
+/* Tastaturfokus: Ring mit Abstand in der Akzentfarbe, bei Gefahr in der Fehlerfarbe. */
+.baustein:is(:focus-visible, .vorschaufokus) { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.baustein[data-knopf="gefahr"]:is(:focus-visible, .vorschaufokus) { outline-color: var(--schlecht); }
+
+/* Gesperrt mit Grund (aria-disabled, bleibt erreichbar) wie gesperrt ohne Grund (disabled, styles.css). */
+.baustein[aria-disabled="true"]:not([aria-busy="true"]) { opacity: .5; cursor: not-allowed; }
+.baustein:disabled { cursor: not-allowed; }
+
+/* Nur Symbol: schmaler, aber mindestens 24 px breit (WCAG 2.2, Zielgröße). */
+.symbol { padding-left: 8px; padding-right: 8px; min-width: 24px; }
+
+/* „läuft“: Beschriftung bleibt unsichtbar stehen (Breite und Name bleiben), darüber Kreisel und „Läuft …“. */
+.stapel { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 0; }
+.text { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+/* Unterstreichung (Link-Optik, Hover, Design „Hoher Kontrast“) erreicht inline-flex-Kinder nur so. */
+.stapel, .text { text-decoration: inherit; }
+.baustein[aria-busy="true"] { cursor: progress; }
+.baustein[aria-busy="true"] .text { opacity: 0; }
+.laeuft { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+.laeufttext { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kreisel { flex: none; width: .9em; height: .9em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: kreisel .8s linear infinite; }
+@keyframes kreisel { to { transform: rotate(360deg); } }
+
+/* Grund und Ergebnis: in einer Knopfreihe (flex) unter allen Knöpfen der Reihe, sonst direkt unter dem Knopf. */
+.grund, .ergebnis { order: 1; flex: 1 1 100%; min-width: 0; font-weight: 400; white-space: normal; overflow-wrap: anywhere; text-align: left; }
+.grund { display: block; margin-top: 2px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.ergebnis { display: flex; gap: 8px; align-items: baseline; margin-top: 4px; padding: 8px 12px; border-radius: var(--r); font-size: calc(13px * var(--skala, 1)); line-height: 1.45; }
+/* Ausführliches Ergebnis (ErgebnisBlock): ohne eigenes Aussehen. */
+.block { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+/* Leer bleiben beide im Dokument (für aria-live), nehmen aber keinen Platz. */
+.ergebnis:empty, .block:empty { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; }
+.ergebnissymbol { flex: none; align-self: center; }
+.gut { background: var(--gruen-zart); color: var(--gruen); }
+.info { background: var(--akzent-zart); color: var(--tinte); }
+.warn { background: var(--warn-zart); color: var(--warn); }
+.schlecht { background: var(--schlecht-zart); color: var(--schlecht); }
+
+@media (prefers-reduced-motion: reduce) {
+  .baustein { transition: none; }
+  .kreisel { animation: none; border-right-color: currentColor; opacity: .6; }
+}

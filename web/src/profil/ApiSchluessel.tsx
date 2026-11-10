@@ -6,6 +6,7 @@ import { useKonto } from '../konto';
 import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { knopfAussehen } from '../bausteine';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : '–');
@@ -63,7 +64,7 @@ export function ApiSchluesselBlatt() {
       {liste && !liste.length && !neu && <p className="leise">{t('profil.apischluessel.noch-keine-schluessel')}</p>}
       {/* #818: Schlüssel bekommen nie Verwaltungsrechte – auch die von Personen, die verwalten. */}
       <details className="neuerschluessel">
-        <summary className="knopf">{t('profil.apischluessel.neuen-schluessel-erzeugen')}</summary>
+        <summary {...knopfAussehen({ art: 'anlegen' })}>{t('profil.apischluessel.neuen-schluessel-erzeugen')}</summary>
         <SchluesselFormular knopf={t('profil.apischluessel.erzeugen')} senden={(d) => aktion(async () => setNeu(await api.apiSchluesselAnlegen(d)))} />
       </details>
     </div>

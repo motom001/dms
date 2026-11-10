@@ -37,6 +37,7 @@ import { AufgabenWeitergeben } from '../profil/Abwesenheit';
 import { ErledigenUmschalter, MeineAufgabenWeitergeben, TermineSicht, useErledigenAnsicht } from './Termine';
 import { Ehemalig } from '../Person';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -440,7 +441,7 @@ function Liste(p: {
     <>
       <div ref={mess} className="breitenmesser" aria-hidden="true" />
       <Listenkopf titel={p.titel} hilfe={p.hilfe} beschreibung={p.beschreibung}>
-        {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">{t('ablage.ablage.neu')}</Link>}
+        {p.neu && <KnopfLink to={`/ablage/${p.sicht}/neu`} art="anlegen" groesse="klein">{t('ablage.ablage.neu')}</KnopfLink>}
         {p.post && p.typ && <div className="postknopf"><PostKnopf /></div>}
       </Listenkopf>
       {p.kopf}

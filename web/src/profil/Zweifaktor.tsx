@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import { api, type ZweifaktorStand } from '../api';
 import { Hilfe } from '../Hilfe';
-import { useKonto } from '../konto';
+import { useKonto } from '../konto-kontext';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**

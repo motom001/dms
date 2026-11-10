@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ErgebnisBlock, Knopf } from '../bausteine';
 import { api, ApiFehler, type AnbindungEingabe, type AnbindungPruefung, type AnbindungStand } from '../api';
 import { AnbindungFormular, PruefungAnzeige } from '../einrichtung';
 import { Hilfe } from '../Hilfe';
@@ -75,17 +76,20 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
         <h2 className="h3">{t('werkbank.anbindung.verbindung')}</h2>
         <p className="klein">{tn('werkbank.anbindung.aktuell-verbunden', { span: <span className="mono">{s.anbindung.benutzer}@{s.anbindung.host}:{s.anbindung.port}/{s.anbindung.datenbank}</span>, wert: s.neustartNoetig ? <span className="chip warn">{t('werkbank.anbindung.geaendert-gilt-nach-dem')}</span> : <span className="chip gut">{t('werkbank.anbindung.in-betrieb')}</span> })}</p>
         <AnbindungFormular wert={a} setWert={(x) => { setA(x); setP(null); setLeer(false); }} passwortGesetzt={s.anbindung.passwortGesetzt} felder={felder} />
-        {p && <PruefungAnzeige p={p} />}
-        {leer && <div className="hinweis warn"><p>{tn('werkbank.anbindung.nach-dem-neustart-beginnt', { b: <strong>{t('werkbank.anbindung.diese-datenbank-ist-leer')}</strong> })}</p></div>}
-        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe">
-          <button className="knopf" disabled={laeuft}>{laeuft ? t('werkbank.anbindung.pruefe') : t('werkbank.anbindung.verbindung-pruefen')}</button>
+          <Knopf type="submit" laeuft={laeuft} laeuftText={t('werkbank.anbindung.pruefe')}>{t('werkbank.anbindung.verbindung-pruefen')}</Knopf>
           <button type="button" className="knopf primaer" disabled={laeuft || !p?.ok}
             onClick={() => void tu(async () => {
               const neu = await api.anbindungSpeichern(a, leer);
               z.setStand(neu); setMeldung({ art: 'gut', text: t('werkbank.anbindung.gespeichert-die-neue-anbindung') }); nachAenderung?.();
             })}>{leer ? t('werkbank.anbindung.trotzdem-uebernehmen') : t('werkbank.anbindung.uebernehmen')}</button>
         </div>
+        {/* Ergebnis von „Verbindung prüfen“ und „Übernehmen“ unter den Knöpfen (#986): darüber verschiebt sich nichts. */}
+        <ErgebnisBlock anlass={p ?? meldung}>
+          {p && <PruefungAnzeige p={p} />}
+          {leer && <div className="hinweis warn"><p>{tn('werkbank.anbindung.nach-dem-neustart-beginnt', { b: <strong>{t('werkbank.anbindung.diese-datenbank-ist-leer')}</strong> })}</p></div>}
+          {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'}>{meldung.text}</p>}
+        </ErgebnisBlock>
         <p className="leise klein">{tn('werkbank.anbindung.uebernehmen-geht-erst-nach', { link: <Link to="/werkbank/sicherung" className="verweis">{t('werkbank.anbindung.sicherung')}</Link> })}</p>
       </form>
       {unten}

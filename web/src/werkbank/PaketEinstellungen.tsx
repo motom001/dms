@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, MEHRFACH_VERWEISE, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
-import { Feld, FeldGruppe, HakenFeld, type FeldVerknuepfung } from '../bausteine';
+import { Feld, FeldGruppe, type FeldVerknuepfung, HakenFeld, Knopf, type KnopfErgebnis } from '../bausteine';
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -66,12 +66,11 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
       setMeldung({ art: 'schlecht', text: (e as Error).message });
     } finally { setLaeuft(false); }
   }
-  async function aktion(a: { schluessel: string; name: string; bestaetigen?: boolean }) {
+  // Aktionen des Pakets, z. B. „Verbindung testen“ (#986): Ergebnis und Fehler stehen unter den Knöpfen, nicht oben.
+  async function aktion(a: { schluessel: string; name: string; bestaetigen?: boolean }): Promise<KnopfErgebnis | undefined> {
     if (a.bestaetigen && !(await rueckfrage({ titel: t('werkbank.paketeinstellungen.jetzt-ausfuehren', { name: a.name }), ja: t('werkbank.paketeinstellungen.ausfuehren') }))) return;
-    setLaeuft(true); setMeldung(undefined);
-    try { const r = await api.paketAktion(id, a.schluessel); setMeldung({ art: r.ok ? 'gut' : 'schlecht', text: r.text }); }
-    catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
-    finally { setLaeuft(false); }
+    const r = await api.paketAktion(id, a.schluessel);
+    return { art: r.ok ? 'gut' : 'schlecht', text: r.text };
   }
   const b = stand.beschreibung;
   return (
@@ -85,7 +84,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
           <h2 className="h3">{t('werkbank.paketeinstellungen.aktionen')}</h2>
           {!stand.laeufer && <p className="leise klein">{t('werkbank.paketeinstellungen.pakete-mit-code-laufen')}</p>}
           <div className="knoepfe">
-            {b.aktionen.map((a) => <button key={a.schluessel} type="button" className="knopf" disabled={laeuft} title={a.hilfe} onClick={() => void aktion(a)}>{a.name}</button>)}
+            {b.aktionen.map((a) => <Knopf key={a.schluessel} gesperrt={laeuft} title={a.hilfe} onClick={() => aktion(a)}>{a.name}</Knopf>)}
           </div>
         </section>
       )}

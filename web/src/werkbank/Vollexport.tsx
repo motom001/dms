@@ -1,3 +1,4 @@
+import { Knopf, type KnopfErgebnis } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type Auftrag, type ExportUmzug, type KontaktZuordnung, type VollexportStand } from '../api';
 import { t, tn } from '../sprache';
@@ -129,7 +130,12 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
               {e.passwoerter && <span className="fehlertext klein blockzeile">{tn('werkbank.vollexport.nach-dem-import-in', { b: <strong>{t('werkbank.vollexport.enthaelt-passwoerter-im-klartext')}</strong> })}</span>}
               <span className="knoepfe">
                 <a className="knopf klein" href={`/api/werkbank/export/${encodeURIComponent(e.name)}/zip`}>{t('werkbank.vollexport.als-zip-herunterladen')}</a>
-                <button type="button" className="knopf klein" onClick={() => void tu(async () => { const r = await api.vollexportPruefen(e.name); return r.ok ? t('werkbank.vollexport.alle-dateien-vollstaendig-und', { dateien: r.dateien }) : t('werkbank.vollexport.abweichungen', { wert: [...r.fehlend.map((x) => t('werkbank.vollexport.fehlt', { x })), ...r.abweichend.map((x) => t('werkbank.vollexport.veraendert', { x }))].slice(0, 5).join(', '), wert2: r.fehlend.length + r.abweichend.length > 5 ? ' …' : '' }); })}>{t('werkbank.vollexport.pruefen')}</button>
+                {/* „Prüfen“ (#986): Ergebnis in der Zeile des Exports, nicht oben auf der Seite. */}
+                <Knopf groesse="klein" laeuftText={t('werkbank.vollexport.prueft')} onClick={async (): Promise<KnopfErgebnis> => {
+                  const r = await api.vollexportPruefen(e.name);
+                  return r.ok ? { art: 'gut', text: t('werkbank.vollexport.alle-dateien-vollstaendig-und', { dateien: r.dateien }) }
+                    : { art: 'schlecht', text: t('werkbank.vollexport.abweichungen', { wert: [...r.fehlend.map((x) => t('werkbank.vollexport.fehlt', { x })), ...r.abweichend.map((x) => t('werkbank.vollexport.veraendert', { x }))].slice(0, 5).join(', '), wert2: r.fehlend.length + r.abweichend.length > 5 ? ' …' : '' }) };
+                }}>{t('werkbank.vollexport.pruefen')}</Knopf>
                 <button type="button" className="knopf klein gefahr-rand" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen'), gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</button>
               </span>
             </li>

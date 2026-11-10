@@ -9,6 +9,7 @@ import { wartungAktiv } from '../wartung';
 import { istTouch, postFotografieren } from './PostKamera';
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
+import { knopfAussehen } from '../bausteine';
 
 /**
  * Neue Post von überall (#193): Dateien irgendwo ins Fenster ziehen oder über „+ Neu“ wählen –
@@ -241,7 +242,7 @@ export function NeuKnopf() {
   if (!post && !typen.length) return null;
   return (
     <div className="neuknopf" ref={rahmen}>
-      <button type="button" className="knopf gruen klein" data-anker="neu" aria-haspopup="menu" aria-expanded={offen} onClick={() => { setOffen(!offen); setMappe(false); }}>{t('ablage.neuepost.neu')}</button>
+      <button type="button" {...knopfAussehen({ art: 'anlegen', groesse: 'klein' })} data-anker="neu" aria-haspopup="menu" aria-expanded={offen} onClick={() => { setOffen(!offen); setMappe(false); }}>{t('ablage.neuepost.neu')}</button>
       {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => { setOffen(false); setMappe(false); }} />}
       {offen && (
         <div className="menue" role="menu">

@@ -1,9 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
-import { ABGEMELDET, api, type KontoStatus, type SprachStatus, type WartungOeffentlich } from './api';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
+import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich } from './api';
 import { erlaubteSprachen, setzeErlaubteSprachen } from '../../shared/src/beschriftung';
 import { sprache } from '../../shared/src/sprache';
-import type { UebersetzenAngebot } from '../../shared/src/uebersetzung';
 import { WartungsHinweis } from './wartung';
 import { ErreichbarkeitsBanner, WIEDER_ERREICHBAR } from './erreichbar';
 import { Wiederherstellungsbildschirm } from './wiederherstellen';
@@ -13,6 +12,9 @@ import { Marke } from './Marke';
 import { ZweifaktorEinrichten } from './profil/Zweifaktor';
 import { rueckfrage } from './rueckfrage';
 import { t, wechsleSprache } from './sprache';
+import { Ctx } from './konto-kontext';
+
+export { useKonto, useKontoOptional } from './konto-kontext';
 import { LasttestSeite } from './lasttest';
 import { setzeZeitzone } from '../../shared/src/region';
 import { zielNachAnmeldung } from '../../shared/src/startseite';
@@ -23,51 +25,6 @@ const OHNE_MODUS: Verwaltungsstand = { darf: false, aktiv: false, bis: null, heu
 
 /** Logo und Schriftzug des Standard-Designs für Anmeldung und Passwortseiten (#72). */
 let MARKE: { schriftzug: string | null; logo: string | null } = { schriftzug: null, logo: null };
-
-interface Konto {
-  ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void>;
-  /** Lassen sich Passwörter speichern (Schlüssel vorhanden)? */
-  passwoerterMoeglich: boolean;
-  vertretung: KontoStatus['vertretung'];
-  hinweise: NonNullable<KontoStatus['hinweise']>;
-  /** Version der Installation – für Links ins passende Handbuch (#111). */
-  version: string | null;
-  /** Zwei-Faktor (#242, #416): eingerichtet? Vorgeschrieben, aber erst ab der nächsten Anmeldung (Hinweis oben)? */
-  zweifaktor: { aktiv: boolean; ausstehend: boolean };
-  /** Favoriten benachrichtigen (#506): von der Werkbank erlaubt? Sonst kein Schalter an den Favoriten. */
-  favoritenBenachrichtigung: boolean;
-  /** Laufwerk (#720): vom Administrator eingeschaltet? Sonst kein Menüeintrag, kein Bereich. */
-  laufwerk: boolean;
-  /** Aufgaben ohne Empfänger (#719): Sieht er sie (Administrator oder gewählter Alltags-Benutzer)? */
-  ohneEmpfaenger: boolean;
-  /** Technische Aufgaben (#719): Für die Verwaltung liegt etwas an (nur ja/nein). */
-  verwaltung: boolean;
-  /** Verwaltungsmodus (#819): darf ich verwalten, läuft er, welche Bereiche? */
-  verwaltungsmodus: Verwaltungsstand;
-  /** Sprachen (#729): erlaubte Sprachen und Sprache der Installation – für Mein Konto. */
-  sprachen: SprachStatus;
-  /** Inhalte übersetzen (#732): Angebot (Paket, Zielsprache, Netz) oder null; `aus`, wenn die Person es abgeschaltet hat. */
-  uebersetzen: UebersetzenAngebot | null;
-  /** „Ablago verwalten“: Modus beginnen (wenn nötig mit erneuter Anmeldung) und in die Werkbank. */
-  verwalten(): Promise<void>;
-  /** „Verwaltung beenden“: zurück in die Ablage. */
-  verwaltungBeenden(): Promise<void>;
-}
-const Ctx = createContext<Konto | null>(null);
-
-export function useKonto(): Konto {
-  const k = useContext(Ctx);
-  if (!k) throw new Error(t('oberflaeche.konto.kontoprovider-fehlt'));
-  return k;
-}
-
-/**
- * Konto, falls jemand angemeldet ist – sonst null (#881). Für Bausteine, die auch im Einrichtungsassistenten
- * laufen: Der steht vor dem Provider, dort gibt es noch kein Konto.
- */
-export function useKontoOptional(): Konto | null {
-  return useContext(Ctx);
-}
 
 /** War beim letzten Status jemand angemeldet? Für die Fehlergrenze (#881), die außerhalb des Providers liegt. */
 let ANGEMELDET = false;
