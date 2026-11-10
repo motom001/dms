@@ -46,7 +46,7 @@ export const UEBERGAENGE: Uebergang[] = [
   },
   {
     was: 'Ältere Pakete: fremde_typen mit Kennung der Form <paket>_<schluessel> (vor #1084) – Zuordnung über die installierten Pakete',
-    seit: '#1084, 0.227',
+    seit: '#1084, 0.229',
     entfaelltMit: '1.0.0',
     fundstellen: [
       { datei: 'server/src/pakete.ts', text: 'export function neueKennung(kennung: string' },
@@ -54,7 +54,7 @@ export const UEBERGAENGE: Uebergang[] = [
   },
   {
     was: 'Zusatzsprachen der Texterkennung unter der Id <paket>_<kennung> (vor dem Umzug auf <paket>.<kennung>, #1084)',
-    seit: '#1084, 0.227',
+    seit: '#1084, 0.229',
     entfaelltMit: '1.0.0',
     fundstellen: [
       { datei: 'server/src/volltext/volltext.dienst.ts', text: "x.id.startsWith(`${p.id}_`)" },

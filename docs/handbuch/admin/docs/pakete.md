@@ -33,7 +33,7 @@ Vor dem Anlegen prüft Ablago:
 - ob alle **Abhängigkeiten** installiert sind und in einer passenden Version,
 - ob das heruntergeladene Archiv zur **Prüfsumme (SHA-256)** im Katalog passt. Passt sie nicht, installiert Ablago nichts.
 
-Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Mappentypen aus Paketen haben die [Kennung](mappentypen.md) `paket:schluessel`, z. B. `basis:person` – so kommen sich Pakete nicht in die Quere, auch wenn Paket-Id und Kennung selbst einen Unterstrich enthalten (bis Ablago 0.226 hieß es `basis_person`; beim Update hat Ablago alle Kennungen umgestellt, #1084). Eigene Mappentypen haben eine Kennung ohne Doppelpunkt. Verweise auf Mappentypen anderer Pakete löst Ablago auf. **Scheitert etwas, nimmt Ablago alles zurück** – es bleibt nichts halb angelegt.
+Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Mappentypen aus Paketen haben die [Kennung](mappentypen.md) `paket:schluessel`, z. B. `basis:person` – so kommen sich Pakete nicht in die Quere, auch wenn Paket-Id und Kennung selbst einen Unterstrich enthalten (bis Ablago 0.228 hieß es `basis_person`; beim Update hat Ablago alle Kennungen umgestellt, #1084). Eigene Mappentypen haben eine Kennung ohne Doppelpunkt. Verweise auf Mappentypen anderer Pakete löst Ablago auf. **Scheitert etwas, nimmt Ablago alles zurück** – es bleibt nichts halb angelegt.
 
 ### Mehrere Pakete in einem Schritt installieren { #mehrere-pakete-in-einem-schritt-installieren }
 

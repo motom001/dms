@@ -33,7 +33,7 @@ Before creating anything, Ablago checks:
 - whether all **dependencies** are installed and in a fitting version,
 - whether the downloaded archive matches the **checksum (SHA-256)** in the catalogue. If it doesn't, Ablago installs nothing.
 
-Creation uses the same functions as in the Workbench, with all validation rules. Folder types from packages have the [identifier](mappentypen.md) `package:key`, e.g. `basis:person` – so packages don't get in each other's way, even if the package ID and the key contain an underscore themselves (up to Ablago 0.226 it was `basis_person`; during the update Ablago converted all identifiers, #1084). Your own folder types have an identifier without a colon. Ablago resolves links to other packages' folder types. **If something fails, Ablago undoes everything** – nothing is left half-created.
+Creation uses the same functions as in the Workbench, with all validation rules. Folder types from packages have the [identifier](mappentypen.md) `package:key`, e.g. `basis:person` – so packages don't get in each other's way, even if the package ID and the key contain an underscore themselves (up to Ablago 0.228 it was `basis_person`; during the update Ablago converted all identifiers, #1084). Your own folder types have an identifier without a colon. Ablago resolves links to other packages' folder types. **If something fails, Ablago undoes everything** – nothing is left half-created.
 
 ### Installing several packages in one step { #mehrere-pakete-in-einem-schritt-installieren }
 
