@@ -100,7 +100,8 @@ Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewu
 - **Nur über `index.ts`:** Ordner mit einer `index.ts` sind von außen nur über diese erreichbar – heute die [PDF-Stelle](aufbau.md#pdf-stelle) `server/src/pdf/` (außer für `arbeit/vorgaenge.ts`, das die Vorgänge im Arbeiter-Faden ausführt) und `server/src/arbeit/`.
 - **Kern nur abwärts** (#961, `kern-nur-abwaerts`): `server/src/kern/` importiert nur sich selbst, `shared/` und die Basis (`BASIS` in der Datei: Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler, Fehler, Grenzen) – nie `dienst.ts`, Routen oder Fachordner. Von außen nur über `kern/index.ts` (`kern-nur-ueber-index`). Siehe [Kern](aufbau.md#kern).
 - **Hilfen der HTTP-Schicht nur in Routen** (#961, `routen-hilfen-nur-in-routen`): `http/routen-hilfen.ts` und `http/routen-kontext.ts` importieren nur `*.routen.ts` und `routen.ts`. Fachlogik bekommt den Benutzer übergeben, statt ihn selbst aus der Anfrage zu lesen (etwa mit `ich(a)`).
-- **Vorbereitet:** „Fachbereiche nur über `index.ts`“ steht als Kommentar in der Datei und wird aktiv, sobald die Fachordner eigene Module mit `index.ts` haben.
+- **Suche nur abwärts und nur über `index.ts`** (#964, `suche-nur-abwaerts`, `suche-nur-ueber-index`): `server/src/suche/` importiert nur sich selbst, den Kern, `shared/`, die Basis und `vektoren.ts` – keinen anderen Fachbereich, nie `dienst.ts` (Routen ausgenommen). Von außen nur über `suche/index.ts`; die Routen holt `routen.ts` direkt. Siehe [Suche](aufbau.md#suche).
+- **Vorbereitet:** „Fachbereiche nur über `index.ts`“ für alle Fachordner steht als Kommentar in der Datei und wird aktiv, sobald die übrigen Fachordner eigene Module mit `index.ts` haben.
 
 ### Abhängigkeitsbild { #abhaengigkeitsbild }
 

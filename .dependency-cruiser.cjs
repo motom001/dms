@@ -8,6 +8,8 @@
  *   (BASIS unten) – nie den Dienst, Routen oder Fachordner. Von außen nur über kern/index.ts.
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
  *   Sicherheit): Fachlogik bekommt den Benutzer übergeben und liest ihn nicht selbst aus der Anfrage.
+ * - Fachordner mit eigener Fachlogik (#964, Probelauf: suche/) nur über ihre index.ts (Routen holt routen.ts direkt);
+ *   sie binden nur sich selbst, den Kern, shared/ und die Basis ein – keinen anderen Fachbereich, nie den Dienst.
  *
  * Bestand: .dependency-cruiser-known-violations.json (wie eslint-suppressions.json: die Zahl darf nie steigen,
  * .github/werkzeuge/ausnahmen-zaehlen.mjs). Das Abhängigkeitsbild fürs Entwicklerhandbuch: `npm run abhaengigkeitsbild`.
@@ -83,6 +85,20 @@ module.exports = {
       comment: 'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
       from: { path: '^(server|shared|web)/', pathNot: ['\\.routen\\.ts$', '^server/src/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'] },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
+    },
+    {
+      name: 'suche-nur-ueber-index',
+      severity: 'error',
+      comment: 'Die Suche (#964) nur über suche/index.ts einbinden. Ausnahme: routen.ts sammelt die Routen (suche.routen.ts).',
+      from: { path: '^(server|shared|web)/', pathNot: ['^server/src/suche/', '^server/src/routen\\.ts$'] },
+      to: { path: '^server/src/suche/(?!index\\.ts$)' },
+    },
+    {
+      name: 'suche-nur-abwaerts',
+      severity: 'error',
+      comment: 'Die Suche (#964, Schicht 3) ruft nur nach unten: sich selbst, den Kern, shared/, die Basis und vektoren.ts – nie dienst.ts oder einen anderen Fachbereich. Routen (suche.routen.ts) sind ausgenommen.',
+      from: { path: '^server/src/suche/', pathNot: '\\.routen\\.ts$' },
+      to: { path: '^server/src/', pathNot: ['^server/src/(suche|kern)/', `^server/src/(${BASIS}|vektoren)\\.ts$`] },
     },
     // Später (wenn die Fachbereiche eigene Module mit index.ts haben): ein Fachbereich nutzt einen anderen nur über
     // dessen index.ts. FACH = Liste der Fachordner, z. B. 'mappen|mappentypen|dokumente'.

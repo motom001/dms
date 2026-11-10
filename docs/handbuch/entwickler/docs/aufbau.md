@@ -36,7 +36,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `mappen/` | Mappen, Historie, Papierkorb |
 | `dokumente/` | Dokumente, Fassungen, Inhalte |
 
-Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu. In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen.
+Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu – als Erstes `suche/suche.dienst.ts` ([Suche](#suche), #964). In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen.
 
 Daneben, ohne Routen:
 
@@ -55,7 +55,7 @@ Daneben, ohne Routen:
 - **Einstellungen** stehen als JSON je Schlüssel in der Tabelle `einstellungen`. `null` löscht einen Eintrag.
 - **Heimnetz erkennen** (#595): Ob eine Adresse im Heimnetz liegt, entscheidet nur `shared/src/heimnetz.ts` (`imHeimnetz`, Liste `HEIMNETZ_ENDUNGEN` mit `.local`, `.lan`, `.internal`, `.home.arpa`). Art `ausnahme` (streng) erlaubt `http://` ohne TLS – Anmeldung über einen Anbieter, Endpunkte eigener Postfach-Anbieter; Art `hinweis` (weiter, z. B. auch `.fritz.box`, 100.64/10) dient nur Vorschlägen wie „Abruf-Link oder E-Mail“, nie einer Sicherheitsausnahme. Neue Stellen nutzen diese Funktion statt einer eigenen Liste. „Gleicher Rechner“ (nur `localhost`) ist eine andere Frage und bleibt bei ihren Stellen.
 - **Hilfe:** Jedes ?-Symbol in der Oberfläche zeigt auf eine Stelle im Handbuch. Die Tabelle dazu steht in `shared/src/hilfe.ts`, und die CI prüft, dass jeder Anker existiert.
-- **Gemeinsam beschriebene Zeilen und Verklemmungen** (#575): Trigger, die viele Transaktionen in dieselben Zeilen schreiben lassen (z. B. Zähler je Wort mit `INSERT … ON CONFLICT DO UPDATE`), verklemmen sich unter Last – jede Transaktion sperrt ihre Zeilen in anderer Reihenfolge, PostgreSQL bricht eine ab (Deadlock). Muster: Der Trigger hängt nur an einen Eingang ohne eindeutigen Schlüssel an, ein Hintergrundlauf übernimmt ihn unter einer Sperre und in fester Reihenfolge (Wörterverzeichnis: `suchwoerter_eingang`, `dms_woerter_einarbeiten`, `Dienst.woerterEinarbeiten`, Migration 052). Was trotzdem abgebrochen werden kann und nicht verloren gehen darf, läuft über `beiVerklemmungWiederholen` (`server/src/db.ts`, wiederholt bei 40P01/40001) – als eigene Transaktion bzw. `sql.begin` (in einer Transaktion ein Sicherungspunkt). Test: `server/test/verklemmung.test.ts`.
+- **Gemeinsam beschriebene Zeilen und Verklemmungen** (#575): Trigger, die viele Transaktionen in dieselben Zeilen schreiben lassen (z. B. Zähler je Wort mit `INSERT … ON CONFLICT DO UPDATE`), verklemmen sich unter Last – jede Transaktion sperrt ihre Zeilen in anderer Reihenfolge, PostgreSQL bricht eine ab (Deadlock). Muster: Der Trigger hängt nur an einen Eingang ohne eindeutigen Schlüssel an, ein Hintergrundlauf übernimmt ihn unter einer Sperre und in fester Reihenfolge (Wörterverzeichnis: `suchwoerter_eingang`, `dms_woerter_einarbeiten`, `SucheDienst.woerterEinarbeiten`, Migration 052). Was trotzdem abgebrochen werden kann und nicht verloren gehen darf, läuft über `beiVerklemmungWiederholen` (`server/src/db.ts`, wiederholt bei 40P01/40001) – als eigene Transaktion bzw. `sql.begin` (in einer Transaktion ein Sicherungspunkt). Test: `server/test/verklemmung.test.ts`.
 - **Sicherung und Wiederherstellung** sichern alle Tabellen außer dem Inhalt von `sitzungen` und `schema_migrationen` (`OHNE_INHALT` in `server/src/datenbankabzug.ts`). Eine neue Tabelle ist automatisch dabei. Daten außerhalb der Datenbank brauchen einen Gedanken: Wo liegen sie, und kommen sie mit?
 
 
@@ -99,6 +99,15 @@ Anlass → Empfänger (der Reihe nach; Fachbereich.Aufgabe):
 - `typAngelegt` → 1. `sichten.eigeneSicht`
 - `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
 <!-- anlaesse:ende -->
+
+## Suche (#964) { #suche }
+
+Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielaufteilung): `server/src/suche/suche.dienst.ts` mit der Klasse `SucheDienst` – unscharfe Suche (Tippfehler, gleichbedeutende Wörter, Wörterverzeichnis), Vektoren zu Dokumenten und ähnliche Dokumente. Der Dienst baut ihn als `dienst.suche` und behält für jede Methode eine einzeilige Weiterleitung; `dienst.vektorAnbieter` reicht an `dienst.suche.vektorAnbieter` durch.
+
+- **Tür:** `suche/index.ts`; die Routen (`suche.routen.ts`) holt nur `routen.ts` direkt.
+- **Bekommt den Kern**, nicht den ganzen Dienst, dazu einen `SucheAnschluss`: `grundRepo` (der Zwischenspeicher der Vektoren gilt über Transaktionen hinweg), `lesbare` und `pruefeRecht` (Schicht „zugriff“, bis sie ein eigenes Modul ist, im Dienst) und `konten` (Dienstkonto eines Pakets).
+- **Nur abwärts:** Die Suche importiert sich selbst, den Kern, `shared/`, die Basis und `vektoren.ts` – geprüft mit `suche-nur-abwaerts` und `suche-nur-ueber-index` ([Regeln](stil.md#abhaengigkeiten-pruefen)).
+- **Noch im Dienst:** `vektorNachlauf` (braucht die KI-Sperre der Pakete) und die Suche in der Mappenliste (`listeMappen`).
 
 ## Abhängigkeiten { #abhaengigkeiten }
 
