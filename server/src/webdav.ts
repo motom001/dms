@@ -22,7 +22,7 @@ import {
   Ratenbegrenzung, schluessel, sperrAntwort, VERKNUEPFT, WEBDAV_PFAD, zerlege, type Eintrag,
 } from './webdav-baum';
 import { anteilVon } from './zwischenspeicher';
-import { MB, WEBDAV_STEMPEL_SPEICHER as STEMPEL_SPEICHER, WEBDAV_XML_MAX as XML_MAX } from './grenzen';
+import { WEBDAV_STEMPEL_SPEICHER as STEMPEL_SPEICHER, WEBDAV_XML_MAX as XML_MAX } from './grenzen';
 
 /**
  * WebDAV-Laufwerk (#346), Stufe 1: lesen und ablegen.

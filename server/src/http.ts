@@ -230,7 +230,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   });
 
   // Datei-Uploads kommen als rohe Bytes (application/octet-stream) – nur an Routen mit `roh` (#901).
-  const istDateiKoerper = (req: FastifyRequest) => String(req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase() === 'application/octet-stream';
+  // Dateien als Körper nur, wo die Route eine eigene Grenze nennt (#901): Sonst gälte still die Grenze für JSON (2 MB).
+  const ohneDatei = { preParsing: async (req: FastifyRequest) => { if (String(req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase() === 'application/octet-stream') throw new Fachfehler(415, t('meldungen.http.keine-datei-erwartet')); } };
   app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
 
   const anfrageAus = (req: FastifyRequest): Anfrage => ({
@@ -249,9 +250,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     ziel.route({
       method: r.methode,
       url: r.pfad,
-      ...(r.roh ? { bodyLimit: r.roh } : {}),
-      // Dateien als Körper nur, wo die Route eine eigene Grenze nennt (#901): Sonst gälte still die Grenze für JSON.
-      ...(!r.roh ? { preParsing: async (req: FastifyRequest) => { if (istDateiKoerper(req)) throw new Fachfehler(415, t('meldungen.http.keine-datei-erwartet')); } } : {}),
+      ...(r.roh ? { bodyLimit: r.roh } : ohneDatei),
       ...(r.ohneHead ? { exposeHeadRoute: false } : {}),
       // Große Uploads (#683): Anmeldung und Rolle prüfen, **bevor** der Körper (bis zu 256 MB) gelesen wird –
       // sonst hält jede Anfrage ohne Anmeldung den ganzen Körper im Speicher, bis die 401 kommt.

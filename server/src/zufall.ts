@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { MB, ZUFALL_STUECK } from './grenzen';
+import { ZUFALL_STUECK } from './grenzen';
 
 /**
  * Zufall mit Startwert (#248): gleicher Startwert, gleiche Folge – damit Messungen mit

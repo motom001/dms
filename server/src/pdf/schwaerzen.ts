@@ -33,7 +33,7 @@ import { exifAusrichtung, jpegMasse } from './bild';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
 import { t } from '../sprache';
-import { AUSGABE_GROSS, MB } from '../grenzen';
+import { AUSGABE_GROSS } from '../grenzen';
 
 /** Auflösung des Ergebnisses (PDF). */
 export const SCHWAERZEN_DPI = 150;

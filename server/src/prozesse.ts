@@ -24,7 +24,7 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { ausnahmeArt, Buendel, Protokollsammlung, rohAus, type Rohmeldung, type Sammelstand } from './protokollsammlung';
 import { dateiLeser, liesCgroup, type Leser } from './systemlast';
-import { GB, HALDE_MIN_MB, MB, SPEICHER_JE_PROZESS, SPEICHER_RESERVE } from './grenzen';
+import { HALDE_MIN_MB, MB, SPEICHER_JE_PROZESS, SPEICHER_RESERVE } from './grenzen';
 
 export const PROZESSE_MAX = 16;
 /**

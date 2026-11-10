@@ -32,7 +32,7 @@ import { typBild, typUnterschiede, type TypUnterschiede } from '../../shared/src
 import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
-import { ARCHIV_MERKEN_MAX, MB } from './grenzen';
+import { ARCHIV_MERKEN_MAX } from './grenzen';
 
 const log = protokoll.modul('werkbank');
 

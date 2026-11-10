@@ -9,7 +9,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { NeueMappe } from './repo';
 import { Zufall } from './zufall';
-import { DEMO_PLATZ_PRUEFEN, DEMO_VORRAT_MAX, GB, MB } from './grenzen';
+import { DEMO_PLATZ_PRUEFEN, DEMO_VORRAT_MAX, GB } from './grenzen';
 
 /**
  * Erzeugt Demo-Mappen für die vorhandenen Mappentypen. Die Werte passen zu
