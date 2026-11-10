@@ -5,7 +5,7 @@ import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgt
 import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
-  ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
+  ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, feldtypName, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
   type Abschnitt, type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Trefferliste, type Werte,
   einzigesZiel, gemeinsameFelder, jedeMappe, zielErlaubt, zieleVon,
 } from '../../../shared/src/model';
@@ -681,7 +681,7 @@ function FeldZeile(p: {
         <button type="button" className="feldkopfknopf" aria-expanded={offen} onClick={p.umschalten}>
           <span className="flabel">{f.label || t('mappentypen.editor.ohne-bezeichnung')}{f.pflicht && <span className="pflicht">*</span>}</span>
           <code className="fkey">{f.key}</code>
-          <span className="ftyp">{FELDTYPEN[f.typ]}</span>
+          <span className="ftyp">{feldtypName(f.typ)}</span>
           {(chips.length > 0 || f.anzeigen) && <span className="chips">{chips.map((c) => <span key={c} className="chip">{c}</span>)}<AnzeigeChip regel={f.anzeigen} typ={{ felder: p.alleFelder }} /></span>}
         </button>
         <div className="feldaktionen">
@@ -723,7 +723,7 @@ function FeldZeile(p: {
               <input id={id('key')} className="mono" value={f.key} disabled={!f._neu} onChange={(e) => setze({ key: e.target.value })} /></label>
             <label className="eigenschaft" htmlFor={id('typ')}><span>{t('mappentypen.editor.feldart')}</span>
               <select id={id('typ')} value={f.typ} onChange={(e) => setze({ typ: e.target.value as Feld['typ'] })}>
-                {Object.entries(FELDTYPEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                {(Object.keys(FELDTYPEN) as Feld['typ'][]).map((k) => <option key={k} value={k}>{feldtypName(k)}</option>)}
               </select></label>
           </div>
           <div className="raster">
@@ -738,7 +738,7 @@ function FeldZeile(p: {
           </div>
           {/* Anzeigen, wenn … (#1033): nie an Systemfeldern. */}
           {!f.system && <AnzeigeEditor regel={f.anzeigen} setze={(anzeigen) => setze({ anzeigen })} typ={{ felder: p.alleFelder }} eigene={[f.key]} typen={p.typen} />}
-          {besonders && <><h3 className="zwischen">{t('mappentypen.editor.eigenschaften-fuer', { FELDTYPEN: FELDTYPEN[f.typ] })}</h3>{besonders}</>}
+          {besonders && <><h3 className="zwischen">{t('mappentypen.editor.eigenschaften-fuer', { FELDTYPEN: feldtypName(f.typ) })}</h3>{besonders}</>}
           {ERKENNUNG_FELDTYPEN.includes(f.typ) && <ErkennungEditor f={f} id={id} setze={setze} />}
           {WIEDERFINDEN_FELDTYPEN.includes(f.typ) && <WiederfindenEditor f={f} setze={setze} />}
           </fieldset>

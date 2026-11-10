@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- **Feldarten auf Englisch** (#1094): In der englischen Oberfläche heißen die Feldarten im Typ-Editor jetzt auch englisch (zum Beispiel „Period“, „Percentage“, „Amount“); die API-Beschreibung nennt zu jeder Kennung den deutschen und den englischen Namen. Die Kennungen selbst bleiben gleich.
