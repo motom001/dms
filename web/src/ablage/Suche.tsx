@@ -1,3 +1,4 @@
+import { istTeiltyp } from '../../../shared/src/teile';
 import { optionText, typName } from '../../../shared/src/beschriftung';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
@@ -33,7 +34,8 @@ function useLesbareTypen(): Mappentyp[] | null {
     api.meineRechte().then((r) => { if (aktuell) setIds(new Set(r.filter((x) => x.rechte.R !== 'nie').map((x) => x.typId))); }).catch(() => aktuell && setIds(new Set(d.typen.map((mappentyp) => mappentyp.id))));
     return () => { aktuell = false; };
   }, [d.typen]);
-  return ids ? d.typen.filter((mappentyp) => ids.has(mappentyp.id)) : null;
+  // Teile (#1031) nicht: Sie erscheinen in der Suche über ihre übergeordnete Mappe.
+  return ids ? d.typen.filter((mappentyp) => ids.has(mappentyp.id) && !istTeiltyp(mappentyp)) : null;
 }
 
 const typSchluessel = (mappentyp: Mappentyp) => mappentyp.schluessel ?? mappentyp.id;

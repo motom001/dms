@@ -1035,5 +1035,16 @@
   "tabelle.nicht-im-titel": "Tabellen haben keinen Wert und können nicht in der Titel-Vorlage stehen: {map}.",
   "tabelle.keine-spalte": "Eine Tabelle kann keine Spalte einer Trefferliste sein.",
   "tabelle.neu": "+ {typ}",
-  "typvergleich.tabelle": "Tabelle"
+  "typvergleich.tabelle": "Tabelle",
+  "loeschprotokoll.mit-teilen": "mit ihren Teilen",
+  "teile.nicht-bei-system": "Ist Teil einer anderen Mappe: Systemmappentypen gehören nie zu einer anderen Mappe.",
+  "teile.feld-waehlen": "Ist Teil einer anderen Mappe: Wähle das Verweisfeld, über das die Mappe dazugehört.",
+  "teile.ein-zieltyp": "Ist Teil einer anderen Mappe: Das Feld „{feld}“ muss auf genau einen anderen Mappentyp verweisen.",
+  "teile.nicht-sich-selbst": "Ist Teil einer anderen Mappe: Das Feld „{feld}“ verweist auf diesen Mappentyp selbst – ein Teil gehört zu einer Mappe eines anderen Typs.",
+  "teile.nicht-zu-system": "Ist Teil einer anderen Mappe: Zu Mappen vom Typ „{typ}“ können keine Teile gehören.",
+  "teile.keine-kette": "Ist Teil einer anderen Mappe: „{typ}“ ist selbst Teil einer anderen Mappe – Ketten gibt es nicht.",
+  "teile.eine-mappe": "Ist Teil einer anderen Mappe: Im Feld „{feld}“ darf nur eine Mappe stehen.",
+  "teile.pflicht": "Ist Teil einer anderen Mappe: Das Feld „{feld}“ muss Pflicht sein – ein Teil gehört immer zu einer Mappe.",
+  "teile.sichtbar": "Ist Teil einer anderen Mappe: Das Feld „{feld}“ muss immer zu sehen sein (nicht ausgeblendet, ohne „Anzeigen, wenn …“).",
+  "teile.hat-teile": "Ist Teil einer anderen Mappe: Zu Mappen dieses Typs gehören selbst Teile ({typen}) – Ketten gibt es nicht."
 }

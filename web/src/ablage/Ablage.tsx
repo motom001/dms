@@ -8,6 +8,7 @@ import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere,
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
 import type { Aufgabe } from '../../../shared/src/model';
+import { istTeiltyp, uebergeordneterTyp } from '../../../shared/src/teile';
 import { AufgabenHinweis } from './Aufgaben';
 import { useAblageStand, useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -102,6 +103,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
     rechts = <div className="leer"><p>{t('ablage.ablage.diese-ansicht-zeigt-mehrere')}</p></div>;
   } else if (dritt === 'neu' && typ && verwaltet?.rechte?.C === false) {
     rechts = <div className="leer"><p>{t('ablage.ablage.in-der-ansicht-lassen', { name: sichtName(verwaltet) })}</p></div>;
+  } else if (dritt === 'neu' && typ && istTeiltyp(typ) && !suche.get('verweis')) {
+    // Teile (#1031) entstehen an ihrer übergeordneten Mappe („+ Position“ an der Rechnung).
+    rechts = <div className="leer"><p>{t('ablage.teile.neu-an-uebergeordneter', { name: typName(typ), eltern: ((x) => (x ? typName(x) : '…'))(d.typ(uebergeordneterTyp(typ))) })}</p></div>;
   } else if (dritt === 'neu' && typ && !darfErstellen(typ)) {
     rechts = <div className="leer"><p>{t('ablage.ablage.von-lassen-sich-in', { name: typ.name, wert: typ.system === 'benutzer' ? t('ablage.ablage.benutzer-legt-in-der') : '' })}</p></div>;
   } else if (dritt === 'neu' && typ) {
@@ -195,6 +199,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <Liste key="favoriten" sicht="favoriten" titel={t('ablage.ablage.favoriten')} offen={dritt} hilfe="ablage.favoriten"
               beschreibung={t('ablage.ablage.mappen-die-du-mit')}
               leerText={t('ablage.ablage.noch-keine-favoriten-markiere')} />
+          : !verwaltet && typ && istTeiltyp(typ) ? <TeilListe typ={typ} />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet ? sichtName(verwaltet) : typName(typ!)} beschreibung={verwaltet ? sichtBeschreibung(verwaltet) : typ ? typBeschreibung(typ) : undefined}
               offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
               leerText={typ?.system === 'post' ? t('ablage.ablage.keine-post-mit-post') : verwaltet?.bedingungen.some((x) => x.art === 'favorit') ? t('ablage.ablage.noch-keine-favoriten-markiere') : t('ablage.ablage.noch-keine-mappen-in')} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
@@ -689,12 +694,35 @@ function Wahlhaken({ an, titel, waehle }: { an: boolean; titel: string; waehle(a
 
 /** Fundstelle im Volltext (#45): Dokumentname und Ausschnitt, Treffer hervorgehoben (ohne HTML vom Server). */
 function Fundstelle({ a }: { a: Ausschnitt }) {
+  const d = useDaten();
   const teile = a.text.split(TREFFER_ANFANG).flatMap((text, i) => {
     if (i === 0) return [<span key={`t${i}`}>{text}</span>];
     const [treffer, rest = ''] = text.split(TREFFER_ENDE);
     return [<mark key={`m${i}`}>{treffer}</mark>, <span key={`r${i}`}>{rest}</span>];
   });
+  // Teile (#1031): „gefunden in Rechnungsposition „3. Bohrmaschine““ – ggf. mit dem Dokument des Teils.
+  if (a.teil) {
+    const teiltyp = d.typ(a.teil.typId);
+    const wo = t('ablage.teile.gefunden-in', { typ: teiltyp ? typName(teiltyp) : '…', titel: titelOder(a.teil.titel) });
+    return <span className="fundstelle"><span className="dok">{a.dokument ? `${wo} · ${a.dokument}:` : wo}</span>{a.text ? <> {teile}</> : null}</span>;
+  }
   return <span className="fundstelle"><span className="dok" title={t('ablage.ablage.fundstelle-im-dokument')}>{a.dokument}:</span> {teile}</span>;
+}
+
+/**
+ * Teile (#1031) haben keine eigene Ansicht: Wer über einen direkten Link bei einem Teil landet, sieht in der Mitte statt
+ * aller Teile, wo sie stehen – an ihrer übergeordneten Mappe.
+ */
+function TeilListe({ typ }: { typ: Mappentyp }) {
+  const d = useDaten();
+  const eltern = d.typ(uebergeordneterTyp(typ));
+  return (
+    <>
+      <Listenkopf titel={typName(typ)} hilfe="ablage.sicht" beschreibung={typBeschreibung(typ)} />
+      <div className="leer"><p>{t('ablage.teile.keine-ansicht', { name: typName(typ), eltern: eltern ? typName(eltern) : '…' })}</p>
+        {eltern && <p><Link to={`/ablage/${eltern.id}`} className="verweis">{t('ablage.teile.zu-den-uebergeordneten', { eltern: typName(eltern) })}</Link></p>}</div>
+    </>
+  );
 }
 
 /**

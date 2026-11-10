@@ -98,7 +98,7 @@ Occasion → receivers (in order; subject area.task):
 
 <!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->
 - `mappeGeaendert` → 1. `mappentypen.passung` 2. `aufgaben.erwaehnungen` 3. `aufgaben.fristen` 4. `post.aufgaben`
-- `typGeaendert` → 1. `sichten.umbenennen` 2. `mappen.titel` 3. `mappentypen.passung` 4. `aufgaben.fristen`
+- `typGeaendert` → 1. `sichten.umbenennen` 2. `sichten.teile` 3. `mappen.titel` 4. `mappentypen.passung` 5. `aufgaben.fristen`
 - `typAngelegt` → 1. `sichten.eigeneSicht`
 - `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
 <!-- anlaesse:ende -->
@@ -188,7 +188,8 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `sichten/index.ts`; only `routen.ts` loads the routes (`sichten.routen.ts`) directly.
 - **Gets the core**, `SichtenDienst` also the [permission check](#zugriff), the [folders](#mappen) and the [search](#suche), and a connector for what is still in the service (validity of the counts – `mindestensMs` stays on the service –, tasks without recipient and without read permission, dates, accounts).
 - **Counts:** the caches hang on the same states as before (folder state or household state, #742, #918); the caches of the dates stay with the tasks in the service.
-- **Immediate:** the service still registers the receivers `sichten.umbenennen` and `sichten.eigeneSicht` at the [connection points](#anschlusspunkte), in unchanged order.
+- **Immediate:** the service still registers the receivers `sichten.umbenennen` and `sichten.eigeneSicht` at the [connection points](#anschlusspunkte), in unchanged order; `sichten.teile` (#1031) takes a type out of the views when "Is part of another folder" is switched on and gives it its view back when it is switched off.
+- **Parts (#1031, `shared/src/teile.ts`):** `klauselnFuer` leaves out part types – so they are missing from every view and its counts; the advanced search likewise. With a search, `SichtenDienst.seite` first searches the part types (same term, same variants, **same read filter**, at most `TEIL_TREFFER_MAX`) and hands the parent folders to the repo as `auchIds`: they count as hits there, while type, conditions and read filter still apply. The hit is in `ausschnitte[id].teil`.
 
 ## Permissions (#1076) { #berechtigungen }
 
@@ -298,6 +299,7 @@ The first subject area with its own business logic in its subject folder (trial 
 | `beispiele.ts` | `BeispielMappen` (`dienst.beispielMappen`) | example folders from packages (#878) |
 
 - **Gets the core** and `LoeschenTeile` (permission check, fit, history, documents, outgoing, views, system folders and each other); event and `aktualisiereTitel` through the facade, accounts through the connector.
+- **Parts (#1031):** `loescheMappe` takes the parts of a folder along (`loescheMitTeilen`: R and D on every part, otherwise 403 with the number; bin, history, events and deletion log with the way `teile` in one transaction, operation = id of the folder). The bin restores them with it and deletes them permanently with it; "with linked folders" refuses if a part of a deleted folder would remain.
 
 ## Data protection (#1078) { #datenschutz }
 

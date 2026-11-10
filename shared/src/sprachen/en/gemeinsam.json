@@ -1035,5 +1035,16 @@
   "tabelle.nicht-im-titel": "Tables have no value and cannot appear in the title template: {map}.",
   "tabelle.keine-spalte": "A table cannot be a column of a results list.",
   "tabelle.neu": "+ {typ}",
-  "typvergleich.tabelle": "Table"
+  "typvergleich.tabelle": "Table",
+  "loeschprotokoll.mit-teilen": "with its parts",
+  "teile.nicht-bei-system": "Is part of another folder: system folder types never belong to another folder.",
+  "teile.feld-waehlen": "Is part of another folder: choose the link field through which the folder belongs to the other one.",
+  "teile.ein-zieltyp": "Is part of another folder: the field \"{feld}\" must link to exactly one other folder type.",
+  "teile.nicht-sich-selbst": "Is part of another folder: the field \"{feld}\" links to this folder type itself – a part belongs to a folder of another type.",
+  "teile.nicht-zu-system": "Is part of another folder: folders of the type \"{typ}\" cannot have parts.",
+  "teile.keine-kette": "Is part of another folder: \"{typ}\" is itself part of another folder – chains are not possible.",
+  "teile.eine-mappe": "Is part of another folder: the field \"{feld}\" may only hold one folder.",
+  "teile.pflicht": "Is part of another folder: the field \"{feld}\" must be required – a part always belongs to a folder.",
+  "teile.sichtbar": "Is part of another folder: the field \"{feld}\" must always be visible (not hidden, without \"Show if …\").",
+  "teile.hat-teile": "Is part of another folder: folders of this type have parts themselves ({typen}) – chains are not possible."
 }

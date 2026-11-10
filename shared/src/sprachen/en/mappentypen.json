@@ -402,5 +402,18 @@
   "tabelle.neu-hilfe": "Shown below the table, for example “+ Item”. Only people who may create the other type see the button.",
   "tabelle.ohne-wert": "A table has no value of its own: it only shows the folders – not in exports, not in conditions, without totals.",
   "tabelle.keine-quelle": "No field links to this type yet. First add a link field pointing to this type in the other folder type (for example “Invoice” on the invoice item).",
-  "tabelle.verwendet": "Table {link}"
+  "tabelle.verwendet": "Table {link}",
+  "teile.einstellung-hilfe": "Folders of this type always belong to another folder, e.g. invoice items to their invoice. They only appear there – not in views, search and \"+ New\".",
+  "teile.hat-teile": "Not possible: folders of this type have parts themselves ({typen}).",
+  "teile.kein-feld": "This needs a link field to exactly one other folder type that holds one folder.",
+  "teile.feld": "Belongs to it through",
+  "teile.feld-hilfe": "The link field to the parent folder. It becomes required.",
+  "teile.waehlen": "Choose a field …",
+  "teile.bedeutet": "New folders are created at the parent folder ({eltern}), e.g. through a table or a linked folders tab. The type has no view of its own; search finds what is in a folder at {eltern}. If a folder of the type {eltern} is deleted, its parts go with it.",
+  "teile.rechte": "Read permissions: without permissions of its own, the type takes over the read permissions of {eltern} once when you switch this on. If the permissions of {eltern} change later, that does not apply here by itself – otherwise parts could be readable more widely than their folder; please adjust them here too.",
+  "teile.kein-schutz": "No protection: parts are missing from views and search but remain reachable through the API, the export and direct links. Who may see what is set by the permissions.",
+  "teile.rechte-uebernommen": "Read permissions taken over from {eltern} – see Permissions.",
+  "teile.rechte-ausgelassen_one": "{anzahl} rule could not be carried over (its field is missing here) – please check yourself.",
+  "teile.rechte-ausgelassen_other": "{anzahl} rules could not be carried over (their field is missing here) – please check yourself.",
+  "teile.einstellung-name": "Is part of another folder"
 }

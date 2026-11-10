@@ -59,6 +59,8 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   // Dokument übernehmen (#937, Migration 089): null = Vorgabe.
   ausPost: (r.aus_post as boolean | null) ?? null,
   erkennbarAn: (r.erkennbar_an as string | null) ?? '',
+  // Ist Teil einer anderen Mappe (#1031, Migration 097): nur, wenn eingestellt.
+  ...(r.teil_von ? { teilVon: r.teil_von as string } : {}),
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -626,6 +628,12 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     });
   }
 
+  /** Treffermenge und Textfilter (#740) samt übergeordneten Mappen, die über ihre Teile gefunden wurden (#1031). */
+  const mitTeilen = (roh: Teil | null, tf: Teil | null, auch: string[]) => ({
+    treffer: roh && auch.length ? sql`${roh} UNION SELECT unnest(${auch}::uuid[])` : roh,
+    textfilter: !tf ? sql`` : auch.length ? sql`AND (mappen.id IN (${tf}) OR mappen.id = ANY(${auch}::uuid[]))` : sql`AND mappen.id IN (${tf})`,
+  });
+
   /**
    * Bedingungen einer Seite (#740): `wo` (Typ, Eingang/Favoriten, Textfilter der erweiterten Suche, Lesefilter – je mit
    * AND davor) und, mit Suche, `treffer`: die Ids der Mappen, die den Begriff enthalten, als eine Menge (UNION aus
@@ -681,9 +689,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     // Erweiterte Suche (#199): Begriff in Dokumenten oder Notizen, zusätzlich zu allen anderen Bedingungen.
     const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen) ? o.textfilter : null;
     const tfMenge = tf ? vereint([...(tf.dokumente ? [inDokumenten(tf.text)] : []), ...(tf.notizen ? [inNotizen(tf.text)] : [])]) : null;
-    // Ohne Suche ist der Textfilter die Treffermenge; mit Suche eine weitere Bedingung.
-    const treffer = suche ?? tfMenge;
-    const textfilter = suche && tfMenge ? sql`AND mappen.id IN (${tfMenge})` : sql``;
+    // Ohne Suche ist der Textfilter die Treffermenge; mit Suche eine weitere Bedingung. Teile (#1031): übergeordnete
+    // Mappen, in deren Teilen der Begriff steht (auchIds), zählen für beides als Treffer.
+    const { treffer, textfilter } = mitTeilen(suche ?? tfMenge, suche && tfMenge, (o.auchIds ?? []).filter(istUuid));
     // Berechtigungen (#124): nur, was der Benutzer lesen darf.
     const lesen = o.lesen ? sql`AND ${lesefilterSql(sql, o.lesen)}` : sql``;
     const wo = sql`${typ} ${eingang} ${textfilter} ${lesen}`;
@@ -724,10 +732,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async legeTypAn(id, d: MappentypDaten, system) {
       const k = d.schluessel ? teileKennung(d.schluessel) : { paket: null, schluessel: null };
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an)
+        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an, teil_von)
         VALUES (${id}, ${haushaltId}, ${d.name}, ${k.paket}, ${k.schluessel}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
           ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null}, ${d.archiv ? json(sql, d.archiv) : null}, ${d.beschriftungen ? json(sql, d.beschriftungen) : null},
-          ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''})
+          ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''}, ${d.teilVon || null})
         RETURNING *`;
       return alsTyp(r);
     },
@@ -745,7 +753,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
             felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
             erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, archiv = ${d.archiv ? json(sql, d.archiv) : null},
             beschriftungen = ${d.beschriftungen ? json(sql, d.beschriftungen) : null}, aus_post = ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, erkennbar_an = ${d.erkennbarAn ?? ''},
-            geaendert = ${STAND_WEITER}
+            teil_von = ${d.teilVon || null}, geaendert = ${STAND_WEITER}
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);

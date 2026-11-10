@@ -31,6 +31,9 @@ begriffe:
   Kann aus Post angelegt werden:
     begriff: Can be created from post
     beschreibung: Tick in the basics of a folder type (#937). Only folder types with it can be chosen under "Where does this belong?" when a document is taken over from the post – for everyone who may create folders there. On by default for folder types with a documents tab; never for system folder types.
+  Ist Teil einer anderen Mappe:
+    begriff: Is part of another folder
+    beschreibung: Tick in the basics of a folder type with the link field through which the folder belongs ("Belongs to it through", #1031). Its folders are then parts, e.g. invoice items of an invoice – only at the parent folder, without a view of their own, not in search and "+ New". The field becomes required; no chains. The type takes over the read permissions of the parent once as a default when it is switched on; later changes there do not apply. In the package format gehoertZu.
   Woran man ihn erkennt:
     begriff: How to recognise it
     beschreibung: Short sentence in the basics of a folder type (#937, at most 300 characters), e.g. "Contains invoice number, amount and payment deadline". Helps recognition assign a document to the right folder type. The description is for people, this sentence for recognition.
@@ -55,6 +58,12 @@ begriffe:
   Tabelle:
     begriff: Table
     beschreibung: Field kind without a value of its own – shows, between the fields of a folder, the folders of another type that link to it, with the columns of a results list, e.g. the items of an invoice; below it "+ New" (such as "+ Item"). Only folders you may read; no totals.
+  Teil:
+    begriff: Part
+    beschreibung: A folder that always belongs to another one and only appears there – such as an invoice item at its invoice (#1031). Parts are not shown in views, search and "Recently opened"; what is in a part finds the parent folder ("found in …") if you may read both. If you open a part directly, "Part of …" is shown at the top. Deleted and restored with the parent folder. No protection – it remains reachable through the API, export and links.
+  Übergeordnete Mappe:
+    begriff: Parent folder
+    beschreibung: The folder a part belongs to – such as the invoice of its items (#1031). The parts are shown at it (usually as a table), new ones are created there, and they go with it when it is deleted and restored.
   Prozent:
     begriff: Percentage
     beschreibung: Field kind for a percentage, e.g. the tax rate "19%" – with decimals, freely chosen (foreign rates too). "19", "19%" and "19.0" mean the same.

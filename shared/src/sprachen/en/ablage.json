@@ -1263,5 +1263,15 @@
   "tabelle.leer": "No {name} yet",
   "tabelle.nach-dem-speichern": "You can add {name} after saving – with “{neu}” below the table.",
   "tabelle.weitere": "Show {anzahl} more (of {gesamt})",
-  "tabelle.angelegt": "“{titel}” created."
+  "tabelle.angelegt": "“{titel}” created.",
+  "teile.teil-von": "Part of {mappe}",
+  "teile.teil-von-verborgen": "Part of another folder you cannot see.",
+  "teile.kommen-mit_one": "Its {anzahl} part goes with it. ",
+  "teile.kommen-mit_other": "Its {anzahl} parts go with it. ",
+  "teile.werden-mitgeloescht_one": "Its {anzahl} part is deleted as well. ",
+  "teile.werden-mitgeloescht_other": "Its {anzahl} parts are deleted as well. ",
+  "teile.neu-an-uebergeordneter": "You create folders of the type {name} at their parent folder – open a folder of the type {eltern}.",
+  "teile.gefunden-in": "found in {typ} \"{titel}\"",
+  "teile.keine-ansicht": "Folders of the type {name} only appear at their parent folder ({eltern}) – not in views and lists.",
+  "teile.zu-den-uebergeordneten": "Go to {eltern}"
 }

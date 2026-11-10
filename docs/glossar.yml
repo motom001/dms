@@ -22,7 +22,7 @@
 # Neue Begriffe kommen mit dem Release hierher (Qualitätskontrolle).
 # Die Personas: docs/handbuch/entwickler/docs/personas.md
 
-stand: '2026-11-10'
+stand: '2026-11-11'
 
 begriffe:
 
@@ -115,6 +115,22 @@ begriffe:
     nicht_verwenden: [Unterformular, Liste (als Feldart), Positionstabelle]
     verwandt: [Feldart, Register, Trefferliste, Verweis]
     code: tabelle, Feld.quelle, shared/src/tabelle.ts
+  - begriff: Teil
+    bereich: ablage
+    beschreibung: Eine Mappe, die immer zu einer anderen gehört und nur dort erscheint – etwa eine Rechnungsposition an ihrer Rechnung (#1031). Teile stehen nicht in Ansichten, Suche und „Zuletzt geöffnet“; was in einem Teil steht, findet die übergeordnete Mappe („gefunden in …“), wenn man beide lesen darf. Öffnet man einen Teil direkt, steht oben „Teil von …“. Mit der übergeordneten Mappe gelöscht und wiederhergestellt. Kein Schutz – über Schnittstelle, Export und Links bleibt er erreichbar.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Untertyp, Untermappe, Kindmappe, Teil-Mappe]
+    verwandt: [Übergeordnete Mappe, Ist Teil einer anderen Mappe, Tabelle]
+    code: shared/src/teile.ts
+  - begriff: Übergeordnete Mappe
+    bereich: ablage
+    beschreibung: Die Mappe, zu der ein Teil gehört – etwa die Rechnung ihrer Positionen (#1031). An ihr stehen die Teile (meist als Tabelle), an ihr legt man neue an, und mit ihr gehen sie beim Löschen und Wiederherstellen.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Elternmappe, Hauptmappe]
+    verwandt: [Teil]
+    code: uebergeordneteId, shared/src/teile.ts
   - begriff: Prozent
     bereich: grundbegriffe
     beschreibung: Feldart für einen Prozentsatz, z. B. den Steuersatz „19 %“ – mit Nachkommastellen, frei wählbar (auch ausländische Sätze). „19“, „19 %“ und „19,0“ bedeuten dasselbe.
@@ -493,6 +509,14 @@ begriffe:
     begegnet: admin
     verwandt: [Mappentyp, Post, Woran man ihn erkennt]
     code: Mappentyp.ausPost
+  - begriff: Ist Teil einer anderen Mappe
+    bereich: werkbank
+    beschreibung: Haken in den Grunddaten eines Mappentyps mit dem Verweisfeld, über das die Mappe dazugehört („Gehört dazu über“, #1031). Seine Mappen sind dann Teile, z. B. Rechnungspositionen einer Rechnung – nur an der übergeordneten Mappe, ohne eigene Ansicht, nicht in Suche und „+ Neu“. Das Feld wird Pflicht; keine Ketten. Die Leserechte der übergeordneten übernimmt der Typ einmal beim Einschalten als Vorgabe, danach gelten Änderungen dort nicht mit. Im Paketformat gehoertZu.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Untertyp, Untermappentyp, Vererbung]
+    verwandt: [Teil, Übergeordnete Mappe, Tabelle, Mappentyp]
+    code: Mappentyp.teilVon, gehoertZu, shared/src/teile.ts
   - begriff: Woran man ihn erkennt
     bereich: werkbank
     beschreibung: Kurzer Satz in den Grunddaten eines Mappentyps (#937, höchstens 300 Zeichen), z. B. „Enthält Rechnungsnummer, Betrag und Zahlungsziel“. Hilft der Erkennung, ein Dokument dem richtigen Mappentyp zuzuordnen. Die Beschreibung ist für Menschen, dieser Satz für die Erkennung.

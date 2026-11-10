@@ -26,6 +26,8 @@ export const LOESCHWEGE = {
   einzeln: 'einzeln',
   mehrere: t('gemeinsam.loeschprotokoll.mehrere-ausgewaehlt'),
   verknuepft: t('gemeinsam.loeschprotokoll.mit-verknuepften-mappen'),
+  /** #1031: mit der übergeordneten Mappe gegangen bzw. die übergeordnete Mappe mit ihren Teilen. */
+  teile: t('gemeinsam.loeschprotokoll.mit-teilen'),
   dokument: t('gemeinsam.loeschprotokoll.dokument-einzeln'),
   ersetzt: t('gemeinsam.loeschprotokoll.dokument-ersetzt'),
   version: t('gemeinsam.loeschprotokoll.aeltere-version-entfernt'),

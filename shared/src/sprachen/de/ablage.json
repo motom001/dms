@@ -1263,5 +1263,15 @@
   "tabelle.leer": "Noch keine {name}",
   "tabelle.nach-dem-speichern": "{name} kannst du nach dem Speichern anlegen – mit „{neu}“ unter der Tabelle.",
   "tabelle.weitere": "{anzahl} weitere anzeigen (von {gesamt})",
-  "tabelle.angelegt": "„{titel}“ angelegt."
+  "tabelle.angelegt": "„{titel}“ angelegt.",
+  "teile.teil-von": "Teil von {mappe}",
+  "teile.teil-von-verborgen": "Teil einer anderen Mappe, die du nicht sehen kannst.",
+  "teile.kommen-mit_one": "Ihr {anzahl} Teil kommt mit. ",
+  "teile.kommen-mit_other": "Ihre {anzahl} Teile kommen mit. ",
+  "teile.werden-mitgeloescht_one": "Ihr {anzahl} Teil wird mitgelöscht. ",
+  "teile.werden-mitgeloescht_other": "Ihre {anzahl} Teile werden mitgelöscht. ",
+  "teile.neu-an-uebergeordneter": "Mappen vom Typ {name} legst du an ihrer übergeordneten Mappe an – öffne dazu eine Mappe vom Typ {eltern}.",
+  "teile.gefunden-in": "gefunden in {typ} „{titel}“",
+  "teile.keine-ansicht": "Mappen vom Typ {name} erscheinen nur an ihrer übergeordneten Mappe ({eltern}) – nicht in Ansichten und Listen.",
+  "teile.zu-den-uebergeordneten": "Zu {eltern}"
 }

@@ -183,6 +183,8 @@ export function speicherRepo(): Repo {
   const mitPaket = (t: Mappentyp): Mappentyp => {
     const p = t.schluessel ? teileKennung(t.schluessel).paket : null;
     if (p) t.paket = p; else delete t.paket;
+    // Ist Teil einer anderen Mappe (#1031): wie in PostgreSQL nur, wenn eingestellt.
+    if (!t.teilVon) delete t.teilVon;
     return t;
   };
   return {
@@ -413,17 +415,19 @@ export function speicherRepo(): Repo {
       const vv: Varianten = { ...(o.varianten ?? {}) };
       for (const [k, w] of Object.entries(o.aehnlich ?? {})) vv[k] = [...(vv[k] ?? []), ...w];
       const wertText = (v: unknown) => (typeof v === 'object' ? JSON.stringify(v) : String(v));
+      // Teile (#1031): übergeordnete Mappen, in deren Teilen der Begriff steht, zählen als Treffer.
+      const auch = new Set(o.auchIds ?? []);
       const alle = [...mappen.values()]
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
         .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId))
         .filter((m) => lesbar(o.lesen ?? null, m, zaehl))
-        .filter((m) => !q || enthaelt(m.titel ?? '', q, vv) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && enthaelt(wertText(v), q, vv))
+        .filter((m) => !q || auch.has(m.id) || enthaelt(m.titel ?? '', q, vv) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && enthaelt(wertText(v), q, vv))
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q, vv)))
           || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && enthaelt(n.text, q, vv))))
         // Erweiterte Suche (#199): Begriff in Dokumenten oder Notizen – UND mit allem anderen.
-        .filter((m) => !tf || (tf.dokumente && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), tf.text, vv)))
+        .filter((m) => !tf || auch.has(m.id) || (tf.dokumente && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), tf.text, vv)))
           || (tf.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && enthaelt(n.text, tf.text, vv))))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
       const seite = alle.slice(o.von, o.von + o.anzahl).map(kopie);

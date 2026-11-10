@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { Mappe } from '../../../shared/src/model';
+import type { Ausschnitt, Mappe } from '../../../shared/src/model';
+import { typName } from '../../../shared/src/beschriftung';
 import { gruppiereTreffer, suchWoerter } from '../../../shared/src/schnellsuche';
 import { api, type AehnlicheMappe, type Bezuege, type Unscharf } from '../api';
 import { UnscharfHinweis } from './Unscharf';
@@ -32,7 +33,7 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
   const d = useDaten();
   const [eingabe, setEingabe] = useState('');
   const [volltext, setVolltext] = useState(false);
-  const [stand, setStand] = useState<{ such: string; gesamt: number; mappen: Mappe[]; bezuege: Bezuege; aehnlich: AehnlicheMappe[]; unscharf: Unscharf | null } | null>(null);
+  const [stand, setStand] = useState<{ such: string; gesamt: number; mappen: Mappe[]; bezuege: Bezuege; aehnlich: AehnlicheMappe[]; unscharf: Unscharf | null; ausschnitte: Record<string, Ausschnitt> } | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const nr = useRef(0);
@@ -44,7 +45,7 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
     setLaeuft(true);
     const timer = setTimeout(() => {
       api.seite('suche', 0, MAX, such, null, volltext, false, '')
-        .then((s) => { if (meine === nr.current) { setStand({ such, gesamt: s.gesamt, mappen: s.mappen.filter((m) => !m.verborgen), bezuege: s.bezuege, aehnlich: s.aehnlich ?? [], unscharf: s.unscharf ?? null }); setFehler(undefined); } })
+        .then((s) => { if (meine === nr.current) { setStand({ such, gesamt: s.gesamt, mappen: s.mappen.filter((m) => !m.verborgen), bezuege: s.bezuege, aehnlich: s.aehnlich ?? [], unscharf: s.unscharf ?? null, ausschnitte: s.ausschnitte ?? {} }); setFehler(undefined); } })
         .catch((e) => { if (meine === nr.current) setFehler((e as Error).message); })
         .finally(() => { if (meine === nr.current) setLaeuft(false); });
     }, 200);
@@ -92,6 +93,8 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
                       <span className="titel"><Ehemalig id={suchtreffer.m.id}><Hervor text={titelOder(suchtreffer.m.titel)} woerter={woerter} /></Ehemalig></span>
                       {suchtreffer.grund && !suchtreffer.titelTreffer && <span className="unter">{suchtreffer.grund.feld}: <Hervor text={suchtreffer.grund.wert} woerter={woerter} /></span>}
                       {suchtreffer.grund && suchtreffer.titelTreffer && suchtreffer.grund.wert !== suchtreffer.m.titel && <span className="unter leise">{suchtreffer.grund.feld}: <Hervor text={suchtreffer.grund.wert} woerter={woerter} /></span>}
+                      {/* Teile (#1031): gefunden in einem Teil dieser Mappe, etwa einer Rechnungsposition. */}
+                      {!suchtreffer.grund && <TeilFund a={stand.ausschnitte[suchtreffer.m.id]} woerter={woerter} />}
                     </Link>
                   </li>
                 ))}
@@ -119,4 +122,12 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
       {such.length < 2 && sonst}
     </section>
   );
+}
+
+/** „gefunden in Rechnungsposition „3. Bohrmaschine““ (#1031) unter einem Treffer, den die Suche über einen Teil fand. */
+function TeilFund({ a, woerter }: { a?: Ausschnitt; woerter: string[] }) {
+  const d = useDaten();
+  if (!a?.teil) return null;
+  const typ = d.typ(a.teil.typId);
+  return <span className="unter leise"><Hervor text={t('ablage.teile.gefunden-in', { typ: typ ? typName(typ) : '…', titel: titelOder(a.teil.titel) })} woerter={woerter} /></span>;
 }

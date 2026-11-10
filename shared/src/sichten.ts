@@ -5,6 +5,7 @@
  * gespeicherte Abfrage. Sichten bilden einen Baum: Eine Elternsicht zeigt ihre eigenen
  * Treffer und die aller Kinder (ohne Doppelte). Server und Oberfläche teilen diese Datei.
  */
+import { istTeiltyp } from './teile';
 import type { SichtRechte, SichtRegelwerk } from './sichtrechte';
 import { gleicheZiele, jedeMappe, zielErlaubt, zieleVon } from './verweisziele';
 import { GEMISCHTE_SPALTEN, istLeer, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, type Feld, type Feldtyp, type Mappe, type Mappentyp, type Quelle } from './model';
@@ -420,11 +421,13 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
 /** Klauseln einer Sicht samt Nachkommen; jede Sicht mit eigenen Typen ergibt eine Klausel. */
 export function klauselnFuer(alle: Sicht[], id: string, typen: Map<string, Mappentyp>, a: Aufloesung, verborgen?: Set<string>): Klausel[] {
   // Verborgene Untersichten (#148): ihre Mappen fehlen auch in der Elternsicht.
+  // Teile (#1031) erscheinen in keiner Ansicht – nur an ihrer übergeordneten Mappe.
+  const sichtbar = (s: Sicht) => typenDerSicht(s, typen.keys()).map((t) => typen.get(t)).filter((t): t is Mappentyp => !!t && !istTeiltyp(t));
   return mitNachkommen(alle, id)
     .filter((s) => !verborgen?.has(s.id))
-    .filter((s) => typenDerSicht(s, typen.keys()).some((t) => typen.has(t)))
+    .filter((s) => sichtbar(s).length > 0)
     .map((s) => {
-      const eigene = typenDerSicht(s, typen.keys()).map((t) => typen.get(t)).filter((t): t is Mappentyp => !!t);
+      const eigene = sichtbar(s);
       return { typen: eigene.map((t) => t.id), filter: filterFuer(s, eigene, a) };
     });
 }

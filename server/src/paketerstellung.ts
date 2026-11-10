@@ -34,6 +34,7 @@ import { typBild, typUnterschiede, type TypUnterschiede } from '../../shared/src
 import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
 import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
+import { DMS_TEILE_AB } from '../../shared/src/teile';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
@@ -61,6 +62,7 @@ export const MINDEST_FUNKTIONEN = {
   feldarten: { ab: FELDARTEN_AB, grund: t('meldungen.paketerstellung.feldarten') },
   tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
   vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },
+  teile: { ab: DMS_TEILE_AB, grund: t('meldungen.paketerstellung.teile') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -416,6 +418,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
       // Dokument übernehmen (#937): nur, was eingestellt ist; ältere Ablago ignorieren es.
       ...(typeof mappentyp.ausPost === 'boolean' ? { ausPost: mappentyp.ausPost } : {}),
       ...ohneLeere({ erkennbarAn: mappentyp.erkennbarAn || undefined }),
+      // Ist Teil einer anderen Mappe (#1031): wie im Entwurf Rechnungen die Kennung des Verweisfelds.
+      ...(mappentyp.teilVon && felder.some((f) => f.key === mappentyp.teilVon) ? { gehoertZu: mappentyp.teilVon } : {}),
     };
   });
 
@@ -575,6 +579,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'zeitraum' || f.typ === 'prozent' || f.negativ === true))) genutzt.push('feldarten');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length))) genutzt.push('vorbelegen');
+  if (paketTypen.some((t) => 'gehoertZu' in t)) genutzt.push('teile');
   const mindest = mindestversion(genutzt);
   const optionen = dmsOptionen(mindest.version, d.dmsVersion);
   const unten = untergrenze(dms);

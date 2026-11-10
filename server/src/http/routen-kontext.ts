@@ -2,6 +2,7 @@
  * Hilfen der Routen, die Dienste brauchen (#960): einmal je Aufruf von routen() gebaut und jeder Routendatei
  * als Parameter übergeben. Aus routen() hierher verschoben, unverändert.
  */
+import { teiltypen } from '../../../shared/src/teile';
 import type { Readable } from 'node:stream';
 import { buffer as alsPuffer } from 'node:stream/consumers';
 import { pdfFuerAnzeige } from '../pdfanzeige';
@@ -223,7 +224,9 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     const ids = liste.map((x) => x.id);
     const lesbar = await dienst.lesbare(await zg(a), ids);
     const bezuege = await dienst.bezuegeVon(ids.filter((id) => lesbar.has(id)));
-    return liste.filter((x) => bezuege.has(x.id)).slice(0, anzahl).map((x) => ({ id: x.id, typId: bezuege.get(x.id)!.typId, titel: bezuege.get(x.id)!.titel, am: x.am }));
+    // Teile (#1031) nicht: Sie erscheinen nur an ihrer übergeordneten Mappe.
+    const teile = teiltypen((await zg(a)).typen.values());
+    return liste.filter((x) => bezuege.has(x.id) && !teile.has(bezuege.get(x.id)!.typId)).slice(0, anzahl).map((x) => ({ id: x.id, typId: bezuege.get(x.id)!.typId, titel: bezuege.get(x.id)!.titel, am: x.am }));
   };
   /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
   const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {

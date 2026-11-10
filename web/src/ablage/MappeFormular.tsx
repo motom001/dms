@@ -45,6 +45,7 @@ import { enthaeltId, ersteId } from '../../../shared/src/folgtaus';
 import { VerweisFenster } from './VerweisFenster';
 import { Tabellenfeld } from './Tabellenfeld';
 import { wertfelder } from '../../../shared/src/tabelle';
+import { istTeiltyp, uebergeordneteId } from '../../../shared/src/teile';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -213,6 +214,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
         {mappe.systemKennung && <p className="leise klein"><span className="chip">{t('ablage.mappeformular.systemrolle')}</span> {t('mappen.systemrolle.hinweis')}</p>}
         {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
       </div>
+      <TeilVon typ={typ} details={details} />
       {details.nurImVerwaltungsmodus && <NurImModus mappeId={mappe.id} />}
       {typ.system === 'post' && <PostLeiste typ={typ} details={details} neuLaden={neuLaden} />}
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} zuNotizen={() => setRegisterWunsch((w) => ({ key: NOTIZEN_REGISTER, n: (w?.n ?? 0) + 1 }))} />
@@ -299,6 +301,25 @@ let zaehler = 0;
 const folgendeAus = (typ: Mappentyp, key: string) => typ.felder.filter((x) => x.typ === 'referenz' && x.folgtAus?.feld === key).map((x) => x.key);
 
 /** „passt nicht zu „Organisation““ bzw. „passt nicht zur Auswahlregel dieses Felds“ (#887) – nie „Filter“. */
+/**
+ * Teil einer anderen Mappe (#1031, Hinweis Qualität E7): Wer einen Teil direkt öffnet, sieht oben deutlich „Teil von
+ * ‹Rechnung …›“ mit dem Weg zurück. Ist die übergeordnete Mappe nicht lesbar, steht nur, dass sie nicht sichtbar ist.
+ */
+function TeilVon({ typ, details }: { typ: Mappentyp; details: MappeDetails }) {
+  const d = useDaten();
+  const id = istTeiltyp(typ) ? uebergeordneteId(typ, details.mappe.werte) : null;
+  if (!id) return null;
+  const b = details.bezuege[id];
+  const eltern = b ? d.typ(b.typId) : undefined;
+  return (
+    <div className="hinweis info teil-von" data-anker="mappe.teil-von">
+      <p>{b && !b.verborgen
+        ? tn('ablage.teile.teil-von', { mappe: <Link to={`/ablage/${b.typId}/${id}`} className="verweis">{eltern ? `${typName(eltern)} „${titelOder(b.titel)}“` : titelOder(b.titel)}</Link> })
+        : t('ablage.teile.teil-von-verborgen')}</p>
+    </div>
+  );
+}
+
 export function unpassendText(felder: Feld[], keys: string[]): string {
   const namen = keys.map((k) => felder.find((f) => f.key === k)).filter((f): f is Feld => !!f).map((f) => `„${feldLabel(f)}“`);
   return namen.length ? t('felder.verweis.unpassend', { felder: new Intl.ListFormat(gebietsschema(), { type: 'conjunction' }).format(namen) }) : t('felder.verweis.unpassend.regel');
@@ -876,10 +897,13 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
     const korb = d.zaehler.papierkorbTage ?? 0;
+    // Teile (#1031) gehen mit – das steht vorher da.
+    const teile = details?.loeschbar?.teile ?? 0;
+    const mit = (x: string) => (teile ? `${t(korb ? 'ablage.teile.kommen-mit' : 'ablage.teile.werden-mitgeloescht', { anzahl: teile })}${x}` : x);
     // Grund fürs Löschprotokoll (#470).
     const anlass = await mitGrund(korb
-      ? { titel: t('ablage.mappeformular.mappe-in-den-papierkorb', { titelOder: titelOder(mappe.titel) }), text: t('ablage.mappeformular.dort-laesst-sie-sich', { anzahl: korb, wert: n ? t('ablage.mappeformular.ihre-dokumente-kommen-mit', { anzahl: n }) : '' }), ja: t('ablage.mappeformular.in-den-papierkorb'), gefahr: true }
-      : { titel: t('ablage.mappeformular.mappe-endgueltig-loeschen', { titelOder: titelOder(mappe.titel) }), text: t('ablage.mappeformular.das-laesst-sich-nicht', { wert: n ? t('ablage.mappeformular.ihre-dokumente-werden-mitgeloescht', { anzahl: n }) : '' }), ja: t('ablage.mappeformular.endgueltig-loeschen'), gefahr: true });
+      ? { titel: t('ablage.mappeformular.mappe-in-den-papierkorb', { titelOder: titelOder(mappe.titel) }), text: t('ablage.mappeformular.dort-laesst-sie-sich', { anzahl: korb, wert: mit(n ? t('ablage.mappeformular.ihre-dokumente-kommen-mit', { anzahl: n }) : '') }), ja: t('ablage.mappeformular.in-den-papierkorb'), gefahr: true }
+      : { titel: t('ablage.mappeformular.mappe-endgueltig-loeschen', { titelOder: titelOder(mappe.titel) }), text: t('ablage.mappeformular.das-laesst-sich-nicht', { wert: mit(n ? t('ablage.mappeformular.ihre-dokumente-werden-mitgeloescht', { anzahl: n }) : '') }), ja: t('ablage.mappeformular.endgueltig-loeschen'), gefahr: true });
     if (!anlass) return;
     try {
       await api.mappeLoeschen(mappe.id, anlass);

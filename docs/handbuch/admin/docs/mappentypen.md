@@ -25,6 +25,7 @@ Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: 
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
 - **Kann aus Post angelegt werden** – dann steht der Mappentyp zur Wahl, wenn jemand ein Dokument aus der Post übernimmt und gefragt wird: *Wohin gehört das?* Mehr unter [Dokument übernehmen](#dokument-ubernehmen).
 - **Woran man ihn erkennt** – ein kurzer Satz, höchstens 300 Zeichen. Mehr unter [Dokument übernehmen](#dokument-ubernehmen).
+- **Ist Teil einer anderen Mappe** – Mappen dieses Typs gehören immer zu einer anderen Mappe, z. B. Rechnungspositionen zu ihrer Rechnung, und erscheinen nur dort. Mehr unter [Ist Teil einer anderen Mappe](#ist-teil-einer-anderen-mappe).
 
 Beim **Anlegen** gibt es zusätzlich **Eigene Ansicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Mappentyp in der Ablage als eigene Ansicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Ansicht](sichten.md) erscheinen sollen.
 
@@ -40,6 +41,18 @@ Post landet zuerst unter *Post*. Von dort übernimmt man ein Dokument in eine Ma
 Die **Systemmappentypen** Benutzer, Rolle und Post sind nie wählbar; bei ihnen gibt es beide Angaben nicht. Die Pakete können beides vorgeben. Bei einem Update übernimmt Ablago die Angaben nur, wenn du sie noch nicht eingestellt hast.
 
 **Verwendet in** (bei gespeicherten Mappentypen) zeigt, wo der Mappentyp genutzt wird, jeweils mit Link: Ansichten, die ihn zeigen, Verweisfelder anderer Mappentypen, die auf ihn verweisen, und Verknüpfungsregister anderer Mappentypen, die seine Felder als Quelle nutzen. So siehst du vor einer Änderung, was davon betroffen ist. Steht dort „Nirgends verwendet“, hängt nichts an ihm.
+
+### Ist Teil einer anderen Mappe { #ist-teil-einer-anderen-mappe }
+
+Manche Mappen ergeben nur als Teil einer anderen Sinn – eine **Rechnungsposition** gehört zu ihrer **Rechnung**. Damit nicht hunderte Positionen in Ansichten und Suche stehen, hakst du in den Grunddaten der *Rechnungsposition* **Ist Teil einer anderen Mappe** an und wählst unter **Gehört dazu über** das Verweisfeld, über das sie dazugehört (hier *Rechnung*). Die Mappen dieses Typs heißen dann **Teile**, die andere die **übergeordnete Mappe**.
+
+- **Das Feld** ist ein Verweis auf genau einen anderen Mappentyp, in dem eine Mappe steht. Es wird **Pflicht** und bleibt immer zu sehen (nicht ausgeblendet, ohne *Anzeigen, wenn …*). Systemmappentypen gehören nie zu einer anderen Mappe. **Keine Ketten:** Der übergeordnete Typ ist selbst kein Teil, und ein Typ, der selbst Teile hat, wird keiner.
+- **Wo sie erscheinen:** nur an der übergeordneten Mappe – in einer [Tabelle](#tabelle) (etwa *Positionen* mit „+ Position“) oder einem [Verknüpfungsregister](#register) – und über einen direkten Link. Nicht in [Ansichten](sichten.md) (auch nicht in solchen mit „alle Mappentypen“), Trefferlisten über mehrere Typen, auf der Startseite unter *Zuletzt geöffnet*, in der Suche und der erweiterten Suche, nicht unter **+ Neu** und nicht bei *Wohin gehört das?*. Der Typ bekommt **keine eigene Ansicht**; schaltest du die Einstellung bei einem bestehenden Typ ein, verschwindet er aus den Ansichten (eine Ansicht, die nur ihn zeigte, mit ihm). Schaltest du sie wieder aus, bekommt er seine eigene Ansicht zurück.
+- **Suche:** Was in einem Teil steht, findet die übergeordnete Mappe – in der Trefferliste steht dann „gefunden in Rechnungsposition „3. Bohrmaschine““. Das gilt nur, wenn die Person **beide** lesen darf, den Teil und die übergeordnete Mappe; sonst gibt die Suche keinen Hinweis auf den Inhalt des Teils.
+- **Leserechte:** Hat der Typ noch keine eigenen [Berechtigungen](berechtigungen.md), übernimmt er beim Einschalten **einmal** die Leserechte des übergeordneten Typs (Grundeinstellung „Lesen“ und die Regeln zum Lesen; eine Regel, deren Feld es beim Teil nicht gibt, kommt nicht mit – der Editor sagt das). Danach sind es seine eigenen: Änderst du später die Berechtigungen der Rechnung, gilt das für die Positionen **nicht von selbst** – passe sie dann auch dort an, sonst sind Positionen breiter lesbar als ihre Rechnung.
+- **Löschen und Papierkorb:** Wird die übergeordnete Mappe gelöscht, gehen ihre Teile mit – als ein Vorgang im [Papierkorb](papierkorb.md), im Löschprotokoll mit dem Weg „mit ihren Teilen“; wiederhergestellt ebenso, und endgültig gelöscht ebenso. Darf die Person nicht jeden Teil lesen und löschen, lehnt Ablago ab und nennt nur die Anzahl – mit Systemrechten wird nie still mitgelöscht. Ein einzelner Teil lässt sich wie jede Mappe löschen; liegt seine übergeordnete Mappe im Papierkorb, kommt er nur mit ihr zurück.
+
+**Kein Schutz.** Ausblenden ist Ordnung, kein Zugriffsschutz: Über die [Schnittstelle](api.md), den [Export](export.md), die [Sicherung](sicherung.md) und direkte Links bleiben Teile erreichbar und gehen nicht verloren; ein direkter Link prüft die normalen Rechte. Wer was sehen darf, regeln die [Berechtigungen](berechtigungen.md). Pakete können die Einstellung mitbringen (`gehoertZu` im Paketformat, siehe Entwicklerhandbuch).
 
 ## Felder
 

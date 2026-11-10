@@ -178,6 +178,12 @@ export interface PaketTyp {
   ausPost?: boolean;
   /** „Woran man ihn erkennt“ (#937), Übersetzungen unter beschriftungen.<sprache>.erkennbarAn. */
   erkennbarAn?: string;
+  /**
+   * „Ist Teil einer anderen Mappe“ (#1031, Entwurf Rechnungen: `gehoertZu: rechnung`): Kennung des Verweisfelds dieses
+   * Typs, über das jede Mappe zu ihrer übergeordneten gehört – ein Verweis (ziel genau ein Typ, ohne zielOptional), eine
+   * Mappe, Pflicht. Ältere Ablago ignorieren es (die Teile stehen dort in den Ansichten).
+   */
+  gehoertZu?: string;
 }
 /**
  * Mappentyp, den das Paket nicht mitbringt (#656): Das Zielsystem ordnet ihn über seine Kennung zu, wenn es ihn dort gibt –
@@ -489,10 +495,13 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     return { schluessel: str(t.schluessel), name: str(t.name).trim(), beschreibung: str(t.beschreibung), titelVorlage: t.titelVorlage ? str(t.titelVorlage) : undefined, felder, register, trefferliste: Array.isArray(t.trefferliste) ? t.trefferliste.map(str) : undefined,
       ...(istObjekt(t.beschriftungen) ? { beschriftungen: t.beschriftungen as Beschriftungen<TypTeile> } : {}),
       ...(typeof t.ausPost === 'boolean' ? { ausPost: t.ausPost } : {}),
-      ...(typeof t.erkennbarAn === 'string' && t.erkennbarAn.trim() ? { erkennbarAn: t.erkennbarAn.trim() } : {}) };
+      ...(typeof t.erkennbarAn === 'string' && t.erkennbarAn.trim() ? { erkennbarAn: t.erkennbarAn.trim() } : {}),
+      ...(t.gehoertZu !== undefined && t.gehoertZu !== null ? { gehoertZu: str(t.gehoertZu) } : {}) };
   });
   // Beim Auswählen übernehmen (#1037): braucht alle Typen des Pakets.
   fehler.push(...vorbelegenFehler(typen, str(m.id)));
+  // Ist Teil einer anderen Mappe (#1031): gehoertZu nennt ein passendes Verweisfeld; keine Ketten im Paket.
+  for (const [i, x] of typen.entries()) fehler.push(...teilFehler(x, typen, `mappentypen[${i + 1}]`, str(m.id)));
   const sichten = liste('sichten').map((s, i): PaketSicht => {
     if (!SCHLUESSEL.test(str(s.schluessel))) fehler.push(t('meldungen.pakete.sichten-ungueltige-kennung', { wert: i + 1 }));
     if (!str(s.name).trim()) fehler.push(t('meldungen.pakete.sichten-name-fehlt', { wert: i + 1 }));
@@ -745,11 +754,16 @@ function vorbelegenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array
     return f.typ === 'referenz' && g && !g.vorbelegen?.length && paare.length ? [{ key: g.key, label: g.label, vorbelegen: paare }] : [];
   });
 }
-/** Angaben am Typ (#937), die das Paket vorgibt und die der Administrator noch nicht eingestellt hat. */
-function typAngabenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'ausPost' | 'erkennbarAn'>): { ausPost?: boolean; erkennbarAn?: string } {
+/**
+ * Angaben am Typ (#937), die das Paket vorgibt und die der Administrator noch nicht eingestellt hat. „Ist Teil einer
+ * anderen Mappe“ (#1031) genauso: Ein Update schaltet es ein, wenn das Feld da ist und der Typ eigenständig ist; aus
+ * schaltet es nur der Administrator.
+ */
+function typAngabenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'ausPost' | 'erkennbarAn' | 'teilVon' | 'felder'>): { ausPost?: boolean; erkennbarAn?: string; teilVon?: string } {
   return {
     ...(typeof t.ausPost === 'boolean' && (vorhanden.ausPost ?? null) === null ? { ausPost: t.ausPost } : {}),
     ...(t.erkennbarAn && !vorhanden.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
+    ...(t.gehoertZu && !vorhanden.teilVon && vorhanden.felder.some((f) => f.key === t.gehoertZu && f.typ === 'referenz') ? { teilVon: t.gehoertZu } : {}),
   };
 }
 
@@ -1027,6 +1041,29 @@ function vorbelegenFehler(typen: PaketTyp[], paketId: string): string[] {
       f.vorbelegen = paare;
     }
   }
+  return fehler;
+}
+
+/**
+ * „gehoertZu“ eines Paket-Typs (#1031): die Kennung eines eigenen Verweisfelds mit genau einem Zieltyp (ohne zielOptional),
+ * nicht mehrfach, Pflicht, ohne anzeigen. Zeigt es auf einen Typ dieses Pakets, darf der nicht selbst gehoertZu haben.
+ * Was darüber hinaus nicht passt (Typ einer Abhängigkeit ist selbst Teil, …), meldet die Prüfung des Mappentyps.
+ */
+function teilFehler(x: PaketTyp, typen: PaketTyp[], wo: string, paketId: string): string[] {
+  if (x.gehoertZu === undefined) return [];
+  const f = x.felder.find((g) => g.key === x.gehoertZu);
+  if (!SCHLUESSEL.test(x.gehoertZu) || !f) return [`${wo}: gehoertZu „${x.gehoertZu}“ nennt kein Feld dieses Typs – angegeben wird die Kennung des Verweisfelds, über das die Mappe dazugehört.`];
+  const ziele = paketZiele(f);
+  const fehler: string[] = [];
+  if (f.typ !== 'referenz' || ziele.length !== 1 || f.zielOptional?.length) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: Das Feld muss ein Verweis auf genau einen Mappentyp sein (typ: referenz, ziel ohne Liste und ohne zielOptional).`);
+  if (f.mehrfach) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: Das Feld darf nur auf eine Mappe zeigen (ohne mehrfach).`);
+  if (!f.pflicht) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: Das Feld muss Pflicht sein (pflicht: true) – ein Teil gehört immer zu einer Mappe.`);
+  if ((f as unknown as Record<string, unknown>).anzeigen) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: Das Feld ist immer zu sehen (ohne anzeigen).`);
+  const z = ziele[0] ?? '';
+  const eigen = !z.includes(':') || z.startsWith(`${paketId}:`);
+  const zielTyp = eigen ? typen.find((y) => y.schluessel === z.split(':').pop()) : undefined;
+  if (zielTyp === x) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: Ein Typ kann nicht Teil von Mappen seines eigenen Typs sein.`);
+  else if (zielTyp?.gehoertZu !== undefined) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: „${zielTyp.name}“ ist selbst Teil einer anderen Mappe – Ketten gibt es nicht.`);
   return fehler;
 }
 
@@ -2141,7 +2178,9 @@ export class Paketverwaltung {
         ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
       const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => ziel(q.typ, nurAngelegt) === null));
       const name = plan.typen.find((x) => x.schluessel === t.schluessel)!.name;
-      return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}), sichtAnlegen: false } };
+      return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
+        // Ist Teil einer anderen Mappe (#1031): erst, wenn das Feld dabei ist (sonst im zweiten Durchgang).
+        teilVon: t.gehoertZu && !offen.has(t.gehoertZu) ? t.gehoertZu : null, sichtAnlegen: false } };
     };
     // Zurückrollen: angelegte Mappen, Sichten, Typen; geänderte Typen auf den alten Stand.
     const mappen: string[] = [];
@@ -2220,7 +2259,7 @@ export class Paketverwaltung {
         });
         for (const r of neu.register) if (!register.some((g) => g.key === r.key)) { const { ausgeblendet: _a, ...ohne } = r as Register; register.push(ohne); }
         geaendert.push(aktuell);
-        try { await this.d.aendereTyp(aktuell.id, { ...aktuell, ...typAngabenNeu(paketTyp, aktuell), felder, register, beschriftungen: besch.typ.beschriftungen ?? null }, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: aktuell.name, meldungen: meldungen(f) })); }
+        try { await this.d.aendereTyp(aktuell.id, { ...aktuell, ...typAngabenNeu(paketTyp, { ...aktuell, felder: felder as unknown as Feld[] }), felder, register, beschriftungen: besch.typ.beschriftungen ?? null }, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: aktuell.name, meldungen: meldungen(f) })); }
       }
       // Übernahme (#883): Der frühere Ablageort gehört jetzt dem Paket und heißt wie dessen Typ (#1084: basis:ablageort).
       for (const [s, id] of Object.entries(ueb?.typen ?? {})) {

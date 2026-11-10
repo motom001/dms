@@ -8,6 +8,7 @@ import { ansichtSymbol } from '../../../shared/src/ansichtsymbole';
 import { ausgangAus, bereinigeBeschriftungen, type TypTeile } from '../../../shared/src/beschriftung';
 import type { Benutzer, Mappentyp } from '../../../shared/src/model';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
+import { istTeiltyp } from '../../../shared/src/teile';
 import { bereinigeBedingungen, kinderVon, klauselnFuer, type Sicht, type SichtDaten, waereKreis } from '../../../shared/src/sichten';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, type SichtRegelwerk, sichtTestlauf } from '../../../shared/src/sichtrechte';
 import { Fachfehler } from '../fehler';
@@ -194,6 +195,8 @@ export class SichtenVerwaltung {
    * obersten Ebene angehängt. Benutzer und Rolle stehen dabei immer am Ende.
    */
   async sichtFuerTyp(t: Mappentyp) {
+    // Teile (#1031) bekommen keine eigene Ansicht.
+    if (istTeiltyp(t)) return;
     const alle = await this.repo.listeSichten();
     if (alle.some((s) => s.id === t.id)) return;
     const SYSTEM_AB = 100_000;
@@ -202,6 +205,22 @@ export class SichtenVerwaltung {
       ? Math.max(SYSTEM_AB, ...oben) + 10
       : Math.max(0, ...oben.filter((p) => p < SYSTEM_AB)) + 10;
     await this.repo.legeSichtAn(t.id, { name: t.name, beschreibung: t.beschreibung, elternId: null, position, typen: [t.id], bedingungen: [] });
+  }
+
+  /**
+   * „Ist Teil einer anderen Mappe“ umgeschaltet (#1031): eingeschaltet verschwindet der Typ aus allen Ansichten (Ansichten,
+   * die nur ihn zeigten und keine Unteransichten haben, mit ihm – wie beim Löschen des Typs); ausgeschaltet bekommt er
+   * wieder seine eigene Ansicht.
+   */
+  async teilUmgeschaltet(alt: Mappentyp, typ: Mappentyp) {
+    if (istTeiltyp(alt) === istTeiltyp(typ)) return;
+    if (!istTeiltyp(typ)) { await this.sichtFuerTyp(typ); return; }
+    const alle = await this.repo.listeSichten();
+    for (const x of alle.filter((v) => v.typen.includes(typ.id))) {
+      const typen = x.typen.filter((id) => id !== typ.id);
+      if (!typen.length && !kinderVon(alle, x.id).length) await this.repo.loescheSicht(x.id);
+      else await this.repo.aendereSicht(x.id, { ...x, typen });
+    }
   }
 
   async belegung(typId: string) {

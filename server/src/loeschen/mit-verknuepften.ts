@@ -17,6 +17,7 @@ import { datumDe } from '../../../shared/src/fristen';
 import { liesLoeschAuswahl, LOESCH_TIEFE, loeschErinnerung, type LoeschKante, type LoeschPlan, type LoeschVorschau, loeschVorschlag, planeLoeschung } from '../../../shared/src/loeschbaum';
 import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/src/loeschprotokoll';
 import { darfLoeschen, type Mappe, type Mappentyp, verweiseVon, type Werte } from '../../../shared/src/model';
+import { istTeilVerweis } from '../../../shared/src/teile';
 import type { LoeschenAnschluss, LoeschenDienst, LoeschenTeile } from './loeschen.dienst';
 import type { Papierkorb } from './papierkorb';
 
@@ -132,7 +133,12 @@ export class MitVerknuepften {
     for (const id of plan.loeschen) {
       const m = mappen.get(id);
       if (!m) throw new Fachfehler(409, t('meldungen.dienst.eine-der-mappen-gibt'));
-      const rueck = (await this.repo.rueckverweise(id)).filter((r) => !weg.has(r.quelleId) && !gekappt.has(`${r.quelleId}|${r.feldKey}|${id}`));
+      const alleRueck = await this.repo.rueckverweise(id);
+      // Teile (#1031) gehen immer mit ihrer übergeordneten Mappe – abgewählt, nur entkoppelt oder ohne Recht (nicht im
+      // Baum) lehnt Ablago ab und nennt nur die Anzahl (Ergänzung Sicherheit).
+      const ohneTeile = new Set(alleRueck.filter((r) => r.quelleId !== id && !weg.has(r.quelleId) && istTeilVerweis(z.typen.get(r.quelleTypId), r.feldKey)).map((r) => r.quelleId));
+      if (ohneTeile.size) throw new Fachfehler(409, t('meldungen.teile.mit-verknuepften-fehlen', { anzahl: ohneTeile.size, titel: m.titel || t('meldungen.dienst.ohne-titel') }));
+      const rueck = alleRueck.filter((r) => !weg.has(r.quelleId) && !gekappt.has(`${r.quelleId}|${r.feldKey}|${id}`));
       const p = await this.loeschPruefung(m, z.typen.get(m.typId), rueck);
       if (!p.ok) throw new Fachfehler(p.status, t('meldungen.dienst.bitte-die-vorschau-neu', { wert: m.titel || t('meldungen.dienst.ohne-titel'), grund: p.grund }));
     }

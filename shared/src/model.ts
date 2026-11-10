@@ -18,6 +18,7 @@ import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, Z
 import { t, t as tx } from './texte';
 import { SCHLUESSEL, TYP_KENNUNG } from './kennungen';
 import { tabellenProbleme } from './tabelle';
+import { teilProbleme, type TeilKontext } from './teile';
 import { gebietsschema, registrierteSprachen, textNur } from './sprache';
 import { optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
 export { zeitzone } from './region';
@@ -298,6 +299,12 @@ export interface MappentypDaten {
   erkennbarAn?: string;
   /** Name, Beschreibung und „Woran man ihn erkennt“ in weiteren Sprachen (#728, #937). */
   beschriftungen?: Beschriftungen<TypTeile>;
+  /**
+   * „Ist Teil einer anderen Mappe“ (#1031): Kennung des Verweisfelds, über das jede Mappe dieses Typs zu ihrer
+   * übergeordneten Mappe gehört (z. B. Rechnungsposition → „rechnung“). Solche Mappen heißen Teile und erscheinen nur an
+   * der übergeordneten Mappe und über einen direkten Link (teile.ts). Fehlt bzw. null = eigenständig.
+   */
+  teilVon?: string | null;
 }
 
 /** Höchstlänge von „Woran man ihn erkennt“ (#937). */
@@ -306,8 +313,9 @@ export const ERKENNBAR_AN_MAX = 300;
  * „Kann aus Post angelegt werden“ (#937): eingestellt – sonst an, wenn der Typ ein Dokumentenregister hat.
  * Systemtypen (Benutzer, Rolle, Post) nie.
  */
-export function kannAusPost(t: Pick<MappentypDaten, 'ausPost' | 'register'> & { system?: Systemtyp | null }): boolean {
-  if (t.system) return false;
+export function kannAusPost(t: Pick<MappentypDaten, 'ausPost' | 'register'> & { system?: Systemtyp | null; teilVon?: string | null }): boolean {
+  // Teile (#1031) entstehen nur an ihrer übergeordneten Mappe.
+  if (t.system || t.teilVon) return false;
   return t.ausPost ?? t.register.some((r) => r.art === 'dokumente');
 }
 export interface Mappentyp extends MappentypDaten {
@@ -689,6 +697,14 @@ export interface TypKontext {
   felderVon?: (typId: string) => Feld[] | undefined;
   /** Felder und Trefferlisten eines anderen Typs (Tabelle, #1030); fehlt: aus `felderVon` ohne eigene Trefferlisten. */
   typVon?: (typId: string) => Pick<Mappentyp, 'felder' | 'trefferlisten' | 'trefferliste'> | undefined;
+  /** „Ist Teil einer anderen Mappe“ (#1031): andere Typen und eigene Systemart; fehlt: nur die Angaben am Typ selbst prüfen. */
+  teile?: Omit<TeilKontext, 'eigeneId'>;
+}
+
+/** Ist Teil einer anderen Mappe (#1031): ein Pflicht-Verweis auf genau einen anderen Typ, keine Ketten (teile.ts). */
+function pruefeTeil(d: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
+  const k: TeilKontext = { typVon: () => undefined, teiltypenAuf: () => [], ...ctx.teile, eigeneId: ctx.eigeneId };
+  for (const x of teilProbleme({ ...d, register: d.register ?? [] }, k)) melde(p, 'grunddaten', x);
 }
 
 /** Allgemeine Meldung mit Bereich des Editors (#144). */
@@ -754,6 +770,7 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
   const geheim = vorlageFelder(mappentypDaten.titelVorlage ?? '').filter((k) => mappentypDaten.felder.some((f) => f.key === k && f.typ === 'passwort'));
   if (geheim.length) melde(p, 'titel', t('gemeinsam.model.passwortfelder-duerfen-nicht-im', { map: geheim.map((k) => `{${k}}`).join(', ') }));
   pruefeTabellenOhneWert(mappentypDaten, p);
+  pruefeTeil(mappentypDaten, ctx, p);
   for (const x of pruefeTitelFilter({ felder: mappentypDaten.felder, titelVorlage: mappentypDaten.titelVorlage ?? '' })) melde(p, 'titel', x);
   if ((mappentypDaten.trefferliste ?? []).some((k) => mappentypDaten.felder.some((f) => f.key === k && f.typ === 'passwort'))) melde(p, 'trefferlisten', t('gemeinsam.model.passwortfelder-koennen-keine-spalte'));
   pruefeRegister(mappentypDaten, ctx, p);
@@ -1249,7 +1266,14 @@ export interface Historieneintrag {
 
 /* ---------- Texterkennung (#45) ---------- */
 /** Fundstelle im Volltext: Dokument und Textausschnitt; Treffer zwischen TREFFER_ANFANG und TREFFER_ENDE. */
-export interface Ausschnitt { dokument: string; text: string }
+export interface Ausschnitt {
+  dokument: string; text: string;
+  /**
+   * Teile (#1031): gefunden in einem Teil dieser Mappe („gefunden in Rechnungsposition …“) – nur, wenn die Person den Teil
+   * lesen darf. `dokument` und `text` sind dann die Fundstelle im Teil (leer, wenn der Begriff in seinen Feldern steht).
+   */
+  teil?: { id: string; typId: string; titel: string };
+}
 export const TREFFER_ANFANG = '\u0002';
 export const TREFFER_ENDE = '\u0003';
 export const OCR_STAENDE = {
