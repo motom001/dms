@@ -298,6 +298,7 @@ function faelle() {
 
     it('„Favoriten“ als normale Ansicht über alle Mappentypen, einmal mitgeliefert (#725)', async () => {
       const { d, typ, mappe } = await mitBeispielen();
+      await d.sichereSystem(); // wie beim Start (#963: die Systemausstattung legt sie an)
       const rahmen = await d.zaehlerRahmen();
       assert.ok(rahmen.favoritenSicht, 'beim Start angelegt');
       const fav = (await d.listeSichten()).find((x) => x.id === rahmen.favoritenSicht)!;
