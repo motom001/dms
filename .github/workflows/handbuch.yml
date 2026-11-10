@@ -81,10 +81,13 @@ jobs:
       - name: poppler und qpdf installieren
         run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
 
+      # Testbau (#967): mit der Musterseite der Bausteine unter /muster – ihre Bilder zeigt das Entwicklerhandbuch.
       - name: Ablago bauen
         run: |
           npm ci --no-audit --no-fund
           npm run build
+        env:
+          VITE_MUSTER: '1'
 
       # Ohne DATABASE_URL: Ablago startet im Einrichtungsmodus, das Screenshot-Skript geht den
       # Assistenten im Browser durch (#119) – inklusive Datenbank-Schritt und Start ohne Neustart.
@@ -292,6 +295,12 @@ jobs:
           for h in benutzer admin; do
             cp -r docs/handbuch/bilder "docs/handbuch/$h/docs/bilder"
           done
+          # Entwicklerhandbuch (#967): nur die Bilder der Musterseite („Gestaltung und Bausteine“).
+          mkdir -p docs/handbuch/entwickler/docs/bilder
+          cp docs/handbuch/bilder/muster-*.png docs/handbuch/entwickler/docs/bilder/
+          if ls docs/handbuch/bilder/en/muster-*.png >/dev/null 2>&1; then
+            mkdir -p docs/handbuch/entwickler/docs/bilder/en; cp docs/handbuch/bilder/en/muster-*.png docs/handbuch/entwickler/docs/bilder/en/
+          fi
           # Die Anleitung für den Raspberry Pi (#578) zeigt ein paar Bilder des Einrichtungsassistenten selbst.
           mkdir -p docs/handbuch/installieren/docs/bilder
           for b in einrichtung-code einrichtung-pakete anmelden werkbank-demo; do

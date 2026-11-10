@@ -78,6 +78,9 @@ nav:
   - Loslegen: loslegen.md
   - Beitrag einreichen: beitrag.md
   - Stil und Abhängigkeiten: stil.md
+  - Gestaltung und Bausteine:
+      - Überblick: bausteine.md
+      - Feld: bausteine-feld.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md

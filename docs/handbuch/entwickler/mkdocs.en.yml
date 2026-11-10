@@ -73,6 +73,9 @@ nav:
   - Getting started: loslegen.md
   - Submitting a contribution: beitrag.md
   - Style and dependencies: stil.md
+  - Design and building blocks:
+      - Overview: bausteine.md
+      - Field: bausteine-feld.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

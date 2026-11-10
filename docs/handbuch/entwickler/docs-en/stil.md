@@ -84,6 +84,8 @@ A new token always gets a light **and** a dark value (or deliberately the same o
 
 **Check:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) looks in `web/src/**/*.css` except `tokens.css` for hex values, `rgb()`/`hsl()` and the like, and named colours such as `white`; in `*.ts(x)` for colour values in strings. CI runs it in the job **stil**; every finding is an error. Exceptions need a reason on the same line – `/* farbe-erlaubt: printing is always black on white */` – or, for whole files, an entry with a reason in `AUSNAHMEN` in the script (today: `design.ts` with the values for high contrast, the sample documents of the stamp preview).
 
+**Building blocks:** How fields, buttons and other parts of the interface look and behave is defined by the building blocks in `web/src/bausteine/` – pages put them together instead of writing spacing, colours or `aria` attributes themselves. More under [Design and building blocks](bausteine.md).
+
 ## Dependencies between the parts { #abhaengigkeiten-pruefen }
 
 `.dependency-cruiser.cjs` defines who may import whom (`npm run lint:abh`):
