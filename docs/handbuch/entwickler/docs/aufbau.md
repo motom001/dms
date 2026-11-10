@@ -118,7 +118,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `zugriff/index.ts` (dazu `maskiert` und `NICHT_SICHTBAR` für Titel nicht lesbarer Mappen).
 - **Bekommt den Kern** und einen `ZugriffAnschluss` vom Dienst: `kiSperre` (KI-Einstellung der Pakete) und `konten`.
 - **Schicht 1:** importiert nur sich selbst, den Kern, `shared/`, die Basis und `messung.ts`. Fachordner darüber bekommen den `ZugriffDienst` beim Zusammenbau (wie die Suche) und importieren ihn über `zugriff/index.ts`. Der Kern bindet ihn nicht ein; `kern.zugriff(ich)` ruft, was der Dienst hereinreicht.
-- **Noch im Dienst:** die Werkbank der Berechtigungen (künftig `berechtigungen/`) und `regulaerSichtbarFuer`. `paketSiehtNicht` liegt seit #1073 bei den [Mappentypen](#mappentypen) (`pakete-am-typ.ts`).
+- **Noch im Dienst:** `regulaerSichtbarFuer` (gehört zu den Aufgaben). Die Werkbank der Berechtigungen liegt seit #1076 in den [Berechtigungen](#berechtigungen). `paketSiehtNicht` liegt seit #1073 bei den [Mappentypen](#mappentypen) (`pakete-am-typ.ts`).
 
 ## Mappentypen (#1073) { #mappentypen }
 
@@ -135,7 +135,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 - **Tür:** `mappentypen/index.ts`; die Routen (`mappentypen.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, `TypPakete` und `Systemtypen` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Stempel, Erkennung und Berechtigungen am Typ, Aufgaben, Titel, Aufträge, Systemmappen schreiben).
-- **Noch im Dienst:** Stempel am Typ (`mitStempel`), `berechtigungenAusEingabe` und `ausPostZiele` (#937). `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
+- **Noch im Dienst:** Stempel am Typ (`mitStempel`) und `ausPostZiele` (#937). `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
 
 ## Mappen (#1074) { #mappen }
 
@@ -171,7 +171,43 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `dokumente/index.ts`; die Routen (`dokumente.routen.ts`) holt nur `routen.ts` direkt. Die Technik der Fassungen (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) bleibt außerhalb und ist für Fachordner ein Werkzeug (siehe [Schichten](#schichten)).
 - **Bekommt den Kern** und die Teile dieses Ordners, die eine Klasse ruft, und je Klasse einen Anschluss für das, was noch im Dienst liegt oder im Kreis liefe (Ereignis und Titel über die Fassade, Archivmodus, Verkleinern, Volltext, Aufträge an Pakete, Paket-Einstellungen, Mappentypen, Texterkennung).
 - **Reihenfolge:** `ladeHoch` schreibt Historie, „zuletzt geändert“, Dokument, Volltext und `dokument.hochgeladen` in einer Transaktion, Vorschau, Umwandeln und Entsperren laufen danach; `nachFassung`, `nachEntsperren`, `archivNachVolltext` und `nachNeuerVersion` sind unverändert und werden an denselben Stellen gerufen.
-- **Noch im Dienst:** Volltext (`volltextFertig`, `volltextAusgelassen`), PDF bearbeiten, Verkleinern und Schwärzen, `entsperrtZu`.
+- **Noch im Dienst:** PDF bearbeiten, Verkleinern und Schwärzen, `entsperrtZu`. Den Volltext (`volltextFertig`, `volltextAn`) rufen die Dokumente seit #1076 über ihren Anschluss am Dienst im [Volltext](#volltext).
+
+## Sichten (#1076) { #sichten }
+
+`server/src/sichten/` (Schicht 3) bündelt die Ansichten der Ablage – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`baueSichtenUndVolltext()`) und behält für jede Methode eine einzeilige Weiterleitung:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `sichten.dienst.ts` | `SichtenDienst` (`dienst.sichten`) | `seite`, `trefferIds`, `zaehler`, `zaehlerRahmen`, `zaehlerAbruf` (#625), `ablageStand` (#919), `beiAenderung`, `aktualisiereStatistik`; die Zwischenspeicher der Zahlen, `sortierungAus` |
+| `verwalten.ts` | `SichtenVerwaltung` (`dienst.sichtenVerwaltung`) | `listeSichten`, `verborgeneSichten` (#148), `sichtTestlauf`, anlegen, ändern (#917), löschen, ordnen, verschieben, `sichtVorschau`, `sichtFuerTyp`, `belegung` |
+| `systemsichten.ts` | `Systemsichten` (`dienst.systemsichten`) | „Neue Post“, „Eingegangen“, „Versendet“ (#192), „Favoriten“ (#725) anlegen und nachschlagen |
+
+- **Tür:** `sichten/index.ts`; die Routen (`sichten.routen.ts`) holt nur `routen.ts` direkt.
+- **Bekommt den Kern**, `SichtenDienst` dazu die [Rechteprüfung](#zugriff), die [Mappen](#mappen) und die [Suche](#suche), und einen Anschluss für das, was noch im Dienst liegt (Gültigkeit der Zahlen – `mindestensMs` bleibt am Dienst –, Aufgaben ohne Empfänger und ohne Leserecht, Termine, Konten).
+- **Zahlen:** Die Zwischenspeicher hängen an denselben Ständen wie bisher (Mappenstand bzw. Haushaltsstand, #742, #918); die Zwischenspeicher der Termine bleiben bei den Aufgaben im Dienst.
+- **Sofortiges:** Die Empfänger `sichten.umbenennen` und `sichten.eigeneSicht` an den [Anschlusspunkten](#anschlusspunkte) meldet weiter der Dienst an, Reihenfolge unverändert.
+
+## Berechtigungen (#1076) { #berechtigungen }
+
+`server/src/berechtigungen/berechtigungen.dienst.ts` mit der Klasse `BerechtigungenDienst` (`dienst.berechtigungen`) ist die Werkbank der Berechtigungen (#123–#127): `berechtigungenListe`, `niemandLesbar`, `setzeBerechtigungen` (mit `pruefeBerechtigungen` und `protokolliereBerechtigungen`), `berechtigungenAusEingabe` (#142), `kopiereRegel`, `testlauf` (#125, #710, #798) und `laufwerkMappe` (#346). Was jemand darf, rechnet weiter die [Rechteprüfung](#zugriff).
+
+- **Tür:** `berechtigungen/index.ts`; eigene Routen gibt es nicht.
+- **Bekommt den Kern**, die Rechteprüfung und einen Anschluss mit den Konten.
+- **Schicht 2:** braucht nur Kern und Rechteprüfung; die [Mappentypen](#mappentypen) (auch Schicht 2) prüfen damit die Regeln beim Speichern eines Typs – heute noch über ihren Anschluss am Dienst.
+
+## Volltext (#1076) { #volltext }
+
+`server/src/volltext/` (Schicht 3, über den [Dokumenten](#dokumente)):
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `volltext.dienst.ts` | `VolltextDienst` (`dienst.volltexte`) | `beiVolltextFertig`, `volltextFertig`, `volltextAusgelassen` (#946), `volltextAn`, nachholen und neu erzeugen (#458), Texterkennung als Paket (#459), `nachEreignisAufruf`, `nachTexterkennungsEreignis`, `volltext`, `schreibeVolltext`, `setzeDokumentSprache`, `teilenHinweisAus`; `VOLLTEXT_MAX`, `VolltextMeldung`, `EreignisAufruf` |
+| `aus-paketen.ts` | `VolltextAusPaketen` (`dienst.volltextAusPaketen`) | Volltext aus Paketen (#614): `volltextPaketDa`, `paketWegFuerDateien`, `pruefeVolltextRecht`, `nachVolltextEreignis` |
+
+- **Tür:** `volltext/index.ts`. Wer für einen Dateityp zuständig ist, rechnet weiter `paketvolltext.ts` (Werkzeug, auch für die Dokumente).
+- **Bekommt den Kern** und die Dokumente (Texterkennung, Umwandeln, Archivfassung), dazu einen Anschluss für Ereignis (Fassade), Aufträge, `paketVolltext` und die Sicherung außer Haus.
+- **Reihenfolge:** `volltextFertig` legt erst `volltext.fertig` in den Ausgangskorb, meldet dann die Archivfassung und ruft nur mit Text die Hörer (Erkennung) nacheinander; `nachTexterkennungsEreignis` verteilt wie bisher an Umwandeln, Archivfassung, Volltext aus Paketen und Sicherung.
 
 ### Schichten { #schichten }
 
@@ -181,8 +217,8 @@ Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutze
 |---|---|
 | 0 | `kern/` – nur sich selbst, `shared/` und die Basis |
 | 1 | `zugriff/` |
-| 2 | `mappentypen/`, `mappen/`, `dokumente/` |
-| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `post/`, `aufgaben/` …) |
+| 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/` |
+| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `volltext/`, `post/`, `aufgaben/` …) |
 
 Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
 

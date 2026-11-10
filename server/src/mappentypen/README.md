@@ -36,7 +36,7 @@ Passung der Mappen und Pakete am Typ. Schicht 2 der Zielaufteilung – über Ker
 - Keine Fachlogik anderer Bereiche hier: Braucht ein Mappentyp etwas von dort, kommt es über den Anschluss.
 - `kern.repo` bei jedem Aufruf neu holen (Getter `repo`) – in einer Transaktion sieht es deren Änderungen.
 - Noch im Dienst: Stempel am Typ (`mitStempel`, künftig `pdf/`/`ausgang/`), Berechtigungen am Typ
-  (`berechtigungenAusEingabe`, künftig `berechtigungen/`) und `ausPostZiele` (#937). Titel und Archivkreis liegen seit
+  (`berechtigungenAusEingabe`, seit #1076 in `berechtigungen/`, über den Anschluss) und `ausPostZiele` (#937). Titel und Archivkreis liegen seit
   #1074 in `mappen/` und kommen weiter über den Anschluss.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: drei `complexity` und ein
   `no-unused-vars` in `eingabe.ts`, ein `no-unused-vars` in `mappentypen.dienst.ts`, ein `max-lines-per-function` in

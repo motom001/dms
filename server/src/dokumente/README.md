@@ -37,8 +37,9 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
   das Ereignis `dokument.hochgeladen` in einer Transaktion; Vorschau, Umwandeln und Entsperren laufen danach
   (`kern.danach`). Ereignisse gehen über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`).
 - `kern.repo` bei jedem Aufruf neu holen (Getter `repo`) – in einer Transaktion sieht es deren Änderungen.
-- Noch im Dienst: Volltext (`volltextFertig`, `volltextAusgelassen`, künftig `volltext/`), PDF bearbeiten,
-  Verkleinern und Schwärzen (künftig `pdf/`), `entsperrtZu` (Stempel und Verkleinern).
+- Noch im Dienst: PDF bearbeiten, Verkleinern und Schwärzen (künftig `pdf/`), `entsperrtZu` (Stempel und
+  Verkleinern). Den Volltext (`volltextFertig`, `volltextAn`, seit #1076 in `volltext/`) rufen die Klassen über ihren
+  Anschluss am Dienst.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: je ein `complexity` in
   `dokumente.dienst.ts` und `umwandeln.ts`, ein `max-lines-per-function` in `dokumente.dienst.ts`, ein `max-params`
   und ein `no-unused-vars` in `versionen.ts`).
