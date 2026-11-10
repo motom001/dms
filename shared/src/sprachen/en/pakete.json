@@ -246,6 +246,7 @@
   "ablauf.automatisierungen": "Ready-made automations",
   "ablauf.automatisierungen.text": "These packages contain ready-made automations. Should they be switched on right away? What you untick stays off – you can switch it on later under Workbench → Build the library → Automations.",
   "ablauf.automatisierungen.paket": "from “{name}”",
+  "ablauf.automatisierungen.zeitplan": "runs the package {zeitplan}",
   "ablauf.summe.automatisierungen_one": "{anzahl} automation switched on",
   "ablauf.summe.automatisierungen_other": "{anzahl} automations switched on",
   "ablauf.einstellungen": "Settings",

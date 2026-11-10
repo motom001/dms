@@ -484,6 +484,12 @@ Unter **„Reagiert auf diese Ereignisse:“** nennt die Vorschau, wann der Code
 
 **Typisch:** Zu einer Kündigungsfrist etwas vorbereiten, eine Erinnerung an einen anderen Dienst schicken.
 
+#### Nach Zeitplan ausgeführt { #ereignis-zeitplan-ausgefuehrt }
+
+**Wann:** Wenn eine Automatisierung mit der Karte [Paket nach Zeitplan ausführen](automatisierungen.md#paket-nach-zeitplan) läuft – nur an das Paket, das die Karte nennt, je Automatisierung und Tag **genau einmal**. Das Paket erfährt Datum, geplanten Zeitpunkt und die Aufgabe (z. B. `taeglich`), keine Inhalte der Ablage. Uhrzeit, Tage und an/aus bestimmst du an der Automatisierung; das Paket bekommt dadurch **keine zusätzlichen Rechte**.
+
+**Typisch:** Jeden Morgen den Status aller Verträge oder Rechnungen neu rechnen, der sich nur durch das Datum ändert.
+
 ### Ähnlichkeit { #aehnlichkeit }
 
 Ein Paket mit dem Recht [Vektoren zu Dokumenten](#recht-vektoren) – etwa **KI lokal – Ähnlichkeit** – rechnet zu jedem Dokument mit Volltext einen Vektor. Damit zeigt Ablago:

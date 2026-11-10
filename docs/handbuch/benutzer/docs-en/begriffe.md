@@ -363,6 +363,10 @@ See also: [System role](#systemrolle).
 <a id="regel"></a>**Rule** (*Regel*) · ~ with explanation · administrators  
 An if-then building block of the permissions – a condition, then grant or withdraw a permission, optionally with stop.
 
+<a id="paket-nach-zeitplan-ausfuhren"></a>**Run package on schedule** (*Paket nach Zeitplan ausführen*) · ~ with explanation · administrators  
+Then card of an automation with the trigger "Schedule" – it tells a package that its time has been reached (e.g. "Check contracts daily" at 5 a.m.) so that it recalculates something that depends only on the date. The package works with its own rights; an automation supplied with a package only calls its own package.  
+See also: [Package](#paket), [Calculated field](#berechnetes-feld), [Switched on straight away](#gleich-eingeschaltet).
+
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
 The workbench area under Post and incoming for text recognition, archive version, automatic shrinking, typos and synonyms. Combines the former areas "Text recognition" and "Search".
 
@@ -375,6 +379,10 @@ Lock after failed attempts, blocked IP addresses, requirements for two-factor si
 
 <a id="anmeldung-uber-einen-anbieter"></a>**Sign-in via a provider** (*Anmeldung über einen Anbieter*) · ~ with explanation · everyone  
 Signing in with someone else's account, e.g. Microsoft 365 (OpenID Connect).
+
+<a id="gleich-eingeschaltet"></a>**Switched on straight away** (*Gleich eingeschaltet*) · ~ with explanation · administrators  
+An automation supplied with a package that the package offers ticked when installing. The administrator can untick it; an update never changes on or off afterwards.  
+See also: [Package](#paket), [Run package on schedule](#paket-nach-zeitplan-ausfuhren).
 
 <a id="systemrolle"></a>**System role** (*Systemrolle*) · ~ with explanation · administrators  
 Whether a user is an administrator or a member. Only administrators get into the workbench.  

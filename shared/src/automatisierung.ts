@@ -18,6 +18,7 @@ import type { Feld, Mappentyp } from './model';
 import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
 import { bedingungsProblem, bereinigeBedingungen, verschiebe, type Bedingung, type Sicht } from './sichten';
 import { t } from './texte';
+import { PAKET_ID, SCHLUESSEL } from './kennungen';
 
 /** Grenzen (Zahl der Automatisierungen, Karten je Bereich, Länge der Texte, Laufzeit, Bremse). */
 export const AUTOMATISIERUNG_GRENZEN = {
@@ -110,9 +111,16 @@ export type DannKarte =
   /** Favoriten-Änderungen melden: gebündelte Benachrichtigung „Geändert“ an alle, die die Mappe als Favorit haben (#678, #422). */
   | { id: string; art: 'favoriten' }
   /** Anmeldeschutz (#678, #368): `sammel` = Sammelmeldung über die Sperren vor heute, `konto` = sofort melden, dass ein Konto gesperrt ist. */
-  | { id: string; art: 'anmeldeschutz'; was: 'sammel' | 'konto' };
+  | { id: string; art: 'anmeldeschutz'; was: 'sammel' | 'konto' }
+  /**
+   * „Paket nach Zeitplan ausführen“ (#1082): stellt dem Paket `paket` das Ereignis `zeitplan.ausgefuehrt` zu – nur mit der
+   * Wenn-Karte „Zeitplan“ (nicht „für jeden Benutzer“). `aufgabe`: Kennung, damit ein Paket mehrere Läufe unterscheidet.
+   * Mitgelieferte Automatisierungen rufen nur ihr eigenes Paket, selbst angelegte nur Pakete, die das Ereignis abonnieren.
+   * Die Karte gibt dem Paket keine Rechte – es arbeitet mit seinen eigenen.
+   */
+  | { id: string; art: 'paket'; paket: string; aufgabe?: string | null };
 export type DannArt = DannKarte['art'];
-export const DANN_ARTEN: DannArt[] = ['feld', 'aufgabe', 'zusammenfassung', 'favoriten', 'anmeldeschutz', 'stopp'];
+export const DANN_ARTEN: DannArt[] = ['feld', 'aufgabe', 'zusammenfassung', 'favoriten', 'anmeldeschutz', 'paket', 'stopp'];
 
 export type Herkunft = 'eigen' | 'dms' | 'paket';
 
@@ -177,12 +185,35 @@ export interface AutomatisierungAnsicht extends Automatisierung {
   ausloeser: string;
   /** Das Konto „Automatisierung“ darf den Mappentyp der Wenn-Karte nicht lesen (#709): Hinweis, kein Fehler. */
   rechte?: { typId: string; typ: string; kontoId: string | null; text: string };
+  /** Karten, die gerade ins Leere laufen (#1082: „Paket … ist nicht installiert“) – Hinweis, kein Fehler. */
+  leer?: string[];
 }
 
 /* ---------- Kontext ---------- */
 
+/**
+ * Ein installiertes Paket für die Karte „Paket nach Zeitplan ausführen“ (#1082): `zeitplan` = abonniert
+ * `zeitplan.ausgefuehrt`; `aufgaben` = Kennungen, die seine mitgelieferten Automatisierungen benutzen.
+ */
+export interface KontextPaket { id: string; name: string; zeitplan: boolean; aufgaben: string[] }
+
 /** Was eine Prüfung über das DMS wissen muss. */
-export interface Kontextdaten { typen: Mappentyp[]; sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[]; benutzer: Array<{ id: string; name: string; aktiv?: boolean }>; rollen: Array<{ id: string; name: string }> }
+export interface Kontextdaten { typen: Mappentyp[]; sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[]; benutzer: Array<{ id: string; name: string; aktiv?: boolean }>; rollen: Array<{ id: string; name: string }>;
+  /** Installierte Pakete (#1082); fehlt bei älteren Aufrufern. */
+  pakete?: KontextPaket[] }
+
+/** Passt die Wenn-Karte zur Karte „Paket nach Zeitplan ausführen“ (#1082)? Nur „Zeitplan“, nicht „für jeden Benutzer“. */
+export const zeitplanFuerPaket = (w: WennKarte) => w.art === 'zeitplan' && !w.jeBenutzer;
+
+/**
+ * Warum die Karte „Paket nach Zeitplan ausführen“ gerade ins Leere läuft (#1082) – Paket entfernt oder ohne das Ereignis;
+ * null, wenn sie das Paket erreicht. Kein Problem der Automatisierung: Sie bleibt an und meldet es nur.
+ */
+export function paketKarteLeer(paket: string, pakete: KontextPaket[] | undefined): string | null {
+  const p = pakete?.find((x) => x.id === paket);
+  if (!p) return t('gemeinsam.automatisierung.paket-nicht-installiert', { paket });
+  return p.zeitplan ? null : t('gemeinsam.automatisierung.paket-ohne-zeitplan', { name: p.name });
+}
 
 /** Mappentyp der Wenn-Karte (null = jeder Typ bzw. Benutzer bei Benutzer-Ereignissen). */
 export function kontextTyp(w: WennKarte, typen: Mappentyp[]): Mappentyp | null {
@@ -286,6 +317,13 @@ function bereinigeUnd(e: unknown, tiefe = 0): UndKarte | null {
   return null;
 }
 
+/** „Paket nach Zeitplan ausführen“ (#1082): Paket-Id und Aufgabe nur mit gültiger Kennung, sonst leer. */
+function bereinigePaketKarte(x: Record<string, unknown>, i: number): DannKarte {
+  const kid = id(x.id) || `k${i + 1}`;
+  const paket = id(x.paket), aufgabe = id(x.aufgabe);
+  return { id: kid, art: 'paket', paket: PAKET_ID.test(paket) ? paket : '', aufgabe: SCHLUESSEL.test(aufgabe) ? aufgabe : null };
+}
+
 function bereinigeDann(e: unknown, i: number): DannKarte | null {
   const x = (e ?? {}) as Record<string, unknown>;
   const kid = id(x.id) || `k${i + 1}`;
@@ -304,7 +342,8 @@ function bereinigeDann(e: unknown, i: number): DannKarte | null {
   return null;
 }
 
-const dannListe = (e: unknown) => (Array.isArray(e) ? e : []).slice(0, AUTOMATISIERUNG_GRENZEN.karten).map(bereinigeDann).filter((k): k is DannKarte => !!k)
+const istPaketKarte = (e: unknown): e is Record<string, unknown> => !!e && typeof e === 'object' && (e as Record<string, unknown>).art === 'paket';
+const dannListe = (e: unknown) => (Array.isArray(e) ? e : []).slice(0, AUTOMATISIERUNG_GRENZEN.karten).map((k, i) => (istPaketKarte(k) ? bereinigePaketKarte(k, i) : bereinigeDann(k, i))).filter((k): k is DannKarte => !!k)
   // Eindeutige Ids je Karte (Verlauf, Live-Fortschritt).
   .map((k, i, alle) => (alle.findIndex((x) => x.id === k.id) === i ? k : { ...k, id: `${k.id}-${i + 1}` }));
 
@@ -382,6 +421,9 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
     if (d.art === 'favoriten' && w.art !== 'favorit.geaendert') p.push(t('gemeinsam.automatisierung.favoriten-aenderungen-melden-braucht'));
     if (d.art === 'anmeldeschutz' && d.was === 'sammel' && !(w.art === 'zeitplan' && !w.jeBenutzer)) p.push(t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-braucht'));
     if (d.art === 'anmeldeschutz' && d.was === 'konto' && w.art !== 'benutzer.gesperrt') p.push(t('gemeinsam.automatisierung.kontosperre-melden-braucht-die'));
+    // #1082: Ein entferntes Paket ist kein Problem (die Karte läuft ins Leere, s. paketKarteLeer) – nur Wenn-Karte und Wahl.
+    if (d.art === 'paket' && !zeitplanFuerPaket(w)) p.push(t('gemeinsam.automatisierung.paket-braucht-zeitplan'));
+    if (d.art === 'paket' && !d.paket) p.push(t('gemeinsam.automatisierung.paket-waehlen'));
     if (d.art === 'aufgabe') {
       if (!d.text) p.push(t('gemeinsam.automatisierung.aufgabe-bitte-beschreiben-was'));
       if (!d.empfaenger.length) p.push(t('gemeinsam.automatisierung.aufgabe-bitte-mindestens-einen'));
@@ -400,7 +442,7 @@ const NAMEN: Record<string, string> = {
 };
 
 /** „Wenn Vertrag gespeichert → Aufgabe an Verantwortlich“. */
-export function kurzform(a: AutomatisierungDaten, k: Pick<Kontextdaten, 'typen' | 'benutzer' | 'rollen'>, ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x): string {
+export function kurzform(a: AutomatisierungDaten, k: Pick<Kontextdaten, 'typen' | 'benutzer' | 'rollen' | 'pakete'>, ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x): string {
   const typ = kontextTyp(a.wenn, k.typen);
   const w = a.wenn;
   const wenn = w.art === 'datum'
@@ -411,6 +453,7 @@ export function kurzform(a: AutomatisierungDaten, k: Pick<Kontextdaten, 'typen' 
   const dann = a.dann.map((d) => d.art === 'stopp' ? t('gemeinsam.automatisierung.danach-keine-weiteren')
     : d.art === 'zusammenfassung' ? t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden-2') : d.art === 'favoriten' ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden')
     : d.art === 'anmeldeschutz' ? (d.was === 'sammel' ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden') : t('gemeinsam.automatisierung.kontosperre-an-administratoren'))
+    : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${d.aufgabe})` : '' })
     : d.art === 'feld' ? `${Object.keys(d.werte).map((x) => feldIn(typ, x)?.label ?? x).join(', ')} setzen`
       : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`).join(', ');
   return t('gemeinsam.automatisierung.wenn', { wenn, wert: a.und.karten.length ? ` und ${t('gemeinsam.automatisierung.bedingungen', { anzahl: a.und.karten.length })}` : '', wert2: dann || '…' });

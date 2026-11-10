@@ -246,6 +246,7 @@
   "ablauf.automatisierungen": "Vorgefertigte Automatisierungen",
   "ablauf.automatisierungen.text": "In diesen Paketen stecken vorgefertigte Automatisierungen. Sollen sie gleich eingeschaltet werden? Was du abwählst, bleibt aus – du kannst es später unter Werkbank → Ablage aufbauen → Automatisierungen einschalten.",
   "ablauf.automatisierungen.paket": "aus „{name}“",
+  "ablauf.automatisierungen.zeitplan": "führt das Paket {zeitplan} aus",
   "ablauf.summe.automatisierungen_one": "{anzahl} Automatisierung eingeschaltet",
   "ablauf.summe.automatisierungen_other": "{anzahl} Automatisierungen eingeschaltet",
   "ablauf.einstellungen": "Einstellungen",

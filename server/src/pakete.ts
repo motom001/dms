@@ -23,6 +23,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
+import { bereinigeAutomatisierung, zeitplanText } from '../../shared/src/automatisierung';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
@@ -541,6 +542,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     }
   }
   // Mitgelieferte Automatisierungen (#712): Schlüssel, Name, genau eine Wenn-Karte; Typen als eigener Schlüssel oder paket:typ.
+  const zeitplanKarten: string[] = [];
   const automatisierungen = liste('automatisierungen').map((a, i): PaketAutomatisierung => {
     const wo = `automatisierungen[${i + 1}]`;
     if (!SCHLUESSEL.test(str(a.schluessel))) fehler.push(`${wo}: ungültiger Schlüssel „${str(a.schluessel)}“.`);
@@ -552,7 +554,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     const empf = (Array.isArray(a.dann) ? a.dann : []).filter(istObjekt).flatMap((k) => (Array.isArray(k.empfaenger) ? k.empfaenger : [])).filter(istObjekt);
     if (istObjekt(a.wenn) && a.wenn.rolle) fehler.push(`${wo}: wenn.rolle – feste Rollen gibt es in Paketen nicht; „für jeden Benutzer“ gilt für alle aktiven Benutzer.`);
     if (empf.some((e) => e.art === 'person' || e.art === 'rolle')) fehler.push(`${wo}: feste Personen und Rollen gibt es in Paketen nicht – Empfänger aus einem Feld oder der Ersteller der Mappe.`);
-    return { schluessel: str(a.schluessel), name: str(a.name).trim(), beschreibung: str(a.beschreibung ?? ''), wenn: istObjekt(a.wenn) ? a.wenn : {}, und: istObjekt(a.und) ? a.und : undefined, dann: Array.isArray(a.dann) ? a.dann : [] };
+    if (pruefeZeitplanKarten(a, wo, str(m.id), fehler)) zeitplanKarten.push(wo);
+    return { schluessel: str(a.schluessel), name: str(a.name).trim(), beschreibung: str(a.beschreibung ?? ''), wenn: istObjekt(a.wenn) ? a.wenn : {}, und: istObjekt(a.und) ? a.und : undefined, dann: Array.isArray(a.dann) ? a.dann : [],
+      ...eingeschaltetVon(a) };
   });
   for (const k of new Set(automatisierungen.map((a) => a.schluessel).filter((x, j, l) => l.indexOf(x) !== j))) fehler.push(t('meldungen.pakete.automatisierungen-schluessel-doppelt', { k }));
   // Wortlisten (#356): Gruppen gleichbedeutender Wörter für die Suche, z. B. - woerter: [Kfz, Auto, PKW].
@@ -588,6 +592,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   // Code (#338): Manifest-Angaben, gebautes Modul und Daten.
   const cl = liesCode(m.code, [...dateien].map(([name, inhalt]) => ({ name, groesse: inhalt.length })));
   fehler.push(...cl.fehler.map((f) => (f.startsWith('code/:') ? f.slice('code/: '.length) : `manifest.yaml: ${f}`)));
+  // „Paket nach Zeitplan ausführen“ (#1082): Das Paket muss das Ereignis abonnieren, sonst liefe die Karte ins Leere.
+  if (zeitplanKarten.length && !cl.code?.ereignisse.includes('zeitplan.ausgefuehrt')) fehler.push(t('meldungen.pakete.automatisierung-paket-ereignis', { wo: [...new Set(zeitplanKarten)].join(', ') }));
   // Mappen-Ereignisse (#670): Schlüssel ohne Präfix sind eigene Mappentypen; fremde (paket:typ, dms:post) und „*“ seit #686.
   for (const k of cl.code?.mappentypen ?? []) if (k !== '*' && !k.includes(':') && !typen.some((t) => t.schluessel === k)) fehler.push(t('meldungen.pakete.manifest-yaml-code-mappentypen', { k }));
   // Berechnete Felder (#1034): Den Wert schreibt der Code – er muss den eigenen Mappentyp schreiben dürfen.
@@ -650,11 +656,56 @@ function liesBeispielDokumente(roh: unknown, nr: number, dateien: Map<string, Bu
   });
 }
 
+/**
+ * Mitgelieferte Automatisierung (#1082): `eingeschaltet` ist true oder false; die Karte „Paket nach Zeitplan ausführen“
+ * ruft nur das Paket selbst (Sicherheit), mit gültiger Aufgabe und nur mit der Wenn-Karte „Zeitplan“ (nicht je Benutzer).
+ * true, wenn die Automatisierung diese Karte hat (dann braucht das Paket das Ereignis).
+ */
+const eingeschaltetVon = (a: Record<string, unknown>) => (typeof a.eingeschaltet === 'boolean' ? { eingeschaltet: a.eingeschaltet } : {});
+
+function pruefeZeitplanKarten(a: Record<string, unknown>, wo: string, paketId: string, fehler: string[]): boolean {
+  if (a.eingeschaltet !== undefined && typeof a.eingeschaltet !== 'boolean') fehler.push(t('meldungen.pakete.automatisierung-eingeschaltet', { wo }));
+  const karten = (Array.isArray(a.dann) ? a.dann : []).filter(istObjekt).filter((x) => x.art === 'paket');
+  for (const k of karten) {
+    if (k.paket !== undefined && k.paket !== paketId) fehler.push(t('meldungen.pakete.automatisierung-paket-fremd', { wo, paket: str(k.paket) }));
+    if (k.aufgabe !== undefined && k.aufgabe !== null && !SCHLUESSEL.test(str(k.aufgabe))) fehler.push(t('meldungen.pakete.automatisierung-paket-aufgabe', { wo, aufgabe: str(k.aufgabe) }));
+  }
+  const zeitplan = istObjekt(a.wenn) && a.wenn.art === 'zeitplan' && a.wenn.jeBenutzer !== true;
+  if (karten.length && !zeitplan) fehler.push(t('meldungen.pakete.automatisierung-paket-zeitplan', { wo }));
+  return karten.length > 0;
+}
+
 /** Liste von Schlüsseln aus einer Eingabe (#712: anzuschaltende Automatisierungen); alles andere → leer. */
 const schluesselListe = (x: unknown): string[] => (Array.isArray(x) ? x.filter((y): y is string => typeof y === 'string').slice(0, 200) : []);
 
 /** Eine mitgelieferte Automatisierung im Paket (#712) – Wenn/Und/Dann wie im Editor, Typen als Paket-Schlüssel. */
-export interface PaketAutomatisierung { schluessel: string; name: string; beschreibung: string; wenn: Record<string, unknown>; und?: Record<string, unknown>; dann: unknown[] }
+export interface PaketAutomatisierung { schluessel: string; name: string; beschreibung: string; wenn: Record<string, unknown>; und?: Record<string, unknown>; dann: unknown[];
+  /** Gleich eingeschaltet (#1082): beim Installieren mit gesetztem Haken angeboten; fehlt = nicht angegeben. */
+  eingeschaltet?: boolean }
+
+/**
+ * Welche mitgelieferten Automatisierungen beim Installieren eingeschaltet werden (#712, #1082): die angehakten, wenn die
+ * Eingabe eine Liste nennt (auch leer = alle aus); ohne Angabe die mit `eingeschaltet: true`. Gilt nur für neue – ein
+ * Update ändert an/aus einer vorhandenen nie (Automatisierungen.ausPaket).
+ */
+export function einzuschalten(eingabe: unknown, paket: Pick<Paket, 'automatisierungen'>): string[] {
+  return Array.isArray(eingabe) ? schluesselListe(eingabe) : paket.automatisierungen.filter((a) => a.eingeschaltet === true).map((a) => a.schluessel);
+}
+
+/**
+ * Mitgelieferte Zeitpläne eines Pakets für die Rechte-Vorschau (#1082): „Verträge täglich prüfen (täglich um 05:00)“ –
+ * je Automatisierung mit der Karte „Paket nach Zeitplan ausführen“.
+ */
+export function paketZeitplaene(paket: Pick<Paket, 'automatisierungen'>): string[] {
+  return paket.automatisierungen.flatMap((a) => { const z = paketZeitplan(a); return z ? [`${a.name} (${z})`] : []; });
+}
+
+/** Wann eine mitgelieferte Automatisierung das Paket ausführt (#1082), z. B. „täglich um 05:00“; null ohne die Karte. */
+export function paketZeitplan(a: PaketAutomatisierung): string | null {
+  if (!a.dann.some((k) => istObjekt(k) && k.art === 'paket')) return null;
+  const w = bereinigeAutomatisierung({ name: a.name, wenn: a.wenn, dann: [] }).wenn;
+  return w.art === 'zeitplan' ? zeitplanText(w) : null;
+}
 
 /* ---------- Plan: was angelegt bzw. ergänzt wird ---------- */
 
@@ -822,8 +873,11 @@ export interface Vorschau {
   fehlercodes: string[];
   /** Hinweise, die nicht verhindern (z. B. Code läuft noch nicht). */
   hinweise: string[];
-  /** Mitgelieferte Automatisierungen (#712); neu = kommt mit dieser Installation bzw. diesem Update dazu (nur die stehen zur Wahl). */
-  automatisierungen: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean }>;
+  /**
+   * Mitgelieferte Automatisierungen (#712); neu = kommt mit dieser Installation bzw. diesem Update dazu (nur die stehen zur
+   * Wahl). eingeschaltet (#1082): wie im Paket angegeben – true = mit gesetztem Haken anbieten; fehlt = nicht angegeben.
+   */
+  automatisierungen: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
   /** Einstellungen des Pakets (#197): bei einem Update neue und wegfallende Felder. */
   einstellungen: { neu: string[]; weg: string[] } | null;
   /** Code (#338): Rechte, Netzwerkzugriff, Ereignisse (#449) – muss bestätigt werden (bei einem Update nur, wenn sie sich ändern). */
@@ -837,7 +891,10 @@ interface LegeAuftrag { paket: Paket; herkunft: InstalliertesPaket['herkunft']; 
 export interface PlanQuelle { herkunft: InstalliertesPaket['herkunft']; pruefung: HerkunftPruefung }
 export interface InstallierenEingabe {
   id?: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean;
-  /** Schlüssel mitgelieferter Automatisierungen, die gleich eingeschaltet werden (#712); ohne: alle bleiben aus. */
+  /**
+   * Schlüssel mitgelieferter Automatisierungen, die gleich eingeschaltet werden (#712); ohne: die mit `eingeschaltet: true`
+   * (#1082), alle anderen bleiben aus.
+   */
   automatisierungen?: string[];
   /** Katalogadresse (#189); ohne: der offizielle Katalog. */
   quelle?: string;
@@ -1801,10 +1858,11 @@ export class Paketverwaltung {
       herkunft: ich?.herkunft ?? null,
       pruefung: null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), probleme, fehlercodes, hinweise,
-      automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel) })),
+      automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
-      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) }))), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
+      // Mitgelieferte Zeitpläne (#1082): „Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“.
+      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) })), paketZeitplaene(paket)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
   }
@@ -1878,7 +1936,7 @@ export class Paketverwaltung {
     }
     const konflikte = [...vorschau.typen, ...vorschau.sichten].filter((x) => x.konflikt);
     if (konflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: konflikte.map((x) => `${x.konflikt} Vorschlag: „${x.vorschlag}“.`), konflikte: true });
-    const datensatz = await this.lege(paket, herkunft, v, vorschau, e.beispiele === true && !alt, von, alt, schluesselListe(e.automatisierungen));
+    const datensatz = await this.lege(paket, herkunft, v, vorschau, e.beispiele === true && !alt, von, alt, einzuschalten(e.automatisierungen, paket));
     if (hoch) await this.vergissUpload(String(e.upload));
     log.info(alt ? 'Paket aktualisiert (hochgeladen)' : 'Paket installiert', { von: von.email, paket: id, version: paket.manifest.version, ...(alt ? { vorher: alt.version } : {}), herkunft: hoch ? 'hochgeladen' : quelle, pruefung: geladen.pruefung.art + (geladen.pruefung.stand ? ` (Katalog vom ${geladen.pruefung.stand})` : ''), typen: Object.keys(datensatz.typen).length, sichten: Object.keys(datensatz.sichten).length });
     return datensatz;
@@ -2308,7 +2366,7 @@ export class Paketverwaltung {
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
     Paketverwaltung.rechteBestaetigen(plan, e);
     Paketverwaltung.herausgeberBestaetigen(plan, e);
-    const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, schluesselListe(e.automatisierungen));
+    const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, einzuschalten(e.automatisierungen, paket));
     log.info('Paket aktualisiert', { von: von.email, paket: id, ...(plan.umzug ? { neueId: neu.id } : {}), vorher: alt.version, version: neu.version, pruefung: pruefung.art, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
     return neu;
   }
@@ -2537,7 +2595,7 @@ export class Paketverwaltung {
         if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
         const k = [...vorschau.typen, ...vorschau.sichten].filter((y) => y.konflikt);
         if (k.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: k.map((y) => `${y.konflikt} Vorschlag: „${y.vorschlag}“.`), konflikte: true });
-        const ds = await this.lege(x.paket, x.herkunft, x.v, vorschau, beispiele.has(p.id) && !alt, von, alt, schluesselListe(ein[p.id]));
+        const ds = await this.lege(x.paket, x.herkunft, x.v, vorschau, beispiele.has(p.id) && !alt, von, alt, einzuschalten(ein[p.id], x.paket));
         if (x.upload) await this.vergissUpload(x.upload);
         log.info(alt ? 'Paket aktualisiert (Ablauf)' : 'Paket installiert (Ablauf)', { von: von.email, paket: p.id, version: ds.version, ...(alt ? { vorher: alt.version } : {}), herkunft: x.herkunft.art === 'katalog' ? x.herkunft.url : 'hochgeladen', pruefung: x.pruefung.art, gebrauchtVon: p.fuer.join(', ') || '–' });
         let einst: AblaufErgebnis['installiert'][number]['einstellungen'] = p.einstellungen.length ? (spaeter.has(p.id) ? 'spaeter' : 'fertig') : 'keine';

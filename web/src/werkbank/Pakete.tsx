@@ -1,7 +1,7 @@
 import { HakenFeld, Knopf } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
-import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, vorausgewaehlt, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
@@ -700,9 +700,10 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   herkunftBestaetigt?: boolean;
   los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[] }): Promise<void>;
 }) {
-  // Mitgelieferte Automatisierungen (#712): Vorgabe ja, abgewählte bleiben aus.
+  // Mitgelieferte Automatisierungen (#712): abgewählte bleiben aus. Vorausgewählt (#1082): die mit eingeschaltet: true –
+  // nennt das Paket das nirgends, wie bisher alle.
   const neueAutos = (v.automatisierungen ?? []).filter((a) => a.neu);
-  const [ohneAuto, setOhneAuto] = useState<string[]>([]);
+  const [ohneAuto, setOhneAuto] = useState<string[]>(() => { const an = vorausgewaehlt(v.automatisierungen ?? []); return neueAutos.filter((a) => !an.includes(a.schluessel)).map((a) => a.schluessel); });
   const [namen, setNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.typen.filter((eintrag) => !eintrag.vorhanden).map((eintrag) => [eintrag.schluessel, eintrag.vorschlag ?? eintrag.name])));
   const [sichtNamen, setSichtNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.sichten.filter((s) => !s.vorhanden && !s.ausgelassen).map((s) => [s.schluessel, s.vorschlag ?? s.name])));
   const [beispiele, setBeispiele] = useState(false);
@@ -804,7 +805,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           <p className="leise klein">{tx('pakete.ablauf.automatisierungen.text')}</p>
           {neueAutos.map((a) => (
             <label key={a.schluessel} className="haken"><input type="checkbox" checked={!ohneAuto.includes(a.schluessel)} onChange={(e) => setOhneAuto(e.target.checked ? ohneAuto.filter((x) => x !== a.schluessel) : [...ohneAuto, a.schluessel])} />
-              <span>{a.name}{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
+              <span>{a.name}{a.zeitplan && <> <small className="leise">{tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}</small></>}{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
           ))}
         </fieldset>
       )}

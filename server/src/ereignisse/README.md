@@ -5,7 +5,7 @@ Ereignis des Katalogs an die Pakete, die es abonniert haben, Aufträge an genau 
 Vektoren und die Hilfen, mit denen Automatisierungen prüfen. Den Ausgangskorb selbst (`ereignis`) hat der Kern.
 
 - `ereignisse.dienst.ts` – `EreignisseDienst`: `neueAufgabe`, `meldeVerknuepft` (#670), `ereignisAnPakete`
-  (#686 nur mit Leserecht des Paket-Benutzers, #796 KI-Sperre), `auftrag` (#577, #614, #631), `vektorNachlauf` (#442).
+  (#686 nur mit Leserecht des Paket-Benutzers, #796 KI-Sperre), `auftrag` (#577, #614, #631; #1082 `zeitplan.ausgefuehrt` mit fester Id), `vektorNachlauf` (#442).
 - `automatisierung.ts` – `Automatisierungshilfen` (#674, #712): `automatisierungKontext`, `mitgliederDerRolle`,
   `trifftTeile`, `lesbareTitel`, `datumVon`, `mappenMitDatum`.
 - `index.ts` – die einzige Tür.

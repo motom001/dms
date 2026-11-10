@@ -75,7 +75,9 @@ describe('KI-Dienste (#796): Was ist ein KI-Paket?', () => {
     assert.equal(istKiPaket(code({ rechte: {}, ereignisse: ['post.angelegt'], netz: ['https://api.example.org'] })), true, 'Post-Ereignis');
     assert.equal(istKiPaket(code({ rechte: {}, ereignisse: ['post.angelegt'], netz: [] })), false, 'ohne Netz nie');
     assert.ok(INHALT_EREIGNISSE.includes('volltext.fertig') && !INHALT_EREIGNISSE.includes('sicherung.fertig'));
-    assert.deepEqual(Object.keys(EREIGNISSE).filter((e) => !INHALT_EREIGNISSE.includes(e as never)).sort(), ['paket.einstellungen_geaendert', 'sicherung.fertig'], 'neue Ereignisarten zählen als Inhalt');
+    assert.deepEqual(Object.keys(EREIGNISSE).filter((e) => !INHALT_EREIGNISSE.includes(e as never)).sort(), ['paket.einstellungen_geaendert', 'sicherung.fertig', 'zeitplan.ausgefuehrt'], 'neue Ereignisarten zählen als Inhalt');
+    // #1082: zeitplan.ausgefuehrt trägt nur Id der Automatisierung, Aufgabe, Datum und Zeitpunkt – bewusst ohne Inhalt.
+    assert.equal(istKiPaket(code({ rechte: {}, ereignisse: ['zeitplan.ausgefuehrt'], netz: ['https://api.example.org'] })), false, 'Zeitplan');
   });
 
   it('Rechte-Vorschau nennt die Regel mit Handbuch-Stelle – nur bei KI-Paketen', () => {

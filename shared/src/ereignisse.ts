@@ -71,6 +71,9 @@ export const EREIGNISKATALOG = {
   'datei.volltext': { gruppe: 'auftrag', felder: ['dokument', 'mappe', 'mime', 'groesse', 'sha256'], paket: true },
   // #946: zeitzone (IANA, Werkbank → Region) für Datumsangaben in der Archivfassung.
   'datei.archivfassung': { gruppe: 'auftrag', felder: ['dokument', 'mappe', 'mime', 'groesse', 'sha256', 'zeitzone'], paket: true },
+  // #1082: Dann-Karte „Paket nach Zeitplan ausführen“ – nur an das Paket der Karte, nie an andere. automatisierung (Id),
+  // aufgabe (Kennung oder null), zeitpunkt (geplant, ISO) und datum (Tag in der Zeitzone der Ablage).
+  'zeitplan.ausgefuehrt': { gruppe: 'auftrag', felder: ['automatisierung', 'aufgabe', 'zeitpunkt', 'datum'], paket: true },
   // Zahlen eines Benutzers (Webhooks, #627)
   'zaehler.geaendert': { gruppe: 'zaehler', felder: ['zahlen', 'stand'], webhook: true },
 } as const satisfies Record<string, Katalogeintrag>;

@@ -448,6 +448,8 @@ export const EREIGNISSE = {
   'mappe.geloescht': t('gemeinsam.pakete.eine-mappe-ist-geloescht'),
   'mappe.wiederhergestellt': t('gemeinsam.pakete.eine-mappe-ist-aus'),
   'frist.erreicht': t('gemeinsam.pakete.eine-frist-ist-erreicht'),
+  // #1082: nur über eine Automatisierung mit der Karte „Paket nach Zeitplan ausführen“, die genau dieses Paket nennt.
+  'zeitplan.ausgefuehrt': t('gemeinsam.pakete.zeitplan-ausgefuehrt'),
 } as const satisfies Record<PaketKatalogArt | keyof typeof VERALTETE_EREIGNISSE, string>;
 /** Ereignisse zu Mappen (#670): brauchen code.mappentypen, gelten nur für diese Typen (seit #686 auch fremde). */
 export const MAPPEN_EREIGNISSE: readonly EreignisArt[] = ['mappe.angelegt', 'mappe.geaendert', 'mappe.geloescht', 'mappe.wiederhergestellt', 'frist.erreicht'];
@@ -525,7 +527,7 @@ export const hatNetz = (c: PaketCode | undefined) => !!c && (c.netz.length > 0 |
  * Ereignisart gilt damit erst einmal als „mit Inhalt“ (Mappen-, Dokument-, Post-Ereignisse tragen Ids, Typen,
  * Dateinamen oder „Für“).
  */
-export const EREIGNISSE_OHNE_INHALT: readonly EreignisArt[] = ['sicherung.fertig', 'paket.einstellungen_geaendert'];
+export const EREIGNISSE_OHNE_INHALT: readonly EreignisArt[] = ['sicherung.fertig', 'paket.einstellungen_geaendert', 'zeitplan.ausgefuehrt'];
 /** Ereignisse, mit denen ein Paket etwas aus der Ablage erfährt (#796): alle außer {@link EREIGNISSE_OHNE_INHALT}. */
 export const INHALT_EREIGNISSE: readonly EreignisArt[] = (Object.keys(EREIGNISSE) as EreignisArt[]).filter((e) => !EREIGNISSE_OHNE_INHALT.includes(e));
 export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = ['dms:antworten', 'dms:erkennen', 'dms:klassifizieren', 'dms:uebersetzen', 'dms:vektoren', 'dms:texterkennung', 'dms:volltext', 'dms:umwandeln', 'dms:archivfassung'];
@@ -821,7 +823,18 @@ export const EREIGNIS_HILFE: Record<EreignisArt, Hilfeort> = {
   'mappe.geloescht': 'pakete.ereignis.mappe',
   'mappe.wiederhergestellt': 'pakete.ereignis.mappe',
   'frist.erreicht': 'pakete.ereignis.frist_erreicht',
+  'zeitplan.ausgefuehrt': 'pakete.ereignis.zeitplan_ausgefuehrt',
 };
+
+/**
+ * Welche mitgelieferten Automatisierungen beim Installieren angehakt sind (#712, #1082): Nennt das Paket `eingeschaltet`
+ * an mindestens einer, genau die mit `eingeschaltet: true`; nennt es das nirgends (Pakete von vor #1082), wie bisher alle.
+ * Der Admin kann jede abwählen.
+ */
+export function vorausgewaehlt(autos: ReadonlyArray<{ schluessel: string; eingeschaltet?: boolean }>): string[] {
+  const angegeben = autos.some((a) => a.eingeschaltet !== undefined);
+  return autos.filter((a) => (angegeben ? a.eingeschaltet === true : true)).map((a) => a.schluessel);
+}
 
 /** Ein Punkt der Rechte-Liste in der Vorschau (#449): Text, Handbuch-Stelle, ggf. Unterliste (Ereignisse). */
 export interface RechtePunkt { text: string; hilfe: Hilfeort; unter?: Array<{ text: string; hilfe: Hilfeort }> }
@@ -837,7 +850,7 @@ export interface BerechneteFelder { typ: string; felder: string[] }
  * Unterliste. `berechnet` (#1034): Felder, die das Paket berechnet – sie und Hinweise (`dms:hinweise`) stehen als eigene
  * Punkte da, dazu der Satz, dass alle sie sehen, die die Mappe lesen (Ergänzung Sicherheit).
  */
-export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string, berechnet: BerechneteFelder[] = []): RechtePunkt[] {
+export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string, berechnet: BerechneteFelder[] = [], zeitplaene: string[] = []): RechtePunkt[] {
   const eintrag = (l: string[]) => l.map((v) => (v === ALLE_TYPEN ? t('gemeinsam.pakete.alle-mappentypen') : typName(v))).join(', ');
   const z: RechtePunkt[] = [];
   if (c.rechte.lesen.length) z.push({ text: t('gemeinsam.pakete.mappen-lesen', { lesen: eintrag(c.rechte.lesen) }), hilfe: 'pakete.recht.lesen' });
@@ -859,7 +872,15 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string,
   // #686: „*“ heißt hier „alle, die das Paket lesen darf“ – am Mappentyp lässt sich einzelnen Paketen der Zugriff verwehren.
   const zuTypen = c.mappentypen?.length ? ` – zu: ${c.mappentypen.map((v) => (v === ALLE_TYPEN ? t('gemeinsam.pakete.allen-mappentypen-die-das') : typName(v))).join(', ')}` : '';
   if (c.ereignisse.length) z.push({ text: t('gemeinsam.pakete.reagiert-auf-diese-ereignisse'), hilfe: 'pakete.ereignisse', unter: c.ereignisse.map((e) => ({ text: `${EREIGNISSE[e]}${MAPPEN_EREIGNISSE.includes(e) ? zuTypen : ''}`, hilfe: EREIGNIS_HILFE[e] })) });
+  // Mitgelieferte Zeitpläne (#1082): „Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“ – ohne zusätzliche
+  // Rechte; das Paket arbeitet mit den Rechten oben.
+  z.push(...zeitplanPunkte(zeitplaene));
   return z;
+}
+
+/** „Läuft nach Zeitplan: …“ (#1082) – leer ohne mitgelieferte Zeitpläne. */
+function zeitplanPunkte(zeitplaene: string[]): RechtePunkt[] {
+  return zeitplaene.length ? [{ text: t('gemeinsam.pakete.zeitplan-laeuft', { liste: zeitplaene.join('; ') }), hilfe: 'pakete.zeitplan' }] : [];
 }
 
 /** Rechte-Punkte als einfache Zeilen (z. B. in der Fehlermeldung, wenn die Bestätigung fehlt). */

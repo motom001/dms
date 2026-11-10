@@ -112,6 +112,9 @@ export const HILFE = {
   'pakete.ereignis.sicherung_fertig': admin('pakete/', 'dem Ereignis „Sicherung fertig“', 'ereignis-sicherung-fertig'),
   'pakete.ereignis.mappe': admin('pakete/', 'den Ereignissen zu Mappen', 'ereignis-mappe'),
   'pakete.ereignis.frist_erreicht': admin('pakete/', 'dem Ereignis „Frist erreicht“', 'ereignis-frist-erreicht'),
+  'pakete.ereignis.zeitplan_ausgefuehrt': admin('pakete/', 'dem Ereignis „Nach Zeitplan ausgeführt“', 'ereignis-zeitplan-ausgefuehrt'),
+  // #1082: Dann-Karte „Paket nach Zeitplan ausführen“ und mitgelieferte Zeitpläne in der Rechte-Vorschau.
+  'pakete.zeitplan': admin('automatisierungen/', '„Paket nach Zeitplan ausführen“', 'paket-nach-zeitplan'),
   'mappentyp.archiv': admin('archiv/', 'Archivmodus und Aufbewahrung'),
   'werkbank.stempel': admin('stempel/', 'Stempel-Vorlagen'),
   'werkbank.automatisierungen': admin('automatisierungen/', 'Automatisierungen'),

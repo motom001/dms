@@ -1144,7 +1144,8 @@ export interface PaketVorschau {
   /** Beispiel-Dokumente zu den Beispielen (#878). */
   beispielDokumente?: { anzahl: number; bytes: number };
   /** Mitgelieferte Automatisierungen (#712); neu = steht beim Installieren zur Wahl. */
-  automatisierungen?: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean }>;
+  /** eingeschaltet (#1082): wie im Paket angegeben; fehlt = nicht angegeben (siehe vorausgewaehlt in shared/src/pakete.ts). */
+  automatisierungen?: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */
   laeufer?: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
   /** Sprachpaket (#731): Sprache, Abdeckung gegen diese Version, übergangene Texte, Pakete mit Beschriftungen. */

@@ -482,6 +482,12 @@ Under **"Reacts to these events:"** the preview names when the code runs by itse
 
 **Typical:** preparing something for a notice period, sending a reminder to another service.
 
+#### Run on schedule { #ereignis-zeitplan-ausgefuehrt }
+
+**When:** when an automation with the card [Run package on schedule](automatisierungen.md#paket-nach-zeitplan) runs – only to the package the card names, **exactly once** per automation and day. The package learns the date, the planned time and the task (e.g. `taeglich`), no content of the library. You decide time, days and on/off at the automation; the package gets **no additional rights** from it.
+
+**Typical:** every morning recalculating the status of all contracts or invoices, which changes only with the date.
+
 ### Similarity { #aehnlichkeit }
 
 A package with the permission [Vectors for documents](#recht-vektoren) – for instance **Local AI – similarity** – computes a vector for every document with full text. With it Ablago shows:

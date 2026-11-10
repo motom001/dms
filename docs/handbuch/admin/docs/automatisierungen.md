@@ -85,11 +85,23 @@ Der Vorrat zeigt nur, was zur Wenn-Karte passt: **Feld ändern** etwa nur, wenn 
 - **Tägliche Zusammenfassung senden** (nur mit *Zeitplan für jeden Benutzer*) schickt der Person ihre offenen Aufgaben per E-Mail – derselbe Inhalt wie bisher. Wer sie unter Mein Konto abbestellt hat, abwesend ist oder nichts offen hat, bekommt keine; der Verlauf nennt den Grund.
 - **Favoriten-Änderungen melden** (nur mit *Favorit geändert*) gibt allen, die die Mappe als Favorit haben, die gebündelte Benachrichtigung „Geändert“ – wie bisher. Die [Freigabe für Favoriten](aufgaben.md#favoriten-benachrichtigen) und der Schalter unter Mein Konto gelten weiter; eigene Änderungen melden nie.
 - **Anmeldeschutz melden** schickt allen, die den Anmeldeschutz verwalten, entweder die **Sammelmeldung** über die Sperren (mit *Zeitplan*, nicht je Benutzer) oder sofort eine Mail, wenn ein **Benutzerkonto gesperrt** wurde (mit *Benutzerkonto gesperrt*, je Konto höchstens einmal am Tag). Siehe [Anmeldeschutz](anmeldeschutz.md#mail-an-die-administratoren).
+- **Paket nach Zeitplan ausführen** (nur mit *Zeitplan*, nicht je Benutzer) sagt einem Paket, dass sein Zeitpunkt erreicht ist – siehe [unten](#paket-nach-zeitplan).
 - **Danach keine weiteren Automatisierungen** beendet die Reihe: Automatisierungen mit höherer Nummer laufen für dieses Ereignis nicht mehr (im Verlauf „Übersprungen durch …“).
 
 Automatisierungen arbeiten mit dem **Systemkonto „Automatisierung“** (Werkbank → Benutzer). Was dieses Konto nicht lesen darf, überspringt die Automatisierung; Platzhalter zeigen dann „(nicht sichtbar)“. Bei Aufgaben gelten zusätzlich die Rechte des Empfängers (siehe oben).
 
 Darf das Konto „Automatisierung“ Mappen vom Typ der Wenn-Karte **gar nicht** sehen – zum Beispiel, weil am Mappentyp eine Regel „System- und Paketrollen verboten“ gilt –, kann die Automatisierung nie laufen. Dann steht im Editor und in der Liste ein Hinweis „Diese Automatisierung kann nicht laufen …“. Über **Rechte am Mappentyp ansehen** kommst du zum [Testlauf](berechtigungen.md#testlauf) dieses Mappentyps, mit dem Konto „Automatisierung“ schon gewählt; dort siehst du, welche Regel entschieden hat. Speichern bleibt trotzdem möglich.
+
+## Paket nach Zeitplan ausführen { #paket-nach-zeitplan }
+
+Manche Pakete müssen regelmäßig rechnen, weil sich ihr Ergebnis nur durch das Datum ändert – etwa *Verträge* („kündbar bis …“) oder *Rechnungen* („überfällig seit …“). Statt eines versteckten Laufs bringen sie dafür eine **Automatisierung** mit, zum Beispiel **Verträge täglich prüfen**: Wenn *Zeitplan* täglich um 05:00 → Dann **Paket nach Zeitplan ausführen**.
+
+- **Uhrzeit und Tage** stellst du in der Wenn-Karte ein; ausschalten geht am Schalter. Ausgeschaltet rechnet das Paket nur noch, wenn jemand eine seiner Mappen ändert.
+- Die Karte nennt das **Paket** und optional eine **Aufgabe** (eine Kennung wie `taeglich` oder `monatlich`), damit ein Paket mehrere Läufe unterscheiden kann. Das Paket bekommt das Ereignis *Nach Zeitplan ausgeführt* mit Datum, geplantem Zeitpunkt und Aufgabe – je Tag genau einmal, auch mit mehreren Servern.
+- **Keine zusätzlichen Rechte:** Das Paket arbeitet mit den Rechten, die du bei der Installation bestätigt hast. Die Rechte-Vorschau nennt den Zeitplan („Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“).
+- **Nur das eigene Paket:** Eine mitgelieferte Automatisierung ruft immer nur das Paket auf, das sie mitbringt – das Feld *Paket* ist dort fest. In einer selbst angelegten Automatisierung stehen nur Pakete zur Wahl, die Zeitpläne annehmen.
+- **Paket entfernt:** Die Karte läuft dann ins Leere. Die Automatisierung bleibt an und zeigt „Paket … ist nicht installiert“; im Verlauf steht der Lauf als *übersprungen* – kein Fehler, kein Hinweis auf fehlgeschlagene Läufe.
+- Jeden Lauf siehst du im **Verlauf** der Automatisierung; das Paket bekommt ihn wie jedes andere Ereignis (mit Wiederholung, falls es gerade nicht erreichbar ist).
 
 ## Reihenfolge
 
@@ -112,10 +124,10 @@ Außerdem hält Ablago eine Automatisierung an, wenn sie **mehr als 30-mal in ei
 
 ## Aus Paketen
 
-Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird bald fällig“ (Paket Fahrzeuge) oder „Kündigung bald fällig“ (Paket Haushalt). Beim Installieren – im Einrichtungsassistenten wie in der Werkbank – listet Ablago sie mit Namen auf: **„Sollen sie gleich eingeschaltet werden?“**, alle vorausgewählt. Was angehakt bleibt, ist nach der Installation eingeschaltet, der Rest aus.
+Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird bald fällig“ (Paket Fahrzeuge) oder „Kündigung bald fällig“ (Paket Haushalt). Beim Installieren – im Einrichtungsassistenten wie in der Werkbank – listet Ablago sie mit Namen auf: **„Sollen sie gleich eingeschaltet werden?“** Vorausgewählt sind die, die das Paket als *gleich eingeschaltet* kennzeichnet (z. B. *Verträge täglich prüfen*, mit Uhrzeit dahinter); kennzeichnet ein Paket keine, sind wie bisher alle vorausgewählt. Was angehakt bleibt, ist nach der Installation eingeschaltet, der Rest aus – du kannst jede abwählen.
 
 - In der Liste erkennst du sie an der Herkunft **aus Paket …**. Du kannst sie einschalten, anpassen und kopieren.
-- Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
+- Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
 - Entfernst du das Paket, gehen seine Automatisierungen mit, wenn sie aus und unverändert sind.
 
 ### Vertretung
