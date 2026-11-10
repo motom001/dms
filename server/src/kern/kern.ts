@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 import { KONTOROLLEN, kontorolleKennung, ROLLEN, systemrolleKennung, type Kontorolle, type Mappentyp, type Rolle } from '../../../shared/src/model';
 import type { Aufloesung } from '../../../shared/src/sichten';
+import { liesMerkmale, MERKMALE_EINSTELLUNG, type Merkmale } from '../../../shared/src/merkmale';
 import type { Lesefilter, Wer } from '../../../shared/src/rechte';
 import type { PaketCode, Schnittstelle } from '../../../shared/src/pakete';
 import { EREIGNISKATALOG, mischeFelder, type Ausloeser as EreignisAusloeser, type KatalogArt, type Katalogeintrag } from '../../../shared/src/ereignisse';
@@ -204,6 +205,12 @@ export class Kern {
     const e = (await this.einstellungen.lies('papierkorb')) as { tage?: number } | null;
     return typeof e?.tage === 'number' ? e.tage : PAPIERKORB_STANDARD_TAGE;
   }
+
+  /**
+   * Merkmale der Ablage (#1032), z. B. „beruflich genutzt“ – für Anzeige-Bedingungen (Pflicht beim Speichern) und die
+   * Bedingungen von Rechten, Ansichten und Automatisierungen. Ohne Einstellung: privat.
+   */
+  async merkmale(): Promise<Merkmale> { return liesMerkmale(await this.einstellungen?.lies(MERKMALE_EINSTELLUNG)); }
 
   /** Je Mappentyp-Id die Pakete, denen der Admin diesen Typ verwehrt hat (Einstellung, Teil der Sicherung). */
   async paketVerwehrt(): Promise<Record<string, string[]>> {

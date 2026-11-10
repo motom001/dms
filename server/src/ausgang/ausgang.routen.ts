@@ -39,6 +39,8 @@ export function exportRouten(k: RoutenKontext): Route[] {
         protokoll: () => protokoll.eintraege({}),
         // Region (#726): Land, Bundesland, Zeitzone als struktur/region.json.
         ...(x.region ? { region: () => x.region!.lies() } : {}),
+        // Merkmale der Ablage (#1032) als struktur/merkmale.json.
+        merkmale: () => dienst.merkmale(),
       });
       const von = ich(a).email;
       if (e.passwoerter === true) L.werkbank.warn('Vollexport mit Passwörtern im Klartext gestartet', { von });

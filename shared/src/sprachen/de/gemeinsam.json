@@ -963,5 +963,22 @@
   "feldarten.betrag-nicht-negativ": "Der Betrag darf hier nicht negativ sein.",
   "feldarten.kein-zeitraum": "Kein gültiger Zeitraum – eine ganze Zahl von 0 bis {max} und eine Einheit, zum Beispiel „3 Monate“.",
   "feldarten.bedingung-zeitraum": "Bei „{label}“ ist der Vergleichswert kein Zeitraum – zum Beispiel „3 Monate“.",
-  "ansichtsymbole.vertragsdokument": "Vertragsdokument"
+  "ansichtsymbole.vertragsdokument": "Vertragsdokument",
+  "merkmale.beruflich": "Ablage wird beruflich genutzt",
+  "merkmale.beruflich-nicht": "Ablage wird nicht beruflich genutzt",
+  "merkmale.unbekannt": "Das Merkmal „{merkmal}“ gibt es nicht.",
+  "anzeige.feld-fehlt": "Das Feld „{feld}“ gibt es nicht (mehr).",
+  "anzeige.eigenes-feld": "„{feld}“ liegt selbst im Ausgeblendeten – es ließe sich nicht mehr einblenden.",
+  "anzeige.kein-verweis": "„{feld}“ ist kein Verweisfeld.",
+  "anzeige.anderer-typ": "„{feld}“ zeigt nur auf Mappen eines anderen Typs – die Bedingung träfe nie zu.",
+  "anzeige.typ-fehlt": "Den Mappentyp gibt es nicht (mehr).",
+  "anzeige.nur-feste-werte": "Hier gehen nur feste Werte und „heute“ – was zu sehen ist, hängt nicht davon ab, wer die Mappe ansieht.",
+  "anzeige.verweistyp": "„{feld}“ zeigt auf eine Mappe vom Typ {typ}",
+  "anzeige.verweistyp-nicht": "„{feld}“ zeigt auf keine Mappe vom Typ {typ}",
+  "anzeige.nicht": "nicht ({bedingung})",
+  "anzeige.oder": " oder ",
+  "anzeige.und": " und ",
+  "anzeige.nur-bei": "nur bei {bedingung}",
+  "anzeige.abschnitt-ab": "Abschnitt ab „{feld}“",
+  "anzeige.wert-waehlen": "Bei „{feld}“ bitte mindestens einen Wert wählen."
 }

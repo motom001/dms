@@ -22,6 +22,7 @@ import { liesWortgruppe } from '../../shared/src/suche';
 import type { Synonymgruppe } from './repo';
 import { BESCHREIBUNG_LAENGE, EIGENE_LIZENZ, GITHUB, istFreieLizenz, KEINE_LIZENZ, LIZENZ_VORGABE, LIZENZEN, LIZENZNAME_LAENGE, LIZENZTEXT_MAX, lizenzVerweis, NAME_LAENGE, naechsteVersion, naechsteVersionen, type ErstellenStand, type Fehlend, type PaketEntwurf, type PaketErstellenEingabe, type PaketPruefung, type SelbstErstellt, type SelbstErstelltDetail, type VersionsArt, type VersionsLage } from '../../shared/src/paketerstellung';
 import type { Bedingung, Sicht, WertAngabe } from '../../shared/src/sichten';
+import type { Anzeigeregel } from '../../shared/src/anzeige';
 import type { Dienst } from './dienst';
 import { t } from './sprache';
 import { Fachfehler } from './fehler';
@@ -310,13 +311,30 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     return null;
   };
 
+  /**
+   * Anzeigen, wenn … (#1033) fürs Paket: „Verweis zeigt auf eine Mappe vom Typ …“ mit Typverweis statt Id. Eine
+   * bestimmte Mappe (Id dieser Installation) kommt nicht mit – das geht erst mit festen Kennungen mitgelieferter Mappen
+   * (#1038). Ohne Bedingung bleibt keine Regel.
+   */
+  const anzeigeFuersPaket = (r: Anzeigeregel | undefined, wo: string): Anzeigeregel | undefined => {
+    if (!r) return undefined;
+    const bedingungen = r.bedingungen.flatMap((b): Anzeigeregel['bedingungen'] => {
+      if (b.art === 'verweistyp') { const z = ziel(b.typ, wo); return z ? [{ ...b, typ: z }] : []; }
+      if (b.art === 'feld' && mitId(b.bedingung)) { hinweis(t('meldungen.paketerstellung.anzeige-mappe', { wo })); return []; }
+      return [b];
+    });
+    return bedingungen.length ? { modus: r.modus, bedingungen } : undefined;
+  };
+
   // 3. Mappentypen
   const paketTypen = eigene.map((mappentyp) => {
     const wo = (was: string) => `„${mappentyp.name}“ → ${was}`;
     const felder = mappentyp.felder.filter((f) => !f.system).map((f) => {
       // ausText (#534) gehört zu einem Update aus der Registry, nicht in ein selbst erstelltes Paket.
-      const { zielTyp, system: _s, auswahlFilter, frist, standard, ausText: _a, ...rest } = f as Feld;
+      const { zielTyp, system: _s, auswahlFilter, frist, standard, ausText: _a, anzeigen, ...rest } = f as Feld;
       const x: Record<string, unknown> = ohneLeere(rest as Record<string, unknown>);
+      const az = anzeigeFuersPaket(anzeigen, wo(`Feld „${f.label}“`));
+      if (az) x.anzeigen = az;
       if (f.typ === 'referenz') x.ziel = ziel(zielTyp, wo(`Feld „${f.label}“`)) ?? undefined;
       else delete x.verweisart;
       if (frist) x.frist = ohneLeere(frist as unknown as Record<string, unknown>);
@@ -338,7 +356,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     const register = mappentyp.register.map((r: Register) => {
       const quellen = r.quellen?.map((q) => ({ typ: ziel(q.typId, wo(`Register „${r.name}“`)), feld: q.feldKey })).filter((q): q is { typ: string; feld: string } => !!q.typ);
       // Abschnitte (#890) und Ausblenden (#655): wie eingestellt; ältere Ablago ignorieren beides.
-      const abschnitte = r.art === 'felder' ? (r.abschnitte ?? []).filter((a) => felder.some((f) => f.key === a.vor)).map((a) => ohneLeere({ vor: a.vor, titel: a.titel, eingeklappt: a.eingeklappt, beschriftungen: a.beschriftungen })) : [];
+      const abschnitte = r.art === 'felder' ? (r.abschnitte ?? []).filter((a) => felder.some((f) => f.key === a.vor)).map((a) => ohneLeere({ vor: a.vor, titel: a.titel, eingeklappt: a.eingeklappt, beschriftungen: a.beschriftungen, anzeigen: anzeigeFuersPaket(a.anzeigen, wo(`Abschnitt „${a.titel || a.vor}“`)) })) : [];
       return ohneLeere({ key: r.key, name: r.name, art: r.art, felder: r.art === 'felder' ? (r.felder ?? []).filter((k) => felder.some((f) => f.key === k)) : undefined, quellen, versionierung: r.versionierung, versionenBehalten: r.versionenBehalten, zeigt: r.art === 'protokoll' ? r.zeigt : undefined, beschriftungen: r.beschriftungen, abschnitte: abschnitte.length ? abschnitte : undefined, ausgeblendet: r.ausgeblendet });
     });
     // volltext: false ausdrücklich behalten (Standard ist ja); ohneLeere ließe es weg.
@@ -403,6 +421,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     }).filter((t): t is string => !!t);
     if (fremd.length) fremdeTypen = true;
     const bedingungen = s.bedingungen.flatMap((b: Bedingung) => {
+      // Merkmal der Ablage (#1032): kennt das Paketformat der Ansichten (noch) nicht.
+      if (b.art === 'merkmal') { hinweis(t('meldungen.paketerstellung.ansicht-merkmal', { name: s.name })); return []; }
       if (b.art !== 'feld') { hinweis(t('meldungen.paketerstellung.ansicht-bedingungen-auf-anzahlen', { name: s.name })); return []; }
       const w = (b.op === 'zwischen' || b.op === 'ausserhalb') && b.bis ? [fest(b.wert), fest(b.bis)] : fest(b.wert);
       if (mitId(w)) { hinweis(t('meldungen.paketerstellung.ansicht-eine-bedingung-nennt', { name: s.name })); return []; }

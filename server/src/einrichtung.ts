@@ -8,6 +8,8 @@ import { Fachfehler } from './fehler';
 import { pruefeEmail, pruefePasswortRegeln, type Konten } from './konten';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
+import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
+import { vorlageFuer } from '../../shared/src/werkbankansicht';
 
 /**
  * Einrichtungsassistent (#119), sobald die Datenbank steht. Seit #804 sammelt der Assistent erst alles (Ablage,
@@ -71,6 +73,7 @@ export function planAusEingabe(x: unknown): Einrichtungsplan {
       adresse: text(op.adresse) || null,
       bundesland: typeof op.bundesland === 'string' && op.bundesland in BUNDESLAENDER ? op.bundesland : null,
       beispiele: ja(op.beispiele),
+      ...(ja(op.beruflich) ? { beruflich: true } : {}),
       mail: m && typeof m === 'object' ? {
         aktiv: m.aktiv !== false, host: text(m.host, 200), port: zahl(m.port, verbindung === 'ssl' ? 465 : 587), verbindung,
         benutzer: text(m.benutzer, 200), absender: text(m.absender, 200), selbstsigniert: ja(m.selbstsigniert), ...verweis(m.passwort),
@@ -111,8 +114,9 @@ export class Einrichtung {
     await this.d.mandant.umbenennen(mandant);
     try { await this.d.schriftzug?.(mandant); } catch (x) { log.warn('Schriftzug nicht gesetzt', { fehler: (x as Error).message }); }
     await this.d.einstellungen.schreibe('einrichtung', { offen: true, erledigt: [], uebersprungen: [] });
-    // Neue Installationen bekommen die schlanke Werkbank (#281); bestehende behalten alles.
-    await this.d.einstellungen.schreibe('werkbank_ansicht', { vorlage: 'haushalt', ein: [], aus: [] });
+    // Neue Installationen bekommen die schlanke Werkbank (#281); bestehende behalten alles. Die Vorlage folgt dem
+    // Merkmal „beruflich genutzt“ (#1032): beruflich → Organisation, sonst Haushalt.
+    await this.d.einstellungen.schreibe('werkbank_ansicht', { vorlage: vorlageFuer(liesMerkmale(await this.d.einstellungen.lies(MERKMALE_EINSTELLUNG))), ein: [], aus: [] });
     await this.d.code?.entfernen();
     log.info('Einrichtung: Ablage und eigenes Konto mit „Gesamte Verwaltung“ angelegt', { mandant, email: r.benutzer.email });
     return r;

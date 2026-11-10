@@ -275,11 +275,12 @@ export class ZugriffDienst {
   async aufloesung(benutzerId: string): Promise<Aufloesung> {
     const bilde = async (): Promise<Aufloesung> => {
       const m = istUuid(benutzerId) ? await this.repo.holeMappe(benutzerId) : undefined;
-      return { heute: heuteIn(), ich: benutzerId, meineRollen: m ? alsListe(m.werte.rollen) : [] };
+      // Merkmale der Ablage (#1032) für Bedingungen in Rechten, Ansichten und Automatisierungen.
+      return { heute: heuteIn(), ich: benutzerId, meineRollen: m ? alsListe(m.werte.rollen) : [], merkmale: await this.kern.merkmale() };
     };
     // Rollen einmal je Anfrage (#741) wie der Zugriff; jeder Aufrufer bekommt eine eigene Kopie.
     if (this.kern.inEigenerTransaktion()) return bilde();
     const a = await jeAnfrage(`${this.kennung}|rollen|${benutzerId}`, bilde);
-    return { ...a, meineRollen: [...a.meineRollen] };
+    return { ...a, meineRollen: [...a.meineRollen], ...(a.merkmale ? { merkmale: { ...a.merkmale } } : {}) };
   }
 }

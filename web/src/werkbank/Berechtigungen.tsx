@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
+import { merkmalName } from '../../../shared/src/merkmale';
 import {
   beschreibeRegelBedingung, kurz, kurzStandard, RECHTE, RECHTE_LISTE, regelProblem, systemSperre,
   type Recht, type Regel, type RegelBedingung, type Regelwerk, type Wirkung,
@@ -37,6 +38,8 @@ const ARTEN: Array<{ art: Art; name: string; nurBenutzerTyp?: boolean }> = [
   { art: 'feld', name: t('werkbank.berechtigungen.feld-der-mappe') },
   { art: 'aufgabe', name: t('werkbank.berechtigungen.offene-aufgabe-fuer-den') },
   { art: 'eigeneMappe', name: t('werkbank.berechtigungen.mappe-ist-die-des'), nurBenutzerTyp: true },
+  // Merkmal der Ablage (#1032): gilt für alle Mappen gleich.
+  { art: 'merkmal', name: merkmalName('beruflich') },
 ];
 
 /**
@@ -222,6 +225,7 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
     if (art === 'feld') { const f = felder[0]; return { ...n, art, bedingung: { art: 'feld', feld: f?.key ?? '_erstellt', op: OPERATOREN_JE_ART[f?.art ?? 'zeit'][0] } }; }
     if (art === 'benutzer') return { ...n, art, benutzer: [] };
     if (art === 'rolle') return { ...n, art, rollen: [] };
+    if (art === 'merkmal') return { ...n, art, merkmal: 'beruflich' };
     return { ...n, art };
   };
   const rollenTyp = d.typen.find((mappentyp) => mappentyp.system === 'rolle')?.id;

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { pruefeMappe, type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
+import { type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
+import { pruefeMitAnzeige } from '../../shared/src/anzeige';
 import { wirksameTypen, type Sicht } from '../../shared/src/sichten';
 import { api, type Person, type Zaehler } from './api';
 import { rettungsweg, wendeAn, type Design } from './design';
@@ -123,7 +124,8 @@ export function DatenProvider({ children }: { children: ReactNode }) {
       anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
       personen,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? t('oberflaeche.daten.geloeschter-benutzer') : 'unbekannt'),
-      pruefe: (mappentyp, werte, typVon) => pruefeMappe(mappentyp, werte, { typVon, doppelt: () => undefined }),
+      // Anzeige-Bedingungen (#1033): wie der Server – was nicht zu sehen ist, ist nicht Pflicht.
+      pruefe: (mappentyp, werte, typVon) => pruefeMitAnzeige(mappentyp, werte, { typVon, doppelt: () => undefined, merkmale: zaehler.merkmale }),
     };
   }, [typen, sichten, zaehler, zahlenDa, personen, geladen, fehler, stand, neuLaden, frisch, auffrischen, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
 

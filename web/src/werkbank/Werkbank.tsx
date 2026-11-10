@@ -3,6 +3,7 @@ import { SuchePanel } from './SucheEinstellungen';
 import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
+import { NutzungPanel, useNutzung } from './Nutzung';
 import { SprachenPanel, useSprachen } from './Sprachen';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
@@ -135,6 +136,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const pakete = usePakete(bereich === 'pakete' || bereich === 'typen');
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
+  const nutzung = useNutzung(bereich === 'nutzung');
   const sprachen = useSprachen(bereich === 'sprachen');
   const anbindung = useAnbindung(bereich === 'anbindung');
   const ansicht = useWerkbankAnsicht();
@@ -233,6 +235,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
   } else if (bereich === 'region') {
     rechts = <RegionPanel z={region} />;
+  } else if (bereich === 'nutzung') {
+    rechts = <NutzungPanel z={nutzung} />;
   } else if (bereich === 'sprachen') {
     rechts = <SprachenPanel z={sprachen} />;
   } else if (bereich === 'anmeldeschutz') {
@@ -288,6 +292,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const eintraege: WerkbankEintrag[] = [
     { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
     // Ablage aufbauen (#717)
+    { pfad: 'nutzung', name: n('nutzung'), gruppe: 'ablage' },
     { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
     { pfad: 'typen', name: n('typen'), gruppe: 'ablage', zahl: d.typen.length },
     { pfad: 'sichten', name: n('sichten'), gruppe: 'ablage', zahl: d.sichten.length || undefined },

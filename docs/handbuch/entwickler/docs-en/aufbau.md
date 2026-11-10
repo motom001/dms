@@ -313,7 +313,9 @@ The first subject area with its own business logic in its subject folder (trial 
 
 ## Workbench (#1078) { #werkbank }
 
-`server/src/werkbank/werkbank.dienst.ts` with `WerkbankDienst` (`dienst.werkbank`, layer 3, only the core): the Workbench view (#281, `werkbankAnsicht`, `setzeWerkbankAnsicht`).
+`server/src/werkbank/werkbank.dienst.ts` with `WerkbankDienst` (`dienst.werkbank`, layer 3, only the core): the Workbench view (#281, `werkbankAnsicht`, `setzeWerkbankAnsicht`) and the Library attributes (#1032, `merkmale`, `setzeMerkmale`; setting `merkmale`). They are read everywhere via `kern.merkmale()` – also in `zugriff.aufloesung` for the conditions of permissions, views and automations.
+
+**Display conditions (#1033):** the evaluation lives in `shared/src/anzeige.ts` (`anzeigestand`, `pruefeMitAnzeige`) and is the same for the interface and the server – `mappen/eingaben.ts` (saving) and `mappentypen/passung.ts` (fit) check required fields with it, the form uses it via `web/src/ablage/anzeige.ts`. The conditions build on the views’ toolkit (`sichten.ts`); nothing but what the form shows depends on them.
 
 ## What stays in dienst.ts (#1078) { #dienst-rest }
 
@@ -722,7 +724,7 @@ Tours and tips are **data, not code**. Ablago's own live in `shared/entdecken/` 
 
 The server reads the YAML files at runtime (in the image under `/app/shared/entdecken`, see the Dockerfile). Faulty entries are dropped and logged once; nothing changes for the person.
 
-### Tour
+### Tour {#rundgang}
 
 ```yaml
 - schluessel: ablago            # lower case, digits, _
@@ -741,7 +743,7 @@ Texts: title, description and closing sentence under `rundgang.<tour>.titel | .b
 
 At runtime a step is dropped silently if none of its anchors is visible (for example on a phone) – with a note in the console (`console.debug`), without a message for the person.
 
-### Tip
+### Tip {#tipp}
 
 ```yaml
 - schluessel: suche_in_dokumenten
@@ -763,7 +765,7 @@ Targets are fixed anchor points, not HTML ids: the element carries `data-anker="
 
 `server/test/entdecken.test.ts` checks during the build: every anchor appears in the interface's source, format, targets and tours exist, lengths are right, and every text is there in German and English. Whoever rebuilds an element keeps the attribute; new anchors are added, existing ones are not renamed.
 
-### Interface and what is remembered
+### Interface and what is remembered {#schnittstelle-und-merker}
 
 - `GET /api/entdecken` – tours and tips for the signed-in person in their language (filtered by the right to administer and by switched-on features), plus the tip of the day (`tipp`), whether the tip line is on (`tippsAn`) and which tour starts by itself now (`starten`). Per tip: anchor and page or tour, origin (`ablago`, later `paket:<id>`), `neu`, `ausgeblendet` and `clients` (suitable for clients: no tour, the anchor exists there too).
 - `POST /api/entdecken/tipps/:schluessel` with `aktion`: `gezeigt`, `erledigt`, `ausblenden`, `einblenden`.

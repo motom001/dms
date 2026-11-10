@@ -3,6 +3,7 @@
  * Systemübersicht; Region, Sprachen, Übersetzen, Aufgaben-Mail und Favoriten-Freigabe.
  */
 import { istPerson } from '../../../shared/src/model';
+import { hatMerkmalBedingung } from '../../../shared/src/anzeige';
 import { taugtAlsAufgabenEmpfaenger } from '../dienst';
 import { Fachfehler } from '../fehler';
 import { umzugHinweis } from '../exportordner';
@@ -110,6 +111,14 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       return ok({ ...(await dienst.werkbankAnsicht(ich(a))), benutzt: liste });
     } },
     { methode: 'PUT', pfad: '/api/werkbank/ansicht', zugang: 'admin', handler: async (a) => ok(await dienst.setzeWerkbankAnsicht(ich(a), b(a))) },
+    // Merkmale der Ablage (#1032): lesen alle, die verwalten; ändern nur „Gesamte Verwaltung“ (verwaltungsbereiche.ts).
+    { methode: 'GET', pfad: '/api/werkbank/merkmale', zugang: 'admin', handler: async () => ok(await dienst.merkmale()) },
+    { methode: 'PUT', pfad: '/api/werkbank/merkmale', zugang: 'admin', handler: async (a) => {
+      const m = await dienst.setzeMerkmale(a.body, ich(a).email);
+      // Pflicht hängt an Anzeige-Bedingungen mit Merkmal (#1033): Passung dieser Mappentypen neu prüfen.
+      for (const typ of await dienst.listeTypen()) if (hatMerkmalBedingung(typ)) await dienst.pruefePassung(typ.id);
+      return ok(m);
+    } },
     // Übersicht als Startseite der Werkbank (#68): was zu tun ist, auf einen Blick.
     // Werkbank (#921): wer außer mir gerade im Verwaltungsmodus ist – nur im Modus (zugang „admin“, Bereich für alle,
     // die verwalten), nie mit API-Schlüssel, nicht in /api/v1. Nachgefragt im Takt (`still`: verlängert den Modus nicht).
@@ -238,6 +247,8 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/region', zugang: 'admin', handler: async () => ok(await regionStand(await region().lies())) },
     { methode: 'PUT', pfad: '/api/werkbank/region', zugang: 'admin', handler: async (a) => ok(await regionStand(await region().speichere(a.body))) },
     { methode: 'GET', pfad: '/api/region', zugang: 'angemeldet', handler: async () => ok(await region().lies()) },
+    // Merkmale der Ablage (#1032) für alle Angemeldeten (Apps mit Formularen, GET /api/v1/merkmale).
+    { methode: 'GET', pfad: '/api/merkmale', zugang: 'angemeldet', handler: async () => ok(await dienst.merkmale()) },
     // Sprachen (#729): Werkbank → Sprachen.
     { methode: 'GET', pfad: '/api/werkbank/sprachen', zugang: 'admin', handler: async () => ok(await sprachen().stand()) },
     { methode: 'PUT', pfad: '/api/werkbank/sprachen', zugang: 'admin', handler: async (a) => { await sprachen().speichere(a.body); return ok(await sprachen().stand()); } },

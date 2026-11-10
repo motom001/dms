@@ -270,5 +270,8 @@
   "sprache.titel": "Sprache",
   "sprache.unter": "In welcher Sprache möchtest du Ablago einrichten? Sie gilt danach für alle, die nichts anderes wählen.",
   "sprache.spaeter": "Weitere Sprachen erlaubst du später in der Werkbank unter Sprachen. Jede Person wählt ihre Sprache in Mein Konto.",
-  "gesperrt.sprache": "Wähle zuerst die Sprache."
+  "gesperrt.sprache": "Wähle zuerst die Sprache.",
+  "zf.beruflich": "Auch beruflich genutzt",
+  "zf.beruflich.datei": "aus der Datei; ändern in Werkbank → Nutzung",
+  "lauf.nutzung": "Nutzung der Ablage speichern"
 }

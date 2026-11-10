@@ -1,5 +1,7 @@
 import { abschnittTitel, feldHilfe, feldLabel, optionText, registerName, typName } from '../../../shared/src/beschriftung';
 import { abschnittEinstellung, abschnittId, ausgeblendeteFelder, gruppiere, sichtbareRegister } from '../../../shared/src/darstellung';
+import { abschnittName, anzeigestand, beschreibeAnzeige, typNameAus, type Anzeigestand } from '../../../shared/src/anzeige';
+import { anzahlWerte, anzeigeImFormular, hatWert as mitWert } from './anzeige';
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { Stern } from './Stern';
@@ -9,7 +11,7 @@ import { datumText, inFrist } from '../../../shared/src/archiv';
 import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
 import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, titelAus, VERWEISARTEN, verweisAusText, type Verweiskonflikt, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
-import { ProzentEingabe, ZeitraumEingabe } from '../bausteine';
+import { Knopf, ProzentEingabe, ZeitraumEingabe } from '../bausteine';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -413,6 +415,16 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const reg = register.find((r) => r.key === aktiv) ?? register[0];
   // Ausgeblendete Felder (#655) zeigt die Mappe nicht; ihre Werte bleiben, wie sie sind.
   const ausgeblendet = useMemo(() => ausgeblendeteFelder(typ), [typ]);
+  /*
+   * Anzeigen, wenn … (#1033): Was bei den eingegebenen Werten zu sehen ist – sofort beim Ausfüllen, mit derselben
+   * Auswertung wie der Server (Pflicht). Ausgeblendete Werte bleiben, wie sie sind; eine ruhige Zeile sagt es, und
+   * „anzeigen“ holt Feld oder Abschnitt für diese Mappe zurück (`aufgedeckt`, nur bis zum Verlassen).
+   */
+  const merkmale = d.zaehler.merkmale;
+  const anz: Anzeigestand = useMemo(() => anzeigeImFormular(typ, roh, { merkmale, bekannt }), [typ, roh, merkmale, bekannt]);
+  const [aufgedeckt, setAufgedeckt] = useState<Set<string>>(() => new Set());
+  const decke = (k: string) => setAufgedeckt((x) => new Set([...x, k]));
+  const hatWert = (f: Feld) => mitWert(f, roh);
   const alleAuf = (r: Register) => typ.felder.filter((f) => r.felder?.includes(f.key));
   const felderAuf = (r: Register) => alleAuf(r).filter((f) => !ausgeblendet.has(f.key));
   const fehlerAuf = (r: AnsichtsRegister) => (r.art === 'felder' ? felderAuf(r).filter((f) => fehler?.felder[f.key]).length : 0);
@@ -688,7 +700,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     // Formate und Datumsgrenzen (#535): neue Mappe ganz, sonst nur, was sich ändert.
     for (const [k, m] of Object.entries(pruefeFormate(typ, werte, mappe?.werte))) p.felder[k] ??= m;
     // Ausgeblendete Felder (#655): Was dort unverändert steht, hält das Speichern nicht auf (wie auf dem Server).
-    for (const k of Object.keys(p.felder)) if (ausgeblendet.has(k) && !geaenderteFelder.includes(k)) delete p.felder[k];
+    // Genauso, was eine Anzeige-Bedingung gerade ausblendet (#1033).
+    const verborgen = anzeigestand(typ, werte, { merkmale, typVon: (id) => bekannt[id]?.typId }).verborgen;
+    for (const k of Object.keys(p.felder)) if ((ausgeblendet.has(k) || verborgen.has(k)) && !geaenderteFelder.includes(k)) delete p.felder[k];
     if (!istOk(p)) { zeigeFehler(p); setMeldung(t('ablage.mappeformular.bitte-die-markierten-felder')); return; }
     // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
     if (mappe && werteGeaendert && ich.rolle !== 'admin') {
@@ -807,16 +821,33 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   if (!reg) inhalt = <p className="leise">{t('ablage.mappeformular.dieser-mappentyp-hat-keine')}</p>;
   else if (reg.art === 'felder') {
     const r = reg;
-    const eingabe = (f: Feld) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
+    const anzeigeNamen = { typ: typNameAus(d.typen), mappe: (id: string) => titelOder(bekannt[id]?.titel) };
+    const nurBei = (r2: Parameters<typeof beschreibeAnzeige>[0]) => beschreibeAnzeige(r2, typ, anzeigeNamen);
+    // Ausgeblendetes Feld mit Wert (#1033): ruhige Zeile statt der Eingabe; aufgedeckt mit dem Satz „nur bei …“.
+    const eingabe = (f: Feld) => (anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)
+      ? <AusgeblendetZeile key={f.key} text={t('ablage.anzeige.feld', { feld: feldLabel(f) })} anzeigen={() => decke(`f:${f.key}`)} />
+      : feldEingabe(f, anz.felder.has(f.key) ? <p className="anzeigehinweis leise klein"><Symbol name="auge-aus" /> {t('ablage.anzeige.gerade-aus', { bedingung: nurBei(f.anzeigen) })}</p> : undefined));
+    const feldEingabe = (f: Feld, anzeige?: ReactNode) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
       typId={typ.id} typFelder={typ.felder} unpassend={details?.unpassend?.[f.key]} gruende={grundAus(details?.konflikte, f.key)} eigene={eigeneWerte(f)}
       neu={f.typ === 'referenz' && adNeu[f.key]?.typId === f.zielTyp ? adNeu[f.key].werte : undefined}
-      gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} plzDeutsch={f.format === 'plz' ? deutschePlz(f, typ.felder, roh as Werte) : undefined} passwortSehen={!rechte || rechte.P} zusatz={hinweisAm(f)} gespeichert={mappe ? mappe.werte[f.key] : undefined} />;
+      gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} plzDeutsch={f.format === 'plz' ? deutschePlz(f, typ.felder, roh as Werte) : undefined} passwortSehen={!rechte || rechte.P} zusatz={anzeige ? <>{anzeige}{hinweisAm(f)}</> : hinweisAm(f)} gespeichert={mappe ? mappe.werte[f.key] : undefined} />;
     // Abschnitte (#890): jede Gruppe ein eigenes Raster – so beginnt nach jedem Abschnitt eine neue Zeile.
-    const gruppen = gruppiere(r.abschnitte, alleAuf(r), (f) => !ausgeblendet.has(f.key) && sichtbar(f));
-    inhalt = gruppen.length
-      ? <div className="feldgruppen">{gruppen.map((g) => {
+    // Anzeige-Bedingungen (#1033): Felder ausgeblendeter Abschnitte bleiben in der Gruppe (für die ruhige Zeile);
+    // ein selbst ausgeblendetes Feld nur, wenn es einen Wert hat.
+    const gruppen = gruppiere(r.abschnitte, alleAuf(r), (f) => !ausgeblendet.has(f.key) && sichtbar(f) && (!anz.felder.has(f.key) || hatWert(f) || aufgedeckt.has(`f:${f.key}`)));
+    const abschnittAus = (a: Abschnitt) => anz.abschnitte.some((x) => x.register === r.key && x.abschnitt.vor === a.vor) && !aufgedeckt.has(`a:${r.key}.${a.vor}`);
+    const abschnittAufgedeckt = (a: Abschnitt) => anz.abschnitte.some((x) => x.register === r.key && x.abschnitt.vor === a.vor) && aufgedeckt.has(`a:${r.key}.${a.vor}`);
+    const sichtbareGruppen = gruppen.filter((g) => !g.abschnitt || !abschnittAus(g.abschnitt) || g.felder.some(hatWert));
+    inhalt = sichtbareGruppen.length
+      ? <div className="feldgruppen">{sichtbareGruppen.map((g) => {
           const a = g.abschnitt;
-          if (!a?.titel) return <div key={a?.vor ?? '_'} className={`formular${a ? ' nach-umbruch' : ''}`}>{g.felder.map(eingabe)}</div>;
+          // Abschnitt ausgeblendet, aber mit Werten: eine ruhige Zeile an seiner Stelle – nichts verschwindet heimlich.
+          if (a && abschnittAus(a)) {
+            const n = anzahlWerte(typ, g.felder.map((f) => f.key), roh);
+            return <AusgeblendetZeile key={a.vor} text={t('ablage.anzeige.abschnitt', { name: abschnittName(a, typ), anzahl: n })} anzeigen={() => decke(`a:${r.key}.${a.vor}`)} />;
+          }
+          const gerade = a && abschnittAufgedeckt(a) ? <p className="anzeigehinweis leise klein"><Symbol name="auge-aus" /> {t('ablage.anzeige.gerade-aus', { bedingung: nurBei(a.anzeigen) })}</p> : null;
+          if (!a?.titel) return <div key={a?.vor ?? '_'} className={`formular${a ? ' nach-umbruch' : ''}`}>{gerade}{g.felder.map(eingabe)}</div>;
           const offen = abschnittOffen(r, a);
           const id = `abschnitt-${r.key}-${a.vor}`;
           const gefuellt = g.felder.filter((f) => !istLeer(ausRoh(f, roh[f.key]))).length;
@@ -831,7 +862,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
                   {mitFehler > 0 && <span className="fehlerpunkt" title={t('ablage.mappeformular.felder-mit-fehler', { anzahl: mitFehler })}>{mitFehler}</span>}
                 </button>
               </h3>
-              <div id={id} className="formular" hidden={!offen}>{g.felder.map(eingabe)}</div>
+              <div id={id} className="formular" hidden={!offen}>{gerade}{g.felder.map(eingabe)}</div>
             </section>
           );
         })}</div>
@@ -931,6 +962,19 @@ const grundAus = (k: Verweiskonflikt[] | undefined, feld: string): Record<string
   const x = k?.find((y) => y.feld === feld);
   return x ? Object.fromEntries(x.ids.map((id) => [id, x.eigeneFelder])) : undefined;
 };
+
+/**
+ * Ruhige Zeile (#1033, Hinweis Qualität): Ein Feld oder Abschnitt ist gerade ausgeblendet, hat aber Werte – „Abschnitt
+ * Miete ist ausgeblendet – 3 Werte bleiben gespeichert · anzeigen“. So glaubt niemand, die Werte seien weg.
+ */
+function AusgeblendetZeile({ text, anzeigen }: { text: string; anzeigen(): void }) {
+  return (
+    <p className="ausgeblendetzeile leise klein" data-anker="mappe.ausgeblendet">
+      <Symbol name="auge-aus" /><span>{text}</span><span aria-hidden="true">·</span>
+      <Knopf art="link" groesse="klein" onClick={anzeigen}>{t('ablage.anzeige.anzeigen')}</Knopf>
+    </p>
+  );
+}
 
 /**
  * Hinweiszeile über den Registern (#887): Verweise, die nicht zu anderen Angaben der Mappe passen – gelb, ein Hinweis

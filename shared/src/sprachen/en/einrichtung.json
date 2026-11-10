@@ -270,5 +270,8 @@
   "sprache.titel": "Language",
   "sprache.unter": "In which language would you like to set up Ablago? It then applies to everyone who doesn’t choose another one.",
   "sprache.spaeter": "You allow more languages later in the Workbench under Languages. Each person chooses their language in My account.",
-  "gesperrt.sprache": "Choose the language first."
+  "gesperrt.sprache": "Choose the language first.",
+  "zf.beruflich": "Also used for work",
+  "zf.beruflich.datei": "from the file; change in Workbench → Use",
+  "lauf.nutzung": "Save how the Library is used"
 }

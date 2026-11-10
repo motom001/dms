@@ -71,6 +71,7 @@ optionales:
 - `konto` ist die Person, die einrichtet: Sie bekommt „Gesamte Verwaltung“ und arbeitet auch in der Ablage. Weitere Personen lädst du nach der Einrichtung unter Werkbank → Benutzer ein.
 - Ohne Liste `pakete` wählst du die Pakete im Assistenten; `pakete: []` heißt „keine“.
 - **Dateien aus Version 0.191 und 0.192** lädt Ablago weiter: Der Abschnitt `administrator` gilt als `konto`. Einen Abschnitt `erster-benutzer` übergeht Ablago mit einem Hinweis – den ersten Benutzer gibt es im Assistenten nicht mehr. Beim Speichern steht nur noch `konto` in der Datei.
+- `optionales: beruflich: true` heißt: Die Ablage wird auch beruflich genutzt ([Nutzung](nutzung.md)); fehlt die Angabe, gilt nein. Der Assistent zeigt es in der Zusammenfassung und speichert es mit „Jetzt einrichten“.
 - Automatisierungen eines Pakets stehen als Schlüssel mit `true` (eingeschaltet) oder `false` (aus); fehlt eine, ist sie wie im Assistenten eingeschaltet.
 
 ## Verweise statt Passwörter

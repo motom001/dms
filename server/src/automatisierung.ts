@@ -8,7 +8,7 @@ import {
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, OHNE_WENN, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { tagVon, titelAus, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
-import { heuteIn, verschiebe, type Bedingung } from '../../shared/src/sichten';
+import { heuteIn, merkmalTrifft, verschiebe, type Bedingung } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
 import texte from '../../shared/src/sprachen/de/automatisierung.json';
 import ereignisTexte from '../../shared/src/sprachen/de/ereignisse.json';
@@ -922,13 +922,18 @@ export class Automatisierungen {
   /** Und-Bedingungen: jede umkehrbar, „alle“ oder „eine davon“, eine Ebene Gruppen. */
   private async pruefeUnd(karten: UndKarte[], modus: 'alle' | 'eine', mappe: Mappe | null, ich: string, personen: (e: Empfaenger) => Promise<string[]>): Promise<{ ok: boolean; text: string }> {
     if (!karten.length) return { ok: true, text: t('automatisierung.und.keine') };
-    if (!mappe) return { ok: false, text: t('automatisierung.und.ohne-mappe') };
     const flach: UndKarte[] = karten.flatMap((k) => (k.art === 'gruppe' ? k.karten : [k]));
-    const teile = await Promise.all(flach.map(async (k) => k.art === 'bedingung' ? { art: 'bedingungen' as const, bedingungen: [k.bedingung as Bedingung] }
+    // Merkmal der Ablage (#1032): gilt ohne Mappe – auch bei Zeitplänen.
+    const merkmal = (k: UndKarte) => k.art === 'bedingung' && k.bedingung.art === 'merkmal';
+    if (!mappe && !flach.every(merkmal)) return { ok: false, text: t('automatisierung.und.ohne-mappe') };
+    const merkmale = flach.some(merkmal) ? await this.d.dienst.merkmale() : undefined;
+    const mitMappe = flach.filter((k) => !merkmal(k));
+    const teile = await Promise.all(mitMappe.map(async (k) => k.art === 'bedingung' ? { art: 'bedingungen' as const, bedingungen: [k.bedingung as Bedingung] }
       : k.art === 'ansicht' ? { art: 'sicht' as const, sicht: k.sicht }
         : { art: 'favorit' as const, benutzer: k.art === 'favorit' ? await personen(k.von) : [] }));
-    const erg = await this.d.dienst.trifftTeile(mappe.id, teile, ich);
-    const wert = new Map(flach.map((k, i) => [k, erg[i] !== (k.nicht === true)]));
+    const erg = mappe && mitMappe.length ? await this.d.dienst.trifftTeile(mappe.id, teile, ich) : [];
+    const trifft = (k: UndKarte) => (k.art === 'bedingung' && k.bedingung.art === 'merkmal' ? merkmalTrifft(k.bedingung, merkmale) : erg[mitMappe.indexOf(k)]);
+    const wert = new Map(flach.map((k) => [k, trifft(k) !== (k.nicht === true)]));
     const verbinde = (liste: UndKarte[], m: 'alle' | 'eine'): boolean => {
       const w = liste.map((k) => (k.art === 'gruppe' ? verbinde(k.karten, k.modus) !== (k.nicht === true) : wert.get(k)!));
       return m === 'alle' ? w.every(Boolean) : w.some(Boolean);

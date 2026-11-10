@@ -1250,5 +1250,10 @@
   "konflikt.zeile": "Note: {feld} {grund}.",
   "fenster.titel": "Create {typ}",
   "fenster.verschieben": "Drag here to move",
-  "fenster.angelegt": "“{titel}” created and filled in."
+  "fenster.angelegt": "“{titel}” created and filled in.",
+  "anzeige.abschnitt_one": "Section {name} is hidden – {anzahl} value stays saved",
+  "anzeige.abschnitt_other": "Section {name} is hidden – {anzahl} values stay saved",
+  "anzeige.feld": "{feld} is hidden – the value stays saved",
+  "anzeige.anzeigen": "show",
+  "anzeige.gerade-aus": "Currently hidden ({bedingung}) – the values stay saved."
 }

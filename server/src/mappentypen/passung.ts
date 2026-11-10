@@ -2,7 +2,8 @@
  * Passung (#1073, aus dienst.ts): Passt eine Mappe zur aktuellen Definition ihres Typs? Prüfen je Typ, je Mappe und
  * beim Start nachholen; Ergebnis am Repo, „passt nicht“-Aufgaben über den Anschluss. Schicht 2.
  */
-import { ersterGrund, istLeer, pruefeMappe, verweiseVon, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { ersterGrund, istLeer, verweiseVon, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import type { Kern } from '../kern';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
@@ -37,8 +38,11 @@ export class Passung {
       }
       gleiche.set(f.key, nachWert);
     }
+    // Anzeige-Bedingungen (#1033): Was eine Mappe nicht zeigt, ist nicht Pflicht – wie beim Speichern.
+    const merkmale = await this.kern.merkmale();
     const ergebnis = mappen.map((m) => {
-      const p = pruefeMappe(typ, m.werte, {
+      const p = pruefeMitAnzeige(typ, m.werte, {
+        merkmale,
         typVon: (id) => typVon.get(id),
         doppelt: (k, v) => {
           const andere = gleiche.get(k)?.get(String(v).trim().toLowerCase())?.find((x) => x.id !== m.id);
@@ -71,9 +75,10 @@ export class Passung {
     const typen = await this.repo.typenVon([...new Set(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)))].filter(istUuid));
     const eindeutig = typ.felder.filter((f) => f.eindeutig && (f.typ === 'text' || f.typ === 'zahl'));
     const funde = await this.repo.findeDoppelte(typ.id, mappen.flatMap((m) => eindeutig.filter((f) => !istLeer(m.werte[f.key])).map((f) => ({ mappeId: m.id, feldKey: f.key, wert: String(m.werte[f.key]) }))));
+    const merkmale = await this.kern.merkmale();
     for (const m of mappen) {
       const doppelt = (k: string) => { const d = funde.get(`${m.id}|${k}`); return d ? d.titel || t('meldungen.dienst.ohne-titel') : undefined; };
-      const problem = ersterGrund(typ, pruefeMappe(typ, m.werte, { typVon: (id) => typen.get(id), doppelt }));
+      const problem = ersterGrund(typ, pruefeMitAnzeige(typ, m.werte, { typVon: (id) => typen.get(id), doppelt, merkmale }));
       if (problem !== m.problem) liste.push({ id: m.id, problem });
     }
     await this.repo.setzePassung(liste);

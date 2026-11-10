@@ -79,6 +79,7 @@ export const SCHEMA: Schema = {
         adresse: { type: 'string', minLength: 1, maxLength: 300, pattern: '^https?://', description: t('meldungen.einrichtungsdatei.adresse-von-ablago-fuer') },
         bundesland: { enum: Object.keys(BUNDESLAENDER), description: t('meldungen.einrichtungsdatei.fuer-die-feiertage-werkbank') },
         beispiele: { type: 'boolean', description: t('meldungen.einrichtungsdatei.beispiel-mappentypen-laden') },
+        beruflich: { type: 'boolean', description: t('meldungen.einrichtungsdatei.beruflich') },
         'e-mail': {
           type: 'object', additionalProperties: false, required: ['server'],
           properties: {
@@ -178,7 +179,7 @@ function planAus(o: Roh): Einrichtungsplan {
     ablage: str(o.ablage).replace(/\s+/g, ' ').trim(),
     konto: { name: str(konto.name), email: str(konto.email), ...(typeof konto.passwort === 'string' ? { passwort: konto.passwort } : {}) },
     pakete: Array.isArray(o.pakete) ? (o.pakete as Roh[]).map((p) => ({ id: str(p.id), beispiele: p.beispiele === true, automatisierungen: { ...((p.automatisierungen ?? {}) as Record<string, boolean>) } })) : null,
-    optional: { adresse: typeof opt.adresse === 'string' ? opt.adresse : null, bundesland: typeof opt.bundesland === 'string' ? opt.bundesland : null, beispiele: opt.beispiele === true, mail },
+    optional: { adresse: typeof opt.adresse === 'string' ? opt.adresse : null, bundesland: typeof opt.bundesland === 'string' ? opt.bundesland : null, beispiele: opt.beispiele === true, mail, ...(opt.beruflich === true ? { beruflich: true } : {}) },
   };
 }
 
@@ -250,6 +251,8 @@ export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
   if (plan.optional.adresse) opt.adresse = plan.optional.adresse;
   if (plan.optional.bundesland) opt.bundesland = plan.optional.bundesland;
   opt.beispiele = plan.optional.beispiele;
+  // Merkmal der Ablage (#1032): nur, wenn an – Vorgabe ist nein.
+  if (plan.optional.beruflich) opt.beruflich = true;
   const m = plan.optional.mail;
   if (m) opt['e-mail'] = { aktiv: m.aktiv, server: m.host, port: m.port, verbindung: m.verbindung, benutzer: m.benutzer, absender: m.absender, selbstsigniert: m.selbstsigniert, ...(m.passwort ? { passwort: m.passwort } : {}) };
   o.optionales = opt;

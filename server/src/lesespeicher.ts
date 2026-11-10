@@ -30,6 +30,8 @@ export const GEMERKTE_EINSTELLUNGEN: ReadonlySet<string> = new Set([
   'zweifaktor_pflicht', 'zweifaktor_pflicht_seit', 'aufgaben_empfaenger', 'post', 'papierkorb', 'favoriten_sicht',
   'favoriten_freigabe', 'stempel', 'erkennung_typen', 'ablageort', 'datenschutz', 'paket_verwehrt', 'ki_typen', 'suche', 'vektoren',
   'historie', 'wiederherstellung_abschluss',
+  // Merkmale der Ablage (#1032): jede Prüfung von Rechten, Ansichten und Pflichtfeldern liest sie.
+  'merkmale',
 ]);
 
 /** `mappen` (#918, Sequenz `haushaltsstand_mappen`): wie `zahlen`, aber ohne Favoriten. */

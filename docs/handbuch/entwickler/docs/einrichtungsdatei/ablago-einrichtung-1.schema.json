@@ -155,6 +155,10 @@
           "type": "boolean",
           "description": "Beispiel-Mappentypen laden."
         },
+        "beruflich": {
+          "type": "boolean",
+          "description": "Die Ablage wird auch beruflich genutzt (Merkmal „beruflich genutzt“, Vorgabe nein): Mappentypen zeigen dann ihre beruflichen Felder und Abschnitte, die Werkbank startet mit der Vorlage „Betrieb“."
+        },
         "e-mail": {
           "type": "object",
           "additionalProperties": false,

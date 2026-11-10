@@ -1710,5 +1710,10 @@
   "verwaltung.netz-abgelehnt": "Network blocked: {anzahl} × {methode} {host} – the address is not allowed",
   "verwaltung.netz-ohne-antwort": "no response",
   "prozess.ungueltige-methode": "Invalid method – only capital letters are allowed, e.g. GET or POST.",
-  "paketerstellung.feldarten": "Field types period and percentage, negative amounts"
+  "paketerstellung.feldarten": "Field types period and percentage, negative amounts",
+  "dienst.anzeige-abschnitt": "Section “{name}”: {problem}",
+  "dienst.merkmal-ja-nein": "The attribute “{merkmal}” is yes or no (true or false).",
+  "paketerstellung.anzeige-mappe": "{wo}: A display condition names a folder in this installation and is not included in the package.",
+  "paketerstellung.ansicht-merkmal": "View “{name}”: the package format for views does not know conditions on the library attribute; they are left out of the package.",
+  "einrichtungsdatei.beruflich": "The Library is also used for work (attribute “used for work”, default no): folder types then show their work-related fields and sections, and the Workbench starts with the “Business” template."
 }

@@ -221,10 +221,25 @@ begriffe:
     code: Trefferliste
   - begriff: Bedingung
     bereich: grundbegriffe
-    beschreibung: Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches, z. B. ein Feld gleich „aktueller Benutzer“ oder „ist mein Favorit“.
+    beschreibung: Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen, Persönliches oder das Merkmal der Ablage, z. B. ein Feld gleich „aktueller Benutzer“, „ist mein Favorit“ oder „Ablage wird beruflich genutzt“.
     einsteiger: erklaeren
     begegnet: admin
     code: Bedingung
+  - begriff: Anzeigen, wenn …
+    bereich: grundbegriffe
+    beschreibung: Einstellung an einem Feld oder Abschnitt eines Mappentyps – die Mappe zeigt es nur, wenn die Bedingungen zutreffen, z. B. Abschnitt „Miete“ nur bei Vertragsart Miete. Ein ausgeblendeter Abschnitt blendet alle Felder bis zum nächsten Abschnitt aus. Ausblenden ist Ordnung, kein Schutz – Werte bleiben gespeichert und stehen in Schnittstelle, Export und Auskunft; Pflicht ist ein Feld nur, solange es zu sehen ist.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Sichtbarkeitsregel, bedingtes Feld]
+    verwandt: [Bedingung, Beruflich genutzt, Mappentyp]
+    code: anzeigen (Anzeigeregel)
+  - begriff: Beruflich genutzt
+    bereich: grundbegriffe
+    beschreibung: Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Nutzung.
+    einsteiger: alltag
+    begegnet: admin
+    verwandt: ["Anzeigen, wenn …", Bedingung]
+    code: merkmale.beruflich
   - begriff: Favoriten
     bereich: grundbegriffe
     beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).

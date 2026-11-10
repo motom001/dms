@@ -49,6 +49,11 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     if (!b) return 'ausgelassen';
     await api.regionSetzen({ bundesland: b as never });
   },
+  // Merkmal „beruflich genutzt“ (#1032): bis #1045 nur aus einer Datei; die Werkbank-Vorlage folgt ihm.
+  async nutzung() {
+    if (!holeStand().sammlung.optional.beruflich) return 'ausgelassen';
+    await api.setzeMerkmale({ beruflich: true });
+  },
   async mail() {
     const m = holeStand().sammlung.optional.mail;
     if (!m) return 'ausgelassen';

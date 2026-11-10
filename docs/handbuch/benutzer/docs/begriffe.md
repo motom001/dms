@@ -34,12 +34,20 @@ Siehe auch: [Rundgang](#rundgang), [Tipp](#tipp).
 Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Ansichten stehen im Baum links in der Ablage. Wie etwas aussieht, heißt dagegen „Darstellung“.  
 Siehe auch: [Unteransicht](#unteransicht), [Bedingung](#bedingung), [Trefferliste](#trefferliste).
 
+<a id="anzeigen-wenn"></a>**Anzeigen, wenn …** · ~ mit Erklärung · Administratoren  
+Einstellung an einem Feld oder Abschnitt eines Mappentyps – die Mappe zeigt es nur, wenn die Bedingungen zutreffen, z. B. Abschnitt „Miete“ nur bei Vertragsart Miete. Ein ausgeblendeter Abschnitt blendet alle Felder bis zum nächsten Abschnitt aus. Ausblenden ist Ordnung, kein Schutz – Werte bleiben gespeichert und stehen in Schnittstelle, Export und Auskunft; Pflicht ist ein Feld nur, solange es zu sehen ist.  
+Siehe auch: [Bedingung](#bedingung), [Beruflich genutzt](#beruflich-genutzt), [Mappentyp](#mappentyp).
+
 <a id="archivnummer"></a>**Archivnummer** · ✓ Alltagswort · alle  
 Nummer auf einem Aufkleber am Papieroriginal (z. B. A-000123), dieselbe steht am Dokument in Ablago. Eindeutig je Ablage; kommt aus dem Nummernkreis „Archivnummer“. Verbindet Papier und Dokument in beide Richtungen.  
 Siehe auch: [Ablageort](#ablageort), [Nummernkreis](#nummernkreis), [Dokument](#dokument).
 
 <a id="bedingung"></a>**Bedingung** · ~ mit Erklärung · Administratoren  
-Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches, z. B. ein Feld gleich „aktueller Benutzer“ oder „ist mein Favorit“.
+Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen, Persönliches oder das Merkmal der Ablage, z. B. ein Feld gleich „aktueller Benutzer“, „ist mein Favorit“ oder „Ablage wird beruflich genutzt“.
+
+<a id="beruflich-genutzt"></a>**Beruflich genutzt** · ✓ Alltagswort · Administratoren  
+Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Nutzung.  
+Siehe auch: [Anzeigen, wenn …](#anzeigen-wenn), [Bedingung](#bedingung).
 
 <a id="darstellung"></a>**Darstellung** · ✓ Alltagswort · alle  
 Der Bereich unter Mein Konto, in dem jeder einstellt, wie Ablago für ihn aussieht – das Design (für sein Konto), die Schriftgröße und die Breite der Bereiche (je Gerät).  
@@ -538,6 +546,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Administrator | Admin (in der Oberfläche) | – |
 | Anmeldung über einen Anbieter | SSO, OIDC (in der Oberfläche) | – |
 | Ansicht | Sicht, Filter, View | `Sicht` |
+| Anzeigen, wenn … | Sichtbarkeitsregel, bedingtes Feld | `anzeigen (Anzeigeregel)` |
 | Archivfassung | Archivkopie, Langzeitfassung | `Archivfassung` |
 | Archivmodus | – | `Archiv` |
 | Archivnummer | – | `archivnummer` |
@@ -548,6 +557,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Bedingung | – | `Bedingung` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechtigungen | Permissions | `Rechte` |
+| Beruflich genutzt | – | `merkmale.beruflich` |
 | Betrieb | Organisation (für die Vorlage) | `organisation (Vorlage)` |
 | Darstellung | Theme, Ansicht (für das Aussehen) | – |
 | Design | Theme | – |

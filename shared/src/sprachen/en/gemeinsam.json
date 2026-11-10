@@ -963,5 +963,22 @@
   "feldarten.betrag-nicht-negativ": "The amount cannot be negative here.",
   "feldarten.kein-zeitraum": "Not a valid period – a whole number from 0 to {max} and a unit, for example “3 months”.",
   "feldarten.bedingung-zeitraum": "For “{label}” the value to compare is not a period – for example “3 months”.",
-  "ansichtsymbole.vertragsdokument": "Contract document"
+  "ansichtsymbole.vertragsdokument": "Contract document",
+  "merkmale.beruflich": "Library is also used for work",
+  "merkmale.beruflich-nicht": "Library is not used for work",
+  "merkmale.unbekannt": "There is no attribute “{merkmal}”.",
+  "anzeige.feld-fehlt": "The field “{feld}” no longer exists.",
+  "anzeige.eigenes-feld": "“{feld}” is itself part of what is hidden – it could never be shown again.",
+  "anzeige.kein-verweis": "“{feld}” is not a reference field.",
+  "anzeige.anderer-typ": "“{feld}” only refers to folders of another type – the condition would never apply.",
+  "anzeige.typ-fehlt": "This folder type no longer exists.",
+  "anzeige.nur-feste-werte": "Only fixed values and “today” work here – what is shown does not depend on who is looking at the folder.",
+  "anzeige.verweistyp": "“{feld}” refers to a folder of type {typ}",
+  "anzeige.verweistyp-nicht": "“{feld}” does not refer to a folder of type {typ}",
+  "anzeige.nicht": "not ({bedingung})",
+  "anzeige.oder": " or ",
+  "anzeige.und": " and ",
+  "anzeige.nur-bei": "only if {bedingung}",
+  "anzeige.abschnitt-ab": "Section from “{feld}”",
+  "anzeige.wert-waehlen": "For “{feld}” please choose at least one value."
 }

@@ -168,7 +168,7 @@ const neueId = () => `k${Math.random().toString(36).slice(2, 8)}`;
 /** Karten im Vorrat: Art und Name; „wenn“ ersetzt die Wenn-Karte, „und“/„dann“ hängen an. */
 const VORRAT: Array<{ bereich: 'wenn' | 'und' | 'dann'; art: string }> = [
   { bereich: 'wenn', art: 'datum' }, { bereich: 'wenn', art: 'zeitplan' }, ...WENN_EREIGNISSE.map((a) => ({ bereich: 'wenn' as const, art: a })),
-  { bereich: 'und', art: 'bedingung' }, { bereich: 'und', art: 'ansicht' }, { bereich: 'und', art: 'favorit' }, { bereich: 'und', art: 'gruppe' },
+  { bereich: 'und', art: 'bedingung' }, { bereich: 'und', art: 'ansicht' }, { bereich: 'und', art: 'favorit' }, { bereich: 'und', art: 'merkmal' }, { bereich: 'und', art: 'gruppe' },
   { bereich: 'dann', art: 'feld' }, { bereich: 'dann', art: 'aufgabe' },
   // #678: Benachrichtigungen – passen nur zu ihrer Wenn-Karte (Zeitplan je Benutzer, Favorit geändert, Zeitplan bzw. Kontosperre).
   { bereich: 'dann', art: 'zusammenfassung' }, { bereich: 'dann', art: 'favoriten' }, { bereich: 'dann', art: 'anmeldeschutz' },
@@ -473,6 +473,8 @@ function neueUnd(art: string, typ: Mappentyp | null): UndKarte {
   if (art === 'ansicht') return { art: 'ansicht', sicht: '' };
   if (art === 'favorit') return { art: 'favorit', von: { art: 'person', id: '' } };
   if (art === 'gruppe') return { art: 'gruppe', modus: 'eine', karten: [] };
+  // Merkmal der Ablage (#1032): „Ablage wird beruflich genutzt“, umkehrbar über „nicht“.
+  if (art === 'merkmal') return { art: 'bedingung', bedingung: { art: 'merkmal', merkmal: 'beruflich' } };
   const f = bedingungsfelder(typ ? [typ] : [])[0];
   return { art: 'bedingung', bedingung: { art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] } };
 }
@@ -519,7 +521,7 @@ function UndListe({ karten, typ, k, setze, tief = 0 }: { karten: UndKarte[]; typ
             <UndListe karten={u.karten} typ={typ} k={k} setze={(x) => aendere(i, { ...u, karten: x })} tief={1} />
             <select value="" aria-label={t('automatisierung.ui.karte.hinzu')} onChange={(x) => { if (x.target.value) aendere(i, { ...u, karten: [...u.karten, neueUnd(x.target.value, typ)] }); }}>
               <option value="">{t('automatisierung.ui.karte.hinzu')}</option>
-              {['bedingung', 'ansicht', 'favorit'].map((art) => <option key={art} value={art}>{t.frei(`automatisierung.ui.karte.und.${art}`)}</option>)}
+              {['bedingung', 'ansicht', 'favorit', 'merkmal'].map((art) => <option key={art} value={art}>{t.frei(`automatisierung.ui.karte.und.${art}`)}</option>)}
             </select>
           </div>}
         </li>

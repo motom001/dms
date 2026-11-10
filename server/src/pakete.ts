@@ -18,6 +18,7 @@ import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, type Abschnitt, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
 import { bereinigeAbschnitte } from '../../shared/src/darstellung';
+import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
@@ -343,6 +344,15 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
         else f.ausText = str(roh.aus_text);
         delete roh.aus_text;
       }
+    }
+    // Anzeigen, wenn … (#1033) an Feldern und Abschnitten: ein Objekt; Typen als Verweis wie bei ziel. Was im Einzelnen
+    // nicht passt, meldet die Prüfung des Mappentyps beim Anlegen.
+    const anzeigen = [...felder.map((f) => ({ key: f.key, a: (f as unknown as Record<string, unknown>).anzeigen })),
+      ...register.flatMap((r) => (Array.isArray(r.abschnitte) ? r.abschnitte : []).filter(istObjekt).map((x) => ({ key: `${r.key}.${str(x.vor)}`, a: x.anzeigen })))];
+    for (const { key, a } of anzeigen) {
+      if (a === undefined || a === null) continue;
+      if (!istObjekt(a) || !Array.isArray(a.bedingungen)) { fehler.push(`${wo}: „${key}“: anzeigen muss ein Objekt mit modus und bedingungen sein.`); continue; }
+      for (const b of a.bedingungen.filter(istObjekt)) if (b.art === 'verweistyp' && !TYPVERWEIS.test(str(b.typ))) fehler.push(`${wo}: „${key}“: anzeigen nennt den Mappentyp „${str(b.typ)}“ ungültig.`);
     }
     if (!register.length) fehler.push(`${wo}: mindestens ein Register nötig.`);
     // Beschriftungen (#728): ein Objekt Sprache → Texte; was nicht passt, bereinigt das DMS beim Anlegen.
@@ -1612,11 +1622,17 @@ export class Paketverwaltung {
       if (!id) throw new Fachfehler(422, t('meldungen.pakete.der-verweis-zeigt-auf', { vw }));
       return !nurAngelegt || angelegt.has(s) || vorher.has(id) ? id : null;
     };
+    // Anzeigen, wenn … (#1033): „zeigt auf eine Mappe vom Typ …“ nennt im Paket einen Typverweis – hier die Id.
+    const anzeige = (a: unknown) => {
+      if (!istObjekt(a) || !Array.isArray(a.bedingungen)) return a;
+      return { ...a, bedingungen: a.bedingungen.map((b) => (istObjekt(b) && b.art === 'verweistyp' ? { ...b, typ: ziel(str(b.typ), false) } : b)) };
+    };
     const eingabe = (t: PaketTyp, nurAngelegt: boolean) => {
       const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
       const offen = new Set(t.felder.filter((f) => f.ziel && !(eigen(f.ziel) && f.ziel.split(':').pop() === t.schluessel) && ziel(f.ziel, nurAngelegt) === null).map((f) => f.key));
-      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, ...f }) => ({ ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(z ? { zielTyp: ziel(z, false) } : {}) }));
-      const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}) }));
+      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, ...f }) => ({ ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(z ? { zielTyp: ziel(z, false) } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}) }));
+      const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}),
+        ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
       const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => ziel(q.typ, nurAngelegt) === null));
       const name = plan.typen.find((x) => x.schluessel === t.schluessel)!.name;
       return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: `${m.id}_${t.schluessel}`, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}), sichtAnlegen: false } };
@@ -1685,7 +1701,7 @@ export class Paketverwaltung {
         const register = besch.typ.register.map((r) => {
           const dazu = neueFelderAuf(paketTyp, aktuell, r);
           const mit = dazu.length ? { ...r, felder: [...(r.felder ?? []), ...dazu] } : r;
-          return abschnitte.has(r.key) ? { ...mit, abschnitte: abschnitte.get(r.key) } : mit;
+          return abschnitte.has(r.key) ? { ...mit, abschnitte: abschnitte.get(r.key)!.map((a) => (a.anzeigen ? { ...a, anzeigen: anzeige(a.anzeigen) as Anzeigeregel } : a)) } : mit;
         });
         for (const r of neu.register) if (!register.some((g) => g.key === r.key)) { const { ausgeblendet: _a, ...ohne } = r as Register; register.push(ohne); }
         geaendert.push(aktuell);

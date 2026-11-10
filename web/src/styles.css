@@ -116,6 +116,12 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .feldabschnitt.offen .abschnittkopf svg { transform: rotate(90deg); }
 .abschnittkopf .leise { font-weight: 400; }
 .feldabschnitt > .formular[hidden] { display: none; }
+/* Ruhige Zeile (#1033): ausgeblendet, aber mit Werten – an der Stelle des Felds bzw. Abschnitts, über die ganze Breite. */
+.ausgeblendetzeile { grid-column: 1 / -1; margin: 0; padding: 6px 0; border-top: 1px dashed var(--linie); }
+.ausgeblendetzeile > svg { vertical-align: -2px; margin-right: 6px; }
+.ausgeblendetzeile > span[aria-hidden] { margin: 0 6px; }
+.ausgeblendetzeile svg, .anzeigehinweis svg { width: 14px; height: 14px; flex: none; }
+.anzeigehinweis { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0; }
 @media (max-width: 560px) { .feldabschnitt { border-top: 0; padding-top: 0; } }
 @media (prefers-reduced-motion: reduce) { .abschnittkopf svg { transition: none; } }
 .hilfe { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-weight: 400; }
@@ -366,6 +372,12 @@ a.textknopf { text-decoration: none; }
 .abschnittzeile .sprachtext { flex: 1 1 220px; }
 .abschnittzeile .haken { margin: 0; }
 .abschnittzeile .feldaktionen { margin-left: auto; padding-right: 0; }
+/* Anzeigen, wenn … (#1033): Bedingung am Abschnitt im Editor, Symbol und Satz „nur bei …“ als Chip. */
+.abschnittanzeige { list-style: none; margin: 2px 0 8px; padding: 8px 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
+.anzeigechip { gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anzeigechip svg { width: 12px; height: 12px; flex: none; }
+.anzeigeeditor .bedingungen { margin: 4px 0; }
+.anzeigeeditor .anzeigemodus { display: flex; align-items: center; gap: 8px; }
 
 /* Werkbank, Profil, vorgemerkte Dokumente */
 .eintrag.werk.an { background: var(--akzent-zart); border-left-color: var(--akzent); }

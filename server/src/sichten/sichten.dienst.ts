@@ -302,12 +302,13 @@ export class SichtenDienst {
   }
 
   /**
-   * Was die Ablage ohne Zählen sofort braucht (#512): Tage im Papierkorb (0 = aus) und die Sicht
-   * „Neue Post“. Die Oberfläche lädt das vorab, die Zahlen danach.
+   * Was die Ablage ohne Zählen sofort braucht (#512): Tage im Papierkorb (0 = aus), die Sicht
+   * „Neue Post“ und die Merkmale der Ablage (#1032). Die Oberfläche lädt das vorab, die Zahlen danach.
    */
   async zaehlerRahmen() {
     // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
-    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht(), favoritenSicht: await this.favoritenSicht() };
+    // Merkmale der Ablage (#1032): für die Anzeige-Bedingungen im Formular (#1033).
+    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht(), favoritenSicht: await this.favoritenSicht(), merkmale: await this.kern.merkmale() };
   }
 
   /**

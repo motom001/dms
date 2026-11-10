@@ -286,5 +286,6 @@
   "ui.karte.dann.anmeldeschutz.sammel": "Sammelmeldung über die Sperren vor heute",
   "ui.karte.dann.anmeldeschutz.konto": "Kontosperre sofort an alle, die den Anmeldeschutz verwalten",
   "ui.karte.dann.anmeldeschutz.sammel.text": "E-Mail an alle, die den Anmeldeschutz verwalten, nur wenn es seit der letzten Meldung Sperren gab (Wenn-Karte „Zeitplan“).",
-  "ui.karte.dann.anmeldeschutz.konto.text": "E-Mail an alle, die den Anmeldeschutz verwalten, je Konto höchstens einmal am Tag (Wenn-Karte „Benutzerkonto gesperrt“)."
+  "ui.karte.dann.anmeldeschutz.konto.text": "E-Mail an alle, die den Anmeldeschutz verwalten, je Konto höchstens einmal am Tag (Wenn-Karte „Benutzerkonto gesperrt“).",
+  "ui.karte.und.merkmal": "Ablage wird beruflich genutzt"
 }

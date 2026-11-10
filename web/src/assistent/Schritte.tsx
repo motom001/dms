@@ -431,6 +431,8 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
             <dt>{t('einrichtung.optional.adresse')}</dt><dd>{s.optional.adresse.trim() || <span className="leise">{t('einrichtung.zf.adresse.keine')}</span>}</dd>
             <dt>{t('einrichtung.optional.bundesland')}</dt><dd>{s.optional.bundesland ? BUNDESLAENDER[s.optional.bundesland as keyof typeof BUNDESLAENDER] : <span className="leise">{t('einrichtung.optional.bundesland.keins')}</span>}</dd>
             <dt>{t('einrichtung.optional.beispiele.titel')}</dt><dd>{s.optional.beispiele ? t('einrichtung.zf.ja') : t('einrichtung.zf.nein')}</dd>
+            {/* Beruflich genutzt (#1032): bis #1045 nur aus einer Datei – dann steht es hier, damit nichts unsichtbar mitkommt. */}
+            {s.optional.beruflich && <><dt>{t('einrichtung.zf.beruflich')}</dt><dd>{t('einrichtung.zf.ja')} <span className="leise">– {t('einrichtung.zf.beruflich.datei')}</span></dd></>}
             <dt>{t('einrichtung.optional.mail')}</dt><dd>{m ? `${m.host}:${m.port}${m.benutzer ? ` · ${m.benutzer}` : ''} · ${m.mitPasswort && geheim.mail ? t('einrichtung.zf.passwort.gesetzt') : t('einrichtung.zf.mail.ohne')}${m.aktiv ? '' : ` · ${t('einrichtung.zf.mail.aus')}`}` : <span className="leise">{t('einrichtung.zf.mail.keine')}</span>}</dd>
           </dl>
         </Abschnitt>
@@ -459,10 +461,10 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
 
 const STUFE_TEXT: Record<Stufe, string> = {
   ablage: 'einrichtung.lauf.ablage', schluessel: 'einrichtung.lauf.schluessel', adresse: 'einrichtung.lauf.adresse', region: 'einrichtung.lauf.region',
-  mail: 'einrichtung.lauf.mail', beispiele: 'einrichtung.lauf.beispiele', pakete: 'einrichtung.lauf.pakete',
+  nutzung: 'einrichtung.lauf.nutzung', mail: 'einrichtung.lauf.mail', beispiele: 'einrichtung.lauf.beispiele', pakete: 'einrichtung.lauf.pakete',
 };
 /** Welcher Schritt eine Stufe ändert (nach einem Fehler). */
-const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', mail: 'optional', beispiele: 'optional', pakete: 'pakete' };
+const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'optional', mail: 'optional', beispiele: 'optional', pakete: 'pakete' };
 
 function LaufAnsicht() {
   const st = useAssistent();

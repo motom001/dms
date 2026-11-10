@@ -1250,5 +1250,10 @@
   "konflikt.zeile": "Achtung: {feld} {grund}.",
   "fenster.titel": "{typ} anlegen",
   "fenster.verschieben": "Zum Verschieben hier ziehen",
-  "fenster.angelegt": "„{titel}“ angelegt und eingetragen."
+  "fenster.angelegt": "„{titel}“ angelegt und eingetragen.",
+  "anzeige.abschnitt_one": "Abschnitt {name} ist ausgeblendet – {anzahl} Wert bleibt gespeichert",
+  "anzeige.abschnitt_other": "Abschnitt {name} ist ausgeblendet – {anzahl} Werte bleiben gespeichert",
+  "anzeige.feld": "{feld} ist ausgeblendet – der Wert bleibt gespeichert",
+  "anzeige.anzeigen": "anzeigen",
+  "anzeige.gerade-aus": "Gerade ausgeblendet ({bedingung}) – die Werte bleiben gespeichert."
 }

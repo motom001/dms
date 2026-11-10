@@ -87,6 +87,7 @@ nav:
   - Workbench:
       - Workbench and overview: uebersicht.md
       - Building your Library:
+          - "Use (private or work)": nutzung.md
           - Folder types: mappentypen.md
           - Views: sichten.md
           - Number sequences: nummernkreise.md

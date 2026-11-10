@@ -4,10 +4,11 @@
  * Bearbeiten (#609). Die Eingabe-Hilfen der Mappentypen liegen in mappentypen/eingabe.ts. Schicht 2.
  */
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
+import { anzeigestand, hatAnzeige, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
 import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgtaus';
-import { type Feld, type Feldkonflikt, formatiere, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, pruefeMappe, verweiseVon, type Verweiskonflikt, type Wert, type Werte } from '../../../shared/src/model';
+import { type Feld, type Feldkonflikt, formatiere, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte } from '../../../shared/src/model';
 import type { Rechte } from '../../../shared/src/rechte';
 import { type Aufloesung, auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, heuteIn, setzeEigeneWerte } from '../../../shared/src/sichten';
 import { Fachfehler } from '../fehler';
@@ -83,12 +84,17 @@ export class MappenEingaben {
         if (d) doppelt.set(f.key, lesbar.has(d.id) ? d.titel || 'Ohne Titel' : '');
       }
     }
-    const p = pruefeMappe(typ, werte, { typVon: (id) => typen.get(id), doppelt: (k) => doppelt.get(k) });
+    // Anzeige-Bedingungen (#1033): dieselbe Auswertung wie im Formular (shared/src/anzeige.ts) – Felder, die bei
+    // diesen Werten nicht zu sehen sind, sind nicht Pflicht.
+    const merkmale = await this.kern.merkmale();
+    const typVon = (id: string) => typen.get(id);
+    const p = pruefeMitAnzeige(typ, werte, { typVon, doppelt: (k) => doppelt.get(k), merkmale });
     // Formate und Datumsgrenzen (#535): beim Bearbeiten nur, was sich ändert – der Bestand bleibt gültig.
     for (const [k, m] of Object.entries(pruefeFormate(typ, werte, alt))) p.felder[k] ??= m;
-    // Ausgeblendete Felder (#655): Was dort unverändert steht, hält das Speichern nicht auf – sehen kann es hier keiner.
+    // Ausgeblendete Felder (#655, #1033): Was dort unverändert steht, hält das Speichern nicht auf – sehen kann es hier keiner.
     if (alt) {
       const aus = ausgeblendeteFelder(typ);
+      if (hatAnzeige(typ)) for (const k of anzeigestand(typ, werte, { merkmale, typVon }).verborgen) aus.add(k);
       for (const k of Object.keys(p.felder)) if (aus.has(k) && JSON.stringify(werte[k] ?? null) === JSON.stringify(alt[k] ?? null)) delete p.felder[k];
     }
     if (!istOk(p)) {

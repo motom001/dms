@@ -113,6 +113,31 @@ export interface Feld {
    * Bedingungen. Die Werte bleiben gespeichert (Sicherung, Vollexport, API). Nie Pflicht, nie an Systemfeldern.
    */
   ausgeblendet?: boolean;
+  /**
+   * „Anzeigen, wenn …“ (#1033): Das Formular zeigt das Feld nur, wenn die Regel zutrifft (anzeige.ts). Nur Ordnung,
+   * kein Schutz – der Wert bleibt gespeichert und steht in Schnittstelle, Export und Auskunft. Pflicht nur, solange
+   * es zu sehen ist. Fehlt = immer. Nie an Systemfeldern.
+   */
+  anzeigen?: Anzeigeregel;
+}
+
+/**
+ * Eine Bedingung in „Anzeigen, wenn …“ (#1033); `nicht` kehrt sie um. Ausgewertet in anzeige.ts (hier nur der Typ,
+ * damit das Modell nicht auf die Auswertung zeigt).
+ */
+export type Anzeigebedingung = { nicht?: boolean } & (
+  /** Merkmal der Ablage (#1032). */
+  | { art: 'merkmal'; merkmal: import('./merkmale').Merkmal }
+  /** Feldwert der Mappe – wie in Ansichten, nur mit festen Vergleichswerten oder „heute“. */
+  | { art: 'feld'; bedingung: import('./sichten').Feldbedingung }
+  /** Ein Verweisfeld zeigt auf (mindestens) eine Mappe vom Typ `typ` (Id des Mappentyps). */
+  | { art: 'verweistyp'; feld: string; typ: string }
+);
+/** „Anzeigen, wenn …“ (#1033): alle Bedingungen oder eine davon. */
+export interface Anzeigeregel {
+  /** alle: jede Bedingung muss zutreffen; eine: mindestens eine. */
+  modus: 'alle' | 'eine';
+  bedingungen: Anzeigebedingung[];
 }
 
 /**
@@ -129,6 +154,11 @@ export interface Abschnitt {
   eingeklappt?: boolean;
   /** Überschrift in weiteren Sprachen (#728). */
   beschriftungen?: Beschriftungen<AbschnittTeile>;
+  /**
+   * „Anzeigen, wenn …“ (#1033): Trifft die Regel nicht zu, fehlt der Abschnitt samt allen Feldern bis zum nächsten
+   * Abschnitt; deren Werte bleiben gespeichert. Fehlt = immer.
+   */
+  anzeigen?: Anzeigeregel;
 }
 /** Höchstlänge der Überschrift eines Abschnitts (#890). */
 export const ABSCHNITT_TITEL_MAX = 80;
@@ -716,6 +746,8 @@ export interface MappenKontext {
   typVon: (mappeId: string) => string | undefined;
   /** Titel einer anderen Mappe desselben Typs mit gleichem Wert ('' = vorhanden, aber nicht lesbar), sonst undefined. */
   doppelt: (feldKey: string, wert: string | number) => string | undefined;
+  /** Felder, die gerade nicht zu sehen sind (Anzeige-Bedingungen, #1033): nie Pflicht. Siehe `pruefeMitAnzeige`. */
+  verborgen?: Set<string>;
 }
 
 /** Prüft die Werte einer Mappe gegen die aktuelle Definition ihres Typs. */
@@ -728,7 +760,7 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
     // Nummernkreis (#171): Wert vergibt das DMS, keine Prüfung der Eingabe.
     if (kreisVon(f)) continue;
     if (istLeer(v)) {
-      if (f.pflicht && f.typ !== 'janein') fehler(f.key, t('gemeinsam.model.pflichtfeld-bitte-ausfuellen'));
+      if (f.pflicht && f.typ !== 'janein' && !ctx.verborgen?.has(f.key)) fehler(f.key, t('gemeinsam.model.pflichtfeld-bitte-ausfuellen'));
       continue;
     }
     switch (f.typ) {

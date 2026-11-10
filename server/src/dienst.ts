@@ -863,6 +863,8 @@ export class Dienst {
 
   werkbankAnsicht(wer: { id: string | null; email: string }) { return this.werkbank.werkbankAnsicht(wer); }
   setzeWerkbankAnsicht(wer: { id: string | null; email: string }, body: Record<string, unknown>) { return this.werkbank.setzeWerkbankAnsicht(wer, body); }
+  merkmale() { return this.werkbank.merkmale(); }
+  setzeMerkmale(body: unknown, von: string) { return this.werkbank.setzeMerkmale(body, von); }
 
   /* ---------- Pakete (#188): die Logik steckt in pakete.ts; die Ablage ruft das Repo des Kerns bzw. pakete/pakete.einstellungen.ts (#961) ---------- */
 

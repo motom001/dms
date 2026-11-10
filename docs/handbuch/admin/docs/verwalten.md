@@ -7,7 +7,7 @@ Ablago hat **kein eigenes Konto „Administrator“**. Verwalten ist ein Recht a
 Unter **Werkbank → Benutzer → Person** steht der Abschnitt **Verwaltung**:
 
 - **Darf Ablago verwalten** – ohne diesen Haken gibt es für die Person weder die Werkbank noch den Eintrag „Ablago verwalten“.
-- Darunter ein Baum mit den Bereichen der Werkbank, gegliedert nach den Gruppen der Leiste. Ganz oben steht **Gesamte Verwaltung**: alle Bereiche, auch solche, die in späteren Versionen dazukommen.
+- Darunter ein Baum mit den Bereichen der Werkbank, gegliedert nach den Gruppen der Leiste. Ganz oben steht **Gesamte Verwaltung**: alle Bereiche, auch solche, die in späteren Versionen dazukommen. [Nutzung](nutzung.md) steht nicht im Baum – das gehört immer zur Gesamten Verwaltung.
 - Wer einen Bereich darf, darf alles darin. Die **Übersicht** der Werkbank sieht jede Person, die verwaltet – mit den Meldungen ihrer eigenen Bereiche.
 - Der Server prüft dasselbe wie die Oberfläche: Einen Bereich ohne Recht erreicht man auch nicht über einen Link oder die Schnittstelle.
 

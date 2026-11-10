@@ -3114,5 +3114,17 @@
   "uebersetzen.abfluss.titel": "Texte an einen Dienst schicken?",
   "uebersetzen.abfluss.text": "„{paket}“ übersetzt nicht auf dem Gerät: Jeder Text, den jemand übersetzen lässt, geht an {ziele}. Wer übersetzt, sieht das am Ergebnis.",
   "uebersetzen.abfluss.ja": "Bestätigen und wählen",
-  "pakete.abschnitte": "Abschnitte in {map}"
+  "pakete.abschnitte": "Abschnitte in {map}",
+  "sichten.ablage": "Ablage",
+  "bereich.nutzung.name": "Nutzung",
+  "bereich.nutzung.wann": "ob die Ablage auch beruflich genutzt wird – Mappentypen zeigen dann ihre beruflichen Felder und Abschnitte",
+  "bereich.nutzung.auch": "beruflich|privat|Betrieb|selbständig|Merkmal",
+  "nutzung.lade": "Lade …",
+  "nutzung.einleitung": "Wofür diese Ablage genutzt wird. Mappentypen können Felder und Abschnitte davon abhängig zeigen („Anzeigen, wenn …“) – so bleibt ein Mappentyp für eine rein private Ablage einfach und kann im Betrieb trotzdem alles.",
+  "nutzung.beruflich": "Die Ablage wird auch beruflich genutzt",
+  "nutzung.beruflich.hinweis": "Zum Beispiel als Selbständige, im Verein oder im Betrieb. Gilt für die ganze Ablage, nicht je Person.",
+  "nutzung.ordnung": "Ausblenden ist Ordnung, kein Schutz: Werte ausgeblendeter Felder bleiben gespeichert und stehen in Schnittstelle, Export und Auskunft. Wer was sehen darf, regeln die Berechtigungen.",
+  "nutzung.vorlage": "Vorlage der Werkbank dazu: {vorlage}. Sie folgt dem Merkmal, solange niemand die Leiste angepasst hat.",
+  "nutzung.gespeichert": "Gespeichert. Mappen zeigen ab jetzt, was dazugehört.",
+  "ansicht.vorgabe-nutzung": "passt zur Nutzung"
 }

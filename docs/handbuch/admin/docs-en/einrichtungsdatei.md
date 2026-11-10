@@ -73,6 +73,7 @@ optionales:
 - `konto` is the person who sets up: they get "Full administration" and also work in the Library. You invite further people after the setup under Workbench → Users.
 - Without a list `pakete` you choose the packages in the wizard; `pakete: []` means "none".
 - **Files from version 0.191 and 0.192** are still loaded: the section `administrator` counts as `konto`. Ablago skips a section `erster-benutzer` with a notice – the first user no longer exists in the wizard. When saving, only `konto` is in the file.
+- `optionales: beruflich: true` means the Library is also used for work ([Use](nutzung.md)); without it, no. The wizard shows it in the summary and saves it with "Set up now".
 - A package's automations are keys with `true` (switched on) or `false` (off); if one is missing, it is switched on as in the wizard.
 
 ## References instead of passwords {#verweise-statt-passworter}

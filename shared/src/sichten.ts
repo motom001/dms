@@ -12,6 +12,7 @@ import { ALLE_TYPEN } from './pakete';
 import { t } from './texte';
 import { feldLabel, optionText } from './beschriftung';
 import { istZeitraum, leseProzent, leseZeitraum, zeitraumTage, zeitraumText } from './feldarten';
+import { istMerkmal, merkmalText, type Merkmal, type Merkmale } from './merkmale';
 
 /** Arten, die als Zahl verglichen werden – Zeitraum in Tagen (#1035). */
 export const istZahlvergleich = (art: Feldart) => art === 'zahl' || art === 'betrag' || art === 'prozent' || art === 'zeitraum';
@@ -107,7 +108,12 @@ export type Bedingung =
   /** Die Mappe ist ein Favorit des aktuellen Benutzers (#62). */
   | { art: 'favorit' }
   /** Frist in den nächsten n Tagen (#133): ein Datumsfeld oder (null) alle Datumsfelder mit Erinnerung; optional nur meine. */
-  | { art: 'frist'; feld: string | null; tage: number; nurMeine?: boolean };
+  | { art: 'frist'; feld: string | null; tage: number; nurMeine?: boolean }
+  /**
+   * Merkmal der Ablage (#1032), z. B. „Ablage wird beruflich genutzt“; `nicht` kehrt es um. Hängt nicht an der Mappe:
+   * trifft für alle Mappen zu oder für keine.
+   */
+  | { art: 'merkmal'; merkmal: Merkmal; nicht?: boolean };
 
 /** Datumsfelder mit Erinnerung (#129) – gleich wie fristFelder in fristen.ts, hier ohne Kreisimport. */
 const mitFrist = (t: Pick<Mappentyp, 'felder'>) => t.felder.filter((f) => f.typ === 'datum' && f.frist);
@@ -231,6 +237,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     return null;
   }
   if (b.art === 'favorit') return null;
+  if (b.art === 'merkmal') return istMerkmal(b.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(b.merkmal) });
   if (b.art === 'frist') {
     if (!Number.isInteger(b.tage) || b.tage < 0 || b.tage > FRIST_TAGE_MAX) return t('gemeinsam.sichten.die-anzahl-tage-muss', { FRIST_TAGE_MAX });
     if (!typen.length) return t('gemeinsam.sichten.fristen-brauchen-mindestens-einen');
@@ -260,7 +267,12 @@ export interface Aufloesung {
   heute: string;
   ich: string;
   meineRollen: string[];
+  /** Merkmale der Ablage (#1032); fehlt = keine (privat). */
+  merkmale?: Merkmale;
 }
+
+/** Trifft eine Merkmal-Bedingung zu? Ohne Angabe gilt die Ablage als privat (#1032). */
+export const merkmalTrifft = (b: { merkmal: Merkmal; nicht?: boolean }, m: Merkmale | undefined) => !!m?.[b.merkmal] !== !!b.nicht;
 
 /** Bedingung, wie das Repo sie braucht: Art des Feldes, Operator und feste Werte. */
 export type Filter =
@@ -353,6 +365,9 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
       erg.push({ art: 'verknuepfungen', quellen: [], vergleich: b.vergleich, anzahl: b.anzahl });
     } else if (b.art === 'favorit') {
       erg.push({ art: 'favorit', benutzer: a.ich });
+    } else if (b.art === 'merkmal') {
+      // Merkmal der Ablage (#1032): trifft es zu, schränkt es nichts ein; sonst trifft keine Mappe zu (leere Id-Liste).
+      if (!merkmalTrifft(b, a.merkmale)) erg.push({ art: 'id', ids: [] });
     } else if (b.art === 'frist') {
       // Je Feldschlüssel das Empfängerfeld des ersten Typs, der dort erinnert.
       const felder = new Map<string, string | null>();
@@ -508,6 +523,8 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
       erg.push({ art: b.art, vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
     } else if (b.art === 'favorit') {
       erg.push({ art: 'favorit' });
+    } else if (b.art === 'merkmal' && istMerkmal(b.merkmal)) {
+      erg.push({ art: 'merkmal', merkmal: b.merkmal, ...(b.nicht === true ? { nicht: true } : {}) });
     } else if (b.art === 'frist') {
       erg.push({ art: 'frist', feld: typeof b.feld === 'string' && b.feld ? b.feld.slice(0, 60) : null, tage: Math.max(0, Math.min(FRIST_TAGE_MAX, Math.trunc(Number(b.tage) || 0))), ...(b.nurMeine === true ? { nurMeine: true } : {}) });
     }
@@ -518,6 +535,7 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
 export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id, eigeneNamen?: Record<string, string>): string {
   if (b.art === 'favorit') return t('gemeinsam.sichten.ist-mein-favorit');
+  if (b.art === 'merkmal') return merkmalText(b.merkmal, b.nicht);
   if (b.art === 'frist') {
     const feld = b.feld ? typen.flatMap((t) => t.felder).find((f) => f.key === b.feld)?.label ?? b.feld : null;
     return t('gemeinsam.sichten.hat-frist-in-den', { anzahl: b.tage, wert: feld ? ` („${feld}“)` : '', wert2: b.nurMeine ? t('gemeinsam.sichten.nur-meine') : '' });
