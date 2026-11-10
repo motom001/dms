@@ -136,6 +136,9 @@ describe('Mehrere Prozesse an einer Datenbank (#744)', { skip: !url && 'ohne TES
     const roh = JSON.stringify(await sql`SELECT wert FROM kurzzustand WHERE art = 'zweifaktor-entwurf'`);
     assert.ok(!roh.includes(geheimnis.replace(/\s/g, '')), 'nicht im Klartext');
     const g = ausBase32(geheimnis.replace(/\s/g, ''));
+    // Nicht kurz vor dem Fensterwechsel beginnen: sonst ist `schritt - 1` beim Prüfen schon zwei Fenster alt.
+    const rest = 30_000 - (Date.now() % 30_000);
+    if (rest < 5_000) await new Promise((fertig) => setTimeout(fertig, rest + 50));
     const schritt = Math.floor(Date.now() / 30_000);
     await k2.zweifaktor!.bestaetige(lena.id, totp(g, schritt - 1), 'test');
     await assert.rejects(k1.zweifaktor!.bestaetige(lena.id, totp(g, schritt - 1), 'test'), status(409), 'Entwurf nur einmal');
