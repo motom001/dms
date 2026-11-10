@@ -143,7 +143,7 @@
       "count": 6
     },
     "max-params": {
-      "count": 8
+      "count": 7
     },
     "no-control-regex": {
       "count": 1
@@ -528,6 +528,11 @@
       "count": 1
     },
     "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/src/suche/suche.dienst.ts": {
+    "max-params": {
       "count": 1
     }
   },
