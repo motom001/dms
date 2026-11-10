@@ -15,6 +15,16 @@ Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die n�
 
 Ablago lädt den Katalog von `https://catalog.ablago.app/katalog.json` und prüft seine **Signatur** (siehe [Herkunft](#herkunft-signiert-oder-nicht)). Weiterleitungen folgt es dabei nur auf `https://`-Adressen. Dafür muss Ablago selbst ins Internet kommen. Einen Proxy für ausgehende Abrufe kann Ablago nicht einstellen. Ohne Internetzugang lädst du ein Paket als Datei hoch (siehe [Expertenmodus](#expertenmodus-weitere-kataloge-und-hochladen)).
 
+Lässt du Ablago nur zu bestimmten Adressen ins Netz (Firewall-Liste, ausgehender Filter am NAS), braucht es diese drei:
+
+- `catalog.ablago.app`: Katalog und Signatur
+- `github.com`: die Paket-Dateien liegen als Release-Datei bei GitHub; von dort leitet GitHub einmal weiter
+- `release-assets.githubusercontent.com`: Ziel dieser Weiterleitung
+
+GitHub kann das Ziel der Weiterleitung ändern. Maßgeblich ist dann die Adresse, die Ablago in der Fehlermeldung beim Laden nennt. Die Prüfsumme jedes Pakets steht im signierten Katalog, an der Prüfung ändert der Ort der Datei nichts.
+
+GitHub zählt, wie oft eine Release-Datei heruntergeladen wird; daraus kommen die Zahlen im Katalog. Ablago sendet dafür nichts mit: keine Kennung, keine Version, nur einen festen User-Agent.
+
 ## Installieren
 
 1. Wähle ein Paket unter **Verfügbar** und ggf. eine ältere Version.
