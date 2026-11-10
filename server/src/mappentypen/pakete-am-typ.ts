@@ -9,7 +9,7 @@ import type { Kern, Zugreifender, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache';
-import type { ZugriffDienst } from '../zugriff/zugriff.dienst';
+import type { ZugriffDienst } from '../zugriff';
 
 /** Was die Pakete am Typ außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht. */
 export interface TypPaketeAnschluss {

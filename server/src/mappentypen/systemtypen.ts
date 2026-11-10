@@ -16,7 +16,7 @@ import type { Kurzzustand } from '../kurzzustand';
 import { protokoll } from '../protokoll';
 import type { Repo, Rueckverweis } from '../repo';
 import { t } from '../sprache';
-import type { ZugriffDienst } from '../zugriff/zugriff.dienst';
+import type { ZugriffDienst } from '../zugriff';
 import { mitBeschriftungen, mitSystemBeschriftung } from './eingabe';
 
 /** Post (#192): Beschreibung und Spalten der Standard-Trefferliste. */

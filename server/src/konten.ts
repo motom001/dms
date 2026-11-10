@@ -10,7 +10,7 @@ import { darfVerwalten, FRISCH_MINUTEN, GESAMT, gleicheVerwaltung, hatGesamt, li
 import { heuteIn } from '../../shared/src/sichten';
 import { Fachfehler } from './fehler';
 import type { KontoRepo, Schutzpruefung, SitzungIntern, SitzungsInfo, Zweck } from './konto-repo';
-import type { Benutzerspiegel } from './dienst';
+import type { Benutzerspiegel } from './mappentypen';
 import { mailtexte, type Mailer } from './mail';
 import { mitSpracheVon, t } from './sprache';
 import { inSprache } from '../../shared/src/sprache';
