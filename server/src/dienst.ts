@@ -98,14 +98,8 @@ export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
-import { MappenDienst } from './mappen/mappen.dienst';
-import { MappenHistorie } from './mappen/historie';
-import { MappenTitel } from './mappen/titel';
-import { bereinigeWerte, MappenEingaben } from './mappen/eingaben';
-import { keinSchluessel, Passwortfelder } from './mappen/passwortfelder';
-import { MappenArchiv } from './mappen/archiv';
-export { HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen/historie';
-export { ARCHIV_PRAEFIX, archivnummerAus } from './mappen/archiv';
+import { bereinigeWerte, keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenTitel, Passwortfelder } from './mappen';
+export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
