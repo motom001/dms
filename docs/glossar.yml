@@ -183,6 +183,22 @@ begriffe:
     nicht_verwenden: [Zielklasse, Referenztyp]
     verwandt: [Verweis, Mappentyp]
     code: Feld.zielTypen, Feld.gleicherTyp, Feld.zielOptional, zielOptional (Paket)
+  - begriff: Berechnetes Feld
+    bereich: grundbegriffe
+    beschreibung: Ein Feld, dessen Wert ein Paket ausrechnet, z. B. „Kündigen bis“ oder der Status eines Vertrags. In der Mappe ist es nur lesbar, darunter steht „berechnet von …“ mit dem Namen des Pakets. Rechnet das Paket nicht mehr, bleibt der letzte Wert stehen („nicht mehr berechnet“), bis der Administrator das Feld wieder freigibt.
+    einsteiger: erklaeren
+    begegnet: alle
+    nicht_verwenden: [Formelfeld, berechnete Spalte, automatisches Feld]
+    verwandt: [Feld, Paket, Hinweis von Paketen]
+    code: Feld.berechnetVon, berechnet (Paket)
+  - begriff: Hinweis von Paketen
+    bereich: grundbegriffe
+    beschreibung: Ein kurzer Satz, den ein Paket an eine Mappe setzt, z. B. „Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €“. Er steht gelb in der Hinweiszeile über den Registern, immer mit dem Namen des Pakets, und hindert das Speichern nie.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Warnung, Fehler, Meldung von Ablago]
+    verwandt: [Berechnetes Feld, Paket]
+    code: PaketHinweis, dms:hinweise
   - begriff: Verknüpfungen
     bereich: grundbegriffe
     beschreibung: Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.

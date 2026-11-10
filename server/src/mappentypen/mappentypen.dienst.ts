@@ -3,6 +3,7 @@
  * Typ fürs Profil, Erkennung am Typ. Schicht 2 – bekommt den Kern, nicht den ganzen Dienst.
  */
 import { randomUUID } from 'node:crypto';
+import { berechneteFelder, berechnungVon } from '../../../shared/src/berechnet';
 import { istOk, kannAusPost, pruefeMappentyp, freierSchluessel, systemfelder, zielErlaubt, zieleVon, BELIEBIGER_TYP, einzigesZiel, jedeMappe, type Mappentyp, type MappentypDaten, type Systemtyp } from '../../../shared/src/model';
 import { festigeDarstellung } from '../../../shared/src/darstellung';
 import { abschnittName, anzeigeProblemeVon } from '../../../shared/src/anzeige';
@@ -17,7 +18,7 @@ import type { Kern, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
 import { t } from '../sprache';
-import { behalteBeschriftungen, behalteDarstellung, behalteErkennung, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
+import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappentypenAnschluss {
@@ -60,7 +61,10 @@ export class MappentypenDienst {
 
   /** Mappentypen für einen Benutzer: Administratoren mit Regeln, alle anderen ohne – dafür „darf anlegen“ (#126). */
   async typenFuer(z: Zugriff) {
-    const typen = (await this.mitStempel([...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')))).map(mitAltemZiel);
+    // Berechnete Felder (#1034): je Paket Name und ob es noch rechnet – für „berechnet von …“ bzw. „nicht mehr berechnet“.
+    const roh = [...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    const pakete = roh.some((x) => berechneteFelder(x).length) ? await this.repo.listePakete() : [];
+    const typen = (await this.mitStempel(roh)).map(mitAltemZiel).map((x) => (berechneteFelder(x).length ? { ...x, berechnung: berechnungVon(x, pakete) } : x));
     if (z.admin) return typen;
     return typen.map(({ berechtigungen, ...t }) => ({ ...t, berechtigungen: null, darfAnlegen: rechteUebersicht({ ...t, berechtigungen }, z.wer, z.a).C !== 'nie' }));
   }
@@ -119,7 +123,8 @@ export class MappentypenDienst {
   /** Mappentyp anlegen bzw. ändern; die Stempel-Einstellung (#394) liegt daneben in den Einstellungen. */
   /** ausPaket (#1084): Id des Pakets, das den Typ anlegt – nur dann darf die Kennung `paket:schluessel` lauten. */
   async legeTypAn(eingabe: unknown, ausPaket?: string): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.legeTypAnIntern(e, ausPaket)); }
-  async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.aendereTypIntern(id, e)); }
+  /** ausPaket (#1034): Id des Pakets, das den Typ mitbringt – nur dann dürfen Felder `berechnetVon` neu bekommen. */
+  async aendereTyp(id: string, eingabe: unknown, ausPaket?: string): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.aendereTypIntern(id, e, ausPaket)); }
   private async mitStempelEingabe(eingabe: unknown, f: (e: unknown) => Promise<Mappentyp>): Promise<Mappentyp> {
     const hat = !!eingabe && typeof eingabe === 'object' && 'stempel' in eingabe;
     const st = hat ? await this.pruefeStempelTyp((eingabe as { stempel: unknown }).stempel) : undefined;
@@ -165,7 +170,8 @@ export class MappentypenDienst {
     const roh = (eingabe ?? {}) as { id?: unknown };
     // Die Oberfläche darf die Id vorgeben, damit ein neuer Typ auf sich selbst verweisen kann.
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
-    const d = bereinigeTyp(eingabe);
+    // Berechnete Felder (#1034) nur aus dem Paket, das den Typ mitbringt.
+    const d = behalteBerechnet(eingabe, bereinigeTyp(eingabe), undefined, ausPaket);
     MappentypenDienst.pruefePaketKennung(d.schluessel, ausPaket);
     // Schlüssel (#145): ohne Angabe aus dem Namen, eindeutig.
     if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
@@ -185,12 +191,13 @@ export class MappentypenDienst {
    * Gleichzeitig bearbeiten (#917): Mit `stand` (`geaendert` des Typs, wie gelesen) speichert Ablago nur, wenn seitdem
    * niemand den Typ geändert hat – sonst 409, nichts wird überschrieben. Ohne `stand` keine Prüfung (wie bisher).
    */
-  private async aendereTypIntern(id: string, eingabe: unknown): Promise<Mappentyp> {
+  private async aendereTypIntern(id: string, eingabe: unknown, ausPaket?: string): Promise<Mappentyp> {
     const alt = await this.repo.holeTyp(id);
     if (!alt) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
     const stand = liesStand((eingabe as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
     if (stand !== undefined && alt.geaendert !== stand) throw this.anschluss.konfigurationKonflikt('typ', alt.geaendert);
-    let d = behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt);
+    // Berechnete Felder (#1034): bleiben, was sie sind; neu nur aus dem Paket des Typs, freigeben mit `berechnetVon: null`.
+    let d = behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
     festigeDarstellung(d);

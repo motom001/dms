@@ -374,6 +374,8 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
         const f = feldIn(typ, key);
         if (!f) p.push(t('gemeinsam.automatisierung.feld-aendern-das-feld', { key, name: typ.name }));
         else if (f.typ === 'passwort') p.push(t('gemeinsam.automatisierung.feld-aendern-passwortfelder-setzt', { label: f.label }));
+        // Berechnete Felder (#1034, „nie überschreiben“): schreibt nur ihr Paket – der Server lehnt es ohnehin ab.
+        else if (f.berechnetVon) p.push(t('gemeinsam.automatisierung.feld-aendern-berechnet', { label: f.label }));
       }
     }
     if (d.art === 'zusammenfassung' && !(w.art === 'zeitplan' && w.jeBenutzer)) p.push(t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden'));

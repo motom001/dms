@@ -1256,5 +1256,7 @@
   "anzeige.feld": "{feld} is hidden – the value stays saved",
   "anzeige.anzeigen": "show",
   "anzeige.gerade-aus": "Currently hidden ({bedingung}) – the values stay saved.",
-  "suche.vom-typ": "points to a folder of type"
+  "suche.vom-typ": "points to a folder of type",
+  "paket-hinweis.titel": "Notes from packages",
+  "paket-hinweis.marke-titel": "Note from the package {paket} – not from Ablago"
 }

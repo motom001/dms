@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
 import type { Hilfeort } from '../../../../shared/src/hilfe';
 import { Hilfe } from '../../Hilfe';
-import { Symbol } from '../../Symbol';
+import { Symbol, type SymbolName } from '../../Symbol';
 import { t } from '../../sprache';
 import s from './Feld.module.css';
 
@@ -151,6 +151,51 @@ export function FeldGruppe({ beschriftung, hinweis, fehler, hilfe, optional, cla
       <Kopf text={beschriftung} optional={optional} hilfe={hilfe} textId={textId} className={s.kopf} />
       <div className={s.gruppeninhalt}>{children}</div>
       <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
+    </div>
+  );
+}
+
+export interface NurLesenFeldProps {
+  /** Sichtbarer Name des Felds. */
+  beschriftung: ReactNode;
+  /** Der Wert, wie er angezeigt wird (Text, Liste, Link …); leer = „–“. */
+  children?: ReactNode;
+  /**
+   * Woher der Wert kommt bzw. warum er sich hier nicht ändern lässt, z. B. „berechnet von Verträge“ (#1034) oder
+   * „setzt sich zusammen aus Bereich, Zeitraum“ (#1050). Steht mit Symbol in der Hinweiszeile und wird mit vorgelesen.
+   */
+  herkunft?: ReactNode;
+  /** Symbol vor der Herkunft; Standard: ein Schloss. */
+  symbol?: SymbolName;
+  /** Stelle im Handbuch: „?“ an der Beschriftung. */
+  hilfe?: Hilfeort;
+  /** Ganze Zeile (lange Texte). */
+  breit?: boolean;
+  className?: string;
+  /** Anker für Tipps, Rundgänge und Tests (`data-anker`). */
+  anker?: string;
+  /** Unter der Herkunft, z. B. eine Übersetzung des Werts (#732). */
+  unter?: ReactNode;
+}
+
+/**
+ * Nur lesen (#1034, Hinweis Qualität): ein Aussehen für alles, was sich hier nicht ändern lässt – berechnete Felder,
+ * zusammengesetzte (#1050), geschützte und Felder ohne Recht zum Bearbeiten. Der Wert steht gut lesbar in einem Rahmen
+ * wie eine Eingabe mit `readonly` (gestrichelt, eingesenkt), darunter die Herkunft mit Symbol. Keine Eingabe, nichts zum
+ * Anklicken außer Links im Wert selbst; die Gruppe ist nach der Beschriftung benannt und beschreibt sich mit der Herkunft.
+ */
+export function NurLesenFeld({ beschriftung, children, herkunft, symbol = 'schloss', hilfe, breit, className, anker, unter }: NurLesenFeldProps) {
+  const basis = useId();
+  const textId = `${basis}-beschriftung`;
+  const hinweisId = `${basis}-hinweis`;
+  const leer = !vorhanden(children as ReactNode);
+  return (
+    <div role="group" aria-labelledby={textId} aria-describedby={vorhanden(herkunft) ? hinweisId : undefined} data-anker={anker}
+      className={klassen(s.feld, breit && s.breit, className)}>
+      <Kopf text={beschriftung} hilfe={hilfe} textId={textId} className={s.kopf} />
+      <div className={klassen(s.wert, leer && s.leer)}>{leer ? '–' : children}</div>
+      {vorhanden(herkunft) && <p id={hinweisId} className={s.herkunft}><Symbol name={symbol} className={s.herkunftsymbol} /><span>{herkunft}</span></p>}
+      {unter}
     </div>
   );
 }

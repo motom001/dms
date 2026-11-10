@@ -77,6 +77,10 @@ Some text fields have a **format**: email, phone, website, IBAN or postcode. On 
 
 **Fields that grow with you:** some fields and sections only appear when they fit – if you choose the contract type *Rent*, for example, the section *Rent* appears straight away. If you later choose something else, it disappears again, but the values you entered don’t: in its place it says “Section Rent is hidden – 3 values stay saved · **show**”. A click on *show* brings it back. Hidden fields are not required. This is only tidiness in the form: exports and data access requests contain all values. What is shown when is set by the administration on the folder type.
 
+**Calculated fields:** A package works out some values itself, for example *Cancel by* or the *status* of a contract. You cannot change such fields; underneath it says "calculated by Verträge". Change the details they come from instead (start, term, notice period …) – the package then calculates again. If it says "no longer calculated", the package no longer calculates it; the value stays until the administration releases the field.
+
+**Notes from packages:** Above the tabs there may be a yellow note from a package, for example "Rechnungen · The items add up to €118.40, the invoice says €120.80". The name of the package is always in front. Such a note never stops you saving; the package removes it again as soon as it no longer applies.
+
 ### Formatted text {#formatierter-text}
 
 Some longer texts can be formatted. Above the field there is a small **toolbar**: select text and click **B** (bold), *I* (italic), a heading, a list, a numbered list, a quote or a link. With **Write** and **Preview** you switch between input and the finished view. The field then contains a simple notation, e.g. `**bold**` – that's correct. **Preview** shows what it looks like.

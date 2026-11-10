@@ -2239,3 +2239,9 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
 .konfliktzeile ul { padding-left: 1.1em; display: flex; flex-direction: column; gap: 2px; }
 .konfliktzeile .textknopf { color: inherit; text-align: left; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
 .ad-hinweis.folgt .chip { background: var(--akzent-zart); color: var(--akzent); }
+
+/* Hinweise von Paketen (#1034): gelb wie „passt nicht“ (#887), nie rot; vor jedem Hinweis das Paket als Marke mit
+   Symbol, damit er nie wie eine Meldung von Ablago aussieht. */
+.pakethinweise p, .pakethinweise li { overflow-wrap: anywhere; }
+.paketmarke { display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border: 1px solid currentColor; border-radius: 999px; font-size: .85em; font-weight: 600; white-space: nowrap; vertical-align: baseline; }
+.pakettext { font-style: normal; }

@@ -60,3 +60,15 @@
 @media (prefers-reduced-motion: reduce) {
   .feld :where(input, select, textarea) { transition: none; }
 }
+
+/* Nur lesen (#1034, ein Aussehen für berechnet, zusammengesetzt und geschützt): der Wert im Rahmen einer Eingabe mit
+   readonly – eingesenkt, gestrichelt in der Stärke der Eingaben (3:1, #1026) –, darunter die Herkunft mit Symbol. */
+.wert { min-height: calc(2.2em + 2px); padding: 7px 9px; border: 1px dashed var(--rand-eingabe); border-radius: 6px; background: var(--senke); overflow-wrap: anywhere; }
+.wert.leer { color: var(--leise); }
+.wert :where(ul) { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.herkunft { display: flex; gap: 5px; align-items: baseline; margin: 0; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); overflow-wrap: anywhere; }
+.herkunftsymbol { flex: none; align-self: center; }
+.breit { grid-column: 1 / -1; }
+@media (pointer: coarse) {
+  .wert { min-height: 44px; }
+}

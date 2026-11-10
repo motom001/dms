@@ -45,6 +45,10 @@ Siehe auch: [Ablageort](#ablageort), [Nummernkreis](#nummernkreis), [Dokument](#
 <a id="bedingung"></a>**Bedingung** · ~ mit Erklärung · Administratoren  
 Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen, Persönliches oder das Merkmal der Ablage, z. B. ein Feld gleich „aktueller Benutzer“, „ist mein Favorit“ oder „Ablage wird beruflich genutzt“.
 
+<a id="berechnetes-feld"></a>**Berechnetes Feld** · ~ mit Erklärung · alle  
+Ein Feld, dessen Wert ein Paket ausrechnet, z. B. „Kündigen bis“ oder der Status eines Vertrags. In der Mappe ist es nur lesbar, darunter steht „berechnet von …“ mit dem Namen des Pakets. Rechnet das Paket nicht mehr, bleibt der letzte Wert stehen („nicht mehr berechnet“), bis der Administrator das Feld wieder freigibt.  
+Siehe auch: [Feld](#feld), [Paket](#paket), [Hinweis von Paketen](#hinweis-von-paketen).
+
 <a id="beruflich-genutzt"></a>**Beruflich genutzt** · ✓ Alltagswort · Administratoren  
 Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Nutzung.  
 Siehe auch: [Anzeigen, wenn …](#anzeigen-wenn), [Bedingung](#bedingung).
@@ -77,6 +81,10 @@ Siehe auch: [Titel](#titel).
 <a id="format"></a>**Format** · ✓ Alltagswort · Administratoren  
 Was in einem Textfeld stehen darf – E-Mail, Telefon, Internetseite, IBAN oder PLZ. Neue und geänderte Angaben müssen passen, am Handy erscheint die passende Tastatur, E-Mail und Telefon lassen sich antippen. Gespeicherte Angaben bleiben gültig. Datumsfelder haben stattdessen Grenzen (frühestens, spätestens, auch „heute“).  
 Siehe auch: [Feld](#feld), [Feldart](#feldart).
+
+<a id="hinweis-von-paketen"></a>**Hinweis von Paketen** · ✓ Alltagswort · alle  
+Ein kurzer Satz, den ein Paket an eine Mappe setzt, z. B. „Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €“. Er steht gelb in der Hinweiszeile über den Registern, immer mit dem Namen des Pakets, und hindert das Speichern nie.  
+Siehe auch: [Berechnetes Feld](#berechnetes-feld), [Paket](#paket).
 
 <a id="kennung"></a>**Kennung** · ✗ Fachwort · Administratoren  
 Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer (bis 60 Zeichen). Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen. Mappentypen aus Paketen haben die Kennung Paket:Kennung, z. B. basis:person (#1084); eigene Mappentypen eine ohne Doppelpunkt.
@@ -564,6 +572,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Aus Dokument füllen | Für die Erkennung nutzen (alter Name) | `Feld.erkennung` |
 | Bedingung | – | `Bedingung` |
 | Benutzer | User, Account | `Benutzer` |
+| Berechnetes Feld | Formelfeld, berechnete Spalte, automatisches Feld | `Feld.berechnetVon, berechnet (Paket)` |
 | Berechtigungen | Permissions | `Rechte` |
 | Beruflich genutzt | – | `merkmale.beruflich` |
 | Betrieb | Organisation (für die Vorlage) | `organisation (Vorlage)` |
@@ -581,6 +590,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Gemeldete Fehler | Fehlermeldungen | – |
 | Gutschrift | – | `Feld.negativ` |
 | Herausgeber | Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher | `herausgeber, InstalliertesPaket.herausgeber` |
+| Hinweis von Paketen | Warnung, Fehler, Meldung von Ablago | `PaketHinweis, dms:hinweise` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |

@@ -49,7 +49,7 @@ export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
-import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
+import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHinweise, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
 export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
 import { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, erkenneAnzeigbar, FehlendeDateien, GeschuetztePdfs, type TexterkennungAnbindung } from './dokumente';
 export { erkenneAnzeigbar };
@@ -228,6 +228,8 @@ export class Dienst {
   readonly ki: KiTypen;
   /** Notizen (#55, #1078). */
   readonly mappenNotizen: MappenNotizen;
+  /** Hinweise von Paketen an Mappen (#1034). */
+  readonly mappenHinweise: MappenHinweise;
   /** Ereignisse an Pakete, Aufträge, neue Aufgaben und Verknüpfungen melden (#670, #1078). */
   readonly ereignisseDienst: EreignisseDienst;
   /** Hilfen für Automatisierungen (#674, #1078). */
@@ -290,7 +292,7 @@ export class Dienst {
     this.mappenArchiv = new MappenArchiv(this.kern, this.rechtepruefung, this.mappenHistorie, {
       aufkleber: { ETIKETTEN, aufkleberPdf }, auftraege: this.auftraege, schreibeFehlendeDateien: (shas) => this.schreibeFehlendeDateien(shas),
     });
-    this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben }, {
+    this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, hinweise: this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung) }, {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
       mitArchivStand: (d) => this.mitArchivStand(d), mitPdfSchutz: (d) => this.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
@@ -764,7 +766,7 @@ export class Dienst {
   ausPostZiele(z?: Zugriff): Promise<Mappentyp[]> { return this.mappentypen.ausPostZiele(z); }
   rechteUebersicht(z: Zugriff) { return this.mappentypen.rechteUebersicht(z); }
   legeTypAn(eingabe: unknown, ausPaket?: string): Promise<Mappentyp> { return this.mappentypen.legeTypAn(eingabe, ausPaket); }
-  aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.aendereTyp(id, eingabe); }
+  aendereTyp(id: string, eingabe: unknown, ausPaket?: string): Promise<Mappentyp> { return this.mappentypen.aendereTyp(id, eingabe, ausPaket); }
   ausDokumentVon(typId: string): Promise<AusDokument | null> { return this.mappentypen.ausDokumentVon(typId); }
   loescheTyp(id: string): Promise<void> { return this.mappentypen.loescheTyp(id); }
   listeMappen(typId?: string) { return this.mappen.listeMappen(typId); }

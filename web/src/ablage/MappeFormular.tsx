@@ -10,8 +10,9 @@ import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
 import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
 import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, titelAus, VERWEISARTEN, verweisAusText, mehrereZiele, zieleVon, zielErlaubt, type Verweiskonflikt, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
+import type { PaketHinweis } from '../../../shared/src/berechnet';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
-import { Knopf, ProzentEingabe, ZeitraumEingabe } from '../bausteine';
+import { Knopf, NurLesenFeld, ProzentEingabe, ZeitraumEingabe } from '../bausteine';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -334,8 +335,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const { ich } = useKonto();
   // Register des Typs plus System-Register „Notizen“ vor der Historie (#427).
   const register = mitNotizen(registerVon(typ));
-  // Nur lesbar: Systemfelder von Benutzern, Name einer Systemrolle (#26, #27).
-  const geschuetzt = geschuetzteFelder(typ, mappe);
+  // Nur lesbar: Systemfelder von Benutzern, Name einer Systemrolle (#26, #27) – und berechnete Felder (#1034): die schreibt
+  // nur ihr Paket. So lassen auch „folgt aus“ und „Aus Dokument ausfüllen“ sie aus („nie überschreiben“).
+  const geschuetzt = { ...geschuetzteFelder(typ, mappe), ...berechnetGesperrt(typ) };
   // Berechtigungen (#126): ohne „Bearbeiten“ nur ansehen; Löschen und Passwörter je nach Recht.
   const rechte = mappe ? details?.rechte : undefined;
   const nurLesen = !!rechte && !rechte.U;
@@ -714,7 +716,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setSendet(true); setHinweise([]);
     let gespeichert: (Mappe & { hinweis?: string }) | undefined = mappe;
     try {
-      if (!mappe) gespeichert = await api.mappeAnlegen({ typId: typ.id, werte });
+      // Berechnete Felder (#1034) schickt die Oberfläche nie – auch nicht leer oder mit einem Standardwert.
+      if (!mappe) gespeichert = await api.mappeAnlegen({ typId: typ.id, werte: Object.fromEntries(Object.entries(werte).filter(([k]) => !typ.felder.find((f) => f.key === k)?.berechnetVon)) });
       else if (geaenderteFelder.length) gespeichert = await api.mappeAendern(mappe.id, { werte: zuSenden, stand: nochmal?.stand ?? stand });
       setFehler(null); setBasis(JSON.stringify(rohJetzt));
       if (gespeichert) setStand(gespeichert.geaendert);
@@ -917,6 +920,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     )}
     <form className="blatt mitregistern" onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate>
       {mappe && !nurLesen && <KonfliktZeile konflikte={(details?.konflikte ?? []).filter((k) => JSON.stringify(roh[k.feld] ?? null) === JSON.stringify(basisRoh[k.feld] ?? null))} felder={typ.felder} zeige={springeZu} />}
+      {mappe && <PaketHinweisZeile hinweise={details?.hinweise ?? []} />}
       <RegisterReihe aktiv={reg?.key}>
         {register.map((r) => {
           const n = fehlerAuf(r);
@@ -994,6 +998,33 @@ function KonfliktZeile({ konflikte, felder, zeige }: { konflikte: Verweiskonflik
       {konflikte.length === 1 ? <p>{knopf(konflikte[0])}</p> : <ul>{konflikte.map((k) => <li key={k.feld}>{knopf(k)}</li>)}</ul>}
     </div>
   );
+}
+
+/**
+ * Hinweise von Paketen (#1034) in der Hinweiszeile über den Registern – für alle, die die Mappe lesen. Ruhig (gelb,
+ * Hinweis Qualität), nie rot; vor jedem Hinweis steht das Paket als Marke mit Symbol, damit er nie wie eine Meldung von
+ * Ablago selbst aussieht (Ergänzung Sicherheit). Nur Text – der Server lässt nichts anderes zu, und hier wird nichts
+ * als HTML, Markdown oder Link gedeutet. Speichern hindern sie nie.
+ */
+function PaketHinweisZeile({ hinweise }: { hinweise: PaketHinweis[] }) {
+  if (!hinweise.length) return null;
+  const eintrag = (h: PaketHinweis) => (
+    <><span className="paketmarke" title={t('ablage.paket-hinweis.marke-titel', { paket: h.paketName })}><Symbol name="paket" />{h.paketName}</span> <span className="pakettext">{h.text}</span></>
+  );
+  return (
+    <div className="hinweis warn konfliktzeile pakethinweise" role="group" aria-label={t('ablage.paket-hinweis.titel')} data-anker="mappe.pakethinweise">
+      {hinweise.length === 1 ? <p>{eintrag(hinweise[0])}</p> : <ul>{hinweise.map((h) => <li key={`${h.paket}|${h.schluessel}`}>{eintrag(h)}</li>)}</ul>}
+    </div>
+  );
+}
+
+/** Berechnete Felder (#1034): nur lesbar, darunter „berechnet von …“ bzw. „nicht mehr berechnet“ mit dem Paketnamen. */
+function berechnetGesperrt(typ: Mappentyp): Record<string, string> {
+  return Object.fromEntries(typ.felder.filter((f) => f.berechnetVon).map((f) => {
+    const b = typ.berechnung?.[f.berechnetVon!];
+    const paket = b?.name ?? f.berechnetVon!;
+    return [f.key, b?.aktiv === false ? t('felder.berechnet.nicht-mehr', { paket }) : t('felder.berechnet.von', { paket })];
+  }));
 }
 
 /** „um 17:04“ (heute) bzw. „am 01.11.2026 um 17:04“. */
@@ -1087,23 +1118,18 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
   if (gesperrt !== undefined) {
     mitLabelFor = false;
     const ids = f.typ === 'referenz' ? (Array.isArray(roh) ? roh as string[] : roh ? [String(roh)] : []) : [];
-    ctl = <div className="festwert" title={gesperrt}>{
-      f.typ === 'referenz'
-        ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <><Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis"><Ehemalig id={x}>{titelOder(bekannt[x].titel)}</Ehemalig></Link>{mehrereZiele(f) && <TypMarke typId={bekannt[x].typId} />}</> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}
-            {/* Wer nur liest, sieht die Markierung am Feld, aber keine Aufforderung (#887). */}
-            {unpassend?.includes(x) && <> <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>{unpassendText(typFelder, gruende?.[x] ?? [])}</span></>}</li>)}</ul>
-        : f.typ === 'janein' ? (roh ? t('ablage.mappeformular.ja') : t('ablage.mappeformular.nein')) : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
-        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'zeitraum' || f.typ === 'prozent' || f.typ === 'betrag' ? formatiere(f, ausRoh(f, roh)) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span>
-        : f.typ === 'text' && f.format ? <FormatWert f={f} wert={String(roh ?? '')} /> : String(roh ?? '')
-    }</div>;
+    ctl = f.typ === 'referenz'
+      ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <><Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis"><Ehemalig id={x}>{titelOder(bekannt[x].titel)}</Ehemalig></Link>{mehrereZiele(f) && <TypMarke typId={bekannt[x].typId} />}</> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}
+          {/* Wer nur liest, sieht die Markierung am Feld, aber keine Aufforderung (#887). */}
+          {unpassend?.includes(x) && <> <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>{unpassendText(typFelder, gruende?.[x] ?? [])}</span></>}</li>)}</ul>
+      : f.typ === 'janein' ? (roh ? t('ablage.mappeformular.ja') : t('ablage.mappeformular.nein')) : f.typ === 'formatiert' ? (roh ? <Formatiert text={String(roh)} /> : null)
+      : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'zeitraum' || f.typ === 'prozent' || f.typ === 'betrag' ? formatiere(f, ausRoh(f, roh)) : f.typ === 'langtext' ? (roh ? <span className="mehrzeilig">{String(roh)}</span> : null)
+      : f.typ === 'text' && f.format && roh ? <FormatWert f={f} wert={String(roh)} /> : String(roh ?? '');
+    // Nur lesen (#1034): ein Aussehen für geschützte und berechnete Felder – nur die Herkunft darunter unterscheidet sich.
     return (
-      <div className={`feld ${f.typ === 'langtext' || f.typ === 'formatiert' ? 'breit' : ''}`} data-anker={`mappe.feld:${f.key}`}>
-        <div className="feldkopf"><span className="label">{feldLabel(f)}</span></div>
-        {ctl}
-        {uebersetzung}
-        <span className="hilfe">{gesperrt}</span>
-        {fehler && <p className="fehlertext">{fehler}</p>}
-      </div>
+      <NurLesenFeld beschriftung={feldLabel(f)} herkunft={gesperrt || undefined} symbol={f.berechnetVon ? 'rechnen' : 'schloss'}
+        breit={f.typ === 'langtext' || f.typ === 'formatiert'} className="feld" anker={`mappe.feld:${f.key}`}
+        unter={uebersetzung || fehler ? <>{uebersetzung}{fehler && <p className="fehlertext">{fehler}</p>}</> : undefined}>{ctl}</NurLesenFeld>
     );
   }
 

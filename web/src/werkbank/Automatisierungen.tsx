@@ -607,7 +607,9 @@ function DannEditor({ karte, typ, wenn, k, setze }: { karte: DannKarte; typ: Map
     </div>
   );
   if (karte.art === 'feld') {
+    // Berechnete Felder (#1034) schreibt nur ihr Paket – nicht zur Wahl (bereits gewählte zeigt die Prüfung als Problem).
     const felder = (typ?.felder ?? []).filter((f) => f.typ !== 'passwort');
+    const waehlbar = felder.filter((f) => !f.berechnetVon);
     const gewaehlt = Object.keys(karte.werte);
     return (
       <div className="karte offen">
@@ -629,7 +631,7 @@ function DannEditor({ karte, typ, wenn, k, setze }: { karte: DannKarte; typ: Map
         </ul>
         {typ && <select value="" aria-label={t('automatisierung.ui.karte.dann.feld.waehlen')} onChange={(x) => { if (x.target.value) setze({ ...karte, werte: { ...karte.werte, [x.target.value]: '' } }); }}>
           <option value="">{t('automatisierung.ui.karte.dann.feld.waehlen')}</option>
-          {felder.filter((f) => !gewaehlt.includes(f.key)).map((f) => <option key={f.key} value={f.key}>{feldLabel(f)}</option>)}
+          {waehlbar.filter((f) => !gewaehlt.includes(f.key)).map((f) => <option key={f.key} value={f.key}>{feldLabel(f)}</option>)}
         </select>}
         <Platzhalter wenn={wenn} typ={typ} einfuegen={(x) => { const letzt = gewaehlt[gewaehlt.length - 1]; if (letzt) setze({ ...karte, werte: { ...karte.werte, [letzt]: `${String(karte.werte[letzt] ?? '')}${x}` } }); }} />
       </div>

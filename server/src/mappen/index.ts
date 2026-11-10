@@ -6,3 +6,5 @@ export { HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE, MappenHistorie } from './hi
 export { keinSchluessel, Passwortfelder, type PasswortfelderAnschluss } from './passwortfelder';
 export { ARCHIV_PRAEFIX, archivnummerAus, MappenArchiv, type MappenArchivAnschluss } from './archiv';
 export { MappenNotizen, type NotizenAnschluss } from './notizen';
+export { geaenderteBerechnete, pruefeBerechnete, type BerechnetAbgelehnt } from './berechnet';
+export { MappenHinweise } from './hinweise';

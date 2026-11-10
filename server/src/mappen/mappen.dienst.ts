@@ -17,12 +17,14 @@ import { liesStand } from '../mappentypen';
 import { istUuid, type NeueMappe, type Repo, type Rueckverweis, StandVeraltet } from '../repo';
 import { t } from '../sprache';
 import { maskiert, NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
+import { pruefeBerechnete } from './berechnet';
 import { bereinigeWerte, gesendeteFelder, type MappenEingaben } from './eingaben';
+import type { MappenHinweise } from './hinweise';
 import type { MappenHistorie } from './historie';
 import type { MappenTitel } from './titel';
 
 /** Die Teile der Mappen, die der Mappen-Dienst ruft (eigene Klassen in diesem Ordner). */
-export interface MappenTeile { historie: MappenHistorie; titel: MappenTitel; eingaben: MappenEingaben }
+export interface MappenTeile { historie: MappenHistorie; titel: MappenTitel; eingaben: MappenEingaben; hinweise: MappenHinweise }
 
 /** Was die Mappen außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappenAnschluss {
@@ -167,12 +169,13 @@ export class MappenDienst {
     const typ = (alleTypen ? z!.typen.get(mappe.typId) : undefined) ?? await this.repo.holeTyp(mappe.typId);
     const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
     // Was nur noch von der Mappe abhängt, gleichzeitig (#741) – erst nach der Prüfung des Leserechts.
-    const [alleRueck, roheBezuege, dokumente, notizen, erinnerungen, unpassend, datenschutz] = await Promise.all([
+    const [alleRueck, roheBezuege, dokumente, notizen, erinnerungen, unpassend, datenschutz, hinweise] = await Promise.all([
       this.repo.rueckverweise(id), this.repo.bezuege(ziele),
       this.repo.listeDokumente(id).then((d) => this.mitArchivStand(d)).then((d) => this.mitPdfSchutz(d)),
       this.repo.notizen(id), this.repo.erinnerungen({ mappeId: id }),
       this.verweiskonflikte(typ, mappe.werte, z?.ich.id ?? '', alleTypen && z?.a ? { typen: alleTypen, a: z.a } : undefined, z),
       z?.admin ? this.datenschutz() : Promise.resolve(null),
+      this.teile.hinweise.von(id),
     ]);
     // Lesbar (#124, #126): verweisende und verwiesene Mappen in einem Zugriff.
     const sichtbar = await this.lesbare(z, [...alleRueck.map((r) => r.quelleId), ...roheBezuege.keys()]);
@@ -200,6 +203,8 @@ export class MappenDienst {
       unpassend: unpassend.unpassend,
       /** Dasselbe je Verweisfeld mit den eigenen Feldern, mit denen es nicht zusammenpasst (#887). */
       konflikte: unpassend.konflikte,
+      /** Hinweise von Paketen (#1034) mit Paketnamen – für alle, die die Mappe lesen. */
+      hinweise,
       /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
       aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
       /** Auskunft nach Art. 15 DSGVO (#396): Administratoren, Mappentyp „betrifft eine Person“. */
@@ -227,6 +232,8 @@ export class MappenDienst {
     if (!typ) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
     if (!darfErstellen(typ)) throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-lassen', { name: typ.name, wert: typ.system === 'benutzer' ? t('meldungen.dienst.benutzer-legt-ein-administrator') : '' }));
     const werte = bereinigeWerte(typ, e.werte, {}, this.verschluessele);
+    // Berechnete Felder (#1034): schon beim Anlegen nur das Paket, das sie berechnet (sonst 400 mit seinem Namen).
+    await pruefeBerechnete(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
     // Berechtigungen (#123): Anlegen wird mit den eingegebenen Werten geprüft.
     if (z && !z.admin) {
       const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: z.ich.id, geaendert: new Date().toISOString(), geaendertVon: z.ich.id };
@@ -290,6 +297,8 @@ export class MappenDienst {
     const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as { werte?: unknown; stand?: unknown };
     const stand = liesStand(e.stand);
     const werte = bereinigeWerte(typ, e.werte, m.werte, this.verschluessele);
+    // Berechnete Felder (#1034): nur das Paket, das sie berechnet – vor allen anderen Prüfungen, die für es genauso gelten.
+    const berechnet = await pruefeBerechnete(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
     // Stand (#609): Hat sich seitdem ein Feld geändert, das diese Eingabe anders setzen will? Dann fragen.
     if (stand && stand !== m.geaendert) {
       const gesendet = e.werte && typeof e.werte === 'object' ? Object.keys(e.werte) : [];
@@ -316,7 +325,10 @@ export class MappenDienst {
     // Feldweise (#609); mit Stand nur, wenn sich die Mappe seit dem Lesen oben nicht geändert hat.
     const titelFuer = await this.titelVorab(typ, werte, m);
     const neu = await this.repo.aendereMappe(id, werte, [], benutzerId, { basis: m.werte, verweise: (w) => verweiseVon(typ, w), titel: titelFuer, ...(stand ? { stand: m.geaendert } : {}) });
-    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen, stand: neu.geaendert });
+    // Kein Rauschen (#1034): Ändert das Paket nur seine berechneten Felder, ein Eintrag je Mappe und Tag (historie.ts).
+    const nurBerechnet = !!z?.paket && !anlass && aenderungen.length > 0 && aenderungen.every((a) => berechnet.some((f) => f.key === a.feld));
+    if (nurBerechnet) await this.teile.historie.notiereBerechnet(id, typ.id, benutzerId, { paketName: (await this.repo.listePakete()).find((p) => p.id === z!.paket!.id)?.name ?? z!.paket!.id, stand: neu.geaendert, aenderungen });
+    else if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen, stand: neu.geaendert });
     await this.meldeVerknuepft(typ, id, m.werte, neu.werte, benutzerId);
     // Titel (#743): stand er schon im UPDATE, nur noch die Mappen nachziehen, die auf diese verweisen (wenn er sich
     // geändert hat); sonst wie bisher.

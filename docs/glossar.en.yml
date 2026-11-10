@@ -88,6 +88,12 @@ begriffe:
   Zieltyp:
     begriff: Target type
     beschreibung: A folder type whose folders a link may point to; a link has one or several. With "all of the same type", several chosen folders stay with the type of the first one. Packages can also bring optional target types – types of another package that Ablago adds as soon as it is installed.
+  Berechnetes Feld:
+    begriff: Calculated field
+    beschreibung: A field whose value a package works out, e.g. "Cancel by" or the status of a contract. In the folder it is read-only, with "calculated by …" and the name of the package underneath. If the package no longer calculates it, the last value stays ("no longer calculated") until the administrator releases the field again.
+  Hinweis von Paketen:
+    begriff: Note from a package
+    beschreibung: A short sentence that a package sets on a folder, e.g. "The items add up to €118.40, the invoice says €120.80". It appears in yellow in the notes line above the tabs, always with the name of the package, and never stops you saving.
   Verknüpfungen:
     begriff: Links (tab)
     beschreibung: The tab that shows all folders linking to this folder – the opposite direction of the link.

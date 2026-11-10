@@ -2289,6 +2289,24 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
 
     /* ---------- Notizen (#55) ---------- */
+    // Hinweise von Paketen (#1034)
+    async hinweise(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      return (await sql`SELECT paket_id, schluessel, text, gesetzt FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY gesetzt, paket_id, schluessel`)
+        .map((r) => ({ paket: r.paket_id as string, schluessel: r.schluessel as string, text: r.text as string, gesetzt: iso(r.gesetzt) }));
+    },
+    async setzeHinweis(h) {
+      if (!istUuid(h.mappeId)) return;
+      await sql`INSERT INTO mappen_hinweise (haushalt_id, mappe_id, paket_id, schluessel, text) VALUES (${haushaltId}, ${h.mappeId}, ${h.paket}, ${h.schluessel}, ${h.text})
+        ON CONFLICT (mappe_id, paket_id, schluessel) DO UPDATE SET text = EXCLUDED.text, gesetzt = now()`;
+    },
+    async loescheHinweis(mappeId, paket, schluessel) {
+      if (!istUuid(mappeId)) return false;
+      return (await sql`DELETE FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND paket_id = ${paket} AND schluessel = ${schluessel}`).count > 0;
+    },
+    async loescheHinweiseVon(paket) {
+      return (await sql`DELETE FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND paket_id = ${paket}`).count;
+    },
     async notizen(mappeId) {
       if (!istUuid(mappeId)) return [];
       return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt, id`).map(alsNotiz);
@@ -2341,6 +2359,17 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         AND coalesce(daten->>'fassung', '') = ${fassung} AND coalesce(daten->>'version', '') = ${version === null ? '' : String(version)}
         ORDER BY zeit DESC LIMIT 1`;
       return r ? iso(r.zeit) : null;
+    },
+    async letzteBerechnung(mappeId, benutzerId, seit) {
+      if (!istUuid(mappeId)) return null;
+      const [r] = await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND zeit >= ${seit} AND art = 'geaendert'
+        AND benutzer_id IS NOT DISTINCT FROM ${istUuid(benutzerId) ? benutzerId : null}::uuid AND daten->>'berechnet' = 'true'
+        ORDER BY zeit DESC, id DESC LIMIT 1`;
+      return r ? alsHistorie(r) : null;
+    },
+    async historieDatenErsetzen(id, daten) {
+      if (daten === null) await sql`DELETE FROM historie WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      else await sql`UPDATE historie SET daten = ${json(sql, daten)} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async historieVon(mappeIds) {
       const gueltig = [...new Set(mappeIds.filter(istUuid))];

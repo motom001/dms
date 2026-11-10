@@ -75,6 +75,8 @@ export function speicherRepo(): Repo {
   };
   /** Notizen (#55). */
   const notizen = new Map<string, Notiz>();
+  /** Hinweise von Paketen (#1034): Schlüssel `mappe|paket|schluessel`. */
+  const hinweise = new Map<string, { mappeId: string; paket: string; schluessel: string; text: string; gesetzt: string }>();
   /** Freie Erinnerungen (#131). */
   const erinnerungen = new Map<string, Erinnerung>();
   const mitMappeE = (e: Erinnerung): Erinnerung => ({ ...kopie(e), mappeTitel: mappen.get(e.mappeId)?.titel ?? '', typId: mappen.get(e.mappeId)?.typId });
@@ -381,6 +383,7 @@ export function speicherRepo(): Repo {
     async loescheMappe(id) {
       mappen.delete(id); verweise.delete(id);
       for (const [k, n] of notizen) if (n.mappeId === id) notizen.delete(k);
+      for (const [k, h] of hinweise) if (h.mappeId === id) hinweise.delete(k);
       for (const [k, a] of aufgaben) if (a.mappeId === id) aufgaben.delete(k);
       for (const [k, e] of erinnerungen) if (e.mappeId === id) erinnerungen.delete(k);
       for (const [k, d] of dokumente) if (d.mappeId === id) { dokumente.delete(k); versionen.delete(k); }
@@ -870,6 +873,20 @@ export function speicherRepo(): Repo {
     async legeErinnerungAn(e) { const x = { ...kopie(e), erstellt: jetzt() }; erinnerungen.set(e.id, x); return kopie(x); },
     async aendereErinnerung(id, e) { const x = erinnerungen.get(id); if (!x) return undefined; Object.assign(x, e); return kopie(x); },
     async loescheErinnerung(id) { erinnerungen.delete(id); },
+    async hinweise(mappeId) {
+      return [...hinweise.values()].filter((h) => h.mappeId === mappeId).sort((a, b) => a.gesetzt.localeCompare(b.gesetzt) || a.paket.localeCompare(b.paket) || a.schluessel.localeCompare(b.schluessel))
+        .map((h) => ({ paket: h.paket, schluessel: h.schluessel, text: h.text, gesetzt: h.gesetzt }));
+    },
+    async setzeHinweis(h) {
+      if (!mappen.has(h.mappeId)) return;
+      hinweise.set(`${h.mappeId}|${h.paket}|${h.schluessel}`, { ...h, gesetzt: jetzt() });
+    },
+    async loescheHinweis(mappeId, paket, schluessel) { return hinweise.delete(`${mappeId}|${paket}|${schluessel}`); },
+    async loescheHinweiseVon(paket) {
+      let n = 0;
+      for (const [k, h] of hinweise) if (h.paket === paket) { hinweise.delete(k); n++; }
+      return n;
+    },
     async notizen(mappeId) { return [...notizen.values()].filter((n) => n.mappeId === mappeId).sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(kopie); },
     async notizenVon(mappeIds) {
       const ids = new Set(mappeIds);
@@ -895,6 +912,19 @@ export function speicherRepo(): Repo {
           && String(h.daten.fassung ?? '') === fassung && String(h.daten.version ?? '') === (version === null ? '' : String(version))) return h.zeit;
       }
       return null;
+    },
+    async letzteBerechnung(mappeId, benutzerId, seit) {
+      for (let i = historie.length - 1; i >= 0; i--) {
+        const h = historie[i];
+        if (h.zeit < seit) break;
+        if (h.mappeId === mappeId && h.art === 'geaendert' && h.benutzerId === benutzerId && h.daten.berechnet === true) return kopie(h);
+      }
+      return null;
+    },
+    async historieDatenErsetzen(id, daten) {
+      const i = historie.findIndex((x) => x.id === id);
+      if (i < 0) return;
+      if (daten === null) historie.splice(i, 1); else historie[i].daten = kopie(daten);
     },
     async historieVon(mappeIds) { const ids = new Set(mappeIds); return historie.filter((h) => ids.has(h.mappeId)).map(kopie).reverse(); },
     async historieArt(art, max) { return historie.filter((h) => h.art === art).map(kopie).reverse().slice(0, max); },

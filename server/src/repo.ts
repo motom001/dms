@@ -6,6 +6,7 @@ import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import type { SprachBeschriftung, Sprachtexte } from '../../shared/src/sprachpaket';
 import type { AuskunftLink } from '../../shared/src/auskunft';
+import type { PaketHinweis } from '../../shared/src/berechnet';
 import type { Fundstelle } from './geheimnisse';
 import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/src/loeschprotokoll';
 import type { Varianten } from '../../shared/src/suche';
@@ -679,6 +680,16 @@ export interface Repo {
   aendereErinnerung(id: string, e: { datum: string; text: string; empfaengerId: string | null }): Promise<Erinnerung | undefined>;
   loescheErinnerung(id: string): Promise<void>;
 
+  /* ---------- Hinweise von Paketen (#1034) ---------- */
+  /** Hinweise an einer Mappe (alle Pakete), älteste zuerst; `paketName` ergänzt der Dienst. */
+  hinweise(mappeId: string): Promise<Array<Omit<PaketHinweis, 'paketName'>>>;
+  /** Hinweis setzen oder ersetzen (je Mappe, Paket und Schlüssel einer). */
+  setzeHinweis(h: { mappeId: string; paket: string; schluessel: string; text: string }): Promise<void>;
+  /** Hinweis entfernen; true, wenn es ihn gab. */
+  loescheHinweis(mappeId: string, paket: string, schluessel: string): Promise<boolean>;
+  /** Alle Hinweise eines Pakets (beim Entfernen des Pakets). */
+  loescheHinweiseVon(paket: string): Promise<number>;
+
   /* ---------- Notizen (#55) ---------- */
   notizen(mappeId: string): Promise<Notiz[]>;
   /** Notizen mehrerer Mappen (#367), je Mappe älteste zuerst. */
@@ -702,6 +713,13 @@ export interface Repo {
   letzterAbruf(mappeId: string, art: Historienart, benutzerId: string | null, dokumentId: string, fassung: string, version: number | null, seit: string): Promise<string | null>;
   /** Historie mehrerer Mappen (#367), je Mappe neueste zuerst. */
   historieVon(mappeIds: string[]): Promise<Historieneintrag[]>;
+  /**
+   * Berechnete Werte (#1034, kein Rauschen): der neueste Eintrag „geändert“ dieser Person (Dienstkonto eines Pakets) an
+   * der Mappe seit `seit`, der nur berechnete Werte enthält (`daten.berechnet`) – zum Bündeln je Mappe und Tag.
+   */
+  letzteBerechnung(mappeId: string, benutzerId: string | null, seit: string): Promise<Historieneintrag | null>;
+  /** Daten eines Eintrags ersetzen (#1034: gebündelte berechnete Werte); Zeitpunkt und Art bleiben. null = Eintrag entfernen. */
+  historieDatenErsetzen(id: number, daten: Historieneintrag['daten'] | null): Promise<void>;
   /**
    * Post auflösen (#936): Historie, Notizen, Aufgaben (ohne „Post für dich“) und Erinnerungen der Mappe `von` gehören
    * danach der Mappe `nach`. Jeder Historieneintrag bekommt `ausPost: von` dazu, damit man sieht, woher er stammt.

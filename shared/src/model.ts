@@ -136,6 +136,12 @@ export interface Feld {
    * es zu sehen ist. Fehlt = immer. Nie an Systemfeldern.
    */
   anzeigen?: Anzeigeregel;
+  /**
+   * Berechnet (#1034): Id des Pakets, dessen Code den Wert schreibt (im Paketformat `berechnet: true` am Feld eines Typs,
+   * den das Paket mitbringt). In der Oberfläche nur lesbar; jeder andere Schreiber bekommt 400 mit dem Paketnamen.
+   * Setzen kann es nur die Paketverwaltung, entfernen („Feld wieder freigeben“) der Administrator. Nie Pflicht.
+   */
+  berechnetVon?: string;
 }
 
 /**
@@ -292,6 +298,11 @@ export interface Mappentyp extends MappentypDaten {
   berechtigungen?: import('./rechte').Regelwerk | null;
   /** Nur für Nicht-Administratoren (#126): Darf man nach den Berechtigungen überhaupt Mappen dieses Typs anlegen? */
   darfAnlegen?: boolean;
+  /**
+   * Berechnete Felder (#1034), nur beim Lesen ergänzt: je Paket-Id an `berechnetVon` sein Name und ob es noch rechnet.
+   * Fehlt, wenn der Typ keine berechneten Felder hat.
+   */
+  berechnung?: Record<string, import('./berechnet').Berechnung>;
 }
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */

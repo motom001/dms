@@ -113,6 +113,20 @@ Jede Bedingung lässt sich umkehren (**trifft nicht zu**); bei mehreren wählst 
 
 Im Editor trägt ein Feld bzw. Abschnitt mit Bedingung ein Auge und den Satz „nur bei …“ – so wunderst du dich nicht, warum ein Feld in einer Mappe fehlt. Bedingungen, die nicht (mehr) passen – etwa weil ihr Feld entfernt wurde –, zeigt der Editor rot; gespeichert wird erst, wenn sie stimmen. Pakete bringen die Einstellung mit (`anzeigen` am Feld und am Abschnitt); „zeigt auf eine bestimmte Mappe“ geht in Paketen erst, wenn sie mitgelieferte Mappen fest benennen können – bis dahin lässt **Paket erstellen** solche Bedingungen mit Hinweis weg.
 
+### Berechnete Felder { #berechnete-felder }
+
+Manche Pakete rechnen selbst aus, was sich aus den Angaben ergibt – das Paket *Verträge* etwa *Kündigen bis*, *Status* oder *Pro Monat*. Solche Felder bringt das Paket in seinem Mappentyp als **berechnet** mit (im Paketformat `berechnet: true`).
+
+- **In der Mappe nur lesbar:** Der Wert steht im Rahmen eines Felds, das sich nicht ändern lässt, darunter „berechnet von Verträge“. So überschreibt niemand einen ausgerechneten Wert aus Versehen.
+- **Nur das Paket schreibt:** Ablago lässt den Wert nur vom Paket ändern, das ihn berechnet – über die Schnittstelle, mit den Rechten, die du ihm bei der Installation bestätigt hast, und mit denselben Prüfungen wie jede andere Änderung. Wer sonst schreibt – die Oberfläche, ein Skript über die [Schnittstelle](api.md), ein anderes Paket, eine [Automatisierung](automatisierungen.md) „Feld ändern“ –, bekommt eine Fehlermeldung mit dem Namen des Pakets. **Aus Dokument ausfüllen**, die [Erkennung](#erkennung), „folgt aus“ und der Demo-Generator lassen berechnete Felder aus.
+- **Nie Pflicht:** Den Wert schreibt das Paket, nicht wer die Mappe anlegt.
+- **Rechte-Vorschau:** Bei der Installation nennt die Rückfrage, welche Felder das Paket berechnet und dass alle die Werte sehen, die die Mappe lesen dürfen (siehe [Berechnete Felder](pakete.md#recht-berechnet)).
+- **Historie ohne Rauschen:** Änderungen des Pakets an berechneten Feldern stehen je Mappe und Tag in **einem** Eintrag („Berechnet vom Paket Verträge – alle Änderungen eines Tages in einem Eintrag“). Ein Status, der sich nur durch das Datum ändert, erscheint so höchstens einmal am Tag; was am Abend wieder wie am Morgen ist, fällt aus dem Eintrag heraus. Was Menschen ändern, steht wie bisher einzeln da.
+
+**Nicht mehr berechnet.** Entfernst du das Paket oder rechnet es nicht mehr (ein Update ohne Code, ohne Schreibrecht auf den Mappentyp), bleibt der letzte Wert stehen. Das Feld zeigt „nicht mehr berechnet“ und bleibt nur lesbar, damit niemand glaubt, der Wert werde noch nachgeführt. Im Editor steht am Feld dann **Feld wieder freigeben**: Nach dem Speichern lässt sich der Wert in der Mappe wieder von Hand ändern. Freigeben kann nur, wer Mappentypen ändern darf. Bringt ein späteres Update des Pakets das Feld wieder als berechnet mit, rechnet es wieder; nimmt ein Update die Angabe zurück, ist das Feld frei.
+
+Selbst machen kannst du ein Feld nicht zum berechneten – das geht nur mit einem Paket, das Code mitbringt. Ein mit **Paket erstellen** erzeugtes Paket nimmt berechnete Felder als gewöhnliche Felder mit.
+
 ### Beschriftungen je Sprache { #beschriftungen-je-sprache }
 
 Name und Beschreibung des Mappentyps, Bezeichnung und Hilfetext jedes Felds sowie die Namen von Registern und Trefferlisten kannst du in mehreren Sprachen pflegen. Neben jedem dieser Texte steht ein kleiner Sprachumschalter (**DE · EN**). Unter **DE** bearbeitest du den Ausgangstext, unter einer anderen Sprache die Beschriftung dafür. Bleibt sie leer, sieht man dort den deutschen Text. Ein Punkt am Umschalter zeigt, dass eine Beschriftung noch fehlt. Unter dem Namen steht zum Beispiel „12 von 14 Beschriftungen auf Englisch“ – das ist nur ein Hinweis, gespeichert wird trotzdem.

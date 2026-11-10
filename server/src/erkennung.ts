@@ -343,7 +343,8 @@ export class Erkennung {
   /** Felder, die „Aus Dokument ausfüllen“ für diesen Benutzer füllen darf (#391): keine Passwörter, keine festen Felder. */
   private erlaubteFelder(typ: Mappentyp, mappe?: Mappe): (f: Feld) => boolean {
     const fest = geschuetzteFelder(typ, mappe);
-    return (f) => f.typ !== 'passwort' && !fest[f.key];
+    // Berechnete Felder (#1034, „nie überschreiben“): kein Vorschlag, egal woher.
+    return (f) => f.typ !== 'passwort' && !fest[f.key] && !f.berechnetVon;
   }
 
   /** Typ und Zugriff prüfen: bestehende Mappe braucht Bearbeiten, eine neue das Anlegen. */

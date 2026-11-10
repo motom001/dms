@@ -14,6 +14,7 @@
  * `pruefeVorschlaege` prüft jede Antwort gegen die Feldtypen, bevor etwas angezeigt wird.
  */
 
+import { vonAussenFuellbar } from './berechnet';
 import { optionTexte, wertZuOption } from './beschriftung';
 import type { Betrag, Feld, Feldtyp, Mappentyp, Wert } from './model';
 import { zielErlaubt, zieleVon } from './verweisziele';
@@ -695,7 +696,8 @@ export type Vorschlaege = Record<string, Vorschlag>;
 export function fuellfelder(t: Pick<Mappentyp, 'felder'> & { register?: Mappentyp['register'] }): Array<{ feld: Feld; art: Erkennungsart }> {
   // Wie ausgeblendeteFelder (darstellung.ts) – hier ohne den Import, der einen Kreis über model.ts schlösse.
   const aus = new Set([...t.felder.filter((f) => f.ausgeblendet).map((f) => f.key), ...(t.register ?? []).filter((r) => r.ausgeblendet && r.art === 'felder').flatMap((r) => r.felder ?? [])]);
-  const geeignet = t.felder.filter((f) => f.typ !== 'passwort' && ERKENNUNG_FELDTYPEN.includes(f.typ) && !aus.has(f.key));
+  // Berechnete Felder (#1034, „nie überschreiben“): schreibt nur ihr Paket – nie ein Vorschlag aus dem Dokument.
+  const geeignet = t.felder.filter((f) => f.typ !== 'passwort' && ERKENNUNG_FELDTYPEN.includes(f.typ) && !aus.has(f.key) && vonAussenFuellbar(f));
   const markiert = geeignet.filter((f) => f.erkennung);
   return (markiert.length ? markiert : geeignet).map((f) => ({ feld: f, art: artVon(f) })).filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art);
 }
@@ -826,7 +828,8 @@ function wertSchema(f: Feld): Record<string, unknown> {
 export function schemaFuer(t: Pick<Mappentyp, 'name' | 'felder'>, nur?: (f: Feld) => boolean): Record<string, unknown> {
   const properties: Record<string, unknown> = {};
   for (const f of t.felder) {
-    if (f.typ === 'passwort' || f.typ === 'formatiert' || (nur && !nur(f))) continue;
+    // Berechnete Felder (#1034) fragt keine Engine an – ihren Wert schreibt nur das Paket.
+    if (f.typ === 'passwort' || f.typ === 'formatiert' || !vonAussenFuellbar(f) || (nur && !nur(f))) continue;
     const art = artVon(f);
     properties[f.key] = {
       title: f.label,
@@ -861,7 +864,8 @@ export function pruefeVorschlaege(pick: Pick<Mappentyp, 'felder'>, antwort: unkn
     const f = pick.felder.find((x) => x.key === key);
     if (!f) { weg(t('gemeinsam.erkennung.dieses-feld-gibt-es')); continue; }
     if (f.typ === 'passwort' || f.typ === 'formatiert') { weg(t('gemeinsam.erkennung.dieses-feld-fuellt-die')); continue; }
-    if (erlaubt && !erlaubt(f)) { weg(t('gemeinsam.erkennung.dieses-feld-darf-nicht')); continue; }
+    // Berechnete Felder (#1034) schreibt nur ihr Paket – auch ohne `erlaubt` nie ein Vorschlag.
+    if (!vonAussenFuellbar(f) || (erlaubt && !erlaubt(f))) { weg(t('gemeinsam.erkennung.dieses-feld-darf-nicht')); continue; }
     const o = roh && typeof roh === 'object' && !Array.isArray(roh) && 'wert' in roh ? roh as Record<string, unknown> : { wert: roh };
     const s = o.sicherheit === 'hoch' || o.sicherheit === 'mittel' || o.sicherheit === 'niedrig' ? o.sicherheit : 'mittel';
     const fundstelle = typeof o.fundstelle === 'string' ? o.fundstelle.slice(0, 500) : '';
