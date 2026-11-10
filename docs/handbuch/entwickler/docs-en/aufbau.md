@@ -36,7 +36,16 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
 
-The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves.
+The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves. `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings.
+
+Alongside, without routes:
+
+| Folder in `server/src/` | Contents |
+|---|---|
+| `kern/` | the [core](#kern) (#961) |
+| `http/` | helpers of the HTTP layer – for routes only |
+| `pdf/`, `arbeit/` | [PDF module](#pdf-stelle), [worker pool](#arbeiter-pool) |
+| `laeufer/` | package runner |
 - **Workbench routes** (`zugang: 'admin'`, #818/#819) only work in **administration mode** (state of the session, `Konten.modusPruefen`) and only with permission for their area. Every new route needs an entry in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – otherwise only people with "Full administration" may use it, and the test `verwaltungsmodus.test.ts` fails. Sensitive actions that require a fresh sign-in are listed there in `heikleHandlung`. `benutzer.rolle` is the request's **effective** role (`admin` only in the mode); the stored permission is in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API keys never get `admin`.
 - **Public links without sign-in** so far only exist for an access copy's retrieval page (#455, `server/src/abruf.ts`, `web/src/abruf.tsx`): key only in the fragment (`/abruf#…`), in the database only hashes (SHA-256 for the key, scrypt for the code), failed attempts in sign-in protection per IP and on the link, download via a one-time ticket. Further sharing links should follow this pattern. In addition there is the **emergency access** `/notfall` (#815, `server/src/notfallcode.ts`, `web/src/notfall.tsx`): emergency code from the emergency sheet only as a scrypt hash (table `notfallcode`), redeemed in one transaction with the new password, default "home network only" with the real address behind a proxy (`istHeimnetz`), 30 s lock per address range, accounts only after the right code, notification before every change.
 - **Migrations** are numbered SQL files in `server/migrations/`. They run at start-up in one transaction and are never changed afterwards, always supplemented by a new one.
@@ -48,6 +57,19 @@ The folders are named after the service modules of the target structure; their `
 - **Rows written by many and deadlocks** (#575): triggers that make many transactions write into the same rows (e.g. counters per word with `INSERT … ON CONFLICT DO UPDATE`) deadlock under load – every transaction locks its rows in a different order, PostgreSQL cancels one (deadlock). Pattern: the trigger only appends to an inbox without a unique key, a background run takes it over under a lock and in a fixed order (word index: `suchwoerter_eingang`, `dms_woerter_einarbeiten`, `Dienst.woerterEinarbeiten`, migration 052). What can still be cancelled and mustn't get lost runs via `beiVerklemmungWiederholen` (`server/src/db.ts`, repeats on 40P01/40001) – as a transaction of its own or `sql.begin` (inside a transaction a savepoint). Test: `server/test/verklemmung.test.ts`.
 - **Backup and restore** back up all tables except the content of `sitzungen` and `schema_migrationen` (`OHNE_INHALT` in `server/src/datenbankabzug.ts`). A new table is automatically included. Data outside the database needs a thought: where is it, and does it come along?
 
+
+## Core (#961) { #kern }
+
+`server/src/kern/` holds what **all** subject areas need, with one door (`kern/index.ts`). The service builds it and passes it on as `dienst.kern`; building blocks such as packages will in future take only the core instead of the whole service.
+
+- `kern.repo` – the repo; inside a transaction of the core, that transaction's repo. Fetch it on every call, never keep it – otherwise a package writes past the transaction.
+- `inTransaktion`, `inEinemZug` (retries on deadlock), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
+- `ereignis(art, daten, von?)` into the outbox, `mitAusloeser`, `ohneEreignisse`.
+- `system()` – look up the user, role and post folder types and the system roles (still creates them the first time; split in #963), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `liesGanz(sha)`.
+- `historie.schreibe(…)` (`kern/historie.ts`) and `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Reading** stays with folders and deletion respectively.
+- `einstellungen`, `dateien`, `stand`.
+
+**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). The service stays a facade with one-line forwards. What the core does not build itself yet (access, creating the system types), it gets from the service when it is assembled.
 
 ## Dependencies { #abhaengigkeiten }
 
@@ -511,7 +533,7 @@ This is stored per person in their settings (`entdecken_rundgaenge`, `entdecken_
 
 ## Event catalogue (#670) { #ereigniskatalog }
 
-What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), the texts in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – underscore as hyphen –, `gruppe.<gruppe>`). Packages (`code.ereignisse`, exactly the entries with `paket: true` plus the outdated names in `VERALTETE_EREIGNISSE`), webhooks and automations (#674) take their events from this catalogue. **The core reports every occurrence exactly once** (#724) – with `dienst.ereignis(…)` into the one outbox; there is no longer a second route for packages. The list for reference is in the Workbench with the package under **Which events exist**.
+What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), the texts in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – underscore as hyphen –, `gruppe.<gruppe>`). Packages (`code.ereignisse`, exactly the entries with `paket: true` plus the outdated names in `VERALTETE_EREIGNISSE`), webhooks and automations (#674) take their events from this catalogue. **The core reports every occurrence exactly once** (#724) – with `kern.ereignis(…)` (in the service `dienst.ereignis(…)`) into the one outbox; there is no longer a second route for packages. The list for reference is in the Workbench with the package under **Which events exist**.
 
 **Rules**
 

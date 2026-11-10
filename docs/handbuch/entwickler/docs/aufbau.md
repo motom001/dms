@@ -36,7 +36,16 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `mappen/` | Mappen, Historie, Papierkorb |
 | `dokumente/` | Dokumente, Fassungen, Inhalte |
 
-Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu.
+Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu. In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen.
+
+Daneben, ohne Routen:
+
+| Ordner in `server/src/` | Inhalt |
+|---|---|
+| `kern/` | der [Kern](#kern) (#961) |
+| `http/` | Hilfen der HTTP-Schicht – nur für Routen |
+| `pdf/`, `arbeit/` | [PDF-Stelle](#pdf-stelle), [Arbeiter-Pool](#arbeiter-pool) |
+| `laeufer/` | Paket-Läufer |
 - **Werkbank-Routen** (`zugang: 'admin'`, #818/#819) gehen nur im **Verwaltungsmodus** (Zustand der Sitzung, `Konten.modusPruefen`) und nur mit Recht auf ihren Bereich. Jede neue Route braucht einen Eintrag in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – sonst dürfen sie nur Personen mit „Gesamte Verwaltung“, und der Test `verwaltungsmodus.test.ts` schlägt fehl. Heikle Handlungen mit Pflicht zur frischen Anmeldung stehen dort in `heikleHandlung`. `benutzer.rolle` ist die **wirksame** Rolle der Anfrage (`admin` nur im Modus); das gespeicherte Recht steht in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API-Schlüssel bekommen nie `admin`.
 - **Öffentliche Links ohne Anmeldung** gibt es bisher nur für die Abrufseite einer Auskunft (#455, `server/src/abruf.ts`, `web/src/abruf.tsx`): Schlüssel nur im Fragment (`/abruf#…`), in der Datenbank nur Hashes (SHA-256 für den Schlüssel, scrypt für den Code), Fehlversuche im Anmeldeschutz je IP und am Link, Download über ein Einmal-Ticket. Weitere Freigabelinks sollten diesem Muster folgen. Dazu kommt der **Notfallzugang** `/notfall` (#815, `server/src/notfallcode.ts`, `web/src/notfall.tsx`): Notfallcode vom Notfallblatt nur als scrypt-Hash (Tabelle `notfallcode`), Einlösen in einer Transaktion mit dem neuen Passwort, Vorgabe „nur Heimnetz“ mit der echten Adresse hinter einem Proxy (`istHeimnetz`), 30 s Sperre je Adressbereich, Konten erst nach richtigem Code, Benachrichtigung vor jeder Änderung.
 - **Migrationen** sind nummerierte SQL-Dateien in `server/migrations/`. Sie laufen beim Start in einer Transaktion und werden nie nachträglich geändert, sondern immer durch eine neue ergänzt.
@@ -48,6 +57,19 @@ Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts`
 - **Gemeinsam beschriebene Zeilen und Verklemmungen** (#575): Trigger, die viele Transaktionen in dieselben Zeilen schreiben lassen (z. B. Zähler je Wort mit `INSERT … ON CONFLICT DO UPDATE`), verklemmen sich unter Last – jede Transaktion sperrt ihre Zeilen in anderer Reihenfolge, PostgreSQL bricht eine ab (Deadlock). Muster: Der Trigger hängt nur an einen Eingang ohne eindeutigen Schlüssel an, ein Hintergrundlauf übernimmt ihn unter einer Sperre und in fester Reihenfolge (Wörterverzeichnis: `suchwoerter_eingang`, `dms_woerter_einarbeiten`, `Dienst.woerterEinarbeiten`, Migration 052). Was trotzdem abgebrochen werden kann und nicht verloren gehen darf, läuft über `beiVerklemmungWiederholen` (`server/src/db.ts`, wiederholt bei 40P01/40001) – als eigene Transaktion bzw. `sql.begin` (in einer Transaktion ein Sicherungspunkt). Test: `server/test/verklemmung.test.ts`.
 - **Sicherung und Wiederherstellung** sichern alle Tabellen außer dem Inhalt von `sitzungen` und `schema_migrationen` (`OHNE_INHALT` in `server/src/datenbankabzug.ts`). Eine neue Tabelle ist automatisch dabei. Daten außerhalb der Datenbank brauchen einen Gedanken: Wo liegen sie, und kommen sie mit?
 
+
+## Kern (#961) { #kern }
+
+`server/src/kern/` enthält, was **alle** Fachbereiche brauchen, mit einer Tür (`kern/index.ts`). Der Dienst baut ihn und reicht ihn als `dienst.kern` weiter; Bausteine wie die Pakete nehmen künftig nur den Kern statt des ganzen Dienstes.
+
+- `kern.repo` – das Repo; in einer Transaktion des Kerns deren Repo. Bei jedem Aufruf neu holen, nie zwischenspeichern – sonst schreibt ein Paket neben der Transaktion vorbei.
+- `inTransaktion`, `inEinemZug` (wiederholt bei Verklemmung), `danach`, `nachDerAntwort`, `inEigenerTransaktion()`.
+- `ereignis(art, daten, von?)` in den Ausgangskorb, `mitAusloeser`, `ohneEreignisse`.
+- `system()` – Benutzer-, Rollen- und Post-Typ und die Systemrollen nachschlagen (legt sie beim ersten Mal noch an; Trennung in #963), `typen()`, `zugriff(ich)`, `name(id)`, `papierkorbTage()`, `liesGanz(sha)`.
+- `historie.schreibe(…)` (`kern/historie.ts`) und `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Lesen** bleibt bei Mappen bzw. Löschen.
+- `einstellungen`, `dateien`, `stand`.
+
+**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst bleibt Fassade mit einzeiligen Weiterleitungen. Was der Kern noch nicht selbst bildet (Zugriff, das Anlegen der Systemtypen), bekommt er beim Zusammenbau vom Dienst.
 
 ## Abhängigkeiten { #abhaengigkeiten }
 
@@ -512,7 +534,7 @@ Gemerkt wird je Person in ihren Einstellungen (`entdecken_rundgaenge`, `entdecke
 
 ## Ereigniskatalog (#670) { #ereigniskatalog }
 
-Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), die Texte in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – Unterstrich als Bindestrich –, `gruppe.<gruppe>`). Pakete (`code.ereignisse`, genau die Einträge mit `paket: true` plus die veralteten Namen in `VERALTETE_EREIGNISSE`), Webhooks und Automatisierungen (#674) nehmen ihre Ereignisse aus diesem Katalog. **Der Kern meldet jedes Geschehen genau einmal** (#724) – mit `dienst.ereignis(…)` in den einen Ausgangskorb; einen zweiten Weg für Pakete gibt es nicht mehr. Die Liste zum Nachschlagen steht in der Werkbank beim Paket unter **Welche Ereignisse es gibt**.
+Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), die Texte in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – Unterstrich als Bindestrich –, `gruppe.<gruppe>`). Pakete (`code.ereignisse`, genau die Einträge mit `paket: true` plus die veralteten Namen in `VERALTETE_EREIGNISSE`), Webhooks und Automatisierungen (#674) nehmen ihre Ereignisse aus diesem Katalog. **Der Kern meldet jedes Geschehen genau einmal** (#724) – mit `kern.ereignis(…)` (im Dienst `dienst.ereignis(…)`) in den einen Ausgangskorb; einen zweiten Weg für Pakete gibt es nicht mehr. Die Liste zum Nachschlagen steht in der Werkbank beim Paket unter **Welche Ereignisse es gibt**.
 
 **Regeln**
 
