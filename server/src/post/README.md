@@ -20,7 +20,7 @@ Benutzer, Rollen). Schicht 3 der Zielaufteilung – über Mappen, Dokumenten, Re
 - Jede Klasse bekommt den **Kern**, die Rechteprüfung, die Mappen und Dokumente, die sie ruft, und die Teile dieses
   Ordners; `PostFotos` dazu `pdf-bearbeiten/` (`pdfVon`). `wandleZuPost` und `ergaenzeSystemfelder` liegen seit #1073
   in `mappentypen/systemtypen.ts`.
-- Über den Anschluss (noch im Dienst): Ereignis, `meldeVerknuepft`, Aufgaben (anlegen, umleiten, nach Anlass
+- Über den Anschluss (am Dienst; Aufgaben und Löschen seit #1078 in `aufgaben/` und `loeschen/`): Ereignis, `meldeVerknuepft`, Aufgaben (anlegen, umleiten, nach Anlass
   erledigen), Konten, Passung, Systemausstattung, das Löschen von Mappen und `sichereZuordnung` aus `erkennung.ts`
   (die Erkennung bekommt noch den ganzen Dienst). `PostAufloesen` holt neue Post über den Dienst – sonst Kreis.
 - Importiert nur sich selbst, Kern, tiefere Fachordner, `volltext/` (`volltextAn`), `pdf-bearbeiten/` (je über

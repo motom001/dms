@@ -33,8 +33,9 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
   (Passung, Erwähnungen, Fristen, Post-Aufgaben, #962). Die Empfänger meldet der Dienst beim Zusammenbau an; ihre
   Reihenfolge ändert sich nur in einem eigenen Pull Request.
 - `kern.repo` bei jedem Aufruf neu holen (Getter `repo`) – in einer Transaktion sieht es deren Änderungen.
-- Noch im Dienst: Notizen schreiben, Löschen und Papierkorb (`loeschPruefung`, künftig `loeschen/`), Aufgaben und
-  Fristen (künftig `aufgaben/`), `meldeVerknuepft` (künftig `ereignisse/`).
+- Notizen schreiben seit #1078 in `notizen.ts` (`MappenNotizen`; Ereignis, Erwähnungen und Übersetzungen über den
+  Anschluss). `loeschPruefung` (`loeschen/`), Aufgaben (`aufgaben/`) und `meldeVerknuepft` (`ereignisse/`) kommen
+  weiter über den Anschluss am Dienst.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: zwei `complexity` in `mappen.dienst.ts`,
   ein `max-params` in `eingaben.ts`).
 

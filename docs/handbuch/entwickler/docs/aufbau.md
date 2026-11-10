@@ -22,7 +22,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `mappentypen/` | Mappentypen, ihr Archiv, Berechtigungen |
 | `werkbank/` | Werkbank-Übersicht, Designs, Region, Sprachen, Protokoll, Verwaltungsmodus |
 | `ausgang/` | Export (Werkbank und Mein Konto); seit #1077 die [Wege nach draußen](#ausgang) |
-| `datenschutz/` | Auskünfte, Löschkonzept, Abrufseite |
+| `datenschutz/` | Auskünfte, Löschkonzept, Abrufseite; seit #1078 der [Datenschutz](#datenschutz) |
 | `pakete/` | Pakete, Katalog, Paket-Einstellungen |
 | `suche/` | Suche, Frag deine Ablage |
 | `wartung/` | Wartungsmodus |
@@ -32,7 +32,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `automatisierung/` | Automatisierungen |
 | `webhooks/` | Webhooks (Werkbank und Mein Konto) |
 | `sichten/` | Ansichten, Mappenlisten, Startseite |
-| `aufgaben/` | Aufgaben |
+| `aufgaben/` | Aufgaben; seit #1078 die [Aufgaben](#aufgaben) |
 | `mappen/` | Mappen, Historie, Papierkorb |
 | `dokumente/` | Dokumente, Fassungen, Inhalte |
 
@@ -110,7 +110,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `suche/index.ts`; die Routen (`suche.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, nicht den ganzen Dienst (für den Zwischenspeicher der Vektoren `kern.repoOhneTransaktion`), dazu die [Rechteprüfung](#zugriff) (`lesbare`, `pruefeRecht`) und einen `SucheAnschluss` mit `konten` (Dienstkonto eines Pakets).
 - **Nur abwärts:** Die Suche (Schicht 3) importiert sich selbst, tiefere Fachordner und den Kern (je über `index.ts`), `shared/`, die Basis und `vektoren.ts` – geprüft mit der Regel `fachordner` ([Regeln](stil.md#abhaengigkeiten-pruefen)). `vektoren.ts` bleibt außerhalb von `suche/`, weil auch der Paket-Läufer damit die Vektoren eines Pakets liest.
-- **Noch im Dienst:** `vektorNachlauf` (braucht die KI-Sperre der Pakete) und die Suche in der Mappenliste (`listeMappen`).
+- **Noch im Dienst:** die Suche in der Mappenliste (`listeMappen`). `vektorNachlauf` liegt seit #1078 bei den [Ereignissen](#ereignisse).
 
 ## Rechte prüfen (#1072) { #zugriff }
 
@@ -119,7 +119,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `zugriff/index.ts` (dazu `maskiert` und `NICHT_SICHTBAR` für Titel nicht lesbarer Mappen).
 - **Bekommt den Kern** und einen `ZugriffAnschluss` vom Dienst: `kiSperre` (KI-Einstellung der Pakete) und `konten`.
 - **Schicht 1:** importiert nur sich selbst, den Kern, `shared/`, die Basis und `messung.ts`. Fachordner darüber bekommen den `ZugriffDienst` beim Zusammenbau (wie die Suche) und importieren ihn über `zugriff/index.ts`. Der Kern bindet ihn nicht ein; `kern.zugriff(ich)` ruft, was der Dienst hereinreicht.
-- **Noch im Dienst:** `regulaerSichtbarFuer` (gehört zu den Aufgaben). Die Werkbank der Berechtigungen liegt seit #1076 in den [Berechtigungen](#berechtigungen). `paketSiehtNicht` liegt seit #1073 bei den [Mappentypen](#mappentypen) (`pakete-am-typ.ts`).
+- `regulaerSichtbarFuer` liegt seit #1078 bei den [Aufgaben](#aufgaben) (`ohne-leserecht.ts`). Die Werkbank der Berechtigungen liegt seit #1076 in den [Berechtigungen](#berechtigungen). `paketSiehtNicht` liegt seit #1073 bei den [Mappentypen](#mappentypen) (`pakete-am-typ.ts`).
 
 ## Mappentypen (#1073) { #mappentypen }
 
@@ -136,7 +136,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 - **Tür:** `mappentypen/index.ts`; die Routen (`mappentypen.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, `TypPakete` und `Systemtypen` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Stempel, Erkennung und Berechtigungen am Typ, Aufgaben, Titel, Aufträge, Systemmappen schreiben).
-- **Noch im Dienst:** `ausPostZiele` (#937). Den Stempel am Typ (`mitStempel`) rechnet seit #1077 der [Ausgang](#ausgang), Prüfen und Speichern die Stempel-Vorlagen in [PDF bearbeiten](#pdf-bearbeiten) – beides über den Anschluss. `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
+- `ausPostZiele` (#937) liegt seit #1078 in `mappentypen.dienst.ts`, die KI-Freigabe der Mappentypen (#796) in `ki-typen.ts` (`KiTypen`, `dienst.ki`). Den Stempel am Typ (`mitStempel`) rechnet seit #1077 der [Ausgang](#ausgang), Prüfen und Speichern die Stempel-Vorlagen in [PDF bearbeiten](#pdf-bearbeiten) – beides über den Anschluss. `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
 
 ## Mappen (#1074) { #mappen }
 
@@ -154,7 +154,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `mappen/index.ts`; die Routen (`mappen.routen.ts`) holt nur `routen.ts` direkt. Die Eingabe-Hilfen der Mappentypen bleiben in `mappentypen/eingabe.ts`.
 - **Bekommt den Kern**, `MappenDienst`, `MappenEingaben` und `MappenArchiv` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt oder über ihn kommt (Konten, Aufgaben ohne Leserecht, Archivfassung und PDF-Schutz aus den [Dokumenten](#dokumente), Datenschutz, `loeschPruefung`, `meldeVerknuepft`, Schlüssel, Aufkleber, Aufträge).
 - **Sofortiges:** `legeMappeAn` und `aendereMappe` melden am Ende ihrer Transaktion `kern.anlaesse.mappeGeaendert` – die [Anschlusspunkte](#anschlusspunkte) und ihre Reihenfolge sind unverändert.
-- **Noch im Dienst:** Notizen schreiben, Löschen und Papierkorb, Aufgaben und Fristen, `meldeVerknuepft`.
+- Notizen schreiben liegt seit #1078 in `notizen.ts` (`MappenNotizen`, `dienst.mappenNotizen`; Erwähnungen und Übersetzungen über den Anschluss). Löschen und Papierkorb liegen in [Löschen](#loeschen), Aufgaben und Fristen in den [Aufgaben](#aufgaben), `meldeVerknuepft` bei den [Ereignissen](#ereignisse) – alle weiter über den Anschluss.
 
 ## Dokumente (#1075) { #dokumente }
 
@@ -172,7 +172,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `dokumente/index.ts`; die Routen (`dokumente.routen.ts`) holt nur `routen.ts` direkt. Die Technik der Fassungen (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) bleibt außerhalb und ist für Fachordner ein Werkzeug (siehe [Schichten](#schichten)).
 - **Bekommt den Kern** und die Teile dieses Ordners, die eine Klasse ruft, und je Klasse einen Anschluss für das, was noch im Dienst liegt oder im Kreis liefe (Ereignis und Titel über die Fassade, Archivmodus, Verkleinern, Volltext, Aufträge an Pakete, Paket-Einstellungen, Mappentypen, Texterkennung).
 - **Reihenfolge:** `ladeHoch` schreibt Historie, „zuletzt geändert“, Dokument, Volltext und `dokument.hochgeladen` in einer Transaktion, Vorschau, Umwandeln und Entsperren laufen danach; `nachFassung`, `nachEntsperren`, `archivNachVolltext` und `nachNeuerVersion` sind unverändert und werden an denselben Stellen gerufen.
-- **Noch im Dienst:** `entsperrtZu`. PDF bearbeiten, Verkleinern und Schwärzen liegen seit #1077 in [PDF bearbeiten](#pdf-bearbeiten). Den Volltext (`volltextFertig`, `volltextAn`) rufen die Dokumente seit #1076 über ihren Anschluss am Dienst im [Volltext](#volltext).
+- `entsperrtZu` liegt seit #1078 in `geschuetzte-pdf.ts`. PDF bearbeiten, Verkleinern und Schwärzen liegen seit #1077 in [PDF bearbeiten](#pdf-bearbeiten). Den Volltext (`volltextFertig`, `volltextAn`) rufen die Dokumente seit #1076 über ihren Anschluss am Dienst im [Volltext](#volltext).
 
 ## Sichten (#1076) { #sichten }
 
@@ -256,6 +256,68 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Warum ein eigener Ordner:** `pdf/` ist von der Regel `fachordner` ausgenommen (`TECHNIK`), läuft im Arbeiter-Pool und wird von den Dokumenten (Schicht 2) eingebunden. Klassen mit Kern, Mappen und Dokumenten dort hätten die Regel aufgeweicht und einen Kreis über `pdf/index.ts` gebaut.
 - **Bekommt den Kern**, die Rechteprüfung, Mappen und Dokumente. Die Post (neue Post beim Teilen, Systemmappe, „Post für dich“) kommt über den Anschluss am Dienst – `post/` hängt Fotos mit `pdfVon` an, andersherum liefe es im Kreis.
 
+## Ereignisse (#1078) { #ereignisse }
+
+`server/src/ereignisse/` (**Schicht 2**) gibt weiter, was der Kern auslöst – den Ausgangskorb selbst (`kern.ereignis`) hat der Kern:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `ereignisse.dienst.ts` | `EreignisseDienst` (`dienst.ereignisseDienst`) | `neueAufgabe`, `meldeVerknuepft` (#670), `ereignisAnPakete` (#686 nur mit Leserecht, #796 KI-Sperre), `auftrag`, `vektorNachlauf` (#442) |
+| `automatisierung.ts` | `Automatisierungshilfen` (`dienst.automatisierungshilfen`) | `automatisierungKontext`, `mitgliederDerRolle`, `trifftTeile`, `lesbareTitel`, `datumVon`, `mappenMitDatum` (#674, #712) |
+
+- **Warum Schicht 2:** Viele brauchen die Ereignisse, auch Mappen und Dokumente; selbst brauchen sie nur Kern, [Rechteprüfung](#zugriff) und die Pakete am Mappentyp samt KI-Freigabe ([Mappentypen](#mappentypen)). Texterkennung ([Volltext](#volltext)) und Rollen ([Post](#post)) kommen über den Anschluss.
+- Den Abnehmer `pakete` meldet der Dienst beim Verteiler an; Ereignis auslösen und der Wecker des Paket-Läufers gehen über die Fassade.
+- **Tür:** `ereignisse/index.ts`, eingebunden als `ereignisse/index` – neben dem Ordner liegt `ereignisse.ts` (der Verteiler des Katalogs), wie bei `pakete/index`.
+
+## Aufgaben (#1078) { #aufgaben }
+
+`server/src/aufgaben/` (Schicht 3) bündelt alles rund um Aufgaben; der Dienst baut die Klassen (`baueAufgaben()`) und behält für jede Methode eine einzeilige Weiterleitung:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `aufgaben.dienst.ts` | `AufgabenDienst` (`dienst.aufgaben`) | `pruefeEmpfaenger`, Erwähnungen (#56, #81), Freigabe der Favoriten (#506), `aufgabeAusAutomatisierung` (#676, #724), `erledigeNachAnlass` |
+| `vertretung.ts` | `AufgabenVertretung` (`dienst.vertretung`) | Vertretung (#78), vergeben, erledigen, weitergeben (auch gesammelt, #415), `abwesenheitGeaendert`, `meineAufgaben` |
+| `ohne-leserecht.ts` | `OhneLeserecht` (`dienst.ohneLeserecht`) | Aufgaben bei Personen ohne Leserecht, Fälle, Leserecht auf Zeit (#798, #958) |
+| `fristen.ts` | `Fristen` (`dienst.fristen`) | Fristen, Erinnerungen, Termine samt Zwischenspeicher, Folgetermin (#129–#133, #528, #725) |
+| `ohne-empfaenger.ts` | `OhneEmpfaenger` (`dienst.ohneEmpfaenger`) | Alltags-Benutzer (#719), Favoriten benachrichtigen (#422) |
+
+- **Bekommt den Kern** und `AufgabenTeile` (Rechteprüfung, Historie und Mappen, Ereignisse, Rollen der [Post](#post) und einander); über den Anschluss Ereignis (Fassade), Konten und die Gültigkeit der Zahlen.
+- Die Empfänger an den [Anschlusspunkten](#anschlusspunkte) sind unverändert; sie rufen `pruefeErwaehnungen`, `fristenAbgleichen` und `abwesenheitGeaendert` über die Fassade.
+
+## Löschen (#1078) { #loeschen }
+
+`server/src/loeschen/` (Schicht 3); der Dienst baut die Klassen (`baueLoeschen()`):
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `loeschen.dienst.ts` | `LoeschenDienst` (`dienst.loeschen`) | `loeschPruefung` (#79), `loescheMappe`, `loescheMappen` (#150), `entferneMappenEndgueltig` |
+| `papierkorb.ts` | `Papierkorb` (`dienst.papierkorbVerwaltung`) | Papierkorb (#43, #344, #936): wiederherstellen, endgültig löschen, leeren, aufräumen |
+| `loeschprotokoll.ts` | `LoeschprotokollVerwaltung` (`dienst.loeschprotokollVerwaltung`) | Löschprotokoll lesen und verwalten (#470); **geschrieben** wird im [Kern](#kern) |
+| `mit-verknuepften.ts` | `MitVerknuepften` (`dienst.mitVerknuepften`) | [Baum](#baum-uber-verweise) und Löschen mit verknüpften Mappen (#396, #424) |
+| `beispiele.ts` | `BeispielMappen` (`dienst.beispielMappen`) | Beispiel-Mappen aus Paketen (#878) |
+
+- **Bekommt den Kern** und `LoeschenTeile` (Rechteprüfung, Passung, Historie, Dokumente, Ausgang, Sichten, Systemmappen und einander); Ereignis und `aktualisiereTitel` über die Fassade, Konten über den Anschluss.
+
+## Datenschutz (#1078) { #datenschutz }
+
+`server/src/datenschutz/` (Schicht 3); der Dienst baut die Klassen (`baueDatenschutz()`):
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `datenschutz.dienst.ts` | `DatenschutzDienst` (`dienst.datenschutzDienst`) | Auskunft nach Art. 15 DSGVO (#396, #472, #668), Demo-Daten (#248) |
+| `vollexport.ts` | `VollexportQuellen` (`dienst.vollexport`) | Datenquellen für Vollexport (#254) und persönlichen Export (#255) |
+| `zustellen.ts` | `AuskunftZustellen` (`dienst.auskunftZustellen`) | E-Mail und Abruf-Links mit Abrufcode (#455), „Meine Daten exportieren“ |
+
+- **Bekommt den Kern** und `DatenschutzTeile` (Rechteprüfung, Mappen, Dokumente, Sichten, Ereignisse, Aufgaben, Löschen und einander); Konten, Kurzzustand, Tresor und Export der Automatisierungen über den Anschluss.
+
+## Werkbank (#1078) { #werkbank }
+
+`server/src/werkbank/werkbank.dienst.ts` mit `WerkbankDienst` (`dienst.werkbank`, Schicht 3, nur der Kern): die Ansicht der Werkbank (#281, `werkbankAnsicht`, `setzeWerkbankAnsicht`).
+
+## Was in dienst.ts bleibt (#1078) { #dienst-rest }
+
+Nach #1078 enthält `dienst.ts` nur noch Weiterleitungen und den Zusammenbau: die Felder der Klassen, den Konstruktor mit den `baue…()`-Methoden, `schliesseEmpfaengerAn()`, die `verbinde…`-Methoden, die Felder, die der Start oder Tests setzen (`mindestensMs`, `sicherungAufgegeben`, `systemkonten`, `ereignisWecker` …), den Verteiler der Ereignisse und den Tresor (`schluesselWechseln`, `verschluesselePaketGeheimnis`, `entschluessele`).
+
 ### Schichten { #schichten }
 
 Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutzen (Kreisläufe verbietet `kein-kreislauf`). Die Liste steht zentral in `.dependency-cruiser.cjs` (`SCHICHTEN`) – ein Ordner, den es noch nicht gibt, ist damit schon eingeordnet:
@@ -264,10 +326,10 @@ Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutze
 |---|---|
 | 0 | `kern/` – nur sich selbst, `shared/` und die Basis |
 | 1 | `zugriff/` |
-| 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/` |
-| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `volltext/`, `post/`, `ausgang/`, `pdf-bearbeiten/`, `aufgaben/` …) |
+| 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/`, `ereignisse/` (#1078) |
+| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `volltext/`, `post/`, `ausgang/`, `pdf-bearbeiten/`, `aufgaben/`, `loeschen/`, `datenschutz/`, `werkbank/` …) |
 
-Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), die Technik für Post, Ausgang und PDF bearbeiten (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
+Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), die Technik für Post, Ausgang und PDF bearbeiten (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), die Technik für Löschen und Datenschutz (`baum.ts`, `schriftstueck.ts`, `auskunft.ts`, `vollexport.ts`, `abruf.ts`, `passwort.ts`, `tresor.ts` – nur `istVerschluesselt`, den Schlüssel reicht der Dienst herein –, #1078), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
 
 ## Abhängigkeiten { #abhaengigkeiten }
 
