@@ -103,7 +103,7 @@ Since #724 all events come from the core's one event catalogue and outbox ([Arch
 | `sicherung.fertig` | Since 0.142.0, only with `dms:sicherung-lesen`: a backup is finished in the backup folder – see [Off-site backup](#sicherung-ausser-haus) | `name`, `datei`, `groesse`, `sha256`, `beginn`, `format`, `schlank`, `verschluesselung` |
 | `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` | Since 0.153.0, only for types from `code.mappentypen` (since 0.166.0 also other packages' types) and only for folders the package may read: folder created, saved and changed in the process, put in the bin, restored. `mappe.geaendert` bundles quick sequences (about 5 s) into one event. Examples, demo data and restores trigger nothing. | `mappe`, `typ`, with `mappe.geaendert` `felder` (keys, never values), `ereignis` |
 | `frist.erreicht` | Since 0.153.0, only for types from `code.mappentypen`: a date field with a deadline reaches the reminder time (`zeitpunkt: vorlauf`) or the day itself (`faellig`) – exactly once per folder, field, date and time | `mappe`, `typ`, `feld`, `datum`, `zeitpunkt`, `empfaenger`, `ereignis` |
-| `zeitplan.ausgefuehrt` | Since 0.232.0: an automation with the Then card **Run package on schedule** has run at its time – see [Calculating on schedule](#nach-zeitplan). Only to the card's package, exactly once per automation, card and day (same id on a repetition). Without content of the library. | `automatisierung` (id), `aufgabe` (key or `null`), `zeitpunkt` (planned, ISO in UTC), `datum` (day in the library's time zone, YYYY-MM-DD) |
+| `zeitplan.ausgefuehrt` | Since 0.233.0: an automation with the Then card **Run package on schedule** has run at its time – see [Calculating on schedule](#nach-zeitplan). Only to the card's package, exactly once per automation, card and day (same id on a repetition). Without content of the library. | `automatisierung` (id), `aufgabe` (key or `null`), `zeitpunkt` (planned, ISO in UTC), `datum` (day in the library's time zone, YYYY-MM-DD) |
 
 **Event id (since 0.153.0):** the events about folders and deadlines come from the [event catalogue](aufbau.md#ereigniskatalog). They are delivered **at least once**; `daten.ereignis` is the id in the catalogue – if the same id comes again, it was a repetition. What the package changes itself isn't reported to it.
 
@@ -259,7 +259,7 @@ A module that imports `netz_strom`, `netz_weiter` or `teil` only loads from Abla
 
 ### Calculating on schedule (`zeitplan.ausgefuehrt`) { #nach-zeitplan }
 
-Since 0.232.0 (#1082). If something depends only on the date ("cancellable until …", "overdue since …"), the package brings an **automation** instead of keeping its own clock – the admin sees it, changes time and days or switches it off:
+Since 0.233.0 (#1082). If something depends only on the date ("cancellable until …", "overdue since …"), the package brings an **automation** instead of keeping its own clock – the admin sees it, changes time and days or switches it off:
 
 ```yaml
 # manifest.yaml

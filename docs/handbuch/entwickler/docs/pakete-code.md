@@ -103,7 +103,7 @@ Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb 
 | `sicherung.fertig` | Seit 0.142.0, nur mit `dms:sicherung-lesen`: Eine Sicherung liegt fertig im Sicherungsordner – siehe [Sicherung außer Haus](#sicherung-ausser-haus) | `name`, `datei`, `groesse`, `sha256`, `beginn`, `format`, `schlank`, `verschluesselung` |
 | `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` | Seit 0.153.0, nur zu Typen aus `code.mappentypen` (seit 0.166.0 auch fremde) und nur zu Mappen, die das Paket lesen darf: Mappe angelegt, gespeichert und dabei geändert, in den Papierkorb gelegt, wiederhergestellt. `mappe.geaendert` bündelt schnelle Folgen (etwa 5 s) zu einem Ereignis. Beispiele, Demo-Daten und Wiederherstellungen lösen nichts aus. | `mappe`, `typ`, bei `mappe.geaendert` `felder` (Schlüssel, nie Werte), `ereignis` |
 | `frist.erreicht` | Seit 0.153.0, nur zu Typen aus `code.mappentypen`: Ein Datumsfeld mit Frist erreicht den Erinnerungszeitpunkt (`zeitpunkt: vorlauf`) bzw. den Tag selbst (`faellig`) – je Mappe, Feld, Datum und Zeitpunkt genau einmal | `mappe`, `typ`, `feld`, `datum`, `zeitpunkt`, `empfaenger`, `ereignis` |
-| `zeitplan.ausgefuehrt` | Seit 0.232.0: Eine Automatisierung mit der Dann-Karte **Paket nach Zeitplan ausführen** ist zu ihrem Zeitpunkt gelaufen – siehe [Nach Zeitplan rechnen](#nach-zeitplan). Nur an das Paket der Karte, je Automatisierung, Karte und Tag genau einmal (gleiche Id bei Wiederholung). Ohne Inhalte der Ablage. | `automatisierung` (Id), `aufgabe` (Kennung oder `null`), `zeitpunkt` (geplant, ISO in UTC), `datum` (Tag in der Zeitzone der Ablage, JJJJ-MM-TT) |
+| `zeitplan.ausgefuehrt` | Seit 0.233.0: Eine Automatisierung mit der Dann-Karte **Paket nach Zeitplan ausführen** ist zu ihrem Zeitpunkt gelaufen – siehe [Nach Zeitplan rechnen](#nach-zeitplan). Nur an das Paket der Karte, je Automatisierung, Karte und Tag genau einmal (gleiche Id bei Wiederholung). Ohne Inhalte der Ablage. | `automatisierung` (Id), `aufgabe` (Kennung oder `null`), `zeitpunkt` (geplant, ISO in UTC), `datum` (Tag in der Zeitzone der Ablage, JJJJ-MM-TT) |
 
 **Ereignis-Id (seit 0.153.0):** Die Ereignisse zu Mappen und Fristen kommen aus dem [Ereigniskatalog](aufbau.md#ereigniskatalog). Sie werden **mindestens einmal** zugestellt; `daten.ereignis` ist die Id im Katalog – kommt dieselbe Id noch einmal, war es eine Wiederholung. Was das Paket selbst ändert, bekommt es nicht gemeldet.
 
@@ -259,7 +259,7 @@ Ein Modul, das `netz_strom`, `netz_weiter` oder `teil` importiert, lädt erst ab
 
 ### Nach Zeitplan rechnen (`zeitplan.ausgefuehrt`) { #nach-zeitplan }
 
-Seit 0.232.0 (#1082). Hängt etwas nur am Datum („kündbar bis …“, „überfällig seit …“), bringt das Paket eine **Automatisierung** mit, statt selbst einen Takt zu führen – der Admin sieht sie, ändert Uhrzeit und Tage oder schaltet sie aus:
+Seit 0.233.0 (#1082). Hängt etwas nur am Datum („kündbar bis …“, „überfällig seit …“), bringt das Paket eine **Automatisierung** mit, statt selbst einen Takt zu führen – der Admin sieht sie, ändert Uhrzeit und Tage oder schaltet sie aus:
 
 ```yaml
 # manifest.yaml
