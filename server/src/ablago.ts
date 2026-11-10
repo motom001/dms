@@ -708,10 +708,10 @@ if (leiter) {
 // Zeitpläne (#744): jeder Lauf unter einer Datenbanksperre – mit mehreren Prozessen arbeitet je Lauf nur einer.
 const papierkorb = async () => { if (!wartung.aktiv) await dienst.raeumePapierkorbAuf(); await raeumeExporteAuf(exporte.pfad); };
 const papierkorbLauf = () => nurEiner('papierkorb', papierkorb).catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
-if (leiter) setInterval(papierkorbLauf, 60 * 60 * 1000).unref();
+if (leiter) setInterval(() => void papierkorbLauf(), 60 * 60 * 1000).unref();
 // Abwesenheit (#78): Abgelaufenes beenden, „abwesend“ an den Benutzer-Mappen nachziehen.
 const abwesenheiten = () => nurEiner('abwesenheiten', () => konten.abwesenheitenPruefen()).catch((e) => log.error('Abwesenheiten prüfen fehlgeschlagen', { fehler: (e as Error).message }));
-if (leiter) setInterval(abwesenheiten, 60 * 60 * 1000).unref();
+if (leiter) setInterval(() => void abwesenheiten(), 60 * 60 * 1000).unref();
 // Anmeldeschutz (#368) und Tägliche Zusammenfassung (#54): Wann gemeldet wird, entscheiden seit #678 die
 // Automatisierungen (Wenn-Karte „Zeitplan“, Paket „Benachrichtigungen“); die Dann-Karten rufen das hier auf.
 dienst.zusammenfassungAn = async (id, trocken) => {
@@ -846,34 +846,47 @@ if (leiter) {
 /** Ganz Ablago beenden – bei mehreren Prozessen alle (über den Hauptprozess), sonst diesen. */
 function ganzBeenden(grund: string) { if (!verbund.beendeAlle(grund)) void beenden(); }
 
+/**
+ * Geordnet beenden (#1011): Jeder Schritt läuft, auch wenn ein früherer scheitert; Fehler kommen ins Protokoll.
+ * Danach endet der Prozess mit 0, oder mit 1, wenn ein Schritt gescheitert ist. Ein zweites Signal während des
+ * Beendens ändert nichts.
+ */
+let beendetSchon = false;
 const beenden = async () => {
+  if (beendetSchon) return;
+  beendetSchon = true;
+  let gescheitert = 0;
+  const schritt = async (name: string, f: () => unknown) => {
+    try { await f(); } catch (e) { gescheitert++; log.error(`Beenden: ${name} fehlgeschlagen`, { fehler: (e as Error).message }); }
+  };
   log.info(leiter ? 'Ablago wird beendet' : `Prozess ${verbund.nr} wird beendet`);
-  await start.schliesse();
-  await lasttestSeite?.stop();
-  if (intern) { const s = intern; await new Promise<void>((r) => { s.closeAllConnections(); s.close(() => r()); }); }
-  texterkennung.stop();
-  await paketlaeufer?.stop();
-  dienst.ereignisse.stoppe();
-  vorschau.stop();
-  wartung.stop();
-  sicherung.stop();
-  speicherplatz.stop();
-  webhooks.stop();
-  if (leiter) await konsole.entferne();
-  await app.close();
+  await schritt('start.schliesse', () => start.schliesse());
+  await schritt('lasttestSeite.stop', () => lasttestSeite?.stop());
+  await schritt('interner Server', () => { if (intern) { const s = intern; return new Promise<void>((r) => { s.closeAllConnections(); s.close(() => r()); }); } });
+  await schritt('texterkennung.stop', () => texterkennung.stop());
+  await schritt('paketlaeufer.stop', () => paketlaeufer?.stop());
+  await schritt('dienst.ereignisse.stoppe', () => dienst.ereignisse.stoppe());
+  await schritt('vorschau.stop', () => vorschau.stop());
+  await schritt('wartung.stop', () => wartung.stop());
+  await schritt('sicherung.stop', () => sicherung.stop());
+  await schritt('speicherplatz.stop', () => speicherplatz.stop());
+  await schritt('webhooks.stop', () => webhooks.stop());
+  await schritt('Konsole', () => leiter && konsole.entferne());
+  await schritt('app.close', () => app.close());
   // Zusammenfassungen der letzten Minute (#920) noch ins Protokoll.
-  messung.leeren();
-  ueberlast.leeren();
-  await beendeArbeiter();
-  verbindungswarten.stop();
-  poolmessung.aus();
-  aufteilung.stop();
-  await lebt.ende();
-  await sql.end({ timeout: 5 });
-  process.exit(0);
+  await schritt('messung.leeren', () => messung.leeren());
+  await schritt('ueberlast.leeren', () => ueberlast.leeren());
+  await schritt('beendeArbeiter', () => beendeArbeiter());
+  await schritt('verbindungswarten.stop', () => verbindungswarten.stop());
+  await schritt('poolmessung.aus', () => poolmessung.aus());
+  await schritt('aufteilung.stop', () => aufteilung.stop());
+  await schritt('lebt.ende', () => lebt.ende());
+  await schritt('sql.end', () => sql.end({ timeout: 5 }));
+  process.exit(gescheitert ? 1 : 0);
 };
-process.on('SIGTERM', beenden);
-process.on('SIGINT', beenden);
+const beendenSignal = () => void beenden();
+process.on('SIGTERM', beendenSignal);
+process.on('SIGINT', beendenSignal);
 
 // Startseite (#802) weg, Ablago selbst an den Port – die Lücke dazwischen ist nur ein Augenblick.
 await start.schliesse();

@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- **Geordnetes Beenden** (#1011): Scheitert beim Beenden von Ablago (Stopp des Containers) ein Schritt, laufen die übrigen trotzdem, und der Fehler steht im Protokoll. Ein zweites Stoppsignal während des Beendens startet es nicht noch einmal.
