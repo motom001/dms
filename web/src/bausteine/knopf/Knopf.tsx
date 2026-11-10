@@ -3,6 +3,7 @@ import { geheZu } from '../../ort';
 import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
 import s from './Knopf.module.css';
+import { hinweis } from '../../rueckfrage';
 
 /**
  * Baustein Knopf (#968): feste Arten, gleiche Zustände, `aria` eingebaut. Anleitung im Entwicklerhandbuch,
@@ -52,6 +53,30 @@ export function fehlerText(x: unknown): string {
   if (x instanceof Error && x.message) return x.message;
   if (typeof x === 'string' && x) return x;
   return t('oberflaeche.knopf.fehler');
+}
+
+/**
+ * Asynchroner Ereignis-Handler ohne Knopf (#1011) – für `onSubmit`, `onChange`, Ereignisse am Fenster und Ähnliches:
+ * React bekommt kein Promise zurück, und ein Fehler geht an `zeige` (die Meldung, die die Seite ohnehin hat, z. B.
+ * `setFehler` oder `text => setMeldung({ art: 'schlecht', text })`), statt still in der Konsole zu landen. Hat die
+ * Stelle keine eigene Meldung, kommt der Fehler als Hinweisfenster (`hinweis`). Der Handler läuft sofort an –
+ * `e.preventDefault()` am Anfang wirkt also wie gewohnt. Für Knöpfe den Baustein `Knopf` nehmen: Der zeigt „läuft“ und
+ * den Fehler selbst am Knopf.
+ */
+export function abfangen<A extends unknown[]>(fn: (...a: A) => Promise<unknown> | void, zeige: (text: string) => void = alsHinweis): (...a: A) => void {
+  return (...a: A) => {
+    try {
+      const r = fn(...a);
+      if (r) r.then(undefined, (x: unknown) => zeige(fehlerText(x)));
+    } catch (x) {
+      zeige(fehlerText(x));
+    }
+  };
+}
+
+/** Fehler ohne eigene Meldung an der Stelle: als Hinweisfenster, wie andere Rückmeldungen ohne festen Platz. */
+function alsHinweis(text: string) {
+  void hinweis({ titel: t('oberflaeche.knopf.fehler'), text });
 }
 
 const SYMBOL = { gut: 'haken', info: 'info', warn: 'warnung', schlecht: 'warnung' } as const;

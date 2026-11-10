@@ -6,7 +6,7 @@ import { useKonto } from '../konto';
 import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { knopfAussehen } from '../bausteine';
+import { abfangen, Knopf, knopfAussehen } from '../bausteine';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : '–');
@@ -55,7 +55,7 @@ export function ApiSchluesselBlatt() {
                 </div>
                 <span className="zeilenaktionen">
                   <button type="button" className="textknopf" onClick={() => setBearbeite(s.id)}>{t('profil.apischluessel.aendern')}</button>
-                  <button type="button" className="textknopf gefahr" onClick={async () => { if (await rueckfrage({ titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }), text: t('profil.apischluessel.programme-die-ihn-nutzen'), ja: t('profil.apischluessel.loeschen'), gefahr: true })) void aktion(() => api.apiSchluesselLoeschen(s.id)); }}>{t('profil.apischluessel.loeschen')}</button>
+                  <Knopf art="link" className="gefahr" onClick={async () => { if (await rueckfrage({ titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }), text: t('profil.apischluessel.programme-die-ihn-nutzen'), ja: t('profil.apischluessel.loeschen'), gefahr: true })) void aktion(() => api.apiSchluesselLoeschen(s.id)); }}>{t('profil.apischluessel.loeschen')}</Knopf>
                 </span>
               </li>
             ))}
@@ -81,7 +81,7 @@ function SchluesselFormular({ start, knopf, senden, abbrechen }: { start?: ApiSc
     if (await senden({ name, recht, passwoerter: recht !== 'zaehler' && passwoerter, ablauf: ausDatum(ablauf) }) && !start) { setName(''); setAblauf(''); setPasswoerter(false); }
   }
   return (
-    <form className="raster schluesselformular" onSubmit={los}>
+    <form className="raster schluesselformular" onSubmit={abfangen(los)}>
       <label className="eigenschaft"><span>{tn('profil.apischluessel.name', { klein: <small>{t('profil.apischluessel.z-b-scanner-buero')}</small> })}</span><input value={name} onChange={(e) => setName(e.target.value)} required /></label>
       <label className="eigenschaft"><span>{t('profil.apischluessel.rechte')}</span>
         <select value={recht} onChange={(e) => setRecht(e.target.value as ApiSchluesselRecht)} aria-describedby="schluessel-stufe-hilfe">

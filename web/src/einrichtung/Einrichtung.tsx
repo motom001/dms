@@ -1,7 +1,7 @@
 import { AuswahlFilter } from '../werkbank/Sichten';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
   ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
@@ -32,6 +32,7 @@ import { optionText, type Beschriftungen, type TypTeile } from '../../../shared/
 import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { abfangen } from '../bausteine';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = t('mappentypen.editor.das-wird-erst-mit');
@@ -981,7 +982,7 @@ function RegisterEditor({ e, setE, feldAblage, klappe, ausblendenFragen }: {
                 <div className="feldaktionen">
                   <button type="button" className="symbol" disabled={i === 0} onClick={() => verschiebe(i, -1)} aria-label={t('mappentypen.editor.register-nach-vorn')}>↑</button>
                   <button type="button" className="symbol" disabled={i === e.register.length - 1} onClick={() => verschiebe(i, 1)} aria-label={t('mappentypen.editor.register-nach-hinten')}>↓</button>
-                  <button type="button" className="symbol" onClick={() => entferne(i)} aria-label={t('mappentypen.editor.register-entfernen-2', { name: r.name })} title={t('mappentypen.editor.register-entfernen-3', { ERST_BEIM_SPEICHERN })}>×</button>
+                  <button type="button" className="symbol" onClick={abfangen(() => entferne(i))} aria-label={t('mappentypen.editor.register-entfernen-2', { name: r.name })} title={t('mappentypen.editor.register-entfernen-3', { ERST_BEIM_SPEICHERN })}>×</button>
                 </div>
               </div>
               {r.art === 'felder' && (anzahl ? <Feldaufteilung r={r} felder={e.felder.filter((f) => f._register === r.key)} setze={(abschnitte) => setzeReg(i, { abschnitte })} ansage={setAnsage} />
@@ -1197,7 +1198,7 @@ function TrefferlisteEditor({ e, setE, klappe }: { e: Entwurf; setE: (f: (x: Ent
                   onChange={() => setE((x) => ({ ...x, trefferlisten: x.trefferlisten.map((y, j) => ({ ...y, standard: j === i })) }))} /><span>{t('mappentypen.editor.standard')}</span></label>
                 <div className="feldaktionen">
                   <button type="button" className="symbol" disabled={e.trefferlisten.length < 2} title={e.trefferlisten.length < 2 ? t('mappentypen.editor.eine-trefferliste-braucht-der') : t('mappentypen.editor.trefferliste-entfernen-2', { ERST_BEIM_SPEICHERN })}
-                    onClick={() => entferne(i)} aria-label={t('mappentypen.editor.trefferliste-entfernen-3', { name: l.name })}>×</button>
+                    onClick={abfangen(() => entferne(i))} aria-label={t('mappentypen.editor.trefferliste-entfernen-3', { name: l.name })}>×</button>
                 </div>
               </div>
               <Spaltenwahl e={e} spalten={l.spalten} name={name} setze={(spalten) => setzeListe(i, { spalten })} />
@@ -1274,10 +1275,10 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
   return (
     <div className="stapel">
       <p className="leise">{t('mappentypen.editor.fuer-belege-mit-aufbewahrungspflicht')}</p>
-      <label className="haken"><input type="checkbox" checked={!!archiv} onChange={async (ev) => {
+      <label className="haken"><input type="checkbox" checked={!!archiv} onChange={abfangen(async (ev: ChangeEvent<HTMLInputElement>) => {
         if (ev.target.checked) setze({ jahre: 8, stichtag: datumsfelder[0]?.key ?? null });
         else if (await rueckfrage({ titel: t('mappentypen.editor.archivmodus-ausschalten'), text: t('mappentypen.editor.danach-lassen-sich-mappen'), ja: t('mappentypen.editor.ausschalten'), gefahr: true })) setze(null);
-      }} /><span>{tn('mappentypen.editor.archivmodus-einschalten', { klein: <small className="hilfe">{t('mappentypen.editor.gilt-auch-fuer-vorhandene')}</small> })}</span></label>
+      })} /><span>{tn('mappentypen.editor.archivmodus-einschalten', { klein: <small className="hilfe">{t('mappentypen.editor.gilt-auch-fuer-vorhandene')}</small> })}</span></label>
       {archiv && <>
         <div className="raster">
           <label className="eigenschaft"><span>{t('mappentypen.editor.aufbewahrungsfrist')}</span>

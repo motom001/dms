@@ -8,6 +8,8 @@ import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf } from '../bausteine';
+import { Kopf } from './Kopf';
 
 /**
  * Schlüssel für verschlüsselte Zugangsdaten (#39): Status, Fingerabdruck, Erzeugen
@@ -26,9 +28,11 @@ export function useTresor(aktiv = true) {
   }, []);
   useEffect(() => {
     if (!aktiv) return;
-    void laden();
-    addEventListener(GEAENDERT, laden);
-    return () => removeEventListener(GEAENDERT, laden);
+    // laden fängt Fehler selbst ab (fehler); der Ereignis-Handler gibt kein Promise zurück (#1011).
+    const neu = () => void laden();
+    neu();
+    addEventListener(GEAENDERT, neu);
+    return () => removeEventListener(GEAENDERT, neu);
   }, [aktiv, laden]);
   return { stand, setStand, fehler, laden };
 }
@@ -88,14 +92,12 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.verschluesselung.werkbank')}</p>
-        <h1>{t('werkbank.verschluesselung.verschluesselung')}</h1>
-        <p className="leise">{tn('werkbank.verschluesselung.passwoerter-und-andere-geheimnisse', { hilfe: <Hilfe ort="werkbank.verschluesselung" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.verschluesselung.verschluesselung')} ueber={t('werkbank.verschluesselung.werkbank')} hilfe="werkbank.verschluesselung">
+        <p className="leise">{t('werkbank.verschluesselung.passwoerter-und-andere-geheimnisse')}</p>
+      </Kopf>
 
       <section className="blatt" id="schluessel">
-        <h2 className="h3">{tn('werkbank.verschluesselung.schluessel', { hilfe: <Hilfe ort="verschluesselung.schluessel" /> })}</h2>
+        <h2 className="h3">{t('werkbank.verschluesselung.schluessel')} <Hilfe ort="verschluesselung.schluessel" /></h2>
         <dl className="eigenschaften">
           <dt>{t('werkbank.verschluesselung.zustand')}</dt><dd><span className={`chip ${s.zustand === 'vorhanden' ? 'gut' : 'schlecht'}`}>{TEXT[s.zustand]}</span></dd>
           <dt>{t('werkbank.verschluesselung.fingerabdruck')}</dt><dd className="mono">{s.fingerabdruck ?? '–'}</dd>
@@ -124,17 +126,17 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         {erzeugbar && (
           <div className="knoepfe">
-            <button className="knopf primaer" disabled={laeuft} onClick={async () => {
+            <Knopf art="haupt" gesperrt={laeuft} onClick={async () => {
               if (s.zustand === 'verloren' && !(await rueckfrage({ titel: t('werkbank.verschluesselung.neuen-schluessel-erzeugen'), text: t('werkbank.verschluesselung.die-bisher-gespeicherten-passwoerter'), ja: t('werkbank.verschluesselung.neuen-schluessel-erzeugen-2'), gefahr: true }))) return;
               void erzeugen();
-            }}>{laeuft ? t('werkbank.verschluesselung.erzeuge') : s.zustand === 'verloren' ? t('werkbank.verschluesselung.neuen-schluessel-erzeugen-2') : t('werkbank.verschluesselung.schluessel-erzeugen')}</button>
+            }}>{laeuft ? t('werkbank.verschluesselung.erzeuge') : s.zustand === 'verloren' ? t('werkbank.verschluesselung.neuen-schluessel-erzeugen-2') : t('werkbank.verschluesselung.schluessel-erzeugen')}</Knopf>
           </div>
         )}
       </section>
 
       {s.zustand === 'vorhanden' && (
         <section className="blatt" id="wechseln">
-          <h2 className="h3">{tn('werkbank.verschluesselung.schluessel-wechseln-2', { hilfe: <Hilfe ort="verschluesselung.wechseln" /> })}</h2>
+          <h2 className="h3">{t('werkbank.verschluesselung.schluessel-wechseln-2')} <Hilfe ort="verschluesselung.wechseln" /></h2>
           <p className="leise">{t('werkbank.verschluesselung.wenn-der-schluessel-bekannt')}</p>
           {!wechsel && <div className="knoepfe"><button type="button" className="knopf gefahr-rand" disabled={laeuft} onClick={() => void wechseln()}>{laeuft ? t('werkbank.verschluesselung.wechsle') : t('werkbank.verschluesselung.schluessel-wechseln')}</button></div>}
           {wechsel && (
@@ -159,7 +161,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
 
       {s.arten && s.arten.length > 0 && (
         <section className="blatt" id="arten">
-          <h2 className="h3">{tn('werkbank.verschluesselung.was-verschluesselt-ist', { hilfe: <Hilfe ort="verschluesselung.arten" /> })}</h2>
+          <h2 className="h3">{t('werkbank.verschluesselung.was-verschluesselt-ist')} <Hilfe ort="verschluesselung.arten" /></h2>
           <p className="leise klein">{t('werkbank.verschluesselung.alles-hier-verschluesselt-ablago')}</p>
           <table className="vs-arten">
             <thead><tr><th>{t('werkbank.verschluesselung.art')}</th><th className="vs-zahl">{t('werkbank.verschluesselung.anzahl')}</th></tr></thead>
@@ -187,7 +189,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
 export function Notfallblatt({ stand, schluessel, geladen }: { stand: Notfallblattstand | null | undefined; schluessel: boolean; geladen(): void }) {
   return (
     <section className="blatt" id="notfallblatt">
-      <h2 className="h3">{tn('werkbank.sicherung.notfallblatt', { hilfe: <Hilfe ort="verschluesselung.notfallblatt" /> })}</h2>
+      <h2 className="h3">{t('werkbank.sicherung.notfallblatt')} <Hilfe ort="verschluesselung.notfallblatt" /></h2>
       <p>{t('werkbank.notfallblatt.ui.text')}</p>
       {stand?.am && <p className="leise klein">{t('werkbank.sicherung.zuletzt-heruntergeladen', { zeit: zeit(stand.am), wert: stand.von ? t('werkbank.sicherung.von-2', { von: stand.von }) : '' })}</p>}
       {stand && !stand.aktuell && stand.am && <div className="hinweis warn"><p><NotfallblattGrund n={stand} /></p></div>}

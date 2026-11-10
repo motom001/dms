@@ -7,7 +7,7 @@ import { rueckfrage } from '../rueckfrage';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { knopfAussehen } from '../bausteine';
+import { abfangen, Knopf, knopfAussehen } from '../bausteine';
 
 /**
  * Webhooks im eigenen Profil (#627): Das DMS meldet geänderte Zahlen (neue Post, Zu erledigen, Fristen) sofort an
@@ -76,13 +76,13 @@ export function WebhooksBlatt() {
                 <button type="button" className="textknopf" onClick={() => void aktion(async () => { const e = await api.webhookProbe(w.id); setProbe((p) => ({ ...p, [w.id]: e })); })}>{t('webhook.profil.probe')}</button>
                 <button type="button" className="textknopf" disabled={!w.aktiv && w.abgeschaltet?.grund === 'admin' && !admin}
                   onClick={() => void aktion(() => api.webhookAendern(w.id, { aktiv: !w.aktiv }))}>{w.aktiv ? t('webhook.ausschalten') : t('webhook.einschalten')}</button>
-                <button type="button" className="textknopf" onClick={async () => {
+                <Knopf art="link" onClick={async () => {
                   if (await rueckfrage({ titel: t('webhook.profil.geheimnis.frage', { name: w.name }), text: t('webhook.profil.geheimnis.folge'), ja: t('webhook.profil.geheimnis.knopf') }))
                     void aktion(async () => setNeu({ name: w.name, geheimnis: (await api.webhookGeheimnis(w.id)).geheimnis }));
-                }}>{t('webhook.profil.geheimnis.knopf')}</button>
-                <button type="button" className="textknopf gefahr" onClick={async () => {
+                }}>{t('webhook.profil.geheimnis.knopf')}</Knopf>
+                <Knopf art="link" className="gefahr" onClick={async () => {
                   if (await rueckfrage({ titel: t('webhook.loeschen.frage', { name: w.name }), text: t('webhook.loeschen.folge'), ja: t('webhook.loeschen'), gefahr: true })) void aktion(() => api.webhookLoeschen(w.id));
-                }}>{t('webhook.loeschen')}</button>
+                }}>{t('webhook.loeschen')}</Knopf>
               </span>
               <Verlauf id={w.id} />
             </li>
@@ -110,7 +110,7 @@ function WebhookFormular({ ziele, admin, senden }: { ziele: string[]; admin: boo
     if (await senden(name, url)) { setName(''); setUrl(''); }
   }
   return (
-    <form className="raster schluesselformular" onSubmit={los}>
+    <form className="raster schluesselformular" onSubmit={abfangen(los)}>
       <label className="eigenschaft"><span>{t('webhook.profil.name')} <small>{t('webhook.profil.name.beispiel')}</small></span><input value={name} onChange={(e) => setName(e.target.value)} required /></label>
       <label className="eigenschaft breit"><span>{t('webhook.profil.adresse')}</span>
         <input className="mono" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="http://homey.home.arpa/api/app/…" required aria-invalid={!!problem} aria-describedby="webhook-ziel-hilfe" /></label>

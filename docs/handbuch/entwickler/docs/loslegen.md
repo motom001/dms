@@ -49,6 +49,7 @@ deploy/vorlagen-probe.sh dms                           # NAS-Vorlagen mit dem sc
 | Befehl | Was |
 | --- | --- |
 | `npm test` | alle Tests des Servers (Node-Testrunner) |
+| `npm run test:datei -w server -- test/<datei>.test.ts` | eine einzelne Testdatei; im Ordner `server` gleichwertig `node --import tsx --import ./test/lader.mjs --test test/<datei>.test.ts`. Der Lader `test/lader.mjs` lässt Tests Module der Oberfläche laden, die CSS importieren (`*.css?raw`, `*.module.css`) – ohne ihn scheitern diese Tests mit „Unknown file extension .css“ |
 | `TEST_DATABASE_URL=postgres://… npm test` | zusätzlich die Tests gegen PostgreSQL – jede Testdatei legt daneben ihre eigene Datenbank an (siehe unten); die Rolle braucht das Recht, Datenbanken anzulegen |
 | `npm run typecheck` | TypeScript für `shared`, `server` und `web` |
 | `npm run lint`, `npm run lint:abh` | ESLint und Abhängigkeiten prüfen – siehe [Stil und Abhängigkeiten](stil.md) |

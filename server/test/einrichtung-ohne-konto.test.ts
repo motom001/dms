@@ -8,10 +8,6 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import React, { createElement as h, createRef, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { register } from 'node:module';
-
-// `tokens.css?raw` (design.ts, #966) wie in Vite als Text laden.
-register(new URL('./css-roh-lader.mjs', import.meta.url));
 
 // Browser-Globals, die die Module der Oberfläche schon beim Laden brauchen.
 const g = globalThis as Record<string, unknown>;

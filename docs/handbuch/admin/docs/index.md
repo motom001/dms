@@ -53,7 +53,7 @@ Was sich in welcher Version geändert hat, steht unter [Neu in dieser Version](n
 Jede Installation bringt das Handbuch ihrer Version mit – auch ohne Internet. Die Hilfe im Menü, der Link in der Werkbank und jedes **?** öffnen es. Online unter `https://help.ablago.app/admin/aktuell/` steht immer das Handbuch zur neuesten Version. Ältere Adressen mit einer Versionsnummer (z. B. `…/admin/v0.22/sicherung/`) führen dort auf dieselbe Seite.
 
 !!! tip "Das ? neben Überschriften"
-    In der Werkbank steht an jedem Bereich und an vielen Zwischenüberschriften ein kleines **?**. Es öffnet in einem neuen Tab genau den passenden Abschnitt dieses Handbuchs.
+    In der Werkbank steht an jedem Bereich und an vielen Zwischenüberschriften ein kleines **?** – immer direkt hinter der Überschrift, nie am Ende des Textes darunter. Es öffnet in einem neuen Tab genau den passenden Abschnitt dieses Handbuchs. Ein **?** an einem einzelnen Feld oder Haken steht an dessen Beschriftung und erklärt nur dieses Feld.
 
 Wünsche und Fehler bitte als [Issue](https://github.com/motom001/dms/issues/new?template=wunsch.md) – beschreib kurz, was du tun willst und woran du merkst, dass es klappt; umgesetzt wird, was das Label `freigegeben` trägt.
 

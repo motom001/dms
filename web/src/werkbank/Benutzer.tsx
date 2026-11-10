@@ -18,7 +18,7 @@ import { rueckfrage } from '../rueckfrage';
 import { SystemkontenGruppe, SystemkontoKennzeichen } from './Systemkonten';
 import { SYSTEMKONTEN_AUF } from '../../../shared/src/systemkonten';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { abfangen, Knopf, KnopfLink } from '../bausteine';
 
 const datumZeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : t('werkbank.benutzer.noch-nie'));
 const status = (b: Benutzer) => (!b.aktiv ? { text: t('werkbank.benutzer.status.deaktiviert'), art: '' } : !b.hatPasswort ? { text: t('werkbank.benutzer.status.eingeladen'), art: 'warn' } : { text: t('werkbank.benutzer.status.aktiv'), art: 'gut' });
@@ -226,11 +226,11 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         <div className="blatt">
           <h2 className="h3">{t('werkbank.benutzer.fehler-nachstellen')}</h2>
           <p className="leise">{t('werkbank.benutzer.du-siehst-und-bedienst', { wert: b.name || b.email })}</p>
-          <div className="knoepfe"><button className="knopf" onClick={async () => {
+          <div className="knoepfe"><Knopf onClick={async () => {
             if (await rueckfrage({ titel: t('werkbank.benutzer.als-anmelden', { wert: b.name || b.email }), text: t('werkbank.benutzer.deine-eigene-sitzung-endet'), ja: t('werkbank.benutzer.anmelden') })) {
               void aktion(async () => { await api.vertreten(b.id); geheZu('/ablage', true); await aktualisieren(); });
             }
-          }}>{t('werkbank.benutzer.als-anmelden-2', { wert: b.name || b.email })}</button></div>
+          }}>{t('werkbank.benutzer.als-anmelden-2', { wert: b.name || b.email })}</Knopf></div>
         </div>
       )}
 
@@ -259,7 +259,7 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
   const gruende = [!vertreter && t('werkbank.benutzer.es-ist-kein-vertreter'), offen > 0 && t('werkbank.benutzer.hat-noch-offene-aufgaben', { anzahl: offen, name, wert: vertreter ? t('werkbank.benutzer.gib-sie-oben-an', { vertreter }) : '.' })].filter(Boolean) as string[];
   return (
     <div className="blatt gefahrenzone">
-      <h2 className="h3">{tn('werkbank.benutzer.zugang-sperren', { hilfe: <Hilfe ort="benutzer.sperren" /> })}</h2>
+      <h2 className="h3">{t('werkbank.benutzer.zugang-sperren')} <Hilfe ort="benutzer.sperren" /></h2>
       <ul className="leise">
         <li>{t('werkbank.benutzer.der-zugang-ist-sofort')}</li>
         <li>{t('werkbank.benutzer.die-mappe-bleibt-erhalten')}</li>
@@ -268,14 +268,14 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
       </ul>
       {gruende.length > 0 && <div className="hinweis warn stapel"><p>{t('konten.sperren.nochnicht')}</p><ul>{gruende.map((g) => <li key={g}>{g}</li>)}</ul></div>}
       <div className="knoepfe">
-        {loeschbar && <button className="knopf gefahr-rand" onClick={async () => {
+        {loeschbar && <Knopf className="gefahr-rand" onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.einladung-loeschen'), text: t('werkbank.benutzer.die-einladung-an-wird', { email: b.email }), ja: t('werkbank.benutzer.einladung-loeschen-2'), gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); });
-        }}>{t('werkbank.benutzer.einladung-loeschen-2')}</button>}
-        <button className="knopf gefahr" disabled={gruende.length > 0} onClick={async () => {
+        }}>{t('werkbank.benutzer.einladung-loeschen-2')}</Knopf>}
+        <Knopf art="gefahr" gesperrt={gruende.length > 0} onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.deaktivieren', { name }), text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }), ja: t('werkbank.benutzer.deaktivieren-2'), gefahr: true })) {
             void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet'));
           }
-        }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</button>
+        }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
       </div>
     </div>
   );
@@ -293,11 +293,11 @@ function ZweifaktorVon({ b }: { b: Benutzer }) {
       <h2 className="h3">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h2>
       {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
         <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
-        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={async () => {
+        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen'), gefahr: true })) {
             void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
           }
-        }}>{t('werkbank.benutzer.zuruecksetzen')}</button></div>
+        }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
       </> : <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
@@ -336,9 +336,9 @@ function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void>
         </ul>
       )}
       {liste && liste.length > 1 && (
-        <div className="knoepfe"><button className="knopf gefahr-rand" onClick={async () => {
+        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.auf-allen-geraeten-abmelden', { wert: b.name || b.email, liste: liste.length }), ja: t('werkbank.benutzer.ueberall-abmelden'), gefahr: true })) void beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell));
-        }}>{t('werkbank.benutzer.ueberall-abmelden')}</button></div>
+        }}>{t('werkbank.benutzer.ueberall-abmelden')}</Knopf></div>
       )}
     </div>
   );
@@ -371,7 +371,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
   );
 
   return (
-    <form className="einspaltig" onSubmit={anlegen} onKeyDown={ent.tasten}>
+    <form className="einspaltig" onSubmit={abfangen(anlegen, setFehler)} onKeyDown={ent.tasten}>
       <div className="mappenkopf"><p className="ueber">{t('werkbank.benutzer.benutzer')}</p><h1>{t('werkbank.benutzer.neuer-benutzer')}</h1>
         <p className="leise">{mail ? t('werkbank.benutzer.er-bekommt-eine-e') : t('werkbank.benutzer.kein-e-mail-versand')}</p></div>
       <div className="blatt">
@@ -443,7 +443,7 @@ function LinkAnzeige({ e, schliessen }: { e: LinkErgebnis; schliessen?: () => vo
       <p>{t('werkbank.benutzer.er-funktioniert-nur-einmal', { wert: e.mailFehler ? t('werkbank.benutzer.die-e-mail-an', { email: e.benutzer.email, mailFehler: e.mailFehler }) : t('werkbank.benutzer.schicke-diesen-link-an', { email: e.benutzer.email }) })}</p>
       <div className="linkzeile">
         <input readOnly value={e.link} onFocus={(ev) => ev.target.select()} aria-label={t('werkbank.benutzer.link-zum-passwort-setzen')} className="mono" />
-        <button className="knopf klein" onClick={async () => { try { await navigator.clipboard.writeText(e.link!); setKopiert(true); } catch { /* Feld ist markierbar */ } }}>{kopiert ? t('werkbank.benutzer.kopiert') : t('werkbank.benutzer.kopieren')}</button>
+        <Knopf groesse="klein" onClick={async () => { try { await navigator.clipboard.writeText(e.link!); setKopiert(true); } catch { /* Feld ist markierbar */ } }}>{kopiert ? t('werkbank.benutzer.kopiert') : t('werkbank.benutzer.kopieren')}</Knopf>
       </div>
       {schliessen && <button className="textknopf" onClick={schliessen}>{t('werkbank.benutzer.schliessen')}</button>}
     </div>

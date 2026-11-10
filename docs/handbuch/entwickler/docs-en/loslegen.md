@@ -49,6 +49,7 @@ Apart from `deploy/komplett/start.sh`, `deploy/` is excluded from the Docker bui
 | Command | What |
 | --- | --- |
 | `npm test` | all server tests (Node test runner) |
+| `npm run test:datei -w server -- test/<file>.test.ts` | a single test file; in the `server` folder equivalently `node --import tsx --import ./test/lader.mjs --test test/<file>.test.ts`. The loader `test/lader.mjs` lets tests load interface modules that import CSS (`*.css?raw`, `*.module.css`) – without it these tests fail with “Unknown file extension .css” |
 | `TEST_DATABASE_URL=postgres://… npm test` | additionally the tests against PostgreSQL – every test file creates its own database next to it (see below); the role needs the right to create databases |
 | `npm run typecheck` | TypeScript for `shared`, `server` and `web` |
 | `npm run lint`, `npm run lint:abh` | check ESLint and dependencies – see [Style and dependencies](stil.md) |

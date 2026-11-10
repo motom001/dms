@@ -1084,9 +1084,6 @@
     }
   },
   "web/src/ablage/Dokumente.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 3
-    },
     "complexity": {
       "count": 4
     },
@@ -1103,9 +1100,6 @@
     }
   },
   "web/src/ablage/Historie.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     },
@@ -1146,15 +1140,7 @@
       "count": 1
     }
   },
-  "web/src/ablage/Notizen.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Papierkorb.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 2
-    },
     "complexity": {
       "count": 2
     }
@@ -1241,9 +1227,6 @@
     }
   },
   "web/src/einrichtung/Einrichtung.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 3
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 13
     },
@@ -1258,9 +1241,6 @@
     }
   },
   "web/src/konto.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 4
-    },
     "complexity": {
       "count": 1
     }
@@ -1281,9 +1261,6 @@
     }
   },
   "web/src/profil/ApiSchluessel.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -1299,24 +1276,11 @@
     }
   },
   "web/src/profil/Profil.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 4
-    },
     "complexity": {
       "count": 1
     },
     "max-lines-per-function": {
       "count": 1
-    }
-  },
-  "web/src/profil/Webhooks.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 3
-    }
-  },
-  "web/src/profil/Zweifaktor.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 2
     }
   },
   "web/src/seiten.ts": {
@@ -1343,9 +1307,6 @@
     }
   },
   "web/src/werkbank/Automatisierungen.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 6
-    },
     "complexity": {
       "count": 2
     },
@@ -1354,9 +1315,6 @@
     }
   },
   "web/src/werkbank/Benutzer.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 7
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -1369,20 +1327,7 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Betrieb.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Datenbank.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Datenschutz.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 2
     },
@@ -1394,28 +1339,17 @@
     }
   },
   "web/src/werkbank/Demo.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Designs.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Eingangsordner.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Loeschprotokoll.tsx": {
-    "@typescript-eslint/no-misused-promises": {
       "count": 1
     }
   },
@@ -1428,9 +1362,6 @@
     }
   },
   "web/src/werkbank/Nummernkreise.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 2
-    },
     "complexity": {
       "count": 2
     }
@@ -1463,9 +1394,6 @@
     }
   },
   "web/src/werkbank/Pakete.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 2
-    },
     "complexity": {
       "count": 6
     },
@@ -1487,26 +1415,15 @@
     }
   },
   "web/src/werkbank/Sicherung.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 4
-    },
     "complexity": {
       "count": 2
     }
   },
   "web/src/werkbank/Sichten.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     },
     "max-lines": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/SucheEinstellungen.tsx": {
-    "@typescript-eslint/no-misused-promises": {
       "count": 1
     }
   },
@@ -1521,31 +1438,17 @@
     }
   },
   "web/src/werkbank/Verschluesselung.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 3
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Vollexport.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Wartungsmodus.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 3
-    },
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Webhooks.tsx": {
-    "@typescript-eslint/no-misused-promises": {
       "count": 1
     }
   },
@@ -1558,9 +1461,6 @@
     }
   },
   "web/src/werkbank/Zustellen.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
@@ -1571,9 +1471,6 @@
     }
   },
   "web/src/wiederherstellen.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
     "complexity": {
       "count": 2
     }

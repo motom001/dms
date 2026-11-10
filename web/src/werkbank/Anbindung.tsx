@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ErgebnisBlock, Knopf } from '../bausteine';
 import { api, ApiFehler, type AnbindungEingabe, type AnbindungPruefung, type AnbindungStand } from '../api';
 import { AnbindungFormular, PruefungAnzeige } from '../einrichtung';
-import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
 import { sprachordner } from '../../../shared/src/hilfe';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Datenbank-Anbindung (#119): ansehen und ändern – erst testen, dann übernehmen.
@@ -56,11 +56,9 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.anbindung.werkbank')}</p>
-        <h1>{t('werkbank.anbindung.datenbank-anbindung')}</h1>
-        <p className="leise">{tn('werkbank.anbindung.die-anbindung-steht-in', { span: <span className="mono">{s.datei}</span>, span2: <span className="mono">{t('werkbank.anbindung.database-url')}</span>, hilfe: <Hilfe ort="werkbank.anbindung" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.anbindung.datenbank-anbindung')} ueber={t('werkbank.anbindung.werkbank')} hilfe="werkbank.anbindung">
+        <p className="leise">{tn('werkbank.anbindung.die-anbindung-steht-in', { span: <span className="mono">{s.datei}</span>, span2: <span className="mono">{t('werkbank.anbindung.database-url')}</span> })}</p>
+      </Kopf>
       {s.umgebung === 'abweichend' && <div className="hinweis warn"><p>{tn('werkbank.anbindung.entferne-die-variable-aus', { b: <strong>{t('werkbank.anbindung.database-url-weicht-von')}</strong> })}</p></div>}
       {/* dms-komplett ohne Volume für /data/postgres (#943): Anleitung im Installationshandbuch (offline unter /hilfe/installieren/). */}
       {s.ohneVolume && <div className="hinweis schlecht"><p>{tn('werkbank.anbindung.ohne-volume.text', { b: <strong>{t('werkbank.uebersicht.datenbank-ohne-volume')}</strong>, link: <a href={`/hilfe/installieren/${sprachordner()}komplett/#datenbank-retten`} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.anbindung.ohne-volume.link')}</a> })}</p></div>}

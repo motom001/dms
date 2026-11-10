@@ -9,6 +9,7 @@ import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf } from '../bausteine';
 
 /**
  * Auskunft zustellen (#455) – an einer bereitliegenden Auskunft:
@@ -156,10 +157,10 @@ export function LinkZeile({ l, nachher, mitTitel }: { l: AuskunftLink; nachher()
     <li className={`auskunft-link status-${st}`}>
       <span>{mitTitel && <><strong>{titelOder(l.titel)}</strong> · </>}<span className={`chip auskunft-status-${st}`}>{LINK_STATUS[st]}</span>{' '}
         <span className="leise klein">{t('werkbank.zustellen.erstellt-gueltig-bis-von', { zeit: zeit(l.erstellt), wert: l.empfaenger ? t('werkbank.zustellen.fuer', { empfaenger: l.empfaenger }) : '', tag: tag(l.ablauf), abrufe: l.abrufe, maxAbrufe: l.maxAbrufe, wert2: l.abgerufen ? t('werkbank.zustellen.zuletzt-abgerufen-am', { zeit: zeit(l.abgerufen) }) : '', wert3: l.fehlversuche ? t('werkbank.zustellen.falsche-codes', { anzahl: l.fehlversuche }) : '', wert4: l.codeArt === 'eigen' ? t('werkbank.zustellen.eigener-code') : '' })}</span></span>
-      {st === 'aktiv' && <button type="button" className="knopf klein gefahr-rand" onClick={async () => {
+      {st === 'aktiv' && <Knopf groesse="klein" className="gefahr-rand" onClick={async () => {
         if (!(await rueckfrage({ titel: t('werkbank.zustellen.abruf-link-zurueckziehen'), text: t('werkbank.zustellen.der-link-gilt-sofort'), ja: t('werkbank.zustellen.zurueckziehen'), gefahr: true }))) return;
         try { await api.auskunftLinkWiderrufen(l.id); await nachher(); } catch (e) { setFehler((e as Error).message); }
-      }}>{t('werkbank.zustellen.zurueckziehen')}</button>}
+      }}>{t('werkbank.zustellen.zurueckziehen')}</Knopf>}
       {fehler && <span className="fehlertext klein">{fehler}</span>}
     </li>
   );

@@ -5,6 +5,7 @@ import { api, type ZweifaktorStand } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto-kontext';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { abfangen } from '../bausteine';
 
 /**
  * Zwei-Faktor-Anmeldung (#242): Einrichten mit einer Authenticator-App, Wiederherstellungscodes,
@@ -54,7 +55,7 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
   }
   if (codes) return <Wiederherstellungscodes codes={codes} weiter={fertig} />;
   return (
-    <form className="stapel" onSubmit={bestaetigen}>
+    <form className="stapel" onSubmit={abfangen(bestaetigen, setFehler)}>
       <p>{t('profil.zweifaktor.1-oeffne-eine-authenticator')}</p>
       {entwurf ? (
         <div className="qr">
@@ -115,7 +116,7 @@ export function ZweifaktorBlatt() {
               {!stand.pflicht && <button type="button" className="knopf gefahr-rand" onClick={() => setModus('aus')}>{t('profil.zweifaktor.abschalten')}</button>}
             </div>
           ) : (
-            <form className="stapel" onSubmit={mitPasswort}>
+            <form className="stapel" onSubmit={abfangen(mitPasswort, (text) => setMeldung({ art: 'schlecht', text }))}>
               <p className="leise">{t('profil.zweifaktor.bitte-mit-deinem-passwort', { wert: modus === 'codes' ? t('profil.zweifaktor.die-bisherigen-codes-gelten') : t('profil.zweifaktor.danach-reicht-wieder-das') })}</p>
               <label className="eigenschaft"><span>{t('profil.zweifaktor.aktuelles-passwort')}</span><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" autoFocus required /></label>
               <div className="knoepfe">

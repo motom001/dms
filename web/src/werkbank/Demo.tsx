@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, DOKUMENTARTEN, type Auftrag, type DemoAbschaetzung, type DemoErgebnis, type DemoOptionen, type DemoStufe, type Dokumentart } from '../api';
 import { useDaten } from '../daten';
-import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { JE_MAPPE_STUFEN, MAX_DEMO, MAX_DEMO_DOKUMENTE, MAX_DUPLIKATE, mengenWarnung, MISCHUNGEN, schaetzeMenge, stelleMischung, stelleVonBis, stufeVon } from '../../../shared/src/demodaten';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf } from '../bausteine';
+import { Kopf } from './Kopf';
 
 type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: number }>;
 
@@ -127,11 +128,9 @@ export function DemoPanel() {
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.demo.werkbank')}</p>
-        <h1>{t('werkbank.demo.demo-daten')}</h1>
-        <p className="leise">{tn('werkbank.demo.erzeugt-mappen-fuer-die', { hilfe: <Hilfe ort="werkbank.demo" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.demo.demo-daten')} ueber={t('werkbank.demo.werkbank')} hilfe="werkbank.demo">
+        <p className="leise">{t('werkbank.demo.erzeugt-mappen-fuer-die')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art} stapel`}><p>{meldung.text}</p>{meldung.liste && <ul>{meldung.liste.map((x) => <li key={x}>{x}</li>)}</ul>}</div>}
       {laeuft && auftrag && (
         <div className="hinweis info stapel" role="status">
@@ -214,9 +213,9 @@ export function DemoPanel() {
       <div className="blatt">
         <h2 className="h3">{t('werkbank.demo.entfernen')}</h2>
         <p className="leise">{t('werkbank.demo.loescht-alle-demo-mappen', { demo: demo.toLocaleString(gebietsschema()) })}</p>
-        <div className="knoepfe"><button className="knopf gefahr-rand" disabled={!demo || laeuft} onClick={async () => {
+        <div className="knoepfe"><Knopf className="gefahr-rand" gesperrt={!demo || laeuft} onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.demo.alle-demo-mappen-loeschen', { demo: demo.toLocaleString(gebietsschema()) }), text: t('werkbank.demo.echte-mappen-bleiben-unberuehrt'), ja: t('werkbank.demo.demo-mappen-loeschen'), gefahr: true })) void starte(() => api.demoEntfernen());
-        }}>{t('werkbank.demo.alle-demo-mappen-entfernen')}</button></div>
+        }}>{t('werkbank.demo.alle-demo-mappen-entfernen')}</Knopf></div>
         <DemoTabelle u={u} />
       </div>
     </div>

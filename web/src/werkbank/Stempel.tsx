@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useDaten } from '../daten';
-import { Hilfe } from '../Hilfe';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { merkeStempelVorlagen } from '../ablage/Stempel';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from '../ablage/StempelVorschau';
-import { t, tn } from '../sprache';
+import { t } from '../sprache';
 import {
   DECKKRAFT_HINWEIS_AB, einzeilig, NEUER_STEMPEL, pruefeVorlage, STEMPEL_FARBEN, STEMPEL_LAGEN, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_SEITEN, STEMPEL_TEXT_MAX,
   type Stempel, type StempelFarbe, type StempelLage, type StempelSeiten, type StempelVorlage,
 } from '../../../shared/src/stempel';
+import { KnopfLink } from '../bausteine';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Stempel (#394): Vorlagen für Stempel und Wasserzeichen beim Weitergeben.
@@ -42,7 +43,7 @@ export function StempelListe({ z, offen }: { z: StempelZustand; offen?: string }
   return (
     <>
       <Listenkopf titel={t('werkbank.stempel.stempel')} hilfe="werkbank.stempel" beschreibung={t('werkbank.stempel.liste.beschreibung')}>
-        <Link to="/werkbank/stempel/neu" className="knopf gruen klein">{t('werkbank.stempel.neu')}</Link>
+        <KnopfLink to="/werkbank/stempel/neu" art="anlegen" groesse="klein">{t('werkbank.stempel.neu')}</KnopfLink>
       </Listenkopf>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {!z.liste ? <p className="leise">{t('werkbank.stempel.lade')}</p> : !z.liste.length && offen !== 'neu' ? <p className="leise leerliste">{t('werkbank.stempel.noch-keine-vorlage')}</p> : (
@@ -102,11 +103,9 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
   const prozent = Math.round(e.deckkraft * 100);
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.stempel.ueber')}</p>
-        <h1>{e.name.trim() || (neu ? t('werkbank.stempel.neue-vorlage-2') : v!.name)}</h1>
-        <p className="leise">{tn('werkbank.stempel.vorlagen-fuer-stempel-und', { hilfe: <Hilfe ort="werkbank.stempel" /> })}</p>
-      </div>
+      <Kopf titel={e.name.trim() || (neu ? t('werkbank.stempel.neue-vorlage-2') : v!.name)} ueber={t('werkbank.stempel.ueber')} hilfe="werkbank.stempel">
+        <p className="leise">{t('werkbank.stempel.vorlagen-fuer-stempel-und')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {/* Umstellung der entfallenen Haken (#799): nichts ändert sich heimlich – Hinweis, bis die Vorlage gespeichert ist. */}
       {v?.umgestellt && <div className="hinweis warn"><p>{t('werkbank.stempel.umgestellt')}</p>

@@ -9,10 +9,6 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import React, { createElement as h } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { register } from 'node:module';
-
-// `tokens.css?raw` (design.ts, #966) wie in Vite als Text laden.
-register(new URL('./css-roh-lader.mjs', import.meta.url));
 
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
@@ -44,7 +40,10 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
   const liste = STANDARD_VORLAGEN;
   it('Mitte: „+ Neu“ grün oben, je Vorlage Name, Text und Lage als Link auf die Vorlage', () => {
     const html = zeichne(h(StempelListe, { z: stempelZ(liste), offen: 'kopie' }));
-    assert.match(html, /<a[^>]*href="\/werkbank\/stempel\/neu"[^>]*class="knopf gruen klein"[^>]*>\+ Neu<\/a>|<a[^>]*class="knopf gruen klein"[^>]*href="\/werkbank\/stempel\/neu"[^>]*>\+ Neu<\/a>/);
+    // Baustein KnopfLink mit Knopfart „Anlegen“ (#989): grün, data-knopf="anlegen".
+    const neu = /<a[^>]*href="\/werkbank\/stempel\/neu"[^>]*>\+ Neu<\/a>/.exec(html)?.[0] ?? '';
+    assert.match(neu, /class="knopf gruen klein[^"]*"/);
+    assert.match(neu, /data-knopf="anlegen"/);
     for (const v of liste) assert.ok(html.includes(`href="/werkbank/stempel/${v.id}"`), v.id);
     assert.equal(html.match(/eintrag werk an/g)?.length, 1, 'nur die offene Vorlage ist markiert');
     assert.ok(html.includes('Kopie für {empfänger} – {datum}'), 'Text mit Platzhaltern');
@@ -59,7 +58,9 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
 
   it('rechts: Vorlage mit Einstellungen, Vorschau, Speicherleiste und „Vorlage löschen“ links', () => {
     const html = zeichne(h(StempelEditor, { z: stempelZ(liste), id: 'kopie' }));
-    assert.ok(html.includes(`<h1>${liste[0].name}</h1>`));
+    // Seiten-Hilfe direkt hinter der Überschrift (#985), nicht mehr am Ende der Beschreibung.
+    assert.match(html, new RegExp(`<h1>${liste[0].name} <a class="hilfesymbol"[^>]*>.*?</a></h1>`));
+    assert.doesNotMatch(/<p class="leise">.*?<\/p>/.exec(html)?.[0] ?? '', /hilfesymbol/);
     assert.ok(html.includes('class="blatt stempeleditor"'));
     assert.ok(html.includes('id="stempel-text"') && html.includes('id="stempel-lage"'));
     assert.ok(html.includes('stempelvorschau'), 'Live-Vorschau (#799)');
@@ -69,7 +70,7 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
 
   it('rechts: neue Vorlage ohne Löschen; unbekannte Vorlage mit Hinweis', () => {
     const neu = zeichne(h(StempelEditor, { z: stempelZ(liste), id: 'neu' }));
-    assert.ok(neu.includes('<h1>Neue Vorlage</h1>'));
+    assert.match(neu, /<h1>Neue Vorlage <a class="hilfesymbol"/);
     assert.ok(!neu.includes('textknopf gefahr'));
     assert.ok(zeichne(h(StempelEditor, { z: stempelZ(liste), id: 'gibtsnicht' })).includes('Diese Vorlage gibt es nicht (mehr).'));
   });

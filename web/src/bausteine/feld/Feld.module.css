@@ -1,4 +1,4 @@
-/* Feldrahmen (#967): Reihen Beschriftung, Eingabe, Hinweis, Fehler (#801). Nur Werte aus tokens.css.
+/* Feldrahmen (#967): Reihen Beschriftung, Eingabe, Fehler, Hinweis (#801, C4). Nur Werte aus tokens.css.
    Die Eingabe selbst kommt aus basis.css; hier nur, was der Rahmen ändert: Hover, Fokus, Fehler, nur lesen. */
 .feld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 
@@ -9,7 +9,7 @@
 .hinweis { display: flex; flex-direction: column; gap: 5px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); overflow-wrap: anywhere; }
 .fehler { display: flex; gap: 5px; align-items: baseline; margin: 0; font-size: calc(12.5px * var(--skala, 1)); color: var(--schlecht); overflow-wrap: anywhere; }
 .fehlersymbol { flex: none; align-self: center; }
-/* Leerer Fehlerbereich (bleibt für aria-live stehen): ohne Höhe und ohne den Abstand davor. */
+/* Leerer Fehlerbereich (bleibt für aria-live stehen): ohne Höhe und ohne einen der beiden Abstände um ihn herum. */
 .fehler:empty { margin-top: -5px; }
 
 /* Haken: Kästchen und Beschriftung in einer Zeile; Hinweis und Fehler darunter, bündig mit der Beschriftung. */

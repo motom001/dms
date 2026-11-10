@@ -20,5 +20,5 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 
 | Baustein | Wofür |
 | --- | --- |
-| `Feld`, `HakenFeld`, `FeldGruppe` | Rahmen für Eingaben: Beschriftung, Eingabe, Hinweis, Fehler, Hilfesymbol, `aria` |
+| `Feld`, `HakenFeld`, `FeldGruppe` | Rahmen für Eingaben: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol, `aria` |
 | `Knopf`, `KnopfLink`, `knopfAussehen` | Knöpfe: Arten Anlegen, Haupt, Neben, Gefahr, Link; gesperrt mit Grund, „läuft“, Ergebnis am Knopf, Fehler aus asynchronen Handlern |

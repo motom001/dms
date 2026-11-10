@@ -3,9 +3,9 @@ import { Symbol } from '../Symbol';
 import { BESCHREIBUNG_LAENGE, LIZENZ_SCHLUESSEL, LIZENZEN_ALPHABETISCH, lizenzPasst, LIZENZNAME_LAENGE, naechsteVersionen, paketIdAus, VERSIONSARTEN, type ErstellenStand, type Lizenz, type PaketEntwurf, type PaketErstellenEingabe, type PaketPruefung, type VersionsArt } from '../../../shared/src/paketerstellung';
 import { t, tn } from '../sprache';
 import { api, ApiFehler } from '../api';
-import { Hilfe } from '../Hilfe';
 import { geheZu } from '../ort';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Pakete → Paket erstellen (#374): eigene Mappentypen und Ansichten als Paket im Format der
@@ -116,11 +116,9 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.paketerstellen.werkbank-pakete')}</p>
-        <h1>{t('werkbank.paketerstellen.paket-erstellen')}</h1>
-        <p className="leise">{tn('werkbank.paketerstellen.mach-aus-deinen-eigenen', { hilfe: <Hilfe ort="werkbank.pakete.erstellen" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.paketerstellen.paket-erstellen')} ueber={t('werkbank.paketerstellen.werkbank-pakete')} hilfe="werkbank.pakete.erstellen">
+        <p className="leise">{t('werkbank.paketerstellen.mach-aus-deinen-eigenen')}</p>
+      </Kopf>
       <ol className="assistent-schritte" aria-label={t('werkbank.paketerstellen.schritt-von', { wert: schritt + 1, SCHRITTE: SCHRITTE.length, SCHRITTE2: SCHRITTE[schritt] })}>
         {SCHRITTE.map((s, i) => (
           <li key={s} className={i < schritt ? 'erledigt' : i === schritt ? 'aktiv' : ''} aria-current={i === schritt ? 'step' : undefined}>

@@ -3,7 +3,6 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { useWartung } from '../wartung';
 import { WiederherstellungsAssistent } from '../wiederherstellen';
-import { Hilfe } from '../Hilfe';
 import { t, tn } from '../sprache';
 
 /** Werkbank → Wiederherstellen (#107): nur im aktiven Wartungsmodus. */
@@ -13,8 +12,8 @@ export function WiederherstellungPanel({ abschnitt }: { abschnitt?: boolean } = 
   const { stand } = useWartung();
   return (
     <div className="einspaltig">
-      <Kopf titel={t('werkbank.wiederherstellung.wiederherstellen')} abschnitt={abschnitt} id="wiederherstellen">
-        <p className="leise">{tn('werkbank.wiederherstellung.ersetzt-den-jetzigen-stand', { hilfe: <Hilfe ort="werkbank.wiederherstellung" /> })}</p>
+      <Kopf titel={t('werkbank.wiederherstellung.wiederherstellen')} abschnitt={abschnitt} id="wiederherstellen" hilfe="werkbank.wiederherstellung">
+        <p className="leise">{t('werkbank.wiederherstellung.ersetzt-den-jetzigen-stand')}</p>
       </Kopf>
       {stand && stand.stufe !== 'aktiv' ? (
         <div className="hinweis warn stapel">

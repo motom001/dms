@@ -70,9 +70,18 @@ async function jetztPruefen(): Promise<KnopfErgebnis> {
 
 1. shows “working” at once (`aria-busy="true"`) and doesn't accept a second click – not even via Enter in a form field;
 2. then shows what the promise returns if it is a `KnopfErgebnis` (`{ art, text }`); anything else (e.g. `true`) is not shown;
-3. **catches an error** and shows it right at the button instead of letting it disappear in the console. This is the shared way for asynchronous handlers in the interface (#1011): `onClick={async () => …}` on a `<button>` is listed in `eslint-suppressions.json` under `@typescript-eslint/no-misused-promises`; whoever switches such a place to `Knopf` removes it there (`npx eslint --prune-suppressions .`).
+3. **catches an error** and shows it right at the button instead of letting it disappear in the console. This is the shared way for asynchronous handlers in the interface (#1011).
 
 The error text is the API's message; without one it says “That didn't work. Please try again.”
+
+**Without a button** – a form's `onSubmit`, a checkbox's `onChange`, an event on the window – use `abfangen` from `../bausteine`. It returns no promise to React and passes an error to the message the place already has; if it has none, the error appears in a notice dialog. The handler starts straight away, so `e.preventDefault()` at the start works as usual.
+
+```tsx
+<form onSubmit={abfangen(speichern, (text) => setMeldung({ art: 'schlecht', text }))}>
+<input type="checkbox" onChange={abfangen(async (e: ChangeEvent<HTMLInputElement>) => { … })} />
+```
+
+ESLint checks this strictly (`@typescript-eslint/no-misused-promises`, `no-floating-promises`); since #1011 there are no exceptions for it in `eslint-suppressions.json` for the interface any more. A loading function that shows its own errors is attached to an event or a timer with `() => void laden()`.
 
 ## Result at the button { #ergebnis }
 

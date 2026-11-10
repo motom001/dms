@@ -73,8 +73,8 @@ export function PaketeDazuholen({ weiter, ueberspringen, geaendert, erneut, zuru
       </div>
       {/* Im Assistenten gibt es noch keinen Administrator, der eine Sammeldatei hochladen dürfte (#804). */}
       {sammeln ? <p className="leise">{t('einrichtung.pakete.offline')}</p> : <section className="stapel" aria-label={t('werkbank.paketedazuholen.ohne-internet')}>
-        <h2 className="h3">{t('werkbank.paketedazuholen.ohne-internet-sammeldatei-hochladen')}</h2>
-        <p className="leise">{tn('werkbank.paketedazuholen.stell-die-pakete-an', { link: <a className="verweis" href={sammelSeiteMitVersion(stand?.dms ?? '')} target="_blank" rel={KATALOG_LINK_REL}>{tn('werkbank.paketedazuholen.katalog-webseite', { symbol: <Symbol name="extern" /> })}</a>, hilfe: <Hilfe ort="werkbank.pakete.sammeldatei" /> })}</p>
+        <h2 className="h3">{t('werkbank.paketedazuholen.ohne-internet-sammeldatei-hochladen')} <Hilfe ort="werkbank.pakete.sammeldatei" /></h2>
+        <p className="leise">{tn('werkbank.paketedazuholen.stell-die-pakete-an', { link: <a className="verweis" href={sammelSeiteMitVersion(stand?.dms ?? '')} target="_blank" rel={KATALOG_LINK_REL}>{tn('werkbank.paketedazuholen.katalog-webseite', { symbol: <Symbol name="extern" /> })}</a> })}</p>
         <p className="leise klein">{t('pakete.katalog.hinweis')}</p>
         {stand && <SammeldateiWahl geladen={(x, datei) => setSammel({ s: x, datei })} />}
       </section>}

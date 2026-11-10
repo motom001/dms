@@ -21,7 +21,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungen (#675): Mitte die Liste (Name, Kurzform, an/aus, letzter Lauf,
@@ -122,7 +122,7 @@ export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZusta
       {s?.umgezogen && (
         <div className="hinweis info">
           <p><strong>{t('automatisierung.ui.umgezogen', { anzahl: s.umgezogen.anzahl })}</strong> {t('automatisierung.ui.umgezogen.text')}</p>
-          <button type="button" className="knopf klein" onClick={async () => { try { await api.automatisierungUmzugGesehen(); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.umgezogen.ok')}</button>
+          <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungUmzugGesehen(); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.umgezogen.ok')}</Knopf>
         </div>
       )}
       {!!s?.fehlgeschlagen && (
@@ -133,8 +133,8 @@ export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZusta
             : t('automatisierung.ui.fehlgeschlagen', { anzahl: s.fehlgeschlagen })}</p>
           <div className="knoepfe">
             {s.fehlgeschlagen > 1 && <button type="button" className="knopf klein" aria-pressed={nurFehl} onClick={() => setNurFehl(!nurFehl)}>{nurFehl ? t('automatisierung.ui.fehlgeschlagen.alle') : t('automatisierung.ui.fehlgeschlagen.anzeigen')}</button>}
-            <button type="button" className="knopf klein" onClick={async () => { try { await api.automatisierungenWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.alle-wiederholen')}</button>
-            <button type="button" className="knopf klein" onClick={async () => { try { await api.automatisierungenNichtWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.nicht-wiederholen.alle')}</button>
+            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.alle-wiederholen')}</Knopf>
+            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenNichtWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.nicht-wiederholen.alle')}</Knopf>
           </div>
         </div>
       )}
@@ -300,11 +300,11 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
         </Bereichskasten>
         {probleme.length > 0 && <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul>}
         <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0}
-          links={a && a.herkunft === 'eigen' && <button type="button" className="textknopf gefahr" onClick={async () => {
+          links={a && a.herkunft === 'eigen' && <Knopf art="link" className="gefahr" onClick={async () => {
             if (await rueckfrage({ titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen'), gefahr: true })) {
               void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht'));
             }
-          }}>{t('automatisierung.ui.loeschen')}</button>} />
+          }}>{t('automatisierung.ui.loeschen')}</Knopf>} />
       </form>
       {a && <>
         <Wiedergeben a={a} typ={kontextTyp(a.wenn, k.typen)} nachher={() => void z.laden()} />
@@ -705,10 +705,10 @@ function Wiedergeben({ a, typ, nachher }: { a: AutomatisierungAnsicht; typ: Mapp
           </div>
           : <p className="leise klein">{t('automatisierung.ui.wiedergeben.ohne-typ')}</p>}
         <label className="haken klein" title={t('automatisierung.ui.trocken.hilfe')}><input type="checkbox" checked={trocken} onChange={(x) => setTrocken(x.target.checked)} /><span>{t('automatisierung.ui.trocken')}</span></label>
-        <button type="button" className="knopf klein" disabled={!mappe} onClick={async () => {
+        <Knopf groesse="klein" gesperrt={!mappe} onClick={async () => {
           setFehler(undefined);
           try { setLauf(await api.automatisierungWiedergeben(a.id, mappe, trocken)); nachher(); } catch (e) { setFehler((e as Error).message); }
-        }}>{t('automatisierung.ui.wiedergeben.los')}</button>
+        }}>{t('automatisierung.ui.wiedergeben.los')}</Knopf>
       </div>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {lauf && <Schritte l={lauf} a={a} />}
@@ -820,10 +820,10 @@ function Fassungen({ a, k, nachher }: { a: AutomatisierungAnsicht; k: Kontextdat
             <tbody>{zeilen.map((z, j) => <tr key={j}><td>{z.was}</td><td className={z.vorher ? '' : 'leise'}>{z.vorher || '–'}</td><td className={z.nachher ? '' : 'leise'}>{z.nachher || '–'}</td></tr>)}</tbody>
           </table>
         )}
-        {!aktuell && <div className="knoepfe"><button type="button" className="knopf klein" onClick={async () => {
+        {!aktuell && <div className="knoepfe"><Knopf groesse="klein" onClick={async () => {
           if (!(await rueckfrage({ titel: t('automatisierung.ui.version.frage', { version: f.version }), text: t('automatisierung.ui.version.text', { version: f.version, neu: neueste + 1 }), ja: t('automatisierung.ui.version.ja') }))) return;
           try { await api.automatisierungFassungWiederherstellen(a.id, f.version); nachher(); } catch (e) { setFehler((e as Error).message); }
-        }}>{t('automatisierung.ui.version.ja')}</button></div>}
+        }}>{t('automatisierung.ui.version.ja')}</Knopf></div>}
       </>,
     };
   });

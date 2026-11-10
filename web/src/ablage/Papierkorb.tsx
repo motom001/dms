@@ -37,9 +37,11 @@ export function usePapierkorb(werkbank: boolean, aktiv = true) {
   }, [werkbank]);
   useEffect(() => {
     if (!aktiv) return;
-    void laden();
-    addEventListener(GEAENDERT, laden);
-    return () => removeEventListener(GEAENDERT, laden);
+    // laden fängt Fehler selbst ab und zeigt sie (fehler); der Ereignis-Handler gibt kein Promise zurück (#1011).
+    const neu = () => void laden();
+    neu();
+    addEventListener(GEAENDERT, neu);
+    return () => removeEventListener(GEAENDERT, neu);
   }, [aktiv, laden]);
   return { eintraege, dokumente, tage, setTage, historieTage, setHistorieTage, fehler, laden };
 }

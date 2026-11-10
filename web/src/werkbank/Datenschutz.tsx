@@ -24,7 +24,8 @@ import { falte } from '../../../shared/src/suche';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { Knopf, KnopfLink } from '../bausteine';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Datenschutz (#396): Auskunft nach Art. 15 DSGVO als ZIP.
@@ -107,8 +108,9 @@ export function AuskunftRechts({ z, id }: { z: DatenschutzZustand; id?: string }
   if (!s) return <p className="leise">{z.fehler ?? t('werkbank.datenschutz.lade')}</p>;
   if (id === 'neu') return (
     <div className="einspaltig">
-      <div className="mappenkopf"><p className="ueber">{bereichName('auskuenfte')}</p><h1>{t('werkbank.auskunft.neu.titel')}</h1>
-        <p className="leise">{tn('werkbank.datenschutz.fragt-ein-kunde-mieter', { hilfe: <Hilfe ort="werkbank.datenschutz" /> })}</p></div>
+      <Kopf titel={t('werkbank.auskunft.neu.titel')} ueber={bereichName('auskuenfte')} hilfe="werkbank.datenschutz">
+        <p className="leise">{t('werkbank.datenschutz.fragt-ein-kunde-mieter')}</p>
+      </Kopf>
       <AuskunftErteilen einstellung={s.einstellung} nachher={z.laden} zustellen={(aid) => geheZu(`/werkbank/auskuenfte/${aid}?zustellen=1`)} />
     </div>
   );
@@ -156,10 +158,10 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
           <p className="knoepfe">
             <button type="button" className={`knopf${zustellen ? '' : ' primaer'}`} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>{zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}</button>
             <a className="knopf" href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>{t('werkbank.auskunft.detail.herunterladen')}</a>
-            <button type="button" className="knopf gefahr-rand" onClick={async () => {
+            <Knopf className="gefahr-rand" onClick={async () => {
               if (!(await rueckfrage({ titel: t('werkbank.auskunft.detail.loeschenFrage'), text: t('werkbank.auskunft.detail.loeschenText', { titel: titelOder(b.titel), zeit: zeit(b.erstellt) }), ja: t('werkbank.auskunft.detail.loeschen'), gefahr: true }))) return;
               try { await api.auskunftLoeschen(b.id); await z.laden(); } catch (x) { setFehler((x as Error).message); }
-            }}>{t('werkbank.auskunft.detail.loeschen')}</button>
+            }}>{t('werkbank.auskunft.detail.loeschen')}</Knopf>
           </p>
         )}
         {b && zustellen && <Zustellen a={b} s={s} nachher={z.laden} />}
@@ -198,11 +200,9 @@ export function LoeschkonzeptPanel({ z }: { z: DatenschutzZustand }) {
   if (!s) return <p className="leise">{z.fehler ?? t('werkbank.datenschutz.lade')}</p>;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.datenschutz.werkbank')}</p>
-        <h1>{t('werkbank.loeschkonzept.titel')}</h1>
-        <p className="leise">{t('werkbank.loeschkonzept.text')} <Hilfe ort="werkbank.loeschkonzept" /></p>
-      </div>
+      <Kopf titel={t('werkbank.loeschkonzept.titel')} ueber={t('werkbank.datenschutz.werkbank')} hilfe="werkbank.loeschkonzept">
+        <p className="leise">{t('werkbank.loeschkonzept.text')}</p>
+      </Kopf>
       <LoeschkonzeptBlatt luecken={s.loeschkonzept?.luecken ?? []} />
       <PersonendatenTypen z={z} />
       <LoeschprotokollBlatt />
@@ -376,7 +376,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
 
   return (
     <section className="blatt" id="auskunft">
-      <h2 className="h3">{tn('werkbank.datenschutz.auskunft-erteilen', { hilfe: <Hilfe ort="werkbank.auskunft" /> })}</h2>
+      <h2 className="h3">{t('werkbank.datenschutz.auskunft-erteilen')} <Hilfe ort="werkbank.auskunft" /></h2>
       {!personTypen.length ? (
         <div className="hinweis info"><p>{tn('werkbank.datenschutz.lege-zuerst-unter-fest', { link: <Link to="/werkbank/loeschkonzept#personendaten" className="verweis">{t('werkbank.loeschkonzept.personendaten')}</Link> })}</p></div>
       ) : !betroffen ? (

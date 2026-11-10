@@ -6,6 +6,7 @@ import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Eingangsordner (#195): Ein/Aus, Prüfabstand, was nach dem Übernehmen geschieht,
@@ -82,8 +83,11 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   if (!s) return <p className="leise">{z.fehler ?? t('werkbank.eingangsordner.lade')}</p>;
   if (!s.vorhanden || !e) {
     return (
-      <div className="einspaltig"><div className="mappenkopf"><p className="ueber">{t('werkbank.eingangsordner.werkbank')}</p><h1>{t('werkbank.eingangsordner.eingangsordner')}</h1>
-        <p className="leise">{tn('werkbank.eingangsordner.es-ist-kein-eingangsordner', { code: <code>{'/eingang'}</code>, hilfe: <Hilfe ort="werkbank.eingangsordner" /> })}</p></div></div>
+      <div className="einspaltig">
+        <Kopf titel={t('werkbank.eingangsordner.eingangsordner')} ueber={t('werkbank.eingangsordner.werkbank')} hilfe="werkbank.eingangsordner">
+          <p className="leise">{tn('werkbank.eingangsordner.es-ist-kein-eingangsordner', { code: <code>{'/eingang'}</code> })}</p>
+        </Kopf>
+      </div>
     );
   }
   async function speichern() {
@@ -102,11 +106,9 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   }
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.eingangsordner.werkbank')}</p>
-        <h1>{t('werkbank.eingangsordner.eingangsordner')}</h1>
-        <p className="leise">{tn('werkbank.eingangsordner.jede-fertige-datei-im', { code: <code>{s.pfad}</code>, code2: <code>{t('werkbank.eingangsordner.eingang-lena')}</code>, hilfe: <Hilfe ort="werkbank.eingangsordner" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.eingangsordner.eingangsordner')} ueber={t('werkbank.eingangsordner.werkbank')} hilfe="werkbank.eingangsordner">
+        <p className="leise">{tn('werkbank.eingangsordner.jede-fertige-datei-im', { code: <code>{s.pfad}</code>, code2: <code>{t('werkbank.eingangsordner.eingang-lena')}</code> })}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {s.pausiert && <div className="hinweis warn"><p>{t('werkbank.eingangsordner.ruht-gerade', { pausiert: s.pausiert })}</p></div>}
       {s.andereInstanz && <div className="hinweis warn"><p>{t('werkbank.eingangsordner.eine-andere-instanz-von')}</p></div>}
@@ -144,9 +146,9 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         <Speicherleiste ent={ent} gegenstand={t('werkbank.eingangsordner.einstellungen')} sendet={sendet} />
       </form>
       <div className="blatt" id="personen">
-        <h2 className="h3">{t('werkbank.eingangsordner.personen')}</h2>
+        <h2 className="h3">{t('werkbank.eingangsordner.personen')} <Hilfe ort="werkbank.eingangsordner" /></h2>
         <p className="leise">{tn('werkbank.eingangsordner.personen.text', { code: <code>{t('werkbank.eingangsordner.eingang-lena')}</code>, code2: <code>{t('werkbank.eingangsordner.eingang-lena-erledigt')}</code> })}</p>
-        <p className="leise klein">{t('werkbank.eingangsordner.personen.leserecht')} <Hilfe ort="werkbank.eingangsordner" /></p>
+        <p className="leise klein">{t('werkbank.eingangsordner.personen.leserecht')}</p>
         <div className="knoepfe">
           <button type="button" className="knopf" disabled={sendet || s.ohneOrdner === 0} onClick={() => void personen()}>{t('werkbank.eingangsordner.personen.anlegen')}</button>
           <span className="leise klein">{s.ohneOrdner ? t('werkbank.eingangsordner.personen.ohne', { anzahl: s.ohneOrdner }) : t('werkbank.eingangsordner.personen.alle')}</span>

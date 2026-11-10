@@ -83,7 +83,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
       kurz={t('werkbank.berechtigungen.standard-regeln', { anzahl: rw.regeln.length, kurzStandard: kurzStandard(Object.fromEntries(RECHTE_LISTE.map((k) => [k, rw.grund[k] && !((k === 'C' && sperre.C) || (k === 'D' && sperre.D))])) as Record<Recht, boolean>), wert: rw.regeln.length || t('werkbank.berechtigungen.keine') })}
       beschreibung={<>{tn('werkbank.berechtigungen.wer-mappen-dieses-mappentyps', { b: <strong>{t('werkbank.berechtigungen.verwaltungsmodus')}</strong> })}</>}>
 
-      <h3 className="zwischen">{tn('werkbank.berechtigungen.standard', { hilfe: <Hilfe ort="berechtigungen.grund" /> })}</h3>
+      <h3 className="zwischen">{t('werkbank.berechtigungen.standard')} <Hilfe ort="berechtigungen.grund" /></h3>
       <p className="leise klein">{t('werkbank.berechtigungen.gilt-solange-keine-regel')}</p>
       <div className="rechtewahl" role="group" aria-label={t('werkbank.berechtigungen.standard-je-recht')}>
         {RECHTE_LISTE.map((k) => {
@@ -100,7 +100,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
       </div>
       {(sperre.C || sperre.D) && <p className="leise klein">{typ.system === 'benutzer' ? t('werkbank.berechtigungen.benutzer-entstehen-und-verschwinden') : t('werkbank.berechtigungen.e-mail-mappen-entstehen')}</p>}
 
-      <h3 className="zwischen">{tn('werkbank.berechtigungen.regeln', { hilfe: <Hilfe ort="berechtigungen.regeln" /> })}</h3>
+      <h3 className="zwischen">{t('werkbank.berechtigungen.regeln')} <Hilfe ort="berechtigungen.regeln" /></h3>
       <p className="leise">{t('werkbank.berechtigungen.von-oben-nach-unten')}</p>
       {rw.regeln.length > 0 && (
         <ol className="regeln">
@@ -422,7 +422,7 @@ export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin
   }, [an, benutzerId, admin]);
   return (
     <section className="blatt" id="was-sieht">
-      <h2 className="h3">{tn('werkbank.berechtigungen.was-sieht-dieser-benutzer', { hilfe: <Hilfe ort="benutzer.wasSieht" /> })}</h2>
+      <h2 className="h3">{t('werkbank.berechtigungen.was-sieht-dieser-benutzer')} <Hilfe ort="benutzer.wasSieht" /></h2>
       {admin
         ? <p className="leise">{t('konten.verwaltende.berechtigungen.modus')}</p>
         : <>

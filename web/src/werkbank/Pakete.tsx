@@ -26,6 +26,7 @@ import { EREIGNISKATALOG, ereignisSchluessel, istKatalogArt, KATALOG_ARTEN } fro
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { MITMACHEN_URL } from '../../../shared/src/sprachwahl';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -243,7 +244,7 @@ function Quellen({ z }: { z: PaketeZustand }) {
             <li key={q.url}>
               <label className="haken"><input type="checkbox" checked={q.aktiv} onChange={(e) => void tu(() => api.paketQuelleSchalten(q.url, e.target.checked))} /><span className="umbrechen">{q.url}</span></label>
               <span className="leise"> {q.von ? t('werkbank.pakete.von', { von: q.von }) : ''}{q.am ? t('werkbank.pakete.am', { datum: datum(q.am) }) : ''} · </span>
-              <button type="button" className="textknopf gefahr" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.pakete.paketquelle-entfernen'), text: q.url, ja: t('werkbank.pakete.entfernen'), gefahr: true })) void tu(() => api.paketQuelleEntfernen(q.url)); }}>{t('werkbank.pakete.entfernen')}</button>
+              <Knopf art="link" className="gefahr" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.pakete.paketquelle-entfernen'), text: q.url, ja: t('werkbank.pakete.entfernen'), gefahr: true })) void tu(() => api.paketQuelleEntfernen(q.url)); }}>{t('werkbank.pakete.entfernen')}</Knopf>
               {q.gesperrt ? (
                 <div className="hinweis warn" role="alert">
                   <p><Symbol name="warnung" className="sym-warn" /> {tx('pakete.quelle.gesperrt', { seit: datum(q.gesperrt.seit) })} <code className="fingerabdruck">{q.gesperrt.fingerabdruck}</code></p>
@@ -375,10 +376,10 @@ function SammelDetail({ z }: { z: PaketeZustand }) {
   const s = z.sammel;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf"><p className="ueber">{t('werkbank.pakete.pakete-ohne-internet')}</p><h1>{t('werkbank.pakete.sammeldatei-hochladen')}</h1>
-        <p className="leise">{tn('werkbank.pakete.kommt-dein-ablago-nicht', { link: <a className="verweis" href={sammelSeiteMitVersion(dms)} target="_blank" rel={KATALOG_LINK_REL}>{tn('werkbank.pakete.katalog-webseite', { symbol: <Symbol name="extern" /> })}</a>, hilfe: <Hilfe ort="werkbank.pakete.sammeldatei" /> })}</p>
+      <Kopf titel={t('werkbank.pakete.sammeldatei-hochladen')} ueber={t('werkbank.pakete.pakete-ohne-internet')} hilfe="werkbank.pakete.sammeldatei">
+        <p className="leise">{tn('werkbank.pakete.kommt-dein-ablago-nicht', { link: <a className="verweis" href={sammelSeiteMitVersion(dms)} target="_blank" rel={KATALOG_LINK_REL}>{tn('werkbank.pakete.katalog-webseite', { symbol: <Symbol name="extern" /> })}</a> })}</p>
         <p className="leise klein">{tx('pakete.katalog.hinweis')}</p>
-      </div>
+      </Kopf>
       {!s ? <SammeldateiWahl geladen={(x, datei) => z.setSammel({ sammeldatei: x, datei })} einzeln={(r, datei) => { z.setUpload({ ...r, datei }); geheZu(`/werkbank/pakete/${UPLOAD}`); }} />
         : <SammeldateiAnsicht key={s.sammeldatei.datei.sha256} s={s.sammeldatei} datei={s.datei} dms={dms} installiert={z.stand?.installiert ?? []}
             geaendert={() => { void z.laden(); void d.neuLaden(); }}
@@ -547,7 +548,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           {!inst && kp && <button type="button" className="knopf primaer" disabled={laeuft || ablauf || !katalog} onClick={() => setAblauf(true)}>{t('werkbank.pakete.installieren')}</button>}
           {inst && neuer && <button type="button" className="knopf primaer" disabled={laeuft} onClick={() => void zeigeVorschau(neuer)}>{t('werkbank.pakete.auf-aktualisieren', { neuer })}</button>}
           {inst && (inst.beispielMappen?.length ?? 0) > 0 && <button type="button" className="knopf" disabled={laeuft} onClick={() => void beispieleEntfernen()}>{t('werkbank.pakete.beispiele-entfernen')}</button>}
-          {inst && <button type="button" className="knopf gefahr-rand" disabled={laeuft} onClick={entfernen}>{t('werkbank.pakete.entfernen')}</button>}
+          {inst && <Knopf className="gefahr-rand" gesperrt={laeuft} onClick={entfernen}>{t('werkbank.pakete.entfernen')}</Knopf>}
           {inst?.herkunft.art === 'hochgeladen' && <span className="leise klein">{t('werkbank.pakete.ein-hochgeladenes-paket')}</span>}
         </div>
         {entfernenOffen && inst && (
