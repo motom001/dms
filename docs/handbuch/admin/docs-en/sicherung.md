@@ -17,7 +17,7 @@ Every backup consists of two files in the backup folder, e.g.:
 | `2026-10-29_0200-automatisch.dms-sicherung` | database and all files (documents, [converted versions](texterkennung.md#andere-dateitypen), logos, images of reported problems), packed and **encrypted** |
 | `2026-10-29_0200-automatisch.json` | metadata, readable: Library id (field `haushaltId`), versions (Ablago, database state, PostgreSQL, Node.js, operating system, architecture), kind, start and duration, number of folders, documents, users and converted versions (field `anzahl.fassungen`), sizes, encryption with the key's fingerprint and the **SHA-256 checksum** of the backup file |
 
-- Encryption uses AES-256-GCM. The key for it is derived from the key under **Workbench → [Encryption](verschluesselung.md)** – the same as for password fields. **Without this key, a backup can't be read.** It is never in the backup, only in the key file and on the [emergency sheet](#notfallblatt).
+- Encryption uses AES-256-GCM. The key for it is derived from the key under **Workbench → [Encryption](verschluesselung.md)** – the same as for password fields. **Without this key, a backup can't be read.** It is never in the backup, only in the key file and on the [emergency sheet](verschluesselung.md#notfallblatt).
 - Signed-in sessions don't belong to it: after a restore, everyone signs in anew.
 - Packages' **converted versions** (e.g. a TIFF scan as PDF, see [Other file types](texterkennung.md#andere-dateitypen)) **are included** since version 0.140.1, with the information which package created them. After a restore, version, full text and preview are there as before – even if the package is no longer installed or a newer version would convert differently today.
 - Packages' **archive versions (PDF/A)** (see [Archive version](texterkennung.md#archivfassung-pdfa)) are likewise included since version 0.149, with status and the word positions of text recognition. The metadata names their number (`anzahl.archivfassungen`); the test restore checks each against its checksum.
@@ -29,7 +29,7 @@ Without a key, no backup can be created; the page then points to encryption.
 
 ## Back up now { #jetzt-sichern }
 
-At the top of the section, the status is in one line: last backup, number and size of the backups, next date according to the schedule, free space and when the emergency sheet was downloaded.
+At the top of the section, the status is in one line: last backup, number and size of the backups, next date according to the schedule, free space and when the emergency sheet was downloaded – a click on it leads to the [emergency sheet](verschluesselung.md#notfallblatt) under Encryption.
 
 **Back up now** starts a backup in the background, with progress. You can leave the page. If less space is free than the [minimum storage space](#zeitplan-und-aufbewahrung), no backup begins.
 
@@ -42,7 +42,7 @@ In the container this also works without a browser with the [command `dms`](kons
 ![Schedule and retention](bilder/werkbank-sicherung-zeitplan.png)
 
 - **Back up automatically** daily or weekly at a time (e.g. daily 02:00). If Ablago was off at that time, it backs up as soon as it runs again – but only on the same day. It doesn't catch up on a missed backup from the previous day; it only backs up again at the next scheduled date. There is never more than one automatic backup per day.
-- The schedule can only be switched on once the **emergency sheet** has been downloaded – because a backup can only be opened with the key on it.
+- The schedule can only be switched on once the **emergency sheet** has been downloaded – because a backup can only be opened with the key on it. Until then, **Go to emergency sheet** leads to [Encryption](verschluesselung.md#notfallblatt).
 - **Retention** (default **7 daily / 4 weekly / 12 monthly**): of the automatic backups, the newest per day, per week and per month remains, as many as set; Ablago removes older ones after every automatic backup. Backups created by hand stay until you delete them.
 - **Keep only the newest locally** (since 0.142): instead of the retention, only the newest automatic backup stays in the folder – for tight space, when an [off-site copy](sicherung-ausser-haus.md) is made. A backup whose copy is currently running stays until it has arrived (at most 2 days). "None locally" doesn't exist.
 - **Minimum storage space** (default 1 GB): if less is free in the backup folder, no backup begins; this is shown as a notice in the workbench and in the log.
@@ -61,7 +61,7 @@ The workbench overview shows a notice if
 
 - the last backup **failed**,
 - the last successful one is **older than 2 days** (or there is none yet),
-- the emergency sheet is missing or belongs to an earlier key,
+- the emergency sheet is missing, belongs to an earlier key or its emergency code has been used (with the button **Go to emergency sheet**; this notice also appears at the top of this page),
 - the backup folder isn't a separate volume or is on the same disk as the documents,
 - the [off-site copy](sicherung-ausser-haus.md#anzeige-und-hinweise) failed or no newer backup has arrived there for more than 2 days.
 
@@ -90,40 +90,15 @@ Ablago only writes into the backup folder. You have the NAS copy it on, for exam
 
 Without a backup app – for instance on a Raspberry Pi or a rented server – a package such as **Backup target WebDAV** brings every backup off site itself and checks it there, see [Off-site backup](sicherung-ausser-haus.md).
 
-As the backups are encrypted, they may also go into a cloud. The [emergency sheet](#notfallblatt) with the key does **not** belong there.
+As the backups are encrypted, they may also go into a cloud. The [emergency sheet](verschluesselung.md#notfallblatt) with the key does **not** belong there.
 
 **What is unencrypted and where it is:** full exports, "Export my data" and access copies under Art. 15 are unencrypted. That's why they are not in the backup folder but in their own [export folder](export.md#export-ordner) (`/data/export`, next to `files/`) and are deleted after downloading or after 7 days. So you can copy the backup folder completely into the cloud. If you put the export folder somewhere else yourself, then never into the backup folder – the workbench warns if it is there.
 
 ## Emergency sheet { #notfallblatt }
 
-**Download emergency sheet** (here and under *Encryption*) creates a PDF with everything you need after a failure – on **one A4 page** in Ablago's look, easily readable in black and white too. The sheet is in German:
+The emergency sheet with the key and the emergency code is only under **Workbench → [Encryption](verschluesselung.md#notfallblatt)** – that is where you download it, and where it says what is on it and how to keep it. Backup only shows in the line at the top when it was last downloaded (a click leads to the emergency sheet). If it is missing, belongs to an earlier key or its emergency code has been used, a notice with the button **Go to emergency sheet** appears at the top.
 
-1. **Header:** logo, name of your Library, date and Ablago version.
-2. **Key:** large in groups of four for typing, plus its **fingerprint**. The zero is struck through, and below easily confused characters (`0` and `O`, `l`, `I` and `1`, `-` and `_`) it says in small print which one is meant. There is deliberately no QR code with the key – that would be one more way to get at it.
-3. **This Library:** address, **Library id** and, in one sentence, where the backups are – since 0.142 also the target of the [off-site copy](sicherung-ausser-haus.md) (package and address, without user and password).
-4. **Whom to ask?** Lines in which you enter who helps you in an emergency.
-5. **Something has happened?** The links to the help page [What has happened to you?](was-ist-passiert.md) – clickable and always written out with `https://`: `https://help.ablago.app/notfall` (English `https://help.ablago.app/emergency`) – and a **QR code** for it. Scan it with your phone, read there and work on the computer at the same time.
-6. **Locked out?** The **emergency code**: 28 characters in groups of four and your Library's address with `/notfall`. With it you get back in if you have locked yourself out – see [Getting back in with the emergency code](was-ist-passiert.md#notfallcode). It isn't the key and opens no backup.
-
-**Every emergency sheet has a new emergency code.** Ablago only stores a hash of it; the code of a sheet downloaded earlier no longer works afterwards. So always print the most recently downloaded sheet. If the code has been used, it no longer works either – the overview then reminds you of a new sheet, as it does for a sheet from the time before the emergency code.
-
-Folders, file names and the steps for restoring are not on the sheet but here in the manual under [Restoring](wiederherstellen.md) – they stay up to date there. An address without `https://` appears on the sheet without `http://` in front and isn't clickable.
-
-![Emergency sheet](bilder/notfallblatt.png)
-
-Where the database password is depends on the template:
-
-| Template | Database password |
-| --- | --- |
-| general template (`deploy/nas`) | in the file `.env` next to the Compose file (`DB_PASSWORD`) |
-| Synology, UGREEN, QNAP, TrueNAS, Unraid | at the top of the Compose file (`x-passwort`) |
-| dms-komplett | none – the database can only be reached inside the container |
-
-It isn't on the emergency sheet. For a new system a new password is enough anyway.
-
-**Keeping it:** printed in a safe place (e.g. with the family documents or in the business's safe) or as a PDF in a password safe – in any case **separately from the NAS** and not next to the backups. Whoever has the sheet can read the backups.
-
-Every download is recorded in the log (without the key). If the key changes ([Changing the key](verschluesselung.md#schlussel-wechseln)), the workbench points out that a new emergency sheet should be created; older backups still need the old one – keep it as long as there are such backups. In the list they carry the note "earlier key"; with **Delete backups with an earlier key** you remove them all at once. The [test restore](wiederherstellen.md#probe-wiederherstellung) needs the current key – backups with an earlier key can't be test-restored.
+Backups with an earlier key still need the old emergency sheet – keep it as long as there are such backups. In the list they carry the note "earlier key"; with **Delete backups with an earlier key** you remove them all at once. The [test restore](wiederherstellen.md#probe-wiederherstellung) needs the current key – backups with an earlier key can't be test-restored.
 
 !!! tip "For the self-employed and landlords"
     How backup, history and permissions together result in orderly receipt filing is described in the [procedure documentation template](verfahrensdokumentation.md).

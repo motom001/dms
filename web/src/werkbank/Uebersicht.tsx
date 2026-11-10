@@ -85,8 +85,8 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
     for (const o of eo.ohnePerson) h.push({ schluessel: `eingangsordner.ohne-person:${o}`, art: 'warn', text: <><strong>{t('werkbank.eingangsordner.ohne-person', { ordner: o })}</strong> {t('werkbank.eingangsordner.ohne-person.text')}</>, ziel: '/werkbank/eingangsordner#personen', knopf: t('werkbank.uebersicht.eingangsordner.zum-ordner') });
     for (const x of eo.umbenennen) h.push({ schluessel: `eingangsordner.umbenennen:${x.neu}`, art: 'warn', text: <><strong>{t('werkbank.eingangsordner.umbenennen', { alt: x.alt, neu: x.neu })}</strong> {t('werkbank.eingangsordner.umbenennen.text')}</>, ziel: '/werkbank/eingangsordner#personen', knopf: t('werkbank.uebersicht.eingangsordner.zum-ordner') });
   }
-  // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort.
-  if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: '/werkbank/sicherung', knopf: t('werkbank.uebersicht.zur-sicherung') });
+  // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort. Das Notfallblatt führt zur Verschlüsselung (#993).
+  if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: x.ziel ?? '/werkbank/sicherung', knopf: x.knopf ?? t('werkbank.uebersicht.zur-sicherung') });
   // Export-Ordner (#797): im Sicherungsordner, oder Exporte beim Update von dort verschoben.
   if (u.exporte) for (const x of exportHinweise(u.exporte)) h.push({ ...x, ziel: '/werkbank/vollexport', knopf: t('werkbank.export.knopf') });
   // #128: API-Schlüssel gehören zu normalen Benutzern.

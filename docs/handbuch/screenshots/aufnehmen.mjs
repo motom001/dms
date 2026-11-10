@@ -1046,8 +1046,9 @@ async function main() {
   await s.getByRole('heading', { name: w(/Aufkleber drucken/) }).waitFor();
   await s.getByRole('heading', { name: w(/Aufkleber drucken/) }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-aufkleber');
-  // Stempel (#394): Vorlage „Kopie für …“ mit Vorschau.
-  await geheZu(s, '/werkbank/stempel?offen=kopie');
+  // Stempel (#394): Vorlage „Kopie für …“ mit Vorschau – seit #990 aus der Liste in der Mitte geöffnet.
+  await geheZu(s, '/werkbank/stempel');
+  await s.locator('.spalte.liste a[href="/werkbank/stempel/kopie"]').click();
   await s.locator('.stempeleditor').waitFor();
   await bild(s, 'werkbank-stempel');
   // Automatisierungen (#675): Beispiel aus dem Handbuch – Vertrag „Kündigung bis“ in 30 Tagen → Aufgabe an Verantwortlich.
@@ -1200,11 +1201,15 @@ async function main() {
   await s.getByText(w('Abschätzung:')).waitFor();
   await bild(s, 'werkbank-demo');
 
-  // Sicherung (#103–#106): jetzt sichern, Notfallblatt herunterladen (als Bild fürs Handbuch), Zeitplan
+  // Sicherung (#103–#106): jetzt sichern, Zeitplan. Das Notfallblatt steht seit #993 nur unter Verschlüsselung:
+  // dort herunterladen (als Bild fürs Handbuch) und den Abschnitt aufnehmen.
   await geheZu(s, '/werkbank/sicherung');
   await s.getByRole('button', { name: w('Jetzt sichern') }).click();
   // „{titel} fertig ({wert}).“ – der Titel ist ein eigener Text, darum die Meldung selbst (#730).
   await s.locator('p.gutertext[role="status"]').waitFor({ timeout: 120_000 });
+  await geheZu(s, '/werkbank/verschluesselung#notfallblatt');
+  await s.locator('#notfallblatt').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-notfallblatt');
   const download = s.waitForEvent('download');
   await s.locator('#notfallblatt').getByRole('link', { name: w(/Notfallblatt herunterladen/) }).click();
   const pdf = join(ZIEL, 'notfallblatt.pdf');

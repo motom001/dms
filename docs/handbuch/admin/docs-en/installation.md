@@ -106,7 +106,7 @@ Everything on one page, each section with **Change**: Library, your account (wit
 
 ![Done](bilder/einrichtung-fertig.png)
 
-During setup, Ablago created a new **key**. It encrypts stored passwords and all backups (see [Encryption](verschluesselung.md)); the [emergency sheet](sicherung.md#notfallblatt) contains it for printing, plus the **emergency code** with which you get back in if you have locked yourself out ([I can't get in any more](was-ist-passiert.md#kein-zugang)). **Complete setup** only works once you have downloaded the emergency sheet. Print it and put it with your important documents, because without the key no backup can be brought back.
+During setup, Ablago created a new **key**. It encrypts stored passwords and all backups (see [Encryption](verschluesselung.md)); the [emergency sheet](verschluesselung.md#notfallblatt) contains it for printing, plus the **emergency code** with which you get back in if you have locked yourself out ([I can't get in any more](was-ist-passiert.md#kein-zugang)). **Complete setup** only works once you have downloaded the emergency sheet. Print it and put it with your important documents, because without the key no backup can be brought back.
 
 Downloading the emergency sheet is a [sensitive action](verwalten.md#frische-anmeldung): if "Set up now" took longer than 10 minutes (for instance with many packages), Ablago asks for your password once more beforehand.
 

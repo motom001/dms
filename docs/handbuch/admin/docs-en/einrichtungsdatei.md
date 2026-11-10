@@ -7,7 +7,7 @@ What you put together in the [setup wizard](installation.md#der-einrichtungsassi
 In the wizard's [summary](installation.md#zusammenfassung), **Save as file** saves the file `ablago-einrichtung.yaml` to your download folder. It contains the database (host, port, name, user), the name of the Library, your account (name, email address), the packages including automations switched on and off, and the optional things (address, state, examples, email sending). Short comments explain every section.
 
 !!! info "Not in the file: passwords and key"
-    The file contains **no passwords** and **no key**. The wizard asks for passwords when loading. Ablago creates the key anew with every setup, and the [emergency sheet](sicherung.md#notfallblatt) remains mandatory. If a file contains a password in plain text anyway, Ablago rejects it.
+    The file contains **no passwords** and **no key**. The wizard asks for passwords when loading. Ablago creates the key anew with every setup, and the [emergency sheet](verschluesselung.md#notfallblatt) remains mandatory. If a file contains a password in plain text anyway, Ablago rejects it.
 
 ## Loading {#laden}
 

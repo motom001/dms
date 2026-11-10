@@ -51,7 +51,7 @@ The data is stored under `/DATA/AppData/dms/`:
 
 ## Back up {#sichern}
 
-- Under **Workbench → [Backup](https://help.ablago.app/admin/aktuell/en/sicherung/)**, switch on a schedule and print the emergency sheet.
+- Under **Workbench → [Backup](https://help.ablago.app/admin/aktuell/en/sicherung/)**, switch on a schedule, and under **Workbench → [Encryption](https://help.ablago.app/admin/aktuell/en/verschluesselung/#notfallblatt)** print the emergency sheet.
 - The backups are stored on the same device. Copy the `sicherung` folder to another place now and then, e.g. to a USB disk or to cloud storage. The backups are encrypted, so cloud storage only sees unreadable files. Exports are not included: a [full export](https://help.ablago.app/admin/aktuell/en/export/) is unencrypted and is therefore kept in its own [export folder](https://help.ablago.app/admin/aktuell/en/export/#export-ordner), never with the backups.
 
 ## Update {#aktualisieren}

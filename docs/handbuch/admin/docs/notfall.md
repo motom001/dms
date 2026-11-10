@@ -1,7 +1,7 @@
 # Notfall: kein Admin mehr
 
 !!! tip "Erst das Notfallblatt, dann die Konsole"
-    Hast du das [Notfallblatt](sicherung.md#notfallblatt), geht es am einfachsten mit dem **Notfallcode** darauf – ohne Dateien auf dem NAS: [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Gibt es noch eine Person mit „Gesamte Verwaltung“ und du kommst nur nicht hinein (Passwort vergessen, IP gesperrt, Handy für die Zwei-Faktor-Anmeldung verloren), geht es auch mit dem [Befehl `dms`](konsole.md) im Container, z. B. `dms passwort <email>`. Die RESCUE-Datei unten ist der Weg, wenn auch das Notfallblatt verloren ist.
+    Hast du das [Notfallblatt](verschluesselung.md#notfallblatt), geht es am einfachsten mit dem **Notfallcode** darauf – ohne Dateien auf dem NAS: [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Gibt es noch eine Person mit „Gesamte Verwaltung“ und du kommst nur nicht hinein (Passwort vergessen, IP gesperrt, Handy für die Zwei-Faktor-Anmeldung verloren), geht es auch mit dem [Befehl `dms`](konsole.md) im Container, z. B. `dms passwort <email>`. Die RESCUE-Datei unten ist der Weg, wenn auch das Notfallblatt verloren ist.
 
 Kommt niemand mit Verwaltungsrecht mehr hinein – Passwort vergessen, die einzige Person mit „Gesamte Verwaltung“ nicht erreichbar, kein E-Mail-Versand für „Passwort vergessen“ –, legst du dir über eine Datei auf dem NAS einen neuen Zugang an. Eine Kommandozeile brauchst du dafür nicht.
 

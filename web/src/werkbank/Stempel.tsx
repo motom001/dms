@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
-import { Link, loeseWache } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { merkeStempelVorlagen } from '../ablage/Stempel';
@@ -16,10 +17,10 @@ import {
 /**
  * Werkbank → Stempel (#394): Vorlagen für Stempel und Wasserzeichen beim Weitergeben.
  *
- * Zweiteilig nach der Regel aus #366: Die Mitte gibt es nur für große Sammlungen. Stempel-Vorlagen sind
- * eine kleine Sammlung (meist vier bis zehn) – sie stehen rechts als aufklappbare Liste wie „Gesperrte
- * Adressen“; aufgeklappt wird eine Vorlage direkt bearbeitet. Es ist immer nur eine offen, damit es nur
- * eine Speicherleiste gibt. ?offen=<id> klappt eine Vorlage auf (alte Links /werkbank/stempel/:id leiten dorthin).
+ * Dreiteilig wie Nummernkreise und Designs (#990, Regel aus #366 seit #990: jede Sammlung, in der man etwas
+ * anlegt und bearbeitet, bekommt die Mitte): Liste der Vorlagen in der Mitte, die gewählte Vorlage rechts mit
+ * allen Einstellungen und der Live-Vorschau (#799). „+ Neu“ öffnet /werkbank/stempel/neu. Alte Links
+ * (/werkbank/stempel?offen=<id>) leiten auf /werkbank/stempel/<id> (`werkbankUmleitung`).
  */
 
 export function useStempelVorlagenWerkbank(offen: boolean) {
@@ -32,50 +33,34 @@ export function useStempelVorlagenWerkbank(offen: boolean) {
 }
 export type StempelZustand = ReturnType<typeof useStempelVorlagenWerkbank>;
 
-export function StempelPanel({ z }: { z: StempelZustand }) {
+const lageKurz = (lage: StempelLage) => t.frei(`werkbank.stempel.lage.${lage}`).replace(/ \(.*\)$/, '');
+export const stempelPfad = (id: string) => `/werkbank/stempel/${encodeURIComponent(id)}`;
+
+/** Mitte: alle Vorlagen mit Name, Text (Platzhalter sichtbar) und Lage, dazu die Mappentypen, die sie nutzen. */
+export function StempelListe({ z, offen }: { z: StempelZustand; offen?: string }) {
   const d = useDaten();
-  const ausAdresse = new URLSearchParams(location.search).get('offen');
-  const [offen, setOffen] = useState<string | null>(ausAdresse);
-  // Auch nach der Umleitung eines alten Links (/werkbank/stempel/:id → ?offen=:id) aufklappen.
-  useEffect(() => { if (ausAdresse) setOffen(ausAdresse); }, [ausAdresse]);
-  const umschalten = async (id: string) => {
-    if (offen === id) { setOffen(null); return; }
-    // Ungespeicherte Änderungen der offenen Vorlage nicht stillschweigend verwerfen.
-    if (offen && document.querySelector('.stempeleditor[data-geaendert="ja"]') && !(await rueckfrage({ titel: t('werkbank.stempel.aenderungen-verwerfen'), text: t('werkbank.stempel.die-geoeffnete-vorlage-hat'), ja: t('werkbank.stempel.verwerfen'), gefahr: true }))) return;
-    loeseWache(); setOffen(id);
-  };
   return (
-    <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.stempel.werkbank')}</p>
-        <h1>{t('werkbank.stempel.stempel')}</h1>
-        <p className="leise">{tn('werkbank.stempel.vorlagen-fuer-stempel-und', { hilfe: <Hilfe ort="werkbank.stempel" /> })}</p>
-      </div>
+    <>
+      <Listenkopf titel={t('werkbank.stempel.stempel')} hilfe="werkbank.stempel" beschreibung={t('werkbank.stempel.liste.beschreibung')}>
+        <Link to="/werkbank/stempel/neu" className="knopf gruen klein">{t('werkbank.stempel.neu')}</Link>
+      </Listenkopf>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      <div className="blatt stapel">
-        <div className="zeile-zwischen"><h2 className="h3">{t('werkbank.stempel.vorlagen')}</h2>
-          <button type="button" className="knopf gruen klein" disabled={offen === 'neu'} onClick={() => void umschalten('neu')}>{t('werkbank.stempel.neue-vorlage')}</button></div>
-        {!z.liste ? <p className="leise">{t('werkbank.stempel.lade')}</p> : (
-          <ul className="aufklappliste stempelvorlagen">
-            {z.liste.map((v) => {
-              const auf = offen === v.id;
-              const genutzt = d.typen.filter((mappentyp) => mappentyp.stempel?.vorlage === v.id);
-              return (
-                <li key={v.id} className={auf ? 'an' : undefined}>
-                  <button type="button" className="aufklappzeile" aria-expanded={auf} onClick={() => void umschalten(v.id)}>
-                    <strong>{v.name}</strong> · <span className="stempeltext">{einzeilig(v.text)}</span> <span className="leise klein">· {t.frei(`werkbank.stempel.lage.${v.lage}`).replace(/ \(.*\)$/, '')}{genutzt.length ? ` · ${genutzt.map((mappentyp) => mappentyp.name).join(', ')}` : ''}</span>
-                  </button>
-                  {auf && <StempelEditor key={v.id} z={z} id={v.id} schliessen={() => setOffen(null)} />}
-                </li>
-              );
-            })}
-            {offen === 'neu' && <li className="an"><p className="aufklappzeile" aria-expanded="true"><strong>{t('werkbank.stempel.neue-vorlage-2')}</strong></p>
-              <StempelEditor key="neu" z={z} id="neu" schliessen={() => setOffen(null)} geoeffnet={(id) => setOffen(id)} /></li>}
-          </ul>
-        )}
-        {z.liste && !z.liste.length && offen !== 'neu' && <p className="leise">{t('werkbank.stempel.noch-keine-vorlage')}</p>}
-      </div>
-    </div>
+      {!z.liste ? <p className="leise">{t('werkbank.stempel.lade')}</p> : !z.liste.length && offen !== 'neu' ? <p className="leise leerliste">{t('werkbank.stempel.noch-keine-vorlage')}</p> : (
+        <ul className="mappenliste stempelvorlagen">
+          {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">{t('werkbank.stempel.neue-vorlage-2')}</span><span className="unter">{t('werkbank.stempel.noch-nicht-gespeichert')}</span></span></li>}
+          {z.liste.map((v) => {
+            const genutzt = d.typen.filter((mappentyp) => mappentyp.stempel?.vorlage === v.id);
+            return (
+              <li key={v.id}><Link to={stempelPfad(v.id)} className={`eintrag werk ${offen === v.id ? 'an' : ''}`}>
+                <span className="titel">{v.name}</span>
+                <span className="unter stempeltext">{einzeilig(v.text)}</span>
+                <span className="leise klein">{lageKurz(v.lage)}{genutzt.length ? ` · ${genutzt.map((mappentyp) => mappentyp.name).join(', ')}` : ''}</span>
+              </Link></li>
+            );
+          })}
+        </ul>
+      )}
+    </>
   );
 }
 
@@ -85,7 +70,8 @@ const entwurfAus = (v: StempelVorlage | undefined): Entwurf => {
   return { name: v?.name ?? '', text, lage, deckkraft, seiten, tinte, drehung, x, y, farbe, groesse };
 };
 
-function StempelEditor({ z, id, schliessen, geoeffnet }: { z: StempelZustand; id: string; schliessen(): void; geoeffnet?: (id: string) => void }) {
+/** Rechts: eine Vorlage (oder „neu“) mit allen Einstellungen, Live-Vorschau (#799) und Speicherleiste. */
+export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
   const d = useDaten();
   const neu = id === 'neu';
   const v = neu ? undefined : z.liste?.find((x) => x.id === id);
@@ -95,7 +81,7 @@ function StempelEditor({ z, id, schliessen, geoeffnet }: { z: StempelZustand; id
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const textfeld = useRef<HTMLTextAreaElement>(null);
-  const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); if (neu) schliessen(); } });
+  const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/stempel', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   if (!neu && !v) return z.liste ? <div className="leer"><p>{t('werkbank.stempel.diese-vorlage-gibt-es')}</p></div> : <p className="leise">{t('werkbank.stempel.lade')}</p>;
   const fehler = pruefeVorlage(e, (z.liste ?? []).filter((x) => x.id !== v?.id).map((x) => x.name));
   const genutzt = d.typen.filter((mappentyp) => mappentyp.stempel?.vorlage === v?.id);
@@ -105,22 +91,27 @@ function StempelEditor({ z, id, schliessen, geoeffnet }: { z: StempelZustand; id
     try {
       const l = neu ? await api.stempelVorlageAnlegen(werte) : await api.stempelVorlageAendern(v!.id, werte);
       z.setListe(l);
-      if (neu) { loeseWache(); geoeffnet?.(l[l.length - 1].id); return; }
+      if (neu) { loeseWache(); geheZu(stempelPfad(l[l.length - 1].id), true); return; }
       setMeldung({ art: 'gut', text: t('werkbank.stempel.gespeichert') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function loeschen() {
     if (!(await rueckfrage({ titel: t('werkbank.stempel.vorlage-loeschen', { name: v!.name }), text: t('werkbank.stempel.bereits-weitergegebene-kopien'), ja: t('werkbank.stempel.loeschen'), gefahr: true }))) return;
-    try { z.setListe(await api.stempelVorlageLoeschen(v!.id)); loeseWache(); schliessen(); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { z.setListe(await api.stempelVorlageLoeschen(v!.id)); loeseWache(); geheZu('/werkbank/stempel', true); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   const prozent = Math.round(e.deckkraft * 100);
   return (
-    <div className="stempeleditor" data-geaendert={ent.geaendert ? 'ja' : 'nein'}>
+    <div className="einspaltig">
+      <div className="mappenkopf">
+        <p className="ueber">{t('werkbank.stempel.ueber')}</p>
+        <h1>{e.name.trim() || (neu ? t('werkbank.stempel.neue-vorlage-2') : v!.name)}</h1>
+        <p className="leise">{tn('werkbank.stempel.vorlagen-fuer-stempel-und', { hilfe: <Hilfe ort="werkbank.stempel" /> })}</p>
+      </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {/* Umstellung der entfallenen Haken (#799): nichts ändert sich heimlich – Hinweis, bis die Vorlage gespeichert ist. */}
       {v?.umgestellt && <div className="hinweis warn"><p>{t('werkbank.stempel.umgestellt')}</p>
         {!ent.geaendert && <p><button type="button" className="knopf klein" disabled={sendet} onClick={() => void speichern(gespeichert)}>{t('werkbank.stempel.umgestellt.ok')}</button></p>}</div>}
-      <form onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+      <form className="blatt stempeleditor" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <div className="raster">
           <label className="eigenschaft"><span>{t('werkbank.stempel.name')}</span><input id="stempel-name" value={e.name} maxLength={STEMPEL_NAME_MAX} onChange={(x) => setze({ name: x.target.value })} required /></label>
           <div className="eigenschaft breit"><label htmlFor="stempel-text"><span>{t('werkbank.stempel.text')} <small>{t('werkbank.stempel.text.hilfe')}</small></span></label>
@@ -153,7 +144,7 @@ function StempelEditor({ z, id, schliessen, geoeffnet }: { z: StempelZustand; id
         <Speicherleiste ent={ent} gegenstand={t('werkbank.stempel.vorlage')} sendet={sendet} ungueltig={Object.keys(fehler).length > 0}
           links={!neu && <button type="button" className="textknopf gefahr" disabled={genutzt.length > 0} title={genutzt.length ? t('werkbank.stempel.ein-mappentyp-verwendet-sie') : undefined} onClick={() => void loeschen()}>{t('werkbank.stempel.vorlage-loeschen-2')}</button>} />
       </form>
-      {!neu && <p className="leise klein">{t('werkbank.stempel.verwendet-in')}{' '}{genutzt.length ? genutzt.map((mappentyp, i) => <span key={mappentyp.id}>{i > 0 && ', '}<Link to={`/werkbank/typen/${mappentyp.id}`} className="verweis">{mappentyp.name}</Link> ({STEMPEL_MODI[mappentyp.stempel!.modus]})</span>)
+      {!neu && <p className="leise klein stempel-verwendet">{t('werkbank.stempel.verwendet-in')}{' '}{genutzt.length ? genutzt.map((mappentyp, i) => <span key={mappentyp.id}>{i > 0 && ', '}<Link to={`/werkbank/typen/${mappentyp.id}`} className="verweis">{mappentyp.name}</Link> ({STEMPEL_MODI[mappentyp.stempel!.modus]})</span>)
         : t('werkbank.stempel.keinem-mappentyp-das-stellst')}</p>}
     </div>
   );

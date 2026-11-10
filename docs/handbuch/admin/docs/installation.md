@@ -106,7 +106,7 @@ Alles auf einer Seite, je Abschnitt mit **Ändern**: Ablage, dein Konto (mit „
 
 ![Fertig](bilder/einrichtung-fertig.png)
 
-Beim Einrichten hat Ablago einen neuen **Schlüssel** erzeugt. Er verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](sicherung.md#notfallblatt) enthält ihn zum Ausdrucken, dazu den **Notfallcode**, mit dem du wieder hineinkommst, wenn du dich ausgesperrt hast ([Ich komme nicht mehr hinein](was-ist-passiert.md#kein-zugang)). **Einrichtung abschließen** geht erst, wenn du das Notfallblatt heruntergeladen hast. Druck es aus und leg es zu deinen wichtigen Unterlagen, denn ohne Schlüssel lässt sich keine Sicherung zurückholen.
+Beim Einrichten hat Ablago einen neuen **Schlüssel** erzeugt. Er verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](verschluesselung.md#notfallblatt) enthält ihn zum Ausdrucken, dazu den **Notfallcode**, mit dem du wieder hineinkommst, wenn du dich ausgesperrt hast ([Ich komme nicht mehr hinein](was-ist-passiert.md#kein-zugang)). **Einrichtung abschließen** geht erst, wenn du das Notfallblatt heruntergeladen hast. Druck es aus und leg es zu deinen wichtigen Unterlagen, denn ohne Schlüssel lässt sich keine Sicherung zurückholen.
 
 Das Notfallblatt herunterzuladen ist eine [heikle Handlung](verwalten.md#frische-anmeldung): Dauerte „Jetzt einrichten“ länger als 10 Minuten (etwa mit vielen Paketen), fragt Ablago vorher noch einmal dein Passwort ab.
 

@@ -352,7 +352,7 @@ Done – your Ablago is running. How to continue (switch on backup, get going) i
 
 ## 7. Good to know { #gut-zu-wissen }
 
-- **Backup to another device:** under **Workbench → Backup**, switch on the schedule and print the **emergency sheet**. The backups end up in `~/dms/sicherung` – i.e. on the same SSD. If it breaks, they are gone too. So copy them elsewhere regularly, e.g. to a NAS or a USB disk. More under [Backup](https://help.ablago.app/admin/aktuell/en/sicherung/).
+- **Backup to another device:** under **Workbench → Backup**, switch on the schedule, and under **Workbench → Encryption** print the **emergency sheet**. The backups end up in `~/dms/sicherung` – i.e. on the same SSD. If it breaks, they are gone too. So copy them elsewhere regularly, e.g. to a NAS or a USB disk. More under [Backup](https://help.ablago.app/admin/aktuell/en/sicherung/).
 - **Update Ablago:** **Workbench → system health → Version and updates** shows whether there is a new version. To update: `cd ~/dms && docker compose pull && docker compose up -d` – or simply run `bash einrichten.sh` again. More under [Updating](https://help.ablago.app/admin/aktuell/en/aktualisieren/).
 - **Update the system:** about once a month `sudo apt update && sudo apt full-upgrade -y` (step 5.1) – that also brings Docker up to date. If you don't want to forget, let security updates be installed automatically, see [PC with Linux](linux.md#4-den-rechner-zum-server-machen).
 - **Heat:** with `vcgencmd measure_temp` the Pi shows its temperature. Up to about 70 °C everything is fine; from 80 °C it slows itself down. Then a fan or a more airy place helps (not in a closed cupboard).

@@ -18,7 +18,7 @@ Unter **Werkbank → Stempel** stehen die Vorlagen. Am Anfang sind es fünf:
 
 ![Werkbank → Stempel](bilder/werkbank-stempel.png)
 
-Ein Klick auf eine Vorlage klappt sie auf; du änderst sie direkt dort und speicherst sie. Mit **+ Neue Vorlage** legst du eine an:
+Die Vorlagen stehen wie Mappentypen oder Nummernkreise **in der Mitte** – je Vorlage Name, Text mit Platzhaltern und Lage, dahinter die Mappentypen, die sie nutzen. Ein Klick öffnet die Vorlage **rechts** mit allen Angaben und der [Vorschau](#vorschau); unten speicherst oder verwirfst du die Änderungen, links unten steht **Vorlage löschen**. Mit **+ Neu** oben in der Mitte legst du eine an:
 
 | Angabe | Bedeutung |
 | --- | --- |

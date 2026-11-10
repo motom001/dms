@@ -20,7 +20,7 @@ Ablago starts small and can grow with you. All moves follow the same path: **cre
 
 This applies to every move: from two containers to `dms-komplett` and back, from a NAS to a server, to new hardware.
 
-1. **On the old system:** switch on [maintenance mode](wartungsmodus.md), create a backup under **Workbench → Backup**. Have the [emergency sheet](sicherung.md#notfallblatt) with the key ready.
+1. **On the old system:** switch on [maintenance mode](wartungsmodus.md), create a backup under **Workbench → Backup**. Have the [emergency sheet](verschluesselung.md#notfallblatt) with the key ready.
 2. Copy the two backup files (`.dms-sicherung` and `.json`) from the `sicherung` folder.
 3. Start **the new system**, e.g. [dms-komplett](https://help.ablago.app/installieren/aktuell/en/komplett/) or one of the [templates](https://help.ablago.app/installieren/aktuell/en/). Put the two files into its `sicherung` folder.
 4. Open the setup wizard in the browser, choose **Restore from a backup** and follow the steps under [Restoring → New NAS, old backup](wiederherstellen.md#neues-nas-alte-sicherung).

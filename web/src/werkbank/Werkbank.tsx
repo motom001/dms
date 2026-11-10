@@ -5,7 +5,7 @@ import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
 import { SprachenPanel, useSprachen } from './Sprachen';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
-import { StempelPanel, useStempelVorlagenWerkbank } from './Stempel';
+import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
 import { DarfWegPanel, useDarfWeg } from './Archiv';
 import { AutomatischVerkleinern } from './Verkleinern';
 import { AuskuenfteListe, AuskunftRechts, LoeschkonzeptPanel, useDatenschutz } from './Datenschutz';
@@ -78,7 +78,8 @@ import { KnopfLink } from '../bausteine';
  * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter (#54, #366, #354; seit #725 „Aufgaben“)
  * /werkbank/wartung                 Wartung: Wartungsmodus und Wartungsoperationen, z. B. Volltext neu erzeugen (#45, #458, #725)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
- * /werkbank/sicherung              Sicherung, Zeitplan, Notfallblatt, Probe, darunter Wiederherstellen (#103–#109, #725)
+ * /werkbank/sicherung              Sicherung, Zeitplan, Probe, darunter Wiederherstellen (#103–#109, #725)
+ * /werkbank/verschluesselung#notfallblatt  Notfallblatt (#106), seit #993 nur hier
  * /werkbank/anbindung[?offen=:id] Datenbank-Anbindung (#119), darunter lange Zugriffe, aufklappbar,
  *                                 und was gerade läuft (#407; früher /werkbank/datenbank, leitet weiter)
  * /werkbank/systemzustand         Systemzustand: Warnschwelle und Grenze, darunter Speicherplatz je Ordner
@@ -86,13 +87,13 @@ import { KnopfLink } from '../bausteine';
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
  * /werkbank/webhooks              Webhooks: freigegebene Ziele, alle Webhooks, abschalten (#627)
  * /werkbank/automatisierungen[/:id|/neu]  Automatisierungen Wenn – Und – Dann (#675), dreiteilig
- * /werkbank/stempel                Vorlagen für Stempel beim Weitergeben (#394), zweiteilig
+ * /werkbank/stempel[/:id|/neu]     Vorlagen für Stempel beim Weitergeben (#394), dreiteilig seit #990
  * /werkbank/auskuenfte[/:id|/neu|/einstellungen][?mappe=]  Datenschutz-Auskünfte (#396, #668), dreiteilig;
  *                                  früher /werkbank/datenschutz (leitet um)
  * /werkbank/loeschkonzept          Löschkonzept, Personendaten in Mappentypen, Löschprotokoll (#469, #470, #668)
  *
- * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (#366, `hatMitte`); alle anderen
- * Bereiche sind zweiteilig: links die Bereiche, rechts die ganze Seite.
+ * Die Mitte bekommt jede Sammlung, in der man etwas anlegt und bearbeitet (#366, seit #990 auch kleine; `hatMitte`);
+ * alle anderen Bereiche sind zweiteilig: links die Bereiche, rechts die ganze Seite.
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -154,7 +155,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   });
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps -- neu laden nur beim Wechsel von Bereich oder Eintrag
-  // Alte Direktlinks in Bereiche ohne Mitte (#366), z. B. /werkbank/stempel/:id → Seite, Eintrag aufgeklappt;
+  // Alte Direktlinks (#366): in Bereiche ohne Mitte → Seite, Eintrag aufgeklappt; /werkbank/stempel?offen=:id → /werkbank/stempel/:id (#990);
   // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle.
   const umleitung = werkbankUmleitung(bereich, id, location.search);
   useEffect(() => { if (umleitung) geheZu(umleitung, true); }, [umleitung]);
@@ -256,7 +257,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     liste = <AutomatisierungenListe z={automatisierungen} offen={id} />;
     rechts = id ? <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} /> : <div className="platzhalter"><p>{t('automatisierung.ui.waehlen')}</p></div>;
   } else if (bereich === 'stempel') {
-    rechts = <StempelPanel z={stempel} />;
+    // Dreiteilig seit #990: Vorlagen in der Mitte, rechts die gewählte mit Live-Vorschau (#799).
+    liste = <StempelListe z={stempel} offen={id} />;
+    rechts = id ? <StempelEditor key={`${id}-${stempel.liste ? 1 : 0}`} z={stempel} id={id} /> : <div className="platzhalter"><p>{t('werkbank.stempel.waehle')}</p></div>;
   } else if (bereich === 'postfaecher') {
     liste = <PostfaecherListe z={postfaecher} offen={id} />;
     rechts = id ? <PostfachEditor key={`${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-ein-postfach')}</p></div>;

@@ -1,6 +1,6 @@
 # Notfall: Was ist dir passiert?
 
-Du hast das [Notfallblatt](sicherung.md#notfallblatt) vor dir und den Code darauf gescannt? Gut. Lies hier am Handy und arbeite parallel am Computer. Such dir aus, was passiert ist – jeder Fall hat nur wenige Schritte.
+Du hast das [Notfallblatt](verschluesselung.md#notfallblatt) vor dir und den Code darauf gescannt? Gut. Lies hier am Handy und arbeite parallel am Computer. Such dir aus, was passiert ist – jeder Fall hat nur wenige Schritte.
 
 Diese Seite erreichst du immer unter **https://help.ablago.app/notfall** (Englisch: **https://help.ablago.app/emergency**). Die Adressen bleiben gültig, weil sie auf Papier stehen.
 

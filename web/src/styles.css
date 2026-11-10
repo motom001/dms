@@ -1545,8 +1545,9 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .stempelzeile { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
 .stempelzeile > div:not(.stempelvorschau-klein) { flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .stempeltext { color: var(--schlecht); overflow-wrap: anywhere; }
-.stempelvorlagen .stempeleditor { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
-.stempelvorlagen .stempeleditor form { display: flex; flex-direction: column; gap: 10px; }
+/* Werkbank → Stempel (#990): Vorlage rechts in der Dreiteilung, Liste in der Mitte. */
+.stempeleditor { display: flex; flex-direction: column; gap: 10px; }
+.stempelvorlagen .eintrag .stempeltext { color: var(--schlecht); }
 .warntext { color: var(--warn); font-size: calc(12.5px * var(--skala, 1)); font-weight: 500; }
 .zeile-mit-zahl { display: flex; gap: 8px; align-items: center; }
 .zeile-mit-zahl input[type="range"] { flex: 1 1 auto; min-width: 0; }
@@ -1557,6 +1558,9 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .stempelvorschau-raster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 900px) { .stempelvorschau-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .stempelvorschau-raster { grid-template-columns: minmax(0, 1fr); } }
+/* Rechts neben der Mitte ist die Spalte schmaler als das Fenster (#990): nach ihrer Breite umbrechen. */
+@container mappe (max-width: 760px) { .stempelvorschau-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container mappe (max-width: 420px) { .stempelvorschau-raster { grid-template-columns: minmax(0, 1fr); } }
 .stempelvorschau-klein { flex: 0 0 150px; }
 .stempelvorschau-klein .stempelvorschau-raster { grid-template-columns: minmax(0, 1fr); }
 .stempelbeleg { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }

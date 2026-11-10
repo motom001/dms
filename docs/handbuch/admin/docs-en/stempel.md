@@ -18,7 +18,7 @@ The templates are under **Workbench → Stamps**. At the start there are five (t
 
 ![Workbench → Stamps](bilder/werkbank-stempel.png)
 
-A click on a template expands it; you change it directly there and save it. With **+ New template** you create one:
+Like folder types or number ranges, the templates are listed **in the middle** – each with name, text with placeholders and position, followed by the folder types that use it. A click opens the template **on the right** with all settings and the [preview](#vorschau); at the bottom you save or discard the changes, and **Delete template** is at the bottom left. With **+ New** at the top of the middle column you create one:
 
 | Detail | Meaning |
 | --- | --- |

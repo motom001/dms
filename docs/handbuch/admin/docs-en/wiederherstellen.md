@@ -16,7 +16,7 @@ You restore a [backup](sicherung.md) in the workbench – without a command line
 
 ## New NAS, old backup { #neues-nas-alte-sicherung }
 
-You need: the two backup files (`.dms-sicherung` and `.json`) and the [emergency sheet](sicherung.md#notfallblatt).
+You need: the two backup files (`.dms-sicherung` and `.json`) and the [emergency sheet](verschluesselung.md#notfallblatt).
 
 1. On the new NAS, create the folder for Ablago, inside it `postgres`, `files`, `geheim` and `sicherung` (see [Installation](installation.md)).
 2. Install Ablago anew, as described under [How do I get a DMS?](https://help.ablago.app/installieren/aktuell/en/) – recommended with two containers (e.g. the [Compose template](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) with a `.env` with a new `DB_PASSWORD`), or with [dms-komplett](https://help.ablago.app/installieren/aktuell/en/komplett/) without a password.

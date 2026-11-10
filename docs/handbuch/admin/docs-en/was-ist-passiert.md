@@ -1,6 +1,6 @@
 # Emergency: What has happened to you? {#notfall-was-ist-dir-passiert}
 
-You have the [emergency sheet](sicherung.md#notfallblatt) in front of you and scanned the code on it? Good. Read here on your phone and work on the computer at the same time. Pick what has happened – each case has only a few steps.
+You have the [emergency sheet](verschluesselung.md#notfallblatt) in front of you and scanned the code on it? Good. Read here on your phone and work on the computer at the same time. Pick what has happened – each case has only a few steps.
 
 You can always reach this page at **https://help.ablago.app/emergency** (German: **https://help.ablago.app/notfall**). The addresses stay valid because they are on paper.
 

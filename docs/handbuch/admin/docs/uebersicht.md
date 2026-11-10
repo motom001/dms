@@ -23,7 +23,7 @@ Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der 
 
 ## So arbeitest du in der Werkbank
 
-Bereiche mit vielen Einträgen, die du bearbeitest – Mappentypen, Ansichten, Nummernkreise, Pakete, Benutzer, Aufgaben, Designs, Papierkorb, Postfächer, Protokoll und Gemeldete Fehler –, sind **dreiteilig**: Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
+Bereiche, in denen du etwas anlegst und bearbeitest – egal ob viele oder wenige Einträge: Mappentypen, Ansichten, Nummernkreise, Automatisierungen, Pakete, Benutzer, Datenschutz-Auskünfte, Stempel, Aufgaben, Designs, Postfächer –, und Listen, die du durchsiehst – Papierkorb, Protokoll und Gemeldete Fehler –, sind **dreiteilig**: Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
 
 Alle anderen Bereiche sind **zweiteilig**: links die Bereiche, rechts die ganze Seite. Kleine oder nur lesende Listen – etwa die langen Datenbankzugriffe, die gesperrten Adressen, die vorhandenen Exporte oder die letzten Zugriffe auf das WebDAV-Laufwerk – stehen dort als eigener Abschnitt mit fester Höhe, in dem du scrollst. Am Smartphone führt **← Bereiche** von einer solchen Seite direkt zurück zur Auswahl der Bereiche.
 
@@ -97,7 +97,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Die letzte Sicherung ist fehlgeschlagen | rot | `sicherung.fehler` |
 | Es gibt noch keine Sicherung | gelb | `sicherung.keine` |
 | Die letzte Sicherung ist älter als 2 Tage | gelb | `sicherung.alt` |
-| Das Notfallblatt fehlt, gehört zu einem früheren Schlüssel, hat noch keinen Notfallcode oder sein Notfallcode wurde benutzt | gelb | `sicherung.notfallblatt` |
+| Das Notfallblatt fehlt, gehört zu einem früheren Schlüssel, hat noch keinen Notfallcode oder sein Notfallcode wurde benutzt (Knopf **Zum Notfallblatt** führt zur [Verschlüsselung](verschluesselung.md#notfallblatt)) | gelb | `sicherung.notfallblatt` |
 | Die letzte Probe-Wiederherstellung ist fehlgeschlagen | rot | `sicherung.probe-fehler` |
 | Probe-Wiederherstellung fehlt oder ist alt | Hinweis | `sicherung.probe` |
 | Der Sicherungsordner ist kein eigenes Volume | gelb | `sicherung.volume` |
