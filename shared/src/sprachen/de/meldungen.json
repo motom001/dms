@@ -1061,7 +1061,7 @@
   "paketerstellung.keine-felder-mappentypen-oder": "Keine Felder, Mappentypen oder Ansichten hinzugekommen oder entfernt",
   "paketerstellung.kommt-aus-dem-paket": "{art} „{name}“ kommt aus dem Paket „{name2}“ – wird als Abhängigkeit eingetragen ({id} >={version}), nicht kopiert.",
   "paketerstellung.aenderungen-an-gehoeren-nicht": "Änderungen an „{name}“ ({name2}) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „{name2}“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
-  "paketerstellung.id-nur-kleinbuchstaben-ziffern": "Id: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben, 2 bis 20 Zeichen (z. B. vertraege_familie).",
+  "paketerstellung.id-nur-kleinbuchstaben-ziffern": "Id: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben, 2 bis 40 Zeichen (z. B. vertraege_familie); eine Ergänzung mit einem Punkt dahinter (z. B. vertraege.familie).",
   "paketerstellung.id-dms-ist-fuer": "Id: „dms“ ist für Verweise auf Mappentypen von Ablago reserviert.",
   "paketerstellung.id-das-paket-ist": "Id: Das Paket „{id}“ ist in dieser Installation installiert. Wähle eine andere Id – ein eigenes Paket darf kein installiertes überdecken.",
   "paketerstellung.name-bis-zeichen": "Name: {min} bis {max} Zeichen.",

@@ -10,6 +10,7 @@ import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
+import { PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://catalog.ablago.app/katalog.json';
@@ -18,7 +19,8 @@ export const KATALOG_SEITE = 'https://catalog.ablago.app/';
 /** Die Registry selbst – Quellen, Regeln, Vorlage. */
 export const REGISTRY = 'https://github.com/motom001/dms-registry';
 
-export const PAKET_ID = /^[a-z][a-z0-9_]{1,19}$/;
+/** Muster der Paket-Id (#1084: bis 40 Zeichen, optional ein Punkt-Zusatz) – zentral in kennungen.ts. */
+export { PAKET_ID };
 export const VERSION = /^\d+\.\d+\.\d+$/;
 
 /**
@@ -571,7 +573,6 @@ export const veralteteVerweise = (liste: Iterable<string>): string[] => [...new 
 export const DMS_POST_RECHT_AB = '0.94.0';
 
 const SPRACHEN = ['rust', 'go', 'c', 'assemblyscript', 'javascript'];
-const TYPVERWEIS_ODER_ALLE = /^(\*|([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39})$/;
 
 /**
  * Die eine Größengrenze für Pakete (#644): das Archiv beim Herunterladen, Hochladen, in der Sammeldatei und beim

@@ -15,6 +15,7 @@ import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 import { datumsformat } from './region';
 import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumText, type Zeitraum } from './feldarten';
 import { t, t as tx } from './texte';
+import { SCHLUESSEL } from './kennungen';
 import { gebietsschema, registrierteSprachen, textNur } from './sprache';
 import { optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
 export { zeitzone } from './region';
@@ -601,7 +602,8 @@ export const istOk = (p: Pruefergebnis) => p.allgemein.length === 0 && Object.ke
 
 /* ---------------------------------------------------------------- */
 
-export const SCHLUESSEL_MUSTER = /^[a-z][a-z0-9_]{0,39}$/;
+/** Kennung von Feld, Register und eigenem Mappentyp (#1084: bis 60 Zeichen, kennungen.ts). */
+export const SCHLUESSEL_MUSTER = SCHLUESSEL;
 
 export function istLeer(v: unknown): boolean {
   if (v == null || v === '') return true;

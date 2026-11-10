@@ -4,6 +4,7 @@ import { ABSCHNITT_TITEL_MAX, FELDTYPEN, HERKUNFT, HISTORIENGRUPPEN, REGISTERART
 import { TEXTSPRACHEN } from '../../shared/src/textsprache';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../shared/src/anzeige';
 import { MERKMALE } from '../../shared/src/merkmale';
+import { SCHLUESSEL } from '../../shared/src/kennungen';
 import { Fachfehler } from './fehler';
 import type { Anfrage, Antwort, Route } from './routen';
 import { t } from './sprache';
@@ -368,7 +369,7 @@ const SCHEMAS: Record<string, Schema> = {
   Feld: {
     type: 'object', required: ['key', 'label', 'typ'],
     properties: {
-      key: { type: 'string', pattern: '^[a-z][a-z0-9_]{0,39}$' }, label: { type: 'string' }, typ: { type: 'string', enum: Object.keys(FELDTYPEN) },
+      key: { type: 'string', pattern: SCHLUESSEL.source }, label: { type: 'string' }, typ: { type: 'string', enum: Object.keys(FELDTYPEN) },
       pflicht: { type: 'boolean' }, eindeutig: { type: 'boolean' }, hilfe: { type: 'string' }, minLen: { type: 'integer' }, maxLen: { type: 'integer' },
       min: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Zahl, Betrag und Prozent: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT – frühestes erlaubtes Datum' },
       max: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Zahl, Betrag und Prozent: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT – spätestes erlaubtes Datum, z. B. heute für einen Geburtstag' }, nachkomma: { type: 'integer', description: 'Zahl und Prozent: höchstens so viele Nachkommastellen' },

@@ -22,6 +22,7 @@ import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { PAKET_ID_TEIL, SCHLUESSEL, TYPVERWEIS } from '../../shared/src/kennungen';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst, PaketQuelleEintrag } from './dienst';
@@ -225,7 +226,7 @@ export interface PaketSprache { angabe: Sprachangabe; texte: Sprachtexte; ueberg
  * Dateien, die ein Sprachpaket enthalten darf (#731): nur Texte. Alles andere – Code, Programme, Bilder, Inhalte – lehnt
  * Ablago ab, damit ein Sprachpaket nie mehr kann, als Texte zu liefern.
  */
-const SPRACHPAKET_DATEI = /^(manifest\.yaml|README(\.[a-z]{2})?\.md|LICENSE(\.[A-Za-z]{1,10})?|NOTICE|CHANGELOG\.md|tests\/[A-Za-z0-9._-]{1,80}\.(ya?ml|json|md)|texte\/[a-z][a-z0-9-]{0,40}\.json|beschriftungen\/[a-z][a-z0-9_]{1,19}\.yaml)$/;
+const SPRACHPAKET_DATEI = new RegExp(String.raw`^(manifest\.yaml|README(\.[a-z]{2})?\.md|LICENSE(\.[A-Za-z]{1,10})?|NOTICE|CHANGELOG\.md|tests\/[A-Za-z0-9._-]{1,80}\.(ya?ml|json|md)|texte\/[a-z][a-z0-9-]{0,40}\.json|beschriftungen\/${PAKET_ID_TEIL}\.yaml)$`);
 
 /** Liest den Teil „Sprache“ eines Pakets (#731); Fehler landen in `fehler`. */
 function liesSprachteil(m: Record<string, unknown>, dateien: Map<string, Buffer>, fehler: string[]): PaketSprache | null {
@@ -258,8 +259,6 @@ function liesSprachteil(m: Record<string, unknown>, dateien: Map<string, Buffer>
 const WASM_KOPF = Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
 const CODE_DATEI = /^code\/(modul\.wasm|daten\/[A-Za-z0-9._-]{1,80})$/;
 
-const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
-const TYPVERWEIS = /^([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39}$/;
 
 /**
  * Mappentypen des DMS, auf die Pakete mit `dms:<kennung>` verweisen dürfen (#310): nur, was jede

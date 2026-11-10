@@ -16,6 +16,7 @@ import { bereinigeFrist } from '../../../shared/src/fristen';
 import { JAHRE_MAX } from '../../../shared/src/archiv';
 import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennung';
 import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
+import { SCHLUESSEL } from '../../../shared/src/kennungen';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -87,7 +88,7 @@ export function bereinigeFeld(e: unknown): Feld {
     // Zum Wiederfinden nutzen (#938): nur Text, Zahl und Verweis.
     ...(liesWiederfinden(f.wiederfinden, typ) ? { wiederfinden: true } : {}),
     // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
-    ...(typ === 'referenz' && /^[a-z][a-z0-9_]{0,39}$/.test(text(f.ausText)) && text(f.ausText) !== text(f.key) ? { ausText: text(f.ausText) } : {}),
+    ...(typ === 'referenz' && SCHLUESSEL.test(text(f.ausText)) && text(f.ausText) !== text(f.key) ? { ausText: text(f.ausText) } : {}),
     // Feldformat (#535): nur an Textfeldern; das Land-Feld nur beim Format PLZ.
     ...(typ === 'text' && text(f.format) ? { format: text(f.format) as Feldformat } : {}),
     ...(typ === 'text' && text(f.format) === 'plz' && text(f.landFeld) ? { landFeld: text(f.landFeld) } : {}),

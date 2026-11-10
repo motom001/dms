@@ -19,6 +19,7 @@ import { istLeer, standardliste, trefferlistenVon, type Feld, type Mappe, type M
 import { kreisImStandard } from '../../shared/src/nummernkreis';
 import { ALLE_TYPEN, BEISPIEL_DOKUMENTE_AB, BEISPIEL_ENDUNGEN, BEREICH, DMS_ALIAS, DMS_WORTLISTEN_AB, inMB, PAKET_ID, VERSION, WORTLISTEN_MAX, vergleicheVersion, type InstalliertesPaket } from '../../shared/src/pakete';
 import { liesWortgruppe } from '../../shared/src/suche';
+import { SCHLUESSEL, SCHLUESSEL_MAX } from '../../shared/src/kennungen';
 import type { Synonymgruppe } from './repo';
 import { BESCHREIBUNG_LAENGE, EIGENE_LIZENZ, GITHUB, istFreieLizenz, KEINE_LIZENZ, LIZENZ_VORGABE, LIZENZEN, LIZENZNAME_LAENGE, LIZENZTEXT_MAX, lizenzVerweis, NAME_LAENGE, naechsteVersion, naechsteVersionen, type ErstellenStand, type Fehlend, type PaketEntwurf, type PaketErstellenEingabe, type PaketPruefung, type SelbstErstellt, type SelbstErstelltDetail, type VersionsArt, type VersionsLage } from '../../shared/src/paketerstellung';
 import type { Bedingung, Sicht, WertAngabe } from '../../shared/src/sichten';
@@ -116,7 +117,6 @@ export function erkenneArt(e: PaketErstellenEingabe, entwurf: PaketEntwurf | nul
   }
   return { art: null, grund: null };
 }
-const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 /** Etwas, das wie eine Id aussieht (Mappe, Benutzer, Rolle) – gehört nie in ein Paket. */
 const ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const mitId = (v: unknown) => ID.test(JSON.stringify(v) ?? '');
@@ -279,7 +279,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     else eigene.push(eintrag);
   }
   const schluessel: Record<string, string> = {};
-  const max = 40 - (PAKET_ID.test(id) ? id.length : 20) - 1;
+  // Paket und Schlüssel stehen getrennt (#1084): die Kennung hat ihre volle Länge, unabhängig von der Paket-Id.
+  const max = SCHLUESSEL_MAX;
   const belegtT = new Set<string>();
   // Gemerkte Kennungen zuerst, damit sie über Versionen gleich bleiben (sonst gäbe es beim Update neue Typen).
   for (const t of eigene) {
@@ -391,7 +392,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     const alt = d.entwurf?.schluessel[s.id];
     if (alt && SCHLUESSEL.test(alt) && !belegtS.has(alt) && !Object.values(schluessel).includes(alt)) { belegtS.add(alt); schluessel[s.id] = alt; }
   }
-  for (const s of eigeneSichten) if (!schluessel[s.id]) schluessel[s.id] = frei(s.name, 40, belegtS);
+  for (const s of eigeneSichten) if (!schluessel[s.id]) schluessel[s.id] = frei(s.name, SCHLUESSEL_MAX, belegtS);
   const fest = (w: WertAngabe | undefined): unknown => (!w ? undefined : w.art === 'fest' ? w.wert : w);
   let fremdeTypen = false;
   const paketSichten = eigeneSichten.map((s) => {

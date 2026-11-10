@@ -2,6 +2,7 @@ import { Knopf } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { PAKET_ID } from '../../../shared/src/kennungen';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -295,7 +296,7 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
 export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
   const d = useDaten();
   const [id, version] = wert.split('@');
-  const gueltig = /^[a-z][a-z0-9_]{1,19}$/.test(id ?? '') && (!version || /^\d+\.\d+\.\d+$/.test(version));
+  const gueltig = PAKET_ID.test(id ?? '') && (!version || /^\d+\.\d+\.\d+$/.test(version));
   const [vorschau, setVorschau] = useState<PaketVorschau | null>(null);
   const [meldung, setMeldung] = useState<Meldung>();
   // Neu installieren (#405): im gemeinsamen Ablauf – dafür der offizielle Katalog (Abhängigkeiten, Ergänzungen).
