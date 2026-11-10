@@ -149,9 +149,10 @@ export class EreignisseDienst {
    * Auftrag an genau ein Paket (#577, #614, #631, #338): Der Kern bittet ein bestimmtes Paket um etwas (Datei umwandeln,
    * Volltext, Archivfassung) bzw. sagt ihm, dass seine Einstellungen geändert sind. Kein Geschehen für andere – daher
    * nicht im Ausgangskorb, sondern direkt in der Zustellung des Paket-Läufers (gleiche Wiederholung). In einer
-   * Transaktion gehört er zur Änderung; sonst landen Fehler nur im Protokoll.
+   * Transaktion gehört er zur Änderung; sonst landen Fehler nur im Protokoll. `id`: feste Id gegen Doppeltes (#1082,
+   * „Paket nach Zeitplan ausführen“).
    */
-  async auftrag(paket: string, art: Extract<EreignisArt, 'datei.umwandeln' | 'datei.volltext' | 'datei.archivfassung' | 'paket.einstellungen_geaendert'>, daten: Record<string, unknown>): Promise<'gesperrt' | void> {
+  async auftrag(paket: string, art: Extract<EreignisArt, 'datei.umwandeln' | 'datei.volltext' | 'datei.archivfassung' | 'paket.einstellungen_geaendert' | 'zeitplan.ausgefuehrt'>, daten: Record<string, unknown>, id: string = randomUUID()): Promise<'gesperrt' | void> {
     const inTx = this.kern.inEigenerTransaktion();
     try {
       const p = (await this.repo.listePakete()).find((x) => x.id === paket && x.laeufer?.ereignisse.includes(art));
@@ -165,7 +166,8 @@ export class EreignisseDienst {
           return 'gesperrt';
         }
       }
-      await this.repo.legeEreignisseAn([{ id: randomUUID(), paketId: p.id, art, daten }]);
+      // Feste Id (#1082, Zeitplan): Kommt derselbe Auftrag noch einmal, entsteht nichts doppelt.
+      await this.repo.legeEreignisseAn([{ id, paketId: p.id, art, daten }]);
       this.danach(() => this.ereignisWecker?.());
     } catch (e) {
       if (inTx) throw e;

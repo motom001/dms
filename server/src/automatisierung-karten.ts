@@ -1,10 +1,11 @@
 import { feldLabel } from '../../shared/src/beschriftung';
 import type { DannKarte } from '../../shared/src/automatisierung';
-import { formatiere, type AufgabenAnlass, type Feld } from '../../shared/src/model';
+import { formatiere, tagVon, type AufgabenAnlass, type Feld } from '../../shared/src/model';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
 import texte from '../../shared/src/sprachen/de/automatisierung.json';
-import { DANN_AUSFUEHRER, type KartenKontext } from './automatisierung';
+import { DANN_AUSFUEHRER, KarteLeer, uuidAus, type KartenKontext } from './automatisierung';
+import { zeitpunktIn } from './zeitplan';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 
@@ -20,6 +21,10 @@ import { t } from './sprache';
  *   wirklich bekommt): Was er nicht sehen darf, steht als „(nicht sichtbar)“ da. Wer die Mappe nicht lesen darf, bekommt
  *   die Aufgabe trotzdem an der Mappe, sieht aber nur einen Hinweis und die Fälligkeit (#798); der Admin sieht den Fall
  *   in der Werkbank. Der Testlauf nennt, wer etwas nicht sehen darf.
+ * - **Paket nach Zeitplan ausführen** (#1082): legt dem Paket das Ereignis `zeitplan.ausgefuehrt` in die Zustellung –
+ *   über denselben Weg wie jeden Auftrag an ein Paket (Wiederholung durch den Paket-Läufer). Mitgelieferte
+ *   Automatisierungen erreichen nur ihr eigenes Paket; fehlt das Paket oder abonniert es das Ereignis nicht (mehr), läuft
+ *   die Karte ins Leere (übersprungen, kein Fehler). Je Automatisierung, Karte und Tag genau eine Zustellung.
  */
 const uebersetzer2 = uebersetzer({ automatisierung: texte });
 
@@ -120,4 +125,29 @@ DANN_AUSFUEHRER.anmeldeschutz = async (k: DannKarte, c: KartenKontext) => {
   if (k.art !== 'anmeldeschutz') throw new Fachfehler(500, t('meldungen.automatisierungkarten.falsche-karte'));
   if (!c.dienst.anmeldeschutzMelden) throw new Fachfehler(500, uebersetzer2('automatisierung.karte.anmeldeschutz.fehlt'));
   return (await c.dienst.anmeldeschutzMelden(k.was, c.daten, c.trocken)).grund;
+};
+
+/* ---------- Paket nach Zeitplan ausführen (#1082) ---------- */
+
+DANN_AUSFUEHRER.paket = async (k: DannKarte, c: KartenKontext) => {
+  if (k.art !== 'paket') throw new Fachfehler(500, t('meldungen.automatisierungkarten.falsche-karte'));
+  const a = c.automatisierung;
+  // Nur das eigene Paket (Sicherheit): Eine mitgelieferte Automatisierung ruft immer das Paket, das sie mitbringt – auch
+  // nach einem Umzug (#1084) und egal, was in der Karte steht.
+  const ziel = a.herkunft === 'paket' ? a.paketId ?? '' : k.paket;
+  if (a.herkunft === 'paket' && !ziel) throw new Fachfehler(403, uebersetzer2('automatisierung.karte.paket.nur-eigenes'));
+  if (a.wenn.art !== 'zeitplan' || a.wenn.jeBenutzer) throw new Fachfehler(422, uebersetzer2('automatisierung.karte.paket.ohne-zeitplan'));
+  const p = (await c.dienst.kern.repo.listePakete()).find((x) => x.id === ziel);
+  if (!p) throw new KarteLeer(uebersetzer2('automatisierung.karte.paket.nicht-installiert', { paket: ziel }));
+  if (!p.laeufer?.ereignisse.includes('zeitplan.ausgefuehrt')) throw new KarteLeer(uebersetzer2('automatisierung.karte.paket.ohne-ereignis', { name: p.name }));
+  const datum = typeof c.daten.tag === 'string' ? c.daten.tag : heuteIn();
+  const zeitpunkt = typeof c.daten.zeitpunkt === 'string' ? c.daten.zeitpunkt : zeitpunktIn(datum, a.wenn.uhrzeit);
+  const aufgabe = k.aufgabe ?? null;
+  const zeile = { name: p.name, aufgabe: aufgabe ?? '–', datum: tagVon(`${datum}T12:00:00Z`) };
+  if (c.trocken) return uebersetzer2('automatisierung.karte.paket.trocken', zeile);
+  // Nur Ids, Kennung und Zeit – nie Inhalte der Ablage. Feste Id je Automatisierung, Karte und Tag: Läuft der Zeitplan auf
+  // zwei Servern oder wird der Lauf wiederholt, bekommt das Paket den Tag trotzdem nur einmal.
+  const id = uuidAus(`zeitplan.ausgefuehrt|${a.id}|${k.id}|${typeof c.daten.tag === 'string' ? c.daten.tag : c.ereignisId}`);
+  await c.dienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
+  return uebersetzer2('automatisierung.karte.paket.ergebnis', zeile);
 };

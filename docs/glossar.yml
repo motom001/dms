@@ -563,6 +563,21 @@ begriffe:
     nicht_verwenden: [Trockenlauf, trocken]
     verwandt: [Testlauf]
     code: trocken
+  - begriff: Paket nach Zeitplan ausführen
+    bereich: werkbank
+    beschreibung: Dann-Karte einer Automatisierung mit dem Auslöser „Zeitplan“ – sie sagt einem Paket, dass sein Zeitpunkt erreicht ist (z. B. „Verträge täglich prüfen“ um 5 Uhr), damit es etwas neu rechnet, das nur am Datum hängt. Das Paket arbeitet dabei mit seinen eigenen Rechten; eine mitgelieferte Automatisierung ruft nur ihr eigenes Paket.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Cronjob, Tagesereignis, Paketlauf]
+    verwandt: [Paket, Berechnetes Feld, Gleich eingeschaltet]
+    code: "DannKarte art: paket, zeitplan.ausgefuehrt"
+  - begriff: Gleich eingeschaltet
+    bereich: werkbank
+    beschreibung: Eine mitgelieferte Automatisierung, die das Paket beim Installieren mit gesetztem Haken anbietet. Der Administrator kann sie abwählen; ein Update ändert an oder aus danach nie.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Paket, Paket nach Zeitplan ausführen]
+    code: eingeschaltet (Paket)
   - begriff: Nummernkreis
     bereich: werkbank
     beschreibung: Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.

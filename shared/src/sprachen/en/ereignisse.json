@@ -59,6 +59,8 @@
   "text.datei.volltext": "Job for a package: a file needs its full text (file types Ablago doesn’t read itself).",
   "name.datei.archivfassung": "Archive version of a file",
   "text.datei.archivfassung": "Job for a package: a document with finished full text (emails also without) needs its archive version (PDF/A).",
+  "name.zeitplan.ausgefuehrt": "Run on schedule",
+  "text.zeitplan.ausgefuehrt": "Job for a package: an automation with the card “Run package on schedule” has run at its time – with task, date and planned time.",
   "gruppe.mappe": "Folders",
   "gruppe.zeit": "Time",
   "gruppe.person": "For people",

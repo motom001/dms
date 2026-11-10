@@ -323,6 +323,10 @@ Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 <a id="fehler-nachstellen"></a>**Fehler nachstellen** · ~ mit Erklärung · Administratoren  
 Ein Administrator arbeitet vorübergehend unter dem Konto eines anderen Benutzers, um einen Fehler zu sehen. Zurück geht es mit „Zurück zum eigenen Konto“.
 
+<a id="gleich-eingeschaltet"></a>**Gleich eingeschaltet** · ~ mit Erklärung · Administratoren  
+Eine mitgelieferte Automatisierung, die das Paket beim Installieren mit gesetztem Haken anbietet. Der Administrator kann sie abwählen; ein Update ändert an oder aus danach nie.  
+Siehe auch: [Paket](#paket), [Paket nach Zeitplan ausführen](#paket-nach-zeitplan-ausfuhren).
+
 <a id="herausgeber"></a>**Herausgeber** · ~ mit Erklärung · Administratoren  
 Wer ein Paket herausgibt, als umgedrehte Domain, z. B. app.ablago für die offiziellen Pakete (#1084). Steht neben dem Namen, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber.  
 Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
@@ -337,6 +341,10 @@ Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 202
 <a id="paket"></a>**Paket** · ~ mit Erklärung · Administratoren  
 Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.  
 Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer), [Herausgeber](#herausgeber).
+
+<a id="paket-nach-zeitplan-ausfuhren"></a>**Paket nach Zeitplan ausführen** · ~ mit Erklärung · Administratoren  
+Dann-Karte einer Automatisierung mit dem Auslöser „Zeitplan“ – sie sagt einem Paket, dass sein Zeitpunkt erreicht ist (z. B. „Verträge täglich prüfen“ um 5 Uhr), damit es etwas neu rechnet, das nur am Datum hängt. Das Paket arbeitet dabei mit seinen eigenen Rechten; eine mitgelieferte Automatisierung ruft nur ihr eigenes Paket.  
+Siehe auch: [Paket](#paket), [Berechnetes Feld](#berechnetes-feld), [Gleich eingeschaltet](#gleich-eingeschaltet).
 
 <a id="paket-laufer"></a>**Paket-Läufer** · ✗ Fachwort · Fortgeschrittene  
 Der Teil von Ablago, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Netzwerk und Internet erreicht der Code nur unter den Adressen, die das Paket nennt – die Vorschau zeigt das als „kein Zugriff auf Netzwerk und Internet“ oder „Zugriff auf Netzwerk/Internet nur zu …“. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.  
@@ -592,6 +600,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
 | Format | Validierung, Datentyp | `Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts` |
 | Gemeldete Fehler | Fehlermeldungen | – |
+| Gleich eingeschaltet | – | `eingeschaltet (Paket)` |
 | Gutschrift | – | `Feld.negativ` |
 | Herausgeber | Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher | `herausgeber, InstalliertesPaket.herausgeber` |
 | Hinweis von Paketen | Warnung, Fehler, Meldung von Ablago | `PaketHinweis, dms:hinweise` |
@@ -608,6 +617,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Nummernkreis | – | `Nummernkreis` |
 | Organisation | – | `basis:organisation` |
 | Paket | Plugin, Erweiterung, App, Modul | `InstalliertesPaket` |
+| Paket nach Zeitplan ausführen | Cronjob, Tagesereignis, Paketlauf | `DannKarte art: paket, zeitplan.ausgefuehrt` |
 | Paket-Läufer | Code im Paket-Läufer, Plugin-Host | `Paketlaeufer, PaketLaeufer` |
 | Paketkatalog | – | `Katalog, OFFIZIELLER_KATALOG` |
 | Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis:person` |

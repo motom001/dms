@@ -85,11 +85,23 @@ The stock only shows what matches the If card: **Change field**, for instance, o
 - **Send daily summary** (only with *Schedule for every user*) sends the person their open tasks by email – the same content as before. Whoever has unsubscribed under My account, is absent or has nothing open gets none; the run history names the reason.
 - **Report favourite changes** (only with *Favourite changed*) gives everyone who has the folder as a favourite the bundled notification "Changed" – as before. The [approval for favourites](aufgaben.md#favoriten-benachrichtigen) and the switch under My account still apply; one's own changes are never reported.
 - **Report sign-in protection** sends everyone who manages sign-in protection either the **summary** of the blocks (with *Schedule*, not per user) or immediately an email when a **user account was blocked** (with *User account blocked*, at most once a day per account). See [Sign-in protection](anmeldeschutz.md#mail-an-die-administratoren).
+- **Run package on schedule** (only with *Schedule*, not per user) tells a package that its time has been reached – see [below](#paket-nach-zeitplan).
 - **No further automations afterwards** ends the sequence: automations with a higher number no longer run for this event (in the run history "Skipped by …").
 
 Automations work with the **system account "Automation"** (Workbench → Users). What this account may not read, the automation skips; placeholders then show "(not visible)". For tasks, the recipient's permissions apply additionally (see above).
 
 If the account "Automation" may **not see** folders of the If card's type **at all** – for example because a rule "System and package roles forbidden" applies on the folder type –, the automation can never run. The editor and the list then show a notice "This automation can't run …". Via **View permissions on the folder type** you get to the [test run](berechtigungen.md#testlauf) of this folder type, with the account "Automation" already chosen; there you see which rule decided. Saving still remains possible.
+
+## Run package on schedule { #paket-nach-zeitplan }
+
+Some packages have to calculate regularly because their result changes only with the date – for example *Contracts* ("cancellable until …") or *Invoices* ("overdue since …"). Instead of a hidden run they bring an **automation** for this, for example **Check contracts daily**: If *Schedule* daily at 05:00 → Then **Run package on schedule**.
+
+- You set **time and days** in the If card; switch it off with the switch. Switched off, the package only calculates when someone changes one of its folders.
+- The card names the **package** and optionally a **task** (a key such as `taeglich` or `monatlich`) so that a package can tell several runs apart. The package receives the event *Run on schedule* with date, planned time and task – exactly once per day, even with several servers.
+- **No additional rights:** the package works with the rights you confirmed when installing it. The rights preview names the schedule ("Runs on schedule: Check contracts daily (daily at 05:00)").
+- **Only its own package:** an automation supplied with a package only ever calls the package that brings it – the field *Package* is fixed there. In an automation you create yourself, only packages that accept schedules can be chosen.
+- **Package removed:** the card then has nothing to run. The automation stays on and shows "Package … is not installed"; the run history lists the run as *skipped* – no error, no notice about failed runs.
+- You see every run in the automation's **run history**; the package receives it like any other event (with retries if it is not reachable at the moment).
 
 ## Order {#reihenfolge}
 
@@ -112,10 +124,10 @@ Ablago also pauses an automation if it runs **more than 30 times in one minute**
 
 ## From packages {#aus-paketen}
 
-Packages bring **ready-made automations**, for example "MOT due soon" (package Vehicles) or "Cancellation due soon" (package Household). When installing – in the setup assistant as in the workbench – Ablago lists them by name: **"Should they be switched on straight away?"**, all preselected. What stays ticked is switched on after installation, the rest off.
+Packages bring **ready-made automations**, for example "MOT due soon" (package Vehicles) or "Cancellation due soon" (package Household). When installing – in the setup assistant as in the workbench – Ablago lists them by name: **"Should they be switched on straight away?"** Preselected are the ones the package marks as *switched on straight away* (e.g. *Check contracts daily*, with the time behind it); if a package marks none, all are preselected as before. What stays ticked is switched on after installation, the rest off – you can untick any of them.
 
 - In the list you recognise them by the origin **from package …**. You can switch them on, adjust and copy them.
-- On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off stays. A changed one stays as it is. New automations from the update are offered again when updating.
+- On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is. New automations from the update are offered again when updating.
 - If you remove the package, its automations go with it if they are off and unchanged.
 
 ### Stand-in {#vertretung}

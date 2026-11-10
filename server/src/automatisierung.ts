@@ -4,7 +4,7 @@ import {
   AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fassung, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
-  PERSONEN_IM_EREIGNIS,
+  PERSONEN_IM_EREIGNIS, paketKarteLeer,
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, OHNE_WENN, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { tagVon, titelAus, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
@@ -17,7 +17,7 @@ import type { PaketAutomatisierung } from './pakete';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
-import { faelligeTage, laufeFaellige, wochentagVon, type Merker } from './zeitplan';
+import { faelligeTage, laufeFaellige, wochentagVon, zeitpunktIn, type Merker } from './zeitplan';
 import { feiertagAm, istBundesland } from '../../shared/src/feiertage';
 import { wirksameZeit } from './aufgabenmail';
 import { istUuid } from './repo';
@@ -276,6 +276,8 @@ export interface KartenKontext {
   typ: Mappentyp | null;
   /** Angaben des Ereignisses (nur Ids, Schlüssel, Datum). */
   daten: Record<string, unknown>;
+  /** Id des auslösenden Ereignisses (#1082: feste Ids für Folge-Ereignisse; beim Probelauf die des Laufs). */
+  ereignisId: string;
   /** Nur beschreiben, was passieren würde. */
   trocken: boolean;
   /** Text mit Platzhaltern füllen (Werte mit den Rechten des Kontos). */
@@ -291,6 +293,11 @@ export interface KartenKontext {
   /** Vermerk für die Historie der Mappe: „durch Automatisierung ‚…‘ (eingerichtet von …)“. */
   anlass: Record<string, unknown>;
 }
+/**
+ * Die Karte hat nichts zu tun, weil ihr Ziel fehlt (#1082: Paket entfernt oder ohne das Ereignis) – der Schritt gilt als
+ * übersprungen, nicht als Fehler: kein Wiederholen, keine Fehlerflut, die Automatisierung bleibt an.
+ */
+export class KarteLeer extends Error {}
 /** Führt eine Karte aus (bzw. beschreibt sie im Trockenlauf) und liefert eine Zeile fürs Protokoll. */
 export type DannAusfuehrer = (k: DannKarte, c: KartenKontext) => Promise<string>;
 /** Ausführende Karten; „stopp“ erledigt der Motor selbst. */
@@ -309,7 +316,8 @@ export interface AutomatisierungDeps {
 /** Ereignis, wie der Motor es verarbeitet (aus dem Katalog oder vom Zeitplan). */
 interface Anlass { id: string; art: string; daten: Record<string, unknown>; kette: number; ausloeser?: KatalogEreignis['ausloeser'] }
 
-const uuidAus = (s: string) => { const h = createHash('sha256').update(s).digest('hex'); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`; };
+/** Feste UUID aus einem Text (gleiche Eingabe = gleiche Id; mehrere Server legen nichts doppelt an). */
+export const uuidAus = (s: string) => { const h = createHash('sha256').update(s).digest('hex'); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`; };
 const UHR_FORMAT = () => datumsformat(gebietsschema(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 /** Feste Id der beim Update übernommenen Vertretungs-Aufgabe (#712/#678). */
@@ -400,7 +408,9 @@ export class Automatisierungen {
       // Nach einem Umzug (#1084) behält eine mitgelieferte Automatisierung ihre Id aus der früheren Paket-Id.
       const id = paketAutomatisierungId(p, x.schluessel, vorhanden);
       ids.add(id);
-      const d = bereinigeAutomatisierung({ name: x.name, beschreibung: x.beschreibung, wenn: { ...x.wenn, typ: typId(x.wenn.typ) }, und: x.und, dann: x.dann });
+      // „Paket nach Zeitplan ausführen“ (#1082): Im Paket steht kein Ziel – es ist immer das Paket selbst.
+      const dann = x.dann.map((k) => (k && typeof k === 'object' && (k as Record<string, unknown>).art === 'paket' ? { ...k, paket: p.id } : k));
+      const d = bereinigeAutomatisierung({ name: x.name, beschreibung: x.beschreibung, wenn: { ...x.wenn, typ: typId(x.wenn.typ) }, und: x.und, dann });
       d.reihenfolge = REIHENFOLGE.paket;
       // Unbekannter Mappentyp (#1084, Sicherheit A): geschlossen statt offen – ohne Typ liefe sie auf alle; sie hält an.
       const halt = this.haltOhneTyp(p.id, x, typId);
@@ -554,7 +564,14 @@ export class Automatisierungen {
 
   /* ---------- Verwalten ---------- */
 
-  async kontext(): Promise<Kontextdaten> { return this.d.dienst.automatisierungKontext(); }
+  async kontext(): Promise<Kontextdaten> {
+    const [k, pakete, liste] = await Promise.all([this.d.dienst.automatisierungKontext(), this.d.dienst.kern.repo.listePakete(), this.d.repo.liste()]);
+    // Pakete für „Paket nach Zeitplan ausführen“ (#1082): ob sie das Ereignis abonnieren und welche Aufgaben ihre
+    // mitgelieferten Automatisierungen nennen (zur Auswahl im Editor).
+    const aufgaben = (id: string) => [...new Set(liste.filter((a) => a.herkunft === 'paket' && a.paketId === id)
+      .flatMap((a) => a.dann.flatMap((d) => (d.art === 'paket' && d.aufgabe ? [d.aufgabe] : []))))].sort();
+    return { ...k, pakete: pakete.map((p) => ({ id: p.id, name: p.name, zeitplan: !!p.laeufer?.ereignisse.includes('zeitplan.ausgefuehrt'), aufgaben: aufgaben(p.id) })) };
+  }
 
   private async ansicht(a: Automatisierung, k: Kontextdaten, letzte: Map<string, Lauf>, unlesbar: Set<string>, kontoId: string | null): Promise<AutomatisierungAnsicht> {
     const l = letzte.get(a.id);
@@ -563,10 +580,14 @@ export class Automatisierungen {
     // Darf das Konto „Automatisierung“ den Mappentyp der Wenn-Karte gar nicht lesen, kann sie nie laufen (#709) – nur Hinweis.
     const typ = kontextTyp(a.wenn, k.typen);
     const rechte = typ && unlesbar.has(typ.id) ? { typId: typ.id, typ: typ.name, kontoId, text: t('automatisierung.rechte.warnung', { typ: typ.name }) } : null;
+    // „Paket nach Zeitplan ausführen“ (#1082): Paket entfernt oder ohne das Ereignis – Hinweis, die Automatisierung bleibt an.
+    const ziel = (d: DannKarte) => (d.art !== 'paket' ? '' : a.herkunft === 'paket' ? a.paketId ?? '' : d.paket);
+    const leer = [...new Set(a.dann.flatMap((d) => (ziel(d) ? [paketKarteLeer(ziel(d), k.pakete)] : [])).filter((x): x is string => !!x))];
     return {
       ...ohne, kurz: kurzform(a, k, (art) => (art === 'datum' ? t('automatisierung.wenn.datum') : t.frei(`ereignisse.name.${art.replace(/_/g, '-')}`))), probleme: automatisierungsProbleme(a, k), ausloeser: ausloeserSchluessel(a.wenn),
       letzterLauf: l ? { id: l.id, zustand: l.zustand, gestartet: l.gestartet, fehler: l.fehler } : null,
       ...(rechte ? { rechte } : {}),
+      ...(leer.length ? { leer } : {}),
     };
   }
 
@@ -617,10 +638,29 @@ export class Automatisierungen {
   }
 
   /** Speichern geht nur mit gültigem Stand (Fehler mit Gründen); eine neue Automatisierung startet ausgeschaltet. */
-  private async pruefe(d: AutomatisierungDaten) {
-    const p = automatisierungsProbleme(d, await this.kontext());
+  private async pruefe(d: AutomatisierungDaten, wer?: { herkunft: Herkunft; paketId?: string | null; alt?: DannKarte[] }) {
+    const k = await this.kontext();
+    const p = automatisierungsProbleme(d, k);
     if (p.length) throw new Fachfehler(422, p[0], { probleme: p });
-    for (const k of [...d.dann, ...d.sonst]) if (k.art !== 'stopp' && !DANN_AUSFUEHRER[k.art]) throw new Fachfehler(422, t('automatisierung.karte.unbekannt', { art: k.art }));
+    for (const x of [...d.dann, ...d.sonst]) if (x.art !== 'stopp' && !DANN_AUSFUEHRER[x.art]) throw new Fachfehler(422, t('automatisierung.karte.unbekannt', { art: x.art }));
+    if (wer) this.pruefePaketKarten(d, wer, k);
+  }
+
+  /**
+   * „Paket nach Zeitplan ausführen“ beim Speichern (#1082, Sicherheit): Eine mitgelieferte Automatisierung ruft nur ihr
+   * eigenes Paket; eine selbst angelegte nur Pakete, die `zeitplan.ausgefuehrt` abonnieren – außer die Karte nannte das
+   * Paket schon vorher (entfernt: Sie läuft ins Leere und lässt sich trotzdem weiter bearbeiten).
+   */
+  private pruefePaketKarten(d: AutomatisierungDaten, wer: { herkunft: Herkunft; paketId?: string | null; alt?: DannKarte[] }, k: Kontextdaten) {
+    const vorher = new Set((wer.alt ?? []).flatMap((x) => (x.art === 'paket' ? [x.paket] : [])));
+    for (const x of [...d.dann, ...d.sonst]) {
+      if (x.art !== 'paket') continue;
+      if (wer.herkunft === 'paket') { if (x.paket !== wer.paketId) throw new Fachfehler(422, t('automatisierung.paket.nur-eigenes')); continue; }
+      if (vorher.has(x.paket)) continue;
+      const p = k.pakete?.find((y) => y.id === x.paket);
+      if (!p) throw new Fachfehler(422, t('automatisierung.paket.nicht-installiert', { paket: x.paket }));
+      if (!p.zeitplan) throw new Fachfehler(422, t('automatisierung.paket.ohne-zeitplan', { name: p.name }));
+    }
   }
 
   async lege(e: unknown, von: string | null, herkunft: Herkunft = 'eigen'): Promise<AutomatisierungAnsicht> {
@@ -628,7 +668,7 @@ export class Automatisierungen {
     const d = bereinigeAutomatisierung(e);
     const roh = (e ?? {}) as Record<string, unknown>;
     if (roh.reihenfolge === undefined) d.reihenfolge = REIHENFOLGE[herkunft];
-    await this.pruefe(d);
+    await this.pruefe(d, { herkunft });
     const a: Automatisierung = { ...d, id: randomUUID(), aktiv: roh.aktiv === true, angehalten: null, herkunft, version: 1, erstellt: this.iso(), erstelltVon: von, geaendert: this.iso(), geaendertVon: von };
     await this.d.repo.lege(a);
     log.info('Automatisierung angelegt', { id: a.id, name: a.name });
@@ -639,7 +679,9 @@ export class Automatisierungen {
     const alt = await this.gibt(id);
     const roh = (e ?? {}) as Record<string, unknown>;
     const d = bereinigeAutomatisierung({ ...alt, ...roh });
-    await this.pruefe(d);
+    // Mitgeliefert (#1082): „Paket nach Zeitplan ausführen“ zeigt immer auf das eigene Paket – was auch geschickt wird.
+    if (alt.herkunft === 'paket' && alt.paketId) for (const k of [...d.dann, ...d.sonst]) if (k.art === 'paket') k.paket = alt.paketId;
+    await this.pruefe(d, { herkunft: alt.herkunft, paketId: alt.paketId, alt: [...alt.dann, ...alt.sonst] });
     const version = Number(roh.version ?? alt.version);
     const aktiv = typeof roh.aktiv === 'boolean' ? roh.aktiv : alt.aktiv;
     if (!(await this.d.repo.speichere(id, { ...d, aktiv }, von, version))) throw new Fachfehler(409, t('automatisierung.konflikt'));
@@ -894,7 +936,7 @@ export class Automatisierungen {
       }
       // Dann
       const kontext: KartenKontext = {
-        dienst: this.d.dienst, z, konto, automatisierung: a, mappe, typ, daten: anlass.daten, trocken: o.trocken, personen,
+        dienst: this.d.dienst, z, konto, automatisierung: a, mappe, typ, daten: anlass.daten, ereignisId: o.test ? l.id : anlass.id, trocken: o.trocken, personen,
         fuelle: (text) => this.fuelle(text, { a, mappe, typ, z, daten: anlass.daten, art: anlass.art }),
         fuelleFuer: async (text, an) => {
           const c = { a, mappe, typ, z, daten: anlass.daten, art: anlass.art };
@@ -907,6 +949,7 @@ export class Automatisierungen {
         anlass: { automatisierung: { id: a.id, name: a.name, eingerichtetVon: a.erstelltVon } },
       };
       const begonnen = this.jetzt();
+      let leer = 0;
       for (let i = 0; i < a.dann.length; i++) {
         const karte = a.dann[i];
         const si = i + 2;
@@ -924,12 +967,15 @@ export class Automatisierungen {
           await schritt(si, { zustand: 'ok', text });
         } catch (x) {
           const text = (x as Error).message;
+          // Ziel fehlt (#1082): übersprungen, die übrigen Karten laufen weiter.
+          if (x instanceof KarteLeer) { await schritt(si, { zustand: 'uebersprungen', text }); leer++; continue; }
           await schritt(si, { zustand: 'fehler', text });
           for (let j = si + 1; j < l.schritte.length; j++) l.schritte[j].zustand = 'uebersprungen';
           return await ende('fehlgeschlagen', text);
         }
       }
-      return await ende('abgeschlossen');
+      // Liefen alle Karten ins Leere, ist der Lauf übersprungen (zählt nicht als Fehlschlag).
+      return await ende(leer && leer === a.dann.filter((k) => k.art !== 'stopp').length ? 'uebersprungen' : 'abgeschlossen');
     } catch (x) {
       return ende('fehlgeschlagen', (x as Error).message);
     }
@@ -1086,7 +1132,8 @@ export class Automatisierungen {
       const sk = createHash('sha256').update(schluessel).digest('hex').slice(0, 16);
       if (!w.jeBenutzer) {
         await laufeFaellige(merker(`zeitplan_zuletzt:${sk}`), ort, takt(w.uhrzeit, w.tage, w.feiertage), async (tag) => {
-          await this.reihe(liste, { id: uuidAus(`zeitplan|${schluessel}|${tag}`), art: 'zeitplan', daten: { tag }, kette: 0 });
+          // zeitpunkt (#1082): der geplante Zeitpunkt, für „Paket nach Zeitplan ausführen“.
+          await this.reihe(liste, { id: uuidAus(`zeitplan|${schluessel}|${tag}`), art: 'zeitplan', daten: { tag, zeitpunkt: zeitpunktIn(tag, w.uhrzeit) }, kette: 0 });
         });
         continue;
       }

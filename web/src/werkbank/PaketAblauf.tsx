@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { HakenFeld } from '../bausteine';
-import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
+import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, vorausgewaehlt, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
 import type { EinstellungFeld } from '../../../shared/src/paketeinstellungen';
 import { api, ApiFehler, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api';
 import { Hilfe } from '../Hilfe';
@@ -44,7 +44,8 @@ export interface PaketWahl {
   mitEinstellungen: boolean;
 }
 /** Vorbelegte Antworten, z. B. aus einer Konfigurationsdatei (#806) oder beim „Ändern“ (#804). */
-export interface PaketVorgabe { beispiele: string[]; automatisierungenAus: string[] }
+/** Vorgabe aus dem Assistenten bzw. der Einrichtungsdatei: „paket|schlüssel“ ausdrücklich aus bzw. an (#1082: der Rest wie im Paket). */
+export interface PaketVorgabe { beispiele: string[]; automatisierungenAus: string[]; automatisierungenAn?: string[] }
 
 /** Woher die Pakete kommen. */
 export type AblaufQuelle =
@@ -299,9 +300,14 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
   const mitBeispielen = pk.filter((p) => p.vorschau.beispiele > 0 && !p.vorschau.update);
   const [beispiele, setBeispiele] = useState(() => !!vorgabe && mitBeispielen.some((p) => vorgabe.beispiele.includes(p.id)));
   const [ohneBeispiele, setOhneBeispiele] = useState<string[]>(() => (vorgabe ? mitBeispielen.filter((p) => !vorgabe.beispiele.includes(p.id)).map((p) => p.id) : []));
-  // Mitgelieferte Automatisierungen (#712): Vorgabe ja – abgewählte bleiben aus („paket|schlüssel“).
+  // Mitgelieferte Automatisierungen (#712): abgewählte bleiben aus („paket|schlüssel“). Vorausgewählt (#1082): die mit
+  // eingeschaltet: true – nennt ein Paket das nirgends, wie bisher alle.
   const mitAutomatisierungen = pk.filter((p) => (p.vorschau.automatisierungen ?? []).some((a) => a.neu));
-  const [ohneAutomatisierung, setOhneAutomatisierung] = useState<string[]>(() => vorgabe?.automatisierungenAus ?? []);
+  const [ohneAutomatisierung, setOhneAutomatisierung] = useState<string[]>(() => [...new Set([...(vorgabe?.automatisierungenAus ?? []), ...mitAutomatisierungen.flatMap((p) => {
+    const an = vorausgewaehlt(p.vorschau.automatisierungen ?? []);
+    return (p.vorschau.automatisierungen ?? []).filter((a) => a.neu && !an.includes(a.schluessel)).map((a) => `${p.id}|${a.schluessel}`)
+      .filter((k) => !vorgabe?.automatisierungenAn?.includes(k) && !vorgabe?.automatisierungenAus.includes(k));
+  })])]);
   const angehakt = Object.fromEntries(mitAutomatisierungen.map((p) => [p.id, (p.vorschau.automatisierungen ?? []).filter((a) => a.neu && !ohneAutomatisierung.includes(`${p.id}|${a.schluessel}`)).map((a) => a.schluessel)]));
   const anzahlAn = Object.values(angehakt).reduce((n, l) => n + l.length, 0);
   const [herkunftOk, setHerkunftOk] = useState(false);
@@ -473,7 +479,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             const k = `${p.id}|${a.schluessel}`;
             return (
               <label key={k} className="haken"><input type="checkbox" checked={!ohneAutomatisierung.includes(k)} onChange={(e) => setOhneAutomatisierung(e.target.checked ? ohneAutomatisierung.filter((x) => x !== k) : [...ohneAutomatisierung, k])} />
-                <span>{a.name} <small className="leise">{t('pakete.ablauf.automatisierungen.paket', { name: p.name })}</small>{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
+                <span>{a.name} <small className="leise">{t('pakete.ablauf.automatisierungen.paket', { name: p.name })}{a.zeitplan && ` · ${t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}`}</small>{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
             );
           }))}
         </section>

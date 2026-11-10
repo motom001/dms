@@ -59,6 +59,8 @@
   "text.datei.volltext": "Auftrag an ein Paket: Eine Datei braucht ihren Volltext (Dateitypen, die Ablago nicht selbst liest).",
   "name.datei.archivfassung": "Archivfassung einer Datei",
   "text.datei.archivfassung": "Auftrag an ein Paket: Ein Dokument mit fertigem Volltext (E-Mails auch ohne) braucht seine Archivfassung (PDF/A).",
+  "name.zeitplan.ausgefuehrt": "Nach Zeitplan ausgeführt",
+  "text.zeitplan.ausgefuehrt": "Auftrag an ein Paket: Eine Automatisierung mit der Karte „Paket nach Zeitplan ausführen“ ist zu ihrem Zeitpunkt gelaufen – mit Aufgabe, Datum und geplantem Zeitpunkt.",
   "gruppe.mappe": "Mappen",
   "gruppe.zeit": "Zeit",
   "gruppe.person": "Für Personen",

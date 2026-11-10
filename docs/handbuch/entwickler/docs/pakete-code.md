@@ -88,7 +88,7 @@ code:
 
 ## Ereignisse
 
-Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb des Kerns ([Aufbau](aufbau.md#ereigniskatalog)). Sie tragen zusätzlich `ereignis` (Id im Ausgangskorb; gleich bei einer Wiederholung) und – zu Mappen und Dokumenten – `typ` (Mappentyp). Aufträge an genau ein Paket (`datei.*`, `paket.einstellungen_geaendert`) kommen direkt.
+Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb des Kerns ([Aufbau](aufbau.md#ereigniskatalog)). Sie tragen zusätzlich `ereignis` (Id im Ausgangskorb; gleich bei einer Wiederholung) und – zu Mappen und Dokumenten – `typ` (Mappentyp). Aufträge an genau ein Paket (`datei.*`, `paket.einstellungen_geaendert`, `zeitplan.ausgefuehrt`) kommen direkt.
 
 | Ereignis | Auslöser | `daten` |
 |---|---|---|
@@ -103,6 +103,7 @@ Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb 
 | `sicherung.fertig` | Seit 0.142.0, nur mit `dms:sicherung-lesen`: Eine Sicherung liegt fertig im Sicherungsordner – siehe [Sicherung außer Haus](#sicherung-ausser-haus) | `name`, `datei`, `groesse`, `sha256`, `beginn`, `format`, `schlank`, `verschluesselung` |
 | `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` | Seit 0.153.0, nur zu Typen aus `code.mappentypen` (seit 0.166.0 auch fremde) und nur zu Mappen, die das Paket lesen darf: Mappe angelegt, gespeichert und dabei geändert, in den Papierkorb gelegt, wiederhergestellt. `mappe.geaendert` bündelt schnelle Folgen (etwa 5 s) zu einem Ereignis. Beispiele, Demo-Daten und Wiederherstellungen lösen nichts aus. | `mappe`, `typ`, bei `mappe.geaendert` `felder` (Schlüssel, nie Werte), `ereignis` |
 | `frist.erreicht` | Seit 0.153.0, nur zu Typen aus `code.mappentypen`: Ein Datumsfeld mit Frist erreicht den Erinnerungszeitpunkt (`zeitpunkt: vorlauf`) bzw. den Tag selbst (`faellig`) – je Mappe, Feld, Datum und Zeitpunkt genau einmal | `mappe`, `typ`, `feld`, `datum`, `zeitpunkt`, `empfaenger`, `ereignis` |
+| `zeitplan.ausgefuehrt` | Seit 0.232.0: Eine Automatisierung mit der Dann-Karte **Paket nach Zeitplan ausführen** ist zu ihrem Zeitpunkt gelaufen – siehe [Nach Zeitplan rechnen](#nach-zeitplan). Nur an das Paket der Karte, je Automatisierung, Karte und Tag genau einmal (gleiche Id bei Wiederholung). Ohne Inhalte der Ablage. | `automatisierung` (Id), `aufgabe` (Kennung oder `null`), `zeitpunkt` (geplant, ISO in UTC), `datum` (Tag in der Zeitzone der Ablage, JJJJ-MM-TT) |
 
 **Ereignis-Id (seit 0.153.0):** Die Ereignisse zu Mappen und Fristen kommen aus dem [Ereigniskatalog](aufbau.md#ereigniskatalog). Sie werden **mindestens einmal** zugestellt; `daten.ereignis` ist die Id im Katalog – kommt dieselbe Id noch einmal, war es eine Wiederholung. Was das Paket selbst ändert, bekommt es nicht gemeldet.
 
@@ -255,6 +256,30 @@ Ein Paket, das **ins Netz darf** (`code.netz` oder eine Dienst-Adresse) und **In
 Das Paket braucht dafür nichts zu tun und erfährt den Grund nicht. Wer ohne Netz im Haus rechnet (`netz: []`, keine Dienst-Adresse), ist davon nicht betroffen. Die Kopie außer Haus (`dms:sicherung-lesen`) zählt nicht als KI-Paket: Sie bekommt nur die verschlüsselte Sicherung.
 
 Ein Modul, das `netz_strom`, `netz_weiter` oder `teil` importiert, lädt erst ab Ablago 0.124.0 – ältere lehnen es ab („Das Modul verlangt Unbekanntes“). Gib dann `dms: ">=0.124.0"` an.
+
+### Nach Zeitplan rechnen (`zeitplan.ausgefuehrt`) { #nach-zeitplan }
+
+Seit 0.232.0 (#1082). Hängt etwas nur am Datum („kündbar bis …“, „überfällig seit …“), bringt das Paket eine **Automatisierung** mit, statt selbst einen Takt zu führen – der Admin sieht sie, ändert Uhrzeit und Tage oder schaltet sie aus:
+
+```yaml
+# manifest.yaml
+code:
+  ereignisse: [mappe.geaendert, zeitplan.ausgefuehrt]
+
+# inhalt/automatisierungen.yaml
+- schluessel: taeglich_pruefen
+  name: Verträge täglich prüfen
+  eingeschaltet: true          # beim Installieren mit gesetztem Haken angeboten
+  wenn: { art: zeitplan, uhrzeit: "05:00", tage: [1, 2, 3, 4, 5, 6, 7] }
+  dann:
+    - { art: paket, aufgabe: taeglich }
+```
+
+- Die Karte `{ art: paket, aufgabe: <kennung> }` ruft **nur das Paket selbst** – ein Feld `paket` brauchst du nicht; nennt es ein anderes Paket, lehnt Ablago das Paket ab. Sie braucht die Wenn-Karte `zeitplan` (nicht `jeBenutzer`) und `zeitplan.ausgefuehrt` in `code.ereignisse`.
+- `aufgabe` (optional, klein wie ein Schlüssel) unterscheidet mehrere Läufe, etwa `taeglich` und `monatlich`. Ein Lauf, der am Monatsersten etwas anderes tut, geht auch mit einer täglichen Aufgabe und dem `datum`.
+- Das Ereignis gibt dem Paket **keine zusätzlichen Rechte**; es arbeitet mit seinen bestätigten Rechten (z. B. `GET /api/v1/mappen?typ=…`, dann berechnete Felder schreiben). Die Rechte-Vorschau nennt den Zeitplan.
+- **Mindestens einmal:** Nach einem Fehler stellt der Paket-Läufer es wieder zu. Die Ereignis-Id ist je Automatisierung, Karte und Tag fest – kommt dieselbe noch einmal, nichts doppelt tun. War Ablago zur Uhrzeit aus, kommt der Lauf am selben Tag nach.
+- Ein Admin kann eigene Automatisierungen mit dieser Karte anlegen; zur Wahl stehen nur Pakete, die `zeitplan.ausgefuehrt` abonnieren.
 
 ## Berechnete Felder und Hinweise { #berechnet-und-hinweise }
 

@@ -305,7 +305,7 @@ function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => voi
   // Vorbelegt beim „Ändern“ bzw. aus der Datei (#806): Auswahl, Beispiele, ausgeschaltete Automatisierungen.
   const quelle = s.pakete ? s.pakete.pakete.map((p) => ({ id: p.id, beispiele: p.beispiele, automatisierungen: p.automatisierungen, gewaehlt: p.gewaehlt })) : s.paketeVorgabe?.map((p) => ({ ...p, gewaehlt: true })) ?? null;
   const start = quelle?.filter((p) => p.gewaehlt).map((p) => p.id);
-  const vorgabe = quelle ? { beispiele: quelle.filter((p) => p.beispiele).map((p) => p.id), automatisierungenAus: quelle.flatMap((p) => Object.entries(p.automatisierungen).filter(([, an]) => !an).map(([k]) => `${p.id}|${k}`)) } : undefined;
+  const vorgabe = quelle ? { beispiele: quelle.filter((p) => p.beispiele).map((p) => p.id), automatisierungenAus: quelle.flatMap((p) => Object.entries(p.automatisierungen).filter(([, an]) => !an).map(([k]) => `${p.id}|${k}`)), automatisierungenAn: quelle.flatMap((p) => Object.entries(p.automatisierungen).filter(([, an]) => an).map(([k]) => `${p.id}|${k}`)) } : undefined;
   const gesammelt = (w: PaketWahl | null) => {
     geheim.paketEinstellungen = w?.eingabe.einstellungen;
     setzeSammlung((x) => ({ ...x, pakete: w, paketeVorgabe: null }));

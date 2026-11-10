@@ -1,3 +1,4 @@
+import { zeitzone } from '../../shared/src/region';
 import { verschiebe } from '../../shared/src/sichten';
 import type { Einstellungen } from './einstellungen';
 
@@ -73,3 +74,24 @@ export async function laufeFaellige(m: Merker, jetzt: Jetzt, t: Takt, lauf: (tag
 
 /** Wochentag eines Datums JJJJ-MM-TT: 1 = Montag … 7 = Sonntag (wie in den Einstellungen). */
 export const wochentagVon = (datum: string) => ((new Date(`${datum}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+
+/**
+ * Zeitpunkt (ISO, UTC) eines Tags JJJJ-MM-TT und einer Uhrzeit HH:MM in der Zeitzone der Ablage (#1082: `zeitpunkt` im
+ * Ereignis `zeitplan.ausgefuehrt`). Gibt es die Uhrzeit wegen der Zeitumstellung nicht, gilt die Stunde danach; gibt es
+ * sie zweimal, die erste.
+ */
+export function zeitpunktIn(tag: string, uhrzeit: string, zone = zeitzone()): string {
+  const [j, m, d] = tag.split('-').map(Number);
+  const [h, min] = uhrzeit.split(':').map(Number);
+  const wunsch = Date.UTC(j, m - 1, d, h, min);
+  const teile = new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  // Abstand der Ortszeit zu UTC an einem Zeitpunkt (in ms).
+  const versatz = (ms: number) => {
+    const x = Object.fromEntries(teile.formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
+    return Date.UTC(Number(x.year), Number(x.month) - 1, Number(x.day), Number(x.hour), Number(x.minute)) - Math.floor(ms / 60_000) * 60_000;
+  };
+  // Kandidaten mit dem Versatz vor und nach einer möglichen Zeitumstellung; passend ist, was als Ortszeit den Wunsch ergibt.
+  const kandidaten = [...new Set([wunsch - versatz(wunsch - 432e5), wunsch - versatz(wunsch + 432e5)])].sort((a, b) => a - b);
+  const passend = kandidaten.filter((c) => c + versatz(c) === wunsch);
+  return new Date(passend.length ? passend[0] : kandidaten[kandidaten.length - 1]).toISOString();
+}
