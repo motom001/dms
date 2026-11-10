@@ -1,15 +1,14 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, ERKENNBAR_AN_MAX, kannAusPost, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, REGISTERNAMEN, ABRUF_ART, type Abrufweg, type Abruffassung, historienartenVon, historiengruppenVon, istHistoriengruppe, SYSTEMTYPEN, ROLLEN, FRUEHERE_ADMINROLLE, type Modusspur, KONTOROLLEN, kontorolleKennung, type Kontorolle, type Systemkonto, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemBeschriftung, systemrolleKennung, titelAus, verweiseVon, verweisAusText,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type DokumentVersion, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Verweiskonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Wert, type Werte,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Verweiskonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Systemtyp, type Wert, type Werte,
 } from '../../shared/src/model';
 import { DateiFehlt, type Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
-import { beiVerklemmungWiederholen, istVerklemmung } from './db';
+import { istVerklemmung } from './db';
 import { EIGENE_MAPPEN, fingerabdruck, Haushaltsstand, MINDESTENS_MS, mitFavoriten, NUR_FAVORITEN, zeitabhaengig, ZAEHLT_FUER_TERMINE, Zaehlerspeicher, type Gueltigkeit } from './zaehlerspeicher';
 import { jeAnfrage } from './lesespeicher';
 import { speicherKurzzustand, type Kurzzustand } from './kurzzustand';
@@ -44,7 +43,7 @@ import { liesLoeschAuswahl, loeschErinnerung, loeschVorschlag, LOESCH_TIEFE, pla
 import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftErwaehnung, type AuskunftMappe, type AuskunftVorschau, type Datenschutz } from '../../shared/src/auskunft';
 import { auskunftMail, auskunftVerzeichnis, FRIST_SCHLUESSEL, FRIST_TEXT_ANFANG, type AuskunftEintrag, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
 import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
-import { alsZeile, liesAnlass, liesFilter, LOESCH_MAX, LOESCH_SPALTEN, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHPROTOKOLL_STANDARD_JAHRE, LOESCHSCHRITTE, LOESCHWEGE, AUSLOESER, nummerVon, type Ausloeser, type LoeschAnlass, type LoeschDokument, type LoeschEintrag, type LoeschKontext, type Loeschweg } from '../../shared/src/loeschprotokoll';
+import { alsZeile, liesAnlass, liesFilter, LOESCH_MAX, LOESCH_SPALTEN, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHPROTOKOLL_STANDARD_JAHRE, LOESCHSCHRITTE, LOESCHWEGE, AUSLOESER, type Ausloeser, type LoeschDokument, type LoeschEintrag, type LoeschKontext, type Loeschweg } from '../../shared/src/loeschprotokoll';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
@@ -64,7 +63,7 @@ import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestl
 import { liesDirektlink } from '../../shared/src/direktlink';
 import { erkenneSprache, istTextsprache, SPRACHE_MARKE, sprachname, spracheZuInfo, TEXTSPRACHEN } from '../../shared/src/textsprache';
 import { dokumentsprachen, MAX_SEITENSPRACHEN, seitentexte, seitenZusammensetzen, SEITENVORSCHUB, SPRACHEN_JE_SEITE, zeichenzahl, type Seitensprache } from '../../shared/src/seitensprachen';
-import { ALLE_TYPEN, INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, PAKET_TEXT, PAKET_VOLLTEXT, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type PaketCode, type Schnittstelle, type BeispielStand } from '../../shared/src/pakete';
+import { ALLE_TYPEN, INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, PAKET_TEXT, PAKET_VOLLTEXT, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type BeispielStand } from '../../shared/src/pakete';
 import { INFO_TEXTEBENE, infoWartet, NICHT_GESPEICHERT } from '../../shared/src/volltext';
 import { dateitypName, erkenneBildtyp, INFO_UMWANDLUNG, infoFassung, infoUmwandlung, katalogUmwandlung, kernTyp, UMWANDELN_MAX_BYTES, type FassungInfo } from '../../shared/src/dateiumwandlung';
 import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from './dateiumwandlung';
@@ -90,7 +89,7 @@ import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
 import { tagIn, zeitzone } from '../../shared/src/region';
 import { Eingang, shaVon } from './hochladen';
-import { EREIGNISKATALOG, mischeFelder, VERALTETE_EREIGNISSE, type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis, type Katalogeintrag } from '../../shared/src/ereignisse';
+import { EREIGNISKATALOG, VERALTETE_EREIGNISSE, type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis, type Katalogeintrag } from '../../shared/src/ereignisse';
 import { bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, folgetermine, istDatum, naechsterTermin, type Erinnerung, type Termin, type TermineAntwort } from '../../shared/src/fristen';
 import { tageZwischen, zeitraumProblem } from '../../shared/src/kalender';
 import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
@@ -98,6 +97,9 @@ import { feiertageZwischen, type Bundesland } from '../../shared/src/feiertage';
 import { ALLES, hatKontoRegeln, kontoRegelwerk, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
+import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugriff } from './kern';
+export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
+export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
 function inReihenfolge<T extends { id: string }>(liste: T[], ids: string[]): T[] {
@@ -111,16 +113,6 @@ const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 /** Empfänger aus Abfrageparametern (API v1) – gilt auch für den Pflicht-Stempel ohne eigenen Wunsch (#799). */
 const empfaengerAus = (q: unknown) => { const o = (q && typeof q === 'object' ? q : {}) as Record<string, unknown>; const e = o.empfaenger ?? o['empfänger']; const s = Array.isArray(e) ? e[0] : e; return typeof s === 'string' ? s.replace(/[\r\n\t]+/g, ' ').trim().slice(0, 120) : ''; };
 
-/* Löschprotokoll (#470) */
-/** Grund und Auslöser einer Löschung (aus Oberfläche/Schnittstelle) und wie gelöscht wurde. */
-export type Anlass = LoeschAnlass & { ausloeser?: Ausloeser; weg?: Loeschweg };
-/** Ein Eintrag ohne Zeit, Id und „wer/warum“ (kommt aus dem Kontext). */
-type ProtokollTeil = Omit<LoeschEintrag, 'id' | 'zeit' | 'vonId' | 'von' | 'ausloeser' | 'grund' | 'grundText'>;
-interface ProtokollMappe { id: string; typId: string; typ: Mappentyp | undefined; werte: Werte; notizen: number; dokumente: LoeschDokument[]; vorgang?: string | null }
-const dokInfo = (d: Dokument): LoeschDokument => ({ dokumentId: d.id, version: d.version ?? 1, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.ocr?.seiten ?? null, archivnummer: d.archivnummer ?? null });
-const versionInfo = (v: DokumentVersion): LoeschDokument => ({ dokumentId: v.dokumentId, version: v.nummer, sha256: v.sha256, groesse: v.groesse, mime: v.mime, seiten: null, archivnummer: null });
-
-/** Zugriff eines Benutzers (#124): Rollen, Auflösung dynamischer Werte, Lesefilter (null = alles). */
 /** Dokument im Papierkorb mit Mappe und Register (#344). */
 export interface DokumentImKorb extends DokumentImPapierkorb { art: 'dokument'; typId: string; mappeTitel: string; register: string; mappe: 'da' | 'papierkorb' | 'weg' }
 /** Aufgelöste Post im Papierkorb (#936): in welche Mappe; `da` = die Mappe gibt es noch. */
@@ -136,30 +128,6 @@ export interface Fundstelle { mappeId: string; typId: string; titel: string; typ
 /** Zähler-Endpunkt (#625): nur Zahlen, keine Inhalte. */
 export interface Zaehlerzahlen { neuePost: number; zuErledigen: number; ueberfaellig: number }
 
-export interface Zugriff {
-  ich: { id: string; rolle: string };
-  admin: boolean;
-  wer: Wer;
-  a: Aufloesung;
-  typen: Map<string, Mappentyp>;
-  lesen: Lesefilter | null;
-  /**
-   * Dienstkonto eines Pakets (#338): Rechte fest aus dem bestätigten Manifest statt aus Regeln.
-   * typen enthält dann nur die lesbaren Typen; schreiben = Ids der Typen mit Anlegen/Bearbeiten.
-   */
-  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente']; schnittstellen?: Schnittstelle[];
-    /** Typen mit Regeln für die Rolle „Paket“ (#673), schon auf diese Regeln zugeschnitten – sie schränken die bestätigten Rechte weiter ein. */
-    regeln?: Map<string, Mappentyp> };
-  /** Systemkonto (#673), z. B. „Automatisierung“: Rechte aus den Regeln für die Rolle „Systemkonto“ (typen sind darauf zugeschnitten). */
-  systemkonto?: string;
-  /**
-   * Leserecht auf Zeit (#798) je Mappe: vom Admin für die Dauer einer Aufgabe gegeben. Nur Lesen, nur diese Mappe,
-   * nur solange die Aufgabe offen bei dieser Person liegt – steht schon im Lesefilter (`lesen`).
-   */
-  aufZeit?: Map<string, LeserechtAufZeit>;
-}
-/** Ein wirksames Leserecht auf Zeit (#798): Grund ist die Aufgabe; von = der Admin, der es gegeben hat. */
-export interface LeserechtAufZeit { fallId: string; aufgabeId: string; aufgabentext: string; seit: string; von: string | null }
 
 /** Lesefilter um Leserechte auf Zeit erweitern (#798): je Mappentyp „oder die Mappe ist eine dieser“. */
 function mitAufZeit(f: Lesefilter | null, typen: Mappentyp[], aufZeit: Array<{ mappeId: string; typId: string }>): Lesefilter | null {
@@ -216,15 +184,6 @@ const liesModellOder422 = (x: unknown) => { try { return liesModell(x); } catch 
 /** Obergrenze für geschriebenen Volltext (Zeichen). */
 export const VOLLTEXT_MAX = VOLLTEXT_ZEICHEN_MAX;
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
-/** Laufende Transaktion je Aufruf (#404): Repo der Transaktion und was erst nach dem Speichern geschehen soll. */
-const transaktionen = new AsyncLocalStorage<{ dienst: object; repo: Repo; nachher: Array<() => void> }>();
-/** Historie → Ereignis des Katalogs (#670); Löschen meldet die Stelle selbst (die Mappe ist danach weg). */
-const NOTIERT_ALS: Partial<Record<Historienart, KatalogArt>> = { angelegt: 'mappe.angelegt', geaendert: 'mappe.geaendert', wiederhergestellt: 'mappe.wiederhergestellt' };
-/**
- * Ereigniskatalog (#670): Wer gerade handelt (z. B. eine Automatisierung, #674) bzw. ob gerade gar nichts ausgelöst
- * werden soll (Import, Beispiel-Mappen, Wiederherstellung).
- */
-const ereignisKontext = new AsyncLocalStorage<{ ausloeser?: EreignisAusloeser; still?: boolean }>();
 
 const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
 const VERBOTEN: Record<Recht, string> = {
@@ -552,7 +511,6 @@ export interface KontenHaken {
   setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 
-export const PAPIERKORB_STANDARD_TAGE = 30;
 /** Post auflösen (#936): „Aus Post … angelegt“ nur, wenn dieselbe Person die Mappe höchstens so lange vorher angelegt hat. */
 const AUFLOESEN_FRIST_MS = 60 * 60 * 1000;
 export { EMAIL_MAX_ANHAENGE };
@@ -563,9 +521,6 @@ export const HISTORIE_STANDARD_TAGE = 365;
 /** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung. */
 export const SAMMEL_MAX = 1000;
 export const SAMMEL_WEITERGABE = 'weitergabe';
-/** Favorit = Abo (#422): Diese Historieneinträge sind Änderungen an der Mappe (Felder, Dokumente, Notizen, Register, Aufgaben). */
-export const ABO_ARTEN = ['geaendert', 'dokument_hochgeladen', 'dokument_geloescht', 'dokument_version', 'dokument_papierkorb', 'dokument_wiederhergestellt',
-  'pdf_bearbeitet', 'geschwaerzt', 'notiz', 'aufgabe', 'papierkorb', 'wiederhergestellt', 'zugeordnet', 'archivnummer'] as const satisfies readonly Historienart[];
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
   tresor?: Tresor;
@@ -754,9 +709,6 @@ const ABRUF_PRUEFUNG_MS = 60_000;
 const FEHLENDE_DATEIEN = 'dateien_fehlen';
 const FEHLENDE_DATEIEN_MAX = 1000;
 
-/** Ereignisse, nach denen eine Mappe unter „Zuletzt geöffnet“ nach oben rückt (#940: Anlegen und Ändern zählen). */
-const ZULETZT_ARTEN = new Set<KatalogArt>(['mappe.angelegt', 'mappe.geaendert', 'dokument.hochgeladen', 'mappe.notiz']);
-
 export class Dienst {
   /**
    * Zustand zwischen Anfragen (#744) – in PostgreSQL für alle Prozesse, sonst im Arbeitsspeicher: u. a. Abruf-Links,
@@ -814,6 +766,9 @@ export class Dienst {
     return wer ? { mindestensMs: this.mindestensMs, wer } : {};
   }
 
+  /** Der Kern (#961): Repo, Transaktion, Ereignisse, Historie und Löschprotokoll schreiben. */
+  readonly kern: Kern;
+
   constructor(private grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
     // Stand aus der Datenbank (#742), sonst nur dieser Prozess (speicherRepo in Tests).
     if (typeof grundRepo.haushaltsstand === 'function' && typeof grundRepo.erhoeheHaushaltsstand === 'function') {
@@ -823,6 +778,7 @@ export class Dienst {
       this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
     }
     this.grundRepo = this.stand.umhuelle(grundRepo, this.mappenstand);
+    this.kern = new Kern({ repo: this.grundRepo, dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), systemAnlegen: () => this.sichereSystemJetzt() });
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
@@ -1236,57 +1192,13 @@ export class Dienst {
     return alle.map((d) => d.id);
   }
 
-  /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
-  private get repo(): Repo {
-    const t = transaktionen.getStore();
-    return t?.dienst === this ? t.repo : this.grundRepo;
-  }
-
-  /**
-   * Änderungen samt Ereignissen ganz oder gar nicht (#404). Verschachtelt läuft alles in der äußeren
-   * Transaktion. Nur Datenbank-Arbeit hineinlegen: Dateien schreiben vorher, Anstöße (Vorschau,
-   * Texterkennung, Läufer) mit `danach`.
-   */
-  private async inTransaktion<T>(f: () => Promise<T>): Promise<T> {
-    if (transaktionen.getStore()?.dienst === this) return f();
-    const nachher: Array<() => void> = [];
-    const erg = await this.grundRepo.transaktion((repo) => transaktionen.run({ dienst: this, repo, nachher }, f));
-    for (const n of nachher) n();
-    return erg;
-  }
-
-  /**
-   * Wie `inTransaktion`; bricht PostgreSQL die eigene Transaktion wegen einer Verklemmung ab (#575), noch einmal von
-   * vorn (#743). In einer äußeren Transaktion nicht – die ist dann ohnehin verloren.
-   */
-  private async inEinemZug<T>(f: () => Promise<T>): Promise<T> {
-    if (transaktionen.getStore()?.dienst === this) return f();
-    return beiVerklemmungWiederholen(() => this.inTransaktion(f));
-  }
-
-  /** Läuft das in einer HTTP-Anfrage, die Arbeit nach der Antwort annimmt (#928)? */
-  private inAnfrage(): boolean { return !!kontext.getStore()?.nachAntwort; }
-
-  /**
-   * Nach der Antwort (#928, über den Nachlauf von #741): Arbeit, die nicht zur Antwort gehört und auch nicht zu dem, was
-   * die Person gleich danach sieht. Ohne Anfrage (Tests, Hintergrund, Automatisierungen) gleich – dann wird gewartet.
-   * Erst nach dem Speichern einer Transaktion; wird sie zurückgerollt, nie. Fehler nur im Protokoll.
-   */
-  private nachDerAntwort(f: () => Promise<unknown>): Promise<void> | void {
-    const k = kontext.getStore();
-    if (!k?.nachAntwort) return f().then(() => undefined);
-    const liste = k.nachAntwort;
-    this.danach(() => { if (!liste.includes(f)) liste.push(f); });
-  }
-
-  /** Verteiler des Ereigniskatalogs wecken – in einer Anfrage erst nach der Antwort (#928), einmal je Anfrage. */
-  private readonly weckeVerteiler = async () => { this.ereignisse.wecke(); };
-
-  /** Nach dem Speichern (bzw. sofort ohne Transaktion); bei Zurückrollen nie. */
-  private danach(f: () => void) {
-    const t = transaktionen.getStore();
-    if (t?.dienst === this) t.nachher.push(f); else f();
-  }
+  /** Das Repo – innerhalb von `inTransaktion` das der Transaktion (Kern). */
+  private get repo(): Repo { return this.kern.repo; }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
+  private inEinemZug<T>(f: () => Promise<T>): Promise<T> { return this.kern.inEinemZug(f); }
+  private inAnfrage(): boolean { return this.kern.inAnfrage(); }
+  private nachDerAntwort(f: () => Promise<unknown>): Promise<void> | void { return this.kern.nachDerAntwort(f); }
+  private danach(f: () => void) { this.kern.danach(f); }
 
   /** Schlüssel wechseln (#47): alle Passwortfelder, der Papierkorb und die Einstellungen in einer Transaktion. */
   async schluesselWechseln(von: string) {
@@ -2030,10 +1942,7 @@ export class Dienst {
   /* ---------- Aufgaben (#54) und Erwähnungen (#56) ---------- */
 
   /** Anzeigename eines Benutzers (auch für Platzhalter in Automatisierungen, #678). */
-  async name(benutzerId: string | null): Promise<string> {
-    if (!benutzerId) return t('meldungen.dienst.ohne-empfaenger');
-    return (await this.repo.titelVon([benutzerId])).get(benutzerId) || 'unbekannt';
-  }
+  name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
 
   /** Ein aktiver Benutzer (seine Benutzer-Mappe), sonst 422. */
   private async pruefeEmpfaenger(id: unknown): Promise<string> {
@@ -3025,23 +2934,8 @@ export class Dienst {
 
   /* ---------- Änderungshistorie (#57) ---------- */
 
-  /** Ein Eintrag in die Historie einer Mappe – und bei Favoriten anderer die gebündelte Benachrichtigung (#422). */
-  private async notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {
-    await this.repo.historieSchreibe([{ mappeId, benutzerId, art, daten }]);
-    // Ereigniskatalog (#670): was in der Historie steht, ist auch ein Ereignis – nur mit Ids und Feldschlüsseln.
-    const katalog = NOTIERT_ALS[art];
-    if (katalog) {
-      const felder = art === 'geaendert' ? [...new Set(((daten?.aenderungen ?? []) as Feldaenderung[]).map((a) => a.feld).filter((f) => !f.startsWith('_')))].sort() : undefined;
-      if (art !== 'geaendert' || felder?.length) await this.ereignis(katalog, { mappe: mappeId, typ: await this.typVon(mappeId), ...(felder ? { felder } : {}) }, benutzerId);
-    }
-    // Favoriten (#422, #678): Das Melden übernimmt die Automatisierung „Favoriten-Änderungen melden“ (Paket
-    // „Benachrichtigungen“). Ein Ereignis gibt es nur, wenn jemand anderes die Mappe als Favorit mit „benachrichtigen“ hat.
-    if (benutzerId && (ABO_ARTEN as readonly string[]).includes(art) && daten?.aufgabenart !== 'aenderung') {
-      try {
-        if ((await this.repo.favoritenDerMappe(mappeId)).some((f) => f.benachrichtigen && f.benutzerId !== benutzerId)) await this.ereignis('favorit.geaendert', { mappe: mappeId, typ: await this.typVon(mappeId), von: benutzerId }, benutzerId);
-      } catch (e) { protokoll.modul('ablage').warn('Benachrichtigung zu Favoriten nicht angelegt', { mappeId, fehler: (e as Error).message }); }
-    }
-  }
+  /** Ein Eintrag in die Historie einer Mappe (Kern). */
+  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) { return this.kern.historie.schreibe(mappeId, benutzerId, art, daten); }
 
   /* ---------- Favorit = Abo (#422) ---------- */
 
@@ -3087,7 +2981,7 @@ export class Dienst {
    */
   async alltagsEmpfaenger(): Promise<{ benutzerId: string | null; wirksam: string | null; gesetzt: boolean; gespeichert: string | null }> {
     // Einmal je Anfrage (#741): Zahlen, Termine und Eingang fragen es mehrfach; braucht die Liste aller Personen.
-    if (transaktionen.getStore()?.dienst === this) return this.bildeAlltagsEmpfaenger();
+    if (this.kern.inEigenerTransaktion()) return this.bildeAlltagsEmpfaenger();
     return { ...await jeAnfrage(`${this.kennung}|alltag`, () => this.bildeAlltagsEmpfaenger()) };
   }
 
@@ -3866,7 +3760,7 @@ export class Dienst {
   async zugriff(ich: { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string }): Promise<Zugriff> {
     // Einmal je Anfrage (#741), nie über die Anfrage hinaus; nach einer Änderung in der Anfrage und in einer
     // Transaktion (sie sieht ihre eigenen Änderungen) neu.
-    if (transaktionen.getStore()?.dienst === this) return rechteMessen(() => this.bildeZugriff(ich));
+    if (this.kern.inEigenerTransaktion()) return rechteMessen(() => this.bildeZugriff(ich));
     return jeAnfrage(`${this.kennung}|zugriff|${ich.id}|${ich.rolle}|${ich.art ?? ''}|${ich.paketId ?? ''}|${ich.systemkonto ?? ''}`, () => rechteMessen(() => this.bildeZugriff(ich)));
   }
   /** Unterscheidet zwei Dienste in derselben Anfrage (Tests mit zwei „Prozessen“). */
@@ -4367,7 +4261,7 @@ export class Dienst {
       return { heute: heuteIn(), ich: benutzerId, meineRollen: m ? alsListe(m.werte.rollen) : [] };
     };
     // Rollen einmal je Anfrage (#741) wie der Zugriff; jeder Aufrufer bekommt eine eigene Kopie.
-    if (transaktionen.getStore()?.dienst === this) return bilde();
+    if (this.kern.inEigenerTransaktion()) return bilde();
     const a = await jeAnfrage(`${this.kennung}|rollen|${benutzerId}`, bilde);
     return { ...a, meineRollen: [...a.meineRollen] };
   }
@@ -4747,8 +4641,9 @@ export class Dienst {
   ereignisStand() { return this.repo.ereignisStand(); }
   /** Wird beim Anlegen eines Ereignisses aufgerufen (der Läufer stellt dann gleich zu). */
   ereignisWecker: (() => void) | null = null;
-  /** Dienstkonten der Pakete (Benutzer-Id → Paket-Id), vom Paket-Läufer gepflegt. */
-  paketKonten = new Map<string, string>();
+  /** Dienstkonten der Pakete (Benutzer-Id → Paket-Id), vom Paket-Läufer gepflegt (Kern). */
+  get paketKonten(): Map<string, string> { return this.kern.paketKonten; }
+  set paketKonten(m: Map<string, string>) { this.kern.paketKonten = m; }
 
   /* ---------- Ereigniskatalog (#670) ---------- */
 
@@ -4756,55 +4651,16 @@ export class Dienst {
   readonly ereignisse = new Ereignisverteiler({ repo: () => this.grundRepo, ruht: () => this.ereignisseRuhen?.() ?? false });
   /** Wartung, Wiederherstellung (vom Start gesetzt): dann verteilt der Katalog nichts. */
   ereignisseRuhen?: () => boolean | Promise<boolean>;
-  /** Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern durch eine Person (vom Start gesetzt: Konten merken es). */
-  beiEigenerAenderung?: (benutzerId: string, mappeId: string) => Promise<void>;
+  /** Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern durch eine Person (vom Start gesetzt, Kern). */
+  get beiEigenerAenderung() { return this.kern.beiEigenerAenderung; }
+  set beiEigenerAenderung(f: ((benutzerId: string, mappeId: string) => Promise<void>) | undefined) { this.kern.beiEigenerAenderung = f; }
 
-  /** `f` im Namen eines bestimmten Auslösers ausführen (#674: eine Automatisierung handelt; Ketten zählen mit). */
-  mitAusloeser<T>(a: EreignisAusloeser, f: () => Promise<T>): Promise<T> { return ereignisKontext.run({ ...ereignisKontext.getStore(), ausloeser: a }, f); }
-  /** `f` ohne Ereignisse ausführen (Import, Beispiel-Mappen, Wiederherstellung – „lösen nichts aus“). */
-  ohneEreignisse<T>(f: () => Promise<T>): Promise<T> { return ereignisKontext.run({ ...ereignisKontext.getStore(), still: true }, f); }
-  /** Wer gerade handelt – aus dem Kontext oder aus dem Konto `von`. */
-  private ausloeser(von: string | null | undefined): EreignisAusloeser {
-    const k = ereignisKontext.getStore()?.ausloeser;
-    if (k) return k;
-    if (!von) return { art: 'system', id: null, konto: null };
-    const paket = this.paketKonten.get(von);
-    return paket ? { art: 'paket', id: paket, konto: von } : { art: 'benutzer', id: von, konto: von };
-  }
+  /** `f` im Namen eines bestimmten Auslösers ausführen (#674); ohne Ereignisse (Import, Beispiele) – Kern. */
+  mitAusloeser<T>(a: EreignisAusloeser, f: () => Promise<T>): Promise<T> { return this.kern.mitAusloeser(a, f); }
+  ohneEreignisse<T>(f: () => Promise<T>): Promise<T> { return this.kern.ohneEreignisse(f); }
 
-  /**
-   * Ein Ereignis des Katalogs (#670) in den Ausgangskorb – in der Transaktion der Änderung, sofern es eine gibt
-   * (dann scheitert beides zusammen), sonst gleich danach; Fehler außerhalb einer Transaktion landen nur im Protokoll.
-   * Nur Ids, Typ, Feldschlüssel und Datum. Demo-Mappen und alles in `ohneEreignisse` lösen nichts aus.
-   */
-  async ereignis(art: KatalogArt, daten: Record<string, unknown>, von?: string | null): Promise<void> {
-    const k = EREIGNISKATALOG[art] as Katalogeintrag;
-    // Still (Demo, Beispiele, Import): nur was Pakete an Dateien verarbeiten (Volltext, Vektoren) – wie vor #724.
-    const still = !!ereignisKontext.getStore()?.still;
-    if (still && (!k.paket || k.mappentyp)) return;
-    const inTx = transaktionen.getStore()?.dienst === this;
-    const ausloeser = this.ausloeser(von);
-    const mappe = typeof daten.mappe === 'string' ? daten.mappe : null;
-    // „Zuletzt geöffnet“ (#940): Was eine Person selbst anlegt oder ändert, zählt wie geöffnet – nach der Antwort.
-    const merken = this.beiEigenerAenderung;
-    if (merken && mappe && !still && ausloeser.art === 'benutzer' && ausloeser.id && ZULETZT_ARTEN.has(art)) {
-      const benutzerId = ausloeser.id;
-      await this.nachDerAntwort(() => merken(benutzerId, mappe).catch((e) => protokoll.modul('ereignisse').warn('„Zuletzt geöffnet“ nicht gemerkt', { fehler: (e as Error).message })));
-    }
-    try {
-      await this.repo.legeKatalogEreignisAn({
-        id: randomUUID(), art, daten, ausloeser: { ...ausloeser, ...(still ? { still: true } : {}) },
-        ...(k.buendelS && mappe ? { buendel: `${art}|${mappe}`, buendelS: k.buendelS } : {}),
-      }, k.buendelS ? (alt) => mischeFelder(alt, daten) : undefined);
-      // #928: Der Verteiler (Automatisierungen, Pakete, Webhooks) teilte sich sonst Datenbank und Rechenzeit mit der
-      // Anfrage, die das Ereignis auslöst; das Ereignis steht schon im Ausgangskorb.
-      if (this.inAnfrage()) void this.nachDerAntwort(this.weckeVerteiler);
-      else this.danach(() => this.ereignisse.wecke());
-    } catch (e) {
-      if (inTx) throw e;
-      protokoll.modul('ereignisse').error('Ereignis nicht gespeichert', { art, fehler: (e as Error).message });
-    }
-  }
+  /** Ein Ereignis des Katalogs (#670) in den Ausgangskorb (Kern). */
+  ereignis(art: KatalogArt, daten: Record<string, unknown>, von?: string | null): Promise<void> { return this.kern.ereignis(art, daten, von); }
 
   /** Aufgabe anlegen und als „etwas ist zu erledigen“ melden (#670). */
   private async neueAufgabe(a: Aufgabe, typ?: string): Promise<Aufgabe> {
@@ -4814,7 +4670,7 @@ export class Dienst {
   }
 
   /** Typ einer Mappe für ein Ereignis (null, wenn es sie nicht mehr gibt). */
-  private async typVon(mappeId: string): Promise<string | null> { return (await this.repo.holeMappe(mappeId))?.typId ?? null; }
+  private typVon(mappeId: string): Promise<string | null> { return this.kern.typVon(mappeId); }
 
   /** Neue Verweise auf andere Mappen (#670: „zu dieser Mappe hin verknüpft“) – je neu verknüpfter Mappe ein Ereignis. */
   private async meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) {
@@ -4888,7 +4744,7 @@ export class Dienst {
    * Transaktion gehört er zur Änderung; sonst landen Fehler nur im Protokoll.
    */
   async auftrag(paket: string, art: Extract<EreignisArt, 'datei.umwandeln' | 'datei.volltext' | 'datei.archivfassung' | 'paket.einstellungen_geaendert'>, daten: Record<string, unknown>): Promise<'gesperrt' | void> {
-    const inTx = transaktionen.getStore()?.dienst === this;
+    const inTx = this.kern.inEigenerTransaktion();
     try {
       const p = (await this.repo.listePakete()).find((x) => x.id === paket && x.laeufer?.ereignisse.includes(art));
       if (!p) return;
@@ -5582,7 +5438,7 @@ export class Dienst {
   async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> {
     // Schreibt zwischen Lesen und Schreiben jemand anderes, noch einmal von vorn (#609). In einer eigenen Transaktion
     // (#743) auch nach einer Verklemmung – die Transaktion ist dann ganz zurückgerollt.
-    const eigene = transaktionen.getStore()?.dienst !== this;
+    const eigene = !this.kern.inEigenerTransaktion();
     for (let versuch = 1; ; versuch++) {
       try {
         const neu = await this.inTransaktion(() => this.aendereMappeEinmal(id, eingabe, benutzerId, z, anlass));
@@ -5957,23 +5813,11 @@ export class Dienst {
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
-  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; post: Mappentyp; systemrollen: Map<Rolle, string>; kontorollen: Map<Kontorolle, string> }>;
-
   /**
-   * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen.
+   * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen (Kern, `system()`).
    * Läuft beim Start und vor jedem Spiegeln; gleichzeitige Aufrufe teilen sich einen Lauf.
    */
-  sichereSystem() {
-    this.sichern ??= this.sichereSystemJetzt().catch((e) => { this.sichern = undefined; throw e; });
-    return this.sichern.then(async (s) => ({
-      // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
-      benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
-      rolle: (await this.repo.holeTyp(s.rolle.id)) ?? s.rolle,
-      post: (await this.repo.holeTyp(s.post.id)) ?? s.post,
-      systemrollen: s.systemrollen,
-      kontorollen: s.kontorollen,
-    }));
-  }
+  sichereSystem(): Promise<SystemIds> { return this.kern.system(); }
 
   /**
    * Ablageort (#168, #883): Seit #883 bringt ihn das Paket Basis mit (`basis:ablageort`); der Kern legt keinen mehr an.
@@ -6967,12 +6811,8 @@ export class Dienst {
 
   /* ---------- Papierkorb (#43) ---------- */
 
-  /** Aufbewahrung in Tagen; 0 = kein Papierkorb (Löschen ist sofort endgültig). */
-  async papierkorbTage(): Promise<number> {
-    if (!this.einstellungen) return 0;
-    const e = (await this.einstellungen.lies('papierkorb')) as { tage?: number } | null;
-    return typeof e?.tage === 'number' ? e.tage : PAPIERKORB_STANDARD_TAGE;
-  }
+  /** Aufbewahrung in Tagen; 0 = kein Papierkorb (Löschen ist sofort endgültig) – Kern. */
+  papierkorbTage(): Promise<number> { return this.kern.papierkorbTage(); }
 
   /** Aufbewahrung ändern. 0 schaltet den Papierkorb aus und leert ihn sofort. */
   async setzePapierkorbTage(eingabe: unknown, von?: string | null): Promise<{ tage: number; geleert: number }> {
@@ -7187,12 +7027,8 @@ export class Dienst {
 
   /* ---------- Löschprotokoll (#470) ---------- */
 
-  /** Wer und warum. Ohne Benutzer: „DMS“ (automatisch). */
-  private async loeschKontext(von: string | null, anlass: Anlass = {}): Promise<LoeschKontext> {
-    const a = liesAnlass({ grund: anlass.grund, text: anlass.text });
-    const ausloeser: Ausloeser = anlass.ausloeser ?? (von ? 'benutzer' : 'automatisch');
-    return { vonId: von, von: von ? await this.name(von) : 'Ablago', ausloeser, grund: a.grund ?? null, grundText: a.text ?? '' };
-  }
+  /** Wer und warum. Ohne Benutzer: „DMS“ (automatisch) – Kern. */
+  private loeschKontext(von: string | null, anlass: Anlass = {}): Promise<LoeschKontext> { return this.kern.loeschprotokoll.kontext(von, anlass); }
 
   /** Lebende Mappen samt Dokumenten (aller Versionen) und Notizen – für Einträge vor dem Löschen. Demo-Mappen bleiben draußen. */
   private async lebendInhalt(mappen: Mappe[]): Promise<ProtokollMappe[]> {
@@ -7217,75 +7053,16 @@ export class Dienst {
     return liste.filter((k) => !k.demo).map((k) => ({ id: k.id, typId: k.typId, typ: typen.get(k.typId), werte: k.werte, notizen: k.notizen, dokumente: k.dokumente, vorgang: k.vorgang }));
   }
 
-  /** Einträge für Mappen und ihre Dokumente. */
-  private mappenEintraege(liste: ProtokollMappe[], x: { schritt: LoeschEintrag['schritt']; weg: Loeschweg; vorgang?: string; startId?: string; verweise?: Record<string, number> }): ProtokollTeil[] {
-    return liste.flatMap((m) => {
-      const nummer = nummerVon(m.typ, m.werte);
-      const vorgang = x.vorgang ?? m.vorgang ?? null;
-      const gemeinsam = { mappeId: m.id, typId: m.typId, typ: m.typ?.name ?? '', nummer, vorgang, startId: vorgang ? (x.startId ?? (m.id === vorgang ? m.id : null)) : null, schritt: x.schritt, weg: x.weg };
-      const dokumente = new Set(m.dokumente.map((d) => d.dokumentId)).size;
-      return [
-        { ...gemeinsam, art: 'mappe' as const, dokumentId: null, archivnummer: null, version: null, sha256: null, groesse: null, mime: null, seiten: null,
-          anzahl: { dokumente, versionen: m.dokumente.length - dokumente, notizen: m.notizen, verweise: x.verweise?.[m.id] ?? 0 } },
-        ...this.dokEintraege(m.dokumente, gemeinsam),
-      ];
-    });
-  }
-
-  private dokEintraege(liste: LoeschDokument[], x: { mappeId: string; typId: string | null; typ: string; nummer: string | null; vorgang: string | null; startId: string | null; schritt: LoeschEintrag['schritt']; weg: Loeschweg }): ProtokollTeil[] {
-    return liste.map((d) => ({ ...x, art: 'dokument' as const, dokumentId: d.dokumentId, archivnummer: d.archivnummer, version: d.version, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.seiten, anzahl: null }));
-  }
-
-  private wiederEintrag(e: PapierkorbEintrag, typ: Mappentyp | undefined, vorgang: string | null): ProtokollTeil {
-    return { art: 'mappe', schritt: 'wiederhergestellt', weg: vorgang ? 'verknuepft' : 'einzeln', mappeId: e.id, typId: e.typId, typ: typ?.name ?? '', nummer: nummerVon(typ, e.werte),
-      archivnummer: null, dokumentId: null, version: null, sha256: null, groesse: null, mime: null, seiten: null, anzahl: null, vorgang, startId: vorgang && e.id === vorgang ? e.id : null };
-  }
-
-  /** Letzter Eintrag „in den Papierkorb“ je Mappen- bzw. Dokument-Id (für Grund, Typ und Nummer beim endgültigen Löschen). */
-  private async letzteSchritte(ids: string[]): Promise<Map<string, LoeschEintrag>> {
-    const r = new Map<string, LoeschEintrag>();
-    for (let i = 0; i < ids.length; i += 500) {
-      const teil = ids.slice(i, i + 500);
-      const { eintraege } = await this.repo.loeschprotokoll({ ids: teil, schritt: 'papierkorb', max: LOESCH_MAX * 5 });
-      // Neueste zuerst: der erste Treffer je Id zählt.
-      for (const e of eintraege) { const k = e.art === 'dokument' ? e.dokumentId! : e.mappeId; if (!r.has(k)) r.set(k, e); }
-    }
-    return r;
-  }
-
-  /** Typ, Nummer und Vorgang der Mappe eines Dokuments – lebend, im Papierkorb oder aus dem Protokoll. */
-  private async mappenInfo(mappeIds: string[], frueher: Map<string, LoeschEintrag>) {
-    const ids = [...new Set(mappeIds)];
-    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const lebend = new Map((await this.repo.holeMappen(ids)).map((m) => [m.id, m] as const));
-    const korb = new Map((await this.repo.papierkorbInhalt(ids.filter((id) => !lebend.has(id)))).map((k) => [k.id, k] as const));
-    return (mappeId: string, dokumentId: string) => {
-      const m = lebend.get(mappeId); const k = korb.get(mappeId); const f = frueher.get(dokumentId);
-      const typId = m?.typId ?? k?.typId ?? f?.typId ?? null;
-      const typ = typId ? typen.get(typId) : undefined;
-      return { mappeId, typId, typ: typ?.name ?? f?.typ ?? '', nummer: m ? nummerVon(typ, m.werte) : k ? nummerVon(typ, k.werte) : f?.nummer ?? null, vorgang: k?.vorgang ?? f?.vorgang ?? null, startId: f?.startId ?? null };
-    };
-  }
-
-  /**
-   * Einträge schreiben. `nachGrund`: Grund und Text vom Schritt „in den Papierkorb“ übernehmen, wenn dieser
-   * Schritt selbst keinen hat (endgültig löschen, Ablauf). Ein Fehler hier macht das Löschen nicht rückgängig,
-   * steht aber im Protokoll.
-   */
-  private async protokolliere(teile: ProtokollTeil[], k: LoeschKontext, nachGrund = false) {
-    if (!teile.length) return;
-    try {
-      const frueher = nachGrund && !k.grund ? await this.letzteSchritte([...new Set(teile.map((t) => (t.art === 'dokument' ? t.dokumentId! : t.mappeId)))]) : new Map<string, LoeschEintrag>();
-      const zeit = new Date().toISOString();
-      await this.repo.loeschprotokollSchreibe(teile.map((t) => {
-        const f = frueher.get(t.art === 'dokument' ? t.dokumentId! : t.mappeId) ?? frueher.get(t.mappeId);
-        return { ...t, id: randomUUID(), zeit, vonId: k.vonId, von: k.von, ausloeser: k.ausloeser, grund: k.grund ?? f?.grund ?? null, grundText: k.grund ? k.grundText : (f?.grundText ?? k.grundText),
-          vorgang: t.vorgang ?? f?.vorgang ?? null, startId: t.startId ?? f?.startId ?? null };
-      }));
-    } catch (e) {
-      protokoll.modul('datenschutz').error('Löschprotokoll nicht geschrieben', { fehler: (e as Error).message, eintraege: teile.length });
-    }
-  }
+  /** Einträge für Mappen und ihre Dokumente (Kern). */
+  private mappenEintraege(liste: ProtokollMappe[], x: Parameters<Loeschprotokoll['mappenEintraege']>[1]): ProtokollTeil[] { return this.kern.loeschprotokoll.mappenEintraege(liste, x); }
+  private dokEintraege(liste: LoeschDokument[], x: Parameters<Loeschprotokoll['dokEintraege']>[1]): ProtokollTeil[] { return this.kern.loeschprotokoll.dokEintraege(liste, x); }
+  private wiederEintrag(e: PapierkorbEintrag, typ: Mappentyp | undefined, vorgang: string | null): ProtokollTeil { return this.kern.loeschprotokoll.wiederEintrag(e, typ, vorgang); }
+  /** Letzter Eintrag „in den Papierkorb“ je Mappen- bzw. Dokument-Id (Kern). */
+  private letzteSchritte(ids: string[]): Promise<Map<string, LoeschEintrag>> { return this.kern.loeschprotokoll.letzteSchritte(ids); }
+  /** Typ, Nummer und Vorgang der Mappe eines Dokuments – lebend, im Papierkorb oder aus dem Protokoll (Kern). */
+  private mappenInfo(mappeIds: string[], frueher: Map<string, LoeschEintrag>) { return this.kern.loeschprotokoll.mappenInfo(mappeIds, frueher); }
+  /** Einträge ins Löschprotokoll schreiben (Kern). */
+  private protokolliere(teile: ProtokollTeil[], k: LoeschKontext, nachGrund = false) { return this.kern.loeschprotokoll.schreibe(teile, k, nachGrund); }
 
   async loeschprotokollJahre(): Promise<number> {
     const e = this.einstellungen ? ((await this.einstellungen.lies('loeschprotokoll')) as { jahre?: number } | null) : null;
@@ -7676,10 +7453,7 @@ export class Dienst {
       { benutzer: leser, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d.archivnummer ?? null, entsperrt: this.entsperrtZu });
   }
 
-  private async liesGanz(sha256: string): Promise<Buffer> {
-    const x = await this.dateien.lies(sha256);
-    return Buffer.isBuffer(x) ? x : Buffer.concat(await x.toArray() as Buffer[]);
-  }
+  private liesGanz(sha256: string): Promise<Buffer> { return this.kern.liesGanz(sha256); }
 
   /** Historie (#394, #393): „weitergegeben mit Stempel ‚…‘, verkleinert (… → …) an …“. */
   private async notiereWeitergabe(mappeId: string, von: string | null, wie: string, plan: GeltenderStempel | null, ausgaben: Ausgabe[]) {
