@@ -20,6 +20,7 @@ import { setzeZeitzone } from '../../shared/src/region';
 import { zielNachAnmeldung } from '../../shared/src/startseite';
 import { darfVerwalten, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import { Verwaltungsanmeldung, verwaltungBeginnen } from './verwaltungsmodus';
+import { abfangen } from './bausteine';
 
 const OHNE_MODUS: Verwaltungsstand = { darf: false, aktiv: false, bis: null, heuteBestaetigt: false, frisch: false, code: false, passwort: true, bereiche: [] };
 
@@ -196,11 +197,12 @@ function Karte({ titel, unter, children }: { titel: string; unter?: string; chil
 function useAbsenden(fn: () => Promise<void>) {
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string>();
-  const absenden = async (e: FormEvent) => {
+  // Fehler stehen im Formular (fehler); abfangen gibt React kein Promise zurück (#1011).
+  const absenden = abfangen(async (e: FormEvent) => {
     e.preventDefault();
     setSendet(true); setFehler(undefined);
-    try { await fn(); } catch (err) { setFehler((err as Error).message); } finally { setSendet(false); }
-  };
+    try { await fn(); } finally { setSendet(false); }
+  }, setFehler);
   return { sendet, fehler, absenden };
 }
 

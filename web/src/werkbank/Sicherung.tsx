@@ -10,6 +10,7 @@ import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
@@ -34,9 +35,11 @@ export function useSicherung(offen: boolean) {
   }, []);
   useEffect(() => {
     if (!offen) return;
-    void laden();
-    addEventListener(GEAENDERT, laden);
-    return () => removeEventListener(GEAENDERT, laden);
+    // laden fängt Fehler selbst ab (fehler); der Ereignis-Handler gibt kein Promise zurück (#1011).
+    const neu = () => void laden();
+    neu();
+    addEventListener(GEAENDERT, neu);
+    return () => removeEventListener(GEAENDERT, neu);
   }, [offen, laden]);
   // Während ein Lauf läuft: jede Sekunde den Fortschritt, am Ende alles neu.
   const laeuft = stand?.lauf?.status === 'laeuft';
@@ -200,11 +203,9 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.sicherung.werkbank')}</p>
-        <h1>{t('werkbank.sicherung.sicherung')}</h1>
-        <p className="leise">{tn('werkbank.sicherung.eine-sicherung-enthaelt-die', { link: <Link to="/werkbank/verschluesselung" className="verweis">{t('werkbank.sicherung.verschluesselung')}</Link>, link2: <a href={handbuch('admin', 'sicherung/')} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.administratorhandbuch')}</a>, hilfe: <Hilfe ort="werkbank.sicherung" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.sicherung.sicherung')} ueber={t('werkbank.sicherung.werkbank')} hilfe="werkbank.sicherung">
+        <p className="leise">{tn('werkbank.sicherung.eine-sicherung-enthaelt-die', { link: <Link to="/werkbank/verschluesselung" className="verweis">{t('werkbank.sicherung.verschluesselung')}</Link>, link2: <a href={handbuch('admin', 'sicherung/')} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.administratorhandbuch')}</a> })}</p>
+      </Kopf>
 
       {!s.zustand.schluessel && <div className="hinweis warn"><p>{tn('werkbank.sicherung.erzeuge-ihn-zuerst-unter', { b: <strong>{t('werkbank.sicherung.ohne-schluessel-keine-sicherung')}</strong> })}</p><Link to="/werkbank/verschluesselung" className="knopf klein">{t('werkbank.sicherung.zur-verschluesselung')}</Link></div>}
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art === 'info' ? 'info' : h.art}`}><p>{h.text}</p>{h.ziel && <Link to={h.ziel} className="knopf klein">{h.knopf}</Link>}</div>)}
@@ -235,9 +236,9 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         {alte.length > 0 && (
           <div className="hinweis info">
             <p>{tn('werkbank.sicherung.zum-wiederherstellen-brauchst-du', { b: <strong>{t('werkbank.sicherung.sicherungen-sind-mit-einem', { anzahl: alte.length })}</strong> })}</p>
-            <div className="knoepfe"><button type="button" className="knopf klein gefahr-rand" disabled={laeuft}
+            <div className="knoepfe"><Knopf groesse="klein" className="gefahr-rand" gesperrt={laeuft}
               onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.alle-sicherungen-mit-frueherem', { anzahl: alte.length }), text: t('werkbank.sicherung.sie-sind-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
-              {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</button></div>
+              {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</Knopf></div>
           </div>
         )}
         {!s.liste.length ? <p className="leise">{tn('werkbank.sicherung.noch-keine-sicherung-im', { span: <span className="mono">{s.zustand.ort.ordner}</span> })}</p> : (
@@ -255,7 +256,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? t('werkbank.sicherung.in-ordnung') : t('werkbank.sicherung.fehler')}</span> : <span className="leise">–</span>}</td>
                 <td className="kurz">
                   {pruefKnopf(x.name, !!(x.meta || x.schlank))}{' · '}
-                  <button type="button" className="textknopf" disabled={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</button>
+                  <Knopf art="link" gesperrt={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
                 </td>
               </tr>
             ))}</tbody>
@@ -269,7 +270,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} notfallblatt={s.zustand.notfallblatt.aktuell} gespeichert={() => void z.laden()} />
 
       <section className="blatt" id="speicher">
-        <h2 className="h3">{tn('werkbank.sicherung.speicherplatz', { hilfe: <Hilfe ort="sicherung.speicher" /> })}</h2>
+        <h2 className="h3">{t('werkbank.sicherung.speicherplatz')} <Hilfe ort="sicherung.speicher" /></h2>
         <dl className="eigenschaften">
           <dt>{t('werkbank.sicherung.dokumente-und-dateien-heute')}</dt><dd>{t('werkbank.sicherung.dateien', { bytes: bytes(s.speicher.dateienBytes), dateien: s.speicher.dateien.toLocaleString(gebietsschema()) })}</dd>
           <dt>{t('werkbank.sicherung.datenbank-heute')}</dt><dd>{bytes(s.speicher.datenbankBytes)}</dd>
@@ -281,7 +282,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       </section>
 
       <section className="blatt" id="ort">
-        <h2 className="h3">{tn('werkbank.sicherung.speicherort', { hilfe: <Hilfe ort="sicherung.ort" /> })}</h2>
+        <h2 className="h3">{t('werkbank.sicherung.speicherort')} <Hilfe ort="sicherung.ort" /></h2>
         <dl className="eigenschaften">
           <dt>{t('werkbank.sicherung.ordner')}</dt><dd className="mono">{s.zustand.ort.ordner}</dd>
           <dt>{t('werkbank.sicherung.eigenes-volume')}</dt><dd>{s.zustand.ort.volume === null ? t('werkbank.sicherung.nicht-feststellbar') : s.zustand.ort.volume ? t('werkbank.sicherung.ja') : t('werkbank.sicherung.nein')}</dd>
@@ -309,7 +310,7 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
   }
   return (
     <form className="blatt" id="zeitplan" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-      <h2 className="h3">{tn('werkbank.sicherung.zeitplan-und-aufbewahrung', { hilfe: <Hilfe ort="sicherung.zeitplan" /> })}</h2>
+      <h2 className="h3">{t('werkbank.sicherung.zeitplan-und-aufbewahrung')} <Hilfe ort="sicherung.zeitplan" /></h2>
       <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>{t('werkbank.sicherung.automatisch-sichern')}</span></label>
       {/* Herunterladen nur unter Verschlüsselung (#993): hier ein Link dorthin. */}
       {!notfallblatt && !p.aktiv && <p className="leise klein">{tn('werkbank.sicherung.erst-einschaltbar-wenn-du', { link: <Link to={NOTFALLBLATT_SEITE} className="knopf klein">{t('werkbank.sicherung.zum-notfallblatt')}</Link> })}</p>}
@@ -364,7 +365,7 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
   return (
     <form className="blatt" id="probe" onKeyDown={ent.tasten}
       onSubmit={(x) => { x.preventDefault(); setSendet(true); void tu(() => api.probePlan(plan), t('werkbank.sicherung.gespeichert')).finally(() => setSendet(false)); }}>
-      <h2 className="h3">{tn('werkbank.sicherung.probe-wiederherstellung', { hilfe: <Hilfe ort="sicherung.probe" /> })}</h2>
+      <h2 className="h3">{t('werkbank.sicherung.probe-wiederherstellung')} <Hilfe ort="sicherung.probe" /></h2>
       <p>{t('werkbank.sicherung.spielt-die-neueste-sicherung')}</p>
       <dl className="eigenschaften">
         <dt>{t('werkbank.sicherung.ampel')}</dt><dd>{stand.ampel ? <span className={`chip ${AMPEL[stand.ampel][0]}`}>{AMPEL[stand.ampel][1]}</span> : <span className="leise">{t('werkbank.sicherung.noch-keine-sicherung')}</span>}</dd>

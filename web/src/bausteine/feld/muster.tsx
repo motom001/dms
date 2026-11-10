@@ -24,6 +24,7 @@ export function FeldMuster() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('lena@example.org');
   const [plz, setPlz] = useState('0106');
+  const [rueckfrage, setRueckfrage] = useState('lena@');
   const [gelesen, setGelesen] = useState(false);
   const [tage, setTage] = useState<string[]>(['mi']);
   const tag = (k: string) => (
@@ -51,6 +52,13 @@ export function FeldMuster() {
       <Karte zustand="fehler" titel={t('oberflaeche.muster.zustand.fehler')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.plz')} fehler={PLZ.test(plz) ? null : t('oberflaeche.muster.fehler.plz')}>
           <input type="text" inputMode="numeric" autoComplete="off" value={plz} onChange={(e) => setPlz(e.target.value)} />
+        </Feld>
+      </Karte>
+      {/* Fehler steht direkt unter der Eingabe, der Hinweis danach (Prüfung Qualität zu #967). */}
+      <Karte zustand="fehler-hinweis" titel={t('oberflaeche.muster.zustand.fehler-hinweis')}>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.email')} hinweis={t('oberflaeche.muster.hinweis.email')}
+          fehler={/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(rueckfrage) ? null : t('oberflaeche.muster.fehler.email')}>
+          <input type="email" autoComplete="off" value={rueckfrage} onChange={(e) => setRueckfrage(e.target.value)} />
         </Feld>
       </Karte>
       <Karte zustand="gesperrt" titel={t('oberflaeche.muster.zustand.gesperrt')}>

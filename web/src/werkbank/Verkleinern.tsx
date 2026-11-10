@@ -60,7 +60,7 @@ export function GrossePdfsVerkleinern() {
 
   return (
     <section className="blatt" id="verkleinern">
-      <h2 className="h3">{tn('werkbank.verkleinern.grosse-pdfs-verkleinern', { hilfe: <Hilfe ort="werkbank.verkleinern" /> })}</h2>
+      <h2 className="h3">{t('werkbank.verkleinern.grosse-pdfs-verkleinern')} <Hilfe ort="werkbank.verkleinern" /></h2>
       <p className="leise klein">{t('werkbank.verkleinern.gescannte-und-fotografierte-pdfs')}</p>
       <div className="zeile-umbruch">
         <label className="inline">{t('werkbank.verkleinern.ab')}{' '}<select value={ab} onChange={(x) => setAb(Number(x.target.value))}>{ABS.map((a) => <option key={a} value={a}>{t('werkbank.verkleinern.mb', { a })}</option>)}</select></label>
@@ -129,7 +129,7 @@ export function AutomatischVerkleinern() {
   }
   return (
     <form className="blatt" id="automatisch-verkleinern" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-      <h2 className="h3">{tn('werkbank.verkleinern.neue-pdfs-automatisch-verkleinern-2', { hilfe: <Hilfe ort="werkbank.verkleinern" /> })}</h2>
+      <h2 className="h3">{t('werkbank.verkleinern.neue-pdfs-automatisch-verkleinern-2')} <Hilfe ort="werkbank.verkleinern" /></h2>
       <label className="haken"><input type="checkbox" checked={e.automatisch} onChange={(x) => setE({ ...e, automatisch: x.target.checked })} />
         <span>{tn('werkbank.verkleinern.neue-pdfs-beim-ablegen', { span: <span className="leise klein">{t('werkbank.verkleinern.hochladen-eingangsordner-postfaecher')}</span> })}</span></label>
       <div className="raster">

@@ -8,7 +8,8 @@ import s from './Feld.module.css';
 /**
  * Feldrahmen (#967): umschließt genau ein Eingabeelement und setzt alles, was jedes Feld braucht – Beschriftung mit
  * `htmlFor`, Hilfesymbol an der Beschriftung, Hinweis, Fehlermeldung, `aria-invalid` und `aria-describedby`.
- * Reihen wie im Musterkatalog (#801): Beschriftung, Eingabe, Hinweis, Fehler. Anleitung im Entwicklerhandbuch,
+ * Reihen wie im Musterkatalog (#801, C4): Beschriftung, Eingabe, Fehler, Hinweis – der Fehler steht direkt unter der
+ * Eingabe, wo der Blick ist; ein langer Hinweis schiebt ihn so nicht weg. Anleitung im Entwicklerhandbuch,
  * „Gestaltung und Bausteine → Feld“.
  *
  * Benannte Varianten statt Schalter: `Feld` (Beschriftung über der Eingabe), `HakenFeld` (ein Haken, Beschriftung
@@ -82,15 +83,18 @@ function Kopf({ text, optional, hilfe, fuer, textId, className }: { text: ReactN
   );
 }
 
-/** Hinweis- und Fehlerreihe. Der Fehlerbereich steht immer da (aria-live), damit eine neue Meldung angesagt wird. */
+/**
+ * Fehler- und Hinweisreihe: erst der Fehler, dann der Hinweis – so wie sie auch vorgelesen werden (`aria-describedby`:
+ * Fehler vor Hinweis). Der Fehlerbereich steht immer da (aria-live), damit eine neue Meldung angesagt wird.
+ */
 function Unterzeilen({ hinweis, fehler, hinweisId, fehlerId }: Pick<Gemeinsam, 'hinweis' | 'fehler'> & { hinweisId: string; fehlerId: string }) {
   const h = hinweise(hinweis);
   return (
     <>
-      {h.length > 0 && <div id={hinweisId} className={s.hinweis}>{h.map((x, i) => <span key={i}>{x}</span>)}</div>}
       <p id={fehlerId} className={s.fehler} aria-live="polite">
         {vorhanden(fehler) && <><Symbol name="warnung" className={s.fehlersymbol} />{fehler}</>}
       </p>
+      {h.length > 0 && <div id={hinweisId} className={s.hinweis}>{h.map((x, i) => <span key={i}>{x}</span>)}</div>}
     </>
   );
 }

@@ -9,6 +9,7 @@ import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
+import { Kopf } from './Kopf';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
 
@@ -46,11 +47,9 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
   const zahl = (wert: number, f: (n: number) => void, min: number, id: string) => <input id={id} type="number" min={min} value={wert} onChange={(x) => f(Number(x.target.value))} />;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.anmeldeschutz.werkbank')}</p>
-        <h1>{t('werkbank.anmeldeschutz.anmeldeschutz')}</h1>
-        <p className="leise">{tn('werkbank.anmeldeschutz.nach-zu-vielen-falschen', { code: <code>{s.deineIp}</code>, hilfe: <Hilfe ort="werkbank.anmeldeschutz" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.anmeldeschutz.anmeldeschutz')} ueber={t('werkbank.anmeldeschutz.werkbank')} hilfe="werkbank.anmeldeschutz">
+        <p className="leise">{tn('werkbank.anmeldeschutz.nach-zu-vielen-falschen', { code: <code>{s.deineIp}</code> })}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.anmeldeschutz.je-e-mail-adresse')}</h2>
@@ -159,7 +158,7 @@ function ZweifaktorPflichtBlatt() {
   }
   return (
     <div className="blatt">
-      <h2 className="h3">{tn('werkbank.anmeldeschutz.zwei-faktor-anmeldung', { hilfe: <Hilfe ort="werkbank.zweifaktor" /> })}</h2>
+      <h2 className="h3">{t('werkbank.anmeldeschutz.zwei-faktor-anmeldung')} <Hilfe ort="werkbank.zweifaktor" /></h2>
       <p className="leise">{t('werkbank.anmeldeschutz.jeder-kann-sie-unter')}</p>
       {!p ? !meldung && <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p> : <>
         <label className="haken"><input id="zf-admin" type="checkbox" checked={p.admin} disabled={sendet} onChange={(x) => void setze({ admin: x.target.checked })} /><span>{t('konten.verwaltende.zweifaktor.pflicht')}</span></label>
@@ -199,7 +198,7 @@ function AnbieterBlatt() {
   );
   return (
     <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-      <h2 className="h3">{tn('werkbank.anmeldeschutz.anmeldung-ueber-einen-anbieter-2', { hilfe: <Hilfe ort="werkbank.anbieter" /> })}</h2>
+      <h2 className="h3">{t('werkbank.anmeldeschutz.anmeldung-ueber-einen-anbieter-2')} <Hilfe ort="werkbank.anbieter" /></h2>
       <p className="leise">{t('werkbank.anmeldeschutz.anmelden-mit-dem-konto')}</p>
       <p className="klein">{tn('werkbank.anmeldeschutz.beim-anbieter-als-weiterleitungs', { code: <code className="mono">{stand.rueckkehr}</code>, umbruch: <br />, code2: <code className="mono">{stand.abmeldenZurueck}</code> })}</p>
       <div className="raster">

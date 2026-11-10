@@ -8,7 +8,8 @@ import { datumText } from '../../../shared/src/archiv';
 import { titelOder } from '../seiten';
 import { mitGrund } from '../ablage/Loeschgrund';
 import { fortschrittText } from '../../../shared/src/auftrag';
-import { t, tn } from '../sprache';
+import { t } from '../sprache';
+import { Kopf } from './Kopf';
 
 /** Werkbank → Aufbewahrung abgelaufen (#212, bis #725 „Darf weg“): Mappen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. */
 
@@ -46,11 +47,9 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
   }
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.archiv.werkbank')}</p>
-        <h1>{t('werkbank.archiv.aufbewahrung-abgelaufen')}</h1>
-        <p className="leise">{tn('werkbank.archiv.mappen-aus-mappentypen-im', { hilfe: <Hilfe ort="werkbank.aufbewahrung" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.archiv.aufbewahrung-abgelaufen')} ueber={t('werkbank.archiv.werkbank')} hilfe="werkbank.aufbewahrung">
+        <p className="leise">{t('werkbank.archiv.mappen-aus-mappentypen-im')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {!z.liste ? <p className="leise">{t('werkbank.archiv.lade')}</p> : !liste.length && <p className="leise">{t('werkbank.archiv.nichts-keine-frist-ist')}</p>}
@@ -82,7 +81,7 @@ export function DateienPruefen() {
     ? auftrag.ergebnis as { dateien: number; abweichungen: Array<{ sha256: string; grund: string; dokumente: Array<{ name: string; mappeId: string; version: number }> }> } : null;
   return (
     <section className="blatt" id="dateien">
-      <h2 className="h3">{tn('werkbank.archiv.alle-dateien-pruefen', { hilfe: <Hilfe ort="werkbank.dateienpruefen" /> })}</h2>
+      <h2 className="h3">{t('werkbank.archiv.alle-dateien-pruefen')} <Hilfe ort="werkbank.dateienpruefen" /></h2>
       <p className="leise">{t('werkbank.archiv.liest-jede-gespeicherte-datei')}</p>
       <div className="knoepfe"><Knopf art="haupt" laeuft={auftrag?.status === 'laeuft'} onClick={async () => setAuftrag(await api.dateienPruefen())}>{t('werkbank.archiv.jetzt-pruefen')}</Knopf></div>
       {/* Fortschritt und Ergebnis unter dem Knopf (#986): darüber verschiebt sich nichts. */}

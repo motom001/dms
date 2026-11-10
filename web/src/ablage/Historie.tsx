@@ -346,7 +346,7 @@ export interface Listeneintrag {
  */
 export function Eintragsliste({ eintraege }: { eintraege: Listeneintrag[] }) {
   const [alleOffen, setAlleOffen] = useState<boolean | null>(null);
-  const aufklappbar = eintraege.some((x) => x.inhalt);
+  const aufklappbar = eintraege.some((x) => Boolean(x.inhalt));
   return (
     <>
       {aufklappbar && (

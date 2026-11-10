@@ -312,7 +312,7 @@ In addition there are domain areas from earlier issues (`anmeldung`, `automatisi
 
 **Composite keys** (`werkbank.gruppe.${g}`) go through `t.frei(…)` instead of `t(…)`. They escape the type check; the check in CI counts every key with the fixed prefix (`werkbank.gruppe.`) as used. Where you can, write keys out in full.
 
-**Checks in CI** (run with `npm test`, locally in the `server` folder with `node --import tsx --test test/<file>`):
+**Checks in CI** (run with `npm test`, locally in the `server` folder with `node --import tsx --import ./test/lader.mjs --test test/<file>`, see [Getting started](loslegen.md)):
 
 - `sprachdateien.test.ts`: keys the code asks for but that don't exist; keys nobody uses; languages that leave out keys or have extra ones; placeholders that differ between languages; **placeholders a call doesn't supply** (`t('…', { nam })` for `{name}`); plurals without `_other`; empty texts.
 - `sprachdateien-fest.test.ts`: **fixed texts in the interface** – text between tags, in visible attributes (`title`, `aria-label`, `placeholder`, `titel` …) and as a value in curly braces. What stays the same in every language (product names, commands in `<code>`, example addresses) is allowed; further exceptions are listed with a reason in `AUSNAHMEN` in the test file.

@@ -792,7 +792,7 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   const elemente = s.getByRole('region', { name: 'Elemente' });
-  for (const b of ['typen', 'sichten', 'benutzer', 'designs', 'automatisierungen', 'nummernkreise', 'postfaecher', 'auskuenfte']) {
+  for (const b of ['typen', 'sichten', 'benutzer', 'designs', 'automatisierungen', 'nummernkreise', 'postfaecher', 'auskuenfte', 'stempel']) {
     await s.goto(BASIS + `/werkbank/${b}`);
     await elemente.getByRole('heading', { level: 1 }).first().waitFor();
     await s.waitForLoadState('networkidle');
@@ -802,6 +802,56 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   // Die Erkennung selbst: In der Werkbank stehen mindestens Mappentypen, Ansichten, Benutzer und Designs.
   assert.ok(gefunden.filter((x) => x.startsWith('Werkbank')).length >= 4, `Zu wenige Anlege-Knöpfe gefunden: ${gefunden.join(' | ')}`);
   assert.ok(gefunden.some((x) => x.startsWith('Ablage')), 'Kein „+ Neu“ in der Ablage gefunden');
+});
+
+/* ---------- Seiten-Hilfe hinter der Überschrift (#985) ---------- */
+
+/**
+ * Hilfesymbole in den Seitenköpfen (#985): Texte der Köpfe (Beschreibung unter h1 bzw. Abschnitts-h2) enthalten kein
+ * „?“ mehr – es steht direkt hinter der Überschrift. Rückgabe: Köpfe mit „?“ in der Überschrift und die mit „?“ im Text.
+ */
+async function kopfHilfen(s) {
+  return s.evaluate(() => {
+    const koepfe = [...document.querySelectorAll('.mappenkopf, .teilkopf, .listenkopf')].filter((k) => k.getClientRects().length > 0);
+    const name = (k) => (k.querySelector('h1, h2')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    return {
+      inUeberschrift: koepfe.filter((k) => k.querySelector(':is(h1, h2) > .hilfesymbol')).map(name),
+      imText: koepfe.filter((k) => [...k.querySelectorAll('.hilfesymbol')].some((h) => !h.parentElement?.matches('h1, h2'))).map(name),
+    };
+  });
+}
+
+// Alle Bereiche der Werkbank (shared/src/werkbankansicht.ts) und was die Leiste darüber hinaus zeigt, dazu Seiten, die
+// erst beim Anlegen einen Kopf mit Beschreibung zeigen.
+// Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
+rauchtest('Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des Kopfs (#985)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.waitForURL(/\/werkbank/);
+  const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
+  await bereiche.getByRole('link').first().waitFor();
+  const alle = ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'benutzer', 'verschluesselung', 'auskuenfte', 'loeschkonzept',
+    'aufbewahrung', 'stempel', 'postfaecher', 'eingangsordner', 'webdav', 'webhooks', 'texterkennung', 'sicherung', 'vollexport', 'papierkorb',
+    'betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']
+    .map((b) => `/werkbank/${b}`);
+  const leiste = await bereiche.evaluate((b) => [...b.querySelectorAll('a[href^="/werkbank/"]')].map((a) => a.getAttribute('href').split(/[?#]/)[0]));
+  const wege = [...new Set([...alle, ...leiste, '/werkbank/stempel/neu', '/werkbank/auskuenfte/neu'])];
+  const imText = [];
+  const mitHilfe = [];
+  for (const weg of wege) {
+    await s.goto(BASIS + weg);
+    await s.getByRole('heading', { level: 1 }).first().waitFor();
+    await s.waitForLoadState('networkidle');
+    const r = await kopfHilfen(s);
+    imText.push(...r.imText.map((x) => `${weg}: ${x}`));
+    mitHilfe.push(...r.inUeberschrift.map((x) => `${weg}: ${x}`));
+  }
+  assert.deepEqual(imText, [], `Hilfesymbol im Text eines Seitenkopfs statt hinter der Überschrift:\n${imText.join('\n')}`);
+  // Die Erkennung selbst: Eingangsordner, WebDAV, Webhooks und Stempel haben ihre Hilfe hinter der Überschrift.
+  for (const weg of ['/werkbank/eingangsordner', '/werkbank/webdav', '/werkbank/webhooks', '/werkbank/stempel/neu']) {
+    if (wege.includes(weg)) assert.ok(mitHilfe.some((x) => x.startsWith(`${weg}: `)), `Keine Hilfe hinter der Überschrift auf ${weg}: ${mitHilfe.join(' | ')}`);
+  }
+  assert.ok(wege.length >= 20, `Zu wenige Bereiche der Werkbank gefunden: ${wege.join(' ')}`);
 });
 
 // Eingangsordner (#986): „Jetzt prüfen“ steht unten im Block „Einstellungen“; das Ergebnis erscheint direkt unter dem

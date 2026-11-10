@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { zielProblem, type WebhookWerkbank } from '../../../shared/src/webhook';
 import { api } from '../api';
-import { Hilfe } from '../Hilfe';
 import { Abgeschaltet, ErgebnisZeile } from '../profil/Webhooks';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
+import { Knopf } from '../bausteine';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Webhooks (#627): freigegebene Ziele (nur dorthin dürfen Benutzer melden lassen), alle Webhooks mit
@@ -40,11 +41,9 @@ export function WebhooksPanel({ z }: { z: WebhooksZustand }) {
   }
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.webhooks.werkbank')}</p>
-        <h1>{t('webhook.werkbank.titel')}</h1>
-        <p className="leise">{t('webhook.werkbank.text')} <Hilfe ort="werkbank.webhooks" /></p>
-      </div>
+      <Kopf titel={t('webhook.werkbank.titel')} ueber={t('werkbank.webhooks.werkbank')} hilfe="werkbank.webhooks">
+        <p className="leise">{t('webhook.werkbank.text')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <form className="blatt" onSubmit={(e) => { e.preventDefault(); if (!problem) void aktion(async () => { const r = await api.werkbankWebhookZiele(zeilen); setZiele(r.ziele.join('\n')); }, t('webhook.werkbank.ziele.gespeichert')); }}>
         <h2 className="h3">{t('webhook.werkbank.ziele')}</h2>
@@ -69,9 +68,9 @@ export function WebhooksPanel({ z }: { z: WebhooksZustand }) {
                 <Abgeschaltet w={w} />
                 <span className="zeilenaktionen">
                   <button type="button" className="textknopf" onClick={() => void aktion(() => api.werkbankWebhookSchalten(w.id, !w.aktiv))}>{w.aktiv ? t('webhook.ausschalten') : t('webhook.einschalten')}</button>
-                  <button type="button" className="textknopf gefahr" onClick={async () => {
+                  <Knopf art="link" className="gefahr" onClick={async () => {
                     if (await rueckfrage({ titel: t('webhook.loeschen.frage', { name: w.name }), text: t('webhook.loeschen.folge'), ja: t('webhook.loeschen'), gefahr: true })) void aktion(() => api.werkbankWebhookLoeschen(w.id));
-                  }}>{t('webhook.loeschen')}</button>
+                  }}>{t('webhook.loeschen')}</Knopf>
                 </span>
               </li>
             ))}

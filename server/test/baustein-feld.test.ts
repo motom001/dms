@@ -5,13 +5,9 @@
  * `Eingabe` der Paket-Einstellungen.
  */
 import assert from 'node:assert/strict';
-import { register } from 'node:module';
 import { describe, it } from 'node:test';
 import React, { createElement as h, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-
-// CSS Modules der Bausteine und tokens.css?raw (design.ts) wie in Vite laden.
-register(new URL('./css-roh-lader.mjs', import.meta.url));
 
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
@@ -67,6 +63,19 @@ describe('Baustein Feld (#967)', () => {
     assert.doesNotMatch(html, /role="alert"/);
   });
 
+  it('Reihenfolge: Beschriftung · Eingabe · Fehler · Hinweis – der Fehler direkt unter der Eingabe (Prüfung Qualität zu #967)', () => {
+    for (const art of [Feld, HakenFeld]) {
+      const html = zeichne(h(art, { beschriftung: 'E-Mail-Adresse', hinweis: 'An diese Adresse schickt Ablago Erinnerungen.', fehler: 'Bitte eine vollständige Adresse eingeben.' }, h('input', { id: 'mail', type: art === Feld ? 'email' : 'checkbox', readOnly: true })));
+      const eingabe = html.indexOf('<input');
+      const fehler = html.indexOf('id="mail-fehler"');
+      const hinweis = html.indexOf('id="mail-hinweis"');
+      assert.ok(eingabe >= 0 && eingabe < fehler && fehler < hinweis, `Eingabe vor Fehler vor Hinweis: ${html}`);
+      assert.equal(attr(html, INPUT, 'aria-describedby'), 'mail-fehler mail-hinweis', 'vorgelesen wie sichtbar');
+    }
+    const gruppe = zeichne(h(FeldGruppe, { beschriftung: 'Wochentage', hinweis: 'An diesen Tagen.', fehler: 'Bitte einen Tag wählen.' }, h('span', null, 'Mo')));
+    assert.ok(gruppe.search(/ id="[^"]+-fehler"/) < gruppe.search(/ id="[^"]+-hinweis"/), 'auch in der Gruppe');
+  });
+
   it('id des Rahmens geht vor; als Funktion bekommt die Eingabe die Verknüpfung selbst', () => {
     let bekommen: Record<string, unknown> = {};
     const eingabe = (v: Record<string, unknown>) => { bekommen = v; return h('input', v); };
@@ -106,13 +115,20 @@ describe('Paket-Einstellungen mit dem Feldrahmen (#967)', () => {
   const feld = (f: Record<string, unknown>, wert: unknown, fehler?: string) =>
     zeichne(h(Eingabe, { f: { schluessel: 'x', name: 'Grenze', ...f }, wert, fehler, auswahl, id: 'pe-x', setze: nichts }));
 
-  it('Text: Beschriftung, Hinweis und Fehler vom Server verknüpft; Pflicht-Stern nur sichtbar', () => {
+  it('Text: Beschriftung, Hinweis und Fehler vom Server verknüpft; Pflicht ohne Sternchen (Muster A6)', () => {
     const html = feld({ typ: 'text', pflicht: true, hilfe: 'Steht über jeder Mappe.' }, '', 'Bitte ausfüllen.');
     assert.equal(attr(html, LABEL, 'for'), 'pe-x');
     assert.equal(attr(html, INPUT, 'id'), 'pe-x');
     assert.equal(attr(html, INPUT, 'aria-invalid'), 'true');
     assert.equal(attr(html, INPUT, 'aria-describedby'), 'pe-x-fehler pe-x-hinweis');
-    assert.match(html, /Grenze<span aria-hidden="true"> \*<\/span>/);
+    assert.match(html, /<label[^>]*>Grenze<\/label>/, 'Pflicht ist der Normalfall: kein „*“, kein „(optional)“');
+    assert.doesNotMatch(html, /\*/);
+  });
+
+  it('ohne pflicht: „(optional)“ hinter der Beschriftung, beim Haken nicht', () => {
+    assert.match(feld({ typ: 'text' }, ''), /<label[^>]*>Grenze<span[^>]*> \(optional\)<\/span><\/label>/);
+    assert.match(feld({ typ: 'mehrfachauswahl', optionen: ['Mo'] }, []), /Grenze<span[^>]*> \(optional\)<\/span>/);
+    assert.doesNotMatch(feld({ typ: 'janein' }, false), /optional/);
   });
 
   it('Zahl außerhalb von min/max: die Meldung kommt über den Rahmen', () => {

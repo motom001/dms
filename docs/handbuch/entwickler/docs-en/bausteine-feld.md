@@ -2,7 +2,7 @@
 
 `Feld` (field) is the frame around every input (#967). It sets the label, hint, error message and help icon and links them for screen readers – so that every field looks the same and says the same way what is wrong and where to find help.
 
-![“Field” section of the pattern page: empty, filled, with hint and help, optional, error, disabled, read only, drop-down list, multi-line, checkbox, group](bilder/muster-feld.png){ loading=lazy }
+![“Field” section of the pattern page: empty, filled, with hint and help, optional, error, error with hint, disabled, read only, drop-down list, multi-line, checkbox, group](bilder/muster-feld.png){ loading=lazy }
 
 ## Structure { #aufbau }
 
@@ -10,8 +10,8 @@ Every field uses the same rows (basic rule “form rows” in the pattern catalo
 
 1. **Label** – short, without a colon; followed if needed by **“(optional)”** and the **help icon** “?”.
 2. **Input** – text box, drop-down list, multi-line box …; a checkbox sits in this row together with its label.
-3. **Hint** – a permanent explanation in quiet type. For a checkbox, its description goes here.
-4. **Error** – what is wrong and how to put it right, in the error colour with a warning icon.
+3. **Error** – what is wrong and how to put it right, in the error colour with a warning icon. It sits directly below the input, where the eye is: a long hint cannot push it away – on a phone not under the keyboard either – and the visible order is the same as the order read aloud.
+4. **Hint** – a permanent explanation in quiet type. For a checkbox, its description goes here.
 
 ```tsx
 import { Feld, HakenFeld, FeldGruppe } from '../bausteine';
@@ -48,6 +48,7 @@ If the input does not take the links as props (its own component that passes the
 | mouse over | – | border in `--leise` (not when disabled or read only) |
 | keyboard focus | – | border and focus ring in `--akzent` |
 | error | `fehler` set | border and message in `--schlecht`, warning icon; the focus ring then also in `--schlecht` |
+| error with hint | `fehler` and `hinweis` set | message directly below the input, the hint below it |
 | disabled | `disabled` on the input | surface `--senke`, text `--leise`, no hover |
 | read only | `readOnly` on the input | surface `--senke`, dashed border, text easy to read and select |
 | optional | `optional` | “(optional)” in `--leise` after the label |
@@ -70,10 +71,10 @@ If the input does not take the links as props (its own component that passes the
 
 ## Behaviour { #verhalten }
 
-- **Required is the normal case** and is not marked; voluntary fields get `optional`. (The package settings keep their “*” from the manifest for now.)
+- **Required is the normal case** and is not marked; voluntary fields get `optional`. This also applies to package settings: fields without `pflicht` in the manifest show “(optional)”; there is no asterisk.
 - **Only show errors when they are right:** after saving or once the input is definitely wrong – not on the first keystroke in an empty field.
 - **The message says how to put it right:** “Please enter exactly five digits.” instead of “Invalid”.
-- **The hint stays** when an error is added; the error goes below it.
+- **The hint stays** when an error is added; the error goes above it, directly below the input (state “Error with hint” on the pattern page).
 - **The help icon opens the matching place in the manual** of the installed version in a new tab (component `Hilfe`).
 
 ## Accessibility { #barrierefreiheit }

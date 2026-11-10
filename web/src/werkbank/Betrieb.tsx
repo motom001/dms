@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type BetriebAnsicht } from '../api';
 import { MailVersand } from './MailVersand';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Hilfe } from '../Hilfe';
 import { t, tn } from '../sprache';
+import { abfangen } from '../bausteine';
+import { Kopf } from './Kopf';
 
 /**
  * E-Mail-Versand und Adresse des DMS (#37) – früher Umgebungsvariablen (SMTP_*, APP_URL),
@@ -25,11 +26,9 @@ export function BetriebPanel({ b }: { b: BetriebZustand }) {
   if (!b.stand) return <p className="leise">{t('werkbank.betrieb.lade')}</p>;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.betrieb.werkbank')}</p>
-        <h1>{t('werkbank.betrieb.e-mail-und-adresse')}</h1>
-        <p className="leise">{tn('werkbank.betrieb.wie-ablago-e-mails', { hilfe: <Hilfe ort="werkbank.betrieb" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.betrieb.e-mail-und-adresse')} ueber={t('werkbank.betrieb.werkbank')} hilfe="werkbank.betrieb">
+        <p className="leise">{t('werkbank.betrieb.wie-ablago-e-mails')}</p>
+      </Kopf>
       <Adresse b={b} />
       {/* #813: Adresse und Passwort genügen; Vorschläge, Server finden, Erweitert, OAuth. */}
       <MailVersand key={JSON.stringify(b.stand.mail)} b={b} />
@@ -48,7 +47,7 @@ function Adresse({ b }: { b: BetriebZustand }) {
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   return (
-    <form className="blatt" id="adresse" onSubmit={speichern} onKeyDown={ent.tasten}>
+    <form className="blatt" id="adresse" onSubmit={abfangen(speichern, (text) => setMeldung({ art: 'schlecht', text }))} onKeyDown={ent.tasten}>
       <h2 className="h3">{t('werkbank.betrieb.adresse-von-ablago')}</h2>
       <p className="leise">{tn('werkbank.betrieb.unter-dieser-adresse-oeffnen', { span: <span className="mono">{'https://'}</span> })}</p>
       <label className="eigenschaft"><span>{tn('werkbank.betrieb.adresse', { klein: <small>{t('werkbank.betrieb.z-b-http-nas')}</small> })}</span>

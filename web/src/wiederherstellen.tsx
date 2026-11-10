@@ -36,8 +36,9 @@ export function Wiederherstellungsbildschirm({ fertig }: { fertig: () => void })
   const [weg, setWeg] = useState(false);
   useEffect(() => {
     let aus = false;
-    const hole = () => api.whStatus().then((s) => { if (aus) return; setWeg(false); setLauf(s.lauf); setAbschluss(s.abschluss); }, () => { if (!aus) setWeg(true); });
-    void hole();
+    // Fehler fängt hole selbst ab (weg); der Takt bekommt kein Promise zurück (#1011).
+    const hole = () => { void api.whStatus().then((s) => { if (aus) return; setWeg(false); setLauf(s.lauf); setAbschluss(s.abschluss); }, () => { if (!aus) setWeg(true); }); };
+    hole();
     const timer = setInterval(hole, 1000);
     return () => { aus = true; clearInterval(timer); };
   }, []);

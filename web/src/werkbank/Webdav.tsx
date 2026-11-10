@@ -4,6 +4,7 @@ import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → WebDAV-Laufwerk (#346, Stufe 1): an/aus (Standard aus), Stempel beim Lesen und „nur lesend“ (#722), Adresse zum Einbinden,
@@ -43,11 +44,9 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
   }
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.webdav.werkbank')}</p>
-        <h1>{t('werkbank.webdav.webdav-laufwerk')}</h1>
-        <p className="leise">{tn('werkbank.webdav.die-ablage-als-laufwerk', { hilfe: <Hilfe ort="werkbank.webdav" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.webdav.webdav-laufwerk')} ueber={t('werkbank.webdav.werkbank')} hilfe="werkbank.webdav">
+        <p className="leise">{t('werkbank.webdav.die-ablage-als-laufwerk')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {!s.https && <div className="hinweis warn"><p>{tn('werkbank.webdav.die-adresse-von-ablago', { code: <code>{'https://'}</code> })}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>

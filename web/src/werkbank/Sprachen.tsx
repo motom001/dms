@@ -7,6 +7,7 @@ import { rueckfrage } from '../rueckfrage';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t } from '../sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Einstellungen → Sprachen (#729): welche Sprachen es in der Ablage gibt und welche für alle gilt, die nichts
@@ -43,11 +44,9 @@ export function SprachenPanel({ z }: { z: SprachenZustand }) {
   const schalte = (spr: string, an: boolean) => setE({ ...e, erlaubt: s.verfuegbar.filter((x) => (x === spr ? an : e.erlaubt.includes(x))) });
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.sprachen.ueber')}</p>
-        <h1>{t('werkbank.bereich.sprachen.name')}</h1>
-        <p className="leise">{t('werkbank.sprachen.einleitung')} <Hilfe ort="werkbank.sprachen" /></p>
-      </div>
+      <Kopf titel={t('werkbank.bereich.sprachen.name')} ueber={t('werkbank.sprachen.ueber')} hilfe="werkbank.sprachen">
+        <p className="leise">{t('werkbank.sprachen.einleitung')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <fieldset className="eigenschaft">

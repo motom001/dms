@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { setzeZeitzone } from '../../../shared/src/region';
 import { api, type Region, type RegionStand } from '../api';
-import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Einstellungen → Region (#726): Land, Bundesland und Zeitzone an einer Stelle,
@@ -42,11 +42,9 @@ export function RegionPanel({ z }: { z: RegionZustand }) {
   const jahr = s.feiertage[0]?.datum.slice(0, 4) ?? '';
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.region.ueber')}</p>
-        <h1>{t('werkbank.bereich.region.name')}</h1>
-        <p className="leise">{t('werkbank.region.einleitung')} <Hilfe ort="werkbank.region" /></p>
-      </div>
+      <Kopf titel={t('werkbank.bereich.region.name')} ueber={t('werkbank.region.ueber')} hilfe="werkbank.region">
+        <p className="leise">{t('werkbank.region.einleitung')}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <label className="eigenschaft"><span>{t('werkbank.region.land')}</span>

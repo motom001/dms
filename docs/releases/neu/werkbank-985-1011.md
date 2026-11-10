@@ -1,0 +1,11 @@
+art: patch
+
+## Geändert
+
+- **Hilfesymbol immer direkt hinter der Überschrift** (#985): Auf allen Seiten der Werkbank steht das **?** jetzt an derselben Stelle – direkt hinter der Überschrift der Seite oder des Abschnitts, nicht mehr am Ende der Beschreibung (z. B. Eingangsordner, WebDAV-Laufwerk, Webhooks, Stempel, Sicherung). Ein **?** an einem einzelnen Feld bleibt an dessen Beschriftung.
+- **Stempel: „+ Neu“ wie überall** (#989): Der Knopf zum Anlegen einer Stempel-Vorlage ist jetzt ein Anlege-Knopf wie in den übrigen Listen.
+- **Fehler direkt unter dem Feld** (#967): Im Formular steht eine Fehlermeldung jetzt direkt unter der Eingabe, der erklärende Hinweis darunter – ein langer Hinweis schiebt den Fehler nicht mehr weg. In den Paket-Einstellungen sind Pflichtfelder nicht mehr mit „*“ markiert; freiwillige Felder zeigen stattdessen „(optional)“.
+
+## Behoben
+
+- **Fehler beim Klicken und Absenden werden angezeigt** (#1011): Scheitert etwas nach einem Klick (Löschen, Abmelden, Zurücksetzen …) oder beim Absenden eines Formulars, erscheint die Meldung jetzt am Knopf oder im Formular, statt unbemerkt zu bleiben.

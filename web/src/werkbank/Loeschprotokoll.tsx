@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { AUSLOESER, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHSCHRITTE, LOESCHWEGE, istSha, type LoeschEintrag } from '../../../shared/src/loeschprotokoll';
 import { api } from '../api';
 import { useDaten } from '../daten';
@@ -6,6 +6,7 @@ import { Hilfe } from '../Hilfe';
 import { pruefwert } from '../pruefwert';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { abfangen } from '../bausteine';
 
 /**
  * Werkbank → Datenschutz → Löschprotokoll (#470): Nachweis gelöschter Mappen und Dokumente – ohne Titel,
@@ -48,7 +49,7 @@ export function LoeschprotokollBlatt() {
   const shaSuche = istSha(f.suche);
   return (
     <section className="blatt" id="loeschprotokoll">
-      <h2 className="h3">{tn('werkbank.loeschprotokoll.loeschprotokoll', { hilfe: <Hilfe ort="werkbank.loeschprotokoll" /> })}</h2>
+      <h2 className="h3">{t('werkbank.loeschprotokoll.loeschprotokoll')} <Hilfe ort="werkbank.loeschprotokoll" /></h2>
       <p className="leise klein">{t('werkbank.loeschprotokoll.jede-loeschung-steht-hier')}</p>
       <form className="lp-filter" onSubmit={(e) => { e.preventDefault(); void laden(f); }}>
         <label className="eigenschaft"><span>{t('werkbank.loeschprotokoll.von')}</span><input type="date" value={f.von} onChange={(e) => setze('von', e.target.value)} /></label>
@@ -76,10 +77,10 @@ export function LoeschprotokollBlatt() {
             </span>
           </p>
           {r.eintraege.length > 0 && <ul className="lp-liste">{r.eintraege.map((e) => <Zeile key={e.id} e={e} vorgang={(v) => setze('vorgang', v)} />)}</ul>}
-          <form className="lp-jahre" onSubmit={async (x) => {
+          <form className="lp-jahre" onSubmit={abfangen(async (x: FormEvent) => {
             x.preventDefault(); setMeldung(undefined);
-            try { await api.loeschprotokollJahre(Number(jahre)); setMeldung(t('werkbank.loeschprotokoll.gespeichert')); await laden(f); } catch (e) { setMeldung((e as Error).message); }
-          }}>
+            await api.loeschprotokollJahre(Number(jahre)); setMeldung(t('werkbank.loeschprotokoll.gespeichert')); await laden(f);
+          }, setMeldung)}>
             <label className="eigenschaft"><span>{tn('werkbank.loeschprotokoll.aufbewahrung', { klein: <small>{t('werkbank.loeschprotokoll.danach-fallen-alte-eintraege')}</small> })}</span>
               <span className="lp-jahre-feld"><input type="number" min={1} max={LOESCHPROTOKOLL_JAHRE_MAX} value={jahre} onChange={(e) => setJahre(e.target.value)} /> {' '}{t('werkbank.loeschprotokoll.jahre')}</span></label>
             <button type="submit" className="knopf klein" disabled={jahre === String(r.jahre)}>{t('werkbank.loeschprotokoll.speichern')}</button>

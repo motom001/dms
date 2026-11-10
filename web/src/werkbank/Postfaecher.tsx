@@ -318,7 +318,7 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
   const zeitpunkt = (iso: string | null) => (iso ? zeit(iso) : '–');
   return (
     <div className="blatt">
-      <h2 className="h3">{tn('werkbank.postfaecher.anmeldung-per-oauth-2', { hilfe: <Hilfe ort="werkbank.postfaecher.oauth" /> })}</h2>
+      <h2 className="h3">{t('werkbank.postfaecher.anmeldung-per-oauth-2')} <Hilfe ort="werkbank.postfaecher.oauth" /></h2>
       {versand && <p className="leise klein">{anbieter === 'microsoft' ? t('werkbank.mail.oauth.app.microsoft') : t('werkbank.mail.oauth.app.google')}</p>}
       {anbieter === 'google' && <div className="hinweis"><p>{tn('werkbank.postfaecher.dann-ist-ein-einfacher', { b: <strong>{t('werkbank.postfaecher.privates-gmail-konto')}</strong>, b2: <strong>{t('werkbank.postfaecher.app-passwort')}</strong> })}</p></div>}
       <form onSubmit={(x) => { x.preventDefault(); void appSpeichern(); }} onKeyDown={appEnt.tasten}>

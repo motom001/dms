@@ -184,8 +184,10 @@ function Block({ blk, werte, setze, fehler, auswahl }: { blk: EinstellungBlock; 
 export function Eingabe({ f, wert, setze, fehler, auswahl, id, ausgeschlossen }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; fehler?: string; auswahl: Auswahl; id: string; ausgeschlossen?: string[] }) {
   const [geheimNeu, setGeheimNeu] = useState(false);
   const [warGesetzt] = useState(!!wert && typeof wert === 'object');
-  // Pflicht bleibt wie bisher mit „*“ markiert (nur sichtbar); der Rahmen setzt Hinweis, Fehler und aria.
-  const name = <>{f.name}{f.pflicht && <span aria-hidden="true"> *</span>}</>;
+  // Muster A6: Pflicht ist der Normalfall und bleibt unmarkiert; ohne `pflicht` im Manifest steht „(optional)“ hinter
+  // der Beschriftung (nicht beim Haken – der ist immer an oder aus). Der Rahmen setzt Hinweis, Fehler und aria.
+  const name = f.name;
+  const optional = !f.pflicht;
   const hinweis = [f.typ === 'adresse' ? t('fragen.adresse.feld') : null, f.hilfe];
   // Zahl (#657): die Prüfung am Feld zeigt der Rahmen wie jeden anderen Fehler.
   const zahl = f.typ === 'zahl' && wert != null ? String(wert).replace('.', ',').trim() : '';
@@ -198,20 +200,20 @@ export function Eingabe({ f, wert, setze, fehler, auswahl, id, ausgeschlossen }:
   if (f.typ === 'mehrfachauswahl') {
     const l = Array.isArray(wert) ? wert.map(String) : [];
     return (
-      <FeldGruppe beschriftung={name} hinweis={f.hilfe} fehler={meldung}>
+      <FeldGruppe beschriftung={name} optional={optional} hinweis={f.hilfe} fehler={meldung}>
         {(f.optionen ?? []).map((o) => <label key={o} className="haken klein"><input type="checkbox" checked={l.includes(o)} onChange={(e) => setze(e.target.checked ? [...l, o] : l.filter((x) => x !== o))} /><span>{o}</span></label>)}
       </FeldGruppe>
     );
   }
   if (f.typ === 'geheim' && !!wert && typeof wert === 'object' && !geheimNeu) return (
-    <FeldGruppe beschriftung={name} hinweis={f.hilfe} fehler={meldung}>
+    <FeldGruppe beschriftung={name} optional={optional} hinweis={f.hilfe} fehler={meldung}>
       <span className="chip gut">{t('werkbank.paketeinstellungen.gesetzt')}</span>
       <button type="button" className="textknopf klein" onClick={() => setGeheimNeu(true)}>{t('werkbank.paketeinstellungen.aendern')}</button>
       <button type="button" className="textknopf klein gefahr" onClick={() => setze(null)}>{t('werkbank.paketeinstellungen.loeschen')}</button>
     </FeldGruppe>
   );
   return (
-    <Feld beschriftung={name} hinweis={hinweis} fehler={meldung} id={id}>
+    <Feld beschriftung={name} optional={optional} hinweis={hinweis} fehler={meldung} id={id}>
       {(v) => <Steuerelement f={f} wert={wert} setze={setze} auswahl={auswahl} v={v} ausgeschlossen={ausgeschlossen} geheim={{ neu: geheimNeu, warGesetzt }} />}
     </Feld>
   );

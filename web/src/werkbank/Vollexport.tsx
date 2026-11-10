@@ -8,6 +8,7 @@ import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Vollexport (#254): alle Daten in offenen Formaten, lesbar ohne das DMS.
@@ -64,11 +65,9 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
   const fertig = auftrag?.status === 'fertig' && auftrag.art === 'vollexport' ? auftrag.ergebnis as { name: string; dateien: number; bytes: number } : null;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.vollexport.werkbank')}</p>
-        <h1>{t('werkbank.vollexport.vollexport')}</h1>
-        <p className="leise">{tn('werkbank.vollexport.deine-daten-gehoeren-dir', { b: <strong>{t('werkbank.vollexport.alles')}</strong>, b2: <strong>{t('werkbank.vollexport.unverschluesselt')}</strong>, hilfe: <Hilfe ort="werkbank.vollexport" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.vollexport.vollexport')} ueber={t('werkbank.vollexport.werkbank')} hilfe="werkbank.vollexport">
+        <p className="leise">{tn('werkbank.vollexport.deine-daten-gehoeren-dir', { b: <strong>{t('werkbank.vollexport.alles')}</strong>, b2: <strong>{t('werkbank.vollexport.unverschluesselt')}</strong> })}</p>
+      </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {exportHinweise({ pfad: s.ordner, imSicherungsordner: s.imSicherungsordner, umzug: s.umzug }, s.tage).map((x, i) => (
         <div key={i} className={`hinweis ${x.art}`}><p>{x.text}</p>
@@ -86,7 +85,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
         <label className="haken"><input type="checkbox" checked={pw} onChange={(e) => { setPw(e.target.checked); if (!e.target.checked) setPwOk(false); }} /><span>{tn('werkbank.vollexport.passwortfelder-im-klartext-als', { klein: <small className="hilfe">{t('werkbank.vollexport.im-format-von-bitwarden')}</small> })}</span></label>
         {pw && <label className="haken einzug"><input type="checkbox" checked={pwOk} onChange={(e) => setPwOk(e.target.checked)} /><span className="fehlertext">{t('werkbank.vollexport.mir-ist-klar-die')}</span></label>}
         {s.kontakte.length > 0 && <>
-          <h3 className="h4">{tn('werkbank.vollexport.kontakte-als-vcard', { hilfe: <Hilfe ort="werkbank.vollexport.kontakte" /> })}</h3>
+          <h3 className="h4">{t('werkbank.vollexport.kontakte-als-vcard')} <Hilfe ort="werkbank.vollexport.kontakte" /></h3>
           <p className="leise klein">{t('werkbank.vollexport.diese-mappentypen-sehen-nach')}</p>
           {s.kontakte.map((k) => {
             const z2 = kontakte[k.typId];
@@ -136,7 +135,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
                   return r.ok ? { art: 'gut', text: t('werkbank.vollexport.alle-dateien-vollstaendig-und', { dateien: r.dateien }) }
                     : { art: 'schlecht', text: t('werkbank.vollexport.abweichungen', { wert: [...r.fehlend.map((x) => t('werkbank.vollexport.fehlt', { x })), ...r.abweichend.map((x) => t('werkbank.vollexport.veraendert', { x }))].slice(0, 5).join(', '), wert2: r.fehlend.length + r.abweichend.length > 5 ? ' …' : '' }) };
                 }}>{t('werkbank.vollexport.pruefen')}</Knopf>
-                <button type="button" className="knopf klein gefahr-rand" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen'), gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</button>
+                <Knopf groesse="klein" className="gefahr-rand" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen'), gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</Knopf>
               </span>
             </li>
           ))}

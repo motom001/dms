@@ -312,7 +312,7 @@ Daneben gibt es Fachbereiche aus früheren Issues (`anmeldung`, `automatisierung
 
 **Zusammengesetzte Schlüssel** (`werkbank.gruppe.${g}`) gehen mit `t.frei(…)` statt `t(…)`. Sie entgehen der Typprüfung; die Prüfung in der CI zählt alle Schlüssel mit dem festen Anfang (`werkbank.gruppe.`) als benutzt. Wo es geht, ganze Schlüssel ausschreiben.
 
-**Prüfungen in der CI** (laufen mit `npm test`, lokal im Ordner `server` mit `node --import tsx --test test/<datei>`):
+**Prüfungen in der CI** (laufen mit `npm test`, lokal im Ordner `server` mit `node --import tsx --import ./test/lader.mjs --test test/<datei>`, siehe [Loslegen](loslegen.md)):
 
 - `sprachdateien.test.ts`: Schlüssel, die der Code abruft, aber nicht gibt; Schlüssel, die niemand benutzt; Sprachen, die Schlüssel auslassen oder zusätzliche haben; Platzhalter, die zwischen den Sprachen abweichen; **Platzhalter, die ein Aufruf nicht liefert** (`t('…', { nam })` für `{name}`); Mehrzahl ohne `_other`; leere Texte.
 - `sprachdateien-fest.test.ts`: **feste Texte in der Oberfläche** – Text zwischen Tags, in sichtbaren Attributen (`title`, `aria-label`, `placeholder`, `titel` …) und als Wert in geschweiften Klammern. Was in jeder Sprache gleich bleibt (Produktnamen, Befehle in `<code>`, Beispieladressen), ist erlaubt; weitere Ausnahmen stehen mit Grund in `AUSNAHMEN` in der Testdatei.

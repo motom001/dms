@@ -48,5 +48,5 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 
 | Baustein | Wofür |
 | --- | --- |
-| [Feld](bausteine-feld.md) | Rahmen für jedes Eingabeelement: Beschriftung, Eingabe, Hinweis, Fehler, Hilfesymbol |
+| [Feld](bausteine-feld.md) | Rahmen für jedes Eingabeelement: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol |
 | [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Anlegen, Haupt, Neben, Gefahr, Link; gesperrt mit Grund, „läuft“, Ergebnis und Fehler am Knopf |

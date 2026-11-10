@@ -1,10 +1,10 @@
 import { Kopf } from './Kopf';
 import { useEffect, useState } from 'react';
 import { api, type SucheStand } from '../api';
-import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
+import { abfangen } from '../bausteine';
 
 /**
  * Werkbank → Suche (#356): unscharfe Suche an/aus, gleichbedeutende Wörter (eigene Gruppen; Wortlisten aus Paketen
@@ -30,7 +30,7 @@ export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
 
   return (
     <div className="einspaltig stapel">
-      <Kopf titel={<>{t('suche.werkbank.titel')} <Hilfe ort="werkbank.suche" /></>} abschnitt={abschnitt} id="suche" ueber={t('suche.werkbank.ueber')} />
+      <Kopf titel={t('suche.werkbank.titel')} hilfe="werkbank.suche" abschnitt={abschnitt} id="suche" ueber={t('suche.werkbank.ueber')} />
       <p className="leise">{t('suche.werkbank.text')}</p>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
 
@@ -65,7 +65,7 @@ export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
                   <span className="verweisaktionen">
                     <button type="button" className="textknopf klein" onClick={() => setBearbeiten({ id: g.id, text: g.woerter.join(', ') })}>{t('suche.werkbank.aendern')}</button>
                     <button type="button" className="textknopf klein gefahr" aria-label={t('suche.werkbank.entfernen.titel', { woerter: g.woerter.join(', ') })}
-                      onClick={async () => { if (await rueckfrage({ titel: t('suche.werkbank.entfernen.frage'), text: g.woerter.join(', '), ja: t('suche.werkbank.entfernen'), gefahr: true })) await tu(() => api.synonymLoeschen(g.id)); }}>
+                      onClick={abfangen(async () => { if (await rueckfrage({ titel: t('suche.werkbank.entfernen.frage'), text: g.woerter.join(', '), ja: t('suche.werkbank.entfernen'), gefahr: true })) await tu(() => api.synonymLoeschen(g.id)); })}>
                       <Symbol name="geloescht" /> {t('suche.werkbank.entfernen')}
                     </button>
                   </span>

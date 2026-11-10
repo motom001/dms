@@ -6,6 +6,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { ProzessTabelle } from './Auslastung';
+import { abfangen } from '../bausteine';
 
 /**
  * Lange Datenbankzugriffe (#12) und was gerade in der Datenbank läuft – seit #407 unter
@@ -108,8 +109,8 @@ function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
-    <form className="blatt" id="lange-zugriffe" onSubmit={speichern} onKeyDown={ent.tasten}>
-      <h2 className="h3">{tn('werkbank.datenbank.lange-datenbankzugriffe', { hilfe: <Hilfe ort="werkbank.datenbank" /> })}</h2>
+    <form className="blatt" id="lange-zugriffe" onSubmit={abfangen(speichern, (text) => setMeldung({ art: 'schlecht', text }))} onKeyDown={ent.tasten}>
+      <h2 className="h3">{t('werkbank.datenbank.lange-datenbankzugriffe')} <Hilfe ort="werkbank.datenbank" /></h2>
       <p className="leise">{t('werkbank.datenbank.jeder-datenbankzugriff-wird-gestoppt')}</p>
       <div className="raster">
         <label className="eigenschaft"><span>{tn('werkbank.datenbank.lang-ab', { klein: <small>{t('werkbank.datenbank.millisekunden-standard-500')}</small> })}</span><input type="number" min={1} max={600000} value={schwelle} onChange={(x) => setSchwelle(x.target.value)} /></label>

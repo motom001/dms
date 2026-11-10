@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { geraetText } from '../../../shared/src/model';
 import { markdownZelle } from '../../../shared/src/maskieren';
 import { api, type Systemuebersicht, type Vergleich } from '../api';
-import { Hilfe, useHandbuch } from '../Hilfe';
+import { useHandbuch } from '../Hilfe';
 import { useKonto } from '../konto';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -131,8 +131,8 @@ export function TechnikPanel({ t: eintrag, abschnitt }: { t: TechnikZustand; abs
   const imageName = komplett ? 'ghcr.io/motom001/dms-komplett' : 'ghcr.io/motom001/dms';
   return (
     <div className="einspaltig">
-      <Kopf titel={t('werkbank.technik.version-und-updates')} abschnitt={abschnitt} id="version">
-        <p className="leise">{tn('werkbank.technik.fuer-fragen-an-den', { link: <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">{t('werkbank.technik.github-issue')}</a>, link2: <a className="verweis" href={handbuch('admin', 'technik/')} target="_blank" rel="noreferrer">{t('werkbank.technik.das-administratorhandbuch')}</a>, hilfe: <Hilfe ort="werkbank.technik" /> })}</p>
+      <Kopf titel={t('werkbank.technik.version-und-updates')} abschnitt={abschnitt} id="version" hilfe="werkbank.technik">
+        <p className="leise">{tn('werkbank.technik.fuer-fragen-an-den', { link: <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">{t('werkbank.technik.github-issue')}</a>, link2: <a className="verweis" href={handbuch('admin', 'technik/')} target="_blank" rel="noreferrer">{t('werkbank.technik.das-administratorhandbuch')}</a> })}</p>
       </Kopf>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.technik.fuer-den-support')}</h2>

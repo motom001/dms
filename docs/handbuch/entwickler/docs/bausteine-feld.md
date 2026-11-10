@@ -2,7 +2,7 @@
 
 `Feld` ist der Rahmen um jedes Eingabeelement (#967). Er setzt Beschriftung, Hinweis, Fehlermeldung und Hilfesymbol und verknüpft sie für Screenreader – damit jedes Feld gleich aussieht und gleich sagt, was falsch ist und wo es Hilfe gibt.
 
-![Bereich „Feld“ der Musterseite: leer, gefüllt, mit Hinweis und Hilfe, optional, Fehler, gesperrt, nur lesen, Auswahlliste, mehrzeilig, Haken, Gruppe](bilder/muster-feld.png){ loading=lazy }
+![Bereich „Feld“ der Musterseite: leer, gefüllt, mit Hinweis und Hilfe, optional, Fehler, Fehler mit Hinweis, gesperrt, nur lesen, Auswahlliste, mehrzeilig, Haken, Gruppe](bilder/muster-feld.png){ loading=lazy }
 
 ## Aufbau { #aufbau }
 
@@ -10,8 +10,8 @@ Jedes Feld belegt dieselben Reihen (Grundregel „Formularzeilen“ im Musterkat
 
 1. **Beschriftung** – kurz, ohne Doppelpunkt; dahinter bei Bedarf **„(optional)“** und das **Hilfesymbol** „?“.
 2. **Eingabe** – Textfeld, Auswahlliste, mehrzeiliges Feld …; ein Haken steht mit seiner Beschriftung in dieser Reihe.
-3. **Hinweis** – ständige Erklärung, leise gesetzt. Bei einem Haken steht seine Beschreibung hier.
-4. **Fehler** – was falsch ist und wie es richtig wird, in der Fehlerfarbe mit Warnsymbol.
+3. **Fehler** – was falsch ist und wie es richtig wird, in der Fehlerfarbe mit Warnsymbol. Er steht direkt unter der Eingabe, wo der Blick ist: Ein langer Hinweis schiebt ihn so nicht weg – am Handy nicht unter die Tastatur –, und die sichtbare Reihenfolge ist dieselbe wie die vorgelesene.
+4. **Hinweis** – ständige Erklärung, leise gesetzt. Bei einem Haken steht seine Beschreibung hier.
 
 ```tsx
 import { Feld, HakenFeld, FeldGruppe } from '../bausteine';
@@ -48,6 +48,7 @@ Braucht die Eingabe die Verknüpfung nicht als Props (eine eigene Komponente, di
 | Maus darüber | – | Rahmen in `--leise` (nicht bei gesperrt und nur lesen) |
 | Tastaturfokus | – | Rahmen und Fokusring in `--akzent` |
 | Fehler | `fehler` gesetzt | Rahmen und Meldung in `--schlecht`, Warnsymbol; Fokusring dann ebenfalls in `--schlecht` |
+| Fehler mit Hinweis | `fehler` und `hinweis` gesetzt | Meldung direkt unter der Eingabe, der Hinweis darunter |
 | gesperrt | `disabled` an der Eingabe | Fläche `--senke`, Schrift `--leise`, kein Hover |
 | nur lesen | `readOnly` an der Eingabe | Fläche `--senke`, gestrichelter Rahmen, Schrift gut lesbar und markierbar |
 | optional | `optional` | „(optional)“ in `--leise` hinter der Beschriftung |
@@ -70,10 +71,10 @@ Braucht die Eingabe die Verknüpfung nicht als Props (eine eigene Komponente, di
 
 ## Verhalten { #verhalten }
 
-- **Pflicht ist der Normalfall** und wird nicht markiert; freiwillige Felder bekommen `optional`. (Die Paket-Einstellungen behalten vorerst ihr „*“ aus dem Manifest.)
+- **Pflicht ist der Normalfall** und wird nicht markiert; freiwillige Felder bekommen `optional`. Das gilt auch für die Paket-Einstellungen: Felder ohne `pflicht` im Manifest zeigen „(optional)“, ein Sternchen gibt es nicht.
 - **Fehler erst zeigen, wenn sie stimmen:** nach dem Speichern oder sobald die Eingabe sicher falsch ist – nicht schon beim ersten Tastendruck in ein leeres Feld.
 - **Die Meldung sagt, wie es richtig wird:** „Bitte genau fünf Ziffern eingeben.“ statt „Ungültig“.
-- **Der Hinweis bleibt stehen,** auch wenn ein Fehler dazukommt; der Fehler steht darunter.
+- **Der Hinweis bleibt stehen,** auch wenn ein Fehler dazukommt; der Fehler steht darüber, direkt unter der Eingabe (Zustand „Fehler mit Hinweis“ auf der Musterseite).
 - **Das Hilfesymbol öffnet die passende Stelle im Handbuch** der installierten Version in einem neuen Tab (Komponente `Hilfe`).
 
 ## Barrierefreiheit { #barrierefreiheit }

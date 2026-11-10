@@ -616,7 +616,7 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: s
   useEffect(() => {
     if (!eingabe.trim()) { setTreffer([]); return; }
     let aktuell = true;
-    const timer = setTimeout(() => api.seite(`typ:${typId}`, 0, 8, eingabe.trim()).then((s) => aktuell && setTreffer(s.mappen)).catch(() => {}), 200);
+    const timer = setTimeout(() => { void api.seite(`typ:${typId}`, 0, 8, eingabe.trim()).then((s) => aktuell && setTreffer(s.mappen)).catch(() => {}); }, 200);
     return () => { aktuell = false; clearTimeout(timer); };
   }, [eingabe, typId]);
   return (

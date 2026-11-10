@@ -22,11 +22,13 @@ export function useWartungsmodus(offen: boolean) {
     try { setStand(await api.werkbankWartung()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => {
-    void laden();
-    addEventListener(WARTUNG_GEAENDERT, laden);
-    if (!offen) return () => removeEventListener(WARTUNG_GEAENDERT, laden);
-    const timer = setInterval(() => { if (!istWeg()) void laden(); }, 10_000);
-    return () => { clearInterval(timer); removeEventListener(WARTUNG_GEAENDERT, laden); };
+    // laden fängt Fehler selbst ab (fehler); der Ereignis-Handler gibt kein Promise zurück (#1011).
+    const neu = () => void laden();
+    neu();
+    addEventListener(WARTUNG_GEAENDERT, neu);
+    if (!offen) return () => removeEventListener(WARTUNG_GEAENDERT, neu);
+    const timer = setInterval(() => { if (!istWeg()) neu(); }, 10_000);
+    return () => { clearInterval(timer); removeEventListener(WARTUNG_GEAENDERT, neu); };
   }, [offen, laden]);
   return { stand, fehler, laden };
 }
@@ -100,8 +102,8 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
 
   return (
     <div className="einspaltig">
-      <Kopf titel={abschnitt ? t('werkbank.wartungsmodus.wartungsmodus') : t('werkbank.wartungsmodus.wartung')} abschnitt={abschnitt} id="wartungsmodus">
-        <p className="leise">{tn('werkbank.wartungsmodus.schalte-ihn-vor-einem', { b: <strong>{t('werkbank.wartungsmodus.wartungsmodus-2')}</strong>, hilfe: <Hilfe ort="werkbank.wartungsmodus" /> })}</p>
+      <Kopf titel={abschnitt ? t('werkbank.wartungsmodus.wartungsmodus') : t('werkbank.wartungsmodus.wartung')} abschnitt={abschnitt} id="wartungsmodus" hilfe="werkbank.wartungsmodus">
+        <p className="leise">{tn('werkbank.wartungsmodus.schalte-ihn-vor-einem', { b: <strong>{t('werkbank.wartungsmodus.wartungsmodus-2')}</strong> })}</p>
       </Kopf>
 
       <section className="blatt" id="stand">

@@ -1,7 +1,7 @@
 /**
  * Lader für Tests, die Module der Oberfläche zeichnen (#966): Vite liefert `import x from './datei.css?raw'` als Text,
  * Node kennt `.css` nicht. Dieser Lader macht daraus ein Modul mit dem Dateiinhalt als `default`.
- * Einbinden: `register(new URL('./css-roh-lader.mjs', import.meta.url))` aus `node:module`, vor dem ersten Import.
+ * Eingebunden für alle Tests über test/lader.mjs (`--import` in server/package.json).
  *
  * CSS Modules (`import s from './x.module.css'`, Bausteine #967): `s.name` ist hier einfach „name“ – Vite macht
  * daraus beim Bauen einen eindeutigen Namen; für Tests genügt der lesbare.

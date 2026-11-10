@@ -27,6 +27,7 @@ import { kannSchwaerzen } from '../../../shared/src/schwaerzen';
 import { kannStempeln } from '../../../shared/src/stempel';
 import { gebietsschema, sprache } from '../../../shared/src/sprache';
 import { registerName } from '../../../shared/src/beschriftung';
+import { Knopf } from '../bausteine';
 
 /** „Verkleinern“ (#393) erst ab dieser Größe anbieten – kleinere PDFs lohnen die Mühe kaum. */
 const VERKLEINERN_AB = 500 * 1024;
@@ -389,11 +390,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           onClick={() => { setPdfMeldung(undefined); setSeitenOffen(undefined); setKleinOffen(undefined); setSchwarzOffen(schwarzOffen === x.id ? undefined : x.id); }} title={t('ablage.dokumente.stellen-endgueltig-schwaerzen-als')}>{t('ablage.dokumente.schwaerzen')}</button>}
                         {!weg && !nurLesen && neuLaden && !x.archivnummer && asn?.id !== x.id && <button type="button" className="textknopf" title={t('ablage.dokumente.nummer-vom-aufkleber-auf')} onClick={() => setAsn({ id: x.id, wert: '' })}>{t('ablage.dokumente.archivnummer')}</button>}
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title={t('ablage.dokumente.neue-version-hochladen-die')}>{t('ablage.dokumente.ersetzen')}</button>}
-                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
+                        {!nurLesen && <Knopf art="link" className={weg ? undefined : 'gefahr'} onClick={async () => {
                           // Mit allen Versionen (#194): nachfragen, mit Zahl.
                           if (!weg && (x.aeltere ?? 0) > 0 && !(await rueckfrage({ titel: t('ablage.dokumente.mit-allen-versionen-loeschen', { name: x.name, wert: (x.aeltere ?? 0) + 1 }), text: d.zaehler.papierkorbTage ? t('ablage.dokumente.sie-kommen-beim-speichern') : t('ablage.dokumente.das-ist-endgueltig'), ja: t('ablage.dokumente.loeschen'), gefahr: true }))) return;
                           entferne(x.id);
-                        }}>{weg ? t('ablage.dokumente.behalten') : t('ablage.dokumente.loeschen')}</button>}
+                        }}>{weg ? t('ablage.dokumente.behalten') : t('ablage.dokumente.loeschen')}</Knopf>}
 
                               <button type="button" className="textknopf dk-zu">{t('ablage.dokumente.schliessen')}</button>
                             </div>
@@ -414,11 +415,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           onClick={() => { setPdfMeldung(undefined); setSeitenOffen(undefined); setKleinOffen(undefined); setSchwarzOffen(schwarzOffen === x.id ? undefined : x.id); }} title={t('ablage.dokumente.stellen-endgueltig-schwaerzen-als')}>{t('ablage.dokumente.schwaerzen')}</button>}
                         {!weg && !nurLesen && neuLaden && !x.archivnummer && asn?.id !== x.id && <button type="button" className="textknopf" title={t('ablage.dokumente.nummer-vom-aufkleber-auf')} onClick={() => setAsn({ id: x.id, wert: '' })}>{t('ablage.dokumente.archivnummer')}</button>}
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title={t('ablage.dokumente.neue-version-hochladen-die')}>{t('ablage.dokumente.ersetzen')}</button>}
-                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
+                        {!nurLesen && <Knopf art="link" className={weg ? undefined : 'gefahr'} onClick={async () => {
                           // Mit allen Versionen (#194): nachfragen, mit Zahl.
                           if (!weg && (x.aeltere ?? 0) > 0 && !(await rueckfrage({ titel: t('ablage.dokumente.mit-allen-versionen-loeschen', { name: x.name, wert: (x.aeltere ?? 0) + 1 }), text: d.zaehler.papierkorbTage ? t('ablage.dokumente.sie-kommen-beim-speichern') : t('ablage.dokumente.das-ist-endgueltig'), ja: t('ablage.dokumente.loeschen'), gefahr: true }))) return;
                           entferne(x.id);
-                        }}>{weg ? t('ablage.dokumente.behalten') : t('ablage.dokumente.loeschen')}</button>}
+                        }}>{weg ? t('ablage.dokumente.behalten') : t('ablage.dokumente.loeschen')}</Knopf>}
 
                       </div>
                       )}
@@ -731,7 +732,7 @@ function Versionen({ d, zurueck, neuLaden, mitStempel, mitnehmen = true }: { d: 
                 {v.anzeigbar && <a className="symbolverweis" href={versionUrl(d.id, v.nummer)} target="_blank" rel="noreferrer" title={t('ablage.dokumente.ansehen')} aria-label={t('ablage.dokumente.version-ansehen', { nummer: v.nummer })}>↗</a>}
                 {!mitnehmen ? null : mitStempel ? kannStempeln(v.mime) && <button type="button" className="textknopf" onClick={() => mitStempel(v.nummer)}>{t('ablage.dokumente.mit-stempel-herunterladen')}</button>
                   : <a className="textknopf" href={versionUrl(d.id, v.nummer, true)}>{t('ablage.dokumente.herunterladen')}</a>}
-                {zurueck && <button type="button" className="textknopf" onClick={async () => { if (await rueckfrage({ titel: t('ablage.dokumente.version-zurueckholen', { nummer: v.nummer }), text: t('ablage.dokumente.sie-wird-zur-neuen', { wert: (d.version ?? 1) + 1 }), ja: t('ablage.dokumente.zurueckholen') })) void hole(v.nummer); }}>{t('ablage.dokumente.zurueckholen')}</button>}
+                {zurueck && <Knopf art="link" onClick={async () => { if (await rueckfrage({ titel: t('ablage.dokumente.version-zurueckholen', { nummer: v.nummer }), text: t('ablage.dokumente.sie-wird-zur-neuen', { wert: (d.version ?? 1) + 1 }), ja: t('ablage.dokumente.zurueckholen') })) void hole(v.nummer); }}>{t('ablage.dokumente.zurueckholen')}</Knopf>}
               </td>
             </tr>
           ))}

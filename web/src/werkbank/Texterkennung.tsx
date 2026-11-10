@@ -96,11 +96,9 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
   const w = s.werkzeuge;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.texterkennung.werkbank')}</p>
-        <h1>{tx('volltext.werkbank.titel')}</h1>
-        <p className="leise">{tx('volltext.werkbank.einleitung')} <Hilfe ort="werkbank.texterkennung" /></p>
-      </div>
+      <Kopf titel={tx('volltext.werkbank.titel')} ueber={t('werkbank.texterkennung.werkbank')} hilfe="werkbank.texterkennung">
+        <p className="leise">{tx('volltext.werkbank.einleitung')}</p>
+      </Kopf>
       <PauseHinweis t={eintrag} wartungAn={wartungAn} />
 
       <PaketBlock s={s} />
@@ -276,8 +274,8 @@ function ErkannteSprachen({ s }: { s: OcrStatus }) {
 export function WartungPanel({ t: eintrag, wartungAn, abschnitt }: { t: TexterkennungZustand; wartungAn?: boolean; abschnitt?: boolean }) {
   return (
     <div className="einspaltig">
-      <Kopf titel={t('werkbank.texterkennung.wartungsoperationen')} abschnitt={abschnitt} id="operationen">
-        <p className="leise">{tn('werkbank.texterkennung.arbeiten-am-ganzen-bestand', { hilfe: <Hilfe ort="werkbank.wartung" /> })}</p>
+      <Kopf titel={t('werkbank.texterkennung.wartungsoperationen')} abschnitt={abschnitt} id="operationen" hilfe="werkbank.wartung">
+        <p className="leise">{t('werkbank.texterkennung.arbeiten-am-ganzen-bestand')}</p>
       </Kopf>
       <VolltextNeu t={eintrag} wartungAn={wartungAn} />
       <VorschauNachholen />

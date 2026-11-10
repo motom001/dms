@@ -5,13 +5,9 @@
  * Gezeichnet mit react-dom/server wie baustein-feld.test.ts.
  */
 import assert from 'node:assert/strict';
-import { register } from 'node:module';
 import { describe, it } from 'node:test';
 import React, { createElement as h, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-
-// CSS Modules der Bausteine und tokens.css?raw (design.ts) wie in Vite laden.
-register(new URL('./css-roh-lader.mjs', import.meta.url));
 
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
@@ -29,7 +25,8 @@ g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
 const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
-const { Knopf, KnopfLink, knopfAussehen, istKnopfErgebnis, fehlerText, ErgebnisBlock } = await lade('bausteine/index.ts');
+const { Knopf, KnopfLink, knopfAussehen, istKnopfErgebnis, fehlerText, ErgebnisBlock, abfangen } = await lade('bausteine/index.ts');
+const { Kopf } = await lade('werkbank/Kopf.tsx');
 
 const zeichne = (e: ReactElement) => renderToStaticMarkup(e);
 const KNOPF = /<button[^>]*>/;
@@ -115,5 +112,36 @@ describe('Baustein Knopf (#968)', () => {
 
   it('ErgebnisBlock: steht immer im Dokument, mit aria-live', () => {
     assert.equal(zeichne(h(ErgebnisBlock, { anlass: null })), '<div aria-live="polite" class="block"></div>');
+  });
+});
+
+describe('abfangen: asynchrone Handler ohne Knopf (#1011)', () => {
+  it('gibt kein Promise zurück, ruft sofort auf und leitet einen Fehler an die Meldung der Stelle', async () => {
+    const meldungen: string[] = [];
+    let verhindert = false;
+    const handler = abfangen(async (e: { preventDefault(): void }) => { e.preventDefault(); await Promise.resolve(); throw new Error('Kein Netz.'); }, (text: string) => meldungen.push(text));
+    assert.equal(handler({ preventDefault: () => { verhindert = true; } }), undefined);
+    assert.ok(verhindert, 'preventDefault läuft sofort, noch bevor das Promise fertig ist');
+    await new Promise((r) => setTimeout(r, 0));
+    assert.deepEqual(meldungen, ['Kein Netz.']);
+  });
+
+  it('auch ein Fehler vor dem ersten await und einer ohne Text landen in der Meldung; ohne Fehler keine', async () => {
+    const meldungen: string[] = [];
+    abfangen(() => { throw new Error('Sofort.'); }, (text: string) => meldungen.push(text))();
+    abfangen(() => Promise.reject(new Error('')), (text: string) => meldungen.push(text))();
+    abfangen(async () => 'gut', (text: string) => meldungen.push(text))();
+    await new Promise((r) => setTimeout(r, 0));
+    assert.deepEqual(meldungen, ['Sofort.', 'Das hat nicht geklappt. Bitte noch einmal versuchen.']);
+  });
+});
+
+describe('Kopf einer Werkbank-Seite: Hilfe hinter der Überschrift (#985)', () => {
+  it('h1 und Abschnitts-h2 tragen das „?“ direkt hinter dem Titel, die Beschreibung bleibt ohne', () => {
+    const seite = zeichne(h(Kopf, { titel: 'Eingangsordner', hilfe: 'werkbank.eingangsordner' }, h('p', { className: 'leise' }, 'Jede fertige Datei wird eine Post.')));
+    assert.match(seite, /<h1>Eingangsordner <a class="hilfesymbol"[^>]*><span aria-hidden="true">\?<\/span><\/a><\/h1><p class="leise">Jede fertige Datei wird eine Post\.<\/p>/);
+    const abschnitt = zeichne(h(Kopf, { titel: 'Wartungsmodus', abschnitt: true, id: 'wartungsmodus', hilfe: 'werkbank.wartungsmodus' }));
+    assert.match(abschnitt, /<div class="teilkopf" id="wartungsmodus"><h2>Wartungsmodus <a class="hilfesymbol"/);
+    assert.match(zeichne(h(Kopf, { titel: 'Region' })), /<h1>Region<\/h1>/, 'ohne hilfe kein „?“');
   });
 });

@@ -25,6 +25,7 @@ import { t, tn, wechsleSprache } from '../sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { MITMACHEN_URL } from '../../../shared/src/sprachwahl';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { abfangen, Knopf } from '../bausteine';
 
 const STUFE = { immer: t('profil.profil.stufe.immer'), nie: t('profil.profil.stufe.nie'), teils: t('profil.profil.je-nach-mappe') } as const;
 
@@ -53,11 +54,12 @@ function MeineRechte({ admin }: { admin: boolean }) {
 function useFormular(fn: () => Promise<string>) {
   const [sendet, setSendet] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const absenden = async (e: FormEvent) => {
+  // abfangen (#1011): React bekommt kein Promise; ein Fehler steht wie bisher als Meldung am Formular.
+  const absenden = abfangen(async (e: FormEvent) => {
     e.preventDefault();
     setSendet(true); setMeldung(undefined);
-    try { setMeldung({ art: 'gut', text: await fn() }); } catch (err) { setMeldung({ art: 'schlecht', text: (err as Error).message }); } finally { setSendet(false); }
-  };
+    try { setMeldung({ art: 'gut', text: await fn() }); } finally { setSendet(false); }
+  }, (text) => setMeldung({ art: 'schlecht', text }));
   const anzeige: ReactNode = meldung ? <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p> : null;
   return { sendet, absenden, anzeige };
 }
@@ -325,9 +327,9 @@ function MeineGeraete() {
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {andere.length > 0 && !vertretung && (
-        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={async () => {
+        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
           if (await rueckfrage({ titel: t('profil.profil.auf-allen-anderen-geraeten', { anzahl: andere.length }), ja: t('profil.profil.abmelden'), gefahr: true })) void tu(async () => { const r = await api.andereSitzungenBeenden(); return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet }); });
-        }}>{t('profil.profil.alle-anderen-abmelden')}</button></div>
+        }}>{t('profil.profil.alle-anderen-abmelden')}</Knopf></div>
       )}
     </div>
   );

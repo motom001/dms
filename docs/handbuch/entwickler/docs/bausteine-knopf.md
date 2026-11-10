@@ -70,9 +70,18 @@ async function jetztPruefen(): Promise<KnopfErgebnis> {
 
 1. zeigt sofort „läuft“ (`aria-busy="true"`) und nimmt keinen zweiten Klick an – auch nicht per Enter in einem Formularfeld;
 2. zeigt danach, was das Promise liefert, wenn es ein `KnopfErgebnis` ist (`{ art, text }`); anderes (z. B. `true`) zeigt er nicht;
-3. **fängt einen Fehler ab** und zeigt ihn direkt am Knopf, statt ihn in der Konsole verschwinden zu lassen. Das ist der gemeinsame Weg für asynchrone Handler in der Oberfläche (#1011): `onClick={async () => …}` an einem `<button>` steht in `eslint-suppressions.json` unter `@typescript-eslint/no-misused-promises`; wer eine solche Stelle auf `Knopf` umstellt, trägt sie dort aus (`npx eslint --prune-suppressions .`).
+3. **fängt einen Fehler ab** und zeigt ihn direkt am Knopf, statt ihn in der Konsole verschwinden zu lassen. Das ist der gemeinsame Weg für asynchrone Handler in der Oberfläche (#1011).
 
 Der Text des Fehlers ist die Meldung der Schnittstelle; ohne eine heißt es „Das hat nicht geklappt. Bitte noch einmal versuchen.“
+
+**Ohne Knopf** – `onSubmit` eines Formulars, `onChange` eines Hakens, ein Ereignis am Fenster – nimmt man `abfangen` aus `../bausteine`. Es gibt React kein Promise zurück und leitet einen Fehler an die Meldung, die die Stelle ohnehin hat; hat sie keine, erscheint er als Hinweisfenster. Der Handler läuft sofort an, `e.preventDefault()` am Anfang wirkt also wie gewohnt.
+
+```tsx
+<form onSubmit={abfangen(speichern, (text) => setMeldung({ art: 'schlecht', text }))}>
+<input type="checkbox" onChange={abfangen(async (e: ChangeEvent<HTMLInputElement>) => { … })} />
+```
+
+ESLint prüft das streng (`@typescript-eslint/no-misused-promises`, `no-floating-promises`); seit #1011 steht für die Oberfläche keine Ausnahme mehr dafür in `eslint-suppressions.json`. Eine Ladefunktion, die ihre Fehler selbst zeigt, hängt man mit `() => void laden()` an ein Ereignis oder einen Takt.
 
 ## Ergebnis am Knopf { #ergebnis }
 

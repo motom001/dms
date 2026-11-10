@@ -4,7 +4,7 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
-import { t, tn } from '../sprache';
+import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 type Posten = Awaited<ReturnType<typeof api.absenderVorschau>>['posten'];
@@ -36,7 +36,7 @@ export function AbsenderBereinigen() {
   const umschalten = (id: string) => setWahl((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <section className="blatt" id="absender">
-      <h2 className="h3">{tn('werkbank.absenderbereinigen.absender-bereinigen', { hilfe: <Hilfe ort="werkbank.wartung.absender" /> })}</h2>
+      <h2 className="h3">{t('werkbank.absenderbereinigen.absender-bereinigen')} <Hilfe ort="werkbank.wartung.absender" /></h2>
       <p className="leise">{t('werkbank.absenderbereinigen.bis-version-0-99')}</p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {posten === null ? <p className="leise">{t('werkbank.absenderbereinigen.lade')}</p> : !posten.length ? <p className="leise">{t('werkbank.absenderbereinigen.nichts-zu-bereinigen-keine')}</p> : <>

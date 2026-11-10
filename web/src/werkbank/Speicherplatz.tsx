@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api';
 import { Link } from '../ort';
-import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
 import { einDatentraeger } from '../../../shared/src/werkbankansicht';
 import { GrossePdfsVerkleinern } from './Verkleinern';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
@@ -101,11 +101,9 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.speicherplatz.werkbank')}</p>
-        <h1>{t('werkbank.speicherplatz.systemzustand')}</h1>
-        <p className="leise">{tn('werkbank.speicherplatz.wie-es-dem-server', { b: <strong>{t('werkbank.speicherplatz.speicherplatz')}</strong>, b2: <strong>{t('werkbank.speicherplatz.warnschwelle')}</strong>, b3: <strong>{t('werkbank.speicherplatz.grenze')}</strong>, hilfe: <Hilfe ort="werkbank.speicherplatz" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.speicherplatz.systemzustand')} ueber={t('werkbank.speicherplatz.werkbank')} hilfe="werkbank.speicherplatz">
+        <p className="leise">{tn('werkbank.speicherplatz.wie-es-dem-server', { b: <strong>{t('werkbank.speicherplatz.speicherplatz')}</strong>, b2: <strong>{t('werkbank.speicherplatz.warnschwelle')}</strong>, b3: <strong>{t('werkbank.speicherplatz.grenze')}</strong> })}</p>
+      </Kopf>
 
       {s.zustand === 'grenze' && <div className="hinweis schlecht"><p>{tn('werkbank.speicherplatz.hochladen-ist-gesperrt-schaffe', { b: <strong>{t('werkbank.speicherplatz.speicherplatzlimit-erreicht')}</strong>, link: <Link to="/werkbank/sicherung" className="verweis">{t('werkbank.speicherplatz.sicherungen')}</Link>, link2: <Link to="/werkbank/papierkorb" className="verweis">{t('werkbank.speicherplatz.papierkorb')}</Link>, link3: <a href="#verkleinern" className="verweis">{t('werkbank.speicherplatz.grosse-pdfs-verkleinern')}</a>, link4: <Link to="/werkbank/wartung#wartungsmodus" className="verweis">{t('werkbank.speicherplatz.wartungsmodus')}</Link> })}</p></div>}
       {s.zustand === 'warnung' && <div className="hinweis warn"><p>{tn('werkbank.speicherplatz.noch-arbeiten-alle-normal', { b: <strong>{t('werkbank.speicherplatz.der-speicherplatz-wird-knapp')}</strong>, schwelleText: schwelleText(s.einstellung.grenze) })}</p></div>}

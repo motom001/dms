@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type WerkbankAnsichtStand } from '../api';
-import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
   ansichtAus, BEREICHE, expertenBereiche, fuerAlle, GRUPPEN, inVorlage, nurImExpertenmodus, OHNE_EINSTELLUNG, sichtbar, VORLAGEN, type Gruppe, type Vorlage,
 } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
+import { Kopf } from './Kopf';
 
 /**
  * Werkbank anpassen (#281): welche Bereiche in der Leiste stehen.
@@ -81,11 +81,9 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
 
   return (
     <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.ansicht.werkbank')}</p>
-        <h1>{t('werkbank.ansicht.werkbank-anpassen')}</h1>
-        <p className="leise">{tn('werkbank.ansicht.blende-aus-was-du', { b: <strong>{t('werkbank.ansicht.ausblenden-schaltet-nichts-ab')}</strong>, link: <Link to="/werkbank" className="verweis">{t('werkbank.ansicht.uebersicht')}</Link>, hilfe: <Hilfe ort="werkbank.ansicht" /> })}</p>
-      </div>
+      <Kopf titel={t('werkbank.ansicht.werkbank-anpassen')} ueber={t('werkbank.ansicht.werkbank')} hilfe="werkbank.ansicht">
+        <p className="leise">{tn('werkbank.ansicht.blende-aus-was-du', { b: <strong>{t('werkbank.ansicht.ausblenden-schaltet-nichts-ab')}</strong>, link: <Link to="/werkbank" className="verweis">{t('werkbank.ansicht.uebersicht')}</Link> })}</p>
+      </Kopf>
       {!s.eingestellt && <div className="hinweis"><p>{tn('werkbank.ansicht.noch-nicht-eingestellt-bisher', { b: <strong>{t('werkbank.ansicht.haushalt')}</strong>, b2: <strong>{t('werkbank.ansicht.betrieb')}</strong> })}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <fieldset className="wahl">

@@ -48,5 +48,5 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 
 | Building block | Purpose |
 | --- | --- |
-| [Field](bausteine-feld.md) | Frame for every input: label, input, hint, error, help icon |
+| [Field](bausteine-feld.md) | Frame for every input: label, input, error, hint, help icon |
 | [Button](bausteine-knopf.md) | Every button: kinds create, main, secondary, danger, link; disabled with a reason, “working”, result and error at the button |

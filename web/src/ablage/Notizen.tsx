@@ -7,6 +7,7 @@ import { Person } from '../Person';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf } from '../bausteine';
 
 /** Notizen an einer Mappe (#55): lesen, anlegen, bearbeiten, löschen – jeder darf alles. Seit #427 ein System-Register. */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
@@ -32,7 +33,7 @@ export function Notizen({ mappeId, notizen, neuLaden }: { mappeId: string; notiz
               <Person id={n.erstelltVon} /> · {zeit(n.erstellt)}{n.geaendert !== n.erstellt && n.geaendert.slice(0, 16) !== n.erstellt.slice(0, 16) && <> {' '}{t('ablage.notizen.geaendert', { zeit: zeit(n.geaendert) })}{n.geaendertVon !== n.erstelltVon && <> {' '}{t('ablage.notizen.von')}{' '}<Person id={n.geaendertVon} /></>}</>}
               {bearbeite?.id !== n.id && <span className="zeilenaktionen">
                 <button type="button" className="textknopf" onClick={() => setBearbeite({ id: n.id, text: n.text })}>{t('ablage.notizen.bearbeiten')}</button>
-                <button type="button" className="textknopf gefahr" disabled={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('ablage.notizen.diese-notiz-loeschen'), ja: t('ablage.notizen.loeschen'), gefahr: true })) void tu(() => api.notizLoeschen(n.id)); }}>{t('ablage.notizen.loeschen')}</button>
+                <Knopf art="link" className="gefahr" gesperrt={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('ablage.notizen.diese-notiz-loeschen'), ja: t('ablage.notizen.loeschen'), gefahr: true })) void tu(() => api.notizLoeschen(n.id)); }}>{t('ablage.notizen.loeschen')}</Knopf>
               </span>}
             </div>
             {bearbeite?.id === n.id

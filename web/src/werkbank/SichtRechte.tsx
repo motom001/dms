@@ -117,7 +117,7 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
         </>
       ) : (
         <>
-          <h3 className="zwischen">{tn('werkbank.sichtrechte.standard-3', { hilfe: <Hilfe ort="sicht.berechtigungen" /> })}</h3>
+          <h3 className="zwischen">{t('werkbank.sichtrechte.standard-3')} <Hilfe ort="sicht.berechtigungen" /></h3>
           <p className="leise klein">{t('werkbank.sichtrechte.gilt-solange-keine-regel')}</p>
           <div className="rechtewahl" role="group" aria-label={t('werkbank.sichtrechte.standard-je-recht')}>
             {SICHT_RECHTE_LISTE.map((k) => (

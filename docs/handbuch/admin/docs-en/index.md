@@ -53,7 +53,7 @@ What has changed in which version is listed under [New in this version](neu.md) 
 Every installation brings the manual of its version – even without the internet. The help in the menu, the link in the workbench and every **?** open it. Online at `https://help.ablago.app/admin/aktuell/en/` there is always the manual for the newest version. Older addresses with a version number (e.g. `…/admin/v0.22/sicherung/`) lead to the same page there.
 
 !!! tip "The ? next to headings"
-    In the workbench, every area and many subheadings have a small **?**. It opens exactly the matching section of this manual in a new tab.
+    In the workbench, every area and many subheadings have a small **?** – always directly after the heading, never at the end of the text below it. It opens exactly the matching section of this manual in a new tab. A **?** on a single field or checkbox sits at its label and explains just that field.
 
 Please submit wishes and bugs as an [issue](https://github.com/motom001/dms/issues/new?template=wunsch.md) – describe briefly what you want to do and how you notice that it works; what carries the label `freigegeben` gets built.
 

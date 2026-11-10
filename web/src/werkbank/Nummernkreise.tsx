@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { api, speichereDatei, type Auftrag, type NummernkreisAnsicht } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
@@ -10,7 +10,7 @@ import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { abfangen, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Nummernkreise (#171): fortlaufende Nummern für Textfelder.
@@ -93,8 +93,8 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
         </div>
         {musterFehler ? <p className="fehlertext">{musterFehler}</p> : <p className="klein">{tn('werkbank.nummernkreise.beispiel-heute-zaehler-beginnt', { code: <code className="mono">{beispiel}</code>, b: <strong>{NEUBEGINN_TEXT[neubeginn]}</strong> })}</p>}
         <Speicherleiste ent={ent} gegenstand={t('werkbank.nummernkreise.nummernkreis-2')} sendet={sendet} ungueltig={!!musterFehler}
-          links={!neu && <button type="button" className="textknopf gefahr" disabled={k!.verwendet.length > 0} title={k!.verwendet.length ? t('werkbank.nummernkreise.wird-noch-verwendet') : undefined}
-            onClick={async () => { if (await rueckfrage({ titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen'), gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }); }}>{t('werkbank.nummernkreise.nummernkreis-loeschen-2')}</button>} />
+          links={!neu && <Knopf art="link" className="gefahr" gesperrt={k!.verwendet.length > 0} title={k!.verwendet.length ? t('werkbank.nummernkreise.wird-noch-verwendet') : undefined}
+            onClick={async () => { if (await rueckfrage({ titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen'), gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }); }}>{t('werkbank.nummernkreise.nummernkreis-loeschen-2')}</Knopf>} />
       </form>
       {!neu && <>
         <div className="blatt">
@@ -104,7 +104,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
             <p className="leise klein">{t('werkbank.nummernkreise.zuletzt-vergeben')}</p>
             <ul className="stapel klein">{k!.zuletzt.map((x) => <li key={`${x.nummer}-${x.am}`}><code className="mono">{x.nummer}</code> · {zeit(x.am)}{x.mappeId && <> · <Link to={`/ablage/mappe/${x.mappeId}`} className="verweis">{t('werkbank.nummernkreise.mappe')}</Link></>}</li>)}</ul>
           </>}
-          <form className="zeile" onSubmit={async (x) => { x.preventDefault(); if (await rueckfrage({ titel: t('werkbank.nummernkreise.zaehlerstand-setzen'), text: t('werkbank.nummernkreise.die-naechste-nummer-bekommt', { zaehler }), ja: t('werkbank.nummernkreise.zaehlerstand-setzen-2') })) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k!.schluessel, Number(zaehler))); setZaehler(''); return t('werkbank.nummernkreise.zaehlerstand-gesetzt'); }); }}>
+          <form className="zeile" onSubmit={abfangen(async (x: FormEvent) => { x.preventDefault(); if (await rueckfrage({ titel: t('werkbank.nummernkreise.zaehlerstand-setzen'), text: t('werkbank.nummernkreise.die-naechste-nummer-bekommt', { zaehler }), ja: t('werkbank.nummernkreise.zaehlerstand-setzen-2') })) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k!.schluessel, Number(zaehler))); setZaehler(''); return t('werkbank.nummernkreise.zaehlerstand-gesetzt'); }); }, (text) => setMeldung({ art: 'schlecht', text }))}>
             <label className="eigenschaft"><span>{tn('werkbank.nummernkreise.zaehlerstand-setzen-3', { klein: <small>{t('werkbank.nummernkreise.zaehler-der-naechsten-nummer')}</small> })}</span>
               <input id="nk-zaehler" type="number" min={0} value={zaehler} onChange={(x) => setZaehler(x.target.value)} /></label>
             <button className="knopf" disabled={zaehler === ''}>{t('werkbank.nummernkreise.setzen')}</button>
@@ -145,7 +145,7 @@ export function NummernNachtragen() {
   const ergebnis = auftrag?.status === 'fertig' && auftrag.art === 'nummern' ? auftrag.ergebnis as { vergeben: number; erste: string | null; letzte: string | null } : null;
   return (
     <section className="blatt" id="nummern">
-      <h2 className="h3">{tn('werkbank.nummernkreise.nummern-nachtraeglich-vergeben', { hilfe: <Hilfe ort="werkbank.nummernkreise.nachtragen" /> })}</h2>
+      <h2 className="h3">{t('werkbank.nummernkreise.nummern-nachtraeglich-vergeben')} <Hilfe ort="werkbank.nummernkreise.nachtragen" /></h2>
       <p className="leise">{t('werkbank.nummernkreise.mappen-die-angelegt-wurden')}</p>
       {!felder.length ? <p className="leise">{t('werkbank.nummernkreise.kein-feld-nutzt-einen')}</p> : <>
         <label className="eigenschaft"><span>{t('werkbank.nummernkreise.feld')}</span>
@@ -187,7 +187,7 @@ function Aufkleber({ naechste, neuLaden }: { naechste: string; neuLaden(): Promi
   }
   return (
     <div className="blatt">
-      <h2 className="h3">{tn('werkbank.nummernkreise.aufkleber-drucken', { hilfe: <Hilfe ort="werkbank.aufkleber" /> })}</h2>
+      <h2 className="h3">{t('werkbank.nummernkreise.aufkleber-drucken')} <Hilfe ort="werkbank.aufkleber" /></h2>
       <p className="leise">{tn('werkbank.nummernkreise.ein-pdf-mit-aufklebern', { code: <code className="mono">{naechste}</code> })}</p>
       <form className="raster" onSubmit={(e) => { e.preventDefault(); void los(); }}>
         <label className="eigenschaft"><span>{t('werkbank.nummernkreise.anzahl')}</span><input type="number" min={1} max={500} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></label>

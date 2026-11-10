@@ -1,7 +1,7 @@
 import type { Luecke, Personenbezug, Personenverweis } from '../../../shared/src/loeschkonzept';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
-import { t, tn } from '../sprache';
+import { t } from '../sprache';
 
 /** „über „Inhaber“ auf Person“, mehrere mit „und“ (#664). */
 export function verweiseText(v: Personenverweis[]) {
@@ -32,7 +32,7 @@ function zumZweck(typId: string) {
 export function LoeschkonzeptBlatt({ luecken }: { luecken: Luecke[] }) {
   return (
     <section className="blatt" id="loeschkonzept">
-      <h2 className="h3">{tn('werkbank.loeschkonzept.loeschkonzept', { hilfe: <Hilfe ort="werkbank.loeschkonzept" /> })}</h2>
+      <h2 className="h3">{t('werkbank.loeschkonzept.loeschkonzept')} <Hilfe ort="werkbank.loeschkonzept" /></h2>
       <p className="leise klein">{t('werkbank.loeschkonzept.ablago-fuellt-die-vorlage')}</p>
       <p className="leise klein">{t('werkbank.loeschkonzept.wann')}</p>
       {luecken.length > 0 && (
