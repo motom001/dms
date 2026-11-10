@@ -119,7 +119,24 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `zugriff/index.ts` (plus `maskiert` and `NICHT_SICHTBAR` for titles of folders the user cannot read).
 - **Gets the core** and a `ZugriffAnschluss` from the service: `kiSperre` (AI setting of packages) and `konten`.
 - **Layer 1:** imports only itself, the core, `shared/`, the base and `messung.ts`. Subject folders above get the `ZugriffDienst` when assembled (like search) and import it via `zugriff/index.ts`. The core does not import it; `kern.zugriff(ich)` calls what the service passes in.
-- **Still in the service:** the Workbench pages for permissions (later `berechtigungen/`), `regulaerSichtbarFuer` and `paketSiehtNicht`.
+- **Still in the service:** the Workbench pages for permissions (later `berechtigungen/`) and `regulaerSichtbarFuer`. Since #1073 `paketSiehtNicht` lives with the [folder types](#mappentypen) (`pakete-am-typ.ts`).
+
+## Folder types (#1073) { #mappentypen }
+
+`server/src/mappentypen/` (layer 2) gathers what makes up a folder type – one class per topic, each getting the core; the service builds them and keeps a one-line forward for every method:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `mappentypen.dienst.ts` | `MappentypenDienst` (`dienst.mappentypen`) | `listeTypen`, `typenFuer`, `rechteUebersicht`, `legeTypAn`, `aendereTyp`, `loescheTyp`, `belegteTypen`, `ausDokumentVon`, `typErkennungen` |
+| `eingabe.ts` | – | cleaning input: `bereinigeTyp`, `bereinigeFeld`, `behalte…`, `liesStand` |
+| `passung.ts` | `Passung` (`dienst.passung`) | `pruefePassung`, `passungFuer`, `pruefeUnpassende`, `passungNachziehen` |
+| `nummernkreise.ts` | `Nummernkreise` (`dienst.nummernkreise`) | number ranges (#171), `ARCHIV_KREIS` |
+| `systemtypen.ts` | `Systemtypen` (`dienst.systemtypen`) | `sichereSystemtypen` (step of the [system setup](#systemausstattung)), `benutzerspiegel`, `weitereRollen`, `ablageortTyp`, trail in administration mode |
+| `pakete-am-typ.ts` | `TypPakete` (`dienst.typpakete`) | `paketeAmTyp`, `setzePaketVerwehrt`, `paketSiehtNicht` |
+
+- **Door:** `mappentypen/index.ts`; only `routen.ts` loads the routes (`mappentypen.routen.ts`) directly.
+- **Gets the core**, `TypPakete` and `Systemtypen` also the [permission check](#zugriff), and per class a connector for what is still in the service (stamp, recognition and permissions on the type, tasks, titles, jobs, writing system folders).
+- **Still in the service:** the stamp on the type (`mitStempel`), `berechtigungenAusEingabe`, `ausPostZiele` (#937) and `titel`.
 
 ### Layers { #schichten }
 

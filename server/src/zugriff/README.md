@@ -29,7 +29,7 @@ Schicht 1 der Zielaufteilung: direkt über dem Kern, unter allen anderen Fachord
 - `kern.repo` bei jedem Aufruf neu holen – in einer Transaktion sieht der Zugriff deren Änderungen und wird nicht
   über die Anfrage hinaus gemerkt.
 - Noch im Dienst: die Werkbank der Berechtigungen (`berechtigungenListe`, `testlauf` …, künftig `berechtigungen/`),
-  `regulaerSichtbarFuer` (#798) und `paketSiehtNicht` (#686, Zustellung an Pakete).
+  und `regulaerSichtbarFuer` (#798). `paketSiehtNicht` (#686) liegt seit #1073 in `mappentypen/pakete-am-typ.ts`.
 - Neuer Code hier ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity` von `rechteAnEine`).
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Rechte prüfen*.

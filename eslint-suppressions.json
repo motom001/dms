@@ -120,10 +120,10 @@
   },
   "server/src/dienst.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 18
+      "count": 15
     },
     "complexity": {
-      "count": 29
+      "count": 26
     },
     "max-depth": {
       "count": 2
@@ -132,7 +132,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 6
+      "count": 5
     },
     "max-params": {
       "count": 7
@@ -277,6 +277,24 @@
   "server/src/laeufer/webassembly.d.ts": {
     "@typescript-eslint/no-unsafe-function-type": {
       "count": 2
+    }
+  },
+  "server/src/mappentypen/eingabe.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 3
+    }
+  },
+  "server/src/mappentypen/mappentypen.dienst.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/src/mappentypen/systemtypen.ts": {
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/messung.ts": {
