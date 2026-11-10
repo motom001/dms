@@ -1,0 +1,5 @@
+art: patch
+
+## Geändert
+
+- Abhängigkeiten aktualisiert (Gruppe „klein“, u. a. postgres 4.1.0); keine sichtbare Änderung.
