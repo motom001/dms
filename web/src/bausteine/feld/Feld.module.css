@@ -20,7 +20,8 @@
 
 .gruppeninhalt { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 
-/* Textartige Eingaben: Hover und Fokus sichtbar, hell und dunkel (#968, Hinweis aus der Prüfung). */
+/* Textartige Eingaben: Hover und Fokus sichtbar, hell und dunkel (#968, Hinweis aus der Prüfung). Hover (--leise) ist
+   deutlich stärker als der Ruhezustand (--rand-eingabe, #1026): hell 6,0 statt 3,3:1, dunkel 6,4 statt 3,2:1. */
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea) { transition: border-color .12s; }
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):hover:not(:disabled, [readonly]) { border-color: var(--leise); }
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { border-color: var(--akzent); outline: 2px solid var(--akzent); outline-offset: 1px; }
@@ -33,10 +34,28 @@
 .fehlerhaft :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { outline-color: var(--schlecht); }
 .fehlerhaft :where(input[type="checkbox"], input[type="radio"]) { outline: 1px solid var(--schlecht); outline-offset: 1px; }
 
-/* Gesperrt: grau, ohne Hover. Nur lesen: Wert gut lesbar, aber erkennbar nicht änderbar (gestrichelter Rahmen). */
-.feld :where(select, textarea):disabled { background: var(--senke); color: var(--leise); }
+/* Gesperrt: grau mit schwächerem Rand (basis.css, #1026), ohne Hover. Nur lesen: Wert gut lesbar, aber erkennbar nicht
+   änderbar (gestrichelter Rahmen in der Stärke der Eingaben). */
 .feld :where(input, select, textarea):disabled { cursor: not-allowed; }
 .feld :where(input, textarea)[readonly] { background: var(--senke); border-style: dashed; }
+
+/* Am Handy (#1027, Musterkatalog D6): Tippflächen mindestens 44 × 44 px, nur bei (pointer: coarse).
+   - Eingaben und Auswahllisten mindestens 44 px hoch.
+   - Haken: die ganze Zeile mit Beschriftung ist mindestens 44 px hoch; die Beschriftung füllt sie und schaltet mit.
+   - Hilfesymbol: bleibt optisch klein; ein unsichtbares Pseudo-Element gibt ihm 44 × 44 px. Die Kopfzeile ist dafür
+     44 px hoch, und der Abstand zur Beschriftung hält deren Tippfläche frei. */
+@media (pointer: coarse) {
+  .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea) { min-height: 44px; }
+  .mitHilfe { min-height: 44px; align-items: center; }
+  .mitHilfe :global(.hilfesymbol) { position: relative; flex: none; width: 1.25em; height: 1.25em; margin-left: calc(22px - .625em); vertical-align: middle; }
+  .mitHilfe :global(.hilfesymbol)::after { content: ""; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+  /* Erste Zeile der Beschriftung mittig in 44 px (Zeilenhöhe 1,45 aus basis.css), das Kästchen auf ihrer Höhe. */
+  .hakentext > label { padding-block: max(0px, calc((44px - 1.45em) / 2)); }
+  .hakenzeile > input { margin-top: 14px; }
+  .gruppeninhalt { gap: 0 14px; }
+  .gruppeninhalt > :global(.haken) { min-height: 44px; align-items: center; }
+  .gruppeninhalt > :global(.haken) > input { margin-top: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .feld :where(input, select, textarea) { transition: none; }

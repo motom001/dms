@@ -65,3 +65,29 @@ test('Schrift auf Flächen: mindestens 4,5:1, hell und dunkel', () => {
     }
   }
 });
+
+/** Werte für hohen Kontrast aus design.ts (const KONTRAST) – als Text gelesen, das Modul braucht den Browser. */
+function kontrastPalette() {
+  const block = /const KONTRAST: Palette = \{([\s\S]*?)\};/.exec(readFileSync(join(WEB, 'design.ts'), 'utf8'))?.[1] ?? '';
+  const p = Object.fromEntries([...block.matchAll(/'?([\w-]+)'?: '(#[0-9A-Fa-f]{6})'/g)].map((m) => [m[1], m[2]]));
+  assert.ok(Object.keys(p).length >= 8, 'KONTRAST in design.ts gefunden');
+  return p;
+}
+
+test('Rand der Eingaben: mindestens 3:1 gegen Fläche und Senke, hell, dunkel und hoher Kontrast (#1026)', () => {
+  const paletten = { hell, dunkel, kontrast: { ...hell, ...kontrastPalette() } };
+  for (const [name, p] of Object.entries(paletten)) {
+    for (const flaeche of ['flaeche', 'senke']) {
+      const k = kontrast(farbe(p['rand-eingabe']), farbe(p[flaeche]));
+      assert.ok(k >= 3, `${name}: --rand-eingabe auf --${flaeche} nur ${k.toFixed(2)}:1`);
+    }
+    // Hover (--leise, Feld.module.css) bleibt sichtbar stärker als der Ruhezustand.
+    assert.ok(kontrast(farbe(p.leise), farbe(p.flaeche)) > kontrast(farbe(p['rand-eingabe']), farbe(p.flaeche)) * 1.5, `${name}: Hover nicht deutlich stärker als der Rand`);
+  }
+  // Trennlinien und Kartenränder bleiben, wie sie sind – es geht nur um Eingaben.
+  assert.equal(hell['linie-stark'], '#C3CAD4');
+  assert.equal(dunkel['linie-stark'], '#3A4452');
+  // Eingaben nehmen den Rand aus dem Token.
+  const basis = readFileSync(join(WEB, 'basis.css'), 'utf8');
+  assert.match(basis, /^input, select, textarea \{[^}]*border: 1px solid var\(--rand-eingabe\)/m);
+});

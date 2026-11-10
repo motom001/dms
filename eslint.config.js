@@ -66,6 +66,9 @@ export default defineConfig([
       'react-hooks/exhaustive-deps': 'error',
     },
   },
+  // Bausteinregeln (#968, „Neues streng“): rohe Knöpfe und Eingaben nur in den Bausteinen selbst. Der Bestand beim
+  // Einführen steht in eslint-suppressions.json (Regel ablago/bausteine).
+  { files: ['web/src/**/*.tsx'], ignores: ['web/src/bausteine/**'], rules: { 'ablago/bausteine': 'error' } },
   // Komponenten sind länger als Funktionen im Server: 150 Zeilen je Funktion.
   { files: ['web/src/**/*.tsx'], rules: { 'max-lines-per-function': ['error', { max: 150, ...ZEILEN }] } },
   // Routendateien (#960): 60 Zeilen je Handler, die äußere Registrierfunktion ist ausgenommen.

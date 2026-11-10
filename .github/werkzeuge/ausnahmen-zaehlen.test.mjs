@@ -1,7 +1,7 @@
 // Tests für ausnahmen-zaehlen.mjs (#899): node --test .github/werkzeuge/ausnahmen-zaehlen.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { jeRegel, vergleiche, zaehleEslint } from './ausnahmen-zaehlen.mjs';
+import { jeRegel, neueRegeln, ohneRegeln, vergleiche, zaehleEslint } from './ausnahmen-zaehlen.mjs';
 
 const vorher = { 'a.ts': { complexity: { count: 2 }, 'max-params': { count: 1 } }, 'b.ts': { complexity: { count: 1 } } };
 
@@ -25,4 +25,17 @@ test('hinzufügen nein: mehr Einträge schlagen fehl, weniger sind gut', () => {
 
 test('ohne Datei in der Basis gilt der jetzige Stand als Ausgangspunkt', () => {
   assert.equal(vergleiche(null, 99).ok, true);
+});
+
+test('neue Regel (#968): eingefrorener Bestand zählt nicht, wenn die Regel in eslint.config.js neu dazukommt', () => {
+  const jetzt = { ...vorher, 'c.tsx': { 'ablago/bausteine': { count: 40 } } };
+  const alt = "rules: { complexity: ['error', 20] }";
+  const neu = `${alt}, rules: { 'ablago/bausteine': 'error' }`;
+  assert.deepEqual(neueRegeln(vorher, jetzt, alt, neu), ['ablago/bausteine']);
+  assert.equal(zaehleEslint(ohneRegeln(jetzt, ['ablago/bausteine'])), 4);
+  // Ohne neue Nennung in der Konfiguration ist es keine neue Regel – dann zählt der Bestand mit und schlägt fehl.
+  assert.deepEqual(neueRegeln(vorher, jetzt, neu, neu), []);
+  assert.deepEqual(neueRegeln(vorher, jetzt, alt, alt), []);
+  // Eine Regel mit Bestand in der Basis ist nie neu, auch wenn sie in der Konfiguration neu genannt wird.
+  assert.deepEqual(neueRegeln(vorher, { 'a.ts': { complexity: { count: 9 } } }, '', "'complexity'"), []);
 });

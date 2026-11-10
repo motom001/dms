@@ -1057,13 +1057,39 @@
     }
   },
   "web/src/App.tsx": {
+    "ablago/bausteine": {
+      "count": 11
+    },
     "complexity": {
       "count": 2
+    }
+  },
+  "web/src/Fehlergrenze.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/Messpanel.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/Speicherleiste.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/UeberDms.tsx": {
+    "ablago/bausteine": {
+      "count": 1
     }
   },
   "web/src/ablage/Ablage.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "ablago/bausteine": {
+      "count": 20
     },
     "complexity": {
       "count": 3
@@ -1078,17 +1104,41 @@
       "count": 1
     }
   },
+  "web/src/ablage/Aehnlich.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
   "web/src/ablage/Aktionen.tsx": {
+    "ablago/bausteine": {
+      "count": 14
+    },
     "complexity": {
       "count": 1
+    }
+  },
+  "web/src/ablage/AnsichtWahl.tsx": {
+    "ablago/bausteine": {
+      "count": 9
     }
   },
   "web/src/ablage/Aufgaben.tsx": {
+    "ablago/bausteine": {
+      "count": 19
+    },
     "complexity": {
       "count": 1
     }
   },
+  "web/src/ablage/AusDokument.tsx": {
+    "ablago/bausteine": {
+      "count": 7
+    }
+  },
   "web/src/ablage/Dokumente.tsx": {
+    "ablago/bausteine": {
+      "count": 48
+    },
     "complexity": {
       "count": 4
     },
@@ -1100,11 +1150,37 @@
     }
   },
   "web/src/ablage/EmailMehrere.tsx": {
+    "ablago/bausteine": {
+      "count": 11
+    },
     "complexity": {
       "count": 1
     }
   },
+  "web/src/ablage/Export.tsx": {
+    "ablago/bausteine": {
+      "count": 8
+    }
+  },
+  "web/src/ablage/FassungWahl.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/Formatiert.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    }
+  },
+  "web/src/ablage/FragAblage.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
   "web/src/ablage/Historie.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    },
     "complexity": {
       "count": 1
     },
@@ -1116,13 +1192,24 @@
     }
   },
   "web/src/ablage/LoeschBaum.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    },
     "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/Loeschgrund.tsx": {
+    "ablago/bausteine": {
       "count": 2
     }
   },
   "web/src/ablage/MappeFormular.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 3
+    },
+    "ablago/bausteine": {
+      "count": 45
     },
     "complexity": {
       "count": 8
@@ -1137,7 +1224,15 @@
       "count": 2
     }
   },
+  "web/src/ablage/Mehrfachauswahl.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
   "web/src/ablage/NeuePost.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    },
     "complexity": {
       "count": 1
     },
@@ -1145,27 +1240,67 @@
       "count": 1
     }
   },
+  "web/src/ablage/Notizen.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
   "web/src/ablage/Papierkorb.tsx": {
+    "ablago/bausteine": {
+      "count": 8
+    },
     "complexity": {
       "count": 2
     }
   },
+  "web/src/ablage/PdfSeiten.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    }
+  },
+  "web/src/ablage/PdfVerkleinern.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    }
+  },
   "web/src/ablage/Post.tsx": {
+    "ablago/bausteine": {
+      "count": 10
+    },
     "complexity": {
       "count": 3
     }
   },
   "web/src/ablage/PostKamera.tsx": {
+    "ablago/bausteine": {
+      "count": 12
+    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
+  "web/src/ablage/Sammelweitergabe.tsx": {
+    "ablago/bausteine": {
+      "count": 6
+    }
+  },
   "web/src/ablage/Schwaerzen.tsx": {
+    "ablago/bausteine": {
+      "count": 15
+    },
     "max-lines-per-function": {
       "count": 1
     }
   },
+  "web/src/ablage/StartSuche.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
   "web/src/ablage/Startseite.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    },
     "complexity": {
       "count": 1
     }
@@ -1173,9 +1308,25 @@
   "web/src/ablage/Stempel.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "ablago/bausteine": {
+      "count": 11
+    }
+  },
+  "web/src/ablage/StempelVorschau.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/ablage/Stern.tsx": {
+    "ablago/bausteine": {
+      "count": 1
     }
   },
   "web/src/ablage/Suche.tsx": {
+    "ablago/bausteine": {
+      "count": 19
+    },
     "complexity": {
       "count": 1
     },
@@ -1184,11 +1335,17 @@
     }
   },
   "web/src/ablage/Termine.tsx": {
+    "ablago/bausteine": {
+      "count": 13
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/ablage/Uebernehmen.tsx": {
+    "ablago/bausteine": {
+      "count": 17
+    },
     "complexity": {
       "count": 4
     },
@@ -1197,6 +1354,31 @@
     },
     "max-lines-per-function": {
       "count": 1
+    }
+  },
+  "web/src/ablage/Uebersetzung.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    }
+  },
+  "web/src/ablage/Unscharf.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/VerkleinertWahl.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/VerweisFenster.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/abruf.tsx": {
+    "ablago/bausteine": {
+      "count": 3
     }
   },
   "web/src/api.ts": {
@@ -1208,6 +1390,9 @@
     }
   },
   "web/src/assistent/Schritte.tsx": {
+    "ablago/bausteine": {
+      "count": 24
+    },
     "complexity": {
       "count": 1
     },
@@ -1216,6 +1401,9 @@
     }
   },
   "web/src/bereiche.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    },
     "complexity": {
       "count": 1
     },
@@ -1224,6 +1412,9 @@
     }
   },
   "web/src/einrichtung.tsx": {
+    "ablago/bausteine": {
+      "count": 8
+    },
     "complexity": {
       "count": 2
     },
@@ -1231,9 +1422,22 @@
       "count": 1
     }
   },
+  "web/src/einrichtung/Bereich.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/einrichtung/Beschriftung.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
   "web/src/einrichtung/Einrichtung.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 13
+    },
+    "ablago/bausteine": {
+      "count": 85
     },
     "complexity": {
       "count": 3
@@ -1245,12 +1449,38 @@
       "count": 3
     }
   },
+  "web/src/entdecken/Entdecken.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/entdecken/Rundgang.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
+  "web/src/entdecken/TippZeile.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/erreichbar.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    }
+  },
   "web/src/konto.tsx": {
+    "ablago/bausteine": {
+      "count": 21
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/lasttest.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    },
     "complexity": {
       "count": 1
     }
@@ -1260,7 +1490,15 @@
       "count": 1
     }
   },
+  "web/src/notfall.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    }
+  },
   "web/src/profil/Abwesenheit.tsx": {
+    "ablago/bausteine": {
+      "count": 11
+    },
     "complexity": {
       "count": 1
     }
@@ -1268,19 +1506,41 @@
   "web/src/profil/ApiSchluessel.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "ablago/bausteine": {
+      "count": 10
     }
   },
   "web/src/profil/DokumentPasswoerter.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "ablago/bausteine": {
+      "count": 10
+    }
+  },
+  "web/src/profil/FehlerMelden.tsx": {
+    "ablago/bausteine": {
+      "count": 5
     }
   },
   "web/src/profil/Laufwerk.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/profil/MeinExport.tsx": {
+    "ablago/bausteine": {
+      "count": 3
     }
   },
   "web/src/profil/Profil.tsx": {
+    "ablago/bausteine": {
+      "count": 24
+    },
     "complexity": {
       "count": 1
     },
@@ -1288,20 +1548,71 @@
       "count": 1
     }
   },
+  "web/src/profil/Webhooks.tsx": {
+    "ablago/bausteine": {
+      "count": 8
+    }
+  },
+  "web/src/profil/Zusammenfassung.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
+  "web/src/profil/Zweifaktor.tsx": {
+    "ablago/bausteine": {
+      "count": 13
+    }
+  },
+  "web/src/rueckfrage.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
   "web/src/seiten.ts": {
     "max-params": {
       "count": 1
+    }
+  },
+  "web/src/verwaltungsmodus.tsx": {
+    "ablago/bausteine": {
+      "count": 6
+    }
+  },
+  "web/src/werkbank/AbsenderBereinigen.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/werkbank/Anbindung.tsx": {
+    "ablago/bausteine": {
+      "count": 2
     }
   },
   "web/src/werkbank/Anmeldeschutz.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     },
+    "ablago/bausteine": {
+      "count": 14
+    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
+  "web/src/werkbank/Ansicht.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
+  "web/src/werkbank/Archiv.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
   "web/src/werkbank/Aufgaben.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    },
     "complexity": {
       "count": 1
     }
@@ -1312,6 +1623,9 @@
     }
   },
   "web/src/werkbank/Automatisierungen.tsx": {
+    "ablago/bausteine": {
+      "count": 55
+    },
     "complexity": {
       "count": 2
     },
@@ -1319,20 +1633,44 @@
       "count": 1
     }
   },
+  "web/src/werkbank/Benachrichtigungen.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    }
+  },
   "web/src/werkbank/Benutzer.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "ablago/bausteine": {
+      "count": 17
     },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Berechtigungen.tsx": {
+    "ablago/bausteine": {
+      "count": 21
+    },
     "max-lines": {
       "count": 1
     }
   },
+  "web/src/werkbank/Betrieb.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/Datenbank.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
   "web/src/werkbank/Datenschutz.tsx": {
+    "ablago/bausteine": {
+      "count": 30
+    },
     "complexity": {
       "count": 2
     },
@@ -1344,21 +1682,63 @@
     }
   },
   "web/src/werkbank/Demo.tsx": {
+    "ablago/bausteine": {
+      "count": 7
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Designs.tsx": {
+    "ablago/bausteine": {
+      "count": 10
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Eingangsordner.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    },
     "complexity": {
       "count": 1
     }
   },
+  "web/src/werkbank/ErkennungPaket.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Fehlermeldungen.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/werkbank/FragenGrenzen.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/KiTypen.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Loeschkonzept.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Loeschprotokoll.tsx": {
+    "ablago/bausteine": {
+      "count": 11
+    }
+  },
   "web/src/werkbank/MailVersand.tsx": {
+    "ablago/bausteine": {
+      "count": 13
+    },
     "complexity": {
       "count": 1
     },
@@ -1367,11 +1747,22 @@
     }
   },
   "web/src/werkbank/Nummernkreise.tsx": {
+    "ablago/bausteine": {
+      "count": 12
+    },
     "complexity": {
       "count": 2
     }
   },
+  "web/src/werkbank/OhneLeserecht.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
   "web/src/werkbank/PaketAblauf.tsx": {
+    "ablago/bausteine": {
+      "count": 19
+    },
     "complexity": {
       "count": 1
     },
@@ -1383,11 +1774,17 @@
     }
   },
   "web/src/werkbank/PaketEinstellungen.tsx": {
+    "ablago/bausteine": {
+      "count": 15
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/PaketErstellen.tsx": {
+    "ablago/bausteine": {
+      "count": 35
+    },
     "complexity": {
       "count": 1
     },
@@ -1398,7 +1795,15 @@
       "count": 1
     }
   },
+  "web/src/werkbank/PaketUmwandeln.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    }
+  },
   "web/src/werkbank/Pakete.tsx": {
+    "ablago/bausteine": {
+      "count": 31
+    },
     "complexity": {
       "count": 6
     },
@@ -1410,21 +1815,53 @@
     }
   },
   "web/src/werkbank/PaketeDazuholen.tsx": {
+    "ablago/bausteine": {
+      "count": 5
+    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
   "web/src/werkbank/Postfaecher.tsx": {
+    "ablago/bausteine": {
+      "count": 29
+    },
     "complexity": {
       "count": 2
+    }
+  },
+  "web/src/werkbank/Protokoll.tsx": {
+    "ablago/bausteine": {
+      "count": 11
+    }
+  },
+  "web/src/werkbank/Region.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/werkbank/SelbstErstellt.tsx": {
+    "ablago/bausteine": {
+      "count": 1
     }
   },
   "web/src/werkbank/Sicherung.tsx": {
+    "ablago/bausteine": {
+      "count": 12
+    },
     "complexity": {
       "count": 2
     }
   },
+  "web/src/werkbank/SichtRechte.tsx": {
+    "ablago/bausteine": {
+      "count": 14
+    }
+  },
   "web/src/werkbank/Sichten.tsx": {
+    "ablago/bausteine": {
+      "count": 40
+    },
     "complexity": {
       "count": 1
     },
@@ -1432,29 +1869,94 @@
       "count": 1
     }
   },
+  "web/src/werkbank/Speicherplatz.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
+  "web/src/werkbank/Sprachen.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    }
+  },
+  "web/src/werkbank/Stempel.tsx": {
+    "ablago/bausteine": {
+      "count": 12
+    }
+  },
+  "web/src/werkbank/SucheEinstellungen.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    }
+  },
+  "web/src/werkbank/Systemkonten.tsx": {
+    "ablago/bausteine": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Technik.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/TestlaufWahl.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/Texterkennung.tsx": {
+    "ablago/bausteine": {
+      "count": 12
+    }
+  },
   "web/src/werkbank/Uebersicht.tsx": {
+    "ablago/bausteine": {
+      "count": 11
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Verkleinern.tsx": {
+    "ablago/bausteine": {
+      "count": 9
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Verschluesselung.tsx": {
+    "ablago/bausteine": {
+      "count": 2
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Vollexport.tsx": {
+    "ablago/bausteine": {
+      "count": 8
+    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Wartungsmodus.tsx": {
+    "ablago/bausteine": {
+      "count": 4
+    },
     "complexity": {
       "count": 1
+    }
+  },
+  "web/src/werkbank/Webdav.tsx": {
+    "ablago/bausteine": {
+      "count": 3
+    }
+  },
+  "web/src/werkbank/Webhooks.tsx": {
+    "ablago/bausteine": {
+      "count": 3
     }
   },
   "web/src/werkbank/Werkbank.tsx": {
@@ -1466,6 +1968,9 @@
     }
   },
   "web/src/werkbank/Zustellen.tsx": {
+    "ablago/bausteine": {
+      "count": 17
+    },
     "complexity": {
       "count": 1
     }
@@ -1476,6 +1981,9 @@
     }
   },
   "web/src/wiederherstellen.tsx": {
+    "ablago/bausteine": {
+      "count": 10
+    },
     "complexity": {
       "count": 2
     }

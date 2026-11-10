@@ -6,6 +6,8 @@
 
 .inhalt ul { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; }
 .inhalt a { color: var(--akzent); }
+/* Am Handy 44 × 44 px wie die Bausteine (#1027) – die Rauchtests messen jedes Bedienelement der Seite. */
+@media (pointer: coarse) { .inhalt a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; } .inhalt ul { gap: 0 14px; } }
 
 .bereiche { display: flex; flex-direction: column; gap: 28px; }
 .bereich { display: flex; flex-direction: column; gap: 10px; scroll-margin-top: 16px; }

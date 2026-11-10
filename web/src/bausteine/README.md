@@ -9,6 +9,8 @@ Ausführlich im Entwicklerhandbuch unter **Gestaltung und Bausteine**
   `web/src/tokens.css`) und `muster.tsx` mit jedem Zustand für die Musterseite.
 - **Benannte Varianten statt Schalter** (`Feld`, `HakenFeld`, `FeldGruppe`), keine Gottkomponente.
 - **Neues streng, Bestand beim Anfassen** – kein Großumbau.
+- **Am Handy 44 × 44 px:** Jedes Bedienelement hat bei `(pointer: coarse)` eine Tippfläche von mindestens 44 × 44 px,
+  ohne Überlappen; mit der Maus bleibt alles gleich (#1027). Die Rauchtests messen das auf der Musterseite.
 
 ## Musterseite
 

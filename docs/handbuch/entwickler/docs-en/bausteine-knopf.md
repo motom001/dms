@@ -14,7 +14,7 @@
 | `gefahr` | error colour | something that can't easily be undone; almost always with a confirmation | “Delete”, “Lock immediately” |
 | `link` | like a link | **for ways only**: back, to the list, cancel without consequences – never for an action that changes something | “Back to the list”, “Back” |
 
-The colours come from the tokens (`--gruen`, `--akzent`, `--schlecht`) and apply in every design. Size: `groesse="klein"` in list headers, table rows and bars, otherwise normal.
+The colours come from the tokens (`--gruen`, `--akzent`, `--schlecht`) and apply in every design. Size: `groesse="klein"` in list headers, table rows and bars, otherwise normal. On a phone every button has a touch target of at least 44 × 44 px, the small one, too ([On a phone](bausteine.md#handy)).
 
 **“+ New” (#989):** If a page has only one thing to create, the button is called exactly “+ New”. If several things can be created on one page (e.g. My account with API keys and webhooks), it is “+ New …” with the item: “+ New key”, “+ New webhook”.
 

@@ -44,12 +44,12 @@ Braucht die Eingabe die Verknüpfung nicht als Props (eine eigene Komponente, di
 
 | Zustand | So entsteht er | So sieht er aus |
 | --- | --- | --- |
-| leer, gefüllt | Wert der Eingabe | Rahmen in `--linie-stark` |
+| leer, gefüllt | Wert der Eingabe | Rahmen in `--rand-eingabe` (mindestens 3:1, #1026) |
 | Maus darüber | – | Rahmen in `--leise` (nicht bei gesperrt und nur lesen) |
 | Tastaturfokus | – | Rahmen und Fokusring in `--akzent` |
 | Fehler | `fehler` gesetzt | Rahmen und Meldung in `--schlecht`, Warnsymbol; Fokusring dann ebenfalls in `--schlecht` |
 | Fehler mit Hinweis | `fehler` und `hinweis` gesetzt | Meldung direkt unter der Eingabe, der Hinweis darunter |
-| gesperrt | `disabled` an der Eingabe | Fläche `--senke`, Schrift `--leise`, kein Hover |
+| gesperrt | `disabled` an der Eingabe | Fläche `--senke`, Schrift `--leise`, schwächerer Rahmen `--linie-stark`, kein Hover |
 | nur lesen | `readOnly` an der Eingabe | Fläche `--senke`, gestrichelter Rahmen, Schrift gut lesbar und markierbar |
 | optional | `optional` | „(optional)“ in `--leise` hinter der Beschriftung |
 

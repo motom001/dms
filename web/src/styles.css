@@ -631,7 +631,7 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 .farbfelder { display: inline-flex; gap: 3px; vertical-align: -2px; margin-right: 4px; }
 .farbfelder span { width: 12px; height: 12px; border-radius: 3px; border: 1px solid transparent; }
 .farbwahl { display: flex; gap: 8px; align-items: center; }
-.farbwahl input[type=color] { width: 44px; height: 36px; padding: 2px; border: 1px solid var(--linie-stark); border-radius: 6px; background: var(--flaeche); }
+.farbwahl input[type=color] { width: 44px; height: 36px; padding: 2px; border: 1px solid var(--rand-eingabe); border-radius: 6px; background: var(--flaeche); }
 .farbwahl input.mono { width: 10ch; }
 .designvorschau { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .vorschaueintrag { min-width: 200px; }
@@ -1041,6 +1041,7 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   .listenkopf h1 .hilfesymbol > span { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--linie-stark); border-radius: 50%; }
   .listenkopf h1 .hilfesymbol:hover > span, .listenkopf h1 .hilfesymbol:focus-visible > span { border-color: var(--akzent); }
 }
+/* Außerhalb der Bausteine am Handy etwas größer; im Feld legt der Baustein die Tippfläche fest (Feld.module.css, #1027). */
 @media (pointer: coarse) { .hilfesymbol { width: 1.6em; height: 1.6em; } }
 
 /* Speicherplatz (#116): belegt je Ordner mit Marken für Warnschwelle und Grenze */

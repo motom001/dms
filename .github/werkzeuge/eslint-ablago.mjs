@@ -8,6 +8,12 @@
  *   Funktion **außer** der äußeren Registrierfunktion – das ist eine Funktion auf oberster Ebene, die exportiert
  *   wird (`export function bereichRouten(app) { app.get(…, async () => {…}) }`). Jeder Handler darin zählt für
  *   sich, ebenso nicht exportierte Hilfsfunktionen der Datei.
+ * - `ablago/bausteine`: rohe Bedienelemente in der Oberfläche (#968, „Neues streng“). `<button>` ist ein Fehler –
+ *   dafür gibt es `Knopf`; `<input>`, `<select>` und `<textarea>` sind es, wenn sie nicht in einem Feldrahmen stehen
+ *   (`Feld`, `HakenFeld`, `FeldGruppe`). Ausgenommen sind unsichtbare Eingaben (`type="hidden"`, `type="file"` – der
+ *   Dateiwähler öffnet sich über einen Knopf) und alles unter `web/src/bausteine/` (dort entstehen die Bausteine).
+ *   Der Bestand beim Einführen steht in `eslint-suppressions.json`; begründete Ausnahmen im Code wie sonst
+ *   (`// eslint-disable-next-line ablago/bausteine -- Suchfeld ohne sichtbare Beschriftung`).
  */
 import { builtinRules } from 'eslint/use-at-your-own-risk';
 
@@ -34,10 +40,52 @@ const handlerLaenge = {
   },
 };
 
+const ROH = new Set(['button', 'input', 'select', 'textarea']);
+const RAHMEN = new Set(['Feld', 'HakenFeld', 'FeldGruppe']);
+const UNSICHTBAR = new Set(['hidden', 'file']);
+
+/** Wert eines festen JSX-Attributs (`type="file"`), sonst undefined. */
+function attributWert(oeffnend, name) {
+  const a = oeffnend.attributes.find((x) => x.type === 'JSXAttribute' && x.name.name === name);
+  return a?.value?.type === 'Literal' ? a.value.value : undefined;
+}
+
+/** Steht das Element (irgendwo) in einem Feldrahmen? Auch über eine Funktion als Kind: {(v) => <input {...v} />}. */
+function imRahmen(knoten) {
+  for (let p = knoten.parent; p; p = p.parent) {
+    if (p.type === 'JSXElement' && p.openingElement.name.type === 'JSXIdentifier' && RAHMEN.has(p.openingElement.name.name)) return true;
+  }
+  return false;
+}
+
+const bausteine = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Bedienelemente nur über die Bausteine (Knopf, Feld, HakenFeld, FeldGruppe), #968' },
+    schema: [],
+    messages: {
+      knopf: '<button> direkt: Bitte den Baustein Knopf nehmen (web/src/bausteine, Entwicklerhandbuch „Gestaltung und Bausteine“).',
+      feld: '<{{name}}> ohne Feldrahmen: Bitte in Feld, HakenFeld oder FeldGruppe setzen (Entwicklerhandbuch „Gestaltung und Bausteine“).',
+    },
+  },
+  create(context) {
+    return {
+      JSXOpeningElement(knoten) {
+        const name = knoten.name.type === 'JSXIdentifier' ? knoten.name.name : null;
+        if (!name || !ROH.has(name)) return;
+        if (name === 'button') { context.report({ node: knoten, messageId: 'knopf' }); return; }
+        if (name === 'input' && UNSICHTBAR.has(attributWert(knoten, 'type'))) return;
+        if (!imRahmen(knoten.parent)) context.report({ node: knoten, messageId: 'feld', data: { name } });
+      },
+    };
+  },
+};
+
 export default {
   meta: { name: 'ablago' },
   rules: {
     'komplexitaet-hinweis': complexity,
     'handler-laenge': handlerLaenge,
+    bausteine,
   },
 };

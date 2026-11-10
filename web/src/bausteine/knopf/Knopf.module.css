@@ -47,6 +47,21 @@
 .warn { background: var(--warn-zart); color: var(--warn); }
 .schlecht { background: var(--schlecht-zart); color: var(--schlecht); }
 
+/* Am Handy (#1027, Musterkatalog D6): jede Tippfläche mindestens 44 × 44 px, nur bei (pointer: coarse) – mit Maus
+   bleibt alles, wie es ist. Normal und Link wachsen auf 44 px Höhe (Link unsichtbar, er hat keine Fläche), nur Symbol
+   auch in der Breite. Klein bleibt optisch klein: Die Tippfläche ist ein unsichtbares Pseudo-Element 8 px über und unter
+   dem Knopf (bei nur Symbol ringsum); der Außenabstand in derselben Breite hält Nachbarn frei, damit sich Tippflächen
+   in einer Knopfreihe nie überlappen. */
+@media (pointer: coarse) {
+  .baustein:not(:global(.klein)) { min-height: 44px; }
+  .baustein.symbol:not(:global(.klein)) { min-width: 44px; }
+  .baustein[data-knopf="link"] { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; }
+  .baustein:global(.klein) { position: relative; min-height: 28px; min-width: 44px; margin-block: 8px; }
+  .baustein:global(.klein)::before { content: ""; position: absolute; inset: -9px -1px; }
+  .baustein.symbol:global(.klein) { min-width: 28px; margin-inline: 8px; }
+  .baustein.symbol:global(.klein)::before { inset: -9px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .baustein { transition: none; }
   .kreisel { animation: none; border-right-color: currentColor; opacity: .6; }

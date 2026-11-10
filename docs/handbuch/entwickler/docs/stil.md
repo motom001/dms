@@ -32,6 +32,7 @@ Die Einstellungen stehen in `eslint.config.js` (flache Konfiguration, ESLint 10)
 | `@typescript-eslint/no-misused-promises` | an | – |
 | `@typescript-eslint/no-explicit-any` | an | – |
 | `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps` | an (Oberfläche) | – |
+| `ablago/bausteine` | an (`web/src/**/*.tsx` außer `web/src/bausteine/`) | – |
 | `@eslint-community/eslint-comments/require-description` | an | – |
 
 Längen zählen ohne Leerzeilen und Kommentare – Erklärungen im Code sollen nichts kosten.
@@ -40,6 +41,7 @@ Längen zählen ohne Leerzeilen und Kommentare – Erklärungen im Code sollen n
 - **Routendateien (`*.routen.ts`, #960):** Gemessen wird jeder Handler für sich. Ausgenommen ist nur die äußere Registrierfunktion – eine exportierte Funktion auf oberster Ebene, die die Handler einträgt. Stehen die Routen als Liste auf Modulebene, zählt ohnehin jeder Handler einzeln.
 - **Tests (`server/test/`):** ohne `max-lines` und `max-lines-per-function`, sonst dieselben Regeln. `test()`, `describe()` und `it()` aus `node:test` gelten nicht als „nicht abgewartet“.
 - **Werkzeug-Skripte** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/rauchtest/*.mjs`): nur die Grundregeln von ESLint, ohne Typinformation.
+- **Bausteine (`ablago/bausteine`, #968):** In der Oberfläche ist ein rohes `<button>` ein Fehler – dafür gibt es `Knopf`. `<input>`, `<select>` und `<textarea>` sind es, wenn sie nicht in `Feld`, `HakenFeld` oder `FeldGruppe` stehen. Ausgenommen sind unsichtbare Eingaben (`type="hidden"`, `type="file"`) und die Bausteine selbst unter `web/src/bausteine/`. Für Fälle, die die Bausteine bewusst nicht abdecken (Suchfeld ohne sichtbare Beschriftung, Eingabe in einer Tabellenzelle, siehe [Feld](bausteine-feld.md#wann)), gilt eine Ausnahme mit Begründung im Code. Der Bestand beim Einschalten steht in `eslint-suppressions.json`.
 - **Promises in der Oberfläche:** `onClick={async () => …}` meldet `no-misused-promises`, denn React wartet nicht auf das Promise und ein Fehler bliebe unbemerkt. Besser: `onClick={() => void speichern()}` mit eigenem `try`/`catch` in `speichern`.
 
 ### Ausnahmen im Code { #ausnahmen-im-code }
@@ -60,6 +62,7 @@ Für beide Listen gilt: **Die Gesamtzahl darf nie steigen.** Die CI zählt sie i
 
 - **Umtragen ist erlaubt.** Zieht eine Funktion in eine andere Datei um (etwa beim Teilen von `routen.ts`), wandert ihr Eintrag mit: `npm run lint:umtragen` schreibt die Listen neu und streicht, was nicht mehr vorkommt. Die Summe bleibt gleich – die Prüfung ist grün.
 - **Hinzufügen nicht.** Neuer oder geänderter Code, der eine Regel verletzt, wird korrigiert, nicht eingetragen. `lint:umtragen` würde ihn zwar aufnehmen, aber dann wächst die Zahl, und die CI meldet, bei welcher Regel.
+- **Neue Regel einschalten.** Wer eine Regel neu einführt, friert nur ihren Bestand ein: `npx eslint --suppress-rule <regel> --pass-on-unpruned-suppressions .` – die übrigen Einträge bleiben, wie sie sind. Die Gesamtzahl steigt dabei, ohne dass Code schlechter wird; `ausnahmen-zaehlen.mjs` rechnet die neue Regel deshalb heraus und zeigt ihren Bestand als „neue Regel … (Ausgangspunkt)“. Neu ist eine Regel, wenn sie in der Basis keinen Eintrag hat **und** ihr Name (`'regel'`) in `eslint.config.js` neu dazukommt – so steht sie sichtbar im Pull Request, und eine längst eingeschaltete Regel ohne Bestand lässt sich nicht still einfrieren. Ab dem nächsten Stand zählt ihr Bestand wie jeder andere.
 - **Weniger ist willkommen.** Wer eine Funktion vereinfacht, kann die Liste mit `npx eslint --prune-suppressions .` gleich mit verkleinern – sonst erledigt das der Workflow unten.
 
 ### Aufräumen auf main { #aufraeumen }
@@ -74,13 +77,14 @@ Farben stehen nur in **`web/src/tokens.css`** (#966) – als Variablen mit sprec
 
 | Token | Wofür |
 | --- | --- |
-| `--grund`, `--flaeche`, `--senke`, `--tinte`, `--leise`, `--linie`, `--linie-stark` | Seite, Flächen, Schrift und Linien |
+| `--grund`, `--flaeche`, `--senke`, `--tinte`, `--leise`, `--linie`, `--linie-stark` | Seite, Flächen, Schrift und Linien (`--linie-stark` für Trennlinien und Kartenränder) |
+| `--rand-eingabe` | Rand von Eingaben, Auswahllisten und Farbwahl – mindestens 3:1 gegen `--flaeche` und `--senke` (WCAG 1.4.11, #1026) |
 | `--akzent`, `--gruen`, `--schlecht`, `--warn` mit `-zart` und `-tinte` | Farbe, zarter Hintergrund, Schrift auf der vollen Farbe |
 | `--verwaltung`, `--verwaltung-tinte` | roter Balken im Verwaltungsmodus |
 | `--schatten-zart`, `--schatten`, `--schatten-stark`, `--schleier`, `--schleier-stark` | Schatten schwebender Flächen, Schleier hinter Dialogen |
 | `--papier`, `--papier-auswahl`, `--papier-wort`, `--schwaerzung`, `--markierung-1` … `-6` | Dokumente und Markierungen darauf – bleiben auch im Dunkeln wie auf Papier |
 
-Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewusst denselben, wie beim Papier). Schrift auf ihrer Fläche muss in beiden Modi mindestens 4,5:1 erreichen; `server/test/tokens.test.ts` rechnet das für die Paare nach.
+Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewusst denselben, wie beim Papier). Schrift auf ihrer Fläche muss in beiden Modi mindestens 4,5:1 erreichen, der Rand von Eingaben (`--rand-eingabe`) mindestens 3:1 gegen `--flaeche` und `--senke` – auch bei hohem Kontrast; `server/test/tokens.test.ts` rechnet das für die Paare nach.
 
 **Prüfung:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) sucht in `web/src/**/*.css` außer `tokens.css` nach Hex-Werten, `rgb()`/`hsl()` & Co. und benannten Farben wie `white`, in `*.ts(x)` nach Farbwerten in Zeichenketten. Die CI führt sie im Job **stil** aus; jeder Fund ist ein Fehler. Ausnahmen brauchen einen Grund in derselben Zeile – `/* farbe-erlaubt: Druck ist immer schwarz auf weiß */` – oder, für ganze Dateien, einen Eintrag mit Grund in `AUSNAHMEN` im Skript (heute: `design.ts` mit den Werten für hohen Kontrast, die Beispielbelege der Stempel-Vorschau).
 

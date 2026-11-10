@@ -71,12 +71,13 @@ function verknuepfe(eingabe: FeldEingabe, v: FeldVerknuepfung): ReactNode {
 
 /**
  * Kopfzeile: Beschriftung samt „(optional)“, dahinter das Hilfesymbol – das „?“ steht immer an der Beschriftung (#801),
- * aber außerhalb von `<label>`, damit es nicht zum Namen der Eingabe gehört.
+ * aber außerhalb von `<label>`, damit es nicht zum Namen der Eingabe gehört. Mit Hilfesymbol ist die Zeile am Handy
+ * 44 px hoch (Tippfläche, #1027).
  */
 function Kopf({ text, optional, hilfe, fuer, textId, className }: { text: ReactNode; optional?: boolean; hilfe?: Hilfeort; fuer?: string; textId?: string; className: string }) {
   const inhalt = <>{text}{optional && <span className={s.optional}> {t('oberflaeche.feld.optional')}</span>}</>;
   return (
-    <div className={className}>
+    <div className={hilfe ? `${className} ${s.mitHilfe}` : className}>
       {fuer ? <label htmlFor={fuer} className={s.beschriftung}>{inhalt}</label> : <span id={textId} className={s.beschriftung}>{inhalt}</span>}
       {hilfe && <Hilfe ort={hilfe} />}
     </div>
