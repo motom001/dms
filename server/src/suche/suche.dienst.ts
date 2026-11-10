@@ -10,6 +10,7 @@ import { liesWortgruppe, suchbegriffe, variantenVon, type Varianten } from '../.
 import { Fachfehler } from '../fehler';
 import { MB } from '../grenzen';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
+import type { ZugriffDienst } from '../zugriff';
 import { protokoll } from '../protokoll';
 import { WOERTER_JE_LAUF, type Repo } from '../repo';
 import { t } from '../sprache';
@@ -21,29 +22,23 @@ const SYNONYM_GRUPPEN_MAX = 2000;
 export const SUCHE_VEKTOR_MS = 1500;
 const liesModellOder422 = (x: unknown) => { try { return liesModell(x); } catch (e) { throw new Fachfehler(422, (e as Error).message); } };
 
-/**
- * Was die Suche außer dem Kern braucht. Rechte prüfen gehört zur Schicht „zugriff“, die es noch nicht als eigenes Modul
- * gibt – bis dahin reicht der Dienst sie herein (wie beim Kern das Bilden des Zugriffs).
- */
+/** Was die Suche außer dem Kern und der Rechteprüfung (`zugriff/`) braucht – vom Dienst hereingereicht. */
 export interface SucheAnschluss {
-  /** Das Repo außerhalb jeder Transaktion: Der Zwischenspeicher der Vektoren gilt über Transaktionen hinweg. */
-  grundRepo: Repo;
-  lesbare(z: Zugriff | undefined, ids: string[]): Promise<Set<string>>;
-  pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht): Promise<Mappe>;
   /** Konten (vom Start verbunden): das Dienstkonto eines Pakets für „Wohin gehört das?“. */
   konten(): { dienstkonten?(): Promise<Benutzer[]> } | undefined;
 }
 
 export class SucheDienst {
-  constructor(private readonly kern: Kern, private readonly anschluss: SucheAnschluss) {}
+  constructor(private readonly kern: Kern, private readonly rechte: ZugriffDienst, private readonly anschluss: SucheAnschluss) {}
 
   private get repo(): Repo { return this.kern.repo; }
-  private get grundRepo(): Repo { return this.anschluss.grundRepo; }
+  /** Der Zwischenspeicher der Vektoren gilt über Transaktionen hinweg (siehe `Kern.repoOhneTransaktion`). */
+  private get repoOhneTransaktion(): Repo { return this.kern.repoOhneTransaktion; }
   private get einstellungen() { return this.kern.einstellungen; }
   private get konten() { return this.anschluss.konten(); }
   private zugriff(ich: Zugreifender): Promise<Zugriff> { return this.kern.zugriff(ich); }
-  private lesbare(z: Zugriff | undefined, ids: string[]): Promise<Set<string>> { return this.anschluss.lesbare(z, ids); }
-  private pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht): Promise<Mappe> { return this.anschluss.pruefeRecht(z, id, recht); }
+  private lesbare(z: Zugriff | undefined, ids: string[]): Promise<Set<string>> { return this.rechte.lesbare(z, ids); }
+  private pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht): Promise<Mappe> { return this.rechte.pruefeRecht(z, id, recht); }
 
   /* ---------- Vektoren zu Dokumenten (#442) ---------- */
 
@@ -62,7 +57,7 @@ export class SucheDienst {
     if (!x) {
       const t = Date.now();
       let i: Vektorindex | null = null;
-      x = this.grundRepo.vektorenLaden(modell, (teil) => {
+      x = this.repoOhneTransaktion.vektorenLaden(modell, (teil) => {
         for (const e of teil) { i ??= new Vektorindex(e.vektor.length); if (e.vektor.length === i.dimension) i.setze(e.dokumentId, e.mappeId, e.vektor); }
       }).then(() => {
         this.vektorGeladen.add(modell);
@@ -188,7 +183,7 @@ export class SucheDienst {
   async merkeVektorModell(paket: string, modell: string): Promise<void> {
     if (this.vektorModelle.get(paket) === modell) return;
     this.vektorModelle.set(paket, modell);
-    const weg = await this.grundRepo.vektorenLoeschePaket(paket, modell);
+    const weg = await this.repoOhneTransaktion.vektorenLoeschePaket(paket, modell);
     if (weg) {
       for (const k of [...this.vektorIndizes.keys()]) if (k !== modell) { this.vektorIndizes.delete(k); this.vektorGeladen.delete(k); }
       protokoll.modul('werkbank').info('Vektoren eines alten Modells entfernt', { paket, modell, entfernt: weg });
@@ -386,7 +381,7 @@ export class SucheDienst {
 
   /** „Neu berechnen“ in der Werkbank: alle Vektoren des Pakets weg, die Nachberechnung beginnt von vorn. */
   async vektorenNeu(paket: string): Promise<{ entfernt: number }> {
-    const n = await this.grundRepo.vektorenLoeschePaket(paket);
+    const n = await this.repoOhneTransaktion.vektorenLoeschePaket(paket);
     this.vektorIndizes.clear(); this.vektorGeladen.clear();
     return { entfernt: n };
   }

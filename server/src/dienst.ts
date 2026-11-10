@@ -93,7 +93,7 @@ import { kontoRegelwerk, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRege
 import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { SucheDienst } from './suche';
-import { maskiert, NICHT_SICHTBAR, ZugriffDienst } from './zugriff/zugriff.dienst';
+import { maskiert, NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
 import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff, type BenutzerGespiegelt } from './kern';
 import { Systemausstattung } from './systemausstattung/systemausstattung.ablauf';
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
@@ -734,7 +734,7 @@ export class Dienst {
   /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
   readonly systemausstattung: Systemausstattung;
 
-  constructor(private grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
+  constructor(grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
     // Stand aus der Datenbank (#742), sonst nur dieser Prozess (speicherRepo in Tests).
     if (typeof grundRepo.haushaltsstand === 'function' && typeof grundRepo.erhoeheHaushaltsstand === 'function') {
       this.stand.verbinde({ lies: () => grundRepo.haushaltsstand!(), erhoehe: () => grundRepo.erhoeheHaushaltsstand!() });
@@ -742,10 +742,9 @@ export class Dienst {
     if (typeof grundRepo.mappenstand === 'function' && typeof grundRepo.erhoeheMappenstand === 'function') {
       this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
     }
-    this.grundRepo = this.stand.umhuelle(grundRepo, this.mappenstand);
-    this.kern = new Kern({ repo: this.grundRepo, dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.zugriff(ich) });
+    this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.zugriff(ich) });
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.kiSperre(p), konten: () => this.konten });
-    this.suche = new SucheDienst(this.kern, { grundRepo: this.grundRepo, lesbare: (z, ids) => this.lesbare(z, ids), pruefeRecht: (z, id, r) => this.pruefeRecht(z, id, r), konten: () => this.konten });
+    this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
       mappentypen: { sichereSystemtypen: () => this.sichereSystemtypen() },
@@ -879,13 +878,13 @@ export class Dienst {
    * Ereignis „volltext.fertig“ an das Paket (nach = Dokument-Id, ab der weitergesucht wird). Liefert die Ids.
    */
   async vektorNachlauf(paket: string, modell: string, max: number, nach: string | null): Promise<string[]> {
-    const alle = await this.grundRepo.ohneVektor(modell, max, nach);
+    const alle = await this.kern.repoOhneTransaktion.ohneVektor(modell, max, nach);
     if (!alle.length) return [];
     // KI-Dienste (#796): Dokumente nicht zugelassener Mappentypen bekommt ein KI-Paket auch hier nicht (Stelle rückt trotzdem weiter).
     const gesperrt = await this.kiSperreFuer(paket);
-    const typen = await this.grundRepo.typenVon([...new Set(alle.map((d) => d.mappeId))]);
+    const typen = await this.kern.repoOhneTransaktion.typenVon([...new Set(alle.map((d) => d.mappeId))]);
     const liste = alle.filter((d) => { const typ = typen.get(d.mappeId); return !!typ && !gesperrt(typ); });
-    if (liste.length) await this.grundRepo.legeEreignisseAn(liste.map((d) => ({ id: randomUUID(), paketId: paket, art: 'volltext.fertig', daten: { dokument: d.id, mappe: d.mappeId, nachberechnung: true } })));
+    if (liste.length) await this.kern.repoOhneTransaktion.legeEreignisseAn(liste.map((d) => ({ id: randomUUID(), paketId: paket, art: 'volltext.fertig', daten: { dokument: d.id, mappe: d.mappeId, nachberechnung: true } })));
     this.ereignisWecker?.();
     return alle.map((d) => d.id);
   }
@@ -4127,7 +4126,7 @@ export class Dienst {
   /* ---------- Ereigniskatalog (#670) ---------- */
 
   /** Verteiler des Katalogs; Abnehmer (Pakete hier, Automatisierungen #674, Webhooks #671) melden sich mit `abonniere` an. */
-  readonly ereignisse = new Ereignisverteiler({ repo: () => this.grundRepo, ruht: () => this.ereignisseRuhen?.() ?? false });
+  readonly ereignisse = new Ereignisverteiler({ repo: () => this.kern.repoOhneTransaktion, ruht: () => this.ereignisseRuhen?.() ?? false });
   /** Wartung, Wiederherstellung (vom Start gesetzt): dann verteilt der Katalog nichts. */
   ereignisseRuhen?: () => boolean | Promise<boolean>;
   /** Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern durch eine Person (vom Start gesetzt, Kern). */
@@ -4178,8 +4177,8 @@ export class Dienst {
     if (e.ausloeser.still && k.mappentyp) return;
     const alt = Object.entries(VERALTETE_EREIGNISSE).filter(([, neu]) => neu === e.art).map(([name]) => name as EreignisArt);
     const zustellungen: Array<{ paket: InstalliertesPaket; art: EreignisArt }> = [];
-    const pakete = await this.grundRepo.listePakete();
-    const typen = k.mappentyp ? await this.grundRepo.listeTypen() : [];
+    const pakete = await this.kern.repoOhneTransaktion.listePakete();
+    const typen = k.mappentyp ? await this.kern.repoOhneTransaktion.listeTypen() : [];
     for (const p of pakete) {
       const l = p.laeufer;
       if (!l || (e.ausloeser.art === 'paket' && e.ausloeser.id === p.id)) continue;
@@ -4195,7 +4194,7 @@ export class Dienst {
       // nicht – auch nicht Dateiname oder Ids. Lässt sich der Typ nicht bestimmen, gilt er als gesperrt (nie falsch).
       if (!k.mappentyp && istKiPaket(l) && (l.ereignisse.includes(e.art as EreignisArt) || alt.some((a) => l.ereignisse.includes(a)))) {
         const mappe = typeof e.daten.mappe === 'string' ? e.daten.mappe : null;
-        const typ = typeof e.daten.typ === 'string' ? e.daten.typ : mappe ? (await this.grundRepo.holeMappe(mappe))?.typId ?? null : null;
+        const typ = typeof e.daten.typ === 'string' ? e.daten.typ : mappe ? (await this.kern.repoOhneTransaktion.holeMappe(mappe))?.typId ?? null : null;
         if ((typ && (await this.kiSperre(p))(typ)) || (!typ && (mappe || typeof e.daten.dokument === 'string'))) {
           protokoll.modul('werkbank').info('Ereignis nicht an Paket zugestellt', { paket: p.id, ereignis: e.art, mappe, grund: t('meldungen.dienst.ki-nicht-zugelassen') });
           await this.kiUebersprungen(p.id, e.art, e.daten);
@@ -4209,10 +4208,10 @@ export class Dienst {
     if (!zustellungen.length) return;
     const daten: Record<string, unknown> = { ...e.daten, ereignis: e.id };
     // Name der Datei nur für Pakete (nicht im Ausgangskorb, der nur Ids kennt).
-    if (e.art === 'dokument.hochgeladen' && typeof e.daten.dokument === 'string') daten.name = (await this.grundRepo.holeDokument(e.daten.dokument))?.name ?? null;
+    if (e.art === 'dokument.hochgeladen' && typeof e.daten.dokument === 'string') daten.name = (await this.kern.repoOhneTransaktion.holeDokument(e.daten.dokument))?.name ?? null;
     const fuer = (art: EreignisArt): Record<string, unknown> => (art === 'texterkennung.fertig' ? { ...daten, seiten: daten.seiten ?? null } : daten);
     const feste = (paket: string, art: string) => { const h = createHash('sha256').update(`${e.id}|${paket}${art === e.art ? '' : `|${art}`}`).digest('hex'); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`; };
-    await this.grundRepo.legeEreignisseAn(zustellungen.map((z) => ({ id: feste(z.paket.id, z.art), paketId: z.paket.id, art: z.art, daten: fuer(z.art) })));
+    await this.kern.repoOhneTransaktion.legeEreignisseAn(zustellungen.map((z) => ({ id: feste(z.paket.id, z.art), paketId: z.paket.id, art: z.art, daten: fuer(z.art) })));
     this.ereignisWecker?.();
   }
 

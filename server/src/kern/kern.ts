@@ -73,7 +73,7 @@ export interface KernOptionen {
    * Wiederherstellung, Demo entfernen). Beim Start legt sie `systemausstattung.sicherstellen()` ausdrücklich an.
    */
   ausstatten: () => Promise<void>;
-  /** Zugriff bilden (Schicht „zugriff“; bis dahin im Dienst). */
+  /** Zugriff bilden (Schicht „zugriff“, `zugriff/` – der Kern bindet sie nicht ein, der Dienst reicht sie herein). */
   zugriff: (ich: Zugreifender) => Promise<Zugriff>;
 }
 
@@ -96,13 +96,19 @@ export class Kern {
   readonly loeschprotokoll = new Loeschprotokoll(this);
   /** Anschlusspunkte (#962): was sofort, in derselben Transaktion, zu einer Änderung gehört (`kern/anlaesse.ts`). */
   readonly anlaesse = new Anlaesse(() => this.inEigenerTransaktion());
-  private readonly grundRepo: Repo;
+  /**
+   * Das Repo außerhalb jeder Transaktion – auch während `inTransaktion` läuft. Nur für das, was über Transaktionen hinweg
+   * gilt und nie zu einer Änderung gehört: Zwischenspeicher (Vektoren der Suche), den Ereignisverteiler, Nachläufe im
+   * Hintergrund. Alles andere nimmt `repo`: Es sieht, was die laufende Transaktion schon geändert hat, und rollt mit ihr
+   * zurück.
+   */
+  readonly repoOhneTransaktion: Repo;
   private readonly wecke: () => void;
   private readonly ausstatten: () => Promise<void>;
   private readonly zugriffBilden: (ich: Zugreifender) => Promise<Zugriff>;
 
   constructor(o: KernOptionen) {
-    this.grundRepo = o.repo;
+    this.repoOhneTransaktion = o.repo;
     this.dateien = o.dateien;
     this.einstellungen = o.einstellungen;
     this.stand = o.stand;
@@ -116,7 +122,7 @@ export class Kern {
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
   get repo(): Repo {
     const t = transaktionen.getStore();
-    return t?.kern === this ? t.repo : this.grundRepo;
+    return t?.kern === this ? t.repo : this.repoOhneTransaktion;
   }
 
   /** Läuft gerade eine Transaktion dieses Kerns? */
@@ -130,7 +136,7 @@ export class Kern {
   async inTransaktion<T>(f: () => Promise<T>): Promise<T> {
     if (transaktionen.getStore()?.kern === this) return f();
     const nachher: Array<() => void> = [];
-    const erg = await this.grundRepo.transaktion((repo) => transaktionen.run({ kern: this, repo, nachher }, f));
+    const erg = await this.repoOhneTransaktion.transaktion((repo) => transaktionen.run({ kern: this, repo, nachher }, f));
     for (const n of nachher) n();
     return erg;
   }
