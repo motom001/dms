@@ -36,7 +36,6 @@
     "typescript-eslint": "8.72.1"
   },
   "overrides": {
-    "glob": "^14.0.2",
     "minimatch": "^11.0.1"
   }
 }
