@@ -4,7 +4,7 @@ import {
   ABRUF_ART, type Abrufweg, type Abruffassung, type Modusspur, type Kontorolle, type Systemkonto, verweiseVon,
   AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Register, type Wert, type Werte,
 } from '../../shared/src/model';
-import { DateiFehlt, type Dateispeicher } from './dateispeicher';
+import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -60,15 +60,13 @@ import { erkenneSprache, istTextsprache, SPRACHE_MARKE, sprachname, spracheZuInf
 import { dokumentsprachen, MAX_SEITENSPRACHEN, seitentexte, seitenZusammensetzen, SEITENVORSCHUB, SPRACHEN_JE_SEITE, zeichenzahl, type Seitensprache } from '../../shared/src/seitensprachen';
 import { ALLE_TYPEN, INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, PAKET_TEXT, PAKET_VOLLTEXT, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type BeispielStand } from '../../shared/src/pakete';
 import { INFO_TEXTEBENE, infoWartet, NICHT_GESPEICHERT } from '../../shared/src/volltext';
-import { dateitypName, erkenneBildtyp, INFO_UMWANDLUNG, infoFassung, infoUmwandlung, katalogUmwandlung, kernTyp, UMWANDELN_MAX_BYTES, type FassungInfo } from '../../shared/src/dateiumwandlung';
+import { erkenneBildtyp, infoFassung, kernTyp, type FassungInfo } from '../../shared/src/dateiumwandlung';
 import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from './dateiumwandlung';
 import { PaketVolltext } from './paketvolltext';
 import type { ArchivAblage, ArchivAnbindung, Archivfassung } from './archivfassung';
 import type { EntsperrenAnbindung, PdfEntsperren } from './entsperren';
-import { archivfassungName, MAIL_TYPEN, pruefeWoerter } from '../../shared/src/archivfassung';
-import { vorgaben } from '../../shared/src/paketeinstellungen';
-import { liesPdfA, textebeneWoerter } from './pdf';
-import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET, infoVolltextPaket, katalogVolltext, VOLLTEXT_ZEICHEN_MAX } from '../../shared/src/paketvolltext';
+import { archivfassungName, pruefeWoerter } from '../../shared/src/archivfassung';
+import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET, infoVolltextPaket, VOLLTEXT_ZEICHEN_MAX } from '../../shared/src/paketvolltext';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { AusDokument } from '../../shared/src/erkennung';
@@ -100,6 +98,14 @@ export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
 import { bereinigeWerte, keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenTitel, Passwortfelder } from './mappen';
 export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
+import { dateiname, DokumenteDienst, erkenneAnzeigbar, type TexterkennungAnbindung } from './dokumente/dokumente.dienst';
+import { DokumentUmwandlung } from './dokumente/umwandeln';
+import { DokumentArchivfassung } from './dokumente/archivfassung';
+import { GeschuetztePdfs } from './dokumente/geschuetzte-pdf';
+import { FehlendeDateien } from './dokumente/fehlende-dateien';
+import { DokumentVersionen } from './dokumente/versionen';
+export { erkenneAnzeigbar };
+export type { TexterkennungAnbindung };
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
 /** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
@@ -220,13 +226,9 @@ export function verkleinernEinstellungAus(v: unknown): VerkleinernEinstellung {
     stufe: istStufe(o.stufe) ? o.stufe : VERKLEINERN_STANDARD.stufe,
   };
 }
-/** Neue Dateien von außen, die automatisch verkleinert werden dürfen – nicht im DMS Bearbeitetes oder Zurückgeholtes. */
-const AUTOMATISCH_VERKLEINERN: ReadonlySet<Herkunft> = new Set<Herkunft>(['hochgeladen', 'api', 'webdav', 'eingang']);
 /** Werkbank: so viele große PDFs in der Liste und in einer Sammelaktion, davon so viele mit Schätzung. */
 export const GROSSE_MAX = 200;
 export const GROSSE_MIT_SCHAETZUNG = 60;
-/** Volltext übernehmen statt neu erkennen (Verkleinern ohne Versionierung). */
-interface Volltextuebernahme { text: string; seiten: number | null; info: string | null }
 
 /** Kurztext der Historie für „PDF bearbeitet“ (#335). */
 function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: number }): string {
@@ -237,40 +239,13 @@ function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: 
   return eintrag.join(', ') || t('meldungen.dienst.seiten-umsortiert');
 }
 
-function dateiname(v: unknown): string {
-  // eslint-disable-next-line no-control-regex -- Steuerzeichen aus Dateinamen entfernen ist der Zweck
-  const s = text(v).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim();
-  return (s || 'Dokument').slice(0, 200);
-}
-
 /** Prüfwert von Feldwerten (#878): JSON mit sortierten Schlüsseln, damit die Reihenfolge aus der Datenbank nicht zählt. */
 function pruefwertVon(werte: unknown): string {
   const sortiert = (v: unknown): unknown => (Array.isArray(v) ? v.map(sortiert) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, x]) => [k, sortiert(x)])) : v);
   return createHash('sha256').update(JSON.stringify(sortiert(werte ?? {}))).digest('hex');
 }
 
-/** Nur PDF und gängige Bilder werden im Browser angezeigt – erkannt am Inhalt, nicht am Namen. */
-export function erkenneAnzeigbar(b: Buffer): string | null {
-  const kopf = b.subarray(0, 12).toString('latin1');
-  if (kopf.startsWith('%PDF-')) return 'application/pdf';
-  if (b[0] === 0x89 && kopf.slice(1, 4) === 'PNG') return 'image/png';
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-  if (kopf.startsWith('GIF87a') || kopf.startsWith('GIF89a')) return 'image/gif';
-  if (kopf.startsWith('RIFF') && kopf.slice(8, 12) === 'WEBP') return 'image/webp';
-  return null;
-}
-
 /* ---------- Fachlogik ---------- */
-
-/** Was der Dienst von der Texterkennung braucht (#45, #458). */
-export interface TexterkennungAnbindung {
-  anstossen(): void;
-  erkenneSofort?(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }>;
-  /** Ausdrücklich neu erkennen (#458): Warteschlange, das Paket bekommt `neu`. */
-  neuErkennen?(id: string): Promise<void>;
-  /** Sofort, ohne Warteschlange (#458, „Volltext neu erzeugen“). */
-  jetzt?(id: string, opt: { neu: boolean; signal?: AbortSignal }): Promise<void>;
-}
 
 /** Ereignis „Volltext fertig“ (#458): wer den Volltext geliefert hat und ob es Text gibt. */
 export interface VolltextMeldung {
@@ -298,9 +273,6 @@ export const taugtAlsAufgabenEmpfaenger = (b: Benutzer) => b.aktiv && !b.art;
 const ABRUF_PRUEFUNG = 'abruf-pruefung';
 /** Belegung einer Code-Prüfung am Abruf-Link: endet spätestens nach dieser Zeit (scrypt dauert Bruchteile davon). */
 const ABRUF_PRUEFUNG_MS = 60_000;
-/** Fehlende Dateien (#877), die beim Lesen auffielen: für den Hinweis der Werkbank-Übersicht (höchstens so viele). */
-const FEHLENDE_DATEIEN = 'dateien_fehlen';
-const FEHLENDE_DATEIEN_MAX = 1000;
 
 export class Dienst {
   /**
@@ -385,6 +357,18 @@ export class Dienst {
   readonly mappenArchiv: MappenArchiv;
   /** Mappen (#1074): anlegen, ändern, holen, Notizen, Favoriten. */
   readonly mappen: MappenDienst;
+  /** Dokumente (#1075): Hochladen, Löschen, Texterkennung und Vorschaubilder anbinden. */
+  readonly dokumente: DokumenteDienst;
+  /** Dateien umwandeln (#577, #1075). */
+  readonly dokumentUmwandlung: DokumentUmwandlung;
+  /** Archivfassung (#631, #1075). */
+  readonly dokumentArchiv: DokumentArchivfassung;
+  /** Geschützte PDFs (#827, #1075). */
+  readonly geschuetztePdfs: GeschuetztePdfs;
+  /** Fehlende Dateien (#877, #1075). */
+  readonly dateienFehlen: FehlendeDateien;
+  /** Versionen (#194, #1075). */
+  readonly dokumentVersionen: DokumentVersionen;
   /** Suche (#964): unscharfe Suche, gleichbedeutende Wörter, Vektoren und ähnliche Dokumente. */
   readonly suche: SucheDienst;
   /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
@@ -425,6 +409,7 @@ export class Dienst {
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids),
     });
+    ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
@@ -452,6 +437,29 @@ export class Dienst {
     // Volltext aus Paketen (#614): zuständige Pakete mit dms:volltext, Ereignis datei.volltext an genau dieses.
     this.paketVolltext = new PaketVolltext({ pakete: () => this.repo.listePakete(), melde: (paket, daten) => this.auftrag(paket, 'datei.volltext', daten) });
   }
+  /** Dokumente (#1075): die Klassen in dokumente/; was noch im Dienst liegt, kommt über die Anschlüsse. */
+  private baueDokumente() {
+    const umwandlung = new DokumentUmwandlung(this.kern, {
+      ocr: () => this.ocr, entsperren: () => this.entsperren, paketVolltext: () => this.paketVolltext,
+      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.ereignis(art, daten, von),
+    });
+    const archiv = new DokumentArchivfassung(this.kern, umwandlung, {
+      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.ereignis(art, daten, von),
+      paketEinstellungen: (paket) => paketEinstellungen(this.kern, paket),
+    });
+    const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.ocr, listeTypen: () => this.listeTypen() });
+    const versionen = new DokumentVersionen(this.kern, {
+      ocr: () => this.ocr, neueDateien: (docs) => this.neueDateien(docs), raeumeAuf: (sha) => this.raeumeAuf(sha),
+      aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
+    });
+    const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
+      ereignis: (art, daten, von) => this.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.automatischVerkleinert(ein, name),
+      volltextFertig: (e, m) => this.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
+      pruefeArchivDokument: (id, was) => this.pruefeArchivDokument(id, was),
+    });
+    return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen };
+  }
+
   /**
    * Anschlusspunkte (#962): alle sofortigen Empfänger an dieser einen Stelle, in fester Reihenfolge (Test:
    * anlaesse.test.ts, Liste im Entwicklerhandbuch). Eine andere Reihenfolge ist ein eigener Pull Request. Die Empfänger
@@ -587,101 +595,24 @@ export class Dienst {
   /** Konten anbinden: Benutzer-Mappen im Papierkorb (#43). */
   verbindeKonten(h: KontenHaken) { this.konten = h; }
 
-  /** Texterkennung anbinden (#45): neue Dokumente stoßen sie an. */
-  private ocr?: TexterkennungAnbindung;
-  verbindeTexterkennung(t: TexterkennungAnbindung) { this.ocr = t; }
+  /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
 
-  /**
-   * Text einer Datei sofort, ohne Warteschlange (#391, „Aus Dokument ausfüllen“): vCard und Text direkt, PDFs
-   * und Bilder über die Texterkennung. Die Datei wird dabei nicht gespeichert.
-   */
-  async textAusDatei(inhalt: Buffer, name: string, mime: string): Promise<{ text: string; info: string }> {
-    const art = erkenneAnzeigbar(inhalt) ?? mime;
-    if (/\.(vcf|vcard|txt)$/i.test(name) || /^text\/(vcard|x-vcard|plain)$/.test(mime) || inhalt.subarray(0, 64).toString('utf8').includes('BEGIN:VCARD')) {
-      return { text: inhalt.toString('utf8').slice(0, VOLLTEXT_MAX), info: t('meldungen.dienst.text-der-datei') };
-    }
-    if (!this.ocr?.erkenneSofort) throw new Fachfehler(503, t('meldungen.dienst.die-texterkennung-ist-nicht'));
-    if (!/^(application\/pdf|image\/(jpeg|png|tiff|webp|gif|bmp))$/.test(art)) throw new Fachfehler(415, t('meldungen.dienst.diese-datei-laesst-sich'));
-    return this.ocr.erkenneSofort(inhalt, art);
-  }
+  /** Texterkennung (#45) und Vorschaubilder (#332) anbinden, Text einer Datei sofort (#391), neue Dateien melden. */
+  private get ocr() { return this.dokumente.ocr; }
+  verbindeTexterkennung(t: TexterkennungAnbindung) { this.dokumente.verbindeTexterkennung(t); }
+  textAusDatei(inhalt: Buffer, name: string, mime: string): Promise<{ text: string; info: string }> { return this.dokumente.textAusDatei(inhalt, name, mime); }
+  verbindeVorschau(v: Parameters<DokumenteDienst['verbindeVorschau']>[0]) { this.dokumente.verbindeVorschau(v); }
+  vorschauNachholen(): Promise<number> { return this.dokumente.vorschauNachholen(); }
+  private neueDateien(docs: Dokument[]) { this.dokumente.neueDateien(docs); }
 
-  /** Vorschaubilder anbinden (#332): neue Dateien einreihen, gelöschte mit entfernen. */
-  private vorschau?: { einreihen(d: Dokument[]): unknown; entferne(sha: string): Promise<void>; nachholen(d: Dokument[]): Promise<number> };
-  verbindeVorschau(v: { einreihen(d: Dokument[]): unknown; entferne(sha: string): Promise<void>; nachholen(d: Dokument[]): Promise<number> }) { this.vorschau = v; }
+  /* ---------- Geschützte PDFs (#827, dokumente/geschuetzte-pdf.ts) ---------- */
 
-  /** Vorschaubilder für vorhandene Dokumente nachholen (Werkbank → Wartungsoperationen, #332). */
-  async vorschauNachholen(): Promise<number> {
-    if (!this.vorschau) return 0;
-    const ids = [...new Set((await this.repo.alleDateien()).map((f) => f.dokumentId))];
-    const docs: Dokument[] = [];
-    for (const id of ids) { const d = await this.repo.holeDokument(id); if (d) docs.push(d); }
-    // Andere Dateitypen (#577): Dateien ohne Fassung gehen an das zuständige Paket; ihr Bild entsteht mit der Fassung.
-    const gemeldet = await this.umwandlung?.anfordern(docs.filter((d) => !kernTyp(d.mime))).catch((e: Error) => { protokoll.modul('umwandlung').warn('Dateien nicht zum Umwandeln gemeldet', { fehler: e.message }); return 0; }) ?? 0;
-    return (await this.vorschau.nachholen(docs)) + gemeldet;
-  }
-
-  /**
-   * Neue Dateien (#332, #577, #827): Vorschaubild einreihen, andere Dateitypen an das Paket zum Umwandeln melden,
-   * geschützte PDFs erkennen (Rechte-Sperre gleich aufheben, bei Post für eine Person deren gemerkte Passwörter).
-   */
-  private neueDateien(docs: Dokument[]) {
-    this.vorschau?.einreihen(docs);
-    const andere = docs.filter((d) => d && !kernTyp(d.mime));
-    if (andere.length && this.umwandlung) void this.umwandlung.anfordern(andere).catch((e: Error) => protokoll.modul('umwandlung').warn('Datei nicht zum Umwandeln gemeldet', { fehler: e.message }));
-    const pdfs = docs.filter((d) => d && d.mime === 'application/pdf');
-    if (pdfs.length && this.entsperren) void this.entsperren.neu(pdfs, (d) => this.besitzerDerPost(d.mappeId)).catch((e: Error) => protokoll.modul('dokumente').warn('Geschützte PDFs nicht geprüft', { fehler: e.message }));
-  }
-
-  /* ---------- Geschützte PDFs (#827) ---------- */
-
-  private entsperren?: PdfEntsperren;
-  verbindeEntsperren(e: PdfEntsperren) { this.entsperren = e; }
-  get pdfEntsperren() { return this.entsperren; }
-
-  /** Was PdfEntsperren vom Dienst braucht (#827) – für index.ts und Tests. */
-  entsperrenAnbindung(o: Omit<EntsperrenAnbindung, 'datei' | 'dokumenteMitSha' | 'nachEntsperren'>): EntsperrenAnbindung {
-    return { ...o, datei: (sha) => this.kern.liesGanz(sha), dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha), nachEntsperren: (docs, info) => this.nachEntsperren(docs, info) };
-  }
-
-  /**
-   * Wem gehört die Post (#827)? Das Konto aus „Für“ einer Post-Mappe; bei Post für alle und anderen Mappen null –
-   * dann probiert Ablago keine gemerkten Passwörter.
-   */
-  private async besitzerDerPost(mappeId: string): Promise<string | null> {
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) return null;
-    const typ = (await this.listeTypen()).find((x) => x.id === m.typId);
-    if (typ?.system !== 'post') return null;
-    return alsListe(m.werte.fuer)[0] ?? null;
-  }
-
-  /**
-   * Eine entsperrte Fassung ist da (#827): Vorschaubild daraus, Volltext neu (wo er am Schutz scheiterte), Archivfassung
-   * (wo der Volltext schon steht) und – wenn eine Person entsperrt hat – ein Eintrag in der Historie.
-   */
-  private async nachEntsperren(docs: Dokument[], info: FassungInfo) {
-    this.vorschauFassung?.ausFassung(docs);
-    const neu = docs.filter((d) => d.ocr && (d.ocr.stand === 'ausgelassen' || d.ocr.stand === 'fehler')).map((d) => d.id);
-    if (neu.length) { await this.repo.ocrEinreihen(neu); this.ocr?.anstossen(); }
-    for (const d of docs) if (d.ocr?.stand === 'fertig') void this.archivNachVolltext(d.id);
-    const e = info.entsperrt;
-    if (!e || e.art === 'rechte') return;
-    for (const d of docs) {
-      const text = e.art === 'gemerkt' ? t('mappen.entsperren.historie.gemerkt', { name: e.name ?? '' }) : t('mappen.entsperren.historie.passwort');
-      await this.notiere(d.mappeId, e.von, 'entsperrt', { dokument: d.name, text })
-        .catch((f: Error) => protokoll.modul('dokumente').warn('Historie zum Entsperren nicht geschrieben', { dokument: d.id, fehler: f.message }));
-    }
-  }
-
-  /** Geschütztes PDF mit Passwort entsperren (POST /dokumente/{id}/entsperren); Lesen prüft die Route. */
-  async entsperreDokument(id: string, konto: string, e: { passwort?: unknown; merken?: unknown; name?: unknown }, merkenErlaubt: boolean) {
-    if (!this.entsperren) throw new Fachfehler(404, t('mappen.entsperren.aus'));
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (e.merken === true && !merkenErlaubt) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.nur-browser'));
-    const r = await this.entsperren.mitPasswort(d, konto, e.passwort, e.merken === true ? { name: e.name } : null);
-    return { dokument: d.id, ...r };
-  }
+  private get entsperren() { return this.geschuetztePdfs.entsperren; }
+  verbindeEntsperren(e: PdfEntsperren) { this.geschuetztePdfs.verbindeEntsperren(e); }
+  get pdfEntsperren() { return this.geschuetztePdfs.pdfEntsperren; }
+  entsperrenAnbindung(o: Omit<EntsperrenAnbindung, 'datei' | 'dokumenteMitSha' | 'nachEntsperren'>): EntsperrenAnbindung { return this.geschuetztePdfs.entsperrenAnbindung(o); }
+  entsperreDokument(id: string, konto: string, e: { passwort?: unknown; merken?: unknown; name?: unknown }, merkenErlaubt: boolean) { return this.geschuetztePdfs.entsperreDokument(id, konto, e, merkenErlaubt); }
+  private mitPdfSchutz(docs: Dokument[]): Promise<Dokument[]> { return this.geschuetztePdfs.mitPdfSchutz(docs); }
 
   /** Inhalt der entsperrten Fassung zum Inhalt einer Datei (Stempel, Verkleinern, #827); null ohne. */
   private entsperrtZu = async (inhalt: Buffer): Promise<Buffer | null> => {
@@ -689,180 +620,27 @@ export class Dienst {
     return (await this.entsperren.fassung(createHash('sha256').update(inhalt).digest('hex')))?.inhalt ?? null;
   };
 
-  /** Schutz je Dokument (#827), nur bei geschützten PDFs. */
-  private async mitPdfSchutz(docs: Dokument[]): Promise<Dokument[]> {
-    if (!this.entsperren || !docs.length) return docs;
-    return Promise.all(docs.map(async (d) => {
-      const s = await this.entsperren!.stand(d).catch(() => null);
-      return s ? { ...d, pdfSchutz: s } : d;
-    }));
-  }
+  /* ---------- Dateien umwandeln (#577, dokumente/umwandeln.ts) ---------- */
 
-  /* ---------- Dateien umwandeln (#577) ---------- */
+  private get umwandlung() { return this.dokumentUmwandlung.umwandlung; }
+  verbindeUmwandlung(u: Dateiumwandlung, vorschau?: Parameters<DokumentUmwandlung['verbindeUmwandlung']>[1]) { this.dokumentUmwandlung.verbindeUmwandlung(u, vorschau); }
+  get dateiumwandlung() { return this.dokumentUmwandlung.dateiumwandlung; }
+  umwandlungAnbindung(ablage: FassungsAblage, vorschau?: { setze(sha: string, bild: Buffer, mime: string): Promise<void> }): UmwandlungsAnbindung { return this.dokumentUmwandlung.umwandlungAnbindung(ablage, vorschau); }
+  nachFassung(docs: Dokument[], info: FassungInfo) { return this.dokumentUmwandlung.nachFassung(docs, info); }
+  umwandelPaketDa(typen: string[]): Promise<number> { return this.dokumentUmwandlung.umwandelPaketDa(typen); }
+  setzeFassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentUmwandlung.setzeFassung(z, id, sha, inhalt); }
+  setzeVorschaubild(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentUmwandlung.setzeVorschaubild(z, id, sha, inhalt); }
+  fassungVon(id: string): Promise<{ d: Dokument; info: FassungInfo; inhalt: Buffer }> { return this.dokumentUmwandlung.fassungVon(id); }
+  umwandlungStand() { return this.dokumentUmwandlung.umwandlungStand(); }
+  private nachUmwandlungsEreignis(...a: Parameters<DokumentUmwandlung['nachUmwandlungsEreignis']>) { return this.dokumentUmwandlung.nachUmwandlungsEreignis(...a); }
 
-  /** Dateien umwandeln anbinden (#577, dateiumwandlung.ts). */
-  private umwandlung?: Dateiumwandlung;
-  private vorschauFassung?: { ausFassung(d: Dokument[]): unknown; setze(sha: string, bild: Buffer, mime: string): Promise<void> };
-  verbindeUmwandlung(u: Dateiumwandlung, vorschau?: { ausFassung(d: Dokument[]): unknown; setze(sha: string, bild: Buffer, mime: string): Promise<void> }) {
-    this.umwandlung = u;
-    this.vorschauFassung = vorschau;
-  }
-  get dateiumwandlung() { return this.umwandlung; }
+  /* ---------- Archivfassung (PDF/A, #631, dokumente/archivfassung.ts) ---------- */
 
-  /** Was Dateiumwandlung vom Dienst braucht (#577) – für index.ts und Tests. */
-  umwandlungAnbindung(ablage: FassungsAblage, vorschau?: { setze(sha: string, bild: Buffer, mime: string): Promise<void> }): UmwandlungsAnbindung {
-    return {
-      ablage,
-      pakete: () => this.repo.listePakete(),
-      melde: (paket, daten) => this.auftrag(paket, 'datei.umwandeln', daten),
-      dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha),
-      nachFassung: (docs, info) => this.nachFassung(docs, info),
-      ...(vorschau ? { vorschaubild: (sha: string, bild: Buffer, mime: string) => vorschau.setze(sha, bild, mime) } : {}),
-    };
-  }
-
-  /**
-   * Eine neue Fassung ist da (#577): Vorschaubild daraus, Volltext neu (für Dokumente, die darauf warteten oder bisher
-   * ohne Text ausgelassen waren) und ein Eintrag in der Historie jeder betroffenen Mappe.
-   */
-  async nachFassung(docs: Dokument[], info: FassungInfo) {
-    this.vorschauFassung?.ausFassung(docs);
-    // Liefert ein Paket mit dms:volltext den Text (#614), bleibt es dabei: Die Fassung gibt nur das Vorschaubild.
-    const vp = await this.paketVolltext.pakete().catch(() => []);
-    const neu = docs.filter((d) => !vp.some((p) => p.typen.includes(d.mime.toLowerCase())) && d.ocr && (d.ocr.stand === 'ausgelassen' || d.ocr.stand === 'fehler' || (d.ocr.stand === 'paket' && (d.ocr.info ?? '').startsWith(INFO_UMWANDLUNG)))).map((d) => d.id);
-    if (neu.length) { await this.repo.ocrEinreihen(neu); this.ocr?.anstossen(); }
-    const konto = [...this.paketKonten.entries()].find(([, p]) => p === info.paket.id)?.[0] ?? null;
-    for (const d of docs) {
-      await this.ereignis('datei.umgewandelt', { dokument: d.id, mappe: d.mappeId, typ: await this.typVon(d.mappeId), paket: info.paket.id }, konto);
-      await this.notiere(d.mappeId, konto, 'umgewandelt', { dokument: d.name, text: `${dateitypName(d.mime)} → ${dateitypName(info.mime)} (${info.paket.name} ${info.paket.version})`, fassung: info.mime, groesse: info.groesse, paket: `${info.paket.name} ${info.paket.version}` })
-        .catch((e: Error) => protokoll.modul('umwandlung').warn('Historie zur Fassung nicht geschrieben', { dokument: d.id, fehler: e.message }));
-    }
-  }
-
-  /**
-   * Ein Paket zum Umwandeln ist neu installiert (oder kann neue Dateitypen): Alle Dokumente dieser Typen ohne Fassung
-   * gehen an das Paket; wer auf ein Paket wartete (ausgelassen, „mit dem Paket …“), bekommt so Vorschau und Volltext.
-   */
-  async umwandelPaketDa(typen: string[]): Promise<number> {
-    if (!this.umwandlung || !typen.length) return 0;
-    const docs = await this.repo.dokumenteMitTyp(typen);
-    const n = await this.umwandlung.anfordern(docs);
-    // Was bisher ohne Paket ausgelassen war, wartet jetzt sichtbar auf die Fassung.
-    for (const d of docs) {
-      if (d.ocr?.stand !== 'ausgelassen' || (await this.umwandlung.info(d.sha256))) continue;
-      const p = await this.umwandlung.paketFuer(d.mime);
-      if (p && d.groesse <= UMWANDELN_MAX_BYTES) await this.repo.ocrSetze(d.id, { stand: 'paket', info: infoUmwandlung(p), seiten: d.ocr.seiten ?? null });
-    }
-    protokoll.modul('umwandlung').info('Paket zum Umwandeln installiert – vorhandene Dateien gemeldet', { typen, dateien: n });
-    return n;
-  }
-
-  /** Fassung eines Pakets übernehmen (#577, PUT /dokumente/{id}/fassung); Lesen des Dokuments prüft die Route. */
-  async setzeFassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) {
-    if (!this.umwandlung) throw new Fachfehler(404, t('pakete.vorschaubild.aus'));
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const f = await this.umwandlung.setzeFassung(z?.paket, d, sha, inhalt);
-    return { dokument: d.id, fassung: f };
-  }
-
-  /** Vorschaubild eines Pakets übernehmen (#577, PUT /dokumente/{id}/vorschaubild). */
-  async setzeVorschaubild(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) {
-    if (!this.umwandlung) throw new Fachfehler(404, t('pakete.vorschaubild.aus'));
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return this.umwandlung.setzeVorschaubild(z?.paket, d, sha, inhalt);
-  }
-
-  /** Die umgewandelte Fassung eines Dokuments (#577) zum Ansehen; 404, wenn es keine gibt. */
-  async fassungVon(id: string): Promise<{ d: Dokument; info: FassungInfo; inhalt: Buffer }> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    // Geschützte PDFs (#827): die entsperrte Fassung.
-    const f = kernTyp(d.mime) ? (d.mime === 'application/pdf' ? await this.entsperren?.fassung(d.sha256) : null) : await this.umwandlung?.lies(d.sha256);
-    if (!f) throw new Fachfehler(404, t('pakete.fassung.keine'));
-    return { d, ...f };
-  }
-
-  /**
-   * Für die Werkbank (#577): Pakete zum Umwandeln und je Dateityp, den der Kern nicht selbst liest, wie viele
-   * Dokumente es gibt, welches Paket zuständig ist – oder welches aus dem Katalog es wäre.
-   */
-  async umwandlungStand() {
-    const pakete = this.umwandlung ? await this.umwandlung.pakete() : [];
-    const volltextPakete = await this.paketVolltext.pakete();
-    const typen = await this.repo.dokumentTypen();
-    const liste = await Promise.all(Object.entries(typen).filter(([m]) => !kernTyp(m) && (m !== 'application/octet-stream' || volltextPakete.some((p) => p.typen.includes(m)))).map(async ([mime, anzahl]) => {
-      const p = this.umwandlung ? await this.umwandlung.paketFuer(mime, pakete) : null;
-      const k = katalogUmwandlung(mime);
-      // Volltext aus Paketen (#614): zuständiges Paket bzw. das aus dem Katalog.
-      const v = await this.paketVolltext.paketFuer(mime, volltextPakete);
-      const kv = katalogVolltext(mime);
-      return { mime, name: dateitypName(mime), anzahl, paket: p ? { id: p.id, name: p.name } : null, katalog: k ? { id: k.id, name: k.name } : null,
-        volltext: v ? { id: v.id, name: v.name } : null, volltextKatalog: kv ? { id: kv.id, name: kv.name } : null };
-    }));
-    return { pakete, volltextPakete, typen: liste.sort((a, b) => b.anzahl - a.anzahl || a.name.localeCompare(b.name)) };
-  }
-
-  /** Nach dem Ereignis „Datei umwandeln“ (#577): Wartet ein Dokument noch, aber es gibt keine Fassung, steht der Grund daran. */
-  private async nachUmwandlungsEreignis(paket: string, e: { daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) {
-    const sha = typeof e.daten.sha256 === 'string' ? e.daten.sha256 : '';
-    if (!this.umwandlung || !sha) return;
-    if (!r.ok && !r.aufgegeben) return;
-    this.umwandlung.erledigt(sha);
-    if (await this.umwandlung.info(sha)) return;
-    const p = (await this.repo.listePakete()).find((x) => x.id === paket);
-    const grund = (r.ok ? r.text : r.fehler ?? '').trim().replace(/\s+/g, ' ').slice(0, 300);
-    for (const d of await this.repo.dokumenteMitSha(sha)) {
-      if (d.ocr?.stand !== 'paket' || !(d.ocr.info ?? '').startsWith(INFO_UMWANDLUNG)) continue;
-      const info = r.ok ? t('meldungen.dienst.umwandlung-durch-paket', { wert: p?.name ?? paket, wert2: grund || t('meldungen.dienst.keine-fassung-geliefert') }) : t('meldungen.dienst.umwandlung-durch-paket-2', { wert: p?.name ?? paket, wert2: grund ? `: ${grund}` : '' });
-      await this.repo.ocrSetze(d.id, { stand: r.ok ? 'ausgelassen' : 'fehler', info: info.slice(0, 500), text: null });
-    }
-  }
-
-  /* ---------- Archivfassung (PDF/A, #631) ---------- */
-
-  private archiv?: Archivfassung;
-  verbindeArchivfassung(a: Archivfassung) { this.archiv = a; }
-  get archivfassung() { return this.archiv; }
-
-  /** Was Archivfassung vom Dienst braucht (#631) – für index.ts und Tests. */
-  archivAnbindung(ablage: ArchivAblage): ArchivAnbindung {
-    return {
-      ablage,
-      pakete: () => this.repo.listePakete(),
-      einstellung: async (paket, k) => {
-        const w = (await paketEinstellungen(this.kern, paket))?.werte ?? {};
-        if (k in w) return w[k];
-        const p = (await this.repo.listePakete()).find((x) => x.id === paket);
-        return p?.einstellungen ? vorgaben(p.einstellungen)[k] : undefined;
-      },
-      melde: (paket, daten) => this.auftrag(paket, 'datei.archivfassung', daten),
-      dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha),
-      dokumenteMitTyp: (m) => this.repo.dokumenteMitTyp(m),
-      lesefassung: async (sha) => (await this.umwandlung?.lies(sha)) ?? null,
-      datei: (sha) => this.kern.liesGanz(sha),
-      textebene: (pdf) => textebeneWoerter(pdf),
-      liesPdfA: (pdf) => liesPdfA(pdf),
-      notiere: async (d, paket, daten) => {
-        const konto = [...this.paketKonten.entries()].find(([, p]) => p === paket)?.[0] ?? null;
-        await this.notiere(d.mappeId, konto, 'archivfassung', daten);
-        await this.ereignis('archivfassung.erstellt', { dokument: d.id, mappe: d.mappeId, typ: await this.typVon(d.mappeId), paket }, konto);
-      },
-    };
-  }
-
-  /**
-   * Der Volltext steht fest (#631): Dokument an das Paket für die Archivfassung melden – im Hintergrund. Ob es passt
-   * (Volltext fertig bzw. bei E-Mails auch ausgelassen, #946), entscheidet `anfordern`.
-   */
-  private async archivNachVolltext(id: string, neu?: boolean) {
-    if (!this.archiv) return;
-    try {
-      const d = await this.repo.holeDokument(id);
-      if (d) await this.archiv.anfordern(d, { neu });
-    } catch (e) { protokoll.modul('archivfassung').warn('Dokument nicht zur Archivfassung gemeldet', { dokument: id, fehler: (e as Error).message }); }
-  }
+  private get archiv() { return this.dokumentArchiv.archiv; }
+  verbindeArchivfassung(a: Archivfassung) { this.dokumentArchiv.verbindeArchivfassung(a); }
+  get archivfassung() { return this.dokumentArchiv.archivfassung; }
+  archivAnbindung(ablage: ArchivAblage): ArchivAnbindung { return this.dokumentArchiv.archivAnbindung(ablage); }
+  private archivNachVolltext(id: string, neu?: boolean) { return this.dokumentArchiv.archivNachVolltext(id, neu); }
 
   /**
    * Der Kern hat den Volltext ausgelassen (#946), z. B. eine E-Mail ohne Paket, das ihren Text liefert: Für E-Mails
@@ -870,52 +648,12 @@ export class Dienst {
    */
   volltextAusgelassen(id: string) { return this.archivNachVolltext(id); }
 
-  /** Paket für die Archivfassung installiert, neue Dateitypen oder eine Art nachträglich angekreuzt: Bestand melden (#631, #660). */
-  async archivPaketDa(typen: string[]): Promise<number> {
-    if (!this.archiv || !typen.length) return 0;
-    const klein = new Set(typen.map((m) => m.toLowerCase()));
-    // E-Mails (#946) liegen oft als application/octet-stream mit Endung .eml/.msg da.
-    if ([...klein].some((m) => MAIL_TYPEN.includes(m))) klein.add('application/octet-stream');
-    const vorhanden = Object.keys(await this.repo.dokumentTypen()).filter((m) => klein.has(m.toLowerCase()));
-    return this.archiv.bestand(vorhanden);
-  }
-
-  /** Archivfassung annehmen (PUT /dokumente/{id}/archivfassung?sha256=…); Lesen prüft die Route. */
-  async setzeArchivfassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) {
-    if (!this.archiv) throw new Fachfehler(404, t('pakete.archiv.aus'));
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return { dokument: d.id, archivfassung: await this.archiv.setze(z?.paket, d, sha, inhalt) };
-  }
-
-  /** Die Archivfassung eines Dokuments zum Ansehen (nur die aktuelle – zur Datei des Dokuments); 404 ohne. */
-  async archivfassungVon(id: string) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const f = await this.archiv?.lies(d.sha256);
-    if (!f) throw new Fachfehler(404, t('pakete.archiv.keine'));
-    return { d, ...f };
-  }
-
-  /** Wortpositionen eines Dokuments (#631, GET /dokumente/{id}/wortpositionen). */
-  async wortpositionen(id: string) {
-    if (!this.archiv) throw new Fachfehler(404, t('pakete.archiv.aus'));
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return this.archiv.wortpositionen(d);
-  }
-
-  /** Werkbank → Texterkennung → Archivfassung (#631). */
-  async archivStand() { return this.archiv ? this.archiv.uebersicht() : null; }
-
-  /** Stand der Archivfassung je Dokument (#631), nur wenn es eine gibt oder ein Paket dran ist. */
-  private async mitArchivStand(docs: Dokument[]): Promise<Dokument[]> {
-    if (!this.archiv || !docs.length) return docs;
-    return Promise.all(docs.map(async (d) => {
-      const s = await this.archiv!.stand(d).catch(() => null);
-      return s ? { ...d, archivfassung: s } : d;
-    }));
-  }
+  archivPaketDa(typen: string[]): Promise<number> { return this.dokumentArchiv.archivPaketDa(typen); }
+  setzeArchivfassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentArchiv.setzeArchivfassung(z, id, sha, inhalt); }
+  archivfassungVon(id: string) { return this.dokumentArchiv.archivfassungVon(id); }
+  wortpositionen(id: string) { return this.dokumentArchiv.wortpositionen(id); }
+  archivStand() { return this.dokumentArchiv.archivStand(); }
+  private mitArchivStand(docs: Dokument[]): Promise<Dokument[]> { return this.dokumentArchiv.mitArchivStand(docs); }
 
   /* ---------- Volltext aus Paketen (#614) ---------- */
 
@@ -4836,118 +4574,14 @@ export class Dienst {
     this.ocr?.anstossen();
   }
 
-  /* ---------- Dokumente ---------- */
+  /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
 
-  /** Löscht die Datei, wenn kein Dokument mehr auf sie zeigt. */
-  private async raeumeAuf(sha256: string) {
-    if (!(await this.repo.dateiBenutzt(sha256))) {
-      await this.dateien.loesche(sha256);
-      await this.vorschau?.entferne(sha256);
-      await this.umwandlung?.entferne(sha256);
-      await this.archiv?.entferne(sha256);
-    }
-  }
-
-  /**
-   * Hochladen. Gleicher Name im Register (#194): `gleicherName` = „zaehler“ (Standard: „Rechnung (2).pdf“),
-   * „version“ (neue Version des vorhandenen, nur mit Versionierung) oder „ersetzen“ (vorhandenes löschen,
-   * nur ohne Versionierung).
-   */
-  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; gleicherName?: string; herkunft?: Herkunft; volltext?: Volltextuebernahme; /** Nur intern (#878: Beispiel-Dokumente mit Datum). */ erstellt?: string }, inhalt: unknown, benutzerId: string | null) {
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const typ = await this.repo.holeTyp(m.typId);
-    const reg = typ?.register.find((r) => r.key === e.register && r.art === 'dokumente');
-    if (!reg) throw new Fachfehler(422, t('meldungen.dienst.dieses-dokumentenregister-gibt-es-2'));
-    // Upload als temporäre Datei (#746) oder Puffer; ganz gelesen wird er nur, wo es nötig ist (PDF verkleinern).
-    let ein = Eingang.aus(inhalt);
-    if (!ein || ein.groesse === 0) throw new Fachfehler(422, t('meldungen.dienst.die-datei-ist-leer'));
-    if (ein.groesse > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.die-datei-ist-zu'));
-    // Automatisch verkleinern (#393): neue PDFs von außen (Hochladen, Eingangsordner, Postfach, API, WebDAV) ab einer Größe.
-    let automatisch: { vorher: number; nachher: number; stufe: Stufe } | null = null;
-    if (AUTOMATISCH_VERKLEINERN.has(e.herkunft ?? 'hochgeladen') && !e.volltext) {
-      const r = await this.automatischVerkleinert(ein, e.name ?? '');
-      if (r) { automatisch = { vorher: r.vorher, nachher: r.nachher, stufe: r.stufe }; ein = Eingang.aus(r.inhalt)!; }
-    }
-    const groesse = ein.groesse;
-    const art = e.gleicherName ?? 'zaehler';
-    if (!['zaehler', 'version', 'ersetzen'].includes(art)) throw new Fachfehler(422, t('meldungen.dienst.gleichername-zaehler-version-oder'));
-    const vorhanden = (await this.repo.listeDokumente(mappeId)).filter((d) => d.registerKey === reg.key);
-    const gleich = vorhanden.find((d) => d.name.toLowerCase() === dateiname(e.name).toLowerCase());
-    if (gleich && art === 'version') {
-      if (!reg.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist'));
-      return { dokument: await this.ersetzeDokument(gleich.id, { name: e.name, typ: e.typ, herkunft: e.herkunft }, ein, benutzerId), gleicherInhalt: [], version: true };
-    }
-    if (gleich && art === 'ersetzen') {
-      if (reg.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-2'));
-      await this.loescheDokument(gleich.id, benutzerId);
-    }
-    let name = dateiname(e.name);
-    if (gleich && art === 'zaehler') {
-      const namen = new Set(vorhanden.map((d) => d.name.toLowerCase()));
-      const punkt = name.lastIndexOf('.');
-      const [stamm, endung] = punkt > 0 ? [name.slice(0, punkt), name.slice(punkt)] : [name, ''];
-      for (let i = 2; namen.has(name.toLowerCase()); i++) name = `${stamm} (${i})${endung}`;
-    }
-
-    const sha256 = await ein.sha256();
-    const erkannt = erkenneAnzeigbar(ein.kopf);
-    // TIFF, BMP, HEIC … am Inhalt (#577): Browser schicken sie oft ohne oder mit falschem Typ.
-    const angegeben = erkenneBildtyp(ein.kopf) ?? (/^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream');
-    const gleicherInhalt = await this.repo.dokumenteMitSha(sha256);
-    await ein.lege(this.dateien, sha256);
-    // Dokument, Historie und Ereignis in einer Transaktion (#404); die Datei liegt schon (bleibt sie übrig, räumt die Wartung auf).
-    const neu = await this.inTransaktion(async () => {
-      await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: name, groesse, mime: erkannt ?? angegeben, register: reg.name,
-        ...(automatisch ? { verkleinert: `automatisch ${ergebnisText(automatisch.vorher, automatisch.nachher)} (${STUFEN[automatisch.stufe].name})` } : {}) });
-      await this.beruehre(mappeId, typ, benutzerId);
-      const dokument = await this.repo.legeDokumentAn({
-        id: randomUUID(), mappeId, registerKey: reg.key, name, mime: erkannt ?? angegeben,
-        groesse, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
-      });
-      if (e.erstellt) { await this.repo.setzeDokumentErstellt(dokument.id, e.erstellt); dokument.erstellt = e.erstellt; }
-      this.danach(() => this.neueDateien([dokument]));
-      // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
-      let neu = dokument;
-      if (e.volltext) {
-        // Verkleinert ohne Versionierung (#393): Der Volltext des bisherigen bleibt, keine neue Texterkennung.
-        await this.repo.ocrSetze(dokument.id, { stand: 'fertig', ...e.volltext });
-        neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
-        this.danach(() => void this.volltextFertig({ dokument: dokument.id, mappe: mappeId }, { quelle: 'kopie', text: !!e.volltext?.text?.trim(), mime: dokument.mime, seiten: e.volltext?.seiten ?? null }));
-      } else if (Dienst.volltextAn(typ, reg.key)) {
-        await this.repo.ocrEinreihen([dokument.id]);
-        neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
-        this.danach(() => this.ocr?.anstossen());
-      }
-      await this.ereignis('dokument.hochgeladen', { dokument: dokument.id, mappe: mappeId, typ: await this.typVon(mappeId), mime: dokument.mime, groesse, volltextGeplant: neu.ocr?.stand === 'wartet' }, benutzerId);
-      return neu;
-    });
-    const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
-    return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })), ...(automatisch ? { verkleinert: automatisch } : {}) };
-  }
-
-  /** Titel und Typ zu Mappen-Ids (ohne Rechteprüfung – vorher filtern). */
-  bezuegeVon(ids: string[]) { return this.repo.bezuege(ids); }
-
-  /** Startseite (#334): Gibt es noch keine Mappe außer denen des Systems (Benutzer, Rollen, Ablageorte) und Demo-Daten? */
-  async ohneEigeneMappen(): Promise<boolean> {
-    const ablageort = await this.ablageortId();
-    const typen = (await this.repo.listeTypen()).filter((t) => !t.system && t.id !== ablageort);
-    // Nur ob es eine gibt (#615): früher zählte das bei jedem Laden der Startseite alle Mappen je Typ.
-    return !(await this.repo.gibtMappen(typen.map((t) => t.id)));
-  }
-
-  async holeDokument(id: string) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return d;
-  }
-
-  async dokumentInhalt(id: string) {
-    const dokument = await this.repo.holeDokument(id);
-    if (!dokument) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
-  }
+  private raeumeAuf(sha256: string) { return this.dokumente.raeumeAuf(sha256); }
+  ladeHoch(...a: Parameters<DokumenteDienst['ladeHoch']>) { return this.dokumente.ladeHoch(...a); }
+  bezuegeVon(ids: string[]) { return this.dokumente.bezuegeVon(ids); }
+  ohneEigeneMappen(): Promise<boolean> { return this.dokumente.ohneEigeneMappen(); }
+  holeDokument(id: string) { return this.dokumente.holeDokument(id); }
+  dokumentInhalt(id: string) { return this.dokumente.dokumentInhalt(id); }
 
   /* ---------- Stempel beim Weitergeben (#394) ---------- */
 
@@ -5191,27 +4825,7 @@ export class Dienst {
     return { schluessel, pdf: await p };
   }
 
-  async loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    // Archivmodus (#212): Dokumente bleiben bis Fristende; ändern nur als neue Version.
-    await this.pruefeArchivDokument(d.mappeId, 'löschen');
-    // Alle Versionen (#194) gehen mit.
-    const aeltere = await this.repo.versionenVon(id);
-    // Papierkorb (#344): eingeschaltet → das Dokument zieht samt Versionen und Volltext dorthin um.
-    const korb = (await this.kern.papierkorbTage()) > 0;
-    if (korb) await this.repo.legeDokumentInPapierkorb(id, benutzerId);
-    else await this.repo.loescheDokument(id);
-    // Löschprotokoll (#470)
-    const info = (await this.kern.loeschprotokoll.mappenInfo([d.mappeId], new Map()))(d.mappeId, id);
-    await this.kern.loeschprotokoll.schreibe(this.kern.loeschprotokoll.dokEintraege([dokInfo(d), ...aeltere.map(versionInfo)], { ...info, schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass.weg ?? 'dokument' }),
-      await this.kern.loeschprotokoll.kontext(benutzerId, anlass));
-    await this.notiere(d.mappeId, benutzerId, korb ? 'dokument_papierkorb' : 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
-    const m = await this.repo.holeMappe(d.mappeId);
-    if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
-    if (!korb) for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
-    return { papierkorb: korb };
-  }
+  loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) { return this.dokumente.loescheDokument(id, benutzerId, anlass); }
 
   /* ---------- PDF bearbeiten (#335) ---------- */
 
@@ -6516,163 +6130,23 @@ export class Dienst {
   darfWeg() { return this.mappenArchiv.darfWeg(); }
   pruefeDateien(von: string) { return this.mappenArchiv.pruefeDateien(von); }
 
-  /* ---------- Fehlende Dateien (#877) ---------- */
+  /* ---------- Fehlende Dateien (#877, dokumente/fehlende-dateien.ts) ---------- */
 
-  /**
-   * Eine Datei fehlt im Ablageordner (beim ersten Lesen in diesem Prozess): einmal ins Protokoll – mit Prüfwert, Pfad
-   * und den Mappen, nur dort – und für den Hinweis der Werkbank-Übersicht merken.
-   */
-  async merkeFehlendeDatei(f: { sha256: string; pfad: string; ablage: string }) {
-    const doks = await this.repo.dokumenteMitSha(f.sha256).catch(() => [] as Dokument[]);
-    protokoll.modul('dokumente').error('Datei eines Dokuments fehlt im Ablageordner', {
-      sha256: f.sha256, pfad: f.pfad, ablage: f.ablage,
-      ...(doks.length ? { dokumente: doks.slice(0, 5).map((d) => d.id).join(', '), mappen: [...new Set(doks.map((d) => d.mappeId))].slice(0, 5).join(', ') } : {}),
-    });
-    const alt = await this.gemerkteFehlendeDateien();
-    if (!alt.includes(f.sha256)) await this.schreibeFehlendeDateien([...alt, f.sha256]);
-  }
+  merkeFehlendeDatei(f: { sha256: string; pfad: string; ablage: string }) { return this.dateienFehlen.merkeFehlendeDatei(f); }
+  private schreibeFehlendeDateien(shas: string[]) { return this.dateienFehlen.schreibeFehlendeDateien(shas); }
+  fehlendeDateien(): Promise<number> { return this.dateienFehlen.fehlendeDateien(); }
+  dokumenteOhneDatei(): Promise<{ dateien: number; fehlend: number; dokumente: number }> { return this.dateienFehlen.dokumenteOhneDatei(); }
+  private pruefeVorhanden(docs: Array<Pick<Dokument, 'sha256' | 'name'>>) { return this.dateienFehlen.pruefeVorhanden(docs); }
 
-  private async gemerkteFehlendeDateien(): Promise<string[]> {
-    const w = (await this.einstellungen?.lies(FEHLENDE_DATEIEN)) as { shas?: unknown } | null;
-    return Array.isArray(w?.shas) ? w.shas.filter((x): x is string => typeof x === 'string' && /^[0-9a-f]{64}$/.test(x)) : [];
-  }
+  /* ---------- Versionierung (#194, dokumente/versionen.ts) ---------- */
 
-  private async schreibeFehlendeDateien(shas: string[]) {
-    if (!this.einstellungen) return;
-    const liste = [...new Set(shas)].slice(-FEHLENDE_DATEIEN_MAX);
-    await this.einstellungen.schreibe(FEHLENDE_DATEIEN, liste.length ? { shas: liste, am: new Date().toISOString() } : null);
-  }
-
-  /**
-   * Zahl der fehlenden Dateien für die Übersicht: die gemerkten, die noch gebraucht werden und immer noch fehlen.
-   * Ist eine wieder da (Volume wieder eingebunden) oder kein Dokument zeigt mehr darauf, verschwindet sie aus der Liste.
-   */
-  async fehlendeDateien(): Promise<number> {
-    const alt = await this.gemerkteFehlendeDateien();
-    if (!alt.length) return 0;
-    const noch: string[] = [];
-    for (const sha of alt) if ((await this.repo.dateiBenutzt(sha)) && !(await this.dateiVorhanden(sha))) noch.push(sha);
-    if (noch.length !== alt.length) await this.schreibeFehlendeDateien(noch);
-    return noch.length;
-  }
-
-  private async dateiVorhanden(sha: string): Promise<boolean> {
-    if (this.dateien.vorhanden) return this.dateien.vorhanden(sha);
-    try { const s = await this.dateien.lies(sha); if (!Buffer.isBuffer(s)) s.destroy(); return true; } catch { return false; }
-  }
-
-  /**
-   * Alle Dateien nur auf Vorhandensein prüfen (Lasttest #877: schnell, ohne zu lesen): Dokumente ohne Datei. Je
-   * Datei ein `stat`, 32 gleichzeitig.
-   */
-  async dokumenteOhneDatei(): Promise<{ dateien: number; fehlend: number; dokumente: number }> {
-    const alle = await this.repo.alleDateien();
-    const shas = [...new Set(alle.map((x) => x.sha256))];
-    const fehlt = new Set<string>();
-    let i = 0;
-    await Promise.all(Array.from({ length: Math.min(32, shas.length) }, async () => {
-      while (i < shas.length) { const sha = shas[i++]; if (!(await this.dateiVorhanden(sha))) fehlt.add(sha); }
-    }));
-    if (fehlt.size) await this.schreibeFehlendeDateien([...(await this.gemerkteFehlendeDateien()), ...fehlt]).catch(() => {});
-    return { dateien: shas.length, fehlend: fehlt.size, dokumente: new Set(alle.filter((x) => fehlt.has(x.sha256)).map((x) => x.dokumentId)).size };
-  }
-
-  /** Vor einem Strom, dessen Kopf schon unterwegs wäre (ZIP): fehlt eine Datei, gleich ein sauberer Fehler. */
-  private async pruefeVorhanden(docs: Array<Pick<Dokument, 'sha256' | 'name'>>) {
-    if (!this.dateien.vorhanden) return;
-    for (const d of docs) {
-      if (await this.dateien.vorhanden(d.sha256)) continue;
-      // Lesen meldet das Fehlen wie überall (einmal ins Protokoll, Hinweis der Übersicht).
-      await this.dateien.lies(d.sha256).then((x) => { if (!Buffer.isBuffer(x)) x.destroy(); }, () => {});
-      throw new DateiFehlt(d.sha256, d.name);
-    }
-  }
-
-  /* ---------- Versionierung (#194) ---------- */
-
-  private async registerVon(d: Dokument) {
-    const m = await this.repo.holeMappe(d.mappeId);
-    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
-    return { typ, reg: typ?.register.find((r) => r.key === d.registerKey && r.art === 'dokumente') };
-  }
-
-  /** Neue Version eines Dokuments – unabhängig von Name und Dateityp; nur mit eingeschalteter Versionierung. */
-  async ersetzeDokument(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const { typ, reg } = await this.registerVon(d);
-    if (!reg?.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-6'));
-    // Upload als temporäre Datei (#746) oder Puffer.
-    const ein = Eingang.aus(inhalt);
-    if (!ein || ein.groesse === 0) throw new Fachfehler(422, t('meldungen.dienst.die-datei-ist-leer'));
-    if (ein.groesse > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.die-datei-ist-zu'));
-    const sha256 = await ein.sha256();
-    const erkannt = erkenneAnzeigbar(ein.kopf);
-    const angegeben = erkenneBildtyp(ein.kopf) ?? (/^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream');
-    await ein.lege(this.dateien, sha256);
-    const neu = await this.repo.ersetzeDokument(id, {
-      name: e.name ? dateiname(e.name) : d.name, mime: erkannt ?? angegeben, groesse: ein.groesse, sha256, anzeigbar: !!erkannt,
-      erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
-    });
-    this.neueDateien([neu]);
-    return this.nachNeuerVersion(d, neu, typ, reg, benutzerId);
-  }
-
-  /** Eine ältere Version zurückholen: als neue, höchste Version; es geht nichts verloren. */
-  async holeVersionZurueck(id: string, nummer: number, benutzerId: string | null): Promise<Dokument> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const v = await this.repo.holeVersion(id, nummer);
-    if (!v) throw new Fachfehler(404, t('meldungen.dienst.version-gibt-es-nicht', { nummer }));
-    const { typ, reg } = await this.registerVon(d);
-    if (!reg?.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-7'));
-    const neu = await this.repo.ersetzeDokument(id, {
-      name: v.name, mime: v.mime, groesse: v.groesse, sha256: v.sha256, anzeigbar: v.anzeigbar, erstelltVon: benutzerId, herkunft: 'zurueckgeholt', volltext: v.volltext,
-    });
-    return this.nachNeuerVersion(d, neu, typ, reg, benutzerId, nummer);
-  }
-
-  private async nachNeuerVersion(alt: Dokument, neu: Dokument, typ: Mappentyp | undefined, reg: Register, benutzerId: string | null, zurueckgeholt?: number) {
-    await this.notiere(neu.mappeId, benutzerId, 'dokument_version', {
-      dokument: neu.name, version: neu.version, vorher: alt.name, groesse: neu.groesse, mime: neu.mime, register: reg.name,
-      ...(zurueckgeholt ? { zurueckgeholt } : {}),
-    });
-    await this.beruehre(neu.mappeId, typ, benutzerId);
-    // „Nur die letzten N“ (mit der aktuellen): ältere entfernen, Dateien aufräumen.
-    if (reg.versionenBehalten) {
-      const vorher = await this.repo.versionenVon(neu.id);
-      for (const sha of await this.repo.kuerzeVersionen(neu.id, reg.versionenBehalten - 1)) await this.raeumeAuf(sha);
-      // Löschprotokoll (#470): auch ältere Versionen, die über die eingestellte Anzahl hinaus wegfallen.
-      const bleiben = new Set((await this.repo.versionenVon(neu.id)).map((v) => v.nummer));
-      const weg = vorher.filter((v) => !bleiben.has(v.nummer));
-      if (weg.length) await this.kern.loeschprotokoll.schreibe(this.kern.loeschprotokoll.dokEintraege(weg.map(versionInfo), { ...(await this.kern.loeschprotokoll.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id), schritt: 'endgueltig', weg: 'version' }),
-        await this.kern.loeschprotokoll.kontext(benutzerId, { ausloeser: 'automatisch' }));
-    }
-    if (neu.ocr?.stand !== 'fertig' && Dienst.volltextAn(typ, reg.key)) {
-      await this.repo.ocrEinreihen([neu.id]);
-      this.ocr?.anstossen();
-    }
-    return (await this.repo.holeDokument(neu.id)) ?? neu;
-  }
-
-  async versionen(id: string) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return { aktuell: d, aeltere: await this.repo.versionenVon(id) };
-  }
-
-  async versionInhalt(id: string, nummer: number) {
-    const v = await this.repo.holeVersion(id, nummer);
-    if (!v) throw new Fachfehler(404, t('meldungen.dienst.version-gibt-es-nicht', { nummer }));
-    const { volltext: _v, ...version } = v;
-    return { version, inhalt: await this.dateien.lies(v.sha256) };
-  }
-
-  /** Dokumente hinzugefügt oder entfernt (#76): „zuletzt geändert“ nachziehen, Titel mit {geaendert} ebenso. */
-  private async beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) {
-    await this.repo.beruehreMappe(mappeId, benutzerId);
-    if (typ && /\{geaendert\}/.test(typ.titelVorlage ?? '')) await this.aktualisiereTitel([mappeId]);
-  }
+  private registerVon(d: Dokument) { return this.dokumentVersionen.registerVon(d); }
+  ersetzeDokument(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> { return this.dokumentVersionen.ersetzeDokument(id, e, inhalt, benutzerId); }
+  holeVersionZurueck(id: string, nummer: number, benutzerId: string | null): Promise<Dokument> { return this.dokumentVersionen.holeVersionZurueck(id, nummer, benutzerId); }
+  private nachNeuerVersion(...a: Parameters<DokumentVersionen['nachNeuerVersion']>) { return this.dokumentVersionen.nachNeuerVersion(...a); }
+  versionen(id: string) { return this.dokumentVersionen.versionen(id); }
+  versionInhalt(id: string, nummer: number) { return this.dokumentVersionen.versionInhalt(id, nummer); }
+  private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) { return this.dokumentVersionen.beruehre(mappeId, typ, benutzerId); }
 }
 
 /** Liste von Sprachkennungen prüfen (#579): nur bekannte, ohne doppelte, höchstens alle Sprachen des DMS. */
