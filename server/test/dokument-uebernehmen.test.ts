@@ -130,12 +130,12 @@ describe('Feld: Aus Dokument füllen und Zum Wiederfinden nutzen (#938)', () => 
     const vertrag: Pick<Mappentyp, 'id' | 'felder'> = { id: 't-vertrag', felder: [
       { key: 'titel', label: 'Titel', typ: 'text' },
       { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true },
-      { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: 't-partner', wiederfinden: true },
+      { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTypen: ['t-partner'], wiederfinden: true },
     ] };
     const rechnung: Pick<Mappentyp, 'id' | 'felder'> = { id: 't-rechnung', felder: [
       { key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true },
-      { key: 'aussteller', label: 'Aussteller', typ: 'referenz', zielTyp: 't-partner' },
-      { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: 't-vertrag', wiederfinden: true },
+      { key: 'aussteller', label: 'Aussteller', typ: 'referenz', zielTypen: ['t-partner' ]},
+      { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTypen: ['t-vertrag'], wiederfinden: true },
     ] };
     return { partner, vertrag, rechnung };
   };

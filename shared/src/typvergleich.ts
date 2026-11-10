@@ -16,10 +16,10 @@ export interface TypBild {
 }
 
 /** Eigenschaften eines Felds, die eine inhaltliche Änderung sind (Name extra, damit „umbenannt“ lesbar wird). */
-const FELD = ['typ', 'pflicht', 'eindeutig', 'hilfe', 'standard', 'minLen', 'maxLen', 'muster', 'min', 'max', 'nachkomma', 'waehrung', 'optionen', 'mehrfach', 'zielTyp', 'verweisart', 'frist', 'auswahlFilter', 'folgtAus', 'erkennung', 'format', 'landFeld', 'beschriftungen', 'ausgeblendet'] as const;
+const FELD = ['typ', 'pflicht', 'eindeutig', 'hilfe', 'standard', 'minLen', 'maxLen', 'muster', 'min', 'max', 'nachkomma', 'waehrung', 'optionen', 'mehrfach', 'zielTyp', 'zielTypen', 'gleicherTyp', 'zielOptional', 'verweisart', 'frist', 'auswahlFilter', 'folgtAus', 'erkennung', 'format', 'landFeld', 'beschriftungen', 'ausgeblendet'] as const;
 const NAMEN: Record<string, string> = {
   typ: 'Art', pflicht: 'Pflicht', eindeutig: 'eindeutig', hilfe: t('gemeinsam.typvergleich.hilfetext'), standard: 'Vorgabe', minLen: 'Mindestlänge', maxLen: 'Höchstlänge', muster: 'Muster',
-  min: 'Untergrenze', max: 'Obergrenze', nachkomma: 'Nachkommastellen', waehrung: 'Währung', optionen: 'Auswahlwerte', mehrfach: 'Mehrfachauswahl', zielTyp: 'Ziel',
+  min: 'Untergrenze', max: 'Obergrenze', nachkomma: 'Nachkommastellen', waehrung: 'Währung', optionen: 'Auswahlwerte', mehrfach: 'Mehrfachauswahl', zielTyp: 'Ziel', zielTypen: 'Ziel', gleicherTyp: t('gemeinsam.typvergleich.gleicher-typ'), zielOptional: t('gemeinsam.typvergleich.ziel-optional'),
   verweisart: 'Verweisart', frist: 'Frist', auswahlFilter: 'Auswahlfilter', folgtAus: t('gemeinsam.typvergleich.folgt-aus'), erkennung: 'Aus Dokument füllen', format: 'Format', landFeld: t('gemeinsam.typvergleich.land-feld'), beschriftungen: t('gemeinsam.typvergleich.beschriftungen'),
   name: 'Name', art: 'Art', felder: 'Felder', quellen: 'Quellen',
   ausgeblendet: t('gemeinsam.typvergleich.ausgeblendet'), abschnitte: t('gemeinsam.typvergleich.abschnitte'),
@@ -29,8 +29,18 @@ const leer = (v: unknown) => v === undefined || v === null || v === false || v =
 const sauber = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => !leer(v)).sort(([a], [b]) => a.localeCompare(b)));
 const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
-export function typBild(t: Mappentyp): TypBild {
-  const feld = (f: Feld) => ({ key: f.key, label: f.label, werte: sauber(Object.fromEntries(FELD.map((k) => [k, (f as unknown as Record<string, unknown>)[k]]))) });
+/**
+ * Bild eines Mappentyps. Ziele (#1036): ein fester Zieltyp steht wie in älteren Ständen unter `zielTyp`, mehrere unter
+ * `zielTypen`; Typen, die über `zielOptional` dazukamen (`kennungVon` kennt ihre Kennung), zählen nicht – dass ein anderes
+ * Paket später kam, ist keine eigene Änderung.
+ */
+export function typBild(t: Mappentyp, kennungVon?: (typId: string) => string | undefined): TypBild {
+  const ziele = (f: Feld): Record<string, unknown> => {
+    if (f.typ !== 'referenz') return {};
+    const fest = (f.zielTypen ?? []).filter((id) => !f.zielOptional?.includes(kennungVon?.(id) ?? ''));
+    return fest.length === 1 ? { zielTyp: fest[0], zielTypen: undefined } : { zielTyp: undefined, zielTypen: fest };
+  };
+  const feld = (f: Feld) => { const x = { ...f, ...ziele(f) } as unknown as Record<string, unknown>; return { key: f.key, label: f.label, werte: sauber(Object.fromEntries(FELD.map((k) => [k, x[k]]))) }; };
   return {
     name: t.name, beschreibung: t.beschreibung ?? '', titelVorlage: t.titelVorlage ?? '',
     ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}),

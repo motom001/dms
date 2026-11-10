@@ -1,10 +1,10 @@
 import { SprachText } from '../einrichtung/Beschriftung';
-import { optionText } from '../../../shared/src/beschriftung';
+import { optionText, typName } from '../../../shared/src/beschriftung';
 import { useEffect, useMemo, useState } from 'react';
 import { Ansage, useZiehen, ziehTasten, type Ort } from '../ziehen';
-import { SYSTEMSPALTEN, istSystemspalte, type Feld, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { einzigesZiel, SYSTEMSPALTEN, istSystemspalte, zieleVon, type Feld, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
-  bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, spaltenDerSicht, trefferlistenProblem, wirksameTypen, typenDerSicht, zeigtAlleTypen, ALLE_TYPEN,
+  bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, operatorenFuer, spaltenDerSicht, trefferlistenProblem, wirksameTypen, typenDerSicht, zeigtAlleTypen, ALLE_TYPEN,
   ZAEHLVERGLEICHE, auswahlProbleme, OPS_EIGENES_FELD, passendeEigeneFelder, type Bedingung, type Bedingungsfeld, type Feldbedingung, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
 } from '../../../shared/src/sichten';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
@@ -24,7 +24,7 @@ import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
+import { FeldGruppe, KnopfLink, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 
 /**
@@ -454,7 +454,7 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
                             </>}
                         <button type="button" className="textknopf gefahr klein" onClick={() => weg(i)}>{t('werkbank.sichten.bedingung-entfernen')}</button>
                       </div>
-                      <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, typen, (mid) => titel[mid] ?? d.person(mid))}</p>
+                      <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, typen, (mid) => titel[mid] ?? d.person(mid), undefined, (id) => d.typ(id)?.name)}</p>
                     </li>
                   );
                 })}
@@ -491,7 +491,8 @@ export function FeldBedingung({ b, feld, setze, titel, merke }: {
   titel: Record<string, string>; merke: (id: string, text: string) => void;
 }) {
   const d = useDaten();
-  const ops = OPERATOREN_JE_ART[feld.art];
+  // „zeigt auf Mappe vom Typ …“ (#1036) nur bei Verweisen mit mehreren Zieltypen; eine gespeicherte Bedingung bleibt wählbar.
+  const ops = operatorenFuer(feld).concat(b.op === 'zeigtAufTyp' && !operatorenFuer(feld).includes('zeigtAufTyp') ? ['zeigtAufTyp'] : []);
   const ohneWert = ['leer', 'nichtLeer', 'ja', 'nein'].includes(b.op);
   const zwei = b.op === 'zwischen' || b.op === 'ausserhalb';
   const datum = feld.art === 'datum' || feld.art === 'zeit';
@@ -499,16 +500,16 @@ export function FeldBedingung({ b, feld, setze, titel, merke }: {
     if (['leer', 'nichtLeer', 'ja', 'nein'].includes(op)) return undefined;
     if (op === 'imZeitraum') return { art: 'jahr', versatz: 0 };
     if (op === 'zeigtAuf') return feld.art === 'person' || zielSystem(feld) === 'benutzer' ? { art: 'ich' } : { art: 'fest', wert: [] };
-    if (op === 'einerVon') return { art: 'fest', wert: [] };
+    if (op === 'einerVon' || op === 'zeigtAufTyp') return { art: 'fest', wert: [] };
     if (datum) return { art: 'heute', versatz: 0, einheit: 'tage' };
     if (feld.art === 'zeitraum') return { art: 'fest', wert: 'P3M' };
     return { art: 'fest', wert: feld.art === 'zahl' || feld.art === 'betrag' || feld.art === 'prozent' ? 0 : '' };
   };
-  const zielSystem = (f: Bedingungsfeld) => (f.feld?.zielTyp ? d.typ(f.feld.zielTyp)?.system ?? null : null);
+  const zielSystem = (f: Bedingungsfeld) => { const z = f.feld ? einzigesZiel(f.feld) : undefined; return z ? d.typ(z)?.system ?? null : null; };
   const wechsleOp = (op: Operator) => {
     const n: Extract<Bedingung, { art: 'feld' }> = { art: 'feld', feld: b.feld, op };
     const w = standardWert(op);
-    if (w) n.wert = b.wert && !['jahr', 'monat'].includes(b.wert.art) && op !== 'imZeitraum' && op !== 'zeigtAuf' && op !== 'einerVon' ? b.wert : w;
+    if (w) n.wert = b.wert && !['jahr', 'monat'].includes(b.wert.art) && op !== 'imZeitraum' && op !== 'zeigtAuf' && op !== 'einerVon' && op !== 'zeigtAufTyp' && b.op !== 'zeigtAufTyp' ? b.wert : w;
     if (op === 'zwischen' || op === 'ausserhalb') n.bis = b.bis ?? (datum ? { art: 'heute', versatz: 30, einheit: 'tage' } : n.wert);
     setze(n);
   };
@@ -521,11 +522,27 @@ export function FeldBedingung({ b, feld, setze, titel, merke }: {
       {!ohneWert && b.op === 'imZeitraum' && <Zeitraum w={b.wert} setze={(w) => setze({ ...b, wert: w })} />}
       {!ohneWert && b.op === 'einerVon' && <Auswahl feld={feld} w={b.wert} setze={(w) => setze({ ...b, wert: w })} />}
       {!ohneWert && b.op === 'zeigtAuf' && <Verweisziel feld={feld} w={b.wert} setze={(w) => setze({ ...b, wert: w })} titel={titel} merke={merke} system={zielSystem(feld)} />}
-      {!ohneWert && !['imZeitraum', 'einerVon', 'zeigtAuf'].includes(b.op) && <>
+      {!ohneWert && b.op === 'zeigtAufTyp' && <ZieltypWahl feld={feld} w={b.wert} setze={(w) => setze({ ...b, wert: w })} />}
+      {!ohneWert && !['imZeitraum', 'einerVon', 'zeigtAuf', 'zeigtAufTyp'].includes(b.op) && <>
         <Einzelwert feld={feld} w={b.wert} setze={(w) => setze({ ...b, wert: w })} />
         {zwei && <><span className="leise">{t('werkbank.sichten.und')}</span><Einzelwert feld={feld} w={b.bis} setze={(w) => setze({ ...b, bis: w })} /></>}
       </>}
     </>
+  );
+}
+
+/** „zeigt auf Mappe vom Typ …“ (#1036): einer oder mehrere der Zieltypen des Verweisfelds (= einer von). */
+function ZieltypWahl({ feld, w, setze }: { feld: Bedingungsfeld; w?: WertAngabe; setze: (w: WertAngabe) => void }) {
+  const d = useDaten();
+  const gewaehlt = w?.art === 'fest' && Array.isArray(w.wert) ? w.wert : [];
+  const ziele = feld.feld ? zieleVon(feld.feld) : [];
+  return (
+    <FeldGruppe beschriftung={t('werkbank.sichten.zieltypen')} className="wertgruppe umbruch">
+      {[...new Set([...ziele, ...gewaehlt])].map((id) => (
+        <label key={id} className="haken klein"><input type="checkbox" checked={gewaehlt.includes(id)} onChange={(x) => setze({ art: 'fest', wert: x.target.checked ? [...gewaehlt, id] : gewaehlt.filter((y) => y !== id) })} />
+          <span>{d.typ(id) ? typName(d.typ(id)!) : t('werkbank.sichten.typ-fehlt')}</span></label>
+      ))}
+    </FeldGruppe>
   );
 }
 
@@ -614,7 +631,8 @@ function Verweisziel({ feld, w, setze, titel, merke, system }: {
   const person = feld.art === 'person';
   const art = w?.art ?? 'fest';
   const gewaehlt = w?.art === 'fest' && Array.isArray(w.wert) ? w.wert : [];
-  const zielTyp = person ? d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id : feld.feld?.zielTyp;
+  // Mehrere Zieltypen (#1036): Mappen aus allen.
+  const zielTypen = person ? [d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id].filter((x): x is string => !!x) : feld.feld ? zieleVon(feld.feld) : [];
   return (
     <span className="wertgruppe umbruch">
       <select aria-label={t('werkbank.sichten.ziel')} value={art} onChange={(x) => setze(x.target.value === 'fest' ? { art: 'fest', wert: [] } : { art: x.target.value as 'ich' | 'meineRollen' })}>
@@ -622,12 +640,12 @@ function Verweisziel({ feld, w, setze, titel, merke, system }: {
         {(person || system === 'benutzer') && <option value="ich">{DYNAMISCH.ich}</option>}
         {!person && system === 'rolle' && <option value="meineRollen">{DYNAMISCH.meineRollen}</option>}
       </select>
-      {art === 'fest' && zielTyp && <MappenSuche typId={zielTyp} gewaehlt={gewaehlt} titel={titel} merke={merke} setze={(ids) => setze({ art: 'fest', wert: ids })} />}
+      {art === 'fest' && zielTypen.length > 0 && <MappenSuche typId={zielTypen} gewaehlt={gewaehlt} titel={titel} merke={merke} setze={(ids) => setze({ art: 'fest', wert: ids })} />}
     </span>
   );
 }
 
-export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: string; gewaehlt: string[]; titel: Record<string, string>; merke: (id: string, text: string) => void; setze: (ids: string[]) => void }) {
+export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { /** Ein Typ oder mehrere (#1036). */ typId: string | string[]; gewaehlt: string[]; titel: Record<string, string>; merke: (id: string, text: string) => void; setze: (ids: string[]) => void }) {
   const [eingabe, setEingabe] = useState('');
   const [treffer, setTreffer] = useState<Mappe[]>([]);
   const fehlend = gewaehlt.filter((x) => !titel[x]).join(',');
@@ -637,9 +655,10 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: s
   useEffect(() => {
     if (!eingabe.trim()) { setTreffer([]); return; }
     let aktuell = true;
-    const timer = setTimeout(() => { void api.seite(`typ:${typId}`, 0, 8, eingabe.trim()).then((s) => aktuell && setTreffer(s.mappen)).catch(() => {}); }, 200);
+    const ids = Array.isArray(typId) ? typId : [typId];
+    const timer = setTimeout(() => { void Promise.all(ids.map((x) => api.seite(`typ:${x}`, 0, 8, eingabe.trim()))).then((l) => aktuell && setTreffer(l.flatMap((x) => x.mappen))).catch(() => {}); }, 200);
     return () => { aktuell = false; clearTimeout(timer); };
-  }, [eingabe, typId]);
+  }, [eingabe, Array.isArray(typId) ? typId.join(',') : typId]); // eslint-disable-line react-hooks/exhaustive-deps -- die Liste der Typen als Text
   return (
     <span className="mappensuche">
       {gewaehlt.map((x) => <span key={x} className="chip">{titel[x] ?? '…'} <button type="button" className="textknopf klein" aria-label={t('werkbank.sichten.entfernen-2')} onClick={() => setze(gewaehlt.filter((y) => y !== x))}>×</button></span>)}
@@ -661,8 +680,9 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: s
  * Auswahlfilter am Referenzfeld (#172): „Nur Mappen, die …“ – Bedingungen auf Felder und
  * Systemwerte des Zieltyps, wie bei Sichten; dazu, wie viele Mappen passen.
  */
-export function AuswahlFilter({ ziel, bedingungen, setze, eigeneFelder = [], feldKey = '' }: {
-  ziel: Mappentyp; bedingungen: Feldbedingung[]; setze: (b: Feldbedingung[]) => void;
+export function AuswahlFilter({ ziel, zielTypen, bedingungen, setze, eigeneFelder = [], feldKey = '' }: {
+  /** Bei mehreren Zieltypen (#1036) ein Bild mit den Feldern, die alle haben, und den Namen; gezählt wird über `zielTypen`. */
+  ziel: Mappentyp; zielTypen?: string[]; bedingungen: Feldbedingung[]; setze: (b: Feldbedingung[]) => void;
   /** Werte aus der eigenen Mappe (#173): Felder dieses Typs und das Referenzfeld selbst (kein Kreis). */
   eigeneFelder?: Feld[]; feldKey?: string;
 }) {
@@ -675,9 +695,9 @@ export function AuswahlFilter({ ziel, bedingungen, setze, eigeneFelder = [], fel
   const schluessel = JSON.stringify(bedingungen);
   useEffect(() => {
     let aktuell = true;
-    const timer = setTimeout(() => { api.auswahlZaehlen(ziel.id, bedingungen).then((z) => aktuell && setZahl(z)).catch(() => aktuell && setZahl(null)); }, 300);
+    const timer = setTimeout(() => { api.auswahlZaehlen(zielTypen?.length ? zielTypen : [ziel.id], bedingungen).then((z) => aktuell && setZahl(z)).catch(() => aktuell && setZahl(null)); }, 300);
     return () => { aktuell = false; clearTimeout(timer); };
-  }, [ziel.id, schluessel]); // eslint-disable-line react-hooks/exhaustive-deps -- neu zählen nur bei anderem Ziel oder anderen Bedingungen (schluessel)
+  }, [ziel.id, zielTypen?.join(','), schluessel]); // eslint-disable-line react-hooks/exhaustive-deps -- neu zählen nur bei anderem Ziel oder anderen Bedingungen (schluessel)
   const neu = (f: Bedingungsfeld): Feldbedingung => ({ art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] });
   const aendere = (i: number, b: Bedingung) => { if (b.art === 'feld') setze(bedingungen.map((x, j) => (j === i ? b : x))); };
   return (
@@ -716,7 +736,7 @@ export function AuswahlFilter({ ziel, bedingungen, setze, eigeneFelder = [], fel
                   )}
                   <button type="button" className="textknopf gefahr klein" onClick={() => setze(bedingungen.filter((_, j) => j !== i))}>{t('werkbank.sichten.entfernen')}</button>
                 </div>
-                <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, [ziel], (mid) => titel[mid] ?? d.person(mid), eigeneNamen)}{eigen && !problem && <span> {' '}{t('werkbank.sichten.ist-dieses-feld-leer')}</span>}</p>
+                <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, [ziel], (mid) => titel[mid] ?? d.person(mid), eigeneNamen, (id) => d.typ(id)?.name)}{eigen && !problem && <span> {' '}{t('werkbank.sichten.ist-dieses-feld-leer')}</span>}</p>
               </li>
             );
           })}

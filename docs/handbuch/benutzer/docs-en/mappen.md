@@ -105,6 +105,8 @@ If the folder doesn't exist yet, **+ Create …** below the field opens a small 
 
 **Fields that follow from another one:** some links follow from another – if you choose the branch for a person, the organisation it belongs to fills in, with "from Branch" below it. That only happens if the field is empty; if another organisation is already there, Ablago asks "Change Organisation?". If you enter a different organisation by hand, Ablago asks whether to clear the branch – with **Keep** it stays and the field shows the yellow notice. Which fields are connected like this is set by the administrator.
 
+**Fields with several folder types:** some fields link to folders of different types – for instance *concerns* on an invoice to the car, the heating, the flat or a contract. The suggestions are then grouped by type (e.g. *Vehicle*, *Flat*), and within each group the folders you opened most recently come first. Next to each chosen folder you see its type with a symbol, so you can tell "Golf" (vehicle) from "Golf" (contract). **+ Create …** is there for every type you may create folders in. If the field says *all of the same type*, Ablago only offers folders of the first folder's type after the first one. Folders you may not see appear, as everywhere, only as "(not visible)" – without title and without type.
+
 A click on a link that has been set opens the other folder.
 
 ## Changing {#andern}

@@ -7,7 +7,9 @@ import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
   ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
   type Abschnitt, type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Trefferliste, type Werte,
+  einzigesZiel, gemeinsameFelder, jedeMappe, zielErlaubt, zieleVon,
 } from '../../../shared/src/model';
+import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
 import { feldVerwendung, registerAusblendbar } from '../../../shared/src/darstellung';
 import { FILTER } from '../../../shared/src/titelfilter';
 import { wirksameTypen } from '../../../shared/src/sichten';
@@ -148,7 +150,7 @@ function kopieVon(mappentyp: Mappentyp, typen: Mappentyp[]): Entwurf {
   const selbst = (x?: string) => (x === mappentyp.id ? id : x);
   return {
     ...e, id, name, schluessel: freierSchluessel(name, typen.map((x) => x.schluessel ?? '')),
-    felder: e.felder.map((f) => ({ ...f, zielTyp: selbst(f.zielTyp) ?? '', _neu: true, _schluesselGetippt: true })),
+    felder: e.felder.map((f) => ({ ...f, ...(f.typ === 'referenz' ? { zielTypen: (f.zielTypen ?? []).map((z) => selbst(z)!) } : {}), _neu: true, _schluesselGetippt: true })),
     register: e.register.map((r) => (r.quellen ? { ...r, quellen: r.quellen.map((q) => ({ ...q, typId: selbst(q.typId)! })) } : r)),
     berechtigungen: structuredClone(e.berechtigungen),
   };
@@ -275,7 +277,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     const i = e.felder.length;
     const f: EntwurfFeld = {
       key: eindeutigerSchluessel('neues_feld', i), label: t('mappentypen.editor.neues-feld'), typ: 'text', pflicht: false, eindeutig: false, hilfe: '', standard: '',
-      minLen: '', maxLen: '', min: '', max: '', nachkomma: '', muster: '', optionen: [], mehrfach: false, zielTyp: '', verweisart: 'bezug', waehrung: 'EUR', _uid: neueId(), _neu: true,
+      minLen: '', maxLen: '', min: '', max: '', nachkomma: '', muster: '', optionen: [], mehrfach: false, zielTypen: [], verweisart: 'bezug', waehrung: 'EUR', _uid: neueId(), _neu: true,
       _register: e.register.find((r) => r.art === 'felder')?.key ?? '',
     };
     setE((x) => ({ ...x, felder: [...x.felder, f] }));
@@ -457,8 +459,8 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
                 runter: i < e.felder.length - 1 ? () => { verschiebe(i, 1); setAnsage(t('mappentypen.editor.steht-jetzt-an-stelle-2', { wert: f.label || t('mappentypen.editor.feld'), wert2: i + 2 })); } : undefined,
               })}><span aria-hidden="true">⠿</span></button>}
               eigeneId={e.id} eigenerName={e.name} typen={d.typen} feldregister={feldregister}
-              alleFelder={e.felder.map((x) => ({ key: x.key, label: x.label || x.key, typ: x.typ, optionen: x.optionen, zielTyp: x.zielTyp, mehrfach: x.mehrfach }) as Feld)}
-              benutzerFelder={e.felder.filter((x) => x.typ === 'referenz' && !x.mehrfach && x.zielTyp && x.zielTyp === d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id).map((x) => ({ key: x.key, label: x.label || x.key }))}
+              alleFelder={e.felder.map((x) => ({ key: x.key, label: x.label || x.key, typ: x.typ, optionen: x.optionen, zielTypen: x.zielTypen, mehrfach: x.mehrfach }) as Feld)}
+              benutzerFelder={e.felder.filter((x) => x.typ === 'referenz' && !x.mehrfach && !!einzigesZiel(x) && einzigesZiel(x) === d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id).map((x) => ({ key: x.key, label: x.label || x.key }))}
               umschalten={() => setOffen(offen === i ? null : i)}
               verschiebe={(r) => verschiebe(i, r)} entferne={() => void entferne(i)}
               ausblenden={(an) => (an
@@ -534,7 +536,7 @@ function feldKurz(felder: EntwurfFeld[]): string {
 function VerwendetIn({ typ }: { typ: Mappentyp }) {
   const d = useDaten();
   const sichten = d.sichten.filter((s) => s.typen.includes(typ.id));
-  const felder = d.typen.filter((mappentyp) => mappentyp.id !== typ.id).flatMap((mappentyp) => mappentyp.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === typ.id).map((f) => ({ t: mappentyp, f })));
+  const felder = d.typen.filter((mappentyp) => mappentyp.id !== typ.id).flatMap((mappentyp) => mappentyp.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(typ.id)).map((f) => ({ t: mappentyp, f })));
   const register = d.typen.filter((mappentyp) => mappentyp.id !== typ.id)
     .flatMap((mappentyp) => mappentyp.register.filter((r) => r.art === 'verknuepfungen' && r.quellen?.some((q) => q.typId === typ.id)).map((r) => ({ t: mappentyp, r })));
   const leer = !sichten.length && !felder.length && !register.length;
@@ -568,7 +570,10 @@ function FeldZeile(p: {
 }) {
   const { f, i, offen, fehler, setze } = p;
   const id = (x: string) => `f${i}-${x}`;
-  const zielName = f.zielTyp === p.eigeneId ? (p.eigenerName || t('mappentypen.editor.dieser-mappentyp')) : f.zielTyp === '*' ? t('mappentypen.editor.jede-mappe') : p.typen.find((mappentyp) => mappentyp.id === f.zielTyp)?.name ?? '–';
+  // Ziele (#1036): einer oder mehrere Mappentypen; „jede Mappe“ nur an Systemfeldern.
+  const zielNameVon = (z: string) => (z === p.eigeneId ? (p.eigenerName || t('mappentypen.editor.dieser-mappentyp')) : p.typen.find((mappentyp) => mappentyp.id === z)?.name ?? '–');
+  const ziele = zieleVon(f);
+  const zielName = jedeMappe(f) ? t('mappentypen.editor.jede-mappe') : ziele.length ? ziele.map(zielNameVon).join(', ') : f.zielOptional?.length ? t('mappentypen.editor.ziele-offen') : '–';
 
   const chips: string[] = [];
   if (f.system) chips.push(t('mappentypen.editor.system'));
@@ -577,6 +582,7 @@ function FeldZeile(p: {
   if (f.typ === 'referenz') chips.push(`→ ${zielName}`, VERWEISARTEN[f.verweisart ?? 'bezug']);
   if (f.typ === 'auswahl') chips.push(t('mappentypen.editor.werte', { zahl: (f.optionen ?? []).length }));
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
+  if (f.typ === 'referenz' && f.mehrfach && f.gleicherTyp) chips.push(t('mappentypen.editor.chip.gleicher-typ'));
   if (p.feldregister.length > 1) chips.push(t('mappentypen.editor.register', { wert: p.feldregister.find((r) => r.key === f._register)?.name ?? '–' }));
   if (f.erkennung && ERKENNUNG_FELDTYPEN.includes(f.typ)) chips.push(t('mappentypen.editor.chip.aus-dokument'));
   if (f.wiederfinden && WIEDERFINDEN_FELDTYPEN.includes(f.typ)) chips.push(t('mappentypen.editor.chip.wiederfinden'));
@@ -619,28 +625,30 @@ function FeldZeile(p: {
   else if (f.typ === 'datum') besonders = <><DatumGrenzen f={f} id={id} setze={setze} /><FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} /></>;
   else if (f.typ === 'passwort') besonders = <p className="leise klein">{t('mappentypen.editor.wird-verschluesselt-gespeichert-und')}</p>;
   else if (f.typ === 'referenz') besonders = <><div className="raster">
-    <label className="eigenschaft" htmlFor={id('ziel')}><span>{t('mappentypen.editor.verweist-auf-mappen-vom')}</span>
-      <select id={id('ziel')} value={f.zielTyp ?? ''} onChange={(e) => setze({ zielTyp: e.target.value })}>
-        <option value="">{t('mappentypen.editor.bitte-waehlen')}</option>
-        {f.zielTyp === '*' && <option value="*">{t('mappentypen.editor.jede-mappe')}</option>}
-        {p.typen.filter((mappentyp) => mappentyp.id !== p.eigeneId).map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}
-        <option value={p.eigeneId}>{t('mappentypen.editor.dieser-mappentyp-3', { wert: p.eigenerName || t('mappentypen.editor.dieser-mappentyp-2') })}</option>
-      </select>
-      <small className="hilfe">{t('mappentypen.editor.dieser-mappentyp-ergibt-eine')}</small></label>
+    <div className="eigenschaft"><label htmlFor={id('ziel')}>{t('mappentypen.editor.verweist-auf-mappen-vom')}</label>
+      {jedeMappe(f) ? <p className="leise">{t('mappentypen.editor.jede-mappe')}</p>
+        : <ZielTypenWahl id={id('ziel')} f={f} typen={p.typen} eigeneId={p.eigeneId} eigenerName={p.eigenerName} setze={setze} />}
+      <small className="hilfe">{t('mappentypen.editor.dieser-mappentyp-ergibt-eine')} {t('mappentypen.editor.mehrere-ziele-hilfe')}</small></div>
     <fieldset className="wahl"><legend>{t('mappentypen.editor.art-des-verweises')}</legend>
       <label className="haken"><input type="radio" name={id('va')} checked={f.verweisart === 'zugehoerigkeit'} onChange={() => setze({ verweisart: 'zugehoerigkeit' })} /><span>{tn('mappentypen.editor.zugehoerigkeit', { klein: <small className="hilfe">{t('mappentypen.editor.gehoert-zu-zaehlt-bei')}</small> })}</span></label>
       <label className="haken"><input type="radio" name={id('va')} checked={f.verweisart !== 'zugehoerigkeit'} onChange={() => setze({ verweisart: 'bezug' })} /><span>{tn('mappentypen.editor.bezug', { klein: <small className="hilfe">{t('mappentypen.editor.nur-verknuepft-z-b')}</small> })}</span></label>
     </fieldset>
-    <div className="eigenschaft unten">{haken('mehrfach', t('mappentypen.editor.mehrere-mappen-erlaubt'), t('mappentypen.editor.z-b-eine-zahlung'))}</div>
+    <div className="eigenschaft unten">{haken('mehrfach', t('mappentypen.editor.mehrere-mappen-erlaubt'), t('mappentypen.editor.z-b-eine-zahlung'))}
+      {/* „Alle vom selben Typ“ (#1036): nur mit mehreren Mappen und mehr als einem möglichen Zieltyp. */}
+      {f.mehrfach && (ziele.length > 1 || !!f.zielOptional?.length) && <label className="haken"><input type="checkbox" checked={!!f.gleicherTyp} onChange={(e) => setze({ gleicherTyp: e.target.checked || undefined })} /><span><span className="haken-titel">{t('mappentypen.editor.gleicher-typ')}</span><small className="hilfe">{t('mappentypen.editor.gleicher-typ-hilfe')}</small></span></label>}
+    </div>
   </div>
-  {/* Auswahlfilter (#172): nicht für „jede Mappe“. Eigene Zeile in voller Breite (#372) – Bedingungen brauchen Platz. */}
-  {f.zielTyp && f.zielTyp !== '*' && (() => {
-    const ziel = p.typen.find((mappentyp) => mappentyp.id === f.zielTyp);
-    return ziel ? <div><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} eigeneFelder={p.alleFelder} feldKey={f.key} /></div>
-      : f.zielTyp === p.eigeneId ? <p className="leise klein">{t('mappentypen.editor.einen-auswahlfilter-auf-diesen')}</p> : null;
+  {/* Auswahlfilter (#172): nicht für „jede Mappe“. Eigene Zeile in voller Breite (#372) – Bedingungen brauchen Platz.
+      Mehrere Zieltypen (#1036): Bedingungen über die Felder, die alle haben. */}
+  {ziele.length > 0 && (() => {
+    if (ziele.includes(p.eigeneId)) return <p className="leise klein">{t('mappentypen.editor.einen-auswahlfilter-auf-diesen')}</p>;
+    const zt = ziele.map((z) => p.typen.find((mappentyp) => mappentyp.id === z)).filter((x): x is Mappentyp => !!x);
+    if (zt.length !== ziele.length) return null;
+    const ziel = zt.length === 1 ? zt[0] : { ...zt[0], id: '', name: zt.map((x) => x.name).join(', '), felder: gemeinsameFelder(zt.map((x) => x.felder)) };
+    return <div><AuswahlFilter ziel={ziel} zielTypen={ziele} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} eigeneFelder={p.alleFelder} feldKey={f.key} /></div>;
   })()}
-  {/* Folgt aus (#886): nur bei festem Ziel-Mappentyp. */}
-  {f.zielTyp && f.zielTyp !== '*' && <FolgtAusEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)} />}
+  {/* Folgt aus (#886): nur bei genau einem Ziel-Mappentyp. */}
+  {!!einzigesZiel(f) && <FolgtAusEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)} />}
   </>;
 
   let standard = null;
@@ -966,8 +974,8 @@ function RegisterEditor({ e, setE, feldAblage, klappe, ausblendenFragen }: {
 
   // Mögliche Quellen: jedes Referenzfeld, das auf diesen Mappentyp zeigt (auch aus ihm selbst).
   const quellen = [
-    ...d.typen.filter((mappentyp) => mappentyp.id !== e.id).flatMap((mappentyp) => mappentyp.felder.filter((f) => f.typ === 'referenz' && (f.zielTyp === e.id || f.zielTyp === '*')).map((f) => ({ typId: mappentyp.id, feldKey: f.key, text: `${mappentyp.name} › ${f.label}` }))),
-    ...e.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: e.id, feldKey: f.key, text: `${e.name || t('mappentypen.editor.dieser-mappentyp-2')} › ${f.label}` })),
+    ...d.typen.filter((mappentyp) => mappentyp.id !== e.id).flatMap((mappentyp) => mappentyp.felder.filter((f) => f.typ === 'referenz' && zielErlaubt(f, e.id)).map((f) => ({ typId: mappentyp.id, feldKey: f.key, text: `${mappentyp.name} › ${f.label}` }))),
+    ...e.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(e.id)).map((f) => ({ typId: e.id, feldKey: f.key, text: `${e.name || t('mappentypen.editor.dieser-mappentyp-2')} › ${f.label}` })),
   ];
 
   return (
@@ -1092,7 +1100,7 @@ function Feldaufteilung({ r, felder, alle, typen, setze, ansage }: {
 }) {
   const abschnitte = (r.abschnitte ?? []).filter((a) => felder.some((f) => f._uid === a.vor));
   const [bedingungOffen, setBedingungOffen] = useState<string | null>(null);
-  const typTeil = { felder: alle.map((x) => ({ key: x.key, label: x.label || x.key, typ: x.typ, optionen: x.optionen, zielTyp: x.zielTyp, mehrfach: x.mehrfach }) as Feld) };
+  const typTeil = { felder: alle.map((x) => ({ key: x.key, label: x.label || x.key, typ: x.typ, optionen: x.optionen, zielTypen: x.zielTypen, mehrfach: x.mehrfach }) as Feld) };
   /** Felder des Abschnitts: ab seinem Feld bis vor den nächsten Abschnitt – auf die darf seine Bedingung nicht schauen. */
   const eigeneVon = (a: EntwurfAbschnitt) => {
     const start = felder.findIndex((f) => f._uid === a.vor);
@@ -1414,6 +1422,42 @@ function StempelEinstellung({ stempel, setze }: { stempel: StempelTyp | null; se
 }
 
 /**
+ * Ziele eines Verweisfelds (#1036): ein oder mehrere Mappentypen, gewählt mit dem einen Auswahl-Baustein
+ * (Mehrfachauswahl). Optionale Ziele aus einem Paket, die es noch nicht gibt, stehen darunter; wer einen davon entfernt,
+ * nimmt ihn auch aus den optionalen (sonst käme er mit dem nächsten Paket wieder).
+ */
+function ZielTypenWahl({ id, f, typen, eigeneId, eigenerName, setze }: {
+  id: string; f: EntwurfFeld; typen: Mappentyp[]; eigeneId: string; eigenerName: string; setze(patch: Partial<EntwurfFeld>): void;
+}) {
+  const [eingabe, setEingabe] = useState('');
+  const [offen, setOffen] = useState(false);
+  const gewaehlt = zieleVon(f);
+  const eigen = { id: eigeneId, name: t('mappentypen.editor.dieser-mappentyp-3', { wert: eigenerName || t('mappentypen.editor.dieser-mappentyp-2') }), schluessel: undefined as string | undefined };
+  const alle = [...typen.filter((x) => x.id !== eigeneId).map((x) => ({ id: x.id, name: x.name, schluessel: x.schluessel })), eigen];
+  const q = eingabe.trim().toLowerCase();
+  const auswahl = alle.filter((x) => !gewaehlt.includes(x.id) && (!q || x.name.toLowerCase().includes(q)));
+  const name = (z: string) => alle.find((x) => x.id === z)?.name ?? '–';
+  const offenOpt = (f.zielOptional ?? []).filter((k) => !typen.some((x) => x.schluessel === k && gewaehlt.includes(x.id)));
+  const entferne = (z: string) => {
+    const k = typen.find((x) => x.id === z)?.schluessel;
+    const rest = gewaehlt.filter((y) => y !== z);
+    const opt = (f.zielOptional ?? []).filter((x) => x !== k);
+    setze({ zielTypen: rest, zielOptional: opt.length ? opt : undefined, ...(rest.length < 2 && !opt.length ? { gleicherTyp: undefined } : {}) });
+  };
+  return (
+    <>
+      <Mehrfachauswahl id={id} name={t('mappentypen.editor.zieltypen')} platzhalter={t('mappentypen.editor.zieltyp-suchen')}
+        eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen}
+        vorschlaege={auswahl.map((x) => ({ id: x.id, text: x.name }))} leerText={t('mappentypen.editor.keine-weiteren-typen')}
+        waehle={(z) => { setze({ zielTypen: [...gewaehlt, z] }); setEingabe(''); setOffen(false); }}
+        gewaehlt={gewaehlt.map((z) => ({ id: z, inhalt: name(z), entfernenText: t('mappentypen.editor.zieltyp-entfernen', { name: name(z) }) }))}
+        entferne={entferne} />
+      {offenOpt.length > 0 && <p className="leise klein zieltypen-offen">{t('mappentypen.editor.ziele-optional', { typen: offenOpt.join(', ') })}</p>}
+    </>
+  );
+}
+
+/**
  * Folgt aus (#886): Das Verweisfeld füllt sich aus einem anderen Verweisfeld dieser Mappe – über ein Verweisfeld der
  * Mappe, auf die jenes zeigt (z. B. Organisation aus Niederlassung → Organisation). Nur ein leeres Feld, keine Sperre.
  */
@@ -1424,11 +1468,13 @@ function FolgtAusEditor({ f, id, setze, alleFelder, felderVon }: {
   const quellen = moeglicheQuellen(alleFelder, f);
   if (!quellen.length && !f.folgtAus) return null;
   const quelle = f.folgtAus ? alleFelder.find((x) => x.key === f.folgtAus!.feld) : undefined;
-  const zielFelder = quelle?.zielTyp ? moeglicheZielFelder(felderVon(quelle.zielTyp) ?? [], f) : [];
+  const qz = quelle ? einzigesZiel(quelle) : undefined;
+  const zielFelder = qz ? moeglicheZielFelder(felderVon(qz) ?? [], f) : [];
   const waehleQuelle = (k: string) => {
     if (!k) { setze({ folgtAus: undefined }); return; }
     const q = alleFelder.find((x) => x.key === k);
-    const z = q?.zielTyp ? moeglicheZielFelder(felderVon(q.zielTyp) ?? [], f) : [];
+    const qz2 = q ? einzigesZiel(q) : undefined;
+    const z = qz2 ? moeglicheZielFelder(felderVon(qz2) ?? [], f) : [];
     setze({ folgtAus: { feld: k, zielFeld: z[0]?.key ?? '' } });
   };
   return (

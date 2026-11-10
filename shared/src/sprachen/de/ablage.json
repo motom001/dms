@@ -1255,5 +1255,6 @@
   "anzeige.abschnitt_other": "Abschnitt {name} ist ausgeblendet – {anzahl} Werte bleiben gespeichert",
   "anzeige.feld": "{feld} ist ausgeblendet – der Wert bleibt gespeichert",
   "anzeige.anzeigen": "anzeigen",
-  "anzeige.gerade-aus": "Gerade ausgeblendet ({bedingung}) – die Werte bleiben gespeichert."
+  "anzeige.gerade-aus": "Gerade ausgeblendet ({bedingung}) – die Werte bleiben gespeichert.",
+  "suche.vom-typ": "zeigt auf eine Mappe vom Typ"
 }

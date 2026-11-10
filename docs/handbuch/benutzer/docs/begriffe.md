@@ -155,8 +155,8 @@ Ein Dokument kann mehrere Versionen haben. Beim Ersetzen entsteht eine neue Vers
 Siehe auch: [Dokument](#dokument), [Archivmodus](#archivmodus), [Version von Ablago](#version-von-ablago).
 
 <a id="verweis"></a>**Verweis** · ~ mit Erklärung · alle  
-Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag.  
-Siehe auch: [Verknüpfungen](#verknupfungen), [Verweisart](#verweisart).
+Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag. Es kann auf Mappen eines oder mehrerer Mappentypen zeigen (z. B. „betrifft“ auf Fahrzeug, Wohnung oder Vertrag).  
+Siehe auch: [Verknüpfungen](#verknupfungen), [Verweisart](#verweisart), [Zieltyp](#zieltyp).
 
 <a id="verweisart"></a>**Verweisart** · ~ mit Erklärung · Administratoren  
 Ob ein Verweis eine Zugehörigkeit ist („gehört zu“, z. B. eine Rechnung zum Vertrag) oder nur ein Bezug (z. B. der Aussteller). Die Mappe zeigt die Art am Verweis und in den Verknüpfungen.  
@@ -169,6 +169,10 @@ Siehe auch: [Ablage](#ablage), [Administrator](#administrator), [Werkbank anpass
 <a id="zeitraum"></a>**Zeitraum** · ✓ Alltagswort · alle  
 Feldart für eine Dauer aus ganzer Zahl und Einheit – Tage, Wochen, Monate oder Jahre, z. B. die Kündigungsfrist „3 Monate“ oder die Laufzeit „1 Jahr“. Sortiert und verglichen wird nach der Länge. Nicht zu verwechseln mit „im Zeitraum“ bei Datumsbedingungen (Jahr, Monat).  
 Siehe auch: [Feldart](#feldart), [Frist](#frist).
+
+<a id="zieltyp"></a>**Zieltyp** · ~ mit Erklärung · Administratoren  
+Ein Mappentyp, auf dessen Mappen ein Verweis zeigen darf; ein Verweis hat einen oder mehrere. Mit „alle vom selben Typ“ bleiben mehrere gewählte Mappen beim Typ der ersten. Aus Paketen gibt es auch optionale Zieltypen – Typen eines anderen Pakets, die Ablago aufnimmt, sobald es installiert ist.  
+Siehe auch: [Verweis](#verweis), [Mappentyp](#mappentyp).
 
 ## Arbeiten in der Ablage
 
@@ -615,12 +619,13 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Version | Revision, Stand (für Dokumente) | `DokumentVersion` |
 | Version von Ablago | Release (in der Oberfläche) | – |
 | Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |
-| Verweis | Referenz, Link, Relation | `referenz, Feld.zielTyp` |
+| Verweis | Referenz, Link, Relation | `referenz, Feld.zielTypen` |
 | Verweisart | – | `Verweisart, VERWEISARTEN` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Woran man ihn erkennt | – | `Mappentyp.erkennbarAn` |
 | Zeitraum | Dauer (als Feldart), Periode, Intervall | `zeitraum, Zeitraum, shared/src/feldarten.ts` |
+| Zieltyp | Zielklasse, Referenztyp | `Feld.zielTypen, Feld.gleicherTyp, Feld.zielOptional, zielOptional (Paket)` |
 | Zu erledigen | Eingang, Inbox, Posteingang, Anstehend | `eingang` |
 | Zum Wiederfinden nutzen | – | `Feld.wiederfinden` |
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |

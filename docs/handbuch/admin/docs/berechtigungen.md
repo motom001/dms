@@ -58,6 +58,10 @@ Eine Regel heißt: **Wenn** alle Bedingungen zutreffen, **dann** setze diese Rec
 
 Jede Bedingung lässt sich mit **nicht** umkehren. Mehrere Bedingungen einer Regel müssen **alle** zutreffen; für „oder“ legst du zwei Regeln an.
 
+#### Zeigt auf Mappe vom Typ … { #zeigt-auf-mappe-vom-typ }
+
+Bei einem Verweisfeld mit [mehreren Zieltypen](mappentypen.md#mehrere-zieltypen) gibt es unter **Feld der Mappe** auch **zeigt auf Mappe vom Typ …**, z. B. „*betrifft* zeigt auf Mappe vom Typ Fahrzeug“. Diese Bedingung bleibt **im Zweifel geschlossen**: Zeigt das Feld auf eine Mappe, deren Typ die Person nicht sehen darf, gilt die Regel als **nicht erfüllt, wenn sie Rechte erteilt**, und als **erfüllt, wenn sie Rechte entzieht** – auch mit **nicht**. So geben Rechte nichts preis, was die Person nicht sehen darf, und öffnen nichts über einen Typ, den sie nicht kennt. Sehen darf sie einen Typ, wenn sie nach den Regeln überhaupt Mappen davon lesen kann (Leserecht über eine solche Bedingung zählt dabei nicht). Der [Testlauf](#testlauf) rechnet genauso.
+
 !!! tip "Rechte, die vom Inhalt abhängen"
     Ändert jemand ein Feld, von dem seine Rechte abhängen (etwa „Verantwortlich“), fragt Ablago vor dem Speichern nach, wenn er sich damit selbst das Lesen oder Bearbeiten entziehen würde.
 

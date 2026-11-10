@@ -7,7 +7,8 @@
  */
 import { FRISTEN, type Archiv } from './archiv';
 import type { Datenschutz } from './auskunft';
-import { BELIEBIGER_TYP, type Feld, type Systemtyp } from './model';
+import { type Feld, type Systemtyp } from './model';
+import { jedeMappe, zieleVon } from './verweisziele';
 import { t } from './texte';
 
 export interface LoeschkonzeptTyp { id: string; name: string; felder: Feld[]; archiv?: Archiv | null; system?: Systemtyp | null }
@@ -86,8 +87,9 @@ export function personenbezug(typen: LoeschkonzeptTyp[], datenschutz: Pick<Daten
   const karte = new Map<string, Personenbezug>();
   for (const loeschkonzeptTyp of eigene) {
     const verweise = loeschkonzeptTyp.felder
-      .filter((f) => f.typ === 'referenz' && f.zielTyp && (personen.has(f.zielTyp) || (f.zielTyp === BELIEBIGER_TYP && personen.size > 0)) && f.zielTyp !== loeschkonzeptTyp.id)
-      .map((f) => ({ feld: f.label, ziel: f.zielTyp === BELIEBIGER_TYP ? t('gemeinsam.loeschkonzept.zugeordnete-personen') : name.get(f.zielTyp!) ?? f.zielTyp! }));
+      // Mehrere Zieltypen (#1036): die Personentypen darunter, außer dem eigenen.
+      .filter((f) => f.typ === 'referenz' && ((jedeMappe(f) && personen.size > 0) || zieleVon(f).some((z) => personen.has(z) && z !== loeschkonzeptTyp.id)))
+      .map((f) => ({ feld: f.label, ziel: jedeMappe(f) ? t('gemeinsam.loeschkonzept.zugeordnete-personen') : zieleVon(f).filter((z) => personen.has(z) && z !== loeschkonzeptTyp.id).map((z) => name.get(z) ?? z).join(', ') }));
     const bezug: Personenbezug['bezug'] | null = personen.has(loeschkonzeptTyp.id) ? 'person' : verweise.length ? 'verweis' : ds(loeschkonzeptTyp.id).zweck.trim() ? 'zweck' : null;
     if (bezug) karte.set(loeschkonzeptTyp.id, { bezug, verweise });
   }

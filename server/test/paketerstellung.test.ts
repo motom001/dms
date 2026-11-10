@@ -107,7 +107,7 @@ function bild(t: Mappentyp, typen: Mappentyp[]) {
   const n = (id: string) => typen.find((x) => x.id === id)?.name ?? `?${id}`;
   return {
     name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage,
-    felder: t.felder.filter((f) => !f.system).map((f) => ({ key: f.key, label: f.label, typ: f.typ, pflicht: !!f.pflicht, optionen: f.optionen, maxLen: f.maxLen ?? null, ziel: f.zielTyp ? n(f.zielTyp) : null, verweisart: f.verweisart ?? null, frist: f.frist ? [f.frist.vorlauf, f.frist.einheit, f.frist.empfaengerFeld] : null })),
+    felder: t.felder.filter((f) => !f.system).map((f) => ({ key: f.key, label: f.label, typ: f.typ, pflicht: !!f.pflicht, optionen: f.optionen, maxLen: f.maxLen ?? null, ziel: f.zielTypen?.[0] ? n(f.zielTypen[0]) : null, verweisart: f.verweisart ?? null, frist: f.frist ? [f.frist.vorlauf, f.frist.einheit, f.frist.empfaengerFeld] : null })),
     register: t.register.map((r) => ({ key: r.key, name: r.name, art: r.art, felder: r.felder ?? [], quellen: (r.quellen ?? []).map((q) => [n(q.typId), q.feldKey]) })),
     spalten: standardliste(t).spalten,
   };

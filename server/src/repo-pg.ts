@@ -3,7 +3,7 @@ import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, 
 import { alsText } from '../../shared/src/markdown';
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
-import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallEnde, type FallOhneLeserecht, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import { normalisiereZiele, standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallEnde, type FallOhneLeserecht, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import { istZahlvergleich, type Filter, type Klausel, type Sicht, type SichtDaten } from '../../shared/src/sichten';
 import { TAGE_JE_EINHEIT } from '../../shared/src/feldarten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
@@ -44,7 +44,8 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   ...(r.paket ? { paket: r.paket as string } : {}),
   beschreibung: r.beschreibung as string,
   titelVorlage: r.titel_vorlage as string,
-  felder: r.felder as Mappentyp['felder'],
+  // Ziele (#1036): Migration 095 schreibt `zielTypen`; ältere Zeilen (etwa während eines Updates) gleicht das Lesen an.
+  felder: (r.felder as Mappentyp['felder']).map(normalisiereZiele),
   register: r.register as Mappentyp['register'],
   trefferliste: (r.trefferliste as string[] | null) ?? [],
   trefferlisten: (r.trefferlisten as Mappentyp['trefferlisten'] | null) ?? undefined,
@@ -336,6 +337,11 @@ function filterSql(sql: Sql, f: Filter): Teil {
     return sql`EXISTS (SELECT 1 FROM aufgaben auf WHERE auf.mappe_id = mappen.id AND auf.erledigt IS NULL AND auf.empfaenger_id = ${istUuid(f.benutzer) ? f.benutzer : null}::uuid)`;
   }
   if (f.art === 'id') return sql`mappen.id = ANY(${f.ids.filter(istUuid)}::uuid[])`;
+  if (f.art === 'zieltyp') {
+    // „zeigt auf Mappe vom Typ …“ (#1036) über die Verweise; `ausser`: auf eine Mappe, deren Typ keiner davon ist.
+    const typ = f.ausser ? sql`zm.typ_id::text <> ALL(${f.typen}::text[])` : sql`zm.typ_id::text = ANY(${f.typen}::text[])`;
+    return sql`EXISTS (SELECT 1 FROM verweise v JOIN mappen zm ON zm.id = v.ziel_id WHERE v.quelle_id = mappen.id AND v.feld_key = ${f.key} AND ${typ})`;
+  }
   if (f.art === 'frist') {
     // Eines der Datumsfelder in [von, bis]; mit ich nur Fristen dieses Empfängers (Benutzerfeld, sonst Ersteller).
     const teile = f.felder.map((x) => {

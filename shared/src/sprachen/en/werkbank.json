@@ -3128,5 +3128,7 @@
   "nutzung.ordnung": "Hiding is for tidiness, not protection: values of hidden fields stay saved and appear in the API, exports and data access requests. Who may see what is set by the permissions.",
   "nutzung.vorlage": "Matching Workbench template: {vorlage}. It follows the attribute as long as nobody has adjusted the sidebar.",
   "nutzung.gespeichert": "Saved. Folders now show what belongs to this setting.",
-  "ansicht.vorgabe-nutzung": "matches the use"
+  "ansicht.vorgabe-nutzung": "matches the use",
+  "sichten.zieltypen": "Folder types",
+  "sichten.typ-fehlt": "(folder type missing)"
 }

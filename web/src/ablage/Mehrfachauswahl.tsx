@@ -3,7 +3,16 @@ import { t } from '../sprache';
 
 /** Ein gewählter Eintrag: Inhalt (Text oder Link), optional ein Zusatz (z. B. ein Hinweis) und weitere Aktionen vor „Entfernen“. */
 export interface GewaehlterEintrag { id: string; inhalt: ReactNode; zusatz?: ReactNode; aktionen?: ReactNode; entfernenText: string }
-export interface Vorschlag { id: string; text: ReactNode }
+/** Ein Vorschlag; mit `gruppe` (#1036) stehen Vorschläge derselben Gruppe unter einer Überschrift, in der Reihenfolge ihres ersten Auftretens. */
+export interface Vorschlag { id: string; text: ReactNode; gruppe?: string }
+
+/** Vorschläge nach Gruppe, in der Reihenfolge ihres ersten Auftretens; ohne Gruppen eine einzige ohne Namen. */
+function gruppiert(v: Vorschlag[]): Array<{ name: string | null; eintraege: Vorschlag[] }> {
+  if (!v.some((x) => x.gruppe)) return [{ name: null, eintraege: v }];
+  const aus = new Map<string, Vorschlag[]>();
+  for (const x of v) { const g = x.gruppe ?? ''; aus.set(g, [...(aus.get(g) ?? []), x]); }
+  return [...aus].map(([name, eintraege]) => ({ name: name || null, eintraege }));
+}
 
 /**
  * Mehrfachauswahl (#602): mehrere Einträge aus einer Liste wählen, überall mit derselben Bedienung –
@@ -13,6 +22,8 @@ export interface Vorschlag { id: string; text: ReactNode }
  *   Klick oder Pfeil nach unten öffnet sie wieder.
  * - Die gewählten Einträge stehen **unter** dem Suchfeld, je mit „Entfernen“. So bleibt das Suchfeld direkt unter
  *   der Beschriftung und auf einer Höhe mit Nachbarfeldern; die Auswahl schiebt nur, was darunter kommt.
+ * - Vorschläge mit `gruppe` (#1036, z. B. je Mappentyp) stehen unter einer Überschrift; die Liste nennt keine Anzahl.
+ *   Enter nimmt weiter den ersten Vorschlag.
  *
  * Eingabe und „offen“ hält der Aufrufer, weil er davon abhängig Vorschläge lädt oder filtert.
  * `vorschlaege === null` heißt: lädt noch.
@@ -61,7 +72,11 @@ export function Mehrfachauswahl({ id, name, platzhalter, eingabeLabel, eingabe, 
               {vorschlaege === null ? <p className="leise klein">{t('felder.auswahl.lade')}</p>
                 : !vorschlaege.length ? <p className="leise klein">{leerText}</p>
                 : <>
-                    {vorschlaege.map((v) => <button key={v.id} type="button" role="option" aria-selected={false} onClick={() => waehle(v.id)}>{v.text}</button>)}
+                    {gruppiert(vorschlaege).map((g, i) => {
+                      const knoepfe = g.eintraege.map((v) => <button key={v.id} type="button" role="option" aria-selected={false} onClick={() => waehle(v.id)}>{v.text}</button>);
+                      return g.name === null ? <span key={i} className="wahlgruppe-ohne">{knoepfe}</span>
+                        : <div key={i} role="group" aria-label={g.name} className="wahlgruppe"><p className="wahlgruppe-titel" aria-hidden="true">{g.name}</p>{knoepfe}</div>;
+                    })}
                     {fuss}
                   </>}
             </div>

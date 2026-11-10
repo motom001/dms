@@ -16,7 +16,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { liesWortgruppe } from '../../shared/src/suche';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
-import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, type Abschnitt, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
+import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, zieleVon, ZIELTYPEN_MAX, type Abschnitt, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
 import { bereinigeAbschnitte } from '../../shared/src/darstellung';
 import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
@@ -123,7 +123,14 @@ export interface Manifest {
   /** Ersetzte Ids (#1084): Ein Update zieht die Installation unter einer davon auf diese Id um (z. B. texterkennung_fra). */
   ersetzt?: string[];
 }
-export interface PaketFeld extends Partial<Feld> { key: string; label: string; typ: Feld['typ']; ziel?: string }
+/**
+ * Feld im Paket. Verweisfelder (#1036): `ziel` ist ein Typverweis oder eine Liste davon (mehrere Zieltypen);
+ * `zielOptional` nennt Typen anderer Pakete als `paket:schluessel`, von denen das Paket nicht abhängt – Ablago nimmt
+ * sie auf, sobald es sie gibt. Ein Verweisfeld darf auch nur `zielOptional` haben.
+ */
+export interface PaketFeld extends Partial<Feld> { key: string; label: string; typ: Feld['typ']; ziel?: string | string[]; zielOptional?: string[] }
+/** Die festen Ziele eines Paketfelds als Liste (#1036): `ziel` einzeln oder als Liste. */
+export const paketZiele = (f: Pick<PaketFeld, 'ziel'>): string[] => (Array.isArray(f.ziel) ? f.ziel.map(str) : f.ziel ? [str(f.ziel)] : []);
 export interface PaketRegister {
   key: string; name: string; art: Register['art']; felder?: string[]; quellen?: Array<{ typ: string; feld: string }>; volltext?: boolean; beschriftungen?: Beschriftungen<NamensTeile>;
   /** Abschnitte im Feldregister (#890): `{ vor, titel?, eingeklappt?, beschriftungen? }`; ältere Ablago ignorieren sie. */
@@ -214,6 +221,43 @@ export function ordneBeispiele(beispiele: PaketBeispiel[]): PaketBeispiel[] | nu
   for (const b of beispiele) if (!besuche(b)) return null;
   return erg;
 }
+/**
+ * Ziele eines Paketfelds prüfen (#1036): `ziel` ein Typverweis oder eine Liste; `zielOptional` nur „paket:schluessel“
+ * eines anderen Pakets; ein Verweisfeld braucht eins von beiden; `gleicherTyp` nur an Verweisen.
+ */
+function zielFehler(f: PaketFeld, wo: string, paketId: string): string[] {
+  const ref = f.typ === 'referenz';
+  const opt = f.zielOptional;
+  const fehler = [...festeZielFehler(f, wo), ...optionaleZielFehler(f, wo, paketId)];
+  if (ref && !paketZiele(f).length && !(Array.isArray(opt) && opt.length)) fehler.push(`${wo}: Verweisfeld ohne ziel und ohne zielOptional.`);
+  if (f.gleicherTyp !== undefined && (!ref || typeof f.gleicherTyp !== 'boolean')) fehler.push(`${wo}: gleicherTyp gibt es nur bei Verweisfeldern, als true oder false.`);
+  return fehler;
+}
+function festeZielFehler(f: PaketFeld, wo: string): string[] {
+  if (f.ziel === undefined) return [];
+  const fehler: string[] = [];
+  const ziele = Array.isArray(f.ziel) ? f.ziel : [f.ziel];
+  for (const z of ziele) if (!TYPVERWEIS.test(str(z))) fehler.push(`${wo} verweist ungültig auf „${str(z)}“.`);
+  if (!ziele.length) fehler.push(`${wo}: ziel ist eine leere Liste – ohne Zieltyp weglassen oder zielOptional nutzen.`);
+  if (ziele.length > ZIELTYPEN_MAX) fehler.push(`${wo}: höchstens ${ZIELTYPEN_MAX} Zieltypen.`);
+  if (f.typ !== 'referenz') fehler.push(`${wo}: ziel gibt es nur bei Verweisfeldern (typ: referenz).`);
+  return fehler;
+}
+function optionaleZielFehler(f: PaketFeld, wo: string, paketId: string): string[] {
+  const opt = f.zielOptional;
+  if (opt === undefined) return [];
+  const fehler: string[] = [];
+  const ref = f.typ === 'referenz';
+  if (!ref) fehler.push(`${wo}: zielOptional gibt es nur bei Verweisfeldern (typ: referenz).`);
+  if (!Array.isArray(opt)) fehler.push(`${wo}: zielOptional muss eine Liste sein.`);
+  if (Array.isArray(opt) && opt.length > ZIELTYPEN_MAX) fehler.push(`${wo}: höchstens ${ZIELTYPEN_MAX} optionale Zieltypen.`);
+  for (const k of (Array.isArray(opt) ? opt : []).map(str)) {
+    if (!k.includes(':') || !TYPVERWEIS.test(k) || istDmsVerweis(k)) fehler.push(`${wo}: zielOptional „${k}“ muss ein Mappentyp eines anderen Pakets sein (paket:schluessel).`);
+    else if (k.startsWith(`${paketId}:`)) fehler.push(`${wo}: zielOptional „${k}“ ist ein Typ dieses Pakets – eigene Typen gehören unter ziel.`);
+  }
+  return fehler;
+}
+
 /** Code eines Pakets (#338): Angaben aus dem Manifest und die Dateien unter code/ (modul.wasm, daten/…). */
 export interface PaketCodeTeil { info: PaketCode; dateien: Array<{ name: string; inhalt: Buffer }> }
 export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; /** Gleichbedeutende Wörter für die Suche (#356). */ wortlisten: string[][];
@@ -278,7 +322,8 @@ const DMS_PRAEFIX = 'dms:';
 const istDmsVerweis = (vw: string) => vw.startsWith(DMS_PRAEFIX);
 /** Alle Typverweise eines Pakets: Felder, Quellen der Verknüpfungsregister, Typen der Ansichten. */
 const typverweise = (typen: PaketTyp[], sichten: PaketSicht[]) => [
-  ...typen.flatMap((t) => [...t.felder.flatMap((f) => (f.ziel ? [f.ziel] : [])), ...t.register.flatMap((r) => (r.quellen ?? []).map((q) => q.typ))]),
+  // Optionale Ziele (#1036) zählen nicht: Von ihnen hängt das Paket gerade nicht ab.
+  ...typen.flatMap((t) => [...t.felder.flatMap((f) => paketZiele(f)), ...t.register.flatMap((r) => (r.quellen ?? []).map((q) => q.typ))]),
   ...sichten.flatMap((s) => (s.typen ?? []).filter((t) => t !== ALLE_TYPEN)),
 ];
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -374,7 +419,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     const register = Array.isArray(t.register) ? t.register.filter(istObjekt) as unknown as PaketRegister[] : [];
     for (const f of felder) {
       if (!SCHLUESSEL.test(str(f.key))) fehler.push(`${wo}: Feld mit ungültiger Kennung „${str(f.key)}“.`);
-      if (f.ziel !== undefined && !TYPVERWEIS.test(str(f.ziel))) fehler.push(`${wo}: Feld „${f.key}“ verweist ungültig auf „${str(f.ziel)}“.`);
+      fehler.push(...zielFehler(f, `${wo}: Feld „${f.key}“`, str(m.id)));
       // Feldart (#1035): Unbekanntes nicht still zu Text machen – meist braucht das Paket eine neuere Ablago-Version.
       if (f.typ !== undefined && !Object.hasOwn(FELDTYPEN, str(f.typ))) fehler.push(`${wo}: Feld „${f.key}“ hat die unbekannte Feldart „${str(f.typ)}“ (möglich: ${Object.keys(FELDTYPEN).join(', ')}).`);
       if (f.negativ !== undefined && (f.typ !== 'betrag' || typeof f.negativ !== 'boolean')) fehler.push(`${wo}: Feld „${f.key}“: negativ gibt es nur bei Beträgen (typ: betrag), als true oder false.`);
@@ -386,6 +431,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
         else if (!SCHLUESSEL.test(str(roh.aus_text)) || roh.aus_text === f.key) fehler.push(`${wo}: Feld „${f.key}“: aus_text muss die Kennung eines anderen Felds sein.`);
         else if (quelle && quelle.typ !== 'text' && quelle.typ !== 'langtext') fehler.push(`${wo}: Feld „${f.key}“: aus_text „${str(roh.aus_text)}“ ist kein Textfeld.`);
         else if (f.pflicht) fehler.push(`${wo}: Feld „${f.key}“: Ein Verweisfeld mit aus_text darf keine Pflicht sein – sonst passen vorhandene Mappen nach dem Update nicht mehr.`);
+        else if (paketZiele(f).length !== 1 || f.zielOptional?.length) fehler.push(`${wo}: Feld „${f.key}“: aus_text geht nur mit genau einem Zieltyp (ziel) – neue Mappen entstehen in diesem Typ.`);
         else f.ausText = str(roh.aus_text);
         delete roh.aus_text;
       }
@@ -772,6 +818,17 @@ function nachEltern(sichten: PaketSicht[]): PaketSicht[] {
     erg.push(...rest.splice(i < 0 ? 0 : i, 1));
   }
   return erg;
+}
+
+/**
+ * Felder eines Typs ohne Verweise auf Typen aus `weg` (außer auf sich selbst) – zum Entfernen von Paketen, deren Typen im
+ * Kreis aufeinander zeigen. Mehrere Zieltypen (#1036): nur diese Ziele gehen; das Feld bleibt, solange es andere oder
+ * optionale hat.
+ */
+function ohneZiele(t: Mappentyp, weg: Set<string>): Feld[] {
+  const rest = (f: Feld) => zieleVon(f).filter((z) => !weg.has(z) || z === t.id);
+  return t.felder.flatMap((f) => (f.typ !== 'referenz' || rest(f).length === zieleVon(f).length ? [f]
+    : rest(f).length || f.zielOptional?.length ? [{ ...f, zielTypen: rest(f) }] : []));
 }
 
 /** Bedingung aus dem Paket in die Form der Werkbank. */
@@ -1793,6 +1850,32 @@ export class Paketverwaltung {
     }
   }
 
+  /**
+   * Optionale Ziele (#1036) nachziehen: An den Feldern der Typen von `paket` die `zielOptional` des Pakets ergänzen
+   * (vereinigt, nie gekürzt), dann an allen Verweisfeldern jede optionale Kennung, die es als Typ gibt, in `zielTypen`
+   * aufnehmen. Geänderte Typen landen in `geaendert` (Zurückrollen).
+   */
+  private async ergaenzeOptionaleZiele(paket: Pick<Paket, 'manifest' | 'typen'> | null, typMap: Record<string, string>, geaendert: Mappentyp[]) {
+    const typen = await this.d.listeTypen();
+    const kennung = new Map(typen.filter((x) => x.schluessel).map((x) => [x.schluessel!, x.id] as const));
+    for (const typ of typen) {
+      const pt = paket?.typen.find((x) => typMap[x.schluessel] === typ.id);
+      let anders = false;
+      const felder = typ.felder.map((f) => {
+        if (f.typ !== 'referenz') return f;
+        const neuOpt = (pt?.felder.find((x) => x.key === f.key)?.zielOptional ?? []).map(str);
+        const opt = [...new Set([...(f.zielOptional ?? []), ...neuOpt])];
+        const dazu = opt.map((k) => kennung.get(k)).filter((id): id is string => !!id && !zieleVon(f).includes(id));
+        if (!dazu.length && opt.length === (f.zielOptional ?? []).length) return f;
+        anders = true;
+        return { ...f, zielTypen: [...zieleVon(f), ...dazu], ...(opt.length ? { zielOptional: opt } : {}) };
+      });
+      if (!anders) continue;
+      if (!geaendert.some((x) => x.id === typ.id)) geaendert.push(typ);
+      try { await this.d.aendereTyp(typ.id, { ...typ, felder }); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: typ.name, meldungen: meldungen(f) })); }
+    }
+  }
+
   private async legeIntern({ paket, herkunft, v, plan, beispiele, von, alt, ein }: LegeAuftrag): Promise<InstalliertesPaket> {
     const m = paket.manifest;
     const installierte = await this.d.kern.repo.listePakete();
@@ -1822,15 +1905,30 @@ export class Paketverwaltung {
       if (!id) throw new Fachfehler(422, t('meldungen.pakete.der-verweis-zeigt-auf', { vw }));
       return !nurAngelegt || angelegt.has(s) || vorher.has(id) ? id : null;
     };
+    // „zeigt auf Mappe vom Typ …“ in Ansichten (#1036): Typverweise → Ids; optionale (eines nicht installierten Pakets) fallen weg.
+    const zieltypenIn = (b: Bedingung): Bedingung => {
+      if (b.art !== 'feld' || b.op !== 'zeigtAufTyp' || b.wert?.art !== 'fest' || !Array.isArray(b.wert.wert)) return b;
+      const ids = b.wert.wert.map((vw) => { try { return ziel(str(vw), false); } catch { return str(vw).includes(':') ? optional(str(vw)) : null; } }).filter((x): x is string => !!x);
+      return { ...b, wert: { art: 'fest', wert: ids } };
+    };
     // Anzeigen, wenn … (#1033): „zeigt auf eine Mappe vom Typ …“ nennt im Paket einen Typverweis – hier die Id.
     const anzeige = (a: unknown) => {
       if (!istObjekt(a) || !Array.isArray(a.bedingungen)) return a;
       return { ...a, bedingungen: a.bedingungen.map((b) => (istObjekt(b) && b.art === 'verweistyp' ? { ...b, typ: ziel(str(b.typ), false) } : b)) };
     };
+    // Optionale Ziele (#1036): ein Typ eines anderen Pakets, wenn es ihn schon gibt – sonst still nichts.
+    const optional = (vw: string): string | null => {
+      const [p, sl] = vw.split(':');
+      const id = installierte.find((x) => x.id === p)?.typen[sl];
+      return id && vorher.has(id) ? id : null;
+    };
     const eingabe = (t: PaketTyp, nurAngelegt: boolean) => {
       const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
-      const offen = new Set(t.felder.filter((f) => f.ziel && !(eigen(f.ziel) && f.ziel.split(':').pop() === t.schluessel) && ziel(f.ziel, nurAngelegt) === null).map((f) => f.key));
-      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, ...f }) => ({ ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(z ? { zielTyp: ziel(z, false) } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}) }));
+      const offen = new Set(t.felder.filter((f) => paketZiele(f).some((z) => !(eigen(z) && z.split(':').pop() === t.schluessel) && ziel(z, nurAngelegt) === null)).map((f) => f.key));
+      const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, zielOptional: opt, ...f }) => {
+        const ziele = [...paketZiele({ ziel: z }).map((x) => ziel(x, false)!), ...(opt ?? []).map(optional).filter((x): x is string => !!x)];
+        return { ...f, wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}) };
+      });
       const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}),
         ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
       const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => ziel(q.typ, nurAngelegt) === null));
@@ -1916,6 +2014,10 @@ export class Paketverwaltung {
         await this.d.kern.repo.setzeTypKennung(id, typKennung(m.id, s));
         if (vorKennung) kennungZurueck.set(id, vorKennung);
       }
+      // 2b. Optionale Ziele (#1036): Vorhandene Felder dieses Pakets lernen neue optionale Ziele aus dem Update; dann nimmt
+      // jedes Feld (auch anderer Pakete) die optionalen Ziele auf, die es jetzt gibt – etwa die Fahrzeuge, wenn das Paket
+      // Fahrzeuge nach den Rechnungen kommt. Entfernt wird dabei nichts.
+      await this.ergaenzeOptionaleZiele(paket, typMap, geaendert);
       // 3. Neue Sichten, Elternsichten zuerst, am Ende ihrer Ebene.
       for (const s of nachEltern(paket.sichten)) {
         const sp = plan.sichten.find((x) => x.schluessel === s.schluessel)!;
@@ -1930,7 +2032,7 @@ export class Paketverwaltung {
         const typen = [...new Set([...(s.typen ?? []).map((x) => (x === ALLE_TYPEN ? ALLE_TYPEN : ziel(x, false)!)).filter(Boolean), ...fremd])];
         if (!typen.length && (s.fremdeTypen ?? []).length) continue;
         try {
-          const neu = await this.d.legeSichtAn({ name: sp.name, beschreibung: s.beschreibung ?? '', ...(s.beschriftungen ? { beschriftungen: s.beschriftungen } : {}), elternId, position, typen, bedingungen: (s.bedingungen ?? []).map(bedingungAus), ...(s.trefferliste ? { trefferliste: s.trefferliste } : {}), ...(s.symbol ? { symbol: s.symbol } : {}) });
+          const neu = await this.d.legeSichtAn({ name: sp.name, beschreibung: s.beschreibung ?? '', ...(s.beschriftungen ? { beschriftungen: s.beschriftungen } : {}), elternId, position, typen, bedingungen: (s.bedingungen ?? []).map(bedingungAus).map(zieltypenIn), ...(s.trefferliste ? { trefferliste: s.trefferliste } : {}), ...(s.symbol ? { symbol: s.symbol } : {}) });
           neueSichten.push(neu.id);
           sichtMap[s.schluessel] = neu.id;
         } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.ansicht', { name: sp.name, meldungen: meldungen(f) })); }
@@ -1999,7 +2101,7 @@ export class Paketverwaltung {
       for (const tid of Object.values(typMap)) {
         const t = nachher.get(tid);
         if (!t) continue;
-        const jetztBild = typBild(t);
+        const jetztBild = typBild(t, (id) => nachher.get(id)?.schluessel);
         const vorBild = alt?.typStand?.[tid];
         typStand[tid] = !vorBild ? jetztBild : {
           ...vorBild,
@@ -2610,8 +2712,8 @@ export class Paketverwaltung {
       if (offen.length === vorher) {
         const bleibt = new Set(offen);
         for (const t of typen.filter((x) => bleibt.has(x.id))) {
-          const felder = t.felder.filter((f) => !(f.typ === 'referenz' && f.zielTyp && bleibt.has(f.zielTyp) && f.zielTyp !== t.id));
-          if (felder.length === t.felder.length) continue;
+          const felder = ohneZiele(t, bleibt);
+          if (felder.length === t.felder.length && felder.every((f, i) => f === t.felder[i])) continue;
           const register = t.register.map((r) => (r.quellen ? { ...r, quellen: r.quellen.filter((q) => !bleibt.has(q.typId) || q.typId === t.id) } : r));
           await this.d.aendereTyp(t.id, { ...t, felder, register });
         }

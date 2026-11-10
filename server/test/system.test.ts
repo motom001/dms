@@ -108,7 +108,7 @@ describe('Mappentyp Benutzer (#26)', () => {
     assert.equal(email.eindeutig, true);
     assert.equal(email.system, true);
     assert.equal(t.felder.find((f) => f.key === 'telefon')!.system, undefined);
-    assert.equal(t.felder.find((f) => f.key === 'rollen')!.zielTyp, rolleTyp.id);
+    assert.equal(t.felder.find((f) => f.key === 'rollen')!.zielTypen?.[0], rolleTyp.id);
     assert.equal(t.erstellenErlaubt, false);
     assert.equal(t.loeschenErlaubt, false);
     await wirft(dienst.aendereTyp(benutzerTyp.id, { ...ohneTyp(t), felder: t.felder.filter((f) => f.key !== 'aktiv') }), 422, /Aktiv/);

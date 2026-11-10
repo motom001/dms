@@ -3,10 +3,10 @@
  * wirksame Rechte an Mappen, lesbare Mappen, Leserecht auf Zeit. Schicht 1 – bekommt den Kern, nicht den ganzen Dienst.
  */
 import { randomUUID } from 'node:crypto';
-import type { Aufgabe, Benutzer, Mappe, MappenBezug, Mappentyp } from '../../../shared/src/model';
+import { verweiseVon, type Aufgabe, type Benutzer, type Mappe, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
-import { ALLES, FALSCH, hatKontoRegeln, kontoRegelwerk, lesefilter, NICHTS, oder, rechteAn as rechteAnMappe, wirksamVon, type Ausdruck, type Lesefilter, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../../shared/src/rechte';
+import { ALLES, FALSCH, hatKontoRegeln, kontoRegelwerk, lesefilter, mitSichtbarenTypen, NICHTS, nutztZieltypRegeln, oder, rechteAn as rechteAnMappe, wirksamVon, type Ausdruck, type Lesefilter, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../../shared/src/rechte';
 import { heuteIn, type Aufloesung } from '../../../shared/src/sichten';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
@@ -32,15 +32,19 @@ function mitAufZeit(f: Lesefilter | null, typen: Mappentyp[], aufZeit: Array<{ m
   }
   return neu;
 }
-/** Titel nicht lesbarer Mappen ausblenden (#124); `ok`: die lesbaren. */
+/**
+ * Titel nicht lesbarer Mappen ausblenden (#124); `ok`: die lesbaren. Auch ohne Typ (#1036): Ein Verweisfeld darf auf
+ * mehrere Mappentypen zeigen – der Typ einer nicht sichtbaren Mappe ginge sonst aus Symbol, Gruppe oder Anzeige-Bedingung
+ * hervor.
+ */
 export function maskiert(b: Map<string, MappenBezug>, ok: Set<string>): Record<string, MappenBezug> {
-  return Object.fromEntries([...b].map(([id, x]) => [id, ok.has(id) ? x : { titel: NICHT_SICHTBAR, typId: x.typId, verborgen: true }]));
+  return Object.fromEntries([...b].map(([id, x]) => [id, ok.has(id) ? x : { titel: NICHT_SICHTBAR, typId: '', verborgen: true }]));
 }
 
 /** Für die Rechte im Arbeitsspeicher (Regel „mit Aufgabe“): offene Aufgaben des Benutzers aus einer Liste. */
-function quelleAus(benutzerId: string, aufgaben: Aufgabe[]): Mappenquelle {
+function quelleAus(benutzerId: string, aufgaben: Aufgabe[], typVon?: (id: string) => string | undefined): Mappenquelle {
   const mit = new Set(aufgaben.filter((x) => !x.erledigt && x.empfaengerId === benutzerId).map((x) => x.mappeId));
-  return { dokumente: () => 0, verknuepfungen: () => 0, aufgabe: (id, b) => b === benutzerId && mit.has(id) };
+  return { dokumente: () => 0, verknuepfungen: () => 0, aufgabe: (id, b) => b === benutzerId && mit.has(id), ...(typVon ? { typVon } : {}) };
 }
 const VERBOTEN: Record<Recht, string> = {
   C: t('meldungen.dienst.mappen-dieses-typs-darfst'),
@@ -81,18 +85,22 @@ export class ZugriffDienst {
   }
 
   async bildeZugriff(ich: { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string }, o: { ohneAufZeit?: boolean } = {}): Promise<Zugriff> {
-    const a = await this.aufloesung(ich.id);
+    const roh = await this.aufloesung(ich.id);
     const typen = await this.repo.listeTypen();
     const admin = ich.rolle === 'admin' && !ich.art;
     if (ich.art) {
       // Konten, die kein Mensch sind (#673): ihre Rolle (Systemkonto bzw. Paket) statt der Rollen aus einer Benutzer-Mappe.
       const rolleId = (await this.kern.system()).kontorollen.get(ich.art === 'system' ? 'systemkonto' : 'paket')!;
       const wer: Wer = { id: ich.id, rollen: [rolleId] };
-      if (ich.art === 'dienst') return this.paketZugriff(ich, a, wer, typen, rolleId);
+      if (ich.art === 'dienst') return this.paketZugriff(ich, roh, wer, typen, rolleId);
       const eigene = typen.map((t) => kontoRegelwerk(t, rolleId));
+      // „zeigt auf Mappe vom Typ …“ im Zweifel geschlossen (#1036): welche Typen dieses Konto sieht.
+      const a = mitSichtbarenTypen(eigene, wer, roh);
       return { ich: { id: ich.id, rolle: 'mitglied' }, admin: false, wer, a, typen: new Map(eigene.map((t) => [t.id, t])), lesen: lesefilter(eigene, wer, a), systemkonto: ich.systemkonto ?? 'system' };
     }
-    const wer: Wer = { id: ich.id, rollen: a.meineRollen };
+    const wer: Wer = { id: ich.id, rollen: roh.meineRollen };
+    // Für Administratoren gelten keine Regeln; sonst die Typen, die die Person sieht (#1036, Regeln „zeigt auf Mappe vom Typ …“).
+    const a = admin ? roh : mitSichtbarenTypen(typen, wer, roh);
     const lesen = admin ? null : lesefilter(typen, wer, a);
     // Leserecht auf Zeit (#798): nur für Menschen ohne Admin-Rechte, nur wenn die Regeln nicht ohnehin alles erlauben.
     const aufZeit = admin || !lesen || o.ohneAufZeit ? [] : await this.repo.leserechteAufZeit(ich.id);
@@ -103,7 +111,7 @@ export class ZugriffDienst {
   }
 
   /** Zugriff eines Dienstkontos (#338): nur die Typen und Rechte, die bei der Installation bestätigt wurden. */
-  private async paketZugriff(ich: { id: string; rolle: string; paketId?: string }, a: Aufloesung, wer: Wer, typen: Mappentyp[], rolleId: string): Promise<Zugriff> {
+  private async paketZugriff(ich: { id: string; rolle: string; paketId?: string }, roh: Aufloesung, wer: Wer, typen: Mappentyp[], rolleId: string): Promise<Zugriff> {
     const pakete = await this.repo.listePakete();
     const p = pakete.find((x) => x.id === ich.paketId);
     const r = p?.laeufer?.rechte ?? { lesen: [], schreiben: [], dokumente: 'keine' as const };
@@ -116,6 +124,8 @@ export class ZugriffDienst {
     const sichtbar = typen.filter((t) => lesbar.has(t.id) && !(p && verwehrt[t.id]?.includes(p.id)) && !kiGesperrt(t.id));
     // Regeln für die Rolle „Paket“ (#673) schränken die bestätigten Rechte weiter ein; ohne solche Regeln wie bisher.
     const mitRegeln = sichtbar.filter((t) => hatKontoRegeln(t, rolleId)).map((t) => kontoRegelwerk(t, rolleId));
+    // „zeigt auf Mappe vom Typ …“ (#1036): Typen außerhalb der bestätigten sieht das Paket nie.
+    const a = mitSichtbarenTypen(sichtbar.map((t) => mitRegeln.find((x) => x.id === t.id) ?? kontoRegelwerk(t, rolleId)), wer, roh);
     // Nie null („alles lesbar“): lesefilter() liefert null, wenn alle übergebenen Typen offen sind – hier sind das nur
     // die für das Paket sichtbaren. null hieße für Repo und lesbare() aber „alle Mappen aller Typen“.
     const offen = { offen: sichtbar.map((t) => t.id), je: [] };
@@ -171,11 +181,12 @@ export class ZugriffDienst {
       const regeln = z.paket.regeln?.get(typ.id);
       if (!regeln) return bestaetigt;
       // Regeln für die Rolle „Paket“ (#673): nur einschränken, nie über die bestätigten Rechte hinaus.
-      const quelle = aufgaben && !neu ? quelleAus(z.wer.id, aufgaben.filter((x) => x.mappeId === m.id)) : await this.mappenquelle(z.wer.id, neu ? [] : [m.id]);
+      const quelle = aufgaben && !neu ? quelleAus(z.wer.id, aufgaben.filter((x) => x.mappeId === m.id), await this.zieltypen([regeln], [m])) : await this.mappenquelle(z.wer.id, neu ? [] : [m.id], await this.zieltypen([regeln], [m]));
       const r = rechteAnMappe(regeln, m, z.wer, z.a, quelle, neu).wirksam;
       return { C: bestaetigt.C && r.C, R: bestaetigt.R && r.R, U: bestaetigt.U && r.U, D: false, P: false };
     }
-    const quelle = aufgaben && !neu ? quelleAus(z.wer.id, aufgaben.filter((x) => x.mappeId === m.id)) : await this.mappenquelle(z.wer.id, neu ? [] : [m.id]);
+    const typVon = await this.zieltypen([typ], [m]);
+    const quelle = aufgaben && !neu ? quelleAus(z.wer.id, aufgaben.filter((x) => x.mappeId === m.id), typVon) : await this.mappenquelle(z.wer.id, neu ? [] : [m.id], typVon);
     const r = rechteAnMappe(typ, m, z.wer, z.a, quelle, neu).wirksam;
     // Leserecht auf Zeit (#798): nur Lesen – Bearbeiten, Löschen und Passwörter bleiben, wie die Regeln sagen (ohne Lesen: nein).
     if (!r.R && !neu && z.aufZeit?.has(m.id)) return { ...r, R: true };
@@ -193,7 +204,7 @@ export class ZugriffDienst {
     if (z.admin) { for (const m of ms) { const typ = z.typen.get(m.typId); r.set(m.id, typ ? wirksamVon(ALLES, typ) : { ...NICHTS }); } return r; }
     // Dienstkonto (#338): wie in rechteAn, ohne Regeln.
     if (z.paket) { for (const m of ms) r.set(m.id, await this.rechteAnEine(z, m, false)); return r; }
-    const quelle = await this.mappenquelle(z.wer.id, ms.map((m) => m.id));
+    const quelle = await this.mappenquelle(z.wer.id, ms.map((m) => m.id), await this.zieltypen([...z.typen.values()], ms));
     for (const m of ms) {
       const typ = z.typen.get(m.typId);
       const x = typ ? rechteAnMappe(typ, m, z.wer, z.a, quelle, false).wirksam : { ...NICHTS };
@@ -204,9 +215,21 @@ export class ZugriffDienst {
     return r;
   }
 
-  /** Für die Auswertung im Arbeitsspeicher: nur Aufgaben werden nachgeschlagen. */
-  async mappenquelle(benutzerId: string, mappeIds: string[]): Promise<Mappenquelle> {
-    return quelleAus(benutzerId, mappeIds.length ? await this.repo.offeneAufgaben({ benutzerId, mappeIds }) : []);
+  /** Für die Auswertung im Arbeitsspeicher: Aufgaben und (#1036) die Typen verwiesener Mappen werden nachgeschlagen. */
+  async mappenquelle(benutzerId: string, mappeIds: string[], typVon?: (id: string) => string | undefined): Promise<Mappenquelle> {
+    return quelleAus(benutzerId, mappeIds.length ? await this.repo.offeneAufgaben({ benutzerId, mappeIds }) : [], typVon);
+  }
+
+  /**
+   * Typen der Mappen, auf die diese Mappen verweisen (#1036) – nur, wenn ein Typ Regeln „zeigt auf Mappe vom Typ …“ hat.
+   * Gelesen ohne Rechte: Ob die Person den Typ sehen darf, entscheidet die Regel selbst (im Zweifel geschlossen).
+   */
+  async zieltypen(regelTypen: Mappentyp[], ms: Mappe[]): Promise<((id: string) => string | undefined) | undefined> {
+    const mit = new Map(regelTypen.filter((t) => nutztZieltypRegeln([t])).map((t) => [t.id, t]));
+    const ids = [...new Set(ms.flatMap((m) => { const t = mit.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; }))];
+    if (!ids.length) return undefined;
+    const typVon = await this.repo.typenVon(ids.filter(istUuid));
+    return (id) => typVon.get(id);
   }
 
   /** Mappe holen und ein Recht verlangen. Ohne Lesen: 404 (wer nichts sehen darf, erfährt nicht, dass es sie gibt). */

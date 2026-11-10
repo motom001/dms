@@ -8,7 +8,7 @@ import { anzeigestand, hatAnzeige, pruefeMitAnzeige } from '../../../shared/src/
 import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
 import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgtaus';
-import { type Feld, type Feldkonflikt, formatiere, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte } from '../../../shared/src/model';
+import { einzigesZiel, type Feld, type Feldkonflikt, formatiere, gemeinsameFelder, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte, zieleVon, zielTypenAus } from '../../../shared/src/model';
 import type { Rechte } from '../../../shared/src/rechte';
 import { type Aufloesung, auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, heuteIn, setzeEigeneWerte } from '../../../shared/src/sichten';
 import { Fachfehler } from '../fehler';
@@ -138,11 +138,13 @@ export class MappenEingaben {
     for (const f of mitFilter) {
       const vorher = new Set(ids(alt[f.key]));
       const neu = ids(werte[f.key]).filter((x) => !vorher.has(x));
-      const ziel = typen.get(f.zielTyp ?? '');
-      if (!neu.length || !ziel) continue;
+      const ziele = zieltypenIn(f, typen);
+      if (!neu.length || !ziele.length) continue;
       // Werte aus der eigenen Mappe (#173): die, die gespeichert werden sollen.
-      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter!, werte), ziel, a);
-      const falsch = (await this.repo.holeMappen(neu)).filter((m) => m.typId !== ziel.id || !erfuellt(m, k.filter, KEINE_ZAEHLUNG));
+      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter!, werte), ziele, a);
+      const gewaehlt = await this.repo.holeMappen(neu);
+      const quelle = await this.zaehlungMitTypen(gewaehlt, typen);
+      const falsch = gewaehlt.filter((m) => !k.typen.includes(m.typId) || !erfuellt(m, k.filter, quelle));
       if (falsch.length) fehler[f.key] = [t('meldungen.dienst.passt-nicht-zur-auswahl', { map: falsch.map((m) => `„${m.titel || t('meldungen.dienst.ohne-titel')}“`).join(', ') })];
     }
     if (Object.keys(fehler).length) throw new Fachfehler(422, t('meldungen.dienst.bitte-die-markierten-felder-2'), { allgemein: [], felder: fehler });
@@ -163,7 +165,7 @@ export class MappenEingaben {
     for (const f of felder) {
       const ids = (Array.isArray(werte[f.key]) ? werte[f.key] as string[] : werte[f.key] ? [String(werte[f.key])] : []).filter(istUuid);
       if (!ids.length) continue;
-      const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, typen.get(f.zielTyp ?? ''), a, z);
+      const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, zieltypenIn(f, typen), a, z);
       const falsch = ids.filter((id) => gruende[id]);
       if (!falsch.length) continue;
       unpassend[f.key] = falsch;
@@ -179,18 +181,19 @@ export class MappenEingaben {
    * Felder, die aus diesem Feld folgen und etwas anderes enthalten. Eine leere Liste heißt: passt nur nicht zu den festen
    * Bedingungen des Auswahlfilters. Was folgt, zählt nur mit Mappen, die die Person lesen darf.
    */
-  private async verweisGruende(typ: Mappentyp, f: Feld, mappen: Mappe[], werte: Werte, ziel: Mappentyp | undefined, a: Aufloesung, z?: Zugriff): Promise<Record<string, string[]>> {
+  private async verweisGruende(typ: Mappentyp, f: Feld, mappen: Mappe[], werte: Werte, ziele: Mappentyp[], a: Aufloesung, z?: Zugriff): Promise<Record<string, string[]>> {
     const gruende: Record<string, string[]> = {};
     const dazu = (id: string, k?: string) => { const g = (gruende[id] ??= []); if (k && !g.includes(k)) g.push(k); };
-    if (ziel && f.auswahlFilter?.length) {
-      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter, werte), ziel, a);
+    if (ziele.length && f.auswahlFilter?.length) {
+      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter, werte), ziele, a);
       const eigene = f.auswahlFilter.filter((b) => b.wert?.art === 'eigenesFeld');
+      const quelle = await this.zaehlungMitTypen(mappen, new Map(ziele.map((x) => [x.id, x] as const)));
       for (const m of mappen) {
-        if (m.typId === ziel.id && erfuellt(m, k.filter, KEINE_ZAEHLUNG)) continue;
+        if (k.typen.includes(m.typId) && erfuellt(m, k.filter, quelle)) continue;
         dazu(m.id);
         for (const b of eigene) {
-          const kb = auswahlKlausel(setzeEigeneWerte([b], werte), ziel, a);
-          if (!erfuellt(m, kb.filter, KEINE_ZAEHLUNG)) dazu(m.id, (b.wert as { feld: string }).feld);
+          const kb = auswahlKlausel(setzeEigeneWerte([b], werte), ziele, a);
+          if (!erfuellt(m, kb.filter, quelle)) dazu(m.id, (b.wert as { feld: string }).feld);
         }
       }
     }
@@ -198,7 +201,7 @@ export class MappenEingaben {
     if (folgen.length) {
       const lesbar = await this.lesbare(z, mappen.map((m) => m.id));
       for (const m of mappen) {
-        if (!lesbar.has(m.id) || m.typId !== f.zielTyp) continue;
+        if (!lesbar.has(m.id) || m.typId !== einzigesZiel(f)) continue;
         for (const x of folgen) {
           const soll = ersteId(m.werte[x.folgtAus!.zielFeld]);
           if (istUuid(soll) && !enthaeltId(werte[x.key], soll)) dazu(m.id, x.key);
@@ -208,20 +211,30 @@ export class MappenEingaben {
     return gruende;
   }
 
+  /**
+   * Für Auswahlfilter im Arbeitsspeicher: ohne Zählungen, aber mit den Typen der Mappen, auf die diese Mappen verweisen
+   * (#1036, „zeigt auf Mappe vom Typ …“ an einem Feld des Zieltyps).
+   */
+  private async zaehlungMitTypen(mappen: Mappe[], typen: Map<string, Mappentyp>) {
+    const ids = [...new Set(mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; }))].filter(istUuid);
+    const typVon = ids.length ? await this.repo.typenVon(ids) : new Map<string, string>();
+    return { ...KEINE_ZAEHLUNG, typVon: (id: string) => typVon.get(id) };
+  }
+
   /** Auswahlfilter (#172, #173) und „folgt aus“ (#886) beim Ausfüllen: welche der gewählten Mappen passen nicht, und womit nicht? */
   async auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) {
     const x = (e ?? {}) as { typId?: unknown; feldKey?: unknown; ids?: unknown; werte?: unknown };
     const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
     const f = typ?.felder.find((y) => y.key === x.feldKey && y.typ === 'referenz');
-    const ziel = f ? await this.repo.holeTyp(f.zielTyp ?? '') : undefined;
+    const ziele = f ? zieltypenIn(f, new Map((await this.repo.listeTypen()).map((y) => [y.id, y] as const))) : [];
     // Nur Mappen, die man lesen darf – sonst verriete die Antwort etwas über ihre Werte.
     const roh = (Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid).slice(0, 200);
     const lesbar = await this.lesbare(z, roh);
     const ids = roh.filter((id) => lesbar.has(id));
     const leer = { unpassend: [] as string[], gruende: {} as Record<string, string[]> };
-    if (!typ || !f || !ziel || !ids.length || !(f.auswahlFilter?.length || typ.felder.some((y) => y.folgtAus?.feld === f.key))) return leer;
+    if (!typ || !f || !ziele.length || !ids.length || !(f.auswahlFilter?.length || typ.felder.some((y) => y.folgtAus?.feld === f.key))) return leer;
     const werte = x.werte && typeof x.werte === 'object' ? x.werte as Werte : {};
-    const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, ziel, await this.aufloesung(benutzerId), z);
+    const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, ziele, await this.aufloesung(benutzerId), z);
     return { unpassend: ids.filter((id) => gruende[id]), gruende };
   }
 
@@ -243,11 +256,11 @@ export class MappenEingaben {
   /** Was aus der Quelle folgt: die Mappe im Feld `zielFeld` der Mappe `q` – vom passenden Typ und für die Person lesbar. */
   private async folgeWert(quelle: Feld, zielFeld: string, f: Feld, q: string, z?: Zugriff): Promise<Mappe | null> {
     const m = await this.repo.holeMappe(q);
-    if (!m || m.typId !== quelle.zielTyp) return null;
+    if (!m || m.typId !== einzigesZiel(quelle)) return null;
     const id = ersteId(m.werte[zielFeld]);
     if (!istUuid(id)) return null;
     const ziel = await this.repo.holeMappe(id);
-    if (!ziel || ziel.typId !== f.zielTyp) return null;
+    if (!ziel || ziel.typId !== einzigesZiel(f)) return null;
     const lesbar = await this.lesbare(z, [q, id]);
     return lesbar.has(q) && lesbar.has(id) ? ziel : null;
   }
@@ -289,15 +302,19 @@ export class MappenEingaben {
     }
   }
 
-  /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen des Zieltyps passen? */
+  /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen der Zieltypen passen? `zielTypen` (#1036) oder wie bisher `zielTyp`. */
   async zaehleAuswahl(e: unknown, benutzerId: string) {
-    const x = (e ?? {}) as { zielTyp?: unknown; bedingungen?: unknown };
-    const ziel = istUuid(x.zielTyp) ? await this.repo.holeTyp(x.zielTyp) : undefined;
-    if (!ziel) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-ziel-mappentyp'));
+    const x = (e ?? {}) as { zielTyp?: unknown; zielTypen?: unknown; bedingungen?: unknown };
+    const ids = zielTypenAus(x.zielTypen ?? x.zielTyp).filter(istUuid);
+    const ziele: Mappentyp[] = [];
+    for (const id of ids) { const z = await this.repo.holeTyp(id); if (z) ziele.push(z); }
+    if (!ziele.length || ziele.length !== ids.length) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-ziel-mappentyp'));
     // Bedingungen mit Werten der eigenen Mappe (#173) zählen hier nicht – die Mappe gibt es noch nicht.
     const bed = setzeEigeneWerte(bereinigeAuswahlfilter(x.bedingungen), {});
-    const [passen] = await this.repo.zaehleKlauseln([[auswahlKlausel(bed, ziel, await this.aufloesung(benutzerId))]], null);
-    return { passen, gesamt: await this.repo.zaehleMappen(ziel.id), probleme: auswahlProbleme(bed, ziel) };
+    const [passen] = await this.repo.zaehleKlauseln([[auswahlKlausel(bed, ziele, await this.aufloesung(benutzerId))]], null);
+    let gesamt = 0;
+    for (const z of ziele) gesamt += await this.repo.zaehleMappen(z.id);
+    return { passen, gesamt, probleme: auswahlProbleme(bed, { felder: gemeinsameFelder(ziele.map((z) => z.felder)) }) };
   }
 
   /** Verweise nur auf Mappen, die man sehen darf (#124, #137); bisherige Ziele bleiben erlaubt. */
@@ -358,4 +375,9 @@ export class MappenEingaben {
     }
     return liste;
   }
+}
+
+/** Die Ziel-Mappentypen eines Verweisfelds, die es gibt (#1036). */
+function zieltypenIn(f: Feld, typen: Map<string, Mappentyp>): Mappentyp[] {
+  return zieleVon(f).map((id) => typen.get(id)).filter((x): x is Mappentyp => !!x);
 }

@@ -59,7 +59,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 | Datum | [Frühestens, Spätestens](#formate-und-datumsgrenzen) (fest oder „heute“), Ist eine Frist |
 | Ja/Nein | – |
 | Auswahlliste | die Auswahlwerte (einer pro Zeile), Mehrfachauswahl, [Beschriftung der Werte](#beschriftungen-je-sprache) |
-| Verweis | Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt |
+| Verweis | Ziel-Mappentypen (einer oder mehrere), Art des Verweises, mehrere Mappen erlaubt, alle vom selben Typ |
 | Passwort | – (wird verschlüsselt gespeichert, siehe unten) |
 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
@@ -184,13 +184,24 @@ Unter der Kennung speichert Ablago die Werte, und die [Schnittstelle](api.md) ve
 
 Ein Feld der Feldart **Verweis** zeigt auf Mappen eines anderen Mappentyps (oder desselben – so entstehen Hierarchien wie Haus → Heizung → Wärmepumpe). Wähle dazu:
 
-- **Ziel-Mappentyp** – worauf verwiesen wird, z. B. *Vertragspartner*. Auch *Benutzer* und *Rolle* sind möglich, z. B. für ein Feld „Verantwortlich“.
+- **Ziel-Mappentypen** – worauf verwiesen wird, z. B. *Vertragspartner*. Auch *Benutzer* und *Rolle* sind möglich, z. B. für ein Feld „Verantwortlich“. Du kannst **mehrere** Mappentypen wählen: Eine Rechnung *betrifft* dann in **einem** Feld das Auto, die Heizung, die Wohnung oder einen Vertrag, statt für jede Art ein eigenes Feld zu haben. Wähle die Typen im Feld nacheinander aus; **Entfernen** nimmt einen wieder heraus.
 - **Mehrfach** – ob mehrere Mappen gewählt werden können.
+- **Alle vom selben Typ** – nur mit *Mehrere Mappen erlaubt* und mehreren Zieltypen: Ist die erste gewählte Mappe ein Fahrzeug, dürfen die weiteren nur Fahrzeuge sein. Ablago prüft das beim Speichern, auch über die [Schnittstelle](api.md).
 - **Verweisart:**
     - **Zugehörigkeit** – „gehört zu“: Die Rechnung gehört zum Vertrag. Zählt später bei Auswertungen wie „alles zum Haus“ mit.
     - **Bezug** – „hat zu tun mit“: Die Rechnung kommt von diesem Aussteller. Nur eine Verknüpfung.
 
     Die Verweisart entscheidet auch beim **Löschen mit verknüpften Mappen** und bei der **Auskunft** ([Datenschutz in Ablago](datenschutz.md#mit-verknupften-mappen-loschen)): Mitgelöscht und vollständig herausgegeben wird nur, was über **Zugehörigkeit** dranhängt. Soll z. B. ein Vertrag mit seinem Vertragspartner gehen, stell das Feld *Vertragspartner* im Vertrag auf Zugehörigkeit (bei den Beispiel-Mappentypen ist das so).
+
+#### Mehrere Zieltypen { #mehrere-zieltypen }
+
+- **Beim Ausfüllen** stehen die Mappen nach Typ gruppiert zur Auswahl, die Suche geht über alle Zieltypen, und in jeder Gruppe stehen die Mappen zuerst, die die Person zuletzt geöffnet hat. Gewählte Mappen zeigen ihren Typ mit Symbol (das der Ansicht des Typs), damit „Golf“ (Fahrzeug) und „Golf“ (Vertrag) unterscheidbar sind. **+ … anlegen** gibt es je Typ, in dem die Person anlegen darf.
+- **Nicht sichtbare Mappen** stehen wie bei einem Zieltyp als „(nicht sichtbar)“ da – ohne Titel und ohne Typ; die Gruppen nennen keine Anzahl.
+- **Beim Speichern** prüft Ablago, dass jede verwiesene Mappe einen der Zieltypen hat (und *Alle vom selben Typ* gilt). Bestehende Felder mit einem Zieltyp bleiben, wie sie sind.
+- **In Ansichten, Rechten, der erweiterten Suche und „Anzeigen, wenn …“** gibt es für solche Felder die Bedingung **zeigt auf Mappe vom Typ …**, z. B. „*betrifft* zeigt auf Mappe vom Typ Fahrzeug“ ([Ansichten](sichten.md), [Berechtigungen](berechtigungen.md#zeigt-auf-mappe-vom-typ)).
+- **Auswahlfilter** (nächster Abschnitt) gehen über die Felder, die alle Zieltypen gemeinsam haben (gleiche Kennung und Feldart). **Folgt aus** und das Umwandeln aus einem Textfeld ([Pakete](pakete.md)) gehen nur mit genau einem Zieltyp.
+- **Löschen eines Zieltyps:** Ist er einer von mehreren, nimmt Ablago ihn beim Löschen aus dem Feld heraus. Ist er der einzige, verhindert das Feld das Löschen wie bisher.
+- **Aus Paketen** können Zieltypen kommen, von denen das Paket nicht abhängt (*optional*, z. B. *Rechnung › betrifft* → Fahrzeug, wenn das Paket Fahrzeuge installiert ist). Ablago nimmt so einen Typ auf, sobald es ihn gibt – auch, wenn das andere Paket erst später kommt. Im Editor steht darunter „Kommt dazu, sobald installiert: …“. Fehlt der Typ, bleibt das Feld trotzdem; hat es noch gar keinen Zieltyp, sagt das Formular, dass die Typen mit einem anderen Paket kommen.
 
 #### Auswahl einschränken
 
@@ -439,4 +450,4 @@ Ganz unten legst du fest, ob der Mappentyp **an KI-Dienste gehen darf** – an P
 
 ## Mappentyp löschen
 
-**Mappentyp löschen** geht nur, solange es keine Mappen dieses Mappentyps gibt – auch keine im [Papierkorb](papierkorb.md) – und kein anderer Mappentyp auf ihn verweist. Sonst nennt Ablago die Gründe. [Systemmappentypen](#systemmappentypen-benutzer-rolle-und-post) lassen sich nie löschen.
+**Mappentyp löschen** geht nur, solange es keine Mappen dieses Mappentyps gibt – auch keine im [Papierkorb](papierkorb.md) – und kein anderer Mappentyp allein auf ihn verweist (ist er einer von [mehreren Zieltypen](#mehrere-zieltypen), nimmt Ablago ihn dort heraus). Sonst nennt Ablago die Gründe. [Systemmappentypen](#systemmappentypen-benutzer-rolle-und-post) lassen sich nie löschen.

@@ -11,7 +11,7 @@ import type { Fund, Nummernfund, Briefkopf, Treffer } from '../../shared/src/erk
 import { eindeutigerTreffer, ENGINE_EINGEBAUT, typAusText, type TypFund, ERKENNEN_HINWEIS, findeAngaben, findeMappen, fuellfelder, gleicheAb, istAbsenderTyp, merkmalsfelder, type Abgleich, pruefeVorschlaege, schemaFuer, vorschlaegeAus, type Angaben, type AusDokument, type Vergleichsmappe, type Vorschlaege } from '../../shared/src/erkennung';
 import { hatNetz, hatSchnittstelle } from '../../shared/src/pakete';
 import type { Einstellungen } from './einstellungen';
-import { auswahlText, geschuetzteFelder, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug } from '../../shared/src/model';
+import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug } from '../../shared/src/model';
 import type { Dienst, Zugriff } from './dienst';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -427,7 +427,7 @@ export class Erkennung {
     const bezuege: Record<string, MappenBezug> = {};
     const neu: TypVorschlaege['neu'] = {};
     for (const { feld: f } of fuellfelder(typ)) {
-      if (f.typ !== 'referenz' || !f.zielTyp || f.zielTyp === '*' || !erlaubt(f)) continue;
+      if (f.typ !== 'referenz' || !zieleVon(f).length || !erlaubt(f)) continue;
       const v = await this.verweisFuer(f, text, angaben, z);
       if (v?.mappe) { roh[f.key] = { wert: f.mehrfach ? [v.mappe.id] : v.mappe.id, sicherheit: v.sicherheit, fundstelle: v.fundstelle }; bezuege[v.mappe.id] = { titel: v.mappe.titel ?? '', typId: v.mappe.typId }; }
       else if (v?.neu) neu[f.key] = v.neu;
@@ -470,19 +470,30 @@ export class Erkennung {
     }
   }
 
-  /** Verweisfeld: Mappe des Zieltyps, die im Text steht (markierte Felder, sonst der Titel); sonst „neu anlegen“. */
+  /**
+   * Verweisfeld: Mappe eines Zieltyps, die im Text steht (markierte Felder, sonst der Titel); sonst „neu anlegen“ – das
+   * nur bei genau einem Zieltyp (#1036: bei mehreren stünde nicht fest, welcher gemeint ist).
+   */
   private async verweisFuer(f: Feld, text: string, a: Angaben, z?: Zugriff): Promise<{ mappe?: Mappe; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string; neu?: TypVorschlaege['neu'][string] } | null> {
-    const ziel = await this.repo().holeTyp(f.zielTyp!);
-    if (!ziel || (z && !z.typen.has(ziel.id))) return null;
-    const alle = await this.repo().listeMappen(ziel.id);
-    const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
-    const mappen = alle.filter((m) => lesbar.has(m.id));
-    // Ohne Felder zum Wiederfinden (#938) zählt der Titel als Name.
-    const markiert = merkmalsfelder(ziel).length > 0;
-    const vergleich = markiert ? ziel : { id: ziel.id, felder: [{ key: '_titel', label: t('meldungen.erkennung.name'), typ: 'text' as const, erkennung: { art: 'name' as const }, wiederfinden: true }] };
-    const treffer = findeMappen(text, [vergleich], mappen.map((m) => ({ id: m.id, typId: m.typId, werte: markiert ? m.werte : { _titel: m.titel ?? '' } })));
+    const ziele: Mappentyp[] = [];
+    for (const id of zieleVon(f)) { const x = await this.repo().holeTyp(id); if (x && (!z || z.typen.has(x.id))) ziele.push(x); }
+    if (!ziele.length) return null;
+    const vergleiche: Array<Pick<Mappentyp, 'id' | 'felder'>> = [];
+    const mappen: Mappe[] = [];
+    for (const ziel of ziele) {
+      const alle = await this.repo().listeMappen(ziel.id);
+      const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
+      mappen.push(...alle.filter((m) => lesbar.has(m.id)));
+      // Ohne Felder zum Wiederfinden (#938) zählt der Titel als Name.
+      vergleiche.push(merkmalsfelder(ziel).length > 0 ? ziel : { id: ziel.id, felder: [{ key: '_titel', label: t('meldungen.erkennung.name'), typ: 'text' as const, erkennung: { art: 'name' as const }, wiederfinden: true }] });
+    }
+    const markiertIn = new Set(ziele.filter((x) => merkmalsfelder(x).length > 0).map((x) => x.id));
+    const treffer = findeMappen(text, vergleiche, mappen.map((m) => ({ id: m.id, typId: m.typId, werte: markiertIn.has(m.typId) ? m.werte : { _titel: m.titel ?? '' } })));
     const best = eindeutigerTreffer(treffer) ?? (treffer.length === 1 ? treffer[0] : null);
     if (best) return { mappe: mappen.find((m) => m.id === best.mappeId), sicherheit: best.stark ? 'hoch' : 'mittel', fundstelle: `gefunden: ${best.gruende.join(', ')}` };
+    if (ziele.length !== 1) return null;
+    const [ziel] = ziele;
+    const markiert = markiertIn.has(ziel.id);
     if (!istAbsenderTyp(ziel) && markiert) return null;
     const firma = a.briefkopf?.name ?? a.person?.organisation;
     if (!firma) return null;

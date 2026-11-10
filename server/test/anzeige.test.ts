@@ -86,8 +86,8 @@ describe('Anzeige-Bedingungen (#1033): Auswertung in shared/', () => {
   it('umkehrbar, „alle“ und „eine davon“, Verweis auf bestimmte Mappe und auf eine Mappe vom Typ …', () => {
     const t = { felder: [
       { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['A', 'B'] },
-      { key: 'vertragsart', label: 'Vertragsart', typ: 'referenz', zielTyp: 't-art' },
-      { key: 'betrifft', label: 'betrifft', typ: 'referenz', zielTyp: '*' },
+      { key: 'vertragsart', label: 'Vertragsart', typ: 'referenz', zielTypen: ['t-art'] },
+      { key: 'betrifft', label: 'betrifft', typ: 'referenz', zielTypen: ['*'] },
     ] } as Mappentyp;
     const art = { art: 'feld' as const, bedingung: { art: 'feld' as const, feld: 'art', op: 'einerVon' as const, wert: { art: 'fest' as const, wert: ['A'] } } };
     assert.equal(zeigtAn({ modus: 'alle', bedingungen: [art, { art: 'merkmal', merkmal: 'beruflich' }] }, t, { art: 'A' }, {}), false);

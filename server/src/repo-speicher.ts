@@ -5,7 +5,7 @@ import { kannTerminHaben, type Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallOhneLeserecht, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { normalisiereZiele, standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallOhneLeserecht, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { teileKennung } from '../../shared/src/kennungen';
 import { SPRACHE_MARKE, spracheAusInfo } from '../../shared/src/textsprache';
@@ -139,11 +139,14 @@ export function speicherRepo(): Repo {
     dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && (register === null || d.registerKey === register)).length,
     favorit: (id, benutzer) => istFavorit(id, benutzer),
     aufgabe: (id, benutzer) => [...aufgaben.values()].some((a) => a.mappeId === id && !a.erledigt && a.empfaengerId === benutzer),
+    typVon: (id) => mappen.get(id)?.typId,
     verknuepfungen: (id, quellen) => new Set([...verweise.entries()]
       .filter(([q, vs]) => q !== id && vs.some((v) => v.zielId === id && (!quellen.length || quellen.some((x) => x.typId === mappen.get(q)?.typId && x.feldKey === v.feldKey))))
       .map(([q]) => q)).size,
   };
   const jetzt = () => new Date().toISOString();
+  /** Ziele (#1036) wie in PostgreSQL nach Migration 095: immer `zielTypen`. */
+  const zieleNeu = <T extends Pick<MappentypDaten, 'felder'>>(d: T): T => ({ ...d, felder: (d.felder ?? []).map(normalisiereZiele) });
   /** „Zuletzt geändert“ (#609): bei jedem Schreiben mindestens eine Millisekunde später als vorher. */
   const standWeiter = (vorher: string) => new Date(Math.max(Date.now(), Date.parse(vorher) + 1)).toISOString();
   const kopie = <T>(x: T): T => structuredClone(x);
@@ -184,14 +187,14 @@ export function speicherRepo(): Repo {
     async listeTypen() { return [...typen.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async holeTyp(id) { const t = typen.get(id); return t && kopie(t); },
     async legeTypAn(id, d: MappentypDaten, system) {
-      const t: Mappentyp = { id, ...ohnePaket(kopie(d)), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
+      const t: Mappentyp = { id, ...ohnePaket(zieleNeu(kopie(d))), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
       typen.set(id, mitPaket(t));
       return kopie(t);
     },
     async aendereTyp(id, d, erwartet) {
       const alt = typen.get(id)!;
       if (erwartet !== undefined && alt.geaendert !== erwartet) throw new KonfigurationVeraltet();
-      const t: Mappentyp = { ...alt, ...ohnePaket(kopie(d)), paket: alt.paket, schluessel: alt.schluessel ?? d.schluessel, ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: standWeiter(alt.geaendert) };
+      const t: Mappentyp = { ...alt, ...ohnePaket(zieleNeu(kopie(d))), paket: alt.paket, schluessel: alt.schluessel ?? d.schluessel, ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: standWeiter(alt.geaendert) };
       typen.set(id, mitPaket(t));
       const refKeys = new Set(t.felder.filter((f) => f.typ === 'referenz').map((f) => f.key));
       for (const m of mappen.values()) if (m.typId === id) verweise.set(m.id, (verweise.get(m.id) ?? []).filter((v) => refKeys.has(v.feldKey)));

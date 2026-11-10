@@ -16,6 +16,7 @@
 
 import { optionTexte, wertZuOption } from './beschriftung';
 import type { Betrag, Feld, Feldtyp, Mappentyp, Wert } from './model';
+import { zielErlaubt, zieleVon } from './verweisziele';
 import { formatFehler, type Feldformat } from './feldformate';
 import { leseProzent, leseZeitraum, ZEITRAUM_ANZAHL_MAX, ZEITRAUM_EINHEITEN } from './feldarten';
 import { t } from './texte';
@@ -631,8 +632,9 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
   const verweise: Record<string, Abgleichtreffer[]> = {};
   const doppelt: Abgleichtreffer[] = [];
   if (ziel) {
-    for (const f of ziel.felder.filter((x) => x.typ === 'referenz' && x.zielTyp && x.zielTyp !== '*')) {
-      const passend = treffer.filter((x) => x.typId === f.zielTyp).slice(0, ABGLEICH_JE_FELD);
+    // Mehrere Zieltypen (#1036): Treffer jedes erlaubten Typs; „jede Mappe“ (Systemfelder) bleibt außen vor.
+    for (const f of ziel.felder.filter((x) => x.typ === 'referenz' && zieleVon(x).length)) {
+      const passend = treffer.filter((x) => zielErlaubt(f, x.typId)).slice(0, ABGLEICH_JE_FELD);
       if (passend.length) verweise[f.key] = passend;
     }
     // Doppelt: jede gefüllte Angabe zum Wiederfinden der vorhandenen Mappe steht im Dokument, mindestens eine stark.

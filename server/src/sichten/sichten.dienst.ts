@@ -6,7 +6,7 @@
 import { liesDirektlink } from '../../../shared/src/direktlink';
 import { abfrageAus, liesSuche } from '../../../shared/src/erweitertesuche';
 import type { TermineAntwort } from '../../../shared/src/fristen';
-import { type Aufgabe, type Mappentyp, MAX_AUSWAHL, POST_STAND, sortierbar, verweiseVon, type Werte } from '../../../shared/src/model';
+import { type Aufgabe, type Mappentyp, MAX_AUSWAHL, POST_STAND, sortierbar, verweiseVon, type Werte, zieleVon } from '../../../shared/src/model';
 import { auswahlKlausel, type Bedingung, filterFuer, heuteIn, klauselnFuer, setzeEigeneWerte, type Sicht, wirksameTypen } from '../../../shared/src/sichten';
 import { suchbegriffe, type Varianten, vorschlagAus } from '../../../shared/src/suche';
 import { Fachfehler } from '../fehler';
@@ -125,16 +125,17 @@ export class SichtenDienst {
     const sichten = await this.repo.listeSichten();
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
     const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
-    // „feld:<typId>:<feldKey>“ (#172): Auswahl für ein Referenzfeld – Zieltyp mit dem Auswahlfilter des Felds.
+    // „feld:<typId>:<feldKey>“ (#172): Auswahl für ein Referenzfeld – Zieltypen (#1036: einer oder mehrere) mit dem
+    // Auswahlfilter des Felds. Nur Typen, die der Zugriff kennt; lesbar sind wie immer nur die Mappen, die die Person sieht.
     const auswahl = String(q.sicht ?? '').startsWith('feld:') ? (() => {
       const [, typId, key] = String(q.sicht).split(':');
       const f = typen.get(typId)?.felder.find((x) => x.key === key && x.typ === 'referenz');
-      const ziel = f ? typen.get(f.zielTyp ?? '') : undefined;
-      if (!f || !ziel) throw new Fachfehler(404, t('meldungen.dienst.dieses-verweisfeld-gibt-es'));
+      const ziele = f ? zieleVon(f).map((id) => typen.get(id)).filter((x): x is Mappentyp => !!x) : [];
+      if (!f || !ziele.length) throw new Fachfehler(404, t('meldungen.dienst.dieses-verweisfeld-gibt-es'));
       // Werte der Mappe, die gerade ausgefüllt wird (#173).
       let eigene: Werte = {};
       try { const w = JSON.parse(text(q.eigene).slice(0, 8000) || '{}'); if (w && typeof w === 'object' && !Array.isArray(w)) eigene = w; } catch { /* ohne */ }
-      return { f, ziel, eigene };
+      return { f, ziele, eigene };
     })() : null;
     // Verborgene Sichten (#148) gibt es für den Benutzer nicht; ihre Mappen fehlen auch in der Elternsicht.
     const verborgen = this.verborgeneSichten(sichten, z);
@@ -166,7 +167,7 @@ export class SichtenDienst {
       : link
         ? { klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await aufloesung()) }], suche, volltext, notizen, von, anzahl, sortierung, lesen }
       : auswahl
-        ? { klauseln: [auswahlKlausel(setzeEigeneWerte(auswahl.f.auswahlFilter ?? [], auswahl.eigene), auswahl.ziel, await aufloesung())], suche, volltext, notizen, von, anzahl, sortierung, lesen }
+        ? { klauseln: [auswahlKlausel(setzeEigeneWerte(auswahl.f.auswahlFilter ?? [], auswahl.eigene), auswahl.ziele, await aufloesung())], suche, volltext, notizen, von, anzahl, sortierung, lesen }
       : sicht
         ? { klauseln: klauselnFuer(sichten, sicht.id, typen, await aufloesung(), verborgen), suche, volltext, notizen, von, anzahl, sortierung, lesen }
         : { typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung, lesen };

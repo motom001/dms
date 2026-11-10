@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { feldLabel, typBeschreibung, typName } from '../../../shared/src/beschriftung';
 import type { Abgleich, Abgleichtreffer } from '../../../shared/src/erkennung';
 import type { Einschaetzung, Klassbeleg, Klassifizierung } from '../../../shared/src/klassifizierung';
-import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST_STAND, titelAus, type Dokument, type Feld, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST_STAND, titelAus, zielErlaubt, type Dokument, type Feld, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
 import { kannSchwaerzen, type Bereich, type SchwaerzSeite } from '../../../shared/src/schwaerzen';
 import { textformen, stelleVon, wertAusText } from '../../../shared/src/uebernehmen';
 import type { WortSeite } from '../../../shared/src/archivfassung';
@@ -220,7 +220,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     let wert: Wert | null = null;
     let bezug: { id: string; titel: string; typId: string } | undefined;
     if (f.typ === 'referenz') {
-      if (n.mappeId && n.typId && (f.zielTyp === n.typId || f.zielTyp === '*')) { wert = f.mehrfach ? [n.mappeId] : n.mappeId; bezug = { id: n.mappeId, titel: n.titel ?? n.text, typId: n.typId }; }
+      if (n.mappeId && n.typId && zielErlaubt(f, n.typId)) { wert = f.mehrfach ? [n.mappeId] : n.mappeId; bezug = { id: n.mappeId, titel: n.titel ?? n.text, typId: n.typId }; }
     } else if (n.wert != null && n.feldTyp === f.typ) wert = n.wert;
     else wert = wertAusText(f, n.text);
     if (wert == null) {

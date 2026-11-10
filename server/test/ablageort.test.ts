@@ -89,7 +89,7 @@ describe('Ablageort (#168): der frühere aus einer älteren Ablage', () => {
       const t = typen.find((x) => x.name === name)!;
       const f = t.felder.find((x) => x.key === 'verbleib_original');
       assert.ok(f, `${name} hat verbleib_original`);
-      assert.equal(f.zielTyp, a.id);
+      assert.equal(f.zielTypen?.[0], a.id);
     }
     assert.ok(!typen.find((x) => x.name === 'Vertragspartner')!.felder.some((f) => f.key === 'verbleib_original'));
     const orte = await d.listeMappen(a.id);

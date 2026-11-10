@@ -68,5 +68,6 @@
   "verweis.aendern": "Ändern",
   "verweis.entfernen": "Verweis „{titel}“ entfernen",
   "verweis.entfernen.ohne": "Verweis entfernen",
-  "eingabe.betrag-negativ": "Gutschrift oder Erstattung? Mit Minus eintragen."
+  "eingabe.betrag-negativ": "Gutschrift oder Erstattung? Mit Minus eintragen.",
+  "verweis.noch-kein-ziel": "Die Mappentypen für dieses Feld kommen mit einem anderen Paket – noch ist keiner installiert."
 }

@@ -4,6 +4,7 @@
  * mit denselben Werten.
  */
 import type { Mappentyp } from './model';
+import { einzigesZiel, zieleVon } from './verweisziele';
 
 export const DOKUMENTARTEN = ['brief', 'mehrseitig', 'scan', 'bild', 'gross'] as const;
 export type Dokumentart = (typeof DOKUMENTARTEN)[number];
@@ -118,7 +119,7 @@ export const dokumentRegister = (t: Mappentyp) => t.register.filter((r) => r.art
 
 /** Wie viele Mappen bekommt jeder Typ? Stammdaten (wenig Verweise) weniger als Belege; Summe genau n. */
 export function verteilung(typen: Mappentyp[], n: number): Map<string, number> {
-  const gewicht = (t: Mappentyp) => 1 + 2 * t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp !== t.id).length;
+  const gewicht = (t: Mappentyp) => 1 + 2 * t.felder.filter((f) => f.typ === 'referenz' && einzigesZiel(f) !== t.id).length;
   const anzahl = aufteilen(typen.map(gewicht), n);
   // Jeder Typ bekommt mindestens eine Mappe (bei sehr kleinen Anzahlen also etwas mehr als n).
   return new Map(typen.map((t, i) => [t.id, Math.max(1, anzahl[i])]));
@@ -152,9 +153,10 @@ export function nichtErzeugbar(typen: Mappentyp[], ziel: Map<string, number>, vo
         if (f.typ === 'passwort') grund = pflichtGrund(f.label, 'passwort');
         else if (f.typ === 'auswahl' && !(f.optionen ?? []).length) grund = pflichtGrund(f.label, 'sonst');
         else if (f.typ === 'referenz') {
-          const z = f.zielTyp ?? '';
-          const kommt = z !== t.id && eigene.some((x) => x.id === z) && !gesperrt.has(z);
-          if (!vorhanden(z) && !kommt) grund = pflichtGrund(f.label, 'verweis', name(z));
+          // Mehrere Zieltypen (#1036): Es reicht einer, der Mappen hat oder im selben Lauf bekommt.
+          const ziele = zieleVon(f);
+          const kommt = (z: string) => z !== t.id && eigene.some((x) => x.id === z) && !gesperrt.has(z);
+          if (!ziele.some((z) => vorhanden(z) || kommt(z))) grund = pflichtGrund(f.label, 'verweis', ziele.length === 1 ? name(ziele[0]) : undefined);
         }
         if (grund) { gesperrt.set(t.id, grund); neu = true; break; }
       }

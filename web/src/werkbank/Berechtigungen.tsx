@@ -230,7 +230,7 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
   };
   const rollenTyp = d.typen.find((mappentyp) => mappentyp.system === 'rolle')?.id;
   const benutzerTyp = d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id;
-  const feldName = (b: Extract<Bedingung, { art: 'feld' }>) => beschreibeBedingung(b, [typ], (id) => titel[id] ?? d.person(id));
+  const feldName = (b: Extract<Bedingung, { art: 'feld' }>) => beschreibeBedingung(b, [typ], (id) => titel[id] ?? d.person(id), undefined, (id) => d.typ(id)?.name);
 
   const bedText = (b: RegelBedingung) => beschreibeRegelBedingung(b, { benutzer: (id) => titel[id] ?? d.person(id), rolle: (id) => titel[id] ?? '…', feld: feldName });
   // Rollen- und Benutzernamen für die Kurzform nachladen.

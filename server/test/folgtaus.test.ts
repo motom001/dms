@@ -81,8 +81,8 @@ describe('Folgt aus – Mappentyp (#886)', () => {
   it('Prüfung: Felder gibt es, Verweis mit einer Mappe, Zielfeld auf denselben Typ, keine Kreise', async () => {
     const { d, organisation, niederlassung } = await aufbau();
     const probe = (felder: Partial<Feld>[]) => d.legeTypAn({ name: `Probe ${Math.random()}`, felder });
-    const org: Partial<Feld> = { key: 'org', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id };
-    const nl: Partial<Feld> = { key: 'nl', label: 'Niederlassung', typ: 'referenz', zielTyp: niederlassung.id };
+    const org: Partial<Feld> = { key: 'org', label: 'Organisation', typ: 'referenz', zielTypen: [organisation.id ]};
+    const nl: Partial<Feld> = { key: 'nl', label: 'Niederlassung', typ: 'referenz', zielTypen: [niederlassung.id ]};
     await assert.rejects(probe([{ ...org, folgtAus: { feld: 'fehlt', zielFeld: 'organisation' } }, nl]), meldet(/Das Feld „fehlt“ gibt es/));
     await assert.rejects(probe([{ ...org, folgtAus: { feld: 'nl', zielFeld: 'gibtsnicht' } }, nl]), meldet(/haben kein Feld „gibtsnicht“/));
     await assert.rejects(probe([{ ...org, folgtAus: { feld: 'nl', zielFeld: 'name' } }, nl]), meldet(/zeigt nicht auf eine einzelne Mappe/));
@@ -92,8 +92,8 @@ describe('Folgt aus – Mappentyp (#886)', () => {
     const mutter = await d.legeTypAn({ name: 'Firma', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const tochter = await d.legeTypAn({ name: 'Tochter', felder: [{ key: 'mutter', label: 'Mutter', typ: 'referenz', zielTyp: mutter.id }] });
     await d.aendereTyp(mutter.id, { ...mutter, felder: [...mutter.felder, { key: 'tochter', label: 'Tochter', typ: 'referenz', zielTyp: tochter.id }] });
-    const a: Partial<Feld> = { key: 'a', label: 'A', typ: 'referenz', zielTyp: mutter.id, folgtAus: { feld: 'b', zielFeld: 'mutter' } };
-    const b: Partial<Feld> = { key: 'b', label: 'B', typ: 'referenz', zielTyp: tochter.id, folgtAus: { feld: 'a', zielFeld: 'tochter' } };
+    const a: Partial<Feld> = { key: 'a', label: 'A', typ: 'referenz', zielTypen: [mutter.id], folgtAus: { feld: 'b', zielFeld: 'mutter' } };
+    const b: Partial<Feld> = { key: 'b', label: 'B', typ: 'referenz', zielTypen: [tochter.id], folgtAus: { feld: 'a', zielFeld: 'tochter' } };
     await assert.rejects(probe([a, b]), meldet(/folgen im Kreis/));
     assert.deepEqual(folgtAusKreis([a, b] as Feld[]), ['a', 'b']);
     // Kette: a aus b, b aus c – b füllt sich zuerst.

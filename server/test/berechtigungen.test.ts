@@ -171,7 +171,7 @@ describe('Durchsetzung (#124), Ablage (#126), Aufgaben (#127)', () => {
     const p = await d.legeMappeAn({ typId: projekt.id, werte: { name: 'Haus', rechnung: geheim.id } }, fibu.id);
     await d.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
     const sicht = (await rufe(max, 'GET', '/api/mappen/:id', { params: { id: p.id } })).body as { bezuege: Record<string, { titel: string; verborgen?: boolean }> };
-    assert.deepEqual(sicht.bezuege[geheim.id], { titel: 'nicht sichtbare Mappe', typId: rechnung.id, verborgen: true });
+    assert.deepEqual(sicht.bezuege[geheim.id], { titel: 'nicht sichtbare Mappe', typId: '', verborgen: true });
     // Verweis auf eine nicht sichtbare Mappe neu setzen: abgelehnt; bestehender bleibt erlaubt
     const p2 = await d.legeMappeAn({ typId: projekt.id, werte: { name: 'Garten' } }, max.id);
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: p2.id }, body: { werte: { name: 'Garten', rechnung: geheim.id } } }), status(422));

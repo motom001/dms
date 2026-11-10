@@ -982,5 +982,13 @@
   "anzeige.und": " und ",
   "anzeige.nur-bei": "nur bei {bedingung}",
   "anzeige.abschnitt-ab": "Abschnitt ab „{feld}“",
-  "anzeige.wert-waehlen": "Bei „{feld}“ bitte mindestens einen Wert wählen."
+  "anzeige.wert-waehlen": "Bei „{feld}“ bitte mindestens einen Wert wählen.",
+  "model.gleicher-typ": "Alle Mappen müssen vom selben Mappentyp sein.",
+  "model.gleicher-typ-nur-mehrfach": "„Alle vom selben Typ“ geht nur mit „mehrere Mappen erlaubt“.",
+  "sichten.zeigt-auf-typ": "zeigt auf Mappe vom Typ",
+  "sichten.typ-waehlen": "Bei „{label}“ mindestens einen Mappentyp wählen.",
+  "sichten.typ-kein-ziel": "„{label}“ zeigt nicht auf Mappen dieses Typs – die Bedingung träfe nie zu.",
+  "typvergleich.gleicher-typ": "alle vom selben Typ",
+  "typvergleich.ziel-optional": "optionale Zieltypen",
+  "erweitertesuche.vom-typ": "(vom Typ {typen})"
 }

@@ -113,7 +113,7 @@ This is how the form works:
     - **Date**: from–to in one line; either may stay empty. Under **Period …** there are "this year", "last year", "last 12 months", "this month" and "last month".
     - **Number, amount, percentage**: from–to.
     - **Period**: from–to as text, e.g. "1 month" to "6 months"; compared by length.
-    - **Link** (e.g. contract partner): several folders – the folder must point to **one of them**.
+    - **Link** (e.g. contract partner): several folders – the folder must point to **one of them**. If the field points to folders of different types (e.g. *concerns*), tick below under **points to a folder of type** which types count – for instance all invoices that concern a vehicle.
     - **Choice list**: several values – one of them must match.
     - **Yes/no**: yes, no or either.
     - **Text**: the value contains the text entered.

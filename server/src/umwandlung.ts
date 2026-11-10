@@ -7,7 +7,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { aufbewahrenBis, datumText, inFrist } from '../../shared/src/archiv';
-import { altesTextfeldVon, istLeer, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
+import { altesTextfeldVon, einzigesZiel, istLeer, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
 import { namensSchluessel, namenVon, neueMappeWerte, registerUmstellen, spaltenUmstellen, teileNamen, vorlageUmstellen, vorschlag, type Entscheidung, type TypAenderung, type UmwandlungsFeld, type Umwandlungsvorgang, type UmwandlungsVorschau, type VorschauZeile } from '../../shared/src/umwandlung';
 import type { Dienst, Zugriff } from './dienst';
 import { Fachfehler } from './fehler';
@@ -171,7 +171,7 @@ export class Umwandlung {
   }
 
   private feld(typ: Mappentyp, f: Feld, alt: Feld, typen: Mappentyp[], anzahl: number): UmwandlungsFeld {
-    const ziel = typen.find((x) => x.id === f.zielTyp);
+    const ziel = typen.find((x) => x.id === einzigesZiel(f));
     return { typId: typ.id, typName: typ.name, feldKey: f.key, feldLabel: f.label, ausKey: alt.key, ausLabel: alt.label, mehrfach: !!f.mehrfach, zielTypId: ziel?.id ?? '', zielTypName: ziel?.name ?? '', anzahl };
   }
 
@@ -188,7 +188,8 @@ export class Umwandlung {
     const feld = typ?.felder.find((f) => f.key === text(e.feldKey));
     const alt = typ && feld ? altesTextfeldVon(typ, feld) : undefined;
     if (!typ || !feld || !alt) throw new Fachfehler(404, t('pakete.umwandeln.fehler.feld'));
-    const ziel = typen.find((x) => x.id === feld.zielTyp);
+    // Umwandeln (#534) nur mit genau einem Zieltyp: Neue Mappen entstehen in diesem Typ (#1036).
+    const ziel = typen.find((x) => x.id === einzigesZiel(feld));
     if (!ziel) throw new Fachfehler(409, t('pakete.umwandeln.fehler.ziel'));
     const kandidaten = (await this.d.listeMappen(ziel.id)).map((m) => ({ id: m.id, titel: m.titel || t('pakete.umwandeln.ohnetitel'), namen: namenVon(m) }))
       .sort((a, b) => a.titel.localeCompare(b.titel, 'de'));

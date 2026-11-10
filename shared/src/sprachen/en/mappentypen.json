@@ -121,7 +121,7 @@
   "editor.mehrfachauswahl": "Multiple choice",
   "editor.mehrere-werte-gleichzeitig-waehlbar": "Several values can be chosen at once",
   "editor.wird-verschluesselt-gespeichert-und": "Stored encrypted and never appears in the title, the result list, the search or demo data. It can only be shown individually via the eye; that is recorded in the history.",
-  "editor.verweist-auf-mappen-vom": "Links to folders of the folder type",
+  "editor.verweist-auf-mappen-vom": "Links to folders of the folder types",
   "editor.bitte-waehlen": "– please choose –",
   "editor.dieser-mappentyp-2": "This folder type",
   "editor.dieser-mappentyp-3": "{wert} (this folder type)",
@@ -362,5 +362,15 @@
   "anzeige.hinzu": "+ Condition",
   "anzeige.hoechstens": "At most {anzahl} conditions",
   "anzeige.immer-zeigen": "Always show",
-  "anzeige.am-abschnitt": "Show if …"
+  "anzeige.am-abschnitt": "Show if …",
+  "editor.ziele-offen": "(target type from another package, not installed yet)",
+  "editor.mehrere-ziele-hilfe": "Several types: when filling in, the folders are offered grouped by type, e.g. “concerns” vehicle, flat or contract.",
+  "editor.chip.gleicher-typ": "all of the same type",
+  "editor.gleicher-typ": "All of the same type",
+  "editor.gleicher-typ-hilfe": "If the first folder chosen is a vehicle, the others may only be vehicles.",
+  "editor.zieltypen": "Target folder types",
+  "editor.zieltyp-suchen": "Add a folder type …",
+  "editor.keine-weiteren-typen": "No further folder types.",
+  "editor.zieltyp-entfernen": "Remove folder type “{name}”",
+  "editor.ziele-optional": "Added as soon as it is installed: {typen}"
 }

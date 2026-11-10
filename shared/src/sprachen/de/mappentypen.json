@@ -121,7 +121,7 @@
   "editor.mehrfachauswahl": "Mehrfachauswahl",
   "editor.mehrere-werte-gleichzeitig-waehlbar": "Mehrere Werte gleichzeitig wählbar",
   "editor.wird-verschluesselt-gespeichert-und": "Wird verschlüsselt gespeichert und erscheint nie im Titel, in der Trefferliste, in der Suche oder in Demo-Daten. Anzeigen lässt es sich nur einzeln über das Auge; das steht in der Historie.",
-  "editor.verweist-auf-mappen-vom": "Verweist auf Mappen vom Mappentyp",
+  "editor.verweist-auf-mappen-vom": "Verweist auf Mappen der Mappentypen",
   "editor.bitte-waehlen": "– bitte wählen –",
   "editor.dieser-mappentyp-2": "Dieser Mappentyp",
   "editor.dieser-mappentyp-3": "{wert} (dieser Mappentyp)",
@@ -362,5 +362,15 @@
   "anzeige.hinzu": "+ Bedingung",
   "anzeige.hoechstens": "Höchstens {anzahl} Bedingungen",
   "anzeige.immer-zeigen": "Immer anzeigen",
-  "anzeige.am-abschnitt": "Anzeigen, wenn …"
+  "anzeige.am-abschnitt": "Anzeigen, wenn …",
+  "editor.ziele-offen": "(Zieltyp aus einem anderen Paket, noch nicht installiert)",
+  "editor.mehrere-ziele-hilfe": "Mehrere Typen: Beim Ausfüllen stehen die Mappen nach Typ gruppiert zur Auswahl, z. B. „betrifft“ Fahrzeug, Wohnung oder Vertrag.",
+  "editor.chip.gleicher-typ": "alle vom selben Typ",
+  "editor.gleicher-typ": "Alle vom selben Typ",
+  "editor.gleicher-typ-hilfe": "Ist die erste gewählte Mappe ein Fahrzeug, dürfen die weiteren nur Fahrzeuge sein.",
+  "editor.zieltypen": "Ziel-Mappentypen",
+  "editor.zieltyp-suchen": "Mappentyp hinzufügen …",
+  "editor.keine-weiteren-typen": "Keine weiteren Mappentypen.",
+  "editor.zieltyp-entfernen": "Mappentyp „{name}“ entfernen",
+  "editor.ziele-optional": "Kommt dazu, sobald installiert: {typen}"
 }

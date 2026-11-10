@@ -252,7 +252,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     for (const k of ['stand', 'kanal', 'richtung', 'fuer']) assert.ok(post.felder.some((f) => f.key === k && f.system), k);
     assert.ok(post.register.find((r) => r.key === 'allgemein')!.felder!.includes('stand'));
     assert.equal(post.register.find((r) => r.key === 'anhaenge')!.name, 'Dokumente');
-    assert.equal(post.felder.find((f) => f.key === 'fuer')!.zielTyp, (await d.listeTypen()).find((t) => t.system === 'benutzer')!.id);
+    assert.equal(post.felder.find((f) => f.key === 'fuer')!.zielTypen?.[0], (await d.listeTypen()).find((t) => t.system === 'benutzer')!.id);
     void rolle; void systemfelder;
     const sichten = await d.listeSichten();
     assert.equal(sichten.find((s) => s.id === post.id)!.name, 'Post');

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { abfrageAus, alsParameter, chipsVon, eingabeart, istGesetzt, kannLeer, liesSuche, ohneChip, suchfelder, SUCHE_PFAD, zeitraumVon, ZEITRAEUME, type Feldeingabe, type Suchformular, type Zeitraum } from '../../../shared/src/erweitertesuche';
 import { heuteIn, type Bedingungsfeld } from '../../../shared/src/sichten';
-import type { Mappentyp } from '../../../shared/src/model';
+import { zieleVon, type Mappentyp } from '../../../shared/src/model';
 import { api, type Bezuege } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -13,6 +13,7 @@ import { Symbol } from '../Symbol';
 import { titelOder } from '../seiten';
 import { MappenWahl } from './MappeFormular';
 import { Mehrfachauswahl } from './Mehrfachauswahl';
+import { FeldGruppe } from '../bausteine';
 
 /**
  * Erweiterte Suche (#199, #426): oben in der Mitte das Formular, darunter die Treffer mit den Bedingungen als
@@ -188,9 +189,18 @@ function Feldsuche({ feld, e, setze, merke, weg }: { feld: Bedingungsfeld; e: Fe
       </div>
     );
   } else if (art === 'verweis') {
-    const ziel = d.typ(feld.feld?.zielTyp ?? '');
+    // Mehrere Zieltypen (#1036): Mappen aus allen, dazu „vom Typ …“ zum Ankreuzen (in der Adresse „feld.typ=…“).
+    const ziele = (feld.feld ? zieleVon(feld.feld) : []).map((z) => d.typ(z)).filter((x): x is Mappentyp => !!x);
+    const ziel = ziele[0];
+    const typen = e.typen ?? [];
+    const kennung = (x: Mappentyp) => x.schluessel ?? x.id;
     eingabe = ziel
-      ? <MappenWahl id={id} ziel={ziel} mehrfach wert={werte} bekannt={titelCache} merke={merke} setze={(v) => setze({ ...e, werte: Array.isArray(v) ? v.map(String) : v ? [String(v)] : [] })} />
+      ? <>
+          <MappenWahl id={id} ziel={ziel} ziele={ziele} mehrfach wert={werte} bekannt={titelCache} merke={merke} setze={(v) => setze({ ...e, werte: Array.isArray(v) ? v.map(String) : v ? [String(v)] : [] })} />
+          {ziele.length > 1 && <FeldGruppe beschriftung={t('ablage.suche.vom-typ')} className="such-zieltypen">
+            <span className="zeile umbruch">{ziele.map((x) => <label key={x.id} className="haken klein"><input type="checkbox" checked={typen.includes(kennung(x))} onChange={(c) => setze({ ...e, typen: c.target.checked ? [...typen, kennung(x)] : typen.filter((w) => w !== kennung(x)) })} /><span>{typName(x)}</span></label>)}</span>
+          </FeldGruppe>}
+        </>
       : <p className="leise klein">{t('ablage.suche.der-zieltyp-fehlt')}</p>;
   } else if (art === 'person') {
     eingabe = (

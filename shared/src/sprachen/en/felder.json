@@ -68,5 +68,6 @@
   "verweis.aendern": "Change",
   "verweis.entfernen": "Remove link “{titel}”",
   "verweis.entfernen.ohne": "Remove link",
-  "eingabe.betrag-negativ": "Credit note or refund? Enter it with a minus."
+  "eingabe.betrag-negativ": "Credit note or refund? Enter it with a minus.",
+  "verweis.noch-kein-ziel": "The folder types for this field come with another package – none is installed yet."
 }
