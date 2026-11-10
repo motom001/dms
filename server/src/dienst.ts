@@ -775,7 +775,7 @@ export class Dienst {
       this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
     }
     this.grundRepo = this.stand.umhuelle(grundRepo, this.mappenstand);
-    this.kern = new Kern({ repo: this.grundRepo, dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), systemAnlegen: () => this.sichereSystemJetzt() });
+    this.kern = new Kern({ repo: this.grundRepo, dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), systemAnlegen: () => this.sichereSystemJetzt(), zugriff: (ich) => this.zugriff(ich) });
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
@@ -1259,7 +1259,7 @@ export class Dienst {
 
   /** Was PdfEntsperren vom Dienst braucht (#827) – für index.ts und Tests. */
   entsperrenAnbindung(o: Omit<EntsperrenAnbindung, 'datei' | 'dokumenteMitSha' | 'nachEntsperren'>): EntsperrenAnbindung {
-    return { ...o, datei: (sha) => this.liesGanz(sha), dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha), nachEntsperren: (docs, info) => this.nachEntsperren(docs, info) };
+    return { ...o, datei: (sha) => this.kern.liesGanz(sha), dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha), nachEntsperren: (docs, info) => this.nachEntsperren(docs, info) };
   }
 
   /**
@@ -1460,7 +1460,7 @@ export class Dienst {
       dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha),
       dokumenteMitTyp: (m) => this.repo.dokumenteMitTyp(m),
       lesefassung: async (sha) => (await this.umwandlung?.lies(sha)) ?? null,
-      datei: (sha) => this.liesGanz(sha),
+      datei: (sha) => this.kern.liesGanz(sha),
       textebene: (pdf) => textebeneWoerter(pdf),
       liesPdfA: (pdf) => liesPdfA(pdf),
       notiere: async (d, paket, daten) => {
@@ -3769,7 +3769,7 @@ export class Dienst {
     const admin = ich.rolle === 'admin' && !ich.art;
     if (ich.art) {
       // Konten, die kein Mensch sind (#673): ihre Rolle (Systemkonto bzw. Paket) statt der Rollen aus einer Benutzer-Mappe.
-      const rolleId = (await this.sichereSystem()).kontorollen.get(ich.art === 'system' ? 'systemkonto' : 'paket')!;
+      const rolleId = (await this.kern.system()).kontorollen.get(ich.art === 'system' ? 'systemkonto' : 'paket')!;
       const wer: Wer = { id: ich.id, rollen: [rolleId] };
       if (ich.art === 'dienst') return this.paketZugriff(ich, a, wer, typen, rolleId);
       const eigene = typen.map((t) => kontoRegelwerk(t, rolleId));
@@ -3815,7 +3815,7 @@ export class Dienst {
    * ohne Präfix, `paket:typ`, `dms:ablageort|rolle|post` oder `*` (alle außer Benutzer). Unbekanntes fällt still weg.
    */
   private async typverweise(paketId: string, pakete: InstalliertesPaket[], typen: Mappentyp[]): Promise<(liste: string[]) => Set<string>> {
-    const dms = await this.sichereSystem();
+    const dms = await this.kern.system();
     const ablageort = await this.ablageortId();
     return (liste) => {
       const ids = new Set<string>();
@@ -4945,7 +4945,7 @@ export class Dienst {
    * versendete Post bleiben außen vor – dort kommt der Absender aus der E-Mail bzw. ist richtig.
    */
   async absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> {
-    const typ = await this.postTyp();
+    const typ = (await this.kern.system()).post;
     const kanaele = new Set<string>([POST_KANAL.hochgeladen, POST_KANAL.api, POST_KANAL.webdav, POST_KANAL.ordner]);
     const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend
       && kanaele.has(auswahlText(m.werte.kanal)) && typeof m.werte.absender === 'string' && m.werte.absender.trim() !== '');
@@ -4955,7 +4955,7 @@ export class Dienst {
       const absender = String(m.werte.absender).trim();
       let passt = auswahlText(m.werte.kanal) === POST_KANAL.ordner && absender === 'Eingangsordner';
       if (!passt && m.erstelltVon) {
-        if (!namen.has(m.erstelltVon)) namen.set(m.erstelltVon, await this.name(m.erstelltVon));
+        if (!namen.has(m.erstelltVon)) namen.set(m.erstelltVon, await this.kern.name(m.erstelltVon));
         passt = absender === namen.get(m.erstelltVon);
       }
       if (passt) posten.push({ id: m.id, titel: m.titel ?? '', absender, kanal: auswahlText(m.werte.kanal), erstellt: m.erstellt });
@@ -4968,7 +4968,7 @@ export class Dienst {
   async absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> {
     const gewaehlt = new Set(Array.isArray(ids) ? ids.map(String) : []);
     if (!gewaehlt.size) throw new Fachfehler(422, t('meldungen.dienst.bitte-mindestens-eine-post'));
-    const typ = await this.postTyp();
+    const typ = (await this.kern.system()).post;
     const passend = (await this.absenderVorschau()).posten.filter((p) => gewaehlt.has(p.id));
     for (const p of passend) {
       const m = await this.repo.holeMappe(p.id);
@@ -5329,7 +5329,7 @@ export class Dienst {
       liste.push({
         feld: f.key, label: f.label, deins: lesbar(f, werte[f.key]), aktuell: lesbar(f, m.werte[f.key]),
         ...(f.typ === 'passwort' ? { geheim: true } : { wert: m.werte[f.key] ?? null }),
-        von: h.benutzerId, name: h.benutzerId ? await this.name(h.benutzerId) : t('mappen.konflikt.system'), zeit: h.zeit,
+        von: h.benutzerId, name: h.benutzerId ? await this.kern.name(h.benutzerId) : t('mappen.konflikt.system'), zeit: h.zeit,
       });
     }
     return liste;
@@ -6704,7 +6704,7 @@ export class Dienst {
       aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von),
       abwesenheitGeaendert: (b, alt, von, wegen) => this.abwesenheitGeaendert(b, alt, von, wegen),
       entferne: (id) => this.entferneBenutzerMappe(id),
-      papierkorbAn: async () => (await this.papierkorbTage()) > 0,
+      papierkorbAn: async () => (await this.kern.papierkorbTage()) > 0,
       inPapierkorb: async (id, von) => {
         const m = await this.repo.holeMappe(id);
         if (!m) return;
@@ -7499,13 +7499,13 @@ export class Dienst {
     // Alle Versionen (#194) gehen mit.
     const aeltere = await this.repo.versionenVon(id);
     // Papierkorb (#344): eingeschaltet → das Dokument zieht samt Versionen und Volltext dorthin um.
-    const korb = (await this.papierkorbTage()) > 0;
+    const korb = (await this.kern.papierkorbTage()) > 0;
     if (korb) await this.repo.legeDokumentInPapierkorb(id, benutzerId);
     else await this.repo.loescheDokument(id);
     // Löschprotokoll (#470)
-    const info = (await this.mappenInfo([d.mappeId], new Map()))(d.mappeId, id);
-    await this.protokolliere(this.dokEintraege([dokInfo(d), ...aeltere.map(versionInfo)], { ...info, schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass.weg ?? 'dokument' }),
-      await this.loeschKontext(benutzerId, anlass));
+    const info = (await this.kern.loeschprotokoll.mappenInfo([d.mappeId], new Map()))(d.mappeId, id);
+    await this.kern.loeschprotokoll.schreibe(this.kern.loeschprotokoll.dokEintraege([dokInfo(d), ...aeltere.map(versionInfo)], { ...info, schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass.weg ?? 'dokument' }),
+      await this.kern.loeschprotokoll.kontext(benutzerId, anlass));
     await this.notiere(d.mappeId, benutzerId, korb ? 'dokument_papierkorb' : 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
@@ -9041,8 +9041,8 @@ export class Dienst {
       // Löschprotokoll (#470): auch ältere Versionen, die über die eingestellte Anzahl hinaus wegfallen.
       const bleiben = new Set((await this.repo.versionenVon(neu.id)).map((v) => v.nummer));
       const weg = vorher.filter((v) => !bleiben.has(v.nummer));
-      if (weg.length) await this.protokolliere(this.dokEintraege(weg.map(versionInfo), { ...(await this.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id), schritt: 'endgueltig', weg: 'version' }),
-        await this.loeschKontext(benutzerId, { ausloeser: 'automatisch' }));
+      if (weg.length) await this.kern.loeschprotokoll.schreibe(this.kern.loeschprotokoll.dokEintraege(weg.map(versionInfo), { ...(await this.kern.loeschprotokoll.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id), schritt: 'endgueltig', weg: 'version' }),
+        await this.kern.loeschprotokoll.kontext(benutzerId, { ausloeser: 'automatisch' }));
     }
     if (neu.ocr?.stand !== 'fertig' && Dienst.volltextAn(typ, reg.key)) {
       await this.repo.ocrEinreihen([neu.id]);

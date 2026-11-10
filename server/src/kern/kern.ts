@@ -52,6 +52,9 @@ export interface Zugriff {
 /** Ein wirksames Leserecht auf Zeit (#798): Grund ist die Aufgabe; von = der Admin, der es gegeben hat. */
 export interface LeserechtAufZeit { fallId: string; aufgabeId: string; aufgabentext: string; seit: string; von: string | null }
 
+/** Wer zugreift (#124, #338, #673): Mensch, Dienstkonto eines Pakets oder Systemkonto. */
+export interface Zugreifender { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string }
+
 /** Systemtypen und -rollen (#26, #27, #435, #673): Benutzer, Rolle, Post und die Ids der festen Rollen. */
 export interface SystemIds { benutzer: Mappentyp; rolle: Mappentyp; post: Mappentyp; systemrollen: Map<Rolle, string>; kontorollen: Map<Kontorolle, string> }
 
@@ -66,6 +69,8 @@ export interface KernOptionen {
   wecke: () => void;
   /** Systemtypen anlegen, falls sie fehlen (bis #963 im Dienst). */
   systemAnlegen: () => Promise<SystemIds>;
+  /** Zugriff bilden (Schicht „zugriff“; bis dahin im Dienst). */
+  zugriff: (ich: Zugreifender) => Promise<Zugriff>;
 }
 
 /**
@@ -87,6 +92,7 @@ export class Kern {
   private readonly grundRepo: Repo;
   private readonly wecke: () => void;
   private readonly systemAnlegen: () => Promise<SystemIds>;
+  private readonly zugriffBilden: (ich: Zugreifender) => Promise<Zugriff>;
 
   constructor(o: KernOptionen) {
     this.grundRepo = o.repo;
@@ -95,6 +101,7 @@ export class Kern {
     this.stand = o.stand;
     this.wecke = o.wecke;
     this.systemAnlegen = o.systemAnlegen;
+    this.zugriffBilden = o.zugriff;
   }
 
   /* ---------- Repo und Transaktion (#404) ---------- */
@@ -168,6 +175,12 @@ export class Kern {
     if (!benutzerId) return t('meldungen.dienst.ohne-empfaenger');
     return (await this.repo.titelVon([benutzerId])).get(benutzerId) || 'unbekannt';
   }
+
+  /** Wer was lesen darf – einmal je Anfrage gebildet (#741); die Fachbereiche reichen ihn weiter. */
+  zugriff(ich: Zugreifender): Promise<Zugriff> { return this.zugriffBilden(ich); }
+
+  /** Alle Mappentypen nach Id (aus dem Repo, in einer Transaktion deren Stand). */
+  async typen(): Promise<Map<string, Mappentyp>> { return new Map((await this.repo.listeTypen()).map((x) => [x.id, x] as const)); }
 
   /** Typ einer Mappe für ein Ereignis (null, wenn es sie nicht mehr gibt). */
   async typVon(mappeId: string): Promise<string | null> { return (await this.repo.holeMappe(mappeId))?.typId ?? null; }
