@@ -34,7 +34,7 @@ export function TippZeile() {
   const weitere = stand.tipp?.weitere ?? 0;
   return (
     <p className="tipp-zeile" data-anker="startseite.tipp">
-      <span className="sr-only">{t('entdecken.zeile.titel')}: </span>
+      <span className="sr">{t('entdecken.zeile.titel')}: </span>
       <a href={x.ziel?.seite ?? '/entdecken'} className="tipp-satz" onClick={(e) => { e.preventDefault(); setWeg('erledigt'); void tippHandlung(x.schluessel, 'erledigt'); void zeigeZiel(x); }}>
         {x.neu ? t('entdecken.zeile.neu', { text: x.text }) : x.text}
       </a>

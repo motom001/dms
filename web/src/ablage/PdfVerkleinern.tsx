@@ -55,7 +55,7 @@ export function PdfVerkleinern({ d, bearbeitbar, mitnehmen = true, schliessen, f
         <Hilfe ort="dokumente.verkleinern" />
       </div>
       <fieldset className="stufenwahl">
-        <legend className="sr-only">{t('ablage.pdfverkleinern.stufe')}</legend>
+        <legend className="sr">{t('ablage.pdfverkleinern.stufe')}</legend>
         {STUFEN_LISTE.map((k) => {
           const x = v.stufen[k];
           return (

@@ -33,7 +33,7 @@ export function UeberDms({ schliessen }: { schliessen: () => void }) {
       // Klick auf den abgedunkelten Rand (das <dialog> selbst, nicht sein Inhalt) schließt.
       onClick={(e) => { if (e.target === ref.current) schliessen(); }}>
       <div className="ueber-dms-inhalt">
-        <h2 id={`${id}-t`} className="marke ueber-dms-marke"><Marke logo={null} schriftzug="Ablago" gross /><span className="sr-only"> {' '}{t('oberflaeche.ueberdms.ueber-ablago')}</span></h2>
+        <h2 id={`${id}-t`} className="marke ueber-dms-marke"><Marke logo={null} schriftzug="Ablago" gross /><span className="sr"> {' '}{t('oberflaeche.ueberdms.ueber-ablago')}</span></h2>
         <p>{t('oberflaeche.ueberdms.ablago-ist-die-dokumentenablage')}</p>
         <dl className="ueber-dms-angaben">
           <dt>{t('oberflaeche.ueberdms.version')}</dt>

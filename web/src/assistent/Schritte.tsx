@@ -396,7 +396,7 @@ function Abschnitt({ titel, ziel, probleme, children }: { titel: string; ziel: A
     <section className={`blatt zf-abschnitt${probleme?.length ? ' mitfehler' : ''}`} aria-label={titel}>
       <div className="zf-kopf">
         <h2 className="h3">{titel}</h2>
-        <button type="button" className="textknopf" onClick={() => setzeSammlung((s) => ({ ...s, ansicht: ziel, zurZusammenfassung: true }))}>{t('einrichtung.zf.aendern')}<span className="sr-only"> – {titel}</span></button>
+        <button type="button" className="textknopf" onClick={() => setzeSammlung((s) => ({ ...s, ansicht: ziel, zurZusammenfassung: true }))}>{t('einrichtung.zf.aendern')}<span className="sr"> – {titel}</span></button>
       </div>
       <div className="zf-inhalt">{children}</div>
       {probleme?.length ? <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul> : null}
@@ -482,7 +482,7 @@ function LaufAnsicht() {
             <li key={s} className={`lauf-${x.zustand}`} aria-busy={x.zustand === 'laeuft' || undefined}>
               <span className="lauf-zeichen" aria-hidden="true">{x.zustand === 'fertig' ? <Symbol name="haken" /> : x.zustand === 'fehler' ? <Symbol name="warnung" /> : x.zustand === 'laeuft' ? '…' : '·'}</span>
               <span className="lauf-text">
-                <span>{text}{x.zustand === 'laeuft' ? ' …' : ''}<span className="sr-only"> – {t(`einrichtung.lauf.zustand.${x.zustand}`)}</span></span>
+                <span>{text}{x.zustand === 'laeuft' ? ' …' : ''}<span className="sr"> – {t(`einrichtung.lauf.zustand.${x.zustand}`)}</span></span>
                 {x.meldung && <span className={x.zustand === 'fehler' ? 'fehlertext klein' : 'leise klein'}>{x.meldung}</span>}
                 {x.zustand === 'fehler' && (
                   <span className="knoepfe">

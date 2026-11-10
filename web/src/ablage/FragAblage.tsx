@@ -79,7 +79,7 @@ export function FragAblage() {
         </ol>
       )}
       <form className="frag-form" onSubmit={(e) => { e.preventDefault(); void fragen(); }}>
-        <label className="sr-only" htmlFor="frag-feld">{t('fragen.feld')}</label>
+        <label className="sr" htmlFor="frag-feld">{t('fragen.feld')}</label>
         <textarea id="frag-feld" className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.beispiel')}
           onChange={(e) => setEingabe(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void fragen(); } }} />
@@ -101,9 +101,9 @@ function RundeAnzeige({ r }: { r: Runde }) {
   const geschickt = r.ausschnitte && r.gekuerzt ? r.ausschnitte.filter((a) => r.gekuerzt!.geschickt.includes(a.nr)) : r.ausschnitte;
   return (
     <li className="frag-runde">
-      <p className="frag-frage"><span className="sr-only">{t('fragen.du')}: </span>{r.frage}</p>
+      <p className="frag-frage"><span className="sr">{t('fragen.du')}: </span>{r.frage}</p>
       <div className="frag-antwort">
-        <span className="sr-only">{t('fragen.antwort')}: </span>
+        <span className="sr">{t('fragen.antwort')}: </span>
         {text ? <p className="frag-text">{text}</p> : r.laeuft ? <p className="leise klein">{r.ausschnitte ? t('fragen.laeuft') : t('fragen.sucht')}</p> : null}
         {r.fehler && <p className="fehlertext" role="alert">{r.fehler}</p>}
         {r.quellen && (r.quellen.length

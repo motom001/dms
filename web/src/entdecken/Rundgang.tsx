@@ -124,7 +124,7 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
           {s.bild === 'dreiteilung' && <DreiteilungBild schmal={schmal} />}
           <div id={`${id}-x`}>
             <p>{text}</p>
-            {s.ort && <p className="sr-only">{s.ort}</p>}
+            {s.ort && <p className="sr">{s.ort}</p>}
             {letzter && rundgang.ende && <p className="rg-ende">{rundgang.ende}</p>}
           </div>
         </div>

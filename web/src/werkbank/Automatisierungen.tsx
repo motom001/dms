@@ -698,7 +698,7 @@ function Wiedergeben({ a, typ, nachher }: { a: AutomatisierungAnsicht; typ: Mapp
       <p className="leise klein">{t('automatisierung.ui.wiedergeben.text')}</p>
       <div className="zeile">
         {typ ? <div className="feld">
-            <label htmlFor="ausprobieren-mappe" className="sr-only">{t('automatisierung.ui.wiedergeben.suchen')}</label>
+            <label htmlFor="ausprobieren-mappe" className="sr">{t('automatisierung.ui.wiedergeben.suchen')}</label>
             <MappenWahl id="ausprobieren-mappe" ziel={typ} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen
               merke={(id, x) => setBekannt((y) => ({ ...y, [id]: x }))} setze={(v) => setMappe(typeof v === 'string' ? v : '')}
               platzhalter={t('automatisierung.ui.wiedergeben.suchen')} quelle={quelle} leer={t('automatisierung.ui.wiedergeben.leer', { typ: typ.name })} />

@@ -113,7 +113,7 @@ export function App() {
       {admin && !vertretung && bereich === 'werkbank' && <GeradeImModus />}
       <header className="kopf">
         <Link to={startseiteVon(vertretung ? undefined : ich.rolle, d.einstellungen.startseite === false)} className="marke" title={t('oberflaeche.app.zur-startseite')}>
-          <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} /><span className="sr-only">{t('oberflaeche.app.startseite', { wert: schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null) })}</span>
+          <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} /><span className="sr">{t('oberflaeche.app.startseite', { wert: schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null) })}</span>
         </Link>
         {/* #819: Kein Weg in die Werkbank aus der Ablage-Navigation – nur über das Benutzermenü („Ablago verwalten“).
             Im Verwaltungsmodus führt der Reiter zurück in die Werkbank. */}

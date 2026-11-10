@@ -549,7 +549,7 @@ function Liste(p: {
 
 /** Favorit = Abo (#422): Punkt vor geänderten Favoriten und eigenen Mappen – wie „ungelesen“ im E-Mail-Programm. */
 function GeaendertPunkt() {
-  return <><span className="abo-punkt" title={t('ablage.ablage.von-anderen-geaendert-seit')} aria-hidden="true" /><span className="sr-only">{t('ablage.ablage.geaendert-2')}{' '}</span></>;
+  return <><span className="abo-punkt" title={t('ablage.ablage.von-anderen-geaendert-seit')} aria-hidden="true" /><span className="sr">{t('ablage.ablage.geaendert-2')}{' '}</span></>;
 }
 
 const absenderFehlt = (typ: Mappentyp | undefined, m: Mappe) => typ?.system === 'post' && !m.werte.absender && auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend;

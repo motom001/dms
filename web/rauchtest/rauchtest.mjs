@@ -230,7 +230,10 @@ async function vorbereiten(cookie) {
     await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${betreff}.pdf`)}&typ=application/pdf`, { cookie, body: beispielPdf(betreff), roh: true });
     daten[schluessel] = brief;
   }
-  const einladung = (await api('POST', '/api/benutzer', { cookie, body: { email: JONAS.email, name: JONAS.name, rolle: 'mitglied', rollen: [] } })).daten;
+  // Eine Automatisierung für die Dreiteilung der Werkbank (#1063): Ihre Bearbeitung ist länger als das Fenster.
+  const vertrag = (await api('GET', '/api/typen', { cookie })).daten.find((x) => x.name === 'Vertrag');
+  await api('POST', '/api/werkbank/automatisierungen', { cookie, body: { name: 'Rauchtest Vertrag angelegt', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [{ id: 's', art: 'stopp' }] } });
+  const einladung = (await api('POST', '/api/benutzer',{ cookie, body: { email: JONAS.email, name: JONAS.name, rolle: 'mitglied', rollen: [] } })).daten;
   await api('POST', '/api/konto/passwort-setzen', { body: { schluessel: einladung.link.split('/passwort/')[1], passwort: JONAS.passwort } });
 }
 
@@ -876,6 +879,55 @@ rauchtest('Eingangsordner: „Jetzt prüfen“ – Ergebnis unter dem Knopf (#98
   assert.ok(e.y + e.height <= (s.viewportSize()?.height ?? 900) && e.y >= 0, 'Ergebnis ist zu sehen, ohne zu rollen');
   assert.ok(Math.abs((await s.evaluate(() => scrollY)) - vorher) < 200, 'Die Seite springt nicht');
   assert.equal(await s.locator('.einspaltig > .hinweis').filter({ hasText: /Geprüft – nichts/ }).count(), 0, 'Kein Ergebnis oben auf der Seite');
+});
+
+/* ---------- Dreiteilung fest im Fenster (#1063) ---------- */
+
+/**
+ * Die Dreiteilung steht fest im Fenster (#1063): Nur die Spalten rollen, nie die Seite unter ihnen. Rollt die rechte
+ * Spalte ans Ende; dann ist die Seite genau so hoch wie das Fenster. Die rechte Spalte muss dafür länger sein als ihr
+ * Platz – sonst prüft der Test nichts.
+ */
+async function dreiteilungSteht(s, wo) {
+  const r = await s.evaluate(() => {
+    const rechts = document.querySelector('.drei .spalte.mappe');
+    rechts.scrollTop = rechts.scrollHeight;
+    return { seite: document.scrollingElement.scrollHeight, fenster: innerHeight, spalte: rechts.scrollHeight, platz: rechts.clientHeight };
+  });
+  assert.ok(r.spalte > r.platz + 100, `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`);
+  assert.equal(r.seite, r.fenster, `${wo}: Die Seite rollt unter der Dreiteilung weiter (Seite ${r.seite} px, Fenster ${r.fenster} px)`);
+}
+
+rauchtest('Ablage und Werkbank: Die Seite rollt nicht unter der Dreiteilung, versteckte Beschriftungen bleiben lesbar (#1063)', { als: LENA }, async (s) => {
+  await s.setViewportSize({ width: 1366, height: 640 });
+  const mappeOeffnen = async () => {
+    await s.goto(BASIS + '/ablage/start');
+    await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
+    await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /Stromvertrag Haus/ }).first().click();
+    await s.getByRole('region', { name: 'Mappe' }).getByRole('button', { name: 'Mappe speichern' }).waitFor();
+    await s.waitForLoadState('networkidle');
+  };
+  // Ablage: eine Mappe rechts, ohne und mit Verwaltungsmodus (roter Balken oben).
+  await mappeOeffnen();
+  await dreiteilungSteht(s, 'Ablage → Mappe');
+  await verwalten(s);
+  await mappeOeffnen();
+  await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor();
+  await dreiteilungSteht(s, 'Ablage → Mappe im Verwaltungsmodus');
+  // Werkbank → Automatisierungen: In „Ausprobieren“ steht die versteckte Beschriftung „Mappe suchen …“.
+  await s.goto(BASIS + '/werkbank/automatisierungen');
+  await s.getByRole('region', { name: 'Elemente' }).getByRole('link', { name: /Rauchtest Vertrag angelegt/ }).click();
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  const suche = bearbeitung.getByLabel('Mappe suchen …');
+  await suche.waitFor();
+  await s.waitForLoadState('networkidle');
+  await dreiteilungSteht(s, 'Werkbank → Automatisierung');
+  // Gegenprobe: Die Beschriftungen bleiben unsichtbar, aber im Barrierefreiheitsbaum – auch die der Marke oben.
+  const beschriftung = bearbeitung.locator('label[for="ausprobieren-mappe"]');
+  const kasten = await beschriftung.boundingBox();
+  assert.ok(kasten && kasten.width <= 1 && kasten.height <= 1, `Die Beschriftung „Mappe suchen …“ ist zu sehen (${JSON.stringify(kasten)})`);
+  assert.equal(await suche.count(), 1, 'Das Suchfeld ist über seine versteckte Beschriftung zu finden');
+  await s.getByRole('banner').getByRole('link', { name: /– Startseite$/ }).waitFor();
 });
 
 /* ---------- Hilfen ---------- */
