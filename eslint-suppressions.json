@@ -51,6 +51,22 @@
       "count": 1
     }
   },
+  "server/src/ausgang/email.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/ausgang/export.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
   "server/src/auskunft.ts": {
     "complexity": {
       "count": 1
@@ -128,7 +144,7 @@
       "count": 8
     },
     "complexity": {
-      "count": 15
+      "count": 8
     },
     "max-depth": {
       "count": 1
@@ -137,10 +153,10 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 3
+      "count": 2
     },
     "max-params": {
-      "count": 5
+      "count": 1
     },
     "no-useless-assignment": {
       "count": 1
@@ -263,7 +279,7 @@
       "count": 1
     },
     "complexity": {
-      "count": 2
+      "count": 1
     },
     "max-lines": {
       "count": 1
@@ -380,6 +396,24 @@
       "count": 1
     }
   },
+  "server/src/pdf-bearbeiten/pdf-bearbeiten.dienst.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/pdf-bearbeiten/schwaerzen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/pdf-bearbeiten/verkleinern.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
   "server/src/pdf/anzeige.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -455,6 +489,14 @@
     },
     "max-params": {
       "count": 1
+    }
+  },
+  "server/src/post/post.dienst.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-params": {
+      "count": 2
     }
   },
   "server/src/postfach-oauth.ts": {

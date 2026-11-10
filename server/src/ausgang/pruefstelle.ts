@@ -8,11 +8,13 @@
  * #294); Administratoren dürfen alles. Ansehen im Browser bleibt mit R möglich – ganz verhindern lässt sich das
  * Abspeichern beim Ansehen nie (Browser, Bildschirmfoto).
  *
- * Hier stehen nur die Regel und die Meldungen; Lesen und Exportrecht löst der Dienst auf (`Dienst.mitnehmbar`,
- * `Dienst.pruefeAusgang`). So können die einzelnen Wege nicht auseinanderlaufen.
+ * Hier stehen nur die Regel und die Meldungen; Lesen und Exportrecht löst `ausgang.dienst.ts` auf
+ * (`AusgangDienst.mitnehmbar`, `AusgangDienst.pruefeAusgang`, #1077). Alle Wege fragen über die Fassade
+ * (`dienst.mitnehmbar`, `dienst.pruefeAusgang`) – auch E-Mail und Export in diesem Ordner. So können die einzelnen
+ * Wege nicht auseinanderlaufen.
  */
-import { Fachfehler } from './fehler';
-import { t } from './sprache';
+import { Fachfehler } from '../fehler';
+import { t } from '../sprache';
 
 export const AUSGAENGE = ['herunterladen', 'email', 'export', 'webdav'] as const;
 export type Ausgang = typeof AUSGAENGE[number];

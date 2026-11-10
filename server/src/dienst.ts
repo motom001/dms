@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   kannAusPost, darfLoeschen, istLeer, MAX_AUSWAHL, MAX_DATEIGROESSE,
-  ABRUF_ART, type Abrufweg, type Abruffassung, type Modusspur, type Kontorolle, type Systemkonto, verweiseVon,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Register, type Wert, type Werte,
+  type Abrufweg, type Abruffassung, type Modusspur, type Systemkonto, verweiseVon,
+  AUFGABE_MAX, istEmail, auswahlText, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappenBezug, type Wert, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -12,10 +12,7 @@ import { EIGENE_MAPPEN, fingerabdruck, Haushaltsstand, MINDESTENS_MS, mitFavorit
 import { jeAnfrage } from './lesespeicher';
 import { speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { rechteMessen } from './messung';
-import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
-import { bilderZuPdf, fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
-import { bildSeitePdf } from './pdf';
 import { aufkleberPdf, ETIKETTEN } from './aufkleber';
 import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
@@ -40,26 +37,17 @@ import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from 
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
-import { csvAus, type Zelle } from './xlsx';
-import { arbeite } from './arbeit';
+import { csvAus } from './xlsx';
 import { schriftstueckPdf } from './schriftstueck';
-import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
-import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
-import { fuerAusgabe, kannStempeln, weitergabeWas, type Ausgabe } from './ausgabe';
-import { mitnehmbar, pruefeAlle, sichtVerboten, verboten, type Ausgang, type Ausgangsrechte } from './ausgang';
-import { analysiere as schwaerzAnalyse, schwaerze, seitenbild as schwaerzSeitenbild, type Analyse as SchwaerzAnalyse } from './schwaerzen';
-import { bereicheVon, findeBegriff, findeMuster, geschwaerztName, istMuster, kannSchwaerzen, MUSTER, pruefeBegriffe, pruefeBereiche, SCHWAERZEN_MAX_SEITEN, stellenText, type Bereich } from '../../shared/src/schwaerzen';
-import { analysiere, ergebnisText, istStufe, MIN_ERSPARNIS, STANDARD_STUFE, stufeAus, STUFEN, verkleinere, type Analyse, type Stufe } from './verkleinern';
-import { geltenderStempel, liesStempelTyp, liesVorlagen, NEUER_STEMPEL, WEBDAV_VORLAGE, pruefeVorlage, stempelAus, StempelFehler, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_VORLAGEN_MAX, stempelDatum, wunschAus, type GeltenderStempel, type StempelTyp, type StempelVorlage, type StempelWunsch } from '../../shared/src/stempel';
-import { alleSichtRechte } from '../../shared/src/sichtrechte';
+import { exportSpalten, mappenPdf } from './export';
+import { geschwaerztName, kannSchwaerzen } from '../../shared/src/schwaerzen';
+import { type StempelTyp } from '../../shared/src/stempel';
 import { INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type BeispielStand } from '../../shared/src/pakete';
-import { erkenneBildtyp, kernTyp, type FassungInfo } from '../../shared/src/dateiumwandlung';
+import { erkenneBildtyp, type FassungInfo } from '../../shared/src/dateiumwandlung';
 import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from './dateiumwandlung';
 import { PaketVolltext } from './paketvolltext';
 import type { ArchivAblage, ArchivAnbindung, Archivfassung } from './archivfassung';
 import type { EntsperrenAnbindung, PdfEntsperren } from './entsperren';
-import { archivfassungName } from '../../shared/src/archivfassung';
-import { systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
 import type { AusDokument } from '../../shared/src/erkennung';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
@@ -68,7 +56,7 @@ import { favoritenErlaubt, freigabeZumSpeichern, liesFavoritenFreigabe, type Fav
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
 import { zeitzone } from '../../shared/src/region';
-import { Eingang, shaVon } from './hochladen';
+import { Eingang } from './hochladen';
 import { EREIGNISKATALOG, VERALTETE_EREIGNISSE, type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis, type Katalogeintrag } from '../../shared/src/ereignisse';
 import { datumDe, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, folgetermine, istDatum, naechsterTermin, type Erinnerung, type Termin, type TermineAntwort } from '../../shared/src/fristen';
 import { zeitraumProblem } from '../../shared/src/kalender';
@@ -78,7 +66,7 @@ import { gebietsschema } from '../../shared/src/sprache';
 import { EMAIL_MAX_ANHAENGE, KB, MB } from './grenzen';
 import { SucheDienst } from './suche';
 import { NICHT_SICHTBAR, ZugriffDienst } from './zugriff';
-import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff, type BenutzerGespiegelt } from './kern';
+import { ABO_ARTEN, dokInfo, Kern, type Loeschprotokoll, PAPIERKORB_STANDARD_TAGE, versionInfo, type Anlass, type ProtokollMappe, type ProtokollTeil, type SystemIds, type Zugreifender, type Zugriff } from './kern';
 import { Systemausstattung } from './systemausstattung';
 import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
 export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
@@ -86,7 +74,7 @@ export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
-import { bereinigeWerte, keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenTitel, Passwortfelder } from './mappen';
+import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenTitel, Passwortfelder } from './mappen';
 export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
 import { dateiname, DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, erkenneAnzeigbar, FehlendeDateien, GeschuetztePdfs, type TexterkennungAnbindung } from './dokumente';
 export { erkenneAnzeigbar };
@@ -95,52 +83,21 @@ import { SichtenDienst, SichtenVerwaltung, sortierungAus, Systemsichten, type Za
 export { sortierungAus };
 export type { Zaehlerzahlen };
 import { BerechtigungenDienst } from './berechtigungen';
+import { PdfBearbeiten, PdfVerkleinern, Schwaerzen, Stempelvorlagen } from './pdf-bearbeiten';
+export { GROSSE_MAX, GROSSE_MIT_SCHAETZUNG, VERKLEINERN_STANDARD, verkleinernEinstellungAus, type VerkleinernEinstellung } from './pdf-bearbeiten';
+import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostSystemmappen } from './post';
+export type { Fundstelle, SystemkontoEintrag } from './post';
+import { type Ausgang, AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
+export { EMAIL_MAX_EMPFAENGER, EMAIL_MAX_MAPPEN } from './ausgang';
 import { type EreignisAufruf, VOLLTEXT_MAX, VolltextAusPaketen, VolltextDienst, type VolltextMeldung } from './volltext';
 export { VOLLTEXT_MAX };
 export type { EreignisAufruf, VolltextMeldung };
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
-/** Mappen in der Reihenfolge der Ids (#542: mit Index statt `indexOf` je Vergleich – bei 20.000 Mappen Sekunden). */
-function inReihenfolge<T extends { id: string }>(liste: T[], ids: string[]): T[] {
-  const pos = new Map(ids.map((id, i) => [id, i]));
-  return liste.sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0));
-}
-
-/* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
-
-const text = (v: unknown) => (v == null ? '' : String(v)).trim();
-/** Empfänger aus Abfrageparametern (API v1) – gilt auch für den Pflicht-Stempel ohne eigenen Wunsch (#799). */
-const empfaengerAus = (q: unknown) => { const o = (q && typeof q === 'object' ? q : {}) as Record<string, unknown>; const e = o.empfaenger ?? o['empfänger']; const s = Array.isArray(e) ? e[0] : e; return typeof s === 'string' ? s.replace(/[\r\n\t]+/g, ' ').trim().slice(0, 120) : ''; };
-
 /** Dokument im Papierkorb mit Mappe und Register (#344). */
 export interface DokumentImKorb extends DokumentImPapierkorb { art: 'dokument'; typId: string; mappeTitel: string; register: string; mappe: 'da' | 'papierkorb' | 'weg' }
 /** Aufgelöste Post im Papierkorb (#936): in welche Mappe; `da` = die Mappe gibt es noch. */
 export interface AufgeloestIn { id: string; typId: string; titel: string; da: boolean }
-/** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
-export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
-
-
-/** Ein Konto, das kein Mensch ist (#673), für Werkbank → Benutzer. */
-export interface SystemkontoEintrag {
-  id: string; name: string; rolle: Kontorolle; aktiv: boolean; systemkonto?: string;
-  paketId?: string; paket?: string | null; automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>;
-  /**
-   * Auffälligkeiten (#817), auch eingeklappt in der Kopfzeile sichtbar: `fehler` – Konto deaktiviert (obwohl sein
-   * Paket noch da ist) oder eine seiner Automatisierungen angehalten; `weitreichend` – das Paket darf alle Mappentypen ändern oder alle
-   * lesen und dazu ins Netz (`systemkontoAuffaellig` in shared/src/systemkonten.ts).
-   */
-  fehler?: SystemkontoFehler; weitreichend?: boolean;
-}
-
-/** Ein Anhang einer E-Mail (#723): Dokument (oder das PDF „Angaben“, dann ohne Dokument) und was hinausgeht. */
-interface Versandanhang {
-  dokument: Dokument | null; name: string; mime: string; groesse: number;
-  /** Bearbeitet (Stempel, verkleinert) oder Archivfassung: liegt als eigene Datei in der Post. */
-  ausgabe: Ausgabe | null;
-  inhalt(): Promise<Buffer | Readable>;
-}
-/** Alles, was von einer Mappe per E-Mail hinausgeht. `ausgaben`: die bearbeiteten (für Historie und Hinweise). */
-interface Versandteil { m: Mappe; plan: GeltenderStempel | null; angaben: Versandanhang | null; dokumente: Versandanhang[]; ausgaben: Ausgabe[]; groesse: number }
 
 /** Startseite (#918): der nächste Termin erst in so vielen Tagen gesucht, nur ohne Treffer im ganzen Jahr. */
 export const NAECHSTER_TERMIN_ERST_TAGE = 31;
@@ -165,12 +122,7 @@ export interface KontenHaken {
   setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 
-/** Post auflösen (#936): „Aus Post … angelegt“ nur, wenn dieselbe Person die Mappe höchstens so lange vorher angelegt hat. */
-const AUFLOESEN_FRIST_MS = 60 * 60 * 1000;
 export { EMAIL_MAX_ANHAENGE };
-export const EMAIL_MAX_EMPFAENGER = 20;
-/** Höchstens so viele Mappen in einer E-Mail (#151). */
-export const EMAIL_MAX_MAPPEN = 100;
 /** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung. */
 export const SAMMEL_MAX = 1000;
 export const SAMMEL_WEITERGABE = 'weitergabe';
@@ -187,30 +139,6 @@ export interface DienstOptionen {
 }
 
 /** Dateiname ohne Pfadanteile und Steuerzeichen. */
-/** Automatisch verkleinern (#393): Einstellung in der Werkbank → Systemzustand; Standard aus. */
-export interface VerkleinernEinstellung { automatisch: boolean; abMb: number; stufe: Stufe }
-export const VERKLEINERN_STANDARD: VerkleinernEinstellung = { automatisch: false, abMb: 5, stufe: STANDARD_STUFE };
-export function verkleinernEinstellungAus(v: unknown): VerkleinernEinstellung {
-  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
-  const abMb = Number(o.abMb);
-  return {
-    automatisch: o.automatisch === true,
-    abMb: Number.isFinite(abMb) && abMb >= 1 && abMb <= 100 ? abMb : VERKLEINERN_STANDARD.abMb,
-    stufe: istStufe(o.stufe) ? o.stufe : VERKLEINERN_STANDARD.stufe,
-  };
-}
-/** Werkbank: so viele große PDFs in der Liste und in einer Sammelaktion, davon so viele mit Schätzung. */
-export const GROSSE_MAX = 200;
-export const GROSSE_MIT_SCHAETZUNG = 60;
-
-/** Kurztext der Historie für „PDF bearbeitet“ (#335). */
-function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: number }): string {
-  const eintrag: string[] = [];
-  if (w.teile) eintrag.push(t('meldungen.dienst.in-teile-geteilt', { teile: w.teile }));
-  if (w.seiten !== w.vorher && !w.teile) eintrag.push(`${w.vorher} → ${w.seiten} Seiten`);
-  if (w.gedreht) eintrag.push(`${w.gedreht} ${t('meldungen.dienst.seiten', { anzahl: w.gedreht })} gedreht`);
-  return eintrag.join(', ') || t('meldungen.dienst.seiten-umsortiert');
-}
 
 /** Prüfwert von Feldwerten (#878): JSON mit sortierten Schlüsseln, damit die Reihenfolge aus der Datenbank nicht zählt. */
 function pruefwertVon(werte: unknown): string {
@@ -321,6 +249,30 @@ export class Dienst {
   readonly volltextAusPaketen: VolltextAusPaketen;
   /** Volltext (#45, #458, #1076). */
   readonly volltexte: VolltextDienst;
+  /** Stempel-Vorlagen (#394, #1077). */
+  readonly stempelvorlagen: Stempelvorlagen;
+  /** PDF bearbeiten (#335, #1077). */
+  readonly pdfBearbeiten: PdfBearbeiten;
+  /** PDF verkleinern (#393, #1077). */
+  readonly pdfVerkleinern: PdfVerkleinern;
+  /** Schwärzen (#392, #1077). */
+  readonly schwaerzen: Schwaerzen;
+  /** Systemmappen, Benutzer-Mappen, Rollen, Systemkonten (#43, #673, #1077). */
+  readonly postSystemmappen: PostSystemmappen;
+  /** Post auflösen und abtrennen (#934, #936, #1077). */
+  readonly postAufloesen: PostAufloesen;
+  /** Post (#192, #337, #1077): anlegen, zuordnen, automatisch zuordnen. */
+  readonly post: PostDienst;
+  /** Eingangskanäle (#195, #333, #1077). */
+  readonly eingangskanaele: Eingangskanaele;
+  /** Post fotografieren (#490, #1077). */
+  readonly postFotos: PostFotos;
+  /** Ausgang (#723, #1077): die gemeinsame Prüfstelle für alle Wege nach draußen, Stempel, Fassungen. */
+  readonly ausgang: AusgangDienst;
+  /** E-Mail aus der Ablage (#58, #151, #1077). */
+  readonly ausgangEmail: AusgangEmail;
+  /** Export mehrerer Mappen (#152, #1077). */
+  readonly ausgangExport: AusgangExport;
   /** Systemtypen, Systemrollen und mitgelieferte Ansichten anlegen (#963). */
   readonly systemausstattung: Systemausstattung;
 
@@ -362,6 +314,8 @@ export class Dienst {
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     ({ verwalten: this.sichtenVerwaltung, systemsichten: this.systemsichten, sichten: this.sichten, berechtigungen: this.berechtigungen, ausPaketen: this.volltextAusPaketen, volltext: this.volltexte } = this.baueSichtenUndVolltext());
+    ({ stempelvorlagen: this.stempelvorlagen, pdf: this.pdfBearbeiten, verkleinern: this.pdfVerkleinern, schwaerzen: this.schwaerzen, systemmappen: this.postSystemmappen, aufloesen: this.postAufloesen,
+      post: this.post, eingang: this.eingangskanaele, fotos: this.postFotos, ausgang: this.ausgang, email: this.ausgangEmail, export: this.ausgangExport } = this.bauePdfPostAusgang());
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
       mappentypen: { sichereSystemtypen: () => this.systemtypen.sichereSystemtypen() },
@@ -426,6 +380,57 @@ export class Dienst {
       sicherungAufgegeben: (paket, name, fehler) => this.sicherungAufgegeben?.(paket, name, fehler), sicherungAntwort: (paket, name, r) => this.sicherungAntwort?.(paket, name, r),
     });
     return { verwalten, systemsichten, sichten, berechtigungen, ausPaketen, volltext };
+  }
+
+  /**
+   * PDF bearbeiten, Post und Ausgang (#1077): die Klassen in pdf-bearbeiten/, post/ und ausgang/. Was noch im Dienst
+   * liegt und was im Kreis liefe (PDF bearbeiten und Auflösen → neue Post), kommt über die Anschlüsse; die Prüfstelle
+   * der Wege nach draußen (`pruefeAusgang`, `mitnehmbar`) rufen E-Mail und Export über die Fassade.
+   */
+  private bauePdfPostAusgang() {
+    const rechte = this.rechtepruefung;
+    const mappen = { historie: this.mappenHistorie, titel: this.mappenTitel, archiv: this.mappenArchiv };
+    const doks = { dokumente: this.dokumente, versionen: this.dokumentVersionen };
+    const stempelvorlagen = new Stempelvorlagen(this.kern);
+    const pdf = new PdfBearbeiten(this.kern, { rechte, ...mappen, ...doks, umwandlung: this.dokumentUmwandlung }, {
+      legePostAn: (...a) => this.legePostAn(...a), schreibeSystemMappe: (...a) => this.schreibeSystemMappe(...a), postAufgaben: (id, von) => this.postAufgaben(id, von),
+    });
+    const verkleinern = new PdfVerkleinern(this.kern, { pdf, ...mappen, ...doks }, { auftraege: this.auftraege });
+    const schwaerzen = new Schwaerzen(this.kern, { verkleinern, historie: this.mappenHistorie, ...doks, archiv: this.dokumentArchiv }, {
+      volltextFertig: (e, m, von) => this.volltextFertig(e, m, von),
+    });
+    const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
+      ereignis: (art, daten, von) => this.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      passungsAufgaben: (liste) => this.passungsAufgaben(liste), favoritenFreigabe: () => this.favoritenFreigabe(),
+      vorgabeAufgabenEmpfaenger: (b) => this.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.sichereSystem(), konten: () => this.konten,
+      systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
+    });
+    const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen }, {
+      legePostAn: (...a) => this.legePostAn(...a), postAufgaben: (id, von) => this.postAufgaben(id, von),
+      loeschPruefung: (m, typ, rueck) => this.loeschPruefung(m, typ, rueck), loescheMappe: (id, von, z, anlass) => this.loescheMappe(id, von, z, anlass),
+    });
+    const post = new PostDienst(this.kern, {
+      rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen,
+    }, {
+      ereignis: (art, daten, von) => this.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.neueAufgabe(a, typ), leiteUm: (a) => this.leiteUm(a),
+      eigeneAufgabe: (id, ich) => this.eigeneAufgabe(id, ich), erledigeNachAnlass: (id, passt, grund) => this.erledigeNachAnlass(id, passt, grund), konten: () => this.konten,
+      sichereZuordnung: (e, autoTypen) => sichereZuordnung(e as PostErkennung, autoTypen),
+    });
+    const eingang = new Eingangskanaele(this.kern, { rechte, historie: this.mappenHistorie, dokumente: this.dokumente });
+    const fotos = new PostFotos(this.kern, { rechte, ...mappen, ...doks, pdf, post, eingang }, { loescheMappe: (id, von, z, anlass) => this.loescheMappe(id, von, z, anlass) });
+    const entsperrtZu = (inhalt: Buffer) => this.entsperrtZu(inhalt);
+    const ausgang = new AusgangDienst(this.kern, {
+      rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, versionen: this.dokumentVersionen,
+      umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, verwalten: this.sichtenVerwaltung, stempel: stempelvorlagen,
+    }, { entsperrtZu });
+    const email = new AusgangEmail(this.kern, { rechte, historie: this.mappenHistorie, dokumente: this.dokumente, ausgang, stempel: stempelvorlagen, systemmappen }, {
+      pruefeAusgang: (ich, z, weg, ids) => this.pruefeAusgang(ich, z, weg, ids), entsperrtZu,
+    });
+    const exportieren = new AusgangExport(this.kern, { rechte, sichten: this.sichten, fehlend: this.dateienFehlen, ausgang, stempel: stempelvorlagen }, {
+      mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids), entsperrtZu,
+    });
+    return { stempelvorlagen, pdf, verkleinern, schwaerzen, systemmappen, aufloesen, post, eingang, fotos, ausgang, email, export: exportieren };
   }
 
   /**
@@ -531,7 +536,6 @@ export class Dienst {
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion (Kern). */
   private get repo(): Repo { return this.kern.repo; }
   private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
-  private inEinemZug<T>(f: () => Promise<T>): Promise<T> { return this.kern.inEinemZug(f); }
   private inAnfrage(): boolean { return this.kern.inAnfrage(); }
   private nachDerAntwort(f: () => Promise<unknown>): Promise<void> | void { return this.kern.nachDerAntwort(f); }
   private danach(f: () => void) { this.kern.danach(f); }
@@ -693,7 +697,6 @@ export class Dienst {
       if (!jetzt.has(id)) await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnung-von-entfernt', { name: await this.name(id), ort: quelle.ort }) });
     }
   }
-
 
   /* ---------- Abwesenheit und Vertretung (#77, #78) ---------- */
 
@@ -1355,240 +1358,12 @@ export class Dienst {
   private static vorschau(t: string) { return MappenDienst.vorschau(t); }
   notizen(mappeId: string): Promise<Notiz[]> { return this.mappen.notizen(mappeId); }
 
-  /* ---------- E-Mail aus der Mappe (#58) ---------- */
+  /* ---------- E-Mail aus der Mappe (#58, #151, ausgang/email.ts) ---------- */
 
-  /**
-   * Verschickt eine E-Mail mit ausgewählten Dokumenten der Mappe. Absender ist das DMS,
-   * „Antworten an“ der Benutzer. Danach gibt es eine Post-Mappe (#192: Kanal E-Mail, ausgehend,
-   * erledigt, zugeordnet zur Mappe) mit den Anhängen (dieselbe Datei, kein zweiter Speicherplatz)
-   * und einen Eintrag im Protokoll.
-   */
-  /** Empfänger, Betreff und Nachricht einer E-Mail prüfen (#58, #151). */
-  private static emailKopf(e: Record<string, unknown>) {
-    const an = [...new Set(String(e.an ?? '').split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean))];
-    const betreff = String(e.betreff ?? '').replace(/[\r\n]+/g, ' ').trim();
-    const nachricht = String(e.nachricht ?? '');
-    const fehler: Record<string, string> = {};
-    if (!an.length) fehler.an = t('meldungen.dienst.mindestens-einen-empfaenger-angeben');
-    else if (an.length > EMAIL_MAX_EMPFAENGER) fehler.an = t('meldungen.dienst.hoechstens-empfaenger', { EMAIL_MAX_EMPFAENGER });
-    else if (an.some((x) => !istEmail(x))) fehler.an = t('meldungen.dienst.keine-gueltige-adresse', { filter: an.filter((x) => !istEmail(x)).join(', ') });
-    if (!betreff) fehler.betreff = t('meldungen.dienst.der-betreff-fehlt');
-    else if (betreff.length > 250) fehler.betreff = t('meldungen.dienst.der-betreff-ist-zu');
-    if (nachricht.length > NOTIZ_MAX) fehler.nachricht = t('meldungen.dienst.die-nachricht-ist-zu');
-    if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
-    return { an, betreff, nachricht };
-  }
+  versendeMappen(...a: Parameters<AusgangEmail['versendeMappen']>) { return this.ausgangEmail.versendeMappen(...a); }
+  versendeMappe(...a: Parameters<AusgangEmail['versendeMappe']>) { return this.ausgangEmail.versendeMappe(...a); }
 
-  /**
-   * Mehrere Mappen per E-Mail (#151): eine E-Mail an alle Empfänger. Anhänge: je Mappe ihre Angaben als
-   * PDF („Titel.pdf“, wenn `angaben`) und die gewählten Dokumente (`dokumente`: „alle“ oder Ids).
-   * Rechte: Lesen und Versenden (Recht E einer Ansicht, Regel A wie beim Export) je Mappe – über die gemeinsame
-   * Prüfstelle (#723). Anhänge wie bei einer Mappe (`versandTeil`). Danach eine Post (Kanal E-Mail, ausgehend,
-   * erledigt), die auf alle Mappen verweist, und je Mappe ein Eintrag in der Historie.
-   */
-  async versendeMappen(eingabe: unknown, ich: { id: string; name: string; email: string; rolle: string }, z: Zugriff, mailer: Mailer | null) {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const ids = [...new Set((Array.isArray(e.ids) ? e.ids : []).map(String).filter(istUuid))];
-    if (!ids.length) throw new Fachfehler(422, t('meldungen.dienst.keine-mappen-ausgewaehlt'));
-    if (ids.length > EMAIL_MAX_MAPPEN) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-mappen-in-einer', { EMAIL_MAX_MAPPEN }));
-    const { an, betreff, nachricht } = Dienst.emailKopf(e);
-    Dienst.pruefeFassungswahl(e);
-    // Rechte (#723, gemeinsame Prüfstelle): jede Mappe lesbar und versendbar – sonst nichts verschicken (keine stillen Lücken).
-    await this.pruefeAusgang(ich, z, 'email', ids);
-    if (!mailer) throw new Fachfehler(409, t('meldungen.dienst.der-e-mail-versand'));
-    const mappen = inReihenfolge(await this.repo.holeMappen(ids), ids);
-    if (mappen.length !== ids.length) throw new Fachfehler(404, t('meldungen.dienst.eine-ausgewaehlte-mappe-gibt'));
-    const angaben = e.angaben !== false;
-    const gewaehlt = e.dokumente === 'alle' ? null : new Set((Array.isArray(e.dokumente) ? e.dokumente : []).map(String));
-    const dokJe = await this.dokumenteJeMappe(mappen.map((m) => m.id));
-    if (gewaehlt) {
-      const bekannt = new Set(mappen.flatMap((m) => (dokJe.get(m.id) ?? []).map((d) => d.id)));
-      if ([...gewaehlt].some((id) => !bekannt.has(id))) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert'));
-    }
-    const quelle = angaben ? await this.angabenQuelle(z, mappen) : null;
-    const stempelDaten = await this.stempelDaten();
-    const je: Versandteil[] = [];
-    for (const m of mappen) {
-      const docs = (dokJe.get(m.id) ?? []).filter((d) => !gewaehlt || gewaehlt.has(d.id));
-      je.push(await this.versandTeil(m, docs, { e, an, ich, quelle, stempelDaten }));
-    }
-    const groesse = je.reduce((a, x) => a + x.groesse, 0);
-    if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, t('meldungen.dienst.die-anhaenge-sind-zusammen', { round: Math.round(EMAIL_MAX_ANHAENGE / 1e6) }));
-    const { namen, anhaenge } = await this.versandAnhaenge(je);
-    const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
-    try {
-      await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
-    } catch (x) {
-      throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
-    }
-    const { post: typ } = await this.kern.system();
-    const id = randomUUID();
-    await this.schreibeSystemMappe(typ, id, {
-      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum: heuteIn(), bezug: ids, ...(nachricht.trim() ? { nachricht } : {}),
-      kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
-    }, ich.id);
-    await this.legeVersandAb(typ, id, je, namen, ich.id);
-    let i = 0;
-    for (const x of je) {
-      const teile = [...(x.angaben ? [x.angaben] : []), ...x.dokumente];
-      const n = teile.length;
-      const stempeltext = x.ausgaben.find((y) => y.stempeltext)?.stempeltext;
-      const mitStempel = x.ausgaben.some((y) => y.gestempelt);
-      const was = weitergabeWas(x.ausgaben);
-      await this.notiere(x.m.id, ich.id, 'email', {
-        text: t('meldungen.dienst.an-mit-mappen', { betreff, an: an.join(', '), mappen: mappen.length, wert: n ? t('meldungen.dienst.von-dieser-anhaenge', { anzahl: n }) : '', wert2: was ? `, ${was}` : '' }), email: id,
-        an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), mappen: mappen.length,
-        anhaenge: teile.map((y) => ({ name: namen[i++], groesse: y.groesse })),
-        ...(mitStempel ? { stempel: stempeltext ?? null, stempelAn: x.plan?.empfaenger ?? null } : {}),
-      });
-    }
-    protokoll.modul('ablage').info('E-Mail mit mehreren Mappen verschickt', { mappen: mappen.length, empfaenger: an.length, anhaenge: anhaenge.length, bytes: groesse });
-    return { id, typId: typ.id, mappen: mappen.length, anhaenge: anhaenge.length };
-  }
-
-  /** `fassung` und `fassungen` (je Dokument) kennen nur „original“ und „archiv“ – geprüft, bevor etwas geschieht. */
-  private static pruefeFassungswahl(e: Record<string, unknown>) {
-    const werte = [e.fassung, ...(e.fassungen && typeof e.fassungen === 'object' ? Object.values(e.fassungen) : [])];
-    if (werte.some((v) => v !== undefined && v !== null && v !== 'original' && v !== 'archiv')) throw new Fachfehler(422, t('meldungen.dienst.fassung-kennt-nur-original'));
-  }
-
-  /** Typen und Titel der Verweise für das PDF „Angaben“ – mit `z` nur, was der Benutzer sehen darf. */
-  private async angabenQuelle(z: Zugriff | undefined, mappen: Mappe[]): Promise<Parameters<typeof mappenPdf>[2]> {
-    const typen = z?.typen ?? new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const verweise = mappen.flatMap((m) => { const t = typen.get(m.typId); return [...(t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v); });
-    const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
-    return { typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
-  }
-
-  /**
-   * Was von einer Mappe per E-Mail hinausgeht (#723: ein Weg für eine und mehrere Mappen). Für jedes Dokument gilt
-   * dieselbe Wahl Original/Archivfassung (`fassungen` je Dokument, sonst `fassung` für alle; ohne Archivfassung
-   * und bei E-Rechnungen das Original), derselbe Stempel (gewünscht oder Pflicht des Mappentyps) – auch auf dem
-   * PDF „Angaben“ – und dasselbe Verkleinern. `groesse` zählt alles, was angehängt wird, das Angaben-PDF mit.
-   */
-  private async versandTeil(m: Mappe, docs: Dokument[], o: {
-    e: Record<string, unknown>; an: string[]; ich: { name: string };
-    /** Mit Angaben-PDF: Typen und Titel der Verweise; null = ohne. */
-    quelle: Parameters<typeof mappenPdf>[2] | null;
-    stempelDaten: Awaited<ReturnType<Dienst['stempelDaten']>>;
-  }): Promise<Versandteil> {
-    const wahl = (o.e.fassungen && typeof o.e.fassungen === 'object' ? o.e.fassungen : {}) as Record<string, unknown>;
-    const quellen = await Promise.all(docs.map((d) => this.ausgabeQuelle(d, wahl[d.id] ?? o.e.fassung, wahl[d.id] === undefined)));
-    const pdf = o.quelle ? await mappenPdf(m.titel || t('meldungen.dienst.ohne-titel'), [{ mappe: m, typ: o.quelle.typen.get(m.typId), dokumente: [], inhalt: (d: Dokument) => this.liesGanz(d.sha256) }], o.quelle, null) : null;
-    // Stempel (#394): gewünscht oder vom Mappentyp verlangt; {empfänger} sind ohne Angabe die Adressen.
-    const plan = docs.length || pdf ? await this.stempelPlan(m.typId, wunschAus(o.e.stempel), o.an.join(', '), o.stempelDaten) : null;
-    // Verkleinert senden (#393): PDFs als verkleinerte Kopie, vor dem Stempeln.
-    const klein = stufeAus(o.e.verkleinern);
-    const kontext = (d?: Dokument) => ({ benutzer: o.ich.name, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d?.archivnummer ?? null, entsperrt: this.entsperrtZu });
-    const bearbeiten = !!plan || (!!klein && docs.length > 0);
-    const dokumente: Versandanhang[] = await Promise.all(quellen.map(async (q, i): Promise<Versandanhang> => {
-      const d = docs[i];
-      if (bearbeiten) {
-        const roh = await fuerAusgabe({ name: q.name, mime: q.mime, inhalt: await q.inhalt() }, { stempel: plan, verkleinern: klein }, kontext(d));
-        // Unverändert, aber Archivfassung: in der Post liegt dann die Fassung, nicht das Original.
-        const a: Ausgabe = q.archiv && roh.unveraendert ? { ...roh, unveraendert: undefined } : roh;
-        return { dokument: d, name: a.name, mime: a.mime, groesse: a.inhalt.length, ausgabe: a, inhalt: async () => a.inhalt };
-      }
-      if (q.archiv) {
-        const b = await q.inhalt();
-        return { dokument: d, name: q.name, mime: q.mime, groesse: b.length, ausgabe: { name: q.name, mime: q.mime, inhalt: b, stempeltext: null }, inhalt: async () => b };
-      }
-      return { dokument: d, name: d.name, mime: d.mime, groesse: d.groesse, ausgabe: null, inhalt: () => this.dateien.lies(d.sha256) as Promise<Buffer | Readable> };
-    }));
-    let angaben: Versandanhang | null = null;
-    if (pdf) {
-      const name = `${m.titel || t('meldungen.dienst.ohne-titel')}.pdf`;
-      // Das PDF „Angaben“ geht ebenso hinaus: der Stempel (Pflicht oder gewünscht) gilt auch für es (#723).
-      const a = plan ? await fuerAusgabe({ name, mime: 'application/pdf', inhalt: pdf }, { stempel: plan }, kontext()) : null;
-      const b = a?.inhalt ?? pdf;
-      angaben = { dokument: null, name, mime: 'application/pdf', groesse: b.length, ausgabe: a ?? { name, mime: 'application/pdf', inhalt: b, stempeltext: null }, inhalt: async () => b };
-    }
-    const ausgaben = [...(angaben?.ausgabe?.gestempelt ? [angaben.ausgabe] : []), ...dokumente.flatMap((x) => (x.ausgabe ? [x.ausgabe] : []))];
-    const groesse = (angaben?.groesse ?? 0) + dokumente.reduce((s, x) => s + x.groesse, 0);
-    return { m, plan, angaben, dokumente, ausgaben, groesse };
-  }
-
-  /** Anhänge der E-Mail mit eindeutigen Dateinamen: je Mappe erst „Titel.pdf“ der Angaben, dann die Dokumente. */
-  private async versandAnhaenge(je: Versandteil[]) {
-    const teile = je.flatMap((x) => [...(x.angaben ? [x.angaben] : []), ...x.dokumente]);
-    const namen = eindeutig(teile.map((x) => sichererName(x.name, 120)));
-    const anhaenge = await Promise.all(teile.map(async (x, i) => ({ name: namen[i], mime: x.mime, inhalt: await x.inhalt() })));
-    return { namen, anhaenge };
-  }
-
-  /** In der Post liegt, was verschickt wurde: gestempelte Kopien und Fassungen als eigene Datei, sonst dieselbe Datei. */
-  private async legeVersandAb(typ: Mappentyp, postId: string, je: Versandteil[], namen: string[], von: string) {
-    const reg = typ.register.find((r) => r.art === 'dokumente');
-    if (!reg) return;
-    let i = 0;
-    for (const x of je) {
-      for (const y of [...(x.angaben ? [x.angaben] : []), ...x.dokumente]) {
-        const name = namen[i++];
-        if (y.dokument) { await this.legeVersandkopieAn(y.dokument, y.ausgabe ?? undefined, postId, reg.key, von, name); continue; }
-        const inhalt = y.ausgabe!.inhalt;
-        const sha256 = createHash('sha256').update(inhalt).digest('hex');
-        await this.dateien.schreibe(sha256, inhalt);
-        const neu = await this.repo.legeDokumentAn({ id: randomUUID(), mappeId: postId, registerKey: reg.key, name, mime: 'application/pdf', groesse: inhalt.length, sha256, anzeigbar: true, erstellt: new Date().toISOString(), erstelltVon: von, herkunft: 'hochgeladen' });
-        this.neueDateien([neu]);
-      }
-    }
-  }
-
-  /** Kopie eines verschickten Dokuments in der Post: gestempelt als eigene Datei (#394), sonst dieselbe Datei. */
-  private async legeVersandkopieAn(d: Dokument, a: Ausgabe | undefined, postId: string, registerKey: string, von: string, name?: string) {
-    const jetzt = new Date().toISOString();
-    if (!a || a.unveraendert) { await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: postId, registerKey, name: name ?? d.name, erstellt: jetzt, erstelltVon: von }); return; }
-    const sha256 = createHash('sha256').update(a.inhalt).digest('hex');
-    await this.dateien.schreibe(sha256, a.inhalt);
-    const neu = await this.repo.legeDokumentAn({ id: randomUUID(), mappeId: postId, registerKey, name: name ?? a.name, mime: a.mime, groesse: a.inhalt.length, sha256, anzeigbar: true, erstellt: jetzt, erstelltVon: von, herkunft: 'hochgeladen' });
-    this.neueDateien([neu]);
-  }
-
-  /**
-   * Eine Mappe per E-Mail (#58). Mit `z` prüft die gemeinsame Prüfstelle (#723) Lesen und Exportrecht, bevor
-   * irgendetwas anderes geschieht. Anhänge wie bei mehreren Mappen (`versandTeil`): Archivfassung je Dokument
-   * (`fassungen`) oder für alle (`fassung`), Stempel, Verkleinern; mit `angaben: true` auch das PDF „Angaben“.
-   */
-  async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null, z?: Zugriff) {
-    if (z) await this.pruefeAusgang(z.ich, z, 'email', [mappeId]);
-    if (!mailer) throw new Fachfehler(409, t('meldungen.dienst.der-e-mail-versand'));
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const { an, betreff, nachricht } = Dienst.emailKopf(e);
-    Dienst.pruefeFassungswahl(e);
-    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
-    const alle = await this.repo.listeDokumente(mappeId);
-    const dokumente = ids.map((id) => alle.find((d) => d.id === id));
-    if (dokumente.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-2'));
-    const quelle = e.angaben === true ? await this.angabenQuelle(z, [m]) : null;
-    const teil = await this.versandTeil(m, dokumente as Dokument[], { e, an, ich, quelle, stempelDaten: await this.stempelDaten() });
-    if (teil.groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, t('meldungen.dienst.die-anhaenge-sind-zusammen-2', { round: Math.round(EMAIL_MAX_ANHAENGE / 1e6) }));
-    const { namen, anhaenge } = await this.versandAnhaenge([teil]);
-    const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
-    try {
-      await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
-    } catch (x) {
-      throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
-    }
-    const { post: typ } = await this.kern.system();
-    const id = randomUUID();
-    const datum = heuteIn();
-    await this.schreibeSystemMappe(typ, id, {
-      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum, bezug: [mappeId], ...(nachricht.trim() ? { nachricht } : {}),
-      kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
-    }, ich.id);
-    await this.legeVersandAb(typ, id, [teil], namen, ich.id);
-    const stempeltext = teil.ausgaben.find((x) => x.stempeltext)?.stempeltext;
-    const mitStempel = teil.ausgaben.some((x) => x.gestempelt);
-    const was = weitergabeWas(teil.ausgaben);
-    const n = anhaenge.length;
-    await this.notiere(mappeId, ich.id, 'email', { text: t('meldungen.dienst.an', { betreff, an: an.join(', '), wert: n ? t('meldungen.dienst.mit-anhaengen', { anzahl: n }) : '', wert2: was ? `, ${was}` : '' }), email: id,
-      an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), anhaenge: anhaenge.map((x, i) => ({ name: x.name, groesse: [...(teil.angaben ? [teil.angaben] : []), ...teil.dokumente][i].groesse })),
-      ...(mitStempel ? { stempel: stempeltext ?? null, stempelAn: teil.plan?.empfaenger ?? null } : {}) });
-    protokoll.modul('ablage').info('E-Mail aus Mappe verschickt', { mappe: mappeId, empfaenger: an.length, anhaenge: n, bytes: teil.groesse });
-    return { id, typId: typ.id };
-  }
+  /* ---------- Notizen anlegen, ändern, löschen (#55; gehören zu den Mappen, noch im Dienst) ---------- */
 
   async legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> {
     const m = await this.repo.holeMappe(mappeId);
@@ -1792,7 +1567,6 @@ export class Dienst {
   legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.legeTypAn(eingabe); }
   aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.aendereTyp(id, eingabe); }
   ausDokumentVon(typId: string): Promise<AusDokument | null> { return this.mappentypen.ausDokumentVon(typId); }
-  private typErkennungen() { return this.mappentypen.typErkennungen(); }
   loescheTyp(id: string): Promise<void> { return this.mappentypen.loescheTyp(id); }
 
   listeMappen(typId?: string) { return this.mappen.listeMappen(typId); }
@@ -1979,7 +1753,6 @@ export class Dienst {
   private passungFuer(typ: Mappentyp, ids: string[]) { return this.passung.passungFuer(typ, ids); }
   passungNachziehen(fortschritt?: (fertig: number, gesamt: number) => void): Promise<number> { return this.passung.passungNachziehen(fortschritt); }
 
-  private titel(m: Mappe): Promise<string> { return this.mappenTitel.titel(m); }
 
   /* ---------- Titel ---------- */
 
@@ -2227,14 +2000,12 @@ export class Dienst {
   absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> { return this.mappenTitel.absenderBereinigen(ids, von); }
   titelNachziehen(): Promise<number> { return this.mappenTitel.titelNachziehen(); }
   ehemaligZuruecksetzen(): Promise<number> { return this.mappenTitel.ehemaligZuruecksetzen(); }
-  private pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string, alt?: Werte, z?: Zugriff) { return this.mappenEingaben.pruefeWerte(typ, werte, eigeneId, alt, z); }
   unpassendeFormate(): Promise<Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }>> { return this.mappenEingaben.unpassendeFormate(); }
   legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> { return this.mappen.legeMappeAn(eingabe, benutzerId, demo, z); }
   auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) { return this.mappenEingaben.auswahlPruefen(e, benutzerId, z); }
   folgen(e: unknown, z?: Zugriff) { return this.mappenEingaben.folgen(e, z); }
   folgeVorschlaege(typ: Mappentyp, v: { vorschlaege: Record<string, { wert: Wert; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string }>; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, z?: Zugriff): Promise<void> { return this.mappenEingaben.folgeVorschlaege(typ, v, z); }
   zaehleAuswahl(e: unknown, benutzerId: string) { return this.mappenEingaben.zaehleAuswahl(e, benutzerId); }
-  private pruefeVerweisziele(z: Zugriff | undefined, typ: Mappentyp, werte: Werte, alt: Werte) { return this.mappenEingaben.pruefeVerweisziele(z, typ, werte, alt); }
   rechteVorschau(id: string, eingabe: unknown, z: Zugriff): Promise<Rechte> { return this.mappenEingaben.rechteVorschau(id, eingabe, z); }
   aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> { return this.mappen.aendereMappe(id, eingabe, benutzerId, z, anlass); }
   legeMappenAn(liste: NeueMappe[]) { return this.mappen.legeMappenAn(liste); }
@@ -2265,175 +2036,22 @@ export class Dienst {
     return { ok: true as const, status: 200, grund: undefined, fremd, zuordnungen, emails, benutzerTyp, emailTyp };
   }
 
-  /**
-   * Export mehrerer Mappen (#152, #153): Tabelle (csv, xlsx), ZIP mit Dokumenten oder ein PDF.
-   * Recht E an der Sicht, Lesen je Mappe; Reihenfolge wie in der Liste. Passwörter nie.
-   */
-  async exportiere(ich: { id: string; rolle: string; name?: string }, e: unknown, z: Zugriff, spur?: (ids: string[]) => Promise<unknown>, weg: Abrufweg = 'oberflaeche'): Promise<{ name: string; mime: string; inhalt: Buffer | Readable; groesse: number; mappen: number; ausgelassen: number }> {
-    const x = (e ?? {}) as Record<string, unknown>;
-    const format = String(x.format ?? '');
-    if (!['csv', 'xlsx', 'zip', 'pdf'].includes(format)) throw new Fachfehler(422, t('meldungen.dienst.unbekanntes-format'));
-    const q = { sicht: text(x.sicht), link: x.link, suche: x.suche, volltext: x.volltext, notizen: x.notizen, sortierung: x.sortierung, absteigend: x.absteigend };
-    const alle = await this.repo.listeSichten();
-    const sicht = alle.find((s) => s.id === q.sicht);
-    if (sicht && !z.admin) {
-      const r = alleSichtRechte(alle, z.wer, false).get(sicht.id);
-      if (!r?.R) throw new Fachfehler(404, t('meldungen.dienst.diese-ansicht-gibt-es'));
-      if (!r.E) throw sichtVerboten();
-    }
-    const treffer = (await this.trefferIds(ich, q, z)).ids;
-    const gewaehlt = Array.isArray(x.ids) ? new Set(x.ids.map(String)) : null;
-    let ids = gewaehlt ? treffer.filter((id) => gewaehlt.has(id)) : treffer;
-    if (!ids.length) throw new Fachfehler(422, t('meldungen.dienst.keine-mappen-zum-exportieren'));
-    // Ohne Sicht (erweiterte Suche, Typ-Liste, Link …) gilt Regel A (#294): nur Mappen, die der Benutzer
-    // in mindestens einer Sicht mit Recht E sehen würde; die übrigen werden ausgelassen und gezählt.
-    let ausgelassen = 0;
-    if (!sicht && !z.admin) {
-      const erlaubt = await this.mitnehmbar(ich, z, ids);
-      ausgelassen = ids.length - erlaubt.size;
-      ids = ids.filter((id) => erlaubt.has(id));
-      if (!ids.length) throw verboten('export', [], Math.max(2, ausgelassen));
-    }
-    // Verwaltungsmodus (#820): fremde Mappen im Export dauerhaft in ihrer Historie.
-    await spur?.(ids);
-    const mappen = inReihenfolge(await this.repo.holeMappen(ids), ids);
-    const typen = [...new Set(mappen.map((m) => m.typId))].map((t) => z.typen.get(t)).filter((t): t is Mappentyp => !!t);
-    const spalten = exportSpalten(typen, x.spalten === 'alle' ? 'alle' : 'liste', sicht?.trefferliste ?? null);
-    const verweise = mappen.flatMap((m) => { const t = z.typen.get(m.typId); return [...(t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v); });
-    const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
-    const quelle = { typen: z.typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
-    const titel = sicht?.name ?? (q.sicht === 'suche' ? 'Suche' : typen[0]?.name) ?? t('meldungen.dienst.export');
-    const datei = `${sichererName(titel, 60)} ${new Date().toISOString().slice(0, 10)}`;
-    // Große Exporte (#542): Zeilen mit Pausen aufbereiten, Excel und CSV im Arbeiter schreiben.
-    const tabelle = async (art: { xlsx?: boolean; csv?: boolean }) => {
-      const kopf = spalten.map((k) => spaltenKopf(k, typen));
-      const text: string[][] = []; const werte: Zelle[][] = [];
-      for (const [i, m] of mappen.entries()) {
-        const z = zeile(m, spalten, quelle);
-        text.push(z.text); werte.push(z.werte);
-        if (i % 1000 === 999) await new Promise<void>((r) => setImmediate(r));
-      }
-      const r = await arbeite('exportTabellen', { titel, kopf, ...(art.csv ? { text } : {}), ...(art.xlsx ? { werte } : {}), zeitzone: zeitzone() });
-      return { xlsx: r.xlsx!, csv: r.csv! };
-    };
-    if (format === 'csv') { const b = (await tabelle({ csv: true })).csv; return { name: `${datei}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
-    if (format === 'xlsx') { const b = (await tabelle({ xlsx: true })).xlsx; return { name: `${datei}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
-    // Dokumente aller Mappen in einem Zugriff (#367).
-    const dokJe = (format === 'pdf' || format === 'zip') ? await this.dokumenteJeMappe(mappen.map((m) => m.id)) : new Map<string, Dokument[]>();
-    // Archivfassung oder Original (#715): je Dokument, ohne Archivfassung das Original.
-    const fw = await this.archivWahl(x.fassung);
-    if (x.fassung === 'archiv') for (const [id, docs] of dokJe) dokJe.set(id, await Promise.all(docs.map(fw.waehle)));
-    // Stempel (#394): je Mappe, weil die Pflicht am Mappentyp hängt. Nur PDFs und Bilder werden gestempelt.
-    const wunsch = wunschAus(x.stempel);
-    const stempelDaten = await this.stempelDaten();
-    const plaene = new Map<string, GeltenderStempel>();
-    for (const m of mappen) {
-      if (!(dokJe.get(m.id) ?? []).length) continue;
-      const p = await this.stempelPlan(m.typId, wunsch, '', stempelDaten);
-      if (p) plaene.set(m.id, p);
-    }
-    // Verkleinert exportieren (#393): PDFs als verkleinerte Kopie, vor dem Stempeln.
-    const klein = stufeAus(x.verkleinern);
-    const wie = format === 'pdf' ? t('meldungen.dienst.als-pdf-exportiert') : t('meldungen.dienst.als-zip-exportiert');
-    const gestempelt = new Map<string, Ausgabe[]>();
-    const ausgabe = async (m: Mappe, d: Dokument, streng: boolean): Promise<Ausgabe> => {
-      const a = await fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await fw.lies(d) }, { stempel: plaene.get(m.id), verkleinern: klein },
-        { benutzer: ich.name ?? '', mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d.archivnummer, entsperrt: this.entsperrtZu }, streng);
-      gestempelt.set(m.id, [...(gestempelt.get(m.id) ?? []), a]);
-      return a;
-    };
-    const historie = async () => {
-      for (const [id, a] of gestempelt) await this.notiereWeitergabe(id, ich.id, wie, plaene.get(id) ?? null, a);
-      // #800: Ein Export mit Dokumenten ist Herunterladen – je Mappe ein Eintrag mit ihren Dateien. Nicht zusammengefasst:
-      // Ein Export ist eine bewusste Handlung, kein Rauschen. In Teilen zu 500, damit große Exporte nicht eine Riesenabfrage schicken.
-      const abrufe = mappen.filter((m) => (dokJe.get(m.id) ?? []).length).map((m) => ({ mappeId: m.id, benutzerId: ich.id, art: ABRUF_ART[weg], daten: {
-        dokumente: (dokJe.get(m.id) ?? []).map((d) => d.name), weg, fassung: 'export', format, ...(plaene.has(m.id) ? { gestempelt: true } : {}),
-      } }));
-      for (let i = 0; i < abrufe.length; i += 500) await this.repo.historieSchreibe(abrufe.slice(i, i + 500));
-    };
-    const bearbeiten = (m: Mappe) => plaene.has(m.id) || (!!klein && (dokJe.get(m.id) ?? []).some((d) => d.mime === 'application/pdf'));
-    if (format === 'pdf') {
-      const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => {
-        const docs = dokJe.get(m.id) ?? [];
-        const mitStempel = plaene.has(m.id);
-        const mitAusgabe = bearbeiten(m);
-        // Gestempelte Bilder kommen als PDF zurück und werden darum wie PDFs eingebunden.
-        return {
-          mappe: m, typ: z.typen.get(m.typId),
-          dokumente: mitStempel ? docs.map((d) => (kannStempeln(d.mime) ? { ...d, mime: 'application/pdf' } : d)) : docs,
-          inhalt: async (d: Dokument) => {
-            if (!mitAusgabe) return fw.lies(d);
-            const original = docs.find((y) => y.id === d.id)!;
-            return (await ausgabe(m, original, false)).inhalt;
-          },
-        };
-      })), quelle, x.uebersicht === true ? { spalten, typen } : null);
-      await historie();
-      return { name: `${datei}.pdf`, mime: 'application/pdf', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen };
-    }
-    // ZIP: Tabelle als Excel und CSV, je Mappe ein Ordner mit ihren Dokumenten.
-    const eintrag = await tabelle({ xlsx: true, csv: true });
-    const eintraege: ZipEintrag[] = [
-      { name: 'Mappen.xlsx', daten: eintrag.xlsx }, { name: 'Mappen.csv', daten: eintrag.csv },
-    ].map((d) => ({ name: d.name, groesse: d.daten.length, inhalt: async () => d.daten }));
-    const ordner = eindeutig(mappen.map((m) => sichererName(m.titel || t('meldungen.dienst.ohne-titel'))));
-    const ausDatei: Dokument[] = [];
-    for (const [i, m] of mappen.entries()) {
-      const docs = dokJe.get(m.id) ?? [];
-      // Gestempelte Kopien entstehen vorab: das ZIP braucht die Größen im Voraus.
-      const aus = bearbeiten(m) ? await Promise.all(docs.map((d) => ausgabe(m, d, false))) : null;
-      const namen = eindeutig(docs.map((d, j) => sichererName(aus?.[j].name ?? d.name, 120)));
-      docs.forEach((d, j) => {
-        const a = aus?.[j];
-        if (!a && !fw.archiv(d)) ausDatei.push(d);
-        eintraege.push(a ? { name: `${ordner[i]}/${namen[j]}`, groesse: a.inhalt.length, inhalt: async () => a.inhalt } : { name: `${ordner[i]}/${namen[j]}`, groesse: d.groesse, inhalt: () => fw.strom(d) });
-      });
-    }
-    // Fehlende Datei (#877): vorher melden – im ZIP wäre der Kopf schon unterwegs, die Antwort bräche nur ab.
-    await this.pruefeVorhanden(ausDatei);
-    const groesse = zipGroesse(eintraege);
-    if (groesse > ZIP_MAX) throw new Fachfehler(422, t('meldungen.dienst.der-export-waere-groesser'));
-    await historie();
-    return { name: `${datei}.zip`, mime: 'application/zip', inhalt: zipStrom(eintraege), groesse, mappen: mappen.length, ausgelassen };
-  }
+  /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
 
-  /** Dokumente mehrerer Mappen mit einem Zugriff je 500 Mappen (#367), je Mappe neueste zuerst. */
-  private async dokumenteJeMappe(ids: string[]): Promise<Map<string, Dokument[]>> {
-    const r = new Map<string, Dokument[]>();
-    for (let i = 0; i < ids.length; i += 500) {
-      for (const d of await this.repo.dokumenteVon(ids.slice(i, i + 500))) { const l = r.get(d.mappeId); if (l) l.push(d); else r.set(d.mappeId, [d]); }
-    }
-    return r;
-  }
+  exportiere(...a: Parameters<AusgangExport['exportiere']>) { return this.ausgangExport.exportiere(...a); }
 
-  /**
-   * Exportrecht ohne Sicht (#294, Regel A): welche dieser Mappen der Benutzer in mindestens einer Sicht
-   * mit den Rechten R und E sehen würde (einschließlich Untersichten, ohne verborgene). Administratoren: alle.
-   */
-  async exportierbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> {
-    if (z.admin) return new Set(ids);
-    const alle = await this.repo.listeSichten();
-    const rechte = alleSichtRechte(alle, z.wer, false);
-    const verborgen = this.verborgeneSichten(alle, z);
-    // Die Auflösung (Rollen, heute) hat der Zugriff desselben Benutzers schon (#615).
-    const a = z.a && z.ich?.id === ich.id ? z.a : await this.aufloesung(ich.id);
-    const klauseln = alle.filter((s) => rechte.get(s.id)?.R && rechte.get(s.id)?.E)
-      .flatMap((s) => klauselnFuer(alle, s.id, z.typen, a, verborgen));
-    return klauseln.length ? this.repo.inKlauseln(ids, klauseln) : new Set();
-  }
+  /* ---------- Wege nach draußen: die gemeinsame Prüfstelle (#723), Stempel, Fassungen (ausgang/ausgang.dienst.ts) ---------- */
 
-  /** Lesen und Exportrecht für die Prüfstelle der Wege nach draußen (#723, `ausgang.ts`). */
-  private ausgangsrechte(ich: { id: string; rolle: string }, z: Zugriff): Ausgangsrechte {
-    return { lesbar: (ids) => this.lesbare(z, ids), exportierbar: (ids) => this.exportierbar(ich, z, ids) };
-  }
-  /** Welche dieser Mappen dürfen hinaus (Herunterladen, E-Mail, Export, Laufwerk)? Lesen und Exportrecht (#723). */
-  async mitnehmbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> {
-    return mitnehmbar(this.ausgangsrechte(ich, z), ids);
-  }
-  /** Gemeinsame Prüfstelle (#723): alle Mappen müssen über diesen Weg hinausdürfen, sonst 404 bzw. 403. */
-  async pruefeAusgang(ich: { id: string; rolle: string }, z: Zugriff, ausgang: Ausgang, ids: string[]): Promise<void> {
-    return pruefeAlle(this.ausgangsrechte(ich, z), ausgang, ids);
-  }
+  private dokumenteJeMappe(ids: string[]) { return this.ausgang.dokumenteJeMappe(ids); }
+  exportierbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> { return this.ausgang.exportierbar(ich, z, ids); }
+  mitnehmbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> { return this.ausgang.mitnehmbar(ich, z, ids); }
+  pruefeAusgang(ich: { id: string; rolle: string }, z: Zugriff, ausgang: Ausgang, ids: string[]): Promise<void> { return this.ausgang.pruefeAusgang(ich, z, ausgang, ids); }
+  private mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> { return this.ausgang.mitStempel(typen); }
+  laufwerkStempel(typId: string, vorlage: string | null, leser: string) { return this.ausgang.laufwerkStempel(typId, vorlage, leser); }
+  laufwerkAusgabe(...a: Parameters<AusgangDienst['laufwerkAusgabe']>) { return this.ausgang.laufwerkAusgabe(...a); }
+  dokumentFuerAusgabe(...a: Parameters<AusgangDienst['dokumentFuerAusgabe']>) { return this.ausgang.dokumentFuerAusgabe(...a); }
+  fassungFuerAusgabe(...a: Parameters<AusgangDienst['fassungFuerAusgabe']>) { return this.ausgang.fassungFuerAusgabe(...a); }
+  gestempelteSeiten(...a: Parameters<AusgangDienst['gestempelteSeiten']>) { return this.ausgang.gestempelteSeiten(...a); }
 
   trefferIds(...a: Parameters<SichtenDienst['trefferIds']>) { return this.sichten.trefferIds(...a); }
 
@@ -2545,479 +2163,29 @@ export class Dienst {
   favoritenSicht(): Promise<string | null> { return this.systemsichten.favoritenSicht(); }
   neuePostSicht(): Promise<string | null> { return this.systemsichten.neuePostSicht(); }
 
-  /* ---------- Post (#192) ---------- */
+  /* ---------- Post (#192, post/post.dienst.ts; Auflösen post/aufloesen.ts) ---------- */
 
-  /**
-   * Neue Post anlegen (Oberfläche „+ Post“, API): Stand Neu, eingehend, heute. Die Dokumente kommen
-   * danach über das Hochladen ins Dokumentenregister. Ob man Post anlegen darf, regeln die Berechtigungen.
-   */
-  /**
-   * Post anlegen. `ich.id` null: kein echter Benutzer, sondern ein Eingangskanal (#195: „Eingangsordner“);
-   * `herkunft` steht dann als eigener Eintrag in der Historie.
-   * `alt` (Teilen, #445): Werte der Ausgangspost – Verweise, die dort schon stehen (z. B. „Für“), gelten nicht als neu.
-   */
-  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID(), alt: Werte = {}): Promise<Mappe> {
-    const { post: typ } = await this.kern.system();
-    if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || t('meldungen.dienst.neue-post');
-    const datum = istDatum(text(e.datum)) ? text(e.datum) : heuteIn();
-    const werte = bereinigeWerte(typ, {
-      ...(e.werte && typeof e.werte === 'object' ? e.werte as Record<string, unknown> : {}),
-      betreff, datum, kanal: Object.values(POST_KANAL).includes(text(e.kanal) as never) ? text(e.kanal) : kanal,
-      richtung: POST_RICHTUNG.eingehend, stand: POST_STAND.neu,
-      // Kein Rückgriff auf den Namen des Anlegenden (#494): Absender ist, wer den Brief geschickt hat.
-      absender: text(e.absender).trim().slice(0, 250) || null, bezug: null,
-      ...(e.fuer !== undefined ? { fuer: e.fuer || null } : {}), ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
-    }, {}, this.verschluessele);
-    if (z && !z.admin) {
-      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: ich.id, geaendert: new Date().toISOString(), geaendertVon: ich.id };
-      if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, t('meldungen.dienst.post-anlegen-darfst-du'));
-    }
-    await this.pruefeVerweisziele(z, typ, werte, alt);
-    await this.pruefeWerte(typ, werte);
-    // Vorgegebene Id (#196): Eingangskanäle merken sie sich vorher und erkennen nach einem Absturz, dass es die Post schon gibt.
-    // Post samt Historie, Aufgabe und Ereignis in einer Transaktion (#404).
-    const { m, titel } = await this.inTransaktion(async () => {
-      const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), ich.id);
-      await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte), ...(ich.id ? {} : { system: ich.name }) });
-      if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
-      const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
-      await this.postAufgaben(m.id, ich.id);
-      await this.ereignis('post.angelegt', { mappe: m.id, kanal: werte.kanal, fuer: typeof werte.fuer === 'string' ? werte.fuer : null }, ich.id);
-      await this.meldeVerknuepft(typ, m.id, alt, werte, ich.id);
-      return { m, titel };
-    });
-    protokoll.modul('ablage').info('Post angelegt', { mappe: m.id, kanal: werte.kanal });
-    return { ...m, titel };
-  }
+  legePostAn(...a: Parameters<PostDienst['legePostAn']>) { return this.post.legePostAn(...a); }
+  ordneZu(...a: Parameters<PostDienst['ordneZu']>) { return this.post.ordneZu(...a); }
+  automatischZuordnen(postId: string, e: PostErkennung) { return this.post.automatischZuordnen(postId, e); }
+  automatikRueckgaengig(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) { return this.post.automatikRueckgaengig(aufgabeId, ich, z); }
+  private postAufgaben(mappeId: string, von: string | null) { return this.post.postAufgaben(mappeId, von); }
 
-  /**
-   * Zuordnen (#192): Post gehört zu einer Mappe. Die gewählten Dokumente wandern in ein
-   * Dokumentenregister der Zielmappe (oder werden kopiert – dieselbe Datei, kein zweiter Platz),
-   * die Post verweist auf die Mappe und hat danach Stand „Zugeordnet“. Mehrmals möglich.
-   *
-   * Auflösen (#936, `aufloesen: true`): Ist die Zielmappe eben aus dieser Post angelegt worden, wird aus der Post die
-   * Mappe – siehe `loesePostAuf`. Darf die Person die Post nicht löschen, bleibt es beim Zuordnen, mit `hinweis`.
-   */
-  async ordneZu(postId: string, eingabe: unknown, von: string | null, z?: Zugriff, auto?: { grund: string }, quelle?: Ausloeser) {
-    const post = z ? await this.pruefeRecht(z, postId, 'U') : await this.repo.holeMappe(postId);
-    if (!post) throw new Fachfehler(404, t('meldungen.dienst.diese-post-gibt-es'));
-    const typ = await this.repo.holeTyp(post.typId);
-    if (typ?.system !== 'post') throw new Fachfehler(422, t('meldungen.dienst.zuordnen-geht-nur-mit'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const zielId = text(e.ziel);
-    if (!istUuid(zielId) || zielId === postId) throw new Fachfehler(422, t('meldungen.dienst.bitte-eine-mappe-waehlen'));
-    const ziel = z ? await this.pruefeRecht(z, zielId, 'U') : await this.repo.holeMappe(zielId);
-    if (!ziel) throw new Fachfehler(404, t('meldungen.dienst.die-gewaehlte-mappe-gibt'));
-    const zielTyp = await this.repo.holeTyp(ziel.typId);
-    if (!zielTyp) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-der-zielmappe'));
-    if (zielTyp.system === 'post') throw new Fachfehler(422, t('meldungen.dienst.post-laesst-sich-nicht-2'));
-    const alle = await this.repo.listeDokumente(postId);
-    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id);
-    const dokumente = ids.map((id) => alle.find((d) => d.id === id));
-    if (dokumente.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
-    const regs = zielTyp.register.filter((r) => r.art === 'dokumente');
-    const reg = regs.find((r) => r.key === text(e.register)) ?? (e.register ? undefined : regs[0]);
-    if (dokumente.length && !reg) throw new Fachfehler(422, regs.length ? t('meldungen.dienst.dieses-dokumentenregister-gibt-es') : t('meldungen.dienst.hat-kein-dokumentenregister-ordne', { name: zielTyp.name }));
-    const kopieren = e.kopieren === true;
-    // Auflösen (#936, #934): auf Wunsch – in eine neue wie in eine bestehende Mappe. Nie automatisch (wegen „Automatik
-    // rückgängig“), nie mit „Kopie in der Post behalten“ und nie bei versendeten E-Mails (Nachweis des Versands).
-    const rest = alle.filter((d) => !ids.includes(d.id));
-    let hinweis: string | undefined;
-    if (e.aufloesen === true && !auto && !kopieren && !istVersendet(post.werte)) {
-      const grund = await this.aufloesenSperre(post, typ, rest.length > 0, z);
-      if (!grund) return this.loesePostAuf({ post, typ, ziel, zielTyp, reg, dokumente: dokumente as Dokument[], rest, von, quelle, neu: await this.ebenAngelegt(ziel, von) });
-      hinweis = t('meldungen.dienst.post-bleibt-zugeordnet', { grund });
-    }
-    for (const d of dokumente as Dokument[]) {
-      if (kopieren) {
-        const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: ziel.id, registerKey: reg!.key, erstellt: new Date().toISOString(), erstelltVon: von });
-        const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
-        if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info, sprache: fertig.sprache ?? null });
-        else if (Dienst.volltextAn(zielTyp, reg!.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
-      } else await this.verschiebeInRegister(d, ziel.id, zielTyp, reg!.key);
-    }
-    const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
-    const zielTitel = await this.titel(ziel);
-    const n = dokumente.length;
-    const doks = n ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: kopieren ? ' (kopiert)' : '', name: reg!.name }) : '';
-    const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id])];
-    await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.zugeordnet }, von);
-    // Automatisch (#337): Begründung in der Historie beider Mappen.
-    const wie = auto ? { automatisch: true, grund: auto.grund, system: 'Erkennung' } : {};
-    const warum = auto ? ` – automatisch: ${auto.grund}` : '';
-    await this.notiere(post.id, von, 'zugeordnet', { text: t('meldungen.dienst.zugeordnet-zu', { wert: auto ? t('meldungen.dienst.automatisch') : '', zielTitel, doks, warum }), ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren, ...wie });
-    await this.notiere(ziel.id, von, 'zugeordnet', { text: t('meldungen.dienst.post-zugeordnet', { betreff, wert: auto ? t('meldungen.dienst.automatisch') : '', doks, warum }), post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren, ...wie });
-    if (n) {
-      await this.beruehre(ziel.id, zielTyp, von);
-      await this.beruehre(post.id, typ, von);
-    }
-    await this.postAufgaben(post.id, von);
-    protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren, aufloesenGesperrt: hinweis ? true : undefined });
-    return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: false as const, ...(hinweis ? { hinweis } : {}) };
-  }
+  trennePostAb(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postAufloesen.trennePostAb(postId, eingabe, von, z); }
 
-  /** Dokument in ein anderes Register (einer anderen Mappe); dort ist die Texterkennung vielleicht aus oder an. */
-  private async verschiebeInRegister(d: Dokument, mappeId: string, typ: Mappentyp, registerKey: string) {
-    await this.repo.verschiebeDokument(d.id, mappeId, registerKey);
-    if (Dienst.volltextAn(typ, registerKey) && (d.ocr?.stand === 'keiner' || d.ocr?.stand === 'ausgelassen')) { await this.repo.ocrEinreihen([d.id]); this.ocr?.anstossen(); }
-  }
+  /* ---------- Systemmappen, Benutzer-Mappen, Rollen, Systemkonten (#43, #673, post/systemmappen.ts) ---------- */
 
-  /**
-   * Eben aus dieser Post angelegt (#936)? Die Zielmappe hat dieselbe Person vor höchstens einer Stunde angelegt, und ihr
-   * ist noch keine Post zugeordnet. Seit #934 nur noch für den Wortlaut der Historie („Aus Post … angelegt“ bzw.
-   * „Post … übernommen“) – auflösen lässt sich Post auch in eine bestehende Mappe.
-   */
-  private async ebenAngelegt(ziel: Mappe, von: string | null): Promise<boolean> {
-    if ((ziel.erstelltVon ?? null) !== von) return false;
-    if (Date.now() - Date.parse(ziel.erstellt) > AUFLOESEN_FRIST_MS) return false;
-    return !(await this.repo.historie(ziel.id, { arten: ['zugeordnet'], max: 1 })).length;
-  }
+  private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) { return this.postSystemmappen.schreibeSystemMappe(...a); }
+  spiegleBenutzer(...a: Parameters<PostSystemmappen['spiegleBenutzer']>) { return this.postSystemmappen.spiegleBenutzer(...a); }
+  gleicheBenutzerAb(...a: Parameters<PostSystemmappen['gleicheBenutzerAb']>) { return this.postSystemmappen.gleicheBenutzerAb(...a); }
+  pruefeRollen(eingabe: unknown) { return this.postSystemmappen.pruefeRollen(eingabe); }
+  setzeRollen(benutzerId: string, eingabe: unknown, von: string | null = null) { return this.postSystemmappen.setzeRollen(benutzerId, eingabe, von); }
+  listeRollen(mitKonten = false) { return this.postSystemmappen.listeRollen(mitKonten); }
+  systemkontenUebersicht(system: Benutzer[], dienst: Benutzer[]) { return this.postSystemmappen.systemkontenUebersicht(system, dienst); }
+  systemZugriff(kennung: Systemkonto = 'automatisierung') { return this.postSystemmappen.systemZugriff(kennung); }
 
-  /**
-   * Warum sich die Post nicht auflösen lässt (#936), sonst null. Auflösen legt die Post in den Papierkorb – das darf nur,
-   * wer sie auch löschen darf (Recht D und dieselbe Prüfung wie beim Löschen). Bleibt ein Teil der Dokumente übrig, kommt
-   * er in eine neue Post – dafür braucht es das Recht, Post anzulegen.
-   */
-  private async aufloesenSperre(post: Mappe, typ: Mappentyp, mitRest: boolean, z?: Zugriff): Promise<string | null> {
-    if (z && !(await this.rechteAn(z, post)).D) return t('meldungen.dienst.kein-recht-zum-loeschen');
-    const p = await this.loeschPruefung(post, typ, await this.repo.rueckverweise(post.id));
-    if (!p.ok) return p.grund ?? t('meldungen.dienst.kein-recht-zum-loeschen');
-    if (mitRest) {
-      if (!darfPostAnlegen(typ)) return t('meldungen.dienst.post-laesst-sich-nicht');
-      if (z && !z.admin) {
-        const jetzt = new Date().toISOString();
-        const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte: { ...post.werte, stand: POST_STAND.neu, bezug: null }, erstellt: jetzt, erstelltVon: z.ich.id, geaendert: jetzt, geaendertVon: z.ich.id };
-        if (!(await this.rechteAn(z, entwurf, true)).C) return t('meldungen.dienst.post-anlegen-darfst-du');
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Post auflösen (#936, #934): Aus der Post wird die Mappe – eben angelegt oder vorhanden. Die gewählten Dokumente wandern in ihr Register,
-   * die übrigen („abgetrennt“) in eine neue Post mit Verweis auf die Herkunft. Historie, Notizen, Aufgaben und
-   * Erinnerungen der Post gehören danach der Mappe, dazu der Eintrag „Aus Post … angelegt“. Die leere Post kommt mit
-   * „Aufgelöst in …“ in den Papierkorb (bei ausgeschaltetem Papierkorb endgültig weg); wiederherstellen lässt sie sich
-   * nicht – der Weg zurück ist, die neue Mappe zu löschen (Thomas, 07.11.2026). Alles in einer Transaktion.
-   */
-  private async loesePostAuf(x: { post: Mappe; typ: Mappentyp; ziel: Mappe; zielTyp: Mappentyp; reg: Register | undefined; dokumente: Dokument[]; rest: Dokument[]; von: string | null; quelle?: Ausloeser; neu: boolean }) {
-    const { post, typ, ziel, zielTyp, reg, dokumente, rest, von } = x;
-    const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
-    const zielTitel = await this.titel(ziel);
-    const erg = await this.inTransaktion(async () => {
-      for (const d of dokumente) await this.verschiebeInRegister(d, ziel.id, zielTyp, reg!.key);
-      // Abgetrennt: die übrigen Dokumente als neue Post in „Neue Post“, Betreff, Datum, Absender, Kanal und „Für“ wie bisher.
-      const abgetrennt = rest.length ? await this.legeAbgetrenntAn(post, typ, rest, von, {
-        text: t(x.neu ? 'meldungen.dienst.abgetrennt-aus' : 'meldungen.dienst.abgetrennt-aus-uebernommen', { anzahl: rest.length, betreff, typ: zielTyp.name, zielTitel }),
-        ziel: ziel.id, zielTyp: zielTyp.id,
-      }) : undefined;
-      // Stand „Zugeordnet“: erledigt die Aufgabe „Post für dich“ und Aufgaben mit Anlass „Post“; die Post verweist auf die Mappe.
-      const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id, ...(abgetrennt ? [abgetrennt.id] : [])])];
-      await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.zugeordnet }, von);
-      await this.postAufgaben(post.id, von);
-      // Alles, was mit der Post passiert ist, steht jetzt bei der Mappe.
-      const mit = await this.repo.uebertrageAnMappe(post.id, ziel.id);
-      const n = dokumente.length;
-      const doks = n ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: '', name: reg!.name }) : '';
-      const abg = abgetrennt ? t('meldungen.dienst.abgetrennt-als-neue-post', { anzahl: rest.length }) : '';
-      await this.notiere(ziel.id, von, 'zugeordnet', {
-        text: t(x.neu ? 'meldungen.dienst.aus-post-angelegt' : 'meldungen.dienst.aus-post-uebernommen', { betreff, doks, abg }), post: post.id, postTyp: typ.id, dokumente: n, aufgeloest: true,
-        ...(abgetrennt ? { abgetrennt: abgetrennt.id } : {}),
-      });
-      await this.notiere(post.id, von, 'zugeordnet', { text: t('meldungen.dienst.aufgeloest-in', { typ: zielTyp.name, zielTitel }), ziel: ziel.id, zielTyp: zielTyp.id, aufgeloest: true });
-      await this.beruehre(ziel.id, zielTyp, von);
-      const vorher = (await this.repo.holeMappe(post.id))!;
-      // Löschprotokoll (#470): Weg „aufgelöst“, als Grund nur Mappentyp und Id der Mappe – keine Titel.
-      await this.loescheMappe(post.id, von, undefined, { weg: 'aufgeloest', ausloeser: x.quelle, text: t('meldungen.dienst.aufgeloest-grund', { typ: zielTyp.name, id: ziel.id }) });
-      return { vorher, abgetrennt, mit };
-    });
-    const papierkorb = (await this.papierkorbTage()) > 0;
-    protokoll.modul('ablage').info('Post aufgelöst', { post: post.id, ziel: ziel.id, dokumente: dokumente.length, abgetrennt: erg.abgetrennt?.id, papierkorb, ...erg.mit });
-    return {
-      post: erg.vorher, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: true as const, papierkorb,
-      ...(erg.abgetrennt ? { abgetrennt: (await this.repo.holeMappe(erg.abgetrennt.id))! } : {}),
-    };
-  }
-
-  /**
-   * Abgetrennter Teil einer Post (#936, #934): neue Post in „Neue Post“ mit Betreff „… (abgetrennt)“, Datum, Absender,
-   * Kanal und „Für“ wie bisher; die Dokumente wandern dorthin, ihre Historie nennt die Herkunft.
-   */
-  private async legeAbgetrenntAn(post: Mappe, typ: Mappentyp, dokumente: Dokument[], von: string | null, herkunft: { text: string } & Record<string, unknown>): Promise<Mappe> {
-    const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
-    const neu = await this.legePostAn({
-      betreff: t('meldungen.dienst.abgetrennt-betreff', { betreff }), datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
-      fuer: alsListe(post.werte.fuer)[0] ?? null,
-    }, { id: von, name: '' }, undefined, undefined, undefined, undefined, post.werte);
-    for (const d of dokumente) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
-    await this.notiere(neu.id, von, 'post_geteilt', { ...herkunft, post: post.id, postTyp: typ.id, dokumente: dokumente.length });
-    await this.beruehre(neu.id, typ, von);
-    return neu;
-  }
-
-  /**
-   * „Ab hier abtrennen“ (#934): Passt ein Folgedokument nicht zur Mappe, kommen die gewählten Dokumente als neue Post
-   * nach „Neue Post“ – mit Verweis auf die Herkunft in ihrer Historie. Die Post behält die übrigen (mindestens eins).
-   * Braucht Bearbeiten an der Post und das Recht, Post anzulegen.
-   */
-  async trennePostAb(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) {
-    const post = z ? await this.pruefeRecht(z, postId, 'U') : await this.repo.holeMappe(postId);
-    if (!post) throw new Fachfehler(404, t('meldungen.dienst.diese-post-gibt-es'));
-    const typ = await this.repo.holeTyp(post.typId);
-    if (typ?.system !== 'post') throw new Fachfehler(422, t('meldungen.dienst.abtrennen-nur-post'));
-    if (istVersendet(post.werte)) throw new Fachfehler(422, t('meldungen.dienst.abtrennen-versendet'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const alle = await this.repo.listeDokumente(postId);
-    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
-    const weg = ids.map((id) => alle.find((d) => d.id === id));
-    if (!ids.length || weg.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
-    if (weg.length >= alle.length) throw new Fachfehler(422, t('meldungen.dienst.abtrennen-eins-bleibt'));
-    if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
-    if (z && !z.admin) {
-      const jetzt = new Date().toISOString();
-      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte: { ...post.werte, stand: POST_STAND.neu, bezug: null }, erstellt: jetzt, erstelltVon: z.ich.id, geaendert: jetzt, geaendertVon: z.ich.id };
-      if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, t('meldungen.dienst.post-anlegen-darfst-du'));
-    }
-    const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
-    const neu = await this.inTransaktion(async () => {
-      const n = await this.legeAbgetrenntAn(post, typ, weg as Dokument[], von, { text: t('meldungen.dienst.abgetrennt-von', { anzahl: weg.length, betreff }) });
-      await this.notiere(post.id, von, 'post_geteilt', { text: t('meldungen.dienst.abgetrennt-nach', { anzahl: weg.length, betreff: auswahlText(n.werte.betreff) }), abgetrennt: n.id, postTyp: typ.id, dokumente: weg.length });
-      await this.beruehre(post.id, typ, von);
-      return n;
-    });
-    protokoll.modul('ablage').info('Post abgetrennt', { post: post.id, neu: neu.id, dokumente: weg.length });
-    return { post: (await this.repo.holeMappe(post.id))!, neu: (await this.repo.holeMappe(neu.id))! };
-  }
-
-  /** Mappentypen mit „Post automatisch zuordnen“ (#337); Archivmodus- und Systemtypen nie (dort nur mit Bestätigung). */
-  private async autoTypen(): Promise<Set<string>> {
-    const e = await this.typErkennungen();
-    return new Set((await this.repo.listeTypen()).filter((t) => e[t.id]?.auto && !t.archiv && !t.system).map((t) => t.id));
-  }
-
-  /**
-   * Erkannte Post automatisch zuordnen (#337), wenn die Erkennung sicher ist (siehe sichereZuordnung) und der
-   * Zieltyp das erlaubt (Standard aus). Nie: neue Mappen anlegen, Post ohne Leserecht des Empfängers zuordnen,
-   * Archivmodus-Typen. Danach eine Aufgabe „Automatisch zugeordnet – bitte prüfen“ an den Empfänger (Feld „Für“,
-   * sonst wer die Post ins DMS gebracht hat), mit Rückgängig. Je Post höchstens einmal.
-   */
-  async automatischZuordnen(postId: string, e: PostErkennung): Promise<{ ziel: string } | { nicht: string }> {
-    const log = protokoll.modul('ablage');
-    if (e.auto) return { nicht: t('meldungen.dienst.schon-einmal-automatisch-zugeordnet') };
-    const autoTypen = await this.autoTypen();
-    if (!autoTypen.size) return { nicht: t('meldungen.dienst.bei-keinem-mappentyp-eingeschaltet') };
-    const post = await this.repo.holeMappe(postId);
-    const typ = post && await this.repo.holeTyp(post.typId);
-    if (!post || typ?.system !== 'post') return { nicht: t('meldungen.dienst.keine-post') };
-    if (auswahlText(post.werte.stand) !== POST_STAND.neu || auswahlText(post.werte.richtung) === POST_RICHTUNG.ausgehend) return { nicht: t('meldungen.dienst.nicht-neu-oder-ausgehend') };
-    const s = sichereZuordnung(e, autoTypen);
-    const nicht = (grund: string) => { log.info('Post nicht automatisch zugeordnet', { post: postId, grund }); return { nicht: grund }; };
-    if (!s.ziel) return nicht(s.grund);
-    const empfaenger = alsListe(post.werte.fuer)[0] ?? post.erstelltVon;
-    if (!empfaenger) return nicht(t('meldungen.dienst.niemand-der-es-pruefen'));
-    if (!(await this.sichtbarFuer(empfaenger, [s.ziel.mappeId])).has(s.ziel.mappeId)) return nicht(t('meldungen.dienst.der-empfaenger-darf-die'));
-    const ziel = await this.repo.holeMappe(s.ziel.mappeId);
-    const zielTyp = ziel && await this.repo.holeTyp(ziel.typId);
-    if (!ziel || !zielTyp || zielTyp.archiv) return nicht(t('meldungen.dienst.zielmappe-fehlt-oder-ist'));
-    const dokumente = await this.repo.listeDokumente(post.id);
-    if (dokumente.length && !zielTyp.register.some((r) => r.art === 'dokumente')) return nicht(t('meldungen.dienst.zielmappe-hat-kein'));
-    const absender = (await this.repo.bezuege([e.eindeutig!])).get(e.eindeutig!)?.titel ?? '';
-    const grund = s.grund.replace('Absender eindeutig', `Absender „${absender}“ eindeutig`);
-    const zielTitel = await this.titel(ziel);
-    let aufgabe: Aufgabe | null = null;
-    await this.inTransaktion(async () => {
-      await this.ordneZu(post.id, { ziel: ziel.id }, null, undefined, { grund });
-      aufgabe = await this.neueAufgabe({
-        id: randomUUID(), mappeId: post.id, empfaengerId: empfaenger, art: 'zugeordnet', text: t('meldungen.dienst.automatisch-zugeordnet-zu-bitte', { zielTitel }), feldKey: `auto:${ziel.id}`,
-        erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null,
-      });
-      aufgabe = await this.leiteUm(aufgabe);
-      await this.repo.erkennungSchreibe(post.id, { ...e, auto: { ziel: ziel.id, zeit: new Date().toISOString(), grund, dokumente: dokumente.map((d) => ({ id: d.id, register: d.registerKey })), aufgabe: aufgabe.id } }, e.eindeutig);
-    });
-    log.info('Post automatisch zugeordnet', { post: post.id, ziel: ziel.id, empfaenger, dokumente: dokumente.length });
-    return { ziel: ziel.id };
-  }
-
-  /**
-   * Rückgängig aus der Aufgabe „Automatisch zugeordnet – bitte prüfen“ (#337): Dokumente zurück in die Post (in ihr
-   * altes Register), Verweis weg, Stand wieder „Neu“ (wenn sie sonst nirgends zugeordnet ist), Aufgabe erledigt.
-   * Danach ordnet die Erkennung diese Post nie wieder von selbst zu.
-   */
-  async automatikRueckgaengig(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) {
-    const a = await this.eigeneAufgabe(aufgabeId, ich);
-    if (a.art !== 'zugeordnet' || a.erledigt) throw new Fachfehler(409, t('meldungen.dienst.diese-aufgabe-gehoert-zu'));
-    const post = await this.pruefeRecht(z, a.mappeId, 'U');
-    const typ = (await this.repo.holeTyp(post.typId))!;
-    const gespeichert = (await this.repo.erkennungLies(post.id))?.ergebnis as PostErkennung | undefined;
-    const auto = gespeichert?.auto;
-    if (!gespeichert || !auto || auto.rueckgaengig) throw new Fachfehler(409, t('meldungen.dienst.diese-automatische-zuordnung-ist'));
-    const ziel = await this.repo.holeMappe(auto.ziel);
-    let zurueck = 0;
-    await this.inTransaktion(async () => {
-      for (const x of auto.dokumente) {
-        const d = await this.repo.holeDokument(x.id);
-        if (!d || d.mappeId !== auto.ziel) continue;
-        const reg = typ.register.find((r) => r.key === x.register && r.art === 'dokumente') ?? typ.register.find((r) => r.art === 'dokumente');
-        if (!reg) continue;
-        await this.repo.verschiebeDokument(d.id, post.id, reg.key);
-        zurueck++;
-      }
-      const bezug = alsListe(post.werte.bezug).filter((id) => id !== auto.ziel);
-      await this.schreibeSystemMappe(typ, post.id, { bezug, stand: bezug.length ? post.werte.stand : POST_STAND.neu }, ich.id);
-      const zielTitel = ziel ? await this.titel(ziel) : t('meldungen.dienst.eine-geloeschte-mappe');
-      const doks = zurueck ? t('meldungen.dienst.dokumente-zurueck-in-der', { anzahl: zurueck }) : '';
-      await this.notiere(post.id, ich.id, 'zugeordnet', { text: t('meldungen.dienst.automatische-zuordnung-zu', { zielTitel, doks }), ziel: auto.ziel, rueckgaengig: true, dokumente: zurueck });
-      if (ziel) await this.notiere(ziel.id, ich.id, 'zugeordnet', { text: t('meldungen.dienst.automatische-zuordnung-der-post', { wert: auswahlText(post.werte.betreff) || t('meldungen.dienst.post'), doks }), post: post.id, rueckgaengig: true, dokumente: zurueck });
-      await this.repo.erledigeAufgabe(a.id, ich.id);
-      await this.repo.erkennungSchreibe(post.id, { ...gespeichert, auto: { ...auto, rueckgaengig: { zeit: new Date().toISOString(), von: ich.id } } }, gespeichert.eindeutig);
-      await this.postAufgaben(post.id, ich.id);
-    });
-    protokoll.modul('ablage').info('Automatische Zuordnung rückgängig gemacht', { post: post.id, ziel: auto.ziel, dokumente: zurueck });
-    return { post: (await this.repo.holeMappe(post.id))!, dokumente: zurueck };
-  }
-
-  /**
-   * „Für“ (#192): Solange Post neu ist und jemandem gilt, hat dieser eine Aufgabe „Neue Post“ im Eingang
-   * (bei Abwesenheit sein Vertreter). Zugeordnet, erledigt oder an jemand anderen → die Aufgabe ist erledigt.
-   */
-  private async postAufgaben(mappeId: string, von: string | null) {
-    const m = await this.repo.holeMappe(mappeId);
-    const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'post');
-    const fuer = m && auswahlText(m.werte.stand) === POST_STAND.neu ? alsListe(m.werte.fuer)[0] ?? null : null;
-    const schluessel = fuer ? `fuer:${fuer}` : null;
-    for (const a of offen) if (a.feldKey !== schluessel) await this.repo.erledigeAufgabe(a.id, von);
-    // Aufgaben mit Anlass „Post“ (#724, z. B. aus „Wenn neue Post“): erledigt, sobald die Post nicht mehr neu ist.
-    if (m && auswahlText(m.werte.stand) !== POST_STAND.neu) await this.erledigeNachAnlass(mappeId, (x) => x.art === 'post', t('meldungen.dienst.post-zugeordnet-2'));
-    if (!fuer || offen.some((a) => a.feldKey === schluessel)) return;
-    // Aufgaben gehen an Konten; ohne Kontenverwaltung (Tests) genügt der Verweis.
-    if (this.konten?.benutzer && !(await this.konten.benutzer()).some((b) => b.id === fuer)) return;
-    const a = await this.neueAufgabe({
-      id: randomUUID(), mappeId, empfaengerId: fuer, art: 'post', text: t('meldungen.dienst.post-fuer-dich'), feldKey: schluessel,
-      erstellt: new Date().toISOString(), erstelltVon: von, erledigt: null, erledigtVon: null,
-    });
-    await this.leiteUm(a);
-  }
-
-
-  /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */
-  private async schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null): Promise<Mappe> {
-    const alt = await this.repo.holeMappe(id);
-    const werte = bereinigeWerte(typ, eingabe, alt?.werte);
-    if (alt && JSON.stringify(alt.werte) === JSON.stringify(werte)) return alt;
-    const aenderungen = await this.aenderungen(typ, alt?.werte ?? {}, werte);
-    // Feldweise (#609): Felder, die inzwischen ein Mensch geändert hat, bleiben.
-    const neu = alt ? await this.repo.aendereMappe(id, werte, [], von, { basis: alt.werte, verweise: (w) => verweiseVon(typ, w) }) : undefined;
-    if (!alt) await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
-    if (aenderungen.length) await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen, ...(neu ? { stand: neu.geaendert } : {}) });
-    await this.meldeVerknuepft(typ, id, alt?.werte ?? {}, werte, von);
-    if (alt) await this.passungsAufgaben([{ id, problem: null }]);
-    await this.aktualisiereTitel([id]);
-    // Hat der Administrator den Typ um Pflichtfelder erweitert, landet die Mappe im Eingang.
-    await this.passungFuer(typ, [id]);
-    return (await this.repo.holeMappe(id))!;
-  }
-
-  /** Mappe eines Benutzers anlegen oder nachziehen. Weitere Rollen bleiben, die Systemrolle folgt dem Konto. */
-  async spiegleBenutzer(b: Benutzer, von: string | null = null, abwesenheit?: BenutzerGespiegelt['abwesenheit']) {
-    // Liegt die Mappe im Papierkorb, bleibt sie dort (der Benutzer ist bis zum Leeren deaktiviert).
-    if (await this.repo.holeAusPapierkorb(b.id)) return;
-    const { benutzer: typ, systemrollen } = await this.kern.system();
-    const alt = await this.repo.holeMappe(b.id);
-    // Neuer Benutzer (#506): Vorgabe „Favoriten benachrichtigen“ aus der Werkbank – nur, wenn sie aus ist.
-    if (!alt && b.art !== 'dienst' && !(await this.favoritenFreigabe()).vorgabe) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
-    // #719: Der erste Mensch ohne Admin-Rechte bekommt die Aufgaben ohne Empfänger, bis die Werkbank anders wählt.
-    if (!alt) await this.vorgabeAufgabenEmpfaenger(b);
-    const system = new Set(systemrollen.values());
-    const weitere = alt ? alsListe(alt.werte.rollen).filter((r) => !system.has(r)) : [];
-    const ab = b.abwesenheit;
-    // In einer Transaktion (#962): Benutzer-Mappe, Ereignis und die sofortigen Empfänger (Abwesenheit) ganz oder gar nicht.
-    await this.inEinemZug(async () => {
-      // Ereigniskatalog (#670): Benutzer deaktiviert bzw. wieder aktiviert (die Mappe folgt dem Konto).
-      if (alt && alt.werte.aktiv !== b.aktiv) await this.ereignis(b.aktiv ? 'benutzer.aktiviert' : 'benutzer.deaktiviert', { benutzer: b.id }, von);
-      // Abwesenheit (#78): „abwesend“ = wirkt heute; Zeitraum nur, solange sie an ist; der Vertreter auch nach dem Deaktivieren.
-      await this.schreibeSystemMappe(typ, b.id, {
-        ...(alt?.werte ?? {}),
-        // Systemrolle ist für jeden Menschen „Mitglied“ (#818: die Systemrolle „Administrator“ ist entfallen).
-        name: b.name || b.email, email: b.email, rollen: [systemrollen.get('mitglied')!, ...weitere], aktiv: b.aktiv,
-        abwesend: abwesenheitWirkt(ab, heuteIn()),
-        abwesend_von: ab?.an ? ab.von : null, abwesend_bis: ab?.an ? ab.bis : null,
-        vertreter: ab?.vertreterId && (ab.an || !b.aktiv) ? ab.vertreterId : null,
-      }, von);
-      await this.kern.anlaesse.benutzerGespiegelt.melde({ benutzer: b, von, ...(abwesenheit ? { abwesenheit } : {}) });
-    });
-  }
-
-  /** Beim Start: alle Benutzer haben ihre Mappe, und sie stimmt mit dem Konto überein. */
-  async gleicheBenutzerAb(liste: Benutzer[], fortschritt: (fertig: number, gesamt: number) => void = () => {}) {
-    await this.sichereSystem();
-    // Fortschritt für die Startseite (#802).
-    for (const [i, b] of liste.entries()) { fortschritt(i, liste.length); await this.spiegleBenutzer(b); }
-  }
-
-  /** Prüft eine Auswahl weiterer Rollen, bevor etwas geändert wird; liefert die bereinigten Ids. */
-  async pruefeRollen(eingabe: unknown): Promise<string[]> {
-    if (!Array.isArray(eingabe)) throw new Fachfehler(422, t('meldungen.dienst.rollen-als-liste-angeben'));
-    const ids = [...new Set(eingabe.map(String))];
-    const { rolle, systemrollen, kontorollen } = await this.kern.system();
-    const typVon = await this.repo.typenVon(ids.filter(istUuid));
-    if (ids.some((id) => typVon.get(id) !== rolle.id)) throw new Fachfehler(422, t('meldungen.dienst.mindestens-eine-dieser-rollen'));
-    const system = new Set(systemrollen.values());
-    if (ids.some((id) => system.has(id))) throw new Fachfehler(422, t('meldungen.dienst.die-systemrolle-mitglied-hat'));
-    if (ids.some((id) => [...kontorollen.values()].includes(id))) throw new Fachfehler(422, t('konten.fehler.kontorolle'));
-    return ids;
-  }
-
-  /** Weitere (fachliche) Rollen eines Benutzers setzen – nur aus der Benutzerverwaltung. */
-  async setzeRollen(benutzerId: string, eingabe: unknown, von: string | null = null) {
-    const ids = await this.pruefeRollen(eingabe);
-    const { benutzer: typ, systemrollen } = await this.kern.system();
-    const m = await this.repo.holeMappe(benutzerId);
-    if (!m || m.typId !== typ.id) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
-    const system = new Set(systemrollen.values());
-    const behalten = alsListe(m.werte.rollen).filter((r) => system.has(r));
-    await this.schreibeSystemMappe(typ, benutzerId, { rollen: [...behalten, ...ids] }, von);
-  }
-
-  /** Alle Rollen für die Auswahl in der Benutzerverwaltung; Systemrollen zuerst. */
-  async listeRollen(mitKonten = false) {
-    const { rolle, kontorollen } = await this.kern.system();
-    const konto = new Set(kontorollen.values());
-    return (await this.repo.listeMappen(rolle.id))
-      // Systemkonto und Paket (#673) vergibt niemand an Menschen – in Benutzerverwaltung und Freigaben nicht zur Wahl.
-      .filter((m) => mitKonten || !konto.has(m.id))
-      .map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? ''), system: !!m.systemKennung, ...(konto.has(m.id) ? { konto: true } : {}) }))
-      .sort((a, b) => Number(b.system) - Number(a.system) || a.name.localeCompare(b.name, 'de'));
-  }
-
-  /**
-   * Werkbank → Benutzer, Abschnitt „Systemkonten“ (#673): das Systemkonto „Automatisierung“ und die Dienstkonten der
-   * Pakete mit ihrer Systemrolle; je Konto, welche Automatisierungen es ausführt (kommt mit #674 über `automatisierungenVon`).
-   */
-  async systemkontenUebersicht(system: Benutzer[], dienst: Benutzer[]): Promise<SystemkontoEintrag[]> {
-    const pakete = new Map((await this.repo.listePakete()).map((p) => [p.id, p]));
-    const eintrag = async (b: Benutzer, rolle: Kontorolle): Promise<SystemkontoEintrag> => {
-      const paket = b.paketId ? pakete.get(b.paketId) ?? null : undefined;
-      const automatisierungen = (await this.automatisierungenVon?.(b.id)) ?? [];
-      const a = systemkontoAuffaellig({ aktiv: b.aktiv, rolle, paket: paket === undefined ? undefined : paket ? paket.name : null, automatisierungen, rechte: paket?.laeufer });
-      return {
-        id: b.id, name: b.name, rolle, aktiv: b.aktiv,
-        ...(b.systemkonto ? { systemkonto: b.systemkonto } : {}),
-        ...(b.paketId ? { paketId: b.paketId, paket: paket?.name ?? null } : {}),
-        automatisierungen,
-        ...(a.fehler ? { fehler: a.fehler } : {}), ...(a.weitreichend ? { weitreichend: true } : {}),
-      };
-    };
-    return [...await Promise.all(system.map((b) => eintrag(b, 'systemkonto'))), ...await Promise.all(dienst.map((b) => eintrag(b, 'paket')))];
-  }
   /** Systemkonten des DMS (#673), vom Start gesetzt (Konten legen sie bei Bedarf an). */
   systemkonten?: (kennung: Systemkonto) => Promise<Benutzer>;
-  /** Zugriff eines Systemkontos (#673), z. B. für Automatisierungen: Rechte aus den Regeln für die Rolle „Systemkonto“. */
-  async systemZugriff(kennung: Systemkonto = 'automatisierung'): Promise<Zugriff> {
-    if (!this.systemkonten) throw new Fachfehler(500, t('meldungen.dienst.systemkonten-sind-nicht-eingerichtet'));
-    return this.zugriff(await this.systemkonten(kennung));
-  }
   /** Automatisierungen, die ein Konto ausführt (#674 setzt das); bis dahin keine. */
   automatisierungenVon?: (kontoId: string) => Promise<Array<{ id: string; name: string; angehalten?: boolean }>>;
   /** Tägliche Zusammenfassung an einen Benutzer (#678, Dann-Karte); setzt der Server aus der Aufgaben-Mail. */
@@ -3529,68 +2697,19 @@ export class Dienst {
     return { id: d.id, volltext: Dienst.volltextAn(typ, registerKey) };
   }
 
-  /* ---------- Eingangskanäle (#195) ---------- */
+  /* ---------- Eingangskanäle (#195, post/eingangskanaele.ts) ---------- */
 
-  async postTyp() { return (await this.kern.system()).post; }
+  postTyp() { return this.eingangskanaele.postTyp(); }
+  notiereSystem(mappeId: string, system: string, text: string) { return this.eingangskanaele.notiereSystem(mappeId, system, text); }
+  anzahlDokumente(mappeId: string) { return this.eingangskanaele.anzahlDokumente(mappeId); }
+  gibtMappe(id: string) { return this.eingangskanaele.gibtMappe(id); }
+  dokumenteMitInhalt(sha256: string) { return this.eingangskanaele.dokumenteMitInhalt(sha256); }
+  fundstellen(z: Zugriff | undefined, pruefwerte: unknown, ohneMappe?: string) { return this.eingangskanaele.fundstellen(z, pruefwerte, ohneMappe); }
+  postMitDatei(sha256: string, seit: string) { return this.eingangskanaele.postMitDatei(sha256, seit); }
+  demoTexterkennung(ids: string[]) { return this.eingangskanaele.demoTexterkennung(ids); }
 
-  /** Historien-Eintrag eines Eingangskanals (#196), z. B. nicht übernommene Anhänge. */
-  async notiereSystem(mappeId: string, system: string, text: string) { await this.notiere(mappeId, null, 'uebernommen', { system, text }); }
-  async anzahlDokumente(mappeId: string) { return (await this.repo.listeDokumente(mappeId)).length; }
   /** Dokumente einer Mappe ohne Rechteprüfung (#878: Paket erstellen mit Beispiel-Dokumenten, nur für Administratoren). */
   listeDokumente(mappeId: string) { return this.repo.listeDokumente(mappeId); }
-
-  /** Gibt es die Mappe (z. B. eine Post mit vorgegebener Id) schon? */
-  async gibtMappe(id: string) { return !!(await this.repo.holeMappe(id)); }
-
-  /** Mappen, die schon eine Datei mit diesem Inhalt haben („gleicher Inhalt wie …“). */
-  async dokumenteMitInhalt(sha256: string) {
-    const docs = await this.repo.dokumenteMitSha(sha256);
-    const bezuege = await this.repo.bezuege([...new Set(docs.map((d) => d.mappeId))]);
-    return docs.slice(0, 5).map((d) => ({ mappeId: d.mappeId, name: d.name, titel: bezuege.get(d.mappeId)?.titel ?? '' }));
-  }
-
-  /**
-   * Doppelte Dateien (#333): Wo liegt eine Datei mit diesem Prüfwert schon? Nur Mappen, die der Benutzer
-   * lesen darf – liegt sie nur in fremden Mappen, gibt es keinen Hinweis (nichts verraten).
-   */
-  async fundstellen(z: Zugriff | undefined, pruefwerte: unknown, ohneMappe?: string): Promise<Record<string, Fundstelle[]>> {
-    const liste = Array.isArray(pruefwerte) ? [...new Set(pruefwerte.filter((x): x is string => typeof x === 'string' && /^[0-9a-f]{64}$/.test(x)))] : [];
-    if (liste.length > 100) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-100-pruefwerte-auf'));
-    const erg: Record<string, Fundstelle[]> = {};
-    for (const sha of liste) {
-      const docs = (await this.repo.dokumenteMitSha(sha)).filter((d) => d.mappeId !== ohneMappe);
-      if (!docs.length) continue;
-      const lesbar = await this.lesbare(z, [...new Set(docs.map((d) => d.mappeId))]);
-      const sichtbar = docs.filter((d) => lesbar.has(d.mappeId));
-      if (!sichtbar.length) continue;
-      const bezuege = await this.repo.bezuege(sichtbar.map((d) => d.mappeId));
-      const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-      erg[sha] = sichtbar.slice(0, 5).map((d) => {
-        const b = bezuege.get(d.mappeId);
-        const t = b ? typen.get(b.typId) : undefined;
-        return { mappeId: d.mappeId, typId: b?.typId ?? '', titel: b?.titel ?? '', typ: t?.name ?? '', register: t?.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey, name: d.name, erstellt: d.erstellt };
-      });
-    }
-    return erg;
-  }
-
-  /** Eine Post, die seit `seit` ein Dokument mit diesem Inhalt bekommen hat (Aufräumen nach Abbruch). */
-  async postMitDatei(sha256: string, seit: string): Promise<string | null> {
-    const post = await this.postTyp();
-    for (const d of await this.repo.dokumenteMitSha(sha256)) {
-      if (d.erstellt < seit) continue;
-      const m = await this.repo.holeMappe(d.mappeId);
-      if (m?.typId === post.id) return m.id;
-    }
-    return null;
-  }
-
-  /** Demo-Dokumente gesammelt in die Warteschlange der Texterkennung. */
-  async demoTexterkennung(ids: string[]) {
-    if (!ids.length) return;
-    await this.repo.ocrEinreihen(ids);
-    this.ocr?.anstossen();
-  }
 
   /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
 
@@ -3601,856 +2720,48 @@ export class Dienst {
   holeDokument(id: string) { return this.dokumente.holeDokument(id); }
   dokumentInhalt(id: string) { return this.dokumente.dokumentInhalt(id); }
 
-  /* ---------- Stempel beim Weitergeben (#394) ---------- */
+  /* ---------- Stempel beim Weitergeben (#394, pdf-bearbeiten/stempelvorlagen.ts) ---------- */
 
-  /** Vorlagen und Einstellung je Mappentyp – beides in den Einstellungen (Schlüssel „stempel“), ohne Migration. */
-  private async stempelDaten(): Promise<{ vorlagen: StempelVorlage[]; typen: Record<string, StempelTyp> }> {
-    const roh = (await this.einstellungen?.lies('stempel')) as { vorlagen?: unknown; typen?: unknown } | null;
-    const typen: Record<string, StempelTyp> = {};
-    if (roh?.typen && typeof roh.typen === 'object') for (const [k, v] of Object.entries(roh.typen)) { const t = liesStempelTyp(v); if (t) typen[k] = t; }
-    return { vorlagen: liesVorlagen(roh?.vorlagen), typen };
-  }
-  private async schreibeStempelDaten(d: { vorlagen: StempelVorlage[]; typen: Record<string, StempelTyp> }) {
-    if (!this.einstellungen) throw new Fachfehler(409, t('meldungen.dienst.einstellungen-lassen-sich-hier'));
-    await this.einstellungen.schreibe('stempel', d);
-  }
-
-  /** Vorlagen für alle Angemeldeten (zum Auswählen beim Weitergeben). */
-  async stempelVorlagen(): Promise<StempelVorlage[]> { return (await this.stempelDaten()).vorlagen; }
-
-  /** Vorlage anlegen (`id` null) oder ändern (Werkbank). */
-  async speichereStempelVorlage(id: string | null, eingabe: unknown, von: string): Promise<StempelVorlage[]> {
-    const d = await this.stempelDaten();
-    const alt = id ? d.vorlagen.find((v) => v.id === id) : undefined;
-    if (id && !alt) throw new Fachfehler(404, t('meldungen.dienst.diese-stempel-vorlage-gibt'));
-    if (!id && d.vorlagen.length >= STEMPEL_VORLAGEN_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-stempel-vorlagen', { STEMPEL_VORLAGEN_MAX }));
-    const o = (eingabe ?? {}) as Record<string, unknown>;
-    const name = String(o.name ?? alt?.name ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, STEMPEL_NAME_MAX);
-    // Neue Vorlagen beginnen mit 70 % und „wie Tinte“ (#799); gespeichert ist eine Umstellung erledigt (ohne `umgestellt`).
-    const v: StempelVorlage = { id: alt?.id ?? randomUUID(), name, ...stempelAus(o, alt ?? NEUER_STEMPEL) };
-    const fehler = pruefeVorlage(v, d.vorlagen.filter((x) => x.id !== v.id).map((x) => x.name));
-    if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
-    d.vorlagen = alt ? d.vorlagen.map((x) => (x.id === v.id ? v : x)) : [...d.vorlagen, v];
-    await this.schreibeStempelDaten(d);
-    protokoll.modul('werkbank').info(alt ? 'Stempel-Vorlage geändert' : 'Stempel-Vorlage angelegt', { name: v.name, text: v.text, von });
-    return d.vorlagen;
-  }
-
-  /** Vorlage löschen – nicht, solange ein Mappentyp sie nutzt. */
-  async loescheStempelVorlage(id: string, von: string): Promise<StempelVorlage[]> {
-    const d = await this.stempelDaten();
-    const v = d.vorlagen.find((x) => x.id === id);
-    if (!v) throw new Fachfehler(404, t('meldungen.dienst.diese-stempel-vorlage-gibt'));
-    const typen = await this.repo.listeTypen();
-    const nutzer = Object.entries(d.typen).filter(([t, s]) => s.vorlage === id && typen.some((x) => x.id === t)).map(([t]) => typen.find((x) => x.id === t)!.name);
-    if (nutzer.length) throw new Fachfehler(409, t('meldungen.dienst.die-vorlage-wird-noch', { anzahl: nutzer.length, name: v.name, map: nutzer.map((n) => `„${n}“`).join(', ') }));
-    // Stempel beim Lesen über das Laufwerk (#722): ohne Angabe gilt die mitgelieferte Vorlage.
-    const laufwerk = (await this.einstellungen?.lies('webdav')) as { stempel?: unknown } | null;
-    if ((laufwerk && 'stempel' in laufwerk ? laufwerk.stempel : WEBDAV_VORLAGE) === id) throw new Fachfehler(409, t('api.webdav.vorlage-in-gebrauch', { name: v.name }));
-    d.vorlagen = d.vorlagen.filter((x) => x.id !== id);
-    await this.schreibeStempelDaten(d);
-    protokoll.modul('werkbank').info('Stempel-Vorlage gelöscht', { name: v.name, von });
-    return d.vorlagen;
-  }
-
-  /** Stempel-Einstellung eines Mappentyps prüfen (vor dem Speichern des Typs). */
-  private async pruefeStempelTyp(v: unknown): Promise<StempelTyp | null> {
-    if (v && typeof v === 'object' && typeof (v as { modus?: unknown }).modus === 'string' && !((v as { modus: string }).modus in STEMPEL_MODI)) {
-      throw new Fachfehler(422, t('meldungen.dienst.stempel-beim-weitergeben-unbekannte'), { allgemein: [t('meldungen.dienst.stempel-beim-weitergeben-unbekannte')], felder: {}, orte: ['stempel'] });
-    }
-    const eintrag = liesStempelTyp(v);
-    if (eintrag?.vorlage && !(await this.stempelDaten()).vorlagen.some((x) => x.id === eintrag.vorlage)) {
-      throw new Fachfehler(422, t('meldungen.dienst.stempel-beim-weitergeben-diese'), { allgemein: [t('meldungen.dienst.stempel-beim-weitergeben-diese')], felder: {}, orte: ['stempel'] });
-    }
-    return eintrag;
-  }
-  private async setzeStempelTyp(typId: string, t: StempelTyp | null) {
-    if (!this.einstellungen) return;
-    const d = await this.stempelDaten();
-    const vorher = d.typen[typId] ?? null;
-    if (JSON.stringify(vorher) === JSON.stringify(t)) return;
-    if (t) d.typen[typId] = t; else delete d.typen[typId];
-    await this.schreibeStempelDaten(d);
-    protokoll.modul('werkbank').info('Stempel beim Weitergeben eingestellt', { typ: typId, modus: t?.modus ?? 'aus', vorlage: t?.vorlage ?? null });
-  }
-  /** Mappentypen mit ihrer Stempel-Einstellung (für die Oberfläche). */
-  private async mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> {
-    const { typen: s } = await this.stempelDaten();
-    const e = await this.typErkennungen();
-    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null, autoZuordnen: !!e[t.id]?.auto }));
-  }
-
-  /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */
-  private async stempelPlan(typId: string, wunsch: StempelWunsch | null, empfaengerErsatz = '', daten?: Awaited<ReturnType<Dienst['stempelDaten']>>): Promise<GeltenderStempel | null> {
-    const d = daten ?? await this.stempelDaten();
-    try { return geltenderStempel(wunsch, d.typen[typId], d.vorlagen, empfaengerErsatz); } catch (x) {
-      if (x instanceof StempelFehler) throw new Fachfehler(422, x.message, { stempel: true, pflicht: d.typen[typId]?.modus === 'pflicht' });
-      throw x;
-    }
-  }
-
-  /**
-   * Stempel beim Lesen über das WebDAV-Laufwerk (#722): Der Pflicht-Stempel des Mappentyps gewinnt immer – auch wenn
-   * die Einstellung des Laufwerks „aus“ ist. Sonst gilt die Vorlage der Einstellung (`vorlage`, null = aus; eine
-   * gelöschte Vorlage wirkt wie „aus“). {empfänger} und {benutzer} sind der lesende Benutzer (`leser`).
-   * `fehler`: Der Stempel lässt sich nicht bilden – bei Pflicht geht die Datei dann nicht hinaus.
-   */
-  async laufwerkStempel(typId: string, vorlage: string | null, leser: string): Promise<{ pflicht: boolean; plan: GeltenderStempel | null; fehler?: string }> {
-    const d = await this.stempelDaten();
-    const pflicht = d.typen[typId]?.modus === 'pflicht';
-    const wunsch = !pflicht && vorlage && d.vorlagen.some((v) => v.id === vorlage) ? { vorlage } : null;
-    if (!pflicht && !wunsch) return { pflicht, plan: null };
-    try { return { pflicht, plan: await this.stempelPlan(typId, wunsch, leser, d) }; } catch (x) {
-      if (x instanceof Fachfehler) return { pflicht, plan: null, fehler: x.message };
-      throw x;
-    }
-  }
-
-  /** Gestempelte Kopie eines Dokuments fürs Laufwerk (#722); das gespeicherte Original bleibt unverändert. */
-  async laufwerkAusgabe(d: Dokument, m: Pick<Mappe, 'titel'>, plan: GeltenderStempel, leser: string): Promise<Ausgabe> {
-    return fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) }, { stempel: plan },
-      { benutzer: leser, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d.archivnummer ?? null, entsperrt: this.entsperrtZu });
-  }
-
-  private liesGanz(sha256: string): Promise<Buffer> { return this.kern.liesGanz(sha256); }
-
-  /** Historie (#394, #393): „weitergegeben mit Stempel ‚…‘, verkleinert (… → …) an …“. */
-  private async notiereWeitergabe(mappeId: string, von: string | null, wie: string, plan: GeltenderStempel | null, ausgaben: Ausgabe[]) {
-    const bearbeitet = ausgaben.filter((a) => a.gestempelt || a.verkleinert);
-    if (!bearbeitet.length) return;
-    const text = bearbeitet.find((a) => a.stempeltext)?.stempeltext ?? null;
-    const klein = bearbeitet.filter((a) => a.verkleinert);
-    await this.notiere(mappeId, von, 'weitergegeben', {
-      text: `${weitergabeWas(ausgaben)}${plan?.empfaenger ? t('meldungen.dienst.an-2', { empfaenger: plan.empfaenger }) : ''} (${wie}: ${bearbeitet.map((a) => a.name).join(', ')})`,
-      stempel: text, an: plan?.empfaenger || null, wie, vorlage: plan?.vorlage ?? null, pflicht: plan?.pflicht ?? false, dokumente: bearbeitet.map((a) => a.name),
-      ...(klein.length ? { verkleinert: { vorher: klein.reduce((s, a) => s + a.verkleinert!.vorher, 0), nachher: klein.reduce((s, a) => s + a.verkleinert!.nachher, 0) } } : {}),
-    });
-  }
-
-  /**
-   * Ein Dokument oder eine ältere Version herunterladen (#394): mit Stempel, wenn gewünscht (`stempel`,
-   * aus Anfragekörper oder Abfrageparametern) oder vom Mappentyp verlangt. Ohne Stempel unverändert als Strom.
-   */
-  /**
-   * Archivfassung für mehrere Dokumente (#715: E-Mail mehrerer Mappen, Export): mit `fassung` = „archiv“ tritt an die
-   * Stelle jedes Dokuments mit Archivfassung (keine E-Rechnung) ein Dokument mit Name, Typ und Größe der Fassung;
-   * die übrigen bleiben Original – ohne Rückfrage. `lies`/`strom` lesen dann die richtige Datei.
-   */
-  private async archivWahl(fassung: unknown) {
-    if (fassung !== undefined && fassung !== null && fassung !== 'original' && fassung !== 'archiv') throw new Fachfehler(422, t('meldungen.dienst.fassung-kennt-nur-original'));
-    const original = new Map<string, Dokument>();
-    const waehle = async (d: Dokument): Promise<Dokument> => {
-      if (fassung !== 'archiv') return d;
-      const q = await this.ausgabeQuelle(d, 'archiv', true);
-      if (!q.archiv) return d;
-      original.set(d.id, d);
-      return { ...d, name: q.name, mime: q.mime, groesse: q.groesse };
-    };
-    const lies = async (d: Dokument): Promise<Buffer> => (original.has(d.id) ? (await this.ausgabeQuelle(original.get(d.id)!, 'archiv', true)).inhalt() : this.liesGanz(d.sha256));
-    const strom = async (d: Dokument): Promise<Buffer | Readable> => (original.has(d.id) ? lies(d) : this.dateien.lies(d.sha256) as Promise<Buffer | Readable>);
-    return { waehle, lies, strom, anzahl: () => original.size, archiv: (d: Dokument) => original.has(d.id) };
-  }
-
-  /**
-   * Archivfassung statt Original weitergeben (#631): `fassung` = „archiv“ nimmt die aktuelle Archivfassung des
-   * Dokuments (gibt es keine, 404), sonst das Original. `nurWo` (mehrere Dokumente): ohne Archivfassung und bei
-   * E-Rechnungen das Original, ohne Fehler.
-   */
-  private async ausgabeQuelle(d: Pick<Dokument, 'name' | 'mime' | 'sha256' | 'groesse' | 'anzeigbar'>, fassung: unknown, nurWo = false): Promise<{ name: string; mime: string; sha256: string; groesse: number; anzeigbar: boolean; inhalt: () => Promise<Buffer>; archiv: boolean }> {
-    const original = { name: d.name, mime: d.mime, sha256: d.sha256, groesse: d.groesse, anzeigbar: d.anzeigbar, inhalt: () => this.liesGanz(d.sha256), archiv: false };
-    if (fassung === undefined || fassung === null || fassung === 'original') return original;
-    if (fassung !== 'archiv') throw new Fachfehler(422, t('meldungen.dienst.fassung-kennt-nur-original'));
-    const f = await this.archiv?.lies(d.sha256);
-    if (!f || (nurWo && f.info.erechnung)) { if (nurWo) return original; throw new Fachfehler(404, t('pakete.archiv.keine')); }
-    return { name: archivfassungName(d.name), mime: 'application/pdf', sha256: f.info.sha256, groesse: f.inhalt.length, anzeigbar: true, inhalt: async () => f.inhalt, archiv: true };
-  }
-
-  async dokumentFuerAusgabe(id: string, o: { version?: number; stempel?: unknown; verkleinern?: unknown; fassung?: unknown; ich: { id: string | null; name: string } }) {
-    const dokument = await this.repo.holeDokument(id);
-    if (!dokument) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const datei = o.version != null ? (await this.versionInhalt(id, o.version)).version : await this.ausgabeQuelle(dokument, o.fassung);
-    const m = await this.repo.holeMappe(dokument.mappeId);
-    const plan = m ? await this.stempelPlan(m.typId, wunschAus(o.stempel), empfaengerAus(o.stempel)) : null;
-    // Verkleinert herunterladen (#393): nur PDFs; das gespeicherte Dokument bleibt, wie es ist.
-    const klein = stufeAus(o.verkleinern);
-    if (klein && datei.mime !== 'application/pdf' && !plan) throw new Fachfehler(422, t('meldungen.dienst.ist-kein-pdf-verkleinern', { name: datei.name }));
-    const lies = async () => ('archiv' in datei && datei.archiv ? datei.inhalt() : this.liesGanz(datei.sha256));
-    if (!plan && !klein) return { name: datei.name, mime: datei.mime, anzeigbar: datei.anzeigbar, groesse: datei.groesse, inhalt: ('archiv' in datei && datei.archiv ? await datei.inhalt() : await this.dateien.lies(datei.sha256)) as Buffer | Readable, gestempelt: false };
-    const a = await fuerAusgabe({ name: datei.name, mime: datei.mime, inhalt: await lies() }, { stempel: plan, verkleinern: klein },
-      { benutzer: o.ich.name, mappe: m!.titel || t('meldungen.dienst.ohne-titel'), archivnummer: dokument.archivnummer, entsperrt: this.entsperrtZu }, true);
-    await this.notiereWeitergabe(m!.id, o.ich.id, o.version != null ? t('meldungen.dienst.heruntergeladen-version', { version: o.version }) : 'archiv' in datei && datei.archiv ? t('meldungen.dienst.heruntergeladen-archivfassung') : 'heruntergeladen', plan, [a]);
-    if (plan) protokoll.modul('dokumente').info('Dokument mit Stempel heruntergeladen', { id, mappe: m!.id, pflicht: plan.pflicht });
-    if (a.verkleinert) protokoll.modul('dokumente').info('Dokument verkleinert heruntergeladen', { id, mappe: m!.id, vorher: a.verkleinert.vorher, nachher: a.verkleinert.nachher });
-    return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: !!a.gestempelt, verkleinert: a.verkleinert ?? null };
-  }
-
-  /**
-   * Abruf mit API-Schlüssel ist Herausgeben (#799): die Archivfassung (#631) oder die umgewandelte Fassung (#577) mit
-   * dem Stempel, den der Abruf wünscht oder der Mappentyp verlangt – auf den Seiten des Dokuments selbst, ohne eigenes
-   * Deckblatt. Die gespeicherte Fassung bleibt unverändert. Ohne geltenden Stempel `null`: Dann geht die Fassung so
-   * hinaus, wie sie gespeichert ist.
-   */
-  async fassungFuerAusgabe(id: string, art: 'archiv' | 'umgewandelt', o: { stempel?: unknown; ich: { id: string | null; name: string } }) {
-    const f = art === 'archiv' ? await this.archivfassungVon(id) : await this.fassungVon(id);
-    const m = await this.repo.holeMappe(f.d.mappeId);
-    const wunsch = wunschAus(o.stempel);
-    const plan = m ? await this.stempelPlan(m.typId, wunsch, empfaengerAus(o.stempel)) : null;
-    if (!plan) return null;
-    const punkt = f.d.name.lastIndexOf('.');
-    const name = art === 'archiv' ? ((f.info as { imOriginal?: boolean }).imOriginal ? f.d.name : archivfassungName(f.d.name)) : `${punkt > 0 ? f.d.name.slice(0, punkt) : f.d.name} (umgewandelt).pdf`;
-    const mime = art === 'archiv' ? 'application/pdf' : (f.info as FassungInfo).mime;
-    const a = await fuerAusgabe({ name, mime, inhalt: f.inhalt }, { stempel: plan }, { benutzer: o.ich.name, mappe: m!.titel || t('meldungen.dienst.ohne-titel'), archivnummer: f.d.archivnummer ?? null }, true);
-    await this.notiereWeitergabe(m!.id, o.ich.id, art === 'archiv' ? t('meldungen.dienst.ueber-die-api-archivfassung') : t('meldungen.dienst.ueber-die-api-umgewandelte'), plan, [a]);
-    protokoll.modul('dokumente').info('Fassung mit Stempel über die API ausgegeben', { id, mappe: m!.id, art, pflicht: plan.pflicht });
-    return a;
-  }
-
-  /** Gestempelte Kopien für Seitenbilder über die API (#799), kurz im Arbeitsspeicher: Seite für Seite wird nur einmal gestempelt. */
-  private readonly apiKopien = new Map<string, Promise<Buffer>>();
-  /**
-   * Seitenbilder bei einem Abruf mit API-Schlüssel (#799): Gilt ein Stempel (Pflicht des Mappentyps oder gewünscht),
-   * entstehen die Bilder aus der gestempelten Kopie – als PDF, auch bei Bildern und umgewandelten Dateien. Ohne
-   * Stempel `null` (dann die üblichen Seitenbilder). Die Weitergabe steht einmal je Kopie in der Historie.
-   */
-  async gestempelteSeiten(id: string, o: { stempel?: unknown; ich: { id: string | null; name: string } }): Promise<{ schluessel: string; pdf: Buffer } | null> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const m = await this.repo.holeMappe(d.mappeId);
-    if (!m) return null;
-    const wunsch = wunschAus(o.stempel);
-    const plan = await this.stempelPlan(m.typId, wunsch, empfaengerAus(o.stempel));
-    if (!plan) return null;
-    const kontext = { benutzer: o.ich.name, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d.archivnummer ?? null, datum: stempelDatum() };
-    const schluessel = `stempel:${d.sha256}:${createHash('sha256').update(JSON.stringify([plan, kontext])).digest('hex')}`;
-    let p = this.apiKopien.get(schluessel);
-    if (!p) {
-      p = (async () => {
-        let quelle: { name: string; mime: string; inhalt: Buffer };
-        if (kernTyp(d.mime)) quelle = { name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) };
-        else {
-          const f = await this.umwandlung?.lies(d.sha256);
-          if (!f) throw new Fachfehler(422, t('meldungen.dienst.ist-weder-pdf-noch', { name: d.name }));
-          quelle = { name: d.name, mime: f.info.mime, inhalt: f.inhalt };
-        }
-        const a = await fuerAusgabe(quelle, { stempel: plan }, kontext, true);
-        await this.notiereWeitergabe(m.id, o.ich.id, t('meldungen.dienst.ueber-die-api-seitenbilder'), plan, [a]);
-        return a.inhalt;
-      })();
-      this.apiKopien.set(schluessel, p);
-      p.catch(() => this.apiKopien.delete(schluessel));
-      while (this.apiKopien.size > 8) this.apiKopien.delete(this.apiKopien.keys().next().value!);
-    }
-    return { schluessel, pdf: await p };
-  }
+  stempelVorlagen() { return this.stempelvorlagen.stempelVorlagen(); }
+  speichereStempelVorlage(id: string | null, eingabe: unknown, von: string) { return this.stempelvorlagen.speichereStempelVorlage(id, eingabe, von); }
+  loescheStempelVorlage(id: string, von: string) { return this.stempelvorlagen.loescheStempelVorlage(id, von); }
+  private pruefeStempelTyp(v: unknown) { return this.stempelvorlagen.pruefeStempelTyp(v); }
+  private setzeStempelTyp(typId: string, st: StempelTyp | null) { return this.stempelvorlagen.setzeStempelTyp(typId, st); }
 
   loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) { return this.dokumente.loescheDokument(id, benutzerId, anlass); }
 
-  /* ---------- PDF bearbeiten (#335) ---------- */
+  /* ---------- PDF bearbeiten (#335, pdf-bearbeiten/pdf-bearbeiten.dienst.ts) ---------- */
 
   /** Seitenbilder der Seitenansicht (im Arbeitsspeicher, für die letzten Dokumente). */
-  readonly seitenbilder = new Seitenbilder();
+  get seitenbilder() { return this.pdfBearbeiten.seitenbilder; }
+  seiteAlsGraubild(...a: Parameters<PdfBearbeiten['seiteAlsGraubild']>) { return this.pdfBearbeiten.seiteAlsGraubild(...a); }
+  pdfSeiten(id: string) { return this.pdfBearbeiten.pdfSeiten(id); }
+  pdfSeitenbild(...a: Parameters<PdfBearbeiten['pdfSeitenbild']>) { return this.pdfBearbeiten.pdfSeitenbild(...a); }
+  bearbeitePdf(id: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.pdfBearbeiten.bearbeitePdf(id, eingabe, von, z); }
+  fuegePdfZusammen(eingabe: unknown, von: string | null, z?: Zugriff) { return this.pdfBearbeiten.fuegePdfZusammen(eingabe, von, z); }
 
-  private async pdfVon(id: string): Promise<{ d: Dokument; inhalt: Buffer }> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (d.mime !== 'application/pdf') throw new Fachfehler(422, t('meldungen.dienst.ist-kein-pdf-bearbeiten', { name: d.name }));
-    const s = await this.dateien.lies(d.sha256);
-    return { d, inhalt: Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]) };
-  }
+  /* ---------- Post fotografieren (#490, post/foto.ts) ---------- */
 
-  /**
-   * Eine Seite als Graustufenbild (PGM) für eine Texterkennung im Paket (#338). JPEG und PNG (#458) haben genau eine
-   * Seite: Das Bild wird ohne Neuberechnung in ein einseitiges PDF gelegt (wie bei den Vorschaubildern) und genauso
-   * gerastert – kein zusätzliches Bildwerkzeug im Image. Bilder kommen in Originalgröße, dpi zählt dort nicht.
-   * `farbe` (#716): als Farbbild (PPM) statt Graustufen, z. B. für die Archivfassung.
-   */
-  async seiteAlsGraubild(id: string, nr: number, dpi: number, farbe = false, gestempelt?: { pdf: Buffer } | null): Promise<Buffer> {
-    // Abruf mit API-Schlüssel und Stempel (#799): aus der gestempelten Kopie.
-    if (gestempelt) return graubild(gestempelt.pdf, nr, dpi, farbe);
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    // Andere Dateitypen (#577): die Seiten der umgewandelten Fassung (PDF, PNG oder JPEG) eines Pakets.
-    if (!kernTyp(d.mime)) {
-      const f = await this.umwandlung?.lies(d.sha256);
-      if (!f) throw new Fachfehler(422, t('meldungen.dienst.ist-weder-pdf-noch', { name: d.name }));
-      if (f.info.mime === 'application/pdf') return graubild(f.inhalt, nr, dpi, farbe);
-      if (nr !== 1) throw new Fachfehler(404, t('meldungen.dienst.seite-gibt-es-nicht', { nr }));
-      return graubild(await bildSeitePdf(f.inhalt, f.info.mime), 1, 72, farbe);
-    }
-    if (d.mime === 'image/jpeg' || d.mime === 'image/png') {
-      if (nr !== 1) throw new Fachfehler(404, t('meldungen.dienst.seite-gibt-es-nicht', { nr }));
-      const s = await this.dateien.lies(d.sha256);
-      const bild = Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]);
-      // Das Bild liegt in Originalgröße (1 Bildpunkt = 1 pt): bei 72 dpi kommen genau seine Bildpunkte.
-      return graubild(await bildSeitePdf(bild, d.mime), 1, 72, farbe);
-    }
-    if (d.mime !== 'application/pdf') throw new Fachfehler(422, t('meldungen.dienst.ist-weder-pdf-noch-2', { name: d.name }));
-    const { inhalt } = await this.pdfVon(id);
-    return graubild(inhalt, nr, dpi, farbe);
-  }
+  postAusFotos(...a: Parameters<PostFotos['postAusFotos']>) { return this.postFotos.postAusFotos(...a); }
+  fotosAnMappe(...a: Parameters<PostFotos['fotosAnMappe']>) { return this.postFotos.fotosAnMappe(...a); }
+  legePostZusammen(zielId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postFotos.legePostZusammen(zielId, eingabe, von, z); }
 
-  /** Seitenzahl und Drehung je Seite. */
-  async pdfSeiten(id: string) {
-    const { d, inhalt } = await this.pdfVon(id);
-    return { id: d.id, name: d.name, version: d.version ?? 1, sha256: d.sha256, ...(await seitenInfo(inhalt)), bilderBis: SEITENBILDER_MAX };
-  }
+  /* ---------- PDF verkleinern (#393, pdf-bearbeiten/verkleinern.ts) ---------- */
 
-  /** Bild einer Seite (Seitenansicht); null, wenn es keins gibt. */
-  async pdfSeitenbild(id: string, nr: number, gestempelt?: { schluessel: string; pdf: Buffer } | null): Promise<Buffer | null> {
-    if (gestempelt) return Number.isInteger(nr) && nr >= 1 && nr <= SEITENBILDER_MAX ? this.seitenbilder.bild(gestempelt.schluessel, nr, async () => gestempelt.pdf) : null;
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (d.mime !== 'application/pdf' || !Number.isInteger(nr) || nr < 1 || nr > SEITENBILDER_MAX) return null;
-    return this.seitenbilder.bild(d.sha256, nr, async () => (await this.pdfVon(id)).inhalt);
-  }
+  verkleinernVorschau(id: string) { return this.pdfVerkleinern.verkleinernVorschau(id); }
+  verkleinereDokument(id: string, eingabe: unknown, von: string | null) { return this.pdfVerkleinern.verkleinereDokument(id, eingabe, von); }
+  verkleinernEinstellung() { return this.pdfVerkleinern.verkleinernEinstellung(); }
+  setzeVerkleinernEinstellung(eingabe: unknown) { return this.pdfVerkleinern.setzeVerkleinernEinstellung(eingabe); }
+  private automatischVerkleinert(ein: Eingang, name: string) { return this.pdfVerkleinern.automatischVerkleinert(ein, name); }
+  grosseDokumente(f: { ab?: unknown; stufe?: unknown }) { return this.pdfVerkleinern.grosseDokumente(f); }
+  verkleinereViele(eingabe: unknown, von: { id: string | null; email: string }) { return this.pdfVerkleinern.verkleinereViele(eingabe, von); }
 
-  /**
-   * Seiten bearbeiten (#335): `seiten` = die Seiten des Ergebnisses in Reihenfolge (Nummer im Original,
-   * Drehung), `teile` = Positionen in dieser Liste, an denen ein neuer Teil beginnt.
-   * - Ohne Teilen: neue Version (Versionierung) bzw. – ohne Versionierung – Ersetzen nach Rückfrage
-   *   (`bestaetigt`), das bisherige kommt in den Papierkorb.
-   * - Teilen in einer Mappe: Teil 1 wird so zur neuen Version, die weiteren Teile werden eigene Dokumente
-   *   im selben Register.
-   * - Teilen bei Post: je Teil eine neue Post; die Ausgangspost behält ihr Dokument, ist erledigt und
-   *   verweist auf die neuen.
-   */
-  async bearbeitePdf(id: string, eingabe: unknown, von: string | null, z?: Zugriff) {
-    const { d, inhalt } = await this.pdfVon(id);
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const info = await seitenInfo(inhalt);
-    const seiten = pruefeAuswahl(e.seiten, info.anzahl);
-    const starts = pruefeTeile(e.teile, seiten.length);
-    const m = await this.repo.holeMappe(d.mappeId);
-    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
-    const reg = typ?.register.find((r) => r.key === d.registerKey && r.art === 'dokumente');
-    if (!m || !typ || !reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
-    const gleich = starts.length === 1 && seiten.length === info.anzahl && seiten.every((s, i) => s.nr === i + 1 && !s.drehung);
-    if (gleich) throw new Fachfehler(422, t('meldungen.dienst.es-hat-sich-nichts'));
-    const teileBuf = await teile(inhalt, seiten, starts);
-    const gedreht = seiten.filter((s) => s.drehung).length;
-    const was = { dokument: d.name, seiten: seiten.length, vorher: info.anzahl, ...(gedreht ? { gedreht } : {}), ...(starts.length > 1 ? { teile: starts.length } : {}) };
+  /* ---------- Schwärzen (#392, pdf-bearbeiten/schwaerzen.ts) ---------- */
 
-    if (typ.system === 'post' && starts.length > 1) return this.teilePost(m, typ, reg, d, teileBuf, von, z, was);
-
-    const korb = (await this.papierkorbTage()) > 0;
-    let erstes: Dokument;
-    const name1 = starts.length > 1 ? teilName(d.name, 1) : d.name;
-    if (reg.versionierung) {
-      erstes = await this.ersetzeDokument(d.id, { name: name1, typ: 'application/pdf', herkunft: 'bearbeitet' }, teileBuf[0], von);
-    } else {
-      if (e.bestaetigt !== true) {
-        throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-3', { wert: korb ? t('meldungen.dienst.das-bisherige-kommt-in') : t('meldungen.dienst.das-bisherige-ist-danach') }), { rueckfrage: true, papierkorb: korb });
-      }
-      await this.loescheDokument(d.id, von);
-      erstes = (await this.ladeHoch(m.id, { register: reg.key, name: name1, typ: 'application/pdf', herkunft: 'bearbeitet' }, teileBuf[0], von)).dokument;
-    }
-    const weitere: Dokument[] = [];
-    for (const [i, b] of teileBuf.slice(1).entries()) {
-      weitere.push((await this.ladeHoch(m.id, { register: reg.key, name: teilName(d.name, i + 2), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
-    }
-    await this.notiere(m.id, von, 'pdf_bearbeitet', { ...was, text: pdfText(was) });
-    protokoll.modul('dokumente').info('PDF bearbeitet', { id: d.id, seiten: seiten.length, vorher: info.anzahl, teile: starts.length });
-    return { dokumente: [erstes, ...weitere], posten: [] as Mappe[] };
-  }
-
-  private async teilePost(post: Mappe, typ: Mappentyp, reg: Register, d: Dokument, teileBuf: Buffer[], von: string | null, z: Zugriff | undefined, was: Record<string, unknown>) {
-    const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
-    const posten: Mappe[] = [];
-    const dokumente: Dokument[] = [];
-    for (const [i, b] of teileBuf.entries()) {
-      // Je Teil: neue Post mit ihrem Dokument und beiden Ereignissen (post.angelegt, dokument.hochgeladen) ganz oder gar nicht (#404).
-      await this.inTransaktion(async () => {
-        const neu = await this.legePostAn({
-          betreff: t('meldungen.dienst.teil', { betreff, wert: i + 1 }), datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
-          fuer: alsListe(post.werte.fuer)[0] ?? null,
-        }, { id: von, name: '' }, z, undefined, undefined, undefined, post.werte);
-        await this.notiere(neu.id, von, 'post_geteilt', { text: t('meldungen.dienst.teil-von-aus', { wert: i + 1, teileBuf: teileBuf.length, betreff }), post: post.id, postTyp: typ.id });
-        dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
-        posten.push((await this.repo.holeMappe(neu.id))!);
-      });
-    }
-    const bezug = [...new Set([...alsListe(post.werte.bezug), ...posten.map((p) => p.id)])];
-    await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.erledigt }, von);
-    await this.notiere(post.id, von, 'post_geteilt', { ...was, text: t('meldungen.dienst.in-posts-geteilt', { name: d.name, posten: posten.length }), posten: posten.map((p) => p.id), postTyp: typ.id });
-    await this.postAufgaben(post.id, von);
-    protokoll.modul('ablage').info('Post geteilt', { post: post.id, teile: posten.length });
-    return { dokumente, posten };
-  }
-
-  /**
-   * Zusammenfügen (#335): mehrere PDF-Dokumente (auch aus mehreren Mappen oder Posts) zu einem neuen
-   * Dokument in `ziel` (Standard: die Mappe des ersten). `originaleEntfernen`: die Ausgangsdokumente
-   * kommen in den Papierkorb (ohne Papierkorb nur mit `bestaetigt`); eine Post, die dadurch kein
-   * Dokument mehr hat, ist erledigt und verweist auf das Ziel.
-   */
-  async fuegePdfZusammen(eingabe: unknown, von: string | null, z?: Zugriff) {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
-    if (ids.length < 2) throw new Fachfehler(422, t('meldungen.dienst.bitte-mindestens-zwei-pdf'));
-    if (ids.length > 100) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-100-dokumente-auf'));
-    const entfernen = e.originaleEntfernen === true;
-    const quellen: Array<{ d: Dokument; inhalt: Buffer }> = [];
-    for (const id of ids) {
-      const d = await this.repo.holeDokument(id);
-      if (!d) throw new Fachfehler(404, t('meldungen.dienst.ein-gewaehltes-dokument-gibt'));
-      if (z) await this.pruefeRecht(z, d.mappeId, entfernen ? 'U' : 'R');
-      quellen.push(await this.pdfVon(id));
-    }
-    const zielId = istUuid(text(e.ziel)) ? text(e.ziel) : quellen[0].d.mappeId;
-    const ziel = z ? await this.pruefeRecht(z, zielId, 'U') : await this.repo.holeMappe(zielId);
-    if (!ziel) throw new Fachfehler(404, t('meldungen.dienst.die-gewaehlte-mappe-gibt'));
-    const zielTyp = await this.repo.holeTyp(ziel.typId);
-    const regs = zielTyp?.register.filter((r) => r.art === 'dokumente') ?? [];
-    const reg = e.register ? regs.find((r) => r.key === text(e.register)) : regs.find((r) => r.key === quellen[0].d.registerKey && ziel.id === quellen[0].d.mappeId) ?? regs[0];
-    if (!reg) throw new Fachfehler(422, regs.length ? t('meldungen.dienst.dieses-dokumentenregister-gibt-es-2') : t('meldungen.dienst.die-mappe-hat-kein'));
-    const mappen = [...new Set(quellen.map((q) => q.d.mappeId))];
-    if (entfernen) {
-      for (const mid of mappen) await this.pruefeArchivDokument(mid, 'entfernen');
-      if ((await this.papierkorbTage()) === 0 && e.bestaetigt !== true) {
-        throw new Fachfehler(409, t('meldungen.dienst.der-papierkorb-ist-ausgeschaltet'), { rueckfrage: true, papierkorb: false });
-      }
-    }
-    const buf = await fuegeZusammen(quellen.map((q) => q.inhalt));
-    if (buf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.zusammengefuegt-waere-das-pdf'));
-    let name = dateiname(text(e.name) || quellen[0].d.name);
-    if (!/\.pdf$/i.test(name)) name += '.pdf';
-    // Erst entfernen, dann ablegen: so bekommt das Ergebnis den Namen des ersten ohne „(2)“.
-    if (entfernen) for (const q of quellen) await this.loescheDokument(q.d.id, von);
-    const neu = (await this.ladeHoch(ziel.id, { register: reg.key, name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
-    const was = { dokument: neu.name, zusammengefuegt: quellen.map((q) => q.d.name), seiten: (await seitenInfo(buf)).anzahl };
-    await this.notiere(ziel.id, von, 'pdf_bearbeitet', { ...was, text: t('meldungen.dienst.pdfs-zu-zusammengefuegt', { quellen: quellen.length, name: neu.name }) });
-    const erledigt: string[] = [];
-    if (entfernen) {
-      const zielTitel = await this.titel(ziel);
-      for (const mid of mappen.filter((x) => x !== ziel.id)) {
-        const p = await this.repo.holeMappe(mid);
-        const eintrag = p ? await this.repo.holeTyp(p.typId) : undefined;
-        if (!p || eintrag?.system !== 'post' || (await this.repo.listeDokumente(mid)).length) continue;
-        await this.schreibeSystemMappe(eintrag, p.id, { bezug: [...new Set([...alsListe(p.werte.bezug), ziel.id])], stand: POST_STAND.erledigt }, von);
-        await this.notiere(p.id, von, 'zugeordnet', { text: t('meldungen.dienst.dokumente-zusammengefuegt-in', { zielTitel }), ziel: ziel.id, zielTyp: ziel.typId });
-        await this.postAufgaben(p.id, von);
-        erledigt.push(p.id);
-      }
-    }
-    protokoll.modul('dokumente').info('PDFs zusammengefügt', { ziel: ziel.id, anzahl: quellen.length, entfernt: entfernen });
-    return { dokument: neu, erledigtePost: erledigt };
-  }
-
-  /* ---------- Post fotografieren (#490) ---------- */
-
-  /**
-   * Fotos als eine Post: Aus den Fotos (in dieser Reihenfolge) wird ein PDF, daraus eine neue Post
-   * (Betreff „Post vom …“, wenn keiner angegeben ist). Die Fotos kommen vom Handy einzeln über den
-   * Fotostapel; ein mehrseitiger Brief ist so ein PDF und eine Post.
-   */
-  async postAusFotos(eingabe: unknown, fotos: Buffer[], ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen): Promise<{ post: Mappe; dokument: Dokument; seiten: number }> {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const pdf = await bilderZuPdf(fotos);
-    if (pdf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.als-pdf-waeren-die'));
-    const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || fotoBetreff();
-    const post = await this.legePostAn({ betreff, ...(e.fuer ? { fuer: e.fuer } : {}) }, ich, z, kanal);
-    const typ = await this.postTyp();
-    const register = typ.register.find((r) => r.art === 'dokumente')?.key;
-    const dokument = (await this.ladeHoch(post.id, { register, name: `${dateiname(betreff)}.pdf`, typ: 'application/pdf', herkunft: 'hochgeladen' }, pdf, ich.id)).dokument;
-    protokoll.modul('ablage').info('Post fotografiert', { mappe: post.id, seiten: fotos.length });
-    return { post: (await this.repo.holeMappe(post.id))!, dokument, seiten: fotos.length };
-  }
-
-  /**
-   * Seiten an ein PDF anhängen (#490, „Seite hinzufügen“; Mechanik aus #335 „zusammenfügen“): neue Version,
-   * ohne Versionierung ersetzt das Ergebnis das bisherige (es kommt in den Papierkorb – verloren geht nichts,
-   * alle Seiten stecken im neuen PDF). `pdfs`: weitere PDFs, `fotos`: Fotos als Seiten, in dieser Reihenfolge.
-   */
-  private async haengeSeitenAn(d: Dokument, inhalt: Buffer, anhang: Buffer[], von: string | null, text: string): Promise<{ dokument: Dokument; seiten: number }> {
-    const { m, reg } = await this.registerVon(d).then(async (x) => ({ ...x, m: await this.repo.holeMappe(d.mappeId) }));
-    if (!m || !reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
-    await this.pruefeArchivDokument(m.id, 'ersetzen');
-    const buf = await fuegeZusammen([inhalt, ...anhang]);
-    if (buf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.zusammen-waere-das-pdf'));
-    let dokument: Dokument;
-    if (reg.versionierung) dokument = await this.ersetzeDokument(d.id, { name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von);
-    else {
-      await this.loescheDokument(d.id, von);
-      dokument = (await this.ladeHoch(m.id, { register: reg.key, name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
-    }
-    const seiten = (await seitenInfo(buf)).anzahl;
-    await this.notiere(m.id, von, 'pdf_bearbeitet', { dokument: d.name, seiten, vorher: (await seitenInfo(inhalt)).anzahl, text });
-    return { dokument, seiten };
-  }
-
-  /**
-   * Fotos als Seiten an eine Mappe (#490): mit `dokument` ans Ende dieses PDFs, sonst als neues PDF
-   * „Fotos vom ….pdf“ im ersten Dokumentenregister (bzw. `register`).
-   */
-  async fotosAnMappe(mappeId: string, eingabe: unknown, fotos: Buffer[], von: string | null, z?: Zugriff): Promise<{ dokument: Dokument; seiten: number }> {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const m = z ? await this.pruefeRecht(z, mappeId, 'U') : await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const neu = await bilderZuPdf(fotos);
-    if (e.dokument) {
-      const { d, inhalt } = await this.pdfVon(text(e.dokument));
-      if (d.mappeId !== m.id) throw new Fachfehler(422, t('meldungen.dienst.das-dokument-gehoert-nicht'));
-      const n = fotos.length;
-      return this.haengeSeitenAn(d, inhalt, [neu], von, t('meldungen.dienst.seiten-an-angehaengt-fotografiert', { anzahl: n, name: d.name }));
-    }
-    const typ = await this.repo.holeTyp(m.typId);
-    const regs = typ?.register.filter((r) => r.art === 'dokumente') ?? [];
-    const reg = e.register ? regs.find((r) => r.key === text(e.register)) : regs[0];
-    if (!reg) throw new Fachfehler(422, t('meldungen.dienst.die-mappe-hat-kein'));
-    const dokument = (await this.ladeHoch(m.id, { register: reg.key, name: `${dateiname(fotoBetreff().replace(/^Post/, 'Fotos'))}.pdf`, typ: 'application/pdf', herkunft: 'hochgeladen' }, neu, von)).dokument;
-    return { dokument, seiten: fotos.length };
-  }
-
-  /**
-   * Zwei Posts zusammenlegen (#490): Die Seiten der zweiten Post (PDFs und Fotos, in ihrer Reihenfolge)
-   * kommen ans Ende des ersten PDFs der ersten Post (hat sie keins, entsteht eins), die zweite Post kommt
-   * in den Papierkorb. Andere Dateien (z. B. Word) lassen sich nicht anhängen – dann 422.
-   */
-  async legePostZusammen(zielId: string, eingabe: unknown, von: string | null, z?: Zugriff): Promise<{ post: Mappe; dokument: Dokument; seiten: number }> {
-    const quelleId = text((eingabe as Record<string, unknown> | null)?.quelle);
-    if (!istUuid(quelleId) || quelleId === zielId) throw new Fachfehler(422, t('meldungen.dienst.bitte-die-post-waehlen'));
-    const ziel = z ? await this.pruefeRecht(z, zielId, 'U') : await this.repo.holeMappe(zielId);
-    const quelle = z ? await this.pruefeRecht(z, quelleId, 'D') : await this.repo.holeMappe(quelleId);
-    if (!ziel || !quelle) throw new Fachfehler(404, t('meldungen.dienst.diese-post-gibt-es'));
-    const typ = await this.postTyp();
-    if (ziel.typId !== typ.id || quelle.typId !== typ.id) throw new Fachfehler(422, t('meldungen.dienst.zusammenlegen-geht-nur-mit'));
-    if (istVersendet(ziel.werte) || istVersendet(quelle.werte)) throw new Fachfehler(422, t('meldungen.dienst.versendete-e-mails-bleiben'));
-    const quellDoks = await this.repo.listeDokumente(quelleId);
-    if (!quellDoks.length) throw new Fachfehler(422, t('meldungen.dienst.die-gewaehlte-post-hat'));
-    const fremd = quellDoks.filter((d) => d.mime !== 'application/pdf' && d.mime !== 'image/jpeg' && d.mime !== 'image/png');
-    if (fremd.length) throw new Fachfehler(422, t('meldungen.dienst.ist-kein-pdf-und', { name: fremd[0].name }));
-    const anhang: Buffer[] = [];
-    for (const d of quellDoks) {
-      const s = await this.dateien.lies(d.sha256);
-      const b = Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]);
-      anhang.push(d.mime === 'application/pdf' ? b : await bilderZuPdf([b]));
-    }
-    const zielPdf = (await this.repo.listeDokumente(zielId)).find((d) => d.mime === 'application/pdf');
-    const qTitel = await this.titel(quelle);
-    let erg: { dokument: Dokument; seiten: number };
-    if (zielPdf) {
-      const { inhalt } = await this.pdfVon(zielPdf.id);
-      erg = await this.haengeSeitenAn(zielPdf, inhalt, anhang, von, t('meldungen.dienst.seiten-aus-der-post', { qTitel }));
-    } else {
-      const buf = await fuegeZusammen(anhang);
-      const reg = typ.register.find((r) => r.art === 'dokumente')!;
-      const dokument = (await this.ladeHoch(zielId, { register: reg.key, name: `${dateiname(auswahlText(ziel.werte.betreff) || 'Post')}.pdf`, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
-      erg = { dokument, seiten: (await seitenInfo(buf)).anzahl };
-      await this.notiere(zielId, von, 'pdf_bearbeitet', { dokument: dokument.name, seiten: erg.seiten, text: t('meldungen.dienst.seiten-aus-der-post-2', { qTitel }) });
-    }
-    await this.notiere(quelleId, von, 'zugeordnet', { text: t('meldungen.dienst.seiten-an-die-post', { titel: await this.titel(ziel) }), ziel: zielId, zielTyp: typ.id });
-    await this.loescheMappe(quelleId, von);
-    protokoll.modul('ablage').info('Posts zusammengelegt', { ziel: zielId, quelle: quelleId, seiten: erg.seiten });
-    return { post: (await this.repo.holeMappe(zielId))!, ...erg };
-  }
-
-  /* ---------- PDF verkleinern (#393) ---------- */
-
-  /** Schätzungen je Prüfwert (Analyse ist schnell, aber nicht kostenlos – die Werkbank fragt viele ab). */
-  private readonly analysen = new Map<string, Analyse>();
-  private async analyseVon(d: Dokument): Promise<Analyse> {
-    const da = this.analysen.get(d.sha256);
-    if (da) return da;
-    const a = await analysiere(await this.liesGanz(d.sha256));
-    if (this.analysen.size > 500) this.analysen.delete(this.analysen.keys().next().value!);
-    this.analysen.set(d.sha256, a);
-    return a;
-  }
-
-  /** Für den Dialog: Größe, Bilder und geschätzte Größe je Stufe; dazu, was mit dem Ergebnis geschieht. */
-  async verkleinernVorschau(id: string) {
-    const { d } = await this.pdfVon(id);
-    const { reg } = await this.registerVon(d);
-    return { id: d.id, name: d.name, ...(await this.analyseVon(d)), versioniert: !!reg?.versionierung, papierkorb: (await this.papierkorbTage()) > 0, mindestens: MIN_ERSPARNIS };
-  }
-
-  /**
-   * Verkleinern am Dokument: Ergebnis als neue Version (Versionierung) bzw. – ohne Versionierung – Ersetzen
-   * nach Rückfrage (`bestaetigt`), das bisherige kommt in den Papierkorb (wie „PDF bearbeiten“, #335).
-   * Der Volltext bleibt (die Textebene ist unverändert), es gibt keine neue Texterkennung.
-   * Bringt es weniger als 10 %, bleibt alles, wie es ist (`unveraendert: true`). `ohneOriginal` (Sammelaktion):
-   * die bisherige Version nicht behalten – nur außerhalb einer Aufbewahrungsfrist.
-   */
-  async verkleinereDokument(id: string, eingabe: unknown, von: string | null): Promise<{ dokument: Dokument; unveraendert: boolean; vorher: number; nachher: number; stufe: Stufe; meldung: string }> {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const stufe = e.stufe === undefined ? STANDARD_STUFE : stufeAus(e.stufe) ?? STANDARD_STUFE;
-    const { d, inhalt } = await this.pdfVon(id);
-    const { typ, reg } = await this.registerVon(d);
-    if (!reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
-    const korb = (await this.papierkorbTage()) > 0;
-    if (!reg.versionierung && e.bestaetigt !== true) {
-      throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-4', { wert: korb ? t('meldungen.dienst.das-bisherige-kommt-in') : t('meldungen.dienst.das-bisherige-ist-danach') }), { rueckfrage: true, papierkorb: korb });
-    }
-    const r = await verkleinere(inhalt, stufe);
-    if (!r.lohnt) {
-      const meldung = t('meldungen.dienst.laesst-sich-kaum-verkleinern', { name: d.name, round: Math.round(MIN_ERSPARNIS * 100) });
-      return { dokument: d, unveraendert: true, vorher: r.vorher, nachher: r.vorher, stufe, meldung };
-    }
-    const ocr = d.ocr?.stand === 'fertig' ? { text: (await this.repo.volltext(d.id)) ?? '', seiten: d.ocr.seiten ?? null, info: d.ocr.info ?? null } : null;
-    let neu: Dokument;
-    if (reg.versionierung) {
-      const v = await this.repo.ersetzeDokument(d.id, {
-        name: d.name, mime: 'application/pdf', groesse: r.inhalt.length, sha256: await this.legeDateiAb(r.inhalt), anzeigbar: true,
-        erstelltVon: von, herkunft: 'bearbeitet', ...(ocr ? { volltext: ocr.text } : {}),
-      });
-      if (ocr) await this.repo.ocrSetze(v.id, { stand: 'fertig', ...ocr });
-      this.neueDateien([v]);
-      neu = await this.nachNeuerVersion(d, v, typ, reg, von);
-      if (e.ohneOriginal === true && (await this.archivErlaubt(d.mappeId))) {
-        const alt = (await this.repo.versionenVon(d.id)).find((x) => x.nummer === v.version! - 1);
-        const sha = await this.repo.loescheVersion(d.id, v.version! - 1);
-        if (sha) await this.raeumeAuf(sha);
-        if (sha && alt) await this.protokolliere(this.dokEintraege([versionInfo(alt)], { ...(await this.mappenInfo([d.mappeId], new Map()))(d.mappeId, d.id), schritt: 'endgueltig', weg: 'version' }), await this.loeschKontext(von));
-        neu = (await this.repo.holeDokument(d.id)) ?? neu;
-      }
-    } else {
-      await this.loescheDokument(d.id, von);
-      neu = (await this.ladeHoch(d.mappeId, { register: reg.key, name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet', ...(ocr ? { volltext: ocr } : {}) }, r.inhalt, von)).dokument;
-      if (d.archivnummer) neu = await this.setzeArchivnummer(neu.id, d.archivnummer, von).catch(() => neu);
-    }
-    const text = t('meldungen.dienst.verkleinert-stufe-dpi', { ergebnisText: ergebnisText(r.vorher, r.nachher), name: STUFEN[stufe].name, dpi: STUFEN[stufe].dpi });
-    await this.notiere(d.mappeId, von, 'pdf_bearbeitet', { dokument: d.name, text, verkleinert: { vorher: r.vorher, nachher: r.nachher, stufe }, seiten: r.seiten, vorher: r.seiten });
-    protokoll.modul('dokumente').info('PDF verkleinert', { id: d.id, stufe, vorher: r.vorher, nachher: r.nachher, bilder: r.bilder });
-    return { dokument: neu, unveraendert: false, vorher: r.vorher, nachher: r.nachher, stufe, meldung: t('meldungen.dienst.verkleinert', { ergebnisText: ergebnisText(r.vorher, r.nachher) }) };
-  }
-
-  private async legeDateiAb(inhalt: Buffer): Promise<string> {
-    // Prüfsumme in Stücken (#746): PDFs nach dem Bearbeiten sind bis zu 100 MB groß.
-    const sha256 = await shaVon(inhalt);
-    await this.dateien.schreibe(sha256, inhalt);
-    return sha256;
-  }
-
-  /** Darf eine ältere Version weg? Nicht während einer Aufbewahrungsfrist (Archivmodus, #212). */
-  private async archivErlaubt(mappeId: string): Promise<boolean> {
-    try { await this.pruefeArchivDokument(mappeId, 'löschen'); return true; } catch { return false; }
-  }
-
-  /** Einstellung „automatisch verkleinern“ (Werkbank → Systemzustand); Standard aus. */
-  async verkleinernEinstellung(): Promise<VerkleinernEinstellung> {
-    return verkleinernEinstellungAus(await this.einstellungen?.lies('verkleinern'));
-  }
-  async setzeVerkleinernEinstellung(eingabe: unknown): Promise<VerkleinernEinstellung> {
-    if (!this.einstellungen) throw new Fachfehler(409, t('meldungen.dienst.einstellungen-sind-nicht-verfuegbar'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const abMb = Number(e.abMb);
-    if (!Number.isFinite(abMb) || abMb < 1 || abMb > 100) throw new Fachfehler(422, t('meldungen.dienst.ab-welcher-groesse-1'));
-    if (!istStufe(e.stufe)) throw new Fachfehler(422, t('meldungen.dienst.stufe-bildschirm-standard-oder'));
-    const neu: VerkleinernEinstellung = { automatisch: e.automatisch === true, abMb: Math.round(abMb * 10) / 10, stufe: e.stufe };
-    await this.einstellungen.schreibe('verkleinern', neu);
-    protokoll.modul('werkbank').info('Automatisch verkleinern geändert', { ...neu });
-    return neu;
-  }
-
-  /** Verkleinert ein neues PDF, wenn das eingeschaltet ist und es groß genug ist; null = unverändert lassen. */
-  private async automatischVerkleinert(ein: Eingang, name: string) {
-    if (erkenneAnzeigbar(ein.kopf) !== 'application/pdf') return null;
-    const e = await this.verkleinernEinstellung();
-    if (!e.automatisch || ein.groesse < e.abMb * MB) return null;
-    try {
-      const r = await verkleinere(await ein.puffer(), e.stufe);
-      if (!r.lohnt) return null;
-      protokoll.modul('dokumente').info('Neues PDF automatisch verkleinert', { name, vorher: r.vorher, nachher: r.nachher, stufe: e.stufe });
-      return r;
-    } catch (x) {
-      // Lässt es sich nicht verkleinern (verschlüsselt, beschädigt), wird es so abgelegt, wie es kam.
-      protokoll.modul('dokumente').warn('Automatisch verkleinern übersprungen', { name, fehler: (x as Error).message });
-      return null;
-    }
-  }
-
-  /**
-   * Werkbank: große PDF-Dokumente nach Größe, mit geschätzter Ersparnis der Stufe. Geschätzt werden nur die
-   * ersten `GROSSE_MIT_SCHAETZUNG` (die Liste soll schnell da sein); `ab` in MB.
-   */
-  async grosseDokumente(f: { ab?: unknown; stufe?: unknown }) {
-    const ab = Number(f.ab ?? 2);
-    if (!Number.isFinite(ab) || ab < 0 || ab > 100) throw new Fachfehler(422, t('meldungen.dienst.ab-0-bis-100'));
-    const stufe = f.stufe === undefined || f.stufe === '' ? STANDARD_STUFE : stufeAus(f.stufe) ?? STANDARD_STUFE;
-    const docs = await this.repo.grossePdfs(Math.round(ab * MB), GROSSE_MAX);
-    const bezuege = await this.repo.bezuege([...new Set(docs.map((d) => d.mappeId))]);
-    const eintraege = [];
-    for (const [i, d] of docs.entries()) {
-      let geschaetzt: number | null = null, lohnt: boolean | null = null, fehler: string | null = null;
-      if (i < GROSSE_MIT_SCHAETZUNG) {
-        try { const a = (await this.analyseVon(d)).stufen[stufe]; geschaetzt = a.geschaetzt; lohnt = a.lohnt; } catch (x) { fehler = (x as Error).message; }
-      }
-      const b = bezuege.get(d.mappeId);
-      eintraege.push({ id: d.id, name: d.name, groesse: d.groesse, mappeId: d.mappeId, mappeTitel: b?.titel ?? '', typId: b?.typId ?? null, version: d.version ?? 1, geschaetzt, lohnt, fehler });
-    }
-    const geschaetzteErsparnis = eintraege.reduce((s, x) => s + (x.lohnt && x.geschaetzt != null ? x.groesse - x.geschaetzt : 0), 0);
-    return { stufe, ab, eintraege, geschaetzteErsparnis, mehr: docs.length === GROSSE_MAX };
-  }
-
-  /** Sammelaktion „Große Dokumente verkleinern“ als Hintergrundauftrag (eine Phase, Einheit Dokumente). */
-  verkleinereViele(eingabe: unknown, von: { id: string | null; email: string }) {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const ids = Array.isArray(e.ids) ? [...new Set(e.ids.map(String))].filter(istUuid) : [];
-    if (!ids.length) throw new Fachfehler(422, t('meldungen.dienst.bitte-mindestens-ein-dokument'));
-    if (ids.length > GROSSE_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-dokumente-auf-einmal', { GROSSE_MAX }));
-    const stufe = stufeAus(e.stufe ?? STANDARD_STUFE) ?? STANDARD_STUFE;
-    const ohneOriginal = e.ohneOriginal === true;
-    // Ohne Versionierung ersetzt das Verkleinern das Dokument – das muss hier einmal für alle bestätigt sein.
-    const bestaetigt = e.bestaetigt === true;
-    return this.auftraege.starte('pdf-verkleinern', `${ids.length} ${ids.length === 1 ? 'PDF' : 'PDFs'} verkleinern (${STUFEN[stufe].name})`, async (fortschritt) => {
-      let vorher = 0, nachher = 0, verkleinert = 0, unveraendert = 0;
-      const fehler: Array<{ id: string; name: string; grund: string }> = [];
-      fortschritt(0, ids.length);
-      for (const [i, id] of ids.entries()) {
-        try {
-          const r = await this.verkleinereDokument(id, { stufe, bestaetigt, ohneOriginal }, von.id);
-          if (r.unveraendert) unveraendert++; else { verkleinert++; vorher += r.vorher; nachher += r.nachher; }
-        } catch (x) {
-          const d = await this.repo.holeDokument(id).catch(() => undefined);
-          fehler.push({ id, name: d?.name ?? id, grund: (x as Error).message });
-        }
-        fortschritt(i + 1, ids.length);
-      }
-      protokoll.modul('werkbank').info('Große Dokumente verkleinert', { von: von.email, stufe, verkleinert, unveraendert, fehler: fehler.length, vorher, nachher });
-      return { stufe, verkleinert, unveraendert, fehler, vorher, nachher, ohneOriginal };
-    }, [{ key: 'dokumente', name: 'PDFs verkleinern', einheit: 'Dokumente' }]);
-  }
-
-  /* ---------- Schwärzen (#392) ---------- */
-
-  /** Wörter mit Lage je Prüfwert (aus der Textebene; der Dialog fragt Seite für Seite). */
-  private readonly schwaerzAnalysen = new Map<string, Promise<SchwaerzAnalyse>>();
-
-  private async schwaerzbar(id: string): Promise<{ d: Dokument; inhalt: Buffer }> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (!kannSchwaerzen(d.mime)) throw new Fachfehler(422, t('meldungen.dienst.laesst-sich-nicht-schwaerzen', { name: d.name }));
-    return { d, inhalt: await this.liesGanz(d.sha256) };
-  }
-
-  private schwaerzAnalyseVon(d: Dokument, inhalt: () => Promise<Buffer>): Promise<SchwaerzAnalyse> {
-    let p = this.schwaerzAnalysen.get(d.sha256);
-    if (!p) {
-      p = (async () => schwaerzAnalyse(await inhalt(), d.mime))();
-      this.schwaerzAnalysen.set(d.sha256, p);
-      p.catch(() => this.schwaerzAnalysen.delete(d.sha256));
-      while (this.schwaerzAnalysen.size > 20) this.schwaerzAnalysen.delete(this.schwaerzAnalysen.keys().next().value!);
-    }
-    return p;
-  }
-
-  /** Für den Dialog: Seiten mit Größe und Wörtern (für Suchbegriffe und Vorschläge), was mit dem Ergebnis geschieht. */
-  async schwaerzenVorschau(id: string) {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (!kannSchwaerzen(d.mime)) throw new Fachfehler(422, t('meldungen.dienst.laesst-sich-nicht-schwaerzen', { name: d.name }));
-    const a = await this.schwaerzAnalyseVon(d, () => this.liesGanz(d.sha256));
-    const { reg } = await this.registerVon(d);
-    return { id: d.id, name: d.name, mime: d.mime, sha256: d.sha256, ...a, versioniert: !!reg?.versionierung, kopieName: geschwaerztName(d.name), muster: MUSTER };
-  }
-
-  /** Seitenbild für den Dialog (größer als die Seitenansicht; Bilder in derselben Ausrichtung wie beim Schwärzen). */
-  private readonly schwaerzBilder = new Map<string, Promise<Buffer | null>>();
-  async schwaerzSeitenbild(id: string, nr: number, gestempelt?: { pdf: Buffer } | null): Promise<Buffer | null> {
-    if (gestempelt) return Number.isInteger(nr) && nr >= 1 && nr <= SCHWAERZEN_MAX_SEITEN ? schwaerzSeitenbild(gestempelt.pdf, 'application/pdf', nr) : null;
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (!kannSchwaerzen(d.mime) || !Number.isInteger(nr) || nr < 1 || nr > SCHWAERZEN_MAX_SEITEN) return null;
-    const k = `${d.sha256}:${nr}`;
-    let p = this.schwaerzBilder.get(k);
-    if (!p) {
-      p = (async () => schwaerzSeitenbild(await this.liesGanz(d.sha256), d.mime, nr))();
-      this.schwaerzBilder.set(k, p);
-      p.catch(() => this.schwaerzBilder.delete(k));
-      while (this.schwaerzBilder.size > 40) this.schwaerzBilder.delete(this.schwaerzBilder.keys().next().value!);
-    }
-    return p;
-  }
-
-  /**
-   * Seitenbild der Archivfassung (#934, „Dokument übernehmen“ mit „Original | PDF/A“): wie `schwaerzSeitenbild`, aber
-   * aus dem PDF/A. Steckt die Archivfassung im Original (schon PDF/A), ist es dessen Seite. null: keine Archivfassung.
-   */
-  async archivSeitenbild(id: string, nr: number): Promise<Buffer | null> {
-    const d = await this.repo.holeDokument(id);
-    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    if (!Number.isInteger(nr) || nr < 1 || nr > SCHWAERZEN_MAX_SEITEN) return null;
-    const info = await this.archiv?.info(d.sha256);
-    if (!info) return null;
-    if (info.imOriginal) return this.schwaerzSeitenbild(id, nr);
-    const k = `${d.sha256}:archiv:${nr}`;
-    let p = this.schwaerzBilder.get(k);
-    if (!p) {
-      p = (async () => { const f = await this.archiv!.lies(d.sha256); return f ? schwaerzSeitenbild(f.inhalt, 'application/pdf', nr) : null; })();
-      this.schwaerzBilder.set(k, p);
-      p.catch(() => this.schwaerzBilder.delete(k));
-      while (this.schwaerzBilder.size > 40) this.schwaerzBilder.delete(this.schwaerzBilder.keys().next().value!);
-    }
-    return p;
-  }
-
-  /**
-   * Schwärzen (#392): `bereiche` (Seite ab 1, x, y, b, h relativ), `begriffe` (überall schwärzen) und/oder
-   * `muster` (alle Vorschläge dieser Arten) → neues Dokument „… (geschwärzt)“ im selben Register (`ziel`
-   * „kopie“, Standard) oder neue Version (`ziel` „version“, nur mit Versionierung). Das Original bleibt.
-   * Historie und Protokoll nennen nur Zahlen, nie die Suchbegriffe oder den geschwärzten Text.
-   */
-  async schwaerzeDokument(id: string, eingabe: unknown, von: string | null) {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
-    const ziel = e.ziel === undefined || e.ziel === null || e.ziel === '' ? 'kopie' : e.ziel;
-    if (ziel !== 'kopie' && ziel !== 'version') throw new Fachfehler(422, t('meldungen.dienst.ziel-kopie-oder-version'));
-    const { d, inhalt } = await this.schwaerzbar(id);
-    const { typ, reg } = await this.registerVon(d);
-    if (!reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
-    if (ziel === 'version' && !reg.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-5'));
-    let begriffe: string[];
-    try { begriffe = pruefeBegriffe(e.begriffe); } catch (x) { throw new Fachfehler(422, (x as Error).message); }
-    const roh = e.muster === undefined || e.muster === null ? [] : Array.isArray(e.muster) ? e.muster : [e.muster];
-    if (roh.some((m) => !istMuster(m))) throw new Fachfehler(422, `muster: ${Object.keys(MUSTER).join(', ')}.`);
-    const muster = [...new Set(roh)] as Array<keyof typeof MUSTER>;
-    const a = await this.schwaerzAnalyseVon(d, async () => inhalt);
-    let bereiche: Bereich[];
-    try { bereiche = pruefeBereiche(e.bereiche, a.seiten.length); } catch (x) { throw new Fachfehler(422, (x as Error).message); }
-    const gefunden = begriffe.map((b) => findeBegriff(a.seiten, b));
-    bereiche = [...bereiche, ...bereicheVon(a.seiten, gefunden.flat()), ...(muster.length ? bereicheVon(a.seiten, findeMuster(a.seiten, muster)) : [])];
-    if (!bereiche.length) {
-      throw new Fachfehler(422, begriffe.length || muster.length
-        ? t('meldungen.dienst.nichts-zu-schwaerzen', { wert: begriffe.length ? (t('meldungen.dienst.keiner-der-suchbegriffe-kommt', { anzahl: begriffe.length })) : t('meldungen.dienst.keines-der-muster-kommt'), wert2: a.quelle === 'keine' ? t('meldungen.dienst.das-dokument-hat-keinen') : '' })
-        : t('meldungen.dienst.nichts-zu-schwaerzen-bitte'));
-    }
-    const r = await schwaerze(inhalt, d.mime, a, bereiche);
-    // Volltext der geschwärzten Fassung (#459): Hat jede Seite eine Textebene, gilt der Text ohne die geschwärzten
-    // Wörter gleich. Sonst (Scan, Foto, gemischt) läuft sie wie ein neues Dokument durch Textebene und Paket – das
-    // Paket sieht nur die geschwärzte Fassung, nie das Original.
-    const volltext = r.text !== null && !a.seiten.some((s) => !s.woerter.length) ? { text: r.text, seiten: r.seiten, info: t('meldungen.dienst.textebene-nach-dem-schwaerzen') } : null;
-    const stellen = stellenText(bereiche);
-    let neu: Dokument;
-    if (ziel === 'version') {
-      const sha256 = await this.legeDateiAb(r.inhalt);
-      neu = await this.inTransaktion(async () => {
-        const v = await this.repo.ersetzeDokument(d.id, {
-          name: d.name, mime: r.mime, groesse: r.inhalt.length, sha256, anzeigbar: true, erstelltVon: von, herkunft: 'geschwaerzt',
-          ...(volltext ? { volltext: volltext.text } : {}),
-        });
-        if (volltext) await this.repo.ocrSetze(v.id, { stand: 'fertig', ...volltext });
-        // Der Vektor (#442) stammt noch aus dem ungeschwärzten Text: weg damit; das Ereignis „Volltext fertig“
-        // lässt Pakete (z. B. Ähnlichkeit) ihn aus dem geschwärzten Text neu berechnen.
-        await this.repo.vektorLoesche(v.id);
-        this.danach(() => this.neueDateien([v]));
-        if (volltext) this.danach(() => void this.volltextFertig({ dokument: v.id, mappe: d.mappeId }, { quelle: 'kern', text: !!volltext.text.trim(), mime: r.mime, seiten: volltext.seiten ?? null }).catch(() => {}));
-        const x = await this.nachNeuerVersion(d, { ...v, ocr: volltext ? { stand: 'fertig' } as Dokument['ocr'] : v.ocr }, typ, reg, von);
-        await this.notiere(d.mappeId, von, 'geschwaerzt', { dokument: d.name, text: t('meldungen.dienst.geschwaerzte-fassung-als-version', { wert: x.version ?? '', name: d.name, stellen }), version: x.version, stellen: r.bereiche, seiten: r.betroffen });
-        return x;
-      });
-    } else {
-      neu = await this.inTransaktion(async () => {
-        const x = (await this.ladeHoch(d.mappeId, { register: reg.key, name: geschwaerztName(d.name), typ: r.mime, herkunft: 'geschwaerzt', ...(volltext ? { volltext } : {}) }, r.inhalt, von)).dokument;
-        await this.notiere(d.mappeId, von, 'geschwaerzt', { dokument: x.name, text: t('meldungen.dienst.geschwaerzte-fassung-von-erstellt', { name: x.name, name2: d.name, stellen }), quelle: d.name, stellen: r.bereiche, seiten: r.betroffen });
-        return x;
-      });
-    }
-    protokoll.modul('dokumente').info('Dokument geschwärzt', { id: d.id, neu: neu.id, ziel, stellen: r.bereiche, seiten: r.betroffen, begriffe: begriffe.length, muster });
-    return {
-      dokument: neu, ziel, stellen: r.bereiche, seiten: r.betroffen,
-      begriffe: gefunden.map((f) => ({ gefunden: f.length })),
-      meldung: ziel === 'version' ? t('meldungen.dienst.geschwaerzt-version-die', { stellen, wert: neu.version ?? '' }) : t('meldungen.dienst.angelegt-das-original-bleibt', { name: neu.name, stellen }),
-    };
-  }
+  schwaerzenVorschau(id: string) { return this.schwaerzen.schwaerzenVorschau(id); }
+  schwaerzSeitenbild(...a: Parameters<Schwaerzen['schwaerzSeitenbild']>) { return this.schwaerzen.schwaerzSeitenbild(...a); }
+  archivSeitenbild(id: string, nr: number) { return this.schwaerzen.archivSeitenbild(id, nr); }
+  schwaerzeDokument(id: string, eingabe: unknown, von: string | null) { return this.schwaerzen.schwaerzeDokument(id, eingabe, von); }
 
   /* ---------- Archivnummer (#345) ---------- */
 
@@ -4978,7 +3289,7 @@ export class Dienst {
     if (stand.bytes > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, t('meldungen.dienst.die-auskunft-ist-mit', { round: Math.round(stand.bytes / 1e6), round2: Math.round(EMAIL_MAX_ANHAENGE / 1e6) }));
     const e = (eingabe ?? {}) as Record<string, unknown>;
     const vorlage = auskunftMail.zip((await this.datenschutz()).anrede);
-    const { an, betreff, nachricht } = Dienst.emailKopf({ betreff: vorlage.betreff, nachricht: vorlage.nachricht, ...e });
+    const { an, betreff, nachricht } = AusgangEmail.emailKopf({ betreff: vorlage.betreff, nachricht: vorlage.nachricht, ...e });
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
     try {
       await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge: [{ name: `${stand.name}.zip`, mime: 'application/zip', inhalt: await datei() }] });
@@ -5154,14 +3465,11 @@ export class Dienst {
   private schreibeFehlendeDateien(shas: string[]) { return this.dateienFehlen.schreibeFehlendeDateien(shas); }
   fehlendeDateien(): Promise<number> { return this.dateienFehlen.fehlendeDateien(); }
   dokumenteOhneDatei(): Promise<{ dateien: number; fehlend: number; dokumente: number }> { return this.dateienFehlen.dokumenteOhneDatei(); }
-  private pruefeVorhanden(docs: Array<Pick<Dokument, 'sha256' | 'name'>>) { return this.dateienFehlen.pruefeVorhanden(docs); }
 
   /* ---------- Versionierung (#194, dokumente/versionen.ts) ---------- */
 
-  private registerVon(d: Dokument) { return this.dokumentVersionen.registerVon(d); }
   ersetzeDokument(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> { return this.dokumentVersionen.ersetzeDokument(id, e, inhalt, benutzerId); }
   holeVersionZurueck(id: string, nummer: number, benutzerId: string | null): Promise<Dokument> { return this.dokumentVersionen.holeVersionZurueck(id, nummer, benutzerId); }
-  private nachNeuerVersion(...a: Parameters<DokumentVersionen['nachNeuerVersion']>) { return this.dokumentVersionen.nachNeuerVersion(...a); }
   versionen(id: string) { return this.dokumentVersionen.versionen(id); }
   versionInhalt(id: string, nummer: number) { return this.dokumentVersionen.versionInhalt(id, nummer); }
   private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) { return this.dokumentVersionen.beruehre(mappeId, typ, benutzerId); }

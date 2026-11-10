@@ -21,14 +21,14 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `konten/` | users, roles, deputies, API keys |
 | `mappentypen/` | folder types, their archive, permissions |
 | `werkbank/` | Workbench overview, designs, region, languages, log, admin mode |
-| `ausgang/` | export (Workbench and My account) |
+| `ausgang/` | export (Workbench and My account); since #1077 the [routes to the outside](#ausgang) |
 | `datenschutz/` | data subject requests, deletion concept, retrieval page |
 | `pakete/` | packages, catalogue, package settings |
 | `suche/` | search, Ask your archive |
 | `wartung/` | maintenance mode |
 | `sicherung/` | backup, restore, emergency sheet, keys |
 | `system/` | operation, system status, connection, sign-in protection, inbox folder, WebDAV, error reports |
-| `post/` | mailboxes and other inbound channels |
+| `post/` | mailboxes and other inbound channels; since #1077 [post](#post) |
 | `automatisierung/` | automations |
 | `webhooks/` | webhooks (Workbench and My account) |
 | `sichten/` | views, folder lists, start page |
@@ -46,6 +46,7 @@ Alongside, without routes:
 | `zugriff/` | [checking permissions](#zugriff) (#1072) |
 | `systemausstattung/` | the [system setup](#systemausstattung) (#963) |
 | `http/` | helpers of the HTTP layer – for routes only (checked with `npm run lint:abh`) |
+| `pdf-bearbeiten/` | [editing PDFs](#pdf-bearbeiten) (#1077): pages, shrinking, redacting, stamp templates |
 | `pdf/`, `arbeit/` | [PDF module](#pdf-stelle), [worker pool](#arbeiter-pool) |
 | `laeufer/` | package runner |
 - **Workbench routes** (`zugang: 'admin'`, #818/#819) only work in **administration mode** (state of the session, `Konten.modusPruefen`) and only with permission for their area. Every new route needs an entry in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – otherwise only people with "Full administration" may use it, and the test `verwaltungsmodus.test.ts` fails. Sensitive actions that require a fresh sign-in are listed there in `heikleHandlung`. `benutzer.rolle` is the request's **effective** role (`admin` only in the mode); the stored permission is in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API keys never get `admin`.
@@ -136,7 +137,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 - **Door:** `mappentypen/index.ts`; only `routen.ts` loads the routes (`mappentypen.routen.ts`) directly.
 - **Gets the core**, `TypPakete` and `Systemtypen` also the [permission check](#zugriff), and per class a connector for what is still in the service (stamp, recognition and permissions on the type, tasks, titles, jobs, writing system folders).
-- **Still in the service:** the stamp on the type (`mitStempel`) and `ausPostZiele` (#937). Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
+- **Still in the service:** `ausPostZiele` (#937). Since #1077 the stamp on the type (`mitStempel`) is worked out by [outgoing](#ausgang), checking and saving it by the stamp templates in [editing PDFs](#pdf-bearbeiten) – both through the connector. Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
 
 ## Folders (#1074) { #mappen }
 
@@ -172,7 +173,7 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `dokumente/index.ts`; only `routen.ts` loads the routes (`dokumente.routen.ts`) directly. The technology of the versions (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) stays outside and is a tool for subject folders (see [layers](#schichten)).
 - **Gets the core** and the classes of this folder it calls, and per class a connector for what is still in the service or would run in a circle (event and titles via the facade, archive mode, shrinking, full text, jobs for packages, package settings, folder types, text recognition).
 - **Order:** `ladeHoch` writes history, “last changed”, document, full text and `dokument.hochgeladen` in one transaction; preview, converting and unlocking run afterwards. `nachFassung`, `nachEntsperren`, `archivNachVolltext` and `nachNeuerVersion` are unchanged and called from the same places.
-- **Still in the service:** editing PDFs, shrinking and redacting, `entsperrtZu`. Since #1076 the documents call the [full text](#volltext) (`volltextFertig`, `volltextAn`) through their connector on the service.
+- **Still in the service:** `entsperrtZu`. Since #1077 editing PDFs, shrinking and redacting live in [editing PDFs](#pdf-bearbeiten). Since #1076 the documents call the [full text](#volltext) (`volltextFertig`, `volltextAn`) through their connector on the service.
 
 ## Views (#1076) { #sichten }
 
@@ -210,6 +211,52 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Gets the core** and the documents (text recognition, converting, archive version), plus a connector for the event (facade), jobs, `paketVolltext` and the off-site backup.
 - **Order:** `volltextFertig` first puts `volltext.fertig` into the outbox, then reports to the archive version and only with text calls the listeners (recognition) one after the other; `nachTexterkennungsEreignis` hands on as before to converting, archive version, full text from packages and backup.
 
+## Post (#1077) { #post }
+
+`server/src/post/` (layer 3) groups everything that comes in – one class per topic that gets the core; the service builds them (`bauePdfPostAusgang()`) and keeps a one-line forward for every method:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `post.dienst.ts` | `PostDienst` (`dienst.post`) | `legePostAn`, `ordneZu` (#192), `automatischZuordnen`, `automatikRueckgaengig` (#337), `postAufgaben` (“post for you”) |
+| `aufloesen.ts` | `PostAufloesen` (`dienst.postAufloesen`) | dissolving and splitting off post (#934, #936): `loesePostAuf`, `trennePostAb`, `verschiebeInRegister` |
+| `systemmappen.ts` | `PostSystemmappen` (`dienst.postSystemmappen`) | `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, roles, system accounts (#673); `SystemkontoEintrag` |
+| `eingangskanaele.ts` | `Eingangskanaele` (`dienst.eingangskanaele`) | what inbox folders and mailboxes need (#195, #196), identical files and `fundstellen` (#333); `Fundstelle` |
+| `foto.ts` | `PostFotos` (`dienst.postFotos`) | photographing post (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen` |
+
+- **Door:** `post/index.ts`; only `routen.ts` loads the mailbox routes (`post.routen.ts`) directly. Since #1073 `wandleZuPost` and `ergaenzeSystemfelder` live with the [folder types](#mappentypen).
+- **Gets the core**, [checking permissions](#zugriff), [folder types](#mappentypen), [folders](#mappen), [documents](#dokumente) and the classes of this folder, `PostFotos` also [editing PDFs](#pdf-bearbeiten). Through the connector: event (facade), `meldeVerknuepft`, tasks, accounts, fit, system setup, deleting folders and `sichereZuordnung` from `erkennung.ts` (recognition still gets the whole service and so does not sit below layer 3).
+- **Order:** `legePostAn` writes folder, history, title, “post for you”, `post.angelegt` and the links in one transaction; the receiver `post.aufgaben` at the connection point `mappeGeaendert` stays last in line and calls `postAufgaben` through the facade.
+
+## Outgoing (#1077) { #ausgang }
+
+`server/src/ausgang/` (layer 3) groups the [routes to the outside](#wege-nach-draussen) on which files and data leave Ablago – download, email, export, WebDAV drive – and their **shared checkpoint** (#723):
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `pruefstelle.ts` | – | the rule “R means view, E means take along” (formerly `ausgang.ts`): `mitnehmbar`, `pruefeAlle`, messages |
+| `ausgang.dienst.ts` | `AusgangDienst` (`dienst.ausgang`) | `exportierbar` (#294), `mitnehmbar`, `pruefeAusgang`; stamps (`mitStempel`, `stempelPlan`, `laufwerkStempel`, `laufwerkAusgabe`), `notiereWeitergabe`, original or archive version, `dokumentFuerAusgabe`, `fassungFuerAusgabe`, `gestempelteSeiten` (#799) |
+| `email.ts` | `AusgangEmail` (`dienst.ausgangEmail`) | `versendeMappen`, `versendeMappe` (#58, #151), `emailKopf` (also for access requests) |
+| `export.ts` | `AusgangExport` (`dienst.ausgangExport`) | `exportiere` (#152, #153) |
+
+- **Door:** `ausgang/index.ts`; only `routen.ts` loads the routes (`ausgang.routen.ts`) directly.
+- **One checkpoint:** every route asks `dienst.pruefeAusgang` or `dienst.mitnehmbar` through the facade – routes (`http/routen-kontext.ts`, `sichten.routen.ts`), `webdav.ts` and also email and export in this folder (through their connector). `ausgang.test.ts` replaces both on the service and checks that download, email (one, several), export and drive ask them. A new route to the outside asks them before anything else happens.
+- **Gets the core**, checking permissions, folder types, folders, documents, the [views](#sichten), the stamp templates ([editing PDFs](#pdf-bearbeiten)) and – for email – the system folders of [post](#post); `entsperrtZu` through the connector.
+
+## Editing PDFs (#1077) { #pdf-bearbeiten }
+
+`server/src/pdf-bearbeiten/` (layer 3) is the business logic around PDFs; the [PDF place](#pdf-stelle) `pdf/` with pdf-lib stays technology and unchanged:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `pdf-bearbeiten.dienst.ts` | `PdfBearbeiten` (`dienst.pdfBearbeiten`) | page images, `seiteAlsGraubild` (#338), `pdfSeiten`, `bearbeitePdf` (split, for post one post per part, #335), `fuegePdfZusammen` |
+| `verkleinern.ts` | `PdfVerkleinern` (`dienst.pdfVerkleinern`) | shrinking PDFs (#393): preview, on a document, automatically, large documents; `VERKLEINERN_STANDARD`, `GROSSE_MAX` |
+| `schwaerzen.ts` | `Schwaerzen` (`dienst.schwaerzen`) | redacting (#392, #459), page images also of the archive version (#934) |
+| `stempelvorlagen.ts` | `Stempelvorlagen` (`dienst.stempelvorlagen`) | stamp templates and the stamp per folder type (#394) |
+
+- **Door:** `pdf-bearbeiten/index.ts`; the routes live with the documents.
+- **Why a folder of its own:** `pdf/` is exempt from the `fachordner` rule (`TECHNIK`), runs in the worker pool and is imported by the documents (layer 2). Classes with core, folders and documents there would have weakened the rule and built a cycle through `pdf/index.ts`.
+- **Gets the core**, checking permissions, folders and documents. Post (new post when splitting, system folder, “post for you”) comes through the connector on the service – `post/` appends photos with `pdfVon`, the other way round would run in a circle.
+
 ### Layers { #schichten }
 
 Subject folders only call downwards; within the same layer they may use each other (`kein-kreislauf` forbids cycles). The list is kept in one place in `.dependency-cruiser.cjs` (`SCHICHTEN`) – a folder that does not exist yet is already placed:
@@ -219,9 +266,9 @@ Subject folders only call downwards; within the same layer they may use each oth
 | 0 | `kern/` – only itself, `shared/` and the base |
 | 1 | `zugriff/` |
 | 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/` |
-| 3 | all other subject folders (`suche/`, `sichten/`, `volltext/`, `post/`, `aufgaben/` …) |
+| 3 | all other subject folders (`suche/`, `sichten/`, `volltext/`, `post/`, `ausgang/`, `pdf-bearbeiten/`, `aufgaben/` …) |
 
-Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
+Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), the technology for post, outgoing and editing PDFs (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
 
 ## Dependencies { #abhaengigkeiten }
 
@@ -771,6 +818,8 @@ Ablago **never opens a connection** to the internet on its own. Every route to t
 | Webhooks | Administrator approves the target, user creates | only numbers, signed | `server/src/webhook.ts` |
 | Package network | Administrator confirms on installation | only to the addresses from the manifest or service address | package runner, right `netzwerk` |
 | Retrieval links (data protection request) | Administrator creates the link | the request, only after the retrieval code | `server/src/abruf.ts` |
+
+Download, email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through the facade `dienst.pruefeAusgang` or `dienst.mitnehmbar`.
 
 **Rule for new routes:** a new route to the outside needs an approved issue, is **switched off** until someone explicitly switches it on, sends as little as possible (numbers instead of content where that's enough), is listed in this table and in the overview in the administrator handbook, and is reviewed by security.
 
