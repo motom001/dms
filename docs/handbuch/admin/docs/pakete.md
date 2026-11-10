@@ -213,7 +213,7 @@ Schlägt ein **Update** fehl, bleibt die alte Version mit ihrem alten Code insta
 
 Vor der Installation zeigt die Vorschau unter **„Das Paket enthält Code.“** eine Liste der Rechte. Hinter jedem Punkt führt ein **?** zur passenden Stelle hier. **Unter der Liste** steht links der Haken **„Ich erlaube dem Paket diese Rechte.“** – lies erst die Liste, dann setze den Haken. Ohne ihn bleibt **Installieren** gesperrt. Bei einem **Update** mit geänderten Rechten heißt der Haken **„Die Rechte haben sich geändert. Ich erlaube sie.“**; sind die Rechte gleich geblieben, steht dort nur „Die Rechte sind dieselben wie bisher.“
 
-Was nicht in der Liste steht, darf der Code nicht. Benutzer und Passwörter sieht ein Paket nie, und löschen darf es nichts.
+Was nicht in der Liste steht, darf der Code nicht. Benutzer und Passwörter sieht ein Paket nie, und löschen darf es nichts. **Passwörter und andere Geheimnisse** (Passwortfelder, Zugangsdaten von Postfächern und Diensten, Schlüssel, Tokens) bekommt ein Paket mit keinem Recht und keinem Haken – wo eines eingerichtet ist, sieht es nur „eingerichtet: ja/nein“. Eine Einstellung dafür gibt es nicht. Nur die eigenen Einstellungen des Pakets (etwa das Passwort seines Sicherungsziels) bekommt es zum Arbeiten.
 
 #### Mappen lesen { #recht-mappen-lesen }
 

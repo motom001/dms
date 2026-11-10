@@ -211,7 +211,7 @@ If an **update** fails, the old version stays installed with its old code. A pac
 
 Before installation, the preview shows a list of the permissions under **"The package contains code."**. Behind every item a **?** leads to the matching place here. **Below the list**, on the left, is the tick **"I allow the package these permissions."** – first read the list, then set the tick. Without it **Install** stays locked. With an **update** with changed permissions the tick is called **"The permissions have changed. I allow them."**; if the permissions have stayed the same, it only says "The permissions are the same as before."
 
-What isn't on the list, the code may not do. A package never sees users and passwords, and it may delete nothing.
+What isn't on the list, the code may not do. A package never sees users and passwords, and it may delete nothing. **Passwords and other secrets** (password fields, credentials of mailboxes and services, keys, tokens) a package gets with no permission and no tick – where one is set up, it only sees "set up: yes/no". There is no setting for this. Only the package's own settings (such as the password of its backup target) reach it so it can work.
 
 #### Reading folders { #recht-mappen-lesen }
 

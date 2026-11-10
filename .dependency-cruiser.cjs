@@ -15,9 +15,9 @@
  */
 /**
  * Basis, auf der der Kern aufsetzt (#961): Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler,
- * Fehler, Grenzen. Diese Module binden selbst keinen Dienst und keinen Fachbereich ein.
+ * Fehler, Grenzen, Sperre für Geheimnisse (#1055). Diese Module binden selbst keinen Dienst und keinen Fachbereich ein.
  */
-const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen';
+const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen|geheimnis-sperre';
 /**
  * Was Fachordner außer Kern und BASIS einbinden dürfen (#1072): Messung der Rechteprüfung, Vektoren lesen (auch der
  * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool. Seit #1075
