@@ -96,8 +96,20 @@ jobs:
       # Auswahl im Wochenlauf (mindestens 24 Stunden alt, nie zurück).
       - name: Regeln für :stabil
         run: .github/werkzeuge/stabil-pruefen.test.sh
+      # Die Musterseite der Bausteine (#967) darf nie ins Image: Produktivbau der Oberfläche ohne VITE_MUSTER bauen und
+      # prüfen, dass weder der Teil „muster“ noch der Weg /muster darin steckt.
+      - name: Produktivbau ohne Musterseite
+        shell: bash
+        run: |
+          npm run build -w web
+          if ls web/dist/assets | grep -q '^muster' || grep -alq '/muster' web/dist/assets/*.js; then
+            echo "::error title=Musterseite::Die Musterseite steckt im Produktivbau (web/src/start.tsx, VITE_MUSTER)"; exit 1
+          fi
+      # Testbau (#967): mit Musterseite unter /muster für die Rauchtests. Das Image baut das Dockerfile, ohne Musterseite.
       - name: Bauen
         run: npm run build
+        env:
+          VITE_MUSTER: '1'
 
       # Rauchtests für die Oberfläche (#897): die wichtigsten Wege einmal im Browser, gegen das eben gebaute Ablago –
       # gestartet wie im Workflow „Handbuch“: ohne Datenbank-Anbindung, der erste Test geht den Assistenten durch und
@@ -130,7 +142,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node web/rauchtest/rauchtest.mjs "$RUNNER_TEMP/rauchtest-fehler" 2>&1 | tee "$RUNNER_TEMP/rauchtest.log"
+          node web/rauchtest/rauchtest.mjs "$RUNNER_TEMP/rauchtest-fehler" "$RUNNER_TEMP/rauchtest-muster" 2>&1 | tee "$RUNNER_TEMP/rauchtest.log"
         env:
           DMS_URL: http://localhost:3000
           DMS_DATENWURZEL: ${{ runner.temp }}/rauchtest-daten
@@ -144,6 +156,15 @@ jobs:
         run: |
           grep -n -A12 "^not ok" "$RUNNER_TEMP/rauchtest.log" 2>/dev/null | head -80 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=Rauchtests::/'; echo
           grep -E "ERROR|WARN" "$RUNNER_TEMP/rauchtest-dms.log" 2>/dev/null | tail -n 30 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=Ablago-Protokoll (Rauchtests)::/'; echo
+      # Immer (#967): Musterseite der Bausteine hell und dunkel, Desktop und Handy – zum Ansehen im Pull Request.
+      - name: Bilder der Musterseite hochladen
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: musterseite
+          path: ${{ runner.temp }}/rauchtest-muster
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Bilder der Rauchtests hochladen
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

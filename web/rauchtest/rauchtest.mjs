@@ -9,7 +9,10 @@
  *   - keine Fehler in der Konsole und keine Fehler im Skript der Seite,
  *   - keine fehlgeschlagene Anfrage und keine Antwort ab 400 von Ablago (außer den beim Test erwarteten).
  *
- *   DMS_URL=http://localhost:3000 DMS_DATENWURZEL=… DB_HOST=localhost DB_PASSWORT=dms node web/rauchtest/rauchtest.mjs [fehlerordner]
+ *   DMS_URL=http://localhost:3000 DMS_DATENWURZEL=… DB_HOST=localhost DB_PASSWORT=dms node web/rauchtest/rauchtest.mjs [fehlerordner] [musterordner]
+ *
+ * Ablago muss als Testbau gebaut sein (`VITE_MUSTER=1 npm run build`): Der Test „Musterseite der Bausteine“ (#967)
+ * fotografiert /muster nach [musterordner] (Vorgabe rauchtest-muster) und prüft die Seite mit axe-core.
  *
  * Weitere Variablen: DB_NAME (Vorgabe dms_rauchtest), DB_BENUTZER (Vorgabe dms), DMS_EINRICHTUNGSCODE (statt der
  * Datei unter DMS_DATENWURZEL/geheim). Bei einem Fehler liegt ein Bild der Seite im Fehlerordner.
@@ -24,9 +27,12 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test, after, before } from 'node:test';
 import { chromium } from 'playwright';
+import { musterAufnehmen } from './muster.mjs';
 
 const BASIS = (process.env.DMS_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const FEHLERORDNER = process.argv[2] ?? process.env.DMS_RAUCHTEST_BILDER ?? 'rauchtest-fehler';
+// Bilder der Musterseite (#967): immer, nicht nur bei Fehlern – zum Ansehen im Pull Request.
+const MUSTERORDNER = process.argv[3] ?? process.env.DMS_MUSTER_BILDER ?? 'rauchtest-muster';
 // Persona-Namen (Lena richtet ein, Jonas ist neu dabei) und nur Beispiel-Domains.
 const LENA = { email: 'lena@example.org', name: 'Lena Beispiel', passwort: 'rauchtest-passwort-1' };
 const JONAS = { email: 'jonas@example.org', name: 'Jonas Beispiel', passwort: 'rauchtest-passwort-2' };
@@ -662,6 +668,24 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
   // Über den Registern die Zeile; ein Klick springt ins Register zum Feld.
   await mappe.getByRole('button', { name: 'Achtung: Vertrag passt nicht zu „Aussteller“.' }).click();
   await s.waitForFunction(() => document.activeElement?.closest('[data-anker="mappe.feld:vertrag"]'));
+});
+
+/* ---------- Bausteine (#967) ---------- */
+
+// Musterseite (nur im Testbau, VITE_MUSTER=1): hell und dunkel, Desktop und Handy fotografieren, mit axe-core prüfen –
+// ohne Verstoß, ohne Fehler im Browser. Braucht keine Einrichtung und keine Daten.
+test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 120_000 }, async () => {
+  await warteAufAblago();
+  await mkdir(MUSTERORDNER, { recursive: true });
+  const fehler = [];
+  const beobachte = (k) => {
+    k.on('console', (m) => { if (m.type() === 'error') fehler.push(`Konsole: ${m.text()}`); });
+    k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
+  };
+  const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
+  assert.equal(bilder.length, 8, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
+  assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });
 
 /* ---------- Hilfen ---------- */

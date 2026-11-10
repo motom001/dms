@@ -1,0 +1,43 @@
+/* Feldrahmen (#967): Reihen Beschriftung, Eingabe, Hinweis, Fehler (#801). Nur Werte aus tokens.css.
+   Die Eingabe selbst kommt aus basis.css; hier nur, was der Rahmen ändert: Hover, Fokus, Fehler, nur lesen. */
+.feld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.kopf { display: flex; align-items: baseline; min-width: 0; }
+.beschriftung { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; overflow-wrap: anywhere; }
+.optional { font-weight: 400; color: var(--leise); }
+
+.hinweis { display: flex; flex-direction: column; gap: 5px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); overflow-wrap: anywhere; }
+.fehler { display: flex; gap: 5px; align-items: baseline; margin: 0; font-size: calc(12.5px * var(--skala, 1)); color: var(--schlecht); overflow-wrap: anywhere; }
+.fehlersymbol { flex: none; align-self: center; }
+/* Leerer Fehlerbereich (bleibt für aria-live stehen): ohne Höhe und ohne den Abstand davor. */
+.fehler:empty { margin-top: -5px; }
+
+/* Haken: Kästchen und Beschriftung in einer Zeile; Hinweis und Fehler darunter, bündig mit der Beschriftung. */
+.hakenzeile { display: flex; gap: 8px; align-items: flex-start; }
+.hakentext { display: flex; align-items: baseline; min-width: 0; }
+.hakentext > label { font-size: inherit; font-weight: 500; cursor: pointer; overflow-wrap: anywhere; }
+.haken > .hinweis, .haken > .fehler { padding-left: 24px; }
+
+.gruppeninhalt { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+
+/* Textartige Eingaben: Hover und Fokus sichtbar, hell und dunkel (#968, Hinweis aus der Prüfung). */
+.feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea) { transition: border-color .12s; }
+.feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):hover:not(:disabled, [readonly]) { border-color: var(--leise); }
+.feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { border-color: var(--akzent); outline: 2px solid var(--akzent); outline-offset: 1px; }
+/* Haken und Optionsknöpfe: beim Darüberfahren ein zarter Ring. */
+.feld :where(input[type="checkbox"], input[type="radio"]):hover:not(:disabled) { box-shadow: 0 0 0 3px var(--akzent-zart); }
+
+/* Fehler: Rahmen in der Fehlerfarbe – auch beim Darüberfahren, beim Fokus mit Ring in der Fehlerfarbe. */
+.fehlerhaft :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea),
+.fehlerhaft :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):hover:not(:disabled, [readonly]) { border-color: var(--schlecht); }
+.fehlerhaft :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { outline-color: var(--schlecht); }
+.fehlerhaft :where(input[type="checkbox"], input[type="radio"]) { outline: 1px solid var(--schlecht); outline-offset: 1px; }
+
+/* Gesperrt: grau, ohne Hover. Nur lesen: Wert gut lesbar, aber erkennbar nicht änderbar (gestrichelter Rahmen). */
+.feld :where(select, textarea):disabled { background: var(--senke); color: var(--leise); }
+.feld :where(input, select, textarea):disabled { cursor: not-allowed; }
+.feld :where(input, textarea)[readonly] { background: var(--senke); border-style: dashed; }
+
+@media (prefers-reduced-motion: reduce) {
+  .feld :where(input, select, textarea) { transition: none; }
+}

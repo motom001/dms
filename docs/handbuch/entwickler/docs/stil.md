@@ -84,6 +84,8 @@ Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewu
 
 **Prüfung:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) sucht in `web/src/**/*.css` außer `tokens.css` nach Hex-Werten, `rgb()`/`hsl()` & Co. und benannten Farben wie `white`, in `*.ts(x)` nach Farbwerten in Zeichenketten. Die CI führt sie im Job **stil** aus; jeder Fund ist ein Fehler. Ausnahmen brauchen einen Grund in derselben Zeile – `/* farbe-erlaubt: Druck ist immer schwarz auf weiß */` – oder, für ganze Dateien, einen Eintrag mit Grund in `AUSNAHMEN` im Skript (heute: `design.ts` mit den Werten für hohen Kontrast, die Beispielbelege der Stempel-Vorschau).
 
+**Bausteine:** Wie Felder, Knöpfe und andere Teile der Oberfläche aussehen und sich verhalten, legen die Bausteine unter `web/src/bausteine/` fest – Seiten setzen sie zusammen, statt Abstände, Farben oder `aria`-Attribute selbst zu schreiben. Mehr unter [Gestaltung und Bausteine](bausteine.md).
+
 ## Abhängigkeiten zwischen den Teilen { #abhaengigkeiten-pruefen }
 
 `.dependency-cruiser.cjs` legt fest, wer wen importieren darf (`npm run lint:abh`):

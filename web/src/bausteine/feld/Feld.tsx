@@ -1,0 +1,151 @@
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
+import type { Hilfeort } from '../../../../shared/src/hilfe';
+import { Hilfe } from '../../Hilfe';
+import { Symbol } from '../../Symbol';
+import { t } from '../../sprache';
+import s from './Feld.module.css';
+
+/**
+ * Feldrahmen (#967): umschließt genau ein Eingabeelement und setzt alles, was jedes Feld braucht – Beschriftung mit
+ * `htmlFor`, Hilfesymbol an der Beschriftung, Hinweis, Fehlermeldung, `aria-invalid` und `aria-describedby`.
+ * Reihen wie im Musterkatalog (#801): Beschriftung, Eingabe, Hinweis, Fehler. Anleitung im Entwicklerhandbuch,
+ * „Gestaltung und Bausteine → Feld“.
+ *
+ * Benannte Varianten statt Schalter: `Feld` (Beschriftung über der Eingabe), `HakenFeld` (ein Haken, Beschriftung
+ * daneben) und `FeldGruppe` (mehrere Eingaben unter einer Beschriftung, als Gruppe).
+ */
+
+/** Was das Eingabeelement vom Rahmen bekommt. */
+export interface FeldVerknuepfung {
+  id: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: true;
+}
+
+/** Ein Element (bekommt die Verknüpfung als Props) oder eine Funktion, die sie selbst weitergibt. */
+export type FeldEingabe = ReactElement<Partial<FeldVerknuepfung>> | ((v: FeldVerknuepfung) => ReactNode);
+
+interface Gemeinsam {
+  /** Sichtbarer Name des Felds – kurz, ohne Doppelpunkt. */
+  beschriftung: ReactNode;
+  /** Ständige Erklärung unter der Eingabe; mehrere Einträge stehen untereinander. */
+  hinweis?: ReactNode | ReactNode[];
+  /** Was falsch ist und wie es richtig wird. Leer = kein Fehler. */
+  fehler?: ReactNode;
+  /** Stelle im Handbuch (shared/src/hilfe.ts): „?“ direkt hinter der Beschriftung. */
+  hilfe?: Hilfeort;
+  /** Kennzeichnet ein freiwilliges Feld mit „(optional)“. Pflicht ist der Normalfall und wird nicht markiert. */
+  optional?: boolean;
+  className?: string;
+}
+
+export interface FeldProps extends Gemeinsam {
+  /** Id der Eingabe; ohne Angabe die des Elements, sonst eine erzeugte. */
+  id?: string;
+  children: FeldEingabe;
+}
+
+/** Ids für Eingabe, Hinweis und Fehler und die Verknüpfung, die die Eingabe bekommt. */
+function useVerknuepfung(vorgabe: string | undefined, { hinweis, fehler }: Pick<Gemeinsam, 'hinweis' | 'fehler'>, bisher?: string) {
+  const basis = useId();
+  const id = vorgabe ?? `${basis}e`;
+  const hinweisId = `${id}-hinweis`;
+  const fehlerId = `${id}-fehler`;
+  const fehlerhaft = vorhanden(fehler);
+  const beschrieben = [bisher, fehlerhaft ? fehlerId : null, hinweise(hinweis).length ? hinweisId : null].filter(Boolean).join(' ');
+  const v: FeldVerknuepfung = { id, ...(beschrieben ? { 'aria-describedby': beschrieben } : {}), ...(fehlerhaft ? { 'aria-invalid': true } : {}) };
+  return { v, hinweisId, fehlerId, fehlerhaft };
+}
+
+const vorhanden = (x: ReactNode) => x !== undefined && x !== null && x !== false && x !== '';
+const hinweise = (h: Gemeinsam['hinweis']) => (Array.isArray(h) ? h : [h]).filter(vorhanden);
+
+/** Die Eingabe mit der Verknüpfung versehen: Element klonen (eigene Props bleiben) oder die Funktion aufrufen. */
+function verknuepfe(eingabe: FeldEingabe, v: FeldVerknuepfung): ReactNode {
+  if (typeof eingabe === 'function') return eingabe(v);
+  if (!isValidElement(eingabe)) return eingabe;
+  const eigen = eingabe.props;
+  return cloneElement(eingabe, { ...v, 'aria-invalid': v['aria-invalid'] ?? eigen['aria-invalid'] });
+}
+
+/**
+ * Kopfzeile: Beschriftung samt „(optional)“, dahinter das Hilfesymbol – das „?“ steht immer an der Beschriftung (#801),
+ * aber außerhalb von `<label>`, damit es nicht zum Namen der Eingabe gehört.
+ */
+function Kopf({ text, optional, hilfe, fuer, textId, className }: { text: ReactNode; optional?: boolean; hilfe?: Hilfeort; fuer?: string; textId?: string; className: string }) {
+  const inhalt = <>{text}{optional && <span className={s.optional}> {t('oberflaeche.feld.optional')}</span>}</>;
+  return (
+    <div className={className}>
+      {fuer ? <label htmlFor={fuer} className={s.beschriftung}>{inhalt}</label> : <span id={textId} className={s.beschriftung}>{inhalt}</span>}
+      {hilfe && <Hilfe ort={hilfe} />}
+    </div>
+  );
+}
+
+/** Hinweis- und Fehlerreihe. Der Fehlerbereich steht immer da (aria-live), damit eine neue Meldung angesagt wird. */
+function Unterzeilen({ hinweis, fehler, hinweisId, fehlerId }: Pick<Gemeinsam, 'hinweis' | 'fehler'> & { hinweisId: string; fehlerId: string }) {
+  const h = hinweise(hinweis);
+  return (
+    <>
+      {h.length > 0 && <div id={hinweisId} className={s.hinweis}>{h.map((x, i) => <span key={i}>{x}</span>)}</div>}
+      <p id={fehlerId} className={s.fehler} aria-live="polite">
+        {vorhanden(fehler) && <><Symbol name="warnung" className={s.fehlersymbol} />{fehler}</>}
+      </p>
+    </>
+  );
+}
+
+const klassen = (...k: Array<string | false | undefined>) => k.filter(Boolean).join(' ');
+const eigeneId = (e: FeldEingabe) => (typeof e !== 'function' && isValidElement(e) ? e.props.id : undefined);
+const eigeneBeschreibung = (e: FeldEingabe) => (typeof e !== 'function' && isValidElement(e) ? e.props['aria-describedby'] : undefined);
+
+/** Ein Feld: Beschriftung über der Eingabe (Text, Zahl, Datum, Auswahlliste, mehrzeilig …). */
+export function Feld({ beschriftung, hinweis, fehler, hilfe, optional, id, className, children }: FeldProps) {
+  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(id ?? eigeneId(children), { hinweis, fehler }, eigeneBeschreibung(children));
+  return (
+    <div className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)}>
+      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} fuer={v.id} className={s.kopf} />
+      {verknuepfe(children, v)}
+      <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
+    </div>
+  );
+}
+
+/**
+ * Ein Haken (Checkbox): steht in der Eingabezeile, die Beschriftung direkt daneben, das „?“ an der Beschriftung, die
+ * Beschreibung in der Hinweiszeile (#801). Die Eingabe ist ein `<input type="checkbox">`.
+ */
+export function HakenFeld({ beschriftung, hinweis, fehler, hilfe, optional, id, className, children }: FeldProps) {
+  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(id ?? eigeneId(children), { hinweis, fehler }, eigeneBeschreibung(children));
+  return (
+    <div className={klassen(s.feld, s.haken, fehlerhaft && s.fehlerhaft, className)}>
+      <div className={s.hakenzeile}>
+        {verknuepfe(children, v)}
+        <Kopf text={beschriftung} optional={optional} hilfe={hilfe} fuer={v.id} className={s.hakentext} />
+      </div>
+      <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
+    </div>
+  );
+}
+
+export interface FeldGruppeProps extends Gemeinsam {
+  /** Mehrere Eingaben, jede mit eigener Beschriftung (z. B. Haken mit `<label className="haken">`). */
+  children: ReactNode;
+}
+
+/**
+ * Mehrere Eingaben unter einer Beschriftung (Haken einer Mehrfachauswahl, Optionsknöpfe): eine Gruppe
+ * (`role="group"`), benannt durch die Beschriftung. Hinweis und Fehler hängen an der Gruppe; `aria-invalid` gibt es für
+ * Gruppen nicht, der Fehler steht im Text.
+ */
+export function FeldGruppe({ beschriftung, hinweis, fehler, hilfe, optional, className, children }: FeldGruppeProps) {
+  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(undefined, { hinweis, fehler });
+  const textId = `${v.id}-beschriftung`;
+  return (
+    <div role="group" aria-labelledby={textId} aria-describedby={v['aria-describedby']} className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)}>
+      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} textId={textId} className={s.kopf} />
+      <div className={s.gruppeninhalt}>{children}</div>
+      <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
+    </div>
+  );
+}

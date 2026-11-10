@@ -27,6 +27,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { musterAufnehmen } from '../../../web/rauchtest/muster.mjs';
 
 const BASIS = process.env.DMS_URL ?? 'http://localhost:3000';
 const ZIEL = process.argv[2] ?? 'bilder';
@@ -1277,6 +1278,12 @@ async function main() {
   // Lasttest-Modus (#612): Die Seite gibt es nur mit DMS_LASTTEST – hier mit nachgestellten Antworten (laufend und
   // fertig), hell, dunkel und am Handy. Werte erfunden, Gerät ohne Namen.
   await lasttestSeite(browser, bild);
+
+  // Musterseite der Bausteine (#967) fürs Entwicklerhandbuch – dieselben Bilder wie in den Rauchtests (dort mit axe).
+  // Nur im Testbau (VITE_MUSTER=1, Workflow „Handbuch“).
+  const muster = await musterAufnehmen(browser, { basis: BASIS, ziel: ZIEL, gebiet: GEBIET, pruefen: false });
+  erstellt.push(...muster.bilder);
+  for (const b of muster.bilder) console.log(`  ${b}.png`);
 
   // Die API-Beschreibung dieser Version für das Administratorhandbuch
   await writeFile(join(ZIEL, 'openapi.json'), JSON.stringify(await (await fetch(`${BASIS}/api/openapi.json`)).json(), null, 2));

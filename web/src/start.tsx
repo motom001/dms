@@ -10,10 +10,18 @@ import { Abrufseite } from './abruf';
 import { Notfallseite } from './notfall';
 import { Fehlergrenze } from './Fehlergrenze';
 
+/**
+ * Musterseite der Bausteine (#967): nur im Entwicklungsmodus und im Testbau (VITE_MUSTER=1). Vite setzt beide Werte
+ * beim Bauen fest ein; im Produktivbau ist die Bedingung immer falsch und der Code samt Musterseite fällt heraus.
+ */
+const MUSTER = import.meta.env.DEV || import.meta.env.VITE_MUSTER === '1';
+
 /** Erstes Bild, nachdem die Sprache feststeht (main.tsx, #729). */
 export function zeige() {
   const wurzel = createRoot(document.getElementById('root')!);
-  if (location.pathname === '/abruf') {
+  if (MUSTER && location.pathname === '/muster') {
+    void import('./bausteine/muster').then((m) => m.zeigeMuster(wurzel));
+  } else if (location.pathname === '/abruf') {
     // Öffentliche Abrufseite einer Auskunft (#455): eigenständig – ohne Anmeldung, Kontostatus und Diagnose.
     wurzel.render(<StrictMode><Fehlergrenze><Abrufseite /></Fehlergrenze></StrictMode>);
   } else if (location.pathname === '/notfall') {

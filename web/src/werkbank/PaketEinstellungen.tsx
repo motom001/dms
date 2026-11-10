@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, MEHRFACH_VERWEISE, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
+import { Feld, FeldGruppe, HakenFeld, type FeldVerknuepfung } from '../bausteine';
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -180,97 +181,115 @@ function Block({ blk, werte, setze, fehler, auswahl }: { blk: EinstellungBlock; 
   );
 }
 
-/** Ein Feld mit den Bausteinen der Oberfläche; Verweise als Auswahllisten (gespeichert wird die Id). */
+/** Ein Feld mit den Bausteinen der Oberfläche; Verweise als Auswahllisten (gespeichert wird die Id). Rahmen: `Feld` (#967). */
 export function Eingabe({ f, wert, setze, fehler, auswahl, id, ausgeschlossen }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; fehler?: string; auswahl: Auswahl; id: string; ausgeschlossen?: string[] }) {
   const [geheimNeu, setGeheimNeu] = useState(false);
   const [warGesetzt] = useState(!!wert && typeof wert === 'object');
-  let ctl: React.ReactNode;
+  // Pflicht bleibt wie bisher mit „*“ markiert (nur sichtbar); der Rahmen setzt Hinweis, Fehler und aria.
+  const name = <>{f.name}{f.pflicht && <span aria-hidden="true"> *</span>}</>;
+  const hinweis = [f.typ === 'adresse' ? t('fragen.adresse.feld') : null, f.hilfe];
+  // Zahl (#657): die Prüfung am Feld zeigt der Rahmen wie jeden anderen Fehler.
+  const zahl = f.typ === 'zahl' && wert != null ? String(wert).replace('.', ',').trim() : '';
+  const meldung = fehler ?? (zahl ? zahlFehler(f, zahl) : null);
+  if (f.typ === 'janein') return (
+    <HakenFeld beschriftung={name} hinweis={f.hilfe} fehler={meldung}>
+      <input id={id} type="checkbox" checked={wert === true} onChange={(e) => setze(e.target.checked)} />
+    </HakenFeld>
+  );
+  if (f.typ === 'mehrfachauswahl') {
+    const l = Array.isArray(wert) ? wert.map(String) : [];
+    return (
+      <FeldGruppe beschriftung={name} hinweis={f.hilfe} fehler={meldung}>
+        {(f.optionen ?? []).map((o) => <label key={o} className="haken klein"><input type="checkbox" checked={l.includes(o)} onChange={(e) => setze(e.target.checked ? [...l, o] : l.filter((x) => x !== o))} /><span>{o}</span></label>)}
+      </FeldGruppe>
+    );
+  }
+  if (f.typ === 'geheim' && !!wert && typeof wert === 'object' && !geheimNeu) return (
+    <FeldGruppe beschriftung={name} hinweis={f.hilfe} fehler={meldung}>
+      <span className="chip gut">{t('werkbank.paketeinstellungen.gesetzt')}</span>
+      <button type="button" className="textknopf klein" onClick={() => setGeheimNeu(true)}>{t('werkbank.paketeinstellungen.aendern')}</button>
+      <button type="button" className="textknopf klein gefahr" onClick={() => setze(null)}>{t('werkbank.paketeinstellungen.loeschen')}</button>
+    </FeldGruppe>
+  );
+  return (
+    <Feld beschriftung={name} hinweis={hinweis} fehler={meldung} id={id}>
+      {(v) => <Steuerelement f={f} wert={wert} setze={setze} auswahl={auswahl} v={v} ausgeschlossen={ausgeschlossen} geheim={{ neu: geheimNeu, warGesetzt }} />}
+    </Feld>
+  );
+}
+
+const VERWEISE: EinstellungFeld['typ'][] = ['mappentyp', 'benutzer', 'rolle', 'sicht'];
+
+/** Das Eingabeelement eines Felds; `v` (id, aria) kommt vom Rahmen. */
+function Steuerelement({ f, wert, setze, auswahl, v, ausgeschlossen, geheim }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; auswahl: Auswahl; v: FeldVerknuepfung; ausgeschlossen?: string[]; geheim: { neu: boolean; warGesetzt: boolean } }) {
   const liste = (optionen: Array<{ id: string; name: string }>) => (
-    <select id={id} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)}>
+    <select {...v} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)}>
       <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>
       {optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
     </select>
   );
-  if (f.mehrfach) ctl = <VerweisWahl id={id} name={f.name} optionen={optionenVon(f, auswahl)} gewaehlt={Array.isArray(wert) ? wert.map(String) : wert ? [String(wert)] : []} setze={setze} ausgeschlossen={ausgeschlossen} />;
-  else switch (f.typ) {
-    case 'text': ctl = <input id={id} type="text" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />; break;
+  if (VERWEISE.includes(f.typ) && !f.mehrfach) return liste(optionenVon(f, auswahl));
+  if (f.mehrfach) return <VerweisWahl id={v.id} name={f.name} optionen={optionenVon(f, auswahl)} gewaehlt={Array.isArray(wert) ? wert.map(String) : wert ? [String(wert)] : []} setze={setze} ausgeschlossen={ausgeschlossen} />;
+  switch (f.typ) {
     // Dienst-Adresse (#444): nie voreingestellt, nur ein Beispiel im leeren Feld; beim Speichern bestätigen.
-    case 'adresse': ctl = <><input id={id} type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={f.beispiel} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} /><small className="leise">{t('fragen.adresse.feld')}</small></>; break;
-    case 'mehrzeilig': ctl = <textarea id={id} rows={4} value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />; break;
-    case 'zahl': ctl = <ZahlEingabe f={f} wert={wert} setze={setze} id={id} />; break;
-    case 'datum': ctl = <input id={id} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />; break;
-    case 'janein': ctl = <label className="haken"><input id={id} type="checkbox" checked={wert === true} onChange={(e) => setze(e.target.checked)} /><span>{f.name}</span></label>; break;
-    case 'auswahl': ctl = (
-      <select id={id} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)}>
-        <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>{(f.optionen ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-    ); break;
-    case 'mehrfachauswahl': {
-      const l = Array.isArray(wert) ? wert.map(String) : [];
-      ctl = <div className="zeile">{(f.optionen ?? []).map((o) => <label key={o} className="haken klein"><input type="checkbox" checked={l.includes(o)} onChange={(e) => setze(e.target.checked ? [...l, o] : l.filter((x) => x !== o))} /><span>{o}</span></label>)}</div>;
-      break;
-    }
-    case 'geheim': {
-      const gesetzt = !!wert && typeof wert === 'object';
-      ctl = gesetzt && !geheimNeu
-        ? <div className="zeile"><span className="chip gut">{t('werkbank.paketeinstellungen.gesetzt')}</span><button type="button" className="textknopf klein" onClick={() => setGeheimNeu(true)}>{t('werkbank.paketeinstellungen.aendern')}</button><button type="button" className="textknopf klein gefahr" onClick={() => setze(null)}>{t('werkbank.paketeinstellungen.loeschen')}</button></div>
-        : <input id={id} type="password" autoComplete="new-password" placeholder={wert === null && !geheimNeu ? t('werkbank.paketeinstellungen.nicht-gesetzt') : t('werkbank.paketeinstellungen.neuer-wert')} value={typeof wert === 'string' ? wert : ''} onChange={(e) => setze(e.target.value || (warGesetzt && geheimNeu ? { behalten: true } : null))} />;
-      break;
-    }
-    case 'mappentyp': ctl = liste(auswahl.typen); break;
-    case 'benutzer': ctl = liste(auswahl.benutzer); break;
-    case 'rolle': ctl = liste(auswahl.rollen); break;
-    case 'sicht': ctl = liste(auswahl.sichten); break;
-    case 'feld': {
-      const v = wert as FeldVerweis | null;
-      const optionen = auswahl.typen.flatMap((eintrag) => eintrag.felder.map((g) => ({ id: `${eintrag.id}|${g.key}`, name: `${eintrag.name} › ${g.label}` })));
-      ctl = (
-        <select id={id} value={v ? `${v.typ}|${v.feld}` : ''} onChange={(e) => { const [typ, feld] = e.target.value.split('|'); setze(e.target.value ? { typ, feld } : null); }}>
-          <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>{optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-        </select>
-      );
-      break;
-    }
+    case 'adresse': return <input {...v} type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={f.beispiel} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />;
+    case 'mehrzeilig': return <textarea {...v} rows={4} value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />;
+    case 'zahl': return <ZahlEingabe f={f} wert={wert} setze={setze} v={v} />;
+    case 'datum': return <input {...v} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />;
+    case 'auswahl': return liste((f.optionen ?? []).map((o) => ({ id: o, name: o })));
+    case 'geheim': return <GeheimEingabe wert={wert} setze={setze} v={v} geheim={geheim} />;
+    case 'feld': return <FeldWahl wert={wert as FeldVerweis | null} setze={setze} auswahl={auswahl} v={v} />;
+    case 'text': return <input {...v} type="text" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />;
+    default: return null;
   }
+}
+
+/** Geheimnis neu eingeben: leer = nicht gesetzt, oder (beim Ändern) das gespeicherte behalten. */
+function GeheimEingabe({ wert, setze, v, geheim }: { wert: unknown; setze: (v: unknown) => void; v: FeldVerknuepfung; geheim: { neu: boolean; warGesetzt: boolean } }) {
   return (
-    <div className={`eigenschaft${fehler ? ' fehlerhaft' : ''}`}>
-      {f.typ !== 'janein' && <label htmlFor={id}>{f.name}{f.pflicht && <span aria-hidden="true"> *</span>}</label>}
-      {ctl}
-      {f.hilfe && <small className="leise">{f.hilfe}</small>}
-      {fehler && <small className="fehlertext">{fehler}</small>}
-    </div>
+    <input {...v} type="password" autoComplete="new-password" placeholder={wert === null && !geheim.neu ? t('werkbank.paketeinstellungen.nicht-gesetzt') : t('werkbank.paketeinstellungen.neuer-wert')}
+      value={typeof wert === 'string' ? wert : ''} onChange={(e) => setze(e.target.value || (geheim.warGesetzt && geheim.neu ? { behalten: true } : null))} />
+  );
+}
+
+/** Feld eines Mappentyps (Typ „feld“): gespeichert als { typ, feld }. */
+function FeldWahl({ wert, setze, auswahl, v }: { wert: FeldVerweis | null; setze: (v: unknown) => void; auswahl: Auswahl; v: FeldVerknuepfung }) {
+  const optionen = auswahl.typen.flatMap((eintrag) => eintrag.felder.map((g) => ({ id: `${eintrag.id}|${g.key}`, name: `${eintrag.name} › ${g.label}` })));
+  return (
+    <select {...v} value={wert ? `${wert.typ}|${wert.feld}` : ''} onChange={(e) => { const [typ, feld] = e.target.value.split('|'); setze(e.target.value ? { typ, feld } : null); }}>
+      <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>{optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+    </select>
   );
 }
 
 /**
- * Zahl (#657): nur Ziffern und ein Komma, Prüfung von min/max/schritt direkt am Feld. Mit `vorschlaege` eine Auswahl
- * mit Beschriftung; „Eigener Wert …“ öffnet das Zahlenfeld (innerhalb von min/max).
+ * Zahl (#657): nur Ziffern und ein Komma; min/max/schritt prüft Eingabe und zeigt die Meldung im Rahmen. Mit
+ * `vorschlaege` eine Auswahl mit Beschriftung; „Eigener Wert …“ öffnet das Zahlenfeld (innerhalb von min/max).
+ * `v` (id, aria) bekommt das gerade sichtbare Bedienelement, das die Beschriftung meint.
  */
-function ZahlEingabe({ f, wert, setze, id }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; id: string }) {
+function ZahlEingabe({ f, wert, setze, v }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; v: FeldVerknuepfung }) {
   const text = wert == null ? '' : String(wert).replace('.', ',');
-  const passend = f.vorschlaege?.find((v) => String(v.wert) === String(wert));
+  const passend = f.vorschlaege?.find((x) => String(x.wert) === String(wert));
   const [eigen, setEigen] = useState(!!f.vorschlaege && wert != null && wert !== '' && !passend);
-  const falsch = text.trim() ? zahlFehler(f, text) : null;
   const ganz = f.schritt !== undefined && Number.isInteger(f.schritt) && Number.isInteger(f.min ?? 0);
   const feld = (
-    <input id={eigen || !f.vorschlaege ? id : undefined} type="text" inputMode={ganz ? 'numeric' : 'decimal'} autoComplete="off" value={text}
-      aria-invalid={!!falsch} placeholder={f.min !== undefined && f.max !== undefined ? `${f.min}–${f.max}` : undefined}
+    <input {...(eigen || !f.vorschlaege ? v : {})} type="text" inputMode={ganz ? 'numeric' : 'decimal'} autoComplete="off" value={text}
+      placeholder={f.min !== undefined && f.max !== undefined ? `${f.min}–${f.max}` : undefined}
       onChange={(e) => setze(e.target.value.replace(/[^0-9,.-]/g, '').replace('.', ',') || null)} />
   );
   return (
     <>
       {f.vorschlaege ? (
-        <select id={eigen ? undefined : id} value={eigen ? '__eigen' : passend ? String(passend.wert) : ''} onChange={(e) => {
+        <select {...(eigen ? {} : v)} value={eigen ? '__eigen' : passend ? String(passend.wert) : ''} onChange={(e) => {
           if (e.target.value === '__eigen') { setEigen(true); return; }
           setEigen(false); setze(e.target.value === '' ? null : Number(e.target.value));
         }}>
           {!f.pflicht && <option value="">{t('pakete.einstellung.zahl.keine')}</option>}
-          {f.vorschlaege.map((v) => <option key={v.wert} value={String(v.wert)}>{String(v.wert).replace('.', ',')} – {v.name}</option>)}
+          {f.vorschlaege.map((x) => <option key={x.wert} value={String(x.wert)}>{String(x.wert).replace('.', ',')} – {x.name}</option>)}
           <option value="__eigen">{t('pakete.einstellung.zahl.eigen')}</option>
         </select>
       ) : feld}
       {f.vorschlaege && eigen && feld}
-      {falsch && <small className="fehlertext">{falsch}</small>}
     </>
   );
 }
