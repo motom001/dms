@@ -8,6 +8,7 @@
 import { parentPort, receiveMessageOnPort, workerData, type MessagePort } from 'node:worker_threads';
 import { SEITE, type Modulpruefung } from './modul';
 import { WasiEnde, wasiImporte } from './wasi';
+import { MB } from '../grenzen';
 
 export interface ArbeiterDaten {
   modul: WebAssembly.Module;
@@ -87,7 +88,7 @@ function lauf(d: ArbeiterDaten) {
   };
   try {
     const max = Math.min(d.speicherSeiten, d.pruefung.speicherMax ?? d.speicherSeiten);
-    if (d.pruefung.speicherMin > max) throw new Error(`Das Modul braucht mindestens ${Math.ceil(d.pruefung.speicherMin * SEITE / 1048576)} MB Speicher, erlaubt sind ${Math.floor(max * SEITE / 1048576)} MB.`);
+    if (d.pruefung.speicherMin > max) throw new Error(`Das Modul braucht mindestens ${Math.ceil(d.pruefung.speicherMin * SEITE / MB)} MB Speicher, erlaubt sind ${Math.floor(max * SEITE / MB)} MB.`);
     speicher = new WebAssembly.Memory({ initial: d.pruefung.speicherMin, maximum: max });
     const wasi = wasiImporte(() => speicher!, (zeile, fd) => melde({ art: 'log', stufe: fd === 2 ? 2 : 1, text: zeile }), d.pruefung.wasi);
     const inst = new WebAssembly.Instance(d.modul, { env: { memory: speicher }, wasi_snapshot_preview1: wasi, dms: Object.fromEntries(d.pruefung.dms.map((n) => [n, dms[n]])) });

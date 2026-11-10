@@ -9,6 +9,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { NeueMappe } from './repo';
 import { Zufall } from './zufall';
+import { DEMO_PLATZ_PRUEFEN, DEMO_VORRAT_MAX, GB } from './grenzen';
 
 /**
  * Erzeugt Demo-Mappen für die vorhandenen Mappentypen. Die Werte passen zu
@@ -367,7 +368,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
             datei = e;
             jeArt[e.art]++;
             statistik.seiten += e.seiten;
-            if (e.inhalt.length < 5 * 1024 * 1024) { vorrat.push(datei); if (vorrat.length > 50) vorrat.shift(); }
+            if (e.inhalt.length < DEMO_VORRAT_MAX) { vorrat.push(datei); if (vorrat.length > 50) vorrat.shift(); }
             statistik.bytes += e.inhalt.length;
             seitPruefung += e.inhalt.length;
           }
@@ -382,7 +383,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
           if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.aktualisiereStatistik(); }
           if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
           // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
-          if (platz && seitPruefung > 200 * 1024 * 1024) {
+          if (platz && seitPruefung > DEMO_PLATZ_PRUEFEN) {
             seitPruefung = 0;
             const [frei, mindest] = await Promise.all([platz.frei().catch(() => null), platz.mindest().catch(() => 0)]);
             if (frei !== null && frei < mindest) { ergebnis.abgebrochen = `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`; break aussen; }
@@ -402,7 +403,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   return ergebnis;
 }
 
-const gb = (b: number) => `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`;
+const gb = (b: number) => `${(b / GB).toFixed(1).replace('.', ',')} GB`;
 
 export function pruefeAnzahl(anzahl: unknown): number {
   const n = Math.floor(Number(anzahl));

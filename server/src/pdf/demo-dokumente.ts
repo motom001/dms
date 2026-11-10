@@ -9,6 +9,7 @@ import type { Dokumentart } from '../../../shared/src/demodaten';
 import { absatz, anschrift, euro, person, position, satz, ueberschrift } from '../demo-text';
 import type { Zufall } from '../zufall';
 import { eigenerPuffer } from './puffer';
+import { AUSGABE_MITTEL, DEMO_GROSS_MAX as MAX_GROSS, MB } from '../grenzen';
 
 const deflateAsync = promisify(deflate);
 
@@ -23,7 +24,6 @@ const deflateAsync = promisify(deflate);
  * Teil der PDF-Stelle (#541); die Prüfung der Optionen liegt in `demo-dokumente.ts`.
  */
 
-const MAX_GROSS = 95 * 1024 * 1024;
 
 /** Was die Mappe zum Dokument beiträgt: Titel und ihre Werte als „Bezeichnung: Wert“. */
 export interface MappenInhalt {
@@ -208,7 +208,7 @@ async function mehrseitig(z: Zufall, m: MappenInhalt, kennung: string, seitenZie
 /* ---------- Rastern mit pdftoppm ---------- */
 
 function starte(cmd: string, args: string[]): Promise<void> {
-  return new Promise((ok, fehler) => execFile(cmd, args, { timeout: 300_000, maxBuffer: 16 * 1024 * 1024 }, (e, _o, stderr) => (e ? fehler(new Error(`${cmd}: ${stderr || e.message}`)) : ok())));
+  return new Promise((ok, fehler) => execFile(cmd, args, { timeout: 300_000, maxBuffer: AUSGABE_MITTEL }, (e, _o, stderr) => (e ? fehler(new Error(`${cmd}: ${stderr || e.message}`)) : ok())));
 }
 
 let pdftoppmDa: Promise<boolean> | undefined;
@@ -281,11 +281,11 @@ async function bild(z: Zufall, m: MappenInhalt, kennung: string): Promise<{ inha
 
 /** Großes PDF: eine Textseite und ein großer, nicht komprimierbarer Anhang (Messdaten). */
 async function gross(z: Zufall, m: MappenInhalt, kennung: string): Promise<{ inhalt: Buffer; seiten: number }> {
-  const groesse = Math.min(MAX_GROSS, Math.round(z.zwischen(20, 95) * 1024 * 1024));
+  const groesse = Math.min(MAX_GROSS, Math.round(z.zwischen(20, 95) * MB));
   const { doc, schrift, fett } = await neuesPdf(m.titel);
   const b = new Blatt(doc, schrift, fett);
   b.text(`Große Datei: ${m.titel}`, { fett: true, groesse: 14 });
-  b.text(`Dokument-Nr. ${kennung} · Anhang mit ${(groesse / 1024 / 1024).toFixed(0)} MB Messdaten zum Testen von Hochladen, Vorschau, Export und Sicherung.`);
+  b.text(`Dokument-Nr. ${kennung} · Anhang mit ${(groesse / MB).toFixed(0)} MB Messdaten zum Testen von Hochladen, Vorschau, Export und Sicherung.`);
   b.text(absatz(z), { abstand: 8 });
   // Nicht blockieren (#367): Bytes stückweise, Komprimieren im Thread-Pool von zlib statt mit pako im
   // Hauptthread (das hielt die Oberfläche bei 60 MB mehrere Sekunden an). pdf-lib bekommt den fertigen Strom.

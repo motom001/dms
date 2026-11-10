@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { ZUFALL_STUECK } from './grenzen';
 
 /**
  * Zufall mit Startwert (#248): gleicher Startwert, gleiche Folge – damit Messungen mit
@@ -59,7 +60,7 @@ export class Zufall {
     const h = createHash('sha256').update(`${this.startwert}:${this.int(2 ** 31)}`).digest();
     // Ein Hash als Keim, daraus schnell viele Bytes (xorshift); reicht gegen Kompression.
     let x = h.readUInt32LE(0) || 1;
-    const ende = Math.min(n, i + (1 << 20));
+    const ende = Math.min(n, i + ZUFALL_STUECK);
     for (; i + 4 <= ende; i += 4) { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; b.writeUInt32LE(x >>> 0, i); }
     for (; i < ende; i++) b[i] = h[i & 31];
     return i;

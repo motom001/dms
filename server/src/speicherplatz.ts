@@ -4,6 +4,7 @@ import { belegung, statfsMesser, type Messer, type Ordner, type OrdnerBelegung }
 import { protokoll } from './protokoll';
 import type { Wartung } from './wartung';
 import { t } from './sprache';
+import { GB } from './grenzen';
 
 /**
  * Speicherplatz-Überwachung (#116) in zwei Stufen:
@@ -16,7 +17,6 @@ import { t } from './sprache';
 const log = protokoll.modul('system');
 export const LIMIT_TEXT = t('meldungen.speicherplatz.speicherplatzlimit-erreicht');
 export const VORLAUF_MIN = 5;
-const GB = 1024 ** 3;
 
 export type Einheit = 'prozent' | 'gb';
 export interface Schwelle { wert: number; einheit: Einheit }

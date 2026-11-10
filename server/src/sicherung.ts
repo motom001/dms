@@ -14,6 +14,7 @@ import type { EreignisAufruf } from './dienst';
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
+import { GB, MB, STUECK_MAX } from './grenzen';
 
 /**
  * Sicherungen (#103–#105): Datenbank und Dateien zum selben Zeitpunkt, verschlüsselt mit dem
@@ -110,8 +111,7 @@ export interface ExternAnbindung {
   pakete(): Promise<Array<{ id: string; name: string; adresse: string | null }>>;
   melde(daten: SchlankeMetadaten & { name: string }): Promise<void>;
 }
-/** So viele Bytes liest ein Paket höchstens auf einmal (GET /sicherungen/{name}/datei). */
-export const STUECK_MAX = 8 * 1024 * 1024;
+export { STUECK_MAX };
 const EXTERN_STATUS: ExternStatus[] = ['laeuft', 'hochgeladen', 'geprueft', 'fehlgeschlagen'];
 const EXTERN_PRUEFUNG: ExternPruefung[] = ['pruefsumme', 'stichprobe', 'groesse', 'keine'];
 const erfolgreich = (s: ExternStand) => s.status === 'hochgeladen' || s.status === 'geprueft';
@@ -318,7 +318,7 @@ export class Sicherung {
 
   /** Ist mindestens der eingestellte Mindest-Speicherplatz frei? */
   async genugPlatz(): Promise<boolean> {
-    try { const f = await statfs(this.ordner); return f.bavail * f.bsize >= (await this.plan()).mindestFreiGB * 1024 ** 3; } catch { return true; }
+    try { const f = await statfs(this.ordner); return f.bavail * f.bsize >= (await this.plan()).mindestFreiGB * GB; } catch { return true; }
   }
 
   /**
@@ -435,7 +435,7 @@ export class Sicherung {
     // Jede Sicherung ist vollständig; Zahl der höchstens aufbewahrten Sicherungen.
     const stueck = plan.nurNeueste ? 1 : (plan.haeufigkeit === 'taeglich' ? a.taeglich : 0) + a.woechentlich + a.monatlich;
     const letzte = liste.find((x) => x.meta)?.bytes ?? dateienBytes + datenbankBytes;
-    const mindest = plan.mindestFreiGB * 1024 ** 3;
+    const mindest = plan.mindestFreiGB * GB;
     return {
       dateienBytes, dateien, datenbankBytes, sicherungenBytes, anzahl: liste.length, frei, gesamt,
       hochrechnung: { stueck, bytes: stueck * (dateienBytes + datenbankBytes) },
@@ -466,8 +466,8 @@ export class Sicherung {
     try {
       const f = await statfs(this.ordner);
       const frei = f.bavail * f.bsize;
-      if (frei < plan.mindestFreiGB * 1024 ** 3) {
-        const grund = t('meldungen.sicherung.zu-wenig-freier-speicherplatz', { replace: (frei / 1024 ** 3).toFixed(1).replace('.', ','), mindestFreiGB: plan.mindestFreiGB });
+      if (frei < plan.mindestFreiGB * GB) {
+        const grund = t('meldungen.sicherung.zu-wenig-freier-speicherplatz', { replace: (frei / GB).toFixed(1).replace('.', ','), mindestFreiGB: plan.mindestFreiGB });
         await this.merkeFehler(art, grund);
         throw new Fachfehler(507, grund);
       }
@@ -543,7 +543,7 @@ export class Sicherung {
       await rename(teil, join(this.ordner, `${name}${ENDUNG}`));
       await rename(join(this.ordner, `.${name}.json.teil`), join(this.ordner, `${name}.json`));
       lauf.status = 'fertig'; lauf.ergebnis = meta; lauf.schritt = 'Fertig';
-      log.info('Sicherung fertig', { name, art, mappen: meta.anzahl.mappen, dokumente: meta.anzahl.dokumente, dateien, mb: Math.round(ergebnis.g.bytes / 1024 / 1024), sekunden: meta.dauerSekunden });
+      log.info('Sicherung fertig', { name, art, mappen: meta.anzahl.mappen, dokumente: meta.anzahl.dokumente, dateien, mb: Math.round(ergebnis.g.bytes / MB), sekunden: meta.dauerSekunden });
       // Danach im Hintergrund außer Haus (#585): Die lokale Sicherung ist fertig, egal was dort geschieht.
       await this.kuendigeAn(name, meta);
       if (art === 'automatisch') await this.raeumeAuf();

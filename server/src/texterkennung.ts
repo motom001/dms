@@ -16,6 +16,7 @@ import { INFO_TEXTEBENE, infoWartet, NICHT_GESPEICHERT } from '../../shared/src/
 import { dateitypName, infoFassung, infoUmwandlung, katalogUmwandlung, UMWANDELN_MAX_BYTES } from '../../shared/src/dateiumwandlung';
 import { infoVolltextPaket, katalogVolltext, VOLLTEXT_PAKET_MAX_BYTES } from '../../shared/src/paketvolltext';
 import { t } from './sprache';
+import { AUSGABE_GROSS, MB, TEXTERKENNUNG_MAX_MB as MAX_MB } from './grenzen';
 
 /**
  * Volltext (#45, #458, #459).
@@ -47,8 +48,7 @@ export const DATEITYPEN: Record<string, string> = {
 };
 /** Höchstens so viele Seiten liest der Kern aus der Textebene (pdftotext ist schnell). */
 export const MAX_SEITEN = 1000;
-/** Größere Dateien bekommen keinen Volltext (MB). */
-export const MAX_MB = 100;
+export { MAX_MB };
 
 /**
  * Einstellungen (#45): seit #459 nur noch, ob überhaupt Volltext erzeugt wird und wie viele Dokumente gleichzeitig.
@@ -87,7 +87,7 @@ export function ocrAusGespeichert(e: unknown): OcrEinstellungen {
 interface Lauf { stdout: string; stderr: string }
 function starte(cmd: string, args: string[], ms: number, signal?: AbortSignal): Promise<Lauf> {
   return new Promise((ok, fehler) => {
-    execFile(cmd, args, { timeout: ms, maxBuffer: 64 * 1024 * 1024, encoding: 'utf8', signal }, (e, stdout, stderr) => {
+    execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_GROSS, encoding: 'utf8', signal }, (e, stdout, stderr) => {
       if (e) {
         const f = e as NodeJS.ErrnoException & { killed?: boolean };
         if (signal?.aborted) { fehler(new Error('abgebrochen')); return; }
@@ -354,7 +354,7 @@ export class Texterkennung {
 
   private async ergebnis(d: Dokument, signal?: AbortSignal, neu = false): Promise<OcrErgebnis> {
     if (!DATEITYPEN[d.mime]) return this.umgewandelt(d, signal, neu);
-    if (d.groesse > MAX_MB * 1024 * 1024) return { stand: 'ausgelassen', info: t('meldungen.texterkennung.groesser-als-mb', { MAX_MB }), text: null };
+    if (d.groesse > MAX_MB * MB) return { stand: 'ausgelassen', info: t('meldungen.texterkennung.groesser-als-mb', { MAX_MB }), text: null };
     // Geschütztes PDF (#827): Text aus der entsperrten Fassung. Das Ereignis nennt sie (`fassung`), damit ein Paket für
     // die Texterkennung sie statt des Originals liest.
     const frei = d.mime === 'application/pdf' ? await this.entsperrt?.(d.sha256).catch(() => null) : null;
@@ -389,7 +389,7 @@ export class Texterkennung {
       if (this.umwandlung!.gesperrt?.(d.sha256)) return { stand: 'ausgelassen', info: t('pakete.fassung.ki-gesperrt', { paket: p.name }), text: null };
       return { stand: 'paket', info: infoUmwandlung(p), seiten: d.ocr?.seiten ?? null, fassung: 'wartet' } as OcrErgebnis;
     }
-    if (p) return { stand: 'ausgelassen', info: t('pakete.fassung.zu-gross', { typ: name, mb: UMWANDELN_MAX_BYTES / 1048576 }), text: null };
+    if (p) return { stand: 'ausgelassen', info: t('pakete.fassung.zu-gross', { typ: name, mb: UMWANDELN_MAX_BYTES / MB }), text: null };
     const k = katalogUmwandlung(d.mime);
     if (k) return { stand: 'ausgelassen', info: t('pakete.fassung.ohne-paket', { typ: name, paket: k.name }), text: null };
     // Ein Paket aus dem Katalog liefert den Volltext (#614, z. B. Office und E-Mail): Hinweis darauf.
@@ -403,7 +403,7 @@ export class Texterkennung {
    * an das Paket (in verarbeite, nach dem Speichern des Stands).
    */
   private async volltextAusPaket(d: Dokument, p: { id: string; name: string; version: string; typen: string[] }, neu: boolean): Promise<OcrErgebnis> {
-    if (d.groesse > VOLLTEXT_PAKET_MAX_BYTES) return { stand: 'ausgelassen', info: t('pakete.volltext.zu-gross', { typ: dateitypName(d.mime), mb: VOLLTEXT_PAKET_MAX_BYTES / 1048576 }), text: null };
+    if (d.groesse > VOLLTEXT_PAKET_MAX_BYTES) return { stand: 'ausgelassen', info: t('pakete.volltext.zu-gross', { typ: dateitypName(d.mime), mb: VOLLTEXT_PAKET_MAX_BYTES / MB }), text: null };
     const vorhanden = neu ? undefined : await this.repo.ocrVonSha(d.sha256, d.id);
     if (vorhanden && hatText(vorhanden.text)) return { stand: 'fertig', text: vorhanden.text, seiten: vorhanden.seiten, info: t('meldungen.texterkennung.uebernommen-gleicher-inhalt', { wert: vorhanden.info ?? '' }).trim(), sprache: vorhanden.sprache ?? null, weitere: vorhanden.weitere ?? null, seitensprachen: vorhanden.seitensprachen ?? null };
     return { stand: 'paket', info: infoVolltextPaket(p), seiten: d.ocr?.seiten ?? null, ausPaket: p } as OcrErgebnis;

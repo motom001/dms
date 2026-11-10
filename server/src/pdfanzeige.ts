@@ -7,10 +7,10 @@ import { createHash } from 'node:crypto';
 import { bereinigePdf } from './pdf';
 import { protokoll } from './protokoll';
 import { anteilVon } from './zwischenspeicher';
+import { PDF_CACHE_BYTES as CACHE_BYTES } from './grenzen';
 
 const L = protokoll.modul('dokumente');
-/** Zwischenspeicher insgesamt: 256 MB – mit mehreren Prozessen geteilt (#874, `anteilVon`). */
-export const CACHE_BYTES = 256 << 20;
+export { CACHE_BYTES };
 const grenze = () => anteilVon(CACHE_BYTES);
 
 const cache = new Map<string, Buffer>();

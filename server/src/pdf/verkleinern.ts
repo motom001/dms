@@ -34,6 +34,7 @@ import { MIN_ERSPARNIS, STANDARD_STUFE, STUFEN, type Stufe } from '../../../shar
 import { jpegMasse } from './bild';
 import { ladePdf } from './laden';
 import { t } from '../sprache';
+import { AUSGABE_VERKLEINERN, MIN_BILD_BYTES } from '../grenzen';
 
 /* ---------- Inhaltsströme lesen: Bilder und ihre Größe auf der Seite ---------- */
 
@@ -228,8 +229,6 @@ function faktor(b: BildInfo, dpi: number): number {
 /** Wirksame Auflösung (kleinere Achse), gerundet. */
 const wirksameDpi = (b: BildInfo) => Math.round(Math.min(b.breite / b.p.breiteZoll, b.hoehe / b.p.hoeheZoll));
 
-/** Ab hier lohnt ein Bild die Arbeit (kleinere Bilder bleiben). */
-const MIN_BILD_BYTES = 24 * 1024;
 /** Herunterrechnen erst, wenn es spürbar weniger Bildpunkte werden (sonst nur Qualitätsverlust). */
 const MIN_SCHRUMPF = 0.85;
 /** Typische Bytes je Bildpunkt eines JPEG bei der Qualität der Stufe (Farbe; Grau etwa 60 %). */
@@ -307,7 +306,7 @@ const ZEIT_MS = 5 * 60_000;
 
 function starte(befehl: string, args: string[], zeit = ZEIT_MS): Promise<void> {
   return new Promise((ok, fehler) => {
-    execFile(befehl, args, { timeout: zeit, maxBuffer: 4 << 20 }, (e, _o, err) => {
+    execFile(befehl, args, { timeout: zeit, maxBuffer: AUSGABE_VERKLEINERN }, (e, _o, err) => {
       if (!e) return ok();
       const x = new Error(String(err).trim().slice(0, 300) || e.message) as NodeJS.ErrnoException;
       x.code = (e as NodeJS.ErrnoException).code;

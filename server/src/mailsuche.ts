@@ -3,6 +3,7 @@ import { anbieterFuerAdresse, anbieterFuerMx, anbieterFuerServer, domainVon, typ
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
+import { MAILSUCHE_ANTWORT_MAX as MAX_ANTWORT } from './grenzen';
 
 /**
  * Server und Port für den E-Mail-Versand aus der eigenen Adresse finden (#813) – in dieser Reihenfolge:
@@ -45,7 +46,6 @@ export interface SucheDeps {
 }
 
 export const SUCHE_ZEIT_MS = 4000;
-const MAX_ANTWORT = 64 * 1024;
 const log = protokoll.modul('mail');
 
 export function standardSuche(): SucheDeps {

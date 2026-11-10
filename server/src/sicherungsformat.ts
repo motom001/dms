@@ -4,6 +4,7 @@ import { open, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { createGunzip, createGzip } from 'node:zlib';
 import { t } from './sprache';
+import { SICHERUNGSKOPF_MAX, SICHERUNG_STUECK as STUECK } from './grenzen';
 
 /**
  * Dateiformat einer Sicherung (#103), Version 1.
@@ -26,7 +27,6 @@ import { t } from './sprache';
 export const MAGIE = Buffer.from('DMS-SICHERUNG 1\n', 'latin1');
 export const FORMAT = 1;
 export const ZWECK = 'dms-sicherung';
-const STUECK = 1 << 20;
 
 export interface Dateikopf { format: number; verfahren: string; ableitung: string; kompression: string; fingerabdruck: string; nonce: string }
 export type Art = 'M' | 'T' | 'D' | 'E';
@@ -112,7 +112,7 @@ export async function liesKopf(pfad: string): Promise<{ kopf: Dateikopf; vorspan
     const { bytesRead } = await f.read(anfang, 0, anfang.length, 0);
     if (bytesRead < anfang.length || !anfang.subarray(0, MAGIE.length).equals(MAGIE)) throw new Error('Das ist keine Sicherungsdatei von Ablago (oder ein unbekanntes Format).');
     const laenge = anfang.readUInt32BE(MAGIE.length);
-    if (laenge > 64 * 1024) throw new Error('Der Kopf der Sicherungsdatei ist beschädigt.');
+    if (laenge > SICHERUNGSKOPF_MAX) throw new Error('Der Kopf der Sicherungsdatei ist beschädigt.');
     const kopfBytes = Buffer.alloc(laenge);
     await f.read(kopfBytes, 0, laenge, anfang.length);
     const kopf = JSON.parse(kopfBytes.toString('utf8')) as Dateikopf;

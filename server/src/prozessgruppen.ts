@@ -20,6 +20,7 @@
  */
 import { readdirSync } from 'node:fs';
 import { dateiLeser, type Leser } from './systemlast';
+import { KB } from './grenzen';
 
 export type GruppenArt = 'ablago' | 'lastgenerator' | 'postgres' | 'texterkennung' | 'bilder' | 'rest';
 export const GRUPPEN_FOLGE: readonly GruppenArt[] = ['ablago', 'lastgenerator', 'postgres', 'texterkennung', 'bilder', 'rest'];
@@ -71,7 +72,7 @@ export function liesStat(text: string | null): ProzessStat | null {
   return { comm: text.slice(a + 1, z), ppid: w[0], eigen: (w[1] + w[2]) / USER_HZ, kinder: (w[3] + w[4]) / USER_HZ, start: w[5] };
 }
 
-const rssMb = (text: string | null) => { const kb = text?.match(/^VmRSS:\s+(\d+)\s+kB/m)?.[1]; return kb ? Number(kb) / 1024 : 0; };
+const rssMb = (text: string | null) => { const kb = text?.match(/^VmRSS:\s+(\d+)\s+kB/m)?.[1]; return kb ? Number(kb) / KB : 0; };
 
 function allePids(): number[] {
   try { return readdirSync('/proc').filter((n) => /^\d+$/.test(n)).map(Number); } catch { return []; }

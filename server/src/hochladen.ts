@@ -7,6 +7,7 @@ import type { Readable } from 'node:stream';
 import { oeffneStrom, type Dateispeicher } from './dateispeicher';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
+import { HOCHLADEN_STUECK, MB } from './grenzen';
 
 /**
  * Hochladen als Strom (#746): Der Körper eines Uploads (bis 100 MB) geht Stück für Stück in eine temporäre Datei,
@@ -118,7 +119,7 @@ export async function nimmAuf(quelle: Readable, max: number, laenge?: number): P
   return new Hochgeladen(pfad, n, h.digest('hex'), Buffer.concat(kopf));
 }
 
-const zuGross = (max: number) => new Fachfehler(413, t('meldungen.hochladen.die-datei-ist-zu', { round: Math.round(max / 1024 / 1024) }));
+const zuGross = (max: number) => new Fachfehler(413, t('meldungen.hochladen.die-datei-ist-zu', { round: Math.round(max / MB) }));
 
 /**
  * Inhalt beim Ablegen: ein Upload (temporäre Datei) oder ein Puffer (Postfach, Eingangsordner, PDF-Bearbeitung …).
@@ -150,10 +151,9 @@ export class Eingang {
 /** SHA-256 eines Puffers in Stücken von 1 MB, dazwischen kurz frei für andere Anfragen (#746). */
 export async function shaVon(b: Buffer): Promise<string> {
   const h = createHash('sha256');
-  const STUECK = 1024 * 1024;
-  for (let i = 0; i < b.length; i += STUECK) {
-    h.update(b.subarray(i, i + STUECK));
-    if (i + STUECK < b.length) await new Promise<void>((r) => setImmediate(r));
+  for (let i = 0; i < b.length; i += HOCHLADEN_STUECK) {
+    h.update(b.subarray(i, i + HOCHLADEN_STUECK));
+    if (i + HOCHLADEN_STUECK < b.length) await new Promise<void>((r) => setImmediate(r));
   }
   return h.digest('hex');
 }

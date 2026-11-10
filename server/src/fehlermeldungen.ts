@@ -6,6 +6,7 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
+import { FEHLER_BILD_BYTES, MB } from './grenzen';
 
 /**
  * Fehlermeldungen von Benutzern an die Administratoren (#70): eigene Beschreibung, bis zu zwei
@@ -30,7 +31,7 @@ export interface FehlerRepo {
 
 export const FEHLER_TEXT_MAX = 5000;
 export const FEHLER_BILDER_MAX = 2;
-export const FEHLER_BILD_BYTES = 10 * 1024 * 1024;
+export { FEHLER_BILD_BYTES };
 const BILDTYPEN = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const log = protokoll.modul('system');
 
@@ -59,7 +60,7 @@ export class Fehlermeldungen {
       const x = (b ?? {}) as Record<string, unknown>;
       const inhalt = typeof x.daten === 'string' ? Buffer.from(x.daten.replace(/^data:[^,]*,/, ''), 'base64') : Buffer.alloc(0);
       if (!inhalt.length) throw new Fachfehler(422, t('meldungen.fehlermeldungen.ein-bild-ist-leer'));
-      if (inhalt.length > FEHLER_BILD_BYTES) throw new Fachfehler(413, t('meldungen.fehlermeldungen.ein-bild-darf-hoechstens', { wert: FEHLER_BILD_BYTES / 1024 / 1024 }));
+      if (inhalt.length > FEHLER_BILD_BYTES) throw new Fachfehler(413, t('meldungen.fehlermeldungen.ein-bild-darf-hoechstens', { wert: FEHLER_BILD_BYTES / MB }));
       const mime = erkenneAnzeigbar(inhalt);
       if (!mime || !BILDTYPEN.has(mime)) throw new Fachfehler(422, t('meldungen.fehlermeldungen.bilder-bitte-als-png'));
       const sha256 = createHash('sha256').update(inhalt).digest('hex');

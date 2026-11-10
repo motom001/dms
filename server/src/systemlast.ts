@@ -13,6 +13,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { availableParallelism, cpus, loadavg, totalmem } from 'node:os';
 import { dauerhaftHoch, VERLAUF_MINUTEN, type Anteile, type Messpunkt, type SystemlastStand, type Warnung } from '../../shared/src/systemlast';
+import { KB } from './grenzen';
 
 export { dauerhaftHoch, type Messpunkt, type SystemlastStand } from '../../shared/src/systemlast';
 
@@ -108,13 +109,13 @@ export function liesNetz(text: string | null): { rx: number; tx: number } | null
 /** Proportionaler Anteil am Arbeitsspeicher (Pss) eines Prozesses in Byte; geteilter Speicher zählt anteilig. */
 export function liesPss(lies: Leser, pid: number): number | null {
   const kb = lies(`/proc/${pid}/smaps_rollup`)?.match(/^Pss:\s+(\d+)\s+kB/m)?.[1];
-  return kb ? Number(kb) * 1024 : null;
+  return kb ? Number(kb) * KB : null;
 }
 
 /** Belegter Arbeitsspeicher (RSS) eines Prozesses in Byte (#745, z. B. des Hauptprozesses). */
 export function liesRss(lies: Leser, pid: number): number | null {
   const kb = lies(`/proc/${pid}/status`)?.match(/^VmRSS:\s+(\d+)\s+kB/m)?.[1];
-  return kb ? Number(kb) * 1024 : null;
+  return kb ? Number(kb) * KB : null;
 }
 
 export function liesAnteile(lies: Leser, o: { eigen: number; laeufer: number | null; postgres: boolean; pids?: () => number[] }): Anteile {

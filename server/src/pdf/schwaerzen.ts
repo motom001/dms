@@ -33,6 +33,7 @@ import { exifAusrichtung, jpegMasse } from './bild';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
 import { t } from '../sprache';
+import { AUSGABE_GROSS } from '../grenzen';
 
 /** Auflösung des Ergebnisses (PDF). */
 export const SCHWAERZEN_DPI = 150;
@@ -49,7 +50,7 @@ const ZEIT_MS = 5 * 60_000;
 
 function starte(befehl: string, args: string[], zeit = ZEIT_MS): Promise<string> {
   return new Promise((ok, fehler) => {
-    execFile(befehl, args, { timeout: zeit, maxBuffer: 64 << 20 }, (e, aus, err) => {
+    execFile(befehl, args, { timeout: zeit, maxBuffer: AUSGABE_GROSS }, (e, aus, err) => {
       if (!e) return ok(String(aus));
       const x = new Error(String(err).trim().slice(0, 300) || e.message) as NodeJS.ErrnoException;
       x.code = (e as NodeJS.ErrnoException).code;

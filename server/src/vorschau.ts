@@ -7,6 +7,7 @@ import type { Dokument } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { protokoll } from './protokoll';
 import { bildSeitePdf } from './pdf';
+import { AUSGABE_MITTEL, VORSCHAU_MAX_BYTES } from './grenzen';
 
 /**
  * Vorschaubilder der ersten Seite (#332).
@@ -30,8 +31,7 @@ const log = protokoll.modul('vorschau');
 export const VORSCHAU_VERSION = 1;
 /** Längste Seite in Pixeln (2 × 52 px). */
 export const VORSCHAU_PX = 104;
-/** Größere Dateien bekommen kein Vorschaubild. */
-export const VORSCHAU_MAX_BYTES = 100 * 1024 * 1024;
+export { VORSCHAU_MAX_BYTES };
 export const VORSCHAU_TYPEN = ['application/pdf', 'image/jpeg', 'image/png'] as const;
 
 export const hatVorschau = (mime: string) => (VORSCHAU_TYPEN as readonly string[]).includes(mime);
@@ -104,7 +104,7 @@ export type Erzeuger = (inhalt: Buffer, mime: string) => Promise<Buffer | null>;
 
 function starte(cmd: string, args: string[], ms: number): Promise<void> {
   return new Promise((ok, fehler) => {
-    execFile(cmd, args, { timeout: ms, maxBuffer: 16 * 1024 * 1024 }, (e, _out, err) => {
+    execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_MITTEL }, (e, _out, err) => {
       if (!e) { ok(); return; }
       const f = e as NodeJS.ErrnoException & { killed?: boolean };
       fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange.` : String(err || f.message).trim().split('\n').slice(-2).join(' ')));

@@ -2,6 +2,7 @@ import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
 import type { GeleseneMail, ImapSitzung, ImapVerbinder, MailLeser } from './postfach';
 import { t } from './sprache';
+import { MAIL_INLINE_BILD_MAX } from './grenzen';
 
 /**
  * Anbindung der Postfächer (#196) an imapflow und mailparser (beide MIT). Getrennt von postfach.ts,
@@ -62,7 +63,7 @@ export const liesMail: MailLeser = async (quelle) => {
   const von = m.from?.value?.[0];
   const anhaenge: GeleseneMail['anhaenge'] = m.attachments.map((a, i) => {
     const bild = a.contentType.startsWith('image/');
-    const eingebettet = bild && (a.related === true || (a.contentDisposition === 'inline' && a.size < 100 * 1024));
+    const eingebettet = bild && (a.related === true || (a.contentDisposition === 'inline' && a.size < MAIL_INLINE_BILD_MAX));
     const endung = a.contentType === 'message/rfc822' ? '.eml' : '';
     const name = (a.filename || t('meldungen.imap.anhang', { wert: i + 1, endung })).replace(/[\\/:*?"<>|\r\n]+/g, ' ').trim();
     return { name: endung && !name.toLowerCase().endsWith('.eml') ? `${name}${endung}` : name, mime: a.contentType, inhalt: a.content, eingebettet };

@@ -27,6 +27,28 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 | dms-komplett | The same image with PostgreSQL 17 (Alpine package) in the same container; database in the folder `/data/postgres` | Ablago and database in one container |
 | Checks | GitHub Actions: type check, tests against PostgreSQL, image build | Every push to `main`, every pull request, every version tag and once a week |
 
+## Limits { #grenzen }
+
+How large something may be at most. Ablago checks every limit before it processes the data; anything larger is rejected with a message (usually “413 – too large”). In the source code all limits are in one place: `server/src/grenzen.ts`.
+
+| What | At most |
+| --- | --- |
+| Uploading, replacing or photographing a document | 100 MB |
+| File for “Fill in from document” without filing | 30 MB |
+| Text recognition and preview of Office files | 100 MB per file; larger ones get no full text or preview |
+| Attachments of an e-mail together | 50 MB |
+| Package (archive and all files under `code/` together) | 128 MB |
+| Bundle file | 256 MB, at most 50 packages |
+| Catalogue, signature and key of a package source | 10 MB |
+| Uploaded packages not yet installed | 30 minutes; 512 MB together in memory, beyond that the oldest are dropped |
+| Converted version, archive version and preview image from packages | 50 MB, 100 MB, 5 MB |
+| Error report (with screenshot and attachments) | 30 MB, the screenshot 10 MB |
+| Logo of a design | 1 MB |
+| Setup file | 64 KB |
+| All other requests (forms, settings) | 2 MB; they do not accept a file at all |
+
+A reverse proxy in front needs its own limit slightly above that, for nginx `client_max_body_size 260m;` (with bundle files) or `130m` (without), see [Installation](installation.md#hinter-einem-reverse-proxy).
+
 ## Many simultaneous requests { #last }
 
 A household has 2–6 users, a small business 10–20. A single user already triggers several requests at once (opening the Library is 6–10), plus WebDAV programs, packages and scripts. **100 simultaneous requests** – about 10–15 people clicking at the same moment – are the realistic upper limit; Ablago is designed for this and it is measured regularly (load test in three levels, #544, #563). What each device copes with is under [What Ablago copes with](verkraftet.md); you can measure yourself with the [load test](lasttest.md). More hardly ever happens in operation, for instance with a wrongly configured WebDAV program.

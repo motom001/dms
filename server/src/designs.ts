@@ -3,6 +3,7 @@ import type { Dateispeicher } from './dateispeicher';
 import type postgres from 'postgres';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
+import { LOGO_MAX } from './grenzen';
 
 /**
  * Designs der Weboberfläche (#21). Ein Design besteht aus einer Grundlage
@@ -22,7 +23,7 @@ export interface Design {
 }
 export type DesignDaten = Omit<Design, 'id' | 'logo'>;
 export const SCHRIFTZUG_MAX = 30;
-export const LOGO_MAX = 1024 * 1024;
+export { LOGO_MAX };
 
 export interface DesignRepo {
   liste(): Promise<Design[]>;

@@ -8,6 +8,7 @@ import { createCipheriv, createHmac, pbkdf2Sync, randomBytes } from 'node:crypto
 import { Readable } from 'node:stream';
 import * as zlib from 'node:zlib';
 import { deflateRawSync } from 'node:zlib';
+import { ZIP_STUECK as STUECK } from './grenzen';
 
 const TABELLE = (() => {
   const t = new Uint32Array(256);
@@ -78,7 +79,6 @@ export const ZIP_PASSWORT_MIN = 10;
  * Schlüsselstrom – seit #746 in 32-Bit-Worten statt Byte für Byte (rund viermal schneller), in Stücken von höchstens
  * STUECK Bytes, damit ein großes Stück den Faden nicht lange hält.
  */
-const STUECK = 256 * 1024;
 /** Uint32Array schreibt in der Byte-Reihenfolge des Rechners; WinZip braucht little-endian (x86, ARM: ja). */
 const KLEIN_ZUERST = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
 class AesStrom {

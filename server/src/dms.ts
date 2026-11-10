@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { ALS_KOPF, KONSOLE_KOPF, konsolenDatei, lokaleUrl, type KonsolenDatei } from './konsole';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
+import { MB } from './grenzen';
 
 export class KonsolenFehler extends Error {
   constructor(message: string, readonly code = 1) { super(message); }
@@ -242,7 +243,7 @@ export async function fuehreAus(z: Zerlegt, v: Verbindung, ein: Ein, aus: Aus): 
       const s = await v.anfrage<{ lauf: { zustand?: string; name?: string } | null; liste: Array<{ name: string; bytes?: number; erstellt?: string; geprueft?: { ok: boolean } | null }> }>('GET', '/api/werkbank/sicherung');
       return zeige(s, () => [
         ...(s.lauf ? [t('meldungen.dms.laeuft-gerade', { wert: s.lauf.name ?? '', wert2: s.lauf.zustand ?? '' }).trim()] : []),
-        ...(s.liste.length ? tabelle([['Name', 'Größe'], ...s.liste.map((x) => [x.name, x.bytes !== undefined ? `${(x.bytes / 1024 ** 2).toFixed(1)} MB` : ''])]) : [t('meldungen.dms.noch-keine-sicherung')]),
+        ...(s.liste.length ? tabelle([['Name', 'Größe'], ...s.liste.map((x) => [x.name, x.bytes !== undefined ? `${(x.bytes / MB).toFixed(1)} MB` : ''])]) : [t('meldungen.dms.noch-keine-sicherung')]),
       ]);
     }
     case 'benutzer': {

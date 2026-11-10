@@ -4,6 +4,7 @@ import { HANDBUCH_BASIS } from '../../shared/src/hilfe';
 import { EINRICHTUNG_FORMAT, PLAN_VERBINDUNGEN, VERWEIS_MUSTER, type DateiFehler, type Einrichtungsplan, type PlanMail } from '../../shared/src/einrichtungsplan';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
+import { EINRICHTUNGSDATEI_MAX as DATEI_MAX, KB } from './grenzen';
 
 /**
  * Einrichtung als Konfigurationsdatei (#806): YAML (JSON geht auch – gültiges JSON ist gültiges YAML), geprüft gegen
@@ -15,7 +16,7 @@ import { t } from './sprache';
  * weitere Personen lädt man nach der Einrichtung ein.
  */
 
-export const DATEI_MAX = 64 * 1024;
+export { DATEI_MAX };
 export const SCHEMA_DATEI = `ablago-einrichtung-${EINRICHTUNG_FORMAT}.schema.json`;
 
 type Schema = {
@@ -203,7 +204,7 @@ function aelter(wert: unknown): { wert: unknown; kontoIn: string; hinweise: stri
 /** Liest eine Konfigurationsdatei; bei Fehlern kein Plan, sondern die Fehler mit Zeile und Feld. */
 export function liesEinrichtungsdatei(text: unknown): { plan: Einrichtungsplan | null; fehler: DateiFehler[]; hinweise: string[] } {
   if (typeof text !== 'string' || !text.trim()) return { plan: null, fehler: [{ zeile: null, feld: t('einrichtung.datei.ganz'), text: t('einrichtung.datei.fehler.leer.datei') }], hinweise: [] };
-  if (Buffer.byteLength(text) > DATEI_MAX) throw new Fachfehler(413, t('einrichtung.datei.fehler.gross', { kb: DATEI_MAX / 1024 }));
+  if (Buffer.byteLength(text) > DATEI_MAX) throw new Fachfehler(413, t('einrichtung.datei.fehler.gross', { kb: DATEI_MAX / KB }));
   const lc = new LineCounter();
   const doc = parseDocument(text, { lineCounter: lc, prettyErrors: true, uniqueKeys: true });
   if (doc.errors.length) {

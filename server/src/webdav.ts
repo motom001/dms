@@ -22,6 +22,7 @@ import {
   Ratenbegrenzung, schluessel, sperrAntwort, VERKNUEPFT, WEBDAV_PFAD, zerlege, type Eintrag,
 } from './webdav-baum';
 import { anteilVon } from './zwischenspeicher';
+import { WEBDAV_STEMPEL_SPEICHER as STEMPEL_SPEICHER, WEBDAV_XML_MAX as XML_MAX } from './grenzen';
 
 /**
  * WebDAV-Laufwerk (#346), Stufe 1: lesen und ablegen.
@@ -54,7 +55,6 @@ export const WEBDAV_ZUSATZMETHODEN: Array<[string, boolean]> = [['PROPFIND', tru
 export const MAX_EINTRAEGE = 1000;
 /** Anfragen je Benutzer und Minute (Explorer und Finder fragen beim Blättern viel). */
 export const STANDARD_GRENZE = 600;
-const XML_MAX = 64 * 1024;
 const SCHWEBEND_MS = 10 * 60_000;
 const SCHWEBEND = 'webdav-schwebend';
 /** Höchstens so viele schwebende Dateien je Benutzer und Ort zeigt der Ordner. */
@@ -154,7 +154,6 @@ const LESEMETHODEN = ['OPTIONS', 'GET', 'HEAD', 'PROPFIND'];
  * Gestempelte Fassungen im Speicher: höchstens so viele Bytes; Größe und Stand bleiben länger gemerkt. Mit mehreren
  * Prozessen teilen sie sich die Bytes (#874, `anteilVon`); die Einträge (nur Größe und Stand) bleiben je Prozess.
  */
-const STEMPEL_SPEICHER = 64 * 1024 * 1024;
 const stempelSpeicher = () => anteilVon(STEMPEL_SPEICHER);
 const STEMPEL_EINTRAEGE = 2000;
 

@@ -16,12 +16,12 @@
 import { createHash, createPublicKey, verify, type KeyObject } from 'node:crypto';
 import { PROJEKT_SCHLUESSEL, type Projektschluessel } from './projektschluessel';
 import { t } from './sprache';
+import { SIGNATUR_MAX } from './grenzen';
 
 export const SIGNATUR_DATEI = 'katalog.sig';
 export const SCHLUESSEL_DATEI = 'katalog.schluessel';
 export const WECHSEL_DATEI = 'katalog.schluessel.sig';
-/** Größer ist keine Signatur- oder Schlüsseldatei. */
-export const SIGNATUR_MAX = 8 * 1024;
+export { SIGNATUR_MAX };
 
 export interface Schluessel { key: KeyObject; kennung: string; fingerabdruck: string; pem: string }
 

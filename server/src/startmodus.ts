@@ -10,6 +10,7 @@ import { protokoll } from './protokoll';
 import type { ProxyVertrauen } from './proxy';
 import { t } from './sprache';
 import { standKennung } from './system';
+import { MODUS_KOERPER_MAX } from './grenzen';
 
 /**
  * Startseite „Ablago startet …“ (#802): Der Port ist wenige Sekunden nach dem Start offen, auch wenn Migrationen und
@@ -178,7 +179,7 @@ ${teile.join('\n')}
   /** Port öffnen. Mehrfach möglich (nach dem Einrichtungsmodus, der den Port zwischendurch braucht). */
   async oeffne() {
     if (this.app) return;
-    const app = Fastify({ trustProxy: this.o.proxy ?? false, bodyLimit: 16 * 1024 });
+    const app = Fastify({ trustProxy: this.o.proxy ?? false, bodyLimit: MODUS_KOERPER_MAX });
     app.setErrorHandler((e: unknown, _req, reply) => {
       log.warn('Fehler auf der Startseite', { fehler: (e as Error)?.message ?? String(e) });
       return reply.code(503).header('retry-after', '5').send({ fehler: t('start.api'), startet: true });
