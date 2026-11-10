@@ -23,9 +23,13 @@ const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspei
  * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool. Seit #1075
  * die Technik der Dateien, die Dokumente brauchen: Hochladen, Verkleinern, Fassungen (Umwandeln, Archivfassung,
  * Entsperren) und Volltext aus Paketen – sie binden selbst nur die Basis, hintergrund.ts und die PDF-Stelle ein.
+ * Seit #1077 die Technik, die Post, Ausgang und PDF bearbeiten brauchen: Seiten und Seitenbilder (pdfseiten,
+ * graubild), Schwärzen, Stempeln beim Weitergeben (ausgabe), Export-Dateien (export, xlsx, zip) und den Mailer (mail,
+ * nur sein Typ) – auch sie binden nur die Basis, hintergrund.ts, zwischenspeicher.ts, die PDF-Stelle und einander ein.
  */
 const WERKZEUGE = {
   dateien: 'messung|vektoren|hochladen|verkleinern|dateiumwandlung|archivfassung|entsperren|paketvolltext',
+  ausgang: 'pdfseiten|graubild|schwaerzen|ausgabe|export|xlsx|zip|mail',
   ordner: 'pdf|arbeit',
 };
 
@@ -39,10 +43,14 @@ const SCHICHTEN = [
   ['zugriff'], // 1: Rechte prüfen (#1072)
   // 2; berechtigungen (#1076) braucht nur Kern und Rechteprüfung, und die Mappentypen prüfen damit ihre Regeln
   ['mappentypen', 'mappen', 'dokumente', 'berechtigungen'],
-  // 3: alle übrigen Fachordner (sichten und volltext über Mappen und Dokumenten, #1076; suche, pdf-Fachlogik,
-  // ausgang, aufgaben, post …)
+  // 3: alle übrigen Fachordner (sichten und volltext über Mappen und Dokumenten, #1076; post, ausgang und
+  // pdf-bearbeiten ebenso, #1077; suche, aufgaben …)
 ];
-/** Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. */
+/**
+ * Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. Die
+ * Fachlogik rund um PDFs liegt seit #1077 im Fachordner pdf-bearbeiten/ (Schicht 3) – nicht in pdf/, das so ein
+ * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter).
+ */
 const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer'];
 
 /**
@@ -72,7 +80,7 @@ function fachordner() {
       : [
         i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN.slice(0, i + 1).flat().join('|')})/` : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
         `^server/src/(${WERKZEUGE.ordner})/`,
-        `^server/src/(${BASIS}|${WERKZEUGE.dateien})\\.ts$`,
+        `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang})\\.ts$`,
       ];
     regeln.push({
       name,

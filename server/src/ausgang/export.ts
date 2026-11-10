@@ -10,7 +10,7 @@ import type { FehlendeDateien } from '../dokumente';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from '../export';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
-import type { Stempelvorlagen } from '../pdf-bearbeiten/stempelvorlagen';
+import type { Stempelvorlagen } from '../pdf-bearbeiten';
 import type { Repo } from '../repo';
 import type { SichtenDienst } from '../sichten';
 import { t } from '../sprache';

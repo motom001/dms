@@ -40,7 +40,6 @@ import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus } from './xlsx';
 import { schriftstueckPdf } from './schriftstueck';
 import { exportSpalten, mappenPdf } from './export';
-import { type Ausgang } from './ausgang/pruefstelle';
 import { geschwaerztName, kannSchwaerzen } from '../../shared/src/schwaerzen';
 import { type StempelTyp } from '../../shared/src/stempel';
 import { INHALT_EREIGNISSE, MAPPEN_EREIGNISSE, hatSchnittstelle, istKiPaket, kenntVolltextOhneText, type EreignisArt, type InstalliertesPaket, type KiUebersicht, type BeispielStand } from '../../shared/src/pakete';
@@ -84,22 +83,12 @@ import { SichtenDienst, SichtenVerwaltung, sortierungAus, Systemsichten, type Za
 export { sortierungAus };
 export type { Zaehlerzahlen };
 import { BerechtigungenDienst } from './berechtigungen';
-import { Stempelvorlagen } from './pdf-bearbeiten/stempelvorlagen';
-import { PdfBearbeiten } from './pdf-bearbeiten/pdf-bearbeiten.dienst';
-import { PdfVerkleinern } from './pdf-bearbeiten/verkleinern';
-export { GROSSE_MAX, GROSSE_MIT_SCHAETZUNG, VERKLEINERN_STANDARD, verkleinernEinstellungAus, type VerkleinernEinstellung } from './pdf-bearbeiten/verkleinern';
-import { Schwaerzen } from './pdf-bearbeiten/schwaerzen';
-import { PostSystemmappen } from './post/systemmappen';
-export type { SystemkontoEintrag } from './post/systemmappen';
-import { PostAufloesen } from './post/aufloesen';
-import { PostDienst } from './post/post.dienst';
-import { Eingangskanaele } from './post/eingangskanaele';
-export type { Fundstelle } from './post/eingangskanaele';
-import { PostFotos } from './post/foto';
-import { AusgangDienst } from './ausgang/ausgang.dienst';
-import { AusgangEmail } from './ausgang/email';
-export { EMAIL_MAX_EMPFAENGER, EMAIL_MAX_MAPPEN } from './ausgang/email';
-import { AusgangExport } from './ausgang/export';
+import { PdfBearbeiten, PdfVerkleinern, Schwaerzen, Stempelvorlagen } from './pdf-bearbeiten';
+export { GROSSE_MAX, GROSSE_MIT_SCHAETZUNG, VERKLEINERN_STANDARD, verkleinernEinstellungAus, type VerkleinernEinstellung } from './pdf-bearbeiten';
+import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostSystemmappen } from './post';
+export type { Fundstelle, SystemkontoEintrag } from './post';
+import { type Ausgang, AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
+export { EMAIL_MAX_EMPFAENGER, EMAIL_MAX_MAPPEN } from './ausgang';
 import { type EreignisAufruf, VOLLTEXT_MAX, VolltextAusPaketen, VolltextDienst, type VolltextMeldung } from './volltext';
 export { VOLLTEXT_MAX };
 export type { EreignisAufruf, VolltextMeldung };
@@ -1369,10 +1358,12 @@ export class Dienst {
   private static vorschau(t: string) { return MappenDienst.vorschau(t); }
   notizen(mappeId: string): Promise<Notiz[]> { return this.mappen.notizen(mappeId); }
 
-  /* ---------- E-Mail aus der Mappe (#58) ---------- */
+  /* ---------- E-Mail aus der Mappe (#58, #151, ausgang/email.ts) ---------- */
 
   versendeMappen(...a: Parameters<AusgangEmail['versendeMappen']>) { return this.ausgangEmail.versendeMappen(...a); }
   versendeMappe(...a: Parameters<AusgangEmail['versendeMappe']>) { return this.ausgangEmail.versendeMappe(...a); }
+
+  /* ---------- Notizen anlegen, ändern, löschen (#55; gehören zu den Mappen, noch im Dienst) ---------- */
 
   async legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> {
     const m = await this.repo.holeMappe(mappeId);
@@ -2045,7 +2036,11 @@ export class Dienst {
     return { ok: true as const, status: 200, grund: undefined, fremd, zuordnungen, emails, benutzerTyp, emailTyp };
   }
 
+  /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
+
   exportiere(...a: Parameters<AusgangExport['exportiere']>) { return this.ausgangExport.exportiere(...a); }
+
+  /* ---------- Wege nach draußen: die gemeinsame Prüfstelle (#723), Stempel, Fassungen (ausgang/ausgang.dienst.ts) ---------- */
 
   private dokumenteJeMappe(ids: string[]) { return this.ausgang.dokumenteJeMappe(ids); }
   exportierbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> { return this.ausgang.exportierbar(ich, z, ids); }
@@ -2168,7 +2163,7 @@ export class Dienst {
   favoritenSicht(): Promise<string | null> { return this.systemsichten.favoritenSicht(); }
   neuePostSicht(): Promise<string | null> { return this.systemsichten.neuePostSicht(); }
 
-  /* ---------- Post (#192) ---------- */
+  /* ---------- Post (#192, post/post.dienst.ts; Auflösen post/aufloesen.ts) ---------- */
 
   legePostAn(...a: Parameters<PostDienst['legePostAn']>) { return this.post.legePostAn(...a); }
   ordneZu(...a: Parameters<PostDienst['ordneZu']>) { return this.post.ordneZu(...a); }
@@ -2177,6 +2172,8 @@ export class Dienst {
   private postAufgaben(mappeId: string, von: string | null) { return this.post.postAufgaben(mappeId, von); }
 
   trennePostAb(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postAufloesen.trennePostAb(postId, eingabe, von, z); }
+
+  /* ---------- Systemmappen, Benutzer-Mappen, Rollen, Systemkonten (#43, #673, post/systemmappen.ts) ---------- */
 
   private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) { return this.postSystemmappen.schreibeSystemMappe(...a); }
   spiegleBenutzer(...a: Parameters<PostSystemmappen['spiegleBenutzer']>) { return this.postSystemmappen.spiegleBenutzer(...a); }
@@ -2700,7 +2697,7 @@ export class Dienst {
     return { id: d.id, volltext: Dienst.volltextAn(typ, registerKey) };
   }
 
-  /* ---------- Eingangskanäle (#195) ---------- */
+  /* ---------- Eingangskanäle (#195, post/eingangskanaele.ts) ---------- */
 
   postTyp() { return this.eingangskanaele.postTyp(); }
   notiereSystem(mappeId: string, system: string, text: string) { return this.eingangskanaele.notiereSystem(mappeId, system, text); }
@@ -2723,7 +2720,7 @@ export class Dienst {
   holeDokument(id: string) { return this.dokumente.holeDokument(id); }
   dokumentInhalt(id: string) { return this.dokumente.dokumentInhalt(id); }
 
-  /* ---------- Stempel beim Weitergeben (#394) ---------- */
+  /* ---------- Stempel beim Weitergeben (#394, pdf-bearbeiten/stempelvorlagen.ts) ---------- */
 
   stempelVorlagen() { return this.stempelvorlagen.stempelVorlagen(); }
   speichereStempelVorlage(id: string | null, eingabe: unknown, von: string) { return this.stempelvorlagen.speichereStempelVorlage(id, eingabe, von); }
@@ -2733,7 +2730,7 @@ export class Dienst {
 
   loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) { return this.dokumente.loescheDokument(id, benutzerId, anlass); }
 
-  /* ---------- PDF bearbeiten (#335) ---------- */
+  /* ---------- PDF bearbeiten (#335, pdf-bearbeiten/pdf-bearbeiten.dienst.ts) ---------- */
 
   /** Seitenbilder der Seitenansicht (im Arbeitsspeicher, für die letzten Dokumente). */
   get seitenbilder() { return this.pdfBearbeiten.seitenbilder; }
@@ -2743,13 +2740,13 @@ export class Dienst {
   bearbeitePdf(id: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.pdfBearbeiten.bearbeitePdf(id, eingabe, von, z); }
   fuegePdfZusammen(eingabe: unknown, von: string | null, z?: Zugriff) { return this.pdfBearbeiten.fuegePdfZusammen(eingabe, von, z); }
 
-  /* ---------- Post fotografieren (#490) ---------- */
+  /* ---------- Post fotografieren (#490, post/foto.ts) ---------- */
 
   postAusFotos(...a: Parameters<PostFotos['postAusFotos']>) { return this.postFotos.postAusFotos(...a); }
   fotosAnMappe(...a: Parameters<PostFotos['fotosAnMappe']>) { return this.postFotos.fotosAnMappe(...a); }
   legePostZusammen(zielId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postFotos.legePostZusammen(zielId, eingabe, von, z); }
 
-  /* ---------- PDF verkleinern (#393) ---------- */
+  /* ---------- PDF verkleinern (#393, pdf-bearbeiten/verkleinern.ts) ---------- */
 
   verkleinernVorschau(id: string) { return this.pdfVerkleinern.verkleinernVorschau(id); }
   verkleinereDokument(id: string, eingabe: unknown, von: string | null) { return this.pdfVerkleinern.verkleinereDokument(id, eingabe, von); }
@@ -2759,7 +2756,7 @@ export class Dienst {
   grosseDokumente(f: { ab?: unknown; stufe?: unknown }) { return this.pdfVerkleinern.grosseDokumente(f); }
   verkleinereViele(eingabe: unknown, von: { id: string | null; email: string }) { return this.pdfVerkleinern.verkleinereViele(eingabe, von); }
 
-  /* ---------- Schwärzen (#392) ---------- */
+  /* ---------- Schwärzen (#392, pdf-bearbeiten/schwaerzen.ts) ---------- */
 
   schwaerzenVorschau(id: string) { return this.schwaerzen.schwaerzenVorschau(id); }
   schwaerzSeitenbild(...a: Parameters<Schwaerzen['schwaerzSeitenbild']>) { return this.schwaerzen.schwaerzSeitenbild(...a); }

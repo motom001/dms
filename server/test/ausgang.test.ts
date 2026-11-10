@@ -10,7 +10,7 @@ import { describe, it } from 'node:test';
 import { inflateSync } from 'node:zlib';
 import { PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
 import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { mitnehmbar, pruefeAlle, verboten } from '../src/ausgang/pruefstelle';
+import { mitnehmbar, pruefeAlle, verboten } from '../src/ausgang';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';

@@ -7,7 +7,7 @@ import { dateiname, type DokumenteDienst, type DokumentVersionen } from '../doku
 import { Fachfehler } from '../fehler';
 import type { Anlass, Kern, Zugriff } from '../kern';
 import type { MappenArchiv, MappenHistorie, MappenTitel } from '../mappen';
-import type { PdfBearbeiten } from '../pdf-bearbeiten/pdf-bearbeiten.dienst';
+import type { PdfBearbeiten } from '../pdf-bearbeiten';
 import { bilderZuPdf, fuegeZusammen, seitenInfo } from '../pdfseiten';
 import { protokoll } from '../protokoll';
 import { istUuid, type Repo } from '../repo';

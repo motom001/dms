@@ -12,7 +12,7 @@ import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
 import type { MappentypenDienst } from '../mappentypen';
-import type { Stempelvorlagen } from '../pdf-bearbeiten/stempelvorlagen';
+import type { Stempelvorlagen } from '../pdf-bearbeiten';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import type { SichtenVerwaltung } from '../sichten';
