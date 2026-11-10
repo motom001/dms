@@ -118,7 +118,24 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `zugriff/index.ts` (dazu `maskiert` und `NICHT_SICHTBAR` für Titel nicht lesbarer Mappen).
 - **Bekommt den Kern** und einen `ZugriffAnschluss` vom Dienst: `kiSperre` (KI-Einstellung der Pakete) und `konten`.
 - **Schicht 1:** importiert nur sich selbst, den Kern, `shared/`, die Basis und `messung.ts`. Fachordner darüber bekommen den `ZugriffDienst` beim Zusammenbau (wie die Suche) und importieren ihn über `zugriff/index.ts`. Der Kern bindet ihn nicht ein; `kern.zugriff(ich)` ruft, was der Dienst hereinreicht.
-- **Noch im Dienst:** die Werkbank der Berechtigungen (künftig `berechtigungen/`), `regulaerSichtbarFuer` und `paketSiehtNicht`.
+- **Noch im Dienst:** die Werkbank der Berechtigungen (künftig `berechtigungen/`) und `regulaerSichtbarFuer`. `paketSiehtNicht` liegt seit #1073 bei den [Mappentypen](#mappentypen) (`pakete-am-typ.ts`).
+
+## Mappentypen (#1073) { #mappentypen }
+
+`server/src/mappentypen/` (Schicht 2) bündelt, was einen Mappentyp ausmacht – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie und behält für jede Methode eine einzeilige Weiterleitung:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `mappentypen.dienst.ts` | `MappentypenDienst` (`dienst.mappentypen`) | `listeTypen`, `typenFuer`, `rechteUebersicht`, `legeTypAn`, `aendereTyp`, `loescheTyp`, `belegteTypen`, `ausDokumentVon`, `typErkennungen` |
+| `eingabe.ts` | – | Eingaben bereinigen: `bereinigeTyp`, `bereinigeFeld`, `behalte…`, `liesStand` |
+| `passung.ts` | `Passung` (`dienst.passung`) | `pruefePassung`, `passungFuer`, `pruefeUnpassende`, `passungNachziehen` |
+| `nummernkreise.ts` | `Nummernkreise` (`dienst.nummernkreise`) | Nummernkreise (#171), `ARCHIV_KREIS` |
+| `systemtypen.ts` | `Systemtypen` (`dienst.systemtypen`) | `sichereSystemtypen` (Schritt der [Systemausstattung](#systemausstattung)), `benutzerspiegel`, `weitereRollen`, `ablageortTyp`, Spur im Verwaltungsmodus |
+| `pakete-am-typ.ts` | `TypPakete` (`dienst.typpakete`) | `paketeAmTyp`, `setzePaketVerwehrt`, `paketSiehtNicht` |
+
+- **Tür:** `mappentypen/index.ts`; die Routen (`mappentypen.routen.ts`) holt nur `routen.ts` direkt.
+- **Bekommt den Kern**, `TypPakete` und `Systemtypen` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Stempel, Erkennung und Berechtigungen am Typ, Aufgaben, Titel, Aufträge, Systemmappen schreiben).
+- **Noch im Dienst:** Stempel am Typ (`mitStempel`), `berechtigungenAusEingabe`, `ausPostZiele` (#937) und `titel`.
 
 ### Schichten { #schichten }
 
