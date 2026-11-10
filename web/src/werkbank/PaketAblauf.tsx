@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { HakenFeld } from '../bausteine';
 import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
 import type { EinstellungFeld } from '../../../shared/src/paketeinstellungen';
 import { api, ApiFehler, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api';
@@ -305,6 +306,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
   const anzahlAn = Object.values(angehakt).reduce((n, l) => n + l.length, 0);
   const [herkunftOk, setHerkunftOk] = useState(false);
   const [rechteOk, setRechteOk] = useState(false);
+  // Erstmals gesetzte Herausgeber von Bestandspaketen (#1084): ein eigener Haken.
+  const [herausgeberOk, setHerausgeberOk] = useState(false);
+  const erstmals = pk.filter((p) => p.vorschau.herausgeberBestaetigen);
   const [adresseOk, setAdresseOk] = useState(false);
   const mitEinstellungen = pk.filter((p) => p.einstellungen.length > 0);
   const [werte, setWerte] = useState<Record<string, Record<string, unknown>>>(() => Object.fromEntries(mitEinstellungen.map((p) => [p.id, Object.fromEntries(p.einstellungen.map((f) => [f.schluessel, null]))])));
@@ -322,6 +326,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
   const fehlt = [
     plan.herkunftBestaetigen && !herkunftOk ? t('pakete.ablauf.fehlt.herkunft') : '',
     plan.rechte.bestaetigen && !rechteOk ? t('pakete.ablauf.fehlt.rechte') : '',
+    erstmals.length && !herausgeberOk ? t('pakete.ablauf.fehlt.herausgeber') : '',
     leereNamen || nochKonflikt ? t('pakete.ablauf.fehlt.namen') : '',
     offenePflicht.length ? t('pakete.ablauf.fehlt.einstellungen', { namen: offenePflicht.map((p) => p.name).join(', ') }) : '',
     adressen.length && !adresseOk ? t('pakete.ablauf.fehlt.adresse') : '',
@@ -333,7 +338,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
 
   const antworten = (): AblaufInstallation => ({
     ...eingabe(), namen, sichtNamen, beispiele: beispielPakete.map((p) => p.id), automatisierungen: angehakt,
-    ...(herkunftOk ? { bestaetigt: true } : {}), ...(rechteOk ? { rechteStand: plan.rechte.stand } : {}),
+    ...(herkunftOk ? { bestaetigt: true } : {}), ...(rechteOk ? { rechteStand: plan.rechte.stand } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}),
     einstellungen: Object.fromEntries(Object.entries(werte).filter(([id]) => !spaeter.includes(id))), spaeter, ...(adresseOk ? { adresseBestaetigt: true } : {}),
   });
 
@@ -408,6 +413,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             </div>
           ))}
           {mitCode.some((p) => p.vorschau.laeufer!.rechte.some((r) => r.hilfe === 'pakete.recht.adresse')) && <p className="klein">{t('pakete.ablauf.adresse.hinweis')}</p>}
+          {erstmals.length > 0 && (
+            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.herausgeber.ja', { liste: erstmals.map((p) => `${p.name}: ${p.vorschau.herausgeberBestaetigen}`).join(', ') })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld></div>
+          )}
           {plan.rechte.bestaetigen && (
             <div className="hinweis warn"><label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{t('pakete.ablauf.rechte.ja')}</span></label></div>
           )}

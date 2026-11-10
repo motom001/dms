@@ -1695,6 +1695,7 @@
   "pakete.hochgeladenes-paket": "Hochgeladenes Paket",
   "pakete.herausgeber": "Herausgeber",
   "pakete.herausgeber-ungeprueft": "Herausgeber laut Paket: {wer} – nicht geprüft",
+  "pakete.herausgeber-bestaetigen": "Ich bestätige: Ab diesem Update gilt „{herausgeber}“ als Herausgeber dieses Pakets.",
   "pakete.datei": "Datei",
   "pakete.version-3": "Version {installiert}{wert}",
   "pakete.hochgeladen-aus-der-datei": "Hochgeladen aus der Datei „{datei}“",

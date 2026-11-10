@@ -46,7 +46,7 @@ export function paketeRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/pakete/ablauf/plan', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.ablaufPlan((a.body ?? {}) as AblaufEingabe)) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/ablauf/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.ablaufInstallieren((a.body ?? {}) as AblaufInstallation, wer(a)))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean }, wer(a)))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; herausgeberBestaetigt?: boolean }, wer(a)))) },
     // Paket-Läufer (#338): Stand je Paket mit Code – geladen, Aufrufe, Fehler, Ereignisse.
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
   ];

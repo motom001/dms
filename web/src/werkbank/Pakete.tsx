@@ -1,4 +1,4 @@
-import { Knopf } from '../bausteine';
+import { HakenFeld, Knopf } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
@@ -350,7 +350,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
           los={async (x) => {
             try {
-              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, x.automatisierungen) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
               await z.laden(); await d.neuLaden(); await z.abrufen(false);
               geheZu(`/werkbank/pakete/${r.id}`);
             } catch (e) { setMeldung(alsMeldung(e)); }
@@ -580,7 +580,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <VorschauBlock v={vorschau} warnung={offiziell || vorschau.pruefung?.bestaetigen === false ? null : t('werkbank.pakete.aus-dem-katalog', { wert: String(inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle) })} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
             if (vorschau.update) {
-              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, x.automatisierungen);
+              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt });
               // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
               if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);
               return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version });
@@ -698,7 +698,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   v: PaketVorschau; warnung: string | null; abbrechen(): void; titel?: string; abbrechenText?: string;
   /** Herkunft schon vorher bestätigt (Sammeldatei): kein zweiter Haken. */
   herkunftBestaetigt?: boolean;
-  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; automatisierungen: string[] }): Promise<void>;
+  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[] }): Promise<void>;
 }) {
   // Mitgelieferte Automatisierungen (#712): Vorgabe ja, abgewählte bleiben aus.
   const neueAutos = (v.automatisierungen ?? []).filter((a) => a.neu);
@@ -711,6 +711,9 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   const [rechteOk, setRechteOk] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const rechteFehlen = !!v.laeufer?.bestaetigen && !rechteOk;
+  // Erstmals ein Herausgeber an einem Bestandspaket (#1084): eigener Haken, sonst kein Update.
+  const [herausgeberOk, setHerausgeberOk] = useState(false);
+  const herausgeberFehlt = !!v.herausgeberBestaetigen && !herausgeberOk;
   const fehlend = v.abhaengigkeiten.filter((a) => !a.installiert);
   const konflikt = v.typen.some((eintrag) => !eintrag.vorhanden && eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase())
     || v.sichten.some((s) => !s.vorhanden && !s.ausgelassen && s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase());
@@ -805,9 +808,14 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           ))}
         </fieldset>
       )}
+      {v.herausgeberBestaetigen && (
+        <div className="hinweis warn">
+          <HakenFeld beschriftung={t('werkbank.pakete.herausgeber-bestaetigen', { herausgeber: v.herausgeberBestaetigen })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld>
+        </div>
+      )}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen}
-          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
+        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt}
+          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
           {laeuft ? (v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')) : v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
         </button>
         <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>

@@ -22,6 +22,18 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
 const archiv = (d: Record<string, string>) => zipPuffer(Object.entries(d).map(([name, inhalt]) => ({ name, daten: Buffer.from(inhalt) })), new Date('2026-01-01T12:00:00Z'));
 const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
+/** Sammeldatei (#461) wie von der Katalog-Webseite: Verzeichnis und Paket-Archive. */
+function sammeldatei(pakete: Array<Record<string, string>>) {
+  const d = new Map<string, Buffer>();
+  const eintraege = pakete.map((p) => {
+    const id = /^id: (\S+)$/m.exec(p['manifest.yaml'])![1], version = /^version: (\S+)$/m.exec(p['manifest.yaml'])![1];
+    const b = archiv(p);
+    d.set(`pakete/${id}-${version}.zip`, b);
+    return { id, version, name: id, archiv: `pakete/${id}-${version}.zip`, sha256: sha(b), groesse: b.length, gewaehlt: true };
+  });
+  d.set('sammeldatei.json', Buffer.from(JSON.stringify({ format: 1, art: 'dms-sammeldatei', erstellt: '2026-11-01T12:00:00Z', quelle: 'https://github.com/motom001/dms-registry', katalog: KATALOG, dms: '0.107.1', pakete: eintraege })));
+  return zipPuffer([...d].map(([name, daten]) => ({ name, daten })));
+}
 const gruende = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && [e.message, ...((e.details as { gruende?: string[] })?.gruende ?? [])].some((g) => re.test(g));
 
 /** Ein kleines Paket: Manifest-Zeilen dazu, optional ein Mappentyp. */
@@ -229,6 +241,52 @@ for (const pg of [false, true]) {
       assert.equal(typen.find((x) => x.id === a.typen.garten_pflanze)?.schluessel, 'haus:garten_pflanze');
       assert.equal(typen.find((x) => x.id === b.typen.pflanze)?.schluessel, 'haus_garten:pflanze');
       assert.notEqual(a.typen.garten_pflanze, b.typen.pflanze);
+    });
+
+    it('erstmals ein Herausgeber an einem Bestandspaket: nur mit ausdrücklicher Bestätigung', async () => {
+      const k = katalog([{ dateien: paket('basis', '1.0.0') }]);
+      k.setze(k.pakete);
+      const { p } = await aufbau(k);
+      const alt = await p.hochladen(archiv(paket('familie', '1.0.0')), ICH);
+      assert.equal((await p.installiere({ upload: alt.upload, bestaetigt: true }, ICH)).herausgeber, undefined, 'Bestand: unbekannt');
+      const neu = await p.hochladen(archiv(paket('familie', '1.1.0', 'herausgeber: org.example\n')), ICH);
+      assert.equal(neu.vorschau.herausgeberBestaetigen, 'org.example');
+      assert.deepEqual(neu.vorschau.probleme, []);
+      await assert.rejects(p.installiere({ upload: neu.upload, bestaetigt: true }, ICH), (e: unknown) => e instanceof Fachfehler && e.status === 409 && /Ab diesem Update gilt „org\.example“ als Herausgeber/.test(e.message));
+      assert.equal((await p.installierte()).find((x) => x.id === 'familie')?.version, '1.0.0', 'ohne Bestätigung kein Update');
+      const ok = await p.installiere({ upload: neu.upload, bestaetigt: true, herausgeberBestaetigt: true }, ICH);
+      assert.deepEqual([ok.version, ok.herausgeber], ['1.1.0', 'org.example']);
+      // Danach gilt er: kein weiterer Haken, ein anderer Herausgeber wird abgelehnt.
+      const weiter = await p.hochladen(archiv(paket('familie', '1.2.0', 'herausgeber: org.example\n')), ICH);
+      assert.equal(weiter.vorschau.herausgeberBestaetigen, null);
+    });
+
+    it('Sammeldatei: nicht zuordenbare fremde_typen sind ein Fehler mit Ansicht und Typ – die Installation bricht vorher ab', async () => {
+      const k = katalog([{ dateien: paket('basis', '1.0.0') }]);
+      k.setze(k.pakete);
+      const { p, d } = await aufbau(k);
+      const mitAnsicht = (fremd: string) => ({
+        ...paket('uebersicht', '1.0.0'),
+        'manifest.yaml': paket('uebersicht', '1.0.0')['manifest.yaml'] + 'inhalt:\n  sichten: inhalt/sichten.yaml\n',
+        'inhalt/sichten.yaml': `- schluessel: alle\n  name: Alles im Garten\n  fremde_typen:\n    - { kennung: ${fremd}, name: Pflanze }\n`,
+      });
+      const r = await p.hochladenDatei(sammeldatei([mitAnsicht('haus:garten_pflanze')]), ICH);
+      assert.ok('sammeldatei' in r);
+      const v = r.sammeldatei.pakete[0].vorschau;
+      assert.ok(v.fehlercodes.includes('fremder-typ'), v.probleme.join(' | '));
+      assert.ok(v.probleme.some((x) => /Ansicht „Alles im Garten“: Den Mappentyp „Pflanze“ \(haus:garten_pflanze\)/.test(x)));
+      const uploads = r.sammeldatei.pakete.map((x) => x.upload);
+      await assert.rejects(p.ablaufInstallieren({ uploads, bestaetigt: true }, ICH), gruende(/Alles im Garten/));
+      await assert.rejects(p.installiere({ upload: uploads[0], bestaetigt: true }, ICH), gruende(/Alles im Garten/), 'auch einzeln nicht');
+      assert.deepEqual((await p.installierte()).map((x) => x.id), [], 'nichts installiert');
+      assert.equal((await d.listeSichten()).some((x) => x.name === 'Alles im Garten'), false);
+      // Bringt die Sammeldatei den Typ mit, ist es kein Fehler (auch in der alten Schreibweise).
+      const haus = { ...paket('haus', '1.0.0', '', true), 'inhalt/mappentypen.yaml': '- schluessel: garten_pflanze\n  name: Pflanze\n  felder:\n    - { key: name, label: Name, typ: text }\n  register:\n    - { key: daten, name: Daten, art: felder, felder: [name] }\n' };
+      for (const kennung of ['haus:garten_pflanze', 'haus_garten_pflanze']) {
+        const mit = await p.hochladenDatei(sammeldatei([haus, mitAnsicht(kennung)]), ICH);
+        assert.ok('sammeldatei' in mit);
+        assert.deepEqual(mit.sammeldatei.pakete.flatMap((x) => x.vorschau.probleme), [], kennung);
+      }
     });
 
     it('Umzug nur aus derselben Quelle: ein hochgeladenes Paket mit ersetzt übernimmt keine Katalog-Installation', async () => {

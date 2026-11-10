@@ -899,6 +899,8 @@ export interface AblaufInstallation extends AblaufEingabe {
   spaeter?: string[];
   /** Dienst-Adressen in den Einstellungen bestätigt. */
   adresseBestaetigt?: boolean;
+  /** Erstmals gesetzte Herausgeber von Bestandspaketen bestätigt (#1084) – ein Haken für alle. */
+  herausgeberBestaetigt?: boolean;
 }
 export interface AblaufPaket<V> {
   /** Paket-Id (Katalog) bzw. Upload-Kennung (Sammeldatei). */

@@ -1695,6 +1695,7 @@
   "pakete.hochgeladenes-paket": "Uploaded package",
   "pakete.herausgeber": "Publisher",
   "pakete.herausgeber-ungeprueft": "Publisher according to the package: {wer} – not verified",
+  "pakete.herausgeber-bestaetigen": "I confirm: from this update on, “{herausgeber}” counts as the publisher of this package.",
   "pakete.datei": "File",
   "pakete.version-3": "Version {installiert}{wert}",
   "pakete.hochgeladen-aus-der-datei": "Uploaded from the file “{datei}”",
