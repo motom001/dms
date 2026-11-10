@@ -122,7 +122,7 @@ How the building blocks fit together is described under [Technology](technik.md)
     That is the reverse proxy's address: Ablago doesn't believe its information. Look under **Technology** at what `TRUST_PROXY` says. If the proxy has a public address, `TRUST_PROXY` can be set to this address or to `true` – more under [What the proxy tells Ablago](installation.md#was-der-proxy-dem-dms-mitteilt).
 
 ??? question "Uploading large files aborts."
-    Allow larger requests in the reverse proxy, e.g. for nginx `client_max_body_size 110m;`.
+    Allow larger requests in the reverse proxy, e.g. for nginx `client_max_body_size 130m;`. Ablago accepts documents up to 100 MB and packages up to 128 MB; the limit in the proxy should be a little higher.
 
 ??? question "The interface is unusable after a design change."
     Append `?design=standard` to the address, see [Themes](designs.md#eigenes-css).

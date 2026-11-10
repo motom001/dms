@@ -144,6 +144,24 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
       e instanceof Fachfehler && e.status === 404 && JSON.stringify(e.details).includes('frag Lena') && !JSON.stringify(e.details).includes('Kündigung'));
   });
 
+  it('#958: Fristen an Mappen ohne Leserecht ohne Datum und Feld – wer lesen darf, sieht beides', async () => {
+    for (const repos of [undefined, ...(url ? [await pgRepos()] : [])]) {
+      const { d, lena, petra, m, ich, rufe } = await aufbau(repos);
+      const datum = verschiebe(heuteIn(), 30);
+      for (const an of [petra, lena]) {
+        await d.aufgabeAusAutomatisierung({ mappeId: m.id, empfaengerId: an.id, text: 'Strom kündbar bis', datum: null, von: lena.id, buendeln: null, anlass: {},
+          aufgabenAnlass: { art: 'datum', feld: 'kuendbar_bis' }, frist: { feld: 'kuendbar_bis', datum } });
+      }
+      const fuer = async (b: { id: string }) => (await d.meineAufgaben(await ich(b.id), await d.zugriff(await ich(b.id)))).find((x) => x.mappeId === m.id && x.art === 'frist')!;
+      const p = await fuer(petra);
+      assert.deepEqual([p.datum, p.feldKey, p.anlass, p.mappeTitel], [null, null, null, 'nicht sichtbare Mappe'], 'Petra darf den Vertrag nicht lesen');
+      assert.doesNotMatch(JSON.stringify(p), /kuendbar_bis|Strom/);
+      assert.doesNotMatch(JSON.stringify((await rufe(petra, 'GET', '/api/aufgaben')).body), new RegExp(`kuendbar_bis|${datum}`), 'auch über die API');
+      const l = await fuer(lena);
+      assert.deepEqual([l.datum, l.feldKey, l.anlass?.art], [datum, 'kuendbar_bis', 'datum'], 'Lena darf lesen');
+    }
+  });
+
   it('beim Zuweisen von Hand: Prüfung vorab, Aufgabe kommt an, der Admin erfährt es (Fall, Hinweis über #719)', async () => {
     const { d, lena, jonas, petra, m, rufe } = await aufbau();
     assert.deepEqual((await rufe(lena, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: petra.id } })).body, { lesen: false });

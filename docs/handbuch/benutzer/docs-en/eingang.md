@@ -37,7 +37,7 @@ To the right of a folder's title, next to the star, is the menu **Folder ▾**; 
 
 Tasks always go to a user, not to a role – so it is clear who takes care of it. If the recipient may not read the folder under the [permissions](mappen.md#was-du-sehen-und-andern-darfst), Ablago asks first: "Jonas may not see this folder. The task reaches Jonas, but the folder doesn't. The admin will be informed." With **Assign anyway** it goes out, with **Cancel** it doesn't. You can't give permissions here – the administrator does that.
 
-If you see a **Folder you can't see** under "To do", you have a task on a folder you may not read. If someone gave it to you by hand, its text is shown. If it was created automatically, you only see "Task on a folder you may not see – ask Lena" and the due date – the same in the Daily summary. When you open it, you can complete the task or pass it on to someone who may see the folder. If the administrator gives you read permission for the duration of the task, you can read the folder until the task is done or passed on.
+If you see a **Folder you can't see** under "To do", you have a task on a folder you may not read. If someone gave it to you by hand, its text is shown. If it was created automatically, you only see "Task on a folder you may not see – ask Lena" and the due date – the same in the Daily summary. For a deadline the date is left out too, as it comes from the folder. When you open it, you can complete the task or pass it on to someone who may see the folder. If the administrator gives you read permission for the duration of the task, you can read the folder until the task is done or passed on.
 
 ## Remind { #erinnern }
 

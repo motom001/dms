@@ -270,7 +270,7 @@ server {
     server_name dms.example.org;
     # ssl_certificate …; ssl_certificate_key …;
 
-    client_max_body_size 110m;          # Dokumente bis 100 MB
+    client_max_body_size 130m;          # Dokumente bis 100 MB, Pakete bis 128 MB
 
     location / {
         proxy_pass http://<NAS>:8080;
