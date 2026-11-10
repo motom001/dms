@@ -1041,6 +1041,7 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   .listenkopf h1 .hilfesymbol > span { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--linie-stark); border-radius: 50%; }
   .listenkopf h1 .hilfesymbol:hover > span, .listenkopf h1 .hilfesymbol:focus-visible > span { border-color: var(--akzent); }
 }
+/* Außerhalb der Bausteine am Handy etwas größer; im Feld legt der Baustein die Tippfläche fest (Feld.module.css, #1027). */
 @media (pointer: coarse) { .hilfesymbol { width: 1.6em; height: 1.6em; } }
 
 /* Speicherplatz (#116): belegt je Ordner mit Marken für Warnschwelle und Grenze */

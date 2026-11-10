@@ -14,7 +14,7 @@
 | `gefahr` | Fehlerfarbe | etwas, das sich nicht oder schwer zurücknehmen lässt; fast immer mit Rückfrage | „Löschen“, „Jetzt sofort sperren“ |
 | `link` | wie ein Verweis | **nur für Wege**: zurück, zur Liste, abbrechen ohne Folgen – nie für eine Handlung, die etwas ändert | „Zur Liste“, „Zurück“ |
 
-Die Farben kommen aus den Tokens (`--gruen`, `--akzent`, `--schlecht`) und gelten in jedem Design. Größe: `groesse="klein"` in Listenköpfen, Tabellenzeilen und Leisten, sonst normal.
+Die Farben kommen aus den Tokens (`--gruen`, `--akzent`, `--schlecht`) und gelten in jedem Design. Größe: `groesse="klein"` in Listenköpfen, Tabellenzeilen und Leisten, sonst normal. Am Handy hat jeder Knopf eine Tippfläche von mindestens 44 × 44 px, auch der kleine ([Am Handy](bausteine.md#handy)).
 
 **„+ Neu“ (#989):** Steht auf einer Seite nur eine Sache zum Anlegen, heißt der Knopf genau „+ Neu“. Lassen sich auf einer Seite mehrere Dinge anlegen (z. B. Mein Konto mit API-Schlüsseln und Webhooks), heißt er „+ Neu…“ mit dem Gegenstand: „+ Neuer Schlüssel“, „+ Neuer Webhook“.
 

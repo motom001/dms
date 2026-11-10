@@ -23,6 +23,22 @@ Alle Bausteine stehen unter `web/src/bausteine/`:
 - **Barrierefreiheit gehört in den Baustein.** `id`, `htmlFor`, `aria-describedby` und Co. setzt der Baustein; wer ihn benutzt, muss daran nicht denken.
 - **Hell und dunkel, Desktop und Handy.** Jeder Zustand ist in beiden Darstellungen und in Handybreite lesbar; Hover und Tastaturfokus sind sichtbar.
 
+## Am Handy { #handy }
+
+Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement eines Bausteins bei **`(pointer: coarse)`** (Touch als Hauptzeiger) eine **Tippfläche von mindestens 44 × 44 px** (Musterkatalog D6, #1027; WCAG 2.5.8 verlangt 24 px). Mit der Maus (`pointer: fine`) bleibt alles, wie es ist.
+
+| Baustein | Am Handy |
+| --- | --- |
+| `Knopf`, `KnopfLink` (normal, alle Arten) | mindestens 44 px hoch, nur Symbol auch 44 px breit; die Art Link ohne sichtbare Fläche ebenso |
+| `Knopf` klein | bleibt optisch klein; ein unsichtbares Pseudo-Element vergrößert die Tippfläche, ein Außenabstand derselben Breite hält Nachbarn frei |
+| `Feld` | Eingaben und Auswahllisten mindestens 44 px hoch |
+| Hilfesymbol „?“ im Feld | bleibt optisch klein; unsichtbare Tippfläche 44 × 44 px, Kopfzeile 44 px hoch, Abstand zur Beschriftung |
+| `HakenFeld`, Haken in `FeldGruppe` | die ganze Zeile mit Beschriftung ist mindestens 44 px hoch; die Beschriftung schaltet den Haken mit |
+
+**Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `styles.css` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
+
+**Geprüft** wird das im Rauchtest der Musterseite: In der Handyansicht (390 px, Touch) misst `tippflaechenPruefen` in `web/rauchtest/muster.mjs` jedes Bedienelement der Seite so, wie der Browser einen Fingertipp zuordnet (`elementFromPoint` – unsichtbare Tippflächen und Beschriftungen zählen mit). Jedes braucht ein eigenes Quadrat von 44 × 44 px; sonst scheitert der Test. Ausnahmen stehen mit Grund in `TIPP_AUSNAHMEN` (heute keine).
+
 ## Musterseite { #musterseite }
 
 Die Musterseite unter **`/muster`** zeigt jeden Baustein in jedem Zustand – zum Ansehen, Ausprobieren und Vergleichen. Oben rechts lässt sich die Darstellung umschalten (automatisch, hell, dunkel, hoher Kontrast); die Wahl steht in der Adresse (`/muster?darstellung=dunkel`).
@@ -40,7 +56,7 @@ Im **Produktivbau** (`npm run build` ohne `VITE_MUSTER`, auch im Image) fehlt si
 
 ## Rauchtest und Bilder { #rauchtest }
 
-Der Rauchtest „Musterseite der Bausteine“ (`web/rauchtest/rauchtest.mjs`, Job **pruefen**) öffnet `/muster` hell und dunkel, am Desktop und in Handybreite, prüft jede Ansicht mit **axe-core** (WCAG 2.2 A und AA samt bewährter Praxis) und darauf, dass die Seite am Handy nicht waagerecht rollt. Jeder Verstoß lässt den Test scheitern. Die Bilder liegen danach im Artefakt **musterseite** des Laufs.
+Der Rauchtest „Musterseite der Bausteine“ (`web/rauchtest/rauchtest.mjs`, Job **pruefen**) öffnet `/muster` hell und dunkel, am Desktop und in Handybreite, prüft jede Ansicht mit **axe-core** (WCAG 2.2 A und AA samt bewährter Praxis) darauf, dass die Seite am Handy nicht waagerecht rollt, und dort auf Tippflächen von mindestens 44 × 44 px ([Am Handy](#handy)). Jeder Verstoß lässt den Test scheitern. Die Bilder liegen danach im Artefakt **musterseite** des Laufs.
 
 Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `bilder (en)` auf (`docs/handbuch/screenshots/aufnehmen.mjs`, gemeinsamer Code in `web/rauchtest/muster.mjs`); sie landen in diesem Handbuch unter `bilder/muster-*.png`. Lokal fehlen sie wie alle Bildschirmfotos ([Loslegen](loslegen.md)).
 
