@@ -20,9 +20,14 @@
 const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen';
 /**
  * Was Fachordner außer Kern und BASIS einbinden dürfen (#1072): Messung der Rechteprüfung, Vektoren lesen (auch der
- * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool.
+ * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool. Seit #1075
+ * die Technik der Dateien, die Dokumente brauchen: Hochladen, Verkleinern, Fassungen (Umwandeln, Archivfassung,
+ * Entsperren) und Volltext aus Paketen – sie binden selbst nur die Basis, hintergrund.ts und die PDF-Stelle ein.
  */
-const WERKZEUGE = { dateien: 'messung|vektoren', ordner: 'pdf|arbeit' };
+const WERKZEUGE = {
+  dateien: 'messung|vektoren|hochladen|verkleinern|dateiumwandlung|archivfassung|entsperren|paketvolltext',
+  ordner: 'pdf|arbeit',
+};
 
 /**
  * Schichten der Fachordner unter server/src/ (#1072, Zielaufteilung): Aufrufe nur abwärts, in derselben Schicht
