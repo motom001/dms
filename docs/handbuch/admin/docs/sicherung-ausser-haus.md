@@ -41,7 +41,7 @@ Der Abschnitt **Außer Haus** nennt das Ziel und die letzte Kopie. Die Übersich
 
 Die E-Mail nennt nur das Ziel, nie Zugangsdaten. Ein einzelner Fehlversuch, den die nächste Wiederholung behebt, steht nur in der Werkbank.
 
-Das [Notfallblatt](sicherung.md#notfallblatt) nennt das Ziel (Paket und Adresse) **ohne Passwort**, dazu den Satz: *Der Schlüssel der Werkbank liegt nicht auf dem Ziel. Die Kopie öffnest du nur mit dem Schlüssel von diesem Blatt.* Lade es nach dem Einrichten neu herunter.
+Das [Notfallblatt](verschluesselung.md#notfallblatt) nennt das Ziel (Paket und Adresse) **ohne Passwort**, dazu den Satz: *Der Schlüssel der Werkbank liegt nicht auf dem Ziel. Die Kopie öffnest du nur mit dem Schlüssel von diesem Blatt.* Lade es nach dem Einrichten neu herunter.
 
 ## Einrichten mit „Sicherungsziel WebDAV“
 

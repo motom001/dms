@@ -4,7 +4,7 @@ Du hast Ablago gerade installiert und den Einrichtungsassistenten durchlaufen? D
 
 ## 1. Sicherung einschalten
 
-Das Wichtigste zuerst: **Werkbank → Sicherung**. Lade das **Notfallblatt** herunter und leg es getrennt vom NAS ab, ausgedruckt oder in einem Passwortsafe – nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen. Danach schaltest du den **Zeitplan** ein; Ablago sichert sich ab dann selbst und prüft jede Woche, ob sich die Sicherung einspielen lässt.
+Das Wichtigste zuerst: die Sicherung. Lade unter **Werkbank → [Verschlüsselung](verschluesselung.md#notfallblatt)** das **Notfallblatt** herunter und leg es getrennt vom NAS ab, ausgedruckt oder in einem Passwortsafe – nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen. Danach schaltest du unter **Werkbank → Sicherung** den **Zeitplan** ein; Ablago sichert sich ab dann selbst und prüft jede Woche, ob sich die Sicherung einspielen lässt.
 
 *Das Notfallblatt hast du am Ende des Assistenten schon heruntergeladen* – ohne geht „Einrichtung abschließen“ nicht. Darauf steht auch der **Notfallcode**, falls du dich einmal aussperrst. Es fehlt nur noch der Zeitplan.
 

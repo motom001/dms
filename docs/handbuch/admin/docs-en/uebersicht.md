@@ -23,7 +23,7 @@ Next to the areas it says how much is set up there – for instance the number o
 
 ## How you work in the workbench {#so-arbeitest-du-in-der-werkbank}
 
-Areas with many entries that you edit – folder types, views, number sequences, packages, users, tasks, designs, bin, mailboxes, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; with **+ New** you create one.
+Areas in which you create and edit something – whether there are many entries or few: folder types, views, number sequences, automations, packages, users, data protection requests, stamps, tasks, designs, mailboxes – and lists you look through – bin, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; with **+ New** you create one.
 
 All other areas have **two parts**: the areas on the left, the whole page on the right. Small or read-only lists – for instance the long database accesses, the blocked addresses, the existing exports or the latest accesses to the WebDAV drive – are there as a section of their own with a fixed height that you scroll. On a smartphone, **← Areas** leads from such a page directly back to the choice of areas.
 
@@ -97,7 +97,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | The last backup failed | red | `sicherung.fehler` |
 | There is no backup yet | yellow | `sicherung.keine` |
 | The last backup is older than 2 days | yellow | `sicherung.alt` |
-| The emergency sheet is missing, belongs to an earlier key, has no emergency code yet or its emergency code was used | yellow | `sicherung.notfallblatt` |
+| The emergency sheet is missing, belongs to an earlier key, has no emergency code yet or its emergency code was used (button **Go to emergency sheet** leads to [Encryption](verschluesselung.md#notfallblatt)) | yellow | `sicherung.notfallblatt` |
 | The last test restore failed | red | `sicherung.probe-fehler` |
 | Test restore missing or old | notice | `sicherung.probe` |
 | The backup folder is not a volume of its own | yellow | `sicherung.volume` |

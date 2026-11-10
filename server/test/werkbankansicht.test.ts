@@ -118,11 +118,11 @@ describe('Werkbank-Ansicht: Dienst', () => {
   });
 });
 
-describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
+describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (#366, #990)', () => {
   it('Sammlungen behalten die Mitte, Seiten sind zweiteilig', () => {
-    for (const b of ['typen', 'sichten', 'benutzer', 'pakete', 'postfaecher', 'papierkorb', 'protokoll', 'automatisierungen', 'auskuenfte']) assert.ok(hatMitte(b), b);
+    for (const b of ['typen', 'sichten', 'benutzer', 'pakete', 'postfaecher', 'papierkorb', 'protokoll', 'automatisierungen', 'auskuenfte', 'stempel']) assert.ok(hatMitte(b), b);
     for (const b of ['demo', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'sicherung',
-      'systemzustand', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'aufbewahrung', 'vollexport', 'ansicht', 'webdav', 'stempel', 'region', 'loeschkonzept']) assert.ok(!hatMitte(b), b);
+      'systemzustand', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'aufbewahrung', 'vollexport', 'ansicht', 'webdav', 'region', 'loeschkonzept']) assert.ok(!hatMitte(b), b);
     // Jeder Bereich der Leiste ist eingeordnet; neue Bereiche sind ohne Zutun zweiteilig.
     assert.ok(BEREICHE.every((b) => typeof hatMitte(b.pfad) === 'boolean'));
   });
@@ -139,11 +139,23 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
     assert.equal(werkbankEbene('systemzustand', undefined, true), 'mappe');
   });
 
+  it('Stempel (#990): Vorlagen in der Mitte, alte Links führen auf die Vorlage rechts', () => {
+    assert.ok(hatMitte('stempel'));
+    assert.equal(werkbankEbene('stempel'), 'liste');
+    assert.equal(werkbankEbene('stempel', 'kopie'), 'mappe');
+    assert.equal(werkbankZurueck('stempel'), '/werkbank/stempel');
+    // Früher klappte ?offen=… die Vorlage rechts auf; jetzt steht sie unter /werkbank/stempel/:id.
+    assert.equal(werkbankUmleitung('stempel', undefined, '?offen=kopie'), '/werkbank/stempel/kopie');
+    assert.equal(werkbankUmleitung('stempel', undefined, '?offen=a%20b'), '/werkbank/stempel/a%20b');
+    assert.equal(werkbankUmleitung('stempel', 'kopie'), null, '/werkbank/stempel/:id gilt direkt');
+    assert.equal(werkbankUmleitung('stempel'), null);
+    assert.equal(werkbankUmleitung('stempel', undefined, '?x=1'), null);
+  });
+
   it('alte Direktlinks führen auf die Seite', () => {
     // Lange Datenbankzugriffe stehen seit #725 im Systemzustand.
     assert.equal(werkbankUmleitung('anbindung', '42'), '/werkbank/systemzustand?offen=42#datenbank');
     assert.equal(werkbankUmleitung('region', 'irgendwas'), '/werkbank/region');
-    assert.equal(werkbankUmleitung('stempel', 'kopie'), '/werkbank/stempel?offen=kopie');
     assert.equal(werkbankUmleitung('anbindung'), null);
     assert.equal(werkbankUmleitung('typen', 'abc'), null);
   });
@@ -266,6 +278,10 @@ describe('Werkbank neu geordnet (#717, #725)', () => {
     assert.ok(finde('gleichbedeutende').includes('texterkennung'));
     assert.ok(finde('wartungsmodus').includes('wartung'));
     assert.ok(finde('STEMPEL').includes('stempel'));
+    // Notfallblatt (#993): nur noch unter Verschlüsselung.
+    assert.ok(finde('Notfallblatt').includes('verschluesselung'));
+    assert.ok(!finde('Notfallblatt').includes('sicherung'));
+    assert.ok(finde('notfallcode').includes('verschluesselung'));
     assert.equal(finde('').length, BEREICHE.length);
   });
 });

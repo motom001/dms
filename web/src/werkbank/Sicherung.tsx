@@ -1,6 +1,5 @@
 import { Knopf } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { heikelHerunterladen } from '../verwaltungsmodus';
 import { Symbol } from '../Symbol';
 import { api, type ExternStand, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungEintrag, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
 import { t, tn } from '../sprache';
@@ -10,10 +9,12 @@ import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
- * Aufbewahrung, Speicherplatz, Speicherort und Notfallblatt.
+ * Aufbewahrung, Speicherplatz und Speicherort. Das Notfallblatt steht nur unter Verschlüsselung (#993);
+ * hier bleibt der Hinweis, wenn es fehlt oder nicht mehr gilt, mit Link dorthin (`NOTFALLBLATT_SEITE`).
  */
 
 export const NOTFALLBLATT_URL = '/api/werkbank/notfallblatt';
@@ -21,7 +22,7 @@ const GEAENDERT = 'dms:sicherung';
 export const meldeSicherung = () => dispatchEvent(new Event(GEAENDERT));
 
 export const bytes = (b: number) => (b < 1024 ** 2 ? `${Math.max(1, Math.round(b / 1024))} KB` : b < 1024 ** 3 ? `${(b / 1024 ** 2).toFixed(0)} MB` : `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`);
-const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
+export const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
 const ART = { manuell: t('werkbank.sicherung.von-hand'), automatisch: t('werkbank.sicherung.art.automatisch'), 'vor-wiederherstellung': t('werkbank.sicherung.vor-einer-wiederherstellung') } as Record<string, string>;
 const TAGE = ['', t('werkbank.sicherung.montag'), t('werkbank.sicherung.dienstag'), t('werkbank.sicherung.mittwoch'), t('werkbank.sicherung.donnerstag'), t('werkbank.sicherung.freitag'), t('werkbank.sicherung.samstag'), t('werkbank.sicherung.sonntag')];
 
@@ -67,15 +68,21 @@ export type SicherungZustand = ReturnType<typeof useSicherung>;
 
 /** Hinweise zur Sicherung – auch für die Übersicht der Werkbank (#105). */
 /** Hinweise zur Sicherung; `schluessel` und `datum` für die Übersicht (#816: Sortierung, Akzeptieren). */
-export function sicherungsHinweise(z: SicherungsZustand): Array<{ art: 'schlecht' | 'warn' | 'info'; text: ReactNode; schluessel: string; datum?: string | null }> {
-  const h: Array<{ art: 'schlecht' | 'warn' | 'info'; text: ReactNode; schluessel: string; datum?: string | null }> = [];
+export interface SicherungsHinweis {
+  art: 'schlecht' | 'warn' | 'info'; text: ReactNode; schluessel: string; datum?: string | null;
+  /** Eigenes Ziel statt der Sicherung (#993: Notfallblatt → Verschlüsselung) mit Text für den Knopf. */
+  ziel?: string; knopf?: string;
+}
+export function sicherungsHinweise(z: SicherungsZustand): SicherungsHinweis[] {
+  const h: SicherungsHinweis[] = [];
   if (!z.schluessel) return h; // Ohne Schlüssel weist schon die Verschlüsselung darauf hin.
   if (z.fehler) h.push({ schluessel: 'sicherung.fehler', datum: z.fehler.am, art: 'schlecht', text: <><strong>{t('werkbank.sicherung.die-letzte-sicherung-ist')}</strong> ({zeit(z.fehler.am)}): {z.fehler.grund}</> });
   if (!z.letzte) h.push({ schluessel: 'sicherung.keine', art: 'warn', text: <>{tn('werkbank.sicherung.lege-eine-an-und', { b: <strong>{t('werkbank.sicherung.es-gibt-noch-keine')}</strong> })}</> });
   else if (z.zuAlt) h.push({ schluessel: 'sicherung.alt', datum: z.letzte.ende, art: 'warn', text: <><strong>{t('werkbank.sicherung.die-letzte-sicherung-ist-2')}</strong> ({zeit(z.letzte.ende)}).</> });
   // Seit #815 auch: Der Notfallcode darauf wurde benutzt, oder das Blatt stammt aus der Zeit vor dem Notfallcode.
   const nb = z.notfallblatt;
-  if (!nb.aktuell && (z.letzte || z.planAktiv || nb.am)) h.push({ schluessel: 'sicherung.notfallblatt', art: 'warn', text: nb.grund === 'benutzt' || nb.grund === 'ohne-code'
+  // Das Notfallblatt selbst steht unter Verschlüsselung (#993) – der Hinweis führt dorthin.
+  if (!nb.aktuell && (z.letzte || z.planAktiv || nb.am)) h.push({ schluessel: 'sicherung.notfallblatt', art: 'warn', ziel: NOTFALLBLATT_SEITE, knopf: t('werkbank.sicherung.zum-notfallblatt'), text: nb.grund === 'benutzt' || nb.grund === 'ohne-code'
     ? <NotfallblattGrund n={nb} />
     : <>{tn('werkbank.sicherung.ohne-den-schluessel-darauf', { b: <strong>{nb.am ? t('werkbank.sicherung.das-notfallblatt-gehoert-zu') : t('werkbank.sicherung.das-notfallblatt-fehlt')}</strong> })}</> });
   // Probe-Wiederherstellung (#109): Ampel.
@@ -157,7 +164,10 @@ function StandZeile({ s }: { s: SicherungStand }) {
     t('werkbank.sicherung.sicherungen', { anzahl: s.liste.length, bytes: bytes(s.speicher.sicherungenBytes) }),
     s.plan.aktiv ? t('werkbank.sicherung.naechste-uhr', { wert: s.plan.haeufigkeit === 'taeglich' ? t('werkbank.sicherung.taeglich') : TAGE[s.plan.wochentag], uhrzeit: s.plan.uhrzeit }) : t('werkbank.sicherung.zeitplan-aus'),
     <>{s.speicher.frei === null ? t('werkbank.sicherung.platz-nicht-feststellbar') : t('werkbank.sicherung.frei', { bytes: bytes(s.speicher.frei) })}{s.speicher.knapp && <span className="fehlertext"> {' '}{t('werkbank.sicherung.knapp')}</span>}</>,
-    z.notfallblatt.aktuell && z.notfallblatt.am ? t('werkbank.sicherung.notfallblatt-heruntergeladen', { zeit: zeit(z.notfallblatt.am) }) : <span className="fehlertext">{t('werkbank.sicherung.notfallblatt-fehlt')}</span>,
+    // #993: als Link zum Notfallblatt unter Verschlüsselung.
+    z.notfallblatt.aktuell && z.notfallblatt.am
+      ? <Link to={NOTFALLBLATT_SEITE} className="verweis">{t('werkbank.sicherung.notfallblatt-heruntergeladen', { zeit: zeit(z.notfallblatt.am) })}</Link>
+      : <Link to={NOTFALLBLATT_SEITE} className="verweis fehlertext">{t('werkbank.sicherung.notfallblatt-fehlt')}</Link>,
     ...(z.extern?.ziele.length ? [<>{z.extern.letzte ? t('werkbank.sicherung.extern.zeile', { datum: zeit(z.extern.letzte.stand.am) }) : t('werkbank.sicherung.extern.zeile.keine')}{(z.extern.fehler || z.extern.zuAlt) && <span className="fehlertext"> ({z.extern.fehler ? t('werkbank.sicherung.extern.kurz.fehler') : t('werkbank.sicherung.extern.kurz.alt')})</span>}</>] : []),
   ];
   return <p className="klein standzeile">{teile.map((x, i) => <span key={i}>{i > 0 && ' · '}{x}</span>)}</p>;
@@ -197,7 +207,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       </div>
 
       {!s.zustand.schluessel && <div className="hinweis warn"><p>{tn('werkbank.sicherung.erzeuge-ihn-zuerst-unter', { b: <strong>{t('werkbank.sicherung.ohne-schluessel-keine-sicherung')}</strong> })}</p><Link to="/werkbank/verschluesselung" className="knopf klein">{t('werkbank.sicherung.zur-verschluesselung')}</Link></div>}
-      {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art === 'info' ? 'info' : h.art}`}><p>{h.text}</p></div>)}
+      {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art === 'info' ? 'info' : h.art}`}><p>{h.text}</p>{h.ziel && <Link to={h.ziel} className="knopf klein">{h.knopf}</Link>}</div>)}
 
       <section className="blatt" id="jetzt">
         <h2 className="h3">{t('werkbank.sicherung.jetzt-sichern')}</h2>
@@ -281,8 +291,6 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       </section>
 
       <AusserHaus x={s.zustand.extern} handbuch={handbuch('admin', 'sicherung-ausser-haus/')} />
-
-      <Notfallblatt stand={s.zustand.notfallblatt} schluessel={s.zustand.schluessel} geladen={() => void z.laden()} />
     </div>
   );
 }
@@ -303,7 +311,8 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
     <form className="blatt" id="zeitplan" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">{tn('werkbank.sicherung.zeitplan-und-aufbewahrung', { hilfe: <Hilfe ort="sicherung.zeitplan" /> })}</h2>
       <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>{t('werkbank.sicherung.automatisch-sichern')}</span></label>
-      {!notfallblatt && !p.aktiv && <p className="leise klein">{tn('werkbank.sicherung.erst-einschaltbar-wenn-du', { link: <a className="knopf klein" href={NOTFALLBLATT_URL} download onClick={(e) => void heikelHerunterladen(e, NOTFALLBLATT_URL, () => { setTimeout(gespeichert, 1500); setTimeout(meldeSicherung, 1500); })}>{t('werkbank.sicherung.notfallblatt-herunterladen')}</a> })}</p>}
+      {/* Herunterladen nur unter Verschlüsselung (#993): hier ein Link dorthin. */}
+      {!notfallblatt && !p.aktiv && <p className="leise klein">{tn('werkbank.sicherung.erst-einschaltbar-wenn-du', { link: <Link to={NOTFALLBLATT_SEITE} className="knopf klein">{t('werkbank.sicherung.zum-notfallblatt')}</Link> })}</p>}
       <div className="raster">
         <label className="eigenschaft"><span>{t('werkbank.sicherung.haeufigkeit')}</span>
           <select value={p.haeufigkeit} onChange={(e) => setP({ ...p, haeufigkeit: e.target.value as SicherungsPlan['haeufigkeit'] })}><option value="taeglich">{t('werkbank.sicherung.taeglich')}</option><option value="woechentlich">{t('werkbank.sicherung.woechentlich')}</option></select></label>
@@ -327,28 +336,11 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
   );
 }
 
-/** Notfallblatt (#106): herunterladen, Stand, Hinweis nach einem Schlüsselwechsel. */
 /** Warum ein heruntergeladenes Notfallblatt nicht mehr gilt (#47 Schlüssel, #815 Notfallcode). */
-function NotfallblattGrund({ n }: { n: Notfallblattstand }) {
+export function NotfallblattGrund({ n }: { n: Notfallblattstand }) {
   if (n.grund === 'benutzt') return <><strong>{t('werkbank.sicherung.notfallblatt.benutzt')}</strong> {t('werkbank.sicherung.notfallblatt.benutzt.text')}</>;
   if (n.grund === 'ohne-code') return <><strong>{t('werkbank.sicherung.notfallblatt.ohne-code')}</strong> {t('werkbank.sicherung.notfallblatt.ohne-code.text')}</>;
   return <>{tn('werkbank.sicherung.lade-ein-neues-notfallblatt', { b: <strong>{t('werkbank.sicherung.der-schluessel-hat-sich')}</strong> })}</>;
-}
-
-export function Notfallblatt({ stand, schluessel, geladen }: { stand: SicherungsZustand['notfallblatt'] | null | undefined; schluessel: boolean; geladen(): void }) {
-  return (
-    <section className="blatt" id="notfallblatt">
-      <h2 className="h3">{tn('werkbank.sicherung.notfallblatt', { hilfe: <Hilfe ort="sicherung.notfallblatt" /> })}</h2>
-      <p>{t('werkbank.notfallblatt.ui.text')}</p>
-      {stand?.am && <p className="leise klein">{t('werkbank.sicherung.zuletzt-heruntergeladen', { zeit: zeit(stand.am), wert: stand.von ? t('werkbank.sicherung.von-2', { von: stand.von }) : '' })}</p>}
-      {stand && !stand.aktuell && stand.am && <div className="hinweis warn"><p><NotfallblattGrund n={stand} /></p></div>}
-      <div className="knoepfe">
-        {schluessel
-          ? <a className="knopf primaer" href={NOTFALLBLATT_URL} download onClick={(e) => void heikelHerunterladen(e, NOTFALLBLATT_URL, () => { setTimeout(geladen, 1500); setTimeout(meldeSicherung, 1500); })}>{t('werkbank.sicherung.notfallblatt-herunterladen-pdf')}</a>
-          : <span className="leise">{t('werkbank.sicherung.erst-moeglich-wenn-es')}</span>}
-      </div>
-    </section>
-  );
 }
 
 /** Häkchen vor einem erledigten Schritt (#414). */

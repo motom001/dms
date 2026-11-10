@@ -51,7 +51,7 @@ Die Daten liegen unter `~/umbrel/app-data/motom001-dms/data/`:
 
 ## Sichern
 
-- Unter **Werkbank → [Sicherung](https://help.ablago.app/admin/aktuell/sicherung/)** einen Zeitplan einschalten und das Notfallblatt ausdrucken.
+- Unter **Werkbank → [Sicherung](https://help.ablago.app/admin/aktuell/sicherung/)** einen Zeitplan einschalten und unter **Werkbank → [Verschlüsselung](https://help.ablago.app/admin/aktuell/verschluesselung/#notfallblatt)** das Notfallblatt ausdrucken.
 - Die Sicherungen liegen auf demselben Gerät. Kopiere sie ab und zu an einen anderen Ort, z. B. auf einen USB-Stick oder in einen Cloudspeicher. Die Sicherungen sind verschlüsselt, ein Cloudspeicher sieht also nur unlesbare Dateien. Exporte sind nicht darin: Ein [Vollexport](https://help.ablago.app/admin/aktuell/export/) ist unverschlüsselt und liegt deshalb im eigenen [Export-Ordner](https://help.ablago.app/admin/aktuell/export/#export-ordner), nie bei den Sicherungen.
 - Hast du in umbrelOS **Backups** eingeschaltet, sichert umbrelOS die App-Daten zusätzlich mit.
 

@@ -167,10 +167,11 @@ export const HILFE = {
   'verschluesselung.schluessel': admin('verschluesselung/', 'Schlüssel', 'schlussel-erzeugen'),
   'verschluesselung.wechseln': admin('verschluesselung/', 'Schlüssel wechseln', 'schlussel-wechseln'),
   'verschluesselung.arten': admin('verschluesselung/', 'Was verschlüsselt ist', 'was-verschlusselt-ist'),
+  // Notfallblatt (#106) steht seit #993 nur unter Verschlüsselung.
+  'verschluesselung.notfallblatt': admin('verschluesselung/', 'Notfallblatt', 'notfallblatt'),
   'sicherung.zeitplan': admin('sicherung/', 'Zeitplan und Aufbewahrung', 'zeitplan-und-aufbewahrung'),
   'sicherung.speicher': admin('sicherung/', 'Speicherplatz', 'speicherplatz'),
   'sicherung.ort': admin('sicherung/', 'Speicherort', 'speicherort'),
-  'sicherung.notfallblatt': admin('sicherung/', 'Notfallblatt', 'notfallblatt'),
   'werkbank.notfallzugang': admin('anmeldeschutz/', 'Notfallzugang', 'notfallzugang'),
   // #885: warum Ablago „nicht im Heimnetz“ meint.
   'werkbank.notfallzugang.oeffentlich': admin('anmeldeschutz/', 'Zu Hause über den öffentlichen Namen', 'zu-hause-uber-den-offentlichen-namen'),

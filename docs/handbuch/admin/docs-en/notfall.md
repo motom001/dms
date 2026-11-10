@@ -1,7 +1,7 @@
 # Emergency: no admin left {#notfall-kein-admin-mehr}
 
 !!! tip "First the emergency sheet, then the console"
-    If you have the [emergency sheet](sicherung.md#notfallblatt), the easiest way is with the **emergency code** on it – without files on the NAS: [Getting back in with the emergency code](was-ist-passiert.md#notfallcode). If there is still a person with "Full administration" and you just can't get in (forgotten password, IP blocked, lost phone for two-factor sign-in), the [command `dms`](konsole.md) in the container also works, e.g. `dms passwort <email>`. The RESCUE file below is the way if the emergency sheet is lost too.
+    If you have the [emergency sheet](verschluesselung.md#notfallblatt), the easiest way is with the **emergency code** on it – without files on the NAS: [Getting back in with the emergency code](was-ist-passiert.md#notfallcode). If there is still a person with "Full administration" and you just can't get in (forgotten password, IP blocked, lost phone for two-factor sign-in), the [command `dms`](konsole.md) in the container also works, e.g. `dms passwort <email>`. The RESCUE file below is the way if the emergency sheet is lost too.
 
 If nobody with the administration permission can get in any more – forgotten password, the only person with "Full administration" unreachable, no email sending for "Forgot your password?" –, you create a new account for yourself via a file on the NAS. You don't need a command line for it.
 

@@ -55,7 +55,7 @@ If you can't get further because of [two-factor sign-in](#zwei-faktor-anmeldung)
 
 ## Emergency access {#notfallzugang}
 
-Whoever has locked themselves out gets back in with the **emergency code** from the [emergency sheet](sicherung.md#notfallblatt) via Ablago's address with `/notfall` at the end and sets a new password for a person with management permission – step by step under [Back in with the emergency code](was-ist-passiert.md#notfallcode). Here it says on which emergency sheet the valid code is. Every new emergency sheet brings a new code; the previous one then no longer applies.
+Whoever has locked themselves out gets back in with the **emergency code** from the [emergency sheet](verschluesselung.md#notfallblatt) via Ablago's address with `/notfall` at the end and sets a new password for a person with management permission – step by step under [Back in with the emergency code](was-ist-passiert.md#notfallcode). Here it says on which emergency sheet the valid code is; **Go to emergency sheet** leads to [Encryption](verschluesselung.md#notfallblatt), where you download a new one. Every new emergency sheet brings a new code; the previous one then no longer applies.
 
 - **Default: only from the home network.** The page `/notfall` only works from devices in private networks (e.g. `192.168.…`, `10.…`, `fd…`), not from the internet.
 - **Allow emergency access from the internet:** with this tick it works from anywhere – for everyone who knows the address and has the code. Ablago warns against it and requires a [fresh sign-in](verwalten.md#frische-anmeldung) for it. Going back to "only home network" works without.

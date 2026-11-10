@@ -204,16 +204,20 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
 /* ---------- Mittlere Spalte (#366) ---------- */
 
 /**
- * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (Mappentypen, Ansichten, Benutzer …).
- * Kleine oder nur lesende Listen (lange Datenbankzugriffe unter Datenbank-Anbindung #407, Demo-Übersicht, Technik, Exporte, gesperrte Adressen,
- * Stempel-Vorlagen #394, Löschkonzept #668)
- * stehen rechts im passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
+ * Die Mitte bekommt jede Sammlung, in der man etwas anlegt und bearbeitet – groß oder klein (#366, seit #990
+ * auch kleine wie die Stempel-Vorlagen): Liste in der Mitte mit „+ Neu“ oben, Bearbeitung rechts. Dazu Listen,
+ * die man durchsieht (Protokoll, Fehlermeldungen, Papierkorb). Nur lesende Listen und Einstellungen, die zu
+ * einem Abschnitt gehören (lange Datenbankzugriffe unter Datenbank-Anbindung #407, Demo-Übersicht, Technik,
+ * Exporte, gesperrte Adressen, Löschkonzept #668, freigegebene Ziele der Webhooks #627), stehen rechts im
+ * passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
 export const MIT_MITTE: ReadonlySet<string> = new Set([
   'uebersicht', 'typen', 'sichten', 'nummernkreise', 'pakete', 'benutzer', 'aufgaben',
   'designs', 'papierkorb', 'automatisierungen', 'postfaecher', 'protokoll', 'fehlermeldungen',
-  // Datenschutz-Auskünfte (#668): Ausnahme zu „kleine Listen rechts“ – die Sammlung wächst mit jeder Anfrage.
+  // Datenschutz-Auskünfte (#668): die Sammlung wächst mit jeder Anfrage.
   'auskuenfte',
+  // Stempel-Vorlagen (#990): klein, aber man legt sie an und bearbeitet sie – wie Nummernkreise und Designs.
+  'stempel',
 ]);
 
 export const hatMitte = (bereich: string) => MIT_MITTE.has(bereich);
@@ -227,21 +231,32 @@ export function werkbankEbene(bereich: string, id?: string, rechtsOhneAuswahl = 
   return !hatMitte(bereich) || id || rechtsOhneAuswahl ? 'mappe' : 'liste';
 }
 
+/** Wo das Notfallblatt in der Werkbank steht (#993): nur unter Verschlüsselung, Abschnitt „Notfallblatt“. */
+export const NOTFALLBLATT_SEITE = '/werkbank/verschluesselung#notfallblatt';
+
 /** Ziel von „← Zurück“ am Handy: ohne Mitte gleich zu den Bereichen, sonst zur Liste des Bereichs. */
 export const werkbankZurueck = (bereich: string) => (hatMitte(bereich) ? `/werkbank/${bereich}` : '/werkbank');
 
+/** Früher ohne Mitte mit ?offen=<id>, jetzt mit Mitte und /<id> (#990). */
+const OFFEN_ALS_PFAD: ReadonlySet<string> = new Set(['stempel']);
+
 /**
- * Alte Direktlinks in Bereiche ohne Mitte (z. B. /werkbank/stempel/:id) führen auf die Seite;
- * der Eintrag steht dann als ?offen=… in der Adresse und ist aufgeklappt. Umgezogene Bereiche
- * (`UMGEZOGEN`) leiten samt Suche (`?offen=…`) auf die neue Stelle. `null` = nichts umzuleiten.
+ * Alte Direktlinks in Bereiche ohne Mitte (z. B. /werkbank/region/:id) führen auf die Seite. Bereiche, die
+ * früher ohne Mitte einen Eintrag über ?offen=… aufklappten und jetzt eine Mitte haben (`OFFEN_ALS_PFAD`,
+ * #990: /werkbank/stempel?offen=kopie), führen auf den Eintrag rechts (/werkbank/stempel/kopie).
+ * Umgezogene Bereiche (`UMGEZOGEN`) leiten samt Suche (`?offen=…`) auf die neue Stelle. `null` = nichts umzuleiten.
  */
 export function werkbankUmleitung(bereich: string, id?: string, suche = ''): string | null {
   const neu = UMGEZOGEN[bereich];
   if (neu) return id ? werkbankUmleitung(neu, id) ?? `/werkbank/${neu}` : `/werkbank/${neu}${suche}${UMGEZOGEN_ABSCHNITT[bereich] ? `#${UMGEZOGEN_ABSCHNITT[bereich]}` : ''}`;
+  if (!id && OFFEN_ALS_PFAD.has(bereich)) {
+    const offen = new URLSearchParams(suche).get('offen');
+    return offen ? `/werkbank/${bereich}/${encodeURIComponent(offen)}` : null;
+  }
   if (!id || hatMitte(bereich)) return null;
   // Lange Datenbankzugriffe stehen seit #725 im Systemzustand (Auslastung).
   if (bereich === 'anbindung') return `/werkbank/systemzustand?offen=${encodeURIComponent(id)}#datenbank`;
-  return bereich === 'stempel' ? `/werkbank/${bereich}?offen=${encodeURIComponent(id)}` : `/werkbank/${bereich}`;
+  return `/werkbank/${bereich}`;
 }
 
 /** Plakette links für den Wartungsmodus (#366): „angekündigt“, solange er noch nicht wirkt, „an“ erst danach. */

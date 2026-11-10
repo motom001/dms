@@ -400,6 +400,42 @@ rauchtest('Werkbank: Mappentyp bearbeiten (Felder)', { als: LENA }, async (s) =>
   await s.getByRole('region', { name: 'Mappe' }).getByRole('textbox', { name: 'Kundenportal' }).waitFor();
 });
 
+rauchtest('Werkbank: Stempel-Vorlage aus der Mitte öffnen (#990)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Stempel/ }).click();
+  const elemente = s.getByRole('region', { name: 'Elemente' });
+  await elemente.getByRole('link', { name: '+ Neu' }).waitFor();
+  await elemente.getByRole('link', { name: /^Kopie für/ }).click();
+  await s.waitForURL(/\/werkbank\/stempel\/kopie$/);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: /^Kopie für/, level: 1 }).waitFor();
+  // Live-Vorschau (#799) und Speicherleiste rechts.
+  await bearbeitung.getByRole('heading', { name: 'Vorschau' }).waitFor();
+  await bearbeitung.getByRole('textbox', { name: 'Name' }).fill('Kopie für Rauchtest');
+  await bearbeitung.getByRole('button', { name: 'Vorlage speichern' }).click();
+  await bearbeitung.locator('.hinweis.gut').getByText('Gespeichert.').waitFor();
+  await elemente.getByRole('link', { name: /^Kopie für Rauchtest/ }).waitFor();
+  // Alter Link mit ?offen=… führt auf die Vorlage rechts.
+  await s.goto(BASIS + '/werkbank/stempel?offen=entwurf');
+  await s.waitForURL(/\/werkbank\/stempel\/entwurf$/);
+  await bearbeitung.getByRole('heading', { name: 'Entwurf', level: 1 }).waitFor();
+});
+
+// Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
+rauchtest('Werkbank: Notfallblatt nur unter Verschlüsselung, Sicherung verweist dorthin (#993)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Sicherung/ }).click();
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
+  assert.equal(await bearbeitung.getByRole('heading', { name: /^Notfallblatt/ }).count(), 0, 'kein Abschnitt Notfallblatt in der Sicherung');
+  await bearbeitung.getByRole('link', { name: /^Notfallblatt heruntergeladen/ }).click();
+  await s.waitForURL(/\/werkbank\/verschluesselung#notfallblatt$/);
+  await bearbeitung.getByRole('heading', { name: /^Notfallblatt/ }).waitFor();
+  await bearbeitung.getByRole('link', { name: 'Notfallblatt herunterladen (PDF)' }).waitFor();
+});
+
 rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async (s) => {
   await s.goto(BASIS + '/');
   await s.getByLabel('E-Mail-Adresse').fill(JONAS.email);

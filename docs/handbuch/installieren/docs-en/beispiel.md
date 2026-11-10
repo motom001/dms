@@ -34,7 +34,7 @@ For this I simply adjust the paths in the Compose configuration. Ablago itself d
 The SSD is **single**. If it fails, the documents and the key on it are gone. I accept that because two things are kept separately:
 
 - the **backups**, on the RAID and in the cloud,
-- the **[emergency sheet](https://help.ablago.app/admin/aktuell/en/sicherung/#notfallblatt)** with the key, in my password manager on my phone.
+- the **[emergency sheet](https://help.ablago.app/admin/aktuell/en/verschluesselung/#notfallblatt)** with the key, in my password manager on my phone.
 
 With both, Ablago can be [restored](https://help.ablago.app/admin/aktuell/en/wiederherstellen/) on a new disk or a new device. Important here: the key is **not** with the backups. The backups are encrypted with it, and whoever gets hold of a copy can't do anything with it without the key.
 

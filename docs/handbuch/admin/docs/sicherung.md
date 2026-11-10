@@ -17,7 +17,7 @@ Jede Sicherung besteht aus zwei Dateien im Sicherungsordner, z. B.:
 | `2026-10-29_0200-automatisch.dms-sicherung` | Datenbank und alle Dateien (Dokumente, [umgewandelte Fassungen](texterkennung.md#andere-dateitypen), Logos, Bilder gemeldeter Fehler), gepackt und **verschlüsselt** |
 | `2026-10-29_0200-automatisch.json` | Metadaten, lesbar: Ablage-Id (Feld `haushaltId`), Versionen (Ablago, Datenbank-Stand, PostgreSQL, Node.js, Betriebssystem, Architektur), Art, Beginn und Dauer, Anzahl Mappen, Dokumente, Benutzer und umgewandelter Fassungen (Feld `anzahl.fassungen`), Größen, Verschlüsselung mit Fingerabdruck des Schlüssels und die **SHA-256-Prüfsumme** der Sicherungsdatei |
 
-- Verschlüsselt wird mit AES-256-GCM. Der Schlüssel dafür wird aus dem Schlüssel unter **Werkbank → [Verschlüsselung](verschluesselung.md)** abgeleitet – derselbe wie für Passwortfelder. **Ohne diesen Schlüssel ist eine Sicherung nicht lesbar.** Er steht nie in der Sicherung, nur in der Schlüsseldatei und auf dem [Notfallblatt](#notfallblatt).
+- Verschlüsselt wird mit AES-256-GCM. Der Schlüssel dafür wird aus dem Schlüssel unter **Werkbank → [Verschlüsselung](verschluesselung.md)** abgeleitet – derselbe wie für Passwortfelder. **Ohne diesen Schlüssel ist eine Sicherung nicht lesbar.** Er steht nie in der Sicherung, nur in der Schlüsseldatei und auf dem [Notfallblatt](verschluesselung.md#notfallblatt).
 - Angemeldete Sitzungen gehören nicht dazu: Nach einer Wiederherstellung meldet sich jeder neu an.
 - Die **umgewandelten Fassungen** von Paketen (z. B. ein TIFF-Scan als PDF, siehe [Andere Dateitypen](texterkennung.md#andere-dateitypen)) gehören seit Version 0.140.1 **dazu**, mit der Angabe, welches Paket sie erzeugt hat. Nach einer Wiederherstellung sind Fassung, Volltext und Vorschau so da wie vorher – auch wenn das Paket nicht mehr installiert ist oder eine neuere Version heute anders umwandeln würde.
 - Die **Archivfassungen (PDF/A)** von Paketen (siehe [Archivfassung](texterkennung.md#archivfassung-pdfa)) gehören seit Version 0.149 ebenso dazu, mit Stand und den Wortpositionen der Texterkennung. Die Metadaten nennen ihre Zahl (`anzahl.archivfassungen`); die Probe-Wiederherstellung prüft jede gegen ihren Prüfwert.
@@ -29,7 +29,7 @@ Ohne Schlüssel lässt sich keine Sicherung anlegen; die Seite weist dann auf di
 
 ## Jetzt sichern
 
-Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und Größe der Sicherungen, nächster Termin laut Zeitplan, freier Platz und wann das Notfallblatt heruntergeladen wurde.
+Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und Größe der Sicherungen, nächster Termin laut Zeitplan, freier Platz und wann das Notfallblatt heruntergeladen wurde – ein Klick darauf führt zum [Notfallblatt](verschluesselung.md#notfallblatt) unter Verschlüsselung.
 
 **Jetzt sichern** startet eine Sicherung im Hintergrund, mit Fortschritt. Du kannst die Seite verlassen. Ist weniger Platz frei als der [Mindest-Speicherplatz](#zeitplan-und-aufbewahrung), beginnt keine Sicherung.
 
@@ -42,7 +42,7 @@ Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrie
 ![Zeitplan und Aufbewahrung](bilder/werkbank-sicherung-zeitplan.png)
 
 - **Automatisch sichern** täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). War Ablago zu der Zeit aus, sichert es, sobald es wieder läuft – aber nur am selben Tag. Eine verpasste Sicherung vom Vortag holt es nicht nach; es sichert erst wieder zum nächsten geplanten Termin. Mehr als eine automatische Sicherung am Tag gibt es nie.
-- Einschalten lässt sich der Zeitplan erst, wenn das **Notfallblatt** heruntergeladen ist – denn nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen.
+- Einschalten lässt sich der Zeitplan erst, wenn das **Notfallblatt** heruntergeladen ist – denn nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen. Bis dahin führt **Zum Notfallblatt** zur [Verschlüsselung](verschluesselung.md#notfallblatt).
 - **Aufbewahrung** (Standard **7 tägliche / 4 wöchentliche / 12 monatliche**): Von den automatischen Sicherungen bleibt je Tag, je Woche und je Monat die neueste, so viele wie eingestellt; ältere entfernt Ablago nach jeder automatischen Sicherung. Von Hand angelegte Sicherungen bleiben, bis du sie löschst.
 - **Lokal nur die neueste behalten** (seit 0.142): Statt der Aufbewahrung bleibt nur die neueste automatische Sicherung im Ordner – für knappen Platz, wenn eine [Kopie außer Haus](sicherung-ausser-haus.md) entsteht. Eine Sicherung, deren Kopie gerade läuft, bleibt stehen, bis sie angekommen ist (höchstens 2 Tage). „Lokal keine“ gibt es nicht.
 - **Mindest-Speicherplatz** (Standard 1 GB): Ist im Sicherungsordner weniger frei, beginnt keine Sicherung; das steht als Hinweis in der Werkbank und im Protokoll.
@@ -61,7 +61,7 @@ Die Übersicht der Werkbank zeigt einen Hinweis, wenn
 
 - die letzte Sicherung **fehlgeschlagen** ist,
 - die letzte erfolgreiche **älter als 2 Tage** ist (oder es noch keine gibt),
-- das Notfallblatt fehlt oder zu einem früheren Schlüssel gehört,
+- das Notfallblatt fehlt, zu einem früheren Schlüssel gehört oder sein Notfallcode benutzt wurde (mit dem Knopf **Zum Notfallblatt**; dieser Hinweis steht auch oben auf dieser Seite),
 - der Sicherungsordner kein eigenes Volume ist oder auf derselben Platte liegt wie die Dokumente,
 - die [Kopie außer Haus](sicherung-ausser-haus.md#anzeige-und-hinweise) fehlgeschlagen ist oder seit mehr als 2 Tagen keine neuere Sicherung dort ankam.
 
@@ -90,40 +90,15 @@ Ablago schreibt nur in den Sicherungsordner. Weiterkopieren lässt du ihn vom NA
 
 Ohne Sicherungs-App – etwa auf einem Raspberry Pi oder einem gemieteten Server – bringt ein Paket wie **Sicherungsziel WebDAV** jede Sicherung selbst außer Haus und prüft sie dort, siehe [Sicherung außer Haus](sicherung-ausser-haus.md).
 
-Da die Sicherungen verschlüsselt sind, dürfen sie auch in eine Cloud. Das [Notfallblatt](#notfallblatt) mit dem Schlüssel gehört **nicht** dorthin.
+Da die Sicherungen verschlüsselt sind, dürfen sie auch in eine Cloud. Das [Notfallblatt](verschluesselung.md#notfallblatt) mit dem Schlüssel gehört **nicht** dorthin.
 
 **Was unverschlüsselt ist und wo es liegt:** Vollexporte, „Meine Daten exportieren“ und Auskünfte nach Art. 15 sind unverschlüsselt. Sie liegen deshalb nicht im Sicherungsordner, sondern im eigenen [Export-Ordner](export.md#export-ordner) (`/data/export`, neben `files/`) und werden nach dem Herunterladen bzw. nach 7 Tagen gelöscht. Den Sicherungsordner kannst du also vollständig in die Cloud kopieren. Legst du den Export-Ordner selbst an einen anderen Ort, dann nie in den Sicherungsordner – die Werkbank warnt, wenn er dort liegt.
 
 ## Notfallblatt
 
-**Notfallblatt herunterladen** (hier und unter *Verschlüsselung*) erzeugt ein PDF mit allem, was du nach einem Ausfall brauchst – auf **einer Seite A4** in Ablago-Optik, auch in Schwarzweiß gut lesbar:
+Das Notfallblatt mit dem Schlüssel und dem Notfallcode steht nur unter **Werkbank → [Verschlüsselung](verschluesselung.md#notfallblatt)** – dort lädst du es herunter, und dort steht, was darauf steht und wie du es aufbewahrst. Die Sicherung zeigt in der Zeile oben nur, wann es zuletzt heruntergeladen wurde (ein Klick führt zum Notfallblatt). Fehlt es, gehört es zu einem früheren Schlüssel oder wurde sein Notfallcode benutzt, erscheint oben ein Hinweis mit dem Knopf **Zum Notfallblatt**.
 
-1. **Kopf:** Logo, Name deiner Ablage, Datum und Ablago-Version.
-2. **Schlüssel:** groß in Vierergruppen zum Abtippen, dazu sein **Fingerabdruck**. Die Null ist durchgestrichen, und unter leicht verwechselbaren Zeichen (`0` und `O`, `l`, `I` und `1`, `-` und `_`) steht klein, welches gemeint ist. Einen QR-Code mit dem Schlüssel gibt es bewusst nicht – das wäre ein Weg mehr, an ihn zu kommen.
-3. **Diese Ablage:** Adresse, **Ablage-Id** und in einem Satz, wo die Sicherungen liegen – seit 0.142 auch das Ziel der [Kopie außer Haus](sicherung-ausser-haus.md) (Paket und Adresse, ohne Benutzer und Passwort).
-4. **Wen fragen?** Zeilen, in die du einträgst, wer dir im Ernstfall hilft.
-5. **Etwas ist passiert?** Die Links zur Hilfeseite [Was ist dir passiert?](was-ist-passiert.md) – klickbar und immer mit `https://` ausgeschrieben: `https://help.ablago.app/notfall` (Englisch `https://help.ablago.app/emergency`) – und ein **QR-Code** dazu. Scanne ihn mit dem Handy, lies dort und arbeite parallel am Computer.
-6. **Ausgesperrt?** Der **Notfallcode**: 28 Zeichen in Vierergruppen und die Adresse deiner Ablage mit `/notfall`. Mit ihm kommst du wieder hinein, wenn du dich ausgesperrt hast – siehe [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Er ist nicht der Schlüssel und öffnet keine Sicherung.
-
-**Jedes Notfallblatt hat einen neuen Notfallcode.** Ablago speichert nur einen Hash davon; der Code eines früher heruntergeladenen Blatts gilt danach nicht mehr. Druck also immer das zuletzt heruntergeladene Blatt aus. Ist der Code benutzt worden, gilt er ebenfalls nicht mehr – die Übersicht erinnert dann an ein neues Blatt, ebenso bei einem Blatt aus der Zeit vor dem Notfallcode.
-
-Ordner, Dateinamen und die Schritte zum Wiederherstellen stehen nicht auf dem Blatt, sondern hier im Handbuch unter [Wiederherstellen](wiederherstellen.md) – dort bleiben sie aktuell. Eine Adresse ohne `https://` steht ohne `http://` davor auf dem Blatt und ist nicht klickbar.
-
-![Notfallblatt](bilder/notfallblatt.png)
-
-Wo das Datenbank-Passwort steht, hängt von der Vorlage ab:
-
-| Vorlage | Datenbank-Passwort |
-| --- | --- |
-| allgemeine Vorlage (`deploy/nas`) | in der Datei `.env` neben der Compose-Datei (`DB_PASSWORD`) |
-| Synology, UGREEN, QNAP, TrueNAS, Unraid | oben in der Compose-Datei (`x-passwort`) |
-| dms-komplett | keins – die Datenbank ist nur im Container erreichbar |
-
-Auf dem Notfallblatt steht es nicht. Für ein neues System genügt ohnehin ein neues Passwort.
-
-**Aufbewahren:** ausgedruckt an einem sicheren Ort (z. B. bei den Familienunterlagen oder im Tresor des Betriebs) oder als PDF in einem Passwortsafe – auf jeden Fall **getrennt vom NAS** und nicht neben den Sicherungen. Wer das Blatt hat, kann die Sicherungen lesen.
-
-Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel ([Schlüssel wechseln](verschluesselung.md#schlussel-wechseln)), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit **Sicherungen mit früherem Schlüssel löschen** entfernst du sie alle auf einmal. Die [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung) braucht den aktuellen Schlüssel – Sicherungen mit früherem Schlüssel lassen sich nicht probeweise einspielen.
+Sicherungen mit einem früheren Schlüssel brauchen weiterhin das alte Notfallblatt – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit **Sicherungen mit früherem Schlüssel löschen** entfernst du sie alle auf einmal. Die [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung) braucht den aktuellen Schlüssel – Sicherungen mit früherem Schlüssel lassen sich nicht probeweise einspielen.
 
 !!! tip "Für Selbstständige und Vermieter"
     Wie Sicherung, Historie und Berechtigungen zusammen eine geordnete Belegablage ergeben, beschreibt die [Vorlage für die Verfahrensdokumentation](verfahrensdokumentation.md).

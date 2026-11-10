@@ -7,7 +7,7 @@ Was du im [Einrichtungsassistenten](installation.md#der-einrichtungsassistent) z
 In der [Zusammenfassung](installation.md#zusammenfassung) des Assistenten speichert **Als Datei speichern** die Datei `ablago-einrichtung.yaml` in deinen Download-Ordner. Darin stehen Datenbank (Rechner, Port, Name, Benutzer), Name der Ablage, dein Konto (Name, E-Mail-Adresse), die Pakete samt ein- und ausgeschalteter Automatisierungen und das Optionale (Adresse, Bundesland, Beispiele, E-Mail-Versand). Kurze Kommentare erklären jeden Abschnitt.
 
 !!! info "Nicht in der Datei: Passwörter und Schlüssel"
-    Die Datei enthält **keine Passwörter** und **keinen Schlüssel**. Passwörter fragt der Assistent beim Laden ab. Den Schlüssel erzeugt Ablago bei jeder Einrichtung neu, und das [Notfallblatt](sicherung.md#notfallblatt) bleibt Pflicht. Steht in einer Datei trotzdem ein Passwort im Klartext, lehnt Ablago sie ab.
+    Die Datei enthält **keine Passwörter** und **keinen Schlüssel**. Passwörter fragt der Assistent beim Laden ab. Den Schlüssel erzeugt Ablago bei jeder Einrichtung neu, und das [Notfallblatt](verschluesselung.md#notfallblatt) bleibt Pflicht. Steht in einer Datei trotzdem ein Passwort im Klartext, lehnt Ablago sie ab.
 
 ## Laden
 

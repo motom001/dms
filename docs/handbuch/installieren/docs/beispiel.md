@@ -34,7 +34,7 @@ Die Pfade passe ich dafür einfach in der Compose-Konfiguration an. Ablago selbs
 Die SSD ist **einzeln**. Fällt sie aus, sind die Dokumente und der Schlüssel dort weg. Das nehme ich in Kauf, weil zwei Dinge getrennt davon liegen:
 
 - die **Sicherungen**, auf dem RAID und in der Cloud,
-- das **[Notfallblatt](https://help.ablago.app/admin/aktuell/sicherung/#notfallblatt)** mit dem Schlüssel, in meinem Passwortmanager auf dem Handy.
+- das **[Notfallblatt](https://help.ablago.app/admin/aktuell/verschluesselung/#notfallblatt)** mit dem Schlüssel, in meinem Passwortmanager auf dem Handy.
 
 Mit beidem lässt sich Ablago auf einem neuen Datenträger oder einem neuen Gerät [wiederherstellen](https://help.ablago.app/admin/aktuell/wiederherstellen/). Wichtig dabei: Der Schlüssel liegt **nicht** bei den Sicherungen. Die Sicherungen sind damit verschlüsselt, und wer eine Kopie davon in die Hände bekommt, kann ohne Schlüssel nichts damit anfangen.
 

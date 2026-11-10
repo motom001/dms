@@ -55,7 +55,7 @@ Kommst du wegen der [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung) nicht weiter
 
 ## Notfallzugang { #notfallzugang }
 
-Wer sich ausgesperrt hat, kommt mit dem **Notfallcode** vom [Notfallblatt](sicherung.md#notfallblatt) über die Adresse von Ablago mit `/notfall` am Ende wieder hinein und legt für eine Person mit Verwaltungsrecht ein neues Passwort fest – Schritt für Schritt unter [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Hier steht, auf welchem Notfallblatt der gültige Code steht. Jedes neue Notfallblatt bringt einen neuen Code; der vorige gilt dann nicht mehr.
+Wer sich ausgesperrt hat, kommt mit dem **Notfallcode** vom [Notfallblatt](verschluesselung.md#notfallblatt) über die Adresse von Ablago mit `/notfall` am Ende wieder hinein und legt für eine Person mit Verwaltungsrecht ein neues Passwort fest – Schritt für Schritt unter [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Hier steht, auf welchem Notfallblatt der gültige Code steht; **Zum Notfallblatt** führt zur [Verschlüsselung](verschluesselung.md#notfallblatt), wo du ein neues herunterlädst. Jedes neue Notfallblatt bringt einen neuen Code; der vorige gilt dann nicht mehr.
 
 - **Vorgabe: nur aus dem Heimnetz.** Die Seite `/notfall` geht nur von Geräten aus privaten Netzen (z. B. `192.168.…`, `10.…`, `fd…`), nicht aus dem Internet.
 - **Notfallzugang aus dem Internet erlauben:** Mit diesem Haken geht es von überall – für alle, die die Adresse kennen und den Code haben. Ablago warnt davor und verlangt dafür eine [frische Anmeldung](verwalten.md#frische-anmeldung). Zurück auf „nur Heimnetz“ geht ohne.

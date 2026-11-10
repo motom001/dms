@@ -8,6 +8,7 @@ import { t, tn } from '../sprache';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
 
@@ -110,7 +111,9 @@ function NotfallzugangBlatt({ deineIp }: { deineIp: string }) {
     <div className="blatt" id="notfallzugang">
       <h2 className="h3">{t('werkbank.notfallzugang.titel')} <Hilfe ort="werkbank.notfallzugang" /></h2>
       <p className="leise">{t('werkbank.notfallzugang.text')}</p>
-      {n && <p className="klein">{n.code.vorhanden && n.code.erstellt ? t('werkbank.notfallzugang.code', { datum: zeit(n.code.erstellt) }) : t('werkbank.notfallzugang.code.keiner')}</p>}
+      {/* Das Notfallblatt mit dem Code steht unter Verschlüsselung (#993). */}
+      {n && <p className="klein">{n.code.vorhanden && n.code.erstellt ? t('werkbank.notfallzugang.code', { datum: zeit(n.code.erstellt) }) : t('werkbank.notfallzugang.code.keiner')}{' '}
+        <Link to={NOTFALLBLATT_SEITE} className="verweis">{t('werkbank.sicherung.zum-notfallblatt')}</Link></p>}
       {n && <>
         <label className="haken"><input id="notfall-internet" type="checkbox" checked={n.internet} disabled={sendet} onChange={(x) => void setze(x.target.checked)} />
           <span>{t('werkbank.notfallzugang.internet')}<small className="hilfe">{t('werkbank.notfallzugang.internet.hilfe')}</small></span></label>

@@ -41,7 +41,7 @@ The section **Off site** names the target and the last copy. The workbench overv
 
 The email only names the target, never credentials. A single failed attempt that the next retry fixes is only shown in the workbench.
 
-The [emergency sheet](sicherung.md#notfallblatt) names the target (package and address) **without a password**, plus the sentence: *The workbench's key is not on the target. You only open the copy with the key from this sheet.* Download it anew after setting up.
+The [emergency sheet](verschluesselung.md#notfallblatt) names the target (package and address) **without a password**, plus the sentence: *The workbench's key is not on the target. You only open the copy with the key from this sheet.* Download it anew after setting up.
 
 ## Setting up with "Backup target WebDAV" { #einrichten-mit-sicherungsziel-webdav }
 
