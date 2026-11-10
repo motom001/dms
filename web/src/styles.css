@@ -46,7 +46,7 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .knopf:not(.primaer):not(.gruen):not(.gefahr):hover:not(:disabled) { background: var(--senke); }
 .knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
 .knopf.gruen { background: var(--gruen); border-color: var(--gruen); color: var(--gruen-tinte, var(--akzent-tinte)); }
-.knopf.primaer:hover:not(:disabled), .knopf.gruen:hover:not(:disabled) { filter: brightness(1.08); }
+.knopf.primaer:hover:not(:disabled), .knopf.gruen:hover:not(:disabled), .knopf.gefahr:hover:not(:disabled) { filter: brightness(1.08); }
 .knopf.klein { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
 .knopf:disabled { opacity: 0.5; cursor: default; }
 .knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }

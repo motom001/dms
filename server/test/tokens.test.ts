@@ -53,6 +53,8 @@ test('Schrift auf Flächen: mindestens 4,5:1, hell und dunkel', () => {
     ['akzent-tinte', 'akzent'], ['schlecht', 'flaeche'], ['schlecht-tinte', 'schlecht'], ['warn', 'flaeche'],
     ['warn-tinte', 'warn'], ['warn', 'warn-tinte'], ['verwaltung-tinte', 'verwaltung'], ['verwaltung', 'verwaltung-tinte'],
     ['gruen', 'flaeche'], ['bildmarke-tinte', 'bildmarke'],
+    // Nummern auf den Markierungen beim Übernehmen (#1017).
+    ...[1, 2, 3, 4, 5, 6].map((i): [string, string] => ['markierung-tinte', `markierung-${i}`]),
   ];
   for (const [name, p] of [['hell', hell], ['dunkel', dunkel]] as const) {
     for (const [schrift, flaeche] of paare) {

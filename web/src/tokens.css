@@ -20,8 +20,8 @@
   /* Papier: Dokumente, Vorschaubilder und QR-Code bleiben auch im Dunkeln weiß, Markierungen darauf ebenso. */
   --papier: #FFFFFF; --papier-auswahl: rgb(31 78 121 / .28); --papier-wort: rgb(30 90 200 / .7); --schwaerzung: #000000;
   /* Felder beim Übernehmen (#934): je Feld eine Farbe für Rahmen und Nummer. */
-  --markierung-1: #D9480F; --markierung-2: #1971C2; --markierung-3: #2F9E44;
-  --markierung-4: #9C36B5; --markierung-5: #C2255C; --markierung-6: #0C8599; --markierung-tinte: #FFFFFF;
+  --markierung-1: #C2410C; --markierung-2: #1971C2; --markierung-3: #237032;
+  --markierung-4: #9C36B5; --markierung-5: #C2255C; --markierung-6: #0B7285; --markierung-tinte: #FFFFFF;
   --schrift: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --r: 8px;
