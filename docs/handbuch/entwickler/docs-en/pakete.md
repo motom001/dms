@@ -6,6 +6,23 @@ Packages extend Ablago with ready-made folder types, views and sample folders. A
 
 All official packages are in the repository **[motom001/dms-registry](https://github.com/motom001/dms-registry)**, one folder per package under `pakete/<id>/`. The same rules apply there as in Ablago: first an issue as a user story; implementation follows the label `freigegeben`. The rules for packages (licences, what is forbidden, names) are in [REGELN.md](https://github.com/motom001/dms-registry/blob/main/REGELN.md).
 
+## Package kinds and same keys { #paketarten }
+
+Before you create a package, decide its **kind** – the rules are in [REGELN.en.md, "Package kinds"](https://github.com/motom001/dms-registry/blob/main/REGELN.en.md#package-kinds) (dms-registry #157):
+
+- **Foundation package** Basis (organisation, person, storage location) – always installed; every template package depends on it.
+- **Template packages** bring folder types, views and automations for one area (Haushalt, Fahrzeuge, Verträge, Rechnungen). They may bring code that **only maintains their own folder types**, e.g. calculating status and deadlines.
+- **Function packages** bring code for all folders but no folder types (Texterkennung, PDF/A, AI).
+- **Add-ons** extend exactly one other package (`ergaenzt`) and change neither its types nor its permissions.
+- **Languages** and **automation packages** bring only texts or only automations.
+
+Two rules keep packages together:
+
+- **A folder type lives in exactly one package.** Other packages refer to it (`vertraege:vertrag`) and list it under `abhaengigkeiten`.
+- **Same keys for the same meaning** – `von`, `an`, `betrag`, `datum`, `betrifft`, `steuerjahr`, `zustaendig`, `verbleib_original` … (list in [REGELN.en.md, "Same keys"](https://github.com/motom001/dms-registry/blob/main/REGELN.en.md#same-keys)). Then hit lists and views across several folder types show the same columns. The label may speak per type ("Anbieter", "Rechnungssteller"), the key may not. `pruefen.py` points out deviations in new fields.
+
+**Text templates** (e.g. a cancellation letter) are brought only as Markdown under `inhalt/vorlagen/`: no HTML, no images, links only `https:`, no password fields as placeholders. `pruefen.py` rejects anything else, and Ablago checks the same when installing (#1038, #1040).
+
 ## Creating a package { #ein-paket-anlegen }
 
 ```sh
