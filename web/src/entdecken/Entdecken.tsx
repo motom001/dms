@@ -14,7 +14,7 @@ export function Entdecken() {
   const d = useDaten();
   const [such, setSuch] = useState('');
   const woerter = such.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const tipps = useMemo(() => (stand?.tipps ?? []).filter((x) => woerter.every((w) => x.text.toLowerCase().includes(w) || t.frei(`entdecken.bereich.${x.bereich}`).toLowerCase().includes(w))), [stand, woerter.join(' ')]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tipps = useMemo(() => (stand?.tipps ?? []).filter((x) => woerter.every((w) => x.text.toLowerCase().includes(w) || t.frei(`entdecken.bereich.${x.bereich}`).toLowerCase().includes(w))), [stand, woerter.join(' ')]); // eslint-disable-line react-hooks/exhaustive-deps -- Suchwörter als Text verglichen, nicht als neues Feld bei jedem Zeichnen
   const neu = (stand?.tipps ?? []).filter((x) => x.neu);
 
   return (

@@ -174,7 +174,7 @@ export function pruefeKlassifizierung(antwort: unknown, kandidaten: ReadonlySet<
 
 /** Text aus einer Antwort für die Anzeige: eine Zeile, ohne Steuerzeichen. */
 export function einzeilig(s: string): string {
-  // eslint-disable-next-line no-control-regex
+  // eslint-disable-next-line no-control-regex -- Steuerzeichen entfernen ist der Zweck
   return s.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 

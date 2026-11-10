@@ -151,7 +151,7 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
     const typ = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
     assert.deepEqual(typ.felder.filter((f) => f.system).map((f) => f.key).slice(-4), ['abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter']);
     // Stand vor dem Update: ohne die neuen Systemfelder, aber mit einem eigenen Feld „vertreter“ (Text).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test greift auf interne Felder zu
     const intern = d as any;
     const neu = ['abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'];
     await intern.repo.aendereTyp(typ.id, { ...typ, felder: [...typ.felder.filter((f) => !neu.includes(f.key)), { key: 'vertreter', label: 'Mein Vertreter', typ: 'text' }],

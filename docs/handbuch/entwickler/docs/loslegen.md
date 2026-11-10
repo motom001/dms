@@ -51,6 +51,7 @@ deploy/vorlagen-probe.sh dms                           # NAS-Vorlagen mit dem sc
 | `npm test` | alle Tests des Servers (Node-Testrunner) |
 | `TEST_DATABASE_URL=postgres://… npm test` | zusätzlich die Tests gegen PostgreSQL – jede Testdatei legt daneben ihre eigene Datenbank an (siehe unten); die Rolle braucht das Recht, Datenbanken anzulegen |
 | `npm run typecheck` | TypeScript für `shared`, `server` und `web` |
+| `npm run lint`, `npm run lint:abh` | ESLint und Abhängigkeiten prüfen – siehe [Stil und Abhängigkeiten](stil.md) |
 | `npm run build` | Oberfläche und Server bauen wie im Image |
 
 Die CI auf GitHub führt all das aus, dazu die [Rauchtests der Oberfläche](#rauchtests-der-oberflache), baut beide Images (`dms`, `dms-komplett`) für amd64 und arm64, nimmt die Screenshots der Handbücher auf und prüft die Oberfläche in iPhone-Größe.

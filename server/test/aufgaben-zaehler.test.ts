@@ -25,7 +25,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
   type App = { inject: (o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }) => Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>; close(): Promise<void> };
   let app!: App;
   let sql!: postgres.Sql;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let dienst!: any; let konten!: any; let repo!: any;
   let nachlauf!: { alle(): Promise<void> };
   const ids = { lena: '', jonas: '', petra: '', markus: '', vertrag: '' };

@@ -13,7 +13,7 @@ import { t, tn } from '../sprache';
 export function useSammelauswahl(angezeigt: string[]) {
   const [gewaehlt, setGewaehlt] = useState<Set<string>>(new Set());
   const schluessel = angezeigt.join('|');
-  const sichtbar = useMemo(() => new Set(angezeigt), [schluessel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sichtbar = useMemo(() => new Set(angezeigt), [schluessel]); // eslint-disable-line react-hooks/exhaustive-deps -- Auswahl als Schlüssel verglichen, nicht als neues Feld bei jedem Zeichnen
   const aktiv = angezeigt.filter((id) => gewaehlt.has(id));
   return {
     aktiv, angezeigt,

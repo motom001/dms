@@ -65,7 +65,7 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
   const [breit, setBreit] = useState(() => innerWidth > SCHMAL);
   const rahmen = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setS(lies(k, ort)); }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setS(lies(k, ort)); }, [k]); // eslint-disable-line react-hooks/exhaustive-deps -- k enthält ort schon (schluessel(ort, …))
   useEffect(() => {
     const f = () => setS(lies(k, ort));
     addEventListener(RESET, f);
@@ -87,7 +87,7 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
   useEffect(() => {
     if (offen && offen !== vorher.current && s.rechtsZu) merke({ ...s, rechtsZu: false });
     vorher.current = offen;
-  }, [offen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [offen]); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Wechsel des offenen Eintrags, nicht bei jeder Änderung des Stands
   // Auch dieselbe Mappe noch einmal aus der Liste öffnen klappt rechts auf (#536): Die Adresse ändert sich
   // dann nicht, deshalb zählt hier jeder Klick auf einen Link in der Mitte.
   const linkInMitte = (e: MouseEvent<HTMLDivElement>) => {

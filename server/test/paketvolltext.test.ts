@@ -280,7 +280,7 @@ describe('Volltext aus Paketen (#614): API für Pakete', () => {
 });
 
 describe('Volltext aus Paketen (#614): Grenze der Textmenge über HTTP', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let app: any; let cookie = ''; let id = ''; let x: Awaited<ReturnType<typeof aufbau>>;
   before(async () => {
     const { baueApp } = await import('../src/http');

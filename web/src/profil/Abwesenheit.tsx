@@ -27,7 +27,7 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
 }) {
   const d = useDaten();
   const [a, setA] = useState<Abwesenheit>(wert);
-  useEffect(() => setA(wert), [JSON.stringify(wert)]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setA(wert), [JSON.stringify(wert)]); // eslint-disable-line react-hooks/exhaustive-deps -- Wert als Text verglichen, nicht als neues Objekt bei jedem Zeichnen
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const geaendert = JSON.stringify(a) !== JSON.stringify(wert);

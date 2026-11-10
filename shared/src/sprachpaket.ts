@@ -74,7 +74,7 @@ const VERSION = /^\d+\.\d+\.\d+$/;
 const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 /** Steuerzeichen außer Zeilenumbruch und Tabulator. */
-// eslint-disable-next-line no-control-regex
+// eslint-disable-next-line no-control-regex -- Steuerzeichen in Sprachpaketen sind genau das, was hier gesucht wird
 const STEUERZEICHEN = /[\u0000-\u0008\u000b-\u001f\u007f\u2028\u2029]/;
 const KLAMMERN = /[<>]/;
 const KODIERER = new TextEncoder();

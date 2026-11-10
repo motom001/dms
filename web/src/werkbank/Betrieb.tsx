@@ -20,7 +20,7 @@ export function useBetrieb() {
 export type BetriebZustand = ReturnType<typeof useBetrieb>;
 
 export function BetriebPanel({ b }: { b: BetriebZustand }) {
-  useEffect(() => { void b.laden(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void b.laden(); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim ersten Anzeigen laden
   if (b.fehler) return <div className="hinweis schlecht"><p>{b.fehler}</p></div>;
   if (!b.stand) return <p className="leise">{t('werkbank.betrieb.lade')}</p>;
   return (

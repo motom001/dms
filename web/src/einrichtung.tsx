@@ -73,7 +73,7 @@ export function Einrichtungsassistent({ status, fertig }: { status: KontoStatus;
     const wartend = nimmDatei();
     if (wartend) { void ladeDatei(wartend, phase === 'datenbank').catch(() => {}); return; }
     if (phase === 'konto' && st.sammlung.pruefungOffen) void nachDemLaden().catch(() => {});
-  }, [codeOk, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [codeOk, phase]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei gültigem Code oder neuer Phase
 
   if (phase === 'startet') return <Rahmen aktiv={VOR.datenbank} titel={t('einrichtung.assistent.ablago-startet')} leiste={VORHER}><p className="leise">{t('einrichtung.assistent.die-datenbank-ist-verbunden')}</p></Rahmen>;
   // Sprache zuerst (#729).
@@ -200,7 +200,7 @@ export function AssistentAngemeldet() {
   const { aktualisieren, version } = useKonto();
   const st = useAssistent();
   useNeuLadenBeiNeuerVersion(!!st.lauf?.laeuft, `${st.lauf?.fertig}-${st.aendern ?? st.sammlung.ansicht}`);
-  useEffect(() => { if (!st.lauf) unterbrochenerLauf(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!st.lauf) unterbrochenerLauf(); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim ersten Anzeigen prüfen
   if (!st.lauf) return <p className="leise mittig">{t('einrichtung.assistent.lade')}</p>;
   return <Sammelassistent zurWahl={() => {}} abschliessen={aktualisieren} version={version} />;
 }

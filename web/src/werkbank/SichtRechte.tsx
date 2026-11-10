@@ -85,7 +85,7 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
   });
   const ids = [...kette.flatMap((s) => sichtRegelwerkVon(s).regeln), ...rw.regeln].flatMap((r) => r.wenn.flatMap((b) => (b.art === 'rolle' ? b.rollen : b.benutzer)));
   const fehlend = ids.filter((x) => !namen.titel[x]).join(',');
-  useEffect(() => { if (fehlend) namen.laden(fehlend.split(',')); }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (fehlend) namen.laden(fehlend.split(',')); }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
 
   return (
     <Bereich id="berechtigungen" titel={t('werkbank.sichtrechte.berechtigungen')} hilfe={<Hilfe ort="sicht.berechtigungen" />} klappe={klappe} kurz={sichtRechteKurz(e, alle)}

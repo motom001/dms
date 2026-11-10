@@ -539,7 +539,7 @@ export function speicherWebhookRepo(uhr: () => number = Date.now): WebhookRepo {
 
 /* ---------- PostgreSQL ---------- */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zeile aus der Datenbank, Spalten werden einzeln übernommen
 const alsWebhook = (r: any): WebhookDaten => ({
   id: r.id, benutzerId: r.benutzer_id, name: r.name, url: r.url, geheimnis: r.geheimnis, ereignisse: r.ereignisse ?? [],
   aktiv: r.aktiv, abgeschaltet: r.abgeschaltet ?? null, gemeldetStand: r.gemeldet_stand === null ? null : Number(r.gemeldet_stand),

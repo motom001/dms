@@ -51,6 +51,7 @@ Apart from `deploy/komplett/start.sh`, `deploy/` is excluded from the Docker bui
 | `npm test` | all server tests (Node test runner) |
 | `TEST_DATABASE_URL=postgres://… npm test` | additionally the tests against PostgreSQL – every test file creates its own database next to it (see below); the role needs the right to create databases |
 | `npm run typecheck` | TypeScript for `shared`, `server` and `web` |
+| `npm run lint`, `npm run lint:abh` | check ESLint and dependencies – see [Style and dependencies](stil.md) |
 | `npm run build` | build interface and server as in the image |
 
 CI on GitHub runs all of this plus the [smoke tests of the interface](#rauchtests-der-oberflache), builds both images (`dms`, `dms-komplett`) for amd64 and arm64, records the manuals' screenshots and checks the interface at iPhone size.

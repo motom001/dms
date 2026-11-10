@@ -14,7 +14,7 @@ export const ABLAGE = 'Ablage';
 export const VERKNUEPFT = 'Verknüpft';
 
 /** Zeichen, die Windows, macOS oder iOS in Datei- und Ordnernamen nicht mögen. */
-// eslint-disable-next-line no-control-regex
+// eslint-disable-next-line no-control-regex -- Steuerzeichen in Namen sind genau das, was hier gesucht wird
 const VERBOTEN = /[\\/:*?"<>|\u0000-\u001f\u007f]/g;
 /** Unter Windows reservierte Namen (auch mit Endung). */
 const RESERVIERT = /^(con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³])(\..*)?$/i;
@@ -114,7 +114,7 @@ export function href(teile: string[], ordner: boolean): string {
 
 /** Text für XML (Inhalt und Attribute). Zeichen, die XML 1.0 nicht erlaubt, fallen weg. */
 export function xml(s: string): string {
-  // eslint-disable-next-line no-control-regex
+  // eslint-disable-next-line no-control-regex -- Steuerzeichen entfernen ist der Zweck
   return String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g, '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }

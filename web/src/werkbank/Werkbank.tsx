@@ -152,7 +152,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     void offen[bereich]?.();
   });
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
-  useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps -- neu laden nur beim Wechsel von Bereich oder Eintrag
   // Alte Direktlinks in Bereiche ohne Mitte (#366), z. B. /werkbank/stempel/:id → Seite, Eintrag aufgeklappt;
   // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle.
   const umleitung = werkbankUmleitung(bereich, id, location.search);

@@ -780,7 +780,7 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
     const logs: string[] = [];
     await new Promise<void>((fertig, fehler) => {
       const uhr = setTimeout(() => { kind.kill(); fehler(new Error('Zeit abgelaufen')); }, 20_000);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nachrichten des Kindprozesses unterschiedlicher Art
       kind.on('message', (m: any) => {
         if (m.art === 'bereit') kind.send({ art: 'pakete', pakete: [{ id: 'echo', version: '1.0.0', modul: new Uint8Array(ECHO), daten: [], netz: [] }], grenzen: { speicherMB: 16, sekunden: 5, parallel: 1 } });
         else if (m.art === 'geladen') { assert.equal(m.pakete[0].fehler, null); kind.send({ art: 'aufruf', nr: 1, paket: 'echo', eingang: { art: 'ereignis', json: '{"art":"x"}' } }); }

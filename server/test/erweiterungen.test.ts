@@ -30,7 +30,7 @@ describe('Erweiterungen der Suche (#562): Bewertung', () => {
 });
 
 describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sql aus dynamisch geladenem Modul; Typ im Test ohne Belang
   type Sql = any;
   const db = `dms_erw_${process.pid}`;
   const offen: Array<() => Promise<void>> = [];

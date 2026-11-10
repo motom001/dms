@@ -122,7 +122,7 @@ faelle();
 
 const url = process.env.TEST_DATABASE_URL;
 describe('Sprechende Links in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let haupt: any; let sql: any;
   const db = `dms_direktlink_${process.pid}`;
   before(async () => {

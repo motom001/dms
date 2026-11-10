@@ -16,10 +16,22 @@
     "dev": "npm run dev -w server & npm run dev -w web",
     "build": "npm run build -w web && npm run build -w server",
     "typecheck": "tsc -p shared; s=$?; npm run typecheck -w server; t=$?; npm run typecheck -w web; w=$?; exit $((s+t+w))",
-    "test": "npm run test -w server"
+    "test": "npm run test -w server",
+    "lint": "eslint --pass-on-unpruned-suppressions .",
+    "lint:abh": "depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --ignore-known",
+    "lint:zaehlen": "node .github/werkzeuge/ausnahmen-zaehlen.mjs",
+    "lint:umtragen": "eslint --suppress-all --pass-on-unpruned-suppressions . && eslint --prune-suppressions . && depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json && node .github/werkzeuge/ausnahmen-zaehlen.mjs",
+    "abhaengigkeitsbild": "node .github/werkzeuge/abhaengigkeitsbild.mjs"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
+    "@eslint/js": "10.0.1",
+    "dependency-cruiser": "18.7.2",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "8.72.1"
   },
   "overrides": {
     "glob": "^14.0.2",

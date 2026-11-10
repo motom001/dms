@@ -1,0 +1,1014 @@
+[
+  {
+    "type": "cycle",
+    "from": "shared/src/erkennung.ts",
+    "to": "shared/src/feldformate.ts",
+    "unresolvedTo": "./feldformate",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "shared/src/feldformate.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "shared/src/erkennung.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "shared/src/model.ts",
+    "to": "shared/src/rechte.ts",
+    "unresolvedTo": "./rechte",
+    "dependencyTypes": [
+      "local",
+      "type-import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "shared/src/rechte.ts",
+        "dependencyTypes": [
+          "local",
+          "type-import"
+        ]
+      },
+      {
+        "name": "shared/src/model.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "shared/src/model.ts",
+    "to": "shared/src/sichten.ts",
+    "unresolvedTo": "./sichten",
+    "dependencyTypes": [
+      "local",
+      "type-import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "shared/src/sichten.ts",
+        "dependencyTypes": [
+          "local",
+          "type-import"
+        ]
+      },
+      {
+        "name": "shared/src/model.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/assistent/Schritte.tsx",
+    "to": "web/src/profil/Zweifaktor.tsx",
+    "unresolvedTo": "../profil/Zweifaktor",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/profil/Zweifaktor.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/assistent/Schritte.tsx",
+    "to": "web/src/werkbank/MailVersand.tsx",
+    "unresolvedTo": "../werkbank/MailVersand",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/MailVersand.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/assistent/Schritte.tsx",
+    "to": "web/src/werkbank/PaketAblauf.tsx",
+    "unresolvedTo": "../werkbank/PaketAblauf",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/PaketAblauf.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/assistent/Schritte.tsx",
+    "to": "web/src/werkbank/PaketeDazuholen.tsx",
+    "unresolvedTo": "../werkbank/PaketeDazuholen",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/PaketeDazuholen.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/einrichtung.tsx",
+    "to": "web/src/konto.tsx",
+    "unresolvedTo": "./konto",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/konto.tsx",
+    "to": "web/src/lasttest.tsx",
+    "unresolvedTo": "./lasttest",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/lasttest.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Auslastung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/konto.tsx",
+    "to": "web/src/profil/Zweifaktor.tsx",
+    "unresolvedTo": "./profil/Zweifaktor",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/profil/Zweifaktor.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/lasttest.tsx",
+    "to": "web/src/werkbank/Speicherplatz.tsx",
+    "unresolvedTo": "./werkbank/Speicherplatz",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/Speicherplatz.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/lasttest.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/Listenkopf.tsx",
+    "to": "web/src/Hilfe.tsx",
+    "unresolvedTo": "./Hilfe",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/MailVersand.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Postfaecher.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Listenkopf.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/profil/Zweifaktor.tsx",
+    "to": "web/src/Hilfe.tsx",
+    "unresolvedTo": "../Hilfe",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/profil/Zweifaktor.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/Auslastung.tsx",
+    "to": "web/src/werkbank/Speicherplatz.tsx",
+    "unresolvedTo": "./Speicherplatz",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/Speicherplatz.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/lasttest.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Auslastung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/MailVersand.tsx",
+    "to": "web/src/konto.tsx",
+    "unresolvedTo": "../konto",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/MailVersand.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/MailVersand.tsx",
+    "to": "web/src/werkbank/Postfaecher.tsx",
+    "unresolvedTo": "./Postfaecher",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/Postfaecher.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/MailVersand.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/Pakete.tsx",
+    "to": "web/src/werkbank/PaketUmwandeln.tsx",
+    "unresolvedTo": "./PaketUmwandeln",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/PaketUmwandeln.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Pakete.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/Pakete.tsx",
+    "to": "web/src/werkbank/SelbstErstellt.tsx",
+    "unresolvedTo": "./SelbstErstellt",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/SelbstErstellt.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Pakete.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/PaketeDazuholen.tsx",
+    "to": "web/src/werkbank/Herkunft.tsx",
+    "unresolvedTo": "./Herkunft",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/Herkunft.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/PaketeDazuholen.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/PaketeDazuholen.tsx",
+    "to": "web/src/werkbank/PaketAblauf.tsx",
+    "unresolvedTo": "./PaketAblauf",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/PaketAblauf.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/einrichtung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/assistent/Schritte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/PaketeDazuholen.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/Sichten.tsx",
+    "to": "web/src/werkbank/SichtRechte.tsx",
+    "unresolvedTo": "./SichtRechte",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/SichtRechte.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Sichten.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/Speicherplatz.tsx",
+    "to": "web/src/werkbank/Verkleinern.tsx",
+    "unresolvedTo": "./Verkleinern",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/werkbank/Verkleinern.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/lasttest.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Speicherplatz.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "web/src/werkbank/Verkleinern.tsx",
+    "to": "web/src/Hilfe.tsx",
+    "unresolvedTo": "../Hilfe",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "kein-kreislauf"
+    },
+    "cycle": [
+      {
+        "name": "web/src/Hilfe.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/konto.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/lasttest.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Auslastung.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Speicherplatz.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "web/src/werkbank/Verkleinern.tsx",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  }
+]

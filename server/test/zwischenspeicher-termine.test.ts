@@ -405,11 +405,11 @@ const url = process.env.TEST_DATABASE_URL;
 const EIGENE_DB = `dms_test_918_${process.pid}`;
 describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   const HAUSHALT = '00000000-0000-4000-8000-000000000001';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let sql: any; let haupt: any;
   let ordner = '';
   let h!: Aufbau;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let mod: any;
   /** fristtermine stimmt genau mit den Datumswerten der Mappen überein. */
   const abgleich = async (was: string) => {

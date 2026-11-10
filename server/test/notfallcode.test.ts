@@ -285,7 +285,7 @@ describe('Notfallzugang (#815): Konto wählen, Passwort setzen, einmal gültig',
 
 const url = process.env.TEST_DATABASE_URL;
 describe('Notfallcode gegen PostgreSQL (#815): Einlösen in einer Transaktion', { skip: !url && 'ohne TEST_DATABASE_URL' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let sql: any;
   after(async () => { await sql?.end(); });
   it('nur der Hash in der Tabelle; zwei gleichzeitige Einlösungen – genau eine setzt das Passwort', async () => {

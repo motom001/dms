@@ -6,7 +6,7 @@
 - **Leitplanken eingehalten** ([Was jeder Beitrag einhält](index.md#was-jeder-beitrag-einhalt)): kein neuer Weg nach draußen ohne ausdrückliche Zustimmung und ohne Zeile in [Wege nach draußen](aufbau.md#wege-nach-draussen), keine Telemetrie, nichts von fremden Servern, offene Formate im Export, keine heimliche Änderung bei Updates.
 - Ein eigener Branch, z. B. `abwesenheit-vertreter`, von aktuellem `main`.
 - **Tests** für das Neue, im Arbeitsspeicher und, wo Daten gespeichert werden, auch gegen PostgreSQL.
-- `npm test` und `npm run typecheck` laufen lokal durch.
+- `npm test` und `npm run typecheck` laufen lokal durch, `npm run lint` und `npm run lint:abh` melden keine Fehler. Bestehende Verstöße stehen in einer Liste, die nicht wachsen darf – umtragen ja, hinzufügen nein ([Stil und Abhängigkeiten](stil.md#bestand)).
 - **Keine neue Abhängigkeit ohne Begründung:** Wer ein npm-Paket unter `dependencies` oder ein Alpine-Paket im `Dockerfile` ergänzt, beantwortet in der PR-Beschreibung die Fragen unter [Aufbau → Abhängigkeiten](aufbau.md#abhaengigkeiten). Die Prüfung im PR weist darauf hin.
 - **Handbuch** angepasst, wo sich etwas Sichtbares ändert: Benutzer-, Administrator- oder Installationshandbuch. Neue ?-Symbole brauchen einen Eintrag in `shared/src/hilfe.ts`.
 - **Englisches Handbuch** mitgepflegt (#730): Jedes Handbuch hat neben `docs/` den Ordner `docs-en/` mit derselben Gliederung. Wer eine deutsche Seite ändert, ändert die englische mit – oder vermerkt im Pull Request, dass die Übersetzung noch fehlt. `python3 docs/handbuch/werkzeuge/anker.py en` trägt die deutschen Anker in neue englische Überschriften ein, `--pruefen` meldet Seiten, deren Gliederung abweicht.

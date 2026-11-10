@@ -55,7 +55,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
     })();
     return () => { ab = true; };
     // Die Auswahl kommt als neues Feld bei jedem Zeichnen; neu laden nur, wenn sie sich ändert.
-  }, [ids.join(','), zuViele]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ids.join(','), zuViele]); // eslint-disable-line react-hooks/exhaustive-deps -- Auswahl als Text verglichen, siehe Kommentar darüber
 
   const alleDocs = (liste ?? []).flatMap((m) => m.dokumente);
   const docs = umfang === 'alle' ? alleDocs : umfang === 'keine' ? [] : alleDocs.filter((x) => gewaehlt.has(x.id));

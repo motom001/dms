@@ -226,7 +226,7 @@ function MappeLader({ id, sicht, anhang = '', alsPost = false }: { id: string; s
   useEffect(() => { void laden(); }, [laden, d.stand]);
   // Neue Post aus allen Eingängen (#934) öffnet die Seite „Dokument übernehmen“ – unter „Neue Post“, damit links sie markiert ist.
   const weiter = details && details !== 'fehlt' && !('verborgen' in details) && !alsPost && oeffnetUebernehmen(details, d.typ(details.mappe.typId));
-  useEffect(() => { if (weiter) geheZu(`/ablage/${d.zaehler.neuePost ?? sicht}/${id}/uebernehmen`, true); }, [weiter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (weiter) geheZu(`/ablage/${d.zaehler.neuePost ?? sicht}/${id}/uebernehmen`, true); }, [weiter]); // eslint-disable-line react-hooks/exhaustive-deps -- nur weiter, wenn „weiter“ gesetzt wird; die Adresse gilt zu diesem Zeitpunkt
   if (details === null || weiter) return <p className="leise">{t('ablage.ablage.lade')}</p>;
   if (details === 'fehlt') return <div className="leer"><p>{t('ablage.ablage.diese-mappe-gibt-es')}</p></div>;
   // Ohne Leserecht (#124): nur die eigenen Aufgaben dazu – erledigen oder weitergeben.
@@ -350,7 +350,7 @@ function Liste(p: {
       geoeffnet.current = true;
       geheZu(`/ablage/${p.sicht}/${s.mappen[0].id}${anhang}`, true);
     }
-  }, [p.offen, p.zuerstOeffnen, s.mappen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.offen, p.zuerstOeffnen, s.mappen]); // eslint-disable-line react-hooks/exhaustive-deps -- erste Mappe nur öffnen, wenn sich Auswahl oder Liste ändern
 
   // Breite der Liste: schmal → kompakte Einträge, breit → Tabelle (#22).
   const mess = useRef<HTMLDivElement>(null);
@@ -374,7 +374,7 @@ function Liste(p: {
     const o = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) s.mehr(); }, { rootMargin: '300px' });
     o.observe(el);
     return () => o.disconnect();
-  }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps -- Beobachter nur neu, wenn sich Liste oder Darstellung ändern
 
   // Solange die Zahlen der Ansichten nachkommen (#512), zählt die Liste selbst.
   const gesamtSicht = !d.zahlenDa ? s.gesamt ?? 0 : p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
@@ -390,7 +390,7 @@ function Liste(p: {
     const id = p.offen;
     s.gesehen([id]);
     void api.gesehen([id]).then(() => d.neuLaden()).catch(() => {});
-  }, [p.offen, s.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.offen, s.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- als gesehen melden nur bei anderer Mappe oder neuen Änderungen
   const geaenderteHier = s.mappen.filter((m) => s.geaendert.has(m.id)).map((m) => m.id);
   async function alleGesehen() {
     s.gesehen(geaenderteHier);

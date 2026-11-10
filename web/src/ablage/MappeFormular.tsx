@@ -75,7 +75,7 @@ function useAufloesung(z: ZuordnenNachher | undefined) {
       setX({ aufloesen: !gesperrt, gesperrt, dokumente: p.dokumente.length });
     }, () => {});
     return () => { aktuell = false; };
-  }, [z?.post, z?.kopieren]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [z?.post, z?.kopieren]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei anderer Post neu laden
   return x;
 }
 
@@ -388,7 +388,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (mappe && !werteGeaendert && startJson !== basis) { setBasis(startJson); setRoh(JSON.parse(startJson)); }
     // Mit den Werten auch ihren Stand übernehmen (#609) – solange hier nichts ungespeichert ist.
     if (mappe && !werteGeaendert) setStand(mappe.geaendert);
-  }, [startJson, mappe?.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [startJson, mappe?.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- nur übernehmen, wenn sich die gespeicherten Werte ändern (#609)
   const dokumenteGeaendert = neueDateien.length > 0 || entfernt.length > 0;
   const geaendert = werteGeaendert || dokumenteGeaendert || !mappe;
   useUngespeichert(werteGeaendert || dokumenteGeaendert);
@@ -426,7 +426,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       for (const g of gruppiere(r.abschnitte, alleAuf(r), (f) => !ausgeblendet.has(f.key))) if (g.abschnitt?.titel) for (const f of g.felder) m.set(f.key, abschnittId(r.key, g.abschnitt));
     }
     return m;
-  }, [typ, ausgeblendet]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [typ, ausgeblendet]); // eslint-disable-line react-hooks/exhaustive-deps -- hängt am Typ und den ausgeblendeten Feldern, Hilfsfunktionen sind fest
   const [jetzt, setJetzt] = useState<Record<string, boolean>>(() => {
     const such = new URLSearchParams(location.search);
     const gesucht = new Set([...such.keys()].map((k) => k.split('.')[0]).concat(such.getAll('feld')));
@@ -577,7 +577,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const werte = uebernimmVorschlaege({ r: vorschlagStart, dateien: [], ablegen: null });
     // Neue Mappe: Die Vorschläge sind der Ausgangsstand – erst eigene Eingaben sind „ungespeichert“ (Blättern ohne Rückfrage).
     if (!mappe) setBasis(JSON.stringify({ ...roh, ...werte }));
-  }, [vorschlagStart, vorschlagRunde]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [vorschlagStart, vorschlagRunde]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschläge nur in einer neuen Runde übernehmen, nicht bei jeder Eingabe
   // Die Brücke setzt Werte vom Dokument und zeigt Felder; über Refs immer mit dem aktuellen Stand.
   const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge });
   anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge };
@@ -603,7 +603,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       a.oeffneAbschnitte([k]);
       window.setTimeout(() => document.querySelector(`.spalte.mappe [data-anker="mappe.feld:${k}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 30);
     },
-  }), [bruecke?.anschliessen, typ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [bruecke?.anschliessen, typ]); // eslint-disable-line react-hooks/exhaustive-deps -- die Brücke liest über anschluss.current immer den aktuellen Stand
 
   async function neuAnlegen(k: string) {
     const n = adNeu[k]; const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n?.typId);
@@ -1213,7 +1213,7 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId, nurLesen, sehen 
   const [fehler, setFehler] = useState<string>();
   const [aendern, setAendern] = useState(false);
   // Nach dem Speichern (neuer Stand vom Server) die Anzeige zurücksetzen.
-  useEffect(() => { if (!p.neu) { setKlartext(null); setAendern(false); setZeigen(false); } }, [p.gesetzt, p.lesbar]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!p.neu) { setKlartext(null); setAendern(false); setZeigen(false); } }, [p.gesetzt, p.lesbar]); // eslint-disable-line react-hooks/exhaustive-deps -- nur zurücksetzen, wenn sich der gespeicherte Wert ändert
   const auge = (an: boolean) => <Symbol name={an ? 'auge-aus' : 'auge'} />;
 
   if (p.entfernen) return (
@@ -1412,7 +1412,7 @@ export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke,
     for (const x of fehlend ? fehlend.split(',') : []) {
       api.mappe(x).then((r) => merke(x, { titel: r.mappe.titel ?? '', typId: r.mappe.typId })).catch(() => merke(x, { titel: t('ablage.mappeformular.geloeschte-mappe'), typId: '' }));
     }
-  }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
 
   useEffect(() => {
     if (!offen) return;
@@ -1451,7 +1451,7 @@ export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke,
   const auswahl = (treffer ?? []).filter((m) => m.id !== eigeneId && !gewaehlt.includes(m.id));
   // Rechte wie sonst: nur, wenn die Person im Zieltyp anlegen darf.
   const anlegen = !ohneAnlegen && darfErstellen(ziel) ? <button ref={anlegenRef} type="button" className="textknopf klein" aria-haspopup="dialog" aria-expanded={fenster} onClick={() => setFenster(true)}>{t('ablage.mappeformular.anlegen-2', { name: typName(ziel) })}</button> : null;
-  const start = useMemo(() => { const r = standardRoh(ziel); belegeVor(ziel, r, vorbelegen ?? {}); return r; }, [ziel, fenster]); // eslint-disable-line react-hooks/exhaustive-deps
+  const start = useMemo(() => { const r = standardRoh(ziel); belegeVor(ziel, r, vorbelegen ?? {}); return r; }, [ziel, fenster]); // eslint-disable-line react-hooks/exhaustive-deps -- Startwerte neu je Fenster; vorbelegen gilt beim Öffnen
 
   return (
     <Mehrfachauswahl id={id} name={t('felder.verweis.gewaehlt')} platzhalter={platzhalter ?? t('felder.verweis.suchen', { typ: typName(ziel) })}

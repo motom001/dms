@@ -1,0 +1,66 @@
+%% Erzeugt mit `npm run abhaengigkeitsbild` (#899) – nicht von Hand ändern.
+flowchart LR
+  subgraph server
+    server_src["server/src (Wurzel)"]
+    server_src_arbeit["server/src/arbeit"]
+    server_src_laeufer["server/src/laeufer"]
+    server_src_pdf["server/src/pdf"]
+  end
+  subgraph web
+    web_src["web/src (Wurzel)"]
+    web_src_ablage["web/src/ablage"]
+    web_src_assistent["web/src/assistent"]
+    web_src_einrichtung["web/src/einrichtung"]
+    web_src_entdecken["web/src/entdecken"]
+    web_src_profil["web/src/profil"]
+    web_src_werkbank["web/src/werkbank"]
+  end
+  subgraph shared
+    shared_src["shared/src (Wurzel)"]
+    shared_src_sprachen["shared/src/sprachen"]
+  end
+  server_src -->|4| server_src_arbeit
+  server_src -->|6| server_src_laeufer
+  server_src -->|15| server_src_pdf
+  server_src -->|320| shared_src
+  server_src -->|19| shared_src_sprachen
+  server_src_arbeit -->|8| server_src
+  server_src_arbeit -->|1| server_src_laeufer
+  server_src_arbeit -->|11| server_src_pdf
+  server_src_arbeit -->|2| shared_src
+  server_src_laeufer -->|13| server_src
+  server_src_laeufer -->|5| shared_src
+  server_src_pdf -->|23| server_src
+  server_src_pdf -->|1| server_src_arbeit
+  server_src_pdf -->|7| shared_src
+  shared_src -->|68| shared_src_sprachen
+  web_src -->|88| shared_src
+  web_src -->|26| shared_src_sprachen
+  web_src -->|3| web_src_ablage
+  web_src -->|3| web_src_assistent
+  web_src -->|3| web_src_entdecken
+  web_src -->|3| web_src_profil
+  web_src -->|4| web_src_werkbank
+  web_src_ablage -->|121| shared_src
+  web_src_ablage -->|223| web_src
+  web_src_ablage -->|1| web_src_entdecken
+  web_src_ablage -->|1| web_src_profil
+  web_src_assistent -->|10| shared_src
+  web_src_assistent -->|11| web_src
+  web_src_assistent -->|1| web_src_profil
+  web_src_assistent -->|5| web_src_werkbank
+  web_src_einrichtung -->|17| shared_src
+  web_src_einrichtung -->|12| web_src
+  web_src_einrichtung -->|1| web_src_ablage
+  web_src_einrichtung -->|3| web_src_werkbank
+  web_src_entdecken -->|3| shared_src
+  web_src_entdecken -->|11| web_src
+  web_src_profil -->|20| shared_src
+  web_src_profil -->|58| web_src
+  web_src_profil -->|2| web_src_ablage
+  web_src_profil -->|1| web_src_werkbank
+  web_src_werkbank -->|139| shared_src
+  web_src_werkbank -->|351| web_src
+  web_src_werkbank -->|13| web_src_ablage
+  web_src_werkbank -->|5| web_src_einrichtung
+  web_src_werkbank -->|2| web_src_profil

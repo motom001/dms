@@ -57,7 +57,7 @@ export const zeitpunkt = (iso: string) => new Date(iso).toLocaleString(gebietssc
 export function WartungsBanner({ admin, abgemeldet }: { admin: boolean; abgemeldet: () => void }) {
   const { stand, rest } = useWartung();
   // Aktiv und kein Admin: Die Sitzung ist beendet – gleich zur Anmeldeseite mit dem Hinweis.
-  useEffect(() => { if (stand?.stufe === 'aktiv' && !admin) abgemeldet(); }, [stand?.stufe, admin]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (stand?.stufe === 'aktiv' && !admin) abgemeldet(); }, [stand?.stufe, admin]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei geänderter Stufe oder Rolle abmelden
   if (!stand || stand.stufe === 'aus') return null;
   const zusatz = <>{stand.text && <> {stand.text}.</>}{stand.ende && <> {' '}{t('oberflaeche.wartung.voraussichtlich-bis-uhr', { zeitpunkt: zeitpunkt(stand.ende) })}</>}</>;
   if (stand.stufe === 'angekuendigt') {

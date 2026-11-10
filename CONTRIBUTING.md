@@ -21,6 +21,10 @@ Ablago kommt mit sehr wenig fremdem Code aus – das schützt vor Angriffen übe
 
 Die Vorlage für Pull Requests fragt danach; die Prüfung „Abhängigkeiten“ weist im PR auf neue Abhängigkeiten hin. Die heutige Liste mit Zweck steht im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#abhaengigkeiten).
 
+## Stil und Abhängigkeiten prüfen
+
+Vor dem Pull Request laufen `npm run lint` (ESLint mit Typinformation) und `npm run lint:abh` (dependency-cruiser) ohne Fehler durch. Was es beim Einführen schon gab, steht in `eslint-suppressions.json` bzw. `.dependency-cruiser-known-violations.json` und meldet sich nicht – neuer Code ist voll streng, und die Listen dürfen nicht wachsen: **umtragen ja, hinzufügen nein**. Ausnahmen im Code nur mit Begründung (`// eslint-disable-next-line regel -- Grund`). Einzelheiten im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/stil/).
+
 ## Grafiken und Bilder je Sprache
 
 Grafiken mit Text gibt es je Sprache: `name.svg` auf Deutsch, `name.en.svg` auf Englisch (z. B. `personas-skala.svg` und `personas-skala.en.svg`, erzeugt von `docs/handbuch/werkzeuge/personas_grafiken.py`). `README.md` bindet die deutschen ein, `README.en.md` nur die `.en`-Fassungen. Einzige Ausnahme sind Bildschirmfotos der Oberfläche: Solange es sie nur auf Deutsch gibt (#357), zeigt `README.en.md` das deutsche Bild mit dem Hinweis, dass die Oberfläche derzeit nur Deutsch kann. Ein Test (`server/test/readme-sprachen.test.ts`) prüft das.

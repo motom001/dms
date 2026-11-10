@@ -135,7 +135,7 @@ describe('Termine und Zähler ohne Durchgang über alle Mappen (#477)', () => {
 
 const url = process.env.TEST_DATABASE_URL;
 describe('PostgreSQL: mappenMitDatum und Eingang im Zähler (#477)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let sql: any; let repo: import('../src/repo').Repo;
   const HAUSHALT = '00000000-0000-4000-8000-000000000477';
   const BEN = '00000000-0000-4000-8000-0000000004bb';
@@ -164,7 +164,7 @@ describe('PostgreSQL: mappenMitDatum und Eingang im Zähler (#477)', { skip: url
 
 const echtesFastify = await import('fastify').then((m) => typeof m.default === 'function', () => false);
 describe('HTTP: Server-Timing-Header (#477)', { skip: echtesFastify ? false : 'fastify nicht installiert' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let app: any; let messung: Messung; let cookie = '';
   before(async () => {
     const { baueApp } = await import('../src/http');

@@ -59,7 +59,7 @@ The check **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) reports 
 | `postgresql17`, `postgresql17-contrib` | only `dms-komplett` | PostgreSQL | database in the same container; `contrib` for `pg_trgm` |
 | `tini`, `su-exec` | only `dms-komplett` | MIT | starting and cleanly ending processes, PostgreSQL without root |
 
-Only for build and tests (not in the image): `typescript`, `tsx`, `esbuild`, `vite` with `@vitejs/plugin-react` and the types under `@types/…`. Here too: rather built-in means – the tests run with Node.js's test runner (`node --test`), without a test framework of their own.
+Only for build and tests (not in the image): `typescript`, `tsx`, `esbuild`, `vite` with `@vitejs/plugin-react` and the types under `@types/…`; for [style and dependencies](stil.md) (#899) `eslint` with `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `@eslint-community/eslint-plugin-eslint-comments` and `globals`, plus `dependency-cruiser`. Here too: rather built-in means – the tests run with Node.js's test runner (`node --test`), without a test framework of their own.
 
 ## dms-komplett: database folder { #komplett-datenbankordner }
 

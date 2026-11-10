@@ -66,7 +66,7 @@ export function App() {
     // Frühere Adressen
     else if (teile[0] === 'einrichtung') geheZu(`/werkbank/typen${teile[1] ? `/${teile[1]}` : ''}`, true);
     else if (teile[0] === 'benutzer') geheZu('/werkbank/benutzer', true);
-  }, [pfad]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pfad]); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Wechsel der Adresse weiterleiten
 
   let inhalt;
   if (!d.geladen) inhalt = <p className="leise">{t('oberflaeche.app.lade')}</p>;

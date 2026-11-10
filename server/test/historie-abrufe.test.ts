@@ -29,7 +29,7 @@ const PW = 'ein-langes-passwort';
 const PDF = Buffer.from('%PDF-1.4\n% Rechnung\n');
 const ABRUFE: Historienart[] = ['heruntergeladen', 'abruf_api', 'abruf_webdav'];
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
 let sql: any;
 const offen: Array<() => Promise<unknown>> = [];
 after(async () => { for (const f of offen) await f(); });
