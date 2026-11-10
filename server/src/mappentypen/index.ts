@@ -5,3 +5,4 @@ export { Passung, type PassungAnschluss } from './passung';
 export { ARCHIV_KREIS, Nummernkreise, type NummernkreiseAnschluss } from './nummernkreise';
 export { MODUSSPUR_MINUTEN, Systemtypen, type Benutzerspiegel, type SystemtypenAnschluss } from './systemtypen';
 export { TypPakete, type TypPaketeAnschluss } from './pakete-am-typ';
+export { KiTypen } from './ki-typen';

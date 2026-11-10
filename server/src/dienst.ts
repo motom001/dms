@@ -43,13 +43,13 @@ import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
 import { ABO_ARTEN, Kern, PAPIERKORB_STANDARD_TAGE, type Anlass, type SystemIds, type Zugreifender, type Zugriff } from './kern';
 import { Systemausstattung } from './systemausstattung';
-import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
+import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
 export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
 export type { Benutzerspiegel };
 export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
 export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
 import { paketEinstellungen } from './pakete/index';
-import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenTitel, Passwortfelder } from './mappen';
+import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
 export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
 import { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, erkenneAnzeigbar, FehlendeDateien, GeschuetztePdfs, type TexterkennungAnbindung } from './dokumente';
 export { erkenneAnzeigbar };
@@ -65,28 +65,13 @@ export type { Fundstelle, SystemkontoEintrag } from './post';
 import { type Ausgang, AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
 export { EMAIL_MAX_EMPFAENGER, EMAIL_MAX_MAPPEN } from './ausgang';
 import { type EreignisAufruf, VOLLTEXT_MAX, VolltextAusPaketen, VolltextDienst, type VolltextMeldung } from './volltext';
-import { EreignisseDienst } from './ereignisse/ereignisse.dienst';
-import { Automatisierungshilfen } from './ereignisse/automatisierung';
-import { AufgabenDienst, type AufgabenTeile } from './aufgaben/aufgaben.dienst';
-import { AufgabenVertretung } from './aufgaben/vertretung';
-import { OhneLeserecht } from './aufgaben/ohne-leserecht';
-import { Fristen } from './aufgaben/fristen';
-import { OhneEmpfaenger } from './aufgaben/ohne-empfaenger';
-export { SAMMEL_MAX, SAMMEL_WEITERGABE } from './aufgaben/vertretung';
-export { NAECHSTER_TERMIN_ERST_TAGE } from './aufgaben/fristen';
-export { taugtAlsAufgabenEmpfaenger } from './aufgaben/ohne-empfaenger';
-import { LoeschenDienst, type LoeschenTeile } from './loeschen/loeschen.dienst';
-import { BeispielMappen } from './loeschen/beispiele';
-import { type DokumentImKorb, Papierkorb } from './loeschen/papierkorb';
-export type { AufgeloestIn, DokumentImKorb } from './loeschen/papierkorb';
-import { LoeschprotokollVerwaltung } from './loeschen/loeschprotokoll';
-import { MitVerknuepften } from './loeschen/mit-verknuepften';
-import { DatenschutzDienst, type DatenschutzTeile } from './datenschutz/datenschutz.dienst';
-import { VollexportQuellen } from './datenschutz/vollexport';
-import { AuskunftZustellen } from './datenschutz/zustellen';
-import { KiTypen } from './mappentypen/ki-typen';
-import { MappenNotizen } from './mappen/notizen';
-import { WerkbankDienst } from './werkbank/werkbank.dienst';
+import { Automatisierungshilfen, EreignisseDienst } from './ereignisse/index';
+import { AufgabenDienst, type AufgabenTeile, AufgabenVertretung, Fristen, OhneEmpfaenger, OhneLeserecht } from './aufgaben';
+export { NAECHSTER_TERMIN_ERST_TAGE, SAMMEL_MAX, SAMMEL_WEITERGABE, taugtAlsAufgabenEmpfaenger } from './aufgaben';
+import { BeispielMappen, type DokumentImKorb, LoeschenDienst, type LoeschenTeile, LoeschprotokollVerwaltung, MitVerknuepften, Papierkorb } from './loeschen';
+export type { AufgeloestIn, DokumentImKorb } from './loeschen';
+import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, VollexportQuellen } from './datenschutz';
+import { WerkbankDienst } from './werkbank';
 export { VOLLTEXT_MAX };
 export type { EreignisAufruf, VolltextMeldung };
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
@@ -587,7 +572,6 @@ export class Dienst {
   aehnlicheTypen(...a: Parameters<SucheDienst['aehnlicheTypen']>) { return this.suche.aehnlicheTypen(...a); }
   vektorStand() { return this.suche.vektorStand(); }
   vektorenNeu(paket: string) { return this.suche.vektorenNeu(paket); }
-
   vektorNachlauf(paket: string, modell: string, max: number, nach: string | null): Promise<string[]> { return this.ereignisseDienst.vektorNachlauf(paket, modell, max, nach); }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion (Kern). */
@@ -642,9 +626,7 @@ export class Dienst {
   get archivfassung() { return this.dokumentArchiv.archivfassung; }
   archivAnbindung(ablage: ArchivAblage): ArchivAnbindung { return this.dokumentArchiv.archivAnbindung(ablage); }
   private archivNachVolltext(id: string, neu?: boolean) { return this.dokumentArchiv.archivNachVolltext(id, neu); }
-
   volltextAusgelassen(id: string) { return this.volltexte.volltextAusgelassen(id); }
-
   archivPaketDa(typen: string[]): Promise<number> { return this.dokumentArchiv.archivPaketDa(typen); }
   setzeArchivfassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentArchiv.setzeArchivfassung(z, id, sha, inhalt); }
   archivfassungVon(id: string) { return this.dokumentArchiv.archivfassungVon(id); }
@@ -690,81 +672,52 @@ export class Dienst {
   zeigePasswort(mappeId: string, feldKey: string, benutzerId: string | null = null): Promise<{ wert: string }> { return this.passwortfelder.zeigePasswort(mappeId, feldKey, benutzerId); }
   entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string, benutzerId: string | null = null): Promise<T[]> { return this.passwortfelder.entschluesselePasswoerter<T>(mappen, wer, benutzerId); }
 
-  /* ---------- Aufgaben (#54) und Erwähnungen (#56) ---------- */
+  /* ---------- Aufgaben (#54) und Erwähnungen (#56), aufgaben/aufgaben.dienst.ts ---------- */
 
   /** Anzeigename eines Benutzers (auch für Platzhalter in Automatisierungen, #678). */
   name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
-
   private pruefeErwaehnungen(...a: Parameters<AufgabenDienst['pruefeErwaehnungen']>) { return this.aufgaben.pruefeErwaehnungen(...a); }
-
   private erwaehnungenAbgleichen(...a: Parameters<AufgabenDienst['erwaehnungenAbgleichen']>) { return this.aufgaben.erwaehnungenAbgleichen(...a); }
 
-  /* ---------- Abwesenheit und Vertretung (#77, #78) ---------- */
+  /* ---------- Abwesenheit und Vertretung (#77, #78), aufgaben/vertretung.ts ---------- */
 
   empfaengerAufloesen(id: string | null): Promise<{ ziel: string | null; abwesende: string[] }> { return this.vertretung.empfaengerAufloesen(id); }
-
   private leiteUm(a: Aufgabe): Promise<Aufgabe> { return this.vertretung.leiteUm(a); }
-
   private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) { return this.vertretung.passungsAufgaben(liste); }
-
   aufgabenUebergeben(id: string, an: string, von: string | null): Promise<number> { return this.vertretung.aufgabenUebergeben(id, an, von); }
-
   abwesenheitGeaendert(...a: Parameters<AufgabenVertretung['abwesenheitGeaendert']>) { return this.vertretung.abwesenheitGeaendert(...a); }
-
   legeAufgabeAn(mappeId: string, e: unknown, von: string | null): Promise<Aufgabe> { return this.vertretung.legeAufgabeAn(mappeId, e, von); }
-
   private eigeneAufgabe(id: string, ich: { id: string; rolle: string }) { return this.vertretung.eigeneAufgabe(id, ich); }
-
   erledigeAufgabe(id: string, ich: { id: string; rolle: string }) { return this.vertretung.erledigeAufgabe(id, ich); }
-
   delegiereAufgabe(id: string, an: unknown, ich: { id: string; rolle: string }) { return this.vertretung.delegiereAufgabe(id, an, ich); }
-
   aufgabenWeitergeben(ids: unknown, an: unknown, ich: { id: string; rolle: string }) { return this.vertretung.aufgabenWeitergeben(ids, an, ich); }
-
   aufgabenErledigen(ids: unknown, ich: { id: string; rolle: string }) { return this.vertretung.aufgabenErledigen(ids, ich); }
-
   benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.vertretung.benachrichtigeGebuendelt(...a); }
-
   meineAufgaben(ich: { id: string; rolle: string }, z?: Zugriff) { return this.vertretung.meineAufgaben(ich, z); }
 
-  /* ---------- Aufgaben bei Personen ohne Leserecht (#798) ---------- */
+  /* ---------- Aufgaben bei Personen ohne Leserecht (#798), aufgaben/ohne-leserecht.ts ---------- */
 
   private ohneLeserechtText<T extends Aufgabe>(liste: T[], lesbar: Set<string>, ich: string): Promise<T[]> { return this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich); }
-
   zugriffVon(benutzerId: string): Promise<Zugriff | null> { return this.ohneLeserecht.zugriffVon(benutzerId); }
-
   regulaerSichtbarFuer(benutzerId: string, ids: string[]): Promise<Set<string>> { return this.ohneLeserecht.regulaerSichtbarFuer(benutzerId, ids); }
-
   faelleAbgleichen(f: { mappeIds?: string[] } = {}): Promise<{ neu: number; beendet: number }> { return this.ohneLeserecht.faelleAbgleichen(f); }
-
   offeneFaelle(): Promise<FallOhneLeserecht[]> { return this.ohneLeserecht.offeneFaelle(); }
-
   faelleUebersicht(): Promise<{ offen: FallOhneLeserecht[]; vergangen: FallOhneLeserecht[] }> { return this.ohneLeserecht.faelleUebersicht(); }
-
   leserechtAufZeitGeben(fallId: unknown, von: string | null): Promise<FallOhneLeserecht> { return this.ohneLeserecht.leserechtAufZeitGeben(fallId, von); }
   alleAufgaben(erledigt = false) { return this.ohneLeserecht.alleAufgaben(erledigt); }
   aufgabenVon(mappeId: string) { return this.ohneLeserecht.aufgabenVon(mappeId); }
 
-  /* ---------- Fristen (#129–#133) ---------- */
+  /* ---------- Fristen (#129–#133), aufgaben/fristen.ts ---------- */
 
   fristenAbgleichen(...a: Parameters<Fristen['fristenAbgleichen']>) { return this.fristen.fristenAbgleichen(...a); }
-
   erinnerungenFaellig(...a: Parameters<Fristen['erinnerungenFaellig']>) { return this.fristen.erinnerungenFaellig(...a); }
-
   fristenLauf(...a: Parameters<Fristen['fristenLauf']>) { return this.fristen.fristenLauf(...a); }
-
   legeErinnerungAn(mappeId: string, e: unknown, von: string): Promise<Erinnerung | Aufgabe> { return this.fristen.legeErinnerungAn(mappeId, e, von); }
-
   erinnerungMappe(id: string) { return this.fristen.erinnerungMappe(id); }
-
   aendereErinnerung(id: string, e: unknown, ich: { id: string; rolle: string }): Promise<Erinnerung> { return this.fristen.aendereErinnerung(id, e, ich); }
-
   loescheErinnerung(id: string, ich: { id: string; rolle: string }) { return this.fristen.loescheErinnerung(id, ich); }
-
   termine(...a: Parameters<Fristen['termine']>) { return this.fristen.termine(...a); }
-
   naechsterTermin(z: Zugriff): Promise<{ termin: Termin | null; ueberfaellig: number }> { return this.fristen.naechsterTermin(z); }
-
   setzeFolgetermin(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) { return this.fristen.setzeFolgetermin(aufgabeId, ich, z); }
 
   /* ---------- Notizen (#55) ---------- */
@@ -776,61 +729,44 @@ export class Dienst {
   versendeMappen(...a: Parameters<AusgangEmail['versendeMappen']>) { return this.ausgangEmail.versendeMappen(...a); }
   versendeMappe(...a: Parameters<AusgangEmail['versendeMappe']>) { return this.ausgangEmail.versendeMappe(...a); }
 
-  /* ---------- Notizen anlegen, ändern, löschen (#55; gehören zu den Mappen, noch im Dienst) ---------- */
+  /* ---------- Notizen anlegen, ändern, löschen (#55, mappen/notizen.ts) ---------- */
 
   legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> { return this.mappenNotizen.legeNotizAn(mappeId, text, von); }
-
   aendereNotiz(id: string, text: unknown, von: string | null): Promise<Notiz> { return this.mappenNotizen.aendereNotiz(id, text, von); }
-
   loescheNotiz(id: string, von: string | null) { return this.mappenNotizen.loescheNotiz(id, von); }
-
-  /* ---------- Änderungshistorie (#57) ---------- */
 
   /* ---------- Favorit = Abo (#422) ---------- */
 
   persoenlicheEinstellungen(benutzerId: string): Promise<Record<string, unknown>> { return this.mappen.persoenlicheEinstellungen(benutzerId); }
 
-  /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506) ---------- */
+  /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506, aufgaben/aufgaben.dienst.ts) ---------- */
 
   favoritenFreigabe(): Promise<FavoritenFreigabe> { return this.aufgaben.favoritenFreigabe(); }
-
   setzeFavoritenFreigabe(eingabe: unknown, von: string) { return this.aufgaben.setzeFavoritenFreigabe(eingabe, von); }
 
-  /* ---------- Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719) ---------- */
+  /* ---------- Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, aufgaben/ohne-empfaenger.ts) ---------- */
 
   alltagsEmpfaenger() { return this.ohneEmpfaenger.alltagsEmpfaenger(); }
-
   setzeAufgabenEmpfaenger(eingabe: unknown, von: string | null) { return this.ohneEmpfaenger.setzeAufgabenEmpfaenger(eingabe, von); }
-
   siehtOhneEmpfaenger(ich: { id: string; rolle: string }): Promise<boolean> { return this.ohneEmpfaenger.siehtOhneEmpfaenger(ich); }
-
   private vorgabeAufgabenEmpfaenger(b: Benutzer) { return this.ohneEmpfaenger.vorgabeAufgabenEmpfaenger(b); }
-
   favoritenBenachrichtigungErlaubt(benutzerId: string): Promise<boolean> { return this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(benutzerId); }
-
   favoritenVorgabeAnwenden(von: string): Promise<number> { return this.ohneEmpfaenger.favoritenVorgabeAnwenden(von); }
-
   favoritenMelden(mappeId: string, von: string): Promise<number> { return this.ohneEmpfaenger.favoritenMelden(mappeId, von); }
-
   gesehen(ich: { id: string }, mappeIds: unknown, aufgaben?: Aufgabe[]) { return this.mappen.gesehen(ich, mappeIds, aufgaben); }
   setzeFavoritBenachrichtigen(ich: { id: string }, mappeId: string, an: unknown) { return this.mappen.setzeFavoritBenachrichtigen(ich, mappeId, an); }
   historie(mappeId: string, o: { register?: unknown; max?: unknown; vor?: unknown } = {}): Promise<Historieneintrag[]> { return this.mappenHistorie.historie(mappeId, o); }
   notiereAbruf(x: { dokumentId: string; benutzerId: string | null; weg: Abrufweg; fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; schluessel?: string | null; datei?: string }): Promise<boolean> { return this.mappenHistorie.notiereAbruf(x); }
   historieTage(): Promise<number> { return this.mappenHistorie.historieTage(); }
   setzeHistorieTage(eingabe: unknown): Promise<number> { return this.mappenHistorie.setzeHistorieTage(eingabe); }
-
   listeTypen() { return this.mappentypen.listeTypen(); }
-
   typenFuer(z: Zugriff) { return this.mappentypen.typenFuer(z); }
-
   ausPostZiele(z?: Zugriff): Promise<Mappentyp[]> { return this.mappentypen.ausPostZiele(z); }
-
   rechteUebersicht(z: Zugriff) { return this.mappentypen.rechteUebersicht(z); }
   legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.legeTypAn(eingabe); }
   aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mappentypen.aendereTyp(id, eingabe); }
   ausDokumentVon(typId: string): Promise<AusDokument | null> { return this.mappentypen.ausDokumentVon(typId); }
   loescheTyp(id: string): Promise<void> { return this.mappentypen.loescheTyp(id); }
-
   listeMappen(typId?: string) { return this.mappen.listeMappen(typId); }
   mappenKurz() { return this.mappen.mappenKurz(); }
   feldwerte(typId: string, key: string) { return this.mappen.feldwerte(typId, key); }
@@ -872,20 +808,14 @@ export class Dienst {
   /** Je Mappentyp-Id die Pakete, denen der Admin diesen Typ verwehrt hat (Kern). */
   paketVerwehrt(): Promise<Record<string, string[]>> { return this.kern.paketVerwehrt(); }
 
-  /* ---------- KI-Dienste und Mappentypen (#796) ---------- */
+  /* ---------- KI-Dienste und Mappentypen (#796, mappentypen/ki-typen.ts) ---------- */
 
   kiTypen(): Promise<{ zugelassen: Set<string>; hinweis: boolean }> { return this.ki.kiTypen(); }
-
   kiSperre(p: Pick<InstalliertesPaket, 'laeufer'> | null | undefined): Promise<(typId: string) => boolean> { return this.ki.kiSperre(p); }
-
   kiSperreFuer(paketId: string): Promise<(typId: string) => boolean> { return this.ki.kiSperreFuer(paketId); }
-
   kiUebersicht(): Promise<KiUebersicht> { return this.ki.kiUebersicht(); }
-
   setzeKiTyp(typId: string, zugelassen: boolean, von: string | null): Promise<KiUebersicht> { return this.ki.setzeKiTyp(typId, zugelassen, von); }
-
   kiHinweisGelesen(): Promise<KiUebersicht> { return this.ki.kiHinweisGelesen(); }
-
   paketeAmTyp(typId: string) { return this.typpakete.paketeAmTyp(typId); }
   setzePaketVerwehrt(typId: string, paketId: string, verwehrt: boolean, von: string | null): Promise<void> { return this.typpakete.setzePaketVerwehrt(typId, paketId, verwehrt, von); }
 
@@ -893,15 +823,12 @@ export class Dienst {
 
   berechtigungenListe() { return this.berechtigungen.berechtigungenListe(); }
   niemandLesbar(typ: Mappentyp, rw: Regelwerk): Promise<number> { return this.berechtigungen.niemandLesbar(typ, rw); }
-
   setzeBerechtigungen(typId: string, eingabe: unknown, bestaetigt: boolean): Promise<{ typ: Mappentyp; niemand: number }> { return this.berechtigungen.setzeBerechtigungen(typId, eingabe, bestaetigt); }
 
   private static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) { BerechtigungenDienst.protokolliereBerechtigungen(typ, niemand); }
 
   private berechtigungenAusEingabe(typ: Mappentyp, eingabe: unknown): Promise<{ rw: Regelwerk; niemand: number } | null> { return this.berechtigungen.berechtigungenAusEingabe(typ, eingabe); }
-
   kopiereRegel(typId: string, regelId: string, ziele: unknown): Promise<{ kopiert: number; ausgelassen: number }> { return this.berechtigungen.kopiereRegel(typId, regelId, ziele); }
-
   testlauf(e: { mappeId?: unknown; benutzerId?: unknown; berechtigungen?: unknown }) { return this.berechtigungen.testlauf(e); }
   laufwerkMappe(id: string, z: Zugriff) { return this.berechtigungen.laufwerkMappe(id, z); }
 
@@ -916,9 +843,7 @@ export class Dienst {
   loescheSicht(id: string): Promise<void> { return this.sichtenVerwaltung.loescheSicht(id); }
   ordneSichten(elternId: unknown, ids: unknown): Promise<Sicht[]> { return this.sichtenVerwaltung.ordneSichten(elternId, ids); }
   verschiebeSicht(id: string, elternId: unknown, stelle: unknown): Promise<Sicht[]> { return this.sichtenVerwaltung.verschiebeSicht(id, elternId, stelle); }
-
   sichtVorschau(ich: { id: string }, id: unknown, e: unknown): Promise<{ anzahl: number }> { return this.sichtenVerwaltung.sichtVorschau(ich, id, e); }
-
   private sichtFuerTyp(t: Mappentyp) { return this.sichtenVerwaltung.sichtFuerTyp(t); }
   belegung(typId: string) { return this.sichtenVerwaltung.belegung(typId); }
 
@@ -934,7 +859,7 @@ export class Dienst {
   hakenUeberfuehren(): Promise<number> { return this.mappenTitel.hakenUeberfuehren(); }
   typSchluesselNachziehen(): Promise<number> { return this.mappenTitel.typSchluesselNachziehen(); }
 
-  /* ---------- Ansicht der Werkbank (#281): nur Navigation, keine Funktion wird abgeschaltet ---------- */
+  /* ---------- Ansicht der Werkbank (#281, werkbank/werkbank.dienst.ts) ---------- */
 
   werkbankAnsicht(wer: { id: string | null; email: string }) { return this.werkbank.werkbankAnsicht(wer); }
   setzeWerkbankAnsicht(wer: { id: string | null; email: string }, body: Record<string, unknown>) { return this.werkbank.setzeWerkbankAnsicht(wer, body); }
@@ -947,7 +872,7 @@ export class Dienst {
   get paketKonten(): Map<string, string> { return this.kern.paketKonten; }
   set paketKonten(m: Map<string, string>) { this.kern.paketKonten = m; }
 
-  /* ---------- Ereigniskatalog (#670) ---------- */
+  /* ---------- Ereigniskatalog (#670; Verteiler hier, Zustellung an Pakete in ereignisse/ereignisse.dienst.ts) ---------- */
 
   /** Verteiler des Katalogs; Abnehmer (Pakete hier, Automatisierungen #674, Webhooks #671) melden sich mit `abonniere` an. */
   readonly ereignisse = new Ereignisverteiler({ repo: () => this.kern.repoOhneTransaktion, ruht: () => this.ereignisseRuhen?.() ?? false });
@@ -963,13 +888,9 @@ export class Dienst {
 
   /** Ein Ereignis des Katalogs (#670) in den Ausgangskorb (Kern). */
   ereignis(art: KatalogArt, daten: Record<string, unknown>, von?: string | null): Promise<void> { return this.kern.ereignis(art, daten, von); }
-
   private neueAufgabe(a: Aufgabe, typ?: string): Promise<Aufgabe> { return this.ereignisseDienst.neueAufgabe(a, typ); }
-
   private meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) { return this.ereignisseDienst.meldeVerknuepft(typ, mappeId, alt, neu, von); }
-
   private ereignisAnPakete(e: KatalogEreignis) { return this.ereignisseDienst.ereignisAnPakete(e); }
-
   auftrag(...a: Parameters<EreignisseDienst['auftrag']>) { return this.ereignisseDienst.auftrag(...a); }
 
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
@@ -980,15 +901,12 @@ export class Dienst {
   entschluessele(wert: string): string | null { return this.tresor?.entschluessele(wert) ?? null; }
 
   belegteTypen(ids: string[], ohne: string[] = []): Promise<string[]> { return this.mappentypen.belegteTypen(ids, ohne); }
-
   entferneMappenEndgueltig(ids: string[]) { return this.loeschen.entferneMappenEndgueltig(ids); }
 
-  /* ---------- Beispiel-Mappen aus Paketen (#878) ---------- */
+  /* ---------- Beispiel-Mappen aus Paketen (#878, loeschen/beispiele.ts) ---------- */
 
   beispielStand(ids: string[]): Promise<BeispielStand[]> { return this.beispielMappen.beispielStand(ids); }
-
   pruefeBeispiele(staende: BeispielStand[]) { return this.beispielMappen.pruefeBeispiele(staende); }
-
   entferneBeispielMappen(ids: string[], von: string | null) { return this.beispielMappen.entferneBeispielMappen(ids, von); }
 
   /* ---------- Nummernkreise (#171) ---------- */
@@ -999,7 +917,6 @@ export class Dienst {
   setzeZaehler(schluessel: string, e: unknown, von: string, jetzt?: Date) { return this.nummernkreise.setzeZaehler(schluessel, e, von, jetzt); }
   nummernVorschau(typId: string, feldKey: string, jetzt?: Date) { return this.nummernkreise.nummernVorschau(typId, feldKey, jetzt); }
   nummernNachtragen(typId: string, feldKey: string, von: string) { return this.nummernkreise.nummernNachtragen(typId, feldKey, von); }
-
   absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> { return this.mappenTitel.absenderVorschau(); }
   absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> { return this.mappenTitel.absenderBereinigen(ids, von); }
   titelNachziehen(): Promise<number> { return this.mappenTitel.titelNachziehen(); }
@@ -1014,7 +931,6 @@ export class Dienst {
   aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> { return this.mappen.aendereMappe(id, eingabe, benutzerId, z, anlass); }
   legeMappenAn(liste: NeueMappe[]) { return this.mappen.legeMappenAn(liste); }
   aktualisiereStatistik() { return this.sichten.aktualisiereStatistik(); }
-
   private loeschPruefung(...a: Parameters<LoeschenDienst['loeschPruefung']>) { return this.loeschen.loeschPruefung(...a); }
 
   /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
@@ -1032,13 +948,9 @@ export class Dienst {
   dokumentFuerAusgabe(...a: Parameters<AusgangDienst['dokumentFuerAusgabe']>) { return this.ausgang.dokumentFuerAusgabe(...a); }
   fassungFuerAusgabe(...a: Parameters<AusgangDienst['fassungFuerAusgabe']>) { return this.ausgang.fassungFuerAusgabe(...a); }
   gestempelteSeiten(...a: Parameters<AusgangDienst['gestempelteSeiten']>) { return this.ausgang.gestempelteSeiten(...a); }
-
   trefferIds(...a: Parameters<SichtenDienst['trefferIds']>) { return this.sichten.trefferIds(...a); }
-
   loescheMappen(...a: Parameters<LoeschenDienst['loescheMappen']>) { return this.loeschen.loescheMappen(...a); }
-
   loescheMappe(...a: Parameters<LoeschenDienst['loescheMappe']>): Promise<void> { return this.loeschen.loescheMappe(...a); }
-
   private loescheMappeIntern(id: string, typ: Mappentyp | undefined, von: string | null = null) { return this.loeschen.loescheMappeIntern(id, typ, von); }
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
@@ -1048,17 +960,13 @@ export class Dienst {
    * Läuft beim Start; wer nur Ids braucht, nimmt `kern.system()`.
    */
   sichereSystem(): Promise<SystemIds> { return this.systemausstattung.sicherstellen(); }
-
   ablageortTyp(): Promise<Mappentyp | undefined> { return this.systemtypen.ablageortTyp(); }
-
   private ablageortId(): Promise<string | undefined> { return this.kern.ablageortId(); }
 
   /** Der Ablageort, den der Kern vor #883 angelegt hat (Kern). */
   frueherAblageortTyp(): Promise<Mappentyp | undefined> { return this.kern.frueherAblageortTyp(); }
-
   vermerkeVerwaltungsmodus(alltag: { id: string; rolle: string; name?: string; email?: string }, ids: string[], was: Modusspur): Promise<Set<string>> { return this.systemtypen.vermerkeVerwaltungsmodus(alltag, ids, was); }
   imVerwaltungsmodus(max?: number) { return this.systemtypen.imVerwaltungsmodus(max); }
-
   private sicherePostSichten(post: Mappentyp) { return this.systemsichten.sicherePostSichten(post); }
   private sichereFavoritenSicht() { return this.systemsichten.sichereFavoritenSicht(); }
   favoritenSicht(): Promise<string | null> { return this.systemsichten.favoritenSicht(); }
@@ -1071,7 +979,6 @@ export class Dienst {
   automatischZuordnen(postId: string, e: PostErkennung) { return this.post.automatischZuordnen(postId, e); }
   automatikRueckgaengig(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) { return this.post.automatikRueckgaengig(aufgabeId, ich, z); }
   private postAufgaben(mappeId: string, von: string | null) { return this.post.postAufgaben(mappeId, von); }
-
   trennePostAb(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postAufloesen.trennePostAb(postId, eingabe, von, z); }
 
   /* ---------- Systemmappen, Benutzer-Mappen, Rollen, Systemkonten (#43, #673, post/systemmappen.ts) ---------- */
@@ -1100,75 +1007,49 @@ export class Dienst {
   /** Automatisierungen mit Änderungsverlauf für den Vollexport (#674 setzt das). */
   automatisierungenExport?: () => Promise<unknown[]>;
 
-  /* ---------- Hilfen für Automatisierungen (#674) ---------- */
+  /* ---------- Hilfen für Automatisierungen (#674, ereignisse/automatisierung.ts) ---------- */
 
   automatisierungKontext() { return this.automatisierungshilfen.automatisierungKontext(); }
-
   mitgliederDerRolle(rolleId: string): Promise<string[]> { return this.automatisierungshilfen.mitgliederDerRolle(rolleId); }
-
   trifftTeile(...a: Parameters<Automatisierungshilfen['trifftTeile']>) { return this.automatisierungshilfen.trifftTeile(...a); }
-
   lesbareTitel(z: Zugriff, ids: string[]): Promise<Map<string, string>> { return this.automatisierungshilfen.lesbareTitel(z, ids); }
-
   aufgabenEmpfaenger(id: string): Promise<{ an: string | null; ueber: string[] }> { return this.aufgaben.aufgabenEmpfaenger(id); }
-
   aufgabeAusAutomatisierung(...a: Parameters<AufgabenDienst['aufgabeAusAutomatisierung']>) { return this.aufgaben.aufgabeAusAutomatisierung(...a); }
-
   private erledigeNachAnlass(...a: Parameters<AufgabenDienst['erledigeNachAnlass']>) { return this.aufgaben.erledigeNachAnlass(...a); }
-
   datumVon(mappeId: string, feld: string): Promise<string | null> { return this.automatisierungshilfen.datumVon(mappeId, feld); }
-
   mappenMitDatum(typId: string, feld: string, datum: string): Promise<string[]> { return this.automatisierungshilfen.mappenMitDatum(typId, feld, datum); }
-
   weitereRollen(): Promise<Map<string, string[]>> { return this.systemtypen.weitereRollen(); }
   entferneBenutzerMappe(id: string) { return this.systemtypen.entferneBenutzerMappe(id); }
   benutzerspiegel(): Benutzerspiegel { return this.systemtypen.benutzerspiegel(); }
 
-  /* ---------- Papierkorb (#43) ---------- */
+  /* ---------- Papierkorb (#43, loeschen/papierkorb.ts) ---------- */
 
   /** Aufbewahrung in Tagen; 0 = kein Papierkorb (Löschen ist sofort endgültig) – Kern. */
   papierkorbTage(): Promise<number> { return this.kern.papierkorbTage(); }
-
   setzePapierkorbTage(eingabe: unknown, von?: string | null): Promise<{ tage: number; geleert: number }> { return this.papierkorbVerwaltung.setzePapierkorbTage(eingabe, von); }
-
   papierkorb(ich: { id: string; rolle: string }, alle = false) { return this.papierkorbVerwaltung.papierkorb(ich, alle); }
-
   papierkorbDokumente(ich: { id: string; rolle: string }, alle = false): Promise<DokumentImKorb[]> { return this.papierkorbVerwaltung.papierkorbDokumente(ich, alle); }
-
   stelleDokumentWiederHer(...a: Parameters<Papierkorb['stelleDokumentWiederHer']>) { return this.papierkorbVerwaltung.stelleDokumentWiederHer(...a); }
-
   loescheDokumentEndgueltig(...a: Parameters<Papierkorb['loescheDokumentEndgueltig']>): Promise<number> { return this.papierkorbVerwaltung.loescheDokumentEndgueltig(...a); }
-
   papierkorbEintrag(id: string, ich: { id: string; rolle: string }, alle = false) { return this.papierkorbVerwaltung.papierkorbEintrag(id, ich, alle); }
-
   stelleWiederHer(...a: Parameters<Papierkorb['stelleWiederHer']>) { return this.papierkorbVerwaltung.stelleWiederHer(...a); }
-
   loescheEndgueltig(...a: Parameters<Papierkorb['loescheEndgueltig']>): Promise<number> { return this.papierkorbVerwaltung.loescheEndgueltig(...a); }
-
   leerePapierkorb(...a: Parameters<Papierkorb['leerePapierkorb']>): Promise<number> { return this.papierkorbVerwaltung.leerePapierkorb(...a); }
-
   raeumePapierkorbAuf(...a: Parameters<Papierkorb['raeumePapierkorbAuf']>): Promise<number> { return this.papierkorbVerwaltung.raeumePapierkorbAuf(...a); }
 
-  /* ---------- Löschprotokoll (#470) ---------- */
+  /* ---------- Löschprotokoll lesen (#470, loeschen/loeschprotokoll.ts) ---------- */
 
   loeschprotokollJahre(): Promise<number> { return this.loeschprotokollVerwaltung.loeschprotokollJahre(); }
-
   setzeLoeschprotokollJahre(eingabe: unknown, von: string): Promise<number> { return this.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(eingabe, von); }
-
   loeschprotokoll(q: Record<string, unknown>) { return this.loeschprotokollVerwaltung.loeschprotokoll(q); }
-
   loeschprotokollAusgabe(...a: Parameters<LoeschprotokollVerwaltung['loeschprotokollAusgabe']>) { return this.loeschprotokollVerwaltung.loeschprotokollAusgabe(...a); }
-
   loeschprotokollAlle(): Promise<LoeschEintrag[]> { return this.loeschprotokollVerwaltung.loeschprotokollAlle(); }
 
-  /* ---------- Demo-Daten ---------- */
+  /* ---------- Demo-Daten (#248, datenschutz/datenschutz.dienst.ts) ---------- */
 
   mappenJeTyp(): Promise<Map<string, number>> { return this.datenschutzDienst.mappenJeTyp(); }
-
   demoUebersicht() { return this.datenschutzDienst.demoUebersicht(); }
-
   entferneDemo(...a: Parameters<DatenschutzDienst['entferneDemo']>) { return this.datenschutzDienst.entferneDemo(...a); }
-
   legeDemoDokumentAn(...a: Parameters<DatenschutzDienst['legeDemoDokumentAn']>) { return this.datenschutzDienst.legeDemoDokumentAn(...a); }
 
   /* ---------- Eingangskanäle (#195, post/eingangskanaele.ts) ---------- */
@@ -1201,7 +1082,6 @@ export class Dienst {
   loescheStempelVorlage(id: string, von: string) { return this.stempelvorlagen.loescheStempelVorlage(id, von); }
   private pruefeStempelTyp(v: unknown) { return this.stempelvorlagen.pruefeStempelTyp(v); }
   private setzeStempelTyp(typId: string, st: StempelTyp | null) { return this.stempelvorlagen.setzeStempelTyp(typId, st); }
-
   loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) { return this.dokumente.loescheDokument(id, benutzerId, anlass); }
 
   /* ---------- PDF bearbeiten (#335, pdf-bearbeiten/pdf-bearbeiten.dienst.ts) ---------- */
@@ -1244,67 +1124,46 @@ export class Dienst {
   findeArchivnummer(eingabe: unknown, z?: Zugriff) { return this.mappenArchiv.findeArchivnummer(eingabe, z); }
   archivAufkleber(eingabe: unknown, von: string) { return this.mappenArchiv.archivAufkleber(eingabe, von); }
 
-  /* ---------- Vollexport (#254) ---------- */
+  /* ---------- Vollexport (#254, datenschutz/vollexport.ts) ---------- */
 
   vollexportQuelle(...a: Parameters<VollexportQuellen['vollexportQuelle']>): ExportQuelle { return this.vollexport.vollexportQuelle(...a); }
-
   persoenlicheQuelle(...a: Parameters<VollexportQuellen['persoenlicheQuelle']>): Promise<ExportQuelle> { return this.vollexport.persoenlicheQuelle(...a); }
 
-  /* ---------- Baum-Sammlung über Verweise (#396, #424) ---------- */
+  /* ---------- Baum-Sammlung über Verweise (#396, #424, loeschen/mit-verknuepften.ts) ---------- */
 
   baumQuelle(z: Zugriff): BaumQuelle { return this.mitVerknuepften.baumQuelle(z); }
-
   baum(startId: string, eingabe: unknown, z: Zugriff): Promise<Baum> { return this.mitVerknuepften.baum(startId, eingabe, z); }
 
-  /* ---------- Mappe mit allen verknüpften Mappen löschen (#424) ---------- */
+  /* ---------- Mappe mit allen verknüpften Mappen löschen (#424, loeschen/mit-verknuepften.ts) ---------- */
 
   loeschVorschau(startId: string, eingabe: unknown, z: Zugriff): Promise<LoeschVorschau> { return this.mitVerknuepften.loeschVorschau(startId, eingabe, z); }
-
   loescheMitVerknuepften(...a: Parameters<MitVerknuepften['loescheMitVerknuepften']>) { return this.mitVerknuepften.loescheMitVerknuepften(...a); }
-
   stelleVorgangWiederHer(...a: Parameters<MitVerknuepften['stelleVorgangWiederHer']>) { return this.mitVerknuepften.stelleVorgangWiederHer(...a); }
 
-  /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396) ---------- */
+  /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396, datenschutz/datenschutz.dienst.ts) ---------- */
 
   datenschutz(): Promise<Datenschutz> { return this.datenschutzDienst.datenschutz(); }
-
   setzeDatenschutz(eingabe: unknown, von: string): Promise<Datenschutz> { return this.datenschutzDienst.setzeDatenschutz(eingabe, von); }
-
   auskunftVorschau(e: unknown, z: Zugriff): Promise<AuskunftVorschau> { return this.datenschutzDienst.auskunftVorschau(e, z); }
-
   auskunftDaten(...a: Parameters<DatenschutzDienst['auskunftDaten']>): Promise<AuskunftDaten> { return this.datenschutzDienst.auskunftDaten(...a); }
-
   auskunftNachweis(...a: Parameters<DatenschutzDienst['auskunftNachweis']>) { return this.datenschutzDienst.auskunftNachweis(...a); }
-
   auskunftFrist(e: unknown, z: Zugriff, von: string): Promise<Aufgabe> { return this.datenschutzDienst.auskunftFrist(e, z, von); }
-
   auskunftVerzeichnis(...a: Parameters<DatenschutzDienst['auskunftVerzeichnis']>): Promise<AuskunftEintrag[]> { return this.datenschutzDienst.auskunftVerzeichnis(...a); }
-
   auskunftNotiz(...a: Parameters<DatenschutzDienst['auskunftNotiz']>) { return this.datenschutzDienst.auskunftNotiz(...a); }
 
-  /* ---------- Auskunft zustellen (#455): per E-Mail oder Abruf-Link mit Abrufcode ---------- */
+  /* ---------- Auskunft zustellen (#455, datenschutz/zustellen.ts) ---------- */
 
   auskunftLinks(...a: Parameters<AuskunftZustellen['auskunftLinks']>): Promise<AuskunftLink[]> { return this.auskunftZustellen.auskunftLinks(...a); }
-
   auskunftLinkAktiv(auskunftId: string): Promise<boolean> { return this.auskunftZustellen.auskunftLinkAktiv(auskunftId); }
-
   auskunftPerEmail(...a: Parameters<AuskunftZustellen['auskunftPerEmail']>) { return this.auskunftZustellen.auskunftPerEmail(...a); }
-
   auskunftLinkAnlegen(...a: Parameters<AuskunftZustellen['auskunftLinkAnlegen']>) { return this.auskunftZustellen.auskunftLinkAnlegen(...a); }
-
   auskunftLinkWiderrufen(id: string, ich: { id: string; email: string }): Promise<AuskunftLink> { return this.auskunftZustellen.auskunftLinkWiderrufen(id, ich); }
-
   auskunftAbrufPruefen(...a: Parameters<AuskunftZustellen['auskunftAbrufPruefen']>) { return this.auskunftZustellen.auskunftAbrufPruefen(...a); }
-
   auskunftLinkMitId(id: string): Promise<AuskunftLinkIntern | undefined> { return this.auskunftZustellen.auskunftLinkMitId(id); }
-
   auskunftAbrufZaehlen(id: string): Promise<number | null> { return this.auskunftZustellen.auskunftAbrufZaehlen(id); }
-
   auskunftAbgerufen(...a: Parameters<AuskunftZustellen['auskunftAbgerufen']>) { return this.auskunftZustellen.auskunftAbgerufen(...a); }
-
   persoenlicherExportErlaubt(): Promise<boolean> { return this.auskunftZustellen.persoenlicherExportErlaubt(); }
   setzePersoenlicherExport(an: unknown, von: string) { return this.auskunftZustellen.setzePersoenlicherExport(an, von); }
-
   exportAbschaetzung() { return this.auskunftZustellen.exportAbschaetzung(); }
 
   /* ---------- Archivmodus (#212) ---------- */

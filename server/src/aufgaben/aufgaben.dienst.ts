@@ -5,7 +5,7 @@
  * Ordners (sie kennen einander über `teile`); Ereignis, Konten und die Gültigkeit der Zahlen über den Anschluss.
  */
 import { randomUUID } from 'node:crypto';
-import type { EreignisseDienst } from '../ereignisse/ereignisse.dienst';
+import type { EreignisseDienst } from '../ereignisse/index';
 import { Fachfehler } from '../fehler';
 import type { Kern } from '../kern';
 import type { MappenDienst, MappenHistorie } from '../mappen';

@@ -6,16 +6,16 @@
  * über `teile`); Konten, Kurzzustand, Tresor und den Export der Automatisierungen über den Anschluss.
  */
 import { createHash, randomUUID } from 'node:crypto';
-import type { AufgabenVertretung } from '../aufgaben/vertretung';
+import type { AufgabenVertretung } from '../aufgaben';
 import type { AuskunftDaten } from '../auskunft';
 import { dateiname, type DokumentArchivfassung, type DokumenteDienst, type DokumentUmwandlung, erkenneAnzeigbar } from '../dokumente';
-import type { EreignisseDienst } from '../ereignisse/ereignisse.dienst';
+import type { EreignisseDienst } from '../ereignisse/index';
 import { Fachfehler } from '../fehler';
 import { MB } from '../grenzen';
 import type { Kern, Zugriff } from '../kern';
 import type { Kurzzustand } from '../kurzzustand';
-import type { LoeschprotokollVerwaltung } from '../loeschen/loeschprotokoll';
-import type { MitVerknuepften } from '../loeschen/mit-verknuepften';
+import type { LoeschprotokollVerwaltung } from '../loeschen';
+import type { MitVerknuepften } from '../loeschen';
 import type { MappenDienst, MappenHistorie } from '../mappen';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';

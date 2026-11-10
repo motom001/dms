@@ -8,7 +8,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { Kern } from '../kern';
 import type { TypPakete } from '../mappentypen';
-import type { KiTypen } from '../mappentypen/ki-typen';
+import type { KiTypen } from '../mappentypen';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache';

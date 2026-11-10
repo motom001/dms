@@ -26,10 +26,15 @@ const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspei
  * Seit #1077 die Technik, die Post, Ausgang und PDF bearbeiten brauchen: Seiten und Seitenbilder (pdfseiten,
  * graubild), Schwärzen, Stempeln beim Weitergeben (ausgabe), Export-Dateien (export, xlsx, zip) und den Mailer (mail,
  * nur sein Typ) – auch sie binden nur die Basis, hintergrund.ts, zwischenspeicher.ts, die PDF-Stelle und einander ein.
+ * Seit #1078 die Technik, die Löschen und Datenschutz brauchen: Baum über Verweise, Schriftstück (PDF des
+ * Löschprotokolls), Auskunft und Vollexport (Format), Abrufcode, Hashes (passwort) und aus tresor.ts nur
+ * `istVerschluesselt` – den Schlüssel selbst reicht der Dienst über den Anschluss herein. Auch sie binden nur die Basis,
+ * geheimnisse.ts, die PDF-Stelle, den Arbeiter-Pool und die Werkzeuge oben ein.
  */
 const WERKZEUGE = {
   dateien: 'messung|vektoren|hochladen|verkleinern|dateiumwandlung|archivfassung|entsperren|paketvolltext',
   ausgang: 'pdfseiten|graubild|schwaerzen|ausgabe|export|xlsx|zip|mail',
+  datenschutz: 'baum|schriftstueck|auskunft|vollexport|abruf|passwort|tresor',
   ordner: 'pdf|arbeit',
 };
 
@@ -42,9 +47,11 @@ const SCHICHTEN = [
   ['kern'], // 0: Repo, Transaktion, Ereignisse, Historie und Löschprotokoll schreiben (#961)
   ['zugriff'], // 1: Rechte prüfen (#1072)
   // 2; berechtigungen (#1076) braucht nur Kern und Rechteprüfung, und die Mappentypen prüfen damit ihre Regeln
-  ['mappentypen', 'mappen', 'dokumente', 'berechtigungen'],
+  // ereignisse (#1078) brauchen nur Kern, Rechteprüfung und die Pakete am Mappentyp – und viele brauchen sie, auch
+  // Mappen und Dokumente; Texterkennung und Rollen (Schicht 3) kommen über ihren Anschluss
+  ['mappentypen', 'mappen', 'dokumente', 'berechtigungen', 'ereignisse'],
   // 3: alle übrigen Fachordner (sichten und volltext über Mappen und Dokumenten, #1076; post, ausgang und
-  // pdf-bearbeiten ebenso, #1077; suche, aufgaben …)
+  // pdf-bearbeiten ebenso, #1077; aufgaben, loeschen, datenschutz und werkbank, #1078; suche …)
 ];
 /**
  * Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. Die
@@ -80,7 +87,7 @@ function fachordner() {
       : [
         i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN.slice(0, i + 1).flat().join('|')})/` : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
         `^server/src/(${WERKZEUGE.ordner})/`,
-        `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang})\\.ts$`,
+        `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang}|${WERKZEUGE.datenschutz})\\.ts$`,
       ];
     regeln.push({
       name,
