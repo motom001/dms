@@ -119,7 +119,7 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `zugriff/index.ts` (plus `maskiert` and `NICHT_SICHTBAR` for titles of folders the user cannot read).
 - **Gets the core** and a `ZugriffAnschluss` from the service: `kiSperre` (AI setting of packages) and `konten`.
 - **Layer 1:** imports only itself, the core, `shared/`, the base and `messung.ts`. Subject folders above get the `ZugriffDienst` when assembled (like search) and import it via `zugriff/index.ts`. The core does not import it; `kern.zugriff(ich)` calls what the service passes in.
-- **Still in the service:** the Workbench pages for permissions (later `berechtigungen/`) and `regulaerSichtbarFuer`. Since #1073 `paketSiehtNicht` lives with the [folder types](#mappentypen) (`pakete-am-typ.ts`).
+- **Still in the service:** `regulaerSichtbarFuer` (belongs to the tasks). Since #1076 the Workbench pages for permissions live in [permissions](#berechtigungen). Since #1073 `paketSiehtNicht` lives with the [folder types](#mappentypen) (`pakete-am-typ.ts`).
 
 ## Folder types (#1073) { #mappentypen }
 
@@ -136,7 +136,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 - **Door:** `mappentypen/index.ts`; only `routen.ts` loads the routes (`mappentypen.routen.ts`) directly.
 - **Gets the core**, `TypPakete` and `Systemtypen` also the [permission check](#zugriff), and per class a connector for what is still in the service (stamp, recognition and permissions on the type, tasks, titles, jobs, writing system folders).
-- **Still in the service:** the stamp on the type (`mitStempel`), `berechtigungenAusEingabe` and `ausPostZiele` (#937). Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
+- **Still in the service:** the stamp on the type (`mitStempel`) and `ausPostZiele` (#937). Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
 
 ## Folders (#1074) { #mappen }
 
@@ -172,7 +172,43 @@ The first subject area with its own business logic in its subject folder (trial 
 - **Door:** `dokumente/index.ts`; only `routen.ts` loads the routes (`dokumente.routen.ts`) directly. The technology of the versions (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) stays outside and is a tool for subject folders (see [layers](#schichten)).
 - **Gets the core** and the classes of this folder it calls, and per class a connector for what is still in the service or would run in a circle (event and titles via the facade, archive mode, shrinking, full text, jobs for packages, package settings, folder types, text recognition).
 - **Order:** `ladeHoch` writes history, “last changed”, document, full text and `dokument.hochgeladen` in one transaction; preview, converting and unlocking run afterwards. `nachFassung`, `nachEntsperren`, `archivNachVolltext` and `nachNeuerVersion` are unchanged and called from the same places.
-- **Still in the service:** full text (`volltextFertig`, `volltextAusgelassen`), editing PDFs, shrinking and redacting, `entsperrtZu`.
+- **Still in the service:** editing PDFs, shrinking and redacting, `entsperrtZu`. Since #1076 the documents call the [full text](#volltext) (`volltextFertig`, `volltextAn`) through their connector on the service.
+
+## Views (#1076) { #sichten }
+
+`server/src/sichten/` (layer 3) gathers the views of the Library – one class per topic, each getting the core; the service builds them (`baueSichtenUndVolltext()`) and keeps a one-line forward for every method:
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `sichten.dienst.ts` | `SichtenDienst` (`dienst.sichten`) | `seite`, `trefferIds`, `zaehler`, `zaehlerRahmen`, `zaehlerAbruf` (#625), `ablageStand` (#919), `beiAenderung`, `aktualisiereStatistik`; the caches of the counts, `sortierungAus` |
+| `verwalten.ts` | `SichtenVerwaltung` (`dienst.sichtenVerwaltung`) | `listeSichten`, `verborgeneSichten` (#148), `sichtTestlauf`, create, change (#917), delete, order, move, `sichtVorschau`, `sichtFuerTyp`, `belegung` |
+| `systemsichten.ts` | `Systemsichten` (`dienst.systemsichten`) | creating and looking up “New post”, “Received”, “Sent” (#192) and “Favourites” (#725) |
+
+- **Door:** `sichten/index.ts`; only `routen.ts` loads the routes (`sichten.routen.ts`) directly.
+- **Gets the core**, `SichtenDienst` also the [permission check](#zugriff), the [folders](#mappen) and the [search](#suche), and a connector for what is still in the service (validity of the counts – `mindestensMs` stays on the service –, tasks without recipient and without read permission, dates, accounts).
+- **Counts:** the caches hang on the same states as before (folder state or household state, #742, #918); the caches of the dates stay with the tasks in the service.
+- **Immediate:** the service still registers the receivers `sichten.umbenennen` and `sichten.eigeneSicht` at the [connection points](#anschlusspunkte), in unchanged order.
+
+## Permissions (#1076) { #berechtigungen }
+
+`server/src/berechtigungen/berechtigungen.dienst.ts` with the class `BerechtigungenDienst` (`dienst.berechtigungen`) is the Workbench page for permissions (#123–#127): `berechtigungenListe`, `niemandLesbar`, `setzeBerechtigungen` (with `pruefeBerechtigungen` and `protokolliereBerechtigungen`), `berechtigungenAusEingabe` (#142), `kopiereRegel`, `testlauf` (#125, #710, #798) and `laufwerkMappe` (#346). What someone may do is still worked out by the [permission check](#zugriff).
+
+- **Door:** `berechtigungen/index.ts`; there are no own routes.
+- **Gets the core**, the permission check and a connector with the accounts.
+- **Layer 2:** needs only the core and the permission check; the [folder types](#mappentypen) (also layer 2) check the rules with it when a type is saved – today still through their connector on the service.
+
+## Full text (#1076) { #volltext }
+
+`server/src/volltext/` (layer 3, above the [documents](#dokumente)):
+
+| File | Class (in the service) | Content |
+|---|---|---|
+| `volltext.dienst.ts` | `VolltextDienst` (`dienst.volltexte`) | `beiVolltextFertig`, `volltextFertig`, `volltextAusgelassen` (#946), `volltextAn`, catching up and recreating (#458), text recognition as a package (#459), `nachEreignisAufruf`, `nachTexterkennungsEreignis`, `volltext`, `schreibeVolltext`, `setzeDokumentSprache`, `teilenHinweisAus`; `VOLLTEXT_MAX`, `VolltextMeldung`, `EreignisAufruf` |
+| `aus-paketen.ts` | `VolltextAusPaketen` (`dienst.volltextAusPaketen`) | full text from packages (#614): `volltextPaketDa`, `paketWegFuerDateien`, `pruefeVolltextRecht`, `nachVolltextEreignis` |
+
+- **Door:** `volltext/index.ts`. Which package is responsible for a file type is still worked out by `paketvolltext.ts` (a tool, also for the documents).
+- **Gets the core** and the documents (text recognition, converting, archive version), plus a connector for the event (facade), jobs, `paketVolltext` and the off-site backup.
+- **Order:** `volltextFertig` first puts `volltext.fertig` into the outbox, then reports to the archive version and only with text calls the listeners (recognition) one after the other; `nachTexterkennungsEreignis` hands on as before to converting, archive version, full text from packages and backup.
 
 ### Layers { #schichten }
 
@@ -182,8 +218,8 @@ Subject folders only call downwards; within the same layer they may use each oth
 |---|---|
 | 0 | `kern/` – only itself, `shared/` and the base |
 | 1 | `zugriff/` |
-| 2 | `mappentypen/`, `mappen/`, `dokumente/` |
-| 3 | all other subject folders (`suche/`, `sichten/`, `post/`, `aufgaben/` …) |
+| 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/` |
+| 3 | all other subject folders (`suche/`, `sichten/`, `volltext/`, `post/`, `aufgaben/` …) |
 
 Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
 

@@ -37,8 +37,10 @@ const WERKZEUGE = {
 const SCHICHTEN = [
   ['kern'], // 0: Repo, Transaktion, Ereignisse, Historie und Löschprotokoll schreiben (#961)
   ['zugriff'], // 1: Rechte prüfen (#1072)
-  ['mappentypen', 'mappen', 'dokumente'], // 2
-  // 3: alle übrigen Fachordner (berechtigungen, sichten, suche, volltext, pdf-Fachlogik, ausgang, aufgaben, post …)
+  // 2; berechtigungen (#1076) braucht nur Kern und Rechteprüfung, und die Mappentypen prüfen damit ihre Regeln
+  ['mappentypen', 'mappen', 'dokumente', 'berechtigungen'],
+  // 3: alle übrigen Fachordner (sichten und volltext über Mappen und Dokumenten, #1076; suche, pdf-Fachlogik,
+  // ausgang, aufgaben, post …)
 ];
 /** Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. */
 const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer'];
