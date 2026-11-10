@@ -1,0 +1,5 @@
+art: patch
+
+## Sicherheit
+
+- **Passwörter und Geheimnisse gibt Ablago nie heraus** (#1055): Neue zentrale Sperre `server/src/geheimnis-sperre.ts`. Wer Daten für Pakete, Einrichtung, Nachweise oder Vergleiche zusammenstellt (#1053), schickt sie dort durch; von jedem Geheimnis bleibt nur „eingerichtet: ja/nein“. Das **Systemprotokoll** nutzt die Sperre schon jetzt für die Daten jedes Eintrags. Ein neuer Test legt eine Ablage mit bekannten Testgeheimnissen an (Konto, Passwortfeld, E-Mail-Versand, Postfächer mit Passwort und OAuth, Webhook, API-Schlüssel, Zwei-Faktor, Tresor, Sitzung) und durchsucht alle GET-Routen, Vollexport, persönlichen Export, Auskunft, Einrichtungsdatei und Diagnose danach – auch Base64-, URL- und Hex-kodiert. Neue Exporte müssen sich dort eintragen. Handbuch: Pakete → Rechte und Datenschutz.

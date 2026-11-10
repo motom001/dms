@@ -18,6 +18,7 @@ export const STUFEN = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'] as co
 export type Stufe = (typeof STUFEN)[number];
 const RANG: Record<Stufe, number> = { trace: 10, debug: 20, info: 30, warn: 40, error: 50, fatal: 60 };
 import { MODULE, type Modul } from '../../shared/src/protokollmodule';
+import { ohneGeheimnisse } from './geheimnis-sperre';
 import { tDe } from './sprache';
 export { MODULE, type Modul };
 
@@ -113,7 +114,8 @@ export class Protokoll {
     const e: Eintrag = { nr: ++this.nr, zeit: new Date().toISOString(), stufe, modul, text };
     if (k?.benutzer) e.benutzer = k.benutzer;
     if (k?.anfrage) e.anfrage = k.anfrage;
-    if (daten && Object.keys(daten).length) e.daten = daten;
+    // Geheimnisse nie ins Protokoll (#1055): nur „eingerichtet: ja/nein“.
+    if (daten && Object.keys(daten).length) e.daten = ohneGeheimnisse(daten);
     this.puffer.push(e);
     this.aufraeumen();
     try { this.ausgabe(zeile(e)); } catch { /* Ausgabe darf nie die Anwendung stören */ }
