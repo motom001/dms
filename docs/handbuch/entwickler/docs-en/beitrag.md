@@ -6,7 +6,7 @@
 - **Guard rails kept** ([What every contribution keeps to](index.md#was-jeder-beitrag-einhalt)): no new way outside without explicit consent and without a line in [Ways outside](aufbau.md#wege-nach-draussen), no telemetry, nothing from outside servers, open formats in the export, no secret change on updates.
 - A branch of its own, e.g. `abwesenheit-vertreter`, from current `main`.
 - **Tests** for what is new, in memory and, where data is stored, also against PostgreSQL.
-- `npm test` and `npm run typecheck` pass locally.
+- `npm test` and `npm run typecheck` pass locally, `npm run lint` and `npm run lint:abh` report no errors. Existing violations are on a list that must not grow – move yes, add no ([Style and dependencies](stil.md#bestand)).
 - **No new dependency without justification:** whoever adds an npm package under `dependencies` or an Alpine package in the `Dockerfile` answers the questions under [Architecture → Dependencies](aufbau.md#abhaengigkeiten) in the PR description. The check in the PR points this out.
 - **Manual** updated wherever something visible changes: User, Administrator or Installation manual. New ? symbols need an entry in `shared/src/hilfe.ts`.
 - **English manual** maintained too (#730): next to `docs/`, every manual has the folder `docs-en/` with the same structure. Whoever changes a German page changes the English one too – or notes in the pull request that the translation is still missing. `python3 docs/handbuch/werkzeuge/anker.py en` enters the German anchors into new English headings, `--pruefen` reports pages whose structure differs.

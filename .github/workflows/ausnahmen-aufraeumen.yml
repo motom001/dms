@@ -1,0 +1,88 @@
+# Bestandslisten aufräumen (#899): Nach jedem Push auf main streicht ESLint Einträge aus eslint-suppressions.json, die
+# nicht mehr vorkommen (`--prune-suppressions`), und dependency-cruiser schreibt seine Liste bekannter Verstöße neu.
+# Ändert sich etwas, landet das auf dem Branch ausnahmen-aufraeumen und in einem Pull Request („Bestandslisten
+# aufräumen“), der bei weiteren Läufen nur aktualisiert wird. Die Listen dürfen dabei nur schrumpfen
+# (ausnahmen-zaehlen.mjs gegen den Stand auf main).
+#
+# Pull Requests, die mit dem GITHUB_TOKEN angelegt oder aktualisiert werden, starten keine weiteren Workflows (Regel
+# von GitHub gegen Endlosschleifen) – die Pflichtprüfungen fehlen dann. Darum steht im Pull Request: einmal schließen
+# und wieder öffnen, dann laufen die Prüfungen wie bei jedem anderen Pull Request.
+name: Bestandslisten aufräumen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'web/**'
+      - 'shared/**'
+      - 'eslint.config.js'
+      - 'eslint-suppressions.json'
+      - '.dependency-cruiser.cjs'
+      - '.dependency-cruiser-known-violations.json'
+      - 'package-lock.json'
+      - '.github/werkzeuge/eslint-ablago.mjs'
+      - '.github/workflows/ausnahmen-aufraeumen.yml'
+  workflow_dispatch:
+
+# Grundsätzlich nur lesen (#221); Schreibrechte bekommt nur der Job, der sie braucht.
+permissions:
+  contents: read
+
+# Mehrere Merges kurz hintereinander: Nur der letzte Stand zählt.
+concurrency:
+  group: ausnahmen-aufraeumen
+  cancel-in-progress: true
+
+jobs:
+  aufraeumen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # Branch ausnahmen-aufraeumen schreiben und den Pull Request dazu anlegen bzw. aktualisieren.
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - name: Nicht mehr nötige Einträge streichen
+        run: |
+          npx eslint --prune-suppressions --quiet .
+          npx depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json
+          # Nur schrumpfen, nie wachsen – sonst stimmt auf main etwas nicht.
+          node .github/werkzeuge/ausnahmen-zaehlen.mjs HEAD
+      - name: Branch und Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- eslint-suppressions.json .dependency-cruiser-known-violations.json; then
+            echo "Bestandslisten sind aktuell – nichts zu tun."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -q -C ausnahmen-aufraeumen
+          git add eslint-suppressions.json .dependency-cruiser-known-violations.json
+          git commit -q -m "Bestandslisten aufräumen (#899)" -m "Erzeugt vom Workflow „Bestandslisten aufräumen“ auf Stand ${GITHUB_SHA::7}."
+          git push -q --force origin ausnahmen-aufraeumen
+          vorher=$(git show HEAD~1:eslint-suppressions.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log(Object.values(j).reduce((a,r)=>a+Object.values(r).reduce((b,x)=>b+x.count,0),0))})')
+          jetzt=$(node -e 'const j=require("./eslint-suppressions.json");console.log(Object.values(j).reduce((a,r)=>a+Object.values(r).reduce((b,x)=>b+x.count,0),0))')
+          text=$(printf '%s\n' \
+            "Erzeugt vom Workflow „Bestandslisten aufräumen“ (#899) nach Stand ${GITHUB_SHA::7} auf main: Einträge, die im Code nicht mehr vorkommen, sind gestrichen (ESLint ${vorher} → ${jetzt})." \
+            "" \
+            "**Prüfungen starten:** Mit dem GITHUB_TOKEN angelegte Pull Requests lösen keine Workflows aus. Bitte einmal *Close pull request* und wieder *Reopen* – dann laufen alle Pflichtprüfungen." \
+            "" \
+            "Keine Release-Notiz nötig: nur die Bestandslisten, kein Programmcode.")
+          nummer=$(gh pr list --repo "$REPO" --head ausnahmen-aufraeumen --base main --state open --json number -q '.[0].number')
+          if [ -n "$nummer" ]; then
+            gh pr edit "$nummer" --repo "$REPO" --body "$text"
+            echo "::notice title=Bestandslisten::Pull Request #$nummer aktualisiert (ESLint ${vorher} → ${jetzt})"
+          else
+            gh pr create --repo "$REPO" --base main --head ausnahmen-aufraeumen --title "Bestandslisten aufräumen (#899)" --body "$text"
+          fi

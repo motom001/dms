@@ -145,7 +145,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
       );
     }
     return () => { aktuell = false; };
-  }, [dokKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dokKey]); // eslint-disable-line react-hooks/exhaustive-deps -- Wortpositionen nur bei anderen Dokumenten (dokKey) laden
 
   // Vorschläge, wie das Formular sie einträgt: Erkennung, dazu Verweise aus dem Abgleich und bei Post Betreff und Datum.
   const vorschlagStart = useMemo<TypVorschlaege | undefined>(() => {
@@ -326,7 +326,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
       setFolge(n);
     });
     return () => { aktuell = false; };
-  }, [post, dokKey, zielId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [post, dokKey, zielId]); // eslint-disable-line react-hooks/exhaustive-deps -- Folge nur bei anderer Post, anderen Dokumenten oder anderem Ziel neu bestimmen
 
   /* ---------- Post: Zähler „Post 1 von N“ ---------- */
   const np = d.zaehler.neuePost;

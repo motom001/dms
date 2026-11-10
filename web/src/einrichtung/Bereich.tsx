@@ -80,7 +80,7 @@ export function useBereiche<K extends string>(liste: ReadonlyArray<readonly [K, 
   });
   const stelle = (n: Set<K>) => { if (id) merkeOffen(id, n, art); return n; };
   const springe = (k: K) => setTimeout(() => document.getElementById(k)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
-  useEffect(() => { const h = location.hash.slice(1); if (liste.some(([k]) => k === h)) springe(h as K); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const h = location.hash.slice(1); if (liste.some(([k]) => k === h)) springe(h as K); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Sprungziel aus der Adresse nur beim ersten Anzeigen
   const oeffne = (ks: K[], springen = true) => {
     setAuf((x) => stelle(new Set([...x, ...ks])));
     if (springen && ks[0]) springe(ks[0]);

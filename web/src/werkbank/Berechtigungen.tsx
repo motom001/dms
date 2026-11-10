@@ -234,7 +234,7 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
   useEffect(() => {
     if (offen) return;
     for (const x of fehlend ? fehlend.split(',') : []) api.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)'));
-  }, [fehlend, offen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fehlend, offen]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
 
   if (!offen) return (
     <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>

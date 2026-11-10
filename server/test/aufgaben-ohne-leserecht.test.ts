@@ -29,7 +29,7 @@ import { eigeneDatenbank } from './hilfe-db';
 const url = process.env.TEST_DATABASE_URL;
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
 let sql: any;
 after(async () => { await sql?.end(); });
 

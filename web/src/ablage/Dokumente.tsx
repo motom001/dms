@@ -186,7 +186,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
       }, () => {});
     }, 3000);
     return () => clearTimeout(timer);
-  }, [offen, ocr, dokumente.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [offen, ocr, dokumente.length]); // eslint-disable-line react-hooks/exhaustive-deps -- Nachfrage nur neu planen, wenn sich Texterkennung oder Dokumentzahl ändern
   async function erneut(id: string) {
     try { const x = await api.texterkennungErneut(id); setOcr((o) => ({ ...o, [id]: x.ocr })); } catch { /* bleibt */ }
   }

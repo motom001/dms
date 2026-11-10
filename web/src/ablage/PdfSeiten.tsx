@@ -31,7 +31,7 @@ export function PdfSeiten({ d, post, versioniert, papierkorb, teilAb, schliessen
       setInfo(i);
       setSeiten(Array.from({ length: i.anzahl }, (_, k) => ({ nr: k + 1, drehung: 0, weg: false, teilAb: !!teilAb && k + 1 === teilAb && k > 0 })));
     }, (e: Error) => setFehler(e.message));
-  }, [d.id, d.sha256]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [d.id, d.sha256]); // eslint-disable-line react-hooks/exhaustive-deps -- Seiten nur bei anderem Dokument oder anderem Inhalt neu laden
   // Mit Vorschlag (#579) die Kachel der Seite gleich ins Bild holen.
   useEffect(() => { if (teilAb && seiten.length >= teilAb) kacheln.current[teilAb - 1]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [teilAb, seiten.length]);
   useEffect(() => { if (fokus !== undefined) kacheln.current[fokus]?.focus(); }, [fokus, seiten]);

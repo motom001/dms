@@ -51,7 +51,7 @@ export function useNeuLadenBeiNeuerVersion(laeuft = false, schritt?: string) {
   useEffect(() => {
     if (erster.current) { erster.current = false; return; }
     if (!laeuft) void erreichbarkeit.pruefe();
-  }, [schritt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [schritt]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei einem neuen Schritt prüfen, nicht bei jeder Änderung des Prüfstands
 }
 
 /** Für regelmäßige Abfragen: solange das DMS weg ist, auslassen. */

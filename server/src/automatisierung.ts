@@ -149,7 +149,7 @@ export function speicherAutomatisierungRepo(uhr: () => number = Date.now): Autom
   };
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Zeilen aus der Datenbank, Spalten werden einzeln übernommen */
 const iso = (d: any) => (d instanceof Date ? d.toISOString() : d == null ? null : String(d));
 const alsAuto = (r: any): Gespeichert => ({
   ...(r.daten as AutomatisierungDaten), id: r.id, name: r.name, reihenfolge: r.reihenfolge, aktiv: r.aktiv, angehalten: r.angehalten ?? null,

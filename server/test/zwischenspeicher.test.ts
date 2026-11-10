@@ -88,12 +88,11 @@ describe('Lesespeicher und Zähler im Arbeitsspeicher (#741, #742)', () => {
 
 describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   type App = { inject: (o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }) => Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>; close(): Promise<void> };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   type Prozess = { sql: postgres.Sql; app: App; dienst: any; konten: any; zweifaktor: any; nachlauf: { alle(): Promise<void> }; abfragen: () => number };
   const prozesse: Prozess[] = [];
   let A!: Prozess; let B!: Prozess;
   const ids = { lena: '', jonas: '', markus: '', petra: '', rechnung: '', fibu: '', andere: '', mappe: '' };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rw!: (rollen: string[]) => Regelwerk;
   /** Eigene Datenbank (#900); beide „Prozesse“ verbinden sich mit ihr. */
   let dbUrl = '';

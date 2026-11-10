@@ -156,7 +156,7 @@ export function SichtEditor({ id }: { id: string }) {
     if (neu || !vorhanden || !stand || vorhanden.geaendert <= stand || geaendert) return;
     const frisch = JSON.stringify(datenVon(vorhanden));
     setBasis(frisch); setE(JSON.parse(frisch)); setStand(vorhanden.geaendert);
-  }, [vorhanden?.geaendert, geaendert]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [vorhanden?.geaendert, geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- nur übernehmen, wenn sich der gespeicherte Stand ändert; die übrigen Werte gelten zu diesem Zeitpunkt
   // Bereiche (#148) wie am Mappentyp: neu offen, bestehend eingeklappt bzw. wie zuletzt.
   const b = useBereiche(SICHT_BEREICHE, 'sicht', neu ? null : id);
   const [fehlerOrte, setFehlerOrte] = useState<Set<SichtBereich>>(new Set());
@@ -187,7 +187,7 @@ export function SichtEditor({ id }: { id: string }) {
       api.sichtVorschau(neu ? null : id, { ...e, name: e.name || t('werkbank.sichten.vorschau') }).then((r) => aktuell && setVorschau(r.anzahl)).catch(() => aktuell && setVorschau(null));
     }, 350);
     return () => { aktuell = false; clearTimeout(timer); };
-  }, [entwurf, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [entwurf, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschau hängt am Entwurf als Text (entwurf), nicht an der Objekt-Identität von e
 
   if (!neu && !vorhanden) return <div className="leer"><p>{t('werkbank.sichten.diese-ansicht-gibt-es')}</p></div>;
 
@@ -611,7 +611,7 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: s
   const fehlend = gewaehlt.filter((x) => !titel[x]).join(',');
   useEffect(() => {
     for (const x of fehlend ? fehlend.split(',') : []) api.mappe(x).then((r) => merke(x, titelOder(r.mappe.titel))).catch(() => merke(x, '(gelöscht)'));
-  }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
   useEffect(() => {
     if (!eingabe.trim()) { setTreffer([]); return; }
     let aktuell = true;
@@ -655,7 +655,7 @@ export function AuswahlFilter({ ziel, bedingungen, setze, eigeneFelder = [], fel
     let aktuell = true;
     const timer = setTimeout(() => { api.auswahlZaehlen(ziel.id, bedingungen).then((z) => aktuell && setZahl(z)).catch(() => aktuell && setZahl(null)); }, 300);
     return () => { aktuell = false; clearTimeout(timer); };
-  }, [ziel.id, schluessel]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ziel.id, schluessel]); // eslint-disable-line react-hooks/exhaustive-deps -- neu zählen nur bei anderem Ziel oder anderen Bedingungen (schluessel)
   const neu = (f: Bedingungsfeld): Feldbedingung => ({ art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] });
   const aendere = (i: number, b: Bedingung) => { if (b.art === 'feld') setze(bedingungen.map((x, j) => (j === i ? b : x))); };
   return (

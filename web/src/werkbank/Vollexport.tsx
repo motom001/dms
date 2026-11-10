@@ -48,12 +48,12 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
   const [kontakte, setKontakte] = useState<Record<string, KontaktZuordnung | null>>({});
   const [auftrag, setAuftrag] = useState<Auftrag | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht' | 'info'; text: string }>();
-  useEffect(() => { if (s && !Object.keys(kontakte).length) setKontakte(Object.fromEntries(s.kontakte.map((k) => [k.typId, k.zuordnung]))); }, [s]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (s && !Object.keys(kontakte).length) setKontakte(Object.fromEntries(s.kontakte.map((k) => [k.typId, k.zuordnung]))); }, [s]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorbelegung nur einmal, sobald der Stand da ist – Eingaben nicht überschreiben
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
     const timer = setInterval(() => void api.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void z.laden(); }), 1500);
     return () => clearInterval(timer);
-  }, [auftrag?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [auftrag?.status]); // eslint-disable-line react-hooks/exhaustive-deps -- Abfrage nur beim Wechsel des Status starten oder stoppen
   async function tu(f: () => Promise<string>) {
     setMeldung(undefined);
     try { setMeldung({ art: 'gut', text: await f() }); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }

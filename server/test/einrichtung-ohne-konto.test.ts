@@ -28,7 +28,7 @@ g.document = { title: '', querySelector: () => null, documentElement: { lang: 'd
 // Oberfläche prüft ihr eigener Typcheck. tsx übersetzt JSX hier klassisch (React.createElement) – darum React global.
 g.React = React;
 const WEB = new URL('../../web/src/', import.meta.url).href;
-const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any
+const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
 const { Hilfe, useHandbuch } = await lade('Hilfe.tsx');
 const { Sammelassistent } = await lade('assistent/Schritte.tsx');
 const { setzeStand, leereSammlung } = await lade('assistent/stand.ts');

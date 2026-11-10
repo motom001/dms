@@ -251,7 +251,7 @@ describe('Zustellung an einen Empfänger (#627)', () => {
 
 describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFastify ? false : 'Fastify nicht installiert' }, () => {
   let e: Awaited<ReturnType<typeof empfaenger>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let app: any; let dienst: import('../src/dienst').Dienst; let w: Webhooks;
   let cookieAdmin = ''; let cookieLena = ''; let adminId = ''; let lenaId = '';
   before(async () => {
@@ -318,7 +318,7 @@ describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFa
 
 const url = process.env.TEST_DATABASE_URL;
 describe('Webhooks in PostgreSQL (#627)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let haupt: any; let sql: any;
   const db = `dms_webhook_${process.pid}`;
   const HAUSHALT = '00000000-0000-4000-8000-000000000001';

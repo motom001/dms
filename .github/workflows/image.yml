@@ -153,6 +153,43 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Stil und Abhängigkeiten (#899), parallel zu „pruefen“: ESLint (mit Typinformation) und dependency-cruiser.
+  # Bestand steht in eslint-suppressions.json bzw. .dependency-cruiser-known-violations.json und meldet sich nicht;
+  # neuer Code ist voll streng. Die beiden Listen dürfen nie wachsen – umtragen ja, hinzufügen nein.
+  # Einträge, die nicht mehr vorkommen, räumt der Workflow „Bestandslisten aufräumen“ auf main ab.
+  stil:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Bestandslisten wachsen nicht
+        if: github.event_name == 'pull_request'
+        env:
+          BASIS: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch -q --depth 1 origin "$BASIS"
+          node --test .github/werkzeuge/ausnahmen-zaehlen.test.mjs
+          node .github/werkzeuge/ausnahmen-zaehlen.mjs "$BASIS"
+      - run: npm ci --no-audit --no-fund
+      - name: Abhängigkeiten (dependency-cruiser)
+        run: npm run lint:abh
+      # Nur Fehler; jeder erscheint als Anmerkung an der Zeile im Pull Request.
+      - name: ESLint
+        run: npx eslint --pass-on-unpruned-suppressions --quiet --format ./.github/werkzeuge/eslint-github.mjs .
+      # Warnungen (z. B. Komplexität über 15) nur für die geänderten Dateien – als Hinweis, sie brechen nichts.
+      - name: Hinweise zu geänderten Dateien
+        if: github.event_name == 'pull_request'
+        env:
+          BASIS: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          mapfile -t dateien < <(git diff --name-only --diff-filter=d "$BASIS" HEAD -- 'server/src/*.ts' 'server/test/*.ts' 'web/src/*.ts' 'web/src/*.tsx' 'shared/src/*.ts')
+          if [ "${#dateien[@]}" -eq 0 ]; then echo "Keine geänderten Dateien mit Hinweisen."; exit 0; fi
+          npx eslint --pass-on-unpruned-suppressions --format ./.github/werkzeuge/eslint-github.mjs "${dateien[@]}"
+
   # Pull Requests: Image für beide Architekturen bauen (ohne Veröffentlichung), jeweils auf
   # einem passenden Rechner (#88), und prüfen, ob die Werkzeuge im Image laufen – so fallen
   # falsche Paketnamen und Probleme mit arm64 vor dem Merge auf.

@@ -7,7 +7,7 @@ import { t, tn } from '../sprache';
  * Lesbare API-Dokumentation (#20), erzeugt aus /api/openapi.json der
  * installierten Version – ohne fremde Bibliothek.
  */
-type J = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+type J = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- OpenAPI-Beschreibung, beliebig geschachteltes JSON
 
 export function ApiDoku() {
   const [doc, setDoc] = useState<J | null>(null);

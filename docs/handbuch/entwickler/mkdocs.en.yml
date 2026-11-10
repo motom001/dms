@@ -72,6 +72,7 @@ nav:
   - Who we build for: personas.md
   - Getting started: loslegen.md
   - Submitting a contribution: beitrag.md
+  - Style and dependencies: stil.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

@@ -194,7 +194,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     setAuf((x) => stelle(new Set([...x, ...ks])));
     if (springen && ks[0]) springe(ks[0]);
   };
-  useEffect(() => { const h = location.hash.slice(1); if (TYP_BEREICHE.some(([k]) => k === h)) springe(h as TypBereich); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const h = location.hash.slice(1); if (TYP_BEREICHE.some(([k]) => k === h)) springe(h as TypBereich); }, []);
   // Drag & Drop (#74): Felder umsortieren oder auf ein Feldregister ziehen; ändert nur den Entwurf.
   const zf = useZiehen({
     erlaubt: (_q, ziel, ort) => ort !== 'in' || ziel.startsWith('reg:'),
@@ -233,7 +233,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     if (neu || !gespeichert || !stand || gespeichert.geaendert <= stand || ent.geaendert) return;
     const frisch = entwurfAus(gespeichert);
     setE(frisch); setBasis(JSON.stringify(frisch)); setStand(gespeichert.geaendert);
-  }, [gespeichert?.geaendert, ent.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gespeichert?.geaendert, ent.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- nur übernehmen, wenn sich der gespeicherte Stand ändert
   // Der Entwurf als Mappentyp, für Regeln und Prüfungen im Editor.
   const entwurfTyp = { id: e.id, name: e.name, beschreibung: e.beschreibung, system: system ?? null, felder: e.felder as unknown as Feld[], register: [], erstellt: '', geaendert: '' } as unknown as Mappentyp;
   // Fehler, die man schon vor dem Speichern sieht.
@@ -833,7 +833,7 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
   useEffect(() => {
     if (d.zahlenDa && !d.anzahl(e.id)) return;
     api.seite(`typ:${e.id}`, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
-  }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps -- Beispiele nur bei anderem Typ oder neuem Stand laden
   const felder = e.felder as unknown as Feld[];
   const v = e.titelVorlage;
   const unbekannt = vorlageFelder(v).filter((k) => !istIndexplatzhalter(k) && !felder.some((f) => f.key === k));
@@ -1269,7 +1269,7 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
     let aktuell = true;
     api.archivVorschau(typId, archiv).then((v) => aktuell && setVorschau(v)).catch(() => aktuell && setVorschau(null));
     return () => { aktuell = false; };
-  }, [text, typId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [text, typId]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschau hängt am eingegebenen Text; archiv wird daraus abgeleitet
   const vorschlag = FRISTEN.some((f) => f.jahre === archiv?.jahre);
   return (
     <div className="stapel">

@@ -17,7 +17,7 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const MIGRATIONEN = fileURLToPath(new URL('../migrations', import.meta.url));
 
 describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sql aus dynamisch geladenem Modul; Typ im Test ohne Belang
   type Sql = any;
   let haupt: Sql;
   const offen: Sql[] = [];

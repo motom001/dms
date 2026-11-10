@@ -4,7 +4,6 @@
  * Quellen: Vorlage der Registry (MIT), SPDX (BSD), Debian common-licenses (Apache, MPL, GPL, LGPL, CC0),
  * LICENSE des DMS bis 0.92.0 (AGPL).
  */
-/* eslint-disable */
 export const LIZENZTEXTE: Record<string, string> = {
   'MIT': `MIT License
 

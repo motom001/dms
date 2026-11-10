@@ -193,7 +193,7 @@ describe('Automatisierungen (#674): Ausführen', () => {
 
 const url = process.env.TEST_DATABASE_URL;
 describe('Automatisierungen in PostgreSQL (#674)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let haupt: any; let sql: any;
   const db = `dms_auto_${process.pid}`;
   const HAUSHALT = '00000000-0000-4000-8000-000000000001';

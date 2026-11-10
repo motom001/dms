@@ -1,0 +1,1568 @@
+{
+  "server/src/ablago.ts": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 4
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "server/src/anbindung.ts": {
+    "max-params": {
+      "count": 1
+    },
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/src/api-v1.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "server/src/apischluessel.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/src/arbeit/arbeitsfaden.ts": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "server/src/archivfassung.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/aufteilung.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/ausgabe.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/auskunft.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/automatisierung-karten.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/automatisierung.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "server/src/baum.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/beispiele.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/betrieb.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 2
+    },
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/src/datenbankabzug.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/src/demo.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 10
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/dienst.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 18
+    },
+    "complexity": {
+      "count": 32
+    },
+    "max-depth": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 6
+    },
+    "max-params": {
+      "count": 8
+    },
+    "no-control-regex": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/dms.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/eingangsordner.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/einrichtungsdatei.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/einrichtungsmodus.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/ereignisse.ts": {
+    "max-depth": {
+      "count": 2
+    }
+  },
+  "server/src/erkennung.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/export.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/src/fragen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/geheimnisse.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/http.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/klassifizierung.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/konten.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "server/src/konto-repo.ts": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "server/src/kurzzustand.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "server/src/laeufer/arbeiter.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/laeufer/modul.ts": {
+    "max-depth": {
+      "count": 2
+    }
+  },
+  "server/src/laeufer/verwaltung.ts": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "server/src/laeufer/webassembly.d.ts": {
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 2
+    }
+  },
+  "server/src/messung.ts": {
+    "@typescript-eslint/no-this-alias": {
+      "count": 1
+    }
+  },
+  "server/src/oidc.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "server/src/pakete.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 6
+    },
+    "complexity": {
+      "count": 16
+    },
+    "max-depth": {
+      "count": 7
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 6
+    },
+    "max-params": {
+      "count": 2
+    },
+    "no-control-regex": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/paketerstellung.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 4
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/anzeige.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "server/src/pdf/archiv.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/bild.ts": {
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/demo-dokumente.ts": {
+    "max-params": {
+      "count": 2
+    },
+    "no-irregular-whitespace": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/export.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/laden.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "server/src/pdf/notfallblatt.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/schreiber.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/schwaerzen.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/pdf/verkleinern.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/postfach-oauth.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "server/src/postfach.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "no-control-regex": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/protokoll.ts": {
+    "@typescript-eslint/no-this-alias": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/protokollsammlung.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/prozesse.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "server/src/prozessgruppen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/repo-pg.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    },
+    "max-params": {
+      "count": 2
+    }
+  },
+  "server/src/repo-speicher.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 2
+    }
+  },
+  "server/src/routen.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 6
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/schriftstueck.ts": {
+    "no-control-regex": {
+      "count": 1
+    },
+    "no-irregular-whitespace": {
+      "count": 2
+    }
+  },
+  "server/src/sicherung.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/src/sicherungsformat.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/src/system.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/systemlast.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/texterkennung.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "server/src/uebersetzung.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/src/umwandlung.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "server/src/verwaltungsbereiche.ts": {
+    "no-fallthrough": {
+      "count": 1
+    }
+  },
+  "server/src/vollexport.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 6
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/wartung.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/webdav-baum.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/webdav.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "server/src/webhook.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "server/src/wiederherstellung.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 3
+    },
+    "max-depth": {
+      "count": 7
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/xlsx.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/test/abfragestatistik.test.ts": {
+    "no-regex-spaces": {
+      "count": 1
+    }
+  },
+  "server/test/admin-aufgaben.test.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "server/test/archiv-protokoll.test.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/test/archivfassung.test.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/test/aufgaben.test.ts": {
+    "no-regex-spaces": {
+      "count": 1
+    }
+  },
+  "server/test/automatisierung-karten.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/darstellung.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "server/test/dateiumwandlung.test.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/test/dokument-uebernehmen.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 4
+    }
+  },
+  "server/test/einrichtungsdatei.test.ts": {
+    "no-regex-spaces": {
+      "count": 1
+    }
+  },
+  "server/test/erweitertesuche.test.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/test/exportordner.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/gleichzeitig.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/hilfen-arbeitsfaden.ts": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "server/test/laeufer.test.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/test/lasttest-grenzen.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    }
+  },
+  "server/test/lasttest-protokoll-cpu.test.ts": {
+    "no-regex-spaces": {
+      "count": 2
+    }
+  },
+  "server/test/lasttest.mjs": {
+    "no-unused-vars": {
+      "count": 5
+    }
+  },
+  "server/test/lasttestmodus-e2e.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    },
+    "no-regex-spaces": {
+      "count": 3
+    }
+  },
+  "server/test/lasttestmodus.test.ts": {
+    "no-regex-spaces": {
+      "count": 4
+    }
+  },
+  "server/test/notizen.test.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/test/pakete.test.ts": {
+    "no-regex-spaces": {
+      "count": 1
+    }
+  },
+  "server/test/paketvolltext.test.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/test/pg.test.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/test/postfach.test.ts": {
+    "@typescript-eslint/no-this-alias": {
+      "count": 1
+    }
+  },
+  "server/test/prozesse-e2e.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "server/test/prozesse.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/sicherung-extern.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/sichtrechte.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/sprachpakete.test.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/test/startmodus.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "server/test/system.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 5
+    }
+  },
+  "server/test/vollexport.test.ts": {
+    "no-irregular-whitespace": {
+      "count": 2
+    }
+  },
+  "server/test/wiederherstellung.test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/test/zaehlerspeicher.test.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "server/test/zwischenspeicher-termine.test.ts": {
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "shared/src/auskunft.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/automatisierung.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "shared/src/darstellung.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "shared/src/dateiumwandlung.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/demodaten.ts": {
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "shared/src/direktlink.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "shared/src/entdecken.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    },
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "shared/src/erkennung.ts": {
+    "complexity": {
+      "count": 7
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "no-irregular-whitespace": {
+      "count": 2
+    },
+    "no-useless-assignment": {
+      "count": 1
+    },
+    "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "shared/src/erweitertesuche.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "shared/src/feldformate.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "shared/src/fragen.ts": {
+    "no-control-regex": {
+      "count": 1
+    },
+    "no-irregular-whitespace": {
+      "count": 1
+    }
+  },
+  "shared/src/heimnetz.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/klassifizierung.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/loeschbaum.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/loeschkonzept.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "shared/src/loeschprotokoll.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/model.ts": {
+    "complexity": {
+      "count": 4
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "shared/src/pakete.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 5
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "shared/src/paketeinstellungen.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "shared/src/rechte.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "shared/src/seitensprachen.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "shared/src/sichten.ts": {
+    "complexity": {
+      "count": 7
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "shared/src/sprachpaket.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "shared/src/sprachpruefung.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "shared/src/stempel.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/suche.ts": {
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "shared/src/titelfilter.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/typvergleich.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/uebernehmen.ts": {
+    "no-irregular-whitespace": {
+      "count": 2
+    },
+    "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "shared/src/volltext.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/App.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/Ablage.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 3
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Aktionen.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Aufgaben.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Dokumente.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 3
+    },
+    "complexity": {
+      "count": 4
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/EmailMehrere.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Historie.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "no-duplicate-case": {
+      "count": 1
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/LoeschBaum.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/MappeFormular.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    },
+    "complexity": {
+      "count": 8
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/NeuePost.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Notizen.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Papierkorb.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/ablage/Post.tsx": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "web/src/ablage/PostKamera.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Schwaerzen.tsx": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Startseite.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Stempel.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Suche.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Termine.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/Uebernehmen.tsx": {
+    "complexity": {
+      "count": 4
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/api.ts": {
+    "max-lines": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 2
+    }
+  },
+  "web/src/assistent/Schritte.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "web/src/bereiche.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/einrichtung.tsx": {
+    "complexity": {
+      "count": 2
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/einrichtung/Einrichtung.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 13
+    },
+    "complexity": {
+      "count": 3
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "web/src/konto.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 4
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/lasttest.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/messung.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "web/src/profil/Abwesenheit.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/profil/ApiSchluessel.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "web/src/profil/DokumentPasswoerter.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "web/src/profil/Laufwerk.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "web/src/profil/Profil.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 4
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/profil/Webhooks.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 3
+    }
+  },
+  "web/src/profil/Zweifaktor.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    }
+  },
+  "web/src/seiten.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Anmeldeschutz.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Aufgaben.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Auslastung.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Automatisierungen.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 6
+    },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Benutzer.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 7
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Berechtigungen.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Betrieb.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Datenbank.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Datenschutz.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Demo.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Designs.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Eingangsordner.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Loeschprotokoll.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/MailVersand.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Nummernkreise.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/PaketAblauf.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/PaketEinstellungen.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/PaketErstellen.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Pakete.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 6
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/PaketeDazuholen.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Postfaecher.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/Sicherung.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 4
+    },
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/werkbank/Sichten.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/SucheEinstellungen.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Uebersicht.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Verkleinern.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Verschluesselung.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 3
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Vollexport.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Wartungsmodus.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 5
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Webhooks.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Werkbank.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Zustellen.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/werte.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "web/src/wiederherstellen.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 2
+    }
+  }
+}

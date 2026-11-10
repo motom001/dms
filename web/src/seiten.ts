@@ -57,7 +57,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     } finally {
       if (nr === lauf.current) setLaedt(false);
     }
-  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen, link]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen, link]); // eslint-disable-line react-hooks/exhaustive-deps -- lade hängt an den Suchparametern, die übrigen Werte liest es über Refs
 
   // Neue Sicht oder Suche: von vorn.
   useEffect(() => { setMappen([]); setGesamt(null); geladen.current = 0; void lade(0, SEITE, true); }, [lade]);
@@ -66,7 +66,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   useEffect(() => {
     if (stand === ersterStand.current) return;
     void lade(0, Math.min(500, Math.max(SEITE, geladen.current)), true);
-  }, [stand]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stand]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei neuem Stand nachladen
 
   const mehr = useCallback(() => {
     if (laedt || gesamt === null || mappen.length >= gesamt) return;

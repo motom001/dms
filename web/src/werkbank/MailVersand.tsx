@@ -125,7 +125,7 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
     const a = anbieterFuerAdresse(adresse);
     if (a) { setSuche({ domain: domainVon(adresse)!, gefragt: [], fund: { host: a.host, port: a.port, verbindung: a.verbindung, quelle: 'liste', anbieter: a.id, benutzer: 'adresse' } }); schlageVor(adresse, a); }
     else if (domainVon(adresse)) schlageVor(adresse, null);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschlag nur beim ersten Anzeigen, spätere Eingaben nicht überschreiben
 
   /** Server zur Adresse suchen (beim Verlassen des Felds); Thunderbird nur auf Knopfdruck. */
   async function finden(thunderbird = false) {

@@ -631,7 +631,7 @@ export function archivnummerAus(v: unknown): string | null {
 }
 
 function dateiname(v: unknown): string {
-  // eslint-disable-next-line no-control-regex
+  // eslint-disable-next-line no-control-regex -- Steuerzeichen aus Dateinamen entfernen ist der Zweck
   const s = text(v).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim();
   return (s || 'Dokument').slice(0, 200);
 }

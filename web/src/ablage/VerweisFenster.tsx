@@ -41,7 +41,7 @@ export function VerweisFenster({ ziel, zurueck, schliessen, children }: {
     (el ?? ref.current)?.focus();
     const z = zurueck.current;
     return () => { window.setTimeout(() => z?.focus(), 0); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Fokus nur beim Öffnen setzen und beim Schließen zurückgeben
 
   /** Im sichtbaren Bereich halten (auch nach dem Drehen des Handys). */
   const begrenze = useCallback((x: number, y: number) => {

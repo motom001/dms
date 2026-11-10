@@ -56,7 +56,7 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
     if (!offen || !liste.length) return;
     setAuf((x) => new Set(x).add(offen));
     rahmen.current?.querySelector(`[data-id="${CSS.escape(offen)}"]`)?.scrollIntoView({ block: 'nearest' });
-  }, [offen, liste.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [offen, liste.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps -- nur aufklappen, wenn sich der offene Eintrag ändert oder die Liste erstmals da ist
   const umschalten = (id: string) => setAuf((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <div className="stapel">
