@@ -398,7 +398,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           <p className="leise">{t('pakete.ablauf.rechte.text', { anzahl: mitCode.length })}</p>
           {mitCode.map((p) => (
             <div key={p.schluessel} className="pa-rechte">
-              <h3 className="klein">{p.name} {p.version}{p.vorschau.paket.herausgeber && <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {p.vorschau.paket.herausgeber}</span>}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
+              <h3 className="klein">{p.name} {p.version}{p.vorschau.paket.herausgeber && <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {p.vorschau.paket.herausgeberGeprueft ? p.vorschau.paket.herausgeber : t('werkbank.pakete.herausgeber-ungeprueft', { wer: p.vorschau.paket.herausgeber })}</span>}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
               <ul className="klein">
                 {p.vorschau.laeufer!.rechte.map((r) => (
                   <li key={r.text}>{r.text} <Hilfe ort={r.hilfe} />{r.unter && <ul>{r.unter.map((u) => <li key={u.text}>{u.text} <Hilfe ort={u.hilfe} /></li>)}</ul>}</li>

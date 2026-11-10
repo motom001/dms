@@ -1694,6 +1694,7 @@
   "pakete.kein-hochgeladenes-paket-lade": "Kein hochgeladenes Paket. Lade im Expertenmodus eine .zip-Datei hoch.",
   "pakete.hochgeladenes-paket": "Hochgeladenes Paket",
   "pakete.herausgeber": "Herausgeber",
+  "pakete.herausgeber-ungeprueft": "Herausgeber laut Paket: {wer} – nicht geprüft",
   "pakete.datei": "Datei",
   "pakete.version-3": "Version {installiert}{wert}",
   "pakete.hochgeladen-aus-der-datei": "Hochgeladen aus der Datei „{datei}“",

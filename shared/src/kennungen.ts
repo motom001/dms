@@ -20,7 +20,7 @@ export const PAKET_ZUSATZ_MAX = 20;
 export const SCHLUESSEL_MAX = 60;
 
 /** Teilmuster (ohne Anker) zum Zusammensetzen. */
-export const PAKET_ID_TEIL = `[a-z][a-z0-9_]{1,${PAKET_ID_MAX - 1}}(?:\\.[a-z][a-z0-9_]{1,${PAKET_ZUSATZ_MAX - 1}})?`;
+export const PAKET_ID_TEIL = `[a-z][a-z0-9_]{1,${PAKET_ID_MAX - 1}}(?:\\.[a-z][a-z0-9_]{0,${PAKET_ZUSATZ_MAX - 1}})?`;
 export const SCHLUESSEL_TEIL = `[a-z][a-z0-9_]{0,${SCHLUESSEL_MAX - 1}}`;
 
 /** Paket-Id, z. B. `basis`, `haus_und_garten`, `texterkennung.fra`. */
@@ -51,10 +51,25 @@ export function teileKennung(kennung: string): { paket: string | null; schluesse
 
 /**
  * Herausgeber eines Pakets (#1084): umgedrehte Domain, z. B. `app.ablago` (offizielle Pakete) oder `org.example`.
- * Mindestens zwei Teile, je Kleinbuchstaben, Ziffern und Bindestriche (nicht am Rand), höchstens 100 Zeichen.
+ * Nur ASCII: mindestens zwei Teile, je Kleinbuchstaben, Ziffern und Bindestriche (nicht am Rand), höchstens 64 Zeichen,
+ * kein Punycode (`xn--`) – damit nichts wie `app.ablago` aussieht, ohne es zu sein. Angezeigt wird er immer ganz.
  */
-export const HERAUSGEBER_MAX = 100;
+export const HERAUSGEBER_MAX = 64;
 export const HERAUSGEBER = /^[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?){1,9}$/;
 /** Herausgeber der offiziellen Pakete (Katalog des Projekts). */
 export const OFFIZIELLER_HERAUSGEBER = 'app.ablago';
-export const istHerausgeber = (v: unknown): v is string => typeof v === 'string' && v.length <= HERAUSGEBER_MAX && HERAUSGEBER.test(v);
+export const istHerausgeber = (v: unknown): v is string => typeof v === 'string' && v.length <= HERAUSGEBER_MAX && HERAUSGEBER.test(v) && !v.split('.').some((t) => t.startsWith('xn--'));
+/** `app.ablago` und alles darunter (`app.ablago.*`) gehört dem Projekt (#1084, Sicherheit C). */
+export const istOffiziellerHerausgeber = (h: string | null | undefined): boolean => !!h && (h === OFFIZIELLER_HERAUSGEBER || h.startsWith(`${OFFIZIELLER_HERAUSGEBER}.`));
+
+/**
+ * Kennung eines Mappentyps in Datei- und Ordnernamen (#1084, Sicherheit A): nie mit Doppelpunkt (Windows/SMB lehnen ihn
+ * ab, manche Systeme trennen damit Pfade). Die eine feste, umkehrbare Schreibweise: `paket.schluessel` – eindeutig,
+ * weil Schlüssel keinen Punkt enthalten und die Paket-Id höchstens einen; zurück mit {@link kennungAusDateiname}.
+ */
+export const kennungAlsDateiname = (kennung: string): string => kennung.replace(':', '.');
+/** Umkehrung von {@link kennungAlsDateiname}: der letzte Punkt trennt Paket und Schlüssel. */
+export function kennungAusDateiname(name: string): string {
+  const i = name.lastIndexOf('.');
+  return i < 0 ? name : `${name.slice(0, i)}:${name.slice(i + 1)}`;
+}

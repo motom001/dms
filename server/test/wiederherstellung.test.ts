@@ -464,6 +464,10 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     await q.sql`INSERT INTO mappentypen (id, haushalt_id, name, schluessel, register, trefferlisten) VALUES
       (${a}, ${HAUSHALT}, 'Pflanze', 'haus_garten_pflanze', ${reg}, ${tl}), (${b}, ${HAUSHALT}, 'Beet', 'haus_garten_beet', ${reg}, ${tl}),
       (${c}, ${HAUSHALT}, 'Eigen', 'garten_pflanze', ${reg}, ${tl})`;
+    // Rechte-Regeln am Typ (per uuid): nach dem Wiederherstellen und der Umstellung genau dieselben (Sicherheit D).
+    const regel = { grund: { C: 'nie', R: 'immer', U: 'nie', D: 'nie', P: 'nie' }, regeln: [{ wer: { art: 'rolle', id: '00000000-0000-4000-8000-0000000000e1' }, rechte: { U: 'immer' } }] };
+    await q.sql`UPDATE mappentypen SET berechtigungen = ${q.sql.json(regel)} WHERE id = ${a}`;
+    const rechteVorher = await q.sql`SELECT id::text, berechtigungen FROM mappentypen ORDER BY id`;
     await q.sql`INSERT INTO pakete (haushalt_id, id, version, daten) VALUES
       (${HAUSHALT}, 'haus', '1.0.0', ${q.sql.json({ id: 'haus', typen: { garten_pflanze: a } })}),
       (${HAUSHALT}, 'haus_garten', '1.0.0', ${q.sql.json({ id: 'haus_garten', typen: { beet: b } })})`;
@@ -481,5 +485,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.deepEqual(typen.map((r: Record<string, unknown>) => [r.id, r.paket, r.schluessel]), [
       [a, 'haus', 'garten_pflanze'], [b, 'haus_garten', 'beet'], [c, null, 'garten_pflanze'],
     ], 'haus_garten_pflanze gehört laut Paket zu haus, nicht zu haus_garten; der eigene Typ bleibt');
+    assert.deepEqual(await neu`SELECT id::text, berechtigungen FROM mappentypen ORDER BY id`, rechteVorher, 'dieselben Rechte-Regeln je Typ');
+    assert.equal((await neu`SELECT daten->>'herausgeber' AS h FROM pakete WHERE id = 'haus'`)[0].h, null, 'nicht aus dem offiziellen Katalog: Herausgeber bleibt offen');
   });
 });

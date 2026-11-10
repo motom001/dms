@@ -233,7 +233,7 @@ export interface Repo {
   speicherePaket(p: InstalliertesPaket): Promise<void>;
   loeschePaket(id: string): Promise<void>;
   /**
-   * Umzug auf eine neue Paket-Id (#1084, Manifest `frueher`, z. B. texterkennung_fra → texterkennung.fra): dieselbe
+   * Umzug auf eine neue Paket-Id (#1084, Manifest `ersetzt`, z. B. texterkennung_fra → texterkennung.fra): dieselbe
    * Installation unter neuer Id – Eintrag, Abhängigkeiten anderer Pakete, Code, Sprachtexte, Ereignisse, Wortlisten,
    * Herkunft der Mappentypen, Vektoren, mitgelieferte Automatisierungen und Dienstkonto (PostgreSQL in einer
    * Transaktion). Einstellungen zieht die Paketverwaltung über die Einstellungen um.
@@ -716,6 +716,8 @@ export interface Repo {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Adresse eines Dienstkontos (#338) – mit Haushalt, weil die Adresse über alle Haushalte eindeutig ist (benutzer_email_uq). */
+export const dienstEmail = (paketId: string, haushaltId: string) => `paket-${paketId}.${haushaltId}@dienst.invalid`;
 export const istUuid = (s: unknown): s is string => typeof s === 'string' && UUID.test(s);
 
 /** Nummern ziehen beim Anlegen (#171): Feld → Kreis, Tag des Ziehens. */

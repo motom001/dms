@@ -21,6 +21,7 @@ import type { PapierkorbEintrag } from './repo';
 import { alsZeile, LOESCH_SPALTEN, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { t } from './sprache';
 import { EXPORT_STUECK_ZEICHEN as STUECK_ZEICHEN } from './grenzen';
+import { kennungAlsDateiname } from '../../shared/src/kennungen';
 
 /**
  * Vollexport aller Daten in offenen Formaten (#254): ein Ordner, lesbar ohne das DMS.
@@ -409,7 +410,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   for (const mappentyp of typen) {
     const ms = jeTyp.get(mappentyp.id) ?? [];
     // Kennung `paket:schluessel` (#1084): im Dateinamen mit Punkt statt Doppelpunkt (Windows kennt keinen Doppelpunkt).
-    const dateiname = sichererName(mappentyp.schluessel?.replace(':', '.') || mappentyp.name, 130);
+    const dateiname = sichererName(mappentyp.schluessel ? kennungAlsDateiname(mappentyp.schluessel) : mappentyp.name, 130);
     // CSV und JSON Lines: alle Felder, Verweise als Id und Titel.
     const kopf = ['id', 'titel', 'angelegt', 'angelegt_von', 'geaendert', 'geaendert_von', ...(mappentyp.archiv ? ['aufbewahren_bis'] : []),
       ...mappentyp.felder.flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];

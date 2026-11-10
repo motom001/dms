@@ -174,7 +174,7 @@ export function speicherRepo(): Repo {
   };
 
   // Paket der Kennung (#1084): wie in PostgreSQL getrennt – abgeleitet aus `paket:schluessel`, nie aus der Eingabe.
-  const ohnePaket = <T extends object>(d: T): T => { const { paket: _p, ...rest } = d as T & { paket?: string }; return rest as T; };
+  const ohnePaket = <T extends object>(d: T): T => { const rest = { ...d } as T & { paket?: string }; delete rest.paket; return rest; };
   const mitPaket = (t: Mappentyp): Mappentyp => {
     const p = t.schluessel ? teileKennung(t.schluessel).paket : null;
     if (p) t.paket = p; else delete t.paket;

@@ -6,11 +6,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { hauptpaket, istHerausgeber, PAKET_ID, SCHLUESSEL, teileKennung, TYP_KENNUNG, typKennung, TYPVERWEIS } from '../../shared/src/kennungen';
+import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, kennungAlsDateiname, kennungAusDateiname, PAKET_ID, SCHLUESSEL, teileKennung, TYP_KENNUNG, typKennung, TYPVERWEIS } from '../../shared/src/kennungen';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
+import { sichererName } from '../src/export';
 import { neueKennung } from '../src/pakete';
 import { speicherRepo } from '../src/repo-speicher';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
@@ -39,6 +40,30 @@ describe('Kennungen (#1084)', () => {
     assert.deepEqual(teileKennung('rechnung'), { paket: null, schluessel: 'rechnung' });
     for (const h of ['app.ablago', 'org.example', 'org.example.pakete', 'de.familie-meier']) assert.ok(istHerausgeber(h), h);
     for (const h of ['ablago', 'App.ablago', 'org.-example', 'org.example-', 'org..example', `org.${'x'.repeat(100)}`]) assert.ok(!istHerausgeber(h), h);
+  });
+
+  it('Punkt-Id genau nach dem Muster der Sicherheit: ein Punkt, nicht am Rand, nur ASCII-Kleinbuchstaben', () => {
+    assert.equal(PAKET_ID.source, '^[a-z][a-z0-9_]{1,39}(?:\\.[a-z][a-z0-9_]{0,19})?$');
+    for (const x of ['texterkennung.f', 'texterkennung.fra', 'ab', 'a_1.b_2']) assert.ok(PAKET_ID.test(x), x);
+    for (const x of ['.x', 'x.', 'ab.', 'a..b', 'ab..cd', 'a.b.c', 'ab.cd.ef', 'Ab', 'ab.Cd', 'äb', 'ab.ü', 'ab\u0131', 'ab.c d', 'ab/cd', 'ab\\cd', '..']) assert.ok(!PAKET_ID.test(x), JSON.stringify(x));
+    // Herausgeber: ASCII, mindestens zwei Teile, höchstens 64 Zeichen, kein Punycode; app.ablago auch als Präfix reserviert.
+    assert.ok(!istHerausgeber('app.xn--blago-9ra') && !istHerausgeber(`org.${'x'.repeat(61)}`) && istHerausgeber(`org.${'x'.repeat(60)}`));
+    assert.ok(istOffiziellerHerausgeber('app.ablago') && istOffiziellerHerausgeber('app.ablago.foo'));
+    assert.ok(!istOffiziellerHerausgeber('app.ablago-community') && !istOffiziellerHerausgeber('app.ablagox'));
+  });
+
+  it('Kennung in Datei- und Ordnernamen: nie mit Doppelpunkt, eine feste, umkehrbare Schreibweise', () => {
+    for (const k of ['basis:person', 'texterkennung.fra:sprache', 'rechnung', 'haus_garten:pflanze']) {
+      const n = kennungAlsDateiname(k);
+      assert.ok(!n.includes(':'), n);
+      assert.equal(kennungAusDateiname(n), k);
+    }
+    assert.equal(kennungAlsDateiname('basis:person'), 'basis.person');
+    // Anzeigenamen mit Pfadteilen werden nie zu Pfaden (Vollexport nimmt sonst den Namen).
+    for (const name of ['..', '../geheim', 'a/b', 'a\\b', 'x:y']) {
+      const n = sichererName(name, 130);
+      assert.ok(!n.includes('/') && !n.includes('\\') && !n.includes(':') && !n.startsWith('.'), JSON.stringify(n));
+    }
   });
 
   it('kein Kollisionsfall mehr: haus + garten_pflanze und haus_garten + pflanze sind zwei Kennungen', () => {
@@ -113,6 +138,15 @@ describe('Migration 093 (#1084) – PostgreSQL', () => {
     assert.equal(k.get(eigen.id), 'garten_pflanze', 'eigener Typ bleibt ohne Paket');
     assert.equal(k.get(ablageort.id), 'basis:ablageort', 'übernommener Ablageort gehört jetzt Basis');
     assert.deepEqual(await bild(), vorher, 'Rechte-Regeln, Felder, Ansichten und Automatisierungen unverändert');
+    // Protokoll alt → neu (Sicherheit A), beim Start ins Systemprotokoll.
+    const [umzug] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${HAUSHALT} AND schluessel = 'kennungen_umzug'`;
+    assert.deepEqual((umzug.wert as Array<{ alt: string; neu: string }>).map((x) => [x.alt, x.neu]).sort(), [['ablageort', 'basis:ablageort'], ['haus_garten_beet', 'haus_garten:beet'], ['haus_garten_pflanze', 'haus:garten_pflanze']]);
+    const { protokolliereKennungsUmzug } = await import('../src/mappentypen/index');
+    const { pgEinstellungen } = await import('../src/einstellungen');
+    assert.equal(await protokolliereKennungsUmzug(pgEinstellungen(sql, HAUSHALT)), 3);
+    assert.equal(await protokolliereKennungsUmzug(pgEinstellungen(sql, HAUSHALT)), 0, 'nur einmal');
+    // Herausgeber im Bestand (Sicherheit C): offizieller Katalog → app.ablago.
+    assert.deepEqual((await sql`SELECT id, daten->>'herausgeber' AS h FROM pakete ORDER BY id`).map((r) => [r.id, r.h]), [['basis', 'app.ablago'], ['haus', 'app.ablago'], ['haus_garten', 'app.ablago']]);
     // Nach außen: paket:schluessel, Paket getrennt.
     const typ = (await d.listeTypen()).find((x) => x.id === pflanze.id)!;
     assert.equal(typ.schluessel, 'haus:garten_pflanze');

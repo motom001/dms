@@ -122,7 +122,7 @@ function faelle(pg: boolean) {
       return { vorschau: h.vorschau, paket: await p.installiere({ upload: h.upload, bestaetigt: true, beispiele }, ICH) };
     }
     const vertraege = async (d: Dienst) => {
-      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'demo_vertrag')!;
+      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
       return (await d.listeMappen(typ.id)).sort((a, b) => String(a.werte.nr).localeCompare(String(b.werte.nr)));
     };
 
@@ -169,7 +169,7 @@ function faelle(pg: boolean) {
       const { d, p, dateien } = await aufbau();
       await installiere(p);
       const [strom] = await vertraege(d);
-      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'demo_vertrag')!;
+      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
       await d.aendereMappe(strom.id, { werte: { ...strom.werte, nr: 'SV-4712' } }, ICH.id);
       await assert.rejects(p.entferne('demo', ICH), (e) => gruende(/„SV-4712“ wurde geändert und bleibt/)(e) && gruende(/1 Mappe/)(e));
       assert.equal((await vertraege(d)).length, 2, 'beim Scheitern bleibt alles');
@@ -185,11 +185,11 @@ function faelle(pg: boolean) {
     it('„Beispiele entfernen“: unveränderte gehen, geänderte und verwiesene bleiben und werden genannt', async () => {
       const { d, p } = await aufbau();
       await installiere(p);
-      const firmaTyp = (await d.listeTypen()).find((t) => t.schluessel === 'demo_firma')!;
+      const firmaTyp = (await d.listeTypen()).find((t) => t.schluessel === 'demo:firma')!;
       const [strom, wartung] = await vertraege(d);
       // Ein eigener Vertrag verweist auf die Beispiel-Firma; an den Wartungsvertrag kommt ein weiteres Dokument.
       const firma = (await d.listeMappen(firmaTyp.id))[0];
-      const vertragTyp = (await d.listeTypen()).find((t) => t.schluessel === 'demo_vertrag')!;
+      const vertragTyp = (await d.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
       await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'EIGEN-1', firma: firma.id } }, ICH.id);
       await d.ladeHoch(wartung.id, { register: 'unterlagen', name: 'Nachtrag.pdf' }, PDF('Nachtrag Petra'), ICH.id);
       const r = await p.beispieleEntfernen('demo', ICH);
@@ -232,7 +232,7 @@ function faelle(pg: boolean) {
       // In einer frischen Ablage: dieselben Dokumente an der Beispiel-Mappe.
       const ziel = await aufbau();
       await installiere(ziel.p, Object.fromEntries([...inhalt].map(([n, b]) => [n, b])));
-      const zt = (await ziel.d.listeTypen()).find((t) => t.schluessel === 'urkunden_urkunde')!;
+      const zt = (await ziel.d.listeTypen()).find((t) => t.schluessel === 'urkunden:urkunde')!;
       const zm = (await ziel.d.listeMappen(zt.id))[0];
       assert.deepEqual((await ziel.d.listeDokumente(zm.id)).map((x) => x.name).sort(), ['Geburtsurkunde Katrin.pdf', 'Rückseite.png']);
       assert.ok(p);

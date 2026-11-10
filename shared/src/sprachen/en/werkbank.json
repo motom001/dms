@@ -1694,6 +1694,7 @@
   "pakete.kein-hochgeladenes-paket-lade": "No uploaded package. Upload a .zip file in expert mode.",
   "pakete.hochgeladenes-paket": "Uploaded package",
   "pakete.herausgeber": "Publisher",
+  "pakete.herausgeber-ungeprueft": "Publisher according to the package: {wer} – not verified",
   "pakete.datei": "File",
   "pakete.version-3": "Version {installiert}{wert}",
   "pakete.hochgeladen-aus-der-datei": "Uploaded from the file “{datei}”",

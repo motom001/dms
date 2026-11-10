@@ -123,6 +123,17 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
     assert.equal((await fristen(lena.id)).length, 0);
   });
 
+  it('mitgelieferte Automatisierung mit unbekanntem Mappentyp hält an, statt auf alle zu laufen (#1084, Sicherheit A)', async () => {
+    const { vertrag, repo, motor } = await aufbau();
+    const p = { id: 'vertraege', name: 'Verträge', typen: { vertrag: vertrag.id } } as never;
+    const def = { schluessel: 'pruefen', name: 'Prüfen', beschreibung: '', wenn: { art: 'mappe.angelegt', typ: 'haus_garten:pflanze' }, dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'ersteller' }], text: 'Prüfen?' }] };
+    await motor.ausPaket(p, [def], ['pruefen']);
+    const a = (await repo.liste()).find((x) => x.paketId === 'vertraege')!;
+    assert.equal(a.aktiv, false, 'auch angehakt nicht an');
+    assert.equal(a.angehalten?.grund, 'fehlerhaft');
+    assert.match(a.angehalten?.text ?? '', /haus_garten:pflanze/);
+  });
+
   it('mitgelieferte Automatisierungen eines Pakets: aus, Typ aufgelöst, Update ersetzt nur Unverändertes', async () => {
     const { vertrag, repo, motor } = await aufbau();
     const p = { id: 'vertraege', name: 'Verträge', typen: { vertrag: vertrag.id } } as never;

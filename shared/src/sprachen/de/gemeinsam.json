@@ -439,7 +439,7 @@
   "nummernkreis.die-stellenzahl-im-zaehler": "Die Stellenzahl im Zähler muss zwischen 1 und 18 liegen.",
   "pakete.ergaenzt-ungueltige-paket-id": "ergaenzt: ungültige Paket-Id.",
   "pakete.punkt-id-ohne-ergaenzt": "Die Id „{id}“ hat einen Punkt und ergänzt damit das Paket „{haupt}“ – dann muss das Manifest ergaenzt: {haupt} angeben.",
-  "pakete.frueher-ungueltig": "frueher: eine Paket-Id oder eine Liste davon (höchstens {max}, nicht die eigene).",
+  "pakete.ersetzt-ungueltig": "ersetzt: eine Paket-Id oder eine Liste davon (höchstens {max}, nicht die eigene).",
   "pakete.ergaenzt-muss-auch-unter": "ergaenzt: „{paket}“ muss auch unter abhaengigkeiten stehen.",
   "pakete.ergaenzt-gruppe-ein-text": "ergaenzt.gruppe: ein Text mit höchstens {ERGAENZUNG_GRUPPE_MAX} Zeichen, z. B. „Weitere Sprachen“.",
   "pakete.ergaenzt-gibt-es-nicht": "ergaenzt: „{k}“ gibt es nicht (nur paket und gruppe).",

@@ -74,6 +74,8 @@ import { Verwaltung } from './verwaltung';
 import { arch, release, type } from 'node:os';
 import { pgDatenquelle } from './datenbankabzug';
 import { pgEinstellungen } from './einstellungen';
+import { protokolliereKennungsUmzug } from './mappentypen/index';
+import { istUuid } from './repo';
 import { Sicherung } from './sicherung';
 import { eigeneVersion } from './system';
 import { Wiederherstellung } from './wiederherstellung';
@@ -251,6 +253,8 @@ if (ueberlastZahl.fehler && leiter) log.warn(ueberlastZahl.fehler);
 const ueberlast = new Ueberlastschutz(ueberlastZahl.max, ueberlastZahl.quelle);
 const mandant = await bestimmeMandant(sql, db, env, (a) => schreibeAnbindung(ordner.geheim, a));
 cfg.haushalt = mandant.id;
+// Umzug der Kennungen (#1084): je umgestellte Kennung alt → neu ins Systemprotokoll, einmal nach der Migration.
+if (leiter && istUuid(cfg.haushalt)) await protokolliereKennungsUmzug(pgEinstellungen(sql, cfg.haushalt)).catch((e: Error) => log.warn('Protokoll der umgestellten Kennungen nicht geschrieben', { fehler: e.message }));
 if (mandant.hinweis) log.warn(mandant.hinweis);
 // Zustand zwischen Anfragen (#744): Fehlversuche, Sperren, Einmal-Tickets und Merker für alle Prozesse und Server
 // derselben Datenbank. Das Lebenszeichen sagt, ob dieser Prozess allein an der Datenbank ist (z. B. für die Texterkennung).

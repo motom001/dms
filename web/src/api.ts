@@ -1123,7 +1123,7 @@ export interface BeispielBehalten { id: string; titel: string; grund: 'geaendert
 
 /** Vorschau einer Paketinstallation bzw. eines Updates (#188). */
 export interface PaketVorschau {
-  paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null; herausgeber?: string | null };
+  paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null; herausgeber?: string | null; herausgeberGeprueft?: boolean };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
   /** Umzug (#1084): frühere Id, von der das Update die Installation auf die neue zieht. */
   umzug?: string | null;

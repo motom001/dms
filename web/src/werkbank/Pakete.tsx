@@ -91,8 +91,8 @@ export function usePakete(offen: boolean) {
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
     const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));
-    // Umgezogen (#1084): unter der neuen Id, die die installierte unter `frueher` nennt.
-    const kp = k?.katalog?.pakete.find((p) => p.id === id) ?? k?.katalog?.pakete.find((p) => p.frueher?.includes(id));
+    // Umgezogen (#1084): unter der neuen Id, die die installierte unter `ersetzt` nennt.
+    const kp = k?.katalog?.pakete.find((p) => p.id === id) ?? k?.katalog?.pakete.find((p) => p.ersetzt?.includes(id));
     return kp && k ? { kp, url: k.url, offiziell: k.offiziell } : undefined;
   };
   /** Hat ein Katalog ein Paket mit derselben Id wie ein selbst erstelltes (#652)? */
@@ -106,7 +106,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
   const installiert = z.stand?.installiert ?? [];
   const quelleOffen = new URLSearchParams(location.search).get('quelle');
   const verfuegbar = (z.kataloge?.liste ?? [])
-    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.frueher?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
+    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
   const neuer = (id: string) => z.updates?.find((u) => u.id === id);
   const [hochFehler, setHochFehler] = useState<string>();
   async function hochladen(f: File | undefined) {
@@ -160,7 +160,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
           ))}
           {installiert.map((p) => (
             <li key={p.id}><Link to={`/werkbank/pakete/${p.id}`} className={`eintrag werk ${offen === p.id ? 'an' : ''}`}>
-              <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} /> {neuer(p.id) && <span className="chip warn" title={t('werkbank.pakete.neuere-version-in-der')}>{neuer(p.id)!.neu}</span>}{p.einstellungenNoetig && <> <span className="chip warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>{t('werkbank.pakete.einstellungen-noetig')}</span></>}</span>
+              <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} geprueft={p.herausgeberGeprueft} /> {neuer(p.id) && <span className="chip warn" title={t('werkbank.pakete.neuere-version-in-der')}>{neuer(p.id)!.neu}</span>}{p.einstellungenNoetig && <> <span className="chip warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>{t('werkbank.pakete.einstellungen-noetig')}</span></>}</span>
               <span className="unter">{t('werkbank.pakete.version', { version: p.version, herkunftText: herkunftText(p.herkunft) })}</span>
             </Link></li>
           ))}
@@ -174,7 +174,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
           <ul className="mappenliste">
             {verfuegbar.map(({ p, url, offiziell }) => (
               <li key={`${url}|${p.id}`}><Link to={`/werkbank/pakete/${p.id}${offiziell ? '' : `?quelle=${encodeURIComponent(url)}`}`} className={`eintrag werk ${offen === p.id && (offiziell ? !quelleOffen : quelleOffen === url) ? 'an' : ''}`}>
-                <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} />{!offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url })}>{host(url)}</span></>}</span>
+                <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} geprueft={offiziell} />{!offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url })}>{host(url)}</span></>}</span>
                 <span className="unter">{p.aktuell} · {p.beschreibung}</span>
               </Link></li>
             ))}
@@ -399,7 +399,7 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
   const p = u.vorschau.paket;
   return (
     <div className="einspaltig">
-      <div className="mappenkopf"><p className="ueber">{t('werkbank.pakete.hochgeladenes-paket')}</p><h1>{p.name} {p.version}<Herausgeber wer={p.herausgeber} /></h1><p className="leise">{p.beschreibung}</p></div>
+      <div className="mappenkopf"><p className="ueber">{t('werkbank.pakete.hochgeladenes-paket')}</p><h1>{p.name} {p.version}<Herausgeber wer={p.herausgeber} geprueft={p.herausgeberGeprueft} /></h1><p className="leise">{p.beschreibung}</p></div>
       <MeldungBox m={meldung} />
       <section className="blatt">
         <dl className="eigenschaften">
@@ -494,7 +494,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     <div className="einspaltig">
       <div className="mappenkopf">
         <p className="ueber">{t('werkbank.pakete.paket')}{!offiziell && <> · <span className="chip warn">{t('werkbank.pakete.nicht-vom-ablago-projekt')}</span></>}</p>
-        <h1>{inst?.name ?? kp!.name}<Herausgeber wer={inst?.herausgeber ?? kp?.herausgeber} /></h1>
+        <h1>{inst?.name ?? kp!.name}<Herausgeber wer={inst?.herausgeber ?? kp?.herausgeber} geprueft={inst ? inst.herausgeberGeprueft : offiziell} /></h1>
         <p className="leise">{inst?.beschreibung ?? kp?.beschreibung}</p>
       </div>
       <MeldungBox m={meldung} />
@@ -720,7 +720,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   const bestaetigen = pruefWarnung !== null && !herkunftBestaetigt;
   return (
     <section className="blatt" aria-label={t('werkbank.pakete.vorschau')}>
-      <h2 className="h3">{titel ?? (v.update ? t('werkbank.pakete.update-auf', { version: v.paket.version }) : t('werkbank.pakete.vorschau-2', { name: v.paket.name, version: v.paket.version }))}<Herausgeber wer={v.paket.herausgeber} /></h2>
+      <h2 className="h3">{titel ?? (v.update ? t('werkbank.pakete.update-auf', { version: v.paket.version }) : t('werkbank.pakete.vorschau-2', { name: v.paket.name, version: v.paket.version }))}<Herausgeber wer={v.paket.herausgeber} geprueft={v.paket.herausgeberGeprueft} /></h2>
       <HerkunftZeile p={v.pruefung} />
       {bestaetigen && (
         <div className="hinweis warn" role="alert">
@@ -842,7 +842,11 @@ function LizenzAngabe({ lizenz }: { lizenz: string }) {
     <small className="leise" style={{ display: 'block' }}>{tx(art === 'keine' ? 'pakete.vorschau.lizenz.keine' : 'pakete.vorschau.lizenz.eigen')}</small></>;
 }
 
-/** Herausgeber neben dem Namen (#1084): „Verträge · app.ablago“; ohne bekannten Herausgeber nichts. */
-function Herausgeber({ wer }: { wer?: string | null }) {
-  return wer ? <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {wer}</span> : null;
+/**
+ * Herausgeber neben dem Namen (#1084): „Verträge · app.ablago“, immer vollständig (nie gekürzt – sonst sähe
+ * app.ablago-community wie app.ablago aus). Nicht belegte als „Herausgeber laut Paket: … – nicht geprüft“.
+ */
+function Herausgeber({ wer, geprueft }: { wer?: string | null; geprueft?: boolean }) {
+  if (!wer) return null;
+  return <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {geprueft ? wer : t('werkbank.pakete.herausgeber-ungeprueft', { wer })}</span>;
 }
