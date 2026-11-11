@@ -62,6 +62,14 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 
 **Visitenkarte mit QR-Code:** Viele Karten tragen einen QR-Code mit allen Kontaktdaten (vCard). Hat der Administrator das Paket **QR-Code lesen** gewählt, übernimmt Ablago die Angaben aus diesem Code statt aus dem erkannten Text – Telefonnummern und Namen stimmen dann Zeichen für Zeichen. Unter dem Ergebnis steht „Erkannt mit „QR-Code lesen“.“; die Fundstelle nennt die Zeile aus der vCard. Das Paket liest Dokumente, die schon in der Mappe oder in einer Post liegen: Lege das Foto der Karte also zuerst ab (oder öffne die Post, in der es angekommen ist) und klicke dann **Aus Dokument ausfüllen** mit diesem Dokument. Hat die Karte keinen QR-Code oder steht darin etwas anderes (eine Internetadresse, ein GiroCode), liest Ablago wie gewohnt den Text, und ein Satz sagt dir das.
 
+**E-Rechnung (XRechnung, ZUGFeRD):** Wählst du eine E-Rechnung als Datei (`.xml`) oder ein PDF mit eingebetteter Rechnung (ZUGFeRD, Factur-X), liest Ablago die Angaben direkt aus den Daten statt aus dem Text – Rechnungsnummer, Datum, Fälligkeit, Beträge, Umsatzsteuer, IBAN und den Rechnungssteller. Die Fundstelle heißt dann „E-Rechnung: …“. Hat der Mappentyp eine Tabelle für Positionen (etwa *Positionen* an der Rechnung), steht im Kasten „… Positionen aus der E-Rechnung beim Speichern anlegen“ – angelegt werden sie erst mit **Mappe speichern**; nimm den Haken weg, wenn du sie nicht willst. Die Datei selbst bleibt unverändert im Dokumentenregister.
+
+**Gutschrift:** Steht oben auf dem Beleg „Gutschrift“, „Erstattung“ oder „Rückzahlung“ (oder neben dem Betrag), trägt Ablago den Betrag mit Minus ein – nur in Felder, die negative Beträge erlauben – und sagt es am Feld: „„Gutschrift“ auf dem Beleg – als negativer Betrag übernommen“.
+
+**Eigene Organisation und Haushalt:** Deine eigene Organisation und die Menschen mit einem Konto in deiner Ablage schlägt Ablago nie als Absender (*von*, etwa *Rechnungssteller*) vor – auch wenn ihr Name im Anschriftfeld steht. Stehen sie oben als Aussteller (in der kleinen Absenderzeile oder in der E-Rechnung als Verkäufer), ist es wohl ein **ausgehender** Beleg: Dann steht deine Organisation als Vorschlag im Feld, mit niedriger Sicherheit und dem Hinweis „ausgehend? Bitte prüfen.“, und *an* bekommt die Gegenseite. Ablago entscheidet das nie still – prüf es, bevor du speicherst.
+
+**Gehört dazu:** Steht auf einer Rechnung die Nummer eines Lieferscheins, den es schon gibt, steht im Kasten „Lieferschein „…“ gehört dazu – beim Speichern verknüpfen“. Beim Speichern trägt Ablago die Rechnung beim Lieferschein unter *Gehört zu Rechnung* ein. Umgekehrt schlägt Ablago an einem neuen Lieferschein die Rechnung vor, in deren Dokumenten seine Nummer steht.
+
 ### Die Felder
 
 | Feld | So gibst du es ein |

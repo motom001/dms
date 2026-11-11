@@ -19,6 +19,7 @@
  * - `notfallblatt.ts`  Notfallblatt in Ablago-Optik (#106, #814)
  * - `brief.ts`        Brief aus einer Text-Vorlage (#1040), getaggt, im Aufbau ähnlich DIN 5008
  * - `anzeige.ts`       bereinigte Kopie für die Anzeige im Browser (#639)
+ * - `erechnung.ts`     eingebettete E-Rechnung (ZUGFeRD/Factur-X) aus dem PDF holen (#1043)
  * - `demo-dokumente.ts` Demo-Dokumente für Wachstumstests (#248)
  * - `einfach.ts`      sehr kleiner Schreiber für Textseiten ohne Bibliothek (früher Notfallblatt, #106)
  * - `bild.ts`, `puffer.ts`, `text.ts` kleine Helfer (Bildart, EXIF, Umgehung #456, WinAnsi)
@@ -39,6 +40,7 @@ import type * as An from './anzeige';
 import type * as Nf from './notfallblatt';
 import type * as Br from './brief';
 import { TEXTSATZ_ZEIT_MS } from '../grenzen';
+import type * as Er from './erechnung';
 
 export { pdfAus, type Absatz, type Schrift } from './einfach';
 export { bildArt, exifAusrichtung, jpegMasse } from './bild';
@@ -84,6 +86,8 @@ export const notfallblattPdf = (...a: A<typeof Nf.notfallblattPdf>) => arbeite('
 export const liesPdfA = (...a: A<typeof Ar.liesPdfA>) => arbeite('liesPdfA', ...a);
 export const textebeneWoerter = (...a: A<typeof Ar.textebeneWoerter>) => arbeite('textebeneWoerter', ...a);
 export const bereinigePdf = (...a: A<typeof An.bereinigePdf>) => arbeite('bereinigePdf', ...a);
+/** E-Rechnung (#1043): XML aus dem PDF-Anhang (ZUGFeRD/Factur-X), mit Grenzen; null ohne. */
+export const eingebetteteERechnung = (...a: A<typeof Er.eingebetteteERechnung>) => arbeite('eingebetteteERechnung', ...a);
 export type { PdfaBefund } from './archiv';
 /** Brief aus einer Text-Vorlage (#1040) – mit eigener Zeitgrenze (grenzen.ts). */
 export const briefPdf = (...a: A<typeof Br.briefPdf>) => arbeiteBis(TEXTSATZ_ZEIT_MS, 'briefPdf', ...a);

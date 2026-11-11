@@ -45,6 +45,7 @@ Wie groß etwas höchstens sein darf. Ablago prüft jede Grenze, bevor es die Da
 | Fehlermeldung (mit Bildschirmfoto und Anhängen) | 30 MB, das Bildschirmfoto 10 MB |
 | Logo eines Designs | 1 MB |
 | Einrichtungsdatei | 64 KB |
+| E-Rechnung (XML als Datei oder aus dem PDF-Anhang) | 4 MB, höchstens 64 Ebenen tief, 200 000 Elemente, 500 Positionen werden übernommen; ohne DTD und Entitäten. Was darüber liegt, liest Ablago nicht als E-Rechnung |
 | Alle anderen Anfragen (Formulare, Einstellungen) | 2 MB; eine Datei nehmen sie gar nicht an |
 
 Ein Reverse-Proxy davor braucht eine eigene Grenze, die etwas darüber liegt, für nginx `client_max_body_size 260m;` (mit Sammeldateien) bzw. `130m` (ohne), siehe [Installation](installation.md#hinter-einem-reverse-proxy).

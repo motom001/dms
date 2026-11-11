@@ -167,9 +167,11 @@ export function vorschlagFuer(ziel: Mappentyp, post: Werte, e?: PostErkennung | 
   for (const f of ziel.felder) {
     if (v[f.key] !== undefined || f.typ === 'passwort') continue;
     const art = artVon(f);
-    if (art === 'betrag' && f.typ === 'betrag' && e.angaben.betrag) v[f.key] = e.angaben.betrag.wert;
+    // Gutschrift (#1043): negativ, wo das Feld es erlaubt.
+    if (art === 'betrag' && f.typ === 'betrag' && e.angaben.betrag) v[f.key] = e.angaben.gutschrift && f.negativ && e.angaben.betrag.wert.betrag > 0 ? { ...e.angaben.betrag.wert, betrag: -e.angaben.betrag.wert.betrag } : e.angaben.betrag.wert;
     else if (art === 'nummer' && f.typ === 'text') { const n = e.angaben.nummern.find((x) => stamm(x.label) && (stamm(x.label) === stamm(f.label) || stamm(x.label) === stamm(f.key))); if (n) v[f.key] = n.wert; }
-    else if (art === 'verweis' && absender && zielErlaubt(f, absender.typId) && !jedeMappe(f)) v[f.key] = f.mehrfach ? [absender.mappeId] : absender.mappeId;
+    // „von“ und „an“ (#1043): Bei eigener Post (ausgehend) ist der Erkannte die Gegenseite – dann „an“, sonst „von“.
+    else if (art === 'verweis' && absender && zielErlaubt(f, absender.typId) && !jedeMappe(f) && !(f.key === 'von' && e.ausgehend) && !(f.key === 'an' && !e.ausgehend)) v[f.key] = f.mehrfach ? [absender.mappeId] : absender.mappeId;
   }
   return v;
 }
@@ -207,6 +209,8 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
       {e.auto && <p className="klein er-auto">{e.auto.rueckgaengig ? t('ablage.post.die-automatische-zuordnung-wurde') : t('ablage.post.automatisch-zugeordnet')}
         {e.bezuege[e.auto.ziel] && <> {e.auto.rueckgaengig ? t('ablage.post.von') : t('ablage.post.zu')} <Link to={`/ablage/${e.bezuege[e.auto.ziel].typId}/${e.auto.ziel}`} className="verweis">{titelOder(e.bezuege[e.auto.ziel].titel)}</Link></>}
         {!e.auto.rueckgaengig && <span className="leise"> – {e.auto.grund}</span>}</p>}
+      {e.ausgehend && <p className="klein er-auto"><span className="chip warn">{t('ablage.post.ausgehend')}</span>{' '}{e.ausgehend.titel ? t('ablage.post.ausgehend-text', { titel: e.ausgehend.titel }) : t('ablage.post.ausgehend-text-ohne')}
+        {e.ausgehend.fundstelle && <span className="leise"> – „{e.ausgehend.fundstelle}“</span>}</p>}
       {leer ? <p className="leise klein">{t('ablage.post.im-text-dieser-post')}</p> : (
         <dl className="er-liste">
           {absender && <div className="er-paar">

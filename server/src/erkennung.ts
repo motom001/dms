@@ -8,11 +8,16 @@
  */
 
 import type { Fund, Nummernfund, Briefkopf, Treffer } from '../../shared/src/erkennung';
-import { eindeutigerTreffer, ENGINE_EINGEBAUT, typAusText, type TypFund, ERKENNEN_HINWEIS, findeAngaben, findeMappen, fuellfelder, gleicheAb, istAbsenderTyp, merkmalsfelder, type Abgleich, pruefeVorschlaege, schemaFuer, vorschlaegeAus, type Angaben, type AusDokument, type Vergleichsmappe, type Vorschlaege } from '../../shared/src/erkennung';
+import { eindeutigerTreffer, ENGINE_EINGEBAUT, typAusText, type TypFund, ERKENNEN_HINWEIS, findeAngaben, findeMappen, fuellfelder, gleicheAb, istAbsenderTyp, merkmalsfelder, type Abgleich, pruefeVorschlaege, schemaFuer, vorschlaegeAus, type Angaben, type AusDokument, type Vergleichsmappe, type Vorschlaege, eigeneAngaben, eigenerAussteller, wendeGutschriftAn, artVon, type Aussteller, type EigeneAngaben, type Vorschlag } from '../../shared/src/erkennung';
+import { erechnungText, positionAusERechnung, vorschlaegeAusERechnung, type ERechnung } from '../../shared/src/erechnung';
+import { jedeMappe } from '../../shared/src/verweisziele';
+import { eingebetteteERechnung } from './pdf';
+import { istXmlDatei, liesERechnung } from './erechnung';
+import { ERECHNUNG_XML_MAX } from './grenzen';
 import { hatNetz, hatSchnittstelle } from '../../shared/src/pakete';
 import type { Einstellungen } from './einstellungen';
-import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug, type Werte } from '../../shared/src/model';
-import { istEigeneOrganisation } from '../../shared/src/organisation';
+import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug, type Werte, type Wert } from '../../shared/src/model';
+import { istEigeneOrganisation, merkmalFeld } from '../../shared/src/organisation';
 import type { Dienst, Zugriff } from './dienst';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -43,7 +48,9 @@ export interface AutoZuordnung {
  * eine passende Zielmappe unter den Mappentypen mit „automatisch zuordnen“ – bei mehreren gewinnt die eine,
  * die direkt im Text steht (z. B. über ihre Vertragsnummer). Liefert Ziel und Begründung oder den Grund dagegen.
  */
-export function sichereZuordnung(e: Pick<PostErkennung, 'absender' | 'eindeutig' | 'ziele'>, autoTypen: Set<string>): { ziel: Zielvorschlag; grund: string } | { ziel: null; grund: string } {
+export function sichereZuordnung(e: Pick<PostErkennung, 'absender' | 'eindeutig' | 'ziele' | 'ausgehend'>, autoTypen: Set<string>): { ziel: Zielvorschlag; grund: string } | { ziel: null; grund: string } {
+  // Eigene Post (#1043): nie still zuordnen – „ausgehend“ ist nur ein Vorschlag (Ergänzung Sicherheit).
+  if (e.ausgehend) return { ziel: null, grund: t('meldungen.erkennung.ausgehend-nicht-automatisch') };
   const abs = e.absender.find((x) => x.mappeId === e.eindeutig);
   if (!abs || !abs.stark) return { ziel: null, grund: t('meldungen.erkennung.absender-nicht-eindeutig-erkannt') };
   const kandidaten = e.ziele.filter((z) => autoTypen.has(z.typId));
@@ -62,12 +69,18 @@ export interface PostErkennung {
   absender: Treffer[];
   /** Eindeutig erkannter Absender (genau einer mit starkem Merkmal). */
   eindeutig: string | null;
-  angaben: { datum: Fund | null; betrag: Fund<Betrag> | null; nummern: Nummernfund[] };
+  /** gutschrift (#1043): „Gutschrift“, „Erstattung“ … auf dem Beleg – der Betrag gehört dann negativ in Felder, die das erlauben. */
+  angaben: { datum: Fund | null; betrag: Fund<Betrag> | null; nummern: Nummernfund[]; gutschrift?: Fund };
   /** Absender aus dem Briefkopf, wenn keiner der vorhandenen passt. */
   briefkopf: Briefkopf | null;
   ziele: Zielvorschlag[];
   /** Automatisch zugeordnet (#337). */
   auto?: AutoZuordnung;
+  /**
+   * Ausgehend? (#1043): Eine eigene Organisation oder eine Person des Haushalts steht als Aussteller in der
+   * Absenderzeile. Nur ein Hinweis – die Richtung der Post ändert die Erkennung nie selbst.
+   */
+  ausgehend?: { mappeId: string; fundstelle: string };
 }
 
 /** Was ein Benutzer davon sieht: nur lesbare Mappen, mit Titeln. */
@@ -83,6 +96,8 @@ export interface ErkennungAntwort {
   bezuege: Record<string, MappenBezug>;
   /** Automatisch zugeordnet (#337) – nur, wenn der Benutzer Ziel und Absender lesen darf. */
   auto: { ziel: string; zeit: string; grund: string; rueckgaengig: boolean } | null;
+  /** Ausgehend? (#1043): Aussteller ist eine eigene Organisation bzw. Person des Haushalts (Titel nur, wenn lesbar). */
+  ausgehend: { titel: string; fundstelle: string } | null;
 }
 
 /** „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps. */
@@ -103,6 +118,19 @@ export interface TypVorschlaege {
   hinweis?: string;
   /** Das Paket hat nur einen Teil des Dokumenttexts gelesen (#564) – gekürzt vom Kern oder vom Paket. */
   gekuerzt?: true;
+  /** Aus einer E-Rechnung gelesen (#1043): Format und Profil; die Werte daraus haben Vorrang. */
+  erechnung?: { syntax: 'ubl' | 'cii'; gutschrift: boolean; profil?: string; nummer?: string };
+  /**
+   * Positionen aus der E-Rechnung (#1043) für eine Tabelle des Typs (#1030): Mappen des Teiltyps, die beim Speichern
+   * angelegt werden – geprüft wie jede Eingabe; nur, wenn die Person sie anlegen darf.
+   */
+  positionen?: { feld: string; typId: string; feldKey: string; zeilen: Array<Record<string, Wert>>; weitere?: number };
+  /**
+   * Gehört dazu (#1043): vorhandene Mappen anderer Typen, die im Dokument stehen und über ein leeres Verweisfeld zu
+   * dieser Mappe gehören (z. B. der Lieferschein zur Rechnung). Verknüpft wird erst beim Speichern, wenn die Person es
+   * so lässt; nur lesbare Mappen.
+   */
+  dazu?: Array<{ mappeId: string; typId: string; titel: string; feldKey: string; feld: string; gruende: string[] }>;
 }
 export const TEXT_MAX = 200_000;
 
@@ -117,6 +145,20 @@ export interface EngineWahl { paket: string | null; abfluss?: boolean }
 export const ERKENNEN_MS = 60_000;
 /** Höchstens so viel Text (Zeichen) geht an ein Paket. */
 export const PAKET_TEXT_MAX = 50_000;
+
+/** Eigene Mappen (#995, #1043): eigene Organisationen und Personen des Haushalts – nie Absender bzw. „von“. */
+export interface EigeneLage {
+  ids: Set<string>;
+  /** Je eigene Mappe (und je Benutzer) Namen, USt-Id und IBAN – woran sie als Aussteller zu erkennen ist. */
+  angaben: EigeneAngaben[];
+}
+/** Aussteller eines Belegs: die Absenderzeile, bei einer E-Rechnung der Verkäufer. */
+export function ausstellerAus(a: Angaben, er?: ERechnung | null): Aussteller | null {
+  if (er?.verkaeufer.name || er?.verkaeufer.ustid) return { name: er.verkaeufer.name, ustid: er.verkaeufer.ustid, iban: er.iban, fundstelle: `${t('meldungen.erkennung.erechnung-verkaeufer')}: ${er.verkaeufer.name ?? er.verkaeufer.ustid}` };
+  return a.briefkopf?.zeile && a.briefkopf.name ? { name: a.briefkopf.name, fundstelle: a.briefkopf.fundstelle } : null;
+}
+/** Höchstens so viele Mappen je Typ beim Suchen eigener Mappen. */
+const MAX_EIGENE = 2000;
 
 const MAX_ABSENDER = 5;
 const MAX_ZIELE = 8;
@@ -210,6 +252,41 @@ export class Erkennung {
     return { vorschlaege, gekuerzt: text.length > PAKET_TEXT_MAX || (huelle && o.gekuerzt === true) };
   }
 
+  /**
+   * Eigene Mappen (#995, #1043) mit Systemrechten: Mappen mit dem Merkmal „eigene Organisation“ und Personen des Haushalts.
+   * Zum Haushalt gehört, wer ein Konto in dieser Ablage hat; eine Person (Mappe mit Vor- und Nachname bzw. E-Mail) zählt
+   * dazu, wenn ihr Name oder ihre E-Mail-Adresse die eines Kontos ist. Liefert nur Ids und Merkmale zum Vergleich – was
+   * die Person sieht, entscheidet der Aufrufer über ihre Leserechte.
+   */
+  async eigeneLage(): Promise<EigeneLage> {
+    const typen = await this.repo().listeTypen();
+    const ids = new Set<string>();
+    const angaben: EigeneAngaben[] = [];
+    const btyp = typen.find((x) => x.system === 'benutzer');
+    const konten = btyp ? (await this.repo().listeMappen(btyp.id)).slice(0, MAX_EIGENE) : [];
+    const kontoNamen = new Set(konten.map((k) => auswahlText(k.werte.name).trim().toLowerCase()).filter((n) => n.includes(' ')));
+    const kontoMails = new Set(konten.map((k) => auswahlText(k.werte.email).trim().toLowerCase()).filter(Boolean));
+    for (const typ of typen) {
+      if (typ.system) continue;
+      const org = !!merkmalFeld(typ);
+      const person = typ.felder.some((f) => artVon(f) === 'nachname') || typ.felder.some((f) => artVon(f) === 'email' && f.typ === 'text');
+      if (!org && !person) continue;
+      for (const m of (await this.repo().listeMappen(typ.id)).slice(0, MAX_EIGENE)) {
+        const e = eigeneAngaben(typ, m);
+        const mails = typ.felder.filter((f) => artVon(f) === 'email').map((f) => auswahlText(m.werte[f.key]).trim().toLowerCase()).filter(Boolean);
+        const istPerson = typ.felder.some((f) => artVon(f) === 'nachname') && e.namen.some((n) => kontoNamen.has(n.toLowerCase()));
+        if ((org && istEigeneOrganisation(typ, m.werte as Werte)) || istPerson || (!org && mails.some((x) => kontoMails.has(x)))) { ids.add(m.id); angaben.push(e); }
+      }
+    }
+    // Konten selbst zuletzt (eine Person-Mappe geht vor): Name mit Vor- und Nachname als Aussteller, z. B.
+    // „Lena Muster · Lindenweg 4 · 01234 Beispielort“ – auch, wenn es keine Mappe zu ihr gibt.
+    for (const k of konten) {
+      const n = auswahlText(k.werte.name).trim();
+      if (btyp && n.includes(' ')) angaben.push({ mappeId: k.id, typId: btyp.id, namen: [n], ustids: [], ibans: [] });
+    }
+    return { ids, angaben };
+  }
+
   /** Hörer auf „Volltext fertig“: Gehört das Dokument zu Post, die Erkennung dieser Post neu rechnen. */
   async nachVolltext(e: { dokument: string; mappe: string }): Promise<PostErkennung | null> {
     const m = await this.repo().holeMappe(e.mappe);
@@ -258,10 +335,11 @@ export class Erkennung {
     const angaben = findeAngaben(text);
     const { typen, mappen } = await this.vergleich();
     const typVon = new Map(typen.map((t) => [t.id, t]));
-    // Eigene Organisation (#995, #1043): ist nie Absender eingehender Post – auch wenn ihr Briefkopf im Text steht
-    // (z. B. auf einer Antwort, einer eigenen Rechnung oder im Anschreiben). Auch kein Ziel über „gefunden“.
-    const eigene = new Set(mappen.filter((m) => istEigeneOrganisation(typVon.get(m.typId), m.werte as Werte)).map((m) => m.id));
-    const treffer = findeMappen(text, typen, mappen).filter((x) => !eigene.has(x.mappeId));
+    // Eigene Organisation (#995) und Haushalt (#1043): nie Absender, auch nicht über „gefunden“ (auch wenn sie im
+    // Anschriftfeld stehen). Stehen sie in der Absenderzeile, ist die Post wohl ausgehend – nur als Hinweis.
+    const eigen = await this.eigeneLage();
+    const treffer = findeMappen(text, typen, mappen).filter((x) => !eigen.ids.has(x.mappeId));
+    const aus = eigenerAussteller(ausstellerAus(angaben), eigen.angaben);
     const absender = treffer.filter((x) => istAbsenderTyp(typVon.get(x.typId)!)).slice(0, MAX_ABSENDER);
     const eindeutig = eindeutigerTreffer(absender);
     const haupt = eindeutig ?? (absender[0]?.stark ? absender[0] : null);
@@ -299,18 +377,19 @@ export class Erkennung {
     }
     const vorher = await repo.erkennungLies(post.id);
     const auto = (vorher?.ergebnis as PostErkennung | undefined)?.auto;
-    const ergebnis: PostErkennung = {
-      ...(auto ? { auto } : {}),
+    const ergebnis: PostErkennung = { ...(auto ? { auto } : {}),
       zeit: new Date().toISOString(),
       dokumente,
       absender,
       eindeutig: eindeutig?.mappeId ?? null,
-      angaben: { datum: angaben.datum, betrag: angaben.betrag, nummern: angaben.nummern.slice(0, 10) },
-      briefkopf: absender.length ? null : angaben.briefkopf,
+      angaben: { datum: angaben.datum, betrag: angaben.betrag, nummern: angaben.nummern.slice(0, 10), ...(angaben.gutschrift ? { gutschrift: angaben.gutschrift } : {}) },
+      // Eigene Post: kein „neuen Absender anlegen“ mit den eigenen Angaben.
+      briefkopf: absender.length || aus ? null : angaben.briefkopf,
       ziele: [...ziele.values()].sort((a, b) => b.punkte - a.punkte).slice(0, MAX_ZIELE),
+      ...(aus ? { ausgehend: { mappeId: aus.mappeId, fundstelle: angaben.briefkopf?.fundstelle ?? '' } } : {}),
     };
     await repo.erkennungSchreibe(post.id, ergebnis, ergebnis.eindeutig);
-    log.info('Erkennung für Post', { post: post.id, dokumente, absender: absender.length, eindeutig: !!eindeutig, ziele: ergebnis.ziele.length, ms: Date.now() - start });
+    log.info('Erkennung für Post', { post: post.id, dokumente, absender: absender.length, eindeutig: !!eindeutig, ziele: ergebnis.ziele.length, ausgehend: !!aus, ms: Date.now() - start });
     return ergebnis;
   }
 
@@ -327,7 +406,7 @@ export class Erkennung {
     if (typ?.system !== 'post') throw new Fachfehler(422, t('meldungen.erkennung.vorschlaege-beim-zuordnen-gibt'));
     const e = await this.ergebnis(postId);
     if (!e) throw new Fachfehler(404, t('meldungen.erkennung.diese-post-gibt-es'));
-    const ids = [...e.absender.map((x) => x.mappeId), ...e.ziele.map((x) => x.mappeId), ...(e.auto ? [e.auto.ziel] : [])];
+    const ids = [...e.absender.map((x) => x.mappeId), ...e.ziele.map((x) => x.mappeId), ...(e.auto ? [e.auto.ziel] : []), ...(e.ausgehend ? [e.ausgehend.mappeId] : [])];
     const lesbar = await this.d.lesbare(z, ids);
     const bezuege = await this.repo().bezuege(ids.filter((id) => lesbar.has(id)));
     const titel = (id: string) => bezuege.get(id)?.titel ?? '';
@@ -341,6 +420,7 @@ export class Erkennung {
       ziele,
       bezuege: Object.fromEntries(bezuege),
       auto: e.auto && lesbar.has(e.auto.ziel) && (!e.eindeutig || lesbar.has(e.eindeutig)) ? { ziel: e.auto.ziel, zeit: e.auto.zeit, grund: e.auto.grund, rueckgaengig: !!e.auto.rueckgaengig } : null,
+      ausgehend: e.ausgehend ? { titel: lesbar.has(e.ausgehend.mappeId) ? titel(e.ausgehend.mappeId) : '', fundstelle: e.ausgehend.fundstelle } : null,
     };
   }
 
@@ -378,21 +458,27 @@ export class Erkennung {
    * dürfen). Verweisfelder: vorhandene Mappe des Zieltyps, die sich im Text wiederfindet – sonst ein Vorschlag
    * „neu anlegen“. Jede Antwort geht durch die Prüfung gegen die Feldtypen; nichts wird gespeichert.
    */
-  async fuerTyp(typId: string, eingabe: unknown, z?: Zugriff): Promise<TypVorschlaege> {
+  async fuerTyp(typId: string, eingabe: unknown, z?: Zugriff, zusatz?: { erechnung?: ERechnung | null }): Promise<TypVorschlaege> {
     const e = (eingabe ?? {}) as { text?: unknown; dokumente?: unknown; mappe?: unknown };
     const { typ, mappe } = await this.typFuer(typId, typeof e.mappe === 'string' && e.mappe ? e.mappe : undefined, z);
     const teile: string[] = [];
     if (typeof e.text === 'string' && e.text.trim()) teile.push(e.text.slice(0, TEXT_MAX));
     // Mappentypen, aus denen der Text stammt (#796): Gesperrte gehen an kein KI-Paket.
     const quellTypen = new Set<string>([typ.id]);
+    // E-Rechnung (#1043): aus der Datei (Route) oder aus einem der Dokumente – XML direkt, PDF über den Anhang.
+    let er = zusatz?.erechnung ?? null;
     for (const id of (Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10)) {
       const d = await this.repo().holeDokument(id);
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
       quellTypen.add((await this.d.pruefeRecht(z, d.mappeId, 'R')).typId);
+      if (!er && (istXmlDatei(d.name, d.mime) || d.mime === 'application/pdf')) er = await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse);
       const eintrag = await this.repo().volltext(id);
+      // Eine E-Rechnung als XML hat keinen Volltext – dann ist ihr Text der lesbare Auszug.
+      if (!eintrag?.trim() && er && istXmlDatei(d.name, d.mime)) { teile.push(erechnungText(er)); continue; }
       if (!eintrag?.trim()) throw new Fachfehler(409, t('meldungen.erkennung.hat-noch-keinen-volltext', { name: d.name }));
       teile.push(eintrag);
     }
+    if (er && !teile.length) teile.push(erechnungText(er));
     const text = teile.join('\n\n').slice(0, TEXT_MAX);
     const erlaubt = this.erlaubteFelder(typ, mappe);
     const angaben = findeAngaben(text);
@@ -429,16 +515,37 @@ export class Erkennung {
       }
     }
     const roh: Record<string, unknown> = ausPaket ?? vorschlaegeAus(typ, text, angaben);
+    // Hinweise am Vorschlag kommen nur aus dem Kern (eingebaute Erkennung, E-Rechnung, Verweise) – nie aus einem Paket.
+    const hinweise = new Map<string, string>();
+    if (!ausPaket) for (const [k, v] of Object.entries(roh)) if ((v as Vorschlag).hinweis) hinweise.set(k, (v as Vorschlag).hinweis!);
+    // E-Rechnung (#1043): Ihre Werte stehen exakt in den Daten und gehen vor – geprüft wird danach wie bei allen.
+    const ausER = er ? vorschlaegeAusERechnung(typ, er) : {};
+    for (const [k, v] of Object.entries(ausER)) { roh[k] = v; if (v.hinweis) hinweise.set(k, v.hinweis); else hinweise.delete(k); }
     const bezuege: Record<string, MappenBezug> = {};
     const neu: TypVorschlaege['neu'] = {};
-    for (const { feld: f } of fuellfelder(typ)) {
+    // Eigene Organisation und Haushalt (#995, #1043): nie „von“; stehen sie als Aussteller drin, ist der Beleg wohl ausgehend.
+    const eigen = await this.eigeneLage();
+    const aussteller = eigenerAussteller(ausstellerAus(angaben, er), eigen.angaben);
+    const felder = fuellfelder(typ).map((x) => x.feld);
+    // Ausgehend: „an“ bekommt die Gegenseite, auch wenn das Feld nicht für die Erkennung markiert ist.
+    const an = aussteller ? typ.felder.find((f) => f.key === 'an' && f.typ === 'referenz' && !felder.includes(f)) : undefined;
+    for (const f of an ? [...felder, an] : felder) {
       if (f.typ !== 'referenz' || !zieleVon(f).length || !erlaubt(f)) continue;
-      const v = await this.verweisFuer(f, text, angaben, z);
-      if (v?.mappe) { roh[f.key] = { wert: f.mehrfach ? [v.mappe.id] : v.mappe.id, sicherheit: v.sicherheit, fundstelle: v.fundstelle }; bezuege[v.mappe.id] = { titel: v.mappe.titel ?? '', typId: v.mappe.typId }; }
-      else if (v?.neu) neu[f.key] = v.neu;
+      const v = await this.verweisFuer(f, text, angaben, z, { eigen, aussteller });
+      if (v?.mappe) {
+        roh[f.key] = { wert: f.mehrfach ? [v.mappe.id] : v.mappe.id, sicherheit: v.sicherheit, fundstelle: v.fundstelle };
+        if (v.hinweis) hinweise.set(f.key, v.hinweis); else hinweise.delete(f.key);
+        bezuege[v.mappe.id] = { titel: v.mappe.titel ?? '', typId: v.mappe.typId };
+      } else if (v?.neu) neu[f.key] = v.neu;
     }
+    if (aussteller && !roh.von) hinweis = [hinweis, t('meldungen.erkennung.ausgehend-allgemein')].filter(Boolean).join(' ');
     // Jede Antwort – eingebaut oder vom Paket – geht durch die Prüfung gegen die Feldtypen; verworfen wird mit Grund protokolliert (ohne Werte).
     const { vorschlaege, verworfen } = pruefeVorschlaege(typ, roh, erlaubt);
+    for (const [k, v] of Object.entries(vorschlaege)) { const h = hinweise.get(k); if (h) v.hinweis = h; }
+    // Gutschrift (#1043): positive Beträge negativ, wo das Feld es erlaubt – auch bei Antworten aus Paketen.
+    wendeGutschriftAn(typ, vorschlaege, angaben.gutschrift, new Set(Object.keys(ausER)));
+    // Lieferschein und Rechnung (#1043): Eine Mappe des Zieltyps, in deren Dokumenten die Nummer dieses Belegs steht.
+    await this.nenntNummer(typ, vorschlaege, bezuege, erlaubt, z);
     // Folgt aus (#886): Felder, die aus einem vorgeschlagenen Verweis folgen, bekommen ihren Vorschlag dazu.
     await this.d.folgeVorschlaege(typ, { vorschlaege, bezuege, neu }, z);
     // Beim Auswählen übernehmen (#1037): Werte aus vorgeschlagenen Mappen, mit den Rechten der Person – erst hier, nach
@@ -447,8 +554,133 @@ export class Erkennung {
     if (verworfen.length) log.warn('Vorschläge der Erkennung verworfen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; ') });
     // Fundstellen (#939): Seite und Rahmen aus der Textebene bzw. Texterkennung; nicht gefunden = Wert ohne Rahmen.
     if (dokIds.length && Object.keys(vorschlaege).length) await this.stellen(typ, vorschlaege, dokIds);
-    log.info('Aus Dokument ausfüllen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, zeichen: text.length, vorschlaege: Object.keys(vorschlaege).length, neu: Object.keys(neu).length });
-    return { vorschlaege, bezuege, neu, verworfen: verworfen.length, zeichen: text.length, engine, ...(hinweis ? { hinweis } : {}), ...(gekuerzt ? { gekuerzt: true as const } : {}) };
+    const positionen = er ? await this.positionen(typ, er, z) : undefined;
+    const dazu = text.trim() ? await this.dazu(text, typ, mappe, z) : [];
+    log.info('Aus Dokument ausfüllen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, zeichen: text.length, vorschlaege: Object.keys(vorschlaege).length, neu: Object.keys(neu).length, erechnung: er?.syntax ?? null, positionen: positionen?.zeilen.length ?? 0, dazu: dazu.length, ausgehend: !!aussteller });
+    return {
+      vorschlaege, bezuege, neu, verworfen: verworfen.length, zeichen: text.length, engine, ...(hinweis ? { hinweis } : {}), ...(gekuerzt ? { gekuerzt: true as const } : {}),
+      ...(er ? { erechnung: { syntax: er.syntax, gutschrift: er.gutschrift, ...(er.profil ? { profil: er.profil } : {}), ...(er.nummer ? { nummer: er.nummer } : {}) } } : {}),
+      ...(positionen?.zeilen.length ? { positionen } : {}),
+      ...(dazu.length ? { dazu } : {}),
+    };
+  }
+
+  /**
+   * E-Rechnung aus einer Datei bzw. einem Dokument (#1043): XML direkt, PDF über den Anhang (PDF-Stelle, im Arbeiter).
+   * `lies` holt den Inhalt erst, wenn die Art passt; zu große XML-Dateien werden nicht gelesen. Fehler beim Lesen sind
+   * kein Fehler der Anfrage – dann gibt es eben keine E-Rechnung (protokolliert ohne Inhalt).
+   */
+  async erechnungAus(lies: () => Promise<Buffer>, name: string, mime: string, groesse?: number): Promise<ERechnung | null> {
+    try {
+      if (istXmlDatei(name, mime)) {
+        if (groesse != null && groesse > ERECHNUNG_XML_MAX) return null;
+        const inhalt = await lies();
+        if (inhalt.length > ERECHNUNG_XML_MAX) return null;
+        const r = liesERechnung(inhalt.toString('utf8'));
+        if (r.fehler) log.info('E-Rechnung nicht gelesen', { grund: r.fehler });
+        return r.er;
+      }
+      if (mime !== 'application/pdf') return null;
+      const xml = await eingebetteteERechnung(await lies());
+      if (!xml) return null;
+      const r = liesERechnung(xml);
+      if (r.fehler) log.info('E-Rechnung im PDF nicht gelesen', { grund: r.fehler });
+      return r.er;
+    } catch (x) {
+      log.info('E-Rechnung nicht gelesen', { grund: (x as Error).message.slice(0, 200) });
+      return null;
+    }
+  }
+
+  /**
+   * Datei für „Aus Dokument ausfüllen“ (#391, #1043): E-Rechnung lesen und den Text holen. Eine XML-E-Rechnung braucht
+   * keine Texterkennung (ihr Text ist der lesbare Auszug); ein PDF mit E-Rechnung geht ohne Texterkennung auch.
+   */
+  async dateiLesen(inhalt: Buffer, name: string, mime: string): Promise<{ text: string; info: string; erechnung: ERechnung | null }> {
+    const pdf = mime === 'application/pdf' || inhalt.subarray(0, 5).toString('latin1') === '%PDF-';
+    const er = await this.erechnungAus(async () => inhalt, name, pdf ? 'application/pdf' : mime, inhalt.length);
+    if (er && istXmlDatei(name, mime)) return { text: erechnungText(er), info: t('meldungen.erkennung.erechnung-gelesen'), erechnung: er };
+    if (istXmlDatei(name, mime)) throw new Fachfehler(415, t('meldungen.erkennung.xml-keine-erechnung'));
+    try {
+      return { ...(await this.d.textAusDatei(inhalt, name, mime)), erechnung: er };
+    } catch (x) {
+      if (er && x instanceof Fachfehler && x.status === 503) return { text: erechnungText(er), info: t('meldungen.erkennung.erechnung-gelesen'), erechnung: er };
+      throw x;
+    }
+  }
+
+  /**
+   * Positionen der E-Rechnung (#1043) für die erste Tabelle des Typs (#1030), deren Zeilen Teile sind (#1031) – nur,
+   * wenn die Person Mappen dieses Typs anlegen darf. Jede Zeile geht durch dieselbe Prüfung wie Eingaben.
+   */
+  private async positionen(typ: Mappentyp, er: ERechnung, z?: Zugriff): Promise<TypVorschlaege['positionen']> {
+    if (!er.positionen.length) return undefined;
+    for (const f of typ.felder.filter((x) => x.typ === 'tabelle' && x.quelle?.typId && x.quelle.feldKey)) {
+      const pt = z ? z.typen.get(f.quelle!.typId) : await this.repo().holeTyp(f.quelle!.typId);
+      if (!pt || pt.system) continue;
+      if (z && !(await this.d.rechteAn(z, { id: '', typId: pt.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
+      const erlaubt = (x: Feld) => x.key !== f.quelle!.feldKey && this.erlaubteFelder(pt)(x);
+      const zeilen = er.positionen.map((p) => {
+        const roh = Object.fromEntries(Object.entries(positionAusERechnung(pt, p, er, f.quelle!.feldKey)).map(([k, w]) => [k, { wert: w }]));
+        return Object.fromEntries(Object.entries(pruefeVorschlaege(pt, roh, erlaubt).vorschlaege).map(([k, v]) => [k, v.wert]));
+      }).filter((w) => Object.keys(w).length > 0);
+      if (!zeilen.length) continue;
+      return { feld: f.key, typId: pt.id, feldKey: f.quelle!.feldKey, zeilen, ...(er.weiterePositionen ? { weitere: er.weiterePositionen } : {}) };
+    }
+    return undefined;
+  }
+
+  /**
+   * Gehört dazu (#1043): vorhandene, lesbare Mappen anderer Typen, die im Dokument stehen und über ein leeres Verweisfeld
+   * zu einer Mappe dieses Typs gehören könnten – der Lieferschein, dessen Nummer auf der Rechnung steht. Ohne die Mappe
+   * selbst und ohne Mappen, die schon auf sie zeigen.
+   */
+  private async dazu(text: string, typ: Mappentyp, mappe: Mappe | undefined, z?: Zugriff): Promise<NonNullable<TypVorschlaege['dazu']>> {
+    const a = await this.abgleich(text, typ.id, z).catch(() => null);
+    return (a?.dazu ?? []).filter((x) => x.mappeId !== mappe?.id).map((x) => ({
+      mappeId: x.mappeId, typId: x.typId, titel: a!.bezuege[x.mappeId]?.titel ?? '', feldKey: x.feldKey, feld: x.feld,
+      gruende: x.belege.filter((b) => b.stark && !b.ueber).map((b) => `${b.feld} ${b.wert}`).slice(0, 3),
+    }));
+  }
+
+  /**
+   * Umgekehrt (#1043): Ein Verweisfeld ohne Vorschlag bekommt die Mappe seines Zieltyps, in deren Dokumenten die Nummer
+   * dieses Belegs steht – etwa die Rechnung, die die Lieferscheinnummer nennt, für „Gehört zu Rechnung“ am Lieferschein.
+   * Die Nummer ist der Vorschlag für ein Feld mit „Zum Wiederfinden nutzen“ (mindestens 4 Zeichen, mit Ziffer). Nur bei
+   * genau einer lesbaren Mappe; die Nummer muss wörtlich im Volltext stehen (nicht nur nach der Volltextsuche).
+   */
+  /** Steht `wert` wörtlich im Volltext eines der Dokumente der Mappe (höchstens 20)? */
+  private async nennt(mappeId: string, wert: string): Promise<boolean> {
+    const texte = await this.repo().volltexte((await this.repo().listeDokumente(mappeId)).map((d) => d.id).slice(0, 20));
+    return [...texte.values()].some((x) => stehtImText(x, wert));
+  }
+
+  /** Die eine lesbare Mappe dieser Typen, deren Dokumente `wert` nennen (Volltextsuche, dann wörtlich geprüft); sonst null. */
+  private async einzigeMitNummer(typen: string[], wert: string, z?: Zugriff): Promise<Mappe | null> {
+    const gefunden: Mappe[] = [];
+    for (const typId of typen) {
+      const s = await this.repo().seite({ typId, textfilter: { text: wert, dokumente: true, notizen: false }, von: 0, anzahl: 5 }).catch(() => null);
+      for (const m of s?.mappen ?? []) if (await this.nennt(m.id, wert)) gefunden.push(m);
+    }
+    const lesbar = await this.d.lesbare(z, gefunden.map((m) => m.id));
+    const da = gefunden.filter((m) => lesbar.has(m.id));
+    return da.length === 1 ? da[0] : null;
+  }
+
+  private async nenntNummer(typ: Mappentyp, vorschlaege: Vorschlaege, bezuege: Record<string, MappenBezug>, erlaubt: (f: Feld) => boolean, z?: Zugriff) {
+    const nummern = typ.felder.filter((f) => f.wiederfinden && (f.typ === 'text' || f.typ === 'zahl') && vorschlaege[f.key])
+      .map((f) => ({ f, w: String(vorschlaege[f.key].wert).trim() })).filter((x) => x.w.length >= 4 && /\d/.test(x.w));
+    if (!nummern.length) return;
+    // Nur „gehört zu“-Verweise (Lieferschein → Rechnung, Rechnung → Vertrag), nie „von“ oder „an“.
+    for (const f of typ.felder.filter((x) => x.typ === 'referenz' && x.verweisart === 'zugehoerigkeit' && !vorschlaege[x.key] && erlaubt(x) && !jedeMappe(x) && zieleVon(x).length)) {
+      for (const { f: nf, w } of nummern) {
+        const m = await this.einzigeMitNummer(zieleVon(f).filter((x) => x !== typ.id && (!z || z.typen.has(x))), w, z);
+        if (!m) continue;
+        vorschlaege[f.key] = { wert: f.mehrfach ? [m.id] : m.id, sicherheit: 'mittel', fundstelle: t('meldungen.erkennung.nennt-nummer', { titel: m.titel ?? '', feld: nf.label || nf.key, wert: w }) };
+        bezuege[m.id] = { titel: m.titel ?? '', typId: m.typId };
+        break;
+      }
+    }
   }
 
   /**
@@ -481,30 +713,47 @@ export class Erkennung {
   /**
    * Verweisfeld: Mappe eines Zieltyps, die im Text steht (markierte Felder, sonst der Titel); sonst „neu anlegen“ – das
    * nur bei genau einem Zieltyp (#1036: bei mehreren stünde nicht fest, welcher gemeint ist).
+   *
+   * „von“ und „an“ (#1043, Kennungen nach den Paket-Regeln): Eigene Organisationen und Personen des Haushalts sind nie
+   * „von“. Steht eine von ihnen als Aussteller drin (`aussteller`), ist der Beleg wohl ausgehend: „von“ schlägt sie vor –
+   * mit niedriger Sicherheit und Hinweis, nie still (Ergänzung Sicherheit) – und „an“ die Gegenseite.
    */
-  private async verweisFuer(f: Feld, text: string, a: Angaben, z?: Zugriff): Promise<{ mappe?: Mappe; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string; neu?: TypVorschlaege['neu'][string] } | null> {
+  private async verweisFuer(f: Feld, text: string, a: Angaben, z: Zugriff | undefined, ctx: { eigen: EigeneLage; aussteller: EigeneAngaben | null }): Promise<{ mappe?: Mappe; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string; hinweis?: string; neu?: TypVorschlaege['neu'][string] } | null> {
     const ziele: Mappentyp[] = [];
     for (const id of zieleVon(f)) { const x = await this.repo().holeTyp(id); if (x && (!z || z.typen.has(x.id))) ziele.push(x); }
     if (!ziele.length) return null;
+    const von = f.key === 'von';
+    const an = f.key === 'an';
+    const aus = ctx.aussteller;
+    // „an“ eines eingehenden Belegs bleibt leer („leer heißt wir“) – sonst stünde hier der Absender.
+    if (an && !aus) return null;
+    if (von && aus) {
+      // Ausgehend: die eigene Mappe – wenn das Feld auf ihren Typ zeigen darf und die Person sie lesen darf.
+      const m = ziele.some((x) => x.id === aus.typId) && (await this.d.lesbare(z, [aus.mappeId])).has(aus.mappeId) ? await this.repo().holeMappe(aus.mappeId) : null;
+      return m ? { mappe: m, sicherheit: 'niedrig', fundstelle: t('meldungen.erkennung.aussteller-eigen', { titel: m.titel ?? '' }), hinweis: t('meldungen.erkennung.ausgehend-hinweis') } : null;
+    }
     const vergleiche: Array<Pick<Mappentyp, 'id' | 'felder'>> = [];
     const mappen: Mappe[] = [];
     for (const ziel of ziele) {
       const alle = await this.repo().listeMappen(ziel.id);
       const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
-      mappen.push(...alle.filter((m) => lesbar.has(m.id)));
+      // „von“ bzw. „an“ eines ausgehenden Belegs: nie eine eigene Mappe.
+      mappen.push(...alle.filter((m) => lesbar.has(m.id) && !((von || (an && aus)) && ctx.eigen.ids.has(m.id))));
       // Ohne Felder zum Wiederfinden (#938) zählt der Titel als Name.
       vergleiche.push(merkmalsfelder(ziel).length > 0 ? ziel : { id: ziel.id, felder: [{ key: '_titel', label: t('meldungen.erkennung.name'), typ: 'text' as const, erkennung: { art: 'name' as const }, wiederfinden: true }] });
     }
     const markiertIn = new Set(ziele.filter((x) => merkmalsfelder(x).length > 0).map((x) => x.id));
     const treffer = findeMappen(text, vergleiche, mappen.map((m) => ({ id: m.id, typId: m.typId, werte: markiertIn.has(m.typId) ? m.werte : { _titel: m.titel ?? '' } })));
     const best = eindeutigerTreffer(treffer) ?? (treffer.length === 1 ? treffer[0] : null);
-    if (best) return { mappe: mappen.find((m) => m.id === best.mappeId), sicherheit: best.stark ? 'hoch' : 'mittel', fundstelle: `gefunden: ${best.gruende.join(', ')}` };
-    if (ziele.length !== 1) return null;
+    if (best) return { mappe: mappen.find((m) => m.id === best.mappeId), sicherheit: best.stark ? 'hoch' : 'mittel', fundstelle: `gefunden: ${best.gruende.join(', ')}`, ...(an ? { hinweis: t('meldungen.erkennung.ausgehend-an') } : {}) };
+    if (ziele.length !== 1 || an) return null;
     const [ziel] = ziele;
     const markiert = markiertIn.has(ziel.id);
     if (!istAbsenderTyp(ziel) && markiert) return null;
     const firma = a.briefkopf?.name ?? a.person?.organisation;
     if (!firma) return null;
+    // Der Briefkopf ist der eigene (ausgehend): nicht als neue Organisation vorschlagen.
+    if (von && eigenerAussteller({ name: firma, fundstelle: '' }, ctx.eigen.angaben)) return null;
     if (z && !(await this.d.rechteAn(z, { id: '', typId: ziel.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) return null;
     const werte = Object.fromEntries(Object.entries(vorschlaegeAus(ziel, text, { ...a, person: null, briefkopf: { ...(a.briefkopf ?? { fundstelle: a.person?.fundstelle ?? '' }), name: firma } }))
       .filter(([k, v]) => typeof v.wert === 'string' && ziel.felder.some((x) => x.key === k && x.typ !== 'referenz')).map(([k, v]) => [k, v.wert as string]));
@@ -531,6 +780,13 @@ export class Erkennung {
     const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
     const mappen = alle.filter((m) => lesbar.has(m.id));
     const erg = gleicheAb(text.slice(0, TEXT_MAX), typen, mappen, ziel);
+    // Eigene Organisation und Haushalt (#1043): nie als „von“ vorgeschlagen, nie „gehört dazu“; als Beleg für einen
+    // Mappentyp zählen sie auch nicht (sie stehen auf fast jedem Dokument) – `eigene` nennt sie für die Klassifizierung.
+    const eigen = await this.eigeneLage();
+    if (erg.verweise.von) { erg.verweise.von = erg.verweise.von.filter((x) => !eigen.ids.has(x.mappeId)); if (!erg.verweise.von.length) delete erg.verweise.von; }
+    if (erg.dazu) erg.dazu = erg.dazu.filter((x) => !eigen.ids.has(x.mappeId));
+    const eigene = erg.treffer.filter((x) => eigen.ids.has(x.mappeId)).map((x) => x.mappeId);
+    if (eigene.length) erg.eigene = eigene;
     const bezuege = Object.fromEntries(await this.repo().bezuege(erg.treffer.map((x) => x.mappeId)));
     log.info('Abgleich mit vorhandenen Mappen', { zeichen: text.length, mappen: mappen.length, treffer: erg.treffer.length, doppelt: erg.doppelt.length, ...(ziel ? { typ: ziel.name } : {}) });
     return { ...erg, bezuege };
@@ -553,7 +809,9 @@ export class Erkennung {
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
       await this.d.pruefeRecht(z, d.mappeId, 'R');
       const text = await this.repo().volltext(id);
-      if (text?.trim()) teile.push(text); else ohneText.push(id);
+      // E-Rechnung als XML (#1043): ohne Volltext zählt ihr lesbarer Auszug.
+      const er = !text?.trim() && istXmlDatei(d.name, d.mime) ? await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse) : null;
+      if (text?.trim()) teile.push(text); else if (er) teile.push(erechnungText(er)); else ohneText.push(id);
     }
     const text = teile.join('\n\n').slice(0, TEXT_MAX);
     const erg = await this.abgleich(text, typ, z);

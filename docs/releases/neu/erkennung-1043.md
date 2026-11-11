@@ -1,0 +1,11 @@
+art: minor
+
+## Neu
+
+- **E-Rechnung lesen** (#1043): „Aus Dokument ausfüllen“ übernimmt XRechnung (UBL oder CII, als `.xml`) und ZUGFeRD/Factur-X (im PDF eingebettet) direkt aus den Daten – Nummer, Datum, Fälligkeit, Beträge, Umsatzsteuer, IBAN, Rechnungssteller und auf Wunsch die Positionen. Gelesen wird ohne DTD und Entitäten und mit festen Grenzen; das Original bleibt unverändert.
+- **Gutschrift negativ** (#1043): Steht „Gutschrift“, „Erstattung“ oder „Rückzahlung“ auf dem Beleg, übernimmt die Erkennung den Betrag mit Minus – in Felder, die negative Beträge erlauben, mit Hinweis am Feld. Auch bei der Erkennung durch ein Paket.
+- **Lieferschein und Rechnung** (#1043): Steht auf einer Rechnung die Nummer eines vorhandenen Lieferscheins, bietet Ablago an, ihn beim Speichern zu verknüpfen; an einem neuen Lieferschein schlägt es die Rechnung vor, die seine Nummer nennt.
+
+## Geändert
+
+- **Eigene Organisation und Haushalt nie „von“** (#1043): Neben der eigenen Organisation (#995) sind jetzt auch die Personen des Haushalts nie Absender bzw. Aussteller. Stehen sie selbst als Aussteller drin, schlägt Ablago „ausgehend“ vor – nur mit Hinweis, nie still; solche Post wird nie automatisch zugeordnet. Eigene Mappen zählen auch nicht mehr als Beleg bei „Wohin gehört das?“.

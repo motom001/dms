@@ -13,7 +13,7 @@ import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon
 import type { PaketHinweis } from '../../../shared/src/berechnet';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
 import { teileVon } from '../../../shared/src/zusammengesetzt';
-import { Knopf, NurLesenFeld, ProzentEingabe, ZeitraumEingabe } from '../bausteine';
+import { HakenFeld, Knopf, NurLesenFeld, ProzentEingabe, ZeitraumEingabe } from '../bausteine';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -427,6 +427,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const [vorschlaege, setVorschlaege] = useState<Record<string, FeldVorschlag>>({});
   const [adNeu, setAdNeu] = useState<TypVorschlaege['neu']>({});
   const [adMeldung, setAdMeldung] = useState<string>();
+  // Nach dem Speichern (#1043): Positionen der E-Rechnung anlegen, Mappen, die dazugehören, verknüpfen – abwählbar.
+  const [adPositionen, setAdPositionen] = useState<(NonNullable<TypVorschlaege['positionen']> & { an: boolean }) | null>(null);
+  const [adDazu, setAdDazu] = useState<Array<NonNullable<TypVorschlaege['dazu']>[number] & { an: boolean }>>([]);
   // Titel und Typ der Mappen, auf die verwiesen wird (vom Server und aus der Auswahl).
   const [bekannt, setBekannt] = useState<Bezuege>(details?.bezuege ?? {});
   useEffect(() => { if (details) setBekannt((b) => ({ ...b, ...details.bezuege })); }, [details]);
@@ -451,7 +454,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (mappe && !werteGeaendert) setStand(mappe.geaendert);
   }, [startJson, mappe?.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- nur übernehmen, wenn sich die gespeicherten Werte ändern (#609)
   const dokumenteGeaendert = neueDateien.length > 0 || entfernt.length > 0;
-  const geaendert = werteGeaendert || dokumenteGeaendert || !mappe;
+  const danachOffen = !!adPositionen?.an || adDazu.some((x) => x.an);
+  const geaendert = werteGeaendert || dokumenteGeaendert || danachOffen || !mappe;
   useUngespeichert(werteGeaendert || dokumenteGeaendert);
 
   const dokumenteIn = (key: string) => (details?.dokumente ?? []).filter((x) => x.registerKey === key);
@@ -679,6 +683,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     // Abschnitte mit Vorschlägen klappen auf (#890).
     oeffneAbschnitte([...Object.keys(neu), ...Object.keys(marken)]);
     setAdNeu(Object.fromEntries(Object.entries(r.neu).filter(([k]) => istLeer(ausRoh(typ.felder.find((x) => x.key === k)!, roh[k])))));
+    merkeDanach(r);
     if (ablegen && dateien.length) setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: ablegen }))]);
     const n = Object.values(neu).filter((v) => v.art === 'eingetragen').length + Object.keys(marken).length;
     const alt = Object.values(neu).filter((v) => v.art === 'alternative').length;
@@ -692,6 +697,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const ziel = register.find((x) => x.art === 'felder' && felderAuf(x).some((f) => neu[f.key]));
     if (ziel) setAktiv(ziel.key);
     return werte;
+  }
+  /** E-Rechnung und „gehört dazu“ (#1043): was beim Speichern noch geschieht – zunächst angehakt. */
+  function merkeDanach(r: TypVorschlaege) {
+    setAdPositionen(r.positionen && d.typ(r.positionen.typId) ? { ...r.positionen, an: true } : null);
+    setAdDazu((r.dazu ?? []).filter((x) => x.mappeId !== mappe?.id).map((x) => ({ ...x, an: true })));
   }
   function vorschlagZuruecknehmen(k: string) {
     const v = vorschlaege[k];
@@ -763,10 +773,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const sicher = v.sicherheit === 'hoch' ? 'sicher' : v.sicherheit === 'mittel' ? 'wahrscheinlich' : 'unsicher';
     if (v.art === 'eingetragen') {
       if (JSON.stringify(roh[f.key]) !== JSON.stringify(zuRoh(f, v.wert))) return null;
-      return <p className="ad-hinweis"><span className="chip">{t('ablage.mappeformular.vorschlag')}</span> <span className="leise">{sicher}{v.fundstelle ? <> – „{v.fundstelle}“</> : null}</span> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>{t('ablage.mappeformular.zuruecknehmen')}</button></p>;
+      return <p className="ad-hinweis"><span className="chip">{t('ablage.mappeformular.vorschlag')}</span> {v.hinweis && <><strong>{v.hinweis}</strong> </>}<span className="leise">{sicher}{v.fundstelle ? <> – „{v.fundstelle}“</> : null}</span> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>{t('ablage.mappeformular.zuruecknehmen')}</button></p>;
     }
     const text = f.typ === 'referenz' ? titelOder(bekannt[String(Array.isArray(v.wert) ? v.wert[0] : v.wert)]?.titel) : formatiere(f, v.wert);
-    return <p className="ad-hinweis"><span className="chip">{t('ablage.mappeformular.im-dokument')}</span> <strong>{text}</strong> <span className="leise">({sicher})</span> <button type="button" className="textknopf klein" onClick={() => alternativeUebernehmen(f.key)}>{t('ablage.mappeformular.uebernehmen')}</button> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>{t('ablage.mappeformular.verwerfen')}</button></p>;
+    return <p className="ad-hinweis"><span className="chip">{t('ablage.mappeformular.im-dokument')}</span> <strong>{text}</strong> <span className="leise">({sicher}){v.hinweis ? ` – ${v.hinweis}` : ''}</span> <button type="button" className="textknopf klein" onClick={() => alternativeUebernehmen(f.key)}>{t('ablage.mappeformular.uebernehmen')}</button> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>{t('ablage.mappeformular.verwerfen')}</button></p>;
   }
   const alternativen = Object.entries(vorschlaege).filter(([, v]) => v.art === 'alternative').map(([k]) => k);
   /** Altes Textfeld nach einem Paket-Update (#534): leer ausgeblendet, sonst mit Hinweis auf die Umwandlung. */
@@ -872,6 +882,19 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         neu.push({ art: 'schlecht', text: t('ablage.mappeformular.wurde-nicht-hochgeladen', { name: n.datei.name, message: (e as Error).message }) });
       }
     }
+    // E-Rechnung (#1043): Positionen als Teile dieser Mappe anlegen; Mappen, die dazugehören, verknüpfen.
+    if (adPositionen?.an) {
+      let fehlt = 0; let letzter = '';
+      for (const w of adPositionen.zeilen) {
+        try { await api.mappeAnlegen({ typId: adPositionen.typId, werte: { ...w, [adPositionen.feldKey]: gespeichert!.id } }); } catch (e) { fehlt++; letzter = (e as Error).message; }
+      }
+      if (fehlt) neu.push({ art: 'schlecht', text: t('ablage.mappeformular.positionen-nicht-angelegt', { anzahl: fehlt, message: letzter }) });
+    }
+    for (const x of adDazu.filter((y) => y.an)) {
+      const zf = d.typ(x.typId)?.felder.find((f) => f.key === x.feldKey);
+      try { await api.mappeAendern(x.mappeId, { werte: { [x.feldKey]: zf?.mehrfach ? [gespeichert!.id] : gespeichert!.id } }); } catch (e) { neu.push({ art: 'schlecht', text: t('ablage.mappeformular.dazu-nicht-verknuepft', { titel: titelOder(x.titel), message: (e as Error).message }) }); }
+    }
+    setAdPositionen(null); setAdDazu([]);
     // Zuordnen (#192): Die Post gehört jetzt zu dieser neuen Mappe – bzw. wird zu ihr (#936, aufgelöst).
     let aufgeloest = false;
     if (!mappe && zuordnen) {
@@ -1036,16 +1059,23 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       ? <AusDokument typ={typ} titel={knopf} mappeId={mappe?.id} dokumente={(details?.dokumente ?? []).filter((x) => x.ocr?.stand === 'fertig')} fertig={uebernimmVorschlaege} schliessen={() => setAdOffen(false)} />
       : <div className="ad-leiste"><button type="button" className="knopf klein" onClick={() => (mappe && mitText.length ? geheZu(`/ablage/${sicht}/${mappe.id}/uebernehmen`) : setAdOffen(true))}><Symbol name="kamera" /> {knopf}</button>
           {mappe && mitText.length > 0 && <button type="button" className="textknopf klein" onClick={() => setAdOffen(true)}>{t('ablage.uebernehmen.foto-oder-datei')}</button>}</div>)}
-    {(adMeldung || Object.keys(adNeu).length > 0) && (
+    {(adMeldung || Object.keys(adNeu).length > 0 || adPositionen || adDazu.length > 0) && (
       <div className="hinweis info ad-ergebnis" role="status">
         {adMeldung && <p>{adMeldung}</p>}
+        {adPositionen && <HakenFeld beschriftung={t('ablage.mappeformular.positionen-anlegen', { anzahl: adPositionen.zeilen.length, feld: feldLabel(typ.felder.find((f) => f.key === adPositionen.feld) ?? { key: adPositionen.feld, label: adPositionen.feld }) })}
+          hinweis={adPositionen.weitere ? t('ablage.mappeformular.positionen-weitere', { anzahl: adPositionen.weitere }) : undefined}>
+          <input type="checkbox" checked={adPositionen.an} onChange={(e) => setAdPositionen((x) => x && { ...x, an: e.target.checked })} />
+        </HakenFeld>}
+        {adDazu.map((x) => <HakenFeld key={x.mappeId} beschriftung={t('ablage.mappeformular.dazu-verknuepfen', { typ: typName(d.typ(x.typId) ?? { name: '' }), titel: titelOder(x.titel), feld: x.feld })} hinweis={x.gruende.length ? t('ablage.mappeformular.dazu-gefunden', { gruende: x.gruende.join(', ') }) : undefined}>
+          <input type="checkbox" checked={x.an} onChange={(e) => setAdDazu((l) => l.map((y) => (y.mappeId === x.mappeId ? { ...y, an: e.target.checked } : y)))} />
+        </HakenFeld>)}
         {Object.entries(adNeu).map(([k, n]) => {
           const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n.typId);
           return f && ziel ? <p key={k}>{t('ablage.mappeformular.fuer-gibt-es-noch', { label: feldLabel(f), values: Object.values(n.werte).slice(0, 3).join(', ') })}{' '}{darfErstellen(ziel) && <button type="button" className="textknopf" onClick={() => void neuAnlegen(k)}>{t('ablage.mappeformular.mit-diesen-angaben-anlegen', { name: ziel.name })}</button>}</p> : null;
         })}
         {(alternativen.length > 0 || Object.keys(vorschlaege).length > 0) && <div className="knoepfe">
           {alternativen.length > 0 && <button type="button" className="knopf klein" onClick={() => alternativen.forEach(alternativeUebernehmen)}>{t('ablage.mappeformular.alle-alternativen-uebernehmen')}</button>}
-          <button type="button" className="textknopf klein" onClick={() => { Object.keys(vorschlaege).forEach(vorschlagZuruecknehmen); setAdMeldung(undefined); setAdNeu({}); }}>{t('ablage.mappeformular.alle-vorschlaege-zuruecknehmen')}</button>
+          <button type="button" className="textknopf klein" onClick={() => { Object.keys(vorschlaege).forEach(vorschlagZuruecknehmen); setAdMeldung(undefined); setAdNeu({}); setAdPositionen(null); setAdDazu([]); }}>{t('ablage.mappeformular.alle-vorschlaege-zuruecknehmen')}</button>
         </div>}
       </div>
     )}
@@ -1079,7 +1109,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         <span />
       </div> : <div className={`speicherleiste${mappe && !werteGeaendert && !dokumenteGeaendert && !sendet && !meldung ? ' hy-ruhig' : ''}`}>
         <span className="hy-nur-breit">{loeschKnopf}</span>
-        <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? t('ablage.mappeformular.speichere') : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert) ? t('ablage.mappeformular.ungespeicherte-aenderungen') : !mappe ? aufloesenHinweis : '')}</span>
+        <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? t('ablage.mappeformular.speichere') : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert || danachOffen) ? t('ablage.mappeformular.ungespeicherte-aenderungen') : !mappe ? aufloesenHinweis : '')}</span>
         <div className="knoepfe">
           {mappe
             ? <button type="button" className="knopf" disabled={!(werteGeaendert || dokumenteGeaendert) || sendet} onClick={verwerfen}><span className="hy-nur-breit">{t('ablage.mappeformular.aenderungen-verwerfen')}</span><span className="hy-nur-schmal">{t('ablage.mappeformular.verwerfen')}</span></button>
@@ -1275,7 +1305,7 @@ function vorbelegtAusVorschlaegen(typ: Mappentyp, r: TypVorschlaege, roh: RohWer
 }
 
 /** Ein Vorschlag aus „Aus Dokument ausfüllen“ (#391) am Feld. */
-interface FeldVorschlag { wert: Wert; sicherheit: Sicherheit; fundstelle: string; art: 'eingetragen' | 'alternative'; vorher?: Roh }
+interface FeldVorschlag { wert: Wert; sicherheit: Sicherheit; fundstelle: string; art: 'eingetragen' | 'alternative'; vorher?: Roh; hinweis?: string }
 
 function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, typFelder = [], unpassend, gruende, eigene, neu, zusatz, plzDeutsch, gespeichert }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;

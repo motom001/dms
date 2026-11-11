@@ -8,6 +8,7 @@ import { aufkleberbogenPdf } from '../pdf/aufkleber';
 import { notfallblattPdf } from '../pdf/notfallblatt';
 import { liesPdfA, textebeneWoerter } from '../pdf/archiv';
 import { bereinigePdf } from '../pdf/anzeige';
+import { eingebetteteERechnung } from '../pdf/erechnung';
 import { erzeugeDokument, type MappenInhalt } from '../pdf/demo-dokumente';
 import { textdokumentPdf } from '../pdf/schreiber';
 import { briefPdf } from '../pdf/brief';
@@ -55,7 +56,7 @@ export const VORGAENGE = {
   analysiereVerkleinern, verkleinerePdf,
   analysiereSchwaerzen, schwaerze, schwaerzSeitenbild, arbeitsPdf,
   textdokumentPdf, mappenPdfZeichnen, aufkleberbogenPdf, notfallblattPdf, briefPdf,
-  liesPdfA, textebeneWoerter, bereinigePdf,
+  liesPdfA, textebeneWoerter, bereinigePdf, eingebetteteERechnung,
   demoDokument, exportTabellen, exportTabelleAusDatei,
 };
 

@@ -151,7 +151,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const vorschlagStart = useMemo<TypVorschlaege | undefined>(() => {
     if (!zielTyp || !erkannt || erkannt.typId !== zielTyp.id) return undefined;
     const v = erkannt.vorschlaege;
-    const r: TypVorschlaege = { vorschlaege: { ...(v?.vorschlaege ?? {}) }, bezuege: { ...(v?.bezuege ?? {}), ...(erkannt.abgleich?.bezuege ?? {}) }, neu: { ...(v?.neu ?? {}) }, verworfen: v?.verworfen ?? 0, zeichen: v?.zeichen ?? 0, ...(v?.engine ? { engine: v.engine } : {}), ...(v?.hinweis ? { hinweis: v.hinweis } : {}) };
+    const r: TypVorschlaege = { vorschlaege: { ...(v?.vorschlaege ?? {}) }, bezuege: { ...(v?.bezuege ?? {}), ...(erkannt.abgleich?.bezuege ?? {}) }, neu: { ...(v?.neu ?? {}) }, verworfen: v?.verworfen ?? 0, zeichen: v?.zeichen ?? 0, ...(v?.engine ? { engine: v.engine } : {}), ...(v?.hinweis ? { hinweis: v.hinweis } : {}), ...(v?.positionen ? { positionen: v.positionen } : {}), ...(v?.dazu ? { dazu: v.dazu } : {}), ...(v?.erechnung ? { erechnung: v.erechnung } : {}) };
     for (const [k, liste] of Object.entries(erkannt.abgleich?.verweise ?? {})) {
       const f = zielTyp.felder.find((x) => x.key === k);
       const best = liste[0];

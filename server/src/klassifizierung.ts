@@ -160,7 +160,8 @@ export class Klassifizierung {
     const a = await this.erkennung.abgleich(text, undefined, z).catch(() => null);
     if (!a?.treffer.length) return { belege: [], bezuege: {} };
     const belege: Array<Klassbeleg & { typId: string }> = [];
-    const treffer = a.treffer.filter((x) => !x.unsicher);
+    // Eigene Organisation und Haushalt (#1043) stehen auf fast jedem Dokument – kein Beleg für einen Mappentyp.
+    const treffer = a.treffer.filter((x) => !x.unsicher && !a.eigene?.includes(x.mappeId));
     for (const tr of treffer) {
       const zeigen = ziele.flatMap((zt) => zt.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(tr.typId) && zt.id !== tr.typId).slice(0, 1).map((f) => ({ zt, f })));
       if (!zeigen.length) continue;

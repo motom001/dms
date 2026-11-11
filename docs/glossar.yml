@@ -298,12 +298,19 @@ begriffe:
     code: merkmale.beruflich
   - begriff: Eigene Organisation
     bereich: grundbegriffe
-    beschreibung: Die Organisation in der Ablage, die „wir“ sind – der eigene Betrieb, die eigene Firma oder das Gewerbe. Gekennzeichnet über das Feld „Eigene Organisation“ (Paket Basis); setzen darf es nur, wer die eigene Organisation verwaltet. Name, Anschrift, Kontakt, Verantwortlicher und Datenschutzbeauftragter werden dort einmal gepflegt und von Auskünften und Löschkonzept genutzt; die Erkennung nimmt sie nie als Absender. Mehrere sind möglich.
+    beschreibung: Die Organisation in der Ablage, die „wir“ sind – der eigene Betrieb, die eigene Firma oder das Gewerbe. Gekennzeichnet über das Feld „Eigene Organisation“ (Paket Basis); setzen darf es nur, wer die eigene Organisation verwaltet. Name, Anschrift, Kontakt, Verantwortlicher und Datenschutzbeauftragter werden dort einmal gepflegt und von Auskünften und Löschkonzept genutzt; die Erkennung nimmt sie nie als Absender („von“); steht sie als Aussteller drin, schlägt sie „ausgehend“ nur mit Hinweis vor (#1043). Mehrere sind möglich.
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Mandant, Betrieb und Verantwortliche, Impressum]
     verwandt: [Beruflich genutzt]
     code: merkmal eigeneOrganisation
+  - begriff: E-Rechnung
+    bereich: ablage
+    beschreibung: Rechnung als strukturierte Daten (XML) nach EN 16931 – XRechnung (UBL oder CII, als eigene XML-Datei) oder ZUGFeRD/Factur-X (die XML steckt im PDF). „Aus Dokument ausfüllen“ übernimmt Angaben und Positionen direkt aus den Daten; das Original bleibt unverändert.
+    einsteiger: erklaeren
+    begegnet: alle
+    verwandt: [Archivfassung]
+    code: erechnung
   - begriff: Favoriten
     bereich: grundbegriffe
     beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).

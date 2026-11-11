@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFObject, PDFRawStream, PDFRef, PDFStream, PDFString } from 'pdf-lib';
 import type { SchwaerzSeite } from '../../../shared/src/schwaerzen';
+import { ERECHNUNG_DATEINAME } from '../../../shared/src/erechnung';
 import { liesBbox, popplerDrehungen } from './schwaerzen';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
@@ -46,7 +47,8 @@ export interface PdfaBefund {
 
 /** Aktionen, die die Archivfassung nicht enthalten darf (PDF/A verbietet sie bzw. sie laden nach oder senden). */
 const VERBOTENE_AKTIONEN = new Set(['JavaScript', 'Launch', 'URI', 'SubmitForm', 'ImportData', 'GoToR', 'GoToE', 'ResetForm', 'Sound', 'Movie', 'Rendition', 'Hide', 'SetOCGState', 'Trans', 'GoTo3DView', 'RichMediaExecute']);
-const ERECHNUNG = /^(factur-x|zugferd-invoice|zugferd|xrechnung|order-x)\.xml$/i;
+/** Dateinamen eingebetteter E-Rechnungen (#1043: eine Stelle in shared/src/erechnung.ts). */
+const ERECHNUNG = ERECHNUNG_DATEINAME;
 
 const text = (o: PDFObject | undefined): string | null => (o instanceof PDFString || o instanceof PDFHexString ? o.decodeText() : o instanceof PDFName ? o.decodeText() : null);
 

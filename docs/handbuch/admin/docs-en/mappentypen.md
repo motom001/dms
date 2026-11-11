@@ -224,6 +224,13 @@ Suitable are text, long text, number, amount, date, choice list, link, period an
 
 The registry's packages (e.g. *Basis*) set the tick themselves. On an update, Ablago only takes it over on fields where you haven't set anything yet; the preview names them under "Fill from document".
 
+**What recognition takes into account by itself** (#1043):
+
+- **from and to:** link fields with the key `von` (issuer, invoice issuer, supplier) never get an [own organisation](organisation.md) and never a person of the household – person folders whose name or email address is that of an account in this Library. If one of them is the issuer in the sender line or the seller in an e-invoice, Ablago suggests it for `von` with low certainty and the note "outgoing?", and the other party for `an`. For incoming documents `an` stays empty ("empty means us"). Ablago never assigns post with your own issuer automatically.
+- **Credit note:** if "Gutschrift", "Erstattung" or "Rückzahlung" (credit note, refund, repayment) is in the header or next to the amount, positive amounts in amount fields with **allow negative amounts** become negative – also when a package does the recognition.
+- **E-invoice:** Ablago reads XRechnung (UBL or CII, as `.xml`) and ZUGFeRD/Factur-X (embedded in a PDF) directly: numbers, dates, amounts, VAT, IBAN, issuer and items. Which field gets what follows, as above, from field type, key and label ("Net", "Due on", "Delivery note number"). Items go into the first [table](#tabelle) of the type whose rows are parts – when saving, and only with the right to create them. It is read without DTD and entities, at most 4 MB and 500 items; the original stays unchanged.
+- **Belongs to this:** if the document contains a folder of another type (via *Use to find existing folders*) whose link field points to this type and is still empty – such as a delivery note on an invoice –, Ablago offers to link it when saving. The other way round, an empty link field of the kind *belongs to* gets the one folder whose documents mention the number of this document.
+
 ### Use to find existing folders {#zum-wiederfinden-nutzen}
 
 With the tick **Use to find existing folders** you tell Ablago which values it uses to find **existing folders** again in a document. Typical fields:

@@ -62,6 +62,14 @@ Which fields recognition fills in is set by the administrator on the folder type
 
 **Business card with a QR code:** many cards carry a QR code with all contact details (vCard). If the administrator has chosen the package **Read QR code**, Ablago takes the details from this code instead of from the recognised text – phone numbers and names are then correct character for character. Below the result, "Recognised with "Read QR code"." appears; the passage names the line from the vCard. The package reads documents that are already in the folder or in a post: so first file the photo of the card (or open the post it arrived in) and then click **Fill in from document** with this document. If the card has no QR code or something else is in it (a web address, a GiroCode), Ablago reads the text as usual, and a sentence tells you so.
 
+**E-invoice (XRechnung, ZUGFeRD):** if you choose an e-invoice as a file (`.xml`) or a PDF with an embedded invoice (ZUGFeRD, Factur-X), Ablago reads the details straight from the data instead of from the text – invoice number, date, due date, amounts, VAT, IBAN and the issuer. The passage then reads "E-invoice: …". If the folder type has a table for items (such as *Items* on an invoice), the box says "Create … items from the e-invoice … when saving" – they are only created with **Save folder**; untick it if you don't want them. The file itself stays unchanged in the documents tab.
+
+**Credit note:** if "credit note", "refund" or "repayment" (Gutschrift, Erstattung, Rückzahlung) appears at the top of the document (or next to the amount), Ablago enters the amount with a minus sign – only in fields that allow negative amounts – and says so at the field: ""Gutschrift" on the document – taken over as a negative amount".
+
+**Your own organisation and household:** Ablago never suggests your own organisation or the people with an account in your Library as the sender (*from*, such as *Issued by*) – even if their name is in the address field. If they appear at the top as the issuer (in the small sender line, or as the seller in an e-invoice), it is probably an **outgoing** document: your organisation is then suggested in the field, with low certainty and the note "outgoing? Please check.", and *to* gets the other party. Ablago never decides this silently – check it before you save.
+
+**Belongs to this:** if an invoice shows the number of a delivery note that already exists, the box says "Delivery note "…" belongs to this – link it when saving". When you save, Ablago enters the invoice on the delivery note under *Belongs to invoice*. The other way round, Ablago suggests on a new delivery note the invoice whose documents mention its number.
+
 ### The fields {#die-felder}
 
 | Field | How to enter it |

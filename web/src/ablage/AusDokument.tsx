@@ -62,7 +62,7 @@ export function AusDokument({ typ, titel, mappeId, dokumente, fertig, schliessen
         {istTouch() && <button type="button" className="knopf primaer" disabled={!!laeuft} onClick={() => kamera.current?.click()}><Symbol name="kamera" /> {dateien.length ? t('ablage.ausdokument.weiteres-foto') : t('ablage.ausdokument.foto-aufnehmen')}</button>}
         <button type="button" className="knopf" disabled={!!laeuft} onClick={() => wahl.current?.click()}>{istTouch() ? t('ablage.ausdokument.foto-oder-datei-waehlen') : t('ablage.ausdokument.datei-waehlen')}</button>
         <input ref={kamera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { dazu(e.target.files); e.target.value = ''; }} />
-        <input ref={wahl} type="file" accept="image/*,application/pdf,.vcf,text/vcard" multiple hidden onChange={(e) => { dazu(e.target.files); e.target.value = ''; }} />
+        <input ref={wahl} type="file" accept="image/*,application/pdf,.vcf,text/vcard,.xml,application/xml,text/xml" multiple hidden onChange={(e) => { dazu(e.target.files); e.target.value = ''; }} />
       </div>
       {dateien.length > 0 && (
         <ul className="ad-dateien">{dateien.map((f, i) => (

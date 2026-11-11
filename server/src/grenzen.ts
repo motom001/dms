@@ -116,6 +116,17 @@ export const MAILSUCHE_ANTWORT_MAX = 64 * KB;
 export const WEBDAV_STEMPEL_SPEICHER = 64 * MB;
 /** XML-Körper einer WebDAV-Anfrage (PROPFIND, LOCK …). */
 export const WEBDAV_XML_MAX = 64 * KB;
+/**
+ * E-Rechnung (#1043, XRechnung und ZUGFeRD): so groß darf das XML sein – als Datei und entpackt aus dem PDF-Anhang.
+ * Übliche Rechnungen haben wenige KB, große mit vielen Positionen einige hundert; 4 MB lassen Luft, ohne dass ein
+ * präpariertes XML den Speicher füllt. Ein größeres wird nicht gelesen (die Erkennung arbeitet dann mit dem Text).
+ */
+export const ERECHNUNG_XML_MAX = 4 * MB;
+/** E-Rechnung: höchstens so tief verschachtelt (UBL und CII brauchen gut 10 Ebenen) und so viele Elemente. */
+export const ERECHNUNG_TIEFE_MAX = 64;
+export const ERECHNUNG_ELEMENTE_MAX = 200_000;
+/** E-Rechnung: höchstens so viele Positionen werden übernommen; weitere bleiben im Original (Hinweis). */
+export const ERECHNUNG_POSITIONEN_MAX = 500;
 
 /* ---------- Ausgaben externer Programme (`maxBuffer`) ---------- */
 

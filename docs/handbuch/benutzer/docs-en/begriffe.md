@@ -112,7 +112,7 @@ A company, authority, bank, practice, club or other body you deal with. Folder t
 See also: [Branch](#niederlassung), [Person](#person).
 
 <a id="eigene-organisation"></a>**Own organisation** (*Eigene Organisation*) · ✓ everyday word · administrators  
-The organisation in the Library that is "us" – your own business, company or trade. Marked by the field "Own organisation" (package Basis); only someone managing the own organisation may set it. Name, address, contact, controller and data protection officer are kept there once and used by requests and the deletion concept; recognition never takes it as sender. Several are possible.  
+The organisation in the Library that is "us" – your own business, company or trade. Marked by the field "Own organisation" (package Basis); only someone managing the own organisation may set it. Name, address, contact, controller and data protection officer are kept there once and used by requests and the deletion concept; recognition never takes it as sender ("from"); if it is the issuer, recognition only suggests "outgoing" with a note (#1043). Several are possible.  
 See also: [Used for work](#beruflich-genutzt).
 
 <a id="prozent"></a>**Percentage** (*Prozent*) · ✓ everyday word · everyone  
@@ -226,6 +226,10 @@ See also: [Reminder](#erinnerung), [To do](#zu-erledigen).
 <a id="richtung-post"></a>**Direction (post)** (*Richtung (Post)*) · ✓ everyday word · everyone  
 Whether post is incoming or outgoing. "Send by email" creates outgoing post.  
 See also: [Post](#post).
+
+<a id="e-rechnung"></a>**E-invoice** (*E-Rechnung*) · ~ with explanation · everyone  
+An invoice as structured data (XML) according to EN 16931 – XRechnung (UBL or CII, as a separate XML file) or ZUGFeRD/Factur-X (the XML is inside the PDF). "Fill in from document" takes over details and items directly from the data; the original stays unchanged.  
+See also: [Archive version](#archivfassung).
 
 <a id="export"></a>**Export** · ~ with explanation · everyone  
 Downloading selected folders of a view as Excel, CSV, ZIP or PDF.  

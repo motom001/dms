@@ -45,6 +45,7 @@ How large something may be at most. Ablago checks every limit before it processe
 | Error report (with screenshot and attachments) | 30 MB, the screenshot 10 MB |
 | Logo of a design | 1 MB |
 | Setup file | 64 KB |
+| E-invoice (XML as a file or from the PDF attachment) | 4 MB, at most 64 levels deep, 200,000 elements, 500 items are taken over; without DTD and entities. Ablago doesn't read anything larger as an e-invoice |
 | All other requests (forms, settings) | 2 MB; they do not accept a file at all |
 
 A reverse proxy in front needs its own limit slightly above that, for nginx `client_max_body_size 260m;` (with bundle files) or `130m` (without), see [Installation](installation.md#hinter-einem-reverse-proxy).
