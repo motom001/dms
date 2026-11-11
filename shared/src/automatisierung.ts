@@ -16,7 +16,7 @@ import { EREIGNISKATALOG, KATALOG_ARTEN, OHNE_WENN, type KatalogArt } from './er
 import { VORLAUF_EINHEITEN, type VorlaufEinheit } from './fristen';
 import type { Feld, Mappentyp } from './model';
 import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
-import { bedingungsProblem, bereinigeBedingungen, verschiebe, type Bedingung, type Sicht } from './sichten';
+import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, verschiebe, type Bedingung, type Sicht } from './sichten';
 import { t } from './texte';
 import { PAKET_ID, SCHLUESSEL } from './kennungen';
 
@@ -315,6 +315,53 @@ function bereinigeUnd(e: unknown, tiefe = 0): UndKarte | null {
     return { art: 'gruppe', modus: x.modus === 'eine' ? 'eine' : 'alle', karten, ...nicht };
   }
   return null;
+}
+
+const UND_ARTEN = ['bedingung', 'ansicht', 'favorit', 'gruppe'];
+
+/**
+ * Was `bereinigeAutomatisierung` am Und-Teil weglassen würde – je Stelle ein Text, leer = in Ordnung (#1108). Für
+ * Pakete: Eine falsch geschriebene Bedingung ist dort ein Fehler, statt still wegzufallen (die Automatisierung liefe
+ * sonst öfter als gedacht). Die Werkbank braucht das nicht – ihr Editor erzeugt nur gültige Karten.
+ */
+export function undEingabeFehler(roh: unknown): string[] {
+  if (roh === undefined || roh === null) return [];
+  if (typeof roh !== 'object' || Array.isArray(roh) || !Array.isArray((roh as Record<string, unknown>).karten)) return [t('gemeinsam.bedingungspruefung.und-form')];
+  return undKartenFehler(roh as Record<string, unknown>, 'und', 0);
+}
+
+function undKartenFehler(x: Record<string, unknown>, wo: string, tiefe: number): string[] {
+  const karten = Array.isArray(x.karten) ? x.karten : [];
+  const aus: string[] = [];
+  const stelle = (teil: string, grund: string) => aus.push(t('gemeinsam.bedingungspruefung.und-stelle', { wo: teil, grund }));
+  if (x.modus !== undefined && x.modus !== 'alle' && x.modus !== 'eine') stelle(wo, t('gemeinsam.bedingungspruefung.modus', { wert: String(x.modus) }));
+  if (karten.length > AUTOMATISIERUNG_GRENZEN.bedingungen) stelle(wo, t('gemeinsam.bedingungspruefung.zu-viele', { max: AUTOMATISIERUNG_GRENZEN.bedingungen }));
+  karten.forEach((k, i) => {
+    const hier = `${wo}.karten[${i + 1}]`;
+    const fehler = undKarteFehler(k, hier, tiefe);
+    if (typeof fehler === 'string') stelle(hier, fehler);
+    else aus.push(...fehler);
+  });
+  return aus;
+}
+
+function undArtFehler(c: Record<string, unknown>): string | null {
+  if (c.nicht !== undefined && typeof c.nicht !== 'boolean') return t('gemeinsam.bedingungspruefung.nicht');
+  if (c.art === undefined) return t('gemeinsam.bedingungspruefung.art-fehlt', { arten: UND_ARTEN.join(', ') });
+  return UND_ARTEN.includes(String(c.art)) ? null : t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(c.art), arten: UND_ARTEN.join(', ') });
+}
+
+/** Eine Und-Karte: ein Grund (diese Stelle), sonst die Gründe aus einer Gruppe ([] = in Ordnung). */
+function undKarteFehler(k: unknown, hier: string, tiefe: number): string | string[] {
+  if (!k || typeof k !== 'object' || Array.isArray(k)) return t('gemeinsam.bedingungspruefung.kein-objekt');
+  const c = k as Record<string, unknown>;
+  const form = undArtFehler(c);
+  if (form) return form;
+  if (c.art === 'bedingung') { const g = bedingungEingabeFehler(c.bedingung); return g ? t('gemeinsam.bedingungspruefung.innen', { grund: g }) : []; }
+  if (c.art === 'ansicht') return id(c.sicht) ? [] : t('gemeinsam.bedingungspruefung.sicht-fehlt');
+  if (c.art === 'favorit') return bereinigeEmpfaenger(c.von) ? [] : t('gemeinsam.bedingungspruefung.von-fehlt');
+  if (tiefe > 0) return t('gemeinsam.bedingungspruefung.gruppe-in-gruppe');
+  return Array.isArray(c.karten) ? undKartenFehler(c, hier, 1) : t('gemeinsam.bedingungspruefung.und-form');
 }
 
 /** „Paket nach Zeitplan ausführen“ (#1082): Paket-Id und Aufgabe nur mit gültiger Kennung, sonst leer. */

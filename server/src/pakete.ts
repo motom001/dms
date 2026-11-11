@@ -19,7 +19,7 @@ import { parse as yamlLesen } from 'yaml';
 import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, zieleVon, ZIELTYPEN_MAX, type Abschnitt, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
 import { FELDMERKMALE, istFeldmerkmal, istSchreibschutz, SCHREIBSCHUTZ } from '../../shared/src/organisation';
 import { bereinigeAbschnitte } from '../../shared/src/darstellung';
-import type { Anzeigeregel } from '../../shared/src/anzeige';
+import { anzeigeEingabeFehler, type Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import type { MappenAktion } from '../../shared/src/paketaktionen';
@@ -28,10 +28,10 @@ import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKE
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
-import { bereinigeAutomatisierung, zeitplanText } from '../../shared/src/automatisierung';
+import { bereinigeAutomatisierung, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
-import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
+import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst, PaketQuelleEintrag } from './dienst';
 import { Fachfehler } from './fehler';
@@ -508,15 +508,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       }
     }
     if (felder.filter((f) => f.merkmal !== undefined).length > 1) fehler.push(`${wo}: höchstens ein Feld mit merkmal je Mappentyp.`);
-    // Anzeigen, wenn … (#1033) an Feldern und Abschnitten: ein Objekt; Typen als Verweis wie bei ziel. Was im Einzelnen
-    // nicht passt, meldet die Prüfung des Mappentyps beim Anlegen.
-    const anzeigen = [...felder.map((f) => ({ key: f.key, a: (f as unknown as Record<string, unknown>).anzeigen })),
-      ...register.flatMap((r) => (Array.isArray(r.abschnitte) ? r.abschnitte : []).filter(istObjekt).map((x) => ({ key: `${r.key}.${str(x.vor)}`, a: x.anzeigen })))];
-    for (const { key, a } of anzeigen) {
-      if (a === undefined || a === null) continue;
-      if (!istObjekt(a) || !Array.isArray(a.bedingungen)) { fehler.push(`${wo}: „${key}“: anzeigen muss ein Objekt mit modus und bedingungen sein.`); continue; }
-      for (const b of a.bedingungen.filter(istObjekt)) if (b.art === 'verweistyp' && !TYPVERWEIS.test(str(b.typ))) fehler.push(`${wo}: „${key}“: anzeigen nennt den Mappentyp „${str(b.typ)}“ ungültig.`);
-    }
+    // Anzeigen, wenn … (#1033) an Feldern und Abschnitten; was im Einzelnen nicht passt, meldet der Mappentyp beim Anlegen.
+    fehler.push(...anzeigenFehler(felder, register, `${wo} „${str(t.schluessel)}“`));
     if (!register.length) fehler.push(`${wo}: mindestens ein Register nötig.`);
     // Archivmodus (#1051): Schreibweise wie in der Registry; was nicht passt, verhindert die Installation.
     const archivFehler = paketArchivFehler(t.archiv, felder, wo);
@@ -540,6 +533,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   const sichten = liste('sichten').map((s, i): PaketSicht => {
     if (!SCHLUESSEL.test(str(s.schluessel))) fehler.push(t('meldungen.pakete.sichten-ungueltige-kennung', { wert: i + 1 }));
     if (!str(s.name).trim()) fehler.push(t('meldungen.pakete.sichten-name-fehlt', { wert: i + 1 }));
+    fehler.push(...sichtBedingungenFehler(s.bedingungen, `sichten[${i + 1}] „${str(s.schluessel)}“`));
     return {
       schluessel: str(s.schluessel), name: str(s.name).trim(), beschreibung: s.beschreibung ? str(s.beschreibung) : undefined, eltern: s.eltern ? str(s.eltern) : undefined,
       ...(istObjekt(s.beschriftungen) ? { beschriftungen: s.beschriftungen as Beschriftungen<TypTeile> } : {}),
@@ -617,6 +611,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     if (istObjekt(a.wenn) && a.wenn.rolle) fehler.push(`${wo}: wenn.rolle – feste Rollen gibt es in Paketen nicht; „für jeden Benutzer“ gilt für alle aktiven Benutzer.`);
     if (empf.some((e) => e.art === 'person' || e.art === 'rolle')) fehler.push(`${wo}: feste Personen und Rollen gibt es in Paketen nicht – Empfänger aus einem Feld oder der Ersteller der Mappe.`);
     if (pruefeZeitplanKarten(a, wo, str(m.id), fehler)) zeitplanKarten.push(wo);
+    // Und-Teil (#1108): falsch geschriebene Bedingungen sind ein Fehler – sonst liefe die Automatisierung öfter als gedacht.
+    for (const grund of undEingabeFehler(a.und)) fehler.push(`${wo} „${str(a.schluessel)}“: ${grund}`);
     return { schluessel: str(a.schluessel), name: str(a.name).trim(), beschreibung: str(a.beschreibung ?? ''), wenn: istObjekt(a.wenn) ? a.wenn : {}, und: istObjekt(a.und) ? a.und : undefined, dann: Array.isArray(a.dann) ? a.dann : [],
       ...eingeschaltetVon(a) };
   });
@@ -1183,6 +1179,37 @@ function teilFehler(x: PaketTyp, typen: PaketTyp[], wo: string, paketId: string)
 
 /** Archivmodus aus dem Typplan (#1051) ohne die Beschriftung des Stichtags. */
 const archivOhneName = ({ jahre, stichtag, leererStichtag }: NonNullable<TypPlan['archiv']>): Archiv => ({ jahre, stichtag, ...(leererStichtag ? { leererStichtag } : {}) });
+
+/**
+ * Anzeigen, wenn … (#1033) an Feldern und Abschnitten eines Mappentyps im Paket: ein Objekt; Typen als Verweis wie bei
+ * ziel. Falsch Geschriebenes ist ein Fehler, statt still wegzufallen (#1108) – sonst wäre das Feld immer zu sehen. Ob
+ * Feld und Werte zum Typ passen, meldet die Prüfung des Mappentyps beim Anlegen.
+ */
+function anzeigenFehler(felder: PaketFeld[], register: PaketRegister[], wo: string): string[] {
+  const anzeigen = [...felder.map((f) => ({ key: f.key, a: (f as unknown as Record<string, unknown>).anzeigen })),
+    ...register.flatMap((r) => (Array.isArray(r.abschnitte) ? r.abschnitte : []).filter(istObjekt).map((x) => ({ key: `${r.key}.${str(x.vor)}`, a: x.anzeigen })))];
+  return anzeigen.flatMap(({ key, a }) => [
+    ...anzeigeEingabeFehler(a, ['vorgabe']).map((grund) => `${wo}: „${key}“: anzeigen, ${grund}`),
+    ...(istObjekt(a) && Array.isArray(a.bedingungen) ? a.bedingungen.filter(istObjekt) : [])
+      .filter((b) => b.art === 'verweistyp' && str(b.typ) && !TYPVERWEIS.test(str(b.typ))).map((b) => `${wo}: „${key}“: anzeigen nennt den Mappentyp „${str(b.typ)}“ ungültig.`),
+  ]);
+}
+
+/** Bedingungen einer Ansicht im Paket (#1108): falsch Geschriebenes ist ein Fehler, statt beim Anlegen still wegzufallen. */
+function sichtBedingungenFehler(roh: unknown, wo: string): string[] {
+  if (roh === undefined || roh === null) return [];
+  if (!Array.isArray(roh)) return [t('meldungen.pakete.sicht-bedingungen-liste', { wo })];
+  return roh.flatMap((b, j) => { const grund = sichtBedingungFehler(b); return grund ? [`${wo}, bedingungen[${j + 1}]: ${grund}`] : []; });
+}
+
+/** Warum eine Bedingung einer Ansicht im Paket (`{ feld, operator, wert }`) nicht passt; null = in Ordnung (#1108). */
+function sichtBedingungFehler(b: unknown): string | null {
+  if (!istObjekt(b)) return bedingungEingabeFehler(b);
+  if (b.operator === undefined && b.op !== undefined) return t('meldungen.pakete.sicht-bedingung-op');
+  // Unbekannter Operator: dieselbe Meldung wie in der Werkbank-Form (bedingungAus lehnte ihn sonst erst beim Anlegen ab).
+  if (!Object.hasOwn(OPERATOREN, str(b.operator))) return bedingungEingabeFehler({ art: 'feld', feld: str(b.feld), op: str(b.operator) });
+  return bedingungEingabeFehler(bedingungAus({ feld: str(b.feld), operator: str(b.operator), wert: b.wert }));
+}
 
 /** Bedingung aus dem Paket in die Form der Werkbank. */
 function bedingungAus(b: { feld: string; operator: string; wert?: unknown }): Bedingung {

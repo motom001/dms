@@ -22,7 +22,7 @@
 import { feldLabel, abschnittTitel, typName } from './beschriftung';
 import { istMerkmal, merkmalText, type Merkmale } from './merkmale';
 import { einzigesZiel, istLeer, jedeMappe, zielErlaubt, pruefeMappe, standardRegister, type Abschnitt, type Anzeigebedingung, type Anzeigeregel, type Feld, type Mappe, type MappenKontext, type Mappentyp, type MappentypDaten, type Pruefergebnis, type Register, type Werte } from './model';
-import { bedingungsProblem, bereinigeBedingungen, beschreibeBedingung, erfuellt, filterFuer, heuteIn, merkmalTrifft } from './sichten';
+import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, beschreibeBedingung, erfuellt, filterFuer, heuteIn, merkmalTrifft } from './sichten';
 import { t } from './texte';
 
 /** Die Typen stehen im Modell (model.ts), die Auswertung hier. */
@@ -71,6 +71,51 @@ function bereinigeEine(e: unknown): Anzeigebedingung | null {
     return b?.art === 'feld' ? { ...n, art: 'feld', bedingung: b } : null;
   }
   return null;
+}
+
+/**
+ * Was `bereinigeAnzeige` an dieser Eingabe weglassen oder ändern würde – je Stelle ein Text, leer = in Ordnung (#1108).
+ * Für Pakete: Eine falsch geschriebene Bedingung ist dort ein Fehler, statt still wegzufallen (das Feld wäre sonst immer
+ * zu sehen). `weitere`: Arten, die der Aufrufer selbst prüft (Pakete: `vorgabe`). Die Werkbank braucht das nicht – ihr
+ * Editor erzeugt nur gültige Bedingungen.
+ */
+export function anzeigeEingabeFehler(roh: unknown, weitere: string[] = []): string[] {
+  if (roh === undefined || roh === null) return [];
+  if (typeof roh !== 'object' || Array.isArray(roh) || !Array.isArray((roh as Record<string, unknown>).bedingungen)) return [t('gemeinsam.bedingungspruefung.anzeige-form')];
+  const o = roh as { modus?: unknown; bedingungen: unknown[] };
+  const aus: string[] = [];
+  if (o.modus !== undefined && o.modus !== 'alle' && o.modus !== 'eine') aus.push(t('gemeinsam.bedingungspruefung.modus', { wert: String(o.modus) }));
+  if (o.bedingungen.length > ANZEIGE_BEDINGUNGEN_MAX) aus.push(t('gemeinsam.bedingungspruefung.zu-viele', { max: ANZEIGE_BEDINGUNGEN_MAX }));
+  o.bedingungen.forEach((b, i) => {
+    const x = b && typeof b === 'object' && !Array.isArray(b) ? b as Record<string, unknown> : null;
+    if (x && weitere.includes(String(x.art))) return;
+    const grund = anzeigeBedingungFehler(x);
+    if (grund) aus.push(t('gemeinsam.bedingungspruefung.stelle', { nr: i + 1, grund }));
+  });
+  return aus;
+}
+
+const ANZEIGE_ARTEN = ['feld', 'merkmal', 'verweistyp', 'eigeneOrganisation'];
+
+function anzeigeBedingungFehler(x: Record<string, unknown> | null): string | null {
+  if (!x) return t('gemeinsam.bedingungspruefung.kein-objekt');
+  if (x.nicht !== undefined && typeof x.nicht !== 'boolean') return t('gemeinsam.bedingungspruefung.nicht');
+  if (x.art === undefined) return t('gemeinsam.bedingungspruefung.art-fehlt', { arten: ANZEIGE_ARTEN.join(', ') });
+  if (!ANZEIGE_ARTEN.includes(String(x.art))) return t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(x.art), arten: ANZEIGE_ARTEN.join(', ') });
+  if (x.art === 'feld') return innereFehler(x.bedingung);
+  if (x.art === 'merkmal') return istMerkmal(x.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(x.merkmal) });
+  if (typeof x.feld !== 'string' || !x.feld) return t('gemeinsam.bedingungspruefung.feld-fehlt');
+  return x.art === 'verweistyp' && (typeof x.typ !== 'string' || !x.typ) ? t('gemeinsam.bedingungspruefung.typ-fehlt') : null;
+}
+
+/** Die innere Bedingung von `art: feld` ist eine Bedingung der Ansichten und braucht ihr eigenes `art: feld` (#1108). */
+function innereFehler(b: unknown): string | null {
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return t('gemeinsam.bedingungspruefung.bedingung-fehlt');
+  const art = (b as Record<string, unknown>).art;
+  if (art === undefined) return t('gemeinsam.bedingungspruefung.innere-art-fehlt');
+  if (art !== 'feld') return t('gemeinsam.bedingungspruefung.innere-art', { art: String(art) });
+  const grund = bedingungEingabeFehler(b);
+  return grund ? t('gemeinsam.bedingungspruefung.innen', { grund }) : null;
 }
 
 /* ---------- Prüfen ---------- */

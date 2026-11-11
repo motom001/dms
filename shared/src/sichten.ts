@@ -573,6 +573,36 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
   return erg;
 }
 
+const ARTEN_BEDINGUNG = ['feld', 'dokumente', 'verknuepfungen', 'dokumenteGesamt', 'verknuepfungenGesamt', 'favorit', 'frist', 'merkmal'];
+
+/**
+ * Warum `bereinigeBedingungen` diese Eingabe nicht oder nur zum Teil übernähme – null = in Ordnung (#1108). Für Pakete:
+ * Dort ist eine falsch geschriebene Bedingung ein Fehler beim Installieren, statt still wegzufallen. Ob das Feld zum
+ * Mappentyp passt, prüft `bedingungsProblem`; hier geht es nur um die Schreibweise.
+ */
+export function bedingungEingabeFehler(roh: unknown): string | null {
+  if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return t('gemeinsam.bedingungspruefung.kein-objekt');
+  const b = roh as Record<string, unknown>;
+  if (b.art === undefined) return t('gemeinsam.bedingungspruefung.art-fehlt', { arten: ARTEN_BEDINGUNG.join(', ') });
+  if (!ARTEN_BEDINGUNG.includes(String(b.art))) return t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(b.art), arten: ARTEN_BEDINGUNG.join(', ') });
+  if (b.art === 'feld') return feldbedingungFehler(b);
+  if (b.art === 'merkmal') return istMerkmal(b.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(b.merkmal) });
+  return b.art === 'favorit' || b.art === 'frist' ? null : zaehlbedingungFehler(b);
+}
+
+function zaehlbedingungFehler(b: Record<string, unknown>): string | null {
+  if ((b.art === 'dokumente' || b.art === 'verknuepfungen') && (typeof b.register !== 'string' || !b.register)) return t('gemeinsam.bedingungspruefung.register-fehlt');
+  return b.vergleich !== undefined && !Object.hasOwn(ZAEHLVERGLEICHE, String(b.vergleich)) ? t('gemeinsam.bedingungspruefung.vergleich', { wert: String(b.vergleich), moeglich: Object.keys(ZAEHLVERGLEICHE).join(', ') }) : null;
+}
+
+function feldbedingungFehler(b: Record<string, unknown>): string | null {
+  if (typeof b.feld !== 'string' || !b.feld) return t('gemeinsam.bedingungspruefung.feld-fehlt');
+  if (!Object.hasOwn(OPERATOREN, String(b.op))) return t('gemeinsam.bedingungspruefung.op', { op: String(b.op ?? ''), moeglich: Object.keys(OPERATOREN).join(', ') });
+  const falsch = (['wert', 'bis'] as const).find((k) => b[k] !== undefined && !bereinigeWert(b[k]));
+  if (falsch) return t('gemeinsam.bedingungspruefung.wert', { teil: falsch, arten: ARTEN_WERT.join(', ') });
+  return b.bis !== undefined && b.op !== 'zwischen' && b.op !== 'ausserhalb' ? t('gemeinsam.bedingungspruefung.bis') : null;
+}
+
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
 export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id, eigeneNamen?: Record<string, string>, typNameVon?: (id: string) => string | undefined): string {
   if (b.art === 'favorit') return t('gemeinsam.sichten.ist-mein-favorit');
