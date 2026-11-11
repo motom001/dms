@@ -44,6 +44,7 @@ Aufruf:  docker exec -it <container> dms <befehl> [--json] [--als <admin-email>]
 Notfall
   passwort <email> [--passwort <neu>]   Passwort direkt setzen (ohne Mail), alle Sitzungen enden
   zweifaktor-zuruecksetzen <email>       Zwei-Faktor-Anmeldung eines Benutzers entfernen
+  passkeys-zuruecksetzen <email>         alle Passkeys eines Benutzers entfernen
   gesperrt                               gesperrte IP-Adressen anzeigen
   entsperren <ip>                        IP-Adresse freigeben
   wartung                                Stand des Wartungsmodus
@@ -75,7 +76,7 @@ Optionen
 
 Handbuch: https://help.ablago.app/admin/aktuell/konsole/`;
 
-const BEFEHLE = ['passwort', 'zweifaktor-zuruecksetzen', 'gesperrt', 'entsperren', 'wartung', 'abmelden', 'status', 'sicherung', 'benutzer', 'api'];
+const BEFEHLE = ['passwort', 'zweifaktor-zuruecksetzen', 'passkeys-zuruecksetzen', 'gesperrt', 'entsperren', 'wartung', 'abmelden', 'status', 'sicherung', 'benutzer', 'api'];
 
 /* ---------- Verbindung ---------- */
 
@@ -188,6 +189,12 @@ export async function fuehreAus(z: Zerlegt, v: Verbindung, ein: Ein, aus: Aus): 
       await bestaetige(ein, opt, t('meldungen.dms.zwei-faktor-anmeldung-von', { email: u.email }));
       await v.anfrage('POST', `/api/benutzer/${u.id}/zweifaktor/zuruecksetzen`);
       return zeige({ ok: true, email: u.email }, () => t('meldungen.dms.zwei-faktor-anmeldung-von-2', { email: u.email }));
+    }
+    case 'passkeys-zuruecksetzen': {
+      const u = await benutzerZu(v, rest[0]);
+      await bestaetige(ein, opt, t('meldungen.dms.passkeys-von', { email: u.email }));
+      await v.anfrage('POST', `/api/benutzer/${u.id}/passkeys/zuruecksetzen`);
+      return zeige({ ok: true, email: u.email }, () => t('meldungen.dms.passkeys-von-2', { email: u.email }));
     }
     case 'gesperrt': {
       const s = await v.anfrage<{ gesperrt: Array<{ ip: string; grund: string; seit: string; bis: string | null }> }>('GET', '/api/werkbank/anmeldeschutz');

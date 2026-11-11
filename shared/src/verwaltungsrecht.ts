@@ -38,7 +38,7 @@ export const HEIKLE_BEREICHE: ReadonlySet<string> = new Set([
  * Handlungen, für die immer eine frische Anmeldung nötig ist (#819, Frage 7 von Sicherheit). Danach gilt sie
  * `FRISCH_MINUTEN`. Die Zuordnung zu Schnittstellen steht im Server (`verwaltungsbereiche.ts`).
  */
-export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall';
+export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall' | 'anmeldung';
 
 /**
  * Bereiche nur für „Gesamte Verwaltung“: Sie lassen sich nicht einzeln vergeben. Nutzung (#1032) ändert, was alle
@@ -113,6 +113,8 @@ export interface Verwaltungsstand {
   code: boolean;
   /** Hat die Person ein Passwort? Ohne (nur Anbieter) geht die erneute Anmeldung über den Anbieter. */
   passwort: boolean;
+  /** Geht die erneute Anmeldung auch mit einem Passkey (#811)? Nur, wenn einer zur Adresse passt (HTTPS). */
+  passkey?: boolean;
   /** Eigene Bereiche; `null` = Gesamte Verwaltung. */
   bereiche: string[] | null;
 }

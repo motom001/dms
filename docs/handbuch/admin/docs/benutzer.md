@@ -58,7 +58,7 @@ Mindestens eine aktive Person, die sich anmelden kann, behält immer **„Gesamt
 
 Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen beendest du mit **Abmelden**, etwa wenn ein Gerät verloren ging. Ist er auf mehreren Geräten angemeldet, beendet **Überall abmelden** alle Sitzungen auf einmal.
 
-Darüber steht, ob er die [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) eingerichtet hat. **Zurücksetzen** entfernt sie, z. B. nach einem verlorenen Handy.
+Darüber steht, ob er die [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) eingerichtet hat. **Zurücksetzen** entfernt sie, z. B. nach einem verlorenen Handy. Darunter steht, wie viele [Passkeys](anmeldeschutz.md#passkeys) er hat; **Zurücksetzen** im Block **Passkeys** entfernt alle.
 
 ## Was sieht ein Benutzer?
 

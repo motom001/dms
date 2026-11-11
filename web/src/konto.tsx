@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
-import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich } from './api';
+import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich, type ZweiteWege } from './api';
 import { erlaubteSprachen, setzeErlaubteSprachen } from '../../shared/src/beschriftung';
 import { sprache } from '../../shared/src/sprache';
 import { WartungsHinweis } from './wartung';
@@ -9,7 +9,11 @@ import { Wiederherstellungsbildschirm } from './wiederherstellen';
 import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
+import { Symbol } from './Symbol';
+import { Hilfe } from './Hilfe';
 import { ZweifaktorEinrichten } from './profil/Zweifaktor';
+import { PasskeyHinzufuegen, PasskeyOhneHttps } from './profil/Passkeys';
+import { passkeysImBrowser, passkeyVerwenden } from './passkey';
 import { rueckfrage } from './rueckfrage';
 import { t, wechsleSprache } from './sprache';
 import { Ctx } from './konto-kontext';
@@ -20,7 +24,7 @@ import { setzeZeitzone } from '../../shared/src/region';
 import { zielNachAnmeldung } from '../../shared/src/startseite';
 import { darfVerwalten, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import { Verwaltungsanmeldung, verwaltungBeginnen } from './verwaltungsmodus';
-import { abfangen } from './bausteine';
+import { abfangen, Knopf } from './bausteine';
 
 const OHNE_MODUS: Verwaltungsstand = { darf: false, aktiv: false, bis: null, heuteBestaetigt: false, frisch: false, code: false, passwort: true, bereiche: [] };
 
@@ -105,7 +109,12 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   // Immer an derselben Stelle vor dem Inhalt, damit sie beim Wechsel zwischen den Bildschirmen stehen bleibt.
   const seite = (inhalt: ReactNode) => <><ErreichbarkeitsBanner aussen version={status?.version ?? null} ansichtNeuLaden={() => void laden()} />{inhalt}</>;
   // Anbieter bestätigt, jetzt der Code (#241, #242).
-  if (pfad === '/anmelden/code' && location.hash.length > 1) return seite(<CodeSchritt kennung={location.hash.slice(1)} fertig={async () => { geheZu(nachAnmeldung(false) ?? '/', true); await laden(); }} zurueck={() => geheZu('/', true)} />);
+  if (pfad === '/anmelden/code' && location.hash.length > 1) {
+    // Nach dem Anbieter (#241): „#<kennung>.<wege>“ – c = Code, p = Passkey (#811); ohne Angabe nur der Code.
+    const [kennung, w] = location.hash.slice(1).split('.');
+    const wege = w === undefined ? undefined : { code: w.includes('c'), passkey: w.includes('p') };
+    return seite(<CodeSchritt kennung={kennung} wege={wege} fertig={async () => { geheZu(nachAnmeldung(false) ?? '/', true); await laden(); }} zurueck={() => geheZu('/', true)} />);
+  }
   if (pfad.startsWith('/passwort/')) return seite(<PasswortSetzen schluessel={decodeURIComponent(pfad.slice('/passwort/'.length))} fertig={laden} />);
   if (fehler) return seite(<Karte titel={t('anmeldung.verbindung.titel')}><p className="hinweis schlecht">{fehler}</p><button className="knopf" onClick={() => void laden()}>{t('anmeldung.verbindung.erneut')}</button></Karte>);
   if (!status) return seite(<p className="leise mittig">{t('anmeldung.lade')}</p>);
@@ -123,13 +132,27 @@ export function KontoProvider({ children }: { children: ReactNode }) {
       <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => {}} />
     </>
   );
-  if (!status.benutzer) return seite(<Anmelden mail={status.mail} wartung={status.wartung} anbieter={status.anbieter ?? null} fertig={laden} />);
+  if (!status.benutzer) return seite(<Anmelden mail={status.mail} wartung={status.wartung} anbieter={status.anbieter ?? null} passkey={!!status.passkey?.moeglich} fertig={laden} />);
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: erst einrichten.
   if (status.zweifaktor?.fehlt) return seite(
     <Karte titel={t('anmeldung.zweifaktor.titel')} unter={t('anmeldung.zweifaktor.text')}>
       <ZweifaktorEinrichten fertig={() => void laden()} />
+      {/* #811: Ein Passkey erfüllt die Pflicht ebenfalls. */}
+      {status.passkey?.moeglich && passkeysImBrowser() && <>
+        <p className="trenner">{t('anmeldung.zweifaktor.oder-passkey')}</p>
+        <PasskeyHinzufuegen fertig={() => laden()} />
+      </>}
       <button className="textknopf" onClick={() => void abmelden()}>{t('anmeldung.abmelden')}</button>
       {darfVerwalten(status.benutzer) && <PflichtAusschalten fertig={laden} />}
+      <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => void laden()} />
+    </Karte>
+  );
+  // Passkey vorgeschrieben (#811), aber noch keiner da: erst hinzufügen – wie bei der Zwei-Faktor-Anmeldung.
+  if (status.passkey?.fehlt) return seite(
+    <Karte titel={t('anmeldung.passkey.pflicht.titel')} unter={t('anmeldung.passkey.pflicht.text')}>
+      {passkeysImBrowser() ? <PasskeyHinzufuegen fertig={() => laden()} /> : <PasskeyOhneHttps />}
+      <Knopf art="link" onClick={abmelden}>{t('anmeldung.abmelden')}</Knopf>
+      {darfVerwalten(status.benutzer) && <PflichtAusschalten art="passkey" fertig={laden} />}
       <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => void laden()} />
     </Karte>
   );
@@ -145,7 +168,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   };
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
-    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null, zweifaktor: { aktiv: !!status.zweifaktor?.aktiv, ausstehend: !!status.zweifaktor?.ausstehend }, favoritenBenachrichtigung: status.favoritenBenachrichtigung !== false, ohneEmpfaenger: !!status.aufgabenOhneEmpfaenger || status.benutzer.rolle === 'admin', verwaltung: !!status.verwaltung, laufwerk: status.laufwerk === true, verwaltungsmodus: modus, verwalten, verwaltungBeenden, sprachen: status.sprachen ?? { sprache: sprache(), standard: 'de', erlaubt: erlaubteSprachen(), maschinell: [] }, uebersetzen: status.uebersetzen ?? null }}>
+    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null, zweifaktor: { aktiv: !!status.zweifaktor?.aktiv, ausstehend: !!status.zweifaktor?.ausstehend }, passkey: { aktiv: !!status.passkey?.aktiv, ausstehend: !!status.passkey?.ausstehend }, favoritenBenachrichtigung: status.favoritenBenachrichtigung !== false, ohneEmpfaenger: !!status.aufgabenOhneEmpfaenger || status.benutzer.rolle === 'admin', verwaltung: !!status.verwaltung, laufwerk: status.laufwerk === true, verwaltungsmodus: modus, verwalten, verwaltungBeenden, sprachen: status.sprachen ?? { sprache: sprache(), standard: 'de', erlaubt: erlaubteSprachen(), maschinell: [] }, uebersetzen: status.uebersetzen ?? null }}>
       {/* … danach mit „Gesamte Verwaltung“ (#818) im Verwaltungsmodus: „Jetzt einrichten“ läuft weiter, dann Notfallblatt und Abschluss (#804). */}
       {status.einrichtung?.assistent ? seite(<AssistentAngemeldet />) : children}
       <Verwaltungsanmeldung stand={modus} nachher={() => void laden()} />
@@ -158,11 +181,14 @@ export function KontoProvider({ children }: { children: ReactNode }) {
  * ist. Nur ausschalten; der Server lässt in diesem Zustand nichts anderes zu. Seit #819 im Verwaltungsmodus: Fehlt er,
  * fragt der Dialog die erneute Anmeldung ab und schickt die Anfrage danach noch einmal.
  */
-function PflichtAusschalten({ fertig }: { fertig: () => Promise<void> }) {
+function PflichtAusschalten({ fertig, art = 'zweifaktor' }: { fertig: () => Promise<void>; art?: 'zweifaktor' | 'passkey' }) {
   const [fehler, setFehler] = useState<string>();
   async function aus() {
-    if (!(await rueckfrage({ titel: t('anmeldung.zweifaktor.pflicht.frage'), text: t('anmeldung.zweifaktor.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja'), gefahr: true }))) return;
-    try { await api.zweifaktorPflichtSetzen({ admin: false }); await fertig(); } catch (e) { setFehler((e as Error).message); }
+    const frage = art === 'passkey'
+      ? { titel: t('anmeldung.passkey.pflicht.frage'), text: t('anmeldung.passkey.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja'), gefahr: true }
+      : { titel: t('anmeldung.zweifaktor.pflicht.frage'), text: t('anmeldung.zweifaktor.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja'), gefahr: true };
+    if (!(await rueckfrage(frage))) return;
+    try { await (art === 'passkey' ? api.passkeyPflichtSetzen({ admin: false }) : api.zweifaktorPflichtSetzen({ admin: false })); await fertig(); } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <p className="leise klein">{t('anmeldung.zweifaktor.pflicht.hinweis')}{' '}
@@ -206,8 +232,16 @@ function useAbsenden(fn: () => Promise<void>) {
   return { sendet, fehler, absenden };
 }
 
-/** Zweiter Schritt der Anmeldung (#242): Code aus der App oder ein Wiederherstellungscode. */
-function CodeSchritt({ kennung, fertig, zurueck }: { kennung: string; fertig: () => Promise<void>; zurueck: () => void }) {
+/** Mit Passkey anmelden (#811): ohne E-Mail-Adresse oder – mit `zweiterSchritt` – als zweiter Faktor. */
+async function mitPasskeyAnmelden(zweiterSchritt?: string) {
+  const o = await api.passkeyOptionen(zweiterSchritt);
+  const antwort = await passkeyVerwenden(o.optionen);
+  await api.passkeyAnmelden({ kennung: o.kennung, antwort, ...(zweiterSchritt ? { zweiterSchritt } : {}) });
+}
+
+/** Zweiter Schritt der Anmeldung (#242): Code aus der App, ein Wiederherstellungscode oder ein Passkey (#811). */
+function CodeSchritt({ kennung, wege = { code: true, passkey: false }, fertig, zurueck }: { kennung: string; wege?: ZweiteWege; fertig: () => Promise<void>; zurueck: () => void }) {
+  const passkey = wege.passkey && passkeysImBrowser();
   const [code, setCode] = useState('');
   const [wiederherstellung, setWiederherstellung] = useState(false);
   const [genutzt, setGenutzt] = useState(false);
@@ -225,8 +259,20 @@ function CodeSchritt({ kennung, fertig, zurueck }: { kennung: string; fertig: ()
       </div>
     </Karte>
   );
+  const mitPasskey = passkey && <div className="anmelden-passkey">
+    <Knopf id="anmelden-passkey-zweiter" art={wege.code ? 'neben' : 'haupt'} className="breit" laeuftText={t('anmeldung.passkey.warte')}
+      onClick={async () => { await mitPasskeyAnmelden(kennung); await fertig(); }}><Symbol name="passkey" /> {t('anmeldung.passkey.bestaetigen')}</Knopf>
+  </div>;
+  // Nur Passkey (vorgeschrieben, ohne Code-App): kein Code-Feld.
+  if (!wege.code) return (
+    <Karte titel={t('anmeldung.passkey.zweiter.titel')} unter={t('anmeldung.passkey.zweiter.text')}>
+      {mitPasskey || <PasskeyOhneHttps />}
+      <Knopf art="link" onClick={zurueck}>{t('anmeldung.zurueck')}</Knopf>
+    </Karte>
+  );
   return (
     <Karte titel={t('anmeldung.code.titel')} unter={wiederherstellung ? t('anmeldung.code.text.wiederherstellung') : t('anmeldung.code.text')}>
+      {mitPasskey && <>{mitPasskey}<p className="trenner">{t('anmeldung.passkey.oder-code')}</p></>}
       <form className="stapel" onSubmit={f.absenden}>
         <label className="eigenschaft"><span>{wiederherstellung ? t('anmeldung.code.feld.wiederherstellung') : t('anmeldung.code.feld')}</span>
           <input id="anmelden-code" key={String(wiederherstellung)} value={code} onChange={(e) => setCode(e.target.value)} autoFocus required
@@ -241,7 +287,7 @@ function CodeSchritt({ kennung, fertig, zurueck }: { kennung: string; fertig: ()
   );
 }
 
-function Anmelden({ mail, wartung, anbieter, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; anbieter: KontoStatus['anbieter']; fertig: () => Promise<void> }) {
+function Anmelden({ mail, wartung, anbieter, passkey, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; anbieter: KontoStatus['anbieter']; passkey: boolean; fertig: () => Promise<void> }) {
   // Fehler der Anmeldung über einen Anbieter (#241) kommen als ?anmeldefehler= zurück.
   const [anbieterFehler] = useState(() => {
     const m = new URLSearchParams(location.search).get('anmeldefehler');
@@ -253,15 +299,15 @@ function Anmelden({ mail, wartung, anbieter, fertig }: { mail: boolean; wartung?
   const [pw, setPw] = useState('');
   const [vergessen, setVergessen] = useState(false);
   const [gesendet, setGesendet] = useState(false);
-  const [kennung, setKennung] = useState<string | null>(null);
+  const [kennung, setKennung] = useState<{ kennung: string; wege?: ZweiteWege } | null>(null);
   const f = useAbsenden(async () => {
     if (vergessen) { await api.passwortVergessen(email); setGesendet(true); return; }
     const r = await api.anmelden({ email, passwort: pw });
-    if (r.zweiterSchritt) { setKennung(r.zweiterSchritt); setPw(''); return; }
+    if (r.zweiterSchritt) { setKennung({ kennung: r.zweiterSchritt, wege: r.wege }); setPw(''); return; }
     await fertig();
   });
 
-  if (kennung) return <CodeSchritt kennung={kennung} fertig={fertig} zurueck={() => setKennung(null)} />;
+  if (kennung) return <CodeSchritt kennung={kennung.kennung} wege={kennung.wege} fertig={fertig} zurueck={() => setKennung(null)} />;
 
   if (vergessen) return (
     <Karte titel={t('anmeldung.vergessen.titel')} unter={mail ? t('anmeldung.vergessen.text') : undefined}>
@@ -286,6 +332,12 @@ function Anmelden({ mail, wartung, anbieter, fertig }: { mail: boolean; wartung?
           ? <button className="textknopf" onClick={() => setMitPasswort(true)}>{t('anmeldung.anbieter.admin')}</button>
           : <p className="trenner">{t('anmeldung.anbieter.oder')}</p>}
       </>}
+      {/* Passkey (#811): eigener Weg ohne E-Mail-Adresse – nur über HTTPS; sonst ein ruhiger Hinweis mit Weg ins Handbuch. */}
+      {passkey && passkeysImBrowser() ? <div className="anmelden-passkey">
+        <Knopf id="anmelden-passkey" className="breit" laeuftText={t('anmeldung.passkey.warte')} onClick={async () => { await mitPasskeyAnmelden(); await fertig(); }}>
+          <Symbol name="passkey" /> {t('anmeldung.passkey.knopf')}</Knopf>
+        <p className="trenner">{t('anmeldung.passkey.oder')}</p>
+      </div> : <p className="leise klein" id="anmelden-passkey-hinweis">{t('anmeldung.passkey.fehler.https')} <Hilfe ort="profil.passkeys" /></p>}
       {(!anbieter || !anbieter.lokalNurAdmins || mitPasswort) && <>
       <form className="stapel" onSubmit={f.absenden}>
         <label className="eigenschaft"><span>{t('anmeldung.email')}</span><input id="anmelden-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus={!anbieter} required /></label>
@@ -304,18 +356,18 @@ function PasswortSetzen({ schluessel, fertig }: { schluessel: string; fertig: ()
   const [ungueltig, setUngueltig] = useState<string>();
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
-  const [kennung, setKennung] = useState<string | null>(null);
+  const [kennung, setKennung] = useState<{ kennung: string; wege?: ZweiteWege } | null>(null);
   useEffect(() => { api.linkPruefen(schluessel).then(setInfo).catch((e) => setUngueltig((e as Error).message)); }, [schluessel]);
   const f = useAbsenden(async () => {
     if (pw !== pw2) throw new Error(t('anmeldung.passwort.ungleich'));
     const r = await api.passwortSetzen(schluessel, pw);
     // Zwei-Faktor (#242): Der Link ersetzt das Passwort, nicht den Code.
-    if (r.zweiterSchritt) { setKennung(r.zweiterSchritt); return; }
+    if (r.zweiterSchritt) { setKennung({ kennung: r.zweiterSchritt, wege: r.wege }); return; }
     geheZu('/ablage', true);
     await fertig();
   });
 
-  if (kennung) return <CodeSchritt kennung={kennung} fertig={async () => { if (location.pathname.startsWith('/passwort/')) geheZu('/ablage', true); await fertig(); }} zurueck={() => geheZu('/', true)} />;
+  if (kennung) return <CodeSchritt kennung={kennung.kennung} wege={kennung.wege} fertig={async () => { if (location.pathname.startsWith('/passwort/')) geheZu('/ablage', true); await fertig(); }} zurueck={() => geheZu('/', true)} />;
 
   if (ungueltig) return <Karte titel={t('anmeldung.link.ungueltig')}><p>{ungueltig}</p><a className="knopf" href="/">{t('anmeldung.zur-anmeldung')}</a></Karte>;
   if (!info) return <p className="leise mittig">{t('anmeldung.link.pruefe')}</p>;

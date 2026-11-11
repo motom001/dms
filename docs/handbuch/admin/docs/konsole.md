@@ -33,6 +33,7 @@ Der Befehl `dms` funktioniert auch im [Wartungsmodus](wartungsmodus.md). So been
 | --- | --- |
 | `dms passwort <email>` | Passwort direkt setzen, ohne Mail und Link. Fragt das neue Passwort zweimal ab; alle Sitzungen des Benutzers enden. Ohne Terminal: `--passwort <neu>`. |
 | `dms zweifaktor-zuruecksetzen <email>` | [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) entfernen (Handy verloren). |
+| `dms passkeys-zuruecksetzen <email>` | Alle [Passkeys](anmeldeschutz.md#passkeys) einer Person entfernen (Gerät verloren). |
 | `dms gesperrt` | gesperrte IP-Adressen ([Anmeldeschutz](anmeldeschutz.md)) |
 | `dms entsperren <ip>` | IP-Adresse freigeben |
 | `dms wartung` / `dms wartung aus` | Stand des [Wartungsmodus](wartungsmodus.md) / ihn beenden |

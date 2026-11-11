@@ -1,9 +1,10 @@
 import type { Zweifaktor } from './zweifaktor';
+import type { Passkeys } from './passkeys';
 import type { AnbieterIdentitaet, OidcEinstellung } from './oidc';
 import { protokoll } from './protokoll';
 
 const log = protokoll.modul('konto');
-import { Anmeldesperre } from './anmeldesperre';
+import { Anmeldesperre, type Versuch } from './anmeldesperre';
 import { randomInt, randomUUID } from 'node:crypto';
 import { abwesenheitWirkt, istEmail, istPerson, KEINE_ABWESENHEIT, PASSWORT_MINDESTLAENGE, SYSTEMKONTEN, type Abwesenheit, type Benutzer, type Systemkonto } from '../../shared/src/model';
 import { darfVerwalten, FRISCH_MINUTEN, GESAMT, gleicheVerwaltung, hatGesamt, liesVerwaltung, MODUS_MINUTEN, verwaltungText, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
@@ -58,6 +59,8 @@ const OHNE_GERAET: Geraet = { geraet: '', ip: '' };
 const ZWEITER_SCHRITT = 'zweiter-schritt';
 const ZWEITER_SCHRITT_MS = 5 * 60_000;
 interface ZweiterSchritt { benutzerId: string; email: string; ip: string; geraet: string }
+/** Erneute Anmeldung (#819): Passwort und Code – oder ein Passkey (#811) als `{ kennung, antwort }`. */
+export interface Bestaetigung { passwort?: unknown; code?: unknown; passkey?: unknown }
 /** Letzte Aktivität höchstens einmal je Minute schreiben. */
 const BERUEHREN_MS = 60_000;
 
@@ -77,7 +80,15 @@ export class Konten {
   verbindeSperre(s: Anmeldesperre) { this.sperre = s; }
   /** Zwei-Faktor-Anmeldung (#242); ohne Verbindung gibt es keine. */
   zweifaktor: Zweifaktor | null = null;
-  verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; }
+  verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; this.verbindeAlternative(); }
+  /** Passkeys (#811); ohne Verbindung gibt es keine. */
+  passkeys: Passkeys | null = null;
+  verbindePasskeys(p: Passkeys) { this.passkeys = p; this.verbindeAlternative(); }
+  /** Ein Passkey erfüllt auch die Zwei-Faktor-Pflicht (Entscheidung 11.11.2026, #811). */
+  private verbindeAlternative() {
+    // Nur ein Passkey für die gepflegte Adresse zählt (Durchsicht Sicherheit): nie die Adresse der Anfrage.
+    if (this.zweifaktor) this.zweifaktor.alternative = async (id) => !!this.passkeys && (await this.passkeys.fuerPflicht(id));
+  }
   /** Anmeldung über einen Anbieter (#241): aktive Einstellung, sonst null. */
   private anbieter: () => Promise<OidcEinstellung | null> = async () => null;
   verbindeAnbieter(f: () => Promise<OidcEinstellung | null>) { this.anbieter = f; }
@@ -149,11 +160,46 @@ export class Konten {
     return this.nachErstemFaktor(treffer.benutzer, { ip, geraet });
   }
 
-  /** Nach Passwort oder Anbieter: Zwei-Faktor (#242) oder gleich die Sitzung. */
+  /**
+   * Welche zweiten Faktoren gelten für diese Person – oder null, wenn keiner nötig ist? Code aus der App (#242), sobald
+   * eingerichtet; ein Passkey (#811) als Alternative dazu, und allein nur, wenn für die Rolle ein Passkey oder die
+   * Zwei-Faktor-Anmeldung vorgeschrieben ist – ein Passkey erfüllt auch diese Pflicht (sonst bliebe ein verlorenes Handy
+   * ohne Wiederherstellungscodes ein Aussperren).
+   */
+  async zweiteWege(b: Benutzer): Promise<{ code: boolean; passkey: boolean } | null> {
+    const code = !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id));
+    const pk = this.passkeys;
+    if (code) return { code, passkey: !!pk && (await pk.nutzbar(b.id)) };
+    if (!pk || !(await pk.anzahl(b.id))) return null;
+    const pkPflicht = await pk.pflichtGilt(b);
+    const zfPflicht = !!this.zweifaktor && (await this.zweifaktor.pflichtFuer(b));
+    if (!pkPflicht && !zfPflicht) return null;
+    // Entschieden wird gegen die gepflegte Adresse (Durchsicht Sicherheit): Gilt dort ein Passkey und läuft die Anfrage
+    // über sie, ist er der zweite Schritt. Sonst kein Durchwinken über eine IP-Adresse oder einen zweiten Namen.
+    const rp = pk.pflichtRp();
+    if (rp && (await pk.fuerPflicht(b.id)) && pk.rp()?.rpId === rp.rpId) return { code: false, passkey: true };
+    if (rp) throw new Fachfehler(409, t('anmeldung.passkey.fehler.andere-adresse', { adresse: rp.origin }), { adresse: rp.origin });
+    // Ohne gepflegte Adresse zählt kein Passkey: Passkey-Pflicht bleibt geschlossen; die Zwei-Faktor-Pflicht verlangt
+    // dann wie ohne Passkey die Code-App (nach der Anmeldung, vor allem anderen).
+    if (pkPflicht) throw new Fachfehler(409, t('anmeldung.passkey.fehler.ohne-adresse'), { adresse: null });
+    return null;
+  }
+
+  /**
+   * Ist der letzte Passkey nötig, um eine Pflicht zu erfüllen? Passkey vorgeschrieben – oder Zwei-Faktor vorgeschrieben
+   * ohne Code-App (#811). Dann lässt er sich nicht selbst entfernen. Liefert den Grund oder null.
+   */
+  async passkeyNoetig(b: Benutzer): Promise<'passkey' | 'zweifaktor' | null> {
+    if (!this.passkeys || !this.passkeys.pflichtRp()) return null;
+    if (this.passkeys && (await this.passkeys.pflichtGilt(b))) return 'passkey';
+    if (this.zweifaktor && (await this.zweifaktor.pflichtFuer(b)) && !(await this.zweifaktor.aktiv(b.id))) return 'zweifaktor';
+    return null;
+  }
+
+  /** Nach Passwort oder Anbieter: zweiter Faktor (Code #242, Passkey #811) oder gleich die Sitzung. */
   private async nachErstemFaktor(b: Benutzer, g: Geraet) {
-    if (this.zweifaktor && (await this.zweifaktor.aktiv(b.id))) {
-      return { zweiterSchritt: await this.merkeZweitenSchritt(b.id, b.email, g) } as const;
-    }
+    const wege = await this.zweiteWege(b);
+    if (wege) return { zweiterSchritt: await this.merkeZweitenSchritt(b.id, b.email, g), wege } as const;
     await this.repo.notiereAnmeldung(b.id);
     return { benutzer: b, schluessel: await this.neueSitzung(b.id, { ...g, voll: true }) };
   }
@@ -241,6 +287,99 @@ export class Konten {
     return { benutzer, schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: k.geraet, voll: true }), wiederherstellung: art === 'wiederherstellung' };
   }
 
+  /* ---------- Passkeys (#811) ---------- */
+
+  private pk(): Passkeys {
+    if (!this.passkeys) throw new Fachfehler(404, t('anmeldung.passkey.fehler.aus'));
+    return this.passkeys;
+  }
+
+  /** Zweiter Schritt mit Kennung (aus dem Kurzzustand), nur von derselben Adresse wie der erste. */
+  private async zweiterSchritt(kennung: unknown, ip: string): Promise<{ schluessel: string; k: ZweiterSchritt }> {
+    const schluessel = typeof kennung === 'string' && kennung ? hashe(kennung) : '';
+    const k = schluessel ? (await this.zustand.lies(ZWEITER_SCHRITT, schluessel))?.wert as ZweiterSchritt | undefined : undefined;
+    if (!k || k.ip !== ip) throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
+    return { schluessel, k };
+  }
+
+  /**
+   * Optionen für die Anmeldung mit Passkey: ohne E-Mail-Adresse (das Gerät fragt, welcher Passkey) oder – mit der
+   * Kennung des zweiten Schritts – nur mit den Passkeys dieser Person. Eine gesperrte Adresse bekommt keine.
+   */
+  async passkeyOptionen(e: { zweiterSchritt?: unknown }, ip: string) {
+    const pk = this.pk();
+    if (e.zweiterSchritt !== undefined && e.zweiterSchritt !== null) {
+      const z = await this.zweiterSchritt(e.zweiterSchritt, ip);
+      await this.sperre.pruefe(z.k.email.toLowerCase(), ip);
+      return pk.beginneAnmeldung('zweiter-schritt', z.k.benutzerId, z.schluessel);
+    }
+    await this.sperre.pruefe('', ip);
+    return pk.beginneAnmeldung('anmelden', null, null, ip);
+  }
+
+  /**
+   * Anmeldung mit Passkey (#811) – als eigener Weg oder als zweiter Schritt. Der Anmeldeschutz (#240) gilt wie beim
+   * Passwort: vorab gezählt (#956), je E-Mail-Adresse des genannten Kontos und je IP; ein Erfolg setzt zurück.
+   */
+  async anmeldenMitPasskey(e: { kennung?: unknown; antwort?: unknown; zweiterSchritt?: unknown }, ip: string, geraet = '') {
+    const pk = this.pk();
+    const z = e.zweiterSchritt !== undefined && e.zweiterSchritt !== null ? await this.zweiterSchritt(e.zweiterSchritt, ip) : null;
+    const vermutet = z ? z.k.benutzerId : (await pk.vermutlich(e.kennung, e.antwort)).benutzerId;
+    const kandidat = vermutet ? await this.repo.holeBenutzer(vermutet) : undefined;
+    const email = (z?.k.email ?? kandidat?.email ?? '').toLowerCase();
+    const v = await this.sperre.versuch(email, ip);
+    if (z) await this.zaehleZweitenSchritt(z.schluessel);
+    const treffer = await this.pruefePasskey(e, z, { email, ip, v, bekannt: !!z || !!kandidat?.aktiv });
+    if (z && !(await this.zustand.nimm(ZWEITER_SCHRITT, z.schluessel))) throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
+    const benutzer = await this.passkeyPerson(treffer.benutzerId, !z);
+    await this.repo.notiereAnmeldung(benutzer.id);
+    return { benutzer, schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: z?.k.geraet ?? geraet, voll: true }), passkey: treffer.name };
+  }
+
+  /** Höchstens 5 Versuche je Kennung des zweiten Schritts, wie beim Code (#744, #956). */
+  private async zaehleZweitenSchritt(schluessel: string) {
+    const n = await this.zustand.erhoehe(ZWEITER_SCHRITT, schluessel);
+    if (n === null || n > 5) { await this.zustand.loesche(ZWEITER_SCHRITT, schluessel); throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen')); }
+  }
+
+  /** Antwort des Geräts prüfen; ein Fehlschlag zählt in den Anmeldeschutz, ein Erfolg setzt ihn zurück. */
+  private async pruefePasskey(e: { kennung?: unknown; antwort?: unknown }, z: { schluessel: string; k: ZweiterSchritt } | null, s: { email: string; ip: string; v: Versuch; bekannt: boolean }) {
+    try {
+      const treffer = await this.pk().pruefeAnmeldung(e.kennung, e.antwort, z ? { zweck: 'zweiter-schritt', benutzerId: z.k.benutzerId } : { zweck: 'anmelden' });
+      if (z && treffer.bezug !== z.schluessel) throw new Fachfehler(401, t('anmeldung.passkey.fehler.falsch'));
+      await this.sperre.erfolg(s.email, s.ip);
+      return treffer;
+    } catch (x) {
+      await this.sperre.fehlschlag(s.email, s.ip, s.bekannt, s.v);
+      throw x;
+    }
+  }
+
+  /** Die Person zum Passkey: aktiv, ein Mensch; als eigener Weg nicht, wenn der Anbieter Passwörter nur Verwaltenden lässt. */
+  private async passkeyPerson(id: string, eigenerWeg: boolean): Promise<Benutzer> {
+    const b = await this.repo.holeBenutzer(id);
+    if (!b || !b.aktiv || !istPerson(b)) throw new Fachfehler(401, t('anmeldung.passkey.fehler.falsch'));
+    // Anbieter (#241) mit „Passwort nur für Verwaltende“: Auch der Passkey ist dann nur für sie ein eigener Weg.
+    const a = eigenerWeg ? await this.anbieter() : null;
+    if (a?.lokalNurAdmins && !darfVerwalten(b)) throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
+    return b;
+  }
+
+  /** Optionen für die erneute Anmeldung mit Passkey (Verwaltungsmodus, heikle Handlungen, #819). */
+  async passkeyBestaetigungOptionen(b: Benutzer, s: SitzungIntern | undefined, fuer?: unknown) {
+    if (s?.vertretungId) throw new Fachfehler(403, t('konten.verwaltung.fehler.vertretung'));
+    // Eigener Zweck für „Passwörter für Dokumente“ (#827): Eine solche Bestätigung taugt nicht für den Verwaltungsmodus.
+    return this.pk().beginneAnmeldung(fuer === 'dokumentpasswoerter' ? 'dokumentpasswoerter' : 'bestaetigen', b.id);
+  }
+
+  /** Bestätigung für „Passwörter für Dokumente“ mit Passkey (#811, #827); wirft 403 bei Fehlern. */
+  async pruefePasskeyFuerDokumente(b: Benutzer, passkey: unknown) {
+    const p = (passkey && typeof passkey === 'object' ? passkey : {}) as { kennung?: unknown; antwort?: unknown };
+    try { await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'dokumentpasswoerter', benutzerId: b.id }); } catch (x) {
+      throw new Fachfehler(403, x instanceof Fachfehler ? x.message : t('anmeldung.passkey.fehler.falsch'));
+    }
+  }
+
   private async neueSitzung(benutzerId: string, info: Geraet & { voll?: boolean }, vertretungId: string | null = null) {
     const schluessel = neuerSchluessel();
     // Eine vertretene Sitzung (#43) ist nie eine Anmeldung mit allen Faktoren (#819).
@@ -282,7 +421,7 @@ export class Konten {
       darf: darfVerwalten(b) && !s?.vertretungId, aktiv,
       bis: aktiv && zuletzt ? new Date(zuletzt.getTime() + MODUS_MINUTEN * MINUTE).toISOString() : null,
       heuteBestaetigt: this.heuteBestaetigt(s), frisch: this.istFrisch(s),
-      code: !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id)), passwort: b.hatPasswort,
+      code: !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id)), passwort: b.hatPasswort, passkey: await this.passkeyNutzbar(b),
       bereiche: hatGesamt(b) ? null : [...(b.verwaltung ?? [])],
     };
   }
@@ -313,9 +452,22 @@ export class Konten {
    * Erneute Anmeldung (#819): Passwort und – falls eingerichtet – Code. Fehlversuche zählen in den Anmeldeschutz.
    * Ohne Passwort (nur Anbieter) gibt es hier keine Bestätigung; die Oberfläche meldet dann neu über den Anbieter an.
    */
-  private async bestaetigeErneut(b: Benutzer, e: { passwort?: unknown; code?: unknown }, ip: string, wofuer: string): Promise<void> {
-    if (!b.hatPasswort) throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true });
+  private async bestaetigeErneut(b: Benutzer, e: Bestaetigung, ip: string, wofuer: string): Promise<void> {
     const email = b.email.toLowerCase();
+    // Passkey (#811): statt Passwort und Code – auch für Personen, die sich sonst nur über einen Anbieter anmelden.
+    if (e.passkey !== undefined && e.passkey !== null) {
+      const p = (typeof e.passkey === 'object' ? e.passkey : {}) as { kennung?: unknown; antwort?: unknown };
+      const v = await this.sperre.versuch(email, ip);
+      try { await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'bestaetigen', benutzerId: b.id }); } catch (x) {
+        await this.sperre.fehlschlag(email, ip, true, v);
+        log.warn('Erneute Anmeldung fehlgeschlagen', { person: b.email, wofuer, ip, grund: 'Passkey' });
+        const m = x instanceof Fachfehler ? x.message : t('anmeldung.passkey.fehler.falsch');
+        throw new Fachfehler(401, m, { bestaetigen: true, passkey: true });
+      }
+      await this.sperre.erfolg(email, ip);
+      return;
+    }
+    if (!b.hatPasswort) throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true, passkey: await this.passkeyNutzbar(b) });
     const v = await this.sperre.versuch(email, ip);
     const treffer = await this.repo.holeHash(email);
     const ok = await pruefePasswort(typeof e.passwort === 'string' ? e.passwort : '', treffer?.hash);
@@ -324,7 +476,7 @@ export class Konten {
     if (!ok || !codeOk) {
       await this.sperre.fehlschlag(email, ip, true, v);
       log.warn('Erneute Anmeldung fehlgeschlagen', { person: b.email, wofuer, ip, grund: ok ? 'Code' : 'Passwort' });
-      throw new Fachfehler(401, t(ok ? 'anmeldung.fehler.code' : 'konten.verwaltung.fehler.passwort'), { bestaetigen: true, code: mitCode });
+      throw new Fachfehler(401, t(ok ? 'anmeldung.fehler.code' : 'konten.verwaltung.fehler.passwort'), { bestaetigen: true, code: mitCode, passkey: await this.passkeyNutzbar(b) });
     }
     await this.sperre.erfolg(email, ip);
   }
@@ -333,20 +485,20 @@ export class Konten {
    * „Ablago verwalten“ (#819): Modus beginnen. Ohne Angaben nur, wenn die Anmeldung höchstens 10 Minuten zurückliegt
    * oder heute in diesem Browser schon bestätigt wurde (Wiedereinstieg mit einem Klick); sonst mit erneuter Anmeldung.
    */
-  async beginneVerwaltung(b: Benutzer, schluessel: string | undefined, s: SitzungIntern | undefined, e: { passwort?: unknown; code?: unknown }, ip: string) {
+  async beginneVerwaltung(b: Benutzer, schluessel: string | undefined, s: SitzungIntern | undefined, e: Bestaetigung, ip: string) {
     if (!darfVerwalten(b)) throw new Fachfehler(403, t('konten.verwaltung.fehler.recht'));
     if (!schluessel || !s) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
     if (s.vertretungId) throw new Fachfehler(403, t('konten.verwaltung.fehler.vertretung'));
     const hash = hasheSchluessel(schluessel);
     const jetzt = new Date(this.uhr());
-    const mitAngaben = e.passwort !== undefined;
+    const mitAngaben = e.passwort !== undefined || (e.passkey !== undefined && e.passkey !== null);
     let wie: 'bestaetigt' | 'frisch' | 'wieder';
     if (mitAngaben) { await this.bestaetigeErneut(b, e, ip, 'Verwaltungsmodus'); wie = 'bestaetigt'; }
     else if (this.istFrisch(s)) wie = 'frisch';
     else if (this.heuteBestaetigt(s)) wie = 'wieder';
     else {
       const mitCode = !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id));
-      throw new Fachfehler(401, t('konten.verwaltung.fehler.bestaetigen'), { bestaetigen: true, code: mitCode, anbieter: !b.hatPasswort });
+      throw new Fachfehler(401, t('konten.verwaltung.fehler.bestaetigen'), { bestaetigen: true, code: mitCode, anbieter: !b.hatPasswort, passkey: await this.passkeyNutzbar(b) });
     }
     await this.repo.setzeSitzungsVerwaltung(hash, {
       verwaltungSeit: jetzt, verwaltungAktiv: jetzt,
@@ -391,7 +543,7 @@ export class Konten {
   }
 
   /** Frische Anmeldung für eine heikle Handlung (#819): immer mit Passwort (und Code); gilt dann 10 Minuten. */
-  async bestaetigeFrisch(b: Benutzer, schluessel: string | undefined, s: SitzungIntern | undefined, e: { passwort?: unknown; code?: unknown }, ip: string) {
+  async bestaetigeFrisch(b: Benutzer, schluessel: string | undefined, s: SitzungIntern | undefined, e: Bestaetigung, ip: string) {
     if (!schluessel || !s) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
     if (s.vertretungId) throw new Fachfehler(403, t('konten.verwaltung.fehler.vertretung'));
     await this.bestaetigeErneut(b, e, ip, t('meldungen.konten.heikle-handlung'));
@@ -399,6 +551,9 @@ export class Konten {
     await this.repo.setzeSitzungsVerwaltung(hasheSchluessel(schluessel), { frisch: jetzt, verwaltungBestaetigt: jetzt });
     log.info('Frisch angemeldet für eine heikle Handlung', { person: b.email, imVerwaltungsmodus: this.modusAktiv(b, s) });
   }
+
+  /** Kann die Person hier mit einem Passkey bestätigen (#811)? */
+  private async passkeyNutzbar(b: Benutzer): Promise<boolean> { return !!this.passkeys && (await this.passkeys.nutzbar(b.id)); }
 
   /** Zwei-Faktor geändert (#819): Modus, Tagesmerker und frische Anmeldung in allen Sitzungen aufheben. */
   async zweifaktorGeaendert(benutzerId: string) { await this.repo.vergissVerwaltungVon(benutzerId); }
@@ -660,6 +815,8 @@ export class Konten {
     const benutzer = await Promise.all((await this.repo.listeBenutzer()).map(async (b) => ({
       id: b.id, email: b.email, name: b.name, verwaltung: b.verwaltung ?? [], aktiv: b.aktiv, erstellt: b.erstellt, letzteAnmeldung: b.letzteAnmeldung,
       abwesenheit: b.abwesenheit ?? null, einstellungen: await this.repo.einstellungen(b.id),
+      // Passkeys (#811): nur Name und Zeitpunkte – Schlüssel gehören zur Installation, nicht in einen Export.
+      passkeys: this.passkeys ? (await this.passkeys.liste(b.id)).map((p) => ({ name: p.name, erstellt: p.erstellt, zuletzt: p.zuletzt })) : [],
     })));
     return { benutzer, vertretungen: await this.repo.alleVertretungen() };
   }
@@ -913,6 +1070,8 @@ export class Konten {
     if (!b) throw new Fachfehler(404, t('konten.notfall.fehler.konto'));
     if (!(await this.repo.loeseNotfallcodeEin(hash, b.id, await hashePasswort(pw)))) return null;
     if (this.zweifaktor) await this.zweifaktor.entferne(b.id, 'Notfallzugang');
+    // Passkeys (#811) ebenso: Wer den Notfallzugang braucht, hat womöglich auch das Gerät nicht mehr.
+    if (this.passkeys) await this.passkeys.entferneAlle(b.id, b.email, 'Notfallzugang');
     await this.repo.vergissVerwaltungVon(b.id);
     return (await this.repo.holeBenutzer(b.id)) ?? b;
   }
@@ -993,10 +1152,9 @@ export class Konten {
     await this.repo.setzeHash(l.benutzerId, await hashePasswort(passwort));
     await this.repo.loescheSitzungenVon(l.benutzerId);
     const benutzer = (await this.repo.holeBenutzer(l.benutzerId))!;
-    // Zwei-Faktor (#242): Der Link ersetzt nur das Passwort, nicht den zweiten Faktor.
-    if (this.zweifaktor && (await this.zweifaktor.aktiv(benutzer.id))) {
-      return { benutzer, zweiterSchritt: await this.merkeZweitenSchritt(benutzer.id, benutzer.email, info) };
-    }
+    // Zwei-Faktor (#242) und Passkey (#811): Der Link ersetzt nur das Passwort, nicht den zweiten Faktor.
+    const wege = await this.zweiteWege(benutzer);
+    if (wege) return { benutzer, zweiterSchritt: await this.merkeZweitenSchritt(benutzer.id, benutzer.email, info), wege };
     await this.repo.notiereAnmeldung(l.benutzerId);
     return { benutzer, schluessel: await this.neueSitzung(l.benutzerId, { ...info, voll: true }) };
   }

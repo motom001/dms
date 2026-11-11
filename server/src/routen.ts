@@ -412,12 +412,12 @@ export function sitzungsCookie(schluessel: string | null, sicher: boolean): stri
 }
 
 /**
- * Zwei-Faktor-Pflicht lesen oder nur ausschalten (#416): geht für Administratoren auch, solange sie die
- * Zwei-Faktor-Anmeldung selbst noch einrichten müssen – so sperrt sich niemand mit dieser Einstellung aus.
- * Einschalten (ein Wert true) gehört nicht dazu.
+ * Zwei-Faktor- oder Passkey-Pflicht lesen oder nur ausschalten (#416, #811): geht für Administratoren auch, solange sie
+ * die Zwei-Faktor-Anmeldung bzw. einen Passkey selbst noch einrichten müssen – so sperrt sich niemand mit dieser
+ * Einstellung aus. Einschalten (ein Wert true) gehört nicht dazu.
  */
 export function pflichtZuruecknehmen(r: Pick<Route, 'methode' | 'pfad'>, a: Pick<Anfrage, 'body' | 'benutzer'>): boolean {
-  if (r.pfad !== '/api/werkbank/zweifaktor' || a.benutzer?.rolle !== 'admin') return false;
+  if ((r.pfad !== '/api/werkbank/zweifaktor' && r.pfad !== '/api/werkbank/passkeys') || a.benutzer?.rolle !== 'admin') return false;
   if (r.methode === 'GET') return true;
   if (r.methode !== 'PUT' || !a.body || typeof a.body !== 'object') return false;
   return Object.values(a.body as Record<string, unknown>).every((w) => w === false);
@@ -486,6 +486,11 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
   if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)
     && (await konten.zweifaktor.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))) {
     throw new Fachfehler(403, t('meldungen.routen.bitte-zuerst-die-zwei'));
+  }
+  // Passkey vorgeschrieben (#811), aber noch keiner da: ebenso nur das eigene Konto (#416: erst für neue Sitzungen).
+  if (konten.passkeys && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)
+    && (await konten.passkeys.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))) {
+    throw new Fachfehler(403, t('anmeldung.passkey.fehler.pflicht'));
   }
   if (r.zugang === 'admin') pruefeVerwaltung(r, a, konten);
 }

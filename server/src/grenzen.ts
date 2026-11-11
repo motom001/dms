@@ -33,6 +33,12 @@ export const JSON_KOERPER_MAX = 2 * MB;
 export const EINRICHTUNG_KOERPER_MAX = 64 * KB;
 /** Start- und Lasttestmodus: nur Formulare und Statusabfragen. */
 export const MODUS_KOERPER_MAX = 16 * KB;
+/** Antwort eines Geräts beim Anlegen oder Anmelden mit Passkey (#811), als JSON gezählt – echte sind wenige KB. */
+export const PASSKEY_ANTWORT_MAX = 16 * KB;
+/** Offene Herausforderungen für die Anmeldung mit Passkey ohne E-Mail-Adresse je IPv4-Adresse bzw. IPv6-/64 in 5 Minuten. */
+export const PASSKEY_OPTIONEN_JE_ADRESSE = 20;
+/** Dieselben für alle Adressen zusammen – nur Notbremse gegen ein Fluten des Kurzzustands aus vielen Netzen. */
+export const PASSKEY_OPTIONEN_GESAMT = 20_000;
 /** Fehlermeldung mit Bildschirmfoto und Anhängen (Konto → Fehler melden). */
 export const FEHLERMELDUNG_KOERPER_MAX = 30 * MB;
 /** Bildschirmfoto einer Fehlermeldung, einzeln. */

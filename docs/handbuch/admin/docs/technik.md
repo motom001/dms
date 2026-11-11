@@ -23,6 +23,7 @@ Browser ── HTTP ──▶ Ablago-Container (Node.js) ──▶ PostgreSQL-Co
 | PDF bearbeiten | pdf-lib (MIT), nur über eine gemeinsame Stelle im Server gekapselt (#541); Bewertung der Alternativen im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#pdf-stelle) | Stempel, Export, Seiten bearbeiten, Schwärzen, Verkleinern, Vorschau, Auskunft, Aufkleber |
 | Arbeiter | `node:worker_threads`, ohne zusätzliche Bibliothek: ein kleiner Pool neben dem Hauptfaden (#542), siehe [Systemzustand](speicherplatz.md#arbeiter-fur-pdf-und-exporte) | PDF-Arbeiten und große Exporte, ohne dass andere Benutzer warten |
 | Verschlüsselung | AES-256-GCM (Node.js crypto), Schlüssel als Datei unter `/data/geheim` | Gespeicherte Passwörter (#39, #46) |
+| Passkeys | WebAuthn; geprüft mit `@simplewebauthn/server` (MIT), im Browser die eingebaute Schnittstelle; nur öffentliche Schlüssel in der Datenbank | Anmelden ohne Passwort, zweiter Faktor, erneute Anmeldung ([Passkeys](anmeldeschutz.md#passkeys), #811) |
 | Image | `node:24-alpine`, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt | Läuft auf dem NAS neben dem PostgreSQL-Image |
 | dms-komplett | Dasselbe Image mit PostgreSQL 17 (Alpine-Paket) im selben Container; Datenbank im Ordner `/data/postgres` | Ablago und Datenbank in einem Container |
 | Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main`, jeder Pull Request, jedes Versions-Tag und einmal pro Woche |
@@ -45,6 +46,7 @@ Wie groß etwas höchstens sein darf. Ablago prüft jede Grenze, bevor es die Da
 | Fehlermeldung (mit Bildschirmfoto und Anhängen) | 30 MB, das Bildschirmfoto 10 MB |
 | Logo eines Designs | 1 MB |
 | Einrichtungsdatei | 64 KB |
+| Passkeys | 20 je Person, Name 60 Zeichen, Antwort des Geräts 16 KB; Anmeldung ohne E-Mail-Adresse: 20 Herausforderungen je IP-Adresse bzw. IPv6-/64 in 5 Minuten, 20 000 offene insgesamt |
 | E-Rechnung (XML als Datei oder aus dem PDF-Anhang) | 4 MB, höchstens 64 Ebenen tief, 200 000 Elemente, 500 Positionen werden übernommen; ohne DTD und Entitäten. Was darüber liegt, liest Ablago nicht als E-Rechnung |
 | Alle anderen Anfragen (Formulare, Einstellungen) | 2 MB; eine Datei nehmen sie gar nicht an |
 

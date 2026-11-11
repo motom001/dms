@@ -3,6 +3,7 @@ import { abwesenheitWirkt } from '../../shared/src/model';
 import { heuteIn } from '../../shared/src/sichten';
 import { leseSchrift, setzeSchrift } from './design';
 import { api } from './api';
+import { KnopfLink } from './bausteine';
 import { Ablage } from './ablage/Ablage';
 import { useDaten } from './daten';
 import { useKonto } from './konto';
@@ -30,7 +31,7 @@ import { starteRundgang, useEntdecken } from './entdecken/stand';
 export function App() {
   const { pfad, suche } = useOrt();
   const d = useDaten();
-  const { ich, abmelden, vertretung, hinweise, aktualisieren, version, zweifaktor, verwaltung, verwaltungsmodus, verwalten, verwaltungBeenden } = useKonto();
+  const { ich, abmelden, vertretung, hinweise, aktualisieren, version, zweifaktor, passkey, verwaltung, verwaltungsmodus, verwalten, verwaltungBeenden } = useKonto();
   // Nach einem Ausfall (#122): gemeinsame Daten neu holen; „Ansicht neu laden“ baut den Inhalt neu auf.
   const [ansicht, setAnsicht] = useState(0);
   useBeiWiederErreichbar(() => void d.neuLaden());
@@ -98,6 +99,13 @@ export function App() {
         <div className="hinweisbanner" role="alert" id="zweifaktor-hinweis">
           <p>{tn('oberflaeche.app.richte-sie-jetzt-ein', { b: <strong>{t('oberflaeche.app.die-zwei-faktor-anmeldung')}</strong> })}</p>
           {!(bereich === 'profil' && teile[1] === 'sicherheit') && <Link to="/profil/sicherheit" className="knopf klein">{t('oberflaeche.app.jetzt-einrichten')}</Link>}
+        </div>
+      )}
+      {/* #811: Passkey vorgeschrieben, während diese Sitzung lief – wie bei der Zwei-Faktor-Anmeldung (#416). */}
+      {!vertretung && passkey.ausstehend && (
+        <div className="hinweisbanner" role="alert" id="passkey-hinweis">
+          <p>{tn('oberflaeche.app.passkey.richte-ihn-ein', { b: <strong>{t('oberflaeche.app.passkey.vorgeschrieben')}</strong> })}</p>
+          {!(bereich === 'profil' && teile[1] === 'sicherheit') && <KnopfLink to="/profil/sicherheit" groesse="klein">{t('oberflaeche.app.jetzt-einrichten')}</KnopfLink>}
         </div>
       )}
       <ErreichbarkeitsBanner version={version} ansichtNeuLaden={() => { setAnsicht((n) => n + 1); void d.neuLaden(); }} />

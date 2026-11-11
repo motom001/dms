@@ -20,6 +20,8 @@ export interface Konto {
   version: string | null;
   /** Zwei-Faktor (#242, #416): eingerichtet? Vorgeschrieben, aber erst ab der nächsten Anmeldung (Hinweis oben)? */
   zweifaktor: { aktiv: boolean; ausstehend: boolean };
+  /** Passkeys (#811): eigener vorhanden? Vorgeschrieben, aber erst ab der nächsten Anmeldung (Hinweis oben)? */
+  passkey: { aktiv: boolean; ausstehend: boolean };
   /** Favoriten benachrichtigen (#506): von der Werkbank erlaubt? Sonst kein Schalter an den Favoriten. */
   favoritenBenachrichtigung: boolean;
   /** Laufwerk (#720): vom Administrator eingeschaltet? Sonst kein Menüeintrag, kein Bereich. */

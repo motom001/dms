@@ -13,6 +13,7 @@ import { GRUNDLAGEN, leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from '
 import { Link } from '../ort';
 import { FehlerMelden } from './FehlerMelden';
 import { ZweifaktorBlatt } from './Zweifaktor';
+import { PasskeyBlatt } from './Passkeys';
 import { DokumentPasswoerter } from './DokumentPasswoerter';
 import { MeinExport } from './MeinExport';
 import { LaufwerkBereich } from './Laufwerk';
@@ -161,6 +162,8 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         {fPw.anzeige}
         <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>{t('profil.profil.passwort-aendern')}</button></div>
       </form>
+
+      <PasskeyBlatt />
 
       <ZweifaktorBlatt />
 

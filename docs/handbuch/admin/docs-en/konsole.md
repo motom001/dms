@@ -35,6 +35,7 @@ The command `dms` also works in [maintenance mode](wartungsmodus.md). So you end
 | --- | --- |
 | `dms passwort <email>` | Set a password directly, without email and link. Asks for the new password twice; all of the user's sessions end. Without a terminal: `--passwort <new>`. |
 | `dms zweifaktor-zuruecksetzen <email>` | Remove [two-factor sign-in](anmeldeschutz.md#zwei-faktor-anmeldung) (phone lost). |
+| `dms passkeys-zuruecksetzen <email>` | Remove all [passkeys](anmeldeschutz.md#passkeys) of a person (device lost). |
 | `dms gesperrt` | blocked IP addresses ([sign-in protection](anmeldeschutz.md)) |
 | `dms entsperren <ip>` | unblock an IP address |
 | `dms wartung` / `dms wartung aus` | status of [maintenance mode](wartungsmodus.md) / end it |

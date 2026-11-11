@@ -135,13 +135,15 @@ export function kontenRouten(k: RoutenKontext): Route[] {
      */
     { methode: 'GET', pfad: '/api/konto/dokument-passwoerter', zugang: 'angemeldet', handler: async (a) => {
       const e = nurSelbst(a);
-      return ok({ eintraege: await e.liste(ich(a).id), bestaetigtBis: await e.bestaetigtBis(a.sitzungsDaten?.id), max: GEMERKT_MAX, zweifaktor: (await zf().status(ich(a).id)).aktiv });
+      return ok({ eintraege: await e.liste(ich(a).id), bestaetigtBis: await e.bestaetigtBis(a.sitzungsDaten?.id), max: GEMERKT_MAX, zweifaktor: (await zf().status(ich(a).id)).aktiv, passkey: !!konten.passkeys && (await konten.passkeys.nutzbar(ich(a).id)) });
     } },
     { methode: 'POST', pfad: '/api/konto/dokument-passwoerter', zugang: 'angemeldet', handler: async (a) => ok(await nurSelbst(a).merke(ich(a).id, b(a).name, b(a).passwort), 201) },
     { methode: 'POST', pfad: '/api/konto/dokument-passwoerter/bestaetigen', zugang: 'angemeldet', handler: async (a) => {
       const e = nurSelbst(a);
       const bis = await e.bestaetige(ich(a).id, a.sitzungsDaten?.id, async () => {
-        // Ein Code der Zwei-Faktor-Anmeldung (nur sechs Ziffern: kein Wiederherstellungscode wird verbraucht) oder das Passwort.
+        // Ein Passkey (#811, eigener Zweck), ein Code der Zwei-Faktor-Anmeldung (nur sechs Ziffern: kein
+        // Wiederherstellungscode wird verbraucht) oder das Passwort.
+        if (b(a).passkey !== undefined && b(a).passkey !== null) { await konten.pruefePasskeyFuerDokumente(ich(a), b(a).passkey); return; }
         const code = String(b(a).code ?? '').replace(/\s/g, '');
         if (/^\d{6}$/.test(code)) { if ((await zf().pruefe(ich(a).id, code)) !== 'totp') throw new Fachfehler(403, t('mappen.entsperren.gemerkt.code-falsch')); return; }
         await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);

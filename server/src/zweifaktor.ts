@@ -57,6 +57,41 @@ export type Pflicht = Record<Rolle, boolean>;
 export type PflichtPerson = { id: string; verwaltung?: string[]; art?: string };
 export const pflichtRolle = (b: PflichtPerson): Rolle => (darfVerwalten(b) ? 'admin' : 'mitglied');
 
+/**
+ * Eine Anmeldeart je Rolle vorschreiben (#242, #416, seit #811 auch für Passkeys): Schalter je Rolle unter `schluessel`,
+ * seit wann je Rolle unter `<schluessel>_seit`. Die Pflicht gilt erst für Sitzungen, die nach dem Einschalten beginnen.
+ */
+export class RollenPflicht {
+  constructor(private speicher: Einstellungen, private schluessel: string, private logText: string, private jetzt: () => number = Date.now) {}
+
+  async pflicht(): Promise<Pflicht> { return { admin: false, mitglied: false, ...((await this.speicher.lies(this.schluessel)) as Partial<Pflicht> | null ?? {}) }; }
+  /** Seit wann die Pflicht je Rolle gilt (#416); fehlt der Zeitpunkt (eingeschaltet vor 0.91.1), gilt sie für alle Sitzungen. */
+  private async seit(): Promise<Partial<Record<Rolle, string>>> { return ((await this.speicher.lies(`${this.schluessel}_seit`)) as Partial<Record<Rolle, string>> | null) ?? {}; }
+  async setze(x: unknown, von: string): Promise<Pflicht> {
+    const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+    const alt = await this.pflicht();
+    const neu: Pflicht = { admin: o.admin === undefined ? alt.admin : o.admin === true, mitglied: o.mitglied === undefined ? alt.mitglied : o.mitglied === true };
+    // #416: Die Pflicht gilt erst für Sitzungen, die nach dem Einschalten beginnen – laufende arbeiten weiter.
+    const seit = await this.seit();
+    const jetzt = new Date(this.jetzt()).toISOString();
+    for (const r of ['admin', 'mitglied'] as const) {
+      if (neu[r] && !alt[r]) seit[r] = jetzt;
+      if (!neu[r]) delete seit[r];
+    }
+    await this.speicher.schreibe(`${this.schluessel}_seit`, seit);
+    await this.speicher.schreibe(this.schluessel, neu);
+    log.info(this.logText, { von, ...neu });
+    return neu;
+  }
+  /** 'fehlt', 'ausstehend' oder 'ok' – siehe `Zweifaktor.lage`; `eingerichtet` fragt erst, wenn die Pflicht gilt. */
+  async lage(b: PflichtPerson, sitzungSeit: Date | undefined, eingerichtet: () => Promise<boolean>): Promise<'ok' | 'ausstehend' | 'fehlt'> {
+    if (!(await this.pflicht())[pflichtRolle(b)] || (await eingerichtet())) return 'ok';
+    const ab = (await this.seit())[pflichtRolle(b)];
+    if (sitzungSeit && ab && sitzungSeit.getTime() < Date.parse(ab)) return 'ausstehend';
+    return 'fehlt';
+  }
+}
+
 /** Entwurf beim Einrichten (#744: im Kurzzustand, das Geheimnis mit dem Schlüssel des DMS verschlüsselt). */
 const ENTWURF = 'zweifaktor-entwurf';
 const ENTWURF_MS = 10 * 60_000;
@@ -66,6 +101,7 @@ export class Zweifaktor {
 
   constructor(private speicher: Einstellungen, private verschluessele: (k: string) => string, private entschluessele: (w: string) => string | null, private jetzt: () => number = Date.now, zustand?: Kurzzustand) {
     this.zustand = zustand ?? speicherKurzzustand(jetzt);
+    this.vorschrift = new RollenPflicht(speicher, 'zweifaktor_pflicht', 'Pflicht zur Zwei-Faktor-Anmeldung geändert', jetzt);
   }
 
   private async lies(id: string) { return (await this.speicher.lies(`zweifaktor_${id}`)) as Gespeichert | null; }
@@ -87,25 +123,10 @@ export class Zweifaktor {
     return { aktiv: !!g, seit: g?.seit ?? null, codesUebrig: g?.codes.filter(Boolean).length ?? 0 };
   }
 
-  async pflicht(): Promise<Pflicht> { return { admin: false, mitglied: false, ...((await this.speicher.lies('zweifaktor_pflicht')) as Partial<Pflicht> | null ?? {}) }; }
-  /** Seit wann die Pflicht je Rolle gilt (#416); fehlt der Zeitpunkt (eingeschaltet vor 0.91.1), gilt sie für alle Sitzungen. */
-  private async pflichtSeit(): Promise<Partial<Record<Rolle, string>>> { return ((await this.speicher.lies('zweifaktor_pflicht_seit')) as Partial<Record<Rolle, string>> | null) ?? {}; }
-  async setzePflicht(x: unknown, von: string): Promise<Pflicht> {
-    const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
-    const alt = await this.pflicht();
-    const neu: Pflicht = { admin: o.admin === undefined ? alt.admin : o.admin === true, mitglied: o.mitglied === undefined ? alt.mitglied : o.mitglied === true };
-    // #416: Die Pflicht gilt erst für Sitzungen, die nach dem Einschalten beginnen – laufende arbeiten weiter.
-    const seit = await this.pflichtSeit();
-    const jetzt = new Date(this.jetzt()).toISOString();
-    for (const r of ['admin', 'mitglied'] as const) {
-      if (neu[r] && !alt[r]) seit[r] = jetzt;
-      if (!neu[r]) delete seit[r];
-    }
-    await this.speicher.schreibe('zweifaktor_pflicht_seit', seit);
-    await this.speicher.schreibe('zweifaktor_pflicht', neu);
-    log.info('Pflicht zur Zwei-Faktor-Anmeldung geändert', { von, ...neu });
-    return neu;
-  }
+  /** Pflicht je Rolle (#242, #416); dieselbe Logik nutzt die Passkey-Pflicht (#811). */
+  readonly vorschrift: RollenPflicht;
+  async pflicht(): Promise<Pflicht> { return this.vorschrift.pflicht(); }
+  async setzePflicht(x: unknown, von: string): Promise<Pflicht> { return this.vorschrift.setze(x, von); }
   /**
    * Muss dieser Benutzer die Zwei-Faktor-Anmeldung noch einrichten?
    * - 'fehlt': ja, und diese Sitzung begann nach dem Einschalten der Pflicht – erst einrichten (#242).
@@ -114,11 +135,16 @@ export class Zweifaktor {
    * Ohne Sitzungsbeginn (z. B. reine Prüfung) zählt jede Pflicht als 'fehlt'.
    */
   async lage(b: PflichtPerson, sitzungSeit?: Date): Promise<'ok' | 'ausstehend' | 'fehlt'> {
-    if (!(await this.pflicht())[pflichtRolle(b)] || (await this.aktiv(b.id))) return 'ok';
-    const ab = (await this.pflichtSeit())[pflichtRolle(b)];
-    if (sitzungSeit && ab && sitzungSeit.getTime() < Date.parse(ab)) return 'ausstehend';
-    return 'fehlt';
+    return this.vorschrift.lage(b, sitzungSeit, () => this.erfuellt(b.id));
   }
+  /**
+   * Erfüllt diese Person die Pflicht? Mit Code-App – oder (Entscheidung 11.11.2026, #811) mit einem Passkey, der hier
+   * gilt: `alternative` verbindet `Konten` mit den Passkeys.
+   */
+  alternative: ((id: string) => Promise<boolean>) | null = null;
+  async erfuellt(id: string): Promise<boolean> { return (await this.aktiv(id)) || (!!this.alternative && (await this.alternative(id))); }
+  /** Gilt die Pflicht für die Rolle dieser Person (unabhängig davon, ob sie erfüllt ist)? */
+  async pflichtFuer(b: PflichtPerson): Promise<boolean> { return (await this.pflicht())[pflichtRolle(b)]; }
   async fehlt(b: PflichtPerson, sitzungSeit?: Date): Promise<boolean> { return (await this.lage(b, sitzungSeit)) === 'fehlt'; }
 
   /** Einrichten, Schritt 1: neues Geheimnis (noch nicht gespeichert) und Adresse für den QR-Code. */

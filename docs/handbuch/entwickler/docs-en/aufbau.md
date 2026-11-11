@@ -17,7 +17,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 
 | Folder in `server/src/` | Routes for |
 |---|---|
-| `anmeldung/` | sign-in, two-factor, password, setup, emergency access |
+| `anmeldung/` | sign-in, two-factor, passkeys, password, setup, emergency access |
 | `konten/` | users, roles, deputies, API keys |
 | `mappentypen/` | folder types, their archive, permissions |
 | `werkbank/` | Workbench overview, designs, region, languages, log, admin mode |
@@ -366,6 +366,7 @@ The check **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) reports 
 | `mailparser` | server | MIT | splitting collected emails into text and attachments |
 | `pdf-lib` | server | MIT | assembling, shrinking, redacting, stamping PDFs – only via the [PDF place](#pdf-stelle) |
 | `yaml` | server | ISC | reading and writing packages in YAML format |
+| `@simplewebauthn/server` | server | MIT | verifying [passkeys](#passkeys) (WebAuthn: CBOR, COSE keys, signatures, counters) – pinned version; brings `@peculiar/*` and `asn1js` (MIT/BSD-3-Clause), `@levischuck/tiny-cbor`, `@hexagon/base64`, `tsyringe` (MIT), `reflect-metadata` (Apache-2.0) and `tslib` (0BSD) |
 | `react`, `react-dom` | interface | MIT | interface |
 | `qrcode` | interface | MIT | QR code for two-factor sign-in |
 | `poppler-utils` | image (Alpine) | GPL-2.0-or-later, called as a separate program | `pdftotext`, `pdftoppm`: text and images from PDFs |
@@ -693,6 +694,38 @@ Besides people (`benutzer.art = 'person'`) there are two kinds of accounts that 
 - **Workbench:** system accounts are never `admin`; which Workbench actions a card allows is up to the card itself (#677).
 - **Interface:** Workbench → Users, section "System accounts" (`GET /api/benutzer/systemkonten`, administrators only).
 
+## Passkeys (#811) { #passkeys }
+
+Sign-in with WebAuthn – as a way of its own, as a second factor and for signing in again (#819). The cryptography (CBOR, COSE keys, signatures, counters) is verified by `@simplewebauthn/server` in a pinned version ([dependencies](#abhaengigkeiten)); in the browser Ablago uses the built-in `navigator.credentials` interface without a library (`web/src/passkey.ts`).
+
+- **Where:** `server/src/passkeys.ts` (class `Passkeys`, next to `zweifaktor.ts`), connected to `Konten` with `verbindePasskeys` like two-factor sign-in. The requirement per role uses the same `RollenPflicht` as two-factor sign-in (keys `passkey_pflicht`, `passkey_pflicht_seit`). Routes in `anmeldung/anmeldung.routen.ts`.
+- **RP ID and origin** from `betrieb.adresseFuerLinks()` (maintained address, otherwise the request's): only `https://` with a name or `http://localhost` (`relyingParty`). Each passkey remembers its RP ID; if it does not match the current address, it does not count (`passt: false` in the list).
+- **Challenge** in the [short-lived state](#kurzzustand): when adding, per account (`passkey-neu`); when signing in, under the hash of a random identifier (`passkey-anmeldung`), with purpose (`anmelden`, `zweiter-schritt`, `bestaetigen`, `dokumentpasswoerter`) and – except when signing in without an email address – the account. 5 minutes; `nimm` redeems it once, also on errors. At most 2000 open.
+- **Verification:** `userVerification: 'required'` when creating and signing in, attestation `none`, origin and RP ID from the challenge, counter must increase (otherwise warning "possibly copied"). The counter is saved with `Einstellungen.tausche`.
+- **Stored** in the settings under `passkeys_<account>`: `{ liste: [{ nr, id, oeffentlich, zaehler, name, rpId, erstellt, zuletzt, transports, mehrgeraete }] }` – only public data, hence part of the backup and unchanged by `ohneGeheimnisse`. `nr` is Ablago's own identifier for routes and interface; the authenticator's identifier only leaves the server in `allowCredentials`/`excludeCredentials`. The `userID` when creating is the account id (not an email address); signing in without an email address finds the account by it.
+- **Decisions only by the maintained address** (security review): `pflichtRp()`/`fuerPflicht()` read `betrieb.gepflegteAdresse()`, never the request's address. The passkey requirement can only be switched on with a maintained HTTPS address (409); if it goes missing later, the requirement keeps applying, closed. If the requirement is on and the person has passkeys but none for the maintained address, or the request comes via another address, `zweiteWege` requires the code or answers 409.
+- **Limits:** challenges without an account (`passkey-anmeldung-offen`) per address range (`adressbereich`: IPv4 or IPv6 /64) at most `PASSKEY_OPTIONEN_JE_ADRESSE` in 5 minutes (counter `passkey-optionen-adresse`), plus the emergency brake `PASSKEY_OPTIONEN_GESAMT` (`grenzen.ts`); second step and confirmations (`passkey-anmeldung`) do not count.
+- **Requirements:** a passkey for the maintained address also fulfils the two-factor requirement (`Zweifaktor.alternative`, connected by `Konten`); `zweiteWege` then requires it when signing in with a password, and `passkeyNoetig` blocks removing the last one. The passkey requirement stays separate.
+- **Purposes:** `bestaetigen` for administration mode and sensitive actions, `dokumentpasswoerter` for "passwords for documents" (`POST …/passkeys/bestaetigen/optionen` with `{ fuer: 'dokumentpasswoerter' }`, then `POST /api/konto/dokument-passwoerter/bestaetigen` with `{ passkey }`) – a challenge is only valid for its purpose.
+- **Sign-in protection:** `Konten.anmeldenMitPasskey` counts beforehand with `sperre.versuch` (email of the named account, otherwise empty, and IP); a failure with `fehlschlag`, a success resets – as with the password (#956).
+
+| Route | Access | Purpose |
+| --- | --- | --- |
+| `POST /api/konto/passkey/optionen` | open | `{ zweiterSchritt? }` → `{ kennung, optionen }` (request options in WebAuthn's JSON format) |
+| `POST /api/konto/passkey/anmelden` | open | `{ kennung, antwort, zweiterSchritt? }` → session |
+| `GET /api/konto/passkeys` | signed in | own passkeys, `moeglich`, `adresse` (RP ID), `pflicht`, `hoechstens` |
+| `POST /api/konto/passkeys/beginnen` | signed in | creation options |
+| `POST /api/konto/passkeys` | signed in | `{ antwort, name }` → new passkey (201) |
+| `PUT /api/konto/passkeys/:nr` | signed in | `{ name }` rename |
+| `DELETE /api/konto/passkeys/:nr` | signed in | remove – only with a fresh sign-in (otherwise 403 with `details.frisch`) |
+| `POST /api/konto/passkeys/bestaetigen/optionen` | signed in | options for signing in again; then `POST /api/konto/verwaltung` or `…/verwaltung/bestaetigen` with `{ passkey: { kennung, antwort } }` |
+| `GET`/`PUT /api/werkbank/passkeys` | Workbench (sign-in protection) | requirement per role `{ admin, mitglied }`, plus `moeglich` |
+| `GET /api/benutzer/:id/passkeys`, `POST …/zuruecksetzen` | Workbench (users) | number, remove all (also `dms passkeys-zuruecksetzen`) |
+
+`POST /api/konto/anmelden` and `…/passwort-setzen` additionally return `wege: { code, passkey }` for the second step; after a provider this is in the address of `/anmelden/code` as `#<kennung>.<c|p>`. `/api/konto/status` contains `passkey: { moeglich, aktiv?, fehlt?, ausstehend? }`, the administration state `passkey`.
+
+**Tests:** `server/test/passkeys.test.ts` with a simulated authenticator (`server/test/hilfen-authenticator.ts`: P-256, attestation `none`, small CBOR) – adding, signing in, wrong origin, reused challenge, counter going backwards, without user verification, sign-in protection, removing without a fresh sign-in, requirement, changed address, administration mode. The smoke test creates a passkey in Chromium with a virtual authenticator (DevTools protocol) and signs in with it.
+
 ## State between requests (#744) { #kurzzustand }
 
 Build rule "keep several servers possible later": whatever applies between two requests lives in PostgreSQL – not in a `Map` inside one process. Otherwise an attacker with two processes would get twice as many attempts, and the second sign-in step would end up at the wrong process.
@@ -703,12 +736,13 @@ Build rule "keep several servers possible later": whatever applies between two r
 - **Secrets:** if the key itself is secret (ticket, `state`, identifier, session), only its hash is stored (`hashe`). Secret values (TOTP draft, PKCE verifier, device code, new emergency sheet) are encrypted by the caller with the vault.
 - **Schedules:** `exklusiv(name, f)` takes `pg_try_advisory_lock(744, hashtext(haushalt:name))` on a connection of its own; if another process holds it, the run doesn't happen here (there is never any waiting). In `ablago.ts` as `nurEiner(…)` for the Bin, absences, deadlines (day of the last run also in the short-term state), technical tasks, test restore, RESCUE file, storage transitions and cleaning up the short-term state (every 10 minutes). Daily runs with `laufeFaellige` (backup, summary, automations) were already safe via the marker in the settings.
 - **Sign of life:** `lebenszeichen(sql, haushalt)` holds a shared lock per process – since #745 only the leader (the process for background work). Only a process that is alone at start-up resets "running" text recognition to interrupted.
-- **Compare and swap** instead of overwriting where two processes change the same value: last TOTP step and used recovery codes (`zweifaktor.ts`), renewed token of the mailbox sign-in (`postfach-oauth.ts`), toggling maintenance mode (`wartung.ts`, now reads the state from the database at every check).
+- **Compare and swap** instead of overwriting where two processes change the same value: last TOTP step and used recovery codes (`zweifaktor.ts`), passkey counters (`passkeys.ts`), renewed token of the mailbox sign-in (`postfach-oauth.ts`), toggling maintenance mode (`wartung.ts`, now reads the state from the database at every check).
 
 | What | Kind(s) in the short-term state |
 |---|---|
 | Sign-in protection: failed attempts per account and IP, per IP, IP blocks, collective and immediate notification | `anmeldung-konto`, `anmeldung-ip`, `anmeldung-ip-sperre`, `anmeldung-meldung`, `anmeldung-sammelmeldung`, `anmeldung-sofortmeldung` |
 | Second sign-in step, setting up two-factor | `zweiter-schritt`, `zweifaktor-entwurf` |
+| Passkeys (#811): challenge when adding and when signing in, counter per address | `passkey-neu`, `passkey-anmeldung`, `passkey-anmeldung-offen`, `passkey-optionen-adresse` |
 | Retrieval page: tickets, failed attempts per scope, one check per link | `abruf-ticket`, `abruf-fehler`, `abruf-pruefung` |
 | OIDC, mailbox OAuth (callback, device code) | `oidc-anmeldung`, `postfach-oauth-code`, `postfach-oauth-geraet` |
 | WebDAV: counting windows, pending files | `webdav-fenster`, `webdav-schwebend` |

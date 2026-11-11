@@ -1348,6 +1348,12 @@ dialog.ueber-dms::backdrop { background: var(--schleier); }
 .qr { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .qr img { background: var(--papier); padding: 6px; border-radius: var(--r); border: 1px solid var(--linie); }
 .qr .geheimnis { display: inline-block; font-size: calc(14px * var(--skala, 1)); letter-spacing: .04em; word-break: break-all; user-select: all; }
+/* Passkeys (#811): Liste in Mein Konto → Sicherheit; am Handy rutschen die Knöpfe unter den Namen. */
+.passkey-liste li { flex-wrap: wrap; align-items: flex-start; }
+.passkey-liste li > .stapel { flex: 1 1 100%; }
+.passkey-liste .hinweis { margin: 6px 0 0; }
+.passkey-liste .knoepfe { margin: 0; }
+.anmelden-passkey { display: flex; flex-direction: column; gap: 8px; }
 ol.codes { columns: 2; margin: 0; padding-left: 24px; font-size: calc(14px * var(--skala, 1)); line-height: 1.9; }
 ol.codes code { user-select: all; letter-spacing: .04em; }
 @media print {

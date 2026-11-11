@@ -122,7 +122,9 @@ During setup, Ablago created a new **key**. It encrypts stored passwords and all
 
 Downloading the emergency sheet is a [sensitive action](verwalten.md#frische-anmeldung): if "Set up now" took longer than 10 minutes (for instance with many packages), Ablago asks for your password once more beforehand.
 
-Below it, the assistant offers **two-factor sign-in** – with **Set up now** (authenticator app on the phone, then keep the recovery codes safe) or **Later**. It is voluntary; it can be set up at any time under **My account → Security**. If you set it up now, Ablago asks for password and code once when completing, because your sign-in has changed. There are no passkeys yet.
+Below it, the assistant offers **two-factor sign-in** – with **Set up now** (authenticator app on the phone, then keep the recovery codes safe) or **Later**. It is voluntary; it can be set up at any time under **My account → Security**. If you set it up now, Ablago asks for password and code once when completing, because your sign-in has changed.
+
+If the assistant runs over **HTTPS** (or on `localhost`), it then offers a **passkey**: **Add now** creates it on this device (fingerprint, face or PIN); **Later** works too – at any time under **My account → Security**. Without HTTPS the offer is missing, because passkeys do not work there (see [Passkeys](anmeldeschutz.md#passkeys)).
 
 Plus links to both manuals, "Report a problem" as a prepared GitHub issue and the note about GitHub Sponsors.
 
@@ -168,7 +170,7 @@ Only emails that someone triggers or switches on go via the mail server: sent fo
 
 ![Email and address in the Workbench](bilder/werkbank-betrieb.png)
 
-- **Ablago's address** – at this address users open Ablago, e.g. `http://nas.home.arpa:8080` or `https://ablage.example.org`. It is in the links in the emails. As long as none is maintained, Ablago takes the address under which it is currently being called; **Take over this address** saves it. If it begins with `https://`, sign-in then only works via HTTPS.
+- **Ablago's address** – at this address users open Ablago, e.g. `http://nas.home.arpa:8080` or `https://ablage.example.org`. It is in the links in the emails. As long as none is maintained, Ablago takes the address under which it is currently being called; **Take over this address** saves it. If it begins with `https://`, sign-in then only works via HTTPS. [Passkeys](anmeldeschutz.md#passkeys) are bound to this name as well: if it changes, existing passkeys no longer fit – the Workbench points this out when you change it.
 - **Email sending** – your own address and password; Ablago suggests server, port, user and sender, all fields are under *Advanced*. Also sign-in via OAuth for Microsoft 365 and Google. **Check connection** signs in to the server without sending anything; **Send test email** sends an email to an address of your choice – both with the values in the form, also before you save. If something fails, Ablago names the cause, with the server's answer below. Everything about it, with notes per provider: [Email sending](e-mail-versand.md).
 - **Allow self-signed certificate** – only for your own mail server in the home network.
 - The **sender** is also the sender when users [send a folder by email](https://help.ablago.app/benutzer/aktuell/en/versenden/). Ablago enters the user's address as **Reply-To** – so replies reach them without Ablago faking outside senders (many recipients would classify that as spam). The [daily summary of tasks](aufgaben.md#tagliche-zusammenfassung) needs the same setting.

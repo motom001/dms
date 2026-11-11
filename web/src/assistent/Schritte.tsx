@@ -4,7 +4,7 @@ import { handbuchUrl, HILFE, hilfeOnlineUrl, type Hilfeort } from '../../../shar
 import { PASSWORT_MINDESTLAENGE } from '../../../shared/src/model';
 import { beruflichBei, leereOrganisation, NUTZUNGEN, PAKETE_JE_NUTZUNG, type Nutzung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
 import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
-import { FeldGruppe } from '../bausteine';
+import { FeldGruppe, Knopf } from '../bausteine';
 import { api, heikleDatei } from '../api';
 import { Marke } from '../Marke';
 import { geheZu } from '../ort';
@@ -17,6 +17,8 @@ import { PaketApiKontext, type PaketApi, type PaketWahl } from '../werkbank/Pake
 import { PaketeDazuholen, VORAUSWAHL } from '../werkbank/PaketeDazuholen';
 import { MailSammeln, type MailGriff } from '../werkbank/MailVersand';
 import { ZweifaktorEinrichten } from '../profil/Zweifaktor';
+import { PasskeyHinzufuegen } from '../profil/Passkeys';
+import { passkeysImBrowser } from '../passkey';
 import { ausfuehren, neuerLauf, STUFEN_JE_SCHRITT, stufenZuruecksetzen } from './ausfuehren';
 import { ladeDatei, merkeDatei, pruefeAlles, speichereDatei } from './datei';
 import { OrganisationFelder } from './Organisation';
@@ -572,8 +574,8 @@ function LaufAnsicht() {
 /* ---------- Fertig: Notfallblatt, Zwei-Faktor ---------- */
 
 /**
- * Zwei-Faktor-Anmeldung anbieten (#821, #810 Frage 10): „Jetzt einrichten“ oder „Später“, keine Pflicht. Passkeys
- * (#811) gibt es noch nicht. Die Wahl steht im Lauf (sessionStorage), damit sie ein Neuladen übersteht.
+ * Zwei-Faktor-Anmeldung anbieten (#821, #810 Frage 10): „Jetzt einrichten“ oder „Später“, keine Pflicht. Den Passkey
+ * bietet `PasskeyAngebot` an (#811). Die Wahl steht im Lauf (sessionStorage), damit sie ein Neuladen übersteht.
  */
 function ZweifaktorAngebot({ l, aktualisieren }: { l: Lauf; aktualisieren: () => Promise<void> }) {
   const [einrichten, setEinrichten] = useState(false);
@@ -591,6 +593,27 @@ function ZweifaktorAngebot({ l, aktualisieren }: { l: Lauf; aktualisieren: () =>
           <div className="knoepfe links">
             <button type="button" className="knopf" onClick={() => setEinrichten(true)}>{t('einrichtung.abschluss.zweifaktor.jetzt')}</button>
             {l.zweifaktor !== 'spaeter' && <button type="button" className="knopf" onClick={() => setze('spaeter')}>{t('einrichtung.abschluss.zweifaktor.spaeter')}</button>}
+          </div>
+        </>}
+    </section>
+  );
+}
+
+/** Passkey anbieten (#811): wie die Zwei-Faktor-Anmeldung – „Jetzt hinzufügen“ oder „Später“, keine Pflicht. */
+function PasskeyAngebot({ l, aktualisieren }: { l: Lauf; aktualisieren: () => Promise<void> }) {
+  const [neu, setNeu] = useState(false);
+  const setze = (passkey: Lauf['passkey']) => setzeStand((a) => (a.lauf ? { ...a, lauf: { ...a.lauf, passkey } } : a));
+  return (
+    <section className="blatt stapel" aria-label={t('einrichtung.abschluss.passkey')}>
+      <h2 className="h3">{t('einrichtung.abschluss.passkey')}</h2>
+      {l.passkey === 'eingerichtet' ? <p className="gutertext klein" role="status"><Symbol name="haken" /> {t('einrichtung.abschluss.passkey.fertig')}</p>
+        : neu ? <PasskeyHinzufuegen autoFocus fertig={() => { setze('eingerichtet'); setNeu(false); void aktualisieren(); }} abbrechen={() => setNeu(false)} />
+        : <>
+          <p>{t('einrichtung.abschluss.passkey.text')}</p>
+          {l.passkey === 'spaeter' && <p className="leise klein">{t('einrichtung.abschluss.passkey.spaeter.text')}</p>}
+          <div className="knoepfe links">
+            <Knopf onClick={() => setNeu(true)}>{t('einrichtung.abschluss.passkey.jetzt')}</Knopf>
+            {l.passkey !== 'spaeter' && <Knopf onClick={() => setze('spaeter')}>{t('einrichtung.abschluss.zweifaktor.spaeter')}</Knopf>}
           </div>
         </>}
     </section>
@@ -639,6 +662,8 @@ function Abschluss({ abschliessen, version }: { abschliessen: () => Promise<void
         {geladen ? <p className="gutertext klein" role="status"><Symbol name="haken" /> {t('einrichtung.abschluss.geladen')}</p> : <p className="leise klein">{t('einrichtung.abschluss.pflicht')}</p>}
       </section>
       <ZweifaktorAngebot l={l} aktualisieren={abschliessen} />
+      {/* Passkey (#811): nur über HTTPS (oder localhost) – sonst bietet der Assistent ihn gar nicht erst an. */}
+      {passkeysImBrowser() && <PasskeyAngebot l={l} aktualisieren={abschliessen} />}
       <ul className="linkliste">
         <li><a className="verweis" href={handbuchUrl('admin', version, 'fuenf-schritte/')} target="_blank" rel="noreferrer">{t('einrichtung.abschluss.link.fuenf')}</a> – {t('einrichtung.abschluss.link.fuenf.text')}</li>
         <li><a className="verweis" href={handbuchUrl('benutzer', version)} target="_blank" rel="noreferrer">{t('einrichtung.abschluss.link.benutzer')}</a> – {t('einrichtung.abschluss.link.benutzer.text')}</li>

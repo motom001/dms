@@ -17,7 +17,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 
 | Ordner in `server/src/` | Routen für |
 |---|---|
-| `anmeldung/` | Anmelden, Zwei-Faktor, Passwort, Einrichtung, Notfallzugang |
+| `anmeldung/` | Anmelden, Zwei-Faktor, Passkeys, Passwort, Einrichtung, Notfallzugang |
 | `konten/` | Benutzer, Rollen, Vertretung, API-Schlüssel |
 | `mappentypen/` | Mappentypen, ihr Archiv, Berechtigungen |
 | `werkbank/` | Werkbank-Übersicht, Designs, Region, Sprachen, Protokoll, Verwaltungsmodus |
@@ -365,6 +365,7 @@ Die Prüfung **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) melde
 | `mailparser` | Server | MIT | abgeholte E-Mails in Text und Anhänge zerlegen |
 | `pdf-lib` | Server | MIT | PDFs zusammenstellen, verkleinern, schwärzen, stempeln – nur über die [PDF-Stelle](#pdf-stelle) |
 | `yaml` | Server | ISC | Pakete im YAML-Format lesen und schreiben |
+| `@simplewebauthn/server` | Server | MIT | [Passkeys](#passkeys) prüfen (WebAuthn: CBOR, COSE-Schlüssel, Signaturen, Zähler) – feste Version; bringt `@peculiar/*` und `asn1js` (MIT/BSD-3-Clause), `@levischuck/tiny-cbor`, `@hexagon/base64`, `tsyringe` (MIT), `reflect-metadata` (Apache-2.0) und `tslib` (0BSD) mit |
 | `react`, `react-dom` | Oberfläche | MIT | Oberfläche |
 | `qrcode` | Oberfläche | MIT | QR-Code für die Zwei-Faktor-Anmeldung |
 | `poppler-utils` | Image (Alpine) | GPL-2.0-or-later, als eigenes Programm aufgerufen | `pdftotext`, `pdftoppm`: Text und Bilder aus PDFs |
@@ -693,6 +694,38 @@ Neben Menschen (`benutzer.art = 'person'`) gibt es zwei Arten von Konten, die si
 - **Werkbank:** Systemkonten sind nie `admin`; welche Werkbank-Aktionen eine Karte darf, entscheidet die Karte selbst (#677).
 - **Oberfläche:** Werkbank → Benutzer, Abschnitt „Systemkonten“ (`GET /api/benutzer/systemkonten`, nur Administratoren).
 
+## Passkeys (#811) { #passkeys }
+
+Anmeldung mit WebAuthn – als eigener Weg, als zweiter Faktor und für die erneute Anmeldung (#819). Die Kryptografie (CBOR, COSE-Schlüssel, Signaturen, Zähler) prüft `@simplewebauthn/server` in fester Version ([Abhängigkeiten](#abhaengigkeiten)); im Browser nimmt Ablago die eingebaute Schnittstelle `navigator.credentials` ohne Bibliothek (`web/src/passkey.ts`).
+
+- **Wo:** `server/src/passkeys.ts` (Klasse `Passkeys`, neben `zweifaktor.ts`), angebunden an `Konten` mit `verbindePasskeys` wie die Zwei-Faktor-Anmeldung. Die Pflicht je Rolle nutzt dieselbe `RollenPflicht` wie die Zwei-Faktor-Anmeldung (Schlüssel `passkey_pflicht`, `passkey_pflicht_seit`). Routen in `anmeldung/anmeldung.routen.ts`.
+- **RP-ID und Origin** aus `betrieb.adresseFuerLinks()` (gepflegte Adresse, sonst die der Anfrage): nur `https://` mit einem Namen oder `http://localhost` (`relyingParty`). Jeder Passkey merkt sich seine RP-ID; passt sie nicht zur aktuellen Adresse, gilt er nicht (`passt: false` in der Liste).
+- **Herausforderung** im [Kurzzustand](#kurzzustand): beim Hinzufügen je Konto (`passkey-neu`), beim Anmelden unter dem Hash einer zufälligen Kennung (`passkey-anmeldung`), mit Zweck (`anmelden`, `zweiter-schritt`, `bestaetigen`, `dokumentpasswoerter`) und – außer beim Anmelden ohne E-Mail-Adresse – dem Konto. 5 Minuten, `nimm` löst sie einmal ein, auch bei Fehlern. Höchstens 2000 offene.
+- **Prüfung:** `userVerification: 'required'` beim Anlegen und Anmelden, Attestation `none`, Origin und RP-ID aus der Herausforderung, Zähler muss steigen (sonst Warnung „womöglich kopiert“). Der Zähler wird mit `Einstellungen.tausche` gespeichert.
+- **Gespeichert** in den Einstellungen unter `passkeys_<Konto>`: `{ liste: [{ nr, id, oeffentlich, zaehler, name, rpId, erstellt, zuletzt, transports, mehrgeraete }] }` – nur Öffentliches, darum Teil der Sicherung und unverändert durch `ohneGeheimnisse`. `nr` ist Ablagos eigene Kennung für Routen und Oberfläche; die Kennung des Authenticators verlässt den Server nur in `allowCredentials`/`excludeCredentials`. `userID` beim Anlegen ist die Konto-Id (keine E-Mail-Adresse); daran findet die Anmeldung ohne E-Mail-Adresse das Konto.
+- **Entscheidungen nur nach der gepflegten Adresse** (Durchsicht Sicherheit): `pflichtRp()`/`fuerPflicht()` lesen `betrieb.gepflegteAdresse()`, nie die Adresse der Anfrage. Die Passkey-Pflicht lässt sich nur mit gepflegter HTTPS-Adresse einschalten (409); fehlt sie später, gilt die Pflicht geschlossen weiter. Ist die Pflicht an und die Person hat Passkeys, aber keinen für die gepflegte Adresse bzw. läuft die Anfrage über eine andere, verlangt `zweiteWege` den Code oder antwortet 409.
+- **Grenzen:** Herausforderungen ohne Konto (`passkey-anmeldung-offen`) je Adressbereich (`adressbereich`: IPv4 bzw. IPv6-/64) höchstens `PASSKEY_OPTIONEN_JE_ADRESSE` in 5 Minuten (Zähler `passkey-optionen-adresse`), dazu die Notbremse `PASSKEY_OPTIONEN_GESAMT` (`grenzen.ts`); zweiter Schritt und Bestätigungen (`passkey-anmeldung`) zählen nicht mit.
+- **Pflichten:** Ein Passkey für die gepflegte Adresse erfüllt auch die Zwei-Faktor-Pflicht (`Zweifaktor.alternative`, verbunden von `Konten`); dann verlangt `zweiteWege` ihn beim Anmelden mit Passwort, und `passkeyNoetig` sperrt das Entfernen des letzten. Die Passkey-Pflicht bleibt eigenständig.
+- **Zwecke:** `bestaetigen` für Verwaltungsmodus und heikle Handlungen, `dokumentpasswoerter` für „Passwörter für Dokumente“ (`POST …/passkeys/bestaetigen/optionen` mit `{ fuer: 'dokumentpasswoerter' }`, dann `POST /api/konto/dokument-passwoerter/bestaetigen` mit `{ passkey }`) – eine Herausforderung gilt nur für ihren Zweck.
+- **Anmeldeschutz:** `Konten.anmeldenMitPasskey` zählt vorab mit `sperre.versuch` (E-Mail des genannten Kontos, sonst leer, und IP), ein Fehlschlag mit `fehlschlag`, ein Erfolg setzt zurück – wie beim Passwort (#956).
+
+| Route | Zugang | Wozu |
+| --- | --- | --- |
+| `POST /api/konto/passkey/optionen` | offen | `{ zweiterSchritt? }` → `{ kennung, optionen }` (Request-Optionen im JSON-Format von WebAuthn) |
+| `POST /api/konto/passkey/anmelden` | offen | `{ kennung, antwort, zweiterSchritt? }` → Sitzung |
+| `GET /api/konto/passkeys` | angemeldet | eigene Passkeys, `moeglich`, `adresse` (RP-ID), `pflicht`, `hoechstens` |
+| `POST /api/konto/passkeys/beginnen` | angemeldet | Creation-Optionen |
+| `POST /api/konto/passkeys` | angemeldet | `{ antwort, name }` → neuer Passkey (201) |
+| `PUT /api/konto/passkeys/:nr` | angemeldet | `{ name }` umbenennen |
+| `DELETE /api/konto/passkeys/:nr` | angemeldet | entfernen – nur mit frischer Anmeldung (sonst 403 mit `details.frisch`) |
+| `POST /api/konto/passkeys/bestaetigen/optionen` | angemeldet | Optionen für die erneute Anmeldung; danach `POST /api/konto/verwaltung` bzw. `…/verwaltung/bestaetigen` mit `{ passkey: { kennung, antwort } }` |
+| `GET`/`PUT /api/werkbank/passkeys` | Werkbank (Anmeldeschutz) | Pflicht je Rolle `{ admin, mitglied }`, dazu `moeglich` |
+| `GET /api/benutzer/:id/passkeys`, `POST …/zuruecksetzen` | Werkbank (Benutzer) | Anzahl, alle entfernen (auch `dms passkeys-zuruecksetzen`) |
+
+`POST /api/konto/anmelden` und `…/passwort-setzen` liefern beim zweiten Schritt zusätzlich `wege: { code, passkey }`; nach dem Anbieter steht das als `#<kennung>.<c|p>` in der Adresse von `/anmelden/code`. `/api/konto/status` nennt `passkey: { moeglich, aktiv?, fehlt?, ausstehend? }`, der Verwaltungsstand `passkey`.
+
+**Tests:** `server/test/passkeys.test.ts` mit einem nachgebildeten Authenticator (`server/test/hilfen-authenticator.ts`: P-256, Attestation `none`, kleines CBOR) – Hinzufügen, Anmelden, falscher Origin, wiederverwendete Herausforderung, Zähler rückwärts, ohne Nutzer-Verifizierung, Anmeldeschutz, Entfernen ohne frische Anmeldung, Pflicht, Adresse geändert, Verwaltungsmodus. Der Rauchtest legt im Chromium mit einem virtuellen Authenticator (DevTools-Protokoll) einen Passkey an und meldet sich damit an.
+
 ## Zustand zwischen Anfragen (#744) { #kurzzustand }
 
 Bauregel „später mehrere Server möglich halten“: Was zwischen zwei Anfragen gilt, liegt in PostgreSQL – nicht in einer `Map` eines Prozesses. Sonst hätte ein Angreifer mit zwei Prozessen doppelt so viele Versuche, und der zweite Anmeldeschritt landete beim falschen Prozess.
@@ -703,12 +736,13 @@ Bauregel „später mehrere Server möglich halten“: Was zwischen zwei Anfrage
 - **Geheimnisse:** Ist der Schlüssel selbst geheim (Ticket, `state`, Kennung, Sitzung), steht nur sein Hash (`hashe`). Geheime Werte (TOTP-Entwurf, PKCE-Verifier, Gerätecode, neues Notfallblatt) verschlüsselt der Aufrufer mit dem Tresor.
 - **Zeitpläne:** `exklusiv(name, f)` nimmt `pg_try_advisory_lock(744, hashtext(haushalt:name))` auf einer eigenen Verbindung; hält ein anderer Prozess sie, läuft der Lauf hier nicht (es wird nie gewartet). In `ablago.ts` als `nurEiner(…)` für Papierkorb, Abwesenheiten, Fristen (Tag des letzten Laufs ebenfalls im Kurzzustand), technische Aufgaben, Probe-Wiederherstellung, RESCUE-Datei, Speicherplatz-Übergänge und das Aufräumen des Kurzzustands (alle 10 Minuten). Tägliche Läufe mit `laufeFaellige` (Sicherung, Zusammenfassung, Automatisierungen) waren schon über den Merker in den Einstellungen sicher.
 - **Lebenszeichen:** `lebenszeichen(sql, haushalt)` hält je Prozess eine geteilte Sperre – seit #745 nur der Leiter (Prozess für die Arbeit im Hintergrund). Nur wer beim Start allein ist, stellt „laufende“ Texterkennung als unterbrochen zurück.
-- **Vergleichen und tauschen** statt überschreiben, wo zwei Prozesse denselben Wert ändern: letzter TOTP-Schritt und verbrauchte Wiederherstellungscodes (`zweifaktor.ts`), erneuertes Token der Postfach-Anmeldung (`postfach-oauth.ts`), Umschalten des Wartungsmodus (`wartung.ts`, liest den Stand jetzt bei jeder Prüfung aus der Datenbank).
+- **Vergleichen und tauschen** statt überschreiben, wo zwei Prozesse denselben Wert ändern: letzter TOTP-Schritt und verbrauchte Wiederherstellungscodes (`zweifaktor.ts`), Zähler der Passkeys (`passkeys.ts`), erneuertes Token der Postfach-Anmeldung (`postfach-oauth.ts`), Umschalten des Wartungsmodus (`wartung.ts`, liest den Stand jetzt bei jeder Prüfung aus der Datenbank).
 
 | Was | Art(en) im Kurzzustand |
 |---|---|
 | Anmeldeschutz: Fehlversuche je Konto und IP, je IP, IP-Sperren, Sammel- und Sofortmeldung | `anmeldung-konto`, `anmeldung-ip`, `anmeldung-ip-sperre`, `anmeldung-meldung`, `anmeldung-sammelmeldung`, `anmeldung-sofortmeldung` |
 | Zweiter Anmeldeschritt, Zwei-Faktor einrichten | `zweiter-schritt`, `zweifaktor-entwurf` |
+| Passkeys (#811): Herausforderung beim Hinzufügen und beim Anmelden, Zähler je Adresse | `passkey-neu`, `passkey-anmeldung`, `passkey-anmeldung-offen`, `passkey-optionen-adresse` |
 | Abrufseite: Tickets, Fehlversuche je Bereich, eine Prüfung je Link | `abruf-ticket`, `abruf-fehler`, `abruf-pruefung` |
 | OIDC, Postfach-OAuth (Rückruf, Gerätecode) | `oidc-anmeldung`, `postfach-oauth-code`, `postfach-oauth-geraet` |
 | WebDAV: Zählfenster, schwebende Dateien | `webdav-fenster`, `webdav-schwebend` |

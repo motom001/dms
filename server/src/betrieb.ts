@@ -330,6 +330,9 @@ export class Betrieb {
    * Adresse für Links in E-Mails: gepflegt oder – solange nicht gepflegt – die Adresse der
    * aktuellen Anfrage (hinter einem Proxy über X-Forwarded-*, siehe TRUST_PROXY).
    */
+  /** Nur die gepflegte Adresse (leer = keine) – für Entscheidungen, die nie an der Adresse der Anfrage hängen dürfen (#811). */
+  gepflegteAdresse(): string { return this.adresse; }
+
   adresseFuerLinks(): string { return this.adresse || kontext.getStore()?.ursprung || this.standardAdresse; }
 
   /** Sitzungs-Cookie nur über HTTPS, wenn die Adresse https ist (oder die Anfrage über HTTPS kam). */

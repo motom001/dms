@@ -150,6 +150,8 @@ export const HILFE = {
   'werkbank.anmeldeschutz': admin('anmeldeschutz/', 'Anmeldeschutz'),
   'werkbank.anbieter': admin('anmeldeschutz/', 'Anmeldung über einen Anbieter', 'anmeldung-uber-einen-anbieter-openid-connect'),
   'werkbank.zweifaktor': admin('anmeldeschutz/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
+  // Passkeys (#811): vorschreiben, HTTPS und Adresse.
+  'werkbank.passkeys': admin('anmeldeschutz/', 'Passkeys', 'passkeys'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.wartung.volltext': admin('texterkennung/', 'Volltext neu erzeugen', 'volltext-neu-erzeugen'),
   'werkbank.wartung.absender': admin('texterkennung/', '„Von“ bereinigen', 'absender-bereinigen'),
@@ -242,6 +244,7 @@ export const HILFE = {
   'mappen.uebersetzen': benutzer('mappen/', 'Inhalte übersetzen', 'inhalte-ubersetzen'),
   'profil.export': benutzer('profil/', 'Meine Daten exportieren', 'meine-daten-exportieren'),
   'profil.zweifaktor': benutzer('profil/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
+  'profil.passkeys': benutzer('profil/', 'Passkeys', 'passkeys'),
   'profil.dokumentpasswoerter': benutzer('profil/', 'Passwörter für Dokumente', 'passwoerter-fuer-dokumente'),
   'profil.benachrichtigungen': benutzer('profil/', 'Benachrichtigungen', 'benachrichtigungen'),
   'profil.webhooks': benutzer('hausautomatisierung/', 'Sofort melden (Webhook)', 'sofort-melden-webhook'),

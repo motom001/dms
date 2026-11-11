@@ -224,7 +224,9 @@ rauchtest('Einrichtung: Assistent im Browser', {
   await s.getByRole('button', { name: 'Notfallblatt herunterladen' }).click();
   await (await download).cancel().catch(() => {});
   await s.getByText(/Notfallblatt heruntergeladen/).waitFor();
-  await s.getByRole('button', { name: 'Später' }).click();
+  // Auf localhost bietet der Assistent auch den Passkey an (#811) – beides „Später“, hier die Zwei-Faktor-Anmeldung.
+  await s.getByRole('region', { name: /Zwei-Faktor/ }).getByRole('button', { name: 'Später' }).click();
+  await s.getByRole('region', { name: /Passkey/ }).getByRole('button', { name: 'Jetzt hinzufügen' }).waitFor();
   await s.getByRole('button', { name: 'Einrichtung abschließen' }).click();
   await s.waitForURL(/\/werkbank/);
   const sitzungscookie = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
@@ -306,7 +308,7 @@ rauchtest('Anmelden und Startseite', {}, async (s) => {
   await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
   await s.getByLabel('E-Mail-Adresse').fill(LENA.email);
   await s.getByLabel('Passwort', { exact: true }).fill(LENA.passwort);
-  await s.getByRole('button', { name: 'Anmelden' }).click();
+  await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await s.waitForURL(/\/ablage\/start$/);
   await s.getByRole('heading', { name: /^Start/, level: 1 }).waitFor();
   await s.getByText('Hallo Lena! Hier fängst du an.').waitFor();
@@ -505,7 +507,7 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   await s.goto(BASIS + '/');
   await s.getByLabel('E-Mail-Adresse').fill(JONAS.email);
   await s.getByLabel('Passwort', { exact: true }).fill(JONAS.passwort);
-  await s.getByRole('button', { name: 'Anmelden' }).click();
+  await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const rundgang = s.getByRole('dialog');
   await rundgang.getByText('Schritt 1 von 5').waitFor();
   for (let i = 2; i <= 5; i++) {
@@ -543,7 +545,7 @@ rauchtest('Handy: Anmelden und Startseite', { handy: true }, async (s) => {
   await s.goto(BASIS + '/');
   await s.getByLabel('E-Mail-Adresse').fill(LENA.email);
   await s.getByLabel('Passwort', { exact: true }).fill(LENA.passwort);
-  await s.getByRole('button', { name: 'Anmelden' }).click();
+  await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await s.waitForURL(/\/ablage\/start$/);
   // Am Handy: Ansicht oben als Auswahl, Startseite einspaltig mit „Post fotografieren“.
   await s.getByRole('heading', { name: /^Start/, level: 1 }).waitFor();
@@ -1105,6 +1107,34 @@ rauchtest('Systemzustand: Externe Dienste und KI-Kosten, Monatsbudget speichern 
   await kosten.getByLabel(/^Monatsbudget/).fill('');
   await kosten.getByRole('button', { name: /speichern$/ }).click();
   await s.waitForFunction(() => document.querySelector('#ki-kosten-budget')?.value === '' && !document.querySelector('#ki-kosten-hart')?.checked);
+});
+
+// Passkeys (#811): Chromium mit einem virtuellen Authenticator (DevTools-Protokoll, Fingerabdruck „ja“). Lena fügt in Mein
+// Konto → Sicherheit einen Passkey hinzu, meldet sich ab und mit dem Passkey wieder an (ohne E-Mail-Adresse) und entfernt
+// ihn – die Anmeldung mit Passkey ist frisch, also ohne erneute Abfrage. Am Ende ist kein Passkey mehr da.
+rauchtest('Passkey: hinzufügen, damit anmelden, entfernen (#811)', { als: LENA }, async (s, k) => {
+  const cdp = await k.newCDPSession(s);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+  await s.goto(BASIS + '/profil/sicherheit');
+  const blatt = s.locator('#passkeys');
+  await blatt.getByRole('heading', { name: 'Passkeys' }).waitFor();
+  await blatt.getByRole('button', { name: 'Passkey hinzufügen' }).click();
+  await blatt.getByLabel('Name').fill('Rauchtest-Laptop');
+  await blatt.getByRole('button', { name: 'Weiter' }).click();
+  await blatt.getByText(/„Rauchtest-Laptop“ ist hinzugefügt/).waitFor();
+  await blatt.getByText('Rauchtest-Laptop', { exact: true }).waitFor();
+  // Abmelden, dann mit dem Passkey wieder hinein.
+  await k.clearCookies();
+  await s.goto(BASIS + '/');
+  await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
+  await s.getByRole('button', { name: 'Mit Passkey anmelden' }).click();
+  await s.getByText('Hallo Lena! Hier fängst du an.').waitFor();
+  await s.goto(BASIS + '/profil/sicherheit');
+  await blatt.getByText(/zuletzt benutzt am/).waitFor();
+  await blatt.getByRole('button', { name: 'Entfernen' }).click();
+  await s.getByRole('alertdialog', { name: '„Rauchtest-Laptop“ entfernen?' }).getByRole('button', { name: 'Entfernen' }).click();
+  await blatt.getByText('Rauchtest-Laptop', { exact: true }).waitFor({ state: 'detached' });
 });
 
 /* ---------- Hilfen ---------- */

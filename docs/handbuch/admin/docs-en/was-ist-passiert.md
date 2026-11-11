@@ -30,6 +30,7 @@ All details are under [New NAS, old backup](wiederherstellen.md#neues-nas-alte-s
 - **Forgotten password:** on the sign-in page, choose **Forgot your password?** – this works if email sending is set up. Otherwise another person who may administer Ablago creates a password link for you under **Workbench → Users**.
 - **Nobody who may administer can get in any more:** use the **emergency code** from the emergency sheet – see below. Without an emergency sheet, the [RESCUE file on the device](notfall.md) helps.
 - **Lost the phone for two-factor sign-in:** another person with "Full administration" resets it, you use a recovery code – or the emergency code (it resets two-factor sign-in).
+- **Lost the device with your passkey:** sign in with your password and remove the passkey under **My account → Security**. If a passkey is required and you have no other one, another person with "Full administration" resets your passkeys – or the emergency code (it removes the passkeys too).
 
 ### Getting back in with the emergency code { #notfallcode }
 
@@ -39,7 +40,7 @@ At the bottom of the emergency sheet, in the box **Locked out?**, there is a lon
 2. Type in the **emergency code**. Upper and lower case, spaces and hyphens don't count. **Not the key** from the emergency sheet – that never belongs in the browser.
 3. If you mistype, it says "The emergency code was wrong", and input is **blocked for 30 seconds** – a countdown counts down. This only applies to your device or your connection; someone making failed attempts elsewhere doesn't lock you out.
 4. If the code is correct, you choose the **account** for which you set a new password. Only people who may administer Ablago are offered.
-5. Set the **new password**. Ablago ends all sign-ins of this account and resets two-factor sign-in – set it up anew afterwards. The account's API keys remain valid.
+5. Set the **new password**. Ablago ends all sign-ins of this account, resets two-factor sign-in and removes the passkeys – set them up anew afterwards. The account's API keys remain valid.
 6. Download the **new emergency sheet**. The old code only works once – the new sheet has a new one. Print it and destroy the old one.
 7. **Sign in** – with the account's email address and the new password.
 

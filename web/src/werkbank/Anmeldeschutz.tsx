@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Knopf, type KnopfErgebnis } from '../bausteine';
-import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
+import { HakenFeld, Knopf, type KnopfErgebnis } from '../bausteine';
+import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type PasskeyPflicht, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
@@ -71,6 +71,7 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
         <Speicherleiste ent={ent} gegenstand={t('werkbank.anmeldeschutz.anmeldeschutz')} sendet={sendet} />
       </form>
       <ZweifaktorPflichtBlatt />
+      <PasskeyPflichtBlatt />
       <AnbieterBlatt />
       <NotfallzugangBlatt deineIp={s.deineIp} />
       {/* #366: früher die mittlere Spalte; ganz unten, mit fester Höhe – bei Dauerangriffen kommen viele zusammen. */}
@@ -163,6 +164,55 @@ function ZweifaktorPflichtBlatt() {
       {!p ? !meldung && <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p> : <>
         <label className="haken"><input id="zf-admin" type="checkbox" checked={p.admin} disabled={sendet} onChange={(x) => void setze({ admin: x.target.checked })} /><span>{t('konten.verwaltende.zweifaktor.pflicht')}</span></label>
         <label className="haken"><input id="zf-mitglied" type="checkbox" checked={p.mitglied} disabled={sendet} onChange={(x) => void setze({ mitglied: x.target.checked })} /><span>{t('werkbank.anmeldeschutz.fuer-mitglieder-vorschreiben')}</span></label>
+      </>}
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+    </div>
+  );
+}
+
+/**
+ * Passkey je Rolle vorschreiben (#811), wie die Zwei-Faktor-Anmeldung: Wer keinen hat, fügt ihn nach der nächsten
+ * Anmeldung hinzu; danach gehört er beim Anmelden mit Passwort als zweiter Schritt dazu. Ohne HTTPS geht das nicht –
+ * dann steht hier der Hinweis, und die Pflicht sperrt niemanden aus.
+ */
+function PasskeyPflichtBlatt() {
+  const { ich, passkey, aktualisieren } = useKonto();
+  const [p, setP] = useState<PasskeyPflicht | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [sendet, setSendet] = useState(false);
+  useEffect(() => { api.passkeyPflicht().then(setP).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  async function setze(neu: Partial<ZweifaktorPflicht>) {
+    if (!p) return;
+    // Für die eigene Rolle ohne eigenen Passkey: vorher fragen, mit Weg zum Hinzufügen (wie #416).
+    if (neu[ich.rolle] && !p[ich.rolle] && !passkey.aktiv) {
+      const trotzdem = await rueckfrage({
+        titel: t('werkbank.anmeldeschutz.passkey.selbst'), text: t('werkbank.anmeldeschutz.passkey.selbst.text'),
+        ja: t('werkbank.anmeldeschutz.trotzdem-vorschreiben'), nein: t('werkbank.anmeldeschutz.passkey.jetzt'), gefahr: true,
+      });
+      if (!trotzdem) { geheZu('/profil/sicherheit'); return; }
+    }
+    const alt = p;
+    setP({ ...p, ...neu }); setSendet(true); setMeldung(undefined);
+    try { setP(await api.passkeyPflichtSetzen(neu)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); void aktualisieren(); }
+    catch (x) { setP(alt); setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    finally { setSendet(false); }
+  }
+  return (
+    <div className="blatt" id="passkeys">
+      <h2 className="h3">{t('werkbank.anmeldeschutz.passkey.titel')} <Hilfe ort="werkbank.passkeys" /></h2>
+      <p className="leise">{t('werkbank.anmeldeschutz.passkey.text')}</p>
+      {!p ? !meldung && <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p> : <>
+        {/* Durchsicht Sicherheit: nur mit gepflegter HTTPS-Adresse; ist die Pflicht ohne sie an, gilt sie geschlossen weiter. */}
+        {!p.moeglich && (p.admin || p.mitglied
+          ? <div className="hinweis warn" id="passkey-pflicht-ohne-adresse"><p>{t('werkbank.anmeldeschutz.passkey.ohne-adresse')}</p><Link to="/werkbank/betrieb" className="knopf klein">{t('werkbank.anmeldeschutz.passkey.zur-adresse')}</Link></div>
+          : <div className="hinweis info" id="passkey-pflicht-adresse"><p>{t('anmeldung.passkey.fehler.pflicht-adresse')}</p><Link to="/werkbank/betrieb" className="knopf klein">{t('werkbank.anmeldeschutz.passkey.zur-adresse')}</Link></div>)}
+        {p.moeglich && p.adresse && <p className="leise klein">{t('werkbank.anmeldeschutz.passkey.gilt-fuer', { adresse: p.adresse })}</p>}
+        <HakenFeld beschriftung={t('werkbank.anmeldeschutz.passkey.admin')}>
+          <input id="pk-admin" type="checkbox" checked={p.admin} disabled={sendet || (!p.moeglich && !p.admin)} onChange={(x) => void setze({ admin: x.target.checked })} />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('werkbank.anmeldeschutz.passkey.mitglied')} hinweis={t('werkbank.anmeldeschutz.passkey.hinweis')}>
+          <input id="pk-mitglied" type="checkbox" checked={p.mitglied} disabled={sendet || (!p.moeglich && !p.mitglied)} onChange={(x) => void setze({ mitglied: x.target.checked })} />
+        </HakenFeld>
       </>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
