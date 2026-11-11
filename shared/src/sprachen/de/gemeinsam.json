@@ -1103,7 +1103,6 @@
   "bedingungspruefung.stelle": "Bedingung {nr}: {grund}",
   "bedingungspruefung.nicht": "nicht ist true oder false.",
   "bedingungspruefung.bedingung-fehlt": "Bei art: feld fehlt bedingung (ein Objekt mit art: feld, feld und op).",
-  "bedingungspruefung.innere-art-fehlt": "In bedingung fehlt art: feld.",
   "bedingungspruefung.innere-art": "In bedingung steht art: {art} – hier geht nur art: feld.",
   "bedingungspruefung.innen": "bedingung: {grund}",
   "bedingungspruefung.typ-fehlt": "typ fehlt.",
