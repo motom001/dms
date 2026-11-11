@@ -630,6 +630,9 @@ function FeldZeile(p: {
   if (f.typ === 'datum' && f.max) chips.push(t('felder.editor.chip.max', { datum: grenzeText(f.max) }));
   if (f.typ === 'datum' && f.frist) chips.push(t('felder.editor.chip.frist'));
   if (f.typ === 'betrag' && f.negativ) chips.push(t('mappentypen.editor.chip.negativ'));
+  // Eigene Organisation (#995): Merkmal und Schreibschutz kommen aus dem Paket und bleiben, wie sie sind.
+  if (f.typ === 'janein' && f.merkmal === 'eigeneOrganisation') chips.push(t('mappentypen.editor.chip.eigene-organisation'));
+  if (f.schreibschutz) chips.push(t('mappentypen.editor.chip.schreibschutz'));
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
     <label className="eigenschaft" htmlFor={id(prop)}><span>{label}</span>

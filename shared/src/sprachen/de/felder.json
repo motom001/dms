@@ -71,5 +71,6 @@
   "eingabe.betrag-negativ": "Gutschrift oder Erstattung? Mit Minus eintragen.",
   "verweis.noch-kein-ziel": "Die Mappentypen für dieses Feld kommen mit einem anderen Paket – noch ist keiner installiert.",
   "berechnet.von": "berechnet von {paket}",
-  "berechnet.nicht-mehr": "nicht mehr berechnet – {paket} rechnet nicht mehr, der letzte Wert bleibt"
+  "berechnet.nicht-mehr": "nicht mehr berechnet – {paket} rechnet nicht mehr, der letzte Wert bleibt",
+  "schreibschutz.nur-verwaltung": "ändert nur, wer die eigene Organisation verwaltet"
 }

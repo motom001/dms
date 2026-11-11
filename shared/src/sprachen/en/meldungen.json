@@ -1819,5 +1819,20 @@
   "teile.wiederherstellen-ohne-recht_other": "Not restored: you cannot restore {anzahl} parts of this folder.",
   "paketerstellung.teile": "Is part of another folder",
   "paketerstellung.archiv": "Archive mode on the folder type",
-  "paketerstellung.archiv-ohne-stichtag": "“{name}”: The reference date field of the archive mode doesn’t come along – in the package the creation date counts."
+  "paketerstellung.archiv-ohne-stichtag": "“{name}”: The reference date field of the archive mode doesn’t come along – in the package the creation date counts.",
+  "organisation.schreibschutz_one": "{felder} can only be changed by someone managing the own organisation in administration mode or with a role released for it.",
+  "organisation.schreibschutz_other": "{felder} can only be changed by someone managing the own organisation in administration mode or with a role released for it.",
+  "organisation.keine-eigene": "This folder is not an own organisation – please choose an organisation with the attribute “own organisation”.",
+  "organisation.rollen-ungueltig": "Please only choose existing roles.",
+  "organisation.system": "Ablago",
+  "organisation.notiz.merkmal-an": "marked as own organisation",
+  "organisation.notiz.merkmal-aus": "no longer marked as own organisation",
+  "organisation.notiz.verantwortlicher": "controller changed",
+  "organisation.notiz.datenschutzbeauftragter": "data protection officer changed",
+  "organisation.mail.betreff": "Ablago: own organisation changed",
+  "organisation.mail.text": "Something changed at the own organisation “{name}”: {was} (by {von}).\n\nThese details appear on data protection requests and in the deletion concept. Details under Workbench → Own organisation.",
+  "organisation.nichts-bisher": "There is no previous controller entry to take over.",
+  "organisation.schon-da": "There already is an own organisation – please add the previous entry there by hand.",
+  "organisation.ohne-basis": "This needs a folder type with the attribute “own organisation” – the package Basis from version 1.7.0.",
+  "paketerstellung.organisation": "Own organisation (attribute, write protection, display condition)"
 }

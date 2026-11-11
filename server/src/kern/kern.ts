@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { KONTOROLLEN, kontorolleKennung, ROLLEN, systemrolleKennung, type Kontorolle, type Mappentyp, type Rolle } from '../../../shared/src/model';
 import type { Aufloesung } from '../../../shared/src/sichten';
 import { liesMerkmale, MERKMALE_EINSTELLUNG, type Merkmale } from '../../../shared/src/merkmale';
+import { merkmalFeld } from '../../../shared/src/organisation';
 import type { Lesefilter, Wer } from '../../../shared/src/rechte';
 import type { PaketCode, Schnittstelle } from '../../../shared/src/pakete';
 import { EREIGNISKATALOG, mischeFelder, type Ausloeser as EreignisAusloeser, type KatalogArt, type Katalogeintrag } from '../../../shared/src/ereignisse';
@@ -25,12 +26,15 @@ const transaktionen = new AsyncLocalStorage<{ kern: object; repo: Repo; nachher:
  */
 const ereignisKontext = new AsyncLocalStorage<{ ausloeser?: EreignisAusloeser; still?: boolean }>();
 export const PAPIERKORB_STANDARD_TAGE = 30;
+/** Höchstzahl eigener Organisationen, die Ablago kennt (#995) – mehrere sind möglich, aber nicht viele. */
+export const EIGENE_ORGANISATIONEN_MAX = 50;
 /** Ereignisse, nach denen eine Mappe unter „Zuletzt geöffnet“ nach oben rückt (#940: Anlegen und Ändern zählen). */
 const ZULETZT_ARTEN = new Set<KatalogArt>(['mappe.angelegt', 'mappe.geaendert', 'dokument.hochgeladen', 'mappe.notiz']);
 
 /** Zugriff eines Benutzers (#124): Rollen, Auflösung dynamischer Werte, Lesefilter (null = alles). */
 export interface Zugriff {
-  ich: { id: string; rolle: string };
+  /** Wer zugreift; `verwaltung` = Verwaltungsrecht der Person (#818), nur bei Menschen (für geschützte Felder, #995). */
+  ich: { id: string; rolle: string; verwaltung?: string[] | null };
   admin: boolean;
   wer: Wer;
   a: Aufloesung;
@@ -55,7 +59,7 @@ export interface Zugriff {
 export interface LeserechtAufZeit { fallId: string; aufgabeId: string; aufgabentext: string; seit: string; von: string | null }
 
 /** Wer zugreift (#124, #338, #673): Mensch, Dienstkonto eines Pakets oder Systemkonto. */
-export interface Zugreifender { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string }
+export interface Zugreifender { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string; verwaltung?: string[] | null }
 
 /** Systemtypen und -rollen (#26, #27, #435, #673): Benutzer, Rolle, Post und die Ids der festen Rollen. */
 export interface SystemIds { benutzer: Mappentyp; rolle: Mappentyp; post: Mappentyp; systemrollen: Map<Rolle, string>; kontorollen: Map<Kontorolle, string> }
@@ -211,6 +215,22 @@ export class Kern {
    * Bedingungen von Rechten, Ansichten und Automatisierungen. Ohne Einstellung: privat.
    */
   async merkmale(): Promise<Merkmale> { return liesMerkmale(await this.einstellungen?.lies(MERKMALE_EINSTELLUNG)); }
+
+  /**
+   * Ids der eigenen Organisationen (#995): Mappen, deren Ja/Nein-Feld mit dem Merkmal „eigene Organisation“ „ja“ ist –
+   * ohne Rechte, nur die Ids (Anzeige-Bedingung „zeigt auf eine eigene Organisation“, Erkennung, Werkbank). Höchstens
+   * `EIGENE_ORGANISATIONEN_MAX`.
+   */
+  async eigeneOrganisationen(): Promise<Array<{ id: string; typId: string }>> {
+    const aus: Array<{ id: string; typId: string }> = [];
+    for (const typ of await this.repo.listeTypen()) {
+      const f = merkmalFeld(typ);
+      if (!f) continue;
+      const r = await this.repo.seite({ klauseln: [{ typen: [typ.id], filter: [{ art: 'feld', key: f.key, feldart: 'janein', op: 'ja' }] }], von: 0, anzahl: EIGENE_ORGANISATIONEN_MAX });
+      aus.push(...r.mappen.map((m) => ({ id: m.id, typId: m.typId })));
+    }
+    return aus.slice(0, EIGENE_ORGANISATIONEN_MAX);
+  }
 
   /** Je Mappentyp-Id die Pakete, denen der Admin diesen Typ verwehrt hat (Einstellung, Teil der Sicherung). */
   async paketVerwehrt(): Promise<Record<string, string[]>> {

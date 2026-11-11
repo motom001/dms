@@ -120,6 +120,8 @@ export interface ExportQuelle {
   region?(): Promise<unknown>;
   /** Merkmale der Ablage (#1032), z. B. „beruflich genutzt“; fehlt bei Auskunft und persönlichem Export. */
   merkmale?(): Promise<unknown>;
+  /** Eigene Organisation (#995): Wahl für Auskünfte, freigegebene Rollen, Notizen; fehlt bei Auskunft und persönlichem Export. */
+  organisation?(): Promise<unknown>;
   /** Automatisierungen mit Änderungsverlauf (#674); fehlt bei Auskunft und persönlichem Export. */
   automatisierungen?(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;
@@ -370,6 +372,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   if (q.synonyme) await w.schreibe('struktur/synonyme.json', json(await q.synonyme()));
   if (q.region) await w.schreibe('struktur/region.json', json(await q.region()));
   if (q.merkmale) await w.schreibe('struktur/merkmale.json', json(await q.merkmale()));
+  if (q.organisation) await w.schreibe('struktur/organisation.json', json(await q.organisation()));
   if (q.automatisierungen) await w.schreibe('struktur/automatisierungen.json', json(await q.automatisierungen()));
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
 

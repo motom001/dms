@@ -167,6 +167,16 @@ export interface Feld {
    * `trefferliste` (fehlt = Standard) und der Beschriftung `neu` für „+ Neu“. Nur bei `typ: 'tabelle'`.
    */
   quelle?: import('./tabelle').Tabellenquelle;
+  /**
+   * Merkmal am Ja/Nein-Feld (#995): `eigeneOrganisation` – „ja“ heißt, diese Mappe ist eine eigene Organisation
+   * (organisation.ts). Kommt aus dem Paket (Basis); die Werkbank lässt es, wie es ist.
+   */
+  merkmal?: import('./feldmerkmale').Feldmerkmal;
+  /**
+   * Schreibschutz (#995): `verwaltung` – ändern nur im Verwaltungsmodus mit dem Bereich „Eigene Organisation“ oder mit
+   * einer dort freigegebenen Rolle; sonst 403, auch über die Schnittstelle. Kommt aus dem Paket; die Werkbank lässt ihn.
+   */
+  schreibschutz?: import('./feldmerkmale').Schreibschutz;
 }
 
 /**
@@ -180,6 +190,8 @@ export type Anzeigebedingung = { nicht?: boolean } & (
   | { art: 'feld'; bedingung: import('./sichten').Feldbedingung }
   /** Ein Verweisfeld zeigt auf (mindestens) eine Mappe vom Typ `typ` (Id des Mappentyps). */
   | { art: 'verweistyp'; feld: string; typ: string }
+  /** Ein Verweisfeld zeigt auf (mindestens) eine eigene Organisation (#995), z. B. „Rechnungssteller ist wir“. */
+  | { art: 'eigeneOrganisation'; feld: string }
 );
 /** „Anzeigen, wenn …“ (#1033): alle Bedingungen oder eine davon. */
 export interface Anzeigeregel {

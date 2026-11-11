@@ -65,6 +65,8 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'automatisierungen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
+  // Eigene Organisation (#995): Verweis auf die Organisation mit dem Merkmal – erst mit der Vorlage für Betriebe.
+  { pfad: 'organisation', gruppe: 'benutzer', in: O },
   // Datenschutz getrennt (#668): Auskünfte (mit Mitte, wachsende Sammlung) und Löschkonzept.
   { pfad: 'auskuenfte', gruppe: 'benutzer', in: O },
   { pfad: 'loeschkonzept', gruppe: 'benutzer', in: O },

@@ -72,7 +72,7 @@ A family member or someone from the business who has an account in Ablago wants 
 
 A tenant, customer or contact asks for their data. **Workbench → Data protection requests** takes care of this; the details are [further below](#auskunft-nach-art-15-dsgvo).
 
-1. **Set up once:** controller, recipients and the folder types that concern a person, each with a purpose ([Settings](#einstellungen)).
+1. **Set up once:** controller (at the [own organisation](organisation.md)), recipients and the folder types that concern a person, each with a purpose ([Settings](#einstellungen)).
 2. **Choose the person** – or on their folder **Folder ▾ → Create access copy …** – and enter when the request came in. **Create deadline as a task** reminds you under "To do".
 3. **Collect:** Ablago follows the links from the person's folder (tenancy agreement, statements, flat) – completely only what belongs to them via **belonging**. Folders in which they are only named via a **reference** (e.g. as contact person) appear without their content ([Belonging or reference](#zugehorigkeit-oder-bezug)).
 4. **Keep searching** if the person also occurs elsewhere: Ablago deliberately doesn't do a full-text search ([why](#warum-keine-volltext-suche)). Search yourself in the Library with the [advanced search](https://help.ablago.app/benutzer/aktuell/en/ablage/#erweiterte-suche) without a chosen folder type, with **full text** also in documents and notes. What really belongs to the person you link with their folder (as belonging) and collect again.
@@ -143,9 +143,9 @@ If you choose an access copy, everything is in one place on the right: **Details
 
 ### Settings { #einstellungen }
 
-Set up once. Controller, recipients, rights and form of address are above the list under **Settings**; which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
+Set up once. Recipients, rights and form of address are above the list under **Settings**, the controller is kept at the [own organisation](organisation.md); which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
 
-- **Controller:** name and address – shown as the sender on the cover sheet.
+- **Controller:** since #995 name and address come from the [own organisation](organisation.md) (plus email, phone and – if there is one – the data protection officer) and appear as sender on the cover sheet and in the email to the person. If there is no own organisation yet, the previous entry applies; the Workbench offers to take it over as own organisation.
 - **Recipients:** to whom you pass on data (e.g. tax adviser, caretaker service). This is the suggestion for every access copy; you can change it per access copy.
 - **The person's rights:** the text on the cover sheet (rectification, erasure, restriction, data portability, objection, complaint). A suggestion is already filled in – in the set [form of address](#anrede). You can adjust the text here; Ablago doesn't change a text of your own when the form of address changes.
 - **Form of address in documents for third parties:** see [below](#anrede).

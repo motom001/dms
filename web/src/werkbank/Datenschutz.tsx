@@ -527,7 +527,8 @@ function AuskunftEinstellungen({ z }: { z: DatenschutzZustand }) {
   return (
     <form className="blatt" id="datenschutz-einstellungen" onSubmit={(x) => { x.preventDefault(); void speichern((g) => ({ ...g, verantwortlicher: e.verantwortlicher, empfaenger: e.empfaenger, rechte: e.rechte, anrede: e.anrede })); }} onKeyDown={ent.tasten}>
       <div className="raster">
-        <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.verantwortlicher', { klein: <small>{t('werkbank.datenschutz.name-und-anschrift-steht')}</small> })}</span><textarea rows={3} value={e.verantwortlicher} onChange={(x) => setE({ ...e, verantwortlicher: x.target.value })} /></label>
+        {/* Eigene Organisation (#995): Name und Anschrift des Verantwortlichen pflegt man einmal an der Organisation. */}
+        <p className="eigenschaft breit leise">{tn('werkbank.datenschutz.verantwortlicher-organisation', { link: <Link to="/werkbank/organisation" className="verweis">{t('werkbank.datenschutz.zur-organisation')}</Link> })}</p>
         <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.empfaenger', { klein: <small>{t('werkbank.datenschutz.vorschlag-fuer-jede-auskunft')}</small> })}</span><textarea rows={2} value={e.empfaenger} onChange={(x) => setE({ ...e, empfaenger: x.target.value })} /></label>
         <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.rechte-der-person', { klein: <small>{t('werkbank.datenschutz.text-auf-dem-deckblatt')}</small> })}</span><textarea rows={4} value={e.rechte} onChange={(x) => setE({ ...e, rechte: x.target.value })} /></label>
       </div>
@@ -577,7 +578,7 @@ function PersonendatenTypen({ z }: { z: DatenschutzZustand }) {
           <ul className="stapel auskunft-typen">{ohne.map(zeile)}</ul>
         </details>
       )}
-      <p className="leise klein">{t('werkbank.loeschkonzept.verantwortlicher')} <Link to="/werkbank/auskuenfte/einstellungen" className="verweis">{t('werkbank.auskunft.einstellungen.titel')}</Link></p>
+      <p className="leise klein">{t('werkbank.loeschkonzept.verantwortlicher')} <Link to="/werkbank/organisation" className="verweis">{t('werkbank.datenschutz.zur-organisation')}</Link></p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.datenschutz.personendaten')} sendet={laeuft} />
     </form>

@@ -19,7 +19,7 @@ import type { Kern, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
 import { t } from '../sprache';
-import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, behalteTeil, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
+import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, behalteOrganisation, behalteTeil, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappentypenAnschluss {
@@ -196,7 +196,8 @@ export class MappentypenDienst {
     // Die Oberfläche darf die Id vorgeben, damit ein neuer Typ auf sich selbst verweisen kann.
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
     // Berechnete Felder (#1034) nur aus dem Paket, das den Typ mitbringt.
-    const d = behalteBerechnet(eingabe, bereinigeTyp(eingabe), undefined, ausPaket);
+    // Merkmal „eigene Organisation“ und Schreibschutz (#995) ebenso.
+    const d = behalteOrganisation(behalteBerechnet(eingabe, bereinigeTyp(eingabe), undefined, ausPaket), undefined, ausPaket);
     MappentypenDienst.pruefePaketKennung(d.schluessel, ausPaket);
     // Schlüssel (#145): ohne Angabe aus dem Namen, eindeutig.
     if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
@@ -226,7 +227,8 @@ export class MappentypenDienst {
     const stand = liesStand((eingabe as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
     if (stand !== undefined && alt.geaendert !== stand) throw this.anschluss.konfigurationKonflikt('typ', alt.geaendert);
     // Berechnete Felder (#1034): bleiben, was sie sind; neu nur aus dem Paket des Typs, freigeben mit `berechnetVon: null`.
-    let d = behalteTeil(eingabe, behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket), alt);
+    // Merkmal „eigene Organisation“ und Schreibschutz (#995): nur aus dem Paket, sonst wie bisher.
+    let d = behalteOrganisation(behalteTeil(eingabe, behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket), alt), alt, ausPaket);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
     festigeDarstellung(d);

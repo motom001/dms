@@ -3,7 +3,7 @@
  * beim Start nachholen; Ergebnis am Repo, „passt nicht“-Aufgaben über den Anschluss. Schicht 2.
  */
 import { ersterGrund, istLeer, verweiseVon, type Mappe, type Mappentyp } from '../../../shared/src/model';
-import { pruefeMitAnzeige } from '../../../shared/src/anzeige';
+import { hatEigeneOrganisationBedingung, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import type { Kern } from '../kern';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
@@ -40,9 +40,10 @@ export class Passung {
     }
     // Anzeige-Bedingungen (#1033): Was eine Mappe nicht zeigt, ist nicht Pflicht – wie beim Speichern.
     const merkmale = await this.kern.merkmale();
+    const eigeneOrganisation = await this.eigeneOrganisation(typ);
     const ergebnis = mappen.map((m) => {
       const p = pruefeMitAnzeige(typ, m.werte, {
-        merkmale,
+        merkmale, eigeneOrganisation,
         typVon: (id) => typVon.get(id),
         doppelt: (k, v) => {
           const andere = gleiche.get(k)?.get(String(v).trim().toLowerCase())?.find((x) => x.id !== m.id);
@@ -56,6 +57,13 @@ export class Passung {
     // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
     await this.passungsAufgaben(geaendert);
     return ergebnis.filter((e) => e.problem).length;
+  }
+
+  /** „zeigt auf eine eigene Organisation“ (#995): nur nachschlagen, wenn der Typ so eine Bedingung hat. */
+  private async eigeneOrganisation(typ: Mappentyp): Promise<((id: string) => boolean) | undefined> {
+    if (!hatEigeneOrganisationBedingung(typ)) return undefined;
+    const ids = new Set((await this.kern.eigeneOrganisationen()).map((x) => x.id));
+    return (id) => ids.has(id);
   }
 
   /**
@@ -76,9 +84,10 @@ export class Passung {
     const eindeutig = typ.felder.filter((f) => f.eindeutig && (f.typ === 'text' || f.typ === 'zahl'));
     const funde = await this.repo.findeDoppelte(typ.id, mappen.flatMap((m) => eindeutig.filter((f) => !istLeer(m.werte[f.key])).map((f) => ({ mappeId: m.id, feldKey: f.key, wert: String(m.werte[f.key]) }))));
     const merkmale = await this.kern.merkmale();
+    const eigeneOrganisation = await this.eigeneOrganisation(typ);
     for (const m of mappen) {
       const doppelt = (k: string) => { const d = funde.get(`${m.id}|${k}`); return d ? d.titel || t('meldungen.dienst.ohne-titel') : undefined; };
-      const problem = ersterGrund(typ, pruefeMitAnzeige(typ, m.werte, { typVon: (id) => typen.get(id), doppelt, merkmale }));
+      const problem = ersterGrund(typ, pruefeMitAnzeige(typ, m.werte, { typVon: (id) => typen.get(id), doppelt, merkmale, eigeneOrganisation }));
       if (problem !== m.problem) liste.push({ id: m.id, problem });
     }
     await this.repo.setzePassung(liste);

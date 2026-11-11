@@ -61,6 +61,10 @@ Siehe auch: [Design](#design), [Mein Konto](#mein-konto).
 Eine Datei, die in Ablago in einem Dokumentenregister einer Mappe liegt. Hochgeladen wird eine Datei; in Ablago ist sie ein Dokument. An einer E-Mail heißt sie Anhang.  
 Siehe auch: [Version](#version).
 
+<a id="eigene-organisation"></a>**Eigene Organisation** · ✓ Alltagswort · Administratoren  
+Die Organisation in der Ablage, die „wir“ sind – der eigene Betrieb, die eigene Firma oder das Gewerbe. Gekennzeichnet über das Feld „Eigene Organisation“ (Paket Basis); setzen darf es nur, wer die eigene Organisation verwaltet. Name, Anschrift, Kontakt, Verantwortlicher und Datenschutzbeauftragter werden dort einmal gepflegt und von Auskünften und Löschkonzept genutzt; die Erkennung nimmt sie nie als Absender. Mehrere sind möglich.  
+Siehe auch: [Beruflich genutzt](#beruflich-genutzt).
+
 <a id="eindeutig"></a>**Eindeutig** · ~ mit Erklärung · Administratoren  
 Ein Feldwert, der in diesem Mappentyp nur einmal vorkommen darf, z. B. eine Rechnungsnummer.
 
@@ -622,6 +626,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Design | Theme | – |
 | Dienstkonto | Systembenutzer, Bot, technischer Benutzer | `benutzer.art = 'dienst'` |
 | Dokument | – | `Dokument` |
+| Eigene Organisation | Mandant, Betrieb und Verantwortliche, Impressum | `merkmal eigeneOrganisation` |
 | Erinnerung | – | `Erinnerung` |
 | Erweiterte Suche | – | `Suchformular` |
 | Expertenmodus | Erweiterte Ansicht | `useExperteOffen` |

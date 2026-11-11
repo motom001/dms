@@ -5,7 +5,7 @@
  */
 import { vonAussenFuellbar } from '../../../shared/src/berechnet';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
-import { anzeigestand, hatAnzeige, pruefeMitAnzeige } from '../../../shared/src/anzeige';
+import { anzeigestand, hatAnzeige, hatEigeneOrganisationBedingung, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
 import { wertfelder } from '../../../shared/src/tabelle';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
@@ -73,6 +73,13 @@ export class MappenEingaben {
   private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) { return this.rechtepruefung.pruefeRecht(...a); }
   private aufloesung(...a: Parameters<ZugriffDienst['aufloesung']>) { return this.rechtepruefung.aufloesung(...a); }
 
+  /** „zeigt auf eine eigene Organisation“ (#995): nur nachschlagen, wenn der Typ so eine Bedingung hat. */
+  private async eigeneOrganisation(typ: Mappentyp): Promise<((id: string) => boolean) | undefined> {
+    if (!hatEigeneOrganisationBedingung(typ)) return undefined;
+    const ids = new Set((await this.kern.eigeneOrganisationen()).map((x) => x.id));
+    return (id) => ids.has(id);
+  }
+
   /**
    * Werte vor dem Speichern prüfen. „Bereits vergeben“ (#743): alle eindeutigen Felder in einer Abfrage über den Index;
    * liegt der gleiche Wert in einer Mappe, die der Benutzer nicht lesen darf, nennt die Meldung ihren Titel nicht.
@@ -94,13 +101,14 @@ export class MappenEingaben {
     // diesen Werten nicht zu sehen sind, sind nicht Pflicht.
     const merkmale = await this.kern.merkmale();
     const typVon = (id: string) => typen.get(id);
-    const p = pruefeMitAnzeige(typ, werte, { typVon, doppelt: (k) => doppelt.get(k), merkmale });
+    const eigeneOrganisation = await this.eigeneOrganisation(typ);
+    const p = pruefeMitAnzeige(typ, werte, { typVon, doppelt: (k) => doppelt.get(k), merkmale, eigeneOrganisation });
     // Formate und Datumsgrenzen (#535): beim Bearbeiten nur, was sich ändert – der Bestand bleibt gültig.
     for (const [k, m] of Object.entries(pruefeFormate(typ, werte, alt))) p.felder[k] ??= m;
     // Ausgeblendete Felder (#655, #1033): Was dort unverändert steht, hält das Speichern nicht auf – sehen kann es hier keiner.
     if (alt) {
       const aus = ausgeblendeteFelder(typ);
-      if (hatAnzeige(typ)) for (const k of anzeigestand(typ, werte, { merkmale, typVon }).verborgen) aus.add(k);
+      if (hatAnzeige(typ)) for (const k of anzeigestand(typ, werte, { merkmale, typVon, eigeneOrganisation }).verborgen) aus.add(k);
       for (const k of Object.keys(p.felder)) if (aus.has(k) && JSON.stringify(werte[k] ?? null) === JSON.stringify(alt[k] ?? null)) delete p.felder[k];
     }
     if (!istOk(p)) {

@@ -424,5 +424,9 @@
   "teile.rechte-uebernommen": "Leserechte von {eltern} übernommen – siehe Berechtigungen.",
   "teile.rechte-ausgelassen_one": "{anzahl} Regel ließ sich nicht übertragen (ihr Feld fehlt hier) – bitte selbst prüfen.",
   "teile.rechte-ausgelassen_other": "{anzahl} Regeln ließen sich nicht übertragen (ihr Feld fehlt hier) – bitte selbst prüfen.",
-  "teile.einstellung-name": "Ist Teil einer anderen Mappe"
+  "teile.einstellung-name": "Ist Teil einer anderen Mappe",
+  "anzeige.eigene-organisation": "Verweis zeigt auf eine eigene Organisation",
+  "anzeige.eigene-organisation-feld": "„{feld}“ zeigt auf eine eigene Organisation",
+  "editor.chip.eigene-organisation": "Merkmal: eigene Organisation",
+  "editor.chip.schreibschutz": "nur mit Verwaltungsrecht änderbar"
 }

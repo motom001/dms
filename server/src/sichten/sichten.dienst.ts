@@ -360,7 +360,8 @@ export class SichtenDienst {
   async zaehlerRahmen() {
     // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
     // Merkmale der Ablage (#1032): für die Anzeige-Bedingungen im Formular (#1033).
-    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht(), favoritenSicht: await this.favoritenSicht(), merkmale: await this.kern.merkmale() };
+    // Eigene Organisationen (#995): nur die Ids – für „zeigt auf eine eigene Organisation“ im Formular.
+    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht(), favoritenSicht: await this.favoritenSicht(), merkmale: await this.kern.merkmale(), eigeneOrganisationen: (await this.kern.eigeneOrganisationen()).map((x) => x.id) };
   }
 
   /**

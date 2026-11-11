@@ -97,7 +97,8 @@ export class AuskunftZustellen {
     const url = `${x.adresse.replace(/\/+$/, '')}/abruf#${schluessel}`;
     const bis = datumText(link.ablauf.slice(0, 10));
     if (e.senden) {
-      const ds = await this.datenschutz();
+      // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
+      const ds = await this.teile.datenschutz.datenschutzFuerUnterlagen();
       const m = auskunftMail.link(ds.anrede, url, bis, link.maxAbrufe, ds.verantwortlicher);
       const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
       try { await x.mailer!.sende(e.an, m.betreff, m.nachricht, { antwortAn }); } catch (f) {

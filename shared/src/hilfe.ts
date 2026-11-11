@@ -139,6 +139,8 @@ export const HILFE = {
   'werkbank.aufkleber': admin('nummernkreise/', 'Aufkleber für Archivnummern', 'archivnummern-und-aufkleber'),
   'werkbank.region': admin('region/', 'Region'),
   'werkbank.nutzung': admin('nutzung/', 'Nutzung'),
+  // Eigene Organisation (#995).
+  'werkbank.organisation': admin('organisation/', 'Eigene Organisation'),
   // Anzeigen, wenn … (#1033) am Feld und am Abschnitt.
   'mappentyp.anzeigen': admin('mappentypen/', 'Anzeigen, wenn …', 'anzeigen-wenn'),
   'mappentyp.berechnet': admin('mappentypen/', 'Berechnete Felder', 'berechnete-felder'),

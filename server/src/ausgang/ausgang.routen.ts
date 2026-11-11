@@ -41,6 +41,8 @@ export function exportRouten(k: RoutenKontext): Route[] {
         ...(x.region ? { region: () => x.region!.lies() } : {}),
         // Merkmale der Ablage (#1032) als struktur/merkmale.json.
         merkmale: () => dienst.merkmale(),
+        // Eigene Organisation (#995): Verweis, Rollen und Notizen als struktur/organisation.json (die Angaben stehen in der Mappe).
+        organisation: () => dienst.organisation.einstellung(),
       });
       const von = ich(a).email;
       if (e.passwoerter === true) L.werkbank.warn('Vollexport mit Passwörtern im Klartext gestartet', { von });

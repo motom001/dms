@@ -19,6 +19,18 @@ import { FeldBedingung } from '../werkbank/Sichten';
 type TypTeil = { felder: Feld[] };
 
 /** Kurz am Feld bzw. Abschnitt (#1033, Hinweis Qualität): Symbol und Satz „nur bei …“. */
+/** Ziele „Verweis zeigt auf eine eigene Organisation“ (#995): je Verweisfeld eine Wahl; fehlt das Feld, ein Hinweis. */
+function EigeneOrganisationZiele({ b, verweise, fehlt, wert }: { b: Anzeigebedingung; verweise: Feld[]; fehlt: boolean; wert: string }) {
+  const hier = b.art === 'eigeneOrganisation';
+  if (!verweise.length && !hier) return null;
+  return (
+    <optgroup label={t('mappentypen.anzeige.eigene-organisation')}>
+      {hier && fehlt && <option value={wert}>{t('mappentypen.anzeige.fehlt', { feld: b.feld })}</option>}
+      {verweise.map((f) => <option key={f.key} value={`eigeneOrganisation:${f.key}`}>{t('mappentypen.anzeige.eigene-organisation-feld', { feld: feldLabel(f) })}</option>)}
+    </optgroup>
+  );
+}
+
 export function AnzeigeChip({ regel, typ }: { regel?: Anzeigeregel; typ: TypTeil }) {
   const d = useDaten();
   if (!regel?.bedingungen.length) return null;
@@ -45,11 +57,13 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
   const setzeB = (i: number, b: Anzeigebedingung) => setzeListe(bedingungen.map((x, j) => (j === i ? b : x)));
 
   /** Ziel einer Bedingung als Wert der Auswahl. */
-  const zielVon = (b: Anzeigebedingung) => (b.art === 'merkmal' ? `merkmal:${b.merkmal}` : b.art === 'feld' ? `feld:${b.bedingung.feld}` : `verweistyp:${b.feld}`);
+  const zielVon = (b: Anzeigebedingung) => (b.art === 'merkmal' ? `merkmal:${b.merkmal}` : b.art === 'feld' ? `feld:${b.bedingung.feld}` : b.art === 'eigeneOrganisation' ? `eigeneOrganisation:${b.feld}` : `verweistyp:${b.feld}`);
   const neu = (ziel: string, nicht?: boolean): Anzeigebedingung | null => {
     const n = nicht ? { nicht: true } : {};
     const [art, key] = ziel.split(':');
     if (art === 'merkmal') return { ...n, art: 'merkmal', merkmal: 'beruflich' };
+    // Eigene Organisation (#995): das Verweisfeld zeigt auf eine Mappe mit dem Merkmal.
+    if (art === 'eigeneOrganisation') return { ...n, art: 'eigeneOrganisation', feld: key };
     if (art === 'verweistyp') {
       const f = typ.felder.find((x) => x.key === key);
       // Mehrere Zieltypen (#1036): der erste davon; bei „jede Mappe“ der erste eigene Typ.
@@ -78,7 +92,7 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
           {bedingungen.map((b, i) => {
             const problem = anzeigeBedingungProblem(b, typ, eigene, (id) => typen.some((x) => x.id === id));
             const feld = b.art === 'feld' ? felder.find((f) => f.key === b.bedingung.feld) : undefined;
-            const vf = b.art === 'verweistyp' ? typ.felder.find((f) => f.key === b.feld) : undefined;
+            const vf = b.art === 'verweistyp' || b.art === 'eigeneOrganisation' ? typ.felder.find((f) => f.key === b.feld) : undefined;
             return (
               <li key={i} className={problem ? 'fehlerhaft' : ''}>
                 <div className="bedingungszeile">
@@ -92,6 +106,7 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
                       {b.art === 'verweistyp' && !vf && <option value={zielVon(b)}>{t('mappentypen.anzeige.fehlt', { feld: b.feld })}</option>}
                       {verweise.map((f) => <option key={f.key} value={`verweistyp:${f.key}`}>{t('mappentypen.anzeige.verweistyp-feld', { feld: feldLabel(f) })}</option>)}
                     </optgroup>}
+                    <EigeneOrganisationZiele b={b} verweise={verweise} fehlt={!vf} wert={zielVon(b)} />
                   </select>
                   <select aria-label={t('mappentypen.anzeige.umkehren')} value={b.nicht ? 'nicht' : 'ja'} onChange={(x) => setzeB(i, { ...b, nicht: x.target.value === 'nicht' || undefined })}>
                     <option value="ja">{t('mappentypen.anzeige.trifft-zu')}</option><option value="nicht">{t('mappentypen.anzeige.trifft-nicht-zu')}</option>

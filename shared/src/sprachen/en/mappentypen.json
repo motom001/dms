@@ -424,5 +424,9 @@
   "teile.rechte-uebernommen": "Read permissions taken over from {eltern} – see Permissions.",
   "teile.rechte-ausgelassen_one": "{anzahl} rule could not be carried over (its field is missing here) – please check yourself.",
   "teile.rechte-ausgelassen_other": "{anzahl} rules could not be carried over (their field is missing here) – please check yourself.",
-  "teile.einstellung-name": "Is part of another folder"
+  "teile.einstellung-name": "Is part of another folder",
+  "anzeige.eigene-organisation": "Reference points to an own organisation",
+  "anzeige.eigene-organisation-feld": "“{feld}” points to an own organisation",
+  "editor.chip.eigene-organisation": "Attribute: own organisation",
+  "editor.chip.schreibschutz": "changeable only with administration rights"
 }
