@@ -13,7 +13,7 @@ Funktion wird abgeschaltet – und die Merkmale der Ablage (#1032, „beruflich 
 **Abhängigkeiten**
 
 - Bekommt nur den **Kern** (Einstellungen). Importiert nur Kern, `shared/` und die Basis.
-- Wer die Ansicht braucht, ruft weiter `dienst.werkbankAnsicht(…)` (Fassade mit einzeiliger Weiterleitung).
+- Wer die Ansicht braucht, ruft `dienst.werkbank.werkbankAnsicht(…)` (seit #1079 ohne Weiterleitung im Dienst).
 
 **Regeln**
 

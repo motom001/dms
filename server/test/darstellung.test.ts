@@ -13,7 +13,8 @@ import { pruefeMappentyp, type Mappentyp } from '../../shared/src/model';
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
 import { openapi } from '../src/api-v1';
 import { speicherDateien } from '../src/dateispeicher';
-import { bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { bereinigeTyp } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
@@ -79,18 +80,18 @@ describe('Abschnitte im Feldregister (#890)', () => {
 
   it('Merken je Person: persönliche Einstellung je Mappentyp (auf dem Server, nicht nur im Browser)', async () => {
     const d = neuerDienst();
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-    const t = await d.legeTypAn(PERSON);
+    const t = await d.mappentypen.legeTypAn(PERSON);
     await konten.setzeEinstellung(lena, abschnittEinstellung(t.id), { [abschnittId('stammdaten', { vor: 'iban' })]: true });
     assert.deepEqual((await konten.einstellungen(lena))[abschnittEinstellung(t.id)], { 'stammdaten.iban': true });
   });
 
   it('nur Darstellung: Werte, Prüfung und Felder ändern sich nicht', async () => {
     const d = neuerDienst();
-    const t = await d.legeTypAn(PERSON);
-    await assert.rejects(d.legeMappeAn({ typId: t.id, werte: { vorname: 'Lena' } }), (e) => e instanceof Fachfehler && e.status === 422, 'Pflicht im eingeklappten Abschnitt gilt weiter');
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', iban: 'DE02120300000000202051' } });
+    const t = await d.mappentypen.legeTypAn(PERSON);
+    await assert.rejects(d.mappen.legeMappeAn({ typId: t.id, werte: { vorname: 'Lena' } }), (e) => e instanceof Fachfehler && e.status === 422, 'Pflicht im eingeklappten Abschnitt gilt weiter');
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', iban: 'DE02120300000000202051' } });
     assert.equal(m.werte.iban, 'DE02120300000000202051');
   });
 });
@@ -115,45 +116,45 @@ describe('Felder und Register ausblenden (#655)', () => {
 
   it('Werte bleiben; Ausblenden und Abschnitte bleiben ohne Nennung (ältere Programme), Konfliktschutz (#917) gilt', async () => {
     const d = neuerDienst();
-    const t = await d.legeTypAn(PERSON);
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', bic: 'GENODEF1S12' } });
-    const t2 = await d.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'bic' || f.key === 'nachname' ? { ...f, ausgeblendet: true } : f)), stand: t.geaendert });
+    const t = await d.mappentypen.legeTypAn(PERSON);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', bic: 'GENODEF1S12' } });
+    const t2 = await d.mappentypen.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'bic' || f.key === 'nachname' ? { ...f, ausgeblendet: true } : f)), stand: t.geaendert });
     assert.deepEqual(t2.felder.filter((f) => f.ausgeblendet).map((f) => [f.key, f.pflicht]), [['nachname', false], ['bic', false]]);
-    assert.equal((await d.holeMappe(m.id)).mappe.werte.bic, 'GENODEF1S12', 'Werte bleiben gespeichert');
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.bic, 'GENODEF1S12', 'Werte bleiben gespeichert');
     // Älteres Programm über die API: ohne ausgeblendet und abschnitte gespeichert – nichts geht verloren.
-    const t3 = await d.aendereTyp(t.id, { ...t2, beschreibung: 'neu', felder: t2.felder.map(({ ausgeblendet: _a, ...f }) => f), register: t2.register.map(({ abschnitte: _x, ...r }) => r) });
+    const t3 = await d.mappentypen.aendereTyp(t.id, { ...t2, beschreibung: 'neu', felder: t2.felder.map(({ ausgeblendet: _a, ...f }) => f), register: t2.register.map(({ abschnitte: _x, ...r }) => r) });
     assert.deepEqual(t3.felder.filter((f) => f.ausgeblendet).map((f) => f.key), ['nachname', 'bic']);
     assert.deepEqual(t3.register[0].abschnitte?.map((a) => a.vor), ['geburtstag', 'iban']);
     // Wieder einblenden: ausdrücklich false; Abschnitte ausdrücklich leer.
-    const t4 = await d.aendereTyp(t.id, { ...t3, felder: t3.felder.map((f) => ({ ...f, ausgeblendet: false })), register: t3.register.map((r) => ({ ...r, abschnitte: [] })), stand: t3.geaendert });
+    const t4 = await d.mappentypen.aendereTyp(t.id, { ...t3, felder: t3.felder.map((f) => ({ ...f, ausgeblendet: false })), register: t3.register.map((r) => ({ ...r, abschnitte: [] })), stand: t3.geaendert });
     assert.deepEqual([t4.felder.some((f) => f.ausgeblendet), t4.register[0].abschnitte], [false, undefined]);
     assert.equal(t4.felder.find((f) => f.key === 'nachname')!.pflicht, false, 'Pflicht kommt nicht von selbst zurück');
-    await assert.rejects(d.aendereTyp(t.id, { ...t4, felder: t4.felder.map((f) => ({ ...f, ausgeblendet: true })), stand: t3.geaendert }), (e) => e instanceof Fachfehler && e.status === 409);
+    await assert.rejects(d.mappentypen.aendereTyp(t.id, { ...t4, felder: t4.felder.map((f) => ({ ...f, ausgeblendet: true })), stand: t3.geaendert }), (e) => e instanceof Fachfehler && e.status === 409);
     // Das Dokumentenregister bleibt sichtbar; ohne es muss ein anderes Register sichtbar bleiben.
-    const t5 = await d.aendereTyp(t.id, { ...t4, register: t4.register.map((r) => ({ ...r, ausgeblendet: true })) });
+    const t5 = await d.mappentypen.aendereTyp(t.id, { ...t4, register: t4.register.map((r) => ({ ...r, ausgeblendet: true })) });
     assert.deepEqual(t5.register.map((r) => !!r.ausgeblendet), [true, false]);
-    const nur = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'verlauf', name: 'Verlauf', art: 'protokoll' }] });
-    await assert.rejects(d.aendereTyp(nur.id, { ...nur, register: nur.register.map((r) => ({ ...r, ausgeblendet: true })) }), (e) => e instanceof Fachfehler && e.status === 422, 'ein Register muss sichtbar bleiben');
+    const nur = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'verlauf', name: 'Verlauf', art: 'protokoll' }] });
+    await assert.rejects(d.mappentypen.aendereTyp(nur.id, { ...nur, register: nur.register.map((r) => ({ ...r, ausgeblendet: true })) }), (e) => e instanceof Fachfehler && e.status === 422, 'ein Register muss sichtbar bleiben');
   });
 
   it('unverändert Ungültiges in ausgeblendeten Feldern hält das Speichern nicht auf; Neues wird geprüft', async () => {
     const d = neuerDienst();
-    const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'alt', label: 'Altes Kürzel', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, DOK] });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'WV-1043', alt: 'ABCDEF' } });
-    const t2 = await d.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'alt' ? { ...f, maxLen: 3, ausgeblendet: true } : f)) });
-    const m2 = await d.aendereMappe(m.id, { werte: { ...m.werte, nr: 'WV-1044' } });
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'alt', label: 'Altes Kürzel', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, DOK] });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'WV-1043', alt: 'ABCDEF' } });
+    const t2 = await d.mappentypen.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'alt' ? { ...f, maxLen: 3, ausgeblendet: true } : f)) });
+    const m2 = await d.mappen.aendereMappe(m.id, { werte: { ...m.werte, nr: 'WV-1044' } });
     assert.deepEqual([m2.werte.nr, m2.werte.alt], ['WV-1044', 'ABCDEF']);
-    await assert.rejects(d.aendereMappe(m.id, { werte: { ...m2.werte, alt: 'GHIJKL' } }), (e) => e instanceof Fachfehler && e.status === 422, 'über die API geänderte Werte prüft Ablago weiter');
+    await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { ...m2.werte, alt: 'GHIJKL' } }), (e) => e instanceof Fachfehler && e.status === 422, 'über die API geänderte Werte prüft Ablago weiter');
     assert.ok(t2.felder.find((f) => f.key === 'alt')!.ausgeblendet);
   });
 
   it('Systemtypen: Systemfelder und ihre Register lassen sich nicht ausblenden, eigene Felder schon', async () => {
     const d = neuerDienst();
-    await d.postTyp();
-    const post = (await d.listeTypen()).find((x) => x.system === 'post')!;
+    await d.eingangskanaele.postTyp();
+    const post = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
     const eigen = { key: 'notiz_x', label: 'Notiz', typ: 'text' };
     const reg = post.register.map((r) => ({ ...r, ausgeblendet: r.art === 'felder' }));
-    const p2 = await d.aendereTyp(post.id, { ...post, felder: [...post.felder.map((f) => ({ ...f, ausgeblendet: true })), { ...eigen, ausgeblendet: true }], register: [...reg, { key: 'extra', name: 'Extra', art: 'felder', felder: ['notiz_x'], ausgeblendet: true }] });
+    const p2 = await d.mappentypen.aendereTyp(post.id, { ...post, felder: [...post.felder.map((f) => ({ ...f, ausgeblendet: true })), { ...eigen, ausgeblendet: true }], register: [...reg, { key: 'extra', name: 'Extra', art: 'felder', felder: ['notiz_x'], ausgeblendet: true }] });
     assert.deepEqual(p2.felder.filter((f) => f.ausgeblendet).map((f) => f.key), ['notiz_x']);
     assert.deepEqual(p2.register.filter((r) => r.ausgeblendet).map((r) => r.key), ['extra']);
   });
@@ -250,11 +251,11 @@ function paketFaelle(pg: boolean) {
       const d = neuerDienst(await repo());
       const p = new Paketverwaltung(d, { version: () => '0.217.0', abruf: katalog([paket('1.0.0', ORGANISATION_10), paket('1.1.0', ORGANISATION_11)]), katalogUrl: KATALOG });
       const inst = await p.installiere({ id: 'basis_test', version: '1.0.0' }, ICH);
-      const holen = async () => (await d.listeTypen()).find((t) => t.id === inst.typen.organisation)!;
+      const holen = async () => (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.organisation)!;
       const o = await holen();
-      const m = await d.legeMappeAn({ typId: o.id, werte: { name: 'Stadtwerke Musterstadt', handelsregister: 'HRB 4711' } });
+      const m = await d.mappen.legeMappeAn({ typId: o.id, werte: { name: 'Stadtwerke Musterstadt', handelsregister: 'HRB 4711' } });
       // Markus blendet das Handelsregister aus (Pflicht fällt weg) und gliedert „Kontakt“ selbst.
-      const o2 = await d.aendereTyp(o.id, {
+      const o2 = await d.mappentypen.aendereTyp(o.id, {
         ...o, felder: o.felder.map((f) => (f.key === 'handelsregister' ? { ...f, ausgeblendet: true } : f)),
         register: o.register.map((r) => (r.key === 'kontakt' ? { ...r, abschnitte: [{ vor: 'telefon', titel: 'Erreichbar' }] } : r)),
       });
@@ -271,7 +272,7 @@ function paketFaelle(pg: boolean) {
       assert.deepEqual(reg('stammdaten').abschnitte, [{ vor: 'handelsregister', titel: 'Register', eingeklappt: true, beschriftungen: { en: { titel: 'Registry' } } }]);
       assert.deepEqual(reg('kontakt').abschnitte, [{ vor: 'telefon', titel: 'Erreichbar' }], 'eigene Abschnitte bleiben');
       assert.deepEqual(reg('kontakt').felder, ['telefon', 'email', 'fax']);
-      assert.equal((await d.holeMappe(m.id)).mappe.werte.handelsregister, 'HRB 4711', 'Werte bleiben');
+      assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.handelsregister, 'HRB 4711', 'Werte bleiben');
       // Paketstand (#653): Die Abschnitte aus dem Update gehören dazu – eigene Änderungen sind nur Ausblenden und „Kontakt“.
       const ip = (await p.installierte()).find((x) => x.id === 'basis_test')!;
       const u = aenderung(o3, ip).unterschiede;
@@ -282,7 +283,7 @@ function paketFaelle(pg: boolean) {
 
       // Paket erstellen: Abschnitte und Ausblenden kommen mit; ältere Ablago ignorieren beides.
       const bau = baue({ typen: [o3.id], sichten: [], beispiele: [], id: 'eigenes', name: 'Eigenes', version: '1.0.0', beschreibung: 'Ein Paket zum Testen der Darstellung.', autor: { name: 'Markus', github: 'markus' }, lizenz: 'MIT', dms: '>=0.113.0', aenderungen: '' },
-        { typen: await d.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.217.0', entwurf: null, jetzt: new Date('2026-11-08T12:00:00Z') });
+        { typen: await d.mappentypen.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.217.0', entwurf: null, jetzt: new Date('2026-11-08T12:00:00Z') });
       const datei = bau.dateien.find((x) => x.name.endsWith('mappentypen.yaml'))!;
       const yaml = parse(datei.daten.toString()) as Array<{ felder: Array<Record<string, unknown>>; register: Array<Record<string, unknown>> }>;
       assert.equal(yaml[0].felder.find((x) => x.key === 'handelsregister')!.ausgeblendet, true);
@@ -297,7 +298,7 @@ function paketFaelle(pg: boolean) {
       const d = neuerDienst(await repo());
       const p = new Paketverwaltung(d, { version: () => '0.217.0', abruf: katalog([paket('1.1.0', ORGANISATION_11)]), katalogUrl: KATALOG });
       const inst = await p.installiere({ id: 'basis_test', version: '1.1.0' }, ICH);
-      const o = (await d.listeTypen()).find((t) => t.id === inst.typen.organisation)!;
+      const o = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.organisation)!;
       assert.equal(o.felder.find((f) => f.key === 'fax')!.ausgeblendet, true);
       assert.deepEqual(o.register.find((r) => r.key === 'kontakt')!.abschnitte, [{ vor: 'email', titel: 'Online' }]);
     });

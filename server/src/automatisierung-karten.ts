@@ -51,7 +51,7 @@ DANN_AUSFUEHRER.feld = async (k: DannKarte, c: KartenKontext) => {
   }
   const zeile = Object.entries(werte).map(([key, v]) => { const f = c.typ!.felder.find((x) => x.key === key)!; return `${feldLabel(f)} = ${formatiere(f, v as never) || '–'}`; }).join(', ');
   if (c.trocken) return uebersetzer2('automatisierung.karte.feld.trocken', { felder: zeile });
-  await c.dienst.aendereMappe(c.mappe.id, { werte }, c.konto.id, c.z, c.anlass);
+  await c.dienst.mappen.aendereMappe(c.mappe.id, { werte }, c.konto.id, c.z, c.anlass);
   return uebersetzer2('automatisierung.karte.feld.ergebnis', { felder: zeile });
 };
 
@@ -70,9 +70,9 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
     // Testlauf (#795): je Empfänger mit seinen Rechten – wer etwas nicht sehen darf, steht dabei.
     const teils: string[] = []; const gar: string[] = [];
     for (const id of an) {
-      const wer = (await c.dienst.aufgabenEmpfaenger(id)).an;
+      const wer = (await c.dienst.aufgaben.aufgabenEmpfaenger(id)).an;
       const f = await c.fuelleFuer(k.text, wer);
-      if (!f.mappe) gar.push(await c.dienst.name(wer)); else if (f.verborgen) teils.push(await c.dienst.name(wer));
+      if (!f.mappe) gar.push(await c.dienst.kern.name(wer)); else if (f.verborgen) teils.push(await c.dienst.kern.name(wer));
     }
     return [uebersetzer2('automatisierung.karte.aufgabe.trocken', { als, anzahl: an.length, text }),
       ...(teils.length ? [uebersetzer2('automatisierung.karte.aufgabe.trocken.nicht-sichtbar', { anzahl: teils.length, namen: teils.join(', ') })] : []),
@@ -90,7 +90,7 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   // Platzhalter je Empfänger mit dessen Rechten (#795) – fürs Konto leer ist er schon oben abgefangen.
   const fuer = async (wer: string | null) => (await c.fuelleFuer(k.text, wer)).text.trim() || text;
   for (const id of an) {
-    const r = await c.dienst.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist });
+    const r = await c.dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist });
     if (r.ohneLeserecht) ohneLeserecht++;
     if (r.vorhanden) vorhanden++;
     if (!r.an) admins++;
@@ -118,7 +118,7 @@ DANN_AUSFUEHRER.favoriten = async (k: DannKarte, c: KartenKontext) => {
   const von = typeof c.daten.von === 'string' ? c.daten.von : null;
   if (!von) return uebersetzer2('automatisierung.karte.favoriten.niemand');
   if (c.trocken) return uebersetzer2('automatisierung.karte.favoriten.trocken');
-  const n = await c.dienst.favoritenMelden(c.mappe.id, von);
+  const n = await c.dienst.ohneEmpfaenger.favoritenMelden(c.mappe.id, von);
   return n ? uebersetzer2('automatisierung.karte.favoriten.ergebnis', { anzahl: n }) : uebersetzer2('automatisierung.karte.favoriten.niemand');
 };
 
@@ -149,6 +149,6 @@ DANN_AUSFUEHRER.paket = async (k: DannKarte, c: KartenKontext) => {
   // Nur Ids, Kennung und Zeit – nie Inhalte der Ablage. Feste Id je Automatisierung, Karte und Tag: Läuft der Zeitplan auf
   // zwei Servern oder wird der Lauf wiederholt, bekommt das Paket den Tag trotzdem nur einmal.
   const id = uuidAus(`zeitplan.ausgefuehrt|${a.id}|${k.id}|${typeof c.daten.tag === 'string' ? c.daten.tag : c.ereignisId}`);
-  await c.dienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
+  await c.dienst.ereignisseDienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
   return uebersetzer2('automatisierung.karte.paket.ergebnis', zeile);
 };

@@ -26,15 +26,15 @@ async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'status', label: 'Status', typ: 'auswahl', optionen: ['offen', 'erledigt'] },
     { key: 'bemerkung', label: 'Bemerkung', typ: 'text' },
@@ -51,25 +51,25 @@ async function aufbau() {
 describe('Dann-Karte „Feld ändern“ (#676)', () => {
   it('setzt nur die gewählten Felder mit Platzhaltern und heute; Historie „durch Automatisierung“; löst sich nicht selbst aus', async () => {
     const { d, admin, vertrag, motor, ereignis } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', status: 'offen', kuendbar_bis: '2031-09-30' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', status: 'offen', kuendbar_bis: '2031-09-30' } }, admin.id);
     const a = await motor.lege({ name: 'Erledigt', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
       dann: [{ art: 'feld', werte: { status: 'erledigt', bemerkung: 'Geprüft: {name} am {heute}', geprueft: 'heute+1' } }] }, admin.id);
     const trocken = await motor.wiedergeben(a.id, m.id, true);
     assert.match(trocken.schritte[2].text!, /^Würde setzen: Status = erledigt, Bemerkung = Geprüft: Strom am/);
-    assert.equal((await d.holeMappe(m.id)).mappe.werte.status, 'offen', 'Trockenlauf ändert nichts');
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.status, 'offen', 'Trockenlauf ändert nichts');
     // Über den Katalog: Notiz → Lauf → Feld geändert → Ereignis der Automatisierung (löst sie nicht noch einmal aus).
     motor.start();
     try {
-      await d.legeNotizAn(m.id, 'Anruf', admin.id);
+      await d.mappenNotizen.legeNotizAn(m.id, 'Anruf', admin.id);
       await spaeter(10_000, () => d.ereignisse.verteile());
       await spaeter(10_000, () => d.ereignisse.verteile());
     } finally { motor.stop(); }
-    const neu = (await d.holeMappe(m.id)).mappe.werte;
+    const neu = (await d.mappen.holeMappe(m.id)).mappe.werte;
     assert.equal(neu.status, 'erledigt');
     assert.equal(neu.geprueft, verschiebe(heuteIn(), 1));
     assert.match(String(neu.bemerkung), /^Geprüft: Strom am \d{2}\.\d{2}\.\d{4}$/);
     assert.equal(neu.kuendbar_bis, '2031-09-30', 'nicht gewählte Felder bleiben');
-    const h = (await d.historie(m.id)).find((x) => x.art === 'geaendert');
+    const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'geaendert');
     assert.equal((h?.daten as { automatisierung?: { name: string } }).automatisierung?.name, 'Erledigt');
     const laeufe = await motor.laeufe(a.id);
     assert.deepEqual(laeufe.filter((l) => !l.test).map((l) => l.zustand), ['abgeschlossen'], 'genau ein echter Lauf');
@@ -77,7 +77,7 @@ describe('Dann-Karte „Feld ändern“ (#676)', () => {
 
   it('prüft wie im Formular: ungültiger Wert lässt den Lauf fehlschlagen (wiederholbar)', async () => {
     const { d, admin, vertrag, motor, ereignis } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
     const a = await motor.lege({ name: 'Kaputt', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id }, dann: [{ art: 'feld', werte: { status: 'gibtsnicht' } }] }, admin.id);
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     const [l] = await motor.laeufe(a.id);
@@ -93,14 +93,14 @@ describe('Dann-Karte „Feld ändern“ (#676)', () => {
 describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
   it('Handbuch-Beispiel: Kündbar bis in 7 Tagen → Aufgabe an Verantwortlich, mit Fälligkeit und Platzhaltern', async () => {
     const { d, admin, lena, vertrag, motor } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: verschiebe(heuteIn(), 7), verantwortlich: lena.id } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: verschiebe(heuteIn(), 7), verantwortlich: lena.id } }, admin.id);
     const a = await motor.lege({ name: 'Kündigung prüfen', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'kuendbar_bis', vorlauf: 7, einheit: 'tage', uhrzeit: '00:00' },
       und: { modus: 'alle', karten: [{ art: 'bedingung', bedingung: { art: 'feld', feld: 'verantwortlich', op: 'nichtLeer' } }] },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'feld', feld: 'verantwortlich' }], faellig: 3, text: 'Bitte {name} prüfen – kündbar bis {kuendbar_bis}.' }] }, admin.id);
     await motor.zeitplan();
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
-    const aufgaben = (await d.alleAufgaben()).filter((x) => x.empfaengerId === lena.id && x.mappeId === m.id);
+    const aufgaben = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.empfaengerId === lena.id && x.mappeId === m.id);
     assert.equal(aufgaben.length, 1);
     assert.match(aufgaben[0].text, /^Bitte Strom prüfen – kündbar bis \d{2}\.\d{2}\.\d{4}\.$/);
     // Seit #724: aus „Datum erreicht“ eine Frist zum Datum der Mappe (erledigt sich selbst, wenn es sich ändert).
@@ -110,20 +110,20 @@ describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
 
   it('Benachrichtigung an eine Rolle gebündelt; ohne Leserecht trotzdem an der Mappe (#798)', async () => {
     const { d, admin, lena, vertrag, motor, ereignis } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-    const rollen = await d.listeRollen();
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+    const rollen = await d.postSystemmappen.listeRollen();
     const mitglied = rollen.find((r) => r.system && /Mitglied/.test(r.name))!;
     // Mitglieder dürfen Verträge nicht lesen.
-    await d.setzeBerechtigungen(vertrag.id, { regeln: [{ wer: { art: 'rolle', id: rollen.find((r) => /Administrator/.test(r.name))?.id ?? '' }, rechte: ['C', 'R', 'U', 'D'] }] }, true).catch(() => null);
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { regeln: [{ wer: { art: 'rolle', id: rollen.find((r) => /Administrator/.test(r.name))?.id ?? '' }, rechte: ['C', 'R', 'U', 'D'] }] }, true).catch(() => null);
     const a = await motor.lege({ name: 'Melden', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
       dann: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'rolle', id: mitglied.id }, { art: 'person', id: lena.id }], text: 'Neue Notiz an {titel}' }] }, admin.id);
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
-    const fuerLena = (await d.alleAufgaben()).filter((x) => x.empfaengerId === lena.id);
+    const fuerLena = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.empfaengerId === lena.id);
     assert.equal(fuerLena.length, 1, 'gebündelt, Rolle und Person sind dieselbe Lena');
-    const lesbar = (await d.sichtbarFuer(lena.id, [m.id])).has(m.id);
+    const lesbar = (await d.rechtepruefung.sichtbarFuer(lena.id, [m.id])).has(m.id);
     assert.equal(fuerLena[0].mappeId, m.id, 'seit #798 immer an der Mappe – ohne Leserecht nur mit Hinweis');
     if (!lesbar) assert.match(l.schritte[2].text!, /darf die Mappe nicht sehen/);
   });

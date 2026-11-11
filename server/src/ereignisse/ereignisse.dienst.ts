@@ -22,11 +22,11 @@ export interface EreignisseTeile { rechte: ZugriffDienst; typpakete: TypPakete; 
 
 /** Was die Ereignisse außer dem Kern brauchen – vom Dienst hereingereicht. */
 export interface EreignisseAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   /** Wecker des Paket-Läufers (Feld am Dienst, vom Start gesetzt). */
   ereignisWecker(): (() => void) | null;
-  /** Stand der Texterkennung nachtragen (#796; volltext/, Schicht 3, über die Fassade). */
+  /** Stand der Texterkennung nachtragen (#796; volltext/, Schicht 3, über den Anschluss). */
   nachTexterkennungsEreignis(paket: string, e: { art: string; daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }): Promise<void>;
 }
 

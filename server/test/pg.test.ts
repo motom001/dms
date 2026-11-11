@@ -48,14 +48,14 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     betrieb = new Betrieb(pgBetriebSpeicher(sql, HAUSHALT), undefined, tresor);
     await betrieb.laden();
     await betrieb.speichereAdresse('http://nas:3000');
-    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     // Texterkennung wie im Betrieb (#45); in GitHub Actions sind tesseract und poppler installiert.
     const { Texterkennung } = await import('../src/texterkennung');
     texterkennung = new Texterkennung(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT), pgBetriebSpeicher(sql, HAUSHALT));
-    dienst.verbindeTexterkennung(texterkennung);
+    dienst.dokumente.verbindeTexterkennung(texterkennung);
     await texterkennung.start();
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
         betrieb, tresor, texterkennung, sicher: () => betrieb.cookieNurHttps(),
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
@@ -1031,21 +1031,21 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
     await repo.speicherePaket({ id: 'tx404', name: 'Tx', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
     const ereignisse = async () => { await d.ereignisse.verteile(); return (await sql`SELECT art, daten FROM paket_ereignisse WHERE paket_id = 'tx404' ORDER BY erstellt`) as Array<{ art: string; daten: Record<string, string> }>; };
     try {
-      const { post } = await d.sichereSystem();
+      const { post } = await d.systemausstattung.sicherstellen();
       const reg = post.register.find((x) => x.art === 'dokumente')!.key;
-      const vorher = (await d.listeMappen(post.id)).length;
+      const vorher = (await d.mappen.listeMappen(post.id)).length;
       stoeren = true;
-      await assert.rejects(d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' }), /Ablago fällt aus/);
-      assert.equal((await d.listeMappen(post.id)).length, vorher, 'keine Post ohne Ereignis');
+      await assert.rejects(d.post.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' }), /Ablago fällt aus/);
+      assert.equal((await d.mappen.listeMappen(post.id)).length, vorher, 'keine Post ohne Ereignis');
       stoeren = false;
-      const p = await d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
+      const p = await d.post.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
       stoeren = true;
-      await assert.rejects(d.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
-      const m = await d.holeMappe(p.id);
+      await assert.rejects(d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
+      const m = await d.mappen.holeMappe(p.id);
       assert.equal(m.dokumente.length, 0, 'kein Dokument ohne Ereignis');
-      assert.ok(!(await d.historie(p.id)).some((h) => h.art === 'dokument_hochgeladen'), 'auch keine Historie');
+      assert.ok(!(await d.mappenHistorie.historie(p.id)).some((h) => h.art === 'dokument_hochgeladen'), 'auch keine Historie');
       stoeren = false;
-      const doc = (await d.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null)).dokument;
+      const doc = (await d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null)).dokument;
       assert.deepEqual((await ereignisse()).map((e) => `${e.art}:${e.daten.mappe}:${e.daten.dokument ?? ''}`), [`post.angelegt:${p.id}:`, `dokument.hochgeladen:${p.id}:${doc.id}`]);
     } finally {
       await repo.loeschePaket('tx404');

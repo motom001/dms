@@ -37,10 +37,10 @@ function faelle(pg: boolean) {
     it('findet „Backofen“ mit „Ofen“, Wortformen weiter, ganze Wörter in Anführungszeichen', async () => {
       const r = await repo(pg);
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await d.legeTypAn({ name: 'Gerät', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Gerät', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
       const text = async (nr: string, inhalt: string) => {
-        const m = await d.legeMappeAn({ typId: typ.id, werte: { nr } });
-        const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
+        const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr } });
+        const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
         await r.ocrSetze(dokument.id, { stand: 'fertig', text: inhalt });
         return m;
       };
@@ -50,7 +50,7 @@ function faelle(pg: boolean) {
       await text('G-4', 'Waschmaschine');
       const ich = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
       const suche = async (s: string) => {
-        const x = await d.seite(ich, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' });
+        const x = await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' });
         return { titel: x.mappen.map((m) => m.titel).sort(), ausschnitte: (x as { ausschnitte?: Record<string, { text: string }> }).ausschnitte ?? {} };
       };
       const ofen = await suche('Ofen');

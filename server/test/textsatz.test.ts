@@ -188,11 +188,11 @@ for (const pg of [false, true]) {
       const tresor = new Tresor(speicherEinstellungen(), join(mkdtempSync(join(tmpdir(), 'dms-satz-')), 'dms.schluessel'), () => null);
       await tresor.laden(); await tresor.erzeuge();
       const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-      const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.benutzerspiegel());
+      const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
       d.verbindeKonten(konten.papierkorbHaken());
       const { benutzer: katrin } = await konten.einrichten({ email: 'katrin@example.org', name: 'Katrin', passwort: 'ein-langes-passwort' });
       const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, katrin.id)).benutzer;
-      await d.gleicheBenutzerAb(await konten.listeBenutzer());
+      await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       const p = new Paketverwaltung(d, { version: () => '0.238.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
       const ICH = { id: katrin.id, email: katrin.email };
       const h = await p.hochladen(archiv(PAKET), ICH);
@@ -208,8 +208,8 @@ for (const pg of [false, true]) {
       const wir = ((await verwaltend(katrin, 'POST', '/api/mappen', { body: { typId: inst.typen.organisation, werte: {
         name: 'Tischlerei Brandt', eigene_organisation: true, kundennummer: 'EIGEN-1', strasse: 'Hauptstraße', hausnummer: '5', plz: '01067', ort: 'Dresden', email: 'info@example.org',
       } } })).body as { id: string }).id;
-      const anbieter = (await d.legeMappeAn({ typId: inst.typen.organisation, werte: { name: 'Stadtwerke Musterstadt', kundennummer: 'K-4711', kennwort: 'streng-geheim', strasse: 'Am Werk', hausnummer: '1', plz: '12345', ort: 'Musterstadt' } }, katrin.id)).id;
-      const vertrag = (await d.legeMappeAn({ typId: inst.typen.vertrag, werte: {
+      const anbieter = (await d.mappen.legeMappeAn({ typId: inst.typen.organisation, werte: { name: 'Stadtwerke Musterstadt', kundennummer: 'K-4711', kennwort: 'streng-geheim', strasse: 'Am Werk', hausnummer: '1', plz: '12345', ort: 'Musterstadt' } }, katrin.id)).id;
+      const vertrag = (await d.mappen.legeMappeAn({ typId: inst.typen.vertrag, werte: {
         bezeichnung: 'Wohnung **Lena**', von: anbieter, art: miete.id, vertragsnummer: 'V-{art}-42', kuendigen_bis: '2026-12-31', betrag: { betrag: 650, waehrung: 'EUR' },
         zugang: { neu: 'auch-geheim' }, notiz: '- erste Zeile\n[Link](https://example.org)',
       } }, katrin.id)).id;
@@ -287,14 +287,14 @@ for (const pg of [false, true]) {
     it('Passwortfelder nie – eigene Vorlage im Register „Vorlagen“ mit {zugang} oder {von.kennwort} wird abgelehnt', async () => {
       const x = await aufbau('textsatz_passwort');
       for (const platz of ['{zugang}', '{von.kennwort}']) {
-        const dok = (await x.d.ladeHoch(x.miete.id, { register: 'vorlagen', name: `eigen-${platz.length}.md`, typ: 'text/markdown' }, Buffer.from(`Zugang: ${platz}`), x.katrin.id)).dokument;
+        const dok = (await x.d.dokumente.ladeHoch(x.miete.id, { register: 'vorlagen', name: `eigen-${platz.length}.md`, typ: 'text/markdown' }, Buffer.from(`Zugang: ${platz}`), x.katrin.id)).dokument;
         await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: dok.id } }), fehler(422, /Passwortfeld/));
       }
       // HTML, das nachträglich in eine Vorlage kam, ebenso.
-      const html = (await x.d.ladeHoch(x.miete.id, { register: 'vorlagen', name: 'html.md', typ: 'text/markdown' }, Buffer.from('Hallo <img src=x>'), x.katrin.id)).dokument;
+      const html = (await x.d.dokumente.ladeHoch(x.miete.id, { register: 'vorlagen', name: 'html.md', typ: 'text/markdown' }, Buffer.from('Hallo <img src=x>'), x.katrin.id)).dokument;
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: html.id } }), fehler(422, /HTML/));
       // Ein Dokument, das keine Vorlage dieser Mappe ist: 404.
-      const fremd = (await x.d.ladeHoch(x.vertrag, { register: 'dokumente', name: 'notiz.md', typ: 'text/markdown' }, Buffer.from('Hallo'), x.katrin.id)).dokument;
+      const fremd = (await x.d.dokumente.ladeHoch(x.vertrag, { register: 'dokumente', name: 'notiz.md', typ: 'text/markdown' }, Buffer.from('Hallo'), x.katrin.id)).dokument;
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: fremd.id } }), fehler(404));
     });
 
@@ -304,14 +304,14 @@ for (const pg of [false, true]) {
       const gefragt: string[][] = [];
       // Ohne Ansicht mit Recht E sagt die echte Prüfstelle nein – hier sagt sie ja und merkt sich die Frage.
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId }, body: { ziel: 'herunterladen' } }), fehler(403, /Exportrecht/));
-      x.d.pruefeAusgang = async (_ich, _z, weg, ids) => { gefragt.push([weg, ...ids]); };
+      x.d.ausgang.pruefeAusgang = async (_ich, _z, weg, ids) => { gefragt.push([weg, ...ids]); };
       const r = await x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId }, body: { ziel: 'herunterladen' } });
       assert.deepEqual(gefragt, [['herunterladen', x.vertrag]]);
       assert.equal(r.datei?.mime, 'application/pdf');
       assert.match(String(r.datei?.name), /^Kündigung .*\.pdf$/);
       assert.equal((await x.d.kern.repo.listeDokumente(x.vertrag)).length, 0, 'nichts abgelegt');
       // Darf die Prüfstelle nicht, geht nichts hinaus.
-      x.d.pruefeAusgang = async () => { throw new Fachfehler(403, 'nein'); };
+      x.d.ausgang.pruefeAusgang = async () => { throw new Fachfehler(403, 'nein'); };
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId }, body: { ziel: 'herunterladen' } }), fehler(403));
       // Nur Lesen am Vertrag: Liste ja, Ablegen 403.
       await x.d.kern.repo.setzeBerechtigungen(x.inst.typen.vertrag, { grund: { C: false, R: true, U: false, D: false, P: false }, regeln: [] });
@@ -325,8 +325,8 @@ for (const pg of [false, true]) {
 
     it('Briefkopf aus der Person im Feld „an“; ohne eigene Organisation und ohne „an“ kein Briefkopf', async () => {
       const x = await aufbau('textsatz_an');
-      const lena = (await x.d.legeMappeAn({ typId: x.inst.typen.person, werte: { vorname: 'Lena', nachname: 'Beispiel', strasse: 'Lindenweg', hausnummer: '3', plz: '01099', ort: 'Dresden' } }, x.katrin.id)).id;
-      await x.d.aendereMappe(x.vertrag, { werte: { an: lena } }, x.katrin.id);
+      const lena = (await x.d.mappen.legeMappeAn({ typId: x.inst.typen.person, werte: { vorname: 'Lena', nachname: 'Beispiel', strasse: 'Lindenweg', hausnummer: '3', plz: '01099', ort: 'Dresden' } }, x.katrin.id)).id;
+      await x.d.mappen.aendereMappe(x.vertrag, { werte: { an: lena } }, x.katrin.id);
       const v = ((await x.als(x.katrin, 'GET', '/api/mappen/:id/vorlagen', { params: { id: x.vertrag } })).body as VorlagenListe).vorlagen[0];
       assert.equal(v.absender, 'Lena Beispiel');
       const e = (await x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId } })).body as TextGesetzt;
@@ -336,7 +336,7 @@ for (const pg of [false, true]) {
 
     it('Grenze: mehr Seiten als erlaubt ergibt 413', async () => {
       const x = await aufbau('textsatz_grenze');
-      await x.d.aendereMappe(x.vertrag, { werte: { notiz: 'Zeile mit etwas Text, der den Brief lang macht.\n'.repeat(TEXTSATZ_SEITEN * 60) } }, x.katrin.id);
+      await x.d.mappen.aendereMappe(x.vertrag, { werte: { notiz: 'Zeile mit etwas Text, der den Brief lang macht.\n'.repeat(TEXTSATZ_SEITEN * 60) } }, x.katrin.id);
       const v = ((await x.als(x.katrin, 'GET', '/api/mappen/:id/vorlagen', { params: { id: x.vertrag } })).body as VorlagenListe).vorlagen[0];
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId } }), fehler(413, new RegExp(`${TEXTSATZ_SEITEN} Seiten`)));
     });

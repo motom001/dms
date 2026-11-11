@@ -122,8 +122,8 @@ function faelle(pg: boolean) {
       return { vorschau: h.vorschau, paket: await p.installiere({ upload: h.upload, bestaetigt: true, beispiele }, ICH) };
     }
     const vertraege = async (d: Dienst) => {
-      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
-      return (await d.listeMappen(typ.id)).sort((a, b) => String(a.werte.nr).localeCompare(String(b.werte.nr)));
+      const typ = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
+      return (await d.mappen.listeMappen(typ.id)).sort((a, b) => String(a.werte.nr).localeCompare(String(b.werte.nr)));
     };
 
     it('legt die Dokumente wie beim Hochladen an: Register, Name, Datum, Herkunft, Volltext; ohne Mappen-Ereignisse', async () => {
@@ -160,7 +160,7 @@ function faelle(pg: boolean) {
       // Das zweite Beispiel scheitert (doppelte eindeutige Nummer) – das erste samt Dokument muss wieder weg.
       const kaputt = mitBeispielen('- typ: vertrag\n  werte: { nr: A-1 }\n  dokumente:\n    - { datei: beispiele/heizung/wartungsvertrag.pdf }\n- typ: vertrag\n  werte: { nr: A-1 }\n');
       await assert.rejects(installiere(p, { ...kaputt, 'inhalt/mappentypen.yaml': TYPEN.replace('{ key: nr, label: Nummer, typ: text, pflicht: true }', '{ key: nr, label: Nummer, typ: text, pflicht: true, eindeutig: true }') }), /Beispiel/);
-      assert.ok(!(await d.listeTypen()).some((t) => t.schluessel?.startsWith('demo_')), 'keine Typen übrig');
+      assert.ok(!(await d.mappentypen.listeTypen()).some((t) => t.schluessel?.startsWith('demo_')), 'keine Typen übrig');
       assert.deepEqual(await d.kern.repo.listePakete(), []);
       await assert.rejects(dateien.lies(createHashHex(DATEIEN['inhalt/beispiele/heizung/wartungsvertrag.pdf'] as Buffer)), 'Datei der zurückgenommenen Mappe ist weg');
     });
@@ -169,34 +169,34 @@ function faelle(pg: boolean) {
       const { d, p, dateien } = await aufbau();
       await installiere(p);
       const [strom] = await vertraege(d);
-      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
-      await d.aendereMappe(strom.id, { werte: { ...strom.werte, nr: 'SV-4712' } }, ICH.id);
+      const typ = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
+      await d.mappen.aendereMappe(strom.id, { werte: { ...strom.werte, nr: 'SV-4712' } }, ICH.id);
       await assert.rejects(p.entferne('demo', ICH), (e) => gruende(/„SV-4712“ wurde geändert und bleibt/)(e) && gruende(/1 Mappe/)(e));
       assert.equal((await vertraege(d)).length, 2, 'beim Scheitern bleibt alles');
       // Geändertes Beispiel selbst löschen – dann geht das Paket samt den übrigen Beispielen.
-      await d.entferneMappenEndgueltig([strom.id]);
+      await d.loeschen.entferneMappenEndgueltig([strom.id]);
       const sha = (await d.listeDokumente((await vertraege(d))[0].id))[0].sha256;
       const r = await p.entferne('demo', ICH);
       assert.deepEqual(r.beispieleBehalten, []);
-      assert.ok(!(await d.listeTypen()).some((t) => t.id === typ.id));
+      assert.ok(!(await d.mappentypen.listeTypen()).some((t) => t.id === typ.id));
       await assert.rejects(dateien.lies(sha), 'Dateien der Beispiele sind weg');
     });
 
     it('„Beispiele entfernen“: unveränderte gehen, geänderte und verwiesene bleiben und werden genannt', async () => {
       const { d, p } = await aufbau();
       await installiere(p);
-      const firmaTyp = (await d.listeTypen()).find((t) => t.schluessel === 'demo:firma')!;
+      const firmaTyp = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:firma')!;
       const [strom, wartung] = await vertraege(d);
       // Ein eigener Vertrag verweist auf die Beispiel-Firma; an den Wartungsvertrag kommt ein weiteres Dokument.
-      const firma = (await d.listeMappen(firmaTyp.id))[0];
-      const vertragTyp = (await d.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
-      await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'EIGEN-1', firma: firma.id } }, ICH.id);
-      await d.ladeHoch(wartung.id, { register: 'unterlagen', name: 'Nachtrag.pdf' }, PDF('Nachtrag Petra'), ICH.id);
+      const firma = (await d.mappen.listeMappen(firmaTyp.id))[0];
+      const vertragTyp = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
+      await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'EIGEN-1', firma: firma.id } }, ICH.id);
+      await d.dokumente.ladeHoch(wartung.id, { register: 'unterlagen', name: 'Nachtrag.pdf' }, PDF('Nachtrag Petra'), ICH.id);
       const r = await p.beispieleEntfernen('demo', ICH);
       assert.equal(r.entfernt, 1);
       assert.deepEqual(r.behalten.map((b) => [b.titel, b.grund]).sort(), [['Heizungsbau Beispiel GmbH', 'verwiesen'], ['WV-2023-17', 'geaendert']]);
-      assert.ok(!(await d.gibtMappe(strom.id)), 'unverändertes Beispiel samt Dokument weg');
-      assert.ok(await d.gibtMappe(wartung.id) && await d.gibtMappe(firma.id));
+      assert.ok(!(await d.eingangskanaele.gibtMappe(strom.id)), 'unverändertes Beispiel samt Dokument weg');
+      assert.ok(await d.eingangskanaele.gibtMappe(wartung.id) && await d.eingangskanaele.gibtMappe(firma.id));
       const nachher = (await d.kern.repo.listePakete()).find((x) => x.id === 'demo')!;
       assert.equal(nachher.beispielMappen, undefined, 'das Paket merkt sich keine Beispiele mehr');
       assert.deepEqual(Object.keys(nachher.beispiele ?? {}).sort(), ['heizung', 'wartung'], 'Schlüssel der gebliebenen bleiben für Verweise');
@@ -206,11 +206,11 @@ function faelle(pg: boolean) {
     it('Paket erstellen nimmt Dokumente der gewählten Beispiele nur auf Wunsch mit – und es lässt sich wieder installieren', async () => {
       const { d, p, e } = await aufbau();
       // Eigener Typ (nicht aus einem Paket) mit Beispiel-Mappe und Dokumenten: PDF, PNG und eines, das draußen bleibt.
-      const typ = await d.legeTypAn({ name: 'Urkunde', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name'] }, { key: 'scans', name: 'Scans', art: 'dokumente' }] } as never);
-      const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Geburtsurkunde Katrin' } }, ICH.id);
-      await d.ladeHoch(m.id, { register: 'scans', name: 'Geburtsurkunde Katrin.pdf' }, PDF('Urkunde Katrin'), ICH.id);
-      await d.ladeHoch(m.id, { register: 'scans', name: 'Rückseite.png' }, PNG, ICH.id);
-      await d.ladeHoch(m.id, { register: 'scans', name: 'Notiz.txt', typ: 'text/plain' }, Buffer.from('Notiz'), ICH.id);
+      const typ = await d.mappentypen.legeTypAn({ name: 'Urkunde', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name'] }, { key: 'scans', name: 'Scans', art: 'dokumente' }] } as never);
+      const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Geburtsurkunde Katrin' } }, ICH.id);
+      await d.dokumente.ladeHoch(m.id, { register: 'scans', name: 'Geburtsurkunde Katrin.pdf' }, PDF('Urkunde Katrin'), ICH.id);
+      await d.dokumente.ladeHoch(m.id, { register: 'scans', name: 'Rückseite.png' }, PNG, ICH.id);
+      await d.dokumente.ladeHoch(m.id, { register: 'scans', name: 'Notiz.txt', typ: 'text/plain' }, Buffer.from('Notiz'), ICH.id);
       const eingabe = { typen: [typ.id], sichten: [], beispiele: [m.id], wortlisten: [], id: 'urkunden', name: 'Urkunden', version: '1.0.0', beschreibung: 'Urkunden mit Beispielen.', autor: { name: 'Herr Özdemir', github: 'oezdemir' }, lizenz: 'MIT', lizenzArt: 'frei', dms: `>=${BEISPIEL_DOKUMENTE_AB}`, aenderungen: '' };
       const ohne = await e.pruefe(eingabe);
       assert.equal(ohne.inhalt.beispielDokumente, undefined);
@@ -232,8 +232,8 @@ function faelle(pg: boolean) {
       // In einer frischen Ablage: dieselben Dokumente an der Beispiel-Mappe.
       const ziel = await aufbau();
       await installiere(ziel.p, Object.fromEntries([...inhalt].map(([n, b]) => [n, b])));
-      const zt = (await ziel.d.listeTypen()).find((t) => t.schluessel === 'urkunden:urkunde')!;
-      const zm = (await ziel.d.listeMappen(zt.id))[0];
+      const zt = (await ziel.d.mappentypen.listeTypen()).find((t) => t.schluessel === 'urkunden:urkunde')!;
+      const zm = (await ziel.d.mappen.listeMappen(zt.id))[0];
       assert.deepEqual((await ziel.d.listeDokumente(zm.id)).map((x) => x.name).sort(), ['Geburtsurkunde Katrin.pdf', 'Rückseite.png']);
       assert.ok(p);
     });

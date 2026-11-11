@@ -22,12 +22,12 @@ const linkSchluessel = (link: string) => link.split('/passwort/')[1];
 /** DMS wie im Betrieb: Konten spiegeln Benutzer in Mappen. */
 async function aufbau() {
   const dienst = new Dienst(speicherRepo(), speicherDateien());
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas:3000', dienst.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas:3000', dienst.systemtypen.benutzerspiegel());
   const admin = imModus((await konten.einrichten({ email: 'admin@example.org', name: 'Anna Admin', passwort: 'ein-langes-passwort' })).benutzer);
-  const typen = await dienst.listeTypen();
+  const typen = await dienst.mappentypen.listeTypen();
   const benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
   const rolleTyp = typen.find((t) => t.system === 'rolle')!;
-  const sys = { mitglied: (await dienst.listeRollen()).find((r) => r.name === 'Mitglied')!.id };
+  const sys = { mitglied: (await dienst.postSystemmappen.listeRollen()).find((r) => r.name === 'Mitglied')!.id };
   return { dienst, konten, admin, benutzerTyp, rolleTyp, sys };
 }
 const ohneTyp = ({ id: _i, erstellt: _e, geaendert: _g, system: _s, ...rest }: Mappentyp) => rest;
@@ -36,7 +36,7 @@ describe('Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146)', 
   it('überführt ohne Mehrrechte für Benutzer; Admins ohne Sperre; Systemregeln bleiben', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien());
-    const t = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
     assert.equal(t.erstellenErlaubt, true);
     // Stand wie vor dem Update: Haken aus, eine Regel erteilt C und R, eine nur C.
     await repo.aendereTyp(t.id, { ...t, erstellenErlaubt: false, loeschenErlaubt: false });
@@ -44,17 +44,17 @@ describe('Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146)', 
       { id: 'a', name: 'Alle', wenn: [{ art: 'aufgabe' }], dann: { C: 'erteilen', R: 'erteilen' }, stopp: false },
       { id: 'b', name: 'Nur anlegen', wenn: [{ art: 'aufgabe' }], dann: { C: 'erteilen' }, stopp: false },
     ] });
-    assert.equal(await d.hakenUeberfuehren(), 1);
-    const neu = (await d.listeTypen()).find((x) => x.id === t.id)!;
+    assert.equal(await d.mappenTitel.hakenUeberfuehren(), 1);
+    const neu = (await d.mappentypen.listeTypen()).find((x) => x.id === t.id)!;
     assert.deepEqual(neu.berechtigungen!.grund, { C: false, R: true, U: true, D: false, P: true });
     assert.deepEqual(neu.berechtigungen!.regeln.map((r) => [r.name, r.dann]), [['Alle', { R: 'erteilen' }]]);
     assert.equal(neu.erstellenErlaubt, true);
-    assert.equal(await d.hakenUeberfuehren(), 0, 'nur einmal');
+    assert.equal(await d.mappenTitel.hakenUeberfuehren(), 0, 'nur einmal');
     // Ohne Zugriff (Admin, System): Anlegen und Löschen gehen.
-    const m = await d.legeMappeAn({ typId: t.id, werte: { titel: 'a' } });
-    await d.loescheMappe(m.id);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { titel: 'a' } });
+    await d.loeschen.loescheMappe(m.id);
     // Eingaben mit Haken haben keine Wirkung mehr.
-    const x = await d.aendereTyp(t.id, { ...ohneTyp(neu), erstellenErlaubt: false });
+    const x = await d.mappentypen.aendereTyp(t.id, { ...ohneTyp(neu), erstellenErlaubt: false });
     assert.equal(x.erstellenErlaubt, true);
   });
 });
@@ -63,20 +63,20 @@ describe('Mappentyp Benutzer (#26)', () => {
   it('gibt jedem Benutzer eine Mappe, die dem Konto folgt', async () => {
     const { dienst, konten, admin, benutzerTyp, sys } = await aufbau();
     assert.equal(benutzerTyp.name, 'Benutzer');
-    const m = (await dienst.holeMappe(admin.id)).mappe;
+    const m = (await dienst.mappen.holeMappe(admin.id)).mappe;
     assert.equal(m.typId, benutzerTyp.id);
     assert.deepEqual(m.werte, { name: 'Anna Admin', email: 'admin@example.org', rollen: [sys.mitglied], aktiv: true, abwesend: false, abwesend_von: null, abwesend_bis: null, vertreter: null });
     assert.equal(m.titel, 'Anna Admin');
 
     const r = await konten.legeBenutzerAn({ email: 'bernd@example.org' }, admin.id);
-    const b = (await dienst.holeMappe(r.benutzer.id)).mappe;
+    const b = (await dienst.mappen.holeMappe(r.benutzer.id)).mappe;
     assert.equal(b.werte.name, 'bernd@example.org', 'ohne Namen steht die E-Mail-Adresse im Namen');
     assert.deepEqual(b.werte.rollen, [sys.mitglied]);
     assert.equal(b.erstelltVon, admin.id);
 
     await konten.aendereProfil(admin, { name: 'Anna A.' });
     await konten.aendereEmail(admin, { email: 'anna@example.org', passwort: 'ein-langes-passwort' });
-    const neu = (await dienst.holeMappe(admin.id)).mappe;
+    const neu = (await dienst.mappen.holeMappe(admin.id)).mappe;
     assert.equal(neu.werte.name, 'Anna A.');
     assert.equal(neu.werte.email, 'anna@example.org');
   });
@@ -85,20 +85,20 @@ describe('Mappentyp Benutzer (#26)', () => {
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas:3000'); // noch ohne Spiegel
     const { benutzer } = await konten.einrichten({ email: 'alt@example.org', passwort: 'ein-langes-passwort' });
-    assert.equal((await dienst.listeTypen()).length, 0);
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer()); // zweiter Lauf ändert nichts
-    assert.equal((await dienst.listeTypen()).filter((t) => t.system).length, 3, 'Benutzer, Rolle, E-Mail');
-    assert.equal((await dienst.holeMappe(benutzer.id)).mappe.werte.email, 'alt@example.org');
-    assert.equal((await dienst.listeRollen()).length, 1, 'nur noch Mitglied (#818)');
+    assert.equal((await dienst.mappentypen.listeTypen()).length, 0);
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer()); // zweiter Lauf ändert nichts
+    assert.equal((await dienst.mappentypen.listeTypen()).filter((t) => t.system).length, 3, 'Benutzer, Rolle, E-Mail');
+    assert.equal((await dienst.mappen.holeMappe(benutzer.id)).mappe.werte.email, 'alt@example.org');
+    assert.equal((await dienst.postSystemmappen.listeRollen()).length, 1, 'nur noch Mitglied (#818)');
   });
 
   it('lässt sich erweitern, aber nicht löschen; Systemfelder bleiben fest', async () => {
     const { dienst, benutzerTyp, rolleTyp } = await aufbau();
-    await wirft(dienst.loescheTyp(benutzerTyp.id), 409, /Systemmappentyp/);
+    await wirft(dienst.mappentypen.loescheTyp(benutzerTyp.id), 409, /Systemmappentyp/);
     // Feld ergänzen und Systemfeld umbenennen: ja. Datentyp ändern oder Erstellen erlauben: nein.
     const felder = benutzerTyp.felder.map((f) => (f.key === 'email' ? { ...f, label: 'Mail', typ: 'zahl', eindeutig: false } : f));
-    const t = await dienst.aendereTyp(benutzerTyp.id, {
+    const t = await dienst.mappentypen.aendereTyp(benutzerTyp.id, {
       ...ohneTyp(benutzerTyp), erstellenErlaubt: true, loeschenErlaubt: true,
       felder: [...felder, { key: 'telefon', label: 'Telefon', typ: 'text' }],
     });
@@ -111,41 +111,41 @@ describe('Mappentyp Benutzer (#26)', () => {
     assert.equal(t.felder.find((f) => f.key === 'rollen')!.zielTypen?.[0], rolleTyp.id);
     assert.equal(t.erstellenErlaubt, false);
     assert.equal(t.loeschenErlaubt, false);
-    await wirft(dienst.aendereTyp(benutzerTyp.id, { ...ohneTyp(t), felder: t.felder.filter((f) => f.key !== 'aktiv') }), 422, /Aktiv/);
+    await wirft(dienst.mappentypen.aendereTyp(benutzerTyp.id, { ...ohneTyp(t), felder: t.felder.filter((f) => f.key !== 'aktiv') }), 422, /Aktiv/);
   });
 
   it('Mappen entstehen und verschwinden nicht in der Ablage', async () => {
     const { dienst, admin, benutzerTyp } = await aufbau();
-    await wirft(dienst.legeMappeAn({ typId: benutzerTyp.id, werte: { name: 'X', email: 'x@example.org', aktiv: true } }), 403);
-    await wirft(dienst.loescheMappe(admin.id), 403);
+    await wirft(dienst.mappen.legeMappeAn({ typId: benutzerTyp.id, werte: { name: 'X', email: 'x@example.org', aktiv: true } }), 403);
+    await wirft(dienst.loeschen.loescheMappe(admin.id), 403);
   });
 
   it('Sicherheit: Systemfelder sind in der Ablage nur lesbar, eigene Felder nicht', async () => {
     const { dienst, konten, admin, benutzerTyp, sys } = await aufbau();
     const r = await konten.legeBenutzerAn({ email: 'mitglied@example.org', name: 'Mia' }, admin.id);
     const { benutzer: mia } = await konten.passwortSetzen({ schluessel: linkSchluessel(r.link!), passwort: 'passwort-von-mia' });
-    const m = (await dienst.holeMappe(admin.id)).mappe;
+    const m = (await dienst.mappen.holeMappe(admin.id)).mappe;
     // Mia versucht, die E-Mail-Adresse der Administratorin zu übernehmen (danach „Passwort vergessen“).
-    await wirft(dienst.aendereMappe(admin.id, { werte: { ...m.werte, email: 'mia@boese.example' } }, mia.id), 403, /Benutzerverwaltung/);
-    await wirft(dienst.aendereMappe(r.benutzer.id, { werte: { rollen: [] } }, mia.id), 403);
-    await wirft(dienst.aendereMappe(admin.id, { werte: { aktiv: false } }, mia.id), 403);
-    await wirft(dienst.aendereMappe(admin.id, { werte: { name: 'Hacker' } }, mia.id), 403);
-    assert.equal((await dienst.holeMappe(admin.id)).mappe.werte.email, 'admin@example.org');
+    await wirft(dienst.mappen.aendereMappe(admin.id, { werte: { ...m.werte, email: 'mia@boese.example' } }, mia.id), 403, /Benutzerverwaltung/);
+    await wirft(dienst.mappen.aendereMappe(r.benutzer.id, { werte: { rollen: [] } }, mia.id), 403);
+    await wirft(dienst.mappen.aendereMappe(admin.id, { werte: { aktiv: false } }, mia.id), 403);
+    await wirft(dienst.mappen.aendereMappe(admin.id, { werte: { name: 'Hacker' } }, mia.id), 403);
+    assert.equal((await dienst.mappen.holeMappe(admin.id)).mappe.werte.email, 'admin@example.org');
     // Eigene Felder des Administrators sind normal bearbeitbar.
-    await dienst.aendereTyp(benutzerTyp.id, { ...ohneTyp(benutzerTyp), felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text' }] });
-    const neu = await dienst.aendereMappe(admin.id, { werte: { ...m.werte, telefon: '0351 123' } }, mia.id);
+    await dienst.mappentypen.aendereTyp(benutzerTyp.id, { ...ohneTyp(benutzerTyp), felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text' }] });
+    const neu = await dienst.mappen.aendereMappe(admin.id, { werte: { ...m.werte, telefon: '0351 123' } }, mia.id);
     assert.equal(neu.werte.telefon, '0351 123');
   });
 
   it('deaktiviert statt zu löschen; Verweise bleiben, der Titel bleibt der Name (#663)', async () => {
     const { dienst, konten, admin, benutzerTyp } = await aufbau();
-    const vertrag = await dienst.legeTypAn({ name: 'Vertrag', felder: [
+    const vertrag = await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
       { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true },
       { key: 'verantwortlich', label: 'Verantwortlicher Benutzer', typ: 'referenz', zielTyp: benutzerTyp.id },
     ] });
     const r = await konten.legeBenutzerAn({ email: 'paul@example.org', name: 'Paul' }, admin.id);
-    const v = await dienst.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Strom', verantwortlich: r.benutzer.id } }, admin.id);
-    assert.deepEqual((await dienst.holeMappe(r.benutzer.id)).rueckverweise.map((x) => x.quelleId), [v.id]);
+    const v = await dienst.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Strom', verantwortlich: r.benutzer.id } }, admin.id);
+    assert.deepEqual((await dienst.mappen.holeMappe(r.benutzer.id)).rueckverweise.map((x) => x.quelleId), [v.id]);
 
     // Eine nie angenommene Einladung ließe sich löschen – aber nicht, solange auf sie verwiesen wird.
     await wirft(konten.loescheBenutzer(admin, r.benutzer.id), 409, /Deaktiviere/);
@@ -153,58 +153,58 @@ describe('Mappentyp Benutzer (#26)', () => {
     await wirft(konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false }), 409, /Vertreter/);
     await konten.setzeAbwesenheit(admin, r.benutzer.id, { an: false, vertreterId: admin.id });
     await konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false });
-    const paul = (await dienst.holeMappe(r.benutzer.id)).mappe;
+    const paul = (await dienst.mappen.holeMappe(r.benutzer.id)).mappe;
     assert.equal(paul.werte.aktiv, false);
     assert.equal(paul.titel, 'Paul');
-    assert.equal((await dienst.holeMappe(v.id)).bezuege[r.benutzer.id].titel, 'Paul');
+    assert.equal((await dienst.mappen.holeMappe(v.id)).bezuege[r.benutzer.id].titel, 'Paul');
     await wirft(konten.loescheBenutzer(admin, r.benutzer.id), 409, /deaktiviert statt gelöscht/);
     await konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: true });
-    assert.equal((await dienst.holeMappe(r.benutzer.id)).mappe.titel, 'Paul');
+    assert.equal((await dienst.mappen.holeMappe(r.benutzer.id)).mappe.titel, 'Paul');
   });
 
   it('setzt alte Titel „… (ehemalig)“ beim Start zurück, auch in verweisenden Mappen (#663)', async () => {
     const repo = speicherRepo();
     const dienst = new Dienst(repo, speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas:3000', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas:3000', dienst.systemtypen.benutzerspiegel());
     const admin = imModus((await konten.einrichten({ email: 'admin@example.org', name: 'Anna Admin', passwort: 'ein-langes-passwort' })).benutzer);
-    const benutzerTyp = (await dienst.listeTypen()).find((t) => t.system === 'benutzer')!;
-    const notiz = await dienst.legeTypAn({ name: 'Notiz', titelVorlage: 'Notiz für {an}', felder: [{ key: 'an', label: 'An', typ: 'referenz', zielTyp: benutzerTyp.id }] });
+    const benutzerTyp = (await dienst.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+    const notiz = await dienst.mappentypen.legeTypAn({ name: 'Notiz', titelVorlage: 'Notiz für {an}', felder: [{ key: 'an', label: 'An', typ: 'referenz', zielTyp: benutzerTyp.id }] });
     const r = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id);
     const echt = await konten.legeBenutzerAn({ email: 'petra@example.org', name: 'Petra (ehemalig)' }, admin.id);
-    const n = await dienst.legeMappeAn({ typId: notiz.id, werte: { an: r.benutzer.id } }, admin.id);
+    const n = await dienst.mappen.legeMappeAn({ typId: notiz.id, werte: { an: r.benutzer.id } }, admin.id);
     await konten.passwortSetzen({ schluessel: linkSchluessel(r.link!), passwort: 'passwort-von-jonas' });
     await konten.setzeAbwesenheit(admin, r.benutzer.id, { an: false, vertreterId: admin.id });
     await konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false });
     // Stand einer älteren Version nachbauen: gespeicherte Titel mit Zusatz.
     await repo.setzeTitel([{ id: r.benutzer.id, titel: 'Jonas (ehemalig)' }, { id: n.id, titel: 'Notiz für Jonas (ehemalig)' }]);
-    assert.equal(await dienst.ehemaligZuruecksetzen(), 1);
-    assert.equal((await dienst.holeMappe(r.benutzer.id)).mappe.titel, 'Jonas');
-    assert.equal((await dienst.holeMappe(n.id)).mappe.titel, 'Notiz für Jonas');
+    assert.equal(await dienst.mappenTitel.ehemaligZuruecksetzen(), 1);
+    assert.equal((await dienst.mappen.holeMappe(r.benutzer.id)).mappe.titel, 'Jonas');
+    assert.equal((await dienst.mappen.holeMappe(n.id)).mappe.titel, 'Notiz für Jonas');
     // Wer wirklich so heißt und aktiv ist, bleibt unberührt; ein zweiter Lauf findet nichts mehr.
-    assert.equal((await dienst.holeMappe(echt.benutzer.id)).mappe.titel, 'Petra (ehemalig)');
-    assert.equal(await dienst.ehemaligZuruecksetzen(), 0);
+    assert.equal((await dienst.mappen.holeMappe(echt.benutzer.id)).mappe.titel, 'Petra (ehemalig)');
+    assert.equal(await dienst.mappenTitel.ehemaligZuruecksetzen(), 0);
   });
 
   it('löscht eine nie angenommene Einladung samt Mappe', async () => {
     const { dienst, konten, admin } = await aufbau();
     const r = await konten.legeBenutzerAn({ email: 'vertippt@exmaple.test' }, admin.id);
     await konten.loescheBenutzer(admin, r.benutzer.id);
-    await wirft(dienst.holeMappe(r.benutzer.id), 404);
+    await wirft(dienst.mappen.holeMappe(r.benutzer.id), 404);
   });
 
   it('Demo-Daten lassen Benutzer und Rollen in Ruhe', async () => {
     const { dienst, benutzerTyp } = await aufbau();
-    await dienst.legeTypAn({ name: 'Aufgabe', felder: [
+    await dienst.mappentypen.legeTypAn({ name: 'Aufgabe', felder: [
       { key: 'titel', label: 'Titel', typ: 'text', pflicht: true },
       { key: 'wer', label: 'Wer', typ: 'referenz', zielTyp: benutzerTyp.id, pflicht: true },
     ] });
-    const vorher = (await dienst.listeMappen()).length;
+    const vorher = (await dienst.mappen.listeMappen()).length;
     const r = await erzeugeDemo(dienst, 20, null);
     assert.ok(!('Benutzer' in r.erzeugt) && !('Rolle' in r.erzeugt));
-    assert.equal((await dienst.listeMappen()).length, vorher + r.gesamt);
-    assert.ok(!(await dienst.demoUebersicht()).some((u) => u.name === 'Benutzer' || u.name === 'Rolle'));
-    await dienst.entferneDemo();
-    assert.equal((await dienst.listeMappen()).length, vorher);
+    assert.equal((await dienst.mappen.listeMappen()).length, vorher + r.gesamt);
+    assert.ok(!(await dienst.datenschutzDienst.demoUebersicht()).some((u) => u.name === 'Benutzer' || u.name === 'Rolle'));
+    await dienst.datenschutzDienst.entferneDemo();
+    assert.equal((await dienst.mappen.listeMappen()).length, vorher);
   });
 
   it('Beispiele lassen sich laden, obwohl es die Systemtypen gibt', async () => {
@@ -218,98 +218,98 @@ describe('Mappentyp Benutzer (#26)', () => {
 describe('Mappentyp Rolle (#27)', () => {
   it('hat die Systemrolle Mitglied, geschützt – keine Systemrolle „Administrator“ mehr (#818)', async () => {
     const { dienst, rolleTyp, sys } = await aufbau();
-    await wirft(dienst.loescheTyp(rolleTyp.id), 409);
-    assert.equal((await dienst.listeRollen()).some((r) => r.name === 'Administrator'), false);
-    const mitglied = (await dienst.holeMappe(sys.mitglied)).mappe;
+    await wirft(dienst.mappentypen.loescheTyp(rolleTyp.id), 409);
+    assert.equal((await dienst.postSystemmappen.listeRollen()).some((r) => r.name === 'Administrator'), false);
+    const mitglied = (await dienst.mappen.holeMappe(sys.mitglied)).mappe;
     assert.equal(mitglied.systemKennung, systemrolleKennung('mitglied'));
-    await wirft(dienst.loescheMappe(sys.mitglied), 409, /Systemrollen/);
-    await wirft(dienst.aendereMappe(sys.mitglied, { werte: { name: 'Chef' } }), 403, /Systemrolle/);
+    await wirft(dienst.loeschen.loescheMappe(sys.mitglied), 409, /Systemrollen/);
+    await wirft(dienst.mappen.aendereMappe(sys.mitglied, { werte: { name: 'Chef' } }), 403, /Systemrolle/);
     // Eigene Felder an Systemrollen sind erlaubt.
-    await dienst.aendereTyp(rolleTyp.id, { ...ohneTyp(rolleTyp), felder: [...rolleTyp.felder, { key: 'beschreibung', label: 'Beschreibung', typ: 'langtext' }] });
-    assert.equal((await dienst.aendereMappe(sys.mitglied, { werte: { name: 'Mitglied', beschreibung: 'Alle' } })).werte.beschreibung, 'Alle');
+    await dienst.mappentypen.aendereTyp(rolleTyp.id, { ...ohneTyp(rolleTyp), felder: [...rolleTyp.felder, { key: 'beschreibung', label: 'Beschreibung', typ: 'langtext' }] });
+    assert.equal((await dienst.mappen.aendereMappe(sys.mitglied, { werte: { name: 'Mitglied', beschreibung: 'Alle' } })).werte.beschreibung, 'Alle');
   });
 
   it('Umstellung #818: die frühere Systemrolle „Administrator“ wird eine gewöhnliche Rolle ohne Mitglieder', async () => {
     const repo = speicherRepo();
     const vorher = new Dienst(repo, speicherDateien());
-    await vorher.listeRollen();
-    const typen = await vorher.listeTypen();
+    await vorher.postSystemmappen.listeRollen();
+    const typen = await vorher.mappentypen.listeTypen();
     const rolleTyp = typen.find((t) => t.system === 'rolle')!, benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
     // Stand vor dem Update: Mappe rolle:admin, eine Person hat sie.
     const alt = await repo.legeMappeAn('00000000-0000-4000-8000-0000000000ad', rolleTyp.id, { name: 'Administrator' }, [], null, false, 'rolle:admin');
-    const mitglied = (await vorher.listeRollen()).find((r) => r.name === 'Mitglied')!.id;
+    const mitglied = (await vorher.postSystemmappen.listeRollen()).find((r) => r.name === 'Mitglied')!.id;
     await repo.legeMappeAn('00000000-0000-4000-8000-0000000000b1', benutzerTyp.id, { name: 'Lena', email: 'lena@example.org', rollen: [alt.id, mitglied], aktiv: true }, [], null);
     const nachher = new Dienst(repo, speicherDateien());
     // Der Start nach dem Update (#963: die Systemausstattung räumt auf; nachschlagen allein ändert nichts).
-    await nachher.sichereSystem();
-    await nachher.listeRollen();
-    const m = (await nachher.holeMappe(alt.id)).mappe;
+    await nachher.systemausstattung.sicherstellen();
+    await nachher.postSystemmappen.listeRollen();
+    const m = (await nachher.mappen.holeMappe(alt.id)).mappe;
     assert.equal(m.systemKennung, null, 'keine Systemrolle mehr');
-    assert.deepEqual((await nachher.holeMappe('00000000-0000-4000-8000-0000000000b1')).mappe.werte.rollen, [mitglied]);
-    assert.equal((await nachher.listeRollen()).find((r) => r.id === alt.id)?.system, false);
+    assert.deepEqual((await nachher.mappen.holeMappe('00000000-0000-4000-8000-0000000000b1')).mappe.werte.rollen, [mitglied]);
+    assert.equal((await nachher.postSystemmappen.listeRollen()).find((r) => r.id === alt.id)?.system, false);
     // Jetzt löschbar wie jede Rolle.
-    await nachher.loescheMappe(alt.id);
+    await nachher.loeschen.loescheMappe(alt.id);
   });
 
   it('Rollen lassen sich anlegen, ändern und löschen; Namen sind eindeutig', async () => {
     const { dienst, rolleTyp } = await aufbau();
-    const steuer = await dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Steuern' } });
-    await wirft(dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'steuern' } }), 422);
-    await wirft(dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Mitglied' } }), 422);
-    assert.equal((await dienst.aendereMappe(steuer.id, { werte: { name: 'Steuer & Finanzen' } })).titel, 'Steuer & Finanzen');
-    await dienst.loescheMappe(steuer.id);
-    assert.equal((await dienst.listeRollen()).length, 1);
+    const steuer = await dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Steuern' } });
+    await wirft(dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'steuern' } }), 422);
+    await wirft(dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Mitglied' } }), 422);
+    assert.equal((await dienst.mappen.aendereMappe(steuer.id, { werte: { name: 'Steuer & Finanzen' } })).titel, 'Steuer & Finanzen');
+    await dienst.loeschen.loescheMappe(steuer.id);
+    assert.equal((await dienst.postSystemmappen.listeRollen()).length, 1);
   });
 
   it('Zuordnung nur über die Benutzerverwaltung; Systemrolle folgt dem Konto', async () => {
     const { dienst, konten, admin, rolleTyp, sys } = await aufbau();
-    const steuer = await dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Steuern' } });
-    const garten = await dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Garten' } });
+    const steuer = await dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Steuern' } });
+    const garten = await dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Garten' } });
     const r = await konten.legeBenutzerAn({ email: 'b@example.org', name: 'Bea' }, admin.id);
-    await dienst.setzeRollen(r.benutzer.id, [steuer.id, garten.id], admin.id);
-    assert.deepEqual((await dienst.holeMappe(r.benutzer.id)).mappe.werte.rollen, [sys.mitglied, steuer.id, garten.id]);
-    assert.deepEqual((await dienst.weitereRollen()).get(r.benutzer.id), [steuer.id, garten.id]);
+    await dienst.postSystemmappen.setzeRollen(r.benutzer.id, [steuer.id, garten.id], admin.id);
+    assert.deepEqual((await dienst.mappen.holeMappe(r.benutzer.id)).mappe.werte.rollen, [sys.mitglied, steuer.id, garten.id]);
+    assert.deepEqual((await dienst.systemtypen.weitereRollen()).get(r.benutzer.id), [steuer.id, garten.id]);
     // Systemrollen lassen sich so nicht vergeben.
-    await wirft(dienst.setzeRollen(r.benutzer.id, [sys.mitglied]), 422);
-    await wirft(dienst.setzeRollen(r.benutzer.id, ['00000000-0000-4000-8000-00000000abcd']), 422);
+    await wirft(dienst.postSystemmappen.setzeRollen(r.benutzer.id, [sys.mitglied]), 422);
+    await wirft(dienst.postSystemmappen.setzeRollen(r.benutzer.id, ['00000000-0000-4000-8000-00000000abcd']), 422);
     // Verwaltungsrecht (#818) ändert die Rollen nicht: Die Systemrolle bleibt „Mitglied“, weitere Rollen bleiben.
     await konten.setzeVerwaltung(admin, r.benutzer.id, ['*']);
-    assert.deepEqual((await dienst.holeMappe(r.benutzer.id)).mappe.werte.rollen, [sys.mitglied, steuer.id, garten.id]);
+    assert.deepEqual((await dienst.mappen.holeMappe(r.benutzer.id)).mappe.werte.rollen, [sys.mitglied, steuer.id, garten.id]);
     // Die Rolle zeigt ihre Benutzer (Verknüpfungsregister über rollen).
-    const steuerDetails = await dienst.holeMappe(steuer.id);
+    const steuerDetails = await dienst.mappen.holeMappe(steuer.id);
     assert.deepEqual(steuerDetails.rueckverweise.map((x) => [x.titel, x.feldKey]), [['Bea', 'rollen']]);
-    const mitgliedRolle = await dienst.holeMappe(sys.mitglied);
+    const mitgliedRolle = await dienst.mappen.holeMappe(sys.mitglied);
     assert.deepEqual(mitgliedRolle.rueckverweise.map((x) => x.titel).sort(), ['Anna Admin', 'Bea']);
     // Deaktiviert: bleibt in der Rolle sichtbar, unter seinem Namen (#663).
     await konten.setzeAbwesenheit(admin, r.benutzer.id, { vertreterId: admin.id });
     await konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false });
-    assert.deepEqual((await dienst.holeMappe(steuer.id)).rueckverweise.map((x) => x.titel), ['Bea']);
+    assert.deepEqual((await dienst.mappen.holeMappe(steuer.id)).rueckverweise.map((x) => x.titel), ['Bea']);
   });
 
   it('Rolle mit Benutzern löschen: Zuordnungen fallen weg; Verweise aus Feldern blockieren', async () => {
     const { dienst, konten, admin, rolleTyp, benutzerTyp, sys } = await aufbau();
-    const steuer = await dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Steuern' } });
-    const garten = await dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Garten' } });
-    await dienst.setzeRollen(admin.id, [steuer.id, garten.id], admin.id);
-    const vertrag = await dienst.legeTypAn({ name: 'Vertrag', felder: [
+    const steuer = await dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Steuern' } });
+    const garten = await dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Garten' } });
+    await dienst.postSystemmappen.setzeRollen(admin.id, [steuer.id, garten.id], admin.id);
+    const vertrag = await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
       { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true },
       { key: 'verantwortlich', label: 'Verantwortlicher Benutzer', typ: 'referenz', zielTyp: benutzerTyp.id },
       { key: 'gruppe', label: 'Verantwortliche Rolle', typ: 'referenz', zielTyp: rolleTyp.id },
     ] });
-    await dienst.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Steuerberater', verantwortlich: admin.id, gruppe: steuer.id } });
-    await wirft(dienst.loescheMappe(steuer.id), 409, /verweist noch/);
-    await dienst.loescheMappe(garten.id, admin.id);
-    assert.deepEqual((await dienst.holeMappe(admin.id)).mappe.werte.rollen, [sys.mitglied, steuer.id]);
+    await dienst.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Steuerberater', verantwortlich: admin.id, gruppe: steuer.id } });
+    await wirft(dienst.loeschen.loescheMappe(steuer.id), 409, /verweist noch/);
+    await dienst.loeschen.loescheMappe(garten.id, admin.id);
+    assert.deepEqual((await dienst.mappen.holeMappe(admin.id)).mappe.werte.rollen, [sys.mitglied, steuer.id]);
     // Die Benutzer-Mappe bleibt dabei gültig.
-    assert.notEqual((await dienst.holeMappe(admin.id)).mappe.passt, false);
+    assert.notEqual((await dienst.mappen.holeMappe(admin.id)).mappe.passt, false);
     void konten;
   });
 
   it('erweiterte Pflichtfelder bringen Benutzer in den Eingang statt Anlegen zu verhindern', async () => {
     const { dienst, konten, admin, benutzerTyp } = await aufbau();
-    await dienst.aendereTyp(benutzerTyp.id, { ...ohneTyp(benutzerTyp), felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text', pflicht: true }] });
+    await dienst.mappentypen.aendereTyp(benutzerTyp.id, { ...ohneTyp(benutzerTyp), felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text', pflicht: true }] });
     const r = await konten.legeBenutzerAn({ email: 'neu@example.org' }, admin.id);
-    const m = (await dienst.holeMappe(r.benutzer.id)).mappe;
+    const m = (await dienst.mappen.holeMappe(r.benutzer.id)).mappe;
     assert.equal(m.passt, false);
     assert.match(m.problem ?? '', /Telefon/);
   });

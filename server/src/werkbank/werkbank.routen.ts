@@ -4,7 +4,7 @@
  */
 import { istPerson } from '../../../shared/src/model';
 import { hatMerkmalBedingung } from '../../../shared/src/anzeige';
-import { taugtAlsAufgabenEmpfaenger } from '../dienst';
+import { taugtAlsAufgabenEmpfaenger } from '../aufgaben';
 import { Fachfehler } from '../fehler';
 import { umzugHinweis } from '../exportordner';
 import { t } from '../sprache';
@@ -83,13 +83,13 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
     /* ---------- E-Mail-Versand und Adresse (#37) ---------- */
     /* ---------- Texterkennung und Wartungsoperationen (#45) ---------- */
     // Mit den Dateitypen, die Pakete umwandeln bzw. umwandeln könnten (#577).
-    { methode: 'GET', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => ok({ ...(await ocr().status(a.query.neu !== undefined)), umwandlung: await dienst.umwandlungStand(), archivfassung: await dienst.archivStand() }) },
+    { methode: 'GET', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => ok({ ...(await ocr().status(a.query.neu !== undefined)), umwandlung: await dienst.dokumentUmwandlung.umwandlungStand(), archivfassung: await dienst.dokumentArchiv.archivStand() }) },
     // Aufträge der Texterkennung einsehen, neu starten, abbrechen (#61)
     { methode: 'GET', pfad: '/api/werkbank/texterkennung/auftraege', zugang: 'admin', handler: async (a) => ok(await ocr().auftraege(a.query)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/neu', zugang: 'admin', handler: async (a) => ok(await ocr().neuStarten(b(a).ids, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
-    { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok({ ...(await ocr().status()), umwandlung: await dienst.umwandlungStand(), archivfassung: await dienst.archivStand() }); } },
+    { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok({ ...(await ocr().status()), umwandlung: await dienst.dokumentUmwandlung.umwandlungStand(), archivfassung: await dienst.dokumentArchiv.archivStand() }); } },
   ];
 }
 
@@ -101,22 +101,22 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       // Was eingerichtet ist, soll nicht unbemerkt aus der Leiste verschwinden.
       const sicher = async (f: () => Promise<boolean> | boolean) => { try { return await f(); } catch { return false; } };
       const benutzt = Object.entries({
-        nummernkreise: () => dienst.listeNummernkreise().then((l) => l.length > 0),
+        nummernkreise: () => dienst.nummernkreise.listeNummernkreise().then((l) => l.length > 0),
         postfaecher: async () => !!x.postfaecher && (await x.postfaecher.liste()).length > 0,
         eingangsordner: () => !!x.eingangsordner?.vorhanden,
         anmeldeschutz: async () => !!x.oidc && !!(await x.oidc.bereit()),
       });
       const liste: string[] = [];
       for (const [pfad, f] of benutzt) if (await sicher(f)) liste.push(pfad);
-      return ok({ ...(await dienst.werkbankAnsicht(ich(a))), benutzt: liste });
+      return ok({ ...(await dienst.werkbank.werkbankAnsicht(ich(a))), benutzt: liste });
     } },
-    { methode: 'PUT', pfad: '/api/werkbank/ansicht', zugang: 'admin', handler: async (a) => ok(await dienst.setzeWerkbankAnsicht(ich(a), b(a))) },
+    { methode: 'PUT', pfad: '/api/werkbank/ansicht', zugang: 'admin', handler: async (a) => ok(await dienst.werkbank.setzeWerkbankAnsicht(ich(a), b(a))) },
     // Merkmale der Ablage (#1032): lesen alle, die verwalten; ändern nur „Gesamte Verwaltung“ (verwaltungsbereiche.ts).
-    { methode: 'GET', pfad: '/api/werkbank/merkmale', zugang: 'admin', handler: async () => ok(await dienst.merkmale()) },
+    { methode: 'GET', pfad: '/api/werkbank/merkmale', zugang: 'admin', handler: async () => ok(await dienst.werkbank.merkmale()) },
     { methode: 'PUT', pfad: '/api/werkbank/merkmale', zugang: 'admin', handler: async (a) => {
-      const m = await dienst.setzeMerkmale(a.body, ich(a).email);
+      const m = await dienst.werkbank.setzeMerkmale(a.body, ich(a).email);
       // Pflicht hängt an Anzeige-Bedingungen mit Merkmal (#1033): Passung dieser Mappentypen neu prüfen.
-      for (const typ of await dienst.listeTypen()) if (hatMerkmalBedingung(typ)) await dienst.pruefePassung(typ.id);
+      for (const typ of await dienst.mappentypen.listeTypen()) if (hatMerkmalBedingung(typ)) await dienst.passung.pruefePassung(typ.id);
       return ok(m);
     } },
     // Übersicht als Startseite der Werkbank (#68): was zu tun ist, auf einen Blick.
@@ -126,9 +126,9 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/uebersicht', zugang: 'admin', handler: async (a) => {
       const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
       const ts = x.tresor ? await sicher(() => x.tresor!.status()) : null;
-      const z = await dienst.zaehler(ich(a));
-      const aufgaben = await dienst.alleAufgaben(false);
-      const korb = await dienst.papierkorb(ich(a), true);
+      const z = await dienst.sichten.zaehler(ich(a));
+      const aufgaben = await dienst.ohneLeserecht.alleAufgaben(false);
+      const korb = await dienst.papierkorbVerwaltung.papierkorb(ich(a), true);
       const sys = await uebersicht(system, x.betrieb?.kurz());
       return ok(nurEigeneBereiche(ich(a), {
         tresor: ts ? { zustand: ts.zustand, eingebunden: ts.eingebunden, betroffen: ts.betroffen.length } : null,
@@ -136,18 +136,18 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         adresse: x.betrieb ? !!x.betrieb.ansicht().adresse : true,
         texterkennung: x.texterkennung ? await sicher(() => x.texterkennung!.zaehler()) : null,
         // #459: Ist ein Paket für die Texterkennung installiert? Sonst Hinweis „Texterkennung ist jetzt ein Paket“.
-        texterkennungPaket: !!(await sicher(() => dienst.texterkennungPaket())),
+        texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
         aufgaben: { offen: aufgaben.length, ohneEmpfaenger: aufgaben.filter((y) => !y.empfaengerId).length },
         // #798: Aufgaben bei Personen ohne Leserecht (offene Fälle, abgeglichen alle fünf Minuten und beim Öffnen).
-        ohneLeserecht: (await sicher(async () => (await dienst.offeneFaelle()).length)) ?? 0,
+        ohneLeserecht: (await sicher(async () => (await dienst.ohneLeserecht.offeneFaelle()).length)) ?? 0,
         // Eingangsordner (#915): Warnungen (zu alt, zu groß, fehler/, zu viele), Ordner ohne Person, nicht umbenannte Ordner.
         eingangsordner: x.eingangsordner?.vorhanden ? await sicher(() => x.eingangsordner!.meldungen()) : null,
         // #877: Dokumentdateien, die beim Lesen fehlten (und noch fehlen) – Volume vergessen, Datei gelöscht, Platte defekt.
-        dateienFehlen: (await sicher(() => dienst.fehlendeDateien())) ?? 0,
+        dateienFehlen: (await sicher(() => dienst.dateienFehlen.fehlendeDateien())) ?? 0,
         // #719: Wer im Alltag die Aufgaben ohne Empfänger bekommt; `moeglich` = aktive Benutzer ohne Admin-Rechte.
-        aufgabenEmpfaenger: await sicher(async () => ({ benutzerId: (await dienst.alltagsEmpfaenger()).wirksam, moeglich: (await konten.listeBenutzer()).filter(taugtAlsAufgabenEmpfaenger).length })),
+        aufgabenEmpfaenger: await sicher(async () => ({ benutzerId: (await dienst.ohneEmpfaenger.alltagsEmpfaenger()).wirksam, moeglich: (await konten.listeBenutzer()).filter(taugtAlsAufgabenEmpfaenger).length })),
         unpassend: Object.values(z.typen).reduce((s, t) => s + (t.unpassend ?? 0), 0),
-        papierkorb: { anzahl: korb.length, aeltester: korb.reduce<string | null>((m, e) => (!m || e.geloescht < m ? e.geloescht : m), null), tage: await dienst.papierkorbTage() },
+        papierkorb: { anzahl: korb.length, aeltester: korb.reduce<string | null>((m, e) => (!m || e.geloescht < m ? e.geloescht : m), null), tage: await dienst.kern.papierkorbTage() },
         version: sys.dms,
         bestand: 'fehler' in sys.datenbank ? null : sys.datenbank,
         fehlermeldungen: x.fehlermeldungen ? await sicher(() => x.fehlermeldungen!.offen()) : null,
@@ -186,14 +186,14 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         // Pflicht-Einstellungen eines Pakets fehlen (#405: im Ablauf „später ausfüllen“) – Aufgabe für den Administrator.
         paketeEinstellungen: (await sicher(() => pakete.installierte()))?.filter((p) => p.einstellungenNoetig).map((p) => ({ id: p.id, name: p.name })) ?? [],
         // KI-Dienste (#796): nach dem Update einmal sagen, dass sich Mappentypen jetzt ausschließen lassen (nur mit KI-Paketen).
-        kiTypen: (await sicher(async () => { const k = await dienst.kiUebersicht(); return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null; })) ?? null,
+        kiTypen: (await sicher(async () => { const k = await dienst.ki.kiUebersicht(); return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null; })) ?? null,
         // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
         zahlen: await werkbankZahlen({
-          nummernkreise: () => dienst.listeNummernkreise(),
+          nummernkreise: () => dienst.nummernkreise.listeNummernkreise(),
           pakete: () => pakete.installierte(),
           benutzer: () => konten.listeBenutzer(),
           postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
-          darfWeg: () => dienst.darfWeg(),
+          darfWeg: () => dienst.mappenArchiv.darfWeg(),
         }),
         // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
         postfachAnmeldung: x.postfaecher ? await sicher(() => x.postfaecher!.anmeldungFehlt()) ?? [] : [],
@@ -203,7 +203,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
     } },
     // Im Verwaltungsmodus angesehen (#820): Person, Mappe, Zeit – nur für „Gesamte Verwaltung“ (verwaltungsbereiche.ts).
     { methode: 'GET', pfad: '/api/werkbank/verwaltungsmodus', zugang: 'admin', handler: async () => {
-      const liste = await dienst.imVerwaltungsmodus();
+      const liste = await dienst.systemtypen.imVerwaltungsmodus();
       const namen = new Map((await konten.personen()).map((p) => [p.id, p.name] as const));
       return ok(liste.map((e) => ({ ...e, person: e.benutzerId ? namen.get(e.benutzerId) ?? '' : '' })));
     } },
@@ -219,7 +219,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       // KI-Dienste (#796): „Verstanden“ zum Hinweis nach dem Update – für alle, die Pakete verwalten (sie sehen ihn).
       if (k === 'ki.typen') {
         if (!darfBereich(ich(a), 'pakete')) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
-        await dienst.kiHinweisGelesen(); L.werkbank.info('Hinweis „Mappentypen von KI-Diensten ausschließen“ gelesen', { von: ich(a).email });
+        await dienst.ki.kiHinweisGelesen(); L.werkbank.info('Hinweis „Mappentypen von KI-Diensten ausschließen“ gelesen', { von: ich(a).email });
         return leer;
       }
       if (!hatGesamt(ich(a))) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
@@ -248,7 +248,7 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'PUT', pfad: '/api/werkbank/region', zugang: 'admin', handler: async (a) => ok(await regionStand(await region().speichere(a.body))) },
     { methode: 'GET', pfad: '/api/region', zugang: 'angemeldet', handler: async () => ok(await region().lies()) },
     // Merkmale der Ablage (#1032) für alle Angemeldeten (Apps mit Formularen, GET /api/v1/merkmale).
-    { methode: 'GET', pfad: '/api/merkmale', zugang: 'angemeldet', handler: async () => ok(await dienst.merkmale()) },
+    { methode: 'GET', pfad: '/api/merkmale', zugang: 'angemeldet', handler: async () => ok(await dienst.werkbank.merkmale()) },
     // Sprachen (#729): Werkbank → Sprachen.
     { methode: 'GET', pfad: '/api/werkbank/sprachen', zugang: 'admin', handler: async () => ok(await sprachen().stand()) },
     { methode: 'PUT', pfad: '/api/werkbank/sprachen', zugang: 'admin', handler: async (a) => { await sprachen().speichere(a.body); return ok(await sprachen().stand()); } },
@@ -259,10 +259,10 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/aufgaben/mail/senden', zugang: 'admin', handler: async () => ok({ verschickt: await mail().sende() }) },
     // Favoriten benachrichtigen (#506): für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer.
     // Aufgaben ohne Empfänger gehen an einen Alltags-Benutzer (#719).
-    { methode: 'GET', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async () => ok(await dienst.alltagsEmpfaenger()) },
-    { methode: 'PUT', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async (a) => ok(await dienst.setzeAufgabenEmpfaenger(a.body, ich(a).id)) },
-    { methode: 'GET', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async () => ok({ freigabe: await dienst.favoritenFreigabe(), rollen: await dienst.listeRollen() }) },
-    { methode: 'PUT', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async (a) => ok({ freigabe: await dienst.setzeFavoritenFreigabe(a.body, ich(a).email), rollen: await dienst.listeRollen() }) },
-    { methode: 'POST', pfad: '/api/werkbank/favoriten-freigabe/anwenden', zugang: 'admin', handler: async (a) => ok({ benutzer: await dienst.favoritenVorgabeAnwenden(ich(a).email) }) },
+    { methode: 'GET', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async () => ok(await dienst.ohneEmpfaenger.alltagsEmpfaenger()) },
+    { methode: 'PUT', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async (a) => ok(await dienst.ohneEmpfaenger.setzeAufgabenEmpfaenger(a.body, ich(a).id)) },
+    { methode: 'GET', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async () => ok({ freigabe: await dienst.aufgaben.favoritenFreigabe(), rollen: await dienst.postSystemmappen.listeRollen() }) },
+    { methode: 'PUT', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async (a) => ok({ freigabe: await dienst.aufgaben.setzeFavoritenFreigabe(a.body, ich(a).email), rollen: await dienst.postSystemmappen.listeRollen() }) },
+    { methode: 'POST', pfad: '/api/werkbank/favoriten-freigabe/anwenden', zugang: 'admin', handler: async (a) => ok({ benutzer: await dienst.ohneEmpfaenger.favoritenVorgabeAnwenden(ich(a).email) }) },
   ];
 }

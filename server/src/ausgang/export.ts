@@ -1,7 +1,7 @@
 /**
  * Export mehrerer Mappen (#152, #153, #294, #1077 aus dienst.ts): Tabelle (CSV, Excel), ZIP mit Dokumenten oder ein
  * PDF – mit Stempel, Verkleinern und Archivfassung. Schicht 3 – bekommt den Kern, die Rechteprüfung, Sichten, fehlende
- * Dateien, den Ausgang und die Stempel-Vorlagen. Die Prüfstelle (`mitnehmbar`) ruft er über die Fassade des Dienstes.
+ * Dateien, den Ausgang und die Stempel-Vorlagen. Die Prüfstelle (`mitnehmbar`) ruft er über seinen Anschluss.
  */
 import type { Readable } from 'node:stream';
 import { arbeite } from '../arbeit';
@@ -37,7 +37,7 @@ export interface ExportTeile { rechte: ZugriffDienst; sichten: SichtenDienst; fe
 
 /** Was der Export außer dem Kern braucht – vom Dienst hereingereicht. */
 export interface ExportAnschluss {
-  /** Die gemeinsame Prüfstelle (#723) – über die Fassade des Dienstes, damit jeder Weg dieselbe Stelle fragt. */
+  /** Die gemeinsame Prüfstelle (#723) – über den Anschluss (`dienst.ausgang.mitnehmbar`), damit jeder Weg dieselbe Stelle fragt. */
   mitnehmbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>>;
   /** Inhalt der entsperrten Fassung (#827; geschützte PDFs, am Dienst). */
   entsperrtZu(inhalt: Buffer): Promise<Buffer | null>;

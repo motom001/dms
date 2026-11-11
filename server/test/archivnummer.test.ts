@@ -35,13 +35,13 @@ async function repo(pg: boolean): Promise<Repo> {
 
 async function aufbau(pg: boolean) {
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const typ = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Rechnung' } }, ANNA);
-  const a = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA)).dokument;
-  const b = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), ANNA)).dokument;
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Rechnung' } }, ANNA);
+  const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA)).dokument;
+  const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), ANNA)).dokument;
   return { d, m, a, b };
 }
 
@@ -68,42 +68,42 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('setzen, eindeutig ohne Groß-/Kleinschreibung, entfernen; Historie', async () => {
       const { d, m, a, b } = await aufbau(pg);
-      assert.equal((await d.setzeArchivnummer(a.id, ' DMS-ASN:A-000001 ', ANNA)).archivnummer, 'A-000001');
-      await assert.rejects(d.setzeArchivnummer(b.id, 'a-000001', ANNA), status(409, /schon ein anderes Dokument/));
-      await assert.rejects(d.setzeArchivnummer(b.id, 'A 1', ANNA), status(422));
-      assert.equal((await d.holeMappe(m.id)).dokumente.find((x) => x.id === a.id)?.archivnummer, 'A-000001');
-      assert.ok((await d.historie(m.id)).some((h) => h.art === 'archivnummer' && h.daten.neu === 'A-000001'));
-      assert.equal((await d.setzeArchivnummer(a.id, '', ANNA)).archivnummer, null);
-      assert.equal((await d.setzeArchivnummer(b.id, 'A-000001', ANNA)).archivnummer, 'A-000001');
+      assert.equal((await d.mappenArchiv.setzeArchivnummer(a.id, ' DMS-ASN:A-000001 ', ANNA)).archivnummer, 'A-000001');
+      await assert.rejects(d.mappenArchiv.setzeArchivnummer(b.id, 'a-000001', ANNA), status(409, /schon ein anderes Dokument/));
+      await assert.rejects(d.mappenArchiv.setzeArchivnummer(b.id, 'A 1', ANNA), status(422));
+      assert.equal((await d.mappen.holeMappe(m.id)).dokumente.find((x) => x.id === a.id)?.archivnummer, 'A-000001');
+      assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'archivnummer' && h.daten.neu === 'A-000001'));
+      assert.equal((await d.mappenArchiv.setzeArchivnummer(a.id, '', ANNA)).archivnummer, null);
+      assert.equal((await d.mappenArchiv.setzeArchivnummer(b.id, 'A-000001', ANNA)).archivnummer, 'A-000001');
     });
 
     it('finden mit Präfix vom Handscanner; unbekannt → 404', async () => {
       const { d, m, a } = await aufbau(pg);
-      await d.setzeArchivnummer(a.id, 'A-000007', ANNA);
-      const r = await d.findeArchivnummer('DMS-ASN:a-000007');
+      await d.mappenArchiv.setzeArchivnummer(a.id, 'A-000007', ANNA);
+      const r = await d.mappenArchiv.findeArchivnummer('DMS-ASN:a-000007');
       assert.equal(r.dokument.id, a.id);
       assert.equal(r.mappeId, m.id);
-      await assert.rejects(d.findeArchivnummer('A-999999'), status(404));
+      await assert.rejects(d.mappenArchiv.findeArchivnummer('A-999999'), status(404));
     });
 
     it('Aufkleber ziehen fortlaufende Nummern; der Kreis lässt sich nicht löschen', async () => {
       const { d } = await aufbau(pg);
-      const r = await d.archivAufkleber({ anzahl: 42, etikett: '48x25', start: 3 }, 'admin');
+      const r = await d.mappenArchiv.archivAufkleber({ anzahl: 42, etikett: '48x25', start: 3 }, 'admin');
       assert.equal(r.erste, 'A-000001');
       assert.equal(r.letzte, 'A-000042');
       assert.equal((await PDFDocument.load(r.pdf)).getPageCount(), 2, '38 auf Bogen 1 (ab Feld 3), 4 auf Bogen 2');
-      assert.equal((await d.archivAufkleber({ anzahl: 1 }, 'admin')).erste, 'A-000043', 'gedruckte Nummern gelten als vergeben');
-      await assert.rejects(d.archivAufkleber({ anzahl: 1, etikett: '48x25', start: 41 }, 'admin'), status(422));
-      await assert.rejects(d.archivAufkleber({ anzahl: 0 }, 'admin'), status(422));
-      await assert.rejects(d.loescheNummernkreis('archivnummer', 'admin'), status(409));
+      assert.equal((await d.mappenArchiv.archivAufkleber({ anzahl: 1 }, 'admin')).erste, 'A-000043', 'gedruckte Nummern gelten als vergeben');
+      await assert.rejects(d.mappenArchiv.archivAufkleber({ anzahl: 1, etikett: '48x25', start: 41 }, 'admin'), status(422));
+      await assert.rejects(d.mappenArchiv.archivAufkleber({ anzahl: 0 }, 'admin'), status(422));
+      await assert.rejects(d.nummernkreise.loescheNummernkreis('archivnummer', 'admin'), status(409));
     });
 
     it('Wiederherstellen aus dem Papierkorb: inzwischen vergebene Nummer entfällt', async () => {
       const { d, a, b } = await aufbau(pg);
-      await d.setzeArchivnummer(a.id, 'A-000005', ANNA);
-      await d.loescheDokument(a.id, ANNA);
-      await d.setzeArchivnummer(b.id, 'A-000005', ANNA);
-      const r = await d.stelleDokumentWiederHer(a.id, { id: ANNA, rolle: 'mitglied' }, undefined);
+      await d.mappenArchiv.setzeArchivnummer(a.id, 'A-000005', ANNA);
+      await d.dokumente.loescheDokument(a.id, ANNA);
+      await d.mappenArchiv.setzeArchivnummer(b.id, 'A-000005', ANNA);
+      const r = await d.papierkorbVerwaltung.stelleDokumentWiederHer(a.id, { id: ANNA, rolle: 'mitglied' }, undefined);
       assert.equal(r.dokument.archivnummer ?? null, null);
     });
   });

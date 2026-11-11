@@ -282,7 +282,7 @@ describe('Schnittstellen des Assistenten über HTTP (#804, #806)', { skip: echte
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const code = new Einrichtungscode(await ordner());
     const c = await code.bereitstellen();
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const einrichtung = new Einrichtung({ konten, code, einstellungen: speicherEinstellungen(), mandant: { name: async () => null, umbenennen: async () => {} }, datenbank: () => ({ host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms' }) });
     const app = await baueApp(dienst, konten, { einrichtung }) as unknown as { inject(o: object): Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>; close(): Promise<void> };
     try {

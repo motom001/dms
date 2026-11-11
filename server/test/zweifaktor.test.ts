@@ -111,7 +111,7 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
 
   it('Pflicht ohne eigenes Zwei-Faktor einschalten: laufende Sitzung arbeitet weiter, Ausschalten geht immer (#416)', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const z = new Zweifaktor(speicherEinstellungen(), ver, ent);
     konten.verbindeZweifaktor(z);
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
@@ -180,7 +180,7 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
 
   it('Anmeldung: Passwort, dann Code; falsche Codes; Passwort-Link verlangt den Code ebenfalls', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const z = new Zweifaktor(speicherEinstellungen(), ver, ent);
     konten.verbindeZweifaktor(z);
     const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });

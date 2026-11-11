@@ -34,21 +34,21 @@ async function repo(pg: boolean): Promise<Repo> {
 /** Händler, Rechnungen und Gutschriften mit gemeinsamen Feldern; je Rechnung ein Dokument mit Text. */
 async function aufbau(r: Repo) {
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const partner = await d.legeTypAn({ name: 'Partner', schluessel: 'partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', schluessel: 'partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
   const felder = [
     { key: 'nr', label: 'Nummer', typ: 'text' as const, pflicht: true },
     { key: 'rechnungsdatum', label: 'Rechnungsdatum', typ: 'datum' as const },
     { key: 'vertragspartner', label: 'Vertragspartner', typ: 'referenz' as const, zielTyp: partner.id },
     { key: 'betrag', label: 'Betrag', typ: 'betrag' as const },
   ];
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [...felder,
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [...felder,
     { key: 'bezahlt', label: 'Bezahlt', typ: 'janein' }, { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Elektro', 'Möbel', 'Sonstiges'] }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
-  const gutschrift = await d.legeTypAn({ name: 'Gutschrift', schluessel: 'gutschrift', titelVorlage: '{nr}', felder });
-  const p = async (name: string) => (await d.legeMappeAn({ typId: partner.id, werte: { name } })).id;
+  const gutschrift = await d.mappentypen.legeTypAn({ name: 'Gutschrift', schluessel: 'gutschrift', titelVorlage: '{nr}', felder });
+  const p = async (name: string) => (await d.mappen.legeMappeAn({ typId: partner.id, werte: { name } })).id;
   const P = { mm: await p('MediaMarkt'), saturn: await p('Saturn'), otto: await p('Otto'), ikea: await p('Ikea') };
   const mappe = async (typId: string, nr: string, datum: string, vp: string, text: string, extra: Record<string, unknown> = {}) => {
-    const m = await d.legeMappeAn({ typId, werte: { nr, rechnungsdatum: datum, vertragspartner: vp, betrag: { betrag: 100, waehrung: 'EUR' }, ...extra } });
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
+    const m = await d.mappen.legeMappeAn({ typId, werte: { nr, rechnungsdatum: datum, vertragspartner: vp, betrag: { betrag: 100, waehrung: 'EUR' }, ...extra } });
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
     await r.ocrSetze(dokument.id, { stand: 'fertig', text });
     return m;
   };
@@ -57,14 +57,14 @@ async function aufbau(r: Repo) {
   await mappe(rechnung.id, 'R-3', '2025-08-15', P.ikea, 'Backofen bei Ikea');
   await mappe(rechnung.id, 'R-4', '2025-09-01', P.otto, 'Kühlschrank', { art: 'Möbel' });
   const r5 = await mappe(rechnung.id, 'R-5', '2025-11-30', P.saturn, 'Waschmaschine');
-  await d.legeNotizAn(r5.id, 'Kam zusammen mit dem Backofen', null);
+  await d.mappenNotizen.legeNotizAn(r5.id, 'Kam zusammen mit dem Backofen', null);
   await mappe(gutschrift.id, 'G-1', '2025-06-01', P.otto, 'Gutschrift Backofen');
   await mappe(gutschrift.id, 'G-2', '2026-01-10', P.mm, 'Gutschrift Backofen später');
   return { d, partner, rechnung, gutschrift, P };
 }
 
 const treffer = async (d: Dienst, q: string, ich = ICH, extra: Record<string, unknown> = {}) =>
-  (await d.seite(ich, { sicht: 'suche', link: q, anzahl: 500, ...extra })).mappen.map((m) => m.titel).sort();
+  (await d.sichten.seite(ich, { sicht: 'suche', link: q, anzahl: 500, ...extra })).mappen.map((m) => m.titel).sort();
 
 describe('Erweiterte Suche: Formular und Adresse (#199)', () => {
   it('liest und schreibt die Adresse, Chips entfernen einzelne Bedingungen', () => {
@@ -100,7 +100,7 @@ function faelle(pg: boolean) {
       const { d, P } = await aufbau(await repo(pg));
       const q = `typ=rechnung&rechnungsdatum.von=2025-03-01&rechnungsdatum.bis=2025-11-30&vertragspartner=${P.mm}&vertragspartner=${P.saturn}&vertragspartner=${P.otto}&volltext=Backofen`;
       assert.deepEqual(await treffer(d, q), ['R-1', 'R-5']);
-      const s = await d.seite(ICH, { sicht: 'suche', link: q });
+      const s = await d.sichten.seite(ICH, { sicht: 'suche', link: q });
       assert.equal(s.ausschnitte?.[s.mappen.find((m) => m.titel === 'R-5')!.id]?.dokument, 'Notiz');
       assert.ok(s.ausschnitte?.[s.mappen.find((m) => m.titel === 'R-1')!.id]?.text.includes('Backofen'));
     });
@@ -111,7 +111,7 @@ function faelle(pg: boolean) {
       assert.ok(!suchfelder([rechnung]).some((f) => f.key === 'pw'), 'nie Passwortfelder');
       assert.deepEqual(await treffer(d, `typ=rechnung&typ=gutschrift&vertragspartner=${P.otto}`), ['G-1', 'R-4']);
       assert.deepEqual((await treffer(d, 'volltext=Backofen&in=dokumente')), ['G-1', 'G-2', 'R-1', 'R-2', 'R-3']);
-      await assert.rejects(d.seite(ICH, { sicht: 'suche', link: 'typ=gibtsnicht' }), (e) => e instanceof Fachfehler && e.status === 422);
+      await assert.rejects(d.sichten.seite(ICH, { sicht: 'suche', link: 'typ=gibtsnicht' }), (e) => e instanceof Fachfehler && e.status === 422);
     });
 
     it('Datum nur von bzw. nur bis, Zahlen, Ja/Nein, Auswahl, Text, leer', async () => {
@@ -123,7 +123,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(await treffer(d, 'typ=rechnung&art=Elektro&art=möbel'), ['R-1', 'R-4']);
       assert.deepEqual(await treffer(d, 'typ=rechnung&art.leer=1'), ['R-2', 'R-3', 'R-5']);
       assert.deepEqual(await treffer(d, 'typ=rechnung&nr=r-3'), ['R-3']);
-      await assert.rejects(d.seite(ICH, { sicht: 'suche', link: 'typ=rechnung&rechnungsdatum.von=gestern' }), /kein Datum/);
+      await assert.rejects(d.sichten.seite(ICH, { sicht: 'suche', link: 'typ=rechnung&rechnungsdatum.von=gestern' }), /kein Datum/);
     });
 
     it('Volltext nur in Notizen, nur in Dokumenten, in beiden', async () => {
@@ -142,27 +142,27 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-es-')), 'dms.schluessel'), () => null);
     await tresor.laden(); await tresor.erzeuge();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
     const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const t = await d.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{name}', felder: [
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'privat', label: 'Privat', typ: 'janein' },
     ] });
-    await d.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
+    await d.berechtigungen.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
       { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: true },
     ] }, true);
-    const strom = await d.legeMappeAn({ typId: t.id, werte: { name: 'Strom', privat: false } }, admin.id);
-    const geheim = await d.legeMappeAn({ typId: t.id, werte: { name: 'Geheim', privat: true } }, admin.id);
-    await d.legeNotizAn(strom.id, 'Vertrag kündigen', admin.id);
-    await d.legeNotizAn(geheim.id, 'Vertrag kündigen', admin.id);
+    const strom = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom', privat: false } }, admin.id);
+    const geheim = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Geheim', privat: true } }, admin.id);
+    await d.mappenNotizen.legeNotizAn(strom.id, 'Vertrag kündigen', admin.id);
+    await d.mappenNotizen.legeNotizAn(geheim.id, 'Vertrag kündigen', admin.id);
     const link = 'typ=vertrag&volltext=kündigen&in=notizen';
     const a = { id: admin.id, rolle: 'admin' };
     assert.deepEqual(await treffer(d, link, a, { }), ['Geheim', 'Strom']);
     const m = { id: max.id, rolle: 'mitglied' };
-    const z = await d.zugriff(m);
-    assert.deepEqual((await d.seite(m, { sicht: 'suche', link, anzahl: 500 }, z)).mappen.map((x) => x.titel), ['Strom']);
-    assert.deepEqual((await d.trefferIds(m, { sicht: 'suche', link }, z)).ids, [strom.id], 'Auswahl „alle Treffer“');
+    const z = await d.rechtepruefung.zugriff(m);
+    assert.deepEqual((await d.sichten.seite(m, { sicht: 'suche', link, anzahl: 500 }, z)).mappen.map((x) => x.titel), ['Strom']);
+    assert.deepEqual((await d.sichten.trefferIds(m, { sicht: 'suche', link }, z)).ids, [strom.id], 'Auswahl „alle Treffer“');
   });
 });
 

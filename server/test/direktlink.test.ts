@@ -20,12 +20,12 @@ let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
 async function mitBeispielen() {
   const d = new Dienst(await neuesRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   await ladeBeispiele(d, null);
-  const typen = await d.listeTypen();
+  const typen = await d.mappentypen.listeTypen();
   return { d, typen, typ: (n: string) => typen.find((t) => t.name === n)! };
 }
 const lies = (q: string, typen: Parameters<typeof liesDirektlink>[1]) => liesDirektlink(new URLSearchParams(q), typen);
 const titel = async (d: Dienst, link: string, extra: Record<string, unknown> = {}) =>
-  (await d.seite(ICH, { sicht: 'link', link, anzahl: 500, ...extra })).mappen.map((m) => m.titel);
+  (await d.sichten.seite(ICH, { sicht: 'link', link, anzahl: 500, ...extra })).mappen.map((m) => m.titel);
 
 function faelle() {
 describe('Sprechende Links (#98)', () => {
@@ -88,13 +88,13 @@ describe('Sprechende Links (#98)', () => {
     assert.deepEqual(await titel(d, 'typ=Rechnung&rechnungsnummer=gibtsnicht'), []);
     const morgen = verschiebe(heuteIn(), 1);
     assert.deepEqual(await titel(d, `typ=Rechnung&rechnungsdatum.groesser=${morgen}`), []);
-    await assert.rejects(d.seite(ICH, { sicht: 'link', link: 'typ=Rechnung&rechnungsnumer=1' }),
+    await assert.rejects(d.sichten.seite(ICH, { sicht: 'link', link: 'typ=Rechnung&rechnungsnumer=1' }),
       (e: unknown) => e instanceof Fachfehler && e.status === 422 && /rechnungsnumer/.test(e.message));
   });
 
   it('baut Links aus einem eindeutigen Feld oder aus den Titelfeldern, die wieder zur Mappe führen', async () => {
     const { d, typ } = await mitBeispielen();
-    const mappen = await d.listeMappen();
+    const mappen = await d.mappen.listeMappen();
     const vertrag = mappen.find((m) => m.werte.vertragsnummer === 'SV-4711')!;
     const l = linkZuMappe(typ('Vertrag'), vertrag)!;
     assert.equal(l, `${LINK_PFAD}?typ=vertrag&vertragsnummer=SV-4711`, 'eindeutiges Feld');
@@ -102,18 +102,18 @@ describe('Sprechende Links (#98)', () => {
     const lr = linkZuMappe(typ('Rechnung'), rechnung)!;
     assert.equal(lr, `${LINK_PFAD}?typ=rechnung&rechnungsnummer=R-2026-117&rechnungsdatum=2026-03-02`, 'Titelfelder');
     for (const m of mappen) {
-      const t = (await d.listeTypen()).find((x) => x.id === m.typId)!;
+      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === m.typId)!;
       const link = linkZuMappe(t, m);
       if (!link) continue;
-      const ids = (await d.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
+      const ids = (await d.sichten.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
       assert.ok(ids.includes(m.id), `${link} findet ${m.titel}`);
     }
     // Felder mit festem Parameternamen gehen über „feld.operator“.
-    const t = await d.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
+    const t = await d.mappentypen.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
     const ld = linkZuMappe(t, m)!;
     assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);
-    assert.deepEqual((await d.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);
+    assert.deepEqual((await d.sichten.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);
   });
 });
 }

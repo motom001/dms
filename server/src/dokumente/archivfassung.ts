@@ -18,7 +18,7 @@ import type { DokumentUmwandlung } from './umwandeln';
 export interface ArchivfassungAnschluss {
   /** Ereignis an genau ein Paket (Ereignisse, noch im Dienst). */
   auftrag(paket: string, art: 'datei.archivfassung', daten: Record<string, unknown>): Promise<'gesperrt' | void>;
-  /** Ereignis auslösen – über die Fassade des Dienstes, wie bisher. */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   /** Gespeicherte Einstellungen eines Pakets (Pakete, Schicht 3). */
   paketEinstellungen(paket: string): Promise<{ werte: Record<string, unknown> } | null>;

@@ -42,7 +42,7 @@ export interface LaeuferSicht {
 export function schnappschuss(l: Paketlaeufer, d: Dienst): LaeuferSchnappschuss {
   return {
     vektorPaket: l.vektorPaket(), antworten: l.paketMit('dms:antworten'),
-    erkennen: d.erkennung.anbieter?.pakete() ?? [], klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], aktionen: l.aktionPakete(), paketKonten: [...d.paketKonten.entries()], pid: l.pid,
+    erkennen: d.erkennung.anbieter?.pakete() ?? [], klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], aktionen: l.aktionPakete(), paketKonten: [...d.kern.paketKonten.entries()], pid: l.pid,
   };
 }
 
@@ -77,7 +77,7 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
 
   constructor(private v: Verbund, private dienst: Dienst) {
     dienst.ereignisWecker = () => v.melde('laeufer.stelleZu');
-    dienst.vektorAnbieter = {
+    dienst.suche.vektorAnbieter = {
       paket: () => this.z.vektorPaket,
       vektorFuer: (text, ms) => v.rufe('laeufer.vektorFuer', [text, ms], { ms: ms + 5000 }),
     };
@@ -104,7 +104,7 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
     v.hoere('laeufer.zustand', (z) => this.setze(z as LaeuferSchnappschuss));
   }
 
-  private setze(z: LaeuferSchnappschuss) { this.z = z; this.dienst.paketKonten = new Map(z.paketKonten); }
+  private setze(z: LaeuferSchnappschuss) { this.z = z; this.dienst.kern.paketKonten = new Map(z.paketKonten); }
 
   /** Beim Start den Stand des Leiters holen. */
   async start() { this.setze(await this.v.rufe<LaeuferSchnappschuss>('laeufer.zustand')); }

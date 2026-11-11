@@ -64,33 +64,33 @@ async function aufbau() {
   const dateien = speicherDateien();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, dateien, { einstellungen });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena Beispiel', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas Beispiel' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = new Texterkennung(repo, dateien, einstellungen, textebeneEngine, async () => ({ pdftotext: true, pdftoppm: true }));
-  d.verbindeTexterkennung(t);
+  d.dokumente.verbindeTexterkennung(t);
   const bilder = speicherAblage();
   const erzeugt: string[] = [];
   const vorschau = new Vorschaubilder(bilder, dateien, async (inhalt) => { erzeugt.push(inhalt.subarray(0, 8).toString('latin1')); return Buffer.from('bild'); });
-  d.verbindeVorschau(vorschau);
+  d.dokumente.verbindeVorschau(vorschau);
   const ablage = speicherFassungen();
   vorschau.fassung = (sha) => ablage.lies(sha);
   const schluessel = randomBytes(32);
-  const e = new PdfEntsperren(d.entsperrenAnbindung({ ablage, speicher: einstellungen, verschluessele: (k) => verschluesseleMit(schluessel, k), entschluessele: (w) => entschluesseleMit(schluessel, w) }));
-  d.verbindeEntsperren(e);
+  const e = new PdfEntsperren(d.geschuetztePdfs.entsperrenAnbindung({ ablage, speicher: einstellungen, verschluessele: (k) => verschluesseleMit(schluessel, k), entschluessele: (w) => entschluesseleMit(schluessel, w) }));
+  d.geschuetztePdfs.verbindeEntsperren(e);
   t.entsperrt = (sha) => e.fassung(sha);
-  const post = await d.postTyp();
+  const post = await d.eingangskanaele.postTyp();
   const register = post.register.find((r) => r.art === 'dokumente')!.key;
   /** Neue Post mit einem PDF; `fuer`: Konto aus „Für“. Wartet, bis der Volltext feststeht. */
   const ablegen = async (inhalt: Buffer, o: { fuer?: string; betreff?: string } = {}) => {
-    const m = await d.legePostAn({ betreff: o.betreff ?? 'Gehaltsabrechnung Oktober 2026', ...(o.fuer ? { fuer: o.fuer } : {}) }, { id: lena.id, name: 'Lena' });
-    const id = (await d.ladeHoch(m.id, { register, name: 'abrechnung.pdf', typ: 'application/pdf' }, inhalt, lena.id)).dokument.id;
+    const m = await d.post.legePostAn({ betreff: o.betreff ?? 'Gehaltsabrechnung Oktober 2026', ...(o.fuer ? { fuer: o.fuer } : {}) }, { id: lena.id, name: 'Lena' });
+    const id = (await d.dokumente.ladeHoch(m.id, { register, name: 'abrechnung.pdf', typ: 'application/pdf' }, inhalt, lena.id)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr?.stand ?? 'wartet'));
     return { m, id };
   };
-  const inMappe = async (mappeId: string, id: string) => (await d.holeMappe(mappeId)).dokumente.find((x) => x.id === id)!;
+  const inMappe = async (mappeId: string, id: string) => (await d.mappen.holeMappe(mappeId)).dokumente.find((x) => x.id === id)!;
   return { d, e, t, repo, dateien, einstellungen, ablage, vorschau, erzeugt, lena, jonas, ablegen, inMappe, schluessel };
 }
 
@@ -150,18 +150,18 @@ describe('Geschützte PDFs ablegen und entsperren (#827)', { skip: ohneQpdf }, (
     assert.equal(vorher.ocr?.stand, 'ausgelassen');
     assert.match(vorher.ocr?.info ?? '', /Passwort/);
 
-    const r = await x.d.entsperreDokument(id, x.lena.id, { passwort: PW }, true);
+    const r = await x.d.geschuetztePdfs.entsperreDokument(id, x.lena.id, { passwort: PW }, true);
     assert.equal(r.pdfSchutz?.entsperrt?.art, 'passwort');
     assert.equal(r.gemerkt, false);
     await warte(async () => (await x.repo.holeDokument(id))!.ocr?.stand === 'fertig');
     const nachher = await x.inMappe(m.id, id);
     assert.match(nachher.ocr?.info ?? '', /entsperrten Fassung/);
-    assert.match((await x.d.volltext(id)).text ?? '', /Gehaltsabrechnung Oktober/);
+    assert.match((await x.d.volltexte.volltext(id)).text ?? '', /Gehaltsabrechnung Oktober/);
     // Original unverändert: gleicher Prüfwert, gleiche Bytes.
     assert.equal(nachher.sha256, vorher.sha256);
-    assert.ok((((await x.d.dokumentInhalt(id)).inhalt) as Buffer).equals(pdf));
+    assert.ok((((await x.d.dokumente.dokumentInhalt(id)).inhalt) as Buffer).equals(pdf));
     // Fassung zum Ansehen und für Pakete (GET /dokumente/{id}/fassung).
-    const f = await x.d.fassungVon(id);
+    const f = await x.d.dokumentUmwandlung.fassungVon(id);
     assert.equal(f.info.entsperrt?.art, 'passwort');
     assert.equal(await schutzVon(f.inhalt), null);
     // Historie: „Passwortschutz entfernt“ mit Person und Zeit.
@@ -181,12 +181,12 @@ describe('Geschützte PDFs ablegen und entsperren (#827)', { skip: ohneQpdf }, (
     const x = await aufbau();
     const { id } = await x.ablegen(await geschuetzt('rc4'));
     for (let i = 1; i < VERSUCHE_MAX; i++) {
-      await assert.rejects(x.d.entsperreDokument(id, x.jonas.id, { passwort: `falsch-${i}` }, true), (e: Error & { status?: number }) => e.status === 422 && /stimmt nicht\. Noch \d Versuch/.test(e.message));
+      await assert.rejects(x.d.geschuetztePdfs.entsperreDokument(id, x.jonas.id, { passwort: `falsch-${i}` }, true), (e: Error & { status?: number }) => e.status === 422 && /stimmt nicht\. Noch \d Versuch/.test(e.message));
     }
-    await assert.rejects(x.d.entsperreDokument(id, x.jonas.id, { passwort: 'falsch-letzt' }, true), (e: Error & { status?: number }) => e.status === 422 && /Zu viele/.test(e.message));
-    await assert.rejects(x.d.entsperreDokument(id, x.jonas.id, { passwort: PW }, true), (e: Error & { status?: number }) => e.status === 429);
+    await assert.rejects(x.d.geschuetztePdfs.entsperreDokument(id, x.jonas.id, { passwort: 'falsch-letzt' }, true), (e: Error & { status?: number }) => e.status === 422 && /Zu viele/.test(e.message));
+    await assert.rejects(x.d.geschuetztePdfs.entsperreDokument(id, x.jonas.id, { passwort: PW }, true), (e: Error & { status?: number }) => e.status === 429);
     // Eine andere Person ist davon nicht betroffen.
-    const r = await x.d.entsperreDokument(id, x.lena.id, { passwort: PW }, true);
+    const r = await x.d.geschuetztePdfs.entsperreDokument(id, x.lena.id, { passwort: PW }, true);
     assert.equal(r.pdfSchutz?.entsperrt?.von, x.lena.id);
   });
 
@@ -199,7 +199,7 @@ describe('Geschützte PDFs ablegen und entsperren (#827)', { skip: ohneQpdf }, (
     assert.equal(s?.art, 'rechte');
     assert.equal(s?.entsperrt?.art, 'rechte');
     assert.equal((await x.repo.historie(m.id)).filter((e) => e.art === 'entsperrt').length, 0);
-    assert.ok((((await x.d.dokumentInhalt(id)).inhalt) as Buffer).equals(pdf));
+    assert.ok((((await x.d.dokumente.dokumentInhalt(id)).inhalt) as Buffer).equals(pdf));
   });
 
   it('Stempel und Verkleinern nehmen die entsperrte Fassung; ohne Fassung bleibt die Meldung „verschlüsselt“', async () => {
@@ -208,7 +208,7 @@ describe('Geschützte PDFs ablegen und entsperren (#827)', { skip: ohneQpdf }, (
     const plan = { stempel: stempelVorlage({ text: 'Kopie' }), empfaenger: '', pflicht: false, vorlage: null };
     await assert.rejects(fuerAusgabe({ name: 'a.pdf', mime: 'application/pdf', inhalt: pdf }, { stempel: plan }, { benutzer: 'Lena', mappe: 'Post' }, true), /verschlüsselt/);
     const { id } = await x.ablegen(pdf);
-    await x.d.entsperreDokument(id, x.lena.id, { passwort: PW }, true);
+    await x.d.geschuetztePdfs.entsperreDokument(id, x.lena.id, { passwort: PW }, true);
     const frei = (await x.e.fassung((await x.repo.holeDokument(id))!.sha256))!.inhalt;
     const a = await fuerAusgabe({ name: 'a.pdf', mime: 'application/pdf', inhalt: pdf }, { stempel: plan }, { benutzer: 'Lena', mappe: 'Post', entsperrt: async (b) => (b.equals(pdf) ? frei : null) }, true);
     assert.equal(a.gestempelt, true);
@@ -220,7 +220,7 @@ describe('Passwörter für Dokumente merken (#827, Variante A)', { skip: ohneQpd
   it('merken beim Entsperren: verschlüsselt im Konto, Liste ohne Passwort, Anzeigen nur nach Bestätigung, höchstens 20', async () => {
     const x = await aufbau();
     const { id } = await x.ablegen(await geschuetzt('aes'));
-    const r = await x.d.entsperreDokument(id, x.lena.id, { passwort: PW, merken: true, name: 'Gehaltsabrechnung' }, true);
+    const r = await x.d.geschuetztePdfs.entsperreDokument(id, x.lena.id, { passwort: PW, merken: true, name: 'Gehaltsabrechnung' }, true);
     assert.equal(r.gemerkt, true);
     const roh = JSON.stringify(await x.einstellungen.lies(gemerktSchluessel(x.lena.id)));
     assert.ok(!roh.includes(PW), 'nicht im Klartext');
@@ -239,7 +239,7 @@ describe('Passwörter für Dokumente merken (#827, Variante A)', { skip: ohneQpd
     assert.equal(await x.e.zeige(x.lena.id, liste[0].id), PW);
     // Merken in einer Vertretung oder mit API-Schlüssel: abgelehnt.
     const { id: id2 } = await x.ablegen(await geschuetzt('aes', 'Zweites Schreiben fuer Lena', 'anderes-pw'));
-    await assert.rejects(x.d.entsperreDokument(id2, x.lena.id, { passwort: 'anderes-pw', merken: true, name: 'X' }, false), (e: Error & { status?: number }) => e.status === 403);
+    await assert.rejects(x.d.geschuetztePdfs.entsperreDokument(id2, x.lena.id, { passwort: 'anderes-pw', merken: true, name: 'X' }, false), (e: Error & { status?: number }) => e.status === 403);
     // Ändern und Löschen.
     await x.e.aendere(x.lena.id, liste[0].id, { name: 'Lohn' });
     assert.equal((await x.e.liste(x.lena.id))[0].name, 'Lohn');

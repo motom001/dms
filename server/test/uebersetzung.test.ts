@@ -44,22 +44,22 @@ const paket = (id: string, netz: string[] = [], version = '1.0.0'): Installierte
  */
 async function aufbau(o: { repo?: Repo; konto?: KontoRepo; zustand?: Kurzzustand } = {}) {
   const d = new Dienst(o.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), zustand: o.zustand ?? speicherKurzzustand() });
-  const konten = new Konten(o.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(o.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
   let lena = await neu('Lena'); const petra = await neu('Petra');
   lena = await konten.aendereProfil(lena, { sprache: 'en' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const brief = await d.legeTypAn({ name: 'Brief', titelVorlage: '{betreff}', felder: [
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const brief = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{betreff}', felder: [
     { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
     { key: 'inhalt', label: 'Inhalt', typ: 'langtext' },
     { key: 'email', label: 'E-Mail', typ: 'text', format: 'email' },
     { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
   ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
   const lesen: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [lena.id] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] };
-  await d.setzeBerechtigungen(brief.id, lesen, true);
-  const m = await d.legeMappeAn({ typId: brief.id, werte: { betreff: 'Neue Mülltonne', inhalt: BRIEF, email: 'post@example.org' } }, lena.id);
+  await d.berechtigungen.setzeBerechtigungen(brief.id, lesen, true);
+  const m = await d.mappen.legeMappeAn({ typId: brief.id, werte: { betreff: 'Neue Mülltonne', inhalt: BRIEF, email: 'post@example.org' } }, lena.id);
   const eingaenge: Array<{ paket: string; e: Record<string, unknown> }> = [];
   let antwort = (e: Record<string, unknown>) => JSON.stringify({ text: `EN: ${String(e.text)}`, von: 'de' });
   const geladen = new Map([['lokal', paket('lokal')], ['wolke', paket('wolke', ['https://uebersetzer.example/v1'])]]);
@@ -133,11 +133,11 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     assert.deepEqual(Object.keys(e).sort(), ['art', 'format', 'nach', 'teil', 'teile', 'text', 'von'], 'keine Kennungen, keine Mappe');
     assert.equal(e.text, BRIEF); assert.equal(e.nach, 'en'); assert.equal(e.art, 'feld'); assert.equal(e.format, 'text');
     // Notiz (Markdown) und Volltext.
-    const n = await x.d.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
+    const n = await x.d.mappenNotizen.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
     assert.equal((await x.uebersetze(x.lena, { art: 'notiz', notiz: n.id })).text, `EN: ${NOTIZ}`);
     assert.equal(x.eingaenge.at(-1)!.e.format, 'markdown');
-    const dok = (await x.d.ladeHoch(x.m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief']), x.lena.id)).dokument;
-    await x.d.schreibeVolltext(dok.id, { text: `${BRIEF}\f${NOTIZ}`, sprache: 'deu' }, { id: x.lena.id, herkunft: 'Test', paket: false });
+    const dok = (await x.d.dokumente.ladeHoch(x.m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief']), x.lena.id)).dokument;
+    await x.d.volltexte.schreibeVolltext(dok.id, { text: `${BRIEF}\f${NOTIZ}`, sprache: 'deu' }, { id: x.lena.id, herkunft: 'Test', paket: false });
     const v = await x.uebersetze(x.lena, { art: 'volltext', dokument: dok.id });
     assert.equal(v.von, 'de', 'Sprache aus der Texterkennung');
     assert.ok(String(v.text).startsWith('EN: '));
@@ -145,13 +145,13 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'kennwort' }), status(422));
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'email' }), status(422));
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'gibtsnicht' }), status(422));
-    const leer = await x.d.legeMappeAn({ typId: x.brief.id, werte: { betreff: 'Leer' } }, x.lena.id);
+    const leer = await x.d.mappen.legeMappeAn({ typId: x.brief.id, werte: { betreff: 'Leer' } }, x.lena.id);
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: leer.id, feld: 'inhalt' }), status(422));
   });
 
   it('Rechte: Was die Person nicht lesen darf, wird nicht übersetzt – und das Paket sieht nichts davon', async () => {
     const x = await aufbau();
-    const n = await x.d.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
+    const n = await x.d.mappenNotizen.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
     const vorher = x.eingaenge.length;
     await assert.rejects(x.uebersetze(x.petra, { art: 'feld', mappe: x.m.id, feld: 'inhalt' }), status(404));
     await assert.rejects(x.uebersetze(x.petra, { art: 'notiz', notiz: n.id }), status(404));
@@ -160,14 +160,14 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
 
   it('Gespeichert wird nur das Original: Mappe und Notiz bleiben unverändert, keine Historie', async () => {
     const x = await aufbau();
-    const n = await x.d.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
-    const historie = (await x.d.historie(x.m.id)).length;
+    const n = await x.d.mappenNotizen.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
+    const historie = (await x.d.mappenHistorie.historie(x.m.id)).length;
     await x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' });
     await x.uebersetze(x.lena, { art: 'notiz', notiz: n.id });
-    const nachher = await x.d.holeMappe(x.m.id);
+    const nachher = await x.d.mappen.holeMappe(x.m.id);
     assert.equal(nachher.mappe.werte.inhalt, BRIEF);
     assert.equal(nachher.notizen[0].text, NOTIZ);
-    assert.equal((await x.d.historie(x.m.id)).length, historie);
+    assert.equal((await x.d.mappenHistorie.historie(x.m.id)).length, historie);
   });
 
   it('Zwischenspeicher: gleicher Text, Sprache, Paket und Version aus dem Speicher; verfällt mit dem Original', async () => {
@@ -186,7 +186,7 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     assert.equal(eintraege.length, 1);
     assert.match(eintraege[0].schluessel, /\|en\|lokal@1\.1\.0$/);
     // Original geändert: Der Prüfwert passt nicht mehr – neu übersetzt, die alte Übersetzung ist gelöscht.
-    await x.d.aendereMappe(x.m.id, { werte: { ...x.m.werte, inhalt: `${BRIEF} Nachtrag folgt.` } }, x.lena.id);
+    await x.d.mappen.aendereMappe(x.m.id, { werte: { ...x.m.werte, inhalt: `${BRIEF} Nachtrag folgt.` } }, x.lena.id);
     const neu = await x.uebersetze(x.lena, q);
     assert.equal(neu.text, `EN: ${BRIEF} Nachtrag folgt.`);
     assert.equal(neu.gespeichert, undefined);
@@ -196,12 +196,12 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     await x.d.uebersetzung.nachEreignis({ id: 'e1', art: 'mappe.geaendert', daten: { mappe: x.m.id, felder: ['inhalt'] }, ausloeser: { art: 'system' } as never, erstellt: '' });
     assert.equal((await x.d.kurzzustand.liste(ZWISCHENSPEICHER, `${x.m.id}|feld:inhalt|`)).length, 0);
     // Notiz ändern und löschen: ihre Übersetzung ist sofort weg.
-    const n = await x.d.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
+    const n = await x.d.mappenNotizen.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
     await x.uebersetze(x.lena, { art: 'notiz', notiz: n.id });
-    await x.d.aendereNotiz(n.id, `${NOTIZ} Danke!`, x.lena.id);
+    await x.d.mappenNotizen.aendereNotiz(n.id, `${NOTIZ} Danke!`, x.lena.id);
     assert.equal((await x.d.kurzzustand.liste(ZWISCHENSPEICHER, `${x.m.id}|notiz:`)).length, 0);
     // Mappe gelöscht: alles zu ihr weg.
-    await x.d.loescheMappe(x.m.id, x.lena.id);
+    await x.d.loeschen.loescheMappe(x.m.id, x.lena.id);
     await x.d.ereignisse.verteile();
     assert.equal((await x.d.kurzzustand.liste(ZWISCHENSPEICHER, `${x.m.id}|`)).length, 0);
   });
@@ -209,7 +209,7 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
   it('lange Texte abschnittsweise; schon in der Sprache der Person: nichts an das Paket', async () => {
     const x = await aufbau();
     const lang = Array.from({ length: 6 }, (_, i) => `Absatz ${i + 1}: ${'Die Heizung im Keller wird im Herbst gewartet und geprüft. '.repeat(20)}`).join('\n\n');
-    const m = await x.d.legeMappeAn({ typId: x.brief.id, werte: { betreff: 'Lang', inhalt: lang } }, x.lena.id);
+    const m = await x.d.mappen.legeMappeAn({ typId: x.brief.id, werte: { betreff: 'Lang', inhalt: lang } }, x.lena.id);
     const q = { art: 'feld', mappe: m.id, feld: 'inhalt' };
     const erst = await x.uebersetze(x.lena, q, 0);
     assert.ok(Number(erst.teile) > 1);
@@ -218,7 +218,7 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     assert.equal(ganz, lang, 'Abschnitte samt Trennern ergeben das Original');
     await assert.rejects(x.uebersetze(x.lena, q, Number(erst.teile)), status(422));
     // Englischer Text für Lena (Englisch): schon in ihrer Sprache.
-    const en = await x.d.legeMappeAn({ typId: x.brief.id, werte: { betreff: 'Englisch', inhalt: 'Dear Mrs Example, we are happy to tell you that your application for a new bin has been approved and it will be delivered next week.' } }, x.lena.id);
+    const en = await x.d.mappen.legeMappeAn({ typId: x.brief.id, werte: { betreff: 'Englisch', inhalt: 'Dear Mrs Example, we are happy to tell you that your application for a new bin has been approved and it will be delivered next week.' } }, x.lena.id);
     const vorher = x.eingaenge.length;
     const g = await x.uebersetze(x.lena, { art: 'feld', mappe: en.id, feld: 'inhalt' });
     assert.equal(g.gleich, true);
@@ -275,7 +275,7 @@ describe('Inhalte übersetzen (#732): abschaltbar und Datenabfluss', () => {
     assert.equal(s.wirksam.id, 'wolke');
     // KI-Dienste (#796): Der neue Mappentyp „Brief“ ist für Pakete mit Netz gesperrt, bis er zugelassen ist.
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' }), (e: Fachfehler) => e.status === 409 && /KI-Dienste/.test(e.message));
-    await x.d.setzeKiTyp(x.brief.id, true, null);
+    await x.d.ki.setzeKiTyp(x.brief.id, true, null);
     const r = await x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' });
     assert.deepEqual(r.netz, ['uebersetzer.example']);
     assert.equal(x.eingaenge.at(-1)!.paket, 'wolke');

@@ -82,7 +82,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
     const { HAUSHALT } = await import('./leistung-daten');
     const z = zaehlend(pgRepo(sql, HAUSHALT));
     const d = new Dienst(z.repo, ordnerSpeicher(ordner, HAUSHALT), { einstellungen: speicherEinstellungen() });
-    const q = d.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const q = d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
     // Nur 300 Mappen (PDF je Mappe kostet Zeit); reicht für mehrere Pakete.
     let rest = 300;
     const mappen = q.mappen;
@@ -93,7 +93,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
       assert.ok(r.dokumente > 300, `nur ${r.dokumente} Dokumente`);
       const je = z.je();
       for (const einzeln of ['listeDokumente', 'volltext', 'versionenVon', 'notizen', 'aufgabenVon', 'historie']) assert.equal(je.get(einzeln)?.n ?? 0, 0, `${einzeln} je Mappe/Dokument`);
-      const typen = (await d.listeTypen()).length;
+      const typen = (await d.mappentypen.listeTypen()).length;
       assert.ok((je.get('dokumenteVon')?.n ?? 0) <= typen + 2, `dokumenteVon ${je.get('dokumenteVon')?.n}×`);
       assert.ok((je.get('volltexte')?.n ?? 0) <= Math.ceil(r.dokumente / 100) + typen + 2, `volltexte ${je.get('volltexte')?.n}×`);
       assert.ok((je.get('bezuege')?.n ?? 0) < 50, `bezuege ${je.get('bezuege')?.n}×`);

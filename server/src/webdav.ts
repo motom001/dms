@@ -8,7 +8,8 @@ import { ersetzePlatzhalter, kannStempeln, WEBDAV_VORLAGE, type GeltenderStempel
 import { pdfName } from './ausgabe';
 import { NUR_ZAEHLER, PRAEFIX, type ApiSchluessel, type ApiSchluesselDienst } from './apischluessel';
 import { t } from './sprache';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import { MIME } from './eingangsordner';
 import type { Einstellungen } from './einstellungen';
 import { DateiFehlt } from './dateispeicher';
@@ -135,9 +136,9 @@ interface Kind { name: string; k: Knoten }
 interface Schwebend { ort: string; name: string; groesse: number; zeit: string }
 interface Ctx {
   b: Benutzer; s: ApiSchluessel; z: Zugriff; e: WebdavEinstellung;
-  mappen: Map<string, Awaited<ReturnType<Dienst['laufwerkMappe']>>>;
+  mappen: Map<string, Awaited<ReturnType<Dienst['berechtigungen']['laufwerkMappe']>>>;
   /** Stempel je Mappentyp (#722) und ob eine Mappe hinausdarf (#723) – einmal je Anfrage. */
-  stempel: Map<string, Promise<Awaited<ReturnType<Dienst['laufwerkStempel']>>>>;
+  stempel: Map<string, Promise<Awaited<ReturnType<Dienst['ausgang']['laufwerkStempel']>>>>;
   raus: Map<string, Promise<boolean>>;
 }
 /** Was beim Lesen eines Dokuments hinausgeht (#722): gestempelt oder das Original, mit Größe und ETag dazu. */
@@ -241,7 +242,7 @@ export class Webdav {
     if (hat('aktiv') && typeof x.aktiv !== 'boolean') throw new Fachfehler(422, t('meldungen.webdav.aktiv-true-oder-false'));
     if (hat('nurLesend') && typeof x.nurLesend !== 'boolean') throw new Fachfehler(422, t('api.webdav.nur-lesend-ungueltig'));
     if (hat('stempel') && x.stempel !== null && typeof x.stempel !== 'string') throw new Fachfehler(422, t('api.webdav.stempel-ungueltig'));
-    if (hat('stempel') && x.stempel && !(await this.d.dienst.stempelVorlagen()).some((v) => v.id === x.stempel)) throw new Fachfehler(422, t('api.webdav.vorlage-fehlt'));
+    if (hat('stempel') && x.stempel && !(await this.d.dienst.stempelvorlagen.stempelVorlagen()).some((v) => v.id === x.stempel)) throw new Fachfehler(422, t('api.webdav.vorlage-fehlt'));
     const vorher = await this.einstellung();
     const neu: WebdavEinstellung = {
       aktiv: hat('aktiv') ? x.aktiv as boolean : vorher.aktiv,
@@ -261,7 +262,7 @@ export class Webdav {
     return {
       einstellung: await this.einstellung(), adresse: `${basis}${WEBDAV_PFAD}/`, https: basis.startsWith('https://'),
       grenze: this.grenze.grenze, anfragen: this.anfragen, zugriffe: [...this.zugriffe].reverse(),
-      vorlagen: (await this.d.dienst.stempelVorlagen()).map((v) => ({ id: v.id, name: v.name, text: v.text })),
+      vorlagen: (await this.d.dienst.stempelvorlagen.stempelVorlagen()).map((v) => ({ id: v.id, name: v.name, text: v.text })),
     };
   }
 
@@ -343,7 +344,7 @@ export class Webdav {
       logKonto.info('WebDAV: Anmeldung abgelehnt', { email: kurz, ip: a.ip, grund: 'Schlüssel nur Zähler' });
       return { status: true, wer: kurz, antwort: text(403, t('api.schluessel.nur-zaehler-laufwerk')) };
     }
-    return { b, s, z: await this.d.dienst.zugriff(b), e: await this.einstellung(), mappen: new Map(), stempel: new Map(), raus: new Map() };
+    return { b, s, z: await this.d.dienst.rechtepruefung.zugriff(b), e: await this.einstellung(), mappen: new Map(), stempel: new Map(), raus: new Map() };
   }
 
   private async verarbeite(methode: string, teile: string[], a: WebdavAnfrage, ctx: Ctx): Promise<WebdavAntwort> {
@@ -380,7 +381,7 @@ export class Webdav {
 
   private async mappe(id: string, ctx: Ctx) {
     let m = ctx.mappen.get(id);
-    if (!m) { m = await this.d.dienst.laufwerkMappe(id, ctx.z); ctx.mappen.set(id, m); }
+    if (!m) { m = await this.d.dienst.berechtigungen.laufwerkMappe(id, ctx.z); ctx.mappen.set(id, m); }
     return m;
   }
 
@@ -391,7 +392,7 @@ export class Webdav {
   /** Stempel beim Lesen für Mappen dieses Typs: Pflicht des Typs, sonst die Vorlage der Einstellung. */
   private stempelFuer(typId: string, ctx: Ctx) {
     let p = ctx.stempel.get(typId);
-    if (!p) { p = this.d.dienst.laufwerkStempel(typId, ctx.e.stempel, this.leser(ctx)); ctx.stempel.set(typId, p); }
+    if (!p) { p = this.d.dienst.ausgang.laufwerkStempel(typId, ctx.e.stempel, this.leser(ctx)); ctx.stempel.set(typId, p); }
     return p;
   }
   /** Hat der Mappentyp dieser Mappe einen Pflicht-Stempel? Dann ist sie über das Laufwerk nur lesbar. */
@@ -415,7 +416,7 @@ export class Webdav {
   /** Darf die Mappe über das Laufwerk hinaus (Lesen und Exportrecht, gemeinsame Prüfstelle #723)? */
   private darfRaus(mappeId: string, ctx: Ctx): Promise<boolean> {
     let p = ctx.raus.get(mappeId);
-    if (!p) { p = this.d.dienst.mitnehmbar(ctx.b, ctx.z, [mappeId]).then((x) => x.has(mappeId)); ctx.raus.set(mappeId, p); }
+    if (!p) { p = this.d.dienst.ausgang.mitnehmbar(ctx.b, ctx.z, [mappeId]).then((x) => x.has(mappeId)); ctx.raus.set(mappeId, p); }
     return p;
   }
 
@@ -428,7 +429,7 @@ export class Webdav {
     const d = k.dok;
     const original: Auslieferung = {
       gestempelt: false, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', groesse: d.groesse, etag: etagVon(d),
-      inhalt: async () => (await this.d.dienst.dokumentInhalt(d.id)).inhalt,
+      inhalt: async () => (await this.d.dienst.dokumente.dokumentInhalt(d.id)).inhalt,
     };
     const m = await this.mappe(k.mappeId, ctx);
     const s = await this.stempelFuer(m.mappe.typId, ctx);
@@ -467,7 +468,7 @@ export class Webdav {
     }
   }
   private async stemple(d: Dokument, m: Mappe, plan: GeltenderStempel, ctx: Ctx, schluessel: string) {
-    const a = await this.d.dienst.laufwerkAusgabe(d, m, plan, this.leser(ctx));
+    const a = await this.d.dienst.ausgang.laufwerkAusgabe(d, m, plan, this.leser(ctx));
     const eintrag = { gestempelt: true, groesse: a.inhalt.length, inhalt: a.inhalt };
     this.merkeStempel(schluessel, eintrag);
     return eintrag;
@@ -512,7 +513,7 @@ export class Webdav {
       case 'wurzel': return [{ name: NEUE_POST, k: { art: 'post' } }, { name: ABLAGE, k: { art: 'ablage' } }];
       case 'post': return (await this.schwebende(ctx, 'post')).map((s) => ({ name: s.name, k: { art: 'schwebend', s } }));
       case 'ablage': {
-        const sichten = await this.d.dienst.listeSichten(ctx.z);
+        const sichten = await this.d.dienst.sichtenVerwaltung.listeSichten(ctx.z);
         // Reihenfolge wie im Baum der Ablage; alle Ansichten auf einer Ebene.
         const reihe: Sicht[] = [];
         const besuche = (eltern: string | null) => { for (const s of kinderVon(sichten, eltern)) { if (!reihe.includes(s)) { reihe.push(s); besuche(s.id); } } };
@@ -522,7 +523,7 @@ export class Webdav {
         return reihe.map((s, i) => ({ name: namen[i], k: { art: 'sicht', sicht: s } }));
       }
       case 'sicht': {
-        const r = await this.d.dienst.seite(ctx.b, { sicht: k.sicht.id, anzahl: MAX_EINTRAEGE }, ctx.z, MAX_EINTRAEGE);
+        const r = await this.d.dienst.sichten.seite(ctx.b, { sicht: k.sicht.id, anzahl: MAX_EINTRAEGE }, ctx.z, MAX_EINTRAEGE);
         const mappen = (r.mappen as Array<Mappe & { verborgen?: boolean }>).filter((m) => !m.verborgen)
           .sort((x, y) => (x.titel ?? '').localeCompare(y.titel ?? '', 'de') || x.erstellt.localeCompare(y.erstellt) || x.id.localeCompare(y.id));
         if (r.gesamt > MAX_EINTRAEGE) log.debug('WebDAV: Ansicht gekürzt', { sicht: k.sicht.name, gesamt: r.gesamt, gezeigt: MAX_EINTRAEGE });
@@ -653,7 +654,7 @@ export class Webdav {
     // Explorer, Finder und Office lesen dieselbe Datei oft viele Male (auch für Vorschaubilder): Je Person, Datei und
     // Tag bleibt es bei einem Eintrag. Scheitert das Schreiben, geht die Datei nicht hinaus.
     try {
-      await this.d.dienst.notiereAbruf({ dokumentId: d.id, benutzerId: ctx.b.id, weg: 'webdav', schluessel: ctx.s.name, gestempelt: aus.gestempelt, datei: aus.name });
+      await this.d.dienst.mappenHistorie.notiereAbruf({ dokumentId: d.id, benutzerId: ctx.b.id, weg: 'webdav', schluessel: ctx.s.name, gestempelt: aus.gestempelt, datei: aus.name });
     } catch (e) {
       if (!Buffer.isBuffer(inhalt)) (inhalt as Readable).destroy();
       throw e;
@@ -688,7 +689,7 @@ export class Webdav {
     // Nur Bytes zählen, nichts puffern – und das vor jeder Prüfung des Ziels (geht auch mit Lese-Schlüssel).
     if (teile.length && istHilfsdatei(teile[teile.length - 1])) { await leere(a.koerper, MAX_DATEIGROESSE); return { status: 201, koepfe: { 'content-length': '0' } }; }
     const z = await this.ablageZiel(teile, ctx);
-    if (z.eltern.art === 'register') await this.d.dienst.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
+    if (z.eltern.art === 'register') await this.d.dienst.rechtepruefung.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
     // Jeder Upload belegt bis zu 100 MB (temporäre Datei, #746): nur wenige gleichzeitig je Benutzer.
     const laufend = this.uploads.get(ctx.b.id) ?? 0;
     if (laufend >= MAX_UPLOADS) {
@@ -719,9 +720,9 @@ export class Webdav {
     }
     const typ = MIME[extname(z.name).toLowerCase()];
     if (z.eltern.art === 'post') {
-      const post = await this.d.dienst.legePostAn({ betreff: z.name.replace(/\.[^.]{1,8}$/, '').slice(0, 250) || z.name }, { id: ctx.b.id, name: ctx.b.name }, ctx.z, POST_KANAL.webdav);
-      const register = (await this.d.dienst.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
-      await this.d.dienst.ladeHoch(post.id, { register, name: z.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
+      const post = await this.d.dienst.post.legePostAn({ betreff: z.name.replace(/\.[^.]{1,8}$/, '').slice(0, 250) || z.name }, { id: ctx.b.id, name: ctx.b.name }, ctx.z, POST_KANAL.webdav);
+      const register = (await this.d.dienst.eingangskanaele.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
+      await this.d.dienst.dokumente.ladeHoch(post.id, { register, name: z.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
       log.info('Post über WebDAV abgelegt', { datei: z.name, groesse, mappe: post.id, von: ctx.b.email });
       await this.merkeSchwebend(ctx, z.ort, z.name, groesse);
       return { status: 201, koepfe: { 'content-length': '0' } };
@@ -733,11 +734,11 @@ export class Webdav {
       if (!reg.versionierung) throw new Fachfehler(409, t('meldungen.webdav.im-register-gibt-es', { name: reg.name, name2: z.k.dok.name }));
       // Per Dokument-Id, nicht per Name: Laufwerksnamen sind bereinigt und eindeutig gemacht („X (2).pdf“),
       // im DMS können zwei Dokumente gleich (oder nach dem Bereinigen gleich) heißen.
-      const neu = await this.d.dienst.ersetzeDokument(z.k.dok.id, { name: z.k.dok.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
+      const neu = await this.d.dienst.dokumentVersionen.ersetzeDokument(z.k.dok.id, { name: z.k.dok.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
       log.info('Neue Version über WebDAV abgelegt', { datei: neu.name, id: neu.id, groesse, mappe: z.eltern.mappeId, von: ctx.b.email });
       return { status: 204, koepfe: {} };
     }
-    const r = await this.d.dienst.ladeHoch(z.eltern.mappeId, { register: reg.key, name: z.name, typ, gleicherName: 'zaehler', herkunft: 'webdav' }, inhalt, ctx.b.id);
+    const r = await this.d.dienst.dokumente.ladeHoch(z.eltern.mappeId, { register: reg.key, name: z.name, typ, gleicherName: 'zaehler', herkunft: 'webdav' }, inhalt, ctx.b.id);
     await this.vergiss(ctx, z.ort, z.name);
     log.info('Dokument über WebDAV abgelegt', { datei: r.dokument.name, groesse, mappe: z.eltern.mappeId, von: ctx.b.email });
     return { status: 201, koepfe: { 'content-length': '0' } };
@@ -752,7 +753,7 @@ export class Webdav {
     const token = vorhanden ?? `opaquelocktoken:${randomUUID()}`;
     let status = 200;
     if (z && !z.k) {
-      if (z.eltern.art === 'register') await this.d.dienst.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
+      if (z.eltern.art === 'register') await this.d.dienst.rechtepruefung.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
       await this.merkeSchwebend(ctx, z.ort, z.name, 0);
       status = 201;
     }

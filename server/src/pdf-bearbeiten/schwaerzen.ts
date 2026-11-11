@@ -1,7 +1,7 @@
 /**
  * Schwärzen (#392, #459, #1077 aus dienst.ts): Wörter mit Lage, Seitenbilder für den Dialog (auch der Archivfassung,
  * #934), geschwärzte Fassung als Kopie oder neue Version. Schicht 3 – bekommt den Kern, das Verkleinern (Datei
- * ablegen), Mappen und Dokumente; den Volltext über den Anschluss (Fassade des Dienstes).
+ * ablegen), Mappen und Dokumente; den Volltext über den Anschluss.
  */
 import type { DokumentArchivfassung, DokumenteDienst, DokumentVersionen } from '../dokumente';
 import { Fachfehler } from '../fehler';
@@ -21,7 +21,7 @@ export interface SchwaerzenTeile { verkleinern: PdfVerkleinern; historie: Mappen
 
 /** Was das Schwärzen außer dem Kern braucht – vom Dienst hereingereicht. */
 export interface SchwaerzenAnschluss {
-  /** „Volltext fertig“ (#459; volltext/, über die Fassade des Dienstes). */
+  /** „Volltext fertig“ (#459; volltext/, über den Anschluss). */
   volltextFertig(e: { dokument: string; mappe: string }, m?: VolltextMeldung, von?: string | null): Promise<void>;
 }
 

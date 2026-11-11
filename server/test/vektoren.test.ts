@@ -86,11 +86,11 @@ for (const pg of [false, true]) {
       const db = pg ? await pgRepoNeu() : { repo: speicherRepo(), ende: async () => {} };
       try {
         const d = new Dienst(db.repo, speicherDateien());
-        const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-        const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
+        const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+        const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
         const ids: string[] = [];
-        for (let i = 0; i < 3; i++) ids.push((await d.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id);
-        for (const id of ids.slice(0, 2)) await d.schreibeVolltext(id, { text: `Text ${id}` }, { id: null as never, herkunft: 'Test', paket: false });
+        for (let i = 0; i < 3; i++) ids.push((await d.dokumente.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id);
+        for (const id of ids.slice(0, 2)) await d.volltexte.schreibeVolltext(id, { text: `Text ${id}` }, { id: null as never, herkunft: 'Test', paket: false });
         assert.equal(await db.repo.mitVolltext(), 2);
         const v = liesVektor([1, 2, 3, 4, 5, 6, 7, 8]);
         assert.equal(await db.repo.vektorSetze({ dokumentId: ids[0], paket: 'ki', modell: 'm/8', vektor: v }), true);

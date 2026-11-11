@@ -85,14 +85,14 @@ async function aufbau() {
   const repo = speicherRepo();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, speicherDateien(), { einstellungen });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const rolleTyp = (await d.listeTypen()).find((t) => t.system === 'rolle')!;
-  const fibu = (await d.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', felder: [
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
+  const fibu = (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'privat', label: 'Privat', typ: 'janein' },
     { key: 'faellig', label: 'Fällig', typ: 'datum' },
@@ -100,33 +100,33 @@ async function aufbau() {
   const privatNurFibu: Regelwerk = { grund: ALLES, regeln: [
     { id: 'privat', name: 'Privat nur FiBu', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }, { art: 'rolle', rollen: [fibu], nicht: true }], dann: { R: 'entziehen' }, stopp: true },
   ] };
-  await d.setzeBerechtigungen(rechnung.id, privatNurFibu, true);
-  const alle = await d.legeSichtAn({ name: 'Alle Rechnungen', typen: [rechnung.id], bedingungen: [] });
-  const privat = await d.legeSichtAn({ name: 'Privat', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }] });
-  const faellig = await d.legeSichtAn({ name: 'Fällig bis heute', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }] });
+  await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurFibu, true);
+  const alle = await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Rechnungen', typen: [rechnung.id], bedingungen: [] });
+  const privat = await d.sichtenVerwaltung.legeSichtAn({ name: 'Privat', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }] });
+  const faellig = await d.sichtenVerwaltung.legeSichtAn({ name: 'Fällig bis heute', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }] });
   const ich = async (id: string) => { const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!); return { id: b.id, rolle: b.rolle }; };
   /** Zahlen wie der Server sie liefert, und ob der Zwischenspeicher traf. */
   const zahlen = async (id: string) => {
     const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
     const b = await ich(id);
-    const z = await kontext.run(k, async () => d.zaehler(b, await d.zugriff(b)));
+    const z = await kontext.run(k, async () => d.sichten.zaehler(b, await d.rechtepruefung.zugriff(b)));
     return { z, art: k.zwischenspeicher?.art };
   };
   /** Dieselben Zahlen frisch gezählt (ein neuer Dienst auf demselben Bestand, ohne Zwischenspeicher). */
   const frisch = async (id: string) => {
     const f = new Dienst(repo, speicherDateien(), { einstellungen });
     const b = await ich(id);
-    return f.zaehler(b, await f.zugriff(b));
+    return f.sichten.zaehler(b, await f.rechtepruefung.zugriff(b));
   };
   return { d, admin, max, fibu, rechnung, privatNurFibu, alle, privat, faellig, zahlen, frisch };
 }
 
-const teil = (z: Awaited<ReturnType<Dienst['zaehler']>>) => ({ typen: z.typen, eingang: z.eingang, favoriten: z.favoriten, sichten: z.sichten, papierkorb: z.papierkorb });
+const teil = (z: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({ typen: z.typen, eingang: z.eingang, favoriten: z.favoriten, sichten: z.sichten, papierkorb: z.papierkorb });
 
 describe('Dienst: Zahlen der Ansichten (#512)', () => {
   it('wiederholtes Laden ohne Änderung zählt nicht neu', async () => {
     const h = await aufbau();
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
     assert.equal((await h.zahlen(h.max.id)).art, 'neu');
     const zweites = await h.zahlen(h.max.id);
     assert.equal(zweites.art, 'treffer');
@@ -134,7 +134,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     // Rahmen ist immer frisch dabei.
     assert.equal('papierkorbTage' in zweites.z && 'neuePost' in zweites.z, true);
     // Lesen ändert den Stand nicht.
-    await h.d.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.zugriff({ id: h.max.id, rolle: 'mitglied' }));
+    await h.d.sichten.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.rechtepruefung.zugriff({ id: h.max.id, rolle: 'mitglied' }));
     assert.equal((await h.zahlen(h.max.id)).art, 'treffer');
   });
 
@@ -155,40 +155,40 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     };
     await pruefe('Anfang');
     // Mappe anlegen
-    const r1 = await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
-    const r2 = await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2', privat: true } }, h.admin.id);
+    const r1 = await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
+    const r2 = await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2', privat: true } }, h.admin.id);
     await stimmt('anlegen', { admin: [2, 1], max: [1, 0] });
     await pruefe('anlegen');
     // Mappe ändern
-    await h.d.aendereMappe(r1.id, { werte: { nr: 'R1', privat: true } }, h.admin.id);
+    await h.d.mappen.aendereMappe(r1.id, { werte: { nr: 'R1', privat: true } }, h.admin.id);
     await stimmt('ändern', { admin: [2, 2], max: [0, 0] });
     await pruefe('ändern');
     // Rechte ändern: Regeln weg …
-    await h.d.setzeBerechtigungen(h.rechnung.id, { grund: ALLES, regeln: [] }, true);
+    await h.d.berechtigungen.setzeBerechtigungen(h.rechnung.id, { grund: ALLES, regeln: [] }, true);
     await stimmt('Rechte ändern', { admin: [2, 2], max: [2, 2] });
     // … wieder an, und Max bekommt die Rolle FiBu
-    await h.d.setzeBerechtigungen(h.rechnung.id, h.privatNurFibu, true);
+    await h.d.berechtigungen.setzeBerechtigungen(h.rechnung.id, h.privatNurFibu, true);
     await stimmt('Rechte zurück', { admin: [2, 2], max: [0, 0] });
     await pruefe('Rechte zurück');
-    await h.d.setzeRollen(h.max.id, [h.fibu], h.admin.id);
+    await h.d.postSystemmappen.setzeRollen(h.max.id, [h.fibu], h.admin.id);
     await stimmt('Rolle', { admin: [2, 2], max: [2, 2] });
     await pruefe('Rolle');
     // Ansicht ändern
-    await h.d.aendereSicht(h.privat.id, { name: 'Nicht privat', typen: [h.rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'nein' }] });
+    await h.d.sichtenVerwaltung.aendereSicht(h.privat.id, { name: 'Nicht privat', typen: [h.rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'nein' }] });
     await stimmt('Ansicht ändern', { admin: [2, 0], max: [2, 0] });
     await pruefe('Ansicht ändern');
     // Aufgabe vergeben und erledigen (Eingang)
-    const a = await h.d.legeAufgabeAn(r2.id, { text: 'Bitte zahlen', empfaengerId: h.max.id }, h.admin.id);
+    const a = await h.d.vertretung.legeAufgabeAn(r2.id, { text: 'Bitte zahlen', empfaengerId: h.max.id }, h.admin.id);
     assert.equal((await h.zahlen(h.max.id)).z.eingang, 1);
     await h.zahlen(h.max.id);
-    await h.d.erledigeAufgabe(a.id, { id: h.max.id, rolle: 'mitglied' });
+    await h.d.vertretung.erledigeAufgabe(a.id, { id: h.max.id, rolle: 'mitglied' });
     assert.equal((await h.zahlen(h.max.id)).z.eingang, 0, 'Aufgabe erledigt');
     await stimmt('Aufgabe erledigt', { admin: [2, 0], max: [2, 0] });
     // Favorit
-    await h.d.setzeFavorit({ id: h.max.id }, r1.id, true);
+    await h.d.mappen.setzeFavorit({ id: h.max.id }, r1.id, true);
     assert.equal((await h.zahlen(h.max.id)).z.favoriten, 1);
     // Mappe löschen
-    await h.d.loescheMappe(r1.id, h.admin.id);
+    await h.d.loeschen.loescheMappe(r1.id, h.admin.id);
     await stimmt('löschen', { admin: [1, 0], max: [1, 0] });
     assert.equal((await h.zahlen(h.max.id)).z.favoriten, 0);
   });
@@ -198,16 +198,16 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     const b = { id: h.max.id, rolle: 'mitglied' };
     const termine = async () => {
       const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
-      await kontext.run(k, async () => h.d.naechsterTermin(await h.d.zugriff(b)));
+      await kontext.run(k, async () => h.d.fristen.naechsterTermin(await h.d.rechtepruefung.zugriff(b)));
       return k.zwischenspeicher?.art;
     };
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
     await h.d.ereignisse.verteile();
     await h.zahlen(h.max.id); await termine();
     const vorher = h.d.fristenstand.stand;
     // Nichts fällig und einmal mit einem Ereignis im Ausgangskorb: holen, verteilen, aufräumen.
     await h.d.ereignisse.verteile();
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2' } }, h.admin.id);
     await h.zahlen(h.max.id); await termine();
     const nachAenderung = h.d.fristenstand.stand;
     assert.ok(nachAenderung > vorher, 'die Änderung zählt');
@@ -235,7 +235,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     // 23:30 in Berlin; die Rechnung ist morgen fällig.
     t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-01T22:30:00Z') });
     const h = await aufbau();
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1', faellig: '2026-11-02' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1', faellig: '2026-11-02' } }, h.admin.id);
     assert.equal((await h.zahlen(h.admin.id)).z.sichten[h.faellig.id], 0);
     assert.equal((await h.zahlen(h.admin.id)).art, 'treffer');
     t.mock.timers.setTime(Date.parse('2026-11-01T22:40:00Z'));

@@ -34,7 +34,7 @@ async function aufbau() {
     holeAnmeldung: async (h) => { const x = await grund.holeAnmeldung!(h); return x && { ...x, sitzung: { ...x.sitzung, zuletztAktiv: new Date(0) } }; },
     beruehreSitzung: async (h) => { beruehrt.n++; await grund.beruehreSitzung(h); },
   };
-  const konten = new Konten(repo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const mitPasswort = async (email: string, name: string) => {
@@ -45,7 +45,7 @@ async function aufbau() {
   const markus = await mitPasswort('markus@example.org', 'Markus');
   const petra = await mitPasswort('petra@example.org', 'Petra');
   await konten.setzeVerwaltung(imModus(lena), markus.id, ['benutzer']);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const { baueApp } = await import('../src/http');
   const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
   const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()) });
@@ -179,7 +179,7 @@ describe('Stand der Ablage (#919, GET /api/ablage/stand)', () => {
     assert.deepEqual(Object.keys(s1), ['stand']);
     assert.match(s1.stand, /^[\w-]{10,40}$/);
     assert.equal((await stand()).stand, s1.stand, 'nichts geändert → gleicher Stand');
-    await x.d.legeTypAn({ id: crypto.randomUUID(), name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ key: 'a', name: 'A', art: 'felder', felder: ['name'] }], trefferliste: ['_titel'] });
+    await x.d.mappentypen.legeTypAn({ id: crypto.randomUUID(), name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ key: 'a', name: 'A', art: 'felder', felder: ['name'] }], trefferliste: ['_titel'] });
     const s2 = await stand();
     assert.notEqual(s2.stand, s1.stand, 'nach einer Änderung ein anderer Stand');
     assert.equal((await stand()).stand, s2.stand);

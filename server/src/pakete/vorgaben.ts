@@ -305,14 +305,11 @@ export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<Ins
 
 /** Was das Anlegen vom Dienst braucht – die Paketverwaltung gibt ihren Dienst hinein. */
 export interface VorgabenDienst {
-  listeTypen(): Promise<Mappentyp[]>;
-  ohneEreignisse<T>(f: () => Promise<T>): Promise<T>;
-  legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
-  aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
-  ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>;
+  mappentypen: { listeTypen(): Promise<Mappentyp[]> };
+  mappen: { legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>; aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe> };
+  dokumente: { ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>; loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown> };
   listeDokumente(mappeId: string): Promise<Dokument[]>;
-  loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown>;
-  kern: { repo: { holeMappe(id: string): Promise<Mappe | undefined>; setzeVorgabe(id: string, kennung: string | null): Promise<void>; mappenMitVorgabe(praefix: string): Promise<Mappe[]> } };
+  kern: { repo: { holeMappe(id: string): Promise<Mappe | undefined>; setzeVorgabe(id: string, kennung: string | null): Promise<void>; mappenMitVorgabe(praefix: string): Promise<Mappe[]> }; ohneEreignisse<T>(f: () => Promise<T>): Promise<T> };
 }
 
 export interface VorgabenAuftrag {
@@ -355,7 +352,7 @@ export function vorlagenName(v: PaketVorlage): string {
  * anderer Pakete nur Vorlagen an. Scheitert etwas, rollt die Paketverwaltung mit `angelegt` und `rueck` zurück.
  */
 export async function legeVorgaben(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis): Promise<void> {
-  const typen = new Map((await d.listeTypen()).map((x) => [x.id, x] as const));
+  const typen = new Map((await d.mappentypen.listeTypen()).map((x) => [x.id, x] as const));
   for (const v of ordneVorgaben(a.teil.vorgaben, a.paketId) ?? a.teil.vorgaben) await legeEineVorgabe(d, a, erg, v, typen);
   await legeErgaenzungen(d, a, erg, typen);
 }
@@ -363,10 +360,10 @@ export async function legeVorgaben(d: VorgabenDienst, a: VorgabenAuftrag, erg: V
 /** Werte einer Vorgabe schreiben – nur neu oder unverändert seit dem letzten Schreiben (dann alle Felder vom Paket). */
 async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis, x: { v: PaketVorgabe; l: VorgabenLage['je'] extends Map<string, infer L> ? L : never; typ: Mappentyp; werte: Record<string, unknown> }) {
   const { v, l, typ, werte } = x;
-  const ohne = <T>(f: () => Promise<T>) => d.ohneEreignisse(f);
+  const ohne = <T>(f: () => Promise<T>) => d.kern.ohneEreignisse(f);
   const fehler = (f: unknown) => new Fachfehler(422, t('meldungen.pakete.vorgaben.anlegen', { name: v.schluessel, meldungen: (f as Error).message }));
   if (l.zustand === 'neu') {
-    try { await ohne(() => d.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von)); } catch (f) { throw fehler(f); }
+    try { await ohne(() => d.mappen.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von)); } catch (f) { throw fehler(f); }
     erg.angelegt.push(l.id);
     await d.kern.repo.setzeVorgabe(l.id, vorgabeKennung(a.paketId, v.schluessel));
     return;
@@ -376,8 +373,8 @@ async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgabe
   const leer = (keys: string[]) => Object.fromEntries(keys.map((k) => [k, null]));
   // Was das Paket jetzt weglässt, wird leer: Alle Werte dieser Mappe kamen vom Paket.
   const neu = { ...leer(Object.keys(m.werte).filter((k) => !(k in werte))), ...werte };
-  try { await ohne(() => d.aendereMappe(m.id, { werte: neu }, a.von)); } catch (f) { throw fehler(f); }
-  erg.rueck.unshift(() => ohne(() => d.aendereMappe(m.id, { werte: { ...leer(Object.keys(neu)), ...m.werte } }, a.von)));
+  try { await ohne(() => d.mappen.aendereMappe(m.id, { werte: neu }, a.von)); } catch (f) { throw fehler(f); }
+  erg.rueck.unshift(() => ohne(() => d.mappen.aendereMappe(m.id, { werte: { ...leer(Object.keys(neu)), ...m.werte } }, a.von)));
 }
 
 /** Eine eigene Vorgabe anlegen bzw. aktualisieren, samt Vorlagen; gelöschte bleiben gelöscht. */
@@ -456,9 +453,9 @@ async function legeVorlagen(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgaben
     if (alt && !dok) continue; // gelöscht: bleibt weg
     if (alt && dok && (dok.sha256 !== alt.sha256 || !x.ersetzen || sha === alt.sha256)) { staende.push(alt); continue; }
     // Die bisherige Fassung zuerst in den Papierkorb (sonst hieße die neue „… (2).md“).
-    if (dok) await d.ohneEreignisse(() => d.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
-    const neu = await d.ohneEreignisse(() => d.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
-    erg.rueck.unshift(() => d.loescheDokument(neu.dokument.id, a.von, { weg: 'dokument' }));
+    if (dok) await d.kern.ohneEreignisse(() => d.dokumente.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
+    const neu = await d.kern.ohneEreignisse(() => d.dokumente.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
+    erg.rueck.unshift(() => d.dokumente.loescheDokument(neu.dokument.id, a.von, { weg: 'dokument' }));
     staende.push({ datei: v.datei, dokument: neu.dokument.id, sha256: neu.dokument.sha256 });
   }
   // Vorlagen, die das Paket nicht mehr mitbringt, bleiben stehen und gehören weiter dazu (beim Entfernen gehen sie mit).

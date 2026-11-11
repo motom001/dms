@@ -61,9 +61,9 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     if (opt.mitDaten) {
       await ladeBeispiele(dienst, null);
       // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
-      const partner = (await dienst.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
-      const m = (await dienst.listeMappen(partner.id))[0];
-      await dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
+      const partner = (await dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+      const m = (await dienst.mappen.listeMappen(partner.id))[0];
+      await dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
       await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (gen_random_uuid(), ${HAUSHALT}, 'anna@example.org', 'Anna', 'admin')`;
       benutzer = 1;
     }
@@ -195,8 +195,8 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   it('auf dem laufenden System nur im Wartungsmodus; vorher wird der jetzige Stand gesichert', async () => {
     const q = quelle;
     // Nach der Sicherung kommt etwas dazu, das die Wiederherstellung wieder entfernt.
-    const typ = (await q.dienst.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
-    await q.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Nach der Sicherung GmbH' } });
+    const typ = (await q.dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    await q.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Nach der Sicherung GmbH' } });
     const vorher = await zaehle(q.sql);
     await assert.rejects(q.w.pruefeZugang(false), /Verwaltungsmodus/);
     await assert.rejects(q.w.pruefeZugang(true), /Wartungsmodus/);
@@ -324,26 +324,26 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       const dateien = ordnerSpeicher(join(wurzel, 'files'), HAUSHALT);
       const d = dienst ?? new Dienst(pgRepo(s, HAUSHALT), dateien, {});
       const vorschau = new Vorschaubilder(speicherAblage(), dateien, async (inhalt, mime) => Buffer.from(`vorschau:${mime}:${inhalt.length}`));
-      d.verbindeVorschau(vorschau);
-      const u = new Dateiumwandlung(d.umwandlungAnbindung(ordnerFassungen(fassungsOrdner(join(wurzel, 'files'), HAUSHALT)), vorschau));
-      d.verbindeUmwandlung(u, vorschau);
+      d.dokumente.verbindeVorschau(vorschau);
+      const u = new Dateiumwandlung(d.dokumentUmwandlung.umwandlungAnbindung(ordnerFassungen(fassungsOrdner(join(wurzel, 'files'), HAUSHALT)), vorschau));
+      d.dokumentUmwandlung.verbindeUmwandlung(u, vorschau);
       vorschau.fassung = (sha) => u.lies(sha);
       return { d, u, vorschau };
     };
     const q = await system(dbs[3], { mitSchluessel: true });
     const quelleU = verbinde(q.sql, q.wurzel, q.dienst);
-    const typ = await q.dienst.legeTypAn({ name: 'Scan', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
+    const typ = await q.dienst.mappentypen.legeTypAn({ name: 'Scan', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-    const m = await q.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Scans von Lena' } });
+    const m = await q.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Scans von Lena' } });
     const tiff = Buffer.concat([Buffer.from([0x49, 0x49, 42, 0, 8, 0, 0, 0]), Buffer.alloc(64, 7)]);
-    const dok = (await q.dienst.ladeHoch(m.id, { register: 'dokumente', name: 'scan.tif', typ: 'image/tiff' }, tiff, null)).dokument;
+    const dok = (await q.dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.tif', typ: 'image/tiff' }, tiff, null)).dokument;
     assert.equal(dok.mime, 'image/tiff');
     // Die Fassung, wie das Paket Bildformate sie geliefert hätte, und der Text daraus.
     const pdf = pdfMitText(['Kontoauszug Oktober']);
     const info = { mime: 'application/pdf', groesse: pdf.length, sha256: createHash('sha256').update(pdf).digest('hex'), paket: { id: 'bildformate', name: 'Bildformate', version: '1.0.0' }, erstellt: new Date().toISOString() };
     const ablage = ordnerFassungen(fassungsOrdner(join(q.wurzel, 'files'), HAUSHALT));
     await ablage.schreibe(dok.sha256, info, pdf);
-    await q.dienst.schreibeVolltext(dok.id, { text: 'Kontoauszug Oktober' }, { id: 'kern', herkunft: 'Text aus dem PDF', paket: false });
+    await q.dienst.volltexte.schreibeVolltext(dok.id, { text: 'Kontoauszug Oktober' }, { id: 'kern', herkunft: 'Text aus dem PDF', paket: false });
     // Eine halbe Fassung (nur Inhalt, ohne Angaben) – z. B. während der Sicherung entstanden – kommt nicht mit.
     await mkdir(join(q.wurzel, 'files', HAUSHALT, 'fassungen', 'ee'), { recursive: true });
     await writeFile(join(q.wurzel, 'files', HAUSHALT, 'fassungen', 'ee', `${'e'.repeat(64)}.fassung`), 'halb');
@@ -351,7 +351,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     // Archivfassung (PDF/A, #631) zu einem PDF, wie das Paket PDF/A sie abgelegt hätte, mit Stand und Wortpositionen.
     const { archivOrdner, ordnerArchiv, woerterOrdner } = await import('../src/archivfassung');
     const archivAblage = (w: string) => ordnerArchiv(archivOrdner(join(w, 'files'), HAUSHALT), woerterOrdner(join(w, 'files'), HAUSHALT));
-    const brief = (await q.dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief von Petra']), null)).dokument;
+    const brief = (await q.dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief von Petra']), null)).dokument;
     const pdfa = pdfMitText(['Brief von Petra als PDF/A']);
     const archivInfo = { mime: 'application/pdf' as const, groesse: pdfa.length, sha256: createHash('sha256').update(pdfa).digest('hex'), seiten: 1, pdfa: { teil: 2, stufe: 'B' }, paket: { id: 'pdfa', name: 'PDF/A', version: '1.0.0' }, erstellt: new Date().toISOString() };
     await archivAblage(q.wurzel).schreibe(brief.sha256, archivInfo, pdfa);
@@ -385,11 +385,11 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal((await zielU.u.pakete()).length, 0, 'auch hier kein Paket');
     // Archivfassung und Wortpositionen sind da – ohne Paket.
     const { Archivfassung } = await import('../src/archivfassung');
-    const za = new Archivfassung(zielU.d.archivAnbindung(archivAblage(z.wurzel)));
-    zielU.d.verbindeArchivfassung(za);
-    assert.deepEqual((await zielU.d.archivfassungVon(brief.id)).inhalt, pdfa, 'Archivfassung ansehen');
+    const za = new Archivfassung(zielU.d.dokumentArchiv.archivAnbindung(archivAblage(z.wurzel)));
+    zielU.d.dokumentArchiv.verbindeArchivfassung(za);
+    assert.deepEqual((await zielU.d.dokumentArchiv.archivfassungVon(brief.id)).inhalt, pdfa, 'Archivfassung ansehen');
     assert.equal((await archivAblage(z.wurzel).woerter(brief.sha256))?.seiten[0]?.[0][0], 'Brief');
-    const f = await zielU.d.fassungVon(dok.id);
+    const f = await zielU.d.dokumentUmwandlung.fassungVon(dok.id);
     assert.deepEqual(f.inhalt, pdf, 'Fassung ansehen: dieselbe Fassung wie vorher');
     assert.deepEqual(f.info.paket, info.paket);
     assert.equal(f.info.sha256, info.sha256);
@@ -404,7 +404,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
 
     // Vollexport: die Fassung steht neben dem Original und in dokumente.csv.
     const { vollexport } = await import('../src/vollexport');
-    const ex = await vollexport(zielU.d.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), join(z.wurzel, 'export'), {});
+    const ex = await vollexport(zielU.d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), join(z.wurzel, 'export'), {});
     const rel = ex.pfade.dokumente.get(dok.id)!;
     assert.deepEqual(await readFile(join(ex.ordner, ...`${rel}.fassung.pdf`.split('/'))), pdf);
     const csvText = await readFile(join(ex.ordner, 'daten', 'dokumente.csv'), 'utf8');
@@ -418,10 +418,10 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const x = await system(dbs[2], { mitDaten: true, mitSchluessel: true });
     const { pgRepo } = await import('../src/repo-pg');
     const repo = pgRepo(x.sql, HAUSHALT);
-    const typ = await x.dienst.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
-    const a = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
-    const b = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
-    await x.dienst.loescheMappe(b.id);
+    const typ = await x.dienst.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
+    const a = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
+    const b = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
+    await x.dienst.loeschen.loescheMappe(b.id);
     const meta = (await (await x.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
     const name = meta.datei.replace('.dms-sicherung', '');
     const altText = x.tresor.alsText()!;
@@ -441,7 +441,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(w.umgeschluesselt, 2);
     const nachher = await roh();
     assert.notEqual(nachher.a, vorher.a); assert.notEqual(nachher.b, vorher.b); assert.notEqual(nachher.pruefwort, vorher.pruefwort);
-    assert.equal((await x.dienst.zeigePasswort(a.id, 'pw')).wert, 'geheim-a');
+    assert.equal((await x.dienst.passwortfelder.zeigePasswort(a.id, 'pw')).wert, 'geheim-a');
     assert.equal((await x.sql`SELECT wert FROM einstellungen WHERE schluessel = 'tresor'`)[0].wert.fingerabdruck, w.neu);
     // Die Sicherung von vorher: früherer Schlüssel, Wiederherstellen fragt nach dem alten.
     const eintrag = (await x.sicherung.liste()).find((e) => e.name === name)!;

@@ -110,7 +110,7 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     // Wie verbinde() in db.ts, zusätzlich zählt jede SQL-Anweisung (Abfragen je Anfrage).
     const sql = postgres(dbUrl, { max: 4, onnotice: () => {}, infer: true, debug: () => { n++; } });
     const dienst = new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a741-')), HAUSHALT), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
-    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     const zweifaktor = new Zweifaktor(pgEinstellungen(sql, HAUSHALT), (k: string) => `v:${k}`, (w: string) => (w.startsWith('v:') ? w.slice(2) : null));
     konten.verbindeZweifaktor(zweifaktor);
@@ -152,17 +152,17 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     ids.jonas = await mitPasswort('jonas@example.org', 'Jonas');
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
     ids.petra = await mitPasswort('petra@example.org', 'Petra');
-    await A.dienst.gleicheBenutzerAb(await A.konten.listeBenutzer());
-    const typen = await A.dienst.listeTypen();
+    await A.dienst.postSystemmappen.gleicheBenutzerAb(await A.konten.listeBenutzer());
+    const typen = await A.dienst.mappentypen.listeTypen();
     const rolleTyp = typen.find((t: { system?: string }) => t.system === 'rolle');
-    ids.fibu = (await A.dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, lena.id)).id;
-    ids.andere = (await A.dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
-    await A.dienst.setzeRollen(ids.jonas, [ids.fibu]);
-    await A.dienst.setzeRollen(ids.markus, [ids.fibu]);
-    ids.rechnung = (await A.dienst.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
+    ids.fibu = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, lena.id)).id;
+    ids.andere = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
+    await A.dienst.postSystemmappen.setzeRollen(ids.jonas, [ids.fibu]);
+    await A.dienst.postSystemmappen.setzeRollen(ids.markus, [ids.fibu]);
+    ids.rechnung = (await A.dienst.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
     rw = (rollen) => ({ grund: NICHTS, regeln: [{ id: 'fibu', name: 'FiBu liest', wenn: [{ art: 'rolle', rollen }], dann: { R: 'erteilen', U: 'erteilen', C: 'erteilen' }, stopp: false }] }) as unknown as Regelwerk;
-    await A.dienst.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
-    for (const nr of ['R1', 'R2']) ids.mappe = (await A.dienst.legeMappeAn({ typId: ids.rechnung, werte: { nr } }, lena.id)).id;
+    await A.dienst.berechtigungen.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
+    for (const nr of ['R1', 'R2']) ids.mappe = (await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr } }, lena.id)).id;
     for (const p of [A, B]) p.dienst.mindestensMs = 3000;
   });
   after(async () => { for (const p of prozesse) { await p.app.close(); await p.sql.end(); } });
@@ -183,17 +183,17 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 200);
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 200, 'zweimal: Mappentypen sind gemerkt');
     // Am Mappentyp (gemerkt im Lesespeicher): FiBu verliert das Leserecht.
-    await A.dienst.setzeBerechtigungen(ids.rechnung, rw([ids.andere]), true);
+    await A.dienst.berechtigungen.setzeBerechtigungen(ids.rechnung, rw([ids.andere]), true);
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 404);
     assert.equal((await rechnungen(B, c)).n, 0, 'und die Zahl zeigt sie nicht mehr – auch nicht in der Mindestgültigkeit');
-    await A.dienst.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
+    await A.dienst.berechtigungen.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 200);
     assert.equal((await rechnungen(B, c)).n, 2);
     // An der Person (Rollen, nie gemerkt): Jonas verliert FiBu.
-    await A.dienst.setzeRollen(ids.jonas, []);
+    await A.dienst.postSystemmappen.setzeRollen(ids.jonas, []);
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 404);
     assert.equal((await rechnungen(B, c)).n, 0);
-    await A.dienst.setzeRollen(ids.jonas, [ids.fibu]);
+    await A.dienst.postSystemmappen.setzeRollen(ids.jonas, [ids.fibu]);
     assert.equal((await rechnungen(B, c)).n, 2);
   });
 
@@ -230,7 +230,7 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     B.dienst.mindestensMs = 0;
     try {
       // Eine Änderung, damit alle frisch zählen.
-      await A.dienst.legeMappeAn({ typId: ids.rechnung, werte: { nr: 'R3' } }, ids.lena);
+      await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr: 'R3' } }, ids.lena);
       // Der Stand in der Datenbank zählt kurz nach der Änderung hoch (auch nach den Anmeldungen in B). Darauf warten
       // (#900) statt auf eine feste Zeit – danach sehen Jonas und Markus denselben Stand.
       await A.dienst.stand.hochgezaehlt(); await B.dienst.stand.hochgezaehlt();

@@ -113,10 +113,10 @@ describe('Schlüssel wechseln (#47)', () => {
     const betrieb = new Betrieb(einst, 'http://nas', t);
     await betrieb.laden();
     await betrieb.speichereMail({ aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'mail-geheim', absender: 'dms@example.org' });
-    const typ = await d.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
-    const m1 = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
-    const m2 = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
-    await d.loescheMappe(m2.id);
+    const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
+    const m1 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
+    const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
+    await d.loeschen.loescheMappe(m2.id);
     return { t, einst, datei, d, repo, betrieb, m1, m2 };
   }
 
@@ -124,7 +124,7 @@ describe('Schlüssel wechseln (#47)', () => {
     const { t, einst, datei, d, betrieb, m1, m2 } = await aufbau();
     const alt = t.fingerabdruck!;
     const altDatei = await readFile(datei, 'utf8');
-    const vorher = (await d.holeMappe(m1.id)).mappe.werte.pw;
+    const vorher = (await d.mappen.holeMappe(m1.id)).mappe.werte.pw;
     const w = await d.schluesselWechseln('admin@example.org');
     assert.equal(w.alt, alt);
     assert.notEqual(w.neu, alt);
@@ -133,8 +133,8 @@ describe('Schlüssel wechseln (#47)', () => {
     assert.equal(t.zustand, 'vorhanden');
     assert.notEqual(await readFile(datei, 'utf8'), altDatei);
     await assert.rejects(stat(`${datei}.neu`), 'keine .neu-Datei übrig');
-    assert.notEqual((await d.holeMappe(m1.id)).mappe.werte.pw, vorher);
-    assert.equal((await d.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+    assert.notEqual((await d.mappen.holeMappe(m1.id)).mappe.werte.pw, vorher);
+    assert.equal((await d.passwortfelder.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
     assert.equal(await t.pruefwort(), true);
     assert.equal(((await einst.lies('tresor')) as { fingerabdruck: string }).fingerabdruck, w.neu);
     // Mailserver: Passwort mit dem neuen Schlüssel lesbar.
@@ -142,8 +142,8 @@ describe('Schlüssel wechseln (#47)', () => {
     assert.equal(t.entschluessele(mail.passwort), 'mail-geheim');
     assert.ok(betrieb.ansicht().mail.passwortLesbar);
     // Papierkorb: wiederhergestellt und lesbar.
-    await d.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
-    assert.equal((await d.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
+    await d.papierkorbVerwaltung.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
+    assert.equal((await d.passwortfelder.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
     // Neu geladen (Neustart): derselbe Schlüssel.
     const t2 = new Tresor(einst, datei, () => null);
     await t2.laden();
@@ -155,16 +155,16 @@ describe('Schlüssel wechseln (#47)', () => {
     const { t, datei, d, repo, m1 } = await aufbau();
     const alt = t.fingerabdruck;
     const altDatei = await readFile(datei, 'utf8');
-    const vorher = (await d.holeMappe(m1.id)).mappe.werte.pw;
+    const vorher = (await d.mappen.holeMappe(m1.id)).mappe.werte.pw;
     await assert.rejects(t.wechsle(async (um) => { um(String(vorher)); throw new Error('Verbindung weg'); }, 'admin'), /abgebrochen.*bisherige Schlüssel/);
     assert.equal(t.fingerabdruck, alt);
     assert.equal(await readFile(datei, 'utf8'), altDatei);
     await assert.rejects(stat(`${datei}.neu`));
-    assert.equal((await d.holeMappe(m1.id)).mappe.werte.pw, vorher);
-    assert.equal((await d.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+    assert.equal((await d.mappen.holeMappe(m1.id)).mappe.werte.pw, vorher);
+    assert.equal((await d.passwortfelder.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
     // Danach klappt es normal.
     await t.wechsle((um, e) => repo.umschluesseln(um, e), 'admin');
-    assert.equal((await d.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+    assert.equal((await d.passwortfelder.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
   });
 
   it('Neustart zwischen Datenbank und Datei: die .neu-Datei wird übernommen; ein Überbleibsel gelöscht', async () => {

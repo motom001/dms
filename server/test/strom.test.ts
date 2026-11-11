@@ -102,11 +102,11 @@ describe('Hochladen als Strom (#746)', () => {
 
   it('über HTTP: Dokument und neue Version als Strom, mit richtiger Prüfsumme; danach keine temporären Dateien', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-    const typ = await d.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+    const typ = await d.mappentypen.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }],
       register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Dokumente', art: 'dokumente', versionierung: true }] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Akte Jonas' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Akte Jonas' } });
     const { baueApp } = await import('../src/http');
     const app = await baueApp(d, konten, {});
     try {
@@ -127,7 +127,7 @@ describe('Hochladen als Strom (#746)', () => {
       assert.equal(api.statusCode, 201, api.body);
       const leer = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dok&name=leer.pdf`, headers: koepfe, payload: Buffer.alloc(0) });
       assert.equal(leer.statusCode, 422);
-      const inhalt = await d.dokumentInhalt(dok.id);
+      const inhalt = await d.dokumente.dokumentInhalt(dok.id);
       assert.deepEqual(inhalt.inhalt, zwei);
       // Aufgeräumt wird nach dem Senden der Antwort (onResponse) – kurz darauf warten.
       for (let i = 0; i < 50 && (await restDateien()).length; i++) await new Promise((x) => setTimeout(x, 20));

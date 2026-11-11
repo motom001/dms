@@ -33,7 +33,7 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     app = await baueApp(dienst, konten, { webDir: web }) as unknown as typeof app;
   });
   after(async () => { await app?.close(); });

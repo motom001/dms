@@ -81,7 +81,7 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const app = await baueApp(dienst, konten, { webDir: web }) as unknown as { inject(o: { method: string; url: string }): Promise<{ statusCode: number; body: string; headers: Record<string, string> }>; close(): Promise<unknown> };
     try {
       await pruefeBetriebsart(async (pfad) => {

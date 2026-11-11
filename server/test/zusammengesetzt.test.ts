@@ -141,24 +141,24 @@ const privatNurErsteller: Regelwerk = {
 async function aufbau(pg: boolean, name: string) {
   const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-  const zg = async (b: { id: string }) => d.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
-  const org = await d.legeTypAn({ name: 'Organisation', schluessel: 'organisation', titelVorlage: '{name}', felder: [
+  const zg = async (b: { id: string }) => d.rechtepruefung.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
+  const org = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr} von {von}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr} von {von}', felder: [
     { key: 'von', label: 'Absender', typ: 'referenz', zielTypen: [org.id] },
     { key: 'nr', label: 'Rechnungsnummer', typ: 'text' },
     { key: 'privat', label: 'Privat', typ: 'janein' },
     { key: 'kennung', label: 'Kennung', typ: 'zusammengesetzt', vorlage: '{von} · {nr}', eindeutig: true, pflicht: true },
   ], trefferliste: ['_titel', 'kennung'] });
-  await d.setzeBerechtigungen(org.id, privatNurErsteller, true);
-  await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
-  return { d, repo: r.repo, admin, lena, zg, org, rechnung: (await d.listeTypen()).find((x) => x.id === rechnung.id)! };
+  await d.berechtigungen.setzeBerechtigungen(org.id, privatNurErsteller, true);
+  await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
+  return { d, repo: r.repo, admin, lena, zg, org, rechnung: (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)! };
 }
 
 for (const pg of [false, ...(url ? [true] : [])]) {
@@ -171,15 +171,15 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('beim Speichern gesetzt, schreibgeschützt, Kennung statt Titel; eindeutig als Kombination – je Absender, nicht je Name', async () => {
       const { d, admin, lena, zg, org, rechnung } = await aufbau(pg, 'zus_speichern');
-      const muster1 = await d.legeMappeAn({ typId: org.id, werte: { name: 'Muster GmbH' } }, admin.id);
-      const muster2 = await d.legeMappeAn({ typId: org.id, werte: { name: 'Muster GmbH' } }, admin.id);
-      const a = await d.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 'RE-17', kennung: 'von Hand' } }, lena.id, false, await zg(lena));
+      const muster1 = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Muster GmbH' } }, admin.id);
+      const muster2 = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Muster GmbH' } }, admin.id);
+      const a = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 'RE-17', kennung: 'von Hand' } }, lena.id, false, await zg(lena));
       assert.equal(a.werte.kennung, `${muster1.id} · RE-17`, 'gesendeter Wert zählt nicht');
       assert.ok(!String(a.werte.kennung).includes('Muster'), 'nie der Titel der verwiesenen Mappe');
       // Gleiche Nummer bei einer anderen Organisation gleichen Namens: keine Doppelung.
-      await d.legeMappeAn({ typId: rechnung.id, werte: { von: muster2.id, nr: 'RE-17' } }, lena.id, false, await zg(lena));
+      await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: muster2.id, nr: 'RE-17' } }, lena.id, false, await zg(lena));
       // Gleiche Kombination: 422 am ersten beteiligten Feld (Absender), mit beiden Feldern und dem Titel.
-      await assert.rejects(d.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 're-17' } }, lena.id, false, await zg(lena)), (e: unknown) => {
+      await assert.rejects(d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 're-17' } }, lena.id, false, await zg(lena)), (e: unknown) => {
         assert.ok(e instanceof Fachfehler && e.status === 422);
         const felder = (e.details as { felder: Record<string, string[]> }).felder;
         assert.deepEqual(Object.keys(felder), ['von']);
@@ -187,15 +187,15 @@ for (const pg of [false, ...(url ? [true] : [])]) {
         return true;
       });
       // Ändern: Wert folgt den Teilen, eigene Mappe zählt nicht.
-      const geaendert = await d.aendereMappe(a.id, { werte: { nr: 'RE-18', kennung: 'egal' } }, lena.id, await zg(lena));
+      const geaendert = await d.mappen.aendereMappe(a.id, { werte: { nr: 'RE-18', kennung: 'egal' } }, lena.id, await zg(lena));
       assert.equal(geaendert.werte.kennung, `${muster1.id} · RE-18`);
-      await d.aendereMappe(a.id, { werte: { nr: 'RE-18' } }, lena.id, await zg(lena));
+      await d.mappen.aendereMappe(a.id, { werte: { nr: 'RE-18' } }, lena.id, await zg(lena));
       // Die Historie nennt die Teile, nicht das zusammengesetzte Feld (kein Titel zusätzlich darin).
-      const h = (await d.historie(a.id)).find((x) => x.art === 'geaendert')!;
+      const h = (await d.mappenHistorie.historie(a.id)).find((x) => x.art === 'geaendert')!;
       assert.deepEqual((h.daten.aenderungen as Array<{ feld: string }>).map((x) => x.feld), ['nr']);
       // Gibt es die Kombination in einer Mappe, die die Person nicht lesen darf: Meldung ohne deren Titel.
-      await d.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 'RE-99', privat: true } }, admin.id, false, await zg({ id: admin.id }));
-      await assert.rejects(d.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 'RE-99' } }, lena.id, false, await zg(lena)), (e: unknown) => {
+      await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 'RE-99', privat: true } }, admin.id, false, await zg({ id: admin.id }));
+      await assert.rejects(d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: muster1.id, nr: 'RE-99' } }, lena.id, false, await zg(lena)), (e: unknown) => {
         const felder = (e as Fachfehler).details as { felder: Record<string, string[]> };
         assert.equal(felder.felder.von[0], 'Diese Kombination aus Absender und Rechnungsnummer gibt es schon.');
         return true;
@@ -204,9 +204,9 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Titel verwiesener Mappen, die die Person nicht lesen darf: „nicht sichtbare Mappe“ – in der Mappe, in Spalten und im Export', async () => {
       const { d, admin, lena, zg, org, rechnung } = await aufbau(pg, 'zus_sichtbar');
-      const geheim = await d.legeMappeAn({ typId: org.id, werte: { name: 'Geheime Bank', privat: true } }, admin.id);
-      const m = await d.legeMappeAn({ typId: rechnung.id, werte: { von: geheim.id, nr: 'RE-5' } }, admin.id, false, await zg({ id: admin.id }));
-      const fuerLena = await d.holeMappe(m.id, await zg(lena));
+      const geheim = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Geheime Bank', privat: true } }, admin.id);
+      const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: geheim.id, nr: 'RE-5' } }, admin.id, false, await zg({ id: admin.id }));
+      const fuerLena = await d.mappen.holeMappe(m.id, await zg(lena));
       assert.equal(fuerLena.bezuege[geheim.id].verborgen, true);
       const f = rechnung.felder.find((x) => x.key === 'kennung')!;
       const text = formatiere(f, fuerLena.mappe.werte.kennung, (id) => fuerLena.bezuege[id]?.titel ?? '', { felder: rechnung.felder, werte: fuerLena.mappe.werte });
@@ -219,20 +219,20 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Vorlage ändern: vorher 409 mit Anzahl der Doppelten, mit Bestätigung gespeichert und alle Mappen neu berechnet', async () => {
       const { d, admin, org, rechnung, repo } = await aufbau(pg, 'zus_vorlage');
-      const o1 = await d.legeMappeAn({ typId: org.id, werte: { name: 'Stadtwerke' } }, admin.id);
-      const o2 = await d.legeMappeAn({ typId: org.id, werte: { name: 'Muster GmbH' } }, admin.id);
-      const a = await d.legeMappeAn({ typId: rechnung.id, werte: { von: o1.id, nr: 'RE-1' } }, admin.id);
-      const b = await d.legeMappeAn({ typId: rechnung.id, werte: { von: o2.id, nr: 'RE-1' } }, admin.id);
+      const o1 = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Stadtwerke' } }, admin.id);
+      const o2 = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Muster GmbH' } }, admin.id);
+      const a = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: o1.id, nr: 'RE-1' } }, admin.id);
+      const b = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { von: o2.id, nr: 'RE-1' } }, admin.id);
       const nurNummer = { ...rechnung, felder: rechnung.felder.map((f) => (f.key === 'kennung' ? { ...f, vorlage: '{nr}' } : f)) };
-      await assert.rejects(d.aendereTyp(rechnung.id, nurNummer), status(409, /2 Mappen in „Kennung“/));
+      await assert.rejects(d.mappentypen.aendereTyp(rechnung.id, nurNummer), status(409, /2 Mappen in „Kennung“/));
       assert.equal((await repo.holeMappe(a.id))!.werte.kennung, `${o1.id} · RE-1`, 'nichts gespeichert');
-      await d.aendereTyp(rechnung.id, { ...nurNummer, doppelteBestaetigt: true });
+      await d.mappentypen.aendereTyp(rechnung.id, { ...nurNummer, doppelteBestaetigt: true });
       assert.equal((await repo.holeMappe(a.id))!.werte.kennung, 'RE-1');
       assert.equal((await repo.holeMappe(b.id))!.werte.kennung, 'RE-1');
       // Beide passen danach nicht – wie beim Einschalten von „eindeutig“.
       assert.deepEqual((await repo.unpassende(rechnung.id)).sort(), [a.id, b.id].sort());
       // Ohne Doppelte keine Rückfrage; die Werte folgen der neuen Vorlage.
-      await d.aendereTyp(rechnung.id, { ...nurNummer, felder: nurNummer.felder.map((f) => (f.key === 'kennung' ? { ...f, vorlage: '{nr} · {von}' } : f)) });
+      await d.mappentypen.aendereTyp(rechnung.id, { ...nurNummer, felder: nurNummer.felder.map((f) => (f.key === 'kennung' ? { ...f, vorlage: '{nr} · {von}' } : f)) });
       assert.equal((await repo.holeMappe(b.id))!.werte.kennung, `RE-1 · ${o2.id}`);
       assert.deepEqual(await repo.unpassende(rechnung.id), []);
     });

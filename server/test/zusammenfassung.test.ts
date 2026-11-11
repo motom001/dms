@@ -17,19 +17,19 @@ const berlin = (tag: string, uhr: string) => new Date(`${tag}T${uhr}:00+01:00`);
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
-  const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, anna.id);
-  await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, anna.id);
-  await d.legeAufgabeAn(m.id, { empfaengerId: anna.id, text: 'Ablegen' }, anna.id);
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
+  const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, anna.id);
+  await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, anna.id);
+  await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: anna.id, text: 'Ablegen' }, anna.id);
   const an: string[] = [];
   const einst = speicherEinstellungen();
   const mail = new Aufgabenmail({
     benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
-    aufgabenVon: (b) => d.meineAufgaben(b), typName: async () => 'Vorgang',
+    aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Vorgang',
   }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas', einst);
   const region = new RegionDienst(einst);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;

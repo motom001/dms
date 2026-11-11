@@ -165,7 +165,7 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
 
   it('Zuordnung zu Benutzern: vorhandene, anlegen, Admin-Gruppe, letzter Admin, deaktiviert, Passwort nur für Admins', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: chef } = await konten.einrichten({ email: 'chef@example.org', name: 'Chef', passwort: 'ein-langes-passwort' });
     const basis = { aktiv: true, aussteller: ISS, clientId: 'c', clientSecret: '', knopf: 'Mit Firmenkonto', anlegen: false, standardrolle: 'mitglied' as const, adminGruppe: '', gruppenClaim: 'groups', lokalNurAdmins: false, abmeldenBeimAnbieter: false };
     const g = { ip: '1.1.1.1', geraet: '' };

@@ -317,12 +317,12 @@ const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'),
   tresor, einstellungen: pgBetriebSpeicher(sql, cfg.haushalt), zustand: zustandDb,
 });
 // Fehlende Dokumentdatei (#877): einmal je Datei mit Mappe ins Protokoll und als Hinweis in die Werkbank-Übersicht.
-beiFehlenderDatei((f) => { void dienst.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
+beiFehlenderDatei((f) => { void dienst.dateienFehlen.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
-const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
 dienst.verbindeKonten(konten.papierkorbHaken());
 // Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern zählen wie Öffnen.
-dienst.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
+dienst.kern.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
 konten.verbindeZustand(zustandDb);
 // Sprachpakete (#731): ihre Sprachen kommen dazu, sobald die Pakete lesbar sind; danach lädt der SprachDienst sie mit.
 const personenMitSprache = async (k: string) => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false && b.sprache === k).length;
@@ -348,7 +348,7 @@ konten.verbindeSperre(anmeldesperre);
 // Ereigniskatalog (#670): Kontosperre als Ereignis (Id des Benutzers, Zeitpunkt, Fehlversuche, IP gekürzt).
 anmeldesperre.beiKontosperre = async (x) => {
   const b = await konten.personMitEmail(x.email);
-  if (b) await dienst.ereignis('benutzer.gesperrt', { benutzer: b.id, zeitpunkt: new Date().toISOString(), fehlversuche: x.versuche, bis: x.bis, ip: kuerzeIp(x.ip) });
+  if (b) await dienst.kern.ereignis('benutzer.gesperrt', { benutzer: b.id, zeitpunkt: new Date().toISOString(), fehlversuche: x.versuche, bis: x.bis, ip: kuerzeIp(x.ip) });
 };
 // Zwei-Faktor-Anmeldung (#242): Geheimnis verschlüsselt mit dem Schlüssel des DMS.
 konten.verbindeZweifaktor(new Zweifaktor(pgEinstellungen(sql, cfg.haushalt), (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w), Date.now, zustandDb));
@@ -383,12 +383,12 @@ const abschluss = leiter ? await pgEinstellungen(sql, cfg.haushalt).lies('wieder
 if (abschluss) log.warn('Gestartet nach einer Wiederherstellung', { sicherung: abschluss.sicherung });
 start.schritt('ordner');
 const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(ordner.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
-dienst.verbindeTexterkennung(texterkennung);
+dienst.dokumente.verbindeTexterkennung(texterkennung);
 texterkennung.pause = () => wartung.aktiv;
 wartung.beimAusschalten(() => texterkennung.anstossen());
 // Vorschaubilder der ersten Seite (#332): außerhalb des Haushaltsordners, damit sie nicht in die Sicherung gehen.
 const vorschau = new Vorschaubilder(ordnerAblage(join(ordner.dateien, 'vorschau', cfg.haushalt)), ordnerSpeicher(ordner.dateien, cfg.haushalt));
-dienst.verbindeVorschau(vorschau);
+dienst.dokumente.verbindeVorschau(vorschau);
 vorschau.pause = () => wartung.aktiv;
 wartung.beimAusschalten(() => vorschau.anstossen());
 // Dateien umwandeln (#577): Fassungen aus Paketen mit dms:umwandeln im Haushaltsordner – sie gehen mit in die
@@ -406,27 +406,27 @@ if (leiter) try {
 } catch (e) { log.warn('Exporte nicht aus dem Sicherungsordner verschoben', { fehler: (e as Error).message }); }
 if (exporte.imSicherungsordner && leiter) log.warn('Der Export-Ordner liegt im Sicherungsordner: Unverschlüsselte Exporte gehen mit jeder Kopie der Sicherung mit. Lege das Volume für /data/export an einen anderen Ort.', { pfad: exporte.pfad });
 const fassungen = ordnerFassungen(fassungsOrdner(ordner.dateien, cfg.haushalt));
-const umwandlung = new Dateiumwandlung(dienst.umwandlungAnbindung(fassungen, vorschau));
-dienst.verbindeUmwandlung(umwandlung, vorschau);
+const umwandlung = new Dateiumwandlung(dienst.dokumentUmwandlung.umwandlungAnbindung(fassungen, vorschau));
+dienst.dokumentUmwandlung.verbindeUmwandlung(umwandlung, vorschau);
 vorschau.fassung = (sha) => umwandlung.lies(sha);
 texterkennung.umwandlung = { lies: (sha) => umwandlung.lies(sha), paketFuer: (m) => umwandlung.paketFuer(m), anfordern: (d) => umwandlung.anfordern(d), gesperrt: (sha) => umwandlung.gesperrt(sha) };
 // Geschützte PDFs (#827): entsperrte Fassungen (qpdf) neben den umgewandelten; gemerkte Passwörter je Konto verschlüsselt.
-const entsperren = new PdfEntsperren(dienst.entsperrenAnbindung({ ablage: fassungen, speicher: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), zustand: zustandDb }));
-dienst.verbindeEntsperren(entsperren);
+const entsperren = new PdfEntsperren(dienst.geschuetztePdfs.entsperrenAnbindung({ ablage: fassungen, speicher: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), zustand: zustandDb }));
+dienst.geschuetztePdfs.verbindeEntsperren(entsperren);
 texterkennung.entsperrt = (sha) => entsperren.fassung(sha);
 // Volltext aus Paketen (#614): Dateitypen, für die ein Paket mit dms:volltext den Text liefert.
 texterkennung.volltextPaket = dienst.paketVolltext;
 // Archivfassung (PDF/A, #631): Pakete mit dms:archivfassung legen sie im Haushaltsordner ab (Sicherung, Vollexport);
 // Wortpositionen der Texterkennung daneben. Der Kern meldet Dokumente erst mit feststehendem Volltext.
-const archivfassung = new Archivfassung(dienst.archivAnbindung(ordnerArchiv(archivOrdner(ordner.dateien, cfg.haushalt), woerterOrdner(ordner.dateien, cfg.haushalt))));
-dienst.verbindeArchivfassung(archivfassung);
+const archivfassung = new Archivfassung(dienst.dokumentArchiv.archivAnbindung(ordnerArchiv(archivOrdner(ordner.dateien, cfg.haushalt), woerterOrdner(ordner.dateien, cfg.haushalt))));
+dienst.dokumentArchiv.verbindeArchivfassung(archivfassung);
 // Tägliche Zusammenfassung der offenen Aufgaben (#54).
-const typName = async (id: string | undefined) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? '';
+const typName = async (id: string | undefined) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? '';
 const aufgabenmail = new Aufgabenmail({
   benutzer: () => konten.listeBenutzer(),
   einstellungenVon: (b) => konten.einstellungen(b),
   // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
-  aufgabenVon: async (b) => dienst.meineAufgaben(b, await dienst.zugriff(b)),
+  aufgabenVon: async (b) => dienst.vertretung.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
   typName,
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
@@ -542,13 +542,13 @@ const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
 texterkennung.nachher = (d, e, k) => {
   // Ausgelassen: E-Mails bekommen trotzdem ihre Archivfassung (#946) – ohne Paket, das ihren Text liefert, steht ihr
   // Volltext damit fest (leer).
-  if (e.stand === 'ausgelassen') { void dienst.volltextAusgelassen(d.id); return; }
+  if (e.stand === 'ausgelassen') { void dienst.volltexte.volltextAusgelassen(d.id); return; }
   if (e.stand !== 'fertig' && e.stand !== 'paket') return;
   // Umgewandelte Datei (#577): mime ist der Typ der Fassung, original der des Dokuments.
-  void dienst.volltextFertig({ dokument: d.id, mappe: d.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? d.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
+  void dienst.volltexte.volltextFertig({ dokument: d.id, mappe: d.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? d.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
 };
 // Texterkennung als Paket (#458): das installierte Paket mit dms:texterkennung.
-texterkennung.paket = () => dienst.texterkennungPaket();
+texterkennung.paket = () => dienst.volltexte.texterkennungPaket();
 // Sicherung außer Haus (#585): Pakete mit dms:sicherung-lesen bekommen jede fertige Sicherung (Ereignis sicherung.fertig),
 // lesen die verschlüsselte Datei in Stücken und melden je Sicherung zurück. Adresse: die bestätigte aus den Einstellungen.
 sicherung.extern = {
@@ -557,7 +557,7 @@ sicherung.extern = {
     const adresse = p.einstellungen ? adressfelder(p.einstellungen).map((f) => werte[f.schluessel]).find((v): v is string => typeof v === 'string' && !!v) ?? null : null;
     return { id: p.id, name: p.name, adresse };
   })),
-  melde: (daten) => dienst.ereignis('sicherung.fertig', { ...daten }),
+  melde: (daten) => dienst.kern.ereignis('sicherung.fertig', { ...daten }),
 };
 dienst.sicherungAufgegeben = (paket, name, fehler) => sicherung.externAufgegeben(paket, name, fehler);
 dienst.sicherungAntwort = (paket, name, r) => sicherung.externAntwort(paket, name, r);
@@ -573,7 +573,7 @@ const webhooks = new Webhooks({
   repo: messung.umhuelle(pgWebhookRepo(sql, cfg.haushalt), 'webhooks'),
   einstellungen: pgEinstellungen(sql, cfg.haushalt),
   verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w),
-  zahlen: async (b) => { const r = await dienst.zaehlerAbruf(await dienst.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
+  zahlen: async (b) => { const r = await dienst.sichten.zaehlerAbruf(await dienst.rechtepruefung.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
   benutzer: (id) => konten.benutzerMitId(id),
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
   anAdmins: anVerwaltendeVon('webhooks'),
@@ -585,7 +585,7 @@ const webhooks = new Webhooks({
     return r.ok as boolean;
   })()),
 });
-dienst.beiAenderung(() => webhooks.anstossen());
+dienst.sichten.beiAenderung(() => webhooks.anstossen());
 // Automatisierungen (#674): Wenn · Und · Dann unter dem Systemkonto „Automatisierung“; Läufe je Ereignis genau einmal.
 const automatisierungen = new Automatisierungen({
   dienst, repo: messung.umhuelle(pgAutomatisierungRepo(sql, cfg.haushalt), 'automatisierungen'),
@@ -627,7 +627,7 @@ const verwaltung = new Verwaltung({
     async () => { const n = (await texterkennung.zaehler()).fehler; return n ? [{ bereich: 'texterkennung', schluessel: `texterkennung:${n}`, text: t('werkbank.verwaltung.texterkennung', { anzahl: n }) }] : []; },
     async () => ((await liesErweiterungen(sql)).some((e) => e.zustand !== 'ok') ? [{ bereich: 'systemzustand', schluessel: 'erweiterungen', text: t('werkbank.verwaltung.erweiterungen') }] : []),
     // Aufgaben bei Personen ohne Leserecht (#798): je Fall einmal gemeldet; der Alltags-Benutzer sieht nur „etwas liegt an“.
-    async () => Promise.all((await dienst.offeneFaelle()).map(async (f) => ({ bereich: 'aufgaben', schluessel: `ohne-leserecht:${f.id}`, text: t('werkbank.verwaltung.ohne-leserecht', { name: await dienst.name(f.benutzerId) }) }))),
+    async () => Promise.all((await dienst.ohneLeserecht.offeneFaelle()).map(async (f) => ({ bereich: 'aufgaben', schluessel: `ohne-leserecht:${f.id}`, text: t('werkbank.verwaltung.ohne-leserecht', { name: await dienst.kern.name(f.benutzerId) }) }))),
   ],
 });
 // WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).
@@ -692,13 +692,13 @@ if (leiter) {
   log.info(`E-Mail-Versand: ${kurz.mail === 'aus' ? 'aus – Links werden in der Benutzerverwaltung angezeigt (einrichten in Werkbank → E-Mail und Adresse)' : kurz.mail}`);
   log.info(`Adresse für Links: ${kurz.adresse}`);
   start.schritt('titel');
-  const nachgezogen = await dienst.titelNachziehen();
+  const nachgezogen = await dienst.mappenTitel.titelNachziehen();
   if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
   // Systemtypen Benutzer und Rolle anlegen und jedem Benutzer seine Mappe geben (auch nach einem Update).
   start.schritt('benutzer');
-  await dienst.gleicheBenutzerAb(await konten.listeBenutzer(), (f, g) => start.menge(f, g));
+  await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer(), (f, g) => start.menge(f, g));
   // Titel „… (ehemalig)“ aus älteren Versionen zurücksetzen (#663); deaktiviert zeigt die Oberfläche durchgestrichen.
-  const ehemalig = await dienst.ehemaligZuruecksetzen();
+  const ehemalig = await dienst.mappenTitel.ehemaligZuruecksetzen();
   if (ehemalig) log.info(`Titel von ${ehemalig} deaktivierten Benutzern ohne „(ehemalig)“ neu berechnet`);
 }
 // Systemkonto „Automatisierung“ (#673): sichtbar, nie anmeldbar; Automatisierungen (#674) laufen darunter.
@@ -713,17 +713,17 @@ if (leiter) {
   wartung.beimAusschalten(() => dienst.ereignisse.wecke());
   // Schlüssel für Mappentypen (#145), einmalig nach dem Update.
   start.schritt('typen');
-  await dienst.typSchluesselNachziehen();
+  await dienst.mappenTitel.typSchluesselNachziehen();
   // Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146), einmalig nach dem Update.
-  await dienst.hakenUeberfuehren();
-  const geprueft = await dienst.passungNachziehen((f, g) => start.menge(f, g));
+  await dienst.mappenTitel.hakenUeberfuehren();
+  const geprueft = await dienst.passung.passungNachziehen((f, g) => start.menge(f, g));
   if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 }
 // Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.
 // Auskünfte (#396): nach 7 Tagen weg – im selben stündlichen Lauf.
 // Exporte (#797): nach dem Herunterladen bzw. nach 7 Tagen weg – derselbe Lauf wie für die Auskünfte.
 // Zeitpläne (#744): jeder Lauf unter einer Datenbanksperre – mit mehreren Prozessen arbeitet je Lauf nur einer.
-const papierkorb = async () => { if (!wartung.aktiv) await dienst.raeumePapierkorbAuf(); await raeumeExporteAuf(exporte.pfad); };
+const papierkorb = async () => { if (!wartung.aktiv) await dienst.papierkorbVerwaltung.raeumePapierkorbAuf(); await raeumeExporteAuf(exporte.pfad); };
 const papierkorbLauf = () => nurEiner('papierkorb', papierkorb).catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
 if (leiter) setInterval(() => void papierkorbLauf(), 60 * 60 * 1000).unref();
 // Abwesenheit (#78): Abgelaufenes beenden, „abwesend“ an den Benutzer-Mappen nachziehen.
@@ -750,7 +750,7 @@ dienst.anmeldeschutzMelden = async (was, daten, trocken) => {
 const fristen = () => nurEiner('fristen', async () => {
   const heute = heuteIn();
   if (wartung.aktiv || (await zustandDb.lies('fristen-tag', 'lauf'))?.wert === heute) return;
-  const r = await dienst.fristenLauf(heute);
+  const r = await dienst.fristen.fristenLauf(heute);
   await zustandDb.setze('fristen-tag', 'lauf', heute, null);
   if (r.angelegt || r.erledigt || r.erinnerungen) log.info('Fristen und Erinnerungen geprüft', r);
 });
@@ -782,7 +782,7 @@ if (leiter) {
   setInterval(() => {
     if (wartung.aktiv || wiederherstellung.laeuft()) return;
     void nurEiner('verwaltung', async () => {
-      await dienst.faelleAbgleichen().catch((e) => log.warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message }));
+      await dienst.ohneLeserecht.faelleAbgleichen().catch((e) => log.warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message }));
       await verwaltung.tick();
     }).catch((e) => log.error('Technische Aufgaben prüfen fehlgeschlagen', { fehler: (e as Error).message }));
   }, 5 * 60 * 1000).unref();
@@ -790,7 +790,7 @@ if (leiter) {
   let woerterFehler = '';
   setInterval(() => {
     if (wiederherstellung.laeuft()) return;
-    void dienst.woerterEinarbeiten().then(() => { woerterFehler = ''; }, (e) => {
+    void dienst.suche.woerterEinarbeiten().then(() => { woerterFehler = ''; }, (e) => {
       // Nur einmal je Fehlerbild melden, nicht alle fünf Sekunden.
       if ((e as Error).message !== woerterFehler) log.warn('Wörterverzeichnis: neue Wörter nicht übernommen', { fehler: (e as Error).message });
       woerterFehler = (e as Error).message;

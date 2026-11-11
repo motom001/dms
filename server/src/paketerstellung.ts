@@ -731,14 +731,14 @@ export class Paketerstellung {
   private async dmsTypen(): Promise<Map<string, string>> {
     const s = await this.d.kern.system();
     // Den Ablageort von Basis behandelt die Erstellung wie jeden Paket-Typ; den früheren des Kerns gibt es nur noch hier (#883).
-    const a = await this.d.frueherAblageortTyp();
+    const a = await this.d.kern.frueherAblageortTyp();
     return new Map<string, string>([[s.benutzer.id, 'benutzer'], [s.rolle.id, 'rolle'], ...(a ? [[a.id, 'ablageort'] as [string, string]] : [])]);
   }
 
 
   /** Was es zur Auswahl gibt, gemerkte Entwürfe und Vorschläge für den nächsten Export. */
   async stand(): Promise<ErstellenStand> {
-    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.listeTypen(), await this.d.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
+    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.mappentypen.listeTypen(), await this.d.sichtenVerwaltung.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
     const herkunft = (map: (p: InstalliertesPaket) => Record<string, string>, id: string) => {
       const p = pakete.find((x) => Object.values(map(x)).includes(id));
       return p ? { id: p.id, name: p.name, version: p.version } : null;
@@ -752,7 +752,7 @@ export class Paketerstellung {
         return { id: t.id, name: t.name, beschreibung: t.beschreibung ?? '', paket: herkunft((x) => x.typen, t.id), geaendert: a.geaendert, ...(a.geaendert ? { unterschiede: a.unterschiede } : {}) };
       }).sort((a, b) => a.name.localeCompare(b.name, 'de')),
       sichten: sichten.map((s) => ({ id: s.id, name: s.name, elternId: s.elternId ?? null, paket: herkunft((x) => x.sichten, s.id) })),
-      wortlisten: (await this.d.sucheStand()).synonyme.map((g) => ({ id: g.id, woerter: g.woerter, paket: g.quelle === 'werkbank' ? null : { id: g.quelle, name: g.paketName ?? g.quelle } })),
+      wortlisten: (await this.d.suche.sucheStand()).synonyme.map((g) => ({ id: g.id, woerter: g.woerter, paket: g.quelle === 'werkbank' ? null : { id: g.quelle, name: g.paketName ?? g.quelle } })),
       entwuerfe,
       dms: this.o.version(),
       // #652: nie ungefragt vorbelegen – „Neue Version von …“ wählt man im ersten Schritt.
@@ -769,9 +769,9 @@ export class Paketerstellung {
   }
 
   private async daten(e: PaketErstellenEingabe): Promise<ErstellenDaten> {
-    const typen = await this.d.listeTypen();
+    const typen = await this.d.mappentypen.listeTypen();
     const gewaehlt = new Set(e.beispiele);
-    const mappen = gewaehlt.size ? (await Promise.all(e.typen.filter((t) => typen.some((x) => x.id === t)).map((t) => this.d.listeMappen(t)))).flat().filter((m) => gewaehlt.has(m.id)) : [];
+    const mappen = gewaehlt.size ? (await Promise.all(e.typen.filter((t) => typen.some((x) => x.id === t)).map((t) => this.d.mappen.listeMappen(t)))).flat().filter((m) => gewaehlt.has(m.id)) : [];
     // Beispiel-Dokumente (#878): nur PDF, PNG und JPEG; zusammen höchstens so viel, wie ins Archiv passt.
     const dokumente = new Map<string, Array<{ name: string; registerKey: string; erstellt: string; inhalt: Buffer }>>();
     let ausgelassen = 0, summe = 0;
@@ -781,7 +781,7 @@ export class Paketerstellung {
           if (!['application/pdf', 'image/png', 'image/jpeg'].includes(x.mime)) { ausgelassen++; continue; }
           summe += x.groesse;
           if (summe > ARCHIV_MAX) continue;
-          const roh = (await this.d.dokumentInhalt(x.id)).inhalt;
+          const roh = (await this.d.dokumente.dokumentInhalt(x.id)).inhalt;
           const inhalt = Buffer.isBuffer(roh) ? roh : await alsPuffer(roh);
           if (!beispielDateiart(x.mime === 'application/pdf' ? 'a.pdf' : x.mime === 'image/png' ? 'a.png' : 'a.jpg', inhalt)) { ausgelassen++; continue; }
           dokumente.set(m.id, [...(dokumente.get(m.id) ?? []), { name: x.name, registerKey: x.registerKey, erstellt: x.erstellt, inhalt }]);
@@ -794,7 +794,7 @@ export class Paketerstellung {
     const vorgaben = new Map((gezeigt.length ? await this.d.kern.repo.holeMappen(gezeigt) : []).filter((m) => m.vorgabe).map((m) => [m.id, m.vorgabe!] as const));
     return {
       dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}), vorgaben,
-      typen, sichten: await this.d.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.sucheStand()).synonyme,
+      typen, sichten: await this.d.sichtenVerwaltung.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.suche.sucheStand()).synonyme,
       dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };
   }
@@ -824,7 +824,7 @@ export class Paketerstellung {
     const { bau, zip, daten } = await this.baueUndPruefe(e);
     const eigene = daten.typen.filter((t) => e.typen.includes(t.id) && !t.system && !daten.dmsTypen.has(t.id) && !daten.pakete.some((p) => Object.values(p.typen).includes(t.id)));
     const beispielMappen = await Promise.all(eigene.map(async (mappentyp) => {
-      const alle = (await this.d.listeMappen(mappentyp.id)).filter((m) => !m.systemKennung).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
+      const alle = (await this.d.mappen.listeMappen(mappentyp.id)).filter((m) => !m.systemKennung).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
       return { typId: mappentyp.id, typ: mappentyp.name, mappen: alle.slice(0, BEISPIELMAPPEN_MAX).map((m) => ({ id: m.id, titel: m.titel || t('meldungen.paketerstellung.ohne-titel'), demo: !!m.demo })), mehr: alle.length > BEISPIELMAPPEN_MAX };
     }));
     return {
@@ -866,7 +866,7 @@ export class Paketerstellung {
   async selbstErstelltDetail(id: string): Promise<SelbstErstelltDetail> {
     const e = (await paketEntwuerfe(this.d.kern)).find((x) => x.id === id);
     if (!e) throw new Fachfehler(404, t('meldungen.paketerstellung.dieses-selbst-erstellte-paket'));
-    const [typen, sichten] = [await this.d.listeTypen(), await this.d.listeSichten()];
+    const [typen, sichten] = [await this.d.mappentypen.listeTypen(), await this.d.sichtenVerwaltung.listeSichten()];
     return {
       ...this.kurz(e, await this.archive(id)), beschreibung: e.beschreibung, dms: e.dms, autor: e.autor, aenderungen: e.aenderungen, verlauf: e.verlauf,
       typen: e.typen.map((tid) => { const t = typen.find((x) => x.id === tid); return { id: tid, name: t?.name ?? null, geaendert: !!t && t.geaendert > e.exportiert }; }),

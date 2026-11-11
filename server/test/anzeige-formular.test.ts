@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { anzeigestand, pruefeMitAnzeige } from '../../shared/src/anzeige';
 import type { Mappentyp } from '../../shared/src/model';
-import { bereinigeTyp } from '../src/dienst';
+import { bereinigeTyp } from '../src/mappentypen';
 import type { Anzeigestand } from '../../shared/src/anzeige';
 import type { Merkmale } from '../../shared/src/merkmale';
 import type { Werte } from '../../shared/src/model';

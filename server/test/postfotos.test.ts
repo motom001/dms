@@ -36,17 +36,17 @@ const seiten = async (b: Buffer) => (await PDFDocument.load(b)).getPages();
 async function aufbau() {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const wurzel = await mkdtemp(join(tmpdir(), 'dms-fotostapel-test-'));
   const stapel = new Fotostapel(wurzel);
   const tabelle = routen(d, konten, { fotostapel: stapel });
   const rufe = async (m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === anna.id)!) }) as Promise<{ status: number; body: Record<string, unknown> }>;
   const foto = async (b: Buffer) => (await rufe('POST', '/api/fotostapel', { body: b })).body.id as string;
-  const pdfVon = async (id: string) => { const s = await dateien.lies((await d.holeMappe(id)).dokumente[0].sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); };
+  const pdfVon = async (id: string) => { const s = await dateien.lies((await d.mappen.holeMappe(id)).dokumente[0].sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); };
   return { d, anna, rufe, foto, pdfVon, stapel, wurzel, aufraeumen: () => rm(wurzel, { recursive: true, force: true }) };
 }
 
@@ -78,7 +78,7 @@ describe('Fotos als PDF (#490)', () => {
       assert.equal(post.werte.kanal, POST_KANAL.hochgeladen);
       assert.equal(post.werte.stand, POST_STAND.neu);
       assert.equal(post.werte.von ?? null, null);
-      const doks = (await d.holeMappe(post.id)).dokumente;
+      const doks = (await d.mappen.holeMappe(post.id)).dokumente;
       assert.equal(doks.length, 1);
       assert.equal(doks[0].mime, 'application/pdf');
       assert.equal(doks[0].name, `${post.werte.betreff}.pdf`);
@@ -98,17 +98,17 @@ describe('Fotos als PDF (#490)', () => {
     try {
       const r = await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40))] } });
       const post = r.body.post as { id: string };
-      const dok = (await d.holeMappe(post.id)).dokumente[0];
+      const dok = (await d.mappen.holeMappe(post.id)).dokumente[0];
       const a = await rufe('POST', '/api/mappen/:id/fotos', { params: { id: post.id }, body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], dokument: dok.id } });
       assert.equal(a.body.seiten, 3);
-      const doks = (await d.holeMappe(post.id)).dokumente;
+      const doks = (await d.mappen.holeMappe(post.id)).dokumente;
       assert.equal(doks.length, 1);
       assert.equal(doks[0].name, dok.name);
       assert.equal((await seiten(await pdfVon(post.id))).length, 3);
-      assert.match(String((await d.historie(post.id)).find((h) => h.art === 'pdf_bearbeitet')!.daten.text), /2 Seiten an „.*“ angehängt/);
+      assert.match(String((await d.mappenHistorie.historie(post.id)).find((h) => h.art === 'pdf_bearbeitet')!.daten.text), /2 Seiten an „.*“ angehängt/);
       // Fremdes Dokument: 422.
       const anders = await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(5, 5))] } });
-      const fremd = (await d.holeMappe((anders.body.post as { id: string }).id)).dokumente[0];
+      const fremd = (await d.mappen.holeMappe((anders.body.post as { id: string }).id)).dokumente[0];
       await assert.rejects(rufe('POST', '/api/mappen/:id/fotos', { params: { id: post.id }, body: { stapel: [await foto(jpeg(5, 5))], dokument: fremd.id } }), status(422));
       // Post ohne Dokument: neues PDF.
       const leer = await rufe('POST', '/api/post', { body: { betreff: 'leer' } });
@@ -123,16 +123,16 @@ describe('Fotos als PDF (#490)', () => {
       const vorne = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40))], betreff: 'Brief Vorderseite' } })).body.post as { id: string };
       const hinten = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], betreff: 'Brief Rückseite' } })).body.post as { id: string };
       // Ein Foto als eigenes Dokument kommt auch mit.
-      await d.ladeHoch(hinten.id, { register: 'dokumente', name: 'image.jpg', typ: 'image/jpeg' }, jpeg(20, 20), anna.id);
+      await d.dokumente.ladeHoch(hinten.id, { register: 'dokumente', name: 'image.jpg', typ: 'image/jpeg' }, jpeg(20, 20), anna.id);
       const r = await rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: hinten.id } });
       assert.equal(r.body.seiten, 4);
       assert.equal((await seiten(await pdfVon(vorne.id))).length, 4);
-      await assert.rejects(d.holeMappe(hinten.id), status(404));
-      assert.ok((await d.papierkorb({ id: anna.id, rolle: 'admin' })).some((m: { id: string }) => m.id === hinten.id));
+      await assert.rejects(d.mappen.holeMappe(hinten.id), status(404));
+      assert.ok((await d.papierkorbVerwaltung.papierkorb({ id: anna.id, rolle: 'admin' })).some((m: { id: string }) => m.id === hinten.id));
       await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: vorne.id } }), status(422));
       // Andere Dateien lassen sich nicht anhängen.
       const word = (await rufe('POST', '/api/post', { body: { betreff: 'Word' } })).body as { id: string };
-      await d.ladeHoch(word.id, { register: 'dokumente', name: 'brief.docx', typ: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, Buffer.from('PK\x03\x04 docx'), anna.id);
+      await d.dokumente.ladeHoch(word.id, { register: 'dokumente', name: 'brief.docx', typ: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, Buffer.from('PK\x03\x04 docx'), anna.id);
       await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: word.id } }), status(422));
     } finally { await aufraeumen(); }
   });

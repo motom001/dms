@@ -31,11 +31,10 @@ const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String
 /** Was das Modul vom Dienst braucht (die Paketverwaltung reicht den Dienst herein). */
 export interface UmbauDienst {
   kern: Kern;
-  listeTypen(): Promise<Mappentyp[]>;
-  listeMappen(typId?: string): Promise<Mappe[]>;
-  listeSichten(): Promise<Sicht[]>;
-  loescheTyp(id: string): Promise<void>;
-  aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
+  mappentypen: { listeTypen(): Promise<Mappentyp[]>; loescheTyp(id: string): Promise<void> };
+  mappen: { listeMappen(typId?: string): Promise<Mappe[]> };
+  sichtenVerwaltung: { listeSichten(): Promise<Sicht[]> };
+  mappenTitel: { aktualisiereTitel(ids: string[]): Promise<Map<string, string>> };
 }
 
 /** Mappentyp eines Pakets, so weit der Umbau ihn braucht. */
@@ -339,7 +338,7 @@ const sichtFelder = (s: Sicht): string[] => s.bedingungen.flatMap((b) => (b.art 
  */
 async function ansichtHinweise(d: UmbauDienst, alt: Mappentyp, felder: FeldPlan[], ziel: Mappentyp | undefined, u: Umgebung): Promise<UmbauAnsicht[]> {
   const bleibt = new Set(umbenennung(felder).keys());
-  const breiter = ziel ? (await d.listeMappen(ziel.id)).length : 0;
+  const breiter = ziel ? (await d.mappen.listeMappen(ziel.id)).length : 0;
   const besitzer = (id: string) => u.k.installierte.find((p) => Object.values(p.sichten).includes(id))?.name ?? null;
   return u.sichten.filter((s) => s.typen.includes(alt.id)).flatMap((s): UmbauAnsicht[] => {
     const weg = [...new Set(sichtFelder(s).filter((f) => felder.some((x) => x.feld.key === f) && !bleibt.has(f)))].map((f) => alt.felder.find((g) => g.key === f)?.label ?? f);
@@ -362,7 +361,7 @@ async function planeSchritt(d: UmbauDienst, s: UmbauSchritt, u: Umgebung): Promi
   const z = q ? zielVon(s, q.alt, u) : null;
   if (!q || !z) return null;
   const { alt, quelle } = q;
-  const mappen = await d.listeMappen(alt.id);
+  const mappen = await d.mappen.listeMappen(alt.id);
   const felder = feldPlaene(s, alt, { stand: quelle.typStand?.[alt.id]?.felder, zielFelder: z.zielFelder, mappen, problem: u.problem });
   pruefeSchritt(s, alt, z, felder, u.problem);
   const uebernehmen = !z.vorhanden;
@@ -394,7 +393,7 @@ async function planeSchritt(d: UmbauDienst, s: UmbauSchritt, u: Umgebung): Promi
 export async function planeUmbau(d: UmbauDienst, k: UmbauKontext, probleme: Array<{ code: string; text: string }>): Promise<UmbauLage> {
   const lage: UmbauLage = { schritte: [], uebernahme: {} };
   if (!k.paket.umbau.length) return lage;
-  const u: Umgebung = { k, lage, problem: (code, text) => probleme.push({ code, text }), ki: await kiTypen(d), verwehrt: await paketVerwehrt(d), sichten: await d.listeSichten() };
+  const u: Umgebung = { k, lage, problem: (code, text) => probleme.push({ code, text }), ki: await kiTypen(d), verwehrt: await paketVerwehrt(d), sichten: await d.sichtenVerwaltung.listeSichten() };
   // Übernahmen zuerst: Ein späterer Schritt in denselben (neuen) Zieltyp legt dann mit dem übernommenen zusammen.
   const neu = (s: UmbauSchritt) => { const nk = teileKennung(s.nach); return nk.paket === k.paket.id && !k.ich?.typen[nk.schluessel]; };
   for (const s of [...k.paket.umbau].sort((a, b) => Number(!neu(a)) - Number(!neu(b)))) {

@@ -116,13 +116,13 @@ async function aufbau(pg: boolean, katalog?: Katalog, archive: Record<string, Bu
   const p = new Paketverwaltung(d, { version: () => '0.245.0', abruf, katalogUrl: KATALOG });
   const hoch = async (dateien: Record<string, string>) => p.hochladen(archiv(dateien), ICH);
   const installiere = async (dateien: Record<string, string>, mehr: Record<string, unknown> = {}) => p.installiere({ upload: (await hoch(dateien)).upload, bestaetigt: true, ...mehr }, ICH);
-  const typ = async (k: string) => (await d.listeTypen()).find((x) => x.schluessel === k)!;
+  const typ = async (k: string) => (await d.mappentypen.listeTypen()).find((x) => x.schluessel === k)!;
   return { d, p, hoch, installiere, typ };
 }
 
 /** Quellen eines Registers als „kennung.feld“. */
 async function quellen(d: Dienst, t: Mappentyp, register: string): Promise<string[]> {
-  const typen = await d.listeTypen();
+  const typen = await d.mappentypen.listeTypen();
   return (t.register.find((r) => r.key === register)?.quellen ?? []).map((q) => `${typen.find((x) => x.id === q.typId)?.schluessel}.${q.feldKey}`).sort();
 }
 
@@ -145,7 +145,7 @@ for (const pg of [false, true]) {
         const abschnitt = rechnung.register.find((r) => r.key === 'daten')!.abschnitte![0].anzeigen!.bedingungen[0];
         assert.deepEqual(abschnitt.art === 'feld' && abschnitt.bedingung.wert, { art: 'fest', wert: [fz] });
         // Das spätere Paket ist keine eigene Änderung an Verträge und Rechnungen.
-        const inst = await p.installierte(), typen = await d.listeTypen();
+        const inst = await p.installierte(), typen = await d.mappentypen.listeTypen();
         for (const id of ['vertraege', 'rechnungen']) {
           const ip = inst.find((x) => x.id === id)!;
           for (const tid of Object.values(ip.typen)) assert.equal(aenderung(typen.find((x) => x.id === tid)!, ip, (i) => typen.find((x) => x.id === i)?.schluessel).geaendert, false, `${id}: ${tid}`);
@@ -209,10 +209,10 @@ for (const pg of [false, true]) {
     it('nichts fällt still weg: eine Quelle, die sich nicht anlegen lässt, ist ein Fehler mit Stelle', async () => {
       const { d, p, installiere } = await aufbau(pg);
       for (const x of [BASIS, VERTRAEGE, rechnungen()]) await installiere(x);
-      const typen = (await d.listeTypen()).length;
+      const typen = (await d.mappentypen.listeTypen()).length;
       // „Nummer“ der Rechnung ist kein Verweis auf das Fahrzeug – früher fiel die Quelle beim Speichern still weg.
       await assert.rejects(installiere(mitQuellen('fahrzeuge', 'Fahrzeuge', 'fahrzeug', 'Fahrzeug', 'nr')), fehlerMit(422, /Fahrzeug.*Rechnungen.*„rechnungen:rechnung\.nr“/));
-      assert.equal((await d.listeTypen()).length, typen, 'zurückgenommen');
+      assert.equal((await d.mappentypen.listeTypen()).length, typen, 'zurückgenommen');
       assert.equal((await p.installierte()).some((x) => x.id === 'fahrzeuge'), false);
     });
   });
@@ -221,8 +221,8 @@ for (const pg of [false, true]) {
     it('Mappentyp und Ansicht: selbst angelegt bzw. aus einem Paket – in probleme, vor dem Anlegen, mit Namen gelöst', async () => {
       const { d, p, hoch, installiere } = await aufbau(pg);
       await installiere(BASIS);
-      await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      await d.legeSichtAn({ name: 'Verträge', typen: [] });
+      await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [] });
       const { vorschau: v } = await hoch(VERTRAEGE);
       const erwartet = [
         'Mappentyp „Vertrag“: Den Namen hat schon ein selbst angelegter Mappentyp. Bitte einen anderen wählen, etwa „Vertrag (Verträge)“.',
@@ -231,11 +231,11 @@ for (const pg of [false, true]) {
       assert.deepEqual(v.namenskonflikte, erwartet);
       assert.deepEqual(v.probleme, erwartet);
       assert.ok(v.fehlercodes.includes('namenskonflikt'));
-      const typen = (await d.listeTypen()).length;
+      const typen = (await d.mappentypen.listeTypen()).length;
       await assert.rejects(installiere(VERTRAEGE), (e) => e instanceof Fachfehler && e.status === 409 && (e.details as { konflikte?: boolean }).konflikte === true);
-      assert.equal((await d.listeTypen()).length, typen, 'nichts angelegt');
+      assert.equal((await d.mappentypen.listeTypen()).length, typen, 'nichts angelegt');
       const ok = await installiere(VERTRAEGE, { namen: { vertrag: 'Vertrag (Verträge)' }, sichtNamen: { vertraege: 'Verträge (Paket)' } });
-      assert.equal((await d.listeTypen()).find((x) => x.id === ok.typen.vertrag)!.name, 'Vertrag (Verträge)');
+      assert.equal((await d.mappentypen.listeTypen()).find((x) => x.id === ok.typen.vertrag)!.name, 'Vertrag (Verträge)');
       // Aus einem Paket: „Position“ gibt es schon in „Lager“.
       await installiere(paket('lager', 'Lager', '- schluessel: position\n  name: Position\n  felder: [{ key: text, label: Text, typ: text }]\n  register: [{ key: daten, name: Daten, art: felder, felder: [text] }]\n'));
       const { vorschau: r } = await hoch(rechnungen());
@@ -251,7 +251,7 @@ for (const pg of [false, true]) {
       const { d, p, hoch, installiere } = await aufbau(pg, katalog, { 'archive/vertraege-1.0.0.zip': zip });
       assert.deepEqual((await p.abrufen(false)).kataloge.map((k) => k.fehler), [null]);
       await installiere(BASIS);
-      await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
       // Ein Paket, das Verträge braucht und selbst einen Typ „Vertrag“ mitbrächte.
       const fremd = paket('kfz', 'Kfz', '- schluessel: vertrag\n  name: Vertrag\n  felder: [{ key: name, label: Name, typ: text }]\n  register: [{ key: daten, name: Daten, art: felder, felder: [name] }]\n', ['vertraege']);
       const { vorschau: v } = await hoch(fremd);
@@ -259,7 +259,7 @@ for (const pg of [false, true]) {
       assert.ok(v.fehlercodes.includes('namenskonflikt-abhaengigkeit'));
       assert.deepEqual(v.namenskonflikte, ['Mappentyp „Vertrag“: Den Namen hat schon ein selbst angelegter Mappentyp. Bitte einen anderen wählen, etwa „Vertrag (Kfz)“.']);
       // Ohne den eigenen Typ: Der Typ der Abhängigkeit zählt schon, bevor sie installiert ist.
-      await d.loescheTyp((await d.listeTypen()).find((x) => x.name === 'Vertrag')!.id);
+      await d.mappentypen.loescheTyp((await d.mappentypen.listeTypen()).find((x) => x.name === 'Vertrag')!.id);
       const { vorschau: w } = await hoch(fremd);
       assert.deepEqual(w.namenskonflikte, ['Mappentyp „Vertrag“: Den Namen hat schon ein Mappentyp aus „Verträge“, das als Abhängigkeit mitinstalliert wird. Bitte einen anderen wählen, etwa „Vertrag (Kfz)“.']);
       assert.deepEqual(w.probleme, w.namenskonflikte);

@@ -33,12 +33,12 @@ const LEER = { jahre: 2, stichtag: 'bis', leererStichtag: 'laeuftNicht' as const
 async function aufbau(repo: Repo = speicherRepo(), papierkorb = 0) {
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, speicherDateien(), { einstellungen });
-  if (papierkorb) await d.setzePapierkorbTage(papierkorb);
-  const t = await d.legeTypAn({ name: 'Verfahren', titelVorlage: '{name}', archiv: LEER,
+  if (papierkorb) await d.papierkorbVerwaltung.setzePapierkorbTage(papierkorb);
+  const t = await d.mappentypen.legeTypAn({ name: 'Verfahren', titelVorlage: '{name}', archiv: LEER,
     felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'bis', label: 'Gilt nicht mehr seit', typ: 'datum' }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente' }] });
-  const aktuell = await d.legeMappeAn({ typId: t.id, werte: { name: 'Aktuell' } });
-  const abgeloest = await d.legeMappeAn({ typId: t.id, werte: { name: 'Abgelöst', bis: '2015-06-30' } });
+  const aktuell = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Aktuell' } });
+  const abgeloest = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Abgelöst', bis: '2015-06-30' } });
   return { d, t, aktuell, abgeloest, einstellungen };
 }
 
@@ -63,17 +63,17 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
   it('An der Mappe „aufbewahren, Frist beginnt mit …“; Löschsperre auf allen Wegen; nicht unter „Aufbewahrung abgelaufen“', async () => {
     const { d, t, aktuell, abgeloest } = await aufbau();
     assert.deepEqual(t.archiv, LEER);
-    const det = await d.holeMappe(aktuell.id);
+    const det = await d.mappen.holeMappe(aktuell.id);
     assert.equal(det.aufbewahrenBis, null);
     assert.equal((det as { fristBeginntMit?: string }).fristBeginntMit, 'Gilt nicht mehr seit');
     assert.equal(det.loeschbar.ok, false);
-    assert.equal((await d.holeMappe(abgeloest.id) as { fristBeginntMit?: string }).fristBeginntMit, undefined);
-    await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
-    const { dokument } = await d.ladeHoch(aktuell.id, { register: 'belege', name: 'V.pdf' }, Buffer.from('%PDF-1.4 a'), null);
-    await assert.rejects(d.loescheDokument(dokument.id), (e) => e instanceof Fachfehler && e.status === 409 && /beginnt erst mit/.test(e.message));
-    assert.deepEqual((await d.darfWeg()).map((x) => x.titel), ['Abgelöst']);
+    assert.equal((await d.mappen.holeMappe(abgeloest.id) as { fristBeginntMit?: string }).fristBeginntMit, undefined);
+    await assert.rejects(d.loeschen.loescheMappe(aktuell.id, ICH.id), offen);
+    const { dokument } = await d.dokumente.ladeHoch(aktuell.id, { register: 'belege', name: 'V.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+    await assert.rejects(d.dokumente.loescheDokument(dokument.id), (e) => e instanceof Fachfehler && e.status === 409 && /beginnt erst mit/.test(e.message));
+    assert.deepEqual((await d.mappenArchiv.darfWeg()).map((x) => x.titel), ['Abgelöst']);
     // Baum (Löschen mit verknüpften Mappen, Auskunft): gesperrt ohne Datum.
-    const baum = await d.baum(aktuell.id, {}, await d.zugriff({ id: ICH.id, rolle: 'admin' } as never));
+    const baum = await d.mitVerknuepften.baum(aktuell.id, {}, await d.rechtepruefung.zugriff({ id: ICH.id, rolle: 'admin' } as never));
     const k = baum.knoten.find((x) => x.id === aktuell.id)!;
     assert.equal(k.gesperrt, true);
     assert.equal(k.aufbewahrenBis, null);
@@ -81,30 +81,30 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
 
   it('Stichtag später gefüllt: Frist ab diesem Datum, steht in der Historie; danach darf die Mappe weg', async () => {
     const { d, aktuell } = await aufbau();
-    await d.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: '2016-01-01' } });
-    const h = (await d.historie(aktuell.id)).find((x) => x.art === 'geaendert');
+    await d.mappen.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: '2016-01-01' } });
+    const h = (await d.mappenHistorie.historie(aktuell.id)).find((x) => x.art === 'geaendert');
     const a = h?.daten.aenderungen?.find((x) => x.label === 'Aufbewahren bis');
     assert.deepEqual([a?.alt, a?.neu], ['Frist läuft noch nicht (beginnt mit „Gilt nicht mehr seit“)', '31.12.2018']);
-    assert.equal((await d.holeMappe(aktuell.id)).aufbewahrenBis, '2018-12-31');
-    assert.ok((await d.darfWeg()).some((x) => x.id === aktuell.id));
+    assert.equal((await d.mappen.holeMappe(aktuell.id)).aufbewahrenBis, '2018-12-31');
+    assert.ok((await d.mappenArchiv.darfWeg()).some((x) => x.id === aktuell.id));
     // Wieder geleert: Die Frist läuft wieder nicht – auch das steht in der Historie.
-    await d.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: null } });
-    const h2 = (await d.historie(aktuell.id)).filter((x) => x.art === 'geaendert').map((x) => x.daten.aenderungen?.find((y) => y.label === 'Aufbewahren bis')?.neu);
+    await d.mappen.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: null } });
+    const h2 = (await d.mappenHistorie.historie(aktuell.id)).filter((x) => x.art === 'geaendert').map((x) => x.daten.aenderungen?.find((y) => y.label === 'Aufbewahren bis')?.neu);
     assert.ok(h2.includes('Frist läuft noch nicht (beginnt mit „Gilt nicht mehr seit“)'));
-    await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
+    await assert.rejects(d.loeschen.loescheMappe(aktuell.id, ICH.id), offen);
   });
 
   it('Vorschau beim Umschalten nennt die Mappen mit leerem Stichtag; Papierkorb hält sie fest', async () => {
     const { d, t } = await aufbau();
-    assert.deepEqual(await d.archivVorschau(t.id, { jahre: 2, stichtag: 'bis' }), { mappen: 2, darfWeg: 1, stichtagLeer: 1 });
-    assert.deepEqual(await d.archivVorschau(t.id, LEER), { mappen: 2, darfWeg: 1, stichtagLeer: 1 });
-    assert.deepEqual(await d.archivVorschau(t.id, { jahre: 2, stichtag: null }), { mappen: 2, darfWeg: 0, stichtagLeer: 0 });
+    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, { jahre: 2, stichtag: 'bis' }), { mappen: 2, darfWeg: 1, stichtagLeer: 1 });
+    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, LEER), { mappen: 2, darfWeg: 1, stichtagLeer: 1 });
+    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, { jahre: 2, stichtag: null }), { mappen: 2, darfWeg: 0, stichtagLeer: 0 });
     // Vorher im Papierkorb: bleibt dort, bis der Stichtag gefüllt und die Frist abgelaufen ist.
     const p = await aufbau(speicherRepo(), 30);
-    const ohne = await p.d.aendereTyp(p.t.id, { ...p.t, archiv: null });
-    await p.d.loescheMappe(p.aktuell.id, ICH.id);
-    await p.d.aendereTyp(p.t.id, { ...ohne, archiv: LEER });
-    await assert.rejects(p.d.loescheEndgueltig([p.aktuell.id], { id: ICH.id, rolle: 'admin' }, true), (e) => e instanceof Fachfehler && e.status === 409 && /„Aktuell“ nicht endgültig/.test(e.message));
+    const ohne = await p.d.mappentypen.aendereTyp(p.t.id, { ...p.t, archiv: null });
+    await p.d.loeschen.loescheMappe(p.aktuell.id, ICH.id);
+    await p.d.mappentypen.aendereTyp(p.t.id, { ...ohne, archiv: LEER });
+    await assert.rejects(p.d.papierkorbVerwaltung.loescheEndgueltig([p.aktuell.id], { id: ICH.id, rolle: 'admin' }, true), (e) => e instanceof Fachfehler && e.status === 409 && /„Aktuell“ nicht endgültig/.test(e.message));
   });
 
   it('Löschkonzept nennt „läuft noch nicht“', async () => {
@@ -119,7 +119,7 @@ describe('Archivmodus im Protokoll (#1051)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'x');
     const { benutzer } = await konten.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
-    const t = await d.legeTypAn({ name: 'Vertrag', archiv: { jahre: 6, stichtag: 'ende' }, felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'ende', label: 'Beendet am', typ: 'datum' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', archiv: { jahre: 6, stichtag: 'ende' }, felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'ende', label: 'Beendet am', typ: 'datum' }] });
     const r = routen(d, konten, {}).find((y) => y.methode === 'PUT' && y.pfad === '/api/typen/:id')!;
     const n = protokoll.letzteNr;
     await r.handler({ body: { ...t, archiv: { jahre: 6, stichtag: 'ende', leererStichtag: 'laeuftNicht' } }, params: { id: t.id }, query: {}, ip: '127.0.0.1', benutzer } as unknown as Anfrage);
@@ -182,13 +182,13 @@ describe('Archivmodus aus dem Paket (#1051)', () => {
     const a = dms();
     const { vorschau, paket } = await installiere(a, COMPLIANCE, '1.0.0', 'archiv: { jahre: 2, stichtag: stichtag }');
     assert.deepEqual(vorschau.typen.find((x) => x.schluessel === 'verfahren')?.archiv, { jahre: 2, stichtag: 'gilt_nicht_mehr_seit', leererStichtag: 'laeuftNicht', stichtagName: 'Gilt nicht mehr seit' });
-    const typ = async (s: string) => (await a.d.listeTypen()).find((x) => x.id === paket.typen[s])!;
+    const typ = async (s: string) => (await a.d.mappentypen.listeTypen()).find((x) => x.id === paket.typen[s])!;
     assert.deepEqual((await typ('verfahren')).archiv, { jahre: 2, stichtag: 'gilt_nicht_mehr_seit', leererStichtag: 'laeuftNicht' });
     assert.deepEqual((await typ('nachweis')).archiv, { jahre: 2, stichtag: 'stichtag' });
     const b = dms();
     await b.einstellungen.schreibe(MERKMALE_EINSTELLUNG, { beruflich: true });
     const p2 = (await installiere(b, COMPLIANCE)).paket;
-    assert.equal((await b.d.listeTypen()).find((x) => x.id === p2.typen.verfahren)?.archiv?.jahre, 10);
+    assert.equal((await b.d.mappentypen.listeTypen()).find((x) => x.id === p2.typen.verfahren)?.archiv?.jahre, 10);
   });
 
   it('Sicherheit: Ein Update lockert nie (kürzer, aus, ab Anlagedatum) und ändert nichts, was der Administrator gesetzt hat', async () => {
@@ -198,24 +198,24 @@ describe('Archivmodus aus dem Paket (#1051)', () => {
     // Update mit kürzerer Frist, ohne „läuft noch nicht ab“ – und für einen vorhandenen Typ ohne Archivmodus eine Vorgabe.
     const u = await installiere(a, 'archiv: { jahre: 1 }', '1.1.0', 'archiv: { jahre: 30, stichtag: stichtag }');
     assert.equal(u.vorschau.typen.every((x) => x.archiv === undefined), true, 'kein Archivmodus für vorhandene Typen in der Vorschau');
-    assert.deepEqual((await a.d.listeTypen()).find((x) => x.id === id)?.archiv, { jahre: 2, stichtag: 'gilt_nicht_mehr_seit', leererStichtag: 'laeuftNicht' });
-    assert.equal((await a.d.listeTypen()).find((x) => x.id === nId)?.archiv, null);
+    assert.deepEqual((await a.d.mappentypen.listeTypen()).find((x) => x.id === id)?.archiv, { jahre: 2, stichtag: 'gilt_nicht_mehr_seit', leererStichtag: 'laeuftNicht' });
+    assert.equal((await a.d.mappentypen.listeTypen()).find((x) => x.id === nId)?.archiv, null);
     // Update ohne archiv: bleibt.
     await installiere(a, '', '1.2.0');
-    assert.equal((await a.d.listeTypen()).find((x) => x.id === id)?.archiv?.jahre, 2);
+    assert.equal((await a.d.mappentypen.listeTypen()).find((x) => x.id === id)?.archiv?.jahre, 2);
     // Vom Administrator gesetzte Werte bleiben, auch wenn das Paket etwas anderes vorgibt.
-    const t = (await a.d.listeTypen()).find((x) => x.id === id)!;
-    await a.d.aendereTyp(id, { ...t, archiv: { jahre: 6, stichtag: null } });
+    const t = (await a.d.mappentypen.listeTypen()).find((x) => x.id === id)!;
+    await a.d.mappentypen.aendereTyp(id, { ...t, archiv: { jahre: 6, stichtag: null } });
     await installiere(a, COMPLIANCE, '1.3.0');
-    assert.deepEqual((await a.d.listeTypen()).find((x) => x.id === id)?.archiv, { jahre: 6, stichtag: null });
+    assert.deepEqual((await a.d.mappentypen.listeTypen()).find((x) => x.id === id)?.archiv, { jahre: 6, stichtag: null });
   });
 
   it('Paket erstellen schreibt den Archivmodus in der Schreibweise der Registry und hebt die Mindestversion', async () => {
     assert.equal(mindestversion(['archiv']).version, DMS_ARCHIV_PAKET_AB);
     const b = dms();
-    const t = await b.d.legeTypAn({ name: 'Verfahren', schluessel: 'verfahren', titelVorlage: '{name}', archiv: { jahre: 2, stichtag: 'bis', leererStichtag: 'laeuftNicht' },
+    const t = await b.d.mappentypen.legeTypAn({ name: 'Verfahren', schluessel: 'verfahren', titelVorlage: '{name}', archiv: { jahre: 2, stichtag: 'bis', leererStichtag: 'laeuftNicht' },
       felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'bis', label: 'Gilt nicht mehr seit', typ: 'datum' }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name', 'bis'] }] });
-    const ohne = await b.d.legeTypAn({ name: 'Notiz', schluessel: 'notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name'] }] });
+    const ohne = await b.d.mappentypen.legeTypAn({ name: 'Notiz', schluessel: 'notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name'] }] });
     const z = await b.e.exportiere({ typen: [t.id, ohne.id], sichten: [], beispiele: [], id: 'verfahren_eigen', name: 'Verfahren (eigen)', version: '1.0.0', beschreibung: 'Verfahren.',
       autor: { name: 'Lena Beispiel', github: 'lena' }, lizenz: 'MIT', dms: `>=${DMS_ARCHIV_PAKET_AB}`, aenderungen: '' }, ICH);
     const inhalt = parse(liesZip(z.daten).get('verfahren_eigen/inhalt/mappentypen.yaml')!.toString()) as Array<{ schluessel: string; archiv?: unknown }>;
@@ -230,10 +230,10 @@ describe('Ist der Stichtag leer – PostgreSQL (#1051)', { skip: !process.env.TE
     const { pgRepo } = await import('../src/repo-pg');
     try {
       const { d, t, aktuell } = await aufbau(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo);
-      assert.deepEqual((await d.listeTypen()).find((x) => x.id === t.id)?.archiv, LEER);
-      await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
-      await d.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: '2016-01-01' } });
-      assert.equal((await d.holeMappe(aktuell.id)).aufbewahrenBis, '2018-12-31');
+      assert.deepEqual((await d.mappentypen.listeTypen()).find((x) => x.id === t.id)?.archiv, LEER);
+      await assert.rejects(d.loeschen.loescheMappe(aktuell.id, ICH.id), offen);
+      await d.mappen.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: '2016-01-01' } });
+      assert.equal((await d.mappen.holeMappe(aktuell.id)).aufbewahrenBis, '2018-12-31');
     } finally { await db.ende(); }
   });
 });

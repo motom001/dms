@@ -10,7 +10,7 @@ import { protokoll } from './protokoll';
 import { einstellungsMerker, laufeFaellige, wochentagVon } from './zeitplan';
 import { schreibeSicherung, sha256Von, ZWECK, type Eintrag } from './sicherungsformat';
 import { aufVolume, geraetVon } from './tresor';
-import type { EreignisAufruf } from './dienst';
+import type { EreignisAufruf } from './volltext';
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';

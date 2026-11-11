@@ -21,24 +21,24 @@ describe('Vollexport (#254)', () => {
   it('exportiert alles lesbar, ohne Passwörter; mit Bestätigung Passwörter; Prüfwerte', async () => {
     const tresor = { bereit: true, registriere: () => {}, registriereBestand: () => {}, verschluessele: (k: string) => `dms1$${k}`, entschluessele: (w: string) => (w.startsWith('dms1$') ? w.slice(5) : null) };
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor: tresor as never });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
-    const partner = await d.legeTypAn({ name: 'Vertragspartner', schluessel: 'partner', titelVorlage: '{name}', felder: [
+    const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', schluessel: 'partner', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'email', label: 'E-Mail', typ: 'text' }, { key: 'telefon', label: 'Telefon', typ: 'text' },
     ] });
-    const konto = await d.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [
+    const konto = await d.mappentypen.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'benutzer', label: 'Benutzername', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' },
       { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id }, { key: 'betrag', label: 'Betrag', typ: 'betrag' }, { key: 'ab', label: 'Ab', typ: 'datum' },
     ], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Unterlagen', art: 'dokumente', versionierung: true }] });
-    const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' } });
-    const z = await d.legeMappeAn({ typId: konto.id, werte: { name: 'Portal', benutzer: 'anna', pw: 'geheim123', partner: p.id, betrag: { betrag: 12.5, waehrung: 'EUR' }, ab: '2026-12-01' } });
-    const dok = (await d.ladeHoch(z.id, { register: 'dok', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 eins'), null)).dokument;
-    await d.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
-    await d.legeNotizAn(z.id, 'Notiz zum Zugang', null);
+    const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' } });
+    const z = await d.mappen.legeMappeAn({ typId: konto.id, werte: { name: 'Portal', benutzer: 'anna', pw: 'geheim123', partner: p.id, betrag: { betrag: 12.5, waehrung: 'EUR' }, ab: '2026-12-01' } });
+    const dok = (await d.dokumente.ladeHoch(z.id, { register: 'dok', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 eins'), null)).dokument;
+    await d.dokumentVersionen.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
+    await d.mappenNotizen.legeNotizAn(z.id, 'Notiz zum Zugang', null);
 
-    const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
     const ziel = await mkdtemp(join(tmpdir(), 'dms-export-'));
-    const vor = kontaktVorschlaege(await d.listeTypen()).find((v) => v.typId === partner.id)!;
+    const vor = kontaktVorschlaege(await d.mappentypen.listeTypen()).find((v) => v.typId === partner.id)!;
     assert.deepEqual(vor.zuordnung, { name: 'name', email: 'email', telefon: 'telefon' });
     const r = await vollexport(quelle, ziel, { kontakte: { [partner.id]: vor.zuordnung } });
     const lies = (rel: string) => readFile(join(r.ordner, rel), 'utf8');

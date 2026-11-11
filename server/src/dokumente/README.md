@@ -27,15 +27,15 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
 - Importiert nur sich selbst, Kern, `shared/`, die Basis und die Technik der Dateien (`hochladen.ts`,
   `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts` – `WERKZEUGE` in
   `.dependency-cruiser.cjs`), geprüft mit `npm run lint:abh` (Regel `fachordner`, Schicht 2 in `SCHICHTEN`).
-- Wer Dokumente braucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen). Den Zustand (angebundene
-  Texterkennung, Vorschaubilder, Umwandlung, Entsperren, Archivfassung) halten die Klassen; der Dienst liest ihn über
-  private Getter.
+- Wer Dokumente braucht, ruft die Klasse am Dienst (`dienst.dokumente.…`, `dienst.dokumentVersionen.…` usw.; seit
+  #1079 ohne Weiterleitungen im Dienst). Den Zustand (angebundene Texterkennung, Vorschaubilder, Umwandlung,
+  Entsperren, Archivfassung) halten die Klassen; der Zusammenbau reicht ihn über die Anschlüsse weiter.
 
 **Regeln**
 
 - Reihenfolge und Transaktion bleiben: `ladeHoch` schreibt Historie, „zuletzt geändert“, Dokument, Volltext und
   das Ereignis `dokument.hochgeladen` in einer Transaktion; Vorschau, Umwandeln und Entsperren laufen danach
-  (`kern.danach`). Ereignisse gehen über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`).
+  (`kern.danach`). Ereignisse gehen über den Anschluss (Tests ersetzen `dienst.kern.ereignis`).
 - `kern.repo` bei jedem Aufruf neu holen (Getter `repo`) – in einer Transaktion sieht es deren Änderungen.
 - PDF bearbeiten, Verkleinern und Schwärzen liegen seit #1077 in `pdf-bearbeiten/`; `entsperrtZu` (Stempel und
   Verkleinern beim Weitergeben) seit #1078 in `geschuetzte-pdf.ts`. Den Volltext (`volltextFertig`, `volltextAn`, seit #1076 in `volltext/`) rufen die Klassen über ihren

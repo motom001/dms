@@ -76,15 +76,15 @@ Alongside, without routes:
 - `historie.schreibe(…)` (`kern/historie.ts`) and `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Reading** stays with folders and deletion respectively.
 - `einstellungen`, `dateien`, `stand`.
 
-**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). The service stays a facade with one-line forwards. What the core does not build itself (access – that is [checking permissions](#zugriff), one layer above –, the fallback of the system setup), it gets from the service when it is assembled.
+**Rule:** only what everyone needs goes into the core – anything new only with a reason in the pull request. The core imports nothing from `dienst.ts`, routes or subject folders, only `shared/` and the base (repo, database, log, texts, settings, files, counters); `npm run lint:abh` checks this ([rules](stil.md#abhaengigkeiten-pruefen)). Since #1079 the service is only the assembly: routes, modules and tests call the subject services on its fields ([what stays](#dienst-rest)). What the core does not build itself (access – that is [checking permissions](#zugriff), one layer above –, the fallback of the system setup), it gets from the service when it is assembled.
 
 ### System setup (#963) { #systemausstattung }
 
 `server/src/systemausstattung/` creates what every library needs: the system folder types “Role”, “User” and “Post” with their system fields and labels, the system roles and the views that ship with Ablago. It is a flow **above** the subject areas: `sicherstellen()` calls, one after the other, folder types (types and roles), views (own view of a type just created), post (the post views) and views (“Favourites”); it gets these steps from the service when it is assembled. Each step only creates what is missing.
 
-- **At start-up** (`dienst.gleicheBenutzerAb`, leader only) and so after every restore, which restarts.
+- **At start-up** (`dienst.postSystemmappen.gleicheBenutzerAb`, leader only) and so after every restore, which restarts.
 - **As a fallback**: if `kern.system()` does not find everything, it calls `systemausstattung.anlegen()` – for paths without a start (tests, restore, removing demo data). Concurrent calls share one run.
-- Whoever only needs ids uses `kern.system()`; `dienst.sichereSystem()` is the facade for `sicherstellen()`. The core keeps the ids only if it looked them up outside a transaction.
+- Whoever only needs ids uses `kern.system()`; start-up calls `dienst.systemausstattung.sicherstellen()`. The core keeps the ids only if it looked them up outside a transaction.
 
 ### Hook points (#962) { #anschlusspunkte }
 
@@ -107,7 +107,7 @@ Occasion → receivers (in order; subject area.task):
 
 ## Search (#964) { #suche }
 
-The first subject area with its own business logic in its subject folder (trial run of the target structure): `server/src/suche/suche.dienst.ts` with the class `SucheDienst` – fuzzy search (typos, words with the same meaning, word index), vectors for documents and similar documents. The service builds it as `dienst.suche` and keeps a one-line forward for every method; `dienst.vektorAnbieter` passes through to `dienst.suche.vektorAnbieter`.
+The first subject area with its own business logic in its subject folder (trial run of the target structure): `server/src/suche/suche.dienst.ts` with the class `SucheDienst` – fuzzy search (typos, words with the same meaning, word index), vectors for documents and similar documents. The service builds it as `dienst.suche`; whoever searches calls it there (also `dienst.suche.vektorAnbieter`).
 
 - **Door:** `suche/index.ts`; only `routen.ts` fetches the routes (`suche.routen.ts`) directly.
 - **Gets the core**, not the whole service (`kern.repoOhneTransaktion` for the vector cache), plus [permission checking](#zugriff) (`lesbare`, `pruefeRecht`) and a `SucheAnschluss` with `konten` (service account of a package).
@@ -117,7 +117,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 ## Checking permissions (#1072) { #zugriff }
 
-`server/src/zugriff/zugriff.dienst.ts` with the class `ZugriffDienst` checks who may do what – in one place: `zugriff(ich)` once per request (people by the rules on the folder type, package service accounts by their confirmed permissions, system accounts by their role, read access for a limited time), `rechteAn`, `rechteAnVielen`, `pruefeRecht`, `lesbare`, `mitPasswortRecht`, `sichtbarFuer`, `kannLesen`, `wasSieht`, `mappeVon`. The service builds it as `dienst.rechtepruefung` and keeps a one-line forward for every method.
+`server/src/zugriff/zugriff.dienst.ts` with the class `ZugriffDienst` checks who may do what – in one place: `zugriff(ich)` once per request (people by the rules on the folder type, package service accounts by their confirmed permissions, system accounts by their role, read access for a limited time), `rechteAn`, `rechteAnVielen`, `pruefeRecht`, `lesbare`, `mitPasswortRecht`, `sichtbarFuer`, `kannLesen`, `wasSieht`, `mappeVon`. The service builds it as `dienst.rechtepruefung`; routes and modules call it there.
 
 - **Door:** `zugriff/index.ts` (plus `maskiert` and `NICHT_SICHTBAR` for titles of folders the user cannot read).
 - **Gets the core** and a `ZugriffAnschluss` from the service: `kiSperre` (AI setting of packages) and `konten`.
@@ -126,7 +126,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 ## Folder types (#1073) { #mappentypen }
 
-`server/src/mappentypen/` (layer 2) gathers what makes up a folder type – one class per topic, each getting the core; the service builds them and keeps a one-line forward for every method:
+`server/src/mappentypen/` (layer 2) gathers what makes up a folder type – one class per topic, each getting the core; the service builds them and keeps them as fields on the service; that is where they are called (#1079):
 
 | File | Class (in the service) | Content |
 |---|---|---|
@@ -143,7 +143,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 ## Folders (#1074) { #mappen }
 
-`server/src/mappen/` (layer 2) gathers what makes up a single folder – one class per topic, each getting the core; the service builds them and keeps a one-line forward for every method:
+`server/src/mappen/` (layer 2) gathers what makes up a single folder – one class per topic, each getting the core; the service builds them and keeps them as fields on the service; that is where they are called (#1079):
 
 | File | Class (in the service) | Content |
 |---|---|---|
@@ -161,7 +161,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 ## Documents (#1075) { #dokumente }
 
-`server/src/dokumente/` (layer 2) gathers everything about the files in a folder – one class per topic, each getting the core; the service builds them (`baueDokumente()`) and keeps a one-line forward for every method:
+`server/src/dokumente/` (layer 2) gathers everything about the files in a folder – one class per topic, each getting the core; the service builds them (`baueDokumente()`) and keeps them as fields on the service; that is where they are called (#1079):
 
 | File | Class (in the service) | Content |
 |---|---|---|
@@ -173,13 +173,13 @@ The first subject area with its own business logic in its subject folder (trial 
 | `fehlende-dateien.ts` | `FehlendeDateien` (`dienst.dateienFehlen`) | missing files (#877): `merkeFehlendeDatei`, `fehlendeDateien`, `dokumenteOhneDatei`, `pruefeVorhanden` |
 
 - **Door:** `dokumente/index.ts`; only `routen.ts` loads the routes (`dokumente.routen.ts`) directly. The technology of the versions (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) stays outside and is a tool for subject folders (see [layers](#schichten)).
-- **Gets the core** and the classes of this folder it calls, and per class a connector for what is still in the service or would run in a circle (event and titles via the facade, archive mode, shrinking, full text, jobs for packages, package settings, folder types, text recognition).
+- **Gets the core** and the classes of this folder it calls, and per class a connector for what is still in the service or would run in a circle (event and titles – `kern.ereignis`, `mappenTitel` –, archive mode, shrinking, full text, jobs for packages, package settings, folder types, text recognition).
 - **Order:** `ladeHoch` writes history, “last changed”, document, full text and `dokument.hochgeladen` in one transaction; preview, converting and unlocking run afterwards. `nachFassung`, `nachEntsperren`, `archivNachVolltext` and `nachNeuerVersion` are unchanged and called from the same places.
 - Since #1078 `entsperrtZu` lives in `geschuetzte-pdf.ts`. Since #1077 editing PDFs, shrinking and redacting live in [editing PDFs](#pdf-bearbeiten). Since #1076 the documents call the [full text](#volltext) (`volltextFertig`, `volltextAn`) through their connector on the service.
 
 ## Views (#1076) { #sichten }
 
-`server/src/sichten/` (layer 3) gathers the views of the Library – one class per topic, each getting the core; the service builds them (`baueSichtenUndVolltext()`) and keeps a one-line forward for every method:
+`server/src/sichten/` (layer 3) gathers the views of the Library – one class per topic, each getting the core; the service builds them (`baueSichtenUndVolltext()`) and keeps them as fields on the service; that is where they are called (#1079):
 
 | File | Class (in the service) | Content |
 |---|---|---|
@@ -211,12 +211,12 @@ The first subject area with its own business logic in its subject folder (trial 
 | `aus-paketen.ts` | `VolltextAusPaketen` (`dienst.volltextAusPaketen`) | full text from packages (#614): `volltextPaketDa`, `paketWegFuerDateien`, `pruefeVolltextRecht`, `nachVolltextEreignis` |
 
 - **Door:** `volltext/index.ts`. Which package is responsible for a file type is still worked out by `paketvolltext.ts` (a tool, also for the documents).
-- **Gets the core** and the documents (text recognition, converting, archive version), plus a connector for the event (facade), jobs, `paketVolltext` and the off-site backup.
+- **Gets the core** and the documents (text recognition, converting, archive version), plus a connector for the event (`kern.ereignis`), jobs, `paketVolltext` and the off-site backup.
 - **Order:** `volltextFertig` first puts `volltext.fertig` into the outbox, then reports to the archive version and only with text calls the listeners (recognition) one after the other; `nachTexterkennungsEreignis` hands on as before to converting, archive version, full text from packages and backup.
 
 ## Post (#1077) { #post }
 
-`server/src/post/` (layer 3) groups everything that comes in – one class per topic that gets the core; the service builds them (`bauePdfPostAusgang()`) and keeps a one-line forward for every method:
+`server/src/post/` (layer 3) groups everything that comes in – one class per topic that gets the core; the service builds them (`bauePdfPostAusgang()`) and keeps them as fields on the service; that is where they are called (#1079):
 
 | File | Class (in the service) | Content |
 |---|---|---|
@@ -227,8 +227,8 @@ The first subject area with its own business logic in its subject folder (trial 
 | `foto.ts` | `PostFotos` (`dienst.postFotos`) | photographing post (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen` |
 
 - **Door:** `post/index.ts`; only `routen.ts` loads the mailbox routes (`post.routen.ts`) directly. Since #1073 `wandleZuPost` and `ergaenzeSystemfelder` live with the [folder types](#mappentypen).
-- **Gets the core**, [checking permissions](#zugriff), [folder types](#mappentypen), [folders](#mappen), [documents](#dokumente) and the classes of this folder, `PostFotos` also [editing PDFs](#pdf-bearbeiten). Through the connector: event (facade), `meldeVerknuepft`, tasks, accounts, fit, system setup, deleting folders and `sichereZuordnung` from `erkennung.ts` (recognition still gets the whole service and so does not sit below layer 3).
-- **Order:** `legePostAn` writes folder, history, title, “post for you”, `post.angelegt` and the links in one transaction; the receiver `post.aufgaben` at the connection point `mappeGeaendert` stays last in line and calls `postAufgaben` through the facade.
+- **Gets the core**, [checking permissions](#zugriff), [folder types](#mappentypen), [folders](#mappen), [documents](#dokumente) and the classes of this folder, `PostFotos` also [editing PDFs](#pdf-bearbeiten). Through the connector: event (`kern.ereignis`), `meldeVerknuepft`, tasks, accounts, fit, system setup, deleting folders and `sichereZuordnung` from `erkennung.ts` (recognition still gets the whole service and so does not sit below layer 3).
+- **Order:** `legePostAn` writes folder, history, title, “post for you”, `post.angelegt` and the links in one transaction; the receiver `post.aufgaben` at the connection point `mappeGeaendert` stays last in line and calls `post.postAufgaben`.
 
 ## Outgoing (#1077) { #ausgang }
 
@@ -242,7 +242,7 @@ The first subject area with its own business logic in its subject folder (trial 
 | `export.ts` | `AusgangExport` (`dienst.ausgangExport`) | `exportiere` (#152, #153) |
 
 - **Door:** `ausgang/index.ts`; only `routen.ts` loads the routes (`ausgang.routen.ts`) directly.
-- **One checkpoint:** every route asks `dienst.pruefeAusgang` or `dienst.mitnehmbar` through the facade – routes (`http/routen-kontext.ts`, `sichten.routen.ts`), `webdav.ts` and also email and export in this folder (through their connector). `ausgang.test.ts` replaces both on the service and checks that download, email (one, several), export and drive ask them. A new route to the outside asks them before anything else happens.
+- **One checkpoint:** every route asks `dienst.ausgang.pruefeAusgang` or `dienst.ausgang.mitnehmbar` – routes (`http/routen-kontext.ts`, `sichten.routen.ts`), `webdav.ts` and also email and export in this folder (through their connector). `ausgang.test.ts` replaces both on `dienst.ausgang` and checks that download, email (one, several), export and drive ask them. A new route to the outside asks them before anything else happens.
 - **Gets the core**, checking permissions, folder types, folders, documents, the [views](#sichten), the stamp templates ([editing PDFs](#pdf-bearbeiten)) and – for email – the system folders of [post](#post); `entsperrtZu` through the connector.
 
 ## Editing PDFs (#1077) { #pdf-bearbeiten }
@@ -270,12 +270,12 @@ The first subject area with its own business logic in its subject folder (trial 
 | `automatisierung.ts` | `Automatisierungshilfen` (`dienst.automatisierungshilfen`) | `automatisierungKontext`, `mitgliederDerRolle`, `trifftTeile`, `lesbareTitel`, `datumVon`, `mappenMitDatum` (#674, #712) |
 
 - **Why layer 2:** many need the events, folders and documents too; they themselves need only the core, the [permission check](#zugriff) and the packages on the folder type including the AI approval ([folder types](#mappentypen)). Text recognition ([full text](#volltext)) and roles ([post](#post)) come through the connector.
-- The service registers the `pakete` consumer with the distributor; raising events and the package runner's wake-up go through the facade.
+- The service registers the `pakete` consumer with the distributor; raising events (`kern.ereignis`) and the package runner's wake-up (`ereignisWecker`) come through the connector.
 - **Door:** `ereignisse/index.ts`, imported as `ereignisse/index` – next to the folder lies `ereignisse.ts` (the catalogue's distributor), as with `pakete/index`.
 
 ## Tasks (#1078) { #aufgaben }
 
-`server/src/aufgaben/` (layer 3) bundles everything around To dos; the service builds the classes (`baueAufgaben()`) and keeps a one-line forward for each method:
+`server/src/aufgaben/` (layer 3) bundles everything around To dos; the service builds the classes (`baueAufgaben()`) and keeps them as fields on the service; that is where they are called (#1079):
 
 | File | Class (in the service) | Content |
 |---|---|---|
@@ -285,8 +285,8 @@ The first subject area with its own business logic in its subject folder (trial 
 | `fristen.ts` | `Fristen` (`dienst.fristen`) | deadlines, reminders, dates with their cache, follow-up date (#129–#133, #528, #725) |
 | `ohne-empfaenger.ts` | `OhneEmpfaenger` (`dienst.ohneEmpfaenger`) | everyday user (#719), notifying favourites (#422) |
 
-- **Gets the core** and `AufgabenTeile` (permission check, history and folders, events, roles from [post](#post) and each other); through the connector the event (facade), accounts and the validity of the counts.
-- The receivers at the [connection points](#anschlusspunkte) are unchanged; they call `pruefeErwaehnungen`, `fristenAbgleichen` and `abwesenheitGeaendert` through the facade.
+- **Gets the core** and `AufgabenTeile` (permission check, history and folders, events, roles from [post](#post) and each other); through the connector the event (`kern.ereignis`), accounts and the validity of the counts.
+- The receivers at the [connection points](#anschlusspunkte) are unchanged; they call `aufgaben.pruefeErwaehnungen`, `fristen.fristenAbgleichen` and `vertretung.abwesenheitGeaendert` only when triggered – tests replace them there.
 
 ## Deleting (#1078) { #loeschen }
 
@@ -300,7 +300,7 @@ The first subject area with its own business logic in its subject folder (trial 
 | `mit-verknuepften.ts` | `MitVerknuepften` (`dienst.mitVerknuepften`) | [tree](#baum-uber-verweise) and deleting with linked folders (#396, #424) |
 | `beispiele.ts` | `BeispielMappen` (`dienst.beispielMappen`) | example folders from packages (#878) |
 
-- **Gets the core** and `LoeschenTeile` (permission check, fit, history, documents, outgoing, views, system folders and each other); event and `aktualisiereTitel` through the facade, accounts through the connector.
+- **Gets the core** and `LoeschenTeile` (permission check, fit, history, documents, outgoing, views, system folders and each other); event (`kern.ereignis`), `aktualisiereTitel` (`mappenTitel`) and accounts through the connector.
 - **Parts (#1031):** `loescheMappe` takes the parts of a folder along (`loescheMitTeilen`: R and D on every part, otherwise 403 with the number; bin, history, events and deletion log with the way `teile` in one transaction, operation = id of the folder). The bin restores them with it and deletes them permanently with it; "with linked folders" refuses if a part of a deleted folder would remain.
 
 ## Data protection (#1078) { #datenschutz }
@@ -321,9 +321,11 @@ The first subject area with its own business logic in its subject folder (trial 
 
 **Display conditions (#1033):** the evaluation lives in `shared/src/anzeige.ts` (`anzeigestand`, `pruefeMitAnzeige`) and is the same for the interface and the server – `mappen/eingaben.ts` (saving) and `mappentypen/passung.ts` (fit) check required fields with it, the form uses it via `web/src/ablage/anzeige.ts`. The conditions build on the views’ toolkit (`sichten.ts`); nothing but what the form shows depends on them.
 
-## What stays in dienst.ts (#1078) { #dienst-rest }
+## What stays in dienst.ts (#1078, #1079) { #dienst-rest }
 
-After #1078 `dienst.ts` contains only forwards and the assembly: the fields of the classes, the constructor with the `baue…()` methods, `schliesseEmpfaengerAn()`, the `verbinde…` methods, the fields set by start-up or tests (`mindestensMs`, `sicherungAufgegeben`, `systemkonten`, `ereignisWecker` …), the event distributor and the vault (`schluesselWechseln`, `verschluesselePaketGeheimnis`, `entschluessele`).
+Since #1079 `dienst.ts` contains no forwards any more, only the assembly: the fields of the classes, the constructor with the `baue…()` methods, `schliesseEmpfaengerAn()`, the `verbinde…` methods, the fields set by start-up or tests (`mindestensMs`, `sicherungAufgegeben`, `systemkonten`, `ereignisWecker` …), the event distributor and the vault (`schluesselWechseln`, `verschluesselePaketGeheimnis`, `entschluessele`).
+
+Routes, modules and tests call the subject services on the fields of the service (`dienst.mappen.holeMappe(…)`, `dienst.kern.ereignis(…)`, `dienst.ausgang.pruefeAusgang(…)`); constants, helpers and types come from the subject folder's `index.ts`, not through `dienst.ts`. Permission checks stay where they were: in the subject services and in the route wrappers (`dokumentRecht`, `maskiere` …). One forward remains: `listeDokumente` reads the documents of a folder from the repo without a permission check (creating a package with sample documents, administrators only) – the repo does not belong in the routes. New code calls the subject service directly and adds no new forward.
 
 ### Layers { #schichten }
 
@@ -503,7 +505,7 @@ The maintainer decides between a, b and c. Here is what has been checked for it 
 
 - **Password:** only via standard input (`--password-file=-`), never on the command line; never in database, log or history. A test checks qpdf's arguments.
 - **Limits:** five wrong passwords per person and document in 15 minutes, then 429; qpdf with a time limit (60 s, remembered passwords 20 s per attempt, 2 minutes per document).
-- **Remembered passwords:** setting `dokpasswoerter_<account>`, every password individually encrypted with the vault (kind "Remembered passwords for documents" in Workbench → Encryption, re-encrypted on a key change). Routes `/api/konto/dokument-passwoerter…` only in one's own session (no API key, no impersonation); displaying and changing the password only after `…/bestaetigen` (5 minutes per session). New post with "For" tries this person's passwords (`Dienst.neueDateien` → `PdfEntsperren.neu`).
+- **Remembered passwords:** setting `dokpasswoerter_<account>`, every password individually encrypted with the vault (kind "Remembered passwords for documents" in Workbench → Encryption, re-encrypted on a key change). Routes `/api/konto/dokument-passwoerter…` only in one's own session (no API key, no impersonation); displaying and changing the password only after `…/bestaetigen` (5 minutes per session). New post with "For" tries this person's passwords (`DokumenteDienst.neueDateien` → `PdfEntsperren.neu`).
 
 ### Displaying PDFs in the browser (#639) { #pdf-anzeige }
 
@@ -651,26 +653,26 @@ Everything that hangs off a folder via links is collected by **one** module – 
 
 - **Types and options:** `shared/src/baum.ts` – `BaumOptionen` (`richtungen`: `verwiesenVon` = folders that link to the node, "downwards"; `verweistAuf` = folders it links to; `tiefe` 1–10; `max` up to 5000; `seitwaerts`; `ohneTypen`; `nurZugehoerigkeit`), `bereinigeBaumOptionen(eingabe, standard)`, `Baum`, `BaumKnoten`, helpers `kinderVon`, `haengtAuchAnderswo`, `wirdAnderswoGebraucht`, `baumZahlen`.
 - **Algorithm:** `server/src/baum.ts` – `sammleBaum(quelle, startId, optionen)`: breadth-first search, one access per level for links (`Repo.kantenVon`), folders and readability. Without `seitwaerts` a node only continues in the direction it was reached from (the start folder in all chosen ones). Cycles and multiple paths end up in `auchUeber` and `kreise`; every node appears once. Beyond `max`: `abgeschnitten`. With `nurZugehoerigkeit` it only continues via link fields of the kind membership (`verweisartVon(typ, feldKey)`, default reference); nodes that only hang on via a reference are leaves with `nurBezug` – if the search later reaches them via a membership, they are attached there and followed further (within a level, memberships take precedence).
-- **Rights:** the `BaumQuelle` is built by `Dienst.baumQuelle(zugriff)`; only readable folders are included **and** followed, unreadable ones only count in `verborgen`. To call it: `await dienst.baum(startId, eingabe, zugriff)` (users and roles are excluded unless `ohneTypen` says otherwise), over HTTP `GET /api/v1/mappen/{id}/baum`.
+- **Rights:** the `BaumQuelle` is built by `MitVerknuepften.baumQuelle(zugriff)`; only readable folders are included **and** followed, unreadable ones only count in `verborgen`. To call it: `await dienst.mitVerknuepften.baum(startId, eingabe, zugriff)` (users and roles are excluded unless `ohneTypen` says otherwise), over HTTP `GET /api/v1/mappen/{id}/baum`.
 - **Per node:** `typ`, `titel`, `ebene`, `ueber` (parent node, direction, field, `verweisart`), `nurBezug`, `dokumente`, `aussen` (links to folders outside the tree per direction, unreadable ones without a title), `aufbewahrenBis`/`gesperrt` (archive mode #212) and `rechte` (the caller's CRUDP).
 
-The data protection request (`Dienst.auskunftVorschau`) and deletion both collect with `nurZugehoerigkeit` (#472, #424): reference nodes only go out as a mention in the request (`AuskunftAuswahl.erwaehnungen`, `erwaehnungText` in `shared/src/auskunft.ts`); when deleting, only their link is removed. Full-text suggestions are no longer part of the request.
+The data protection request (`DatenschutzDienst.auskunftVorschau`) and deletion both collect with `nurZugehoerigkeit` (#472, #424): reference nodes only go out as a mention in the request (`AuskunftAuswahl.erwaehnungen`, `erwaehnungText` in `shared/src/auskunft.ts`); when deleting, only their link is removed. Full-text suggestions are no longer part of the request.
 
 Tests: `server/test/auskunft.test.ts` (cycles, rights, upper limit, sideways, membership/reference).
 
 ### Deleting with linked folders (#424) { #mit-verknupften-mappen-loschen-424 }
 
-- **Preview and plan** (pure functions, server and interface): `shared/src/loeschbaum.ts`. `Dienst.loeschVorschau(startId, { tiefe, max }, zugriff)` collects the tree only `verwiesenVon` with `nurZugehoerigkeit` (default depth 5) and adds `kanten` (all links between nodes, not just the tree paths), `geteilt` and `nichtLoeschbar`. Markers (`kennzeichen(v, k)`): 🔒 = `gesperrt`, 📎 = `nurBezug` (never deleted, `loeschen` counts as `entkoppeln`), ⛔ = `!rechte.D` or `nichtLoeschbar`, 🔗 = `geteilt` – narrower than `haengtAuchAnderswo(k)`: only counts outward links of the kind membership via a field the node hangs on in the tree, or to a folder of the same type as in the tree; links to master data (storage location, category) and users don't count, otherwise almost everything would be 🔗.
+- **Preview and plan** (pure functions, server and interface): `shared/src/loeschbaum.ts`. `MitVerknuepften.loeschVorschau(startId, { tiefe, max }, zugriff)` collects the tree only `verwiesenVon` with `nurZugehoerigkeit` (default depth 5) and adds `kanten` (all links between nodes, not just the tree paths), `geteilt` and `nichtLoeschbar`. Markers (`kennzeichen(v, k)`): 🔒 = `gesperrt`, 📎 = `nurBezug` (never deleted, `loeschen` counts as `entkoppeln`), ⛔ = `!rechte.D` or `nichtLoeschbar`, 🔗 = `geteilt` – narrower than `haengtAuchAnderswo(k)`: only counts outward links of the kind membership via a field the node hangs on in the tree, or to a folder of the same type as in the tree; links to master data (storage location, category) and users don't count, otherwise almost everything would be 🔗.
 - **Plan:** `planeLoeschung(vorschau, auswahl)` – a choice per id of `loeschen | entkoppeln | behalten` (missing ids stay). Fixed point: a folder stays if `wirdAnderswoGebraucht(k)` or a remaining folder in the tree links to it without `entkoppeln`. Locked folders are never unlinked.
-- **Running it:** `Dienst.loescheMitVerknuepften` collects again, plans, checks every folder as for a single deletion (`loeschPruefung` with all back-links), cuts the links (`entkoppeln`, right U) and puts everything into the Bin with `Repo.legeVorgangInPapierkorb` in **one** transaction (links among each other first – that way cycles work too). Columns `papierkorb.vorgang` and `papierkorb.entkoppelt` (migration 042). `stelleVorgangWiederHer` and `Repo.stelleMehrereWiederHer` first create all folders, then the links, and restore the unlinked links. Tests: `server/test/loeschbaum.test.ts`.
+- **Running it:** `MitVerknuepften.loescheMitVerknuepften` collects again, plans, checks every folder as for a single deletion (`loeschPruefung` with all back-links), cuts the links (`entkoppeln`, right U) and puts everything into the Bin with `Repo.legeVorgangInPapierkorb` in **one** transaction (links among each other first – that way cycles work too). Columns `papierkorb.vorgang` and `papierkorb.entkoppelt` (migration 042). `stelleVorgangWiederHer` and `Repo.stelleMehrereWiederHer` first create all folders, then the links, and restore the unlinked links. Tests: `server/test/loeschbaum.test.ts`.
 
 ## Writing folders, even at the same time (#609) { #mappen-schreiben }
 
 Whoever saves last must not reset fields they didn't touch. So for **every** writer of folder values:
 
 - **Write only what changed.** `Repo.aendereMappe(id, werte, [], von, { basis, verweise })` only sets the fields that differ from `basis` (the values read) to the current state – with the row locked (`SELECT … FOR UPDATE`), and the same in memory (`feldweise` in `server/src/repo.ts`). `verweise(w)` computes the links from the result. Internal writers (`schreibeSystemMappe`, `schreibeVerweisWerte`, `absenderBereinigen`, renaming fields) use this; `schreibeSystemMappe` also only gets the fields to change, never `{ ...mappe.werte, … }` from an older read.
-- **Version.** `mappen.geaendert` is accurate to the millisecond and increases with every write (`greatest(clock_timestamp(), geaendert + 1 ms)`) so it works as a version counter; no migration needed. With `stand` the repo only writes if the row still has that version, otherwise `StandVeraltet` – `Dienst.aendereMappe` then reads again and retries up to five times.
-- **Conflict.** `Dienst.aendereMappe(id, { werte, stand })`: if `stand` differs from the current one, `feldkonflikte` looks in the history for `geaendert` entries with `daten.stand` > `stand` (each entry remembers the version its write produced). A submitted field that appears there and should now have a different value results in 409 with `Mappenkonflikt` (`shared/src/model.ts`). Without `stand` there is no check, only field-by-field writing – so old API calls stay valid.
+- **Version.** `mappen.geaendert` is accurate to the millisecond and increases with every write (`greatest(clock_timestamp(), geaendert + 1 ms)`) so it works as a version counter; no migration needed. With `stand` the repo only writes if the row still has that version, otherwise `StandVeraltet` – `MappenDienst.aendereMappe` then reads again and retries up to five times.
+- **Conflict.** `MappenDienst.aendereMappe(id, { werte, stand })`: if `stand` differs from the current one, `feldkonflikte` looks in the history for `geaendert` entries with `daten.stand` > `stand` (each entry remembers the version its write produced). A submitted field that appears there and should now have a different value results in 409 with `Mappenkonflikt` (`shared/src/model.ts`). Without `stand` there is no check, only field-by-field writing – so old API calls stay valid.
 - **Form.** `MappeFormular` only sends the fields whose raw value differs from `basis`, and `stand` = `mappe.geaendert` when `basis` was loaded. On 409, `Konfliktfrage` shows the choice per field; "Mine" goes along again with the new version from the response, "Theirs" takes over the value and is left out.
 
 Tests: `server/test/gleichzeitig.test.ts` (memory and PostgreSQL), in the browser `docs/handbuch/screenshots/gleichzeitig-pruefen.mjs` (two windows, workflow "Handbuch").
@@ -687,7 +689,7 @@ Besides people (`benutzer.art = 'person'`) there are two kinds of accounts that 
 - **Creation:** `Konten.systemkonto(kennung)` at start-up (`ablago.ts`), idempotent; in PostgreSQL the index `benutzer_systemkonto` prevents a second account, even with two servers (migration 059).
 - **Never usable:** `holeHash`, `listeBenutzer`, `anzahlBenutzer` only see people; `benutzerZu` (session) and `benutzerMitId` (API key) reject system accounts; user management and "Sign in as user" don't know them (`person()`). `personen()` only returns them for names (`aktiv: false`, `art`).
 - **Roles:** the role folders `rolle:systemkonto` and `rolle:paket` are created by the [system setup](#systemausstattung) (`kontorollen` in `kern.system()`). `listeRollen()` only returns them with `mitKonten`, `pruefeRollen()` rejects them.
-- **Access:** `Dienst.zugriff(konto)` sets `wer.rollen = [account role]` and trims the folder types with `kontoRegelwerk(typ, rolleId)` (`shared/src/rechte.ts`): default "everything", only rules that name the role (`nenntRolle`). So a strict default for members doesn't lock out an automation, but an administrator can restrict it on purpose. For packages the result is intersected with the confirmed rights. `Dienst.systemZugriff('automatisierung')` returns the system account's access (for the automation engine, #674).
+- **Access:** `ZugriffDienst.zugriff(konto)` sets `wer.rollen = [account role]` and trims the folder types with `kontoRegelwerk(typ, rolleId)` (`shared/src/rechte.ts`): default "everything", only rules that name the role (`nenntRolle`). So a strict default for members doesn't lock out an automation, but an administrator can restrict it on purpose. For packages the result is intersected with the confirmed rights. `PostSystemmappen.systemZugriff('automatisierung')` returns the system account's access (for the automation engine, #674).
 - **Workbench:** system accounts are never `admin`; which Workbench actions a card allows is up to the card itself (#677).
 - **Interface:** Workbench → Users, section "System accounts" (`GET /api/benutzer/systemkonten`, administrators only).
 
@@ -802,19 +804,19 @@ This is stored per person in their settings (`entdecken_rundgaenge`, `entdecken_
 
 ## Event catalogue (#670) { #ereigniskatalog }
 
-What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), the texts in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – underscore as hyphen –, `gruppe.<gruppe>`). Packages (`code.ereignisse`, exactly the entries with `paket: true` plus the outdated names in `VERALTETE_EREIGNISSE`), webhooks and automations (#674) take their events from this catalogue. **The core reports every occurrence exactly once** (#724) – with `kern.ereignis(…)` (in the service `dienst.ereignis(…)`) into the one outbox; there is no longer a second route for packages. The list for reference is in the Workbench with the package under **Which events exist**.
+What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), the texts in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – underscore as hyphen –, `gruppe.<gruppe>`). Packages (`code.ereignisse`, exactly the entries with `paket: true` plus the outdated names in `VERALTETE_EREIGNISSE`), webhooks and automations (#674) take their events from this catalogue. **The core reports every occurrence exactly once** (#724) – with `kern.ereignis(…)` (in the service `dienst.kern.ereignis(…)`) into the one outbox; there is no longer a second route for packages. The list for reference is in the Workbench with the package under **Which events exist**.
 
 **Rules**
 
 - **Only ids, kind, field keys and date** in `daten` – never values, titles or names. Anyone who wants to know more reads up with their own rights.
-- **At least once, in the same transaction:** `dienst.ereignis(art, daten, von)` writes to the outbox (table `ereignisse`, migration 060). If a transaction is running (`inTransaktion`), the event belongs to the change – if one fails, neither is saved. Every event has a fixed id; a consumer recognises a repetition by it.
+- **At least once, in the same transaction:** `dienst.kern.ereignis(art, daten, von)` writes to the outbox (table `ereignisse`, migration 060). If a transaction is running (`inTransaktion`), the event belongs to the change – if one fails, neither is saved. Every event has a fixed id; a consumer recognises a repetition by it.
 - **Several servers:** the `Ereignisverteiler` (`server/src/ereignisse.ts`) fetches open events with `FOR UPDATE SKIP LOCKED` and a lock (`gesperrt_bis`, 120 s). Only when **all** consumers have accepted it does an event count as dispatched; otherwise it is retried after 1, 5, 30, 120 and 360 minutes, then given up (log). Dispatched events are kept for 7 days.
 - **One rule for retries:** `wiederholungNach(versuche, plan)` in `shared/src/ereignisse.ts`. `kurz` (1, 5, 30, 120, 360 minutes) applies to the outbox and delivery to packages, `lang` (30 s up to 8 hours, a good 22 hours in total) to webhooks, whose target on the home network may be switched off overnight.
-- **Consumers in the core:** `automatisierungen`, `pakete` (every subscribed event; ends up with a fixed id per package in the package runner's delivery, `paket_ereignisse`) and webhooks (recount after changes). **Jobs** for exactly one package (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, group `auftrag`) are not an occurrence for others: `dienst.auftrag(paket, art, daten)` puts them straight into delivery.
+- **Consumers in the core:** `automatisierungen`, `pakete` (every subscribed event; ends up with a fixed id per package in the package runner's delivery, `paket_ereignisse`) and webhooks (recount after changes). **Jobs** for exactly one package (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, group `auftrag`) are not an occurrence for others: `dienst.ereignisseDienst.auftrag(paket, art, daten)` puts them straight into delivery.
 - **Outdated names:** the core no longer reports `texterkennung.fertig`. A package that subscribed to it gets `volltext.fertig` with `quelle: kern` under the old name (transition, `VERALTETE_EREIGNISSE`, dropped with 1.0.0). **All transitional exceptions** are listed with the version that drops them in `server/src/uebergaenge.ts` (#902); `uebergaenge.test.ts` fails as soon as Ablago reaches that version. New special paths for old packages or files only with an entry there.
 - **Bundling:** entries with `buendelS` (today `mappe.geaendert`, 5 s) combine quick successions for the same folder as long as the event hasn't been dispatched yet; the field keys are merged (`mischeFelder`).
 - **Deadline reached** exactly once: `frist_meldungen` (folder, field, date, time) as the primary key; remembering and event in one transaction.
-- **Silent:** `dienst.ohneEreignisse(f)` – examples, demo data (creating and removing). Only events in which packages process files (full text, vectors, post) go into the outbox with `ausloeser.still` – automations skip them, folder events aren't created at all. A restore marks all open events as dispatched; during maintenance and a restore the dispatcher rests.
+- **Silent:** `dienst.kern.ohneEreignisse(f)` – examples, demo data (creating and removing). Only events in which packages process files (full text, vectors, post) go into the outbox with `ausloeser.still` – automations skip them, folder events aren't created at all. A restore marks all open events as dispatched; during maintenance and a restore the dispatcher rests.
 
 **Consumers**
 
@@ -826,10 +828,10 @@ dienst.ereignisse.abonniere('mein-abnehmer', async (e: KatalogEreignis) => {
 
 The `pakete` consumer passes folder events and `frist.erreicht` on to packages that have subscribed to them, name the type under `code.mappentypen` (their own, others', `*`) and are currently allowed to read the folder with their service account's rights (#686: confirmed rights, setting `paket_verwehrt` per folder type, rules for the role *Package*; otherwise a log entry instead of delivery) – with an id computed from event and package id so that a retry doesn't arrive twice at the package.
 
-**Trigger** (`e.ausloeser`): `{ art: 'benutzer' | 'paket' | 'automatisierung' | 'system', id, konto, kette }`. `dienst.ereignis` takes the trigger from the account (`von`: user or a package's service account) or from `dienst.mitAusloeser(a, f)`. An automation (#674) runs its actions like this:
+**Trigger** (`e.ausloeser`): `{ art: 'benutzer' | 'paket' | 'automatisierung' | 'system', id, konto, kette }`. `dienst.kern.ereignis` takes the trigger from the account (`von`: user or a package's service account) or from `dienst.kern.mitAusloeser(a, f)`. An automation (#674) runs its actions like this:
 
 ```ts
-await dienst.mitAusloeser({ art: 'automatisierung', id: regel.id, konto: systemkonto.id, kette: e.ausloeser.kette ? e.ausloeser.kette + 1 : 1 }, () => aktion());
+await dienst.kern.mitAusloeser({ art: 'automatisierung', id: regel.id, konto: systemkonto.id, kette: e.ausloeser.kette ? e.ausloeser.kette + 1 : 1 }, () => aktion());
 ```
 
 That way it recognises its own changes and can limit chains. A package isn't notified of its own changes.
@@ -843,7 +845,7 @@ Small routines without code: **When · And · Then** (Otherwise comes with stage
 **Model**
 
 - **Exactly one When card:** an event from the catalogue (all groups except `zaehler`, optionally only one folder type, for `mappe.geaendert` optionally only certain fields) or `datum` – "date field reached in N days" (negative: N days ago), daily from a time of day in the household's time zone. The When card sets the **context**: the event's folder (`daten.mappe`, for user events the user folder) and its folder type.
-- **And:** conditions from the views' toolkit (`Bedingung` from `sichten.ts`), plus "folder is in view …" and "folder is in the favourites of …" (person, role, field). Each can be inverted (`nicht`), groups `alle`/`eine` one level deep. Evaluated in the database (`Dienst.trifftTeile` → `repo.inKlauseln`); "me" is the system account.
+- **And:** conditions from the views' toolkit (`Bedingung` from `sichten.ts`), plus "folder is in view …" and "folder is in the favourites of …" (person, role, field). Each can be inverted (`nicht`), groups `alle`/`eine` one level deep. Evaluated in the database (`Automatisierungshilfen.trifftTeile` → `repo.inKlauseln`); "me" is the system account.
 - **Then:** cards in their order; they are carried out by the entries in `DANN_AUSFUEHRER` (`(karte, kontext) => Promise<string>` – the line for the log; in a dry run (`trocken`) they only describe). "Don't run any further automations afterwards" (`stopp`) is handled by the engine itself.
 - **Placeholders** as for the folder title (`{feld}`, `{feld|filter}`), plus `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}`, for `datum` also `{datum}` and `{tage}`. Values with the system account's rights; titles of linked folders it may not read appear as "(not visible)"; passwords never.
 
@@ -851,18 +853,18 @@ Small routines without code: **When · And · Then** (Otherwise comes with stage
 
 1. The event catalogue's `automatisierungen` consumer looks for switched-on, non-paused automations with a matching When card and runs them **one after another** by `reihenfolge` (1–99, then name). Each reads the current state.
 2. Per automation and event there is **exactly one run** (`UNIQUE (automatisierung_id, ereignis_id)`) – if an event comes again or two servers check the same day, nothing runs twice. For the schedule, the event id is computed from the automation trigger, folder and date; `letzter_tag` is the schedule building block's marker (missed days up to 31 back are caught up).
-3. It runs under the system account "Automatisierung" (`dienst.systemZugriff('automatisierung')`) and with `dienst.mitAusloeser({ art: 'automatisierung', id, konto, kette })` – history and events show who acted. If the system account may not read the folder, the run is skipped.
+3. It runs under the system account "Automatisierung" (`dienst.postSystemmappen.systemZugriff('automatisierung')`) and with `dienst.kern.mitAusloeser({ art: 'automatisierung', id, konto, kette })` – history and events show who acted. If the system account may not read the folder, the run is skipped.
 4. Every step (When, And, each Then card) is recorded with its state in the run (`schritte`) – the interface shows progress live. A card error ends the run as `fehlgeschlagen` (can be retried); the following automations still run.
 
 **Schedule building block** (`server/src/zeitplan.ts`, #724): `faelligeTage(zuletzt, jetzt, takt)` is the one rule – due is every day after the last one run on which the rhythm applies (`an(tag)`, e.g. weekday, public holiday), as soon as its time of day is reached, at most `nachholenTage` back (0 = only today); a new one begins today. `laufeFaellige(merker, jetzt, takt, lauf)` first records the day (compare and swap, `Einstellungen.tausche`) and then runs – with several servers exactly one does it. Backup, test restore, daily summary (per user) and "date reached" (catch up 31 days) use it; the marker keys in the settings are the same as before.
 
 **Date reached** (`art: 'datum'`): `vorlauf` with `einheit` (`tage`, `wochen`, `monate`), `uhrzeit`, `wiederholung` (months). `erreichteDaten(tag, vorlauf, einheit)` returns the field dates reached on `tag` – for months all D with D − lead time = tag (end of month capped). Old cards (`tage`, `frist.erreicht`) are translated by `bereinigeWenn`.
 
-**One route for to-dos** (`Dienst.aufgabeAusAutomatisierung`, #724): `aufgabenEmpfaenger` resolves absence and deactivation via `empfaengerAufloesen`; if no active person can be reached, they go to the administrators (`null`). `aufgaben.anlass` (migration 062, `AufgabenAnlass`): `datum` (resolves itself in `fristenAbgleichen` when the date no longer matches; `wiederholung` → next date), `post` (in `postAufgaben` when the post is no longer new), `abwesenheit` (when the absence ends). From "date reached" the to-do becomes a **deadline** (`art: 'frist'`, field, date); the unique index `aufgaben_frist_idx` applies per folder, field, date and recipient – the same person never gets two.
+**One route for to-dos** (`AufgabenDienst.aufgabeAusAutomatisierung`, #724): `aufgabenEmpfaenger` resolves absence and deactivation via `empfaengerAufloesen`; if no active person can be reached, they go to the administrators (`null`). `aufgaben.anlass` (migration 062, `AufgabenAnlass`): `datum` (resolves itself in `fristenAbgleichen` when the date no longer matches; `wiederholung` → next date), `post` (in `postAufgaben` when the post is no longer new), `abwesenheit` (when the absence ends). From "date reached" the to-do becomes a **deadline** (`art: 'frist'`, field, date); the unique index `aufgaben_frist_idx` applies per folder, field, date and recipient – the same person never gets two.
 
 **Then cards** (`server/src/automatisierung-karten.ts`, #676)
 
-- **Change field** (`feld`): `werte` per field key – fixed, text with placeholders (text, long text, formatted text), for date fields also `heute`, `heute+7`, `heute-3`. Writing goes through `Dienst.aendereMappe` with the system account's access and only the chosen fields (#609): field formats, required fields, choice lists and link targets are checked as in the form; archive mode and deadline lock are never bypassed. The history carries `automatisierung: { id, name, eingerichtetVon }`.
+- **Change field** (`feld`): `werte` per field key – fixed, text with placeholders (text, long text, formatted text), for date fields also `heute`, `heute+7`, `heute-3`. Writing goes through `MappenDienst.aendereMappe` with the system account's access and only the chosen fields (#609): field formats, required fields, choice lists and link targets are checked as in the form; archive mode and deadline lock are never bypassed. The history carries `automatisierung: { id, name, eingerichtetVon }`.
 - **To do / notification** (`aufgabe`): recipient a person, role (all active members), field of the folder (link to a user) or `ersteller` (whoever created the folder); `als: 'aufgabe'` creates a to-do every time (due `faellig` days from today → appears under "Upcoming"), `als: 'benachrichtigung'` bundles per automation, folder and recipient (one open, the text is updated). Anyone who may not read the folder gets it on their own user folder – without a link. Stage 1 fills placeholders with the system account's rights (recipient rights: #683).
 
 **Interface** (`web/src/werkbank/Automatisierungen.tsx`, #675): Workbench → Build the Library → Automations, in three parts. Cards from the supply come in via `useZiehen` (drop zones `wenn`/`und`/`dann`) or via "+ Card" (choice field, keyboard); Then cards and the list "by trigger" are sorted by dragging or Alt+↑/↓ (order is reassigned in steps of ten). **Live progress by polling:** as long as the editor is open, it fetches `GET …/:id/laeufe` every 2 s – the steps are in the database, so this works with several servers, without SSE and without session affinity. The list asks every 15 s. At start-up, `legeBeispiele()` creates three switched-off examples (origin `dms`, fixed ids from `uuidAus`) if they don't exist yet.
@@ -889,13 +891,13 @@ Ablago **never opens a connection** to the internet on its own. Every route to t
 | Package network | Administrator confirms on installation | only to the addresses from the manifest or service address | package runner, right `netzwerk` |
 | Retrieval links (data protection request) | Administrator creates the link | the request, only after the retrieval code | `server/src/abruf.ts` |
 
-Download (also a letter from template, #1040), email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through the facade `dienst.pruefeAusgang` or `dienst.mitnehmbar`.
+Download (also a letter from template, #1040), email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through `dienst.ausgang.pruefeAusgang` or `dienst.ausgang.mitnehmbar`.
 
 **Rule for new routes:** a new route to the outside needs an approved issue, is **switched off** until someone explicitly switches it on, sends as little as possible (numbers instead of content where that's enough), is listed in this table and in the overview in the administrator handbook, and is reviewed by security.
 
 ## Counter endpoint and key levels (#625) { #zaehler-endpunkt }
 
-Other programs (home automation, wall tablet, clients) often only want to know **whether there is something new**. For that there is `GET /api/v1/ich/zaehler` (internally `/api/ich/zaehler`, `Dienst.zaehlerAbruf`):
+Other programs (home automation, wall tablet, clients) often only want to know **whether there is something new**. For that there is `GET /api/v1/ich/zaehler` (internally `/api/ich/zaehler`, `SichtenDienst.zaehlerAbruf`):
 
 ```sh
 curl -i -H "Authorization: Bearer dms_…" https://dms.example.org/api/v1/ich/zaehler
@@ -908,7 +910,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 ```
 
 - **Numbers only.** The response never contains titles, names, senders or content – not even in future fields. The OpenAPI schema `Zaehlerstand` has `additionalProperties: false`; the test `server/test/zaehler-api.test.ts` checks the keys and that no texts slip through.
-- **Where the numbers come from.** `zuErledigen` is `eingang` from `Dienst.zaehler` (#512), `ueberfaellig` counts your own overdue entries from `Dienst.termine` (#528, #725; `anstehend` was dropped with #725), `neuePost` counts post with the status "New" and "For" = me or empty via `zaehleKlauseln` – with its own `Zaehlerspeicher` keyed to the household version. All within the user's rights (read filter); nothing is recomputed for the endpoint as long as nothing in the household changes.
+- **Where the numbers come from.** `zuErledigen` is `eingang` from `SichtenDienst.zaehler` (#512), `ueberfaellig` counts your own overdue entries from `Fristen.termine` (#528, #725; `anstehend` was dropped with #725), `neuePost` counts post with the status "New" and "For" = me or empty via `zaehleKlauseln` – with its own `Zaehlerspeicher` keyed to the household version. All within the user's rights (read filter); nothing is recomputed for the endpoint as long as nothing in the household changes.
 - **Version in the database** (table `zaehlerstaende`, migration 056). For each request the server builds a hash of the numbers (`fingerabdruck`), compares it with the stored one and only increments `stand` if they differ (`Repo.setzeZaehlerstand`, an `INSERT … ON CONFLICT DO UPDATE … WHERE abdruck IS DISTINCT FROM …`: concurrent requests count a change once). Unchanged means: read only. The household version from #512 only lives in memory and starts at 0 after every restart – so it isn't suitable as an ETag. The ETag is `"z<stand>-<hash>"`: the same ETag means the same numbers, even after a restart or a restore.
 - **ETag and 304.** `passtEtag` (`http/routen-hilfen.ts`) understands lists, `W/…` and `*`. A route sets its own headers via `Antwort.koepfe`; it reads request headers via `Anfrage.kopf(name)`. `Cache-Control: private, no-cache` instead of `no-store`, so that programs may revalidate.
 - **Key level "counters only"** (`recht = 'zaehler'`, `NUR_ZAEHLER` and `ZAEHLER_PFAD` in `apischluessel.ts`). `pruefeZugang` only lets it through to `GET /api/v1/ich/zaehler`; every other route under `/api/v1` and – explicitly – every internal route with such a key in the header gets `403` (`api.schluessel.nur-zaehler`), and so does the drive (`webdav.ts`). "Read passwords" doesn't exist for this level. A new interface that accepts API keys must reject this level in the same way.
@@ -1018,7 +1020,7 @@ The server has the same check as `pruefeSignatur` (`webhook.ts`) for tests.
 
 ### Sequence and several servers {#ablauf-und-mehrere-server}
 
-- **Trigger:** `Haushaltsstand.beiAenderung` (`zaehlerspeicher.ts`) calls `Webhooks.anstossen()` after every changing repo method (via `Dienst.beiAenderung`, for view numbers and dates). After 3 s, `pruefe()` counts `zaehlerAbruf` once for every user with a switched-on webhook (from the cache, usually milliseconds). Without a cause, the server holding the lock counts every minute (midnight, deadlines, changes on another server).
+- **Trigger:** `Haushaltsstand.beiAenderung` (`zaehlerspeicher.ts`) calls `Webhooks.anstossen()` after every changing repo method (via `SichtenDienst.beiAenderung`, for view numbers and dates). After 3 s, `pruefe()` counts `zaehlerAbruf` once for every user with a switched-on webhook (from the cache, usually milliseconds). Without a cause, the server holding the lock counts every minute (midnight, deadlines, changes on another server).
 - **Outbox in the database:** `merkeStand` sets `webhooks.gemeldet_stand` in a transaction with a row lock and creates the message – or replaces the data of the open one (at most one per webhook, unique partial index). So every version counts once, even if two servers check at the same time. New messages are due 30 s after the last send at the earliest (`webhooks.gesendet`) – that is the bundling.
 - **Delivery:** `faellige` fetches messages with `FOR UPDATE SKIP LOCKED`, increments the attempt and moves `faellig` on by 60 s (lease). If the server dies while sending, another one picks up the message afterwards – it may then arrive twice, with the same event id (**at least once**). If the data changes while sending, `zugestellt` doesn't close the message (the event id no longer matches) and it goes out again after the minimum interval.
 - **Retrying and giving up:** waiting times `WEBHOOK_WARTEN_S` (30 s up to 8 h, about 22 h in total, 12 attempts); after the last failure `zustand = 'aufgegeben'`, webhook off (`abgeschaltet.grund = 'fehler'`), log, email to the administrators and – if the owner isn't an administrator – to them too (`anBesitzer`).

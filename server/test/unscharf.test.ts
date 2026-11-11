@@ -65,20 +65,20 @@ function faelle(pg: boolean) {
     async function aufbau() {
       const { r, sql } = await repo(pg);
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await d.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }] });
-      const lese = await d.legeTypAn({ name: 'Gesperrt', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }] });
+      const lese = await d.mappentypen.legeTypAn({ name: 'Gesperrt', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const mappe = async (titel: string, text?: string, von?: string, t = typ) => {
-        const m = await d.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
+        const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
         if (text !== undefined) {
-          const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
+          const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
           await r.ocrSetze(dokument.id, { stand: 'fertig', text });
         }
         return m;
       };
       const suche = async (s: string, volltext = true, sicht = `typ:${typ.id}`) => {
         // Neue Wörter kommen über den Eingang ins Wörterverzeichnis (#575); im Betrieb alle paar Sekunden.
-        await d.woerterEinarbeiten();
-        const x = await d.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['seite']>> & { unscharf?: { statt: string; vorschlag: string | null } };
+        await d.suche.woerterEinarbeiten();
+        const x = await d.sichten.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['sichten']['seite']>> & { unscharf?: { statt: string; vorschlag: string | null } };
         return { titel: x.mappen.map((m) => m.titel).sort(), unscharf: x.unscharf ?? null };
       };
       return { d, r, sql, typ, lese, mappe, suche };
@@ -104,15 +104,15 @@ function faelle(pg: boolean) {
       await mappe('Auto-Werkstatt', 'Inspektion');
       await mappe('Steuer', 'Bescheid über die PKW-Steuer');
       await mappe('Garten', 'Rasen');
-      const s = await d.legeSynonymAn({ woerter: 'Kfz, Auto, PKW' }, ICH.email);
+      const s = await d.suche.legeSynonymAn({ woerter: 'Kfz, Auto, PKW' }, ICH.email);
       assert.equal(s.synonyme.length, 1);
-      await assert.rejects(d.legeSynonymAn({ woerter: 'Kfz' }, ICH.email), /mindestens zwei/);
+      await assert.rejects(d.suche.legeSynonymAn({ woerter: 'Kfz' }, ICH.email), /mindestens zwei/);
       assert.deepEqual((await suche('Kfz')).titel, ['Auto-Werkstatt', 'Steuer']);
       assert.deepEqual((await suche('"Kfz"')).titel, []);
       const id = s.synonyme[0].id;
-      await d.aendereSynonym(id, { woerter: 'Kfz, Auto' }, ICH.email);
+      await d.suche.aendereSynonym(id, { woerter: 'Kfz, Auto' }, ICH.email);
       assert.deepEqual((await suche('Kfz')).titel, ['Auto-Werkstatt']);
-      await d.loescheSynonym(id, ICH.email);
+      await d.suche.loescheSynonym(id, ICH.email);
       assert.deepEqual((await suche('Kfz')).titel, []);
     });
 
@@ -135,9 +135,9 @@ function faelle(pg: boolean) {
       assert.equal(x.unscharf?.statt, 'Waschmashine');
       assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
       // Abschalten in der Werkbank
-      await d.setzeSuche({ unscharf: false }, ICH.email);
+      await d.suche.setzeSuche({ unscharf: false }, ICH.email);
       assert.deepEqual((await suche('Waschmashine')).titel, []);
-      assert.equal((await d.sucheStand()).unscharf, false);
+      assert.equal((await d.suche.sucheStand()).unscharf, false);
     });
 
     it('keine Treffer und kein Vorschlag aus Mappen ohne Leserecht', async () => {
@@ -146,7 +146,7 @@ function faelle(pg: boolean) {
       await mappe('Offen', 'Kein passendes Wort');
       // Lesefilter nur auf „Unterlage“: Der Tippfehler findet nichts aus „Gesperrt“ und schlägt nichts von dort vor.
       const lesen = { offen: [typ.id], je: [] };
-      const x = await d.seite(ICH, { sicht: 'suche', link: '', suche: 'Steuererklarung', volltext: 'true' }, { lesen } as never) as unknown as { gesamt: number; unscharf?: { vorschlag: string | null } };
+      const x = await d.sichten.seite(ICH, { sicht: 'suche', link: '', suche: 'Steuererklarung', volltext: 'true' }, { lesen } as never) as unknown as { gesamt: number; unscharf?: { vorschlag: string | null } };
       assert.equal(x.gesamt, 0);
       assert.equal(x.unscharf, undefined);
       // Ohne Filter (Administrator) findet sie es
@@ -166,15 +166,15 @@ function faelle(pg: boolean) {
       assert.ok(h.vorschau.hinweise.some((x) => /eine Gruppe gleichbedeutender Wörter/.test(x)));
       await p.installiere({ upload: h.upload, bestaetigt: true }, { id: ICH.id, email: ICH.email });
       assert.deepEqual((await suche('Nebenkosten')).titel, ['Abrechnung 2025']);
-      const stand = await d.sucheStand();
+      const stand = await d.suche.sucheStand();
       assert.deepEqual(stand.synonyme.map((g) => [g.quelle, g.paketName, g.woerter]), [['wohnen', 'Wohnen', ['Nebenkosten', 'Betriebskosten']]]);
       // Werkbank ändert Paket-Gruppen nicht
-      await assert.rejects(d.loescheSynonym(stand.synonyme[0].id, ICH.email), /gehört zu einem Paket/);
+      await assert.rejects(d.suche.loescheSynonym(stand.synonyme[0].id, ICH.email), /gehört zu einem Paket/);
       const h2 = await p.hochladen(paket('1.1.0', '- woerter: [Miete, Kaltmiete]\n'), { id: ICH.id, email: ICH.email });
       await p.installiere({ upload: h2.upload, bestaetigt: true }, { id: ICH.id, email: ICH.email });
-      assert.deepEqual((await d.sucheStand()).synonyme.map((g) => g.woerter), [['Miete', 'Kaltmiete']]);
+      assert.deepEqual((await d.suche.sucheStand()).synonyme.map((g) => g.woerter), [['Miete', 'Kaltmiete']]);
       await p.entferne('wohnen', { id: ICH.id, email: ICH.email });
-      assert.deepEqual((await d.sucheStand()).synonyme, []);
+      assert.deepEqual((await d.suche.sucheStand()).synonyme, []);
     });
 
     if (pg) it('PostgreSQL: Suchindex per Trigger, Wörterverzeichnis, Papierkorb', async () => {

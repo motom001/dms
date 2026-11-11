@@ -35,15 +35,15 @@ async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
 async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const repo = repos?.repo ?? speicherRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', text: '{feld} {datum}' } },
   ] });
-  const notiz = await d.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+  const notiz = await d.mappentypen.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
   const gesehen: KatalogEreignis[] = [];
   d.ereignisse.abonniere('test', async (e) => { gesehen.push(e); });
   const verteile = () => spaeter(10_000, () => d.ereignisse.verteile());
@@ -83,10 +83,10 @@ describe('Ereigniskatalog (#670): Katalog', () => {
 describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
   it('Mappe angelegt, geändert (gebündelt, nur Feldschlüssel), verknüpft, Notiz, gelöscht, wiederhergestellt – mit Auslöser', async () => {
     const { d, admin, vertrag, gesehen, verteile } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-    await d.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, admin.id);
-    await d.aendereMappe(m.id, { werte: { name: 'Strom Haus', kuendigung: '2031-09-30' } }, admin.id);
-    await d.legeNotizAn(m.id, 'Anruf', admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+    await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, admin.id);
+    await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom Haus', kuendigung: '2031-09-30' } }, admin.id);
+    await d.mappenNotizen.legeNotizAn(m.id, 'Anruf', admin.id);
     await verteile();
     const arten = gesehen.map((e) => e.art);
     assert.ok(arten.includes('mappe.angelegt'));
@@ -99,8 +99,8 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     assert.equal(gesehen[0].daten.mappe, m.id);
     assert.equal(gesehen[0].daten.typ, vertrag.id);
     gesehen.length = 0;
-    await d.loescheMappe(m.id, admin.id);
-    await d.stelleWiederHer(m.id, { id: admin.id, rolle: 'admin' });
+    await d.loeschen.loescheMappe(m.id, admin.id);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, { id: admin.id, rolle: 'admin' });
     await verteile();
     assert.deepEqual(gesehen.map((e) => e.art).filter((a) => a.startsWith('mappe.')), ['mappe.geloescht', 'mappe.wiederhergestellt']);
   });
@@ -109,7 +109,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     const { d, admin, notiz, gesehen, verteile } = await aufbau();
     let mal = 0;
     d.ereignisse.abonniere('wackelt', async () => { if (mal++ === 0) throw new Error('kurz weg'); });
-    await d.legeMappeAn({ typId: notiz.id, werte: { name: 'A' } }, admin.id);
+    await d.mappen.legeMappeAn({ typId: notiz.id, werte: { name: 'A' } }, admin.id);
     await verteile();
     assert.equal(gesehen.length, 1);
     assert.equal(await verteile(), 0, 'vor der Wiederholung nichts');
@@ -121,8 +121,8 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
 
   it('mitAusloeser kennzeichnet eine Automatisierung; ohneEreignisse (Beispiele, Demo) ist still', async () => {
     const { d, admin, notiz, gesehen, verteile } = await aufbau();
-    await d.mitAusloeser({ art: 'automatisierung', id: 'regel-1', konto: 'sys', kette: 1 }, () => d.legeMappeAn({ typId: notiz.id, werte: { name: 'B' } }, admin.id));
-    await d.ohneEreignisse(() => d.legeMappeAn({ typId: notiz.id, werte: { name: 'C' } }, admin.id));
+    await d.kern.mitAusloeser({ art: 'automatisierung', id: 'regel-1', konto: 'sys', kette: 1 }, () => d.mappen.legeMappeAn({ typId: notiz.id, werte: { name: 'B' } }, admin.id));
+    await d.kern.ohneEreignisse(() => d.mappen.legeMappeAn({ typId: notiz.id, werte: { name: 'C' } }, admin.id));
     await verteile();
     assert.equal(gesehen.length, 1);
     assert.deepEqual(gesehen[0].ausloeser, { art: 'automatisierung', id: 'regel-1', konto: 'sys', kette: 1 });
@@ -139,8 +139,8 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     await repo.speicherePaket(p);
     let mal = 0;
     d.ereignisse.abonniere('wackelt', async () => { if (mal++ === 0) throw new Error('kurz weg'); });
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-    await d.legeMappeAn({ typId: notiz.id, werte: { name: 'Zettel' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+    await d.mappen.legeMappeAn({ typId: notiz.id, werte: { name: 'Zettel' } }, admin.id);
     await verteile();
     await spaeter(2 * 60_000, () => d.ereignisse.verteile());
     // Verteilt wird erst nach dem Speichern (#743: Anlegen in einer Transaktion) – im Test also mit vorgestellter Uhr.
@@ -162,30 +162,30 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     await repo.speicherePaket(p);
     await konten.dienstkonto('vertraege', 'Vertragsverwaltung');
     const beimPaket = async () => (await spaeter(30 * 60_000, () => repo.faelligeEreignisse(100))).filter((e) => e.paketId === 'vertraege').map((e) => e.daten.mappe);
-    const a = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-    const b = await d.legeMappeAn({ typId: notiz.id, werte: { name: 'Zettel' } }, admin.id);
+    const a = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+    const b = await d.mappen.legeMappeAn({ typId: notiz.id, werte: { name: 'Zettel' } }, admin.id);
     await verteile();
     assert.deepEqual((await beimPaket()).sort(), [a.id, b.id].sort(), 'fremde Typen über „*“');
     // Abschnitt „Pakete“ am Mappentyp: das Paket liest Vertrag und bekommt Ereignisse dazu.
-    assert.deepEqual(await d.paketeAmTyp(vertrag.id), [{ id: 'vertraege', name: 'Vertragsverwaltung', schreiben: false, verwehrt: false, ereignisse: true }]);
-    await d.setzePaketVerwehrt(vertrag.id, 'vertraege', true, admin.email);
-    assert.equal((await d.paketeAmTyp(vertrag.id))[0].verwehrt, true);
-    const z = await d.zugriff({ id: 'paket:vertraege', rolle: 'mitglied', art: 'dienst', paketId: 'vertraege' });
+    assert.deepEqual(await d.typpakete.paketeAmTyp(vertrag.id), [{ id: 'vertraege', name: 'Vertragsverwaltung', schreiben: false, verwehrt: false, ereignisse: true }]);
+    await d.typpakete.setzePaketVerwehrt(vertrag.id, 'vertraege', true, admin.email);
+    assert.equal((await d.typpakete.paketeAmTyp(vertrag.id))[0].verwehrt, true);
+    const z = await d.rechtepruefung.zugriff({ id: 'paket:vertraege', rolle: 'mitglied', art: 'dienst', paketId: 'vertraege' });
     assert.equal(z.typen.has(vertrag.id), false, 'verwehrt: Paket sieht den Typ nicht mehr');
     assert.equal(z.typen.has(notiz.id), true);
-    const c = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
-    const e = await d.legeMappeAn({ typId: notiz.id, werte: { name: 'Noch ein Zettel' } }, admin.id);
+    const c = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
+    const e = await d.mappen.legeMappeAn({ typId: notiz.id, werte: { name: 'Noch ein Zettel' } }, admin.id);
     await spaeter(60_000, () => d.ereignisse.verteile());
     const danach = await beimPaket();
     assert.ok(danach.includes(e.id), 'erlaubter Typ kommt an');
     assert.ok(!danach.includes(c.id), 'verwehrter Typ: still nichts');
     // Wieder erlauben wirkt sofort.
-    await d.setzePaketVerwehrt(vertrag.id, 'vertraege', false, admin.email);
-    const f = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser' } }, admin.id);
+    await d.typpakete.setzePaketVerwehrt(vertrag.id, 'vertraege', false, admin.email);
+    const f = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser' } }, admin.id);
     await spaeter(120_000, () => d.ereignisse.verteile());
     assert.ok((await beimPaket()).includes(f.id));
     // Ein Paket ohne Leserecht am Typ taucht am Mappentyp nicht auf und lässt sich nicht verwehren.
-    await assert.rejects(() => d.setzePaketVerwehrt(vertrag.id, 'gibtsnicht', true, null), /ohnehin nicht lesen/);
+    await assert.rejects(() => d.typpakete.setzePaketVerwehrt(vertrag.id, 'gibtsnicht', true, null), /ohnehin nicht lesen/);
   });
 
   it('#686: Regel für die Rolle „Paket“ am Typ – Ereignisse nur zu Mappen, die das Paket lesen darf', async () => {
@@ -200,10 +200,10 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     await repo.speicherePaket({ ...basis, id: 'kuendigen', name: 'Kündigen', typen: {}, code: true, laeufer: liesCode(code).code! });
     await konten.dienstkonto('kuendigen', 'Kündigen');
     // Regel: Paket darf Verträge mit Name „Geheim“ nicht lesen.
-    const paketRolle = (await d.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
-    await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
-    const offen = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-    const geheim = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
+    const paketRolle = (await d.rechtepruefung.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
+    const offen = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+    const geheim = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
     await verteile();
     const da = (await spaeter(30 * 60_000, () => repo.faelligeEreignisse(100))).filter((e) => e.paketId === 'kuendigen').map((e) => e.daten.mappe);
     assert.ok(da.includes(offen.id));
@@ -222,14 +222,14 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
       await repo.speicherePaket(basis);
       await repo.speicherePaket({ ...basis, id: 'kuendigen', name: 'Kündigen', typen: {}, code: true, laeufer: liesCode(code).code! });
       await konten.dienstkonto('kuendigen', 'Kündigen');
-      const paketRolle = (await d.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
-      await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
-      const offen = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-      const geheim = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
-      const weg = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
-      await d.loescheMappe(offen.id, admin.id);
-      await d.loescheMappe(geheim.id, admin.id);
-      await d.loescheMappe(weg.id, admin.id);
+      const paketRolle = (await d.rechtepruefung.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
+      await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
+      const offen = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
+      const geheim = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
+      const weg = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
+      await d.loeschen.loescheMappe(offen.id, admin.id);
+      await d.loeschen.loescheMappe(geheim.id, admin.id);
+      await d.loeschen.loescheMappe(weg.id, admin.id);
       assert.equal(await repo.holeMappe(geheim.id), undefined, 'im Papierkorb');
       // Papierkorb schon geleert, bevor verteilt wird: Das Leserecht lässt sich nicht mehr prüfen – nichts zustellen.
       await repo.leerePapierkorb([weg.id]);
@@ -241,12 +241,12 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
 
   it('Frist erreicht: zum Erinnerungszeitpunkt und am Tag selbst je genau einmal', async () => {
     const { d, admin, vertrag, gesehen, verteile } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: '2031-06-30' } }, admin.id);
-    await d.fristenAbgleichen({}, '2031-06-10');
-    await d.fristenAbgleichen({}, '2031-06-20');
-    await d.fristenAbgleichen({}, '2031-06-21');
-    await d.fristenAbgleichen({}, '2031-06-30');
-    await d.fristenAbgleichen({}, '2031-06-30');
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: '2031-06-30' } }, admin.id);
+    await d.fristen.fristenAbgleichen({}, '2031-06-10');
+    await d.fristen.fristenAbgleichen({}, '2031-06-20');
+    await d.fristen.fristenAbgleichen({}, '2031-06-21');
+    await d.fristen.fristenAbgleichen({}, '2031-06-30');
+    await d.fristen.fristenAbgleichen({}, '2031-06-30');
     await verteile();
     const f = gesehen.filter((e) => e.art === 'frist.erreicht');
     assert.deepEqual(f.map((e) => e.daten.zeitpunkt), ['vorlauf', 'faellig']);

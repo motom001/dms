@@ -69,7 +69,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     const { pgEinstellungen } = await import('../src/einstellungen');
     repo = pgRepo(sql, HAUSHALT);
     dienst = new Dienst(repo, ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a928-')), HAUSHALT), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
-    konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.benutzerspiegel());
+    konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     nachlauf = new Nachlauf();
     app = await baueApp(dienst, konten, { nachlauf: nachlauf as InstanceType<typeof Nachlauf> }) as unknown as App;
@@ -83,12 +83,12 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     ids.jonas = await mitPasswort('jonas@example.org', 'Jonas');
     ids.petra = await mitPasswort('petra@example.org', 'Petra');
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     // Verträge lesen Lena, Jonas und Markus – Petra nicht.
-    ids.vertrag = (await dienst.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
+    ids.vertrag = (await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
     const rw: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [ids.lena, ids.jonas, ids.markus] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] } as unknown as Regelwerk;
-    await dienst.setzeBerechtigungen(ids.vertrag, rw, true);
-    for (let i = 1; i <= 12; i++) mappen.push((await dienst.legeMappeAn({ typId: ids.vertrag, werte: { name: `Vertrag ${i}` } }, lena.id)).id);
+    await dienst.berechtigungen.setzeBerechtigungen(ids.vertrag, rw, true);
+    for (let i = 1; i <= 12; i++) mappen.push((await dienst.mappen.legeMappeAn({ typId: ids.vertrag, werte: { name: `Vertrag ${i}` } }, lena.id)).id);
     for (const [k, email] of [['lena', 'lena@example.org'], ['jonas', 'jonas@example.org'], ['petra', 'petra@example.org'], ['markus', 'markus@example.org']]) cookies[k] = await anmelden(email);
   });
   after(async () => { richteZwischenspeicherEin({}); await app?.close(); });
@@ -108,11 +108,11 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     const p = await aufgabe('lena', mappen[5], ids.petra);
     assert.ok(p.hinweis, 'Hinweis: Petra darf die Mappe nicht lesen');
     await nachlauf.alle();
-    const fall = (await dienst.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
+    const fall = (await dienst.ohneLeserecht.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
     assert.ok(fall, 'Fall nach dem Nachlauf angelegt');
-    await dienst.leserechtAufZeitGeben(fall.id, ids.lena);
+    await dienst.ohneLeserecht.leserechtAufZeitGeben(fall.id, ids.lena);
     // Aufgabe aus einer Automatisierung (#676, #724).
-    await dienst.aufgabeAusAutomatisierung({ mappeId: mappen[6], empfaengerId: ids.jonas, text: 'Aus der Automatisierung', datum: null, von: ids.lena, buendeln: null, anlass: {} });
+    await dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: mappen[6], empfaengerId: ids.jonas, text: 'Aus der Automatisierung', datum: null, von: ids.lena, buendeln: null, anlass: {} });
     // Erledigte zählen nicht.
     const erl = await aufgabe('lena', mappen[7], ids.jonas);
     assert.equal((await rufe('jonas', 'POST', `/api/aufgaben/${erl.id}/erledigt`)).status, 200);
@@ -129,7 +129,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
       assert.equal(mit[wer].eingang, erwartet[wer as keyof typeof erwartet], `${wer}: Zahl wie bisher`);
     }
     assert.equal(mit.jonas.favoriten, 2);
-    const favSicht = await dienst.favoritenSicht();
+    const favSicht = await dienst.systemsichten.favoritenSicht();
     assert.ok(favSicht, 'Ansicht „Favoriten“ gibt es');
     assert.equal(mit.jonas.sichten[favSicht], 2, 'Ansicht „Favoriten“ zählt nur die eigenen');
     assert.equal(mit.lena.sichten[favSicht], 0);
@@ -153,7 +153,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     // Petra ohne Leserecht: der Fall entsteht im Nachlauf.
     const p = await aufgabe('jonas', mappen[10], ids.petra);
     await nachlauf.alle();
-    assert.ok((await dienst.offeneFaelle()).some((f: { aufgabeId: string }) => f.aufgabeId === p.id));
+    assert.ok((await dienst.ohneLeserecht.offeneFaelle()).some((f: { aufgabeId: string }) => f.aufgabeId === p.id));
     // Das Ereignis „aufgabe.neu“ steht schon im Ausgangskorb, bevor der Verteiler geweckt wird.
     const [e] = await sql`SELECT count(*)::int AS n FROM ereignisse WHERE art = 'aufgabe.neu' AND daten ->> 'aufgabe' = ${p.id}`;
     assert.equal(e.n, 1);
@@ -162,8 +162,8 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
   it('Leserecht auf Zeit endet mit dem Erledigen sofort (nicht erst im Nachlauf)', async () => {
     const p = await aufgabe('lena', mappen[11], ids.petra);
     await nachlauf.alle();
-    const fall = (await dienst.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
-    await dienst.leserechtAufZeitGeben(fall.id, ids.lena);
+    const fall = (await dienst.ohneLeserecht.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
+    await dienst.ohneLeserecht.leserechtAufZeitGeben(fall.id, ids.lena);
     assert.equal((await rufe('petra', 'GET', `/api/mappen/${mappen[11]}`)).status, 200, 'mit Leserecht auf Zeit');
     assert.equal((await rufe('petra', 'POST', `/api/aufgaben/${p.id}/erledigt`)).status, 200);
     assert.equal((await rufe('petra', 'GET', `/api/mappen/${mappen[11]}`)).status, 404, 'gleich danach kein Leserecht mehr');

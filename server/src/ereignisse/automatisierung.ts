@@ -14,7 +14,7 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
 
 /** Was die Hilfen außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht. */
 export interface AutomatisierungAnschluss {
-  /** Rollen (#27; post/systemmappen.ts, über die Fassade). */
+  /** Rollen (#27; post/systemmappen.ts, über den Anschluss). */
   listeRollen(): Promise<Array<{ id: string; name: string }>>;
 }
 

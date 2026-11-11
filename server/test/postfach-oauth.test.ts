@@ -75,11 +75,11 @@ async function aufbau() {
   const tresor = new Tresor(einstellungen, join(await mkdtemp(join(tmpdir(), 'dms-oauth-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const admin2 = (await konten.legeBenutzerAn({ email: 'zweit@example.org', name: 'Zweit', verwaltung: ['*'] }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const a = anbieter();
   const mails: string[] = [];
   const anAdmins = async (b: MailText) => { mails.push(mailText(b)); };

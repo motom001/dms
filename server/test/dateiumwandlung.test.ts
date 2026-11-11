@@ -13,7 +13,8 @@ import { volltextHerkunft } from '../../shared/src/volltext';
 import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/apischluessel';
 import { bildGroesse, Dateiumwandlung, fassungsTyp, speicherFassungen } from '../src/dateiumwandlung';
 import { speicherDateien } from '../src/dateispeicher';
-import { Dienst, type Zugriff } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { type Zugriff } from '../src/kern';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
@@ -68,31 +69,31 @@ async function aufbau(o: { mitPaket?: boolean; mitTexterkennung?: boolean; mitHo
   const gelesen: string[] = [];
   const engine: Engine = async (_pfad, mime) => { gelesen.push(mime); return { text: TEXT, seiten: 2, info: 'Textebene des PDFs', ohneText: [] }; };
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-  d.verbindeTexterkennung(t);
-  t.paket = () => d.texterkennungPaket();
+  d.dokumente.verbindeTexterkennung(t);
+  t.paket = () => d.volltexte.texterkennungPaket();
   t.nachher = (dok, e, k) => {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
-    void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? dok.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu });
+    void d.volltexte.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? dok.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu });
   };
   const bilder = speicherAblage();
   const vorschau = new Vorschaubilder(bilder, dateien, async (inhalt, mime) => Buffer.from(`vorschau:${mime}:${inhalt.length}`));
-  d.verbindeVorschau(vorschau);
+  d.dokumente.verbindeVorschau(vorschau);
   const ablage = speicherFassungen();
-  const u = new Dateiumwandlung(d.umwandlungAnbindung(ablage, vorschau));
-  d.verbindeUmwandlung(u, vorschau);
+  const u = new Dateiumwandlung(d.dokumentUmwandlung.umwandlungAnbindung(ablage, vorschau));
+  d.dokumentUmwandlung.verbindeUmwandlung(u, vorschau);
   vorschau.fassung = (sha) => u.lies(sha);
   t.umwandlung = { lies: (sha) => u.lies(sha), paketFuer: (m) => u.paketFuer(m), anfordern: (x) => u.anfordern(x), gesperrt: (sha) => u.gesperrt(sha) };
   if (o.mitPaket !== false) await d.kern.repo.speicherePaket(paket('bildformate', o.mitNetz ? { ...MANIFEST_CODE, netz: ['https://umwandler.example.org/v1'] } : MANIFEST_CODE));
   if (o.mitTexterkennung) await d.kern.repo.speicherePaket(texterkennungPaket());
   // Ein Paket, das nur „Volltext fertig“ hört (z. B. für Vektoren) – damit das Ereignis im Ausgangskorb landet.
   if (o.mitHoerer) await d.kern.repo.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
-  const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
   const hoch = async (name: string, inhalt: Buffer, typAngabe = 'application/octet-stream') => {
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
     return id;
   };
@@ -162,7 +163,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     assert.match(heic.ocr?.info ?? '', /HEIC bekommt keinen Volltext/);
     assert.deepEqual(await x.ereignisse('datei.umwandeln'), []);
     assert.equal(await x.vorschau.bild(dok), null);
-    const stand = await x.d.umwandlungStand();
+    const stand = await x.d.dokumentUmwandlung.umwandlungStand();
     assert.deepEqual(stand.typen.map((t) => [t.name, t.anzahl, t.paket, t.katalog?.id ?? null]), [['HEIC', 1, null, null], ['TIFF', 1, null, 'bildformate']]);
   });
 
@@ -180,7 +181,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     assert.deepEqual(await x.ereignisse('volltext.fertig'), [], 'Volltext fertig erst mit der Fassung');
 
     const pdf = pdfMitText([TEXT]);
-    const r = await x.d.setzeFassung(x.alsPaket, id, dok.sha256, pdf);
+    const r = await x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, dok.sha256, pdf);
     assert.equal(r.fassung.mime, 'application/pdf');
     assert.deepEqual(r.fassung.paket, { id: 'bildformate', name: 'Bildformate', version: '1.0.0' });
     assert.equal(r.fassung.seiten, 1);
@@ -193,7 +194,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     dok = await x.dok(id);
     assert.equal(fassungAusInfo(dok.ocr?.info), 'Bildformate 1.0.0');
     assert.deepEqual(volltextHerkunft(dok.ocr), { art: 'pdf' });
-    assert.equal((await x.d.volltext(id)).text, TEXT);
+    assert.equal((await x.d.volltexte.volltext(id)).text, TEXT);
     assert.deepEqual(x.gelesen, ['application/pdf'], 'der Kern las die Fassung als PDF');
     const vf = await x.ereignisse('volltext.fertig');
     assert.equal(vf.length, 1);
@@ -204,11 +205,11 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     await x.vorschau.fertig();
     assert.equal((await x.vorschau.bild(dok))?.toString(), `vorschau:application/pdf:${pdf.length}`);
     // Historie der Mappe: umgewandelte Fassung.
-    const h = (await x.d.historie(x.m.id)).find((e) => e.art === 'umgewandelt');
+    const h = (await x.d.mappenHistorie.historie(x.m.id)).find((e) => e.art === 'umgewandelt');
     assert.ok(h, 'Eintrag in der Historie');
     assert.match(String(h.daten?.text), /TIFF → PDF \(Bildformate 1\.0\.0\)/);
     // Zum Ansehen.
-    const f = await x.d.fassungVon(id);
+    const f = await x.d.dokumentUmwandlung.fassungVon(id);
     assert.equal(f.info.mime, 'application/pdf');
   });
 
@@ -217,7 +218,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     const gif = Buffer.from('GIF89a\x10\x00\x10\x00\x00\x00\x00;', 'latin1');
     const id = await x.hoch('logo.gif', gif, 'image/gif');
     const sha = (await x.dok(id)).sha256;
-    await x.d.setzeFassung(x.alsPaket, id, sha, png(16, 16));
+    await x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, png(16, 16));
     await warte(async () => (await x.dok(id)).ocr?.stand === 'paket' && !(await x.dok(id)).ocr?.info?.startsWith(INFO_UMWANDLUNG));
     assert.deepEqual(volltextHerkunft((await x.dok(id)).ocr), { art: 'wartet', paket: 'Texterkennung' });
     const vf = (await x.ereignisse('volltext.fertig')).filter((e) => e.paketId === 'texterkennung');
@@ -226,11 +227,11 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     assert.equal(vf[0].daten.original, 'image/gif');
     assert.equal(vf[0].daten.text, false);
     // Das Paket Texterkennung holt die Seite – aus der Fassung (pdftoppm wie bei PNG).
-    const seite = await x.d.seiteAlsGraubild(id, 1, 300);
+    const seite = await x.d.pdfBearbeiten.seiteAlsGraubild(id, 1, 300);
     assert.equal(seite.subarray(0, 2).toString('latin1'), 'P5');
-    await assert.rejects(x.d.seiteAlsGraubild(id, 2, 300), (e: { status?: number }) => e.status === 404);
+    await assert.rejects(x.d.pdfBearbeiten.seiteAlsGraubild(id, 2, 300), (e: { status?: number }) => e.status === 404);
     // Schreibt es den Volltext, ist der als „aus der umgewandelten Fassung“ gekennzeichnet; das Ereignis nennt beides.
-    await x.d.schreibeVolltext(id, { text: TEXT }, { id: 'konto', herkunft: 'Texterkennung 2.0.0', paket: true });
+    await x.d.volltexte.schreibeVolltext(id, { text: TEXT }, { id: 'konto', herkunft: 'Texterkennung 2.0.0', paket: true });
     const dok = await x.dok(id);
     assert.equal(volltextHerkunft(dok.ocr)?.art, 'paket');
     assert.equal(fassungAusInfo(dok.ocr?.info), 'Bildformate 1.0.0');
@@ -241,22 +242,22 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     const id = await x.hoch('scan.tif', TIFF);
     const sha = (await x.dok(id)).sha256;
     const status = (n: number) => (e: { status?: number }) => e.status === n;
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, SHA0, png(2, 2)), status(409));
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, 'abc', png(2, 2)), status(422));
-    await assert.rejects(x.d.setzeFassung(undefined, id, sha, png(2, 2)), /nur Pakete mit dem Recht „dms:umwandeln“/);
-    await assert.rejects(x.d.setzeFassung({ paket: { ...x.alsPaket.paket!, schnittstellen: [] } } as unknown as Zugriff, id, sha, png(2, 2)), /hat das Recht „dms:umwandeln“ nicht/);
-    await assert.rejects(x.d.setzeFassung({ paket: { ...x.alsPaket.paket!, id: 'anderes' } } as unknown as Zugriff, id, sha, png(2, 2)), /nicht zuständig/);
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, SHA0, png(2, 2)), status(409));
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, 'abc', png(2, 2)), status(422));
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(undefined, id, sha, png(2, 2)), /nur Pakete mit dem Recht „dms:umwandeln“/);
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung({ paket: { ...x.alsPaket.paket!, schnittstellen: [] } } as unknown as Zugriff, id, sha, png(2, 2)), /hat das Recht „dms:umwandeln“ nicht/);
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung({ paket: { ...x.alsPaket.paket!, id: 'anderes' } } as unknown as Zugriff, id, sha, png(2, 2)), /nicht zuständig/);
     const heic = await x.hoch('foto.heic', HEIC);
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, heic, (await x.dok(heic)).sha256, png(2, 2)), /Typ image\/heic ist dieses Paket nicht zuständig/);
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, sha, TIFF), status(415));
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, sha, Buffer.alloc(0)), status(422));
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, sha, Buffer.concat([pdfMitText(['x']), Buffer.alloc(FASSUNG_MAX_BYTES)])), status(413));
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, sha, png(10_000, 4_000)), /10000 × 4000 Bildpunkte – höchstens 36 Millionen/);
-    await assert.rejects(x.d.setzeFassung(x.alsPaket, id, sha, Buffer.from('%PDF-1.4 kaputt', 'latin1')), /Das PDF lässt sich nicht lesen/);
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, heic, (await x.dok(heic)).sha256, png(2, 2)), /Typ image\/heic ist dieses Paket nicht zuständig/);
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, TIFF), status(415));
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, Buffer.alloc(0)), status(422));
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, Buffer.concat([pdfMitText(['x']), Buffer.alloc(FASSUNG_MAX_BYTES)])), status(413));
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, png(10_000, 4_000)), /10000 × 4000 Bildpunkte – höchstens 36 Millionen/);
+    await assert.rejects(x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, Buffer.from('%PDF-1.4 kaputt', 'latin1')), /Das PDF lässt sich nicht lesen/);
     assert.equal(x.ablage.fassungen.size, 0, 'nichts gespeichert');
     // Vorschaubild: nur JPEG/PNG, wird verkleinert gespeichert.
-    await assert.rejects(x.d.setzeVorschaubild(x.alsPaket, id, sha, pdfMitText(['x'])), status(415));
-    await x.d.setzeVorschaubild(x.alsPaket, id, sha, png(400, 300));
+    await assert.rejects(x.d.dokumentUmwandlung.setzeVorschaubild(x.alsPaket, id, sha, pdfMitText(['x'])), status(415));
+    await x.d.dokumentUmwandlung.setzeVorschaubild(x.alsPaket, id, sha, png(400, 300));
     assert.match((await x.vorschau.bild(await x.dok(id)))?.toString() ?? '', /^vorschau:image\/png:/);
   });
 
@@ -265,22 +266,22 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     const id = await x.hoch('kaputt.tif', TIFF);
     const sha = (await x.dok(id)).sha256;
     const [e] = await x.ereignisse('datei.umwandeln');
-    await x.d.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'TIFF lässt sich nicht lesen: Seite 1 kaputt' });
+    await x.d.volltexte.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'TIFF lässt sich nicht lesen: Seite 1 kaputt' });
     let dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'ausgelassen');
     assert.equal(dok.ocr?.info, 'Umwandlung durch Paket Bildformate: TIFF lässt sich nicht lesen: Seite 1 kaputt');
     // „Erneut versuchen“ meldet die Datei wieder (sie ist nicht mehr unterwegs).
-    await x.d.texterkennungErneut(id);
+    await x.d.volltexte.texterkennungErneut(id);
     await warte(async () => (await x.dok(id)).ocr?.stand === 'paket');
     assert.equal((await x.ereignisse('datei.umwandeln')).length, 2);
-    await x.d.nachTexterkennungsEreignis('bildformate', e, { ok: false, text: '', fehler: 'Zeitgrenze', aufgegeben: true });
+    await x.d.volltexte.nachTexterkennungsEreignis('bildformate', e, { ok: false, text: '', fehler: 'Zeitgrenze', aufgegeben: true });
     dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'fehler');
     assert.match(dok.ocr?.info ?? '', /Umwandlung durch Paket Bildformate fehlgeschlagen: Zeitgrenze/);
     // Mit Fassung bleibt alles, wie es ist.
-    await x.d.setzeFassung(x.alsPaket, id, sha, pdfMitText([TEXT]));
+    await x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, pdfMitText([TEXT]));
     await warte(async () => (await x.dok(id)).ocr?.stand === 'fertig');
-    await x.d.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'egal' });
+    await x.d.volltexte.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'egal' });
     assert.equal((await x.dok(id)).ocr?.stand, 'fertig');
   });
 
@@ -290,24 +291,24 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     const b = await x.hoch('b.tif', Buffer.concat([TIFF, Buffer.from('b')]));
     assert.equal((await x.dok(a)).ocr?.stand, 'ausgelassen');
     await x.d.kern.repo.speicherePaket(paket('bildformate', MANIFEST_CODE));
-    assert.equal(await x.d.umwandelPaketDa(['image/tiff']), 2);
+    assert.equal(await x.d.dokumentUmwandlung.umwandelPaketDa(['image/tiff']), 2);
     assert.equal((await x.dok(a)).ocr?.info, `${INFO_UMWANDLUNG} (Paket Bildformate)`, 'wartet jetzt sichtbar');
     assert.deepEqual((await x.ereignisse('datei.umwandeln')).map((e) => e.daten.dokument).sort(), [a, b].sort());
-    assert.equal(await x.d.umwandelPaketDa(['image/tiff']), 0, 'unterwegs: nicht noch einmal');
+    assert.equal(await x.d.dokumentUmwandlung.umwandelPaketDa(['image/tiff']), 0, 'unterwegs: nicht noch einmal');
     // Zu große Dateien meldet der Kern nicht.
     const gross = { id: 'x', mappeId: x.m.id, name: 'gross.tif', mime: 'image/tiff', groesse: UMWANDELN_MAX_BYTES + 1, sha256: '1'.repeat(64) };
     assert.equal(await x.u.anfordern([gross]), 0);
     // Mit Fassung: kein weiteres Ereignis, auch nicht beim Nachholen; ohne: Nachholen meldet.
-    await x.d.setzeFassung(x.alsPaket, a, (await x.dok(a)).sha256, pdfMitText([TEXT]));
+    await x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, a, (await x.dok(a)).sha256, pdfMitText([TEXT]));
     x.u.erledigt((await x.dok(b)).sha256);
     const vorher = (await x.ereignisse('datei.umwandeln')).length;
-    await x.d.vorschauNachholen();
+    await x.d.dokumente.vorschauNachholen();
     const neu = (await x.ereignisse('datei.umwandeln')).slice(vorher);
     assert.deepEqual(neu.map((e) => e.daten.dokument), [b]);
     // Löschen ohne Papierkorb: Datei weg → Fassung weg.
     const sha = (await x.dok(a)).sha256;
-    await x.d.setzePapierkorbTage(0);
-    await x.d.loescheDokument(a, null);
+    await x.d.papierkorbVerwaltung.setzePapierkorbTage(0);
+    await x.d.dokumente.loescheDokument(a, null);
     assert.equal(x.ablage.fassungen.has(sha), false);
   });
 });
@@ -316,7 +317,7 @@ describe('Dateien umwandeln (#577): API für Pakete', () => {
   it('PUT /dokumente/{id}/fassung: Paket mit dms:umwandeln und Lesen genügt; ohne das Recht 403; GET liefert die Fassung', async () => {
     const x = await aufbau();
     await x.d.kern.repo.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(x.d, konten, { apiSchluessel: schluessel });
     const rufe = async (paketId: string, methode: string, pfad: string, params: Record<string, string>, body: unknown, query: Record<string, string> = {}) => {
@@ -387,10 +388,10 @@ describe('Dateien umwandeln (#796): KI-Sperre je Mappentyp', () => {
   /** Paket mit Netz (KI-Paket); „Gesundheit“ ist neu und damit gesperrt, „Rechnung“ wird zugelassen. */
   async function mitSperre() {
     const x = await aufbau({ mitNetz: true });
-    const gesundheit = await x.d.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-    const befund = await x.d.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'B-1' } });
+    const gesundheit = await x.d.mappentypen.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
+    const befund = await x.d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'B-1' } });
     const hochGesperrt = async (name: string, inhalt: Buffer) => {
-      const id = (await x.d.ladeHoch(befund.id, { register: 'dokumente', name, typ: 'image/tiff' }, inhalt, null)).dokument.id;
+      const id = (await x.d.dokumente.ladeHoch(befund.id, { register: 'dokumente', name, typ: 'image/tiff' }, inhalt, null)).dokument.id;
       await x.warte(async () => !['wartet', 'laeuft'].includes((await x.repo.holeDokument(id))!.ocr!.stand));
       return id;
     };
@@ -409,7 +410,7 @@ describe('Dateien umwandeln (#796): KI-Sperre je Mappentyp', () => {
 
   it('dieselbe Datei auch in einem zugelassenen Typ: Auftrag über das zugelassene Dokument; dessen Stand bleibt unberührt', async () => {
     const x = await mitSperre();
-    await x.d.setzeKiTyp(x.typ.id, true, null);
+    await x.d.ki.setzeKiTyp(x.typ.id, true, null);
     const erlaubt = await x.hoch('rechnung.tif', TIFF, 'image/tiff');
     const gesperrt = await x.hochGesperrt('befund.tif', TIFF);
     let ev = await x.ereignisse('datei.umwandeln');

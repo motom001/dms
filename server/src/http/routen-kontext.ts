@@ -82,7 +82,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    */
   const mitnehmen = async (a: Anfrage, mappeId: string) => {
     if (a.benutzer?.art === 'dienst') return;
-    await dienst.pruefeAusgang(ich(a), await zg(a), 'herunterladen', [mappeId]);
+    await dienst.ausgang.pruefeAusgang(ich(a), await zg(a), 'herunterladen', [mappeId]);
     await modusSpur(a, [mappeId], 'heruntergeladen');
   };
   /**
@@ -94,7 +94,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const abgerufen = async <T extends Antwort>(a: Anfrage, dokumentId: string, o: { fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; datei?: string }, antwort: T): Promise<T> => {
     if (a.benutzer?.art === 'dienst') return antwort;
     try {
-      await dienst.notiereAbruf({ dokumentId, benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' : 'oberflaeche', schluessel: a.apiSchluessel?.name ?? null, ...o });
+      await dienst.mappenHistorie.notiereAbruf({ dokumentId, benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' : 'oberflaeche', schluessel: a.apiSchluessel?.name ?? null, ...o });
     } catch (e) {
       const inhalt = antwort.datei?.inhalt;
       if (inhalt && !Buffer.isBuffer(inhalt)) (inhalt as Readable).destroy();
@@ -111,7 +111,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const seitenquelle = async (a: Anfrage, mappeId: string) => {
     if (!herausgeben(a)) return null;
     await mitnehmen(a, mappeId);
-    return dienst.gestempelteSeiten(a.params.id, { stempel: a.query, ich: ich(a) });
+    return dienst.ausgang.gestempelteSeiten(a.params.id, { stempel: a.query, ich: ich(a) });
   };
   /** Kommt die Datei nicht zum Ansehen (inline), sondern zum Abspeichern? Mit API-Schlüssel eines Menschen immer. */
   const zumAbspeichern = (a: Anfrage) => a.query.herunterladen !== undefined || (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
@@ -135,12 +135,12 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     const koepfe: Record<string, string> = { ...(r.gestempelt ? { 'x-dms-stempel': '1' } : {}), ...(r.verkleinert ? { 'x-dms-verkleinert': `${r.verkleinert.vorher}/${r.verkleinert.nachher}` } : {}) };
     return { datei: { inhalt: r.inhalt, name: r.name, mime: r.anzeigbar ? r.mime : 'application/octet-stream', anzeigen: false, groesse: r.groesse, ...(Object.keys(koepfe).length ? { koepfe } : {}) } };
   };
-  const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
+  const typName = async (id: string) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? id;
   /** Passwörter für Dokumente (#827): nur die Person selbst im Browser – kein API-Schlüssel, keine Vertretung. */
   const nurSelbst = (a: Anfrage) => {
     if (a.apiSchluessel || !a.sitzungsDaten?.id) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.nur-browser'));
     if (a.sitzungsDaten.vertretungId) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.vertretung'));
-    const e = dienst.pdfEntsperren;
+    const e = dienst.geschuetztePdfs.pdfEntsperren;
     if (!e) throw new Fachfehler(404, t('mappen.entsperren.gemerkt.aus'));
     return e;
   };
@@ -205,37 +205,37 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    */
   const modusSpur = async (a: Anfrage, ids: string[], was: 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet'): Promise<Set<string>> => {
     if (a.benutzer?.rolle !== 'admin' || a.konsole || !ids.length) return new Set();
-    return dienst.vermerkeVerwaltungsmodus({ ...a.benutzer, rolle: 'mitglied' }, ids, was);
+    return dienst.systemtypen.vermerkeVerwaltungsmodus({ ...a.benutzer, rolle: 'mitglied' }, ids, was);
   };
   /** Berechtigungen (#124): Zugriff des Benutzers, einmal je Anfrage. */
-  const zg = (a: Anfrage) => dienst.zugriff(ich(a));
+  const zg = (a: Anfrage) => dienst.rechtepruefung.zugriff(ich(a));
   /** #137: Empfänger von Aufgaben nur unter den Benutzern, die man sieht. */
   const empfaengerSichtbar = async (a: Anfrage, id: unknown) => {
     if (typeof id !== 'string' || !id) return;
-    if (!(await dienst.lesbare(await zg(a), [id])).has(id)) throw new Fachfehler(422, t('meldungen.routen.diesen-benutzer-gibt-es'));
+    if (!(await dienst.rechtepruefung.lesbare(await zg(a), [id])).has(id)) throw new Fachfehler(422, t('meldungen.routen.diesen-benutzer-gibt-es'));
   };
   /** #127: Darf der Empfänger die Mappe lesen? Sonst ein Hinweis in der Antwort. */
   const leseHinweis = async (empfaengerId: string | null, mappeId: string) =>
-    (empfaengerId && !(await dienst.kannLesen(empfaengerId, mappeId)) ? { hinweis: t('meldungen.routen.gespeichert-der-empfaenger-darf') } : {});
-  const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.pruefeRecht(await zg(a), mappeId, recht);
+    (empfaengerId && !(await dienst.rechtepruefung.kannLesen(empfaengerId, mappeId)) ? { hinweis: t('meldungen.routen.gespeichert-der-empfaenger-darf') } : {});
+  const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.rechtepruefung.pruefeRecht(await zg(a), mappeId, recht);
   /** „Zuletzt geöffnet“ (#334, #940): nur lesbare Mappen außerhalb des Papierkorbs, neueste oben, je mit Zeitpunkt. */
   const zuletztGeoeffnet = async (a: Anfrage, anzahl: number) => {
     const liste = zuletztListe((await konten.einstellungen(ich(a))).zuletzt_geoeffnet);
     const ids = liste.map((x) => x.id);
-    const lesbar = await dienst.lesbare(await zg(a), ids);
-    const bezuege = await dienst.bezuegeVon(ids.filter((id) => lesbar.has(id)));
+    const lesbar = await dienst.rechtepruefung.lesbare(await zg(a), ids);
+    const bezuege = await dienst.dokumente.bezuegeVon(ids.filter((id) => lesbar.has(id)));
     // Teile (#1031) nicht: Sie erscheinen nur an ihrer übergeordneten Mappe.
     const teile = teiltypen((await zg(a)).typen.values());
     return liste.filter((x) => bezuege.has(x.id) && !teile.has(bezuege.get(x.id)!.typId)).slice(0, anzahl).map((x) => ({ id: x.id, typId: bezuege.get(x.id)!.typId, titel: bezuege.get(x.id)!.titel, am: x.am }));
   };
   /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
   const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {
-    const { mit } = await dienst.mitPasswortRecht(await zg(a), mappen);
-    const klar = new Map((await dienst.entschluesselePasswoerter(mit, klartext, ich(a).id)).map((m) => [m.id, m]));
+    const { mit } = await dienst.rechtepruefung.mitPasswortRecht(await zg(a), mappen);
+    const klar = new Map((await dienst.passwortfelder.entschluesselePasswoerter(mit, klartext, ich(a).id)).map((m) => [m.id, m]));
     return mappen.map((m) => klar.get(m.id) ?? m);
   };
   /** Benutzer mit ihren weiteren Rollen (#27). */
-  const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
+  const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.systemtypen.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, t('meldungen.routen.sicherungen-sind-nicht-eingerichtet')); return x.sicherung; };
   /** Paket mit dms:sicherung-lesen (#585) – Menschen und andere Pakete bekommen 403. */
   const sicherungsPaket = async (a: Anfrage): Promise<string> => {
@@ -259,12 +259,12 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
     // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
-    typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
-    papierkorbTage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(),
+    typen: await dienst.mappentypen.listeTypen(), datenschutz: await dienst.datenschutzDienst.datenschutzFuerUnterlagen(),
+    papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
     version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',
-    loeschprotokoll: { jahre: await dienst.loeschprotokollJahre() },
+    loeschprotokoll: { jahre: await dienst.loeschprotokollVerwaltung.loeschprotokollJahre() },
   });
   /** Auskunft zustellen (#455): Einmal-Tickets der öffentlichen Abrufseite. */
   const abrufTickets = new AbrufTickets(Date.now, dienst.kurzzustand);
@@ -298,7 +298,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   };
   const nf = () => { if (!x.notfallcode) throw new Fachfehler(404, t('konten.notfall.fehler.aus')); return x.notfallcode; };
   /** Meldungen der Abrufseite in der Anrede für Dritte (#474). */
-  const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutz()).anrede, k);
+  const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutzDienst.datenschutz()).anrede, k);
   const exportZiel = () => { if (!x.exporte) throw new Fachfehler(404, t('werkbank.export.ohne-ordner')); return x.exporte.pfad; };
   /** Nach dem Herunterladen gelöscht (#797), wie die Auskunft: erst, wenn die ZIP ganz gelesen ist. */
   const danachLoeschen = (strom: Readable, ordner: string, melde: () => void) => strom.on('end', () => void loescheExport(ordner).then(melde, () => {}));

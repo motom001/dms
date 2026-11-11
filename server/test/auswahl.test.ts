@@ -16,21 +16,21 @@ type Ergebnis = { mappen: number; dokumente: number; geloescht: number; ausgelas
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const partner = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
   // Max darf Rechnungen nicht löschen.
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
   ], berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'max', name: 'Max löscht nicht', wenn: [{ art: 'benutzer', benutzer: [max.id] }], dann: { D: 'entziehen' }, stopp: false }] } });
-  const p1 = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
+  const p1 = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
   const r: Array<{ id: string }> = [];
-  for (const nr of ['R-1', 'R-2', 'R-3']) r.push(await d.legeMappeAn({ typId: rechnung.id, werte: { nr, partner: nr === 'R-1' ? p1.id : null } }, anna.id));
+  for (const nr of ['R-1', 'R-2', 'R-3']) r.push(await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr, partner: nr === 'R-1' ? p1.id : null } }, anna.id));
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => tabelle.find((t) => t.methode === m && t.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
@@ -53,14 +53,14 @@ describe('Auswahl und Mehrfach-Löschen (#149, #150)', () => {
     const probe = await loesche(anna, r.map((x) => x.id), true);
     assert.equal(probe.mappen, 3);
     assert.equal(probe.geloescht, 0);
-    assert.equal((await d.listeMappen()).filter((m) => r.some((x) => x.id === m.id)).length, 3);
+    assert.equal((await d.mappen.listeMappen()).filter((m) => r.some((x) => x.id === m.id)).length, 3);
     const ohne = await loesche(max, r.map((x) => x.id));
     assert.equal(ohne.geloescht, 0);
     assert.deepEqual(ohne.ausgelassen.map((x) => x.grund), ['kein Recht zum Löschen', 'kein Recht zum Löschen', 'kein Recht zum Löschen']);
     const ja = await loesche(anna, [r[1].id, r[2].id]);
     assert.equal(ja.geloescht, 2);
     // In den Papierkorb, je Mappe ein Eintrag.
-    assert.equal((await d.papierkorb({ id: anna.id, rolle: 'mitglied' })).length, 2);
+    assert.equal((await d.papierkorbVerwaltung.papierkorb({ id: anna.id, rolle: 'mitglied' })).length, 2);
   });
 
   it('Verweise: innerhalb der Auswahl kein Hindernis, sonst ausgelassen', async () => {

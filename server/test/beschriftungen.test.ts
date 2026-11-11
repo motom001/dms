@@ -13,7 +13,8 @@ import { formatiere, POST_STAND, systemfelder, type Feld, type Mappentyp } from 
 import { beschreibeBedingung } from '../../shared/src/sichten';
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
 import { speicherDateien } from '../src/dateispeicher';
-import { behalteBeschriftungen, bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { behalteBeschriftungen, bereinigeTyp } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { spaltenKopf, zeile } from '../src/export';
 import { beschriftungenNeu, liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
@@ -142,13 +143,13 @@ describe('Beschriftungen je Sprache (#728) – Grundlagen', () => {
 /** Ein Dienst mit Mappentyp „Zähler“ und zwei Mappen – wie vor #728 angelegt. */
 async function aufbau(repo: Repo = speicherRepo()) {
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const typ = await d.legeTypAn({ name: 'Zähler', titelVorlage: '{nr} {art}', felder: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Zähler', titelVorlage: '{nr} {art}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Strom', 'Gas', 'Wasser'] },
     { key: 'mehr', label: 'Mehr', typ: 'auswahl', mehrfach: true, optionen: ['Keller', 'Garage'] },
   ] });
-  const m1 = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-1', art: 'Strom', mehr: ['Keller'] } });
-  const m2 = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-2', art: 'Gas' } });
+  const m1 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-1', art: 'Strom', mehr: ['Keller'] } });
+  const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-2', art: 'Gas' } });
   return { d, typ, m1, m2 };
 }
 const beschriftet = (typ: Mappentyp) => ({
@@ -170,7 +171,7 @@ function dienstFaelle(pg: boolean) {
     it('Migration ohne Änderung an gespeicherten Werten: vorhandene Mappen passen und behalten ihre Werte', async () => {
       const { r, sql } = await repo();
       const { d, typ, m1, m2 } = await aufbau(r);
-      const vorher = JSON.stringify([(await d.holeMappe(m1.id)).mappe.werte, (await d.holeMappe(m2.id)).mappe.werte]);
+      const vorher = JSON.stringify([(await d.mappen.holeMappe(m1.id)).mappe.werte, (await d.mappen.holeMappe(m2.id)).mappe.werte]);
       if (sql) {
         // Die Spalten der Migration 080 gibt es, und bisher steht dort nichts.
         const spalten = await sql`SELECT table_name FROM information_schema.columns WHERE column_name = 'beschriftungen' ORDER BY table_name`;
@@ -178,37 +179,37 @@ function dienstFaelle(pg: boolean) {
         const [z] = await sql`SELECT beschriftungen FROM mappentypen WHERE id = ${typ.id}`;
         assert.equal(z.beschriftungen, null);
       }
-      const neu = await d.aendereTyp(typ.id, beschriftet(typ));
+      const neu = await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
       assert.deepEqual(neu.beschriftungen, { en: { name: 'Meter', beschreibung: 'Meters' } });
       assert.deepEqual(neu.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity', Wasser: 'Water' } } });
       assert.deepEqual(neu.register.find((r) => r.key === 'allgemein')!.beschriftungen, { en: { name: 'General' } });
-      const nachher = JSON.stringify([(await d.holeMappe(m1.id)).mappe.werte, (await d.holeMappe(m2.id)).mappe.werte]);
+      const nachher = JSON.stringify([(await d.mappen.holeMappe(m1.id)).mappe.werte, (await d.mappen.holeMappe(m2.id)).mappe.werte]);
       assert.equal(nachher, vorher, 'gespeicherte Werte unverändert');
-      for (const m of [m1, m2]) assert.equal((await d.holeMappe(m.id)).mappe.passt, true);
+      for (const m of [m1, m2]) assert.equal((await d.mappen.holeMappe(m.id)).mappe.passt, true);
       // Gespeichert wird weiter der feste Wert; eine Beschriftung ist kein gültiger Wert.
-      await d.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Wasser' } });
-      assert.equal((await d.holeMappe(m2.id)).mappe.werte.art, 'Wasser');
-      await assert.rejects(d.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Water' } }), /Art/);
+      await d.mappen.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Wasser' } });
+      assert.equal((await d.mappen.holeMappe(m2.id)).mappe.werte.art, 'Wasser');
+      await assert.rejects(d.mappen.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Water' } }), /Art/);
       // Neu gelesen (Datenbank) – alles noch da.
-      const gelesen = (await d.listeTypen()).find((t) => t.id === typ.id)!;
+      const gelesen = (await d.mappentypen.listeTypen()).find((t) => t.id === typ.id)!;
       assert.deepEqual(gelesen.beschriftungen, neu.beschriftungen);
     });
 
     it('Speichern ohne Beschriftungen behält sie, null entfernt sie; entfernte Optionen verlieren ihre', async () => {
       const { r } = await repo();
       const { d, typ } = await aufbau(r);
-      await d.aendereTyp(typ.id, beschriftet(typ));
+      await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
       // Ein älteres Programm über die API: kennt beschriftungen nicht.
       const ohne = JSON.parse(JSON.stringify(typ, (k, v) => (k === 'beschriftungen' ? undefined : v)));
-      const t2 = await d.aendereTyp(typ.id, { ...ohne, beschreibung: 'neu', felder: ohne.felder.map((f: Feld) => (f.key === 'art' ? { ...f, optionen: ['Strom', 'Gas', 'Wasser', 'Öl'] } : f)) });
+      const t2 = await d.mappentypen.aendereTyp(typ.id, { ...ohne, beschreibung: 'neu', felder: ohne.felder.map((f: Feld) => (f.key === 'art' ? { ...f, optionen: ['Strom', 'Gas', 'Wasser', 'Öl'] } : f)) });
       assert.deepEqual(t2.beschriftungen, { en: { name: 'Meter', beschreibung: 'Meters' } });
       assert.equal(t2.felder.find((f) => f.key === 'art')!.beschriftungen?.en?.optionen?.Strom, 'Electricity');
       assert.equal(t2.register.find((x) => x.key === 'allgemein')!.beschriftungen?.en?.name, 'General');
       // Option „Wasser“ fällt weg → ihre Beschriftung auch.
-      const t3 = await d.aendereTyp(typ.id, { ...t2, felder: t2.felder.map((f) => (f.key === 'art' ? { ...f, optionen: ['Strom', 'Gas'] } : f)) });
+      const t3 = await d.mappentypen.aendereTyp(typ.id, { ...t2, felder: t2.felder.map((f) => (f.key === 'art' ? { ...f, optionen: ['Strom', 'Gas'] } : f)) });
       assert.deepEqual(t3.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity' } } });
       // Wie die Oberfläche: leer als null.
-      const t4 = await d.aendereTyp(typ.id, { ...t3, beschriftungen: null, felder: t3.felder.map((f) => ({ ...f, beschriftungen: null })), register: t3.register.map((x) => ({ ...x, beschriftungen: null })) });
+      const t4 = await d.mappentypen.aendereTyp(typ.id, { ...t3, beschriftungen: null, felder: t3.felder.map((f) => ({ ...f, beschriftungen: null })), register: t3.register.map((x) => ({ ...x, beschriftungen: null })) });
       assert.equal(t4.beschriftungen, undefined);
       assert.ok(t4.felder.every((f) => !f.beschriftungen));
       assert.ok(t4.register.every((x) => !x.beschriftungen));
@@ -221,29 +222,29 @@ function dienstFaelle(pg: boolean) {
     it('Ansichten: Name und Beschreibung je Sprache, Bedingungen mit dem festen Wert', async () => {
       const { r } = await repo();
       const { d, typ, m1 } = await aufbau(r);
-      await d.aendereTyp(typ.id, beschriftet(typ));
-      const s = await d.legeSichtAn({ name: 'Strom', beschriftungen: { en: { name: 'Electricity', beschreibung: 'Power meters' }, xx1: { name: 'ungültig' } }, typen: [typ.id],
+      await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
+      const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Strom', beschriftungen: { en: { name: 'Electricity', beschreibung: 'Power meters' }, xx1: { name: 'ungültig' } }, typen: [typ.id],
         bedingungen: [{ art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Strom'] } }] });
       assert.deepEqual(s.beschriftungen, { en: { name: 'Electricity', beschreibung: 'Power meters' } });
-      assert.deepEqual((await d.seite(ICH, { sicht: s.id })).mappen.map((m) => m.id), [m1.id]);
+      assert.deepEqual((await d.sichten.seite(ICH, { sicht: s.id })).mappen.map((m) => m.id), [m1.id]);
       // Ändern ohne Angabe behält, mit null entfernt.
-      const s2 = await d.aendereSicht(s.id, { name: 'Strom!', typen: [typ.id], bedingungen: s.bedingungen });
+      const s2 = await d.sichtenVerwaltung.aendereSicht(s.id, { name: 'Strom!', typen: [typ.id], bedingungen: s.bedingungen });
       assert.equal(s2.beschriftungen?.en?.name, 'Electricity');
-      const s3 = await d.aendereSicht(s.id, { ...s2, beschriftungen: null });
+      const s3 = await d.sichtenVerwaltung.aendereSicht(s.id, { ...s2, beschriftungen: null });
       assert.ok(!s3.beschriftungen);
     });
 
     it('Suche findet den festen Wert auch über seine Beschriftung; Titel und Export zeigen die Beschriftung', async () => {
       const { r } = await repo();
       const { d, typ, m1 } = await aufbau(r);
-      const t = await d.aendereTyp(typ.id, {
+      const t = await d.mappentypen.aendereTyp(typ.id, {
         ...typ, felder: typ.felder.map((f) => (f.key === 'art' ? { ...f, beschriftungen: { de: { optionen: { Strom: 'Elektrizität' } }, en: { optionen: { Strom: 'Electricity' } } } } : f)),
       });
-      const treffer = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.id);
+      const treffer = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.id);
       assert.deepEqual(await treffer('Electricity'), [m1.id]);
       assert.deepEqual(await treffer('Strom'), [m1.id]);
       // Der Titel ist die Beschriftung in der Sprache des Servers (Deutsch); der Wert bleibt.
-      const m = (await d.holeMappe(m1.id)).mappe;
+      const m = (await d.mappen.holeMappe(m1.id)).mappe;
       assert.equal(m.titel, 'Z-1 Elektrizität');
       assert.equal(m.werte.art, 'Strom');
       assert.deepEqual(await treffer('Elektrizität'), [m1.id]);
@@ -256,14 +257,14 @@ function dienstFaelle(pg: boolean) {
     it('Systemtyp Post: Beschriftungen der festen Werte bleiben über einen Neustart', async () => {
       const { r } = await repo();
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      await d.sichereSystem();
-      const post = (await d.listeTypen()).find((t) => t.system === 'post')!;
-      const geaendert = await d.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'stand' ? { ...f, beschriftungen: { en: { label: 'Status', optionen: { [POST_STAND.neu]: 'New' } } } } : f)) });
+      await d.systemausstattung.sicherstellen();
+      const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
+      const geaendert = await d.mappentypen.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'stand' ? { ...f, beschriftungen: { en: { label: 'Status', optionen: { [POST_STAND.neu]: 'New' } } } } : f)) });
       assert.equal(geaendert.felder.find((f) => f.key === 'stand')!.beschriftungen?.en?.optionen?.Neu, 'New');
       // Start: Systemfelder werden nachgezogen – die Beschriftungen bleiben.
       const neu = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      await neu.sichereSystem();
-      const nachher = (await neu.listeTypen()).find((t) => t.system === 'post')!;
+      await neu.systemausstattung.sicherstellen();
+      const nachher = (await neu.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
       // Eigene Beschriftungen bleiben; Lücken füllt der Start aus den Sprachdateien (#729).
       const en = nachher.felder.find((f) => f.key === 'stand')!.beschriftungen?.en;
       assert.equal(en?.label, 'Status');
@@ -283,10 +284,10 @@ describe('Vollexport (#728)', () => {
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const { vollexport } = await import('../src/vollexport');
     const { d, typ } = await aufbau();
-    await d.aendereTyp(typ.id, beschriftet(typ));
-    await d.legeSichtAn({ name: 'Alle Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
-    const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+    await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
+    await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
     const ziel = await mkdtemp(join(process.env.TMPDIR ?? '/tmp', 'a728-export-'));
     try {
       const r = await vollexport(quelle, ziel, {});
@@ -345,11 +346,11 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
   it('ältere Pakete mit reinen Textoptionen funktionieren unverändert', async () => {
     const { d, p } = dms();
     const inst = await installiere(p, zip('1.0.0', TYP_ALT, SICHT(false)));
-    const typ = (await d.listeTypen()).find((t) => t.id === inst.typen.zaehler)!;
+    const typ = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.zaehler)!;
     assert.deepEqual(typ.felder.find((f) => f.key === 'art')!.optionen, ['Strom', 'Gas', 'Wasser']);
     assert.ok(!typ.beschriftungen && typ.felder.every((f) => !f.beschriftungen));
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1', art: 'Strom' } });
-    assert.deepEqual((await d.seite(ICH, { sicht: inst.sichten.strom })).mappen.map((x) => x.id), [m.id]);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1', art: 'Strom' } });
+    assert.deepEqual((await d.sichten.seite(ICH, { sicht: inst.sichten.strom })).mappen.map((x) => x.id), [m.id]);
   });
 
   it('Paket mit Beschriftungen: Installation übernimmt sie; das Update ergänzt nur, was fehlt', async () => {
@@ -360,27 +361,27 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     // Neu installiert.
     const a = dms();
     const inst = await installiere(a.p, zip('1.1.0', TYP_NEU, SICHT(true)));
-    const typ = (await a.d.listeTypen()).find((t) => t.id === inst.typen.zaehler)!;
+    const typ = (await a.d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.zaehler)!;
     assert.deepEqual(typ.beschriftungen, { en: { name: 'Meter', beschreibung: 'Electricity, gas and water' } });
     assert.deepEqual(typ.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity', Wasser: 'Water' } } }, 'Beschriftung eines unbekannten Werts fällt weg');
     assert.equal(typ.register[0].beschriftungen?.en?.name, 'General');
-    assert.equal((await a.d.listeSichten()).find((s) => s.id === inst.sichten.strom)!.beschriftungen?.en?.name, 'Electricity meters');
+    assert.equal((await a.d.sichtenVerwaltung.listeSichten()).find((s) => s.id === inst.sichten.strom)!.beschriftungen?.en?.name, 'Electricity meters');
 
     // Update von 1.0.0 (ohne) auf 1.1.0 (mit): Der Administrator hat „Strom“ schon selbst beschriftet.
     const b = dms();
     const alt = await installiere(b.p, zip('1.0.0', TYP_ALT, SICHT(false)));
-    const t0 = (await b.d.listeTypen()).find((t) => t.id === alt.typen.zaehler)!;
-    const m = await b.d.legeMappeAn({ typId: t0.id, werte: { nr: '1', art: 'Wasser' } });
-    await b.d.aendereTyp(t0.id, { ...t0, felder: t0.felder.map((f) => (f.key === 'art' ? { ...f, beschriftungen: { en: { optionen: { Strom: 'Power' } } } } : f)) });
+    const t0 = (await b.d.mappentypen.listeTypen()).find((t) => t.id === alt.typen.zaehler)!;
+    const m = await b.d.mappen.legeMappeAn({ typId: t0.id, werte: { nr: '1', art: 'Wasser' } });
+    await b.d.mappentypen.aendereTyp(t0.id, { ...t0, felder: t0.felder.map((f) => (f.key === 'art' ? { ...f, beschriftungen: { en: { optionen: { Strom: 'Power' } } } } : f)) });
     const h = await b.p.hochladen(zip('1.1.0', TYP_NEU, SICHT(true)), ICH);
     const plan = h.vorschau.typen.find((x) => x.schluessel === 'zaehler')!;
     assert.equal(plan.beschriftungen, 6, 'Name, Beschreibung, Nummer, Art, Wasser, Register – „Strom“ bleibt beim Administrator');
     await b.p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
-    const t1 = (await b.d.listeTypen()).find((t) => t.id === t0.id)!;
+    const t1 = (await b.d.mappentypen.listeTypen()).find((t) => t.id === t0.id)!;
     assert.deepEqual(t1.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { optionen: { Strom: 'Power', Wasser: 'Water' }, label: 'Kind' } });
     assert.equal(t1.beschriftungen?.en?.name, 'Meter');
     assert.equal(t1.register[0].beschriftungen?.en?.name, 'General');
-    assert.equal((await b.d.holeMappe(m.id)).mappe.werte.art, 'Wasser', 'Werte der Mappen unverändert');
+    assert.equal((await b.d.mappen.holeMappe(m.id)).mappe.werte.art, 'Wasser', 'Werte der Mappen unverändert');
     // Unmittelbar: nichts mehr zu ergänzen.
     assert.equal(beschriftungenNeu(liesPaket(liesZip(zip('1.1.0', TYP_NEU, ''))).typen[0], t1).anzahl, 0);
   });
@@ -388,20 +389,20 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
   it('„Paket erstellen“ nimmt die Beschriftungen mit – und ein anderes Ablago liest sie wieder', async () => {
     const q = dms();
     const { typ } = await (async () => {
-      const t = await q.d.legeTypAn({ name: 'Zähler', schluessel: 'zaehler', beschriftungen: { en: { name: 'Meter' } }, felder: [
+      const t = await q.d.mappentypen.legeTypAn({ name: 'Zähler', schluessel: 'zaehler', beschriftungen: { en: { name: 'Meter' } }, felder: [
         { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Strom', 'Gas'], beschriftungen: { en: { label: 'Kind', optionen: { Strom: 'Electricity' } } } },
       ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['art'], beschriftungen: { en: { name: 'General' } } }] });
       return { typ: t };
     })();
-    const s = await q.d.legeSichtAn({ name: 'Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
+    const s = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
     const z = await q.e.exportiere({ typen: [typ.id], sichten: [s.id], beispiele: [], id: 'meine_zaehler', name: 'Meine Zähler', version: '1.0.0', beschreibung: 'Zähler mit Beschriftungen auf Englisch.', autor: { name: 'Lena', github: 'lena' }, lizenz: 'MIT', dms: '>=0.86.0', aenderungen: '' }, ICH);
     const ziel = dms();
     const inst = await installiere(ziel.p, z.daten);
-    const t = (await ziel.d.listeTypen()).find((x) => x.id === inst.typen.zaehler)!;
+    const t = (await ziel.d.mappentypen.listeTypen()).find((x) => x.id === inst.typen.zaehler)!;
     assert.deepEqual(t.beschriftungen, { en: { name: 'Meter' } });
     assert.deepEqual(t.felder[0].beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity' } } });
     assert.equal(t.register[0].beschriftungen?.en?.name, 'General');
     assert.equal(Object.values(inst.sichten).length, 1);
-    assert.equal((await ziel.d.listeSichten()).find((x) => x.id === Object.values(inst.sichten)[0])!.beschriftungen?.en?.name, 'Meters');
+    assert.equal((await ziel.d.sichtenVerwaltung.listeSichten()).find((x) => x.id === Object.values(inst.sichten)[0])!.beschriftungen?.en?.name, 'Meters');
   });
 });

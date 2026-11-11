@@ -94,19 +94,19 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
     const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
     const { Webdav } = await import('../src/webdav');
     d = new Dienst(speicherRepo(), speicher, { einstellungen: speicherEinstellungen() });
-    beiFehlenderDatei((f) => { void d.merkeFehlendeDatei(f); });
+    beiFehlenderDatei((f) => { void d.dateienFehlen.merkeFehlendeDatei(f); });
     vergissFehlendeDateien();
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     ] } as never);
-    await d.legeSichtAn({ name: 'Verträge', typen: [typ.id] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
-    weg = (await d.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF('Rechnung von Jonas'), lena.id)).dokument;
-    da = (await d.ladeHoch(m.id, { register: 'belege', name: 'Vertrag.pdf', typ: 'application/pdf' }, PDF('Vertrag mit Petra'), lena.id)).dokument;
+    await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [typ.id] });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
+    weg = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF('Rechnung von Jonas'), lena.id)).dokument;
+    da = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Vertrag.pdf', typ: 'application/pdf' }, PDF('Vertrag mit Petra'), lena.id)).dokument;
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const k = (await schluessel.lege(lena, { name: 'Laufwerk', recht: 'lesen' })).schluessel;
     basic = `Basic ${Buffer.from(`lena@example.org:${k}`).toString('base64')}`;
@@ -180,7 +180,7 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
 
   it('Werkbank: Zahl der fehlenden Dateien in der Übersicht, „Dokumente ohne Datei“ für den Lasttest; wieder da → 0', async () => {
     await warte(30);
-    assert.equal(await d.fehlendeDateien(), 1);
+    assert.equal(await d.dateienFehlen.fehlendeDateien(), 1);
     const u = await rufe('GET', '/api/werkbank/uebersicht');
     assert.equal(u.statusCode, 200, u.body);
     assert.equal(u.json().dateienFehlen, 1);
@@ -190,7 +190,7 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
     ohneInnenleben(f.body, weg.sha256);
     // Volume wieder eingebunden: Die Meldung verschwindet von selbst.
     await rename(join(tmp, 'beiseite'), pfad(weg.sha256));
-    assert.equal(await d.fehlendeDateien(), 0);
+    assert.equal(await d.dateienFehlen.fehlendeDateien(), 0);
     assert.equal((await rufe('GET', `/api/dokumente/${weg.id}/inhalt`)).statusCode, 200);
   });
 });

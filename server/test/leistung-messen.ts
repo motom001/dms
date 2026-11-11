@@ -61,8 +61,8 @@ export async function messeAbfragen(sql: postgres.Sql, repo: Repo, konten: Konto
   const typ = (await repo.listeTypen()).find((t) => !t.system)!;
   const n = o.n ?? 7;
   const zeiten: Zeit[] = [
-    await stoppe('Mappe öffnen (Dienst.holeMappe, Mappe mit Dokumenten)', () => d.holeMappe(z.mappeMitDokumenten), n),
-    await stoppe(`Mappe öffnen (Dienst.holeMappe, ${z.rueckverweise} Rückverweise)`, () => d.holeMappe(z.verwiesen), n),
+    await stoppe('Mappe öffnen (Dienst.holeMappe, Mappe mit Dokumenten)', () => d.mappen.holeMappe(z.mappeMitDokumenten), n),
+    await stoppe(`Mappe öffnen (Dienst.holeMappe, ${z.rueckverweise} Rückverweise)`, () => d.mappen.holeMappe(z.verwiesen), n),
     await stoppe('mappen.listeDokumente', () => repo.listeDokumente(z.mappeMitDokumenten), n),
     await stoppe('mappen.holeDokument', () => repo.holeDokument(z.dokument), n),
     await stoppe('mappen.volltext (größtes Dokument)', () => repo.volltext(z.dokument), n),

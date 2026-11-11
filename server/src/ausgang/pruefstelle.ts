@@ -9,8 +9,8 @@
  * Abspeichern beim Ansehen nie (Browser, Bildschirmfoto).
  *
  * Hier stehen nur die Regel und die Meldungen; Lesen und Exportrecht löst `ausgang.dienst.ts` auf
- * (`AusgangDienst.mitnehmbar`, `AusgangDienst.pruefeAusgang`, #1077). Alle Wege fragen über die Fassade
- * (`dienst.mitnehmbar`, `dienst.pruefeAusgang`) – auch E-Mail und Export in diesem Ordner. So können die einzelnen
+ * (`AusgangDienst.mitnehmbar`, `AusgangDienst.pruefeAusgang`, #1077). Alle Wege fragen diese beiden
+ * (`dienst.ausgang.mitnehmbar`, `dienst.ausgang.pruefeAusgang`) – auch E-Mail und Export in diesem Ordner. So können die einzelnen
  * Wege nicht auseinanderlaufen.
  */
 import { Fachfehler } from '../fehler';

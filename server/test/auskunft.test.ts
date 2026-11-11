@@ -94,47 +94,47 @@ async function aufbau(pg: boolean) {
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-ausk-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const, versionierung: true }];
-  const wohnungTyp = await d.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
-  const mieterTyp = await d.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
+  const wohnungTyp = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
+  const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text' }, { key: 'email', label: 'E-Mail', typ: 'text' }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text' },
     { key: 'portal', label: 'Portal-Passwort', typ: 'passwort' }, { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id, verweisart: 'zugehoerigkeit' },
   ], register: reg });
-  const vertragTyp = await d.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{nr}', archiv: { jahre: 10, stichtag: null }, felder: [
+  const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{nr}', archiv: { jahre: 10, stichtag: null }, felder: [
     { key: 'nr', label: 'Vertragsnummer', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieterTyp.id, verweisart: 'zugehoerigkeit' },
     { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id },
   ], register: reg });
-  await d.aendereTyp(vertragTyp.id, { ...(await d.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }] });
-  const nkTyp = await d.legeTypAn({ name: 'Nebenkostenabrechnung', titelVorlage: 'NK {jahr}', felder: [
+  await d.mappentypen.aendereTyp(vertragTyp.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }] });
+  const nkTyp = await d.mappentypen.legeTypAn({ name: 'Nebenkostenabrechnung', titelVorlage: 'NK {jahr}', felder: [
     { key: 'jahr', label: 'Jahr', typ: 'text' }, { key: 'vertrag', label: 'Mietvertrag', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }, { key: 'privat', label: 'Privat', typ: 'janein' },
   ], register: reg });
-  const hinweisTyp = await d.legeTypAn({ name: 'Hinweis', titelVorlage: '{text}', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
+  const hinweisTyp = await d.mappentypen.legeTypAn({ name: 'Hinweis', titelVorlage: '{text}', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
 
-  const wohnung = await d.legeMappeAn({ typId: wohnungTyp.id, werte: { lage: 'Musterweg 1, EG links' } }, admin.id);
-  const max = await d.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter', email: 'max@example.net', kundennummer: 'K-4711', portal: 'geheim-portal-123', wohnung: wohnung.id } }, admin.id);
-  const bea = await d.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Bea Beispiel', email: 'bea@example.net', wohnung: wohnung.id } }, admin.id);
-  const v1 = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2020', mieter: max.id, wohnung: wohnung.id } }, admin.id);
+  const wohnung = await d.mappen.legeMappeAn({ typId: wohnungTyp.id, werte: { lage: 'Musterweg 1, EG links' } }, admin.id);
+  const max = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter', email: 'max@example.net', kundennummer: 'K-4711', portal: 'geheim-portal-123', wohnung: wohnung.id } }, admin.id);
+  const bea = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Bea Beispiel', email: 'bea@example.net', wohnung: wohnung.id } }, admin.id);
+  const v1 = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2020', mieter: max.id, wohnung: wohnung.id } }, admin.id);
   // Kreis: der neue Vertrag nennt den alten als Vorgänger, der alte (fälschlich) den neuen.
-  const v2 = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2024', mieter: max.id, wohnung: wohnung.id, vorgaenger: v1.id } }, admin.id);
-  await d.aendereMappe(v1.id, { werte: { nr: 'MV-2020', mieter: max.id, wohnung: wohnung.id, vorgaenger: v2.id } }, admin.id);
-  const vBea = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2022-B', mieter: bea.id, wohnung: wohnung.id } }, admin.id);
-  const nk1 = await d.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2024', vertrag: v2.id } }, admin.id);
-  const nk2 = await d.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2025', vertrag: v2.id, privat: true } }, admin.id);
-  const hinweis = await d.legeMappeAn({ typId: hinweisTyp.id, werte: { text: 'Rückruf an max@example.net wegen Schlüssel' } }, admin.id);
+  const v2 = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2024', mieter: max.id, wohnung: wohnung.id, vorgaenger: v1.id } }, admin.id);
+  await d.mappen.aendereMappe(v1.id, { werte: { nr: 'MV-2020', mieter: max.id, wohnung: wohnung.id, vorgaenger: v2.id } }, admin.id);
+  const vBea = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2022-B', mieter: bea.id, wohnung: wohnung.id } }, admin.id);
+  const nk1 = await d.mappen.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2024', vertrag: v2.id } }, admin.id);
+  const nk2 = await d.mappen.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2025', vertrag: v2.id, privat: true } }, admin.id);
+  const hinweis = await d.mappen.legeMappeAn({ typId: hinweisTyp.id, werte: { text: 'Rückruf an max@example.net wegen Schlüssel' } }, admin.id);
   // Schriftverkehr als Post, zugeordnet zum Mieter
-  const post = await d.legePostAn({ betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id }, { id: admin.id, name: 'Vera' });
-  await d.ordneZu(post.id, { ziel: max.id, dokumente: [] }, admin.id);
+  const post = await d.post.legePostAn({ betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id }, { id: admin.id, name: 'Vera' });
+  await d.post.ordneZu(post.id, { ziel: max.id, dokumente: [] }, admin.id);
   // Dokumente: Nebenkostenabrechnung mit Daten der Nachbarin und eine geschwärzte Fassung davon
-  const nkPdf = (await d.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024.pdf' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']), admin.id)).dokument;
-  const nkGeschwaerzt = (await d.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']), admin.id)).dokument;
-  const vertragPdf = (await d.ladeHoch(v2.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag MV-2024']), admin.id)).dokument;
-  const notizOk = await d.legeNotizAn(max.id, 'Zahlt immer pünktlich.', admin.id);
-  const notizIntern = await d.legeNotizAn(max.id, 'Interne Einschätzung: Klage prüfen.', admin.id);
+  const nkPdf = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024.pdf' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']), admin.id)).dokument;
+  const nkGeschwaerzt = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']), admin.id)).dokument;
+  const vertragPdf = (await d.dokumente.ladeHoch(v2.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag MV-2024']), admin.id)).dokument;
+  const notizOk = await d.mappenNotizen.legeNotizAn(max.id, 'Zahlt immer pünktlich.', admin.id);
+  const notizIntern = await d.mappenNotizen.legeNotizAn(max.id, 'Interne Einschätzung: Klage prüfen.', admin.id);
   const tabelle = routen(d, konten, {});
   const route = (m: string, p: string) => tabelle.find((x) => x.methode === m && x.pfad === p)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
@@ -184,8 +184,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('sammelt in beiden Richtungen, ohne quer weiterzugehen; Kreise, Verweise nach außen, Fristen, Dokumente', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
-      const b = await d.baum(m.max.id, {}, z);
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
+      const b = await d.mitVerknuepften.baum(m.max.id, {}, z);
       const k = new Map(b.knoten.map((x) => [x.id, x]));
       assert.equal(b.knoten[0].id, m.max.id);
       assert.equal(b.knoten[0].ueber, null);
@@ -220,36 +220,36 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Tiefe, Richtung, Obergrenze, seitwärts und große Kreise enden', async () => {
       const { d, admin, m } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
-      const flach = await d.baum(m.max.id, { tiefe: 1 }, z);
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
+      const flach = await d.mitVerknuepften.baum(m.max.id, { tiefe: 1 }, z);
       assert.ok(!ids(flach).has(m.nk1.id));
       assert.equal(flach.tieferMoeglich, true);
-      const unten = await d.baum(m.max.id, { richtungen: ['verwiesenVon'] }, z);
+      const unten = await d.mitVerknuepften.baum(m.max.id, { richtungen: ['verwiesenVon'] }, z);
       assert.ok(!ids(unten).has(m.wohnung.id) && ids(unten).has(m.nk1.id));
-      const knapp = await d.baum(m.max.id, { max: 3 }, z);
+      const knapp = await d.mitVerknuepften.baum(m.max.id, { max: 3 }, z);
       assert.equal(knapp.knoten.length, 3);
       assert.equal(knapp.abgeschnitten, true);
       // Seitwärts über 10 Ebenen: alles Erreichbare genau einmal, Benutzer bleiben draußen, keine Endlosschleife
-      const quer = await d.baum(m.max.id, { tiefe: 10, seitwaerts: true }, z);
+      const quer = await d.mitVerknuepften.baum(m.max.id, { tiefe: 10, seitwaerts: true }, z);
       for (const x of [m.bea, m.vBea]) assert.ok(ids(quer).has(x.id));
       assert.ok(!ids(quer).has(admin.id), 'Benutzer-Mappen sind ausgenommen');
       assert.equal(quer.knoten.length, ids(quer).size);
-      await assert.rejects(d.baum('00000000-0000-4000-8000-00000000ffff', {}, z), status(404));
+      await assert.rejects(d.mitVerknuepften.baum('00000000-0000-4000-8000-00000000ffff', {}, z), status(404));
     });
 
     it('nur innerhalb der Rechte: Nicht Lesbares fehlt und wird nicht weiterverfolgt', async () => {
       const { d, anna, m, typen, rufe } = await aufbau(pg);
-      await d.setzeBerechtigungen(typen.nkTyp.id, { grund: ALLES, regeln: [
+      await d.berechtigungen.setzeBerechtigungen(typen.nkTyp.id, { grund: ALLES, regeln: [
         { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: true },
       ] }, true);
-      await d.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
       const b = (await rufe(anna, 'GET', '/api/mappen/:id/baum', { params: { id: m.max.id } })).body as Baum;
       assert.ok(ids(b).has(m.nk1.id));
       assert.ok(!ids(b).has(m.nk2.id));
       assert.equal(b.verborgen, 1);
       assert.equal(b.knoten.find((x) => x.id === m.v2.id)!.rechte.D, false, '⛔ kein Löschrecht für #424');
       // Über eine nicht lesbare Mappe geht es nicht weiter
-      await d.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       const ohne = (await rufe(anna, 'GET', '/api/mappen/:id/baum', { params: { id: m.max.id } })).body as Baum;
       assert.ok(!ids(ohne).has(m.v2.id) && !ids(ohne).has(m.nk1.id));
       assert.ok(ohne.verborgen >= 2);
@@ -298,8 +298,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, passwort: 'kurz' } }), /mindestens 10/);
 
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-zip-'));
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
-      const daten = await d.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
+      const daten = await d.datenschutzDienst.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
       assert.deepEqual(daten.gruende, ['Interne Bewertung (Art. 15 Abs. 4 DSGVO)']);
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' }, mandant: 'Hausverwaltung' });
       assert.equal(r.mappen, 4); assert.equal(r.dokumente, 2);
@@ -334,8 +334,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const pdf = e.get('Deckblatt.pdf')!.daten;
       assert.ok(pdf.subarray(0, 5).toString() === '%PDF-');
       // Nachweis: Historie des Betroffenen ohne Inhalte
-      await d.auskunftNachweis(daten, { id: admin.id, email: 'verwalter@example.org' }, r);
-      const h = (await d.historie(m.max.id)).find((x) => x.art === 'auskunft')!;
+      await d.datenschutzDienst.auskunftNachweis(daten, { id: admin.id, email: 'verwalter@example.org' }, r);
+      const h = (await d.mappenHistorie.historie(m.max.id)).find((x) => x.art === 'auskunft')!;
       assert.match(String(h.daten.text), /4 Mappen, 2 Dokumente/);
       assert.equal(h.daten.ohneNotizen, 1);
       assert.ok(!JSON.stringify(h).includes('pünktlich') && !JSON.stringify(h).includes('Mustermieter'));
@@ -349,27 +349,27 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, admin, m, typen, rufe } = await aufbau(pg);
       const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
       // Firma der Person mit Muttergesellschaft und einem Firmenvertrag (gehört zur Firma, nicht zur Person)
-      const orgTyp = await d.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      await d.aendereTyp(orgTyp.id, { ...(await d.listeTypen()).find((t) => t.id === orgTyp.id)!, felder: [...orgTyp.felder, { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
-      const mt = (await d.listeTypen()).find((t) => t.id === typen.mieterTyp.id)!;
-      await d.aendereTyp(mt.id, { ...mt, felder: [...mt.felder, { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
-      const konzern = await d.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Holding AG' } }, admin.id);
-      const firma = await d.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Bau GmbH', mutter: konzern.id } }, admin.id);
-      const mx = (await d.holeMappe(m.max.id)).mappe;
-      await d.aendereMappe(m.max.id, { werte: { ...mx.werte, arbeitgeber: firma.id } }, admin.id);
+      const orgTyp = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.mappentypen.aendereTyp(orgTyp.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === orgTyp.id)!, felder: [...orgTyp.felder, { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const mt = (await d.mappentypen.listeTypen()).find((t) => t.id === typen.mieterTyp.id)!;
+      await d.mappentypen.aendereTyp(mt.id, { ...mt, felder: [...mt.felder, { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const konzern = await d.mappen.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Holding AG' } }, admin.id);
+      const firma = await d.mappen.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Bau GmbH', mutter: konzern.id } }, admin.id);
+      const mx = (await d.mappen.holeMappe(m.max.id)).mappe;
+      await d.mappen.aendereMappe(m.max.id, { werte: { ...mx.werte, arbeitgeber: firma.id } }, admin.id);
       // Wartungsvertrag eines Dienstleisters mit Max nur als Ansprechpartner (Bezug), mit Dokument, Notiz und Betrag
-      const wartungTyp = await d.legeTypAn({ name: 'Wartungsvertrag', titelVorlage: '{nr}', felder: [
+      const wartungTyp = await d.mappentypen.legeTypAn({ name: 'Wartungsvertrag', titelVorlage: '{nr}', felder: [
         { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'betrag', label: 'Betrag', typ: 'text' },
         { key: 'ansprechpartner', label: 'Ansprechpartner', typ: 'referenz', zielTyp: typen.mieterTyp.id, verweisart: 'bezug' },
         { key: 'firma', label: 'Firma', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
       ], register: reg });
-      const rechnungTyp = await d.legeTypAn({ name: 'Wartungsrechnung', titelVorlage: '{nr}', felder: [
+      const rechnungTyp = await d.mappentypen.legeTypAn({ name: 'Wartungsrechnung', titelVorlage: '{nr}', felder: [
         { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: wartungTyp.id, verweisart: 'zugehoerigkeit' },
       ] });
-      const wartung = await d.legeMappeAn({ typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } }, admin.id);
-      const wDok = (await d.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)).dokument;
-      await d.legeNotizAn(wartung.id, 'Internes Besprechungsprotokoll zur Wartung', admin.id);
-      const wr = await d.legeMappeAn({ typId: rechnungTyp.id, werte: { nr: 'WR-1', vertrag: wartung.id } }, admin.id);
+      const wartung = await d.mappen.legeMappeAn({ typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } }, admin.id);
+      const wDok = (await d.dokumente.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)).dokument;
+      await d.mappenNotizen.legeNotizAn(wartung.id, 'Internes Besprechungsprotokoll zur Wartung', admin.id);
+      const wr = await d.mappen.legeMappeAn({ typId: rechnungTyp.id, werte: { nr: 'WR-1', vertrag: wartung.id } }, admin.id);
 
       const v = (await rufe(admin, 'POST', '/api/werkbank/auskunft/vorschau', { body: { mappeId: m.max.id, vorschlaege: true } })).body as AuskunftVorschau;
       const k = new Map(v.baum.knoten.map((x) => [x.id, x]));
@@ -386,13 +386,13 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(k.has(m.nk1.id) && !k.get(m.v2.id)?.nurBezug);
       assert.ok(!('vorschlaege' in v), 'auch mit vorschlaege: true keine Vorschläge');
 
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-bezug-'));
       const basis = { mappeId: m.max.id, geprueft: true, passwort: '' };
       // Erwähnung nur von Bezug-Mappen
-      await assert.rejects(d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] } }, z, { mandant: 'H', version: '0' }), /Bezug/);
-      const ohneNotiz = (await d.holeMappe(m.max.id)).notizen.map((n) => ({ id: n.id, grund: 'interne Bewertung – Art. 15 Abs. 4' }));
-      const daten = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } }, z, { mandant: 'H', version: '0' });
+      await assert.rejects(d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] } }, z, { mandant: 'H', version: '0' }), /Bezug/);
+      const ohneNotiz = (await d.mappen.holeMappe(m.max.id)).notizen.map((n) => ({ id: n.id, grund: 'interne Bewertung – Art. 15 Abs. 4' }));
+      const daten = await d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } }, z, { mandant: 'H', version: '0' });
       assert.equal(daten.anzahl.erwaehnungen, 2);
       assert.deepEqual(daten.erwaehnungen.find((e) => e.mappeId === wartung.id), { mappeId: wartung.id, typ: 'Wartungsvertrag', titel: 'W-1', feld: 'Ansprechpartner', richtung: 'verwiesenVon' });
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera', email: 'v@example.org' }, mandant: 'H' });
@@ -426,7 +426,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       }
 
       // Bewusst ganz aufnehmen: dann mit Dokument und Angaben
-      const ganz = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
+      const ganz = await d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.mappen.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
       assert.equal(ganz.erwaehnungen.length, 0, 'ganz aufgenommen – keine zusätzliche Erwähnung');
       assert.ok(ganz.mappen.some((x) => x.id === wartung.id && x.werte.betrag === 'Geheimpreis 9.999 EUR'));
     });
@@ -443,7 +443,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(stand.verschluesselt, true);
       const liste = ((await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { auskuenfte: Array<{ id: string }> }).auskuenfte;
       assert.ok(liste.some((x) => x.id === stand.id));
-      assert.ok((await d.historie(m.max.id)).some((x) => x.art === 'auskunft' && x.daten.verschluesselt === true));
+      assert.ok((await d.mappenHistorie.historie(m.max.id)).some((x) => x.art === 'auskunft' && x.daten.verschluesselt === true));
       const dl = await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: stand.id } });
       const teile: Buffer[] = [];
       for await (const c of dl.datei!.inhalt as AsyncIterable<Buffer>) teile.push(c);

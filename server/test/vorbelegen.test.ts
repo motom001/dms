@@ -51,8 +51,8 @@ async function tresor() {
 /** Vertragsart mit üblichen Fristen, Vertrag mit „Art“ und den Paaren; ein berechnetes Feld „Kündigen bis“. */
 async function aufbau(extra: { zu?: Regelwerk } = {}) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor: await tresor() });
-  const organisation = await d.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], ...(extra.zu ? { berechtigungen: extra.zu } : {}) });
-  const vertragsart = await d.legeTypAn({ name: 'Vertragsart', titelVorlage: '{name}', felder: [
+  const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], ...(extra.zu ? { berechtigungen: extra.zu } : {}) });
+  const vertragsart = await d.mappentypen.legeTypAn({ name: 'Vertragsart', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text' },
     { key: 'kuendigungsfrist', label: 'Kündigungsfrist', typ: 'zeitraum' },
     { key: 'kuendigung_zum', label: 'Kündigung zum', typ: 'auswahl', optionen: OPTIONEN },
@@ -62,7 +62,7 @@ async function aufbau(extra: { zu?: Regelwerk } = {}) {
     { key: 'pin', label: 'Kundenkennwort', typ: 'passwort' },
     { key: 'kuendigen_bis', label: 'Kündigen bis', typ: 'datum' },
   ] });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{bezeichnung}', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{bezeichnung}', felder: [
     { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text' },
     { key: 'art', label: 'Vertragsart', typ: 'referenz', zielTyp: vertragsart.id, erkennung: {}, vorbelegen: [...PAARE, { von: 'kuendigen_bis', nach: 'kuendigen_bis' }] },
     { key: 'kuendigungsfrist', label: 'Kündigungsfrist', typ: 'zeitraum', erkennung: {} },
@@ -73,9 +73,9 @@ async function aufbau(extra: { zu?: Regelwerk } = {}) {
     // Berechnet (#1034): schreibt nur das Paket – auch kein Vorschlag aus der Vertragsart.
     { key: 'kuendigen_bis', label: 'Kündigen bis', typ: 'datum', berechnetVon: 'vertraege' },
   ] }, 'vertraege');
-  const telekom = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Funknetz Beispiel AG' } });
-  const mobilfunk = await d.legeMappeAn({ typId: vertragsart.id, werte: { name: 'Mobilfunk', kuendigungsfrist: { anzahl: 3, einheit: 'monate' }, kuendigung_zum: 'laufzeitende', anbieter: telekom.id, hinweis: 'Rufnummer mitnehmen', online: true, pin: { neu: 'geheim-1234' }, kuendigen_bis: '2027-01-31' } });
-  const strom = await d.legeMappeAn({ typId: vertragsart.id, werte: { name: 'Strom', kuendigungsfrist: { anzahl: 2, einheit: 'wochen' }, kuendigung_zum: 'monatsende', online: false } });
+  const telekom = await d.mappen.legeMappeAn({ typId: organisation.id, werte: { name: 'Funknetz Beispiel AG' } });
+  const mobilfunk = await d.mappen.legeMappeAn({ typId: vertragsart.id, werte: { name: 'Mobilfunk', kuendigungsfrist: { anzahl: 3, einheit: 'monate' }, kuendigung_zum: 'laufzeitende', anbieter: telekom.id, hinweis: 'Rufnummer mitnehmen', online: true, pin: { neu: 'geheim-1234' }, kuendigen_bis: '2027-01-31' } });
+  const strom = await d.mappen.legeMappeAn({ typId: vertragsart.id, werte: { name: 'Strom', kuendigungsfrist: { anzahl: 2, einheit: 'wochen' }, kuendigung_zum: 'monatsende', online: false } });
   return { d, organisation, vertragsart, vertrag, telekom, mobilfunk, strom };
 }
 
@@ -87,14 +87,14 @@ describe('Beim Auswählen übernehmen – Mappentyp (#1037)', () => {
     assert.match(typUnterschiede(typBild(ohne), typBild(vertrag))?.liste.join(' ') ?? '', /Vertragsart“: Beim Auswählen übernehmen/);
     const doku = JSON.stringify(openapi('test'));
     assert.ok(doku.includes('"vorbelegen"') && doku.includes('vorgeschlagen aus'));
-    const t2 = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text', vorbelegen: [{ von: 'a', nach: 'b' }] }, { key: 'art', label: 'Art', typ: 'referenz', zielTyp: vertragsart.id, vorbelegen: [{ von: 'kuendigungsfrist', nach: 'frist' }, { von: 'name', nach: 'frist' }, { von: 'X y', nach: 'frist' }] }, { key: 'frist', label: 'Frist', typ: 'zeitraum' }] });
+    const t2 = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text', vorbelegen: [{ von: 'a', nach: 'b' }] }, { key: 'art', label: 'Art', typ: 'referenz', zielTyp: vertragsart.id, vorbelegen: [{ von: 'kuendigungsfrist', nach: 'frist' }, { von: 'name', nach: 'frist' }, { von: 'X y', nach: 'frist' }] }, { key: 'frist', label: 'Frist', typ: 'zeitraum' }] });
     assert.equal(t2.felder[0].vorbelegen, undefined, 'nur an Verweisfeldern');
     assert.deepEqual(t2.felder[1].vorbelegen, [{ von: 'kuendigungsfrist', nach: 'frist' }], 'je Zielfeld ein Paar, gültige Kennungen');
   });
 
   it('Prüfung: Felder gibt es, sie passen zusammen, nie Passwortfelder', async () => {
     const { d, vertragsart, organisation } = await aufbau();
-    const typMit = (vorbelegen: unknown, felder: unknown[] = []) => d.legeTypAn({ name: `T${Math.random()}`, felder: [
+    const typMit = (vorbelegen: unknown, felder: unknown[] = []) => d.mappentypen.legeTypAn({ name: `T${Math.random()}`, felder: [
       { key: 'art', label: 'Art', typ: 'referenz', zielTyp: vertragsart.id, vorbelegen },
       { key: 'frist', label: 'Frist', typ: 'zeitraum' }, { key: 'text', label: 'Text', typ: 'text' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }, ...felder] });
     await assert.rejects(typMit([{ von: 'kuendigungsfrist', nach: 'fehlt' }]), meldet(/„fehlt“ gibt es in diesem Mappentyp nicht/));
@@ -128,64 +128,64 @@ describe('Beim Auswählen übernehmen – Mappentyp (#1037)', () => {
 describe('Beim Auswählen übernehmen – Vorschläge (#1037)', () => {
   it('liefert die Werte der gewählten Mappe – gültig, ohne Passwort, nie in berechnete Felder, nichts Leeres', async () => {
     const { d, vertrag, mobilfunk, strom, telekom } = await aufbau();
-    const r = await d.vorbelegen({ typId: vertrag.id, feldKey: 'art', id: mobilfunk.id });
+    const r = await d.mappenEingaben.vorbelegen({ typId: vertrag.id, feldKey: 'art', id: mobilfunk.id });
     assert.deepEqual(r.felder, { kuendigungsfrist: { anzahl: 3, einheit: 'monate' }, kuendigung_zum: 'laufzeitende', anbieter: telekom.id, bemerkung: 'Rufnummer mitnehmen', online: true });
     assert.equal(r.titel, 'Mobilfunk');
     assert.equal(r.bezuege[telekom.id]?.titel, 'Funknetz Beispiel AG');
     assert.ok(!JSON.stringify(r).includes('geheim') && !JSON.stringify(r).includes(JSON.stringify(mobilfunk.werte.pin).slice(1, 20)), 'kein Passwort, auch nicht verschlüsselt');
     assert.ok(!('kuendigen_bis' in r.felder), 'berechnete Felder bekommen nie einen Vorschlag');
     // „nein“ und leere Werte schlagen nichts vor.
-    assert.deepEqual(Object.keys((await d.vorbelegen({ typId: vertrag.id, feldKey: 'art', id: strom.id })).felder).sort(), ['kuendigung_zum', 'kuendigungsfrist']);
+    assert.deepEqual(Object.keys((await d.mappenEingaben.vorbelegen({ typId: vertrag.id, feldKey: 'art', id: strom.id })).felder).sort(), ['kuendigung_zum', 'kuendigungsfrist']);
     // Unbekanntes Feld, fremde Mappe, falscher Typ: keine Felder.
-    assert.deepEqual((await d.vorbelegen({ typId: vertrag.id, feldKey: 'bezeichnung', id: mobilfunk.id })).felder, {});
-    assert.deepEqual((await d.vorbelegen({ typId: vertrag.id, feldKey: 'art', id: telekom.id })).felder, {}, 'Mappe vom falschen Typ');
-    await assert.rejects(d.vorbelegen({ typId: 'kein-typ', feldKey: 'art', id: mobilfunk.id }), meldet(/Mappentyp/));
+    assert.deepEqual((await d.mappenEingaben.vorbelegen({ typId: vertrag.id, feldKey: 'bezeichnung', id: mobilfunk.id })).felder, {});
+    assert.deepEqual((await d.mappenEingaben.vorbelegen({ typId: vertrag.id, feldKey: 'art', id: telekom.id })).felder, {}, 'Mappe vom falschen Typ');
+    await assert.rejects(d.mappenEingaben.vorbelegen({ typId: 'kein-typ', feldKey: 'art', id: mobilfunk.id }), meldet(/Mappentyp/));
     // Speichern füllt nichts von selbst – es sind Vorschläge der Oberfläche.
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Handyvertrag', art: mobilfunk.id } });
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Handyvertrag', art: mobilfunk.id } });
     assert.equal(m.werte.kuendigungsfrist, null);
   });
 
   it('ungültige Werte für das Zielfeld fallen weg (Länge, Auswahl)', async () => {
     const { d, vertragsart, mobilfunk } = await aufbau();
-    const knapp = await d.legeTypAn({ name: 'Knapp', felder: [
+    const knapp = await d.mappentypen.legeTypAn({ name: 'Knapp', felder: [
       { key: 'art', label: 'Art', typ: 'referenz', zielTyp: vertragsart.id, vorbelegen: [{ von: 'hinweis', nach: 'kurz' }, { von: 'kuendigung_zum', nach: 'zum' }] },
       { key: 'kurz', label: 'Kurz', typ: 'text', maxLen: 5 }, { key: 'zum', label: 'Zum', typ: 'auswahl', optionen: OPTIONEN },
     ] });
-    assert.deepEqual((await d.vorbelegen({ typId: knapp.id, feldKey: 'art', id: mobilfunk.id })).felder, { zum: 'laufzeitende' });
+    assert.deepEqual((await d.mappenEingaben.vorbelegen({ typId: knapp.id, feldKey: 'art', id: mobilfunk.id })).felder, { zum: 'laufzeitende' });
   });
 
   it('nur mit Leserecht: nicht lesbare Mappe gibt nichts, Verweise auf nicht lesbare Mappen fallen weg', async () => {
     const x = await aufbau({ zu: { grund: NICHTS, regeln: [] } });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', x.d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', x.d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
-    await x.d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const zJ = await x.d.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
-    assert.ok(!(await x.d.lesbare(zJ, [x.telekom.id])).has(x.telekom.id), 'Jonas darf die Organisation nicht lesen');
-    const r = await x.d.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ);
+    await x.d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    const zJ = await x.d.rechtepruefung.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
+    assert.ok(!(await x.d.rechtepruefung.lesbare(zJ, [x.telekom.id])).has(x.telekom.id), 'Jonas darf die Organisation nicht lesen');
+    const r = await x.d.mappenEingaben.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ);
     assert.ok(!('anbieter' in r.felder) && !(x.telekom.id in r.bezuege), 'kein Titel über den Vorschlag');
     assert.deepEqual(r.felder.kuendigungsfrist, { anzahl: 3, einheit: 'monate' });
     // Vertragsart selbst gesperrt: gar nichts.
-    await x.d.aendereTyp(x.vertragsart.id, { ...x.vertragsart, berechtigungen: { grund: NICHTS, regeln: [] } });
-    const zJ2 = await x.d.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
-    assert.deepEqual((await x.d.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ2)).felder, {});
+    await x.d.mappentypen.aendereTyp(x.vertragsart.id, { ...x.vertragsart, berechtigungen: { grund: NICHTS, regeln: [] } });
+    const zJ2 = await x.d.rechtepruefung.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
+    assert.deepEqual((await x.d.mappenEingaben.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ2)).felder, {});
     // Die Route ist angemeldet erreichbar.
     assert.ok(routen(x.d, konten, {}).some((r2) => r2.methode === 'POST' && r2.pfad === '/api/mappen/vorbelegen' && r2.zugang === 'angemeldet'));
   });
 
   it('mehrere Zieltypen (#1036): gilt je Typ, der das Feld hat', async () => {
     const { d, vertragsart, mobilfunk } = await aufbau();
-    const tarif = await d.legeTypAn({ name: 'Tarif', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'hinweis', label: 'Hinweis', typ: 'text' }] });
-    const t = await d.legeTypAn({ name: 'Abo', felder: [
+    const tarif = await d.mappentypen.legeTypAn({ name: 'Tarif', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'hinweis', label: 'Hinweis', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Abo', felder: [
       { key: 'grundlage', label: 'Grundlage', typ: 'referenz', zielTypen: [vertragsart.id, tarif.id], vorbelegen: [{ von: 'kuendigungsfrist', nach: 'frist' }, { von: 'hinweis', nach: 'notiz' }] },
       { key: 'frist', label: 'Frist', typ: 'zeitraum' }, { key: 'notiz', label: 'Notiz', typ: 'text' },
     ] });
-    const basis = await d.legeMappeAn({ typId: tarif.id, werte: { name: 'Basis', hinweis: 'monatlich kündbar' } });
-    assert.deepEqual((await d.vorbelegen({ typId: t.id, feldKey: 'grundlage', id: mobilfunk.id })).felder, { frist: { anzahl: 3, einheit: 'monate' }, notiz: 'Rufnummer mitnehmen' });
-    assert.deepEqual((await d.vorbelegen({ typId: t.id, feldKey: 'grundlage', id: basis.id })).felder, { notiz: 'monatlich kündbar' }, 'Tarif hat keine Kündigungsfrist');
+    const basis = await d.mappen.legeMappeAn({ typId: tarif.id, werte: { name: 'Basis', hinweis: 'monatlich kündbar' } });
+    assert.deepEqual((await d.mappenEingaben.vorbelegen({ typId: t.id, feldKey: 'grundlage', id: mobilfunk.id })).felder, { frist: { anzahl: 3, einheit: 'monate' }, notiz: 'Rufnummer mitnehmen' });
+    assert.deepEqual((await d.mappenEingaben.vorbelegen({ typId: t.id, feldKey: 'grundlage', id: basis.id })).felder, { notiz: 'monatlich kündbar' }, 'Tarif hat keine Kündigungsfrist');
     // Passt ein gleichnamiges Feld in einem der Typen nicht, ist das Paar ungültig.
-    const schief = await d.legeTypAn({ name: 'Schief', felder: [{ key: 'kuendigungsfrist', label: 'Frist als Text', typ: 'text' }] });
-    await assert.rejects(d.legeTypAn({ name: 'Abo2', felder: [
+    const schief = await d.mappentypen.legeTypAn({ name: 'Schief', felder: [{ key: 'kuendigungsfrist', label: 'Frist als Text', typ: 'text' }] });
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Abo2', felder: [
       { key: 'grundlage', label: 'Grundlage', typ: 'referenz', zielTypen: [vertragsart.id, schief.id], vorbelegen: [{ von: 'kuendigungsfrist', nach: 'frist' }] },
       { key: 'frist', label: 'Frist', typ: 'zeitraum' },
     ] }), meldet(/passt nicht/));
@@ -206,7 +206,7 @@ describe('Beim Auswählen übernehmen – aus Dokument ausfüllen und „Dokumen
     const doc = await d.erkennung.fuerTyp(vertrag.id, { text: 'Ihr Vertrag Mobilfunk\nKündigungsfrist: 1 Monat' });
     if (doc.vorschlaege.kuendigungsfrist && !doc.vorschlaege.kuendigungsfrist.aus) assert.deepEqual(doc.vorschlaege.kuendigungsfrist.wert, { anzahl: 1, einheit: 'monate' });
     // Bearbeiten: was in der Mappe steht, bekommt keinen Vorschlag.
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Handy', bemerkung: 'eigene Notiz' } });
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Handy', bemerkung: 'eigene Notiz' } });
     const b = await d.erkennung.fuerTyp(vertrag.id, { text: 'Ihr Vertrag Mobilfunk', mappe: m.id });
     assert.equal(b.vorschlaege.bemerkung, undefined);
     assert.equal(b.vorschlaege.kuendigung_zum?.wert, 'laufzeitende');
@@ -222,7 +222,7 @@ describe('Beim Auswählen übernehmen – aus Dokument ausfüllen und „Dokumen
       herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null,
       typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { ...c, modul: { sha256: 'x', groesse: 1 } } } as InstalliertesPaket);
     // Der Vertrag ist für KI-Dienste zugelassen (#796), die Vertragsart nicht – ihre Werte gehen trotzdem nie an das Paket.
-    await d.setzeKiTyp(vertrag.id, true, null);
+    await d.ki.setzeKiTyp(vertrag.id, true, null);
     d.erkennung.anbieter = { pakete: () => [{ id: 'wolke', name: 'KI Wolke', netz: true }], erkenne: async (_p, e) => { gerufen.push(e); return { text: JSON.stringify({ kuendigungsfrist: { wert: { anzahl: 1, einheit: 'monate' }, fundstelle: 'Kündigungsfrist 1 Monat' } }), ms: 1 }; } };
     await d.erkennung.setzeStandard({ paket: 'wolke', abfluss: true });
     const r = await d.erkennung.fuerTyp(vertrag.id, { text: 'Ihr Vertrag Mobilfunk\nKündigungsfrist 1 Monat' });
@@ -293,7 +293,7 @@ describe('Beim Auswählen übernehmen – Paketformat (#1037)', () => {
     const installiere = async (dateien: Record<string, string>) => { const h = await p.hochladen(archiv(dateien), ICH); return p.installiere({ upload: h.upload, bestaetigt: true }, ICH); };
     // Erst ohne Paare (Version 1.0.0), dann das Update mit Paaren.
     const r = await installiere(paket(VERTRAEGE('', 'ohne')));
-    const art = async () => (await d.listeTypen()).find((x) => x.id === r.typen.vertrag)!.felder.find((f) => f.key === 'art')!;
+    const art = async () => (await d.mappentypen.listeTypen()).find((x) => x.id === r.typen.vertrag)!.felder.find((f) => f.key === 'art')!;
     assert.equal((await art()).vorbelegen, undefined);
     const h = await p.hochladen(archiv(paket(VERTRAEGE(), '1.1.0')), ICH);
     const v = await p.vorschau({ upload: h.upload });
@@ -301,14 +301,14 @@ describe('Beim Auswählen übernehmen – Paketformat (#1037)', () => {
     await p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
     assert.deepEqual((await art()).vorbelegen, [{ von: 'kuendigungsfrist', nach: 'kuendigungsfrist' }, { von: 'kuendigung_zum', nach: 'kuendigung_zum' }]);
     // Und es wirkt: Vorschläge aus der Vertragsart, das berechnete Feld nie.
-    const mf = await d.legeMappeAn({ typId: r.typen.vertragsart, werte: { name: 'Mobilfunk', kuendigungsfrist: 'P3M', kuendigung_zum: 'laufzeitende' } });
-    assert.deepEqual((await d.vorbelegen({ typId: r.typen.vertrag, feldKey: 'art', id: mf.id })).felder, { kuendigungsfrist: { anzahl: 3, einheit: 'monate' }, kuendigung_zum: 'laufzeitende' });
+    const mf = await d.mappen.legeMappeAn({ typId: r.typen.vertragsart, werte: { name: 'Mobilfunk', kuendigungsfrist: 'P3M', kuendigung_zum: 'laufzeitende' } });
+    assert.deepEqual((await d.mappenEingaben.vorbelegen({ typId: r.typen.vertrag, feldKey: 'art', id: mf.id })).felder, { kuendigungsfrist: { anzahl: 3, einheit: 'monate' }, kuendigung_zum: 'laufzeitende' });
   });
 
   it('„Paket erstellen“ nimmt die Paare mit (nur mit Zielfeld im Paket) und hebt die Mindestversion', async () => {
     const { d, vertrag, vertragsart, organisation } = await aufbau();
     const bau = baue({ typen: [vertrag.id, vertragsart.id, organisation.id], sichten: [], beispiele: [], id: 'vertraege_eigen', name: 'Verträge', version: '1.0.0', beschreibung: 'Ein Paket zum Testen von vorbelegen.', autor: { name: 'Markus', github: 'markus' }, lizenz: 'MIT', dms: '>=0.234.0', aenderungen: '' },
-      { typen: await d.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.234.0', entwurf: null, jetzt: new Date('2026-11-10T12:00:00Z') });
+      { typen: await d.mappentypen.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.234.0', entwurf: null, jetzt: new Date('2026-11-10T12:00:00Z') });
     const yaml = bau.dateien.find((x) => x.name.endsWith('mappentypen.yaml'))!.daten.toString();
     assert.match(yaml, /vorbelegen:\s*\n\s*- von: kuendigungsfrist\s*\n\s*nach: kuendigungsfrist/);
     assert.equal(mindestversion(['vorbelegen']).version, '0.234.0');

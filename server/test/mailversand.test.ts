@@ -206,9 +206,9 @@ async function aufbau() {
   const tresor = new Tresor(einstellungen, join(await mkdtemp(join(tmpdir(), 'dms-a813-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const { benutzer: admin } = await konten.einrichten({ email: 'katrin@example.org', name: 'Katrin', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ms = microsoft();
   const oauth = new PostfachOAuth({ einstellungen, verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), abruf: ms.abruf, jetzt: () => jetzt });
   const versand: Array<{ host: string; zugriff?: string; passwort: string; an?: string }> = [];
@@ -330,7 +330,7 @@ describe('E-Mail-Versand im Einrichtungsassistenten (#813, #804)', () => {
     const code = new Einrichtungscode(await mkdtemp(join(tmpdir(), 'dms-a803-')));
     const c = await code.bereitstellen();
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const einrichtung = new Einrichtung({ konten, code, einstellungen: speicherEinstellungen(), mandant: { name: async () => null, umbenennen: async () => {} }, datenbank: () => ({ host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms' }) });
     const { d: suche, gefragt } = netz({ srv: { '_submissions._tcp.example.org': [{ name: 'smtp.example.org', port: 465 }] } });
     const betrieb = new Betrieb(speicherBetrieb(), 'http://nas', undefined, { suche });

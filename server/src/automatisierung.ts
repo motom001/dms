@@ -13,7 +13,8 @@ import { heuteIn, merkmalTrifft, verschiebe, type Bedingung } from '../../shared
 import { uebersetzer } from '../../shared/src/sprache';
 import texte from '../../shared/src/sprachen/de/automatisierung.json';
 import ereignisTexte from '../../shared/src/sprachen/de/ereignisse.json';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import type { PaketAutomatisierung } from './pakete';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';
@@ -591,7 +592,7 @@ export class Automatisierungen {
   /* ---------- Verwalten ---------- */
 
   async kontext(): Promise<Kontextdaten> {
-    const [k, pakete, liste] = await Promise.all([this.d.dienst.automatisierungKontext(), this.d.dienst.kern.repo.listePakete(), this.d.repo.liste()]);
+    const [k, pakete, liste] = await Promise.all([this.d.dienst.automatisierungshilfen.automatisierungKontext(), this.d.dienst.kern.repo.listePakete(), this.d.repo.liste()]);
     // Pakete für „Paket nach Zeitplan ausführen“ (#1082): ob sie das Ereignis abonnieren und welche Aufgaben ihre
     // mitgelieferten Automatisierungen nennen (zur Auswahl im Editor).
     const aufgaben = (id: string) => [...new Set(liste.filter((a) => a.herkunft === 'paket' && a.paketId === id)
@@ -621,9 +622,9 @@ export class Automatisierungen {
   private async unlesbar(): Promise<{ typen: Set<string>; kontoId: string | null }> {
     const konto = await this.konto().catch(() => null);
     if (!konto) return { typen: new Set(), kontoId: null };
-    const z = await this.d.dienst.zugriff(konto);
+    const z = await this.d.dienst.rechtepruefung.zugriff(konto);
     const typen = new Set<string>();
-    for (const typ of await this.d.dienst.listeTypen()) {
+    for (const typ of await this.d.dienst.mappentypen.listeTypen()) {
       const lesbar = z.typen.has(typ.id) && (!z.lesen || z.lesen.offen.includes(typ.id) || z.lesen.je.some((x) => x.typId === typ.id));
       if (!lesbar) typen.add(typ.id);
     }
@@ -653,7 +654,7 @@ export class Automatisierungen {
     const typ = kontextTyp(a.wenn, (await this.kontext()).typen);
     if (!typ) return { mappen: [], gesamt: 0 };
     const konto = await this.konto();
-    const s = await this.d.dienst.seite(konto, { sicht: `typ:${typ.id}`, suche, anzahl: 20 }, await this.d.dienst.zugriff(konto), 20);
+    const s = await this.d.dienst.sichten.seite(konto, { sicht: `typ:${typ.id}`, suche, anzahl: 20 }, await this.d.dienst.rechtepruefung.zugriff(konto), 20);
     return { mappen: s.mappen.map((m) => ({ id: m.id, titel: m.titel ?? '', typId: m.typId })), gesamt: s.gesamt };
   }
 
@@ -789,8 +790,8 @@ export class Automatisierungen {
     const k = await this.kontext();
     const typ = kontextTyp(a.wenn, k.typen);
     // Rechte des Kontos „Automatisierung“, nicht die des Admins – die Meldung sagt das auch so (#709).
-    const roh = await this.d.dienst.pruefeRecht(undefined, mappeId, 'R');
-    const m = await this.d.dienst.pruefeRecht(await this.d.dienst.systemZugriff('automatisierung'), mappeId, 'R').catch((x: unknown) => {
+    const roh = await this.d.dienst.rechtepruefung.pruefeRecht(undefined, mappeId, 'R');
+    const m = await this.d.dienst.rechtepruefung.pruefeRecht(await this.d.dienst.postSystemmappen.systemZugriff('automatisierung'), mappeId, 'R').catch((x: unknown) => {
       if (x instanceof Fachfehler && (x.status === 403 || x.status === 404)) throw new Fachfehler(403, t('automatisierung.test.rechte', { typ: k.typen.find((y) => y.id === roh.typId)?.name ?? '' }));
       throw x;
     });
@@ -858,7 +859,7 @@ export class Automatisierungen {
     for (const a of kandidaten) gruppen.set(ausloeserSchluessel(a.wenn), [...(gruppen.get(ausloeserSchluessel(a.wenn)) ?? []), a]);
     for (const liste of gruppen.values()) {
       const w = liste[0].wenn as Extract<WennDatum, { art: 'datum' }>;
-      const datum = await this.d.dienst.datumVon(mappe, w.feld);
+      const datum = await this.d.dienst.automatisierungshilfen.datumVon(mappe, w.feld);
       // Nur im Vorlauf: Datum heute oder später, Erinnerungstag erreicht (auch heute – lief der Zeitplan schon, holt es das nach).
       if (!datum || datum < heute || verschiebe(datum, -w.vorlauf, w.einheit) > heute) continue;
       await this.reihe(liste, { id: uuidAus(`datum|${ausloeserSchluessel(w)}|${mappe}|${datum}`), art: 'datum', daten: { mappe, typ, feld: w.feld, datum, tage: tageBis(datum, heute) }, kette: 0 });
@@ -932,11 +933,11 @@ export class Automatisierungen {
       }
       const typ = kontextTyp(a.wenn, k.typen);
       const konto = await this.konto();
-      const z = await this.d.dienst.systemZugriff('automatisierung');
+      const z = await this.d.dienst.postSystemmappen.systemZugriff('automatisierung');
       // Mappe mit den Rechten des Systemkontos: Was es nicht lesen darf, sieht die Automatisierung nicht.
       let mappe: Mappe | null = null;
       if (mappeId) {
-        try { mappe = await this.d.dienst.pruefeRecht(z, mappeId, 'R'); }
+        try { mappe = await this.d.dienst.rechtepruefung.pruefeRecht(z, mappeId, 'R'); }
         catch (x) {
           if (x instanceof Fachfehler && x.status === 403) { await schritt(1, { zustand: 'uebersprungen', text: t('automatisierung.lauf.nicht-lesbar') }); return await ende('uebersprungen'); }
           if (!(x instanceof Fachfehler && x.status === 404)) throw x;
@@ -945,7 +946,7 @@ export class Automatisierungen {
       if (typ && mappe && mappe.typId !== typ.id) { await schritt(1, { zustand: 'uebersprungen', text: t('automatisierung.lauf.anderer-typ') }); return await ende('uebersprungen'); }
       const personen = async (e: Empfaenger): Promise<string[]> => {
         if (e.art === 'person') return [e.id];
-        if (e.art === 'rolle') return this.d.dienst.mitgliederDerRolle(e.id);
+        if (e.art === 'rolle') return this.d.dienst.automatisierungshilfen.mitgliederDerRolle(e.id);
         const ersteller = mappe?.erstelltVon && istUuid(mappe.erstelltVon) ? [mappe.erstelltVon] : [];
         if (e.art === 'ersteller') return ersteller;
         // Person aus dem Ereignis (#678/#712), z. B. der Vertreter bei „Abwesenheit gesetzt“.
@@ -966,7 +967,7 @@ export class Automatisierungen {
         fuelle: (text) => this.fuelle(text, { a, mappe, typ, z, daten: anlass.daten, art: anlass.art }),
         fuelleFuer: async (text, an) => {
           const c = { a, mappe, typ, z, daten: anlass.daten, art: anlass.art };
-          const empf = an ? await this.d.dienst.zugriffVon(an) : null;
+          const empf = an ? await this.d.dienst.ohneLeserecht.zugriffVon(an) : null;
           if (!empf) return { text: await this.fuelle(text, c), verborgen: 0, mappe: true };
           const basis = await this.fuelleMit(text, c, null);
           const fuer = await this.fuelleMit(text, c, empf);
@@ -989,7 +990,7 @@ export class Automatisierungen {
           const art = (karte as DannKarte).art;
           const ausf = DANN_AUSFUEHRER[art];
           if (!ausf) throw new Fachfehler(422, t('automatisierung.karte.unbekannt', { art }));
-          const text = await this.d.dienst.mitAusloeser({ art: 'automatisierung', id: a.id, konto: konto.id, kette: anlass.kette + 1 }, () => ausf(karte, kontext));
+          const text = await this.d.dienst.kern.mitAusloeser({ art: 'automatisierung', id: a.id, konto: konto.id, kette: anlass.kette + 1 }, () => ausf(karte, kontext));
           await schritt(si, { zustand: 'ok', text });
         } catch (x) {
           const text = (x as Error).message;
@@ -1014,12 +1015,12 @@ export class Automatisierungen {
     // Merkmal der Ablage (#1032): gilt ohne Mappe – auch bei Zeitplänen.
     const merkmal = (k: UndKarte) => k.art === 'bedingung' && k.bedingung.art === 'merkmal';
     if (!mappe && !flach.every(merkmal)) return { ok: false, text: t('automatisierung.und.ohne-mappe') };
-    const merkmale = flach.some(merkmal) ? await this.d.dienst.merkmale() : undefined;
+    const merkmale = flach.some(merkmal) ? await this.d.dienst.werkbank.merkmale() : undefined;
     const mitMappe = flach.filter((k) => !merkmal(k));
     const teile = await Promise.all(mitMappe.map(async (k) => k.art === 'bedingung' ? { art: 'bedingungen' as const, bedingungen: [k.bedingung as Bedingung] }
       : k.art === 'ansicht' ? { art: 'sicht' as const, sicht: k.sicht }
         : { art: 'favorit' as const, benutzer: k.art === 'favorit' ? await personen(k.von) : [] }));
-    const erg = mappe && mitMappe.length ? await this.d.dienst.trifftTeile(mappe.id, teile, ich) : [];
+    const erg = mappe && mitMappe.length ? await this.d.dienst.automatisierungshilfen.trifftTeile(mappe.id, teile, ich) : [];
     const trifft = (k: UndKarte) => (k.art === 'bedingung' && k.bedingung.art === 'merkmal' ? merkmalTrifft(k.bedingung, merkmale) : erg[mitMappe.indexOf(k)]);
     const wert = new Map(flach.map((k) => [k, trifft(k) !== (k.nicht === true)]));
     const verbinde = (liste: UndKarte[], m: 'alle' | 'eine'): boolean => {
@@ -1045,10 +1046,10 @@ export class Automatisierungen {
   async fuelleMit(text: string, c: { a: Automatisierung; mappe: Mappe | null; typ: Mappentyp | null; z: Zugriff; daten: Record<string, unknown>; art?: string }, empf: Zugriff | null): Promise<{ text: string; verborgen: number; mappe: boolean }> {
     const { a, mappe, typ, z, daten } = c;
     const versteckt = t('automatisierung.platzhalter.nicht-sichtbar');
-    const mappeSichtbar = !empf || !mappe || (await this.d.dienst.lesbare(empf, [mappe.id])).has(mappe.id);
+    const mappeSichtbar = !empf || !mappe || (await this.d.dienst.rechtepruefung.lesbare(empf, [mappe.id])).has(mappe.id);
     const refs = mappe && typ ? typ.felder.filter((f) => f.typ === 'referenz').flatMap((f) => alsListe(mappe.werte[f.key])).filter(istUuid) : [];
-    const titel = refs.length ? await this.d.dienst.lesbareTitel(z, refs) : new Map<string, string>();
-    if (empf && refs.length) { const ok = await this.d.dienst.lesbare(empf, refs); for (const id of [...titel.keys()]) if (!ok.has(id)) titel.delete(id); }
+    const titel = refs.length ? await this.d.dienst.automatisierungshilfen.lesbareTitel(z, refs) : new Map<string, string>();
+    if (empf && refs.length) { const ok = await this.d.dienst.rechtepruefung.lesbare(empf, refs); for (const id of [...titel.keys()]) if (!ok.has(id)) titel.delete(id); }
     const fest: Record<string, string> = {
       titel: mappe?.titel ?? '', mappentyp: typ?.name ?? '', heute: tagVon(new Date(this.jetzt()).toISOString()), automatisierung: a.name,
       datum: typeof daten.datum === 'string' ? tagVon(`${daten.datum}T12:00:00Z`) : '', tage: daten.tage === undefined ? '' : String(daten.tage),
@@ -1059,10 +1060,10 @@ export class Automatisierungen {
     // Aus dem Ereignis (#678/#712): Personen mit Namen, Zeitraum einer Abwesenheit lesbar.
     const tag = (x: unknown) => (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x) ? tagVon(`${x}T12:00:00Z`) : '');
     const personen = (PERSONEN_IM_EREIGNIS[c.art ?? ''] ?? []).filter((k) => typeof daten[k] === 'string' && istUuid(daten[k] as string));
-    const siehtPersonen = empf && personen.length ? await this.d.dienst.lesbare(empf, personen.map((k) => daten[k] as string)) : null;
+    const siehtPersonen = empf && personen.length ? await this.d.dienst.rechtepruefung.lesbare(empf, personen.map((k) => daten[k] as string)) : null;
     for (const k of personen) {
       const id = daten[k] as string;
-      if (siehtPersonen && !siehtPersonen.has(id)) { fest[k] = versteckt; verdeckt.add(k); } else fest[k] = await this.d.dienst.name(id);
+      if (siehtPersonen && !siehtPersonen.has(id)) { fest[k] = versteckt; verdeckt.add(k); } else fest[k] = await this.d.dienst.kern.name(id);
     }
     if ('von' in daten || 'bis' in daten) {
       fest.von = tag(daten.von); fest.bis = tag(daten.bis);
@@ -1114,7 +1115,7 @@ export class Automatisierungen {
           // Zeitplan-Baustein (#724): eine Regel zum Nachholen; neu eingeschaltet ab heute (nichts rückwirkend).
           for (const tag of faelligeTage(a.letzterTag, ort, { uhrzeit: w.uhrzeit, nachholenTage: AUTOMATISIERUNG_GRENZEN.nachholenTage })) {
             for (const ziel of erreichteDaten(tag, w.vorlauf, w.einheit)) {
-              for (const mappe of await this.d.dienst.mappenMitDatum(w.typ, w.feld, ziel)) {
+              for (const mappe of await this.d.dienst.automatisierungshilfen.mappenMitDatum(w.typ, w.feld, ziel)) {
                 const ereignis = uuidAus(`datum|${ausloeserSchluessel(w)}|${mappe}|${ziel}`);
                 // Alle der Gruppe für diese Mappe und diesen Tag (die eigene Reihenfolge entscheidet).
                 await this.reihe(liste.filter((x) => x.id === a.id || (x.letzterTag ? x.letzterTag < tag : tag === heute)), { id: ereignis, art: 'datum', daten: { mappe, typ: w.typ, feld: w.feld, datum: ziel, tage: tageBis(ziel, tag) }, kette: 0 });
@@ -1166,13 +1167,13 @@ export class Automatisierungen {
         });
         continue;
       }
-      const wer = w.rolle ? new Set(await this.d.dienst.mitgliederDerRolle(w.rolle)) : null;
+      const wer = w.rolle ? new Set(await this.d.dienst.automatisierungshilfen.mitgliederDerRolle(w.rolle)) : null;
       for (const b of k.benutzer) {
         if (b.aktiv === false || (wer && !wer.has(b.id))) continue;
         let t_ = takt(w.uhrzeit, w.tage, w.feiertage);
         if (w.profilzeit) {
           // Wie bisher die Tägliche Zusammenfassung: Uhrzeit, Wochentage und Feiertage aus dem Profil, sonst die Karte.
-          const z = wirksameZeit((await this.d.dienst.persoenlicheEinstellungen(b.id)).aufgaben_mail_zeit, { aktiv: true, uhrzeit: w.uhrzeit, bundesland });
+          const z = wirksameZeit((await this.d.dienst.mappen.persoenlicheEinstellungen(b.id)).aufgaben_mail_zeit, { aktiv: true, uhrzeit: w.uhrzeit, bundesland });
           t_ = takt(z.uhrzeit, z.tage, z.feiertage);
         }
         await laufeFaellige(merker(`zeitplan_zuletzt:${sk}:${b.id}`), ort, t_, async (tag) => {

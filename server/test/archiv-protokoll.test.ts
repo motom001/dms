@@ -18,8 +18,8 @@ async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const konten = new Konten(speicherKontoRepo(), null, 'x');
   const { benutzer } = await konten.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
-  const t = await d.legeTypAn({ name: 'Beleg', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' }] });
-  await d.legeMappeAn({ typId: t.id, werte: { name: 'A', datum: '2020-01-01' } });
+  const t = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' }] });
+  await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'A', datum: '2020-01-01' } });
   const alle = routen(d, konten, {});
   /** Wie der HTTP-Adapter (http.ts): Handler, danach die Anfragezeile mit ihrer Stufe. */
   const rufe = async (methode: string, pfad: string, x: Partial<Anfrage>, url = pfad) => {

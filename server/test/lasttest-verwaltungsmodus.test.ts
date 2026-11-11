@@ -32,12 +32,12 @@ const PETRA: [string, string] = ['petra@example.org', 'lasttest-passwort-3'];
 
 before(async () => {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas.example.org', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas.example.org', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: LENA[0], name: 'Lena (Lasttest)', passwort: LENA[1] });
   const r = await konten.legeBenutzerAn({ email: PETRA[0], name: 'Petra (Lasttest)' }, lena.id);
   await konten.passwortSetzen({ schluessel: r.link!.split('/passwort/')[1], passwort: PETRA[1] });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   konten.uhr = () => jetzt.t;
   const { baueApp } = await import('../src/http');
   const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');

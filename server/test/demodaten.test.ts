@@ -65,7 +65,7 @@ describe('Demo-Daten: Regler und Abschätzung (#365)', () => {
   it('Verteilung ergibt genau die Anzahl; Abschätzung wie auf dem Server', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const eigene = typen.filter((t) => !t.system);
     for (const n of [40, 1000, 4711]) assert.equal([...verteilung(eigene, n).values()].reduce((a, b) => a + b, 0), n);
     const o = { anzahl: 1000, dokumente: { anteil: 30, von: 1, bis: 3, mischung: MISCHUNGEN.realistisch, duplikate: 0 } };
@@ -84,7 +84,7 @@ describe('Demo-Daten: Regler und Abschätzung (#365)', () => {
   it('warnt bei großen Mengen und lehnt zu viele Dokumente je Lauf ab', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const klein = schaetzeMenge(typen, { anzahl: 100, dokumente: { anteil: 30, von: 1, bis: 3, mischung: MISCHUNGEN.leicht, duplikate: 0 } });
     assert.equal(mengenWarnung(klein), null);
     const gross = schaetzeMenge(typen, { anzahl: 5000, dokumente: { anteil: 100, von: 10, bis: 20, mischung: MISCHUNGEN.leicht, duplikate: 0 } });

@@ -455,7 +455,7 @@ export class Eingangsordner {
     try { inhalt = await readFile(pfad); } catch (x) { log.warn('Eingangsordner: Datei nicht lesbar', { datei: anzeige, fehler: (x as Error).message }); return false; }
     const sha256 = createHash('sha256').update(inhalt).digest('hex');
     // Doppelt (#333): auf Wunsch gar nicht erst als Post übernehmen.
-    if (e.doppelteUeberspringen && (await this.d.dienst.dokumenteMitInhalt(sha256)).length) {
+    if (e.doppelteUeberspringen && (await this.d.dienst.eingangskanaele.dokumenteMitInhalt(sha256)).length) {
       await this.nachher(pfad, rel, e, person);
       await this.merke('uebernommen', { datei: anzeige, zeit: new Date().toISOString(), grund: t('meldungen.eingangsordner.doppelt-liegt-schon-in') });
       log.info('Eingangsordner: doppelte Datei übersprungen', { datei: anzeige });
@@ -465,16 +465,16 @@ export class Eingangsordner {
     await this.d.einstellungen.schreibe('eingangsordner_journal', journal);
     let mappeId: string;
     try {
-      const gleich = await this.d.dienst.dokumenteMitInhalt(sha256);
-      const post = await this.d.dienst.legePostAn({ betreff: basename(rel, extname(rel)).slice(0, 250), ...(person ? { an: person.id } : {}) },
+      const gleich = await this.d.dienst.eingangskanaele.dokumenteMitInhalt(sha256);
+      const post = await this.d.dienst.post.legePostAn({ betreff: basename(rel, extname(rel)).slice(0, 250), ...(person ? { an: person.id } : {}) },
         { id: null, name: SYSTEMNAME }, undefined, POST_KANAL.ordner,
         // Doppelt (#333): nur die Anzahl – Titel sähe jeder, der die Post lesen darf, auch für fremde Mappen.
         { text: t('meldungen.eingangsordner.aus-dem-eingangsordner-uebernommen', { anzeige }), datei: anzeige, ...(gleich.length ? { doppelt: gleich.length } : {}) });
       mappeId = post.id;
       await this.d.einstellungen.schreibe('eingangsordner_journal', { ...journal, mappeId });
-      const typ = await this.d.dienst.postTyp();
+      const typ = await this.d.dienst.eingangskanaele.postTyp();
       const register = typ.register.find((r) => r.art === 'dokumente')?.key;
-      await this.d.dienst.ladeHoch(post.id, { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null);
+      await this.d.dienst.dokumente.ladeHoch(post.id, { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null);
     } catch (x) {
       await this.d.einstellungen.schreibe('eingangsordner_journal', null);
       const f = x as Error & { status?: number };
@@ -500,15 +500,15 @@ export class Eingangsordner {
     let mappeId = j.mappeId;
     if (!mappeId) {
       // Post angelegt, aber das Journal noch nicht nachgetragen? Dann gibt es eine Post mit dieser Datei.
-      mappeId = (await this.d.dienst.postMitDatei(j.sha256, j.seit)) ?? undefined;
+      mappeId = (await this.d.dienst.eingangskanaele.postMitDatei(j.sha256, j.seit)) ?? undefined;
     }
     if (mappeId && existsSync(j.pfad)) {
       const inhalt = await readFile(j.pfad).catch(() => null);
       if (inhalt && createHash('sha256').update(inhalt).digest('hex') === j.sha256) {
         // Dokument fehlt noch (Absturz zwischen Post und Hochladen)? Dann jetzt nachholen.
-        if (!(await this.d.dienst.postMitDatei(j.sha256, j.seit))) {
-          const typ = await this.d.dienst.postTyp();
-          await this.d.dienst.ladeHoch(mappeId, { register: typ.register.find((r) => r.art === 'dokumente')?.key, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null).catch(() => {});
+        if (!(await this.d.dienst.eingangskanaele.postMitDatei(j.sha256, j.seit))) {
+          const typ = await this.d.dienst.eingangskanaele.postTyp();
+          await this.d.dienst.dokumente.ladeHoch(mappeId, { register: typ.register.find((r) => r.art === 'dokumente')?.key, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null).catch(() => {});
         }
         await this.nachher(j.pfad, rel, e, this.personIn(rel, personen));
         log.warn('Eingangsordner: nach einem Abbruch aufgeräumt – keine doppelte Post', { datei: rel, mappe: mappeId });

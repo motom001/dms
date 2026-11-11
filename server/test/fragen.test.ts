@@ -119,26 +119,26 @@ async function pgDatenbank() {
 /** Ablage mit Lena (Admin) und Jonas (Mitglied); Jonas darf Verträge nicht lesen. */
 async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   const d = new Dienst(db?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(db?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(db?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'ende', label: 'Läuft aus am', typ: 'datum' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }], register });
-  const notiz = await d.legeTypAn({ name: 'Unterlage', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register });
-  const kfz = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kfz-Versicherung', ende: '2026-12-31' } }, lena.id);
-  const garten = await d.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'ende', label: 'Läuft aus am', typ: 'datum' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }], register });
+  const notiz = await d.mappentypen.legeTypAn({ name: 'Unterlage', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register });
+  const kfz = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kfz-Versicherung', ende: '2026-12-31' } }, lena.id);
+  const garten = await d.mappen.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
-    const x = (await d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
-    await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
+    const x = (await d.dokumente.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
+    await d.volltexte.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
   const police = await dok(kfz.id, 'police.pdf', `${'Allgemeine Bedingungen. '.repeat(80)}Ihre Kfz-Versicherung läuft am 31.12.2026 aus und verlängert sich um ein Jahr.`);
   const brief = await dok(garten.id, 'angebot.pdf', 'Angebot für das Gartenhaus: Versicherung gegen Sturm, 120 Euro im Jahr.');
-  await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
-  const L = await d.zugriff({ id: lena.id, rolle: 'admin' });
-  const J = await d.zugriff({ id: jonas.id, rolle: 'mitglied' });
+  await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
+  const L = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
+  const J = await d.rechtepruefung.zugriff({ id: jonas.id, rolle: 'mitglied' });
   return { d, konten, lena, jonas, kfz, garten, police, brief, L, J };
 }
 
@@ -167,7 +167,7 @@ for (const pg of [false, true]) {
 
     it('Ausschnitte nur aus lesbaren Mappen; Angaben ohne Passwortfelder; Höchstmenge greift', async () => {
       const x = await aufbau();
-      await x.d.aendereMappe(x.kfz.id, { werte: { kennwort: { neu: 'geheim-123' } } }, x.lena.id).catch(() => {});
+      await x.d.mappen.aendereMappe(x.kfz.id, { werte: { kennwort: { neu: 'geheim-123' } } }, x.lena.id).catch(() => {});
       const fuerLena = await x.d.fragen.ausschnitte(x.L, 'Wann läuft die Kfz-Versicherung aus?', [], FRAGEN_STANDARD);
       assert.ok(fuerLena.some((a) => a.quelle.art === 'dokument' && a.quelle.id === x.police && /31\.12\.2026/.test(a.text)), JSON.stringify(fuerLena));
       const angaben = fuerLena.find((a) => a.quelle.art === 'angaben' && a.mappe.id === x.kfz.id)!;
@@ -325,7 +325,7 @@ describe('Frag deine Ablage (#444): echter Paket-Läufer', () => {
     const wasm = stromModul(JSON.stringify({ methode: 'POST', url: `${adresse}/chat/completions`, kopf: { 'content-type': 'application/json' } }), '{"text":"Die Police läuft am 31.12.2026 aus. [1]","quellen":[1]}');
 
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     let werte: Record<string, unknown> = {};
     const l = new Paketlaeufer({ dienst: d, konten, schluessel, api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => werte, speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 10, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });

@@ -204,11 +204,11 @@ export interface DemoAbschaetzung {
 
 export async function schaetzeDemo(dienst: Dienst, o: DemoOptionen, platz?: DemoPlatz): Promise<DemoAbschaetzung> {
   // Dieselbe Rechnung wie in der Oberfläche (#365), hier zusätzlich mit dem freien Platz.
-  const typen = await dienst.listeTypen();
+  const typen = await dienst.mappentypen.listeTypen();
   const { mappen, mappenMitRegister, dokumente } = schaetzeMenge(typen, o);
   const frei = platz ? await platz.frei().catch(() => null) : null;
   const mindest = platz ? await platz.mindest().catch(() => 0) : 0;
-  const anzahl = await dienst.mappenJeTyp();
+  const anzahl = await dienst.datenschutzDienst.mappenJeTyp();
   const fehlen = nichtErzeugbar(typen, verteilung(typen.filter((t) => !t.system), o.anzahl), (id) => anzahl.get(id) ?? 0);
   return { mappen, mappenMitRegister, dokumente, frei, mindest, reicht: frei === null || frei - (dokumente?.bytes ?? 0) >= mindest, rastern: await kannRastern(), nichtErzeugbar: fehlen };
 }
@@ -259,7 +259,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   z = new Zufall(o.startwert);
   heute = o.startwert ? Date.UTC(2026, 0, 1) : Date.now();
   // Benutzer und Rollen pflegt das System; Demo-Mappen dürfen aber auf sie verweisen.
-  const typen = reihenfolge((await dienst.listeTypen()).filter((t) => !t.system));
+  const typen = reihenfolge((await dienst.mappentypen.listeTypen()).filter((t) => !t.system));
   if (!typen.length) throw new Fachfehler(409, 'Es gibt noch keine Mappentypen. Lege zuerst welche an oder lade die Beispiele.');
 
   // Grenze je Lauf (#365): Mappen × Anteil × Dokumente je Mappe.
@@ -276,7 +276,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   const mappenZiel = [...ziel.values()].reduce((a, b) => a + b, 0);
 
   // Schlank laden (#248): Id, Typ, Titel – Werte nur für eindeutige Felder.
-  const vorhanden = await dienst.mappenKurz();
+  const vorhanden = await dienst.mappen.mappenKurz();
   const pools = new Map<string, string[]>();
   const typVon = new Map<string, string>();
   const titel = new Map<string, string>();
@@ -294,12 +294,12 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   let paket: NeueMappe[] = [];
   const weiter = takt();
   // Kleinere Transaktionen (#367): 250 Mappen je Paket, danach nachgeben.
-  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); await weiter(); };
+  const schreibe = async () => { await dienst.mappen.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); await weiter(); };
   const jetzt = new Date().toISOString();
 
   for (const t of typen) {
     const vergeben = new Map<string, Set<string>>();
-    for (const f of t.felder.filter((x) => x.eindeutig)) vergeben.set(f.key, new Set((await dienst.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
+    for (const f of t.felder.filter((x) => x.eindeutig)) vergeben.set(f.key, new Set((await dienst.mappen.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
     const mitRegister = o.dokumente && dokumentRegister(t).length > 0;
     let ok = 0, fehlversuche = 0, letzterFehler = '';
     while (ok < ziel.get(t.id)! && fehlversuche < 25) {
@@ -344,7 +344,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   if (uebersprungen.length) fortschritt(fertig, mappenZiel, 'mappen', { uebersprungen: mappenZiel - fertig, gruende: uebersprungen.map(uebersprungenText) });
   const mappen = fertig;
   // Statistik nach dem Massen-Einfügen (#367), sonst plant PostgreSQL mit veralteten Zahlen.
-  if (mappen) await dienst.aktualisiereStatistik();
+  if (mappen) await dienst.sichten.aktualisiereStatistik();
   const ergebnis: DemoErgebnis = { erzeugt, uebersprungen, gesamt: mappen, startwert: z.startwert, dauerMs: 0, dokumente: null };
 
   if (o.dokumente) {
@@ -385,14 +385,14 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
             seitPruefung += e.inhalt.length;
           }
           const reg = z.eins(register);
-          const r = await dienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
+          const r = await dienst.datenschutzDienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
           if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
-          if (ocr.length >= 200) { await dienst.demoTexterkennung(ocr); ocr = []; }
+          if (ocr.length >= 200) { await dienst.eingangskanaele.demoTexterkennung(ocr); ocr = []; }
           statistik.anzahl++;
           erzeugtDok++;
           await weiter();
           // Zwischendurch die Statistik auffrischen (#367): Bei vielen Dokumenten wächst die Tabelle stark.
-          if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.aktualisiereStatistik(); }
+          if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.sichten.aktualisiereStatistik(); }
           if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
           // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
           if (platz && seitPruefung > DEMO_PLATZ_PRUEFEN) {
@@ -402,9 +402,9 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
           }
         }
       }
-      await dienst.demoTexterkennung(ocr);
+      await dienst.eingangskanaele.demoTexterkennung(ocr);
     } finally {
-      if (erzeugtDok) await dienst.aktualisiereStatistik();
+      if (erzeugtDok) await dienst.sichten.aktualisiereStatistik();
     }
     statistik.dauerMs = Date.now() - docBeginn;
     ergebnis.dokumente = statistik;

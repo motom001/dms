@@ -24,7 +24,8 @@ import { vorlageFuer } from '../../shared/src/werkbankansicht';
 import { openapi } from '../src/api-v1';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
 import { speicherDateien } from '../src/dateispeicher';
-import { bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { bereinigeTyp } from '../src/mappentypen';
 import { planAusEingabe } from '../src/einrichtung';
 import { liesEinrichtungsdatei, schreibeEinrichtungsdatei } from '../src/einrichtungsdatei';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -131,13 +132,13 @@ describe('Anzeige-Bedingungen (#1033): Auswertung in shared/', () => {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const vertrag = await d.legeTypAn(VERTRAG);
+  const vertrag = await d.mappentypen.legeTypAn(VERTRAG);
   return { d, konten, admin, vertrag };
 }
 const fehlerFelder = async (p: Promise<unknown>): Promise<string[]> => {
@@ -150,18 +151,18 @@ const fehlerFelder = async (p: Promise<unknown>): Promise<string[]> => {
 describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033): Server', () => {
   it('Merkmal: Vorgabe nein, nur ja/nein, gespeichert nur wenn an; Werkbank-Vorlage folgt, solange unverändert', async () => {
     const { d } = await aufbau();
-    assert.deepEqual(await d.merkmale(), { beruflich: false });
-    await assert.rejects(d.setzeMerkmale({ beruflich: 'ja' }, 'markus@example.org'), (e) => e instanceof Fachfehler && e.status === 422);
+    assert.deepEqual(await d.werkbank.merkmale(), { beruflich: false });
+    await assert.rejects(d.werkbank.setzeMerkmale({ beruflich: 'ja' }, 'markus@example.org'), (e) => e instanceof Fachfehler && e.status === 422);
     await d.kern.einstellungen!.schreibe('werkbank_ansicht', { vorlage: 'haushalt', ein: [], aus: [] });
-    assert.deepEqual(await d.setzeMerkmale({ beruflich: true, unbekannt: true }, 'markus@example.org'), { beruflich: true });
+    assert.deepEqual(await d.werkbank.setzeMerkmale({ beruflich: true, unbekannt: true }, 'markus@example.org'), { beruflich: true });
     assert.deepEqual(await d.kern.einstellungen!.lies('merkmale'), { beruflich: true });
-    assert.equal((await d.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'Vorgabe der Vorlage (#987): beruflich → Betrieb');
-    await d.setzeWerkbankAnsicht({ id: null, email: 'x' }, { installation: { vorlage: 'organisation', ein: ['demo'], aus: [] } });
-    await d.setzeMerkmale({ beruflich: false }, 'markus@example.org');
+    assert.equal((await d.werkbank.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'Vorgabe der Vorlage (#987): beruflich → Betrieb');
+    await d.werkbank.setzeWerkbankAnsicht({ id: null, email: 'x' }, { installation: { vorlage: 'organisation', ein: ['demo'], aus: [] } });
+    await d.werkbank.setzeMerkmale({ beruflich: false }, 'markus@example.org');
     assert.equal(await d.kern.einstellungen!.lies('merkmale'), null);
-    assert.equal((await d.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'angepasste Leiste bleibt');
+    assert.equal((await d.werkbank.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'angepasste Leiste bleibt');
     assert.equal(vorlageFuer({ beruflich: false }), 'haushalt');
-    assert.deepEqual((await d.zaehlerRahmen()).merkmale, { beruflich: false }, 'die Oberfläche bekommt es mit dem Rahmen der Ablage');
+    assert.deepEqual((await d.sichten.zaehlerRahmen()).merkmale, { beruflich: false }, 'die Oberfläche bekommt es mit dem Rahmen der Ablage');
   });
 
   it('nur „Gesamte Verwaltung“ ändert es; der Bereich lässt sich nicht einzeln vergeben', () => {
@@ -181,62 +182,62 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
       { werte: { name: 'Strom', art: 'Strom' }, beruflich: true },
     ];
     for (const f of faelle) {
-      await d.setzeMerkmale({ beruflich: f.beruflich }, 'markus@example.org');
-      const server = await fehlerFelder(d.legeMappeAn({ typId: vertrag.id, werte: f.werte }, admin.id));
+      await d.werkbank.setzeMerkmale({ beruflich: f.beruflich }, 'markus@example.org');
+      const server = await fehlerFelder(d.mappen.legeMappeAn({ typId: vertrag.id, werte: f.werte }, admin.id));
       const geteilt = Object.keys(pruefeMitAnzeige(vertrag, { ...f.werte }, { ...ctx, merkmale: { beruflich: f.beruflich } }).felder).sort();
       assert.deepEqual(server, geteilt, `gleiche Auswertung für ${JSON.stringify(f)}`);
     }
     // Ausgeblendete Werte bleiben gespeichert: Vertragsart von Miete auf Strom.
-    await d.setzeMerkmale({ beruflich: false }, 'markus@example.org');
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wohnung', art: 'Miete', kaltmiete: BETRAG, kaution: { betrag: 2850, waehrung: 'EUR' }, vermieter: 'Petra' } }, admin.id);
-    const n = await d.aendereMappe(m.id, { werte: { art: 'Strom' } }, admin.id);
+    await d.werkbank.setzeMerkmale({ beruflich: false }, 'markus@example.org');
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wohnung', art: 'Miete', kaltmiete: BETRAG, kaution: { betrag: 2850, waehrung: 'EUR' }, vermieter: 'Petra' } }, admin.id);
+    const n = await d.mappen.aendereMappe(m.id, { werte: { art: 'Strom' } }, admin.id);
     assert.deepEqual([n.werte.kaltmiete, n.werte.vermieter], [BETRAG, 'Petra'], 'Werte bleiben (wie #655)');
-    assert.equal((await d.holeMappe(m.id)).mappe.werte.vermieter, 'Petra', 'API zeigt alle Werte');
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.vermieter, 'Petra', 'API zeigt alle Werte');
     assert.deepEqual(anzeigestand(vertrag, n.werte, {}).abschnitte.map((a) => a.abschnitt.titel), ['Miete', 'Abschluss']);
     // Pflicht kommt zurück, sobald der Abschnitt wieder zu sehen ist.
-    const o = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
-    assert.deepEqual(await fehlerFelder(d.aendereMappe(o.id, { werte: { art: 'Miete' } }, admin.id)), ['kaltmiete']);
+    const o = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
+    assert.deepEqual(await fehlerFelder(d.mappen.aendereMappe(o.id, { werte: { art: 'Miete' } }, admin.id)), ['kaltmiete']);
   });
 
   it('Speichern des Typs prüft die Bedingungen; Systemfelder bekommen keine', async () => {
     const { d, vertrag } = await aufbau();
-    await assert.rejects(d.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'vermieter' ? { ...f, anzeigen: { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'gibtsnicht', op: 'leer' } }] } } : f)) }),
+    await assert.rejects(d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'vermieter' ? { ...f, anzeigen: { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'gibtsnicht', op: 'leer' } }] } } : f)) }),
       (e) => e instanceof Fachfehler && e.status === 422);
-    await assert.rejects(d.aendereTyp(vertrag.id, { ...vertrag, register: vertrag.register.map((r) => (r.key === 'vertrag' ? { ...r, abschnitte: [{ vor: 'art', titel: 'Kopf', anzeigen: MIETE }] } : r)) }),
+    await assert.rejects(d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, register: vertrag.register.map((r) => (r.key === 'vertrag' ? { ...r, abschnitte: [{ vor: 'art', titel: 'Kopf', anzeigen: MIETE }] } : r)) }),
       (e) => e instanceof Fachfehler && /Kopf/.test(JSON.stringify(e.details)));
     // Wer anzeigen nicht nennt (älteres Programm), behält die Regel.
     const ohne = { ...vertrag.felder.find((f) => f.key === 'notiz')! };
     delete ohne.anzeigen;
-    const neu = await d.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'notiz' ? ohne : f)) });
+    const neu = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'notiz' ? ohne : f)) });
     assert.ok(neu.felder.find((f) => f.key === 'notiz')!.anzeigen);
-    const post = (await d.listeTypen()).find((x) => x.system === 'post');
+    const post = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post');
     if (post) {
-      const p = await d.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'betreff' ? { ...f, anzeigen: BERUFLICH } : f)) });
+      const p = await d.mappentypen.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'betreff' ? { ...f, anzeigen: BERUFLICH } : f)) });
       assert.equal(p.felder.find((f) => f.key === 'betreff')!.anzeigen, undefined);
     }
   });
 
   it('Merkmal ändern zieht die Passung nach (Pflicht hängt daran)', async () => {
     const { d, admin, vertrag } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
-    await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
-    await d.pruefePassung(vertrag.id);
-    assert.match((await d.holeMappe(m.id)).mappe.problem ?? '', /Kostenstelle/);
-    await d.setzeMerkmale({ beruflich: false }, 'markus@example.org');
-    await d.pruefePassung(vertrag.id);
-    assert.equal((await d.holeMappe(m.id)).mappe.problem ?? null, null);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
+    await d.werkbank.setzeMerkmale({ beruflich: true }, 'markus@example.org');
+    await d.passung.pruefePassung(vertrag.id);
+    assert.match((await d.mappen.holeMappe(m.id)).mappe.problem ?? '', /Kostenstelle/);
+    await d.werkbank.setzeMerkmale({ beruflich: false }, 'markus@example.org');
+    await d.passung.pruefePassung(vertrag.id);
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.problem ?? null, null);
   });
 
   it('Paketformat: Paket erstellen nimmt die Einstellung mit, das Lesen prüft sie; Typ-Verweis statt Id, bestimmte Mappe bleibt weg', async () => {
     const { d, vertrag, admin } = await aufbau();
-    const fahrzeug = await d.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kennzeichen', label: 'Kennzeichen', typ: 'text' }] });
-    const auto = await d.legeMappeAn({ typId: fahrzeug.id, werte: { kennzeichen: 'B-LN 1' } }, admin.id);
-    const t = await d.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder,
+    const fahrzeug = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kennzeichen', label: 'Kennzeichen', typ: 'text' }] });
+    const auto = await d.mappen.legeMappeAn({ typId: fahrzeug.id, werte: { kennzeichen: 'B-LN 1' } }, admin.id);
+    const t = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder,
       { key: 'betrifft', label: 'betrifft', typ: 'referenz', zielTyp: fahrzeug.id },
       { key: 'kfz', label: 'Kfz-Steuer', typ: 'betrag', anzeigen: { modus: 'eine', bedingungen: [{ art: 'verweistyp', feld: 'betrifft', typ: fahrzeug.id }, { art: 'feld', bedingung: { art: 'feld', feld: 'betrifft', op: 'zeigtAuf', wert: { art: 'fest', wert: [auto.id] } } }] } },
     ], register: vertrag.register.map((r) => (r.key === 'vertrag' ? { ...r, felder: [...r.felder!, 'betrifft', 'kfz'] } : r)) });
     const bau = baue({ typen: [t.id, fahrzeug.id], sichten: [], beispiele: [], id: 'vertraege_test', name: 'Verträge', version: '1.0.0', beschreibung: 'Ein Paket zum Testen der Anzeige-Bedingungen.', autor: { name: 'Markus', github: 'markus' }, lizenz: 'MIT', dms: '>=0.113.0', aenderungen: '' },
-      { typen: await d.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.217.0', entwurf: null, jetzt: new Date('2026-11-10T12:00:00Z') });
+      { typen: await d.mappentypen.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.217.0', entwurf: null, jetzt: new Date('2026-11-10T12:00:00Z') });
     assert.ok(bau.hinweise.some((h) => /Anzeige-Bedingung nennt eine Mappe/.test(h)), bau.hinweise.join(' | '));
     const yaml = parse(bau.dateien.find((x) => x.name.endsWith('mappentypen.yaml'))!.daten.toString()) as Array<{ schluessel: string; felder: Array<Record<string, unknown>>; register: Array<Record<string, unknown>> }>;
     const v = yaml.find((x) => x.felder.some((f) => f.key === 'kfz'))!;
@@ -253,12 +254,12 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
 
   it('Merkmal in Bedingungen von Ansichten, Rechten und Automatisierungen – Sichtbarkeit von Feldern zählt dort nie', async () => {
     const { d, admin, vertrag } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
     // Ansicht
-    const s = await d.legeSichtAn({ name: 'Beruflich', typen: [vertrag.id], bedingungen: [{ art: 'merkmal', merkmal: 'beruflich' }] });
-    const zahl = async () => (await d.zaehler({ id: admin.id, rolle: 'admin' })).sichten[s.id];
+    const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Beruflich', typen: [vertrag.id], bedingungen: [{ art: 'merkmal', merkmal: 'beruflich' }] });
+    const zahl = async () => (await d.sichten.zaehler({ id: admin.id, rolle: 'admin' })).sichten[s.id];
     assert.equal(await zahl(), 0);
-    await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
+    await d.werkbank.setzeMerkmale({ beruflich: true }, 'markus@example.org');
     assert.equal(await zahl(), 1);
     assert.deepEqual(bereinigeBedingungen([{ art: 'merkmal', merkmal: 'beruflich', nicht: true }]), [{ art: 'merkmal', merkmal: 'beruflich', nicht: true }]);
     const k = filterFuer({ bedingungen: [{ art: 'merkmal', merkmal: 'beruflich', nicht: true }] }, [vertrag], { heute: '2026-11-10', ich: admin.id, meineRollen: [], merkmale: { beruflich: true } });
@@ -269,7 +270,7 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     const lesen = (beruflich: boolean) => rechteAn(mitRegel, m as Mappe, { id: 'jemand', rollen: [] }, { heute: '2026-11-10', ich: 'jemand', meineRollen: [], merkmale: liesMerkmale({ beruflich }) }, { dokumente: () => 0, verknuepfungen: () => 0 }).rechte.R;
     assert.deepEqual([lesen(false), lesen(true)], [true, false]);
     // Automatisierung: Und-Karte mit Merkmal braucht keine Mappe.
-    const ak = await d.automatisierungKontext();
+    const ak = await d.automatisierungshilfen.automatisierungKontext();
     const a = bereinigeAutomatisierung({ name: 'Beruflich', wenn: { art: 'zeitplan', uhrzeit: '08:00', tage: [1] }, und: { modus: 'alle', karten: [{ art: 'bedingung', bedingung: { art: 'merkmal', merkmal: 'beruflich' } }] }, dann: [{ id: 's', art: 'stopp' }] });
     assert.deepEqual(automatisierungsProbleme(a, ak), []);
     const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(), uhr: Date.now });
@@ -280,8 +281,8 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
 
   it('Vollexport, Einrichtungsdatei (#806) und API nehmen das Merkmal mit', async () => {
     const { d, konten } = await aufbau();
-    await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
-    const quelle = d.vollexportQuelle({ mandant: 'Tischlerei Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [], merkmale: () => d.merkmale() });
+    await d.werkbank.setzeMerkmale({ beruflich: true }, 'markus@example.org');
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Tischlerei Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [], merkmale: () => d.werkbank.merkmale() });
     const r = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-1032-')), {});
     assert.deepEqual(JSON.parse(await readFile(join(r.ordner, 'struktur/merkmale.json'), 'utf8')), { beruflich: true });
     assert.ok(JSON.parse(await readFile(join(r.ordner, 'struktur/mappentypen.json'), 'utf8')).some((x: Mappentyp) => x.register.some((y) => y.abschnitte?.some((a) => a.anzeigen))), 'Typen mit ihren Bedingungen');
@@ -324,11 +325,11 @@ describe('Paket installieren mit Anzeige-Bedingungen (#1033)', () => {
       ].join('\n'),
     }), katalogUrl: KATALOG });
     const inst = await p.installiere({ id: 'vertraege_test', version: '1.0.0' }, { id: admin.id, email: admin.email });
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const v = typen.find((x) => x.id === inst.typen.vertrag)!;
     assert.deepEqual(v.felder.find((f) => f.key === 'kfz')!.anzeigen, { modus: 'alle', bedingungen: [{ art: 'verweistyp', feld: 'betrifft', typ: inst.typen.fahrzeug }] });
     assert.deepEqual(v.register[0].abschnitte, [{ vor: 'kostenstelle', anzeigen: BERUFLICH, titel: 'Abschluss' }]);
     // Privat: Kostenstelle ist nicht Pflicht.
-    await d.legeMappeAn({ typId: v.id, werte: { name: 'Haftpflicht' } }, admin.id);
+    await d.mappen.legeMappeAn({ typId: v.id, werte: { name: 'Haftpflicht' } }, admin.id);
   });
 });

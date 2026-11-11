@@ -32,7 +32,7 @@ Benutzer, Rollen). Schicht 3 der Zielaufteilung – über Mappen, Dokumenten, Re
   `post.angelegt` und die Verknüpfungen in einer Transaktion; `ordneZu` setzt Stand und Verweis vor
   `postAufgaben`; Auflösen und automatisches Zuordnen laufen je in einer Transaktion.
 - Den Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` meldet weiter der Dienst an (letzter in der
-  Reihe); er ruft `postAufgaben` über die Fassade. Ereignisse gehen über die Fassade (Tests ersetzen `dienst.ereignis`),
+  Reihe); er ruft `post.postAufgaben`. Ereignisse gehen über den Anschluss (Tests ersetzen `dienst.kern.ereignis`),
   `systemkonten` und `automatisierungenVon` bleiben am Dienst (der Start und Tests setzen sie).
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: zwei `complexity`, zwei `max-params` in
   `post.dienst.ts`).

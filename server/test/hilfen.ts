@@ -35,7 +35,7 @@ export const wieImModus = <T extends { rolle?: string; verwaltung?: string[] }>(
  */
 export async function frueherAblageort(d: Dienst, einstellungen?: { schreibe(k: string, w: unknown): Promise<void> }) {
   const id = crypto.randomUUID();
-  const typ = await d.legeTypAn({
+  const typ = await d.mappentypen.legeTypAn({
     id, name: 'Ablageort', schluessel: 'ablageort', beschreibung: 'Wo Originale liegen – verschachtelt, z. B. zu Hause › Arbeitszimmer Schrank › roter Ordner',
     titelVorlage: '{liegt_in} › {name}',
     felder: [

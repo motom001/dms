@@ -21,12 +21,12 @@ const am = (uhr: string, tag = '2027-03-10') => Date.parse(`${tag}T${uhr}:00+01:
 async function aufbau(uhr = am('09:00')) {
   const einst = speicherEinstellungen();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   const zeit = { jetzt: uhr };
@@ -82,7 +82,7 @@ describe('Wenn-Karte „Zeitplan“ (#678)', () => {
     await motor.zeitplan();
     assert.ok(gesendet.includes(lena.id));
     // Nur eine Rolle: die Rolle prüft der Motor über ihre Mitglieder (hier nur Jonas).
-    d.mitgliederDerRolle = async () => [jonas.id];
+    d.automatisierungshilfen.mitgliederDerRolle = async () => [jonas.id];
     const rolle = (await motor.kontext()).rollen[0].id;
     const b = await motor.lege(zusammenfassung({ uhrzeit: '07:00', jeBenutzer: true, rolle, tage: [1, 2, 3, 4, 5, 6, 7] }), admin.id);
     await motor.schalte(b.id, true, admin.id);
@@ -96,14 +96,14 @@ describe('Wenn-Karte „Zeitplan“ (#678)', () => {
 describe('Dann-Karten der Benachrichtigungen (#678)', () => {
   it('Tägliche Zusammenfassung: derselbe Text wie bisher; abbestellt, abwesend, nichts offen → nichts', async () => {
     const { d, konten, lena, admin } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
-    await d.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
+    await d.vertretung.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
     const mailer = { sende: async (an: string, betreff: string, text: string) => { mails.push({ an, betreff, text }); } };
-    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.meineAufgaben(b as never, await d.zugriff(b as never)), typName: async () => 'Vorgang' };
+    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.vertretung.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)), typName: async () => 'Vorgang' };
     const am_ = new Aufgabenmail(quelle as never, () => mailer as never, () => 'http://nas', speicherEinstellungen());
-    const offen = (await d.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
+    const offen = (await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
     assert.equal(offen, 1, 'Lena hat eine offene Aufgabe');
     await am_.sende();
     const bisher = mails.filter((x) => x.an === 'lena@example.org');
@@ -119,18 +119,18 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
 
   it('Favoriten-Änderungen melden: Ereignis „Favorit geändert“ → gebündelte Benachrichtigung', async () => {
     const { d, motor, lena, admin } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
     const L = { id: lena.id, rolle: 'mitglied' };
-    await d.setzeFavorit(L, m.id, true);
+    await d.mappen.setzeFavorit(L, m.id, true);
     await d.ereignisse.verteile();
     const a = await motor.lege({ name: 'F', wenn: { art: 'favorit.geaendert', typ: null }, dann: [{ id: 'f1', art: 'favoriten' }] }, admin.id);
     await motor.schalte(a.id, true, admin.id);
     motor.start();
     try {
-      await d.aendereMappe(m.id, { werte: { nr: '2' } }, admin.id);
+      await d.mappen.aendereMappe(m.id, { werte: { nr: '2' } }, admin.id);
       await d.ereignisse.verteile();
-      const n = (await d.meineAufgaben(L)).filter((x) => x.art === 'aenderung');
+      const n = (await d.vertretung.meineAufgaben(L)).filter((x) => x.art === 'aenderung');
       assert.equal(n.length, 1);
       assert.match(n[0].text, /^Eine Änderung von Markus/);
       const l = (await motor.laeufe(a.id))[0];
@@ -183,7 +183,7 @@ describe('Übernahme beim Update (#678)', () => {
   it('frische Installation ohne Benutzer: nichts übernommen, Hinweis „Paket installieren?“', async () => {
     const einst = speicherEinstellungen();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     await konten.systemkonto('automatisierung').catch(() => null);
     d.systemkonten = (k) => konten.systemkonto(k);

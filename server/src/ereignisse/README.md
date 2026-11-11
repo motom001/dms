@@ -18,7 +18,7 @@ Anschluss. So können tiefere Ordner sie künftig direkt nutzen, ohne Umweg übe
 **Abhängigkeiten**
 
 - `EreignisseDienst` bekommt den Kern und `EreignisseTeile` (Rechteprüfung, `TypPakete`, `KiTypen`); über den
-  Anschluss Ereignis auslösen (Fassade), den Wecker des Paket-Läufers (`ereignisWecker`, vom Start gesetzt) und
+  Anschluss Ereignis auslösen (`kern.ereignis`), den Wecker des Paket-Läufers (`ereignisWecker`, vom Start gesetzt) und
   `nachTexterkennungsEreignis`.
 - `Automatisierungshilfen` bekommt Kern und Rechteprüfung, die Rollen über den Anschluss.
 - Importiert nur sich selbst, Kern, `zugriff/`, `mappentypen/` (je über `index.ts`), `shared/` und die Basis.

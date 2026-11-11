@@ -28,8 +28,8 @@ async function aufbau(engine: Engine, opt: { volltext?: boolean } = {}) {
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, dateien, { einstellungen });
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-  d.verbindeTexterkennung(t);
-  const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  d.dokumente.verbindeTexterkennung(t);
+  const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', ...(opt.volltext === false ? { volltext: false } : {}) },
   ] });
@@ -41,37 +41,37 @@ describe('Texterkennung (#45)', () => {
   it('reiht neue Dokumente ein, arbeitet sie ab, übernimmt Text bei gleichem Inhalt und findet ihn in der Suche', async () => {
     let aufrufe = 0;
     const { d, t, repo, typ } = await aufbau(async () => { aufrufe++; return { text: 'Stromrechnung der Stadtwerke Musterstadt für Januar', seiten: 1, info: 'Ersatz' }; });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, pdfMitText(['x']), null);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, pdfMitText(['x']), null);
     assert.equal(dokument.ocr?.stand, 'wartet');
     await warte(async () => (await repo.holeDokument(dokument.id))?.ocr?.stand === 'fertig');
-    const zweite = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-2' } });
-    const kopie = (await d.ladeHoch(zweite.id, { register: 'dokumente', name: 'kopie.pdf', typ: 'application/pdf' }, pdfMitText(['x']), null)).dokument;
+    const zweite = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-2' } });
+    const kopie = (await d.dokumente.ladeHoch(zweite.id, { register: 'dokumente', name: 'kopie.pdf', typ: 'application/pdf' }, pdfMitText(['x']), null)).dokument;
     await warte(async () => (await repo.holeDokument(kopie.id))?.ocr?.stand === 'fertig');
     assert.equal(aufrufe, 1, 'gleicher Inhalt: Text übernommen');
     assert.match((await repo.holeDokument(kopie.id))!.ocr!.info!, /übernommen/);
 
-    const ohne = await d.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke' });
+    const ohne = await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke' });
     assert.equal(ohne.gesamt, 0, 'ohne Häkchen nur Titel und Werte');
-    const mit = await d.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke', volltext: 'true' });
+    const mit = await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke', volltext: 'true' });
     assert.equal(mit.gesamt, 2);
     const a = (mit as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id];
     assert.equal(a.dokument, 'r.pdf');
     assert.ok(a.text.includes(`${TREFFER_ANFANG}Stadtwerke${TREFFER_ENDE}`), a.text);
-    assert.equal((await d.volltext(dokument.id)).text, 'Stromrechnung der Stadtwerke Musterstadt für Januar');
+    assert.equal((await d.volltexte.volltext(dokument.id)).text, 'Stromrechnung der Stadtwerke Musterstadt für Januar');
     assert.equal((await t.status()).zaehler.fertig, 2);
   });
 
   it('beachtet Register, Dateityp, Ausschalten, Fehler und „erneut versuchen“', async () => {
     let fehler = true;
     const { d, t, repo, typ } = await aufbau(async () => { if (fehler) throw new Error('kaputt'); return { text: 'Stromrechnung der Stadtwerke Musterstadt', seiten: 1, info: 'Ersatz' }; });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
-    const hoch = async (name: string, typ2: string, inhalt: Buffer) => (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typ2 }, inhalt, null)).dokument.id;
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const hoch = async (name: string, typ2: string, inhalt: Buffer) => (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: typ2 }, inhalt, null)).dokument.id;
     const pdf = await hoch('a.pdf', 'application/pdf', pdfMitText(['a']));
     await warte(async () => (await repo.holeDokument(pdf))?.ocr?.stand === 'fehler');
     assert.equal((await repo.holeDokument(pdf))!.ocr!.info, 'kaputt');
     fehler = false;
-    await d.texterkennungErneut(pdf);
+    await d.volltexte.texterkennungErneut(pdf);
     await warte(async () => (await repo.holeDokument(pdf))?.ocr?.stand === 'fertig');
 
     const txt = await hoch('n.txt', 'text/plain', Buffer.from('hallo'));
@@ -94,12 +94,12 @@ describe('Texterkennung (#45)', () => {
 
   it('holt Volltext für vorhandene Dokumente nach – nur in Registern mit Volltext', async () => {
     const { d, repo, typ } = await aufbau(async () => ({ text: 'Stromrechnung der Stadtwerke Musterstadt', seiten: 1, info: 'Ersatz' }), { volltext: false });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null);
     assert.equal(dokument.ocr?.stand, 'keiner', 'Register ohne Volltext');
-    assert.equal(await d.volltextNachholen(), 0);
-    await d.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => ({ ...r, volltext: true })) });
-    assert.equal(await d.volltextNachholen(), 1);
+    assert.equal(await d.volltexte.volltextNachholen(), 0);
+    await d.mappentypen.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => ({ ...r, volltext: true })) });
+    assert.equal(await d.volltexte.volltextNachholen(), 1);
     await warte(async () => (await repo.holeDokument(dokument.id))?.ocr?.stand === 'fertig');
   });
 
@@ -143,8 +143,8 @@ describe('Aufträge der Texterkennung in der Werkbank (#61)', () => {
       if (modus === 'haengt') await new Promise((_r, nein) => o.signal?.addEventListener('abort', () => nein(new Error('abgebrochen'))));
       return { text: 'Stromrechnung der Stadtwerke Musterstadt', seiten: 1, info: 'Ersatz' };
     });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
-    const hoch = async (name: string, i: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: 'application/pdf' }, pdfMitText([i]), null)).dokument.id;
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const hoch = async (name: string, i: string) => (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: 'application/pdf' }, pdfMitText([i]), null)).dokument.id;
     const a = await hoch('a.pdf', 'a');
     await warte(async () => (await repo.holeDokument(a))?.ocr?.stand === 'fehler');
     const liste = await t.auftraege({ stand: 'fehler' });

@@ -41,7 +41,7 @@ export interface SystemmappenTeile { rechte: ZugriffDienst; passung: Passung; hi
 
 /** Was die Systemmappen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface SystemmappenAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null): Promise<void>;
   passungsAufgaben(liste: Array<{ id: string; problem: string | null }>): Promise<unknown>;

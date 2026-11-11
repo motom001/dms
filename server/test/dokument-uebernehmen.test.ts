@@ -11,7 +11,8 @@ import { ERKENNBAR_AN_MAX, kannAusPost, type Feld, type Mappentyp } from '../../
 import { typErkennbarAn } from '../../shared/src/beschriftung';
 import { openapi } from '../src/api-v1';
 import { speicherDateien } from '../src/dateispeicher';
-import { bereinigeFeld, bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { bereinigeFeld, bereinigeTyp } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
@@ -57,42 +58,42 @@ describe('Mappentyp: Kann aus Post angelegt werden, Woran man ihn erkennt (#937)
 
   it('speichern: Angaben bleiben ohne Nennung, Systemtypen nie, Konfliktschutz (#917) gilt weiter', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }], register: [FELDREG, DOK], ausPost: false, erkennbarAn: 'Enthält Rechnungsnummer' });
+    const t = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }], register: [FELDREG, DOK], ausPost: false, erkennbarAn: 'Enthält Rechnungsnummer' });
     assert.deepEqual([t.ausPost, t.erkennbarAn], [false, 'Enthält Rechnungsnummer']);
     // Älteres Programm über die API: ohne die neuen Angaben gespeichert – nichts geht verloren.
     const { ausPost: _a, erkennbarAn: _e, ...alt } = t;
-    const t2 = await d.aendereTyp(t.id, { ...alt, beschreibung: 'neu', felder: t.felder.map(({ wiederfinden: _w, ...f }) => f) });
+    const t2 = await d.mappentypen.aendereTyp(t.id, { ...alt, beschreibung: 'neu', felder: t.felder.map(({ wiederfinden: _w, ...f }) => f) });
     assert.deepEqual([t2.ausPost, t2.erkennbarAn, t2.felder[0].wiederfinden], [false, 'Enthält Rechnungsnummer', true]);
     // Ausdrücklich zurück auf die Vorgabe.
-    const t3 = await d.aendereTyp(t.id, { ...t2, ausPost: null, erkennbarAn: '', stand: t2.geaendert });
+    const t3 = await d.mappentypen.aendereTyp(t.id, { ...t2, ausPost: null, erkennbarAn: '', stand: t2.geaendert });
     assert.deepEqual([t3.ausPost, t3.erkennbarAn, kannAusPost(t3)], [null, '', true]);
     // Konfliktschutz (#917): mit altem Stand nichts überschrieben.
-    await assert.rejects(d.aendereTyp(t.id, { ...t3, ausPost: false, stand: t2.geaendert }), (e) => e instanceof Fachfehler && e.status === 409);
-    assert.equal((await d.listeTypen()).find((x) => x.id === t.id)!.ausPost, null);
+    await assert.rejects(d.mappentypen.aendereTyp(t.id, { ...t3, ausPost: false, stand: t2.geaendert }), (e) => e instanceof Fachfehler && e.status === 409);
+    assert.equal((await d.mappentypen.listeTypen()).find((x) => x.id === t.id)!.ausPost, null);
     // Systemtyp Post: beide Angaben lassen sich nicht setzen.
-    await d.postTyp();
-    const post = (await d.listeTypen()).find((x) => x.system === 'post')!;
-    const p2 = await d.aendereTyp(post.id, { ...post, ausPost: true, erkennbarAn: 'Alles', beschriftungen: { en: { erkennbarAn: 'All' } } });
+    await d.eingangskanaele.postTyp();
+    const post = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
+    const p2 = await d.mappentypen.aendereTyp(post.id, { ...post, ausPost: true, erkennbarAn: 'Alles', beschriftungen: { en: { erkennbarAn: 'All' } } });
     assert.deepEqual([p2.ausPost, p2.erkennbarAn, kannAusPost(p2), p2.beschriftungen?.en?.erkennbarAn], [false, '', false, undefined]);
   });
 
   it('„Wohin gehört das?“: nur Typen mit dem Haken, in denen die Person anlegen darf; Systemtypen nie', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    await d.postTyp();
-    const rechnung = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG, DOK] });
-    await d.legeTypAn({ name: 'Ablagenotiz', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG] });
-    const aus = await d.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'nr', label: 'Kennzeichen', typ: 'text' }], register: [FELDREG, DOK], ausPost: false });
-    const nurLesen = await d.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG, DOK] });
-    await d.setzeBerechtigungen(nurLesen.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);
-    const namen = async (b: { id: string; rolle: string }) => (await d.ausPostZiele(await d.zugriff(b))).map((t) => t.name);
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.eingangskanaele.postTyp();
+    const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG, DOK] });
+    await d.mappentypen.legeTypAn({ name: 'Ablagenotiz', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG] });
+    const aus = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'nr', label: 'Kennzeichen', typ: 'text' }], register: [FELDREG, DOK], ausPost: false });
+    const nurLesen = await d.mappentypen.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG, DOK] });
+    await d.berechtigungen.setzeBerechtigungen(nurLesen.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);
+    const namen = async (b: { id: string; rolle: string }) => (await d.mappentypen.ausPostZiele(await d.rechtepruefung.zugriff(b))).map((t) => t.name);
     assert.deepEqual(await namen({ id: lena.id, rolle: 'admin' }), ['Rechnung', 'Versicherung']);
     assert.deepEqual(await namen({ id: jonas.id, rolle: 'mitglied' }), ['Rechnung'], 'ohne Recht C nicht wählbar');
-    assert.ok(!(await d.ausPostZiele()).some((t) => t.system || t.id === aus.id), 'Systemtypen und Typen ohne Haken nie');
-    assert.ok((await d.ausPostZiele()).some((t) => t.id === rechnung.id));
+    assert.ok(!(await d.mappentypen.ausPostZiele()).some((t) => t.system || t.id === aus.id), 'Systemtypen und Typen ohne Haken nie');
+    assert.ok((await d.mappentypen.ausPostZiele()).some((t) => t.id === rechnung.id));
   });
 
   it('API v1: Mappentyp mit ausPost und erkennbarAn, Feld mit wiederfinden', () => {
@@ -196,22 +197,22 @@ describe('Feld: Aus Dokument füllen und Zum Wiederfinden nutzen (#938)', () => 
 
   it('Abgleich im Dienst: nur Mappen, die die Person lesen darf; Zieltyp muss es geben', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const partner = await d.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', wiederfinden: true }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text', wiederfinden: true }], register: [FELDREG, DOK] });
-    const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true }, { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id, wiederfinden: true }], register: [FELDREG, DOK] });
-    const rechnung = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, wiederfinden: true }], register: [FELDREG, DOK] });
-    const sw = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, lena.id);
-    const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', wiederfinden: true }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text', wiederfinden: true }], register: [FELDREG, DOK] });
+    const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true }, { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id, wiederfinden: true }], register: [FELDREG, DOK] });
+    const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, wiederfinden: true }], register: [FELDREG, DOK] });
+    const sw = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, lena.id);
+    const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
     // Jonas darf Verträge nicht lesen.
-    await d.setzeBerechtigungen(vertrag.id, { grund: { C: false, R: false, U: false, D: false, P: false }, regeln: [] }, true);
-    const fuerLena = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.zugriff({ id: lena.id, rolle: 'admin' }));
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { C: false, R: false, U: false, D: false, P: false }, regeln: [] }, true);
+    const fuerLena = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }));
     assert.equal(fuerLena.verweise.vertrag[0].mappeId, strom.id);
     assert.equal(fuerLena.verweise.vertrag[0].belege.length, 3);
     assert.equal(fuerLena.bezuege[strom.id].titel, 'Strom');
-    const fuerJonas = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.zugriff({ id: jonas.id, rolle: 'mitglied' }));
+    const fuerJonas = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.rechtepruefung.zugriff({ id: jonas.id, rolle: 'mitglied' }));
     assert.equal(fuerJonas.verweise.vertrag, undefined, 'Verträge, die Jonas nicht lesen darf, kommen nicht vor');
     assert.ok(!fuerJonas.treffer.some((x) => x.mappeId === strom.id));
     assert.ok(fuerJonas.treffer.some((x) => x.mappeId === sw.id));
@@ -281,7 +282,7 @@ function paketFaelle(pg: boolean) {
       const d = new Dienst(await repo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
       const p = new Paketverwaltung(d, { version: () => '0.216.2', abruf: katalog([paket('1.0.0', RECHNUNG_10), paket('1.1.0', update)]), katalogUrl: KATALOG });
       const inst = await p.installiere({ id: 'haushalt_test', version: '1.0.0' }, ICH);
-      const holen = async (s: string) => (await d.listeTypen()).find((t) => t.id === inst.typen[s])!;
+      const holen = async (s: string) => (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen[s])!;
       const r = await holen('rechnung');
       assert.deepEqual([r.ausPost, kannAusPost(r), r.erkennbarAn, r.beschriftungen?.en?.erkennbarAn], [null, true, 'Enthält Rechnungsnummer, Betrag und Zahlungsziel', 'Contains invoice number']);
       const wf = (t: Mappentyp) => Object.fromEntries(t.felder.map((f) => [f.key, !!f.wiederfinden]));
@@ -293,14 +294,14 @@ function paketFaelle(pg: boolean) {
       const vorschau = await p.vorschau({ id: 'haushalt_test' });
       assert.deepEqual(vorschau.typen.find((t) => t.schluessel === 'rechnung')!.wiederfinden, ['Notiz']);
       assert.equal(vorschau.typen.find((t) => t.schluessel === 'rechnung')!.typAngaben, true);
-      await d.aendereTyp(r.id, { ...r, felder: r.felder.map((f) => (f.key === 'kundennummer' ? { ...f, wiederfinden: false } : f)) });
+      await d.mappentypen.aendereTyp(r.id, { ...r, felder: r.felder.map((f) => (f.key === 'kundennummer' ? { ...f, wiederfinden: false } : f)) });
       await p.aktualisiere('haushalt_test', {}, ICH);
       const r2 = await holen('rechnung');
       assert.deepEqual([r2.ausPost, r2.erkennbarAn], [false, 'Enthält Rechnungsnummer, Betrag und Zahlungsziel'], 'erkennbarAn war eingestellt und bleibt; ausPost war Vorgabe und kommt aus dem Paket');
       assert.deepEqual(wf(r2), { nr: true, kundennummer: false, name: false, notiz: true }, 'abgewählter Haken bleibt aus');
 
       // Paket erstellen exportiert beide Angaben und den Haken (false ausdrücklich, wo er sonst abgeleitet würde).
-      const typen = await d.listeTypen();
+      const typen = await d.mappentypen.listeTypen();
       const bau = baue({ typen: [r2.id], sichten: [], beispiele: [], id: 'eigenes', name: 'Eigenes', version: '1.0.0', beschreibung: 'Ein Paket zum Testen der neuen Angaben.', autor: { name: 'Lena', github: 'lena' }, lizenz: 'MIT', dms: '>=0.113.0', aenderungen: '' },
         { typen, sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.216.2', entwurf: null, jetzt: new Date('2026-11-07T12:00:00Z') });
       assert.deepEqual(bau.probleme, []);

@@ -40,7 +40,7 @@ const marke = () => Math.max(0, ...protokoll.eintraege({}).map((e) => e.nr));
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const zf = new Zweifaktor(speicherEinstellungen(), (k) => `v:${k}`, (w) => (w.startsWith('v:') ? w.slice(2) : null));
   konten.verbindeZweifaktor(zf);
@@ -53,7 +53,7 @@ async function aufbau() {
   const jonas = await mitPasswort('jonas@example.org', 'Jonas');
   const petra = await mitPasswort('petra@example.org', 'Petra');
   await konten.setzeVerwaltung(imModus(lena), jonas.id, ['benutzer']);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const { baueApp } = await import('../src/http');
   const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
   const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()) });
@@ -337,8 +337,8 @@ describe('Neues seit 0.188 im Modell von #818', () => {
   it('Passwörter für Dokumente (#827) bleiben auch im Verwaltungsmodus bei ihrer Person', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
-    const e = new PdfEntsperren(x.d.entsperrenAnbindung({ ablage: speicherFassungen(), speicher: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null) }));
-    x.d.verbindeEntsperren(e);
+    const e = new PdfEntsperren(x.d.geschuetztePdfs.entsperrenAnbindung({ ablage: speicherFassungen(), speicher: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null) }));
+    x.d.geschuetztePdfs.verbindeEntsperren(e);
     const fremd = await e.merke(x.petra.id, 'Gehaltsabrechnung', 'petras-geheimnis');
     const c = await x.anmelden('lena@example.org');
     assert.equal((await x.verwalten(c)).statusCode, 200);
@@ -380,11 +380,11 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
   it('vermerkt Öffnen, Herunterladen und Ändern dauerhaft – einmal kurz hintereinander, nur bei fremden Mappen', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
-    const gesperrt = await x.d.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
-    await x.d.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
-    const offenTyp = await x.d.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    const m = await x.d.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
-    const eigen = await x.d.legeMappeAn({ typId: offenTyp.id, werte: { name: 'Einkauf' } });
+    const gesperrt = await x.d.mappentypen.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
+    await x.d.berechtigungen.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
+    const offenTyp = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const m = await x.d.mappen.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
+    const eigen = await x.d.mappen.legeMappeAn({ typId: offenTyp.id, werte: { name: 'Einkauf' } });
     const c = await x.anmelden('lena@example.org');
     assert.equal((await x.rufe(c, 'GET', `/api/mappen/${m.id}`)).statusCode, 404, 'ohne Modus nicht lesbar');
     await x.verwalten(c);
@@ -395,9 +395,9 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     const eigeneSicht = await x.rufe(c, 'GET', `/api/mappen/${eigen.id}`);
     assert.equal(eigeneSicht.json().nurImVerwaltungsmodus, undefined);
     assert.equal((await x.rufe(c, 'PUT', `/api/mappen/${m.id}`, { werte: { name: 'Akte Herr Özdemir (2)' } })).statusCode, 200);
-    const h = (await x.d.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus');
+    const h = (await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus');
     assert.deepEqual(h.map((e) => [e.daten.was, e.benutzerId]).sort(), [['angesehen', x.lena.id], ['geaendert', x.lena.id]], 'kurz hintereinander nur einmal');
-    assert.equal((await x.d.historie(eigen.id)).some((e) => e.art === 'verwaltungsmodus'), false);
+    assert.equal((await x.d.mappenHistorie.historie(eigen.id)).some((e) => e.art === 'verwaltungsmodus'), false);
     // Werkbank: Liste nur für „Gesamte Verwaltung“.
     const liste = (await x.rufe(c, 'GET', '/api/werkbank/verwaltungsmodus')).json() as Array<{ person: string; titel: string; was: string }>;
     assert.deepEqual(liste.map((e) => [e.person, e.was]).sort(), [['Lena', 'angesehen'], ['Lena', 'geaendert']]);
@@ -407,7 +407,7 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     // Nach der Sperrfrist wieder ein Eintrag.
     await x.d.kurzzustand.loesche('modusspur');
     await x.rufe(c, 'GET', `/api/mappen/${m.id}`);
-    assert.equal((await x.d.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus' && e.daten.was === 'angesehen').length, 2);
+    assert.equal((await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus' && e.daten.was === 'angesehen').length, 2);
   });
 
   it('nicht löschbar: auch das Aufräumen der Historie gelöschter Mappen lässt sie stehen', async () => {

@@ -12,8 +12,8 @@ const feld = (key: string, label: string, typ: Feld['typ'], extra: Partial<Feld>
  * und Rechnungen das Feld „Verbleib Originaldokumente“ (#168) und es entstehen ein paar Ablageorte; sonst ohne.
  */
 export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = null) {
-  const ablageort = await dienst.ablageortTyp();
-  if ((await dienst.listeTypen()).some((t) => !t.system && t.id !== ablageort?.id)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
+  const ablageort = await dienst.systemtypen.ablageortTyp();
+  if ((await dienst.mappentypen.listeTypen()).some((t) => !t.system && t.id !== ablageort?.id)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
   // Verbleib Originaldokumente (#168): gleiche Kennung in allen Mappentypen mit Papier – für gemeinsame Listen und Bedingungen.
   const verbleib: Feld[] = ablageort ? [feld('verbleib_original', 'Verbleib Originaldokumente', 'referenz', { zielTypen: [ablageort.id], verweisart: 'bezug', hilfe: 'Wo das Papier liegt – oder „vernichtet“' })] : [];
   const id = { partner: randomUUID(), vertrag: randomUUID(), rechnung: randomUUID(), zahlung: randomUUID() };
@@ -86,12 +86,12 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
     },
   };
   // Erst alle Typen anlegen (Register mit Verweisen brauchen die anderen Typen), dann die Register setzen.
-  for (const t of Object.values(typen)) await dienst.legeTypAn({ ...t, register: undefined });
-  for (const t of Object.values(typen)) if (t.register) await dienst.aendereTyp(t.id, t);
+  for (const t of Object.values(typen)) await dienst.mappentypen.legeTypAn({ ...t, register: undefined });
+  for (const t of Object.values(typen)) if (t.register) await dienst.mappentypen.aendereTyp(t.id, t);
 
   // Ablageorte (#168): verschachtelt; der Titel zeigt den ganzen Pfad.
   const ort = async (name: string, liegtIn?: string, beschreibung?: string) => ablageort
-    ? (await dienst.legeMappeAn({ typId: ablageort.id, werte: { name, ...(liegtIn ? { liegt_in: liegtIn } : {}), ...(beschreibung ? { beschreibung } : {}) } }, benutzerId)).id
+    ? (await dienst.mappen.legeMappeAn({ typId: ablageort.id, werte: { name, ...(liegtIn ? { liegt_in: liegtIn } : {}), ...(beschreibung ? { beschreibung } : {}) } }, benutzerId)).id
     : undefined;
   const zuHause = await ort('zu Hause');
   const schrank = zuHause && await ort('Arbeitszimmer Schrank', zuHause);
@@ -101,15 +101,15 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
   const vernichtet = await ort('vernichtet', undefined, 'Papier ist nach dem Scannen vernichtet; das Dokument in Ablago ist die einzige Fassung');
   const im = (o?: string) => (o ? { verbleib_original: o } : {});
 
-  const sw = await dienst.legeMappeAn({ typId: id.partner, werte: { name: 'Stadtwerke Musterstadt', art: 'Unternehmen', kundennummer: '100234' } }, benutzerId);
-  const hb = await dienst.legeMappeAn({ typId: id.partner, werte: { name: 'Heizungsbau Beispiel GmbH', art: 'Unternehmen', kundennummer: 'K-5521' } }, benutzerId);
-  const sv = await dienst.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Stromvertrag Haus', vertragspartner: sw.id, vertragsnummer: 'SV-4711', ...im(roterOrdner), beginn: '2022-01-01', kuendigung_bis: '2027-09-30', zahlungszyklus: 'monatlich', betrag: { betrag: 98, waehrung: 'EUR' } } }, benutzerId);
-  const wv = await dienst.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Wartungsvertrag Heizung', vertragspartner: hb.id, vertragsnummer: 'WV-2023-17', ...im(roterOrdner), beginn: '2023-04-01', kuendigung_bis: '2027-01-31', zahlungszyklus: 'jährlich', betrag: { betrag: 189, waehrung: 'EUR' } } }, benutzerId);
-  const r1 = await dienst.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'JA-2025-0815', ...im(vernichtet), aussteller: sw.id, vertrag: sv.id, vertragsnummer_gedruckt: 'SV-4711', rechnungsdatum: '2026-01-15', betrag: { betrag: 214.37, waehrung: 'EUR' }, bezahlt: true } }, benutzerId);
-  await dienst.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'R-2026-117', aussteller: hb.id, vertrag: wv.id, vertragsnummer_gedruckt: 'WV-2023-17', rechnungsdatum: '2026-03-02', betrag: { betrag: 189, waehrung: 'EUR' }, bezahlt: false } }, benutzerId);
-  await dienst.legeMappeAn({ typId: id.zahlung, werte: { verwendungszweck: 'Nachzahlung Jahresabrechnung 2025', zahlungsdatum: '2026-01-29', betrag: { betrag: 214.37, waehrung: 'EUR' }, rechnungen: [r1.id] } }, benutzerId);
+  const sw = await dienst.mappen.legeMappeAn({ typId: id.partner, werte: { name: 'Stadtwerke Musterstadt', art: 'Unternehmen', kundennummer: '100234' } }, benutzerId);
+  const hb = await dienst.mappen.legeMappeAn({ typId: id.partner, werte: { name: 'Heizungsbau Beispiel GmbH', art: 'Unternehmen', kundennummer: 'K-5521' } }, benutzerId);
+  const sv = await dienst.mappen.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Stromvertrag Haus', vertragspartner: sw.id, vertragsnummer: 'SV-4711', ...im(roterOrdner), beginn: '2022-01-01', kuendigung_bis: '2027-09-30', zahlungszyklus: 'monatlich', betrag: { betrag: 98, waehrung: 'EUR' } } }, benutzerId);
+  const wv = await dienst.mappen.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Wartungsvertrag Heizung', vertragspartner: hb.id, vertragsnummer: 'WV-2023-17', ...im(roterOrdner), beginn: '2023-04-01', kuendigung_bis: '2027-01-31', zahlungszyklus: 'jährlich', betrag: { betrag: 189, waehrung: 'EUR' } } }, benutzerId);
+  const r1 = await dienst.mappen.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'JA-2025-0815', ...im(vernichtet), aussteller: sw.id, vertrag: sv.id, vertragsnummer_gedruckt: 'SV-4711', rechnungsdatum: '2026-01-15', betrag: { betrag: 214.37, waehrung: 'EUR' }, bezahlt: true } }, benutzerId);
+  await dienst.mappen.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'R-2026-117', aussteller: hb.id, vertrag: wv.id, vertragsnummer_gedruckt: 'WV-2023-17', rechnungsdatum: '2026-03-02', betrag: { betrag: 189, waehrung: 'EUR' }, bezahlt: false } }, benutzerId);
+  await dienst.mappen.legeMappeAn({ typId: id.zahlung, werte: { verwendungszweck: 'Nachzahlung Jahresabrechnung 2025', zahlungsdatum: '2026-01-29', betrag: { betrag: 214.37, waehrung: 'EUR' }, rechnungen: [r1.id] } }, benutzerId);
   if (ablageort) {
-    await dienst.legeSichtAn({
+    await dienst.sichtenVerwaltung.legeSichtAn({
       name: 'Originale nach Ort', beschreibung: 'Verträge und Rechnungen, bei denen eingetragen ist, wo das Papier liegt',
       typen: [id.vertrag, id.rechnung], bedingungen: [{ art: 'feld', feld: 'verbleib_original', op: 'nichtLeer' }],
     });

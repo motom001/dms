@@ -176,17 +176,17 @@ for (const pg of [false, true]) {
       const hoch = async (dateien: Record<string, string>) => p.hochladen(zip(dateien), ICH);
       await p.installiere({ upload: (await hoch(basis)).upload, bestaetigt: true }, ICH);
       await p.installiere({ upload: (await hoch(haushalt1)).upload, bestaetigt: true }, ICH);
-      const typ = async (k: string) => (await d.listeTypen()).find((x) => x.schluessel === k);
+      const typ = async (k: string) => (await d.mappentypen.listeTypen()).find((x) => x.schluessel === k);
       // Bestand wie im echten Haushalt: Lena, Jonas und Markus haben Verträge und Versicherungen.
-      const org = async (name: string) => (await d.legeMappeAn({ typId: (await typ('basis:organisation'))!.id, werte: { name } }, ICH.id)).id;
+      const org = async (name: string) => (await d.mappen.legeMappeAn({ typId: (await typ('basis:organisation'))!.id, werte: { name } }, ICH.id)).id;
       const stadtwerke = await org('Stadtwerke Beispielstadt'), versicherer = await org('Beispiel Versicherung AG');
       const vertrag = (await typ('haushalt:vertrag'))!, versicherung = (await typ('haushalt:versicherung'))!;
-      const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { vertragspartner: stadtwerke, art: 'Strom', kuendigungsfrist: '3 Monate zum Ende der Laufzeit', betrag: { betrag: 64, waehrung: 'EUR' } } }, ICH.id);
-      const handy = await d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Handy', kuendigungsfrist: '1 Monat' } }, ICH.id);
+      const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { vertragspartner: stadtwerke, art: 'Strom', kuendigungsfrist: '3 Monate zum Ende der Laufzeit', betrag: { betrag: 64, waehrung: 'EUR' } } }, ICH.id);
+      const handy = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Handy', kuendigungsfrist: '1 Monat' } }, ICH.id);
       // Der Administrator hat an der Versicherung ein eigenes Feld angelegt (Rückfrage) und sie eng verrechtet.
-      await d.aendereTyp(versicherung.id, { ...versicherung, felder: [...versicherung.felder, { key: 'zustand', label: 'Zustand', typ: 'text' }] });
-      const haft = await d.legeMappeAn({ typId: versicherung.id, werte: { versicherer, versicherungsnummer: 'HV-4711', beitrag: { betrag: 59.9, waehrung: 'EUR' }, kuendigen_bis: '2027-03-01', zustand: 'aktiv' } }, ICH.id);
-      const hausrat = await d.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'OFFEN-1' } }, ICH.id);
+      await d.mappentypen.aendereTyp(versicherung.id, { ...versicherung, felder: [...versicherung.felder, { key: 'zustand', label: 'Zustand', typ: 'text' }] });
+      const haft = await d.mappen.legeMappeAn({ typId: versicherung.id, werte: { versicherer, versicherungsnummer: 'HV-4711', beitrag: { betrag: 59.9, waehrung: 'EUR' }, kuendigen_bis: '2027-03-01', zustand: 'aktiv' } }, ICH.id);
+      const hausrat = await d.mappen.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'OFFEN-1' } }, ICH.id);
       await d.kern.repo.setzeBerechtigungen(versicherung.id, { grund: { C: true, R: false, U: false, D: false, P: false }, regeln: [
         { id: 'r1', name: 'Offen', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'versicherungsnummer', op: 'gleich', wert: { art: 'fest', wert: 'OFFEN-1' } } }], dann: { R: 'erteilen' }, stopp: false },
       ] });
@@ -194,8 +194,8 @@ for (const pg of [false, true]) {
       await einstellungen.schreibe('ki_typen', { zugelassen: [vertrag.id] });
       // Ein Fahrzeug verweist auf die Versicherung, eine Ansicht zeigt Versicherungen mit Nummer.
       const fz = (await typ('haushalt:fahrzeug'))!;
-      const auto = await d.legeMappeAn({ typId: fz.id, werte: { kennzeichen: 'B-LB 1', versicherung: haft.id } }, ICH.id);
-      const sicht = await d.legeSichtAn({ name: 'Versicherungen mit Nummer', typen: [versicherung.id], bedingungen: [{ art: 'feld', feld: 'versicherungsnummer', op: 'nichtLeer' }] });
+      const auto = await d.mappen.legeMappeAn({ typId: fz.id, werte: { kennzeichen: 'B-LB 1', versicherung: haft.id } }, ICH.id);
+      const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Versicherungen mit Nummer', typen: [versicherung.id], bedingungen: [{ art: 'feld', feld: 'versicherungsnummer', op: 'nichtLeer' }] });
       return { d, p, r, einstellungen, hoch, typ, vertrag, versicherung, strom, handy, haft, hausrat, auto, sicht, stadtwerke, versicherer };
     }
     const ENTSCHEIDUNGEN = { 'haushalt:versicherung': { zustand: 'feld' } };
@@ -282,7 +282,7 @@ for (const pg of [false, true]) {
       const fz = (await x.typ('haushalt:fahrzeug'))!;
       assert.deepEqual(fz.felder.find((f) => f.key === 'versicherung')?.zielTypen, [vertrag.id]);
       assert.equal((await m(x.auto.id)).werte.versicherung, x.haft.id);
-      const sicht = (await x.d.listeSichten()).find((s) => s.id === x.sicht.id)!;
+      const sicht = (await x.d.sichtenVerwaltung.listeSichten()).find((s) => s.id === x.sicht.id)!;
       assert.deepEqual(sicht.typen, [vertrag.id]);
       assert.deepEqual(sicht.bedingungen.map((b) => (b as { feld?: string }).feld), ['vertragsnummer']);
       // Ein zweites Update baut nichts zweimal um; Haushalt 2.0.0 (Major) gibt die Typen ab, ohne sie neu anzulegen.
@@ -290,18 +290,18 @@ for (const pg of [false, true]) {
       assert.deepEqual(zwei.vorschau.umbau, []);
       await x.p.installiere({ upload: zwei.upload, bestaetigt: true }, ICH);
       assert.equal(await x.typ('haushalt:vertrag'), undefined);
-      assert.equal((await x.d.listeMappen(vertrag.id)).length, 4);
+      assert.equal((await x.d.mappen.listeMappen(vertrag.id)).length, 4);
     });
 
     it('alles oder nichts: bricht der Umbau ab, ist nichts verändert', { skip: !pg && 'Transaktion nur mit PostgreSQL' }, async () => {
       const x = await aufbau();
       const { upload } = await x.hoch(vertraege);
-      const titel = x.d.aktualisiereTitel.bind(x.d);
+      const titel = x.d.mappenTitel.aktualisiereTitel.bind(x.d.mappenTitel);
       let aufrufe = 0;
       // Der zweite Schritt scheitert mittendrin (nach dem Umziehen der Werte).
-      x.d.aktualisiereTitel = async (ids) => { if (++aufrufe === 2) throw new Error('Platte voll'); return titel(ids); };
+      x.d.mappenTitel.aktualisiereTitel = async (ids) => { if (++aufrufe === 2) throw new Error('Platte voll'); return titel(ids); };
       await assert.rejects(x.p.installiere({ upload, bestaetigt: true, gesamteVerwaltung: true, umbauBestaetigt: true, umbauEntscheidungen: ENTSCHEIDUNGEN }, ICH), (e: Fachfehler) => /nichts verändert/.test(e.message) && /Platte voll/.test(e.message));
-      x.d.aktualisiereTitel = titel;
+      x.d.mappenTitel.aktualisiereTitel = titel;
       assert.ok(await x.typ('haushalt:vertrag'));
       assert.ok(await x.typ('haushalt:versicherung'));
       assert.equal(await x.typ('vertraege:vertrag'), undefined);
@@ -321,7 +321,7 @@ for (const pg of [false, true]) {
 
     it('Archivmodus: wird er beim Zusammenlegen lockerer, gibt es keinen Umbau', async () => {
       const x = await aufbau();
-      await x.d.aendereTyp(x.versicherung.id, { ...(await x.typ('haushalt:versicherung'))!, archiv: { jahre: 10, stichtag: null } });
+      await x.d.mappentypen.aendereTyp(x.versicherung.id, { ...(await x.typ('haushalt:versicherung'))!, archiv: { jahre: 10, stichtag: null } });
       const { vorschau } = await x.hoch(vertraege);
       assert.ok(vorschau.fehlercodes.includes('umbau-archiv'), vorschau.probleme.join(' | '));
     });

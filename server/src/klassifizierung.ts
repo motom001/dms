@@ -21,7 +21,8 @@ import {
   type Kandidat, type Klassbeleg, type Klassifizierung as Ergebnis, type Wegstand,
 } from '../../shared/src/klassifizierung';
 import { zieleVon, type MappenBezug, type Mappentyp } from '../../shared/src/model';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import type { Erkennung } from './erkennung';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -72,12 +73,12 @@ export class Klassifizierung {
     for (const id of ids) {
       const dok = await this.repo().holeDokument(id);
       if (!dok) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
-      quellTypen.add((await this.d.pruefeRecht(z, dok.mappeId, 'R')).typId);
+      quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, dok.mappeId, 'R')).typId);
       const text = await this.repo().volltext(id);
       if (text?.trim()) teile.push(text); else ohneText.push(id);
     }
     const text = teile.join('\n\n');
-    const ziele = await this.d.ausPostZiele(z);
+    const ziele = await this.d.mappentypen.ausPostZiele(z);
     const name = (id: string) => ziele.find((x) => x.id === id)?.name ?? '';
     if (!text.trim() || !ziele.length) return { vorschlag: null, typen: [], wege: [], ohneText, bezuege: {} };
 
@@ -105,7 +106,7 @@ export class Klassifizierung {
   private async perPaketen(text: string, ziele: Mappentyp[], quellTypen: Set<string>, z?: Zugriff): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
     const pakete = this.anbieter?.pakete() ?? [];
     if (!pakete.length) return { belege: [], wege: [] };
-    const { zugelassen } = await this.d.kiTypen();
+    const { zugelassen } = await this.d.ki.kiTypen();
     // Kandidaten: auch für Pakete ohne Netz nur zugelassene Typen – keine Namen oder Felder gesperrter Typen gehen hinaus.
     const kandidaten: Kandidat[] = ziele.filter((x) => zugelassen.has(x.id)).slice(0, KANDIDATEN_MAX)
       .map((x) => ({ id: x.id, name: x.name, beschreibung: kurzText(x.beschreibung), erkennbarAn: kurzText(x.erkennbarAn) }));
@@ -127,7 +128,7 @@ export class Klassifizierung {
       }
       const eingang: Record<string, unknown> = { typen: kandidaten, schema: klassifizierSchema([...ids]), text: anfang, hinweis: KLASSIFIZIEREN_HINWEIS, sprache: 'de' };
       // Ähnlichkeit: nur ein Paket ohne Netz, das selbst die Vektoren liefert – nur Typ und Maß, mit den Rechten beider.
-      if (!p.netz && p.vektoren) eingang.aehnliche = await this.d.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null) ?? [];
+      if (!p.netz && p.vektoren) eingang.aehnliche = await this.d.suche.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null) ?? [];
       try {
         const r = await this.anbieter!.klassifiziere(p.id, eingang, KLASSIFIZIEREN_MS);
         const roh = r.text.trim();

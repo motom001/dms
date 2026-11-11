@@ -47,7 +47,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       // #416: ausstehend = vorgeschrieben, aber diese Sitzung lief schon vorher – Hinweis statt Sperre.
       zweifaktor: a.benutzer && konten.zweifaktor ? await zweifaktorStatus(konten.zweifaktor, a.benutzer, a.sitzungsDaten) : null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
-      passwoerterMoeglich: dienst.passwoerterMoeglich,
+      passwoerterMoeglich: dienst.passwortfelder.passwoerterMoeglich,
       // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
       marke: x.designs ? await x.designs.marke() : null,
       // Zeitzone der Region (#726): die Oberfläche rechnet „heute“ und Uhrzeiten wie der Server.
@@ -63,13 +63,13 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
       hinweise: a.benutzer && !a.sitzungsDaten?.vertretungId ? await konten.hinweise(a.benutzer.id) : [],
       // Favoriten benachrichtigen (#506): von der Werkbank für diesen Benutzer erlaubt? Sonst kein Schalter.
-      favoritenBenachrichtigung: a.benutzer ? await dienst.favoritenBenachrichtigungErlaubt(a.benutzer.id) : null,
+      favoritenBenachrichtigung: a.benutzer ? await dienst.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(a.benutzer.id) : null,
       // Laufwerk (#720): eingeschaltet? Nur dann zeigt die Oberfläche „Als Laufwerk einbinden“.
       laufwerk: a.benutzer && x.webdav ? (await x.webdav.einstellung()).aktiv : false,
       // Inhalte übersetzen (#732): Knopf „Übersetzung anzeigen“ – Paket, Zielsprache, wohin der Text ggf. geht.
       uebersetzen: a.benutzer ? await dienst.uebersetzung.angebot(a.benutzer, (await spracheFuer(a)).sprache) : null,
       // Aufgaben ohne Empfänger (#719): Sieht dieser Benutzer sie (Administrator oder gewählter Alltags-Benutzer)?
-      aufgabenOhneEmpfaenger: a.benutzer ? await dienst.siehtOhneEmpfaenger(a.benutzer) : false,
+      aufgabenOhneEmpfaenger: a.benutzer ? await dienst.ohneEmpfaenger.siehtOhneEmpfaenger(a.benutzer) : false,
       // Technische Aufgaben (#719): nur außerhalb des Verwaltungsmodus, nur ja/nein – nie, was genau anliegt.
       verwaltung: await verwaltungHinweis(a),
       // Verwaltungsmodus (#819): darf die Person verwalten, läuft er, bis wann, Wiedereinstieg mit einem Klick?
@@ -245,7 +245,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
       // Papierkorb beim Abmelden leeren, wenn im Profil so eingestellt (#43) – nicht, solange ein Administrator vertritt.
       if (a.benutzer && !a.sitzungsDaten?.vertretungId && (await konten.einstellungen(a.benutzer)).papierkorb_beim_abmelden === true) {
-        await dienst.leerePapierkorb(a.benutzer, false, { weg: 'abmelden' }).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
+        await dienst.papierkorbVerwaltung.leerePapierkorb(a.benutzer, false, { weg: 'abmelden' }).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
       }
       await konten.abmelden(a.sitzung);
       if (a.benutzer) L.konto.info('Abgemeldet', { email: a.benutzer.email });

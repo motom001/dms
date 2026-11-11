@@ -44,8 +44,8 @@ function dienst(repo: Repo = speicherRepo()) {
   return new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
 }
 async function vertraege(d: Dienst) {
-  const typ = await d.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{nr} – {frist}', felder: FELDER.map((f) => ({ ...f })), trefferliste: ['nr', 'frist', 'steuersatz', 'gutschrift'] });
-  const m = async (nr: string, werte: Record<string, unknown>) => d.legeMappeAn({ typId: typ.id, werte: { nr, ...werte } });
+  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{nr} – {frist}', felder: FELDER.map((f) => ({ ...f })), trefferliste: ['nr', 'frist', 'steuersatz', 'gutschrift'] });
+  const m = async (nr: string, werte: Record<string, unknown>) => d.mappen.legeMappeAn({ typId: typ.id, werte: { nr, ...werte } });
   return { typ, m };
 }
 
@@ -160,14 +160,14 @@ async function sortierenUndFiltern(d: Dienst) {
   await m('D', { frist: '14 Tage' });
   await m('E', {});
   const nrn = async (sortierung: string, absteigend = false) =>
-    (await d.seite(ADMIN, { sicht: typ.id, sortierung, absteigend: String(absteigend) })).mappen.map((x) => String(x.werte.nr)).join('');
+    (await d.sichten.seite(ADMIN, { sicht: typ.id, sortierung, absteigend: String(absteigend) })).mappen.map((x) => String(x.werte.nr)).join('');
   assert.equal(await nrn('frist'), 'DBACE', '14 Tage < 13 Wochen < 3 Monate < 1 Jahr, leer zuletzt');
   assert.equal(await nrn('frist', true), 'CABDE');
   assert.equal(await nrn('steuersatz'), 'CBADE');
   // Bedingungen: Zeitraum in Tagen, Prozent wie Zahl.
   const treffer = async (bedingungen: Bedingung[]) => {
-    const s = await d.legeSichtAn({ name: `S ${Math.random()}`, typen: [typ.id], bedingungen });
-    return (await d.seite(ADMIN, { sicht: s.id, sortierung: 'nr' })).mappen.map((x) => String(x.werte.nr)).join('');
+    const s = await d.sichtenVerwaltung.legeSichtAn({ name: `S ${Math.random()}`, typen: [typ.id], bedingungen });
+    return (await d.sichten.seite(ADMIN, { sicht: s.id, sortierung: 'nr' })).mappen.map((x) => String(x.werte.nr)).join('');
   };
   assert.equal(await treffer([{ art: 'feld', feld: 'frist', op: 'groesser', wert: { art: 'fest', wert: 'P2M' } }]), 'ABC');
   assert.equal(await treffer([{ art: 'feld', feld: 'frist', op: 'gleich', wert: { art: 'fest', wert: 'P3M' } }]), 'A');
@@ -294,10 +294,10 @@ describe('Paketformat (#1035)', () => {
     const h = await z.p.hochladen(zip.daten, ICH);
     assert.deepEqual(h.vorschau.probleme, []);
     const paket = await z.p.installiere({ upload: h.upload, bestaetigt: true, beispiele: true }, ICH);
-    const zt = (await z.d.listeTypen()).find((t) => t.id === paket.typen.vertrag)!;
+    const zt = (await z.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.vertrag)!;
     assert.deepEqual(zt.felder.map((f) => [f.key, f.typ]).slice(1, 4), [['frist', 'zeitraum'], ['laufzeit', 'zeitraum'], ['steuersatz', 'prozent']]);
     assert.equal(zt.felder.find((f) => f.key === 'gutschrift')!.negativ, true);
-    const [beispiel] = (await z.d.seite(ADMIN, { sicht: zt.id })).mappen;
+    const [beispiel] = (await z.d.sichten.seite(ADMIN, { sicht: zt.id })).mappen;
     assert.deepEqual(beispiel.werte.frist, { anzahl: 3, einheit: 'monate' });
     assert.deepEqual(beispiel.werte.gutschrift, { betrag: -25, waehrung: 'EUR' });
 
@@ -335,13 +335,13 @@ describe('Zeitraum, Prozent und Migration 094 – PostgreSQL (#1035)', { skip: !
     const { pgRepo } = await import('../src/repo-pg');
     try {
       const d = dienst(pgRepo(db.sql, H) as never as Repo);
-      const typ = await d.legeTypAn({ name: 'Beleg', felder: [
+      const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [
         { key: 'nr', label: 'Nr', typ: 'text' },
         { key: 'betrag', label: 'Betrag', typ: 'betrag', waehrung: 'EUR' },
         { key: 'skonto', label: 'Skonto', typ: 'betrag', waehrung: 'EUR' },
       ] });
       // So, als stünde aus einer älteren Version schon eine Gutschrift in der Datenbank.
-      await d.legeMappeAn({ typId: typ.id, werte: { nr: 'G-1', betrag: { betrag: 10, waehrung: 'EUR' }, skonto: { betrag: 2, waehrung: 'EUR' } } });
+      await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'G-1', betrag: { betrag: 10, waehrung: 'EUR' }, skonto: { betrag: 2, waehrung: 'EUR' } } });
       await db.sql`UPDATE mappen SET werte = jsonb_set(werte, '{betrag,betrag}', '-49.9'::jsonb) WHERE typ_id = ${typ.id}`;
       await db.sql.unsafe(readFileSync(`${MIGRATIONEN}/093_betrag_negativ.sql`, 'utf8'));
       const [t] = await db.sql<Array<{ felder: Feld[] }>>`SELECT felder FROM mappentypen WHERE id = ${typ.id}`;

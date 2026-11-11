@@ -98,7 +98,7 @@ function titelSuche(d: UmbauDienst, typen: string[], titel: Map<string, string>)
     const index = new Map<string, Map<string, string[]>>();
     for (const id of typen) {
       const je = new Map<string, string[]>();
-      for (const m of await d.listeMappen(id)) {
+      for (const m of await d.mappen.listeMappen(id)) {
         if (!m.titel) continue;
         const k = titelKennung(m.titel);
         je.set(k, [...(je.get(k) ?? []), m.id]);
@@ -125,7 +125,7 @@ const verweisIds = (m: Mappe): string[] => Object.values(m.werte).flatMap((v) =>
 async function zieheMappenUm(d: UmbauDienst, g: GeplanterSchritt, x: { ziel: Mappentyp; mitnehmen: boolean; a: UmbauAuftrag; typVon: TypVon }): Promise<number> {
   const { ziel, a } = x;
   const repo = d.kern.repo;
-  const mappen = await d.listeMappen(g.alt.id);
+  const mappen = await d.mappen.listeMappen(g.alt.id);
   if (!mappen.length) return 0;
   const titel = await repo.titelVon(mappen.flatMap(verweisIds));
   const suche = await titelSuche(d, titelTypen(g, ziel), titel);
@@ -145,7 +145,7 @@ async function zieheMappenUm(d: UmbauDienst, g: GeplanterSchritt, x: { ziel: Map
     await repo.historieSchreibe([{ mappeId: m.id, benutzerId: a.von.id, art: 'geaendert', daten: { aenderungen: aenderungen(schritt, m.werte, werte, titelVon), text, umbau: { paket: a.paket.id, version: a.paket.version, von: g.schritt.von, nach: g.schritt.nach } } }]);
   }
   await verschiebeDokumente(d, g, ziel, mappen);
-  await d.aktualisiereTitel(mappen.map((m) => m.id));
+  await d.mappenTitel.aktualisiereTitel(mappen.map((m) => m.id));
   return mappen.length;
 }
 
@@ -175,12 +175,12 @@ async function leiteUm(d: UmbauDienst, g: GeplanterSchritt, neuId: string, umben
   const altId = g.alt.id;
   const repo = d.kern.repo;
   const feld = (k: string) => umbenannt.get(k) ?? k;
-  for (const typ of (await d.listeTypen()).filter((x) => x.id !== altId)) {
+  for (const typ of (await d.mappentypen.listeTypen()).filter((x) => x.id !== altId)) {
     const felder = typ.felder.map((f) => feldUmgeleitet(f, altId, neuId, feld) ?? f);
     const register = typ.register.map((r) => (r.quellen?.some((q) => q.typId === altId) ? { ...r, quellen: r.quellen.map((q) => (q.typId === altId ? { typId: neuId, feldKey: feld(q.feldKey) } : q)) } : r));
     if (JSON.stringify([felder, register]) !== JSON.stringify([typ.felder, typ.register])) await repo.aendereTyp(typ.id, { ...typ, felder, register });
   }
-  for (const s of (await d.listeSichten()).filter((x) => x.typen.includes(altId))) {
+  for (const s of (await d.sichtenVerwaltung.listeSichten()).filter((x) => x.typen.includes(altId))) {
     const bedingungen = s.bedingungen.map((b) => (b.art === 'feld' && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b.art === 'frist' && b.feld && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b));
     const neu = await repo.aendereSicht(s.id, { ...s, typen: [...new Set(s.typen.map((x) => (x === altId ? neuId : x)))], bedingungen });
     merkeSichtAenderung(sichten, s.id, sichtPruefwert(s), sichtPruefwert(neu));
@@ -213,7 +213,7 @@ async function gibAb(d: UmbauDienst, g: GeplanterSchritt, a: UmbauAuftrag, quell
   }
   if (g.plan.art === 'zusammenlegen') {
     if ((await d.kern.repo.papierkorb({ typId: g.alt.id })).length) await d.kern.repo.setzeTypKennung(g.alt.id, vk.schluessel);
-    else await d.loescheTyp(g.alt.id);
+    else await d.mappentypen.loescheTyp(g.alt.id);
   }
   return eigen ? vk.schluessel : null;
 }
@@ -228,11 +228,11 @@ export async function fuehreUmbauAus(d: UmbauDienst, a: UmbauAuftrag): Promise<U
   // Typ jeder Mappe, auf die ein umziehender Wert verweist – nach dem Umbau (Mappen umgebauter Typen im Zieltyp).
   const zielId = (g: GeplanterSchritt) => g.ziel?.id ?? (g.eigenerZiel ? a.typId(g.eigenerZiel) : undefined) ?? g.alt.id;
   const nachUmbau = new Map(a.lage.schritte.map((g) => [g.alt.id, zielId(g)] as const));
-  const verwiesen = await d.kern.repo.typenVon((await Promise.all(a.lage.schritte.map((g) => d.listeMappen(g.alt.id)))).flat().flatMap(verweisIds));
+  const verwiesen = await d.kern.repo.typenVon((await Promise.all(a.lage.schritte.map((g) => d.mappen.listeMappen(g.alt.id)))).flat().flatMap(verweisIds));
   const typVon: TypVon = (id) => { const ty = verwiesen.get(id); return ty ? nachUmbau.get(ty) ?? ty : undefined; };
   const quellen: InstalliertesPaket[] = [];
   for (const g of a.lage.schritte) {
-    const roh = (await d.listeTypen()).find((x) => x.id === zielId(g));
+    const roh = (await d.mappentypen.listeTypen()).find((x) => x.id === zielId(g));
     if (!roh) throw new Fachfehler(422, t('meldungen.pakete.umbau.ziel-nicht-da', { name: g.alt.name, nach: g.schritt.nach }));
     const umbenannt = umbenennung(g.felder);
     const { ziel, mitnehmen } = await bereiteZielVor(d, g, roh, umbenannt);

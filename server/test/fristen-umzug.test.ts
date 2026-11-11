@@ -28,16 +28,16 @@ async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
   const lena = await neu('Lena'); const jonas = await neu('Jonas');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', empfaengerFeld: 'verantwortlich', text: '{feld} {datum}', wiederholung: 12 } },
     { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
@@ -46,7 +46,7 @@ async function aufbau() {
   const motor = new Automatisierungen({ dienst: d, repo });
   d.ereignisse.abonniere('automatisierungen', (e) => motor.ereignis(e));
   const verteile = () => spaeter(30_000, () => d.ereignisse.verteile());
-  const fristen = async (id: string) => (await d.meineAufgaben({ id, rolle: 'mitglied' })).filter((a) => a.art === 'frist');
+  const fristen = async (id: string) => (await d.vertretung.meineAufgaben({ id, rolle: 'mitglied' })).filter((a) => a.art === 'frist');
   return { d, konten, admin, lena, jonas, vertrag, repo, motor, verteile, fristen };
 }
 
@@ -71,7 +71,7 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
   it('nur einmal beim Update: eine später angelegte Frist legt keine Automatisierung an', async () => {
     const { d, repo, motor } = await aufbau();
     assert.equal(await motor.fristenUebernehmen(), 2);
-    await d.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'gueltig', label: 'Gültig bis', typ: 'datum', frist: { vorlauf: 90, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: null } }] });
+    await d.mappentypen.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'gueltig', label: 'Gültig bis', typ: 'datum', frist: { vorlauf: 90, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: null } }] });
     assert.equal(await motor.fristenUebernehmen(), 0);
     assert.equal((await nurDatum(repo)).length, 1);
   });
@@ -86,28 +86,28 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
   it('Datum im Vorlauf: sofort eine Frist (an den Ersteller, wenn kein Verantwortlicher) – das Feld selbst legt keine an', async () => {
     const { d, lena, jonas, vertrag, motor, verteile, fristen } = await aufbau();
     // Ohne Automatisierung: das Feld erinnert nicht mehr selbst.
-    const ohne = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', kuendigung: in_(10) } }, lena.id);
-    assert.equal((await d.fristenLauf()).angelegt, 0);
+    const ohne = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', kuendigung: in_(10) } }, lena.id);
+    assert.equal((await d.fristen.fristenLauf()).angelegt, 0);
     assert.equal((await fristen(lena.id)).length, 0);
-    await d.loescheMappe(ohne.id, lena.id).catch(() => {});
+    await d.loeschen.loescheMappe(ohne.id, lena.id).catch(() => {});
     await motor.fristenUebernehmen();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, lena.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, lena.id);
     await verteile();
     let offen = await fristen(lena.id);
     assert.equal(offen.length, 1);
     assert.equal(offen[0].datum, in_(10));
     assert.match(offen[0].text, /^Kündigung bis \d\d\.\d\d\.\d{4}$/);
     // Noch einmal gespeichert: keine zweite.
-    await d.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, lena.id);
     await verteile();
     assert.equal((await fristen(lena.id)).length, 1);
     // Datum verschoben: alte erledigt sich; neues Datum noch nicht im Vorlauf → nichts.
-    await d.aendereMappe(m.id, { werte: { kuendigung: in_(60), verantwortlich: jonas.id } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { kuendigung: in_(60), verantwortlich: jonas.id } }, lena.id);
     await verteile();
     assert.equal((await fristen(lena.id)).length, 0);
     assert.equal((await fristen(jonas.id)).length, 0);
     // Wieder in den Vorlauf: an den Verantwortlichen.
-    await d.aendereMappe(m.id, { werte: { kuendigung: in_(5) } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { kuendigung: in_(5) } }, lena.id);
     await verteile();
     offen = await fristen(jonas.id);
     assert.equal(offen.length, 1);
@@ -117,8 +117,8 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
   it('vergangene Daten und Daten weit voraus erinnern beim Speichern nicht', async () => {
     const { d, lena, vertrag, motor, verteile, fristen } = await aufbau();
     await motor.fristenUebernehmen();
-    await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Alt', kuendigung: in_(-3) } }, lena.id);
-    await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Später', kuendigung: in_(40) } }, lena.id);
+    await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Alt', kuendigung: in_(-3) } }, lena.id);
+    await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Später', kuendigung: in_(40) } }, lena.id);
     await verteile();
     assert.equal((await fristen(lena.id)).length, 0);
   });

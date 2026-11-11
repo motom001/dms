@@ -30,7 +30,8 @@ Passung der Mappen und Pakete am Typ. Schicht 2 der Zielaufteilung – über Ker
   Benutzer spiegeln, Kurzzustand.
 - Importiert nur sich selbst, Kern und Rechteprüfung (je über `index.ts`), `shared/` und die Basis – geprüft mit
   `npm run lint:abh` (Regel `fachordner`, Schicht 2 in `SCHICHTEN`).
-- Wer Mappentypen braucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen); die Systemausstattung
+- Wer Mappentypen braucht, ruft die Klasse am Dienst (`dienst.mappentypen.…`, `dienst.passung.…` usw.; seit #1079 ohne
+  Weiterleitungen im Dienst); die Systemausstattung
   bekommt `sichereSystemtypen` beim Zusammenbau.
 
 **Regeln**

@@ -40,18 +40,18 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     const r = pgRepo(sql, HAUSHALT);
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
     const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [
       { key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }, { key: 'notiz', label: 'Notiz', typ: 'text' },
     ] });
-    const suche = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.titel).sort();
+    const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.titel).sort();
     return { sql, r, d, typ, suche };
   }
 
   it('Trigger füllt den Suchtext beim Anlegen und Ändern – ohne Passwörter; dieselben Treffer mit und ohne', async () => {
     const { sql, d, typ, suche } = await aufbau();
-    const a = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Kfz-Versicherung 2026', von: 'Herr Özdemir' } });
-    const b = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Stromvertrag', notiz: 'Gebühr für die Straße' } });
-    await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Garten' } });
+    const a = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Kfz-Versicherung 2026', von: 'Herr Özdemir' } });
+    const b = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Stromvertrag', notiz: 'Gebühr für die Straße' } });
+    await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Garten' } });
     const [x] = await sql`SELECT suchtext, suchtext = dms_mappe_suchtext(titel, werte) AS gleich FROM mappen WHERE id = ${a.id}`;
     assert.equal(x.gleich, true);
     assert.match(x.suchtext as string, /kfzversicherung 2026/);
@@ -64,7 +64,7 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     for (const [s, erwartet] of faelle) assert.deepEqual(await suche(s), erwartet, s);
 
     // Ändern: der Suchtext folgt (auch wenn nur ein Wert sich ändert).
-    await d.aendereMappe(b.id, { werte: { notiz: 'Abschlag fürs Wasser' } });
+    await d.mappen.aendereMappe(b.id, { werte: { notiz: 'Abschlag fürs Wasser' } });
     assert.deepEqual(await suche('Strasse'), []);
     assert.deepEqual(await suche('wasser'), ['Stromvertrag']);
     // Passwörter (verschlüsselt, „dms1$“) stehen nie im Suchtext und werden nicht gefunden.
@@ -91,12 +91,12 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     assert.deepEqual([...spalten].sort(), [...MAPPEN_SPALTEN].sort(), 'neue Spalten fallen hier auf');
     assert.ok(OHNE_SPALTEN.mappen?.includes('suchtext'));
 
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Heizöl Lieferung' } });
-    assert.equal('suchtext' in (await d.holeMappe(m.id)).mappe, false);
-    await d.loescheMappe(m.id);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Heizöl Lieferung' } });
+    assert.equal('suchtext' in (await d.mappen.holeMappe(m.id)).mappe, false);
+    await d.loeschen.loescheMappe(m.id);
     const [k] = await sql`SELECT mappe ? 'suchtext' AS mit FROM papierkorb WHERE id = ${m.id}`;
     assert.equal(k.mit, false);
-    await d.stelleWiederHer(m.id, ICH, true);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, ICH, true);
     const [z] = await sql`SELECT suchtext FROM mappen WHERE id = ${m.id}`;
     assert.match(z.suchtext as string, /heizol lieferung/);
     assert.deepEqual(await suche('Heizol'), ['Heizöl Lieferung']);
@@ -165,10 +165,10 @@ describe('Zuletzt geöffnet in einem Zugriff (#615)', () => {
 describe('Startseite (#334, #615): „noch keine eigene Mappe“ ohne alles zu zählen', () => {
   it('im Arbeitsspeicher', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    assert.equal(await d.ohneEigeneMappen(), true);
-    const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    assert.equal(await d.ohneEigeneMappen(), true);
-    await d.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } });
-    assert.equal(await d.ohneEigeneMappen(), false);
+    assert.equal(await d.dokumente.ohneEigeneMappen(), true);
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    assert.equal(await d.dokumente.ohneEigeneMappen(), true);
+    await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } });
+    assert.equal(await d.dokumente.ohneEigeneMappen(), false);
   });
 });

@@ -196,7 +196,7 @@ describe('Externe Dienste (#565): Messpunkt, Budget, Aufbewahrung', () => {
 
   it('harte Grenze im Paket-Läufer: eine Schnittstelle wirft mit der Meldung, bevor etwas hinausgeht', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const l = new Paketlaeufer({ dienst: d, konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => ({}), speicher: { lies: async () => ({}), schreibe: async () => {} } });
     const einst = speicherEinstellungen();
     extern.setze({ speicher: speicherExternSpeicher(), einstellungen: einst });
@@ -307,7 +307,7 @@ async function durchAlleDienste(person: string) {
     const adresse = `http://127.0.0.1:${(dienst.address() as { port: number }).port}/v1`;
     const wasm = stromModul(JSON.stringify({ methode: 'POST', url: `${adresse}/chat/completions?geheim-query=1`, kopf: { authorization: 'Bearer abc' } }), JSON.stringify({ text: ANTWORT }));
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const l = new Paketlaeufer({ dienst: d, konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => ({ dienst: adresse }), speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 10, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });
     offen.push(l);
     const manifest = `schema: 1\nid: ki_cloud\nname: KI Cloud\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.124.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  rechte: { schnittstellen: ["dms:antworten"] }\n  einstellungen:\n    - abschnitt: Dienst\n      felder:\n        - { schluessel: dienst, name: Dienst-Adresse, typ: adresse }\n`;

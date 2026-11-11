@@ -76,15 +76,15 @@ Daneben, ohne Routen:
 - `historie.schreibe(…)` (`kern/historie.ts`) und `loeschprotokoll.schreibe(…)` (`kern/loeschprotokoll.ts`). **Lesen** bleibt bei Mappen bzw. Löschen.
 - `einstellungen`, `dateien`, `stand`.
 
-**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst bleibt Fassade mit einzeiligen Weiterleitungen. Was der Kern nicht selbst bildet (den Zugriff – das ist [Rechte prüfen](#zugriff), eine Schicht darüber –, den Rückfall der Systemausstattung), bekommt er beim Zusammenbau vom Dienst.
+**Regel:** In den Kern kommt nur, was alle brauchen – Neues nur mit Begründung im Pull Request. Der Kern importiert nichts aus `dienst.ts`, Routen oder Fachordnern, nur `shared/` und die Basis (Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler); das prüft `npm run lint:abh` ([Regeln](stil.md#abhaengigkeiten-pruefen)). Der Dienst ist seit #1079 nur noch Zusammenbau: Routen, Module und Tests rufen die Fachdienste an seinen Feldern ([was bleibt](#dienst-rest)). Was der Kern nicht selbst bildet (den Zugriff – das ist [Rechte prüfen](#zugriff), eine Schicht darüber –, den Rückfall der Systemausstattung), bekommt er beim Zusammenbau vom Dienst.
 
 ### Systemausstattung (#963) { #systemausstattung }
 
 `server/src/systemausstattung/` legt an, was jede Ablage braucht: die Systemtypen „Rolle“, „Benutzer“ und „Post“ mit Systemfeldern und Beschriftungen, die Systemrollen und die mitgelieferten Ansichten. Es ist ein Ablauf **über** den Fachbereichen: `sicherstellen()` ruft nacheinander Mappentypen (Typen und Rollen), Ansichten (eigene Ansicht eines eben angelegten Typs), Post (Ansichten der Post) und Ansichten („Favoriten“); die Schritte bekommt es beim Zusammenbau vom Dienst. Jeder Schritt legt nur an, was fehlt.
 
-- **Beim Start** (`dienst.gleicheBenutzerAb`, nur der Leiter) und damit nach jeder Wiederherstellung, die neu startet.
+- **Beim Start** (`dienst.postSystemmappen.gleicheBenutzerAb`, nur der Leiter) und damit nach jeder Wiederherstellung, die neu startet.
 - **Als Rückfall**: Findet `kern.system()` nicht alles, ruft es `systemausstattung.anlegen()` – für Wege ohne Start (Tests, Wiederherstellung, Demo entfernen). Gleichzeitige Aufrufe teilen sich einen Lauf.
-- Wer nur Ids braucht, nimmt `kern.system()`; `dienst.sichereSystem()` ist die Fassade für `sicherstellen()`. Die Ids merkt sich der Kern nur, wenn er sie außerhalb einer Transaktion nachgeschlagen hat.
+- Wer nur Ids braucht, nimmt `kern.system()`; der Start ruft `dienst.systemausstattung.sicherstellen()`. Die Ids merkt sich der Kern nur, wenn er sie außerhalb einer Transaktion nachgeschlagen hat.
 
 ### Anschlusspunkte (#962) { #anschlusspunkte }
 
@@ -107,7 +107,7 @@ Anlass → Empfänger (der Reihe nach; Fachbereich.Aufgabe):
 
 ## Suche (#964) { #suche }
 
-Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielaufteilung): `server/src/suche/suche.dienst.ts` mit der Klasse `SucheDienst` – unscharfe Suche (Tippfehler, gleichbedeutende Wörter, Wörterverzeichnis), Vektoren zu Dokumenten und ähnliche Dokumente. Der Dienst baut ihn als `dienst.suche` und behält für jede Methode eine einzeilige Weiterleitung; `dienst.vektorAnbieter` reicht an `dienst.suche.vektorAnbieter` durch.
+Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielaufteilung): `server/src/suche/suche.dienst.ts` mit der Klasse `SucheDienst` – unscharfe Suche (Tippfehler, gleichbedeutende Wörter, Wörterverzeichnis), Vektoren zu Dokumenten und ähnliche Dokumente. Der Dienst baut ihn als `dienst.suche`; wer sucht, ruft ihn dort (auch `dienst.suche.vektorAnbieter`).
 
 - **Tür:** `suche/index.ts`; die Routen (`suche.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, nicht den ganzen Dienst (für den Zwischenspeicher der Vektoren `kern.repoOhneTransaktion`), dazu die [Rechteprüfung](#zugriff) (`lesbare`, `pruefeRecht`) und einen `SucheAnschluss` mit `konten` (Dienstkonto eines Pakets).
@@ -116,7 +116,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 ## Rechte prüfen (#1072) { #zugriff }
 
-`server/src/zugriff/zugriff.dienst.ts` mit der Klasse `ZugriffDienst` prüft, wer was darf – an einer Stelle: `zugriff(ich)` einmal je Anfrage (Menschen nach den Regeln am Mappentyp, Dienstkonten der Pakete nach den bestätigten Rechten, Systemkonten nach ihrer Rolle, Leserechte auf Zeit), `rechteAn`, `rechteAnVielen`, `pruefeRecht`, `lesbare`, `mitPasswortRecht`, `sichtbarFuer`, `kannLesen`, `wasSieht`, `mappeVon`. Der Dienst baut ihn als `dienst.rechtepruefung` und behält für jede Methode eine einzeilige Weiterleitung.
+`server/src/zugriff/zugriff.dienst.ts` mit der Klasse `ZugriffDienst` prüft, wer was darf – an einer Stelle: `zugriff(ich)` einmal je Anfrage (Menschen nach den Regeln am Mappentyp, Dienstkonten der Pakete nach den bestätigten Rechten, Systemkonten nach ihrer Rolle, Leserechte auf Zeit), `rechteAn`, `rechteAnVielen`, `pruefeRecht`, `lesbare`, `mitPasswortRecht`, `sichtbarFuer`, `kannLesen`, `wasSieht`, `mappeVon`. Der Dienst baut ihn als `dienst.rechtepruefung`; Routen und Module rufen ihn dort.
 
 - **Tür:** `zugriff/index.ts` (dazu `maskiert` und `NICHT_SICHTBAR` für Titel nicht lesbarer Mappen).
 - **Bekommt den Kern** und einen `ZugriffAnschluss` vom Dienst: `kiSperre` (KI-Einstellung der Pakete) und `konten`.
@@ -125,7 +125,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 ## Mappentypen (#1073) { #mappentypen }
 
-`server/src/mappentypen/` (Schicht 2) bündelt, was einen Mappentyp ausmacht – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie und behält für jede Methode eine einzeilige Weiterleitung:
+`server/src/mappentypen/` (Schicht 2) bündelt, was einen Mappentyp ausmacht – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie und hält sie als Felder am Dienst; dort werden sie gerufen (#1079):
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
@@ -142,7 +142,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 ## Mappen (#1074) { #mappen }
 
-`server/src/mappen/` (Schicht 2) bündelt, was eine einzelne Mappe ausmacht – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie und behält für jede Methode eine einzeilige Weiterleitung:
+`server/src/mappen/` (Schicht 2) bündelt, was eine einzelne Mappe ausmacht – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie und hält sie als Felder am Dienst; dort werden sie gerufen (#1079):
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
@@ -160,7 +160,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 ## Dokumente (#1075) { #dokumente }
 
-`server/src/dokumente/` (Schicht 2) bündelt alles rund um die Dateien an einer Mappe – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`baueDokumente()`) und behält für jede Methode eine einzeilige Weiterleitung:
+`server/src/dokumente/` (Schicht 2) bündelt alles rund um die Dateien an einer Mappe – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`baueDokumente()`) und hält sie als Felder am Dienst; dort werden sie gerufen (#1079):
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
@@ -172,13 +172,13 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `fehlende-dateien.ts` | `FehlendeDateien` (`dienst.dateienFehlen`) | fehlende Dateien (#877): `merkeFehlendeDatei`, `fehlendeDateien`, `dokumenteOhneDatei`, `pruefeVorhanden` |
 
 - **Tür:** `dokumente/index.ts`; die Routen (`dokumente.routen.ts`) holt nur `routen.ts` direkt. Die Technik der Fassungen (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) bleibt außerhalb und ist für Fachordner ein Werkzeug (siehe [Schichten](#schichten)).
-- **Bekommt den Kern** und die Teile dieses Ordners, die eine Klasse ruft, und je Klasse einen Anschluss für das, was noch im Dienst liegt oder im Kreis liefe (Ereignis und Titel über die Fassade, Archivmodus, Verkleinern, Volltext, Aufträge an Pakete, Paket-Einstellungen, Mappentypen, Texterkennung).
+- **Bekommt den Kern** und die Teile dieses Ordners, die eine Klasse ruft, und je Klasse einen Anschluss für das, was noch im Dienst liegt oder im Kreis liefe (Ereignis und Titel – `kern.ereignis`, `mappenTitel` –, Archivmodus, Verkleinern, Volltext, Aufträge an Pakete, Paket-Einstellungen, Mappentypen, Texterkennung).
 - **Reihenfolge:** `ladeHoch` schreibt Historie, „zuletzt geändert“, Dokument, Volltext und `dokument.hochgeladen` in einer Transaktion, Vorschau, Umwandeln und Entsperren laufen danach; `nachFassung`, `nachEntsperren`, `archivNachVolltext` und `nachNeuerVersion` sind unverändert und werden an denselben Stellen gerufen.
 - `entsperrtZu` liegt seit #1078 in `geschuetzte-pdf.ts`. PDF bearbeiten, Verkleinern und Schwärzen liegen seit #1077 in [PDF bearbeiten](#pdf-bearbeiten). Den Volltext (`volltextFertig`, `volltextAn`) rufen die Dokumente seit #1076 über ihren Anschluss am Dienst im [Volltext](#volltext).
 
 ## Sichten (#1076) { #sichten }
 
-`server/src/sichten/` (Schicht 3) bündelt die Ansichten der Ablage – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`baueSichtenUndVolltext()`) und behält für jede Methode eine einzeilige Weiterleitung:
+`server/src/sichten/` (Schicht 3) bündelt die Ansichten der Ablage – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`baueSichtenUndVolltext()`) und hält sie als Felder am Dienst; dort werden sie gerufen (#1079):
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
@@ -210,12 +210,12 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `aus-paketen.ts` | `VolltextAusPaketen` (`dienst.volltextAusPaketen`) | Volltext aus Paketen (#614): `volltextPaketDa`, `paketWegFuerDateien`, `pruefeVolltextRecht`, `nachVolltextEreignis` |
 
 - **Tür:** `volltext/index.ts`. Wer für einen Dateityp zuständig ist, rechnet weiter `paketvolltext.ts` (Werkzeug, auch für die Dokumente).
-- **Bekommt den Kern** und die Dokumente (Texterkennung, Umwandeln, Archivfassung), dazu einen Anschluss für Ereignis (Fassade), Aufträge, `paketVolltext` und die Sicherung außer Haus.
+- **Bekommt den Kern** und die Dokumente (Texterkennung, Umwandeln, Archivfassung), dazu einen Anschluss für Ereignis (`kern.ereignis`), Aufträge, `paketVolltext` und die Sicherung außer Haus.
 - **Reihenfolge:** `volltextFertig` legt erst `volltext.fertig` in den Ausgangskorb, meldet dann die Archivfassung und ruft nur mit Text die Hörer (Erkennung) nacheinander; `nachTexterkennungsEreignis` verteilt wie bisher an Umwandeln, Archivfassung, Volltext aus Paketen und Sicherung.
 
 ## Post (#1077) { #post }
 
-`server/src/post/` (Schicht 3) bündelt, was hereinkommt – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`bauePdfPostAusgang()`) und behält für jede Methode eine einzeilige Weiterleitung:
+`server/src/post/` (Schicht 3) bündelt, was hereinkommt – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`bauePdfPostAusgang()`) und hält sie als Felder am Dienst; dort werden sie gerufen (#1079):
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
@@ -226,8 +226,8 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `foto.ts` | `PostFotos` (`dienst.postFotos`) | Post fotografieren (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen` |
 
 - **Tür:** `post/index.ts`; die Routen der Postfächer (`post.routen.ts`) holt nur `routen.ts` direkt. `wandleZuPost` und `ergaenzeSystemfelder` liegen seit #1073 bei den [Mappentypen](#mappentypen).
-- **Bekommt den Kern**, die [Rechteprüfung](#zugriff), [Mappentypen](#mappentypen), [Mappen](#mappen), [Dokumente](#dokumente) und die Teile dieses Ordners, `PostFotos` dazu [PDF bearbeiten](#pdf-bearbeiten). Über den Anschluss: Ereignis (Fassade), `meldeVerknuepft`, Aufgaben, Konten, Passung, Systemausstattung, Mappen löschen und `sichereZuordnung` aus `erkennung.ts` (die Erkennung bekommt noch den ganzen Dienst und liegt darum nicht unter Schicht 3).
-- **Reihenfolge:** `legePostAn` schreibt Mappe, Historie, Titel, „Post für dich“, `post.angelegt` und die Verknüpfungen in einer Transaktion; der Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` bleibt der letzte in der Reihe und ruft `postAufgaben` über die Fassade.
+- **Bekommt den Kern**, die [Rechteprüfung](#zugriff), [Mappentypen](#mappentypen), [Mappen](#mappen), [Dokumente](#dokumente) und die Teile dieses Ordners, `PostFotos` dazu [PDF bearbeiten](#pdf-bearbeiten). Über den Anschluss: Ereignis (`kern.ereignis`), `meldeVerknuepft`, Aufgaben, Konten, Passung, Systemausstattung, Mappen löschen und `sichereZuordnung` aus `erkennung.ts` (die Erkennung bekommt noch den ganzen Dienst und liegt darum nicht unter Schicht 3).
+- **Reihenfolge:** `legePostAn` schreibt Mappe, Historie, Titel, „Post für dich“, `post.angelegt` und die Verknüpfungen in einer Transaktion; der Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` bleibt der letzte in der Reihe und ruft `post.postAufgaben`.
 
 ## Ausgang (#1077) { #ausgang }
 
@@ -241,7 +241,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `export.ts` | `AusgangExport` (`dienst.ausgangExport`) | `exportiere` (#152, #153) |
 
 - **Tür:** `ausgang/index.ts`; die Routen (`ausgang.routen.ts`) holt nur `routen.ts` direkt.
-- **Eine Prüfstelle:** Jeder Weg fragt `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar` über die Fassade – Routen (`http/routen-kontext.ts`, `sichten.routen.ts`), `webdav.ts` und auch E-Mail und Export in diesem Ordner (über ihren Anschluss). `ausgang.test.ts` ersetzt die beiden am Dienst und prüft, dass Herunterladen, E-Mail (eine, mehrere), Export und Laufwerk sie fragen. Ein neuer Weg nach draußen fragt sie, bevor irgendetwas geschieht.
+- **Eine Prüfstelle:** Jeder Weg fragt `dienst.ausgang.pruefeAusgang` bzw. `dienst.ausgang.mitnehmbar` – Routen (`http/routen-kontext.ts`, `sichten.routen.ts`), `webdav.ts` und auch E-Mail und Export in diesem Ordner (über ihren Anschluss). `ausgang.test.ts` ersetzt die beiden an `dienst.ausgang` und prüft, dass Herunterladen, E-Mail (eine, mehrere), Export und Laufwerk sie fragen. Ein neuer Weg nach draußen fragt sie, bevor irgendetwas geschieht.
 - **Bekommt den Kern**, die Rechteprüfung, Mappentypen, Mappen, Dokumente, die [Sichten](#sichten), die Stempel-Vorlagen ([PDF bearbeiten](#pdf-bearbeiten)) und – für die E-Mail – die Systemmappen der [Post](#post); `entsperrtZu` über den Anschluss.
 
 ## PDF bearbeiten (#1077) { #pdf-bearbeiten }
@@ -269,12 +269,12 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `automatisierung.ts` | `Automatisierungshilfen` (`dienst.automatisierungshilfen`) | `automatisierungKontext`, `mitgliederDerRolle`, `trifftTeile`, `lesbareTitel`, `datumVon`, `mappenMitDatum` (#674, #712) |
 
 - **Warum Schicht 2:** Viele brauchen die Ereignisse, auch Mappen und Dokumente; selbst brauchen sie nur Kern, [Rechteprüfung](#zugriff) und die Pakete am Mappentyp samt KI-Freigabe ([Mappentypen](#mappentypen)). Texterkennung ([Volltext](#volltext)) und Rollen ([Post](#post)) kommen über den Anschluss.
-- Den Abnehmer `pakete` meldet der Dienst beim Verteiler an; Ereignis auslösen und der Wecker des Paket-Läufers gehen über die Fassade.
+- Den Abnehmer `pakete` meldet der Dienst beim Verteiler an; Ereignis auslösen (`kern.ereignis`) und der Wecker des Paket-Läufers (`ereignisWecker`) kommen über den Anschluss.
 - **Tür:** `ereignisse/index.ts`, eingebunden als `ereignisse/index` – neben dem Ordner liegt `ereignisse.ts` (der Verteiler des Katalogs), wie bei `pakete/index`.
 
 ## Aufgaben (#1078) { #aufgaben }
 
-`server/src/aufgaben/` (Schicht 3) bündelt alles rund um Aufgaben; der Dienst baut die Klassen (`baueAufgaben()`) und behält für jede Methode eine einzeilige Weiterleitung:
+`server/src/aufgaben/` (Schicht 3) bündelt alles rund um Aufgaben; der Dienst baut die Klassen (`baueAufgaben()`) und hält sie als Felder am Dienst; dort werden sie gerufen (#1079):
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
@@ -284,8 +284,8 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `fristen.ts` | `Fristen` (`dienst.fristen`) | Fristen, Erinnerungen, Termine samt Zwischenspeicher, Folgetermin (#129–#133, #528, #725) |
 | `ohne-empfaenger.ts` | `OhneEmpfaenger` (`dienst.ohneEmpfaenger`) | Alltags-Benutzer (#719), Favoriten benachrichtigen (#422) |
 
-- **Bekommt den Kern** und `AufgabenTeile` (Rechteprüfung, Historie und Mappen, Ereignisse, Rollen der [Post](#post) und einander); über den Anschluss Ereignis (Fassade), Konten und die Gültigkeit der Zahlen.
-- Die Empfänger an den [Anschlusspunkten](#anschlusspunkte) sind unverändert; sie rufen `pruefeErwaehnungen`, `fristenAbgleichen` und `abwesenheitGeaendert` über die Fassade.
+- **Bekommt den Kern** und `AufgabenTeile` (Rechteprüfung, Historie und Mappen, Ereignisse, Rollen der [Post](#post) und einander); über den Anschluss Ereignis (`kern.ereignis`), Konten und die Gültigkeit der Zahlen.
+- Die Empfänger an den [Anschlusspunkten](#anschlusspunkte) sind unverändert; sie rufen `aufgaben.pruefeErwaehnungen`, `fristen.fristenAbgleichen` und `vertretung.abwesenheitGeaendert` erst beim Auslösen – Tests ersetzen sie dort.
 
 ## Löschen (#1078) { #loeschen }
 
@@ -299,7 +299,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `mit-verknuepften.ts` | `MitVerknuepften` (`dienst.mitVerknuepften`) | [Baum](#baum-uber-verweise) und Löschen mit verknüpften Mappen (#396, #424) |
 | `beispiele.ts` | `BeispielMappen` (`dienst.beispielMappen`) | Beispiel-Mappen aus Paketen (#878) |
 
-- **Bekommt den Kern** und `LoeschenTeile` (Rechteprüfung, Passung, Historie, Dokumente, Ausgang, Sichten, Systemmappen und einander); Ereignis und `aktualisiereTitel` über die Fassade, Konten über den Anschluss.
+- **Bekommt den Kern** und `LoeschenTeile` (Rechteprüfung, Passung, Historie, Dokumente, Ausgang, Sichten, Systemmappen und einander); Ereignis (`kern.ereignis`), `aktualisiereTitel` (`mappenTitel`) und Konten über den Anschluss.
 - **Teile (#1031):** `loescheMappe` nimmt die Teile einer Mappe mit (`loescheMitTeilen`: R und D an jedem Teil, sonst 403 mit Anzahl; Papierkorb, Historie, Ereignisse und Löschprotokoll mit Weg `teile` in einer Transaktion, Vorgang = Id der Mappe). Der Papierkorb stellt sie mit ihr wieder her und löscht sie mit ihr endgültig; „mit verknüpften Mappen“ lehnt ab, wenn ein Teil einer gelöschten Mappe bliebe.
 
 ## Datenschutz (#1078) { #datenschutz }
@@ -320,9 +320,11 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 **Anzeige-Bedingungen (#1033):** Die Auswertung steht in `shared/src/anzeige.ts` (`anzeigestand`, `pruefeMitAnzeige`) und gilt für Oberfläche und Server gleich – Pflicht prüfen `mappen/eingaben.ts` (Speichern) und `mappentypen/passung.ts` (Passung) damit, das Formular nutzt sie über `web/src/ablage/anzeige.ts`. Die Bedingungen bauen auf dem Baukasten der Ansichten (`sichten.ts`) auf; nichts außer der Anzeige im Formular hängt an ihnen.
 
-## Was in dienst.ts bleibt (#1078) { #dienst-rest }
+## Was in dienst.ts bleibt (#1078, #1079) { #dienst-rest }
 
-Nach #1078 enthält `dienst.ts` nur noch Weiterleitungen und den Zusammenbau: die Felder der Klassen, den Konstruktor mit den `baue…()`-Methoden, `schliesseEmpfaengerAn()`, die `verbinde…`-Methoden, die Felder, die der Start oder Tests setzen (`mindestensMs`, `sicherungAufgegeben`, `systemkonten`, `ereignisWecker` …), den Verteiler der Ereignisse und den Tresor (`schluesselWechseln`, `verschluesselePaketGeheimnis`, `entschluessele`).
+Seit #1079 enthält `dienst.ts` keine Weiterleitungen mehr, nur den Zusammenbau: die Felder der Klassen, den Konstruktor mit den `baue…()`-Methoden, `schliesseEmpfaengerAn()`, die `verbinde…`-Methoden, die Felder, die der Start oder Tests setzen (`mindestensMs`, `sicherungAufgegeben`, `systemkonten`, `ereignisWecker` …), den Verteiler der Ereignisse und den Tresor (`schluesselWechseln`, `verschluesselePaketGeheimnis`, `entschluessele`).
+
+Routen, Module und Tests rufen die Fachdienste an den Feldern des Dienstes (`dienst.mappen.holeMappe(…)`, `dienst.kern.ereignis(…)`, `dienst.ausgang.pruefeAusgang(…)`); Konstanten, Hilfen und Typen holen sie aus der `index.ts` des Fachordners, nicht über `dienst.ts`. Die Rechteprüfung bleibt, wo sie war: in den Fachdiensten und in den Hüllen der Routen (`dokumentRecht`, `maskiere` …). Eine Weiterleitung ist geblieben: `listeDokumente` liest die Dokumente einer Mappe am Repo vorbei, ohne Rechteprüfung (Paket erstellen mit Beispiel-Dokumenten, nur für Administratoren) – das Repo gehört nicht in die Routen. Wer Neues baut, ruft den Fachdienst direkt und legt keine neue Weiterleitung an.
 
 ### Schichten { #schichten }
 
@@ -502,7 +504,7 @@ Die Entscheidung zwischen a, b und c trifft der Maintainer. Hier steht, was daf�
 
 - **Passwort:** nur über die Standardeingabe (`--password-file=-`), nie in der Befehlszeile; nie in Datenbank, Protokoll oder Historie. Ein Test prüft die Argumente von qpdf.
 - **Grenzen:** fünf falsche Passwörter je Person und Dokument in 15 Minuten, danach 429; qpdf mit Zeitgrenze (60 s, gemerkte Passwörter 20 s je Versuch, 2 Minuten je Dokument).
-- **Gemerkte Passwörter:** Einstellung `dokpasswoerter_<konto>`, jedes Passwort einzeln mit dem Tresor verschlüsselt (Art „Gemerkte Passwörter für Dokumente“ in Werkbank → Verschlüsselung, beim Schlüsselwechsel umgeschlüsselt). Routen `/api/konto/dokument-passwoerter…` nur in der eigenen Sitzung (kein API-Schlüssel, keine Vertretung); Anzeigen und Ändern des Passworts nur nach `…/bestaetigen` (5 Minuten je Sitzung). Neue Post mit „Für“ probiert die Passwörter dieser Person (`Dienst.neueDateien` → `PdfEntsperren.neu`).
+- **Gemerkte Passwörter:** Einstellung `dokpasswoerter_<konto>`, jedes Passwort einzeln mit dem Tresor verschlüsselt (Art „Gemerkte Passwörter für Dokumente“ in Werkbank → Verschlüsselung, beim Schlüsselwechsel umgeschlüsselt). Routen `/api/konto/dokument-passwoerter…` nur in der eigenen Sitzung (kein API-Schlüssel, keine Vertretung); Anzeigen und Ändern des Passworts nur nach `…/bestaetigen` (5 Minuten je Sitzung). Neue Post mit „Für“ probiert die Passwörter dieser Person (`DokumenteDienst.neueDateien` → `PdfEntsperren.neu`).
 
 ### Anzeige von PDFs im Browser (#639) { #pdf-anzeige }
 
@@ -651,26 +653,26 @@ Alles, was über Verweise an einer Mappe hängt, sammelt **ein** Modul – genut
 
 - **Typen und Optionen:** `shared/src/baum.ts` – `BaumOptionen` (`richtungen`: `verwiesenVon` = Mappen, die auf den Knoten verweisen, „nach unten“; `verweistAuf` = Mappen, auf die er verweist; `tiefe` 1–10; `max` bis 5000; `seitwaerts`; `ohneTypen`; `nurZugehoerigkeit`), `bereinigeBaumOptionen(eingabe, standard)`, `Baum`, `BaumKnoten`, Hilfen `kinderVon`, `haengtAuchAnderswo`, `wirdAnderswoGebraucht`, `baumZahlen`.
 - **Algorithmus:** `server/src/baum.ts` – `sammleBaum(quelle, startId, optionen)`: Breitensuche, je Ebene ein Zugriff auf Verweise (`Repo.kantenVon`), Mappen und Lesbarkeit. Ohne `seitwaerts` geht ein Knoten nur in der Richtung weiter, über die er erreicht wurde (die Start-Mappe in alle gewählten). Kreise und mehrfache Wege landen in `auchUeber` und `kreise`, jeder Knoten steht einmal da. Über `max` hinaus: `abgeschnitten`. Mit `nurZugehoerigkeit` geht es nur über Verweisfelder der Art Zugehörigkeit weiter (`verweisartVon(typ, feldKey)`, Standard Bezug); Knoten, die nur über Bezug dranhängen, sind Blätter mit `nurBezug` – erreicht die Suche sie später über eine Zugehörigkeit, werden sie dort eingehängt und weiterverfolgt (innerhalb einer Ebene haben Zugehörigkeiten Vorrang).
-- **Rechte:** Die `BaumQuelle` baut `Dienst.baumQuelle(zugriff)`; nur lesbare Mappen werden aufgenommen **und** weiterverfolgt, nicht lesbare zählen nur in `verborgen`. Zum Aufrufen: `await dienst.baum(startId, eingabe, zugriff)` (Benutzer und Rollen sind ohne `ohneTypen` ausgenommen), über HTTP `GET /api/v1/mappen/{id}/baum`.
+- **Rechte:** Die `BaumQuelle` baut `MitVerknuepften.baumQuelle(zugriff)`; nur lesbare Mappen werden aufgenommen **und** weiterverfolgt, nicht lesbare zählen nur in `verborgen`. Zum Aufrufen: `await dienst.mitVerknuepften.baum(startId, eingabe, zugriff)` (Benutzer und Rollen sind ohne `ohneTypen` ausgenommen), über HTTP `GET /api/v1/mappen/{id}/baum`.
 - **Je Knoten:** `typ`, `titel`, `ebene`, `ueber` (Elternknoten, Richtung, Feld, `verweisart`), `nurBezug`, `dokumente`, `aussen` (Verweise zu Mappen außerhalb des Baums je Richtung, nicht lesbare ohne Titel), `aufbewahrenBis`/`gesperrt` (Archivmodus #212) und `rechte` (CRUDP des Aufrufers).
 
-Die Auskunft (`Dienst.auskunftVorschau`) und das Löschen sammeln beide mit `nurZugehoerigkeit` (#472, #424): Bezug-Knoten gehen bei der Auskunft nur als Erwähnung hinaus (`AuskunftAuswahl.erwaehnungen`, `erwaehnungText` in `shared/src/auskunft.ts`), beim Löschen wird nur ihr Verweis entfernt. Volltext-Vorschläge gibt es bei der Auskunft nicht (mehr).
+Die Auskunft (`DatenschutzDienst.auskunftVorschau`) und das Löschen sammeln beide mit `nurZugehoerigkeit` (#472, #424): Bezug-Knoten gehen bei der Auskunft nur als Erwähnung hinaus (`AuskunftAuswahl.erwaehnungen`, `erwaehnungText` in `shared/src/auskunft.ts`), beim Löschen wird nur ihr Verweis entfernt. Volltext-Vorschläge gibt es bei der Auskunft nicht (mehr).
 
 Tests: `server/test/auskunft.test.ts` (Kreise, Rechte, Obergrenze, seitwärts, Zugehörigkeit/Bezug).
 
 ### Mit verknüpften Mappen löschen (#424)
 
-- **Vorschau und Plan** (reine Funktionen, Server und Oberfläche): `shared/src/loeschbaum.ts`. `Dienst.loeschVorschau(startId, { tiefe, max }, zugriff)` sammelt den Baum nur `verwiesenVon` mit `nurZugehoerigkeit` (Standardtiefe 5) und ergänzt `kanten` (alle Verweise zwischen Knoten, nicht nur die Baumwege), `geteilt` und `nichtLoeschbar`. Kennzeichen (`kennzeichen(v, k)`): 🔒 = `gesperrt`, 📎 = `nurBezug` (wird nie gelöscht, `loeschen` gilt als `entkoppeln`), ⛔ = `!rechte.D` oder `nichtLoeschbar`, 🔗 = `geteilt` – enger als `haengtAuchAnderswo(k)`: zählt nur Verweise der Art Zugehörigkeit nach außen über ein Feld, über das der Knoten im Baum hängt, oder auf eine Mappe desselben Typs wie im Baum; Verweise auf Stammdaten (Ablageort, Kategorie) und Benutzer zählen nicht, sonst wäre fast alles 🔗.
+- **Vorschau und Plan** (reine Funktionen, Server und Oberfläche): `shared/src/loeschbaum.ts`. `MitVerknuepften.loeschVorschau(startId, { tiefe, max }, zugriff)` sammelt den Baum nur `verwiesenVon` mit `nurZugehoerigkeit` (Standardtiefe 5) und ergänzt `kanten` (alle Verweise zwischen Knoten, nicht nur die Baumwege), `geteilt` und `nichtLoeschbar`. Kennzeichen (`kennzeichen(v, k)`): 🔒 = `gesperrt`, 📎 = `nurBezug` (wird nie gelöscht, `loeschen` gilt als `entkoppeln`), ⛔ = `!rechte.D` oder `nichtLoeschbar`, 🔗 = `geteilt` – enger als `haengtAuchAnderswo(k)`: zählt nur Verweise der Art Zugehörigkeit nach außen über ein Feld, über das der Knoten im Baum hängt, oder auf eine Mappe desselben Typs wie im Baum; Verweise auf Stammdaten (Ablageort, Kategorie) und Benutzer zählen nicht, sonst wäre fast alles 🔗.
 - **Plan:** `planeLoeschung(vorschau, auswahl)` – Auswahl je Id `loeschen | entkoppeln | behalten` (fehlende Ids bleiben). Fixpunkt: Eine Mappe bleibt, wenn `wirdAnderswoGebraucht(k)` oder eine bleibende Mappe im Baum ohne `entkoppeln` auf sie verweist. Gesperrte Mappen werden nie entkoppelt.
-- **Ausführen:** `Dienst.loescheMitVerknuepften` sammelt neu, plant, prüft jede Mappe wie beim einzelnen Löschen (`loeschPruefung` mit allen Rückverweisen), kappt die Verweise (`entkoppeln`, Recht U) und legt alles mit `Repo.legeVorgangInPapierkorb` in **einer** Transaktion in den Papierkorb (Verweise untereinander zuerst – so gehen auch Kreise). Spalten `papierkorb.vorgang` und `papierkorb.entkoppelt` (Migration 042). `stelleVorgangWiederHer` bzw. `Repo.stelleMehrereWiederHer` legen erst alle Mappen, dann die Verweise an und setzen die entkoppelten Verweise wieder. Tests: `server/test/loeschbaum.test.ts`.
+- **Ausführen:** `MitVerknuepften.loescheMitVerknuepften` sammelt neu, plant, prüft jede Mappe wie beim einzelnen Löschen (`loeschPruefung` mit allen Rückverweisen), kappt die Verweise (`entkoppeln`, Recht U) und legt alles mit `Repo.legeVorgangInPapierkorb` in **einer** Transaktion in den Papierkorb (Verweise untereinander zuerst – so gehen auch Kreise). Spalten `papierkorb.vorgang` und `papierkorb.entkoppelt` (Migration 042). `stelleVorgangWiederHer` bzw. `Repo.stelleMehrereWiederHer` legen erst alle Mappen, dann die Verweise an und setzen die entkoppelten Verweise wieder. Tests: `server/test/loeschbaum.test.ts`.
 
 ## Mappen schreiben, auch gleichzeitig (#609) { #mappen-schreiben }
 
 Wer zuletzt speichert, darf keine Felder zurücksetzen, die er nicht angefasst hat. Deshalb gilt für **jeden** Schreiber von Mappenwerten:
 
 - **Nur Geändertes schreiben.** `Repo.aendereMappe(id, werte, [], von, { basis, verweise })` legt nur die Felder auf den aktuellen Stand, die sich gegenüber `basis` (den gelesenen Werten) ändern – unter Sperre der Zeile (`SELECT … FOR UPDATE`) bzw. im Arbeitsspeicher genauso (`feldweise` in `server/src/repo.ts`). `verweise(w)` berechnet die Verweise aus dem Ergebnis. Interne Schreiber (`schreibeSystemMappe`, `schreibeVerweisWerte`, `absenderBereinigen`, Umbenennen von Feldern) nutzen das; `schreibeSystemMappe` bekommt außerdem nur die zu ändernden Felder, nie `{ ...mappe.werte, … }` aus einem älteren Lesen.
-- **Stand.** `mappen.geaendert` ist auf die Millisekunde genau und steigt bei jedem Schreiben (`greatest(clock_timestamp(), geaendert + 1 ms)`), damit er als Versionszähler taugt; keine Migration nötig. Mit `stand` schreibt das Repo nur, wenn die Zeile noch diesen Stand hat, sonst `StandVeraltet` – `Dienst.aendereMappe` liest dann neu und versucht es bis zu fünfmal.
-- **Konflikt.** `Dienst.aendereMappe(id, { werte, stand })`: Weicht `stand` vom aktuellen ab, sucht `feldkonflikte` in der Historie die Einträge `geaendert` mit `daten.stand` > `stand` (jeder Eintrag merkt sich den Stand, den sein Schreiben erzeugt hat). Ein übergebenes Feld, das dort vorkommt und jetzt anders lauten soll, ergibt 409 mit `Mappenkonflikt` (`shared/src/model.ts`). Ohne `stand` keine Prüfung, nur feldweises Schreiben – so bleiben alte API-Aufrufe gültig.
+- **Stand.** `mappen.geaendert` ist auf die Millisekunde genau und steigt bei jedem Schreiben (`greatest(clock_timestamp(), geaendert + 1 ms)`), damit er als Versionszähler taugt; keine Migration nötig. Mit `stand` schreibt das Repo nur, wenn die Zeile noch diesen Stand hat, sonst `StandVeraltet` – `MappenDienst.aendereMappe` liest dann neu und versucht es bis zu fünfmal.
+- **Konflikt.** `MappenDienst.aendereMappe(id, { werte, stand })`: Weicht `stand` vom aktuellen ab, sucht `feldkonflikte` in der Historie die Einträge `geaendert` mit `daten.stand` > `stand` (jeder Eintrag merkt sich den Stand, den sein Schreiben erzeugt hat). Ein übergebenes Feld, das dort vorkommt und jetzt anders lauten soll, ergibt 409 mit `Mappenkonflikt` (`shared/src/model.ts`). Ohne `stand` keine Prüfung, nur feldweises Schreiben – so bleiben alte API-Aufrufe gültig.
 - **Formular.** `MappeFormular` schickt nur die Felder, deren Rohwert von `basis` abweicht, und `stand` = `mappe.geaendert` beim Laden von `basis`. Bei 409 zeigt `Konfliktfrage` je Feld die Wahl; „Meins“ geht mit dem neuen Stand aus der Antwort noch einmal mit, „Seins“ übernimmt den Wert und bleibt weg.
 
 Tests: `server/test/gleichzeitig.test.ts` (Arbeitsspeicher und PostgreSQL), im Browser `docs/handbuch/screenshots/gleichzeitig-pruefen.mjs` (zwei Fenster, Workflow „Handbuch“).
@@ -687,7 +689,7 @@ Neben Menschen (`benutzer.art = 'person'`) gibt es zwei Arten von Konten, die si
 - **Anlegen:** `Konten.systemkonto(kennung)` beim Start (`ablago.ts`), idempotent; in PostgreSQL schützt der Index `benutzer_systemkonto` vor einem zweiten Konto, auch bei zwei Servern (Migration 059).
 - **Nie benutzbar:** `holeHash`, `listeBenutzer`, `anzahlBenutzer` sehen nur Menschen; `benutzerZu` (Sitzung) und `benutzerMitId` (API-Schlüssel) lehnen Systemkonten ab; Benutzerverwaltung und „Als Benutzer anmelden“ kennen sie nicht (`person()`). `personen()` liefert sie nur für Namen (`aktiv: false`, `art`).
 - **Rollen:** Die Rollen-Mappen `rolle:systemkonto` und `rolle:paket` legt die [Systemausstattung](#systemausstattung) an (`kontorollen` in `kern.system()`). `listeRollen()` liefert sie nur mit `mitKonten`, `pruefeRollen()` lehnt sie ab.
-- **Zugriff:** `Dienst.zugriff(konto)` setzt `wer.rollen = [Kontorolle]` und schneidet die Mappentypen mit `kontoRegelwerk(typ, rolleId)` (`shared/src/rechte.ts`) zu: Grundeinstellung „alles“, nur Regeln, die die Rolle nennen (`nenntRolle`). So sperrt ein strenger Standard für Mitglieder keine Automatisierung aus, ein Administrator kann aber gezielt einschränken. Für Pakete wird das Ergebnis mit den bestätigten Rechten geschnitten. `Dienst.systemZugriff('automatisierung')` liefert den Zugriff des Systemkontos (für den Motor der Automatisierungen, #674).
+- **Zugriff:** `ZugriffDienst.zugriff(konto)` setzt `wer.rollen = [Kontorolle]` und schneidet die Mappentypen mit `kontoRegelwerk(typ, rolleId)` (`shared/src/rechte.ts`) zu: Grundeinstellung „alles“, nur Regeln, die die Rolle nennen (`nenntRolle`). So sperrt ein strenger Standard für Mitglieder keine Automatisierung aus, ein Administrator kann aber gezielt einschränken. Für Pakete wird das Ergebnis mit den bestätigten Rechten geschnitten. `PostSystemmappen.systemZugriff('automatisierung')` liefert den Zugriff des Systemkontos (für den Motor der Automatisierungen, #674).
 - **Werkbank:** Systemkonten sind nie `admin`; welche Werkbank-Aktionen eine Karte darf, entscheidet die Karte selbst (#677).
 - **Oberfläche:** Werkbank → Benutzer, Abschnitt „Systemkonten“ (`GET /api/benutzer/systemkonten`, nur Administratoren).
 
@@ -802,19 +804,19 @@ Gemerkt wird je Person in ihren Einstellungen (`entdecken_rundgaenge`, `entdecke
 
 ## Ereigniskatalog (#670) { #ereigniskatalog }
 
-Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), die Texte in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – Unterstrich als Bindestrich –, `gruppe.<gruppe>`). Pakete (`code.ereignisse`, genau die Einträge mit `paket: true` plus die veralteten Namen in `VERALTETE_EREIGNISSE`), Webhooks und Automatisierungen (#674) nehmen ihre Ereignisse aus diesem Katalog. **Der Kern meldet jedes Geschehen genau einmal** (#724) – mit `kern.ereignis(…)` (im Dienst `dienst.ereignis(…)`) in den einen Ausgangskorb; einen zweiten Weg für Pakete gibt es nicht mehr. Die Liste zum Nachschlagen steht in der Werkbank beim Paket unter **Welche Ereignisse es gibt**.
+Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), die Texte in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – Unterstrich als Bindestrich –, `gruppe.<gruppe>`). Pakete (`code.ereignisse`, genau die Einträge mit `paket: true` plus die veralteten Namen in `VERALTETE_EREIGNISSE`), Webhooks und Automatisierungen (#674) nehmen ihre Ereignisse aus diesem Katalog. **Der Kern meldet jedes Geschehen genau einmal** (#724) – mit `kern.ereignis(…)` (im Dienst `dienst.kern.ereignis(…)`) in den einen Ausgangskorb; einen zweiten Weg für Pakete gibt es nicht mehr. Die Liste zum Nachschlagen steht in der Werkbank beim Paket unter **Welche Ereignisse es gibt**.
 
 **Regeln**
 
 - **Nur Ids, Art, Feldschlüssel und Datum** in `daten` – nie Werte, Titel oder Namen. Wer mehr wissen will, liest mit eigenen Rechten nach.
-- **Mindestens einmal, in derselben Transaktion:** `dienst.ereignis(art, daten, von)` schreibt in den Ausgangskorb (Tabelle `ereignisse`, Migration 060). Läuft gerade eine Transaktion (`inTransaktion`), gehört das Ereignis zur Änderung – scheitert eines, wird beides nicht gespeichert. Jedes Ereignis hat eine feste Id; ein Abnehmer erkennt daran eine Wiederholung.
+- **Mindestens einmal, in derselben Transaktion:** `dienst.kern.ereignis(art, daten, von)` schreibt in den Ausgangskorb (Tabelle `ereignisse`, Migration 060). Läuft gerade eine Transaktion (`inTransaktion`), gehört das Ereignis zur Änderung – scheitert eines, wird beides nicht gespeichert. Jedes Ereignis hat eine feste Id; ein Abnehmer erkennt daran eine Wiederholung.
 - **Mehrere Server:** Der `Ereignisverteiler` (`server/src/ereignisse.ts`) holt offene Ereignisse mit `FOR UPDATE SKIP LOCKED` und einer Sperre (`gesperrt_bis`, 120 s). Erst wenn **alle** Abnehmer es angenommen haben, gilt ein Ereignis als verteilt; sonst Wiederholung nach 1, 5, 30, 120 und 360 Minuten, danach aufgegeben (Protokoll). Verteilte Ereignisse bleiben 7 Tage.
 - **Eine Regel für Wiederholungen:** `wiederholungNach(versuche, plan)` in `shared/src/ereignisse.ts`. `kurz` (1, 5, 30, 120, 360 Minuten) gilt für den Ausgangskorb und die Zustellung an Pakete, `lang` (30 s bis 8 Stunden, zusammen gut 22 Stunden) für Webhooks, deren Ziel im Heimnetz über Nacht aus sein kann.
-- **Abnehmer im Kern:** `automatisierungen`, `pakete` (jedes abonnierte Ereignis; landet mit fester Id je Paket in der Zustellung des Paket-Läufers, `paket_ereignisse`) und Webhooks (zählen nach Änderungen neu). **Aufträge** an genau ein Paket (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, Gruppe `auftrag`) sind kein Geschehen für andere: `dienst.auftrag(paket, art, daten)` legt sie direkt in die Zustellung.
+- **Abnehmer im Kern:** `automatisierungen`, `pakete` (jedes abonnierte Ereignis; landet mit fester Id je Paket in der Zustellung des Paket-Läufers, `paket_ereignisse`) und Webhooks (zählen nach Änderungen neu). **Aufträge** an genau ein Paket (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, Gruppe `auftrag`) sind kein Geschehen für andere: `dienst.ereignisseDienst.auftrag(paket, art, daten)` legt sie direkt in die Zustellung.
 - **Veraltete Namen:** `texterkennung.fertig` meldet der Kern nicht mehr. Ein Paket, das es abonniert hat, bekommt `volltext.fertig` mit `quelle: kern` unter dem alten Namen (Übergang, `VERALTETE_EREIGNISSE`, entfällt mit 1.0.0). **Alle Übergangsausnahmen** stehen mit der Version, mit der sie entfallen, in `server/src/uebergaenge.ts` (#902); `uebergaenge.test.ts` wird rot, sobald Ablago diese Version erreicht. Neue Sonderwege für alte Pakete oder Dateien nur mit Eintrag dort.
 - **Bündeln:** Einträge mit `buendelS` (heute `mappe.geaendert`, 5 s) fassen schnelle Folgen zur selben Mappe zusammen, solange das Ereignis noch nicht verteilt ist; die Feldschlüssel werden vereinigt (`mischeFelder`).
 - **Frist erreicht** genau einmal: `frist_meldungen` (Mappe, Feld, Datum, Zeitpunkt) als Primärschlüssel; Merken und Ereignis in einer Transaktion.
-- **Still:** `dienst.ohneEreignisse(f)` – Beispiele, Demo-Daten (Erzeugen und Entfernen). Nur Ereignisse, die Pakete an Dateien verarbeiten (Volltext, Vektoren, Post), kommen mit `ausloeser.still` in den Ausgangskorb – Automatisierungen übergehen sie, Mappen-Ereignisse entstehen gar nicht. Eine Wiederherstellung markiert alle offenen Ereignisse als verteilt; in Wartung und während einer Wiederherstellung ruht der Verteiler.
+- **Still:** `dienst.kern.ohneEreignisse(f)` – Beispiele, Demo-Daten (Erzeugen und Entfernen). Nur Ereignisse, die Pakete an Dateien verarbeiten (Volltext, Vektoren, Post), kommen mit `ausloeser.still` in den Ausgangskorb – Automatisierungen übergehen sie, Mappen-Ereignisse entstehen gar nicht. Eine Wiederherstellung markiert alle offenen Ereignisse als verteilt; in Wartung und während einer Wiederherstellung ruht der Verteiler.
 
 **Abnehmer**
 
@@ -826,10 +828,10 @@ dienst.ereignisse.abonniere('mein-abnehmer', async (e: KatalogEreignis) => {
 
 Der Abnehmer `pakete` gibt Mappen-Ereignisse und `frist.erreicht` an Pakete weiter, die sie abonniert haben, den Typ unter `code.mappentypen` nennen (eigene, fremde, `*`) und die Mappe mit den Rechten ihres Dienstkontos gerade lesen dürfen (#686: bestätigte Rechte, Einstellung `paket_verwehrt` je Mappentyp, Regeln für die Rolle *Paket*; sonst Protokolleintrag statt Zustellung) – mit einer aus Ereignis- und Paket-Id berechneten Id, damit eine Wiederholung beim Paket nicht doppelt ankommt.
 
-**Auslöser** (`e.ausloeser`): `{ art: 'benutzer' | 'paket' | 'automatisierung' | 'system', id, konto, kette }`. Den Auslöser nimmt `dienst.ereignis` aus dem Konto (`von`: Benutzer bzw. Dienstkonto eines Pakets) oder aus `dienst.mitAusloeser(a, f)`. Eine Automatisierung (#674) führt ihre Aktionen so aus:
+**Auslöser** (`e.ausloeser`): `{ art: 'benutzer' | 'paket' | 'automatisierung' | 'system', id, konto, kette }`. Den Auslöser nimmt `dienst.kern.ereignis` aus dem Konto (`von`: Benutzer bzw. Dienstkonto eines Pakets) oder aus `dienst.kern.mitAusloeser(a, f)`. Eine Automatisierung (#674) führt ihre Aktionen so aus:
 
 ```ts
-await dienst.mitAusloeser({ art: 'automatisierung', id: regel.id, konto: systemkonto.id, kette: e.ausloeser.kette ? e.ausloeser.kette + 1 : 1 }, () => aktion());
+await dienst.kern.mitAusloeser({ art: 'automatisierung', id: regel.id, konto: systemkonto.id, kette: e.ausloeser.kette ? e.ausloeser.kette + 1 : 1 }, () => aktion());
 ```
 
 Damit erkennt sie ihre eigenen Änderungen und kann Ketten begrenzen. Ein Paket bekommt seine eigenen Änderungen nicht gemeldet.
@@ -843,7 +845,7 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Mo
 **Modell**
 
 - **Genau eine Wenn-Karte:** ein Ereignis aus dem Katalog (alle Gruppen außer `zaehler`, optional nur ein Mappentyp, bei `mappe.geaendert` optional nur bestimmte Felder) oder `datum` – „Datumsfeld in N Tagen erreicht“ (negativ: vor N Tagen), täglich ab einer Uhrzeit in der Zeitzone des Haushalts. Die Wenn-Karte legt den **Kontext** fest: die Mappe des Ereignisses (`daten.mappe`, bei Benutzer-Ereignissen die Benutzer-Mappe) und ihren Mappentyp.
-- **Und:** Bedingungen aus dem Baukasten der Ansichten (`Bedingung` aus `sichten.ts`), dazu „Mappe ist in Ansicht …“ und „Mappe ist in den Favoriten von …“ (Person, Rolle, Feld). Jede umkehrbar (`nicht`), Gruppen `alle`/`eine` eine Ebene tief. Ausgewertet in der Datenbank (`Dienst.trifftTeile` → `repo.inKlauseln`), „ich“ ist das Systemkonto.
+- **Und:** Bedingungen aus dem Baukasten der Ansichten (`Bedingung` aus `sichten.ts`), dazu „Mappe ist in Ansicht …“ und „Mappe ist in den Favoriten von …“ (Person, Rolle, Feld). Jede umkehrbar (`nicht`), Gruppen `alle`/`eine` eine Ebene tief. Ausgewertet in der Datenbank (`Automatisierungshilfen.trifftTeile` → `repo.inKlauseln`), „ich“ ist das Systemkonto.
 - **Dann:** Karten in ihrer Reihenfolge; ausführen tun sie die Einträge in `DANN_AUSFUEHRER` (`(karte, kontext) => Promise<string>` – die Zeile fürs Protokoll; im Probelauf (`trocken`) nur beschreiben). „Danach keine weiteren Automatisierungen ausführen“ (`stopp`) erledigt der Motor selbst.
 - **Platzhalter** wie beim Mappentitel (`{feld}`, `{feld|filter}`), dazu `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}`, bei `datum` auch `{datum}` und `{tage}`. Werte mit den Rechten des Systemkontos; Titel verknüpfter Mappen, die es nicht lesen darf, erscheinen als „(nicht sichtbar)“; Passwörter nie.
 
@@ -851,18 +853,18 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Mo
 
 1. Der Abnehmer `automatisierungen` des Ereigniskatalogs sucht eingeschaltete, nicht angehaltene Automatisierungen mit passender Wenn-Karte und führt sie **nacheinander** nach `reihenfolge` (1–99, dann Name) aus. Jede liest den aktuellen Stand.
 2. Je Automatisierung und Ereignis entsteht **genau ein Lauf** (`UNIQUE (automatisierung_id, ereignis_id)`) – kommt ein Ereignis noch einmal oder prüfen zwei Server denselben Tag, läuft nichts doppelt. Beim Zeitplan ist die Ereignis-Id aus Automatisierungs-Auslöser, Mappe und Datum berechnet; `letzter_tag` ist der Merker des Zeitplan-Bausteins (verpasste Tage bis 31 zurück werden nachgeholt).
-3. Ausgeführt wird unter dem Systemkonto „Automatisierung“ (`dienst.systemZugriff('automatisierung')`) und mit `dienst.mitAusloeser({ art: 'automatisierung', id, konto, kette })` – Historie und Ereignisse zeigen, wer gehandelt hat. Darf das Systemkonto die Mappe nicht lesen, wird der Lauf übersprungen.
+3. Ausgeführt wird unter dem Systemkonto „Automatisierung“ (`dienst.postSystemmappen.systemZugriff('automatisierung')`) und mit `dienst.kern.mitAusloeser({ art: 'automatisierung', id, konto, kette })` – Historie und Ereignisse zeigen, wer gehandelt hat. Darf das Systemkonto die Mappe nicht lesen, wird der Lauf übersprungen.
 4. Jeder Schritt (Wenn, Und, jede Dann-Karte) steht mit Zustand im Lauf (`schritte`) – die Oberfläche zeigt den Fortschritt live. Ein Kartenfehler beendet den Lauf als `fehlgeschlagen` (wiederholbar), die folgenden Automatisierungen laufen trotzdem.
 
 **Zeitplan-Baustein** (`server/src/zeitplan.ts`, #724): `faelligeTage(zuletzt, jetzt, takt)` ist die eine Regel – fällig ist jeder Tag nach dem zuletzt gelaufenen, an dem der Takt gilt (`an(tag)`, z. B. Wochentag, Feiertag), sobald seine Uhrzeit erreicht ist, höchstens `nachholenTage` zurück (0 = nur heute); neu beginnt heute. `laufeFaellige(merker, jetzt, takt, lauf)` trägt den Tag erst ein (vergleichen und tauschen, `Einstellungen.tausche`) und läuft dann – mit mehreren Servern macht ihn genau einer. Sicherung, Probe-Wiederherstellung, Tägliche Zusammenfassung (je Benutzer) und „Datum erreicht“ (31 Tage nachholen) nutzen ihn; die Merker-Schlüssel der Einstellungen sind dieselben wie vorher.
 
 **Datum erreicht** (`art: 'datum'`): `vorlauf` mit `einheit` (`tage`, `wochen`, `monate`), `uhrzeit`, `wiederholung` (Monate). `erreichteDaten(tag, vorlauf, einheit)` liefert die Feld-Daten, die an `tag` erreicht sind – bei Monaten alle D mit D − Vorlauf = tag (Monatsende gekappt). Alte Karten (`tage`, `frist.erreicht`) übersetzt `bereinigeWenn`.
 
-**Ein Weg für Aufgaben** (`Dienst.aufgabeAusAutomatisierung`, #724): `aufgabenEmpfaenger` löst Abwesenheit und Deaktivierung über `empfaengerAufloesen` auf; ist niemand Aktives erreichbar, gehen sie an die Administratoren (`null`). `aufgaben.anlass` (Migration 062, `AufgabenAnlass`): `datum` (erledigt sich in `fristenAbgleichen`, wenn das Datum nicht mehr stimmt; `wiederholung` → Folgetermin), `post` (in `postAufgaben`, wenn die Post nicht mehr neu ist), `abwesenheit` (beim Ende der Abwesenheit). Aus „Datum erreicht“ wird die Aufgabe eine **Frist** (`art: 'frist'`, Feld, Datum); der eindeutige Index `aufgaben_frist_idx` gilt je Mappe, Feld, Datum und Empfänger – dieselbe Person bekommt nie zwei.
+**Ein Weg für Aufgaben** (`AufgabenDienst.aufgabeAusAutomatisierung`, #724): `aufgabenEmpfaenger` löst Abwesenheit und Deaktivierung über `empfaengerAufloesen` auf; ist niemand Aktives erreichbar, gehen sie an die Administratoren (`null`). `aufgaben.anlass` (Migration 062, `AufgabenAnlass`): `datum` (erledigt sich in `fristenAbgleichen`, wenn das Datum nicht mehr stimmt; `wiederholung` → Folgetermin), `post` (in `postAufgaben`, wenn die Post nicht mehr neu ist), `abwesenheit` (beim Ende der Abwesenheit). Aus „Datum erreicht“ wird die Aufgabe eine **Frist** (`art: 'frist'`, Feld, Datum); der eindeutige Index `aufgaben_frist_idx` gilt je Mappe, Feld, Datum und Empfänger – dieselbe Person bekommt nie zwei.
 
 **Dann-Karten** (`server/src/automatisierung-karten.ts`, #676)
 
-- **Feld ändern** (`feld`): `werte` je Feldschlüssel – fest, Text mit Platzhaltern (Text, Langtext, formatierter Text), bei Datumsfeldern auch `heute`, `heute+7`, `heute-3`. Geschrieben wird über `Dienst.aendereMappe` mit dem Zugriff des Systemkontos und nur den gewählten Feldern (#609): Feldformate, Pflicht, Auswahllisten und Verweisziele werden geprüft wie im Formular, Archivmodus und Fristsperre nie umgangen. Die Historie trägt `automatisierung: { id, name, eingerichtetVon }`.
+- **Feld ändern** (`feld`): `werte` je Feldschlüssel – fest, Text mit Platzhaltern (Text, Langtext, formatierter Text), bei Datumsfeldern auch `heute`, `heute+7`, `heute-3`. Geschrieben wird über `MappenDienst.aendereMappe` mit dem Zugriff des Systemkontos und nur den gewählten Feldern (#609): Feldformate, Pflicht, Auswahllisten und Verweisziele werden geprüft wie im Formular, Archivmodus und Fristsperre nie umgangen. Die Historie trägt `automatisierung: { id, name, eingerichtetVon }`.
 - **Aufgabe / Benachrichtigung** (`aufgabe`): Empfänger Person, Rolle (alle aktiven Mitglieder), Feld der Mappe (Verweis auf Benutzer) oder `ersteller` (wer die Mappe angelegt hat); `als: 'aufgabe'` legt jedes Mal eine Aufgabe an (Fälligkeit `faellig` Tage ab heute → erscheint unter „Anstehend“), `als: 'benachrichtigung'` bündelt je Automatisierung, Mappe und Empfänger (eine offene, der Text wird aktualisiert). Wer die Mappe nicht lesen darf, bekommt sie an seiner eigenen Benutzer-Mappe – ohne Link. Platzhalter füllt Stufe 1 mit den Rechten des Systemkontos (Empfänger-Rechte: #683).
 
 **Oberfläche** (`web/src/werkbank/Automatisierungen.tsx`, #675): Werkbank → Ablage aufbauen → Automatisierungen, dreiteilig. Karten aus dem Vorrat kommen per `useZiehen` (Ablagen `wenn`/`und`/`dann`) oder per „+ Karte“ (Auswahlfeld, Tastatur) hinein; Dann-Karten und die Liste „nach Auslöser“ sortieren per Ziehen oder Alt+↑/↓ (Reihenfolge wird in Zehnerschritten neu vergeben). **Live-Fortschritt per Abfrage:** solange der Editor offen ist, holt er alle 2 s `GET …/:id/laeufe` – die Schritte stehen in der Datenbank, deshalb mit mehreren Servern verträglich, ohne SSE und ohne Sitzungsbindung. Die Liste fragt alle 15 s nach. Beim Start legt `legeBeispiele()` drei ausgeschaltete Beispiele (Herkunft `dms`, feste Ids aus `uuidAus`) an, wenn es sie noch nicht gibt.
@@ -889,13 +891,13 @@ Ablago baut **von sich aus keine Verbindung** ins Internet auf. Jeder Weg nach d
 | Paket-Netz | Administrator bestätigt bei der Installation | nur an die Adressen aus Manifest bzw. Dienst-Adresse | Paket-Läufer, Recht `netzwerk` |
 | Abruf-Links (Auskunft) | Administrator erzeugt den Link | die Auskunft, nur nach Abrufcode | `server/src/abruf.ts` |
 
-Herunterladen (auch ein Brief aus Vorlage, #1040), E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über die Fassade `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar`.
+Herunterladen (auch ein Brief aus Vorlage, #1040), E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über `dienst.ausgang.pruefeAusgang` bzw. `dienst.ausgang.mitnehmbar`.
 
 **Regel für neue Wege:** Ein neuer Weg nach draußen braucht ein freigegebenes Issue, ist **ausgeschaltet**, bis ihn jemand ausdrücklich einschaltet, schickt so wenig wie möglich (Zahlen statt Inhalte, wo es reicht), steht in dieser Tabelle und in der Übersicht im Administratorhandbuch und wird von Sicherheit geprüft.
 
 ## Zähler-Endpunkt und Schlüssel-Stufen (#625) { #zaehler-endpunkt }
 
-Andere Programme (Hausautomatisierung, Wand-Tablet, Clients) wollen oft nur wissen, **ob etwas Neues da ist**. Dafür gibt es `GET /api/v1/ich/zaehler` (intern `/api/ich/zaehler`, `Dienst.zaehlerAbruf`):
+Andere Programme (Hausautomatisierung, Wand-Tablet, Clients) wollen oft nur wissen, **ob etwas Neues da ist**. Dafür gibt es `GET /api/v1/ich/zaehler` (intern `/api/ich/zaehler`, `SichtenDienst.zaehlerAbruf`):
 
 ```sh
 curl -i -H "Authorization: Bearer dms_…" https://dms.example.org/api/v1/ich/zaehler
@@ -908,7 +910,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 ```
 
 - **Nur Zahlen.** Die Antwort enthält nie Titel, Namen, Absender oder Inhalte – auch künftige Felder nicht. Das OpenAPI-Schema `Zaehlerstand` hat `additionalProperties: false`, der Test `server/test/zaehler-api.test.ts` prüft die Schlüssel und dass keine Texte durchrutschen.
-- **Woher die Zahlen kommen.** `zuErledigen` ist `eingang` aus `Dienst.zaehler` (#512), `ueberfaellig` zählt die eigenen überfälligen Einträge von `Dienst.termine` (#528, #725; `anstehend` ist mit #725 entfallen), `neuePost` zählt Post im Stand „Neu“ mit „Für“ = ich oder leer über `zaehleKlauseln` – mit eigenem `Zaehlerspeicher` am Haushaltsstand. Alles in den Rechten des Benutzers (Lesefilter); nichts wird für den Endpunkt neu gerechnet, solange sich am Haushalt nichts ändert.
+- **Woher die Zahlen kommen.** `zuErledigen` ist `eingang` aus `SichtenDienst.zaehler` (#512), `ueberfaellig` zählt die eigenen überfälligen Einträge von `Fristen.termine` (#528, #725; `anstehend` ist mit #725 entfallen), `neuePost` zählt Post im Stand „Neu“ mit „Für“ = ich oder leer über `zaehleKlauseln` – mit eigenem `Zaehlerspeicher` am Haushaltsstand. Alles in den Rechten des Benutzers (Lesefilter); nichts wird für den Endpunkt neu gerechnet, solange sich am Haushalt nichts ändert.
 - **Stand in der Datenbank** (Tabelle `zaehlerstaende`, Migration 056). Je Abruf bildet der Server einen Hash der Zahlen (`fingerabdruck`), vergleicht ihn mit dem gespeicherten und zählt `stand` nur bei einer Abweichung hoch (`Repo.setzeZaehlerstand`, ein `INSERT … ON CONFLICT DO UPDATE … WHERE abdruck IS DISTINCT FROM …`: gleichzeitige Abrufe zählen eine Änderung einmal). Unverändert heißt: nur lesen. Der Haushaltsstand aus #512 lebt nur im Arbeitsspeicher und fängt nach jedem Neustart bei 0 an – als ETag taugt er darum nicht. Das ETag ist `"z<stand>-<hash>"`: Gleiches ETag heißt gleiche Zahlen, auch nach einem Neustart oder einer Wiederherstellung.
 - **ETag und 304.** `passtEtag` (`http/routen-hilfen.ts`) versteht Listen, `W/…` und `*`. Eine Route setzt eigene Köpfe über `Antwort.koepfe`; Köpfe der Anfrage liest sie über `Anfrage.kopf(name)`. `Cache-Control: private, no-cache` statt `no-store`, damit Programme nachfragen dürfen.
 - **Schlüssel-Stufe „nur Zähler“** (`recht = 'zaehler'`, `NUR_ZAEHLER` und `ZAEHLER_PFAD` in `apischluessel.ts`). `pruefeZugang` lässt sie nur an `GET /api/v1/ich/zaehler` durch; jede andere Route unter `/api/v1` und – ausdrücklich – jede interne Route mit einem solchen Schlüssel im Kopf bekommt `403` (`api.schluessel.nur-zaehler`), das Laufwerk ebenfalls (`webdav.ts`). „Passwörter lesen“ gibt es für diese Stufe nicht. Eine neue Schnittstelle, die API-Schlüssel annimmt, muss die Stufe genauso abweisen.
@@ -1018,7 +1020,7 @@ Im Server gibt es dieselbe Prüfung als `pruefeSignatur` (`webhook.ts`) für Tes
 
 ### Ablauf und mehrere Server
 
-- **Anstoß:** `Haushaltsstand.beiAenderung` (`zaehlerspeicher.ts`) ruft nach jeder ändernden Repo-Methode `Webhooks.anstossen()` (über `Dienst.beiAenderung`, für Zahlen der Ansichten und die Termine). Nach 3 s zählt `pruefe()` für jeden Benutzer mit eingeschaltetem Webhook einmal `zaehlerAbruf` (aus dem Zwischenspeicher, meist Millisekunden). Ohne Anlass zählt der Server mit der Sperre jede Minute (Mitternacht, Fristen, Änderungen auf einem anderen Server).
+- **Anstoß:** `Haushaltsstand.beiAenderung` (`zaehlerspeicher.ts`) ruft nach jeder ändernden Repo-Methode `Webhooks.anstossen()` (über `SichtenDienst.beiAenderung`, für Zahlen der Ansichten und die Termine). Nach 3 s zählt `pruefe()` für jeden Benutzer mit eingeschaltetem Webhook einmal `zaehlerAbruf` (aus dem Zwischenspeicher, meist Millisekunden). Ohne Anlass zählt der Server mit der Sperre jede Minute (Mitternacht, Fristen, Änderungen auf einem anderen Server).
 - **Ausgangskorb in der Datenbank:** `merkeStand` setzt in einer Transaktion mit Zeilensperre `webhooks.gemeldet_stand` und legt die Meldung an – oder ersetzt die Daten der offenen (höchstens eine je Webhook, eindeutiger Teilindex). So zählt jeder Stand einmal, auch wenn zwei Server gleichzeitig prüfen. Neue Meldungen sind frühestens 30 s nach dem letzten Senden (`webhooks.gesendet`) fällig – das ist das Zusammenfassen.
 - **Zustellen:** `faellige` holt Meldungen mit `FOR UPDATE SKIP LOCKED`, zählt den Versuch hoch und schiebt `faellig` um 60 s (Lease). Stirbt der Server beim Senden, holt ein anderer die Meldung danach – sie kommt dann womöglich doppelt, mit derselben Ereignis-Id (**mindestens einmal**). Ändern sich die Daten während des Sendens, schließt `zugestellt` die Meldung nicht (Ereignis-Id passt nicht mehr) und sie geht nach dem Mindestabstand erneut.
 - **Wiederholen und Aufgeben:** Wartezeiten `WEBHOOK_WARTEN_S` (30 s bis 8 h, zusammen etwa 22 h, 12 Versuche); nach dem letzten Fehlschlag `zustand = 'aufgegeben'`, Webhook aus (`abgeschaltet.grund = 'fehler'`), Protokoll, Mail an die Administratoren und – ist der Besitzer kein Administrator – auch an ihn (`anBesitzer`).

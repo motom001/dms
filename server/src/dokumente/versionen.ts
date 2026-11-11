@@ -18,7 +18,7 @@ export interface VersionenAnschluss {
   /** Neue Dateien melden und unbenutzte aufräumen (Dokumente, über den Dienst). */
   neueDateien(docs: Dokument[]): void;
   raeumeAuf(sha256: string): Promise<void>;
-  /** Titel neu berechnen – über die Fassade des Dienstes, wie bisher (`MappenTitel.aktualisiereTitel`). */
+  /** Titel neu berechnen – über den Anschluss (`MappenTitel.aktualisiereTitel`). */
   aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
   /** Will das Register Volltext (#45; Volltext, noch im Dienst)? */
   volltextAn(typ: Mappentyp | undefined, registerKey: string): boolean;

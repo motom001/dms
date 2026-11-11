@@ -35,13 +35,13 @@ const paket = (id: string, netz: string[] = []): InstalliertesPaket => ({
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
-  const organisation = await d.legeTypAn({ name: 'Organisation', felder: [{ key: 'name', label: 'Name', typ: 'text', erkennung: {}, wiederfinden: true }], register });
-  const person = await d.legeTypAn({ name: 'Person', felder: [
+  const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', felder: [{ key: 'name', label: 'Name', typ: 'text', erkennung: {}, wiederfinden: true }], register });
+  const person = await d.mappentypen.legeTypAn({ name: 'Person', felder: [
     { key: 'vorname', label: 'Vorname', typ: 'text', erkennung: {} },
     { key: 'nachname', label: 'Nachname', typ: 'text', erkennung: {} },
     { key: 'funktion', label: 'Funktion', typ: 'text', erkennung: {} },
@@ -51,7 +51,7 @@ async function aufbau() {
     { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id, erkennung: {} },
     { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
   ], register });
-  const A = await d.zugriff({ id: lena.id, rolle: 'admin' });
+  const A = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
   const eingaenge: Array<Record<string, unknown>> = [];
   let antwort: () => Promise<string> = async () => JSON.stringify({
     vorname: { wert: 'Jonas', sicherheit: 'hoch', fundstelle: 'Jonas Beispiel' },
@@ -112,14 +112,14 @@ describe('Aus Dokument ausfüllen per Paket (#511)', () => {
     const gesperrt = await x.d.erkennung.fuerTyp(x.person.id, { text: KARTE }, x.A);
     assert.deepEqual(gesperrt.engine, { art: 'eingebaut' });
     assert.match(String(gesperrt.hinweis), /nicht für KI-Dienste zugelassen/);
-    await x.d.setzeKiTyp(x.person.id, true, null);
+    await x.d.ki.setzeKiTyp(x.person.id, true, null);
     assert.deepEqual((await x.d.erkennung.fuerTyp(x.person.id, { text: KARTE }, x.A)).engine, { art: 'paket', id: 'wolke', name: 'Erkennung wolke' });
     // Am Typ: eingebaut – überschreibt den Standard.
-    await x.d.aendereTyp(x.person.id, { ...x.person, ausDokument: { engine: 'eingebaut' } });
+    await x.d.mappentypen.aendereTyp(x.person.id, { ...x.person, ausDokument: { engine: 'eingebaut' } });
     assert.deepEqual((await x.d.erkennung.fuerTyp(x.person.id, { text: KARTE }, x.A)).engine, { art: 'eingebaut' });
     // Am Typ ein Paket mit Netz: nur mit Bestätigung.
-    await assert.rejects(x.d.aendereTyp(x.person.id, { ...x.person, ausDokument: { engine: 'wolke' } }), (e: Fachfehler) => e.status === 409);
-    await x.d.aendereTyp(x.person.id, { ...x.person, ausDokument: { engine: 'wolke', abfluss: true } });
+    await assert.rejects(x.d.mappentypen.aendereTyp(x.person.id, { ...x.person, ausDokument: { engine: 'wolke' } }), (e: Fachfehler) => e.status === 409);
+    await x.d.mappentypen.aendereTyp(x.person.id, { ...x.person, ausDokument: { engine: 'wolke', abfluss: true } });
     assert.deepEqual((await x.d.erkennung.fuerTyp(x.person.id, { text: KARTE }, x.A)).engine.art, 'paket');
     // Werkbank-Routen.
     const tabelle = routen(x.d, x.konten, {});
@@ -144,13 +144,13 @@ describe('Aus Dokument ausfüllen per Paket (#511)', () => {
 
   it('Gutschrift (#1043) auch bei Antworten aus Paketen: positiver Betrag wird negativ, Hinweise nur vom Kern', async () => {
     const x = await aufbau();
-    const beleg = await x.d.legeTypAn({ name: 'Beleg', felder: [
+    const beleg = await x.d.mappentypen.legeTypAn({ name: 'Beleg', felder: [
       { key: 'betrag', label: 'Betrag', typ: 'betrag', negativ: true, erkennung: {} },
       { key: 'skonto', label: 'Skonto', typ: 'betrag', erkennung: {} },
     ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }] });
     await x.d.erkennung.setzeStandard({ paket: 'ki' });
     x.setzeAntwort(async () => JSON.stringify({ betrag: { wert: { betrag: 49.9, waehrung: 'EUR' }, hinweis: 'vom Paket' }, skonto: { wert: { betrag: 1, waehrung: 'EUR' } } }));
-    const r = await x.d.erkennung.fuerTyp(beleg.id, { text: 'Versandhaus Beispiel\nGutschrift Nr. 12\nGesamtbetrag 49,90 €' }, await x.d.zugriff({ id: (await x.konten.listeBenutzer())[0].id, rolle: 'admin' }));
+    const r = await x.d.erkennung.fuerTyp(beleg.id, { text: 'Versandhaus Beispiel\nGutschrift Nr. 12\nGesamtbetrag 49,90 €' }, await x.d.rechtepruefung.zugriff({ id: (await x.konten.listeBenutzer())[0].id, rolle: 'admin' }));
     assert.equal(r.engine.art, 'paket');
     assert.deepEqual(r.vorschlaege.betrag.wert, { betrag: -49.9, waehrung: 'EUR' });
     assert.match(r.vorschlaege.betrag.hinweis!, /Gutschrift/);

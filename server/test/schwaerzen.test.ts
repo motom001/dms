@@ -236,30 +236,30 @@ describe('Bilder schwärzen (#392)', () => {
 
 async function aufbau(repo: Repo, versionierung = true) {
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
   ] });
-  const m = await d.legeMappeAn({ typId: t.id, werte: { name: 'Gehalt' } }, null);
+  const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Gehalt' } }, null);
   const pdf = await pdfMitAllem();
-  const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'nachweis.pdf', typ: 'application/pdf' }, pdf, null);
+  const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'nachweis.pdf', typ: 'application/pdf' }, pdf, null);
   // Der Volltext des Originals (wie nach der Texterkennung).
   await (d as unknown as { repo: Repo }).repo.ocrSetze(dokument.id, { stand: 'fertig', text: ZEILEN.join('\n'), seiten: 1, info: 'Textebene des PDFs' });
   const ereignisse: string[] = [];
-  const melde = d.ereignis.bind(d);
-  d.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
+  const melde = d.kern.ereignis.bind(d.kern);
+  d.kern.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
   return { d, t, m, dokument, pdf, ereignisse };
 }
 
 describe('Schwärzen am Dokument (#392)', () => {
   it('eigenes Dokument „… (geschwärzt)“, Original bleibt, Historie ohne Inhalt, Ereignis wie beim Hochladen', async () => {
     const { d, m, dokument, ereignisse } = await aufbau(speicherRepo());
-    const v = await d.schwaerzenVorschau(dokument.id);
+    const v = await d.schwaerzen.schwaerzenVorschau(dokument.id);
     assert.equal(v.kopieName, 'nachweis (geschwärzt).pdf');
     assert.equal(v.versioniert, true);
     assert.equal(v.seiten.length, 1);
     assert.ok(v.seiten[0].woerter.some((w) => w[0] === 'Mustermann'));
-    const r = await d.schwaerzeDokument(dokument.id, { begriffe: ['mustermann', 'gibt es nicht'], muster: ['iban'] }, ich);
+    const r = await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['mustermann', 'gibt es nicht'], muster: ['iban'] }, ich);
     assert.equal(r.ziel, 'kopie');
     assert.equal(r.dokument.name, 'nachweis (geschwärzt).pdf');
     assert.notEqual(r.dokument.id, dokument.id);
@@ -267,67 +267,67 @@ describe('Schwärzen am Dokument (#392)', () => {
     assert.deepEqual(r.begriffe, [{ gefunden: 1 }, { gefunden: 0 }]);
     assert.equal(r.stellen, 2);
     assert.match(r.meldung, /Original bleibt unverändert/);
-    const vt = (await d.volltext(r.dokument.id)).text!;
+    const vt = (await d.volltexte.volltext(r.dokument.id)).text!;
     assert.ok(vt.includes('Gehalt 4711') && !vt.includes('Mustermann') && !vt.includes('DE89'), vt);
     assert.equal(r.dokument.ocr?.stand, 'fertig', 'keine neue Texterkennung nötig');
-    const original = await d.holeDokument(dokument.id);
+    const original = await d.dokumente.holeDokument(dokument.id);
     assert.equal(original.sha256, dokument.sha256, 'Original unverändert');
     assert.equal(original.version ?? 1, 1);
     assert.ok(ereignisse.includes('dokument.hochgeladen'));
-    const h = await d.historie(m.id);
+    const h = await d.mappenHistorie.historie(m.id);
     const e = h.find((x) => x.art === 'geschwaerzt')!;
     assert.match(String(e.daten.text), /^geschwärzte Fassung „nachweis \(geschwärzt\)\.pdf“ von „nachweis\.pdf“ erstellt \(2 Stellen auf 1 Seite\)$/);
     assert.equal(e.benutzerId, ich);
     assert.ok(!/mustermann|gibt es nicht|DE89/i.test(JSON.stringify(h)), 'keine Suchbegriffe und kein Inhalt in der Historie');
     // Ein zweites Mal: Zähler im Namen.
-    const z = await d.schwaerzeDokument(dokument.id, { bereiche: [{ seite: 1, x: 0, y: 0, b: 0.5, h: 0.5 }] }, ich);
+    const z = await d.schwaerzen.schwaerzeDokument(dokument.id, { bereiche: [{ seite: 1, x: 0, y: 0, b: 0.5, h: 0.5 }] }, ich);
     assert.equal(z.dokument.name, 'nachweis (geschwärzt) (2).pdf');
   });
 
   it('als neue Version; ohne Versionierung nur als Kopie; Fehler', async () => {
     const { d, dokument } = await aufbau(speicherRepo());
-    const r = await d.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich);
+    const r = await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich);
     assert.equal(r.dokument.id, dokument.id);
     assert.equal(r.dokument.version, 2);
     assert.equal(r.dokument.herkunft, 'geschwaerzt');
-    assert.ok(!(await d.volltext(dokument.id)).text!.includes('Mustermann'));
-    assert.equal((await d.versionen(dokument.id)).aeltere[0].sha256, dokument.sha256, 'die ungeschwärzte bleibt als Version 1');
-    await assert.rejects(d.schwaerzeDokument(dokument.id, { begriffe: ['Mondlandung'] }, ich), status(422, /Suchbegriff kommt im Text des Dokuments nicht vor/));
-    await assert.rejects(d.schwaerzeDokument(dokument.id, {}, ich), status(422, /Bitte Bereiche/));
-    await assert.rejects(d.schwaerzeDokument(dokument.id, { muster: ['postleitzahl'] }, ich), status(422, /muster/));
-    await assert.rejects(d.schwaerzeDokument(dokument.id, { bereiche: [{ seite: 2, x: 0, y: 0, b: 1, h: 1 }] }, ich), status(422, /Seite 2 gibt es nicht/));
-    await assert.rejects(d.schwaerzeDokument(dokument.id, { begriffe: ['x'], ziel: 'irgendwo' }, ich), status(422));
+    assert.ok(!(await d.volltexte.volltext(dokument.id)).text!.includes('Mustermann'));
+    assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere[0].sha256, dokument.sha256, 'die ungeschwärzte bleibt als Version 1');
+    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mondlandung'] }, ich), status(422, /Suchbegriff kommt im Text des Dokuments nicht vor/));
+    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, {}, ich), status(422, /Bitte Bereiche/));
+    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { muster: ['postleitzahl'] }, ich), status(422, /muster/));
+    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { bereiche: [{ seite: 2, x: 0, y: 0, b: 1, h: 1 }] }, ich), status(422, /Seite 2 gibt es nicht/));
+    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['x'], ziel: 'irgendwo' }, ich), status(422));
 
     const o = await aufbau(speicherRepo(), false);
-    await assert.rejects(o.d.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich), status(409, /nur ein eigenes Dokument/));
-    const k = await o.d.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'] }, ich);
-    assert.equal((await o.d.holeMappe(o.m.id)).dokumente.length, 2);
+    await assert.rejects(o.d.schwaerzen.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich), status(409, /nur ein eigenes Dokument/));
+    const k = await o.d.schwaerzen.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'] }, ich);
+    assert.equal((await o.d.mappen.holeMappe(o.m.id)).dokumente.length, 2);
     assert.equal(k.dokument.name, 'nachweis (geschwärzt).pdf');
-    const txt = (await o.d.ladeHoch(o.m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('Mustermann'), null)).dokument;
-    await assert.rejects(o.d.schwaerzenVorschau(txt.id), status(422, /PDFs und Bildern/));
-    await assert.rejects(o.d.schwaerzeDokument(txt.id, { begriffe: ['Mustermann'] }, ich), status(422, /PDFs und Bildern/));
+    const txt = (await o.d.dokumente.ladeHoch(o.m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('Mustermann'), null)).dokument;
+    await assert.rejects(o.d.schwaerzen.schwaerzenVorschau(txt.id), status(422, /PDFs und Bildern/));
+    await assert.rejects(o.d.schwaerzen.schwaerzeDokument(txt.id, { begriffe: ['Mustermann'] }, ich), status(422, /PDFs und Bildern/));
   });
 
   it('Scan (#459): keine Wörter, nur Bereiche; die Kopie bekommt ihren Volltext wie ein neues Dokument – nie den des Originals', async () => {
     const { d, m } = await aufbau(speicherRepo());
     const png = await bildMitText('png');
-    const scan = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'scan.png', typ: 'image/png' }, png, null)).dokument;
+    const scan = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.png', typ: 'image/png' }, png, null)).dokument;
     // Der Volltext des Originals (wie vom Paket Texterkennung erkannt).
-    await d.schreibeVolltext(scan.id, { text: 'SECRET 4711 CODE PUBLIC WORDS HERE' }, { id: 'p', herkunft: 'Texterkennung 2.0.0', paket: true });
-    const v = await d.schwaerzenVorschau(scan.id);
+    await d.volltexte.schreibeVolltext(scan.id, { text: 'SECRET 4711 CODE PUBLIC WORDS HERE' }, { id: 'p', herkunft: 'Texterkennung 2.0.0', paket: true });
+    const v = await d.schwaerzen.schwaerzenVorschau(scan.id);
     assert.equal(v.quelle, 'keine');
     assert.deepEqual(v.seiten[0].woerter, []);
-    await assert.rejects(d.schwaerzeDokument(scan.id, { begriffe: ['4711'] }, ich), status(422, /keinen lesbaren Text/));
-    const r = await d.schwaerzeDokument(scan.id, { bereiche: [{ seite: 1, x: 0, y: 0, b: 1, h: 0.5 }] }, ich);
+    await assert.rejects(d.schwaerzen.schwaerzeDokument(scan.id, { begriffe: ['4711'] }, ich), status(422, /keinen lesbaren Text/));
+    const r = await d.schwaerzen.schwaerzeDokument(scan.id, { bereiche: [{ seite: 1, x: 0, y: 0, b: 1, h: 0.5 }] }, ich);
     assert.notEqual(r.dokument.ocr?.stand, 'fertig', 'kein Volltext übernommen – die Kopie geht durch Textebene und Paket');
-    assert.equal((await d.volltext(r.dokument.id)).text ?? '', '', 'nichts vom Text des Originals');
+    assert.equal((await d.volltexte.volltext(r.dokument.id)).text ?? '', '', 'nichts vom Text des Originals');
   });
 
   it('Seitenbild für den Dialog', async () => {
     const { d, dokument } = await aufbau(speicherRepo());
-    const b = await d.schwaerzSeitenbild(dokument.id, 1);
+    const b = await d.schwaerzen.schwaerzSeitenbild(dokument.id, 1);
     assert.ok(b && b[0] === 0xff && b[1] === 0xd8);
-    assert.equal(await d.schwaerzSeitenbild(dokument.id, 0), null);
+    assert.equal(await d.schwaerzen.schwaerzSeitenbild(dokument.id, 0), null);
   });
 });
 
@@ -350,9 +350,9 @@ describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.T
 
   it('neue Version: die Suche findet den Begriff nicht mehr, den Rest schon', async () => {
     const { d, t, dokument } = await aufbau(await pgRepo());
-    const suche = (q: string) => d.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
+    const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
     assert.equal((await suche('Mustermann')).gesamt, 1, 'vorher gefunden');
-    await d.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], muster: ['iban'], ziel: 'version' }, null);
+    await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], muster: ['iban'], ziel: 'version' }, null);
     assert.equal((await suche('Mustermann')).gesamt, 0);
     assert.equal((await suche('DE89')).gesamt, 0);
     assert.equal((await suche('brutto')).gesamt, 1, 'der übrige Text bleibt durchsuchbar');
@@ -360,14 +360,14 @@ describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.T
 
   it('Kopie in einer Transaktion; ohne das Original findet die Suche nichts mehr', async () => {
     const { d, t, m, dokument } = await aufbau(await pgRepo(), false);
-    const r = await d.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'] }, null);
-    const suche = (q: string) => d.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
-    assert.ok(!(await d.volltext(r.dokument.id)).text!.includes('Mustermann'));
-    await d.loescheDokument(dokument.id, null);
+    const r = await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'] }, null);
+    const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
+    assert.ok(!(await d.volltexte.volltext(r.dokument.id)).text!.includes('Mustermann'));
+    await d.dokumente.loescheDokument(dokument.id, null);
     assert.equal((await suche('Mustermann')).gesamt, 0);
     const s = await suche('brutto') as { gesamt: number; ausschnitte?: Record<string, { dokument: string }> };
     assert.equal(s.gesamt, 1);
     assert.equal(s.ausschnitte?.[m.id]?.dokument, 'nachweis (geschwärzt).pdf');
-    assert.ok((await d.historie(m.id)).some((h) => h.art === 'geschwaerzt'));
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'geschwaerzt'));
   });
 });

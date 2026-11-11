@@ -106,9 +106,9 @@ describe('Ablage während eines großen Exports (#542)', () => {
     await ladeBeispiele(d);
     await erzeugeDemo(d, { anzahl: 2500, startwert: 'arbeiter-542' }, null);
     const ich = { id: 'admin', rolle: 'admin' };
-    const z = await d.zugriff(ich);
-    const typen = (await d.listeTypen()).filter((t) => !t.system);
-    const zahl = await Promise.all(typen.map(async (t) => ({ t, n: (await d.seite(ich, { sicht: t.id, von: 0, anzahl: 1 }, z)).gesamt })));
+    const z = await d.rechtepruefung.zugriff(ich);
+    const typen = (await d.mappentypen.listeTypen()).filter((t) => !t.system);
+    const zahl = await Promise.all(typen.map(async (t) => ({ t, n: (await d.sichten.seite(ich, { sicht: t.id, von: 0, anzahl: 1 }, z)).gesamt })));
     const gross = zahl.sort((a, b) => b.n - a.n)[0].t;
 
     const messe = async () => {
@@ -117,11 +117,11 @@ describe('Ablage während eines großen Exports (#542)', () => {
       const ablage: number[] = [];
       let fertig = false;
       const t0 = performance.now();
-      const exp = d.exportiere(ich, { format: 'pdf', sicht: gross.id, uebersicht: true }, z).finally(() => { fertig = true; });
+      const exp = d.ausgangExport.exportiere(ich, { format: 'pdf', sicht: gross.id, uebersicht: true }, z).finally(() => { fertig = true; });
       // Wie die Oberfläche: Listen verschiedener Ansichten laden, solange der Export läuft.
       while (!fertig) {
         const s = performance.now();
-        await d.seite(ich, { sicht: typen[ablage.length % typen.length].id, von: 0, anzahl: 50 }, z);
+        await d.sichten.seite(ich, { sicht: typen[ablage.length % typen.length].id, von: 0, anzahl: 50 }, z);
         ablage.push(performance.now() - s);
         await new Promise((r) => setTimeout(r, 20));
       }

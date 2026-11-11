@@ -187,17 +187,17 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-zust-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna', verwaltung: ['*'] }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
-  const mieterTyp = await d.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: reg });
-  const max = await d.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter' } }, admin.id);
-  const dok = (await d.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)).dokument;
+  const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: reg });
+  const max = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter' } }, admin.id);
+  const dok = (await d.dokumente.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)).dokument;
   // Anna hat Max als Favorit (Stern = Abo, #422) und bekommt die Benachrichtigung.
-  await d.setzeFavorit(anna, max.id, true);
+  await d.mappen.setzeFavorit(anna, max.id, true);
   const gesendet: Gesendet[] = [];
   const mailer: Mailer = {
     async sende(an, betreff, text, optionen) {
@@ -248,10 +248,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(m.optionen?.anhaenge?.[0].name, `${a.name}.zip`);
       assert.equal(m.anhang?.length, a.bytes);
       assert.match(m.optionen?.antwortAn ?? '', /verwalter@example\.org/);
-      const h = (await d.historie(max.id)).find((x) => x.art === 'auskunft' && x.daten.zustellung === 'email');
+      const h = (await d.mappenHistorie.historie(max.id)).find((x) => x.art === 'auskunft' && x.daten.zustellung === 'email');
       assert.match(String(h?.daten.text), /Auskunft per E-Mail gesendet an max@example\.net/);
       // Zu groß für E-Mail → Abruf-Link vorgeschlagen.
-      await assert.rejects(d.auskunftPerEmail({ ...a, mappeId: max.id, titel: '', erstellt: '', mappen: 1, dokumente: 1, von: '', bytes: 60_000_000 }, () => { throw new Error('nicht lesen'); }, { an: 'max@example.net' }, { id: admin.id, name: '', email: admin.email }, { sende: async () => {} }),
+      await assert.rejects(d.auskunftZustellen.auskunftPerEmail({ ...a, mappeId: max.id, titel: '', erstellt: '', mappen: 1, dokumente: 1, von: '', bytes: 60_000_000 }, () => { throw new Error('nicht lesen'); }, { an: 'max@example.net' }, { id: admin.id, name: '', email: admin.email }, { sende: async () => {} }),
         (e: unknown) => status(413)(e) && /Abruf-Link/.test((e as Error).message));
     });
 
@@ -325,7 +325,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const unbekannt = await rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code }, ip: '198.51.100.1' }).catch((e) => e as Fachfehler);
       const kaputt = await rufe(null, 'POST', '/api/abruf', { body: { schluessel: '../../etc', code }, ip: '198.51.100.2' }).catch((e) => e as Fachfehler);
       for (const f of [falsch, unbekannt, kaputt]) { assert.ok(f instanceof Fachfehler); assert.equal(f.status, 403); assert.equal(f.message, (falsch as Fachfehler).message); }
-      assert.ok((await d.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false));
+      assert.ok((await d.mappenHistorie.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false));
       // Richtig (Schreibweise egal): Ticket, dann Download genau einmal.
       const ok = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: zeigeCode(code).toLowerCase() } })).body as { ticket: string; groesse: number; maxAbrufe: number };
       assert.equal(ok.groesse, a.bytes);
@@ -335,8 +335,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(daten.length, a.bytes);
       assert.equal(dl.datei!.name, `${a.name}.zip`);
       await assert.rejects(rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok.ticket } }), status(410), 'Ticket nur einmal');
-      await bis(async () => (await d.historie(max.id)).some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true));
-      const h = await d.historie(max.id);
+      await bis(async () => (await d.mappenHistorie.historie(max.id)).some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true));
+      const h = await d.mappenHistorie.historie(max.id);
       assert.ok(h.some((x) => x.daten.zustellung === 'link' && /Abruf-Link erstellt: gültig bis .*höchstens 2 Abrufe, per E-Mail an max@example\.net/.test(String(x.daten.text))));
       assert.ok(h.some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true && /Auskunft abgerufen \(1\. von höchstens 2/.test(String(x.daten.text))));
       assert.ok(!JSON.stringify(h).includes('203.0.113'), 'keine IP in der Historie');
@@ -429,7 +429,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const ab = (await r.repo.auskunftLinks()).find((x) => x.schluessel === hasheSchluessel(s1))!;
       assert.equal(ab.abrufe, 0);
       assert.equal(await r.repo.auskunftLinkAbruf(ab.id), null, 'abgelaufen zählt nicht');
-      assert.ok((await d.historie(max.id)).some((h) => /Link ist abgelaufen/.test(String(h.daten.text))));
+      assert.ok((await d.mappenHistorie.historie(max.id)).some((h) => /Link ist abgelaufen/.test(String(h.daten.text))));
       // Zurückziehen
       const n = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { tage: 60 } })).body as { url: string; code: string; link: { id: string } };
       const ziel = join(ordner, 'export', 'auskunft');
@@ -455,8 +455,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const t = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code } })).body as { ticket: string };
       const dl = await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: t.ticket } });
       (dl.datei!.inhalt as { destroy(): void }).destroy();
-      await bis(async () => (await d.historie(max.id)).some((h) => /abgebrochen/.test(String(h.daten.text))));
-      assert.ok((await d.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false && /abgebrochen/.test(String(h.daten.text))));
+      await bis(async () => (await d.mappenHistorie.historie(max.id)).some((h) => /abgebrochen/.test(String(h.daten.text))));
+      assert.ok((await d.mappenHistorie.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false && /abgebrochen/.test(String(h.daten.text))));
     });
   });
 }

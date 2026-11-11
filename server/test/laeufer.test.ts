@@ -193,7 +193,7 @@ describe('Paket-Läufer: Nacharbeiten (#403)', () => {
 describe('Sicherung außer Haus (#636): Leseschlüssel, PUT nur im Übergang', () => {
   it('ein Leseschlüssel darf PUT /sicherungen/{name}/extern (Pakete vor #636), sonst nichts schreiben', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const key = await schluessel.fuerDienstkonto(await konten.dienstkonto('sicherung_webdav', 'Sicherungsziel WebDAV'), 'lesen');
@@ -247,7 +247,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
 
   async function aufbau(grenzen = {}, db?: { repo: Repo; konto: KontoRepo }, extra: { weiterMax?: number } = {}) {
     const d = new Dienst(db?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(db?.konto ?? speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(db?.konto ?? speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     // Wie http.ts: Route suchen, Zugang prüfen (API-Schlüssel), Handler.
@@ -285,8 +285,8 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.equal(konto.name, 'Paket Probe echo');
     assert.equal(konto.art, 'dienst');
     assert.deepEqual(await konten.listeBenutzer(), [], 'nicht in der Benutzerliste');
-    await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
-    await d.ereignis('post.angelegt', { mappe: 'm1' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('post.angelegt', { mappe: 'm1' }); await d.ereignisse.verteile();
     await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);
     const u1 = await l.uebersicht();
     const echo = u1.pakete[0];
@@ -300,11 +300,11 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const { d, l } = await aufbau({}, undefined, { weiterMax: 3 });
     // Antwort jedes Aufrufs (#636) – auch der Fortsetzungen – geht an den Dienst.
     const antworten: Array<{ art: string; ok: boolean; text: string; rc: number | null; beginn: number }> = [];
-    d.nachEreignisAufruf = async (_p, e, r) => { antworten.push({ art: e.art, ok: r.ok, text: r.text, rc: r.rc, beginn: r.beginn }); };
+    d.volltexte.nachEreignisAufruf = async (_p, e, r) => { antworten.push({ art: e.art, ok: r.ok, text: r.text, rc: r.rc, beginn: r.beginn }); };
     await installiere(d, 'weiter', WEITER);
     await l.start();
     await warte(async () => (await l.uebersicht()).laeuft);
-    await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     await warte(async () => (await d.kern.repo.ereignisStand()).weiter?.zugestellt === 1);
     const p = (await l.uebersicht()).pakete[0];
     assert.equal(p.aufrufe, 4, 'erster Aufruf und drei Fortsetzungen');
@@ -343,15 +343,15 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'alles', ECHO, '{ lesen: ["*"], dokumente: lesen }');
     const blind = await konten.dienstkonto('blind', 'Blind');
     const alles = await konten.dienstkonto('alles', 'Alles');
-    const zb = await d.zugriff(blind), za = await d.zugriff(alles);
+    const zb = await d.rechtepruefung.zugriff(blind), za = await d.rechtepruefung.zugriff(alles);
     assert.equal(zb.typen.size, 0);
     assert.equal(za.admin, false);
-    const sys = await d.sichereSystem();
+    const sys = await d.systemausstattung.sicherstellen();
     assert.ok(za.typen.has(sys.post.id) && !za.typen.has(sys.benutzer.id), '„*“ = alle außer Benutzer');
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-    assert.equal((await d.rechteAn(za, post)).R, true);
-    assert.equal((await d.rechteAn(za, post)).U, false, 'ohne „schreiben“ nicht bearbeiten');
-    assert.equal((await d.rechteAn(zb, post)).R, false);
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+    assert.equal((await d.rechtepruefung.rechteAn(za, post)).R, true);
+    assert.equal((await d.rechtepruefung.rechteAn(za, post)).U, false, 'ohne „schreiben“ nicht bearbeiten');
+    assert.equal((await d.rechtepruefung.rechteAn(zb, post)).R, false);
     // Über die API: Dokument-Routen nur mit dem Recht aus dem Manifest.
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const key = await schluessel.fuerDienstkonto(blind, 'lesen');
@@ -385,10 +385,10 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'mitdok', ECHO, '{ lesen: ["*"], dokumente: lesen }');
     const ohne = await konten.dienstkonto('ohnedok', 'Ohne');
     const mit = await konten.dienstkonto('mitdok', 'Mit');
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-    const sys = await d.sichereSystem();
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+    const sys = await d.systemausstattung.sicherstellen();
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
-    await d.ladeHoch(post.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+    await d.dokumente.ladeHoch(post.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null);
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const rufe = async (b: typeof ohne, methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
       const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
@@ -412,20 +412,20 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const { d, konten, schluessel } = await aufbau();
     await installiere(d, 'trenner', ECHO, '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }');
     const konto = await konten.dienstkonto('trenner', 'Trenner');
-    const sys = await d.sichereSystem();
-    const z = await d.zugriff(konto);
+    const sys = await d.systemausstattung.sicherstellen();
+    const z = await d.rechtepruefung.zugriff(konto);
     assert.deepEqual([...z.typen.keys()], [sys.post.id], 'sieht nur den Mappentyp Post');
-    const vertragTyp = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+    const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Unterlagen', art: 'dokumente' },
     ] });
-    const vertrag = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
-    const vdok = (await d.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
-    const post = await d.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
+    const vertrag = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
+    const vdok = (await d.dokumente.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
+    const post = await d.post.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
-    const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
-    assert.deepEqual(await d.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
-    assert.equal((await d.rechteAn(z, vertrag)).R, false);
-    assert.deepEqual([...await d.lesbare(z, [post.id, vertrag.id])], [post.id]);
+    const pdok = (await d.dokumente.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
+    assert.deepEqual(await d.rechtepruefung.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
+    assert.equal((await d.rechtepruefung.rechteAn(z, vertrag)).R, false);
+    assert.deepEqual([...await d.rechtepruefung.lesbare(z, [post.id, vertrag.id])], [post.id]);
     // Über die API wie im Paket-Läufer.
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const rufe = async (methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
@@ -438,7 +438,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const gelesen = (await rufe('GET', '/api/v1/mappen/:id', { id: post.id })).body as { dokumente?: unknown[] };
     assert.equal(gelesen.dokumente?.length, 1);
     await rufe('PUT', '/api/v1/dokumente/:id/volltext', { id: pdok.id }, { text: 'Sehr geehrte Damen und Herren' });
-    assert.match((await d.volltext(pdok.id)).text ?? '', /Sehr geehrte/);
+    assert.match((await d.volltexte.volltext(pdok.id)).text ?? '', /Sehr geehrte/);
     await rufe('PUT', '/api/v1/dokumente/:id/archivnummer', { id: pdok.id }, { archivnummer: 'A-17' });
     const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }], teile: [0, 1] })).body as { posten: Array<{ typId: string }> };
     assert.equal(geteilt.posten.length, 2);
@@ -460,14 +460,14 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         const konto = await konten.dienstkonto('trenner', 'Trenner');
         const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
         const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
-        const sys = await d.sichereSystem();
-        const z = await d.zugriff(konto);
-        assert.equal((await d.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
+        const sys = await d.systemausstattung.sicherstellen();
+        const z = await d.rechtepruefung.zugriff(konto);
+        assert.equal((await d.rechtepruefung.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
         // „Für“ setzt ein Benutzer im DMS (hier: Anna als Administratorin).
-        const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.zugriff({ id: anna.id, rolle: 'admin' }));
+        const post = await d.post.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'admin' }));
         assert.deepEqual(post.werte.an, ben.id);
         const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
-        const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
+        const pdok = (await d.dokumente.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
         const tabelle = routen(d, konten, { apiSchluessel: schluessel });
         const rufe = async (methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
           const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
@@ -478,11 +478,11 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         };
         const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }, { nr: 3 }], teile: [0, 2] })).body as { posten: Array<{ id: string }> };
         assert.equal(geteilt.posten.length, 2);
-        for (const p of geteilt.posten) assert.deepEqual((await d.holeMappe(p.id)).mappe.werte.an, ben.id, 'dasselbe „An“ wie die Ausgangspost');
+        for (const p of geteilt.posten) assert.deepEqual((await d.mappen.holeMappe(p.id)).mappe.werte.an, ben.id, 'dasselbe „An“ wie die Ausgangspost');
         // Neues „Für“ über die API: weiterhin abgelehnt – beim Anlegen und beim Ändern.
         const abgelehnt = (e: { status?: number; message?: string }) => e.status === 422 && /nicht sehen darfst/.test(e.message ?? '');
         await assert.rejects(rufe('POST', '/api/v1/post', {}, { betreff: 'Neu', fuer: ben.id }), abgelehnt);
-        const ohne = await d.legePostAn({ betreff: 'Ohne' }, { id: null, name: 'Test' });
+        const ohne = await d.post.legePostAn({ betreff: 'Ohne' }, { id: null, name: 'Test' });
         await assert.rejects(rufe('PUT', '/api/v1/mappen/:id', { id: ohne.id }, { werte: { fuer: ben.id } }), abgelehnt);
         await assert.rejects(rufe('PUT', '/api/v1/mappen/:id', { id: post.id }, { werte: { fuer: anna.id } }), abgelehnt);
         assert.equal((await rufe('POST', '/api/v1/post', {}, { betreff: 'Ohne Für' })).status, 201, 'ohne „Für“ geht es');
@@ -495,7 +495,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'schleife', SCHLEIFE);
     await l.start();
     await warte(async () => (await l.uebersicht()).laeuft);
-    await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     await new Promise((r) => setTimeout(r, 400)); // Aufruf läuft (Endlosschleife)
     await d.kern.repo.loeschePaket('schleife');
     await d.kern.repo.loescheEreignisse('schleife');
@@ -505,13 +505,13 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'echo', ECHO);
     void l.codeGeaendert();
     await warte(async () => (await l.uebersicht()).laeuft);
-    await d.ereignis('dokument.hochgeladen', { dokument: 'd2' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd2' }); await d.ereignisse.verteile();
     await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);
     // Eigene Änderungen: was das Dienstkonto von echo hochlädt, meldet das DMS echo nicht.
     const konto = (await konten.listeDienstkonten()).find((b) => b.paketId === 'echo')!;
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-    const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
-    await d.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+    const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
+    await d.dokumente.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
     await new Promise((r) => setTimeout(r, 300));
     assert.equal((await d.kern.repo.ereignisStand()).echo.offen + (await d.kern.repo.ereignisStand()).echo.zugestellt, 1, 'kein Ereignis für die eigene Änderung');
   });
@@ -519,9 +519,9 @@ describe('Paket-Läufer (#338): Ablauf', () => {
   it('Ausgangskorb: ein wartendes Ereignis hält spätere desselben Pakets zurück', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     await installiere(d, 'echo', ECHO);
-    await d.ereignis('dokument.hochgeladen', { n: 1 }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { n: 1 }); await d.ereignisse.verteile();
     await new Promise((r) => setTimeout(r, 5));
-    await d.ereignis('dokument.hochgeladen', { n: 2 }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { n: 2 }); await d.ereignisse.verteile();
     const [e1] = await d.kern.repo.faelligeEreignisse(10);
     assert.equal(e1.daten.n, 1);
     await d.kern.repo.ereignisFehlgeschlagen(e1.id, 'x', new Date(Date.now() + 60_000));
@@ -539,7 +539,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const ziel = Math.min(19, getPriority(process.pid) + hintergrundNice());
     assert.ok(faedenVon(pid).length > 1, 'mehrere Fäden im Läufer');
     assert.deepEqual([...new Set(faedenVon(pid).map((tid) => getPriority(tid)))], [ziel], 'alle Fäden des Läufers');
-    await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     await warte(async () => (await d.kern.repo.ereignisStand()).eins?.zugestellt === 1);
     assert.deepEqual([...new Set(faedenVon(pid).map((tid) => getPriority(tid)))], [ziel], 'auch nach einem Aufruf');
     assert.equal(getPriority(process.pid), ziel - hintergrundNice(), 'der Hauptfaden des DMS bleibt');
@@ -564,7 +564,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await warte(async () => (await l.uebersicht()).pakete.length === 3 && (await l.uebersicht()).pakete.every((p) => p.geladen));
     assert.deepEqual(gelesen, ['drei'], 'nur das neue Paket aus der Datenbank');
     // Die anderen laufen mit ihrem behaltenen Modul weiter.
-    await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     await warte(async () => { const e = await d.kern.repo.ereignisStand(); return e.eins?.zugestellt === 1 && e.zwei?.zugestellt === 1 && e.drei?.zugestellt === 1; });
     // Absturz: Zustand „neustart“ mit Zeit, danach „neu gestartet nach Absturz“; nach dem Neustart wieder alle Module.
     gelesen.length = 0;
@@ -589,7 +589,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     for (const { d, l } of [zeit, speicher]) {
       await l.start();
       await warte(async () => (await l.uebersicht()).laeuft);
-      await d.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
+      await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1' }); await d.ereignisse.verteile();
     }
     for (const { l } of [zeit, speicher]) await warte(async () => (await l.uebersicht()).pakete.every((p) => p.fehlgeschlagen === 1));
     assert.match((await zeit.l.uebersicht()).pakete.find((p) => p.id === 'schleife')!.letzte[0].text, /Zeitgrenze/);
@@ -632,7 +632,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
   /** `ohneErsteNachberechnung`: Die Nachberechnung läuft nur, wenn der Test sie aufruft (#900). */
   async function aufbau(o: { ohneErsteNachberechnung?: boolean } = {}) {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const api: ApiAufruf = async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') });
@@ -653,15 +653,15 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
       return (await r.handler(a)).body;
     };
     // Zwei Briefe (Post) und ein Vertrag mit je einem Dokument und Volltext.
-    const post = await d.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
-    const post2 = await d.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
-    const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
-    const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    const vertrag = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
+    const post = await d.post.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
+    const post2 = await d.post.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
+    const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const vertrag = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
     const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
     const dok = async (m: string, r: string, name: string, text: string) => {
-      const x = (await d.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;
-      await d.schreibeVolltext(x.id, { text }, { id: null as never, herkunft: 'Test', paket: false });
+      const x = (await d.dokumente.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;
+      await d.volltexte.schreibeVolltext(x.id, { text }, { id: null as never, herkunft: 'Test', paket: false });
       return x.id;
     };
     const d1 = await dok(post.id, reg, 'rechnung.pdf', 'Rechnung Heizung');
@@ -692,7 +692,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     // An der Mappe (Oberfläche): je Mappe, ohne die eigene.
     await x.l.start();
     await warte(() => x.l.vektorPaket() === 'ki');
-    const anMappe = await x.d.aehnlicheZurMappe(undefined, x.post.id);
+    const anMappe = await x.d.suche.aehnlicheZurMappe(undefined, x.post.id);
     assert.equal(anMappe.verfuegbar, true);
     assert.deepEqual(anMappe.mappen.map((m) => [m.id, m.dokument.name]), [[x.vertrag.id, 'wartung.pdf']], 'nur ab der Schwelle');
     // Löschen: nur dieses Dokument und Modell.
@@ -700,7 +700,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await assert.rejects(x.rufe('ki', 'GET', '/api/v1/dokumente/:id/aehnliche', { id: x.d3 }), /noch\) keinen Vektor/);
     // Modellwechsel: alte Vektoren des Pakets sind ungültig und weg.
     await setze('ki', x.d3, [1, 0, 0, 0, 0, 0, 0, 0, 1], 'probe/9');
-    assert.deepEqual((await x.d.vektorStand()).modelle.map((m) => m.modell), ['probe/9']);
+    assert.deepEqual((await x.d.suche.vektorStand()).modelle.map((m) => m.modell), ['probe/9']);
   });
 
   it('Suche fragt das Paket nach dem Vektor (Kennzeichen „ähnlich“); ohne Antwort in der Zeit wie bisher', async () => {
@@ -712,20 +712,20 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await x.rufe('ki', 'PUT', '/api/v1/dokumente/:id/vektor', { id: x.d3 }, { modell: 'probe/8', vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
     const ich = { id: 'u1', rolle: 'admin' };
     // „Heizung“ trifft die Post per Wort; der Vertrag (Gastherme) kommt als ähnlicher Treffer dazu.
-    const s1 = await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
+    const s1 = await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
     assert.deepEqual(s1.mappen.map((m) => m.id), [x.post.id]);
     assert.deepEqual(s1.aehnlich?.map((a) => [a.id, a.dokument.name]), [[x.vertrag.id, 'wartung.pdf']]);
     assert.ok(s1.aehnlich![0].aehnlichkeit > 0.9);
     // Nur mit „auch in Dokumenten“, nur auf der ersten Seite, nicht in Ansichten.
-    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung' })).aehnlich, undefined);
-    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true', von: 1 })).aehnlich, undefined);
-    assert.equal((await x.d.seite(ich, { sicht: x.post.typId, suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung' })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true', von: 1 })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: x.post.typId, suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
     // Einstellung aus: keine ähnlichen Treffer.
-    await x.d.setzeVektorEinstellung({ suche: false });
-    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
-    await x.d.setzeVektorEinstellung({ suche: true });
+    await x.d.suche.setzeVektorEinstellung({ suche: false });
+    assert.equal((await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
+    await x.d.suche.setzeVektorEinstellung({ suche: true });
     // Werkbank: Stand.
-    const st = await x.d.vektorStand();
+    const st = await x.d.suche.vektorStand();
     assert.deepEqual([st.paket, st.modell, st.mitVektor, st.mitVolltext, st.suche], ['ki', 'probe/8', 2, 3, true]);
 
     // Ein Paket, das nicht antwortet: die Suche wartet höchstens die Zeitgrenze und läuft wie bisher.
@@ -734,9 +734,9 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await y.l.start();
     await warte(() => y.l.vektorPaket() === 'ki' && y.l.uebersicht().then((u) => u.pakete[0]?.geladen));
     const t0 = Date.now();
-    assert.equal(await y.d.aehnlicheZurSuche(undefined, 'Heizung', { typen: null, ohneMappen: new Set(), ms: 300 }).then((r) => r.length), 0);
+    assert.equal(await y.d.suche.aehnlicheZurSuche(undefined, 'Heizung', { typen: null, ohneMappen: new Set(), ms: 300 }).then((r) => r.length), 0);
     assert.ok(Date.now() - t0 < 2000, `${Date.now() - t0} ms`);
-    const s2 = await y.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
+    const s2 = await y.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
     assert.deepEqual(s2.mappen.map((m) => m.id), [y.post.id]);
     assert.equal(s2.aehnlich, undefined);
   });
@@ -746,16 +746,16 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     // hier, kehrte dieser sofort zurück, und das Modell stand noch nicht fest („Modell beim Paket erfragt“).
     const x = await aufbau({ ohneErsteNachberechnung: true });
     await x.installiere('ki', VEKTOR, KI_RECHTE);
-    const neu = await x.d.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
-    const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
-    const d4 = (await x.d.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
-    await x.d.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
+    const neu = await x.d.post.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
+    const reg = (await x.d.systemausstattung.sicherstellen()).post.register.find((r) => r.art === 'dokumente')!.key;
+    const d4 = (await x.d.dokumente.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
+    await x.d.volltexte.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
     assert.equal((await x.d.kern.repo.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');
     await x.l.start();
     await warte(async () => (await x.d.kern.repo.ereignisStand()).ki?.offen === 0);
     // Bestand: die anderen 3 Dokumente (Volltext vor der Installation) holt die Nachberechnung.
     await x.l.nachberechnen();
-    assert.equal((await x.d.vektorStand()).modell, 'probe/8', 'Modell beim Paket erfragt');
+    assert.equal((await x.d.suche.vektorStand()).modell, 'probe/8', 'Modell beim Paket erfragt');
     const offen = (await x.d.kern.repo.ereignisStand()).ki?.offen ?? 0;
     const zugestellt = (await x.d.kern.repo.ereignisStand()).ki?.zugestellt ?? 0;
     assert.ok(offen + zugestellt >= 4, `${offen} offen, ${zugestellt} zugestellt`);

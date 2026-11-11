@@ -26,7 +26,7 @@ export interface UmwandelnAnschluss {
   paketVolltext(): PaketVolltext;
   /** Ereignis an genau ein Paket (Ereignisse, noch im Dienst). */
   auftrag(paket: string, art: 'datei.umwandeln', daten: Record<string, unknown>): Promise<'gesperrt' | void>;
-  /** Ereignis auslösen – über die Fassade des Dienstes, wie bisher. */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
 }
 

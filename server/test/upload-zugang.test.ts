@@ -15,7 +15,7 @@ describe('Upload ohne Anmeldung (#683)', () => {
 
   it('Paket hochladen und Dokument ablegen: 401, ohne den Körper zu lesen', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { baueApp } = await import('../src/http');
     const app = await baueApp(d, konten, {});

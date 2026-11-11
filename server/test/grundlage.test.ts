@@ -22,16 +22,16 @@ import { einstellungsMerker, faelligeTage, laufeFaellige, wochentagVon } from '.
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendbar_bis', label: 'Kündbar bis', typ: 'datum', frist: { vorlauf: 30, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: null } },
     { key: 'ende', label: 'Ende', typ: 'datum' },
@@ -78,36 +78,36 @@ describe('„Datum erreicht“ (#724)', () => {
   it('3 Monate vorher → Frist für Lena; Abwesenheit → an Jonas; erledigt sich, wenn das Datum geändert wird; Folgetermin', async () => {
     const { d, konten, admin, lena, jonas, vertrag, motor } = await aufbau();
     const datum = verschiebe(heuteIn(), 3, 'monate');
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', ende: datum, verantwortlich: lena.id } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', ende: datum, verantwortlich: lena.id } }, admin.id);
     await konten.setzeAbwesenheit(lena, lena.id, { an: true, vertreterId: jonas.id });
     const a = await motor.lege({ name: 'Ende', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'ende', vorlauf: 3, einheit: 'monate', uhrzeit: '00:00', wiederholung: 12 },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'feld', feld: 'verantwortlich' }], text: '{name} endet am {ende}.' }] }, admin.id);
     await motor.zeitplan();
     const [l] = await motor.laeufe(a.id);
     assert.equal(l?.zustand, 'abgeschlossen', JSON.stringify(l?.schritte));
-    const [f] = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
+    const [f] = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
     assert.equal(f.art, 'frist', 'Art bleibt erkennbar');
     assert.equal(f.empfaengerId, jonas.id, 'Vertretung');
     assert.equal(f.datum, datum);
-    assert.ok((await d.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Lena/.test(String(h.daten.text))));
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Lena/.test(String(h.daten.text))));
     // Datum verschoben → die Frist erledigt sich selbst.
-    await d.aendereMappe(m.id, { werte: { ende: verschiebe(datum, 1) } }, admin.id);
-    assert.ok((await d.aufgabenVon(m.id)).find((x) => x.id === f.id)?.erledigt, 'erledigt sich selbst');
-    assert.ok((await d.historie(m.id)).some((h) => /erledigt \(verschoben auf/.test(String(h.daten.text))));
+    await d.mappen.aendereMappe(m.id, { werte: { ende: verschiebe(datum, 1) } }, admin.id);
+    assert.ok((await d.ohneLeserecht.aufgabenVon(m.id)).find((x) => x.id === f.id)?.erledigt, 'erledigt sich selbst');
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /erledigt \(verschoben auf/.test(String(h.daten.text))));
   });
 
   it('deaktivierter Empfänger ohne Vertretung: Lauf bricht nicht ab, Aufgabe an die Administratoren; Ersteller wählbar', async () => {
     const { d, konten, admin, lena, vertrag, motor } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', ende: heuteIn(), verantwortlich: lena.id } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', ende: heuteIn(), verantwortlich: lena.id } }, admin.id);
     // Über die Werkbank geht Deaktivieren nur mit Vertreter – hier der Fall ohne (z. B. aus einer Anmeldung über Anbieter).
     await (konten as unknown as { repo: { aendereBenutzer(id: string, d: { aktiv: boolean }): Promise<unknown> } }).repo.aendereBenutzer(lena.id, { aktiv: false });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const a = await motor.lege({ name: 'Heute', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'ende', vorlauf: 0, einheit: 'tage', uhrzeit: '00:00' },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'feld', feld: 'verantwortlich' }, { art: 'ersteller' }], text: 'Heute: {name}' }] }, admin.id);
     await motor.zeitplan();
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
-    const auf = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
+    const auf = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
     assert.deepEqual(auf.map((x) => x.empfaengerId).sort(), [admin.id, null].sort(), 'Ersteller (Markus) und Administratoren statt Lena');
     assert.match(l.schritte[2].text!, /ohne Empfänger/);
   });
@@ -116,10 +116,10 @@ describe('„Datum erreicht“ (#724)', () => {
     const { d, admin, vertrag, motor } = await aufbau();
     assert.equal(await motor.fristenUebernehmen(), 2, 'Erinnerung am Feld → Automatisierung, dazu „Vertretung eingetragen“');
     const datum = verschiebe(heuteIn(), 30);
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: datum } }, admin.id);
-    assert.equal((await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 0, 'das Feld legt selbst keine an');
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: datum } }, admin.id);
+    assert.equal((await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 0, 'das Feld legt selbst keine an');
     await motor.ereignis({ id: crypto.randomUUID(), art: 'mappe.angelegt', daten: { mappe: m.id, typ: vertrag.id }, ausloeser: { art: 'benutzer', id: admin.id, konto: admin.id }, erstellt: new Date().toISOString() });
-    const eingebaut = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist');
+    const eingebaut = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist');
     assert.equal(eingebaut.length, 1, 'übernommene Erinnerung an den Ersteller (Datum im Vorlauf, beim Speichern)');
     const a = await motor.lege({ name: 'Kündigen', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'kuendbar_bis', vorlauf: 30, einheit: 'tage', uhrzeit: '00:00' },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'ersteller' }], text: 'Kündigen?' }] }, admin.id);
@@ -127,7 +127,7 @@ describe('„Datum erreicht“ (#724)', () => {
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen');
     assert.match(l.schritte[2].text!, /schon eine Frist/);
-    assert.equal((await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 1, 'nur eine');
+    assert.equal((await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 1, 'nur eine');
   });
 
   it('alte Wenn-Karten: „Datum in N Tagen“ und „Frist erreicht“ werden „Datum erreicht“', async () => {
@@ -149,10 +149,10 @@ describe('Aufgaben mit Anlass (#724)', () => {
       await d.ereignisse.verteile();
       const [l] = await motor.laeufe(a.id);
       assert.equal(l?.zustand, 'abgeschlossen', JSON.stringify(l?.schritte));
-      const offen = (await d.aufgabenVon(lena.id)).filter((x) => x.anlass?.art === 'abwesenheit' && x.anlass.automatisierung === a.id && !x.erledigt);
+      const offen = (await d.ohneLeserecht.aufgabenVon(lena.id)).filter((x) => x.anlass?.art === 'abwesenheit' && x.anlass.automatisierung === a.id && !x.erledigt);
       assert.equal(offen.length, 1);
       await konten.setzeAbwesenheit(lena, lena.id, { an: false });
-      assert.ok((await d.aufgabenVon(lena.id)).find((x) => x.id === offen[0].id)?.erledigt, 'erledigt sich selbst');
+      assert.ok((await d.ohneLeserecht.aufgabenVon(lena.id)).find((x) => x.id === offen[0].id)?.erledigt, 'erledigt sich selbst');
     } finally { motor.stop(); }
   });
 });
@@ -168,12 +168,12 @@ describe('Ein Ereigniskatalog, ein Ausgangskorb, eine Regel für Wiederholungen 
 
   it('Dokument hochgeladen: ein Ereignis im Ausgangskorb, Pakete bekommen es mit Dateinamen über die Zustellung', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
     await d.kern.repo.speicherePaket({ id: 'echo', name: 'Echo', version: '1.0.0', beschreibung: '', typen: {}, sichten: {}, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), laeufer: { sprache: 'wasm', ereignisse: ['dokument.hochgeladen'], rechte: { lesen: [], schreiben: [], dokumente: 'keine' }, netz: [] } } as never);
     const katalog: string[] = [];
     d.ereignisse.abonniere('test', async (e) => { katalog.push(e.art); });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } });
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo'), null);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } });
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo'), null);
     await d.ereignisse.verteile();
     assert.equal(katalog.filter((a) => a === 'dokument.hochgeladen').length, 1, 'genau einmal');
     const [z] = (await d.kern.repo.faelligeEreignisse(10)).filter((x) => x.art === 'dokument.hochgeladen');

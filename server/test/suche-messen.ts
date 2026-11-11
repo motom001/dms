@@ -64,7 +64,7 @@ try {
   console.log('| Suche | Treffer | Median ms | Max ms |\n|---|---:|---:|---:|');
   for (const [name, q] of faelle) {
     let n = 0;
-    const f = async () => { const r = await d.seite(ich, { ...q, von: 0, anzahl: 100 }); n = r.gesamt; };
+    const f = async () => { const r = await d.sichten.seite(ich, { ...q, von: 0, anzahl: 100 }); n = r.gesamt; };
     if (laeufe > 1) await f();
     const t: number[] = [];
     for (let i = 0; i < laeufe; i++) { const s = performance.now(); await f(); t.push(performance.now() - s); }

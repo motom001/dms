@@ -115,17 +115,17 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-aktion-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.benutzerspiegel());
+  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const p = new Paketverwaltung(d, { version: () => '0.242.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
   const hochladen = async (dateien: Record<string, string | Buffer>) => p.hochladen(archiv(dateien), ICH);
   const installiere = async (dateien: Record<string, string | Buffer>) => { const h = await hochladen(dateien); return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };
   const v = await installiere(paket(o));
   const konto = await konten.dienstkonto('vertraege', 'Verträge');
-  d.paketKonten.set(konto.id, 'vertraege');
+  d.kern.paketKonten.set(konto.id, 'vertraege');
   const typId = v.typen.vertrag;
   // Ersatz für den Paket-Läufer: Antworten nach Skript, Aufrufe gezählt.
   const aufrufe: Array<Record<string, unknown>> = [];
@@ -145,8 +145,8 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   const starte = async (b: { id: string }, mappeId: string, aktion: string) => (await oberflaeche(b, 'POST', '/api/mappen/:id/paketaktionen/:paket/:aktion', { params: { id: mappeId, paket: 'vertraege', aktion } })).body as AktionsSchritt;
   const weiter = async (b: { id: string }, lauf: string, antworten: unknown) => (await oberflaeche(b, 'POST', '/api/paketaktionen/laeufe/:lauf', { params: { lauf }, body: { antworten } })).body as AktionsSchritt;
   // Herausgeben braucht das Exportrecht E – über eine Ansicht mit dem Mappentyp (#723).
-  await d.legeSichtAn({ name: 'Verträge', typen: [typId], bedingungen: [] });
-  const mappe = await d.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', anbieter: 'Stadtwerke Beispielstadt', kundenkennwort: 'geheim-123' } }, lena.id);
+  await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [typId], bedingungen: [] });
+  const mappe = await d.mappen.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', anbieter: 'Stadtwerke Beispielstadt', kundenkennwort: 'geheim-123' } }, lena.id);
   return { d, p, konten, lena, jonas, typId, kuendigungTyp: v.typen.kuendigung, mappe, aufrufe, setzeSkript, oberflaeche, angebot, starte, weiter, hochladen, installiere, repo: r.repo };
 }
 const antwort = (x: unknown) => ({ ok: true, text: JSON.stringify(x), fehler: null });
@@ -222,12 +222,12 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.equal(alle.aktionen[0].paket.name, 'Verträge');
       // Jonas darf nur lesen (und anlegen): Ändern und Dokument hinzufügen fehlen ganz, Lesen bleibt.
       const nurLesen: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [t.jonas.id] }], dann: { R: 'erteilen' }, stopp: false }, { id: 's', name: 'Lena', wenn: [{ art: 'benutzer', benutzer: [t.lena.id] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] };
-      await t.d.setzeBerechtigungen(t.typId, nurLesen, true);
+      await t.d.berechtigungen.setzeBerechtigungen(t.typId, nurLesen, true);
       const jonas = (await t.angebot(t.jonas, t.mappe.id)).aktionen.map((a) => a.schluessel);
       assert.ok(!jonas.includes('gekuendigt') && !jonas.includes('notiz') && !jonas.includes('vorlage_hinzufuegen'), jonas.join());
       assert.ok(jonas.includes('kuendigung_anlegen'));
       // Bedingung: ohne Anbieter gesperrt mit Grund – Start antwortet 409 mit dem Grund.
-      await t.d.aendereMappe(t.mappe.id, { werte: { anbieter: '' } }, t.lena.id);
+      await t.d.mappen.aendereMappe(t.mappe.id, { werte: { anbieter: '' } }, t.lena.id);
       assert.equal((await t.angebot(t.lena, t.mappe.id)).aktionen.find((a) => a.schluessel === 'vorlage_hinzufuegen')?.gesperrt, 'Erst einen Anbieter eintragen');
       await assert.rejects(t.starte(t.lena, t.mappe.id, 'vorlage_hinzufuegen'), fehler(409, /Anbieter/));
       // In den Einstellungen des Pakets ausgeschaltet: weg, auch beim Start; eingebaute an einer Stelle.
@@ -273,7 +273,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       const m = (await t.d.kern.repo.holeMappe(t.mappe.id))!;
       assert.equal(m.werte.gekuendigt_am, '2026-11-11');
       assert.equal(m.geaendertVon, t.lena.id);
-      const h = await t.d.historie(t.mappe.id);
+      const h = await t.d.mappenHistorie.historie(t.mappe.id);
       const eintrag = h.find((x) => x.art === 'paketaktion');
       assert.equal(eintrag?.benutzerId, t.lena.id);
       assert.equal(eintrag?.daten.paket, 'vertraege');
@@ -285,7 +285,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Rechte bei jedem Schritt; Mappe nie aus der Antwort; Nicht-Angekündigtes ändert nichts', async () => {
       const t = await aufbau(pg, 'aktionen_schritt');
-      const andere = await t.d.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
+      const andere = await t.d.mappen.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
       t.setzeSkript(async (e) => (e.schritt === 1 ? antwort(dialog) : antwort({ ergebnis: { meldung: 'ok', mappe: andere.id, felder: { gekuendigt_am: '2026-01-01' } } })));
       const s1 = await t.starte(t.lena, t.mappe.id, 'gekuendigt');
       const s2 = await t.weiter(t.lena, s1.lauf, { am: '2026-11-11' });
@@ -294,7 +294,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.equal((await t.d.kern.repo.holeMappe(t.mappe.id))!.werte.gekuendigt_am, '2026-01-01');
       // Zwischen Start und Antwort verliert Lena das Recht zu ändern → 403 beim nächsten Schritt.
       const s3 = await t.starte(t.lena, t.mappe.id, 'gekuendigt');
-      await t.d.setzeBerechtigungen(t.typId, { grund: { ...NICHTS, R: true, C: true }, regeln: [] }, true);
+      await t.d.berechtigungen.setzeBerechtigungen(t.typId, { grund: { ...NICHTS, R: true, C: true }, regeln: [] }, true);
       await assert.rejects(t.weiter(t.lena, s3.lauf, { am: '2026-11-11' }), fehler(403));
       // Eine Lese-Aktion, die Felder schreiben will: 502, nichts geändert.
       t.setzeSkript(async () => antwort({ ergebnis: { meldung: 'x', felder: { bezeichnung: 'Gekapert' } } }));
@@ -333,9 +333,9 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Eingeschränkter Zugriff: nur diese Mappe, ihre Dokumente, Dateien ablegen; neues Dokument wie ein Upload', async () => {
       const t = await aufbau(pg, 'aktionen_zugang');
-      const fremd = await t.d.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
-      const fremdDok = (await t.d.ladeHoch(fremd.id, { register: 'dokumente', name: 'gas.txt', typ: 'text/plain' }, Buffer.from('Gas'), t.lena.id)).dokument;
-      const eigenDok = (await t.d.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'strom.txt', typ: 'text/plain' }, Buffer.from('Strom'), t.lena.id)).dokument;
+      const fremd = await t.d.mappen.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
+      const fremdDok = (await t.d.dokumente.ladeHoch(fremd.id, { register: 'dokumente', name: 'gas.txt', typ: 'text/plain' }, Buffer.from('Gas'), t.lena.id)).dokument;
+      const eigenDok = (await t.d.dokumente.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'strom.txt', typ: 'text/plain' }, Buffer.from('Strom'), t.lena.id)).dokument;
       const gesehen: Record<string, number> = {};
       t.setzeSkript(async (_e, o) => {
         const q = async (methode: string, pfad: string, body?: Buffer) => { const r = await o.zugang({ methode, pfad, ...(body ? { body } : {}) }); gesehen[`${methode} ${pfad}`] = r.status; return r; };
@@ -392,13 +392,13 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.ok('kern' in s);
       assert.equal(s.kern, 'dms:vorlage');
       assert.equal(t.aufrufe.length, 0, 'ohne Code des Pakets');
-      const h = { ich: { id: t.lena.id, rolle: 'mitglied', name: 'Lena' }, z: await t.d.zugriff({ id: t.lena.id, rolle: 'mitglied' }) };
+      const h = { ich: { id: t.lena.id, rolle: 'mitglied', name: 'Lena' }, z: await t.d.rechtepruefung.zugriff({ id: t.lena.id, rolle: 'mitglied' }) };
       await assert.rejects(t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, null, false), fehler(404));
       await assert.rejects(t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', true), fehler(403));
       await t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', false);
-      const dok = (await t.d.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'Kündigung.pdf', typ: 'application/pdf' }, Buffer.from('x'), t.lena.id)).dokument;
+      const dok = (await t.d.dokumente.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'Kündigung.pdf', typ: 'application/pdf' }, Buffer.from('x'), t.lena.id)).dokument;
       await t.d.paketaktionen.vorlageErledigt(h, s.lauf, { dokument: dok });
-      const e = (await t.d.historie(t.mappe.id)).find((x) => x.art === 'paketaktion');
+      const e = (await t.d.mappenHistorie.historie(t.mappe.id)).find((x) => x.art === 'paketaktion');
       assert.equal(e?.daten.dokument, 'Kündigung.pdf');
       assert.equal(e?.benutzerId, t.lena.id);
     });
@@ -418,7 +418,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 describe('Paket-Läufer (#1039): Fragen aus einer Aktion gehen nie ans Dienstkonto', () => {
   it('mit Aufruf-Nummer an den eingeschränkten Zugriff, Speicher nur lesen; ohne wie bisher', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const api: Array<string> = [];
     const l = new Paketlaeufer({ dienst: d, konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async (a) => { api.push(a.pfad); return { status: 200, kopf: {}, body: Buffer.from('dienstkonto') }; },
       einstellungen: async () => ({}), speicher: { lies: async () => ({ k: 'v' }), schreibe: async () => {} } });

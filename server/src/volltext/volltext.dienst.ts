@@ -50,7 +50,7 @@ export interface VolltextTeile { dokumente: DokumenteDienst; umwandlung: Dokumen
 
 /** Was der Volltext außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface VolltextAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes, wie bisher (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   /** Hintergrundaufträge des Dienstes („Volltext neu erzeugen“, #458). */
   auftraege: { starte(art: string, titel: string, arbeit: (fortschritt: Fortschritt, signal?: AbortSignal) => Promise<unknown>, phasen?: PhasenPlan[], opt?: { abbrechbar?: boolean }): Auftrag };

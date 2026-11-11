@@ -207,7 +207,7 @@ function faelle(pg: boolean) {
 
     it('mehrere Pakete: Beispiele je Paket, Namen nur bei Konflikt, Einstellungen im Ablauf oder später', async () => {
       const { d, p } = await aufbau(pg, [basis, kontakte, dienstpaket, grund()]);
-      await d.legeTypAn({ name: 'Kontakt', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.mappentypen.legeTypAn({ name: 'Kontakt', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
       const plan = await p.ablaufPlan({ pakete: ['basis', 'kontakte', 'dienst', 'grund'] });
       assert.deepEqual(plan.probleme, []);
       const pk = (id: string) => plan.pakete.find((x) => x.id === id)!;
@@ -234,11 +234,11 @@ function faelle(pg: boolean) {
       const inst = await p.installierte();
       assert.equal(inst.find((x) => x.id === 'dienst')!.einstellungenNoetig, false);
       assert.deepEqual(await p.einstellungenFuerPaket('dienst'), { adresse: 'http://ollama:11434/v1', modell: 'klein', schluessel: null, grenze: 5 });
-      const typen = await d.listeTypen();
+      const typen = await d.mappentypen.listeTypen();
       const kontaktTyp = typen.find((x) => x.id === inst.find((y) => y.id === 'kontakte')!.typen.kontakt)!;
       assert.equal(kontaktTyp.name, 'Kontakt (Kontakte)');
-      assert.equal((await d.listeMappen(kontaktTyp.id)).length, 2, 'Beispiele nur für Kontakte');
-      assert.equal((await d.listeMappen(inst.find((y) => y.id === 'basis')!.typen.organisation)).length, 0, 'für Basis abgewählt');
+      assert.equal((await d.mappen.listeMappen(kontaktTyp.id)).length, 2, 'Beispiele nur für Kontakte');
+      assert.equal((await d.mappen.listeMappen(inst.find((y) => y.id === 'basis')!.typen.organisation)).length, 0, 'für Basis abgewählt');
     });
 
     it('Einstellungen später: installiert mit „Einstellungen nötig“', async () => {
@@ -298,14 +298,14 @@ function faelle(pg: boolean) {
       const { d, p } = await aufbau(pg, [grund(), kaputt, nachher]);
       const plan = await p.ablaufPlan({ pakete: ['grund', 'grund_fra'] });
       assert.deepEqual(plan.pakete.map((x) => x.id), ['grund', 'kontakte', 'grund_fra']);
-      const typenVorher = (await d.listeTypen()).length;
+      const typenVorher = (await d.mappentypen.listeTypen()).length;
       const erg = await p.ablaufInstallieren({ pakete: ['grund', 'grund_fra'], rechteStand: plan.rechte.stand, beispiele: ['kontakte'] }, ICH);
       assert.deepEqual(erg.installiert.map((x) => x.id), ['grund']);
       assert.equal(erg.fehler?.id, 'kontakte');
       assert.match(erg.fehler!.meldung, /Beispiel/);
       assert.deepEqual(erg.nichtInstalliert.map((x) => x.id), ['grund_fra']);
       assert.deepEqual((await d.kern.repo.listePakete()).map((x) => x.id), ['grund']);
-      assert.equal((await d.listeTypen()).length, typenVorher, 'vom gescheiterten Paket bleibt kein Mappentyp');
+      assert.equal((await d.mappentypen.listeTypen()).length, typenVorher, 'vom gescheiterten Paket bleibt kein Mappentyp');
     });
   });
 }

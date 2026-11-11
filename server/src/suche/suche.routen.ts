@@ -13,13 +13,13 @@ export function sucheRouten(k: RoutenKontext): Route[] {
   return [
     // Vektoren (#442): Stand der Berechnung, Einstellung „Ähnliche Treffer in der Suche“, neu berechnen.
     // Suche (#356): Tippfehler an/aus, gleichbedeutende Wörter, Wörterverzeichnis.
-    { methode: 'GET', pfad: '/api/werkbank/suche', zugang: 'admin', handler: async () => ok(await dienst.sucheStand()) },
-    { methode: 'PUT', pfad: '/api/werkbank/suche', zugang: 'admin', handler: async (a) => ok(await dienst.setzeSuche(a.body, ich(a).email)) },
-    { methode: 'POST', pfad: '/api/werkbank/suche/synonyme', zugang: 'admin', handler: async (a) => ok(await dienst.legeSynonymAn(a.body, ich(a).email)) },
-    { methode: 'PUT', pfad: '/api/werkbank/suche/synonyme/:id', zugang: 'admin', handler: async (a) => ok(await dienst.aendereSynonym(a.params.id, a.body, ich(a).email)) },
-    { methode: 'DELETE', pfad: '/api/werkbank/suche/synonyme/:id', zugang: 'admin', handler: async (a) => ok(await dienst.loescheSynonym(a.params.id, ich(a).email)) },
-    { methode: 'POST', pfad: '/api/werkbank/suche/woerter', zugang: 'admin', handler: async (a) => ok(await dienst.woerterNeu(ich(a).email)) },
-    { methode: 'GET', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async () => ok(await dienst.vektorStand()) },
+    { methode: 'GET', pfad: '/api/werkbank/suche', zugang: 'admin', handler: async () => ok(await dienst.suche.sucheStand()) },
+    { methode: 'PUT', pfad: '/api/werkbank/suche', zugang: 'admin', handler: async (a) => ok(await dienst.suche.setzeSuche(a.body, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/suche/synonyme', zugang: 'admin', handler: async (a) => ok(await dienst.suche.legeSynonymAn(a.body, ich(a).email)) },
+    { methode: 'PUT', pfad: '/api/werkbank/suche/synonyme/:id', zugang: 'admin', handler: async (a) => ok(await dienst.suche.aendereSynonym(a.params.id, a.body, ich(a).email)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/suche/synonyme/:id', zugang: 'admin', handler: async (a) => ok(await dienst.suche.loescheSynonym(a.params.id, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/suche/woerter', zugang: 'admin', handler: async (a) => ok(await dienst.suche.woerterNeu(ich(a).email)) },
+    { methode: 'GET', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async () => ok(await dienst.suche.vektorStand()) },
     // „Aus Dokument ausfüllen“ per Paket (#511): Standard-Erkennung (eingebaut oder Paket mit dms:erkennen).
     { methode: 'GET', pfad: '/api/werkbank/erkennung', zugang: 'admin', handler: async () => ok(await dienst.erkennung.engineStand()) },
     { methode: 'PUT', pfad: '/api/werkbank/erkennung', zugang: 'admin', handler: async (a) => ok(await dienst.erkennung.setzeStandard(a.body)) },
@@ -40,7 +40,7 @@ export function sucheRouten(k: RoutenKontext): Route[] {
       void lauf.catch(() => {}).finally(() => { if (!strom.destroyed) strom.end(); });
       return { strom };
     } },
-    { methode: 'PUT', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async (a) => { await dienst.setzeVektorEinstellung(a.body); return ok(await dienst.vektorStand()); } },
+    { methode: 'PUT', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async (a) => { await dienst.suche.setzeVektorEinstellung(a.body); return ok(await dienst.suche.vektorStand()); } },
     { methode: 'POST', pfad: '/api/werkbank/vektoren/neu', zugang: 'admin', handler: async () => {
       if (!x.paketlaeufer) throw new Fachfehler(404, t('meldungen.routen.pakete-mit-code-laufen'));
       try { return ok(await x.paketlaeufer.vektorenNeu()); } catch (e) { throw e instanceof Fachfehler ? e : new Fachfehler(409, (e as Error).message); }

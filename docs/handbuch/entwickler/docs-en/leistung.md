@@ -8,7 +8,7 @@ With **10,000 folders and 20,000–30,000 documents** (full text 5–50 KB per d
 
 | Operation | Limit |
 |---|---:|
-| Opening a folder (`Dienst.holeMappe`) | 200 ms |
+| Opening a folder (`MappenDienst.holeMappe`) | 200 ms |
 | A folder's document list (`listeDokumente`) | 200 ms |
 
 That also applies **while** demo data with documents is being created and text recognition is running in the same process. Measured on an ordinary computer, the values today are in the single-digit millisecond range; the limit leaves room for a slow NAS.
@@ -55,7 +55,7 @@ vor;dur=0.1, app;dur=211.5, db;dur=154.7;desc="8", rechte;dur=2.6, json;dur=0.7,
 | `vor` | arrival of the request (hook `onRequest`) until the handler starts |
 | `app` | handler, contains `db` and `rechte` |
 | `db` | sum of database accesses (`Messung.umhuelle`), in `desc` their number |
-| `rechte` | evaluating permissions (`Dienst.zugriff`, `rechteAn`, `rechteAnVielen`, `lesbare`), overlapping calls once, without the database accesses in them (`rechteMessen` in `messung.ts`) |
+| `rechte` | evaluating permissions (`ZugriffDienst.zugriff`, `rechteAn`, `rechteAnVielen`, `lesbare`), overlapping calls once, without the database accesses in them (`rechteMessen` in `messung.ts`) |
 | `json` | `reply.send` until the hook `onSend` – converting the answer into text |
 | `gesamt` | arrival until `onSend` |
 | `zs` | only for requests that need the views' numbers (#512): duration and in `desc` `treffer` (cache) or `neu` (counted) |
@@ -96,7 +96,7 @@ Target value: with the same data, a member loads start page and Library at most 
 
 ## The views' numbers (#512) { #zahlen-der-ansichten-512 }
 
-The numbers next to the views (`GET /api/sichten` → `Dienst.zaehler`) count all visible views with **one** query per `count(*) FILTER (WHERE …)` over all folders of the household, plus types, inbox, favourites and bin – 120–150 ms alone with 50,000 folders, 150–260 ms under the page's load. Two remedies:
+The numbers next to the views (`GET /api/sichten` → `SichtenDienst.zaehler`) count all visible views with **one** query per `count(*) FILTER (WHERE …)` over all folders of the household, plus types, inbox, favourites and bin – 120–150 ms alone with 50,000 folders, 150–260 ms under the page's load. Two remedies:
 
 1. **Don't block.** The interface (`web/src/daten.tsx`) loads types, people, views and the frame (`GET /api/sichten/rahmen`: bin days, view "New post" – without counting) and shows the Library; the numbers come afterwards (`zahlenDa`). Until then "…" stands in their place (`ZahlWarte`, likewise the start page's tiles); nothing jumps. When reloading, the old numbers stay until the new ones are there. What derives something from the numbers (the list's search field, usage when removing a field) doesn't wait for them.
 2. **Cache** (`server/src/zaehlerspeicher.ts`). The **household state** (`Haushaltsstand`) counts up as soon as a changing method of the repo has finished – the `Dienst` wraps its repo with this (`transaktion` counts as a whole). Reading and inconsequential methods (history, events, text recognition, "seen" …) are in `OHNE_FOLGEN`; a new method counts until it is listed there. The key per entry: user, role and a fingerprint of read filter, hidden views and own roles (since #742 a fingerprint of the permissions without the person, see [below](#sparsam-gemerkt)); valid with the same state and the same `heute`, so at most until midnight. Views with a date reference (`heute`, month, year, deadline) are valid for at most 5 minutes (`ZEITABHAENGIG_MS`), all others for at most 30 minutes (`HOECHSTENS_MS`, safety net for changes bypassing Ablago in the database, for instance by hand). Simultaneous requests with the same key wait for the same count. A hit costs about 7 ms (session, permissions, loading views), counting anew 110–150 ms.
@@ -287,7 +287,7 @@ Load test mittel on the test computer (2 cores, load test on the same computer, 
 3. **Duplicate check via an index.** `dms_gleichwerte(werte)` returns a fingerprint of field key and `lower(trim(value))` (md5 as uuid) per text and number value; the GIN index over it finds equal values, afterwards they are compared exactly. `findeDoppelte` checks many folders in one query (fit after saving).
 4. **Saving in one go.** Creating and changing run in one transaction (starting over on deadlock); the title is in the same UPDATE as the values. The event distributor sets "distributed" per fetch in one statement.
 
-Measured with 50,000 demo folders and 25,000 documents (measuring script, median of 7 runs, `Dienst.seite` and `aendereMappe` respectively, 2 cores, PostgreSQL 16):
+Measured with 50,000 demo folders and 25,000 documents (measuring script, median of 7 runs, `SichtenDienst.seite` and `aendereMappe` respectively, 2 cores, PostgreSQL 16):
 
 | Case | before | after |
 |---|---:|---:|
@@ -421,7 +421,7 @@ In everyday use, what slows Ablago down is rarely many people at once but large 
 - **No `SELECT *` on tables with large columns.** Documents always with `DOKUMENT_SPALTEN`, folders with `MAPPEN_SPALTEN` (without `suchtext`, #615); read the full text only via `volltext(id)` or in bundles via `volltexte(ids)`. EXPLAIN doesn't show this: the full text is stored out of line (TOAST) and only unpacked when it is sent to the server.
 - **Don't load all folders to filter in memory.** What can be narrowed down in SQL (date in the period, open tasks), the query narrows down (#477: `mappenMitDatum`, inbox in the counter).
 - **No accesses in loops over folders or documents.** For bulk work there are bundled methods (`dokumenteVon`, `volltexte`, `versionenVonDokumenten`, `notizenVon`, `aufgabenVonMappen`, `historieVon`). Even locally, one access costs about half a millisecond – with 10,000 folders that is seconds.
-- **Refresh the statistics after bulk runs:** `Dienst.aktualisiereStatistik()` (creating and removing demo data; restoring does it itself). For `dokumente` only via the columns in `STATISTIK_SPALTEN`: without a column list, PostgreSQL also calculates the statistics of the index `to_tsvector('german', volltext)` – over a minute with 20,000 documents instead of 0.1 seconds.
+- **Refresh the statistics after bulk runs:** `SichtenDienst.aktualisiereStatistik()` (creating and removing demo data; restoring does it itself). For `dokumente` only via the columns in `STATISTIK_SPALTEN`: without a column list, PostgreSQL also calculates the statistics of the index `to_tsvector('german', volltext)` – over a minute with 20,000 documents instead of 0.1 seconds.
 - **Long computing work yields.** Server and interface share one Node process: whatever blocks the event loop delays every request – and appears in the measurement of database accesses as a "long access" although the database was fast. Loops over many elements yield with `takt()` (`server/src/demo.ts`) or `setImmediate`; large data is compressed with the asynchronous `zlib` instead of in the main thread.
 - **Large files as a stream** (#746): uploads up to 100 MB go into a temporary file; the checksum arises while reading (`strom: true` on the route, `nimmAuf`). The full export writes long lists (CSV, JSON Lines) line by line with back-pressure and pauses by computing time (`Zeilen` in `vollexport.ts`) instead of building them as one text. Large tables don't go to the worker as a message (the copy holds the main thread) but as a file the worker reads itself (`exportTabelleAusDatei`).
 - **Heavy work into the worker.** What computes for seconds (PDF, large tables) belongs in the [worker pool](aufbau.md#arbeiter-pool) (#542), not in the main thread – not even with pauses.

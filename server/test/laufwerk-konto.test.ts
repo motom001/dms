@@ -13,7 +13,7 @@ import { routen } from '../src/routen';
 describe('Laufwerk unter Mein Konto (#720)', () => {
   it('ausgeschaltet: kein Hinweis im Status, Bereich gibt 404; eingeschaltet: Adresse und Benutzername', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
     const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
     let aktiv = false;

@@ -21,8 +21,8 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
   let basic = '';
   let bearer = '';
   const post = async () => {
-    const typ = await dienst.postTyp();
-    return (await dienst.seite({ id: annaId, rolle: 'mitglied' }, { sicht: `typ:${typ.id}` })).mappen;
+    const typ = await dienst.eingangskanaele.postTyp();
+    return (await dienst.sichten.seite({ id: annaId, rolle: 'mitglied' }, { sicht: `typ:${typ.id}` })).mappen;
   };
 
   before(async () => {
@@ -36,22 +36,22 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
     const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
     const { Webdav } = await import('../src/webdav');
     dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
     const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
     annaId = anna.id;
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const k = (await schluessel.lege(anna, { name: 'Laufwerk', recht: 'schreiben' })).schluessel;
     basic = `Basic ${Buffer.from(`anna@example.org:${k}`).toString('base64')}`;
     bearer = `Bearer ${k}`;
-    const typ = await dienst.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+    const typ = await dienst.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     ] } as never);
-    const m = await dienst.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, anna.id);
+    const m = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, anna.id);
     mappeId = m.id;
-    await dienst.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF, anna.id);
+    await dienst.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF, anna.id);
     wd = new Webdav({ dienst, konten, schluessel, einstellungen: speicherEinstellungen(), adresse: () => 'https://dms.example.org' });
     app = await baueApp(dienst, konten, { apiSchluessel: schluessel, webdav: wd }) as unknown as App;
   });
@@ -94,7 +94,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
     }
     const p = await post();
     assert.equal(p.length, vorher + 3);
-    const doks = (await dienst.laufwerkMappe(p.find((x) => x.werte.betreff === 'Scan')!.id, await dienst.zugriff({ id: annaId, rolle: 'mitglied' }))).dokumente;
+    const doks = (await dienst.berechtigungen.laufwerkMappe(p.find((x) => x.werte.betreff === 'Scan')!.id, await dienst.rechtepruefung.zugriff({ id: annaId, rolle: 'mitglied' }))).dokumente;
     assert.equal(doks.length, 1);
     assert.equal(doks[0].groesse, PDF.length);
   });

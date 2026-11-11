@@ -189,7 +189,7 @@ export class Paketlaeufer implements PaketLaeufer {
     this.grenzen = { ...STANDARD_GRENZEN, ...o.grenzen };
     o.dienst.ereignisWecker = () => void this.stelleZu();
     // Vektoren (#442): Der Kern fragt das Paket mit dms:vektoren nach dem Vektor eines Suchbegriffs.
-    o.dienst.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
+    o.dienst.suche.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
     // „Frag deine Ablage“ (#444): Das Paket mit dms:antworten beantwortet Fragen aus den Ausschnitten des Kerns.
     o.dienst.fragen.anbieter = {
       paket: () => this.paketMit('dms:antworten'),
@@ -248,7 +248,7 @@ export class Paketlaeufer implements PaketLaeufer {
   codeGeaendert(): Promise<void> { this.nachlauf.clear(); this.suchvektoren.clear(); return this.synchronisiere().catch((e) => log.error('Paket-Läufer: Pakete nicht neu geladen', { fehler: (e as Error).message })); }
 
 
-  ereignis(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]) { void this.o.dienst.auftrag(paket, name, { felder }); }
+  ereignis(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]) { void this.o.dienst.ereignisseDienst.auftrag(paket, name, { felder }); }
 
   async aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string> {
     if (this.o.pausiert?.()) throw new Error('Während der Wartung laufen keine Pakete. Bitte danach noch einmal.');
@@ -303,7 +303,7 @@ export class Paketlaeufer implements PaketLaeufer {
       if (b.aktiv && b.paketId && !this.pakete.some((p) => p.id === b.paketId)) { await this.o.konten.dienstkontoAus(b.paketId); this.schluessel.delete(b.paketId); this.schluesselRecht.delete(b.paketId); this.konto.delete(b.paketId); }
     }
     // Auch entfernte Pakete: ihre Konten bleiben als Paket-Konten bekannt (Historie), lösen aber nichts mehr aus.
-    this.o.dienst.paketKonten = new Map((await this.o.konten.listeDienstkonten()).filter((b) => b.paketId).map((b) => [b.id, b.paketId!]));
+    this.o.dienst.kern.paketKonten = new Map((await this.o.konten.listeDienstkonten()).filter((b) => b.paketId).map((b) => [b.id, b.paketId!]));
     if (!this.pakete.length) { if (this.kind) await this.beendeKind(); return; }
     if (!this.kind) this.starteKind();
     else if (this.bereit) await this.sendePakete();
@@ -526,13 +526,13 @@ export class Paketlaeufer implements PaketLaeufer {
       if (!n) {
         const r = await this.vektorAnfrage('', 30_000);
         if (!r) return;
-        await this.o.dienst.merkeVektorModell(paket, r.modell);
+        await this.o.dienst.suche.merkeVektorModell(paket, r.modell);
         n = { modell: r.modell, nach: null, pauseBis: 0 };
         this.nachlauf.set(paket, n);
       }
       if (Date.now() < n.pauseBis) return;
       if (((await this.o.dienst.kern.repo.ereignisStand())[paket]?.offen ?? 0) > 0) return;
-      const ids = await this.o.dienst.vektorNachlauf(paket, n.modell, NACHLAUF_JE_RUNDE, n.nach);
+      const ids = await this.o.dienst.ereignisseDienst.vektorNachlauf(paket, n.modell, NACHLAUF_JE_RUNDE, n.nach);
       if (ids.length) n.nach = ids[ids.length - 1];
       else { n.nach = null; n.pauseBis = Date.now() + NACHLAUF_PAUSE_MS; }
     } catch (e) {
@@ -544,7 +544,7 @@ export class Paketlaeufer implements PaketLaeufer {
   async vektorenNeu(): Promise<{ entfernt: number }> {
     const paket = this.vektorPaket();
     if (!paket) throw new Error('Es ist kein Paket mit dem Recht „dms:vektoren“ installiert.');
-    const r = await this.o.dienst.vektorenNeu(paket);
+    const r = await this.o.dienst.suche.vektorenNeu(paket);
     this.nachlauf.delete(paket);
     void this.nachberechnen();
     return r;
@@ -656,7 +656,7 @@ export class Paketlaeufer implements PaketLaeufer {
       if (!this.pakete.some((p) => p.id === paket)) { await this.o.dienst.kern.repo.ereignisFehlgeschlagen(e.id, t('meldungen.verwaltung.das-paket-hat-keinen'), null); continue; }
       // Antwort jedes Aufrufs (#636): z. B. Stand der Kopie außer Haus – das Paket meldet ihn, statt selbst zu schreiben.
       const antwort = (r: Ergebnis, beginn: number) => r.ohneVersuch ? Promise.resolve() :
-        this.o.dienst.nachEreignisAufruf(paket, e, { ok: r.ok, text: r.text, fehler: r.fehler, rc: r.rc, beginn }).catch((f) => log.warn('Paket-Läufer: Antwort des Pakets nicht übernommen', { paket, art: e.art, fehler: (f as Error).message }));
+        this.o.dienst.volltexte.nachEreignisAufruf(paket, e, { ok: r.ok, text: r.text, fehler: r.fehler, rc: r.rc, beginn }).catch((f) => log.warn('Paket-Läufer: Antwort des Pakets nicht übernommen', { paket, art: e.art, fehler: (f as Error).message }));
       let beginn = Date.now();
       let r = await this.rufe(paket, 'ereignis', { art: e.art, id: e.id, erstellt: e.erstellt, versuch: e.versuche + 1, daten: e.daten });
       await antwort(r, beginn);
@@ -667,7 +667,7 @@ export class Paketlaeufer implements PaketLaeufer {
         if (abschnitt > max) { this.notiere(paket, { stufe: 2, text: t('meldungen.verwaltung.ereignis-nach-fortsetzungen-beendet', { max }) }); break; }
         e.daten = { ...e.daten, weiter, abschnitt };
         await this.o.dienst.kern.repo.ereignisDaten(e.id, e.daten);
-        await this.o.dienst.texterkennungFortschritt(paket, e, weiter).catch(() => {});
+        await this.o.dienst.volltexte.texterkennungFortschritt(paket, e, weiter).catch(() => {});
         if (!this.laeuft()) return;
         beginn = Date.now();
         r = await this.rufe(paket, 'ereignis', { art: e.art, id: e.id, erstellt: e.erstellt, versuch: e.versuche + 1, daten: e.daten });
@@ -675,7 +675,7 @@ export class Paketlaeufer implements PaketLaeufer {
       }
       // Texterkennung als Paket (#458): Dokument wartet nicht länger, wenn das Paket fertig ist oder aufgibt.
       const nachher = (x: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) =>
-        this.o.dienst.nachTexterkennungsEreignis(paket, e, x).catch((f) => log.warn('Paket-Läufer: Stand der Texterkennung nicht nachgetragen', { paket, fehler: (f as Error).message }));
+        this.o.dienst.volltexte.nachTexterkennungsEreignis(paket, e, x).catch((f) => log.warn('Paket-Läufer: Stand der Texterkennung nicht nachgetragen', { paket, fehler: (f as Error).message }));
       if (r.ok) { await this.o.dienst.kern.repo.ereignisZugestellt(e.id); await nachher({ ok: true, text: r.text }); continue; }
       if (r.ohneVersuch) return;
       const w = WARTEN_MIN[e.versuche];

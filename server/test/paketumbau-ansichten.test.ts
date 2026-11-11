@@ -152,8 +152,8 @@ for (const pg of [false, true]) {
       const p = new Paketverwaltung(d, { version: () => VERSION, katalogUrl: 'https://katalog.test/katalog.json', abruf: async () => { throw new Error('ohne Netz'); }, dienstkonto: async () => konto });
       const hoch = async (dateien: Record<string, string>) => p.hochladen(zip(dateien), ICH);
       const installiere = async (dateien: Record<string, string>, mehr: Record<string, unknown> = {}) => p.installiere({ upload: (await hoch(dateien)).upload, bestaetigt: true, ...mehr }, ICH);
-      const typ = async (k: string) => (await d.listeTypen()).find((x) => x.schluessel === k);
-      const sicht = async (id: string) => (await d.listeSichten()).find((x) => x.id === id)!;
+      const typ = async (k: string) => (await d.mappentypen.listeTypen()).find((x) => x.schluessel === k);
+      const sicht = async (id: string) => (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === id)!;
       const paket = async (id: string) => (await p.installierte()).find((x) => x.id === id)!;
       return { d, p, hoch, installiere, typ, sicht, paket };
     }
@@ -165,11 +165,11 @@ for (const pg of [false, true]) {
       assert.deepEqual(Object.keys(h1.sichtStand ?? {}).sort(), ['haftpflicht', 'haushalt', 'versicherungen', 'vertraege'], 'jede Ansicht hat einen Prüfwert');
       // Lena benennt „Haftpflicht“ um – eine Änderung des Administrators.
       const haft = await x.sicht(h1.sichten.haftpflicht);
-      await x.d.aendereSicht(haft.id, { ...haft, name: 'Haftpflicht (Lena)' });
+      await x.d.sichtenVerwaltung.aendereSicht(haft.id, { ...haft, name: 'Haftpflicht (Lena)' });
       const vertrag = (await x.typ('haushalt:vertrag'))!, versicherung = (await x.typ('haushalt:versicherung'))!;
-      const strom = await x.d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Strom' } }, ICH.id);
-      const waerme = await x.d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Fernwärme' } }, ICH.id);
-      const hv = await x.d.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'HV-4711', versicherung_art: 'Haftpflicht' } }, ICH.id);
+      const strom = await x.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Strom' } }, ICH.id);
+      const waerme = await x.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Fernwärme' } }, ICH.id);
+      const hv = await x.d.mappen.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'HV-4711', versicherung_art: 'Haftpflicht' } }, ICH.id);
 
       const { vorschau, upload } = await x.hoch(vertraege);
       assert.deepEqual(vorschau.probleme, []);
@@ -188,7 +188,7 @@ for (const pg of [false, true]) {
       assert.equal((await m(strom.id)).werte.art, await art('strom'), 'Auswahl „Strom“ → Vertragsart „Strom“');
       assert.equal((await m(waerme.id)).werte.art, undefined, 'keine Vertragsart „Fernwärme“: bleibt leer, nichts angelegt');
       assert.match((await x.d.kern.repo.notizen(waerme.id))[0]?.text ?? '', /Art: Fernwärme/);
-      assert.equal((await x.d.listeMappen((await x.typ('vertraege:vertragsart'))!.id)).length, 3, 'keine neuen Vertragsarten');
+      assert.equal((await x.d.mappen.listeMappen((await x.typ('vertraege:vertragsart'))!.id)).length, 3, 'keine neuen Vertragsarten');
       const hist = await x.d.kern.repo.historie(strom.id);
       assert.ok(hist.some((h) => JSON.stringify(h.daten.aenderungen ?? []).includes('Vertragsart: Strom')), 'Historie nennt den Titel');
       const neuHv = await m(hv.id);
@@ -222,7 +222,7 @@ for (const pg of [false, true]) {
       const x = await aufbau();
       const g1 = await x.installiere(garten('1.0.0', GARTEN1));
       const sonnig = await x.sicht(g1.sichten.sonnig);
-      await x.d.aendereSicht(sonnig.id, { ...sonnig, beschreibung: 'Jonas’ Beete' });
+      await x.d.sichtenVerwaltung.aendereSicht(sonnig.id, { ...sonnig, beschreibung: 'Jonas’ Beete' });
       // Wie eine Installation vor #1125: ohne Prüfwerte.
       const ohne = await x.paket('garten');
       delete ohne.sichtStand;
@@ -236,7 +236,7 @@ for (const pg of [false, true]) {
       assert.deepEqual(Object.keys(g2.sichtStand ?? {}).sort(), ['beete', 'schattig'], '„sonnig“ bleibt ohne Prüfwert – das nächste Update fragt wieder');
       // Geändert und gewählt: ersetzt (die Rechte an der Ansicht bleiben).
       const sch = await x.sicht(g1.sichten.schattig);
-      await x.d.aendereSicht(sch.id, { ...sch, name: 'Schatten' });
+      await x.d.sichtenVerwaltung.aendereSicht(sch.id, { ...sch, name: 'Schatten' });
       const v2 = (await x.hoch(garten('1.2.0', GARTEN2.replace('Schatten]', 'Schatten, Sonne]')))).vorschau;
       assert.equal(v2.sichten.find((y) => y.schluessel === 'schattig')?.zustand, 'geaendert');
       await x.installiere(garten('1.2.0', GARTEN2.replace('Schatten]', 'Schatten, Sonne]')), { sichtenErsetzen: ['schattig'] });
@@ -248,13 +248,13 @@ for (const pg of [false, true]) {
     it('gelöschte Ansicht kommt nicht wieder; nichts ersetzt, wenn die Fassung gleich bleibt', async () => {
       const x = await aufbau();
       const g1 = await x.installiere(garten('1.0.0', GARTEN1));
-      await x.d.loescheSicht(g1.sichten.schattig);
+      await x.d.sichtenVerwaltung.loescheSicht(g1.sichten.schattig);
       const sonnig = await x.sicht(g1.sichten.sonnig);
-      await x.d.aendereSicht(sonnig.id, { ...sonnig, name: 'Sonnenbeete' });
+      await x.d.sichtenVerwaltung.aendereSicht(sonnig.id, { ...sonnig, name: 'Sonnenbeete' });
       const v = (await x.hoch(garten('1.0.1', GARTEN1))).vorschau;
       assert.deepEqual(Object.fromEntries(v.sichten.map((y) => [y.schluessel, y.zustand])), { beete: 'gleich', sonnig: 'gleich', schattig: 'geloescht' });
       await x.installiere(garten('1.0.1', GARTEN1));
-      assert.equal((await x.d.listeSichten()).some((s) => s.id === g1.sichten.schattig), false);
+      assert.equal((await x.d.sichtenVerwaltung.listeSichten()).some((s) => s.id === g1.sichten.schattig), false);
       assert.equal((await x.sicht(g1.sichten.sonnig)).name, 'Sonnenbeete');
     });
   });

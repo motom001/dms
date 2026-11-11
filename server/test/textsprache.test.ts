@@ -77,13 +77,13 @@ describe('Einstellung und Werkbank (#395)', () => {
     let text = BEISPIELE.fra;
     const engine: Engine = async () => ({ text, seiten: 1, info: 'Ersatz' });
     const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-    d.verbindeTexterkennung(t);
-    const typ = await d.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+    d.dokumente.verbindeTexterkennung(t);
+    const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
       { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
-    const hoch = async (n: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name: `${n}.pdf`, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
+    const hoch = async (n: string) => (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${n}.pdf`, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
     const warte = async (id: string) => { for (let i = 0; i < 400 && (await repo.holeDokument(id))?.ocr?.stand !== 'fertig'; i++) await new Promise((r) => setTimeout(r, 25)); };
     const a = await hoch('a'); await warte(a);
     text = BEISPIELE.deu;
@@ -96,14 +96,14 @@ describe('Einstellung und Werkbank (#395)', () => {
   it('Volltext eines Pakets (#338): PAKET_TEXT bleibt vorn, die Sprache hängt hinten an und wird gezählt', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
       { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null)).dokument.id;
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null)).dokument.id;
     // Eine Herkunft, die die Marke vortäuscht, zählt nicht.
-    const doc = await d.schreibeVolltext(id, { text: BEISPIELE.tur }, { id: 'p', herkunft: 'Mein OCR · Sprache: eng (99 %)', paket: true });
+    const doc = await d.volltexte.schreibeVolltext(id, { text: BEISPIELE.tur }, { id: 'p', herkunft: 'Mein OCR · Sprache: eng (99 %)', paket: true });
     assert.ok(doc.ocr!.info!.startsWith(PAKET_TEXT));
     assert.equal(spracheAusInfo(doc.ocr!.info)?.sprache, 'tur');
     assert.match(doc.ocr!.info!, / · Sprache: tur \(\d+ %\)$/);

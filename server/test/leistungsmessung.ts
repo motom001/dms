@@ -70,7 +70,7 @@ try {
   if (exportMax > 0) {
     const z = zaehlend(pgRepo(sql, HAUSHALT));
     const d = new Dienst(z.repo, ordnerSpeicher(dateiOrdner, HAUSHALT), { einstellungen: speicherEinstellungen() });
-    const quelle = d.vollexportQuelle({ mandant: 'Messung', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Messung', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
     let rest = exportMax;
     const mappen = quelle.mappen;
     quelle.mappen = async (typId) => { const ms = (await mappen(typId)).slice(0, Math.max(0, rest)); rest -= ms.length; return ms; };
@@ -105,7 +105,7 @@ async function unterLast() {
   const dateien = ordnerSpeicher(ordner, HAUSHALT);
   const d = new Dienst(pgRepo(lsql, HAUSHALT), dateien, { einstellungen: speicherEinstellungen() });
   const ocr = new Texterkennung(pgRepo(lsql, HAUSHALT), dateien, speicherEinstellungen());
-  d.verbindeTexterkennung(ocr);
+  d.dokumente.verbindeTexterkennung(ocr);
   await ocr.start();
   let stopp = false, phase = '', dokumente = 0;
   const demo = erzeugeDemo(d, { anzahl: 3000, startwert: 'last-367', dokumente: { anteil: 100, von: 1, bis: 3, stufe: 'realistisch' } }, BENUTZER, (f, _g, p) => {

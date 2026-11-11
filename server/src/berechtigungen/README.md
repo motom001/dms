@@ -22,7 +22,7 @@ WebDAV-Laufwerk. Was jemand darf, rechnet weiter die Rechteprüfung in `zugriff/
 
 **Regeln**
 
-- Wer Berechtigungen braucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen).
+- Wer Berechtigungen braucht, ruft `dienst.berechtigungen.…` (seit #1079 ohne Weiterleitungen im Dienst).
 - `kern.repo` bei jedem Aufruf neu holen (Getter `repo`) – in einer Transaktion sieht es deren Änderungen.
 - Regeln prüfen und ihre Wirkung (`rechteAn`, `kontoRegelwerk`, `leseAusdruck`) liegen in `shared/src/rechte.ts`;
   hier nur, was Werkbank und Speichern brauchen.

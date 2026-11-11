@@ -102,12 +102,12 @@ describe('Rechte-Regeln: unbekannte Kennung wirkt geschlossen (#1042)', () => {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const post = (await d.listeTypen()).find((t) => t.system === 'post')!;
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: (await konten.listeBenutzer()).find((u) => u.id === b.id)! });
@@ -122,13 +122,13 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     assert.equal(angelegt.werte.an, lena.id);
     assert.equal(angelegt.werte.absender, 'Stadtwerke', 'alter Name in der Antwort');
     assert.equal(angelegt.werte.fuer, lena.id);
-    const gespeichert = (await d.holeMappe(angelegt.id)).mappe;
+    const gespeichert = (await d.mappen.holeMappe(angelegt.id)).mappe;
     assert.deepEqual([gespeichert.werte.von, gespeichert.werte.an, 'absender' in gespeichert.werte, 'fuer' in gespeichert.werte], ['Stadtwerke', lena.id, false, false]);
     // „Post für dich“ entsteht über an.
-    assert.deepEqual((await d.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((a) => a.art === 'post').map((a) => a.feldKey), [`an:${lena.id}`]);
+    assert.deepEqual((await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((a) => a.art === 'post').map((a) => a.feldKey), [`an:${lena.id}`]);
 
     await rufe(markus, 'PUT', '/api/v1/mappen/:id', { params: { id: angelegt.id }, body: { werte: { absender: 'Finanzamt', fuer: markus.id } } });
-    const geaendert = (await d.holeMappe(angelegt.id)).mappe;
+    const geaendert = (await d.mappen.holeMappe(angelegt.id)).mappe;
     assert.deepEqual([geaendert.werte.von, geaendert.werte.an], ['Finanzamt', markus.id]);
     const v1 = (await rufe(markus, 'GET', '/api/v1/mappen/:id', { params: { id: angelegt.id } })).body as { mappe: Mappe };
     assert.deepEqual([v1.mappe.werte.von, v1.mappe.werte.absender, v1.mappe.werte.an, v1.mappe.werte.fuer], ['Finanzamt', 'Finanzamt', markus.id, markus.id]);
@@ -140,22 +140,22 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     const zl = (await rufe(lena, 'GET', '/api/v1/ich/zaehler')).body as Record<string, unknown>;
     assert.deepEqual(Object.keys(zl).sort(), ['geaendert', 'neuePost', 'stand', 'ueberfaellig', 'zuErledigen']);
     assert.equal(zl.neuePost, 0, 'die Post ist jetzt an Markus');
-    await d.aendereMappe(angelegt.id, { werte: { an: lena.id } }, markus.id);
+    await d.mappen.aendereMappe(angelegt.id, { werte: { an: lena.id } }, markus.id);
     assert.equal(((await rufe(lena, 'GET', '/api/v1/ich/zaehler')).body as { neuePost: number }).neuePost, 1);
-    await d.aendereMappe(angelegt.id, { werte: { stand: POST_STAND.erledigt } }, markus.id);
+    await d.mappen.aendereMappe(angelegt.id, { werte: { stand: POST_STAND.erledigt } }, markus.id);
     void post;
   });
 
   it('Platzhalter {absender} und {fuer} in Automatisierungen und Links mit den alten Namen', async () => {
     const { d, markus, lena, post } = await aufbau();
-    const m = await d.legePostAn({ betreff: 'Brief', von: 'Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
+    const m = await d.post.legePostAn({ betreff: 'Brief', von: 'Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
     const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
-    const z = await d.zugriff({ id: markus.id, rolle: 'admin' });
+    const z = await d.rechtepruefung.zugriff({ id: markus.id, rolle: 'admin' });
     const text = await motor.fuelle('{absender} an {fuer} – {von} an {an}', { a: { name: 'Test' } as never, mappe: m, typ: post, z, daten: {} });
     assert.equal(text, 'Stadtwerke an Lena – Stadtwerke an Lena');
     // Link über Mappentyp und Feldwerte (#98): absender/fuer gelten als von/an.
     const p = new URLSearchParams(`typ=post&absender=Stadtwerke&fuer.leer=1&sortierung=-absender`);
-    const l = liesDirektlink(p, await d.listeTypen());
+    const l = liesDirektlink(p, await d.mappentypen.listeTypen());
     assert.ok(l.ok, JSON.stringify(l));
     if (l.ok) {
       assert.deepEqual(l.link.bedingungen.map((b) => (b.art === 'feld' ? [b.feld, b.op] : [])), [['von', 'gleich'], ['an', 'leer']]);
@@ -185,13 +185,13 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     const neuerDienst = () => new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
     const d = neuerDienst();
-    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
     const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id)).benutzer;
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, markus.id)).benutzer;
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const typen = await d.listeTypen();
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    const typen = await d.mappentypen.listeTypen();
     const post = typen.find((t) => t.system === 'post')!;
     const benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
     const ich = { id: markus.id, name: 'Markus' };
@@ -205,13 +205,13 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
       { id: 'mail', name: 'Versendetes lesen', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'an_adresse', op: 'leer' } }], dann: { R: 'erteilen' }, stopp: false },
     ] };
     await sql`UPDATE mappentypen SET berechtigungen = ${sql.json(regeln as never)} WHERE id = ${post.id}`;
-    const p1 = await d.legePostAn({ betreff: 'Strom', von: 'Stadtwerke', an: lena.id }, ich);
-    const p2 = await d.legePostAn({ betreff: 'Steuer', an: jonas.id }, ich);
-    const p3 = await d.legePostAn({ betreff: 'Antwort', von: 'Markus' }, ich);
-    await d.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
-    const p4 = await d.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
-    await d.loescheMappe(p4.id, markus.id);
-    const sicht = await d.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
+    const p1 = await d.post.legePostAn({ betreff: 'Strom', von: 'Stadtwerke', an: lena.id }, ich);
+    const p2 = await d.post.legePostAn({ betreff: 'Steuer', an: jonas.id }, ich);
+    const p3 = await d.post.legePostAn({ betreff: 'Antwort', von: 'Markus' }, ich);
+    await d.mappen.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
+    const p4 = await d.post.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
+    await d.loeschen.loescheMappe(p4.id, markus.id);
+    const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
       { art: 'feld', feld: 'an', op: 'zeigtAuf', wert: { art: 'ich' } }, { art: 'feld', feld: 'von', op: 'nichtLeer' },
     ] });
     const auto = { name: 'Post prüfen', beschreibung: '', reihenfolge: 50, wenn: { art: 'mappe.geaendert', typ: post.id, felder: ['an', 'von'] },
@@ -240,9 +240,9 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
       const alle = (await sql`SELECT id FROM mappen WHERE typ_id = ${post.id} ORDER BY id`).map((r) => r.id as string);
       const dd = neuerDienst();
       for (const b of [lena, jonas]) {
-        const z = await dd.zugriff({ id: b.id, rolle: 'mitglied' });
-        const lesbar = await dd.lesbare(z, alle);
-        for (const id of alle) ergebnis[`${b.email} ${id}`] = { ...(await dd.rechteAn(z, (await dd.holeMappe(id)).mappe)), sql: lesbar.has(id) };
+        const z = await dd.rechtepruefung.zugriff({ id: b.id, rolle: 'mitglied' });
+        const lesbar = await dd.rechtepruefung.lesbare(z, alle);
+        for (const id of alle) ergebnis[`${b.email} ${id}`] = { ...(await dd.rechtepruefung.rechteAn(z, (await dd.mappen.holeMappe(id)).mappe)), sql: lesbar.has(id) };
       }
       return ergebnis;
     };
@@ -279,7 +279,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     const migration = readFileSync(join(MIGRATIONEN, '099_post_von_an.sql'), 'utf8');
     await sql.begin((tx) => tx.unsafe(migration));
     // Bezeichnungen zieht der Start nach (wandleZuPost).
-    await neuerDienst().sichereSystem();
+    await neuerDienst().systemausstattung.sicherstellen();
     const nachher = await bild();
 
     // Das eigene Feld „von“ heißt jetzt von_alt – samt Wert und Platz im Register.
@@ -300,7 +300,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     // Effektive Rechte genau wie vorher – im Arbeitsspeicher und als SQL-Filter.
     assert.deepEqual(await rechte(), rechteVorher);
     // Offene „Post für dich“ bleiben dieselben Aufgaben; ein Speichern legt keine zweite an.
-    await neuerDienst().aendereMappe(p1.id, { werte: { betreff: 'Strom 2026' } }, markus.id);
+    await neuerDienst().mappen.aendereMappe(p1.id, { werte: { betreff: 'Strom 2026' } }, markus.id);
     assert.deepEqual((await sql`SELECT feld_key FROM aufgaben WHERE mappe_id = ${p1.id} AND art = 'post' AND erledigt IS NULL`).map((x) => x.feld_key), [`an:${lena.id}`]);
 
     // Wiederholbar: ein zweiter Lauf ändert nichts.

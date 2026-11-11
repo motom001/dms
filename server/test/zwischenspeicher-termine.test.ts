@@ -120,13 +120,13 @@ interface Aufbau {
 async function aufbau(roh: Repo, kontoRepo: ReturnType<typeof speicherKontoRepo>, einstellungen: Einstellungen): Promise<Aufbau> {
   const d = new Dienst(roh, speicherDateien(), { einstellungen });
   d.mindestensMs = 0;
-  const konten = new Konten(kontoRepo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => { const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!); return { id: b.id, rolle: b.rolle }; };
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: FELDER });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: FELDER });
   return {
     d, roh, lena: await ich(lena.id), jonas: await ich(jonas.id), vertrag, einstellungen,
     neu: () => { const f = new Dienst(roh, speicherDateien(), { einstellungen }); f.mindestensMs = 0; return f; },
@@ -156,7 +156,7 @@ function erwartet(mappen: Mappe[], typ: Mappentyp, von: string, bis: string): st
   }
   return s.sort();
 }
-const gesehen = (t: Awaited<ReturnType<Dienst['termine']>>, typId: string) =>
+const gesehen = (t: Awaited<ReturnType<Dienst['fristen']['termine']>>, typId: string) =>
   t.eintraege.filter((e) => e.art === 'frist' && !e.faellig && e.typId === typId).map((e) => `${e.mappeId}|${e.feldKey}|${e.datum}|${e.folgetermin ? 'f' : 'e'}`).sort();
 
 async function mitSchalterAus<T>(f: () => Promise<T>): Promise<T> {
@@ -172,7 +172,7 @@ async function pruefeTermine(h: Aufbau) {
   for (let i = 0; i < 40; i++) {
     const werte: Record<string, unknown> = { nr: `V${i}` };
     for (const k of felder) if (r() < 0.45) werte[k] = datumZufall(r);
-    await d.legeMappeAn({ typId: vertrag.id, werte }, lena.id);
+    await d.mappen.legeMappeAn({ typId: vertrag.id, werte }, lena.id);
   }
   for (const werte of [
     { nr: 'S1', jahr: '2024-02-29', monat: '2023-01-31', quartal: '2022-12-31' },
@@ -180,18 +180,18 @@ async function pruefeTermine(h: Aufbau) {
     { nr: 'S3', jahr: '2026-02-30', monat: '0099-05-05', quartal: 'kein Datum', einmal: '' },
     { nr: 'S4', jahr: `${J + 3}-01-01`, monat: ['2024-01-01'] },
   ]) await roh.legeMappeAn(crypto.randomUUID(), vertrag.id, werte as never, [], lena.id);
-  const z = await d.zugriff(lena);
+  const z = await d.rechtepruefung.zugriff(lena);
   const typ = (await roh.listeTypen()).find((t) => t.id === vertrag.id)!;
   const mappen = await roh.listeMappen(vertrag.id);
   const frisch = h.neu();
   for (const [von, bis] of ZEITRAEUME) {
     const soll = erwartet(mappen, typ, von, bis);
-    const a = await d.termine(z, { von, bis });
+    const a = await d.fristen.termine(z, { von, bis });
     assert.deepEqual(gesehen(a, vertrag.id), soll, `frisch gerechnet ${von} … ${bis}`);
-    const b = await d.termine(z, { von, bis });
+    const b = await d.fristen.termine(z, { von, bis });
     assert.deepEqual(b, a, `aus dem Zwischenspeicher gleich ${von} … ${bis}`);
-    assert.deepEqual(await frisch.termine(await frisch.zugriff(lena), { von, bis }), a, `anderer Dienst gleich ${von} … ${bis}`);
-    assert.deepEqual(await mitSchalterAus(() => d.termine(z, { von, bis })), a, `ohne Zwischenspeicher gleich ${von} … ${bis}`);
+    assert.deepEqual(await frisch.fristen.termine(await frisch.rechtepruefung.zugriff(lena), { von, bis }), a, `anderer Dienst gleich ${von} … ${bis}`);
+    assert.deepEqual(await mitSchalterAus(() => d.fristen.termine(z, { von, bis })), a, `ohne Zwischenspeicher gleich ${von} … ${bis}`);
   }
   assert.ok(erwartet(mappen, typ, `${L}-02-29`, `${L}-02-29`).length > 0, 'der 29.02. hat Termine');
 }
@@ -199,47 +199,47 @@ async function pruefeTermine(h: Aufbau) {
 async function pruefeNaechsterTermin(h: Aufbau) {
   const { d, lena, vertrag } = h;
   const ausJahr = async (x: Dienst) => {
-    const t = await x.termine(await x.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) });
+    const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) });
     return { termin: t.eintraege.find((e) => e.datum >= HEUTE) ?? null, ueberfaellig: t.eintraege.filter((e) => e.faellig && e.datum < HEUTE).length };
   };
   // Nur ein jährlicher Termin in gut zwei Monaten: nichts in den ersten 31 Tagen, dann das ganze Jahr.
-  const typ2 = await d.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) }] });
-  await d.legeMappeAn({ typId: typ2.id, werte: { nr: 'A', jahr: verschiebe(verschiebe(HEUTE, 65), -12, 'monate') } }, lena.id);
-  const mitVertrag = async (x: Dienst) => { const t = await x.termine(await x.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) }); return t.eintraege.some((e) => e.typId === vertrag.id); };
+  const typ2 = await d.mappentypen.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) }] });
+  await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'A', jahr: verschiebe(verschiebe(HEUTE, 65), -12, 'monate') } }, lena.id);
+  const mitVertrag = async (x: Dienst) => { const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) }); return t.eintraege.some((e) => e.typId === vertrag.id); };
   if (!(await mitVertrag(d))) {
-    const n = await d.naechsterTermin(await d.zugriff(lena));
+    const n = await d.fristen.naechsterTermin(await d.rechtepruefung.zugriff(lena));
     assert.equal(n.termin?.datum, verschiebe(HEUTE, 65));
   }
-  assert.deepEqual(await d.naechsterTermin(await d.zugriff(lena)), await ausJahr(d));
+  assert.deepEqual(await d.fristen.naechsterTermin(await d.rechtepruefung.zugriff(lena)), await ausJahr(d));
   // Dazu ein Termin in zehn Tagen und zwei am selben Tag mit gleichem Titel: eindeutig, wie aus dem ganzen Jahr.
-  await d.legeMappeAn({ typId: typ2.id, werte: { nr: 'B', jahr: verschiebe(HEUTE, 10) } }, lena.id);
-  await d.legeMappeAn({ typId: typ2.id, werte: { nr: 'B', jahr: verschiebe(HEUTE, 10) } }, lena.id);
+  await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'B', jahr: verschiebe(HEUTE, 10) } }, lena.id);
+  await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'B', jahr: verschiebe(HEUTE, 10) } }, lena.id);
   // Der Zugriff (mit den Mappentypen) gilt je Anfrage – nach dem neuen Typ also neu.
-  const z = await d.zugriff(lena);
-  const n = await d.naechsterTermin(z);
+  const z = await d.rechtepruefung.zugriff(lena);
+  const n = await d.fristen.naechsterTermin(z);
   assert.deepEqual(n, await ausJahr(d));
   assert.deepEqual(n, await ausJahr(h.neu()));
-  assert.deepEqual(await mitSchalterAus(() => d.naechsterTermin(z)), n);
+  assert.deepEqual(await mitSchalterAus(() => d.fristen.naechsterTermin(z)), n);
   assert.ok(n.termin && n.termin.datum <= verschiebe(HEUTE, 10));
 }
 
 async function pruefeTypaenderung(h: Aufbau) {
   const { d, roh, lena } = h;
-  const typ = await d.legeTypAn({ name: 'Wartung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }] });
-  await d.legeMappeAn({ typId: typ.id, werte: { nr: 'W1', datum: `${J - 3}-03-31` } }, lena.id);
+  const typ = await d.mappentypen.legeTypAn({ name: 'Wartung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }] });
+  await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'W1', datum: `${J - 3}-03-31` } }, lena.id);
   const zeitraum = { von: `${J}-01-01`, bis: `${J}-12-31` };
   // Je Abruf ein neuer Zugriff – wie je Anfrage; er bringt die Mappentypen mit.
-  const zahl = async () => (await d.termine(await d.zugriff(lena), zeitraum)).eintraege.filter((e) => e.typId === typ.id).map((e) => e.datum);
+  const zahl = async () => (await d.fristen.termine(await d.rechtepruefung.zugriff(lena), zeitraum)).eintraege.filter((e) => e.typId === typ.id).map((e) => e.datum);
   assert.deepEqual(await zahl(), [], 'noch keine Frist');
   // Feld wird zur jährlichen Frist: sofort der Termin, ohne dass die Mappe gespeichert wird.
   const t = (await roh.listeTypen()).find((x) => x.id === typ.id)!;
   const mitFrist = (w: number | null) => ({ ...t, felder: t.felder.map((f) => (f.key === 'datum' ? { ...f, frist: frist(w) } : f)) });
-  await d.aendereTyp(typ.id, mitFrist(12));
+  await d.mappentypen.aendereTyp(typ.id, mitFrist(12));
   assert.deepEqual(await zahl(), [`${J}-03-31`]);
   // Rhythmus vierteljährlich: 30.06., 30.09., 31.12. dazu (Monatsende gekappt, vom Datum aus gerechnet).
-  await d.aendereTyp(typ.id, mitFrist(3));
+  await d.mappentypen.aendereTyp(typ.id, mitFrist(3));
   assert.deepEqual(await zahl(), [`${J}-03-31`, `${J}-06-30`, `${J}-09-30`, `${J}-12-31`]);
-  await d.aendereTyp(typ.id, mitFrist(null));
+  await d.mappentypen.aendereTyp(typ.id, mitFrist(null));
   assert.deepEqual(await zahl(), [], 'einmalig, Datum liegt vor dem Zeitraum');
 }
 
@@ -247,28 +247,28 @@ async function pruefeZahlen(h: Aufbau) {
   const { d, lena, jonas, vertrag } = h;
   const zahlen = async (ich: { id: string; rolle: string }, benutzerId?: string) => {
     const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 }, ...(benutzerId ? { benutzerId } : {}) };
-    const z = await kontext.run(k, async () => d.zaehler(ich, await d.zugriff(ich)));
+    const z = await kontext.run(k, async () => d.sichten.zaehler(ich, await d.rechtepruefung.zugriff(ich)));
     return { z, art: k.zwischenspeicher?.art };
   };
-  const frisch = async (ich: { id: string; rolle: string }) => { const f = h.neu(); return f.zaehler(ich, await f.zugriff(ich)); };
-  const teil = (x: Awaited<ReturnType<Dienst['zaehler']>>) => ({ typen: x.typen, eingang: x.eingang, favoriten: x.favoriten, sichten: x.sichten, papierkorb: x.papierkorb });
-  const m = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z1' } }, lena.id);
+  const frisch = async (ich: { id: string; rolle: string }) => { const f = h.neu(); return f.sichten.zaehler(ich, await f.rechtepruefung.zugriff(ich)); };
+  const teil = (x: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({ typen: x.typen, eingang: x.eingang, favoriten: x.favoriten, sichten: x.sichten, papierkorb: x.papierkorb });
+  const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z1' } }, lena.id);
   await ruhe();
   await zahlen(jonas); await zahlen(lena);
   assert.equal((await zahlen(jonas)).art, 'treffer');
   // Stern (von Lena) und Notiz: keine neue Zählung für Jonas – und Lenas Zahl der Favoriten stimmt trotzdem sofort.
-  await d.setzeFavorit({ id: lena.id }, m.id, true);
+  await d.mappen.setzeFavorit({ id: lena.id }, m.id, true);
   await ruhe();
   assert.equal((await zahlen(jonas)).art, 'treffer', 'Stern: Zahlen nicht neu gerechnet');
   const l = await zahlen(lena);
   assert.equal(l.art, 'treffer', 'Stern: auch für Lena nicht die Zahlen je Typ');
   assert.equal(l.z.favoriten, 1, 'die eigene Zahl der Favoriten sofort');
   assert.deepEqual(teil(l.z), teil(await frisch(lena)));
-  await d.legeNotizAn(m.id, 'Bitte prüfen', lena.id);
+  await d.mappenNotizen.legeNotizAn(m.id, 'Bitte prüfen', lena.id);
   await ruhe();
   assert.equal((await zahlen(jonas)).art, 'treffer', 'Notiz: Zahlen nicht neu gerechnet');
   // Mappe ändern: neu gerechnet, wie frisch.
-  await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z2' } }, lena.id);
+  await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z2' } }, lena.id);
   const j = await zahlen(jonas);
   assert.equal(j.art, 'neu');
   assert.deepEqual(teil(j.z), teil(await frisch(jonas)));
@@ -277,18 +277,18 @@ async function pruefeZahlen(h: Aufbau) {
   d.mindestensMs = MINDESTENS_MS;
   try {
     const vorher = (await zahlen(jonas, jonas.id)).z.typen[vertrag.id].anzahl;
-    await kontext.run({ anfrage: 'l', db: { anzahl: 0, ms: 0 }, benutzerId: lena.id }, () => d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z3' } }, lena.id));
+    await kontext.run({ anfrage: 'l', db: { anzahl: 0, ms: 0 }, benutzerId: lena.id }, () => d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z3' } }, lena.id));
     assert.equal((await zahlen(lena, lena.id)).z.typen[vertrag.id].anzahl, vorher + 1, 'Lena sieht ihre Änderung sofort');
     const kurz = await zahlen(jonas, jonas.id);
     assert.ok([vorher, vorher + 1].includes(kurz.z.typen[vertrag.id].anzahl), 'Jonas: bisheriger oder neuer Wert');
-    await kontext.run({ anfrage: 'j', db: { anzahl: 0, ms: 0 }, benutzerId: jonas.id }, () => d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z4' } }, jonas.id));
+    await kontext.run({ anfrage: 'j', db: { anzahl: 0, ms: 0 }, benutzerId: jonas.id }, () => d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z4' } }, jonas.id));
     assert.equal((await zahlen(jonas, jonas.id)).z.typen[vertrag.id].anzahl, vorher + 2, 'Jonas sieht seine Änderung sofort');
   } finally { d.mindestensMs = 0; }
 }
 
 async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
   const { d, lena, jonas, vertrag } = h;
-  const seite = async (x: Dienst, ich: { id: string; rolle: string }, q: Record<string, unknown>) => x.seite(ich, { sicht: `typ:${vertrag.id}`, anzahl: 5, ...q }, await x.zugriff(ich));
+  const seite = async (x: Dienst, ich: { id: string; rolle: string }, q: Record<string, unknown>) => x.sichten.seite(ich, { sicht: `typ:${vertrag.id}`, anzahl: 5, ...q }, await x.rechtepruefung.zugriff(ich));
   /** Wie oft der Dienst (nicht der frische zum Vergleich) gezählt hat. */
   const gezaehlt = () => aufrufe.filter((a) => a.zahl === undefined).length;
   const vergleiche = async (q: Record<string, unknown>, was: string) => {
@@ -298,7 +298,7 @@ async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
     assert.deepEqual(a.mappen.map((m) => m.id), f.mappen.map((m) => m.id), `${was}: dieselbe Seite`);
     return a.gesamt;
   };
-  for (let i = 0; i < 7; i++) await d.legeMappeAn({ typId: vertrag.id, werte: { nr: `L${i}` } }, lena.id);
+  for (let i = 0; i < 7; i++) await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: `L${i}` } }, lena.id);
   await ruhe();
   const n = await vergleiche({}, 'erstes Mal');
   let x = gezaehlt();
@@ -307,11 +307,11 @@ async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
   assert.equal(await vergleiche({ von: 5 }, 'zweites Blatt'), n);
   assert.equal(gezaehlt(), x, 'nicht noch einmal gezählt');
   // Stern: keine neue Zählung; neue Mappe: neu gezählt, eine mehr.
-  await d.setzeFavorit({ id: lena.id }, (await seite(d, jonas, {})).mappen[0].id, true);
+  await d.mappen.setzeFavorit({ id: lena.id }, (await seite(d, jonas, {})).mappen[0].id, true);
   await ruhe();
   await seite(d, jonas, {});
   assert.equal(gezaehlt(), x, 'Stern zählt nicht neu');
-  await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'T1' } }, lena.id);
+  await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'T1' } }, lena.id);
   assert.equal(await vergleiche({}, 'nach dem Anlegen'), n + 1, 'sofort');
   assert.equal(gezaehlt(), x + 1);
   await ruhe();
@@ -320,14 +320,14 @@ async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
   x = gezaehlt();
   await seite(d, jonas, { suche: 'T1' });
   assert.equal(gezaehlt(), x, 'Suche: Zahl aus dem Zwischenspeicher');
-  const notiz = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'T2' } }, lena.id);
+  const notiz = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'T2' } }, lena.id);
   assert.equal(await vergleiche({ suche: 'Wasserschaden', notizen: 'true' }, 'Suche in Notizen'), 0);
-  await d.legeNotizAn(notiz.id, 'Wasserschaden im Keller', lena.id);
+  await d.mappenNotizen.legeNotizAn(notiz.id, 'Wasserschaden im Keller', lena.id);
   assert.equal(await vergleiche({ suche: 'Wasserschaden', notizen: 'true' }, 'Suche in Notizen nach neuer Notiz'), 1);
   // Favoriten: am Haushaltsstand – ein Stern gilt sofort.
-  const fav = async () => (await d.seite(lena, { sicht: 'favoriten' }, await d.zugriff(lena))).gesamt;
+  const fav = async () => (await d.sichten.seite(lena, { sicht: 'favoriten' }, await d.rechtepruefung.zugriff(lena))).gesamt;
   const f0 = await fav();
-  await d.setzeFavorit({ id: lena.id }, notiz.id, true);
+  await d.mappen.setzeFavorit({ id: lena.id }, notiz.id, true);
   assert.equal(await fav(), f0 + 1, 'Favoriten: Stern sofort gezählt');
   // Ohne Zwischenspeicher: dieselbe Zahl, jedes Mal gezählt.
   await ruhe();
@@ -477,22 +477,22 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
 
   it('Pflege bei allen Wegen: ändern, Papierkorb, wiederherstellen, endgültig löschen, viele auf einmal, COPY', async () => {
     const { d, roh, lena, vertrag } = h;
-    const z = await d.zugriff(lena);
-    const termine = async () => gesehen(await d.termine(z, { von: `${J}-01-01`, bis: `${J}-12-31` }), vertrag.id).filter((x) => x.startsWith(m.id));
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'P1', jahr: `${J - 1}-05-17` } }, lena.id);
+    const z = await d.rechtepruefung.zugriff(lena);
+    const termine = async () => gesehen(await d.fristen.termine(z, { von: `${J}-01-01`, bis: `${J}-12-31` }), vertrag.id).filter((x) => x.startsWith(m.id));
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'P1', jahr: `${J - 1}-05-17` } }, lena.id);
     await abgleich('anlegen');
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-05-17|f`]);
-    await d.aendereMappe(m.id, { werte: { jahr: `${J - 1}-08-01`, monat: `${J}-11-30` } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { jahr: `${J - 1}-08-01`, monat: `${J}-11-30` } }, lena.id);
     await abgleich('ändern');
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-08-01|f`, `${m.id}|monat|${J}-11-30|e`, `${m.id}|monat|${J}-12-30|f`]);
-    await d.aendereMappe(m.id, { werte: { jahr: null, monat: null } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { jahr: null, monat: null } }, lena.id);
     await abgleich('leeren');
     assert.deepEqual(await termine(), []);
-    await d.aendereMappe(m.id, { werte: { jahr: `${J - 1}-05-17` } }, lena.id);
-    await d.loescheMappe(m.id, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { jahr: `${J - 1}-05-17` } }, lena.id);
+    await d.loeschen.loescheMappe(m.id, lena.id);
     await abgleich('Papierkorb');
     assert.deepEqual(await termine(), [], 'im Papierkorb kein Termin');
-    await d.stelleWiederHer(m.id, lena);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, lena);
     await abgleich('wiederhergestellt');
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-05-17|f`]);
     // Viele auf einmal (Import, Demo-Daten).
@@ -509,8 +509,8 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
     await abgleich('COPY');
     assert.equal((await sql`SELECT count(*)::int AS n FROM fristtermine WHERE mappe_id = ANY(${ids}::uuid[])`)[0].n, 2);
     // Endgültig löschen.
-    await d.loescheMappe(m.id, lena.id);
-    await d.leerePapierkorb(lena, true);
+    await d.loeschen.loescheMappe(m.id, lena.id);
+    await d.papierkorbVerwaltung.leerePapierkorb(lena, true);
     await abgleich('Papierkorb geleert');
   });
 

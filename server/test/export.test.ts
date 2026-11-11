@@ -31,13 +31,13 @@ async function aufbau() {
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-export-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const partner = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'beginn', label: 'Beginn', typ: 'datum' },
     { key: 'betrag', label: 'Betrag', typ: 'betrag', waehrung: 'EUR' },
@@ -45,13 +45,13 @@ async function aufbau() {
     { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
     { key: 'notiz', label: 'Notiz', typ: 'text' },
   ] });
-  const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
-  const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', beginn: '2026-03-01', betrag: { betrag: 1234.5, waehrung: 'EUR' }, partner: p.id, kennwort: { neu: 'streng-geheim-123' }, notiz: '=SUMME(A1)' } }, anna.id);
-  const v2 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', notiz: 'Zeile;mit "Zeichen"' } }, anna.id);
-  await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Dokument' }]), anna.id);
-  await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Foto.png' }, PNG, anna.id);
-  await d.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), anna.id);
-  const sicht = (await d.listeSichten()).find((s) => s.id === vertrag.id)!;
+  const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
+  const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', beginn: '2026-03-01', betrag: { betrag: 1234.5, waehrung: 'EUR' }, partner: p.id, kennwort: { neu: 'streng-geheim-123' }, notiz: '=SUMME(A1)' } }, anna.id);
+  const v2 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', notiz: 'Zeile;mit "Zeichen"' } }, anna.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Dokument' }]), anna.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Foto.png' }, PNG, anna.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), anna.id);
+  const sicht = (await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === vertrag.id)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, { tresor });
   const rufe = async (b: { id: string }, m: string, pf: string, x: Partial<Anfrage> = {}) => tabelle.find((t) => t.methode === m && t.pfad === pf)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
@@ -130,9 +130,9 @@ describe('Export (#152, #153)', () => {
 
   it('Recht E an der Sicht, vererbt; Admins immer', async () => {
     const { d, admin, anna, sicht, exportiere } = await aufbau();
-    const haus = await d.legeSichtAn({ name: 'Haus', typen: [] });
-    await d.aendereSicht(sicht.id, { ...sicht, elternId: haus.id });
-    await d.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'a', name: 'Anna exportiert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    const haus = await d.sichtenVerwaltung.legeSichtAn({ name: 'Haus', typen: [] });
+    await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, elternId: haus.id });
+    await d.sichtenVerwaltung.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'a', name: 'Anna exportiert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
     await assert.rejects(exportiere(anna, { format: 'csv' }), status(403));
     assert.equal((await exportiere(admin, { format: 'csv' })).inhalt.length > 0, true);
     await assert.rejects(exportiere(anna, { format: 'doc' }), status(422));
@@ -141,8 +141,8 @@ describe('Export (#152, #153)', () => {
 
 describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
   const entziehe = async (d: Dienst, sichtId: string, wer: string) => {
-    const s = (await d.listeSichten()).find((x) => x.id === sichtId)!;
-    await d.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [wer] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    const s = (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === sichtId)!;
+    await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [wer] }], dann: { E: 'entziehen' }, stopp: false }] } });
   };
   it('erweiterte Suche: nur Mappen aus Sichten mit Recht E, Rest gezählt; Admins alles', async () => {
     const { d, admin, anna, vertrag, sicht, exportiere } = await aufbau();

@@ -213,9 +213,9 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
     const d = new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(join(wurzel, 'files'), HAUSHALT), { einstellungen: pgBetriebSpeicher(sql, HAUSHALT) });
     await ladeBeispiele(d, null);
     // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
-    const partner = (await d.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
-    const m = (await d.listeMappen(partner.id))[0];
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo Welt'), null);
+    const partner = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    const m = (await d.mappen.listeMappen(partner.id))[0];
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo Welt'), null);
 
     const reihenfolge = (await tabellenIn(sql)).map((t) => t.name);
     assert.ok(reihenfolge.indexOf('haushalte') < reihenfolge.indexOf('mappen'));
@@ -231,7 +231,7 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
     });
     const meta = (await (await s.starte('manuell', 'test')).fertig)!;
     assert.ok(meta, JSON.stringify(s.aktuellerLauf()));
-    assert.equal(meta.anzahl.mappen, (await d.listeMappen()).length);
+    assert.equal(meta.anzahl.mappen, (await d.mappen.listeMappen()).length);
     assert.equal(meta.anzahl.dokumente, 1);
     assert.equal(meta.anzahl.dateien, 1);
     assert.ok(meta.migrationen.includes('001_grundgeruest.sql'));

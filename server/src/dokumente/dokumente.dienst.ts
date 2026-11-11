@@ -57,7 +57,7 @@ export interface DokumenteTeile { umwandlung: DokumentUmwandlung; archiv: Dokume
 
 /** Was die Dokumente außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface DokumenteAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes, wie bisher (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   /** Neue PDFs automatisch verkleinern (#393; PDF, noch im Dienst). */
   automatischVerkleinert(ein: Eingang, name: string): Promise<{ vorher: number; nachher: number; stufe: Stufe; inhalt: Buffer } | null>;

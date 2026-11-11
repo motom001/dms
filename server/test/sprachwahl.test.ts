@@ -97,12 +97,12 @@ describe('Einstellung „sprachen“ und Sprache der Person (#729)', () => {
     const sprachen = new SprachDienst(einst);
     await sprachen.lade();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst });
-    const konten = new Konten(speicherKontoRepo(), mailer, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), mailer, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
     const r = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
     const link = r.link ?? /\/passwort\/(\S+)/.exec(mails.at(-1)!.text)![0];
     await konten.passwortSetzen({ schluessel: link.split('/passwort/')[1], passwort: PW });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const { baueApp } = await import('../src/http');
     const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
     const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), sprachen });

@@ -26,18 +26,18 @@ async function deaktiviere(konten: Konten, id: string) {
 
 async function aufbau(o: { grenze?: number } = {}) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   const bert = (await konten.legeBenutzerAn({ email: 'bert@example.org', name: 'Bert' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const schluesselRepo = speicherApiSchluesselRepo();
   const schluessel = new ApiSchluesselDienst(schluesselRepo);
   const annaKey = (await schluessel.lege(anna, { name: 'Laufwerk', recht: 'schreiben' })).schluessel;
   const bertKey = (await schluessel.lege(bert, { name: 'Laufwerk', recht: 'lesen' })).schluessel;
   const einstellungen = speicherEinstellungen();
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nr', typ: 'text' },
   ], register: [
     { key: 'daten', name: 'Daten', art: 'felder' },
@@ -45,16 +45,16 @@ async function aufbau(o: { grenze?: number } = {}) {
     { key: 'briefe', name: 'Briefe/Post', art: 'dokumente' },
   ] } as never);
   // Verweis auf einen anderen Vertrag – ergibt den Ordner „Verknüpft“.
-  const vt = await d.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id }] });
-  const geheim = await d.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+  const vt = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id }] });
+  const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
     berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
-  const sicht = await d.legeSichtAn({ name: 'Verträge', typen: [vt.id] });
-  const sichtG = await d.legeSichtAn({ name: 'Geheimes', typen: [geheim.id] });
-  const v1a = await d.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
-  const v1b = await d.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
-  const akte = await d.legeMappeAn({ typId: vt.id, werte: { nr: 'Akte: 7?', bezug: v1a.id } }, anna.id);
-  const g = await d.legeMappeAn({ typId: geheim.id, werte: { nr: 'G-1' } }, admin.id);
-  await d.ladeHoch(v1a.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF('r1'), anna.id);
+  const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [vt.id] });
+  const sichtG = await d.sichtenVerwaltung.legeSichtAn({ name: 'Geheimes', typen: [geheim.id] });
+  const v1a = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
+  const v1b = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
+  const akte = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'Akte: 7?', bezug: v1a.id } }, anna.id);
+  const g = await d.mappen.legeMappeAn({ typId: geheim.id, werte: { nr: 'G-1' } }, admin.id);
+  await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF('r1'), anna.id);
   const wd = new Webdav({ dienst: d, konten, schluessel, einstellungen, adresse: () => 'https://dms.example.org', grenze: o.grenze });
   const auth = (email: string, pw: string) => `Basic ${Buffer.from(`${email}:${pw}`).toString('base64')}`;
   const A = auth('anna@example.org', annaKey);
@@ -190,7 +190,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.match(belege.text, /<D:getcontentlength>\d+<\/D:getcontentlength>/);
     // ETag nicht der reine Inhalts-Hash (sonst ließe sich ein Inhalt ohne Exportrecht bestätigen).
     assert.match(belege.text, /<D:getetag>&quot;[0-9a-f]{32}&quot;<\/D:getetag>/);
-    const rechnung = (await d.laufwerkMappe(v1a.id, await d.zugriff(anna))).dokumente[0];
+    const rechnung = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente[0];
     assert.ok(belege.text.includes(etagVon(rechnung).replace(/"/g, '&quot;')));
     assert.ok(!belege.text.includes(rechnung.sha256));
     assert.match(belege.text, /<D:getlastmodified>[A-Z][a-z]{2}, \d{2} /);
@@ -209,7 +209,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     await wd.speichere({ aktiv: true }, 'admin');
     const mappe = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})`;
     const pfad = `${mappe}/Belege/Rechnung.pdf`;
-    const abrufe = async () => (await d.historie(v1a.id)).filter((e) => e.art === 'abruf_webdav');
+    const abrufe = async () => (await d.mappenHistorie.historie(v1a.id)).filter((e) => e.art === 'abruf_webdav');
     assert.equal((await rufe('PROPFIND', `${mappe}/Belege/`, { auth: A, depth: '1' })).status, 207);
     assert.equal((await rufe('HEAD', pfad, { auth: A })).status, 200);
     assert.equal((await abrufe()).length, 0, 'Ordnerabfragen und HEAD sind keine Abrufe');
@@ -241,8 +241,8 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.equal(h.body, undefined);
     // Exportrecht entziehen: Lesen (PROPFIND) geht weiter, Herunterladen nicht.
     // Der Mappentyp hat auch seine eigene Ansicht „Vertrag“ – überall entziehen.
-    for (const s of (await d.listeSichten()).filter((x) => x.id === sicht.id || x.typen.includes(vt.id))) {
-      await d.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    for (const s of (await d.sichtenVerwaltung.listeSichten()).filter((x) => x.id === sicht.id || x.typen.includes(vt.id))) {
+      await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
     }
     assert.equal((await rufe('PROPFIND', pfad, { auth: A, depth: '0' })).status, 207);
     assert.equal((await rufe('GET', pfad, { auth: A })).status, 403);
@@ -251,25 +251,25 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
   it('Ablegen: Neue Post wird Post; im Register Dokument bzw. neue Version; ohne Versionierung kein Überschreiben', async () => {
     const { d, wd, rufe, A, anna, v1a, namen } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
-    const post = await d.postTyp();
-    const zahl = async () => (await d.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt;
+    const post = await d.eingangskanaele.postTyp();
+    const zahl = async () => (await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt;
     assert.equal(await zahl(), 0);
     // Wie der Finder: erst leer anlegen (und sperren), dann Inhalt.
     assert.equal((await rufe('PUT', '/webdav/Neue Post/Scan 1.pdf', { auth: A, body: '' })).status, 201);
     assert.equal(await zahl(), 0, 'leere Datei legt noch nichts an');
     assert.equal((await rufe('PUT', '/webdav/Neue Post/Scan 1.pdf', { auth: A, body: PDF('scan') })).status, 201);
-    const p = (await d.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
+    const p = (await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
     assert.equal(p.length, 1);
     assert.equal(p[0].werte.kanal, 'WebDAV');
     assert.equal(p[0].werte.betreff, 'Scan 1');
-    const doks = (await d.laufwerkMappe(p[0].id, await d.zugriff(anna))).dokumente;
+    const doks = (await d.berechtigungen.laufwerkMappe(p[0].id, await d.rechtepruefung.zugriff(anna))).dokumente;
     assert.deepEqual(doks.map((x) => [x.name, x.herkunft]), [['Scan 1.pdf', 'webdav']]);
     assert.deepEqual(namen(await rufe('PROPFIND', '/webdav/Neue Post/', { auth: A, depth: '1' })).slice(1), ['Scan 1.pdf']);
     // Register mit Versionierung: neues Dokument (201), gleicher Name → neue Version (204).
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})`;
     assert.equal((await rufe('PUT', `${reg}/Belege/Kündigung.pdf`, { auth: A, body: PDF('k1') })).status, 201);
     assert.equal((await rufe('PUT', `${reg}/Belege/rechnung.pdf`, { auth: A, body: PDF('r2') })).status, 204);
-    const nach = (await d.laufwerkMappe(v1a.id, await d.zugriff(anna))).dokumente;
+    const nach = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
     assert.deepEqual(nach.map((x) => [x.name, x.version ?? 1, x.herkunft]).sort(), [['Kündigung.pdf', 1, 'webdav'], ['Rechnung.pdf', 2, 'webdav']]);
     // Register ohne Versionierung: neu ja, gleicher Name 409.
     assert.equal((await rufe('PUT', `${reg}/Briefe_Post/Brief.pdf`, { auth: A, body: PDF('b1') })).status, 201);
@@ -291,8 +291,8 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
       assert.equal((await rufe('PROPFIND', `/webdav/Neue Post/${n}`, { auth: A, depth: '0' })).status, 404, n);
       assert.equal((await rufe('PUT', `/webdav/Ablage/${n}`, { auth: A, body: 'egal' })).status, 201, `${n} überall`);
     }
-    const post = await d.postTyp();
-    assert.equal((await d.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
+    const post = await d.eingangskanaele.postTyp();
+    assert.equal((await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
     for (const m of ['MKCOL', 'DELETE', 'MOVE', 'COPY']) assert.equal((await rufe(m, '/webdav/Ablage/Verträge/neu/', { auth: A })).status, 403, m);
     assert.equal((await rufe('TRACE', '/webdav/', { auth: A })).status, 405);
     // PROPPATCH (Windows setzt Zeiten): Antwort 207, jede Eigenschaft 403 – nichts wird gespeichert.
@@ -371,16 +371,16 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     const { d, wd, rufe, A, anna, v1a, vt } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})/Belege`;
-    await d.aendereTyp(vt.id, { ...vt, berechtigungen: { grund: ALLES, regeln: [{ id: 'u', name: 'Anna ändert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { U: 'entziehen' }, stopp: false }] } });
+    await d.mappentypen.aendereTyp(vt.id, { ...vt, berechtigungen: { grund: ALLES, regeln: [{ id: 'u', name: 'Anna ändert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { U: 'entziehen' }, stopp: false }] } });
     assert.equal((await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' })).status, 207, 'lesen geht');
     assert.equal((await rufe('PUT', `${reg}/Neu.pdf`, { auth: A, body: PDF('n') })).status, 403);
     assert.equal((await rufe('PUT', `${reg}/Rechnung.pdf`, { auth: A, body: PDF('n') })).status, 403, 'auch keine neue Version');
-    assert.equal((await d.laufwerkMappe(v1a.id, await d.zugriff(anna))).dokumente.length, 1);
+    assert.equal((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.length, 1);
     // Post: Anlegen (C) am Post-Typ entziehen.
-    const post = await d.postTyp();
-    await d.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
+    const post = await d.eingangskanaele.postTyp();
+    await d.mappentypen.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
     assert.equal((await rufe('PUT', '/webdav/Neue Post/Scan.pdf', { auth: A, body: PDF('s') })).status, 403);
-    assert.equal((await d.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
+    assert.equal((await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
   });
 
   it('neue Version landet per Id auf dem richtigen Dokument – auch bei gleichen oder kollidierenden Namen', async () => {
@@ -388,17 +388,17 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     await wd.speichere({ aktiv: true }, 'admin');
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})/Belege`;
     // Echte Duplikate: zweites „X.pdf“ (erst „X (2).pdf“, dann per neuer Version umbenannt).
-    await d.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x1'), anna.id);
-    const zweit = (await d.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x2'), anna.id)).dokument;
+    await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x1'), anna.id);
+    const zweit = (await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x2'), anna.id)).dokument;
     assert.equal(zweit.name, 'X (2).pdf');
-    await d.ersetzeDokument(zweit.id, { name: 'X.pdf' }, PDF('x2b'), anna.id);
+    await d.dokumentVersionen.ersetzeDokument(zweit.id, { name: 'X.pdf' }, PDF('x2b'), anna.id);
     // Nach dem Bereinigen gleich: „a:b.pdf“ und „a_b.pdf“.
-    await d.ladeHoch(v1a.id, { register: 'belege', name: 'a:b.pdf' }, PDF('ab1'), anna.id);
-    await d.ladeHoch(v1a.id, { register: 'belege', name: 'a_b.pdf' }, PDF('ab2'), anna.id);
+    await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'a:b.pdf' }, PDF('ab1'), anna.id);
+    await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'a_b.pdf' }, PDF('ab2'), anna.id);
     const liste = await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' });
     assert.deepEqual(namen(liste).slice(1).sort(), ['a_b (2).pdf', 'a_b.pdf', 'Rechnung.pdf', 'X (2).pdf', 'X.pdf'].sort());
     // Welches Dokument hinter welchem Laufwerksnamen steht: über den ETag (Id + Inhalt) im Listing.
-    const vorher = (await d.laufwerkMappe(v1a.id, await d.zugriff(anna))).dokumente;
+    const vorher = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
     const hinter = (name: string) => {
       const m = new RegExp(`<D:displayname>${name.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}</D:displayname>[\\s\\S]*?<D:getetag>&quot;([0-9a-f]{32})&quot;`).exec(liste.text);
       assert.ok(m, name);
@@ -406,14 +406,14 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     };
     for (const name of ['X (2).pdf', 'X.pdf', 'a_b (2).pdf', 'a_b.pdf']) {
       const ziel = hinter(name);
-      const stand = new Map((await d.laufwerkMappe(v1a.id, await d.zugriff(anna))).dokumente.map((x) => [x.id, x.version ?? 1]));
+      const stand = new Map((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.map((x) => [x.id, x.version ?? 1]));
       assert.equal((await rufe('PUT', `${reg}/${name}`, { auth: A, body: PDF(`neu ${name}`) })).status, 204, name);
-      const nach = (await d.laufwerkMappe(v1a.id, await d.zugriff(anna))).dokumente;
+      const nach = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
       for (const x of nach) assert.equal(x.version ?? 1, (stand.get(x.id) ?? 1) + (x.id === ziel.id ? 1 : 0), `${name}: ${x.name}`);
       const z = nach.find((x) => x.id === ziel.id)!;
       assert.equal(z.name, ziel.name, 'Name bleibt');
       assert.equal(z.herkunft, 'webdav');
-      assert.equal((await d.dokumentInhalt(z.id)).inhalt.toString(), PDF(`neu ${name}`).toString());
+      assert.equal((await d.dokumente.dokumentInhalt(z.id)).inhalt.toString(), PDF(`neu ${name}`).toString());
     }
   });
 
@@ -454,7 +454,7 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
     const x = await aufbau();
     await x.wd.speichere({ aktiv: true }, 'admin');
     const echt = pdfAus([{ text: 'Echter Vertrag' }]);
-    const dok = (await x.d.ladeHoch(x.v1a.id, { register: 'belege', name: 'Echt.pdf' }, echt, x.anna.id)).dokument;
+    const dok = (await x.d.dokumente.ladeHoch(x.v1a.id, { register: 'belege', name: 'Echt.pdf' }, echt, x.anna.id)).dokument;
     const reg = `/webdav/Ablage/Verträge/V-1 (${k(x.v1a.id)})`;
     return { ...x, echt, dok, reg, pfad: `${reg}/Belege/Echt.pdf` };
   }
@@ -520,8 +520,8 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
   it('Pflicht gewinnt: Einstellung „aus“ + Pflicht-Stempel → gestempelt (Bilder als PDF); Register schreibgeschützt', async () => {
     const { d, wd, rufe, A, vt, v1a, pfad, reg, namen } = await mitEcht();
     await wd.speichere({ stempel: null }, 'admin');
-    await d.ladeHoch(v1a.id, { register: 'briefe', name: 'foto.png', typ: 'image/png' }, PNG, null);
-    await d.aendereTyp(vt.id, { ...vt, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
+    await d.dokumente.ladeHoch(v1a.id, { register: 'briefe', name: 'foto.png', typ: 'image/png' }, PNG, null);
+    await d.mappentypen.aendereTyp(vt.id, { ...vt, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
     const r = await rufe('GET', pfad, { auth: A });
     assert.equal(r.status, 200);
     assert.equal(r.koepfe['x-dms-stempel'], '1', 'trotz „aus“ gestempelt');

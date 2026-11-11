@@ -47,37 +47,37 @@ GEHEIMES ENDE`;
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', beschreibung: 'Verträge mit Firmen. Laufzeit und Kündigung.', erkennbarAn: 'Enthält eine Vertragsnummer und eine Laufzeit',
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', beschreibung: 'Verträge mit Firmen. Laufzeit und Kündigung.', erkennbarAn: 'Enthält eine Vertragsnummer und eine Laufzeit',
     felder: [{ key: 'vnr', label: 'Vertragsnummer', typ: 'text', erkennung: {}, wiederfinden: true }], register: [{ ...FELDER, felder: ['vnr'] }, DOKS] });
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', beschreibung: 'Rechnungen von Handwerkern und Firmen.', erkennbarAn: 'Enthält Rechnungsnummer, Betrag und Zahlungsziel',
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', beschreibung: 'Rechnungen von Handwerkern und Firmen.', erkennbarAn: 'Enthält Rechnungsnummer, Betrag und Zahlungsziel',
     felder: [{ key: 'nr', label: 'Rechnungsnummer', typ: 'text', erkennung: {} }, { key: 'betrag', label: 'Betrag', typ: 'betrag', erkennung: {} }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id }],
     register: [{ ...FELDER, felder: ['nr', 'betrag', 'vertrag'] }, DOKS] });
-  const gesundheit = await d.legeTypAn({ name: 'Gesundheit', beschreibung: 'Befunde und Arztbriefe.', erkennbarAn: 'Diagnose, Praxis, Befund',
+  const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', beschreibung: 'Befunde und Arztbriefe.', erkennbarAn: 'Diagnose, Praxis, Befund',
     felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register: [{ ...FELDER, felder: ['titel'] }, DOKS] });
-  const ablageort = await d.legeTypAn({ name: 'Ablageort', felder: [{ key: 'ort', label: 'Ort', typ: 'text' }], register: [{ ...FELDER, felder: ['ort'] }] });
-  const postTyp = (await d.listeTypen()).find((x) => x.system === 'post')!;
-  for (const x of [vertrag.id, rechnung.id, postTyp.id]) await d.setzeKiTyp(x, true, null);
+  const ablageort = await d.mappentypen.legeTypAn({ name: 'Ablageort', felder: [{ key: 'ort', label: 'Ort', typ: 'text' }], register: [{ ...FELDER, felder: ['ort'] }] });
+  const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
+  for (const x of [vertrag.id, rechnung.id, postTyp.id]) await d.ki.setzeKiTyp(x, true, null);
   const dok = async (mappe: string, name: string, text: string) => {
-    const x = (await d.ladeHoch(mappe, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
-    await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
+    const x = (await d.dokumente.ladeHoch(mappe, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
+    await d.volltexte.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
-  const wartung = await d.legeMappeAn({ typId: vertrag.id, werte: { vnr: 'WV-1043' } }, lena.id);
-  const befund = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie geheim' } }, lena.id);
-  const alteRechnung = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2025-001' } }, lena.id);
+  const wartung = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { vnr: 'WV-1043' } }, lena.id);
+  const befund = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie geheim' } }, lena.id);
+  const alteRechnung = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2025-001' } }, lena.id);
   const dokVertrag = await dok(wartung.id, 'vertrag.pdf', 'Wartungsvertrag Gastherme WV-1043');
   const dokBefund = await dok(befund.id, 'befund.pdf', 'Diagnose Meniskus');
   const dokAlt = await dok(alteRechnung.id, 'alt.pdf', 'Rechnung Wartung 2025');
-  const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
+  const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
   const brief = await dok(post.id, 'rechnung.pdf', BRIEF);
   await d.kern.repo.speicherePaket(paket('ki_assistent', 'KI-Assistent', ASSISTENT));
   await d.kern.repo.speicherePaket(paket('ki_aehnlich', 'KI lokal – Ähnlichkeit', AEHNLICH));
-  const A = await d.zugriff({ id: lena.id, rolle: 'admin' });
+  const A = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
   const eingaenge: Array<{ paket: string; e: Record<string, unknown> }> = [];
   const antworten: Record<string, (e: Record<string, unknown>) => Promise<string>> = {
     ki_assistent: async () => JSON.stringify({ typen: [{ typ: rechnung.id, sicherheit: 0.8, begruendung: 'Rechnung für eine Wartung', zitat: 'Rechnungsnummer R-2026-117' }] }),
@@ -94,11 +94,11 @@ async function aufbau() {
   };
   // Vektoren: Die Nachbildung liefert für jeden Text denselben Vektor; Vertrag, Befund und alte Rechnung liegen nah.
   const v = (x: number[]) => liesVektor(x);
-  d.vektorAnbieter = { paket: () => 'ki_aehnlich', vektorFuer: async () => ({ paket: 'ki_aehnlich', modell: 'test/8', vektor: v([1, 0, 0, 0, 0, 0, 0, 0]), schwelle: 0.1 }) };
-  const zp = await d.zugriff({ id: 'konto-ki_aehnlich', rolle: 'mitglied', art: 'dienst', paketId: 'ki_aehnlich' });
-  await d.setzeVektor(zp, dokVertrag, 'test/8', { vektor: [1, 0.1, 0, 0, 0, 0, 0, 0] });
-  await d.setzeVektor(zp, dokBefund, 'test/8', { vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
-  await d.setzeVektor(zp, dokAlt, 'test/8', { vektor: [1, 0.2, 0, 0, 0, 0, 0, 0] });
+  d.suche.vektorAnbieter = { paket: () => 'ki_aehnlich', vektorFuer: async () => ({ paket: 'ki_aehnlich', modell: 'test/8', vektor: v([1, 0, 0, 0, 0, 0, 0, 0]), schwelle: 0.1 }) };
+  const zp = await d.rechtepruefung.zugriff({ id: 'konto-ki_aehnlich', rolle: 'mitglied', art: 'dienst', paketId: 'ki_aehnlich' });
+  await d.suche.setzeVektor(zp, dokVertrag, 'test/8', { vektor: [1, 0.1, 0, 0, 0, 0, 0, 0] });
+  await d.suche.setzeVektor(zp, dokBefund, 'test/8', { vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
+  await d.suche.setzeVektor(zp, dokAlt, 'test/8', { vektor: [1, 0.2, 0, 0, 0, 0, 0, 0] });
   await d.erkennung.setzeStandard({ paket: 'ki_assistent', abfluss: true });
   return { d, konten, lena, jonas, A, vertrag, rechnung, gesundheit, ablageort, postTyp, post, brief, wartung, eingaenge, antworten, dokBefund };
 }
@@ -187,7 +187,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
   it('Paket ohne Netz: Dokument aus gesperrtem Mappentyp geht nicht hinaus (Quelle geprüft wie bei Paketen mit Netz)', async () => {
     const x = await aufbau();
     await x.d.erkennung.setzeStandard({ paket: null });
-    await x.d.setzeKiTyp(x.postTyp.id, false, null);
+    await x.d.ki.setzeKiTyp(x.postTyp.id, false, null);
     const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.equal(x.eingaenge.length, 0, 'KI lokal – Ähnlichkeit bekommt weder Text noch ähnliche Typen');
     const w = r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!;
@@ -202,9 +202,9 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     for (const t of a) assert.deepEqual(Object.keys(t).sort(), ['aehnlichkeit', 'typ']);
     assert.deepEqual(new Set(a.map((t) => t.typ)), new Set([x.vertrag.id, x.rechnung.id]));
     // Jonas darf Rechnungen anlegen, aber keine Verträge lesen: deren Mappe zählt für ihn nicht.
-    await x.d.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, C: true }, regeln: [] } as Regelwerk, true);
-    await x.d.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
-    const J = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+    await x.d.berechtigungen.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, C: true }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
+    const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     x.eingaenge.length = 0;
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
     const b = x.eingaenge.find((e) => e.paket === 'ki_aehnlich')!.e.aehnliche as Array<{ typ: string }>;
@@ -213,9 +213,9 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
 
   it('Kandidaten nur aus Typen, in denen die Person anlegen darf', async () => {
     const x = await aufbau();
-    await x.d.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
-    await x.d.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
-    const J = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+    await x.d.berechtigungen.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
+    const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
     for (const { e } of x.eingaenge) assert.deepEqual((e.typen as Kandidat[]).map((t) => t.name), ['Rechnung']);
   });
@@ -267,7 +267,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.equal(r.wege.find((w) => w.paket?.id === 'ki_assistent')!.stand, 'aus');
     await x.d.erkennung.setzeStandard({ paket: 'ki_assistent', abfluss: true });
     // Die Post ist nicht mehr für KI-Dienste zugelassen: an kein Paket geht etwas – auch nicht an das ohne Netz.
-    await x.d.setzeKiTyp(x.postTyp.id, false, null);
+    await x.d.ki.setzeKiTyp(x.postTyp.id, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.deepEqual(x.eingaenge.map((e) => e.paket), [], 'weder das Paket mit Netz noch KI lokal – Ähnlichkeit');
@@ -277,8 +277,8 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     }
     assert.equal(r.vorschlag?.typId, x.rechnung.id, 'Überschrift und Abgleich tragen weiter');
     // Kein Kandidat zugelassen: kein Paket wird gefragt; Überschrift und Abgleich bleiben.
-    await x.d.setzeKiTyp(x.postTyp.id, true, null);
-    for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.setzeKiTyp(t, false, null);
+    await x.d.ki.setzeKiTyp(x.postTyp.id, true, null);
+    for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.ki.setzeKiTyp(t, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.equal(x.eingaenge.length, 0);
@@ -289,12 +289,12 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     const x = await aufbau();
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [] }, x.A), (e: { status?: number }) => e.status === 422);
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: ['00000000-0000-4000-8000-0000000000ff'] }, x.A), (e: { status?: number }) => e.status === 404);
-    await x.d.setzeBerechtigungen(x.gesundheit.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
-    const J = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+    await x.d.berechtigungen.setzeBerechtigungen(x.gesundheit.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
+    const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.dokBefund] }, J));
-    const vorher = JSON.stringify((await x.d.holeMappe(x.post.id)).mappe);
+    const vorher = JSON.stringify((await x.d.mappen.holeMappe(x.post.id)).mappe);
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
-    assert.equal(JSON.stringify((await x.d.holeMappe(x.post.id)).mappe), vorher);
+    assert.equal(JSON.stringify((await x.d.mappen.holeMappe(x.post.id)).mappe), vorher);
   });
 
   it('wechselt die Person den Typ, läuft nur die Extraktion – nicht die Klassifizierung', async () => {
@@ -313,7 +313,7 @@ describe('Fundstellen in dms:erkennen (#939)', () => {
     const eingaenge: Array<Record<string, unknown>> = [];
     x.d.erkennung.anbieter = { pakete: () => [{ id: 'ki_assistent', name: 'KI-Assistent', netz: true }], erkenne: async (_p, e) => { eingaenge.push(e); return { text: JSON.stringify(antwort), ms: 1 }; } };
     const seite = { breite: 595, hoehe: 842, woerter: [['Rechnung', 0.1, 0.1, 0.15, 0.02], ['Rechnungsnummer', 0.1, 0.2, 0.2, 0.02], ['R-2026-117', 0.32, 0.2, 0.15, 0.02], ['Gesamtbetrag', 0.1, 0.3, 0.15, 0.02], ['184,20', 0.3, 0.3, 0.08, 0.02], ['EUR', 0.4, 0.3, 0.05, 0.02]] };
-    (x.d as unknown as { wortpositionen: (id: string) => Promise<unknown> }).wortpositionen = async (id) => ({ seiten: id === x.brief ? [seite] : [] });
+    (x.d.dokumentArchiv as unknown as { wortpositionen: (id: string) => Promise<unknown> }).wortpositionen = async (id) => ({ seiten: id === x.brief ? [seite] : [] });
     const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { dokumente: [x.brief] }, x.A);
     assert.deepEqual(r.engine, { art: 'paket', id: 'ki_assistent', name: 'KI-Assistent' });
     assert.match(String(eingaenge[0].hinweis), /wörtlicher Ausschnitt/);
@@ -331,7 +331,7 @@ describe('Fundstellen in dms:erkennen (#939)', () => {
     assert.deepEqual(alt.vorschlaege.betrag.wert, { betrag: 184.2, waehrung: 'EUR' });
     assert.ok(alt.vorschlaege.betrag.stelle, 'Betrag „184,20“ in der Textebene gefunden');
     // Ohne Wortpositionen (keine Textebene): Werte ohne Rahmen.
-    (x.d as unknown as { wortpositionen: () => Promise<unknown> }).wortpositionen = async () => { throw new Error('keine'); };
+    (x.d.dokumentArchiv as unknown as { wortpositionen: () => Promise<unknown> }).wortpositionen = async () => { throw new Error('keine'); };
     const ohne = await x.d.erkennung.fuerTyp(x.rechnung.id, { dokumente: [x.brief] }, x.A);
     assert.equal(ohne.vorschlaege.nr.wert, 'R-2026-117'); assert.equal(ohne.vorschlaege.nr.stelle, undefined);
   });

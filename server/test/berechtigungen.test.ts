@@ -26,22 +26,22 @@ async function aufbau(repos?: { repo: ReturnType<typeof speicherRepo>; konto: Re
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-recht-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(repos?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
   const fibu = await neu('Fibu'); const max = await neu('Max'); const prakt = await neu('Prakt'); const api = await neu('Api');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const typen = await d.listeTypen();
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+  const typen = await d.mappentypen.listeTypen();
   const rolleTyp = typen.find((t) => t.system === 'rolle')!;
   const benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
-  const rolle = async (name: string) => (await d.legeMappeAn({ typId: rolleTyp.id, werte: { name } }, admin.id)).id;
+  const rolle = async (name: string) => (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name } }, admin.id)).id;
   const R = { fibu: await rolle('FiBu'), praktikant: await rolle('Praktikant'), api: await rolle('API') };
-  await d.setzeRollen(fibu.id, [R.fibu]);
-  await d.setzeRollen(prakt.id, [R.praktikant]);
-  await d.setzeRollen(api.id, [R.api]);
-  const mitglied = (await d.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', felder: [
+  await d.postSystemmappen.setzeRollen(fibu.id, [R.fibu]);
+  await d.postSystemmappen.setzeRollen(prakt.id, [R.praktikant]);
+  await d.postSystemmappen.setzeRollen(api.id, [R.api]);
+  const mitglied = (await d.postSystemmappen.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
     { key: 'privat', label: 'Privat', typ: 'janein' },
@@ -99,10 +99,10 @@ describe('Regelwerk (#123)', () => {
 describe('Durchsetzung (#124), Ablage (#126), Aufgaben (#127)', () => {
   it('Beispiel aus #123: Listen, Zähler, Lesen, Bearbeiten, Löschen, Passwörter, Anlegen', async () => {
     const { d, admin, fibu, max, prakt, R, mitglied, rechnung, rufe } = await aufbau();
-    const m1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', kennwort: { neu: 'geheim' } } }, fibu.id);
-    const m2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', verantwortlich: max.id } }, fibu.id);
-    const m3 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, max.id);
-    await d.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
+    const m1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', kennwort: { neu: 'geheim' } } }, fibu.id);
+    const m2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', verantwortlich: max.id } }, fibu.id);
+    const m3 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, max.id);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
 
     const liste = async (b: { id: string }) => ((await rufe(b, 'GET', '/api/mappen', { query: { sicht: `typ:${rechnung.id}` } })).body as { mappen: Array<{ id: string }> }).mappen.map((x) => x.id).sort();
     // Mitglieder lesen; Privat sieht nur der Ersteller (Max) – FiBu auch nicht, weil Regel 1 vorher stoppt.
@@ -145,13 +145,13 @@ describe('Durchsetzung (#124), Ablage (#126), Aufgaben (#127)', () => {
     const { d, admin, fibu, prakt, R, mitglied, rechnung, rufe } = await aufbau();
     const rw = beispiel(R, mitglied);
     // Ohne die Regel „Mitglieder lesen“ – damit nur die Aufgabe Zugriff gibt
-    await d.setzeBerechtigungen(rechnung.id, { ...rw, regeln: rw.regeln.filter((r) => r.id !== 'mitglied') }, true);
-    const m = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, { ...rw, regeln: rw.regeln.filter((r) => r.id !== 'mitglied') }, true);
+    const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
     await assert.rejects(rufe(prakt, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404));
     await rufe(fibu, 'POST', '/api/mappen/:id/aufgaben', { params: { id: m.id }, body: { empfaengerId: prakt.id, text: 'Prüfen' } });
     assert.equal(((await rufe(prakt, 'GET', '/api/mappen/:id', { params: { id: m.id } })).body as { rechte: { U: boolean } }).rechte.U, true);
     // Ohne Aufgaben-Regel: Hinweis beim Vergeben, Eingang ohne Titel
-    await d.setzeBerechtigungen(rechnung.id, { ...rw, regeln: rw.regeln.filter((r) => r.id !== 'mitglied' && r.id !== 'aufgabe') }, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, { ...rw, regeln: rw.regeln.filter((r) => r.id !== 'mitglied' && r.id !== 'aufgabe') }, true);
     const auf = (await rufe(fibu, 'POST', '/api/mappen/:id/aufgaben', { params: { id: m.id }, body: { empfaengerId: prakt.id, text: 'Nochmal' } })).body as { hinweis?: string };
     assert.match(auf.hinweis ?? '', /nicht lesen/);
     const eingang = (await rufe(prakt, 'GET', '/api/mappen', { query: { sicht: 'eingang' } })).body as { mappen: Array<{ id: string; titel: string; verborgen?: boolean; werte: object }> };
@@ -166,29 +166,29 @@ describe('Durchsetzung (#124), Ablage (#126), Aufgaben (#127)', () => {
 
   it('Titel verwiesener Mappen und verweisende Mappen ohne Leserecht', async () => {
     const { d, fibu, max, R, mitglied, rechnung, rufe } = await aufbau();
-    const projekt = await d.legeTypAn({ name: 'Projekt', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTyp: rechnung.id }] });
-    const geheim = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'GEHEIM', privat: true } }, fibu.id);
-    const p = await d.legeMappeAn({ typId: projekt.id, werte: { name: 'Haus', rechnung: geheim.id } }, fibu.id);
-    await d.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
+    const projekt = await d.mappentypen.legeTypAn({ name: 'Projekt', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTyp: rechnung.id }] });
+    const geheim = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'GEHEIM', privat: true } }, fibu.id);
+    const p = await d.mappen.legeMappeAn({ typId: projekt.id, werte: { name: 'Haus', rechnung: geheim.id } }, fibu.id);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
     const sicht = (await rufe(max, 'GET', '/api/mappen/:id', { params: { id: p.id } })).body as { bezuege: Record<string, { titel: string; verborgen?: boolean }> };
     assert.deepEqual(sicht.bezuege[geheim.id], { titel: 'nicht sichtbare Mappe', typId: '', verborgen: true });
     // Verweis auf eine nicht sichtbare Mappe neu setzen: abgelehnt; bestehender bleibt erlaubt
-    const p2 = await d.legeMappeAn({ typId: projekt.id, werte: { name: 'Garten' } }, max.id);
+    const p2 = await d.mappen.legeMappeAn({ typId: projekt.id, werte: { name: 'Garten' } }, max.id);
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: p2.id }, body: { werte: { name: 'Garten', rechnung: geheim.id } } }), status(422));
     await rufe(max, 'PUT', '/api/mappen/:id', { params: { id: p.id }, body: { werte: { name: 'Haus 2', rechnung: geheim.id } } });
   });
 
   it('Systemfelder bleiben geschützt, auch mit Bearbeiten-Recht (#124); eigener Papierkorb (#126)', async () => {
     const { d, max, R, benutzerTyp, rechnung, rufe } = await aufbau();
-    await d.setzeBerechtigungen(benutzerTyp.id, { grund: ALLES, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(benutzerTyp.id, { grund: ALLES, regeln: [] }, true);
     const eigene = (await rufe(max, 'GET', '/api/mappen/:id', { params: { id: max.id } })).body as { mappe: { werte: Record<string, unknown> } };
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: max.id }, body: { werte: { ...eigene.mappe.werte, rollen: [...(eigene.mappe.werte.rollen as string[]), R.fibu] } } }), status(403));
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: max.id }, body: { werte: { ...eigene.mappe.werte, aktiv: false } } }), status(403));
     // Papierkorb: gelöscht, danach nicht mehr lesbar – trotzdem wiederherstellbar
-    await d.setzePapierkorbTage(30);
-    const m = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'P-1' } }, max.id);
+    await d.papierkorbVerwaltung.setzePapierkorbTage(30);
+    const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'P-1' } }, max.id);
     await rufe(max, 'DELETE', '/api/mappen/:id', { params: { id: m.id } });
-    await d.setzeBerechtigungen(rechnung.id, { grund: NICHTS, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, { grund: NICHTS, regeln: [] }, true);
     assert.deepEqual(((await rufe(max, 'GET', '/api/papierkorb')).body as Array<{ id: string }>).map((x) => x.id), [m.id]);
     const r = (await rufe(max, 'POST', '/api/papierkorb/:id/wiederherstellen', { params: { id: m.id } })).body as { hinweis?: string };
     assert.match(r.hinweis ?? '', /nicht mehr sehen/);
@@ -198,19 +198,19 @@ describe('Durchsetzung (#124), Ablage (#126), Aufgaben (#127)', () => {
 describe('Benutzerauswahl nur mit sichtbaren Benutzern (#137)', () => {
   it('ERP-API: Rolle API am Typ Benutzer ausblenden – nicht für sich selbst', async () => {
     const { d, max, api, R, benutzerTyp, rechnung, rufe } = await aufbau();
-    await d.setzeBerechtigungen(benutzerTyp.id, { grund: ALLES, regeln: [
+    await d.berechtigungen.setzeBerechtigungen(benutzerTyp.id, { grund: ALLES, regeln: [
       { id: 'api', name: 'API-Benutzer ausblenden', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'rollen', op: 'zeigtAuf', wert: { art: 'fest', wert: [R.api] } } }, { art: 'eigeneMappe', nicht: true }], dann: { C: 'entziehen', R: 'entziehen', U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: true },
     ] }, true);
     const personen = async (b: { id: string }) => ((await rufe(b, 'GET', '/api/personen')).body as Array<{ name: string }>).map((p) => p.name);
     assert.ok(!(await personen(max)).includes('Api'));
     assert.ok((await personen(api)).includes('Api'), 'sich selbst sieht der API-Benutzer');
-    const m = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, max.id);
+    const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, max.id);
     await assert.rejects(rufe(max, 'POST', '/api/mappen/:id/aufgaben', { params: { id: m.id }, body: { empfaengerId: api.id, text: 'x' } }), status(422));
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: m.id }, body: { werte: { nr: 'R-1', verantwortlich: api.id } } }), status(422));
     await assert.rejects(rufe(max, 'PUT', '/api/konto/abwesenheit', { body: { an: true, vertreterId: api.id } }), status(422));
     // Erwähnung eines nicht sichtbaren Benutzers erzeugt keine Aufgabe
     await rufe(max, 'PUT', '/api/mappen/:id', { params: { id: m.id }, body: { werte: { nr: 'R-1', text: `Hallo ${erwaehnung('Api', api.id)}` } } });
-    assert.equal((await d.meineAufgaben({ id: api.id, rolle: 'mitglied' })).length, 0);
+    assert.equal((await d.vertretung.meineAufgaben({ id: api.id, rolle: 'mitglied' })).length, 0);
     // Eigene Mappe sieht der API-Benutzer weiter
     assert.equal(((await rufe(api, 'GET', '/api/mappen/:id', { params: { id: api.id } })).body as { rechte: { R: boolean } }).rechte.R, true);
   });
@@ -219,16 +219,16 @@ describe('Benutzerauswahl nur mit sichtbaren Benutzern (#137)', () => {
 describe('Werkbank (#123, #125)', () => {
   it('Warnung „niemand kann lesen“, Kopieren, Testlauf mit Spur, „Was sieht Benutzer X?“', async () => {
     const { d, fibu, prakt, R, mitglied, rechnung, rufe, admin } = await aufbau();
-    await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
+    await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
     await assert.rejects(rufe(admin, 'PUT', '/api/werkbank/berechtigungen/:typId', { params: { typId: rechnung.id }, body: { berechtigungen: { grund: NICHTS, regeln: [] } } }),
       (e: unknown) => e instanceof Fachfehler && e.status === 409 && (e.details as { niemand: number }).niemand === 1);
     await assert.rejects(rufe(admin, 'PUT', '/api/werkbank/berechtigungen/:typId', { params: { typId: rechnung.id }, body: { berechtigungen: { grund: ALLES, regeln: [{ name: '', wenn: [], dann: {} }] } } }), status(422));
     await rufe(admin, 'PUT', '/api/werkbank/berechtigungen/:typId', { params: { typId: rechnung.id }, body: { berechtigungen: beispiel(R, mitglied) } });
-    const projekt = await d.legeTypAn({ name: 'Projekt', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const projekt = await d.mappentypen.legeTypAn({ name: 'Projekt', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const k = (await rufe(admin, 'POST', '/api/werkbank/berechtigungen/:typId/kopieren', { params: { typId: rechnung.id }, body: { regelId: 'verantw', ziele: [projekt.id] } })).body as { kopiert: number; ausgelassen: number };
     assert.deepEqual(k, { kopiert: 0, ausgelassen: 1 }, 'Feld Verantwortlich fehlt in Projekt');
     assert.deepEqual((await rufe(admin, 'POST', '/api/werkbank/berechtigungen/:typId/kopieren', { params: { typId: rechnung.id }, body: { regelId: 'fibu', ziele: [projekt.id] } })).body, { kopiert: 1, ausgelassen: 0 });
-    const m = (await d.listeMappen(rechnung.id))[0];
+    const m = (await d.mappen.listeMappen(rechnung.id))[0];
     const t = (await rufe(admin, 'POST', '/api/werkbank/berechtigungen/testlauf', { body: { mappeId: m.id, benutzerId: prakt.id } })).body as { wirksam: Record<string, boolean>; spur: Array<{ regel: string; traf: boolean | null }> };
     assert.deepEqual(t.wirksam, { C: false, R: true, U: false, D: false, P: false });
     assert.deepEqual(t.spur.map((s) => [s.regel, s.traf]), [['privat', false], ['fibu', false], ['verantw', false], ['aufgabe', false], ['mitglied', true], ['praktikant', true]]);
@@ -241,22 +241,22 @@ describe('Werkbank (#123, #125)', () => {
 describe('Berechtigungen am Mappentyp (#142)', () => {
   it('werden mit „Mappentyp speichern“ gespeichert, dürfen neue Felder nutzen, fragen bei „niemand kann lesen“', async () => {
     const { d, fibu, max, R, rechnung, rufe, admin } = await aufbau();
-    await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
-    const t = (await d.listeTypen()).find((x) => x.id === rechnung.id)!;
+    await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
+    const t = (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!;
     const geheim = { key: 'geheim', label: 'Geheim', typ: 'janein' };
     const rw = { grund: ALLES, regeln: [{ id: 'g', name: 'Geheimes nur FiBu', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'geheim', op: 'ja' } }, { art: 'rolle', nicht: true, rollen: [R.fibu] }], dann: { R: 'entziehen' }, stopp: false }] };
     // Neues Feld und Regel darauf in einem Zug.
     const neu = (await rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...t, felder: [...t.felder, geheim], berechtigungen: rw } })).body as typeof t;
     assert.equal(neu.berechtigungen?.regeln[0].name, 'Geheimes nur FiBu');
     assert.ok(neu.felder.some((f) => f.key === 'geheim'));
-    const m = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', geheim: true } }, fibu.id);
+    const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', geheim: true } }, fibu.id);
     await assert.rejects(rufe(max, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404));
     // Ohne berechtigungen in der Eingabe bleiben die Regeln (z. B. API-Skripte).
     const ohne = (await rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, berechtigungen: undefined, beschreibung: 'x' } })).body as typeof t;
     assert.equal(ohne.berechtigungen?.regeln.length, 1);
     // Regel auf ein Feld, das gleichzeitig entfernt wird: 422, nichts gespeichert.
     await assert.rejects(rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, felder: t.felder, berechtigungen: rw } }), status(422));
-    assert.ok((await d.listeTypen()).find((x) => x.id === rechnung.id)!.felder.some((f) => f.key === 'geheim'), 'Typ unverändert');
+    assert.ok((await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!.felder.some((f) => f.key === 'geheim'), 'Typ unverändert');
     // Niemand kann lesen → 409, mit bestaetigt gespeichert.
     const zu = { grund: NICHTS, regeln: [] };
     await assert.rejects(rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, berechtigungen: zu } }), status(409));
@@ -282,21 +282,21 @@ describe('Berechtigungen in PostgreSQL (#124)', { skip: !process.env.TEST_DATABA
       await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
       const H = '00000000-0000-4000-8000-000000000001';
       const { d, fibu, max, prakt, R, mitglied, rechnung, rufe } = await aufbau({ repo: pgRepo(sql, H) as never, konto: pgKontoRepo(sql, H) as never });
-      const m1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
-      const m2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', verantwortlich: max.id } }, fibu.id);
-      const m3 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, max.id);
-      await d.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
+      const m1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
+      const m2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', verantwortlich: max.id } }, fibu.id);
+      const m3 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, max.id);
+      await d.berechtigungen.setzeBerechtigungen(rechnung.id, beispiel(R, mitglied), true);
       const liste = async (b: { id: string }, q: Record<string, string> = {}) => ((await rufe(b, 'GET', '/api/mappen', { query: { sicht: `typ:${rechnung.id}`, ...q } })).body as { mappen: Array<{ id: string }> }).mappen.map((x) => x.id).sort();
       assert.deepEqual(await liste(max), [m1.id, m2.id, m3.id].sort());
       assert.deepEqual(await liste(fibu), [m1.id, m2.id].sort());
       assert.deepEqual(await liste(fibu, { suche: 'R-3' }), [], 'Suche findet nichts Unsichtbares');
       assert.equal(((await rufe(prakt, 'GET', '/api/sichten')).body as { typen: Record<string, { anzahl: number }> }).typen[rechnung.id].anzahl, 2);
       // Aufgaben-Regel als SQL
-      await d.setzeBerechtigungen(rechnung.id, { ...beispiel(R, mitglied), regeln: beispiel(R, mitglied).regeln.filter((r) => r.id !== 'mitglied') }, true);
+      await d.berechtigungen.setzeBerechtigungen(rechnung.id, { ...beispiel(R, mitglied), regeln: beispiel(R, mitglied).regeln.filter((r) => r.id !== 'mitglied') }, true);
       assert.deepEqual(await liste(prakt), []);
-      await d.legeAufgabeAn(m1.id, { empfaengerId: prakt.id, text: 'Prüfen' }, fibu.id);
+      await d.vertretung.legeAufgabeAn(m1.id, { empfaengerId: prakt.id, text: 'Prüfen' }, fibu.id);
       assert.deepEqual(await liste(prakt), [m1.id]);
-      assert.equal(await d.niemandLesbar((await d.listeTypen()).find((t) => t.id === rechnung.id)!, { grund: NICHTS, regeln: [] }), 3);
+      assert.equal(await d.berechtigungen.niemandLesbar((await d.mappentypen.listeTypen()).find((t) => t.id === rechnung.id)!, { grund: NICHTS, regeln: [] }), 3);
     } finally {
       await sql.end();
       const admin = verbinde(alsUrl(basis));
