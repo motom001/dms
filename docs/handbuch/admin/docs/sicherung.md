@@ -33,9 +33,37 @@ Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und G
 
 **Jetzt sichern** startet eine Sicherung im Hintergrund, mit Fortschritt. Du kannst die Seite verlassen. Ist weniger Platz frei als der [Mindest-Speicherplatz](#zeitplan-und-aufbewahrung), beginnt keine Sicherung.
 
-Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
+Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. Je Zeile stehen **Herunterladen · Prüfen · Löschen**. [Herunterladen](#sicherung-herunterladen) holt eine Kopie auf deinen Rechner. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
 
 Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrieb): `dms sicherung` listet die Sicherungen, `dms sicherung jetzt` startet eine, `dms sicherung pruefen <name>` prüft eine.
+
+## Sicherung herunterladen { #sicherung-herunterladen }
+
+Für eine Kopie auf einem USB-Stick, bei Verwandten oder für den Umzug auf ein neues Gerät lädst du eine Sicherung direkt aus der Werkbank herunter – ohne an den Ordner im Container zu müssen.
+
+1. In der Liste bei der gewünschten Sicherung **Herunterladen** wählen.
+2. Liegt deine letzte Anmeldung mehr als 10 Minuten zurück, fragt Ablago erst dein Passwort (und den Code) oder einen Passkey ab – das Herunterladen ist eine [heikle Handlung](verwalten.md#frische-anmeldung).
+3. Dein Browser lädt die Datei `<name>.dms-sicherung` herunter, z. B. `2026-10-29_0200-automatisch.dms-sicherung` – das Datum steht im Namen. Fortschritt, Abbrechen und Fortsetzen findest du bei den Downloads des Browsers. Auch mehrere GB gehen: Ablago liefert die Datei als Strom, Stück für Stück.
+4. Unter der Liste erscheint der Hinweis **„Zum Wiederherstellen brauchst du dein Notfallblatt (Schlüssel).“** mit Dateiname, Größe (auf das Byte genau) und **Prüfsumme (SHA-256)**. Lade dort auch die **Metadaten** (`.json`) herunter und lege sie neben die Sicherung: Ohne sie lässt sich die Sicherung auf einem neuen Gerät nicht einspielen (siehe [Neues NAS, alte Sicherung](wiederherstellen.md#neues-nas-alte-sicherung)).
+
+Gut zu wissen:
+
+- Heruntergeladen wird die Sicherung **verschlüsselt und unverändert**, genau wie sie im Sicherungsordner liegt. Ohne den Schlüssel vom [Notfallblatt](verschluesselung.md#notfallblatt) kann niemand sie lesen – darum gehört das Notfallblatt nicht auf denselben Stick.
+- Dürfen musst du den Bereich **Sicherung** im [Verwaltungsrecht](verwalten.md). Die Metadaten enthalten keinen Schlüssel; für sie fragt Ablago nicht erneut nach dem Passwort.
+- Bricht der Download ab, setzt der Browser ihn fort, wo er aufgehört hat (HTTP-Range). Liegt die Anmeldung dann mehr als 10 Minuten zurück, wähle in der Werkbank erneut **Herunterladen**.
+- Jedes Herunterladen steht im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*: wer, wann, welche Sicherung (beim Fortsetzen mit der Stelle). Eine neue Datei legt Ablago dafür nicht an – weder im Sicherungs- noch im Export-Ordner.
+
+### Kopie am Rechner prüfen { #kopie-prufen }
+
+Vergleiche die Prüfsumme der heruntergeladenen Datei mit der SHA-256 aus der Werkbank (oder aus der `.json`, Feld `sha256`). Stimmen beide überein, ist die Kopie unverändert:
+
+| System | Befehl |
+| --- | --- |
+| Windows (PowerShell) | `Get-FileHash .\2026-10-29_0200-automatisch.dms-sicherung -Algorithm SHA256` |
+| macOS | `shasum -a 256 2026-10-29_0200-automatisch.dms-sicherung` |
+| Linux | `sha256sum 2026-10-29_0200-automatisch.dms-sicherung` |
+
+Windows zeigt die Prüfsumme in Großbuchstaben – das macht keinen Unterschied.
 
 ## Zeitplan und Aufbewahrung
 

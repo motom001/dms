@@ -6,6 +6,7 @@ import { t } from '../sprache';
 import { ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
+import { abruf } from '../http/teilabruf';
 
 export function sicherungRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, tresor, sicherung, sicherungsPaket, notfallblattDatei, wh, whStand, darfWiederherstellen } = k;
@@ -44,6 +45,19 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/sicherung/jetzt', zugang: 'admin', handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email)).lauf) },
     { methode: 'PUT', pfad: '/api/werkbank/sicherung/plan', zugang: 'admin', handler: async (a) => ok(await sicherung().speicherePlan(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/sicherung/:name/pruefen', zugang: 'admin', handler: async (a) => ok(await sicherung().pruefe(a.params.name, ich(a).email)) },
+    // Herunterladen (#975): die verschlüsselte Datei unverändert, als Strom mit Weiterlesen (Range). Heikle Handlung
+    // „sicherung“ (frische Anmeldung, verwaltungsbereiche.ts), Bereich „Sicherung“. Ohne HEAD: Jeder Abruf steht im Protokoll.
+    { methode: 'GET', pfad: '/api/werkbank/sicherung/:name/datei', zugang: 'admin', ohneHead: true, handler: async (a) => {
+      const d = await sicherung().datei(a.params.name);
+      const { antwort, bereich } = await abruf(d, (n) => a.kopf?.(n));
+      if (antwort.datei) sicherung().merkeHerunterladen(d.name, ich(a).email, bereich, antwort.datei.groesse);
+      return antwort;
+    } },
+    // Die Metadaten daneben (#975): ohne sie lässt sich die Sicherung auf einem neuen Gerät nicht einspielen. Kein Schlüssel darin.
+    { methode: 'GET', pfad: '/api/werkbank/sicherung/:name/metadaten', zugang: 'admin', handler: async (a) => {
+      const m = await sicherung().metadatenDatei(a.params.name);
+      return { datei: { inhalt: m.inhalt, name: m.dateiname, mime: 'application/json', anzeigen: false, groesse: m.inhalt.length, koepfe: { 'cache-control': 'no-store' } } };
+    } },
     { methode: 'DELETE', pfad: '/api/werkbank/sicherung/:name', zugang: 'admin', handler: async (a) => { await sicherung().loesche(a.params.name, ich(a).email); return leer; } },
     // Sicherung außer Haus (#585): nur Pakete mit dms:sicherung-lesen, nur die Sicherungen aus ihrem Ereignis sicherung.fertig –
     // die verschlüsselte Datei in Stücken, schlanke Metadaten und die Rückmeldung. Nie Schlüssel, nie andere Dateien.

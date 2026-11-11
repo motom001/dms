@@ -148,9 +148,18 @@ function PasskeyBestaetigen({ frisch, haupt, tu }: { frisch: boolean; haupt: boo
  */
 export async function heikelHerunterladen(e: { preventDefault(): void }, url: string, nachher?: () => void) {
   e.preventDefault();
+  if (await heikelLaden(url)) nachher?.();
+}
+
+/**
+ * Wie `heikelHerunterladen`, für einen Knopf (#975: Sicherung herunterladen): Nach der frischen Anmeldung lädt der
+ * Browser selbst – als Strom in seine Downloads, mit Fortschritt, Abbrechen und Fortsetzen, ohne die Datei in den
+ * Speicher der Seite zu holen. `true` = gestartet, `false` = Anmeldung abgebrochen.
+ */
+export async function heikelLaden(url: string): Promise<boolean> {
   const st = await api.status().catch(() => null);
-  if (!st?.verwaltungsmodus?.frisch && !(await frischAngemeldet())) return;
+  if (!st?.verwaltungsmodus?.frisch && !(await frischAngemeldet())) return false;
   const a = Object.assign(document.createElement('a'), { href: url, download: '' });
   document.body.append(a); a.click(); a.remove();
-  nachher?.();
+  return true;
 }

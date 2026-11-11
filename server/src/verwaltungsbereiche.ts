@@ -128,6 +128,26 @@ export function bereicheDerRoute(methode: string, pfad: string): string[] | null
 const UMBAU_ROUTEN = new Set(['POST /api/werkbank/pakete/installieren', 'POST /api/werkbank/pakete/:id/aktualisieren']);
 const umbauHandlung = (body: unknown): HeikleHandlung | null => ((body as { umbauBestaetigt?: unknown } | null)?.umbauBestaetigt === true ? 'rechte' : null);
 
+/** Heikle Handlungen ohne Bedingung am Körper der Anfrage: Methode und Pfad der Route genügen. */
+const HEIKEL: Record<string, HeikleHandlung> = {
+  'PUT /api/benutzer/:id/verwaltung': 'rechte',
+  // Anmeldemittel einer Person entfernen (#811, Durchsicht Sicherheit): Wer kurz an einem fremden Gerät sitzt, soll das nicht können.
+  'POST /api/benutzer/:id/zweifaktor/zuruecksetzen': 'anmeldung',
+  'POST /api/benutzer/:id/passkeys/zuruecksetzen': 'anmeldung',
+  'GET /api/werkbank/notfallblatt': 'schluessel',
+  'POST /api/werkbank/tresor/erzeugen': 'schluessel',
+  'POST /api/werkbank/tresor/wechseln': 'schluessel',
+  // Sicherung herunterladen (#975): die ganze Ablage, verschlüsselt – mit dem Notfallblatt lesbar.
+  'GET /api/werkbank/sicherung/:name/datei': 'sicherung',
+  'PUT /api/werkbank/anbindung': 'anbindung',
+  'PUT /api/werkbank/anbieter': 'anbieter',
+  'PUT /api/werkbank/betrieb/mail': 'mailversand',
+  // Versand über OAuth (#813): anmelden bzw. abmelden ändert, womit Ablago verschickt.
+  'POST /api/werkbank/betrieb/mail/oauth/start': 'mailversand',
+  'POST /api/werkbank/betrieb/mail/oauth/geraet': 'mailversand',
+  'POST /api/werkbank/betrieb/mail/oauth/abmelden': 'mailversand',
+};
+
 /**
  * Heikle Handlung dieser Anfrage (#819)? Dann braucht sie eine frische Anmeldung – auch im Verwaltungsmodus mit
  * Tagesmerker. Der Vollexport nur mit Passwörtern im Klartext, der Notfallzugang (#815) nur beim Erlauben aus dem
@@ -138,25 +158,11 @@ export function heikleHandlung(methode: string, pfad: string, body: unknown): He
   const k = `${methode} ${pfad}`;
   // Paket-Umbau (#1041): Mappen wechseln den Typ und damit Rechte – nur mit frischer Anmeldung bestätigen.
   if (UMBAU_ROUTEN.has(k)) return umbauHandlung(body);
+  if (Object.hasOwn(HEIKEL, k)) return HEIKEL[k];
   switch (k) {
-    case 'PUT /api/benutzer/:id/verwaltung': return 'rechte';
-    // Anmeldemittel einer Person entfernen (#811, Durchsicht Sicherheit): Wer kurz an einem fremden Gerät sitzt, soll das nicht können.
-    case 'POST /api/benutzer/:id/zweifaktor/zuruecksetzen':
-    case 'POST /api/benutzer/:id/passkeys/zuruecksetzen': return 'anmeldung';
-
-    case 'GET /api/werkbank/notfallblatt':
-    case 'POST /api/werkbank/tresor/erzeugen':
-    case 'POST /api/werkbank/tresor/wechseln': return 'schluessel';
     case 'POST /api/werkbank/export': return (body as { passwoerter?: unknown } | null)?.passwoerter === true ? 'vollexport' : null;
-    case 'PUT /api/werkbank/anbindung': return 'anbindung';
-    case 'PUT /api/werkbank/anbieter': return 'anbieter';
     // Notfallzugang aus dem Internet erlauben (#815); zurück auf „nur Heimnetz“ geht ohne.
     case 'PUT /api/werkbank/anmeldeschutz/notfallzugang': return (body as { internet?: unknown } | null)?.internet === true ? 'notfall' : null;
-    case 'PUT /api/werkbank/betrieb/mail':
-    // Versand über OAuth (#813): anmelden bzw. abmelden ändert, womit Ablago verschickt.
-    case 'POST /api/werkbank/betrieb/mail/oauth/start':
-    case 'POST /api/werkbank/betrieb/mail/oauth/geraet':
-    case 'POST /api/werkbank/betrieb/mail/oauth/abmelden': return 'mailversand';
     default: return null;
   }
 }

@@ -503,6 +503,28 @@ rauchtest('Werkbank: Notfallblatt nur unter Verschlüsselung, Sicherung verweist
   await bearbeitung.getByRole('link', { name: 'Notfallblatt herunterladen (PDF)' }).waitFor();
 });
 
+// Sicherung herunterladen (#975): anlegen, „Herunterladen“ als Erstes in der Zeile, der Browser lädt die verschlüsselte
+// Datei (Name mit Datum), darunter Hinweis auf das Notfallblatt, Größe und Prüfsumme.
+rauchtest('Werkbank: Sicherung anlegen und herunterladen (#975)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Sicherung/ }).click();
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
+  await bearbeitung.getByRole('button', { name: 'Jetzt sichern' }).click();
+  const zeile = bearbeitung.locator('#liste tbody tr').first();
+  const laden = zeile.getByRole('button', { name: 'Herunterladen' });
+  await laden.waitFor({ timeout: 60_000 });
+  const knoepfe = await zeile.locator('td').last().getByRole('button').allInnerTexts();
+  assert.deepEqual(knoepfe.map((x) => x.trim()), ['Herunterladen', 'Prüfen', 'Löschen'], 'Herunterladen · Prüfen · Löschen');
+  const [download] = await Promise.all([s.waitForEvent('download'), laden.click()]);
+  assert.match(download.suggestedFilename(), /^\d{4}-\d{2}-\d{2}_\d{4}-manuell(-\d+)?\.dms-sicherung$/);
+  assert.equal(await download.failure(), null);
+  await bearbeitung.getByText('Zum Wiederherstellen brauchst du dein Notfallblatt (Schlüssel).').waitFor();
+  await bearbeitung.getByText('Prüfsumme (SHA-256)').waitFor();
+  await bearbeitung.getByRole('link', { name: '.json herunterladen' }).waitFor();
+});
+
 rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async (s) => {
   await s.goto(BASIS + '/');
   await s.getByLabel('E-Mail-Adresse').fill(JONAS.email);

@@ -719,11 +719,6 @@
       "count": 2
     }
   },
-  "server/src/verwaltungsbereiche.ts": {
-    "no-fallthrough": {
-      "count": 1
-    }
-  },
   "server/src/vollexport.ts": {
     "complexity": {
       "count": 1
