@@ -144,9 +144,9 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
   it('zählt Überfälliges; kommende Termine zählen nicht (#725: kein „anstehend“ mehr)', async () => {
     const post = await dienst.post.legePostAn({ betreff: 'Vertrag', fuer: lena.id }, { id: adminId, name: 'Markus' });
     const vorher = (await zaehler(lena.zaehler)).body;
-    await dienst.legeErinnerungAn(post.id, { datum: tagVersetzt(3), text: 'Kündigen', empfaengerId: lena.id }, adminId);
-    await dienst.legeErinnerungAn(post.id, { datum: tagVersetzt(30), text: 'Später', empfaengerId: lena.id }, adminId);
-    await dienst.legeErinnerungAn(post.id, { datum: tagVersetzt(-2), text: 'Vergessen', empfaengerId: lena.id }, adminId);
+    await dienst.fristen.legeErinnerungAn(post.id, { datum: tagVersetzt(3), text: 'Kündigen', empfaengerId: lena.id }, adminId);
+    await dienst.fristen.legeErinnerungAn(post.id, { datum: tagVersetzt(30), text: 'Später', empfaengerId: lena.id }, adminId);
+    await dienst.fristen.legeErinnerungAn(post.id, { datum: tagVersetzt(-2), text: 'Vergessen', empfaengerId: lena.id }, adminId);
     const r = (await zaehler(lena.zaehler)).body;
     assert.equal(r.anstehend, undefined);
     assert.equal(r.ueberfaellig, vorher.ueberfaellig + 1);

@@ -275,8 +275,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(er[0].empfaengerId, admin.id);
       assert.ok((await d.mappenHistorie.historie(m.p.id)).some((x) => x.art === 'aufgabe' && String(x.daten.text).includes('kann ab')));
       // Fällig → Aufgabe „Erinnerung“ unter „Zu erledigen“, verlinkt mit der Start-Mappe
-      await d.erinnerungenFaellig(ab);
-      const aufgaben = (await d.meineAufgaben({ id: admin.id, rolle: 'admin' })).filter((a) => a.art === 'erinnerung');
+      await d.fristen.erinnerungenFaellig(ab);
+      const aufgaben = (await d.vertretung.meineAufgaben({ id: admin.id, rolle: 'admin' })).filter((a) => a.art === 'erinnerung');
       assert.equal(aufgaben.length, 1);
       assert.equal(aufgaben[0].mappeId, m.p.id);
 

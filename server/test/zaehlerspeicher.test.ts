@@ -178,10 +178,10 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     await stimmt('Ansicht ändern', { admin: [2, 0], max: [2, 0] });
     await pruefe('Ansicht ändern');
     // Aufgabe vergeben und erledigen (Eingang)
-    const a = await h.d.legeAufgabeAn(r2.id, { text: 'Bitte zahlen', empfaengerId: h.max.id }, h.admin.id);
+    const a = await h.d.vertretung.legeAufgabeAn(r2.id, { text: 'Bitte zahlen', empfaengerId: h.max.id }, h.admin.id);
     assert.equal((await h.zahlen(h.max.id)).z.eingang, 1);
     await h.zahlen(h.max.id);
-    await h.d.erledigeAufgabe(a.id, { id: h.max.id, rolle: 'mitglied' });
+    await h.d.vertretung.erledigeAufgabe(a.id, { id: h.max.id, rolle: 'mitglied' });
     assert.equal((await h.zahlen(h.max.id)).z.eingang, 0, 'Aufgabe erledigt');
     await stimmt('Aufgabe erledigt', { admin: [2, 0], max: [2, 0] });
     // Favorit
@@ -198,7 +198,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     const b = { id: h.max.id, rolle: 'mitglied' };
     const termine = async () => {
       const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
-      await kontext.run(k, async () => h.d.naechsterTermin(await h.d.rechtepruefung.zugriff(b)));
+      await kontext.run(k, async () => h.d.fristen.naechsterTermin(await h.d.rechtepruefung.zugriff(b)));
       return k.zwischenspeicher?.art;
     };
     await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);

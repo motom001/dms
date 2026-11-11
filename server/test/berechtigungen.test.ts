@@ -210,7 +210,7 @@ describe('Benutzerauswahl nur mit sichtbaren Benutzern (#137)', () => {
     await assert.rejects(rufe(max, 'PUT', '/api/konto/abwesenheit', { body: { an: true, vertreterId: api.id } }), status(422));
     // Erwähnung eines nicht sichtbaren Benutzers erzeugt keine Aufgabe
     await rufe(max, 'PUT', '/api/mappen/:id', { params: { id: m.id }, body: { werte: { nr: 'R-1', text: `Hallo ${erwaehnung('Api', api.id)}` } } });
-    assert.equal((await d.meineAufgaben({ id: api.id, rolle: 'mitglied' })).length, 0);
+    assert.equal((await d.vertretung.meineAufgaben({ id: api.id, rolle: 'mitglied' })).length, 0);
     // Eigene Mappe sieht der API-Benutzer weiter
     assert.equal(((await rufe(api, 'GET', '/api/mappen/:id', { params: { id: api.id } })).body as { rechte: { R: boolean } }).rechte.R, true);
   });
@@ -294,7 +294,7 @@ describe('Berechtigungen in PostgreSQL (#124)', { skip: !process.env.TEST_DATABA
       // Aufgaben-Regel als SQL
       await d.berechtigungen.setzeBerechtigungen(rechnung.id, { ...beispiel(R, mitglied), regeln: beispiel(R, mitglied).regeln.filter((r) => r.id !== 'mitglied') }, true);
       assert.deepEqual(await liste(prakt), []);
-      await d.legeAufgabeAn(m1.id, { empfaengerId: prakt.id, text: 'Prüfen' }, fibu.id);
+      await d.vertretung.legeAufgabeAn(m1.id, { empfaengerId: prakt.id, text: 'Prüfen' }, fibu.id);
       assert.deepEqual(await liste(prakt), [m1.id]);
       assert.equal(await d.berechtigungen.niemandLesbar((await d.mappentypen.listeTypen()).find((t) => t.id === rechnung.id)!, { grund: NICHTS, regeln: [] }), 3);
     } finally {

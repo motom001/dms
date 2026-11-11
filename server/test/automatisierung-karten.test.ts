@@ -100,7 +100,7 @@ describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
     await motor.zeitplan();
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
-    const aufgaben = (await d.alleAufgaben()).filter((x) => x.empfaengerId === lena.id && x.mappeId === m.id);
+    const aufgaben = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.empfaengerId === lena.id && x.mappeId === m.id);
     assert.equal(aufgaben.length, 1);
     assert.match(aufgaben[0].text, /^Bitte Strom prüfen – kündbar bis \d{2}\.\d{2}\.\d{4}\.$/);
     // Seit #724: aus „Datum erreicht“ eine Frist zum Datum der Mappe (erledigt sich selbst, wenn es sich ändert).
@@ -121,7 +121,7 @@ describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
-    const fuerLena = (await d.alleAufgaben()).filter((x) => x.empfaengerId === lena.id);
+    const fuerLena = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.empfaengerId === lena.id);
     assert.equal(fuerLena.length, 1, 'gebündelt, Rolle und Person sind dieselbe Lena');
     const lesbar = (await d.rechtepruefung.sichtbarFuer(lena.id, [m.id])).has(m.id);
     assert.equal(fuerLena[0].mappeId, m.id, 'seit #798 immer an der Mappe – ohne Leserecht nur mit Hinweis');

@@ -71,7 +71,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('Dokumente, Historie, Notizen und Aufgaben wandern in die bestehende Mappe, die leere Post kommt in den Papierkorb', async () => {
       const { d, bestehend, post, a, b } = await aufbau(pg);
       const notiz = await d.mappenNotizen.legeNotizAn(post.id, 'Mit Bank klären', LENA);
-      const aufgabe = await d.legeAufgabeAn(post.id, { text: 'Überweisung prüfen', empfaengerId: LENA }, LENA);
+      const aufgabe = await d.vertretung.legeAufgabeAn(post.id, { text: 'Überweisung prüfen', empfaengerId: LENA }, LENA);
       const eigene = (await d.mappenHistorie.historie(bestehend.id)).length;
       const r = await d.post.ordneZu(post.id, { ziel: bestehend.id, register: 'belege', aufloesen: true }, LENA);
       assert.equal(r.aufgeloest, true);

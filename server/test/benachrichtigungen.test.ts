@@ -98,12 +98,12 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
     const { d, konten, lena, admin } = await aufbau();
     const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
-    await d.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
+    await d.vertretung.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
     const mailer = { sende: async (an: string, betreff: string, text: string) => { mails.push({ an, betreff, text }); } };
-    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)), typName: async () => 'Vorgang' };
+    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.vertretung.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)), typName: async () => 'Vorgang' };
     const am_ = new Aufgabenmail(quelle as never, () => mailer as never, () => 'http://nas', speicherEinstellungen());
-    const offen = (await d.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
+    const offen = (await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
     assert.equal(offen, 1, 'Lena hat eine offene Aufgabe');
     await am_.sende();
     const bisher = mails.filter((x) => x.an === 'lena@example.org');
@@ -130,7 +130,7 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
     try {
       await d.mappen.aendereMappe(m.id, { werte: { nr: '2' } }, admin.id);
       await d.ereignisse.verteile();
-      const n = (await d.meineAufgaben(L)).filter((x) => x.art === 'aenderung');
+      const n = (await d.vertretung.meineAufgaben(L)).filter((x) => x.art === 'aenderung');
       assert.equal(n.length, 1);
       assert.match(n[0].text, /^Eine Änderung von Markus/);
       const l = (await motor.laeufe(a.id))[0];

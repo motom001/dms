@@ -70,7 +70,7 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
     // Testlauf (#795): je Empfänger mit seinen Rechten – wer etwas nicht sehen darf, steht dabei.
     const teils: string[] = []; const gar: string[] = [];
     for (const id of an) {
-      const wer = (await c.dienst.aufgabenEmpfaenger(id)).an;
+      const wer = (await c.dienst.aufgaben.aufgabenEmpfaenger(id)).an;
       const f = await c.fuelleFuer(k.text, wer);
       if (!f.mappe) gar.push(await c.dienst.kern.name(wer)); else if (f.verborgen) teils.push(await c.dienst.kern.name(wer));
     }
@@ -90,7 +90,7 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   // Platzhalter je Empfänger mit dessen Rechten (#795) – fürs Konto leer ist er schon oben abgefangen.
   const fuer = async (wer: string | null) => (await c.fuelleFuer(k.text, wer)).text.trim() || text;
   for (const id of an) {
-    const r = await c.dienst.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist });
+    const r = await c.dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist });
     if (r.ohneLeserecht) ohneLeserecht++;
     if (r.vorhanden) vorhanden++;
     if (!r.an) admins++;
@@ -118,7 +118,7 @@ DANN_AUSFUEHRER.favoriten = async (k: DannKarte, c: KartenKontext) => {
   const von = typeof c.daten.von === 'string' ? c.daten.von : null;
   if (!von) return uebersetzer2('automatisierung.karte.favoriten.niemand');
   if (c.trocken) return uebersetzer2('automatisierung.karte.favoriten.trocken');
-  const n = await c.dienst.favoritenMelden(c.mappe.id, von);
+  const n = await c.dienst.ohneEmpfaenger.favoritenMelden(c.mappe.id, von);
   return n ? uebersetzer2('automatisierung.karte.favoriten.ergebnis', { anzahl: n }) : uebersetzer2('automatisierung.karte.favoriten.niemand');
 };
 

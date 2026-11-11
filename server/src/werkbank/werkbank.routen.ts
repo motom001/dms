@@ -127,7 +127,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
       const ts = x.tresor ? await sicher(() => x.tresor!.status()) : null;
       const z = await dienst.sichten.zaehler(ich(a));
-      const aufgaben = await dienst.alleAufgaben(false);
+      const aufgaben = await dienst.ohneLeserecht.alleAufgaben(false);
       const korb = await dienst.papierkorb(ich(a), true);
       const sys = await uebersicht(system, x.betrieb?.kurz());
       return ok(nurEigeneBereiche(ich(a), {
@@ -139,13 +139,13 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
         aufgaben: { offen: aufgaben.length, ohneEmpfaenger: aufgaben.filter((y) => !y.empfaengerId).length },
         // #798: Aufgaben bei Personen ohne Leserecht (offene Fälle, abgeglichen alle fünf Minuten und beim Öffnen).
-        ohneLeserecht: (await sicher(async () => (await dienst.offeneFaelle()).length)) ?? 0,
+        ohneLeserecht: (await sicher(async () => (await dienst.ohneLeserecht.offeneFaelle()).length)) ?? 0,
         // Eingangsordner (#915): Warnungen (zu alt, zu groß, fehler/, zu viele), Ordner ohne Person, nicht umbenannte Ordner.
         eingangsordner: x.eingangsordner?.vorhanden ? await sicher(() => x.eingangsordner!.meldungen()) : null,
         // #877: Dokumentdateien, die beim Lesen fehlten (und noch fehlen) – Volume vergessen, Datei gelöscht, Platte defekt.
         dateienFehlen: (await sicher(() => dienst.dateienFehlen.fehlendeDateien())) ?? 0,
         // #719: Wer im Alltag die Aufgaben ohne Empfänger bekommt; `moeglich` = aktive Benutzer ohne Admin-Rechte.
-        aufgabenEmpfaenger: await sicher(async () => ({ benutzerId: (await dienst.alltagsEmpfaenger()).wirksam, moeglich: (await konten.listeBenutzer()).filter(taugtAlsAufgabenEmpfaenger).length })),
+        aufgabenEmpfaenger: await sicher(async () => ({ benutzerId: (await dienst.ohneEmpfaenger.alltagsEmpfaenger()).wirksam, moeglich: (await konten.listeBenutzer()).filter(taugtAlsAufgabenEmpfaenger).length })),
         unpassend: Object.values(z.typen).reduce((s, t) => s + (t.unpassend ?? 0), 0),
         papierkorb: { anzahl: korb.length, aeltester: korb.reduce<string | null>((m, e) => (!m || e.geloescht < m ? e.geloescht : m), null), tage: await dienst.kern.papierkorbTage() },
         version: sys.dms,
@@ -259,10 +259,10 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/aufgaben/mail/senden', zugang: 'admin', handler: async () => ok({ verschickt: await mail().sende() }) },
     // Favoriten benachrichtigen (#506): für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer.
     // Aufgaben ohne Empfänger gehen an einen Alltags-Benutzer (#719).
-    { methode: 'GET', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async () => ok(await dienst.alltagsEmpfaenger()) },
-    { methode: 'PUT', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async (a) => ok(await dienst.setzeAufgabenEmpfaenger(a.body, ich(a).id)) },
-    { methode: 'GET', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async () => ok({ freigabe: await dienst.favoritenFreigabe(), rollen: await dienst.postSystemmappen.listeRollen() }) },
-    { methode: 'PUT', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async (a) => ok({ freigabe: await dienst.setzeFavoritenFreigabe(a.body, ich(a).email), rollen: await dienst.postSystemmappen.listeRollen() }) },
-    { methode: 'POST', pfad: '/api/werkbank/favoriten-freigabe/anwenden', zugang: 'admin', handler: async (a) => ok({ benutzer: await dienst.favoritenVorgabeAnwenden(ich(a).email) }) },
+    { methode: 'GET', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async () => ok(await dienst.ohneEmpfaenger.alltagsEmpfaenger()) },
+    { methode: 'PUT', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async (a) => ok(await dienst.ohneEmpfaenger.setzeAufgabenEmpfaenger(a.body, ich(a).id)) },
+    { methode: 'GET', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async () => ok({ freigabe: await dienst.aufgaben.favoritenFreigabe(), rollen: await dienst.postSystemmappen.listeRollen() }) },
+    { methode: 'PUT', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async (a) => ok({ freigabe: await dienst.aufgaben.setzeFavoritenFreigabe(a.body, ich(a).email), rollen: await dienst.postSystemmappen.listeRollen() }) },
+    { methode: 'POST', pfad: '/api/werkbank/favoriten-freigabe/anwenden', zugang: 'admin', handler: async (a) => ok({ benutzer: await dienst.ohneEmpfaenger.favoritenVorgabeAnwenden(ich(a).email) }) },
   ];
 }

@@ -36,8 +36,8 @@ describe('Persönlicher Export (#255)', () => {
     const reg = t.register.find((x) => x.art === 'dokumente')!.key;
     const dok = (await d.dokumente.ladeHoch(geheim.id, { register: reg, name: 'kontoauszug-geheim.pdf' }, Buffer.from('%PDF-1.4 geheim'), admin.id)).dokument;
     await d.dokumente.loescheDokument(dok.id, admin.id);
-    await d.legeAufgabeAn(offen.id, { empfaengerId: max.id, text: 'Für Max' }, admin.id);
-    await d.legeAufgabeAn(offen.id, { empfaengerId: admin.id, text: 'Für Admin' }, admin.id);
+    await d.vertretung.legeAufgabeAn(offen.id, { empfaengerId: max.id, text: 'Für Max' }, admin.id);
+    await d.vertretung.legeAufgabeAn(offen.id, { empfaengerId: admin.id, text: 'Für Admin' }, admin.id);
     await d.mappen.setzeFavorit({ id: max.id }, offen.id, true);
     await d.mappen.setzeFavorit({ id: admin.id }, offen.id, true);
 

@@ -34,7 +34,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
     /* ---------- Abwesenheit mit Vertreter (#78) ---------- */
     { methode: 'GET', pfad: '/api/konto/abwesenheit', zugang: 'angemeldet', handler: async (a) => {
       const x = (await konten.listeBenutzer()).find((y) => y.id === ich(a).id);
-      const offen = (await dienst.meineAufgaben({ id: ich(a).id, rolle: 'mitglied' })).length;
+      const offen = (await dienst.vertretung.meineAufgaben({ id: ich(a).id, rolle: 'mitglied' })).length;
       return ok({ abwesenheit: x?.abwesenheit ?? null, offeneAufgaben: offen });
     } },
     { methode: 'PUT', pfad: '/api/konto/abwesenheit', zugang: 'angemeldet', handler: async (a) => {
@@ -87,7 +87,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
       const rollen = await dienst.systemtypen.weitereRollen();
       // Offene Aufgaben je Benutzer (#77): Deaktivieren geht erst ohne.
       const offen = new Map<string, number>();
-      for (const x of await dienst.alleAufgaben()) if (x.empfaengerId) offen.set(x.empfaengerId, (offen.get(x.empfaengerId) ?? 0) + 1);
+      for (const x of await dienst.ohneLeserecht.alleAufgaben()) if (x.empfaengerId) offen.set(x.empfaengerId, (offen.get(x.empfaengerId) ?? 0) + 1);
       return ok((await konten.listeBenutzer()).map((x) => ({ ...x, rollen: rollen.get(x.id) ?? [], offeneAufgaben: offen.get(x.id) ?? 0 })));
     } },
     { methode: 'POST', pfad: '/api/benutzer', zugang: 'admin', handler: async (a) => {

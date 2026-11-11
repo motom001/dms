@@ -76,8 +76,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.eingangskanaele.notiereSystem(post.id, 'Postfach „Rechnungen“', 'aus Postfach „Rechnungen“ übernommen');
       await d.mappen.aendereMappe(post.id, { werte: { betreff: 'Abschlag Strom' } }, LENA);
       const notiz = await d.mappenNotizen.legeNotizAn(post.id, 'Bitte bis Freitag zahlen', LENA);
-      const aufgabe = await d.legeAufgabeAn(post.id, { text: 'Betrag prüfen', empfaengerId: LENA }, LENA);
-      await d.legeErinnerungAn(post.id, { datum: '2099-01-01', text: 'Zahlung nachsehen' }, LENA);
+      const aufgabe = await d.vertretung.legeAufgabeAn(post.id, { text: 'Betrag prüfen', empfaengerId: LENA }, LENA);
+      await d.fristen.legeErinnerungAn(post.id, { datum: '2099-01-01', text: 'Zahlung nachsehen' }, LENA);
       const vorher = (await d.mappenHistorie.historie(post.id)).map((h) => h.art);
       const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, LENA);
       await d.post.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
@@ -250,11 +250,11 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const post = await d.post.legePostAn({ betreff: 'Für Jonas', fuer: jonas.id }, { id: lena.id, name: 'Lena' });
     await d.post.legePostAn({ betreff: 'Nächste Post' }, { id: lena.id, name: 'Lena' });
     assert.equal((await d.sichten.zaehler({ id: lena.id, rolle: 'admin' }, z)).sichten[sicht], 2);
-    assert.equal((await d.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 1);
+    assert.equal((await d.vertretung.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 1);
     const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'J-1' } }, lena.id);
     await d.post.ordneZu(post.id, { ziel: neu.id, dokumente: [], aufloesen: true }, lena.id, z);
     assert.equal((await d.sichten.zaehler({ id: lena.id, rolle: 'admin' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }))).sichten[sicht], 1);
-    assert.equal((await d.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
+    assert.equal((await d.vertretung.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
     assert.ok(!(await d.mappen.holeMappe(neu.id)).aufgaben.some((x) => x.art === 'post'), '„Post für dich“ gehört nicht zur Rechnung');
   });
 });

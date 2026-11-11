@@ -966,7 +966,7 @@ export class Automatisierungen {
         fuelle: (text) => this.fuelle(text, { a, mappe, typ, z, daten: anlass.daten, art: anlass.art }),
         fuelleFuer: async (text, an) => {
           const c = { a, mappe, typ, z, daten: anlass.daten, art: anlass.art };
-          const empf = an ? await this.d.dienst.zugriffVon(an) : null;
+          const empf = an ? await this.d.dienst.ohneLeserecht.zugriffVon(an) : null;
           if (!empf) return { text: await this.fuelle(text, c), verborgen: 0, mappe: true };
           const basis = await this.fuelleMit(text, c, null);
           const fuer = await this.fuelleMit(text, c, empf);

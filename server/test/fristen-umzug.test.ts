@@ -46,7 +46,7 @@ async function aufbau() {
   const motor = new Automatisierungen({ dienst: d, repo });
   d.ereignisse.abonniere('automatisierungen', (e) => motor.ereignis(e));
   const verteile = () => spaeter(30_000, () => d.ereignisse.verteile());
-  const fristen = async (id: string) => (await d.meineAufgaben({ id, rolle: 'mitglied' })).filter((a) => a.art === 'frist');
+  const fristen = async (id: string) => (await d.vertretung.meineAufgaben({ id, rolle: 'mitglied' })).filter((a) => a.art === 'frist');
   return { d, konten, admin, lena, jonas, vertrag, repo, motor, verteile, fristen };
 }
 
@@ -87,7 +87,7 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
     const { d, lena, jonas, vertrag, motor, verteile, fristen } = await aufbau();
     // Ohne Automatisierung: das Feld erinnert nicht mehr selbst.
     const ohne = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', kuendigung: in_(10) } }, lena.id);
-    assert.equal((await d.fristenLauf()).angelegt, 0);
+    assert.equal((await d.fristen.fristenLauf()).angelegt, 0);
     assert.equal((await fristen(lena.id)).length, 0);
     await d.loescheMappe(ohne.id, lena.id).catch(() => {});
     await motor.fristenUebernehmen();

@@ -1,4 +1,4 @@
-import type { Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Mappentyp } from '../../shared/src/model';
+import type { Systemkonto, Aufgabe, Benutzer, Mappentyp } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -23,10 +23,9 @@ import { PaketVolltext } from './paketvolltext';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
-import { type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
-import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
+import { fristFelder } from '../../shared/src/fristen';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
@@ -306,11 +305,11 @@ export class Dienst {
       protokolliereBerechtigungen: (typ, n) => Dienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => Dienst.konfigurationKonflikt(art, aktuell),
     });
     this.typpakete = new TypPakete(this.kern, this.rechtepruefung, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
-    this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.passungsAufgaben(liste) });
+    this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste) });
     this.nummernkreise = new Nummernkreise(this.kern, { archivKreis: () => this.mappenArchiv.archivKreis(), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), auftraege: this.auftraege });
     this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
       schreibeSystemMappe: (typ, id, e, von, kennung) => this.postSystemmappen.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
-      spiegleBenutzer: (b, von, abwesenheit) => this.postSystemmappen.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
+      spiegleBenutzer: (b, von, abwesenheit) => this.postSystemmappen.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.vertretung.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
     });
     this.mappenHistorie = new MappenHistorie(this.kern);
     this.mappenTitel = new MappenTitel(this.kern, this.mappenHistorie);
@@ -320,7 +319,7 @@ export class Dienst {
       aufkleber: { ETIKETTEN, aufkleberPdf }, auftraege: this.auftraege, schreibeFehlendeDateien: (shas) => this.dateienFehlen.schreibeFehlendeDateien(shas),
     });
     this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, hinweise: this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung) }, {
-      konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
+      konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich),
       mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d), mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
@@ -386,8 +385,8 @@ export class Dienst {
     const verwalten = new SichtenVerwaltung(this.kern, this.rechtepruefung, { konten: () => this.konten });
     const systemsichten = new Systemsichten(this.kern);
     const sichten = new SichtenDienst(this.kern, { rechte: this.rechtepruefung, mappen: this.mappen, suche: this.suche, verwalten, systemsichten }, {
-      gueltigkeit: () => this.gueltigkeit(), siehtOhneEmpfaenger: (ich) => this.siehtOhneEmpfaenger(ich),
-      ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich), termine: (z, q) => this.termine(z, q),
+      gueltigkeit: () => this.gueltigkeit(), siehtOhneEmpfaenger: (ich) => this.ohneEmpfaenger.siehtOhneEmpfaenger(ich),
+      ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich), termine: (z, q) => this.fristen.termine(z, q),
     }, { stand: this.stand, mappenstand: this.mappenstand });
     const berechtigungen = new BerechtigungenDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     const ausPaketen = new VolltextAusPaketen(this.kern, { dokumente: this.dokumente, archiv: this.dokumentArchiv }, { paketVolltext: () => this.paketVolltext });
@@ -417,8 +416,8 @@ export class Dienst {
     });
     const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
-      passungsAufgaben: (liste) => this.passungsAufgaben(liste), favoritenFreigabe: () => this.favoritenFreigabe(),
-      vorgabeAufgabenEmpfaenger: (b) => this.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.systemausstattung.sicherstellen(), konten: () => this.konten,
+      passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste), favoritenFreigabe: () => this.aufgaben.favoritenFreigabe(),
+      vorgabeAufgabenEmpfaenger: (b) => this.ohneEmpfaenger.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.systemausstattung.sicherstellen(), konten: () => this.konten,
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
     });
     const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen }, {
@@ -429,8 +428,8 @@ export class Dienst {
       rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen,
     }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
-      verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.ereignisseDienst.neueAufgabe(a, typ), leiteUm: (a) => this.leiteUm(a),
-      eigeneAufgabe: (id, ich) => this.eigeneAufgabe(id, ich), erledigeNachAnlass: (id, passt, grund) => this.erledigeNachAnlass(id, passt, grund), konten: () => this.konten,
+      verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.ereignisseDienst.neueAufgabe(a, typ), leiteUm: (a) => this.vertretung.leiteUm(a),
+      eigeneAufgabe: (id, ich) => this.vertretung.eigeneAufgabe(id, ich), erledigeNachAnlass: (id, passt, grund) => this.aufgaben.erledigeNachAnlass(id, passt, grund), konten: () => this.konten,
       sichereZuordnung: (e, autoTypen) => sichereZuordnung(e as PostErkennung, autoTypen),
     });
     const eingang = new Eingangskanaele(this.kern, { rechte, historie: this.mappenHistorie, dokumente: this.dokumente });
@@ -470,7 +469,7 @@ export class Dienst {
   private baueEreignisse() {
     const ki = new KiTypen(this.kern, this.rechtepruefung);
     const notizen = new MappenNotizen(this.kern, this.mappenHistorie, {
-      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), erwaehnungenAbgleichen: (...a) => this.erwaehnungenAbgleichen(...a), uebersetzung: () => this.uebersetzung,
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), erwaehnungenAbgleichen: (...a) => this.aufgaben.erwaehnungenAbgleichen(...a), uebersetzung: () => this.uebersetzung,
     });
     const ereignisse = new EreignisseDienst(this.kern, { rechte: this.rechtepruefung, typpakete: this.typpakete, ki }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), ereignisWecker: () => this.ereignisWecker,
@@ -530,14 +529,14 @@ export class Dienst {
     // Mappe angelegt bzw. geändert: Passung → Erwähnungen → Fristen → Post-Aufgaben.
     a.mappeGeaendert.anmelden('mappentypen.passung', async (e) => {
       // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
-      if (!e.angelegt) await this.passungsAufgaben([{ id: e.mappe.id, problem: null }]);
+      if (!e.angelegt) await this.vertretung.passungsAufgaben([{ id: e.mappe.id, problem: null }]);
       if (e.typ.felder.some((f) => f.eindeutig)) await this.passung.pruefeUnpassende(e.typ);
     });
-    a.mappeGeaendert.anmelden('aufgaben.erwaehnungen', async (e) => { if (!e.demo) await this.pruefeErwaehnungen(e.typ, e.mappe.id, e.alt, e.neu, e.von); });
+    a.mappeGeaendert.anmelden('aufgaben.erwaehnungen', async (e) => { if (!e.demo) await this.aufgaben.pruefeErwaehnungen(e.typ, e.mappe.id, e.alt, e.neu, e.von); });
     // Fristen (#129): neues Datum → „Frist erreicht“, verschobenes oder leeres → alte erledigt.
     a.mappeGeaendert.anmelden('aufgaben.fristen', async (e) => {
       if (e.angelegt && (e.demo || !fristFelder(e.typ).length)) return;
-      await this.fristenAbgleichen({ mappeIds: [e.mappe.id] });
+      await this.fristen.fristenAbgleichen({ mappeIds: [e.mappe.id] });
     });
     // Post (#192): „Für“ und Stand bestimmen die Aufgabe „Post für dich“.
     a.mappeGeaendert.anmelden('post.aufgaben', async (e) => { if (!e.angelegt && e.typ.system === 'post') await this.post.postAufgaben(e.mappe.id, e.von); });
@@ -553,12 +552,12 @@ export class Dienst {
     a.typGeaendert.anmelden('mappen.titel', async ({ typ }) => { await this.mappenTitel.aktualisiereTitel((await this.repo.listeMappen(typ.id)).map((m) => m.id)); });
     a.typGeaendert.anmelden('mappentypen.passung', async ({ typ }) => { await this.passung.pruefePassung(typ.id); });
     // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
-    a.typGeaendert.anmelden('aufgaben.fristen', async ({ typ }) => { await this.fristenAbgleichen({ typId: typ.id }); });
+    a.typGeaendert.anmelden('aufgaben.fristen', async ({ typ }) => { await this.fristen.fristenAbgleichen({ typId: typ.id }); });
     // Neue Mappentypen bekommen eine eigene Sicht (#38), außer der Administrator wählt das ab.
     a.typAngelegt.anmelden('sichten.eigeneSicht', async ({ typ, sicht }) => { if (sicht) await this.sichtenVerwaltung.sichtFuerTyp(typ); });
     // Abwesenheit (#78): Historie an der Benutzer-Mappe, Ereignisse, Aufgaben mit Anlass „Abwesenheit“.
     a.benutzerGespiegelt.anmelden('aufgaben.abwesenheit', async ({ benutzer, von, abwesenheit }) => {
-      if (abwesenheit) await this.abwesenheitGeaendert(benutzer, abwesenheit.vorher, von, abwesenheit.wegen);
+      if (abwesenheit) await this.vertretung.abwesenheitGeaendert(benutzer, abwesenheit.vorher, von, abwesenheit.wegen);
     });
     a.schliessen();
   }
@@ -624,49 +623,15 @@ export class Dienst {
 
   /* ---------- Aufgaben (#54) und Erwähnungen (#56), aufgaben/aufgaben.dienst.ts ---------- */
 
-  private pruefeErwaehnungen(...a: Parameters<AufgabenDienst['pruefeErwaehnungen']>) { return this.aufgaben.pruefeErwaehnungen(...a); }
-  private erwaehnungenAbgleichen(...a: Parameters<AufgabenDienst['erwaehnungenAbgleichen']>) { return this.aufgaben.erwaehnungenAbgleichen(...a); }
 
   /* ---------- Abwesenheit und Vertretung (#77, #78), aufgaben/vertretung.ts ---------- */
 
-  empfaengerAufloesen(id: string | null): Promise<{ ziel: string | null; abwesende: string[] }> { return this.vertretung.empfaengerAufloesen(id); }
-  private leiteUm(a: Aufgabe): Promise<Aufgabe> { return this.vertretung.leiteUm(a); }
-  private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) { return this.vertretung.passungsAufgaben(liste); }
-  aufgabenUebergeben(id: string, an: string, von: string | null): Promise<number> { return this.vertretung.aufgabenUebergeben(id, an, von); }
-  abwesenheitGeaendert(...a: Parameters<AufgabenVertretung['abwesenheitGeaendert']>) { return this.vertretung.abwesenheitGeaendert(...a); }
-  legeAufgabeAn(mappeId: string, e: unknown, von: string | null): Promise<Aufgabe> { return this.vertretung.legeAufgabeAn(mappeId, e, von); }
-  private eigeneAufgabe(id: string, ich: { id: string; rolle: string }) { return this.vertretung.eigeneAufgabe(id, ich); }
-  erledigeAufgabe(id: string, ich: { id: string; rolle: string }) { return this.vertretung.erledigeAufgabe(id, ich); }
-  delegiereAufgabe(id: string, an: unknown, ich: { id: string; rolle: string }) { return this.vertretung.delegiereAufgabe(id, an, ich); }
-  aufgabenWeitergeben(ids: unknown, an: unknown, ich: { id: string; rolle: string }) { return this.vertretung.aufgabenWeitergeben(ids, an, ich); }
-  aufgabenErledigen(ids: unknown, ich: { id: string; rolle: string }) { return this.vertretung.aufgabenErledigen(ids, ich); }
-  benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.vertretung.benachrichtigeGebuendelt(...a); }
-  meineAufgaben(ich: { id: string; rolle: string }, z?: Zugriff) { return this.vertretung.meineAufgaben(ich, z); }
 
   /* ---------- Aufgaben bei Personen ohne Leserecht (#798), aufgaben/ohne-leserecht.ts ---------- */
 
-  private ohneLeserechtText<T extends Aufgabe>(liste: T[], lesbar: Set<string>, ich: string): Promise<T[]> { return this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich); }
-  zugriffVon(benutzerId: string): Promise<Zugriff | null> { return this.ohneLeserecht.zugriffVon(benutzerId); }
-  regulaerSichtbarFuer(benutzerId: string, ids: string[]): Promise<Set<string>> { return this.ohneLeserecht.regulaerSichtbarFuer(benutzerId, ids); }
-  faelleAbgleichen(f: { mappeIds?: string[] } = {}): Promise<{ neu: number; beendet: number }> { return this.ohneLeserecht.faelleAbgleichen(f); }
-  offeneFaelle(): Promise<FallOhneLeserecht[]> { return this.ohneLeserecht.offeneFaelle(); }
-  faelleUebersicht(): Promise<{ offen: FallOhneLeserecht[]; vergangen: FallOhneLeserecht[] }> { return this.ohneLeserecht.faelleUebersicht(); }
-  leserechtAufZeitGeben(fallId: unknown, von: string | null): Promise<FallOhneLeserecht> { return this.ohneLeserecht.leserechtAufZeitGeben(fallId, von); }
-  alleAufgaben(erledigt = false) { return this.ohneLeserecht.alleAufgaben(erledigt); }
-  aufgabenVon(mappeId: string) { return this.ohneLeserecht.aufgabenVon(mappeId); }
 
   /* ---------- Fristen (#129–#133), aufgaben/fristen.ts ---------- */
 
-  fristenAbgleichen(...a: Parameters<Fristen['fristenAbgleichen']>) { return this.fristen.fristenAbgleichen(...a); }
-  erinnerungenFaellig(...a: Parameters<Fristen['erinnerungenFaellig']>) { return this.fristen.erinnerungenFaellig(...a); }
-  fristenLauf(...a: Parameters<Fristen['fristenLauf']>) { return this.fristen.fristenLauf(...a); }
-  legeErinnerungAn(mappeId: string, e: unknown, von: string): Promise<Erinnerung | Aufgabe> { return this.fristen.legeErinnerungAn(mappeId, e, von); }
-  erinnerungMappe(id: string) { return this.fristen.erinnerungMappe(id); }
-  aendereErinnerung(id: string, e: unknown, ich: { id: string; rolle: string }): Promise<Erinnerung> { return this.fristen.aendereErinnerung(id, e, ich); }
-  loescheErinnerung(id: string, ich: { id: string; rolle: string }) { return this.fristen.loescheErinnerung(id, ich); }
-  termine(...a: Parameters<Fristen['termine']>) { return this.fristen.termine(...a); }
-  naechsterTermin(z: Zugriff): Promise<{ termin: Termin | null; ueberfaellig: number }> { return this.fristen.naechsterTermin(z); }
-  setzeFolgetermin(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) { return this.fristen.setzeFolgetermin(aufgabeId, ich, z); }
 
   /* ---------- Notizen (#55) ---------- */
 
@@ -682,18 +647,9 @@ export class Dienst {
 
   /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506, aufgaben/aufgaben.dienst.ts) ---------- */
 
-  favoritenFreigabe(): Promise<FavoritenFreigabe> { return this.aufgaben.favoritenFreigabe(); }
-  setzeFavoritenFreigabe(eingabe: unknown, von: string) { return this.aufgaben.setzeFavoritenFreigabe(eingabe, von); }
 
   /* ---------- Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, aufgaben/ohne-empfaenger.ts) ---------- */
 
-  alltagsEmpfaenger() { return this.ohneEmpfaenger.alltagsEmpfaenger(); }
-  setzeAufgabenEmpfaenger(eingabe: unknown, von: string | null) { return this.ohneEmpfaenger.setzeAufgabenEmpfaenger(eingabe, von); }
-  siehtOhneEmpfaenger(ich: { id: string; rolle: string }): Promise<boolean> { return this.ohneEmpfaenger.siehtOhneEmpfaenger(ich); }
-  private vorgabeAufgabenEmpfaenger(b: Benutzer) { return this.ohneEmpfaenger.vorgabeAufgabenEmpfaenger(b); }
-  favoritenBenachrichtigungErlaubt(benutzerId: string): Promise<boolean> { return this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(benutzerId); }
-  favoritenVorgabeAnwenden(von: string): Promise<number> { return this.ohneEmpfaenger.favoritenVorgabeAnwenden(von); }
-  favoritenMelden(mappeId: string, von: string): Promise<number> { return this.ohneEmpfaenger.favoritenMelden(mappeId, von); }
 
   /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
 
@@ -809,9 +765,6 @@ export class Dienst {
 
   /* ---------- Hilfen für Automatisierungen (#674, ereignisse/automatisierung.ts) ---------- */
 
-  aufgabenEmpfaenger(id: string): Promise<{ an: string | null; ueber: string[] }> { return this.aufgaben.aufgabenEmpfaenger(id); }
-  aufgabeAusAutomatisierung(...a: Parameters<AufgabenDienst['aufgabeAusAutomatisierung']>) { return this.aufgaben.aufgabeAusAutomatisierung(...a); }
-  private erledigeNachAnlass(...a: Parameters<AufgabenDienst['erledigeNachAnlass']>) { return this.aufgaben.erledigeNachAnlass(...a); }
 
   /* ---------- Papierkorb (#43, loeschen/papierkorb.ts) ---------- */
 

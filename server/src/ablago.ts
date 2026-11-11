@@ -426,7 +426,7 @@ const aufgabenmail = new Aufgabenmail({
   benutzer: () => konten.listeBenutzer(),
   einstellungenVon: (b) => konten.einstellungen(b),
   // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
-  aufgabenVon: async (b) => dienst.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
+  aufgabenVon: async (b) => dienst.vertretung.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
   typName,
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
@@ -627,7 +627,7 @@ const verwaltung = new Verwaltung({
     async () => { const n = (await texterkennung.zaehler()).fehler; return n ? [{ bereich: 'texterkennung', schluessel: `texterkennung:${n}`, text: t('werkbank.verwaltung.texterkennung', { anzahl: n }) }] : []; },
     async () => ((await liesErweiterungen(sql)).some((e) => e.zustand !== 'ok') ? [{ bereich: 'systemzustand', schluessel: 'erweiterungen', text: t('werkbank.verwaltung.erweiterungen') }] : []),
     // Aufgaben bei Personen ohne Leserecht (#798): je Fall einmal gemeldet; der Alltags-Benutzer sieht nur „etwas liegt an“.
-    async () => Promise.all((await dienst.offeneFaelle()).map(async (f) => ({ bereich: 'aufgaben', schluessel: `ohne-leserecht:${f.id}`, text: t('werkbank.verwaltung.ohne-leserecht', { name: await dienst.kern.name(f.benutzerId) }) }))),
+    async () => Promise.all((await dienst.ohneLeserecht.offeneFaelle()).map(async (f) => ({ bereich: 'aufgaben', schluessel: `ohne-leserecht:${f.id}`, text: t('werkbank.verwaltung.ohne-leserecht', { name: await dienst.kern.name(f.benutzerId) }) }))),
   ],
 });
 // WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).
@@ -750,7 +750,7 @@ dienst.anmeldeschutzMelden = async (was, daten, trocken) => {
 const fristen = () => nurEiner('fristen', async () => {
   const heute = heuteIn();
   if (wartung.aktiv || (await zustandDb.lies('fristen-tag', 'lauf'))?.wert === heute) return;
-  const r = await dienst.fristenLauf(heute);
+  const r = await dienst.fristen.fristenLauf(heute);
   await zustandDb.setze('fristen-tag', 'lauf', heute, null);
   if (r.angelegt || r.erledigt || r.erinnerungen) log.info('Fristen und Erinnerungen geprüft', r);
 });
@@ -782,7 +782,7 @@ if (leiter) {
   setInterval(() => {
     if (wartung.aktiv || wiederherstellung.laeuft()) return;
     void nurEiner('verwaltung', async () => {
-      await dienst.faelleAbgleichen().catch((e) => log.warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message }));
+      await dienst.ohneLeserecht.faelleAbgleichen().catch((e) => log.warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message }));
       await verwaltung.tick();
     }).catch((e) => log.error('Technische Aufgaben prüfen fehlgeschlagen', { fehler: (e as Error).message }));
   }, 5 * 60 * 1000).unref();

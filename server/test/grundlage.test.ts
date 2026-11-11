@@ -85,14 +85,14 @@ describe('„Datum erreicht“ (#724)', () => {
     await motor.zeitplan();
     const [l] = await motor.laeufe(a.id);
     assert.equal(l?.zustand, 'abgeschlossen', JSON.stringify(l?.schritte));
-    const [f] = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
+    const [f] = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
     assert.equal(f.art, 'frist', 'Art bleibt erkennbar');
     assert.equal(f.empfaengerId, jonas.id, 'Vertretung');
     assert.equal(f.datum, datum);
     assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Lena/.test(String(h.daten.text))));
     // Datum verschoben → die Frist erledigt sich selbst.
     await d.mappen.aendereMappe(m.id, { werte: { ende: verschiebe(datum, 1) } }, admin.id);
-    assert.ok((await d.aufgabenVon(m.id)).find((x) => x.id === f.id)?.erledigt, 'erledigt sich selbst');
+    assert.ok((await d.ohneLeserecht.aufgabenVon(m.id)).find((x) => x.id === f.id)?.erledigt, 'erledigt sich selbst');
     assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /erledigt \(verschoben auf/.test(String(h.daten.text))));
   });
 
@@ -107,7 +107,7 @@ describe('„Datum erreicht“ (#724)', () => {
     await motor.zeitplan();
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
-    const auf = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
+    const auf = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.feldKey === 'ende');
     assert.deepEqual(auf.map((x) => x.empfaengerId).sort(), [admin.id, null].sort(), 'Ersteller (Markus) und Administratoren statt Lena');
     assert.match(l.schritte[2].text!, /ohne Empfänger/);
   });
@@ -117,9 +117,9 @@ describe('„Datum erreicht“ (#724)', () => {
     assert.equal(await motor.fristenUebernehmen(), 2, 'Erinnerung am Feld → Automatisierung, dazu „Vertretung eingetragen“');
     const datum = verschiebe(heuteIn(), 30);
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: datum } }, admin.id);
-    assert.equal((await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 0, 'das Feld legt selbst keine an');
+    assert.equal((await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 0, 'das Feld legt selbst keine an');
     await motor.ereignis({ id: crypto.randomUUID(), art: 'mappe.angelegt', daten: { mappe: m.id, typ: vertrag.id }, ausloeser: { art: 'benutzer', id: admin.id, konto: admin.id }, erstellt: new Date().toISOString() });
-    const eingebaut = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist');
+    const eingebaut = (await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist');
     assert.equal(eingebaut.length, 1, 'übernommene Erinnerung an den Ersteller (Datum im Vorlauf, beim Speichern)');
     const a = await motor.lege({ name: 'Kündigen', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'kuendbar_bis', vorlauf: 30, einheit: 'tage', uhrzeit: '00:00' },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'ersteller' }], text: 'Kündigen?' }] }, admin.id);
@@ -127,7 +127,7 @@ describe('„Datum erreicht“ (#724)', () => {
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen');
     assert.match(l.schritte[2].text!, /schon eine Frist/);
-    assert.equal((await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 1, 'nur eine');
+    assert.equal((await d.ohneLeserecht.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 1, 'nur eine');
   });
 
   it('alte Wenn-Karten: „Datum in N Tagen“ und „Frist erreicht“ werden „Datum erreicht“', async () => {
@@ -149,10 +149,10 @@ describe('Aufgaben mit Anlass (#724)', () => {
       await d.ereignisse.verteile();
       const [l] = await motor.laeufe(a.id);
       assert.equal(l?.zustand, 'abgeschlossen', JSON.stringify(l?.schritte));
-      const offen = (await d.aufgabenVon(lena.id)).filter((x) => x.anlass?.art === 'abwesenheit' && x.anlass.automatisierung === a.id && !x.erledigt);
+      const offen = (await d.ohneLeserecht.aufgabenVon(lena.id)).filter((x) => x.anlass?.art === 'abwesenheit' && x.anlass.automatisierung === a.id && !x.erledigt);
       assert.equal(offen.length, 1);
       await konten.setzeAbwesenheit(lena, lena.id, { an: false });
-      assert.ok((await d.aufgabenVon(lena.id)).find((x) => x.id === offen[0].id)?.erledigt, 'erledigt sich selbst');
+      assert.ok((await d.ohneLeserecht.aufgabenVon(lena.id)).find((x) => x.id === offen[0].id)?.erledigt, 'erledigt sich selbst');
     } finally { motor.stop(); }
   });
 });

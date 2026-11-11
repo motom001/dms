@@ -156,7 +156,7 @@ function erwartet(mappen: Mappe[], typ: Mappentyp, von: string, bis: string): st
   }
   return s.sort();
 }
-const gesehen = (t: Awaited<ReturnType<Dienst['termine']>>, typId: string) =>
+const gesehen = (t: Awaited<ReturnType<Dienst['fristen']['termine']>>, typId: string) =>
   t.eintraege.filter((e) => e.art === 'frist' && !e.faellig && e.typId === typId).map((e) => `${e.mappeId}|${e.feldKey}|${e.datum}|${e.folgetermin ? 'f' : 'e'}`).sort();
 
 async function mitSchalterAus<T>(f: () => Promise<T>): Promise<T> {
@@ -186,12 +186,12 @@ async function pruefeTermine(h: Aufbau) {
   const frisch = h.neu();
   for (const [von, bis] of ZEITRAEUME) {
     const soll = erwartet(mappen, typ, von, bis);
-    const a = await d.termine(z, { von, bis });
+    const a = await d.fristen.termine(z, { von, bis });
     assert.deepEqual(gesehen(a, vertrag.id), soll, `frisch gerechnet ${von} … ${bis}`);
-    const b = await d.termine(z, { von, bis });
+    const b = await d.fristen.termine(z, { von, bis });
     assert.deepEqual(b, a, `aus dem Zwischenspeicher gleich ${von} … ${bis}`);
-    assert.deepEqual(await frisch.termine(await frisch.rechtepruefung.zugriff(lena), { von, bis }), a, `anderer Dienst gleich ${von} … ${bis}`);
-    assert.deepEqual(await mitSchalterAus(() => d.termine(z, { von, bis })), a, `ohne Zwischenspeicher gleich ${von} … ${bis}`);
+    assert.deepEqual(await frisch.fristen.termine(await frisch.rechtepruefung.zugriff(lena), { von, bis }), a, `anderer Dienst gleich ${von} … ${bis}`);
+    assert.deepEqual(await mitSchalterAus(() => d.fristen.termine(z, { von, bis })), a, `ohne Zwischenspeicher gleich ${von} … ${bis}`);
   }
   assert.ok(erwartet(mappen, typ, `${L}-02-29`, `${L}-02-29`).length > 0, 'der 29.02. hat Termine');
 }
@@ -199,27 +199,27 @@ async function pruefeTermine(h: Aufbau) {
 async function pruefeNaechsterTermin(h: Aufbau) {
   const { d, lena, vertrag } = h;
   const ausJahr = async (x: Dienst) => {
-    const t = await x.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) });
+    const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) });
     return { termin: t.eintraege.find((e) => e.datum >= HEUTE) ?? null, ueberfaellig: t.eintraege.filter((e) => e.faellig && e.datum < HEUTE).length };
   };
   // Nur ein jährlicher Termin in gut zwei Monaten: nichts in den ersten 31 Tagen, dann das ganze Jahr.
   const typ2 = await d.mappentypen.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) }] });
   await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'A', jahr: verschiebe(verschiebe(HEUTE, 65), -12, 'monate') } }, lena.id);
-  const mitVertrag = async (x: Dienst) => { const t = await x.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) }); return t.eintraege.some((e) => e.typId === vertrag.id); };
+  const mitVertrag = async (x: Dienst) => { const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) }); return t.eintraege.some((e) => e.typId === vertrag.id); };
   if (!(await mitVertrag(d))) {
-    const n = await d.naechsterTermin(await d.rechtepruefung.zugriff(lena));
+    const n = await d.fristen.naechsterTermin(await d.rechtepruefung.zugriff(lena));
     assert.equal(n.termin?.datum, verschiebe(HEUTE, 65));
   }
-  assert.deepEqual(await d.naechsterTermin(await d.rechtepruefung.zugriff(lena)), await ausJahr(d));
+  assert.deepEqual(await d.fristen.naechsterTermin(await d.rechtepruefung.zugriff(lena)), await ausJahr(d));
   // Dazu ein Termin in zehn Tagen und zwei am selben Tag mit gleichem Titel: eindeutig, wie aus dem ganzen Jahr.
   await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'B', jahr: verschiebe(HEUTE, 10) } }, lena.id);
   await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'B', jahr: verschiebe(HEUTE, 10) } }, lena.id);
   // Der Zugriff (mit den Mappentypen) gilt je Anfrage – nach dem neuen Typ also neu.
   const z = await d.rechtepruefung.zugriff(lena);
-  const n = await d.naechsterTermin(z);
+  const n = await d.fristen.naechsterTermin(z);
   assert.deepEqual(n, await ausJahr(d));
   assert.deepEqual(n, await ausJahr(h.neu()));
-  assert.deepEqual(await mitSchalterAus(() => d.naechsterTermin(z)), n);
+  assert.deepEqual(await mitSchalterAus(() => d.fristen.naechsterTermin(z)), n);
   assert.ok(n.termin && n.termin.datum <= verschiebe(HEUTE, 10));
 }
 
@@ -229,7 +229,7 @@ async function pruefeTypaenderung(h: Aufbau) {
   await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'W1', datum: `${J - 3}-03-31` } }, lena.id);
   const zeitraum = { von: `${J}-01-01`, bis: `${J}-12-31` };
   // Je Abruf ein neuer Zugriff – wie je Anfrage; er bringt die Mappentypen mit.
-  const zahl = async () => (await d.termine(await d.rechtepruefung.zugriff(lena), zeitraum)).eintraege.filter((e) => e.typId === typ.id).map((e) => e.datum);
+  const zahl = async () => (await d.fristen.termine(await d.rechtepruefung.zugriff(lena), zeitraum)).eintraege.filter((e) => e.typId === typ.id).map((e) => e.datum);
   assert.deepEqual(await zahl(), [], 'noch keine Frist');
   // Feld wird zur jährlichen Frist: sofort der Termin, ohne dass die Mappe gespeichert wird.
   const t = (await roh.listeTypen()).find((x) => x.id === typ.id)!;
@@ -478,7 +478,7 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
   it('Pflege bei allen Wegen: ändern, Papierkorb, wiederherstellen, endgültig löschen, viele auf einmal, COPY', async () => {
     const { d, roh, lena, vertrag } = h;
     const z = await d.rechtepruefung.zugriff(lena);
-    const termine = async () => gesehen(await d.termine(z, { von: `${J}-01-01`, bis: `${J}-12-31` }), vertrag.id).filter((x) => x.startsWith(m.id));
+    const termine = async () => gesehen(await d.fristen.termine(z, { von: `${J}-01-01`, bis: `${J}-12-31` }), vertrag.id).filter((x) => x.startsWith(m.id));
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'P1', jahr: `${J - 1}-05-17` } }, lena.id);
     await abgleich('anlegen');
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-05-17|f`]);

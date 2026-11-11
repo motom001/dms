@@ -80,7 +80,7 @@ describe('Systemtyp Post (#192)', () => {
   it('„An“: Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist', async () => {
     const { d, anna, ben, B } = await aufbau();
     const m = await d.post.legePostAn({ betreff: 'Für Ben', an: ben.id }, { id: anna.id, name: 'Anna' });
-    const offen = async () => (await d.meineAufgaben(B)).filter((a) => a.art === 'post');
+    const offen = async () => (await d.vertretung.meineAufgaben(B)).filter((a) => a.art === 'post');
     assert.equal((await offen()).length, 1);
     assert.equal((await offen())[0].mappeId, m.id);
     // Speichern ohne Änderung legt keine zweite an.
@@ -89,10 +89,10 @@ describe('Systemtyp Post (#192)', () => {
     // An Anna weitergeben: Bens Aufgabe erledigt, Anna hat eine.
     await d.mappen.aendereMappe(m.id, { werte: { an: anna.id } }, anna.id);
     assert.equal((await offen()).length, 0);
-    assert.equal((await d.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 1);
+    assert.equal((await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 1);
     // Erledigt: keine Aufgabe mehr.
     await d.mappen.aendereMappe(m.id, { werte: { stand: POST_STAND.erledigt } }, anna.id);
-    assert.equal((await d.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 0);
+    assert.equal((await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 0);
   });
 
   it('Zuordnen: Dokumente wandern ins gewählte Register, Post verweist, Stand „Zugeordnet“, Protokoll an beiden', async () => {
@@ -110,7 +110,7 @@ describe('Systemtyp Post (#192)', () => {
     assert.match(String((await d.mappenHistorie.historie(r1.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /Post „Rechnung Backofen“ zugeordnet mit 1 Dokument ins Register „Belege“/);
     assert.match(String((await d.mappenHistorie.historie(m.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /zugeordnet zu „R-1“/);
     // Aufgabe „Neue Post“ ist erledigt.
-    assert.equal((await d.meineAufgaben({ id: ben.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
+    assert.equal((await d.vertretung.meineAufgaben({ id: ben.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
     // Zweite Zielmappe, Rest kopiert: bleibt auch in der Post, dieselbe Datei.
     const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, anna.id);
     const z2 = await d.post.ordneZu(m.id, { ziel: r2.id, kopieren: true }, anna.id);

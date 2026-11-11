@@ -242,11 +242,11 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
   it('Frist erreicht: zum Erinnerungszeitpunkt und am Tag selbst je genau einmal', async () => {
     const { d, admin, vertrag, gesehen, verteile } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: '2031-06-30' } }, admin.id);
-    await d.fristenAbgleichen({}, '2031-06-10');
-    await d.fristenAbgleichen({}, '2031-06-20');
-    await d.fristenAbgleichen({}, '2031-06-21');
-    await d.fristenAbgleichen({}, '2031-06-30');
-    await d.fristenAbgleichen({}, '2031-06-30');
+    await d.fristen.fristenAbgleichen({}, '2031-06-10');
+    await d.fristen.fristenAbgleichen({}, '2031-06-20');
+    await d.fristen.fristenAbgleichen({}, '2031-06-21');
+    await d.fristen.fristenAbgleichen({}, '2031-06-30');
+    await d.fristen.fristenAbgleichen({}, '2031-06-30');
     await verteile();
     const f = gesehen.filter((e) => e.art === 'frist.erreicht');
     assert.deepEqual(f.map((e) => e.daten.zeitpunkt), ['vorlauf', 'faellig']);

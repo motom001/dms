@@ -76,8 +76,8 @@ function faelle(pg: boolean) {
     it('Das Feld legt selbst keine Frist-Aufgaben mehr an (#712 – das tut die übernommene Automatisierung, test/fristen-umzug.test.ts)', async () => {
       const { d, anna, vertrag } = await aufbauFristen(pg);
       await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, anna.id);
-      assert.deepEqual(await d.fristenLauf(), { angelegt: 0, erledigt: 0, erinnerungen: 0 });
-      assert.equal((await d.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).filter((a) => a.art === 'frist').length, 0);
+      assert.deepEqual(await d.fristen.fristenLauf(), { angelegt: 0, erledigt: 0, erinnerungen: 0 });
+      assert.equal((await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).filter((a) => a.art === 'frist').length, 0);
     });
 
     it('Empfängerfeld muss ein Benutzerfeld des Typs sein', async () => {
@@ -106,8 +106,8 @@ function faelle(pg: boolean) {
       // „/api/anstehend“ gibt es nicht mehr (#725).
       await assert.rejects(rufe(anna, 'GET', '/api/anstehend', { query: {} }), status(410));
       // Fällig: wird Aufgabe, Erinnerung verschwindet aus der Tabelle.
-      assert.equal((await d.fristenLauf(in_(7))).erinnerungen, 1);
-      const auf = (await d.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).filter((x) => x.art === 'erinnerung');
+      assert.equal((await d.fristen.fristenLauf(in_(7))).erinnerungen, 1);
+      const auf = (await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).filter((x) => x.art === 'erinnerung');
       assert.equal(auf.length, 1);
       assert.equal(auf[0].datum, in_(5));
       assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen.length, 0);
@@ -118,7 +118,7 @@ function faelle(pg: boolean) {
       await rufe(anna, 'DELETE', '/api/erinnerungen/:id', { params: { id: e2.id } });
       assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen.length, 0);
       await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: heute, text: 'Sofort' } });
-      assert.ok((await d.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).some((x) => x.text === 'Sofort'));
+      assert.ok((await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).some((x) => x.text === 'Sofort'));
     });
 
     it('Papierkorb nimmt Erinnerungen mit', async () => {

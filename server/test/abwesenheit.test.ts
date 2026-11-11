@@ -58,21 +58,21 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     assert.equal(bm.mappe.werte.abwesend_bis, bis);
     assert.equal(bm.mappe.werte.vertreter, cora.id);
     assert.ok((await d.mappenHistorie.historie(ben.id)).some((h) => h.art === 'abwesenheit' && /eingetragen.*Vertreter Cora/.test(String(h.daten.text))));
-    const [vt] = vertretung(await d.meineAufgaben(C));
+    const [vt] = vertretung(await d.vertretung.meineAufgaben(C));
     assert.match(vt.text, /für Ben als Vertreter hinterlegt – ab sofort bis/);
     assert.equal(vt.mappeId, ben.id);
 
     // Von Hand, Erwähnung, „passt nicht“: alles landet bei Cora
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
-    const a = await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, A.id);
+    const a = await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, A.id);
     assert.equal(a.empfaengerId, cora.id);
     assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Ben an Cora/.test(String(h.daten.text))));
     await d.mappen.aendereMappe(m.id, { werte: { nr: '1', text: `Bitte ${erwaehnung('Ben', ben.id)} ansehen` } }, A.id);
     await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
-    const beiCora = await d.meineAufgaben(C);
+    const beiCora = await d.vertretung.meineAufgaben(C);
     assert.deepEqual(beiCora.map((x) => x.art).sort(), ['erwaehnung', 'manuell', 'manuell', 'passung']);
     assert.match(beiCora.find((x) => x.art === 'erwaehnung')!.text, /Erwähnt von Anna/, 'Text der Erwähnung bleibt');
-    assert.equal((await d.meineAufgaben(B)).length, 0);
+    assert.equal((await d.vertretung.meineAufgaben(B)).length, 0);
   });
 
   it('folgt Ketten höchstens drei Schritte, hält bei Kreisen und wirkt nur im Zeitraum', async () => {
@@ -80,14 +80,14 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '2' } }, A.id);
     await konten.setzeAbwesenheit(ben, ben.id, { an: true, vertreterId: cora.id });
     await konten.setzeAbwesenheit(cora, cora.id, { an: true, vertreterId: anna.id });
-    assert.equal((await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Kette' }, A.id)).empfaengerId, anna.id);
+    assert.equal((await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Kette' }, A.id)).empfaengerId, anna.id);
     await konten.setzeAbwesenheit(await ich(anna.id), anna.id, { an: true, vertreterId: ben.id });
-    assert.equal((await d.empfaengerAufloesen(ben.id)).ziel, anna.id, 'Kreis: beim letzten erreichbaren');
+    assert.equal((await d.vertretung.empfaengerAufloesen(ben.id)).ziel, anna.id, 'Kreis: beim letzten erreichbaren');
     // Zukünftiger Zeitraum wirkt noch nicht
     await konten.setzeAbwesenheit(await ich(anna.id), anna.id, { an: false, vertreterId: null });
     await konten.setzeAbwesenheit(cora, cora.id, { an: false });
     await konten.setzeAbwesenheit(ben, ben.id, { an: true, von: verschiebe(heuteIn(), 3, 'tage'), vertreterId: cora.id });
-    assert.equal((await d.empfaengerAufloesen(ben.id)).ziel, ben.id);
+    assert.equal((await d.vertretung.empfaengerAufloesen(ben.id)).ziel, ben.id);
     assert.equal((await d.mappen.holeMappe(ben.id)).mappe.werte.abwesend, false);
   });
 
@@ -95,20 +95,20 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     const { d, konten, kontoRepo, anna, ben, cora, A, B, C, verteile } = await aufbau();
     await konten.setzeAbwesenheit(ben, ben.id, { an: true, vertreterId: cora.id });
     await verteile();
-    assert.equal(vertretung(await d.meineAufgaben(C)).length, 1);
+    assert.equal(vertretung(await d.vertretung.meineAufgaben(C)).length, 1);
     await konten.setzeAbwesenheit(ben, ben.id, { an: true, vertreterId: anna.id });
     await verteile();
-    assert.equal(vertretung(await d.meineAufgaben(C)).length, 0, 'alte erledigt');
-    assert.equal(vertretung(await d.meineAufgaben(A)).length, 1);
+    assert.equal(vertretung(await d.vertretung.meineAufgaben(C)).length, 0, 'alte erledigt');
+    assert.equal(vertretung(await d.vertretung.meineAufgaben(A)).length, 1);
 
     // Tägliche Zusammenfassung: Ben ist abwesend, bekommt keine
     const t = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'x' } }, A.id);
-    await d.legeAufgabeAn(m.id, { empfaengerId: cora.id, text: 'Für Cora' }, A.id);
+    await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: cora.id, text: 'Für Cora' }, A.id);
     const an: string[] = [];
     const mail = new Aufgabenmail({
       benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
-      aufgabenVon: (b) => d.meineAufgaben(b), typName: async () => 'Notiz',
+      aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Notiz',
     }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas', speicherEinstellungen());
     await mail.sende();
     assert.ok(!an.includes('ben@example.org'));
@@ -120,9 +120,9 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     const b = (await konten.listeBenutzer()).find((x) => x.id === ben.id)!;
     assert.equal(b.abwesenheit?.an, false);
     assert.equal(b.abwesenheit?.vertreterId, anna.id, 'Vertreter bleibt hinterlegt');
-    assert.equal(vertretung(await d.meineAufgaben(A)).length, 0, 'erledigt mit dem Ende');
+    assert.equal(vertretung(await d.vertretung.meineAufgaben(A)).length, 0, 'erledigt mit dem Ende');
     assert.ok((await d.mappenHistorie.historie(ben.id)).some((h) => h.art === 'abwesenheit' && /beendet.*abgelaufen/.test(String(h.daten.text))));
-    assert.equal((await d.meineAufgaben(B)).length, 0);
+    assert.equal((await d.vertretung.meineAufgaben(B)).length, 0);
   });
 });
 
@@ -131,7 +131,7 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
     const { d, konten, anna, ben, cora, t, A, C, ich } = await aufbau();
     const admin = imModus(await ich(anna.id));
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '3' } }, A.id);
-    await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Offen' }, A.id);
+    await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Offen' }, A.id);
     await assert.rejects(konten.aendereBenutzer(admin, ben.id, { aktiv: false }), /Vertreter/);
     await konten.setzeAbwesenheit(admin, ben.id, { an: false, vertreterId: cora.id });
     await assert.rejects(konten.aendereBenutzer(admin, ben.id, { aktiv: false }), /offene Aufgabe/);
@@ -141,7 +141,7 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
     assert.equal((await d.mappen.holeMappe(ben.id)).mappe.werte.vertreter, cora.id);
     // Erwähnung des Deaktivierten geht an den Vertreter
     await d.mappen.aendereMappe(m.id, { werte: { nr: '3', text: `Frage an ${erwaehnung('Ben', ben.id)}` } }, A.id);
-    assert.equal((await d.meineAufgaben(C)).filter((a) => a.art === 'erwaehnung').length, 1);
+    assert.equal((await d.vertretung.meineAufgaben(C)).filter((a) => a.art === 'erwaehnung').length, 1);
     const wieder = await konten.aendereBenutzer(admin, ben.id, { aktiv: true });
     assert.equal(wieder.deaktiviert, null);
   });

@@ -204,7 +204,7 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     const vorher = (await sql`SELECT werte, titel, geaendert FROM mappen WHERE id = ${ziel.id}`)[0];
     const historie = (await sql`SELECT count(*)::int AS n FROM historie WHERE mappe_id = ${ziel.id}`)[0].n as number;
     const ereignisse = (await sql`SELECT count(*)::int AS n FROM ereignisse`)[0].n as number;
-    const x = d as unknown as { fristenAbgleichen: () => Promise<unknown> };
+    const x = d.fristen as unknown as { fristenAbgleichen: () => Promise<unknown> };
     const echt = x.fristenAbgleichen;
     x.fristenAbgleichen = async () => { throw new Error('Platte voll'); };
     try { await assert.rejects(d.mappen.aendereMappe(ziel.id, { werte: { name: 'Wasser' } }), /Platte voll/); } finally { x.fristenAbgleichen = echt; }

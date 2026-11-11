@@ -108,11 +108,11 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     const p = await aufgabe('lena', mappen[5], ids.petra);
     assert.ok(p.hinweis, 'Hinweis: Petra darf die Mappe nicht lesen');
     await nachlauf.alle();
-    const fall = (await dienst.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
+    const fall = (await dienst.ohneLeserecht.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
     assert.ok(fall, 'Fall nach dem Nachlauf angelegt');
-    await dienst.leserechtAufZeitGeben(fall.id, ids.lena);
+    await dienst.ohneLeserecht.leserechtAufZeitGeben(fall.id, ids.lena);
     // Aufgabe aus einer Automatisierung (#676, #724).
-    await dienst.aufgabeAusAutomatisierung({ mappeId: mappen[6], empfaengerId: ids.jonas, text: 'Aus der Automatisierung', datum: null, von: ids.lena, buendeln: null, anlass: {} });
+    await dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: mappen[6], empfaengerId: ids.jonas, text: 'Aus der Automatisierung', datum: null, von: ids.lena, buendeln: null, anlass: {} });
     // Erledigte zählen nicht.
     const erl = await aufgabe('lena', mappen[7], ids.jonas);
     assert.equal((await rufe('jonas', 'POST', `/api/aufgaben/${erl.id}/erledigt`)).status, 200);
@@ -153,7 +153,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     // Petra ohne Leserecht: der Fall entsteht im Nachlauf.
     const p = await aufgabe('jonas', mappen[10], ids.petra);
     await nachlauf.alle();
-    assert.ok((await dienst.offeneFaelle()).some((f: { aufgabeId: string }) => f.aufgabeId === p.id));
+    assert.ok((await dienst.ohneLeserecht.offeneFaelle()).some((f: { aufgabeId: string }) => f.aufgabeId === p.id));
     // Das Ereignis „aufgabe.neu“ steht schon im Ausgangskorb, bevor der Verteiler geweckt wird.
     const [e] = await sql`SELECT count(*)::int AS n FROM ereignisse WHERE art = 'aufgabe.neu' AND daten ->> 'aufgabe' = ${p.id}`;
     assert.equal(e.n, 1);
@@ -162,8 +162,8 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
   it('Leserecht auf Zeit endet mit dem Erledigen sofort (nicht erst im Nachlauf)', async () => {
     const p = await aufgabe('lena', mappen[11], ids.petra);
     await nachlauf.alle();
-    const fall = (await dienst.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
-    await dienst.leserechtAufZeitGeben(fall.id, ids.lena);
+    const fall = (await dienst.ohneLeserecht.offeneFaelle()).find((f: { aufgabeId: string }) => f.aufgabeId === p.id);
+    await dienst.ohneLeserecht.leserechtAufZeitGeben(fall.id, ids.lena);
     assert.equal((await rufe('petra', 'GET', `/api/mappen/${mappen[11]}`)).status, 200, 'mit Leserecht auf Zeit');
     assert.equal((await rufe('petra', 'POST', `/api/aufgaben/${p.id}/erledigt`)).status, 200);
     assert.equal((await rufe('petra', 'GET', `/api/mappen/${mappen[11]}`)).status, 404, 'gleich danach kein Leserecht mehr');

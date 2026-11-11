@@ -125,7 +125,7 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     const gespeichert = (await d.mappen.holeMappe(angelegt.id)).mappe;
     assert.deepEqual([gespeichert.werte.von, gespeichert.werte.an, 'absender' in gespeichert.werte, 'fuer' in gespeichert.werte], ['Stadtwerke', lena.id, false, false]);
     // „Post für dich“ entsteht über an.
-    assert.deepEqual((await d.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((a) => a.art === 'post').map((a) => a.feldKey), [`an:${lena.id}`]);
+    assert.deepEqual((await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((a) => a.art === 'post').map((a) => a.feldKey), [`an:${lena.id}`]);
 
     await rufe(markus, 'PUT', '/api/v1/mappen/:id', { params: { id: angelegt.id }, body: { werte: { absender: 'Finanzamt', fuer: markus.id } } });
     const geaendert = (await d.mappen.holeMappe(angelegt.id)).mappe;
