@@ -200,7 +200,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const { d, lena, jonas, rechnung, postTyp, rufe } = await mitKonten();
     // Mitglieder dürfen Post lesen, bearbeiten und anlegen, aber nicht löschen.
     const ohneLoeschen: Regelwerk = { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] };
-    await d.setzeBerechtigungen(postTyp.id, ohneLoeschen, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, ohneLoeschen, true);
     const post = (await rufe(lena, 'POST', '/api/post', { body: { betreff: 'Brief vom Finanzamt' } })).body as { id: string };
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'bescheid.pdf', typ: 'application/pdf' }, PDF('f'), lena.id);
     const neu = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'St-1' } } })).body as { id: string };
@@ -220,7 +220,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
   it('wer löschen darf, löst auf; der abgetrennte Teil braucht das Recht, Post anzulegen', async () => {
     const { d, lena, jonas, rechnung, postTyp, rufe } = await mitKonten();
     const ohneAnlegen: Regelwerk = { grund: { ...NICHTS, R: true, U: true, D: true }, regeln: [] };
-    await d.setzeBerechtigungen(postTyp.id, ohneAnlegen, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, ohneAnlegen, true);
     const post = await d.legePostAn({ betreff: 'Zwei Briefe' }, { id: lena.id, name: 'Lena' });
     const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id)).dokument;
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, PDF('b'), lena.id);

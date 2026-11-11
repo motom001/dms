@@ -202,8 +202,8 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     for (const t of a) assert.deepEqual(Object.keys(t).sort(), ['aehnlichkeit', 'typ']);
     assert.deepEqual(new Set(a.map((t) => t.typ)), new Set([x.vertrag.id, x.rechnung.id]));
     // Jonas darf Rechnungen anlegen, aber keine Verträge lesen: deren Mappe zählt für ihn nicht.
-    await x.d.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, C: true }, regeln: [] } as Regelwerk, true);
-    await x.d.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, C: true }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
     const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     x.eingaenge.length = 0;
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
@@ -213,8 +213,8 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
 
   it('Kandidaten nur aus Typen, in denen die Person anlegen darf', async () => {
     const x = await aufbau();
-    await x.d.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
-    await x.d.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
     const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
     for (const { e } of x.eingaenge) assert.deepEqual((e.typen as Kandidat[]).map((t) => t.name), ['Rechnung']);
@@ -289,7 +289,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     const x = await aufbau();
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [] }, x.A), (e: { status?: number }) => e.status === 422);
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: ['00000000-0000-4000-8000-0000000000ff'] }, x.A), (e: { status?: number }) => e.status === 404);
-    await x.d.setzeBerechtigungen(x.gesundheit.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.gesundheit.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
     const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.dokBefund] }, J));
     const vorher = JSON.stringify((await x.d.mappen.holeMappe(x.post.id)).mappe);

@@ -87,7 +87,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     // Verträge lesen Lena, Jonas und Markus – Petra nicht.
     ids.vertrag = (await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
     const rw: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [ids.lena, ids.jonas, ids.markus] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] } as unknown as Regelwerk;
-    await dienst.setzeBerechtigungen(ids.vertrag, rw, true);
+    await dienst.berechtigungen.setzeBerechtigungen(ids.vertrag, rw, true);
     for (let i = 1; i <= 12; i++) mappen.push((await dienst.mappen.legeMappeAn({ typId: ids.vertrag, werte: { name: `Vertrag ${i}` } }, lena.id)).id);
     for (const [k, email] of [['lena', 'lena@example.org'], ['jonas', 'jonas@example.org'], ['petra', 'petra@example.org'], ['markus', 'markus@example.org']]) cookies[k] = await anmelden(email);
   });

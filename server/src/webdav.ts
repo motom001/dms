@@ -135,7 +135,7 @@ interface Kind { name: string; k: Knoten }
 interface Schwebend { ort: string; name: string; groesse: number; zeit: string }
 interface Ctx {
   b: Benutzer; s: ApiSchluessel; z: Zugriff; e: WebdavEinstellung;
-  mappen: Map<string, Awaited<ReturnType<Dienst['laufwerkMappe']>>>;
+  mappen: Map<string, Awaited<ReturnType<Dienst['berechtigungen']['laufwerkMappe']>>>;
   /** Stempel je Mappentyp (#722) und ob eine Mappe hinausdarf (#723) – einmal je Anfrage. */
   stempel: Map<string, Promise<Awaited<ReturnType<Dienst['laufwerkStempel']>>>>;
   raus: Map<string, Promise<boolean>>;
@@ -380,7 +380,7 @@ export class Webdav {
 
   private async mappe(id: string, ctx: Ctx) {
     let m = ctx.mappen.get(id);
-    if (!m) { m = await this.d.dienst.laufwerkMappe(id, ctx.z); ctx.mappen.set(id, m); }
+    if (!m) { m = await this.d.dienst.berechtigungen.laufwerkMappe(id, ctx.z); ctx.mappen.set(id, m); }
     return m;
   }
 

@@ -150,7 +150,7 @@ describe('Systemtyp Post (#192)', () => {
     const { d, anna, ben, A, B, r1, post, rufe } = await aufbau();
     // Mitglieder dürfen Post nur lesen.
     const nurLesen: Regelwerk = { grund: { ...NICHTS, R: true }, regeln: [] };
-    await d.setzeBerechtigungen(post.id, nurLesen, true);
+    await d.berechtigungen.setzeBerechtigungen(post.id, nurLesen, true);
     await assert.rejects(rufe(ben, 'POST', '/api/post', { body: { betreff: 'x' } }), status(403));
     const m = (await rufe(anna, 'POST', '/api/post', { body: { betreff: 'Admin darf' } })).body as { id: string; werte: Record<string, unknown> };
     assert.equal(m.werte.kanal, POST_KANAL.hochgeladen);

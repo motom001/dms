@@ -222,7 +222,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.equal(alle.aktionen[0].paket.name, 'Verträge');
       // Jonas darf nur lesen (und anlegen): Ändern und Dokument hinzufügen fehlen ganz, Lesen bleibt.
       const nurLesen: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [t.jonas.id] }], dann: { R: 'erteilen' }, stopp: false }, { id: 's', name: 'Lena', wenn: [{ art: 'benutzer', benutzer: [t.lena.id] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] };
-      await t.d.setzeBerechtigungen(t.typId, nurLesen, true);
+      await t.d.berechtigungen.setzeBerechtigungen(t.typId, nurLesen, true);
       const jonas = (await t.angebot(t.jonas, t.mappe.id)).aktionen.map((a) => a.schluessel);
       assert.ok(!jonas.includes('gekuendigt') && !jonas.includes('notiz') && !jonas.includes('vorlage_hinzufuegen'), jonas.join());
       assert.ok(jonas.includes('kuendigung_anlegen'));
@@ -294,7 +294,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.equal((await t.d.kern.repo.holeMappe(t.mappe.id))!.werte.gekuendigt_am, '2026-01-01');
       // Zwischen Start und Antwort verliert Lena das Recht zu ändern → 403 beim nächsten Schritt.
       const s3 = await t.starte(t.lena, t.mappe.id, 'gekuendigt');
-      await t.d.setzeBerechtigungen(t.typId, { grund: { ...NICHTS, R: true, C: true }, regeln: [] }, true);
+      await t.d.berechtigungen.setzeBerechtigungen(t.typId, { grund: { ...NICHTS, R: true, C: true }, regeln: [] }, true);
       await assert.rejects(t.weiter(t.lena, s3.lauf, { am: '2026-11-11' }), fehler(403));
       // Eine Lese-Aktion, die Felder schreiben will: 502, nichts geändert.
       t.setzeSkript(async () => antwort({ ergebnis: { meldung: 'x', felder: { bezeichnung: 'Gekapert' } } }));

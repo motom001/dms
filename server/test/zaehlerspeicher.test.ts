@@ -100,7 +100,7 @@ async function aufbau() {
   const privatNurFibu: Regelwerk = { grund: ALLES, regeln: [
     { id: 'privat', name: 'Privat nur FiBu', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }, { art: 'rolle', rollen: [fibu], nicht: true }], dann: { R: 'entziehen' }, stopp: true },
   ] };
-  await d.setzeBerechtigungen(rechnung.id, privatNurFibu, true);
+  await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurFibu, true);
   const alle = await d.legeSichtAn({ name: 'Alle Rechnungen', typen: [rechnung.id], bedingungen: [] });
   const privat = await d.legeSichtAn({ name: 'Privat', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }] });
   const faellig = await d.legeSichtAn({ name: 'Fällig bis heute', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }] });
@@ -164,10 +164,10 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     await stimmt('ändern', { admin: [2, 2], max: [0, 0] });
     await pruefe('ändern');
     // Rechte ändern: Regeln weg …
-    await h.d.setzeBerechtigungen(h.rechnung.id, { grund: ALLES, regeln: [] }, true);
+    await h.d.berechtigungen.setzeBerechtigungen(h.rechnung.id, { grund: ALLES, regeln: [] }, true);
     await stimmt('Rechte ändern', { admin: [2, 2], max: [2, 2] });
     // … wieder an, und Max bekommt die Rolle FiBu
-    await h.d.setzeBerechtigungen(h.rechnung.id, h.privatNurFibu, true);
+    await h.d.berechtigungen.setzeBerechtigungen(h.rechnung.id, h.privatNurFibu, true);
     await stimmt('Rechte zurück', { admin: [2, 2], max: [0, 0] });
     await pruefe('Rechte zurück');
     await h.d.setzeRollen(h.max.id, [h.fibu], h.admin.id);

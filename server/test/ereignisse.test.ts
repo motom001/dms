@@ -201,7 +201,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     await konten.dienstkonto('kuendigen', 'Kündigen');
     // Regel: Paket darf Verträge mit Name „Geheim“ nicht lesen.
     const paketRolle = (await d.rechtepruefung.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
-    await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
     const offen = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
     const geheim = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
     await verteile();
@@ -223,7 +223,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
       await repo.speicherePaket({ ...basis, id: 'kuendigen', name: 'Kündigen', typen: {}, code: true, laeufer: liesCode(code).code! });
       await konten.dienstkonto('kuendigen', 'Kündigen');
       const paketRolle = (await d.rechtepruefung.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
-      await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
+      await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
       const offen = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
       const geheim = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
       const weg = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);

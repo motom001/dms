@@ -142,8 +142,8 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
   async function mitMappen() {
     const a = await aufbau();
     const { d, admin, rechnung, position } = a;
-    await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
-    await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
+    await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
     const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
     const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
     const r3 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, admin.id);
@@ -212,7 +212,7 @@ describe('Leserechte als Vorgabe (#1031)', () => {
       { id: 'kunde', name: 'Kundenrechnungen', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'enthaelt', wert: { art: 'fest', wert: 'K' } } }], dann: { R: 'erteilen' }, stopp: false },
       { id: 'u', name: 'Nur bearbeiten', wenn: [{ art: 'rolle', rollen: ['x'] }], dann: { U: 'entziehen' }, stopp: false },
     ] };
-    await d.setzeBerechtigungen(rechnung.id, nurBuero, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, nurBuero, true);
     const notiz = await d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
     assert.equal(notiz.berechtigungen ?? null, null);
     const an = await d.mappentypen.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
@@ -221,12 +221,12 @@ describe('Leserechte als Vorgabe (#1031)', () => {
     // „privat“ gibt es am Teil – übernommen, nur mit der Wirkung auf Lesen; „nr“ nicht (ausgelassen), „U“ gar nicht.
     assert.deepEqual(an.berechtigungen?.regeln.map((r) => [r.name, r.dann]), [['Privat nur für den Ersteller', { R: 'entziehen' }]]);
     // Spätere Änderungen an der Rechnung gelten nicht mit.
-    await d.setzeBerechtigungen(rechnung.id, null, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, null, true);
     assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === notiz.id)?.berechtigungen?.grund.R, false);
     // Eigene Berechtigungen bleiben unangetastet.
     const eigen = await d.mappentypen.legeTypAn({ name: 'Anhang', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }] });
-    await d.setzeBerechtigungen(rechnung.id, nurBuero, true);
-    await d.setzeBerechtigungen(eigen.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, nurBuero, true);
+    await d.berechtigungen.setzeBerechtigungen(eigen.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
     const e2 = await d.mappentypen.aendereTyp(eigen.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === eigen.id)!, teilVon: 'rechnung' });
     assert.deepEqual(e2.berechtigungen?.grund, { ...ALLES, D: false });
   });
@@ -263,7 +263,7 @@ describe('Löschen und Papierkorb (#1031)', () => {
   it('ohne Recht an einem Teil: abgelehnt mit der Anzahl, nichts gelöscht (Ergänzung Sicherheit)', async () => {
     const { d, admin, lena, zg, r, position, p1 } = await mitRechnung();
     // Eine Position hat der Administrator angelegt und als privat markiert – Lena darf sie weder lesen noch löschen.
-    await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
+    await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
     await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 3, beschreibung: 'Privat', privat: true } }, admin.id);
     await assert.rejects(d.loescheMappe(r.id, lena.id, await zg(lena)), status(403, /1 Teil/));
     assert.ok(await d.kern.repo.holeMappe(r.id));
@@ -402,7 +402,7 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
     try {
       const { d, admin, lena, suche, zg, rechnung, position } = await aufbau(pgRepo(db.sql, haushalt) as never as Repo, pgKontoRepo(db.sql, haushalt));
       assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === position.id)?.teilVon, 'rechnung');
-      await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
+      await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
       const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, lena.id);
       const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
       const p1 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, lena.id);

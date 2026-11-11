@@ -122,7 +122,7 @@ describe('Sammel-Weitergabe (#415, #419)', () => {
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
     const C = { id: carl.id, rolle: 'mitglied' };
     // „Privat“ darf Carl nicht lesen – auch nicht über eine Aufgabe.
-    await d.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
+    await d.berechtigungen.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
       { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: 'privat' } } }], dann: { R: 'entziehen' }, stopp: true },
     ] }, true);
     const m = await Promise.all(['1', '2', '3', 'privat'].map((nr) => d.mappen.legeMappeAn({ typId: t.id, werte: { nr } }, A.id)));

@@ -144,7 +144,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const fahrzeug = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', titelVorlage: '{name}', felder: name });
   const wohnung = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{name}', felder: name });
   const akte = await d.mappentypen.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: name });
-  await d.setzeBerechtigungen(akte.id, { grund: NICHTS, regeln: [] }, true);
+  await d.berechtigungen.setzeBerechtigungen(akte.id, { grund: NICHTS, regeln: [] }, true);
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'betrifft', label: 'betrifft', typ: 'referenz', mehrfach: true, gleicherTyp: true, zielTypen: [fahrzeug.id, wohnung.id, akte.id] },
@@ -205,7 +205,7 @@ for (const pg of [false, true]) {
 
     it('„(nicht sichtbar)“ ohne Titel und ohne Typ; Auswahl über alle Zieltypen, nur lesbare', async () => {
       const { d, rechnung, golf, haus, geheim, markus, lena, rufe } = await neu('maske');
-      await d.setzeBerechtigungen(rechnung.id, { grund: ALLES, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(rechnung.id, { grund: ALLES, regeln: [] }, true);
       const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [geheim.id] } }, markus.id);
       const sicht = (await rufe(lena, 'GET', '/api/mappen/:id', { params: { id: r.id } })).body as { bezuege: Record<string, unknown> };
       assert.deepEqual(sicht.bezuege[geheim.id], { titel: 'nicht sichtbare Mappe', typId: '', verborgen: true });
@@ -226,14 +226,14 @@ for (const pg of [false, true]) {
         const { d, rechnung, markus, lena } = x;
         const rw: Regelwerk = { grund: fall.wirkung === 'erteilen' ? { ...NICHTS, C: true } : ALLES, regeln: [{ id: 'r', name: 'Typ', stopp: false, dann: { R: fall.wirkung },
           wenn: [{ art: 'feld', ...(fall.nicht ? { nicht: true } : {}), bedingung: { art: 'feld', feld: 'betrifft', op: 'zeigtAufTyp', wert: { art: 'fest', wert: [x[fall.typ].id] } } }] }] };
-        await d.setzeBerechtigungen(rechnung.id, rw, true);
+        await d.berechtigungen.setzeBerechtigungen(rechnung.id, rw, true);
         const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [x[fall.ziel].id] } }, markus.id);
         const z = await d.rechtepruefung.zugriff(await x.ich(lena.id));
         assert.equal(z.a.sichtbareTypen?.includes(x.akte.id), false, 'die Akte sieht Lena nicht');
         assert.equal((await d.rechtepruefung.rechteAn(z, r)).R, fall.lesbar, 'Rechte an der Mappe');
         assert.equal((await d.rechtepruefung.lesbare(z, [r.id])).has(r.id), fall.lesbar, 'Lesefilter der Listen');
         // Testlauf rechnet genauso.
-        const tl = await d.testlauf({ mappeId: r.id, benutzerId: lena.id });
+        const tl = await d.berechtigungen.testlauf({ mappeId: r.id, benutzerId: lena.id });
         assert.equal(tl.wirksam.R, fall.lesbar, 'Testlauf');
         // Im Verwaltungsmodus gelten die Regeln nicht.
         assert.equal((await d.rechtepruefung.rechteAn(await d.rechtepruefung.zugriff(imModus(await x.ich(markus.id))), r)).R, true);

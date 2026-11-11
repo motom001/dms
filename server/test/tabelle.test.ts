@@ -158,12 +158,12 @@ describe('Tabelle in der Ablage (#1030)', () => {
     const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
     await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Öffentlich' } }, admin.id);
     for (let i = 2; i <= 4; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Privat ${i}`, privat: true } }, admin.id);
-    await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
+    await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
     const s = await seite(lena, r.id);
     assert.deepEqual([s.gesamt, s.mappen.map((m) => m.werte.beschreibung)], [1, ['Öffentlich']]);
     assert.equal((await seite(admin, r.id)).gesamt, 4);
     // Mappe selbst nicht lesbar: keine Tabelle (wie die Mappe: 404).
-    await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
     const geheim = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-geheim', privat: true } }, admin.id);
     await assert.rejects(seite(lena, geheim.id), status(404));
     // Eine Spalte, die auf eine nicht lesbare Mappe zeigt: nur „nicht sichtbar“, ohne Titel.
@@ -182,7 +182,7 @@ describe('Tabelle in der Ablage (#1030)', () => {
 
   it('„+ Neu“ per Schnittstelle: Anlegerecht am anderen Typ und Leserecht auf die Mappe prüft der Server', async () => {
     const { d, admin, lena, rechnung, position, rufe } = await aufbau();
-    await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
     const offen = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
     const geheim = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', privat: true } }, admin.id);
     const neu = (rechnungId: string) => rufe(lena, 'POST', '/api/mappen', { body: { typId: position.id, werte: { rechnung: rechnungId, beschreibung: 'Neu' } } });
@@ -191,7 +191,7 @@ describe('Tabelle in der Ablage (#1030)', () => {
     // Auf eine Rechnung, die sie nicht lesen darf: abgelehnt.
     await assert.rejects(neu(geheim.id), status(422));
     // Ohne Anlegerecht am Typ der Positionen: abgelehnt – und der Typ sagt es der Oberfläche.
-    await d.setzeBerechtigungen(position.id, { grund: { ...ALLES, C: false }, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(position.id, { grund: { ...ALLES, C: false }, regeln: [] }, true);
     await assert.rejects(neu(offen.id), status(403));
     const typen = (await rufe(lena, 'GET', '/api/typen')).body as Mappentyp[];
     assert.equal(typen.find((t) => t.id === position.id)!.darfAnlegen, false);

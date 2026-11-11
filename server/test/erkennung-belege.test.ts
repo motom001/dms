@@ -431,7 +431,7 @@ Gesamtbetrag 1.190,00 €`;
 
   it('ohne Recht zum Anlegen der Positionen: keine Positionen', async () => {
     const x = await aufbau();
-    await x.d.setzeBerechtigungen(x.position.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);
+    await x.d.berechtigungen.setzeBerechtigungen(x.position.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);
     const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x' }, await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' }), { erechnung: liesERechnung(CII()).er });
     assert.equal(r.positionen, undefined);
     assert.equal(r.vorschlaege.rechnungsnummer.wert, 'R-2026-0815');

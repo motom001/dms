@@ -101,9 +101,9 @@ export function berechtigungenRouten(k: RoutenKontext): Route[] {
   const { dienst } = k;
   return [
     /* ---------- Berechtigungen (#123, #125) ---------- */
-    { methode: 'GET', pfad: '/api/werkbank/berechtigungen', zugang: 'admin', handler: async () => ok(await dienst.berechtigungenListe()) },
+    { methode: 'GET', pfad: '/api/werkbank/berechtigungen', zugang: 'admin', handler: async () => ok(await dienst.berechtigungen.berechtigungenListe()) },
     { methode: 'PUT', pfad: '/api/werkbank/berechtigungen/:typId', zugang: 'admin', handler: async (a) => {
-      const r = await dienst.setzeBerechtigungen(a.params.typId, b(a).berechtigungen, b(a).bestaetigt === true);
+      const r = await dienst.berechtigungen.setzeBerechtigungen(a.params.typId, b(a).berechtigungen, b(a).bestaetigt === true);
       return ok({ typ: r.typ, niemand: r.niemand });
     } },
     // Pakete am Mappentyp (#686): welche Pakete Mappen dieses Typs lesen dürften, und einzelnen den Typ verwehren.
@@ -116,11 +116,11 @@ export function berechtigungenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/ki-typen', zugang: 'admin', handler: async () => ok(await dienst.ki.kiUebersicht()) },
     { methode: 'PUT', pfad: '/api/werkbank/ki-typen/:typId', zugang: 'admin', handler: async (a) => ok(await dienst.ki.setzeKiTyp(a.params.typId, b(a).zugelassen === true, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/berechtigungen/:typId/kopieren', zugang: 'admin', handler: async (a) => {
-      const r = await dienst.kopiereRegel(a.params.typId, String(b(a).regelId ?? ''), b(a).ziele);
+      const r = await dienst.berechtigungen.kopiereRegel(a.params.typId, String(b(a).regelId ?? ''), b(a).ziele);
       L.werkbank.info('Regel kopiert', { typ: a.params.typId, regel: String(b(a).regelId ?? ''), kopiert: r.kopiert, ausgelassen: r.ausgelassen, von: ich(a).email });
       return ok(r);
     } },
-    { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.testlauf(b(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.berechtigungen.testlauf(b(a))) },
     { methode: 'POST', pfad: '/api/werkbank/sichten/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.sichtTestlauf(b(a))) },
     { methode: 'GET', pfad: '/api/werkbank/berechtigungen/sicht/:benutzerId', zugang: 'admin', handler: async (a) => ok(await dienst.rechtepruefung.wasSieht(a.params.benutzerId)) },
   ];

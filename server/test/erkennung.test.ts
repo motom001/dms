@@ -210,7 +210,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
     await d.mappen.aendereMappe(p.id, { werte: { fuer: ben.id } }, anna.id);
     // Ben darf keine Organisationen lesen.
     const nichts: Regelwerk = { grund: { ...NICHTS }, regeln: [] };
-    await d.setzeBerechtigungen(organisation.id, nichts, true);
+    await d.berechtigungen.setzeBerechtigungen(organisation.id, nichts, true);
     const fuerBen = await d.erkennung.fuerBenutzer(p.id, await d.rechtepruefung.zugriff(B));
     assert.equal(fuerBen.absender.length, 0);
     assert.equal(fuerBen.eindeutig, null);
@@ -312,7 +312,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
 
   it('Rechte: neue Mappe braucht Anlegen, bestehende Bearbeiten; Dokumente nur lesbare; Systemtypen nie', async () => {
     const { d, A, B, person, anna } = await mitPerson();
-    await d.setzeBerechtigungen(person.id, { grund: { ...NICHTS, R: true }, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(person.id, { grund: { ...NICHTS, R: true }, regeln: [] }, true);
     await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE }, await d.rechtepruefung.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
     const m = await d.mappen.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
     await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.rechtepruefung.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
@@ -411,13 +411,13 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.deepEqual((await d.mappen.holeMappe(p2.id)).mappe.werte.bezug, [gas.id]);
     assert.equal((await d.mappen.holeMappe(p2.id)).aufgaben.find((a) => a.art === 'zugeordnet')?.empfaengerId, anna.id, 'ohne „Für“: wer die Post in Ablago gebracht hat');
     // Empfänger Ben darf Verträge nicht lesen → nicht automatisch.
-    await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
     const p3 = await d.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok3 = (await d.dokumente.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
     await d.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.mappen.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
     // Archivmodus: nie automatisch, auch wenn eingeschaltet.
-    await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS, C: true, R: true, U: true, D: true, P: true }, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS, C: true, R: true, U: true, D: true, P: true }, regeln: [] }, true);
     const t2 = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
     await d.mappentypen.aendereTyp(vertrag.id, { ...t2, archiv: { jahre: 10, stichtag: null } });
     const p4 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Archiv');

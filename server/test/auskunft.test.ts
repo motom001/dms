@@ -239,17 +239,17 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('nur innerhalb der Rechte: Nicht Lesbares fehlt und wird nicht weiterverfolgt', async () => {
       const { d, anna, m, typen, rufe } = await aufbau(pg);
-      await d.setzeBerechtigungen(typen.nkTyp.id, { grund: ALLES, regeln: [
+      await d.berechtigungen.setzeBerechtigungen(typen.nkTyp.id, { grund: ALLES, regeln: [
         { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: true },
       ] }, true);
-      await d.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
       const b = (await rufe(anna, 'GET', '/api/mappen/:id/baum', { params: { id: m.max.id } })).body as Baum;
       assert.ok(ids(b).has(m.nk1.id));
       assert.ok(!ids(b).has(m.nk2.id));
       assert.equal(b.verborgen, 1);
       assert.equal(b.knoten.find((x) => x.id === m.v2.id)!.rechte.D, false, '⛔ kein Löschrecht für #424');
       // Über eine nicht lesbare Mappe geht es nicht weiter
-      await d.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       const ohne = (await rufe(anna, 'GET', '/api/mappen/:id/baum', { params: { id: m.max.id } })).body as Baum;
       assert.ok(!ids(ohne).has(m.v2.id) && !ids(ohne).has(m.nk1.id));
       assert.ok(ohne.verborgen >= 2);

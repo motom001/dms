@@ -114,7 +114,7 @@ describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
     const rollen = await d.listeRollen();
     const mitglied = rollen.find((r) => r.system && /Mitglied/.test(r.name))!;
     // Mitglieder dürfen Verträge nicht lesen.
-    await d.setzeBerechtigungen(vertrag.id, { regeln: [{ wer: { art: 'rolle', id: rollen.find((r) => /Administrator/.test(r.name))?.id ?? '' }, rechte: ['C', 'R', 'U', 'D'] }] }, true).catch(() => null);
+    await d.berechtigungen.setzeBerechtigungen(vertrag.id, { regeln: [{ wer: { art: 'rolle', id: rollen.find((r) => /Administrator/.test(r.name))?.id ?? '' }, rechte: ['C', 'R', 'U', 'D'] }] }, true).catch(() => null);
     const a = await motor.lege({ name: 'Melden', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
       dann: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'rolle', id: mitglied.id }, { art: 'person', id: lena.id }], text: 'Neue Notiz an {titel}' }] }, admin.id);
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));

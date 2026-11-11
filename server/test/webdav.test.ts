@@ -190,7 +190,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.match(belege.text, /<D:getcontentlength>\d+<\/D:getcontentlength>/);
     // ETag nicht der reine Inhalts-Hash (sonst ließe sich ein Inhalt ohne Exportrecht bestätigen).
     assert.match(belege.text, /<D:getetag>&quot;[0-9a-f]{32}&quot;<\/D:getetag>/);
-    const rechnung = (await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente[0];
+    const rechnung = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente[0];
     assert.ok(belege.text.includes(etagVon(rechnung).replace(/"/g, '&quot;')));
     assert.ok(!belege.text.includes(rechnung.sha256));
     assert.match(belege.text, /<D:getlastmodified>[A-Z][a-z]{2}, \d{2} /);
@@ -262,14 +262,14 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.equal(p.length, 1);
     assert.equal(p[0].werte.kanal, 'WebDAV');
     assert.equal(p[0].werte.betreff, 'Scan 1');
-    const doks = (await d.laufwerkMappe(p[0].id, await d.rechtepruefung.zugriff(anna))).dokumente;
+    const doks = (await d.berechtigungen.laufwerkMappe(p[0].id, await d.rechtepruefung.zugriff(anna))).dokumente;
     assert.deepEqual(doks.map((x) => [x.name, x.herkunft]), [['Scan 1.pdf', 'webdav']]);
     assert.deepEqual(namen(await rufe('PROPFIND', '/webdav/Neue Post/', { auth: A, depth: '1' })).slice(1), ['Scan 1.pdf']);
     // Register mit Versionierung: neues Dokument (201), gleicher Name → neue Version (204).
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})`;
     assert.equal((await rufe('PUT', `${reg}/Belege/Kündigung.pdf`, { auth: A, body: PDF('k1') })).status, 201);
     assert.equal((await rufe('PUT', `${reg}/Belege/rechnung.pdf`, { auth: A, body: PDF('r2') })).status, 204);
-    const nach = (await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
+    const nach = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
     assert.deepEqual(nach.map((x) => [x.name, x.version ?? 1, x.herkunft]).sort(), [['Kündigung.pdf', 1, 'webdav'], ['Rechnung.pdf', 2, 'webdav']]);
     // Register ohne Versionierung: neu ja, gleicher Name 409.
     assert.equal((await rufe('PUT', `${reg}/Briefe_Post/Brief.pdf`, { auth: A, body: PDF('b1') })).status, 201);
@@ -375,7 +375,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.equal((await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' })).status, 207, 'lesen geht');
     assert.equal((await rufe('PUT', `${reg}/Neu.pdf`, { auth: A, body: PDF('n') })).status, 403);
     assert.equal((await rufe('PUT', `${reg}/Rechnung.pdf`, { auth: A, body: PDF('n') })).status, 403, 'auch keine neue Version');
-    assert.equal((await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.length, 1);
+    assert.equal((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.length, 1);
     // Post: Anlegen (C) am Post-Typ entziehen.
     const post = await d.postTyp();
     await d.mappentypen.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
@@ -398,7 +398,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     const liste = await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' });
     assert.deepEqual(namen(liste).slice(1).sort(), ['a_b (2).pdf', 'a_b.pdf', 'Rechnung.pdf', 'X (2).pdf', 'X.pdf'].sort());
     // Welches Dokument hinter welchem Laufwerksnamen steht: über den ETag (Id + Inhalt) im Listing.
-    const vorher = (await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
+    const vorher = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
     const hinter = (name: string) => {
       const m = new RegExp(`<D:displayname>${name.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}</D:displayname>[\\s\\S]*?<D:getetag>&quot;([0-9a-f]{32})&quot;`).exec(liste.text);
       assert.ok(m, name);
@@ -406,9 +406,9 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     };
     for (const name of ['X (2).pdf', 'X.pdf', 'a_b (2).pdf', 'a_b.pdf']) {
       const ziel = hinter(name);
-      const stand = new Map((await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.map((x) => [x.id, x.version ?? 1]));
+      const stand = new Map((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.map((x) => [x.id, x.version ?? 1]));
       assert.equal((await rufe('PUT', `${reg}/${name}`, { auth: A, body: PDF(`neu ${name}`) })).status, 204, name);
-      const nach = (await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
+      const nach = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
       for (const x of nach) assert.equal(x.version ?? 1, (stand.get(x.id) ?? 1) + (x.id === ziel.id ? 1 : 0), `${name}: ${x.name}`);
       const z = nach.find((x) => x.id === ziel.id)!;
       assert.equal(z.name, ziel.name, 'Name bleibt');

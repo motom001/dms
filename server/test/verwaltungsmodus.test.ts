@@ -381,7 +381,7 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
     const gesperrt = await x.d.mappentypen.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
-    await x.d.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
+    await x.d.berechtigungen.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
     const offenTyp = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const m = await x.d.mappen.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
     const eigen = await x.d.mappen.legeMappeAn({ typId: offenTyp.id, werte: { name: 'Einkauf' } });

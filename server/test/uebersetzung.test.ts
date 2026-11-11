@@ -58,7 +58,7 @@ async function aufbau(o: { repo?: Repo; konto?: KontoRepo; zustand?: Kurzzustand
     { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
   ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
   const lesen: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [lena.id] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] };
-  await d.setzeBerechtigungen(brief.id, lesen, true);
+  await d.berechtigungen.setzeBerechtigungen(brief.id, lesen, true);
   const m = await d.mappen.legeMappeAn({ typId: brief.id, werte: { betreff: 'Neue Mülltonne', inhalt: BRIEF, email: 'post@example.org' } }, lena.id);
   const eingaenge: Array<{ paket: string; e: Record<string, unknown> }> = [];
   let antwort = (e: Record<string, unknown>) => JSON.stringify({ text: `EN: ${String(e.text)}`, von: 'de' });

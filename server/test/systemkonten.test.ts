@@ -98,11 +98,11 @@ describe('Systemkonten (#673)', () => {
     let r = await d.rechtepruefung.rechteAn(z, m);
     assert.deepEqual(r, { C: true, R: true, U: true, D: true, P: false });
     // Standard „nichts“ für Mitglieder: das Systemkonto ist davon nicht betroffen.
-    await d.setzeBerechtigungen(gesundheit.id, { grund: NICHTS, regeln: [] }, true);
+    await d.berechtigungen.setzeBerechtigungen(gesundheit.id, { grund: NICHTS, regeln: [] }, true);
     z = await d.rechtepruefung.zugriff(auto);
     assert.equal((await d.rechtepruefung.rechteAn(z, m)).R, true);
     // Regel „Systemkonto darf von Gesundheit nichts“.
-    await d.setzeBerechtigungen(gesundheit.id, { grund: NICHTS, regeln: [{ id: 's', name: 'Keine Automatisierung', wenn: [{ art: 'rolle', rollen: [await rolleId('systemkonto')] }], dann: { C: 'entziehen', R: 'entziehen', U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: true }] }, true);
+    await d.berechtigungen.setzeBerechtigungen(gesundheit.id, { grund: NICHTS, regeln: [{ id: 's', name: 'Keine Automatisierung', wenn: [{ art: 'rolle', rollen: [await rolleId('systemkonto')] }], dann: { C: 'entziehen', R: 'entziehen', U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: true }] }, true);
     z = await d.rechtepruefung.zugriff(auto);
     r = await d.rechtepruefung.rechteAn(z, m);
     assert.deepEqual(r, { C: false, R: false, U: false, D: false, P: false });
@@ -128,9 +128,9 @@ describe('Systemkonten (#673)', () => {
     assert.deepEqual(await d.rechtepruefung.rechteAn(z, g), { C: false, R: true, U: false, D: false, P: false }, 'wie bestätigt: nur lesen');
     assert.deepEqual(await d.rechtepruefung.rechteAn(z, n), { C: true, R: true, U: true, D: false, P: false });
     // Strenger Standard für Mitglieder ändert nichts; eine Regel für die Rolle Paket entzieht das Lesen.
-    await d.setzeBerechtigungen(gesundheit.id, { grund: NICHTS, regeln: [{ id: 'p', name: 'Pakete nicht', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { R: 'entziehen' }, stopp: true }] }, true);
+    await d.berechtigungen.setzeBerechtigungen(gesundheit.id, { grund: NICHTS, regeln: [{ id: 'p', name: 'Pakete nicht', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { R: 'entziehen' }, stopp: true }] }, true);
     // Erteilen über die bestätigten Rechte hinaus geht nicht.
-    await d.setzeBerechtigungen(andere.id, { grund: NICHTS, regeln: [{ id: 'q', name: 'Pakete alles', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' }, stopp: true }] }, true);
+    await d.berechtigungen.setzeBerechtigungen(andere.id, { grund: NICHTS, regeln: [{ id: 'q', name: 'Pakete alles', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' }, stopp: true }] }, true);
     z = await d.rechtepruefung.zugriff(konto);
     assert.equal((await d.rechtepruefung.rechteAn(z, g)).R, false);
     assert.equal((await d.rechtepruefung.lesbare(z, [g.id, n.id])).has(g.id), false);
@@ -151,7 +151,7 @@ describe('Systemkonten (#673)', () => {
     const g = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
     const n = await d.mappen.legeMappeAn({ typId: andere.id, werte: { titel: 'Zettel' } }, admin.id);
     // Eine Regel für die Rolle Paket, die nur das Löschen nimmt: Lesen bleibt für „Notiz“ offen.
-    await d.setzeBerechtigungen(andere.id, { grund: NICHTS, regeln: [{ id: 'p', name: 'Pakete löschen nicht', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { D: 'entziehen' }, stopp: false }] }, true);
+    await d.berechtigungen.setzeBerechtigungen(andere.id, { grund: NICHTS, regeln: [{ id: 'p', name: 'Pakete löschen nicht', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { D: 'entziehen' }, stopp: false }] }, true);
     const z = await d.rechtepruefung.zugriff(konto);
     assert.ok(z.lesen, 'ein Paket hat immer einen Lesefilter – nie „alles“');
     assert.deepEqual([...await d.rechtepruefung.lesbare(z, [g.id, n.id])], [n.id], '„Gesundheit“ hat das Paket nie bestätigt bekommen');
@@ -174,7 +174,7 @@ describe('Systemkonten (#673)', () => {
     assert.equal(t.wirksam.R, false);
     assert.deepEqual(t.spur.map((s) => [s.name, s.traf]), [['System- und Paketrollen verboten', true]]);
     // Gespeichert gilt dasselbe – und deckt sich mit den echten Rechten des Kontos.
-    await d.setzeBerechtigungen(gesundheit.id, verbot, true);
+    await d.berechtigungen.setzeBerechtigungen(gesundheit.id, verbot, true);
     assert.equal((await lauf(auto.id)).wirksam.R, (await d.rechtepruefung.rechteAn(await d.rechtepruefung.zugriff(auto), m)).R);
     // Paket ohne bestätigten Zugriff auf den Typ: nichts, gekennzeichnet.
     await repo.speicherePaket({

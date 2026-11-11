@@ -156,8 +156,8 @@ async function aufbau(pg: boolean, name: string) {
     { key: 'privat', label: 'Privat', typ: 'janein' },
     { key: 'kennung', label: 'Kennung', typ: 'zusammengesetzt', vorlage: '{von} · {nr}', eindeutig: true, pflicht: true },
   ], trefferliste: ['_titel', 'kennung'] });
-  await d.setzeBerechtigungen(org.id, privatNurErsteller, true);
-  await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
+  await d.berechtigungen.setzeBerechtigungen(org.id, privatNurErsteller, true);
+  await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
   return { d, repo: r.repo, admin, lena, zg, org, rechnung: (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)! };
 }
 

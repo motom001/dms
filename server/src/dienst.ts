@@ -31,7 +31,6 @@ import { Ereignisverteiler } from './ereignisse';
 import { Eingang } from './hochladen';
 import { type KatalogEreignis } from '../../shared/src/ereignisse';
 import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
-import type { Regelwerk } from '../../shared/src/rechte';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
@@ -307,7 +306,7 @@ export class Dienst {
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
     this.mappentypen = new MappentypenDienst(this.kern, {
       mitStempel: (typen) => this.mitStempel(typen), pruefeStempelTyp: (v) => this.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.setzeStempelTyp(id, st),
-      erkennung: () => this.erkennung, berechtigungenAusEingabe: (typ, e) => this.berechtigungenAusEingabe(typ, e),
+      erkennung: () => this.erkennung, berechtigungenAusEingabe: (typ, e) => this.berechtigungen.berechtigungenAusEingabe(typ, e),
       protokolliereBerechtigungen: (typ, n) => Dienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => Dienst.konfigurationKonflikt(art, aktuell),
     });
     this.typpakete = new TypPakete(this.kern, this.rechtepruefung, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
@@ -749,16 +748,9 @@ export class Dienst {
 
   /* ---------- Berechtigungen in der Werkbank (#123, #125, berechtigungen/berechtigungen.dienst.ts) ---------- */
 
-  berechtigungenListe() { return this.berechtigungen.berechtigungenListe(); }
-  niemandLesbar(typ: Mappentyp, rw: Regelwerk): Promise<number> { return this.berechtigungen.niemandLesbar(typ, rw); }
-  setzeBerechtigungen(typId: string, eingabe: unknown, bestaetigt: boolean): Promise<{ typ: Mappentyp; niemand: number }> { return this.berechtigungen.setzeBerechtigungen(typId, eingabe, bestaetigt); }
 
   private static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) { BerechtigungenDienst.protokolliereBerechtigungen(typ, niemand); }
 
-  private berechtigungenAusEingabe(typ: Mappentyp, eingabe: unknown): Promise<{ rw: Regelwerk; niemand: number } | null> { return this.berechtigungen.berechtigungenAusEingabe(typ, eingabe); }
-  kopiereRegel(typId: string, regelId: string, ziele: unknown): Promise<{ kopiert: number; ausgelassen: number }> { return this.berechtigungen.kopiereRegel(typId, regelId, ziele); }
-  testlauf(e: { mappeId?: unknown; benutzerId?: unknown; berechtigungen?: unknown }) { return this.berechtigungen.testlauf(e); }
-  laufwerkMappe(id: string, z: Zugriff) { return this.berechtigungen.laufwerkMappe(id, z); }
 
   /* ---------- Sichten verwalten (#38, sichten/verwalten.ts) ---------- */
 

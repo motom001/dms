@@ -208,7 +208,7 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
     // In der Post liegt, was verschickt wurde: das gestempelte Angaben-PDF.
     const post = await d.postTyp();
     const posts = (await d.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
-    const doks = (await d.laufwerkMappe(posts[0].id, z)).dokumente;
+    const doks = (await d.berechtigungen.laufwerkMappe(posts[0].id, z)).dokumente;
     const kopie = doks.find((x) => x.name === 'V-1.pdf')!;
     assert.ok((await seitentext(await alsPuffer((await d.dokumente.dokumentInhalt(kopie.id)).inhalt))).includes(hex('ENTWURF')));
   });

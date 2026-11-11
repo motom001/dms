@@ -287,7 +287,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('nur innerhalb der Rechte: ⛔ kein Löschrecht hält; nicht Lesbares hält, ohne verraten zu werden; fremder Start 404', async () => {
       const { d, anna, admin, m, typen, rufe } = await aufbau(pg);
       // Anna darf Rechnungen nicht löschen
-      await d.setzeBerechtigungen(typen.rechnung.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.rechnung.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
       const za = await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' });
       const v = await d.loeschVorschau(m.p.id, {}, za);
       assert.equal(kennzeichen(v, v.baum.knoten.find((x) => x.id === m.r1.id)!), 'ohneRecht');
@@ -297,9 +297,9 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(await d.mappen.holeMappe(m.r1.id));
 
       // Eine Mappe, die Anna nicht sehen darf, verweist auf V-2: V-2 bleibt
-      await d.setzeBerechtigungen(typen.rechnung.id, { grund: ALLES, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.rechnung.id, { grund: ALLES, regeln: [] }, true);
       const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{t}', felder: [{ key: 't', label: 'T', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: typen.vertrag.id }] });
-      await d.setzeBerechtigungen(geheim.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(geheim.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       await d.mappen.legeMappeAn({ typId: geheim.id, werte: { t: 'intern', vertrag: m.v2.id } }, admin.id);
       const v2 = await d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' }));
       assert.equal(v2.baum.verborgen, 1);
@@ -309,7 +309,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(new Set(p2.loeschen), new Set([m.r1.id]), 'V-2 hält V-1 (Kreis) und den Partner');
 
       // Start nicht lesbar: 404
-      await d.setzeBerechtigungen(typen.partner.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
+      await d.berechtigungen.setzeBerechtigungen(typen.partner.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       await assert.rejects(d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' })), status(404));
     });
 

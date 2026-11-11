@@ -156,7 +156,7 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
   it('ohne Löschrecht an der Post nur zugeordnet, mit Hinweis; ohne Schreibrecht an der Ziel-Mappe gar nicht (403)', async () => {
     const { d, lena, jonas, rechnung, postTyp, rufe } = await mitKonten();
     const alt = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'A-1' } }, lena.id);
-    await d.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
     const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id);
     const r = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: alt.id, aufloesen: true } })).body as { aufgeloest: boolean; hinweis?: string };
@@ -164,7 +164,7 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
     assert.match(r.hinweis ?? '', /kein Recht zum Löschen/);
     assert.equal((await d.mappen.holeMappe(post.id)).mappe.werte.stand, POST_STAND.zugeordnet);
     // Schreibrecht an der Ziel-Mappe fehlt: wie beim Zuordnen.
-    await d.setzeBerechtigungen(rechnung.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
     const zweite = await d.legePostAn({ betreff: 'Noch einer' }, { id: lena.id, name: 'Lena' });
     await assert.rejects(rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: zweite.id }, body: { ziel: alt.id, aufloesen: true } }), status(403));
   });
@@ -184,11 +184,11 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
     const post = await d.legePostAn({ betreff: 'Sammelbrief' }, { id: lena.id, name: 'Lena' });
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id);
     const b = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, PDF('b'), lena.id)).dokument;
-    await d.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true }, regeln: [] } as Regelwerk, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true }, regeln: [] } as Regelwerk, true);
     await assert.rejects(rufe(jonas, 'POST', '/api/mappen/:id/abtrennen', { params: { id: post.id }, body: { dokumente: [b.id] } }), status(403, /Post anlegen/));
-    await d.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true } , regeln: [] } as Regelwerk, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true } , regeln: [] } as Regelwerk, true);
     await assert.rejects(rufe(jonas, 'POST', '/api/mappen/:id/abtrennen', { params: { id: post.id }, body: { dokumente: [b.id] } }), status(403));
-    await d.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
     const ok = (await rufe(jonas, 'POST', '/api/mappen/:id/abtrennen', { params: { id: post.id }, body: { dokumente: [b.id] } })).body as { neu: { id: string } };
     assert.ok(ok.neu.id);
     // Versendete E-Mail: bleibt, wie sie verschickt wurde.
@@ -249,7 +249,7 @@ describe('Dokument übernehmen: Abgleich für Dokumente (#934)', () => {
     assert.ok([rechnung.id, beleg.id].includes(r.typ!.typId));
     assert.match(r.typ!.fundstelle, /Rechnung/);
     // Jonas darf weder Rechnungen noch Belege anlegen – dann schlägt Ablago keinen der beiden vor.
-    for (const x of [rechnung.id, beleg.id]) await d.setzeBerechtigungen(x, { grund: { ...NICHTS, R: true, U: true }, regeln: [] } as Regelwerk, true);
+    for (const x of [rechnung.id, beleg.id]) await d.berechtigungen.setzeBerechtigungen(x, { grund: { ...NICHTS, R: true, U: true }, regeln: [] } as Regelwerk, true);
     const j = (await rufe(jonas, 'POST', '/api/abgleich', { body: { dokumente: [dok.id] } })).body as { typ: unknown };
     assert.equal(j.typ, null, '„Ihr Vertrag …“ mitten in der Zeile ist keine Überschrift');
   });
@@ -257,7 +257,7 @@ describe('Dokument übernehmen: Abgleich für Dokumente (#934)', () => {
   it('nur Dokumente, die man lesen darf (sonst 403), unbekannte 404; höchstens 10', async () => {
     const { d, jonas, rufe, post, dok } = await abgleichAufbau();
     const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
-    await d.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
+    await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
     await assert.rejects(rufe(jonas, 'POST', '/api/abgleich', { body: { dokumente: [dok.id] } }), (e) => e instanceof Fachfehler && (e.status === 403 || e.status === 404));
     await assert.rejects(rufe(jonas, 'POST', '/api/abgleich', { body: { dokumente: ['00000000-0000-4000-8000-00000000dead'] } }), status(404));
     assert.ok(post.id);

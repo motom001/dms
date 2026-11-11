@@ -149,7 +149,7 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'privat', label: 'Privat', typ: 'janein' },
     ] });
-    await d.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
+    await d.berechtigungen.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
       { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: true },
     ] }, true);
     const strom = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom', privat: false } }, admin.id);
