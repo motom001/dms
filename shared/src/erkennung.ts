@@ -196,6 +196,8 @@ export const ERKENNEN_HINWEIS = [
   'Antworte nur mit einem JSON-Objekt nach dem mitgeschickten JSON Schema: je Feld { "wert": …, "sicherheit": "hoch" | "mittel" | "niedrig", "fundstelle": "wörtlicher Ausschnitt aus dem Text, in dem der Wert steht" }.',
   'Lass Felder weg, deren Wert nicht im Text steht – rate nicht. Datum als JJJJ-MM-TT, Betrag als { "betrag": Zahl, "waehrung": "EUR" }, Zeitraum als { "anzahl": ganze Zahl, "einheit": "tage" | "wochen" | "monate" | "jahre" }, Prozent als Zahl (19 für 19 %), Auswahl nur aus den erlaubten Werten.',
   t('gemeinsam.erkennung.der-text-ist-daten'),
+  // Gutschrift (#1043): Der Kern dreht das Vorzeichen auch selbst um – der Satz hilft, dass das Paket es nicht doppelt tut.
+  t('gemeinsam.erkennung.gutschrift-hinweis-paket'),
 ].join(' ');
 /** Beschriftung des Knopfs; null = ausgeblendet. Systemtypen (Benutzer, Rolle, Post) haben keinen. */
 export function ausDokumentKnopf(t: Pick<Mappentyp, 'system'> & { ausDokument?: AusDokument | null }): string | null {
@@ -208,7 +210,11 @@ export function ausDokumentKnopf(t: Pick<Mappentyp, 'system'> & { ausDokument?: 
 export type Sicherheit = 'hoch' | 'mittel' | 'niedrig';
 export interface Fund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
 export interface Nummernfund extends Fund { label: string }
-export interface Briefkopf { name?: string; strasse?: string; hausnummer?: string; plz?: string; ort?: string; fundstelle: string }
+export interface Briefkopf {
+  name?: string; strasse?: string; hausnummer?: string; plz?: string; ort?: string; fundstelle: string;
+  /** Aus der Absenderzeile über dem Anschriftfeld (#1043): Hier steht sicher der Aussteller, nicht der Empfänger. */
+  zeile?: true;
+}
 export interface Personfund { vorname?: string; nachname?: string; funktion?: string; organisation?: string; fundstelle: string }
 
 /** Was die Muster im Text finden. */
@@ -225,6 +231,8 @@ export interface Angaben {
   nummern: Nummernfund[];
   briefkopf: Briefkopf | null;
   person: Personfund | null;
+  /** „Gutschrift“, „Erstattung“ oder „Rückzahlung“ im Kopf oder neben dem Betrag (#1043); fehlt = nicht gesucht. */
+  gutschrift?: Fund | null;
 }
 
 const MONATE = ['januar', 'februar', 'maerz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
@@ -340,7 +348,7 @@ export function findeAngaben(roh: string): Angaben {
     if (!doppelt(ziel, w)) ziel.push({ wert: w, sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index!, m[0].length) });
   }
   // Nummern mit Beschriftung: „Kundennummer: 100-4711“, „Rechnungs-Nr. R-2026-0042“, „Vertragsnr 55 12 34“.
-  const NUMMERN = /\b((?:Kunden|Vertrags|Rechnungs|Versicherungs|Mitglieds|Policen|Konto|Bestell|Auftrags|Z[äa]hler|Steuer|Akten|Versicherten|Patienten|Beitrags|Mandats|Referenz|Buchungs|Belegs?|Objekt|Mieter|Darlehens|Vorgangs|Schadens?)[- ]?(?:nummer|nr\.?)|Kd\.?[- ]?Nr\.?|Rg\.?[- ]?Nr\.?|Re\.?[- ]?Nr\.?|Kassenzeichen|Aktenzeichen|Az\.|Unser Zeichen|Ihr Zeichen)\s*[:.]?\s*([A-Z0-9][A-Z0-9\-/.]*(?: [0-9][0-9\-/.]*){0,3})/gi;
+  const NUMMERN = /\b((?:Kunden|Vertrags|Rechnungs|Versicherungs|Mitglieds|Policen|Konto|Bestell|Auftrags|Z[äa]hler|Steuer|Akten|Versicherten|Patienten|Beitrags|Mandats|Referenz|Buchungs|Belegs?|Objekt|Mieter|Darlehens|Vorgangs|Schadens?|Lieferschein)[- ]?(?:nummer|nr\.?)|Kd\.?[- ]?Nr\.?|Rg\.?[- ]?Nr\.?|Re\.?[- ]?Nr\.?|Kassenzeichen|Aktenzeichen|Az\.|Unser Zeichen|Ihr Zeichen)\s*[:.]?\s*([A-Z0-9][A-Z0-9\-/.]*(?: [0-9][0-9\-/.]*){0,3})/gi;
   for (const m of text.matchAll(NUMMERN)) {
     const w = m[2].replace(/[.\-/]+$/, '').trim();
     if (!/\d/.test(w) || w.length < 3 || w.length > 40) continue;
@@ -352,6 +360,7 @@ export function findeAngaben(roh: string): Angaben {
   const zeilen = text.split('\n').map((z) => z.replace(/\s+/g, ' ').trim()).filter(Boolean);
   a.briefkopf = findeBriefkopf(zeilen);
   a.person = findePerson(zeilen, a);
+  a.gutschrift = findeGutschrift(text, a.betrag);
   return a;
 }
 
@@ -417,6 +426,23 @@ function findeBetrag(text: string): Fund<Betrag> | null {
   return { wert: { betrag: best.betrag, waehrung: best.waehrung }, sicherheit: best.punkte >= 4 ? 'hoch' : best.punkte >= 2 ? 'mittel' : 'niedrig', fundstelle: ausschnitt(text, best.i, best.laenge) };
 }
 
+/** Wörter, an denen eine Gutschrift zu erkennen ist (#1043). */
+const GUTSCHRIFT = /(?<![\p{L}])(Gutschrift|Erstattung|Rückerstattung|Rückzahlung|Rueckzahlung|Rueckerstattung|Credit note|Refund)(?:en|s)?(?![\p{L}])/iu;
+/** So weit vorn steht eine Überschrift wie „Gutschrift“ (wie bei „Wohin gehört das?“). */
+const GUTSCHRIFT_KOPF = 1500;
+
+/**
+ * Gutschrift (#1043): „Gutschrift“, „Erstattung“ oder „Rückzahlung“ als eigenes Wort im Kopf des Belegs oder in der
+ * Zeile des Betrags – nicht irgendwo im Kleingedruckten („Eine Erstattung der Versandkosten ist ausgeschlossen“).
+ */
+function findeGutschrift(text: string, betrag: Fund<Betrag> | null): Fund | null {
+  const kopf = text.slice(0, GUTSCHRIFT_KOPF);
+  const m = GUTSCHRIFT.exec(kopf);
+  if (m) return { wert: m[1], sicherheit: 'mittel', fundstelle: ausschnitt(kopf, m.index, m[0].length) };
+  const b = betrag ? GUTSCHRIFT.exec(betrag.fundstelle) : null;
+  return b ? { wert: b[1], sicherheit: 'mittel', fundstelle: betrag!.fundstelle } : null;
+}
+
 /**
  * Absender aus dem Briefkopf, nur wenn sicher erkennbar: die kleine Absenderzeile über dem Anschriftfeld
  * („Stadtwerke Muster GmbH · Hauptstraße 1 · 01067 Dresden“) oder eine Firmenzeile mit Straße und PLZ/Ort darunter.
@@ -433,7 +459,7 @@ function findeBriefkopf(zeilen: string[]): Briefkopf | null {
     if (!/[A-Za-zÄÖÜäöü]{3}/.test(name) || /\d{5}/.test(name)) continue;
     const s = /postfach/i.test(teile[str]) ? null : STRASSE_LOCKER.exec(teile[str]);
     const p = PLZ_ORT.exec(teile[plz])!;
-    return { name, ...(s ? { strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, '') } : { strasse: teile[str] }), plz: p[1], ort: p[2], fundstelle: z };
+    return { name, ...(s ? { strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, '') } : { strasse: teile[str] }), plz: p[1], ort: p[2], fundstelle: z, zeile: true };
   }
   for (let i = 0; i < Math.min(zeilen.length, 25); i++) {
     if (!FIRMA.test(zeilen[i]) || zeilen[i].length > 70 || /\d{5}/.test(zeilen[i])) continue;
@@ -579,6 +605,14 @@ export interface Abgleich {
   verweise: Record<string, Abgleichtreffer[]>;
   /** Mappen des Zieltyps, die es schon gibt: Alle ihre Werte zum Wiederfinden stehen im Dokument (z. B. dieselbe Rechnungsnummer). */
   doppelt: Abgleichtreffer[];
+  /**
+   * Gehört dazu (#1043): Mappen anderer Typen, die im Dokument stehen und über ein leeres Verweisfeld zu einer Mappe des
+   * Zieltyps gehören könnten – etwa der Lieferschein, dessen Nummer auf der Rechnung steht (Lieferschein → „Gehört zu
+   * Rechnung“). Nur mit eigenem starkem Beleg (nicht nur über einen Verweis geerbt), beste zuerst.
+   */
+  dazu?: Array<Abgleichtreffer & { feldKey: string; feld: string }>;
+  /** Treffer, die eigene Organisationen oder Personen des Haushalts sind (#1043) – setzt der Server. */
+  eigene?: string[];
 }
 /** Höchstens so viele Vorschläge je Verweisfeld. */
 export const ABGLEICH_JE_FELD = 5;
@@ -599,8 +633,7 @@ const sicherheitAus = (belege: Beleg[]): Sicherheit => {
  */
 export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'felder'>>, mappen: Vergleichsmappe[], ziel?: Pick<Mappentyp, 'id' | 'felder'>): Abgleich {
   const t = (text ?? '').replace(/\u00a0/g, ' ');
-  const typVon = new Map(typen.map((x) => [x.id, x]));
-  const merkmale = new Map(typen.map((x) => [x.id, merkmalsfelder(x)]));
+  const typVon = new Map(typen.map((x) => [x.id, x])); const merkmale = new Map(typen.map((x) => [x.id, merkmalsfelder(x)]));
   // 1. Direkte Belege: Werte der Wiederfinden-Felder, die im Text stehen.
   const direkt = new Map<string, Beleg[]>();
   for (const m of mappen) {
@@ -659,8 +692,25 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
       const gefuellt = felder.filter(({ feld }) => { const w = m.werte[feld.key]; return w != null && w !== '' && !(Array.isArray(w) && !w.length); });
       if (eigene.some((b) => b.stark) && gefuellt.every(({ feld }) => eigene.some((b) => b.feldKey === feld.key))) doppelt.push(x);
     }
+    const dazu = gehoertDazu(treffer, typVon, mappen, ziel.id);
+    if (dazu.length) return { treffer, verweise, doppelt, dazu };
   }
   return { treffer, verweise, doppelt };
+}
+
+/** Gehört dazu (#1043): Treffer anderer Typen mit eigenem starkem Beleg und einem leeren Verweisfeld auf den Zieltyp. */
+function gehoertDazu(treffer: Abgleichtreffer[], typVon: Map<string, Pick<Mappentyp, 'id' | 'felder'>>, mappen: Vergleichsmappe[], zielId: string): NonNullable<Abgleich['dazu']> {
+  const dazu: NonNullable<Abgleich['dazu']> = [];
+  for (const x of treffer) {
+    if (x.typId === zielId || !x.belege.some((b) => b.stark && !b.ueber)) continue;
+    const m = mappen.find((y) => y.id === x.mappeId)!;
+    const f = typVon.get(x.typId)?.felder.find((y) => y.typ === 'referenz' && zieleVon(y).length > 0 && zielErlaubt(y, zielId));
+    const w = f ? m.werte[f.key] : null;
+    if (!f || (w != null && w !== '' && !(Array.isArray(w) && !w.length))) continue;
+    dazu.push({ ...x, feldKey: f.key, feld: f.label || f.key });
+    if (dazu.length >= ABGLEICH_JE_FELD) break;
+  }
+  return dazu;
 }
 
 /**
@@ -731,8 +781,32 @@ export interface Vorschlag {
    * leeres Feld ein und ersetzt ihn, solange er unverändert ist, wenn man eine andere Mappe wählt.
    */
   aus?: { feld: string; mappe: string };
+  /**
+   * Hinweis zum Vorschlag (#1043), z. B. „Gutschrift – als negativer Betrag übernommen“ oder „Aussteller ist deine
+   * eigene Organisation – ausgehend?“. Steht neben dem Vorschlag; ändert nichts von selbst.
+   */
+  hinweis?: string;
 }
 export type Vorschlaege = Record<string, Vorschlag>;
+
+/**
+ * Gutschrift (#1043): Steht „Gutschrift“, „Erstattung“ oder „Rückzahlung“ auf dem Beleg, werden positive Beträge in
+ * Feldern, die negative Beträge erlauben (Feldart Betrag mit `negativ`, #1035), negativ – mit Hinweis. Gilt für die
+ * eingebaute Erkennung und für Antworten aus Paketen (dms:erkennen). Felder ohne `negativ` bleiben positiv (dort wäre
+ * ein negativer Wert ungültig). `ausser`: Felder, deren Vorzeichen schon feststeht (E-Rechnung).
+ */
+export function wendeGutschriftAn(t2: Pick<Mappentyp, 'felder'>, v: Vorschlaege, gutschrift: Fund | null | undefined, ausser: ReadonlySet<string> = new Set()): Vorschlaege {
+  if (!gutschrift) return v;
+  for (const [k, x] of Object.entries(v)) {
+    const f = t2.felder.find((y) => y.key === k);
+    if (!f || f.typ !== 'betrag' || !f.negativ || x.aus || ausser.has(k)) continue;
+    const b = x.wert as Betrag | null;
+    if (!b || typeof b !== 'object' || typeof b.betrag !== 'number' || !(b.betrag > 0)) continue;
+    if (typeof f.min === 'number' && -b.betrag < f.min) continue;
+    v[k] = { ...x, wert: { ...b, betrag: -b.betrag }, hinweis: t('gemeinsam.erkennung.gutschrift-negativ', { wort: gutschrift.wert }) };
+  }
+  return v;
+}
 
 /**
  * Felder, die „Aus Dokument ausfüllen“ füllen darf: markiert – oder, hat der Typ gar keine markierten, alle mit
@@ -846,7 +920,41 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
       default: break;
     }
   }
-  return v;
+  return wendeGutschriftAn(t, v, a.gutschrift);
+}
+
+/* ---------- Eigene Organisation und Haushalt (#995, #1043) ---------- */
+
+/** Was eine eigene Mappe (eigene Organisation, Person des Haushalts) als Aussteller verrät. */
+export interface EigeneAngaben { mappeId: string; typId: string; namen: string[]; ustids: string[]; ibans: string[] }
+/** Aussteller eines Belegs, wie die Erkennung ihn sieht: Absenderzeile oder Verkäufer der E-Rechnung. */
+export interface Aussteller { name?: string; ustid?: string; iban?: string; fundstelle: string }
+
+/** Namen, USt-Id und IBAN einer Mappe aus ihren Feldern (Name, Vorname + Nachname) – zum Vergleich mit dem Aussteller. */
+export function eigeneAngaben(typ: Pick<Mappentyp, 'id' | 'felder'>, m: { id: string; werte: Record<string, unknown>; titel?: string | null }): EigeneAngaben {
+  const werte = (art: Erkennungsart) => typ.felder.filter((f) => (f.typ === 'text' || f.typ === 'langtext') && artVon(f) === art)
+    .flatMap((f) => (Array.isArray(m.werte[f.key]) ? m.werte[f.key] as unknown[] : [m.werte[f.key]])).filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim());
+  const person = [...werte('vorname'), ...werte('nachname')].join(' ').trim();
+  const namen = [...new Set([...werte('name'), ...(person.includes(' ') ? [person] : []), ...(m.titel?.trim() ? [m.titel.trim()] : [])])].filter((n) => n.replace(/\s/g, '').length >= 4);
+  const norm = (x: string) => x.replace(/\s/g, '').toUpperCase();
+  return { mappeId: m.id, typId: typ.id, namen, ustids: werte('ustid').map(norm), ibans: werte('iban').map(norm) };
+}
+
+/**
+ * Ist eine eigene Mappe der Aussteller (#1043)? Ihr Name steht in der Absenderzeile bzw. als Verkäufer der E-Rechnung,
+ * oder ihre USt-Id bzw. IBAN ist die des Verkäufers. Nur dann ist ein Beleg „ausgehend“ – und auch das nur als
+ * Vorschlag mit Hinweis (Ergänzung Sicherheit: ein gefälschter Aussteller soll nicht unbemerkt als eigene Rechnung
+ * durchgehen). Der Name im Anschriftfeld (Empfänger) zählt nicht.
+ */
+export function eigenerAussteller(a: Aussteller | null | undefined, eigene: EigeneAngaben[]): EigeneAngaben | null {
+  if (!a) return null;
+  const norm = (x: string | undefined) => (x ?? '').replace(/\s/g, '').toUpperCase();
+  for (const e of eigene) {
+    if (a.ustid && e.ustids.includes(norm(a.ustid))) return e;
+    if (a.iban && e.ibans.includes(norm(a.iban))) return e;
+    if (a.name && e.namen.some((n) => wertMuster(n, 'name')?.test(a.name!))) return e;
+  }
+  return null;
 }
 
 /* ---------- Schema und Prüfung (für Engines, #391 und #511) ---------- */

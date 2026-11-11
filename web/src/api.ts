@@ -46,17 +46,20 @@ export interface PostErkennung {
   zeit: string; dokumente: number;
   absender: Array<{ mappeId: string; typId: string; titel: string; stark: boolean; punkte: number; gruende: string[] }>;
   eindeutig: string | null;
-  angaben: { datum: ErkFund | null; betrag: ErkFund<{ betrag: number; waehrung: string }> | null; nummern: Array<ErkFund & { label: string }> };
+  /** gutschrift (#1043): „Gutschrift“, „Erstattung“ … auf dem Beleg. */
+  angaben: { datum: ErkFund | null; betrag: ErkFund<{ betrag: number; waehrung: string }> | null; nummern: Array<ErkFund & { label: string }>; gutschrift?: ErkFund };
   neuerAbsender: { typId: string; werte: Record<string, string>; fundstelle: string } | null;
   ziele: Array<{ mappeId: string; typId: string; titel: string; punkte: number; gruende: string[] }>;
   bezuege: Bezuege;
   /** Automatisch zugeordnet (#337). */
   auto?: { ziel: string; zeit: string; grund: string; rueckgaengig: boolean } | null;
+  /** Ausgehend? (#1043): Aussteller ist eine eigene Organisation bzw. Person des Haushalts – nur ein Hinweis. */
+  ausgehend?: { titel: string; fundstelle: string } | null;
 }
 
 /** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
 export interface TypVorschlaege {
-  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string; stelle?: Vorschlag['stelle']; aus?: Vorschlag['aus'] }>;
+  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string; stelle?: Vorschlag['stelle']; aus?: Vorschlag['aus']; hinweis?: string }>;
   bezuege: Bezuege;
   neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
   verworfen: number; zeichen: number;
@@ -65,6 +68,12 @@ export interface TypVorschlaege {
   hinweis?: string;
   /** Das Paket hat nur einen Teil des Dokumenttexts gelesen (#564). */
   gekuerzt?: true;
+  /** Aus einer E-Rechnung gelesen (#1043). */
+  erechnung?: { syntax: 'ubl' | 'cii'; gutschrift: boolean; profil?: string; nummer?: string };
+  /** Positionen der E-Rechnung (#1043): Mappen des Teiltyps, die beim Speichern angelegt werden. */
+  positionen?: { feld: string; typId: string; feldKey: string; zeilen: Array<Record<string, Wert>>; weitere?: number; vorhanden?: number; zurueckgehalten?: number };
+  /** Gehört dazu (#1043): vorhandene Mappen, die beim Speichern über ihr leeres Verweisfeld verknüpft werden. */
+  dazu?: Array<{ mappeId: string; typId: string; titel: string; feldKey: string; feld: string; gruende: string[] }>;
 }
 /** Erkennung per Paket (#511): Standard in der Werkbank und Pakete mit dms:erkennen. */
 export interface ErkennungStand { standard: { paket: string | null; abfluss?: boolean }; pakete: Array<{ id: string; name: string; netz: boolean; laeuft: boolean }> }
@@ -750,9 +759,10 @@ export const api = {
   postAbtrennen: (postId: string, dokumente: string[]) => anfrage<{ post: Mappe; neu: Mappe }>('POST', `/api/mappen/${postId}/abtrennen`, { dokumente }),
   wortpositionen: (id: string) => anfrage<{ quelle: 'original' | 'lesefassung'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }>('GET', `/api/dokumente/${id}/wortpositionen`),
   /** „Aus Dokument ausfüllen“ (#391): Vorschläge aus Text bzw. Dokumenten; aus einer Datei (Foto, PDF, vCard) mit dem gelesenen Text. */
-  vorschlaege: (typId: string, e: { text?: string; dokumente?: string[]; mappe?: string }) => anfrage<TypVorschlaege>('POST', `/api/typen/${typId}/vorschlaege`, e),
+  // positionen (#1043): Die Oberfläche fragt ausdrücklich nach Positionen einer E-Rechnung und entscheidet selbst, ob der Haken an ist.
+  vorschlaege: (typId: string, e: { text?: string; dokumente?: string[]; mappe?: string }) => anfrage<TypVorschlaege>('POST', `/api/typen/${typId}/vorschlaege`, { ...e, positionen: true }),
   vorschlaegeDatei: (typId: string, datei: Blob, name: string, mappe?: string) =>
-    sendeDatei(`/api/typen/${typId}/vorschlaege/datei?${new URLSearchParams({ name, typ: datei.type || 'application/octet-stream', ...(mappe ? { mappe } : {}) })}`, datei) as Promise<TypVorschlaege & { text: string; info: string }>,
+    sendeDatei(`/api/typen/${typId}/vorschlaege/datei?${new URLSearchParams({ name, typ: datei.type || 'application/octet-stream', ...(mappe ? { mappe } : {}), positionen: '1' })}`, datei) as Promise<TypVorschlaege & { text: string; info: string }>,
   /** Erkennung (#336): Vorschläge beim Zuordnen; neu = jetzt neu rechnen. */
   erkennung: (postId: string, neu = false) => anfrage<PostErkennung>(neu ? 'POST' : 'GET', `/api/mappen/${postId}/erkennung`),
   /** Mehrere Mappen per E-Mail (#151). */

@@ -142,6 +142,23 @@ describe('Aus Dokument ausfüllen per Paket (#511)', () => {
     assert.equal(String(x.eingaenge.at(-1)!.text).length, 50_000);
   });
 
+  it('Gutschrift (#1043) auch bei Antworten aus Paketen: positiver Betrag wird negativ, Hinweise nur vom Kern', async () => {
+    const x = await aufbau();
+    const beleg = await x.d.legeTypAn({ name: 'Beleg', felder: [
+      { key: 'betrag', label: 'Betrag', typ: 'betrag', negativ: true, erkennung: {} },
+      { key: 'skonto', label: 'Skonto', typ: 'betrag', erkennung: {} },
+    ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }] });
+    await x.d.erkennung.setzeStandard({ paket: 'ki' });
+    x.setzeAntwort(async () => JSON.stringify({ betrag: { wert: { betrag: 49.9, waehrung: 'EUR' }, hinweis: 'vom Paket' }, skonto: { wert: { betrag: 1, waehrung: 'EUR' } } }));
+    const r = await x.d.erkennung.fuerTyp(beleg.id, { text: 'Versandhaus Beispiel\nGutschrift Nr. 12\nGesamtbetrag 49,90 €' }, await x.d.zugriff({ id: (await x.konten.listeBenutzer())[0].id, rolle: 'admin' }));
+    assert.equal(r.engine.art, 'paket');
+    assert.deepEqual(r.vorschlaege.betrag.wert, { betrag: -49.9, waehrung: 'EUR' });
+    assert.match(r.vorschlaege.betrag.hinweis!, /Gutschrift/);
+    assert.deepEqual(r.vorschlaege.skonto.wert, { betrag: 1, waehrung: 'EUR' }, 'ohne negativ bleibt er positiv');
+    assert.equal(r.vorschlaege.skonto.hinweis, undefined, 'kein Hinweis aus dem Paket');
+    assert.match(String(x.eingaenge.at(-1)!.hinweis), /Gutschrift/);
+  });
+
   it('antwortet das Paket nicht oder unbrauchbar: eingebaute Erkennung mit Hinweis', async () => {
     const x = await aufbau();
     await x.d.erkennung.setzeStandard({ paket: 'ki' });

@@ -55,7 +55,8 @@ describe('Erkennung: Muster (#336)', () => {
     assert.equal(a.emails[0].wert, 'service@stadtwerke-musterstadt.example');
     assert.equal(a.internet[0].wert, 'www.stadtwerke-musterstadt.example');
     assert.equal(a.telefon[0].wert, '0351 123456-0');
-    assert.deepEqual({ ...a.briefkopf, fundstelle: undefined }, { name: 'Stadtwerke Musterstadt GmbH', strasse: 'Hauptstraße', hausnummer: '1', plz: '01067', ort: 'Musterstadt', fundstelle: undefined });
+    // zeile (#1043): aus der Absenderzeile – hier steht sicher der Aussteller.
+    assert.deepEqual({ ...a.briefkopf, fundstelle: undefined }, { name: 'Stadtwerke Musterstadt GmbH', strasse: 'Hauptstraße', hausnummer: '1', plz: '01067', ort: 'Musterstadt', fundstelle: undefined, zeile: true });
   });
 
   it('nimmt beim Datum das Briefdatum, nicht Zeitraum oder Fälligkeit; ohne Gesamtbetrag den größten Betrag mit Währung', () => {

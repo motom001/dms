@@ -148,6 +148,8 @@ As soon as a post's text is available (from text recognition, a PDF's text layer
 - **From:** the sender – an organisation (or branch, person) whose customer number, IBAN, email address, website, phone number or name appears in the letter – with a reason, e.g. "found: customer number 100-4711". **Enter under “From”** writes the name into the post's field *From*. If none matches but the letterhead can be recognised reliably (e.g. the small sender line above the address field), it shows **Create as new organisation** – with name and address prefilled.
 - **Date** of the letter (not the service period or due date) – **Enter as date of the post** takes it over.
 - **Amount** (the total amount) and **numbers** such as customer, invoice or contract number.
+- **Outgoing?** If your own organisation or someone in your household is in the sender line, it is probably your own post. Ablago only says so – you change the direction of the post yourself, and Ablago never assigns such post automatically. Ablago never suggests your own organisation as the sender, even if it is in the address field.
+- **Credit note:** if "Gutschrift", "Erstattung" or "Rückzahlung" (credit note, refund, repayment) is on the document, the amount arrives in the new folder with a minus sign – where the field allows negative amounts.
 
 What Ablago uses to recognise senders and other folders is set by the folder type: fields where an administrator has set "Use to find existing folders" (the packages *Basis* & co. come with this). If you have just created an organisation or added a customer number, click **Recognise again** in the box. Only folders you may see are suggested.
 

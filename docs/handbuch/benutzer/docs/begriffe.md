@@ -62,7 +62,7 @@ Eine Datei, die in Ablago in einem Dokumentenregister einer Mappe liegt. Hochgel
 Siehe auch: [Version](#version).
 
 <a id="eigene-organisation"></a>**Eigene Organisation** · ✓ Alltagswort · Administratoren  
-Die Organisation in der Ablage, die „wir“ sind – der eigene Betrieb, die eigene Firma oder das Gewerbe. Gekennzeichnet über das Feld „Eigene Organisation“ (Paket Basis); setzen darf es nur, wer die eigene Organisation verwaltet. Name, Anschrift, Kontakt, Verantwortlicher und Datenschutzbeauftragter werden dort einmal gepflegt und von Auskünften und Löschkonzept genutzt; die Erkennung nimmt sie nie als Absender. Mehrere sind möglich.  
+Die Organisation in der Ablage, die „wir“ sind – der eigene Betrieb, die eigene Firma oder das Gewerbe. Gekennzeichnet über das Feld „Eigene Organisation“ (Paket Basis); setzen darf es nur, wer die eigene Organisation verwaltet. Name, Anschrift, Kontakt, Verantwortlicher und Datenschutzbeauftragter werden dort einmal gepflegt und von Auskünften und Löschkonzept genutzt; die Erkennung nimmt sie nie als Absender („von“); steht sie als Aussteller drin, schlägt sie „ausgehend“ nur mit Hinweis vor (#1043). Mehrere sind möglich.  
 Siehe auch: [Beruflich genutzt](#beruflich-genutzt).
 
 <a id="eindeutig"></a>**Eindeutig** · ~ mit Erklärung · Administratoren  
@@ -217,6 +217,10 @@ Siehe auch: [Zu erledigen](#zu-erledigen), [Frist](#frist), [Erinnerung](#erinne
 <a id="brief-aus-vorlage"></a>**Brief aus Vorlage** · ✓ Alltagswort · alle  
 Aus einer Vorlage und den Angaben einer Mappe entsteht ein Brief als PDF (Mappe ▾ → Brief aus Vorlage …) – mit Briefkopf, Anschrift, Datum und Betreff, etwa eine Kündigung zum Vertrag. Eingesetzt wird nur, was die Person sehen darf, nie Passwörter; fehlt etwas, steht eine sichtbare Lücke wie [Vertragsnummer] im Brief. Ablegen als Dokument oder herunterladen.  
 Siehe auch: [Vorlage](#vorlage), [Eigene Organisation](#eigene-organisation).
+
+<a id="e-rechnung"></a>**E-Rechnung** · ~ mit Erklärung · alle  
+Rechnung als strukturierte Daten (XML) nach EN 16931 – XRechnung (UBL oder CII, als eigene XML-Datei) oder ZUGFeRD/Factur-X (die XML steckt im PDF). „Aus Dokument ausfüllen“ übernimmt Angaben und Positionen direkt aus den Daten; das Original bleibt unverändert.  
+Siehe auch: [Archivfassung](#archivfassung).
 
 <a id="erinnerung"></a>**Erinnerung** · ✓ Alltagswort · alle  
 Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern).
@@ -655,6 +659,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Design | Theme | – |
 | Dienstkonto | Systembenutzer, Bot, technischer Benutzer | `benutzer.art = 'dienst'` |
 | Dokument | – | `Dokument` |
+| E-Rechnung | – | `erechnung` |
 | Eigene Organisation | Mandant, Betrieb und Verantwortliche, Impressum | `merkmal eigeneOrganisation` |
 | Erinnerung | – | `Erinnerung` |
 | Erweiterte Suche | – | `Suchformular` |

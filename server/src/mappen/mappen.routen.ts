@@ -62,8 +62,9 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       if (!Buffer.isBuffer(a.body) || !a.body.length) throw new Fachfehler(422, t('meldungen.routen.die-datei-ist-leer'));
       // Erst Zugriff prüfen, dann die (teure) Texterkennung.
       await dienst.erkennung.fuerTyp(a.params.id, { mappe: a.query.mappe }, z);
-      const { text, info } = await dienst.textAusDatei(a.body, String(a.query.name ?? ''), String(a.query.typ ?? ''));
-      return ok({ ...(await dienst.erkennung.fuerTyp(a.params.id, { text, mappe: a.query.mappe }, z)), text: text.slice(0, 200_000), info });
+      // E-Rechnung (#1043): XML direkt, im PDF aus dem Anhang – ihre Angaben gehen vor.
+      const { text, info, erechnung } = await dienst.erkennung.dateiLesen(a.body, String(a.query.name ?? ''), String(a.query.typ ?? ''));
+      return ok({ ...(await dienst.erkennung.fuerTyp(a.params.id, { text, mappe: a.query.mappe, positionen: a.query.positionen === '1' || a.query.positionen === 'true' }, z, { erechnung })), text: text.slice(0, 200_000), info });
     } },
     { methode: 'GET', pfad: '/api/typen/:id/erkennungsschema', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.schema(a.params.id, await zg(a))) },
     // Erkennung (#336): Vorschläge beim Zuordnen; POST rechnet neu (z. B. nach dem Anlegen einer Organisation).

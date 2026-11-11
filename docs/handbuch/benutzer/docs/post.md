@@ -148,6 +148,8 @@ Sobald der Text einer Post da ist (aus der Texterkennung, der Textebene eines PD
 - **Von:** der Absender – eine Organisation (oder Niederlassung, Person), deren Kundennummer, IBAN, E-Mail-Adresse, Internetseite, Telefonnummer oder Name im Brief steht – mit Begründung, z. B. „gefunden: Kundennummer 100-4711“. **Bei „Von“ eintragen** schreibt den Namen ins Feld *Von* der Post. Passt keine, aber der Briefkopf ist sicher erkennbar (z. B. die kleine Absenderzeile über dem Anschriftfeld), steht dort **Als neue Organisation anlegen** – mit Name und Anschrift vorbelegt.
 - **Datum** des Schreibens (nicht Leistungszeitraum oder Fälligkeit) – **Als Datum der Post eintragen** übernimmt es.
 - **Betrag** (der Gesamtbetrag) und **Nummern** wie Kunden-, Rechnungs- oder Vertragsnummer.
+- **Ausgehend?** Steht deine eigene Organisation oder jemand aus deinem Haushalt in der Absenderzeile, ist es wohl eigene Post. Ablago sagt das nur – die Richtung der Post änderst du selbst, und solche Post ordnet Ablago nie automatisch zu. Als Absender schlägt Ablago deine eigene Organisation nie vor, auch wenn sie im Anschriftfeld steht.
+- **Gutschrift:** Steht „Gutschrift“, „Erstattung“ oder „Rückzahlung“ auf dem Beleg, kommt der Betrag in der neuen Mappe mit Minus an – wo das Feld negative Beträge erlaubt.
 
 Woran Ablago Absender und andere Mappen wiedererkennt, legt der Mappentyp fest: Felder, an denen ein Administrator „Zum Wiederfinden nutzen“ eingestellt hat (die Pakete *Basis* & Co. bringen das mit). Hast du gerade eine Organisation angelegt oder eine Kundennummer nachgetragen, klick im Kasten auf **Neu erkennen**. Vorgeschlagen werden nur Mappen, die du sehen darfst.
 
