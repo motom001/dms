@@ -117,7 +117,9 @@ With permissions you decide **who sees a view**, **who can create new folders th
     With the read permission, users look at folders and documents **in Ablago** – including PDFs and images in the browser. Downloading, sharing, sending, exporting and the drive additionally need **E**. All these ways are checked by the same place; they can't drift apart. Saving while viewing can never be prevented entirely, though: a browser can save or print a displayed page, and a screenshot always works. E doesn't make taking things along impossible, but it doesn't make it easy either.
 
 !!! info "View rules govern the view, not the folders"
-    Whether someone may read a **folder** is decided solely by the [permissions on the folder type](berechtigungen.md). A folder from a hidden view can therefore still turn up via the search, another view or a link. Whoever wants to hide folders does so on the folder type. The rules on views don't apply to administrators.
+    Whether someone may read a **folder** is decided solely by the [permissions on the folder type](berechtigungen.md). A folder from a hidden view can therefore still turn up via the search, another view or a link. If someone opens it via a link or a mention, the list next to it is the list of the folder type – headed **All folders: <folder type>**, never with the name, conditions or export of the hidden view. Whoever wants to hide folders does so on the folder type. The rules on views don't apply to administrators.
+
+- **No reload needed:** When you end administration mode, the tree immediately shows what you see without it. When you change views, the others see the new state after a few seconds without reloading the page.
 
 - **Default** – on a top-level view, one row with ✓/✗ per permission; without rules everyone may do everything.
 - **Rules** – as on the folder type: *if* the user has a role or is a specific user (each also with *not*), *then* ✓ grant or ✗ withdraw; from top to bottom, with **Stop**. Conditions on fields don't exist on views. Rules can be collapsed and sorted by the handle ⠿.

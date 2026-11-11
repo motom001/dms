@@ -19,6 +19,8 @@ In formatierten Texten und Notizen erwähnst du mit **@** einen Benutzer: Tippe 
 - Speicherst du den Text noch einmal, entsteht keine zweite Aufgabe.
 - Nimmst du die Erwähnung wieder heraus, bleibt die Aufgabe offen; in der Historie steht, dass sie entfernt wurde.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe.
+- Darfst du einen erwähnten Benutzer nicht sehen, steht dort **@Benutzer (nicht sichtbar)** – ohne Namen und ohne Link. **Gelöschter Benutzer** bzw. der graue Name mit dem Hinweis „Diesen Benutzer gibt es nicht mehr“ erscheint nur, wenn es ihn wirklich nicht mehr gibt.
+- Öffnest du einen erwähnten Benutzer, steht daneben die Liste **Alle Mappen: Benutzer** – die Liste des Mappentyps, nicht eine Ansicht.
 
 ## Historie
 

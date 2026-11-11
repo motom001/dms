@@ -17,6 +17,7 @@ import type { GemerktesPasswort, PdfSchutz } from '../../shared/src/entsperren';
 import type { UebersetzenAngebot, UebersetzenEinstellung, Uebersetzt, Uebersetzungsquelle } from '../../shared/src/uebersetzung';
 import type { Verweiskonflikt, Abwesenheit, Aufgabe, Ausschnitt, FallOhneLeserecht, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Wert, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
+import type { Sichtbarkeit } from '../../shared/src/sichtbarkeit';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { AblaufEingabe, AblaufErgebnis, AblaufInstallation, AblaufPlan, Ergaenzung, HerkunftPruefung, InstalliertesPaket, Katalog, KiUebersicht, LaeuferZustand, RechtePunkt } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
@@ -633,6 +634,8 @@ export const api = {
   passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
 
   personen: () => anfrage<Person[]>('GET', '/api/personen'),
+  /** Sichtbarkeit verwiesener Mappen (#888): je Id sichtbar, verborgen oder gelöscht – ohne Titel. */
+  sichtbarkeit: (ids: string[]) => anfrage<Record<string, Sichtbarkeit>>('POST', '/api/mappen/sichtbarkeit', { ids }),
   /* Abwesenheit mit Vertreter (#78) */
   abwesenheit: () => anfrage<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number }>('GET', '/api/konto/abwesenheit'),
   abwesenheitSetzen: (a: Abwesenheit) => anfrage<Benutzer>('PUT', '/api/konto/abwesenheit', a),

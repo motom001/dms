@@ -8,6 +8,7 @@ import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
 import { ALLES, FALSCH, hatKontoRegeln, kontoRegelwerk, lesefilter, mitSichtbarenTypen, NICHTS, nutztZieltypRegeln, oder, rechteAn as rechteAnMappe, wirksamVon, type Ausdruck, type Lesefilter, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../../shared/src/rechte';
 import { heuteIn, type Aufloesung } from '../../../shared/src/sichten';
+import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../../shared/src/sichtbarkeit';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import { jeAnfrage } from '../lesespeicher';
@@ -247,6 +248,19 @@ export class ZugriffDienst {
   async lesbare(z: Zugriff | undefined, ids: string[]): Promise<Set<string>> {
     if (!z || !z.lesen) return new Set(ids);
     return rechteMessen(() => this.repo.lesbare(ids, z.lesen!));
+  }
+
+  /**
+   * Sichtbarkeit verwiesener Mappen (#888, für #889): je Id sichtbar, verborgen (gibt es, nicht lesbar) oder gelöscht
+   * (gibt es nicht oder liegt im Papierkorb). Nur gültige Ids, höchstens SICHTBARKEIT_MAX; Titel und Typ gehen nicht
+   * hinaus. Im Verwaltungsmodus ist alles Vorhandene sichtbar.
+   */
+  async sichtbarkeit(z: Zugriff | undefined, roh: unknown): Promise<Record<string, Sichtbarkeit>> {
+    const ids = [...new Set((Array.isArray(roh) ? roh : []).filter(istUuid).map((id) => id.toLowerCase()))].slice(0, SICHTBARKEIT_MAX);
+    if (!ids.length) return {};
+    const vorhanden = [...(await this.repo.typenVon(ids)).keys()];
+    const lesbar = await this.lesbare(z, vorhanden);
+    return Object.fromEntries(ids.map((id) => [id, lesbar.has(id) ? 'sichtbar' : vorhanden.includes(id) ? 'verborgen' : 'geloescht']));
   }
 
   /** Titel nicht lesbarer Mappen ausblenden (#124). */

@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- Ansichten und Verwaltungsmodus: Nach dem Beenden (oder Beginnen) des Verwaltungsmodus zeigt der Baum der Ablage sofort den passenden Stand, und Änderungen an Ansichten – auch aus einer anderen Sitzung – erscheinen nach wenigen Sekunden, ohne die Seite neu zu laden. Erwähnungen und Namen von Benutzern, die man nicht sehen darf, heißen jetzt „Benutzer (nicht sichtbar)“ ohne Namen; „Diesen Benutzer gibt es nicht mehr“ nur noch, wenn er wirklich gelöscht ist. Die Liste neben einer Mappe, die man über eine Erwähnung oder einen Verweis öffnet, heißt „Alle Mappen: <Mappentyp>“ und ist klar die Liste des Mappentyps, nicht eine (vielleicht gesperrte) Ansicht. (#888)

@@ -166,6 +166,20 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
     assert.equal(admins.koepfe?.['x-dms-ausgelassen'], '0');
     assert.match(admins.inhalt.toString('utf8'), /V-1/);
   });
+  it('Liste des Mappentyps bei verborgener Ansicht mit gleicher Id: Regel A statt Ansicht (#888)', async () => {
+    const { d, admin, anna, vertrag, sicht, exportiere } = await aufbau();
+    await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, name: 'Gesperrte Verträge', berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'r', name: 'verbergen', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } });
+    // Ohne andere Ansicht mit E: wie jede Liste ohne Ansicht abgelehnt (403) – nicht „Ansicht gibt es nicht“.
+    await assert.rejects(exportiere(anna, { format: 'csv' }), status(403));
+    // Mit einer anderen sichtbaren Ansicht samt E: Export der Typ-Liste, ohne Namen der gesperrten Ansicht.
+    await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Verträge', typen: [vertrag.id] });
+    const r = await exportiere(anna, { format: 'csv' });
+    assert.equal(r.koepfe?.['x-dms-ausgelassen'], '0');
+    assert.match(r.inhalt.toString('utf8'), /V-1/);
+    assert.match(r.name, /^Vertrag /);
+    // Administratoren exportieren die Ansicht selbst.
+    assert.match((await exportiere(admin, { format: 'csv' })).name, /^Gesperrte Verträge /);
+  });
   it('„Als PDF exportieren“ an der Mappe nur mit Exportrecht', async () => {
     const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
     const darf = async (b: { id: string }, id: string) => ((await rufe(b, 'GET', '/api/mappen/:id', { params: { id } })) as { body: { exportierbar: boolean } }).body.exportierbar;

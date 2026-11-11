@@ -68,11 +68,14 @@ export class AusgangExport {
     if (!['csv', 'xlsx', 'zip', 'pdf'].includes(format)) throw new Fachfehler(422, t('meldungen.dienst.unbekanntes-format'));
     const q = { sicht: text(x.sicht), link: x.link, suche: x.suche, volltext: x.volltext, notizen: x.notizen, sortierung: x.sortierung, absteigend: x.absteigend };
     const alle = await this.repo.listeSichten();
-    const sicht = alle.find((s) => s.id === q.sicht);
+    let sicht = alle.find((s) => s.id === q.sicht);
     if (sicht && !z.admin) {
       const r = alleSichtRechte(alle, z.wer, false).get(sicht.id);
-      if (!r?.R) throw new Fachfehler(404, t('meldungen.dienst.diese-ansicht-gibt-es'));
-      if (!r.E) throw sichtVerboten();
+      // Verborgene Ansicht mit der Id ihres Mappentyps (#888): Die Ablage zeigt dort die Liste des Mappentyps – also
+      // auch hier ohne die Ansicht (kein Name, keine Trefferliste, kein E der Ansicht), sondern nach Regel A unten.
+      if (!r?.R && z.typen.has(sicht.id)) sicht = undefined;
+      else if (!r?.R) throw new Fachfehler(404, t('meldungen.dienst.diese-ansicht-gibt-es'));
+      else if (!r.E) throw sichtVerboten();
     }
     const treffer = (await this.trefferIds(ich, q, z)).ids;
     const gewaehlt = Array.isArray(x.ids) ? new Set(x.ids.map(String)) : null;

@@ -214,6 +214,32 @@ describe('Benutzerauswahl nur mit sichtbaren Benutzern (#137)', () => {
     // Eigene Mappe sieht der API-Benutzer weiter
     assert.equal(((await rufe(api, 'GET', '/api/mappen/:id', { params: { id: api.id } })).body as { rechte: { R: boolean } }).rechte.R, true);
   });
+
+  it('Sichtbarkeit verwiesener Mappen: nicht sichtbar ≠ gelöscht, ohne Titel (#888)', async () => {
+    const { d, konten, admin, max, api, fibu, R, benutzerTyp, rechnung, rufe } = await aufbau();
+    await d.berechtigungen.setzeBerechtigungen(benutzerTyp.id, { grund: ALLES, regeln: [
+      { id: 'api', name: 'API-Benutzer ausblenden', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'rollen', op: 'zeigtAuf', wert: { art: 'fest', wert: [R.api] } } }, { art: 'eigeneMappe', nicht: true }], dann: { R: 'entziehen' }, stopp: true },
+    ] }, true);
+    // Fibu liegt im Papierkorb: zählt als gelöscht, auch wenn das Konto (deaktiviert) noch besteht.
+    await d.papierkorbVerwaltung.setzePapierkorbTage(30);
+    await konten.loescheBenutzer(admin, fibu.id);
+    assert.ok((await konten.listeBenutzer()).some((b) => b.id === fibu.id && !b.aktiv), 'Konto bleibt bis zum Leeren des Papierkorbs');
+    const weg = '00000000-0000-4000-8000-000000000888';
+    const frage = async (b: { id: string }, ids: unknown) => (await rufe(b, 'POST', '/api/mappen/sichtbarkeit', { body: { ids } })).body as Record<string, string>;
+    assert.deepEqual(await frage(max, [max.id, api.id, weg, fibu.id.toUpperCase()]), { [max.id]: 'sichtbar', [api.id]: 'verborgen', [weg]: 'geloescht', [fibu.id]: 'geloescht' });
+    // Nur Ids, keine Titel oder Mappentypen; Unsinn fällt weg.
+    assert.deepEqual(await frage(max, ['kein-uuid', 7, null]), {});
+    assert.deepEqual(await frage(max, 'nicht-liste'), {});
+    // Gleich für jede Mappe (#889): eine nicht lesbare Rechnung ist verborgen, keine gelöschte.
+    await d.berechtigungen.setzeBerechtigungen(rechnung.id, { grund: NICHTS, regeln: [] }, true);
+    const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-888' } }, admin.id);
+    assert.deepEqual(await frage(max, [m.id]), { [m.id]: 'verborgen' });
+    // Im Verwaltungsmodus ist alles Vorhandene sichtbar.
+    assert.deepEqual(await frage(admin, [api.id, m.id, weg]), { [api.id]: 'sichtbar', [m.id]: 'sichtbar', [weg]: 'geloescht' });
+    // Höchstens SICHTBARKEIT_MAX Ids je Anfrage.
+    const viele = Array.from({ length: 250 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`);
+    assert.equal(Object.keys(await frage(max, viele)).length, 200);
+  });
 });
 
 describe('Werkbank (#123, #125)', () => {

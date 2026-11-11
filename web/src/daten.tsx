@@ -6,6 +6,8 @@ import { api, type Person, type Zaehler } from './api';
 import { rettungsweg, wendeAn, type Design } from './design';
 import { t } from './sprache';
 import { useNachladen } from './nachladen-hook';
+import { useKontoOptional } from './konto-kontext';
+import { vergissSichtbarkeit } from './sichtbarkeit';
 
 /**
  * Gemeinsame Daten der Oberfläche: Mappentypen, Personen und die Zähler der Sichten.
@@ -35,7 +37,10 @@ interface Daten {
    * Startseite lädt dann Termine und „Zuletzt geöffnet“ neu – anders als `stand` ohne Listen und Mappentypen.
    */
   frisch: number;
-  /** Nur die Zahlen der Ansichten neu holen und `frisch` hochzählen (#919) – leise, die alten bleiben bis dahin stehen. */
+  /**
+   * Leise auffrischen (#919): Zahlen der Ansichten, dazu der Baum der Ansichten und die lesbaren Personen (#888) – die
+   * alten bleiben stehen, bis die neuen da sind; geändert wird nur, was sich geändert hat. Zählt `frisch` hoch.
+   */
   auffrischen(): void;
   typ(id: string | undefined): Mappentyp | undefined;
   /** Anzahl Mappen eines Typs (laut Server). */
@@ -58,6 +63,8 @@ interface Daten {
 }
 
 const Ctx = createContext<Daten | null>(null);
+/** Gleicher Inhalt? Für die kleinen Listen beim Auffrischen (Ansichten, Personen). */
+const gleich = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const LEER: Zaehler = { typen: {}, eingang: 0 };
 
 export function DatenProvider({ children }: { children: ReactNode }) {
@@ -87,6 +94,8 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (meinDesign) wendeAn(meinDesign, !rettung); }, [meinDesign, rettung]);
 
   const neuLaden = useCallback(async () => {
+    // Was „nicht sichtbar“ oder „gelöscht“ ist (#888), gilt nach dem Neuladen neu.
+    vergissSichtbarkeit();
     // Zahlen der Ansichten nicht abwarten (#512): Sie kommen nach; nur die jüngste Antwort zählt.
     const nr = ++zahlenNr.current;
     const zahlen = api.sichten().then((z) => { if (nr === zahlenNr.current) { setZaehler(z); setZahlenDa(true); } });
@@ -101,9 +110,24 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   useEffect(() => { void neuLaden(); }, [neuLaden]);
+  // Verwaltungsmodus begonnen oder beendet (#888): Mit der Rolle ändern sich Baum, Mappentypen und lesbare Personen –
+  // alles neu holen, ohne dass jemand die Seite neu laden muss. Nicht beim ersten Aufbau (das erledigt der Effekt oben).
+  const rolle = useKontoOptional()?.ich.rolle;
+  const alteRolle = useRef(rolle);
+  useEffect(() => {
+    if (alteRolle.current === rolle) return;
+    alteRolle.current = rolle;
+    void neuLaden();
+  }, [rolle, neuLaden]);
+  // Andere lesbare Personen: Was fehlt, ist vielleicht jetzt sichtbar oder gelöscht (#888) – neu fragen.
+  useEffect(() => { vergissSichtbarkeit(); }, [personen]);
   const auffrischen = useCallback(() => {
     const nr = ++zahlenNr.current;
     api.sichten().then((z) => { if (nr === zahlenNr.current) setZaehler((alt) => ({ ...alt, ...z })); }, () => {});
+    // Ansichten geändert (auch von anderen, #888): Baum und Personen hängen an Rechten und Ansichten. Beides ist klein;
+    // nur bei einer Änderung neu setzen, sonst baut nichts neu auf.
+    api.sichtDefinitionen().then((s) => setSichten((alt) => (gleich(alt, s) ? alt : s)), () => {});
+    api.personen().then((p) => setPersonen((alt) => (gleich(alt, p) ? alt : p)), () => {});
     setFrisch((n) => n + 1);
   }, []);
 
