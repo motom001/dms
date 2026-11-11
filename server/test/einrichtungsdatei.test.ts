@@ -25,6 +25,7 @@ const BEISPIEL: Einrichtungsplan = {
   datenbank: { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: '${DMS_DB_PASSWORT}' },
   ablage: 'Familie Beispiel',
   konto: { name: 'Lena Beispiel', email: 'lena@example.org', passwort: '${DMS_KONTO_PASSWORT}' },
+  nutzung: 'privat',
   pakete: [{ id: 'texterkennung', beispiele: false, automatisierungen: {} }, { id: 'benachrichtigungen', beispiele: false, automatisierungen: {} }],
   optional: {
     adresse: 'https://ablago.example.org', bundesland: 'SN', beispiele: false,
@@ -37,11 +38,23 @@ const VOLL: Einrichtungsplan = {
   pakete: [{ id: 'haushalt', beispiele: true, automatisierungen: { 'fristen-erinnern': false, 'abo-pruefen': true } }, { id: 'texterkennung', beispiele: false, automatisierungen: {} }],
 };
 
+/** Katrin (#1045): beruflich und zu Hause, mit eigener Organisation – nur der Name ist Pflicht. */
+const KATRIN: Einrichtungsplan = {
+  ...BEISPIEL, ablage: 'Katrin Beispiel', konto: { name: 'Katrin Beispiel', email: 'katrin@example.org' }, nutzung: 'beides',
+  organisation: { name: 'Katrin Beispiel Grafikdesign', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt', email: '', telefon: '' },
+  pakete: [{ id: 'basis', beispiele: false, automatisierungen: {} }, { id: 'vertraege', beispiele: false, automatisierungen: {} }],
+  optional: { ...BEISPIEL.optional, beruflich: true },
+};
+
 const fehlerVon = (text: string) => liesEinrichtungsdatei(text).fehler;
 
 describe('Konfigurationsdatei (#806): Hin und Zurück', () => {
   it('Speichern und Laden ergeben denselben Plan und dieselbe Datei', () => {
-    for (const p of [BEISPIEL, VOLL, { ...BEISPIEL, datenbank: null, pakete: null, optional: { adresse: null, bundesland: null, beispiele: false, mail: null } }, { ...BEISPIEL, pakete: [] }]) {
+    const ohneNutzung: Einrichtungsplan = { ...BEISPIEL, datenbank: null, pakete: null, optional: { adresse: null, bundesland: null, beispiele: false, mail: null } };
+    delete ohneNutzung.nutzung;
+    const beruflichAlt: Einrichtungsplan = { ...ohneNutzung, optional: { ...ohneNutzung.optional, beruflich: true } };
+    for (const p of [BEISPIEL, VOLL, ohneNutzung, beruflichAlt, { ...BEISPIEL, pakete: [] }, KATRIN, { ...KATRIN, nutzung: 'beruflich' as const, organisation: undefined }]) {
+      if (!p.organisation) delete p.organisation;
       const text = schreibeEinrichtungsdatei(p);
       const r = liesEinrichtungsdatei(text);
       assert.deepEqual(r.fehler, []);
@@ -65,6 +78,49 @@ describe('Konfigurationsdatei (#806): Hin und Zurück', () => {
     assert.equal(r.plan?.ablage, 'Büro Brandt');
     assert.deepEqual(r.plan?.konto, { name: '', email: 'markus@example.com' });
     assert.equal(r.plan?.pakete, null, 'ohne Liste: im Assistenten wählen');
+  });
+});
+
+describe('Konfigurationsdatei: Nutzung und eigene Organisation (#1045)', () => {
+  it('„nutzung“ setzt das Merkmal; „organisation“ nur mit Name, nur ausgefüllte Angaben in der Datei', () => {
+    const text = schreibeEinrichtungsdatei(KATRIN);
+    assert.match(text, /^# Wofür Ablago genutzt wird.*\nnutzung: beides$/m);
+    assert.match(text, /^organisation:\n {2}name: Katrin Beispiel Grafikdesign\n {2}strasse: Hauptstraße\n {2}hausnummer: "5"\n {2}plz: "12345"\n {2}ort: Musterstadt\n#/m);
+    assert.doesNotMatch(text, /beruflich: true/, 'das Merkmal steht in „nutzung“');
+    const privat = liesEinrichtungsdatei('ablago-einrichtung: 1\nablage: X\nkonto: { email: a@example.org }\nnutzung: privat\n').plan!;
+    assert.deepEqual([privat.nutzung, privat.optional.beruflich], ['privat', undefined]);
+    assert.equal(liesEinrichtungsdatei('ablago-einrichtung: 1\nablage: X\nkonto: { email: a@example.org }\nnutzung: beruflich\n').plan!.optional.beruflich, true);
+  });
+
+  it('Widersprüche und fehlende Angaben mit Zeile und Feld', () => {
+    const kopf = 'ablago-einrichtung: 1\nablage: X\nkonto: { email: a@example.org }\n';
+    const f1 = fehlerVon(`${kopf}nutzung: privat\noptionales:\n  beruflich: true\n`);
+    assert.deepEqual(f1.map((x) => `${x.zeile} ${x.feld}`), ['6 optionales.beruflich']);
+    assert.match(f1[0].text, /nutzung: privat/);
+    assert.deepEqual(fehlerVon(`${kopf}nutzung: beides\noptionales:\n  beruflich: true\n`), [], 'passt – darf doppelt stehen');
+    const f2 = fehlerVon(`${kopf}nutzung: privat\norganisation:\n  name: Tischlerei Brandt\n`);
+    assert.deepEqual(f2.map((x) => `${x.zeile} ${x.feld}`), ['5 organisation']);
+    assert.match(f2[0].text, /nur bei/);
+    assert.deepEqual(fehlerVon(`${kopf}nutzung: beruflich\norganisation:\n  ort: Musterstadt\n`).map((x) => x.feld), ['organisation.name']);
+    assert.deepEqual(fehlerVon(`${kopf}nutzung: firma\n`).map((x) => x.feld), ['nutzung']);
+    assert.deepEqual(fehlerVon(`${kopf}nutzung: beruflich\norganisation:\n  name: X\n  email: kein-at\n`).map((x) => x.feld), ['organisation.email']);
+  });
+
+  it('Prüfen: Name der Organisation, gültige E-Mail, nur bei beruflicher Nutzung, Paket Basis Pflicht', async () => {
+    const { e } = await neueEinrichtung();
+    const pw = { passwort: 'ein-langes-passwort' };
+    assert.deepEqual(e.pruefePlan(KATRIN, pw), {});
+    const ohneBasis = e.pruefePlan({ ...KATRIN, pakete: [{ id: 'haushalt', beispiele: false, automatisierungen: {} }] }, pw);
+    assert.deepEqual(Object.keys(ohneBasis), ['pakete']);
+    assert.match(ohneBasis.pakete![0], /Paket Basis/);
+    assert.match(e.pruefePlan({ ...KATRIN, pakete: null }, pw).pakete![0], /Paket Basis/, 'übersprungen zählt nicht');
+    const p = e.pruefePlan({ ...KATRIN, organisation: { ...KATRIN.organisation!, name: '', email: 'kein-at' } }, pw);
+    assert.equal(p.nutzung!.length, 2);
+    assert.match(e.pruefePlan({ ...KATRIN, nutzung: 'privat' }, pw).nutzung![0], /nur bei beruflicher/);
+    // Ohne Organisation ist Basis keine Pflicht; „nutzung“ bestimmt das Merkmal, auch gegen `optional.beruflich`.
+    assert.deepEqual(e.pruefePlan({ ...BEISPIEL, pakete: [] }, pw), {});
+    assert.equal(planAusEingabe({ ...BEISPIEL, optional: { ...BEISPIEL.optional, beruflich: true } }).optional.beruflich, undefined);
+    assert.equal(planAusEingabe({ ...BEISPIEL, nutzung: 'firma', optional: { ...BEISPIEL.optional, beruflich: true } }).optional.beruflich, true);
   });
 });
 

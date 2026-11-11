@@ -208,6 +208,10 @@ rauchtest('Einrichtung: Assistent im Browser', {
   await s.locator('label').filter({ has: s.getByText(/^mindestens .* Zeichen$/) }).locator('input').fill(LENA.passwort);
   await s.getByLabel('Passwort wiederholen').fill(LENA.passwort);
   await s.getByRole('button', { name: 'Weiter' }).click();
+  // Wofür nutzt du Ablago? (#1045) – Lena: zu Hause.
+  await s.getByRole('heading', { name: 'Wofür nutzt du Ablago?' }).waitFor();
+  await s.getByRole('radio', { name: /^Für zu Hause/ }).check();
+  await s.getByRole('button', { name: 'Weiter' }).click();
   // Pakete: ohne Internet nur ein Hinweis – die Rauchtests brauchen keine Pakete.
   await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
   await s.getByRole('button', { name: 'Überspringen' }).click({ timeout: 30_000 });

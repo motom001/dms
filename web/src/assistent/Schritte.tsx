@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { handbuchUrl, HILFE, hilfeOnlineUrl, type Hilfeort } from '../../../shared/src/hilfe';
 import { PASSWORT_MINDESTLAENGE } from '../../../shared/src/model';
-import type { Sammelschritt } from '../../../shared/src/einrichtungsplan';
+import { beruflichBei, leereOrganisation, NUTZUNGEN, PAKETE_JE_NUTZUNG, type Nutzung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
+import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
+import { FeldGruppe } from '../bausteine';
 import { api, heikleDatei } from '../api';
 import { Marke } from '../Marke';
 import { geheZu } from '../ort';
@@ -12,19 +14,20 @@ import { EINGEBAUTE_SPRACHEN, sprache } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { Symbol } from '../Symbol';
 import { PaketApiKontext, type PaketApi, type PaketWahl } from '../werkbank/PaketAblauf';
-import { PaketeDazuholen } from '../werkbank/PaketeDazuholen';
+import { PaketeDazuholen, VORAUSWAHL } from '../werkbank/PaketeDazuholen';
 import { MailSammeln, type MailGriff } from '../werkbank/MailVersand';
 import { ZweifaktorEinrichten } from '../profil/Zweifaktor';
 import { ausfuehren, neuerLauf, STUFEN_JE_SCHRITT, stufenZuruecksetzen } from './ausfuehren';
 import { ladeDatei, merkeDatei, pruefeAlles, speichereDatei } from './datei';
+import { OrganisationFelder } from './Organisation';
 import { geheim, holeStand, planAus, setzeSammlung, setzeStand, STUFEN, useAssistent, vergiss, type Ansicht, type Lauf, type MailSammlung, type Sammlung, type Stufe } from './stand';
 
 /**
  * Einrichtungsassistent (#119, #804): erst sammeln, dann eine Zusammenfassung, dann „Jetzt einrichten“.
  *
  *   1 Code · 2 Datenbank · 3 Neu oder Sicherung       – sofort, weil technisch nötig
- *   4 Ablage · 5 Dein Konto · 6 Pakete · 7 Optionales  – nur gesammelt, jederzeit änderbar
- *   8 Zusammenfassung → „Jetzt einrichten“ (mit Fortschritt) · 9 Fertig: Notfallblatt, Zwei-Faktor anbieten, abschließen
+ *   4 Ablage · 5 Dein Konto · 6 Nutzung · 7 Pakete · 8 Optionales  – nur gesammelt, jederzeit änderbar
+ *   9 Zusammenfassung → „Jetzt einrichten“ (mit Fortschritt) · 10 Fertig: Notfallblatt, Zwei-Faktor anbieten, abschließen
  *
  * Seit #821 gibt es nur „Dein Konto“: die Person, die einrichtet, mit „Gesamte Verwaltung“ – kein Administrator und
  * kein erster Benutzer daneben. Eine zweite Person mit Verwaltungsrecht empfiehlt danach ein Hinweis in der Werkbank.
@@ -34,17 +37,17 @@ import { geheim, holeStand, planAus, setzeSammlung, setzeStand, STUFEN, useAssis
  */
 export const SCHRITTE = [
   t('einrichtung.schritt.sprache'), t('einrichtung.schritt.code'), t('einrichtung.schritt.datenbank'), t('einrichtung.schritt.wahl'), t('einrichtung.schritt.ablage'),
-  t('einrichtung.schritt.konto'), t('einrichtung.schritt.pakete'), t('einrichtung.schritt.optional'),
+  t('einrichtung.schritt.konto'), t('einrichtung.schritt.nutzung'), t('einrichtung.schritt.pakete'), t('einrichtung.schritt.optional'),
   t('einrichtung.schritt.zusammenfassung'), t('einrichtung.schritt.fertig'),
 ] as const;
 /** Feste Schritte vor dem Sammeln (#729: Sprache zuerst). */
 export const VOR = { sprache: 0, code: 1, datenbank: 2, wahl: 3 } as const;
-export const NR: Record<Ansicht | 'fertig', number> = { ablage: 4, konto: 5, pakete: 6, optional: 7, zusammenfassung: 8, fertig: 9 };
-const REIHE: Ansicht[] = ['ablage', 'konto', 'pakete', 'optional', 'zusammenfassung'];
+export const NR: Record<Ansicht | 'fertig', number> = { ablage: 4, konto: 5, nutzung: 6, pakete: 7, optional: 8, zusammenfassung: 9, fertig: 10 };
+const REIHE: Ansicht[] = ['ablage', 'konto', 'nutzung', 'pakete', 'optional', 'zusammenfassung'];
 const REPO = 'https://github.com/motom001/dms';
 
 /** Hilfe je Schritt (#278): der passende Abschnitt im Online-Handbuch, mit Bildern. */
-const HILFE_JE_SCHRITT: Hilfeort[] = ['einrichtung.sprache', 'einrichtung.code', 'einrichtung.datenbank', 'einrichtung.wahl', 'einrichtung.mandant', 'einrichtung.konto', 'einrichtung.pakete', 'einrichtung.optional', 'einrichtung.zusammenfassung', 'einrichtung.fertig'];
+const HILFE_JE_SCHRITT: Hilfeort[] = ['einrichtung.sprache', 'einrichtung.code', 'einrichtung.datenbank', 'einrichtung.wahl', 'einrichtung.mandant', 'einrichtung.konto', 'einrichtung.nutzung', 'einrichtung.pakete', 'einrichtung.optional', 'einrichtung.zusammenfassung', 'einrichtung.fertig'];
 
 /** Schrittleiste: welche Schritte anklickbar sind, welche gesperrt (mit Grund). */
 export interface Leiste { erledigt(i: number): boolean; klick?(i: number): (() => void) | null; gesperrt?(i: number): string | null }
@@ -298,6 +301,57 @@ function KontoSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void
   );
 }
 
+/**
+ * „Wofür nutzt du Ablago?“ (#1045): privat, beruflich oder beides – in Lenas Worten (Hinweis Qualität). Beruflich und
+ * beides setzen das Merkmal „beruflich genutzt“ (#1032) und fragen nach der eigenen Organisation (#995); die Antwort
+ * wählt im nächsten Schritt Pakete vor. Ohne Antwort geht es nicht weiter – es gibt keine versteckte Vorgabe (#803);
+ * eine ältere Datei mit `beruflich: true` schlägt „Beides“ sichtbar vor.
+ */
+function NutzungSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void; leiste: Leiste }) {
+  const [wahl, setWahl] = useState<Nutzung | null>(s.nutzung ?? (s.optional.beruflich ? 'beides' : null));
+  const [org, setOrg] = useState(s.organisation ?? leereOrganisation());
+  const [probleme, setProbleme] = useState<string[] | undefined>(s.probleme.nutzung);
+  const x = useSenden();
+  const beruflich = !!wahl && beruflichBei(wahl);
+  // Leer gelassen heißt: keine Organisation (später in der Ablage). Nur der Name ist Pflicht, sobald etwas dasteht.
+  const mitOrg = beruflich && Object.values(org).some((v) => v.trim());
+  const merke = () => setzeSammlung((a) => ({ ...a, nutzung: wahl, organisation: mitOrg ? org : null, optional: { ...a.optional, beruflich: beruflich || undefined } }));
+  const namensfehler = probleme?.find((p) => p === t('einrichtung.plan.organisation.name'));
+  return (
+    <Rahmen aktiv={NR.nutzung} titel={t('einrichtung.nutzung.titel')} unter={t('einrichtung.nutzung.unter')} leiste={leiste}>
+      <form className="stapel" onSubmit={(e) => e.preventDefault()}>
+        <Probleme liste={probleme?.filter((p) => p !== namensfehler)} />
+        <FeldGruppe beschriftung={t('einrichtung.nutzung.frage')} hinweis={t('einrichtung.nutzung.spaeter')}>
+          <div className="wahlkarten">
+            {NUTZUNGEN.map((n) => (
+              <label key={n} className={`wahlkarte${wahl === n ? ' gewaehlt' : ''}`}>
+                <input type="radio" name="nutzung" value={n} checked={wahl === n} onChange={() => setWahl(n)} />
+                <span className="wahlkarte-text"><strong>{t(`einrichtung.nutzung.${n}`)}</strong><span className="leise klein">{t(`einrichtung.nutzung.${n}.text`)}</span></span>
+              </label>
+            ))}
+          </div>
+        </FeldGruppe>
+        {beruflich && (
+          <section className="blatt stapel" aria-label={t('einrichtung.nutzung.organisation.titel')}>
+            <h2 className="h3">{t('einrichtung.nutzung.organisation.titel')}</h2>
+            <p className="leise klein">{t('einrichtung.nutzung.organisation.text')}</p>
+            <OrganisationFelder wert={org} setze={setOrg} fehler={namensfehler} />
+            <p className="leise klein">{t('einrichtung.nutzung.organisation.basis')}</p>
+          </section>
+        )}
+        {wahl && <p className="leise klein">{t('einrichtung.nutzung.vorlage', { vorlage: VORLAGEN[vorlageFuer({ beruflich })].name })}</p>}
+        <Navigation sendet={x.sendet} fehler={x.fehler} kannWeiter={!!wahl} zurueck={() => { merke(); zurueckVon('nutzung', zurWahl); }}
+          weiter={() => void x.los(async () => {
+            merke();
+            const p = await pruefeSchritt('nutzung');
+            setProbleme(p);
+            if (!p.length) weiterVon('nutzung');
+          })} />
+      </form>
+    </Rahmen>
+  );
+}
+
 /** Im Assistenten wählt man Pakete über die Schnittstellen mit Einrichtungscode – installiert wird noch nichts. */
 const EINRICHTUNG_PAKETE: PaketApi = { stand: () => api.einrichtungPakete(), katalog: () => api.einrichtungPaketKatalog(), plan: (e) => api.einrichtungPaketPlan(e) };
 
@@ -306,6 +360,8 @@ function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => voi
   const quelle = s.pakete ? s.pakete.pakete.map((p) => ({ id: p.id, beispiele: p.beispiele, automatisierungen: p.automatisierungen, gewaehlt: p.gewaehlt })) : s.paketeVorgabe?.map((p) => ({ ...p, gewaehlt: true })) ?? null;
   const start = quelle?.filter((p) => p.gewaehlt).map((p) => p.id);
   const vorgabe = quelle ? { beispiele: quelle.filter((p) => p.beispiele).map((p) => p.id), automatisierungenAus: quelle.flatMap((p) => Object.entries(p.automatisierungen).filter(([, an]) => !an).map(([k]) => `${p.id}|${k}`)), automatisierungenAn: quelle.flatMap((p) => Object.entries(p.automatisierungen).filter(([, an]) => an).map(([k]) => `${p.id}|${k}`)) } : undefined;
+  // Vorschlag nach der Antwort auf „Wofür nutzt du Ablago?“ (#1045), dazu die bisherige Empfehlung; nur was es im Katalog gibt.
+  const empfohlen = s.nutzung ? [...new Set([...PAKETE_JE_NUTZUNG[s.nutzung], ...VORAUSWAHL])] : VORAUSWAHL;
   const gesammelt = (w: PaketWahl | null) => {
     geheim.paketEinstellungen = w?.eingabe.einstellungen;
     setzeSammlung((x) => ({ ...x, pakete: w, paketeVorgabe: null }));
@@ -315,8 +371,9 @@ function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => voi
     <Rahmen aktiv={NR.pakete} titel={t('einrichtung.pakete.titel')} leiste={leiste} unter={t('einrichtung.pakete.unter')}>
       <Probleme liste={s.probleme.pakete} />
       <p className="leise klein">{t('einrichtung.pakete.erst')}</p>
+      {s.organisation && <div className="hinweis info"><p>{t('einrichtung.pakete.basis', { name: s.organisation.name })}</p></div>}
       <PaketApiKontext.Provider value={EINRICHTUNG_PAKETE}>
-        <PaketeDazuholen key={JSON.stringify(start ?? null)} start={start} vorgabe={vorgabe} sammeln={gesammelt} zurueck={() => zurueckVon('pakete', zurWahl)}
+        <PaketeDazuholen key={JSON.stringify(start ?? null)} start={start} vorgabe={vorgabe} empfohlen={empfohlen} sammeln={gesammelt} zurueck={() => zurueckVon('pakete', zurWahl)}
           ueberspringen={() => gesammelt(null)} weiter={() => {}} />
       </PaketApiKontext.Provider>
     </Rahmen>
@@ -421,6 +478,15 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
           <p>{[s.konto.name, s.konto.email].filter(Boolean).join(' · ') || <span className="leise">{t('einrichtung.zf.fehlt')}</span>}</p>
           <p className="leise klein">{geheim.konto ? t('einrichtung.zf.passwort.gesetzt') : t('einrichtung.zf.passwort.fehlt')} · {t('einrichtung.zf.konto.recht')}</p>
         </Abschnitt>
+        <Abschnitt titel={t('einrichtung.zf.nutzung')} ziel="nutzung" probleme={p.nutzung}>
+          {s.nutzung ? <>
+            <p>{t(`einrichtung.nutzung.${s.nutzung}`)}</p>
+            <p className="leise klein">{t('einrichtung.nutzung.vorlage', { vorlage: VORLAGEN[vorlageFuer({ beruflich: beruflichBei(s.nutzung) })].name })}</p>
+            {beruflichBei(s.nutzung) && <p>{t('einrichtung.zf.organisation')}: {s.organisation
+              ? [s.organisation.name, [s.organisation.strasse, s.organisation.hausnummer].filter(Boolean).join(' '), [s.organisation.plz, s.organisation.ort].filter(Boolean).join(' '), s.organisation.email, s.organisation.telefon].filter(Boolean).join(' · ')
+              : <span className="leise">{t('einrichtung.zf.organisation.keine')}</span>}</p>}
+          </> : <p className="leise">{t('einrichtung.zf.fehlt')}</p>}
+        </Abschnitt>
         <Abschnitt titel={t('einrichtung.zf.pakete')} ziel="pakete" probleme={p.pakete}>
           {s.pakete?.pakete.length ? <p>{s.pakete.pakete.map((q) => q.name).join(', ')}{autoAn ? ` (${t('einrichtung.zf.pakete.automatisierungen', { anzahl: autoAn })})` : ''}</p>
             : s.paketeVorgabe?.length ? <p>{s.paketeVorgabe.map((q) => q.id).join(', ')} <span className="leise">– {t('einrichtung.zf.pakete.vorgabe')}</span></p>
@@ -431,8 +497,6 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
             <dt>{t('einrichtung.optional.adresse')}</dt><dd>{s.optional.adresse.trim() || <span className="leise">{t('einrichtung.zf.adresse.keine')}</span>}</dd>
             <dt>{t('einrichtung.optional.bundesland')}</dt><dd>{s.optional.bundesland ? BUNDESLAENDER[s.optional.bundesland as keyof typeof BUNDESLAENDER] : <span className="leise">{t('einrichtung.optional.bundesland.keins')}</span>}</dd>
             <dt>{t('einrichtung.optional.beispiele.titel')}</dt><dd>{s.optional.beispiele ? t('einrichtung.zf.ja') : t('einrichtung.zf.nein')}</dd>
-            {/* Beruflich genutzt (#1032): bis #1045 nur aus einer Datei – dann steht es hier, damit nichts unsichtbar mitkommt. */}
-            {s.optional.beruflich && <><dt>{t('einrichtung.zf.beruflich')}</dt><dd>{t('einrichtung.zf.ja')} <span className="leise">– {t('einrichtung.zf.beruflich.datei')}</span></dd></>}
             <dt>{t('einrichtung.optional.mail')}</dt><dd>{m ? `${m.host}:${m.port}${m.benutzer ? ` · ${m.benutzer}` : ''} · ${m.mitPasswort && geheim.mail ? t('einrichtung.zf.passwort.gesetzt') : t('einrichtung.zf.mail.ohne')}${m.aktiv ? '' : ` · ${t('einrichtung.zf.mail.aus')}`}` : <span className="leise">{t('einrichtung.zf.mail.keine')}</span>}</dd>
           </dl>
         </Abschnitt>
@@ -462,9 +526,10 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
 const STUFE_TEXT: Record<Stufe, string> = {
   ablage: 'einrichtung.lauf.ablage', schluessel: 'einrichtung.lauf.schluessel', adresse: 'einrichtung.lauf.adresse', region: 'einrichtung.lauf.region',
   nutzung: 'einrichtung.lauf.nutzung', mail: 'einrichtung.lauf.mail', beispiele: 'einrichtung.lauf.beispiele', pakete: 'einrichtung.lauf.pakete',
+  organisation: 'einrichtung.lauf.organisation',
 };
 /** Welcher Schritt eine Stufe ändert (nach einem Fehler). */
-const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'optional', mail: 'optional', beispiele: 'optional', pakete: 'pakete' };
+const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'nutzung', mail: 'optional', beispiele: 'optional', pakete: 'pakete', organisation: 'nutzung' };
 
 function LaufAnsicht() {
   const st = useAssistent();
@@ -607,6 +672,7 @@ export function Sammelassistent({ zurWahl, abschliessen, version = null, imEinri
   const k = `${ansicht}-${st.aendern ?? ''}`;
   if (ansicht === 'ablage') return <AblageSchritt key={k} {...p} datei={st.aendern ? undefined : { imEinrichtungsmodus }} />;
   if (ansicht === 'konto') return <KontoSchritt key={k} {...p} />;
+  if (ansicht === 'nutzung') return <NutzungSchritt key={k} {...p} />;
   if (ansicht === 'pakete') return <PaketeSchritt key={k} {...p} />;
   if (ansicht === 'optional') return <OptionalSchritt key={k} {...p} />;
   return <Zusammenfassung key={k} {...p} />;

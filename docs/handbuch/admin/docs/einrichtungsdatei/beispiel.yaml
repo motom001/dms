@@ -17,6 +17,8 @@ konto:
   name: Lena Beispiel
   email: lena@example.org
   passwort: ${DMS_KONTO_PASSWORT}
+# Wofür Ablago genutzt wird: privat, beruflich oder beides.
+nutzung: privat
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung

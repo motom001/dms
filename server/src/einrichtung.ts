@@ -1,5 +1,5 @@
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
-import { istVerweis, PLAN_VERBINDUNGEN, type DateiFehler, type Einrichtungsplan, type PlanDatenbank, type Planprobleme, type PlanVerbindung } from '../../shared/src/einrichtungsplan';
+import { beruflichBei, istNutzung, istVerweis, liesPlanOrganisation, PAKET_ORGANISATION, type Nutzung, PLAN_VERBINDUNGEN, type DateiFehler, type Einrichtungsplan, type PlanDatenbank, type Planprobleme, type PlanVerbindung } from '../../shared/src/einrichtungsplan';
 import { pruefeAdresse } from './betrieb';
 import { liesEinrichtungsdatei, schreibeEinrichtungsdatei } from './einrichtungsdatei';
 import type { Einstellungen } from './einstellungen';
@@ -47,6 +47,11 @@ export const EINRICHTUNGSDATEI_NAME = 'ablago-einrichtung.yaml';
 const text = (v: unknown, max = 300) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const ja = (v: unknown) => v === true;
 
+/** #1045: Die Antwort auf „Wofür nutzt du Ablago?“ bestimmt das Merkmal – ohne Antwort zählt es wie bisher (#1032). */
+function nutzungAus(n: unknown, beruflich: unknown): { nutzung?: Nutzung; beruflich: boolean } {
+  return istNutzung(n) ? { nutzung: n, beruflich: beruflichBei(n) } : { beruflich: ja(beruflich) };
+}
+
 /** Ein Plan aus der Oberfläche (JSON) in fester Form; Unbekanntes fällt weg, Passwörter nur als Verweis. */
 export function planAusEingabe(x: unknown): Einrichtungsplan {
   const o = (x ?? {}) as Record<string, unknown>;
@@ -58,6 +63,8 @@ export function planAusEingabe(x: unknown): Einrichtungsplan {
   const verweis = (v: unknown) => (istVerweis(v) ? { passwort: v } : {});
   const zahl = (v: unknown, standard: number) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n >= 1 && n <= 65535 ? n : standard; };
   const verbindung: PlanVerbindung = PLAN_VERBINDUNGEN.includes(m?.verbindung as PlanVerbindung) ? m!.verbindung as PlanVerbindung : 'starttls';
+  const { nutzung, beruflich } = nutzungAus(o.nutzung, op.beruflich);
+  const organisation = liesPlanOrganisation(o.organisation);
   return {
     datenbank: db && typeof db === 'object' ? { host: text(db.host, 255), port: zahl(db.port, 5432), datenbank: text(db.datenbank, 63), benutzer: text(db.benutzer, 63), ...verweis(db.passwort) } : null,
     ablage: text(o.ablage, 100).replace(/\s+/g, ' '),
@@ -73,12 +80,14 @@ export function planAusEingabe(x: unknown): Einrichtungsplan {
       adresse: text(op.adresse) || null,
       bundesland: typeof op.bundesland === 'string' && op.bundesland in BUNDESLAENDER ? op.bundesland : null,
       beispiele: ja(op.beispiele),
-      ...(ja(op.beruflich) ? { beruflich: true } : {}),
+      ...(beruflich ? { beruflich: true } : {}),
       mail: m && typeof m === 'object' ? {
         aktiv: m.aktiv !== false, host: text(m.host, 200), port: zahl(m.port, verbindung === 'ssl' ? 465 : 587), verbindung,
         benutzer: text(m.benutzer, 200), absender: text(m.absender, 200), selbstsigniert: ja(m.selbstsigniert), ...verweis(m.passwort),
       } : null,
     },
+    ...(nutzung ? { nutzung } : {}),
+    ...(organisation ? { organisation } : {}),
   };
 }
 
@@ -154,6 +163,14 @@ export class Einrichtung {
     dazu('konto', typeof geheim.passwort === 'string' && geheim.passwort ? meldung(() => pruefePasswortRegeln(geheim.passwort)) : t('einrichtung.plan.passwort.fehlt'));
     dazu('optional', p.optional.adresse ? meldung(() => pruefeAdresse(p.optional.adresse)) : null);
     if (p.optional.mail?.aktiv && !p.optional.mail.host) dazu('optional', t('einrichtung.plan.mail.server'));
+    // „Deine Organisation“ (#1045): nur bei beruflicher Nutzung, Name Pflicht, E-Mail gültig – und Paket Basis dabei.
+    const o = p.organisation;
+    if (o) {
+      if (!p.optional.beruflich) dazu('nutzung', t('einrichtung.plan.organisation.privat'));
+      dazu('nutzung', o.name ? null : t('einrichtung.plan.organisation.name'));
+      dazu('nutzung', o.email ? meldung(() => pruefeEmail(o.email)) : null);
+      if (!p.pakete?.some((x) => x.id === PAKET_ORGANISATION)) dazu('pakete', t('einrichtung.plan.organisation.basis'));
+    }
     return probleme;
   }
 

@@ -8,6 +8,7 @@ The setup assistant's configuration file (#806) describes a setup in a machine-r
 - Schema: [ablago-einrichtung-1.schema.json](einrichtungsdatei/ablago-einrichtung-1.schema.json) (the same file as in the Administrator manual; `$id` points there).
 - Unknown fields are errors (`additionalProperties: false`) so that typos don't get lost silently.
 - **Your account (#821):** section `konto` – the person setting up, with "Full administration". Older files (0.191, 0.192) with `administrator` Ablago reads as `konto`; `erster-benutzer` is dropped with a notice (`hinweise`). Neither is in the schema – the conversion happens before the check; line and field of an error still name the name from the file.
+- **Use (#1045):** `nutzung` (`privat`, `beruflich`, `beides`) determines the attribute “used for work” (#1032) in the plan (`optional.beruflich`); `organisation` (name required; address, email, phone) only exists for work use. Older files without `nutzung` set the attribute directly with `optionales.beruflich`; if both are present they must match. `server/src/einrichtungsdatei.ts` checks these contradictions after the schema, with line and field.
 - **No secrets:** fields `passwort` only accept a reference to an environment variable (`${NAME}`, capital letters, digits, underscore). The format knows no key – Ablago always creates it anew.
 
 The keys are German in every language, like the API's names.
@@ -49,6 +50,8 @@ konto:
   name: Lena Beispiel
   email: lena@example.org
   passwort: ${DMS_KONTO_PASSWORT}
+# Wofür Ablago genutzt wird: privat, beruflich oder beides.
+nutzung: privat
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung

@@ -4,7 +4,7 @@ What you put together in the [setup wizard](installation.md#der-einrichtungsassi
 
 ## Saving {#speichern}
 
-In the wizard's [summary](installation.md#zusammenfassung), **Save as file** saves the file `ablago-einrichtung.yaml` to your download folder. It contains the database (host, port, name, user), the name of the Library, your account (name, email address), the packages including automations switched on and off, and the optional things (address, state, examples, email sending). Short comments explain every section.
+In the wizard's [summary](installation.md#zusammenfassung), **Save as file** saves the file `ablago-einrichtung.yaml` to your download folder. It contains the database (host, port, name, user), the name of the Library, your account (name, email address), the use including your organisation, the packages including automations switched on and off, and the optional things (address, state, examples, email sending). Short comments explain every section.
 
 !!! info "Not in the file: passwords and key"
     The file contains **no passwords** and **no key**. The wizard asks for passwords when loading. Ablago creates the key anew with every setup, and the [emergency sheet](verschluesselung.md#notfallblatt) remains mandatory. If a file contains a password in plain text anyway, Ablago rejects it.
@@ -48,6 +48,8 @@ konto:
   name: Lena Beispiel
   email: lena@example.org
   passwort: ${DMS_KONTO_PASSWORT}
+# Wofür Ablago genutzt wird: privat, beruflich oder beides.
+nutzung: privat
 # From the official catalogue, each in the newest matching version; automations: true = switched on.
 pakete:
   - id: texterkennung
@@ -73,7 +75,9 @@ optionales:
 - `konto` is the person who sets up: they get "Full administration" and also work in the Library. You invite further people after the setup under Workbench → Users.
 - Without a list `pakete` you choose the packages in the wizard; `pakete: []` means "none".
 - **Files from version 0.191 and 0.192** are still loaded: the section `administrator` counts as `konto`. Ablago skips a section `erster-benutzer` with a notice – the first user no longer exists in the wizard. When saving, only `konto` is in the file.
-- `optionales: beruflich: true` means the Library is also used for work ([Use](nutzung.md)); without it, no. The wizard shows it in the summary and saves it with "Set up now".
+- `nutzung` is the answer to "What will you use Ablago for?": `privat` (home), `beruflich` (work) or `beides` (both) ([Use](installation.md#nutzung)). `beruflich` and `beides` set the attribute [used for work](nutzung.md). Without it, the wizard asks.
+- `organisation` only exists with `beruflich` and `beides`: `name` is required, plus optionally `strasse`, `hausnummer`, `plz`, `ort`, `email` and `telefon`. "Set up now" creates your [own organisation](organisation.md) from it; the package `basis` must then be in the list.
+- **Files up to version 0.237** don't know `nutzung` yet and set the attribute with `optionales: beruflich: true`. Ablago still reads this; the wizard then suggests "Both" in the "Use" step. If both are in the file, they must match.
 - A package's automations are keys with `true` (switched on) or `false` (off); if one is missing, it is switched on as in the wizard.
 
 ## References instead of passwords {#verweise-statt-passworter}

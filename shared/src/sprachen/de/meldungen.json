@@ -1838,5 +1838,8 @@
   "organisation.schon-da": "Es gibt schon eine eigene Organisation – die bisherige Angabe bitte dort von Hand ergänzen.",
   "organisation.ohne-basis": "Dafür braucht es einen Mappentyp mit dem Merkmal „eigene Organisation“ – das Paket Basis ab Version 1.7.0.",
   "paketerstellung.organisation": "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung)",
-  "paketerstellung.zusammengesetzt": "Feldart Zusammengesetzt"
+  "paketerstellung.zusammengesetzt": "Feldart Zusammengesetzt",
+  "einrichtungsdatei.nutzung": "Wofür Ablago genutzt wird: privat, beruflich oder beides. Beruflich und beides setzen das Merkmal „beruflich genutzt“ und wählen im Assistenten passende Pakete vor; fehlt die Angabe, fragt der Assistent.",
+  "einrichtungsdatei.organisation": "Deine Organisation (nur bei beruflich und beides): Name Pflicht, Anschrift, E-Mail und Telefon freiwillig. „Jetzt einrichten“ legt sie mit dem Paket Basis als eigene Organisation an.",
+  "organisation.name-fehlt": "Bitte einen Namen für die Organisation angeben."
 }

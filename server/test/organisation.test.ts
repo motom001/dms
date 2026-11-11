@@ -363,5 +363,22 @@ for (const pg of [false, true]) {
       assert.equal((await x.d.holeMappe(s.organisationen[0].mappeId)).mappe.werte.verantwortlicher, s.organisationen[0].mappeId);
       await assert.rejects(x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/uebernehmen'), fehler(409));
     });
+
+    it('#1045: „Deine Organisation“ aus dem Einrichtungsassistenten – feste Liste, Merkmal, verantwortlich selbst, nur einmal', async () => {
+      const x = await aufbau(pg, 'org_anlegen');
+      assert.deepEqual(bereicheDerRoute('POST', '/api/werkbank/organisation/anlegen'), ['organisation']);
+      await assert.rejects(x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/anlegen', { body: { name: '  ', ort: 'Musterstadt' } }), fehler(422));
+      // Ohne Verwaltungsmodus darf niemand das Merkmal setzen (Schreibschutz, #995).
+      await assert.rejects(x.oberflaeche(x.katrin, 'POST', '/api/werkbank/organisation/anlegen', { body: { name: 'Katrin Beispiel Grafikdesign' } }));
+      const s = (await x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/anlegen', {
+        body: { name: ' Katrin  Beispiel Grafikdesign ', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt', email: 'katrin@example.org', telefon: '', iban: 'DE00', kennwort: 'geheim' },
+      })).body as { organisationen: EigeneOrganisation[] };
+      assert.deepEqual(s.organisationen.map((o) => [o.angaben, o.verantwortlicher]), [[{ name: 'Katrin Beispiel Grafikdesign', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt', email: 'katrin@example.org' }, { selbst: true }]]);
+      const m = (await x.d.holeMappe(s.organisationen[0].mappeId)).mappe;
+      assert.equal(m.werte.eigene_organisation, true);
+      assert.equal(m.werte.verantwortlicher, m.id);
+      assert.ok(!m.werte.iban && !m.werte.kennwort, 'nur die feste Liste – sonst nichts');
+      await assert.rejects(x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/anlegen', { body: { name: 'Zweite' } }), fehler(409));
+    });
   });
 }

@@ -11,9 +11,9 @@ Ablago runs – **recommended** – as two containers: the application (`ghcr.io
 
 ## The setup assistant {#der-einrichtungsassistent}
 
-On the first visit, an assistant guides you through setup in ten steps. Every step has a **?** at the top that opens exactly the matching section here.
+On the first visit, an assistant guides you through setup in eleven steps. Every step has a **?** at the top that opens exactly the matching section here.
 
-**First collect, then set up:** language, code, database and "New or backup" take effect immediately because they are technically necessary. From "Library" onwards the assistant only collects: name of the Library, your account, packages and optional items. **Nothing** is created in the process. With **Back** or a click in the step bar you can get to each of these steps at any time. At the end the [summary](#zusammenfassung) shows everything on one page, and only **Set up now** gets going. If you cancel before that or reload the page, no half-finished setup remains. The browser remembers your entries until then, but not passwords.
+**First collect, then set up:** language, code, database and "New or backup" take effect immediately because they are technically necessary. From "Library" onwards the assistant only collects: name of the Library, your account, what you use Ablago for, packages and optional items. **Nothing** is created in the process. With **Back** or a click in the step bar you can get to each of these steps at any time. At the end the [summary](#zusammenfassung) shows everything on one page, and only **Set up now** gets going. If you cancel before that or reload the page, no half-finished setup remains. The browser remembers your entries until then, but not passwords.
 
 **No individual save buttons:** in every step, **Next** takes over everything in the fields, including suggestions you haven't changed (they carry the notice "suggested – taken over with "Next""). Fields left empty stay empty, and there are no hidden defaults. **Back** and **Next** are in the same place at the bottom of every step.
 
@@ -66,13 +66,25 @@ Name, email address and password of **your own account** – with your one email
 
 **Next** checks address and password straight away, but the account is only created with **Set up now**. Afterwards you are signed in, straight into [administration mode](verwalten.md#der-verwaltungsmodus). The assistant offers you **two-factor sign-in** at the end ([Done](#fertig)). You invite further people after setup under **Workbench → Users** – the overview reminds you that a second person should be able to manage.
 
+### Use { #nutzung }
+
+![Use](bilder/einrichtung-nutzung.png)
+
+**What will you use Ablago for?** Three answers: **For home**, **For my work or my business** or **Both**. You can only continue with an answer; you can change it later under **Workbench → [Use](nutzung.md)**.
+
+- **For my work or my business** and **Both** set the attribute [used for work](nutzung.md): folder types then show their work-related fields, and packages that keep records longer for work use set this up straight away when installed.
+- The answer **preselects packages in the next step**: for home Basis, Household, Contracts and Invoices; for work Basis, Contracts, Invoices and Compliance; for "Both" all of them. Only what exists in the catalogue is preselected – you can deselect everything.
+- The **Workbench** starts with the *Household* template for home use, with *Business* for work (see [Overview](uebersicht.md)).
+
+**Your organisation:** for work use, the step asks right below for your own organisation – name, address, email and phone. Only the name is required, everything else is optional. With **Set up now**, Ablago creates an organisation with the attribute [own organisation](organisation.md) from it, so Ablago knows who "we" are, for example for GDPR access requests. This needs the **Basis** package (1.7.0 or later) – once an organisation is entered, Basis is required, and the summary tells you if it is missing. If you leave all fields empty, Ablago creates none; you can do that later in the library.
+
 ### Adding packages {#pakete-dazuholen}
 
 ![Adding packages](bilder/einrichtung-pakete.png)
 
 Installation only happens with **Set up now**; here you only choose. Only in this step does Ablago query the [official package catalogue](pakete.md) – before that it opens no connection for it. The request goes to catalog.ablago.app (served by GitHub Pages); only the request itself goes out, no data from your Library. The list shows per package name, description and what it creates; packages with code are marked "with code".
 
-- **Text recognition and Notifications are preselected** – without text recognition scanned documents can't be searched, without Notifications no daily summary comes. Below that, **Further languages?** asks for additional languages (German and English are always included). You tick everything else.
+- **Preselected is what fits your answer in the [Use](#nutzung) step, plus Text recognition and Notifications** – without text recognition scanned documents can't be searched, without Notifications no daily summary comes. Below that, **Further languages?** asks for additional languages (German and English are always included). You tick everything else.
 - **Dependencies come along**, e.g. "Basis" for "Household"; they are marked "comes along – needed by …".
 - **Next** leads to **one** page with all questions: the [permissions](pakete.md#rechte-eines-pakets) of all packages with code (one tick for all), names only in case of conflicts, sample folders, supplied automations and required settings, then **Take over packages and continue**. See [Installing several packages in one step](pakete.md#mehrere-pakete-in-einem-schritt-installieren).
 - **Skip** is possible at any time; you add packages later under **Workbench → [Packages](pakete.md)**.
@@ -96,11 +108,11 @@ Everything can also be set later in the Workbench.
 
 ![Summary](bilder/einrichtung-zusammenfassung.png)
 
-Everything on one page, each section with **Change**: Library, your account (with "Full administration"), packages (with the number of switched-on automations) and optional items. Passwords are only shown as "set". After **Change**, **Next** leads back to the summary; everything else stays as it was.
+Everything on one page, each section with **Change**: Library, your account (with "Full administration"), use (with the Workbench template and your organisation), packages (with the number of switched-on automations) and optional items. Passwords are only shown as "set". After **Change**, **Next** leads back to the summary; everything else stays as it was.
 
 **Save as file** stores the setup as a [configuration file](einrichtungsdatei.md), without passwords and without the key.
 
-**Set up now** checks everything once more and then carries it out, with progress: creating the Library and your account, creating the key, saving address, state and email sending, loading examples, installing packages. If something doesn't work, it says what and why. What is already done stays; with **Change** you correct the entry, with **Try again** it continues at this point. Nothing is created twice.
+**Set up now** checks everything once more and then carries it out, with progress: creating the Library and your account, creating the key, saving address, state, use and email sending, loading examples, installing packages, creating your organisation. If something doesn't work, it says what and why. What is already done stays; with **Change** you correct the entry, with **Try again** it continues at this point. Nothing is created twice.
 
 ### Done: emergency sheet { #fertig }
 
@@ -116,7 +128,7 @@ Plus links to both manuals, "Report a problem" as a prepared GitHub issue and th
 
 Afterwards: how to continue is summarised under [Setting up in five steps](fuenf-schritte.md) – switch on the schedule under **Workbench → [Backup](sicherung.md)**, create your own [folder types](mappentypen.md) and [invite more users](benutzer.md) – ideally also a second person who may manage.
 
-**For the self-employed and small businesses:** the Workbench starts with the slim template *Household*. Set the template **Business** under **Workbench → Customise workbench** – then you also see number sequences, archive mode, mailboxes, data protection and the other areas a business needs (see [Overview](uebersicht.md)).
+**For the self-employed and small businesses:** if you chose "For my work or my business" or "Both" in the [Use](#nutzung) step, the Workbench starts with the **Business** template – with number sequences, archive mode, mailboxes, data protection and the other areas a business needs. Otherwise it starts with the slim template *Household*; you can switch at any time under **Workbench → Customise workbench** (see [Overview](uebersicht.md)).
 
 ## Database connection {#datenbank-anbindung}
 

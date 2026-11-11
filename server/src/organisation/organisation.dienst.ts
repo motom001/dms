@@ -7,10 +7,11 @@
  *
  * Schicht 3 – bekommt den Kern, die Mappen (Übernehmen der bisherigen Angaben) und die Mail an die Verwaltenden.
  */
-import { anschriftZeilen, anzeigename, geltendeOrganisation, KEINE_ORGANISATION_EINSTELLUNG, liesAngaben, liesOrganisationEinstellung, merkmalFeld, neueNotizen, NOTIZEN_MAX, ORGANISATION_EINSTELLUNG, verantwortlicherText, verweisFelder, angabenFelder, type EigeneOrganisation, type OrganisationEinstellung, type OrganisationNotiz, type OrganisationStand, type Stelle, type Verwendung } from '../../../shared/src/organisation';
+import { ANGABE_MAX, anschriftZeilen, anzeigename, geltendeOrganisation, KEINE_ORGANISATION_EINSTELLUNG, liesAngaben, liesOrganisationEinstellung, merkmalFeld, neueNotizen, NOTIZEN_MAX, ORGANISATION_EINSTELLUNG, verantwortlicherText, verweisFelder, angabenFelder, type EigeneOrganisation, type OrganisationEinstellung, type OrganisationNotiz, type OrganisationStand, type Stelle, type Verwendung } from '../../../shared/src/organisation';
 import { hatEigeneOrganisationBedingung } from '../../../shared/src/anzeige';
 import { liesDatenschutz } from '../../../shared/src/auskunft';
 import { istLeer, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { liesPlanOrganisation, ORGANISATION_ANGABEN } from '../../../shared/src/einrichtungsplan';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenDienst } from '../mappen';
@@ -170,17 +171,48 @@ export class OrganisationDienst {
   async uebernehmen(z: Zugriff, benutzerId: string): Promise<OrganisationStand> {
     const ds = liesDatenschutz(await this.einstellungen?.lies('datenschutz'));
     if (!ds.verantwortlicher.trim()) throw new Fachfehler(409, t('meldungen.organisation.nichts-bisher'));
-    if ((await this.kern.eigeneOrganisationen()).length) throw new Fachfehler(409, t('meldungen.organisation.schon-da'));
-    const typ = [...(await this.kern.typen()).values()].find((x) => merkmalFeld(x) && !x.system);
-    if (!typ) throw new Fachfehler(409, t('meldungen.organisation.ohne-basis'));
-    const werte = werteAusText(typ, ds.verantwortlicher);
-    const m: Mappe = await this.anschluss.mappen().legeMappeAn({ typId: typ.id, werte }, benutzerId, false, z);
-    // Verantwortlich ist die Organisation selbst – der Verweis zeigt auf sie (geht erst mit ihrer Id).
-    const vf = verweisFelder(typ).verantwortlicher;
-    if (vf) await this.anschluss.mappen().aendereMappe(m.id, { werte: { [vf.key]: m.id } }, benutzerId, z);
+    const typ = await this.typFuerNeue();
+    const m = await this.legeAn(typ, werteAusText(typ, ds.verantwortlicher), z, benutzerId);
     await this.einstellungen?.schreibe('datenschutz', { ...ds, verantwortlicher: '' });
     log.warn('Bisherige Angabe „Verantwortlicher“ als eigene Organisation übernommen', { mappe: m.id, von: benutzerId });
     return this.stand();
+  }
+
+  /**
+   * „Deine Organisation“ aus dem Einrichtungsassistenten (#1045): legt aus wenigen Angaben (Name Pflicht; Anschrift,
+   * E-Mail, Telefon freiwillig) die eigene Organisation an – wie `uebernehmen` mit den Rechten der Person und nur, wenn es
+   * noch keine gibt. Die Angaben landen in den Feldern der festen Liste (je Bedeutung das erste Feld); mehr nicht.
+   */
+  async anlegen(eingabe: unknown, z: Zugriff, benutzerId: string): Promise<OrganisationStand> {
+    const o = liesPlanOrganisation(eingabe);
+    if (!o?.name) throw new Fachfehler(422, t('meldungen.organisation.name-fehlt'));
+    const typ = await this.typFuerNeue();
+    const felder = angabenFelder(typ);
+    const werte: Record<string, unknown> = {};
+    for (const k of ORGANISATION_ANGABEN) {
+      const f = felder[k];
+      if (f && o[k]) werte[f.key] = o[k].slice(0, f.maxLen ?? ANGABE_MAX);
+    }
+    werte[merkmalFeld(typ)!.key] = true;
+    const m = await this.legeAn(typ, werte, z, benutzerId);
+    log.warn('Eigene Organisation im Einrichtungsassistenten angelegt', { mappe: m.id, von: benutzerId });
+    return this.stand();
+  }
+
+  /** Mappentyp für eine neue eigene Organisation – nur, solange es keine gibt (sonst gehört es in die Ablage). */
+  private async typFuerNeue(): Promise<Mappentyp> {
+    if ((await this.kern.eigeneOrganisationen()).length) throw new Fachfehler(409, t('meldungen.organisation.schon-da'));
+    const typ = [...(await this.kern.typen()).values()].find((x) => merkmalFeld(x) && !x.system);
+    if (!typ) throw new Fachfehler(409, t('meldungen.organisation.ohne-basis'));
+    return typ;
+  }
+
+  /** Anlegen mit den Rechten der Person; verantwortlich ist die Organisation selbst (der Verweis geht erst mit ihrer Id). */
+  private async legeAn(typ: Mappentyp, werte: Record<string, unknown>, z: Zugriff, benutzerId: string): Promise<Mappe> {
+    const m: Mappe = await this.anschluss.mappen().legeMappeAn({ typId: typ.id, werte }, benutzerId, false, z);
+    const vf = verweisFelder(typ).verantwortlicher;
+    if (vf) await this.anschluss.mappen().aendereMappe(m.id, { werte: { [vf.key]: m.id } }, benutzerId, z);
+    return m;
   }
 }
 

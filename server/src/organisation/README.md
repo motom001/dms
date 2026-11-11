@@ -8,7 +8,8 @@ Werkbank → Benutzer und Sicherheit → Eigene Organisation. Schicht 3 (nicht i
 - `organisation.dienst.ts` – `OrganisationDienst`: `liste` (eigene Organisationen mit der festen Liste), `geltende`
   (für Auskünfte und Unterlagen), `verantwortlicherText` (Deckblatt, Löschkonzept), `stand` (Werkbank), `setze`
   (Wahl und freigegebene Rollen), `geaendert` (Notiz an die Verwaltung, Systemprotokoll, Mail) und `uebernehmen`
-  (bisherige Angabe „Verantwortlicher“ der Auskunft als Organisation anlegen).
+  (bisherige Angabe „Verantwortlicher“ der Auskunft als Organisation anlegen) und `anlegen` („Deine Organisation“ aus dem
+  Einrichtungsassistenten, #1045 – Name, Anschrift, E-Mail, Telefon in die Felder der festen Liste).
 - `organisation.routen.ts` – Werkbank-Routen unter `/api/werkbank/organisation` (Bereich `organisation`).
 - `index.ts` – die einzige Tür.
 

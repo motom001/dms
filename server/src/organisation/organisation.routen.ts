@@ -16,5 +16,7 @@ export function organisationRouten(k: RoutenKontext): Route[] {
       L.datenschutz.info('Eigene Organisation aus der bisherigen Angabe angelegt', { von: ich(a).email });
       return ok(r, 201);
     } },
+    // Einrichtungsassistent (#1045): „Deine Organisation“ anlegen – nur, solange es keine eigene gibt.
+    { methode: 'POST', pfad: '/api/werkbank/organisation/anlegen', zugang: 'admin', handler: async (a) => ok(await dienst.organisation.anlegen(a.body, await zg(a), ich(a).id), 201) },
   ];
 }

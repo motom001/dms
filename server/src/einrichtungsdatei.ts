@@ -1,7 +1,7 @@
 import { Document, isMap, isScalar, isSeq, LineCounter, parseDocument, type Node } from 'yaml';
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
 import { HANDBUCH_BASIS } from '../../shared/src/hilfe';
-import { EINRICHTUNG_FORMAT, PLAN_VERBINDUNGEN, VERWEIS_MUSTER, type DateiFehler, type Einrichtungsplan, type PlanMail } from '../../shared/src/einrichtungsplan';
+import { beruflichBei, EINRICHTUNG_FORMAT, NUTZUNGEN, ORGANISATION_ANGABEN, ORGANISATION_MAX, PLAN_VERBINDUNGEN, VERWEIS_MUSTER, type DateiFehler, type Einrichtungsplan, type Nutzung, type PlanMail, type PlanOrganisation } from '../../shared/src/einrichtungsplan';
 import { PAKET_ID } from '../../shared/src/kennungen';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
@@ -59,6 +59,20 @@ export const SCHEMA: Schema = {
       type: 'object', additionalProperties: false, required: ['email'],
       description: t('meldungen.einrichtungsdatei.dein-konto-die-person'),
       properties: { name: { type: 'string', maxLength: 100 }, email: EMAIL, passwort: verweis('KONTO_PASSWORT') },
+    },
+    // „Wofür nutzt du Ablago?“ (#1045) und „Deine Organisation“ – nur der Name ist Pflicht.
+    nutzung: { enum: NUTZUNGEN, description: t('meldungen.einrichtungsdatei.nutzung') },
+    organisation: {
+      type: 'object', additionalProperties: false, required: ['name'], description: t('meldungen.einrichtungsdatei.organisation'),
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: ORGANISATION_MAX.name },
+        strasse: { type: 'string', maxLength: ORGANISATION_MAX.strasse },
+        hausnummer: { type: 'string', maxLength: ORGANISATION_MAX.hausnummer },
+        plz: { type: 'string', maxLength: ORGANISATION_MAX.plz },
+        ort: { type: 'string', maxLength: ORGANISATION_MAX.ort },
+        email: { ...EMAIL, maxLength: ORGANISATION_MAX.email },
+        telefon: { type: 'string', maxLength: ORGANISATION_MAX.telefon },
+      },
     },
     pakete: {
       type: 'array', maxItems: 100, description: t('meldungen.einrichtungsdatei.pakete-aus-dem-offiziellen'),
@@ -166,6 +180,9 @@ function zeileVon(doc: Document.Parsed, lc: LineCounter, pfad: Array<string | nu
 type Roh = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
+/** „Deine Organisation“ aus der Datei: fehlende Angaben leer. */
+const organisationAus = (x: Roh): PlanOrganisation => Object.fromEntries(ORGANISATION_ANGABEN.map((k) => [k, str(x[k]).trim()])) as unknown as PlanOrganisation;
+
 function planAus(o: Roh): Einrichtungsplan {
   const db = o.datenbank as Roh | undefined;
   const konto = o.konto as Roh;
@@ -176,13 +193,32 @@ function planAus(o: Roh): Einrichtungsplan {
     verbindung: (m.verbindung as PlanMail['verbindung']) ?? 'starttls', benutzer: str(m.benutzer), absender: str(m.absender), selbstsigniert: m.selbstsigniert === true,
     ...(typeof m.passwort === 'string' ? { passwort: m.passwort } : {}),
   } : null;
+  // #1045: Mit `nutzung` folgt das Merkmal der Antwort; ältere Dateien setzen es mit `optionales.beruflich` direkt.
+  const nutzung = o.nutzung as Nutzung | undefined;
+  const beruflich = nutzung ? beruflichBei(nutzung) : opt.beruflich === true;
   return {
     datenbank: db ? { host: str(db.rechner), port: db.port as number, datenbank: str(db.name), benutzer: str(db.benutzer), ...(typeof db.passwort === 'string' ? { passwort: db.passwort } : {}) } : null,
     ablage: str(o.ablage).replace(/\s+/g, ' ').trim(),
     konto: { name: str(konto.name), email: str(konto.email), ...(typeof konto.passwort === 'string' ? { passwort: konto.passwort } : {}) },
     pakete: Array.isArray(o.pakete) ? (o.pakete as Roh[]).map((p) => ({ id: str(p.id), beispiele: p.beispiele === true, automatisierungen: { ...((p.automatisierungen ?? {}) as Record<string, boolean>) } })) : null,
-    optional: { adresse: typeof opt.adresse === 'string' ? opt.adresse : null, bundesland: typeof opt.bundesland === 'string' ? opt.bundesland : null, beispiele: opt.beispiele === true, mail, ...(opt.beruflich === true ? { beruflich: true } : {}) },
+    optional: { adresse: typeof opt.adresse === 'string' ? opt.adresse : null, bundesland: typeof opt.bundesland === 'string' ? opt.bundesland : null, beispiele: opt.beispiele === true, mail, ...(beruflich ? { beruflich: true } : {}) },
+    ...(nutzung ? { nutzung } : {}),
+    ...(o.organisation ? { organisation: organisationAus(o.organisation as Roh) } : {}),
   };
+}
+
+/**
+ * Was das Schema allein nicht prüfen kann (#1045): `optionales.beruflich` neben `nutzung` muss zur Antwort passen, und
+ * eine eigene Organisation gibt es nur bei beruflicher Nutzung.
+ */
+function widersprueche(o: Roh): Verstoss[] {
+  const aus: Verstoss[] = [];
+  const nutzung = o.nutzung as Nutzung | undefined;
+  const opt = (o.optionales ?? {}) as Roh;
+  if (nutzung && typeof opt.beruflich === 'boolean' && opt.beruflich !== beruflichBei(nutzung)) aus.push({ pfad: ['optionales', 'beruflich'], text: t('einrichtung.datei.fehler.beruflich', { nutzung }) });
+  const beruflich = nutzung ? beruflichBei(nutzung) : opt.beruflich === true;
+  if (o.organisation && !beruflich) aus.push({ pfad: ['organisation'], text: t('einrichtung.datei.fehler.organisation'), schluessel: true });
+  return aus;
 }
 
 /**
@@ -217,6 +253,7 @@ export function liesEinrichtungsdatei(text: unknown): { plan: Einrichtungsplan |
   const { wert, kontoIn, hinweise } = aelter(doc.toJS({ maxAliasCount: 0 }) as unknown);
   const v: Verstoss[] = [];
   pruefe(wert, SCHEMA, [], v);
+  if (!v.length) v.push(...widersprueche(wert as Roh));
   // Zeile und Feld so, wie es in der Datei steht (auch „administrator“ aus älteren Dateien).
   const inDatei = (pfad: Array<string | number>) => (pfad[0] === 'konto' ? [kontoIn, ...pfad.slice(1)] : pfad);
   if (v.length) {
@@ -243,6 +280,9 @@ export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
   }
   o.ablage = plan.ablage;
   o.konto = { ...(plan.konto.name ? { name: plan.konto.name } : {}), email: plan.konto.email, ...(plan.konto.passwort ? { passwort: plan.konto.passwort } : {}) };
+  if (plan.nutzung) o.nutzung = plan.nutzung;
+  // Nur, was ausgefüllt ist; der Name immer (Pflicht).
+  if (plan.organisation) o.organisation = Object.fromEntries(ORGANISATION_ANGABEN.filter((k) => k === 'name' || plan.organisation![k]).map((k) => [k, plan.organisation![k]]));
   if (plan.pakete) {
     o.pakete = plan.pakete.map((p) => ({
       id: p.id, ...(p.beispiele ? { beispiele: true } : {}),
@@ -253,8 +293,8 @@ export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
   if (plan.optional.adresse) opt.adresse = plan.optional.adresse;
   if (plan.optional.bundesland) opt.bundesland = plan.optional.bundesland;
   opt.beispiele = plan.optional.beispiele;
-  // Merkmal der Ablage (#1032): nur, wenn an – Vorgabe ist nein.
-  if (plan.optional.beruflich) opt.beruflich = true;
+  // Merkmal der Ablage (#1032): nur, wenn an – Vorgabe ist nein. Mit `nutzung` (#1045) steht es dort.
+  if (plan.optional.beruflich && !plan.nutzung) opt.beruflich = true;
   const m = plan.optional.mail;
   if (m) opt['e-mail'] = { aktiv: m.aktiv, server: m.host, port: m.port, verbindung: m.verbindung, benutzer: m.benutzer, absender: m.absender, selbstsigniert: m.selbstsigniert, ...(m.passwort ? { passwort: m.passwort } : {}) };
   o.optionales = opt;
@@ -268,6 +308,8 @@ export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
   ueber(doc, 'datenbank', t('einrichtung.datei.kommentar.datenbank'));
   ueber(doc, 'ablage', t('einrichtung.datei.kommentar.ablage'));
   ueber(doc, 'konto', t('einrichtung.datei.kommentar.konto'));
+  ueber(doc, 'nutzung', t('einrichtung.datei.kommentar.nutzung'));
+  ueber(doc, 'organisation', t('einrichtung.datei.kommentar.organisation'));
   ueber(doc, 'pakete', t('einrichtung.datei.kommentar.pakete'));
   ueber(doc, 'optionales', t('einrichtung.datei.kommentar.optionales'));
   return doc.toString({ lineWidth: 0 });

@@ -17,5 +17,5 @@ Ausblenden ist **Ordnung, kein Schutz**: Werte ausgeblendeter Felder bleiben ges
 
 - Ändern darf das Merkmal nur, wer **Gesamte Verwaltung** hat ([Wer darf Ablago verwalten?](verwalten.md)); der Bereich lässt sich nicht einzeln vergeben. Lesen dürfen es alle Angemeldeten – das Formular der Mappe braucht es.
 - Schaltest du es um, prüft Ablago gleich, welche Mappen jetzt Pflichtfelder offen haben (etwa in einem Abschnitt, der nur beruflich zu sehen ist), und zeigt sie wie gewohnt als „passt nicht“.
-- Die [Einrichtungsdatei](einrichtungsdatei.md) kennt es unter `optionales: beruflich: true`. Der Einrichtungsassistent fragt es später selbst ab.
+- Der Einrichtungsassistent fragt es im Schritt [Nutzung](installation.md#nutzung) ab („Wofür nutzt du Ablago?“) und legt bei beruflicher Nutzung auf Wunsch gleich deine [eigene Organisation](organisation.md) an. Die [Einrichtungsdatei](einrichtungsdatei.md) kennt es als `nutzung: beruflich` bzw. `beides` (ältere Dateien: `optionales: beruflich: true`).
 - Das Merkmal steht in der Datenbank und damit in jeder [Sicherung](sicherung.md). Der [Vollexport](export.md) legt es als `struktur/merkmale.json` ab, die Schnittstelle liefert es lesend unter `GET /api/v1/merkmale`.

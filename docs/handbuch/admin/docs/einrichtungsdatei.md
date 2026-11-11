@@ -4,7 +4,7 @@ Was du im [Einrichtungsassistenten](installation.md#der-einrichtungsassistent) z
 
 ## Speichern
 
-In der [Zusammenfassung](installation.md#zusammenfassung) des Assistenten speichert **Als Datei speichern** die Datei `ablago-einrichtung.yaml` in deinen Download-Ordner. Darin stehen Datenbank (Rechner, Port, Name, Benutzer), Name der Ablage, dein Konto (Name, E-Mail-Adresse), die Pakete samt ein- und ausgeschalteter Automatisierungen und das Optionale (Adresse, Bundesland, Beispiele, E-Mail-Versand). Kurze Kommentare erklären jeden Abschnitt.
+In der [Zusammenfassung](installation.md#zusammenfassung) des Assistenten speichert **Als Datei speichern** die Datei `ablago-einrichtung.yaml` in deinen Download-Ordner. Darin stehen Datenbank (Rechner, Port, Name, Benutzer), Name der Ablage, dein Konto (Name, E-Mail-Adresse), die Nutzung samt deiner Organisation, die Pakete samt ein- und ausgeschalteter Automatisierungen und das Optionale (Adresse, Bundesland, Beispiele, E-Mail-Versand). Kurze Kommentare erklären jeden Abschnitt.
 
 !!! info "Nicht in der Datei: Passwörter und Schlüssel"
     Die Datei enthält **keine Passwörter** und **keinen Schlüssel**. Passwörter fragt der Assistent beim Laden ab. Den Schlüssel erzeugt Ablago bei jeder Einrichtung neu, und das [Notfallblatt](verschluesselung.md#notfallblatt) bleibt Pflicht. Steht in einer Datei trotzdem ein Passwort im Klartext, lehnt Ablago sie ab.
@@ -46,6 +46,8 @@ konto:
   name: Lena Beispiel
   email: lena@example.org
   passwort: ${DMS_KONTO_PASSWORT}
+# Wofür Ablago genutzt wird: privat, beruflich oder beides.
+nutzung: privat
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung
@@ -71,7 +73,9 @@ optionales:
 - `konto` ist die Person, die einrichtet: Sie bekommt „Gesamte Verwaltung“ und arbeitet auch in der Ablage. Weitere Personen lädst du nach der Einrichtung unter Werkbank → Benutzer ein.
 - Ohne Liste `pakete` wählst du die Pakete im Assistenten; `pakete: []` heißt „keine“.
 - **Dateien aus Version 0.191 und 0.192** lädt Ablago weiter: Der Abschnitt `administrator` gilt als `konto`. Einen Abschnitt `erster-benutzer` übergeht Ablago mit einem Hinweis – den ersten Benutzer gibt es im Assistenten nicht mehr. Beim Speichern steht nur noch `konto` in der Datei.
-- `optionales: beruflich: true` heißt: Die Ablage wird auch beruflich genutzt ([Nutzung](nutzung.md)); fehlt die Angabe, gilt nein. Der Assistent zeigt es in der Zusammenfassung und speichert es mit „Jetzt einrichten“.
+- `nutzung` ist die Antwort auf „Wofür nutzt du Ablago?“: `privat`, `beruflich` oder `beides` ([Nutzung](installation.md#nutzung)). `beruflich` und `beides` setzen das Merkmal [beruflich genutzt](nutzung.md). Fehlt die Angabe, fragt der Assistent.
+- `organisation` gibt es nur bei `beruflich` und `beides`: `name` ist Pflicht, dazu freiwillig `strasse`, `hausnummer`, `plz`, `ort`, `email` und `telefon`. „Jetzt einrichten“ legt daraus die [eigene Organisation](organisation.md) an; das Paket `basis` muss dann in der Liste stehen.
+- **Dateien bis Version 0.237** kennen `nutzung` noch nicht und setzen das Merkmal mit `optionales: beruflich: true`. Ablago liest das weiter; der Assistent schlägt dann im Schritt „Nutzung“ „Beides“ vor. Steht beides in der Datei, muss es zusammenpassen.
 - Automatisierungen eines Pakets stehen als Schlüssel mit `true` (eingeschaltet) oder `false` (aus); fehlt eine, ist sie wie im Assistenten eingeschaltet.
 
 ## Verweise statt Passwörter

@@ -26,7 +26,7 @@ More: [Users and roles](benutzer.md)
 
 Packages bring ready-made **folder types** – for contracts, insurance policies, vehicles, letting or the business. Under **Workbench → Packages** you see the catalogue; install what suits you. Many packages also bring **reminders**, for instance of a notice period or the next vehicle inspection. They work as automations; which are switched on you see under **Workbench → Building your Library → Automations**.
 
-*Already done if you ticked something in the wizard's step "Packages" and set it up with "Set up now".*
+*Already done if you ticked something in the wizard's step "Packages" and set it up with "Set up now". The question "What will you use Ablago for?" before it already preselected suitable packages there – for home, for work or for both.*
 
 ![Packages in the workbench](bilder/werkbank-pakete.png)
 

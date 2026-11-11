@@ -1115,6 +1115,8 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 fieldset.wahlkarten { border: 0; padding: 0; min-width: 0; }
 label.wahlkarte { flex-direction: row; align-items: center; gap: 10px; }
 .wahlkarte.gewaehlt { border-color: var(--akzent); box-shadow: 0 0 0 1px var(--akzent); }
+/* „Wofür nutzt du Ablago?“ (#1045): Name und ein Satz darunter. */
+.wahlkarte-text { display: grid; gap: 2px; }
 .anleitung { padding-left: 1.3em; display: grid; gap: 10px; margin: 8px 0 14px; }
 .anleitung li.erledigt { color: var(--leise); }
 .nfb-haken { color: var(--gruen); font-weight: 700; } /* #414: erledigter Schritt */
