@@ -4,7 +4,7 @@ Der Baustein **Suche** (#978, #994) ist das eine Suchfeld aller Listen – in de
 
 | Teil | Wofür |
 | --- | --- |
-| `Suchfeld` | Das Feld selbst: Lupe, Platzhalter, „×“ zum Leeren (nur mit Inhalt), **Esc** leert ebenfalls, `onEnter` für eigene Wege (Archivnummer in der Ablage). Die `beschriftung` ist der Name für Bildschirmleser, sichtbar steht der `platzhalter`. |
+| `Suchfeld` | Das Feld selbst: Lupe, Platzhalter, „×“ zum Leeren (nur mit Inhalt), **Esc** leert ebenfalls, `onEnter` für eigene Wege (Archivnummer in der Ablage). Die `beschriftung` ist der Name für Bildschirmleser, sichtbar steht der `platzhalter`. Ohne Vorschläge des Browsers und Rechtschreibprüfung, die Bildschirmtastatur zeigt „Suchen“; `feldRef` gibt Zugriff auf die Eingabe (z. B. Fokus nach dem Umschalten auf der Startseite, #1002). |
 | `ListenSuche` | Das Muster: Suchregion (`role="search"`) mit `Suchfeld`, den `filter` darunter (Gruppe „Filter“) und der Trefferzahl (`aria-live`): „12 Treffer“, solange Suche oder ein Filter aktiv ist (`aktiv`), sonst `anzahl` („30 Mappentypen“). Am Handy bleibt die Region beim Rollen oben. |
 | `FilterHaken` | Ein Haken unter dem Suchfeld, z. B. „Nur offene zeigen“, „Erledigte zeigen“. |
 | `PaketFilter` | Auswahl „Paket“: *Alle*, *Eigene (ohne Paket)*, die Pakete der Liste. Ohne Pakete in der Liste gibt es ihn nicht; `beschriftung` z. B. „Herkunft“. |

@@ -4,7 +4,7 @@ The building block **Search** (#978, #994) is the one search field of all lists 
 
 | Part | What for |
 | --- | --- |
-| `Suchfeld` | The field itself: magnifier, placeholder, “×” to clear (only with content), **Esc** clears too, `onEnter` for your own ways (archive number in the Library). `beschriftung` is the name for screen readers; the `platzhalter` is what you see. |
+| `Suchfeld` | The field itself: magnifier, placeholder, “×” to clear (only with content), **Esc** clears too, `onEnter` for your own ways (archive number in the Library). `beschriftung` is the name for screen readers; the `platzhalter` is what you see. No browser suggestions and no spell check, the on-screen keyboard shows “Search”; `feldRef` gives access to the input (e.g. focus after switching on the start page, #1002). |
 | `ListenSuche` | The pattern: search region (`role="search"`) with `Suchfeld`, the `filter` below (group “Filters”) and the number of results (`aria-live`): “12 results” while the search or a filter is active (`aktiv`), otherwise `anzahl` (“30 folder types”). On a phone the region stays at the top while scrolling. |
 | `FilterHaken` | A tick box below the search field, e.g. “Only show open ones”, “Show completed”. |
 | `PaketFilter` | Choice “Package”: *All*, *Own (no package)*, the packages in the list. Without packages in the list it isn't shown; `beschriftung` e.g. “Origin”. |

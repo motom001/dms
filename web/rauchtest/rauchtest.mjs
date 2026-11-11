@@ -417,6 +417,48 @@ rauchtest('Suche auf der Startseite', { als: LENA }, async (s) => {
   await schnell.getByText('Nichts gefunden für „Xylofonunterricht“.').waitFor();
 });
 
+// #1002: Mit „Frag deine Ablage“ ein Feld statt zwei, darüber „Fragen · Suchen“. Der Text bleibt beim Umschalten, die
+// Wahl merkt Ablago je Person. Ein Antwort-Paket gibt es im Rauchtest nicht: Die Seite bekommt es nur gemeldet – eine
+// Frage stellt der Test nicht.
+const mitFragen = (s) => s.route('**/api/fragen', (r) => r.fulfill({ json: { verfuegbar: true, paket: 'KI-Assistent' } }));
+const feldArtGemerkt = (s, wert) => s.waitForResponse((r) => r.request().method() === 'PUT' && r.url().endsWith('/api/konto/einstellungen/startseite_feld')
+  && JSON.parse(r.request().postData() ?? '{}').wert === wert);
+
+rauchtest('Startseite: ein Feld, „Fragen · Suchen“ umschalten', { als: LENA }, async (s) => {
+  await mitFragen(s);
+  await s.goto(BASIS + '/ablage/start');
+  const schnell = s.getByRole('region', { name: 'Schnell finden' });
+  const art = schnell.getByRole('radiogroup', { name: 'Fragen oder suchen' });
+  // Vorgabe „Fragen“: genau ein Feld, darüber der Umschalter und „Erweiterte Suche“.
+  await art.getByRole('radio', { name: 'Fragen', checked: true }).waitFor();
+  const frage = schnell.getByRole('textbox', { name: 'Frag deine Ablage' });
+  await frage.fill('Stadtwerke');
+  assert.equal(await schnell.getByRole('searchbox').count(), 0, 'kein zweites Feld');
+  await schnell.getByRole('link', { name: 'Erweiterte Suche' }).waitFor();
+  // Klick auf „Suchen“: Text bleibt, Fokus im Feld, die Suche findet.
+  const gemerkt = feldArtGemerkt(s, 'suchen');
+  await art.getByRole('radio', { name: 'Suchen' }).click();
+  await gemerkt;
+  const feld = schnell.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' });
+  assert.equal(await feld.inputValue(), 'Stadtwerke');
+  assert.ok(await feld.evaluate((e) => e === document.activeElement), 'der Fokus bleibt im Feld');
+  await schnell.getByText('Ein Treffer').waitFor();
+  await schnell.getByRole('checkbox', { name: 'auch in Dokumenten' }).waitFor();
+  assert.equal(await frage.count(), 0, 'nur ein Feld');
+  // Nach dem Neuladen weiter „Suchen“; die Pfeiltaste wechselt zurück, der Fokus bleibt im Umschalter.
+  await s.reload();
+  const an = art.getByRole('radio', { name: 'Suchen', checked: true });
+  await an.waitFor();
+  await an.focus();
+  const zurueck = feldArtGemerkt(s, null);
+  await s.keyboard.press('ArrowLeft');
+  await zurueck;
+  const fragenAn = art.getByRole('radio', { name: 'Fragen', checked: true });
+  await fragenAn.waitFor();
+  assert.ok(await fragenAn.evaluate((e) => e === document.activeElement), 'der Fokus bleibt im Umschalter');
+  await frage.waitFor();
+});
+
 /** Verwaltungsmodus über das Benutzermenü; fragt Ablago nach dem Passwort, wird es eingegeben. */
 async function verwalten(s) {
   const menue = await benutzermenue(s, LENA);
@@ -600,6 +642,19 @@ rauchtest('Handy: Suche', { handy: true, als: LENA }, async (s) => {
 });
 
 // #935: „+ … anlegen“ öffnet am Handy dasselbe Fenster – unten, so breit wie der Bildschirm; Esc schließt es.
+// #1002: Am Handy ein Feld, der Umschalter darüber.
+rauchtest('Handy: Startseite mit „Fragen · Suchen“', { handy: true, als: LENA }, async (s) => {
+  await mitFragen(s);
+  await s.goto(BASIS + '/ablage/start');
+  const art = s.getByRole('radiogroup', { name: 'Fragen oder suchen' });
+  await art.waitFor();
+  const frage = s.getByRole('textbox', { name: 'Frag deine Ablage' });
+  const [oben, feld] = [await art.boundingBox(), await frage.boundingBox()];
+  assert.ok(oben && feld && oben.y + oben.height <= feld.y, 'Umschalter über dem Feld');
+  assert.equal(await s.getByRole('searchbox').count(), 0, 'nur ein Feld');
+  await keineWaagerechteRolle(s);
+});
+
 rauchtest('Handy: Fenster „+ … anlegen“ passt auf den Bildschirm (#935)', { handy: true, als: LENA }, async (s) => {
   const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
   await s.goto(BASIS + `/ablage/${typen.find((x) => x.name === 'Rechnung').id}/neu`);

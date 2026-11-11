@@ -10,8 +10,7 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { neuePost } from './NeuePost';
-import { StartSuche } from './StartSuche';
-import { FragAblage } from './FragAblage';
+import { StartFeld } from './StartFeld';
 import { TippZeile } from '../entdecken/TippZeile';
 import { istTouch, postFotografieren } from './PostKamera';
 import { AnsichtSymbol, Symbol } from '../Symbol';
@@ -112,11 +111,10 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
     <>
       <Listenkopf titel={t('ablage.startseite.start')} hilfe="ablage.start" beschreibung={<>{t('ablage.startseite.hallo-hier-faengst-du', { wert: ich.name?.split(/\s+/)[0] || ich.email })}</>} />
       <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
-        {/* Schnell finden (#497) ganz oben; darunter (ohne Suchbegriff) die Kamera, Kacheln und „zuletzt geöffnet“. */}
-        <StartSuche ohneSuche={!!daten?.leer} sonst={<>
-        {/* Frag deine Ablage (#444): eigenes Feld, nur mit einem Antwort-Paket. */}
-        {!daten?.leer && <FragAblage />}
-        {/* Tipp des Tages (#832): eine leise Zeile unter „Frag deine Ablage“ – bleibt dort, wenn die Startseite zum Dashboard wird (#421). */}
+        {/* Ein Feld ganz oben (#497, #1002): Suchen oder – mit einem Antwort-Paket – „Frag deine Ablage“ (#444), umschaltbar.
+            Darunter (beim Suchen ohne Suchbegriff) die Kamera, Kacheln und „zuletzt geöffnet“. */}
+        <StartFeld ohneFeld={!!daten?.leer} sonst={<>
+        {/* Tipp des Tages (#832): eine leise Zeile unter dem Feld – bleibt dort, wenn die Startseite zum Dashboard wird (#421). */}
         {!daten?.leer && <TippZeile />}
         {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. */}
         {kamera && <button type="button" className="knopf gruen pk-start" onClick={() => postFotografieren()}>{tn('ablage.startseite.post-fotografieren', { symbol: <Symbol name="kamera" /> })}</button>}

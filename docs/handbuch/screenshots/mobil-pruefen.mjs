@@ -220,7 +220,8 @@ for (const g of GROESSEN) {
       if (klein.length) fehler.push(`${ort} „Ansicht ▾“: Tippziele unter 44 px: ${klein.join(', ')}`);
       await s.keyboard.press('Escape');
       // Schnell finden (#497): Suchfeld oben, Treffer in unter einer Sekunde, nichts zu breit.
-      const feld = s.locator('#ss-feld');
+      // Seit #1002 der Baustein Suchfeld: die Eingabe im Rahmen `.ss-feld` (ohne Antwort-Paket immer die Suche).
+      const feld = s.locator('.ss-feld input[type="search"]');
       if (!(await feld.count())) fehler.push(`${ort}: Suchfeld der Startseite fehlt`);
       else {
         const t0 = Date.now();

@@ -71,17 +71,22 @@
 # ---------- Startseite ----------
 - anker: startseite.suche
   seite: /ablage/start
-  beschreibung: Suchfeld oben auf der Startseite
+  beschreibung: Suchfeld oben auf der Startseite (mit Antwort-Paket die Art „Suchen“; Tipp und Rundgang schalten dorthin um)
   handy: true
   clients: true
 - anker: startseite.fragen
   seite: /ablage/start
-  beschreibung: Feld „Frag deine Ablage“ (nur mit einem Antwort-Paket)
+  beschreibung: Feld oben auf der Startseite in der Art „Frag deine Ablage“ (nur mit einem Antwort-Paket; Tipp und Rundgang schalten dorthin um)
+  handy: true
+  clients: false
+- anker: startseite.feld-art
+  seite: /ablage/start
+  beschreibung: Umschalter „Fragen · Suchen“ über dem Feld der Startseite (nur mit einem Antwort-Paket)
   handy: true
   clients: false
 - anker: startseite.tipp
   seite: /ablage/start
-  beschreibung: Leise Zeile mit dem Tipp des Tages unter „Frag deine Ablage“
+  beschreibung: Leise Zeile mit dem Tipp des Tages unter dem Feld oben
   handy: true
   clients: false
 - anker: startseite.zu-erledigen

@@ -1324,7 +1324,7 @@
   },
   "web/src/ablage/FragAblage.tsx": {
     "ablago/bausteine": {
-      "count": 4
+      "count": 1
     }
   },
   "web/src/ablage/Historie.tsx": {
@@ -1440,11 +1440,6 @@
     },
     "max-lines-per-function": {
       "count": 1
-    }
-  },
-  "web/src/ablage/StartSuche.tsx": {
-    "ablago/bausteine": {
-      "count": 2
     }
   },
   "web/src/ablage/Startseite.tsx": {

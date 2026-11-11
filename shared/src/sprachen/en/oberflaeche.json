@@ -382,5 +382,16 @@
   "muster.suche.anzahl_one": "{anzahl} example",
   "muster.suche.anzahl_other": "{anzahl} examples",
   "muster.suche.paket": "Household",
-  "muster.suche.haken": "Only show open ones"
+  "muster.suche.haken": "Only show open ones",
+  "muster.umschalter.titel": "Toggle",
+  "muster.umschalter.text": "Two to four equal choices side by side, exactly one is on – such as “Ask · Search” above the box on the start page. Tab reaches the chosen one, the arrow keys choose the next.",
+  "muster.umschalter.zwei": "Two choices",
+  "muster.umschalter.zwei.beschriftung": "Ask or search",
+  "muster.umschalter.fragen": "Ask",
+  "muster.umschalter.suchen": "Search",
+  "muster.umschalter.drei": "Three choices",
+  "muster.umschalter.drei.beschriftung": "View",
+  "muster.umschalter.liste": "List",
+  "muster.umschalter.monat": "Month",
+  "muster.umschalter.jahr": "Year"
 }

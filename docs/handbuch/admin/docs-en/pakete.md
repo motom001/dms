@@ -462,7 +462,7 @@ On the page *Take over document*, Ablago suggests a folder type under **Where do
 
 ### Ask your library { #frag-deine-ablage }
 
-If a package with the permission [Answer questions about the Library](#recht-antworten) is installed and loaded, the Library's start page shows the field **"Ask your library"** (see [User manual](https://help.ablago.app/benutzer/aktuell/en/startseite/#frag-deine-ablage)). This is how a question runs:
+If a package with the permission [Answer questions about the Library](#recht-antworten) is installed and loaded, the box at the top of the Library's start page is **"Ask your library"** at first; with **Ask · Search** above it each person switches to the search, and Ablago remembers their choice (see [User manual](https://help.ablago.app/benutzer/aktuell/en/startseite/#frag-deine-ablage)). This is how a question runs:
 
 1. The browser sends the question and the chat so far to Ablago.
 2. Ablago **itself** looks for matching passages – in the documents' full text, in the folders' titles and fields and, if a package with [vectors](#recht-vektoren) is there, by similarity –, **only in folders the person asking may read**. Password fields and users are never included.

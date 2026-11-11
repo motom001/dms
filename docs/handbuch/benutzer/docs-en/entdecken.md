@@ -8,7 +8,7 @@ The first time you sign in, Ablago shows you the most important places in five s
 
 1. **How Ablago is laid out:** views on the left, the list in the middle, the open folder on the right.
 2. **Filing something new:** with **+ New** you file post; it waits in *New post* until you assign it to a folder.
-3. **Finding things:** the search box at the top of the start page and, if set up, [Ask your library](startseite.md#frag-deine-ablage) below it.
+3. **Finding things:** the box at the top of the start page – if set up, with [Ask your library](startseite.md#frag-deine-ablage) and the **Ask · Search** toggle.
 4. **To do and deadlines:** what is coming up – tasks, reminders and deadlines.
 5. **Your account:** the menu under your name with *My account* and *Discover Ablago*. Anyone who may administer Ablago also sees *Administer Ablago* there.
 
@@ -28,7 +28,7 @@ The tour works with the keyboard: Tab moves between the buttons and stays inside
 
 ## The tip on the start page { #tipps }
 
-Below *Ask your library* (or below the search box) there is now and then **one line with a tip**, for example: “With ‘also in documents’, the search also finds words that appear in your letters and invoices.”
+Below the box at the top of the start page there is now and then **one line with a tip**, for example: “With ‘also in documents’, the search also finds words that appear in your letters and invoices.”
 
 - **At most one tip a day.** The tip stays the same until the evening.
 - **The sentence is the link.** A click takes you to the right place and highlights it briefly – or starts the tour.

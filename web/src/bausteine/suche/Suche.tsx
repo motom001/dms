@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { ALLE_HERKUENFTE, durchsuche, EIGENE, herkunftPasst, suchwoerter, type Fund, type Fundquelle, type Suchoptionen, type Suchtreffer, type Textteil } from '../../../../shared/src/listensuche';
 import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
@@ -35,11 +35,17 @@ export interface SuchfeldProps {
   className?: string;
   /** Sprungziel für Rundgänge und Tests (`data-anker`). */
   anker?: string;
+  /** Zugriff auf die Eingabe, z. B. um den Fokus nach dem Umschalten zurückzugeben (Startseite, #1002). */
+  feldRef?: RefObject<HTMLInputElement | null>;
 }
 
-/** Das Suchfeld: Lupe, Eingabe, „×“ zum Leeren (nur mit Inhalt). Esc leert ebenfalls und bleibt im Feld. */
-export function Suchfeld({ wert, setze, beschriftung, platzhalter, onEnter, className, anker }: SuchfeldProps) {
-  const ref = useRef<HTMLInputElement>(null);
+/**
+ * Das Suchfeld: Lupe, Eingabe, „×“ zum Leeren (nur mit Inhalt). Esc leert ebenfalls und bleibt im Feld. Ohne
+ * Vorschläge des Browsers und ohne Rechtschreibprüfung (Namen und Nummern); die Bildschirmtastatur zeigt „Suchen“.
+ */
+export function Suchfeld({ wert, setze, beschriftung, platzhalter, onEnter, className, anker, feldRef }: SuchfeldProps) {
+  const eigen = useRef<HTMLInputElement>(null);
+  const ref = feldRef ?? eigen;
   const taste = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape' && wert) { e.preventDefault(); e.stopPropagation(); setze(''); }
     else if (e.key === 'Enter' && onEnter) onEnter(wert);
@@ -49,7 +55,7 @@ export function Suchfeld({ wert, setze, beschriftung, platzhalter, onEnter, clas
       <label className={s.feld}>
         <span className="sr">{beschriftung}</span>
         <Symbol name="suche" className={s.lupe} />
-        <input ref={ref} type="search" value={wert} placeholder={platzhalter} onChange={(e) => setze(e.target.value)} onKeyDown={taste} />
+        <input ref={ref} type="search" enterKeyHint="search" autoComplete="off" spellCheck={false} value={wert} placeholder={platzhalter} onChange={(e) => setze(e.target.value)} onKeyDown={taste} />
       </label>
       {wert && (
         <Knopf art="link" nurSymbol={t('oberflaeche.suche.leeren')} className={s.leeren} onClick={() => { setze(''); ref.current?.focus(); }}>

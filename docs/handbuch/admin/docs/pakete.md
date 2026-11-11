@@ -464,7 +464,7 @@ Auf der Seite *Dokument übernehmen* schlägt Ablago unter **Wohin gehört das?*
 
 ### Frag deine Ablage { #frag-deine-ablage }
 
-Ist ein Paket mit dem Recht [Fragen an die Ablage beantworten](#recht-antworten) installiert und geladen, steht auf der Startseite der Ablage das Feld **„Frag deine Ablage“** (siehe [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/startseite/#frag-deine-ablage)). So läuft eine Frage ab:
+Ist ein Paket mit dem Recht [Fragen an die Ablage beantworten](#recht-antworten) installiert und geladen, ist das Feld oben auf der Startseite der Ablage zuerst **„Frag deine Ablage“**; mit **Fragen · Suchen** darüber wechselt jede Person zur Suche, und Ablago merkt sich ihre Wahl (siehe [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/startseite/#frag-deine-ablage)). So läuft eine Frage ab:
 
 1. Der Browser schickt die Frage und den bisherigen Chat an Ablago.
 2. Ablago sucht **selbst** passende Stellen – im Volltext der Dokumente, in Titel und Feldern der Mappen und, wenn ein Paket mit [Vektoren](#recht-vektoren) da ist, nach Ähnlichkeit –, **nur in Mappen, die der Fragende lesen darf**. Passwortfelder und Benutzer sind nie dabei.

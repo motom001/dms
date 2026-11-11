@@ -8,7 +8,7 @@ Meldest du dich zum ersten Mal an, zeigt dir Ablago in fünf Schritten die wicht
 
 1. **So ist Ablago aufgebaut:** links die Ansichten, in der Mitte die Liste, rechts die geöffnete Mappe.
 2. **Etwas Neues ablegen:** über **+ Neu** legst du Post ab; sie wartet unter *Neue Post*, bis du sie einer Mappe zuordnest.
-3. **Finden:** das Suchfeld oben auf der Startseite, darunter – falls eingerichtet – [Frag deine Ablage](startseite.md#frag-deine-ablage).
+3. **Finden:** das Feld oben auf der Startseite – falls eingerichtet mit [Frag deine Ablage](startseite.md#frag-deine-ablage) und dem Umschalter **Fragen · Suchen**.
 4. **Zu erledigen und Fristen:** was ansteht – Aufgaben, Erinnerungen und Fristen.
 5. **Dein Konto:** das Menü unter deinem Namen mit *Mein Konto* und *Ablago entdecken*. Wer Ablago verwalten darf, sieht hier auch *Ablago verwalten*.
 
@@ -28,7 +28,7 @@ Der Rundgang geht mit der Tastatur: Tab wechselt zwischen den Knöpfen und bleib
 
 ## Der Tipp auf der Startseite { #tipps }
 
-Unter dem Feld *Frag deine Ablage* (bzw. unter dem Suchfeld) steht ab und zu **eine Zeile mit einem Tipp**, zum Beispiel: „Mit ‚auch in Dokumenten‘ findet die Suche auch Wörter, die in deinen Briefen und Rechnungen stehen.“
+Unter dem Feld oben auf der Startseite steht ab und zu **eine Zeile mit einem Tipp**, zum Beispiel: „Mit ‚auch in Dokumenten‘ findet die Suche auch Wörter, die in deinen Briefen und Rechnungen stehen.“
 
 - **Höchstens ein Tipp am Tag.** Der Tipp bleibt bis zum Abend derselbe.
 - **Der Satz ist der Link.** Ein Klick führt an die passende Stelle und hebt sie kurz hervor – oder startet den Rundgang.

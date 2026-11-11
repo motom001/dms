@@ -40,6 +40,11 @@
   bereich: suche
   ziel: startseite.fragen
   funktion: fragen
+- schluessel: fragen_oder_suchen
+  bereich: suche
+  ziel: startseite.feld-art
+  funktion: fragen
+  ab_version: 0.254.0
 - schluessel: erinnern
   bereich: fristen
   ziel: navigation.zu-erledigen

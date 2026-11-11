@@ -8,17 +8,35 @@ Die Startseite nutzt die ganze Breite neben den Ansichten: Auf einem großen Bil
 
 ## Schnell finden
 
-Ganz oben auf der Startseite steht ein **Suchfeld**: „Suchen – Name, Nummer, Kennzeichen …“. Es sucht sofort beim Tippen (ab zwei Zeichen) über **alle Mappen, die du lesen darfst** – du musst nicht wissen, in welcher Ansicht etwas liegt. Gesucht wird in Titeln und Feldwerten wie in der Suche der Ansichten; mit **auch in Dokumenten** zusätzlich im Volltext (dauert etwas länger).
+Ganz oben auf der Startseite steht **ein Feld**. Rechts am Feld führt **Erweiterte Suche** zur [erweiterten Suche](ablage.md#erweiterte-suche) – für Fragen wie „alle Rechnungen, die noch nicht bezahlt sind“.
+
+Ohne „Frag deine Ablage“ ist das Feld ein **Suchfeld**: „Suchen – Name, Nummer, Kennzeichen …“. Mit „Frag deine Ablage“ wechselst du darüber mit **Fragen · Suchen** zwischen beidem ([siehe unten](#fragen-oder-suchen)). Die Suche sucht sofort beim Tippen (ab zwei Zeichen) über **alle Mappen, die du lesen darfst** – du musst nicht wissen, in welcher Ansicht etwas liegt. Gesucht wird in Titeln und Feldwerten wie in der Suche der Ansichten; mit **auch in Dokumenten** zusätzlich im Volltext (dauert etwas länger).
 
 Die Treffer stehen nach Mappentyp gruppiert, Mappen mit dem Suchbegriff im Titel zuerst. Unter jedem Treffer steht, **warum er passt**, mit hervorgehobenem Begriff – zum Beispiel „Vertragsnummer: KV-123456“. Ein Tipp öffnet die Mappe. Mehr als 60 Treffer: genauer suchen oder die [Erweiterte Suche](ablage.md#erweiterte-suche) nehmen.
 
 Mit **auch in Dokumenten** und einem Paket wie **KI lokal – Ähnlichkeit** stehen unter den Treffern zusätzlich **„Ähnliche Treffer“**: Mappen, in denen dein Suchbegriff nicht vorkommt, deren Dokument aber dazu passt – „Rechnung für die Heizung“ findet so auch „Wartung Gastherme“. Sie tragen das Kennzeichen **ähnlich**; darunter steht das passende Dokument. Mehr dazu unter [Ähnliche Dokumente](dokumente.md#aehnliche-dokumente).
 
-Am Handy kannst du auch **diktieren** (Mikrofon der Tastatur). Tippst du eine **Archivnummer** und dann Enter bzw. „Suchen“, springst du direkt zum Dokument – wie in den Ansichten. Leerst du das Feld, erscheinen wieder die Kacheln.
+Am Handy kannst du auch **diktieren** (Mikrofon der Tastatur). Tippst du eine **Archivnummer** und dann Enter bzw. „Suchen“, springst du direkt zum Dokument – wie in den Ansichten. Leerst du das Feld (mit **×** oder Esc), erscheinen wieder die Kacheln.
 
 ## Frag deine Ablage { #frag-deine-ablage }
 
-Hat dein Administrator ein Paket wie **KI-Assistent** eingerichtet, steht unter dem Suchfeld ein zweites Feld: **„Frag deine Ablage“**. Hier stellst du eine Frage in eigenen Worten – zum Beispiel „Wann läuft die Kfz-Versicherung aus?“ – und bekommst eine Antwort mit Links zu den passenden Mappen. Ohne ein solches Paket gibt es das Feld nicht.
+Hat dein Administrator ein Paket wie **KI-Assistent** eingerichtet, ist das Feld oben zuerst **„Frag deine Ablage“**. Hier stellst du eine Frage in eigenen Worten – zum Beispiel „Wann läuft die Kfz-Versicherung aus?“ – und bekommst darunter eine Antwort mit Links zu den passenden Mappen. Ohne ein solches Paket gibt es nur die Suche.
+
+### Fragen oder suchen { #fragen-oder-suchen }
+
+Über dem Feld steht der Umschalter **Fragen · Suchen** – am Handy ebenso über dem Feld:
+
+- **Fragen** – das Feld ist „Frag deine Ablage“.
+- **Suchen** – das Feld ist die Suche mit **auch in Dokumenten**, wie [oben](#schnell-finden) beschrieben.
+- **Erweiterte Suche** rechts daneben gibt es in beiden Fällen.
+
+![Startseite mit „Fragen · Suchen“ über dem Feld](bilder/startseite-fragen.png)
+
+Was du eingetippt hast, bleibt beim Umschalten stehen – hast du eine Frage begonnen und willst doch lieber suchen, klick einfach auf **Suchen**. Ablago merkt sich, was du zuletzt gewählt hast, auch auf deinen anderen Geräten; beim ersten Mal ist es **Fragen**.
+
+Mit der Tastatur: Tab führt zur gewählten Seite des Umschalters, die Pfeiltasten wechseln, Tab weiter ins Feld. Ein Screenreader sagt „Fragen oder suchen“ und welche Seite gewählt ist; das Feld heißt je nachdem „Frag deine Ablage“ oder „Alle Mappen durchsuchen“. Schaltest du mit der Maus oder dem Finger um, bleibst du im Feld.
+
+### Eine Frage stellen
 
 - **Fragen:** Frage eintippen, dann **Fragen** oder Enter (neue Zeile mit Umschalt + Enter). Die Antwort entsteht beim Schreiben; mit **Abbrechen** hörst du auf.
 - **Quellen:** Unter der Antwort stehen die Mappen, aus denen sie stammt, als Links. Die Nummern in eckigen Klammern, z. B. „[2]“, zeigen auf die Stellen darunter.
@@ -32,7 +50,7 @@ Die Antwort schreibt ein KI-Dienst. Er kann sich irren oder etwas nicht finden �
 
 ## Tipp des Tages
 
-Unter *Frag deine Ablage* bzw. unter dem Suchfeld steht ab und zu eine leise Zeile mit einem Tipp – höchstens einer am Tag. Der Satz ist der Link; das kleine × blendet den Tipp aus. Mehr unter [Ablago entdecken](entdecken.md#tipps).
+Unter dem Feld steht ab und zu eine leise Zeile mit einem Tipp – höchstens einer am Tag. Der Satz ist der Link; das kleine × blendet den Tipp aus. Mehr unter [Ablago entdecken](entdecken.md#tipps).
 
 ## Die Kacheln
 

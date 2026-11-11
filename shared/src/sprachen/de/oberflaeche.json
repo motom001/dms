@@ -382,5 +382,16 @@
   "muster.suche.anzahl_one": "{anzahl} Beispiel",
   "muster.suche.anzahl_other": "{anzahl} Beispiele",
   "muster.suche.paket": "Haushalt",
-  "muster.suche.haken": "Nur offene zeigen"
+  "muster.suche.haken": "Nur offene zeigen",
+  "muster.umschalter.titel": "Umschalter",
+  "muster.umschalter.text": "Zwei bis vier gleichrangige Wahlen nebeneinander, genau eine ist an – etwa „Fragen · Suchen“ über dem Feld der Startseite. Tab erreicht die gewählte Wahl, die Pfeiltasten wählen die nächste.",
+  "muster.umschalter.zwei": "Zwei Wahlen",
+  "muster.umschalter.zwei.beschriftung": "Fragen oder suchen",
+  "muster.umschalter.fragen": "Fragen",
+  "muster.umschalter.suchen": "Suchen",
+  "muster.umschalter.drei": "Drei Wahlen",
+  "muster.umschalter.drei.beschriftung": "Ansicht",
+  "muster.umschalter.liste": "Liste",
+  "muster.umschalter.monat": "Monat",
+  "muster.umschalter.jahr": "Jahr"
 }
