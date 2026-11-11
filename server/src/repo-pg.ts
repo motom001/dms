@@ -88,6 +88,7 @@ const alsMappe = (r: Zeile): Mappe => ({
   passt: (r.passt as boolean | null) ?? undefined,
   problem: (r.problem as string | null) ?? null,
   systemKennung: (r.system_kennung as string | null) ?? null,
+  ...(r.vorgabe ? { vorgabe: r.vorgabe as string } : {}),
 });
 const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
@@ -127,7 +128,7 @@ export const DOKUMENT_SPALTEN = ['id', 'haushalt_id', 'mappe_id', 'register_key'
  * Spalten einer Mappe ohne `suchtext` (#615): Der gefaltete Suchtext (Migration 055) ist nur für die Suche da und
  * etwa so groß wie Titel und Werte zusammen – Listen und „Mappe öffnen“ lesen ihn nie.
  */
-export const MAPPEN_SPALTEN = ['id', 'haushalt_id', 'typ_id', 'werte', 'erstellt', 'geaendert', 'erstellt_von', 'geaendert_von', 'demo', 'titel', 'passt', 'problem', 'system_kennung'] as const;
+export const MAPPEN_SPALTEN = ['id', 'haushalt_id', 'typ_id', 'werte', 'erstellt', 'geaendert', 'erstellt_von', 'geaendert_von', 'demo', 'titel', 'passt', 'problem', 'system_kennung', 'vorgabe'] as const;
 /**
  * ANALYZE (#367) für Tabellen mit Volltext nur über diese Spalten: Ohne Spaltenliste rechnet PostgreSQL
  * auch die Statistik des Index `to_tsvector('german', volltext)` – über eine Minute bei 20.000 Dokumenten.
@@ -876,6 +877,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         await tx`UPDATE paket_ereignisse SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
         await tx`UPDATE synonyme SET quelle = ${neu} WHERE haushalt_id = ${haushaltId} AND quelle = ${alt}`;
         await tx`UPDATE mappentypen SET paket = ${neu} WHERE haushalt_id = ${haushaltId} AND paket = ${alt}`;
+        // Vorgaben (#1038): Die feste Kennung nennt das Paket – sie zieht mit um.
+        await tx`UPDATE mappen SET vorgabe = ${`paket:${neu}:`} || substr(vorgabe, ${`paket:${alt}:`.length + 1}) WHERE haushalt_id = ${haushaltId} AND left(vorgabe, ${`paket:${alt}:`.length}) = ${`paket:${alt}:`}`;
         await tx`UPDATE vektoren SET paket = ${neu} WHERE haushalt_id = ${haushaltId} AND paket = ${alt}`;
         await tx`UPDATE automatisierungen SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
         await tx`UPDATE benutzer SET paket_id = ${neu}, email = ${dienstEmail(neu, haushaltId)} WHERE haushalt_id = ${haushaltId} AND art = 'dienst' AND paket_id = ${alt}`;
@@ -1079,6 +1082,13 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async setzeSystemKennung(id, kennung) {
       if (!istUuid(id)) return;
       await sql`UPDATE mappen SET system_kennung = ${kennung} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async setzeVorgabe(id, kennung) {
+      if (!istUuid(id)) return;
+      await sql`UPDATE mappen SET vorgabe = ${kennung} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async mappenMitVorgabe(praefix) {
+      return (await sql`SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId} AND left(vorgabe, ${praefix.length}) = ${praefix}`).map(alsMappe);
     },
     async loescheMappe(id) {
       await sql`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;

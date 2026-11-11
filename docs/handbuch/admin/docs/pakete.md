@@ -130,6 +130,28 @@ Viele Pakete bringen **Beispiel-Mappen** mit erfundenen Daten mit, damit du sieh
 
 Bei Paketen, die vor 0.223.0 installiert wurden, kennt Ablago die Beispiele nicht als solche; die löschst du wie andere Mappen.
 
+## Vorgaben { #vorgaben }
+
+Manche Pakete bringen **Vorgaben** mit: Mappen zum **Behalten**, nicht zum Ausprobieren. Das Paket *Verträge* etwa legt die üblichen **Vertragsarten** an – Strom, Gas, Mobilfunk, Miete, Versicherung … – mit typischen Fristen und Vorlagen wie einem Kündigungsschreiben. Anders als [Beispiele](#beispiele) kommen Vorgaben **immer** mit (kein Haken) und sind echte Daten deiner Ablage.
+
+- **In der Vorschau:** Unter **Vorgaben** steht je Mappentyp, was angelegt wird. Liefert das Paket Vorgaben in Mappentypen **eines anderen Pakets** oder hängt es Vorlagen an dessen Vorgaben (etwa *Fahrzeuge* die Vertragsart „Pkw-Kaufvertrag“ in *Verträge*), steht das zusätzlich im Kasten **Ergänzt Mappen anderer Pakete** – mit dem Namen des Pakets. Stammt dieses Paket von einem anderen Herausgeber, sagt die Vorschau das ausdrücklich.
+- **Kennzeichnung:** Eine Vorgabe zeigt über den Registern „Vorgabe aus dem Paket *Verträge*“ – dieselbe Marke wie bei Hinweisen von Paketen. Sonst ist sie eine gewöhnliche Mappe: Du kannst sie ändern, löschen und ihr Dokumente anhängen; Berechtigungen gelten wie für jede Mappe ihres Mappentyps. In der Historie steht als Ersteller das Konto des Pakets („Paket Verträge“).
+- **Sprache:** Bringt das Paket Texte in mehreren Sprachen mit, legt Ablago die Vorgaben in der **Sprache der Installation** an (siehe [Sprachen](sprachen.md)) – „Electricity“ statt „Strom“, wenn sie Englisch ist.
+- **Vorlagen:** Vorgaben können **Text-Vorlagen** mitbringen (schlichtes Markdown, z. B. „Kündigung Mietvertrag.md“). Sie liegen als Dokument im Register der Vorgabe, Herkunft *von einem Paket*. Vorlagen sind reiner Text: kein HTML, keine Bilder, Links nur `https://`, höchstens 256 KB je Vorlage – Ablago prüft das beim Installieren noch einmal.
+- **Still:** Vorgaben lösen beim Installieren keine [Automatisierungen](automatisierungen.md) und keine Mappen-Ereignisse aus – wie Beispiele.
+
+**Updates** ergänzen neue Vorgaben und Vorlagen. Eine Vorgabe, die noch genau so ist, wie das Paket sie angelegt hat, bekommt die neue Fassung. **Hast du sie geändert, bleibt sie so** – die Vorschau sagt dann „von dir geändert – bleibt so, die neue Fassung im Paket wird nicht übernommen“. **Hast du eine Vorgabe gelöscht, bleibt sie gelöscht**; ein Update legt sie nicht wieder an. Doppelt entsteht nichts: Jede Vorgabe hat eine feste Kennung, über die Ablago sie wiederfindet.
+
+**Entfernen** des Pakets:
+
+- Vorgaben, die **benutzt** werden – eine andere Mappe verweist darauf, sie hat Notizen oder Dokumente, die nicht vom Paket kommen –, **bleiben**. In den eigenen Mappentypen des Pakets verhindern sie das Entfernen; Ablago nennt sie („Die Vorgabe „Miete“ wird noch verwendet“).
+- Unbenutzte Vorgaben in den eigenen Mappentypen gehen mit dem Paket.
+- Unbenutzte Vorgaben in Mappentypen **anderer** Pakete: Ablago **fragt** – **Mit entfernen** oder **Behalten** (dann bleiben sie als gewöhnliche Mappen).
+- Vorlagen, die das Paket an Vorgaben anderer Pakete gehängt hat, gehen mit – **nur diese**; was du oder andere Pakete dort abgelegt haben, bleibt.
+- Vorgaben, die stehen bleiben, behalten ihre Kennung: Installierst du das Paket später wieder, nimmt es sie wieder auf, statt sie doppelt anzulegen (Vorschau: „gibt es schon – wird wieder aufgenommen“). Es ändert sie dabei nicht.
+
+Das Löschprotokoll vermerkt entfernte Vorgaben als „Unbenutzte Vorgaben eines Pakets entfernt“.
+
 ## Aktualisieren
 
 **Auf neue Versionen prüfen** fragt den Katalog ab (auf Knopfdruck) und markiert Pakete, für die es Neueres gibt. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen.
@@ -137,7 +159,8 @@ Bei Paketen, die vor 0.223.0 installiert wurden, kennt Ablago die Beispiele nich
 Ein Update **ergänzt nur**:
 
 - neue Mappentypen und Ansichten,
-- neue Felder und Register bei vorhandenen Mappentypen.
+- neue Felder und Register bei vorhandenen Mappentypen,
+- neue [Vorgaben](#vorgaben) und Vorlagen; unveränderte Vorgaben bekommen die neue Fassung.
 
 Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
 
@@ -171,7 +194,7 @@ Für Paket-Autoren steht das Format (`aus_text`) in den [Regeln der Registry](ht
 
 ## Entfernen
 
-**Entfernen** löscht die Mappentypen, Ansichten und Wortlisten des Pakets und seinen Eintrag – und **unveränderte Beispiel-Mappen** samt ihren Dokumenten (siehe [Beispiele](#beispiele)). Das geht nur,
+**Entfernen** löscht die Mappentypen, Ansichten und Wortlisten des Pakets und seinen Eintrag – und **unveränderte Beispiel-Mappen** samt ihren Dokumenten (siehe [Beispiele](#beispiele)) sowie unbenutzte [Vorgaben](#vorgaben). Das geht nur,
 
 - solange es **sonst keine Mappen** dieser Mappentypen gibt (auch nicht im Papierkorb) und
 - **kein anderes Paket** davon abhängt.

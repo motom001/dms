@@ -11,6 +11,7 @@ import { alsText } from '../../../shared/src/markdown';
 import { type Aufgabe, darfErstellen, type Dokument, geschuetzteFelder, type Mappe, type Mappenkonflikt, type Mappentyp, type Notiz, NOTIZ_MAX, verweiseVon, type Werte } from '../../../shared/src/model';
 import { kreisVon } from '../../../shared/src/nummernkreis';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { fremdeVorgabe, teileVorgabe, type VorgabeHerkunft } from '../../../shared/src/vorgaben';
 import { istVerklemmung } from '../db';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
@@ -178,6 +179,8 @@ export class MappenDienst {
       z?.admin ? this.datenschutz() : Promise.resolve(null),
       this.teile.hinweise.von(id),
     ]);
+    // Vorgabe aus einem Paket (#1038): Kennzeichnung „aus Paket …“, solange das Paket installiert ist.
+    const vorgabe = await this.vorgabeHerkunft(mappe);
     // Lesbar (#124, #126): verweisende und verwiesene Mappen in einem Zugriff.
     const sichtbar = await this.lesbare(z, [...alleRueck.map((r) => r.quelleId), ...roheBezuege.keys()]);
     const rueckverweise = alleRueck.filter((r) => sichtbar.has(r.quelleId));
@@ -209,11 +212,30 @@ export class MappenDienst {
       konflikte: unpassend.konflikte,
       /** Hinweise von Paketen (#1034) mit Paketnamen – für alle, die die Mappe lesen. */
       hinweise,
+      /** Vorgabe aus einem Paket (#1038): Paket und Name; fehlt bei allen anderen Mappen. */
+      ...(vorgabe ? { vorgabe } : {}),
       /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
       aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
       /** Auskunft nach Art. 15 DSGVO (#396): Administratoren, Mappentyp „betrifft eine Person“. */
       ...(z?.admin && datenschutz?.typen[mappe.typId]?.person ? { auskunft: true } : {}),
     };
+  }
+
+  /** Herkunft einer Vorgabe (#1038): Paket der festen Kennung, wenn es installiert ist. */
+  private async vorgabeHerkunft(m: Mappe): Promise<VorgabeHerkunft | null> {
+    const v = teileVorgabe(m.vorgabe);
+    const p = v ? (await this.repo.listePakete()).find((x) => x.id === v.paket) : undefined;
+    return p ? { paket: p.id, paketName: p.name } : null;
+  }
+
+  /**
+   * Vorgaben (#1038, Ergänzung Sicherheit): Ein Paket ändert, löscht oder leert keine Vorgabe eines anderen Pakets –
+   * auch nicht mit Schreibrecht am Mappentyp. Für Menschen und das Paket selbst gilt das nicht.
+   */
+  async pruefeFremdeVorgabe(z: Zugriff | undefined, mappe: string | Mappe | undefined): Promise<void> {
+    if (!z?.paket?.id || !mappe) return;
+    const m = typeof mappe === 'string' ? await this.repo.holeMappe(mappe) : mappe;
+    if (fremdeVorgabe(m, z.paket.id)) throw new Fachfehler(403, t('meldungen.dienst.vorgabe-fremdes-paket', { titel: m?.titel || m?.id || '' }));
   }
 
   /* ---------- Favoriten (#62) ---------- */
@@ -296,6 +318,7 @@ export class MappenDienst {
   private async aendereMappeEinmal(id: string, eingabe: unknown, benutzerId: string | null, z: Zugriff | undefined, anlass: Record<string, unknown> | undefined): Promise<Mappe> {
     const m = z ? await this.pruefeRecht(z, id, 'U') : await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
+    await this.pruefeFremdeVorgabe(z, m);
     const typ = await this.repo.holeTyp(m.typId);
     if (!typ) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-dieser-mappe'));
     const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as { werte?: unknown; stand?: unknown };

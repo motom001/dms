@@ -311,7 +311,10 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return { datei: { inhalt: r.pdf, name: t('meldungen.routen.archivnummern-bis-pdf', { erste: r.erste, letzte: r.letzte }), mime: 'application/pdf', anzeigen: false, groesse: r.pdf.length } };
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      await darf(a, mappeId, 'U');
+      // Vorgaben (#1038): Ein Paket löscht keine Dokumente an Vorgaben anderer Pakete.
+      await dienst.pruefeFremdeVorgabe(await zg(a), mappeId);
       const r = await dienst.loescheDokument(a.params.id, ich(a).id, { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'dokument' });
       L.dokumente.info(r.papierkorb ? 'Dokument in den Papierkorb gelegt' : 'Dokument gelöscht', { id: a.params.id });
       return leer;

@@ -507,6 +507,10 @@ const laeufer = paketlaeufer ?? fernlaeufer!;
 const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
   version: eigeneVersion,
   benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })),
+  // Vorgaben (#1038): Werte in der Sprache der Installation; Ersteller ist das Dienstkonto des Pakets (Herkunft in der
+  // Historie). Pakete ohne Code melden sich nie an – ihr Konto bleibt aus (wie nach dem Entfernen) und steht nur für die Herkunft.
+  standardSprache: async () => (await sprachen.lies()).standard,
+  dienstkonto: async (id, name, code) => { const b = await konten.dienstkonto(id, name); if (!code) await konten.dienstkontoAus(id); return b.id; },
   laeufer: laeufer as PaketLaeufer,
   // Mehrere Prozesse (#745): hochgeladene Pakete bis zur Installation neben den temporären Uploads (nicht in der Sicherung).
   ...(verbund.mehrere ? { uploadOrdner: join(ordner.dateien, 'hochladen', 'pakete') } : {}),

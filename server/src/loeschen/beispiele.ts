@@ -57,14 +57,17 @@ export class BeispielMappen {
     return { unveraendert, geaendert };
   }
 
-  /** Beispiel-Mappen samt Dokumenten endgültig entfernen (#878): ohne Papierkorb und Ereignisse, im Löschprotokoll. */
-  async entferneBeispielMappen(ids: string[], von: string | null) {
+  /**
+   * Beispiel-Mappen samt Dokumenten endgültig entfernen (#878): ohne Papierkorb und Ereignisse, im Löschprotokoll. Ebenso
+   * unbenutzte Vorgaben eines Pakets, das entfernt wird (#1038, `weg: 'vorgaben'`).
+   */
+  async entferneBeispielMappen(ids: string[], von: string | null, weg: 'beispiele' | 'vorgaben' = 'beispiele') {
     const mappen = await this.repo.holeMappen(ids);
     const vorher = await this.lebendInhalt(mappen);
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const typVon = new Map(mappen.map((m) => [m.id, m.typId] as const));
     await this.ohneEreignisse(async () => { for (const id of await this.loeschReihenfolge([...typVon.keys()])) await this.loescheMappeIntern(id, typen.get(typVon.get(id)!), von); });
-    await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'endgueltig', weg: 'beispiele' }), await this.loeschKontext(von));
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'endgueltig', weg }), await this.loeschKontext(von));
     if (mappen.length) await this.aktualisiereStatistik();
   }
 }

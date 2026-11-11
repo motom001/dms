@@ -1027,6 +1027,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     <form className="blatt mitregistern" onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate>
       {mappe && !nurLesen && <KonfliktZeile konflikte={(details?.konflikte ?? []).filter((k) => JSON.stringify(roh[k.feld] ?? null) === JSON.stringify(basisRoh[k.feld] ?? null))} felder={typ.felder} zeige={springeZu} />}
       {mappe && <PaketHinweisZeile hinweise={details?.hinweise ?? []} />}
+      {mappe && details?.vorgabe && <VorgabeZeile paketName={details.vorgabe.paketName} />}
       <RegisterReihe aktiv={reg?.key}>
         {register.map((r) => {
           const n = fehlerAuf(r);
@@ -1121,6 +1122,18 @@ function PaketHinweisZeile({ hinweise }: { hinweise: PaketHinweis[] }) {
     <div className="hinweis warn konfliktzeile pakethinweise" role="group" aria-label={t('ablage.paket-hinweis.titel')} data-anker="mappe.pakethinweise">
       {hinweise.length === 1 ? <p>{eintrag(hinweise[0])}</p> : <ul>{hinweise.map((h) => <li key={`${h.paket}|${h.schluessel}`}>{eintrag(h)}</li>)}</ul>}
     </div>
+  );
+}
+
+/**
+ * Vorgabe aus einem Paket (#1038): dieselbe Kennzeichnung „Paket …“ wie bei Hinweisen und Beispielen – ruhig, ohne Warnfarbe.
+ * Die Mappe ist eine gewöhnliche Mappe; die Zeile sagt nur, woher sie kommt.
+ */
+function VorgabeZeile({ paketName }: { paketName: string }) {
+  return (
+    <p className="leise klein" data-anker="mappe.vorgabe">
+      {t('ablage.vorgabe.zeile')} <span className="paketmarke" title={t('ablage.vorgabe.marke-titel', { paket: paketName })}><Symbol name="paket" />{paketName}</span>
+    </p>
   );
 }
 

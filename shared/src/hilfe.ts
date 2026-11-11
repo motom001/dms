@@ -80,6 +80,8 @@ export const HILFE = {
   'pakete.recht.schreiben': admin('pakete/', 'dem Recht „Mappen anlegen und ändern“', 'recht-mappen-anlegen-und-andern'),
   'pakete.recht.dokumente': admin('pakete/', 'den Rechten an Dokumenten', 'recht-dokumente'),
   'pakete.vektoren': admin('pakete/', 'der Ähnlichkeit (Vektoren)', 'aehnlichkeit'),
+  // Vorgaben aus Paketen (#1038): Mappen zum Behalten, Updates, Entfernen.
+  'pakete.vorgaben': admin('pakete/', 'Vorgaben', 'vorgaben'),
   'pakete.recht.vektoren': admin('pakete/', 'dem Recht „Vektoren zu Dokumenten“', 'recht-vektoren'),
   'pakete.recht.netz': admin('pakete/', 'dem Zugriff auf Netzwerk und Internet', 'recht-netzwerk-und-internet'),
   'pakete.recht.antworten': admin('pakete/', 'dem Recht „Fragen an die Ablage beantworten“', 'recht-antworten'),

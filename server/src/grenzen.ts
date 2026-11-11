@@ -66,6 +66,11 @@ export const SAMMEL_VERZEICHNIS_MAX = MB;
 export const UPLOADS_SPEICHER_MAX = 512 * MB;
 /** „Zuletzt erstellt“ in der Paketerstellung: so groß darf das gemerkte Archiv sein. */
 export const ARCHIV_MERKEN_MAX = 5 * MB;
+/**
+ * Text-Vorlage in einem Paket (#1038, `inhalt/vorlagen/*.md`): schlichtes Markdown für Briefe wie ein
+ * Kündigungsschreiben – 256 KB sind viele Seiten Text. dms-registry prüft in `pruefen.py` dieselbe Grenze.
+ */
+export const VORLAGE_MAX = 256 * KB;
 
 /* ---------- Läufer der Pakete ---------- */
 

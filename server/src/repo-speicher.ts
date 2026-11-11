@@ -249,6 +249,8 @@ export function speicherRepo(): Repo {
       for (const x of sprachpakete.values()) if (x.beschriftungen[alt]) { x.beschriftungen[neu] = x.beschriftungen[alt]; delete x.beschriftungen[alt]; }
       for (const e of ereignisse.values()) if (e.paketId === alt) e.paketId = neu;
       for (const g of synonymListe) if (g.quelle === alt) g.quelle = neu;
+      // Vorgaben (#1038): Die feste Kennung nennt das Paket.
+      for (const m of mappen.values()) if (m.vorgabe?.startsWith(`paket:${alt}:`)) m.vorgabe = `paket:${neu}:${m.vorgabe.slice(`paket:${alt}:`.length)}`;
       for (const t of typen.values()) if (t.paket === alt && t.schluessel) { t.schluessel = `${neu}:${teileKennung(t.schluessel).schluessel}`; mitPaket(t); }
     },
     async speicherePaketCode(id, dateien) { paketCode.set(id, dateien.map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) }))); },
@@ -382,6 +384,8 @@ export function speicherRepo(): Repo {
     },
     async holeSystemMappe(kennung) { const m = [...mappen.values()].find((x) => x.systemKennung === kennung); return m && kopie(m); },
     async setzeSystemKennung(id, kennung) { const m = mappen.get(id); if (m) m.systemKennung = kennung; },
+    async setzeVorgabe(id, kennung) { const m = mappen.get(id); if (!m) return; if (kennung) m.vorgabe = kennung; else delete m.vorgabe; },
+    async mappenMitVorgabe(praefix) { return [...mappen.values()].filter((m) => m.vorgabe?.startsWith(praefix)).map((m) => kopie(m)); },
     async loescheMappe(id) {
       mappen.delete(id); verweise.delete(id);
       for (const [k, n] of notizen) if (n.mappeId === id) notizen.delete(k);

@@ -71,7 +71,7 @@ const log = protokoll.modul('datenbank');
 export const OHNE_FOLGEN = new Set<string>([
   // lesen
   'listeTypen', 'holeTyp', 'zaehleMappen', 'listeMappen', 'mappenMitDatum', 'mappenKurz', 'feldwerte', 'holeMappe',
-  'listePakete', 'paketCode', 'faelligeEreignisse', 'ereignisStand', 'listeNummernkreise', 'findeArchivnummer', 'holeSystemMappe',
+  'listePakete', 'paketCode', 'faelligeEreignisse', 'ereignisStand', 'listeNummernkreise', 'findeArchivnummer', 'holeSystemMappe', 'mappenMitVorgabe',
   'holeMappen', 'titelVon', 'quellenVon', 'bezuege', 'seite', 'gibtTreffer', 'zaehler', 'alleFavoriten', 'auskunftLinkPerSchluessel', 'auskunftLinks',
   'favoritenVon', 'favoritenDerMappe', 'gibtMappen', 'stummeFavoriten', 'geaendertVonAnderen', 'zaehleKlauseln', 'lesbare', 'inKlauseln',
   'zaehleAusdruck', 'listeSichten', 'unpassende', 'typenOhnePassung', 'belegung', 'ohneTitel', 'typenVon', 'findeDoppelt', 'findeDoppelte',

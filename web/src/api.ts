@@ -877,9 +877,10 @@ export const api = {
   fragenStand: () => anfrage<FragenStand>('GET', '/api/werkbank/fragen'),
   fragenGrenzen: (g: FragenGrenzen) => anfrage<FragenStand>('PUT', '/api/werkbank/fragen', g),
   aehnlicheZurMappe: (id: string) => anfrage<{ verfuegbar: boolean; berechnet: boolean; mappen: AehnlicheMappe[] }>('GET', `/api/mappen/${id}/aehnliche`),
-  paketEntfernen: (id: string, einstellungenBehalten = false, spracheBestaetigt = false) => {
-    const q = [einstellungenBehalten ? 'einstellungenBehalten=1' : '', spracheBestaetigt ? 'spracheBestaetigt=1' : ''].filter(Boolean).join('&');
-    return anfrage<{ beispieleBehalten: BeispielBehalten[] }>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${q ? `?${q}` : ''}`);
+  /** Vorgaben (#1038): unbenutzte in Typen anderer Pakete nur mit `vorgaben` – ohne fragt der Server (409, `vorgaben`). */
+  paketEntfernen: (id: string, einstellungenBehalten = false, spracheBestaetigt = false, vorgaben?: 'entfernen' | 'behalten') => {
+    const q = [einstellungenBehalten ? 'einstellungenBehalten=1' : '', spracheBestaetigt ? 'spracheBestaetigt=1' : '', vorgaben ? `vorgaben=${vorgaben}` : ''].filter(Boolean).join('&');
+    return anfrage<{ beispieleBehalten: BeispielBehalten[]; vorgabenBehalten?: Array<{ id: string; titel: string }> }>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${q ? `?${q}` : ''}`);
   },
   /** Beispiele entfernen (#878): unveränderte Beispiel-Mappen samt Dokumenten; geänderte bleiben und stehen in `behalten`. */
   paketBeispieleEntfernen: (id: string) => anfrage<{ entfernt: number; behalten: BeispielBehalten[] }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/beispiele/entfernen`),
@@ -1145,6 +1146,9 @@ export interface PaketVorschau {
   beispiele: number; probleme: string[]; fehlercodes?: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Beispiel-Dokumente zu den Beispielen (#878). */
   beispielDokumente?: { anzahl: number; bytes: number };
+  /** Vorgaben (#1038) und Vorlagen an Vorgaben anderer Pakete. */
+  vorgaben?: import('../../shared/src/vorgaben').VorgabePlan[];
+  ergaenzungen?: import('../../shared/src/vorgaben').ErgaenzungPlan[];
   /** Mitgelieferte Automatisierungen (#712); neu = steht beim Installieren zur Wahl. */
   /** eingeschaltet (#1082): wie im Paket angegeben; fehlt = nicht angegeben (siehe vorausgewaehlt in shared/src/pakete.ts). */
   automatisierungen?: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
@@ -1179,7 +1183,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[]; /** Teile (#1031), die beim Löschen mitgehen. */ teile?: number }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean; /** Hinweise von Paketen (#1034). */ hinweise?: import('../../shared/src/berechnet').PaketHinweis[] }
+export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[]; /** Teile (#1031), die beim Löschen mitgehen. */ teile?: number }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean; /** Hinweise von Paketen (#1034). */ hinweise?: import('../../shared/src/berechnet').PaketHinweis[]; /** Vorgabe aus einem Paket (#1038). */ vorgabe?: import('../../shared/src/vorgaben').VorgabeHerkunft }
 /** Werkbank → Datenschutz (#396, #455). */
 export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; /** #668 */ verzeichnis: AuskunftEintrag[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean; /** #469 */ loeschkonzept?: { luecken: Luecke[] } }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }

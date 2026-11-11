@@ -660,6 +660,29 @@ begriffe:
     nicht_verwenden: [Plugin, Erweiterung, App, Modul]
     verwandt: [Paketkatalog, Expertenmodus, Paket-Läufer, Herausgeber]
     code: InstalliertesPaket
+  - begriff: Beispiel-Mappe
+    bereich: werkbank
+    beschreibung: Eine Mappe mit erfundenen Daten, die ein Paket auf Wunsch beim Installieren anlegt (Haken „Beispiel-Mappen anlegen“), damit man sieht, was in eine Mappe gehört – zum Ausprobieren, nicht zum Behalten. Unveränderte Beispiele lassen sich samt Dokumenten wieder entfernen. Anders als eine Vorgabe.
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Demo-Mappe]
+    verwandt: [Paket, Vorgabe, Demo-Daten]
+    code: inhalt/beispiele, beispielMappen
+  - begriff: Vorgabe
+    bereich: werkbank
+    beschreibung: Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „Strom“ oder „Miete“ aus dem Paket Verträge, oft mit Vorlagen. Kommt immer mit, trägt die Kennzeichnung „Vorgabe aus dem Paket …“ und ist sonst eine gewöhnliche Mappe. Updates bringen neue Fassungen nur, solange niemand sie geändert hat; Gelöschtes bleibt gelöscht. Anders als ein Beispiel (erfundene Daten zum Ausprobieren, auf Wunsch, entfernbar).
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Stammdaten, Standardmappe, Voreinstellung]
+    verwandt: [Paket, Beispiel-Mappe, Vorlage]
+    code: vorgabe (Mappe), inhalt.vorgaben
+  - begriff: Vorlage
+    bereich: werkbank
+    beschreibung: Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://.
+    einsteiger: alltag
+    begegnet: admin
+    verwandt: [Vorgabe, Paket]
+    code: inhalt/vorlagen/*.md
   - begriff: Herausgeber
     bereich: werkbank
     beschreibung: Wer ein Paket herausgibt, als umgedrehte Domain, z. B. app.ablago für die offiziellen Pakete (#1084). Steht neben dem Namen, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber.

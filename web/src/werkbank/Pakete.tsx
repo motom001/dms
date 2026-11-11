@@ -28,6 +28,7 @@ import { gebietsschema } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { MITMACHEN_URL } from '../../../shared/src/sprachwahl';
 import { Kopf } from './Kopf';
+import type { VorgabeFrage, VorgabePlan } from '../../../shared/src/vorgaben';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -210,6 +211,29 @@ const fingerabdruckAus = (e: unknown): string | null => {
 
 /** Beispiel-Mappen, die beim Entfernen blieben (#878), als Satz hinter der Meldung. */
 const behaltenText = (l?: BeispielBehalten[]) => (l?.length ? ` ${t('werkbank.pakete.beispiele-behalten', { anzahl: l.length, titel: l.map((b) => `„${b.titel}“`).join(', ') })}` : '');
+/** Vorgaben (#1038), die nach dem Entfernen als gewöhnliche Mappen bleiben. */
+const vorgabenText = (l?: Array<{ titel: string }>) => (l?.length ? ` ${t('werkbank.pakete.vorgaben-behalten', { anzahl: l.length, titel: l.map((b) => `„${b.titel}“`).join(', ') })}` : '');
+
+/**
+ * Entfernen mit den Rückfragen des Servers (409): Sprachpaket in Gebrauch (#731) – nur auf ausdrücklichen Wunsch;
+ * unbenutzte Vorgaben in Mappentypen anderer Pakete (#1038) – mit entfernen oder als gewöhnliche Mappen behalten.
+ */
+async function entferneMitFragen(id: string, einstellungenBehalten: boolean) {
+  let sprache = false;
+  let vorgaben: 'entfernen' | 'behalten' | undefined;
+  for (;;) {
+    try { return await api.paketEntfernen(id, einstellungenBehalten, sprache, vorgaben); } catch (e) {
+      const d = e instanceof ApiFehler && e.status === 409 ? e.details as { sprache?: unknown; vorgaben?: VorgabeFrage[] } | undefined : undefined;
+      if (d?.sprache && !sprache) {
+        if (!(await rueckfrage({ titel: (e as Error).message, text: (e as ApiFehler).gruende.join(' '), ja: t('werkbank.pakete.sprache.entfernen'), gefahr: true }))) throw e;
+        sprache = true;
+      } else if (d?.vorgaben?.length && !vorgaben) {
+        const ja = await rueckfrage({ titel: (e as Error).message, text: <><p>{t('werkbank.pakete.vorgaben-frage.text')}</p><ul>{d.vorgaben.map((v) => <li key={v.id}>{v.titel}{v.typ && <span className="leise"> · {v.typ}</span>}</li>)}</ul></>, ja: t('werkbank.pakete.vorgaben-frage.entfernen'), nein: t('werkbank.pakete.vorgaben-frage.behalten'), gefahr: true });
+        vorgaben = ja ? 'entfernen' : 'behalten';
+      } else throw e;
+    }
+  }
+}
 
 /**
  * Weitere Katalogadressen (#189): hinzufügen, abschalten, entfernen. Hat ein Katalog einen eigenen Schlüssel
@@ -464,19 +488,11 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     if (inst.einstellungen) { setEntfernenOffen(true); return; }
     if (!(await rueckfrage({ titel: t('werkbank.pakete.entfernen-2', { name: inst.name }), text: t('werkbank.pakete.seine-mappentypen-und-ansichten'), ja: t('werkbank.pakete.entfernen'), gefahr: true }))) return;
     void tu(async () => {
-      let bestaetigt = false;
-      let r: { beispieleBehalten: BeispielBehalten[] } | null = null;
-      try { r = await api.paketEntfernen(id); } catch (e) {
-        // Sprachpaket in Gebrauch (#731): sagen, wen es betrifft, und nur auf ausdrücklichen Wunsch entfernen.
-        const s = e instanceof ApiFehler && e.status === 409 ? (e.details as { sprache?: unknown } | undefined)?.sprache : undefined;
-        if (!s || !(await rueckfrage({ titel: (e as Error).message, text: (e as ApiFehler).gruende.join(' '), ja: t('werkbank.pakete.sprache.entfernen'), gefahr: true }))) throw e;
-        bestaetigt = true;
-      }
-      if (bestaetigt) r = await api.paketEntfernen(id, false, true);
-      geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt', { name: inst.name }) + behaltenText(r?.beispieleBehalten);
+      const r = await entferneMitFragen(id, false);
+      geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt', { name: inst.name }) + behaltenText(r.beispieleBehalten) + vorgabenText(r.vorgabenBehalten);
     });
   };
-  const entfernenBestaetigt = () => void tu(async () => { const r = await api.paketEntfernen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt-2', { name: inst!.name, wert: behalten ? t('werkbank.pakete.die-einstellungen-bleiben-fuer') : '' }) + behaltenText(r.beispieleBehalten); });
+  const entfernenBestaetigt = () => void tu(async () => { const r = await entferneMitFragen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt-2', { name: inst!.name, wert: behalten ? t('werkbank.pakete.die-einstellungen-bleiben-fuer') : '' }) + behaltenText(r.beispieleBehalten) + vorgabenText(r.vorgabenBehalten); });
   // Beispiele entfernen (#878): unveränderte Beispiel-Mappen samt Dokumenten; geänderte bleiben und werden genannt.
   const beispieleEntfernen = async () => {
     if (!inst || !(await rueckfrage({ titel: t('werkbank.pakete.beispiele-entfernen.frage', { name: inst.name }), text: t('werkbank.pakete.beispiele-entfernen.text'), ja: t('werkbank.pakete.beispiele-entfernen'), gefahr: true }))) return;
@@ -751,6 +767,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           {v.laeufer.rechte.some((r) => r.hilfe === 'pakete.recht.adresse') && <p>{tx('fragen.adresse.installation')}</p>}
         </div>
       )}
+      <FremdeMappenVorschau v={v} />
       {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.hinweise?.length > 0 && <div className="hinweis info"><ul>{v.hinweise.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.sprache && <SprachVorschau s={v.sprache} />}
@@ -791,6 +808,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           </li>
         ))}
       </ul>
+      <VorgabenVorschau v={v} />
       {v.abhaengigkeiten.length > 0 && (
         <>
           <h3>{t('werkbank.pakete.abhaengigkeiten')}</h3>
@@ -822,6 +840,66 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>
       </div>
     </section>
+  );
+}
+
+/** Was mit einer Vorgabe geschieht (#1038), als kurzer Zusatz hinter ihrem Namen. */
+function vorgabeZustand(x: VorgabePlan, update: boolean): string {
+  const teile = [
+    x.zustand === 'neu' ? (update ? t('werkbank.pakete.vorgaben.neu') : '')
+      : x.zustand === 'aktualisiert' ? t('werkbank.pakete.vorgaben.aktualisiert')
+      : x.zustand === 'geaendert' ? (x.neueFassung ? t('werkbank.pakete.vorgaben.geaendert-neue-fassung') : t('werkbank.pakete.vorgaben.geaendert'))
+      : x.zustand === 'geloescht' ? t('werkbank.pakete.vorgaben.geloescht')
+      : x.zustand === 'uebernommen' ? t('werkbank.pakete.vorgaben.uebernommen') : '',
+    x.vorlagen ? t('werkbank.pakete.vorgaben.vorlagen', { anzahl: x.vorlagen }) : '',
+  ].filter(Boolean);
+  return teile.join(', ');
+}
+
+/**
+ * Vorgaben in der Vorschau (#1038): Mappen, die das Paket zum Behalten mitbringt – je Mappentyp. Beim Update nur, was
+ * sich tut; was unverändert bleibt, steht als Zahl darunter.
+ */
+function VorgabenVorschau({ v }: { v: PaketVorschau }) {
+  const alle = (v.vorgaben ?? []).filter((x) => !x.fremd);
+  if (!alle.length) return null;
+  const zeigen = v.update ? alle.filter((x) => x.zustand !== 'gleich' || x.vorlagen > 0) : alle;
+  const typen = [...new Set(zeigen.map((x) => x.typ))];
+  const gleich = alle.length - zeigen.length;
+  return (
+    <section className="stapel" aria-label={t('werkbank.pakete.vorgaben.titel')} data-anker="pakete.vorgaben">
+      <h3>{t('werkbank.pakete.vorgaben.titel')} <Hilfe ort="pakete.vorgaben" /></h3>
+      <p className="leise klein">{v.update ? t('werkbank.pakete.vorgaben.text-update') : t('werkbank.pakete.vorgaben.text')}</p>
+      {typen.map((typ) => (
+        <div key={typ}>
+          <p className="klein"><strong>{typ}</strong></p>
+          <ul className="klein">
+            {zeigen.filter((x) => x.typ === typ).map((x) => { const z = vorgabeZustand(x, v.update); return <li key={x.schluessel}>{x.name}{z && <span className="leise"> · {z}</span>}</li>; })}
+          </ul>
+        </div>
+      ))}
+      {gleich > 0 && <p className="leise klein">{t('werkbank.pakete.vorgaben.unveraendert', { anzahl: gleich })}</p>}
+    </section>
+  );
+}
+
+/**
+ * Mappen anderer Pakete (#1038) – Teil der Rechte-Vorschau: Vorgaben in deren Mappentypen und Vorlagen, die das Paket an
+ * ihre Vorgaben hängt. Mehr darf es dort nicht (keine Felder, keine Rechte, nichts löschen).
+ */
+function FremdeMappenVorschau({ v }: { v: PaketVorschau }) {
+  const fremd = (v.vorgaben ?? []).filter((x) => x.fremd && (x.zustand === 'neu' || x.vorlagen > 0));
+  const erg = (v.ergaenzungen ?? []).filter((e) => !e.fehlt && e.vorlagen > 0);
+  if (!fremd.length && !erg.length) return null;
+  return (
+    <div className="hinweis info stapel" data-anker="pakete.fremde-mappen">
+      <p><strong>{t('werkbank.pakete.fremde-mappen.titel')}</strong></p>
+      <ul>
+        {fremd.map((x) => <li key={x.schluessel}>{t('werkbank.pakete.fremde-mappen.vorgabe', { name: x.name, typ: x.typ, paket: x.fremd ?? '' })}</li>)}
+        {erg.map((e) => <li key={e.ziel}>{t('werkbank.pakete.fremde-mappen.vorlagen', { anzahl: e.vorlagen, name: e.name, paket: e.paket })}</li>)}
+      </ul>
+      <p className="leise klein">{t('werkbank.pakete.fremde-mappen.grenze')}</p>
+    </div>
   );
 }
 
