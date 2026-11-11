@@ -15,7 +15,7 @@
 import { zerlege, type Block, type Inline } from './markdown';
 
 /** Ab dieser Version bietet Ablago Paketen „Text setzen“ (`POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen`). */
-export const DMS_TEXTSATZ_AB = '0.241.0';
+export const DMS_TEXTSATZ_AB = '0.242.0';
 
 /** Ein Stück Text gleicher Schrift. `luecke`: fehlender Wert („[Vertragsnummer]“). */
 export interface Lauf { text: string; fett?: boolean; kursiv?: boolean; mono?: boolean; luecke?: boolean }
