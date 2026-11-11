@@ -2,11 +2,14 @@
  * Passung (#1073, aus dienst.ts): Passt eine Mappe zur aktuellen Definition ihres Typs? Prüfen je Typ, je Mappe und
  * beim Start nachholen; Ergebnis am Repo, „passt nicht“-Aufgaben über den Anschluss. Schicht 2.
  */
-import { ersterGrund, istLeer, verweiseVon, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { ersterGrund, istLeer, verweiseVon, type Feld, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import { hatEigeneOrganisationBedingung, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import type { Kern } from '../kern';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
+
+/** Felder, für die „eindeutig“ gilt: Text, Zahl und Zusammengesetzt (#1050, die Kombination). */
+const hatEindeutig = (f: Feld) => f.typ === 'text' || f.typ === 'zahl' || f.typ === 'zusammengesetzt';
 
 /** Was die Passung außer dem Kern braucht – vom Dienst hereingereicht. */
 export interface PassungAnschluss {
@@ -29,7 +32,7 @@ export class Passung {
     // Eindeutige Felder: gleiche Werte im Arbeitsspeicher suchen statt je Mappe in der Datenbank.
     const gleiche = new Map<string, Map<string, Mappe[]>>();
     for (const f of typ.felder) {
-      if (!f.eindeutig || (f.typ !== 'text' && f.typ !== 'zahl')) continue;
+      if (!f.eindeutig || !hatEindeutig(f)) continue;
       const nachWert = new Map<string, Mappe[]>();
       for (const m of mappen) {
         if (istLeer(m.werte[f.key])) continue;
@@ -81,7 +84,7 @@ export class Passung {
     const mappen = await this.repo.holeMappen(ids);
     // In einem Zug statt je Mappe (#743): Typen der Verweisziele und „Bereits vergeben“ über den Index.
     const typen = await this.repo.typenVon([...new Set(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)))].filter(istUuid));
-    const eindeutig = typ.felder.filter((f) => f.eindeutig && (f.typ === 'text' || f.typ === 'zahl'));
+    const eindeutig = typ.felder.filter((f) => f.eindeutig && hatEindeutig(f));
     const funde = await this.repo.findeDoppelte(typ.id, mappen.flatMap((m) => eindeutig.filter((f) => !istLeer(m.werte[f.key])).map((f) => ({ mappeId: m.id, feldKey: f.key, wert: String(m.werte[f.key]) }))));
     const merkmale = await this.kern.merkmale();
     const eigeneOrganisation = await this.eigeneOrganisation(typ);

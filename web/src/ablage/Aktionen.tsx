@@ -176,7 +176,7 @@ export function Druckansicht({ typ, details, fertig }: { typ: Mappentyp; details
             {register.filter((x) => x.art === 'felder').length > 1 && <h2>{r.name}</h2>}
             <table><tbody>
               {felder.map((f) => (
-                <tr key={f.key}><th>{feldLabel(f)}</th><td>{f.typ === 'formatiert' && mappe.werte[f.key] ? <Formatiert text={String(mappe.werte[f.key])} /> : formatiere(f, mappe.werte[f.key], titelVon) || '–'}</td></tr>
+                <tr key={f.key}><th>{feldLabel(f)}</th><td>{f.typ === 'formatiert' && mappe.werte[f.key] ? <Formatiert text={String(mappe.werte[f.key])} /> : formatiere(f, mappe.werte[f.key], titelVon, { felder: typ.felder, werte: mappe.werte }) || '–'}</td></tr>
               ))}
             </tbody></table>
           </section>

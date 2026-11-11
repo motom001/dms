@@ -72,5 +72,6 @@
   "verweis.noch-kein-ziel": "The folder types for this field come with another package – none is installed yet.",
   "berechnet.von": "calculated by {paket}",
   "berechnet.nicht-mehr": "no longer calculated – {paket} no longer calculates it, the last value stays",
-  "schreibschutz.nur-verwaltung": "only changed by whoever manages the own organisation"
+  "schreibschutz.nur-verwaltung": "only changed by whoever manages the own organisation",
+  "zusammengesetzt.aus": "combined from {felder}"
 }

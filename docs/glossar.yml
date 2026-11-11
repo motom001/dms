@@ -215,6 +215,14 @@ begriffe:
     nicht_verwenden: [Formelfeld, berechnete Spalte, automatisches Feld]
     verwandt: [Feld, Paket, Hinweis von Paketen]
     code: Feld.berechnetVon, berechnet (Paket)
+  - begriff: Zusammengesetztes Feld
+    bereich: grundbegriffe
+    beschreibung: Ein Feld, das Ablago beim Speichern aus anderen Feldern der Mappe zusammensetzt, z. B. „Absender · Rechnungsnummer“. In der Mappe ist es nur lesbar, darunter steht „setzt sich zusammen aus …“. Ist es eindeutig, darf es die Kombination nur einmal geben; Verweise zählen dabei über die Mappe selbst, nicht über ihren Namen.
+    einsteiger: erklaeren
+    begegnet: alle
+    nicht_verwenden: [Schlüsselfeld, Kombifeld, Verkettung]
+    verwandt: [Feld, Berechnetes Feld]
+    code: "Feld typ: zusammengesetzt, vorlage"
   - begriff: Hinweis von Paketen
     bereich: grundbegriffe
     beschreibung: Ein kurzer Satz, den ein Paket an eine Mappe setzt, z. B. „Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €“. Er steht gelb in der Hinweiszeile über den Registern, immer mit dem Namen des Pakets, und hindert das Speichern nie.

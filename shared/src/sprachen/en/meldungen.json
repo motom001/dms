@@ -1801,6 +1801,9 @@
   "tabelle.gibt-es-nicht": "This folder has no such table.",
   "tabelle.quelle-gebraucht": "The field “{feld}” is needed by the table “{tabelle}” in “{typ}”: it shows folders of this type through this field. Remove the table first or choose another field there.",
   "tabelle.typ-gebraucht": "The table “{label}” in “{name}” shows folders of this type.",
+  "zusammengesetzt.doppelte": "After this change, several folders would have the same combination: {liste}. They will then not match the definition until someone changes them. Save anyway?",
+  "zusammengesetzt.doppelte-feld_one": "{anzahl} folder in “{label}”",
+  "zusammengesetzt.doppelte-feld_other": "{anzahl} folders in “{label}”",
   "pakete.tabelle-typ": "mappentypen: “{typ}” → field “{feld}”: the table shows folders of the type “{quelle}”, which the package does not include.",
   "pakete.tabelle-feld": "mappentypen: “{typ}” → field “{feld}”: the field “{quellfeld}” of “{quelle}” is not a link field pointing to this type – the table only shows folders that link here through such a field.",
   "paketerstellung.tabelle": "Field type table",
@@ -1834,5 +1837,6 @@
   "organisation.nichts-bisher": "There is no previous controller entry to take over.",
   "organisation.schon-da": "There already is an own organisation – please add the previous entry there by hand.",
   "organisation.ohne-basis": "This needs a folder type with the attribute “own organisation” – the package Basis from version 1.7.0.",
-  "paketerstellung.organisation": "Own organisation (attribute, write protection, display condition)"
+  "paketerstellung.organisation": "Own organisation (attribute, write protection, display condition)",
+  "paketerstellung.zusammengesetzt": "Field type Combined"
 }

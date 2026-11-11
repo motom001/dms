@@ -621,7 +621,8 @@ function DannEditor({ karte, typ, wenn, k, eigenesPaket, setze }: { karte: DannK
   );
   if (karte.art === 'feld') {
     // Berechnete Felder (#1034) schreibt nur ihr Paket – nicht zur Wahl (bereits gewählte zeigt die Prüfung als Problem).
-    const felder = (typ?.felder ?? []).filter((f) => f.typ !== 'passwort');
+    // Zusammengesetzte (#1050) setzt Ablago aus ihren Teilen – auch nicht.
+    const felder = (typ?.felder ?? []).filter((f) => f.typ !== 'passwort' && f.typ !== 'zusammengesetzt');
     const waehlbar = felder.filter((f) => !f.berechnetVon);
     const gewaehlt = Object.keys(karte.werte);
     return (

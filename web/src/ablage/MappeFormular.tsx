@@ -9,9 +9,10 @@ import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
 import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
-import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, titelAus, VERWEISARTEN, verweisAusText, mehrereZiele, zieleVon, zielErlaubt, type Verweiskonflikt, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, titelAus, VERWEISARTEN, zusammengesetztText, verweisAusText, mehrereZiele, zieleVon, zielErlaubt, type Verweiskonflikt, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import type { PaketHinweis } from '../../../shared/src/berechnet';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
+import { teileVon } from '../../../shared/src/zusammengesetzt';
 import { Knopf, NurLesenFeld, ProzentEingabe, ZeitraumEingabe } from '../bausteine';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
@@ -366,7 +367,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   // nur ihr Paket. So lassen auch „folgt aus“ und „Aus Dokument ausfüllen“ sie aus („nie überschreiben“).
   // Geschützte Felder (#995), z. B. das Merkmal „eigene Organisation“: Der Server sagt je Mappe, was diese Person nicht
   // ändern darf; bei einer neuen Mappe gilt: nur im Verwaltungsmodus mit dem Bereich „Eigene Organisation“.
-  const geschuetzt = { ...geschuetzteFelder(typ, mappe), ...berechnetGesperrt(typ), ...schreibschutzGesperrt(typ, mappe ? details?.schreibschutz ?? [] : (ich.rolle === 'admin' && darfBereich(ich, ORGANISATION_BEREICH) ? [] : null)) };
+  // Zusammengesetzte Felder (#1050) ebenso: Ablago setzt sie aus ihren Teilen.
+  const geschuetzt = { ...geschuetzteFelder(typ, mappe), ...berechnetGesperrt(typ), ...zusammengesetztGesperrt(typ), ...schreibschutzGesperrt(typ, mappe ? details?.schreibschutz ?? [] : (ich.rolle === 'admin' && darfBereich(ich, ORGANISATION_BEREICH) ? [] : null)) };
   // Berechtigungen (#126): ohne „Bearbeiten“ nur ansehen; Löschen und Passwörter je nach Recht.
   const rechte = mappe ? details?.rechte : undefined;
   const nurLesen = !!rechte && !rechte.U;
@@ -394,6 +396,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const [stand, setStand] = useState(mappe?.geaendert);
   const [konflikt, setKonflikt] = useState<Mappenkonflikt & { wahl: Record<string, 'meins' | 'seins'> }>();
   const [roh, setRoh] = useState<RohWerte>(start);
+  // Werte aus den Eingaben – für zusammengesetzte Felder (#1050), die sich sofort mit ihren Teilen ändern.
+  const werteJetzt = useMemo(() => werteAusRoh(typ, roh), [typ, roh]);
   const [neueDateien, setNeueDateien] = useState<NeueDatei[]>([]);
   const [entfernt, setEntfernt] = useState<string[]>([]);
   const [fehler, setFehler] = useState<Pruefergebnis | null>(null);
@@ -820,8 +824,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setSendet(true); setHinweise([]);
     let gespeichert: (Mappe & { hinweis?: string }) | undefined = mappe;
     try {
-      // Berechnete Felder (#1034) schickt die Oberfläche nie – auch nicht leer oder mit einem Standardwert.
-      if (!mappe) gespeichert = await api.mappeAnlegen({ typId: typ.id, werte: Object.fromEntries(Object.entries(werte).filter(([k]) => !typ.felder.find((f) => f.key === k)?.berechnetVon)) });
+      // Berechnete (#1034) und zusammengesetzte Felder (#1050) schickt die Oberfläche nie – auch nicht leer oder mit einem Standardwert.
+      if (!mappe) gespeichert = await api.mappeAnlegen({ typId: typ.id, werte: Object.fromEntries(Object.entries(werte).filter(([k]) => { const f = typ.felder.find((x) => x.key === k); return !f?.berechnetVon && f?.typ !== 'zusammengesetzt'; })) });
       else if (geaenderteFelder.length) gespeichert = await api.mappeAendern(mappe.id, { werte: zuSenden, stand: nochmal?.stand ?? stand });
       setFehler(null); setBasis(JSON.stringify(rohJetzt));
       if (gespeichert) setStand(gespeichert.geaendert);
@@ -942,7 +946,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const eingabe = (f: Feld, ueber?: string) => (f.typ === 'tabelle' && !(anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)) ? tabelle(f, ueber) : anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)
       ? <AusgeblendetZeile key={f.key} text={t('ablage.anzeige.feld', { feld: feldLabel(f) })} anzeigen={() => decke(`f:${f.key}`)} />
       : feldEingabe(f, anz.felder.has(f.key) ? <p className="anzeigehinweis leise klein"><Symbol name="auge-aus" /> {t('ablage.anzeige.gerade-aus', { bedingung: nurBei(f.anzeigen) })}</p> : undefined));
-    const feldEingabe = (f: Feld, anzeige?: ReactNode) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
+    // Zusammengesetzt (#1050): der Text aus den aktuellen Eingaben – er ändert sich sofort mit seinen Teilen.
+    const feldEingabe = (f: Feld, anzeige?: ReactNode) => <FeldEingabe key={f.key} feld={f} roh={f.typ === 'zusammengesetzt' ? zusammengesetztText(typ.felder, f, werteJetzt, (id) => titelOder(bekannt[id]?.titel)) : roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
       typId={typ.id} typFelder={typ.felder} unpassend={details?.unpassend?.[f.key]} gruende={grundAus(details?.konflikte, f.key)} eigene={eigeneWerte(f)}
       neu={f.typ === 'referenz' && zielErlaubt(f, adNeu[f.key]?.typId) ? adNeu[f.key].werte : undefined}
       gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} plzDeutsch={f.format === 'plz' ? deutschePlz(f, typ.felder, roh as Werte) : undefined} passwortSehen={!rechte || rechte.P} zusatz={anzeige ? <>{anzeige}{hinweisAm(f)}</> : hinweisAm(f)} gespeichert={mappe ? mappe.werte[f.key] : undefined} />;
@@ -1149,6 +1154,14 @@ function schreibschutzGesperrt(typ: Mappentyp, gesperrt: string[] | null): Recor
   return Object.fromEntries(typ.felder.filter((f) => f.schreibschutz && (gesperrt === null || gesperrt.includes(f.key))).map((f) => [f.key, t('felder.schreibschutz.nur-verwaltung')]));
 }
 
+/** Zusammengesetzte Felder (#1050): nur lesbar, darunter „setzt sich zusammen aus …“ mit den Bezeichnungen der Teile. */
+function zusammengesetztGesperrt(typ: Mappentyp): Record<string, string> {
+  return Object.fromEntries(typ.felder.filter((f) => f.typ === 'zusammengesetzt').map((f) => {
+    const teile = teileVon(typ.felder, f).map((x) => feldLabel(x));
+    return [f.key, t('felder.zusammengesetzt.aus', { felder: new Intl.ListFormat(gebietsschema(), { type: 'conjunction' }).format(teile) })];
+  }));
+}
+
 /** Berechnete Felder (#1034): nur lesbar, darunter „berechnet von …“ bzw. „nicht mehr berechnet“ mit dem Paketnamen. */
 function berechnetGesperrt(typ: Mappentyp): Record<string, string> {
   return Object.fromEntries(typ.felder.filter((f) => f.berechnetVon).map((f) => {
@@ -1295,9 +1308,10 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       : f.typ === 'janein' ? (roh ? t('ablage.mappeformular.ja') : t('ablage.mappeformular.nein')) : f.typ === 'formatiert' ? (roh ? <Formatiert text={String(roh)} /> : null)
       : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'zeitraum' || f.typ === 'prozent' || f.typ === 'betrag' ? formatiere(f, ausRoh(f, roh)) : f.typ === 'langtext' ? (roh ? <span className="mehrzeilig">{String(roh)}</span> : null)
       : f.typ === 'text' && f.format && roh ? <FormatWert f={f} wert={String(roh)} /> : String(roh ?? '');
-    // Nur lesen (#1034): ein Aussehen für geschützte und berechnete Felder – nur die Herkunft darunter unterscheidet sich.
+    // Nur lesen (#1034): ein Aussehen für geschützte, berechnete und zusammengesetzte Felder (#1050) – nur die Herkunft
+    // darunter unterscheidet sich.
     return (
-      <NurLesenFeld beschriftung={feldLabel(f)} herkunft={gesperrt || undefined} symbol={f.berechnetVon ? 'rechnen' : 'schloss'}
+      <NurLesenFeld beschriftung={feldLabel(f)} herkunft={gesperrt || undefined} symbol={f.berechnetVon || f.typ === 'zusammengesetzt' ? 'rechnen' : 'schloss'}
         breit={f.typ === 'langtext' || f.typ === 'formatiert'} className="feld" anker={`mappe.feld:${f.key}`}
         unter={uebersetzung || fehler ? <>{uebersetzung}{fehler && <p className="fehlertext">{fehler}</p>}</> : undefined}>{ctl}</NurLesenFeld>
     );

@@ -58,7 +58,9 @@ export class MappenHistorie {
   /** Was sich zwischen zwei Ständen geändert hat – lesbar, wie es zu diesem Zeitpunkt aussah. */
   async aenderungen(typ: Mappentyp, alt: Werte, neu: Werte): Promise<Feldaenderung[]> {
     const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-    const felder = typ.felder.filter((f) => !gleich(alt[f.key], neu[f.key]) && !(istLeer(alt[f.key]) && istLeer(neu[f.key])));
+    // Zusammengesetzt (#1050) nicht: Es folgt aus seinen Teilen, deren Änderung hier steht – und so steht kein Titel einer
+    // verwiesenen Mappe zusätzlich in der Historie.
+    const felder = typ.felder.filter((f) => f.typ !== 'zusammengesetzt' && !gleich(alt[f.key], neu[f.key]) && !(istLeer(alt[f.key]) && istLeer(neu[f.key])));
     if (!felder.length) return [];
     const ids = felder.filter((f) => f.typ === 'referenz').flatMap((f) => [alt[f.key], neu[f.key]].flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))).map(String).filter(istUuid);
     const titel = await this.repo.titelVon(ids);

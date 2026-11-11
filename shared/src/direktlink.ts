@@ -221,7 +221,7 @@ function linkwert(typ: Mappentyp, key: string, m: Mappe): { name: string; wert: 
   if (!f || v === null || v === undefined || v === '') return null;
   const reserviert = (LINK_PARAMETER as readonly string[]).includes(key);
   switch (f.typ) {
-    case 'text': return { name: reserviert ? `${key}.gleich` : key, wert: String(v) };
+    case 'text': case 'zusammengesetzt': return { name: reserviert ? `${key}.gleich` : key, wert: String(v) };
     case 'zahl': case 'prozent': return typeof v === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(v) } : null;
     case 'zeitraum': return istZeitraum(v) ? { name: reserviert ? `${key}.gleich` : key, wert: zeitraumIso(v) } : null;
     case 'betrag': {

@@ -25,6 +25,7 @@ import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type 
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
+import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
 import { bereinigeAutomatisierung, zeitplanText } from '../../shared/src/automatisierung';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
@@ -484,6 +485,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       if (f.merkmal !== undefined && (!istFeldmerkmal(f.merkmal) || f.typ !== 'janein')) fehler.push(`${wo}: Feld „${f.key}“: merkmal gibt es nur am Ja/Nein-Feld (typ: janein), möglich: ${FELDMERKMALE.join(', ')}.`);
       if (f.schreibschutz !== undefined && (!istSchreibschutz(f.schreibschutz) || f.typ === 'passwort' || f.typ === 'tabelle')) fehler.push(`${wo}: Feld „${f.key}“: schreibschutz ist ${SCHREIBSCHUTZ.join(', ')} – nicht an Passwort und Tabelle.`);
       fehler.push(...tabellenFehler(f, `${wo}: Feld „${f.key}“`));
+      fehler.push(...zusammengesetztFehler(f, felder, `${wo}: Feld „${f.key}“`));
       // Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText.
       const roh = f as unknown as Record<string, unknown>;
       if (roh.aus_text !== undefined) {
@@ -1021,6 +1023,23 @@ function ohneZiele(t: Mappentyp, weg: Set<string>): Feld[] {
   return t.felder.flatMap((f) => (f.typ === 'tabelle' ? (f.quelle && weg.has(f.quelle.typId) && f.quelle.typId !== t.id ? [] : [f])
     : f.typ !== 'referenz' || rest(f).length === zieleVon(f).length ? [f]
     : rest(f).length || f.zielOptional?.length ? [{ ...f, zielTypen: rest(f) }] : []));
+}
+
+/**
+ * Feldart Zusammengesetzt (#1050) im Paket: `vorlage` nur bei `typ: zusammengesetzt` und dort Pflicht (höchstens
+ * VORLAGE_MAX Zeichen, Platzhalter aus geeigneten Feldern desselben Typs); nie berechnet, nie Pflicht. Die Kennung setzt
+ * das Paket nicht – Ablago berechnet sie beim Speichern (gesendete Werte zählen nicht), bei Doppelung kommt 422.
+ */
+function zusammengesetztFehler(f: PaketFeld, felder: PaketFeld[], wo: string): string[] {
+  const v = (f as unknown as Record<string, unknown>).vorlage;
+  if (f.typ !== 'zusammengesetzt') return v === undefined ? [] : [`${wo}: vorlage gibt es nur bei zusammengesetzten Feldern (typ: zusammengesetzt).`];
+  if (typeof v !== 'string' || !v.trim()) return [`${wo}: Ein zusammengesetztes Feld braucht vorlage, z. B. „{bereich} · {zeitraum}“.`];
+  const fehler: string[] = [];
+  if (f.berechnet === true) fehler.push(`${wo}: Ein zusammengesetztes Feld berechnet Ablago selbst – berechnet: true geht hier nicht.`);
+  if (f.pflicht) fehler.push(`${wo}: Ein zusammengesetztes Feld ist nie Pflicht – Ablago setzt es aus seinen Teilen.`);
+  // Dieselbe Prüfung wie im Mappentyp-Editor: Länge, Platzhalter, Feldarten, Filter.
+  fehler.push(...zusammengesetztProbleme(felder as unknown as Feld[], { ...f, vorlage: v } as unknown as Feld).map((x) => `${wo}: ${x}`));
+  return fehler;
 }
 
 /**

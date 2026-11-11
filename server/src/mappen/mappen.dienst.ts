@@ -12,6 +12,7 @@ import { type Aufgabe, darfErstellen, type Dokument, geschuetzteFelder, type Map
 import { kreisVon } from '../../../shared/src/nummernkreis';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { fremdeVorgabe, teileVorgabe, type VorgabeHerkunft } from '../../../shared/src/vorgaben';
+import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import { istVerklemmung } from '../db';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
@@ -288,6 +289,8 @@ export class MappenDienst {
     }
     // Folgt aus (#886): leere Felder füllen sich aus ihrer Quelle – was die Anfrage selbst setzt, bleibt.
     await this.folgeFuellen(typ, werte, {}, gesendeteFelder(e.werte), z);
+    // Zusammengesetzt (#1050): nach „folgt aus“ – auch gefolgte Verweise gehören zur Kombination.
+    setzeZusammengesetzte(typ, werte);
     await this.pruefeVerweisziele(z, typ, werte, {});
     await this.pruefeAuswahlfilter(typ, werte, {}, benutzerId);
     await this.pruefeWerte(typ, werte, undefined, undefined, z);
@@ -358,6 +361,7 @@ export class MappenDienst {
       }
     }
     await this.folgeFuellen(typ, werte, m.werte, gesendeteFelder(e.werte), z);
+    setzeZusammengesetzte(typ, werte);
     await this.pruefeVerweisziele(z, typ, werte, m.werte);
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
     await this.pruefeWerte(typ, werte, id, m.werte, z);

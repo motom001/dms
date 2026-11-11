@@ -36,6 +36,7 @@ import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
 import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
 import { DMS_TEILE_AB } from '../../shared/src/teile';
 import { archivInsPaket, DMS_ARCHIV_PAKET_AB } from '../../shared/src/archiv';
+import { DMS_ZUSAMMENGESETZT_AB } from '../../shared/src/zusammengesetzt';
 import { DMS_VORGABEN_AB, teileVorgabe } from '../../shared/src/vorgaben';
 import { DMS_ORGANISATION_AB } from '../../shared/src/organisation';
 import { zipPuffer } from './zip';
@@ -66,6 +67,7 @@ export const MINDEST_FUNKTIONEN = {
   tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
   vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },
   teile: { ab: DMS_TEILE_AB, grund: t('meldungen.paketerstellung.teile') },
+  zusammengesetzt: { ab: DMS_ZUSAMMENGESETZT_AB, grund: t('meldungen.paketerstellung.zusammengesetzt') },
   vorgaben: { ab: DMS_VORGABEN_AB, grund: t('meldungen.paketerstellung.vorgaben') },
   archiv: { ab: DMS_ARCHIV_PAKET_AB, grund: t('meldungen.paketerstellung.archiv') },
   organisation: { ab: DMS_ORGANISATION_AB, grund: t('meldungen.paketerstellung.organisation') },
@@ -614,6 +616,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (paketTypen.some((t) => 'archiv' in t)) genutzt.push('archiv');
   // Eigene Organisation (#995): Merkmal, Schreibschutz oder die Anzeige-Bedingung „zeigt auf eine eigene Organisation“.
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.merkmal || f.schreibschutz)) || JSON.stringify(paketTypen).includes('"art":"eigeneOrganisation"')) genutzt.push('organisation');
+  // Zusammengesetzt (#1050): Ältere Ablago lehnen die unbekannte Feldart ab.
+  if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'zusammengesetzt'))) genutzt.push('zusammengesetzt');
   // Anzeige-Bedingung „zeigt auf die Vorgabe …“ (#1038): Ältere Ablago ließen sie weg (Feld immer zu sehen).
   if (JSON.stringify(paketTypen).includes('"art":"vorgabe"')) genutzt.push('vorgaben');
   const mindest = mindestversion(genutzt);

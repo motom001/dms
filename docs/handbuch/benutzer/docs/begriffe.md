@@ -190,6 +190,10 @@ Siehe auch: [Feldart](#feldart), [Frist](#frist).
 Ein Mappentyp, auf dessen Mappen ein Verweis zeigen darf; ein Verweis hat einen oder mehrere. Mit „alle vom selben Typ“ bleiben mehrere gewählte Mappen beim Typ der ersten. Aus Paketen gibt es auch optionale Zieltypen – Typen eines anderen Pakets, die Ablago aufnimmt, sobald es installiert ist.  
 Siehe auch: [Verweis](#verweis), [Mappentyp](#mappentyp).
 
+<a id="zusammengesetztes-feld"></a>**Zusammengesetztes Feld** · ~ mit Erklärung · alle  
+Ein Feld, das Ablago beim Speichern aus anderen Feldern der Mappe zusammensetzt, z. B. „Absender · Rechnungsnummer“. In der Mappe ist es nur lesbar, darunter steht „setzt sich zusammen aus …“. Ist es eindeutig, darf es die Kombination nur einmal geben; Verweise zählen dabei über die Mappe selbst, nicht über ihren Namen.  
+Siehe auch: [Feld](#feld), [Berechnetes Feld](#berechnetes-feld).
+
 ## Arbeiten in der Ablage
 
 <a id="abwesenheit"></a>**Abwesenheit** · ✓ Alltagswort · alle  
@@ -692,6 +696,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Zieltyp | Zielklasse, Referenztyp | `Feld.zielTypen, Feld.gleicherTyp, Feld.zielOptional, zielOptional (Paket)` |
 | Zu erledigen | Eingang, Inbox, Posteingang, Anstehend | `eingang` |
 | Zum Wiederfinden nutzen | – | `Feld.wiederfinden` |
+| Zusammengesetztes Feld | Schlüsselfeld, Kombifeld, Verkettung | `Feld typ: zusammengesetzt, vorlage` |
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 | Übergeordnete Mappe | Elternmappe, Hauptmappe | `uebergeordneteId, shared/src/teile.ts` |
 

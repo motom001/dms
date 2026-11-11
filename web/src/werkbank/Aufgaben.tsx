@@ -243,7 +243,7 @@ function AufgabeMappe({ a, z }: { a: Aufgabe; z: AufgabenZustand }) {
             <dl className="eigenschaften">
               {felder.map((f) => {
                 const v = m.mappe.werte[f.key];
-                const text = formatiere(f, v, (id) => titelOder(m.bezuege[id]?.titel));
+                const text = formatiere(f, v, (id) => titelOder(m.bezuege[id]?.titel), { felder: typ?.felder ?? [], werte: m.mappe.werte });
                 return <div key={f.key} style={{ display: 'contents' }}><dt>{f.label}</dt><dd>{text || <span className="leise">–</span>}</dd></div>;
               })}
               <dt>{t('werkbank.aufgaben.dokumente')}</dt><dd>{m.dokumente.length || <span className="leise">{t('werkbank.aufgaben.keine')}</span>}</dd>

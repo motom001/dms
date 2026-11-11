@@ -26,7 +26,8 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
   // Verweis noch leer, alter Text da (#534): bis zur Umwandlung zeigt die Spalte den Text.
   const alt = typ && f ? altesTextfeldVon(typ, f) : undefined;
   if (alt && istLeer(m.werte[k]) && !istLeer(m.werte[alt.key])) return formatiere(alt, m.werte[alt.key]);
-  const text = f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
+  // Zusammengesetzt (#1050): Text aus den Werten der Mappe; nicht lesbare Verweise kommen maskiert aus bezuege.
+  const text = f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel), { felder: typ!.felder, werte: m.werte }) : '';
   // Zahlen, Beträge, Prozent (#1035): ein negatives mit echtem Minuszeichen – deutlich, nicht nur über die Farbe.
   if (rechtsbuendig(f?.typ)) return mitMinus(text);
   // Formatierter Text (#53) in Listen: ohne Formatierung, gekürzt.

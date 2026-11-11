@@ -10,7 +10,7 @@ import type { Zelle } from './xlsx';
 import { aufbewahrenBis } from '../../shared/src/archiv';
 import { EXPORT_TAGE } from '../../shared/src/auskunft';
 import { kernTyp } from '../../shared/src/dateiumwandlung';
-import { auswahlText, istLeer, mehrereZiele, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
+import { auswahlText, formatiere, istLeer, mehrereZiele, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
 import { istZeitraum, zeitraumIso } from '../../shared/src/feldarten';
 import { wertfelder } from '../../shared/src/tabelle';
 import type { Erinnerung } from '../../shared/src/fristen';
@@ -420,7 +420,8 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
     const kopf = ['id', 'titel', 'angelegt', 'angelegt_von', 'geaendert', 'geaendert_von', ...(mappentyp.archiv ? ['aufbewahren_bis'] : []),
       // Verweise mit mehreren Zieltypen (#1036): dazu der Mappentyp jeder Mappe (Kennung, sonst Name).
       // Tabellen (#1030) haben keinen Wert – keine Spalte.
-      ...wertfelder(mappentyp.felder).flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`, ...(mehrereZiele(f) ? [`${f.key}_typ`] : [])] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : [f.key]))];
+      // Zusammengesetzt (#1050): der gespeicherte Schlüssel (Verweise als Id) und daneben der Text mit Titeln.
+      ...wertfelder(mappentyp.felder).flatMap((f) => (f.typ === 'referenz' ? [f.key, `${f.key}_titel`, ...(mehrereZiele(f) ? [`${f.key}_typ`] : [])] : f.typ === 'betrag' ? [f.key, `${f.key}_waehrung`] : f.typ === 'zusammengesetzt' ? [f.key, `${f.key}_text`] : [f.key]))];
     const typVonMappe = (id: string) => { const x = typVon.get(alleMappen.get(id)?.typId ?? ''); return x ? x.schluessel ?? x.name : ''; };
     const csvZeileVon = (m: Mappe) => [m.id, m.titel ?? '', m.erstellt, m.erstelltVon ?? '', m.geaendert, m.geaendertVon ?? '', ...(mappentyp.archiv ? [aufbewahrenBis(mappentyp.archiv, m) ?? ''] : []),
       ...wertfelder(mappentyp.felder).flatMap((f) => {
@@ -428,6 +429,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
         if (f.typ === 'passwort') return [istLeer(v) ? '' : '(gesetzt)'];
         if (f.typ === 'referenz') { const ids = Array.isArray(v) ? v.map(String) : v ? [String(v)] : []; return [ids.join(' | '), ids.map(titel).join(' | '), ...(mehrereZiele(f) ? [ids.map(typVonMappe).join(' | ')] : [])]; }
         if (f.typ === 'betrag') { const x = v && typeof v === 'object' ? v as { betrag?: unknown; waehrung?: unknown } : {}; return [x.betrag == null ? '' : String(x.betrag), String(x.waehrung ?? '')]; }
+        if (f.typ === 'zusammengesetzt') return [zelle(v), formatiere(f, v, titel, { felder: mappentyp.felder, werte: m.werte })];
         return [zelle(v)];
       })];
     // CSV und JSON Lines Zeile für Zeile als Strom (#746).
@@ -602,6 +604,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 - Datum: \`JJJJ-MM-TT\`, Zeitpunkte ISO 8601 in UTC. Zahlen mit Punkt. Beträge: Spalte \`<feld>\` und \`<feld>_waehrung\`.
 - Zeiträume nach ISO 8601 (\`P3M\` = 3 Monate, \`P14D\`, \`P2W\`, \`P1Y\`), in JSON als \`{ "anzahl": 3, "einheit": "monate" }\`. Prozent als Zahl (\`19\` für 19 %).
 - Ids: UUID. Mehrfachwerte in CSV mit \` | \` getrennt; in JSON als Liste.
+- Zusammengesetzte Felder: in \`<feld>\` der gespeicherte Schlüssel (Verweise als Id, Datum als \`JJJJ-MM-TT\`), in \`<feld>_text\` der Text mit den Titeln.
 - Passwortfelder stehen nie in den Daten (nur „gesetzt“).
 
 ## Vollständig?

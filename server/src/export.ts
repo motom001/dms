@@ -61,7 +61,7 @@ export function zeile(m: Mappe, spalten: string[], q: Quelle): { text: string[];
     const f = typ?.felder.find((x) => x.key === k);
     const v = m.werte[k];
     if (!f || f.typ === 'passwort' || v == null || v === '') { text.push(''); werte.push(null); continue; }
-    const t = formatiere(f, v, (id) => q.titel(id));
+    const t = formatiere(f, v, (id) => q.titel(id), { felder: typ!.felder, werte: m.werte });
     text.push(t);
     werte.push(wert(f, v, t));
   }
@@ -117,7 +117,7 @@ async function mappenSeite(x: PdfMappe, q: Quelle): Promise<PdfMappenSeite> {
     const felder = (r.felder ?? []).map((k) => typ?.felder.find((f) => f.key === k)).filter((f): f is Feld => !!f && f.typ !== 'passwort');
     const mitWert = felder.filter((fd) => m.werte[fd.key] != null && m.werte[fd.key] !== '' && !(Array.isArray(m.werte[fd.key]) && !(m.werte[fd.key] as unknown[]).length));
     if (!mitWert.length) continue;
-    bloecke.push({ name: register.length > 1 && r.name ? registerName(r) : null, felder: mitWert.map((fd) => [feldLabel(fd), formatiere(fd, m.werte[fd.key], (id) => q.titel(id))]) });
+    bloecke.push({ name: register.length > 1 && r.name ? registerName(r) : null, felder: mitWert.map((fd) => [feldLabel(fd), formatiere(fd, m.werte[fd.key], (id) => q.titel(id), { felder: typ?.felder ?? [], werte: m.werte })]) });
   }
   const dokumente: PdfMappenSeite['dokumente'] = [];
   for (const d of x.dokumente) {

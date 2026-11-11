@@ -3,6 +3,7 @@
  * Wartung beim Start (Haken #146, Kennungen #145, „ehemalig“ #663) und „Absender bereinigen“ (#494). Schicht 2.
  */
 import { auswahlText, freierSchluessel, type Mappe, type Mappentyp, POST_KANAL, POST_RICHTUNG, titelAus, verweiseVon, type Werte } from '../../../shared/src/model';
+import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import { istOffen, kurzStandard, RECHTE_LISTE, regelwerkVon } from '../../../shared/src/rechte';
 import { Fachfehler } from '../fehler';
 import type { Kern } from '../kern';
@@ -136,6 +137,7 @@ export class MappenTitel {
       const m = await this.repo.holeMappe(p.id);
       if (!m) continue;
       const werte = { ...m.werte, absender: null };
+      setzeZusammengesetzte(typ, werte);
       await this.inTransaktion(async () => {
         const neu = await this.repo.aendereMappe(m.id, werte, [], von.id, { basis: m.werte, verweise: (w) => verweiseVon(typ, w) });
         await this.notiere(m.id, von.id, 'geaendert', {

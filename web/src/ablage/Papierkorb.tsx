@@ -284,7 +284,8 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
             const v = e.werte[f.key];
             const text = f.typ === 'referenz'
               ? (Array.isArray(v) ? v.length : v ? 1 : 0) ? t('ablage.papierkorb.verknuepfte-mappen', { anzahl: Array.isArray(v) ? v.length : 1 }) : ''
-              : formatiere(f, v);
+              // Zusammengesetzt (#1050): ohne die Titel verwiesener Mappen – wie die Verweise hier.
+              : formatiere(f, v, () => '', { felder, werte: e.werte });
             return <div key={f.key} style={{ display: 'contents' }}><dt>{feldLabel(f)}</dt><dd>{text || <span className="leise">–</span>}</dd></div>;
           })}
           <dt>{t('ablage.papierkorb.dokumente-2')}</dt><dd>{e.dokumente || <span className="leise">{t('ablage.papierkorb.keine')}</span>}</dd>

@@ -106,6 +106,9 @@ begriffe:
   Berechnetes Feld:
     begriff: Calculated field
     beschreibung: A field whose value a package works out, e.g. "Cancel by" or the status of a contract. In the folder it is read-only, with "calculated by …" and the name of the package underneath. If the package no longer calculates it, the last value stays ("no longer calculated") until the administrator releases the field again.
+  Zusammengesetztes Feld:
+    begriff: Combined field
+    beschreibung: A field that Ablago puts together from other fields of the folder when saving, e.g. "Sender · Invoice number". In the folder it is read-only, with "combined from …" underneath. If it is unique, the combination may exist only once; links count by the folder itself, not by its name.
   Hinweis von Paketen:
     begriff: Note from a package
     beschreibung: A short sentence that a package sets on a folder, e.g. "The items add up to €118.40, the invoice says €120.80". It appears in yellow in the notes line above the tabs, always with the name of the package, and never stops you saving.

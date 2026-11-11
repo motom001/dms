@@ -299,6 +299,8 @@ export class Systemtypen {
         for (const r of register) if (r.felder) r.felder = r.felder.map((k) => (k === x.key ? neu : k));
         trefferlisten = trefferlisten.map((l) => ({ ...l, spalten: l.spalten.map((k) => (k === x.key ? neu : k)) }));
         titelVorlage = titelVorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`);
+        // Zusammengesetzt (#1050): Vorlagen, die das Feld nennen, ebenso.
+        for (const [j, g] of felder.entries()) if (g.vorlage) felder[j] = { ...g, vorlage: g.vorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`) };
         umbenannt.push([x.key, neu]);
       }
       felder.push(x);
