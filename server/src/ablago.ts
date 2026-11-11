@@ -354,7 +354,7 @@ anmeldesperre.beiKontosperre = async (x) => {
 // Zwei-Faktor-Anmeldung (#242): Geheimnis verschlüsselt mit dem Schlüssel des DMS.
 konten.verbindeZweifaktor(new Zweifaktor(pgEinstellungen(sql, cfg.haushalt), (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w), Date.now, zustandDb));
 // Passkeys (#811): gebunden an die Adresse von Ablago (gepflegt, sonst die der Anfrage); Name auf dem Gerät = Schriftzug.
-konten.verbindePasskeys(new Passkeys(pgEinstellungen(sql, cfg.haushalt), () => betrieb.adresseFuerLinks(), zustandDb, Date.now, async () => (await designs.marke())?.schriftzug || 'Ablago'));
+konten.verbindePasskeys(new Passkeys(pgEinstellungen(sql, cfg.haushalt), () => betrieb.adresseFuerLinks(), { zustand: zustandDb, name: async () => (await designs.marke())?.schriftzug || 'Ablago', gepflegt: () => betrieb.gepflegteAdresse() }));
 const notfall = new Notfallzugang(join(dirname(tresor.datei), 'RESCUE'), konten, pgBetriebSpeicher(sql, cfg.haushalt), anVerwaltendeVon());
 // Sicherungen (#103–#105): eigenes Volume, verschlüsselt mit dem Schlüssel der Werkbank.
 const sicherung = new Sicherung(ordner.sicherung, ordner.dateien, cfg.haushalt, {

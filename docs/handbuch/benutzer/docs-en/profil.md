@@ -71,7 +71,7 @@ At the bottom of the area *Account*, below name and email address, it says what 
 - **Two-factor sign-in** – see [below](#zwei-faktor-anmeldung).
 - **My signed-in devices** – everywhere you are currently signed in, with browser, device and last activity; *this device* is marked. **Sign out** ends a single sign-in, **Sign out all others** all except this one – for instance if you have lost a phone. Then it's best to change your password too.
 - <span id="passwoerter-fuer-dokumente"></span>**Passwords for documents** – the passwords of protected PDFs that you stored with **Remember for further documents** when [unlocking](dokumente.md#passwortgeschuetzte-pdfs). For each password you see the name, the password hidden and when Ablago last used it. The eye shows it, **Change** lets you enter a new name or a new password, and the small red **×** deletes it. Documents already unlocked stay unlocked.
-    - **Showing and changing** the password only works after you have confirmed yourself again: with your Ablago password or, with two-factor sign-in, also with a code from the app. The confirmation applies for five minutes to this area.
+    - **Showing and changing** the password only works after you have confirmed yourself again: with your Ablago password, with two-factor sign-in also with a code from the app, or with a [passkey](#passkeys) (**Confirm with a passkey**). The confirmation applies for five minutes to this area.
     - The passwords belong **only to you**: Ablago stores them in your account, encrypted with Ablago's key. Nobody else sees them in Ablago, not even whoever administers Ablago (not even in administration mode), and not in a stand-in arrangement either. They never come out via API keys or packages; they are missing from the full export and are only stored encrypted in the backup. To be honest: whoever has the server itself and Ablago's key in their hands could technically decrypt them – like any password field in a folder.
     - You can remember at most 20 passwords.
     - This is **not a password manager**: Ablago only uses these passwords to open protected documents that you file. For your accounts on websites and apps, please use a password manager.
@@ -127,7 +127,7 @@ From now on you sign in with password **and** code – or, if you have a [passke
 A link to reset the password also asks for the code afterwards. Lost your phone and no codes left? Then an administrator resets two-factor sign-in for your user.
 
 !!! note "Required"
-    An administrator can require it for your system role (administrator or member). Then you set it up after signing in before you can continue, and you can't switch it off yourself.
+    An administrator can require it for your system role (administrator or member). Then you set it up after signing in before you can continue, and you can't switch it off yourself. A [passkey](#passkeys) fulfils the requirement as well: instead of the app you can add a passkey; it is then needed as a second step when signing in with a password. With a passkey you may switch off the code app again – but you can only remove the last passkey once there is a new one or the code app is set up.
 
 ### Appearance { #darstellung }
 

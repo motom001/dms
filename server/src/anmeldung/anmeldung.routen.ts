@@ -224,7 +224,12 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'GET', pfad: '/api/konsole/ich', zugang: 'offen', konsole: true, handler: async (a) => ok({ als: a.benutzer?.email ?? null, version: eigeneVersion() }) },
     /* ---------- Zwei-Faktor-Anmeldung (#242) ---------- */
-    { methode: 'GET', pfad: '/api/konto/zweifaktor', zugang: 'angemeldet', handler: async (a) => ok({ ...(await zf().status(ich(a).id)), pflicht: (await zf().pflicht())[pflichtRolle(ich(a))] }) },
+    // Pflicht: nur, solange kein Passkey sie erfüllt (#811) – dann darf die Code-App auch wieder weg.
+    { methode: 'GET', pfad: '/api/konto/zweifaktor', zugang: 'angemeldet', handler: async (a) => {
+      const rolle = (await zf().pflicht())[pflichtRolle(ich(a))];
+      const passkey = !!konten.passkeys && (await konten.passkeys.fuerPflicht(ich(a).id));
+      return ok({ ...(await zf().status(ich(a).id)), pflicht: rolle && !passkey, passkeyErfuellt: rolle && passkey });
+    } },
     { methode: 'POST', pfad: '/api/konto/zweifaktor/beginnen', zugang: 'angemeldet', handler: async (a) => ok(await zf().beginne(ich(a), (await x.designs?.marke())?.schriftzug || 'Ablago')) },
     { methode: 'POST', pfad: '/api/konto/zweifaktor/bestaetigen', zugang: 'angemeldet', handler: async (a) => {
       const codes = await zf().bestaetige(ich(a).id, b(a).code, ich(a).email);
@@ -237,7 +242,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       return ok({ codes: await zf().neueCodes(ich(a).id, ich(a).email) });
     } },
     { methode: 'POST', pfad: '/api/konto/zweifaktor/entfernen', zugang: 'angemeldet', handler: async (a) => {
-      if ((await zf().pflicht())[pflichtRolle(ich(a))]) throw new Fachfehler(409, t('meldungen.routen.fuer-dich-ist-die'));
+      if ((await zf().pflicht())[pflichtRolle(ich(a))] && !(konten.passkeys && (await konten.passkeys.fuerPflicht(ich(a).id)))) throw new Fachfehler(409, t('meldungen.routen.fuer-dich-ist-die'));
       await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
       await zf().entferne(ich(a).id, ich(a).email);
       await konten.zweifaktorGeaendert(ich(a).id);
@@ -260,7 +265,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
     // Mein Konto → Sicherheit: eigene Passkeys. Nicht in einer Vertretung – dort ändert niemand die Anmeldung eines anderen.
     { methode: 'GET', pfad: '/api/konto/passkeys', zugang: 'angemeldet', handler: async (a) => ok({
       liste: await pk().liste(ich(a).id), moeglich: !!pk().rp(), adresse: pk().rp()?.rpId ?? null,
-      pflicht: (await pk().pflicht())[pflichtRolle(ich(a))], hoechstens: PASSKEYS_HOECHSTENS,
+      pflicht: await konten.passkeyNoetig(ich(a)), hoechstens: PASSKEYS_HOECHSTENS,
     }) },
     { methode: 'POST', pfad: '/api/konto/passkeys/beginnen', zugang: 'angemeldet', handler: async (a) => {
       ohneVertretung(a);
@@ -281,14 +286,20 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       // Vorgeschrieben (wie bei der Zwei-Faktor-Anmeldung): den letzten passenden nicht entfernen.
       const liste = await pk().liste(ich(a).id);
       const der = liste.find((p) => p.nr === a.params.nr);
-      if (der?.passt && liste.filter((p) => p.passt).length === 1 && (await pk().pflichtGilt(ich(a)))) throw new Fachfehler(409, t('anmeldung.passkey.fehler.letzter'));
+      // Nur Passkeys für die gepflegte Adresse erfüllen eine Pflicht – nur deren letzten schützen.
+      const rp = pk().pflichtRp();
+      const zaehlt = (p: { rpId: string }) => !!rp && p.rpId === rp.rpId;
+      const noetig = der && zaehlt(der) && liste.filter(zaehlt).length === 1 ? await konten.passkeyNoetig(ich(a)) : null;
+      if (noetig) throw new Fachfehler(409, t(noetig === 'passkey' ? 'anmeldung.passkey.fehler.letzter' : 'anmeldung.passkey.fehler.letzter.zweifaktor'));
       return ok(await pk().entferne(ich(a), a.params.nr, ich(a).email));
     } },
     // Erneute Anmeldung mit Passkey (Verwaltungsmodus, heikle Handlungen): Optionen nur mit den eigenen Passkeys.
-    { methode: 'POST', pfad: '/api/konto/passkeys/bestaetigen/optionen', zugang: 'angemeldet', handler: async (a) => ok(await konten.passkeyBestaetigungOptionen(ich(a), a.sitzungsDaten)) },
+    // `{ fuer: 'dokumentpasswoerter' }`: eigene Herausforderung für „Passwörter für Dokumente“ (#827).
+    { methode: 'POST', pfad: '/api/konto/passkeys/bestaetigen/optionen', zugang: 'angemeldet', handler: async (a) => ok(await konten.passkeyBestaetigungOptionen(ich(a), a.sitzungsDaten, b(a).fuer)) },
     // Werkbank → Anmeldeschutz: Passkey je Rolle vorschreiben; Verwaltung: Passkeys einer Person zurücksetzen.
-    { methode: 'GET', pfad: '/api/werkbank/passkeys', zugang: 'admin', handler: async () => ok({ ...(await pk().pflicht()), moeglich: !!pk().rp() }) },
-    { methode: 'PUT', pfad: '/api/werkbank/passkeys', zugang: 'admin', handler: async (a) => ok({ ...(await pk().setzePflicht(a.body, ich(a).email)), moeglich: !!pk().rp() }) },
+    // `moeglich` = gepflegte HTTPS-Adresse vorhanden – nur dann lässt sich die Pflicht einschalten (Durchsicht Sicherheit).
+    { methode: 'GET', pfad: '/api/werkbank/passkeys', zugang: 'admin', handler: async () => ok({ ...(await pk().pflicht()), moeglich: !!pk().pflichtRp(), adresse: pk().pflichtRp()?.origin ?? null }) },
+    { methode: 'PUT', pfad: '/api/werkbank/passkeys', zugang: 'admin', handler: async (a) => ok({ ...(await pk().setzePflicht(a.body, ich(a).email)), moeglich: !!pk().pflichtRp(), adresse: pk().pflichtRp()?.origin ?? null }) },
     { methode: 'GET', pfad: '/api/benutzer/:id/passkeys', zugang: 'admin', handler: async (a) => ok({ anzahl: await pk().anzahl(a.params.id) }) },
     { methode: 'POST', pfad: '/api/benutzer/:id/passkeys/zuruecksetzen', zugang: 'admin', handler: async (a) => {
       await konten.pruefeKontoVon(ich(a), a.params.id);

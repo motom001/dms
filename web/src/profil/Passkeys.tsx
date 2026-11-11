@@ -110,7 +110,7 @@ export function PasskeyBlatt() {
           </div>
         )}
         {meldung && <p className="gutertext" role="status">{meldung}</p>}
-        {stand.pflicht && <p className="leise klein">{t('profil.passkeys.pflicht')}</p>}
+        {stand.pflicht && <p className="leise klein">{stand.pflicht === 'zweifaktor' ? t('profil.passkeys.pflicht.zweifaktor') : t('profil.passkeys.pflicht')}</p>}
         {stand.liste.length > 0 && <p className="leise klein">{t('profil.passkeys.verloren')}</p>}
       </>}
     </div>

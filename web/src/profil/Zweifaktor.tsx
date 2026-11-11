@@ -126,6 +126,7 @@ export function ZweifaktorBlatt() {
             </form>
           )}
           {stand.pflicht && <p className="leise klein">{t('profil.zweifaktor.fuer-dich-ist-die')}</p>}
+          {stand.passkeyErfuellt && <p className="leise klein">{t('profil.zweifaktor.passkey-erfuellt')}</p>}
         </>
       ) : (
         <div className="knoepfe"><button type="button" className="knopf primaer" onClick={() => { setMeldung(undefined); setModus('einrichten'); }}>{t('profil.zweifaktor.einrichten')}</button></div>

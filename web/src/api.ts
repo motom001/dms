@@ -364,12 +364,15 @@ export interface AnbieterEingabe {
 }
 export type AnbieterStand = Omit<AnbieterEingabe, 'clientSecret' | 'clientSecretLoeschen'> & { secretGesetzt: boolean; rueckkehr: string; abmeldenZurueck: string };
 /** Zwei-Faktor-Anmeldung (#242). */
-export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUebrig: number; pflicht: boolean }
+/** `pflicht`: vorgeschrieben und von keinem Passkey erfüllt; `passkeyErfuellt`: vorgeschrieben, ein Passkey erfüllt sie (#811). */
+export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUebrig: number; pflicht: boolean; passkeyErfuellt?: boolean }
 export interface ZweifaktorPflicht { admin: boolean; mitglied: boolean }
 /** Passkeys (#811): ein eigener Passkey in Mein Konto → Sicherheit. `passt` = gilt für die Adresse von Ablago. */
 export interface Passkey { nr: string; name: string; erstellt: string; zuletzt: string | null; mehrgeraete: boolean; passt: boolean; rpId: string }
-export interface PasskeyStand { liste: Passkey[]; moeglich: boolean; adresse: string | null; pflicht: boolean; hoechstens: number }
-export type PasskeyPflicht = ZweifaktorPflicht & { moeglich: boolean };
+/** `pflicht`: Der letzte Passkey ist nötig – wegen der Passkey- oder der Zwei-Faktor-Pflicht (ohne Code-App). */
+export interface PasskeyStand { liste: Passkey[]; moeglich: boolean; adresse: string | null; pflicht: 'passkey' | 'zweifaktor' | null; hoechstens: number }
+/** `moeglich`: gepflegte HTTPS-Adresse vorhanden – nur dann lässt sich die Pflicht einschalten; `adresse`: deren Origin. */
+export type PasskeyPflicht = ZweifaktorPflicht & { moeglich: boolean; adresse: string | null };
 /** Optionen und Kennung einer Herausforderung zum Anmelden mit Passkey (Optionen im JSON-Format von WebAuthn). */
 export interface PasskeyAnfrage { kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }
 /** Antwort des Geräts mit der Kennung der Herausforderung – so geht sie an den Server. */
@@ -604,7 +607,7 @@ export const api = {
   passkeyHinzufuegen: (antwort: unknown, name: string) => anfrage<Passkey>('POST', '/api/konto/passkeys', { antwort, name }),
   passkeyBenennen: (nr: string, name: string) => anfrage<Passkey[]>('PUT', `/api/konto/passkeys/${encodeURIComponent(nr)}`, { name }),
   passkeyEntfernen: (nr: string) => anfrage<Passkey[]>('DELETE', `/api/konto/passkeys/${encodeURIComponent(nr)}`),
-  passkeyBestaetigenOptionen: () => anfrage<PasskeyAnfrage>('POST', '/api/konto/passkeys/bestaetigen/optionen'),
+  passkeyBestaetigenOptionen: (fuer?: 'dokumentpasswoerter') => anfrage<PasskeyAnfrage>('POST', '/api/konto/passkeys/bestaetigen/optionen', fuer ? { fuer } : {}),
   passkeyPflicht: () => anfrage<PasskeyPflicht>('GET', '/api/werkbank/passkeys'),
   passkeyPflichtSetzen: (p: Partial<ZweifaktorPflicht>) => anfrage<PasskeyPflicht>('PUT', '/api/werkbank/passkeys', p),
   benutzerPasskeys: (id: string) => anfrage<{ anzahl: number }>('GET', `/api/benutzer/${id}/passkeys`),
@@ -647,8 +650,8 @@ export const api = {
   /** Geschütztes PDF entsperren (#827); mit `merken` zusätzlich im eigenen Konto. */
   dokumentEntsperren: (id: string, passwort: string, merken?: { name: string }) => anfrage<{ dokument: string; pdfSchutz: PdfSchutz | null; gemerkt: boolean; hinweis?: string }>('POST', `/api/dokumente/${id}/entsperren`, { passwort, ...(merken ? { merken: true, name: merken.name } : {}) }),
   /** Passwörter für Dokumente (#827, Mein Konto → Sicherheit). */
-  dokumentPasswoerter: () => anfrage<{ eintraege: GemerktesPasswort[]; bestaetigtBis: string | null; max: number; zweifaktor: boolean }>('GET', '/api/konto/dokument-passwoerter'),
-  dokumentPasswoerterBestaetigen: (e: { passwort?: string; code?: string }) => anfrage<{ bestaetigtBis: string }>('POST', '/api/konto/dokument-passwoerter/bestaetigen', e),
+  dokumentPasswoerter: () => anfrage<{ eintraege: GemerktesPasswort[]; bestaetigtBis: string | null; max: number; zweifaktor: boolean; passkey?: boolean }>('GET', '/api/konto/dokument-passwoerter'),
+  dokumentPasswoerterBestaetigen: (e: { passwort?: string; code?: string; passkey?: PasskeyAntwort }) => anfrage<{ bestaetigtBis: string }>('POST', '/api/konto/dokument-passwoerter/bestaetigen', e),
   dokumentPasswortZeigen: (id: string) => anfrage<{ passwort: string }>('GET', `/api/konto/dokument-passwoerter/${id}`),
   dokumentPasswortAendern: (id: string, e: { name?: string; passwort?: string }) => anfrage<GemerktesPasswort>('PUT', `/api/konto/dokument-passwoerter/${id}`, e),
   dokumentPasswortLoeschen: (id: string) => anfrage<null>('DELETE', `/api/konto/dokument-passwoerter/${id}`),

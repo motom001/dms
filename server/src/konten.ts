@@ -80,10 +80,15 @@ export class Konten {
   verbindeSperre(s: Anmeldesperre) { this.sperre = s; }
   /** Zwei-Faktor-Anmeldung (#242); ohne Verbindung gibt es keine. */
   zweifaktor: Zweifaktor | null = null;
-  verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; }
+  verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; this.verbindeAlternative(); }
   /** Passkeys (#811); ohne Verbindung gibt es keine. */
   passkeys: Passkeys | null = null;
-  verbindePasskeys(p: Passkeys) { this.passkeys = p; }
+  verbindePasskeys(p: Passkeys) { this.passkeys = p; this.verbindeAlternative(); }
+  /** Ein Passkey erfüllt auch die Zwei-Faktor-Pflicht (Entscheidung 11.11.2026, #811). */
+  private verbindeAlternative() {
+    // Nur ein Passkey für die gepflegte Adresse zählt (Durchsicht Sicherheit): nie die Adresse der Anfrage.
+    if (this.zweifaktor) this.zweifaktor.alternative = async (id) => !!this.passkeys && (await this.passkeys.fuerPflicht(id));
+  }
   /** Anmeldung über einen Anbieter (#241): aktive Einstellung, sonst null. */
   private anbieter: () => Promise<OidcEinstellung | null> = async () => null;
   verbindeAnbieter(f: () => Promise<OidcEinstellung | null>) { this.anbieter = f; }
@@ -157,13 +162,37 @@ export class Konten {
 
   /**
    * Welche zweiten Faktoren gelten für diese Person – oder null, wenn keiner nötig ist? Code aus der App (#242), sobald
-   * eingerichtet; ein Passkey (#811) als Alternative dazu, und allein nur, wenn ein Passkey für die Rolle vorgeschrieben
-   * ist (sonst bliebe ein verlorenes Handy ohne Wiederherstellungscodes ein Aussperren).
+   * eingerichtet; ein Passkey (#811) als Alternative dazu, und allein nur, wenn für die Rolle ein Passkey oder die
+   * Zwei-Faktor-Anmeldung vorgeschrieben ist – ein Passkey erfüllt auch diese Pflicht (sonst bliebe ein verlorenes Handy
+   * ohne Wiederherstellungscodes ein Aussperren).
    */
   async zweiteWege(b: Benutzer): Promise<{ code: boolean; passkey: boolean } | null> {
     const code = !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id));
-    const passkey = !!this.passkeys && (await this.passkeys.nutzbar(b.id));
-    if (code || (passkey && (await this.passkeys!.pflichtGilt(b)))) return { code, passkey };
+    const pk = this.passkeys;
+    if (code) return { code, passkey: !!pk && (await pk.nutzbar(b.id)) };
+    if (!pk || !(await pk.anzahl(b.id))) return null;
+    const pkPflicht = await pk.pflichtGilt(b);
+    const zfPflicht = !!this.zweifaktor && (await this.zweifaktor.pflichtFuer(b));
+    if (!pkPflicht && !zfPflicht) return null;
+    // Entschieden wird gegen die gepflegte Adresse (Durchsicht Sicherheit): Gilt dort ein Passkey und läuft die Anfrage
+    // über sie, ist er der zweite Schritt. Sonst kein Durchwinken über eine IP-Adresse oder einen zweiten Namen.
+    const rp = pk.pflichtRp();
+    if (rp && (await pk.fuerPflicht(b.id)) && pk.rp()?.rpId === rp.rpId) return { code: false, passkey: true };
+    if (rp) throw new Fachfehler(409, t('anmeldung.passkey.fehler.andere-adresse', { adresse: rp.origin }), { adresse: rp.origin });
+    // Ohne gepflegte Adresse zählt kein Passkey: Passkey-Pflicht bleibt geschlossen; die Zwei-Faktor-Pflicht verlangt
+    // dann wie ohne Passkey die Code-App (nach der Anmeldung, vor allem anderen).
+    if (pkPflicht) throw new Fachfehler(409, t('anmeldung.passkey.fehler.ohne-adresse'), { adresse: null });
+    return null;
+  }
+
+  /**
+   * Ist der letzte Passkey nötig, um eine Pflicht zu erfüllen? Passkey vorgeschrieben – oder Zwei-Faktor vorgeschrieben
+   * ohne Code-App (#811). Dann lässt er sich nicht selbst entfernen. Liefert den Grund oder null.
+   */
+  async passkeyNoetig(b: Benutzer): Promise<'passkey' | 'zweifaktor' | null> {
+    if (!this.passkeys || !this.passkeys.pflichtRp()) return null;
+    if (this.passkeys && (await this.passkeys.pflichtGilt(b))) return 'passkey';
+    if (this.zweifaktor && (await this.zweifaktor.pflichtFuer(b)) && !(await this.zweifaktor.aktiv(b.id))) return 'zweifaktor';
     return null;
   }
 
@@ -285,7 +314,7 @@ export class Konten {
       return pk.beginneAnmeldung('zweiter-schritt', z.k.benutzerId, z.schluessel);
     }
     await this.sperre.pruefe('', ip);
-    return pk.beginneAnmeldung('anmelden');
+    return pk.beginneAnmeldung('anmelden', null, null, ip);
   }
 
   /**
@@ -337,9 +366,18 @@ export class Konten {
   }
 
   /** Optionen für die erneute Anmeldung mit Passkey (Verwaltungsmodus, heikle Handlungen, #819). */
-  async passkeyBestaetigungOptionen(b: Benutzer, s: SitzungIntern | undefined) {
+  async passkeyBestaetigungOptionen(b: Benutzer, s: SitzungIntern | undefined, fuer?: unknown) {
     if (s?.vertretungId) throw new Fachfehler(403, t('konten.verwaltung.fehler.vertretung'));
-    return this.pk().beginneAnmeldung('bestaetigen', b.id);
+    // Eigener Zweck für „Passwörter für Dokumente“ (#827): Eine solche Bestätigung taugt nicht für den Verwaltungsmodus.
+    return this.pk().beginneAnmeldung(fuer === 'dokumentpasswoerter' ? 'dokumentpasswoerter' : 'bestaetigen', b.id);
+  }
+
+  /** Bestätigung für „Passwörter für Dokumente“ mit Passkey (#811, #827); wirft 403 bei Fehlern. */
+  async pruefePasskeyFuerDokumente(b: Benutzer, passkey: unknown) {
+    const p = (passkey && typeof passkey === 'object' ? passkey : {}) as { kennung?: unknown; antwort?: unknown };
+    try { await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'dokumentpasswoerter', benutzerId: b.id }); } catch (x) {
+      throw new Fachfehler(403, x instanceof Fachfehler ? x.message : t('anmeldung.passkey.fehler.falsch'));
+    }
   }
 
   private async neueSitzung(benutzerId: string, info: Geraet & { voll?: boolean }, vertretungId: string | null = null) {

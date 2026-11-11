@@ -202,7 +202,11 @@ function PasskeyPflichtBlatt() {
       <h2 className="h3">{t('werkbank.anmeldeschutz.passkey.titel')} <Hilfe ort="werkbank.passkeys" /></h2>
       <p className="leise">{t('werkbank.anmeldeschutz.passkey.text')}</p>
       {!p ? !meldung && <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p> : <>
-        {!p.moeglich && <p className="hinweis info">{t('anmeldung.passkey.fehler.https')} <Hilfe ort="werkbank.passkeys" /></p>}
+        {/* Durchsicht Sicherheit: nur mit gepflegter HTTPS-Adresse; ist die Pflicht ohne sie an, gilt sie geschlossen weiter. */}
+        {!p.moeglich && (p.admin || p.mitglied
+          ? <div className="hinweis warn" id="passkey-pflicht-ohne-adresse"><p>{t('werkbank.anmeldeschutz.passkey.ohne-adresse')}</p><Link to="/werkbank/betrieb" className="knopf klein">{t('werkbank.anmeldeschutz.passkey.zur-adresse')}</Link></div>
+          : <div className="hinweis info" id="passkey-pflicht-adresse"><p>{t('anmeldung.passkey.fehler.pflicht-adresse')}</p><Link to="/werkbank/betrieb" className="knopf klein">{t('werkbank.anmeldeschutz.passkey.zur-adresse')}</Link></div>)}
+        {p.moeglich && p.adresse && <p className="leise klein">{t('werkbank.anmeldeschutz.passkey.gilt-fuer', { adresse: p.adresse })}</p>}
         <HakenFeld beschriftung={t('werkbank.anmeldeschutz.passkey.admin')}>
           <input id="pk-admin" type="checkbox" checked={p.admin} disabled={sendet || (!p.moeglich && !p.admin)} onChange={(x) => void setze({ admin: x.target.checked })} />
         </HakenFeld>

@@ -744,7 +744,7 @@
   "anmeldeschutz.trotzdem-vorschreiben": "Require anyway",
   "anmeldeschutz.jetzt-einrichten": "Set up now",
   "anmeldeschutz.zwei-faktor-anmeldung": "Two-factor sign-in",
-  "anmeldeschutz.jeder-kann-sie-unter": "Everyone can set it up for themselves under My account → Security. Here you require it for a role: whoever doesn’t have it yet sets it up at the next sign-in before it continues – whoever is signed in right now keeps working and sees a notice. You reset a lost phone under Users.",
+  "anmeldeschutz.jeder-kann-sie-unter": "Everyone can set it up for themselves under My account → Security. Here you require it for a role: whoever doesn’t have it yet sets it up at the next sign-in before it continues – whoever is signed in right now keeps working and sees a notice. A passkey fulfils the requirement as well; it is then needed as a second step when signing in with a password. You reset a lost phone under Users.",
   "anmeldeschutz.fuer-mitglieder-vorschreiben": "Require for members",
   "anmeldeschutz.abmelden-beim-anbieter-moeglich": ", signing out at the provider possible",
   "anmeldeschutz.ohne-abmelden-beim-anbieter": ", without signing out at the provider",
@@ -3255,5 +3255,9 @@
   "benutzer.passkeys.anzahl_other": "{anzahl} passkeys added.",
   "benutzer.passkeys.keine": "No passkeys.",
   "benutzer.passkeys.frage": "Remove all passkeys of {name}?",
-  "benutzer.passkeys.frage.text": "{name} then signs in with the password and can add new passkeys. Useful if a device is lost."
+  "benutzer.passkeys.frage.text": "{name} then signs in with the password and can add new passkeys. Useful if a device is lost.",
+  "anmeldeschutz.passkey.ohne-adresse": "The passkey requirement is on, but Ablago no longer has a maintained address starting with https://. The requirement still applies: anyone affected can only reach My account. Enter the address again or switch the requirement off.",
+  "anmeldeschutz.passkey.zur-adresse": "Go to Ablago's address",
+  "anmeldeschutz.passkey.gilt-fuer": "The requirement applies to passkeys at {adresse}. Via other addresses (e.g. the IP address) nobody gets in without this passkey.",
+  "betrieb.passkey-pflicht": "Passkeys are required (sign-in protection). Without an address starting with https:// the requirement still applies but can no longer be fulfilled: those affected can then only reach My account."
 }

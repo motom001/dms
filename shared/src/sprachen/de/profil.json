@@ -331,7 +331,7 @@
   "zweifaktor.bitte-mit-deinem-passwort": "{wert} Bitte mit deinem Passwort bestätigen.",
   "zweifaktor.aktuelles-passwort": "Aktuelles Passwort",
   "zweifaktor.neue-codes-erzeugen": "Neue Codes erzeugen",
-  "zweifaktor.fuer-dich-ist-die": "Für dich ist die Zwei-Faktor-Anmeldung vorgeschrieben. Neues Handy? Wer Ablago verwaltet, kann sie zurücksetzen; dann richtest du sie neu ein.",
+  "zweifaktor.fuer-dich-ist-die": "Für dich ist die Zwei-Faktor-Anmeldung vorgeschrieben. Ein Passkey erfüllt sie ebenfalls – mit Passkey kannst du die Code-App abschalten. Neues Handy? Wer Ablago verwaltet, kann sie zurücksetzen; dann richtest du sie neu ein.",
   "zweifaktor.einrichten": "Einrichten",
   "profil.stufe.immer": "ja",
   "profil.stufe.nie": "nein",
@@ -369,5 +369,9 @@
   "passkeys.entfernen.frage": "„{name}“ entfernen?",
   "passkeys.entfernen.text": "Mit diesem Passkey kannst du dich danach nicht mehr anmelden. Auf dem Gerät selbst bleibt er gespeichert – dort kannst du ihn in den Einstellungen löschen.",
   "passkeys.pflicht": "Für dich ist ein Passkey vorgeschrieben. Den letzten kannst du erst entfernen, wenn du einen neuen hinzugefügt hast.",
-  "passkeys.verloren": "Gerät verloren? Melde dich mit Passwort an und entferne den Passkey hier. Kommst du gar nicht mehr hinein, kann ihn jemand zurücksetzen, der Ablago verwaltet."
+  "passkeys.verloren": "Gerät verloren? Melde dich mit Passwort an und entferne den Passkey hier. Kommst du gar nicht mehr hinein, kann ihn jemand zurücksetzen, der Ablago verwaltet.",
+  "passkeys.pflicht.zweifaktor": "Für dich ist die Zwei-Faktor-Anmeldung vorgeschrieben, und ohne Code-App erfüllt sie dein Passkey. Den letzten kannst du erst entfernen, wenn du einen neuen hinzugefügt oder die Code-App eingerichtet hast.",
+  "zweifaktor.passkey-erfuellt": "Für deine Rolle ist die Zwei-Faktor-Anmeldung vorgeschrieben – dein Passkey erfüllt sie schon. Die Code-App ist zusätzlich möglich.",
+  "dokpw.bestaetigen.passkey": "Mit Passkey bestätigen",
+  "dokpw.bestaetigen.oder": "oder mit dem Passwort"
 }

@@ -137,6 +137,11 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (status.zweifaktor?.fehlt) return seite(
     <Karte titel={t('anmeldung.zweifaktor.titel')} unter={t('anmeldung.zweifaktor.text')}>
       <ZweifaktorEinrichten fertig={() => void laden()} />
+      {/* #811: Ein Passkey erfüllt die Pflicht ebenfalls. */}
+      {status.passkey?.moeglich && passkeysImBrowser() && <>
+        <p className="trenner">{t('anmeldung.zweifaktor.oder-passkey')}</p>
+        <PasskeyHinzufuegen fertig={() => laden()} />
+      </>}
       <button className="textknopf" onClick={() => void abmelden()}>{t('anmeldung.abmelden')}</button>
       {darfVerwalten(status.benutzer) && <PflichtAusschalten fertig={laden} />}
       <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => void laden()} />

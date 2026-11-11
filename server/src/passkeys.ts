@@ -3,7 +3,7 @@ import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthe
 import type { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
-import { PASSKEY_ANTWORT_MAX } from './grenzen';
+import { PASSKEY_ANTWORT_MAX, PASSKEY_OPTIONEN_GESAMT, PASSKEY_OPTIONEN_JE_ADRESSE } from './grenzen';
 import { hashe, speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { neuerSchluessel } from './passwort';
 import { protokoll } from './protokoll';
@@ -36,11 +36,25 @@ const log = protokoll.modul('konto');
 
 /** Wie lange eine Herausforderung gilt. */
 const HERAUSFORDERUNG_MS = 5 * 60_000;
-/** Höchstens so viele offene Anmelde-Herausforderungen insgesamt (Schutz gegen Fluten des Kurzzustands). */
-const OFFEN_HOECHSTENS = 2000;
 
 const NEU = 'passkey-neu';
+/** Herausforderungen mit bekanntem Konto (zweiter Schritt, Bestätigungen) – ohne Grenze je Adresse. */
 const ANMELDUNG = 'passkey-anmeldung';
+/** Herausforderungen für die Anmeldung ohne E-Mail-Adresse – offen für jeden, darum begrenzt (Durchsicht Sicherheit). */
+const ANMELDUNG_OFFEN = 'passkey-anmeldung-offen';
+/** Zähler offener Herausforderungen je Adressbereich (IPv4-Adresse bzw. IPv6-/64). */
+const JE_ADRESSE = 'passkey-optionen-adresse';
+
+/** Adressbereich für die Grenze je Adresse: IPv4 wie sie ist (auch ::ffff:1.2.3.4), IPv6 die ersten 64 Bit. */
+export function adressbereich(ip: string): string {
+  const a = ip.trim().toLowerCase().replace(/^::ffff:(?=\d+\.)/, '');
+  if (!a.includes(':')) return a;
+  const [vorne, hinten = ''] = a.split('::');
+  const v = vorne ? vorne.split(':') : [];
+  const h = hinten ? hinten.split(':') : [];
+  const voll = a.includes('::') ? [...v, ...Array(Math.max(0, 8 - v.length - h.length)).fill('0'), ...h] : v;
+  return `${voll.slice(0, 4).map((x) => x.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
 
 /** Relying Party: für wen der Passkey gilt. */
 export interface RelyingParty { rpId: string; origin: string; name: string }
@@ -82,7 +96,8 @@ interface Gespeichert { liste: Eintrag[] }
 export interface PasskeyAnsicht { nr: string; name: string; erstellt: string; zuletzt: string | null; mehrgeraete: boolean; passt: boolean; rpId: string }
 
 /** Wozu eine Anmelde-Herausforderung ausgegeben wurde. */
-export type PasskeyZweck = 'anmelden' | 'zweiter-schritt' | 'bestaetigen';
+/** Wofür: Anmelden, zweiter Schritt, erneute Anmeldung (#819) oder Bestätigung für „Passwörter für Dokumente“ (#827). */
+export type PasskeyZweck = 'anmelden' | 'zweiter-schritt' | 'bestaetigen' | 'dokumentpasswoerter';
 interface Herausforderung { challenge: string; rpId: string; origin: string; zweck: PasskeyZweck; benutzerId: string | null; bezug: string | null }
 
 /** Was eine geprüfte Anmeldung liefert. */
@@ -107,10 +122,20 @@ export class Passkeys {
   /**
    * @param adresse Adresse von Ablago je Anfrage (gepflegt oder die der Anfrage).
    * @param name Name, den das Gerät beim Anlegen zeigt (Schriftzug des Designs).
+   * @param gepflegt Nur die gepflegte Adresse (Werkbank → E-Mail und Adresse), leer = keine. Daran hängen alle
+   *   Entscheidungen über Pflichten (Durchsicht Sicherheit #811): nie an der Adresse der Anfrage – sonst ließe sich eine
+   *   Pflicht über eine IP-Adresse oder einen zweiten Namen umgehen.
    */
-  constructor(private speicher: Einstellungen, private adresse: () => string, zustand?: Kurzzustand, private jetzt: () => number = Date.now, private name: () => Promise<string> = async () => 'Ablago') {
-    this.zustand = zustand ?? speicherKurzzustand(jetzt);
-    this.vorschrift = new RollenPflicht(speicher, 'passkey_pflicht', 'Pflicht zum Passkey geändert', jetzt);
+  private jetzt: () => number;
+  private name: () => Promise<string>;
+  private gepflegt: () => string;
+
+  constructor(private speicher: Einstellungen, private adresse: () => string, o: { zustand?: Kurzzustand; jetzt?: () => number; name?: () => Promise<string>; gepflegt?: () => string } = {}) {
+    this.jetzt = o.jetzt ?? Date.now;
+    this.name = o.name ?? (async () => 'Ablago');
+    this.gepflegt = o.gepflegt ?? adresse;
+    this.zustand = o.zustand ?? speicherKurzzustand(this.jetzt);
+    this.vorschrift = new RollenPflicht(speicher, 'passkey_pflicht', 'Pflicht zum Passkey geändert', this.jetzt);
   }
 
   /** RP der aktuellen Anfrage; null = Passkeys gehen hier nicht (kein HTTPS). */
@@ -153,17 +178,35 @@ export class Passkeys {
 
   /* ---------- Pflicht ---------- */
 
-  async pflicht(): Promise<Pflicht> { return this.vorschrift.pflicht(); }
-  async setzePflicht(x: unknown, von: string): Promise<Pflicht> { return this.vorschrift.setze(x, von); }
-  /** Gilt die Pflicht für diese Person (unabhängig davon, ob sie schon einen Passkey hat)? Ohne HTTPS nie. */
-  async pflichtGilt(b: PflichtPerson): Promise<boolean> { return !!this.rp() && (await this.vorschrift.lage(b, undefined, async () => false)) !== 'ok'; }
   /**
-   * 'fehlt' / 'ausstehend' / 'ok' wie bei der Zwei-Faktor-Anmeldung (#242, #416). Ohne HTTPS lässt sich kein Passkey
-   * anlegen – dann sperrt die Pflicht niemanden aus ('ok'); die Werkbank zeigt das.
+   * RP der **gepflegten** Adresse – Grundlage jeder Entscheidung über eine Pflicht. null: keine gepflegte Adresse oder
+   * keine, unter der Passkeys gehen (ohne HTTPS).
+   */
+  pflichtRp(): RelyingParty | null { return relyingParty(this.gepflegt()); }
+  /** Hat die Person einen Passkey für die gepflegte Adresse? Nur der erfüllt eine Pflicht. */
+  async fuerPflicht(id: string): Promise<boolean> { return this.passende(await this.lies(id), this.pflichtRp()).length > 0; }
+
+  async pflicht(): Promise<Pflicht> { return this.vorschrift.pflicht(); }
+  /**
+   * Einschalten nur mit gepflegter HTTPS-Adresse (409 sonst); ausschalten geht immer. Ist die Pflicht schon an und die
+   * Adresse wird entfernt, gilt sie weiter (geschlossen) – die Werkbank warnt.
+   */
+  async setzePflicht(x: unknown, von: string): Promise<Pflicht> {
+    const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+    const alt = await this.pflicht();
+    const ein = (['admin', 'mitglied'] as const).some((r) => o[r] === true && !alt[r]);
+    if (ein && !this.pflichtRp()) throw new Fachfehler(409, t('anmeldung.passkey.fehler.pflicht-adresse'), { adresse: false });
+    return this.vorschrift.setze(x, von);
+  }
+  /** Gilt die Pflicht für die Rolle dieser Person (unabhängig davon, ob sie erfüllt ist)? Auch ohne Adresse (geschlossen). */
+  async pflichtGilt(b: PflichtPerson): Promise<boolean> { return (await this.vorschrift.lage(b, undefined, async () => false)) !== 'ok'; }
+  /**
+   * 'fehlt' / 'ausstehend' / 'ok' wie bei der Zwei-Faktor-Anmeldung (#242, #416) – erfüllt nur mit einem Passkey für die
+   * gepflegte Adresse. Fehlt sie (entfernt, während die Pflicht an ist), bleibt es bei 'fehlt': nur das eigene Konto und
+   * die Pflicht selbst sind erreichbar, bis jemand sie ausschaltet oder die Adresse wieder pflegt.
    */
   async lage(b: PflichtPerson, sitzungSeit?: Date): Promise<'ok' | 'ausstehend' | 'fehlt'> {
-    if (!this.rp()) return 'ok';
-    return this.vorschrift.lage(b, sitzungSeit, () => this.nutzbar(b.id));
+    return this.vorschrift.lage(b, sitzungSeit, () => this.fuerPflicht(b.id));
   }
   async fehlt(b: PflichtPerson, sitzungSeit?: Date): Promise<boolean> { return (await this.lage(b, sitzungSeit)) === 'fehlt'; }
 
@@ -267,9 +310,16 @@ export class Passkeys {
    * im Kurzzustand). Mit `benutzerId` nur deren Passkeys (zweiter Schritt, erneute Anmeldung); ohne fragt das Gerät,
    * welcher Passkey (Anmeldung ohne E-Mail-Adresse).
    */
-  async beginneAnmeldung(zweck: PasskeyZweck, benutzerId: string | null = null, bezug: string | null = null): Promise<{ kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }> {
+  async beginneAnmeldung(zweck: PasskeyZweck, benutzerId: string | null = null, bezug: string | null = null, ip = ''): Promise<{ kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }> {
     const rp = await this.rpMitName();
-    if ((await this.zustand.anzahl(ANMELDUNG)) >= OFFEN_HOECHSTENS) throw new Fachfehler(429, t('anmeldung.passkey.fehler.viele'));
+    const offen = zweck === 'anmelden';
+    // Nur die offene Anmeldung zählt (Durchsicht Sicherheit): je Adressbereich höchstens PASSKEY_OPTIONEN_JE_ADRESSE in
+    // 5 Minuten – 429 nur für diese Adresse; dazu eine deutlich höhere Notbremse für alle zusammen.
+    if (offen) {
+      const { anzahl } = await this.zustand.zaehle(JE_ADRESSE, adressbereich(ip), HERAUSFORDERUNG_MS);
+      if (anzahl > PASSKEY_OPTIONEN_JE_ADRESSE) throw new Fachfehler(429, t('anmeldung.passkey.fehler.viele-adresse'));
+      if ((await this.zustand.anzahl(ANMELDUNG_OFFEN)) >= PASSKEY_OPTIONEN_GESAMT) throw new Fachfehler(429, t('anmeldung.passkey.fehler.viele'));
+    }
     let allow: Array<{ id: string; transports?: string[] }> | undefined;
     if (benutzerId) {
       allow = this.passende(await this.lies(benutzerId), rp).map((e) => ({ id: e.id, transports: e.transports }));
@@ -277,7 +327,7 @@ export class Passkeys {
     }
     const optionen = await generateAuthenticationOptions({ rpID: rp.rpId, allowCredentials: allow, userVerification: 'required' });
     const kennung = neuerSchluessel();
-    await this.zustand.setze(ANMELDUNG, hashe(kennung), { challenge: optionen.challenge, rpId: rp.rpId, origin: rp.origin, zweck, benutzerId, bezug } satisfies Herausforderung, this.jetzt() + HERAUSFORDERUNG_MS);
+    await this.zustand.setze(offen ? ANMELDUNG_OFFEN : ANMELDUNG, hashe(kennung), { challenge: optionen.challenge, rpId: rp.rpId, origin: rp.origin, zweck, benutzerId, bezug } satisfies Herausforderung, this.jetzt() + HERAUSFORDERUNG_MS);
     return { kennung, optionen };
   }
 
@@ -287,7 +337,8 @@ export class Passkeys {
    * `pruefeAnmeldung`.
    */
   async vermutlich(kennung: unknown, antwort: unknown): Promise<{ benutzerId: string | null; zweck: PasskeyZweck | null; bezug: string | null }> {
-    const h = typeof kennung === 'string' && kennung ? (await this.zustand.lies(ANMELDUNG, hashe(kennung)))?.wert as Herausforderung | undefined : undefined;
+    const k = typeof kennung === 'string' && kennung ? hashe(kennung) : '';
+    const h = k ? ((await this.zustand.lies(ANMELDUNG, k)) ?? (await this.zustand.lies(ANMELDUNG_OFFEN, k)))?.wert as Herausforderung | undefined : undefined;
     if (h?.benutzerId) return { benutzerId: h.benutzerId, zweck: h.zweck, bezug: h.bezug };
     return { benutzerId: benutzerAusAntwort(antwort), zweck: h?.zweck ?? null, bezug: h?.bezug ?? null };
   }
@@ -299,7 +350,8 @@ export class Passkeys {
    */
   async pruefeAnmeldung(kennung: unknown, antwort: unknown, erwartet: { zweck: PasskeyZweck; benutzerId?: string }): Promise<PasskeyTreffer> {
     if (groesse(antwort) > PASSKEY_ANTWORT_MAX) throw new Fachfehler(413, t('anmeldung.passkey.fehler.antwort'));
-    const h = typeof kennung === 'string' && kennung ? (await this.zustand.nimm(ANMELDUNG, hashe(kennung)))?.wert as Herausforderung | undefined : undefined;
+    const k = typeof kennung === 'string' && kennung ? hashe(kennung) : '';
+    const h = k ? ((await this.zustand.nimm(ANMELDUNG, k)) ?? (await this.zustand.nimm(ANMELDUNG_OFFEN, k)))?.wert as Herausforderung | undefined : undefined;
     if (!h) throw new Fachfehler(401, t('anmeldung.passkey.fehler.abgelaufen'));
     if (h.zweck !== erwartet.zweck || (erwartet.benutzerId && h.benutzerId !== erwartet.benutzerId)) throw falsch();
     const a = antwort as AuthenticationResponseJSON | null;

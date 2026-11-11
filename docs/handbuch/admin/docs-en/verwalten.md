@@ -59,6 +59,7 @@ For the most sensitive actions, Ablago **always** asks for the password (and the
 - changing sign-in via a provider
 - changing email sending
 - allowing emergency access from the internet ([sign-in protection](anmeldeschutz.md#notfallzugang))
+- resetting a person's two-factor sign-in or passkeys ([users](benutzer.md))
 
 Failed attempts count towards [sign-in protection](anmeldeschutz.md) as with signing in itself. Two-factor sign-in remains voluntary; it can still be required under *Sign-in protection* "for everyone who may administer".
 

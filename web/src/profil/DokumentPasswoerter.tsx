@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { GemerktesPasswort } from '../../../shared/src/entsperren';
+import { passkeysImBrowser, passkeyVerwenden } from '../passkey';
+import { Knopf } from '../bausteine';
 import { api } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
@@ -32,17 +34,25 @@ export function DokumentPasswoerter() {
   /** Erst bestätigen lassen, dann ausführen. */
   const mitBestaetigung = (f: () => Promise<void>) => { setMeldung(undefined); if (bestaetigt()) void f().catch((e: Error) => setMeldung({ art: 'schlecht', text: e.message })); else { setGeheim(''); setBestaetigen(() => f); } };
 
+  /** Bestätigen (Passwort, Code oder Passkey), dann die gemerkte Handlung ausführen. */
+  async function bestaetigtMit(angaben: Parameters<typeof api.dokumentPasswoerterBestaetigen>[0]) {
+    const r = await api.dokumentPasswoerterBestaetigen(angaben);
+    setStand((s) => (s ? { ...s, bestaetigtBis: r.bestaetigtBis } : s));
+    setGeheim('');
+    const f = bestaetigen;
+    setBestaetigen(null);
+    await f?.();
+  }
   async function bestaetige(e: FormEvent) {
     e.preventDefault();
-    try {
-      const code = geheim.replace(/\s/g, '');
-      const r = await api.dokumentPasswoerterBestaetigen(stand?.zweifaktor && /^\d{6}$/.test(code) ? { code } : { passwort: geheim });
-      setStand((s) => (s ? { ...s, bestaetigtBis: r.bestaetigtBis } : s));
-      setGeheim('');
-      const f = bestaetigen;
-      setBestaetigen(null);
-      await f?.();
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    const code = geheim.replace(/\s/g, '');
+    try { await bestaetigtMit(stand?.zweifaktor && /^\d{6}$/.test(code) ? { code } : { passwort: geheim }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  }
+  /** Passkey (#811): eigene Herausforderung für diesen Zweck, dann wie Passwort und Code. */
+  async function mitPasskey() {
+    setMeldung(undefined);
+    const o = await api.passkeyBestaetigenOptionen('dokumentpasswoerter');
+    await bestaetigtMit({ passkey: { kennung: o.kennung, antwort: await passkeyVerwenden(o.optionen) } });
   }
 
   const zeige = (p: GemerktesPasswort) => {
@@ -104,6 +114,10 @@ export function DokumentPasswoerter() {
       )}
       {bestaetigen && (
         <form className="raster" onSubmit={(e) => void bestaetige(e)}>
+          {stand?.passkey && passkeysImBrowser() && <div className="anmelden-passkey">
+            <Knopf id="dokpw-passkey" laeuftText={t('anmeldung.passkey.warte')} onClick={mitPasskey}><Symbol name="passkey" /> {t('profil.dokpw.bestaetigen.passkey')}</Knopf>
+            <p className="trenner">{t('profil.dokpw.bestaetigen.oder')}</p>
+          </div>}
           <p className="leise">{stand?.zweifaktor ? t('profil.dokpw.bestaetigen.mit-code') : t('profil.dokpw.bestaetigen.text')}</p>
           <label className="eigenschaft"><span>{stand?.zweifaktor ? t('profil.dokpw.bestaetigen.feld-code') : t('profil.dokpw.bestaetigen.feld')}</span>
             <input type="password" autoComplete="current-password" value={geheim} onChange={(e) => setGeheim(e.target.value)} autoFocus required /></label>

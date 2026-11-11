@@ -135,8 +135,16 @@ export class Zweifaktor {
    * Ohne Sitzungsbeginn (z. B. reine Prüfung) zählt jede Pflicht als 'fehlt'.
    */
   async lage(b: PflichtPerson, sitzungSeit?: Date): Promise<'ok' | 'ausstehend' | 'fehlt'> {
-    return this.vorschrift.lage(b, sitzungSeit, () => this.aktiv(b.id));
+    return this.vorschrift.lage(b, sitzungSeit, () => this.erfuellt(b.id));
   }
+  /**
+   * Erfüllt diese Person die Pflicht? Mit Code-App – oder (Entscheidung 11.11.2026, #811) mit einem Passkey, der hier
+   * gilt: `alternative` verbindet `Konten` mit den Passkeys.
+   */
+  alternative: ((id: string) => Promise<boolean>) | null = null;
+  async erfuellt(id: string): Promise<boolean> { return (await this.aktiv(id)) || (!!this.alternative && (await this.alternative(id))); }
+  /** Gilt die Pflicht für die Rolle dieser Person (unabhängig davon, ob sie erfüllt ist)? */
+  async pflichtFuer(b: PflichtPerson): Promise<boolean> { return (await this.pflicht())[pflichtRolle(b)]; }
   async fehlt(b: PflichtPerson, sitzungSeit?: Date): Promise<boolean> { return (await this.lage(b, sitzungSeit)) === 'fehlt'; }
 
   /** Einrichten, Schritt 1: neues Geheimnis (noch nicht gespeichert) und Adresse für den QR-Code. */

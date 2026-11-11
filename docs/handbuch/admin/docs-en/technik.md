@@ -46,7 +46,7 @@ How large something may be at most. Ablago checks every limit before it processe
 | Error report (with screenshot and attachments) | 30 MB, the screenshot 10 MB |
 | Logo of a design | 1 MB |
 | Setup file | 64 KB |
-| Passkeys | 20 per person, name 60 characters, device response 16 KB |
+| Passkeys | 20 per person, name 60 characters, device response 16 KB; signing in without email address: 20 challenges per IP address or IPv6 /64 in 5 minutes, 20,000 open in total |
 | E-invoice (XML as a file or from the PDF attachment) | 4 MB, at most 64 levels deep, 200,000 elements, 500 items are taken over; without DTD and entities. Ablago doesn't read anything larger as an e-invoice |
 | All other requests (forms, settings) | 2 MB; they do not accept a file at all |
 

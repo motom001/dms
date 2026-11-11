@@ -59,6 +59,7 @@ Für die heikelsten Handlungen fragt Ablago **immer** das Passwort (und den Code
 - Anmeldung über einen Anbieter ändern
 - E-Mail-Versand ändern
 - Notfallzugang aus dem Internet erlauben ([Anmeldeschutz](anmeldeschutz.md#notfallzugang))
+- Zwei-Faktor-Anmeldung oder Passkeys einer Person zurücksetzen ([Benutzer](benutzer.md))
 
 Fehlversuche zählen in den [Anmeldeschutz](anmeldeschutz.md) wie bei der Anmeldung selbst. Die Zwei-Faktor-Anmeldung bleibt freiwillig; vorschreiben lässt sie sich unter *Anmeldeschutz* weiter „für alle, die verwalten dürfen“.
 

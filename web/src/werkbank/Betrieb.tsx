@@ -46,6 +46,10 @@ function Adresse({ b }: { b: BetriebZustand }) {
   const s = b.stand!;
   const [adresse, setAdresse] = useState(s.adresse);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  // Passkey-Pflicht an (#811)? Dann warnen, bevor die Adresse ohne https:// gespeichert wird. Ohne Recht auf den
+  // Anmeldeschutz gibt es die Angabe nicht – dann ohne Warnung.
+  const [pflicht, setPflicht] = useState(false);
+  useEffect(() => { api.passkeyPflicht().then((p) => setPflicht(p.admin || p.mitglied)).catch(() => setPflicht(false)); }, []);
   const ent = useEntwurf(s.adresse, adresse.trim(), { zuruecksetzen: () => { setAdresse(s.adresse); setMeldung(undefined); } });
   async function speichern(ev?: FormEvent, wert = adresse) {
     ev?.preventDefault();
@@ -68,6 +72,7 @@ function Adresse({ b }: { b: BetriebZustand }) {
       )}
       {/* Passkeys (#811) gelten nur für den Namen, unter dem sie angelegt wurden: vor dem Speichern darauf hinweisen. */}
       {anderer(adresse, s.adresse || s.vorschlag) && <div className="hinweis warn" id="adresse-passkeys"><p>{t('werkbank.betrieb.passkeys')}</p></div>}
+      {pflicht && !adresse.trim().toLowerCase().startsWith('https://') && <div className="hinweis warn" id="adresse-passkey-pflicht"><p>{t('werkbank.betrieb.passkey-pflicht')}</p></div>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.betrieb.adresse-2')} />
     </form>

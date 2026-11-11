@@ -140,6 +140,9 @@ export function heikleHandlung(methode: string, pfad: string, body: unknown): He
   if (UMBAU_ROUTEN.has(k)) return umbauHandlung(body);
   switch (k) {
     case 'PUT /api/benutzer/:id/verwaltung': return 'rechte';
+    // Anmeldemittel einer Person entfernen (#811, Durchsicht Sicherheit): Wer kurz an einem fremden Gerät sitzt, soll das nicht können.
+    case 'POST /api/benutzer/:id/zweifaktor/zuruecksetzen':
+    case 'POST /api/benutzer/:id/passkeys/zuruecksetzen': return 'anmeldung';
 
     case 'GET /api/werkbank/notfallblatt':
     case 'POST /api/werkbank/tresor/erzeugen':

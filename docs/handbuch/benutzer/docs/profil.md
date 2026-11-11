@@ -71,7 +71,7 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 - **Zwei-Faktor-Anmeldung** – siehe [unten](#zwei-faktor-anmeldung).
 - **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.
 - <span id="passwoerter-fuer-dokumente"></span>**Passwörter für Dokumente** – die Passwörter geschützter PDFs, die du beim [Entsperren](dokumente.md#passwortgeschuetzte-pdfs) mit **Für weitere Dokumente merken** abgelegt hast. Je Passwort siehst du den Namen, das Passwort verdeckt und wann Ablago es zuletzt benutzt hat. Mit dem Auge zeigst du es an, mit **Ändern** gibst du einen neuen Namen oder ein neues Passwort ein, und das kleine rote **×** löscht es. Bereits entsperrte Dokumente bleiben dabei entsperrt.
-    - **Anzeigen und Ändern** des Passworts geht erst, nachdem du dich noch einmal bestätigt hast: mit deinem Ablago-Passwort oder, mit Zwei-Faktor-Anmeldung, auch mit einem Code aus der App. Die Bestätigung gilt fünf Minuten für diesen Bereich.
+    - **Anzeigen und Ändern** des Passworts geht erst, nachdem du dich noch einmal bestätigt hast: mit deinem Ablago-Passwort, mit Zwei-Faktor-Anmeldung auch mit einem Code aus der App, oder mit einem [Passkey](#passkeys) (**Mit Passkey bestätigen**). Die Bestätigung gilt fünf Minuten für diesen Bereich.
     - Die Passwörter gehören **nur dir**: Ablago speichert sie in deinem Konto, verschlüsselt mit dem Schlüssel von Ablago. In Ablago sieht sie niemand sonst, auch nicht, wer Ablago verwaltet (auch nicht im Verwaltungsmodus), und auch nicht in einer Vertretung. Über API-Schlüssel oder Pakete kommen sie nie heraus; im Vollexport fehlen sie, in der Sicherung stehen sie nur verschlüsselt. Ehrlich gesagt: Wer den Server selbst und den Schlüssel von Ablago in der Hand hat, könnte sie technisch entschlüsseln – wie jedes Passwortfeld in einer Mappe.
     - Du kannst höchstens 20 Passwörter merken.
     - Das ist **keine Passwortverwaltung**: Ablago nutzt diese Passwörter nur, um geschützte Dokumente zu öffnen, die du ablegst. Für deine Zugänge zu Websites und Apps nimm bitte einen Passwort-Manager.
@@ -127,7 +127,7 @@ Ab jetzt meldest du dich mit Passwort **und** Code an – oder, wenn du einen [P
 Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy verloren und keine Codes mehr? Dann setzt ein Administrator die Zwei-Faktor-Anmeldung bei deinem Benutzer zurück.
 
 !!! note "Vorgeschrieben"
-    Kann ein Administrator für deine Systemrolle (Administrator oder Mitglied) vorschreiben. Dann richtest du sie nach der Anmeldung ein, bevor es weitergeht, und kannst sie nicht selbst abschalten.
+    Kann ein Administrator für deine Systemrolle (Administrator oder Mitglied) vorschreiben. Dann richtest du sie nach der Anmeldung ein, bevor es weitergeht, und kannst sie nicht selbst abschalten. Ein [Passkey](#passkeys) erfüllt die Pflicht ebenfalls: Statt der App kannst du auch einen Passkey hinzufügen; er gehört dann beim Anmelden mit Passwort als zweiter Schritt dazu. Mit Passkey darfst du die Code-App wieder abschalten – den letzten Passkey aber erst entfernen, wenn es einen neuen gibt oder die Code-App eingerichtet ist.
 
 ### Darstellung
 

@@ -7,7 +7,7 @@
   "app.seit-alles-was-du": "{b} ({email}, since {uhrzeit}). Everything you do now happens under this account.",
   "app.zurueck-zum-eigenen-konto": "Back to your own account",
   "app.die-zwei-faktor-anmeldung": "Two-factor sign-in is required for your role.",
-  "app.richte-sie-jetzt-ein": "{b} Set it up now – otherwise, at the next sign-in at the latest, you can only continue after setting it up.",
+  "app.richte-sie-jetzt-ein": "{b} Set it up now or add a passkey – otherwise, at the next sign-in at the latest, you can only continue afterwards.",
   "app.jetzt-einrichten": "Set up now",
   "app.passkey.vorgeschrieben": "A passkey is required for your role.",
   "app.passkey.richte-ihn-ein": "{b} Add one now – otherwise, from your next sign-in, you can only continue after adding it.",
