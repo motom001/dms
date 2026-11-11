@@ -430,13 +430,23 @@ async function einrichtenImBrowser(browser, bild) {
 function lasttestStand(fertig) {
   const jetzt = Date.now();
   const vorlage = [
-    '```text', 'Messergebnis Lasttest (#563)', 'Ablago-Version: 0.144.0 · Image: dms-komplett · Datenbank: im Container', 'Gerät/Modell: {{geraet}}',
+    '```text', 'Messergebnis Lasttest (#563)', 'Ablago-Version: 0.244.0 · Image: dms-komplett · Datenbank: im Container', 'Gerät/Modell: {{geraet}}',
     'CPU: Intel(R) N100 · 4 Kerne für Ablago, Rechner 4 · x64', 'RAM: 15,5 GB · Speicher: {{speicher}}', 'Bestand: 5013 Mappen, 110 Dokumente (PDF)',
     'Einstellungen: DMS_ARBEITER=2, DMS_DB_VERBINDUNGEN=10, DMS_MAX_ANFRAGEN=250',
     'klein    25 gleichzeitig: p50 48 ms, p95 131 ms, p99 212 ms, Fehler 0,00 % – Ziel eingehalten (Ziel < 300 ms, CI-Grenze 300 ms)',
     'Arbeitsspeicher Ablago höchstens: 342 MB · Ereignisschleife p99 höchstens: 21 ms', 'Gemessen: 2026-11-02', '```',
   ].join('\n');
+  // #1117: Auslastung schon beim Anlegen der Demo-Mappen – ohne Durchgang und p95.
+  const verlauf = Array.from({ length: 30 }, (_, i) => ({ zeit: new Date(jetzt - (30 - i) * 2000).toISOString(), cpu: 30 + Math.round(25 * Math.abs(Math.sin(i / 4))), speicher: 18 + Math.round(i / 3) }));
+  const live = {
+    jetzt: { ...verlauf.at(-1), name: null, n: null, p95: null, anfragen: 0, speicherMb: 2900, grenzeMb: 15_872, ohneGrenze: false, kerne: 4, kerneBegrenzt: false, warteschlange: 0, belegt: 3, verbindungen: 10,
+      gruppen: [{ art: 'ablago', nr: 0, rolle: 'haupt', anzahl: 1, cpu: 2, mb: 120 }, { art: 'ablago', nr: 1, rolle: 'leiter', anzahl: 1, cpu: 38, mb: 310 }, { art: 'ablago', nr: 2, rolle: 'anfragen', anzahl: 1, cpu: 9, mb: 260 },
+        { art: 'lastgenerator', anzahl: 1, cpu: 3, mb: 90 }, { art: 'postgres', anzahl: 9, cpu: 71, mb: 410 }, { art: 'texterkennung', anzahl: 2, cpu: 64, mb: 180 }, { art: 'rest', anzahl: 3, cpu: 1, mb: 20 }],
+      postgresExtern: false, meldungen: [] },
+    verlauf,
+  };
   return {
+    version: '0.244.0', live: fertig ? null : live,
     wahl: 'klein', zustand: fertig ? 'fertig' : 'laeuft', stufe: 'klein', nr: 1, von: 1, schritt: fertig ? 'auswerten' : 'demo',
     demo: fertig ? null : { fertig: 3150, gesamt: 5000 }, durchgang: null,
     durchgaenge: fertig ? [{ name: 'klein', n: 25, p95: 131, fehlerquote: 0 }] : [],

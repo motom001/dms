@@ -120,6 +120,7 @@ describe('Lasttest-Modus (#612): Speicherart erkennen', () => {
 interface Skript {
   PLATZHALTER: typeof PLATZHALTER;
   ergebnisblock(e: unknown[], x: unknown, u: unknown, a?: { geraet?: string; speicher?: string }): string;
+  bericht(e: unknown[], x: unknown): string;
   containerZeile(laeufe: unknown[]): string;
   speichernZeile(d: unknown): string;
   engpassAus(staende: unknown[]): Record<string, unknown> | null;
@@ -146,6 +147,14 @@ describe('Lasttest-Modus (#612): Ergebnisblock', () => {
     assert.match(fuelleErgebnis(vorlage, { geraet: '', speicher: null }, null), /Speicher: bitte ergänzen \(HDD\/SSD\/NVMe\)/);
     // Wie bisher auf der Konsole: ohne Angaben „bitte ergänzen“.
     assert.match(skript.ergebnisblock(ergebnisse, x, umgebung, {}), /Gerät\/Modell: bitte ergänzen/);
+  });
+
+  it('#1117: Version im Bericht und im Ergebnisblock zum Kopieren', () => {
+    assert.match(skript.ergebnisblock(ergebnisse, x, umgebung, skript.PLATZHALTER), /\nAblago-Version: 0\.144\.0 · /);
+    // Bericht nur mit dem Kopf (ohne Durchgänge und Stufen) – es geht um die Zeile der Version.
+    const kopf = { ...x, laeufe: [] };
+    assert.match(skript.bericht([], { ...kopf, version: '0.144.0' }), /^## Lasttest \([^)]+\)\n\nAblago-Version: 0\.144\.0\n/);
+    assert.doesNotMatch(skript.bericht([], kopf), /Ablago-Version/, 'ohne Angabe keine leere Zeile');
   });
 
   it('Arbeitsspeicher des Containers (#696): höchster Stand mit Aufteilung, sonst „nicht verfügbar“', () => {
@@ -270,7 +279,7 @@ describe('Lasttest-Modus (#612): Seite', () => {
     const m = new Lasttestmodus({
       wahl: 'klein', dauer: 5, skript: '/x/lasttest.mjs', ziel: 'http://127.0.0.1:1', ergebnisOrdner: ordner, env: {}, speicherart: 'SSD',
       port, host: '127.0.0.1', beenden: () => { beendet++; }, ...extra,
-      starte: (_s, args) => { aufrufe.push(args); kind = new FalschesKind(); return kind as unknown as ChildProcess; },
+      starte: (_s, args) => { aufrufe.push(args); kind = new FalschesKind(); return kind as unknown as ChildProcess; }, version: '0.244.0',
     });
     await m.start();
     return m;
@@ -288,6 +297,7 @@ describe('Lasttest-Modus (#612): Seite', () => {
       assert.equal((await hole('/api/konto/anmelden', { method: 'POST' })).status, 503);
       let s = await stand();
       assert.equal(s.zustand, 'laeuft');
+      assert.equal(s.version, '0.244.0', '#1117: Version des Containers von Anfang an');
       assert.equal(s.speicherErkannt, 'SSD');
       assert.equal(s.angaben.speicher, 'SSD');
       kind!.sende({ art: 'stufe', stufe: 'klein', nr: 1, von: 1 });
@@ -295,6 +305,14 @@ describe('Lasttest-Modus (#612): Seite', () => {
       kind!.sende({ art: 'demo', fertig: 1200, gesamt: 5000 });
       s = await stand();
       assert.deepEqual([s.stufe, s.schritt, s.demo], ['klein', 'demo', { fertig: 1200, gesamt: 5000 }]);
+      assert.equal(s.live ?? null, null, 'noch nichts gemessen');
+      // #1117: Auslastung schon beim Anlegen der Demo-Mappen – ohne Durchgang.
+      kind!.sende({ art: 'live', name: null, n: null, p95: null, anfragen: 0, cpu: 35, speicher: 20, speicherMb: 800, grenzeMb: 4000, ohneGrenze: false, kerne: 4, kerneBegrenzt: false,
+        warteschlange: 0, belegt: 2, verbindungen: 10, gruppen: [{ art: 'postgres', anzahl: 8, cpu: 60, mb: 300 }], postgresExtern: false, meldungen: [] });
+      s = await stand();
+      assert.equal(s.schritt, 'demo');
+      assert.deepEqual([s.live?.jetzt.name, s.live?.jetzt.n, s.live?.jetzt.p95, s.live?.jetzt.cpu, s.live?.jetzt.kerne, s.live?.jetzt.speicherMb], [null, null, null, 35, 4, 800]);
+      assert.deepEqual(s.live?.jetzt.gruppen?.map((g) => g.art), ['postgres']);
       kind!.sende({ art: 'durchgang', name: 'klein', n: 25, dauer: 5 });
       s = await stand();
       assert.equal(s.schritt, 'messen');
@@ -338,6 +356,7 @@ describe('Lasttest-Modus (#612): Seite', () => {
     try {
       const s = await stand();
       assert.equal(s.zustand, 'beendet');
+      assert.equal(s.version, '0.244.0', '#1117: Version auch nach „Beenden“');
       assert.deepEqual(aufrufe, [], 'Skript nicht noch einmal gestartet');
       assert.match(s.ergebnis!.vorlage, /\{\{geraet\}\}/);
       assert.equal(s.angaben.geraet, 'Beispiel-NAS 16 GB');

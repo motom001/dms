@@ -11,7 +11,7 @@ import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { protokoll } from './protokoll';
 import type { ProxyVertrauen } from './proxy';
 import type { Speicherart } from './speicherart';
-import { standKennung } from './system';
+import { eigeneVersion, standKennung } from './system';
 import { MODUS_KOERPER_MAX } from './grenzen';
 
 /**
@@ -119,6 +119,8 @@ export interface LasttestOptionen {
   /** Für Tests: Kindprozess starten. */
   starte?: (skript: string, args: string[], env: NodeJS.ProcessEnv) => ChildProcess;
   jetzt?: () => number;
+  /** Für Tests: Version des laufenden Containers (#1117), sonst wie Werkbank → Technik (`eigeneVersion`). */
+  version?: string;
 }
 
 type Meldung =
@@ -146,9 +148,10 @@ const dauerAus = (d: unknown): { dauer?: { max: number; mittel: number } } => {
 /**
  * Werte der laufenden Messung aus der Meldung des Skripts (#895) übernehmen – nur die bekannten Felder, Zahlen als
  * Zahlen, Texte gekürzt. Die Texte der Meldungen kommen schon ohne Einzelheiten vom Server (protokollsammlung.ts).
+ * Vor den Durchgängen (#1117: Einrichten, Demo-Mappen, Volltext) meldet das Skript ohne Durchgang – dann sind `name`
+ * und `n` null.
  */
-export function liveAus(m: Record<string, unknown>): LasttestLive | null {
-  if (typeof m.name !== 'string') return null;
+export function liveAus(m: Record<string, unknown>): LasttestLive {
   const gruppen = Array.isArray(m.gruppen)
     ? (m.gruppen as Array<Record<string, unknown>>).filter((g) => GRUPPEN_ARTEN.includes(g?.art as LiveGruppenArt)).slice(0, 40).map((g) => ({
       art: g.art as LiveGruppenArt, ...(typeof g.nr === 'number' ? { nr: g.nr } : {}),
@@ -163,7 +166,7 @@ export function liveAus(m: Record<string, unknown>): LasttestLive | null {
     }))
     : [];
   return {
-    name: kurz(m.name, 80), n: zahlOderNull(m.n) ?? 0, p95: zahlOderNull(m.p95), anfragen: zahlOderNull(m.anfragen) ?? 0,
+    name: typeof m.name === 'string' ? kurz(m.name, 80) : null, n: typeof m.name === 'string' ? zahlOderNull(m.n) ?? 0 : null, p95: zahlOderNull(m.p95), anfragen: zahlOderNull(m.anfragen) ?? 0,
     cpu: zahlOderNull(m.cpu), speicher: zahlOderNull(m.speicher), speicherMb: zahlOderNull(m.speicherMb), grenzeMb: zahlOderNull(m.grenzeMb), ohneGrenze: m.ohneGrenze === true,
     kerne: zahlOderNull(m.kerne), kerneBegrenzt: m.kerneBegrenzt === true,
     warteschlange: zahlOderNull(m.warteschlange), belegt: zahlOderNull(m.belegt), verbindungen: zahlOderNull(m.verbindungen),
@@ -181,12 +184,15 @@ export class Lasttestmodus {
   private stand: LasttestStand;
   private fehlerText = '';
   private jetzt: () => number;
+  /** Version des laufenden Containers (#1117) – steht von Anfang an im Kopf der Seite. */
+  private version: string;
 
   constructor(private o: LasttestOptionen) {
     this.jetzt = o.jetzt ?? Date.now;
+    this.version = o.version ?? eigeneVersion();
     const t = this.jetzt();
     this.stand = {
-      wahl: o.wahl, mappen: o.mappen ?? null, speichern: o.speichern !== false, zustand: 'laeuft', stufe: null, nr: 0, von: stufenVon(o.wahl).length, schritt: 'start', demo: null, durchgang: null,
+      version: this.version, wahl: o.wahl, mappen: o.mappen ?? null, speichern: o.speichern !== false, zustand: 'laeuft', stufe: null, nr: 0, von: stufenVon(o.wahl).length, schritt: 'start', demo: null, durchgang: null,
       durchgaenge: [], begonnen: t, stufeBegonnen: t, jetzt: t, fertigeStufen: [], ergebnis: null, meldung: null,
       angaben: { geraet: '', speicher: o.speicherart }, speicherErkannt: o.speicherart, datei: null,
     };
@@ -238,7 +244,6 @@ export class Lasttestmodus {
       case 'live': {
         // #895: Werte der ohnehin laufenden Messung – die Seite fragt nichts zusätzlich.
         const l = liveAus(m);
-        if (!l) break;
         const zeit = new Date(this.jetzt()).toISOString();
         const verlauf = [...(s.live?.verlauf ?? []), { zeit, cpu: l.cpu, speicher: l.speicher }].slice(-LIVE_VERLAUF);
         s.live = { jetzt: { ...l, zeit }, verlauf };
@@ -251,7 +256,8 @@ export class Lasttestmodus {
   async start(): Promise<void> {
     const vorher = await readFile(join(this.o.ergebnisOrdner, STAND_DATEI), 'utf8').then((t) => JSON.parse(t) as LasttestStand, () => null);
     // Nach „Beenden“ und einem Neustart des Containers (Neustart-Regel der NAS): nicht noch einmal messen.
-    if (vorher && existsSync(join(this.o.ergebnisOrdner, BEENDET_DATEI))) this.stand = { ...vorher, zustand: 'beendet' };
+    // Die Version ist die des laufenden Containers (#1117), nicht die aus dem gespeicherten Stand.
+    if (vorher && existsSync(join(this.o.ergebnisOrdner, BEENDET_DATEI))) this.stand = { ...vorher, zustand: 'beendet', version: this.version };
     await this.oeffneSeite();
     if (this.stand.zustand === 'beendet') {
       log.warn(`Lasttest-Modus: Der Test ist schon beendet (${this.o.ergebnisOrdner}/${BEENDET_DATEI}). Lösche den Container – Anleitung im Browser (Port ${this.o.port}).`);
