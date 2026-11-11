@@ -386,6 +386,10 @@ Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 202
 Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts – außer ein Umbau, den die Vorschau ausdrücklich zeigt.  
 Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer), [Herausgeber](#herausgeber).
 
+<a id="paket-aktion"></a>**Paket-Aktion** · ✓ Alltagswort · alle  
+Ein Eintrag, den ein Paket ins Menü „Mappe ▾“ bringt, z. B. „Vorlage hinzufügen“ am Vertrag – mit dem Paketsymbol und dem Namen des Pakets. Er steht nur bei Personen, die die nötigen Rechte an der Mappe haben; Rückfragen des Pakets erscheinen mit „Aktion von …“ im Kopf und fragen nie nach einem Passwort.  
+Siehe auch: [Paket](#paket), [Brief aus Vorlage](#brief-aus-vorlage).
+
 <a id="paket-nach-zeitplan-ausfuhren"></a>**Paket nach Zeitplan ausführen** · ~ mit Erklärung · Administratoren  
 Dann-Karte einer Automatisierung mit dem Auslöser „Zeitplan“ – sie sagt einem Paket, dass sein Zeitpunkt erreicht ist (z. B. „Verträge täglich prüfen“ um 5 Uhr), damit es etwas neu rechnet, das nur am Datum hängt. Das Paket arbeitet dabei mit seinen eigenen Rechten; eine mitgelieferte Automatisierung ruft nur ihr eigenes Paket.  
 Siehe auch: [Paket](#paket), [Berechnetes Feld](#berechnetes-feld), [Gleich eingeschaltet](#gleich-eingeschaltet).

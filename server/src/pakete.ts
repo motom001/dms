@@ -22,6 +22,8 @@ import { bereinigeAbschnitte } from '../../shared/src/darstellung';
 import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
+import type { MappenAktion } from '../../shared/src/paketaktionen';
+import { liesMappenaktionen } from './paketaktionen';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
@@ -322,7 +324,9 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
   /** Mitgelieferte Automatisierungen (#712, dms-registry #108), roh aus inhalt/automatisierungen.yaml; Typen als Paket-Schlüssel. */
   automatisierungen: PaketAutomatisierung[]; readme: string; einstellungen: Einstellungsbeschreibung | null; code: PaketCodeTeil | null;
   /** Sprachpaket (#731): Angaben, Texte und Beschriftungen der Standardpakete; null bei allen anderen Paketen. */
-  sprache?: PaketSprache | null }
+  sprache?: PaketSprache | null;
+  /** Aktionen im Menü „Mappe“ (#1039). */
+  mappenaktionen?: MappenAktion[] }
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */
 export interface PaketSprache { angabe: Sprachangabe; texte: Sprachtexte; uebergangen: string[]; beschriftungen: Record<string, SprachBeschriftung> }
 
@@ -661,6 +665,21 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     const darf = (cl.code?.rechte.schreiben ?? []).some((v) => v === '*' || v === ty.schluessel || v === `${str(m.id)}:${ty.schluessel}`);
     if (!darf) fehler.push(t('meldungen.pakete.berechnet-ohne-schreiben', { typ: ty.name, felder: felder.map((f) => `„${f.label}“`).join(', ') }));
   }
+  // Aktionen im Menü „Mappe“ (#1039): Mappentypen des Pakets oder seiner Abhängigkeiten; mit Code nur, wenn er die
+  // Mappentypen auch lesen darf (er bekommt die Werte der Mappe).
+  const ma = liesMappenaktionen(m.mappenaktionen, { hatCode: !!cl.code });
+  fehler.push(...ma.fehler.map((f) => `manifest.yaml: ${f}`));
+  for (const a of ma.aktionen) {
+    for (const vw of [...a.mappentypen, ...(a.anlegen ?? [])]) {
+      const [pk, sl] = vw.includes(':') ? vw.split(':') : [str(m.id), vw];
+      if (pk === str(m.id) ? !typen.some((x) => x.schluessel === sl) : !(pk in abh)) fehler.push(t('meldungen.pakete.aktion-typ-fehlt', { aktion: a.name, typ: vw }));
+    }
+    if (!a.dialog && cl.code) {
+      const lesen = cl.code.rechte.lesen;
+      const darf = (vw: string) => lesen.includes('*') || lesen.includes(vw) || (!vw.includes(':') && lesen.includes(`${str(m.id)}:${vw}`)) || (vw.startsWith(`${str(m.id)}:`) && lesen.includes(vw.slice(str(m.id).length + 1)));
+      for (const vw of a.mappentypen) if (!darf(vw)) fehler.push(t('meldungen.pakete.aktion-ohne-lesen', { aktion: a.name, typ: vw }));
+    }
+  }
   let code: PaketCodeTeil | null = null;
   if (cl.code) {
     const modul = dateien.get('code/modul.wasm');
@@ -685,6 +704,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     sprache, ...(beispielDateien.size ? { beispielDateien } : {}),
     ...(vt.vorgaben.length ? { vorgaben: vt.vorgaben } : {}), ...(vt.ergaenzungen.length ? { ergaenzungen: vt.ergaenzungen } : {}), ...(vt.vorlagenDateien.size ? { vorlagenDateien: vt.vorlagenDateien } : {}),
     ...(umbau.length ? { umbau } : {}),
+    ...(ma.aktionen.length ? { mappenaktionen: ma.aktionen } : {}),
   };
 }
 
@@ -979,6 +999,11 @@ export interface Vorschau {
   laeufer: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
   /** Sprachpaket (#731): Sprache, Abdeckung gegen diese Version, übergangene Texte, Pakete mit Beschriftungen. */
   sprache?: (Sprachangabe & { abdeckung: Abdeckung; uebergangen: number; pakete: string[] }) | null;
+  /**
+   * Aktionen im Menü „Mappe“ (#1039) mit ihren Rechten und Mappentypen (Namen) – Teil der Rechte-Vorschau. neu: kommt
+   * mit diesem Update dazu oder braucht jetzt andere Rechte.
+   */
+  aktionen?: Array<{ schluessel: string; name: string; rechte: MappenAktion['rechte']; typen: string[]; dialog?: MappenAktion['dialog']; neu: boolean }>;
 }
 /** Was lege anlegt bzw. ergänzt (#1084: als ein Objekt, damit der Umzug es weiterreichen kann). */
 interface LegeAuftrag { paket: Paket; herkunft: InstalliertesPaket['herkunft']; v: KatalogVersion | undefined; plan: Vorschau; beispiele: boolean; von: Handelnder; alt: InstalliertesPaket | null; ein: string[] }
@@ -2088,6 +2113,12 @@ export class Paketverwaltung {
       if (!s.eltern) geplant?.sichten.add(name.toLowerCase());
       return { schluessel: s.schluessel, name, eltern: s.eltern ?? null, vorhanden: false, konflikt, vorschlag: konflikt ? freierName(name, m.name, new Set(geschwister)) : null, ...(ohne.length ? { ohne } : {}) };
     });
+    // Aktionen im Menü „Mappe“ (#1039): jede mit ihren Rechten; neu = beim Update dazugekommen oder mit anderen Rechten.
+    const aktionen = (paket.mappenaktionen ?? []).map((a) => {
+      const alt = ich?.mappenaktionen?.find((x) => x.schluessel === a.schluessel);
+      return { schluessel: a.schluessel, name: a.name, rechte: a.rechte, typen: a.mappentypen.map((vw) => this.typName(vw, paket, installierte, typen)), ...(a.dialog ? { dialog: a.dialog } : {}),
+        neu: !alt || JSON.stringify([...alt.rechte].sort()) !== JSON.stringify([...a.rechte].sort()) || JSON.stringify(alt.anlegen ?? []) !== JSON.stringify(a.anlegen ?? []) };
+    });
     const vorschau: Vorschau = {
       paket: { id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor, dms: m.dms, abhaengigkeiten: m.abhaengigkeiten, readme: v?.readme ?? null, changelog: v?.changelog ?? null, quelle: v?.quelle ?? null, herausgeber, herausgeberGeprueft: geprueft },
       dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich, umzug, herausgeberBestaetigen: herausgeberErstmals,
@@ -2099,7 +2130,8 @@ export class Paketverwaltung {
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
       // Mitgelieferte Zeitpläne (#1082): „Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“.
-      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) })), paketZeitplaene(paket)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
+      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) })), paketZeitplaene(paket)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) || aktionen.some((a) => a.neu && !a.dialog) } : null,
+      ...(aktionen.length ? { aktionen } : {}),
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
     if (umbau.schritte.length) this.umbauLagen.set(vorschau, umbau);
@@ -2674,6 +2706,8 @@ export class Paketverwaltung {
         ...(paket.code ? { laeufer: { ...paket.code.info, modul: modulInfo(paket.code), daten: paket.code.dateien.filter((d) => d.name !== 'modul.wasm').map((d) => d.name) } } : {}),
         ...(v ? { links: { readme: v.readme, changelog: v.changelog, quelle: v.quelle } } : alt?.links ? { links: alt.links } : {}),
         ...(paket.sprache ? { sprache: { ...paket.sprache.angabe, texte: anzahlTexte(paket.sprache.texte), uebergangen: paket.sprache.uebergangen.length, beschriftungen: Object.keys(paket.sprache.beschriftungen) } } : {}),
+        // Aktionen im Menü „Mappe“ (#1039): wie diese Version sie nennt; ausgeschaltete merkt sich die Werkbank getrennt.
+        ...(paket.mappenaktionen?.length ? { mappenaktionen: paket.mappenaktionen } : {}),
         typStand,
       };
       // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.

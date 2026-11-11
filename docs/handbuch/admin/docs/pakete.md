@@ -247,6 +247,18 @@ Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordn
 
 Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschlüsselt und werden beim Schlüsselwechsel mit umgeschlüsselt. Über die API v1 sind sie nicht lesbar; das Paket selbst bekommt sie über den Paket-Läufer. Das Protokoll vermerkt „Einstellungen von Paket … geändert (Felder …)“ – nie die Werte von Geheimnissen. Nur Administratoren sehen und ändern Einstellungen.
 
+## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
+
+Pakete können Aktionen ins Menü **Mappe ▾** passender Mappen bringen, z. B. **Vorlage hinzufügen** am Vertrag oder **Als bezahlt markieren** an der Rechnung. Jede Aktion nennt im Manifest, an welchen Mappentypen sie steht und **welche Rechte sie am Ende braucht**: lesen, Dokument hinzufügen, ändern, Mappen anlegen, herausgeben (wie Herunterladen, Recht E).
+
+- **Vor der Installation:** Die Vorschau nennt unter „Aktionen im Menü „Mappe““ jede Aktion mit Mappentypen und Rechten. Kommt mit einem Update eine Aktion dazu oder braucht sie andere Rechte, steht **neu** daran, und die Rechte des Codes sind neu zu bestätigen.
+- **Wer sie sieht:** Nur Personen, die an der Mappe genau diese Rechte haben – und nur, wenn das Paket sie auch hat (seine bestätigten Rechte, die Regeln für die Rolle „Paket“, „Pakete“ am Mappentyp). Ein Paket mit Netz (KI-Dienst) bietet an Mappentypen, die nicht für KI-Dienste zugelassen sind, keine Aktion an.
+- **Im Auftrag der Person:** Das Paket handelt nur in der Schnittmenge aus angekündigten Rechten, Rechten der Person und Rechten des Pakets; Ablago prüft sie bei jedem Schritt neu. Während einer Aktion sieht das Paket nur diese Mappe (und ihre Dokumente, wenn es Dokumente lesen darf) – nicht über sein Dienstkonto. Dialoge sind nur Daten (Text, Auswahl, Haken, Textfeld, Datum), nie mit Passwort-Eingabe; der Paketname steht immer im Kopf.
+- **Ausschalten:** **Werkbank → Pakete → *Paket*** zeigt unter „Aktionen im Menü „Mappe““ jede Aktion mit ihren Rechten; ohne Haken steht sie bei niemandem im Menü. Die **eingebauten** Aktionen (Aufgabe vergeben, Erinnern, Per E-Mail versenden, Als PDF exportieren, Link kopieren) blendest du an einer Stelle aus: **Werkbank → Pakete**, Abschnitt **Menü „Mappe“**. Ausblenden ist Ordnung, kein Recht – die Wege über die API bleiben.
+- **Nachvollziehbar:** Jede Ausführung steht in der Historie der Mappe (Person und Paket, Gruppe „Aktionen von Paketen“) und im Verlauf des Paket-Läufers („Aktion „…“ für …, Schritt 1“); das Protokoll nennt Paket, Aktion und Mappe, nie Inhalte.
+
+Höchstens eine Aktion je Person und Paket läuft gleichzeitig; ein Schritt wartet höchstens 30 Sekunden auf das Paket. Die Schalter sind Teil der Sicherung (Einstellung `mappenaktionen`).
+
 ## Pakete mit Code
 
 Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, fertiger Volltext, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Ablago führt ihn im **Paket-Läufer** aus:

@@ -117,6 +117,20 @@ For letters that always look the same – a **cancellation**, for instance – p
 
 You can also write your own templates: as a Markdown file (`.md`) in the **Templates** tab of a folder your folders refer to (e.g. a contract type). The developer handbook explains placeholders under [Text templates](https://help.ablago.app/entwickler/aktuell/en/pakete/#text-vorlagen-schreiben).
 
+## Actions from packages { #aktionen-von-paketen }
+
+Packages can add their own entries to the **Folder ▾** menu, e.g. **Add template** on a contract (Contracts package) or **Mark as paid** on an invoice. You can recognise them by the package icon and the package name after them; they appear below the built-in entries.
+
+- **Only what you may do:** An action is only in the menu if you have exactly the rights it needs on this folder – "Export as XML" works without edit rights, "Mark as paid" does not.
+- **Locked with a reason:** If the folder still lacks something, the action is greyed out with the reason below it, e.g. "Choose a contract type first".
+- **The package's dialog:** If the package asks for something (at most twice), a sheet with a dashed border and **"Action from …"** in its header appears – so you always see which package is asking. A package **never asks for your password** there; if it seems to, something is wrong.
+- **Result:** Afterwards you see what happened, e.g. "Cancellation added as a document", with **Open document** or **Download**. Downloading is [sharing](#weitergeben-mit-stempel) and needs the export right (E); a mandatory stamp of the folder type applies here too.
+- **Traceable:** Every run is listed in the folder's **history** – with you and the package.
+
+The package acts on your behalf: it can never do more than you can do with the folder yourself, and never more than it announced when it was installed. If a package is not responding, you see "The package … is not responding right now" – try again later.
+
+**Add template** (Contracts package) opens [Letter from template](#brief-aus-vorlage) with the package's templates – styled like a package action.
+
 ## Copy link {#link-kopieren}
 
 **Folder ▾ → Copy link** puts a link to the folder on the clipboard, which you can send by email or chat to someone with their own access to Ablago. The link doesn't name the folder by a number but by its details, e.g.

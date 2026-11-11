@@ -1246,6 +1246,8 @@ export const HISTORIENARTEN = {
   heruntergeladen: t('gemeinsam.model.heruntergeladen'),
   abruf_api: t('gemeinsam.model.abruf-api'),
   abruf_webdav: t('gemeinsam.model.abruf-webdav'),
+  /** #1039: Aktion eines Pakets im Menü „Mappe“ – Person (benutzerId) und Paket (daten.paket). */
+  paketaktion: t('gemeinsam.model.paketaktion'),
 } as const;
 /** Was im Verwaltungsmodus mit einer fremden Mappe geschah (#820). */
 export type Modusspur = 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet';
@@ -1268,6 +1270,7 @@ export const HISTORIENGRUPPEN = {
   herunterladen: ['heruntergeladen'],
   api: ['abruf_api'],
   webdav: ['abruf_webdav'],
+  aktionen: ['paketaktion'],
 } as const satisfies Record<string, readonly Historienart[]>;
 export type Historiengruppe = keyof typeof HISTORIENGRUPPEN;
 /** Arten, die jedes Register „Historie“ zeigt, gleich wie es eingestellt ist (#820). */
@@ -1276,7 +1279,7 @@ export const HISTORIE_IMMER: readonly Historienart[] = ['verwaltungsmodus'];
  * Vorauswahl eines Registers „Historie“ ohne eigene Einstellung (#800): alles wie bisher, ohne die Abrufe – die
  * interessieren im Alltag selten. Ein weiteres Register (z. B. „Abrufe“) oder „Alles anzeigen“ zeigt sie.
  */
-export const HISTORIE_VORAUSWAHL: readonly Historiengruppe[] = ['anlegen', 'felder', 'dokumente', 'notizen', 'aufgaben', 'weitergeben', 'rechte'];
+export const HISTORIE_VORAUSWAHL: readonly Historiengruppe[] = ['anlegen', 'felder', 'dokumente', 'notizen', 'aufgaben', 'weitergeben', 'rechte', 'aktionen'];
 export const istHistoriengruppe = (g: unknown): g is Historiengruppe => typeof g === 'string' && Object.hasOwn(HISTORIENGRUPPEN, g);
 /** Name einer Gruppe in der Sprache des Lesers. */
 export const historiengruppeName = (g: Historiengruppe) => t.frei(`gemeinsam.model.historiengruppe.${g}`);

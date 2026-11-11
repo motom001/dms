@@ -439,6 +439,9 @@
   "historie.version-zurueckgeholt": "Version {zurueckgeholt} zurückgeholt",
   "historie.version": "Version {wert}",
   "historie.datei": "Datei",
+  "historie.paketaktion-paket": "Paket",
+  "historie.paketaktion-ergebnis": "Ergebnis",
+  "historie.paketaktion-herausgegeben": "Herausgegeben",
   "historie.ersetzt": "(ersetzt {str})",
   "historie.version-2": "Version",
   "historie.version-zurueckgeholt-2": "– Version {zurueckgeholt} zurückgeholt",
@@ -1316,5 +1319,17 @@
   "brief.abgelegt": "Der Brief liegt jetzt als {name} im Register {register}, daneben der ausgefüllte Text.",
   "brief.mit-luecken_one": "Eine Angabe fehlte – im Brief steht dort eine Lücke.",
   "brief.mit-luecken_other": "{anzahl} Angaben fehlten – im Brief stehen dort Lücken.",
-  "brief.hinweis": "Eingesetzt werden nur Angaben, die du sehen darfst, nie Passwörter. Die Vorlage selbst bleibt, wie sie ist."
+  "brief.hinweis": "Eingesetzt werden nur Angaben, die du sehen darfst, nie Passwörter. Die Vorlage selbst bleibt, wie sie ist.",
+  "paketaktion.von": "Aktion von {paket}",
+  "paketaktion.arbeitet": "{paket} arbeitet …",
+  "paketaktion.hinweis": "Diese Aktion kommt vom Paket {paket}. Es handelt in deinem Auftrag und nur mit Rechten, die du selbst hast. Ablago fragt hier nie nach deinem Passwort.",
+  "paketaktion.weiter": "Weiter",
+  "paketaktion.keine-auswahl": "– bitte wählen –",
+  "paketaktion.geaendert": "Geändert: {felder}",
+  "paketaktion.ohne-titel": "(ohne Titel)",
+  "paketaktion.dokument-oeffnen": "Dokument öffnen",
+  "paketaktion.herunterladen": "{name} herunterladen",
+  "paketaktion.fehler.pflicht": "Bitte ausfüllen.",
+  "paketaktion.fehler.ungueltig": "Bitte einen gültigen Wert wählen.",
+  "paketaktion.fehler.lang": "Bitte kürzer fassen."
 }

@@ -22,7 +22,11 @@ import { senkePrioritaet, senkeProzess } from '../hintergrund';
 import type { AnLaeufer, Grenzen, NetzEintrag, VomLaeufer } from './prozess';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
-import { t } from '../sprache';
+import { t, t as tx } from '../sprache';
+import { beantworteZugang, type AktionsDatei, type Zugang } from '../paketaktionen';
+
+/** Eingeschränkter Zugriff eines laufenden Aufrufs einer Paket-Aktion (#1039). */
+interface AktionsZugang { paket: string; zugang: Zugang; dateien: AktionsDatei[] }
 import { GB, KB, MB, PAKET_SPEICHER_MAX as SPEICHER_MAX, WEITER_MAX_BYTES } from '../grenzen';
 
 const log = protokoll.modul('werkbank');
@@ -164,6 +168,8 @@ export class Paketlaeufer implements PaketLaeufer {
   private nachlauf = new Map<string, { modell: string; nach: string | null; pauseBis: number }>();
   private nachlaufUhr: ReturnType<typeof setInterval> | null = null;
   private nachlaufLaeuft = false;
+  /** Laufende Aufrufe von Paket-Aktionen (#1039): Aufruf-Nummer → Paket, eingeschränkter Zugriff, abgelegte Dateien. */
+  private zugaenge = new Map<number, AktionsZugang>();
 
   constructor(private o: LaeuferOptionen) {
     this.grenzen = { ...STANDARD_GRENZEN, ...o.grenzen };
@@ -186,6 +192,8 @@ export class Paketlaeufer implements PaketLaeufer {
       pakete: () => this.klassifizierPakete(),
       klassifiziere: (paket, eingang, ms) => this.schnittstelle(paket, 'dms:klassifizieren', eingang, { bezeichnung: t('meldungen.verwaltung.typ-vorgeschlagen'), ms }),
     };
+    // Paket-Aktionen im Menü „Mappe“ (#1039): Schritt mit Antwort und Zeitgrenze, mit eingeschränktem Zugriff.
+    o.dienst.paketaktionen.laeufer = { geladen: (paket) => this.aktionBereit(paket), rufe: (paket, eingang, a) => this.mappenaktion(paket, eingang, a) };
     // Inhalte übersetzen (#732): Pakete mit dms:uebersetzen, je Abschnitt ein Aufruf mit Zeitlimit; kein Inhalt in der Werkbank.
     o.dienst.uebersetzung.anbieter = {
       pakete: () => this.uebersetzPakete(),
@@ -233,6 +241,23 @@ export class Paketlaeufer implements PaketLaeufer {
     const r = await this.rufe(paket, 'aktion', { aktion, einstellungen });
     if (!r.ok) throw new Error(r.fehler ?? 'Die Aktion ist fehlgeschlagen.');
     return r.text || 'Erledigt.';
+  }
+
+  /** Paket-Aktionen (#1039): fehlerfrei geladene Pakete (für den Schnappschuss der anderen Prozesse). */
+  aktionPakete(): string[] { return this.pakete.filter((p) => this.ladefehler.has(p.id) && !this.ladefehler.get(p.id)).map((p) => p.id); }
+
+  /** Paket-Aktionen (#1039): Läuft der Läufer und hat er das Paket fehlerfrei geladen? */
+  aktionBereit(paket: string): boolean { return this.laeuft() && this.ladefehler.has(paket) && !this.ladefehler.get(paket); }
+
+  /**
+   * Ein Schritt einer Paket-Aktion (#1039): Aufruf mit Antwort und Zeitgrenze, vor die Warteschlange. Fragen aus diesem
+   * Aufruf beantwortet der eingeschränkte Zugriff (nie das Dienstkonto); abgelegte Dateien kommen mit dem Ergebnis.
+   */
+  async mappenaktion(paket: string, eingang: Record<string, unknown>, a: { ms: number; zugang: Zugang; bezeichnung: string }): Promise<{ ok: boolean; text: string; fehler: string | null; dateien: AktionsDatei[] }> {
+    if (this.o.pausiert?.()) return { ok: false, text: '', fehler: t('meldungen.verwaltung.der-paket-laeufer-laeuft'), dateien: [] };
+    const dateien: AktionsDatei[] = [];
+    const r = await this.rufe(paket, 'aktion', eingang, { ms: a.ms, vorrang: true, bezeichnung: a.bezeichnung, zugang: { zugang: a.zugang, dateien }, ohneInhalt: true });
+    return { ok: r.ok, text: r.text, fehler: r.fehler, dateien };
   }
 
   /* ---------- Pakete und Dienstkonten ---------- */
@@ -356,12 +381,22 @@ export class Paketlaeufer implements PaketLaeufer {
       case 'log': this.notiere(m.paket, { stufe: m.stufe, text: m.text }); return;
       case 'ergebnis': { const a = this.aufrufe.get(m.nr); this.aufrufe.delete(m.nr); a?.ok(m); return; }
       case 'teil': { try { this.aufrufe.get(m.nr)?.teil?.(m.text); } catch { /* Empfänger weg */ } return; }
-      case 'frage': this.sende({ art: 'antwort', nr: m.nr, antwort: await this.beantworte(m.paket, m.anfrage).catch((e) => ({ status: 500, body: new TextEncoder().encode((e as Error).message) })) }); return;
+      case 'frage': this.sende({ art: 'antwort', nr: m.nr, antwort: await this.beantworte(m.paket, m.anfrage, m.aufruf).catch((e) => ({ status: 500, body: new TextEncoder().encode((e as Error).message) })) }); return;
     }
   }
 
-  /** API-Anfragen eines Pakets – immer mit seinem eigenen Schlüssel, nur unter /api/v1. */
-  private async beantworte(paket: string, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage']): Promise<Hostantwort> {
+  /**
+   * API-Anfragen eines Pakets – immer mit seinem eigenen Schlüssel, nur unter /api/v1. Ausnahme Paket-Aktionen (#1039):
+   * Kommt die Frage aus einem Aufruf einer Aktion, gilt nur deren eingeschränkter Zugriff (diese Mappe) – nie das
+   * Dienstkonto; den eigenen Speicher darf das Paket dann nur lesen.
+   */
+  private async beantworte(paket: string, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage'], aufruf?: number): Promise<Hostantwort> {
+    const zugang = aufruf === undefined ? undefined : this.zugaenge.get(aufruf);
+    return (zugang ? await this.aktionsFrage(paket, zugang, q) : null) ?? this.mitDienstkonto(paket, q);
+  }
+
+  /** Speicher und API mit dem Schlüssel des Dienstkontos (alles außer Paket-Aktionen). */
+  private async mitDienstkonto(paket: string, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage']): Promise<Hostantwort> {
     const t = (status: number, s: string): Hostantwort => ({ status, body: new TextEncoder().encode(s) });
     if (q.art === 'speicher_lesen' || q.art === 'speicher_schreiben') {
       const werte = await this.o.speicher.lies(paket);
@@ -382,6 +417,23 @@ export class Paketlaeufer implements PaketLaeufer {
     const body = q.body ? Buffer.from(q.body) : a.body !== undefined ? Buffer.from(JSON.stringify(a.body)) : undefined;
     const kopf: Record<string, string> = { authorization: `Bearer ${s}`, ...(body ? { 'content-type': q.body ? String(a.typ ?? 'application/octet-stream') : 'application/json' } : {}) };
     const r = await this.o.api({ methode, pfad: `/api/v1${pfad}`, kopf, body });
+    return { status: r.status, body: new Uint8Array(r.body) };
+  }
+
+  /**
+   * Frage aus dem Aufruf einer Paket-Aktion (#1039): API nur über den eingeschränkten Zugriff, eigener Speicher nur
+   * lesen (null = wie sonst), fremdes Paket mit derselben Nummer abgelehnt.
+   */
+  private async aktionsFrage(paket: string, zugang: AktionsZugang, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage']): Promise<Hostantwort | null> {
+    const t = (status: number, s: string): Hostantwort => ({ status, body: new TextEncoder().encode(s) });
+    if (zugang.paket !== paket) return t(403, '');
+    if (q.art === 'speicher_schreiben') return t(403, tx('meldungen.paketaktionen.zugang-verboten'));
+    if (q.art !== 'api') return null;
+    let a: { methode?: string; pfad?: string; typ?: string };
+    try { a = JSON.parse(q.json); } catch { return t(400, 'Ungültige Anfrage (JSON).'); }
+    const pfad = String(a.pfad ?? '');
+    if (!/^\/[^\s]*$/.test(pfad) || pfad.includes('..')) return t(400, 'Ungültiger Pfad.');
+    const r = await beantworteZugang(zugang.zugang, zugang.dateien, { methode: String(a.methode ?? 'GET').toUpperCase(), pfad, ...(q.body ? { body: Buffer.from(q.body) } : {}), ...(a.typ ? { typ: String(a.typ) } : {}) }, (sha) => this.o.dienst.kern.liesGanz(sha));
     return { status: r.status, body: new Uint8Array(r.body) };
   }
 
@@ -512,11 +564,13 @@ export class Paketlaeufer implements PaketLaeufer {
   }
 
   /** Einen Aufruf ausführen und auf das Ergebnis warten. ms: eigene, kürzere Wartezeit; vorrang: vor die Warteschlange. */
-  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean } = {}): Promise<Ergebnis> {
+  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'> } = {}): Promise<Ergebnis> {
     if (!this.kind || !this.bereit) return abbruch(t('meldungen.verwaltung.der-paket-laeufer-laeuft'), true);
     const p = this.pakete.find((x) => x.id === paket);
     if (!p) throw new Error('Dieses Paket hat keinen Code.');
     const nr = this.nr++;
+    // Paket-Aktion (#1039): Fragen aus diesem Aufruf gehen an den eingeschränkten Zugriff, nicht ans Dienstkonto.
+    if (opt.zugang) this.zugaenge.set(nr, { paket, ...opt.zugang });
     const json = JSON.stringify({ ...eingang, paket: { id: p.id, version: p.version }, einstellungen: eingang.einstellungen ?? await this.o.einstellungen(paket).catch(() => ({})) });
     // Eigene Zeitgrenze über der des Läufers: Antwortet der Läufer gar nicht mehr, hängt hier nichts.
     const r = await new Promise<Ergebnis>((ok) => {
@@ -524,7 +578,7 @@ export class Paketlaeufer implements PaketLaeufer {
       uhr.unref?.();
       this.aufrufe.set(nr, { ok: (x) => { clearTimeout(uhr); ok(x); }, ...(opt.teil ? { teil: opt.teil } : {}) });
       this.sende({ art: 'aufruf', nr, paket, eingang: { art, json }, ...(opt.vorrang ? { vorrang: true } : {}) });
-    });
+    }).finally(() => this.zugaenge.delete(nr));
     const s = this.standVon(paket);
     s.aufrufe++; if (!r.ok) s.fehlgeschlagen++;
     s.letzterAufruf = new Date().toISOString(); s.dauerMs = r.ms; s.speicherMB = r.speicherMB;

@@ -1,4 +1,5 @@
 import type { TextGesetzt, VorlagenListe } from '../../shared/src/textsatz';
+import type { AktionenAnMappe, AktionenEinstellung, AktionRecht, AktionsSchritt, EingebauteAktion, KernDialog } from '../../shared/src/paketaktionen';
 import type { AutomatisierungAnsicht, AutomatisierungDaten, Fassung, Fehlschlag, Kontextdaten, Lauf } from '../../shared/src/automatisierung';
 import type { Design } from './design';
 import { messung } from './messung';
@@ -773,8 +774,18 @@ export const api = {
   stempelVorlageLoeschen: (id: string) => anfrage<StempelVorlage[]>('DELETE', `/api/werkbank/stempel/vorlagen/${encodeURIComponent(id)}`),
   // Text setzen (#1040): Vorlagen einer Mappe, Brief ablegen oder herunterladen.
   vorlagenFuer: (mappeId: string) => anfrage<VorlagenListe>('GET', `/api/mappen/${mappeId}/vorlagen`),
-  textSetzen: (mappeId: string, dokumentId: string, register: string) => anfrage<TextGesetzt>('POST', `/api/mappen/${mappeId}/vorlagen/${dokumentId}/setzen`, { ziel: 'ablegen', register }),
-  textHerunterladen: (mappeId: string, dokumentId: string, name: string) => speichereDatei(`/api/mappen/${mappeId}/vorlagen/${dokumentId}/setzen`, { ziel: 'herunterladen' }, name),
+  /** `lauf`: Paket-Aktion mit dem Kern-Dialog (#1039) – nur Vorlagen dieses Pakets, Historie nennt das Paket. */
+  textSetzen: (mappeId: string, dokumentId: string, register: string, lauf?: string) => anfrage<TextGesetzt>('POST', `/api/mappen/${mappeId}/vorlagen/${dokumentId}/setzen`, { ziel: 'ablegen', register, ...(lauf ? { lauf } : {}) }),
+  textHerunterladen: (mappeId: string, dokumentId: string, name: string, lauf?: string) => speichereDatei(`/api/mappen/${mappeId}/vorlagen/${dokumentId}/setzen`, { ziel: 'herunterladen', ...(lauf ? { lauf } : {}) }, name),
+  // Paket-Aktionen im Menü „Mappe“ (#1039): Angebot, Start, nächster Schritt, Abbrechen, Datei abholen; Schalter der Werkbank.
+  paketAktionen: (mappeId: string) => anfrage<AktionenAnMappe>('GET', `/api/mappen/${mappeId}/paketaktionen`),
+  paketAktionStarten: (mappeId: string, paket: string, aktion: string) => anfrage<AktionsSchritt>('POST', `/api/mappen/${mappeId}/paketaktionen/${encodeURIComponent(paket)}/${encodeURIComponent(aktion)}`),
+  paketAktionWeiter: (lauf: string, antworten: Record<string, unknown>) => anfrage<AktionsSchritt>('POST', `/api/paketaktionen/laeufe/${encodeURIComponent(lauf)}`, { antworten }),
+  paketAktionAbbrechen: (lauf: string) => anfrage<null>('DELETE', `/api/paketaktionen/laeufe/${encodeURIComponent(lauf)}`),
+  paketAktionDatei: (lauf: string, name: string) => speichereDatei(`/api/paketaktionen/laeufe/${encodeURIComponent(lauf)}/datei`, {}, name),
+  mappenaktionenEinstellung: () => anfrage<AktionenEinstellung>('GET', '/api/werkbank/pakete/mappenaktionen'),
+  eingebauteAktionenSetzen: (eingebautAus: EingebauteAktion[]) => anfrage<AktionenEinstellung>('PUT', '/api/werkbank/pakete/mappenaktionen', { eingebautAus }),
+  paketAktionenAusSetzen: (id: string, aus: string[]) => anfrage<AktionenEinstellung>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/mappenaktionen`, { aus }),
   herunterladenMitStempel: (id: string, stempel: StempelWunsch | null, name: string, version?: number, verkleinern?: KleinStufe | null, fassung?: 'archiv' | 'original') => speichereDatei(`/api/dokumente/${id}/herunterladen`, { stempel, version, verkleinern, fassung }, name),
   emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) =>
     anfrage<{ id: string; typId: string; mappen: number; anhaenge: number }>('POST', '/api/mappen/email', e),
@@ -1182,6 +1193,8 @@ export interface PaketVorschau {
   laeufer?: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
   /** Sprachpaket (#731): Sprache, Abdeckung gegen diese Version, übergangene Texte, Pakete mit Beschriftungen. */
   sprache?: (Sprachangabe & { abdeckung: Abdeckung; uebergangen: number; pakete: string[] }) | null;
+  /** Aktionen im Menü „Mappe“ (#1039) mit ihren Rechten; neu = beim Update dazu oder mit anderen Rechten. */
+  aktionen?: Array<{ schluessel: string; name: string; rechte: AktionRecht[]; typen: string[]; dialog?: KernDialog; neu: boolean }>;
 }
 /** Sammeldatei (#461): geprüft, Pakete in der Reihenfolge zum Installieren (Abhängigkeiten zuerst). */
 export interface SammelPaket {

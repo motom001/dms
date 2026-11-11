@@ -117,6 +117,20 @@ Für Briefe, die immer gleich aussehen – etwa eine **Kündigung** –, bringen
 
 Eigene Vorlagen kannst du auch selbst schreiben: als Markdown-Datei (`.md`) im Register **Vorlagen** einer Mappe, auf die deine Mappen verweisen (z. B. einer Vertragsart). Wie Platzhalter aussehen, steht im [Entwicklerhandbuch unter Text-Vorlagen](https://help.ablago.app/entwickler/aktuell/pakete/#text-vorlagen-schreiben).
 
+## Aktionen von Paketen { #aktionen-von-paketen }
+
+Pakete können eigene Einträge ins Menü **Mappe ▾** bringen, z. B. **Vorlage hinzufügen** am Vertrag (Paket Verträge) oder **Als bezahlt markieren** an einer Rechnung. Du erkennst sie am Paketsymbol und am Namen des Pakets dahinter; sie stehen unter den eingebauten Einträgen.
+
+- **Nur, was du darfst:** Eine Aktion steht nur im Menü, wenn du an dieser Mappe genau die Rechte hast, die sie braucht – „Als XML exportieren“ geht also auch ohne Bearbeiten, „Als bezahlt markieren“ nicht.
+- **Gesperrt mit Grund:** Fehlt der Mappe noch etwas, steht die Aktion grau da, mit dem Grund darunter, z. B. „Erst eine Vertragsart wählen“.
+- **Dialog des Pakets:** Fragt das Paket etwas nach (höchstens zweimal), erscheint ein Blatt mit gestricheltem Rand und **„Aktion von …“** im Kopf – so siehst du immer, welches Paket fragt. Ein Paket fragt dort **nie nach deinem Passwort**; tut es scheinbar doch, ist etwas faul.
+- **Ergebnis:** Danach steht, was geschehen ist, z. B. „Kündigung als Dokument hinzugefügt“, mit **Dokument öffnen** bzw. **Herunterladen**. Herunterladen ist [Weitergeben](#weitergeben-mit-stempel) und braucht das Exportrecht (E); ein Pflicht-Stempel des Mappentyps gilt auch hier.
+- **Nachvollziehbar:** Jede Ausführung steht in der **Historie** der Mappe – mit dir und dem Paket.
+
+Das Paket handelt in deinem Auftrag: Es kann nie mehr, als du selbst an der Mappe kannst, und nie mehr, als es bei der Installation angekündigt hat. Antwortet ein Paket gerade nicht, steht „Das Paket … antwortet gerade nicht“ – dann später noch einmal.
+
+**Vorlage hinzufügen** (Paket Verträge) öffnet [Brief aus Vorlage](#brief-aus-vorlage) mit den Vorlagen des Pakets – im Aussehen einer Paket-Aktion.
+
 ## Link kopieren
 
 **Mappe ▾ → Link kopieren** legt einen Link auf die Mappe in die Zwischenablage, den du per Mail oder Chat an jemanden mit eigenem Zugang zu Ablago schicken kannst. Der Link nennt die Mappe nicht über eine Nummer, sondern über ihre Angaben, z. B.

@@ -817,6 +817,13 @@ input.kurz { width: 7em; }
 .aktionsmenue .menue button:hover, .aktionsmenue .menue button:focus-visible { background: var(--senke); }
 .aktionsmenue-trenner { height: 1px; margin: 4px 6px; background: var(--linie); }
 .aktionsmenue .menue button.aktionsmenue-gefahr { color: var(--schlecht); }
+/* Paket-Aktionen (#1039): gesperrt mit sichtbarem Grund; Dialog eines Pakets sieht anders aus als Ablagos Rückfragen. */
+.aktionsmenue .menue button { flex-wrap: wrap; }
+.aktionsmenue .menue button.aktionsmenue-gesperrt { color: var(--leise); cursor: not-allowed; }
+.aktionsmenue-grund { flex-basis: 100%; color: var(--leise); }
+.paketdialog { border: 2px dashed var(--linie-stark); background: var(--senke); }
+.paketdialog-kopf { margin: 0 0 2px; display: flex; align-items: center; gap: 6px; font-size: calc(13px * var(--skala, 1)); color: var(--leise); font-weight: 600; }
+.paketdialog-text { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
 .mappenleiste .aktionsmenue { margin-left: auto; }
 .anhaenge { border: 0; padding: 0; margin: 12px 0; }
 .anhaenge legend { font-weight: 600; margin-bottom: 4px; }

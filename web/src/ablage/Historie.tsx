@@ -26,6 +26,8 @@ function kurz(e: Historieneintrag, typ?: Pick<Mappentyp, 'felder'>): string {
   if (e.art === 'post_geteilt' && typeof d.text === 'string') return d.text;
   // #820: im Verwaltungsmodus geöffnet, heruntergeladen … – nie ausgeblendet.
   if (e.art === 'verwaltungsmodus') return t.frei(`mappen.historie.verwaltungsmodus.${typeof d.was === 'string' ? d.was : 'angesehen'}`);
+  // Paket-Aktion (#1039): Aktion und Paket; wer sie ausgelöst hat, steht in der Spalte „wer“.
+  if (e.art === 'paketaktion' && typeof d.text === 'string') return d.text;
   if (d.dokument) return d.dokument;
   if (d.feld) return d.feld;
   if (typeof d.text === 'string') return d.text;
@@ -213,6 +215,22 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
             <dt>{t('ablage.historie.historie')}</dt><dd>{t('ablage.historie.von-mappen', { anzahl: n('historie') })}</dd>
             <dt>{t('ablage.historie.passwort')}</dt><dd>{d.verschluesselt ? t('ablage.historie.ja-aes-256') : t('ablage.historie.nein')}</dd>
             {gruende.length > 0 && <><dt>{t('ablage.historie.zurueckgehalten-weil')}</dt><dd><ul className="einzeln">{gruende.map((g, i) => <li key={i}>{g}</li>)}</ul></dd></>}
+          </dl>
+        ),
+      };
+    }
+    case 'paketaktion': {
+      // Paket-Aktion (#1039): was dabei herauskam – Meldung, Dokument, Datei, geänderte Felder.
+      const felder = Array.isArray(d.felder) ? (d.felder as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+      return {
+        hinweis: t('ablage.historie.paketaktion-ergebnis'),
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            {str(d.paketName) && <><dt>{t('ablage.historie.paketaktion-paket')}</dt><dd>{str(d.paketName)}</dd></>}
+            {str(d.ergebnis) && <><dt>{t('ablage.historie.paketaktion-ergebnis')}</dt><dd>{str(d.ergebnis)}</dd></>}
+            {str(d.dokument) && <><dt>{t('ablage.historie.datei')}</dt><dd>{str(d.dokument)}</dd></>}
+            {str(d.datei) && <><dt>{t('ablage.historie.paketaktion-herausgegeben')}</dt><dd>{str(d.datei)}</dd></>}
+            {felder.length > 0 && <><dt>{t('ablage.historie.feld')}</dt><dd>{felder.join(', ')}</dd></>}
           </dl>
         ),
       };

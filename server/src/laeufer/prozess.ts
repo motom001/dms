@@ -30,7 +30,8 @@ export type AnLaeufer =
 export type VomLaeufer =
   | { art: 'bereit' }
   | { art: 'geladen'; pakete: Array<{ id: string; fehler: string | null; speicherMinMB: number | null }> }
-  | { art: 'frage'; nr: number; paket: string; anfrage: Exclude<Hostanfrage, { art: 'netz' } | { art: 'netz_weiter' } | { art: 'datei' }> }
+  /** aufruf: Nummer des Aufrufs, aus dem die Frage kommt (#1039: Paket-Aktionen fragen mit eigenem, eingeschränktem Zugriff). */
+  | { art: 'frage'; nr: number; paket: string; aufruf?: number; anfrage: Exclude<Hostanfrage, { art: 'netz' } | { art: 'netz_weiter' } | { art: 'datei' }> }
   /** Teil einer Antwort (#444, dms.teil), gehört zum Aufruf nr. */
   | { art: 'teil'; nr: number; paket: string; text: string }
   | { art: 'log'; paket: string; stufe: number; text: string }
@@ -178,9 +179,9 @@ async function netzWeiter(s: Strom | null): Promise<Hostantwort> {
   finally { clearTimeout(uhr); }
 }
 
-function frageDms(paket: string, anfrage: Extract<VomLaeufer, { art: 'frage' }>['anfrage']): Promise<Hostantwort> {
+function frageDms(paket: string, anfrage: Extract<VomLaeufer, { art: 'frage' }>['anfrage'], aufruf: number): Promise<Hostantwort> {
   const nr = naechsteNr++;
-  return new Promise((ok) => { offen.set(nr, ok); sende({ art: 'frage', nr, paket, anfrage }); });
+  return new Promise((ok) => { offen.set(nr, ok); sende({ art: 'frage', nr, paket, aufruf, anfrage }); });
 }
 
 function weiter() {
@@ -235,7 +236,7 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
     }
     if (q.art === 'netz_weiter') { void netzWeiter(strom).then((r) => { if (r.status !== 200) strom = null; antworte(r); }); return; }
     if (q.art === 'datei') { const d = g.daten.get(q.name); antworte(d ? { status: 200, body: d } : fehlerAntwort(404, t('meldungen.prozess.datei-gibt-es-nicht'))); return; }
-    void frageDms(a.paket, q).then(antworte);
+    void frageDms(a.paket, q, a.nr).then(antworte);
   });
   w.on('error', (e: Error) => schluss({ ok: false, rc: null, text: '', speicherMB: 0, fehler: /ERR_WORKER_OUT_OF_MEMORY|heap/i.test(`${(e as NodeJS.ErrnoException).code} ${e.message}`) ? t('meldungen.prozess.speichergrenze-erreicht', { message: e.message }) : e.message }));
   // Die Meldung „ende“ kommt über einen eigenen Kanal und kann nach dem Ende des Workers eintreffen: kurz warten.

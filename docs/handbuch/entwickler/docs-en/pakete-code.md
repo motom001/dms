@@ -204,7 +204,7 @@ The **input** is JSON (UTF-8, without a terminating null):
   "einstellungen": { … } }
 ```
 
-For an action: `{ "aktion": "<key>", "paket": …, "einstellungen": … }`. Settings come as described under [Describing settings](pakete.md#einstellungen-beschreiben), secrets in plain text.
+For an action: `{ "aktion": "<key>", "paket": …, "einstellungen": … }`; actions in the “Folder” menu arrive as `"aktion": "dms:mappenaktion"` (see [below](#aktionen-im-menue-mappe)). Settings come as described under [Describing settings](pakete.md#einstellungen-beschreiben), secrets in plain text.
 
 ### Imports from `dms` { #importe-aus-dms }
 
@@ -307,6 +307,79 @@ DELETE /mappen/{id}/hinweise/{schluessel}
 - Notes do not change the folder (no `geaendert`, no history, no event) and never stop saving. `DELETE` also works if the note does not exist. They are read with the folder: `GET /mappen/{id}` → `hinweise: [{ paket, paketName, schluessel, text, gesetzt }]`. If the package is removed, its notes go with it.
 
 The rights preview names both: "Calculates fields that only this package writes …", "Sets notes on folders …" and "Writes values and notes that everyone who can read the folder sees" – values the package works out from other folders are seen by everyone who may read the folder. So only read what the calculation really needs.
+
+## Actions in the “Folder” menu { #aktionen-im-menue-mappe }
+
+Since Ablago 0.245.0 (dms #1039), a package can register actions for the **Folder ▾** menu – e.g. “Add template” on a contract or “Mark as paid” on an invoice. The package brings **no user interface**: it answers with a **dialog description as data** or with a **result**; Ablago shows the dialog with its own building blocks and applies the result with the person's access. Never HTML or JavaScript from packages.
+
+**In the manifest** (top level, not under `code`, so packages without code can use the core dialog too):
+
+```yaml
+dms: ">=0.245.0"
+mappenaktionen:
+  - schluessel: vorlage_hinzufuegen
+    name: Vorlage hinzufügen
+    beschreibung: Cancellation and other letters from the contract type's templates   # tooltip, optional
+    mappentypen: [vertrag]                 # own key or paket:typ (from abhaengigkeiten)
+    rechte: [dokument_hinzufuegen]         # what the action needs in the end
+    dialog: dms:vorlage                    # optional: core dialog “Letter from template” instead of code
+    bedingung:                             # optional, like anzeigen on fields (#1033)
+      modus: alle
+      bedingungen: [{ art: feld, bedingung: { art: feld, feld: vertragsart, op: nichtLeer } }]
+      grund: Erst eine Vertragsart wählen  # shown in the menu while the condition is not met
+  - schluessel: bezahlt
+    name: Als bezahlt markieren
+    mappentypen: [rechnung]
+    rechte: [aendern]
+  - schluessel: positionen
+    name: Rechnungspositionen auslesen
+    mappentypen: [rechnung]
+    rechte: [mappen_anlegen]
+    anlegen: [rechnungsposition]           # required with mappen_anlegen: target types
+```
+
+- **Rights:** `lesen` (R), `dokument_hinzufuegen` and `aendern` (edit the folder), `mappen_anlegen` (create in the target type), `herausgeben` (download with right E, mandatory stamp). Ablago only shows the action to people who have exactly these rights, and only if the package has them too according to `code.rechte` (`lesen` for the folder types is required – the package receives the values). An AI package (with network access) offers nothing on folder types that are not approved.
+- **`dialog: dms:vorlage`** opens “Letter from template” with this package's templates (see [Writing text templates](pakete.md#text-vorlagen-schreiben)) – without code of its own. Rights: `dokument_hinzufuegen`, plus at most `herausgeben` (then also “Download PDF”).
+- At most 20 actions; name up to 60, description and reason up to 300 characters. The rights preview during installation lists each action with its rights.
+
+**Call:** When the person clicks, Ablago calls `dms_aktion` and waits for the answer (time limit 30 s, otherwise “The package is not responding right now”):
+
+```json
+{ "aktion": "dms:mappenaktion", "mappenaktion": "bezahlt", "schritt": 1, "kennung": "…",
+  "mappe": { "id": "…", "typ": "rechnungen:rechnung", "titel": "…", "werte": { … }, "dokumente": [ … ] },
+  "paket": { … }, "einstellungen": { … } }
+```
+
+`werte` without password fields; `dokumente` (id, name, mime, groesse, register) only if the package may read documents. From step 2 on, `antworten` (the dialog's values) and `stand` (what the package passed along with the dialog, at most 16 KB) are added. `kennung` is only an identifier – Ablago always decides folder and person.
+
+**Answer** via `ergebnis(…)` as JSON, exactly one of the two:
+
+```json
+{ "dialog": { "titel": "Als bezahlt markieren", "knopf": "Markieren",
+    "felder": [ { "art": "text", "text": "Wann wurde bezahlt?" },
+                { "art": "datum", "schluessel": "am", "name": "Bezahlt am", "standard": "2026-11-11", "pflicht": true } ] },
+  "stand": { "betrag": 650 } }
+```
+
+```json
+{ "ergebnis": { "meldung": "Als bezahlt markiert.", "felder": { "bezahlt_am": "2026-11-11" } } }
+```
+
+- **Dialog fields:** `text` (paragraph to read), `auswahl` (`optionen` with `wert` and `name`, `mehrfach: true` for a tick box per option), `haken`, `textfeld`, `datum`; each with `schluessel`, `name`, optional `hilfe`, `standard`, `pflicht`. No password input, no file upload, no links; texts stay text. At most 30 fields, texts up to 2,000 characters. `gefahr: true` makes the main button red – only if the package deletes something.
+- **At most two dialogs** per run; then a result must follow.
+- **Result:** `meldung` and, depending on the announced right, `felder` (folder values, `aendern`), `dokument` (`{ "datei": "d1", "register": "dokumente" }`, `dokument_hinzufuegen`), `mappen` (`[{ "typ": "rechnungsposition", "werte": { … } }]`, `mappen_anlegen`, only types from `anlegen`), `herausgeben` (`{ "datei": "d1" }`, the person downloads the file). Ablago rejects anything not announced without changing anything.
+
+**Access during a step:** The package does **not** use its service account. `api(…)` then only knows:
+
+| Request | Answer |
+|---|---|
+| `GET /mappe` | the folder as in the input |
+| `GET /dokumente/<id>` | content of a document of **this** folder (only with read access to documents) |
+| `POST /dateien?name=…&typ=…` (`api_binaer`) | stores a file for the result (at most 3 per step, 10 MB each) → `{ "datei": "d1" }` |
+
+Ablago answers everything else with 403; `speicher_schreiben` does not work, `speicher_lesen` does. New documents go through the same checks as an upload (size, type, PDFs must load).
+
+**Traceable:** Every run is listed in the folder's history (person and package) and in the package runner's history. At most one run per person and package at a time. You can test an action via API v1 (`POST /mappen/{id}/paketaktionen/{paket}/{aktion}`, `POST /paketaktionen/laeufe/{lauf}`) with a person's key.
 
 ## Building with C (wasi-sdk) { #bauen-mit-c-wasi-sdk }
 

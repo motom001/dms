@@ -294,6 +294,7 @@ code:
 - **Pflicht:** `pflicht: true` verlangt einen Wert – im Formular und beim Speichern. Markiert wird das Gegenteil: Felder ohne `pflicht` zeigt Ablago mit „(optional)“ hinter dem Namen (nicht bei `janein`, ein Haken ist immer an oder aus); Pflichtfelder bekommen kein Sternchen.
 - **Werte**, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit `_id` je Eintrag). Verweise sind Ids (bei `feld`: `{ typ, feld }`), Geheimnisse im Klartext – nur für das eigene Paket.
 - Zu `code` gehören außerdem `sprache`, `quelle`, `ereignisse`, `rechte` und `netz` (siehe [Pakete mit Code](pakete-code.md#im-manifest)); das Beispiel oben zeigt nur Einstellungen und Aktionen.
+- `code.aktionen` sind Knöpfe in den Einstellungen des Pakets (für die Verwaltung). Aktionen für das Menü **Mappe ▾** an Mappen stehen getrennt unter `mappenaktionen` (siehe [Aktionen im Menü „Mappe“](pakete-code.md#aktionen-im-menue-mappe)).
 - **Zugangsdaten nur als `geheim`**, nie als `text` und nie mit `standard`.
 - Bei einem **Update** bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.
 

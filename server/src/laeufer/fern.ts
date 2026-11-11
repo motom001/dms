@@ -1,7 +1,7 @@
 /**
  * Paket-Läufer bei mehreren Prozessen (#745): Er läuft genau einmal, im Leiter – er hält die API-Schlüssel der Pakete,
  * und die verlassen diesen Prozess nie. Die anderen Prozesse fragen ihn über den Verbund (`prozesse.ts`): Aktionen,
- * Vektoren für die Suche, „Frag deine Ablage“ (mit Teilen der Antwort), „Aus Dokument ausfüllen“, „Wohin gehört das?“ (#939), „Übersetzung anzeigen“ (#732), Übersicht für die
+ * Vektoren für die Suche, „Frag deine Ablage“ (mit Teilen der Antwort), „Aus Dokument ausfüllen“, „Wohin gehört das?“ (#939), „Übersetzung anzeigen“ (#732), Paket-Aktionen (#1039), Übersicht für die
  * Werkbank. Was sie ohne Warten wissen müssen (welches Paket Vektoren, Antworten, Erkennen anbietet, Dienstkonten der
  * Pakete), schickt der Leiter bei jeder Änderung an alle ({@link LaeuferSchnappschuss}).
  */
@@ -9,6 +9,7 @@ import type { Dienst } from '../dienst';
 import type { PaketLaeufer } from '../pakete';
 import type { Verbund } from '../prozesse';
 import type { Paketlaeufer } from './verwaltung';
+import type { Zugang } from '../paketaktionen';
 
 /** Was die anderen Prozesse vom Läufer ohne Warten wissen müssen. */
 export interface LaeuferSchnappschuss {
@@ -19,12 +20,14 @@ export interface LaeuferSchnappschuss {
   klassifizieren?: Array<{ id: string; name: string; netz: boolean; vektoren: boolean }>;
   /** Inhalte übersetzen (#732): geladene Pakete mit dms:uebersetzen. */
   uebersetzen: Array<{ id: string; name: string; version: string; netz: boolean }>;
+  /** Paket-Aktionen (#1039): Pakete, die der Läufer fehlerfrei geladen hat. */
+  aktionen?: string[];
   /** Dienstkonto → Paket (auch entfernter Pakete, für die Herkunft von Änderungen). */
   paketKonten: Array<[string, string]>;
   pid: number | null;
 }
 
-const LEER: LaeuferSchnappschuss = { vektorPaket: null, antworten: null, erkennen: [], klassifizieren: [], uebersetzen: [], paketKonten: [], pid: null };
+const LEER: LaeuferSchnappschuss = { vektorPaket: null, antworten: null, erkennen: [], klassifizieren: [], uebersetzen: [], aktionen: [], paketKonten: [], pid: null };
 /** So oft vergleicht der Leiter den Schnappschuss und schickt ihn bei einer Änderung. */
 export const SCHNAPPSCHUSS_MS = 2000;
 
@@ -39,7 +42,7 @@ export interface LaeuferSicht {
 export function schnappschuss(l: Paketlaeufer, d: Dienst): LaeuferSchnappschuss {
   return {
     vektorPaket: l.vektorPaket(), antworten: l.paketMit('dms:antworten'),
-    erkennen: d.erkennung.anbieter?.pakete() ?? [], klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], paketKonten: [...d.paketKonten.entries()], pid: l.pid,
+    erkennen: d.erkennung.anbieter?.pakete() ?? [], klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], aktionen: l.aktionPakete(), paketKonten: [...d.paketKonten.entries()], pid: l.pid,
   };
 }
 
@@ -54,6 +57,8 @@ export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
     const o = opt as { bezeichnung: string; ms?: number; mitTeil?: boolean };
     return l.schnittstelle(String(paket), String(aktion), eingang as Record<string, unknown>, { bezeichnung: o.bezeichnung, ...(o.ms ? { ms: o.ms } : {}), ...(o.mitTeil ? { teil: (x: string) => teil(x) } : {}) });
   });
+  // Paket-Aktionen (#1039): der Zugriff kommt als Daten mit, abgelegte Dateien gehen mit dem Ergebnis zurück.
+  v.bediene('laeufer.mappenaktion', ([paket, eingang, opt]) => l.mappenaktion(String(paket), eingang as Record<string, unknown>, opt as { ms: number; zugang: Zugang; bezeichnung: string }));
   v.bediene('laeufer.uebersicht', () => l.uebersicht());
   v.bediene('laeufer.vektorenNeu', () => l.vektorenNeu());
   v.hoere('laeufer.stelleZu', () => void l.stelleZu());
@@ -91,6 +96,10 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
     dienst.uebersetzung.anbieter = {
       pakete: () => this.z.uebersetzen ?? [],
       uebersetze: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:uebersetzen', eingang, { bezeichnung: 'Text übersetzt', ms }], { ms: ms + 5000 }),
+    };
+    dienst.paketaktionen.laeufer = {
+      geladen: (paket) => (this.z.aktionen ?? []).includes(paket),
+      rufe: (paket, eingang, o) => v.rufe('laeufer.mappenaktion', [paket, eingang, o], { ms: o.ms + 5000 }),
     };
     v.hoere('laeufer.zustand', (z) => this.setze(z as LaeuferSchnappschuss));
   }
