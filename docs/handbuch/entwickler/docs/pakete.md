@@ -416,6 +416,34 @@ python3 werkzeuge/katalog.py --probe /tmp/katalog    # lässt sich der Katalog b
 
 Dieselben Prüfungen laufen im Pull Request. Ein veröffentlichtes Paket ändert sich nie: Jede Änderung braucht eine höhere Version und einen Eintrag im `CHANGELOG.md`.
 
+## Pakete mit Ablago prüfen { #pakete-mit-ablago-pruefen }
+
+`pruefen.py` prüft das Format; ob Ablago ein Paket wirklich installiert, zeigt erst der Installer. Den gibt es als Befehl `pakete-pruefen` im Image jeder Ablago-Version: Er liest die Paketordner (wie `liesPaket` beim Hochladen), packt sie wie die Registry und installiert sie mit dem echten Installer dieser Version in eine leere Ablage im Arbeitsspeicher – ohne Datenbank-Server, ohne Netz, ohne Konto.
+
+```sh
+docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete/basis /pakete/vertraege
+docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete    # alle Pakete
+```
+
+- **Reihenfolge:** Die Ordner dürfen in beliebiger Reihenfolge stehen; Ablago installiert erst die Abhängigkeiten. Ein Ordner ohne `manifest.yaml`, aber mit Paketordnern darin (z. B. `pakete/`), steht für alle – im Container löst keine Shell ein `*` auf.
+- **Update alt → neu:** Steht dieselbe Id in mehreren Versionen da, installiert Ablago die älteste und aktualisiert danach Version für Version; ein Paket mit `ersetzt` gilt als Update der ersetzten Id (Umzug). Dieselbe Version zweimal mit gleichem Inhalt zählt einmal, mit anderem Inhalt ist sie ein Fehler (Version erhöhen).
+- **Ausgabe:** je Paket `OK` oder `FEHLER` mit den Gründen – dieselben Texte, die die Vorschau in Ablago zeigt –, darunter die Hinweise der Vorschau (sie machen nichts rot). Exit-Code 0, wenn alles in Ordnung ist, 1 bei mindestens einem Fehler, 2 bei einem falschen Aufruf.
+- **Optionen:** `--ablago <version>` prüft die Angabe `dms` im Manifest gegen eine andere Version, `--ohne-beispiele` lässt die Beispiele weg (sonst installiert Ablago sie mit, wie das Häkchen in der Oberfläche), `--json` bzw. `--ergebnis <datei>` liefern das Ergebnis als JSON, `--sprache en` gibt alles auf Englisch aus.
+
+Was der Befehl **nicht** prüft: die Herkunft (die Pakete stehen in einem Katalog im Arbeitsspeicher, der als offizieller gilt – Signatur und Bestätigungen entfallen), den Code (`code/modul.wasm` wird gespeichert, aber nicht ausgeführt; ohne gebautes Modul gibt es nur einen Hinweis) und Regeln, die nur PostgreSQL kennt. Die Ablage im Arbeitsspeicher ist dieselbe wie in den Server-Tests von Ablago; dort laufen die Installationen dieses Befehls zum Vergleich auch gegen PostgreSQL.
+
+**In der CI von dms-registry** – Pakete einer festen Ablago-Version, im Pull Request auch das Update vom Stand auf `main` (unveränderte Pakete zählen einmal):
+
+```yaml
+      - name: Pakete mit Ablago prüfen
+        run: |
+          git worktree add -q "$RUNNER_TEMP/main" origin/main
+          docker run --rm -v "$RUNNER_TEMP/main/pakete:/alt:ro" -v "$PWD/pakete:/neu:ro" \
+            ghcr.io/motom001/dms:<version> pakete-pruefen /alt /neu
+```
+
+Ohne Docker, im Repo von Ablago: `npm ci && npm run build`, dann `node server/dist/pakete-pruefen.js <ordner…>` (oder während der Entwicklung `node --import tsx server/src/pakete-pruefen.ts <ordner…>`). Ablago selbst prüft so in jedem Pull Request alle Pakete aus `dms-registry` `main` gegen den eigenen Stand (Job `katalog-pakete`, nur Warnungen) – damit eine strengere Prüfung im Kern Katalog-Pakete nicht unbemerkt bricht.
+
 ## Pull Request und Katalog
 
 1. Pull Request mit `Closes #…`; jeder Commit trägt ein `Signed-off-by:` (`git commit -s`).
@@ -507,6 +535,8 @@ Bevor dein Paket in den Katalog kommt, probierst du es im eigenen Ablago aus –
 2. Den Paketordner als ZIP packen, z. B. `cd pakete/mein_paket && zip -r ../../mein_paket.zip .`, und unter **Paket hochladen** wählen. Ein Ordner vor `manifest.yaml` (z. B. `mein_paket/manifest.yaml`) stört nicht. Ablago prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.
     - **Grenzen:** höchstens **128 MB** als ZIP (dieselbe Grenze im Katalog, beim Hochladen, in der Sammeldatei und beim Paket erstellen; `pruefen.py` und `katalog.py` der Registry lehnen größere Pakete ab), entpackt höchstens 20 MB ohne `code/` (für `code/` gelten ebenfalls 128 MB) und 500 Dateien. Ein hochgeladenes Paket bleibt 30 Minuten zum Installieren bereit; danach erneut hochladen.
 3. Installieren (Herkunft bestätigen), ansehen, ändern. Für ein Update die **Version erhöhen** und erneut hochladen – Ablago aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Mappentypen gibt).
+
+Ob Ablago dein Paket installiert – auch als Update und zusammen mit seinen Abhängigkeiten –, prüfst du schneller ohne eigenes Ablago mit [`pakete-pruefen`](#pakete-mit-ablago-pruefen).
 
 Mehrere Pakete testest du auch als eigenen Katalog: `python3 werkzeuge/katalog.py <ordner>` baut `katalog.json` und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von `katalog.json` im Expertenmodus unter **Weitere Quellen** ein.
 
