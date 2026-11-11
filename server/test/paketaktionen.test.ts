@@ -115,7 +115,7 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-aktion-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.benutzerspiegel());
+  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
@@ -418,7 +418,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 describe('Paket-Läufer (#1039): Fragen aus einer Aktion gehen nie ans Dienstkonto', () => {
   it('mit Aufruf-Nummer an den eingeschränkten Zugriff, Speicher nur lesen; ohne wie bisher', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const api: Array<string> = [];
     const l = new Paketlaeufer({ dienst: d, konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async (a) => { api.push(a.pfad); return { status: 200, kopf: {}, body: Buffer.from('dienstkonto') }; },
       einstellungen: async () => ({}), speicher: { lies: async () => ({ k: 'v' }), schreibe: async () => {} } });

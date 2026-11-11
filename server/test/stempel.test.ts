@@ -144,7 +144,7 @@ describe('PDF mit Stempel (#394)', () => {
 async function aufbau(stempel?: unknown) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const t = await d.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ], ...(stempel !== undefined ? { stempel } : {}) });
@@ -177,12 +177,12 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
 
   it('Pflicht je Mappentyp erzwingt den Stempel – beim Herunterladen, beim Export und per E-Mail', async () => {
     const { d, t, m, dokument, mails, mailer } = await aufbau({ modus: 'pflicht', vorlage: 'entwurf' });
-    assert.deepEqual((await d.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
+    assert.deepEqual((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
     const r = await d.dokumentFuerAusgabe(dokument.id, { ich });
     assert.equal(r.gestempelt, true);
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('ENTWURF')));
     // Vorlage mit {empfänger}: ohne Empfänger 422; per E-Mail gelten die Adressen.
-    await d.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'kopie' } });
+    await d.mappentypen.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'kopie' } });
     await assert.rejects(d.dokumentFuerAusgabe(dokument.id, { ich }), status(422, /Empfänger/));
     await d.versendeMappe(m.id, { an: 'bank@example.org', betreff: 'Ausweis', dokumente: [dokument.id] }, ich, mailer);
     const anhang = mails[0].o!.anhaenge![0];
@@ -200,7 +200,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.match(String(h[0].daten.text), /an Steuerbüro \(als ZIP exportiert: ausweis\.pdf\)/);
     // Vorlage in Gebrauch lässt sich nicht löschen; unbekannte Vorlage am Typ wird abgelehnt.
     await assert.rejects(d.loescheStempelVorlage('kopie', 'admin'), status(409, /Ausweis/));
-    await assert.rejects(d.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'weg' } }), status(422));
+    await assert.rejects(d.mappentypen.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'weg' } }), status(422));
   });
 
   it('Vorlagen anlegen, ändern, prüfen und löschen', async () => {

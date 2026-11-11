@@ -21,7 +21,7 @@ const am = (uhr: string, tag = '2027-03-10') => Date.parse(`${tag}T${uhr}:00+01:
 async function aufbau(uhr = am('09:00')) {
   const einst = speicherEinstellungen();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
@@ -96,7 +96,7 @@ describe('Wenn-Karte „Zeitplan“ (#678)', () => {
 describe('Dann-Karten der Benachrichtigungen (#678)', () => {
   it('Tägliche Zusammenfassung: derselbe Text wie bisher; abbestellt, abwesend, nichts offen → nichts', async () => {
     const { d, konten, lena, admin } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
     const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
     await d.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
@@ -119,7 +119,7 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
 
   it('Favoriten-Änderungen melden: Ereignis „Favorit geändert“ → gebündelte Benachrichtigung', async () => {
     const { d, motor, lena, admin } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
     const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
     const L = { id: lena.id, rolle: 'mitglied' };
     await d.setzeFavorit(L, m.id, true);
@@ -183,7 +183,7 @@ describe('Übernahme beim Update (#678)', () => {
   it('frische Installation ohne Benutzer: nichts übernommen, Hinweis „Paket installieren?“', async () => {
     const einst = speicherEinstellungen();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     await konten.systemkonto('automatisierung').catch(() => null);
     d.systemkonten = (k) => konten.systemkonto(k);

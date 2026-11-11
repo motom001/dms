@@ -16,7 +16,7 @@ async function aufbau(papierkorb = 0) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
   if (papierkorb) await d.setzePapierkorbTage(papierkorb);
-  const t = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{name}', archiv: { jahre: 8, stichtag: 'datum' },
+  const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{name}', archiv: { jahre: 8, stichtag: 'datum' },
     felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionenBehalten: 2 }] });
   const jung = await d.legeMappeAn({ typId: t.id, werte: { name: 'Jung', datum: '2026-03-01' } });
@@ -39,7 +39,7 @@ describe('Archivmodus (#212)', () => {
     assert.deepEqual(t.archiv, { jahre: 8, stichtag: 'datum' });
     assert.equal(t.register.find((r) => r.key === 'belege')?.versionierung, true);
     assert.equal(t.register.find((r) => r.key === 'belege')?.versionenBehalten, undefined);
-    await assert.rejects(d.legeTypAn({ name: 'X', archiv: { jahre: 8, stichtag: 'name' }, felder: [{ key: 'name', label: 'N', typ: 'text' }] }), (e) => e instanceof Fachfehler && e.status === 422);
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'X', archiv: { jahre: 8, stichtag: 'name' }, felder: [{ key: 'name', label: 'N', typ: 'text' }] }), (e) => e instanceof Fachfehler && e.status === 422);
     assert.deepEqual(await d.archivVorschau(t.id, { jahre: 8, stichtag: 'datum' }), { mappen: 2, darfWeg: 1, stichtagLeer: 0 });
     assert.deepEqual(await d.archivVorschau(t.id, { jahre: 30, stichtag: 'datum' }), { mappen: 2, darfWeg: 0, stichtagLeer: 0 });
   });
@@ -74,14 +74,14 @@ describe('Archivmodus (#212)', () => {
     const dateien = speicherDateien();
     const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
     await d.setzePapierkorbTage(30);
-    const t = await d.legeTypAn({ name: 'Brief', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Brief', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { name: 'B' } });
     await d.loescheMappe(m.id, ICH.id);
-    await d.aendereTyp(t.id, { ...t, archiv: { jahre: 6, stichtag: null } });
+    await d.mappentypen.aendereTyp(t.id, { ...t, archiv: { jahre: 6, stichtag: null } });
     await assert.rejects(d.loescheEndgueltig([m.id], ICH, true), gesperrt);
     assert.equal(await d.raeumePapierkorbAuf(Date.now() + 365 * 86_400_000), 0);
     // Ausschalten: dann geht es
-    await d.aendereTyp(t.id, { ...t, archiv: null });
+    await d.mappentypen.aendereTyp(t.id, { ...t, archiv: null });
     assert.equal(await d.loescheEndgueltig([m.id], ICH, true), 1);
   });
 

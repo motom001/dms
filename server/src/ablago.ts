@@ -319,7 +319,7 @@ const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'),
 // Fehlende Dokumentdatei (#877): einmal je Datei mit Mappe ins Protokoll und als Hinweis in die Werkbank-Übersicht.
 beiFehlenderDatei((f) => { void dienst.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
-const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
 dienst.verbindeKonten(konten.papierkorbHaken());
 // Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern zählen wie Öffnen.
 dienst.kern.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
@@ -421,7 +421,7 @@ texterkennung.volltextPaket = dienst.paketVolltext;
 const archivfassung = new Archivfassung(dienst.archivAnbindung(ordnerArchiv(archivOrdner(ordner.dateien, cfg.haushalt), woerterOrdner(ordner.dateien, cfg.haushalt))));
 dienst.verbindeArchivfassung(archivfassung);
 // Tägliche Zusammenfassung der offenen Aufgaben (#54).
-const typName = async (id: string | undefined) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? '';
+const typName = async (id: string | undefined) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? '';
 const aufgabenmail = new Aufgabenmail({
   benutzer: () => konten.listeBenutzer(),
   einstellungenVon: (b) => konten.einstellungen(b),
@@ -716,7 +716,7 @@ if (leiter) {
   await dienst.typSchluesselNachziehen();
   // Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146), einmalig nach dem Update.
   await dienst.hakenUeberfuehren();
-  const geprueft = await dienst.passungNachziehen((f, g) => start.menge(f, g));
+  const geprueft = await dienst.passung.passungNachziehen((f, g) => start.menge(f, g));
   if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 }
 // Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.

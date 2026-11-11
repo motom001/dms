@@ -86,7 +86,7 @@ async function aufbau(o: { mitPaket?: boolean; mitTexterkennung?: boolean; mitHo
   if (o.mitTexterkennung) await d.kern.repo.speicherePaket(texterkennungPaket());
   // Ein Paket, das nur „Volltext fertig“ hört (z. B. für Vektoren) – damit das Ereignis im Ausgangskorb landet.
   if (o.mitHoerer) await d.kern.repo.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
-  const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
@@ -316,7 +316,7 @@ describe('Dateien umwandeln (#577): API für Pakete', () => {
   it('PUT /dokumente/{id}/fassung: Paket mit dms:umwandeln und Lesen genügt; ohne das Recht 403; GET liefert die Fassung', async () => {
     const x = await aufbau();
     await x.d.kern.repo.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(x.d, konten, { apiSchluessel: schluessel });
     const rufe = async (paketId: string, methode: string, pfad: string, params: Record<string, string>, body: unknown, query: Record<string, string> = {}) => {
@@ -387,7 +387,7 @@ describe('Dateien umwandeln (#796): KI-Sperre je Mappentyp', () => {
   /** Paket mit Netz (KI-Paket); „Gesundheit“ ist neu und damit gesperrt, „Rechnung“ wird zugelassen. */
   async function mitSperre() {
     const x = await aufbau({ mitNetz: true });
-    const gesundheit = await x.d.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
+    const gesundheit = await x.d.mappentypen.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
     const befund = await x.d.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'B-1' } });
     const hochGesperrt = async (name: string, inhalt: Buffer) => {
       const id = (await x.d.ladeHoch(befund.id, { register: 'dokumente', name, typ: 'image/tiff' }, inhalt, null)).dokument.id;
@@ -409,7 +409,7 @@ describe('Dateien umwandeln (#796): KI-Sperre je Mappentyp', () => {
 
   it('dieselbe Datei auch in einem zugelassenen Typ: Auftrag über das zugelassene Dokument; dessen Stand bleibt unberührt', async () => {
     const x = await mitSperre();
-    await x.d.setzeKiTyp(x.typ.id, true, null);
+    await x.d.ki.setzeKiTyp(x.typ.id, true, null);
     const erlaubt = await x.hoch('rechnung.tif', TIFF, 'image/tiff');
     const gesperrt = await x.hochGesperrt('befund.tif', TIFF);
     let ev = await x.ereignisse('datei.umwandeln');

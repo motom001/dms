@@ -40,7 +40,7 @@ const marke = () => Math.max(0, ...protokoll.eintraege({}).map((e) => e.nr));
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const zf = new Zweifaktor(speicherEinstellungen(), (k) => `v:${k}`, (w) => (w.startsWith('v:') ? w.slice(2) : null));
   konten.verbindeZweifaktor(zf);
@@ -380,9 +380,9 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
   it('vermerkt Öffnen, Herunterladen und Ändern dauerhaft – einmal kurz hintereinander, nur bei fremden Mappen', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
-    const gesperrt = await x.d.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
+    const gesperrt = await x.d.mappentypen.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
     await x.d.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
-    const offenTyp = await x.d.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const offenTyp = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const m = await x.d.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
     const eigen = await x.d.legeMappeAn({ typId: offenTyp.id, werte: { name: 'Einkauf' } });
     const c = await x.anmelden('lena@example.org');

@@ -11,8 +11,8 @@ const ich = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
 describe('Historie (#57)', () => {
   it('hält Anlegen, Änderungen je Speichern, Dokumente und Papierkorb fest', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const p = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-    const t = await d.legeTypAn({ name: 'Vertrag', felder: [
+    const p = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
       { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }, { key: 'betrag', label: 'Betrag', typ: 'betrag' },
       { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }, { key: 'pw', label: 'Kennwort', typ: 'passwort' },
     ] });
@@ -37,7 +37,7 @@ describe('Historie (#57)', () => {
 
   it('behält die Historie endgültig gelöschter Mappen bis zur Frist', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text' }] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { n: 'a' } }, ich.id);
     await d.setzePapierkorbTage(0);
     await d.loescheMappe(m.id, ich.id);

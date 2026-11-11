@@ -28,17 +28,17 @@ async function aufbau() {
   const repo = speicherRepo();
   const kontoRepo = speicherKontoRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(kontoRepo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   d.systemkonten = (k) => konten.systemkonto(k);
   const admin = imModus((await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' })).benutzer);
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const auto = await konten.systemkonto('automatisierung');
-  const typen = await d.listeTypen();
+  const typen = await d.mappentypen.listeTypen();
   const rolleTyp = typen.find((t) => t.system === 'rolle')!;
   const rolleId = async (k: 'systemkonto' | 'paket') => (await repo.holeSystemMappe(kontorolleKennung(k)))!.id;
-  const gesundheit = await d.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }] });
+  const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }] });
   const tabelle = routen(d, konten, {});
   const route = (m: string, p: string) => tabelle.find((r) => r.methode === m && r.pfad === p)!;
   const rufe = (m: string, p: string, x: Partial<Anfrage> = {}) => route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: admin });
@@ -114,7 +114,7 @@ describe('Systemkonten (#673)', () => {
 
   it('Paket: bestätigte Rechte bleiben; Regeln mit der Rolle Paket schränken nur ein', async () => {
     const { d, repo, konten, admin, gesundheit, rolleId } = await aufbau();
-    const andere = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
+    const andere = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
     await repo.speicherePaket({
       id: 'probe', name: 'Probe', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'Lena', github: 'lena' }, herkunft: 'katalog' as never,
       installiert: new Date().toISOString(), installiertVon: admin.id, aktualisiert: null, aktualisiertVon: null,
@@ -140,7 +140,7 @@ describe('Systemkonten (#673)', () => {
 
   it('Paket: Regeln der Rolle Paket, die das Lesen nicht berühren, öffnen keine fremden Mappentypen', async () => {
     const { d, repo, konten, admin, gesundheit, rolleId } = await aufbau();
-    const andere = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
+    const andere = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
     await repo.speicherePaket({
       id: 'probe', name: 'Probe', version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'Lena', github: 'lena' }, herkunft: 'katalog' as never,
       installiert: new Date().toISOString(), installiertVon: admin.id, aktualisiert: null, aktualisiertVon: null,

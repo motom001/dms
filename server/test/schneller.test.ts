@@ -45,11 +45,11 @@ async function pgAufbau() {
   const r = pgRepo(sql, HAUSHALT);
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'nr', label: 'Vertragsnummer', typ: 'text', eindeutig: true },
     { key: 'betrag', label: 'Betrag', typ: 'zahl', eindeutig: true }, { key: 'bemerkung', label: 'Bemerkung', typ: 'text' },
   ] });
-  const zettel = await d.legeTypAn({ name: 'Zettel', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'nr', label: 'Nr', typ: 'text' }] });
+  const zettel = await d.mappentypen.legeTypAn({ name: 'Zettel', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'nr', label: 'Nr', typ: 'text' }] });
   return { sql, r, d, vertrag, zettel };
 }
 
@@ -169,7 +169,7 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     // Passung mehrerer Mappen in einem Zug: beide Seiten einer Dublette passen nicht, nach dem Ändern wieder.
     await sql`DELETE FROM mappen WHERE titel LIKE 'M%' AND typ_id = ${vertrag.id}`;
     await sql`UPDATE mappen SET werte = werte || '{"nr": "sv-4711"}' WHERE id = ${b.id}`;
-    await d.pruefePassung(vertrag.id);
+    await d.passung.pruefePassung(vertrag.id);
     const problem = async (id: string) => (await sql`SELECT problem FROM mappen WHERE id = ${id}`)[0].problem as string | null;
     assert.match((await problem(a.id)) ?? '', /Bereits vergeben in „Gas“/);
     assert.match((await problem(b.id)) ?? '', /Bereits vergeben in „Strom“/);
@@ -181,7 +181,7 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
   it('Speichern in einer Transaktion: Titel im selben UPDATE; bei einem Fehler bleibt nichts halb geschrieben', async () => {
     const { sql, d, vertrag, zettel } = await pgAufbau();
     const ziel = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } });
-    const zettelTyp = await d.aendereTyp(zettel.id, { ...zettel, titelVorlage: '{name}', felder: [...zettel.felder, { key: 'zu', label: 'Zu', typ: 'referenz', zielTyp: vertrag.id }] });
+    const zettelTyp = await d.mappentypen.aendereTyp(zettel.id, { ...zettel, titelVorlage: '{name}', felder: [...zettel.felder, { key: 'zu', label: 'Zu', typ: 'referenz', zielTyp: vertrag.id }] });
     const quelle = await d.legeMappeAn({ typId: zettelTyp.id, werte: { name: 'Notiz zu', zu: ziel.id } });
     assert.equal(quelle.titel, 'Notiz zu');
     // Zeilenversionen der Mappe zählen: ein Trigger nur für diesen Test.
@@ -196,7 +196,7 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     assert.equal(s.titel, 'Ökostrom');
     assert.match(s.suchtext as string, /okostrom/);
     // Verweis mit Titel im Titel: zieht nach, wenn sich der Titel ändert.
-    await d.aendereTyp(zettelTyp.id, { ...zettelTyp, titelVorlage: '{name} {zu}' });
+    await d.mappentypen.aendereTyp(zettelTyp.id, { ...zettelTyp, titelVorlage: '{name} {zu}' });
     await d.aendereMappe(ziel.id, { werte: { name: 'Gas' } });
     assert.equal((await d.holeMappe(quelle.id)).mappe.titel, 'Notiz zu Gas');
 
@@ -238,14 +238,14 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
 describe('Schneller (#743) – ohne Datenbank', () => {
   it('„Bereits vergeben“ nennt den Titel nur, wenn der Benutzer die andere Mappe lesen darf', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: admin } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
     const ALLES = { C: true, R: true, U: true, D: true, P: true };
     // Vertrauliche Verträge darf nur der Administrator lesen.
-    const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'nr', label: 'Vertragsnummer', typ: 'text', eindeutig: true }, { key: 'vertraulich', label: 'Vertraulich', typ: 'janein' },
     ], berechtigungen: { grund: ALLES, regeln: [{ id: 'v', name: 'Vertraulich', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'vertraulich', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
     await d.legeMappeAn({ typId: typ.id, werte: { name: 'Geheimer Vertrag', nr: 'A-1', vertraulich: true } }, admin.id);

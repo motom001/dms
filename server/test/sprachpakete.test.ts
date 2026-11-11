@@ -229,7 +229,7 @@ describe('Sprachpaket installieren und nutzen (#731)', () => {
       if (reihenfolge === 'basis-zuerst') await installiereHochgeladen(p, basis);
       await installiereHochgeladen(p, fr());
       if (reihenfolge === 'sprache-zuerst') await installiereHochgeladen(p, basis);
-      const typ = (await d.listeTypen()).find((x) => x.schluessel === 'basis:organisation')!;
+      const typ = (await d.mappentypen.listeTypen()).find((x) => x.schluessel === 'basis:organisation')!;
       assert.equal(typ.beschriftungen?.fr?.name, 'Organisme', reihenfolge);
       assert.equal(typ.felder.find((f) => f.key === 'art')?.beschriftungen?.fr?.optionen?.Bank, 'Banque');
       assert.equal(typ.felder.find((f) => f.key === 'name')?.beschriftungen?.fr?.label, 'Nom');
@@ -237,9 +237,9 @@ describe('Sprachpaket installieren und nutzen (#731)', () => {
       const sicht = (await d.listeSichten()).find((s) => s.name === 'Organisationen')!;
       assert.equal(sicht.beschriftungen?.fr?.name, 'Organismes');
       // Was der Administrator schon beschriftet hat, bleibt bei einem Update des Sprachpakets.
-      await d.aendereTyp(typ.id, { ...typ, beschriftungen: { ...typ.beschriftungen, fr: { name: 'Organisation (eigene)' } } });
+      await d.mappentypen.aendereTyp(typ.id, { ...typ, beschriftungen: { ...typ.beschriftungen, fr: { name: 'Organisation (eigene)' } } });
       await installiereHochgeladen(p, fr({}, {}, { version: '1.0.1' }));
-      assert.equal((await d.listeTypen()).find((x) => x.id === typ.id)?.beschriftungen?.fr?.name, 'Organisation (eigene)');
+      assert.equal((await d.mappentypen.listeTypen()).find((x) => x.id === typ.id)?.beschriftungen?.fr?.name, 'Organisation (eigene)');
     }
   });
 

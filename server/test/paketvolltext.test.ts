@@ -63,7 +63,7 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
   if (o.mitPaket !== false) await d.kern.repo.speicherePaket(office());
   // Ein Paket, das nur „Volltext fertig“ hört (z. B. für Vektoren).
   await d.kern.repo.speicherePaket(paket('hoerer', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Hörer'));
-  const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
   ] });
@@ -240,7 +240,7 @@ describe('Volltext aus Paketen (#614): API für Pakete', () => {
     await x.d.kern.repo.speicherePaket(paket('nurlesen', { sprache: 'c', ereignisse: [], rechte: { lesen: ['*'], dokumente: 'lesen' } }, 'Nur lesen'));
     // Bestehende Pakete mit Schreibrecht (Texterkennung) bleiben, wie sie sind.
     await x.d.kern.repo.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', x.d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(x.d, konten, { apiSchluessel: schluessel });
     const rufe = async (paketId: string, methode: string, pfad: string, params: Record<string, string>, body: unknown, query: Record<string, string> = {}) => {
@@ -285,7 +285,7 @@ describe('Volltext aus Paketen (#614): Grenze der Textmenge über HTTP', () => {
   before(async () => {
     const { baueApp } = await import('../src/http');
     x = await aufbau({ mitPaket: false });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', x.d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', x.d.systemtypen.benutzerspiegel());
     app = await baueApp(x.d, konten, {});
     const r = await app.inject({ method: 'POST', url: '/api/konto/einrichten', headers: { 'x-dms': '1' }, payload: { email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' } });
     assert.equal(r.statusCode, 201);

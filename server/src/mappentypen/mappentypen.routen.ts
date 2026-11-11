@@ -21,18 +21,18 @@ export function typenRouten(k: RoutenKontext): Route[] {
 
     /* ---------- Mappentypen ---------- */
     // Regeln (#123) sehen nur Administratoren; alle anderen erfahren, ob sie anlegen dürfen.
-    { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.typenFuer(await zg(a))) },
-    { methode: 'GET', pfad: '/api/konto/rechte', zugang: 'angemeldet', handler: async (a) => ok(await dienst.rechteUebersicht(await zg(a))) },
+    { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappentypen.typenFuer(await zg(a))) },
+    { methode: 'GET', pfad: '/api/konto/rechte', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappentypen.rechteUebersicht(await zg(a))) },
     { methode: 'POST', pfad: '/api/typen', zugang: 'admin', handler: async (a) => {
-      const t = await dienst.legeTypAn(a.body);
+      const t = await dienst.mappentypen.legeTypAn(a.body);
       L.werkbank.info('Mappentyp angelegt', { typ: t.name, id: t.id, felder: t.felder.length });
       if (t.archiv) archivProtokoll(t, null);
       return ok(t, 201);
     } },
     { methode: 'PUT', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
       const start = Date.now();
-      const vorher = (await dienst.listeTypen()).find((x) => x.id === a.params.id);
-      const t = await dienst.aendereTyp(a.params.id, a.body);
+      const vorher = (await dienst.mappentypen.listeTypen()).find((x) => x.id === a.params.id);
+      const t = await dienst.mappentypen.aendereTyp(a.params.id, a.body);
       L.werkbank.info('Mappentyp geändert, Titel und Passung neu berechnet', { typ: t.name, id: t.id, ms: Date.now() - start });
       // Archivmodus (#212): Ein-, Aus- und Umschalten festhalten – erst hier beim Speichern (#373).
       archivProtokoll(t, vorher?.archiv ?? null);
@@ -45,7 +45,7 @@ export function typenRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'DELETE', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
       const name = await typName(a.params.id);
-      await dienst.loescheTyp(a.params.id);
+      await dienst.mappentypen.loescheTyp(a.params.id);
       L.werkbank.info('Mappentyp gelöscht', { typ: name, id: a.params.id });
       return leer;
     } },
@@ -107,14 +107,14 @@ export function berechtigungenRouten(k: RoutenKontext): Route[] {
       return ok({ typ: r.typ, niemand: r.niemand });
     } },
     // Pakete am Mappentyp (#686): welche Pakete Mappen dieses Typs lesen dürften, und einzelnen den Typ verwehren.
-    { methode: 'GET', pfad: '/api/werkbank/berechtigungen/:typId/pakete', zugang: 'admin', handler: async (a) => ok(await dienst.paketeAmTyp(a.params.typId)) },
+    { methode: 'GET', pfad: '/api/werkbank/berechtigungen/:typId/pakete', zugang: 'admin', handler: async (a) => ok(await dienst.typpakete.paketeAmTyp(a.params.typId)) },
     { methode: 'PUT', pfad: '/api/werkbank/berechtigungen/:typId/pakete/:paketId', zugang: 'admin', handler: async (a) => {
-      await dienst.setzePaketVerwehrt(a.params.typId, a.params.paketId, b(a).verwehrt === true, ich(a).email);
-      return ok(await dienst.paketeAmTyp(a.params.typId));
+      await dienst.typpakete.setzePaketVerwehrt(a.params.typId, a.params.paketId, b(a).verwehrt === true, ich(a).email);
+      return ok(await dienst.typpakete.paketeAmTyp(a.params.typId));
     } },
     // KI-Dienste (#796): welche Mappentypen an KI-Pakete gehen dürfen; neue erst nach Zulassung.
-    { methode: 'GET', pfad: '/api/werkbank/ki-typen', zugang: 'admin', handler: async () => ok(await dienst.kiUebersicht()) },
-    { methode: 'PUT', pfad: '/api/werkbank/ki-typen/:typId', zugang: 'admin', handler: async (a) => ok(await dienst.setzeKiTyp(a.params.typId, b(a).zugelassen === true, ich(a).email)) },
+    { methode: 'GET', pfad: '/api/werkbank/ki-typen', zugang: 'admin', handler: async () => ok(await dienst.ki.kiUebersicht()) },
+    { methode: 'PUT', pfad: '/api/werkbank/ki-typen/:typId', zugang: 'admin', handler: async (a) => ok(await dienst.ki.setzeKiTyp(a.params.typId, b(a).zugelassen === true, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/berechtigungen/:typId/kopieren', zugang: 'admin', handler: async (a) => {
       const r = await dienst.kopiereRegel(a.params.typId, String(b(a).regelId ?? ''), b(a).ziele);
       L.werkbank.info('Regel kopiert', { typ: a.params.typId, regel: String(b(a).regelId ?? ''), kopiert: r.kopiert, ausgelassen: r.ausgelassen, von: ich(a).email });

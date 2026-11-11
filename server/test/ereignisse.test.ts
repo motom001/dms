@@ -35,15 +35,15 @@ async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
 async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const repo = repos?.repo ?? speicherRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', text: '{feld} {datum}' } },
   ] });
-  const notiz = await d.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+  const notiz = await d.mappentypen.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
   const gesehen: KatalogEreignis[] = [];
   d.ereignisse.abonniere('test', async (e) => { gesehen.push(e); });
   const verteile = () => spaeter(10_000, () => d.ereignisse.verteile());
@@ -167,9 +167,9 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     await verteile();
     assert.deepEqual((await beimPaket()).sort(), [a.id, b.id].sort(), 'fremde Typen über „*“');
     // Abschnitt „Pakete“ am Mappentyp: das Paket liest Vertrag und bekommt Ereignisse dazu.
-    assert.deepEqual(await d.paketeAmTyp(vertrag.id), [{ id: 'vertraege', name: 'Vertragsverwaltung', schreiben: false, verwehrt: false, ereignisse: true }]);
-    await d.setzePaketVerwehrt(vertrag.id, 'vertraege', true, admin.email);
-    assert.equal((await d.paketeAmTyp(vertrag.id))[0].verwehrt, true);
+    assert.deepEqual(await d.typpakete.paketeAmTyp(vertrag.id), [{ id: 'vertraege', name: 'Vertragsverwaltung', schreiben: false, verwehrt: false, ereignisse: true }]);
+    await d.typpakete.setzePaketVerwehrt(vertrag.id, 'vertraege', true, admin.email);
+    assert.equal((await d.typpakete.paketeAmTyp(vertrag.id))[0].verwehrt, true);
     const z = await d.rechtepruefung.zugriff({ id: 'paket:vertraege', rolle: 'mitglied', art: 'dienst', paketId: 'vertraege' });
     assert.equal(z.typen.has(vertrag.id), false, 'verwehrt: Paket sieht den Typ nicht mehr');
     assert.equal(z.typen.has(notiz.id), true);
@@ -180,12 +180,12 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     assert.ok(danach.includes(e.id), 'erlaubter Typ kommt an');
     assert.ok(!danach.includes(c.id), 'verwehrter Typ: still nichts');
     // Wieder erlauben wirkt sofort.
-    await d.setzePaketVerwehrt(vertrag.id, 'vertraege', false, admin.email);
+    await d.typpakete.setzePaketVerwehrt(vertrag.id, 'vertraege', false, admin.email);
     const f = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser' } }, admin.id);
     await spaeter(120_000, () => d.ereignisse.verteile());
     assert.ok((await beimPaket()).includes(f.id));
     // Ein Paket ohne Leserecht am Typ taucht am Mappentyp nicht auf und lässt sich nicht verwehren.
-    await assert.rejects(() => d.setzePaketVerwehrt(vertrag.id, 'gibtsnicht', true, null), /ohnehin nicht lesen/);
+    await assert.rejects(() => d.typpakete.setzePaketVerwehrt(vertrag.id, 'gibtsnicht', true, null), /ohnehin nicht lesen/);
   });
 
   it('#686: Regel für die Rolle „Paket“ am Typ – Ereignisse nur zu Mappen, die das Paket lesen darf', async () => {

@@ -36,7 +36,7 @@ async function aufbau(pg: boolean) {
   const dateien = speicherDateien();
   const r = await repo(pg);
   const d = new Dienst(r, dateien, { einstellungen: speicherEinstellungen() });
-  const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung: true },
   ] });

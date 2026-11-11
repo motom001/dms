@@ -48,7 +48,7 @@ describe('Größengrenzen (#901)', () => {
 
   it('jede Route mit rohem Körper nennt eine eigene, endliche Grenze', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const alle = routen(d, konten, {});
     const roh = alle.filter((r) => r.roh !== undefined);
     assert.ok(roh.length >= 10, `nur ${roh.length} Routen mit rohem Körper gefunden`);
@@ -63,7 +63,7 @@ describe('Größengrenzen (#901)', () => {
 
   it('eine Datei an eine Route ohne eigene Grenze: 415, ohne den Körper zu lesen', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { baueApp } = await import('../src/http');
     const app = await baueApp(d, konten, {});

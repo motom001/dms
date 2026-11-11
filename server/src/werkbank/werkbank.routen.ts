@@ -101,7 +101,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       // Was eingerichtet ist, soll nicht unbemerkt aus der Leiste verschwinden.
       const sicher = async (f: () => Promise<boolean> | boolean) => { try { return await f(); } catch { return false; } };
       const benutzt = Object.entries({
-        nummernkreise: () => dienst.listeNummernkreise().then((l) => l.length > 0),
+        nummernkreise: () => dienst.nummernkreise.listeNummernkreise().then((l) => l.length > 0),
         postfaecher: async () => !!x.postfaecher && (await x.postfaecher.liste()).length > 0,
         eingangsordner: () => !!x.eingangsordner?.vorhanden,
         anmeldeschutz: async () => !!x.oidc && !!(await x.oidc.bereit()),
@@ -116,7 +116,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
     { methode: 'PUT', pfad: '/api/werkbank/merkmale', zugang: 'admin', handler: async (a) => {
       const m = await dienst.setzeMerkmale(a.body, ich(a).email);
       // Pflicht hängt an Anzeige-Bedingungen mit Merkmal (#1033): Passung dieser Mappentypen neu prüfen.
-      for (const typ of await dienst.listeTypen()) if (hatMerkmalBedingung(typ)) await dienst.pruefePassung(typ.id);
+      for (const typ of await dienst.mappentypen.listeTypen()) if (hatMerkmalBedingung(typ)) await dienst.passung.pruefePassung(typ.id);
       return ok(m);
     } },
     // Übersicht als Startseite der Werkbank (#68): was zu tun ist, auf einen Blick.
@@ -186,10 +186,10 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         // Pflicht-Einstellungen eines Pakets fehlen (#405: im Ablauf „später ausfüllen“) – Aufgabe für den Administrator.
         paketeEinstellungen: (await sicher(() => pakete.installierte()))?.filter((p) => p.einstellungenNoetig).map((p) => ({ id: p.id, name: p.name })) ?? [],
         // KI-Dienste (#796): nach dem Update einmal sagen, dass sich Mappentypen jetzt ausschließen lassen (nur mit KI-Paketen).
-        kiTypen: (await sicher(async () => { const k = await dienst.kiUebersicht(); return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null; })) ?? null,
+        kiTypen: (await sicher(async () => { const k = await dienst.ki.kiUebersicht(); return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null; })) ?? null,
         // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
         zahlen: await werkbankZahlen({
-          nummernkreise: () => dienst.listeNummernkreise(),
+          nummernkreise: () => dienst.nummernkreise.listeNummernkreise(),
           pakete: () => pakete.installierte(),
           benutzer: () => konten.listeBenutzer(),
           postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
@@ -203,7 +203,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
     } },
     // Im Verwaltungsmodus angesehen (#820): Person, Mappe, Zeit – nur für „Gesamte Verwaltung“ (verwaltungsbereiche.ts).
     { methode: 'GET', pfad: '/api/werkbank/verwaltungsmodus', zugang: 'admin', handler: async () => {
-      const liste = await dienst.imVerwaltungsmodus();
+      const liste = await dienst.systemtypen.imVerwaltungsmodus();
       const namen = new Map((await konten.personen()).map((p) => [p.id, p.name] as const));
       return ok(liste.map((e) => ({ ...e, person: e.benutzerId ? namen.get(e.benutzerId) ?? '' : '' })));
     } },
@@ -219,7 +219,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       // KI-Dienste (#796): „Verstanden“ zum Hinweis nach dem Update – für alle, die Pakete verwalten (sie sehen ihn).
       if (k === 'ki.typen') {
         if (!darfBereich(ich(a), 'pakete')) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
-        await dienst.kiHinweisGelesen(); L.werkbank.info('Hinweis „Mappentypen von KI-Diensten ausschließen“ gelesen', { von: ich(a).email });
+        await dienst.ki.kiHinweisGelesen(); L.werkbank.info('Hinweis „Mappentypen von KI-Diensten ausschließen“ gelesen', { von: ich(a).email });
         return leer;
       }
       if (!hatGesamt(ich(a))) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));

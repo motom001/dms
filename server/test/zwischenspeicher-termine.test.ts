@@ -120,13 +120,13 @@ interface Aufbau {
 async function aufbau(roh: Repo, kontoRepo: ReturnType<typeof speicherKontoRepo>, einstellungen: Einstellungen): Promise<Aufbau> {
   const d = new Dienst(roh, speicherDateien(), { einstellungen });
   d.mindestensMs = 0;
-  const konten = new Konten(kontoRepo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => { const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!); return { id: b.id, rolle: b.rolle }; };
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: FELDER });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: FELDER });
   return {
     d, roh, lena: await ich(lena.id), jonas: await ich(jonas.id), vertrag, einstellungen,
     neu: () => { const f = new Dienst(roh, speicherDateien(), { einstellungen }); f.mindestensMs = 0; return f; },
@@ -203,7 +203,7 @@ async function pruefeNaechsterTermin(h: Aufbau) {
     return { termin: t.eintraege.find((e) => e.datum >= HEUTE) ?? null, ueberfaellig: t.eintraege.filter((e) => e.faellig && e.datum < HEUTE).length };
   };
   // Nur ein jährlicher Termin in gut zwei Monaten: nichts in den ersten 31 Tagen, dann das ganze Jahr.
-  const typ2 = await d.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) }] });
+  const typ2 = await d.mappentypen.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) }] });
   await d.legeMappeAn({ typId: typ2.id, werte: { nr: 'A', jahr: verschiebe(verschiebe(HEUTE, 65), -12, 'monate') } }, lena.id);
   const mitVertrag = async (x: Dienst) => { const t = await x.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) }); return t.eintraege.some((e) => e.typId === vertrag.id); };
   if (!(await mitVertrag(d))) {
@@ -225,7 +225,7 @@ async function pruefeNaechsterTermin(h: Aufbau) {
 
 async function pruefeTypaenderung(h: Aufbau) {
   const { d, roh, lena } = h;
-  const typ = await d.legeTypAn({ name: 'Wartung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }] });
+  const typ = await d.mappentypen.legeTypAn({ name: 'Wartung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }] });
   await d.legeMappeAn({ typId: typ.id, werte: { nr: 'W1', datum: `${J - 3}-03-31` } }, lena.id);
   const zeitraum = { von: `${J}-01-01`, bis: `${J}-12-31` };
   // Je Abruf ein neuer Zugriff – wie je Anfrage; er bringt die Mappentypen mit.
@@ -234,12 +234,12 @@ async function pruefeTypaenderung(h: Aufbau) {
   // Feld wird zur jährlichen Frist: sofort der Termin, ohne dass die Mappe gespeichert wird.
   const t = (await roh.listeTypen()).find((x) => x.id === typ.id)!;
   const mitFrist = (w: number | null) => ({ ...t, felder: t.felder.map((f) => (f.key === 'datum' ? { ...f, frist: frist(w) } : f)) });
-  await d.aendereTyp(typ.id, mitFrist(12));
+  await d.mappentypen.aendereTyp(typ.id, mitFrist(12));
   assert.deepEqual(await zahl(), [`${J}-03-31`]);
   // Rhythmus vierteljährlich: 30.06., 30.09., 31.12. dazu (Monatsende gekappt, vom Datum aus gerechnet).
-  await d.aendereTyp(typ.id, mitFrist(3));
+  await d.mappentypen.aendereTyp(typ.id, mitFrist(3));
   assert.deepEqual(await zahl(), [`${J}-03-31`, `${J}-06-30`, `${J}-09-30`, `${J}-12-31`]);
-  await d.aendereTyp(typ.id, mitFrist(null));
+  await d.mappentypen.aendereTyp(typ.id, mitFrist(null));
   assert.deepEqual(await zahl(), [], 'einmalig, Datum liegt vor dem Zeitraum');
 }
 

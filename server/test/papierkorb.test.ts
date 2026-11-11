@@ -19,8 +19,8 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 async function aufbau() {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const partner = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true }] });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true }] });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
     { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
   ] });
@@ -48,7 +48,7 @@ describe('Papierkorb (#43)', () => {
 
     // Eindeutige Werte werden frei, solange die Mappe im Papierkorb liegt.
     const neu = await d.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1' } }, admin.id);
-    await assert.rejects(d.loescheTyp(vertrag.id), status(409), 'Typ mit Mappen im Papierkorb bleibt');
+    await assert.rejects(d.mappentypen.loescheTyp(vertrag.id), status(409), 'Typ mit Mappen im Papierkorb bleibt');
 
     const w = await d.stelleWiederHer(v.id, anna);
     assert.equal(w.mappe.passt, false, 'Nummer inzwischen vergeben → Eingang');
@@ -93,7 +93,7 @@ describe('Papierkorb (#43)', () => {
 
   it('Benutzer: Einladung wird deaktiviert und erst beim Leeren gelöscht; Wiederherstellen aktiviert sie wieder', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'x', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'x', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: ich } = await konten.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
     await d.gleicheBenutzerAb(await konten.listeBenutzer());

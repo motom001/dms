@@ -230,7 +230,7 @@ export class Erkennung {
 
   /** Welche Erkennung für diesen Typ gilt: am Typ eingestellt, sonst der Standard aus der Werkbank. */
   private async wahlFuer(typId: string): Promise<{ engine: string; abfluss: boolean }> {
-    const ad = await this.d.ausDokumentVon(typId);
+    const ad = await this.d.mappentypen.ausDokumentVon(typId);
     if (ad?.engine) return { engine: ad.engine, abfluss: !!ad.abfluss };
     const s = await this.standard();
     return { engine: s.paket ?? ENGINE_EINGEBAUT, abfluss: !!s.abfluss };
@@ -497,7 +497,7 @@ export class Erkennung {
     const wahl = text.trim() ? await this.wahlFuer(typ.id) : { engine: ENGINE_EINGEBAUT, abfluss: false };
     if (wahl.engine !== ENGINE_EINGEBAUT) {
       const p = this.anbieter?.pakete().find((x) => x.id === wahl.engine);
-      const gesperrt = p ? await this.d.kiSperreFuer(p.id) : () => false;
+      const gesperrt = p ? await this.d.ki.kiSperreFuer(p.id) : () => false;
       const kiTyp = [...quellTypen].find((x) => gesperrt(x));
       if (!p) hinweis = t('meldungen.erkennung.das-paket-fuer-die', { engine: wahl.engine });
       else if (p.netz && !wahl.abfluss) hinweis = t('meldungen.erkennung.fuer-ist-der-datenabfluss', { name: p.name });
@@ -831,7 +831,7 @@ export class Erkennung {
     const text = teile.join('\n\n').slice(0, TEXT_MAX);
     const erg = await this.abgleich(text, typ, z);
     if (typ) return { ...erg, ohneText };
-    return { ...erg, ohneText, typ: text.trim() ? typAusText(text, await this.d.ausPostZiele(z)) : null };
+    return { ...erg, ohneText, typ: text.trim() ? typAusText(text, await this.d.mappentypen.ausPostZiele(z)) : null };
   }
 
   /** „Neue Organisation anlegen“: der erste Absender-Typ mit Namensfeld, den der Benutzer sieht und anlegen darf. */

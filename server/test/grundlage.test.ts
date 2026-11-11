@@ -22,7 +22,7 @@ import { einstellungsMerker, faelligeTage, laufeFaellige, wochentagVon } from '.
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
@@ -30,8 +30,8 @@ async function aufbau() {
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendbar_bis', label: 'Kündbar bis', typ: 'datum', frist: { vorlauf: 30, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: null } },
     { key: 'ende', label: 'Ende', typ: 'datum' },
@@ -168,7 +168,7 @@ describe('Ein Ereigniskatalog, ein Ausgangskorb, eine Regel für Wiederholungen 
 
   it('Dokument hochgeladen: ein Ereignis im Ausgangskorb, Pakete bekommen es mit Dateinamen über die Zustellung', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
     await d.kern.repo.speicherePaket({ id: 'echo', name: 'Echo', version: '1.0.0', beschreibung: '', typen: {}, sichten: {}, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), laeufer: { sprache: 'wasm', ereignisse: ['dokument.hochgeladen'], rechte: { lesen: [], schreiben: [], dokumente: 'keine' }, netz: [] } } as never);
     const katalog: string[] = [];
     d.ereignisse.abonniere('test', async (e) => { katalog.push(e.art); });

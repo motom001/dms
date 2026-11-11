@@ -20,7 +20,7 @@ let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
 async function mitBeispielen() {
   const d = new Dienst(await neuesRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   await ladeBeispiele(d, null);
-  const typen = await d.listeTypen();
+  const typen = await d.mappentypen.listeTypen();
   return { d, typen, typ: (n: string) => typen.find((t) => t.name === n)! };
 }
 const lies = (q: string, typen: Parameters<typeof liesDirektlink>[1]) => liesDirektlink(new URLSearchParams(q), typen);
@@ -102,14 +102,14 @@ describe('Sprechende Links (#98)', () => {
     const lr = linkZuMappe(typ('Rechnung'), rechnung)!;
     assert.equal(lr, `${LINK_PFAD}?typ=rechnung&rechnungsnummer=R-2026-117&rechnungsdatum=2026-03-02`, 'Titelfelder');
     for (const m of mappen) {
-      const t = (await d.listeTypen()).find((x) => x.id === m.typId)!;
+      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === m.typId)!;
       const link = linkZuMappe(t, m);
       if (!link) continue;
       const ids = (await d.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
       assert.ok(ids.includes(m.id), `${link} findet ${m.titel}`);
     }
     // Felder mit festem Parameternamen gehen über „feld.operator“.
-    const t = await d.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
     const ld = linkZuMappe(t, m)!;
     assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);

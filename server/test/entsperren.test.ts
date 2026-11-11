@@ -64,7 +64,7 @@ async function aufbau() {
   const dateien = speicherDateien();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, dateien, { einstellungen });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena Beispiel', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas Beispiel' }, lena.id);

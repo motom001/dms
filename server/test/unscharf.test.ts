@@ -65,8 +65,8 @@ function faelle(pg: boolean) {
     async function aufbau() {
       const { r, sql } = await repo(pg);
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await d.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }] });
-      const lese = await d.legeTypAn({ name: 'Gesperrt', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }] });
+      const lese = await d.mappentypen.legeTypAn({ name: 'Gesperrt', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const mappe = async (titel: string, text?: string, von?: string, t = typ) => {
         const m = await d.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
         if (text !== undefined) {

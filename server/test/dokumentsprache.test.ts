@@ -46,7 +46,7 @@ function faelle(pg: boolean) {
     async function aufbau() {
       const { r, sql } = await repo(pg);
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await d.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const brief = async (titel: string, text: string, sprache?: string | null) => {
         const m = await d.legeMappeAn({ typId: typ.id, werte: { titel } });
         const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
@@ -100,7 +100,7 @@ function faelle(pg: boolean) {
       // Das Repo merkt sich die Sprachen eine Minute – ein neues Repo sieht sie gleich.
       const { pgRepo } = await import('../src/repo-pg');
       const d2 = new Dienst(pgRepo(sql!, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = (await d2.listeTypen()).find((t) => t.name === 'Brief')!;
+      const typ = (await d2.mappentypen.listeTypen()).find((t) => t.name === 'Brief')!;
       assert.deepEqual((await d2.seite(ICH, { sicht: `typ:${typ.id}`, suche: '"cheval"', volltext: 'true' })).mappen.map((m) => m.titel), ['Lettre']);
       // Die API zeigt für ältere deutsche Dokumente die Sprache aus dem Hinweis.
       assert.equal((await d2.holeDokument(brief2.id)).sprache, 'deu');

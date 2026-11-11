@@ -29,7 +29,7 @@ async function aufbau(engine: Engine, opt: { volltext?: boolean } = {}) {
   const d = new Dienst(repo, dateien, { einstellungen });
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
   d.verbindeTexterkennung(t);
-  const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', ...(opt.volltext === false ? { volltext: false } : {}) },
   ] });
@@ -98,7 +98,7 @@ describe('Texterkennung (#45)', () => {
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null);
     assert.equal(dokument.ocr?.stand, 'keiner', 'Register ohne Volltext');
     assert.equal(await d.volltextNachholen(), 0);
-    await d.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => ({ ...r, volltext: true })) });
+    await d.mappentypen.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => ({ ...r, volltext: true })) });
     assert.equal(await d.volltextNachholen(), 1);
     await warte(async () => (await repo.holeDokument(dokument.id))?.ocr?.stand === 'fertig');
   });

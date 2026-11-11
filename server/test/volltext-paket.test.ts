@@ -78,7 +78,7 @@ async function aufbau(mitPaket = true) {
   // Ein älteres Paket (z. B. für Vektoren) kennt nur Ereignisse mit Text; ein Paket von vor 0.133.0 hört auf texterkennung.fertig.
   await d.kern.repo.speicherePaket(paket('vektor', { dms: '>=0.120.0' }));
   await d.kern.repo.speicherePaket(paket('alt', { dms: '>=0.88.0', ereignisse: ['texterkennung.fertig'] }));
-  const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
@@ -336,7 +336,7 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
       const repo = pgRepo(sql, H);
       const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
       await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
-      const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
       const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
       const hoch = async (n: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name: n, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
       const mit = await hoch('mit.pdf'), ohne = await hoch('ohne.pdf');

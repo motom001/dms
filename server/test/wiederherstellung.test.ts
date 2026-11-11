@@ -61,7 +61,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     if (opt.mitDaten) {
       await ladeBeispiele(dienst, null);
       // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
-      const partner = (await dienst.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+      const partner = (await dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
       const m = (await dienst.listeMappen(partner.id))[0];
       await dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
       await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (gen_random_uuid(), ${HAUSHALT}, 'anna@example.org', 'Anna', 'admin')`;
@@ -195,7 +195,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   it('auf dem laufenden System nur im Wartungsmodus; vorher wird der jetzige Stand gesichert', async () => {
     const q = quelle;
     // Nach der Sicherung kommt etwas dazu, das die Wiederherstellung wieder entfernt.
-    const typ = (await q.dienst.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    const typ = (await q.dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
     await q.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Nach der Sicherung GmbH' } });
     const vorher = await zaehle(q.sql);
     await assert.rejects(q.w.pruefeZugang(false), /Verwaltungsmodus/);
@@ -332,7 +332,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     };
     const q = await system(dbs[3], { mitSchluessel: true });
     const quelleU = verbinde(q.sql, q.wurzel, q.dienst);
-    const typ = await q.dienst.legeTypAn({ name: 'Scan', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
+    const typ = await q.dienst.mappentypen.legeTypAn({ name: 'Scan', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
     const m = await q.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Scans von Lena' } });
     const tiff = Buffer.concat([Buffer.from([0x49, 0x49, 42, 0, 8, 0, 0, 0]), Buffer.alloc(64, 7)]);
@@ -418,7 +418,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const x = await system(dbs[2], { mitDaten: true, mitSchluessel: true });
     const { pgRepo } = await import('../src/repo-pg');
     const repo = pgRepo(x.sql, HAUSHALT);
-    const typ = await x.dienst.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
+    const typ = await x.dienst.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
     const a = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
     const b = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
     await x.dienst.loescheMappe(b.id);

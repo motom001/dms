@@ -20,7 +20,7 @@ import { speicherRepo } from '../src/repo-speicher';
 
 async function aufbau(pause: () => string | null = () => null) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna Muster', passwort: 'ein-langes-passwort' });
   const { benutzer: thomas } = await konten.legeBenutzerAn({ email: 'thomas.m@example.org', name: 'Thomas Meißner' }, anna.id);

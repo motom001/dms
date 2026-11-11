@@ -129,7 +129,7 @@ describe('Netzaufrufe im Protokoll (#807): echter Paket-Läufer', () => {
     const wasm = stromModul(JSON.stringify({ methode: 'POST', url: `${adresse}/chat/completions?schluessel=geheim`, kopf: { authorization: 'Bearer geheim' } }), '{"text":"ok"}');
 
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     let werte: Record<string, unknown> = {};
     const l = new Paketlaeufer({ dienst: d, konten, schluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => werte, speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 10, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });
     offen.push(l);

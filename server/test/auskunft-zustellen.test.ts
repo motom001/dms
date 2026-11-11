@@ -187,13 +187,13 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-zust-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna', verwaltung: ['*'] }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
-  const mieterTyp = await d.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: reg });
+  const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: reg });
   const max = await d.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter' } }, admin.id);
   const dok = (await d.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)).dokument;
   // Anna hat Max als Favorit (Stern = Abo, #422) und bekommt die Benachrichtigung.

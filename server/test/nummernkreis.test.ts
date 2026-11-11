@@ -14,8 +14,8 @@ const okt = { jahr: 2026, monat: 10, tag: 31 };
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  await d.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: '{jjjj}{mm}-R{zaehler:7}', start: 1 }, 'test');
-  const t = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
+  await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: '{jjjj}{mm}-R{zaehler:7}', start: 1 }, 'test');
+  const t = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Rechnungsnummer', typ: 'text', standard: '{nummernkreis:rechnung}', pflicht: true, eindeutig: true },
     { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
   ] });
@@ -72,7 +72,7 @@ describe('Nummernkreise (#171)', () => {
     assert.ok(geschuetzteFelder(t, a).nr);
     assert.match(geschuetzteFelder(t).nr, /beim Speichern/);
     // Übersicht
-    const [k] = (await d.listeNummernkreise()).filter((x) => x.schluessel !== 'archivnummer'); // Archivnummer (#345) ist immer da
+    const [k] = (await d.nummernkreise.listeNummernkreise()).filter((x) => x.schluessel !== 'archivnummer'); // Archivnummer (#345) ist immer da
     assert.equal(k.verwendet[0].feld, 'Rechnungsnummer');
     assert.match(k.naechste, /-R0000028$/);
     assert.equal(k.zuletzt.length, 10);
@@ -80,32 +80,32 @@ describe('Nummernkreise (#171)', () => {
 
   it('Mappentyp: nur Textfeld, Kreis muss existieren; Löschen nur unbenutzt; Zählerstand setzen', async () => {
     const { d, t } = await aufbau();
-    await assert.rejects(d.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text', standard: '{nummernkreis:gibtsnicht}' }] }), status(422));
-    await assert.rejects(d.legeTypAn({ name: 'Y', felder: [{ key: 'n', label: 'N', typ: 'zahl', standard: '{nummernkreis:rechnung}' }] }), status(422));
-    await assert.rejects(d.loescheNummernkreis('rechnung', 'test'), /Rechnung · Rechnungsnummer/);
-    await assert.rejects(d.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Doppelt', muster: '{zaehler}' }, 't'), status(409));
-    await assert.rejects(d.speichereNummernkreis({ neu: true, schluessel: 'Falsch!', name: 'x', muster: '{zaehler}' }, 't'), status(422));
-    await d.setzeZaehler('rechnung', { naechster: 500 }, 'test');
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text', standard: '{nummernkreis:gibtsnicht}' }] }), status(422));
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Y', felder: [{ key: 'n', label: 'N', typ: 'zahl', standard: '{nummernkreis:rechnung}' }] }), status(422));
+    await assert.rejects(d.nummernkreise.loescheNummernkreis('rechnung', 'test'), /Rechnung · Rechnungsnummer/);
+    await assert.rejects(d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Doppelt', muster: '{zaehler}' }, 't'), status(409));
+    await assert.rejects(d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'Falsch!', name: 'x', muster: '{zaehler}' }, 't'), status(422));
+    await d.nummernkreise.setzeZaehler('rechnung', { naechster: 500 }, 'test');
     const m = await d.legeMappeAn({ typId: t.id, werte: { betreff: 'Umstieg' } });
     assert.match(String(m.werte.nr), /-R0000500$/);
-    await d.speichereNummernkreis({ neu: true, schluessel: 'frei', name: 'Frei', muster: 'F{zaehler}', start: 0 }, 't');
-    await d.loescheNummernkreis('frei', 'test');
-    assert.equal((await d.listeNummernkreise()).filter((x) => x.schluessel !== 'archivnummer').length, 1);
+    await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'frei', name: 'Frei', muster: 'F{zaehler}', start: 0 }, 't');
+    await d.nummernkreise.loescheNummernkreis('frei', 'test');
+    assert.equal((await d.nummernkreise.listeNummernkreise()).filter((x) => x.schluessel !== 'archivnummer').length, 1);
   });
 
   it('Wartung: Nummern nachträglich vergeben, in der Reihenfolge des Anlegens', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'name', label: 'Name', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'name', label: 'Name', typ: 'text' }] });
     const alt = [];
     for (const n of ['a', 'b', 'c']) { alt.push(await d.legeMappeAn({ typId: t.id, werte: { name: n } })); await new Promise((r) => setTimeout(r, 2)); }
-    await d.speichereNummernkreis({ neu: true, schluessel: 'vertrag', name: 'Verträge', muster: 'V-{zaehler:3}', start: 1 }, 't');
-    await d.aendereTyp(t.id, { ...t, felder: [{ key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:vertrag}' }, { key: 'name', label: 'Name', typ: 'text' }] });
-    assert.deepEqual(await d.nummernVorschau(t.id, 'nr'), { anzahl: 3, von: 'V-001', bis: 'V-003' });
-    await assert.rejects(d.nummernVorschau(t.id, 'name'), status(422));
-    d.nummernNachtragen(t.id, 'nr', 'test');
+    await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'vertrag', name: 'Verträge', muster: 'V-{zaehler:3}', start: 1 }, 't');
+    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [{ key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:vertrag}' }, { key: 'name', label: 'Name', typ: 'text' }] });
+    assert.deepEqual(await d.nummernkreise.nummernVorschau(t.id, 'nr'), { anzahl: 3, von: 'V-001', bis: 'V-003' });
+    await assert.rejects(d.nummernkreise.nummernVorschau(t.id, 'name'), status(422));
+    d.nummernkreise.nummernNachtragen(t.id, 'nr', 'test');
     const a = await d.auftraege.warte();
     assert.deepEqual(a?.ergebnis, { vergeben: 3, erste: 'V-001', letzte: 'V-003' });
     assert.deepEqual(await Promise.all(alt.map(async (m) => (await d.holeMappe(m.id)).mappe.werte.nr)), ['V-001', 'V-002', 'V-003']);
-    assert.deepEqual(await d.nummernVorschau(t.id, 'nr'), { anzahl: 0, von: null, bis: null });
+    assert.deepEqual(await d.nummernkreise.nummernVorschau(t.id, 'nr'), { anzahl: 0, von: null, bis: null });
   });
 });

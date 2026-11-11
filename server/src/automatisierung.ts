@@ -623,7 +623,7 @@ export class Automatisierungen {
     if (!konto) return { typen: new Set(), kontoId: null };
     const z = await this.d.dienst.rechtepruefung.zugriff(konto);
     const typen = new Set<string>();
-    for (const typ of await this.d.dienst.listeTypen()) {
+    for (const typ of await this.d.dienst.mappentypen.listeTypen()) {
       const lesbar = z.typen.has(typ.id) && (!z.lesen || z.lesen.offen.includes(typ.id) || z.lesen.je.some((x) => x.typId === typ.id));
       if (!lesbar) typen.add(typ.id);
     }

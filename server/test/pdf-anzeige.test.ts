@@ -80,10 +80,10 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
   it('Anzeige in der Oberfläche bereinigt; Herunterladen, API-Schlüssel und Weitergeben liefern das Original', async () => {
     leereAnzeigeCache();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
     ] });
     const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'B-1' } });

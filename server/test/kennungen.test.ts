@@ -80,17 +80,17 @@ describe('Kennungen (#1084)', () => {
 
   it('eigene Mappentypen: Kennung ohne Paket; „paket:schluessel“ vergibt nur die Paketverwaltung', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const eigen = await d.legeTypAn({ name: 'Person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] });
+    const eigen = await d.mappentypen.legeTypAn({ name: 'Person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] });
     assert.equal(eigen.schluessel, 'person');
     assert.equal(eigen.paket, undefined);
-    await assert.rejects(d.legeTypAn({ name: 'Fremd', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }), status(422));
-    const ausPaket = await d.legeTypAn({ name: 'Person (Basis)', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }, 'basis');
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Fremd', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }), status(422));
+    const ausPaket = await d.mappentypen.legeTypAn({ name: 'Person (Basis)', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }, 'basis');
     assert.equal(ausPaket.schluessel, 'basis:person');
     assert.equal(ausPaket.paket, 'basis');
     // Ein anderes Paket darf nicht unter fremdem Präfix anlegen.
-    await assert.rejects(d.legeTypAn({ name: 'X', schluessel: 'basis:x', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }, 'haus'), status(422));
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'X', schluessel: 'basis:x', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }, 'haus'), status(422));
     // Fest nach dem Anlegen, auch beim Ändern mit ganzem Typ.
-    const um = await d.aendereTyp(ausPaket.id, { ...ausPaket, name: 'Kontakt' });
+    const um = await d.mappentypen.aendereTyp(ausPaket.id, { ...ausPaket, name: 'Kontakt' });
     assert.equal(um.schluessel, 'basis:person');
   });
 });
@@ -105,10 +105,10 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     const d = new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const reg = [{ key: 'felder', name: 'Felder', art: 'felder' as const }];
     // Heutiger Stand: Paket haus mit Typ garten_pflanze, Paket haus_garten mit Typ beet, eigener Typ garten_pflanze.
-    const pflanze = await d.legeTypAn({ name: 'Pflanze', schluessel: 'haus:garten_pflanze', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ ...reg[0], felder: ['name'] }] }, 'haus');
-    const beet = await d.legeTypAn({ name: 'Beet', schluessel: 'haus_garten:beet', felder: [], register: reg }, 'haus_garten');
-    const eigen = await d.legeTypAn({ name: 'Garten', schluessel: 'garten_pflanze', felder: [], register: reg });
-    const ablageort = await d.legeTypAn({ name: 'Ablageort', schluessel: 'ablageort', felder: [], register: reg });
+    const pflanze = await d.mappentypen.legeTypAn({ name: 'Pflanze', schluessel: 'haus:garten_pflanze', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ ...reg[0], felder: ['name'] }] }, 'haus');
+    const beet = await d.mappentypen.legeTypAn({ name: 'Beet', schluessel: 'haus_garten:beet', felder: [], register: reg }, 'haus_garten');
+    const eigen = await d.mappentypen.legeTypAn({ name: 'Garten', schluessel: 'garten_pflanze', felder: [], register: reg });
+    const ablageort = await d.mappentypen.legeTypAn({ name: 'Ablageort', schluessel: 'ablageort', felder: [], register: reg });
     const repo = pgRepo(sql, HAUSHALT);
     for (const [id, typen] of [['haus', { garten_pflanze: pflanze.id }], ['haus_garten', { beet: beet.id }], ['basis', { ablageort: ablageort.id }]] as const) {
       await repo.speicherePaket({ id, name: id, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: '', github: '' }, herkunft: { art: 'katalog', url: 'https://catalog.ablago.app/katalog.json' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen, sichten: {}, abhaengigkeiten: {} });
@@ -148,14 +148,14 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     // Herausgeber im Bestand (Sicherheit C): offizieller Katalog → app.ablago.
     assert.deepEqual((await sql`SELECT id, daten->>'herausgeber' AS h FROM pakete ORDER BY id`).map((r) => [r.id, r.h]), [['basis', 'app.ablago'], ['haus', 'app.ablago'], ['haus_garten', 'app.ablago']]);
     // Nach außen: paket:schluessel, Paket getrennt.
-    const typ = (await d.listeTypen()).find((x) => x.id === pflanze.id)!;
+    const typ = (await d.mappentypen.listeTypen()).find((x) => x.id === pflanze.id)!;
     assert.equal(typ.schluessel, 'haus:garten_pflanze');
     assert.equal(typ.paket, 'haus');
     // Ein zweites Mal ändert nichts (wiederholbar), und haus_garten:pflanze ist jetzt frei.
     await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '094_typ_kennungen.sql'), 'utf8')));
-    const neu = await d.legeTypAn({ name: 'Pflanze (Garten)', schluessel: 'haus_garten:pflanze', felder: [], register: reg }, 'haus_garten');
+    const neu = await d.mappentypen.legeTypAn({ name: 'Pflanze (Garten)', schluessel: 'haus_garten:pflanze', felder: [], register: reg }, 'haus_garten');
     assert.equal(neu.schluessel, 'haus_garten:pflanze');
-    await assert.rejects(d.legeTypAn({ name: 'Doppelt', schluessel: 'haus:garten_pflanze', felder: [], register: reg }, 'haus'), status(422));
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Doppelt', schluessel: 'haus:garten_pflanze', felder: [], register: reg }, 'haus'), status(422));
     assert.ok(sicht.id);
     await db.ende();
   });

@@ -28,7 +28,7 @@ async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
@@ -36,8 +36,8 @@ async function aufbau() {
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', empfaengerFeld: 'verantwortlich', text: '{feld} {datum}', wiederholung: 12 } },
     { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
@@ -71,7 +71,7 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
   it('nur einmal beim Update: eine später angelegte Frist legt keine Automatisierung an', async () => {
     const { d, repo, motor } = await aufbau();
     assert.equal(await motor.fristenUebernehmen(), 2);
-    await d.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'gueltig', label: 'Gültig bis', typ: 'datum', frist: { vorlauf: 90, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: null } }] });
+    await d.mappentypen.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'gueltig', label: 'Gültig bis', typ: 'datum', frist: { vorlauf: 90, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: null } }] });
     assert.equal(await motor.fristenUebernehmen(), 0);
     assert.equal((await nurDatum(repo)).length, 1);
   });

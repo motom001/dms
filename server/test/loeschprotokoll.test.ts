@@ -49,12 +49,12 @@ async function repo(pg: boolean): Promise<Repo> {
 async function aufbau(pg: boolean) {
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen });
-  await d.speichereNummernkreis({ neu: true, schluessel: 'mieter', name: 'Mieternummern', muster: 'M-{zaehler:4}', start: 1 }, 'test');
-  const mieter = await d.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [
+  await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'mieter', name: 'Mieternummern', muster: 'M-{zaehler:4}', start: 1 }, 'test');
+  const mieter = await d.mappentypen.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [
     { key: 'nr', label: 'Mieternummer', typ: 'text', standard: '{nummernkreis:mieter}' },
     { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'iban', label: 'IBAN', typ: 'text' },
   ] });
-  const vertrag = await d.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{titel}', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{titel}', felder: [
     { key: 'titel', label: 'Titel', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieter.id, verweisart: 'zugehoerigkeit' },
   ] });
   const m = await d.legeMappeAn({ typId: mieter.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, ANNA);
@@ -162,8 +162,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual([e.art, e.weg, e.dokumentId], ['dokument', 'leeren', dok.id]);
 
       // Versionen über die eingestellte Anzahl hinaus.
-      const typ = (await d.listeTypen()).find((t) => t.name === 'Mietvertrag')!;
-      await d.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => (r.art === 'dokumente' ? { ...r, versionierung: true, versionenBehalten: 2 } : r)) });
+      const typ = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Mietvertrag')!;
+      await d.mappentypen.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => (r.art === 'dokumente' ? { ...r, versionierung: true, versionenBehalten: 2 } : r)) });
       const neu = (await d.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF v1'), ANNA)).dokument;
       for (const x of ['%PDF v2', '%PDF v3']) await d.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf', gleicherName: 'version' }, Buffer.from(x), ANNA);
       const ver = await alle(d, { suche: sha('%PDF v1') });

@@ -26,7 +26,7 @@ async function deaktiviere(konten: Konten, id: string) {
 
 async function aufbau(o: { grenze?: number } = {}) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
@@ -37,7 +37,7 @@ async function aufbau(o: { grenze?: number } = {}) {
   const annaKey = (await schluessel.lege(anna, { name: 'Laufwerk', recht: 'schreiben' })).schluessel;
   const bertKey = (await schluessel.lege(bert, { name: 'Laufwerk', recht: 'lesen' })).schluessel;
   const einstellungen = speicherEinstellungen();
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nr', typ: 'text' },
   ], register: [
     { key: 'daten', name: 'Daten', art: 'felder' },
@@ -45,8 +45,8 @@ async function aufbau(o: { grenze?: number } = {}) {
     { key: 'briefe', name: 'Briefe/Post', art: 'dokumente' },
   ] } as never);
   // Verweis auf einen anderen Vertrag – ergibt den Ordner „Verknüpft“.
-  const vt = await d.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id }] });
-  const geheim = await d.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+  const vt = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id }] });
+  const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
     berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
   const sicht = await d.legeSichtAn({ name: 'Verträge', typen: [vt.id] });
   const sichtG = await d.legeSichtAn({ name: 'Geheimes', typen: [geheim.id] });
@@ -371,14 +371,14 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     const { d, wd, rufe, A, anna, v1a, vt } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})/Belege`;
-    await d.aendereTyp(vt.id, { ...vt, berechtigungen: { grund: ALLES, regeln: [{ id: 'u', name: 'Anna ändert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { U: 'entziehen' }, stopp: false }] } });
+    await d.mappentypen.aendereTyp(vt.id, { ...vt, berechtigungen: { grund: ALLES, regeln: [{ id: 'u', name: 'Anna ändert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { U: 'entziehen' }, stopp: false }] } });
     assert.equal((await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' })).status, 207, 'lesen geht');
     assert.equal((await rufe('PUT', `${reg}/Neu.pdf`, { auth: A, body: PDF('n') })).status, 403);
     assert.equal((await rufe('PUT', `${reg}/Rechnung.pdf`, { auth: A, body: PDF('n') })).status, 403, 'auch keine neue Version');
     assert.equal((await d.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.length, 1);
     // Post: Anlegen (C) am Post-Typ entziehen.
     const post = await d.postTyp();
-    await d.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
+    await d.mappentypen.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
     assert.equal((await rufe('PUT', '/webdav/Neue Post/Scan.pdf', { auth: A, body: PDF('s') })).status, 403);
     assert.equal((await d.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
   });
@@ -521,7 +521,7 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
     const { d, wd, rufe, A, vt, v1a, pfad, reg, namen } = await mitEcht();
     await wd.speichere({ stempel: null }, 'admin');
     await d.ladeHoch(v1a.id, { register: 'briefe', name: 'foto.png', typ: 'image/png' }, PNG, null);
-    await d.aendereTyp(vt.id, { ...vt, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
+    await d.mappentypen.aendereTyp(vt.id, { ...vt, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
     const r = await rufe('GET', pfad, { auth: A });
     assert.equal(r.status, 200);
     assert.equal(r.koepfe['x-dms-stempel'], '1', 'trotz „aus“ gestempelt');

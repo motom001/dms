@@ -96,7 +96,7 @@ async function aufbau(abrufbar = new Map<string, Buffer>()) {
 const alsSammel = (r: unknown): Sammeldatei => { assert.ok(r && typeof r === 'object' && 'sammeldatei' in r); return (r as { sammeldatei: Sammeldatei }).sammeldatei; };
 /** Was das DMS aus einem Paket anlegt, ohne Ids: Mappentypen mit Feldern und Registern, Ansichten, Mappen. */
 async function angelegt(d: Dienst) {
-  const typen = (await d.listeTypen()).filter((t) => t.schluessel === 'basis:organisation');
+  const typen = (await d.mappentypen.listeTypen()).filter((t) => t.schluessel === 'basis:organisation');
   const sichten = await d.listeSichten();
   return {
     typen: typen.map((t) => ({ name: t.name, felder: t.felder, register: t.register.map((r) => r.key) })),

@@ -90,11 +90,11 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
 
   it('weniger als bestellt: übersprungen mit Grund je Mappentyp, sofort nach dem Schritt Mappen und schon vorab (#711)', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    await d.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort', pflicht: true }] });
-    const zugang = (await d.listeTypen()).find((t) => t.name === 'Zugang')!;
-    await d.legeTypAn({ name: 'Konto', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'zugang', label: 'Zugang', typ: 'referenz', zielTyp: zugang.id, pflicht: true }] });
-    await d.legeTypAn({ name: 'Platz', felder: [{ key: 'nr', label: 'Platznummer', typ: 'zahl', min: 1, max: 3, pflicht: true, eindeutig: true }] });
-    await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
+    await d.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort', pflicht: true }] });
+    const zugang = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Zugang')!;
+    await d.mappentypen.legeTypAn({ name: 'Konto', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'zugang', label: 'Zugang', typ: 'referenz', zielTyp: zugang.id, pflicht: true }] });
+    await d.mappentypen.legeTypAn({ name: 'Platz', felder: [{ key: 'nr', label: 'Platznummer', typ: 'zahl', min: 1, max: 3, pflicht: true, eindeutig: true }] });
+    await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
     // Vorab: Passwort und Pflicht-Verweis auf einen Typ, der selbst nicht entsteht; eindeutige Werte zeigen sich erst beim Erzeugen.
     const s = await schaetzeDemo(d, { anzahl: 40 });
     assert.deepEqual(s.nichtErzeugbar.map((x) => x.typ).sort(), ['Konto', 'Zugang']);

@@ -12,7 +12,7 @@ const B = '00000000-0000-4000-8000-00000000000b';
 describe('Zuletzt geändert (#76)', () => {
   it('Hochladen und Entfernen von Dokumenten zählen als Änderung, Notizen nicht', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{nr} ({geaendert})', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr} ({geaendert})', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'B-1' } }, A);
@@ -32,8 +32,8 @@ describe('Zuletzt geändert (#76)', () => {
 describe('Löschen vorab prüfen (#79)', () => {
   it('liefert loeschbar wie das Löschen selbst', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const p = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-    const v = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }] });
+    const p = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+    const v = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }] });
     const pm = await d.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, A);
     assert.deepEqual((await d.holeMappe(pm.id)).loeschbar, { ok: true });
     const vm = await d.legeMappeAn({ typId: v.id, werte: { nr: 'V-1', partner: pm.id } }, A);

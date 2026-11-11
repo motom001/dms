@@ -18,13 +18,13 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 async function aufbau() {
   const repo = speicherRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
+  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
   /** Aufgabe ohne Empfänger, wie sie Post ohne „Für“ oder eine Frist ohne Zuständige anlegt. */
   const ohne = async (mappeId: string, text: string) => { const a = await repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: null, art: 'manuell', text, erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null }); void d.stand.erhoehe(); return a; };
   return { d, konten, t, ohne, admin, lena, jonas, A: { id: admin.id, rolle: 'admin' }, L: { id: lena.id, rolle: 'mitglied' }, J: { id: jonas.id, rolle: 'mitglied' } };

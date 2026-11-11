@@ -235,14 +235,14 @@ describe('Eigene Organisation und Haushalt als Aussteller (#1043)', () => {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena Muster', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas Muster' }, lena.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const R = (key: string, name: string) => ({ key, name, art: 'felder' as const });
   const DOK = { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const };
-  let org = await d.legeTypAn({ name: 'Organisation', schluessel: 'organisation', felder: [
+  let org = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', felder: [
     feld('name', 'Name', 'text', { pflicht: true, erkennung: { art: 'name' }, wiederfinden: true }),
     feld('eigene_organisation', 'Eigene Organisation', 'janein'),
     feld('kundennummer', 'Kundennummer', 'text', { erkennung: { art: 'nummer' }, wiederfinden: true }),
@@ -250,12 +250,12 @@ async function aufbau() {
     feld('strasse', 'Straße', 'text', { erkennung: {} }), feld('plz', 'PLZ', 'text', { erkennung: {} }), feld('ort', 'Ort', 'text', { erkennung: {} }),
   ], register: [R('allgemein', 'Allgemein'), DOK] });
   // Merkmal „eigene Organisation“ kommt nur aus einem Paket (#995) – hier direkt am Typ.
-  org = await d.aendereTyp(org.id, { ...org, felder: org.felder.map((f) => (f.key === 'eigene_organisation' ? { ...f, merkmal: 'eigeneOrganisation' } : f)) }, 'basis');
-  const person = await d.legeTypAn({ name: 'Person', schluessel: 'person', titelVorlage: '{vorname} {nachname}', felder: [
+  org = await d.mappentypen.aendereTyp(org.id, { ...org, felder: org.felder.map((f) => (f.key === 'eigene_organisation' ? { ...f, merkmal: 'eigeneOrganisation' } : f)) }, 'basis');
+  const person = await d.mappentypen.legeTypAn({ name: 'Person', schluessel: 'person', titelVorlage: '{vorname} {nachname}', felder: [
     feld('vorname', 'Vorname', 'text', { erkennung: {} }), feld('nachname', 'Nachname', 'text', { pflicht: true, erkennung: {}, wiederfinden: true }),
     feld('email', 'E-Mail', 'text', { erkennung: {}, wiederfinden: true }),
   ], register: [R('allgemein', 'Allgemein'), DOK] });
-  const rechnung0 = await d.legeTypAn({ name: 'Rechnung', felder: [
+  const rechnung0 = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
     feld('von', 'Rechnungssteller', 'referenz', { zielTypen: [org.id, person.id], erkennung: { art: 'verweis' } }),
     feld('betrag', 'Betrag', 'betrag', { negativ: true, erkennung: { art: 'betrag' } }),
     feld('datum', 'Rechnungsdatum', 'datum', { erkennung: { art: 'datum' } }),
@@ -264,14 +264,14 @@ async function aufbau() {
     feld('an', 'Rechnungsempfänger', 'referenz', { zielTypen: [org.id, person.id] }),
     feld('netto', 'Netto', 'betrag', { negativ: true }),
   ], register: [R('rechnung', 'Rechnung'), { key: 'anlagen', name: 'Anlagen', art: 'dokumente' }] });
-  const position = await d.legeTypAn({ name: 'Rechnungsposition', teilVon: 'rechnung', felder: [
+  const position = await d.mappentypen.legeTypAn({ name: 'Rechnungsposition', teilVon: 'rechnung', felder: [
     feld('rechnung', 'Rechnung', 'referenz', { zielTypen: [rechnung0.id], pflicht: true, verweisart: 'zugehoerigkeit' }),
     feld('nr', 'Nr.', 'zahl'), feld('beschreibung', 'Beschreibung', 'text', { pflicht: true }), feld('menge', 'Menge', 'zahl'), feld('einheit', 'Einheit', 'text'),
     feld('einzelpreis', 'Einzelpreis', 'betrag', { negativ: true }), feld('gesamtpreis', 'Gesamtpreis', 'betrag', { negativ: true }), feld('ust_satz', 'Umsatzsteuersatz', 'prozent'),
     feld('ust_betrag', 'Umsatzsteuer', 'betrag', { negativ: true, berechnetVon: 'rechnungen' }), feld('artikelnummer', 'Artikelnummer', 'text'),
   ], register: [R('position', 'Position')] });
-  const rechnung = await d.aendereTyp(rechnung0.id, { ...rechnung0, felder: [...rechnung0.felder, feld('positionen', 'Positionen', 'tabelle', { quelle: { typId: position.id, feldKey: 'rechnung' } })], register: rechnung0.register.map((r) => (r.key === 'rechnung' ? { ...r, felder: [...(r.felder ?? []), 'positionen'] } : r)) });
-  const lieferschein = await d.legeTypAn({ name: 'Lieferschein', felder: [
+  const rechnung = await d.mappentypen.aendereTyp(rechnung0.id, { ...rechnung0, felder: [...rechnung0.felder, feld('positionen', 'Positionen', 'tabelle', { quelle: { typId: position.id, feldKey: 'rechnung' } })], register: rechnung0.register.map((r) => (r.key === 'rechnung' ? { ...r, felder: [...(r.felder ?? []), 'positionen'] } : r)) });
+  const lieferschein = await d.mappentypen.legeTypAn({ name: 'Lieferschein', felder: [
     feld('von', 'Lieferant', 'referenz', { zielTypen: [org.id, person.id], erkennung: { art: 'verweis' } }),
     feld('lieferscheinnummer', 'Lieferscheinnummer', 'text', { erkennung: { art: 'nummer' }, wiederfinden: true }),
     feld('rechnung', 'Gehört zu Rechnung', 'referenz', { zielTypen: [rechnung.id], verweisart: 'zugehoerigkeit' }),

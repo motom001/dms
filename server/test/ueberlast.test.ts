@@ -107,7 +107,7 @@ describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens 
     const { baueApp } = await import('../src/http');
     const { protokoll } = await import('../src/protokoll');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const ueberlast = new Ueberlastschutz(20);
     ueberlast.laufend = 20;
     const app = await baueApp(dienst, konten, { ueberlast });
@@ -158,7 +158,7 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
     const { Systemlast } = await import('../src/systemlast');
     const { baueApp } = await import('../src/http');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const ueberlast = new Ueberlastschutz(300, 'umgebung');
     const app = await baueApp(dienst, konten, { systemlast: new Systemlast({ lies: () => null }), ueberlast });
     try {

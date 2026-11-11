@@ -183,7 +183,7 @@ function faelle(pg: boolean) {
       return { vorschau: h.vorschau, paket: await p.installiere({ upload: h.upload, bestaetigt: true, beispiele }, ICH) };
     }
     const vorgabe = async (r: Repo, paket: string, s: string) => (await r.mappenMitVorgabe(vorgabeKennung(paket, s))).find((m) => m.vorgabe === vorgabeKennung(paket, s));
-    const typVon = async (d: Dienst, k: string) => (await d.listeTypen()).find((t) => t.schluessel === k)!;
+    const typVon = async (d: Dienst, k: string) => (await d.mappentypen.listeTypen()).find((t) => t.schluessel === k)!;
 
     it('legt Vorgaben mit fester Kennung an – Vorschau, Sprache, Vorlagen, Dienstkonto, ohne Ereignisse', async () => {
       const { d, p, r, konto } = await aufbau('en');
@@ -304,7 +304,7 @@ function faelle(pg: boolean) {
       await installiere(p, vertraege10, true);
       await p.entferne('vertraege', ICH);
       assert.equal((await r.mappenMitVorgabe('paket:vertraege:')).length, 0);
-      assert.equal((await d.listeTypen()).some((t) => t.schluessel?.startsWith('vertraege:')), false);
+      assert.equal((await d.mappentypen.listeTypen()).some((t) => t.schluessel?.startsWith('vertraege:')), false);
     });
 
     it('Paket erstellen: „zeigt auf“ eine Vorgabe kommt mit ihrer Kennung ins Paket, das Paket hängt davon ab', async () => {
@@ -312,7 +312,7 @@ function faelle(pg: boolean) {
       await installiere(p, vertraege10);
       const art = await typVon(d, 'vertraege:vertragsart');
       const miete = (await vorgabe(r, 'vertraege', 'miete'))!;
-      const eigen = await d.legeTypAn({ name: 'Mietobjekt', schluessel: 'mietobjekt', titelVorlage: '{name}', felder: [
+      const eigen = await d.mappentypen.legeTypAn({ name: 'Mietobjekt', schluessel: 'mietobjekt', titelVorlage: '{name}', felder: [
         { key: 'name', label: 'Name', typ: 'text' }, { key: 'art', label: 'Art', typ: 'referenz', zielTypen: [art.id] },
         { key: 'miete', label: 'Miete', typ: 'betrag', anzeigen: { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'art', op: 'zeigtAuf', wert: { art: 'fest', wert: [miete.id] } } }] } },
       ] });
@@ -330,7 +330,7 @@ function faelle(pg: boolean) {
 
     it('Umzug (#1084): die feste Kennung zieht mit dem Paket um', async () => {
       const { d, r } = await aufbau();
-      const typ = await d.legeTypAn({ name: 'Art', schluessel: 'art', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Art', schluessel: 'art', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
       const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } }, ICH.id);
       await r.setzeVorgabe(m.id, 'paket:alt:strom');
       await r.benennePaketUm('alt', 'neu');

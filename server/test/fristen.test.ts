@@ -36,14 +36,14 @@ const offen: Array<{ end(): Promise<void> }> = [];
 export async function aufbauFristen(pg = false) {
   const r = await repos(pg);
   const d = new Dienst(r?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(r?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
   const anna = await neu('Anna'); const ben = await neu('Ben');
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', empfaengerFeld: 'verantwortlich', text: '{feld} {datum}', wiederholung: 12 } },
     { key: 'tuev', label: 'TÜV', typ: 'datum' },
@@ -82,8 +82,8 @@ function faelle(pg: boolean) {
 
     it('Empfängerfeld muss ein Benutzerfeld des Typs sein', async () => {
       const { d, vertrag } = await aufbauFristen(pg);
-      const t = (await d.listeTypen()).find((x) => x.id === vertrag.id)!;
-      const neu = await d.aendereTyp(vertrag.id, { ...t, felder: t.felder.map((f) => (f.key === 'kuendigung' ? { ...f, frist: { ...f.frist, empfaengerFeld: 'name' } } : f)) });
+      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
+      const neu = await d.mappentypen.aendereTyp(vertrag.id, { ...t, felder: t.felder.map((f) => (f.key === 'kuendigung' ? { ...f, frist: { ...f.frist, empfaengerFeld: 'name' } } : f)) });
       assert.equal(neu.felder.find((f) => f.key === 'kuendigung')!.frist!.empfaengerFeld, null);
     });
   });
@@ -197,7 +197,7 @@ function faelle(pg: boolean) {
   describe(`Sichtbedingung „hat Frist in den nächsten n Tagen“ (#133)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
     it('prüft, beschreibt und filtert (alle Felder mit Erinnerung, ein Feld, nur meine)', async () => {
       const { d, anna, ben, vertrag } = await aufbauFristen(pg);
-      const t = (await d.listeTypen()).find((x) => x.id === vertrag.id)!;
+      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
       const a = { heute, ich: anna.id, meineRollen: [] };
       assert.equal(bedingungsProblem({ art: 'frist', feld: null, tage: 30 }, [t]), null);
       assert.match(bedingungsProblem({ art: 'frist', feld: 'name', tage: 30 }, [t]) ?? '', /Datumsfeld/);

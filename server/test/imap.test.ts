@@ -29,7 +29,7 @@ describe('Postfächer mit GreenMail (#196)', { skip: HOST ? false : 'IMAP_TEST_H
     await smtp.sendMail({ from: 'werbung@shop.example', to: 'dms@dms.test', subject: 'Angebot', html: '<p>Nur <b>heute</b></p>' });
 
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
     const pf = new Postfaecher({ dienst: d, einstellungen: speicherEinstellungen(), verbinde: verbindeImap, lies: liesMail, verschluessele: (k) => k, entschluessele: (w) => w });

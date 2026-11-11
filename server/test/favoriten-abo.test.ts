@@ -14,13 +14,13 @@ async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   // #678: Das Melden macht die Automatisierung „Favoriten-Änderungen melden“ – hier direkt als Abnehmer.
   d.ereignisse.abonniere('favoriten', async (e) => { if (e.art === 'favorit.geaendert') await d.favoritenMelden(String(e.daten.mappe), String(e.daten.von)); });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
   const { benutzer: carl } = await konten.legeBenutzerAn({ email: 'carl@example.org', name: 'Carl' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
+  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
   const B = { id: ben.id, rolle: 'mitglied' };
   const geaendert = async () => { await d.ereignisse.verteile(); return (await d.meineAufgaben(B)).filter((a) => a.art === 'aenderung'); };
   const hervorgehoben = async () => ((await d.seite(B, { sicht: t.id })) as { geaendert: string[] }).geaendert;
@@ -132,7 +132,7 @@ describe('Favorit = Abo (#422)', () => {
     assert.equal((await geaendert()).length, 0);
     assert.equal(await d.favoritenBenachrichtigungErlaubt(ben.id), false);
     // Je Rolle – fachliche Rolle „Buchhaltung“ nur für Carl.
-    const rolle = await d.legeMappeAn({ typId: (await d.listeTypen()).find((x) => x.system === 'rolle')!.id, werte: { name: 'Buchhaltung' } }, anna.id);
+    const rolle = await d.legeMappeAn({ typId: (await d.mappentypen.listeTypen()).find((x) => x.system === 'rolle')!.id, werte: { name: 'Buchhaltung' } }, anna.id);
     await d.setzeRollen(carl.id, [rolle.id], anna.id);
     await d.setzeFavoritenFreigabe({ erlaubt: 'rollen', rollen: [rolle.id, 'gibt-es-nicht'], vorgabe: true }, 'anna@example.org');
     assert.deepEqual((await d.favoritenFreigabe()).rollen, [rolle.id], 'unbekannte Rollen fallen weg');

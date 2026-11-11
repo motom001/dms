@@ -176,7 +176,7 @@ for (const pg of [false, true]) {
       const hoch = async (dateien: Record<string, string>) => p.hochladen(zip(dateien), ICH);
       await p.installiere({ upload: (await hoch(basis)).upload, bestaetigt: true }, ICH);
       await p.installiere({ upload: (await hoch(haushalt1)).upload, bestaetigt: true }, ICH);
-      const typ = async (k: string) => (await d.listeTypen()).find((x) => x.schluessel === k);
+      const typ = async (k: string) => (await d.mappentypen.listeTypen()).find((x) => x.schluessel === k);
       // Bestand wie im echten Haushalt: Lena, Jonas und Markus haben Verträge und Versicherungen.
       const org = async (name: string) => (await d.legeMappeAn({ typId: (await typ('basis:organisation'))!.id, werte: { name } }, ICH.id)).id;
       const stadtwerke = await org('Stadtwerke Beispielstadt'), versicherer = await org('Beispiel Versicherung AG');
@@ -184,7 +184,7 @@ for (const pg of [false, true]) {
       const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { vertragspartner: stadtwerke, art: 'Strom', kuendigungsfrist: '3 Monate zum Ende der Laufzeit', betrag: { betrag: 64, waehrung: 'EUR' } } }, ICH.id);
       const handy = await d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Handy', kuendigungsfrist: '1 Monat' } }, ICH.id);
       // Der Administrator hat an der Versicherung ein eigenes Feld angelegt (Rückfrage) und sie eng verrechtet.
-      await d.aendereTyp(versicherung.id, { ...versicherung, felder: [...versicherung.felder, { key: 'zustand', label: 'Zustand', typ: 'text' }] });
+      await d.mappentypen.aendereTyp(versicherung.id, { ...versicherung, felder: [...versicherung.felder, { key: 'zustand', label: 'Zustand', typ: 'text' }] });
       const haft = await d.legeMappeAn({ typId: versicherung.id, werte: { versicherer, versicherungsnummer: 'HV-4711', beitrag: { betrag: 59.9, waehrung: 'EUR' }, kuendigen_bis: '2027-03-01', zustand: 'aktiv' } }, ICH.id);
       const hausrat = await d.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'OFFEN-1' } }, ICH.id);
       await d.kern.repo.setzeBerechtigungen(versicherung.id, { grund: { C: true, R: false, U: false, D: false, P: false }, regeln: [
@@ -321,7 +321,7 @@ for (const pg of [false, true]) {
 
     it('Archivmodus: wird er beim Zusammenlegen lockerer, gibt es keinen Umbau', async () => {
       const x = await aufbau();
-      await x.d.aendereTyp(x.versicherung.id, { ...(await x.typ('haushalt:versicherung'))!, archiv: { jahre: 10, stichtag: null } });
+      await x.d.mappentypen.aendereTyp(x.versicherung.id, { ...(await x.typ('haushalt:versicherung'))!, archiv: { jahre: 10, stichtag: null } });
       const { vorschau } = await x.hoch(vertraege);
       assert.ok(vorschau.fehlercodes.includes('umbau-archiv'), vorschau.probleme.join(' | '));
     });

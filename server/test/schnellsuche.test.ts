@@ -34,8 +34,8 @@ describe('Schnell finden (#497)', () => {
 
   it('Suche über alle Mappentypen (Ansicht „suche“ ohne Bedingungen) findet Feldwerte', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const v = await d.legeTypAn({ name: 'Versicherung', felder: [{ key: 'name', label: 'Bezeichnung', typ: 'text', pflicht: true }, { key: 'nr', label: 'Vertragsnummer', typ: 'text' }], register: [{ key: 'a', name: 'Allgemein', art: 'felder', felder: ['name', 'nr'] }] });
-    const f = await d.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kz', label: 'Kennzeichen', typ: 'text', pflicht: true }], register: [{ key: 'a', name: 'Allgemein', art: 'felder', felder: ['kz'] }] });
+    const v = await d.mappentypen.legeTypAn({ name: 'Versicherung', felder: [{ key: 'name', label: 'Bezeichnung', typ: 'text', pflicht: true }, { key: 'nr', label: 'Vertragsnummer', typ: 'text' }], register: [{ key: 'a', name: 'Allgemein', art: 'felder', felder: ['name', 'nr'] }] });
+    const f = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kz', label: 'Kennzeichen', typ: 'text', pflicht: true }], register: [{ key: 'a', name: 'Allgemein', art: 'felder', felder: ['kz'] }] });
     await d.legeMappeAn({ typId: v.id, werte: { name: 'Kfz-Versicherung', nr: 'KV-123456' } }, null);
     await d.legeMappeAn({ typId: f.id, werte: { kz: 'DD-AB 123' } }, null);
     await d.legeMappeAn({ typId: v.id, werte: { name: 'Hausrat', nr: 'HR-9' } }, null);

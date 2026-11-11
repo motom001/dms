@@ -23,7 +23,7 @@ let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
 async function mitBeispielen() {
   const d = new Dienst(await neuesRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   await ladeBeispiele(d, null);
-  const typen = await d.listeTypen();
+  const typen = await d.mappentypen.listeTypen();
   const typ = (n: string) => typen.find((t) => t.name === n)!;
   const mappen = await d.listeMappen();
   const mappe = (k: string, v: string) => mappen.find((m) => m.werte[k] === v)!;
@@ -69,13 +69,13 @@ function faelle() {
       assert.deepEqual(sichten.map((s) => s.name), ['Vertragspartner', 'Vertrag', 'Rechnung', 'Zahlung'], 'in der Reihenfolge des Anlegens');
       assert.ok(sichten.every((s) => s.typen.length === 1 && s.id === s.typen[0]));
       const z = typ('Zahlung');
-      await d.aendereTyp(z.id, { ...z, name: 'Überweisung' });
+      await d.mappentypen.aendereTyp(z.id, { ...z, name: 'Überweisung' });
       assert.equal((await d.listeSichten()).find((s) => s.id === z.id)!.name, 'Überweisung');
-      const ohne = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }], sichtAnlegen: false });
+      const ohne = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }], sichtAnlegen: false });
       assert.ok(!(await d.listeSichten()).some((s) => s.typen.includes(ohne.id)));
-      const mit = await d.legeTypAn({ name: 'Gerät', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      const mit = await d.mappentypen.legeTypAn({ name: 'Gerät', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
       assert.ok((await d.listeSichten()).some((s) => s.id === mit.id));
-      await d.loescheTyp(mit.id);
+      await d.mappentypen.loescheTyp(mit.id);
       assert.ok(!(await d.listeSichten()).some((s) => s.id === mit.id), 'die eigene Sicht verschwindet mit dem Typ');
     });
 
@@ -188,7 +188,7 @@ function faelle() {
       const p = typ('Vertragspartner');
       const s = await sicht(d, 'Mit Kundennummer', [p.id], [{ art: 'feld', feld: 'kundennummer', op: 'nichtLeer' }]);
       assert.equal((await d.seite(ICH, { sicht: s.id })).gesamt, 2);
-      await d.aendereTyp(p.id, { ...p, felder: p.felder.filter((f) => f.key !== 'kundennummer') });
+      await d.mappentypen.aendereTyp(p.id, { ...p, felder: p.felder.filter((f) => f.key !== 'kundennummer') });
       assert.equal((await d.seite(ICH, { sicht: s.id })).gesamt, 2, 'Bedingung ignoriert');
     });
 
@@ -204,9 +204,9 @@ function faelle() {
     it('speichert mehrere Trefferlisten am Typ und die Wahl an der Sicht', async () => {
       const { d, typ } = await mitBeispielen();
       const r = typ('Rechnung');
-      const neu = await d.aendereTyp(r.id, { ...r, trefferliste: undefined, trefferlisten: [...(r.trefferlisten ?? []), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] }] });
+      const neu = await d.mappentypen.aendereTyp(r.id, { ...r, trefferliste: undefined, trefferlisten: [...(r.trefferlisten ?? []), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] }] });
       assert.deepEqual(neu.trefferlisten!.map((l) => l.key), ['standard', 'kurz']);
-      assert.deepEqual((await d.listeTypen()).find((t) => t.id === r.id)!.trefferlisten![1], { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] });
+      assert.deepEqual((await d.mappentypen.listeTypen()).find((t) => t.id === r.id)!.trefferlisten![1], { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] });
       const s = await sicht(d, 'Kurz', [r.id]);
       await d.aendereSicht(s.id, { ...s, trefferliste: 'kurz' });
       assert.equal((await d.listeSichten()).find((x) => x.id === s.id)!.trefferliste, 'kurz');

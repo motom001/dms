@@ -135,7 +135,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     const koepfe: Record<string, string> = { ...(r.gestempelt ? { 'x-dms-stempel': '1' } : {}), ...(r.verkleinert ? { 'x-dms-verkleinert': `${r.verkleinert.vorher}/${r.verkleinert.nachher}` } : {}) };
     return { datei: { inhalt: r.inhalt, name: r.name, mime: r.anzeigbar ? r.mime : 'application/octet-stream', anzeigen: false, groesse: r.groesse, ...(Object.keys(koepfe).length ? { koepfe } : {}) } };
   };
-  const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
+  const typName = async (id: string) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? id;
   /** Passwörter für Dokumente (#827): nur die Person selbst im Browser – kein API-Schlüssel, keine Vertretung. */
   const nurSelbst = (a: Anfrage) => {
     if (a.apiSchluessel || !a.sitzungsDaten?.id) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.nur-browser'));
@@ -205,7 +205,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    */
   const modusSpur = async (a: Anfrage, ids: string[], was: 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet'): Promise<Set<string>> => {
     if (a.benutzer?.rolle !== 'admin' || a.konsole || !ids.length) return new Set();
-    return dienst.vermerkeVerwaltungsmodus({ ...a.benutzer, rolle: 'mitglied' }, ids, was);
+    return dienst.systemtypen.vermerkeVerwaltungsmodus({ ...a.benutzer, rolle: 'mitglied' }, ids, was);
   };
   /** Berechtigungen (#124): Zugriff des Benutzers, einmal je Anfrage. */
   const zg = (a: Anfrage) => dienst.rechtepruefung.zugriff(ich(a));
@@ -235,7 +235,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     return mappen.map((m) => klar.get(m.id) ?? m);
   };
   /** Benutzer mit ihren weiteren Rollen (#27). */
-  const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
+  const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.systemtypen.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, t('meldungen.routen.sicherungen-sind-nicht-eingerichtet')); return x.sicherung; };
   /** Paket mit dms:sicherung-lesen (#585) – Menschen und andere Pakete bekommen 403. */
   const sicherungsPaket = async (a: Anfrage): Promise<string> => {
@@ -259,7 +259,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
     // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
-    typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
+    typen: await dienst.mappentypen.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
     papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,

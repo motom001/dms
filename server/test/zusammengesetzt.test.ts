@@ -141,16 +141,16 @@ const privatNurErsteller: Regelwerk = {
 async function aufbau(pg: boolean, name: string) {
   const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const zg = async (b: { id: string }) => d.rechtepruefung.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
-  const org = await d.legeTypAn({ name: 'Organisation', schluessel: 'organisation', titelVorlage: '{name}', felder: [
+  const org = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr} von {von}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr} von {von}', felder: [
     { key: 'von', label: 'Absender', typ: 'referenz', zielTypen: [org.id] },
     { key: 'nr', label: 'Rechnungsnummer', typ: 'text' },
     { key: 'privat', label: 'Privat', typ: 'janein' },
@@ -158,7 +158,7 @@ async function aufbau(pg: boolean, name: string) {
   ], trefferliste: ['_titel', 'kennung'] });
   await d.setzeBerechtigungen(org.id, privatNurErsteller, true);
   await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
-  return { d, repo: r.repo, admin, lena, zg, org, rechnung: (await d.listeTypen()).find((x) => x.id === rechnung.id)! };
+  return { d, repo: r.repo, admin, lena, zg, org, rechnung: (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)! };
 }
 
 for (const pg of [false, ...(url ? [true] : [])]) {
@@ -224,15 +224,15 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       const a = await d.legeMappeAn({ typId: rechnung.id, werte: { von: o1.id, nr: 'RE-1' } }, admin.id);
       const b = await d.legeMappeAn({ typId: rechnung.id, werte: { von: o2.id, nr: 'RE-1' } }, admin.id);
       const nurNummer = { ...rechnung, felder: rechnung.felder.map((f) => (f.key === 'kennung' ? { ...f, vorlage: '{nr}' } : f)) };
-      await assert.rejects(d.aendereTyp(rechnung.id, nurNummer), status(409, /2 Mappen in „Kennung“/));
+      await assert.rejects(d.mappentypen.aendereTyp(rechnung.id, nurNummer), status(409, /2 Mappen in „Kennung“/));
       assert.equal((await repo.holeMappe(a.id))!.werte.kennung, `${o1.id} · RE-1`, 'nichts gespeichert');
-      await d.aendereTyp(rechnung.id, { ...nurNummer, doppelteBestaetigt: true });
+      await d.mappentypen.aendereTyp(rechnung.id, { ...nurNummer, doppelteBestaetigt: true });
       assert.equal((await repo.holeMappe(a.id))!.werte.kennung, 'RE-1');
       assert.equal((await repo.holeMappe(b.id))!.werte.kennung, 'RE-1');
       // Beide passen danach nicht – wie beim Einschalten von „eindeutig“.
       assert.deepEqual((await repo.unpassende(rechnung.id)).sort(), [a.id, b.id].sort());
       // Ohne Doppelte keine Rückfrage; die Werte folgen der neuen Vorlage.
-      await d.aendereTyp(rechnung.id, { ...nurNummer, felder: nurNummer.felder.map((f) => (f.key === 'kennung' ? { ...f, vorlage: '{nr} · {von}' } : f)) });
+      await d.mappentypen.aendereTyp(rechnung.id, { ...nurNummer, felder: nurNummer.felder.map((f) => (f.key === 'kennung' ? { ...f, vorlage: '{nr} · {von}' } : f)) });
       assert.equal((await repo.holeMappe(b.id))!.werte.kennung, `RE-1 · ${o2.id}`);
       assert.deepEqual(await repo.unpassende(rechnung.id), []);
     });

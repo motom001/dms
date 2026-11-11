@@ -41,12 +41,12 @@ async function seitentext(pdf: Buffer): Promise<string> {
 async function aufbau() {
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true }] } as never);
   const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1' } }, lena.id);
   const pdf = (await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Vertrag' }]), lena.id)).dokument;
@@ -137,7 +137,7 @@ describe('Herunterladen braucht E (#723)', () => {
     const { d, konten, admin, pdf, rufe, vertrag } = await aufbau();
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    await d.aendereTyp(vertrag.id, { ...vertrag, berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'x', name: 'nicht Jonas', wenn: [{ art: 'benutzer', benutzer: [jonas.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
+    await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'x', name: 'nicht Jonas', wenn: [{ art: 'benutzer', benutzer: [jonas.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
     await assert.rejects(rufe(jonas, 'GET', '/api/dokumente/:id/inhalt', { params: { id: pdf.id }, query: { herunterladen: '1' } }), status(404));
   });
 });
@@ -192,7 +192,7 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
   };
   it('Pflicht-Stempel gilt auch für das PDF „Angaben“ – bei mehreren und bei einer Mappe; in der Post liegt die gestempelte Fassung', async () => {
     const { d, lena, vertrag, v1, pdf } = await aufbau();
-    await d.aendereTyp(vertrag.id, { ...vertrag, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
+    await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
     const z = await d.rechtepruefung.zugriff(lena);
     const ich = { id: lena.id, name: 'Lena', email: 'lena@example.org', rolle: 'mitglied' };
     const { mails, m } = mailer();

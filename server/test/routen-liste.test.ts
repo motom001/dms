@@ -65,7 +65,7 @@ const OFFEN: Record<string, string> = {
 
 describe('Routenliste (#960)', () => {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const alle = routen(d, konten, {});
 
   it('Anzahl der Routen unverändert', () => {

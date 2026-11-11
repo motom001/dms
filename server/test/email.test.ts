@@ -13,7 +13,7 @@ const ich = { id: '00000000-0000-4000-8000-000000000001', name: 'Anna', email: '
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const t = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     { key: 'emails', name: 'E-Mails', art: 'verknuepfungen', quellen: [] },
@@ -34,7 +34,7 @@ describe('E-Mail aus der Mappe (#58)', () => {
     assert.equal(mails[0].o?.antwortAn, '"Anna" <anna@example.org>');
     assert.equal(mails[0].o?.anhaenge?.[0].name, 'rechnung.pdf');
     const e = await d.holeMappe(r.id);
-    const typ = (await d.listeTypen()).find((t) => t.id === e.mappe.typId)!;
+    const typ = (await d.mappentypen.listeTypen()).find((t) => t.id === e.mappe.typId)!;
     assert.equal(typ.system, 'post');
     assert.deepEqual(e.mappe.werte.bezug, [m.id]);
     assert.equal(e.mappe.werte.kanal, 'E-Mail');

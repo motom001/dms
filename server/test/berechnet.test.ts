@@ -79,7 +79,7 @@ const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.
 async function aufbau(pg: boolean, name: string) {
   const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.benutzerspiegel());
+  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
@@ -88,7 +88,7 @@ async function aufbau(pg: boolean, name: string) {
   const installiere = async (dateien: Record<string, string | Buffer>) => { const h = await p.hochladen(archiv(dateien), ICH); return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };
   const v = await installiere(vertraege());
   const typId = v.typen.vertrag;
-  const typ = async () => (await d.listeTypen()).find((x) => x.id === typId)!;
+  const typ = async () => (await d.mappentypen.listeTypen()).find((x) => x.id === typId)!;
   const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
   const tabelle = routen(d, konten, { apiSchluessel: schluessel });
   const route = (m: string, pfad: string) => { const x = tabelle.find((y) => y.methode === m && y.pfad === pfad); assert.ok(x, `${m} ${pfad}`); return x!; };
@@ -160,7 +160,7 @@ for (const pg of [false, true]) {
       const x = await aufbau(pg, 'berechnet_install');
       const t = await x.typ();
       assert.deepEqual(t.felder.filter((f) => f.berechnetVon).map((f) => [f.key, f.berechnetVon, !!f.pflicht]), [['kuendigen_bis', 'vertraege', false], ['status', 'vertraege', false], ['aktiv', 'vertraege', false]]);
-      const fuer = await x.d.typenFuer(await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' }));
+      const fuer = await x.d.mappentypen.typenFuer(await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' }));
       assert.deepEqual(fuer.find((y) => y.id === x.typId)!.berechnung, { vertraege: { name: 'Verträge', aktiv: true } });
     });
 
@@ -202,7 +202,7 @@ for (const pg of [false, true]) {
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { bezeichnung: 'Strom neu' } } });
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { bezeichnung: 'vom Paket' }, stand } }), fehler(409));
       // Rechte: ein Typ ohne Schreibrecht des Pakets.
-      const fremd = await x.d.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
+      const fremd = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
       const n = await x.d.legeMappeAn({ typId: fremd.id, werte: { text: 'a' } }, x.lena.id);
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id: n.id }, body: { werte: { text: 'b' } } }), (e: unknown) => e instanceof Fachfehler && [403, 404].includes(e.status));
     });
@@ -236,7 +236,7 @@ for (const pg of [false, true]) {
       delete ohne.laeufer;
       await x.d.kern.repo.speicherePaket(ohne);
       const z = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
-      assert.deepEqual((await x.d.typenFuer(z)).find((y) => y.id === x.typId)!.berechnung, { vertraege: { name: 'Verträge', aktiv: false } });
+      assert.deepEqual((await x.d.mappentypen.typenFuer(z)).find((y) => y.id === x.typId)!.berechnung, { vertraege: { name: 'Verträge', aktiv: false } });
       assert.equal(berechnungAktiv(undefined, { schluessel: 'vertraege:vertrag' }), false);
       assert.equal((await x.d.holeMappe(id)).mappe.werte.status, 'läuft');
       await assert.rejects(x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { status: 'anders' } } }), fehler(400));
@@ -358,7 +358,7 @@ for (const pg of [false, true]) {
       await x.installiere(ohne);
       await assert.rejects(setze('ohne Recht', 'a', 'rechnen'), fehler(403, /dms:hinweise/));
       // Nur an Mappen, die das Paket schreiben darf.
-      const fremd = await x.d.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
+      const fremd = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
       const n = await x.d.legeMappeAn({ typId: fremd.id, werte: { text: 'a' } }, x.lena.id);
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id/hinweise/:schluessel', { params: { id: n.id, schluessel: 'a' }, body: { text: 'nicht hier' } }), (e: unknown) => e instanceof Fachfehler && [403, 404].includes(e.status));
       // Mit dem Paket gehen seine Hinweise.

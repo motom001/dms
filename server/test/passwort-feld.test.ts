@@ -35,7 +35,7 @@ const FELDER = [
 ];
 async function mitZugang(t?: Tresor) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { tresor: t });
-  const typ = await d.legeTypAn({ name: 'Zugang', felder: FELDER });
+  const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', felder: FELDER });
   return { d, typ };
 }
 
@@ -68,8 +68,8 @@ describe('Passwortfeld (#46)', () => {
     const { d, typ } = await mitZugang(t);
     const p = pruefeMappentyp({ ...typ, titelVorlage: '{name} {kennwort}' }, { namenAndererTypen: [], existiertTyp: () => true });
     assert.ok(p.allgemein.some((x) => /Titel/.test(x)));
-    await assert.rejects(d.aendereTyp(typ.id, { ...typ, titelVorlage: '{kennwort}' }), (e: unknown) => e instanceof Fachfehler && e.status === 422);
-    const geaendert = await d.aendereTyp(typ.id, { ...typ, trefferliste: ['_titel', 'name', 'kennwort'] });
+    await assert.rejects(d.mappentypen.aendereTyp(typ.id, { ...typ, titelVorlage: '{kennwort}' }), (e: unknown) => e instanceof Fachfehler && e.status === 422);
+    const geaendert = await d.mappentypen.aendereTyp(typ.id, { ...typ, trefferliste: ['_titel', 'name', 'kennwort'] });
     assert.deepEqual(geaendert.trefferliste, ['_titel', 'name'], 'Passwortfeld fällt aus der Trefferliste');
     assert.equal(titelAus({ ...typ, titelVorlage: '{name} {kennwort}' } as Mappentyp, { name: 'Bank', kennwort: 'dms1$x' }), 'Bank');
     assert.ok(!bedingungsfelder([typ]).some((f) => f.key === 'kennwort'));

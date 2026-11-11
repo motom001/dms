@@ -175,7 +175,7 @@ async function leiteUm(d: UmbauDienst, g: GeplanterSchritt, neuId: string, umben
   const altId = g.alt.id;
   const repo = d.kern.repo;
   const feld = (k: string) => umbenannt.get(k) ?? k;
-  for (const typ of (await d.listeTypen()).filter((x) => x.id !== altId)) {
+  for (const typ of (await d.mappentypen.listeTypen()).filter((x) => x.id !== altId)) {
     const felder = typ.felder.map((f) => feldUmgeleitet(f, altId, neuId, feld) ?? f);
     const register = typ.register.map((r) => (r.quellen?.some((q) => q.typId === altId) ? { ...r, quellen: r.quellen.map((q) => (q.typId === altId ? { typId: neuId, feldKey: feld(q.feldKey) } : q)) } : r));
     if (JSON.stringify([felder, register]) !== JSON.stringify([typ.felder, typ.register])) await repo.aendereTyp(typ.id, { ...typ, felder, register });
@@ -213,7 +213,7 @@ async function gibAb(d: UmbauDienst, g: GeplanterSchritt, a: UmbauAuftrag, quell
   }
   if (g.plan.art === 'zusammenlegen') {
     if ((await d.kern.repo.papierkorb({ typId: g.alt.id })).length) await d.kern.repo.setzeTypKennung(g.alt.id, vk.schluessel);
-    else await d.loescheTyp(g.alt.id);
+    else await d.mappentypen.loescheTyp(g.alt.id);
   }
   return eigen ? vk.schluessel : null;
 }
@@ -232,7 +232,7 @@ export async function fuehreUmbauAus(d: UmbauDienst, a: UmbauAuftrag): Promise<U
   const typVon: TypVon = (id) => { const ty = verwiesen.get(id); return ty ? nachUmbau.get(ty) ?? ty : undefined; };
   const quellen: InstalliertesPaket[] = [];
   for (const g of a.lage.schritte) {
-    const roh = (await d.listeTypen()).find((x) => x.id === zielId(g));
+    const roh = (await d.mappentypen.listeTypen()).find((x) => x.id === zielId(g));
     if (!roh) throw new Fachfehler(422, t('meldungen.pakete.umbau.ziel-nicht-da', { name: g.alt.name, nach: g.schritt.nach }));
     const umbenannt = umbenennung(g.felder);
     const { ziel, mitnehmen } = await bereiteZielVor(d, g, roh, umbenannt);

@@ -169,8 +169,8 @@ const ordnerpaketNeu = {
 
 /** Mappentypen ohne die, die das DMS selbst mitbringt (Systemtypen, Ablageort #168). */
 const paketTypen = async (d: Dienst) => {
-  const a = await d.ablageortTyp();
-  return (await d.listeTypen()).filter((t) => !t.system && t.id !== a?.id);
+  const a = await d.systemtypen.ablageortTyp();
+  return (await d.mappentypen.listeTypen()).filter((t) => !t.system && t.id !== a?.id);
 };
 
 function faelle(pg: boolean) {
@@ -194,7 +194,7 @@ function faelle(pg: boolean) {
       const inst = await p.installiere({ id: 'basis', version: '1.0.0', beispiele: true }, ICH);
       assert.equal(inst.version, '1.0.0');
       assert.deepEqual(inst.herkunft, { art: 'katalog', url: KATALOG });
-      const typ = (await d.listeTypen()).find((t) => t.schluessel === 'basis:organisation')!;
+      const typ = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'basis:organisation')!;
       assert.equal(typ.id, inst.typen.organisation);
       assert.deepEqual(typ.register.map((r) => r.key), ['stammdaten', 'kontakt', 'anschrift', 'dokumente', 'protokoll']);
       const sichten = await d.listeSichten();
@@ -207,7 +207,7 @@ function faelle(pg: boolean) {
       assert.equal((await d.kern.repo.listePakete()).length, 1);
 
       // Der Administrator ändert selbst: Name, ein eigenes Feld. Das Update überschreibt das nicht.
-      await d.aendereTyp(typ.id, { ...typ, name: 'Firma', felder: [...typ.felder.map((f) => (f.key === 'name' ? { ...f, erkennung: { art: 'name' as const, hinweis: 'eigener' } } : f)), { key: 'notiz', label: 'Notiz', typ: 'text' }] });
+      await d.mappentypen.aendereTyp(typ.id, { ...typ, name: 'Firma', felder: [...typ.felder.map((f) => (f.key === 'name' ? { ...f, erkennung: { art: 'name' as const, hinweis: 'eigener' } } : f)), { key: 'notiz', label: 'Notiz', typ: 'text' }] });
       assert.deepEqual(await p.updates(), [{ id: 'basis', installiert: '1.0.0', neu: '1.1.0', changelog: '', quelle: KATALOG }]);
       const uv = await p.vorschau({ id: 'basis' });
       assert.equal(uv.update, true);
@@ -219,7 +219,7 @@ function faelle(pg: boolean) {
       const neu = await p.aktualisiere('basis', {}, ICH);
       assert.equal(neu.version, '1.1.0');
       assert.equal(neu.installiert, inst.installiert);
-      const t2 = (await d.listeTypen()).find((t) => t.id === typ.id)!;
+      const t2 = (await d.mappentypen.listeTypen()).find((t) => t.id === typ.id)!;
       assert.equal(t2.name, 'Firma');
       assert.ok(t2.felder.some((f) => f.key === 'notiz') && t2.felder.some((f) => f.key === 'steuernummer'));
       assert.ok(t2.register.find((r) => r.key === 'stammdaten')!.felder!.includes('steuernummer'));
@@ -238,7 +238,7 @@ function faelle(pg: boolean) {
       assert.equal((await d.seite(ADMIN, { sicht: oben.id })).gesamt, 2, 'beim Scheitern bleiben beide Beispiele');
       await d.entferneMappenEndgueltig([praxis.id]);
       await p.entferne('basis', ICH);
-      assert.ok(!(await d.listeTypen()).some((t) => t.id === typ.id));
+      assert.ok(!(await d.mappentypen.listeTypen()).some((t) => t.id === typ.id));
       assert.ok(!(await d.listeSichten()).some((s) => Object.values(neu.sichten).includes(s.id)));
       assert.deepEqual(await d.kern.repo.listePakete(), []);
     });
@@ -272,7 +272,7 @@ function faelle(pg: boolean) {
       const inst = await p.installiere({ id: 'vertraege', mitAbhaengigkeiten: true }, ICH);
       const pakete = await d.kern.repo.listePakete();
       assert.deepEqual(pakete.map((x) => x.id), ['basis', 'vertraege']);
-      const typen = await d.listeTypen();
+      const typen = await d.mappentypen.listeTypen();
       const vertrag = typen.find((t) => t.id === inst.typen.vertrag)!;
       assert.equal(vertrag.felder.find((f) => f.key === 'partner')!.zielTypen?.[0], pakete[0].typen.organisation);
       assert.equal(vertrag.felder.find((f) => f.key === 'letzte')!.zielTypen?.[0], inst.typen.zahlung);
@@ -287,19 +287,19 @@ function faelle(pg: boolean) {
     it('Namenskonflikt mit Vorschlag; ein Fehler lässt nichts halb angelegt', async () => {
       const kaputt = { ...basis, 'inhalt/beispiele.yaml': '- typ: organisation\n  werte:\n    kuerzel: OHNE\n' };
       const { d, p } = await aufbau([{ dateien: kaputt }]);
-      await d.legeTypAn({ name: 'Organisation', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.mappentypen.legeTypAn({ name: 'Organisation', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
       const v = await p.vorschau({ id: 'basis' });
       assert.equal(v.typen[0].konflikt, 'Einen Mappentyp „Organisation“ gibt es schon.');
       assert.equal(v.typen[0].vorschlag, 'Organisation (Basis)');
       await assert.rejects(p.installiere({ id: 'basis' }, ICH), (e) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('Organisation (Basis)'));
-      const typen = (await d.listeTypen()).length, sichten = (await d.listeSichten()).length;
+      const typen = (await d.mappentypen.listeTypen()).length, sichten = (await d.listeSichten()).length;
       // Beispiel ohne Pflichtfeld Name: alles wird zurückgenommen.
       await assert.rejects(p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' }, beispiele: true }, ICH), /Beispiel/);
-      assert.equal((await d.listeTypen()).length, typen);
+      assert.equal((await d.mappentypen.listeTypen()).length, typen);
       assert.equal((await d.listeSichten()).length, sichten);
       assert.deepEqual(await d.kern.repo.listePakete(), []);
       const ok = await p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' } }, ICH);
-      assert.equal((await d.listeTypen()).find((t) => t.id === ok.typen.organisation)!.name, 'Organisation (Basis)');
+      assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === ok.typen.organisation)!.name, 'Organisation (Basis)');
     });
 
     it('erweiterte Ansicht: weitere Kataloge, Bestätigung, Updates nur aus der eigenen Quelle (#189)', async () => {
@@ -377,7 +377,7 @@ function faelle(pg: boolean) {
       assert.ok(v.hinweise.some((h) => /Benutzer \(aus Ablago\)/.test(h) && !/Ablageort/.test(h)), v.hinweise.join(' | '));
       assert.ok(v.hinweise.some((h) => /„dms:ablageort“ ist veraltet.*„basis:ablageort“/.test(h)), v.hinweise.join(' | '));
       const ok = await p.installiere({ id: 'ordnerpaket' }, ICH);
-      const urkunde = (await d.listeTypen()).find((t) => t.id === ok.typen.urkunde)!;
+      const urkunde = (await d.mappentypen.listeTypen()).find((t) => t.id === ok.typen.urkunde)!;
       assert.equal(urkunde.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], ablageort.id);
       assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTypen?.[0], (await d.sichereSystem()).benutzer.id);
       assert.deepEqual((await d.listeSichten()).find((s) => s.id === ok.sichten.orte)!.typen.sort(), [ablageort.id, urkunde.id].sort());
@@ -393,10 +393,10 @@ function faelle(pg: boolean) {
       await d.sichereSystem();
       const a = await frueherAblageort(d, einstellungen);
       const ort = await d.legeMappeAn({ typId: a.id, werte: { name: 'roter Ordner' } });
-      const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true },
         { key: 'verbleib_original', label: 'Verbleib Originaldokumente', typ: 'referenz', zielTyp: a.id, verweisart: 'bezug' }] });
       const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', verbleib_original: ort.id } });
-      const typenVorher = (await d.listeTypen()).length;
+      const typenVorher = (await d.mappentypen.listeTypen()).length;
       const sichtenVorher = (await d.listeSichten()).length;
       const plan = await p.vorschau({ id: 'basis' });
       assert.deepEqual(plan.probleme, []);
@@ -406,17 +406,17 @@ function faelle(pg: boolean) {
       const inst = await p.installiere({ id: 'basis' }, ICH);
       assert.equal(inst.typen.ablageort, a.id, 'gleiche Id, Herkunft danach Basis');
       assert.equal(inst.sichten.ablageorte, a.id, 'die vorhandene Ansicht gehört jetzt zu Basis');
-      assert.equal((await d.listeTypen()).length, typenVorher + 1, 'nur Organisation kommt dazu – kein zweiter Ablageort');
+      assert.equal((await d.mappentypen.listeTypen()).length, typenVorher + 1, 'nur Organisation kommt dazu – kein zweiter Ablageort');
       assert.equal((await d.listeSichten()).length, sichtenVorher + 5, 'nur die Ansichten der Organisation');
       assert.equal((await d.listeMappen(a.id)).length, 1, 'Mappen bleiben');
       assert.equal((await d.holeMappe(v1.id)).mappe.werte.verbleib_original, ort.id, 'Verweise bleiben');
-      const jetzt = (await d.ablageortTyp())!;
+      const jetzt = (await d.systemtypen.ablageortTyp())!;
       assert.equal(jetzt.id, a.id);
       assert.equal(jetzt.beschriftungen?.en?.name, 'Storage location', 'Beschriftungen von Basis ergänzt');
       assert.equal(await d.kern.frueherAblageortTyp(), undefined, 'kein früherer mehr');
       // Pakete mit basis:ablageort zeigen auf denselben Typ.
       const o = await p.installiere({ id: 'ordnerpaket' }, ICH);
-      assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);
+      assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);
       // Herkunft „Basis“: Erneute Vorschau übernimmt nichts mehr.
       assert.ok(!(await p.vorschau({ id: 'basis' })).hinweise.some((h) => /übernimmt das Paket/.test(h)));
     });
@@ -428,21 +428,21 @@ function faelle(pg: boolean) {
       const neu = await p.aktualisiere('basis', {}, ICH);
       assert.equal(neu.version, '1.6.0');
       assert.equal(neu.typen.ablageort, a.id);
-      assert.equal((await d.listeTypen()).filter((t) => t.name === 'Ablageort').length, 1);
+      assert.equal((await d.mappentypen.listeTypen()).filter((t) => t.name === 'Ablageort').length, 1);
     });
 
     it('neue Ablage: Basis 1.6.0 legt den Ablageort an; dms:ablageort zeigt als Alias darauf (#883)', async () => {
       const { d, p } = await aufbau([{ dateien: basis16 }, { dateien: ordnerpaket }], '0.212.0');
-      assert.equal(await d.ablageortTyp(), undefined);
+      assert.equal(await d.systemtypen.ablageortTyp(), undefined);
       const inst = await p.installiere({ id: 'basis' }, ICH);
-      const a = (await d.ablageortTyp())!;
+      const a = (await d.systemtypen.ablageortTyp())!;
       assert.equal(a.id, inst.typen.ablageort);
       assert.equal(a.schluessel, 'basis:ablageort');
       assert.deepEqual(a.register.map((r) => r.name), ['Allgemein', 'Enthält', 'Liegt hier', 'Fotos']);
       assert.deepEqual(a.register.find((r) => r.key === 'enthaelt')!.quellen, [{ typId: a.id, feldKey: 'liegt_in' }]);
       assert.equal(a.felder.find((f) => f.key === 'liegt_in')!.zielTypen?.[0], a.id);
       const o = await p.installiere({ id: 'ordnerpaket' }, ICH);
-      assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);
+      assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);
     });
 
     it('Paket hochladen: Prüfung, Bestätigung, Herkunft, Update durch erneutes Hochladen (#189)', async () => {
@@ -466,8 +466,8 @@ function faelle(pg: boolean) {
       const n = await p.installiere({ upload: neu.upload, bestaetigt: true }, ICH);
       assert.equal(n.version, '1.1.0');
       assert.equal(n.installiert, inst.installiert);
-      assert.ok((await d.listeTypen()).find((t) => t.id === n.typen.organisation)!.felder.some((f) => f.key === 'steuernummer'));
-      assert.equal((await d.listeTypen()).filter((t) => t.schluessel === 'basis:organisation').length, 1);
+      assert.ok((await d.mappentypen.listeTypen()).find((t) => t.id === n.typen.organisation)!.felder.some((f) => f.key === 'steuernummer'));
+      assert.equal((await d.mappentypen.listeTypen()).filter((t) => t.schluessel === 'basis:organisation').length, 1);
     });
 
     it('Sammeldatei: prüft alles vorher, ordnet nach Abhängigkeiten, installiert Paket für Paket (#461)', async () => {

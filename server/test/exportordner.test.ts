@@ -228,7 +228,7 @@ describe('Export-Ordner (#797): Werkbank und Herunterladen', () => {
   async function aufbau(imSicherungsordner = false) {
     const einstellungen = speicherEinstellungen();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: katrin } = await konten.einrichten({ email: 'katrin@example.org', name: 'Katrin', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, katrin.id)).benutzer;
     await d.gleicheBenutzerAb(await konten.listeBenutzer());

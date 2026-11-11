@@ -94,26 +94,26 @@ async function aufbau(pg: boolean) {
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-ausk-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const, versionierung: true }];
-  const wohnungTyp = await d.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
-  const mieterTyp = await d.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
+  const wohnungTyp = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
+  const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text' }, { key: 'email', label: 'E-Mail', typ: 'text' }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text' },
     { key: 'portal', label: 'Portal-Passwort', typ: 'passwort' }, { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id, verweisart: 'zugehoerigkeit' },
   ], register: reg });
-  const vertragTyp = await d.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{nr}', archiv: { jahre: 10, stichtag: null }, felder: [
+  const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{nr}', archiv: { jahre: 10, stichtag: null }, felder: [
     { key: 'nr', label: 'Vertragsnummer', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieterTyp.id, verweisart: 'zugehoerigkeit' },
     { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id },
   ], register: reg });
-  await d.aendereTyp(vertragTyp.id, { ...(await d.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }] });
-  const nkTyp = await d.legeTypAn({ name: 'Nebenkostenabrechnung', titelVorlage: 'NK {jahr}', felder: [
+  await d.mappentypen.aendereTyp(vertragTyp.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }] });
+  const nkTyp = await d.mappentypen.legeTypAn({ name: 'Nebenkostenabrechnung', titelVorlage: 'NK {jahr}', felder: [
     { key: 'jahr', label: 'Jahr', typ: 'text' }, { key: 'vertrag', label: 'Mietvertrag', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }, { key: 'privat', label: 'Privat', typ: 'janein' },
   ], register: reg });
-  const hinweisTyp = await d.legeTypAn({ name: 'Hinweis', titelVorlage: '{text}', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
+  const hinweisTyp = await d.mappentypen.legeTypAn({ name: 'Hinweis', titelVorlage: '{text}', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
 
   const wohnung = await d.legeMappeAn({ typId: wohnungTyp.id, werte: { lage: 'Musterweg 1, EG links' } }, admin.id);
   const max = await d.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter', email: 'max@example.net', kundennummer: 'K-4711', portal: 'geheim-portal-123', wohnung: wohnung.id } }, admin.id);
@@ -349,21 +349,21 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, admin, m, typen, rufe } = await aufbau(pg);
       const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
       // Firma der Person mit Muttergesellschaft und einem Firmenvertrag (gehört zur Firma, nicht zur Person)
-      const orgTyp = await d.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      await d.aendereTyp(orgTyp.id, { ...(await d.listeTypen()).find((t) => t.id === orgTyp.id)!, felder: [...orgTyp.felder, { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
-      const mt = (await d.listeTypen()).find((t) => t.id === typen.mieterTyp.id)!;
-      await d.aendereTyp(mt.id, { ...mt, felder: [...mt.felder, { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const orgTyp = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.mappentypen.aendereTyp(orgTyp.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === orgTyp.id)!, felder: [...orgTyp.felder, { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const mt = (await d.mappentypen.listeTypen()).find((t) => t.id === typen.mieterTyp.id)!;
+      await d.mappentypen.aendereTyp(mt.id, { ...mt, felder: [...mt.felder, { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
       const konzern = await d.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Holding AG' } }, admin.id);
       const firma = await d.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Bau GmbH', mutter: konzern.id } }, admin.id);
       const mx = (await d.holeMappe(m.max.id)).mappe;
       await d.aendereMappe(m.max.id, { werte: { ...mx.werte, arbeitgeber: firma.id } }, admin.id);
       // Wartungsvertrag eines Dienstleisters mit Max nur als Ansprechpartner (Bezug), mit Dokument, Notiz und Betrag
-      const wartungTyp = await d.legeTypAn({ name: 'Wartungsvertrag', titelVorlage: '{nr}', felder: [
+      const wartungTyp = await d.mappentypen.legeTypAn({ name: 'Wartungsvertrag', titelVorlage: '{nr}', felder: [
         { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'betrag', label: 'Betrag', typ: 'text' },
         { key: 'ansprechpartner', label: 'Ansprechpartner', typ: 'referenz', zielTyp: typen.mieterTyp.id, verweisart: 'bezug' },
         { key: 'firma', label: 'Firma', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
       ], register: reg });
-      const rechnungTyp = await d.legeTypAn({ name: 'Wartungsrechnung', titelVorlage: '{nr}', felder: [
+      const rechnungTyp = await d.mappentypen.legeTypAn({ name: 'Wartungsrechnung', titelVorlage: '{nr}', felder: [
         { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: wartungTyp.id, verweisart: 'zugehoerigkeit' },
       ] });
       const wartung = await d.legeMappeAn({ typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } }, admin.id);

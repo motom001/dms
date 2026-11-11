@@ -135,17 +135,17 @@ describe('„zeigt auf Mappe vom Typ …“ in Rechten (#1036): im Zweifel gesch
  */
 async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const d = new Dienst(repos?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const name = [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }];
-  const fahrzeug = await d.legeTypAn({ name: 'Fahrzeug', titelVorlage: '{name}', felder: name });
-  const wohnung = await d.legeTypAn({ name: 'Wohnung', titelVorlage: '{name}', felder: name });
-  const akte = await d.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: name });
+  const fahrzeug = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', titelVorlage: '{name}', felder: name });
+  const wohnung = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{name}', felder: name });
+  const akte = await d.mappentypen.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: name });
   await d.setzeBerechtigungen(akte.id, { grund: NICHTS, regeln: [] }, true);
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'betrifft', label: 'betrifft', typ: 'referenz', mehrfach: true, gleicherTyp: true, zielTypen: [fahrzeug.id, wohnung.id, akte.id] },
     // Alte Form (#1036): ein Zieltyp in „zielTyp“ gilt weiter.
@@ -168,7 +168,7 @@ for (const pg of [false, true]) {
 
     it('gespeichert als zielTypen (auch aus der alten Form); die Schnittstelle nennt zielTyp bei genau einem Ziel weiter', async () => {
       const { d, rechnung, fahrzeug, wohnung, akte, lena, rufe } = await neu('modell');
-      const t = (await d.listeTypen()).find((x) => x.id === rechnung.id)!;
+      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!;
       assert.deepEqual(t.felder.find((f) => f.key === 'betrifft')!.zielTypen, [fahrzeug.id, wohnung.id, akte.id]);
       assert.deepEqual(t.felder.find((f) => f.key === 'fahrzeug')!.zielTypen, [fahrzeug.id]);
       assert.equal('zielTyp' in t.felder.find((f) => f.key === 'fahrzeug')!, false);
@@ -188,19 +188,19 @@ for (const pg of [false, true]) {
       await assert.rejects(rufe(lena, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'R4', betrifft: [ok.id] } } }), status(422, /anderen Mappentyps/));
       await assert.rejects(d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R5', fahrzeug: haus.id } }, markus.id), status(422, /anderen Mappentyps/));
       // Ohne „alle vom selben Typ“ gehen gemischte Typen.
-      const t = (await d.listeTypen()).find((x) => x.id === rechnung.id)!;
-      await d.aendereTyp(rechnung.id, { ...t, felder: t.felder.map((f) => (f.key === 'betrifft' ? { ...f, gleicherTyp: false } : f)) });
+      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!;
+      await d.mappentypen.aendereTyp(rechnung.id, { ...t, felder: t.felder.map((f) => (f.key === 'betrifft' ? { ...f, gleicherTyp: false } : f)) });
       const gemischt = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R6', betrifft: [golf.id, haus.id] } }, markus.id);
       assert.deepEqual(gemischt.werte.betrifft, [golf.id, haus.id]);
       // Ein Zieltyp von mehreren lässt sich löschen (ohne Mappen) – er geht aus dem Feld; ist er der einzige, nicht.
-      const leer = await d.legeTypAn({ name: 'Leer', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      const t2 = (await d.listeTypen()).find((x) => x.id === rechnung.id)!;
-      await d.aendereTyp(rechnung.id, { ...t2, felder: [...t2.felder, { key: 'nur_leer', label: 'Nur leer', typ: 'referenz', zielTypen: [leer.id] }, { key: 'beide', label: 'Beide', typ: 'referenz', zielTypen: [leer.id, fahrzeug.id] }] });
-      await assert.rejects(d.loescheTyp(leer.id), status(409));
-      const t3 = (await d.listeTypen()).find((x) => x.id === rechnung.id)!;
-      await d.aendereTyp(rechnung.id, { ...t3, felder: t3.felder.filter((f) => f.key !== 'nur_leer') });
-      await d.loescheTyp(leer.id);
-      assert.deepEqual((await d.listeTypen()).find((x) => x.id === rechnung.id)!.felder.find((f) => f.key === 'beide')!.zielTypen, [fahrzeug.id]);
+      const leer = await d.mappentypen.legeTypAn({ name: 'Leer', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      const t2 = (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!;
+      await d.mappentypen.aendereTyp(rechnung.id, { ...t2, felder: [...t2.felder, { key: 'nur_leer', label: 'Nur leer', typ: 'referenz', zielTypen: [leer.id] }, { key: 'beide', label: 'Beide', typ: 'referenz', zielTypen: [leer.id, fahrzeug.id] }] });
+      await assert.rejects(d.mappentypen.loescheTyp(leer.id), status(409));
+      const t3 = (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!;
+      await d.mappentypen.aendereTyp(rechnung.id, { ...t3, felder: t3.felder.filter((f) => f.key !== 'nur_leer') });
+      await d.mappentypen.loescheTyp(leer.id);
+      assert.deepEqual((await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!.felder.find((f) => f.key === 'beide')!.zielTypen, [fahrzeug.id]);
     });
 
     it('„(nicht sichtbar)“ ohne Titel und ohne Typ; Auswahl über alle Zieltypen, nur lesbare', async () => {
@@ -300,7 +300,7 @@ for (const pg of [false, true]) {
       const p = new Paketverwaltung(d, { version: () => '0.230.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
       const installiere = async (dateien: Record<string, string>) => { const h = await p.hochladen(archiv(dateien), ICH); return p.installiere({ upload: h.upload, bestaetigt: true }, ICH); };
       const r = await installiere(paket('rechnungen', RECHNUNGEN));
-      const feld = async (key: string) => (await d.listeTypen()).find((x) => x.id === r.typen.rechnung)!.felder.find((f) => f.key === key)!;
+      const feld = async (key: string) => (await d.mappentypen.listeTypen()).find((x) => x.id === r.typen.rechnung)!.felder.find((f) => f.key === key)!;
       assert.deepEqual((await feld('betrifft')).zielTypen, [r.typen.vertrag]);
       assert.deepEqual((await feld('betrifft')).zielOptional, ['fahrzeuge:fahrzeug']);
       assert.deepEqual((await feld('steuerjahr')).zielTypen, [], 'nur optional: Feld ohne Zieltyp, kein Fehler');
@@ -309,7 +309,7 @@ for (const pg of [false, true]) {
       assert.deepEqual((await feld('betrifft')).zielTypen, [r.typen.vertrag, f.typen.fahrzeug]);
       // Das ist keine eigene Änderung am Typ aus dem Paket Rechnungen.
       const rp = (await p.installierte()).find((x) => x.id === 'rechnungen')!;
-      const rt = (await d.listeTypen()).find((x) => x.id === r.typen.rechnung)!;
+      const rt = (await d.mappentypen.listeTypen()).find((x) => x.id === r.typen.rechnung)!;
       assert.equal(aenderung(rt, rp, (id) => (id === f.typen.fahrzeug ? 'fahrzeuge:fahrzeug' : undefined)).geaendert, false);
       // Speichern mit einem Fahrzeug geht.
       const golf = await d.legeMappeAn({ typId: f.typen.fahrzeug, werte: { name: 'Golf' } }, null);

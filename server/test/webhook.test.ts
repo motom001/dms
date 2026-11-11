@@ -263,7 +263,7 @@ describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFa
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');
     dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     w = new Webhooks({
       repo: speicherWebhookRepo(), einstellungen: speicherEinstellungen(), verschluessele, entschluessele,

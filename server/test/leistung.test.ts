@@ -93,7 +93,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
       assert.ok(r.dokumente > 300, `nur ${r.dokumente} Dokumente`);
       const je = z.je();
       for (const einzeln of ['listeDokumente', 'volltext', 'versionenVon', 'notizen', 'aufgabenVon', 'historie']) assert.equal(je.get(einzeln)?.n ?? 0, 0, `${einzeln} je Mappe/Dokument`);
-      const typen = (await d.listeTypen()).length;
+      const typen = (await d.mappentypen.listeTypen()).length;
       assert.ok((je.get('dokumenteVon')?.n ?? 0) <= typen + 2, `dokumenteVon ${je.get('dokumenteVon')?.n}×`);
       assert.ok((je.get('volltexte')?.n ?? 0) <= Math.ceil(r.dokumente / 100) + typen + 2, `volltexte ${je.get('volltexte')?.n}×`);
       assert.ok((je.get('bezuege')?.n ?? 0) < 50, `bezuege ${je.get('bezuege')?.n}×`);

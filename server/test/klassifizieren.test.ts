@@ -47,21 +47,21 @@ GEHEIMES ENDE`;
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', beschreibung: 'Verträge mit Firmen. Laufzeit und Kündigung.', erkennbarAn: 'Enthält eine Vertragsnummer und eine Laufzeit',
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', beschreibung: 'Verträge mit Firmen. Laufzeit und Kündigung.', erkennbarAn: 'Enthält eine Vertragsnummer und eine Laufzeit',
     felder: [{ key: 'vnr', label: 'Vertragsnummer', typ: 'text', erkennung: {}, wiederfinden: true }], register: [{ ...FELDER, felder: ['vnr'] }, DOKS] });
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', beschreibung: 'Rechnungen von Handwerkern und Firmen.', erkennbarAn: 'Enthält Rechnungsnummer, Betrag und Zahlungsziel',
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', beschreibung: 'Rechnungen von Handwerkern und Firmen.', erkennbarAn: 'Enthält Rechnungsnummer, Betrag und Zahlungsziel',
     felder: [{ key: 'nr', label: 'Rechnungsnummer', typ: 'text', erkennung: {} }, { key: 'betrag', label: 'Betrag', typ: 'betrag', erkennung: {} }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id }],
     register: [{ ...FELDER, felder: ['nr', 'betrag', 'vertrag'] }, DOKS] });
-  const gesundheit = await d.legeTypAn({ name: 'Gesundheit', beschreibung: 'Befunde und Arztbriefe.', erkennbarAn: 'Diagnose, Praxis, Befund',
+  const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', beschreibung: 'Befunde und Arztbriefe.', erkennbarAn: 'Diagnose, Praxis, Befund',
     felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register: [{ ...FELDER, felder: ['titel'] }, DOKS] });
-  const ablageort = await d.legeTypAn({ name: 'Ablageort', felder: [{ key: 'ort', label: 'Ort', typ: 'text' }], register: [{ ...FELDER, felder: ['ort'] }] });
-  const postTyp = (await d.listeTypen()).find((x) => x.system === 'post')!;
-  for (const x of [vertrag.id, rechnung.id, postTyp.id]) await d.setzeKiTyp(x, true, null);
+  const ablageort = await d.mappentypen.legeTypAn({ name: 'Ablageort', felder: [{ key: 'ort', label: 'Ort', typ: 'text' }], register: [{ ...FELDER, felder: ['ort'] }] });
+  const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
+  for (const x of [vertrag.id, rechnung.id, postTyp.id]) await d.ki.setzeKiTyp(x, true, null);
   const dok = async (mappe: string, name: string, text: string) => {
     const x = (await d.ladeHoch(mappe, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
@@ -187,7 +187,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
   it('Paket ohne Netz: Dokument aus gesperrtem Mappentyp geht nicht hinaus (Quelle geprüft wie bei Paketen mit Netz)', async () => {
     const x = await aufbau();
     await x.d.erkennung.setzeStandard({ paket: null });
-    await x.d.setzeKiTyp(x.postTyp.id, false, null);
+    await x.d.ki.setzeKiTyp(x.postTyp.id, false, null);
     const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.equal(x.eingaenge.length, 0, 'KI lokal – Ähnlichkeit bekommt weder Text noch ähnliche Typen');
     const w = r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!;
@@ -267,7 +267,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.equal(r.wege.find((w) => w.paket?.id === 'ki_assistent')!.stand, 'aus');
     await x.d.erkennung.setzeStandard({ paket: 'ki_assistent', abfluss: true });
     // Die Post ist nicht mehr für KI-Dienste zugelassen: an kein Paket geht etwas – auch nicht an das ohne Netz.
-    await x.d.setzeKiTyp(x.postTyp.id, false, null);
+    await x.d.ki.setzeKiTyp(x.postTyp.id, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.deepEqual(x.eingaenge.map((e) => e.paket), [], 'weder das Paket mit Netz noch KI lokal – Ähnlichkeit');
@@ -277,8 +277,8 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     }
     assert.equal(r.vorschlag?.typId, x.rechnung.id, 'Überschrift und Abgleich tragen weiter');
     // Kein Kandidat zugelassen: kein Paket wird gefragt; Überschrift und Abgleich bleiben.
-    await x.d.setzeKiTyp(x.postTyp.id, true, null);
-    for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.setzeKiTyp(t, false, null);
+    await x.d.ki.setzeKiTyp(x.postTyp.id, true, null);
+    for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.ki.setzeKiTyp(t, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.equal(x.eingaenge.length, 0);

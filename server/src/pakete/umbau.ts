@@ -31,10 +31,9 @@ const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String
 /** Was das Modul vom Dienst braucht (die Paketverwaltung reicht den Dienst herein). */
 export interface UmbauDienst {
   kern: Kern;
-  listeTypen(): Promise<Mappentyp[]>;
+  mappentypen: { listeTypen(): Promise<Mappentyp[]>; loescheTyp(id: string): Promise<void> };
   listeMappen(typId?: string): Promise<Mappe[]>;
   listeSichten(): Promise<Sicht[]>;
-  loescheTyp(id: string): Promise<void>;
   aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
 }
 

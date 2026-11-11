@@ -21,13 +21,13 @@ import { speicherRepo } from '../src/repo-speicher';
 
 async function aufbau(uhr: () => number = Date.now) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'status', label: 'Status', typ: 'auswahl', optionen: ['offen', 'erledigt'] },
     { key: 'kuendbar_bis', label: 'Kündbar bis', typ: 'datum' },
@@ -144,7 +144,7 @@ describe('Automatisierungen (#674): Ausführen', () => {
     assert.equal(trocken.test, true);
     assert.equal(trocken.zustand, 'abgeschlossen');
     // Das Feld verschwindet – das DMS lässt das zu, die Automatisierung wird angehalten.
-    await d.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.filter((f) => f.key !== 'status') });
+    await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.filter((f) => f.key !== 'status') });
     await motor.ereignis(ereignis('mappe.geaendert', { mappe: m.id, typ: vertrag.id, felder: ['status'] }));
     const x = await repo.hole(a.id);
     assert.equal(x!.angehalten?.grund, 'fehlerhaft');
@@ -185,7 +185,7 @@ describe('Automatisierungen (#674): Ausführen', () => {
     const mappe = await d.rechtepruefung.pruefeRecht(z, m.id, 'R');
     const text = await motor.fuelle('{name} kündbar bis {kuendbar_bis} ({mappentyp}, {automatisierung}) {unbekannt}', { a, mappe, typ: vertrag, z, daten: {} });
     assert.equal(text, 'Strom kündbar bis 30.09.2031 (Vertrag, P) {unbekannt}');
-    const fremd = await d.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const fremd = await d.mappentypen.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const zettel = await d.legeMappeAn({ typId: fremd.id, werte: { name: 'x' } }, admin.id);
     await assert.rejects(motor.wiedergeben(a.id, zettel.id, true), /vom Typ „Vertrag“/);
   });

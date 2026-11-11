@@ -84,7 +84,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
     // Systemkonten und Dienstkonten der Pakete (#673): sichtbar, aber nicht bearbeitbar.
     { methode: 'GET', pfad: '/api/benutzer/systemkonten', zugang: 'admin', handler: async () => ok(await dienst.systemkontenUebersicht(await konten.listeSystemkonten(), await konten.listeDienstkonten())) },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => {
-      const rollen = await dienst.weitereRollen();
+      const rollen = await dienst.systemtypen.weitereRollen();
       // Offene Aufgaben je Benutzer (#77): Deaktivieren geht erst ohne.
       const offen = new Map<string, number>();
       for (const x of await dienst.alleAufgaben()) if (x.empfaengerId) offen.set(x.empfaengerId, (offen.get(x.empfaengerId) ?? 0) + 1);

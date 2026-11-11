@@ -40,7 +40,7 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     const r = pgRepo(sql, HAUSHALT);
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
     const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [
       { key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }, { key: 'notiz', label: 'Notiz', typ: 'text' },
     ] });
     const suche = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.titel).sort();
@@ -166,7 +166,7 @@ describe('Startseite (#334, #615): „noch keine eigene Mappe“ ohne alles zu z
   it('im Arbeitsspeicher', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     assert.equal(await d.ohneEigeneMappen(), true);
-    const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     assert.equal(await d.ohneEigeneMappen(), true);
     await d.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } });
     assert.equal(await d.ohneEigeneMappen(), false);

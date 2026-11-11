@@ -305,7 +305,7 @@ export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<Ins
 
 /** Was das Anlegen vom Dienst braucht – die Paketverwaltung gibt ihren Dienst hinein. */
 export interface VorgabenDienst {
-  listeTypen(): Promise<Mappentyp[]>;
+  mappentypen: { listeTypen(): Promise<Mappentyp[]> };
   legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
   aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
   ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>;
@@ -354,7 +354,7 @@ export function vorlagenName(v: PaketVorlage): string {
  * anderer Pakete nur Vorlagen an. Scheitert etwas, rollt die Paketverwaltung mit `angelegt` und `rueck` zurück.
  */
 export async function legeVorgaben(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis): Promise<void> {
-  const typen = new Map((await d.listeTypen()).map((x) => [x.id, x] as const));
+  const typen = new Map((await d.mappentypen.listeTypen()).map((x) => [x.id, x] as const));
   for (const v of ordneVorgaben(a.teil.vorgaben, a.paketId) ?? a.teil.vorgaben) await legeEineVorgabe(d, a, erg, v, typen);
   await legeErgaenzungen(d, a, erg, typen);
 }

@@ -134,7 +134,7 @@ async function aufbau(versionierung = true) {
   const dateien = speicherDateien();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen });
-  const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
   ] });
@@ -282,7 +282,7 @@ describe('Große PDFs in PostgreSQL (#393)', { skip: process.env.TEST_DATABASE_U
   after(async () => { for (const s of offen.splice(0)) await s.end(); });
   it('grossePdfs nach Größe, Sammelaktion ohne Original entfernt die alte Version', async () => {
     const d = new Dienst(await pgRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
     ] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { name: 'Strom' } }, null);

@@ -18,18 +18,18 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 
 async function aufbau(repo = speicherRepo(), einstellungen = speicherEinstellungen()) {
   const d = new Dienst(repo, speicherDateien(), { einstellungen });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'belege', name: 'Belege', art: 'dokumente' },
     { key: 'sonstiges', name: 'Sonstiges', art: 'dokumente', volltext: false },
   ] });
   const r1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, anna.id);
-  const post = (await d.listeTypen()).find((t) => t.system === 'post')!;
+  const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!) });
@@ -138,7 +138,7 @@ describe('Systemtyp Post (#192)', () => {
     const andere = await d.legePostAn({}, { id: anna.id, name: 'Anna' });
     await assert.rejects(d.ordneZu(m.id, { ziel: andere.id }, anna.id), status(422), 'nicht Post zu Post');
     // Ohne Dokumentenregister am Ziel geht es nur ohne Dokumente.
-    const ohne = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['titel'] }] });
+    const ohne = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['titel'] }] });
     const n = await d.legeMappeAn({ typId: ohne.id, werte: { titel: 'Ohne' } }, anna.id);
     await assert.rejects(d.ordneZu(m.id, { ziel: n.id }, anna.id), status(422));
     const ok = await d.ordneZu(m.id, { ziel: n.id, dokumente: [] }, anna.id);
@@ -227,7 +227,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     const repo = speicherRepo();
     const vorher = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
     await vorher.sichereSystem();
-    const typen0 = await vorher.listeTypen();
+    const typen0 = await vorher.mappentypen.listeTypen();
     const rolle = typen0.find((t) => t.system === 'rolle')!;
     // Den frisch angelegten Post-Typ durch die alte E-Mail-Definition ersetzen.
     const post0 = typen0.find((t) => t.system === 'post')!;
@@ -262,7 +262,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     for (const k of ['stand', 'kanal', 'richtung', 'an']) assert.ok(post.felder.some((f) => f.key === k && f.system), k);
     assert.ok(post.register.find((r) => r.key === 'allgemein')!.felder!.includes('stand'));
     assert.equal(post.register.find((r) => r.key === 'anhaenge')!.name, 'Dokumente');
-    assert.equal(post.felder.find((f) => f.key === 'an')!.zielTypen?.[0], (await d.listeTypen()).find((t) => t.system === 'benutzer')!.id);
+    assert.equal(post.felder.find((f) => f.key === 'an')!.zielTypen?.[0], (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!.id);
     void rolle; void systemfelder;
     const sichten = await d.listeSichten();
     assert.equal(sichten.find((s) => s.id === post.id)!.name, 'Post');
@@ -271,7 +271,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     const h = await d.holeMappe(m.id);
     assert.equal(h.mappe.titel || 'Alt', 'Alt');
     // Alte sprechende Links mit typ=email gelten weiter.
-    assert.equal(typImLink('email', await d.listeTypen())?.id, post.id);
+    assert.equal(typImLink('email', await d.mappentypen.listeTypen())?.id, post.id);
     // Ein weiterer Start ändert nichts mehr.
     const geaendert = post.geaendert;
     const d3 = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });

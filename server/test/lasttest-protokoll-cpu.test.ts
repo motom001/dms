@@ -463,7 +463,7 @@ describe('Lasttest (#895): Route und Durchgang', () => {
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas.example.org', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas.example.org', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     await konten.einrichten({ email: LENA[0], name: 'Lena (Lasttest)', passwort: LENA[1] });
     await d.gleicheBenutzerAb(await konten.listeBenutzer());

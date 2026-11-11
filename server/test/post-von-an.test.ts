@@ -102,12 +102,12 @@ describe('Rechte-Regeln: unbekannte Kennung wirkt geschlossen (#1042)', () => {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const post = (await d.listeTypen()).find((t) => t.system === 'post')!;
+  const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: (await konten.listeBenutzer()).find((u) => u.id === b.id)! });
@@ -155,7 +155,7 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     assert.equal(text, 'Stadtwerke an Lena – Stadtwerke an Lena');
     // Link über Mappentyp und Feldwerte (#98): absender/fuer gelten als von/an.
     const p = new URLSearchParams(`typ=post&absender=Stadtwerke&fuer.leer=1&sortierung=-absender`);
-    const l = liesDirektlink(p, await d.listeTypen());
+    const l = liesDirektlink(p, await d.mappentypen.listeTypen());
     assert.ok(l.ok, JSON.stringify(l));
     if (l.ok) {
       assert.deepEqual(l.link.bedingungen.map((b) => (b.art === 'feld' ? [b.feld, b.op] : [])), [['von', 'gleich'], ['an', 'leer']]);
@@ -185,13 +185,13 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     const neuerDienst = () => new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
     const d = neuerDienst();
-    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
     const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id)).benutzer;
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, markus.id)).benutzer;
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const post = typen.find((t) => t.system === 'post')!;
     const benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
     const ich = { id: markus.id, name: 'Markus' };

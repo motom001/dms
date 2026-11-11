@@ -34,7 +34,7 @@ async function aufbau(o: { repo?: KontoRepo; mitMail?: boolean } = {}) {
   const repo = o.repo ?? speicherKontoRepo();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
-  const konten = new Konten(repo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   const zf = new Zweifaktor(speicherEinstellungen(), (k) => `v:${k}`, (w) => (w.startsWith('v:') ? w.slice(2) : null));
   konten.verbindeZweifaktor(zf);
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });

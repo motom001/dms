@@ -80,7 +80,7 @@ function faelle(pg: boolean) {
     async function aufbau() {
       const { r, sql } = await repo(pg);
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await d.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const dok = async (titel: string) => {
         const m = await d.legeMappeAn({ typId: typ.id, werte: { titel } });
         return (await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.pdf`, typ: 'application/pdf' }, pdfMitText([titel]), null)).dokument;
@@ -201,7 +201,7 @@ describe('Textebene: Sprache je Seite im Kern (#579)', () => {
       const d = new Dienst(repo, dateien, { einstellungen });
       const t = new Texterkennung(repo, dateien, einstellungen, textebeneEngine, async () => w);
       d.verbindeTexterkennung(t);
-      const typ = await d.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
+      const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const m = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Botschaft' } });
       const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'botschaft.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'ab.pdf')), null);
       const ende = Date.now() + 15_000;

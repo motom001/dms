@@ -138,7 +138,7 @@ describe('Feldformate (#535): Erkennung nutzt die Formate', () => {
 describe('Feldformate (#535): im Dienst', () => {
   async function aufbau() {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: felder.map((x) => ({ ...x })) });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: felder.map((x) => ({ ...x })) });
     return { d, typ };
   }
 
@@ -149,7 +149,7 @@ describe('Feldformate (#535): im Dienst', () => {
     assert.equal(plz.landFeld, 'land');
     assert.equal(typ.felder.find((x) => x.key === 'geburtstag')!.max, 'heute');
     assert.equal(typ.felder.find((x) => x.key === 'name')!.format, undefined);
-    await assert.rejects(d.legeTypAn({ name: 'Falsch', felder: [{ key: 'd', label: 'D', typ: 'datum', max: 'übermorgen' }] }), (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('heute'));
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Falsch', felder: [{ key: 'd', label: 'D', typ: 'datum', max: 'übermorgen' }] }), (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('heute'));
   });
 
   it('neue Mappe: unpassende Angaben abgelehnt mit Feldname, passende angeglichen', async () => {
@@ -166,11 +166,11 @@ describe('Feldformate (#535): im Dienst', () => {
 
   it('Bestand: neues Format macht nichts ungültig; erst das geänderte Feld muss passen; Werkbank listet', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'plz', label: 'PLZ', typ: 'text' }, { key: 'telefon', label: 'Telefon', typ: 'text' },
     ] });
     const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Markus', plz: '01357asda', telefon: '0351 abc' } });
-    await d.aendereTyp(typ.id, { ...typ, felder: typ.felder.map((x) => (x.key === 'plz' ? { ...x, format: 'plz' } : x.key === 'telefon' ? { ...x, format: 'telefon' } : x)) });
+    await d.mappentypen.aendereTyp(typ.id, { ...typ, felder: typ.felder.map((x) => (x.key === 'plz' ? { ...x, format: 'plz' } : x.key === 'telefon' ? { ...x, format: 'telefon' } : x)) });
     // Passung bleibt: nichts unter „Zu erledigen“.
     assert.notEqual((await d.holeMappe(m.id))?.mappe.passt, false);
     // Anderes Feld ändern geht, die alten Angaben bleiben unverändert.

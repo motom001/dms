@@ -85,14 +85,14 @@ async function aufbau() {
   const repo = speicherRepo();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, speicherDateien(), { einstellungen });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const rolleTyp = (await d.listeTypen()).find((t) => t.system === 'rolle')!;
+  const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
   const fibu = (await d.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'privat', label: 'Privat', typ: 'janein' },
     { key: 'faellig', label: 'Fällig', typ: 'datum' },

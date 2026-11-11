@@ -151,26 +151,26 @@ async function repos(pg: boolean): Promise<{ repo: Repo; konto: ReturnType<typeo
 async function aufbau(pg: boolean) {
   const r = await repos(pg);
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(r.konto, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
-  const kategorie = await d.legeTypAn({ name: 'Kategorie', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-  const partner = await d.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', eindeutig: true }], register: reg });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
+  const kategorie = await d.mappentypen.legeTypAn({ name: 'Kategorie', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+  const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', eindeutig: true }], register: reg });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id, verweisart: 'zugehoerigkeit' },
     { key: 'kategorie', label: 'Kategorie', typ: 'referenz', zielTyp: kategorie.id },
   ], register: reg });
-  await d.aendereTyp(vertrag.id, { ...(await d.listeTypen()).find((t) => t.id === vertrag.id)!, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id, verweisart: 'zugehoerigkeit' }] });
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', archiv: { jahre: 2, stichtag: 'datum' }, felder: [
+  await d.mappentypen.aendereTyp(vertrag.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === vertrag.id)!, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id, verweisart: 'zugehoerigkeit' }] });
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', archiv: { jahre: 2, stichtag: 'datum' }, felder: [
     { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' },
     { key: 'vertrag', label: 'Verträge', typ: 'referenz', zielTyp: vertrag.id, mehrfach: true, verweisart: 'zugehoerigkeit' },
     // Bezug (Entscheidung Thomas zu #424): darüber wird nie mitgelöscht, nur der Verweis entfernt.
     { key: 'ansprechpartner', label: 'Ansprechpartner', typ: 'referenz', zielTyp: partner.id },
   ], register: reg });
-  const lieferschein = await d.legeTypAn({ name: 'Lieferschein', titelVorlage: '{nr}', felder: [
+  const lieferschein = await d.mappentypen.legeTypAn({ name: 'Lieferschein', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTyp: rechnung.id, verweisart: 'zugehoerigkeit' },
   ], register: reg });
   const k = await d.legeMappeAn({ typId: kategorie.id, werte: { name: 'Strom' } }, admin.id);
@@ -298,7 +298,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       // Eine Mappe, die Anna nicht sehen darf, verweist auf V-2: V-2 bleibt
       await d.setzeBerechtigungen(typen.rechnung.id, { grund: ALLES, regeln: [] }, true);
-      const geheim = await d.legeTypAn({ name: 'Geheim', titelVorlage: '{t}', felder: [{ key: 't', label: 'T', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: typen.vertrag.id }] });
+      const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{t}', felder: [{ key: 't', label: 'T', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: typen.vertrag.id }] });
       await d.setzeBerechtigungen(geheim.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       await d.legeMappeAn({ typId: geheim.id, werte: { t: 'intern', vertrag: m.v2.id } }, admin.id);
       const v2 = await d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' }));

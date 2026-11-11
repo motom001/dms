@@ -34,16 +34,16 @@ async function repo(pg: boolean): Promise<Repo> {
 /** Händler, Rechnungen und Gutschriften mit gemeinsamen Feldern; je Rechnung ein Dokument mit Text. */
 async function aufbau(r: Repo) {
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const partner = await d.legeTypAn({ name: 'Partner', schluessel: 'partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', schluessel: 'partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
   const felder = [
     { key: 'nr', label: 'Nummer', typ: 'text' as const, pflicht: true },
     { key: 'rechnungsdatum', label: 'Rechnungsdatum', typ: 'datum' as const },
     { key: 'vertragspartner', label: 'Vertragspartner', typ: 'referenz' as const, zielTyp: partner.id },
     { key: 'betrag', label: 'Betrag', typ: 'betrag' as const },
   ];
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [...felder,
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [...felder,
     { key: 'bezahlt', label: 'Bezahlt', typ: 'janein' }, { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Elektro', 'Möbel', 'Sonstiges'] }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
-  const gutschrift = await d.legeTypAn({ name: 'Gutschrift', schluessel: 'gutschrift', titelVorlage: '{nr}', felder });
+  const gutschrift = await d.mappentypen.legeTypAn({ name: 'Gutschrift', schluessel: 'gutschrift', titelVorlage: '{nr}', felder });
   const p = async (name: string) => (await d.legeMappeAn({ typId: partner.id, werte: { name } })).id;
   const P = { mm: await p('MediaMarkt'), saturn: await p('Saturn'), otto: await p('Otto'), ikea: await p('Ikea') };
   const mappe = async (typId: string, nr: string, datum: string, vp: string, text: string, extra: Record<string, unknown> = {}) => {
@@ -142,11 +142,11 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-es-')), 'dms.schluessel'), () => null);
     await tresor.laden(); await tresor.erzeuge();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
     const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const t = await d.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{name}', felder: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'privat', label: 'Privat', typ: 'janein' },
     ] });
     await d.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [

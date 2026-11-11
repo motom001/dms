@@ -178,7 +178,7 @@ describe('HTTP: Server-Timing-Header (#477)', { skip: echtesFastify ? false : 'f
     const typen = repo.listeTypen.bind(repo);
     repo.listeTypen = async () => { await warte(3); return typen(); };
     const dienst = new Dienst(messung.umhuelle(repo, 'mappen'), speicherDateien());
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     app = await baueApp(dienst, konten, { messung });
   });
   after(async () => { await app?.close(); });

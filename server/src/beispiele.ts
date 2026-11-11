@@ -12,8 +12,8 @@ const feld = (key: string, label: string, typ: Feld['typ'], extra: Partial<Feld>
  * und Rechnungen das Feld „Verbleib Originaldokumente“ (#168) und es entstehen ein paar Ablageorte; sonst ohne.
  */
 export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = null) {
-  const ablageort = await dienst.ablageortTyp();
-  if ((await dienst.listeTypen()).some((t) => !t.system && t.id !== ablageort?.id)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
+  const ablageort = await dienst.systemtypen.ablageortTyp();
+  if ((await dienst.mappentypen.listeTypen()).some((t) => !t.system && t.id !== ablageort?.id)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
   // Verbleib Originaldokumente (#168): gleiche Kennung in allen Mappentypen mit Papier – für gemeinsame Listen und Bedingungen.
   const verbleib: Feld[] = ablageort ? [feld('verbleib_original', 'Verbleib Originaldokumente', 'referenz', { zielTypen: [ablageort.id], verweisart: 'bezug', hilfe: 'Wo das Papier liegt – oder „vernichtet“' })] : [];
   const id = { partner: randomUUID(), vertrag: randomUUID(), rechnung: randomUUID(), zahlung: randomUUID() };
@@ -86,8 +86,8 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
     },
   };
   // Erst alle Typen anlegen (Register mit Verweisen brauchen die anderen Typen), dann die Register setzen.
-  for (const t of Object.values(typen)) await dienst.legeTypAn({ ...t, register: undefined });
-  for (const t of Object.values(typen)) if (t.register) await dienst.aendereTyp(t.id, t);
+  for (const t of Object.values(typen)) await dienst.mappentypen.legeTypAn({ ...t, register: undefined });
+  for (const t of Object.values(typen)) if (t.register) await dienst.mappentypen.aendereTyp(t.id, t);
 
   // Ablageorte (#168): verschachtelt; der Titel zeigt den ganzen Pfad.
   const ort = async (name: string, liegtIn?: string, beschreibung?: string) => ablageort

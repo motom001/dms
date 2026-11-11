@@ -39,24 +39,24 @@ const privatNurErsteller: Regelwerk = {
 
 /** Rechnung mit Tabelle „Positionen“; Rechnungsposition gehört über „rechnung“ dazu (Teil). */
 async function rechnungen(d: Dienst) {
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Rechnungsnummer', typ: 'text', pflicht: true },
     { key: 'privat', label: 'Privat', typ: 'janein' },
   ] });
-  const position = await d.legeTypAn({ name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', teilVon: 'rechnung', felder: [
+  const position = await d.mappentypen.legeTypAn({ name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', teilVon: 'rechnung', felder: [
     { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true, verweisart: 'zugehoerigkeit' },
     { key: 'nr', label: 'Nr.', typ: 'zahl' },
     { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true },
     { key: 'privat', label: 'Privat', typ: 'janein' },
   ], register: [{ key: 'angaben', name: 'Angaben', art: 'felder', felder: ['rechnung', 'nr', 'beschreibung', 'privat'] }, { key: 'belege', name: 'Belege', art: 'dokumente' }] });
-  const mitTabelle = await d.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder,
+  const mitTabelle = await d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder,
     { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: position.id, feldKey: 'rechnung', neu: '+ Position' } }] });
   return { rechnung: mitTabelle, position };
 }
 
 async function aufbau(repo: Repo = speicherRepo(), kontoRepo = speicherKontoRepo()) {
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(kontoRepo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
@@ -110,14 +110,14 @@ describe('Einstellung am Mappentyp (#1031)', () => {
     // Ein älteres Programm ohne teilVon behält die Einstellung.
     const ohne: Partial<Mappentyp> = { ...position };
     delete ohne.teilVon;
-    assert.equal((await d.aendereTyp(position.id, ohne)).teilVon, 'rechnung');
+    assert.equal((await d.mappentypen.aendereTyp(position.id, ohne)).teilVon, 'rechnung');
     // Pflicht weg: abgelehnt.
-    await assert.rejects(d.aendereTyp(position.id, { ...position, felder: position.felder.map((f) => (f.key === 'rechnung' ? { ...f, pflicht: false } : f)) }), status(422, /muss Pflicht sein/));
+    await assert.rejects(d.mappentypen.aendereTyp(position.id, { ...position, felder: position.felder.map((f) => (f.key === 'rechnung' ? { ...f, pflicht: false } : f)) }), status(422, /muss Pflicht sein/));
     // Die Rechnung hat Teile – sie selbst kann keiner werden.
-    const kunde = await d.legeTypAn({ name: 'Kunde', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    await assert.rejects(d.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder, { key: 'kunde', label: 'Kunde', typ: 'referenz', zielTypen: [kunde.id], pflicht: true }], teilVon: 'kunde' }), status(422, /Rechnungsposition/));
+    const kunde = await d.mappentypen.legeTypAn({ name: 'Kunde', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    await assert.rejects(d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder, { key: 'kunde', label: 'Kunde', typ: 'referenz', zielTypen: [kunde.id], pflicht: true }], teilVon: 'kunde' }), status(422, /Rechnungsposition/));
     // Ein Typ, der zu Positionen gehören soll: Kette.
-    await assert.rejects(d.legeTypAn({ name: 'Unterposition', teilVon: 'position', felder: [{ key: 'position', label: 'Position', typ: 'referenz', zielTypen: [position.id], pflicht: true }] }), status(422, /Ketten/));
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Unterposition', teilVon: 'position', felder: [{ key: 'position', label: 'Position', typ: 'referenz', zielTypen: [position.id], pflicht: true }] }), status(422, /Ketten/));
   });
 
   it('keine eigene Ansicht; einschalten nimmt den Typ aus den Ansichten, ausschalten gibt ihm seine zurück', async () => {
@@ -126,13 +126,13 @@ describe('Einstellung am Mappentyp (#1031)', () => {
     assert.ok((await sichten()).some((s) => s.id === rechnung.id));
     assert.equal((await sichten()).some((s) => s.id === position.id), false);
     // Ein eigenständiger Typ mit Ansicht und einer gemeinsamen Ansicht mit der Rechnung.
-    const notiz = await d.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'text', label: 'Text', typ: 'text' }] });
+    const notiz = await d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'text', label: 'Text', typ: 'text' }] });
     const gemeinsam = await d.legeSichtAn({ name: 'Belege', typen: [rechnung.id, notiz.id], bedingungen: [] });
     assert.ok((await sichten()).some((s) => s.id === notiz.id));
-    const an = await d.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
+    const an = await d.mappentypen.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
     assert.equal((await sichten()).some((s) => s.id === notiz.id), false);
     assert.deepEqual((await sichten()).find((s) => s.id === gemeinsam.id)?.typen, [rechnung.id]);
-    await d.aendereTyp(notiz.id, { ...an, teilVon: null });
+    await d.mappentypen.aendereTyp(notiz.id, { ...an, teilVon: null });
     assert.ok((await sichten()).some((s) => s.id === notiz.id));
   });
 });
@@ -213,21 +213,21 @@ describe('Leserechte als Vorgabe (#1031)', () => {
       { id: 'u', name: 'Nur bearbeiten', wenn: [{ art: 'rolle', rollen: ['x'] }], dann: { U: 'entziehen' }, stopp: false },
     ] };
     await d.setzeBerechtigungen(rechnung.id, nurBuero, true);
-    const notiz = await d.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
+    const notiz = await d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
     assert.equal(notiz.berechtigungen ?? null, null);
-    const an = await d.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
+    const an = await d.mappentypen.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
     assert.equal(an.berechtigungen?.grund.R, false);
     assert.equal(an.berechtigungen?.grund.U, true);
     // „privat“ gibt es am Teil – übernommen, nur mit der Wirkung auf Lesen; „nr“ nicht (ausgelassen), „U“ gar nicht.
     assert.deepEqual(an.berechtigungen?.regeln.map((r) => [r.name, r.dann]), [['Privat nur für den Ersteller', { R: 'entziehen' }]]);
     // Spätere Änderungen an der Rechnung gelten nicht mit.
     await d.setzeBerechtigungen(rechnung.id, null, true);
-    assert.equal((await d.listeTypen()).find((t) => t.id === notiz.id)?.berechtigungen?.grund.R, false);
+    assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === notiz.id)?.berechtigungen?.grund.R, false);
     // Eigene Berechtigungen bleiben unangetastet.
-    const eigen = await d.legeTypAn({ name: 'Anhang', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }] });
+    const eigen = await d.mappentypen.legeTypAn({ name: 'Anhang', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }] });
     await d.setzeBerechtigungen(rechnung.id, nurBuero, true);
     await d.setzeBerechtigungen(eigen.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
-    const e2 = await d.aendereTyp(eigen.id, { ...(await d.listeTypen()).find((t) => t.id === eigen.id)!, teilVon: 'rechnung' });
+    const e2 = await d.mappentypen.aendereTyp(eigen.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === eigen.id)!, teilVon: 'rechnung' });
     assert.deepEqual(e2.berechtigungen?.grund, { ...ALLES, D: false });
   });
 
@@ -369,7 +369,7 @@ ${gehoert}
     const h = await a.p.hochladen(zip('  gehoertZu: rechnung'), ICH);
     assert.deepEqual(h.vorschau.probleme, []);
     const paket = await a.p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
-    const pos = (await a.d.listeTypen()).find((t) => t.id === paket.typen.rechnungsposition)!;
+    const pos = (await a.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.rechnungsposition)!;
     assert.equal(pos.teilVon, 'rechnung');
     assert.equal((await a.d.listeSichten()).some((s) => s.id === pos.id), false);
     // Paket erstellen schreibt gehoertZu und hebt die Mindestversion.
@@ -386,10 +386,10 @@ ${gehoert}
     const c = dms();
     const h1 = await c.p.hochladen(zip(''), ICH);
     const p1 = await c.p.installiere({ upload: h1.upload, bestaetigt: true }, ICH);
-    assert.equal(istTeiltyp((await c.d.listeTypen()).find((t) => t.id === p1.typen.rechnungsposition)), false);
+    assert.equal(istTeiltyp((await c.d.mappentypen.listeTypen()).find((t) => t.id === p1.typen.rechnungsposition)), false);
     const h2 = await c.p.hochladen(zip('  gehoertZu: rechnung', '1.1.0'), ICH);
     await c.p.installiere({ upload: h2.upload, bestaetigt: true }, ICH);
-    assert.equal((await c.d.listeTypen()).find((t) => t.id === p1.typen.rechnungsposition)?.teilVon, 'rechnung');
+    assert.equal((await c.d.mappentypen.listeTypen()).find((t) => t.id === p1.typen.rechnungsposition)?.teilVon, 'rechnung');
   });
 });
 
@@ -401,7 +401,7 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
     const haushalt = '00000000-0000-4000-8000-000000000001';
     try {
       const { d, admin, lena, suche, zg, rechnung, position } = await aufbau(pgRepo(db.sql, haushalt) as never as Repo, pgKontoRepo(db.sql, haushalt));
-      assert.equal((await d.listeTypen()).find((t) => t.id === position.id)?.teilVon, 'rechnung');
+      assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === position.id)?.teilVon, 'rechnung');
       await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
       const r1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, lena.id);
       const r2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);

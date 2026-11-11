@@ -44,14 +44,14 @@ const paket = (id: string, netz: string[] = [], version = '1.0.0'): Installierte
  */
 async function aufbau(o: { repo?: Repo; konto?: KontoRepo; zustand?: Kurzzustand } = {}) {
   const d = new Dienst(o.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), zustand: o.zustand ?? speicherKurzzustand() });
-  const konten = new Konten(o.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(o.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
   let lena = await neu('Lena'); const petra = await neu('Petra');
   lena = await konten.aendereProfil(lena, { sprache: 'en' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const brief = await d.legeTypAn({ name: 'Brief', titelVorlage: '{betreff}', felder: [
+  const brief = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{betreff}', felder: [
     { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
     { key: 'inhalt', label: 'Inhalt', typ: 'langtext' },
     { key: 'email', label: 'E-Mail', typ: 'text', format: 'email' },
@@ -275,7 +275,7 @@ describe('Inhalte übersetzen (#732): abschaltbar und Datenabfluss', () => {
     assert.equal(s.wirksam.id, 'wolke');
     // KI-Dienste (#796): Der neue Mappentyp „Brief“ ist für Pakete mit Netz gesperrt, bis er zugelassen ist.
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' }), (e: Fachfehler) => e.status === 409 && /KI-Dienste/.test(e.message));
-    await x.d.setzeKiTyp(x.brief.id, true, null);
+    await x.d.ki.setzeKiTyp(x.brief.id, true, null);
     const r = await x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' });
     assert.deepEqual(r.netz, ['uebersetzer.example']);
     assert.equal(x.eingaenge.at(-1)!.paket, 'wolke');

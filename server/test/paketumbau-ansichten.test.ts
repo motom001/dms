@@ -152,7 +152,7 @@ for (const pg of [false, true]) {
       const p = new Paketverwaltung(d, { version: () => VERSION, katalogUrl: 'https://katalog.test/katalog.json', abruf: async () => { throw new Error('ohne Netz'); }, dienstkonto: async () => konto });
       const hoch = async (dateien: Record<string, string>) => p.hochladen(zip(dateien), ICH);
       const installiere = async (dateien: Record<string, string>, mehr: Record<string, unknown> = {}) => p.installiere({ upload: (await hoch(dateien)).upload, bestaetigt: true, ...mehr }, ICH);
-      const typ = async (k: string) => (await d.listeTypen()).find((x) => x.schluessel === k);
+      const typ = async (k: string) => (await d.mappentypen.listeTypen()).find((x) => x.schluessel === k);
       const sicht = async (id: string) => (await d.listeSichten()).find((x) => x.id === id)!;
       const paket = async (id: string) => (await p.installierte()).find((x) => x.id === id)!;
       return { d, p, hoch, installiere, typ, sicht, paket };

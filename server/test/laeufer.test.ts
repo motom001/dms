@@ -193,7 +193,7 @@ describe('Paket-Läufer: Nacharbeiten (#403)', () => {
 describe('Sicherung außer Haus (#636): Leseschlüssel, PUT nur im Übergang', () => {
   it('ein Leseschlüssel darf PUT /sicherungen/{name}/extern (Pakete vor #636), sonst nichts schreiben', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const key = await schluessel.fuerDienstkonto(await konten.dienstkonto('sicherung_webdav', 'Sicherungsziel WebDAV'), 'lesen');
@@ -247,7 +247,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
 
   async function aufbau(grenzen = {}, db?: { repo: Repo; konto: KontoRepo }, extra: { weiterMax?: number } = {}) {
     const d = new Dienst(db?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(db?.konto ?? speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(db?.konto ?? speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     // Wie http.ts: Route suchen, Zugang prüfen (API-Schlüssel), Handler.
@@ -415,7 +415,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const sys = await d.sichereSystem();
     const z = await d.rechtepruefung.zugriff(konto);
     assert.deepEqual([...z.typen.keys()], [sys.post.id], 'sieht nur den Mappentyp Post');
-    const vertragTyp = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+    const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Unterlagen', art: 'dokumente' },
     ] });
     const vertrag = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
@@ -632,7 +632,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
   /** `ohneErsteNachberechnung`: Die Nachberechnung läuft nur, wenn der Test sie aufruft (#900). */
   async function aufbau(o: { ohneErsteNachberechnung?: boolean } = {}) {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const api: ApiAufruf = async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') });
@@ -656,7 +656,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const post = await d.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
     const post2 = await d.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
     const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
-    const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const vertrag = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
     const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
     const dok = async (m: string, r: string, name: string, text: string) => {

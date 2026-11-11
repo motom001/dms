@@ -12,7 +12,7 @@ import { routen, type Anfrage } from '../src/routen';
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
@@ -36,8 +36,8 @@ describe('Startseite (#334)', () => {
     const { d, admin, anna, rufe } = await aufbau();
     assert.equal(((await rufe(anna, 'GET', '/api/startseite')).body as Start).leer, true, 'nur Systemmappen: leer');
     const ALLES = { C: true, R: true, U: true, D: true, P: true };
-    const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
-    const geheim = await d.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
+    const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
       berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
     const m = [];
     for (let i = 1; i <= 6; i++) m.push(await d.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, anna.id));
@@ -56,7 +56,7 @@ describe('Startseite (#334)', () => {
 
   it('über einen API-Schlüssel wird nichts gemerkt', async () => {
     const { d, admin, anna, rufe } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     const x = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, admin.id);
     await rufe(anna, 'GET', '/api/mappen/:id', { params: { id: x.id }, apiSchluessel: { id: 'k', name: 'Skript' } as never });
     assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite')).body as Start).zuletzt, []);
@@ -67,7 +67,7 @@ type Zuletzt = Array<{ id: string; typId: string; titel: string; am: string | nu
 describe('Liste „Zuletzt geöffnet“ (#940)', () => {
   it('die letzten 25, neueste oben, mit Mappentyp und Zeitpunkt; Papierkorb und Unlesbares fehlen', async () => {
     const { d, konten, admin, anna, rufe } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     // Admin legt an – zählt für Admin, nicht für Anna.
     const m = [];
     for (let i = 1; i <= 30; i++) m.push(await d.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, admin.id));
@@ -91,7 +91,7 @@ describe('Liste „Zuletzt geöffnet“ (#940)', () => {
 
   it('Anlegen und Ändern zählen als geöffnet – nur für die Person, die es tut', async () => {
     const { d, admin, anna, rufe } = await aufbau();
-    const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     const a = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, anna.id);
     const b = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'B' } }, anna.id);
     assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['B', 'A'], 'Anlegen');

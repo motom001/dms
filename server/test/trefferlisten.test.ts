@@ -22,7 +22,7 @@ describe('Trefferlisten (#75)', () => {
 
   it('bereinigt Listen: eindeutige Schlüssel, genau ein Standard, nur gültige Spalten', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const t = await d.legeTypAn({ name: 'Beleg', felder, trefferlisten: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Beleg', felder, trefferlisten: [
       { key: 'kurz', name: 'Kurz', spalten: ['nr', 'pw', 'gibtsnicht', 'nr', '_typ', '_titel'] },
       { key: 'kurz', name: 'Noch eine', spalten: ['betrag'], standard: true },
       { name: 'Ohne Schlüssel', spalten: ['_geaendert'], standard: true },
@@ -31,10 +31,10 @@ describe('Trefferlisten (#75)', () => {
       ['kurz', ['nr', '_titel'], false], ['kurz_2', ['betrag'], true], ['ohne_schluessel', ['_geaendert'], false],
     ]);
     assert.deepEqual(t.trefferliste, ['betrag'], 'ältere Form = Spalten der Standardliste');
-    const leer = await d.legeTypAn({ name: 'Leer', felder });
+    const leer = await d.mappentypen.legeTypAn({ name: 'Leer', felder });
     assert.deepEqual(leer.trefferlisten, [{ key: 'standard', name: 'Standard', spalten: [], standard: true }], 'mindestens eine Liste');
     // Ältere Clients schicken nur trefferliste: sie ersetzt die Spalten der Standardliste.
-    const alt = await d.aendereTyp(t.id, { ...t, trefferliste: ['_titel', 'nr'] });
+    const alt = await d.mappentypen.aendereTyp(t.id, { ...t, trefferliste: ['_titel', 'nr'] });
     assert.deepEqual(alt.trefferlisten!.find((l) => l.standard)!.spalten, ['_titel', 'nr']);
     assert.equal(alt.trefferlisten!.length, 3);
   });
@@ -42,12 +42,12 @@ describe('Trefferlisten (#75)', () => {
   it('wählt die Liste einer Sicht, fällt bei ungültiger Wahl auf den Standard zurück und nimmt bei mehreren Typen nur Gemeinsames', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d, null);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const typ = (n: string) => typen.find((t) => t.name === n)!;
-    const r = await d.aendereTyp(typ('Rechnung').id, { ...typ('Rechnung'), trefferliste: undefined, trefferlisten: [
+    const r = await d.mappentypen.aendereTyp(typ('Rechnung').id, { ...typ('Rechnung'), trefferliste: undefined, trefferlisten: [
       ...trefferlistenVon(typ('Rechnung')), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag', 'bezahlt'] },
     ] });
-    const z = await d.aendereTyp(typ('Zahlung').id, { ...typ('Zahlung'), trefferliste: undefined, trefferlisten: [
+    const z = await d.mappentypen.aendereTyp(typ('Zahlung').id, { ...typ('Zahlung'), trefferliste: undefined, trefferlisten: [
       ...trefferlistenVon(typ('Zahlung')), { key: 'kurz', name: 'Knapp', spalten: ['betrag', '_titel', '_geaendert'] },
     ] });
     assert.deepEqual(spaltenDerSicht([r], 'kurz'), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag', 'bezahlt'], ungueltig: false });

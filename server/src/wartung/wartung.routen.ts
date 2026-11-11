@@ -9,26 +9,26 @@ import type { Route } from '../routen';
 export function wartungRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, wartung } = k;
   return [
-    { methode: 'GET', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async () => ok(await dienst.listeNummernkreise()) },
+    { methode: 'GET', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async () => ok(await dienst.nummernkreise.listeNummernkreise()) },
     { methode: 'POST', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async (a) => {
-      await dienst.speichereNummernkreis({ ...(a.body as object), neu: true }, ich(a).email);
-      return ok(await dienst.listeNummernkreise(), 201);
+      await dienst.nummernkreise.speichereNummernkreis({ ...(a.body as object), neu: true }, ich(a).email);
+      return ok(await dienst.nummernkreise.listeNummernkreise(), 201);
     } },
     { methode: 'PUT', pfad: '/api/werkbank/nummernkreise/:schluessel', zugang: 'admin', handler: async (a) => {
-      await dienst.speichereNummernkreis({ ...(a.body as object), schluessel: a.params.schluessel, neu: false }, ich(a).email);
-      return ok(await dienst.listeNummernkreise());
+      await dienst.nummernkreise.speichereNummernkreis({ ...(a.body as object), schluessel: a.params.schluessel, neu: false }, ich(a).email);
+      return ok(await dienst.nummernkreise.listeNummernkreise());
     } },
     { methode: 'DELETE', pfad: '/api/werkbank/nummernkreise/:schluessel', zugang: 'admin', handler: async (a) => {
-      await dienst.loescheNummernkreis(a.params.schluessel, ich(a).email);
-      return ok(await dienst.listeNummernkreise());
+      await dienst.nummernkreise.loescheNummernkreis(a.params.schluessel, ich(a).email);
+      return ok(await dienst.nummernkreise.listeNummernkreise());
     } },
     { methode: 'POST', pfad: '/api/werkbank/nummernkreise/:schluessel/zaehler', zugang: 'admin', handler: async (a) => {
-      await dienst.setzeZaehler(a.params.schluessel, a.body, ich(a).email);
-      return ok(await dienst.listeNummernkreise());
+      await dienst.nummernkreise.setzeZaehler(a.params.schluessel, a.body, ich(a).email);
+      return ok(await dienst.nummernkreise.listeNummernkreise());
     } },
-    { methode: 'GET', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) => ok(await dienst.nummernVorschau(a.query.typ ?? '', a.query.feld ?? '')) },
+    { methode: 'GET', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) => ok(await dienst.nummernkreise.nummernVorschau(a.query.typ ?? '', a.query.feld ?? '')) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) =>
-      ok(await dienst.auftraege.angemeldet(dienst.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email)), 202) },
+      ok(await dienst.auftraege.angemeldet(dienst.nummernkreise.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email)), 202) },
     // Absender bereinigen (#494): Vorschau, dann nur die gewählten Posts.
     { methode: 'GET', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async () => ok(await dienst.absenderVorschau()) },
     // Angaben, die nicht zum Format passen (#535): je Mappentyp und Feld, mit Sprung zur Mappe.

@@ -98,7 +98,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     G.tresor = tresor.alsText()!;
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen, tresor });
     const kontoRepo = speicherKontoRepo();
-    const konten = new Konten(kontoRepo, null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
     const zweifaktor = new Zweifaktor(einstellungen, (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w));
     konten.verbindeZweifaktor(zweifaktor);
     const lena = (await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: G.kontoPasswort })).benutzer;
@@ -131,7 +131,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
 
     const einrichtung = new Einrichtung({ konten, code: null, einstellungen, mandant: { name: async () => 'Familie Brandt', umbenennen: async () => {} } });
 
-    const typ = await d.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' }] });
     const mappe = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Portal', pw: G.passwortfeld } }, lena.id);
     ids.typ = typ.id; ids.mappe = mappe.id; ids.benutzer = lena.id;
 

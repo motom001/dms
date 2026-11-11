@@ -127,12 +127,12 @@ describe('Erkennung: Muster (#336)', () => {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const organisation = await d.legeTypAn({ name: 'Organisation', schluessel: 'organisation', felder: [
+  const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true, erkennung: {}, wiederfinden: true },
     { key: 'kundennummer', label: 'Kundennummer', typ: 'text', erkennung: { art: 'nummer' }, wiederfinden: true },
     { key: 'iban', label: 'IBAN', typ: 'text', erkennung: {}, wiederfinden: true },
@@ -141,7 +141,7 @@ async function aufbau() {
     { key: 'plz', label: 'PLZ', typ: 'text', erkennung: {} },
     { key: 'ort', label: 'Ort', typ: 'text', erkennung: {} },
   ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'titel', label: 'Titel', typ: 'text', pflicht: true },
     { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: organisation.id },
     { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', erkennung: {}, wiederfinden: true },
@@ -265,7 +265,7 @@ describe('Erkennung: Ablage in PostgreSQL (#336, #337)', { skip: !process.env.TE
 describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
   async function mitPerson() {
     const x = await aufbau();
-    const person = await x.d.legeTypAn({ name: 'Person', ausDokument: { beschriftung: 'Visitenkarte scannen' }, felder: [
+    const person = await x.d.mappentypen.legeTypAn({ name: 'Person', ausDokument: { beschriftung: 'Visitenkarte scannen' }, felder: [
       { key: 'vorname', label: 'Vorname', typ: 'text', erkennung: {} },
       { key: 'nachname', label: 'Nachname', typ: 'text', pflicht: true, erkennung: {} },
       { key: 'funktion', label: 'Funktion', typ: 'text', erkennung: {} },
@@ -318,7 +318,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
     await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.rechtepruefung.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
     const r = await d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.rechtepruefung.zugriff(A));
     assert.equal(r.vorschlaege.nachname.wert, 'Beispiel', 'Vorschlag auch für gefüllte Felder – die Oberfläche zeigt ihn als Alternative');
-    const post = (await d.listeTypen()).find((t) => t.system === 'post')!;
+    const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
     await assert.rejects(d.erkennung.fuerTyp(post.id, { text: KARTE }, await d.rechtepruefung.zugriff(A)), (e: Error & { status?: number }) => e.status === 422);
   });
 
@@ -334,10 +334,10 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
     assert.deepEqual([r.body.vorschlaege.vorname.wert, r.body.vorschlaege.nachname.wert, r.body.vorschlaege.funktion.wert, r.body.vorschlaege.email.wert], ['Ben', 'Beispiel', 'Kundenberater', 'ben@beispiel-ag.example']);
     assert.match(r.body.text, /BEGIN:VCARD/);
     await assert.rejects(rufe(A, 'POST', '/api/typen/:id/vorschlaege/datei', { params: { id: person.id }, query: { name: 'x.zip', typ: 'application/zip' }, body: Buffer.from('PK\u0003\u0004') }), (e: Error & { status?: number }) => e.status === 503 || e.status === 415);
-    const typ = (await d.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === person.id)!;
+    const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === person.id)!;
     assert.deepEqual(typ.ausDokument, { beschriftung: 'Visitenkarte scannen' });
-    await d.aendereTyp(person.id, { ...typ, ausDokument: { aus: true } });
-    assert.deepEqual((await d.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === person.id)!.ausDokument, { aus: true });
+    await d.mappentypen.aendereTyp(person.id, { ...typ, ausDokument: { aus: true } });
+    assert.deepEqual((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === person.id)!.ausDokument, { aus: true });
   });
 });
 
@@ -361,10 +361,10 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     const { d, A, B, anna, ben, vertrag, strom, post } = await aufbau();
     const aus = await post(BRIEF, 'Ohne Einstellung');
     assert.equal((await d.holeMappe(aus.id)).mappe.werte.stand, 'Neu', 'Standard: aus');
-    const typ = (await d.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
+    const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
     assert.equal(typ.autoZuordnen, false);
-    await d.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
-    assert.equal((await d.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!.autoZuordnen, true);
+    await d.mappentypen.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
+    assert.equal((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!.autoZuordnen, true);
 
     // Für Ben: er bekommt die Aufgabe; das Dokument wandert zum Strom-Vertrag (der einzige, der auf den Absender verweist).
     const p = await d.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
@@ -400,8 +400,8 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
 
   it('nicht sicher → nicht automatisch; eine direkt gefundene Nummer gewinnt; Empfänger ohne Leserecht, Archivmodus nie', async () => {
     const { d, A, anna, ben, vertrag, gas, sw, post } = await aufbau();
-    const typ = (await d.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
-    await d.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
+    const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
+    await d.mappentypen.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
     // Zweiter Vertrag mit dem Absender: zwei Kandidaten → nicht eindeutig.
     await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Fernwärme', partner: sw.id } }, anna.id);
     const p1 = await post(BRIEF, 'Zwei Kandidaten');
@@ -418,8 +418,8 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.equal((await d.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
     // Archivmodus: nie automatisch, auch wenn eingeschaltet.
     await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS, C: true, R: true, U: true, D: true, P: true }, regeln: [] }, true);
-    const t2 = (await d.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
-    await d.aendereTyp(vertrag.id, { ...t2, archiv: { jahre: 10, stichtag: null } });
+    const t2 = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
+    await d.mappentypen.aendereTyp(vertrag.id, { ...t2, archiv: { jahre: 10, stichtag: null } });
     const p4 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Archiv');
     assert.equal((await d.holeMappe(p4.id)).mappe.werte.stand, 'Neu');
   });

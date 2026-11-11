@@ -13,7 +13,7 @@ const ben = '00000000-0000-4000-8000-0000000000bb';
 describe('Notizen (#55)', () => {
   it('legt an, ändert, löscht (jeder darf), protokolliert, findet und zieht mit in den Papierkorb', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'V-1' } }, anna);
     await assert.rejects(d.legeNotizAn(m.id, '   ', anna), (e: unknown) => e instanceof Fachfehler && e.status === 422);
     const n = await d.legeNotizAn(m.id, 'Kündigung **telefonisch** angekündigt', anna);

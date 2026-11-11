@@ -20,13 +20,13 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const kontoRepo = speicherKontoRepo();
-  const konten = new Konten(kontoRepo, null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
   const { benutzer: cora } = await konten.legeBenutzerAn({ email: 'cora@example.org', name: 'Cora' }, anna.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.legeTypAn({ name: 'Vorgang', felder: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
   ] });
@@ -68,7 +68,7 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     assert.equal(a.empfaengerId, cora.id);
     assert.ok((await d.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Ben an Cora/.test(String(h.daten.text))));
     await d.aendereMappe(m.id, { werte: { nr: '1', text: `Bitte ${erwaehnung('Ben', ben.id)} ansehen` } }, A.id);
-    await d.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
     const beiCora = await d.meineAufgaben(C);
     assert.deepEqual(beiCora.map((x) => x.art).sort(), ['erwaehnung', 'manuell', 'manuell', 'passung']);
     assert.match(beiCora.find((x) => x.art === 'erwaehnung')!.text, /Erwähnt von Anna/, 'Text der Erwähnung bleibt');
@@ -102,7 +102,7 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     assert.equal(vertretung(await d.meineAufgaben(A)).length, 1);
 
     // Tägliche Zusammenfassung: Ben ist abwesend, bekommt keine
-    const t = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'x' } }, A.id);
     await d.legeAufgabeAn(m.id, { empfaengerId: cora.id, text: 'Für Cora' }, A.id);
     const an: string[] = [];
@@ -148,7 +148,7 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
 
   it('ergänzt die Systemfelder und benennt gleichnamige eigene Felder um', async () => {
     const { d, ben } = await aufbau();
-    const typ = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
+    const typ = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
     assert.deepEqual(typ.felder.filter((f) => f.system).map((f) => f.key).slice(-4), ['abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter']);
     // Stand vor dem Update: ohne die neuen Systemfelder, aber mit einem eigenen Feld „vertreter“ (Text).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test greift auf interne Felder zu

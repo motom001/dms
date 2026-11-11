@@ -21,7 +21,7 @@ export function exportRouten(k: RoutenKontext): Route[] {
     /* ---------- Vollexport (#254) ---------- */
     { methode: 'GET', pfad: '/api/werkbank/export', zugang: 'admin', handler: async () => {
       const ziel = exportZiel();
-      const typen = await dienst.listeTypen();
+      const typen = await dienst.mappentypen.listeTypen();
       return ok({ ordner: ziel, tage: EXPORT_TAGE, imSicherungsordner: !!x.exporte?.imSicherungsordner, volume: x.exporte?.volume ?? null, umzug: await umzugHinweis(dienst.kern.einstellungen), exporte: await exporteIn(ziel), abschaetzung: await dienst.exportAbschaetzung(), frei: await freierPlatz(ziel), kontakte: kontaktVorschlaege(typen), persoenlich: await dienst.persoenlicherExportErlaubt() });
     } },
     { methode: 'POST', pfad: '/api/werkbank/export', zugang: 'admin', handler: async (a) => {

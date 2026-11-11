@@ -16,11 +16,11 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.legeTypAn({ name: 'Vorgang', felder: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
     { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
   ] });
@@ -31,7 +31,7 @@ describe('Aufgaben (#54, #56)', () => {
   it('„passt nicht“ wird eine Aufgabe des Erstellers, die sich selbst erledigt', async () => {
     const { d, t, B } = await aufbau();
     const a = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
-    await d.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
     assert.equal((await d.zaehler(B)).eingang, 1);
     const [auf] = await d.meineAufgaben(B);
     assert.equal(auf.art, 'passung');
@@ -171,7 +171,7 @@ describe('Sammel-Weitergabe (#415, #419)', () => {
     const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
     const a1 = await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'eins' }, A.id);
     const a2 = await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'zwei' }, A.id);
-    await d.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
     const passung = (await d.meineAufgaben(B)).find((a) => a.art === 'passung')!;
     const r = await d.aufgabenErledigen([a1.id, a2.id, passung.id], B);
     assert.deepEqual(r.erledigt, [a1.id, a2.id]);

@@ -130,7 +130,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   // Texterkennung als Paket: Bilder warten auf sie; sie schreibt den Volltext mit Wortpositionen.
   await d.kern.repo.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
   if (o.mitPaket !== false) await d.kern.repo.speicherePaket(o.paket ?? pdfaPaket());
-  const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
   ] });
@@ -143,7 +143,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   const offen = async () => (await repo.faelligeEreignisse(1000)).filter((e) => e.art === 'datei.archivfassung');
   const dok = async (id: string) => (await repo.holeDokument(id))!;
   // API wie der Paket-Läufer: Dienstkonto des Pakets mit seinem Schlüssel.
-  const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
   const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
   const tabelle = routen(d, konten, { apiSchluessel: schluessel });
   const rufe = async (paketId: string, methode: string, pfad: string, params: Record<string, string>, body: unknown, query: Record<string, string> = {}) => {
@@ -502,8 +502,8 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     const gespeichert = Buffer.from((await x.d.archivfassungVon(id)).inhalt);
     const seiten = (await PDFDocument.load(gespeichert)).getPageCount();
     // Pflicht-Stempel am Mappentyp.
-    const typ = (await x.d.listeTypen()).find((y) => y.name === 'Rechnung')!;
-    await x.d.aendereTyp(typ.id, { ...typ, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
+    const typ = (await x.d.mappentypen.listeTypen()).find((y) => y.name === 'Rechnung')!;
+    await x.d.mappentypen.aendereTyp(typ.id, { ...typ, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
     // Paket (Dienstkonto): unverändert, ohne Stempel.
     const paketAbruf = await x.rufe('pdfa', 'GET', '/api/v1/dokumente/:id/archivfassung', { id }, undefined) as { datei: { inhalt: Buffer; koepfe?: Record<string, string> } };
     assert.ok(paketAbruf.datei.inhalt.equals(gespeichert), 'Paket: Archivfassung wie gespeichert');
@@ -534,7 +534,7 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     const bildUi = (await x.d.pdfSeitenbild(id, 1))!;
     assert.ok(!bildApi.equals(bildUi));
     // Ohne Pflicht: die Archivfassung, wie sie ist.
-    await x.d.aendereTyp(typ.id, { ...typ, stempel: null } as never);
+    await x.d.mappentypen.aendereTyp(typ.id, { ...typ, stempel: null } as never);
     const ohne = await mensch('/api/dokumente/:id/archivfassung', { id });
     assert.ok(ohne.datei.inhalt.equals(gespeichert));
   });

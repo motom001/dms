@@ -204,7 +204,7 @@ export interface DemoAbschaetzung {
 
 export async function schaetzeDemo(dienst: Dienst, o: DemoOptionen, platz?: DemoPlatz): Promise<DemoAbschaetzung> {
   // Dieselbe Rechnung wie in der Oberfläche (#365), hier zusätzlich mit dem freien Platz.
-  const typen = await dienst.listeTypen();
+  const typen = await dienst.mappentypen.listeTypen();
   const { mappen, mappenMitRegister, dokumente } = schaetzeMenge(typen, o);
   const frei = platz ? await platz.frei().catch(() => null) : null;
   const mindest = platz ? await platz.mindest().catch(() => 0) : 0;
@@ -259,7 +259,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   z = new Zufall(o.startwert);
   heute = o.startwert ? Date.UTC(2026, 0, 1) : Date.now();
   // Benutzer und Rollen pflegt das System; Demo-Mappen dürfen aber auf sie verweisen.
-  const typen = reihenfolge((await dienst.listeTypen()).filter((t) => !t.system));
+  const typen = reihenfolge((await dienst.mappentypen.listeTypen()).filter((t) => !t.system));
   if (!typen.length) throw new Fachfehler(409, 'Es gibt noch keine Mappentypen. Lege zuerst welche an oder lade die Beispiele.');
 
   // Grenze je Lauf (#365): Mappen × Anteil × Dokumente je Mappe.

@@ -16,15 +16,15 @@ type Ergebnis = { mappen: number; dokumente: number; geloescht: number; ausgelas
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const partner = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
   // Max darf Rechnungen nicht löschen.
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
   ], berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'max', name: 'Max löscht nicht', wenn: [{ art: 'benutzer', benutzer: [max.id] }], dann: { D: 'entziehen' }, stopp: false }] } });

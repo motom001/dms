@@ -14,7 +14,7 @@ const PDF = (t: string) => Buffer.from(`%PDF-1.4\n% ${t}\n`);
 async function aufbau(behalten?: number) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const t = await d.legeTypAn({ name: 'Beleg', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
+  const t = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
     { key: 'daten', name: 'Daten', art: 'felder' },
     { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true, versionenBehalten: behalten },
     { key: 'sonstiges', name: 'Sonstiges', art: 'dokumente' },

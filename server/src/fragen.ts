@@ -161,7 +161,7 @@ export class FragenAnDieAblage {
       const verlauf = liesVerlauf(e.verlauf);
       const g = await this.grenzen();
       const vorige = verlauf.filter((v) => v.rolle === 'frage').slice(-1).map((v) => v.text);
-      ausschnitte = await this.ausschnitte(z, frage, vorige, g, await this.d.kiSperreFuer(paket.id));
+      ausschnitte = await this.ausschnitte(z, frage, vorige, g, await this.d.ki.kiSperreFuer(paket.id));
       const mappen = new Set(ausschnitte.map((a) => a.mappe.id)).size;
       schreibe({ art: 'ausschnitte', ausschnitte, mappen });
       geschrieben = true;

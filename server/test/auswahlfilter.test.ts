@@ -13,7 +13,7 @@ const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const partner = await d.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [
+  const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Arzt', 'Versicherung', 'Handwerker'] },
     { key: 'aktiv', label: 'Aktiv', typ: 'janein' },
@@ -22,7 +22,7 @@ async function aufbau() {
     { art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Arzt'] } },
     { art: 'feld', feld: 'aktiv', op: 'ja' },
   ];
-  const bericht = await d.legeTypAn({ name: 'Arztbericht', felder: [
+  const bericht = await d.mappentypen.legeTypAn({ name: 'Arztbericht', felder: [
     { key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: filter },
     { key: 'kopie', label: 'Kopie an', typ: 'referenz', zielTyp: partner.id, mehrfach: true, auswahlFilter: filter },
   ] });
@@ -34,9 +34,9 @@ describe('Auswahlfilter am Referenzfeld (#172)', () => {
   it('Mappentyp: Filter wird gespeichert, unbekannte Felder werden gemeldet, nicht bei „jede Mappe“', async () => {
     const { d, partner, bericht } = await aufbau();
     assert.equal(bericht.felder[0].auswahlFilter?.length, 2);
-    await assert.rejects(d.legeTypAn({ name: 'Falsch', felder: [{ key: 'x', label: 'X', typ: 'referenz', zielTyp: partner.id, auswahlFilter: [{ art: 'feld', feld: 'gibtsnicht', op: 'leer' }] }] }),
+    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Falsch', felder: [{ key: 'x', label: 'X', typ: 'referenz', zielTyp: partner.id, auswahlFilter: [{ art: 'feld', feld: 'gibtsnicht', op: 'leer' }] }] }),
       (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('Auswahlfilter'));
-    const dok = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'x', label: 'X', typ: 'text' }] });
+    const dok = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'x', label: 'X', typ: 'text' }] });
     assert.equal(dok.felder[0].auswahlFilter, undefined);
     assert.deepEqual(await d.zaehleAuswahl({ zielTyp: partner.id, bedingungen: bericht.felder[0].auswahlFilter }, ICH.id), { passen: 2, gesamt: 4, probleme: [] });
   });
@@ -66,7 +66,7 @@ describe('Auswahlfilter am Referenzfeld (#172)', () => {
     // Wechsel auf eine andere unpassende geht nicht, zurück auf die alte unpassende auch nicht (sie ist dann neu)
     await assert.rejects(d.aendereMappe(b.id, { werte: { ...b.werte, arzt: allianz.id } }), status(422));
     // Filter geändert: bestehende Werte bleiben
-    await d.aendereTyp(bericht.id, { ...bericht, felder: [{ ...bericht.felder[0], auswahlFilter: [{ art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Versicherung'] } }] }, bericht.felder[1]] });
+    await d.mappentypen.aendereTyp(bericht.id, { ...bericht, felder: [{ ...bericht.felder[0], auswahlFilter: [{ art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Versicherung'] } }] }, bericht.felder[1]] });
     const b2 = await d.aendereMappe(b.id, { werte: { ...b.werte } });
     assert.equal(b2.werte.arzt, mueller.id);
     assert.ok(partner);
@@ -77,12 +77,12 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
   async function aufbau2() {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const GEBIETE = ['Kardiologie', 'Orthopädie', 'Zahnmedizin'];
-    const partner = await d.legeTypAn({ name: 'Arzt', titelVorlage: '{name}', felder: [
+    const partner = await d.mappentypen.legeTypAn({ name: 'Arzt', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text', pflicht: true },
       { key: 'fach', label: 'Fachgebiet', typ: 'auswahl', optionen: GEBIETE },
     ] });
     const filter = [{ art: 'feld', feld: 'fach', op: 'einerVon', wert: { art: 'eigenesFeld', feld: 'gebiet' } }];
-    const bericht = await d.legeTypAn({ name: 'Bericht', felder: [
+    const bericht = await d.mappentypen.legeTypAn({ name: 'Bericht', felder: [
       { key: 'gebiet', label: 'Fachgebiet', typ: 'auswahl', optionen: ['Kardiologie', 'Orthopädie'] },
       { key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: filter },
     ] });
@@ -92,7 +92,7 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
 
   it('Mappentyp: eigenes Feld muss existieren, passen und darf nicht das Referenzfeld selbst sein', async () => {
     const { d, partner } = await aufbau2();
-    const probe = (felder: unknown[]) => d.legeTypAn({ name: `T${Math.random()}`, felder });
+    const probe = (felder: unknown[]) => d.mappentypen.legeTypAn({ name: `T${Math.random()}`, felder });
     const ref = (wert: unknown) => ({ key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: [{ art: 'feld', feld: 'fach', op: 'einerVon', wert }] });
     const meldet = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && re.test(JSON.stringify(e.details));
     await assert.rejects(probe([ref({ art: 'eigenesFeld', feld: 'fehlt' })]), meldet(/gibt es nicht/));

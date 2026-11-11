@@ -47,7 +47,7 @@ async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
  */
 async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const d = new Dienst(repos?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
@@ -55,9 +55,9 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const benutzerTyp = (await d.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const kontakt = await d.legeTypAn({ name: 'Kontakt', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
+  const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+  const kontakt = await d.mappentypen.legeTypAn({ name: 'Kontakt', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: kontakt.id },
     { key: 'kuendbar_bis', label: 'Kündbar bis', typ: 'datum' },

@@ -35,7 +35,7 @@ async function repo(pg: boolean): Promise<Repo> {
 
 async function aufbau(pg: boolean) {
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const typ = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
@@ -95,7 +95,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal((await d.archivAufkleber({ anzahl: 1 }, 'admin')).erste, 'A-000043', 'gedruckte Nummern gelten als vergeben');
       await assert.rejects(d.archivAufkleber({ anzahl: 1, etikett: '48x25', start: 41 }, 'admin'), status(422));
       await assert.rejects(d.archivAufkleber({ anzahl: 0 }, 'admin'), status(422));
-      await assert.rejects(d.loescheNummernkreis('archivnummer', 'admin'), status(409));
+      await assert.rejects(d.nummernkreise.loescheNummernkreis('archivnummer', 'admin'), status(409));
     });
 
     it('Wiederherstellen aus dem Papierkorb: inzwischen vergebene Nummer entfällt', async () => {

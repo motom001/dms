@@ -102,9 +102,9 @@ describe('Hochladen als Strom (#746)', () => {
 
   it('über HTTP: Dokument und neue Version als Strom, mit richtiger Prüfsumme; danach keine temporären Dateien', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-    const typ = await d.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+    const typ = await d.mappentypen.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }],
       register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Dokumente', art: 'dokumente', versionierung: true }] });
     const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Akte Jonas' } });
     const { baueApp } = await import('../src/http');

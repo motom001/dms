@@ -38,7 +38,7 @@ async function aufbau() {
   const dateien = speicherDateien();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(r, dateien, { einstellungen });
-  const typ = await d.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'text', label: 'Text', typ: 'text' }] });
+  const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'text', label: 'Text', typ: 'text' }] });
   return { r, d, sql: sql as postgres.Sql, typ, dateien, einstellungen };
 }
 

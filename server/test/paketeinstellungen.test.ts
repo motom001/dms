@@ -167,7 +167,7 @@ describe('Paket-Einstellungen (#197)', () => {
     await assert.rejects(p.speichereEinstellungen('zuordnung', { werte: { grenze: 11, sprache: 'Klingonisch', ab: '31.12.2026', typ: 'x', regeln: [{ absender: '' }] } }, ICH),
       (x) => x instanceof Fachfehler && x.status === 422 && Object.keys((x.details as { felderFehler: Record<string, string> }).felderFehler).sort().join() === 'ab,grenze,regeln.1.absender,sprache,token,typ');
 
-    const typ = (await d.listeTypen()).find((t) => t.id === inst.typen.vorgang)!;
+    const typ = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.vorgang)!;
     const rolle = (await d.listeRollen())[0].id;
     const sicht = (await d.legeSichtAn({ name: 'S', typen: [typ.id] })).id;
     const gueltig = {

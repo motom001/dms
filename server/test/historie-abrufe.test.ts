@@ -52,12 +52,12 @@ async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
 /** Vertrag mit zwei Registern „Historie“: „Verlauf“ (Vorauswahl) und „Abrufe“ (nur Herunterladen, API, WebDAV). */
 async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const d = new Dienst(repos?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const typ = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
     { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     { key: 'verlauf', name: 'Verlauf', art: 'protokoll' },
     { key: 'abrufe', name: 'Abrufe', art: 'protokoll', zeigt: ['herunterladen', 'api', 'webdav'] },

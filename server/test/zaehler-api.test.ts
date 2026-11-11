@@ -81,7 +81,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
     dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     // Änderungen anderer sollen hier sofort zählen (die Mindestgültigkeit #742 prüft zaehlerspeicher.test.ts).
     dienst.mindestensMs = 0;
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     wd = new Webdav({ dienst, konten, schluessel, einstellungen: speicherEinstellungen(), adresse: () => 'https://dms.example.org' });

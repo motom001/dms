@@ -37,11 +37,11 @@ type Seite = { typId: string; spalten: string[]; gesamt: number; von: number; ma
 
 /** Rechnung mit Tabelle „Positionen“; Rechnungsposition verweist über „rechnung“ hierher. */
 async function rechnungen(d: Dienst) {
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Rechnungsnummer', typ: 'text', pflicht: true },
     { key: 'privat', label: 'Privat', typ: 'janein' },
   ] });
-  const position = await d.legeTypAn({ name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', felder: [
+  const position = await d.mappentypen.legeTypAn({ name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', felder: [
     { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true, verweisart: 'zugehoerigkeit' },
     { key: 'nr', label: 'Nr.', typ: 'zahl' },
     { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true },
@@ -50,7 +50,7 @@ async function rechnungen(d: Dienst) {
     { key: 'privat', label: 'Privat', typ: 'janein' },
     { key: 'pin', label: 'Pin', typ: 'passwort' },
   ], trefferliste: ['nr', 'beschreibung', 'menge', 'einzelpreis', 'pin'] });
-  const mitTabelle = await d.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder,
+  const mitTabelle = await d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder,
     { key: 'positionen', label: 'Positionen', typ: 'tabelle', pflicht: true, standard: 'x', quelle: { typId: position.id, feldKey: 'rechnung', neu: '+ Position' } }] });
   return { rechnung: mitTabelle, position };
 }
@@ -59,7 +59,7 @@ async function aufbau() {
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-tabelle-')), 'dms.schluessel'), () => null);
   await tresor.laden(); await tresor.erzeuge();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
@@ -167,8 +167,8 @@ describe('Tabelle in der Ablage (#1030)', () => {
     const geheim = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-geheim', privat: true } }, admin.id);
     await assert.rejects(seite(lena, geheim.id), status(404));
     // Eine Spalte, die auf eine nicht lesbare Mappe zeigt: nur „nicht sichtbar“, ohne Titel.
-    const pt = (await d.listeTypen()).find((t) => t.id === position.id)!;
-    await d.aendereTyp(position.id, { ...pt, felder: [...pt.felder, { key: 'siehe', label: 'Siehe', typ: 'referenz', zielTypen: [rechnung.id] }], trefferliste: ['beschreibung', 'siehe'] });
+    const pt = (await d.mappentypen.listeTypen()).find((t) => t.id === position.id)!;
+    await d.mappentypen.aendereTyp(position.id, { ...pt, felder: [...pt.felder, { key: 'siehe', label: 'Siehe', typ: 'referenz', zielTypen: [rechnung.id] }], trefferliste: ['beschreibung', 'siehe'] });
     await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 5, beschreibung: 'Mit Verweis', siehe: geheim.id } }, admin.id);
     const s3 = await seite(lena, r.id);
     const zeile = s3.mappen.find((m) => m.werte.beschreibung === 'Mit Verweis')!;
@@ -199,12 +199,12 @@ describe('Tabelle in der Ablage (#1030)', () => {
 
   it('Quelle bleibt: Typ löschen und Feld entfernen gehen erst ohne die Tabelle', async () => {
     const { d, rechnung, position } = await aufbau();
-    await assert.rejects(d.loescheTyp(position.id), (e: unknown) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('Positionen'));
-    const p = (await d.listeTypen()).find((t) => t.id === position.id)!;
-    await assert.rejects(d.aendereTyp(position.id, { ...p, felder: p.felder.filter((f) => f.key !== 'rechnung') }), (e: unknown) => e instanceof Fachfehler && /braucht die Tabelle „Positionen“/.test(JSON.stringify(e.details)));
-    await d.aendereTyp(rechnung.id, { ...rechnung, felder: rechnung.felder.filter((f) => f.key !== 'positionen') });
-    await d.aendereTyp(position.id, { ...p, felder: p.felder.filter((f) => f.key !== 'rechnung') });
-    await d.loescheTyp(position.id);
+    await assert.rejects(d.mappentypen.loescheTyp(position.id), (e: unknown) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('Positionen'));
+    const p = (await d.mappentypen.listeTypen()).find((t) => t.id === position.id)!;
+    await assert.rejects(d.mappentypen.aendereTyp(position.id, { ...p, felder: p.felder.filter((f) => f.key !== 'rechnung') }), (e: unknown) => e instanceof Fachfehler && /braucht die Tabelle „Positionen“/.test(JSON.stringify(e.details)));
+    await d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: rechnung.felder.filter((f) => f.key !== 'positionen') });
+    await d.mappentypen.aendereTyp(position.id, { ...p, felder: p.felder.filter((f) => f.key !== 'rechnung') });
+    await d.mappentypen.loescheTyp(position.id);
   });
 });
 
@@ -267,12 +267,12 @@ ${quelle}
     const h = await z.p.hochladen(zip.daten, ICH);
     assert.deepEqual(h.vorschau.probleme, []);
     const paket = await z.p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
-    const zt = (await z.d.listeTypen()).find((t) => t.id === paket.typen.rechnung)!;
+    const zt = (await z.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.rechnung)!;
     assert.deepEqual(zt.felder.find((f) => f.key === 'positionen')!.quelle, { typId: paket.typen.rechnungsposition, feldKey: 'rechnung', neu: '+ Position' });
     assert.ok(zt.register[0].felder!.includes('positionen'));
     // Entfernen löst den Kreis aus Tabelle und Verweis.
     await z.p.entferne('rechnungen_test', ICH);
-    assert.equal((await z.d.listeTypen()).some((t) => t.id === paket.typen.rechnung || t.id === paket.typen.rechnungsposition), false);
+    assert.equal((await z.d.mappentypen.listeTypen()).some((t) => t.id === paket.typen.rechnung || t.id === paket.typen.rechnungsposition), false);
   });
 
   it('Installieren aus der Schreibweise der Registry: Tabelle vor ihrer Quelle, Beschriftung „+ Neu“ auf Englisch', async () => {
@@ -283,7 +283,7 @@ ${quelle}
     const h = await p.hochladen(zip, ICH);
     assert.deepEqual(h.vorschau.probleme, []);
     const paket = await p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
-    const zt = (await d.listeTypen()).find((t) => t.id === paket.typen.rechnung)!;
+    const zt = (await d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.rechnung)!;
     const f = zt.felder.find((x) => x.key === 'positionen')!;
     assert.deepEqual([f.quelle?.typId, f.beschriftungen?.en?.neu], [paket.typen.rechnungsposition, '+ Item']);
     assert.deepEqual(zt.register[0].abschnitte?.map((x) => x.vor), ['positionen']);

@@ -738,7 +738,7 @@ export class Paketerstellung {
 
   /** Was es zur Auswahl gibt, gemerkte Entwürfe und Vorschläge für den nächsten Export. */
   async stand(): Promise<ErstellenStand> {
-    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.listeTypen(), await this.d.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
+    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.mappentypen.listeTypen(), await this.d.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
     const herkunft = (map: (p: InstalliertesPaket) => Record<string, string>, id: string) => {
       const p = pakete.find((x) => Object.values(map(x)).includes(id));
       return p ? { id: p.id, name: p.name, version: p.version } : null;
@@ -769,7 +769,7 @@ export class Paketerstellung {
   }
 
   private async daten(e: PaketErstellenEingabe): Promise<ErstellenDaten> {
-    const typen = await this.d.listeTypen();
+    const typen = await this.d.mappentypen.listeTypen();
     const gewaehlt = new Set(e.beispiele);
     const mappen = gewaehlt.size ? (await Promise.all(e.typen.filter((t) => typen.some((x) => x.id === t)).map((t) => this.d.listeMappen(t)))).flat().filter((m) => gewaehlt.has(m.id)) : [];
     // Beispiel-Dokumente (#878): nur PDF, PNG und JPEG; zusammen höchstens so viel, wie ins Archiv passt.
@@ -866,7 +866,7 @@ export class Paketerstellung {
   async selbstErstelltDetail(id: string): Promise<SelbstErstelltDetail> {
     const e = (await paketEntwuerfe(this.d.kern)).find((x) => x.id === id);
     if (!e) throw new Fachfehler(404, t('meldungen.paketerstellung.dieses-selbst-erstellte-paket'));
-    const [typen, sichten] = [await this.d.listeTypen(), await this.d.listeSichten()];
+    const [typen, sichten] = [await this.d.mappentypen.listeTypen(), await this.d.listeSichten()];
     return {
       ...this.kurz(e, await this.archive(id)), beschreibung: e.beschreibung, dms: e.dms, autor: e.autor, aenderungen: e.aenderungen, verlauf: e.verlauf,
       typen: e.typen.map((tid) => { const t = typen.find((x) => x.id === tid); return { id: tid, name: t?.name ?? null, geaendert: !!t && t.geaendert > e.exportiert }; }),

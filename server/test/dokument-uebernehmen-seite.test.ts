@@ -53,7 +53,7 @@ async function aufbau(pg: boolean) {
   const r = await repo(pg);
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
   await d.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [FELDREG, BELEGE] });
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [FELDREG, BELEGE] });
   // Von jemand anderem angelegt (null = System) – früher hätte das Auflösen hier 422 geliefert.
   const bestehend = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2026-0700' } }, null);
   const fruehere = await d.legePostAn({ betreff: 'Erste Mahnung' }, { id: LENA, name: 'Lena' });
@@ -139,13 +139,13 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
 async function mitKonten() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
-  const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [FELDREG, BELEGE] });
-  const postTyp = (await d.listeTypen()).find((x) => x.system === 'post')!;
+  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [FELDREG, BELEGE] });
+  const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!) });
@@ -215,9 +215,9 @@ describe('Dokument übernehmen: Abgleich für Dokumente (#934)', () => {
   async function abgleichAufbau() {
     const k = await mitKonten();
     const { d, lena } = k;
-    const partner = await d.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', wiederfinden: true }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text', wiederfinden: true }], register: [{ ...FELDREG, felder: ['name', 'kundennummer'] }, BELEGE] });
-    const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true }, { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id, wiederfinden: true }], register: [{ ...FELDREG, felder: ['titel', 'vertragsnummer', 'partner'] }, BELEGE] });
-    const beleg = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{rechnungsnummer}', felder: [{ key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, wiederfinden: true }], register: [{ ...FELDREG, felder: ['rechnungsnummer', 'vertrag'] }, BELEGE], beschriftungen: { en: { name: 'Rechnung' } } });
+    const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', wiederfinden: true }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text', wiederfinden: true }], register: [{ ...FELDREG, felder: ['name', 'kundennummer'] }, BELEGE] });
+    const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true }, { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id, wiederfinden: true }], register: [{ ...FELDREG, felder: ['titel', 'vertragsnummer', 'partner'] }, BELEGE] });
+    const beleg = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{rechnungsnummer}', felder: [{ key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, wiederfinden: true }], register: [{ ...FELDREG, felder: ['rechnungsnummer', 'vertrag'] }, BELEGE], beschriftungen: { en: { name: 'Rechnung' } } });
     const sw = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, lena.id);
     const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
     const da = await d.legeMappeAn({ typId: beleg.id, werte: { rechnungsnummer: 'R-2026-0815' } }, lena.id);
@@ -256,7 +256,7 @@ describe('Dokument übernehmen: Abgleich für Dokumente (#934)', () => {
 
   it('nur Dokumente, die man lesen darf (sonst 403), unbekannte 404; höchstens 10', async () => {
     const { d, jonas, rufe, post, dok } = await abgleichAufbau();
-    const postTyp = (await d.listeTypen()).find((x) => x.system === 'post')!;
+    const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
     await d.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
     await assert.rejects(rufe(jonas, 'POST', '/api/abgleich', { body: { dokumente: [dok.id] } }), (e) => e instanceof Fachfehler && (e.status === 403 || e.status === 404));
     await assert.rejects(rufe(jonas, 'POST', '/api/abgleich', { body: { dokumente: ['00000000-0000-4000-8000-00000000dead'] } }), status(404));

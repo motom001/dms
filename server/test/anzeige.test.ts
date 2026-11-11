@@ -131,13 +131,13 @@ describe('Anzeige-Bedingungen (#1033): Auswertung in shared/', () => {
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
-  const vertrag = await d.legeTypAn(VERTRAG);
+  const vertrag = await d.mappentypen.legeTypAn(VERTRAG);
   return { d, konten, admin, vertrag };
 }
 const fehlerFelder = async (p: Promise<unknown>): Promise<string[]> => {
@@ -200,18 +200,18 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
 
   it('Speichern des Typs prüft die Bedingungen; Systemfelder bekommen keine', async () => {
     const { d, vertrag } = await aufbau();
-    await assert.rejects(d.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'vermieter' ? { ...f, anzeigen: { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'gibtsnicht', op: 'leer' } }] } } : f)) }),
+    await assert.rejects(d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'vermieter' ? { ...f, anzeigen: { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'gibtsnicht', op: 'leer' } }] } } : f)) }),
       (e) => e instanceof Fachfehler && e.status === 422);
-    await assert.rejects(d.aendereTyp(vertrag.id, { ...vertrag, register: vertrag.register.map((r) => (r.key === 'vertrag' ? { ...r, abschnitte: [{ vor: 'art', titel: 'Kopf', anzeigen: MIETE }] } : r)) }),
+    await assert.rejects(d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, register: vertrag.register.map((r) => (r.key === 'vertrag' ? { ...r, abschnitte: [{ vor: 'art', titel: 'Kopf', anzeigen: MIETE }] } : r)) }),
       (e) => e instanceof Fachfehler && /Kopf/.test(JSON.stringify(e.details)));
     // Wer anzeigen nicht nennt (älteres Programm), behält die Regel.
     const ohne = { ...vertrag.felder.find((f) => f.key === 'notiz')! };
     delete ohne.anzeigen;
-    const neu = await d.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'notiz' ? ohne : f)) });
+    const neu = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: vertrag.felder.map((f) => (f.key === 'notiz' ? ohne : f)) });
     assert.ok(neu.felder.find((f) => f.key === 'notiz')!.anzeigen);
-    const post = (await d.listeTypen()).find((x) => x.system === 'post');
+    const post = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post');
     if (post) {
-      const p = await d.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'betreff' ? { ...f, anzeigen: BERUFLICH } : f)) });
+      const p = await d.mappentypen.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'betreff' ? { ...f, anzeigen: BERUFLICH } : f)) });
       assert.equal(p.felder.find((f) => f.key === 'betreff')!.anzeigen, undefined);
     }
   });
@@ -220,23 +220,23 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     const { d, admin, vertrag } = await aufbau();
     const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
     await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
-    await d.pruefePassung(vertrag.id);
+    await d.passung.pruefePassung(vertrag.id);
     assert.match((await d.holeMappe(m.id)).mappe.problem ?? '', /Kostenstelle/);
     await d.setzeMerkmale({ beruflich: false }, 'markus@example.org');
-    await d.pruefePassung(vertrag.id);
+    await d.passung.pruefePassung(vertrag.id);
     assert.equal((await d.holeMappe(m.id)).mappe.problem ?? null, null);
   });
 
   it('Paketformat: Paket erstellen nimmt die Einstellung mit, das Lesen prüft sie; Typ-Verweis statt Id, bestimmte Mappe bleibt weg', async () => {
     const { d, vertrag, admin } = await aufbau();
-    const fahrzeug = await d.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kennzeichen', label: 'Kennzeichen', typ: 'text' }] });
+    const fahrzeug = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kennzeichen', label: 'Kennzeichen', typ: 'text' }] });
     const auto = await d.legeMappeAn({ typId: fahrzeug.id, werte: { kennzeichen: 'B-LN 1' } }, admin.id);
-    const t = await d.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder,
+    const t = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder,
       { key: 'betrifft', label: 'betrifft', typ: 'referenz', zielTyp: fahrzeug.id },
       { key: 'kfz', label: 'Kfz-Steuer', typ: 'betrag', anzeigen: { modus: 'eine', bedingungen: [{ art: 'verweistyp', feld: 'betrifft', typ: fahrzeug.id }, { art: 'feld', bedingung: { art: 'feld', feld: 'betrifft', op: 'zeigtAuf', wert: { art: 'fest', wert: [auto.id] } } }] } },
     ], register: vertrag.register.map((r) => (r.key === 'vertrag' ? { ...r, felder: [...r.felder!, 'betrifft', 'kfz'] } : r)) });
     const bau = baue({ typen: [t.id, fahrzeug.id], sichten: [], beispiele: [], id: 'vertraege_test', name: 'Verträge', version: '1.0.0', beschreibung: 'Ein Paket zum Testen der Anzeige-Bedingungen.', autor: { name: 'Markus', github: 'markus' }, lizenz: 'MIT', dms: '>=0.113.0', aenderungen: '' },
-      { typen: await d.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.217.0', entwurf: null, jetzt: new Date('2026-11-10T12:00:00Z') });
+      { typen: await d.mappentypen.listeTypen(), sichten: [], pakete: [], dmsTypen: new Map(), mappen: [], dmsVersion: '0.217.0', entwurf: null, jetzt: new Date('2026-11-10T12:00:00Z') });
     assert.ok(bau.hinweise.some((h) => /Anzeige-Bedingung nennt eine Mappe/.test(h)), bau.hinweise.join(' | '));
     const yaml = parse(bau.dateien.find((x) => x.name.endsWith('mappentypen.yaml'))!.daten.toString()) as Array<{ schluessel: string; felder: Array<Record<string, unknown>>; register: Array<Record<string, unknown>> }>;
     const v = yaml.find((x) => x.felder.some((f) => f.key === 'kfz'))!;
@@ -324,7 +324,7 @@ describe('Paket installieren mit Anzeige-Bedingungen (#1033)', () => {
       ].join('\n'),
     }), katalogUrl: KATALOG });
     const inst = await p.installiere({ id: 'vertraege_test', version: '1.0.0' }, { id: admin.id, email: admin.email });
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const v = typen.find((x) => x.id === inst.typen.vertrag)!;
     assert.deepEqual(v.felder.find((f) => f.key === 'kfz')!.anzeigen, { modus: 'alle', bedingungen: [{ art: 'verweistyp', feld: 'betrifft', typ: inst.typen.fahrzeug }] });
     assert.deepEqual(v.register[0].abschnitte, [{ vor: 'kostenstelle', anzeigen: BERUFLICH, titel: 'Abschluss' }]);

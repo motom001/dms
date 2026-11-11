@@ -164,7 +164,7 @@ export class Uebersetzung {
     const quelle = await this.lies(q, o.z);
     // KI-Dienste (#796): Inhalte aus nicht zugelassenen Mappentypen gehen an kein KI-Paket.
     const typ = (await this.repo().holeMappe(quelle.mappe))?.typId;
-    if (!typ || (await this.d.kiSperreFuer(w.p.id))(typ)) throw new Fachfehler(409, t('meldungen.uebersetzung.ki-nicht-zugelassen', { name: w.p.name }));
+    if (!typ || (await this.d.ki.kiSperreFuer(w.p.id))(typ)) throw new Fachfehler(409, t('meldungen.uebersetzung.ki-nicht-zugelassen', { name: w.p.name }));
     const gekuerzt = quelle.text.length > UEBERSETZEN_TEXT_MAX;
     const original = gekuerzt ? quelle.text.slice(0, UEBERSETZEN_TEXT_MAX) : quelle.text;
     if (!original.trim()) throw new Fachfehler(422, t('meldungen.uebersetzung.leer'));

@@ -110,7 +110,7 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     // Wie verbinde() in db.ts, zusätzlich zählt jede SQL-Anweisung (Abfragen je Anfrage).
     const sql = postgres(dbUrl, { max: 4, onnotice: () => {}, infer: true, debug: () => { n++; } });
     const dienst = new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a741-')), HAUSHALT), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
-    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.benutzerspiegel());
+    const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     const zweifaktor = new Zweifaktor(pgEinstellungen(sql, HAUSHALT), (k: string) => `v:${k}`, (w: string) => (w.startsWith('v:') ? w.slice(2) : null));
     konten.verbindeZweifaktor(zweifaktor);
@@ -153,13 +153,13 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
     ids.petra = await mitPasswort('petra@example.org', 'Petra');
     await A.dienst.gleicheBenutzerAb(await A.konten.listeBenutzer());
-    const typen = await A.dienst.listeTypen();
+    const typen = await A.dienst.mappentypen.listeTypen();
     const rolleTyp = typen.find((t: { system?: string }) => t.system === 'rolle');
     ids.fibu = (await A.dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, lena.id)).id;
     ids.andere = (await A.dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
     await A.dienst.setzeRollen(ids.jonas, [ids.fibu]);
     await A.dienst.setzeRollen(ids.markus, [ids.fibu]);
-    ids.rechnung = (await A.dienst.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
+    ids.rechnung = (await A.dienst.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
     rw = (rollen) => ({ grund: NICHTS, regeln: [{ id: 'fibu', name: 'FiBu liest', wenn: [{ art: 'rolle', rollen }], dann: { R: 'erteilen', U: 'erteilen', C: 'erteilen' }, stopp: false }] }) as unknown as Regelwerk;
     await A.dienst.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
     for (const nr of ['R1', 'R2']) ids.mappe = (await A.dienst.legeMappeAn({ typId: ids.rechnung, werte: { nr } }, lena.id)).id;

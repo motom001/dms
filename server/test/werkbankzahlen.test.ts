@@ -26,12 +26,12 @@ describe('Werkbank-Zahlen (#375)', () => {
 
   it('folgt Anlegen und Löschen eines Nummernkreises ohne eigenen Abruf des Bereichs', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const zahlen = () => werkbankZahlen({ nummernkreise: () => d.listeNummernkreise(), darfWeg: () => d.darfWeg() });
+    const zahlen = () => werkbankZahlen({ nummernkreise: () => d.nummernkreise.listeNummernkreise(), darfWeg: () => d.darfWeg() });
     const vorher = (await zahlen()).nummernkreise!;
-    assert.equal(vorher, (await d.listeNummernkreise()).length, 'gleiche Zahl wie im Bereich');
-    await d.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: 'R{zaehler:4}', start: 1 }, 'test');
+    assert.equal(vorher, (await d.nummernkreise.listeNummernkreise()).length, 'gleiche Zahl wie im Bereich');
+    await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: 'R{zaehler:4}', start: 1 }, 'test');
     assert.equal((await zahlen()).nummernkreise, vorher + 1);
-    await d.loescheNummernkreis('rechnung', 'test');
+    await d.nummernkreise.loescheNummernkreis('rechnung', 'test');
     assert.equal((await zahlen()).nummernkreise, vorher);
     assert.equal((await zahlen()).darfWeg, 0);
   });

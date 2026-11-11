@@ -32,7 +32,7 @@ async function miss(n: number) {
     await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
     await sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Messung') ON CONFLICT DO NOTHING`;
     const d = new Dienst(pgRepo(sql, H) as never as Repo, speicherDateien());
-    const typ = await d.legeTypAn({ name: 'Rechnung', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const reg = typ.register.find((r) => r.art === 'dokumente')!.key;
     let t = Date.now();
     await sql`INSERT INTO mappen (id, haushalt_id, typ_id, werte) SELECT gen_random_uuid(), ${H}, ${typ.id}, jsonb_build_object('name', 'Mappe ' || i) FROM generate_series(1, ${n}) i`;

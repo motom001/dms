@@ -46,12 +46,12 @@ async function repo(pg: boolean): Promise<Repo> {
 /** Basis im Kleinen: Organisation, Niederlassung (gehört zu einer Organisation), Person mit beiden Richtungen. */
 async function aufbau(pg = false) {
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const organisation = await d.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-  const niederlassung = await d.legeTypAn({ name: 'Niederlassung', titelVorlage: '{name}', felder: [
+  const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+  const niederlassung = await d.mappentypen.legeTypAn({ name: 'Niederlassung', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id },
   ] });
-  const person = await d.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
+  const person = await d.mappentypen.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id, folgtAus: { feld: 'niederlassung', zielFeld: 'organisation' } },
     // dms-registry #139: nur Niederlassungen der gewählten Organisation (leer: alle).
@@ -80,7 +80,7 @@ describe('Folgt aus – Mappentyp (#886)', () => {
 
   it('Prüfung: Felder gibt es, Verweis mit einer Mappe, Zielfeld auf denselben Typ, keine Kreise', async () => {
     const { d, organisation, niederlassung } = await aufbau();
-    const probe = (felder: Partial<Feld>[]) => d.legeTypAn({ name: `Probe ${Math.random()}`, felder });
+    const probe = (felder: Partial<Feld>[]) => d.mappentypen.legeTypAn({ name: `Probe ${Math.random()}`, felder });
     const org: Partial<Feld> = { key: 'org', label: 'Organisation', typ: 'referenz', zielTypen: [organisation.id ]};
     const nl: Partial<Feld> = { key: 'nl', label: 'Niederlassung', typ: 'referenz', zielTypen: [niederlassung.id ]};
     await assert.rejects(probe([{ ...org, folgtAus: { feld: 'fehlt', zielFeld: 'organisation' } }, nl]), meldet(/Das Feld „fehlt“ gibt es/));
@@ -89,9 +89,9 @@ describe('Folgt aus – Mappentyp (#886)', () => {
     await assert.rejects(probe([{ ...org, folgtAus: { feld: 'nl', zielFeld: 'organisation' } }, { ...nl, mehrfach: true }]), meldet(/erlaubt mehrere Mappen/));
     await assert.rejects(probe([{ ...org, folgtAus: { feld: 'name', zielFeld: 'organisation' } }, nl, { key: 'name', label: 'Name', typ: 'text' }]), meldet(/kein Verweisfeld/));
     // Kreis: a aus b, b aus a (beide zeigen auf Organisation, die Organisation zeigt auf sich selbst).
-    const mutter = await d.legeTypAn({ name: 'Firma', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    const tochter = await d.legeTypAn({ name: 'Tochter', felder: [{ key: 'mutter', label: 'Mutter', typ: 'referenz', zielTyp: mutter.id }] });
-    await d.aendereTyp(mutter.id, { ...mutter, felder: [...mutter.felder, { key: 'tochter', label: 'Tochter', typ: 'referenz', zielTyp: tochter.id }] });
+    const mutter = await d.mappentypen.legeTypAn({ name: 'Firma', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const tochter = await d.mappentypen.legeTypAn({ name: 'Tochter', felder: [{ key: 'mutter', label: 'Mutter', typ: 'referenz', zielTyp: mutter.id }] });
+    await d.mappentypen.aendereTyp(mutter.id, { ...mutter, felder: [...mutter.felder, { key: 'tochter', label: 'Tochter', typ: 'referenz', zielTyp: tochter.id }] });
     const a: Partial<Feld> = { key: 'a', label: 'A', typ: 'referenz', zielTypen: [mutter.id], folgtAus: { feld: 'b', zielFeld: 'mutter' } };
     const b: Partial<Feld> = { key: 'b', label: 'B', typ: 'referenz', zielTypen: [tochter.id], folgtAus: { feld: 'a', zielFeld: 'tochter' } };
     await assert.rejects(probe([a, b]), meldet(/folgen im Kreis/));
@@ -156,7 +156,7 @@ describe('Folgt aus – Speichern in Oberfläche und Schnittstelle (#886)', () =
     assert.deepEqual(r.unpassend, [nord.id]);
     assert.deepEqual(r.gruende, { [nord.id]: ['organisation'] });
     // Feste Bedingung ohne eigenes Feld: Grund leer = „Auswahlregel dieses Felds“.
-    const regel = await d.legeTypAn({ name: 'Vermerk', felder: [{ key: 'bank', label: 'Bank', typ: 'referenz', zielTyp: organisation.id, auswahlFilter: [{ art: 'feld', feld: 'name', op: 'enthaelt', wert: { art: 'fest', wert: 'Sparkasse' } }] }] });
+    const regel = await d.mappentypen.legeTypAn({ name: 'Vermerk', felder: [{ key: 'bank', label: 'Bank', typ: 'referenz', zielTyp: organisation.id, auswahlFilter: [{ art: 'feld', feld: 'name', op: 'enthaelt', wert: { art: 'fest', wert: 'Sparkasse' } }] }] });
     const v = await d.legeMappeAn({ typId: regel.id, werte: { bank: sparkasse.id } });
     await d.aendereMappe(sparkasse.id, { werte: { name: 'Stadtbank Musterstadt' } });
     assert.deepEqual((await d.holeMappe(v.id)).konflikte, [{ feld: 'bank', eigeneFelder: [], regel: true, ids: [sparkasse.id] }]);
@@ -177,14 +177,14 @@ describe('Folgt aus – Speichern in Oberfläche und Schnittstelle (#886)', () =
 describe('Folgt aus – nur lesbare Werte, auch über die Schnittstelle (#886)', () => {
   it('ohne Leserecht an der Organisation füllt sich nichts; die Route der API füllt wie die Oberfläche', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
     const zu: Regelwerk = { grund: NICHTS, regeln: [] };
-    const organisation = await d.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], berechtigungen: zu });
-    const niederlassung = await d.legeTypAn({ name: 'Niederlassung', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id }] });
-    const person = await d.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
+    const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], berechtigungen: zu });
+    const niederlassung = await d.mappentypen.legeTypAn({ name: 'Niederlassung', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id }] });
+    const person = await d.mappentypen.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' },
       { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id, folgtAus: { feld: 'niederlassung', zielFeld: 'organisation' } },
       { key: 'niederlassung', label: 'Niederlassung', typ: 'referenz', zielTyp: niederlassung.id },
@@ -209,13 +209,13 @@ describe('Folgt aus – nur lesbare Werte, auch über die Schnittstelle (#886)',
 describe('Folgt aus – aus Dokument ausfüllen (#886)', () => {
   it('Vorschlag für den Verweis bringt den Vorschlag für das Feld mit, das daraus folgt', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const partner = await d.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{bezeichnung}', felder: [
+    const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{bezeichnung}', felder: [
       { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text' },
       { key: 'nummer', label: 'Vertragsnummer', typ: 'text', erkennung: { art: 'nummer' }, wiederfinden: true },
       { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id },
     ] });
-    const rechnung = await d.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
+    const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
       { key: 'nr', label: 'Rechnungsnummer', typ: 'text', erkennung: { art: 'nummer' } },
       { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, erkennung: {} },
       { key: 'aussteller', label: 'Aussteller', typ: 'referenz', zielTyp: partner.id, folgtAus: { feld: 'vertrag', zielFeld: 'partner' } },

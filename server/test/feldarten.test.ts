@@ -44,7 +44,7 @@ function dienst(repo: Repo = speicherRepo()) {
   return new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
 }
 async function vertraege(d: Dienst) {
-  const typ = await d.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{nr} – {frist}', felder: FELDER.map((f) => ({ ...f })), trefferliste: ['nr', 'frist', 'steuersatz', 'gutschrift'] });
+  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{nr} – {frist}', felder: FELDER.map((f) => ({ ...f })), trefferliste: ['nr', 'frist', 'steuersatz', 'gutschrift'] });
   const m = async (nr: string, werte: Record<string, unknown>) => d.legeMappeAn({ typId: typ.id, werte: { nr, ...werte } });
   return { typ, m };
 }
@@ -294,7 +294,7 @@ describe('Paketformat (#1035)', () => {
     const h = await z.p.hochladen(zip.daten, ICH);
     assert.deepEqual(h.vorschau.probleme, []);
     const paket = await z.p.installiere({ upload: h.upload, bestaetigt: true, beispiele: true }, ICH);
-    const zt = (await z.d.listeTypen()).find((t) => t.id === paket.typen.vertrag)!;
+    const zt = (await z.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.vertrag)!;
     assert.deepEqual(zt.felder.map((f) => [f.key, f.typ]).slice(1, 4), [['frist', 'zeitraum'], ['laufzeit', 'zeitraum'], ['steuersatz', 'prozent']]);
     assert.equal(zt.felder.find((f) => f.key === 'gutschrift')!.negativ, true);
     const [beispiel] = (await z.d.seite(ADMIN, { sicht: zt.id })).mappen;
@@ -335,7 +335,7 @@ describe('Zeitraum, Prozent und Migration 094 – PostgreSQL (#1035)', { skip: !
     const { pgRepo } = await import('../src/repo-pg');
     try {
       const d = dienst(pgRepo(db.sql, H) as never as Repo);
-      const typ = await d.legeTypAn({ name: 'Beleg', felder: [
+      const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [
         { key: 'nr', label: 'Nr', typ: 'text' },
         { key: 'betrag', label: 'Betrag', typ: 'betrag', waehrung: 'EUR' },
         { key: 'skonto', label: 'Skonto', typ: 'betrag', waehrung: 'EUR' },

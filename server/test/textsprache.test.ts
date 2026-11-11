@@ -78,7 +78,7 @@ describe('Einstellung und Werkbank (#395)', () => {
     const engine: Engine = async () => ({ text, seiten: 1, info: 'Ersatz' });
     const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
     d.verbindeTexterkennung(t);
-    const typ = await d.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
       { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
@@ -96,7 +96,7 @@ describe('Einstellung und Werkbank (#395)', () => {
   it('Volltext eines Pakets (#338): PAKET_TEXT bleibt vorn, die Sprache hängt hinten an und wird gezählt', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
+    const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
       { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });

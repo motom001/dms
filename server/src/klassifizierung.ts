@@ -77,7 +77,7 @@ export class Klassifizierung {
       if (text?.trim()) teile.push(text); else ohneText.push(id);
     }
     const text = teile.join('\n\n');
-    const ziele = await this.d.ausPostZiele(z);
+    const ziele = await this.d.mappentypen.ausPostZiele(z);
     const name = (id: string) => ziele.find((x) => x.id === id)?.name ?? '';
     if (!text.trim() || !ziele.length) return { vorschlag: null, typen: [], wege: [], ohneText, bezuege: {} };
 
@@ -105,7 +105,7 @@ export class Klassifizierung {
   private async perPaketen(text: string, ziele: Mappentyp[], quellTypen: Set<string>, z?: Zugriff): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
     const pakete = this.anbieter?.pakete() ?? [];
     if (!pakete.length) return { belege: [], wege: [] };
-    const { zugelassen } = await this.d.kiTypen();
+    const { zugelassen } = await this.d.ki.kiTypen();
     // Kandidaten: auch für Pakete ohne Netz nur zugelassene Typen – keine Namen oder Felder gesperrter Typen gehen hinaus.
     const kandidaten: Kandidat[] = ziele.filter((x) => zugelassen.has(x.id)).slice(0, KANDIDATEN_MAX)
       .map((x) => ({ id: x.id, name: x.name, beschreibung: kurzText(x.beschreibung), erkennbarAn: kurzText(x.erkennbarAn) }));

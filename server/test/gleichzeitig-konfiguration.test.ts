@@ -21,7 +21,7 @@ let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
 async function aufbau() {
   const repo = await neuesRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const typ = await d.legeTypAn({ name: 'Versicherung', titelVorlage: '{bezeichnung}', felder: [{ key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true }] });
+  const typ = await d.mappentypen.legeTypAn({ name: 'Versicherung', titelVorlage: '{bezeichnung}', felder: [{ key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true }] });
   const haus = await d.legeSichtAn({ name: 'Haus', typen: [] });
   const sicht = await d.legeSichtAn({ name: 'Versicherungen', elternId: haus.id, typen: [typ.id], bedingungen: [] });
   const zweite = await d.legeSichtAn({ name: 'Verträge', elternId: haus.id, typen: [typ.id] });
@@ -43,34 +43,34 @@ function faelle() {
     const { d, typ } = await aufbau();
     // Markus und Petra öffnen denselben Stand.
     const stand = typ.geaendert;
-    const petra = await d.aendereTyp(typ.id, { ...typ, felder: [...typ.felder, { key: 'beitrag', label: 'Beitrag', typ: 'betrag' }], stand });
+    const petra = await d.mappentypen.aendereTyp(typ.id, { ...typ, felder: [...typ.felder, { key: 'beitrag', label: 'Beitrag', typ: 'betrag' }], stand });
     assert.ok(petra.geaendert > stand, 'Der Stand wächst mit jeder Änderung');
-    const f = await fehler(d.aendereTyp(typ.id, { ...typ, beschreibung: 'Von Markus', stand }), 409);
+    const f = await fehler(d.mappentypen.aendereTyp(typ.id, { ...typ, beschreibung: 'Von Markus', stand }), 409);
     assert.equal(f.message, t('meldungen.dienst.typ-konflikt'));
     assert.equal((f.details as { konflikt?: boolean }).konflikt, true);
-    const jetzt = (await d.listeTypen()).find((x) => x.id === typ.id)!;
+    const jetzt = (await d.mappentypen.listeTypen()).find((x) => x.id === typ.id)!;
     assert.deepEqual(jetzt.felder.map((x) => x.key), ['bezeichnung', 'beitrag'], 'Petras Feld ist noch da');
     assert.equal(jetzt.beschreibung, '', 'Markus hat nichts überschrieben');
     // Neu geladen und noch einmal: geht.
-    const markus = await d.aendereTyp(typ.id, { ...jetzt, beschreibung: 'Von Markus', stand: jetzt.geaendert });
+    const markus = await d.mappentypen.aendereTyp(typ.id, { ...jetzt, beschreibung: 'Von Markus', stand: jetzt.geaendert });
     assert.equal(markus.beschreibung, 'Von Markus');
     assert.equal(markus.felder.length, 2);
   });
 
   it('Mappentyp: ohne Stand wie bisher (abwärtskompatibel), ungültiger Stand ist 422', async () => {
     const { d, typ } = await aufbau();
-    await d.aendereTyp(typ.id, { ...typ, beschreibung: 'eins' });
-    const r = await d.aendereTyp(typ.id, { ...typ, beschreibung: 'zwei' });
+    await d.mappentypen.aendereTyp(typ.id, { ...typ, beschreibung: 'eins' });
+    const r = await d.mappentypen.aendereTyp(typ.id, { ...typ, beschreibung: 'zwei' });
     assert.equal(r.beschreibung, 'zwei');
-    await fehler(d.aendereTyp(typ.id, { ...typ, stand: 'gestern' }), 422);
+    await fehler(d.mappentypen.aendereTyp(typ.id, { ...typ, stand: 'gestern' }), 422);
   });
 
   it('Mappentyp: auch schnell nacheinander bekommt jede Änderung einen neuen Stand', async () => {
     const { d, typ } = await aufbau();
-    const a = await d.aendereTyp(typ.id, { ...typ, beschreibung: 'a', stand: typ.geaendert });
-    const b = await d.aendereTyp(typ.id, { ...typ, beschreibung: 'b', stand: a.geaendert });
+    const a = await d.mappentypen.aendereTyp(typ.id, { ...typ, beschreibung: 'a', stand: typ.geaendert });
+    const b = await d.mappentypen.aendereTyp(typ.id, { ...typ, beschreibung: 'b', stand: a.geaendert });
     assert.ok(b.geaendert > a.geaendert);
-    await fehler(d.aendereTyp(typ.id, { ...typ, beschreibung: 'c', stand: a.geaendert }), 409);
+    await fehler(d.mappentypen.aendereTyp(typ.id, { ...typ, beschreibung: 'c', stand: a.geaendert }), 409);
   });
 
   it('Ansicht: zwei gleichzeitige Bearbeitungen – die zweite scheitert mit 409, nichts geht verloren', async () => {

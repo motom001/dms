@@ -188,7 +188,7 @@ for (const pg of [false, true]) {
       const tresor = new Tresor(speicherEinstellungen(), join(mkdtempSync(join(tmpdir(), 'dms-satz-')), 'dms.schluessel'), () => null);
       await tresor.laden(); await tresor.erzeuge();
       const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
-      const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.benutzerspiegel());
+      const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
       d.verbindeKonten(konten.papierkorbHaken());
       const { benutzer: katrin } = await konten.einrichten({ email: 'katrin@example.org', name: 'Katrin', passwort: 'ein-langes-passwort' });
       const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, katrin.id)).benutzer;

@@ -48,7 +48,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     betrieb = new Betrieb(pgBetriebSpeicher(sql, HAUSHALT), undefined, tresor);
     await betrieb.laden();
     await betrieb.speichereAdresse('http://nas:3000');
-    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     // Texterkennung wie im Betrieb (#45); in GitHub Actions sind tesseract und poppler installiert.
     const { Texterkennung } = await import('../src/texterkennung');

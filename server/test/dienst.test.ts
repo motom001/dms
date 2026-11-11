@@ -13,23 +13,23 @@ async function wirft(p: Promise<unknown>, status: number) {
 describe('Mappentypen', () => {
   it('legt einen Typ an und lehnt doppelte Namen ab', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const t = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true }] });
     assert.equal(t.name, 'Vertrag');
-    await wirft(d.legeTypAn({ name: ' vertrag ', felder: [] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: ' vertrag ', felder: [] }), 422);
   });
 
   it('lehnt ungültige Felder ab', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: '1abc', label: 'A', typ: 'text' }] }), 422);
-    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: 'a', label: 'A', typ: 'text' }, { key: 'a', label: 'B', typ: 'text' }] }), 422);
-    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: 'r', label: 'R', typ: 'referenz' }] }), 422);
-    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: 'w', label: 'W', typ: 'auswahl', optionen: [] }] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: '1abc', label: 'A', typ: 'text' }] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'a', label: 'A', typ: 'text' }, { key: 'a', label: 'B', typ: 'text' }] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'r', label: 'R', typ: 'referenz' }] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'w', label: 'W', typ: 'auswahl', optionen: [] }] }), 422);
   });
 
   it('erlaubt einen Verweis auf den eigenen Typ (Hierarchie)', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     const id = '11111111-1111-4111-8111-111111111111';
-    const t = await d.legeTypAn({ id, name: 'Objekt', felder: [
+    const t = await d.mappentypen.legeTypAn({ id, name: 'Objekt', felder: [
       { key: 'name', label: 'Name', typ: 'text', pflicht: true },
       { key: 'teil_von', label: 'Teil von', typ: 'referenz', zielTyp: id, verweisart: 'zugehoerigkeit' },
     ] });
@@ -43,15 +43,15 @@ describe('Mappentypen', () => {
   it('löscht einen Typ nur, wenn nichts mehr daran hängt', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
-    const partner = (await d.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
-    await wirft(d.loescheTyp(partner.id), 409);
+    const partner = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    await wirft(d.mappentypen.loescheTyp(partner.id), 409);
   });
 });
 
 describe('Mappen', () => {
   it('prüft Pflichtfelder, Längen, Zahlen und Auswahlwerte', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const t = await d.legeTypAn({ name: 'Test', felder: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Test', felder: [
       { key: 'name', label: 'Name', typ: 'text', pflicht: true, maxLen: 5 },
       { key: 'anzahl', label: 'Anzahl', typ: 'zahl', min: 0, max: 10 },
       { key: 'farbe', label: 'Farbe', typ: 'auswahl', optionen: ['rot', 'blau'] },
@@ -69,7 +69,7 @@ describe('Mappen', () => {
 
   it('erzwingt eindeutige Werte je Typ, ohne Groß-/Kleinschreibung', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const t = await d.legeTypAn({ name: 'Partner', felder: [{ key: 'erp', label: 'ERP-Nummer', typ: 'text', eindeutig: true }] });
+    const t = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'erp', label: 'ERP-Nummer', typ: 'text', eindeutig: true }] });
     const a = await d.legeMappeAn({ typId: t.id, werte: { erp: 'A-1' } });
     await wirft(d.legeMappeAn({ typId: t.id, werte: { erp: 'a-1' } }), 422);
     // Die Mappe selbst darf ihren Wert behalten.
@@ -79,7 +79,7 @@ describe('Mappen', () => {
   it('prüft Referenzen auf Existenz und Zieltyp', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const vertrag = typen.find((t) => t.name === 'Vertrag')!;
     const rechnung = typen.find((t) => t.name === 'Rechnung')!;
     const eineRechnung = (await d.listeMappen(rechnung.id))[0];
@@ -90,7 +90,7 @@ describe('Mappen', () => {
   it('verhindert das Löschen einer Mappe, auf die noch verwiesen wird', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
-    const partner = (await d.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    const partner = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
     const stadtwerke = (await d.listeMappen(partner.id)).find((m) => m.werte.name === 'Stadtwerke Musterstadt')!;
     const { rueckverweise } = await d.holeMappe(stadtwerke.id);
     assert.equal(rueckverweise.length, 2); // Stromvertrag (Vertragspartner) und Jahresabrechnung (Aussteller)
@@ -100,13 +100,13 @@ describe('Mappen', () => {
   it('behält Werte entfernter Felder und entfernt deren Verweise', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const rechnung = typen.find((t) => t.name === 'Rechnung')!;
     const partner = typen.find((t) => t.name === 'Vertragspartner')!;
     const hb = (await d.listeMappen(partner.id)).find((m) => m.werte.name === 'Heizungsbau Beispiel GmbH')!;
     assert.equal((await d.holeMappe(hb.id)).rueckverweise.length, 2);
 
-    await d.aendereTyp(rechnung.id, { ...rechnung, felder: rechnung.felder.filter((f) => f.key !== 'aussteller') });
+    await d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: rechnung.felder.filter((f) => f.key !== 'aussteller') });
     assert.equal((await d.holeMappe(hb.id)).rueckverweise.length, 1); // nur noch der Wartungsvertrag
 
     const r = (await d.listeMappen(rechnung.id)).find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
@@ -124,7 +124,7 @@ describe('Register und Dokumente', () => {
     const dateien = speicherDateien();
     const d = new Dienst(speicherRepo(), dateien);
     await ladeBeispiele(d);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const rechnung = typen.find((t) => t.name === 'Rechnung')!;
     const r = (await d.listeMappen(rechnung.id))[0];
     return { d, dateien, rechnung, r };
@@ -134,18 +134,18 @@ describe('Register und Dokumente', () => {
     const { d, rechnung, r } = await aufbau();
     assert.deepEqual(rechnung.register.map((x) => x.art), ['felder', 'dokumente', 'verknuepfungen']);
     assert.equal(rechnung.register[0].felder!.length, rechnung.felder.length);
-    const zahlung = (await d.listeTypen()).find((t) => t.name === 'Zahlung')!;
+    const zahlung = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Zahlung')!;
     assert.equal(zahlung.titelVorlage, '{verwendungszweck} vom {zahlungsdatum}');
     assert.ok(r);
   });
 
   it('lehnt unbekannte Platzhalter und doppelt vergebene Felder ab', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    await wirft(d.legeTypAn({ name: 'X', titelVorlage: '{gibtsnicht}', felder: [{ key: 'a', label: 'A', typ: 'text' }] }), 422);
-    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: 'a', label: 'A', typ: 'text' }], register: [
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', titelVorlage: '{gibtsnicht}', felder: [{ key: 'a', label: 'A', typ: 'text' }] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'a', label: 'A', typ: 'text' }], register: [
       { key: 'eins', name: 'Eins', art: 'felder', felder: ['a'] }, { key: 'zwei', name: 'Zwei', art: 'felder', felder: ['a'] },
     ] }), 422);
-    const t = await d.legeTypAn({ name: 'Y', felder: [{ key: 'a', label: 'A', typ: 'text' }, { key: 'b', label: 'B', typ: 'text' }], register: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Y', felder: [{ key: 'a', label: 'A', typ: 'text' }, { key: 'b', label: 'B', typ: 'text' }], register: [
       { key: 'eins', name: 'Eins', art: 'felder', felder: ['a'] },
     ] });
     assert.deepEqual(t.register[0].felder, ['a', 'b']); // nicht zugeordnete Felder landen auf dem ersten Feldregister
@@ -176,7 +176,7 @@ describe('Register und Dokumente', () => {
     const { d, dateien, rechnung } = await aufbau();
     const ohneZahlung = (await d.listeMappen(rechnung.id)).find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
     await d.ladeHoch(ohneZahlung.id, { register: 'dokumente', name: 'r.pdf' }, pdf, null);
-    await wirft(d.aendereTyp(rechnung.id, { ...rechnung, register: rechnung.register.filter((x) => x.art !== 'dokumente') }), 409);
+    await wirft(d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, register: rechnung.register.filter((x) => x.art !== 'dokumente') }), 409);
     await d.loescheMappe(ohneZahlung.id);
     assert.equal(dateien.anzahl(), 0);
   });
@@ -200,7 +200,7 @@ describe('Demo-Daten', () => {
     const ueber = await d.demoUebersicht();
     assert.equal(ueber.reduce((a, t) => a + t.demo, 0), r.gesamt);
     // Rechnungen verweisen auf vorhandene Verträge, eindeutige Namen bleiben eindeutig
-    const partner = (await d.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    const partner = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
     const namen = alle.filter((m) => m.typId === partner.id).map((m) => String(m.werte.name).toLowerCase());
     assert.equal(new Set(namen).size, namen.length);
     assert.deepEqual(await d.entferneDemo(), { entfernt: r.gesamt });
@@ -212,7 +212,7 @@ describe('Demo-Daten', () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
     await erzeugeDemo(d, 50, null);
-    const typen = await d.listeTypen();
+    const typen = await d.mappentypen.listeTypen();
     const partner = typen.find((t) => t.name === 'Vertragspartner')!;
     const vertrag = typen.find((t) => t.name === 'Vertrag')!;
     const demoPartner = (await d.listeMappen(partner.id)).find((m) => m.demo)!;
@@ -224,8 +224,8 @@ describe('Demo-Daten', () => {
 describe('Gespeicherte Titel', () => {
   async function aufbau() {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const partner = await d.legeTypAn({ name: 'Partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-    const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{art} bei {partner}', felder: [
+    const partner = await d.mappentypen.legeTypAn({ name: 'Partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+    const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{art} bei {partner}', felder: [
       { key: 'art', label: 'Art', typ: 'text', pflicht: true },
       { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
     ] });
@@ -234,7 +234,7 @@ describe('Gespeicherte Titel', () => {
 
   it('speichert den Titel beim Anlegen und setzt Angelegt/Zuletzt geändert ein', async () => {
     const { d, partner } = await aufbau();
-    await d.aendereTyp(partner.id, { ...partner, titelVorlage: '{name} (angelegt {angelegt}, geändert {geaendert})' });
+    await d.mappentypen.aendereTyp(partner.id, { ...partner, titelVorlage: '{name} (angelegt {angelegt}, geändert {geaendert})' });
     const m = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } });
     const heute = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date());
     assert.equal(m.titel, `Stadtwerke (angelegt ${heute}, geändert ${heute})`);
@@ -248,14 +248,14 @@ describe('Gespeicherte Titel', () => {
     assert.equal(v.titel, 'Strom bei Stadtwerke');
     await d.aendereMappe(p.id, { werte: { name: 'Stadtwerke Nord' } });
     assert.equal((await d.holeMappe(v.id)).mappe.titel, 'Strom bei Stadtwerke Nord');
-    await d.aendereTyp(vertrag.id, { ...vertrag, titelVorlage: '{partner}: {art}' });
+    await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, titelVorlage: '{partner}: {art}' });
     assert.equal((await d.holeMappe(v.id)).mappe.titel, 'Stadtwerke Nord: Strom');
   });
 
   it('behandelt Verweise im Kreis, ohne endlos zu rechnen', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     const id = '22222222-2222-4222-8222-222222222222';
-    await d.legeTypAn({ id, name: 'Knoten', titelVorlage: '{name} → {nach}', felder: [
+    await d.mappentypen.legeTypAn({ id, name: 'Knoten', titelVorlage: '{name} → {nach}', felder: [
       { key: 'name', label: 'Name', typ: 'text', pflicht: true },
       { key: 'nach', label: 'Nach', typ: 'referenz', zielTyp: id },
     ] });
@@ -268,9 +268,9 @@ describe('Gespeicherte Titel', () => {
   it('reserviert die Schlüssel der Indexwerte und berechnet fehlende Titel nach', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien());
-    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: 'angelegt', label: 'Angelegt', typ: 'datum' }] }), 422);
+    await wirft(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'angelegt', label: 'Angelegt', typ: 'datum' }] }), 422);
     const { partner } = await aufbau();
-    const t = await d.legeTypAn({ name: 'Partner', titelVorlage: '{name}', felder: partner.felder });
+    const t = await d.mappentypen.legeTypAn({ name: 'Partner', titelVorlage: '{name}', felder: partner.felder });
     const m = await repo.legeMappeAn('33333333-3333-4333-8333-333333333333', t.id, { name: 'Alt' }, [], null);
     assert.equal(m.titel, undefined);
     assert.equal(await d.titelNachziehen(), 1);
@@ -283,7 +283,7 @@ describe('Sichten seitenweise', () => {
   const ich = { id: 'u1', rolle: 'mitglied' };
   async function mitMappen(n: number) {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const t = await d.legeTypAn({ name: 'Ding', titelVorlage: '{name}', felder: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Ding', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text', pflicht: true },
       { key: 'farbe', label: 'Farbe', typ: 'text' },
     ] });
@@ -307,7 +307,7 @@ describe('Sichten seitenweise', () => {
 
   it('führt nicht passende Mappen im Eingang des Erstellers und gibt sie frei, sobald sie passen', async () => {
     const { d, t } = await mitMappen(3);
-    await d.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'farbe' ? { ...f, eindeutig: true } : f)) });
+    await d.mappentypen.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'farbe' ? { ...f, eindeutig: true } : f)) });
     // Ding 000 und Ding 002 sind beide „blau“
     let z = await d.zaehler(ich);
     assert.deepEqual([z.typen[t.id].unpassend, z.eingang], [2, 2]);
@@ -323,7 +323,7 @@ describe('Sichten seitenweise', () => {
 describe('Trefferliste und Sortierung', () => {
   it('bereinigt die Trefferliste und sortiert nach Feldern und Systemspalten', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    const t = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', trefferliste: ['betrag', '_titel', 'gibts_nicht', 'betrag', '_typ', 'datum'], felder: [
+    const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', trefferliste: ['betrag', '_titel', 'gibts_nicht', 'betrag', '_typ', 'datum'], felder: [
       { key: 'nr', label: 'Nr', typ: 'text', pflicht: true },
       { key: 'betrag', label: 'Betrag', typ: 'betrag' },
       { key: 'datum', label: 'Datum', typ: 'datum' },
@@ -341,7 +341,7 @@ describe('Trefferliste und Sortierung', () => {
     assert.equal(await titel('_titel', true), 'CBA');
     assert.equal(await titel('gibts_nicht'), 'ABC', 'unbekannte Spalte → nach Titel');
     // Feld entfernen: Spalte verschwindet aus der Trefferliste
-    const neu = await d.aendereTyp(t.id, { ...t, felder: t.felder.filter((f) => f.key !== 'datum') });
+    const neu = await d.mappentypen.aendereTyp(t.id, { ...t, felder: t.felder.filter((f) => f.key !== 'datum') });
     assert.deepEqual(neu.trefferliste, ['betrag', '_titel']);
   });
 });

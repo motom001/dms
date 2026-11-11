@@ -111,7 +111,7 @@ async function aufbau(pg: boolean, name: string) {
   const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen });
-  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.benutzerspiegel());
+  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const mails: string[] = [];
   d.verbindeVerwaltungsmail((bereich) => async (betreff, text) => { mails.push(`${bereich}|${typeof betreff === 'function' ? betreff() : betreff}|${typeof text === 'function' ? text() : text}`); });
@@ -142,7 +142,7 @@ async function aufbau(pg: boolean, name: string) {
     await pruefeZugang(r as Route, anfrage, (n) => (n === 'authorization' ? `Bearer ${k}` : undefined), konten, schluessel);
     return r.handler(anfrage);
   };
-  const typ = async (id: string) => (await d.listeTypen()).find((x) => x.id === id)!;
+  const typ = async (id: string) => (await d.mappentypen.listeTypen()).find((x) => x.id === id)!;
   return { d, p, konten, katrin, markus, jonas, org, person, rechnung, typ, oberflaeche, verwaltend, api, mails, einstellungen, repo: r.repo };
 }
 
@@ -231,11 +231,11 @@ for (const pg of [false, true]) {
       assert.deepEqual(t.felder.filter((f) => f.merkmal || f.schreibschutz).map((f) => [f.key, f.merkmal, f.schreibschutz]), [['eigene_organisation', 'eigeneOrganisation', 'verwaltung']]);
       // Mappentyp über die Werkbank ändern: Angaben weg bzw. auf einem anderen Feld – bleiben, wie sie waren.
       const felder = t.felder.map((f) => (f.key === 'eigene_organisation' ? { ...f, merkmal: undefined, schreibschutz: undefined } : f.key === 'name' ? { ...f, schreibschutz: 'verwaltung' as const } : f));
-      await x.d.aendereTyp(x.org, { ...t, felder });
+      await x.d.mappentypen.aendereTyp(x.org, { ...t, felder });
       const n = await x.typ(x.org);
       assert.deepEqual(n.felder.filter((f) => f.merkmal || f.schreibschutz).map((f) => f.key), ['eigene_organisation']);
       const p = await x.typ(x.person);
-      await x.d.aendereTyp(x.person, { ...p, felder: [...p.felder, { key: 'wir', label: 'Wir', typ: 'janein', merkmal: 'eigeneOrganisation', schreibschutz: 'verwaltung' }], register: p.register.map((r, i) => (i === 0 ? { ...r, felder: [...(r.felder ?? []), 'wir'] } : r)) });
+      await x.d.mappentypen.aendereTyp(x.person, { ...p, felder: [...p.felder, { key: 'wir', label: 'Wir', typ: 'janein', merkmal: 'eigeneOrganisation', schreibschutz: 'verwaltung' }], register: p.register.map((r, i) => (i === 0 ? { ...r, felder: [...(r.felder ?? []), 'wir'] } : r)) });
       assert.equal((await x.typ(x.person)).felder.find((f) => f.key === 'wir')?.merkmal, undefined);
     });
 

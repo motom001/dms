@@ -69,7 +69,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     const { pgEinstellungen } = await import('../src/einstellungen');
     repo = pgRepo(sql, HAUSHALT);
     dienst = new Dienst(repo, ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a928-')), HAUSHALT), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
-    konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.benutzerspiegel());
+    konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     nachlauf = new Nachlauf();
     app = await baueApp(dienst, konten, { nachlauf: nachlauf as InstanceType<typeof Nachlauf> }) as unknown as App;
@@ -85,7 +85,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
     // Verträge lesen Lena, Jonas und Markus – Petra nicht.
-    ids.vertrag = (await dienst.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
+    ids.vertrag = (await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
     const rw: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [ids.lena, ids.jonas, ids.markus] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] } as unknown as Regelwerk;
     await dienst.setzeBerechtigungen(ids.vertrag, rw, true);
     for (let i = 1; i <= 12; i++) mappen.push((await dienst.legeMappeAn({ typId: ids.vertrag, werte: { name: `Vertrag ${i}` } }, lena.id)).id);

@@ -119,14 +119,14 @@ async function pgDatenbank() {
 /** Ablage mit Lena (Admin) und Jonas (Mitglied); Jonas darf Verträge nicht lesen. */
 async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   const d = new Dienst(db?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(db?.konto ?? speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+  const konten = new Konten(db?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
-  const vertrag = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'ende', label: 'Läuft aus am', typ: 'datum' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }], register });
-  const notiz = await d.legeTypAn({ name: 'Unterlage', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register });
+  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'ende', label: 'Läuft aus am', typ: 'datum' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }], register });
+  const notiz = await d.mappentypen.legeTypAn({ name: 'Unterlage', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register });
   const kfz = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kfz-Versicherung', ende: '2026-12-31' } }, lena.id);
   const garten = await d.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
@@ -325,7 +325,7 @@ describe('Frag deine Ablage (#444): echter Paket-Läufer', () => {
     const wasm = stromModul(JSON.stringify({ methode: 'POST', url: `${adresse}/chat/completions`, kopf: { 'content-type': 'application/json' } }), '{"text":"Die Police läuft am 31.12.2026 aus. [1]","quellen":[1]}');
 
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     let werte: Record<string, unknown> = {};
     const l = new Paketlaeufer({ dienst: d, konten, schluessel, api: async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') }), einstellungen: async () => werte, speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 10, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });
