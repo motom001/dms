@@ -3,6 +3,8 @@
  * welche Werte in welche Felder, was als Notiz bleibt, eine Rückfrage je Feld, das der Administrator selbst angelegt
  * oder geändert hat, und was sich an Rechten und KI-Freigabe ändert. Darunter „Vorher sichern“ (vorausgewählt) und die
  * Bestätigung. Bestätigen darf nur „Gesamte Verwaltung“; der Server verlangt dafür eine frische Anmeldung.
+ * Seit #1125 auch: Werte ohne passende Mappe (Auswahl → Verweis) und Ansichten über den alten Typ, die danach mehr zeigen
+ * oder Felder abfragen, die es nicht mehr gibt.
  */
 import { Feld, HakenFeld } from '../bausteine';
 import type { UmbauEntscheidungen, UmbauPlan } from '../../../shared/src/umbau';
@@ -37,7 +39,8 @@ export function UmbauVorschau({ plaene, stand, setze, gesamt }: { plaene: UmbauP
             {p.felder.length > 0 && (
               <ul className="klein">
                 {p.felder.map((f) => (
-                  <li key={f.von}>{t('pakete.umbau.vorschau.feld', { von: f.von, nach: f.nach, anzahl: f.anzahl })}{f.notiz > 0 && <> {' '}<span className="leise">{t('pakete.umbau.vorschau.feld-notiz', { anzahl: f.notiz })}</span></>}</li>
+                  <li key={f.von}>{t('pakete.umbau.vorschau.feld', { von: f.von, nach: f.nach, anzahl: f.anzahl })}{f.notiz > 0 && <> {' '}<span className="leise">{t('pakete.umbau.vorschau.feld-notiz', { anzahl: f.notiz })}</span></>}
+                    {!!f.ohneZiel?.length && <> {' '}<span className="leise">{t('pakete.umbau.vorschau.ohne-ziel', { liste: f.ohneZiel.map((w) => `„${w}“`).join(', ') })}</span></>}</li>
                 ))}
               </ul>
             )}
@@ -63,6 +66,20 @@ export function UmbauVorschau({ plaene, stand, setze, gesamt }: { plaene: UmbauP
                 p.umgeleitet.felder ? t('pakete.umbau.vorschau.n-felder', { anzahl: p.umgeleitet.felder }) : '',
                 p.umgeleitet.ansichten ? t('pakete.umbau.vorschau.n-ansichten', { anzahl: p.umgeleitet.ansichten }) : '',
               ].filter(Boolean).join(', ') })}</p>
+            )}
+            {p.ansichten.length > 0 && (
+              <div className="hinweis info stapel">
+                <p>{t('pakete.umbau.vorschau.ansichten', { von: p.von.name })}</p>
+                <ul>
+                  {p.ansichten.map((a) => (
+                    <li key={a.name}>
+                      {a.breiter > 0 && <>{t('pakete.umbau.vorschau.ansicht-breiter', { name: a.name, nach: p.nach.name, anzahl: a.breiter })}{' '}</>}
+                      {a.felder.length > 0 && <>{t('pakete.umbau.vorschau.ansicht-felder', { name: a.name, felder: a.felder.map((f) => `„${f}“`).join(', ') })}{' '}</>}
+                      {a.paket && <span className="leise">{t('pakete.umbau.vorschau.ansicht-paket', { paket: a.paket })}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             {p.imPapierkorb > 0 && <p className="leise klein">{t('pakete.umbau.vorschau.papierkorb', { anzahl: p.imPapierkorb, von: p.von.name })}</p>}
           </div>

@@ -382,7 +382,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
           los={async (x) => {
             try {
-              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen, sichtenErsetzen: x.sichtenErsetzen }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
               await z.laden(); await d.neuLaden(); await z.abrufen(false);
               geheZu(`/werkbank/pakete/${r.id}`);
             } catch (e) { setMeldung(alsMeldung(e)); }
@@ -604,7 +604,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <VorschauBlock v={vorschau} warnung={offiziell || vorschau.pruefung?.bestaetigen === false ? null : t('werkbank.pakete.aus-dem-katalog', { wert: String(inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle) })} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
             if (vorschau.update) {
-              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen });
+              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen, sichtenErsetzen: x.sichtenErsetzen });
               // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
               if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);
               return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version });
@@ -724,7 +724,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   v: PaketVorschau; warnung: string | null; abbrechen(): void; titel?: string; abbrechenText?: string;
   /** Herkunft schon vorher bestätigt (Sammeldatei): kein zweiter Haken. */
   herkunftBestaetigt?: boolean;
-  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[]; umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen }): Promise<void>;
+  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[]; umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen; sichtenErsetzen?: string[] }): Promise<void>;
 }) {
   // Mitgelieferte Automatisierungen (#712): abgewählte bleiben aus. Vorausgewählt (#1082): die mit eingeschaltet: true –
   // nennt das Paket das nirgends, wie bisher alle.
@@ -732,6 +732,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   const [ohneAuto, setOhneAuto] = useState<string[]>(() => { const an = vorausgewaehlt(v.automatisierungen ?? []); return neueAutos.filter((a) => !an.includes(a.schluessel)).map((a) => a.schluessel); });
   const [namen, setNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.typen.filter((eintrag) => !eintrag.vorhanden).map((eintrag) => [eintrag.schluessel, eintrag.vorschlag ?? eintrag.name])));
   const [sichtNamen, setSichtNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.sichten.filter((s) => !s.vorhanden && !s.ausgelassen).map((s) => [s.schluessel, s.vorschlag ?? s.name])));
+  // Ansichten (#1125): geänderte bzw. vor #1125 installierte bleiben – außer, sie sind hier angehakt.
+  const [ersetzen, setErsetzen] = useState<string[]>([]);
   const [beispiele, setBeispiele] = useState(false);
   const [mit, setMit] = useState(true);
   const [ok, setOk] = useState(false);
@@ -834,7 +836,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
       <ul className="stapel">
         {v.sichten.map((s) => (
           <li key={s.schluessel}>
-            {s.vorhanden ? <span className="leise">{t('werkbank.pakete.vorhanden', { name: s.name })}</span>
+            {s.vorhanden ? <SichtZustandZeile s={s} ersetzen={ersetzen.includes(s.schluessel)} setze={(an) => setErsetzen(an ? [...ersetzen, s.schluessel] : ersetzen.filter((k) => k !== s.schluessel))} />
               : s.ausgelassen ? <span className="leise">{s.ausgelassen}</span>
               : <label className="paketname"><span>{s.eltern ? t('werkbank.pakete.unter', { wert: v.sichten.find((x) => x.schluessel === s.eltern)?.name ?? s.eltern }) : t('werkbank.pakete.oberste-ebene')}</span>
                   <input value={sichtNamen[s.schluessel] ?? s.name} aria-label={t('werkbank.pakete.name-fuer-ansicht', { name: s.name })} onChange={(e) => setSichtNamen({ ...sichtNamen, [s.schluessel]: e.target.value })} />
@@ -877,7 +879,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
             void (async () => {
               if (umbau.length && umbauStand.sichern && !(await sichereVorher())) return;
               await los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}),
-                ...(umbau.length ? { umbauBestaetigt: true, umbauEntscheidungen: umbauStand.entscheidungen } : {}) });
+                ...(umbau.length ? { umbauBestaetigt: true, umbauEntscheidungen: umbauStand.entscheidungen } : {}), ...(ersetzen.length ? { sichtenErsetzen: ersetzen } : {}) });
             })().finally(() => setLaeuft(false));
           }}>
           {laeuft ? (v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')) : v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
@@ -885,6 +887,21 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>
       </div>
     </section>
+  );
+}
+
+/**
+ * Eine vorhandene Ansicht des Pakets in der Vorschau (#1125): vorhanden, wird ersetzt, oder bleibt (geändert bzw. ohne
+ * Prüfwert) – dann mit Haken „trotzdem ersetzen“.
+ */
+function SichtZustandZeile({ s, ersetzen, setze }: { s: PaketVorschau['sichten'][number]; ersetzen: boolean; setze(an: boolean): void }) {
+  if (s.zustand === 'aktualisiert') return <span>{t('werkbank.pakete.ansicht.aktualisiert', { name: s.name })}</span>;
+  if (s.zustand !== 'geaendert' && s.zustand !== 'unbekannt') return <span className="leise">{t('werkbank.pakete.vorhanden', { name: s.name })}</span>;
+  return (
+    <div className="stapel">
+      <span>{t(s.zustand === 'geaendert' ? 'werkbank.pakete.ansicht.geaendert' : 'werkbank.pakete.ansicht.unbekannt', { name: s.name })}</span>
+      <HakenFeld beschriftung={t('werkbank.pakete.ansicht.ersetzen')}><input type="checkbox" checked={ersetzen} onChange={(e) => setze(e.target.checked)} /></HakenFeld>
+    </div>
   );
 }
 

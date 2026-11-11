@@ -15,6 +15,10 @@
  *     felder: { versicherer: von, beitrag: betrag, versicherungsnummer: vertragsnummer }
  *     setzen: { art: { vorgabe: versicherung } }                             # fester Wert, z. B. die Vertragsart
  *     register: { unterlagen: dokumente }                                    # Dokumente: Register alt → neu
+ *   - von: haushalt:mobilfunk
+ *     nach: vertrag
+ *     felder: { art: art }                       # Auswahl → Verweis über den Titel (#1125): „Strom“ → Vertragsart „Strom“
+ *     setzen: { kuendigungsfrist: { anzahl: 3, einheit: monate } }          # Zeitraum (#1125), auch "P3M"
  * ```
  *
  * **Zwei Arten:** Gibt es den Zieltyp noch nicht, **übernimmt** der erste Schritt dorthin den alten Typ mit seiner Id –
@@ -43,6 +47,13 @@ import { t } from './texte';
  * setzen, mit der es erscheint.
  */
 export const DMS_UMBAU_AB = '0.243.0';
+/**
+ * Ab dieser Version (#1125) kennt der Umbau `setzen` mit Zeitraum, die Zuordnung Auswahl → Verweis über den Titel der
+ * Zielmappe und ersetzt unveränderte Ansichten aus Paketen beim Update. Ältere setzen keinen Zeitraum (Wert bleibt leer)
+ * und legen eine Auswahl in die Notiz – Pakete, die sich darauf verlassen, setzen `dms` mindestens auf diese Version.
+ * Beim Einreihen auf die Version setzen, mit der es erscheint.
+ */
+export const DMS_UMBAU_ZUORDNUNG_AB = '0.248.0';
 /** Höchstens so viele Schritte in einem Paket. */
 export const UMBAU_MAX = 50;
 /**
@@ -61,7 +72,10 @@ export interface UmbauSchritt {
   nach: string;
   /** Felder alt → neu. Mehrere alte auf dasselbe neue: Der erste gefüllte Wert gilt, die übrigen kommen in die Notiz. */
   felder: Record<string, string>;
-  /** Feste Werte im Zieltyp (nur in leere Felder): Text, Zahl, Ja/Nein, Liste oder `{ vorgabe: schluessel }` (#1038). */
+  /**
+   * Feste Werte im Zieltyp (nur in leere Felder): Text, Zahl, Ja/Nein, Liste, `{ vorgabe: schluessel }` (#1038) oder ein
+   * Zeitraum `{ anzahl, einheit }` (#1125; in ein Zeitraum-Feld auch als Text wie „P3M“ oder „3 Monate“).
+   */
   setzen: Record<string, unknown>;
   /** Dokumentregister alt → neu; ohne Angabe gleicher Schlüssel, sonst das erste Dokumentregister des Zieltyps. */
   register: Record<string, string>;
@@ -95,8 +109,12 @@ export interface UmbauPlan {
   mappen: number;
   /** Mappen im Papierkorb – bleiben beim alten Typ, der dann als eigener Typ stehen bleibt. */
   imPapierkorb: number;
-  /** Je Feld des Pakets: wohin, wie viele Werte, wie viele davon in die Notiz (passen nicht). */
-  felder: Array<{ von: string; nach: string; anzahl: number; notiz: number }>;
+  /**
+   * Je Feld des Pakets: wohin, wie viele Werte, wie viele davon in die Notiz (passen nicht). ohneZiel (#1125, Auswahl
+   * oder Text → Verweis): Werte, zu denen es keine (eindeutige) Mappe mit diesem Titel gibt – das Feld bleibt leer, der
+   * Wert steht in der Notiz; Ablago legt keine Mappen an.
+   */
+  felder: Array<{ von: string; nach: string; anzahl: number; notiz: number; ohneZiel?: string[] }>;
   /** Felder ohne Ziel: ihre Werte kommen in die Notiz. */
   notiz: Array<{ feld: string; anzahl: number }>;
   setzen: Array<{ feld: string; wert: string }>;
@@ -109,7 +127,16 @@ export interface UmbauPlan {
   rechte: { regeln: boolean; ki: boolean; verwehrt: string[] };
   /** Was danach auf den Zieltyp zeigt statt auf den alten: Verweisfelder und Ansichten. */
   umgeleitet: { felder: number; ansichten: number };
+  /**
+   * Ansichten über den alten Typ, zu denen es etwas zu sagen gibt (#1125): felder = Bedingungen auf Felder, die es danach
+   * nicht mehr gibt (die Bedingung bleibt stehen und trifft nicht mehr zu); breiter = so viele Mappen des Zieltyps zeigt
+   * die Ansicht danach zusätzlich (Zusammenlegen); paket = Paket, dem die Ansicht gehört (ein Update kann sie ersetzen).
+   */
+  ansichten: UmbauAnsicht[];
 }
+
+/** Eine Ansicht über den alten Typ in der Vorschau des Umbaus (#1125). */
+export interface UmbauAnsicht { name: string; paket: string | null; felder: string[]; breiter: number }
 
 /* ---------- Werte umwandeln ---------- */
 

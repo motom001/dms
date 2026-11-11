@@ -161,9 +161,16 @@ An update **only adds** – unless it [converts](#umbau); then the preview says 
 
 - new folder types and views,
 - new fields and tabs on existing folder types,
-- new [presets](#vorgaben) and templates; unchanged presets get the new version.
+- new [presets](#vorgaben) and templates; unchanged presets get the new version,
+- new versions of the package's **views** – only for views that are still as the package created them (#1125).
 
-It **deletes nothing** and **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so. An update never changes the [archive mode](archiv.md#archivmodus-aus-einem-paket) of an existing folder type – neither shorter nor longer, neither on nor off.
+It **deletes nothing** and **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so.
+
+**The package's views** (#1125): under **Views**, the preview says for each existing view what happens:
+
+- "will be replaced with the new version in the package" – you have not changed it. It stays the same view (links, permissions on the view, place in the tree); only folder types, conditions, name and description come from the package.
+- "changed by you, stays as it is" – you renamed it or changed conditions or folder types. If you want the package's version anyway, tick **Replace with the version in the package anyway**.
+- "differs from the version in the package and stays as it is" – the view came with an older Ablago version, and Ablago does not know whether you changed it. Here, too, you can have it replaced. After a [conversion](#umbau) this is often useful: the old view "Insurance policies" then shows all contracts, the new version only insurance policies. An update never changes the [archive mode](archiv.md#archivmodus-aus-einem-paket) of an existing folder type – neither shorter nor longer, neither on nor off.
 
 **New ID (move, #1084):** if a package renames its ID – for instance the additional languages of text recognition from `texterkennung_fra` to `texterkennung.fra` –, this appears as an ordinary update of the installed package. The preview says "The package is now called …". Afterwards it is there under the new ID, with all folder types, folders, settings and data; no second package is created. This only works from the same source and the same publisher. By the way, an ID with a dot always means: the package **extends** the package before the dot.
 
@@ -179,6 +186,8 @@ Under **Conversion**, the preview shows for each step:
 - what goes **into the note**: values without a matching field are kept in a note on the folder afterwards. **Nothing is lost.**
 - **questions** about fields **you** created or changed on the old folder type: keep as own field, into the note or into a field of the new type. A suggestion is preselected; an update never silently overrides your changes.
 - what changes in **permissions**: the permission rules of the old folder type still apply to the moved folders (afterwards they are at the top of the new type's rules, "Insurance: …", for folders with "Taken over from = haushalt:versicherung"). If the old folder type was not allowed for [AI services](#ki-dienste), the new one is not either afterwards. **A conversion never makes folders readable for more people or services.**
+- **Choice → reference** (#1125): if a choice becomes a reference – for instance the "Type" of a Household contract ("Electricity") becomes the contract type –, Ablago looks for the folder with this title (the contract type "Electricity"). The preview lists values for which there is no such folder or more than one: the field stays empty there and the value goes into the note. **Ablago never creates folders for this** – create the missing contract type yourself afterwards and choose it on the folder.
+- **Views** of the old folder type (#1125): if it is merged into another, a view like "Insurance policies" afterwards shows **all** folders of the new type, i.e. all contracts – the preview says how many are added. If a view checks a field that no longer exists afterwards, the preview names it too; the condition then no longer matches. If the view belongs to a package, its next update usually brings a suitable version (see [the package's views](#aktualisieren)); otherwise adjust it yourself.
 
 Only someone with **Full administration** can confirm, after signing in again. **Back up first** is preselected: Ablago starts a [backup](sicherung.md) and only converts afterwards. The conversion runs **completely or not at all** – if it stops, nothing has changed, and the message says so. Afterwards:
 
