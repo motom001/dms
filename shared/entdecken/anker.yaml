@@ -185,6 +185,21 @@
   beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Nummernkreise
   handy: true
   clients: false
+- anker: werkbank.woerter.suche
+  seite: /werkbank/woerter
+  beschreibung: Suchfeld mit Filter „Herkunft“ über der Liste der gleichbedeutenden Wörter (#992)
+  handy: true
+  clients: false
+- anker: werkbank.woerter.neu
+  seite: /werkbank/woerter
+  beschreibung: Knopf „+ Neu“ über der Liste der gleichbedeutenden Wörter (#992)
+  handy: true
+  clients: false
+- anker: werkbank.suche.woerter
+  seite: /werkbank/texterkennung
+  beschreibung: Link von „Suche und Volltext“ auf den Bereich „Gleichbedeutende Wörter“ (#992)
+  handy: true
+  clients: false
 - anker: werkbank.auskuenfte.suche
   seite: /werkbank/auskuenfte
   beschreibung: Suchfeld über der Liste der Datenschutz-Auskünfte

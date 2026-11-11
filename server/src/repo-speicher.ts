@@ -478,12 +478,18 @@ export function speicherRepo(): Repo {
     // Im Arbeitsspeicher wird das Verzeichnis jedes Mal neu gezählt – es gibt keinen Eingang.
     async woerterEinarbeiten() { return 0; },
     async synonyme() { return synonymListe.map(kopie); },
-    async legeSynonymAn(g) { synonymListe.push(kopie(g)); },
-    async aendereSynonym(id, woerter) { const g = synonymListe.find((x) => x.id === id && x.quelle === 'werkbank'); if (!g) return false; g.woerter = [...woerter]; return true; },
+    async legeSynonymAn(g) { synonymListe.push({ ...kopie(g), geaendert: jetzt() }); },
+    async aendereSynonym(id, woerter, erwartet) {
+      const g = synonymListe.find((x) => x.id === id && x.quelle === 'werkbank');
+      if (!g) return false;
+      if (erwartet !== undefined && g.geaendert !== erwartet) throw new KonfigurationVeraltet();
+      g.woerter = [...woerter]; g.geaendert = standWeiter(g.geaendert);
+      return true;
+    },
     async loescheSynonym(id) { const i = synonymListe.findIndex((x) => x.id === id && x.quelle === 'werkbank'); if (i < 0) return false; synonymListe.splice(i, 1); return true; },
     async setzeSynonyme(quelle, gruppen) {
       for (let i = synonymListe.length - 1; i >= 0; i--) if (synonymListe[i].quelle === quelle) synonymListe.splice(i, 1);
-      for (const g of gruppen) synonymListe.push({ id: randomUUID(), woerter: [...g], quelle });
+      for (const g of gruppen) synonymListe.push({ id: randomUUID(), woerter: [...g], quelle, geaendert: jetzt() });
     },
     async gibtMappen(typIds) { const t = new Set(typIds); for (const m of mappen.values()) if (t.has(m.typId)) return true; return false; },
     async zaehler(benutzerId, admin, lesen) {

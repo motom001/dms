@@ -116,6 +116,27 @@ function faelle(pg: boolean) {
       assert.deepEqual((await suche('Kfz')).titel, []);
     });
 
+    it('#992: Reihenfolge bleibt, neue Id, Konfliktschutz beim Speichern (#917)', async () => {
+      const { d } = await aufbau();
+      const s = await d.suche.legeSynonymAn({ woerter: ['Rechnung', 'Beleg', 'Faktura'] }, ICH.email);
+      const g = s.synonyme.find((x) => x.id === s.id)!;
+      assert.deepEqual(g.woerter, ['Rechnung', 'Beleg', 'Faktura']);
+      assert.ok(g.geaendert);
+      // Ohne stand wie bisher: wer zuletzt speichert, gilt.
+      const a = (await d.suche.aendereSynonym(g.id, { woerter: ['Faktura', 'Rechnung', 'Beleg'] }, ICH.email)).synonyme.find((x) => x.id === g.id)!;
+      assert.deepEqual(a.woerter, ['Faktura', 'Rechnung', 'Beleg']);
+      assert.ok(a.geaendert > g.geaendert);
+      // Mit dem alten Stand: 409, nichts überschrieben, der neue Stand steht in der Antwort.
+      await assert.rejects(d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: g.geaendert }, ICH.email),
+        (e) => { const f = e as { status: number; details?: { konflikt?: boolean; stand?: string } }; return f.status === 409 && f.details?.konflikt === true && f.details.stand === a.geaendert; });
+      assert.deepEqual((await d.suche.sucheStand()).synonyme.find((x) => x.id === g.id)!.woerter, ['Faktura', 'Rechnung', 'Beleg']);
+      // Mit dem aktuellen Stand geht es.
+      const b = await d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: a.geaendert }, ICH.email);
+      assert.deepEqual(b.synonyme.find((x) => x.id === g.id)!.woerter, ['Rechnung', 'Quittung']);
+      await assert.rejects(d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: 'gestern' }, ICH.email), (e) => (e as { status: number }).status === 422);
+      await assert.rejects(d.suche.aendereSynonym('00000000-0000-4000-8000-0000000000ff', { woerter: ['A1', 'B1'], stand: a.geaendert }, ICH.email), (e) => (e as { status: number }).status === 404);
+    });
+
     it('Tippfehler: ohne genauen Treffer ähnliche Schreibweisen und „Meintest du …?“; genaue gehen vor', async () => {
       const { d, mappe, suche } = await aufbau();
       await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');

@@ -1,6 +1,6 @@
 # Suche
 
-Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Suche und Volltext → Suche** ein (Gruppe *Ablage aufbauen*; in der Vorlage *Haushalt* nur im [Expertenmodus](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
+Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Suche und Volltext → Suche** ein, die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (beide in der Gruppe *Post und Eingänge*; in der Vorlage *Haushalt* nur im [Expertenmodus](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
 
 ## Was immer gilt
 
@@ -20,11 +20,23 @@ Die ähnlichen Wörter kommen aus dem **Wörterverzeichnis**: allen Wörtern ab 
 
 ## Gleichbedeutende Wörter
 
-Eine **Gruppe** gleichbedeutender Wörter, z. B. *Kfz, Auto, PKW* oder *Nebenkosten, Betriebskosten*, sorgt dafür, dass die Suche nach einem der Wörter auch die anderen findet. Unter **Gleichbedeutende Wörter** trägst du eine Gruppe mit Komma getrennt ein und klickst **Gruppe hinzufügen**; **Ändern** und **Entfernen** stehen an jeder Gruppe. Eine Gruppe hat 2 bis 20 Wörter.
+Eine **Gruppe** gleichbedeutender Wörter, z. B. *Kfz, Auto, PKW* oder *Nebenkosten, Betriebskosten*, sorgt dafür, dass die Suche nach einem der Wörter auch die anderen findet. Die Gruppen haben einen eigenen Bereich: **Werkbank → Post und Eingänge → Gleichbedeutende Wörter**, direkt unter *Suche und Volltext* (seit #992; vorher standen sie unten auf der Seite *Suche und Volltext*, dort steht jetzt ein Link). Aufgebaut ist er wie die anderen Sammlungen der Werkbank:
+
+![Werkbank → Gleichbedeutende Wörter](bilder/werkbank-woerter.png)
+
+- **In der Mitte** steht je Gruppe eine Zeile: das erste Wort fett, dahinter die übrigen leise (**Rechnung** · Beleg · Faktura), darunter die Herkunft – *Eigene* oder der Name des Pakets. Das **Suchfeld** darüber findet jedes Wort einer Gruppe, nicht nur das erste, und markiert es; mit **Herkunft** zeigst du nur eigene Gruppen oder die eines Pakets. Mit **+ Neu** legst du eine Gruppe an.
+- **Rechts** stehen die Wörter der gewählten Gruppe einzeln untereinander. Du kannst Wörter ändern, mit **+ Wort** dazunehmen, mit **×** entfernen und mit **↑**/**↓** die Reihenfolge ändern – unter dem ersten Wort steht die Gruppe in der Liste. Steht ein Wort schon in einer anderen Gruppe, siehst du das darunter mit einem Link dorthin; das ist erlaubt, die Suche nimmt dann die Wörter beider Gruppen.
+- **Speichern** prüft: mindestens zwei und höchstens 20 Wörter, je 2 bis 60 Zeichen, kein Wort doppelt (Groß- und Kleinschreibung und Umlaute zählen dabei nicht: *Kfz* und *KFZ* sind dasselbe Wort).
+- **Entfernen** fragt vorher nach.
+- **Gleichzeitig bearbeitet:** Hat jemand anderes die Gruppe inzwischen gespeichert, überschreibt Ablago das nicht still, sondern meldet es – wie bei [Mappentypen](mappentypen.md). Mit **Änderungen verwerfen** siehst du den neuen Stand und übernimmst deine Änderung noch einmal.
+
+Am Handy stehen Liste und Gruppe nacheinander; **← Zur Liste** führt zurück.
 
 Gruppen gelten für einfache Suchen. Wer Anführungszeichen oder ein Minus benutzt (siehe [Suchsyntax](https://help.ablago.app/benutzer/aktuell/ablage/#im-text-der-dokumente-suchen)), sucht genau das Eingegebene.
 
-**Wortlisten aus Paketen:** [Pakete](pakete.md) können fertige Gruppen mitbringen, z. B. für Fahrzeuge oder Vermietung. Sie stehen unter **Wortlisten aus Paketen** zum Ansehen, ändern sich mit einem Update des Pakets und verschwinden, wenn du das Paket entfernst. Ohne solches Paket ist die Liste leer.
+**Gruppen aus Paketen:** [Pakete](pakete.md) können fertige Gruppen mitbringen (Wortlisten), z. B. für Fahrzeuge oder Vermietung. Sie stehen mit dem Namen des Pakets in derselben Liste, lassen sich aber nur ansehen: Sie ändern sich mit einem Update des Pakets und verschwinden, wenn du das Paket entfernst. Mit **Als eigene Gruppe übernehmen** legst du eine Kopie an, die du ändern kannst; die Gruppe des Pakets bleibt daneben bestehen.
+
+**Wer darf:** Der Bereich lässt sich wie jeder andere einzeln als [Verwaltungsrecht](benutzer.md) vergeben. Wer vor dem Update *Suche und Volltext* verwalten durfte, darf auch *Gleichbedeutende Wörter*; wer *Suche und Volltext* in der Leiste ein- oder ausgeblendet hatte, für den gilt das auch für den neuen Bereich.
 
 ## Technik
 

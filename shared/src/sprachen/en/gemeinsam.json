@@ -724,6 +724,7 @@
   "suche.ist-zu-kurz-mindestens": "“{w}” is too short (at least 2 characters).",
   "suche.eine-gruppe-braucht-mindestens": "A group needs at least two different words.",
   "suche.hoechstens-woerter-je-gruppe": "At most {SYNONYM_MAX} words per group.",
+  "suche.doppelt": "“{w}” appears twice in the group.",
   "titelfilter.jahr-eines-datums": "Year of a date",
   "titelfilter.monat-eines-datums-01": "Month of a date (01–12)",
   "titelfilter.datum-im-eigenen-format": "Date in your own format, e.g. datum:\"MM/JJJJ\" (JJJJ = year)",

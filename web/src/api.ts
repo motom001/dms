@@ -4,6 +4,7 @@ import type { AutomatisierungAnsicht, AutomatisierungDaten, Fassung, Fehlschlag,
 import type { Design } from './design';
 import { messung } from './messung';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
+import type { Wortgruppe } from '../../shared/src/suche';
 import type { StempelVorlage, StempelWunsch } from '../../shared/src/stempel';
 import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
 import type { Bereich, SchwaerzSeite } from '../../shared/src/schwaerzen';
@@ -241,7 +242,7 @@ export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: 
 /** Unscharfe Suche (#356): statt = gesuchter Text, vorschlag = „Meintest du …?“ (null, wenn nichts Besseres da ist). */
 export interface Unscharf { statt: string; vorschlag: string | null; begriffe: Record<string, string[]> }
 /** Werkbank → Suche (#356). */
-export interface SucheStand { unscharf: boolean; woerter: number; synonyme: Array<{ id: string; woerter: string[]; quelle: string; paketName?: string }> }
+export interface SucheStand { unscharf: boolean; woerter: number; synonyme: Wortgruppe[] }
 /** Eine Mappe mit einem ähnlichen Dokument (#442); aehnlichkeit = Kosinus (0 bis 1). */
 export interface AehnlicheMappe { id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }
 /** „Frag deine Ablage“ (#444): Werkbank (Höchstmenge) und Frage stellen (Antwort als NDJSON-Strom). */
@@ -945,8 +946,9 @@ export const api = {
   /* Suche (#356) */
   sucheStand: () => anfrage<SucheStand>('GET', '/api/werkbank/suche'),
   sucheSetze: (e: { unscharf: boolean }) => anfrage<SucheStand>('PUT', '/api/werkbank/suche', e),
-  synonymNeu: (woerter: string) => anfrage<SucheStand>('POST', '/api/werkbank/suche/synonyme', { woerter }),
-  synonymAendern: (id: string, woerter: string) => anfrage<SucheStand>('PUT', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`, { woerter }),
+  // Gleichbedeutende Wörter (#356, #992): Wörter als Liste in ihrer Reihenfolge; `stand` = `geaendert` der Gruppe (#917).
+  synonymNeu: (woerter: string[]) => anfrage<SucheStand & { id: string }>('POST', '/api/werkbank/suche/synonyme', { woerter }),
+  synonymAendern: (id: string, woerter: string[], stand?: string) => anfrage<SucheStand>('PUT', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`, { woerter, ...(stand ? { stand } : {}) }),
   synonymLoeschen: (id: string) => anfrage<SucheStand>('DELETE', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`),
   woerterNeu: () => anfrage<SucheStand>('POST', '/api/werkbank/suche/woerter'),
   /* Erkennung per Paket (#511) */

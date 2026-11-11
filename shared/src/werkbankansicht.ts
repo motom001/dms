@@ -81,6 +81,8 @@ const EINTRAEGE: Eintrag[] = [
   // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“,
   // im Haushalt nur im Expertenmodus – zusammengelegt erbt der Bereich die weiteste Sichtbarkeit).
   { pfad: 'texterkennung', gruppe: 'post', in: O, experte: ['haushalt'] },
+  // Gleichbedeutende Wörter (#992): eigener Bereich mit Mitte direkt darunter, sichtbar wie „Suche und Volltext“.
+  { pfad: 'woerter', gruppe: 'post', in: O, experte: ['haushalt'] },
   // Sicherung mit Wiederherstellen als Abschnitt (#725).
   { pfad: 'sicherung', gruppe: 'sichern', in: H },
   { pfad: 'vollexport', gruppe: 'sichern', in: H },
@@ -230,6 +232,8 @@ export const MIT_MITTE: ReadonlySet<string> = new Set([
   'auskuenfte',
   // Stempel-Vorlagen (#990): klein, aber man legt sie an und bearbeitet sie – wie Nummernkreise und Designs.
   'stempel',
+  // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
+  'woerter',
 ]);
 
 export const hatMitte = (bereich: string) => MIT_MITTE.has(bereich);

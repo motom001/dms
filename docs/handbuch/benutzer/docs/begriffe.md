@@ -425,7 +425,7 @@ Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines
 Siehe auch: [Archivmodus](#archivmodus).
 
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
-Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern, Tippfehler und gleichbedeutende Wörter. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
+Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern und Tippfehler. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen; die gleichbedeutenden Wörter haben seit #992 einen eigenen Bereich direkt darunter.
 
 <a id="systemrolle"></a>**Systemrolle** · ~ mit Erklärung · Administratoren  
 Ob ein Benutzer Administrator oder Mitglied ist. Nur Administratoren kommen in die Werkbank.  

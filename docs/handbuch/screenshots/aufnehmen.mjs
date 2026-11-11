@@ -1225,6 +1225,16 @@ async function main() {
   await s.getByRole('heading', { name: w('Werkzeuge'), exact: true }).waitFor();
   await s.getByRole('heading', { name: w('Aufträge'), exact: true }).waitFor();
   await bild(s, 'werkbank-texterkennung');
+  // Gleichbedeutende Wörter (#992): Gruppen in der Mitte mit Suche, rechts die Wörter einer Gruppe.
+  const gruppen = SPRACHE === 'en' ? [['Invoice', 'Receipt', 'Bill'], ['Car', 'Vehicle', 'Auto']] : [['Rechnung', 'Beleg', 'Faktura'], ['Kfz', 'Auto', 'PKW']];
+  const ids = [];
+  for (const woerter of gruppen) ids.push((await api('POST', '/api/werkbank/suche/synonyme', { woerter }).catch(() => null))?.id);
+  const gruppe = ids.find(Boolean);
+  await geheZu(s, gruppe ? `/werkbank/woerter/${gruppe}` : '/werkbank/woerter');
+  // Rechts steht das erste Wort der Gruppe als Überschrift, in der Mitte die Liste der Gruppen.
+  await s.locator('.spalte.liste').first().waitFor();
+  if (gruppe) await s.getByRole('heading', { name: gruppen[ids.indexOf(gruppe)][0], exact: true }).first().waitFor();
+  await bild(s, 'werkbank-woerter');
   // Ohne Mitte (#366): lange Zugriffe unter den Einstellungen, „Installiert“ unter „Neuere Versionen“.
   // #407: unter Einstellungen → Datenbank-Anbindung, unter der Verbindung.
   // #725: lange Datenbankzugriffe stehen im Systemzustand.

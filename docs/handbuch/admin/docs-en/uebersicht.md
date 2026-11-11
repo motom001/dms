@@ -7,7 +7,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | --- | --- |
 | **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Own organisation](organisation.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
-| **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Webhooks](webhooks.md), [Search and full text](texterkennung.md) |
+| **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Webhooks](webhooks.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Demo data](demo.md) |
@@ -152,7 +152,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 
 - **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
 <!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Sign-in protection, Themes, Log, Reported errors, Maintenance.
+- **Business**: additionally Number sequences, Automations, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
 <!-- /bereiche:organisation -->
 - **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
 
@@ -161,7 +161,7 @@ Afterwards you can deviate per area:
 - **for everyone**: the area is in the bar for every person who may manage it.
 - **only for me**: the area is additionally only in your bar, for example *Log* if you like to check it but the others don't.
 
-**Expert mode:** a household rarely needs some areas, but they are useful if you want to dig deeper – currently the [search](suche.md) with typos and synonyms. The template **Household** hides them; with the tick **Expert mode – only for me** they appear in your bar. That only applies to you and is not a permission – the others who manage see their own bar. In the list of areas they are marked "in expert mode". With **Business** and **Everything** they are visible anyway.
+**Expert mode:** a household rarely needs some areas, but they are useful if you want to dig deeper – currently *Search and full text* with the [search](suche.md) and the [synonyms](suche.md#gleichbedeutende-worter). The template **Household** hides them; with the tick **Expert mode – only for me** they appear in your bar. That only applies to you and is not a permission – the others who manage see their own bar. In the list of areas they are marked "in expert mode". With **Business** and **Everything** they are visible anyway.
 
 If a hidden area is set up, for instance a mailbox or sign-in via a provider, it says "set up, but hidden". At the bottom of the bar it says how many areas are hidden. A click on it shows them all temporarily.
 
@@ -189,7 +189,8 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Intake folder](eingangsordner.md) | Take over scans from a folder | Business |
 | [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | Household, Business |
 | [Webhooks](webhooks.md) | See and switch off where Ablago reports new post, tasks and deadlines (home automation), and approve destinations | Household, Business |
-| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, shrink PDFs, typos and synonyms (e.g. car, vehicle) for the search | Business, Household in expert mode |
+| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, shrink PDFs, typos and the word index for the search | Business, Household in expert mode |
+| [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | Business, Household in expert mode |
 | [Backup](sicherung.md) | Set up, check and restore backups | Household, Business |
 | [Full export](export.md) | Take all data with you in open formats | Household, Business |
 | [Bin](papierkorb.md) | Bring back deleted folders | Household, Business |

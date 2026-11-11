@@ -121,8 +121,11 @@ export interface SeitenAnfrage {
 }
 /** Mappe als Kandidat für Termine (#918): nur, was die Termine brauchen. */
 export interface FristKandidat { id: string; typId: string; titel?: string | null; werte: Werte }
-/** Gruppe gleichbedeutender Wörter (#356); quelle „werkbank“ oder die Id eines Pakets. */
-export interface Synonymgruppe { id: string; woerter: string[]; quelle: string }
+/**
+ * Gruppe gleichbedeutender Wörter (#356); quelle „werkbank“ oder die Id eines Pakets. Die Reihenfolge der Wörter zählt
+ * (#992): Unter dem ersten steht die Gruppe in der Liste. `geaendert` ist der Stand für den Konfliktschutz (#917).
+ */
+export interface Synonymgruppe { id: string; woerter: string[]; quelle: string; geaendert: string }
 export interface NeueMappe {
   id: string; typId: string; werte: Werte; verweise: Verweis[]; titel: string; benutzerId: string | null; demo: boolean;
 }
@@ -572,7 +575,11 @@ export interface Repo {
   /** Gruppen gleichbedeutender Wörter (Werkbank und Pakete). */
   synonyme(): Promise<Synonymgruppe[]>;
   legeSynonymAn(g: { id: string; woerter: string[]; quelle: string }): Promise<void>;
-  aendereSynonym(id: string, woerter: string[]): Promise<boolean>;
+  /**
+   * Eigene Gruppe ändern (nur quelle „werkbank“); false, wenn es sie nicht gibt. Mit `erwartet` (#917, ihr `geaendert`,
+   * auf dem die Bearbeitung beruht) nur, wenn seitdem niemand gespeichert hat – sonst `KonfigurationVeraltet`.
+   */
+  aendereSynonym(id: string, woerter: string[], erwartet?: string): Promise<boolean>;
   loescheSynonym(id: string): Promise<boolean>;
   /** Alle Gruppen einer Quelle (Paket-Id) ersetzen – leer = entfernen. */
   setzeSynonyme(quelle: string, gruppen: string[][]): Promise<void>;

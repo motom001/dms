@@ -428,7 +428,7 @@ A folder with invented data that a package creates on request when installing (t
 See also: [Package](#paket), [Preset](#vorgabe), [Demo data](#demo-daten).
 
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
-The workbench area under Post and incoming for text recognition, archive version, automatic shrinking, typos and synonyms. Combines the former areas "Text recognition" and "Search".
+The workbench area under Post and incoming for text recognition, archive version, automatic shrinking and typos. Combines the former areas "Text recognition" and "Search"; the synonyms have had an area of their own directly below since #992.
 
 <a id="dienstkonto"></a>**Service account** (*Dienstkonto*) · ~ with explanation · administrators  
 The account with which a package with code works in Ablago, e.g. "Package Text recognition". It never signs in, isn't listed under Users, never deletes and only has the permissions from the package. In the history it appears where the package changed something.  

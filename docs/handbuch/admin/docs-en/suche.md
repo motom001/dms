@@ -1,6 +1,6 @@
 # Search {#suche}
 
-The Library's search forgives typos and other spellings. What it does in the process you set under **Workbench → Search and full text → Search** (group *Building your Library*; in the template *Household* only in [expert mode](uebersicht.md#werkbank-anpassen), in *Business* and *Everything* always). How users search is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/#suchen).
+The Library's search forgives typos and other spellings. What it does in the process you set under **Workbench → Search and full text → Search**, the synonyms under **Workbench → Synonyms** (both in the group *Post and intake*; in the template *Household* only in [expert mode](uebersicht.md#werkbank-anpassen), in *Business* and *Everything* always). How users search is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/#suchen).
 
 ## What always applies {#was-immer-gilt}
 
@@ -20,11 +20,23 @@ Similar-sounding names (Meier, Mayer, Maier) are only found if they are also spe
 
 ## Synonyms { #gleichbedeutende-worter }
 
-A **group** of synonyms, e.g. *car, auto, vehicle* or *service charges, operating costs*, makes sure that searching for one of the words also finds the others. Under **Synonyms** you enter a group separated by commas and click **Add group**; **Change** and **Remove** are on every group. A group has 2 to 20 words.
+A **group** of synonyms, e.g. *car, auto, vehicle* or *service charges, operating costs*, makes sure that searching for one of the words also finds the others. The groups have an area of their own: **Workbench → Post and intake → Synonyms**, directly below *Search and full text* (since #992; before, they were at the bottom of the page *Search and full text*, which now has a link). It is laid out like the other collections in the Workbench:
+
+![Workbench → Synonyms](bilder/werkbank-woerter.png)
+
+- **In the middle** each group has a line: the first word in bold, the others quieter behind it (**Invoice** · Receipt · Bill), below it the source – *Your own* or the package's name. The **search field** above finds every word of a group, not just the first, and highlights it; with **Source** you show only your own groups or those of one package. **+ New** adds a group.
+- **On the right** the words of the chosen group are listed one below the other. You can change words, add one with **+ Word**, remove one with **×** and change the order with **↑**/**↓** – the group is listed under its first word. If a word is already in another group, you see that below it with a link there; that is allowed, the search then takes the words of both groups.
+- **Saving** checks: at least two and at most 20 words, each 2 to 60 characters, no word twice (upper/lower case and umlauts don't count: *car* and *CAR* are the same word).
+- **Remove** asks first.
+- **Edited at the same time:** if someone else has saved the group in the meantime, Ablago doesn't silently overwrite it but says so – as with [folder types](mappentypen.md). **Discard changes** shows the new state; then apply your change again.
+
+On a phone the list and the group come one after the other; **← To the list** returns.
 
 Groups apply to simple searches. Whoever uses quotation marks or a minus (see [search syntax](https://help.ablago.app/benutzer/aktuell/en/ablage/#im-text-der-dokumente-suchen)) searches for exactly what was entered.
 
-**Word lists from packages:** [packages](pakete.md) can bring ready-made groups, e.g. for vehicles or letting. They are listed under **Word lists from packages** for viewing, change with an update of the package and disappear when you remove the package. Without such a package, the list is empty.
+**Groups from packages:** [packages](pakete.md) can bring ready-made groups (word lists), e.g. for vehicles or letting. They are in the same list with the package's name but can only be viewed: they change with an update of the package and disappear when you remove the package. **Copy as your own group** creates a copy you can change; the package's group stays alongside.
+
+**Who may:** like any other area, this one can be granted on its own as a [management right](benutzer.md). Whoever was allowed to manage *Search and full text* before the update may also manage *Synonyms*; if you had shown or hidden *Search and full text* in the bar, the same applies to the new area.
 
 ## Technology { #technik }
 

@@ -7,7 +7,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 | --- | --- |
 | **Ablage aufbauen** | [Nutzung](nutzung.md), [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Eigene Organisation](organisation.md), [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
-| **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Webhooks](webhooks.md), [Suche und Volltext](texterkennung.md) |
+| **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Webhooks](webhooks.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Aufgaben](aufgaben.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
 | **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartung](wartungsmodus.md), [Demo-Daten](demo.md) |
@@ -152,7 +152,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was eine Familie zum Einrichten und Sichern braucht. Neue Installationen beginnen damit. **Selbständige und kleine Betriebe** wählen gleich nach der Einrichtung **Betrieb**.
 <!-- bereiche:organisation -->
-- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Eigene Organisation, Datenschutz-Auskünfte, Löschkonzept, Aufbewahrung abgelaufen, Postfächer, Eingangsordner, Suche und Volltext, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
+- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Eigene Organisation, Datenschutz-Auskünfte, Löschkonzept, Aufbewahrung abgelaufen, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -161,7 +161,7 @@ Danach kannst du je Bereich abweichen:
 - **für alle**: Der Bereich steht bei jeder Person in der Leiste, die ihn verwalten darf.
 - **nur für mich**: Der Bereich steht zusätzlich nur bei dir, zum Beispiel *Protokoll*, wenn du gern nachschaust, die anderen aber nicht.
 
-**Expertenmodus:** Manche Bereiche braucht ein Haushalt selten, sie sind aber nützlich, wenn man tiefer einsteigen will – derzeit die [Suche](suche.md) mit Tippfehlern und gleichbedeutenden Wörtern. Die Vorlage **Haushalt** blendet sie aus; mit dem Haken **Expertenmodus – nur für mich** erscheinen sie in deiner Leiste. Das gilt nur für dich und ist kein Recht – die anderen, die verwalten, sehen ihre eigene Leiste. In der Liste der Bereiche stehen sie mit „im Expertenmodus“. Bei **Betrieb** und **Alles** sind sie ohnehin zu sehen.
+**Expertenmodus:** Manche Bereiche braucht ein Haushalt selten, sie sind aber nützlich, wenn man tiefer einsteigen will – derzeit *Suche und Volltext* mit der [Suche](suche.md) und die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter). Die Vorlage **Haushalt** blendet sie aus; mit dem Haken **Expertenmodus – nur für mich** erscheinen sie in deiner Leiste. Das gilt nur für dich und ist kein Recht – die anderen, die verwalten, sehen ihre eigene Leiste. In der Liste der Bereiche stehen sie mit „im Expertenmodus“. Bei **Betrieb** und **Alles** sind sie ohnehin zu sehen.
 
 Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldung über einen Anbieter, steht dabei „eingerichtet, aber ausgeblendet“. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind. Ein Klick darauf zeigt sie vorübergehend alle.
 
@@ -189,7 +189,8 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
 | [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | Haushalt, Betrieb |
 | [Webhooks](webhooks.md) | Sehen und abschalten, wohin Ablago neue Post, Aufgaben und Fristen meldet (Hausautomatisierung), und Ziele freigeben | Haushalt, Betrieb |
-| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, PDFs verkleinern, Tippfehler und gleichbedeutende Wörter (z. B. Kfz, Auto) für die Suche | Betrieb, Haushalt im Expertenmodus |
+| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, PDFs verkleinern, Tippfehler und Wörterverzeichnis für die Suche | Betrieb, Haushalt im Expertenmodus |
+| [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) | Gruppen von Wörtern, die die Suche gleich behandelt (z. B. Kfz, Auto, PKW): eigene anlegen, die aus Paketen ansehen | Betrieb, Haushalt im Expertenmodus |
 | [Sicherung](sicherung.md) | Sicherungen einrichten, prüfen und zurückspielen | Haushalt, Betrieb |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
 | [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |

@@ -1284,3 +1284,51 @@ rauchtest('Handy: Mappentypen durchsuchen (#978)', { handy: true, als: LENA }, a
   await s.getByRole('link', { name: /^Auftragsposition/ }).waitFor();
   await keineWaagerechteRolle(s);
 });
+
+// #992: Gleichbedeutende Wörter als eigener Bereich – anlegen mit „+ Neu“, Prüfung (doppelt), Reihenfolge, Suche über
+// jedes Wort, Hinweis auf eine andere Gruppe mit Link, Entfernen mit Rückfrage; „Suche und Volltext“ verweist hierher.
+rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einzeln bearbeiten (#992)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/texterkennung');
+  await s.getByRole('link', { name: 'Gleichbedeutende Wörter' }).last().click();
+  await s.waitForURL(/\/werkbank\/woerter$/);
+  const elemente = s.getByRole('region', { name: 'Elemente' });
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await s.waitForURL(/\/werkbank\/woerter\/neu$/);
+  await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).fill('Beleg');
+  await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('beleg');
+  await bearbeitung.getByRole('button', { name: 'Gruppe anlegen' }).click();
+  await bearbeitung.getByText('Steht schon weiter oben.').waitFor();
+  await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('Rechnung');
+  await bearbeitung.getByRole('button', { name: '+ Wort' }).click();
+  await bearbeitung.getByRole('textbox', { name: 'Wort 3' }).fill('Faktura');
+  // Reihenfolge: „Rechnung“ nach oben – unter dem ersten Wort steht die Gruppe in der Liste.
+  await bearbeitung.getByRole('button', { name: '„Rechnung“ nach oben' }).click();
+  assert.equal(await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).inputValue(), 'Rechnung');
+  await bearbeitung.getByRole('button', { name: 'Gruppe anlegen' }).click();
+  await s.waitForURL(/\/werkbank\/woerter\/[0-9a-f-]{36}$/);
+  await bearbeitung.getByRole('heading', { name: 'Rechnung', level: 1 }).waitFor();
+  // Zweite Gruppe mit „Beleg“: Hinweis mit Link auf die erste.
+  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).fill('Quittung');
+  await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('Beleg');
+  await bearbeitung.getByText('Steht auch in:').getByRole('link', { name: 'Rechnung' }).waitFor();
+  await bearbeitung.getByRole('button', { name: 'Gruppe anlegen' }).click();
+  await s.waitForURL(/\/werkbank\/woerter\/[0-9a-f-]{36}$/);
+  // Suche findet jedes Wort, nicht nur das erste.
+  const suche = elemente.getByRole('searchbox', { name: 'Gleichbedeutende Wörter durchsuchen' });
+  await suche.fill('faktura');
+  await elemente.getByText('1 Treffer', { exact: true }).waitFor();
+  await elemente.locator('mark', { hasText: 'Faktura' }).waitFor();
+  await suche.fill('beleg');
+  await elemente.getByText('2 Treffer', { exact: true }).waitFor();
+  // Entfernen mit Rückfrage.
+  await elemente.getByRole('link', { name: /^Quittung/ }).click();
+  await bearbeitung.getByRole('button', { name: 'Entfernen', exact: true }).click();
+  await s.getByRole('alertdialog').getByRole('button', { name: 'Entfernen' }).click();
+  await s.waitForURL(/\/werkbank\/woerter$/);
+  await suche.fill('');
+  await elemente.getByText('1 Gruppe', { exact: true }).waitFor();
+});
