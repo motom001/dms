@@ -160,7 +160,7 @@ const alsPuffer = async (x: Buffer | NodeJS.ReadableStream) => (Buffer.isBuffer(
 describe('Weitergeben mit Stempel im Dienst (#394)', () => {
   it('Herunterladen mit Stempel: Kopie gestempelt, Original unverändert, Historie vermerkt', async () => {
     const { d, m, dokument, pdf } = await aufbau();
-    const r = await d.dokumentFuerAusgabe(dokument.id, { stempel: { vorlage: 'kopie', empfaenger: 'Hausverwaltung Müller' }, ich });
+    const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { stempel: { vorlage: 'kopie', empfaenger: 'Hausverwaltung Müller' }, ich });
     assert.equal(r.gestempelt, true);
     const kopie = await alsPuffer(r.inhalt);
     assert.equal((await PDFDocument.load(kopie)).getPageCount(), 2);
@@ -170,7 +170,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.match(String(h.daten.text), /^mit Stempel „Kopie für Hausverwaltung Müller – \d{2}\.\d{2}\.\d{4}“ an Hausverwaltung Müller \(heruntergeladen: ausweis\.pdf\)$/);
     assert.equal(h.daten.an, 'Hausverwaltung Müller');
     // Ohne Stempel: unverändert, keine Historie.
-    const ohne = await d.dokumentFuerAusgabe(dokument.id, { stempel: {}, ich });
+    const ohne = await d.ausgang.dokumentFuerAusgabe(dokument.id, { stempel: {}, ich });
     assert.equal(ohne.gestempelt, false);
     assert.equal((await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'weitergegeben').length, 1);
   });
@@ -178,13 +178,13 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
   it('Pflicht je Mappentyp erzwingt den Stempel – beim Herunterladen, beim Export und per E-Mail', async () => {
     const { d, t, m, dokument, mails, mailer } = await aufbau({ modus: 'pflicht', vorlage: 'entwurf' });
     assert.deepEqual((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
-    const r = await d.dokumentFuerAusgabe(dokument.id, { ich });
+    const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { ich });
     assert.equal(r.gestempelt, true);
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('ENTWURF')));
     // Vorlage mit {empfänger}: ohne Empfänger 422; per E-Mail gelten die Adressen.
     await d.mappentypen.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'kopie' } });
-    await assert.rejects(d.dokumentFuerAusgabe(dokument.id, { ich }), status(422, /Empfänger/));
-    await d.versendeMappe(m.id, { an: 'bank@example.org', betreff: 'Ausweis', dokumente: [dokument.id] }, ich, mailer);
+    await assert.rejects(d.ausgang.dokumentFuerAusgabe(dokument.id, { ich }), status(422, /Empfänger/));
+    await d.ausgangEmail.versendeMappe(m.id, { an: 'bank@example.org', betreff: 'Ausweis', dokumente: [dokument.id] }, ich, mailer);
     const anhang = mails[0].o!.anhaenge![0];
     assert.ok((await seiteninhalt(anhang.inhalt as Buffer)).text.includes(hex('Kopie für bank@example.org')));
     const email = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'email')!;
@@ -194,8 +194,8 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.notEqual(post.dokumente[0].sha256, dokument.sha256);
     // Export als ZIP: Pflicht greift auch hier.
     const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
-    await assert.rejects(d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id] }, z), status(422, /Empfänger/));
-    await d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], stempel: { vorlage: 'kopie', empfaenger: 'Steuerbüro' } }, z);
+    await assert.rejects(d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id] }, z), status(422, /Empfänger/));
+    await d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], stempel: { vorlage: 'kopie', empfaenger: 'Steuerbüro' } }, z);
     const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'weitergegeben');
     assert.match(String(h[0].daten.text), /an Steuerbüro \(als ZIP exportiert: ausweis\.pdf\)/);
     // Vorlage in Gebrauch lässt sich nicht löschen; unbekannte Vorlage am Typ wird abgelehnt.
@@ -221,7 +221,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
   it('Bild herunterladen mit Stempel wird zum PDF', async () => {
     const { d, m } = await aufbau();
     const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'foto.png', typ: 'image/png' }, png(30, 50), null);
-    const r = await d.dokumentFuerAusgabe(dokument.id, { stempel: { stempel: 'VERTRAULICH', lage: 'ecke' }, ich });
+    const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { stempel: { stempel: 'VERTRAULICH', lage: 'ecke' }, ich });
     assert.equal(r.name, 'foto.pdf'); assert.equal(r.mime, 'application/pdf');
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('VERTRAULICH')));
   });

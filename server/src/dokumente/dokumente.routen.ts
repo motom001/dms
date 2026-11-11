@@ -43,7 +43,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       // Herunterladen ist Weitergeben (#394): mit Stempel-Parametern oder Pflicht des Mappentyps gestempelt – und Mitnehmen (#723, Recht E).
       if (weitergabe(a) || a.query.fassung !== undefined) {
         await mitnehmen(a, mappeId);
-        const r = await dienst.dokumentFuerAusgabe(a.params.id, { stempel: a.query, verkleinern: a.query.verkleinern, fassung: a.query.fassung, ich: ich(a) });
+        const r = await dienst.ausgang.dokumentFuerAusgabe(a.params.id, { stempel: a.query, verkleinern: a.query.verkleinern, fassung: a.query.fassung, ich: ich(a) });
         return abgerufen(a, a.params.id, { fassung: a.query.fassung === 'archiv' ? 'archiv' : 'original', gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
       }
       const d0 = await dienst.dokumente.holeDokument(a.params.id);
@@ -69,7 +69,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       await mitnehmen(a, mappeId);
       const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown; fassung?: unknown };
       const version = e.version == null ? undefined : Number(e.version);
-      const r = await dienst.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, version: Number.isInteger(version) ? version : undefined, ich: ich(a) });
+      const r = await dienst.ausgang.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, version: Number.isInteger(version) ? version : undefined, ich: ich(a) });
       return abgerufen(a, a.params.id, { fassung: Number.isInteger(version) ? 'version' : e.fassung === 'archiv' ? 'archiv' : 'original', version: Number.isInteger(version) ? version : null, gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
     } },
     // Vorschaubild der ersten Seite (#332): gleiche Rechte wie das Dokument; 404, solange es keins gibt.
@@ -111,7 +111,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       if (zumAbspeichern(a)) await mitnehmen(a, mappeId);
-      const g = herausgeben(a) ? await dienst.fassungFuerAusgabe(a.params.id, 'umgewandelt', { stempel: a.query, ich: ich(a) }) : null;
+      const g = herausgeben(a) ? await dienst.ausgang.fassungFuerAusgabe(a.params.id, 'umgewandelt', { stempel: a.query, ich: ich(a) }) : null;
       if (g) return abgerufen(a, a.params.id, { fassung: 'umgewandelt', gestempelt: true, datei: g.name }, ausgabeDatei({ name: g.name, mime: g.mime, anzeigbar: true, groesse: g.inhalt.length, inhalt: g.inhalt, gestempelt: true }));
       const f = await dienst.dokumentUmwandlung.fassungVon(a.params.id);
       const punkt = f.d.name.lastIndexOf('.');
@@ -133,7 +133,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       if (zumAbspeichern(a)) await mitnehmen(a, mappeId);
       // Mit API-Schlüssel ist das Herausgeben (#799): mit Pflicht- oder gewünschtem Stempel eine gestempelte Kopie.
       // Die gespeicherte Archivfassung bleibt unverändert; Pakete bekommen sie immer, wie sie ist.
-      const g = herausgeben(a) ? await dienst.fassungFuerAusgabe(a.params.id, 'archiv', { stempel: a.query, ich: ich(a) }) : null;
+      const g = herausgeben(a) ? await dienst.ausgang.fassungFuerAusgabe(a.params.id, 'archiv', { stempel: a.query, ich: ich(a) }) : null;
       if (g) return abgerufen(a, a.params.id, { fassung: 'archiv', gestempelt: true, datei: g.name }, ausgabeDatei({ name: g.name, mime: g.mime, anzeigbar: true, groesse: g.inhalt.length, inhalt: g.inhalt, gestempelt: true }));
       const f = await dienst.dokumentArchiv.archivfassungVon(a.params.id);
       const name = f.info.imOriginal ? f.d.name : archivfassungName(f.d.name);
@@ -224,7 +224,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const nummer = Number(a.params.nummer);
       if (weitergabe(a)) {
         await mitnehmen(a, mappeId);
-        const r = await dienst.dokumentFuerAusgabe(a.params.id, { version: nummer, stempel: a.query, verkleinern: a.query.verkleinern, ich: ich(a) });
+        const r = await dienst.ausgang.dokumentFuerAusgabe(a.params.id, { version: nummer, stempel: a.query, verkleinern: a.query.verkleinern, ich: ich(a) });
         return abgerufen(a, a.params.id, { fassung: 'version', version: nummer, gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
       }
       const { version: v, inhalt } = await dienst.dokumentVersionen.versionInhalt(a.params.id, nummer);

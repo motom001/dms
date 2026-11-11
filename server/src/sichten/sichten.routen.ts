@@ -85,7 +85,7 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       // Sicht mit Recht E liegen – dieselbe Prüfstelle wie beim Herunterladen selbst.
       // Verwaltungsmodus (#820): ohne Modus nicht lesbar → Historie und Hinweis in der Oberfläche.
       const [mitnehmbar, spur] = await Promise.all([
-        d.rechte?.R !== false ? dienst.mitnehmbar(ich(a), z, [a.params.id]) : Promise.resolve(new Set<string>()),
+        d.rechte?.R !== false ? dienst.ausgang.mitnehmbar(ich(a), z, [a.params.id]) : Promise.resolve(new Set<string>()),
         modusSpur(a, [a.params.id], 'angesehen'),
       ]);
       d.exportierbar = mitnehmbar.has(a.params.id);

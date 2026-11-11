@@ -238,7 +238,7 @@ describe('Ausgabe „verkleinert“ (#393)', () => {
 
   it('Herunterladen, E-Mail und Export verkleinert – das gespeicherte Dokument bleibt unverändert', async () => {
     const { d, t, m, dokument, mails, mailer } = await aufbau();
-    const r = await d.dokumentFuerAusgabe(dokument.id, { verkleinern: 'bildschirm', ich });
+    const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { verkleinern: 'bildschirm', ich });
     assert.ok(r.verkleinert && r.groesse < gross.length / 4);
     assert.equal(r.gestempelt, false);
     assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original unverändert');
@@ -246,19 +246,19 @@ describe('Ausgabe „verkleinert“ (#393)', () => {
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
     assert.match(String(h.daten.text), /^verkleinert \(.* MB → .* KB\) \(heruntergeladen: scan\.pdf\)$/);
 
-    await d.versendeMappe(m.id, { an: 'steuer@example.org', betreff: 'Scan', dokumente: [dokument.id], verkleinern: 'standard' }, ich, mailer);
+    await d.ausgangEmail.versendeMappe(m.id, { an: 'steuer@example.org', betreff: 'Scan', dokumente: [dokument.id], verkleinern: 'standard' }, ich, mailer);
     const anhang = mails[0].o!.anhaenge![0].inhalt as Buffer;
     assert.ok(anhang.length < gross.length / 4);
     assert.match(await pdftext(anhang), /Rechnung Nummer 4711/);
     assert.match(String((await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'email')!.daten.text), /, verkleinert \(/);
 
     const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
-    const ex = await d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], verkleinern: 'standard' }, z);
+    const ex = await d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], verkleinern: 'standard' }, z);
     assert.ok(ex.groesse < gross.length / 2, 'ZIP mit verkleinertem PDF');
     assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original weiter unverändert');
     // Kein PDF und ohne Stempel: beim einzelnen Herunterladen 422.
     const { dokument: txt } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('hallo'), null);
-    await assert.rejects(d.dokumentFuerAusgabe(txt.id, { verkleinern: 'standard', ich }), status(422, /kein PDF/));
+    await assert.rejects(d.ausgang.dokumentFuerAusgabe(txt.id, { verkleinern: 'standard', ich }), status(422, /kein PDF/));
   });
 });
 

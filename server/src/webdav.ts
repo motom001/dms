@@ -137,7 +137,7 @@ interface Ctx {
   b: Benutzer; s: ApiSchluessel; z: Zugriff; e: WebdavEinstellung;
   mappen: Map<string, Awaited<ReturnType<Dienst['berechtigungen']['laufwerkMappe']>>>;
   /** Stempel je Mappentyp (#722) und ob eine Mappe hinausdarf (#723) – einmal je Anfrage. */
-  stempel: Map<string, Promise<Awaited<ReturnType<Dienst['laufwerkStempel']>>>>;
+  stempel: Map<string, Promise<Awaited<ReturnType<Dienst['ausgang']['laufwerkStempel']>>>>;
   raus: Map<string, Promise<boolean>>;
 }
 /** Was beim Lesen eines Dokuments hinausgeht (#722): gestempelt oder das Original, mit Größe und ETag dazu. */
@@ -391,7 +391,7 @@ export class Webdav {
   /** Stempel beim Lesen für Mappen dieses Typs: Pflicht des Typs, sonst die Vorlage der Einstellung. */
   private stempelFuer(typId: string, ctx: Ctx) {
     let p = ctx.stempel.get(typId);
-    if (!p) { p = this.d.dienst.laufwerkStempel(typId, ctx.e.stempel, this.leser(ctx)); ctx.stempel.set(typId, p); }
+    if (!p) { p = this.d.dienst.ausgang.laufwerkStempel(typId, ctx.e.stempel, this.leser(ctx)); ctx.stempel.set(typId, p); }
     return p;
   }
   /** Hat der Mappentyp dieser Mappe einen Pflicht-Stempel? Dann ist sie über das Laufwerk nur lesbar. */
@@ -415,7 +415,7 @@ export class Webdav {
   /** Darf die Mappe über das Laufwerk hinaus (Lesen und Exportrecht, gemeinsame Prüfstelle #723)? */
   private darfRaus(mappeId: string, ctx: Ctx): Promise<boolean> {
     let p = ctx.raus.get(mappeId);
-    if (!p) { p = this.d.dienst.mitnehmbar(ctx.b, ctx.z, [mappeId]).then((x) => x.has(mappeId)); ctx.raus.set(mappeId, p); }
+    if (!p) { p = this.d.dienst.ausgang.mitnehmbar(ctx.b, ctx.z, [mappeId]).then((x) => x.has(mappeId)); ctx.raus.set(mappeId, p); }
     return p;
   }
 
@@ -467,7 +467,7 @@ export class Webdav {
     }
   }
   private async stemple(d: Dokument, m: Mappe, plan: GeltenderStempel, ctx: Ctx, schluessel: string) {
-    const a = await this.d.dienst.laufwerkAusgabe(d, m, plan, this.leser(ctx));
+    const a = await this.d.dienst.ausgang.laufwerkAusgabe(d, m, plan, this.leser(ctx));
     const eintrag = { gestempelt: true, groesse: a.inhalt.length, inhalt: a.inhalt };
     this.merkeStempel(schluessel, eintrag);
     return eintrag;

@@ -195,7 +195,7 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
     const ziel = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'M-1' } }, lena.id);
     await d.dokumente.ladeHoch(ziel.id, { register: 'belege', name: 'r.pdf', typ: 'application/pdf' }, PDF('r'), lena.id);
     const mailer = { async sende() { /* ok */ } };
-    const mail = await d.versendeMappe(ziel.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: lena.id, name: 'Lena', email: 'lena@example.org' }, mailer);
+    const mail = await d.ausgangEmail.versendeMappe(ziel.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: lena.id, name: 'Lena', email: 'lena@example.org' }, mailer);
     await assert.rejects(d.postAufloesen.trennePostAb(mail.id, { dokumente: [] }, lena.id), status(422, /versendete E-Mail/));
   });
 });

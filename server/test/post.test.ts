@@ -163,7 +163,7 @@ describe('Systemtyp Post (#192)', () => {
   it('versendete E-Mails bleiben Post wie verschickt: Felder geschützt', async () => {
     const { d, anna, r1 } = await aufbau();
     const mailer = { async sende() { /* ok */ } };
-    const r = await d.versendeMappe(r1.id, { an: 'a@example.org', betreff: 'Hallo' }, { id: anna.id, name: 'Anna', email: 'anna@example.org' }, mailer);
+    const r = await d.ausgangEmail.versendeMappe(r1.id, { an: 'a@example.org', betreff: 'Hallo' }, { id: anna.id, name: 'Anna', email: 'anna@example.org' }, mailer);
     await assert.rejects(d.mappen.aendereMappe(r.id, { werte: { betreff: 'anders' } }, anna.id), status(403));
     // Stand und „Für“ bleiben änderbar.
     await d.mappen.aendereMappe(r.id, { werte: { stand: POST_STAND.neu } }, anna.id);

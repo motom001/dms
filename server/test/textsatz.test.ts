@@ -304,14 +304,14 @@ for (const pg of [false, true]) {
       const gefragt: string[][] = [];
       // Ohne Ansicht mit Recht E sagt die echte Prüfstelle nein – hier sagt sie ja und merkt sich die Frage.
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId }, body: { ziel: 'herunterladen' } }), fehler(403, /Exportrecht/));
-      x.d.pruefeAusgang = async (_ich, _z, weg, ids) => { gefragt.push([weg, ...ids]); };
+      x.d.ausgang.pruefeAusgang = async (_ich, _z, weg, ids) => { gefragt.push([weg, ...ids]); };
       const r = await x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId }, body: { ziel: 'herunterladen' } });
       assert.deepEqual(gefragt, [['herunterladen', x.vertrag]]);
       assert.equal(r.datei?.mime, 'application/pdf');
       assert.match(String(r.datei?.name), /^Kündigung .*\.pdf$/);
       assert.equal((await x.d.kern.repo.listeDokumente(x.vertrag)).length, 0, 'nichts abgelegt');
       // Darf die Prüfstelle nicht, geht nichts hinaus.
-      x.d.pruefeAusgang = async () => { throw new Fachfehler(403, 'nein'); };
+      x.d.ausgang.pruefeAusgang = async () => { throw new Fachfehler(403, 'nein'); };
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId }, body: { ziel: 'herunterladen' } }), fehler(403));
       // Nur Lesen am Vertrag: Liste ja, Ablegen 403.
       await x.d.kern.repo.setzeBerechtigungen(x.inst.typen.vertrag, { grund: { C: false, R: true, U: false, D: false, P: false }, regeln: [] });

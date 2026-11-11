@@ -21,7 +21,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/mappen/:id/email', zugang: 'angemeldet', handler: async (a) => {
       const i = ich(a);
       // Versenden gibt Daten hinaus wie ein Export (#330): Lesen und Exportrecht, gemeinsame Prüfstelle (#723).
-      const r = await dienst.versendeMappe(a.params.id, b(a), { id: i.id, name: i.name, email: i.email }, x.betrieb?.mailer() ?? null, await zg(a));
+      const r = await dienst.ausgangEmail.versendeMappe(a.params.id, b(a), { id: i.id, name: i.name, email: i.email }, x.betrieb?.mailer() ?? null, await zg(a));
       await modusSpur(a, [a.params.id], 'versendet');
       return ok(r, 201);
     } },
@@ -110,7 +110,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     } },
     // Export (#152, #153): Tabelle, ZIP mit Dokumenten oder PDF – Recht E an der Sicht, Lesen je Mappe.
     { methode: 'POST', pfad: '/api/export', zugang: 'angemeldet', handler: async (a) => {
-      const r = await dienst.exportiere(ich(a), b(a), await zg(a), (ids) => modusSpur(a, ids, 'exportiert'), a.apiSchluessel ? 'api' : 'oberflaeche');
+      const r = await dienst.ausgangExport.exportiere(ich(a), b(a), await zg(a), (ids) => modusSpur(a, ids, 'exportiert'), a.apiSchluessel ? 'api' : 'oberflaeche');
       L.ablage.info('Mappen exportiert', { von: ich(a).email, sicht: b(a).sicht, format: b(a).format, mappen: r.mappen, ausgelassen: r.ausgelassen, auswahl: Array.isArray(b(a).ids) });
       return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.groesse, koepfe: { 'x-dms-ausgelassen': String(r.ausgelassen) } } };
     } },
@@ -119,7 +119,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     // Mehrere Mappen per E-Mail (#151): Lesen und Versenden (Recht E einer Ansicht) je Mappe.
     { methode: 'POST', pfad: '/api/mappen/email', zugang: 'angemeldet', handler: async (a) => {
       const i = ich(a);
-      const r = await dienst.versendeMappen(b(a), { id: i.id, name: i.name, email: i.email, rolle: i.rolle }, await zg(a), x.betrieb?.mailer() ?? null);
+      const r = await dienst.ausgangEmail.versendeMappen(b(a), { id: i.id, name: i.name, email: i.email, rolle: i.rolle }, await zg(a), x.betrieb?.mailer() ?? null);
       await modusSpur(a, (Array.isArray(b(a).ids) ? b(a).ids as unknown[] : []).map(String), 'versendet');
       L.ablage.info('Mehrere Mappen per E-Mail verschickt', { von: i.email, mappen: r.mappen, anhaenge: r.anhaenge });
       return ok(r, 201);

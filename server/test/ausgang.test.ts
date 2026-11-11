@@ -146,10 +146,10 @@ describe('Eine Prüfstelle für alle Ausgänge (#723)', () => {
   it('Herunterladen, E-Mail (eine, mehrere), Export und WebDAV fragen dieselbe Stelle – und sperren ohne E', async () => {
     const x = await aufbau();
     const wege: string[] = [];
-    const pruefe = x.d.pruefeAusgang.bind(x.d);
-    const mit = x.d.mitnehmbar.bind(x.d);
-    x.d.pruefeAusgang = async (ich, z, ausgang, ids) => { wege.push(ausgang); return pruefe(ich, z, ausgang, ids); };
-    x.d.mitnehmbar = async (ich, z, ids) => { wege.push('mitnehmbar'); return mit(ich, z, ids); };
+    const pruefe = x.d.ausgang.pruefeAusgang.bind(x.d.ausgang);
+    const mit = x.d.ausgang.mitnehmbar.bind(x.d.ausgang);
+    x.d.ausgang.pruefeAusgang = async (ich, z, ausgang, ids) => { wege.push(ausgang); return pruefe(ich, z, ausgang, ids); };
+    x.d.ausgang.mitnehmbar = async (ich, z, ids) => { wege.push('mitnehmbar'); return mit(ich, z, ids); };
     await x.ohneE();
     // Herunterladen
     await assert.rejects(x.rufe(x.lena, 'GET', '/api/dokumente/:id/inhalt', { params: { id: x.pdf.id }, query: { herunterladen: '1' } }), status(403));
@@ -196,13 +196,13 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
     const z = await d.rechtepruefung.zugriff(lena);
     const ich = { id: lena.id, name: 'Lena', email: 'lena@example.org', rolle: 'mitglied' };
     const { mails, m } = mailer();
-    await d.versendeMappen({ ids: [v1.id], an: 'steuer@example.org', betreff: 'Belege', dokumente: [pdf.id] }, ich, z, m as never);
+    await d.ausgangEmail.versendeMappen({ ids: [v1.id], an: 'steuer@example.org', betreff: 'Belege', dokumente: [pdf.id] }, ich, z, m as never);
     const angaben = mails[0].anhaenge.find((a) => a.name === 'V-1.pdf')!;
     assert.ok(angaben, 'Angaben-PDF ist dabei');
     assert.ok((await seitentext(await alsPuffer(angaben.inhalt))).includes(hex('ENTWURF')), 'Angaben gestempelt');
     assert.ok((await seitentext(await alsPuffer(mails[0].anhaenge.find((a) => a.name === 'Vertrag.pdf')!.inhalt))).includes(hex('ENTWURF')));
     // Eine Mappe: dieselben Regeln, das Angaben-PDF auf Wunsch.
-    await d.versendeMappe(v1.id, { an: 'steuer@example.org', betreff: 'Eine', dokumente: [pdf.id], angaben: true }, ich, m as never, z);
+    await d.ausgangEmail.versendeMappe(v1.id, { an: 'steuer@example.org', betreff: 'Eine', dokumente: [pdf.id], angaben: true }, ich, m as never, z);
     assert.deepEqual(mails[1].anhaenge.map((a) => a.name), ['V-1.pdf', 'Vertrag.pdf']);
     assert.ok((await seitentext(await alsPuffer(mails[1].anhaenge[0].inhalt))).includes(hex('ENTWURF')));
     // In der Post liegt, was verschickt wurde: das gestempelte Angaben-PDF.
@@ -218,15 +218,15 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
     const z = await d.rechtepruefung.zugriff(lena);
     const ich = { id: lena.id, name: 'Lena', email: 'lena@example.org', rolle: 'mitglied' };
     const { m } = mailer();
-    await assert.rejects(d.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', fassungen: { [pdf.id]: 'kopie' } }, ich, m as never, z), status(422, /kennt nur/));
-    await assert.rejects(d.versendeMappen({ ids: [v1.id], an: 'a@example.org', betreff: 'x', fassungen: { [pdf.id]: 'kopie' } }, ich, z, m as never), status(422, /kennt nur/));
+    await assert.rejects(d.ausgangEmail.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', fassungen: { [pdf.id]: 'kopie' } }, ich, m as never, z), status(422, /kennt nur/));
+    await assert.rejects(d.ausgangEmail.versendeMappen({ ids: [v1.id], an: 'a@example.org', betreff: 'x', fassungen: { [pdf.id]: 'kopie' } }, ich, z, m as never), status(422, /kennt nur/));
     // Für alle „archiv“: ohne Archivfassung geht das Original, ohne Rückfrage – bei einer wie bei mehreren Mappen.
     const { mails, m: m2 } = mailer();
-    await d.versendeMappen({ ids: [v1.id], an: 'a@example.org', betreff: 'x', angaben: false, dokumente: [pdf.id], fassung: 'archiv' }, ich, z, m2 as never);
-    await d.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', dokumente: [pdf.id], fassung: 'archiv' }, ich, m2 as never, z);
+    await d.ausgangEmail.versendeMappen({ ids: [v1.id], an: 'a@example.org', betreff: 'x', angaben: false, dokumente: [pdf.id], fassung: 'archiv' }, ich, z, m2 as never);
+    await d.ausgangEmail.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', dokumente: [pdf.id], fassung: 'archiv' }, ich, m2 as never, z);
     assert.deepEqual(mails.map((x) => x.anhaenge.map((a) => a.name)), [['Vertrag.pdf'], ['Vertrag.pdf']]);
     // Je Dokument ausdrücklich „archiv“ (neu auch bei mehreren Mappen): gibt es keine, sagt Ablago es (404).
-    await assert.rejects(d.versendeMappen({ ids: [v1.id], an: 'a@example.org', betreff: 'x', dokumente: [pdf.id], fassungen: { [pdf.id]: 'archiv' } }, ich, z, m2 as never), status(404));
-    await assert.rejects(d.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', dokumente: [pdf.id], fassungen: { [pdf.id]: 'archiv' } }, ich, m2 as never, z), status(404));
+    await assert.rejects(d.ausgangEmail.versendeMappen({ ids: [v1.id], an: 'a@example.org', betreff: 'x', dokumente: [pdf.id], fassungen: { [pdf.id]: 'archiv' } }, ich, z, m2 as never), status(404));
+    await assert.rejects(d.ausgangEmail.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', dokumente: [pdf.id], fassungen: { [pdf.id]: 'archiv' } }, ich, m2 as never, z), status(404));
   });
 });

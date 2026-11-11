@@ -117,7 +117,7 @@ describe('Ablage während eines großen Exports (#542)', () => {
       const ablage: number[] = [];
       let fertig = false;
       const t0 = performance.now();
-      const exp = d.exportiere(ich, { format: 'pdf', sicht: gross.id, uebersicht: true }, z).finally(() => { fertig = true; });
+      const exp = d.ausgangExport.exportiere(ich, { format: 'pdf', sicht: gross.id, uebersicht: true }, z).finally(() => { fertig = true; });
       // Wie die Oberfläche: Listen verschiedener Ansichten laden, solange der Export läuft.
       while (!fertig) {
         const s = performance.now();

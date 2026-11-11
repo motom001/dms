@@ -350,11 +350,11 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.equal(f.erechnung, true);
     // Weitergeben mit Wahl: Archivfassung ausdrücklich gewählt; mehrere Dokumente mit „archiv“: E-Rechnung bleibt Original.
     const ich = { id: null, name: 'Markus' };
-    const ar = await x.d.dokumentFuerAusgabe(id, { fassung: 'archiv', ich });
+    const ar = await x.d.ausgang.dokumentFuerAusgabe(id, { fassung: 'archiv', ich });
     assert.equal(ar.name, 'newsletter (PDF-A).pdf');
-    const or = await x.d.dokumentFuerAusgabe(id, { ich });
+    const or = await x.d.ausgang.dokumentFuerAusgabe(id, { ich });
     assert.equal(or.name, 'newsletter.pdf');
-    await assert.rejects(x.d.dokumentFuerAusgabe(id, { fassung: 'kopie', ich }), /kennt nur/);
+    await assert.rejects(x.d.ausgang.dokumentFuerAusgabe(id, { fassung: 'kopie', ich }), /kennt nur/);
   });
 
   it('#715: E-Mail mehrerer Mappen und ZIP-Export nehmen mit fassung „archiv“ die Archivfassung, ohne Fassung das Original', async () => {
@@ -371,13 +371,13 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     const z = await x.d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     const mails: Array<{ anhaenge: Array<{ name: string; mime: string }> }> = [];
     const mailer = { async sende(_an: string, _b: string, _t: string, o?: { anhaenge?: Array<{ name: string; mime: string }> }) { mails.push({ anhaenge: o?.anhaenge ?? [] }); } };
-    await x.d.versendeMappen({ ids: [x.m.id], an: 'steuer@example.org', betreff: 'Belege', angaben: false, dokumente: 'alle', fassung: 'archiv' }, ich, z, mailer as never);
+    await x.d.ausgangEmail.versendeMappen({ ids: [x.m.id], an: 'steuer@example.org', betreff: 'Belege', angaben: false, dokumente: 'alle', fassung: 'archiv' }, ich, z, mailer as never);
     assert.deepEqual(mails[0].anhaenge.map((y) => y.name).sort(), ['notiz.pdf', 'rechnung (PDF-A).pdf']);
-    await x.d.versendeMappen({ ids: [x.m.id], an: 'steuer@example.org', betreff: 'Belege', angaben: false, dokumente: 'alle' }, ich, z, mailer as never);
+    await x.d.ausgangEmail.versendeMappen({ ids: [x.m.id], an: 'steuer@example.org', betreff: 'Belege', angaben: false, dokumente: 'alle' }, ich, z, mailer as never);
     assert.deepEqual(mails[1].anhaenge.map((y) => y.name).sort(), ['notiz.pdf', 'rechnung.pdf'], 'ohne Angabe: Original');
-    await assert.rejects(x.d.versendeMappen({ ids: [x.m.id], an: 'a@example.org', betreff: 'x', fassung: 'kopie' }, ich, z, mailer as never), /kennt nur/);
+    await assert.rejects(x.d.ausgangEmail.versendeMappen({ ids: [x.m.id], an: 'a@example.org', betreff: 'x', fassung: 'kopie' }, ich, z, mailer as never), /kennt nur/);
     const zip = async (fassung?: string) => {
-      const r = await x.d.exportiere(ich, { format: 'zip', ids: [x.m.id], ...(fassung ? { fassung } : {}) }, z);
+      const r = await x.d.ausgangExport.exportiere(ich, { format: 'zip', ids: [x.m.id], ...(fassung ? { fassung } : {}) }, z);
       const teile: Buffer[] = []; for await (const c of r.inhalt as AsyncIterable<Buffer>) teile.push(Buffer.from(c));
       const b = Buffer.concat(teile); assert.equal(b.length, r.groesse); return b.toString('latin1');
     };

@@ -165,13 +165,13 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       const ohne = await x.d.mappen.legeMappeAn({ typId: x.typ.id, werte: { nr: 'V-2' } }, x.lena.id);
       const ich = { id: x.lena.id, rolle: 'admin', name: 'Lena' };
       const z = await x.d.rechtepruefung.zugriff(ich);
-      const r = await x.d.exportiere(ich, { format: 'zip', sicht: sicht.id }, z, undefined, 'api');
+      const r = await x.d.ausgangExport.exportiere(ich, { format: 'zip', sicht: sicht.id }, z, undefined, 'api');
       (r.inhalt as NodeJS.ReadableStream).resume?.();
       const e = (await x.d.mappenHistorie.historie(x.m.id)).find((h) => h.art === 'abruf_api')!;
       assert.deepEqual(e.daten.dokumente, ['Rechnung.pdf']);
       assert.equal(e.daten.fassung, 'export');
       assert.ok(!(await x.d.mappenHistorie.historie(ohne.id)).some((h) => ABRUFE.includes(h.art)), 'ohne Dokumente kein Abruf');
-      await x.d.exportiere(ich, { format: 'csv', sicht: sicht.id }, z);
+      await x.d.ausgangExport.exportiere(ich, { format: 'csv', sicht: sicht.id }, z);
       assert.equal((await x.d.mappenHistorie.historie(x.m.id)).filter((h) => ABRUFE.includes(h.art)).length, 1, 'Tabelle allein: keine Dateien');
       await x.d.mappenHistorie.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'webdav' });
       // Vollexport: daten/historie.jsonl

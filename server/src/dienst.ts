@@ -51,7 +51,7 @@ import { PdfBearbeiten, PdfVerkleinern, Schwaerzen, Stempelvorlagen } from './pd
 export { GROSSE_MAX, GROSSE_MIT_SCHAETZUNG, VERKLEINERN_STANDARD, verkleinernEinstellungAus, type VerkleinernEinstellung } from './pdf-bearbeiten';
 import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostSystemmappen } from './post';
 export type { Fundstelle, SystemkontoEintrag } from './post';
-import { type Ausgang, AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
+import { AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
 export { EMAIL_MAX_EMPFAENGER, EMAIL_MAX_MAPPEN } from './ausgang';
 import { type EreignisAufruf, VOLLTEXT_MAX, VolltextAusPaketen, VolltextDienst, type VolltextMeldung } from './volltext';
 import { Automatisierungshilfen, EreignisseDienst } from './ereignisse/index';
@@ -262,7 +262,7 @@ export class Dienst {
   /** Text setzen (#1040): Brief aus einer Text-Vorlage als PDF – beim ersten Gebrauch gebaut. */
   get textsatz(): TextsatzDienst {
     return this.textsatzDienst ??= new TextsatzDienst(this.kern, this.rechtepruefung, {
-      organisation: () => this.organisation.geltende(), mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
+      organisation: () => this.organisation.geltende(), mitnehmbar: (ich, z, ids) => this.ausgang.mitnehmbar(ich, z, ids),
       ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, { ...e, herkunft: 'vorlage' }, inhalt, von),
       darfAblegen: async (z, id) => { const m = await this.repo.holeMappe(id); return !!m && (await this.rechtepruefung.rechteAn(z, m)).U; },
     });
@@ -279,7 +279,7 @@ export class Dienst {
         return konto ? this.rechtepruefung.zugriff({ id: konto, rolle: 'mitglied', art: 'dienst', paketId }) : null;
       },
       kiSperre: (paketId) => this.ki.kiSperreFuer(paketId),
-      mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
+      mitnehmbar: (ich, z, ids) => this.ausgang.mitnehmbar(ich, z, ids),
       ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, { ...e, herkunft: 'paket' }, inhalt, von),
       aendereMappe: (id, werte, von, z, anlass) => this.mappen.aendereMappe(id, { werte }, von, z, { text: anlass }),
       legeMappeAn: (typId, werte, von, z) => this.mappen.legeMappeAn({ typId, werte }, von, false, z),
@@ -301,7 +301,7 @@ export class Dienst {
     this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.rechtepruefung.zugriff(ich) });
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
     this.mappentypen = new MappentypenDienst(this.kern, {
-      mitStempel: (typen) => this.mitStempel(typen), pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
+      mitStempel: (typen) => this.ausgang.mitStempel(typen), pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
       erkennung: () => this.erkennung, berechtigungenAusEingabe: (typ, e) => this.berechtigungen.berechtigungenAusEingabe(typ, e),
       protokolliereBerechtigungen: (typ, n) => Dienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => Dienst.konfigurationKonflikt(art, aktuell),
     });
@@ -441,10 +441,10 @@ export class Dienst {
       umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, verwalten: this.sichtenVerwaltung, stempel: stempelvorlagen,
     }, { entsperrtZu });
     const email = new AusgangEmail(this.kern, { rechte, historie: this.mappenHistorie, dokumente: this.dokumente, ausgang, stempel: stempelvorlagen, systemmappen }, {
-      pruefeAusgang: (ich, z, weg, ids) => this.pruefeAusgang(ich, z, weg, ids), entsperrtZu,
+      pruefeAusgang: (ich, z, weg, ids) => this.ausgang.pruefeAusgang(ich, z, weg, ids), entsperrtZu,
     });
     const exportieren = new AusgangExport(this.kern, { rechte, sichten: this.sichten, fehlend: this.dateienFehlen, ausgang, stempel: stempelvorlagen }, {
-      mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids), entsperrtZu,
+      mitnehmbar: (ich, z, ids) => this.ausgang.mitnehmbar(ich, z, ids), entsperrtZu,
     });
     return { stempelvorlagen, pdf, verkleinern, schwaerzen, systemmappen, aufloesen, post, eingang, fotos, ausgang, email, export: exportieren };
   }
@@ -673,8 +673,6 @@ export class Dienst {
 
   /* ---------- E-Mail aus der Mappe (#58, #151, ausgang/email.ts) ---------- */
 
-  versendeMappen(...a: Parameters<AusgangEmail['versendeMappen']>) { return this.ausgangEmail.versendeMappen(...a); }
-  versendeMappe(...a: Parameters<AusgangEmail['versendeMappe']>) { return this.ausgangEmail.versendeMappe(...a); }
 
   /* ---------- Notizen anlegen, ändern, löschen (#55, mappen/notizen.ts) ---------- */
 
@@ -772,19 +770,9 @@ export class Dienst {
 
   /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
 
-  exportiere(...a: Parameters<AusgangExport['exportiere']>) { return this.ausgangExport.exportiere(...a); }
 
   /* ---------- Wege nach draußen: die gemeinsame Prüfstelle (#723), Stempel, Fassungen (ausgang/ausgang.dienst.ts) ---------- */
 
-  exportierbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> { return this.ausgang.exportierbar(ich, z, ids); }
-  mitnehmbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> { return this.ausgang.mitnehmbar(ich, z, ids); }
-  pruefeAusgang(ich: { id: string; rolle: string }, z: Zugriff, ausgang: Ausgang, ids: string[]): Promise<void> { return this.ausgang.pruefeAusgang(ich, z, ausgang, ids); }
-  private mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> { return this.ausgang.mitStempel(typen); }
-  laufwerkStempel(typId: string, vorlage: string | null, leser: string) { return this.ausgang.laufwerkStempel(typId, vorlage, leser); }
-  laufwerkAusgabe(...a: Parameters<AusgangDienst['laufwerkAusgabe']>) { return this.ausgang.laufwerkAusgabe(...a); }
-  dokumentFuerAusgabe(...a: Parameters<AusgangDienst['dokumentFuerAusgabe']>) { return this.ausgang.dokumentFuerAusgabe(...a); }
-  fassungFuerAusgabe(...a: Parameters<AusgangDienst['fassungFuerAusgabe']>) { return this.ausgang.fassungFuerAusgabe(...a); }
-  gestempelteSeiten(...a: Parameters<AusgangDienst['gestempelteSeiten']>) { return this.ausgang.gestempelteSeiten(...a); }
   loescheMappen(...a: Parameters<LoeschenDienst['loescheMappen']>) { return this.loeschen.loescheMappen(...a); }
   loescheMappe(...a: Parameters<LoeschenDienst['loescheMappe']>): Promise<void> { return this.loeschen.loescheMappe(...a); }
   private loescheMappeIntern(id: string, typ: Mappentyp | undefined, von: string | null = null) { return this.loeschen.loescheMappeIntern(id, typ, von); }

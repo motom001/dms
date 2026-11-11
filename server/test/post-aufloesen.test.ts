@@ -153,7 +153,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.match(String((await d.mappenHistorie.historie(fremd.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /^Post „Noch ein Brief“ übernommen/);
       // Versendete E-Mails bleiben Post, wie sie verschickt wurden.
       const mailer = { async sende() { /* ok */ } };
-      const mail = await d.versendeMappe(fremd.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: LENA, name: 'Lena', email: 'lena@example.org' }, mailer);
+      const mail = await d.ausgangEmail.versendeMappe(fremd.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: LENA, name: 'Lena', email: 'lena@example.org' }, mailer);
       const ziel = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-5' } }, LENA);
       const v = await d.post.ordneZu(mail.id, { ziel: ziel.id, dokumente: [], aufloesen: true }, LENA);
       assert.equal(v.aufgeloest, false);

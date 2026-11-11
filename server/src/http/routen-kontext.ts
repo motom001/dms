@@ -82,7 +82,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    */
   const mitnehmen = async (a: Anfrage, mappeId: string) => {
     if (a.benutzer?.art === 'dienst') return;
-    await dienst.pruefeAusgang(ich(a), await zg(a), 'herunterladen', [mappeId]);
+    await dienst.ausgang.pruefeAusgang(ich(a), await zg(a), 'herunterladen', [mappeId]);
     await modusSpur(a, [mappeId], 'heruntergeladen');
   };
   /**
@@ -111,7 +111,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const seitenquelle = async (a: Anfrage, mappeId: string) => {
     if (!herausgeben(a)) return null;
     await mitnehmen(a, mappeId);
-    return dienst.gestempelteSeiten(a.params.id, { stempel: a.query, ich: ich(a) });
+    return dienst.ausgang.gestempelteSeiten(a.params.id, { stempel: a.query, ich: ich(a) });
   };
   /** Kommt die Datei nicht zum Ansehen (inline), sondern zum Abspeichern? Mit API-Schlüssel eines Menschen immer. */
   const zumAbspeichern = (a: Anfrage) => a.query.herunterladen !== undefined || (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
