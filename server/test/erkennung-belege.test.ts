@@ -412,6 +412,23 @@ Gesamtbetrag 1.190,00 €`;
     await assert.rejects(x.rufe('POST', '/api/typen/:id/vorschlaege/datei', { params: { id: x.rechnung.id }, query: { name: 'x.xml', typ: 'application/xml' }, body: Buffer.from('<?xml version="1.0"?><!DOCTYPE r [<!ENTITY e SYSTEM "file:///etc/passwd">]><r>&e;</r>') }), (e: Error & { status?: number }) => e.status === 415);
   });
 
+  it('Mappe hat schon Positionen: ohne ausdrückliches positionen keine Zeilen, mit nur „vorhanden“ (Haken in der Oberfläche aus)', async () => {
+    const x = await aufbau();
+    const re = await x.d.legeMappeAn({ typId: x.rechnung.id, werte: {} }, x.lena.id);
+    const er = liesERechnung(CII()).er;
+    const leer = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x', mappe: re.id }, await x.z(), { erechnung: er });
+    assert.equal(leer.positionen?.zeilen.length, 2, 'leere Tabelle: Positionen angeboten');
+    assert.equal(leer.positionen?.vorhanden, undefined);
+    await x.d.legeMappeAn({ typId: x.position.id, werte: { rechnung: re.id, beschreibung: 'Schon da' } }, x.lena.id);
+    const ohne = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x', mappe: re.id }, await x.z(), { erechnung: er });
+    assert.deepEqual([ohne.positionen?.zeilen.length, ohne.positionen?.vorhanden, ohne.positionen?.zurueckgehalten], [0, 1, 2]);
+    const mit = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x', mappe: re.id, positionen: true }, await x.z(), { erechnung: er });
+    assert.deepEqual([mit.positionen?.zeilen.length, mit.positionen?.vorhanden], [2, 1]);
+    // Über die Route mit Datei: positionen=1 ist das ausdrückliche Anlegen.
+    const datei = async (q: Record<string, string>) => (await x.rufe('POST', '/api/typen/:id/vorschlaege/datei', { params: { id: x.rechnung.id }, query: { name: 'r.xml', typ: 'application/xml', mappe: re.id, ...q }, body: Buffer.from(CII()) }) as { body: { positionen?: { zeilen: unknown[]; vorhanden?: number } } }).body.positionen;
+    assert.deepEqual([(await datei({}))?.zeilen.length, (await datei({ positionen: '1' }))?.zeilen.length], [0, 2]);
+  });
+
   it('ohne Recht zum Anlegen der Positionen: keine Positionen', async () => {
     const x = await aufbau();
     await x.d.setzeBerechtigungen(x.position.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);

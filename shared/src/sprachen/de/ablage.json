@@ -702,6 +702,8 @@
   "mappeformular.positionen-anlegen_other": "{anzahl} Positionen aus der E-Rechnung beim Speichern unter „{feld}“ anlegen",
   "mappeformular.positionen-weitere_one": "Eine weitere Position bleibt nur im Original.",
   "mappeformular.positionen-weitere_other": "Weitere {anzahl} Positionen bleiben nur im Original.",
+  "mappeformular.positionen-vorhanden_one": "Die Mappe hat schon 1 Position – trotzdem anlegen?",
+  "mappeformular.positionen-vorhanden_other": "Die Mappe hat schon {anzahl} Positionen – trotzdem anlegen?",
   "mappeformular.positionen-nicht-angelegt_one": "1 Position nicht angelegt: {message}",
   "mappeformular.positionen-nicht-angelegt_other": "{anzahl} Positionen nicht angelegt: {message}",
   "mappeformular.dazu-verknuepfen": "{typ} „{titel}“ gehört dazu – beim Speichern verknüpfen („{feld}“)",

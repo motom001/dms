@@ -124,7 +124,13 @@ export interface TypVorschlaege {
    * Positionen aus der E-Rechnung (#1043) für eine Tabelle des Typs (#1030): Mappen des Teiltyps, die beim Speichern
    * angelegt werden – geprüft wie jede Eingabe; nur, wenn die Person sie anlegen darf.
    */
-  positionen?: { feld: string; typId: string; feldKey: string; zeilen: Array<Record<string, Wert>>; weitere?: number };
+  positionen?: {
+    feld: string; typId: string; feldKey: string; zeilen: Array<Record<string, Wert>>; weitere?: number;
+    /** So viele (lesbare) Positionen hat die Mappe schon – dann bietet die Oberfläche das Anlegen nur ohne Haken an. */
+    vorhanden?: number;
+    /** Hat die Mappe schon Positionen und fehlt `positionen: true` in der Anfrage: so viele wurden nicht mitgeschickt (zeilen leer). */
+    zurueckgehalten?: number;
+  };
   /**
    * Gehört dazu (#1043): vorhandene Mappen anderer Typen, die im Dokument stehen und über ein leeres Verweisfeld zu
    * dieser Mappe gehören (z. B. der Lieferschein zur Rechnung). Verknüpft wird erst beim Speichern, wenn die Person es
@@ -459,7 +465,7 @@ export class Erkennung {
    * „neu anlegen“. Jede Antwort geht durch die Prüfung gegen die Feldtypen; nichts wird gespeichert.
    */
   async fuerTyp(typId: string, eingabe: unknown, z?: Zugriff, zusatz?: { erechnung?: ERechnung | null }): Promise<TypVorschlaege> {
-    const e = (eingabe ?? {}) as { text?: unknown; dokumente?: unknown; mappe?: unknown };
+    const e = (eingabe ?? {}) as { text?: unknown; dokumente?: unknown; mappe?: unknown; positionen?: unknown };
     const { typ, mappe } = await this.typFuer(typId, typeof e.mappe === 'string' && e.mappe ? e.mappe : undefined, z);
     const teile: string[] = [];
     if (typeof e.text === 'string' && e.text.trim()) teile.push(e.text.slice(0, TEXT_MAX));
@@ -554,13 +560,13 @@ export class Erkennung {
     if (verworfen.length) log.warn('Vorschläge der Erkennung verworfen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; ') });
     // Fundstellen (#939): Seite und Rahmen aus der Textebene bzw. Texterkennung; nicht gefunden = Wert ohne Rahmen.
     if (dokIds.length && Object.keys(vorschlaege).length) await this.stellen(typ, vorschlaege, dokIds);
-    const positionen = er ? await this.positionen(typ, er, z) : undefined;
+    const positionen = er ? await this.positionen(typ, er, z, mappe, e.positionen === true || e.positionen === '1') : undefined;
     const dazu = text.trim() ? await this.dazu(text, typ, mappe, z) : [];
     log.info('Aus Dokument ausfüllen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, zeichen: text.length, vorschlaege: Object.keys(vorschlaege).length, neu: Object.keys(neu).length, erechnung: er?.syntax ?? null, positionen: positionen?.zeilen.length ?? 0, dazu: dazu.length, ausgehend: !!aussteller });
     return {
       vorschlaege, bezuege, neu, verworfen: verworfen.length, zeichen: text.length, engine, ...(hinweis ? { hinweis } : {}), ...(gekuerzt ? { gekuerzt: true as const } : {}),
       ...(er ? { erechnung: { syntax: er.syntax, gutschrift: er.gutschrift, ...(er.profil ? { profil: er.profil } : {}), ...(er.nummer ? { nummer: er.nummer } : {}) } } : {}),
-      ...(positionen?.zeilen.length ? { positionen } : {}),
+      ...(positionen?.zeilen.length || positionen?.zurueckgehalten ? { positionen } : {}),
       ...(dazu.length ? { dazu } : {}),
     };
   }
@@ -613,7 +619,7 @@ export class Erkennung {
    * Positionen der E-Rechnung (#1043) für die erste Tabelle des Typs (#1030), deren Zeilen Teile sind (#1031) – nur,
    * wenn die Person Mappen dieses Typs anlegen darf. Jede Zeile geht durch dieselbe Prüfung wie Eingaben.
    */
-  private async positionen(typ: Mappentyp, er: ERechnung, z?: Zugriff): Promise<TypVorschlaege['positionen']> {
+  private async positionen(typ: Mappentyp, er: ERechnung, z: Zugriff | undefined, mappe: Mappe | undefined, ausdruecklich: boolean): Promise<TypVorschlaege['positionen']> {
     if (!er.positionen.length) return undefined;
     for (const f of typ.felder.filter((x) => x.typ === 'tabelle' && x.quelle?.typId && x.quelle.feldKey)) {
       const pt = z ? z.typen.get(f.quelle!.typId) : await this.repo().holeTyp(f.quelle!.typId);
@@ -625,9 +631,18 @@ export class Erkennung {
         return Object.fromEntries(Object.entries(pruefeVorschlaege(pt, roh, erlaubt).vorschlaege).map(([k, v]) => [k, v.wert]));
       }).filter((w) => Object.keys(w).length > 0);
       if (!zeilen.length) continue;
-      return { feld: f.key, typId: pt.id, feldKey: f.quelle!.feldKey, zeilen, ...(er.weiterePositionen ? { weitere: er.weiterePositionen } : {}) };
+      // Hat die Mappe schon Positionen, gibt es neue nur auf ausdrücklichen Wunsch (`positionen: true`) – sonst doppelt.
+      const vorhanden = mappe ? await this.vorhandenePositionen(mappe.id, pt.id, f.quelle!.feldKey, z) : 0;
+      const basis = { feld: f.key, typId: pt.id, feldKey: f.quelle!.feldKey, ...(er.weiterePositionen ? { weitere: er.weiterePositionen } : {}), ...(vorhanden ? { vorhanden } : {}) };
+      return vorhanden && !ausdruecklich ? { ...basis, zeilen: [], zurueckgehalten: zeilen.length } : { ...basis, zeilen };
     }
     return undefined;
+  }
+
+  /** Lesbare Mappen des Teiltyps, die über `feldKey` schon zu dieser Mappe gehören. */
+  private async vorhandenePositionen(mappeId: string, typId: string, feldKey: string, z?: Zugriff): Promise<number> {
+    const ids = (await this.repo().rueckverweise(mappeId)).filter((r) => r.quelleTypId === typId && r.feldKey === feldKey).map((r) => r.quelleId);
+    return ids.length ? (await this.d.lesbare(z, [...new Set(ids)])).size : 0;
   }
 
   /**

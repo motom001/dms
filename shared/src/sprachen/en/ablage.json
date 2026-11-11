@@ -702,6 +702,8 @@
   "mappeformular.positionen-anlegen_other": "Create {anzahl} items from the e-invoice under “{feld}” when saving",
   "mappeformular.positionen-weitere_one": "One further item remains in the original only.",
   "mappeformular.positionen-weitere_other": "A further {anzahl} items remain in the original only.",
+  "mappeformular.positionen-vorhanden_one": "The folder already has 1 item – create them anyway?",
+  "mappeformular.positionen-vorhanden_other": "The folder already has {anzahl} items – create them anyway?",
   "mappeformular.positionen-nicht-angelegt_one": "1 item not created: {message}",
   "mappeformular.positionen-nicht-angelegt_other": "{anzahl} items not created: {message}",
   "mappeformular.dazu-verknuepfen": "{typ} “{titel}” belongs to this – link it when saving (“{feld}”)",

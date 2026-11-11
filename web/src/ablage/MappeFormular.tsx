@@ -700,7 +700,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   }
   /** E-Rechnung und „gehört dazu“ (#1043): was beim Speichern noch geschieht – zunächst angehakt. */
   function merkeDanach(r: TypVorschlaege) {
-    setAdPositionen(r.positionen && d.typ(r.positionen.typId) ? { ...r.positionen, an: true } : null);
+    // Hat die Mappe schon Positionen, ist der Haken aus – sonst lägen sie doppelt da.
+    setAdPositionen(r.positionen?.zeilen.length && d.typ(r.positionen.typId) ? { ...r.positionen, an: !r.positionen.vorhanden } : null);
     setAdDazu((r.dazu ?? []).filter((x) => x.mappeId !== mappe?.id).map((x) => ({ ...x, an: true })));
   }
   function vorschlagZuruecknehmen(k: string) {
@@ -1063,7 +1064,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       <div className="hinweis info ad-ergebnis" role="status">
         {adMeldung && <p>{adMeldung}</p>}
         {adPositionen && <HakenFeld beschriftung={t('ablage.mappeformular.positionen-anlegen', { anzahl: adPositionen.zeilen.length, feld: feldLabel(typ.felder.find((f) => f.key === adPositionen.feld) ?? { key: adPositionen.feld, label: adPositionen.feld }) })}
-          hinweis={adPositionen.weitere ? t('ablage.mappeformular.positionen-weitere', { anzahl: adPositionen.weitere }) : undefined}>
+          hinweis={[adPositionen.vorhanden ? t('ablage.mappeformular.positionen-vorhanden', { anzahl: adPositionen.vorhanden }) : '', adPositionen.weitere ? t('ablage.mappeformular.positionen-weitere', { anzahl: adPositionen.weitere }) : ''].filter(Boolean).join(' ') || undefined}>
           <input type="checkbox" checked={adPositionen.an} onChange={(e) => setAdPositionen((x) => x && { ...x, an: e.target.checked })} />
         </HakenFeld>}
         {adDazu.map((x) => <HakenFeld key={x.mappeId} beschriftung={t('ablage.mappeformular.dazu-verknuepfen', { typ: typName(d.typ(x.typId) ?? { name: '' }), titel: titelOder(x.titel), feld: x.feld })} hinweis={x.gruende.length ? t('ablage.mappeformular.dazu-gefunden', { gruende: x.gruende.join(', ') }) : undefined}>
