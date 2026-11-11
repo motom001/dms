@@ -1757,5 +1757,16 @@
   "pakete.tabelle-feld": "mappentypen: „{typ}“ → Feld „{feld}“: Das Feld „{quellfeld}“ von „{quelle}“ ist kein Verweisfeld auf diesen Typ – die Tabelle zeigt nur Mappen, die über ein solches Feld hierher verweisen.",
   "paketerstellung.tabelle": "Feldart Tabelle",
   "paketerstellung.vorbelegen": "„Beim Auswählen übernehmen“ an Verweisfeldern",
-  "paketerstellung.tabelle-liste": "{wo}: Die Tabelle zeigt eine andere Trefferliste von „{name}“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten."
+  "paketerstellung.tabelle-liste": "{wo}: Die Tabelle zeigt eine andere Trefferliste von „{name}“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+  "teile.loeschen-ohne-recht_one": "Nicht gelöscht: Zu dieser Mappe gehört {anzahl} Teil, den du nicht löschen darfst. Teile gehen immer mit ihrer Mappe.",
+  "teile.loeschen-ohne-recht_other": "Nicht gelöscht: Zu dieser Mappe gehören {anzahl} Teile, die du nicht löschen darfst. Teile gehen immer mit ihrer Mappe.",
+  "teile.teil-nicht-loeschbar": "Nicht gelöscht: Der Teil „{titel}“ kann nicht mitgehen – {grund}",
+  "teile.mit-teilen-geloescht_one": "Mit {anzahl} Teil gelöscht",
+  "teile.mit-teilen-geloescht_other": "Mit {anzahl} Teilen gelöscht",
+  "teile.mit-verknuepften-fehlen_one": "Zu „{titel}“ gehört {anzahl} Teil, der nicht mitgelöscht würde (abgewählt, nur entkoppelt oder ohne Recht). Teile gehen immer mit ihrer Mappe – bitte die Vorschau neu laden.",
+  "teile.mit-verknuepften-fehlen_other": "Zu „{titel}“ gehören {anzahl} Teile, die nicht mitgelöscht würden (abgewählt, nur entkoppelt oder ohne Recht). Teile gehen immer mit ihrer Mappe – bitte die Vorschau neu laden.",
+  "teile.erst-uebergeordnete": "Dieser Teil kommt mit seiner übergeordneten Mappe zurück – stelle sie wieder her.",
+  "teile.wiederherstellen-ohne-recht_one": "Nicht wiederhergestellt: {anzahl} Teil dieser Mappe kannst du nicht wiederherstellen.",
+  "teile.wiederherstellen-ohne-recht_other": "Nicht wiederhergestellt: {anzahl} Teile dieser Mappe kannst du nicht wiederherstellen.",
+  "paketerstellung.teile": "Ist Teil einer anderen Mappe"
 }

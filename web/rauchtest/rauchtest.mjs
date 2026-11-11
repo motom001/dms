@@ -253,17 +253,19 @@ async function vorbereiten(cookie) {
 /** Typen „Auftrag“ mit Tabelle „Positionen“ und „Auftragsposition“, ein Auftrag mit zwei Positionen (#1030). */
 async function tabellenDaten(cookie) {
   const auftrag = (await api('POST', '/api/typen', { cookie, body: { name: 'Auftrag', schluessel: 'auftrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Auftragsnummer', typ: 'text', pflicht: true }] } })).daten;
-  const position = (await api('POST', '/api/typen', { cookie, body: { name: 'Auftragsposition', schluessel: 'auftragsposition', titelVorlage: '{nr}. {beschreibung}', trefferliste: ['nr', 'beschreibung', 'menge', 'preis'], felder: [
+  // Ist Teil einer anderen Mappe (#1031): Positionen erscheinen nur am Auftrag.
+  const position = (await api('POST', '/api/typen', { cookie, body: { name: 'Auftragsposition', schluessel: 'auftragsposition', titelVorlage: '{nr}. {beschreibung}', teilVon: 'auftrag', trefferliste: ['nr', 'beschreibung', 'menge', 'preis'], felder: [
     { key: 'auftrag', label: 'Auftrag', typ: 'referenz', zielTypen: [auftrag.id], pflicht: true, verweisart: 'zugehoerigkeit' },
     { key: 'nr', label: 'Nr.', typ: 'zahl' }, { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true },
     { key: 'menge', label: 'Menge', typ: 'zahl' }, { key: 'preis', label: 'Einzelpreis', typ: 'betrag', waehrung: 'EUR' },
   ] } })).daten;
   await api('PUT', `/api/typen/${auftrag.id}`, { cookie, body: { ...auftrag, felder: [...auftrag.felder, { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: position.id, feldKey: 'auftrag', neu: '+ Position' } }] } });
   const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: auftrag.id, werte: { nr: 'A-1' } } })).daten;
+  const positionen = [];
   for (const [nr, beschreibung, menge, betrag] of [[1, 'Ölfilter', 2, 12], [2, 'Inspektion', 1, 189.9]]) {
-    await api('POST', '/api/mappen', { cookie, body: { typId: position.id, werte: { auftrag: mappe.id, nr, beschreibung, menge, preis: { betrag, waehrung: 'EUR' } } } });
+    positionen.push((await api('POST', '/api/mappen', { cookie, body: { typId: position.id, werte: { auftrag: mappe.id, nr, beschreibung, menge, preis: { betrag, waehrung: 'EUR' } } } })).daten);
   }
-  return { auftrag, position, mappe };
+  return { auftrag, position, mappe, positionen };
 }
 
 /** Typen „Tarifart“ (mit Frist und Hinweis) und „Abo“, das beides beim Auswählen übernimmt; zwei Tarifarten (#1037). */
@@ -597,6 +599,23 @@ rauchtest('Handy: Tabelle als Liste mit den ersten zwei Spalten (#1030)', { hand
   assert.equal(await s.getByRole('table', { name: 'Positionen' }).count(), 0);
   assert.match(await liste.getByRole('listitem').filter({ hasText: 'Ölfilter' }).textContent(), /^1\s*Beschreibung:\s*Ölfilter$/);
   await keineWaagerechteRolle(s);
+});
+
+rauchtest('Teile: Suche findet den Auftrag über seine Position, „Teil von …“ am direkten Link (#1031)', { als: LENA }, async (s) => {
+  const { auftrag, mappe, positionen, position } = daten.tabelle;
+  // Suche über alle Mappen: der Auftrag mit „gefunden in Auftragsposition …“, die Position selbst nicht.
+  await s.goto(BASIS + '/ablage/start');
+  const schnell = s.locator('.ss-suche');
+  await schnell.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' }).fill('Ölfilter');
+  await schnell.getByText('gefunden in Auftragsposition „1. Ölfilter“').waitFor();
+  assert.equal(await schnell.getByRole('heading', { name: /^Auftragsposition/ }).count(), 0);
+  // Direkter Link auf die Position: oben „Teil von Auftrag „A-1““ mit Link zurück; in der Mitte keine Liste aller Positionen.
+  await s.goto(BASIS + `/ablage/${position.id}/${positionen[0].id}`);
+  const zurueck = s.getByRole('link', { name: 'Auftrag „A-1“' });
+  await zurueck.waitFor();
+  await s.getByText('Mappen vom Typ Auftragsposition erscheinen nur an ihrer übergeordneten Mappe', { exact: false }).waitFor();
+  await zurueck.click();
+  await s.waitForURL(new RegExp(`/ablage/${auftrag.id}/${mappe.id}`));
 });
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */

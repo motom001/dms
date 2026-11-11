@@ -518,6 +518,8 @@ export class Dienst {
       const eigene = (await this.repo.listeSichten()).find((x) => x.id === typ.id);
       if (eigene && eigene.name === alt.name && alt.name !== typ.name) await this.repo.aendereSicht(typ.id, { ...eigene, name: typ.name });
     });
+    // Ist Teil einer anderen Mappe (#1031) umgeschaltet: aus den Ansichten heraus bzw. wieder mit eigener Ansicht.
+    a.typGeaendert.anmelden('sichten.teile', async ({ alt, typ }) => { await this.sichtenVerwaltung.teilUmgeschaltet(alt, typ); });
     // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
     a.typGeaendert.anmelden('mappen.titel', async ({ typ }) => { await this.aktualisiereTitel((await this.repo.listeMappen(typ.id)).map((m) => m.id)); });
     a.typGeaendert.anmelden('mappentypen.passung', async ({ typ }) => { await this.pruefePassung(typ.id); });

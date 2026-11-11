@@ -269,7 +269,15 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     // Die Haken „Neue Mappen/Löschen erlauben“ gibt es nicht mehr (#146): das regeln die Berechtigungen.
     erstellenErlaubt: true,
     loeschenErlaubt: true,
+    // Ist Teil einer anderen Mappe (#1031): Kennung des Verweisfelds oder null; geprüft in teilProbleme (teile.ts).
+    teilVon: text(t.teilVon).slice(0, 60) || null,
   };
+}
+
+/** Ist Teil einer anderen Mappe (#1031): Eine Eingabe ohne `teilVon` (z. B. ein älteres Programm) behält die Einstellung. */
+export function behalteTeil(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'teilVon'>): MappentypDaten {
+  const r = (roh ?? {}) as Record<string, unknown>;
+  return 'teilVon' in r ? d : { ...d, teilVon: alt.teilVon ?? null };
 }
 
 /** „Woran man ihn erkennt“ (#937) auch in anderen Sprachen höchstens ERKENNBAR_AN_MAX Zeichen. */

@@ -402,5 +402,18 @@
   "tabelle.neu-hilfe": "Steht unter der Tabelle, zum Beispiel „+ Position“. Nur wer den anderen Typ anlegen darf, sieht den Knopf.",
   "tabelle.ohne-wert": "Eine Tabelle hat keinen eigenen Wert: Sie zeigt die Mappen nur an – nicht im Export, nicht in Bedingungen, ohne Summen.",
   "tabelle.keine-quelle": "Noch verweist kein Feld auf diesen Typ. Lege erst beim anderen Mappentyp ein Verweisfeld auf diesen an (zum Beispiel „Rechnung“ an der Rechnungsposition).",
-  "tabelle.verwendet": "Tabelle {link}"
+  "tabelle.verwendet": "Tabelle {link}",
+  "teile.einstellung-hilfe": "Mappen dieses Typs gehören immer zu einer anderen Mappe, z. B. Rechnungspositionen zu ihrer Rechnung. Sie erscheinen nur dort – nicht in Ansichten, Suche und „+ Neu“.",
+  "teile.hat-teile": "Geht nicht: Zu Mappen dieses Typs gehören selbst Teile ({typen}).",
+  "teile.kein-feld": "Dafür braucht der Typ ein Verweisfeld auf genau einen anderen Mappentyp, in dem eine Mappe steht.",
+  "teile.feld": "Gehört dazu über",
+  "teile.feld-hilfe": "Das Verweisfeld auf die übergeordnete Mappe. Es wird Pflicht.",
+  "teile.waehlen": "Feld wählen …",
+  "teile.bedeutet": "Neue Mappen entstehen an der übergeordneten Mappe ({eltern}), etwa über eine Tabelle oder ein Verknüpfungsregister. Der Typ hat keine eigene Ansicht; was in einer Mappe steht, findet die Suche bei {eltern}. Wird eine Mappe vom Typ {eltern} gelöscht, gehen ihre Teile mit.",
+  "teile.rechte": "Leserechte: Ohne eigene Berechtigungen übernimmt der Typ beim Einschalten einmal die Leserechte von {eltern}. Ändern sich die Berechtigungen von {eltern} später, gilt das hier nicht von selbst – sonst wären Teile breiter lesbar als ihre Mappe; bitte dann auch hier anpassen.",
+  "teile.kein-schutz": "Kein Schutz: Teile fehlen in Ansichten und Suche, bleiben aber über die Schnittstelle, den Export und direkte Links erreichbar. Wer was sehen darf, regeln die Berechtigungen.",
+  "teile.rechte-uebernommen": "Leserechte von {eltern} übernommen – siehe Berechtigungen.",
+  "teile.rechte-ausgelassen_one": "{anzahl} Regel ließ sich nicht übertragen (ihr Feld fehlt hier) – bitte selbst prüfen.",
+  "teile.rechte-ausgelassen_other": "{anzahl} Regeln ließen sich nicht übertragen (ihr Feld fehlt hier) – bitte selbst prüfen.",
+  "teile.einstellung-name": "Ist Teil einer anderen Mappe"
 }

@@ -25,6 +25,7 @@ The editor is built in the order in which you create a folder type: **Basics →
 - **Description** – is shown above the list and helps with classification.
 - **Can be created from post** – then the folder type can be chosen when someone takes over a document from the post and is asked: *Where does this belong?* More under [Taking over documents](#dokument-ubernehmen).
 - **How to recognise it** – a short sentence, at most 300 characters. More under [Taking over documents](#dokument-ubernehmen).
+- **Is part of another folder** – folders of this type always belong to another folder, e.g. invoice items to their invoice, and only appear there. More under [Is part of another folder](#ist-teil-einer-anderen-mappe).
 
 When **creating** there is additionally **Create its own view in the Library** (on by default): then the new folder type appears in the Library as a view of its own. Deselect it if its folders should only appear in an existing [view](sichten.md).
 
@@ -40,6 +41,18 @@ Post first lands under *Post*. From there, a document is taken over into a folde
 The **system folder types** User, Role and Post can never be chosen; they don't have either entry. Packages can set both. On an update, Ablago only takes over the entries if you haven't set them yet.
 
 **Used in** (for saved folder types) shows where the folder type is used, each with a link: views that show it, link fields of other folder types that link to it, and links tabs of other folder types that use its fields as a source. That way you see before a change what it affects. If it says "Not used anywhere", nothing depends on it.
+
+### Is part of another folder { #ist-teil-einer-anderen-mappe }
+
+Some folders only make sense as part of another one – an **invoice item** belongs to its **invoice**. So that hundreds of items don't show up in views and search, tick **Is part of another folder** in the basics of the *Invoice item* and choose under **Belongs to it through** the link field through which it belongs (here *Invoice*). The folders of this type are then called **parts**, the other one the **parent folder**.
+
+- **The field** is a link to exactly one other folder type that holds one folder. It becomes **required** and always stays visible (not hidden, without *Show if …*). System folder types never belong to another folder. **No chains:** the parent type is not a part itself, and a type that has parts of its own cannot become one.
+- **Where they appear:** only at the parent folder – in a [table](#tabelle) (such as *Items* with "+ Item") or a [links tab](#register) – and through a direct link. Not in [views](sichten.md) (not even in those with "all folder types"), results lists across several types, on the start page under *Recently opened*, in search and advanced search, not under **+ New** and not under *Where does this belong?*. The type gets **no view of its own**; if you switch the setting on for an existing type, it disappears from the views (a view that only showed it goes with it). If you switch it off again, it gets its own view back.
+- **Search:** what is in a part finds the parent folder – the results list then says "found in Invoice item "3. Drill"". This only applies if the person may read **both**, the part and the parent folder; otherwise search gives no hint of the part's content.
+- **Read permissions:** if the type has no [permissions](berechtigungen.md) of its own yet, it takes over the read permissions of the parent type **once** when you switch this on (the default for "Read" and the rules about reading; a rule whose field the part doesn't have is not carried over – the editor says so). After that they are its own: if you later change the permissions of the invoice, that does **not** apply to the items by itself – adjust them there too, otherwise items are readable more widely than their invoice.
+- **Deleting and bin:** if the parent folder is deleted, its parts go with it – as one operation in the [Bin](papierkorb.md), in the deletion log with the way "with its parts"; restored the same way, and deleted permanently the same way. If the person may not read and delete every part, Ablago refuses and only names the number – it never quietly deletes along with system permissions. A single part can be deleted like any folder; while its parent folder is in the Bin, it only comes back with it.
+
+**No protection.** Hiding is about order, not access control: through the [interface](api.md), the [export](export.md), the [backup](sicherung.md) and direct links, parts remain reachable and are not lost; a direct link checks the normal permissions. Who may see what is governed by the [permissions](berechtigungen.md). Packages can bring the setting along (`gehoertZu` in the package format, see the developer manual).
 
 ## Fields {#felder}
 

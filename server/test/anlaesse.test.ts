@@ -26,7 +26,7 @@ describe('Anschlusspunkte (#962)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), {});
     assert.deepEqual(d.kern.anlaesse.liste(), [
       { anlass: 'mappeGeaendert', empfaenger: ['mappentypen.passung', 'aufgaben.erwaehnungen', 'aufgaben.fristen', 'post.aufgaben'] },
-      { anlass: 'typGeaendert', empfaenger: ['sichten.umbenennen', 'mappen.titel', 'mappentypen.passung', 'aufgaben.fristen'] },
+      { anlass: 'typGeaendert', empfaenger: ['sichten.umbenennen', 'sichten.teile', 'mappen.titel', 'mappentypen.passung', 'aufgaben.fristen'] },
       { anlass: 'typAngelegt', empfaenger: ['sichten.eigeneSicht'] },
       { anlass: 'benutzerGespiegelt', empfaenger: ['aufgaben.abwesenheit'] },
     ]);

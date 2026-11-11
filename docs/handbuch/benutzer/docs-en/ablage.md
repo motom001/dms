@@ -66,6 +66,8 @@ Above the list of every view with folders there is a search field. The search fi
 
 Above the list it says how many hits there are. If the search field is empty, you see all folders again.
 
+[Parts of a folder](mappen.md#teile) – such as invoice items – are not in the list themselves: if the term is in a part, you find the parent folder with "found in …", provided you may see both.
+
 ### Searching in the text of documents {#im-text-der-dokumente-suchen}
 
 If you tick **Search full text** next to the search field, Ablago also searches the text of uploaded documents – in PDFs and, thanks to text recognition, also in scans and photos. Below each hit it says in which document the passage is, with the word found highlighted. Ablago remembers the tick for you.

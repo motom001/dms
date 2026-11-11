@@ -245,6 +245,14 @@ The view with post that has not yet been assigned or completed. Whoever is given
 <a id="notiz"></a>**Note** (*Notiz*) · ✓ everyday word · everyone  
 A comment on a folder.
 
+<a id="ubergeordnete-mappe"></a>**Parent folder** (*Übergeordnete Mappe*) · ✓ everyday word · everyone  
+The folder a part belongs to – such as the invoice of its items (#1031). The parts are shown at it (usually as a table), new ones are created there, and they go with it when it is deleted and restored.  
+See also: [Part](#teil).
+
+<a id="teil"></a>**Part** (*Teil*) · ✓ everyday word · everyone  
+A folder that always belongs to another one and only appears there – such as an invoice item at its invoice (#1031). Parts are not shown in views, search and "Recently opened"; what is in a part finds the parent folder ("found in …") if you may read both. If you open a part directly, "Part of …" is shown at the top. Deleted and restored with the parent folder. No protection – it remains reachable through the API, export and links.  
+See also: [Parent folder](#ubergeordnete-mappe), [Is part of another folder](#ist-teil-einer-anderen-mappe), [Table](#tabelle).
+
 <a id="weitergeben"></a>**Pass on** (*Weitergeben*) · ✓ everyday word · everyone  
 Transferring a task to another user.
 
@@ -320,6 +328,10 @@ See also: [Can be created from post](#kann-aus-post-angelegt-werden).
 
 <a id="eingangsordner"></a>**Intake folder** (*Eingangsordner*) · ~ with explanation · administrators  
 A folder that Ablago watches, e.g. for "Scan to Folder". Every file in it becomes post.
+
+<a id="ist-teil-einer-anderen-mappe"></a>**Is part of another folder** (*Ist Teil einer anderen Mappe*) · ~ with explanation · administrators  
+Tick in the basics of a folder type with the link field through which the folder belongs ("Belongs to it through",  
+See also: [Part](#teil), [Parent folder](#ubergeordnete-mappe), [Table](#tabelle), [Folder type](#mappentyp).
 
 <a id="postfach"></a>**Mailbox** (*Postfach*) · ~ with explanation · administrators  
 A connected email account (IMAP) from which Ablago fetches post.

@@ -2,6 +2,7 @@ import { AuswahlFilter } from '../werkbank/Sichten';
 import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
 import { TabellenEditor } from './Tabelle';
 import { VorbelegenEditor } from './Vorbelegen';
+import { TeilEinstellung } from './Teil';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
@@ -81,6 +82,8 @@ interface Entwurf {
   erkennbarAn: string;
   /** Name, Beschreibung und „Woran man ihn erkennt“ je Sprache (#728, #937). */
   beschriftungen?: Beschriftungen<TypTeile>;
+  /** Ist Teil einer anderen Mappe (#1031): `_uid` des Verweisfelds, '' = noch keins gewählt, null = aus. */
+  _teilVon: string | null;
 }
 
 function neueId(): string {
@@ -112,7 +115,7 @@ function ohneAnker(x: Entwurf, uid: string): Entwurf {
 }
 
 function entwurfAus(eintrag?: Mappentyp): Entwurf {
-  if (!eintrag) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: t('mappentypen.editor.standard'), spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null, autoZuordnen: false, ausPost: null, erkennbarAn: '' };
+  if (!eintrag) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: t('mappentypen.editor.standard'), spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null, autoZuordnen: false, ausPost: null, erkennbarAn: '', _teilVon: null };
   const erstes = eintrag.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: eintrag.id, name: eintrag.name, schluessel: eintrag.schluessel ?? '', beschreibung: eintrag.beschreibung, titelVorlage: eintrag.titelVorlage ?? '',
@@ -131,7 +134,10 @@ function entwurfAus(eintrag?: Mappentyp): Entwurf {
       ...Object.fromEntries(ZAHLEN.map((p) => [p, f[p] == null ? '' : String(f[p]).replace('.', ',')])),
     }) as unknown as EntwurfFeld),
     trefferlisten: [],
+    _teilVon: null,
   };
+  // Ist Teil einer anderen Mappe (#1031): im Entwurf über die _uid des Felds.
+  e._teilVon = eintrag.teilVon ? e.felder.find((f) => f.key === eintrag.teilVon)?._uid ?? '' : null;
   e.register = eintrag.register.map((r) => ({ ...alsEntwurfRegister(r), ...(r.art === 'felder' ? { abschnitte: entwurfAbschnitte(r, e.felder) } : {}) }));
   e.trefferlisten = trefferlistenVon(eintrag).map((l) => ({
     _uid: neueId(), key: l.key, name: l.name, standard: !!l.standard, beschriftungen: l.beschriftungen,
@@ -332,10 +338,12 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
 
   async function speichern(bestaetigt = false) {
     setSendet(true); setMeldung(undefined); setGruende([]);
-    const { trefferlisten: listen, _schluesselGetippt: _sg, ...ohneListen } = e;
+    const { trefferlisten: listen, _schluesselGetippt: _sg, _teilVon: teilUid, ...ohneListen } = e;
     // Beschriftungen (#728) immer mitschicken, leer als null – ohne die Angabe behielte der Server die bisherigen.
     const daten = {
       ...ohneListen, beschriftungen: e.beschriftungen ?? null,
+      // Ist Teil einer anderen Mappe (#1031): Kennung des Felds; ohne gewähltes Feld meldet der Server den Fehler.
+      teilVon: teilUid === null ? null : e.felder.find((f) => f._uid === teilUid)?.key ?? '_',
       // Ausgeblendet (#655) immer mitschicken – ohne die Angabe behielte der Server den bisherigen Wert.
       // Anzeigen, wenn … (#1033) genauso: null entfernt die Regel.
       // Feld wieder freigeben (#1034): ausdrücklich null; sonst bleibt „berechnet“, wie es ist.
@@ -447,11 +455,15 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
         <div className="eigenschaft"><span><label htmlFor="typ-beschreibung">{t('mappentypen.editor.beschreibung')}</label></span>
           <SprachText id="typ-beschreibung" wert={e.beschreibung} placeholder={t('mappentypen.editor.wofuer-ist-dieser-mappentyp')} teil="beschreibung" beschriftungen={e.beschriftungen}
             setzeWert={(beschreibung) => setE({ ...e, beschreibung })} setzeBeschriftungen={(b) => setE({ ...e, beschriftungen: b as Beschriftungen<TypTeile> | undefined })} /></div>
-        {/* Dokument übernehmen (#937): nicht bei Systemtypen – die sind nie Ziel von „Wohin gehört das?“. */}
-        {!system && <DokumentUebernehmen e={e} setE={setE} />}
+        {/* Ist Teil einer anderen Mappe (#1031): nicht bei Systemtypen. */}
+        {!system && <TeilEinstellung eigeneId={e.id} felder={e.felder as unknown as Array<Feld & { _uid: string }>} teilVon={e._teilVon} berechtigungen={e.berechtigungen} typen={d.typen}
+          entwurf={entwurfTyp} setze={(x) => setE((y) => ({ ...y, _teilVon: x.teilVon, ...(x.berechtigungen ? { berechtigungen: x.berechtigungen } : {}),
+            felder: x.pflicht ? y.felder.map((f) => (f._uid === x.pflicht ? { ...f, pflicht: true } : f)) : y.felder }))} />}
+        {/* Dokument übernehmen (#937): nicht bei Systemtypen und Teilen – die sind nie Ziel von „Wohin gehört das?“. */}
+        {!system && e._teilVon === null && <DokumentUebernehmen e={e} setE={setE} />}
         {/* „12 von 14 Beschriftungen auf Englisch“ (#728): nur ein Hinweis, nie ein Fehler. */}
         <Beschriftungsstand typ={{ ...e, felder: e.felder as unknown as Feld[], register: e.register as unknown as Register[], trefferlisten: e.trefferlisten }} />
-        {neu && <label className="haken"><input type="checkbox" checked={sichtAnlegen} onChange={(ev) => setSichtAnlegen(ev.target.checked)} />
+        {neu && e._teilVon === null && <label className="haken"><input type="checkbox" checked={sichtAnlegen} onChange={(ev) => setSichtAnlegen(ev.target.checked)} />
           <span>{tn('mappentypen.editor.eigene-ansicht-in-der', { klein: <small className="hilfe">{t('mappentypen.editor.abwaehlen-wenn-die-mappen')}</small> })}</span></label>}
         {gespeichert && <VerwendetIn typ={gespeichert} />}
       </Bereich>

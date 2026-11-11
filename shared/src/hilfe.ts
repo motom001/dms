@@ -197,6 +197,7 @@ export const HILFE = {
   'mappentyp.erkennungstyp': admin('mappentypen/', 'Erkennung', 'erkennung'),
   'mappentyp.erkennung': admin('mappentypen/', 'Aus Dokument füllen', 'aus-dokument-fullen'),
   'mappentyp.wiederfinden': admin('mappentypen/', 'Zum Wiederfinden nutzen', 'zum-wiederfinden-nutzen'),
+  'mappentyp.teil': admin('mappentypen/', 'Ist Teil einer anderen Mappe', 'ist-teil-einer-anderen-mappe'),
   'mappentyp.frist': admin('mappentypen/', 'Erinnerungen an Datumsfeldern', 'fristen-erinnerungen-an-datumsfeldern'),
   'mappentyp.format': admin('mappentypen/', 'Formate und Datumsgrenzen', 'formate-und-datumsgrenzen'),
   'ablage.favoriten': benutzer('ablage/', 'Favoriten', 'favoriten'),

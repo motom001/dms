@@ -98,7 +98,7 @@ Anlass → Empfänger (der Reihe nach; Fachbereich.Aufgabe):
 
 <!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->
 - `mappeGeaendert` → 1. `mappentypen.passung` 2. `aufgaben.erwaehnungen` 3. `aufgaben.fristen` 4. `post.aufgaben`
-- `typGeaendert` → 1. `sichten.umbenennen` 2. `mappen.titel` 3. `mappentypen.passung` 4. `aufgaben.fristen`
+- `typGeaendert` → 1. `sichten.umbenennen` 2. `sichten.teile` 3. `mappen.titel` 4. `mappentypen.passung` 5. `aufgaben.fristen`
 - `typAngelegt` → 1. `sichten.eigeneSicht`
 - `benutzerGespiegelt` → 1. `aufgaben.abwesenheit`
 <!-- anlaesse:ende -->
@@ -187,7 +187,8 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `sichten/index.ts`; die Routen (`sichten.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, `SichtenDienst` dazu die [Rechteprüfung](#zugriff), die [Mappen](#mappen) und die [Suche](#suche), und einen Anschluss für das, was noch im Dienst liegt (Gültigkeit der Zahlen – `mindestensMs` bleibt am Dienst –, Aufgaben ohne Empfänger und ohne Leserecht, Termine, Konten).
 - **Zahlen:** Die Zwischenspeicher hängen an denselben Ständen wie bisher (Mappenstand bzw. Haushaltsstand, #742, #918); die Zwischenspeicher der Termine bleiben bei den Aufgaben im Dienst.
-- **Sofortiges:** Die Empfänger `sichten.umbenennen` und `sichten.eigeneSicht` an den [Anschlusspunkten](#anschlusspunkte) meldet weiter der Dienst an, Reihenfolge unverändert.
+- **Sofortiges:** Die Empfänger `sichten.umbenennen` und `sichten.eigeneSicht` an den [Anschlusspunkten](#anschlusspunkte) meldet weiter der Dienst an, Reihenfolge unverändert; `sichten.teile` (#1031) nimmt einen Typ aus den Ansichten, wenn „Ist Teil einer anderen Mappe“ angeht, und gibt ihm seine Ansicht zurück, wenn sie ausgeht.
+- **Teile (#1031, `shared/src/teile.ts`):** `klauselnFuer` lässt Teiltypen weg – so fehlen sie in jeder Ansicht und ihren Zahlen; die erweiterte Suche ebenso. Mit Suche sucht `SichtenDienst.seite` vorher in den Teiltypen (gleicher Begriff, gleiche Varianten, **gleicher Lesefilter**, höchstens `TEIL_TREFFER_MAX`) und gibt die übergeordneten Mappen als `auchIds` ans Repo: Sie zählen dort als Treffer, Typ, Bedingungen und Lesefilter gelten weiter. Die Fundstelle steht als `ausschnitte[id].teil`.
 
 ## Berechtigungen (#1076) { #berechtigungen }
 
@@ -297,6 +298,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `beispiele.ts` | `BeispielMappen` (`dienst.beispielMappen`) | Beispiel-Mappen aus Paketen (#878) |
 
 - **Bekommt den Kern** und `LoeschenTeile` (Rechteprüfung, Passung, Historie, Dokumente, Ausgang, Sichten, Systemmappen und einander); Ereignis und `aktualisiereTitel` über die Fassade, Konten über den Anschluss.
+- **Teile (#1031):** `loescheMappe` nimmt die Teile einer Mappe mit (`loescheMitTeilen`: R und D an jedem Teil, sonst 403 mit Anzahl; Papierkorb, Historie, Ereignisse und Löschprotokoll mit Weg `teile` in einer Transaktion, Vorgang = Id der Mappe). Der Papierkorb stellt sie mit ihr wieder her und löscht sie mit ihr endgültig; „mit verknüpften Mappen“ lehnt ab, wenn ein Teil einer gelöschten Mappe bliebe.
 
 ## Datenschutz (#1078) { #datenschutz }
 

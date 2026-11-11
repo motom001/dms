@@ -169,6 +169,10 @@ Mit **+ … anlegen** in der Überschrift einer Gruppe legst du direkt eine neue
 
 Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst, wenn die Mappe gespeichert ist und andere auf sie verweisen.
 
+### Teile einer Mappe { #teile }
+
+Manche Mappen gehören immer zu einer anderen – etwa die **Positionen** einer Rechnung. Solche **Teile** stehen nur an ihrer **übergeordneten Mappe** (meist als Tabelle mit „+ Position“), nicht in den Ansichten, unter *Zuletzt geöffnet* oder in der Suche. Suchst du nach etwas, das in einer Position steht, findest du die Rechnung; in der Trefferliste steht dann „gefunden in Rechnungsposition „3. Bohrmaschine““. Öffnest du einen Teil direkt, steht oben **Teil von …** mit einem Link zurück zur übergeordneten Mappe. Neue Teile legst du an der übergeordneten Mappe an. Löschst du sie, gehen ihre Teile mit – und kommen beim Wiederherstellen aus dem Papierkorb mit ihr zurück. Welche Mappentypen Teile sind, legt dein Administrator fest.
+
 !!! info "Zugehörigkeit oder Bezug"
     Neben jedem Verweis steht, welcher Art er ist. **Zugehörigkeit** heißt: gehört dazu (die Rechnung gehört zum Vertrag). **Bezug** heißt: hat nur damit zu tun (die Rechnung kommt von diesem Aussteller). Das hilft bei Auswertungen wie „alles zum Haus“, damit dort nicht jede Rechnung desselben Handwerkers auftaucht – und beim [Löschen mit verknüpften Mappen](#mit-verknupften-mappen-loschen): Mitgelöscht wird nur, was dazugehört.
 
@@ -183,6 +187,7 @@ Geht Löschen gerade nicht, ist der Knopf gesperrt (gedämpft, mit Schloss), und
 - **Es verweisen noch andere Mappen darauf.** Die Begründung zählt sie auf – mit Links dorthin (bei vielen die ersten acht und „und … weitere“). Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.
 - **Archivmodus:** Die Aufbewahrungsfrist läuft noch; vorher lässt sich die Mappe von niemandem löschen.
 - **Berechtigungen:** Du darfst Mappen dieses Mappentyps nicht löschen. Das legt ein Administrator fest.
+- **Teile, die du nicht löschen darfst:** Hat die Mappe [Teile](#teile), gehen sie beim Löschen mit. Darfst du einen davon nicht löschen, bleibt alles stehen, und Ablago sagt, wie viele es sind.
 
 ![Gesperrter Knopf „Mappe löschen“ mit Schloss und aufgeklappter Begründung](bilder/mappe-loeschen-warum.png)
 

@@ -169,6 +169,10 @@ With **+ Create …** in the heading of a group you directly create a new folder
 
 For a new folder the tab is still empty: links only arise once the folder is saved and others link to it.
 
+### Parts of a folder { #teile }
+
+Some folders always belong to another one – such as the **items** of an invoice. Such **parts** only appear at their **parent folder** (usually as a table with "+ Item"), not in the views, under *Recently opened* or in search. If you search for something that is in an item, you find the invoice; the results list then says "found in Invoice item "3. Drill"". If you open a part directly, **Part of …** is shown at the top with a link back to the parent folder. You create new parts at the parent folder. If you delete it, its parts go with it – and come back with it when you restore it from the Bin. Which folder types are parts is set by your administrator.
+
 !!! info "Belonging or reference"
     Next to every link it says what kind it is. **Belonging** means: belongs to it (the invoice belongs to the contract). **Reference** means: only has to do with it (the invoice comes from this issuer). This helps with evaluations such as "everything about the house", so that not every invoice from the same tradesperson turns up there – and when [deleting with linked folders](#mit-verknupften-mappen-loschen): only what belongs to it is deleted along with it.
 
@@ -183,6 +187,7 @@ If deleting isn't possible right now, the button is locked (dimmed, with a padlo
 - **Other folders still link to it.** The explanation lists them – with links there (for many, the first eight and "and … more"). Remove the link there first. That way no contract can disappear that still has invoices. Sent emails and other [post](post.md) don't prevent deleting.
 - **Archive mode:** the retention period is still running; before that, the folder can't be deleted by anyone.
 - **Permissions:** you may not delete folders of this folder type. An administrator sets this.
+- **Parts you may not delete:** if the folder has [parts](#teile), they go with it when you delete it. If you may not delete one of them, everything stays, and Ablago says how many there are.
 
 ![Locked button "Delete folder" with a padlock and the expanded explanation](bilder/mappe-loeschen-warum.png)
 

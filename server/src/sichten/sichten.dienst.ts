@@ -21,6 +21,16 @@ import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import type { Systemsichten } from './systemsichten';
 import type { SichtenVerwaltung } from './verwalten';
 import { tabellenSeite } from './tabelle';
+import { istTeiltyp, uebergeordneteId, uebergeordneterTyp } from '../../../shared/src/teile';
+import type { Ausschnitt } from '../../../shared/src/model';
+
+/**
+ * Teile (#1031): höchstens so viele Teile werden je Suche durchgesehen, um ihre übergeordneten Mappen zu finden. Mehr
+ * Teile mit dem Begriff sind selten; die übergeordneten Mappen der übrigen fehlen dann in den Treffern.
+ */
+export const TEIL_TREFFER_MAX = 2000;
+/** Fundstelle in einem Teil (#1031) je übergeordneter Mappe. */
+type TeilFunde = Map<string, NonNullable<Ausschnitt['teil']> & { ausschnitt?: Ausschnitt }>;
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 
@@ -172,7 +182,8 @@ export class SichtenDienst {
         ? { favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung, lesen }
       : erweitert
         ? {
-            klauseln: [{ typen: (erweitert.typen.length ? erweitert.typen : [...typen.values()]).map((t) => t.id), filter: filterFuer(erweitert, erweitert.typen, await aufloesung()) }],
+            // Teile (#1031) nie in der erweiterten Suche – nur an ihrer übergeordneten Mappe.
+            klauseln: [{ typen: (erweitert.typen.length ? erweitert.typen : [...typen.values()]).filter((t) => !istTeiltyp(t)).map((t) => t.id), filter: filterFuer(erweitert, erweitert.typen, await aufloesung()) }],
             textfilter, suche, volltext, notizen, von, anzahl, sortierung, lesen }
       : link
         ? { klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await aufloesung()) }], suche, volltext, notizen, von, anzahl, sortierung, lesen }
@@ -184,6 +195,9 @@ export class SichtenDienst {
     // Beim Blättern ohne Suche (#740): die Zahl vom ersten Blatt statt noch einmal zu zählen.
     const bekannt = Number(q.gesamt);
     const gesamt = von > 0 && !suche && !textfilter && Number.isInteger(bekannt) && bekannt >= 0 ? bekannt : undefined;
+    // Teile (#1031): Was in einem lesbaren Teil steht, ist ein Treffer seiner übergeordneten Mappe.
+    let funde = await this.teilFunde(anfrage, typen, varianten);
+    if (funde) anfrage.auchIds = [...funde.keys()];
     let r = gesamt !== undefined ? await this.repo.seite({ ...anfrage, varianten, gesamt }) : await this.seiteMitZahl(anfrage, varianten);
     // Ohne genauen Treffer (#356): mit ähnlichen Wörtern aus dem Wörterverzeichnis noch einmal – genaue Treffer gehen so
     // immer vor; „Meintest du …?“ schlägt die Suche mit dem besten ähnlichen Wort vor.
@@ -193,9 +207,10 @@ export class SichtenDienst {
       const begriffe = suchbegriffe(gesucht);
       const aehnlich = begriffe ? await this.repo.aehnlicheWoerter(begriffe, 5) : {};
       if (Object.keys(aehnlich).length) {
-        const r2 = await this.repo.seite({ ...anfrage, varianten, aehnlich });
+        const funde2 = await this.teilFunde(anfrage, typen, varianten, aehnlich);
+        const r2 = await this.repo.seite({ ...anfrage, varianten, aehnlich, ...(funde2 ? { auchIds: [...funde2.keys()] } : {}) });
         if (r2.gesamt > 0) {
-          r = r2;
+          r = r2; funde = funde2;
           // „Meintest du …?“ nur, wenn der Vorschlag selbst etwas findet, das der Benutzer lesen darf – das
           // Wörterverzeichnis kennt auch Wörter aus Mappen, die er nicht sehen darf (ohne Lesefilter: alles lesbar).
           let vorschlag = vorschlagAus(begriffe!, aehnlich);
@@ -207,6 +222,7 @@ export class SichtenDienst {
         }
       }
     }
+    if (funde?.size) r = { ...r, ausschnitte: mitTeilFunden(r.mappen.map((m) => m.id), r.ausschnitte, funde) };
     if (q.sicht === 'eingang' && lesen) {
       const ok = await this.repo.lesbare(r.mappen.map((m) => m.id), lesen);
       r.mappen = r.mappen.map((m) => (ok.has(m.id) ? m : { id: m.id, typId: m.typId, werte: {}, titel: NICHT_SICHTBAR, erstellt: m.erstellt, erstelltVon: null, geaendert: m.geaendert, geaendertVon: null, verborgen: true }));
@@ -224,7 +240,8 @@ export class SichtenDienst {
     // Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen,
     // auf der ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen.
     const aehnlich = erweitert && !erweitert.bedingungen.length && suche && volltext && von === 0
-      ? await this.aehnlicheZurSuche(z, suche, { typen: erweitert.typen.length ? new Set(erweitert.typen.map((t) => t.id)) : null, ohneMappen: new Set(r.mappen.map((m) => m.id)) })
+      // Teile (#1031) auch hier nicht.
+      ? await this.aehnlicheZurSuche(z, suche, { typen: new Set((erweitert.typen.length ? erweitert.typen : [...typen.values()]).filter((t) => !istTeiltyp(t)).map((t) => t.id)), ohneMappen: new Set(r.mappen.map((m) => m.id)) })
       : [];
     return {
       gesamt: r.gesamt, von, mappen: r.mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
@@ -239,6 +256,30 @@ export class SichtenDienst {
       /** In der Favoritenliste und Ansichten mit „ist mein Favorit“ (#725): Favoriten ohne Benachrichtigung (#422). */
       ...(q.sicht === 'favoriten' || sicht?.bedingungen.some((x) => x.art === 'favorit') ? { stumm: [...await this.repo.stummeFavoriten(ich.id, r.mappen.map((m) => m.id))] } : {}),
     };
+  }
+
+  /**
+   * Teile (#1031): Treffer der Suche in Teilen, je übergeordneter Mappe der erste mit Fundstelle. Gesucht wird mit
+   * demselben Begriff, denselben Varianten und **demselben Lesefilter** – ein Teil, den die Person nicht lesen darf, gibt
+   * keinen Hinweis auf seinen Inhalt; die übergeordnete Mappe muss sie ohnehin lesen dürfen (Lesefilter der eigentlichen
+   * Seite). Nur Teile, deren übergeordneter Typ in der Anfrage vorkommt; nicht im Eingang und in den Favoriten.
+   */
+  private async teilFunde(anfrage: SeitenAnfrage, typen: Map<string, Mappentyp>, varianten: Varianten, aehnlich?: Varianten): Promise<TeilFunde | null> {
+    const gesucht = anfrage.suche || anfrage.textfilter?.text.trim();
+    if (!gesucht || anfrage.eingang || anfrage.favoriten) return null;
+    const ziele = anfrage.klauseln ? new Set(anfrage.klauseln.flatMap((k) => k.typen)) : anfrage.typId ? new Set([anfrage.typId]) : null;
+    const teile = [...typen.values()].filter((x) => { const u = uebergeordneterTyp(x); return istTeiltyp(x) && !!u && (!ziele || ziele.has(u)); });
+    if (!teile.length) return null;
+    const r = await this.repo.seite({
+      klauseln: [{ typen: teile.map((x) => x.id), filter: [] }], suche: anfrage.suche, volltext: anfrage.volltext, notizen: anfrage.notizen,
+      textfilter: anfrage.textfilter, varianten, aehnlich, lesen: anfrage.lesen, von: 0, anzahl: TEIL_TREFFER_MAX, zahl: 0,
+    });
+    const funde: TeilFunde = new Map();
+    for (const m of r.mappen) {
+      const eltern = uebergeordneteId(typen.get(m.typId), m.werte);
+      if (eltern && !funde.has(eltern)) funde.set(eltern, { id: m.id, typId: m.typId, titel: m.titel ?? '', ausschnitt: r.ausschnitte?.[m.id] });
+    }
+    return funde;
   }
 
   /**
@@ -396,4 +437,18 @@ export class SichtenDienst {
     const s = await this.seite(ich, { ...q, von: 0, anzahl: MAX_AUSWAHL }, z, MAX_AUSWAHL);
     return { ids: s.mappen.filter((m) => !m.verborgen).map((m) => m.id), gesamt: s.gesamt };
   }
+}
+
+/**
+ * Fundstellen in Teilen (#1031) an die Treffer hängen: „gefunden in Rechnungsposition …“, wo die Mappe selbst keine
+ * Fundstelle in Dokumenten oder Notizen hat.
+ */
+function mitTeilFunden(ids: string[], eigene: Record<string, Ausschnitt> | undefined, funde: TeilFunde): Record<string, Ausschnitt> {
+  const erg: Record<string, Ausschnitt> = { ...(eigene ?? {}) };
+  for (const id of ids) {
+    const f = funde.get(id);
+    if (!f || erg[id]) continue;
+    erg[id] = { dokument: f.ausschnitt?.dokument ?? '', text: f.ausschnitt?.text ?? '', teil: { id: f.id, typId: f.typId, titel: f.titel } };
+  }
+  return erg;
 }

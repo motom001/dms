@@ -253,6 +253,10 @@ Siehe auch: [Post](#post).
 Wie weit Post bearbeitet ist – Neu (noch nicht bearbeitet), Zugeordnet (liegt bei einer passenden Mappe) oder Erledigt (nichts mehr zu tun).  
 Siehe auch: [Post](#post), [Neue Post](#neue-post).
 
+<a id="teil"></a>**Teil** · ✓ Alltagswort · alle  
+Eine Mappe, die immer zu einer anderen gehört und nur dort erscheint – etwa eine Rechnungsposition an ihrer Rechnung (#1031). Teile stehen nicht in Ansichten, Suche und „Zuletzt geöffnet“; was in einem Teil steht, findet die übergeordnete Mappe („gefunden in …“), wenn man beide lesen darf. Öffnet man einen Teil direkt, steht oben „Teil von …“. Mit der übergeordneten Mappe gelöscht und wiederhergestellt. Kein Schutz – über Schnittstelle, Export und Links bleibt er erreichbar.  
+Siehe auch: [Übergeordnete Mappe](#ubergeordnete-mappe), [Ist Teil einer anderen Mappe](#ist-teil-einer-anderen-mappe), [Tabelle](#tabelle).
+
 <a id="vertretung"></a>**Vertretung** · ✓ Alltagswort · alle  
 Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen. Der Vertreter bekommt dazu eine Aufgabe der Art „Vertretung“.
 
@@ -273,6 +277,10 @@ Siehe auch: [Aufgabe](#aufgabe), [Frist](#frist).
 
 <a id="zuordnen"></a>**Zuordnen** · ✓ Alltagswort · alle  
 Post einer vorhandenen oder neuen Mappe zuweisen. Die Dokumente wandern dabei in das Register der Mappe.
+
+<a id="ubergeordnete-mappe"></a>**Übergeordnete Mappe** · ✓ Alltagswort · alle  
+Die Mappe, zu der ein Teil gehört – etwa die Rechnung ihrer Positionen (#1031). An ihr stehen die Teile (meist als Tabelle), an ihr legt man neue an, und mit ihr gehen sie beim Löschen und Wiederherstellen.  
+Siehe auch: [Teil](#teil).
 
 ## Verwaltung (Werkbank)
 
@@ -334,6 +342,10 @@ Siehe auch: [Paket](#paket), [Paket nach Zeitplan ausführen](#paket-nach-zeitpl
 <a id="herausgeber"></a>**Herausgeber** · ~ mit Erklärung · Administratoren  
 Wer ein Paket herausgibt, als umgedrehte Domain, z. B. app.ablago für die offiziellen Pakete (#1084). Steht neben dem Namen, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber.  
 Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
+
+<a id="ist-teil-einer-anderen-mappe"></a>**Ist Teil einer anderen Mappe** · ~ mit Erklärung · Administratoren  
+Haken in den Grunddaten eines Mappentyps mit dem Verweisfeld, über das die Mappe dazugehört („Gehört dazu über“,  
+Siehe auch: [Teil](#teil), [Übergeordnete Mappe](#ubergeordnete-mappe), [Tabelle](#tabelle), [Mappentyp](#mappentyp).
 
 <a id="kann-aus-post-angelegt-werden"></a>**Kann aus Post angelegt werden** · ~ mit Erklärung · Administratoren  
 Haken in den Grunddaten eines Mappentyps (#937). Nur Mappentypen damit stehen beim Übernehmen eines Dokuments aus der Post unter „Wohin gehört das?“ zur Wahl – für alle, die dort Mappen anlegen dürfen. Vorgabe an bei Mappentypen mit Dokumentenregister; Systemmappentypen nie.  
@@ -610,6 +622,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Herausgeber | Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher | `herausgeber, InstalliertesPaket.herausgeber` |
 | Hinweis von Paketen | Warnung, Fehler, Meldung von Ablago | `PaketHinweis, dms:hinweise` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |
+| Ist Teil einer anderen Mappe | Untertyp, Untermappentyp, Vererbung | `Mappentyp.teilVon, gehoertZu, shared/src/teile.ts` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
 | Link | Direktlink, sprechender Link | `Direktlink` |
@@ -640,6 +653,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
 | Systemzustand | Systemumgebung | – |
 | Tabelle | Unterformular, Liste (als Feldart), Positionstabelle | `tabelle, Feld.quelle, shared/src/tabelle.ts` |
+| Teil | Untertyp, Untermappe, Kindmappe, Teil-Mappe | `shared/src/teile.ts` |
 | Texterkennung | OCR (in der Oberfläche) | `OcrStand` |
 | Tipp | Hinweis (für Tipps), Hilfe-Tipp | `Tipp, tipps.yaml` |
 | Trefferliste | – | `Trefferliste` |
@@ -659,5 +673,6 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Zu erledigen | Eingang, Inbox, Posteingang, Anstehend | `eingang` |
 | Zum Wiederfinden nutzen | – | `Feld.wiederfinden` |
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
+| Übergeordnete Mappe | Elternmappe, Hauptmappe | `uebergeordneteId, shared/src/teile.ts` |
 
 *Stand: 2026-11-10*

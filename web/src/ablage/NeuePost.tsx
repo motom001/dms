@@ -1,3 +1,4 @@
+import { istTeiltyp } from '../../../shared/src/teile';
 import { useEffect, useRef, useState, type DragEvent as ReactDragEvent } from 'react';
 import { darfErstellen, darfPostAnlegen, MAX_DATEIGROESSE, type Mappentyp } from '../../../shared/src/model';
 import { api, type Fundstelle } from '../api';
@@ -225,7 +226,8 @@ export function NeuKnopf() {
   const d = useDaten();
   const typ = postTyp(d.typen);
   const post = darfPostAnlegen(typ) && !!typ?.register.some((r) => r.art === 'dokumente');
-  const typen = d.typen.filter((mappentyp) => darfErstellen(mappentyp)).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  // Teile (#1031) nicht: Sie entstehen an ihrer übergeordneten Mappe.
+  const typen = d.typen.filter((mappentyp) => darfErstellen(mappentyp) && !istTeiltyp(mappentyp)).sort((a, b) => a.name.localeCompare(b.name, 'de'));
   const [offen, setOffen] = useState(false);
   const [mappe, setMappe] = useState(false);
   const touch = istTouch();

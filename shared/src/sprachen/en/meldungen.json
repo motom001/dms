@@ -1757,5 +1757,16 @@
   "pakete.tabelle-feld": "mappentypen: “{typ}” → field “{feld}”: the field “{quellfeld}” of “{quelle}” is not a link field pointing to this type – the table only shows folders that link here through such a field.",
   "paketerstellung.tabelle": "Field type table",
   "paketerstellung.vorbelegen": "“Copy when selected” on reference fields",
-  "paketerstellung.tabelle-liste": "{wo}: the table shows another results list of “{name}” – only the default results list goes into the package; there the table shows its columns."
+  "paketerstellung.tabelle-liste": "{wo}: the table shows another results list of “{name}” – only the default results list goes into the package; there the table shows its columns.",
+  "teile.loeschen-ohne-recht_one": "Not deleted: this folder has {anzahl} part you may not delete. Parts always go with their folder.",
+  "teile.loeschen-ohne-recht_other": "Not deleted: this folder has {anzahl} parts you may not delete. Parts always go with their folder.",
+  "teile.teil-nicht-loeschbar": "Not deleted: the part \"{titel}\" cannot go with it – {grund}",
+  "teile.mit-teilen-geloescht_one": "Deleted with {anzahl} part",
+  "teile.mit-teilen-geloescht_other": "Deleted with {anzahl} parts",
+  "teile.mit-verknuepften-fehlen_one": "\"{titel}\" has {anzahl} part that would not be deleted with it (deselected, only unlinked or without permission). Parts always go with their folder – please reload the preview.",
+  "teile.mit-verknuepften-fehlen_other": "\"{titel}\" has {anzahl} parts that would not be deleted with it (deselected, only unlinked or without permission). Parts always go with their folder – please reload the preview.",
+  "teile.erst-uebergeordnete": "This part comes back with its parent folder – restore that one.",
+  "teile.wiederherstellen-ohne-recht_one": "Not restored: you cannot restore {anzahl} part of this folder.",
+  "teile.wiederherstellen-ohne-recht_other": "Not restored: you cannot restore {anzahl} parts of this folder.",
+  "paketerstellung.teile": "Is part of another folder"
 }

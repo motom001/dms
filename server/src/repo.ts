@@ -96,6 +96,12 @@ export interface SeitenAnfrage {
    * nicht für die Suche nach Wortteilen im Volltext (die müsste dafür alle Texte lesen).
    */
   aehnlich?: Varianten;
+  /**
+   * Teile (#1031): Ids von Mappen, die als Treffer der Suche bzw. des Textfilters zählen, ohne den Begriff selbst zu
+   * enthalten – übergeordnete Mappen, in deren Teilen er steht (die der Dienst vorher mit demselben Lesefilter gesucht
+   * hat). Alle anderen Bedingungen und der Lesefilter gelten für sie wie immer. Nur mit `suche` bzw. `textfilter`.
+   */
+  auchIds?: string[];
   /** Reihenfolge; ohne: nach Titel. */
   sortierung?: SortierungIntern;
   /** Berechtigungen (#124): nur lesbare Mappen; fehlt/null = alle. */

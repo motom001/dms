@@ -19,6 +19,7 @@ import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
 import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/src/loeschprotokoll';
 import { darfLoeschen, type Mappe, type Mappentyp, MAX_AUSWAHL } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { istTeilVerweis } from '../../../shared/src/teile';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
 import type { Papierkorb } from './papierkorb';
@@ -135,7 +136,10 @@ export class LoeschenDienst {
       const r = await this.rechteAn(z, m);
       if (!r.R) { ausgelassen.push({ id, titel: NICHT_SICHTBAR, grund: t('meldungen.dienst.nicht-sichtbar') }); continue; }
       if (!r.D) { ausgelassen.push({ id, titel: m.titel ?? '', grund: t('meldungen.dienst.kein-recht-zum-loeschen') }); continue; }
-      const p = await this.loeschPruefung(m, z.typen.get(m.typId), (await this.repo.rueckverweise(id)).filter((v) => !auswahl.has(v.quelleId)));
+      // Teile (#1031) gehen mit und halten nicht auf.
+      const rueck = await this.repo.rueckverweise(id);
+      const teile = new Set(await this.teileAus(rueck, id));
+      const p = await this.loeschPruefung(m, z.typen.get(m.typId), rueck.filter((v) => !auswahl.has(v.quelleId) && !teile.has(v.quelleId)));
       if (!p.ok) { ausgelassen.push({ id, titel: m.titel ?? '', grund: p.fremd.length ? t('meldungen.dienst.es-wird-noch-auf') : p.grund }); continue; }
       kandidaten.push(m);
       dokumente += (await this.repo.listeDokumente(id)).length;
@@ -147,6 +151,8 @@ export class LoeschenDienst {
     while (offen.length) {
       const rest: Mappe[] = [];
       for (const m of offen) {
+        // Teile (#1031), die schon mit ihrer übergeordneten Mappe gegangen sind, zählen als gelöscht.
+        if (!(await this.repo.holeMappe(m.id))) { geloescht++; continue; }
         try { await this.loescheMappe(m.id, benutzerId, z, { ...liesAnlass(x), ausloeser: quelle, weg: 'mehrere' }); geloescht++; }
         catch (err) {
           if (err instanceof Fachfehler && err.status === 409) rest.push(m);
@@ -164,7 +170,11 @@ export class LoeschenDienst {
     const m = await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
     const typ = await this.repo.holeTyp(m.typId);
-    const p = await this.loeschPruefung(m, typ, await this.repo.rueckverweise(id));
+    const rueckverweise = await this.repo.rueckverweise(id);
+    // Teile (#1031): Hat die Mappe Teile (Rechnungspositionen einer Rechnung), gehen sie mit – in einem Vorgang.
+    const teile = await this.teileAus(rueckverweise, id);
+    if (teile.length) { await this.loescheMitTeilen({ m, typ, rueck: rueckverweise, teilIds: teile }, benutzerId, z, anlass); return; }
+    const p = await this.loeschPruefung(m, typ, rueckverweise);
     if (!p.ok) throw new Fachfehler(p.status, p.grund, p.fremd.length ? { rueckverweise: p.fremd } : undefined);
     const { zuordnungen, emails, benutzerTyp, emailTyp } = p;
     // Löschprotokoll (#470): was mit der Mappe geht, bevor es weg ist.
@@ -182,6 +192,70 @@ export class LoeschenDienst {
     else await this.loescheMappeIntern(id, typ, benutzerId);
     await this.protokolliere(this.mappenEintraege(vorher, { schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass?.weg ?? 'einzeln', verweise: { [id]: zuordnungen.length + emails.length } }),
       await this.loeschKontext(benutzerId, anlass));
+  }
+
+  /** Ids der Teile (#1031) unter den Mappen, die auf `id` verweisen – über das Feld, über das sie zu ihr gehören. */
+  async teileAus(rueck: Rueckverweis[], id: string): Promise<string[]> {
+    if (!rueck.length) return [];
+    const typen = new Map((await this.repo.listeTypen()).map((x) => [x.id, x] as const));
+    return [...new Set(rueck.filter((r) => r.quelleId !== id && istTeilVerweis(typen.get(r.quelleTypId), r.feldKey)).map((r) => r.quelleId))];
+  }
+
+  /**
+   * Mappe mit ihren Teilen löschen (#1031): Die Teile gehen mit wie bei „mit verknüpften Mappen löschen“ – ein Vorgang im
+   * Papierkorb (Id der Mappe), wiederhergestellt ebenso. Rechte werden nie übergangen (Ergänzung Sicherheit): Darf die
+   * Person nicht jeden Teil lesen und löschen, lehnt Ablago ab und nennt nur die Anzahl. Jeder Teil durchläuft dieselbe
+   * Prüfung wie beim einzelnen Löschen (Aufbewahrungsfrist, Verweise anderer Mappen). Papierkorb, Historie, Ereignisse und
+   * Löschprotokoll in einer Transaktion; ohne Papierkorb danach endgültig.
+   */
+  private async loescheMitTeilen(x: { m: Mappe; typ: Mappentyp | undefined; rueck: Rueckverweis[]; teilIds: string[] }, benutzerId: string | null, z: Zugriff | undefined, anlass?: Anlass) {
+    const { m, typ, rueck, teilIds } = x;
+    const teile = await this.repo.holeMappen(teilIds);
+    if (z && teile.length) {
+      const r = await this.teile.rechte.rechteAnVielen(z, teile);
+      const ohne = teile.filter((y) => !r.get(y.id)?.R || !r.get(y.id)?.D).length;
+      if (ohne) throw new Fachfehler(403, t('meldungen.teile.loeschen-ohne-recht', { anzahl: ohne }));
+    }
+    const weg = new Set([m.id, ...teile.map((y) => y.id)]);
+    const alleTypen = await this.repo.listeTypen();
+    const p = await this.loeschPruefung(m, typ, rueck.filter((r) => !weg.has(r.quelleId)), alleTypen);
+    if (!p.ok) throw new Fachfehler(p.status, p.grund, p.fremd.length ? { rueckverweise: p.fremd } : undefined);
+    const pruefungen = [{ m, p }];
+    for (const teil of teile) {
+      const pt = await this.loeschPruefung(teil, alleTypen.find((y) => y.id === teil.typId), (await this.repo.rueckverweise(teil.id)).filter((r) => !weg.has(r.quelleId)), alleTypen);
+      if (!pt.ok) throw new Fachfehler(pt.status, t('meldungen.teile.teil-nicht-loeschbar', { titel: teil.titel || t('meldungen.dienst.ohne-titel'), grund: pt.grund }));
+      pruefungen.push({ m: teil, p: pt });
+    }
+    const alle = [m, ...teile];
+    const vorher = await this.lebendInhalt(alle);
+    const korb = await this.papierkorbTage() > 0;
+    const kontext = await this.loeschKontext(benutzerId, anlass);
+    const vorgang = m.id;
+    const text = t('meldungen.teile.mit-teilen-geloescht', { anzahl: teile.length });
+    await this.kern.inEinemZug(async () => {
+      // Rollen-Zuordnungen und Post, die auf eine der Mappen zeigt, verlieren den Verweis – wie beim einzelnen Löschen.
+      const verweise: Record<string, number> = {};
+      for (const { m: y, p: q } of pruefungen) {
+        for (const zu of q.zuordnungen) {
+          const b = await this.repo.holeMappe(zu.quelleId);
+          if (b) await this.schreibeSystemMappe(q.benutzerTyp!, b.id, { rollen: alsListe(b.werte.rollen).filter((r) => r !== y.id) }, benutzerId);
+        }
+        for (const e of q.emails) {
+          const y = await this.repo.holeMappe(e.quelleId);
+          if (y) await this.schreibeSystemMappe(q.emailTyp!, y.id, { bezug: alsListe(y.werte.bezug).filter((b) => b !== y.id) }, benutzerId);
+        }
+        verweise[y.id] = q.zuordnungen.length + q.emails.length;
+      }
+      await this.repo.legeVorgangInPapierkorb(alle.map((y) => y.id), benutzerId, vorgang, {});
+      await this.repo.historieSchreibe(alle.map((y) => ({ mappeId: y.id, benutzerId, art: 'papierkorb' as const, daten: { vorgang, text, ...(y.id === m.id ? {} : { start: m.id }) } })));
+      for (const y of alle) await this.ereignis('mappe.geloescht', { mappe: y.id, typ: y.typId }, benutzerId);
+      await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'papierkorb', weg: 'teile', vorgang, startId: m.id, verweise }), kontext);
+    });
+    for (const typId of new Set(alle.map((y) => y.typId))) {
+      const tt = alleTypen.find((y) => y.id === typId);
+      if (tt?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(tt);
+    }
+    if (!korb) await this.teile.papierkorb.leere(alle.map((y) => y.id), benutzerId, false, { weg: 'teile', kontext });
   }
 
   /** In den Papierkorb (#43): eindeutige Werte werden frei, Dateien bleiben bis zum Leeren. */

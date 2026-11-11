@@ -30,6 +30,8 @@ Paketen. Schicht 3 der Zielaufteilung.
 - Löschen, Papierkorb und Wiederherstellen schreiben das Löschprotokoll im selben Ablauf wie bisher (gleicher Code);
   Ereignisse `mappe.geloescht` bzw. `mappe.endgueltig_geloescht` in derselben Reihenfolge.
 - Wer eine Mappe löscht, fragt `loeschPruefung` – Anzeige und Löschen laufen nie auseinander.
+- Teile (#1031) gehen mit ihrer übergeordneten Mappe (`loescheMitTeilen`, ein Vorgang, Weg `teile`, in einer
+  Transaktion) und kommen mit ihr zurück; ohne Recht an einem Teil lehnt Ablago ab und nennt die Anzahl.
 - Umgetragen aus `dienst.ts`: zwei `complexity`, ein `max-lines-per-function`.
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Löschen*.

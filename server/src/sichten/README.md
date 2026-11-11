@@ -30,7 +30,10 @@ und die mitgelieferten Ansichten. Schicht 3 der Zielaufteilung – über Mappen,
 - Die Zwischenspeicher hängen an denselben Ständen wie bisher: Zahlen je Typ und Ansicht und Treffer am Mappenstand,
   mit Favoriten, Zahlen der Person und „neue Post“ am Haushaltsstand (#742, #918). Sie entstehen im Konstruktor.
 - Die Empfänger an den Anschlusspunkten (`sichten.umbenennen`, `sichten.eigeneSicht`) meldet weiter der Dienst an,
-  in unveränderter Reihenfolge; sie rufen `sichtFuerTyp` über die Fassade.
+  in unveränderter Reihenfolge; sie rufen `sichtFuerTyp` über die Fassade. `sichten.teile` (#1031) ruft
+  `teilUmgeschaltet`.
+- Teile (#1031, `shared/src/teile.ts`) erscheinen in keiner Ansicht (`klauselnFuer`) und nicht in der erweiterten Suche;
+  mit Suche findet `seite` die übergeordneten Mappen über ihre Teile – mit demselben Lesefilter (`teilFunde`, `auchIds`).
 - Wer Sichten braucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen).
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity`, `max-lines-per-function`,
   `max-depth` und fünf `no-unused-vars` in `sichten.dienst.ts`; `complexity` und ein `no-unused-vars` in

@@ -66,6 +66,8 @@ Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten habe
 
 Über der Liste steht, wie viele Treffer es gibt. Ist das Suchfeld leer, siehst du wieder alle Mappen.
 
+[Teile einer Mappe](mappen.md#teile) – etwa Rechnungspositionen – stehen nicht selbst in der Liste: Steht der Begriff in einem Teil, findest du die übergeordnete Mappe mit „gefunden in …“, sofern du beide sehen darfst.
+
 ### Im Text der Dokumente suchen
 
 Setzt du neben dem Suchfeld den Haken **Volltext durchsuchen**, sucht Ablago auch im Text der hochgeladenen Dokumente – in PDFs und, dank Texterkennung, auch in Scans und Fotos. Unter jedem Treffer steht, in welchem Dokument die Stelle steht, mit dem gefundenen Wort hervorgehoben. Ablago merkt sich den Haken für dich.

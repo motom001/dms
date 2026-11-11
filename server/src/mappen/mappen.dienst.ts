@@ -3,6 +3,7 @@
  * Beim Anlegen und Ändern laufen die sofortigen Empfänger über den Anschlusspunkt `mappeGeaendert` des Kerns (#962).
  * Schicht 2 – bekommt den Kern, nicht den ganzen Dienst.
  */
+import { istTeilVerweis } from '../../../shared/src/teile';
 import { randomUUID } from 'node:crypto';
 import { aufbewahrenBis, datumText } from '../../../shared/src/archiv';
 import type { Datenschutz } from '../../../shared/src/auskunft';
@@ -180,7 +181,10 @@ export class MappenDienst {
     // Lesbar (#124, #126): verweisende und verwiesene Mappen in einem Zugriff.
     const sichtbar = await this.lesbare(z, [...alleRueck.map((r) => r.quelleId), ...roheBezuege.keys()]);
     const rueckverweise = alleRueck.filter((r) => sichtbar.has(r.quelleId));
-    const p = await this.loeschPruefung(mappe, typ, alleRueck, alleTypen);
+    // Teile (#1031) halten das Löschen nicht auf – sie gehen mit (die Rechte an ihnen prüft das Löschen).
+    const typenFuerTeile = alleRueck.length ? new Map((alleTypen ?? await this.repo.listeTypen()).map((x) => [x.id, x] as const)) : new Map<string, Mappentyp>();
+    const teile = new Set(alleRueck.filter((r) => r.quelleId !== id && istTeilVerweis(typenFuerTeile.get(r.quelleTypId), r.feldKey)).map((r) => r.quelleId));
+    const p = await this.loeschPruefung(mappe, typ, alleRueck.filter((r) => !teile.has(r.quelleId)), alleTypen);
     // Verweisende Mappen, die man nicht sehen darf: nur ihre Anzahl (#126).
     const fremd = p.fremd.map((r) => (sichtbar.has(r.quelleId) ? r : { ...r, titel: NICHT_SICHTBAR, verborgen: true }));
     return {
@@ -189,7 +193,7 @@ export class MappenDienst {
       /** Wirksame Rechte des Benutzers an dieser Mappe (#126). */
       rechte: rechte ?? { C: true, R: true, U: true, D: true, P: true },
       /** Ob „Mappe löschen“ geht, sonst warum nicht (#79). */
-      loeschbar: p.ok ? { ok: true } : { ok: false, grund: p.grund, rueckverweise: fremd },
+      loeschbar: p.ok ? { ok: true, ...(teile.size ? { teile: teile.size } : {}) } : { ok: false, grund: p.grund, rueckverweise: fremd },
       dokumente,
       /** Notizen an der Mappe (#55). */
       notizen,

@@ -9,7 +9,8 @@ import { festigeDarstellung } from '../../../shared/src/darstellung';
 import { abschnittName, anzeigeProblemeVon } from '../../../shared/src/anzeige';
 import { auswahlProbleme, kinderVon } from '../../../shared/src/sichten';
 import { empfaengerFelder } from '../../../shared/src/fristen';
-import { istOffen, rechteUebersicht, systemSperre, type Recht, type Regelwerk } from '../../../shared/src/rechte';
+import { istOffen, kopiereRegel, OFFENES_REGELWERK, rechteUebersicht, regelwerkVon, systemSperre, type Recht, type Regelwerk } from '../../../shared/src/rechte';
+import { leserechteAus, uebergeordneterTyp } from '../../../shared/src/teile';
 import { liesAusDokument, type AusDokument } from '../../../shared/src/erkennung';
 import type { StempelTyp } from '../../../shared/src/stempel';
 import { teileKennung } from '../../../shared/src/kennungen';
@@ -18,7 +19,7 @@ import type { Kern, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
 import { t } from '../sprache';
-import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
+import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, behalteTeil, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappentypenAnschluss {
@@ -59,6 +60,13 @@ function gebrauchteQuellen(d: MappentypDaten, eigeneId: string, alle: Mappentyp[
 const tabellenAuf = (mappentyp: Mappentyp, id: string): string[] =>
   mappentyp.felder.filter((f) => f.typ === 'tabelle' && f.quelle?.typId === id).map((f) => t('meldungen.tabelle.typ-gebraucht', { name: mappentyp.name, label: f.label }));
 
+/** Ist Teil einer anderen Mappe (#1031): Zieltyp und Teile anderer Typen für die Prüfung (keine Ketten). */
+const teilKontext = (alle: Mappentyp[], system?: Systemtyp | null) => ({
+  system: system ?? null,
+  typVon: (id: string) => alle.find((x) => x.id === id),
+  teiltypenAuf: (id: string) => alle.filter((x) => x.id !== id && uebergeordneterTyp(x) === id).map((x) => x.name),
+});
+
 export class MappentypenDienst {
   constructor(private readonly kern: Kern, private readonly anschluss: MappentypenAnschluss) {}
 
@@ -91,7 +99,7 @@ export class MappentypenDienst {
     }));
   }
 
-  private async pruefeTyp(d: MappentypDaten, eigeneId: string) {
+  private async pruefeTyp(d: MappentypDaten, eigeneId: string, system?: Systemtyp | null) {
     if (d.archiv?.stichtag && d.felder.find((f) => f.key === d.archiv!.stichtag)?.typ !== 'datum') {
       throw new Fachfehler(422, t('meldungen.dienst.archivmodus-der-stichtag-muss'), { allgemein: [t('meldungen.dienst.archivmodus-der-stichtag-muss')], felder: {} });
     }
@@ -118,6 +126,7 @@ export class MappentypenDienst {
       typVon: (id) => alle.find((t) => t.id === id),
       nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
       auswahlProbleme: (bed, felder, eigene) => auswahlProbleme(bed, { felder }, eigene),
+      teile: teilKontext(alle, system),
     });
     // Anzeigen, wenn … (#1033): Bedingungen auf Felder dieses Typs; ein Abschnitt nie auf eigene Felder.
     for (const [wo, liste] of Object.entries(anzeigeProblemeVon(d, (x) => x === eigeneId || alle.some((y) => y.id === x)))) {
@@ -193,11 +202,15 @@ export class MappentypenDienst {
     if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
     await this.pruefeTyp(d, id);
     const rechte = await this.berechtigungenAusEingabe({ ...d, id, erstellt: '', geaendert: '', berechtigungen: null }, eingabe);
+    // Teil einer anderen Mappe (#1031): ohne eigene Regeln die Leserechte der übergeordneten als Vorgabe.
+    const teilRechte = await this.leserechteFuerTeil({ ...d, id, erstellt: '', geaendert: '' }, null, rechte?.rw ?? OFFENES_REGELWERK);
     // In einer Transaktion (#962): Typ, Berechtigungen und die sofortigen Empfänger (eigene Sicht) ganz oder gar nicht.
     return this.inEinemZug(async () => {
       let typ = await this.repo.legeTypAn(id, d);
-      if (rechte) typ = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
-      await this.kern.anlaesse.typAngelegt.melde({ typ, sicht: (roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false });
+      if (teilRechte) typ = await this.repo.setzeBerechtigungen(id, teilRechte);
+      else if (rechte) typ = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
+      // Teile (#1031) bekommen keine eigene Ansicht.
+      await this.kern.anlaesse.typAngelegt.melde({ typ, sicht: (roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false && !typ.teilVon });
       if (rechte) this.kern.danach(() => this.anschluss.protokolliereBerechtigungen(typ, 0));
       return typ;
     });
@@ -213,16 +226,18 @@ export class MappentypenDienst {
     const stand = liesStand((eingabe as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
     if (stand !== undefined && alt.geaendert !== stand) throw this.anschluss.konfigurationKonflikt('typ', alt.geaendert);
     // Berechnete Felder (#1034): bleiben, was sie sind; neu nur aus dem Paket des Typs, freigeben mit `berechnetVon: null`.
-    let d = behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket);
+    let d = behalteTeil(eingabe, behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket), alt);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
     festigeDarstellung(d);
     // Der Schlüssel ist fest (#145); fehlt er noch, gilt der eingegebene bzw. einer aus dem Namen.
     if (!alt.schluessel) MappentypenDienst.pruefePaketKennung(d.schluessel);
     d.schluessel = alt.schluessel ?? d.schluessel ?? freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).filter((t) => t.id !== id).map((t) => t.schluessel ?? ''));
-    await this.pruefeTyp(d, id);
+    await this.pruefeTyp(d, id, alt.system);
     // Berechtigungen (#142) gegen die neuen Felder prüfen, bevor etwas gespeichert ist.
     const rechte = await this.berechtigungenAusEingabe({ ...alt, ...d }, eingabe);
+    // Gerade „Ist Teil einer anderen Mappe“ eingeschaltet (#1031): ohne eigene Regeln die Leserechte der übergeordneten.
+    const teilRechte = await this.leserechteFuerTeil({ ...alt, ...d }, alt, rechte?.rw ?? regelwerkVon(alt));
     const bleiben = new Set(d.register.filter((r) => r.art === 'dokumente').map((r) => r.key));
     for (const [key, n] of await this.repo.dokumenteJeRegister(id)) {
       if (bleiben.has(key)) continue;
@@ -236,11 +251,34 @@ export class MappentypenDienst {
       try { typ = await this.repo.aendereTyp(id, d, stand); }
       catch (f) { if (f instanceof KonfigurationVeraltet) throw this.anschluss.konfigurationKonflikt('typ'); throw f; }
       await this.kern.anlaesse.typGeaendert.melde({ alt, typ });
+      if (teilRechte) {
+        const mit = await this.repo.setzeBerechtigungen(id, teilRechte);
+        this.kern.danach(() => this.anschluss.protokolliereBerechtigungen(mit, 0));
+        return mit;
+      }
       if (!rechte) return typ;
       const mit = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
       this.kern.danach(() => this.anschluss.protokolliereBerechtigungen(mit, rechte.niemand));
       return mit;
     });
+  }
+
+  /**
+   * Leserechte der übergeordneten Mappe als Vorgabe (#1031, Ergänzung Sicherheit): nur beim Einschalten von „Ist Teil einer
+   * anderen Mappe“ und nur, wenn der Typ keine eigenen Berechtigungen hat (`wirksam` offen) – dann übernimmt er einmal die
+   * Grundeinstellung „Lesen“ und die Regeln zum Lesen der übergeordneten (teile.ts, leserechteAus). Spätere Änderungen
+   * dort gelten nicht mit; das sagt der Editor. null = nichts zu übernehmen.
+   */
+  private async leserechteFuerTeil(neu: Mappentyp, alt: Mappentyp | null, wirksam: Regelwerk): Promise<Regelwerk | null> {
+    if (!neu.teilVon || alt?.teilVon || !istOffen(wirksam)) return null;
+    const zielId = uebergeordneterTyp(neu);
+    const ziel = zielId ? await this.repo.holeTyp(zielId) : undefined;
+    if (!ziel || istOffen(regelwerkVon(ziel))) return null;
+    const { regelwerk } = leserechteAus(regelwerkVon(ziel), wirksam, (r) => {
+      const k = kopiereRegel(r, neu);
+      return k.ausgelassen || !k.regel.wenn.length ? null : k.regel;
+    });
+    return istOffen(regelwerk) ? null : regelwerk;
   }
 
   /**

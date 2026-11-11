@@ -1,3 +1,4 @@
+import { istTeiltyp } from '../../../shared/src/teile';
 import { SprachText } from '../einrichtung/Beschriftung';
 import { optionText, typName } from '../../../shared/src/beschriftung';
 import { useEffect, useMemo, useState } from 'react';
@@ -275,7 +276,8 @@ export function SichtEditor({ id }: { id: string }) {
         <label className="haken"><input type="checkbox" checked={alleTypen} onChange={(x) => setE((y) => ({ ...y, typen: x.target.checked ? [ALLE_TYPEN] : [] }))} />
           <span>{tn('werkbank.sichten.alle-mappentypen-2', { span: <span className="leise klein">{t('werkbank.sichten.auch-kuenftige-z-b')}</span> })}</span></label>
         <div className="typwahl">
-          {d.typen.map((mappentyp) => (
+          {/* Teile (#1031) stehen in keiner Ansicht – nur an ihrer übergeordneten Mappe. */}
+          {d.typen.filter((mappentyp) => !istTeiltyp(mappentyp) || e.typen.includes(mappentyp.id)).map((mappentyp) => (
             <label key={mappentyp.id} className="haken"><input type="checkbox" disabled={alleTypen} checked={alleTypen || e.typen.includes(mappentyp.id)} onChange={(x) => setzeTyp(mappentyp.id, x.target.checked)} /><span>{mappentyp.name}</span></label>
           ))}
         </div>

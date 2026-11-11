@@ -13,6 +13,7 @@ import type { ZugriffDienst } from '../zugriff';
 import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
 import type { Ausloeser, LoeschDokument, LoeschEintrag, LoeschKontext, Loeschweg } from '../../../shared/src/loeschprotokoll';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
+import { istTeiltyp, uebergeordneteId } from '../../../shared/src/teile';
 import type { LoeschenAnschluss, LoeschenTeile } from './loeschen.dienst';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
@@ -180,6 +181,12 @@ export class Papierkorb {
     if (mitAuf.aufgeloestIn) throw new Fachfehler(409, t('meldungen.dienst.aufgeloest-nicht-wiederherstellen', { titel: mitAuf.aufgeloestIn.titel || t('meldungen.dienst.ohne-titel-2') }), { aufgeloestIn: mitAuf.aufgeloestIn });
     const typ = await this.repo.holeTyp(e.typId);
     if (!typ) throw new Fachfehler(409, t('meldungen.dienst.den-mappentyp-dieser-mappe'));
+    // Teile (#1031): Ein Teil kommt nur mit seiner übergeordneten Mappe zurück, solange die im Papierkorb liegt …
+    const eltern = istTeiltyp(typ) ? uebergeordneteId(typ, e.werte) : null;
+    if (eltern && await this.repo.holeAusPapierkorb(eltern)) throw new Fachfehler(409, t('meldungen.teile.erst-uebergeordnete'));
+    // … und die übergeordnete Mappe bringt ihre Teile mit, die mit ihr gegangen sind.
+    const teile = await this.teileImKorb([e]);
+    if (teile.length) return this.stelleMitTeilenWiederHer({ e, typ, teile }, ich, alle, quelle);
     const r = await this.repo.stelleWiederHer(id);
     // Beim Löschen mit verknüpften Mappen entfernte Verweise (#424) kommen mit.
     const zurueck = e.entkoppelt.length ? await this.verbindeWieder(id, e.entkoppelt, ich.id) : { wieder: 0, entfallen: 0 };
@@ -192,6 +199,49 @@ export class Papierkorb {
     const m = (await this.repo.holeMappe(id))!;
     protokoll.modul('ablage').info('Mappe wiederhergestellt', { typ: typ.name, titel: m.titel, id, passt: m.passt !== false || undefined, verweiseEntfallen: verweiseEntfallen || undefined });
     return { mappe: m, verweiseEntfallen };
+  }
+
+  /**
+   * Teile (#1031) im Papierkorb, die mit einer dieser Mappen gegangen sind: gleicher Vorgang (die Id der übergeordneten
+   * Mappe) und sie gehören zu ihr.
+   */
+  private async teileImKorb(eltern: PapierkorbEintrag[]): Promise<PapierkorbEintrag[]> {
+    const ids = new Set(eltern.map((e) => e.id));
+    if (!eltern.some((e) => e.vorgang === e.id)) return [];
+    const typen = new Map((await this.repo.listeTypen()).map((x) => [x.id, x] as const));
+    return (await this.repo.papierkorb()).filter((k) => !ids.has(k.id) && !!k.vorgang && ids.has(k.vorgang) && uebergeordneteId(typen.get(k.typId), k.werte) === k.vorgang);
+  }
+
+  /**
+   * Übergeordnete Mappe samt ihren Teilen wiederherstellen (#1031): Rechte wie beim einzelnen Wiederherstellen – jeder
+   * Teil muss für die Person wiederherstellbar sein (selbst gelöscht oder als Administrator in der Werkbank), sonst lehnt
+   * Ablago ab und nennt die Anzahl. Wiederherstellen, Historie, Ereignisse und Löschprotokoll in einer Transaktion.
+   */
+  private async stelleMitTeilenWiederHer(x: { e: PapierkorbEintrag; typ: Mappentyp; teile: PapierkorbEintrag[] }, ich: { id: string; rolle: string }, alle: boolean, quelle?: Ausloeser) {
+    const { e, typ, teile } = x;
+    const ohne = teile.filter((k) => !(k.geloeschtVon === ich.id || (alle && ich.rolle === 'admin'))).length;
+    if (ohne) throw new Fachfehler(403, t('meldungen.teile.wiederherstellen-ohne-recht', { anzahl: ohne }));
+    const typen = new Map((await this.repo.listeTypen()).map((y) => [y.id, y] as const));
+    const fehlt = teile.find((k) => !typen.has(k.typId));
+    if (fehlt) throw new Fachfehler(409, t('meldungen.dienst.den-mappentyp-von-gibt', { wert: fehlt.titel || t('meldungen.dienst.ohne-titel') }));
+    const eintraege = [e, ...teile];
+    const ids = eintraege.map((y) => y.id);
+    const kontext = await this.loeschKontext(ich.id, { ausloeser: quelle });
+    const { verweiseEntfallen: entfallen } = await this.kern.inEinemZug(async () => {
+      const r = await this.repo.stelleMehrereWiederHer(ids);
+      await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: ich.id, art: 'wiederhergestellt' as const, daten: { vorgang: e.id } })));
+      for (const y of eintraege) await this.ereignis('mappe.wiederhergestellt', { mappe: y.id, typ: y.typId }, ich.id);
+      await this.protokolliere(eintraege.map((y) => this.wiederEintrag(y, typen.get(y.typId), e.id)), kontext);
+      return r;
+    });
+    // Beim Löschen mit verknüpften Mappen entfernte Verweise (#424) kommen mit.
+    const zurueck = e.entkoppelt.length ? await this.verbindeWieder(e.id, e.entkoppelt, ich.id) : { wieder: 0, entfallen: 0 };
+    await this.aktualisiereTitel(ids);
+    for (const typId of new Set(eintraege.map((y) => y.typId))) await this.passungFuer(typen.get(typId)!, eintraege.filter((y) => y.typId === typId).map((y) => y.id));
+    const m = (await this.repo.holeMappe(e.id))!;
+    const verweiseEntfallen = entfallen + zurueck.entfallen;
+    protokoll.modul('ablage').info('Mappe mit ihren Teilen wiederhergestellt', { typ: typ.name, id: e.id, teile: teile.length, verweiseEntfallen: verweiseEntfallen || undefined });
+    return { mappe: m, verweiseEntfallen, teile: teile.length };
   }
 
   /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
@@ -226,7 +276,13 @@ export class Papierkorb {
 
   /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
   async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser): Promise<number> {
-    for (const id of ids) await this.eintrag(id, ich, alle);
+    const eintraege: PapierkorbEintrag[] = [];
+    for (const id of ids) eintraege.push(await this.eintrag(id, ich, alle));
+    // Teile (#1031), die mit einer dieser Mappen gegangen sind, gehen auch endgültig mit – sonst blieben sie ohne Mappe zurück.
+    const teile = (await this.teileImKorb(eintraege)).filter((k) => !ids.includes(k.id));
+    const ohne = teile.filter((k) => !(k.geloeschtVon === ich.id || (alle && ich.rolle === 'admin'))).length;
+    if (ohne) throw new Fachfehler(403, t('meldungen.teile.loeschen-ohne-recht', { anzahl: ohne }));
+    ids = [...ids, ...teile.map((k) => k.id)];
     const n = await this.leere(ids, ich.id, true, { weg: 'papierkorb', kontext: await this.loeschKontext(ich.id, { ausloeser: quelle }) });
     if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
