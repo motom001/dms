@@ -18,3 +18,7 @@ export { pruefeVorlage, vorlagenPlatzhalter, type VorlagenFehler } from './vorla
 export { liesUmbau, planeUmbau, wendeEntscheidungenAn, type GeplanterSchritt, type UmbauDienst, type UmbauLage } from './umbau';
 export { fuehreUmbauAus, nimmEinstellungenZurueck, uebernahmeDaten, type UmbauErgebnis } from './umbau-ausfuehren';
 export { wandle } from './umbau-werte';
+/** Installieren unabhängig von der Reihenfolge (#1122): zweiter Durchgang, optionale Ziele in Bedingungen, Quellen. */
+export { anzeigeTypIds, anzeigeWartet, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './installation';
+/** Namenskonflikte in der Vorschau (#1123). */
+export { abhaengigeTypen, abhaengigkeitsKonflikte, eigeneKonflikte, Namensherkunft, type AbhaengigeTypen } from './namen';

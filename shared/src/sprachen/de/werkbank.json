@@ -1785,6 +1785,8 @@
   "pakete.vorschau": "Vorschau",
   "pakete.update-auf": "Update auf {version}",
   "pakete.vorschau-2": "Vorschau: {name} {version}",
+  "pakete.namenskonflikte": "Namen schon vergeben.",
+  "pakete.namenskonflikte-text": "Wähle oben einen anderen Namen – erst dann lässt sich installieren.",
   "pakete.nicht-vom-ablago-projekt-2": "Nicht vom Ablago-Projekt geprüft.",
   "pakete.installiere-nur-pakete-deren": "{b} {wert}Installiere nur Pakete, deren Herkunft du kennst und der du vertraust.",
   "pakete.ich-weiss-woher-das": "Ich weiß, woher das Paket stammt, und installiere es auf eigene Verantwortung.",

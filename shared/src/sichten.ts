@@ -236,7 +236,8 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
   if (b.art === 'feld') {
     const f = bedingungsfelder(typen).find((x) => x.key === b.feld);
     if (!f) return t('gemeinsam.sichten.das-feld-gibt-es', { feld: b.feld, wert: typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr') });
-    if (!operatorenFuer(f).includes(b.op)) return t('gemeinsam.sichten.passt-nicht-zum-feld', { wert: OPERATOREN[b.op] ?? b.op, label: f.label });
+    // Optionale Ziele (#1122): Mit `zielOptional` geht „zeigt auf Mappe vom Typ …“ auch, solange erst ein Zieltyp da ist.
+    if (!operatorenFuer(f).includes(b.op) && !(b.op === 'zeigtAufTyp' && !!f.feld?.zielOptional?.length)) return t('gemeinsam.sichten.passt-nicht-zum-feld', { wert: OPERATOREN[b.op] ?? b.op, label: f.label });
     const brauchtWert = !['leer', 'nichtLeer', 'ja', 'nein'].includes(b.op);
     if (brauchtWert && !b.wert) return t('gemeinsam.sichten.bei-fehlt-der-vergleichswert', { label: f.label });
     if ((b.op === 'zwischen' || b.op === 'ausserhalb') && !b.bis) return t('gemeinsam.sichten.bei-fehlt-der-zweite', { label: f.label });
@@ -251,7 +252,8 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (b.op === 'zeigtAufTyp') {
       const w = b.wert?.art === 'fest' && Array.isArray(b.wert.wert) ? b.wert.wert : null;
       if (!w?.length) return t('gemeinsam.sichten.typ-waehlen', { label: f.label });
-      if (w.some((x) => !zielErlaubt(f.feld!, x))) return t('gemeinsam.sichten.typ-kein-ziel', { label: f.label });
+      // Optionales Ziel, dessen Paket fehlt (#1122): Die Kennung passt zu keiner Mappe – erlaubt, trifft nie zu.
+      if (w.some((x) => !zielErlaubt(f.feld!, x) && !(typeof x === 'string' && x.includes(':') && f.feld!.zielOptional?.includes(x)))) return t('gemeinsam.sichten.typ-kein-ziel', { label: f.label });
     }
     return null;
   }

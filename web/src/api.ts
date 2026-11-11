@@ -1178,7 +1178,10 @@ export interface PaketVorschau {
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
   typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; wiederfinden?: string[]; vorbelegen?: string[]; typAngaben?: boolean; formate?: string[]; beschriftungen?: number; abschnitte?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean; /** Umbau (#1041): entsteht aus diesem vorhandenen Typ (gleiche Id). */ uebernimmt?: string; /** Archivmodus des neuen Typs (#1051). */ archiv?: Archiv & { stichtagName: string | null } }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; ausgelassen?: string | null; ohne?: string[] }>;
-  beispiele: number; probleme: string[]; fehlercodes?: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
+  beispiele: number; probleme: string[]; fehlercodes?: string[];
+  /** Namenskonflikte (#1123): Einträge aus `probleme`, die sich durch Umbenennen in der Vorschau lösen lassen. */
+  namenskonflikte?: string[];
+  hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Beispiel-Dokumente zu den Beispielen (#878). */
   beispielDokumente?: { anzahl: number; bytes: number };
   /** Vorgaben (#1038) und Vorlagen an Vorgaben anderer Pakete. */

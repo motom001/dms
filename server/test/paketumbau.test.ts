@@ -213,6 +213,8 @@ for (const pg of [false, true]) {
       assert.deepEqual(s.rechte, { regeln: true, ki: true, verwehrt: [] });
       assert.deepEqual(s.umgeleitet, { felder: 1, ansichten: 1 });
       assert.equal(vorschau.typen.find((t) => t.schluessel === 'vertrag')?.uebernimmt, 'Vertrag');
+      // Namenskonflikte (#1123): Der Umbau übernimmt „Vertrag“ aus Haushalt – das ist kein Konflikt.
+      assert.deepEqual([vorschau.typen.find((t) => t.schluessel === 'vertrag')?.konflikt, vorschau.namenskonflikte], [null, []]);
     });
 
     it('nur mit Bestätigung, nur „Gesamte Verwaltung“, nur mit Antwort auf jede Rückfrage', async () => {

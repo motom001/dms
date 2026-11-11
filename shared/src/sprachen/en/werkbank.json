@@ -1785,6 +1785,8 @@
   "pakete.vorschau": "Preview",
   "pakete.update-auf": "Update to {version}",
   "pakete.vorschau-2": "Preview: {name} {version}",
+  "pakete.namenskonflikte": "Names already in use.",
+  "pakete.namenskonflikte-text": "Choose a different name above – then you can install.",
   "pakete.nicht-vom-ablago-projekt-2": "Not checked by the Ablago project.",
   "pakete.installiere-nur-pakete-deren": "{b} {wert}Only install packages whose origin you know and trust.",
   "pakete.ich-weiss-woher-das": "I know where the package comes from and install it at my own risk.",

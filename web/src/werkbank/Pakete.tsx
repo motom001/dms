@@ -20,6 +20,7 @@ import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
 import { SammeldateiAnsicht, SammeldateiWahl } from './PaketeDazuholen';
 import { PaketAblauf } from './PaketAblauf';
+import { NamenskonfliktHinweis } from './Namenskonflikt';
 import { PaketUmwandeln } from './PaketUmwandeln';
 import { UmbauVorschau, umbauStart, type UmbauStand } from './PaketUmbau';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
@@ -757,6 +758,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   const konflikt = v.typen.some((eintrag) => !eintrag.vorhanden && eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase())
     || v.sichten.some((s) => !s.vorhanden && !s.ausgelassen && s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase());
   const leer = Object.values(namen).some((n) => !n.trim()) || Object.values(sichtNamen).some((n) => !n.trim());
+  // Namenskonflikte (#1123) stehen auch in den Problemen; sie verhindern nichts, wenn oben umbenannt ist.
+  const probleme = v.probleme.filter((p) => !v.namenskonflikte?.includes(p));
   // Herkunft bestätigen (#189, #594): außerhalb des offiziellen Katalogs bzw. ohne gültige Signatur.
   const pruefWarnung = warnung ?? (v.pruefung?.bestaetigen ? (v.pruefung.art === 'ungueltig' ? tx('pakete.herkunft.warnung.ungueltig') : '') : null);
   const bestaetigen = pruefWarnung !== null && !herkunftBestaetigt;
@@ -791,7 +794,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
       )}
       <FremdeMappenVorschau v={v} />
       <AktionenVorschau aktionen={v.aktionen} update={v.update} />
-      {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
+      {probleme.length > 0 && <div className="hinweis schlecht"><ul>{probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.hinweise?.length > 0 && <div className="hinweis info"><ul>{v.hinweise.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.sprache && <SprachVorschau s={v.sprache} />}
       {v.einstellungen && (v.einstellungen.neu.length > 0 || v.einstellungen.weg.length > 0) && (
@@ -863,8 +866,9 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           <HakenFeld beschriftung={t('werkbank.pakete.herausgeber-bestaetigen', { herausgeber: v.herausgeberBestaetigen })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld>
         </div>
       )}
+      {konflikt && !!v.namenskonflikte?.length && <NamenskonfliktHinweis liste={v.namenskonflikte} />}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt}
+        <button type="button" className="knopf primaer" disabled={laeuft || probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt}
           onClick={() => {
             setLaeuft(true);
             void (async () => {

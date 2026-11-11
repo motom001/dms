@@ -7,6 +7,7 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t } from '../sprache';
 import { HerkunftZeile } from './Herkunft';
+import { NamenskonfliktHinweis } from './Namenskonflikt';
 import { Eingabe } from './PaketEinstellungen';
 import { PaketSymbol } from './PaketSymbol';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -337,7 +338,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
     offenePflicht.length ? t('pakete.ablauf.fehlt.einstellungen', { namen: offenePflicht.map((p) => p.name).join(', ') }) : '',
     adressen.length && !adresseOk ? t('pakete.ablauf.fehlt.adresse') : '',
   ].filter(Boolean);
-  const probleme = [...plan.probleme, ...pk.flatMap((p) => p.vorschau.probleme.map((x) => `${p.name}: ${x}`))];
+  // Namenskonflikte (#1123) stehen auch in den Problemen; umbenannt wird oben, dann verhindern sie nichts.
+  const probleme = [...plan.probleme, ...pk.flatMap((p) => p.vorschau.probleme.filter((x) => !p.vorschau.namenskonflikte?.includes(x)).map((x) => `${p.name}: ${x}`))];
+  const namenskonflikte = pk.flatMap((p) => (p.vorschau.namenskonflikte ?? []).map((x) => `${p.name}: ${x}`));
   const neueTypen = pk.reduce((n, p) => n + p.vorschau.typen.filter((x) => !x.vorhanden && !x.geloescht).length, 0);
   const neueSichten = pk.reduce((n, p) => n + p.vorschau.sichten.filter((x) => !x.vorhanden).length, 0);
   const updates = pk.filter((p) => p.vorschau.update);
@@ -535,6 +538,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           ))}
         </ol>
         {meldung && <div className="hinweis schlecht" role="status"><p>{meldung.text}</p>{!!meldung.gruende?.length && <ul>{meldung.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div>}
+        {nochKonflikt && namenskonflikte.length > 0 && <NamenskonfliktHinweis liste={namenskonflikte} />}
         {fehlt.length > 0 && !probleme.length && <ul className="leise klein">{fehlt.map((f) => <li key={f}>{f}</li>)}</ul>}
         <div className="knoepfe">
           <button type="button" className="knopf primaer" disabled={laeuft || probleme.length > 0 || fehlt.length > 0} onClick={() => void installieren()}>

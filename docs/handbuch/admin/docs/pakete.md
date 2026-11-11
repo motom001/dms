@@ -31,7 +31,7 @@ GitHub zählt, wie oft eine Release-Datei heruntergeladen wird; daraus kommen di
 2. Klicke **Installieren …**. Es öffnet sich der [gemeinsame Ablauf](#mehrere-pakete-in-einem-schritt-installieren): oben das Paket, darunter, was es braucht („Braucht: …“), und seine **Ergänzungen** als Häkchen – bei der Texterkennung etwa **Weitere Sprachen?** mit Französisch, Spanisch, Türkisch …
 3. Klicke **Weiter mit … Paketen**. Auf **einer Seite** fragt Ablago jetzt alles, was nötig ist, und nur das:
     - bei Paketen mit Code **was der Code darf** – je Paket als Liste, Ereignisse als Unterliste, mit **?** zur Erklärung (siehe [Rechte eines Pakets](#rechte-eines-pakets)). Darunter **ein** Haken für alle, sonst bleibt **Installieren** grau
-    - **Namen**, die es schon gibt: Gibt es einen Mappentyp oder eine Ansicht (auf oberster Ebene) mit gleichem Namen schon, schlägt Ablago einen anderen vor, z. B. „Organisation (Basis)“. Alles andere bekommt den Namen aus dem Paket, ohne Rückfrage
+    - **Namen**, die es schon gibt: Gibt es einen Mappentyp oder eine Ansicht (auf oberster Ebene) mit gleichem Namen schon, schlägt Ablago einen anderen vor, z. B. „Organisation (Basis)“. Alles andere bekommt den Namen aus dem Paket, ohne Rückfrage. Wer den Namen schon hat (ein Paket, selbst angelegt, ein Paket davor im Ablauf), steht vor **Installieren** unter **Namen schon vergeben**; übernimmt ein Umbau den vorhandenen Typ, ist das kein Konflikt (#1123)
     - **Beispiel-Mappen** – nur, wenn du den Haken setzt; bringen sie **Beispiel-Dokumente** mit, stehen Anzahl und Größe dabei (siehe [Beispiele](#beispiele))
     - **Einstellungen**, ohne die ein Paket nicht läuft – oder **Später ausfüllen** (siehe [Einstellungen](#einstellungen))
 4. Unten steht die **Zusammenfassung**: welche Pakete in welcher Reihenfolge, wie viele Mappentypen und Ansichten, Beispiele, Pakete mit Code. Darunter die Hinweise des Pakets, z. B. ob es **gleichbedeutende Wörter** für die Suche mitbringt (Wortlisten, siehe [Suche](suche.md#gleichbedeutende-worter)) oder Mappentypen aus Ablago nutzt.
@@ -41,6 +41,7 @@ Vor dem Anlegen prüft Ablago:
 
 - ob die **eigene Version** passt (sonst erst Ablago [aktualisieren](aktualisieren.md)),
 - ob alle **Abhängigkeiten** installiert sind und in einer passenden Version,
+- ob ein **Name** schon vergeben ist – auch durch einen Mappentyp einer Abhängigkeit, die mitinstalliert würde (#1123). Das steht schon in der Vorschau; Namen des Pakets selbst änderst du dort, bei einer Abhängigkeit installierst du sie vorher einzeln,
 - ob das heruntergeladene Archiv zur **Prüfsumme (SHA-256)** im Katalog passt. Passt sie nicht, installiert Ablago nichts.
 
 Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Mappentypen aus Paketen haben die [Kennung](mappentypen.md) `paket:schluessel`, z. B. `basis:person` – so kommen sich Pakete nicht in die Quere, auch wenn Paket-Id und Kennung selbst einen Unterstrich enthalten (bis Ablago 0.228 hieß es `basis_person`; beim Update hat Ablago alle Kennungen umgestellt, #1084). Eigene Mappentypen haben eine Kennung ohne Doppelpunkt. Verweise auf Mappentypen anderer Pakete löst Ablago auf. **Scheitert etwas, nimmt Ablago alles zurück** – es bleibt nichts halb angelegt.
