@@ -440,6 +440,9 @@ rauchtest('Verwaltungsmodus betreten, Werkbank und Pakete', { als: LENA }, async
   const elemente = s.getByRole('region', { name: 'Elemente' });
   await elemente.getByRole('heading', { name: /^Pakete/, level: 1 }).first().waitFor();
   await elemente.getByRole('button', { name: 'Katalog abrufen' }).waitFor();
+  // Menü „Mappe“ (#1039) lädt seine Einstellung selbst: erst abwarten – sonst trifft die Anfrage nach dem Ende des Modus
+  // ein und bekommt 403.
+  await s.locator('[data-anker="werkbank.mappenmenue"] input[type="checkbox"]:enabled').first().waitFor();
   // Zurück in die Ablage: Der rote Balken bleibt, bis man die Verwaltung beendet.
   await s.getByRole('button', { name: 'Verwaltung beenden' }).click();
   await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor({ state: 'detached' });
@@ -1157,6 +1160,49 @@ rauchtest('Passkey: hinzufügen, damit anmelden, entfernen (#811)', { als: LENA 
   await blatt.getByRole('button', { name: 'Entfernen' }).click();
   await s.getByRole('alertdialog', { name: '„Rauchtest-Laptop“ entfernen?' }).getByRole('button', { name: 'Entfernen' }).click();
   await blatt.getByText('Rauchtest-Laptop', { exact: true }).waitFor({ state: 'detached' });
+});
+
+// Baum der Ansichten ohne Neuladen (#888): Eine für alle gesperrte Ansicht (R entzogen) sieht Lena nur im
+// Verwaltungsmodus. Beginnen und Beenden des Modus und Änderungen an Ansichten aus einer anderen Sitzung zeigt der Baum
+// sofort bzw. nach dem nächsten Nachfragen (#919) – ohne F5. Ein Link auf einen Mappentyp zeigt „Alle Mappen: …“.
+rauchtest('Ansichten: Baum ohne Neuladen nach Verwaltungsmodus und Änderungen (#888)', { als: LENA }, async (s) => {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const vertrag = (await api('GET', '/api/typen', { cookie: verwaltung })).daten.find((x) => x.name === 'Vertrag');
+  const gesperrt = { grund: { R: false, C: false, E: false }, regeln: [] };
+  const sicht = (await api('POST', '/api/sichten/definitionen', { cookie: verwaltung, body: { name: 'Rauchtest gesperrt', typen: [vertrag.id], berechtigungen: gesperrt } })).daten;
+  try {
+    const baum = s.getByRole('complementary', { name: 'Ansichten' });
+    const eintrag = (name) => baum.getByRole('link', { name: new RegExp(`^${name}`) });
+    await s.goto(BASIS + '/ablage/start');
+    await eintrag('Vertrag').first().waitFor();
+    assert.equal(await eintrag('Rauchtest gesperrt').count(), 0, 'gesperrte Ansicht ohne Verwaltungsmodus nicht im Baum');
+    // Im Verwaltungsmodus erscheint sie, nach „Verwaltung beenden“ ist sie wieder weg – ohne Neuladen.
+    await verwalten(s);
+    await s.getByRole('navigation', { name: 'Bereiche' }).getByRole('link', { name: 'Ablage' }).click();
+    await eintrag('Rauchtest gesperrt').waitFor();
+    await s.getByRole('button', { name: 'Verwaltung beenden' }).click();
+    await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor({ state: 'detached' });
+    await eintrag('Rauchtest gesperrt').waitFor({ state: 'detached' });
+    // Eine andere Sitzung gibt die Ansicht frei und benennt sie um: Der Baum holt den neuen Stand selbst.
+    await api('PUT', `/api/sichten/definitionen/${sicht.id}`, { cookie: verwaltung, body: { name: 'Rauchtest offen', typen: [vertrag.id], berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [] } } });
+    await eintrag('Rauchtest offen').waitFor({ timeout: 40_000 });
+    // Ist die Ansicht des Mappentyps (gleiche Id) gesperrt, zeigt ein Link auf den Mappentyp – wie nach einem Klick auf
+    // eine Erwähnung – klar die Liste des Mappentyps, nicht die gesperrte Ansicht.
+    const typSicht = (await api('GET', '/api/sichten/definitionen', { cookie: verwaltung })).daten.find((x) => x.id === vertrag.id);
+    await api('PUT', `/api/sichten/definitionen/${vertrag.id}`, { cookie: verwaltung, body: { ...typSicht, name: 'Rauchtest Verträge gesperrt', berechtigungen: gesperrt } });
+    try {
+      await s.goto(BASIS + `/ablage/${vertrag.id}`);
+      const liste = s.getByRole('region', { name: 'Mappen' });
+      await liste.getByRole('heading', { name: /^Alle Mappen: Vertrag/, level: 1 }).waitFor();
+      await liste.getByRole('link', { name: /Stromvertrag Haus/ }).first().waitFor();
+      assert.equal(await s.getByText('Rauchtest Verträge gesperrt').count(), 0, 'kein Name der gesperrten Ansicht');
+    } finally {
+      await api('PUT', `/api/sichten/definitionen/${vertrag.id}`, { cookie: verwaltung, body: typSicht });
+    }
+  } finally {
+    await api('DELETE', `/api/sichten/definitionen/${sicht.id}`, { cookie: verwaltung });
+  }
 });
 
 /* ---------- Hilfen ---------- */

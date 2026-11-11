@@ -19,6 +19,8 @@ In formatted texts and notes you mention a user with **@**: type **@** and the f
 - If you save the text again, no second task is created.
 - If you remove the mention again, the task stays open; the history records that it was removed.
 - If you mention yourself, you don't get a task.
+- If you aren't allowed to see a mentioned user, it says **@User (not visible)** – without the name and without a link. **Deleted user**, or the greyed-out name with the note "This user no longer exists", only appears if the user really no longer exists.
+- If you open a mentioned user, the list next to it is **All folders: User** – the list of the folder type, not a view.
 
 ## History {#historie}
 

@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { Person as PersonDaten } from './api';
 import { abwesenheitText, useDaten } from './daten';
+import { useSichtbarkeit } from './sichtbarkeit';
 import { Link } from './ort';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -28,15 +29,28 @@ export function Ehemalig({ id, children }: { id: string | null | undefined; chil
 }
 
 /**
- * Ein Benutzername als Link auf die Mappe des Benutzers (#65): aktueller Name; gibt es den
- * Benutzer nicht mehr, grauer Text mit Hinweis. `vor` steht vor dem Namen (z. B. „@“).
+ * Ein Benutzer, der nicht unter den lesbaren ist (#888): Ablago fragt nach. Nicht sichtbar oder (noch) ohne Antwort:
+ * kein Name – auch nicht der aus der Erwähnung; die Antwort ändert dann nur den Zusatz. Gelöscht (oder im Papierkorb):
+ * der Name aus der Erwähnung grau mit Hinweis, sonst „gelöschter Benutzer“.
+ */
+function NichtLesbar({ id, ersatz, vor, className }: { id: string; ersatz?: string; vor: string; className?: string }) {
+  const d = useDaten();
+  const sichtbarkeit = useSichtbarkeit(id, d.geladen);
+  if (sichtbarkeit === 'geloescht') return <span className={`person weg ${className ?? ''}`} title={t('oberflaeche.person.diesen-benutzer-gibt-es')}>{vor}{ersatz ?? t('oberflaeche.person.geloeschter-benutzer')}</span>;
+  const verborgen = sichtbarkeit === 'verborgen';
+  return <span className={`person weg verborgen-titel ${className ?? ''}`} title={verborgen ? t('oberflaeche.person.nicht-sichtbar.titel') : undefined}>{vor}{verborgen ? t('oberflaeche.person.nicht-sichtbar') : t('oberflaeche.person.benutzer')}</span>;
+}
+
+/**
+ * Ein Benutzername als Link auf die Mappe des Benutzers (#65): aktueller Name. Fehlt der Benutzer unter den lesbaren,
+ * unterscheidet `NichtLesbar` „nicht sichtbar“ von „gelöscht“ (#888). `vor` steht vor dem Namen (z. B. „@“).
  */
 export function Person({ id, ersatz, vor = '', className }: { id: string | null | undefined; ersatz?: string; vor?: string; className?: string }) {
   const d = useDaten();
   const ohneLinks = useContext(OhneLinks);
   if (!id) return <span className={className}>{vor}{ersatz ?? t('oberflaeche.person.unbekannt')}</span>;
   const p = d.personen.find((x) => x.id === id);
-  if (!p) return <span className={`person weg ${className ?? ''}`} title={t('oberflaeche.person.diesen-benutzer-gibt-es')}>{vor}{ersatz ?? t('oberflaeche.person.geloeschter-benutzer')}</span>;
+  if (!p) return <NichtLesbar id={id} ersatz={ersatz} vor={vor} className={className} />;
   // Dienstkonto eines Pakets (#338): Name ohne Link, es gibt keine Benutzer-Mappe dazu.
   if (p.art === 'dienst') return <span className={`person paket ${className ?? ''}`} title={t('oberflaeche.person.paket-mit-code-dienstkonto')}>{vor}{p.name}</span>;
   // Systemkonto (#673), z. B. „Automatisierung“: ebenso ohne Mappe.

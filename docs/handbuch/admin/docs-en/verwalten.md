@@ -39,7 +39,7 @@ Day to day, even a person with the administration permission works without these
 2. **Sign in again** – with password and, if set up, the two-factor code – or with a [passkey](anmeldeschutz.md#passkeys) (**Confirm with a passkey**). If the sign-in was at most 10 minutes ago, the question is skipped. Whoever only signs in via a provider signs in there again.
 3. Ablago opens the workbench. At the top there is a **red bar**: "You are currently administering Ablago. You shouldn't work like this every day. You see all folders, including locked ones." with the button **End administration**.
 
-The mode **ends** with **End administration** (bar or user menu) or after **15 minutes without activity**. If it expires during editing, nothing is lost: Ablago only asks for the sign-in again and then saves. On the same day in the same browser, **getting back in takes one click** ("Administer again") – but it still has to be chosen.
+The mode **ends** with **End administration** (bar or user menu) or after **15 minutes without activity**. The library then immediately shows again what you see in everyday use – views, folders and users – without you having to reload the page. If it expires during editing, nothing is lost: Ablago only asks for the sign-in again and then saves. On the same day in the same browser, **getting back in takes one click** ("Administer again") – but it still has to be chosen.
 
 This day marker is tied to the session on the server, not to a cookie. It ends at midnight, on signing out, when the session is ended from another device, on a password change, when two-factor sign-in changes and when the administration permission is withdrawn. In a stand-in arrangement ("Sign in as …") there is no administration mode.
 

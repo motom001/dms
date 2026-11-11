@@ -78,6 +78,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const typ = d.typDerSicht(sicht);
   const ebene = dritt ? 'mappe' : istSuche ? (formular ? 'formular' : 'suchliste') : 'liste';
   // Spalten (#75): Trefferliste der Sicht, sonst Standard; bei mehreren Typen nur Gemeinsames.
+  // Liste eines Mappentyps ohne Ansicht (#888), z. B. nach einem Klick auf eine Erwähnung oder einen Verweis: klar als
+  // „Alle Mappen: <Typ>“ – nie mit Namen, Bedingungen oder Export einer Ansicht, auch wenn eine gesperrte so heißt.
+  const typListe = !verwaltet && typ ? t('ablage.typliste.titel', { name: typName(typ) }) : undefined;
   const sichtTypen = verwaltet ? wirksameTypen(d.sichten, verwaltet.id, d.typen.map((mappentyp) => mappentyp.id)).map((text) => d.typ(text)).filter((eintrag): eintrag is Mappentyp => !!eintrag) : typ ? [typ] : [];
   const wahl = verwaltet ? spaltenDerSicht(sichtTypen, verwaltet.trefferliste) : typ ? { key: 'standard', spalten: standardliste(typ).spalten } : { key: null, spalten: GEMISCHTE_SPALTEN };
   const papierkorb = usePapierkorb(false, sicht === 'papierkorb');
@@ -143,7 +146,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const links = (
       <aside className="spalte sichten" aria-label={t('ablage.ablage.ansichten')} data-anker="navigation.ansichten">
         {/* Handy (#498): ein Knopf „<Ansicht> ▾“ mit Suche und Gruppen statt der Reiterleiste. */}
-        <AnsichtWahl aktiv={sicht} aktuell={sicht === 'start' ? t('ablage.ablage.start') : istSuche ? t('ablage.ablage.erweiterte-suche') : sicht === 'eingang' ? t('ablage.ablage.zu-erledigen') : sicht === 'favoriten' ? t('ablage.ablage.favoriten') : sicht === 'papierkorb' ? t('ablage.ablage.papierkorb') : sicht === 'zuletzt' ? t('ablage.startseite.zuletzt-geoeffnet') : verwaltet?.name ?? typ?.name ?? t('ablage.ablage.ansicht-waehlen')}
+        <AnsichtWahl aktiv={sicht} aktuell={sicht === 'start' ? t('ablage.ablage.start') : istSuche ? t('ablage.ablage.erweiterte-suche') : sicht === 'eingang' ? t('ablage.ablage.zu-erledigen') : sicht === 'favoriten' ? t('ablage.ablage.favoriten') : sicht === 'papierkorb' ? t('ablage.ablage.papierkorb') : sicht === 'zuletzt' ? t('ablage.startseite.zuletzt-geoeffnet') : verwaltet?.name ?? typListe ?? t('ablage.ablage.ansicht-waehlen')}
           feste={feste.map((f) => ({ pfad: f.pfad, name: <><Symbol name={f.symbol} /> {f.name}</>, text: f.name, zahl: f.zahl, warte: f.warte, hervor: f.hervor, an: f.an }))} ohne={[neuePost?.id, favSicht?.id].filter((x): x is string => !!x)} />
         <h2 className="ueber aw-breit">{t('ablage.ablage.ansichten')}</h2>
         <nav className="sichtliste">
@@ -200,7 +203,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               beschreibung={t('ablage.ablage.mappen-die-du-mit')}
               leerText={t('ablage.ablage.noch-keine-favoriten-markiere')} />
           : !verwaltet && typ && istTeiltyp(typ) ? <TeilListe typ={typ} />
-          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet ? sichtName(verwaltet) : typName(typ!)} beschreibung={verwaltet ? sichtBeschreibung(verwaltet) : typ ? typBeschreibung(typ) : undefined}
+          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet ? sichtName(verwaltet) : typListe!} beschreibung={verwaltet ? sichtBeschreibung(verwaltet) : typ ? typBeschreibung(typ) || t('ablage.ablage.alle-mappen-dieses-mappentyps') : undefined}
               offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
               leerText={typ?.system === 'post' ? t('ablage.ablage.keine-post-mit-post') : verwaltet?.bedingungen.some((x) => x.art === 'favorit') ? t('ablage.ablage.noch-keine-favoriten-markiere') : t('ablage.ablage.noch-keine-mappen-in')} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
           : sicht ? <div className="leer"><p>{t('ablage.ablage.diese-ansicht-gibt-es')}</p></div> : null}
