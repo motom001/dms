@@ -17,12 +17,13 @@
  * - `export.ts`        PDF mehrerer Mappen (#152)
  * - `aufkleber.ts`     Aufkleberbogen mit Barcode (#345)
  * - `notfallblatt.ts`  Notfallblatt in Ablago-Optik (#106, #814)
+ * - `brief.ts`        Brief aus einer Text-Vorlage (#1040), getaggt, im Aufbau ähnlich DIN 5008
  * - `anzeige.ts`       bereinigte Kopie für die Anzeige im Browser (#639)
  * - `demo-dokumente.ts` Demo-Dokumente für Wachstumstests (#248)
  * - `einfach.ts`      sehr kleiner Schreiber für Textseiten ohne Bibliothek (früher Notfallblatt, #106)
  * - `bild.ts`, `puffer.ts`, `text.ts` kleine Helfer (Bildart, EXIF, Umgehung #456, WinAnsi)
  */
-import { arbeite } from '../arbeit';
+import { arbeite, arbeiteBis } from '../arbeit';
 import type { Zufall } from '../zufall';
 import type { Dokumentart } from '../../../shared/src/demodaten';
 import type { MappenInhalt } from './demo-dokumente';
@@ -36,6 +37,8 @@ import type * as Au from './aufkleber';
 import type * as Ar from './archiv';
 import type * as An from './anzeige';
 import type * as Nf from './notfallblatt';
+import type * as Br from './brief';
+import { TEXTSATZ_ZEIT_MS } from '../grenzen';
 
 export { pdfAus, type Absatz, type Schrift } from './einfach';
 export { bildArt, exifAusrichtung, jpegMasse } from './bild';
@@ -82,6 +85,8 @@ export const liesPdfA = (...a: A<typeof Ar.liesPdfA>) => arbeite('liesPdfA', ...
 export const textebeneWoerter = (...a: A<typeof Ar.textebeneWoerter>) => arbeite('textebeneWoerter', ...a);
 export const bereinigePdf = (...a: A<typeof An.bereinigePdf>) => arbeite('bereinigePdf', ...a);
 export type { PdfaBefund } from './archiv';
+/** Brief aus einer Text-Vorlage (#1040) – mit eigener Zeitgrenze (grenzen.ts). */
+export const briefPdf = (...a: A<typeof Br.briefPdf>) => arbeiteBis(TEXTSATZ_ZEIT_MS, 'briefPdf', ...a);
 
 /** Demo-Dokument (#248) im Arbeiter; der Zufall geht danach mit dem Stand aus dem Arbeiter weiter. */
 export async function erzeugeDokument(z: Zufall, art: Dokumentart, m: MappenInhalt, kennung: string, rastern: boolean) {

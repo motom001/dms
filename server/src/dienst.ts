@@ -73,6 +73,7 @@ export type { AufgeloestIn, DokumentImKorb } from './loeschen';
 import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, VollexportQuellen } from './datenschutz';
 import { WerkbankDienst } from './werkbank';
 import { OrganisationDienst } from './organisation';
+import { TextsatzDienst } from './textsatz';
 import { ORGANISATION_BEREICH } from '../../shared/src/organisation';
 import type { MailText } from './mail';
 export { VOLLTEXT_MAX };
@@ -267,6 +268,15 @@ export class Dienst {
   readonly werkbank: WerkbankDienst;
   /** Eigene Organisation (#995): Angaben mit der festen Liste, Werkbank-Bereich, Notizen an die Verwaltung. */
   readonly organisation: OrganisationDienst;
+  private textsatzDienst?: TextsatzDienst;
+  /** Text setzen (#1040): Brief aus einer Text-Vorlage als PDF – beim ersten Gebrauch gebaut. */
+  get textsatz(): TextsatzDienst {
+    return this.textsatzDienst ??= new TextsatzDienst(this.kern, this.rechtepruefung, {
+      organisation: () => this.organisation.geltende(), mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
+      ladeHoch: (id, e, inhalt, von) => this.ladeHoch(id, { ...e, herkunft: 'vorlage' }, inhalt, von),
+      darfAblegen: async (z, id) => { const m = await this.repo.holeMappe(id); return !!m && (await this.rechtepruefung.rechteAn(z, m)).U; },
+    });
+  }
   /** Mail an die Verwaltenden eines Bereichs (#995) – beim Start verbunden (ablago.ts), sonst keine. */
   private verwaltungsmail?: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>;
 

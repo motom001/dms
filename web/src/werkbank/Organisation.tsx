@@ -63,6 +63,7 @@ function verwendungText(v: Verwendung): string {
   if (v.art === 'anzeige') return t('werkbank.organisation.verwendung.anzeige', { typ: v.typ });
   if (v.art === 'auskunft') return t('werkbank.organisation.verwendung.auskunft');
   if (v.art === 'loeschkonzept') return t('werkbank.organisation.verwendung.loeschkonzept');
+  if (v.art === 'briefkopf') return t('werkbank.organisation.verwendung.briefkopf');
   return t('werkbank.organisation.verwendung.erkennung');
 }
 

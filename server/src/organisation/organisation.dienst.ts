@@ -97,7 +97,7 @@ export class OrganisationDienst {
       .sort((a, b) => a.name.localeCompare(b.name, 'de'));
     return {
       organisationen, geltend: geltendeOrganisation(organisationen, einstellung)?.mappeId ?? null, einstellung, typen,
-      verwendungen: [{ art: 'auskunft' }, { art: 'loeschkonzept' }, { art: 'erkennung' }, ...anzeige],
+      verwendungen: [{ art: 'auskunft' }, { art: 'loeschkonzept' }, { art: 'erkennung' }, { art: 'briefkopf' }, ...anzeige],
       bisher: liesDatenschutz(await this.einstellungen?.lies('datenschutz')).verantwortlicher, rollen, neu: neueNotizen(einstellung).length,
     };
   }

@@ -217,6 +217,13 @@ export const V1_TABELLE: V1[] = [
       { name: 'gleicherName', wo: 'query', typ: 'string', beschreibung: 'Gibt es im Register schon ein Dokument mit diesem Namen: zaehler (Standard, „Rechnung (2).pdf“), version (neue Version davon; nur mit Versionierung) oder ersetzen (das vorhandene endgültig löschen; nur ohne Versionierung)' }],
     body: 'binaer', antwort: 'Hochgeladen', status: 201,
   },
+  // Text setzen (#1040): Vorlagen einer Mappe und Brief als PDF – für Pakete (z. B. „Vorlage hinzufügen“ am Vertrag) und Skripte.
+  { methode: 'GET', pfad: '/mappen/{id}/vorlagen', gruppe: 'Dokumente', zusammenfassung: 'Text-Vorlagen für eine Mappe',
+    beschreibung: 'Text-Vorlagen (#1038, Markdown), die zu dieser Mappe passen: an ihr selbst und an Mappen, auf die sie verweist (z. B. die Vertragsart eines Vertrags) – nur lesbare. Vorlage ist, was ein Paket als Vorlage mitgebracht hat, oder ein Markdown-Dokument im Register „vorlagen“. Je Vorlage ihre Platzhalter mit fehlt = true, wenn der Wert fehlt oder der Schlüssel ihn nicht lesen darf (dann steht im Brief die Lücke „[Feld]“), dazu Briefkopf (absender) und Empfänger, soweit bekannt. Braucht Lesen an der Mappe (sonst 404); Pakete dazu das Recht „Dokumente lesen“.',
+    intern: { methode: 'GET', pfad: '/api/mappen/:id/vorlagen' }, parameter: [id('der Mappe')], antwort: 'VorlagenListe' },
+  { methode: 'POST', pfad: '/mappen/{id}/vorlagen/{dokument}/setzen', gruppe: 'Dokumente', zusammenfassung: 'Brief aus einer Vorlage setzen (PDF)',
+    beschreibung: 'Text setzen (#1040): Markdown der Vorlage plus Werte der Mappe → Brief als PDF (A4, Aufbau ähnlich DIN 5008, getaggt, Sprache der Vorlage). Briefkopf aus der Mappe im Feld an (Person oder Organisation), sonst aus der eigenen Organisation (nur Name, Anschrift, E-Mail, Telefon, #995); Anschrift aus der Mappe im Feld von; Betreff aus der ersten Überschrift (#). Platzhalter wie {vertragsnummer} oder {von.name} nur mit Werten, die der Schlüssel lesen darf, nie aus Passwortfeldern; Werte erscheinen als Text (kein Markdown). Die Vorlage wird vor dem Satz noch einmal geprüft (422 bei HTML, Bildern, fremden Links, Passwortfeldern). ziel = ablegen (Standard): PDF und ausgefüllter Text (.md) kommen als neue Dokumente ins Register register (sonst „dokumente“ bzw. das erste Dokumentenregister); braucht Bearbeiten an der Mappe, Pakete das Recht „Dokumente schreiben“. ziel = herunterladen: nur das PDF als Antwort; Herunterladen ist Mitnehmen (#723) und braucht Lesen und das Exportrecht E, Werte verwiesener Mappen ebenso. Grenzen: ausgefüllter Text 512 KB, PDF 4 MB und 30 Seiten (413), 30 Sekunden.',
+    intern: { methode: 'POST', pfad: '/api/mappen/:id/vorlagen/:dokument/setzen' }, parameter: [id('der Mappe'), { name: 'dokument', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Id der Vorlage (GET /mappen/{id}/vorlagen)' }], body: 'TextSetzen', antwort: 'TextGesetzt', status: 201 },
   {
     methode: 'POST', pfad: '/dokumente/{id}/ersetzen', gruppe: 'Dokumente', zusammenfassung: 'Neue Version eines Dokuments',
     beschreibung: 'Versionierung (#194): Rohe Bytes als Body; das Dokument behält seine Id, die bisherige Datei bleibt als ältere Version. Name und Dateityp dürfen sich ändern. 409, wenn die Versionierung des Registers aus ist.',
@@ -525,6 +532,24 @@ const SCHEMAS: Record<string, Schema> = {
     },
   },
   Versionen: { type: 'object', properties: { aktuell: ref('Dokument'), aeltere: { type: 'array', items: ref('DokumentVersion'), description: 'neueste zuerst' } } },
+  VorlagenListe: {
+    type: 'object', description: 'Text-Vorlagen einer Mappe (#1040)',
+    properties: {
+      vorlagen: { type: 'array', items: { type: 'object', properties: {
+        dokumentId: uuid, name: { type: 'string' }, quelle: { type: 'object', properties: { mappeId: uuid, titel: { type: 'string' } } },
+        paket: { type: 'object', nullable: true, properties: { id: { type: 'string' }, name: { type: 'string' } } },
+        platzhalter: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, beschriftung: { type: 'string' }, fehlt: { type: 'boolean' }, feld: { type: 'string', description: 'Feld der Mappe (erster Teil des Platzhalters)' } } } },
+        absender: { type: 'string', nullable: true, description: 'Name im Briefkopf' }, empfaenger: { type: 'string', nullable: true, description: 'Name in der Anschrift' },
+      } } },
+      register: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, name: { type: 'string' } } }, description: 'Dokumentenregister zum Ablegen' },
+      ablegen: { type: 'boolean', description: 'Recht Bearbeiten an der Mappe' }, herunterladen: { type: 'boolean', description: 'Lesen und Exportrecht E' },
+    },
+  },
+  TextSetzen: { type: 'object', properties: { ziel: { type: 'string', enum: ['ablegen', 'herunterladen'], description: 'Standard: ablegen' }, register: { type: 'string', description: 'Kennung eines Dokumentenregisters (nur ablegen)' } } },
+  TextGesetzt: {
+    type: 'object', description: 'Abgelegt (#1040); mit ziel = herunterladen kommt stattdessen das PDF (application/pdf)',
+    properties: { pdf: ref('Dokument'), text: ref('Dokument'), luecken: { type: 'array', items: { type: 'string' }, description: 'Platzhalter, die als Lücke im Brief stehen' } },
+  },
   HinweisEingabe: { type: 'object', required: ['text'], properties: { text: { type: 'string', maxLength: 300, description: 'Nur Text, ohne HTML, Markdown und Links' } } },
   PaketHinweis: {
     type: 'object', description: 'Hinweis eines Pakets an einer Mappe (#1034)',

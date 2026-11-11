@@ -241,6 +241,10 @@ See also: [Text recognition](#texterkennung), [Advanced search](#erweiterte-such
 <a id="historie"></a>**History** (*Historie*) · ✓ everyday word · everyone  
 The story of a folder – changes before and after, documents, bin, notes, tasks. The technical operating log, on the other hand, is called "log".
 
+<a id="brief-aus-vorlage"></a>**Letter from template** (*Brief aus Vorlage*) · ✓ everyday word · everyone  
+A template and the details of a folder become a letter as a PDF (Folder ▾ → Letter from template …) – with letterhead, address, date and subject, e.g. a cancellation for a contract. Only what the person may see is filled in, never passwords; if something is missing, the letter shows a visible gap such as [Contract number]. File as a document or download.  
+See also: [Template](#vorlage), [Own organisation](#eigene-organisation).
+
 <a id="link"></a>**Link (address)** (*Link*) · ✓ everyday word · everyone  
 An address of a view or folder, e.g. via "Copy link" – also readable via folder type and field values. In the German interface, "Link" only stands for addresses; fields that point to folders are called Verweis.
 
@@ -374,6 +378,10 @@ See also: [Package](#paket), [Sample folder](#beispiel-mappe), [Template](#vorla
 Who publishes a package, as a reversed domain, e.g. app.ablago for the official packages (#1084). It is shown next to the name, e.g. "Contracts · app.ablago". Ablago never replaces an installed package with one of the same ID from a different publisher.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).
 
+<a id="stichtag"></a>**Reference date** (*Stichtag*) · ~ with explanation · administrators  
+The date field from which the period runs in archive mode – until 31.12. of its year plus the years. If it is empty, the folder's creation date counts or, with "doesn't expire yet", the period only starts once it is filled in.  
+See also: [Archive mode](#archivmodus).
+
 <a id="region"></a>**Region** · ~ with explanation · administrators  
 Where the Library is at home – country, state and time zone (Workbench → Settings → Region). Public holidays, "today" for deadlines and all times of reminders, schedules and the Daily summary follow it.  
 See also: [Daily summary](#tagliche-zusammenfassung).
@@ -421,8 +429,8 @@ Whether a user is an administrator or a member. Only administrators get into the
 See also: [Role](#rolle), [Administrator](#administrator).
 
 <a id="vorlage"></a>**Template** (*Vorlage*) · ✓ everyday word · administrators  
-Plain text (Markdown) with placeholders such as {vertragsnummer}, e.g. a cancellation letter on a contract type. Packages bring templates with their presets; they are stored as a document in the folder's tab. No HTML, no images, links only https://.  
-See also: [Preset](#vorgabe), [Package](#paket).
+Plain text (Markdown) with placeholders such as {vertragsnummer}, e.g. a cancellation letter on a contract type. Packages bring templates with their presets; they are stored as a document in the folder's tab. No HTML, no images, links only https://. "Letter from template" (Folder ▾) turns it into a PDF letter with the folder's details.  
+See also: [Preset](#vorgabe), [Package](#paket), [Letter from template](#brief-aus-vorlage).
 
 <a id="testlauf"></a>**Test run** (*Testlauf*) · ~ with explanation · administrators  
 Checks which permissions a particular user ends up with.

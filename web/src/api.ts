@@ -1,3 +1,4 @@
+import type { TextGesetzt, VorlagenListe } from '../../shared/src/textsatz';
 import type { AutomatisierungAnsicht, AutomatisierungDaten, Fassung, Fehlschlag, Kontextdaten, Lauf } from '../../shared/src/automatisierung';
 import type { Design } from './design';
 import { messung } from './messung';
@@ -760,6 +761,10 @@ export const api = {
   stempelVorlageAnlegen: (v: Omit<StempelVorlage, 'id'>) => anfrage<StempelVorlage[]>('POST', '/api/werkbank/stempel/vorlagen', v),
   stempelVorlageAendern: (id: string, v: Omit<StempelVorlage, 'id'>) => anfrage<StempelVorlage[]>('PUT', `/api/werkbank/stempel/vorlagen/${encodeURIComponent(id)}`, v),
   stempelVorlageLoeschen: (id: string) => anfrage<StempelVorlage[]>('DELETE', `/api/werkbank/stempel/vorlagen/${encodeURIComponent(id)}`),
+  // Text setzen (#1040): Vorlagen einer Mappe, Brief ablegen oder herunterladen.
+  vorlagenFuer: (mappeId: string) => anfrage<VorlagenListe>('GET', `/api/mappen/${mappeId}/vorlagen`),
+  textSetzen: (mappeId: string, dokumentId: string, register: string) => anfrage<TextGesetzt>('POST', `/api/mappen/${mappeId}/vorlagen/${dokumentId}/setzen`, { ziel: 'ablegen', register }),
+  textHerunterladen: (mappeId: string, dokumentId: string, name: string) => speichereDatei(`/api/mappen/${mappeId}/vorlagen/${dokumentId}/setzen`, { ziel: 'herunterladen' }, name),
   herunterladenMitStempel: (id: string, stempel: StempelWunsch | null, name: string, version?: number, verkleinern?: KleinStufe | null, fassung?: 'archiv' | 'original') => speichereDatei(`/api/dokumente/${id}/herunterladen`, { stempel, version, verkleinern, fassung }, name),
   emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) =>
     anfrage<{ id: string; typId: string; mappen: number; anhaenge: number }>('POST', '/api/mappen/email', e),

@@ -10,6 +10,7 @@ import { liesPdfA, textebeneWoerter } from '../pdf/archiv';
 import { bereinigePdf } from '../pdf/anzeige';
 import { erzeugeDokument, type MappenInhalt } from '../pdf/demo-dokumente';
 import { textdokumentPdf } from '../pdf/schreiber';
+import { briefPdf } from '../pdf/brief';
 import { analysiere as analysiereSchwaerzen, arbeitsPdf, schwaerze, seitenbild as schwaerzSeitenbild } from '../pdf/schwaerzen';
 import { baueSeiten, bilderZuPdf, bildSeitePdf, fuegeZusammen, seitenInfo, teileSeiten } from '../pdf/seiten';
 import { bildAlsA4Pdf, stempelePdf } from '../pdf/stempel';
@@ -53,7 +54,7 @@ export const VORGAENGE = {
   stempelePdf, bildAlsA4Pdf,
   analysiereVerkleinern, verkleinerePdf,
   analysiereSchwaerzen, schwaerze, schwaerzSeitenbild, arbeitsPdf,
-  textdokumentPdf, mappenPdfZeichnen, aufkleberbogenPdf, notfallblattPdf,
+  textdokumentPdf, mappenPdfZeichnen, aufkleberbogenPdf, notfallblattPdf, briefPdf,
   liesPdfA, textebeneWoerter, bereinigePdf,
   demoDokument, exportTabellen, exportTabelleAusDatei,
 };

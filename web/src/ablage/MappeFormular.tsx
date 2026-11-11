@@ -31,6 +31,7 @@ import { mitNotizen, NOTIZEN_REGISTER, startRegister, type AnsichtsRegister } fr
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
+import { BriefAusVorlage } from './BriefAusVorlage';
 import { LoeschBaum } from './LoeschBaum';
 import { merkeAufloesung, PostLeiste } from './Post';
 import { linkZuMappe } from '../../../shared/src/direktlink';
@@ -175,12 +176,22 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
   const [aufgabeOffen, setAufgabeOffen] = useState(false);
   const [erinnernOffen, setErinnernOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
+  const [briefOffen, setBriefOffen] = useState(false);
   const [drucken, setDrucken] = useState(false);
   const [loeschBaum, setLoeschBaum] = useState(false);
   // Handy (#489): „Mappe löschen“ steht im Menü „Mappe ▾“ statt in der Speicherleiste; der Formular-Teil löscht.
   const [loeschWunsch, setLoeschWunsch] = useState(0);
   const loeschbarHier = darfLoeschen(typ, mappe);
   const druckEnde = useCallback(() => setDrucken(false), []);
+  // Brief aus Vorlage (#1040): nur, wo Vorlagen sein können – an Mappen mit Verweisen (z. B. auf die Vertragsart) oder
+  // einem Register „Vorlagen“. Ob es wirklich welche gibt, sagt erst der Dialog.
+  const vorlagenMoeglich = !typ.system && (typ.felder.some((f) => f.typ === 'referenz') || !!typ.register?.some((r) => r.key === 'vorlagen'));
+  // Fehlende Angabe im Dialog → zum Feld: Register wechseln, Feld zeigen und fokussieren.
+  const zumFeld = (key: string) => {
+    const r = registerVon(typ).find((x) => x.art === 'felder' && x.felder?.includes(key));
+    if (r) setRegisterWunsch((w) => ({ key: r.key, n: (w?.n ?? 0) + 1 }));
+    window.setTimeout(() => { const el = document.getElementById(`feld-${key}`); el?.scrollIntoView({ block: 'center' }); el?.focus(); }, 80);
+  };
   // Sprechender Link (#98) über ein eindeutiges Feld oder die Titelfelder.
   const direktlink = linkZuMappe(typ, mappe);
   const [kopiert, setKopiert] = useState<{ link: string; ok: boolean } | null>(null);
@@ -199,6 +210,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
           <div className="mappenkopf-knoepfe">
             <Stern mappeId={mappe.id} an={!!details.favorit} anker="mappe.stern" />
             <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
+              brief={vorlagenMoeglich ? () => setBriefOffen(true) : undefined}
               link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
               auskunft={details.auskunft ? () => geheZu(`/werkbank/auskuenfte/neu?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined}
               loeschwege={[
@@ -228,6 +240,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
       {erinnernOffen && <ErinnerungFormular mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setErinnernOffen(false)} />}
       {loeschBaum && <LoeschBaum key={mappe.id} mappeId={mappe.id} titel={mappe.titel ?? ''} sicht={sicht} schliessen={() => setLoeschBaum(false)} neuLaden={neuLaden} />}
       {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
+      {briefOffen && <BriefAusVorlage key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} zumFeld={zumFeld} schliessen={() => setBriefOffen(false)} />}
       {drucken && <Druckansicht typ={typ} details={details} fertig={druckEnde} />}
       {mappe.passt === false && (
         <div className="hinweis warn"><p>{t('ablage.mappeformular.diese-mappe-passt-nicht', { name: typ.name, wert: mappe.problem ? ` (${mappe.problem})` : '' })}</p></div>

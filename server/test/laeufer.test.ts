@@ -360,6 +360,14 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await pruefeZugang(r as Route, a, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
     assert.equal(a.benutzer?.art, 'dienst');
     await assert.rejects(r.handler(a), /darf das mit Dokumenten nicht/);
+    // Text setzen (#1040): Vorlagen lesen und Briefe ablegen sind Dokument-Routen – ohne Dokumentrecht 403.
+    for (const [m, pfad, stufe] of [['GET', '/api/v1/mappen/:id/vorlagen', 'lesen'], ['POST', '/api/v1/mappen/:id/vorlagen/:dokument/setzen', 'schreiben']] as const) {
+      const k = await schluessel.fuerDienstkonto(blind, stufe);
+      const rv = tabelle.find((x) => x.methode === m && x.pfad === pfad)!;
+      const av = { body: {}, params: { id: post.id, dokument: post.id }, query: {}, ip: '127.0.0.1' } as unknown as Anfrage;
+      await pruefeZugang(rv as Route, av, (n) => (n === 'authorization' ? `Bearer ${k}` : undefined), konten, schluessel);
+      await assert.rejects(rv.handler(av), /darf das mit Dokumenten nicht/, pfad);
+    }
     // Anmelden mit der Adresse des Dienstkontos geht nicht.
     await assert.rejects(konten.anmelden({ email: blind.email, passwort: 'x' }, '1.2.3.4'), /stimmen nicht/);
     // Verwaltung, Vertretung und Links kennen Dienstkonten nicht – auch nicht für einen Administrator.

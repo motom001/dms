@@ -35,6 +35,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `aufgaben/` | Aufgaben; seit #1078 die [Aufgaben](#aufgaben) |
 | `mappen/` | Mappen, Historie, Papierkorb |
 | `dokumente/` | Dokumente, Fassungen, Inhalte |
+| `textsatz/` | Text setzen (#1040): Vorlagen einer Mappe, Brief aus Vorlage als PDF (`pdf/brief.ts`, getaggt, im Arbeiter) |
 
 Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu – als Erstes `suche/suche.dienst.ts` ([Suche](#suche), #964). Jeder Fachordner mit `*.dienst.ts` hat eine `index.ts` als Tür und eine von Hand geschriebene `README.md` (20–40 Zeilen); das prüft die CI im Job **stil** (`.github/werkzeuge/fachordner-pruefen.mjs`). Welche Ordner was einbinden dürfen, regeln die [Schichten](#schichten). In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen – von außen über `pakete/index.ts` (neben `pakete.ts` als `./pakete/index` importiert).
 
@@ -885,7 +886,7 @@ Ablago baut **von sich aus keine Verbindung** ins Internet auf. Jeder Weg nach d
 | Paket-Netz | Administrator bestätigt bei der Installation | nur an die Adressen aus Manifest bzw. Dienst-Adresse | Paket-Läufer, Recht `netzwerk` |
 | Abruf-Links (Auskunft) | Administrator erzeugt den Link | die Auskunft, nur nach Abrufcode | `server/src/abruf.ts` |
 
-Herunterladen, E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über die Fassade `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar`.
+Herunterladen (auch ein Brief aus Vorlage, #1040), E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über die Fassade `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar`.
 
 **Regel für neue Wege:** Ein neuer Weg nach draußen braucht ein freigegebenes Issue, ist **ausgeschaltet**, bis ihn jemand ausdrücklich einschaltet, schickt so wenig wie möglich (Zahlen statt Inhalte, wo es reicht), steht in dieser Tabelle und in der Übersicht im Administratorhandbuch und wird von Sicherheit geprüft.
 

@@ -52,6 +52,7 @@ import { werkbankRouten, werkbankUebersichtRouten, werkbankEinstellungenRouten }
 import { exportRouten } from './ausgang/ausgang.routen';
 import { datenschutzRouten, abrufRouten } from './datenschutz/datenschutz.routen';
 import { organisationRouten } from './organisation/organisation.routen';
+import { textsatzRouten } from './textsatz/textsatz.routen';
 import { paketeRouten, paketeEinstellungenRouten } from './pakete/pakete.routen';
 import { sucheRouten } from './suche/suche.routen';
 import { wartungRouten } from './wartung/wartung.routen';
@@ -281,6 +282,7 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   notfallRouten,
   abrufRouten,
   organisationRouten,
+  textsatzRouten,
   typenArchivRouten,
   paketeRouten,
   sucheRouten,
@@ -320,7 +322,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const lesbar = (v: string) => !!x.tresor?.lesbar(v);
   // Dienstkonten (#338): Dokumente nur mit dem bestätigten Recht – lesen (GET) bzw. schreiben.
   // Dienstkonten von Paketen (#338): Dokumente nur mit dem Recht aus dem Manifest; E-Mail-Versand nie (Anhänge, Netz).
-  const dokumentRoute = (r: Route) => /\/dokumente\b|\/archivnummern\b|\/vektoren\b/.test(r.pfad);
+  // Vorlagen (#1040): Liste und „Text setzen“ lesen Vorlagen (Dokumente) und legen Dokumente ab – wie Dokumente.
+  const dokumentRoute = (r: Route) => /\/dokumente\b|\/archivnummern\b|\/vektoren\b|\/mappen\/[^/]+\/vorlagen\b/.test(r.pfad);
   const nieFuerPakete = (r: Route) => /\/email\b/.test(r.pfad);
   // Vektoren (#442) ändern das Dokument nicht: Lesen reicht, das Recht dms:vektoren prüft der Dienst.
   // Fassung und Vorschaubild (#577) ändern das Dokument auch nicht: Lesen reicht, dms:umwandeln prüft der Dienst.

@@ -35,6 +35,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `aufgaben/` | tasks; since #1078 the [tasks](#aufgaben) |
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
+| `textsatz/` | set text (#1040): templates of a folder, letter from template as PDF (`pdf/brief.ts`, tagged, in the worker) |
 
 The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves – first `suche/suche.dienst.ts` ([search](#suche), #964). Every subject folder with a `*.dienst.ts` has an `index.ts` as its door and a hand-written `README.md` (20–40 lines); CI checks this in the **stil** job (`.github/werkzeuge/fachordner-pruefen.mjs`). Which folders may import what is set by the [layers](#schichten). `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings – from outside via `pakete/index.ts` (imported as `./pakete/index` next to `pakete.ts`).
 
@@ -885,7 +886,7 @@ Ablago **never opens a connection** to the internet on its own. Every route to t
 | Package network | Administrator confirms on installation | only to the addresses from the manifest or service address | package runner, right `netzwerk` |
 | Retrieval links (data protection request) | Administrator creates the link | the request, only after the retrieval code | `server/src/abruf.ts` |
 
-Download, email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through the facade `dienst.pruefeAusgang` or `dienst.mitnehmbar`.
+Download (also a letter from template, #1040), email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through the facade `dienst.pruefeAusgang` or `dienst.mitnehmbar`.
 
 **Rule for new routes:** a new route to the outside needs an approved issue, is **switched off** until someone explicitly switches it on, sends as little as possible (numbers instead of content where that's enough), is listed in this table and in the overview in the administrator handbook, and is reviewed by security.
 

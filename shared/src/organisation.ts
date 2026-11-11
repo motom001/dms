@@ -221,7 +221,7 @@ export function geltendeOrganisation<T extends { mappeId: string }>(liste: T[], 
 }
 
 /** Wofür Ablago die Angaben nutzt (Werkbank zeigt das, Ergänzung Sicherheit). */
-export type Verwendung = { art: 'auskunft' | 'loeschkonzept' | 'erkennung' } | { art: 'anzeige'; typId: string; typ: string };
+export type Verwendung = { art: 'auskunft' | 'loeschkonzept' | 'erkennung' | 'briefkopf' } | { art: 'anzeige'; typId: string; typ: string };
 
 /** Stand für die Werkbank (GET /api/werkbank/organisation). */
 export interface OrganisationStand {

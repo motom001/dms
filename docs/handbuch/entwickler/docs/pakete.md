@@ -182,7 +182,7 @@ Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schem
     - **`typ`:** ein eigener Mappentyp oder `paket:schluessel` eines Pakets **unter `abhaengigkeiten`** (Fahrzeuge → Vertragsart „Pkw-Kaufvertrag“ in Verträge); nie `dms:`. Die Vorgabe bekommt die Rechte des Zieltyps wie jede Mappe.
     - **`werte`:** wie bei Beispielen (Beträge als Zahl, Zeiträume als `{ anzahl, einheit }`); keine Passwortfelder, keine Verweise auf Beispiele. Verweise auf Vorgaben gehen mit `{ vorgabe: miete }` bzw. `{ vorgabe: "vertraege:miete" }` – auch in `beispiele.yaml` (dort statt einer festen Id).
     - **`beschriftungen`:** Sprache → Feld → Text. Ablago legt die Vorgabe in der **Sprache der Installation** an (Felder ohne Übersetzung bleiben Deutsch); Werte sind Daten, sie wechseln nicht mit der Sprache der Person.
-    - **`vorlagen`:** Text-Vorlagen unter `inhalt/vorlagen/` (Kleinbuchstaben, Ziffern, `-`, `_`, höchstens zwei Ordner, Endung `.md`), je Eintrag `datei` (Pflicht), `titel` (Name des Dokuments) und `register` (Dokumentenregister; ohne: `vorlagen`, sonst das erste). Höchstens 20 je Vorgabe. Platzhalter wie bei Automatisierungen (`{vertragsnummer}`, `{von.name}`); ausgefüllt werden sie später mit „Text setzen“ (dms #1040).
+    - **`vorlagen`:** Text-Vorlagen unter `inhalt/vorlagen/` (Kleinbuchstaben, Ziffern, `-`, `_`, höchstens zwei Ordner, Endung `.md`), je Eintrag `datei` (Pflicht), `titel` (Name des Dokuments) und `register` (Dokumentenregister; ohne: `vorlagen`, sonst das erste). Höchstens 20 je Vorgabe. Platzhalter wie bei Automatisierungen (`{vertragsnummer}`, `{von.name}`); ausgefüllt werden sie mit „Text setzen“ (dms #1040, siehe [Text-Vorlagen schreiben](#text-vorlagen-schreiben)).
     - **Was eine Vorlage sein darf** (`server/src/pakete/vorlagen.ts`, dieselben Regeln in `pruefen.py`): UTF-8-Text ohne Steuerzeichen, höchstens `VORLAGE_MAX` (256 KB, `server/src/grenzen.ts`); **kein HTML** – auch keine Kommentare `<!-- -->` –, **keine Bilder** (`![…]`), Links nur `https://` (in `[Text](…)`, `[x]: …` und `<https://…>`; `http:`, `mailto:`, `javascript:`, `data:` stehen nirgends im Text); kein Platzhalter nennt ein **Passwortfeld**. Ablago prüft das beim Lesen und beim Installieren noch einmal (dann gegen die Passwortfelder aller Mappentypen).
     - **`ergaenzt: paket:kennung`:** An die Vorgabe eines Pakets unter `abhaengigkeiten` darf ein Paket **nur Vorlagen anhängen** – jede andere Angabe (`werte`, `beschriftungen`, Rechte …) lehnt Ablago ab. Gibt es die Vorgabe nicht (gelöscht), kommen die Vorlagen nicht; die Vorschau sagt es.
     - **Installieren:** ohne Ereignisse (Frage 71), Ersteller ist das Dienstkonto des Pakets (Historie: „Paket …“). Die Vorschau (`vorgaben`, `ergaenzungen`) zeigt je Vorgabe den Zustand; Vorgaben in fremden Typen und Ergänzungen stehen zusätzlich im Kasten „Ergänzt Mappen anderer Pakete“.
@@ -277,6 +277,37 @@ code:
 `werkzeuge/pruefen.py` prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit **Paket hochladen**.
 
 Was das Paket mit den Einstellungen macht und welche Rechte es braucht, beschreibt [Pakete mit Code](pakete-code.md).
+
+## Text-Vorlagen schreiben { #text-vorlagen-schreiben }
+
+Aus einer Text-Vorlage macht Ablago mit **Text setzen** (dms #1040) einen Brief als PDF – in der Oberfläche über **Mappe ▾ → Brief aus Vorlage …**, für Pakete und Skripte über die API. Wie Vorlagen ins Paket kommen, steht oben unter *Vorgaben* (`vorlagen` an einer Vorgabe bzw. Ergänzung); was eine Vorlage sein darf, ebenda.
+
+```markdown
+# Kündigung Vertrag {vertragsnummer}
+
+Sehr geehrte Damen und Herren,
+
+hiermit kündige ich den Vertrag **{bezeichnung}** zum nächstmöglichen Termin, das ist der {kuendigen_bis}.
+Kundennummer: {von.kundennummer}
+
+Bitte bestätigen Sie mir die Kündigung schriftlich.
+
+Mit freundlichen Grüßen
+
+
+
+Muster ohne Gewähr, keine Rechtsberatung – im Zweifel fachlich prüfen lassen.
+```
+
+- **Aufbau des Briefs:** Briefkopf, Anschrift, Ort und Datum setzt Ablago – die Vorlage enthält nur Betreff und Text. Die **erste Überschrift** (`# …`) wird zum **Betreff** (fett, und der Titel des PDFs); ohne sie heißt das PDF wie die Vorlage. Der **Briefkopf** kommt von der Mappe im Verweisfeld `an` (Kunde; Person oder Organisation), sonst von der eigenen Organisation (#995, nur Name, Anschrift, Telefon, E-Mail); die **Anschrift** von der Mappe im Verweisfeld `von` (Gegenseite). Nimm darum die [gleichen Kennungen](#paketarten) `von` und `an`.
+- **Markdown:** Überschriften (`#`, `##`, `###`), Absätze, Listen (`-`, `1.`), Zitate (`>`), **fett**, *kursiv*, `Code`. Ein einfacher Zeilenumbruch bleibt ein Zeilenumbruch (Grußformel, Anschrift im Text); **zwei und mehr Leerzeilen** lassen Platz, z. B. für die Unterschrift. Links erscheinen als Text mit der Adresse in Klammern – im PDF ist nichts anklickbar.
+- **Platzhalter** wie bei Automatisierungen: `{feld}` für ein Feld der Mappe, `{verweis.feld}` für ein Feld der Mappe dahinter (bis drei Stufen, z. B. `{von.kundennummer}`), dazu `{heute}`, `{titel}` und `{mappentyp}`. Werte stehen im Format ihrer Feldart in der **Sprache der Vorlage** (Datum `31.12.2026`, Betrag `650,00 €`, Zeitraum `3 Monate`, Auswahl mit ihrer Beschriftung); Verweise als Titel der Mappe. **Freie Formate oder Ausdrücke gibt es nicht** (etwa `{datum:TT.MM.JJJJ}`) – nur die feste Liste der Feldarten.
+- **Werte sind Text:** Ablago zerlegt erst die Vorlage und setzt dann die Werte ein – in einem Durchgang. Ein Feldwert wie `**fett**`, `[Link](…)` oder `{anderes_feld}` erscheint so, wie er ist. Im ausgefüllten Text (`.md` neben dem PDF) sind solche Zeichen mit `\` maskiert.
+- **Lücken:** Fehlt ein Wert, darf die Person ihn nicht lesen (Mappe oder verwiesene Mappe; beim Herunterladen zusätzlich ohne Exportrecht E) oder nennt der Platzhalter ein Feld, das es nicht gibt, steht **[Beschriftung]** im Brief, z. B. „[Vertragsnummer]“. Passwortfelder sind als Platzhalter verboten – beim Installieren und vor jedem Satz geprüft.
+- **Sprache:** die des Volltexts der Vorlage, wenn Ablago sie kennt, sonst die der Installation – nie die der Oberfläche. Sie steht als `/Lang` im PDF.
+- **Grenzen** (`server/src/grenzen.ts`): ausgefüllter Text höchstens 512 KB (`TEXTSATZ_TEXT_MAX`), PDF höchstens 30 Seiten und 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), Satz höchstens 30 Sekunden im Arbeiter (`TEXTSATZ_ZEIT_MS`). Darüber: 413.
+
+**Für Pakete (API):** `GET /api/v1/mappen/{id}/vorlagen` nennt die Vorlagen einer Mappe (an ihr selbst und an Mappen, auf die sie verweist) mit dem Stand ihrer Platzhalter; `POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen` mit `{ "ziel": "ablegen", "register": "dokumente" }` legt PDF und ausgefüllten Text als neue Dokumente ab (Antwort: beide Dokumente und die Lücken), mit `{ "ziel": "herunterladen" }` kommt das PDF als Antwort. Das Dienstkonto braucht Lesen an der Mappe, für die Liste `dokumente: lesen`, zum Setzen `dokumente: schreiben` und Bearbeiten an der Mappe. Das PDF nennt in den Metadaten (Betreff) Paket und Vorlage. Mindestversion: `dms: ">=0.242.0"` (`DMS_TEXTSATZ_AB` in `shared/src/textsatz.ts`).
 
 ## Sprachpakete { #sprachpakete }
 
