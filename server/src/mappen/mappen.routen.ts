@@ -71,7 +71,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerBenutzer(a.params.id, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', handler: async (a) => {
       const z = await zg(a);
-      await dienst.pruefeRecht(z, a.params.id, 'R');
+      await dienst.rechtepruefung.pruefeRecht(z, a.params.id, 'R');
       await dienst.erkennung.fuerPost(a.params.id);
       return ok(await dienst.erkennung.fuerBenutzer(a.params.id, z));
     } },
@@ -81,8 +81,8 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/uebersetzung', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.uebersetzung.uebersetze(liesQuelle(b(a).quelle), { teil: b(a).teil, nach: (await spracheFuer(a)).sprache, ich: ich(a), z: await zg(a) })) },
     { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },
     { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },
-    { methode: 'PUT', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.mappeVon('notiz', a.params.id), 'R'); return ok(await dienst.aendereNotiz(a.params.id, b(a).text, ich(a).id)); } },
-    { methode: 'DELETE', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.mappeVon('notiz', a.params.id), 'R'); await dienst.loescheNotiz(a.params.id, ich(a).id); return leer; } },
+    { methode: 'PUT', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.rechtepruefung.mappeVon('notiz', a.params.id), 'R'); return ok(await dienst.aendereNotiz(a.params.id, b(a).text, ich(a).id)); } },
+    { methode: 'DELETE', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.rechtepruefung.mappeVon('notiz', a.params.id), 'R'); await dienst.loescheNotiz(a.params.id, ich(a).id); return leer; } },
     // Änderungshistorie (#57)
     { methode: 'GET', pfad: '/api/mappen/:id/verweisende', zugang: 'angemeldet', handler: async (a) => ok(await dienst.verweisende(a.params.id, String(a.query.typ ?? ''), String(a.query.feld ?? ''), await zg(a))) },
     { methode: 'GET', pfad: '/api/mappen/:id/historie', zugang: 'angemeldet', handler: async (a) => {
@@ -151,7 +151,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => {
       const r = await dienst.stelleWiederHer(a.params.id, ich(a), false, quelle(a));
       // Eigener Papierkorb (#126): immer wiederherstellbar; danach gelten wieder die Regeln.
-      const sichtbar = (await dienst.lesbare(await zg(a), [a.params.id])).has(a.params.id);
+      const sichtbar = (await dienst.rechtepruefung.lesbare(await zg(a), [a.params.id])).has(a.params.id);
       return ok(sichtbar ? r : { ...r, hinweis: t('meldungen.routen.wiederhergestellt-diese-mappe-kannst') });
     } },
     { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },

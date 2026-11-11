@@ -196,7 +196,7 @@ export class Umwandlung {
       .sort((a, b) => a.titel.localeCompare(b.titel, 'de'));
     const bekannt = (n: string) => kandidaten.some((k) => k.namen.includes(namensSchluessel(n)));
     const mitText = (await this.d.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]));
-    const rechte = await this.d.rechteAnVielen(z, mitText);
+    const rechte = await this.d.rechtepruefung.rechteAnVielen(z, mitText);
     const ausgelassen: UmwandlungsVorschau['ausgelassen'] = [];
     const mappen: Array<{ mappe: Mappe; text: string; namen: string[] }> = [];
     const zeilen = new Map<string, VorschauZeile>();

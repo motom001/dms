@@ -18,7 +18,7 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       const z = await zg(a);
       if (!a.query.sicht) {
         const alle = await dienst.listeMappen(a.query.typ);
-        const sichtbar = await dienst.lesbare(z, alle.map((m) => m.id));
+        const sichtbar = await dienst.rechtepruefung.lesbare(z, alle.map((m) => m.id));
         const liste = alle.filter((m) => sichtbar.has(m.id));
         return ok(klartext ? await entschluessele(a, liste, klartext) : liste);
       }

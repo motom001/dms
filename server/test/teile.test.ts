@@ -67,7 +67,7 @@ async function aufbau(repo: Repo = speicherRepo(), kontoRepo = speicherKontoRepo
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id) });
   const { rechnung, position } = await rechnungen(d);
   const suche = async (b: { id: string }, query: Record<string, string>) => (await rufe(b, 'GET', '/api/mappen', { query })).body as Seite;
-  const zg = async (b: { id: string }) => d.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
+  const zg = async (b: { id: string }) => d.rechtepruefung.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
   return { d, admin, lena, rechnung, position, rufe, suche, zg, ich };
 }
 

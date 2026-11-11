@@ -88,7 +88,7 @@ describe('Mappentyp: Kann aus Post angelegt werden, Woran man ihn erkennt (#937)
     const aus = await d.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'nr', label: 'Kennzeichen', typ: 'text' }], register: [FELDREG, DOK], ausPost: false });
     const nurLesen = await d.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG, DOK] });
     await d.setzeBerechtigungen(nurLesen.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);
-    const namen = async (b: { id: string; rolle: string }) => (await d.ausPostZiele(await d.zugriff(b))).map((t) => t.name);
+    const namen = async (b: { id: string; rolle: string }) => (await d.ausPostZiele(await d.rechtepruefung.zugriff(b))).map((t) => t.name);
     assert.deepEqual(await namen({ id: lena.id, rolle: 'admin' }), ['Rechnung', 'Versicherung']);
     assert.deepEqual(await namen({ id: jonas.id, rolle: 'mitglied' }), ['Rechnung'], 'ohne Recht C nicht wählbar');
     assert.ok(!(await d.ausPostZiele()).some((t) => t.system || t.id === aus.id), 'Systemtypen und Typen ohne Haken nie');
@@ -207,11 +207,11 @@ describe('Feld: Aus Dokument füllen und Zum Wiederfinden nutzen (#938)', () => 
     const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
     // Jonas darf Verträge nicht lesen.
     await d.setzeBerechtigungen(vertrag.id, { grund: { C: false, R: false, U: false, D: false, P: false }, regeln: [] }, true);
-    const fuerLena = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.zugriff({ id: lena.id, rolle: 'admin' }));
+    const fuerLena = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }));
     assert.equal(fuerLena.verweise.vertrag[0].mappeId, strom.id);
     assert.equal(fuerLena.verweise.vertrag[0].belege.length, 3);
     assert.equal(fuerLena.bezuege[strom.id].titel, 'Strom');
-    const fuerJonas = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.zugriff({ id: jonas.id, rolle: 'mitglied' }));
+    const fuerJonas = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.rechtepruefung.zugriff({ id: jonas.id, rolle: 'mitglied' }));
     assert.equal(fuerJonas.verweise.vertrag, undefined, 'Verträge, die Jonas nicht lesen darf, kommen nicht vor');
     assert.ok(!fuerJonas.treffer.some((x) => x.mappeId === strom.id));
     assert.ok(fuerJonas.treffer.some((x) => x.mappeId === sw.id));

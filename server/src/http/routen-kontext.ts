@@ -208,21 +208,21 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     return dienst.vermerkeVerwaltungsmodus({ ...a.benutzer, rolle: 'mitglied' }, ids, was);
   };
   /** Berechtigungen (#124): Zugriff des Benutzers, einmal je Anfrage. */
-  const zg = (a: Anfrage) => dienst.zugriff(ich(a));
+  const zg = (a: Anfrage) => dienst.rechtepruefung.zugriff(ich(a));
   /** #137: Empfänger von Aufgaben nur unter den Benutzern, die man sieht. */
   const empfaengerSichtbar = async (a: Anfrage, id: unknown) => {
     if (typeof id !== 'string' || !id) return;
-    if (!(await dienst.lesbare(await zg(a), [id])).has(id)) throw new Fachfehler(422, t('meldungen.routen.diesen-benutzer-gibt-es'));
+    if (!(await dienst.rechtepruefung.lesbare(await zg(a), [id])).has(id)) throw new Fachfehler(422, t('meldungen.routen.diesen-benutzer-gibt-es'));
   };
   /** #127: Darf der Empfänger die Mappe lesen? Sonst ein Hinweis in der Antwort. */
   const leseHinweis = async (empfaengerId: string | null, mappeId: string) =>
-    (empfaengerId && !(await dienst.kannLesen(empfaengerId, mappeId)) ? { hinweis: t('meldungen.routen.gespeichert-der-empfaenger-darf') } : {});
-  const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.pruefeRecht(await zg(a), mappeId, recht);
+    (empfaengerId && !(await dienst.rechtepruefung.kannLesen(empfaengerId, mappeId)) ? { hinweis: t('meldungen.routen.gespeichert-der-empfaenger-darf') } : {});
+  const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.rechtepruefung.pruefeRecht(await zg(a), mappeId, recht);
   /** „Zuletzt geöffnet“ (#334, #940): nur lesbare Mappen außerhalb des Papierkorbs, neueste oben, je mit Zeitpunkt. */
   const zuletztGeoeffnet = async (a: Anfrage, anzahl: number) => {
     const liste = zuletztListe((await konten.einstellungen(ich(a))).zuletzt_geoeffnet);
     const ids = liste.map((x) => x.id);
-    const lesbar = await dienst.lesbare(await zg(a), ids);
+    const lesbar = await dienst.rechtepruefung.lesbare(await zg(a), ids);
     const bezuege = await dienst.bezuegeVon(ids.filter((id) => lesbar.has(id)));
     // Teile (#1031) nicht: Sie erscheinen nur an ihrer übergeordneten Mappe.
     const teile = teiltypen((await zg(a)).typen.values());
@@ -230,7 +230,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   };
   /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
   const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {
-    const { mit } = await dienst.mitPasswortRecht(await zg(a), mappen);
+    const { mit } = await dienst.rechtepruefung.mitPasswortRecht(await zg(a), mappen);
     const klar = new Map((await dienst.entschluesselePasswoerter(mit, klartext, ich(a).id)).map((m) => [m.id, m]));
     return mappen.map((m) => klar.get(m.id) ?? m);
   };

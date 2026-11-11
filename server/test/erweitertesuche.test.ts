@@ -160,7 +160,7 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     const a = { id: admin.id, rolle: 'admin' };
     assert.deepEqual(await treffer(d, link, a, { }), ['Geheim', 'Strom']);
     const m = { id: max.id, rolle: 'mitglied' };
-    const z = await d.zugriff(m);
+    const z = await d.rechtepruefung.zugriff(m);
     assert.deepEqual((await d.seite(m, { sicht: 'suche', link, anzahl: 500 }, z)).mappen.map((x) => x.titel), ['Strom']);
     assert.deepEqual((await d.trefferIds(m, { sicht: 'suche', link }, z)).ids, [strom.id], 'Auswahl „alle Treffer“');
   });

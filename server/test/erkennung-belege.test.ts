@@ -281,7 +281,7 @@ async function aufbau() {
   const kunde = await d.legeMappeAn({ typId: org.id, werte: { name: 'Autohaus Özdemir', kundennummer: 'KD-5544' } }, lena.id);
   const lenaP = await d.legeMappeAn({ typId: person.id, werte: { vorname: 'Lena', nachname: 'Muster', email: 'lena@example.org' } }, lena.id);
   const A = { id: lena.id, rolle: 'admin' };
-  const z = async (): Promise<Zugriff> => d.zugriff(A);
+  const z = async (): Promise<Zugriff> => d.rechtepruefung.zugriff(A);
   const tabelle = routen(d, konten, {});
   const rufe = async (m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === lena.id)!) });
@@ -432,7 +432,7 @@ Gesamtbetrag 1.190,00 €`;
   it('ohne Recht zum Anlegen der Positionen: keine Positionen', async () => {
     const x = await aufbau();
     await x.d.setzeBerechtigungen(x.position.id, { grund: { C: false, R: true, U: true, D: true, P: true }, regeln: [] }, true);
-    const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x' }, await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' }), { erechnung: liesERechnung(CII()).er });
+    const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x' }, await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' }), { erechnung: liesERechnung(CII()).er });
     assert.equal(r.positionen, undefined);
     assert.equal(r.vorschlaege.rechnungsnummer.wert, 'R-2026-0815');
   });

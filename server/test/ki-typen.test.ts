@@ -58,8 +58,8 @@ async function aufbau(repo: Repo = speicherRepo()) {
   const stromrechnung = await dok(strom.id, 'strom.pdf', 'Ihre Versicherung und Ihr Stromvertrag: Abschlag 80 Euro im Monat.');
   await d.kern.repo.speicherePaket(paket('wolke', code(WOLKE)));
   await d.kern.repo.speicherePaket(paket('imhaus', code(IM_HAUS)));
-  const L = await d.zugriff({ id: lena.id, rolle: 'admin' });
-  const alsPaket = (id: string) => d.zugriff({ id: `konto-${id}`, rolle: 'mitglied', art: 'dienst', paketId: id });
+  const L = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
+  const alsPaket = (id: string) => d.rechtepruefung.zugriff({ id: `konto-${id}`, rolle: 'mitglied', art: 'dienst', paketId: id });
   return { d, repo, konten, lena, gesundheit, vertrag, befund, strom, kniebrief, stromrechnung, L, alsPaket };
 }
 
@@ -94,14 +94,14 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     const x = await aufbau();
     const wolke = await x.alsPaket('wolke');
     assert.equal(wolke.typen.size, 0, 'nichts zugelassen');
-    await assert.rejects(x.d.pruefeRecht(wolke, x.befund.id, 'R'), (e: Fachfehler) => e.status === 404);
+    await assert.rejects(x.d.rechtepruefung.pruefeRecht(wolke, x.befund.id, 'R'), (e: Fachfehler) => e.status === 404);
     const imHaus = await x.alsPaket('imhaus');
     assert.ok(imHaus.typen.has(x.gesundheit.id) && imHaus.typen.has(x.vertrag.id), 'ohne Netz wie bisher');
     await x.d.setzeKiTyp(x.vertrag.id, true, 'lena@example.org');
     const danach = await x.alsPaket('wolke');
     assert.ok(danach.typen.has(x.vertrag.id) && !danach.typen.has(x.gesundheit.id));
-    await x.d.pruefeRecht(danach, x.strom.id, 'R');
-    await assert.rejects(x.d.pruefeRecht(danach, x.befund.id, 'R'), (e: Fachfehler) => e.status === 404);
+    await x.d.rechtepruefung.pruefeRecht(danach, x.strom.id, 'R');
+    await assert.rejects(x.d.rechtepruefung.pruefeRecht(danach, x.befund.id, 'R'), (e: Fachfehler) => e.status === 404);
     // Übersicht für die Werkbank: Typen mit „zugelassen“, KI-Pakete mit dem, was sie bekommen.
     const k = await x.d.kiUebersicht();
     assert.deepEqual(k.pakete.map((p) => [p.id, p.bekommt]), [['wolke', [x.vertrag.id]]], 'nur das KI-Paket');

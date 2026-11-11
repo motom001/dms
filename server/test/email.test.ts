@@ -77,7 +77,7 @@ describe('Mehrere Mappen per E-Mail (#151)', () => {
   it('eine E-Mail mit Angaben als PDF und Dokumenten; Post verweist auf alle, Historie in jeder', async () => {
     const { d, t, m, dokument, mails, mailer } = await aufbau();
     const m2 = await d.legeMappeAn({ typId: t.id, werte: { nr: 'R-2' } }, null);
-    const z = await d.zugriff({ id: ich.id, rolle: 'admin' });
+    const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     const wer = { ...ich, rolle: 'admin' };
     const r = await d.versendeMappen({ ids: [m.id, m2.id], an: 'steuer@example.org', betreff: 'Belege 2026', dokumente: 'alle' }, wer, z, mailer);
     assert.equal(mails.length, 1);

@@ -24,7 +24,7 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/mappen/:id/leserecht/:benutzer', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, a.params.id, 'R');
       await empfaengerSichtbar(a, a.params.benutzer);
-      return ok({ lesen: await dienst.kannLesen(a.params.benutzer, a.params.id) });
+      return ok({ lesen: await dienst.rechtepruefung.kannLesen(a.params.benutzer, a.params.id) });
     } },
     { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
     // Automatisch zugeordnet (#337): Rückgängig direkt aus der Aufgabe.

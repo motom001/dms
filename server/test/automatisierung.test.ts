@@ -182,7 +182,7 @@ describe('Automatisierungen (#674): Ausführen', () => {
     const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: '2031-09-30' } }, admin.id);
     const a = await motor.lege({ name: 'P', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [stopp] }, admin.id);
     const z = await d.systemZugriff('automatisierung');
-    const mappe = await d.pruefeRecht(z, m.id, 'R');
+    const mappe = await d.rechtepruefung.pruefeRecht(z, m.id, 'R');
     const text = await motor.fuelle('{name} kündbar bis {kuendbar_bis} ({mappentyp}, {automatisierung}) {unbekannt}', { a, mappe, typ: vertrag, z, daten: {} });
     assert.equal(text, 'Strom kündbar bis 30.09.2031 (Vertrag, P) {unbekannt}');
     const fremd = await d.legeTypAn({ name: 'Zettel', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });

@@ -51,7 +51,7 @@ async function aufbau() {
     { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id, erkennung: {} },
     { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
   ], register });
-  const A = await d.zugriff({ id: lena.id, rolle: 'admin' });
+  const A = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
   const eingaenge: Array<Record<string, unknown>> = [];
   let antwort: () => Promise<string> = async () => JSON.stringify({
     vorname: { wert: 'Jonas', sicherheit: 'hoch', fundstelle: 'Jonas Beispiel' },
@@ -150,7 +150,7 @@ describe('Aus Dokument ausfüllen per Paket (#511)', () => {
     ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }] });
     await x.d.erkennung.setzeStandard({ paket: 'ki' });
     x.setzeAntwort(async () => JSON.stringify({ betrag: { wert: { betrag: 49.9, waehrung: 'EUR' }, hinweis: 'vom Paket' }, skonto: { wert: { betrag: 1, waehrung: 'EUR' } } }));
-    const r = await x.d.erkennung.fuerTyp(beleg.id, { text: 'Versandhaus Beispiel\nGutschrift Nr. 12\nGesamtbetrag 49,90 €' }, await x.d.zugriff({ id: (await x.konten.listeBenutzer())[0].id, rolle: 'admin' }));
+    const r = await x.d.erkennung.fuerTyp(beleg.id, { text: 'Versandhaus Beispiel\nGutschrift Nr. 12\nGesamtbetrag 49,90 €' }, await x.d.rechtepruefung.zugriff({ id: (await x.konten.listeBenutzer())[0].id, rolle: 'admin' }));
     assert.equal(r.engine.art, 'paket');
     assert.deepEqual(r.vorschlaege.betrag.wert, { betrag: -49.9, waehrung: 'EUR' });
     assert.match(r.vorschlaege.betrag.hinweis!, /Gutschrift/);

@@ -267,7 +267,7 @@ describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFa
     dienst.verbindeKonten(konten.papierkorbHaken());
     w = new Webhooks({
       repo: speicherWebhookRepo(), einstellungen: speicherEinstellungen(), verschluessele, entschluessele,
-      zahlen: async (b) => { const r = await dienst.zaehlerAbruf(await dienst.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
+      zahlen: async (b) => { const r = await dienst.zaehlerAbruf(await dienst.rechtepruefung.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
       benutzer: (id) => konten.benutzerMitId(id), zeiten: { abstandS: 0.5, anstossS: 0.1 },
     });
     dienst.beiAenderung(() => w.anstossen());
@@ -305,7 +305,7 @@ describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFa
     assert.equal(daten.neuePost, 1);
     for (const wort of ['Stadtwerke', 'Absender', 'Lena', 'Markus', 'Brief']) assert.ok(!x.rumpf.includes(wort), wort);
     // Stand wie beim Zähler-Endpunkt.
-    const z = await dienst.zaehlerAbruf(await dienst.zugriff({ id: lenaId, rolle: 'mitglied' }));
+    const z = await dienst.zaehlerAbruf(await dienst.rechtepruefung.zugriff({ id: lenaId, rolle: 'mitglied' }));
     assert.equal(daten.stand, z.stand);
     const liste = JSON.parse((await rufe(cookieLena, 'GET', '/api/konto/webhooks')).body);
     assert.equal(liste.webhooks.length, 1);

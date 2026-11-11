@@ -392,7 +392,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.ok('kern' in s);
       assert.equal(s.kern, 'dms:vorlage');
       assert.equal(t.aufrufe.length, 0, 'ohne Code des Pakets');
-      const h = { ich: { id: t.lena.id, rolle: 'mitglied', name: 'Lena' }, z: await t.d.zugriff({ id: t.lena.id, rolle: 'mitglied' }) };
+      const h = { ich: { id: t.lena.id, rolle: 'mitglied', name: 'Lena' }, z: await t.d.rechtepruefung.zugriff({ id: t.lena.id, rolle: 'mitglied' }) };
       await assert.rejects(t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, null, false), fehler(404));
       await assert.rejects(t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', true), fehler(403));
       await t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', false);

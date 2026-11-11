@@ -343,7 +343,7 @@ export class Webdav {
       logKonto.info('WebDAV: Anmeldung abgelehnt', { email: kurz, ip: a.ip, grund: 'Schlüssel nur Zähler' });
       return { status: true, wer: kurz, antwort: text(403, t('api.schluessel.nur-zaehler-laufwerk')) };
     }
-    return { b, s, z: await this.d.dienst.zugriff(b), e: await this.einstellung(), mappen: new Map(), stempel: new Map(), raus: new Map() };
+    return { b, s, z: await this.d.dienst.rechtepruefung.zugriff(b), e: await this.einstellung(), mappen: new Map(), stempel: new Map(), raus: new Map() };
   }
 
   private async verarbeite(methode: string, teile: string[], a: WebdavAnfrage, ctx: Ctx): Promise<WebdavAntwort> {
@@ -688,7 +688,7 @@ export class Webdav {
     // Nur Bytes zählen, nichts puffern – und das vor jeder Prüfung des Ziels (geht auch mit Lese-Schlüssel).
     if (teile.length && istHilfsdatei(teile[teile.length - 1])) { await leere(a.koerper, MAX_DATEIGROESSE); return { status: 201, koepfe: { 'content-length': '0' } }; }
     const z = await this.ablageZiel(teile, ctx);
-    if (z.eltern.art === 'register') await this.d.dienst.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
+    if (z.eltern.art === 'register') await this.d.dienst.rechtepruefung.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
     // Jeder Upload belegt bis zu 100 MB (temporäre Datei, #746): nur wenige gleichzeitig je Benutzer.
     const laufend = this.uploads.get(ctx.b.id) ?? 0;
     if (laufend >= MAX_UPLOADS) {
@@ -752,7 +752,7 @@ export class Webdav {
     const token = vorhanden ?? `opaquelocktoken:${randomUUID()}`;
     let status = 200;
     if (z && !z.k) {
-      if (z.eltern.art === 'register') await this.d.dienst.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
+      if (z.eltern.art === 'register') await this.d.dienst.rechtepruefung.pruefeRecht(ctx.z, z.eltern.mappeId, 'U');
       await this.merkeSchwebend(ctx, z.ort, z.name, 0);
       status = 201;
     }

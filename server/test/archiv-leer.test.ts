@@ -73,7 +73,7 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
     await assert.rejects(d.loescheDokument(dokument.id), (e) => e instanceof Fachfehler && e.status === 409 && /beginnt erst mit/.test(e.message));
     assert.deepEqual((await d.darfWeg()).map((x) => x.titel), ['Abgelöst']);
     // Baum (Löschen mit verknüpften Mappen, Auskunft): gesperrt ohne Datum.
-    const baum = await d.baum(aktuell.id, {}, await d.zugriff({ id: ICH.id, rolle: 'admin' } as never));
+    const baum = await d.baum(aktuell.id, {}, await d.rechtepruefung.zugriff({ id: ICH.id, rolle: 'admin' } as never));
     const k = baum.knoten.find((x) => x.id === aktuell.id)!;
     assert.equal(k.gesperrt, true);
     assert.equal(k.aufbewahrenBis, null);

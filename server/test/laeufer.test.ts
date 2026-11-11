@@ -343,15 +343,15 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'alles', ECHO, '{ lesen: ["*"], dokumente: lesen }');
     const blind = await konten.dienstkonto('blind', 'Blind');
     const alles = await konten.dienstkonto('alles', 'Alles');
-    const zb = await d.zugriff(blind), za = await d.zugriff(alles);
+    const zb = await d.rechtepruefung.zugriff(blind), za = await d.rechtepruefung.zugriff(alles);
     assert.equal(zb.typen.size, 0);
     assert.equal(za.admin, false);
     const sys = await d.sichereSystem();
     assert.ok(za.typen.has(sys.post.id) && !za.typen.has(sys.benutzer.id), '„*“ = alle außer Benutzer');
     const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-    assert.equal((await d.rechteAn(za, post)).R, true);
-    assert.equal((await d.rechteAn(za, post)).U, false, 'ohne „schreiben“ nicht bearbeiten');
-    assert.equal((await d.rechteAn(zb, post)).R, false);
+    assert.equal((await d.rechtepruefung.rechteAn(za, post)).R, true);
+    assert.equal((await d.rechtepruefung.rechteAn(za, post)).U, false, 'ohne „schreiben“ nicht bearbeiten');
+    assert.equal((await d.rechtepruefung.rechteAn(zb, post)).R, false);
     // Über die API: Dokument-Routen nur mit dem Recht aus dem Manifest.
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const key = await schluessel.fuerDienstkonto(blind, 'lesen');
@@ -413,7 +413,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'trenner', ECHO, '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }');
     const konto = await konten.dienstkonto('trenner', 'Trenner');
     const sys = await d.sichereSystem();
-    const z = await d.zugriff(konto);
+    const z = await d.rechtepruefung.zugriff(konto);
     assert.deepEqual([...z.typen.keys()], [sys.post.id], 'sieht nur den Mappentyp Post');
     const vertragTyp = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Unterlagen', art: 'dokumente' },
@@ -423,9 +423,9 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const post = await d.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
     const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
-    assert.deepEqual(await d.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
-    assert.equal((await d.rechteAn(z, vertrag)).R, false);
-    assert.deepEqual([...await d.lesbare(z, [post.id, vertrag.id])], [post.id]);
+    assert.deepEqual(await d.rechtepruefung.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
+    assert.equal((await d.rechtepruefung.rechteAn(z, vertrag)).R, false);
+    assert.deepEqual([...await d.rechtepruefung.lesbare(z, [post.id, vertrag.id])], [post.id]);
     // Über die API wie im Paket-Läufer.
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const rufe = async (methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
@@ -461,10 +461,10 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
         const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
         const sys = await d.sichereSystem();
-        const z = await d.zugriff(konto);
-        assert.equal((await d.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
+        const z = await d.rechtepruefung.zugriff(konto);
+        assert.equal((await d.rechtepruefung.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
         // „Für“ setzt ein Benutzer im DMS (hier: Anna als Administratorin).
-        const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.zugriff({ id: anna.id, rolle: 'admin' }));
+        const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'admin' }));
         assert.deepEqual(post.werte.an, ben.id);
         const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
         const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;

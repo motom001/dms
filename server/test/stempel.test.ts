@@ -177,7 +177,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
 
   it('Pflicht je Mappentyp erzwingt den Stempel – beim Herunterladen, beim Export und per E-Mail', async () => {
     const { d, t, m, dokument, mails, mailer } = await aufbau({ modus: 'pflicht', vorlage: 'entwurf' });
-    assert.deepEqual((await d.typenFuer(await d.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
+    assert.deepEqual((await d.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
     const r = await d.dokumentFuerAusgabe(dokument.id, { ich });
     assert.equal(r.gestempelt, true);
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('ENTWURF')));
@@ -193,7 +193,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     const post = await d.holeMappe(String(email.daten.email));
     assert.notEqual(post.dokumente[0].sha256, dokument.sha256);
     // Export als ZIP: Pflicht greift auch hier.
-    const z = await d.zugriff({ id: ich.id, rolle: 'admin' });
+    const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     await assert.rejects(d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id] }, z), status(422, /Empfänger/));
     await d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], stempel: { vorlage: 'kopie', empfaenger: 'Steuerbüro' } }, z);
     const h = (await d.historie(m.id)).filter((x) => x.art === 'weitergegeben');

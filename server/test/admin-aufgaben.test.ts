@@ -52,7 +52,7 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     // „Zu erledigen“ und der Zähler-Endpunkt (#625)
     const seite = await d.seite(L, { sicht: 'eingang' }) as { mappen: Array<{ id: string }> };
     assert.deepEqual(seite.mappen.map((x) => x.id), [m.id]);
-    assert.equal((await d.zaehlerAbruf(await d.zugriff(L))).zahlen.zuErledigen, 1);
+    assert.equal((await d.zaehlerAbruf(await d.rechtepruefung.zugriff(L))).zahlen.zuErledigen, 1);
     await assert.rejects(d.erledigeAufgabe(a.id, J), status(403));
     await d.erledigeAufgabe(a.id, L);
     assert.equal((await d.zaehler(A)).eingang, 0);

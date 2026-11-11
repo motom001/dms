@@ -184,7 +184,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('sammelt in beiden Richtungen, ohne quer weiterzugehen; Kreise, Verweise nach außen, Fristen, Dokumente', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const b = await d.baum(m.max.id, {}, z);
       const k = new Map(b.knoten.map((x) => [x.id, x]));
       assert.equal(b.knoten[0].id, m.max.id);
@@ -220,7 +220,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Tiefe, Richtung, Obergrenze, seitwärts und große Kreise enden', async () => {
       const { d, admin, m } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const flach = await d.baum(m.max.id, { tiefe: 1 }, z);
       assert.ok(!ids(flach).has(m.nk1.id));
       assert.equal(flach.tieferMoeglich, true);
@@ -298,7 +298,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, passwort: 'kurz' } }), /mindestens 10/);
 
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-zip-'));
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const daten = await d.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
       assert.deepEqual(daten.gruende, ['Interne Bewertung (Art. 15 Abs. 4 DSGVO)']);
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' }, mandant: 'Hausverwaltung' });
@@ -386,7 +386,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(k.has(m.nk1.id) && !k.get(m.v2.id)?.nurBezug);
       assert.ok(!('vorschlaege' in v), 'auch mit vorschlaege: true keine Vorschläge');
 
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-bezug-'));
       const basis = { mappeId: m.max.id, geprueft: true, passwort: '' };
       // Erwähnung nur von Bezug-Mappen

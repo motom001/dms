@@ -109,14 +109,14 @@ async function aufbau() {
   const zahlen = async (id: string) => {
     const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
     const b = await ich(id);
-    const z = await kontext.run(k, async () => d.zaehler(b, await d.zugriff(b)));
+    const z = await kontext.run(k, async () => d.zaehler(b, await d.rechtepruefung.zugriff(b)));
     return { z, art: k.zwischenspeicher?.art };
   };
   /** Dieselben Zahlen frisch gezählt (ein neuer Dienst auf demselben Bestand, ohne Zwischenspeicher). */
   const frisch = async (id: string) => {
     const f = new Dienst(repo, speicherDateien(), { einstellungen });
     const b = await ich(id);
-    return f.zaehler(b, await f.zugriff(b));
+    return f.zaehler(b, await f.rechtepruefung.zugriff(b));
   };
   return { d, admin, max, fibu, rechnung, privatNurFibu, alle, privat, faellig, zahlen, frisch };
 }
@@ -134,7 +134,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     // Rahmen ist immer frisch dabei.
     assert.equal('papierkorbTage' in zweites.z && 'neuePost' in zweites.z, true);
     // Lesen ändert den Stand nicht.
-    await h.d.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.zugriff({ id: h.max.id, rolle: 'mitglied' }));
+    await h.d.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.rechtepruefung.zugriff({ id: h.max.id, rolle: 'mitglied' }));
     assert.equal((await h.zahlen(h.max.id)).art, 'treffer');
   });
 
@@ -198,7 +198,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     const b = { id: h.max.id, rolle: 'mitglied' };
     const termine = async () => {
       const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
-      await kontext.run(k, async () => h.d.naechsterTermin(await h.d.zugriff(b)));
+      await kontext.run(k, async () => h.d.naechsterTermin(await h.d.rechtepruefung.zugriff(b)));
       return k.zwischenspeicher?.art;
     };
     await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);

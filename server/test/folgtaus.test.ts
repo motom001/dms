@@ -192,8 +192,8 @@ describe('Folgt aus – nur lesbare Werte, auch über die Schnittstelle (#886)',
     const sk = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Sparkasse Musterstadt' } }, admin.id);
     const nord = await d.legeMappeAn({ typId: niederlassung.id, werte: { name: 'Nordviertel', organisation: sk.id } }, admin.id);
     const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-    const zJ = await d.zugriff(await ich(jonas.id));
-    assert.ok(!(await d.lesbare(zJ, [sk.id])).has(sk.id), 'Jonas darf die Organisation nicht lesen');
+    const zJ = await d.rechtepruefung.zugriff(await ich(jonas.id));
+    assert.ok(!(await d.rechtepruefung.lesbare(zJ, [sk.id])).has(sk.id), 'Jonas darf die Organisation nicht lesen');
     const m = await d.legeMappeAn({ typId: person.id, werte: { name: 'Markus', niederlassung: nord.id } }, jonas.id, false, zJ);
     assert.equal(m.werte.organisation, null);
     assert.deepEqual((await d.folgen({ typId: person.id, werte: { niederlassung: nord.id } }, zJ)).felder.organisation.wert, null);

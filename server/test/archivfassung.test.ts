@@ -368,7 +368,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.equal((await x.a.stand(await x.dok(mit)))?.stand, 'fertig');
     assert.notEqual((await x.a.stand(await x.dok(ohne)))?.stand, 'fertig');
     const ich = { id: '00000000-0000-4000-8000-000000000001', name: 'Markus', email: 'markus@example.org', rolle: 'admin' };
-    const z = await x.d.zugriff({ id: ich.id, rolle: 'admin' });
+    const z = await x.d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     const mails: Array<{ anhaenge: Array<{ name: string; mime: string }> }> = [];
     const mailer = { async sende(_an: string, _b: string, _t: string, o?: { anhaenge?: Array<{ name: string; mime: string }> }) { mails.push({ anhaenge: o?.anhaenge ?? [] }); } };
     await x.d.versendeMappen({ ids: [x.m.id], an: 'steuer@example.org', betreff: 'Belege', angaben: false, dokumente: 'alle', fassung: 'archiv' }, ich, z, mailer as never);

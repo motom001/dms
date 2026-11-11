@@ -407,13 +407,13 @@ export class Erkennung {
 
   /** Für die Oberfläche bzw. die API: nur, was der Benutzer lesen darf. */
   async fuerBenutzer(postId: string, z?: Zugriff): Promise<ErkennungAntwort> {
-    const post = await this.d.pruefeRecht(z, postId, 'R');
+    const post = await this.d.rechtepruefung.pruefeRecht(z, postId, 'R');
     const typ = await this.repo().holeTyp(post.typId);
     if (typ?.system !== 'post') throw new Fachfehler(422, t('meldungen.erkennung.vorschlaege-beim-zuordnen-gibt'));
     const e = await this.ergebnis(postId);
     if (!e) throw new Fachfehler(404, t('meldungen.erkennung.diese-post-gibt-es'));
     const ids = [...e.absender.map((x) => x.mappeId), ...e.ziele.map((x) => x.mappeId), ...(e.auto ? [e.auto.ziel] : []), ...(e.ausgehend ? [e.ausgehend.mappeId] : [])];
-    const lesbar = await this.d.lesbare(z, ids);
+    const lesbar = await this.d.rechtepruefung.lesbare(z, ids);
     const bezuege = await this.repo().bezuege(ids.filter((id) => lesbar.has(id)));
     const titel = (id: string) => bezuege.get(id)?.titel ?? '';
     const absender = e.absender.filter((x) => lesbar.has(x.mappeId) && bezuege.has(x.mappeId)).map((x) => ({ ...x, titel: titel(x.mappeId) }));
@@ -443,11 +443,11 @@ export class Erkennung {
     if (!typ) throw new Fachfehler(404, t('meldungen.erkennung.diesen-mappentyp-gibt-es'));
     if (typ.system) throw new Fachfehler(422, t('meldungen.erkennung.ist-ein-systemmappentyp-dort', { name: typ.name }));
     if (mappeId) {
-      const mappe = await this.d.pruefeRecht(z, mappeId, 'U');
+      const mappe = await this.d.rechtepruefung.pruefeRecht(z, mappeId, 'U');
       if (mappe.typId !== typ.id) throw new Fachfehler(422, t('meldungen.erkennung.die-mappe-hat-einen'));
       return { typ, mappe };
     }
-    if (z && !(await this.d.rechteAn(z, { id: '', typId: typ.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) throw new Fachfehler(403, t('meldungen.erkennung.mappen-dieses-typs-darfst'));
+    if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: typ.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) throw new Fachfehler(403, t('meldungen.erkennung.mappen-dieses-typs-darfst'));
     return { typ };
   }
 
@@ -476,7 +476,7 @@ export class Erkennung {
     for (const id of (Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10)) {
       const d = await this.repo().holeDokument(id);
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
-      quellTypen.add((await this.d.pruefeRecht(z, d.mappeId, 'R')).typId);
+      quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, d.mappeId, 'R')).typId);
       if (!er && (istXmlDatei(d.name, d.mime) || d.mime === 'application/pdf')) er = await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse);
       const eintrag = await this.repo().volltext(id);
       // Eine E-Rechnung als XML hat keinen Volltext – dann ist ihr Text der lesbare Auszug.
@@ -624,7 +624,7 @@ export class Erkennung {
     for (const f of typ.felder.filter((x) => x.typ === 'tabelle' && x.quelle?.typId && x.quelle.feldKey)) {
       const pt = z ? z.typen.get(f.quelle!.typId) : await this.repo().holeTyp(f.quelle!.typId);
       if (!pt || pt.system) continue;
-      if (z && !(await this.d.rechteAn(z, { id: '', typId: pt.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
+      if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: pt.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
       const erlaubt = (x: Feld) => x.key !== f.quelle!.feldKey && this.erlaubteFelder(pt)(x);
       const zeilen = er.positionen.map((p) => {
         const roh = Object.fromEntries(Object.entries(positionAusERechnung(pt, p, er, f.quelle!.feldKey)).map(([k, w]) => [k, { wert: w }]));
@@ -642,7 +642,7 @@ export class Erkennung {
   /** Lesbare Mappen des Teiltyps, die über `feldKey` schon zu dieser Mappe gehören. */
   private async vorhandenePositionen(mappeId: string, typId: string, feldKey: string, z?: Zugriff): Promise<number> {
     const ids = (await this.repo().rueckverweise(mappeId)).filter((r) => r.quelleTypId === typId && r.feldKey === feldKey).map((r) => r.quelleId);
-    return ids.length ? (await this.d.lesbare(z, [...new Set(ids)])).size : 0;
+    return ids.length ? (await this.d.rechtepruefung.lesbare(z, [...new Set(ids)])).size : 0;
   }
 
   /**
@@ -677,7 +677,7 @@ export class Erkennung {
       const s = await this.repo().seite({ typId, textfilter: { text: wert, dokumente: true, notizen: false }, von: 0, anzahl: 5 }).catch(() => null);
       for (const m of s?.mappen ?? []) if (await this.nennt(m.id, wert)) gefunden.push(m);
     }
-    const lesbar = await this.d.lesbare(z, gefunden.map((m) => m.id));
+    const lesbar = await this.d.rechtepruefung.lesbare(z, gefunden.map((m) => m.id));
     const da = gefunden.filter((m) => lesbar.has(m.id));
     return da.length === 1 ? da[0] : null;
   }
@@ -744,14 +744,14 @@ export class Erkennung {
     if (an && !aus) return null;
     if (von && aus) {
       // Ausgehend: die eigene Mappe – wenn das Feld auf ihren Typ zeigen darf und die Person sie lesen darf.
-      const m = ziele.some((x) => x.id === aus.typId) && (await this.d.lesbare(z, [aus.mappeId])).has(aus.mappeId) ? await this.repo().holeMappe(aus.mappeId) : null;
+      const m = ziele.some((x) => x.id === aus.typId) && (await this.d.rechtepruefung.lesbare(z, [aus.mappeId])).has(aus.mappeId) ? await this.repo().holeMappe(aus.mappeId) : null;
       return m ? { mappe: m, sicherheit: 'niedrig', fundstelle: t('meldungen.erkennung.aussteller-eigen', { titel: m.titel ?? '' }), hinweis: t('meldungen.erkennung.ausgehend-hinweis') } : null;
     }
     const vergleiche: Array<Pick<Mappentyp, 'id' | 'felder'>> = [];
     const mappen: Mappe[] = [];
     for (const ziel of ziele) {
       const alle = await this.repo().listeMappen(ziel.id);
-      const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
+      const lesbar = await this.d.rechtepruefung.lesbare(z, alle.map((m) => m.id));
       // „von“ bzw. „an“ eines ausgehenden Belegs: nie eine eigene Mappe.
       mappen.push(...alle.filter((m) => lesbar.has(m.id) && !((von || (an && aus)) && ctx.eigen.ids.has(m.id))));
       // Ohne Felder zum Wiederfinden (#938) zählt der Titel als Name.
@@ -769,7 +769,7 @@ export class Erkennung {
     if (!firma) return null;
     // Der Briefkopf ist der eigene (ausgehend): nicht als neue Organisation vorschlagen.
     if (von && eigenerAussteller({ name: firma, fundstelle: '' }, ctx.eigen.angaben)) return null;
-    if (z && !(await this.d.rechteAn(z, { id: '', typId: ziel.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) return null;
+    if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: ziel.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) return null;
     const werte = Object.fromEntries(Object.entries(vorschlaegeAus(ziel, text, { ...a, person: null, briefkopf: { ...(a.briefkopf ?? { fundstelle: a.person?.fundstelle ?? '' }), name: firma } }))
       .filter(([k, v]) => typeof v.wert === 'string' && ziel.felder.some((x) => x.key === k && x.typ !== 'referenz')).map(([k, v]) => [k, v.wert as string]));
     if (!Object.keys(werte).length) { const n = ziel.felder.find((x) => x.typ === 'text'); if (n) werte[n.key] = firma; }
@@ -792,7 +792,7 @@ export class Erkennung {
       for (const m of await this.repo().listeMappen(x.id)) { alle.push({ id: m.id, typId: m.typId, werte: m.werte }); if (alle.length >= MAX_MAPPEN) break; }
       if (alle.length >= MAX_MAPPEN) break;
     }
-    const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
+    const lesbar = await this.d.rechtepruefung.lesbare(z, alle.map((m) => m.id));
     const mappen = alle.filter((m) => lesbar.has(m.id));
     const erg = gleicheAb(text.slice(0, TEXT_MAX), typen, mappen, ziel);
     // Eigene Organisation und Haushalt (#1043): nie als „von“ vorgeschlagen, nie „gehört dazu“; als Beleg für einen
@@ -822,7 +822,7 @@ export class Erkennung {
     for (const id of ids) {
       const d = await this.repo().holeDokument(id);
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
-      await this.d.pruefeRecht(z, d.mappeId, 'R');
+      await this.d.rechtepruefung.pruefeRecht(z, d.mappeId, 'R');
       const text = await this.repo().volltext(id);
       // E-Rechnung als XML (#1043): ohne Volltext zählt ihr lesbarer Auszug.
       const er = !text?.trim() && istXmlDatei(d.name, d.mime) ? await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse) : null;
@@ -842,7 +842,7 @@ export class Erkennung {
     const kandidaten = typen.filter((t) => !t.felder.some((f) => /vorname|nachname/.test(f.key)))
       .sort((a, c) => Number(/organisation/.test(c.schluessel ?? '')) - Number(/organisation/.test(a.schluessel ?? '')));
     for (const t of kandidaten) {
-      if (z && !(await this.d.rechteAn(z, { id: '', typId: t.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
+      if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: t.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
       const leer = { emails: [], internet: [], ibans: [], ustids: [], telefon: [], mobil: [], fax: [], datum: null, betrag: null, nummern: [], person: null, briefkopf: b };
       const werte = Object.fromEntries(Object.entries(vorschlaegeAus(t, '', leer)).filter(([, v]) => typeof v.wert === 'string').map(([k, v]) => [k, v.wert as string]));
       if (Object.keys(werte).length) return { typId: t.id, werte, fundstelle: b.fundstelle };

@@ -24,7 +24,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       await darf(a, a.params.id, 'U');
       const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ, gleicherName: a.query.gleicherName, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
       // Gleicher Inhalt (#333): nur Mappen, die der Benutzer lesen darf.
-      const lesbar = await dienst.lesbare(await zg(a), r.gleicherInhalt.map((g) => g.mappeId));
+      const lesbar = await dienst.rechtepruefung.lesbare(await zg(a), r.gleicherInhalt.map((g) => g.mappeId));
       r.gleicherInhalt = r.gleicherInhalt.filter((g) => lesbar.has(g.mappeId));
       L.dokumente.info('Dokument hochgeladen', {
         name: r.dokument.name, groesse: r.dokument.groesse, mime: r.dokument.mime, anzeigbar: r.dokument.anzeigbar,
@@ -38,7 +38,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return ok({ fundstellen: await dienst.fundstellen(await zg(a), e.pruefwerte, typeof e.ohneMappe === 'string' ? e.ohneMappe : undefined) });
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       // Herunterladen ist Weitergeben (#394): mit Stempel-Parametern oder Pflicht des Mappentyps gestempelt – und Mitnehmen (#723, Recht E).
       if (weitergabe(a) || a.query.fassung !== undefined) {
@@ -64,7 +64,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     // Herunterladen mit Stempel aus der Oberfläche (#394): Angaben im Körper, sonst wie oben.
     { methode: 'POST', pfad: '/api/dokumente/:id/herunterladen', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       await mitnehmen(a, mappeId);
       const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown; fassung?: unknown };
@@ -74,7 +74,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     // Vorschaubild der ersten Seite (#332): gleiche Rechte wie das Dokument; 404, solange es keins gibt.
     { methode: 'GET', pfad: '/api/dokumente/:id/vorschau', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       // Mit API-Schlüssel und Stempel (#799): Seite 1 der gestempelten Kopie statt des abgelegten Vorschaubilds.
       const q = await seitenquelle(a, mappeId);
@@ -94,21 +94,21 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // Dateien umwandeln (#577): Fassung und Vorschaubild schreiben nur Pakete mit dms:umwandeln, die das Dokument lesen
     // dürfen (das Original bleibt unverändert, deshalb genügt Lesen); ansehen darf die Fassung, wer das Dokument liest.
     { methode: 'PUT', pfad: '/api/dokumente/:id/fassung', zugang: 'angemeldet', roh: FASSUNG_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeFassung(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
     { methode: 'PUT', pfad: '/api/dokumente/:id/vorschaubild', zugang: 'angemeldet', roh: VORSCHAUBILD_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeVorschaubild(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
     // Geschützte PDFs (#827): mit dem Passwort eine entsperrte Fassung anlegen. Das Passwort geht nur an qpdf (über die
     // Standardeingabe), nie in Datenbank, Protokoll oder Historie – außer mit „merken“ verschlüsselt im eigenen Konto.
     { methode: 'POST', pfad: '/api/dokumente/:id/entsperren', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.entsperreDokument(a.params.id, ich(a).id, b(a), !a.apiSchluessel && !a.sitzungsDaten?.vertretungId));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/fassung', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       if (zumAbspeichern(a)) await mitnehmen(a, mappeId);
       const g = herausgeben(a) ? await dienst.fassungFuerAusgabe(a.params.id, 'umgewandelt', { stempel: a.query, ich: ich(a) }) : null;
@@ -124,11 +124,11 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // Archivfassung (PDF/A, #631): ablegen nur Pakete mit dms:archivfassung, die das Dokument lesen dürfen (das Original
     // bleibt unverändert); ansehen, wer das Dokument liest. Wortpositionen ebenso mit Lesen (ohne weiteres Recht).
     { methode: 'PUT', pfad: '/api/dokumente/:id/archivfassung', zugang: 'angemeldet', roh: ARCHIVFASSUNG_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeArchivfassung(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/archivfassung', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       if (zumAbspeichern(a)) await mitnehmen(a, mappeId);
       // Mit API-Schlüssel ist das Herausgeben (#799): mit Pflicht- oder gewünschtem Stempel eine gestempelte Kopie.
@@ -142,19 +142,19 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return zumAbspeichern(a) ? abgerufen(a, a.params.id, { fassung: 'archiv', datei: name }, antwort) : antwort;
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/wortpositionen', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.wortpositionen(a.params.id));
     } },
     // Volltext und Texterkennung (#45)
     { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       const r = await dienst.volltext(a.params.id);
       return ok({ id: r.dokument.id, name: r.dokument.name, ocr: r.dokument.ocr, sprache: r.dokument.sprache ?? null, weitereSprachen: r.dokument.weitereSprachen ?? [], text: r.text, ...(r.seiten ? { seiten: r.seiten } : {}) });
     } },
     // Volltext schreiben (#338): für Pakete wie die Texterkennung – Dienstkonto mit „Dokumente schreiben“ oder Recht Bearbeiten;
     // mit dms:volltext (#614) nur für die Dateitypen des Pakets. Bis zur Grenze des Kerns (5 Mio. Zeichen) in einer Anfrage.
     { methode: 'PUT', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', roh: VOLLTEXT_KOERPER_MAX, handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
       if (a.benutzer?.art === 'dienst') await dienst.pruefeVolltextRecht(await zg(a), a.params.id);
       const p = a.benutzer?.art === 'dienst' ? (await dienst.kern.repo.listePakete()).find((x) => x.id === a.benutzer!.paketId) : undefined;
       const herkunft = p ? `${p.name} ${p.version}` : t('meldungen.routen.ueber-die-api', { wert: ich(a).name || ich(a).email });
@@ -163,7 +163,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     // Sprache des Volltexts (#400): bestimmt die Wortstämme der Suche – Rechte wie beim Volltext schreiben.
     { methode: 'PUT', pfad: '/api/dokumente/:id/sprache', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
       if (a.benutzer?.art === 'dienst') await dienst.pruefeVolltextRecht(await zg(a), a.params.id);
       const p = a.benutzer?.art === 'dienst' ? (await dienst.kern.repo.listePakete()).find((x) => x.id === a.benutzer!.paketId) : undefined;
       const d = await dienst.setzeDokumentSprache(a.params.id, a.body, { id: ich(a).id, wer: p ? `${p.name} ${p.version}` : t('meldungen.routen.ueber-die-api', { wert: ich(a).name || ich(a).email }) });
@@ -171,21 +171,21 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     // Hinweis „Post teilen?“ wegklicken (#579): wer teilen dürfte (Bearbeiten), darf ihn auch ausblenden.
     { methode: 'DELETE', pfad: '/api/dokumente/:id/teilen-hinweis', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       const d = await dienst.teilenHinweisAus(a.params.id);
       return ok({ id: d.id, teilenAb: d.teilenAb ?? null });
     } },
     // Vektoren zu Dokumenten (#442): schreiben nur Pakete mit dms:vektoren, die das Dokument lesen dürfen.
     { methode: 'PUT', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.setzeVektor(await zg(a), a.params.id, (b(a) as { modell?: unknown }).modell, a.body));
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.loescheVektor(await zg(a), a.params.id, a.query.modell));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/aehnliche', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.aehnlicheDokumente(await zg(a), { dokument: a.params.id, modell: a.query.modell, anzahl: a.query.anzahl, schwelle: a.query.schwelle }));
     } },
     { methode: 'POST', pfad: '/api/vektoren/aehnliche', zugang: 'angemeldet', lesend: true, handler: async (a) => {
@@ -196,7 +196,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // Seite als Graustufenbild (#338): Eingabe für eine Texterkennung im Paket (PGM, 8 Bit).
     // Mit ?farbe=1 (#716) als Farbbild (PPM) – für die Archivfassung; wie das Graustufenbild nur mit Leserecht.
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/scan', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       // Rohbild der Seite zum Abspeichern: für Pakete (Dienstkonten) mit Lesen, für Menschen ist es Mitnehmen (#723).
       await mitnehmen(a, mappeId);
@@ -208,18 +208,18 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, { datei: { inhalt: bild, name: `seite-${a.params.nr}.${farbe ? 'ppm' : 'pgm'}`, mime: farbe ? 'image/x-portable-pixmap' : 'image/x-portable-graymap', anzeigen: false, groesse: bild.length } });
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       const d = await dienst.texterkennungErneut(a.params.id);
       L.dokumente.info('Texterkennung erneut angestoßen', { name: d.name, id: d.id });
       return ok(d);
     } },
     /* Versionierung (#194): Ersetzen und Zurückholen mit dem Recht „Bearbeiten“, Versionen mit „Lesen“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/versionen', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.versionen(a.params.id));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       const nummer = Number(a.params.nummer);
       if (weitergabe(a)) {
@@ -236,24 +236,24 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return anzeigen ? antwort : abgerufen(a, a.params.id, { fassung: 'version', version: nummer, datei: v.name }, antwort);
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/ersetzen', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, strom: true, handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       const d = await dienst.ersetzeDokument(a.params.id, { name: a.query.name, typ: a.query.typ, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
       L.dokumente.info('Neue Version eines Dokuments', { name: d.name, id: d.id, version: d.version });
       return ok(d, 201);
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/versionen/:nummer/zurueckholen', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       const d = await dienst.holeVersionZurueck(a.params.id, Number(a.params.nummer), ich(a).id);
       L.dokumente.info('Ältere Version zurückgeholt', { name: d.name, id: d.id, version: d.version, von: Number(a.params.nummer) });
       return ok(d, 201);
     } },
     /* PDF bearbeiten (#335): Seiten ansehen mit „Lesen“, bearbeiten mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.pdfSeiten(a.params.id));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/bild', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       const q = await seitenquelle(a, mappeId);
       const bild = await dienst.pdfSeitenbild(a.params.id, Number(a.params.nr), q);
@@ -263,17 +263,17 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, antwort) : antwort;
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/seiten', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       return ok(await dienst.bearbeitePdf(a.params.id, a.body, ich(a).id, await zg(a)), 201);
     } },
     { methode: 'POST', pfad: '/api/dokumente/zusammenfuegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fuegePdfZusammen(a.body, ich(a).id, await zg(a)), 201) },
     /* Schwärzen (#392): Ansehen und Analyse mit „Lesen“, Schwärzen (neues Dokument bzw. Version) mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.schwaerzenVorschau(a.params.id));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/schwaerzen/seiten/:nr', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       const q = await seitenquelle(a, mappeId);
       // ?fassung=archiv (#934): die Seite der Archivfassung (PDF/A) – nicht mit Pflichtstempel, der gilt dem Original.
@@ -283,16 +283,16 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, antwort) : antwort;
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       return ok(await dienst.schwaerzeDokument(a.params.id, a.body, ich(a).id), 201);
     } },
     /* PDF verkleinern (#393): Schätzung mit „Lesen“, Verkleinern (neue Version) mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
       return ok(await dienst.verkleinernVorschau(a.params.id));
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       const r = await dienst.verkleinereDokument(a.params.id, a.body, ich(a).id);
       return ok(r, r.unveraendert ? 200 : 201);
     } },
@@ -302,7 +302,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     { methode: 'PUT', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async (a) => ok(await dienst.setzeVerkleinernEinstellung(a.body)) },
     /* Archivnummer (#345): setzen mit „Bearbeiten“, suchen mit „Lesen“, Aufkleber in der Werkbank. */
     { methode: 'PUT', pfad: '/api/dokumente/:id/archivnummer', zugang: 'angemeldet', handler: async (a) => {
-      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
       return ok(await dienst.setzeArchivnummer(a.params.id, (b(a) as { archivnummer?: unknown }).archivnummer, ich(a).id));
     } },
     { methode: 'GET', pfad: '/api/archivnummern/:nr', zugang: 'angemeldet', handler: async (a) => ok(await dienst.findeArchivnummer(a.params.nr, await zg(a))) },
@@ -311,7 +311,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       return { datei: { inhalt: r.pdf, name: t('meldungen.routen.archivnummern-bis-pdf', { erste: r.erste, letzte: r.letzte }), mime: 'application/pdf', anzeigen: false, groesse: r.pdf.length } };
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
-      const mappeId = await dienst.mappeVon('dokument', a.params.id);
+      const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'U');
       // Vorgaben (#1038): Ein Paket löscht keine Dokumente an Vorgaben anderer Pakete.
       await dienst.pruefeFremdeVorgabe(await zg(a), mappeId);

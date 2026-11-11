@@ -165,7 +165,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(uv.typen.find((t) => t.schluessel === 'konto')!.umwandeln, [{ feld: 'Inhaber', aus: 'Inhaber', anzahl: 1 }]);
       await p.aktualisiere('autos', {}, ICH);
       // Zugriff je Anfrage, wie in den Routen: mit den Mappentypen nach dem Update.
-      const z = await d.zugriff(ADMIN);
+      const z = await d.rechtepruefung.zugriff(ADMIN);
       let auto = (await d.listeTypen()).find((t) => t.id === autoTyp)!;
       assert.equal(auto.felder.find((f) => f.key === 'halter_verweis')!.ausText, 'halter');
       assert.equal(auto.felder.find((f) => f.key === 'halter')!.pflicht, true, 'das Update ändert das alte Feld nicht');
@@ -281,7 +281,7 @@ function faelle(pg: boolean) {
       // Die Person bekommt ein weiteres Pflichtfeld: Anlegen scheitert, die Mappe bleibt unverändert.
       const pt = (await d.listeTypen()).find((t) => t.id === pk)!;
       await d.aendereTyp(pk, { ...pt, felder: [...pt.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }] });
-      const z = await d.zugriff(ADMIN);
+      const z = await d.rechtepruefung.zugriff(ADMIN);
       await assert.rejects(u.umwandeln('autos', { typId: autoTyp, feldKey: 'halter_verweis', entscheidungen: { [namensSchluessel('Tom Muster')]: { art: 'neu' } } }, ICH, z), /ließ sich nicht anlegen/);
       assert.equal((await d.listeMappen(autoTyp)).find((m) => m.id === a.id)!.werte.halter, 'Tom Muster');
       assert.equal((await d.listeMappen(pk)).length, 0);

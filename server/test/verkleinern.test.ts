@@ -252,7 +252,7 @@ describe('Ausgabe „verkleinert“ (#393)', () => {
     assert.match(await pdftext(anhang), /Rechnung Nummer 4711/);
     assert.match(String((await d.historie(m.id)).find((x) => x.art === 'email')!.daten.text), /, verkleinert \(/);
 
-    const z = await d.zugriff({ id: ich.id, rolle: 'admin' });
+    const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     const ex = await d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], verkleinern: 'standard' }, z);
     assert.ok(ex.groesse < gross.length / 2, 'ZIP mit verkleinertem PDF');
     assert.ok((await alsPuffer((await d.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original weiter unverändert');

@@ -101,7 +101,7 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
     await d.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
     const mailer = { sende: async (an: string, betreff: string, text: string) => { mails.push({ an, betreff, text }); } };
-    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.meineAufgaben(b as never, await d.zugriff(b as never)), typName: async () => 'Vorgang' };
+    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)), typName: async () => 'Vorgang' };
     const am_ = new Aufgabenmail(quelle as never, () => mailer as never, () => 'http://nas', speicherEinstellungen());
     const offen = (await d.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
     assert.equal(offen, 1, 'Lena hat eine offene Aufgabe');

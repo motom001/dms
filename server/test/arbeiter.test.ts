@@ -106,7 +106,7 @@ describe('Ablage während eines großen Exports (#542)', () => {
     await ladeBeispiele(d);
     await erzeugeDemo(d, { anzahl: 2500, startwert: 'arbeiter-542' }, null);
     const ich = { id: 'admin', rolle: 'admin' };
-    const z = await d.zugriff(ich);
+    const z = await d.rechtepruefung.zugriff(ich);
     const typen = (await d.listeTypen()).filter((t) => !t.system);
     const zahl = await Promise.all(typen.map(async (t) => ({ t, n: (await d.seite(ich, { sicht: t.id, von: 0, anzahl: 1 }, z)).gesamt })));
     const gross = zahl.sort((a, b) => b.n - a.n)[0].t;

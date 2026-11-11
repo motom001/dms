@@ -123,7 +123,7 @@ describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
     const fuerLena = (await d.alleAufgaben()).filter((x) => x.empfaengerId === lena.id);
     assert.equal(fuerLena.length, 1, 'gebündelt, Rolle und Person sind dieselbe Lena');
-    const lesbar = (await d.sichtbarFuer(lena.id, [m.id])).has(m.id);
+    const lesbar = (await d.rechtepruefung.sichtbarFuer(lena.id, [m.id])).has(m.id);
     assert.equal(fuerLena[0].mappeId, m.id, 'seit #798 immer an der Mappe – ohne Leserecht nur mit Hinweis');
     if (!lesbar) assert.match(l.schritte[2].text!, /darf die Mappe nicht sehen/);
   });

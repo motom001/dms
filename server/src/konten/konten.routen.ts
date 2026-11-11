@@ -76,7 +76,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
     // #137: nur Benutzer, deren Benutzer-Mappe man lesen darf (Administratoren: alle).
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async (a) => {
       const alle = await konten.personen();
-      const sichtbar = await dienst.lesbare(await zg(a), alle.map((p) => p.id));
+      const sichtbar = await dienst.rechtepruefung.lesbare(await zg(a), alle.map((p) => p.id));
       // Dienstkonten der Pakete haben keine Benutzer-Mappe; ihr Name („Paket …“) ist für alle sichtbar (#338).
       // Ebenso Systemkonten wie „Automatisierung“ (#673).
       return ok(alle.filter((p) => sichtbar.has(p.id) || ('art' in p && (p.art === 'dienst' || p.art === 'system'))));

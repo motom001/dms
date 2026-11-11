@@ -87,7 +87,7 @@ export class FragenAnDieAblage {
     // Mappen, die vorkommen, auf einmal laden (Titel, Typ) und noch einmal auf Lesbarkeit prüfen.
     const alle = [...dok, ...angaben, ...aehnl];
     const bezuege = await this.repo().bezuege([...new Set(alle.map((x) => x.mappeId))]);
-    const lesbar = await this.d.lesbare(z, [...bezuege.keys()]);
+    const lesbar = await this.d.rechtepruefung.lesbare(z, [...bezuege.keys()]);
     const erg: FrageAusschnitt[] = [];
     const gesehen = new Set<string>();
     let zeichen = 0;
@@ -115,7 +115,7 @@ export class FragenAnDieAblage {
     if (!t) return '';
     const zeilen: string[] = [];
     const ziele = t.felder.filter((f) => f.typ === 'referenz').flatMap((f) => (Array.isArray(m.werte[f.key]) ? m.werte[f.key] as string[] : typeof m.werte[f.key] === 'string' ? [m.werte[f.key] as string] : []));
-    const lesbar = ziele.length ? await this.d.lesbare(z, ziele) : new Set<string>();
+    const lesbar = ziele.length ? await this.d.rechtepruefung.lesbare(z, ziele) : new Set<string>();
     // Titel verknüpfter Mappen auch nur aus Mappentypen, die an das (KI-)Paket dürfen (#796).
     if (lesbar.size) { const zt = await this.repo().typenVon([...lesbar]); for (const id of [...lesbar]) { const x = zt.get(id); if (!x || kiGesperrt(x)) lesbar.delete(id); } }
     const titel = ziele.length ? await this.repo().titelVon([...lesbar]) : new Map<string, string>();
@@ -176,7 +176,7 @@ export class FragenAnDieAblage {
       // Quellen: nur gegebene Ausschnitte, noch einmal auf Lesbarkeit geprüft (die Rechte können sich geändert haben).
       const jeMappe = new Map<string, number[]>();
       for (const n of a.quellen) { const x = ausschnitte.find((y) => y.nr === n)!; jeMappe.set(x.mappe.id, [...(jeMappe.get(x.mappe.id) ?? []), n]); }
-      const ok = await this.d.lesbare(z, [...jeMappe.keys()]);
+      const ok = await this.d.rechtepruefung.lesbare(z, [...jeMappe.keys()]);
       const quellen = [...jeMappe].filter(([id]) => ok.has(id)).map(([id, nr]) => { const m = ausschnitte.find((y) => y.mappe.id === id)!.mappe; return { id, typId: m.typId, titel: m.titel, nr }; });
       // Hat das Paket für den Dienst gekürzt (#564), sieht der Fragende das: welche Ausschnitte hingingen, ob Chat wegfiel.
       // Messpanel (#565): Der Kopf mit Server-Timing ging vor der Antwort – die Zeiten des KI-Dienstes stehen hier.

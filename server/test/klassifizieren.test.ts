@@ -77,7 +77,7 @@ async function aufbau() {
   const brief = await dok(post.id, 'rechnung.pdf', BRIEF);
   await d.kern.repo.speicherePaket(paket('ki_assistent', 'KI-Assistent', ASSISTENT));
   await d.kern.repo.speicherePaket(paket('ki_aehnlich', 'KI lokal – Ähnlichkeit', AEHNLICH));
-  const A = await d.zugriff({ id: lena.id, rolle: 'admin' });
+  const A = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
   const eingaenge: Array<{ paket: string; e: Record<string, unknown> }> = [];
   const antworten: Record<string, (e: Record<string, unknown>) => Promise<string>> = {
     ki_assistent: async () => JSON.stringify({ typen: [{ typ: rechnung.id, sicherheit: 0.8, begruendung: 'Rechnung für eine Wartung', zitat: 'Rechnungsnummer R-2026-117' }] }),
@@ -95,7 +95,7 @@ async function aufbau() {
   // Vektoren: Die Nachbildung liefert für jeden Text denselben Vektor; Vertrag, Befund und alte Rechnung liegen nah.
   const v = (x: number[]) => liesVektor(x);
   d.vektorAnbieter = { paket: () => 'ki_aehnlich', vektorFuer: async () => ({ paket: 'ki_aehnlich', modell: 'test/8', vektor: v([1, 0, 0, 0, 0, 0, 0, 0]), schwelle: 0.1 }) };
-  const zp = await d.zugriff({ id: 'konto-ki_aehnlich', rolle: 'mitglied', art: 'dienst', paketId: 'ki_aehnlich' });
+  const zp = await d.rechtepruefung.zugriff({ id: 'konto-ki_aehnlich', rolle: 'mitglied', art: 'dienst', paketId: 'ki_aehnlich' });
   await d.setzeVektor(zp, dokVertrag, 'test/8', { vektor: [1, 0.1, 0, 0, 0, 0, 0, 0] });
   await d.setzeVektor(zp, dokBefund, 'test/8', { vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
   await d.setzeVektor(zp, dokAlt, 'test/8', { vektor: [1, 0.2, 0, 0, 0, 0, 0, 0] });
@@ -204,7 +204,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     // Jonas darf Rechnungen anlegen, aber keine Verträge lesen: deren Mappe zählt für ihn nicht.
     await x.d.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, C: true }, regeln: [] } as Regelwerk, true);
     await x.d.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
-    const J = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+    const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     x.eingaenge.length = 0;
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
     const b = x.eingaenge.find((e) => e.paket === 'ki_aehnlich')!.e.aehnliche as Array<{ typ: string }>;
@@ -215,7 +215,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     const x = await aufbau();
     await x.d.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
     await x.d.setzeBerechtigungen(x.postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
-    const J = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+    const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
     for (const { e } of x.eingaenge) assert.deepEqual((e.typen as Kandidat[]).map((t) => t.name), ['Rechnung']);
   });
@@ -290,7 +290,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [] }, x.A), (e: { status?: number }) => e.status === 422);
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: ['00000000-0000-4000-8000-0000000000ff'] }, x.A), (e: { status?: number }) => e.status === 404);
     await x.d.setzeBerechtigungen(x.gesundheit.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
-    const J = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+    const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.dokBefund] }, J));
     const vorher = JSON.stringify((await x.d.holeMappe(x.post.id)).mappe);
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);

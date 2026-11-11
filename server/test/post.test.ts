@@ -58,7 +58,7 @@ describe('Systemtyp Post (#192)', () => {
 
   it('„+ Post“: neu, eingehend, heute; mit Dokumenten; zählt in „Neue Post“', async () => {
     const { d, A, anna, post } = await aufbau();
-    const m = await d.legePostAn({ betreff: 'Brief vom Finanzamt' }, { id: anna.id, name: 'Anna' }, await d.zugriff(A));
+    const m = await d.legePostAn({ betreff: 'Brief vom Finanzamt' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     assert.equal(m.titel, 'Brief vom Finanzamt');
     assert.equal(m.werte.stand, POST_STAND.neu);
     assert.equal(m.werte.kanal, POST_KANAL.hochgeladen);
@@ -66,7 +66,7 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(m.werte.von ?? null, null, '„Von“ bleibt leer, nicht der Name des Anlegenden (#494)');
     assert.match(String(m.werte.datum), /^\d{4}-\d{2}-\d{2}$/);
     await d.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
-    const z = await d.zaehler(A, await d.zugriff(A));
+    const z = await d.zaehler(A, await d.rechtepruefung.zugriff(A));
     assert.equal(z.sichten[(await d.neuePostSicht())!], 1);
     assert.equal(z.neuePost, await d.neuePostSicht());
     // Das allgemeine Formular legt keine Post an; Kanal und „Zugeordnet zu“ ändert man nicht von Hand.
@@ -173,7 +173,7 @@ describe('Systemtyp Post (#192)', () => {
 describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
   it('bleibt leer ohne Angabe – Hochladen, API, WebDAV; eine Angabe bleibt', async () => {
     const { d, anna, A, rufe } = await aufbau();
-    const hoch = await d.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.zugriff(A));
+    const hoch = await d.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     assert.equal(hoch.werte.von ?? null, null);
     const api = await rufe(A, 'POST', '/api/post', { body: { betreff: 'per API' }, apiSchluessel: { id: 'k', name: 'Skript' } as never }) as { body: { id: string; werte: Record<string, unknown> } };
     assert.equal((await d.holeMappe(api.body.id)).mappe.werte.kanal, POST_KANAL.api);

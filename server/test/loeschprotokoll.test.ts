@@ -131,7 +131,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('mit verknüpften Mappen: ein Vorgang mit Start-Mappe; Wiederherstellen; Ablauf automatisch', async () => {
       const { d, m, v } = await aufbau(pg);
-      const z = await d.zugriff(admin);
+      const z = await d.rechtepruefung.zugriff(admin);
       const vorschau = await d.loeschVorschau(m.id, {}, z);
       const r = await d.loescheMitVerknuepften(m.id, { auswahl: vorschau.vorschlag, grund: 'verlangen' }, admin.id, z);
       const l = await alle(d, { vorgang: r.vorgang, art: 'mappe' });

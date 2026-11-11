@@ -147,7 +147,7 @@ async function aufbau(pg: boolean, name: string) {
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-  const zg = async (b: { id: string }) => d.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
+  const zg = async (b: { id: string }) => d.rechtepruefung.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
   const org = await d.legeTypAn({ name: 'Organisation', schluessel: 'organisation', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
   const rechnung = await d.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr} von {von}', felder: [

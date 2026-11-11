@@ -132,7 +132,7 @@ export class Uebersetzung {
   /** Den Text lesen – mit den Rechten der Person. Liefert die Mappe (für den Zwischenspeicher) und Hinweise zur Sprache. */
   private async lies(q: Uebersetzungsquelle, z: Zugriff): Promise<{ mappe: string; text: string; format: 'text' | 'markdown'; von: string | null; gemischt: boolean }> {
     if (q.art === 'feld') {
-      const m = await this.d.pruefeRecht(z, q.mappe, 'R');
+      const m = await this.d.rechtepruefung.pruefeRecht(z, q.mappe, 'R');
       const typ = z.typen.get(m.typId) ?? await this.repo().holeTyp(m.typId);
       const f = typ?.felder.find((x) => x.key === q.feld);
       if (!f || !(UEBERSETZBARE_FELDER as readonly string[]).includes(f.typ) || (f.typ === 'text' && f.format)) throw new Fachfehler(422, t('meldungen.uebersetzung.feld-nicht'));
@@ -142,11 +142,11 @@ export class Uebersetzung {
     if (q.art === 'notiz') {
       const n = await this.repo().holeNotiz(q.notiz);
       if (!n) throw new Fachfehler(404, t('meldungen.dienst.diese-notiz-gibt-es'));
-      await this.d.pruefeRecht(z, n.mappeId, 'R');
+      await this.d.rechtepruefung.pruefeRecht(z, n.mappeId, 'R');
       return { mappe: n.mappeId, text: n.text, format: 'markdown', von: null, gemischt: false };
     }
-    const mappe = await this.d.mappeVon('dokument', q.dokument);
-    await this.d.pruefeRecht(z, mappe, 'R');
+    const mappe = await this.d.rechtepruefung.mappeVon('dokument', q.dokument);
+    await this.d.rechtepruefung.pruefeRecht(z, mappe, 'R');
     const v = await this.d.volltext(q.dokument);
     // Sprache aus der Texterkennung (#400) als Hinweis für das Paket.
     return { mappe, text: v.text ?? '', format: 'text', von: spracheAusTesseract(v.dokument.sprache), gemischt: !!v.dokument.weitereSprachen?.length };

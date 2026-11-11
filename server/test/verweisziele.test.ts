@@ -228,15 +228,15 @@ for (const pg of [false, true]) {
           wenn: [{ art: 'feld', ...(fall.nicht ? { nicht: true } : {}), bedingung: { art: 'feld', feld: 'betrifft', op: 'zeigtAufTyp', wert: { art: 'fest', wert: [x[fall.typ].id] } } }] }] };
         await d.setzeBerechtigungen(rechnung.id, rw, true);
         const r = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [x[fall.ziel].id] } }, markus.id);
-        const z = await d.zugriff(await x.ich(lena.id));
+        const z = await d.rechtepruefung.zugriff(await x.ich(lena.id));
         assert.equal(z.a.sichtbareTypen?.includes(x.akte.id), false, 'die Akte sieht Lena nicht');
-        assert.equal((await d.rechteAn(z, r)).R, fall.lesbar, 'Rechte an der Mappe');
-        assert.equal((await d.lesbare(z, [r.id])).has(r.id), fall.lesbar, 'Lesefilter der Listen');
+        assert.equal((await d.rechtepruefung.rechteAn(z, r)).R, fall.lesbar, 'Rechte an der Mappe');
+        assert.equal((await d.rechtepruefung.lesbare(z, [r.id])).has(r.id), fall.lesbar, 'Lesefilter der Listen');
         // Testlauf rechnet genauso.
         const tl = await d.testlauf({ mappeId: r.id, benutzerId: lena.id });
         assert.equal(tl.wirksam.R, fall.lesbar, 'Testlauf');
         // Im Verwaltungsmodus gelten die Regeln nicht.
-        assert.equal((await d.rechteAn(await d.zugriff(imModus(await x.ich(markus.id))), r)).R, true);
+        assert.equal((await d.rechtepruefung.rechteAn(await d.rechtepruefung.zugriff(imModus(await x.ich(markus.id))), r)).R, true);
       });
     }
   });

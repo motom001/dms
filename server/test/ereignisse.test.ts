@@ -170,7 +170,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     assert.deepEqual(await d.paketeAmTyp(vertrag.id), [{ id: 'vertraege', name: 'Vertragsverwaltung', schreiben: false, verwehrt: false, ereignisse: true }]);
     await d.setzePaketVerwehrt(vertrag.id, 'vertraege', true, admin.email);
     assert.equal((await d.paketeAmTyp(vertrag.id))[0].verwehrt, true);
-    const z = await d.zugriff({ id: 'paket:vertraege', rolle: 'mitglied', art: 'dienst', paketId: 'vertraege' });
+    const z = await d.rechtepruefung.zugriff({ id: 'paket:vertraege', rolle: 'mitglied', art: 'dienst', paketId: 'vertraege' });
     assert.equal(z.typen.has(vertrag.id), false, 'verwehrt: Paket sieht den Typ nicht mehr');
     assert.equal(z.typen.has(notiz.id), true);
     const c = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
@@ -200,7 +200,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     await repo.speicherePaket({ ...basis, id: 'kuendigen', name: 'Kündigen', typen: {}, code: true, laeufer: liesCode(code).code! });
     await konten.dienstkonto('kuendigen', 'Kündigen');
     // Regel: Paket darf Verträge mit Name „Geheim“ nicht lesen.
-    const paketRolle = (await d.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
+    const paketRolle = (await d.rechtepruefung.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
     await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
     const offen = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
     const geheim = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
@@ -222,7 +222,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
       await repo.speicherePaket(basis);
       await repo.speicherePaket({ ...basis, id: 'kuendigen', name: 'Kündigen', typen: {}, code: true, laeufer: liesCode(code).code! });
       await konten.dienstkonto('kuendigen', 'Kündigen');
-      const paketRolle = (await d.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
+      const paketRolle = (await d.rechtepruefung.zugriff({ id: 'x', rolle: 'mitglied', art: 'dienst', paketId: 'kuendigen' })).wer.rollen[0];
       await d.setzeBerechtigungen(vertrag.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'r1', name: 'Geheim', wenn: [{ art: 'rolle', rollen: [paketRolle] }, { art: 'feld', bedingung: { art: 'feld', feld: 'name', op: 'gleich', wert: { art: 'fest', wert: 'Geheim' } } }], dann: { R: 'entziehen' }, stopp: false }] }, true);
       const offen = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
       const geheim = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);

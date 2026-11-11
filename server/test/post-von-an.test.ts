@@ -150,7 +150,7 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     const { d, markus, lena, post } = await aufbau();
     const m = await d.legePostAn({ betreff: 'Brief', von: 'Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
     const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
-    const z = await d.zugriff({ id: markus.id, rolle: 'admin' });
+    const z = await d.rechtepruefung.zugriff({ id: markus.id, rolle: 'admin' });
     const text = await motor.fuelle('{absender} an {fuer} – {von} an {an}', { a: { name: 'Test' } as never, mappe: m, typ: post, z, daten: {} });
     assert.equal(text, 'Stadtwerke an Lena – Stadtwerke an Lena');
     // Link über Mappentyp und Feldwerte (#98): absender/fuer gelten als von/an.
@@ -240,9 +240,9 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
       const alle = (await sql`SELECT id FROM mappen WHERE typ_id = ${post.id} ORDER BY id`).map((r) => r.id as string);
       const dd = neuerDienst();
       for (const b of [lena, jonas]) {
-        const z = await dd.zugriff({ id: b.id, rolle: 'mitglied' });
-        const lesbar = await dd.lesbare(z, alle);
-        for (const id of alle) ergebnis[`${b.email} ${id}`] = { ...(await dd.rechteAn(z, (await dd.holeMappe(id)).mappe)), sql: lesbar.has(id) };
+        const z = await dd.rechtepruefung.zugriff({ id: b.id, rolle: 'mitglied' });
+        const lesbar = await dd.rechtepruefung.lesbare(z, alle);
+        for (const id of alle) ergebnis[`${b.email} ${id}`] = { ...(await dd.rechtepruefung.rechteAn(z, (await dd.holeMappe(id)).mappe)), sql: lesbar.has(id) };
       }
       return ergebnis;
     };

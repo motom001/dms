@@ -236,7 +236,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await assert.rejects(d.stelleVorgangWiederHer(m.p.id, { id: admin.id, rolle: 'admin' }), status(404));
 
       // Noch einmal löschen, dann nur V-1 einzeln zurück: der entfernte Verweis der Rechnung kommt mit.
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       await d.loescheMitVerknuepften(m.p.id, { auswahl: (await d.loeschVorschau(m.p.id, {}, z)).vorschlag }, admin.id, z);
       const einzeln = await d.stelleWiederHer(m.v1.id, { id: admin.id, rolle: 'admin' });
       assert.deepEqual((await d.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id, m.v1.id]);
@@ -247,7 +247,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('🔒 Aufbewahrungsfrist: bleibt samt allem, worauf sie verweist; ohne Start eigene Vorgangs-Id', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const heute = new Date().toISOString().slice(0, 10);
       const r3 = await d.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-3', datum: heute, vertrag: [m.v2.id] } }, admin.id);
       const v = await d.loeschVorschau(m.p.id, {}, z);
@@ -288,7 +288,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, anna, admin, m, typen, rufe } = await aufbau(pg);
       // Anna darf Rechnungen nicht löschen
       await d.setzeBerechtigungen(typen.rechnung.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
-      const za = await d.zugriff({ id: anna.id, rolle: 'mitglied' });
+      const za = await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' });
       const v = await d.loeschVorschau(m.p.id, {}, za);
       assert.equal(kennzeichen(v, v.baum.knoten.find((x) => x.id === m.r1.id)!), 'ohneRecht');
       const p = planeLoeschung(v, Object.fromEntries(v.baum.knoten.map((x) => [x.id, 'loeschen' as const])));
@@ -301,7 +301,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const geheim = await d.legeTypAn({ name: 'Geheim', titelVorlage: '{t}', felder: [{ key: 't', label: 'T', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: typen.vertrag.id }] });
       await d.setzeBerechtigungen(geheim.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       await d.legeMappeAn({ typId: geheim.id, werte: { t: 'intern', vertrag: m.v2.id } }, admin.id);
-      const v2 = await d.loeschVorschau(m.p.id, {}, await d.zugriff({ id: anna.id, rolle: 'mitglied' }));
+      const v2 = await d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' }));
       assert.equal(v2.baum.verborgen, 1);
       const p2 = planeLoeschung(v2, v2.vorschlag);
       assert.equal(p2.bleibt[m.v2.id].weil, 'aussen');
@@ -310,12 +310,12 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       // Start nicht lesbar: 404
       await d.setzeBerechtigungen(typen.partner.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
-      await assert.rejects(d.loeschVorschau(m.p.id, {}, await d.zugriff({ id: anna.id, rolle: 'mitglied' })), status(404));
+      await assert.rejects(d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' })), status(404));
     });
 
     it('große Bäume: Obergrenze schneidet ab, Abgeschnittenes hält; ohne Papierkorb sofort endgültig', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const viele = pg ? 30 : 520;
       for (let i = 0; i < viele; i++) await d.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: `M-${i}`, datum: '2010-01-01', vertrag: [m.v2.id] } }, admin.id);
       const ganz = await d.loeschVorschau(m.p.id, { max: 5000 }, z);
@@ -337,7 +337,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('nur nach unten und nur über Zugehörigkeit: Bezug-Mappe bleibt (nur Verweis weg), über sie nichts weiter; nie nach oben', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
-      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       // R-9 gehört zum Vertrag X-1 des anderen Partners, nennt die Stadtwerke aber als Ansprechpartner (Bezug).
       const r9 = await d.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-9', datum: '2014-01-01', vertrag: [m.vx.id], ansprechpartner: m.p.id } }, admin.id);
       const l9 = await d.legeMappeAn({ typId: typen.lieferschein.id, werte: { nr: 'L-9', rechnung: r9.id } }, admin.id);

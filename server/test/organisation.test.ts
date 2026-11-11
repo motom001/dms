@@ -257,9 +257,9 @@ for (const pg of [false, true]) {
       await assert.rejects(x.api(x.jonas, 'PUT', '/mappen/:id', { params: { id: fremd.id }, body: { werte: { eigene_organisation: true } } }), fehler(403));
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: wir.id }, body: { werte: { eigene_organisation: true, telefon: '0123 4567' } } });
       // Das Formular erfährt, was gesperrt ist.
-      const z = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+      const z = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
       assert.deepEqual((await x.d.holeMappe(wir.id, z)).schreibschutz, ['eigene_organisation']);
-      const zm = await x.d.zugriff({ ...(await x.konten.listeBenutzer()).find((b) => b.id === x.markus.id)!, rolle: 'admin' });
+      const zm = await x.d.rechtepruefung.zugriff({ ...(await x.konten.listeBenutzer()).find((b) => b.id === x.markus.id)!, rolle: 'admin' });
       assert.deepEqual((await x.d.holeMappe(wir.id, zm)).schreibschutz, []);
       // Freigegebene Rolle (Werkbank): Jonas bekommt eine Rolle „Büro“, die das Merkmal setzen darf.
       const buero = (await x.d.legeMappeAn({ typId: (await x.d.kern.system()).rolle.id, werte: { name: 'Büro' } }, x.katrin.id)).id;
@@ -334,7 +334,7 @@ for (const pg of [false, true]) {
       const x = await aufbau(pg, 'org_erkennung');
       await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Tischlerei Brandt', eigene_organisation: true, email: 'info@tischlerei.example.org', telefon: '0123 45678' } } });
       const sw = (await x.d.legeMappeAn({ typId: x.org, werte: { name: 'Stadtwerke Musterstadt', email: 'kunden@stadtwerke.example.org' } }, x.katrin.id)).id;
-      const p = await x.d.legePostAn({ betreff: 'Ihre Rechnung', nachricht: 'An Tischlerei Brandt, info@tischlerei.example.org, Tel. 0123 45678. Stadtwerke Musterstadt, kunden@stadtwerke.example.org' }, { id: x.katrin.id, name: 'Katrin' }, await x.d.zugriff({ id: x.katrin.id, rolle: 'mitglied' }));
+      const p = await x.d.legePostAn({ betreff: 'Ihre Rechnung', nachricht: 'An Tischlerei Brandt, info@tischlerei.example.org, Tel. 0123 45678. Stadtwerke Musterstadt, kunden@stadtwerke.example.org' }, { id: x.katrin.id, name: 'Katrin' }, await x.d.rechtepruefung.zugriff({ id: x.katrin.id, rolle: 'mitglied' }));
       const e = await x.d.erkennung.fuerPost(p.id);
       assert.deepEqual(e?.absender.map((a) => a.mappeId), [sw]);
     });

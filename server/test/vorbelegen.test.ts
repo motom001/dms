@@ -160,14 +160,14 @@ describe('Beim Auswählen übernehmen – Vorschläge (#1037)', () => {
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
     await x.d.gleicheBenutzerAb(await konten.listeBenutzer());
-    const zJ = await x.d.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
-    assert.ok(!(await x.d.lesbare(zJ, [x.telekom.id])).has(x.telekom.id), 'Jonas darf die Organisation nicht lesen');
+    const zJ = await x.d.rechtepruefung.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
+    assert.ok(!(await x.d.rechtepruefung.lesbare(zJ, [x.telekom.id])).has(x.telekom.id), 'Jonas darf die Organisation nicht lesen');
     const r = await x.d.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ);
     assert.ok(!('anbieter' in r.felder) && !(x.telekom.id in r.bezuege), 'kein Titel über den Vorschlag');
     assert.deepEqual(r.felder.kuendigungsfrist, { anzahl: 3, einheit: 'monate' });
     // Vertragsart selbst gesperrt: gar nichts.
     await x.d.aendereTyp(x.vertragsart.id, { ...x.vertragsart, berechtigungen: { grund: NICHTS, regeln: [] } });
-    const zJ2 = await x.d.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
+    const zJ2 = await x.d.rechtepruefung.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
     assert.deepEqual((await x.d.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ2)).felder, {});
     // Die Route ist angemeldet erreichbar.
     assert.ok(routen(x.d, konten, {}).some((r2) => r2.methode === 'POST' && r2.pfad === '/api/mappen/vorbelegen' && r2.zugang === 'angemeldet'));

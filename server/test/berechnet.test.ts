@@ -160,7 +160,7 @@ for (const pg of [false, true]) {
       const x = await aufbau(pg, 'berechnet_install');
       const t = await x.typ();
       assert.deepEqual(t.felder.filter((f) => f.berechnetVon).map((f) => [f.key, f.berechnetVon, !!f.pflicht]), [['kuendigen_bis', 'vertraege', false], ['status', 'vertraege', false], ['aktiv', 'vertraege', false]]);
-      const fuer = await x.d.typenFuer(await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' }));
+      const fuer = await x.d.typenFuer(await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' }));
       assert.deepEqual(fuer.find((y) => y.id === x.typId)!.berechnung, { vertraege: { name: 'Verträge', aktiv: true } });
     });
 
@@ -212,7 +212,7 @@ for (const pg of [false, true]) {
       const id = x.mappe.id;
       // Automatisierung: Systemkonto über denselben Weg wie die Karte „Feld ändern“.
       const auto = await x.konten.systemkonto?.('automatisierung').catch(() => undefined);
-      const z = await x.d.zugriff({ id: auto?.id ?? '00000000-0000-4000-8000-0000000000ff', rolle: 'mitglied', art: 'system', systemkonto: 'automatisierung' });
+      const z = await x.d.rechtepruefung.zugriff({ id: auto?.id ?? '00000000-0000-4000-8000-0000000000ff', rolle: 'mitglied', art: 'system', systemkonto: 'automatisierung' });
       await assert.rejects(x.d.aendereMappe(id, { werte: { status: 'von der Automatisierung' } }, auto?.id ?? null, z, { automatisierung: 'Test' }), fehler(400, /Verträge/));
       // Erkennung und „Aus Dokument ausfüllen“ fragen berechnete Felder nicht an und nehmen keine Vorschläge dafür.
       const t = await x.typ();
@@ -220,7 +220,7 @@ for (const pg of [false, true]) {
       assert.deepEqual(Object.keys((schemaFuer(t) as { properties: Record<string, unknown> }).properties).sort(), ['beginn', 'bezeichnung']);
       const v = pruefeVorschlaege(t, { status: { wert: 'gekündigt', sicherheit: 'hoch', fundstelle: '' }, bezeichnung: { wert: 'Strom', sicherheit: 'hoch', fundstelle: '' } });
       assert.deepEqual([Object.keys(v.vorschlaege), v.verworfen.map((y) => y.feld)], [['bezeichnung'], ['status']]);
-      const r = await x.d.erkennung.fuerTyp(x.typId, { text: 'Status: gekündigt\nKündigen bis 31.03.2027\nBezeichnung Strom' }, await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' }));
+      const r = await x.d.erkennung.fuerTyp(x.typId, { text: 'Status: gekündigt\nKündigen bis 31.03.2027\nBezeichnung Strom' }, await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' }));
       assert.ok(!('status' in r.vorschlaege) && !('kuendigen_bis' in r.vorschlaege), 'keine Vorschläge für berechnete Felder');
       // Vorschläge aus der verwiesenen Mappe (#1037) und alle künftigen Wege fragen hier.
       assert.deepEqual(t.felder.filter(vonAussenFuellbar).map((f) => f.key), ['bezeichnung', 'beginn']);
@@ -235,7 +235,7 @@ for (const pg of [false, true]) {
       const ohne = { ...ip, code: false };
       delete ohne.laeufer;
       await x.d.kern.repo.speicherePaket(ohne);
-      const z = await x.d.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
+      const z = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
       assert.deepEqual((await x.d.typenFuer(z)).find((y) => y.id === x.typId)!.berechnung, { vertraege: { name: 'Verträge', aktiv: false } });
       assert.equal(berechnungAktiv(undefined, { schluessel: 'vertraege:vertrag' }), false);
       assert.equal((await x.d.holeMappe(id)).mappe.werte.status, 'läuft');

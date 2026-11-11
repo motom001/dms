@@ -426,7 +426,7 @@ const aufgabenmail = new Aufgabenmail({
   benutzer: () => konten.listeBenutzer(),
   einstellungenVon: (b) => konten.einstellungen(b),
   // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
-  aufgabenVon: async (b) => dienst.meineAufgaben(b, await dienst.zugriff(b)),
+  aufgabenVon: async (b) => dienst.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
   typName,
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
@@ -573,7 +573,7 @@ const webhooks = new Webhooks({
   repo: messung.umhuelle(pgWebhookRepo(sql, cfg.haushalt), 'webhooks'),
   einstellungen: pgEinstellungen(sql, cfg.haushalt),
   verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w),
-  zahlen: async (b) => { const r = await dienst.zaehlerAbruf(await dienst.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
+  zahlen: async (b) => { const r = await dienst.zaehlerAbruf(await dienst.rechtepruefung.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
   benutzer: (id) => konten.benutzerMitId(id),
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
   anAdmins: anVerwaltendeVon('webhooks'),

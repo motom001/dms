@@ -94,7 +94,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
     }
     const p = await post();
     assert.equal(p.length, vorher + 3);
-    const doks = (await dienst.laufwerkMappe(p.find((x) => x.werte.betreff === 'Scan')!.id, await dienst.zugriff({ id: annaId, rolle: 'mitglied' }))).dokumente;
+    const doks = (await dienst.laufwerkMappe(p.find((x) => x.werte.betreff === 'Scan')!.id, await dienst.rechtepruefung.zugriff({ id: annaId, rolle: 'mitglied' }))).dokumente;
     assert.equal(doks.length, 1);
     assert.equal(doks[0].groesse, PDF.length);
   });

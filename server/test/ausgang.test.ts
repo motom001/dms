@@ -193,7 +193,7 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
   it('Pflicht-Stempel gilt auch für das PDF „Angaben“ – bei mehreren und bei einer Mappe; in der Post liegt die gestempelte Fassung', async () => {
     const { d, lena, vertrag, v1, pdf } = await aufbau();
     await d.aendereTyp(vertrag.id, { ...vertrag, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
-    const z = await d.zugriff(lena);
+    const z = await d.rechtepruefung.zugriff(lena);
     const ich = { id: lena.id, name: 'Lena', email: 'lena@example.org', rolle: 'mitglied' };
     const { mails, m } = mailer();
     await d.versendeMappen({ ids: [v1.id], an: 'steuer@example.org', betreff: 'Belege', dokumente: [pdf.id] }, ich, z, m as never);
@@ -215,7 +215,7 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
 
   it('gleiche Prüfung und Wahl der Fassung bei einer und mehreren Mappen', async () => {
     const { d, lena, v1, pdf } = await aufbau();
-    const z = await d.zugriff(lena);
+    const z = await d.rechtepruefung.zugriff(lena);
     const ich = { id: lena.id, name: 'Lena', email: 'lena@example.org', rolle: 'mitglied' };
     const { m } = mailer();
     await assert.rejects(d.versendeMappe(v1.id, { an: 'a@example.org', betreff: 'x', fassungen: { [pdf.id]: 'kopie' } }, ich, m as never, z), status(422, /kennt nur/));

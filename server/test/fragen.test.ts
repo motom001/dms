@@ -137,8 +137,8 @@ async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   const police = await dok(kfz.id, 'police.pdf', `${'Allgemeine Bedingungen. '.repeat(80)}Ihre Kfz-Versicherung läuft am 31.12.2026 aus und verlängert sich um ein Jahr.`);
   const brief = await dok(garten.id, 'angebot.pdf', 'Angebot für das Gartenhaus: Versicherung gegen Sturm, 120 Euro im Jahr.');
   await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
-  const L = await d.zugriff({ id: lena.id, rolle: 'admin' });
-  const J = await d.zugriff({ id: jonas.id, rolle: 'mitglied' });
+  const L = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
+  const J = await d.rechtepruefung.zugriff({ id: jonas.id, rolle: 'mitglied' });
   return { d, konten, lena, jonas, kfz, garten, police, brief, L, J };
 }
 

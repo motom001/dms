@@ -72,7 +72,7 @@ export class Klassifizierung {
     for (const id of ids) {
       const dok = await this.repo().holeDokument(id);
       if (!dok) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
-      quellTypen.add((await this.d.pruefeRecht(z, dok.mappeId, 'R')).typId);
+      quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, dok.mappeId, 'R')).typId);
       const text = await this.repo().volltext(id);
       if (text?.trim()) teile.push(text); else ohneText.push(id);
     }

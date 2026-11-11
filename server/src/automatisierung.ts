@@ -621,7 +621,7 @@ export class Automatisierungen {
   private async unlesbar(): Promise<{ typen: Set<string>; kontoId: string | null }> {
     const konto = await this.konto().catch(() => null);
     if (!konto) return { typen: new Set(), kontoId: null };
-    const z = await this.d.dienst.zugriff(konto);
+    const z = await this.d.dienst.rechtepruefung.zugriff(konto);
     const typen = new Set<string>();
     for (const typ of await this.d.dienst.listeTypen()) {
       const lesbar = z.typen.has(typ.id) && (!z.lesen || z.lesen.offen.includes(typ.id) || z.lesen.je.some((x) => x.typId === typ.id));
@@ -653,7 +653,7 @@ export class Automatisierungen {
     const typ = kontextTyp(a.wenn, (await this.kontext()).typen);
     if (!typ) return { mappen: [], gesamt: 0 };
     const konto = await this.konto();
-    const s = await this.d.dienst.seite(konto, { sicht: `typ:${typ.id}`, suche, anzahl: 20 }, await this.d.dienst.zugriff(konto), 20);
+    const s = await this.d.dienst.seite(konto, { sicht: `typ:${typ.id}`, suche, anzahl: 20 }, await this.d.dienst.rechtepruefung.zugriff(konto), 20);
     return { mappen: s.mappen.map((m) => ({ id: m.id, titel: m.titel ?? '', typId: m.typId })), gesamt: s.gesamt };
   }
 
@@ -789,8 +789,8 @@ export class Automatisierungen {
     const k = await this.kontext();
     const typ = kontextTyp(a.wenn, k.typen);
     // Rechte des Kontos „Automatisierung“, nicht die des Admins – die Meldung sagt das auch so (#709).
-    const roh = await this.d.dienst.pruefeRecht(undefined, mappeId, 'R');
-    const m = await this.d.dienst.pruefeRecht(await this.d.dienst.systemZugriff('automatisierung'), mappeId, 'R').catch((x: unknown) => {
+    const roh = await this.d.dienst.rechtepruefung.pruefeRecht(undefined, mappeId, 'R');
+    const m = await this.d.dienst.rechtepruefung.pruefeRecht(await this.d.dienst.systemZugriff('automatisierung'), mappeId, 'R').catch((x: unknown) => {
       if (x instanceof Fachfehler && (x.status === 403 || x.status === 404)) throw new Fachfehler(403, t('automatisierung.test.rechte', { typ: k.typen.find((y) => y.id === roh.typId)?.name ?? '' }));
       throw x;
     });
@@ -936,7 +936,7 @@ export class Automatisierungen {
       // Mappe mit den Rechten des Systemkontos: Was es nicht lesen darf, sieht die Automatisierung nicht.
       let mappe: Mappe | null = null;
       if (mappeId) {
-        try { mappe = await this.d.dienst.pruefeRecht(z, mappeId, 'R'); }
+        try { mappe = await this.d.dienst.rechtepruefung.pruefeRecht(z, mappeId, 'R'); }
         catch (x) {
           if (x instanceof Fachfehler && x.status === 403) { await schritt(1, { zustand: 'uebersprungen', text: t('automatisierung.lauf.nicht-lesbar') }); return await ende('uebersprungen'); }
           if (!(x instanceof Fachfehler && x.status === 404)) throw x;
@@ -1045,10 +1045,10 @@ export class Automatisierungen {
   async fuelleMit(text: string, c: { a: Automatisierung; mappe: Mappe | null; typ: Mappentyp | null; z: Zugriff; daten: Record<string, unknown>; art?: string }, empf: Zugriff | null): Promise<{ text: string; verborgen: number; mappe: boolean }> {
     const { a, mappe, typ, z, daten } = c;
     const versteckt = t('automatisierung.platzhalter.nicht-sichtbar');
-    const mappeSichtbar = !empf || !mappe || (await this.d.dienst.lesbare(empf, [mappe.id])).has(mappe.id);
+    const mappeSichtbar = !empf || !mappe || (await this.d.dienst.rechtepruefung.lesbare(empf, [mappe.id])).has(mappe.id);
     const refs = mappe && typ ? typ.felder.filter((f) => f.typ === 'referenz').flatMap((f) => alsListe(mappe.werte[f.key])).filter(istUuid) : [];
     const titel = refs.length ? await this.d.dienst.lesbareTitel(z, refs) : new Map<string, string>();
-    if (empf && refs.length) { const ok = await this.d.dienst.lesbare(empf, refs); for (const id of [...titel.keys()]) if (!ok.has(id)) titel.delete(id); }
+    if (empf && refs.length) { const ok = await this.d.dienst.rechtepruefung.lesbare(empf, refs); for (const id of [...titel.keys()]) if (!ok.has(id)) titel.delete(id); }
     const fest: Record<string, string> = {
       titel: mappe?.titel ?? '', mappentyp: typ?.name ?? '', heute: tagVon(new Date(this.jetzt()).toISOString()), automatisierung: a.name,
       datum: typeof daten.datum === 'string' ? tagVon(`${daten.datum}T12:00:00Z`) : '', tage: daten.tage === undefined ? '' : String(daten.tage),
@@ -1059,7 +1059,7 @@ export class Automatisierungen {
     // Aus dem Ereignis (#678/#712): Personen mit Namen, Zeitraum einer Abwesenheit lesbar.
     const tag = (x: unknown) => (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x) ? tagVon(`${x}T12:00:00Z`) : '');
     const personen = (PERSONEN_IM_EREIGNIS[c.art ?? ''] ?? []).filter((k) => typeof daten[k] === 'string' && istUuid(daten[k] as string));
-    const siehtPersonen = empf && personen.length ? await this.d.dienst.lesbare(empf, personen.map((k) => daten[k] as string)) : null;
+    const siehtPersonen = empf && personen.length ? await this.d.dienst.rechtepruefung.lesbare(empf, personen.map((k) => daten[k] as string)) : null;
     for (const k of personen) {
       const id = daten[k] as string;
       if (siehtPersonen && !siehtPersonen.has(id)) { fest[k] = versteckt; verdeckt.add(k); } else fest[k] = await this.d.dienst.kern.name(id);

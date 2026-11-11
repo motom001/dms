@@ -245,7 +245,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
 
   it('„Neue Post“ zählt eins weniger; „Post für dich“ ist erledigt und bleibt an der Post', async () => {
     const { d, lena, jonas, rechnung } = await mitKonten();
-    const z = await d.zugriff({ id: lena.id, rolle: 'admin' });
+    const z = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
     const sicht = (await d.neuePostSicht())!;
     const post = await d.legePostAn({ betreff: 'Für Jonas', fuer: jonas.id }, { id: lena.id, name: 'Lena' });
     await d.legePostAn({ betreff: 'Nächste Post' }, { id: lena.id, name: 'Lena' });
@@ -253,7 +253,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     assert.equal((await d.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 1);
     const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'J-1' } }, lena.id);
     await d.ordneZu(post.id, { ziel: neu.id, dokumente: [], aufloesen: true }, lena.id, z);
-    assert.equal((await d.zaehler({ id: lena.id, rolle: 'admin' }, await d.zugriff({ id: lena.id, rolle: 'admin' }))).sichten[sicht], 1);
+    assert.equal((await d.zaehler({ id: lena.id, rolle: 'admin' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }))).sichten[sicht], 1);
     assert.equal((await d.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
     assert.ok(!(await d.holeMappe(neu.id)).aufgaben.some((x) => x.art === 'post'), '„Post für dich“ gehört nicht zur Rechnung');
   });

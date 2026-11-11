@@ -37,11 +37,11 @@ import { Ereignisverteiler } from './ereignisse';
 import { Eingang } from './hochladen';
 import { type KatalogEreignis } from '../../shared/src/ereignisse';
 import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
-import type { Regelwerk, Mappenquelle, Recht, Rechte } from '../../shared/src/rechte';
+import type { Regelwerk, Rechte } from '../../shared/src/rechte';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
-import { ABO_ARTEN, Kern, PAPIERKORB_STANDARD_TAGE, type Anlass, type SystemIds, type Zugreifender, type Zugriff } from './kern';
+import { ABO_ARTEN, Kern, PAPIERKORB_STANDARD_TAGE, type Anlass, type SystemIds, type Zugriff } from './kern';
 import { Systemausstattung } from './systemausstattung';
 import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
 export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
@@ -287,7 +287,7 @@ export class Dienst {
     return this.paketaktionenDienst ??= new PaketAktionen(this.kern, this.rechtepruefung, {
       paketZugriff: async (paketId) => {
         const konto = [...this.kern.paketKonten].find(([, p]) => p === paketId)?.[0];
-        return konto ? this.zugriff({ id: konto, rolle: 'mitglied', art: 'dienst', paketId }) : null;
+        return konto ? this.rechtepruefung.zugriff({ id: konto, rolle: 'mitglied', art: 'dienst', paketId }) : null;
       },
       kiSperre: (paketId) => this.kiSperreFuer(paketId),
       mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
@@ -309,7 +309,7 @@ export class Dienst {
     if (typeof grundRepo.mappenstand === 'function' && typeof grundRepo.erhoeheMappenstand === 'function') {
       this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
     }
-    this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.zugriff(ich) });
+    this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.rechtepruefung.zugriff(ich) });
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.kiSperre(p), konten: () => this.konten });
     this.mappentypen = new MappentypenDienst(this.kern, {
       mitStempel: (typen) => this.mitStempel(typen), pruefeStempelTyp: (v) => this.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.setzeStempelTyp(id, st),
@@ -838,17 +838,6 @@ export class Dienst {
 
   /* ---------- Rechte prüfen (#1072: in zugriff/zugriff.dienst.ts) ---------- */
 
-  zugriff(ich: Zugreifender): Promise<Zugriff> { return this.rechtepruefung.zugriff(ich); }
-  rechteAn(z: Zugriff, m: Mappe, neu = false, aufgaben?: Aufgabe[]): Promise<Rechte> { return this.rechtepruefung.rechteAn(z, m, neu, aufgaben); }
-  rechteAnVielen(z: Zugriff, ms: Mappe[]): Promise<Map<string, Rechte>> { return this.rechtepruefung.rechteAnVielen(z, ms); }
-  private mappenquelle(benutzerId: string, mappeIds: string[]): Promise<Mappenquelle> { return this.rechtepruefung.mappenquelle(benutzerId, mappeIds); }
-  pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht): Promise<Mappe> { return this.rechtepruefung.pruefeRecht(z, id, recht); }
-  lesbare(z: Zugriff | undefined, ids: string[]): Promise<Set<string>> { return this.rechtepruefung.lesbare(z, ids); }
-  sichtbarFuer(benutzerId: string, ids: string[]): Promise<Set<string>> { return this.rechtepruefung.sichtbarFuer(benutzerId, ids); }
-  wasSieht(benutzerId: unknown) { return this.rechtepruefung.wasSieht(benutzerId); }
-  mappeVon(art: 'dokument' | 'notiz' | 'aufgabe', id: string): Promise<string> { return this.rechtepruefung.mappeVon(art, id); }
-  mitPasswortRecht<T extends Mappe>(z: Zugriff, mappen: T[]): Promise<{ mit: T[]; ohne: T[] }> { return this.rechtepruefung.mitPasswortRecht(z, mappen); }
-  kannLesen(benutzerId: string, mappeId: string): Promise<boolean> { return this.rechtepruefung.kannLesen(benutzerId, mappeId); }
 
   /* ---------- Pakete am Mappentyp (#686) ---------- */
 
