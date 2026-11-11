@@ -71,7 +71,7 @@ export const UEBERGAENGE: Uebergang[] = [
   {
     was: 'Post: alte Feldnamen absender und fuer (jetzt von und an) – Schnittstelle v1 nimmt sie beim Schreiben an und liefert sie an der Post mit; '
       + 'Post anlegen und aus Fotos mit absender/fuer; Ereignis post.angelegt mit fuer; Platzhalter {absender}/{fuer}; Links über Mappentyp und Feldwerte',
-    seit: '#1042, 0.241',
+    seit: '#1042, 0.242',
     entfaelltMit: '1.0.0',
     fundstellen: [
       { datei: 'shared/src/postfelder.ts', text: "export const POST_ALTE_KENNUNGEN = { absender: 'von', fuer: 'an' } as const;" },

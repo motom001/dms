@@ -67,7 +67,7 @@ Content-Type: application/json; charset=utf-8
 
 | Field | Meaning |
 | --- | --- |
-| `neuePost` | [post](https://help.ablago.app/benutzer/aktuell/en/post/) in the status *New* whose *To* (until 0.240 *For*) is the user or empty – only post they may read |
+| `neuePost` | [post](https://help.ablago.app/benutzer/aktuell/en/post/) in the status *New* whose *To* (until 0.241 *For*) is the user or empty – only post they may read |
 | `zuErledigen` | like **To do** in the Library: folders with open tasks for them |
 | `ueberfaellig` | own open deadlines, reminders and tasks with a date before today |
 | `stand` | counts up by one as soon as one of the numbers has changed compared with the last retrieval |
@@ -151,7 +151,7 @@ The post is then in **New post** with channel *API* and status *New*. `POST /api
 
 #### From and To { #post-von-und-an }
 
-Since 0.241 (#1042) the fields of post are called the same as on contracts and invoices: `von` (who sent the post, text; until 0.240 `absender`) and `an` (id of the user the post is for; until 0.240 `fuer`). The former text field `an` with the addresses of a sent email is now called `an_adresse`. **Transition until 1.0.0:** the interface still accepts `absender` and `fuer` when writing (`POST /api/v1/post`, `POST /api/v1/post/fotos`, `PUT /api/v1/mappen/{id}`; the new name takes precedence) and returns them in addition with the same value when reading a post. The event `post.angelegt` carries `an` and `fuer`. Links via folder type and field values also understand `absender` and `fuer`. The [counter](#zaehler) stays as it is.
+Since 0.242 (#1042) the fields of post are called the same as on contracts and invoices: `von` (who sent the post, text; until 0.241 `absender`) and `an` (id of the user the post is for; until 0.241 `fuer`). The former text field `an` with the addresses of a sent email is now called `an_adresse`. **Transition until 1.0.0:** the interface still accepts `absender` and `fuer` when writing (`POST /api/v1/post`, `POST /api/v1/post/fotos`, `PUT /api/v1/mappen/{id}`; the new name takes precedence) and returns them in addition with the same value when reading a post. The event `post.angelegt` carries `an` and `fuer`. Links via folder type and field values also understand `absender` and `fuer`. The [counter](#zaehler) stays as it is.
 
 Deleted folders are in the [Bin](papierkorb.md): `GET /api/v1/papierkorb` (own), `POST /api/v1/papierkorb/<id>/wiederherstellen`, `DELETE /api/v1/papierkorb/<id>` and `DELETE /api/v1/papierkorb` (empty).
 

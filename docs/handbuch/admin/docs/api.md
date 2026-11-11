@@ -67,7 +67,7 @@ Content-Type: application/json; charset=utf-8
 
 | Feld | Bedeutung |
 | --- | --- |
-| `neuePost` | [Post](https://help.ablago.app/benutzer/post/) im Stand *Neu*, deren *An* (bis 0.240 *Für*) der Benutzer ist oder leer ist – nur Post, die er lesen darf |
+| `neuePost` | [Post](https://help.ablago.app/benutzer/post/) im Stand *Neu*, deren *An* (bis 0.241 *Für*) der Benutzer ist oder leer ist – nur Post, die er lesen darf |
 | `zuErledigen` | wie **Zu erledigen** in der Ablage: Mappen mit offenen Aufgaben für ihn |
 | `ueberfaellig` | eigene offene Fristen, Erinnerungen und Aufgaben mit Datum vor heute |
 | `stand` | zählt um eins hoch, sobald sich eine der Zahlen gegenüber dem letzten Abruf geändert hat |
@@ -151,7 +151,7 @@ Die Post steht dann mit Kanal *API* und Stand *Neu* in **Neue Post**. `POST /api
 
 #### Von und An { #post-von-und-an }
 
-Die Felder der Post heißen seit 0.241 (#1042) wie bei Verträgen und Rechnungen: `von` (wer die Post geschickt hat, Text; bis 0.240 `absender`) und `an` (Id eines Benutzers, für den die Post ist; bis 0.240 `fuer`). Das frühere Textfeld `an` mit den Adressen einer versendeten E-Mail heißt jetzt `an_adresse`. **Übergang bis 1.0.0:** `absender` und `fuer` nimmt die Schnittstelle beim Schreiben weiter an (`POST /api/v1/post`, `POST /api/v1/post/fotos`, `PUT /api/v1/mappen/{id}`; der neue Name geht vor) und liefert sie beim Lesen einer Post zusätzlich mit demselben Wert. Das Ereignis `post.angelegt` trägt `an` und `fuer`. Links über Mappentyp und Feldwerte verstehen `absender` und `fuer` ebenfalls. Der [Zähler](#zaehler) bleibt, wie er ist.
+Die Felder der Post heißen seit 0.242 (#1042) wie bei Verträgen und Rechnungen: `von` (wer die Post geschickt hat, Text; bis 0.241 `absender`) und `an` (Id eines Benutzers, für den die Post ist; bis 0.241 `fuer`). Das frühere Textfeld `an` mit den Adressen einer versendeten E-Mail heißt jetzt `an_adresse`. **Übergang bis 1.0.0:** `absender` und `fuer` nimmt die Schnittstelle beim Schreiben weiter an (`POST /api/v1/post`, `POST /api/v1/post/fotos`, `PUT /api/v1/mappen/{id}`; der neue Name geht vor) und liefert sie beim Lesen einer Post zusätzlich mit demselben Wert. Das Ereignis `post.angelegt` trägt `an` und `fuer`. Links über Mappentyp und Feldwerte verstehen `absender` und `fuer` ebenfalls. Der [Zähler](#zaehler) bleibt, wie er ist.
 
 Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb` (eigener), `POST /api/v1/papierkorb/<Id>/wiederherstellen`, `DELETE /api/v1/papierkorb/<Id>` und `DELETE /api/v1/papierkorb` (leeren).
 
