@@ -1,4 +1,4 @@
-import type { Systemkonto, Aufgabe, Benutzer, Mappentyp } from '../../shared/src/model';
+import type { Systemkonto, Benutzer, Mappentyp } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -9,11 +9,6 @@ import { aufkleberPdf, ETIKETTEN } from './aufkleber';
 import { istVerschluesselt, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { type Repo } from './repo';
-import type { ExportQuelle } from './vollexport';
-import { type AuskunftVorschau, type Datenschutz } from '../../shared/src/auskunft';
-import type { AuskunftEintrag, AuskunftLink } from '../../shared/src/auskunft';
-import type { AuskunftLinkIntern } from './repo';
-import type { AuskunftDaten } from './auskunft';
 import { type InstalliertesPaket } from '../../shared/src/pakete';
 import { PaketVolltext } from './paketvolltext';
 import { FragenAnDieAblage } from './fragen';
@@ -316,7 +311,7 @@ export class Dienst {
     });
     this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, hinweise: this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung) }, {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich),
-      mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d), mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
+      mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d), mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d), datenschutz: () => this.datenschutzDienst.datenschutz(),
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschen.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
@@ -762,10 +757,6 @@ export class Dienst {
 
   /* ---------- Demo-Daten (#248, datenschutz/datenschutz.dienst.ts) ---------- */
 
-  mappenJeTyp(): Promise<Map<string, number>> { return this.datenschutzDienst.mappenJeTyp(); }
-  demoUebersicht() { return this.datenschutzDienst.demoUebersicht(); }
-  entferneDemo(...a: Parameters<DatenschutzDienst['entferneDemo']>) { return this.datenschutzDienst.entferneDemo(...a); }
-  legeDemoDokumentAn(...a: Parameters<DatenschutzDienst['legeDemoDokumentAn']>) { return this.datenschutzDienst.legeDemoDokumentAn(...a); }
 
   /* ---------- Eingangskanäle (#195, post/eingangskanaele.ts) ---------- */
 
@@ -796,8 +787,6 @@ export class Dienst {
 
   /* ---------- Vollexport (#254, datenschutz/vollexport.ts) ---------- */
 
-  vollexportQuelle(...a: Parameters<VollexportQuellen['vollexportQuelle']>): ExportQuelle { return this.vollexport.vollexportQuelle(...a); }
-  persoenlicheQuelle(...a: Parameters<VollexportQuellen['persoenlicheQuelle']>): Promise<ExportQuelle> { return this.vollexport.persoenlicheQuelle(...a); }
 
   /* ---------- Baum-Sammlung über Verweise (#396, #424, loeschen/mit-verknuepften.ts) ---------- */
 
@@ -807,31 +796,9 @@ export class Dienst {
 
   /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396, datenschutz/datenschutz.dienst.ts) ---------- */
 
-  datenschutz(): Promise<Datenschutz> { return this.datenschutzDienst.datenschutz(); }
-  /** Für Unterlagen an Dritte (#995): Verantwortlicher aus der eigenen Organisation, sonst wie eingestellt. */
-  datenschutzFuerUnterlagen(): Promise<Datenschutz> { return this.datenschutzDienst.datenschutzFuerUnterlagen(); }
-  setzeDatenschutz(eingabe: unknown, von: string): Promise<Datenschutz> { return this.datenschutzDienst.setzeDatenschutz(eingabe, von); }
-  auskunftVorschau(e: unknown, z: Zugriff): Promise<AuskunftVorschau> { return this.datenschutzDienst.auskunftVorschau(e, z); }
-  auskunftDaten(...a: Parameters<DatenschutzDienst['auskunftDaten']>): Promise<AuskunftDaten> { return this.datenschutzDienst.auskunftDaten(...a); }
-  auskunftNachweis(...a: Parameters<DatenschutzDienst['auskunftNachweis']>) { return this.datenschutzDienst.auskunftNachweis(...a); }
-  auskunftFrist(e: unknown, z: Zugriff, von: string): Promise<Aufgabe> { return this.datenschutzDienst.auskunftFrist(e, z, von); }
-  auskunftVerzeichnis(...a: Parameters<DatenschutzDienst['auskunftVerzeichnis']>): Promise<AuskunftEintrag[]> { return this.datenschutzDienst.auskunftVerzeichnis(...a); }
-  auskunftNotiz(...a: Parameters<DatenschutzDienst['auskunftNotiz']>) { return this.datenschutzDienst.auskunftNotiz(...a); }
 
   /* ---------- Auskunft zustellen (#455, datenschutz/zustellen.ts) ---------- */
 
-  auskunftLinks(...a: Parameters<AuskunftZustellen['auskunftLinks']>): Promise<AuskunftLink[]> { return this.auskunftZustellen.auskunftLinks(...a); }
-  auskunftLinkAktiv(auskunftId: string): Promise<boolean> { return this.auskunftZustellen.auskunftLinkAktiv(auskunftId); }
-  auskunftPerEmail(...a: Parameters<AuskunftZustellen['auskunftPerEmail']>) { return this.auskunftZustellen.auskunftPerEmail(...a); }
-  auskunftLinkAnlegen(...a: Parameters<AuskunftZustellen['auskunftLinkAnlegen']>) { return this.auskunftZustellen.auskunftLinkAnlegen(...a); }
-  auskunftLinkWiderrufen(id: string, ich: { id: string; email: string }): Promise<AuskunftLink> { return this.auskunftZustellen.auskunftLinkWiderrufen(id, ich); }
-  auskunftAbrufPruefen(...a: Parameters<AuskunftZustellen['auskunftAbrufPruefen']>) { return this.auskunftZustellen.auskunftAbrufPruefen(...a); }
-  auskunftLinkMitId(id: string): Promise<AuskunftLinkIntern | undefined> { return this.auskunftZustellen.auskunftLinkMitId(id); }
-  auskunftAbrufZaehlen(id: string): Promise<number | null> { return this.auskunftZustellen.auskunftAbrufZaehlen(id); }
-  auskunftAbgerufen(...a: Parameters<AuskunftZustellen['auskunftAbgerufen']>) { return this.auskunftZustellen.auskunftAbgerufen(...a); }
-  persoenlicherExportErlaubt(): Promise<boolean> { return this.auskunftZustellen.persoenlicherExportErlaubt(); }
-  setzePersoenlicherExport(an: unknown, von: string) { return this.auskunftZustellen.setzePersoenlicherExport(an, von); }
-  exportAbschaetzung() { return this.auskunftZustellen.exportAbschaetzung(); }
 
   /* ---------- Archivmodus (#212) ---------- */
 

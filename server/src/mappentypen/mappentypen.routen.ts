@@ -55,7 +55,7 @@ export function typenRouten(k: RoutenKontext): Route[] {
       L.werkbank.info('Beispiel-Mappentypen geladen');
       return leer;
     } },
-    { methode: 'GET', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.demoUebersicht()) },
+    { methode: 'GET', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.datenschutzDienst.demoUebersicht()) },
     // Erzeugen und Entfernen laufen im Hintergrund (202); den Stand liefert /api/werkbank/auftrag.
     { methode: 'POST', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async (a) => {
       const o = pruefeDemoOptionen(b(a));
@@ -71,7 +71,7 @@ export function typenRouten(k: RoutenKontext): Route[] {
     // Abschätzung vor dem Start (#248): Mappen, Dokumente, Größe, Seiten für die Texterkennung, freier Platz.
     { methode: 'POST', pfad: '/api/werkbank/demo/abschaetzung', zugang: 'admin', lesend: true, handler: async (a) => ok(await schaetzeDemo(dienst, pruefeDemoOptionen(b(a)), demoPlatz)) },
     { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
-      ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.kern.ohneEreignisse(() => dienst.entferneDemo(f)), [{ key: 'mappen', name: 'Demo-Mappen entfernen', einheit: 'Mappen' }])), 202) },
+      ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.kern.ohneEreignisse(() => dienst.datenschutzDienst.entferneDemo(f)), [{ key: 'mappen', name: 'Demo-Mappen entfernen', einheit: 'Mappen' }])), 202) },
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(await dienst.auftraege.stand()) },
     // Abbrechen (#458) – nur Aufträge, die das erlauben (z. B. „Volltext neu erzeugen“).
     { methode: 'POST', pfad: '/api/werkbank/auftrag/abbrechen', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.abbrechen((b(a) as { id?: unknown }).id)) },

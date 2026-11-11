@@ -82,7 +82,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
     const { HAUSHALT } = await import('./leistung-daten');
     const z = zaehlend(pgRepo(sql, HAUSHALT));
     const d = new Dienst(z.repo, ordnerSpeicher(ordner, HAUSHALT), { einstellungen: speicherEinstellungen() });
-    const q = d.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const q = d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
     // Nur 300 Mappen (PDF je Mappe kostet Zeit); reicht für mehrere Pakete.
     let rest = 300;
     const mappen = q.mappen;

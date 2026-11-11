@@ -208,7 +208,7 @@ export async function schaetzeDemo(dienst: Dienst, o: DemoOptionen, platz?: Demo
   const { mappen, mappenMitRegister, dokumente } = schaetzeMenge(typen, o);
   const frei = platz ? await platz.frei().catch(() => null) : null;
   const mindest = platz ? await platz.mindest().catch(() => 0) : 0;
-  const anzahl = await dienst.mappenJeTyp();
+  const anzahl = await dienst.datenschutzDienst.mappenJeTyp();
   const fehlen = nichtErzeugbar(typen, verteilung(typen.filter((t) => !t.system), o.anzahl), (id) => anzahl.get(id) ?? 0);
   return { mappen, mappenMitRegister, dokumente, frei, mindest, reicht: frei === null || frei - (dokumente?.bytes ?? 0) >= mindest, rastern: await kannRastern(), nichtErzeugbar: fehlen };
 }
@@ -385,7 +385,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
             seitPruefung += e.inhalt.length;
           }
           const reg = z.eins(register);
-          const r = await dienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
+          const r = await dienst.datenschutzDienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
           if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
           if (ocr.length >= 200) { await dienst.eingangskanaele.demoTexterkennung(ocr); ocr = []; }
           statistik.anzahl++;

@@ -175,12 +175,12 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.equal((await x.d.mappenHistorie.historie(x.m.id)).filter((h) => ABRUFE.includes(h.art)).length, 1, 'Tabelle allein: keine Dateien');
       await x.d.mappenHistorie.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'webdav' });
       // Vollexport: daten/historie.jsonl
-      const quelle = x.d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => x.konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+      const quelle = x.d.vollexport.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => x.konten.exportDaten(), designs: async () => [], protokoll: () => [] });
       const v = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-a800-')), {});
       const zeilen = (await readFile(join(v.ordner, 'daten/historie.jsonl'), 'utf8')).trim().split('\n').map((l) => JSON.parse(l) as { art: string });
       assert.ok(zeilen.some((l) => l.art === 'abruf_webdav') && zeilen.some((l) => l.art === 'abruf_api'));
       // Auskunft (Art. 15 DSGVO): die Historie der Mappe geht mit – samt Abrufen.
-      const daten = await x.d.auskunftDaten({ mappeId: x.m.id, geprueft: true, auswahl: { mappen: [x.m.id], dokumente: [], notizen: [], historie: [x.m.id] } }, z, { mandant: 'H', version: '0' });
+      const daten = await x.d.datenschutzDienst.auskunftDaten({ mappeId: x.m.id, geprueft: true, auswahl: { mappen: [x.m.id], dokumente: [], notizen: [], historie: [x.m.id] } }, z, { mandant: 'H', version: '0' });
       const hist = await daten.quelle.historie([x.m.id]) as unknown as Array<{ art: string }>;
       assert.ok(hist.some((h) => h.art === 'abruf_webdav') && hist.some((h) => h.art === 'abruf_api'));
     });

@@ -294,9 +294,9 @@ for (const pg of [false, true]) {
       await assert.rejects(x.api(x.markus, 'GET', '/mappen/:id', { params: { id: wir.id } }), (e: unknown) => e instanceof Fachfehler && (e.status === 403 || e.status === 404));
       await assert.rejects(x.oberflaeche(x.markus, 'GET', '/api/mappen/:id', { params: { id: wir.id } }), (e: unknown) => e instanceof Fachfehler && (e.status === 403 || e.status === 404));
       // Auskunft und Löschkonzept nehmen den Verantwortlichen von hier.
-      const ds = await x.d.datenschutzFuerUnterlagen();
+      const ds = await x.d.datenschutzDienst.datenschutzFuerUnterlagen();
       assert.equal(ds.verantwortlicher, 'Tischlerei Brandt\nHauptstraße 5\n12345 Musterstadt\nE-Mail: info@example.org\nTelefon: 0123 4567\nDatenschutzbeauftragter: Petra Muster, dsb@example.org');
-      assert.equal((await x.d.datenschutz()).verantwortlicher, '', 'die gespeicherte Einstellung bleibt, wie sie ist');
+      assert.equal((await x.d.datenschutzDienst.datenschutz()).verantwortlicher, '', 'die gespeicherte Einstellung bleibt, wie sie ist');
     });
 
     it('mehrere eigene Organisationen: Wahl „für Auskünfte und Unterlagen gilt …“, nur eigene wählbar', async () => {
@@ -309,7 +309,7 @@ for (const pg of [false, true]) {
       await assert.rejects(x.verwaltend(x.katrin, 'PUT', '/api/werkbank/organisation', { body: { auskunft: c.id } }), fehler(422));
       const s = (await x.verwaltend(x.katrin, 'PUT', '/api/werkbank/organisation', { body: { auskunft: b.id } })).body as { geltend: string };
       assert.equal(s.geltend, b.id);
-      assert.match((await x.d.datenschutzFuerUnterlagen()).verantwortlicher, /^Tischlerei Brandt/);
+      assert.match((await x.d.datenschutzDienst.datenschutzFuerUnterlagen()).verantwortlicher, /^Tischlerei Brandt/);
       assert.notEqual(a.id, b.id);
     });
 
@@ -327,7 +327,7 @@ for (const pg of [false, true]) {
       const s = (await x.verwaltend(x.markus, 'PUT', '/api/werkbank/organisation', { body: { gesehen: true } })).body as { neu: number };
       assert.equal(s.neu, 0);
       // Der Verantwortliche ist jetzt eine Person – für die Auskunft mit der Anschrift der Organisation.
-      assert.match((await x.d.datenschutzFuerUnterlagen()).verantwortlicher, /^Katrin Brandt\nfür Tischlerei Brandt/);
+      assert.match((await x.d.datenschutzDienst.datenschutzFuerUnterlagen()).verantwortlicher, /^Katrin Brandt\nfür Tischlerei Brandt/);
     });
 
     it('Erkennung: die eigene Organisation ist nie Absender eingehender Post', async () => {
@@ -355,8 +355,8 @@ for (const pg of [false, true]) {
 
     it('bisherige Angabe der Auskunft übernehmen: neue Organisation mit Merkmal, verantwortlich selbst, alte Angabe leer', async () => {
       const x = await aufbau(pg, 'org_uebernehmen');
-      await x.d.setzeDatenschutz({ verantwortlicher: 'Tischlerei Brandt\nHauptstraße 5\n12345 Musterstadt' }, 'test');
-      assert.equal((await x.d.datenschutzFuerUnterlagen()).verantwortlicher, 'Tischlerei Brandt\nHauptstraße 5\n12345 Musterstadt', 'bis dahin gilt die bisherige Angabe');
+      await x.d.datenschutzDienst.setzeDatenschutz({ verantwortlicher: 'Tischlerei Brandt\nHauptstraße 5\n12345 Musterstadt' }, 'test');
+      assert.equal((await x.d.datenschutzDienst.datenschutzFuerUnterlagen()).verantwortlicher, 'Tischlerei Brandt\nHauptstraße 5\n12345 Musterstadt', 'bis dahin gilt die bisherige Angabe');
       const s = (await x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/uebernehmen')).body as { organisationen: EigeneOrganisation[]; bisher: string };
       assert.equal(s.bisher, '');
       assert.deepEqual(s.organisationen.map((o) => [o.angaben, o.verantwortlicher]), [[{ name: 'Tischlerei Brandt', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt' }, { selbst: true }]]);

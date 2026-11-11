@@ -82,7 +82,7 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
     assert.equal(docs, r.dokumente!.anzahl);
 
     const entf: number[] = [];
-    const e = await d.entferneDemo((f) => entf.push(f), 25);
+    const e = await d.datenschutzDienst.entferneDemo((f) => entf.push(f), 25);
     assert.equal(e.entfernt, demo.length);
     assert.ok(entf.length >= 3, 'mehrere Pakete');
     assert.equal((await d.mappen.listeMappen()).filter((m) => m.demo).length, 0);

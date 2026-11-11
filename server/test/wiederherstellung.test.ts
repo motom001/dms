@@ -404,7 +404,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
 
     // Vollexport: die Fassung steht neben dem Original und in dokumente.csv.
     const { vollexport } = await import('../src/vollexport');
-    const ex = await vollexport(zielU.d.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), join(z.wurzel, 'export'), {});
+    const ex = await vollexport(zielU.d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), join(z.wurzel, 'export'), {});
     const rel = ex.pfade.dokumente.get(dok.id)!;
     assert.deepEqual(await readFile(join(ex.ordner, ...`${rel}.fassung.pdf`.split('/'))), pdf);
     const csvText = await readFile(join(ex.ordner, 'daten', 'dokumente.csv'), 'utf8');

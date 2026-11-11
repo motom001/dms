@@ -450,7 +450,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await x.laeufer();
     const ziel = await mkdtemp(join(tmpdir(), 'dms-archiv-export-'));
     try {
-      const ex = await vollexport(x.d.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), ziel, {});
+      const ex = await vollexport(x.d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), ziel, {});
       const rel = ex.pfade.dokumente.get(id)!;
       const a = await readFile(join(ex.ordner, ...`${rel}.pdfa.pdf`.split('/')));
       assert.deepEqual(a, (await x.d.dokumentArchiv.archivfassungVon(id)).inhalt);

@@ -36,7 +36,7 @@ describe('Vollexport (#254)', () => {
     await d.dokumentVersionen.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
     await d.mappenNotizen.legeNotizAn(z.id, 'Notiz zum Zugang', null);
 
-    const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
     const ziel = await mkdtemp(join(tmpdir(), 'dms-export-'));
     const vor = kontaktVorschlaege(await d.mappentypen.listeTypen()).find((v) => v.typId === partner.id)!;
     assert.deepEqual(vor.zuordnung, { name: 'name', email: 'email', telefon: 'telefon' });

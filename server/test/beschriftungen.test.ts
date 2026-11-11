@@ -286,7 +286,7 @@ describe('Vollexport (#728)', () => {
     await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
     await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
-    const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
     const ziel = await mkdtemp(join(process.env.TMPDIR ?? '/tmp', 'a728-export-'));
     try {
       const r = await vollexport(quelle, ziel, {});

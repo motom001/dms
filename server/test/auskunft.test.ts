@@ -299,7 +299,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-zip-'));
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
-      const daten = await d.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
+      const daten = await d.datenschutzDienst.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
       assert.deepEqual(daten.gruende, ['Interne Bewertung (Art. 15 Abs. 4 DSGVO)']);
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' }, mandant: 'Hausverwaltung' });
       assert.equal(r.mappen, 4); assert.equal(r.dokumente, 2);
@@ -334,7 +334,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const pdf = e.get('Deckblatt.pdf')!.daten;
       assert.ok(pdf.subarray(0, 5).toString() === '%PDF-');
       // Nachweis: Historie des Betroffenen ohne Inhalte
-      await d.auskunftNachweis(daten, { id: admin.id, email: 'verwalter@example.org' }, r);
+      await d.datenschutzDienst.auskunftNachweis(daten, { id: admin.id, email: 'verwalter@example.org' }, r);
       const h = (await d.mappenHistorie.historie(m.max.id)).find((x) => x.art === 'auskunft')!;
       assert.match(String(h.daten.text), /4 Mappen, 2 Dokumente/);
       assert.equal(h.daten.ohneNotizen, 1);
@@ -390,9 +390,9 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-bezug-'));
       const basis = { mappeId: m.max.id, geprueft: true, passwort: '' };
       // Erwähnung nur von Bezug-Mappen
-      await assert.rejects(d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] } }, z, { mandant: 'H', version: '0' }), /Bezug/);
+      await assert.rejects(d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] } }, z, { mandant: 'H', version: '0' }), /Bezug/);
       const ohneNotiz = (await d.mappen.holeMappe(m.max.id)).notizen.map((n) => ({ id: n.id, grund: 'interne Bewertung – Art. 15 Abs. 4' }));
-      const daten = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } }, z, { mandant: 'H', version: '0' });
+      const daten = await d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } }, z, { mandant: 'H', version: '0' });
       assert.equal(daten.anzahl.erwaehnungen, 2);
       assert.deepEqual(daten.erwaehnungen.find((e) => e.mappeId === wartung.id), { mappeId: wartung.id, typ: 'Wartungsvertrag', titel: 'W-1', feld: 'Ansprechpartner', richtung: 'verwiesenVon' });
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera', email: 'v@example.org' }, mandant: 'H' });
@@ -426,7 +426,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       }
 
       // Bewusst ganz aufnehmen: dann mit Dokument und Angaben
-      const ganz = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.mappen.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
+      const ganz = await d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.mappen.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
       assert.equal(ganz.erwaehnungen.length, 0, 'ganz aufgenommen – keine zusätzliche Erwähnung');
       assert.ok(ganz.mappen.some((x) => x.id === wartung.id && x.werte.betrag === 'Geheimpreis 9.999 EUR'));
     });

@@ -251,7 +251,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const h = (await d.mappenHistorie.historie(max.id)).find((x) => x.art === 'auskunft' && x.daten.zustellung === 'email');
       assert.match(String(h?.daten.text), /Auskunft per E-Mail gesendet an max@example\.net/);
       // Zu groß für E-Mail → Abruf-Link vorgeschlagen.
-      await assert.rejects(d.auskunftPerEmail({ ...a, mappeId: max.id, titel: '', erstellt: '', mappen: 1, dokumente: 1, von: '', bytes: 60_000_000 }, () => { throw new Error('nicht lesen'); }, { an: 'max@example.net' }, { id: admin.id, name: '', email: admin.email }, { sende: async () => {} }),
+      await assert.rejects(d.auskunftZustellen.auskunftPerEmail({ ...a, mappeId: max.id, titel: '', erstellt: '', mappen: 1, dokumente: 1, von: '', bytes: 60_000_000 }, () => { throw new Error('nicht lesen'); }, { an: 'max@example.net' }, { id: admin.id, name: '', email: admin.email }, { sende: async () => {} }),
         (e: unknown) => status(413)(e) && /Abruf-Link/.test((e as Error).message));
     });
 

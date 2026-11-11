@@ -202,8 +202,8 @@ describe('Mappentyp Benutzer (#26)', () => {
     const r = await erzeugeDemo(dienst, 20, null);
     assert.ok(!('Benutzer' in r.erzeugt) && !('Rolle' in r.erzeugt));
     assert.equal((await dienst.mappen.listeMappen()).length, vorher + r.gesamt);
-    assert.ok(!(await dienst.demoUebersicht()).some((u) => u.name === 'Benutzer' || u.name === 'Rolle'));
-    await dienst.entferneDemo();
+    assert.ok(!(await dienst.datenschutzDienst.demoUebersicht()).some((u) => u.name === 'Benutzer' || u.name === 'Rolle'));
+    await dienst.datenschutzDienst.entferneDemo();
     assert.equal((await dienst.mappen.listeMappen()).length, vorher);
   });
 

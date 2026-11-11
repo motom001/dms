@@ -259,7 +259,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
     // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
-    typen: await dienst.mappentypen.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
+    typen: await dienst.mappentypen.listeTypen(), datenschutz: await dienst.datenschutzDienst.datenschutzFuerUnterlagen(),
     papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
@@ -298,7 +298,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   };
   const nf = () => { if (!x.notfallcode) throw new Fachfehler(404, t('konten.notfall.fehler.aus')); return x.notfallcode; };
   /** Meldungen der Abrufseite in der Anrede für Dritte (#474). */
-  const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutz()).anrede, k);
+  const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutzDienst.datenschutz()).anrede, k);
   const exportZiel = () => { if (!x.exporte) throw new Fachfehler(404, t('werkbank.export.ohne-ordner')); return x.exporte.pfad; };
   /** Nach dem Herunterladen gelöscht (#797), wie die Auskunft: erst, wenn die ZIP ganz gelesen ist. */
   const danachLoeschen = (strom: Readable, ordner: string, melde: () => void) => strom.on('end', () => void loescheExport(ordner).then(melde, () => {}));

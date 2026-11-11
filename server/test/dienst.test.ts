@@ -197,13 +197,13 @@ describe('Demo-Daten', () => {
     assert.ok(Date.now() - start < 30_000);
     const alle = await d.mappen.listeMappen();
     assert.equal(alle.filter((m) => m.demo).length, r.gesamt);
-    const ueber = await d.demoUebersicht();
+    const ueber = await d.datenschutzDienst.demoUebersicht();
     assert.equal(ueber.reduce((a, t) => a + t.demo, 0), r.gesamt);
     // Rechnungen verweisen auf vorhandene Verträge, eindeutige Namen bleiben eindeutig
     const partner = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
     const namen = alle.filter((m) => m.typId === partner.id).map((m) => String(m.werte.name).toLowerCase());
     assert.equal(new Set(namen).size, namen.length);
-    assert.deepEqual(await d.entferneDemo(), { entfernt: r.gesamt });
+    assert.deepEqual(await d.datenschutzDienst.entferneDemo(), { entfernt: r.gesamt });
     assert.equal((await d.mappen.listeMappen()).length, vorher);
   });
 
@@ -217,7 +217,7 @@ describe('Demo-Daten', () => {
     const vertrag = typen.find((t) => t.name === 'Vertrag')!;
     const demoPartner = (await d.mappen.listeMappen(partner.id)).find((m) => m.demo)!;
     await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Echt', vertragspartner: demoPartner.id } });
-    await wirft(d.entferneDemo(), 409);
+    await wirft(d.datenschutzDienst.entferneDemo(), 409);
   });
 });
 

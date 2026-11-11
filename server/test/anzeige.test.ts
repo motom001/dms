@@ -281,7 +281,7 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
   it('Vollexport, Einrichtungsdatei (#806) und API nehmen das Merkmal mit', async () => {
     const { d, konten } = await aufbau();
     await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
-    const quelle = d.vollexportQuelle({ mandant: 'Tischlerei Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [], merkmale: () => d.merkmale() });
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Tischlerei Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [], merkmale: () => d.merkmale() });
     const r = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-1032-')), {});
     assert.deepEqual(JSON.parse(await readFile(join(r.ordner, 'struktur/merkmale.json'), 'utf8')), { beruflich: true });
     assert.ok(JSON.parse(await readFile(join(r.ordner, 'struktur/mappentypen.json'), 'utf8')).some((x: Mappentyp) => x.register.some((y) => y.abschnitte?.some((a) => a.anzeigen))), 'Typen mit ihren Bedingungen');

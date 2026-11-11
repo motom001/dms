@@ -42,7 +42,7 @@ describe('Persönlicher Export (#255)', () => {
     await d.mappen.setzeFavorit({ id: admin.id }, offen.id, true);
 
     const z = await d.rechtepruefung.zugriff({ id: max.id, rolle: 'mitglied' });
-    const q = await d.persoenlicheQuelle(z, { mandant: 'M', version: '0', ich: await konten.exportDatenVon(max.id) });
+    const q = await d.vollexport.persoenlicheQuelle(z, { mandant: 'M', version: '0', ich: await konten.exportDatenVon(max.id) });
     const r = await vollexport(q, await mkdtemp(join(tmpdir(), 'dms-pe-')), { passwoerter: true });
     const lies = (rel: string) => readFile(join(r.ordner, rel), 'utf8');
     const csv = await lies('daten/vertrag.csv');
@@ -67,15 +67,15 @@ describe('Persönlicher Export (#255)', () => {
   it('ist ab Werk aus und nur mit ausdrücklichem true erlaubt (#884)', async () => {
     const einstellungen = speicherEinstellungen();
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
-    assert.equal(await d.persoenlicherExportErlaubt(), false, 'ohne Einstellung aus');
-    assert.equal(await d.setzePersoenlicherExport(true, 'test'), true);
+    assert.equal(await d.auskunftZustellen.persoenlicherExportErlaubt(), false, 'ohne Einstellung aus');
+    assert.equal(await d.auskunftZustellen.setzePersoenlicherExport(true, 'test'), true);
     assert.equal(await einstellungen.lies('persoenlicher_export'), true);
-    assert.equal(await d.setzePersoenlicherExport(false, 'test'), false);
+    assert.equal(await d.auskunftZustellen.setzePersoenlicherExport(false, 'test'), false);
     assert.equal(await einstellungen.lies('persoenlicher_export'), false);
     // Alles außer true schaltet aus, auch ein alter Wert null aus der Zeit vor #884.
-    await d.setzePersoenlicherExport('ja', 'test');
-    assert.equal(await d.persoenlicherExportErlaubt(), false);
+    await d.auskunftZustellen.setzePersoenlicherExport('ja', 'test');
+    assert.equal(await d.auskunftZustellen.persoenlicherExportErlaubt(), false);
     await einstellungen.schreibe('persoenlicher_export', null);
-    assert.equal(await d.persoenlicherExportErlaubt(), false);
+    assert.equal(await d.auskunftZustellen.persoenlicherExportErlaubt(), false);
   });
 });

@@ -70,7 +70,7 @@ try {
   if (exportMax > 0) {
     const z = zaehlend(pgRepo(sql, HAUSHALT));
     const d = new Dienst(z.repo, ordnerSpeicher(dateiOrdner, HAUSHALT), { einstellungen: speicherEinstellungen() });
-    const quelle = d.vollexportQuelle({ mandant: 'Messung', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Messung', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
     let rest = exportMax;
     const mappen = quelle.mappen;
     quelle.mappen = async (typId) => { const ms = (await mappen(typId)).slice(0, Math.max(0, rest)); rest -= ms.length; return ms; };

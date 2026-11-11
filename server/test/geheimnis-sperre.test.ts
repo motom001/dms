@@ -155,7 +155,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
         erzeuge: async () => {
           const ziel = await mkdtemp(join(tmpdir(), 'dms-geheim-export-'));
           ordner.push(ziel);
-          const quelle = d.vollexportQuelle({ mandant: 'Familie Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+          const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
           const e = await vollexport(quelle, ziel, {});
           return dateienAls(e.ordner);
         },
