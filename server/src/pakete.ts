@@ -2894,7 +2894,7 @@ export class Paketverwaltung {
       await this.sprachBeschriftungen(paket.sprache ? undefined : [m.id]).catch((e: Error) => log.warn('Beschriftungen aus Sprachpaketen nicht übernommen', { paket: m.id, fehler: e.message }));
       // Texterkennung als Paket (#459): Was ohne Paket wartete, geht jetzt an das neue Paket.
       if (hatSchnittstelle(datensatz.laeufer, 'dms:texterkennung') && !hatSchnittstelle(alt?.laeufer, 'dms:texterkennung')) {
-        void spaeter(() => this.d.texterkennungPaketDa().catch((e: Error) => log.warn('Wartende Dokumente nicht an die Texterkennung gegeben', { paket: m.id, fehler: e.message })));
+        void spaeter(() => this.d.volltexte.texterkennungPaketDa().catch((e: Error) => log.warn('Wartende Dokumente nicht an die Texterkennung gegeben', { paket: m.id, fehler: e.message })));
       }
       // Dateien umwandeln (#577): Vorhandene Dateien der (neuen) Dateitypen gehen an das Paket.
       const neueDateitypen = (datensatz.laeufer?.umwandeln ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:umwandeln') && alt?.laeufer?.umwandeln?.includes(x)));
@@ -2904,7 +2904,7 @@ export class Paketverwaltung {
       // Volltext aus Paketen (#614): Vorhandene Dateien der (neuen) Dateitypen ohne Text gehen an das Paket.
       const neueVolltextTypen = (datensatz.laeufer?.volltext ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:volltext') && alt?.laeufer?.volltext?.includes(x)));
       if (hatSchnittstelle(datensatz.laeufer, 'dms:volltext') && neueVolltextTypen.length) {
-        void spaeter(() => this.d.volltextPaketDa(neueVolltextTypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Volltext an das Paket gegeben', { paket: m.id, fehler: e.message })));
+        void spaeter(() => this.d.volltextAusPaketen.volltextPaketDa(neueVolltextTypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Volltext an das Paket gegeben', { paket: m.id, fehler: e.message })));
       }
       // Archivfassung (#631): Bestand der (neuen) Dateitypen mit fertigem Volltext geht an das Paket.
       const neueArchivTypen = (datensatz.laeufer?.archivfassung?.typen ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:archivfassung') && alt?.laeufer?.archivfassung?.typen.includes(x)));
@@ -3567,7 +3567,7 @@ export class Paketverwaltung {
     if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
     // Volltext und Umwandeln (Frage 51): Was noch auf dieses Paket wartete, wartet nicht mehr.
     const wartetAuf = [...(hatSchnittstelle(p.laeufer, 'dms:volltext') ? p.laeufer?.volltext ?? [] : []), ...(hatSchnittstelle(p.laeufer, 'dms:umwandeln') ? p.laeufer?.umwandeln ?? [] : [])];
-    if (wartetAuf.length) await this.d.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));
+    if (wartetAuf.length) await this.d.volltextAusPaketen.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
     if (!behalten) await setzePaketEinstellungen(this.d.kern, id, null);
     log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten, beispieleEntfernt: bsp.unveraendert.length, vorgabenEntfernt: vorgabenWeg.length });

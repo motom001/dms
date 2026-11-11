@@ -69,10 +69,10 @@ async function aufbau(o: { mitPaket?: boolean; mitTexterkennung?: boolean; mitHo
   const engine: Engine = async (_pfad, mime) => { gelesen.push(mime); return { text: TEXT, seiten: 2, info: 'Textebene des PDFs', ohneText: [] }; };
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
   d.dokumente.verbindeTexterkennung(t);
-  t.paket = () => d.texterkennungPaket();
+  t.paket = () => d.volltexte.texterkennungPaket();
   t.nachher = (dok, e, k) => {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
-    void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? dok.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu });
+    void d.volltexte.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? dok.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu });
   };
   const bilder = speicherAblage();
   const vorschau = new Vorschaubilder(bilder, dateien, async (inhalt, mime) => Buffer.from(`vorschau:${mime}:${inhalt.length}`));
@@ -193,7 +193,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     dok = await x.dok(id);
     assert.equal(fassungAusInfo(dok.ocr?.info), 'Bildformate 1.0.0');
     assert.deepEqual(volltextHerkunft(dok.ocr), { art: 'pdf' });
-    assert.equal((await x.d.volltext(id)).text, TEXT);
+    assert.equal((await x.d.volltexte.volltext(id)).text, TEXT);
     assert.deepEqual(x.gelesen, ['application/pdf'], 'der Kern las die Fassung als PDF');
     const vf = await x.ereignisse('volltext.fertig');
     assert.equal(vf.length, 1);
@@ -230,7 +230,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     assert.equal(seite.subarray(0, 2).toString('latin1'), 'P5');
     await assert.rejects(x.d.seiteAlsGraubild(id, 2, 300), (e: { status?: number }) => e.status === 404);
     // Schreibt es den Volltext, ist der als „aus der umgewandelten Fassung“ gekennzeichnet; das Ereignis nennt beides.
-    await x.d.schreibeVolltext(id, { text: TEXT }, { id: 'konto', herkunft: 'Texterkennung 2.0.0', paket: true });
+    await x.d.volltexte.schreibeVolltext(id, { text: TEXT }, { id: 'konto', herkunft: 'Texterkennung 2.0.0', paket: true });
     const dok = await x.dok(id);
     assert.equal(volltextHerkunft(dok.ocr)?.art, 'paket');
     assert.equal(fassungAusInfo(dok.ocr?.info), 'Bildformate 1.0.0');
@@ -265,22 +265,22 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     const id = await x.hoch('kaputt.tif', TIFF);
     const sha = (await x.dok(id)).sha256;
     const [e] = await x.ereignisse('datei.umwandeln');
-    await x.d.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'TIFF lässt sich nicht lesen: Seite 1 kaputt' });
+    await x.d.volltexte.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'TIFF lässt sich nicht lesen: Seite 1 kaputt' });
     let dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'ausgelassen');
     assert.equal(dok.ocr?.info, 'Umwandlung durch Paket Bildformate: TIFF lässt sich nicht lesen: Seite 1 kaputt');
     // „Erneut versuchen“ meldet die Datei wieder (sie ist nicht mehr unterwegs).
-    await x.d.texterkennungErneut(id);
+    await x.d.volltexte.texterkennungErneut(id);
     await warte(async () => (await x.dok(id)).ocr?.stand === 'paket');
     assert.equal((await x.ereignisse('datei.umwandeln')).length, 2);
-    await x.d.nachTexterkennungsEreignis('bildformate', e, { ok: false, text: '', fehler: 'Zeitgrenze', aufgegeben: true });
+    await x.d.volltexte.nachTexterkennungsEreignis('bildformate', e, { ok: false, text: '', fehler: 'Zeitgrenze', aufgegeben: true });
     dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'fehler');
     assert.match(dok.ocr?.info ?? '', /Umwandlung durch Paket Bildformate fehlgeschlagen: Zeitgrenze/);
     // Mit Fassung bleibt alles, wie es ist.
     await x.d.dokumentUmwandlung.setzeFassung(x.alsPaket, id, sha, pdfMitText([TEXT]));
     await warte(async () => (await x.dok(id)).ocr?.stand === 'fertig');
-    await x.d.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'egal' });
+    await x.d.volltexte.nachTexterkennungsEreignis('bildformate', e, { ok: true, text: 'egal' });
     assert.equal((await x.dok(id)).ocr?.stand, 'fertig');
   });
 

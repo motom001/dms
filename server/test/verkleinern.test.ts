@@ -162,7 +162,7 @@ describe('Am Dokument (#393)', () => {
     assert.equal(r.dokument.herkunft, 'bearbeitet');
     assert.ok(r.dokument.groesse < gross.length / 4);
     assert.equal(r.dokument.ocr?.stand, 'fertig', 'keine neue Texterkennung');
-    assert.equal((await d.volltext(dokument.id)).text, 'erkannter Text');
+    assert.equal((await d.volltexte.volltext(dokument.id)).text, 'erkannter Text');
     assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere[0].groesse, gross.length, 'Original als Version 1');
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'pdf_bearbeitet')!;
     assert.match(String(h.daten.text), /^verkleinert von .* MB auf .* KB \(−\d+ %\), Stufe Standard \(150 dpi\)$/);

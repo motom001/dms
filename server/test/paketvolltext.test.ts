@@ -54,11 +54,11 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
   const engine: Engine = async (_pfad, mime) => { gelesen.push(mime); return { text: TEXT, seiten: 1, info: 'Textebene des PDFs', ohneText: [] }; };
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
   d.dokumente.verbindeTexterkennung(t);
-  t.paket = () => d.texterkennungPaket();
+  t.paket = () => d.volltexte.texterkennungPaket();
   t.volltextPaket = d.paketVolltext;
   t.nachher = (dok, e, k) => {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
-    void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu });
+    void d.volltexte.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu });
   };
   if (o.mitPaket !== false) await d.kern.repo.speicherePaket(office());
   // Ein Paket, das nur „Volltext fertig“ hört (z. B. für Vektoren).
@@ -77,7 +77,7 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
   const ereignisse = async (art: string) => (await repo.faelligeEreignisse(1000)).filter((e) => e.art === art);
   const dok = async (id: string) => (await repo.holeDokument(id))!;
   /** So schreibt das Paket (Dienstkonto mit Paket-Kennung). */
-  const schreibt = (id: string, text = TEXT) => d.schreibeVolltext(id, { text }, { id: 'konto', herkunft: 'Office und E-Mail 1.1.0', paket: true, ausgelesen: true });
+  const schreibt = (id: string, text = TEXT) => d.volltexte.schreibeVolltext(id, { text }, { id: 'konto', herkunft: 'Office und E-Mail 1.1.0', paket: true, ausgelesen: true });
   return { d, t, repo, m, hoch, fertig, ereignisse, dok, schreibt, gelesen };
 }
 
@@ -134,7 +134,7 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     await x.schreibt(id);
     dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'fertig');
-    assert.equal((await x.d.volltext(id)).text, TEXT);
+    assert.equal((await x.d.volltexte.volltext(id)).text, TEXT);
     const vf = await x.ereignisse('volltext.fertig');
     assert.deepEqual(vf.map((e) => [e.paketId, e.daten.quelle, e.daten.mime]), [['hoerer', 'paket', WORD]]);
     // Werkbank: zuständiges Paket je Dateityp.
@@ -160,55 +160,55 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     assert.equal(ev[1].daten.sha256, dok.sha256, 'mit dem Prüfwert der neuen Version');
     await x.schreibt(id, `${TEXT} – Version 2`);
     // „Volltext neu erzeugen“ für alle: Ereignis mit neu, Text bleibt bis dahin stehen.
-    x.d.volltextNeu('alle', 'admin@example.org');
+    x.d.volltexte.volltextNeu('alle', 'admin@example.org');
     await x.d.auftraege.warte();
     dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'paket');
-    assert.equal((await x.d.volltext(id)).text, `${TEXT} – Version 2`, 'Text bleibt für die Suche stehen');
+    assert.equal((await x.d.volltexte.volltext(id)).text, `${TEXT} – Version 2`, 'Text bleibt für die Suche stehen');
     ev = await x.ereignisse('datei.volltext');
     assert.equal(ev.length, 3);
     assert.equal(ev[2].daten.neu, true);
     // Am Dokument „Neu erzeugen“: ebenfalls mit neu – auch wenn noch eine Meldung unterwegs ist.
-    await x.d.texterkennungErneut(id);
+    await x.d.volltexte.texterkennungErneut(id);
     await x.fertig(id);
     ev = await x.ereignisse('datei.volltext');
     assert.equal(ev.filter((e) => e.daten.neu).length >= 2, true);
     // Abbrechen verwirft das offene Ereignis; der Text bleibt.
     assert.deepEqual(await x.t.abbrechen([id], 'admin'), { abgebrochen: 1 });
     assert.deepEqual(await x.ereignisse('datei.volltext'), []);
-    assert.equal((await x.d.volltext(id)).text, `${TEXT} – Version 2`);
+    assert.equal((await x.d.volltexte.volltext(id)).text, `${TEXT} – Version 2`);
   });
 
   it('Paket fertig ohne Volltext: Grund am Dokument; mit altem Text: fertig mit Grund; aufgegeben: Fehler', async () => {
     const x = await aufbau();
     const id = await x.hoch('geheim.docx', DOCX);
     const [e] = await x.ereignisse('datei.volltext');
-    await x.d.nachTexterkennungsEreignis('office_email', e, { ok: true, text: 'Word lässt sich nicht lesen: mit einem Passwort verschlüsselt' });
+    await x.d.volltexte.nachTexterkennungsEreignis('office_email', e, { ok: true, text: 'Word lässt sich nicht lesen: mit einem Passwort verschlüsselt' });
     let dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'ausgelassen');
     assert.equal(dok.ocr?.info, 'Volltext durch Paket Office und E-Mail: Word lässt sich nicht lesen: mit einem Passwort verschlüsselt');
     // „Erneut versuchen“ meldet es wieder; gibt der Läufer auf: Fehler.
-    await x.d.texterkennungErneut(id);
+    await x.d.volltexte.texterkennungErneut(id);
     await x.fertig(id);
     assert.equal((await x.dok(id)).ocr?.stand, 'paket');
     const e2 = (await x.ereignisse('datei.volltext')).at(-1)!;
-    await x.d.nachTexterkennungsEreignis('office_email', e2, { ok: false, text: '', fehler: 'Zeitgrenze erreicht (120 s)', aufgegeben: true });
+    await x.d.volltexte.nachTexterkennungsEreignis('office_email', e2, { ok: false, text: '', fehler: 'Zeitgrenze erreicht (120 s)', aufgegeben: true });
     dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'fehler');
     assert.match(dok.ocr?.info ?? '', /Volltext durch Paket Office und E-Mail fehlgeschlagen: Zeitgrenze/);
     // Mit Text von vorher: fertig, der Text bleibt; ein Ergebnis nach dem Schreiben ändert nichts.
     const b = await x.hoch('brief.docx', Buffer.concat([DOCX, Buffer.from('b')]));
     await x.schreibt(b);
-    await x.d.texterkennungErneut(b);
+    await x.d.volltexte.texterkennungErneut(b);
     await x.fertig(b);
     const e3 = (await x.ereignisse('datei.volltext')).at(-1)!;
-    await x.d.nachTexterkennungsEreignis('office_email', e3, { ok: true, text: 'Word lässt sich nicht lesen: kaputt' });
+    await x.d.volltexte.nachTexterkennungsEreignis('office_email', e3, { ok: true, text: 'Word lässt sich nicht lesen: kaputt' });
     dok = await x.dok(b);
     assert.equal(dok.ocr?.stand, 'fertig');
     assert.match(dok.ocr?.info ?? '', /Paket Office und E-Mail: Word lässt sich nicht lesen/);
-    assert.equal((await x.d.volltext(b)).text, TEXT);
+    assert.equal((await x.d.volltexte.volltext(b)).text, TEXT);
     await x.schreibt(b);
-    await x.d.nachTexterkennungsEreignis('office_email', e3, { ok: true, text: 'egal' });
+    await x.d.volltexte.nachTexterkennungsEreignis('office_email', e3, { ok: true, text: 'egal' });
     assert.equal((await x.dok(b)).ocr?.stand, 'fertig');
     assert.match((await x.dok(b)).ocr?.info ?? '', /^Volltext durch Paket Office und E-Mail 1\.1\.0/);
   });
@@ -224,13 +224,13 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     const makro = await x.hoch('makro.docm', Buffer.concat([DOCX, Buffer.from('m')]), 'application/vnd.ms-word.document.macroEnabled.12');
     assert.equal((await x.dok(a)).ocr?.stand, 'ausgelassen');
     await x.d.kern.repo.speicherePaket(office());
-    assert.equal(await x.d.volltextPaketDa([WORD, EML, DOCM]), 3);
+    assert.equal(await x.d.volltextAusPaketen.volltextPaketDa([WORD, EML, DOCM]), 3);
     await x.fertig(a); await x.fertig(b); await x.fertig(makro);
     assert.deepEqual((await x.ereignisse('datei.volltext')).map((e) => e.daten.dokument).sort(), [a, b, makro].sort());
     assert.equal((await x.dok(a)).ocr?.stand, 'paket');
     assert.equal((await x.dok(c)).ocr?.stand, 'fertig');
     assert.equal((await x.dok(pdf)).ocr?.stand, 'fertig');
-    assert.equal(await x.d.volltextPaketDa(['application/x-unbekannt']), 0);
+    assert.equal(await x.d.volltextAusPaketen.volltextPaketDa(['application/x-unbekannt']), 0);
   });
 });
 
@@ -272,10 +272,10 @@ describe('Volltext aus Paketen (#614): API für Pakete', () => {
     await assert.rejects(rufe('office_email', 'POST', '/api/v1/dokumente/:id/schwaerzen', { id: word }, {}), (e: { status?: number }) => e.status === 403);
     await assert.rejects(rufe('office_email', 'POST', '/api/v1/dokumente/:id/texterkennung', { id: word }, {}), (e: { status?: number }) => e.status === 403);
     assert.equal((await x.dok(word)).name, 'angebot.docx');
-    assert.equal((await x.d.volltext(pdf)).text, TEXT);
+    assert.equal((await x.d.volltexte.volltext(pdf)).text, TEXT);
     // Die Texterkennung (Schreibrecht) schreibt weiter für jedes Dokument.
     await rufe('texterkennung', 'PUT', '/api/v1/dokumente/:id/volltext', { id: pdf }, { text: `${TEXT} erkannt` });
-    assert.equal((await x.d.volltext(pdf)).text, `${TEXT} erkannt`);
+    assert.equal((await x.d.volltexte.volltext(pdf)).text, `${TEXT} erkannt`);
   });
 });
 
@@ -300,7 +300,7 @@ describe('Volltext aus Paketen (#614): Grenze der Textmenge über HTTP', () => {
     assert.ok(koerper.length > 2 * 1024 * 1024 && Buffer.byteLength(koerper) < VOLLTEXT_KOERPER_MAX);
     const r = await app.inject({ method: 'PUT', url: `/api/dokumente/${id}/volltext`, headers: { 'x-dms': '1', cookie, 'content-type': 'application/json' }, payload: koerper });
     assert.equal(r.statusCode, 200, r.body.slice(0, 300));
-    assert.equal(((await x.d.volltext(id)).text ?? '').length, VOLLTEXT_ZEICHEN_MAX);
+    assert.equal(((await x.d.volltexte.volltext(id)).text ?? '').length, VOLLTEXT_ZEICHEN_MAX);
     const zuviel = await app.inject({ method: 'PUT', url: `/api/dokumente/${id}/volltext`, headers: { 'x-dms': '1', cookie, 'content-type': 'application/json' }, payload: JSON.stringify({ text: `${text}x` }) });
     assert.equal(zuviel.statusCode, 413);
     assert.match(zuviel.body, /höchstens 5000000 Zeichen/);
@@ -325,11 +325,11 @@ describe('Paket entfernt (Frage 51)', () => {
     assert.equal((await x.dok(a)).ocr?.stand, 'paket');
     const b = await x.hoch('brief.docx', Buffer.concat([DOCX, Buffer.from('b')]));
     await x.schreibt(b);
-    await x.d.texterkennungErneut(b);
+    await x.d.volltexte.texterkennungErneut(b);
     await x.fertig(b);
     assert.equal((await x.dok(b)).ocr?.stand, 'paket');
     await x.d.kern.repo.loeschePaket('office_email');
-    assert.equal(await x.d.paketWegFuerDateien(office(), [WORD]), 2);
+    assert.equal(await x.d.volltextAusPaketen.paketWegFuerDateien(office(), [WORD]), 2);
     await x.fertig(a);
     const da = await x.dok(a);
     assert.equal(da.ocr?.stand, 'ausgelassen');
@@ -337,7 +337,7 @@ describe('Paket entfernt (Frage 51)', () => {
     const db = await x.dok(b);
     assert.equal(db.ocr?.stand, 'fertig');
     assert.match(db.ocr?.info ?? '', /Text von vorher – das Paket Office und E-Mail ist entfernt/);
-    assert.equal((await x.d.volltext(b)).text, TEXT);
-    assert.equal(await x.d.paketWegFuerDateien(office(), [WORD]), 0, 'nichts wartet mehr');
+    assert.equal((await x.d.volltexte.volltext(b)).text, TEXT);
+    assert.equal(await x.d.volltextAusPaketen.paketWegFuerDateien(office(), [WORD]), 0, 'nichts wartet mehr');
   });
 });

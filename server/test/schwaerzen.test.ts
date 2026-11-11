@@ -267,7 +267,7 @@ describe('Schwärzen am Dokument (#392)', () => {
     assert.deepEqual(r.begriffe, [{ gefunden: 1 }, { gefunden: 0 }]);
     assert.equal(r.stellen, 2);
     assert.match(r.meldung, /Original bleibt unverändert/);
-    const vt = (await d.volltext(r.dokument.id)).text!;
+    const vt = (await d.volltexte.volltext(r.dokument.id)).text!;
     assert.ok(vt.includes('Gehalt 4711') && !vt.includes('Mustermann') && !vt.includes('DE89'), vt);
     assert.equal(r.dokument.ocr?.stand, 'fertig', 'keine neue Texterkennung nötig');
     const original = await d.dokumente.holeDokument(dokument.id);
@@ -290,7 +290,7 @@ describe('Schwärzen am Dokument (#392)', () => {
     assert.equal(r.dokument.id, dokument.id);
     assert.equal(r.dokument.version, 2);
     assert.equal(r.dokument.herkunft, 'geschwaerzt');
-    assert.ok(!(await d.volltext(dokument.id)).text!.includes('Mustermann'));
+    assert.ok(!(await d.volltexte.volltext(dokument.id)).text!.includes('Mustermann'));
     assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere[0].sha256, dokument.sha256, 'die ungeschwärzte bleibt als Version 1');
     await assert.rejects(d.schwaerzeDokument(dokument.id, { begriffe: ['Mondlandung'] }, ich), status(422, /Suchbegriff kommt im Text des Dokuments nicht vor/));
     await assert.rejects(d.schwaerzeDokument(dokument.id, {}, ich), status(422, /Bitte Bereiche/));
@@ -313,14 +313,14 @@ describe('Schwärzen am Dokument (#392)', () => {
     const png = await bildMitText('png');
     const scan = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.png', typ: 'image/png' }, png, null)).dokument;
     // Der Volltext des Originals (wie vom Paket Texterkennung erkannt).
-    await d.schreibeVolltext(scan.id, { text: 'SECRET 4711 CODE PUBLIC WORDS HERE' }, { id: 'p', herkunft: 'Texterkennung 2.0.0', paket: true });
+    await d.volltexte.schreibeVolltext(scan.id, { text: 'SECRET 4711 CODE PUBLIC WORDS HERE' }, { id: 'p', herkunft: 'Texterkennung 2.0.0', paket: true });
     const v = await d.schwaerzenVorschau(scan.id);
     assert.equal(v.quelle, 'keine');
     assert.deepEqual(v.seiten[0].woerter, []);
     await assert.rejects(d.schwaerzeDokument(scan.id, { begriffe: ['4711'] }, ich), status(422, /keinen lesbaren Text/));
     const r = await d.schwaerzeDokument(scan.id, { bereiche: [{ seite: 1, x: 0, y: 0, b: 1, h: 0.5 }] }, ich);
     assert.notEqual(r.dokument.ocr?.stand, 'fertig', 'kein Volltext übernommen – die Kopie geht durch Textebene und Paket');
-    assert.equal((await d.volltext(r.dokument.id)).text ?? '', '', 'nichts vom Text des Originals');
+    assert.equal((await d.volltexte.volltext(r.dokument.id)).text ?? '', '', 'nichts vom Text des Originals');
   });
 
   it('Seitenbild für den Dialog', async () => {
@@ -362,7 +362,7 @@ describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.T
     const { d, t, m, dokument } = await aufbau(await pgRepo(), false);
     const r = await d.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'] }, null);
     const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
-    assert.ok(!(await d.volltext(r.dokument.id)).text!.includes('Mustermann'));
+    assert.ok(!(await d.volltexte.volltext(r.dokument.id)).text!.includes('Mustermann'));
     await d.dokumente.loescheDokument(dokument.id, null);
     assert.equal((await suche('Mustermann')).gesamt, 0);
     const s = await suche('brutto') as { gesamt: number; ausschnitte?: Record<string, { dokument: string }> };

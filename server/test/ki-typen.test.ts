@@ -51,7 +51,7 @@ async function aufbau(repo: Repo = speicherRepo()) {
   const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Stromvertrag', bezug: befund.id } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
     const x = (await d.dokumente.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
-    await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
   const kniebrief = await dok(befund.id, 'knie.pdf', 'Diagnose: Meniskusriss im Knie. Versicherung zahlt die Behandlung.');
@@ -116,8 +116,8 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
   it('Ereignisse: volltext.fertig und Mappen-Ereignisse zu gesperrten Typen gehen nicht an das KI-Paket (auch kein Dateiname)', async () => {
     const x = await aufbau();
     await x.d.ki.setzeKiTyp(x.vertrag.id, true, null);
-    await x.d.schreibeVolltext(x.kniebrief, { text: 'Neu: Knie operiert.' }, { id: x.lena.id, herkunft: 'Test', paket: false });
-    await x.d.schreibeVolltext(x.stromrechnung, { text: 'Neu: Abschlag 85 Euro.' }, { id: x.lena.id, herkunft: 'Test', paket: false });
+    await x.d.volltexte.schreibeVolltext(x.kniebrief, { text: 'Neu: Knie operiert.' }, { id: x.lena.id, herkunft: 'Test', paket: false });
+    await x.d.volltexte.schreibeVolltext(x.stromrechnung, { text: 'Neu: Abschlag 85 Euro.' }, { id: x.lena.id, herkunft: 'Test', paket: false });
     await x.d.mappen.legeMappeAn({ typId: x.gesundheit.id, werte: { titel: 'Zahnarzt' } }, x.lena.id);
     const neuerVertrag = await x.d.mappen.legeMappeAn({ typId: x.vertrag.id, werte: { titel: 'Handy' } }, x.lena.id);
     await spaeter(10_000, () => x.d.ereignisse.verteile());

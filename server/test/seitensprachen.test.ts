@@ -85,7 +85,7 @@ function faelle(pg: boolean) {
         const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel } });
         return (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.pdf`, typ: 'application/pdf' }, pdfMitText([titel]), null)).dokument;
       };
-      const schreibe = (id: string, body: Record<string, unknown>) => d.schreibeVolltext(id, body, { id: ICH.id, herkunft: 'Texterkennung 2.1.0', paket: true });
+      const schreibe = (id: string, body: Record<string, unknown>) => d.volltexte.schreibeVolltext(id, body, { id: ICH.id, herkunft: 'Texterkennung 2.1.0', paket: true });
       const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' }));
       const titel = async (s: string) => (await suche(s)).mappen.map((m) => m.titel).sort();
       return { d, r, sql, dok, schreibe, suche, titel };
@@ -100,11 +100,11 @@ function faelle(pg: boolean) {
       assert.equal(r.teilenAb, 2);
       assert.equal(r.ocr?.seiten, 3, 'Seitenzahl aus den Seiten');
       assert.match(r.ocr?.info ?? '', /Sprache: fra$/);
-      const v = await d.volltext(x.id);
+      const v = await d.volltexte.volltext(x.id);
       assert.ok(!v.text!.includes('\f'), 'gespeichert mit Leerzeilen wie bisher');
       assert.deepEqual(v.seiten!.map((s) => [s.seite, s.sprachen, s.text.slice(0, 12)]), [[1, ['deu'], 'Sehr geehrte'], [2, ['fra'], 'Madame, nous'], [3, ['fra'], 'Madame, nous']]);
       // Hinweis wegklicken: für alle; ein neuer Volltext mit neuem Wechsel bringt ihn wieder.
-      assert.equal((await d.teilenHinweisAus(x.id)).teilenAb, null);
+      assert.equal((await d.volltexte.teilenHinweisAus(x.id)).teilenAb, null);
       assert.equal((await d.dokumente.holeDokument(x.id)).teilenAb, null);
       assert.equal((await schreibe(x.id, { text: `${DEUTSCH}\f${FRANZOESISCH}`, seitensprachen: [['deu'], ['fra']] })).teilenAb, 2);
       // Mischseite (beide Sprachen auf einer Seite): enthält auch, aber kein Hinweis.
@@ -113,7 +113,7 @@ function faelle(pg: boolean) {
       // Einsprachig über Seiten: wie bisher (keine weiteren, keine Seiten gespeichert).
       const z = await schreibe((await dok('Einfach')).id, { text: `${DEUTSCH}\f${DEUTSCH}`, seitensprachen: [['deu'], null] });
       assert.deepEqual([z.sprache, z.weitereSprachen, z.teilenAb], ['deu', [], null]);
-      assert.equal((await d.volltext(z.id)).seiten, null);
+      assert.equal((await d.volltexte.volltext(z.id)).seiten, null);
       // Seiten getrennt, ohne Angabe: das DMS erkennt die Sprache je Seite.
       const w = await schreibe((await dok('Erkannt')).id, { text: `${DEUTSCH}\f${FRANZOESISCH}` });
       assert.deepEqual([w.sprache, w.weitereSprachen, w.teilenAb], ['deu', ['fra'], 2]);
@@ -129,15 +129,15 @@ function faelle(pg: boolean) {
       // Ohne Seiten, aber mit weiteren Sprachen (Paket kennt die Seiten nicht).
       const a = await schreibe(x.id, { text: DEUTSCH, sprache: 'deu', weitere: ['fra', 'deu'] });
       assert.deepEqual([a.sprache, a.weitereSprachen], ['deu', ['fra']]);
-      const b = await d.setzeDokumentSprache(x.id, { sprache: 'fra' }, { id: ICH.id, wer: 'Test' });
+      const b = await d.volltexte.setzeDokumentSprache(x.id, { sprache: 'fra' }, { id: ICH.id, wer: 'Test' });
       assert.deepEqual([b.sprache, b.weitereSprachen], ['fra', []], 'Hauptsprache fällt aus den weiteren');
-      const c = await d.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: ['fra', 'eng'] }, { id: ICH.id, wer: 'Test' });
+      const c = await d.volltexte.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: ['fra', 'eng'] }, { id: ICH.id, wer: 'Test' });
       assert.deepEqual([c.sprache, c.weitereSprachen], ['deu', ['fra', 'eng']]);
-      await assert.rejects(d.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: ['xyz'] }, { id: ICH.id, wer: 'Test' }), /weitere/);
-      assert.deepEqual((await d.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: null }, { id: ICH.id, wer: 'Test' })).weitereSprachen, []);
-      await assert.rejects(d.teilenHinweisAus('00000000-0000-4000-8000-00000000ffff'), /gibt es nicht/);
+      await assert.rejects(d.volltexte.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: ['xyz'] }, { id: ICH.id, wer: 'Test' }), /weitere/);
+      assert.deepEqual((await d.volltexte.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: null }, { id: ICH.id, wer: 'Test' })).weitereSprachen, []);
+      await assert.rejects(d.volltexte.teilenHinweisAus('00000000-0000-4000-8000-00000000ffff'), /gibt es nicht/);
       // Ein neuer Volltext ohne Sprachen-Angaben nimmt die alten weiteren Sprachen nicht mit.
-      await d.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: ['fra'] }, { id: ICH.id, wer: 'Test' });
+      await d.volltexte.setzeDokumentSprache(x.id, { sprache: 'deu', weitere: ['fra'] }, { id: ICH.id, wer: 'Test' });
       assert.deepEqual((await schreibe(x.id, { text: DEUTSCH })).weitereSprachen, []);
     });
 

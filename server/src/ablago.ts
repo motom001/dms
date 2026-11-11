@@ -542,13 +542,13 @@ const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
 texterkennung.nachher = (d, e, k) => {
   // Ausgelassen: E-Mails bekommen trotzdem ihre Archivfassung (#946) – ohne Paket, das ihren Text liefert, steht ihr
   // Volltext damit fest (leer).
-  if (e.stand === 'ausgelassen') { void dienst.volltextAusgelassen(d.id); return; }
+  if (e.stand === 'ausgelassen') { void dienst.volltexte.volltextAusgelassen(d.id); return; }
   if (e.stand !== 'fertig' && e.stand !== 'paket') return;
   // Umgewandelte Datei (#577): mime ist der Typ der Fassung, original der des Dokuments.
-  void dienst.volltextFertig({ dokument: d.id, mappe: d.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? d.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
+  void dienst.volltexte.volltextFertig({ dokument: d.id, mappe: d.mappeId }, { quelle: 'kern', text: k.text, mime: k.mime ?? d.mime, ...(k.original ? { original: k.original } : {}), seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
 };
 // Texterkennung als Paket (#458): das installierte Paket mit dms:texterkennung.
-texterkennung.paket = () => dienst.texterkennungPaket();
+texterkennung.paket = () => dienst.volltexte.texterkennungPaket();
 // Sicherung außer Haus (#585): Pakete mit dms:sicherung-lesen bekommen jede fertige Sicherung (Ereignis sicherung.fertig),
 // lesen die verschlüsselte Datei in Stücken und melden je Sicherung zurück. Adresse: die bestätigte aus den Einstellungen.
 sicherung.extern = {

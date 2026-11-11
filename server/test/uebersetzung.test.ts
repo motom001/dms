@@ -137,7 +137,7 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     assert.equal((await x.uebersetze(x.lena, { art: 'notiz', notiz: n.id })).text, `EN: ${NOTIZ}`);
     assert.equal(x.eingaenge.at(-1)!.e.format, 'markdown');
     const dok = (await x.d.dokumente.ladeHoch(x.m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief']), x.lena.id)).dokument;
-    await x.d.schreibeVolltext(dok.id, { text: `${BRIEF}\f${NOTIZ}`, sprache: 'deu' }, { id: x.lena.id, herkunft: 'Test', paket: false });
+    await x.d.volltexte.schreibeVolltext(dok.id, { text: `${BRIEF}\f${NOTIZ}`, sprache: 'deu' }, { id: x.lena.id, herkunft: 'Test', paket: false });
     const v = await x.uebersetze(x.lena, { art: 'volltext', dokument: dok.id });
     assert.equal(v.von, 'de', 'Sprache aus der Texterkennung');
     assert.ok(String(v.text).startsWith('EN: '));

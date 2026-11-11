@@ -69,10 +69,10 @@ async function aufbau(mitPaket = true) {
   };
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
   d.dokumente.verbindeTexterkennung(t);
-  t.paket = () => d.texterkennungPaket();
+  t.paket = () => d.volltexte.texterkennungPaket();
   t.nachher = (dok, e, k) => {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
-    void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
+    void d.volltexte.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu, seitenOhneText: k.seitenOhneText });
   };
   if (mitPaket) await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
   // Ein älteres Paket (z. B. für Vektoren) kennt nur Ereignisse mit Text; ein Paket von vor 0.133.0 hört auf texterkennung.fertig.
@@ -103,7 +103,7 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     const dok = (await repo.holeDokument(mitText))!;
     assert.equal(dok.ocr?.stand, 'fertig');
     assert.deepEqual(volltextHerkunft(dok.ocr), { art: 'pdf' });
-    assert.equal((await d.volltext(mitText)).text, TEXT);
+    assert.equal((await d.volltexte.volltext(mitText)).text, TEXT);
     let ev = await ereignisse();
     assert.deepEqual(ev.map((e) => e.paketId).sort(), ['texterkennung', 'vektor']);
     assert.equal(ev[0].daten.text, true);
@@ -135,7 +135,7 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     const { d, repo, hoch, ereignisse } = await aufbau();
     const id = await hoch('gemischt.pdf', 'application/pdf', pdfMitText(['gemischt']), 'gemischt');
     assert.equal((await repo.holeDokument(id))!.ocr?.stand, 'paket');
-    assert.equal((await d.volltext(id)).text, TEXT, 'Text der Textseiten schon durchsuchbar');
+    assert.equal((await d.volltexte.volltext(id)).text, TEXT, 'Text der Textseiten schon durchsuchbar');
     const [e] = (await ereignisse()).filter((x) => x.daten.dokument === id && x.paketId === 'texterkennung');
     assert.equal(e.daten.text, true);
     assert.deepEqual(e.daten.seitenOhneText, [2, 3]);
@@ -145,7 +145,7 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     const { d, repo, hoch, ereignisse } = await aufbau();
     const scan = await hoch('scan.pdf', 'application/pdf', pdfMitText(['scan']), true);
     d.kern.paketKonten.set('konto-texterkennung', 'texterkennung');
-    await d.schreibeVolltext(scan, { text: TEXT, seiten: 2 }, { id: 'konto-texterkennung', herkunft: 'Texterkennung 2.0.0', paket: true });
+    await d.volltexte.schreibeVolltext(scan, { text: TEXT, seiten: 2 }, { id: 'konto-texterkennung', herkunft: 'Texterkennung 2.0.0', paket: true });
     const s = (await repo.holeDokument(scan))!;
     assert.equal(s.ocr?.stand, 'fertig');
     assert.deepEqual(volltextHerkunft(s.ocr), { art: 'paket', paket: 'Texterkennung 2.0.0' });
@@ -153,7 +153,7 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     assert.deepEqual(ev.map((e) => e.paketId), ['vektor'], 'das schreibende Paket bekommt sein Ergebnis nicht zurück');
     assert.equal(ev[0].daten.paket, 'texterkennung');
     // Ergebnis nach dem Schreiben ändert nichts mehr.
-    await d.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: scan } }, { ok: true, text: '2 Seiten' });
+    await d.volltexte.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: scan } }, { ok: true, text: '2 Seiten' });
     assert.equal((await repo.holeDokument(scan))!.ocr?.stand, 'fertig');
     assert.match((await repo.holeDokument(scan))!.ocr!.info!, /^Texterkennung durch Paket/);
   });
@@ -162,19 +162,19 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     const { d, repo, hoch } = await aufbau();
     const a = await hoch('a.pdf', 'application/pdf', pdfMitText(['a']), true);
     const b = await hoch('b.pdf', 'application/pdf', pdfMitText(['b']), true);
-    await d.texterkennungFortschritt('texterkennung', { art: 'volltext.fertig', daten: { dokument: a } }, { fortschritt: 'Seite 20 von 64' });
+    await d.volltexte.texterkennungFortschritt('texterkennung', { art: 'volltext.fertig', daten: { dokument: a } }, { fortschritt: 'Seite 20 von 64' });
     assert.equal((await repo.holeDokument(a))!.ocr?.info, 'wartet auf Texterkennung (Paket Texterkennung) – Seite 20 von 64');
     assert.deepEqual(volltextHerkunft((await repo.holeDokument(a))!.ocr), { art: 'wartet', paket: 'Texterkennung' });
     // Fremdes Paket: ändert nichts.
-    await d.nachTexterkennungsEreignis('vektor', { art: 'volltext.fertig', daten: { dokument: a } }, { ok: true, text: '' });
+    await d.volltexte.nachTexterkennungsEreignis('vektor', { art: 'volltext.fertig', daten: { dokument: a } }, { ok: true, text: '' });
     assert.equal((await repo.holeDokument(a))!.ocr?.stand, 'paket');
-    await d.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: a } }, { ok: true, text: 'Mappentyp nicht gewählt' });
+    await d.volltexte.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: a } }, { ok: true, text: 'Mappentyp nicht gewählt' });
     assert.equal((await repo.holeDokument(a))!.ocr?.stand, 'fertig');
     assert.equal((await repo.holeDokument(a))!.ocr?.info, 'ohne Text – Paket Texterkennung: Mappentyp nicht gewählt');
     // Ein Fehlversuch mit späterer Wiederholung ändert nichts, erst das Aufgeben.
-    await d.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: b } }, { ok: false, text: '', fehler: 'Zeitgrenze erreicht' });
+    await d.volltexte.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: b } }, { ok: false, text: '', fehler: 'Zeitgrenze erreicht' });
     assert.equal((await repo.holeDokument(b))!.ocr?.stand, 'paket');
-    await d.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: b } }, { ok: false, text: '', fehler: 'Zeitgrenze erreicht', aufgegeben: true });
+    await d.volltexte.nachTexterkennungsEreignis('texterkennung', { art: 'volltext.fertig', daten: { dokument: b } }, { ok: false, text: '', fehler: 'Zeitgrenze erreicht', aufgegeben: true });
     assert.equal((await repo.holeDokument(b))!.ocr?.stand, 'fehler');
     assert.match((await repo.holeDokument(b))!.ocr!.info!, /Texterkennung durch Paket Texterkennung fehlgeschlagen: Zeitgrenze erreicht/);
   });
@@ -183,10 +183,10 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     const { d, repo, hoch, ereignisse } = await aufbau();
     const mitText = await hoch('brief.pdf', 'application/pdf', pdfMitText([TEXT]));
     const scan = await hoch('scan.pdf', 'application/pdf', pdfMitText(['scan']), true);
-    assert.deepEqual(await d.volltextNeuAnzahl('ohne'), { umfang: 'ohne', anzahl: 1 });
-    assert.deepEqual(await d.volltextNeuAnzahl('alle'), { umfang: 'alle', anzahl: 2 });
+    assert.deepEqual(await d.volltexte.volltextNeuAnzahl('ohne'), { umfang: 'ohne', anzahl: 1 });
+    assert.deepEqual(await d.volltexte.volltextNeuAnzahl('alle'), { umfang: 'alle', anzahl: 2 });
     const vorher = (await ereignisse()).length;
-    const a = d.volltextNeu('ohne', 'admin@example.org');
+    const a = d.volltexte.volltextNeu('ohne', 'admin@example.org');
     assert.equal(a.abbrechbar, true);
     const fertig = (await d.auftraege.warte())!;
     assert.equal(fertig.status, 'fertig');
@@ -194,26 +194,26 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     const neu = (await ereignisse()).slice(vorher);
     assert.ok(neu.every((e) => e.daten.dokument === scan && !e.daten.neu), JSON.stringify(neu.map((e) => e.daten)));
 
-    d.volltextNeu('alle', 'admin@example.org');
+    d.volltexte.volltextNeu('alle', 'admin@example.org');
     assert.deepEqual((await d.auftraege.warte())!.ergebnis, { umfang: 'alle', dokumente: 2, erledigt: 2, abgebrochen: false, paket: 'Texterkennung' });
     const alle = (await ereignisse()).filter((e) => e.paketId === 'texterkennung' && e.daten.neu === true);
     assert.deepEqual(alle.map((e) => e.daten.dokument).sort(), [mitText, scan].sort(), 'neu: true für alle');
     // Mit „neu“ wartet auch das Dokument mit Text auf das Paket; sein Text bleibt so lange für die Suche stehen.
     assert.equal((await repo.holeDokument(mitText))!.ocr?.stand, 'paket');
-    assert.equal((await d.volltext(mitText)).text, TEXT);
+    assert.equal((await d.volltexte.volltext(mitText)).text, TEXT);
   });
 
   it('am Dokument „neu erzeugen“: Ereignis mit neu; abbrechen verwirft das offene Ereignis', async () => {
     const { d, t, repo, hoch, ereignisse } = await aufbau();
     const mitText = await hoch('brief.pdf', 'application/pdf', pdfMitText([TEXT]));
-    await d.texterkennungErneut(mitText);
+    await d.volltexte.texterkennungErneut(mitText);
     await warte(async () => (await repo.holeDokument(mitText))!.ocr?.stand === 'paket');
     const ev = (await ereignisse()).filter((e) => e.daten.dokument === mitText && e.paketId === 'texterkennung');
     assert.equal(ev.at(-1)!.daten.neu, true);
     assert.deepEqual(await t.abbrechen([mitText], 'admin'), { abgebrochen: 1 });
     assert.equal((await repo.holeDokument(mitText))!.ocr?.stand, 'ausgelassen');
     assert.equal((await ereignisse()).filter((e) => e.daten.dokument === mitText).length, 0, 'offene Ereignisse zum Dokument verworfen');
-    assert.equal((await d.volltext(mitText)).text, TEXT, 'Text aus dem PDF bleibt');
+    assert.equal((await d.volltexte.volltext(mitText)).text, TEXT, 'Text aus dem PDF bleibt');
   });
 
   it('ohne Paket (#459): Scans warten auf ein Paket; wird eins installiert, gehen sie an das Paket', async () => {
@@ -227,22 +227,22 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     assert.deepEqual(volltextHerkunft(s.ocr), { art: 'wartet', paket: null });
     assert.deepEqual((await ereignisse()).map((e) => [e.paketId, e.daten.text]), [['vektor', true]], 'ohne Text an kein älteres Paket');
     // „Neu erzeugen“ ohne Paket: Der Text aus dem PDF gilt weiter.
-    await d.texterkennungErneut(mitText);
+    await d.volltexte.texterkennungErneut(mitText);
     await warte(async () => (await repo.holeDokument(mitText))!.ocr?.stand === 'fertig');
-    assert.equal((await d.volltext(mitText)).text, TEXT);
+    assert.equal((await d.volltexte.volltext(mitText)).text, TEXT);
     // Paket kommt: Wartende gehen wie neue Dokumente durch Textebene und Paket.
     await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
     alsScan(true);
-    assert.equal(await d.texterkennungPaketDa(), 1);
+    assert.equal(await d.volltexte.texterkennungPaketDa(), 1);
     await warte(async () => (await repo.holeDokument(scan))!.ocr?.info === infoWartet({ name: 'Texterkennung' }));
     const ev = (await ereignisse()).filter((e) => e.paketId === 'texterkennung');
     assert.deepEqual(ev.map((e) => [e.daten.dokument, e.daten.text]), [[scan, false]]);
-    assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng']);
+    assert.deepEqual((await d.volltexte.texterkennungPaket())?.sprachen, ['deu', 'eng']);
     await d.kern.repo.speicherePaket({ ...paket('texterkennung_fra'), abhaengigkeiten: { texterkennung: '>=2.0.0' } });
-    assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra'], 'Sprach-Zusatzpaket (bisherige Id)');
+    assert.deepEqual((await d.volltexte.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra'], 'Sprach-Zusatzpaket (bisherige Id)');
     // #1084: Ergänzung mit Punkt.
     await d.kern.repo.speicherePaket({ ...paket('texterkennung.tur'), abhaengigkeiten: { texterkennung: '>=2.0.0' } });
-    assert.deepEqual((await d.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra', 'tur'], 'Sprach-Zusatzpaket mit Punkt');
+    assert.deepEqual((await d.volltexte.texterkennungPaket())?.sprachen, ['deu', 'eng', 'fra', 'tur'], 'Sprach-Zusatzpaket mit Punkt');
   });
 
   it('Update (#459): vorhandener Volltext – auch von der früheren eingebauten Texterkennung – bleibt; Wartende gehen an das Paket', async () => {
@@ -256,10 +256,10 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
     await repo.ocrEinreihen([wartend]);
     await t.start();
     await warte(async () => (await repo.holeDokument(wartend))!.ocr?.stand !== 'wartet');
-    assert.equal((await d.volltext(alt)).text, 'Gescannter Brief der Stadtwerke');
+    assert.equal((await d.volltexte.volltext(alt)).text, 'Gescannter Brief der Stadtwerke');
     assert.equal((await repo.holeDokument(alt))!.ocr?.info, 'Texterkennung (deu+eng) · Sprache: deu (90 %)');
     assert.deepEqual(volltextHerkunft((await repo.holeDokument(alt))!.ocr), { art: 'eingebaut' });
-    assert.equal((await d.volltext(ebene)).text, TEXT);
+    assert.equal((await d.volltexte.volltext(ebene)).text, TEXT);
     // Das Ereignis für das Paket entsteht kurz nach dem Wechsel des Stands (im Hintergrund) – darauf warten statt sofort prüfen.
     await warte(async () => (await ereignisse()).some((e) => e.paketId === 'texterkennung' && e.daten.dokument === wartend));
     assert.deepEqual(await repo.volltextHerkunft(), { pdf: 2, paket: 0, api: 0, eingebaut: 1, sonst: 0, ohneText: 0 });
@@ -346,7 +346,7 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
       assert.equal((await repo.ocrZaehler()).paket, 1);
       assert.deepEqual((await repo.volltextKandidaten('ohne')).map((x) => x.id), [ohne]);
       assert.deepEqual((await repo.volltextKandidaten('alle')).map((x) => x.id).sort(), [mit, ohne].sort());
-      await d.volltextFertig({ dokument: ohne, mappe: m.id }, { quelle: 'kern', text: false, mime: 'application/pdf', seiten: 1 });
+      await d.volltexte.volltextFertig({ dokument: ohne, mappe: m.id }, { quelle: 'kern', text: false, mime: 'application/pdf', seiten: 1 });
       await d.ereignisse.verteile();
       const [e] = (await repo.faelligeEreignisse(10)).filter((x) => x.art === 'volltext.fertig' && x.daten.dokument === ohne);
       assert.equal(e.daten.text, false);

@@ -354,7 +354,7 @@ export class Dienst {
     // Inhalte übersetzen (#732): auf Knopfdruck; Änderungen am Original lassen die Übersetzungen verfallen.
     this.uebersetzung = new Uebersetzung(this, () => this.repo, () => this.einstellungen, () => this.kurzzustand);
     this.ereignisse.abonniere('uebersetzung', (e) => this.uebersetzung.nachEreignis(e));
-    this.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
+    this.volltexte.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
     // Ereigniskatalog (#670): Mappen-Ereignisse und Fristen an die Pakete, die diese Mappentypen abonniert haben.
     this.ereignisse.abonniere('pakete', (e) => this.ereignisseDienst.ereignisAnPakete(e));
     // Volltext aus Paketen (#614): zuständige Pakete mit dms:volltext, Ereignis datei.volltext an genau dieses.
@@ -377,7 +377,7 @@ export class Dienst {
     });
     const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.automatischVerkleinert(ein, name),
-      volltextFertig: (e, m) => this.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
+      volltextFertig: (e, m) => this.volltexte.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
       pruefeArchivDokument: (id, was) => this.mappenArchiv.pruefeArchivDokument(id, was),
     });
     return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen };
@@ -415,7 +415,7 @@ export class Dienst {
     });
     const verkleinern = new PdfVerkleinern(this.kern, { pdf, ...mappen, ...doks }, { auftraege: this.auftraege });
     const schwaerzen = new Schwaerzen(this.kern, { verkleinern, historie: this.mappenHistorie, ...doks, archiv: this.dokumentArchiv }, {
-      volltextFertig: (e, m, von) => this.volltextFertig(e, m, von),
+      volltextFertig: (e, m, von) => this.volltexte.volltextFertig(e, m, von),
     });
     const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
@@ -476,7 +476,7 @@ export class Dienst {
     });
     const ereignisse = new EreignisseDienst(this.kern, { rechte: this.rechtepruefung, typpakete: this.typpakete, ki }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), ereignisWecker: () => this.ereignisWecker,
-      nachTexterkennungsEreignis: (paket, e, r) => this.nachTexterkennungsEreignis(paket, e, r),
+      nachTexterkennungsEreignis: (paket, e, r) => this.volltexte.nachTexterkennungsEreignis(paket, e, r),
     });
     const automatisierung = new Automatisierungshilfen(this.kern, this.rechtepruefung, { listeRollen: () => this.listeRollen() });
     return { ki, notizen, ereignisse, automatisierung };
@@ -575,9 +575,6 @@ export class Dienst {
   /** Inhalte übersetzen auf Knopfdruck (#732): Paket mit dms:uebersetzen, Zwischenspeicher im Kurzzustand. */
   readonly uebersetzung: Uebersetzung;
 
-  /** Ereignis „Volltext fertig“ (#336, #458; volltext/volltext.dienst.ts). */
-  beiVolltextFertig(f: (e: { dokument: string; mappe: string }) => Promise<void>) { this.volltexte.beiVolltextFertig(f); }
-  volltextFertig(e: { dokument: string; mappe: string }, m?: VolltextMeldung, von?: string | null): Promise<void> { return this.volltexte.volltextFertig(e, m, von); }
 
   /* ---------- Suche (#964: in suche/suche.dienst.ts) ---------- */
 
@@ -608,36 +605,19 @@ export class Dienst {
 
   /* ---------- Archivfassung (PDF/A, #631, dokumente/archivfassung.ts) ---------- */
 
-  volltextAusgelassen(id: string) { return this.volltexte.volltextAusgelassen(id); }
 
   /* ---------- Volltext aus Paketen (#614, volltext/aus-paketen.ts) ---------- */
 
-  volltextPaketDa(typen: string[]): Promise<number> { return this.volltextAusPaketen.volltextPaketDa(typen); }
-  paketWegFuerDateien(paket: { name: string }, typen: string[]): Promise<number> { return this.volltextAusPaketen.paketWegFuerDateien(paket, typen); }
-  pruefeVolltextRecht(z: Zugriff, id: string): Promise<void> { return this.volltextAusPaketen.pruefeVolltextRecht(z, id); }
 
   /* ---------- Volltext (#45, volltext/volltext.dienst.ts) ---------- */
 
   private static volltextAn(typ: Mappentyp | undefined, registerKey: string) { return VolltextDienst.volltextAn(typ, registerKey); }
-  volltextNachholen(): Promise<number> { return this.volltexte.volltextNachholen(); }
-  texterkennungErneut(id: string) { return this.volltexte.texterkennungErneut(id); }
-  texterkennungPaket() { return this.volltexte.texterkennungPaket(); }
-  texterkennungPaketDa(): Promise<number> { return this.volltexte.texterkennungPaketDa(); }
-  volltextNeuAnzahl(umfang: unknown) { return this.volltexte.volltextNeuAnzahl(umfang); }
-  volltextNeu(umfang: unknown, von: string) { return this.volltexte.volltextNeu(umfang, von); }
-  texterkennungFortschritt(...a: Parameters<VolltextDienst['texterkennungFortschritt']>) { return this.volltexte.texterkennungFortschritt(...a); }
 
   /** Sicherung außer Haus (#585): ein Paket hat das Ereignis sicherung.fertig aufgegeben (index.ts verbindet mit der Sicherung). */
   sicherungAufgegeben?: (paket: string, name: string, fehler: string | null | undefined) => Promise<void>;
   /** Sicherung außer Haus (#636): Antwort des Pakets auf einen Aufruf von sicherung.fertig (index.ts verbindet mit der Sicherung). */
   sicherungAntwort?: (paket: string, name: string, r: EreignisAufruf) => Promise<void>;
 
-  nachEreignisAufruf(paket: string, e: { art: string; daten: Record<string, unknown> }, r: EreignisAufruf): Promise<void> { return this.volltexte.nachEreignisAufruf(paket, e, r); }
-  nachTexterkennungsEreignis(...a: Parameters<VolltextDienst['nachTexterkennungsEreignis']>) { return this.volltexte.nachTexterkennungsEreignis(...a); }
-  volltext(id: string) { return this.volltexte.volltext(id); }
-  schreibeVolltext(...a: Parameters<VolltextDienst['schreibeVolltext']>) { return this.volltexte.schreibeVolltext(...a); }
-  setzeDokumentSprache(...a: Parameters<VolltextDienst['setzeDokumentSprache']>) { return this.volltexte.setzeDokumentSprache(...a); }
-  teilenHinweisAus(id: string) { return this.volltexte.teilenHinweisAus(id); }
 
   private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
 

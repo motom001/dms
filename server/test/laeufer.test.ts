@@ -300,7 +300,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const { d, l } = await aufbau({}, undefined, { weiterMax: 3 });
     // Antwort jedes Aufrufs (#636) – auch der Fortsetzungen – geht an den Dienst.
     const antworten: Array<{ art: string; ok: boolean; text: string; rc: number | null; beginn: number }> = [];
-    d.nachEreignisAufruf = async (_p, e, r) => { antworten.push({ art: e.art, ok: r.ok, text: r.text, rc: r.rc, beginn: r.beginn }); };
+    d.volltexte.nachEreignisAufruf = async (_p, e, r) => { antworten.push({ art: e.art, ok: r.ok, text: r.text, rc: r.rc, beginn: r.beginn }); };
     await installiere(d, 'weiter', WEITER);
     await l.start();
     await warte(async () => (await l.uebersicht()).laeuft);
@@ -438,7 +438,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const gelesen = (await rufe('GET', '/api/v1/mappen/:id', { id: post.id })).body as { dokumente?: unknown[] };
     assert.equal(gelesen.dokumente?.length, 1);
     await rufe('PUT', '/api/v1/dokumente/:id/volltext', { id: pdok.id }, { text: 'Sehr geehrte Damen und Herren' });
-    assert.match((await d.volltext(pdok.id)).text ?? '', /Sehr geehrte/);
+    assert.match((await d.volltexte.volltext(pdok.id)).text ?? '', /Sehr geehrte/);
     await rufe('PUT', '/api/v1/dokumente/:id/archivnummer', { id: pdok.id }, { archivnummer: 'A-17' });
     const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }], teile: [0, 1] })).body as { posten: Array<{ typId: string }> };
     assert.equal(geteilt.posten.length, 2);
@@ -661,7 +661,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
     const dok = async (m: string, r: string, name: string, text: string) => {
       const x = (await d.dokumente.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;
-      await d.schreibeVolltext(x.id, { text }, { id: null as never, herkunft: 'Test', paket: false });
+      await d.volltexte.schreibeVolltext(x.id, { text }, { id: null as never, herkunft: 'Test', paket: false });
       return x.id;
     };
     const d1 = await dok(post.id, reg, 'rechnung.pdf', 'Rechnung Heizung');
@@ -749,7 +749,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const neu = await x.d.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
     const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
     const d4 = (await x.d.dokumente.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
-    await x.d.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
+    await x.d.volltexte.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
     assert.equal((await x.d.kern.repo.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');
     await x.l.start();
     await warte(async () => (await x.d.kern.repo.ereignisStand()).ki?.offen === 0);

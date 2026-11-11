@@ -348,7 +348,7 @@ Gesamtbetrag 1.190,00 €`;
     await x.d.postTyp();
     const p = await x.d.legePostAn({ betreff: 'Rechnung' }, { id: x.lena.id, name: 'Lena' });
     const dok = (await x.d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r'), x.lena.id)).dokument;
-    await x.d.schreibeVolltext(dok.id, { text: AUSGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
+    await x.d.volltexte.schreibeVolltext(dok.id, { text: AUSGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
     const e = (await x.d.erkennung.fuerPost(p.id))!;
     assert.ok(!e.absender.some((t) => t.mappeId === x.eigen.id));
     assert.equal(e.ausgehend?.mappeId, x.eigen.id);
@@ -375,7 +375,7 @@ Gesamtbetrag 1.190,00 €`;
     // Schon verknüpft: nicht noch einmal.
     const re = await x.d.mappen.legeMappeAn({ typId: x.rechnung.id, werte: { rechnungsnummer: 'R-2026-0815', von: x.garten.id } }, x.lena.id);
     const dok = (await x.d.dokumente.ladeHoch(re.id, { register: 'anlagen', name: 'rechnung.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 re'), x.lena.id)).dokument;
-    await x.d.schreibeVolltext(dok.id, { text: EINGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
+    await x.d.volltexte.schreibeVolltext(dok.id, { text: EINGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
     // Umgekehrt: neuer Lieferschein mit der Nummer, die die Rechnung nennt.
     const l = await x.d.erkennung.fuerTyp(x.lieferschein.id, { text: 'Gartenbau Beispiel GmbH · Am Wasserturm 3 · 01067 Musterstadt\nLieferschein\nLieferschein-Nr. LS-2026-0042' }, await x.z());
     assert.equal(l.vorschlaege.lieferscheinnummer.wert, 'LS-2026-0042');

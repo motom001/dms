@@ -148,31 +148,31 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // Volltext und Texterkennung (#45)
     { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      const r = await dienst.volltext(a.params.id);
+      const r = await dienst.volltexte.volltext(a.params.id);
       return ok({ id: r.dokument.id, name: r.dokument.name, ocr: r.dokument.ocr, sprache: r.dokument.sprache ?? null, weitereSprachen: r.dokument.weitereSprachen ?? [], text: r.text, ...(r.seiten ? { seiten: r.seiten } : {}) });
     } },
     // Volltext schreiben (#338): für Pakete wie die Texterkennung – Dienstkonto mit „Dokumente schreiben“ oder Recht Bearbeiten;
     // mit dms:volltext (#614) nur für die Dateitypen des Pakets. Bis zur Grenze des Kerns (5 Mio. Zeichen) in einer Anfrage.
     { methode: 'PUT', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', roh: VOLLTEXT_KOERPER_MAX, handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
-      if (a.benutzer?.art === 'dienst') await dienst.pruefeVolltextRecht(await zg(a), a.params.id);
+      if (a.benutzer?.art === 'dienst') await dienst.volltextAusPaketen.pruefeVolltextRecht(await zg(a), a.params.id);
       const p = a.benutzer?.art === 'dienst' ? (await dienst.kern.repo.listePakete()).find((x) => x.id === a.benutzer!.paketId) : undefined;
       const herkunft = p ? `${p.name} ${p.version}` : t('meldungen.routen.ueber-die-api', { wert: ich(a).name || ich(a).email });
-      const d = await dienst.schreibeVolltext(a.params.id, a.body, { id: ich(a).id, herkunft, paket: !!p, ausgelesen: !!p && hatSchnittstelle(p.laeufer, 'dms:volltext') && !hatSchnittstelle(p.laeufer, 'dms:texterkennung') });
+      const d = await dienst.volltexte.schreibeVolltext(a.params.id, a.body, { id: ich(a).id, herkunft, paket: !!p, ausgelesen: !!p && hatSchnittstelle(p.laeufer, 'dms:volltext') && !hatSchnittstelle(p.laeufer, 'dms:texterkennung') });
       return ok({ id: d.id, name: d.name, ocr: d.ocr, sprache: d.sprache ?? null, weitereSprachen: d.weitereSprachen ?? [] });
     } },
     // Sprache des Volltexts (#400): bestimmt die Wortstämme der Suche – Rechte wie beim Volltext schreiben.
     { methode: 'PUT', pfad: '/api/dokumente/:id/sprache', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
-      if (a.benutzer?.art === 'dienst') await dienst.pruefeVolltextRecht(await zg(a), a.params.id);
+      if (a.benutzer?.art === 'dienst') await dienst.volltextAusPaketen.pruefeVolltextRecht(await zg(a), a.params.id);
       const p = a.benutzer?.art === 'dienst' ? (await dienst.kern.repo.listePakete()).find((x) => x.id === a.benutzer!.paketId) : undefined;
-      const d = await dienst.setzeDokumentSprache(a.params.id, a.body, { id: ich(a).id, wer: p ? `${p.name} ${p.version}` : t('meldungen.routen.ueber-die-api', { wert: ich(a).name || ich(a).email }) });
+      const d = await dienst.volltexte.setzeDokumentSprache(a.params.id, a.body, { id: ich(a).id, wer: p ? `${p.name} ${p.version}` : t('meldungen.routen.ueber-die-api', { wert: ich(a).name || ich(a).email }) });
       return ok({ id: d.id, name: d.name, sprache: d.sprache ?? null, weitereSprachen: d.weitereSprachen ?? [], ocr: d.ocr });
     } },
     // Hinweis „Post teilen?“ wegklicken (#579): wer teilen dürfte (Bearbeiten), darf ihn auch ausblenden.
     { methode: 'DELETE', pfad: '/api/dokumente/:id/teilen-hinweis', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      const d = await dienst.teilenHinweisAus(a.params.id);
+      const d = await dienst.volltexte.teilenHinweisAus(a.params.id);
       return ok({ id: d.id, teilenAb: d.teilenAb ?? null });
     } },
     // Vektoren zu Dokumenten (#442): schreiben nur Pakete mit dms:vektoren, die das Dokument lesen dürfen.
@@ -209,7 +209,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      const d = await dienst.texterkennungErneut(a.params.id);
+      const d = await dienst.volltexte.texterkennungErneut(a.params.id);
       L.dokumente.info('Texterkennung erneut angestoßen', { name: d.name, id: d.id });
       return ok(d);
     } },

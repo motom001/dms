@@ -103,7 +103,7 @@ describe('Einstellung und Werkbank (#395)', () => {
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
     const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null)).dokument.id;
     // Eine Herkunft, die die Marke vortäuscht, zählt nicht.
-    const doc = await d.schreibeVolltext(id, { text: BEISPIELE.tur }, { id: 'p', herkunft: 'Mein OCR · Sprache: eng (99 %)', paket: true });
+    const doc = await d.volltexte.schreibeVolltext(id, { text: BEISPIELE.tur }, { id: 'p', herkunft: 'Mein OCR · Sprache: eng (99 %)', paket: true });
     assert.ok(doc.ocr!.info!.startsWith(PAKET_TEXT));
     assert.equal(spracheAusInfo(doc.ocr!.info)?.sprache, 'tur');
     assert.match(doc.ocr!.info!, / · Sprache: tur \(\d+ %\)$/);

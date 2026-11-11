@@ -50,7 +50,7 @@ function faelle(pg: boolean) {
       const brief = async (titel: string, text: string, sprache?: string | null) => {
         const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel } });
         const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
-        return d.schreibeVolltext(dokument.id, { text, ...(sprache !== undefined ? { sprache } : {}) }, { id: ICH.id, herkunft: 'Test', paket: false });
+        return d.volltexte.schreibeVolltext(dokument.id, { text, ...(sprache !== undefined ? { sprache } : {}) }, { id: ICH.id, herkunft: 'Test', paket: false });
       };
       const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' })).mappen.map((m) => m.titel).sort();
       return { d, r, sql, brief, suche };
@@ -66,11 +66,11 @@ function faelle(pg: boolean) {
       assert.equal(x.sprache, 'eng');
       assert.match(x.ocr?.info ?? '', /Sprache: eng/);
       await assert.rejects(brief('Falsch', DEUTSCH, 'xyz'), /sprache: unbekannt/);
-      const neu = await d.setzeDokumentSprache(x.id, { sprache: 'fra' }, { id: ICH.id, wer: 'Test' });
+      const neu = await d.volltexte.setzeDokumentSprache(x.id, { sprache: 'fra' }, { id: ICH.id, wer: 'Test' });
       assert.equal(neu.sprache, 'fra');
-      assert.equal((await d.setzeDokumentSprache(x.id, { sprache: null }, { id: ICH.id, wer: 'Test' })).sprache, null);
-      await assert.rejects(d.setzeDokumentSprache(x.id, { sprache: 'klingonisch' }, { id: ICH.id, wer: 'Test' }), /unbekannt/);
-      await assert.rejects(d.setzeDokumentSprache('00000000-0000-4000-8000-00000000ffff', { sprache: 'fra' }, { id: ICH.id, wer: 'Test' }), /gibt es nicht/);
+      assert.equal((await d.volltexte.setzeDokumentSprache(x.id, { sprache: null }, { id: ICH.id, wer: 'Test' })).sprache, null);
+      await assert.rejects(d.volltexte.setzeDokumentSprache(x.id, { sprache: 'klingonisch' }, { id: ICH.id, wer: 'Test' }), /unbekannt/);
+      await assert.rejects(d.volltexte.setzeDokumentSprache('00000000-0000-4000-8000-00000000ffff', { sprache: 'fra' }, { id: ICH.id, wer: 'Test' }), /gibt es nicht/);
     });
 
     if (pg) it('PostgreSQL: Wortstämme je Sprache; Sprache ändern baut den Suchindex des Dokuments neu', async () => {
@@ -83,7 +83,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(await suche('"Rechnung"'), ['Brief'], 'deutsch weiter');
       assert.deepEqual(await suche('Grusse'), ['Brief'], 'Umlaute (#356) weiter');
       // Als Deutsch markiert: dann gilt der deutsche Wortstamm, „cheval“ findet „chevaux“ nicht mehr.
-      await d.setzeDokumentSprache(lettre.id, { sprache: 'deu' }, { id: ICH.id, wer: 'Test' });
+      await d.volltexte.setzeDokumentSprache(lettre.id, { sprache: 'deu' }, { id: ICH.id, wer: 'Test' });
       assert.deepEqual(await suche('"cheval"'), []);
     });
 

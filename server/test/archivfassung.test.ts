@@ -116,13 +116,13 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   const engine: Engine = async () => ({ text: TEXT, seiten: 1, info: 'Textebene des PDFs', ohneText: [] });
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
   d.dokumente.verbindeTexterkennung(t);
-  t.paket = () => d.texterkennungPaket();
+  t.paket = () => d.volltexte.texterkennungPaket();
   t.volltextPaket = d.paketVolltext;
   t.nachher = (dok, e, k) => {
     // Wie ablago.ts: Ausgelassen geht an die Archivfassung (E-Mails ohne Volltext-Paket, #946).
-    if (e.stand === 'ausgelassen') { void d.volltextAusgelassen(dok.id); return; }
+    if (e.stand === 'ausgelassen') { void d.volltexte.volltextAusgelassen(dok.id); return; }
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
-    void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu });
+    void d.volltexte.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu });
   };
   const ablage = speicherArchiv();
   const a = new Archivfassung(d.dokumentArchiv.archivAnbindung(ablage));
@@ -173,7 +173,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
         try { await rufe('pdfa', 'PUT', '/api/v1/dokumente/:id/archivfassung', { id }, x, { sha256: String(e.daten.sha256) }); } catch (f) { text = (f as Error).message; }
       }
       await repo.ereignisZugestellt(e.id);
-      await d.nachTexterkennungsEreignis('pdfa', e, { ok: true, text });
+      await d.volltexte.nachTexterkennungsEreignis('pdfa', e, { ok: true, text });
       erg.push(text);
     }
     return erg;
@@ -225,7 +225,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.deepEqual(await x.offen(), [], 'kein Ereignis vor dem Volltext');
     // Die Texterkennung schreibt den Volltext mit Wortpositionen.
     const woerter: Array<[string, number, number, number, number]> = [['Stromrechnung', 0.1, 0.1, 0.3, 0.05], ['Januar', 0.45, 0.1, 0.2, 0.05]];
-    await x.d.schreibeVolltext(id, { text: 'Stromrechnung Januar', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
+    await x.d.volltexte.schreibeVolltext(id, { text: 'Stromrechnung Januar', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
     await warte(async () => (await x.offen()).length === 1);
     const [e] = await x.offen();
     const dok = await x.dok(id);
@@ -285,9 +285,9 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { bilder: false, pdf_scan: false } });
     const woerter: Array<[string, number, number, number, number]> = [['Stromrechnung', 0.1, 0.1, 0.3, 0.05]];
     const bild = await x.hoch('foto.png', png(40, 20), 'image/png');
-    await x.d.schreibeVolltext(bild, { text: 'Stromrechnung', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
+    await x.d.volltexte.schreibeVolltext(bild, { text: 'Stromrechnung', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
     const scan = await x.hoch('scan.pdf', await pdf());
-    await x.d.schreibeVolltext(scan, { text: 'Stromrechnung', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
+    await x.d.volltexte.schreibeVolltext(scan, { text: 'Stromrechnung', woerter: [woerter] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
     await warte(async () => (await x.a.stand(await x.dok(bild)))?.stand === 'ausgelassen' && (await x.a.stand(await x.dok(scan)))?.stand === 'ausgelassen');
     assert.deepEqual(await x.offen(), []);
     assert.match(String((await x.a.stand(await x.dok(bild)))!.info), /Fotos und Bilder/);
@@ -325,7 +325,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await assert.rejects(x.rufe('fremd', 'PUT', '/api/v1/dokumente/:id/archivfassung', { id }, await pdf({ pdfa: {} }), { sha256: String(e.daten.sha256) }), (f: { status?: number }) => f.status === 403);
     // Der Grund der letzten Ablehnung steht am Dokument und in der Werkbank – auch nach dem Ergebnis des Pakets.
     await x.repo.ereignisZugestellt(e.id);
-    await x.d.nachTexterkennungsEreignis('pdfa', e, { ok: true, text: 'abgelehnt' });
+    await x.d.volltexte.nachTexterkennungsEreignis('pdfa', e, { ok: true, text: 'abgelehnt' });
     const s = (await x.a.stand(await x.dok(id)))!;
     assert.equal(s.stand, 'fehler');
     assert.match(s.info ?? '', /^Archivfassung von Paket PDF\/A abgelehnt: .*Aktionen|externen/);
@@ -403,13 +403,13 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await assert.rejects(x.d.dokumentArchiv.archivfassungVon(id), /keine Archivfassung/);
     await x.laeufer();
     // Volltext neu erzeugen: Ereignis mit neu, auch wenn es schon eine gibt.
-    await x.d.texterkennungErneut(id);
+    await x.d.volltexte.texterkennungErneut(id);
     // Erst die Texterkennung (neu): Solange sie dran ist, steht der Volltext nicht fest – kein Ereignis.
     await warte(async () => (await x.dok(id)).ocr?.stand === 'paket');
     assert.deepEqual(await x.offen(), []);
     const vf = (await x.repo.faelligeEreignisse(1000)).filter((e) => e.art === 'volltext.fertig' && e.paketId === 'texterkennung' && e.daten.dokument === id).at(-1)!;
     assert.equal(vf.daten.neu, true);
-    await x.d.nachTexterkennungsEreignis('texterkennung', vf, { ok: true, text: 'Text aus dem PDF bleibt' });
+    await x.d.volltexte.nachTexterkennungsEreignis('texterkennung', vf, { ok: true, text: 'Text aus dem PDF bleibt' });
     await warte(async () => (await x.offen()).some((e) => e.daten.neu === true));
     await x.laeufer();
     // Bestand nach der Installation (hier: Paket neu): alle fertigen ohne Archivfassung.
@@ -642,7 +642,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
     assert.equal((await x.dok(id)).ocr?.stand, 'paket');
     await new Promise((r) => setTimeout(r, 100));
     assert.deepEqual(await x.offen(), [], 'erst mit feststehendem Volltext');
-    await x.d.schreibeVolltext(id, { text: 'Guten Tag Markus, wir bestätigen Ihren Auftrag über die Lieferung.' }, { id: 'konto', herkunft: 'Office und E-Mail 1.1.0', paket: true, ausgelesen: true });
+    await x.d.volltexte.schreibeVolltext(id, { text: 'Guten Tag Markus, wir bestätigen Ihren Auftrag über die Lieferung.' }, { id: 'konto', herkunft: 'Office und E-Mail 1.1.0', paket: true, ausgelesen: true });
     await warte(async () => (await x.offen()).length === 1);
     const [e] = await x.offen();
     assert.equal(e.daten.mime, EML);
@@ -659,7 +659,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
     assert.match(String((await x.a.stand(await x.dok(eml)))!.info), /laut Einstellung bekommen E-Mails keine Archivfassung/);
     // Bilder bleiben davon unberührt.
     const bild = await x.hoch('foto.png', png(40, 20), 'image/png');
-    await x.d.schreibeVolltext(bild, { text: 'Stromrechnung', woerter: [[['Stromrechnung', 0.1, 0.1, 0.3, 0.05]]] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
+    await x.d.volltexte.schreibeVolltext(bild, { text: 'Stromrechnung', woerter: [[['Stromrechnung', 0.1, 0.1, 0.3, 0.05]]] }, { id: 'konto', herkunft: 'Texterkennung 2.2.0', paket: true });
     await warte(async () => (await x.offen()).length === 1);
     assert.equal((await x.offen())[0].daten.mime, 'image/png');
     await x.laeufer();

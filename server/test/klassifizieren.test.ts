@@ -64,7 +64,7 @@ async function aufbau() {
   for (const x of [vertrag.id, rechnung.id, postTyp.id]) await d.ki.setzeKiTyp(x, true, null);
   const dok = async (mappe: string, name: string, text: string) => {
     const x = (await d.dokumente.ladeHoch(mappe, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
-    await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
   const wartung = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { vnr: 'WV-1043' } }, lena.id);

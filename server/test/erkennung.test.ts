@@ -158,7 +158,7 @@ async function aufbau() {
   const post = async (text: string, betreff = 'Brief') => {
     const p = await d.legePostAn({ betreff }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok = (await d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${betreff}`), anna.id)).dokument;
-    await d.schreibeVolltext(dok.id, { text }, { id: anna.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(dok.id, { text }, { id: anna.id, herkunft: 'Test', paket: false });
     return p;
   };
   return { d, konten, anna, ben, A, B, organisation, vertrag, sw, bank, strom, gas, rufe, post };
@@ -327,7 +327,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
     const m = await d.mappen.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
     const dok = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'karte.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 karte'), anna.id)).dokument;
     await assert.rejects(d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.rechtepruefung.zugriff(A)), (e: Error & { status?: number }) => e.status === 409);
-    await d.schreibeVolltext(dok.id, { text: KARTE }, { id: anna.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(dok.id, { text: KARTE }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.rechtepruefung.zugriff(A))).vorschlaege.mobil.wert, '0171 1234567');
     const vcf = Buffer.from('BEGIN:VCARD\nVERSION:3.0\nN:Beispiel;Ben;;;\nTITLE:Kundenberater\nEMAIL:ben@beispiel-ag.example\nEND:VCARD\n');
     const r = await rufe(A, 'POST', '/api/typen/:id/vorschlaege/datei', { params: { id: person.id }, query: { name: 'ben.vcf', typ: 'text/vcard' }, body: vcf }) as { body: { vorschlaege: Record<string, { wert: unknown }>; text: string } };
@@ -369,7 +369,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     // Für Ben: er bekommt die Aufgabe; das Dokument wandert zum Strom-Vertrag (der einzige, der auf den Absender verweist).
     const p = await d.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok = (await d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'abschlag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 abschlag'), anna.id)).dokument;
-    await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
     const nachher = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(nachher.werte.stand, 'Zugeordnet');
     assert.deepEqual(nachher.werte.bezug, [strom.id]);
@@ -393,7 +393,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.deepEqual(offen.map((a) => a.art), ['post']);
     await assert.rejects(d.automatikRueckgaengig(aufgaben[0].id, B), (x: Error & { status?: number }) => x.status === 409);
     // Neuer Volltext: nicht noch einmal automatisch.
-    await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.mappen.holeMappe(p.id)).mappe.werte.stand, 'Neu');
     void A;
   });
@@ -414,7 +414,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
     const p3 = await d.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok3 = (await d.dokumente.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
-    await d.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.mappen.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
     // Archivmodus: nie automatisch, auch wenn eingeschaltet.
     await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS, C: true, R: true, U: true, D: true, P: true }, regeln: [] }, true);

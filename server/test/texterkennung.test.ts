@@ -58,7 +58,7 @@ describe('Texterkennung (#45)', () => {
     const a = (mit as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id];
     assert.equal(a.dokument, 'r.pdf');
     assert.ok(a.text.includes(`${TREFFER_ANFANG}Stadtwerke${TREFFER_ENDE}`), a.text);
-    assert.equal((await d.volltext(dokument.id)).text, 'Stromrechnung der Stadtwerke Musterstadt für Januar');
+    assert.equal((await d.volltexte.volltext(dokument.id)).text, 'Stromrechnung der Stadtwerke Musterstadt für Januar');
     assert.equal((await t.status()).zaehler.fertig, 2);
   });
 
@@ -71,7 +71,7 @@ describe('Texterkennung (#45)', () => {
     await warte(async () => (await repo.holeDokument(pdf))?.ocr?.stand === 'fehler');
     assert.equal((await repo.holeDokument(pdf))!.ocr!.info, 'kaputt');
     fehler = false;
-    await d.texterkennungErneut(pdf);
+    await d.volltexte.texterkennungErneut(pdf);
     await warte(async () => (await repo.holeDokument(pdf))?.ocr?.stand === 'fertig');
 
     const txt = await hoch('n.txt', 'text/plain', Buffer.from('hallo'));
@@ -97,9 +97,9 @@ describe('Texterkennung (#45)', () => {
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
     const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null);
     assert.equal(dokument.ocr?.stand, 'keiner', 'Register ohne Volltext');
-    assert.equal(await d.volltextNachholen(), 0);
+    assert.equal(await d.volltexte.volltextNachholen(), 0);
     await d.mappentypen.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => ({ ...r, volltext: true })) });
-    assert.equal(await d.volltextNachholen(), 1);
+    assert.equal(await d.volltexte.volltextNachholen(), 1);
     await warte(async () => (await repo.holeDokument(dokument.id))?.ocr?.stand === 'fertig');
   });
 

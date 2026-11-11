@@ -131,7 +131,7 @@ async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   const garten = await d.mappen.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
     const x = (await d.dokumente.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
-    await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
+    await d.volltexte.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
   const police = await dok(kfz.id, 'police.pdf', `${'Allgemeine Bedingungen. '.repeat(80)}Ihre Kfz-Versicherung läuft am 31.12.2026 aus und verlängert sich um ein Jahr.`);

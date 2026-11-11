@@ -35,10 +35,10 @@ export function wartungRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/wartung/formate', zugang: 'admin', handler: async () => ok({ typen: await dienst.mappenEingaben.unpassendeFormate() }) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async (a) =>
       ok(await dienst.mappenTitel.absenderBereinigen((a.body as { ids?: unknown })?.ids, { id: ich(a).id, email: ich(a).email })) },
-    { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltexte.volltextNachholen() }) },
     // „Volltext neu erzeugen“ (#458): erst die Anzahl für die Rückfrage, dann als Auftrag mit Fortschritt (abbrechbar).
-    { methode: 'GET', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok({ ...(await dienst.volltextNeuAnzahl(a.query.umfang)), paket: await dienst.texterkennungPaket() }) },
-    { methode: 'POST', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.volltextNeu((b(a) as { umfang?: unknown }).umfang, ich(a).email)), 202) },
+    { methode: 'GET', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok({ ...(await dienst.volltexte.volltextNeuAnzahl(a.query.umfang)), paket: await dienst.volltexte.texterkennungPaket() }) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.volltexte.volltextNeu((b(a) as { umfang?: unknown }).umfang, ich(a).email)), 202) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/vorschau', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.dokumente.vorschauNachholen() }) },
 
     /* ---------- Verschlüsselung (#39) ---------- */

@@ -136,7 +136,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         adresse: x.betrieb ? !!x.betrieb.ansicht().adresse : true,
         texterkennung: x.texterkennung ? await sicher(() => x.texterkennung!.zaehler()) : null,
         // #459: Ist ein Paket für die Texterkennung installiert? Sonst Hinweis „Texterkennung ist jetzt ein Paket“.
-        texterkennungPaket: !!(await sicher(() => dienst.texterkennungPaket())),
+        texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
         aufgaben: { offen: aufgaben.length, ohneEmpfaenger: aufgaben.filter((y) => !y.empfaengerId).length },
         // #798: Aufgaben bei Personen ohne Leserecht (offene Fälle, abgeglichen alle fünf Minuten und beim Öffnen).
         ohneLeserecht: (await sicher(async () => (await dienst.offeneFaelle()).length)) ?? 0,

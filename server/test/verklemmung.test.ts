@@ -78,7 +78,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
     for (const id of dokumente) {
       const dok = await r.holeDokument(id);
       assert.equal(dok?.ocr?.stand, 'fertig');
-      assert.ok((await d.volltext(id)).text!.length > 0, 'Volltext da');
+      assert.ok((await d.volltexte.volltext(id)).text!.length > 0, 'Volltext da');
     }
     // Der Eingang landet vollständig im Wörterverzeichnis – mit denselben Wörtern wie ein Neuaufbau aus dem Bestand
     // (die Zahlen je Wort wachsen bei Änderungen nur, wie bisher).
@@ -110,13 +110,13 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
       CREATE TRIGGER abbruch BEFORE UPDATE OF volltext ON dokumente FOR EACH ROW EXECUTE FUNCTION abbruch();`);
     const seit = protokoll.letzteNr;
     await r.ocrSetze(dokument.id, { stand: 'fertig', text: 'Kontoauszug der Sparkasse', seiten: 1, info: 'Test' });
-    assert.equal((await d.volltext(dokument.id)).text!, 'Kontoauszug der Sparkasse');
+    assert.equal((await d.volltexte.volltext(dokument.id)).text!, 'Kontoauszug der Sparkasse');
     assert.equal(neueVersuche(seit), 3);
     // Auch innerhalb einer Transaktion (Sicherungspunkt): Die Transaktion übersteht den Abbruch.
     await sql`ALTER SEQUENCE abbruch_nr RESTART`;
     const zweite = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'c.txt', typ: 'text/plain' }, Buffer.from('c'), null)).dokument;
     await r.transaktion(async (tx) => { await tx.ocrSetze(zweite.id, { stand: 'fertig', text: 'Zweiter Brief', seiten: 1 }); });
-    assert.equal((await d.volltext(zweite.id)).text!, 'Zweiter Brief');
+    assert.equal((await d.volltexte.volltext(zweite.id)).text!, 'Zweiter Brief');
     // Andere Fehler werden nicht wiederholt.
     await sql.unsafe(`CREATE OR REPLACE FUNCTION abbruch() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN RAISE EXCEPTION 'kaputt'; END $f$`);
     const vorher = protokoll.letzteNr;
@@ -145,7 +145,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
     await sql`DROP TRIGGER abbruch ON dokumente`;
     assert.deepEqual(await t.fehlerNeuStarten('test'), { eingereiht: 1 });
     await warte(async () => (await r.holeDokument(dokument.id))?.ocr?.stand === 'fertig');
-    assert.equal((await d.volltext(dokument.id)).text!.trim(), 'Stromrechnung der Stadtwerke');
+    assert.equal((await d.volltexte.volltext(dokument.id)).text!.trim(), 'Stromrechnung der Stadtwerke');
     t.stop();
   });
 });

@@ -343,7 +343,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const info = { mime: 'application/pdf', groesse: pdf.length, sha256: createHash('sha256').update(pdf).digest('hex'), paket: { id: 'bildformate', name: 'Bildformate', version: '1.0.0' }, erstellt: new Date().toISOString() };
     const ablage = ordnerFassungen(fassungsOrdner(join(q.wurzel, 'files'), HAUSHALT));
     await ablage.schreibe(dok.sha256, info, pdf);
-    await q.dienst.schreibeVolltext(dok.id, { text: 'Kontoauszug Oktober' }, { id: 'kern', herkunft: 'Text aus dem PDF', paket: false });
+    await q.dienst.volltexte.schreibeVolltext(dok.id, { text: 'Kontoauszug Oktober' }, { id: 'kern', herkunft: 'Text aus dem PDF', paket: false });
     // Eine halbe Fassung (nur Inhalt, ohne Angaben) – z. B. während der Sicherung entstanden – kommt nicht mit.
     await mkdir(join(q.wurzel, 'files', HAUSHALT, 'fassungen', 'ee'), { recursive: true });
     await writeFile(join(q.wurzel, 'files', HAUSHALT, 'fassungen', 'ee', `${'e'.repeat(64)}.fassung`), 'halb');

@@ -147,7 +147,7 @@ export class Uebersetzung {
     }
     const mappe = await this.d.rechtepruefung.mappeVon('dokument', q.dokument);
     await this.d.rechtepruefung.pruefeRecht(z, mappe, 'R');
-    const v = await this.d.volltext(q.dokument);
+    const v = await this.d.volltexte.volltext(q.dokument);
     // Sprache aus der Texterkennung (#400) als Hinweis für das Paket.
     return { mappe, text: v.text ?? '', format: 'text', von: spracheAusTesseract(v.dokument.sprache), gemischt: !!v.dokument.weitereSprachen?.length };
   }

@@ -656,7 +656,7 @@ export class Paketlaeufer implements PaketLaeufer {
       if (!this.pakete.some((p) => p.id === paket)) { await this.o.dienst.kern.repo.ereignisFehlgeschlagen(e.id, t('meldungen.verwaltung.das-paket-hat-keinen'), null); continue; }
       // Antwort jedes Aufrufs (#636): z. B. Stand der Kopie außer Haus – das Paket meldet ihn, statt selbst zu schreiben.
       const antwort = (r: Ergebnis, beginn: number) => r.ohneVersuch ? Promise.resolve() :
-        this.o.dienst.nachEreignisAufruf(paket, e, { ok: r.ok, text: r.text, fehler: r.fehler, rc: r.rc, beginn }).catch((f) => log.warn('Paket-Läufer: Antwort des Pakets nicht übernommen', { paket, art: e.art, fehler: (f as Error).message }));
+        this.o.dienst.volltexte.nachEreignisAufruf(paket, e, { ok: r.ok, text: r.text, fehler: r.fehler, rc: r.rc, beginn }).catch((f) => log.warn('Paket-Läufer: Antwort des Pakets nicht übernommen', { paket, art: e.art, fehler: (f as Error).message }));
       let beginn = Date.now();
       let r = await this.rufe(paket, 'ereignis', { art: e.art, id: e.id, erstellt: e.erstellt, versuch: e.versuche + 1, daten: e.daten });
       await antwort(r, beginn);
@@ -667,7 +667,7 @@ export class Paketlaeufer implements PaketLaeufer {
         if (abschnitt > max) { this.notiere(paket, { stufe: 2, text: t('meldungen.verwaltung.ereignis-nach-fortsetzungen-beendet', { max }) }); break; }
         e.daten = { ...e.daten, weiter, abschnitt };
         await this.o.dienst.kern.repo.ereignisDaten(e.id, e.daten);
-        await this.o.dienst.texterkennungFortschritt(paket, e, weiter).catch(() => {});
+        await this.o.dienst.volltexte.texterkennungFortschritt(paket, e, weiter).catch(() => {});
         if (!this.laeuft()) return;
         beginn = Date.now();
         r = await this.rufe(paket, 'ereignis', { art: e.art, id: e.id, erstellt: e.erstellt, versuch: e.versuche + 1, daten: e.daten });
@@ -675,7 +675,7 @@ export class Paketlaeufer implements PaketLaeufer {
       }
       // Texterkennung als Paket (#458): Dokument wartet nicht länger, wenn das Paket fertig ist oder aufgibt.
       const nachher = (x: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) =>
-        this.o.dienst.nachTexterkennungsEreignis(paket, e, x).catch((f) => log.warn('Paket-Läufer: Stand der Texterkennung nicht nachgetragen', { paket, fehler: (f as Error).message }));
+        this.o.dienst.volltexte.nachTexterkennungsEreignis(paket, e, x).catch((f) => log.warn('Paket-Läufer: Stand der Texterkennung nicht nachgetragen', { paket, fehler: (f as Error).message }));
       if (r.ok) { await this.o.dienst.kern.repo.ereignisZugestellt(e.id); await nachher({ ok: true, text: r.text }); continue; }
       if (r.ohneVersuch) return;
       const w = WARTEN_MIN[e.versuche];

@@ -156,7 +156,7 @@ describe('Geschützte PDFs ablegen und entsperren (#827)', { skip: ohneQpdf }, (
     await warte(async () => (await x.repo.holeDokument(id))!.ocr?.stand === 'fertig');
     const nachher = await x.inMappe(m.id, id);
     assert.match(nachher.ocr?.info ?? '', /entsperrten Fassung/);
-    assert.match((await x.d.volltext(id)).text ?? '', /Gehaltsabrechnung Oktober/);
+    assert.match((await x.d.volltexte.volltext(id)).text ?? '', /Gehaltsabrechnung Oktober/);
     // Original unverändert: gleicher Prüfwert, gleiche Bytes.
     assert.equal(nachher.sha256, vorher.sha256);
     assert.ok((((await x.d.dokumente.dokumentInhalt(id)).inhalt) as Buffer).equals(pdf));
