@@ -93,10 +93,10 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
 
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Heizöl Lieferung' } });
     assert.equal('suchtext' in (await d.mappen.holeMappe(m.id)).mappe, false);
-    await d.loescheMappe(m.id);
+    await d.loeschen.loescheMappe(m.id);
     const [k] = await sql`SELECT mappe ? 'suchtext' AS mit FROM papierkorb WHERE id = ${m.id}`;
     assert.equal(k.mit, false);
-    await d.stelleWiederHer(m.id, ICH, true);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, ICH, true);
     const [z] = await sql`SELECT suchtext FROM mappen WHERE id = ${m.id}`;
     assert.match(z.suchtext as string, /heizol lieferung/);
     assert.deepEqual(await suche('Heizol'), ['Heizöl Lieferung']);

@@ -116,7 +116,7 @@ describe('Schlüssel wechseln (#47)', () => {
     const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
     const m1 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
     const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
-    await d.loescheMappe(m2.id);
+    await d.loeschen.loescheMappe(m2.id);
     return { t, einst, datei, d, repo, betrieb, m1, m2 };
   }
 
@@ -142,7 +142,7 @@ describe('Schlüssel wechseln (#47)', () => {
     assert.equal(t.entschluessele(mail.passwort), 'mail-geheim');
     assert.ok(betrieb.ansicht().mail.passwortLesbar);
     // Papierkorb: wiederhergestellt und lesbar.
-    await d.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
+    await d.papierkorbVerwaltung.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
     assert.equal((await d.passwortfelder.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
     // Neu geladen (Neustart): derselbe Schlüssel.
     const t2 = new Tresor(einst, datei, () => null);

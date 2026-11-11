@@ -252,11 +252,11 @@ describe('Löschen und Papierkorb (#1031)', () => {
     const { d, lena, zg, r, p1, p2 } = await mitRechnung();
     const vorher = await d.mappen.holeMappe(r.id, await zg(lena));
     assert.deepEqual(vorher.loeschbar, { ok: true, teile: 2 });
-    await d.loescheMappe(r.id, lena.id, await zg(lena));
+    await d.loeschen.loescheMappe(r.id, lena.id, await zg(lena));
     for (const id of [r.id, p1.id, p2.id]) assert.equal(await d.kern.repo.holeMappe(id), undefined);
-    const korb = await d.papierkorb({ id: lena.id, rolle: 'mitglied' });
+    const korb = await d.papierkorbVerwaltung.papierkorb({ id: lena.id, rolle: 'mitglied' });
     assert.deepEqual(korb.map((e) => [e.id, e.vorgang]).sort(), [[r.id, r.id], [p1.id, r.id], [p2.id, r.id]].sort());
-    const lp = (await d.loeschprotokoll({})).eintraege.filter((e) => e.art === 'mappe');
+    const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((e) => e.art === 'mappe');
     assert.deepEqual(lp.map((e) => [e.mappeId, e.weg, e.vorgang]).sort(), [[r.id, 'teile', r.id], [p1.id, 'teile', r.id], [p2.id, 'teile', r.id]].sort());
   });
 
@@ -265,55 +265,55 @@ describe('Löschen und Papierkorb (#1031)', () => {
     // Eine Position hat der Administrator angelegt und als privat markiert – Lena darf sie weder lesen noch löschen.
     await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
     await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 3, beschreibung: 'Privat', privat: true } }, admin.id);
-    await assert.rejects(d.loescheMappe(r.id, lena.id, await zg(lena)), status(403, /1 Teil/));
+    await assert.rejects(d.loeschen.loescheMappe(r.id, lena.id, await zg(lena)), status(403, /1 Teil/));
     assert.ok(await d.kern.repo.holeMappe(r.id));
     assert.ok(await d.kern.repo.holeMappe(p1.id));
     // Mit verknüpften Mappen löschen: Der nicht lesbare Teil fehlt im Baum und hält die Rechnung – sie bleibt samt ihm.
-    const v = await d.loeschVorschau(r.id, {}, await zg(lena));
+    const v = await d.mitVerknuepften.loeschVorschau(r.id, {}, await zg(lena));
     assert.equal(v.baum.knoten.length, 3);
-    const x = await d.loescheMitVerknuepften(r.id, { auswahl: Object.fromEntries(v.baum.knoten.map((k) => [k.id, 'loeschen'])) }, lena.id, await zg(lena));
+    const x = await d.mitVerknuepften.loescheMitVerknuepften(r.id, { auswahl: Object.fromEntries(v.baum.knoten.map((k) => [k.id, 'loeschen'])) }, lena.id, await zg(lena));
     assert.equal(x.loeschen.includes(r.id), false);
     assert.ok(await d.kern.repo.holeMappe(r.id));
   });
 
   it('mit verknüpften Mappen: Teile lassen sich nicht abwählen oder nur entkoppeln, solange ihre Mappe geht', async () => {
     const { d, lena, zg, r, p1, p2 } = await mitRechnung();
-    const v = await d.loeschVorschau(r.id, {}, await zg(lena));
-    await assert.rejects(d.loescheMitVerknuepften(r.id, { auswahl: { [r.id]: 'loeschen', [p1.id]: 'loeschen', [p2.id]: 'entkoppeln' } }, lena.id, await zg(lena)), status(409, /gehört 1 Teil/));
+    const v = await d.mitVerknuepften.loeschVorschau(r.id, {}, await zg(lena));
+    await assert.rejects(d.mitVerknuepften.loescheMitVerknuepften(r.id, { auswahl: { [r.id]: 'loeschen', [p1.id]: 'loeschen', [p2.id]: 'entkoppeln' } }, lena.id, await zg(lena)), status(409, /gehört 1 Teil/));
     assert.ok(await d.kern.repo.holeMappe(p2.id));
-    const x = await d.loescheMitVerknuepften(r.id, { auswahl: v.vorschlag }, lena.id, await zg(lena));
+    const x = await d.mitVerknuepften.loescheMitVerknuepften(r.id, { auswahl: v.vorschlag }, lena.id, await zg(lena));
     assert.deepEqual([...x.loeschen].sort(), [r.id, p1.id, p2.id].sort());
   });
 
   it('wiederherstellen: die Mappe bringt ihre Teile mit; ein Teil allein erst mit ihr; endgültig löschen nimmt sie mit', async () => {
     const { d, lena, zg, r, p1, p2 } = await mitRechnung();
     const L = { id: lena.id, rolle: 'mitglied' };
-    await d.loescheMappe(r.id, lena.id, await zg(lena));
-    await assert.rejects(d.stelleWiederHer(p1.id, L), status(409, /übergeordneten Mappe/));
-    const w = await d.stelleWiederHer(r.id, L);
+    await d.loeschen.loescheMappe(r.id, lena.id, await zg(lena));
+    await assert.rejects(d.papierkorbVerwaltung.stelleWiederHer(p1.id, L), status(409, /übergeordneten Mappe/));
+    const w = await d.papierkorbVerwaltung.stelleWiederHer(r.id, L);
     assert.equal(w.mappe.id, r.id);
     for (const id of [r.id, p1.id, p2.id]) assert.ok(await d.kern.repo.holeMappe(id));
-    assert.deepEqual((await d.papierkorb(L)).length, 0);
-    const lp = (await d.loeschprotokoll({ schritt: 'wiederhergestellt' })).eintraege.filter((e) => e.art === 'mappe');
+    assert.deepEqual((await d.papierkorbVerwaltung.papierkorb(L)).length, 0);
+    const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({ schritt: 'wiederhergestellt' })).eintraege.filter((e) => e.art === 'mappe');
     assert.equal(lp.length, 3);
     // Ein einzelner Teil lässt sich allein löschen und allein wiederherstellen.
-    await d.loescheMappe(p2.id, lena.id, await zg(lena));
-    await d.stelleWiederHer(p2.id, L);
+    await d.loeschen.loescheMappe(p2.id, lena.id, await zg(lena));
+    await d.papierkorbVerwaltung.stelleWiederHer(p2.id, L);
     // Endgültig aus dem Papierkorb: die Teile gehen mit.
-    await d.loescheMappe(r.id, lena.id, await zg(lena));
-    assert.equal(await d.loescheEndgueltig([r.id], L), 3);
-    assert.deepEqual(await d.papierkorb(L), []);
+    await d.loeschen.loescheMappe(r.id, lena.id, await zg(lena));
+    assert.equal(await d.papierkorbVerwaltung.loescheEndgueltig([r.id], L), 3);
+    assert.deepEqual(await d.papierkorbVerwaltung.papierkorb(L), []);
   });
 
   it('mehrere auswählen samt Teilen; ohne Papierkorb sofort endgültig', async () => {
     const { d, lena, zg, r, p1, p2 } = await mitRechnung();
-    const x = await d.loescheMappen({ ids: [p1.id, r.id] }, lena.id, await zg(lena));
+    const x = await d.loeschen.loescheMappen({ ids: [p1.id, r.id] }, lena.id, await zg(lena));
     assert.equal(x.ausgelassen.length, 0);
     for (const id of [r.id, p1.id, p2.id]) assert.equal(await d.kern.repo.holeMappe(id), undefined);
     const b = await mitRechnung();
-    await b.d.setzePapierkorbTage(0);
-    await b.d.loescheMappe(b.r.id, b.lena.id, await b.zg(b.lena));
-    assert.deepEqual(await b.d.papierkorb({ id: b.lena.id, rolle: 'mitglied' }), []);
+    await b.d.papierkorbVerwaltung.setzePapierkorbTage(0);
+    await b.d.loeschen.loescheMappe(b.r.id, b.lena.id, await b.zg(b.lena));
+    assert.deepEqual(await b.d.papierkorbVerwaltung.papierkorb({ id: b.lena.id, rolle: 'mitglied' }), []);
     for (const id of [b.r.id, b.p1.id]) assert.equal(await b.d.kern.repo.holeMappe(id), undefined);
   });
 });
@@ -414,11 +414,11 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
       assert.equal((await suche(admin, { sicht: rechnung.id, suche: 'Akkuschrauber' })).gesamt, 1);
       // Mit Textfilter und Suche zugleich zählt der Fund im Teil für beides.
       assert.equal((await suche(admin, { sicht: 'suche', link: '', suche: 'Akkuschrauber', volltext: 'true' })).gesamt, 1);
-      await d.loescheMappe(r1.id, lena.id, await zg(lena));
+      await d.loeschen.loescheMappe(r1.id, lena.id, await zg(lena));
       assert.equal(await d.kern.repo.holeMappe(p1.id), undefined);
-      await d.stelleWiederHer(r1.id, { id: lena.id, rolle: 'mitglied' });
+      await d.papierkorbVerwaltung.stelleWiederHer(r1.id, { id: lena.id, rolle: 'mitglied' });
       assert.ok(await d.kern.repo.holeMappe(p1.id));
-      const lp = (await d.loeschprotokoll({})).eintraege.filter((e) => e.art === 'mappe' && e.weg === 'teile');
+      const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((e) => e.art === 'mappe' && e.weg === 'teile');
       assert.equal(lp.length, 2);
     } finally { await db.ende(); }
   });

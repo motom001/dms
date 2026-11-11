@@ -122,7 +122,7 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     const m1 = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
     const m2 = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
     await einst.schreibe('papierkorb', { tage: 30 });
-    await dienst.loescheMappe(m2.id);
+    await dienst.loeschen.loescheMappe(m2.id);
     // Mailserver.
     await betrieb.speichereMail({ aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'mail-geheim', absender: 'dms@example.org' });
     // Postfach mit IMAP-Passwort (wie Postfaecher.speichere) und eines mit OAuth-Anmeldung.
@@ -184,7 +184,7 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     const paket = (await paketEinstellungen(dienst.kern, 'konten'))!.werte as { token: string; liste: Array<{ pw: string }> };
     assert.equal(e(paket.token), 'paket-geheim');
     assert.equal(e(paket.liste[0].pw), 'listen-geheim');
-    await dienst.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
+    await dienst.papierkorbVerwaltung.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
     assert.equal((await dienst.passwortfelder.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
   });
 

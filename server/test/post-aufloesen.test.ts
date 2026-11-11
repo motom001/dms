@@ -63,12 +63,12 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok('papierkorb' in r && r.papierkorb);
       assert.deepEqual((await d.mappen.holeMappe(neu.id)).dokumente.map((x) => [x.id, x.registerKey]).sort(), [[a.id, 'belege'], [b.id, 'belege']].sort());
       await assert.rejects(d.mappen.holeMappe(post.id), status(404), 'die Post ist weg');
-      const korb = await d.papierkorb({ id: LENA, rolle: 'admin' }, true);
+      const korb = await d.papierkorbVerwaltung.papierkorb({ id: LENA, rolle: 'admin' }, true);
       const e = korb.find((x) => x.id === post.id)!;
       assert.equal(e.dokumente, 0, 'keine Dokumente mehr in der Post');
       assert.deepEqual(e.aufgeloestIn, { id: neu.id, typId: rechnung.id, titel: 'R-2026-0815', da: true });
       assert.equal(e.werte.stand, POST_STAND.zugeordnet);
-      assert.deepEqual((await d.papierkorbEintrag(post.id, { id: LENA, rolle: 'admin' }, true)).aufgeloestIn?.id, neu.id);
+      assert.deepEqual((await d.papierkorbVerwaltung.papierkorbEintrag(post.id, { id: LENA, rolle: 'admin' }, true)).aufgeloestIn?.id, neu.id);
     });
 
     it('die ganze Historie der Post steht bei der Mappe – mit Herkunft, Änderungen, Notizen, Aufgaben – dazu „Aus Post … angelegt“', async () => {
@@ -104,17 +104,17 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, rechnung, post } = await aufbau(pg);
       const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-77' } }, LENA);
       await d.post.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
-      const p = (await d.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
+      const p = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
       assert.deepEqual(p.map((x) => x.art), ['mappe'], 'kein Dokument der Post ist gelöscht');
       assert.equal(p[0].schritt, 'papierkorb');
       assert.equal(p[0].weg, 'aufgeloest');
       assert.equal(p[0].grundText, `Post aufgelöst in Mappe ${neu.id} (Rechnung)`);
       assert.ok(!JSON.stringify(p[0]).includes('Stadtwerke') && !JSON.stringify(p[0]).includes('R-77'), 'kein Titel, kein Betreff');
       assert.equal(p[0].anzahl?.dokumente, 0, 'die Dokumente sind nicht gelöscht, sie liegen in der Mappe');
-      await assert.rejects(d.stelleWiederHer(post.id, { id: LENA, rolle: 'admin' }, true), status(409, /aufgelöst.*Mappe dabei neu angelegt, löschst du sie/));
+      await assert.rejects(d.papierkorbVerwaltung.stelleWiederHer(post.id, { id: LENA, rolle: 'admin' }, true), status(409, /aufgelöst.*Mappe dabei neu angelegt, löschst du sie/));
       // Der Weg zurück: die neue Mappe löschen – sie kommt samt Dokumenten und Historie in den Papierkorb.
-      await d.loescheMappe(neu.id, LENA);
-      const korb = await d.papierkorb({ id: LENA, rolle: 'admin' }, true);
+      await d.loeschen.loescheMappe(neu.id, LENA);
+      const korb = await d.papierkorbVerwaltung.papierkorb({ id: LENA, rolle: 'admin' }, true);
       assert.equal(korb.find((x) => x.id === neu.id)?.dokumente, 2);
       assert.equal(korb.find((x) => x.id === post.id)?.aufgeloestIn?.da, false);
     });
@@ -167,10 +167,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-6' } }, LENA);
       const r = await d.post.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
       assert.ok(r.aufgeloest && !r.papierkorb);
-      assert.equal((await d.papierkorb({ id: LENA, rolle: 'admin' }, true)).length, 0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorb({ id: LENA, rolle: 'admin' }, true)).length, 0);
       assert.equal((await d.mappen.holeMappe(neu.id)).dokumente.length, 2);
       assert.ok((await d.mappenHistorie.historie(neu.id)).some((x) => x.daten.ausPost === post.id && x.art === 'angelegt'));
-      const p = (await d.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
+      const p = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
       assert.deepEqual(p.map((x) => [x.art, x.schritt, x.weg]), [['mappe', 'endgueltig', 'aufgeloest']]);
     });
   });
@@ -211,7 +211,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const p = await d.mappen.holeMappe(post.id);
     assert.deepEqual(p.mappe.werte.bezug, [neu.id]);
     assert.equal(p.dokumente.length, 0, 'die Dokumente wandern trotzdem');
-    assert.equal((await d.papierkorb({ id: jonas.id, rolle: 'mitglied' })).length, 0);
+    assert.equal((await d.papierkorbVerwaltung.papierkorb({ id: jonas.id, rolle: 'mitglied' })).length, 0);
     assert.ok(!(await d.mappenHistorie.historie(neu.id)).some((h) => h.daten.ausPost), 'die Historie bleibt bei der Post');
     // Auch den Löschweg selbst sperrt das Recht.
     await assert.rejects(rufe(jonas, 'DELETE', '/api/mappen/:id', { params: { id: post.id } }), status(403));
@@ -238,7 +238,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     assert.equal(korb.find((x) => x.id === zweite.id)?.aufgeloestIn?.id, neu2.id);
     await assert.rejects(rufe(jonas, 'POST', '/api/papierkorb/:id/wiederherstellen', { params: { id: zweite.id } }), status(409));
     // Löschprotokoll: von Jonas, über die Oberfläche.
-    const p = (await d.loeschprotokoll({})).eintraege.find((x) => x.mappeId === zweite.id)!;
+    const p = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.find((x) => x.mappeId === zweite.id)!;
     assert.equal(p.vonId, jonas.id);
     assert.equal(p.ausloeser, 'benutzer');
   });

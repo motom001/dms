@@ -24,8 +24,8 @@ describe('Notizen (#55)', () => {
     assert.match((s as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id].text, /\u0002schriftlich\u0003/);
     assert.equal((await d.sichten.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich' })).gesamt, 0, 'nur mit Haken');
 
-    await d.loescheMappe(m.id, anna);
-    await d.stelleWiederHer(m.id, { id: anna, rolle: 'admin' });
+    await d.loeschen.loescheMappe(m.id, anna);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, { id: anna, rolle: 'admin' });
     assert.equal((await d.mappen.notizen(m.id)).length, 1, 'Notiz kommt mit aus dem Papierkorb');
     await d.mappenNotizen.loescheNotiz(n.id, ben);
     assert.equal((await d.mappen.notizen(m.id)).length, 0);

@@ -50,7 +50,7 @@ describe('E-Mail aus der Mappe (#58)', () => {
     assert.equal(h[0].art, 'email');
     assert.match(String(h[0].daten.text), /an steuer@example.org/);
     // Die Ursprungsmappe lässt sich trotzdem löschen; der Verweis der Post entfällt.
-    await d.loescheMappe(m.id, null);
+    await d.loeschen.loescheMappe(m.id, null);
     assert.ok(!(await d.mappen.holeMappe(r.id)).mappe.werte.bezug);
   });
 

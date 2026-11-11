@@ -185,7 +185,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('sammelt in beiden Richtungen, ohne quer weiterzugehen; Kreise, Verweise nach außen, Fristen, Dokumente', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
-      const b = await d.baum(m.max.id, {}, z);
+      const b = await d.mitVerknuepften.baum(m.max.id, {}, z);
       const k = new Map(b.knoten.map((x) => [x.id, x]));
       assert.equal(b.knoten[0].id, m.max.id);
       assert.equal(b.knoten[0].ueber, null);
@@ -221,20 +221,20 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('Tiefe, Richtung, Obergrenze, seitwärts und große Kreise enden', async () => {
       const { d, admin, m } = await aufbau(pg);
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
-      const flach = await d.baum(m.max.id, { tiefe: 1 }, z);
+      const flach = await d.mitVerknuepften.baum(m.max.id, { tiefe: 1 }, z);
       assert.ok(!ids(flach).has(m.nk1.id));
       assert.equal(flach.tieferMoeglich, true);
-      const unten = await d.baum(m.max.id, { richtungen: ['verwiesenVon'] }, z);
+      const unten = await d.mitVerknuepften.baum(m.max.id, { richtungen: ['verwiesenVon'] }, z);
       assert.ok(!ids(unten).has(m.wohnung.id) && ids(unten).has(m.nk1.id));
-      const knapp = await d.baum(m.max.id, { max: 3 }, z);
+      const knapp = await d.mitVerknuepften.baum(m.max.id, { max: 3 }, z);
       assert.equal(knapp.knoten.length, 3);
       assert.equal(knapp.abgeschnitten, true);
       // Seitwärts über 10 Ebenen: alles Erreichbare genau einmal, Benutzer bleiben draußen, keine Endlosschleife
-      const quer = await d.baum(m.max.id, { tiefe: 10, seitwaerts: true }, z);
+      const quer = await d.mitVerknuepften.baum(m.max.id, { tiefe: 10, seitwaerts: true }, z);
       for (const x of [m.bea, m.vBea]) assert.ok(ids(quer).has(x.id));
       assert.ok(!ids(quer).has(admin.id), 'Benutzer-Mappen sind ausgenommen');
       assert.equal(quer.knoten.length, ids(quer).size);
-      await assert.rejects(d.baum('00000000-0000-4000-8000-00000000ffff', {}, z), status(404));
+      await assert.rejects(d.mitVerknuepften.baum('00000000-0000-4000-8000-00000000ffff', {}, z), status(404));
     });
 
     it('nur innerhalb der Rechte: Nicht Lesbares fehlt und wird nicht weiterverfolgt', async () => {

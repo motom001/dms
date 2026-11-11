@@ -224,7 +224,7 @@ function faelle(pg: boolean) {
       const stromDok = (await d.listeDokumente(vorher.strom.id))[0];
       const mieteDok = (await d.listeDokumente(vorher.miete.id))[0];
       await d.mappen.aendereMappe(vorher.miete.id, { werte: { beschreibung: 'Unsere Wohnung: 6 Monate' } }, ICH.id);
-      await d.loescheMappe(vorher.wasser.id, ICH.id);
+      await d.loeschen.loescheMappe(vorher.wasser.id, ICH.id);
       const h = await p.hochladen(zip(vertraege11), ICH);
       const plan = Object.fromEntries(h.vorschau.vorgaben.map((v) => [v.schluessel, v]));
       assert.equal(plan.strom.zustand, 'aktualisiert');

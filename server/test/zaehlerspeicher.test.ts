@@ -188,7 +188,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     await h.d.mappen.setzeFavorit({ id: h.max.id }, r1.id, true);
     assert.equal((await h.zahlen(h.max.id)).z.favoriten, 1);
     // Mappe löschen
-    await h.d.loescheMappe(r1.id, h.admin.id);
+    await h.d.loeschen.loescheMappe(r1.id, h.admin.id);
     await stimmt('löschen', { admin: [1, 0], max: [1, 0] });
     assert.equal((await h.zahlen(h.max.id)).z.favoriten, 0);
   });

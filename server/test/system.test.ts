@@ -52,7 +52,7 @@ describe('Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146)', 
     assert.equal(await d.mappenTitel.hakenUeberfuehren(), 0, 'nur einmal');
     // Ohne Zugriff (Admin, System): Anlegen und Löschen gehen.
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { titel: 'a' } });
-    await d.loescheMappe(m.id);
+    await d.loeschen.loescheMappe(m.id);
     // Eingaben mit Haken haben keine Wirkung mehr.
     const x = await d.mappentypen.aendereTyp(t.id, { ...ohneTyp(neu), erstellenErlaubt: false });
     assert.equal(x.erstellenErlaubt, true);
@@ -117,7 +117,7 @@ describe('Mappentyp Benutzer (#26)', () => {
   it('Mappen entstehen und verschwinden nicht in der Ablage', async () => {
     const { dienst, admin, benutzerTyp } = await aufbau();
     await wirft(dienst.mappen.legeMappeAn({ typId: benutzerTyp.id, werte: { name: 'X', email: 'x@example.org', aktiv: true } }), 403);
-    await wirft(dienst.loescheMappe(admin.id), 403);
+    await wirft(dienst.loeschen.loescheMappe(admin.id), 403);
   });
 
   it('Sicherheit: Systemfelder sind in der Ablage nur lesbar, eigene Felder nicht', async () => {
@@ -222,7 +222,7 @@ describe('Mappentyp Rolle (#27)', () => {
     assert.equal((await dienst.postSystemmappen.listeRollen()).some((r) => r.name === 'Administrator'), false);
     const mitglied = (await dienst.mappen.holeMappe(sys.mitglied)).mappe;
     assert.equal(mitglied.systemKennung, systemrolleKennung('mitglied'));
-    await wirft(dienst.loescheMappe(sys.mitglied), 409, /Systemrollen/);
+    await wirft(dienst.loeschen.loescheMappe(sys.mitglied), 409, /Systemrollen/);
     await wirft(dienst.mappen.aendereMappe(sys.mitglied, { werte: { name: 'Chef' } }), 403, /Systemrolle/);
     // Eigene Felder an Systemrollen sind erlaubt.
     await dienst.mappentypen.aendereTyp(rolleTyp.id, { ...ohneTyp(rolleTyp), felder: [...rolleTyp.felder, { key: 'beschreibung', label: 'Beschreibung', typ: 'langtext' }] });
@@ -248,7 +248,7 @@ describe('Mappentyp Rolle (#27)', () => {
     assert.deepEqual((await nachher.mappen.holeMappe('00000000-0000-4000-8000-0000000000b1')).mappe.werte.rollen, [mitglied]);
     assert.equal((await nachher.postSystemmappen.listeRollen()).find((r) => r.id === alt.id)?.system, false);
     // Jetzt löschbar wie jede Rolle.
-    await nachher.loescheMappe(alt.id);
+    await nachher.loeschen.loescheMappe(alt.id);
   });
 
   it('Rollen lassen sich anlegen, ändern und löschen; Namen sind eindeutig', async () => {
@@ -257,7 +257,7 @@ describe('Mappentyp Rolle (#27)', () => {
     await wirft(dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'steuern' } }), 422);
     await wirft(dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Mitglied' } }), 422);
     assert.equal((await dienst.mappen.aendereMappe(steuer.id, { werte: { name: 'Steuer & Finanzen' } })).titel, 'Steuer & Finanzen');
-    await dienst.loescheMappe(steuer.id);
+    await dienst.loeschen.loescheMappe(steuer.id);
     assert.equal((await dienst.postSystemmappen.listeRollen()).length, 1);
   });
 
@@ -297,8 +297,8 @@ describe('Mappentyp Rolle (#27)', () => {
       { key: 'gruppe', label: 'Verantwortliche Rolle', typ: 'referenz', zielTyp: rolleTyp.id },
     ] });
     await dienst.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Steuerberater', verantwortlich: admin.id, gruppe: steuer.id } });
-    await wirft(dienst.loescheMappe(steuer.id), 409, /verweist noch/);
-    await dienst.loescheMappe(garten.id, admin.id);
+    await wirft(dienst.loeschen.loescheMappe(steuer.id), 409, /verweist noch/);
+    await dienst.loeschen.loescheMappe(garten.id, admin.id);
     assert.deepEqual((await dienst.mappen.holeMappe(admin.id)).mappe.werte.rollen, [sys.mitglied, steuer.id]);
     // Die Benutzer-Mappe bleibt dabei gültig.
     assert.notEqual((await dienst.mappen.holeMappe(admin.id)).mappe.passt, false);

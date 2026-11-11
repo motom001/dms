@@ -21,8 +21,8 @@ describe('Historie (#57)', () => {
     await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
     await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
     await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 h'), ich.id);
-    await d.loescheMappe(m.id, ich.id);
-    await d.stelleWiederHer(m.id, ich);
+    await d.loeschen.loescheMappe(m.id, ich.id);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, ich);
     const h = await d.mappenHistorie.historie(m.id);
     assert.deepEqual(h.map((e) => e.art), ['wiederhergestellt', 'papierkorb', 'dokument_hochgeladen', 'geaendert', 'angelegt'], 'unverändertes Speichern ohne Eintrag');
     const g = h.find((e) => e.art === 'geaendert')!;
@@ -39,14 +39,14 @@ describe('Historie (#57)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const t = await d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text' }] });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { n: 'a' } }, ich.id);
-    await d.setzePapierkorbTage(0);
-    await d.loescheMappe(m.id, ich.id);
+    await d.papierkorbVerwaltung.setzePapierkorbTage(0);
+    await d.loeschen.loescheMappe(m.id, ich.id);
     assert.equal(await d.mappenHistorie.historieTage(), 365);
-    await d.raeumePapierkorbAuf(Date.now() + 100 * 86_400_000);
+    await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 100 * 86_400_000);
     // Die Mappe gibt es nicht mehr; die Historie steht noch im Repo.
     const repo = (d as unknown as { repo: { historie(id: string): Promise<unknown[]> } }).repo;
     assert.equal((await repo.historie(m.id)).length, 2);
-    await d.raeumePapierkorbAuf(Date.now() + 400 * 86_400_000);
+    await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 400 * 86_400_000);
     assert.equal((await repo.historie(m.id)).length, 0);
     await assert.rejects(d.mappenHistorie.setzeHistorieTage(-1), /ganze Zahl/);
   });

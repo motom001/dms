@@ -128,7 +128,7 @@ describe('Fotos als PDF (#490)', () => {
       assert.equal(r.body.seiten, 4);
       assert.equal((await seiten(await pdfVon(vorne.id))).length, 4);
       await assert.rejects(d.mappen.holeMappe(hinten.id), status(404));
-      assert.ok((await d.papierkorb({ id: anna.id, rolle: 'admin' })).some((m: { id: string }) => m.id === hinten.id));
+      assert.ok((await d.papierkorbVerwaltung.papierkorb({ id: anna.id, rolle: 'admin' })).some((m: { id: string }) => m.id === hinten.id));
       await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: vorne.id } }), status(422));
       // Andere Dateien lassen sich nicht anhängen.
       const word = (await rufe('POST', '/api/post', { body: { betreff: 'Word' } })).body as { id: string };

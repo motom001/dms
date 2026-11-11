@@ -185,7 +185,7 @@ describe('Durchsetzung (#124), Ablage (#126), Aufgaben (#127)', () => {
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: max.id }, body: { werte: { ...eigene.mappe.werte, rollen: [...(eigene.mappe.werte.rollen as string[]), R.fibu] } } }), status(403));
     await assert.rejects(rufe(max, 'PUT', '/api/mappen/:id', { params: { id: max.id }, body: { werte: { ...eigene.mappe.werte, aktiv: false } } }), status(403));
     // Papierkorb: gelöscht, danach nicht mehr lesbar – trotzdem wiederherstellbar
-    await d.setzePapierkorbTage(30);
+    await d.papierkorbVerwaltung.setzePapierkorbTage(30);
     const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'P-1' } }, max.id);
     await rufe(max, 'DELETE', '/api/mappen/:id', { params: { id: m.id } });
     await d.berechtigungen.setzeBerechtigungen(rechnung.id, { grund: NICHTS, regeln: [] }, true);

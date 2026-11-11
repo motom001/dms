@@ -128,7 +128,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       const ts = x.tresor ? await sicher(() => x.tresor!.status()) : null;
       const z = await dienst.sichten.zaehler(ich(a));
       const aufgaben = await dienst.ohneLeserecht.alleAufgaben(false);
-      const korb = await dienst.papierkorb(ich(a), true);
+      const korb = await dienst.papierkorbVerwaltung.papierkorb(ich(a), true);
       const sys = await uebersicht(system, x.betrieb?.kurz());
       return ok(nurEigeneBereiche(ich(a), {
         tresor: ts ? { zustand: ts.zustand, eingebunden: ts.eingebunden, betroffen: ts.betroffen.length } : null,

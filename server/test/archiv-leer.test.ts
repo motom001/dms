@@ -33,7 +33,7 @@ const LEER = { jahre: 2, stichtag: 'bis', leererStichtag: 'laeuftNicht' as const
 async function aufbau(repo: Repo = speicherRepo(), papierkorb = 0) {
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(repo, speicherDateien(), { einstellungen });
-  if (papierkorb) await d.setzePapierkorbTage(papierkorb);
+  if (papierkorb) await d.papierkorbVerwaltung.setzePapierkorbTage(papierkorb);
   const t = await d.mappentypen.legeTypAn({ name: 'Verfahren', titelVorlage: '{name}', archiv: LEER,
     felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'bis', label: 'Gilt nicht mehr seit', typ: 'datum' }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente' }] });
@@ -68,12 +68,12 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
     assert.equal((det as { fristBeginntMit?: string }).fristBeginntMit, 'Gilt nicht mehr seit');
     assert.equal(det.loeschbar.ok, false);
     assert.equal((await d.mappen.holeMappe(abgeloest.id) as { fristBeginntMit?: string }).fristBeginntMit, undefined);
-    await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
+    await assert.rejects(d.loeschen.loescheMappe(aktuell.id, ICH.id), offen);
     const { dokument } = await d.dokumente.ladeHoch(aktuell.id, { register: 'belege', name: 'V.pdf' }, Buffer.from('%PDF-1.4 a'), null);
     await assert.rejects(d.dokumente.loescheDokument(dokument.id), (e) => e instanceof Fachfehler && e.status === 409 && /beginnt erst mit/.test(e.message));
     assert.deepEqual((await d.mappenArchiv.darfWeg()).map((x) => x.titel), ['Abgelöst']);
     // Baum (Löschen mit verknüpften Mappen, Auskunft): gesperrt ohne Datum.
-    const baum = await d.baum(aktuell.id, {}, await d.rechtepruefung.zugriff({ id: ICH.id, rolle: 'admin' } as never));
+    const baum = await d.mitVerknuepften.baum(aktuell.id, {}, await d.rechtepruefung.zugriff({ id: ICH.id, rolle: 'admin' } as never));
     const k = baum.knoten.find((x) => x.id === aktuell.id)!;
     assert.equal(k.gesperrt, true);
     assert.equal(k.aufbewahrenBis, null);
@@ -91,7 +91,7 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
     await d.mappen.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: null } });
     const h2 = (await d.mappenHistorie.historie(aktuell.id)).filter((x) => x.art === 'geaendert').map((x) => x.daten.aenderungen?.find((y) => y.label === 'Aufbewahren bis')?.neu);
     assert.ok(h2.includes('Frist läuft noch nicht (beginnt mit „Gilt nicht mehr seit“)'));
-    await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
+    await assert.rejects(d.loeschen.loescheMappe(aktuell.id, ICH.id), offen);
   });
 
   it('Vorschau beim Umschalten nennt die Mappen mit leerem Stichtag; Papierkorb hält sie fest', async () => {
@@ -102,9 +102,9 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
     // Vorher im Papierkorb: bleibt dort, bis der Stichtag gefüllt und die Frist abgelaufen ist.
     const p = await aufbau(speicherRepo(), 30);
     const ohne = await p.d.mappentypen.aendereTyp(p.t.id, { ...p.t, archiv: null });
-    await p.d.loescheMappe(p.aktuell.id, ICH.id);
+    await p.d.loeschen.loescheMappe(p.aktuell.id, ICH.id);
     await p.d.mappentypen.aendereTyp(p.t.id, { ...ohne, archiv: LEER });
-    await assert.rejects(p.d.loescheEndgueltig([p.aktuell.id], { id: ICH.id, rolle: 'admin' }, true), (e) => e instanceof Fachfehler && e.status === 409 && /„Aktuell“ nicht endgültig/.test(e.message));
+    await assert.rejects(p.d.papierkorbVerwaltung.loescheEndgueltig([p.aktuell.id], { id: ICH.id, rolle: 'admin' }, true), (e) => e instanceof Fachfehler && e.status === 409 && /„Aktuell“ nicht endgültig/.test(e.message));
   });
 
   it('Löschkonzept nennt „läuft noch nicht“', async () => {
@@ -231,7 +231,7 @@ describe('Ist der Stichtag leer – PostgreSQL (#1051)', { skip: !process.env.TE
     try {
       const { d, t, aktuell } = await aufbau(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo);
       assert.deepEqual((await d.mappentypen.listeTypen()).find((x) => x.id === t.id)?.archiv, LEER);
-      await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
+      await assert.rejects(d.loeschen.loescheMappe(aktuell.id, ICH.id), offen);
       await d.mappen.aendereMappe(aktuell.id, { werte: { ...aktuell.werte, bis: '2016-01-01' } });
       assert.equal((await d.mappen.holeMappe(aktuell.id)).aufbewahrenBis, '2018-12-31');
     } finally { await db.ende(); }

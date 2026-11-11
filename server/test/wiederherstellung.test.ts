@@ -421,7 +421,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const typ = await x.dienst.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
     const a = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
     const b = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
-    await x.dienst.loescheMappe(b.id);
+    await x.dienst.loeschen.loescheMappe(b.id);
     const meta = (await (await x.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
     const name = meta.datei.replace('.dms-sicherung', '');
     const altText = x.tresor.alsText()!;

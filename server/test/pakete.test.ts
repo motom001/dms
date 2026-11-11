@@ -236,7 +236,7 @@ function faelle(pg: boolean) {
       await d.mappen.aendereMappe(praxis.id, { werte: { ...praxis.werte, beschreibung: 'Neue Sprechzeiten.' } }, ICH.id);
       await assert.rejects(p.entferne('basis', ICH), (e) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('1 Mappe') && JSON.stringify(e.details).includes('„Praxis Dr. Beispiel“ wurde geändert'));
       assert.equal((await d.sichten.seite(ADMIN, { sicht: oben.id })).gesamt, 2, 'beim Scheitern bleiben beide Beispiele');
-      await d.entferneMappenEndgueltig([praxis.id]);
+      await d.loeschen.entferneMappenEndgueltig([praxis.id]);
       await p.entferne('basis', ICH);
       assert.ok(!(await d.mappentypen.listeTypen()).some((t) => t.id === typ.id));
       assert.ok(!(await d.sichtenVerwaltung.listeSichten()).some((s) => Object.values(neu.sichten).includes(s.id)));

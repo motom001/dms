@@ -89,7 +89,7 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
     const ohne = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', kuendigung: in_(10) } }, lena.id);
     assert.equal((await d.fristen.fristenLauf()).angelegt, 0);
     assert.equal((await fristen(lena.id)).length, 0);
-    await d.loescheMappe(ohne.id, lena.id).catch(() => {});
+    await d.loeschen.loescheMappe(ohne.id, lena.id).catch(() => {});
     await motor.fristenUebernehmen();
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, lena.id);
     await verteile();

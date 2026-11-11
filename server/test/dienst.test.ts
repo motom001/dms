@@ -94,7 +94,7 @@ describe('Mappen', () => {
     const stadtwerke = (await d.mappen.listeMappen(partner.id)).find((m) => m.werte.name === 'Stadtwerke Musterstadt')!;
     const { rueckverweise } = await d.mappen.holeMappe(stadtwerke.id);
     assert.equal(rueckverweise.length, 2); // Stromvertrag (Vertragspartner) und Jahresabrechnung (Aussteller)
-    await wirft(d.loescheMappe(stadtwerke.id), 409);
+    await wirft(d.loeschen.loescheMappe(stadtwerke.id), 409);
   });
 
   it('behält Werte entfernter Felder und entfernt deren Verweise', async () => {
@@ -177,7 +177,7 @@ describe('Register und Dokumente', () => {
     const ohneZahlung = (await d.mappen.listeMappen(rechnung.id)).find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
     await d.dokumente.ladeHoch(ohneZahlung.id, { register: 'dokumente', name: 'r.pdf' }, pdf, null);
     await wirft(d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, register: rechnung.register.filter((x) => x.art !== 'dokumente') }), 409);
-    await d.loescheMappe(ohneZahlung.id);
+    await d.loeschen.loescheMappe(ohneZahlung.id);
     assert.equal(dateien.anzahl(), 0);
   });
 });

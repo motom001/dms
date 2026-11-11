@@ -121,7 +121,7 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(kopie[0].registerKey, 'belege');
     assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 1);
     // Löscht man eine Zielmappe, entfällt nur ihr Verweis.
-    await d.loescheMappe(r2.id, anna.id);
+    await d.loeschen.loescheMappe(r2.id, anna.id);
     assert.deepEqual((await d.mappen.holeMappe(m.id)).mappe.werte.bezug, [r1.id]);
   });
 

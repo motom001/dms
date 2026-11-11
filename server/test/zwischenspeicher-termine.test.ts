@@ -489,10 +489,10 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
     await abgleich('leeren');
     assert.deepEqual(await termine(), []);
     await d.mappen.aendereMappe(m.id, { werte: { jahr: `${J - 1}-05-17` } }, lena.id);
-    await d.loescheMappe(m.id, lena.id);
+    await d.loeschen.loescheMappe(m.id, lena.id);
     await abgleich('Papierkorb');
     assert.deepEqual(await termine(), [], 'im Papierkorb kein Termin');
-    await d.stelleWiederHer(m.id, lena);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, lena);
     await abgleich('wiederhergestellt');
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-05-17|f`]);
     // Viele auf einmal (Import, Demo-Daten).
@@ -509,8 +509,8 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
     await abgleich('COPY');
     assert.equal((await sql`SELECT count(*)::int AS n FROM fristtermine WHERE mappe_id = ANY(${ids}::uuid[])`)[0].n, 2);
     // Endgültig löschen.
-    await d.loescheMappe(m.id, lena.id);
-    await d.leerePapierkorb(lena, true);
+    await d.loeschen.loescheMappe(m.id, lena.id);
+    await d.papierkorbVerwaltung.leerePapierkorb(lena, true);
     await abgleich('Papierkorb geleert');
   });
 

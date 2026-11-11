@@ -201,7 +201,7 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     await x.d.mappenNotizen.aendereNotiz(n.id, `${NOTIZ} Danke!`, x.lena.id);
     assert.equal((await x.d.kurzzustand.liste(ZWISCHENSPEICHER, `${x.m.id}|notiz:`)).length, 0);
     // Mappe gelöscht: alles zu ihr weg.
-    await x.d.loescheMappe(x.m.id, x.lena.id);
+    await x.d.loeschen.loescheMappe(x.m.id, x.lena.id);
     await x.d.ereignisse.verteile();
     assert.equal((await x.d.kurzzustand.liste(ZWISCHENSPEICHER, `${x.m.id}|`)).length, 0);
   });

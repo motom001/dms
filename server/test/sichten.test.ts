@@ -276,10 +276,10 @@ function faelle() {
       const zahlung = (await d.mappen.listeMappen()).find((m) => m.typId === typ('Zahlung').id)!;
       await d.mappen.setzeFavorit(ICH, zahlung.id, true);
       assert.equal((await d.sichten.zaehler(ICH)).favoriten, 2);
-      await d.setzePapierkorbTage(30);
-      await d.loescheMappe(zahlung.id, ICH.id);
+      await d.papierkorbVerwaltung.setzePapierkorbTage(30);
+      await d.loeschen.loescheMappe(zahlung.id, ICH.id);
       assert.equal((await d.sichten.zaehler(ICH)).favoriten, 1, 'verschwindet beim Löschen');
-      await d.stelleWiederHer(zahlung.id, ICH);
+      await d.papierkorbVerwaltung.stelleWiederHer(zahlung.id, ICH);
       assert.equal(await d.mappen.istFavorit(ICH, zahlung.id), true, 'kommt mit dem Wiederherstellen zurück');
       await d.mappen.setzeFavorit(ICH, zahlung.id, false);
       await d.mappen.setzeFavorit(ICH, rechnung.id, false);

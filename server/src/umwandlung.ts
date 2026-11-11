@@ -88,7 +88,7 @@ export class Umwandlung {
         neu.set(zl.schluessel, m.id);
       }
     } catch (f) {
-      await this.d.entferneMappenEndgueltig([...neu.values()]).catch(() => {});
+      await this.d.loeschen.entferneMappenEndgueltig([...neu.values()]).catch(() => {});
       throw new Fachfehler(422, t('pakete.umwandeln.fehler.neu', { meldung: (f as Error).message }));
     }
     const idVon = (n: string): string => { const w = wahl.get(namensSchluessel(n))!; return w.art === 'person' ? w.id : neu.get(namensSchluessel(n))!; };
@@ -138,7 +138,7 @@ export class Umwandlung {
     // Neue Personen: in den Papierkorb, sofern nichts mehr auf sie verweist.
     const behalten: string[] = [];
     for (const id of v.neuePersonen) {
-      try { await this.d.loescheMappe(id, von.id, z); } catch (f) { if ((f as Fachfehler).status !== 404) behalten.push(id); }
+      try { await this.d.loeschen.loescheMappe(id, von.id, z); } catch (f) { if ((f as Fachfehler).status !== 404) behalten.push(id); }
     }
     // Mappentyp: nur zurück, was seitdem niemand anders geändert hat.
     const t2 = (await this.d.mappentypen.listeTypen()).find((x) => x.id === v.typId)!;

@@ -723,7 +723,7 @@ if (leiter) {
 // Auskünfte (#396): nach 7 Tagen weg – im selben stündlichen Lauf.
 // Exporte (#797): nach dem Herunterladen bzw. nach 7 Tagen weg – derselbe Lauf wie für die Auskünfte.
 // Zeitpläne (#744): jeder Lauf unter einer Datenbanksperre – mit mehreren Prozessen arbeitet je Lauf nur einer.
-const papierkorb = async () => { if (!wartung.aktiv) await dienst.raeumePapierkorbAuf(); await raeumeExporteAuf(exporte.pfad); };
+const papierkorb = async () => { if (!wartung.aktiv) await dienst.papierkorbVerwaltung.raeumePapierkorbAuf(); await raeumeExporteAuf(exporte.pfad); };
 const papierkorbLauf = () => nurEiner('papierkorb', papierkorb).catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
 if (leiter) setInterval(() => void papierkorbLauf(), 60 * 60 * 1000).unref();
 // Abwesenheit (#78): Abgelaufenes beenden, „abwesend“ an den Benutzer-Mappen nachziehen.

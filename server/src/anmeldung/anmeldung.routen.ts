@@ -245,7 +245,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
       // Papierkorb beim Abmelden leeren, wenn im Profil so eingestellt (#43) – nicht, solange ein Administrator vertritt.
       if (a.benutzer && !a.sitzungsDaten?.vertretungId && (await konten.einstellungen(a.benutzer)).papierkorb_beim_abmelden === true) {
-        await dienst.leerePapierkorb(a.benutzer, false, { weg: 'abmelden' }).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
+        await dienst.papierkorbVerwaltung.leerePapierkorb(a.benutzer, false, { weg: 'abmelden' }).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
       }
       await konten.abmelden(a.sitzung);
       if (a.benutzer) L.konto.info('Abgemeldet', { email: a.benutzer.email });

@@ -57,75 +57,75 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 0, 'in der Mappe nicht mehr zu sehen');
       assert.equal(dateien.anzahl(), vorher, 'Dateien bleiben, solange es im Papierkorb liegt');
       assert.equal((await d.sichten.zaehler(ANNA)).papierkorb, 1);
-      const [e] = await d.papierkorbDokumente(ANNA);
+      const [e] = await d.papierkorbVerwaltung.papierkorbDokumente(ANNA);
       assert.equal(e.name, 'Vertrag.pdf');
       assert.equal(e.mappeTitel, 'Stromvertrag');
       assert.equal(e.register, 'Unterlagen');
       assert.equal(e.versionen, 1);
       assert.equal(e.mappe, 'da');
       assert.equal(e.geloeschtVon, ANNA.id);
-      assert.equal((await d.papierkorbDokumente(ADMIN)).length, 0, 'in der Ablage nur Eigenes');
-      assert.equal((await d.papierkorbDokumente(ADMIN, true)).length, 1, 'in der Werkbank alles');
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ADMIN)).length, 0, 'in der Ablage nur Eigenes');
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ADMIN, true)).length, 1, 'in der Werkbank alles');
       assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_papierkorb'));
 
-      await assert.rejects(d.stelleDokumentWiederHer(doc.id, ADMIN, undefined), status(404), 'Fremdes nur über die Werkbank');
-      const r = await d.stelleDokumentWiederHer(doc.id, ANNA, undefined);
+      await assert.rejects(d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ADMIN, undefined), status(404), 'Fremdes nur über die Werkbank');
+      const r = await d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined);
       assert.equal(r.dokument.registerKey, 'dokumente');
       assert.equal(r.dokument.version, 2);
       const x = (await d.mappen.holeMappe(m.id)).dokumente;
       assert.deepEqual(x.map((y) => y.name), ['Vertrag.pdf']);
       assert.equal((await d.dokumentVersionen.versionen(doc.id)).aeltere.length, 1, 'ältere Version wieder da');
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0);
       assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_wiederhergestellt'));
     });
 
     it('Mappe im Papierkorb oder weg: erklärt den Weg; endgültig löschen räumt die Dateien auf', async () => {
       const { d, dateien, m, doc } = await aufbau(pg);
       await d.dokumente.loescheDokument(doc.id, ANNA.id);
-      await d.loescheMappe(m.id, ANNA.id);
-      assert.equal((await d.papierkorbDokumente(ANNA))[0].mappe, 'papierkorb');
-      await assert.rejects(d.stelleDokumentWiederHer(doc.id, ANNA, undefined), (f) => f instanceof Fachfehler && f.status === 409 && /zuerst die Mappe/.test(f.message));
+      await d.loeschen.loescheMappe(m.id, ANNA.id);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA))[0].mappe, 'papierkorb');
+      await assert.rejects(d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined), (f) => f instanceof Fachfehler && f.status === 409 && /zuerst die Mappe/.test(f.message));
       // Mappe zurück → Dokument zurück.
-      await d.stelleWiederHer(m.id, ANNA);
-      await d.stelleDokumentWiederHer(doc.id, ANNA, undefined);
+      await d.papierkorbVerwaltung.stelleWiederHer(m.id, ANNA);
+      await d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined);
       // Endgültig: einzeln.
       await d.dokumente.loescheDokument(doc.id, ANNA.id);
-      assert.equal(await d.loescheDokumentEndgueltig([doc.id], ANNA), 1);
+      assert.equal(await d.papierkorbVerwaltung.loescheDokumentEndgueltig([doc.id], ANNA), 1);
       assert.equal(dateien.anzahl(), 0, 'beide Versionen weg');
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0);
     });
 
     it('Mappe endgültig gelöscht: ihre einzeln gelöschten Dokumente gehen mit; Leeren und Ablauf gelten für Dokumente', async () => {
       const { d, dateien, typ, m, doc } = await aufbau(pg);
       await d.dokumente.loescheDokument(doc.id, ANNA.id);
-      await d.loescheMappe(m.id, ANNA.id);
-      assert.equal(await d.leerePapierkorb(ANNA), 1, 'eine Mappe (das Dokument hängt an ihr)');
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
+      await d.loeschen.loescheMappe(m.id, ANNA.id);
+      assert.equal(await d.papierkorbVerwaltung.leerePapierkorb(ANNA), 1, 'eine Mappe (das Dokument hängt an ihr)');
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0);
       assert.equal(dateien.anzahl(), 0);
 
       const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Zwei' } }, ANNA.id);
       const d2 = (await d.dokumente.ladeHoch(m2.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA.id)).dokument;
       await d.dokumente.loescheDokument(d2.id, ANNA.id);
-      assert.equal(await d.raeumePapierkorbAuf(Date.now() + 29 * 86_400_000), 0);
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 1, 'noch in der Frist');
-      await d.raeumePapierkorbAuf(Date.now() + 31 * 86_400_000);
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 0, 'nach der Frist endgültig weg');
+      assert.equal(await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 29 * 86_400_000), 0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 1, 'noch in der Frist');
+      await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 31 * 86_400_000);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0, 'nach der Frist endgültig weg');
 
       const d3 = (await d.dokumente.ladeHoch(m2.id, { register: 'dokumente', name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), ANNA.id)).dokument;
       await d.dokumente.loescheDokument(d3.id, ANNA.id);
-      assert.equal(await d.leerePapierkorb(ANNA), 1, 'Leeren zählt das Dokument');
+      assert.equal(await d.papierkorbVerwaltung.leerePapierkorb(ANNA), 1, 'Leeren zählt das Dokument');
     });
 
     it('ohne Papierkorb (0 Tage) ist Löschen endgültig wie bisher; Ausschalten leert auch die Dokumente', async () => {
       const { d, dateien, m, doc } = await aufbau(pg);
       const d2 = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'zwei.pdf' }, Buffer.from('%PDF-1.4 zwei'), ANNA.id)).dokument;
       await d.dokumente.loescheDokument(d2.id, ANNA.id);
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 1);
-      const r = await d.setzePapierkorbTage(0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 1);
+      const r = await d.papierkorbVerwaltung.setzePapierkorbTage(0);
       assert.equal(r.geleert, 1);
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0);
       assert.deepEqual(await d.dokumente.loescheDokument(doc.id, ANNA.id), { papierkorb: false });
-      assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
+      assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0);
       assert.equal(dateien.anzahl(), 0);
       assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_geloescht'));
     });

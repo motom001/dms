@@ -77,7 +77,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(r.aufgeloest, true);
       assert.deepEqual((await d.mappen.holeMappe(bestehend.id)).dokumente.map((x) => x.id).sort(), [a.id, b.id].sort());
       await assert.rejects(d.mappen.holeMappe(post.id), status(404), 'die Post liegt im Papierkorb');
-      const korb = (await d.papierkorb({ id: LENA, rolle: 'admin' }, true)).find((x) => x.id === post.id)!;
+      const korb = (await d.papierkorbVerwaltung.papierkorb({ id: LENA, rolle: 'admin' }, true)).find((x) => x.id === post.id)!;
       assert.equal(korb.aufgeloestIn?.id, bestehend.id);
       const h = await d.mappenHistorie.historie(bestehend.id);
       assert.ok(h.length > eigene, 'die eigene Historie bleibt, die der Post kommt dazu');
@@ -89,7 +89,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(m.notizen.some((n) => n.id === notiz.id));
       assert.ok(m.aufgaben.some((x) => x.id === aufgabe.id));
       // Die Grenze „eben angelegt, noch ohne Post“ gibt es nicht mehr.
-      await assert.rejects(d.stelleWiederHer(post.id, { id: LENA, rolle: 'admin' }, true), status(409));
+      await assert.rejects(d.papierkorbVerwaltung.stelleWiederHer(post.id, { id: LENA, rolle: 'admin' }, true), status(409));
     });
 
     it('nur ein Teil gewählt: der Rest wird eine neue Post, ihre Historie nennt die bestehende Mappe', async () => {

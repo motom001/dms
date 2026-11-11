@@ -19,7 +19,7 @@ export function datenschutzRouten(k: RoutenKontext): Route[] {
   const { dienst, x, zg, auskunftZiel, loeschkonzeptQuelle, adresse } = k;
   return [
     /* ---------- Baum über Verweise (#396, #424): mit den Rechten des Aufrufers ---------- */
-    { methode: 'GET', pfad: '/api/mappen/:id/baum', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.baum(a.params.id, a.query, await zg(a))) },
+    { methode: 'GET', pfad: '/api/mappen/:id/baum', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mitVerknuepften.baum(a.params.id, a.query, await zg(a))) },
     /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396), nur Administratoren ---------- */
     { methode: 'GET', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async () => {
       const bereit = await auskuenfteIn(auskunftZiel());
@@ -44,14 +44,14 @@ export function datenschutzRouten(k: RoutenKontext): Route[] {
       return { datei: { inhalt, name: `Löschkonzept ${q.stand}.${format}`, mime: format === 'docx' ? DOCX_MIME : 'application/pdf', anzeigen: false, groesse: inhalt.length } };
     } },
     /* Löschprotokoll (#470): nur lesen und ausgeben; ändern lässt sich nur die Aufbewahrung. */
-    { methode: 'GET', pfad: '/api/werkbank/loeschprotokoll', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.loeschprotokoll(a.query)) },
+    { methode: 'GET', pfad: '/api/werkbank/loeschprotokoll', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.loeschprotokollVerwaltung.loeschprotokoll(a.query)) },
     { methode: 'GET', pfad: '/api/werkbank/loeschprotokoll/datei', zugang: 'admin', lesend: true, handler: async (a) => {
       const format = a.query.format === 'csv' ? 'csv' : 'pdf';
-      const r = await dienst.loeschprotokollAusgabe(a.query, format, { von: ich(a).name || ich(a).email, mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion() });
+      const r = await dienst.loeschprotokollVerwaltung.loeschprotokollAusgabe(a.query, format, { von: ich(a).name || ich(a).email, mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion() });
       L.datenschutz.info('Löschprotokoll ausgegeben', { format, von: ich(a).email });
       return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.inhalt.length } };
     } },
-    { methode: 'PUT', pfad: '/api/werkbank/loeschprotokoll/einstellungen', zugang: 'admin', handler: async (a) => ok({ jahre: await dienst.setzeLoeschprotokollJahre(b(a).jahre, ich(a).email) }) },
+    { methode: 'PUT', pfad: '/api/werkbank/loeschprotokoll/einstellungen', zugang: 'admin', handler: async (a) => ok({ jahre: await dienst.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(b(a).jahre, ich(a).email) }) },
     { methode: 'PUT', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async (a) => ok(await dienst.setzeDatenschutz(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.auskunftVorschau(a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/frist', zugang: 'admin', handler: async (a) => ok(await dienst.auskunftFrist(a.body, await zg(a), ich(a).id), 201) },

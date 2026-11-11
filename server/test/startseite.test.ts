@@ -50,7 +50,7 @@ describe('Startseite (#334)', () => {
     // Admin öffnet die geheime Mappe; Anna sähe sie nicht, selbst wenn sie in ihrer Liste stünde.
     await rufe(admin, 'GET', '/api/mappen/:id', { params: { id: g.id } });
     assert.deepEqual(((await rufe(admin, 'GET', '/api/startseite')).body as Start).zuletzt.map((x) => x.titel), ['G']);
-    await d.loescheMappe(m[0].id, anna.id);
+    await d.loeschen.loescheMappe(m[0].id, anna.id);
     assert.equal(((await rufe(anna, 'GET', '/api/startseite')).body as Start).zuletzt[0].titel, 'V-6', 'gelöschte fallen heraus');
   });
 
@@ -82,7 +82,7 @@ describe('Liste „Zuletzt geöffnet“ (#940)', () => {
     const beimAdmin = (await rufe(admin, 'GET', '/api/startseite/zuletzt')).body as Zuletzt;
     assert.equal(beimAdmin[0].titel, 'V-30', 'Anlegen zählt als geöffnet');
     // Papierkorb fehlt.
-    await d.loescheMappe(m[29].id, admin.id);
+    await d.loeschen.loescheMappe(m[29].id, admin.id);
     assert.equal(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt)[0].titel, 'V-29');
     // Frühere Einträge ohne Zeitpunkt bleiben lesbar.
     await konten.setzeEinstellung(await (async () => (await konten.listeBenutzer()).find((b) => b.id === anna.id)!)(), 'zuletzt_geoeffnet', [m[0].id]);

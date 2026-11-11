@@ -88,7 +88,7 @@ describe('Systemkonten (#673)', () => {
     assert.ok((await d.postSystemmappen.listeRollen(true)).some((r) => r.id === s && r.konto));
     await assert.rejects(d.postSystemmappen.setzeRollen(jonas.id, [s]), status(422));
     // Name fest, nicht löschbar wie die anderen Systemrollen.
-    await assert.rejects(d.loescheMappe(s), (e: unknown) => e instanceof Fachfehler);
+    await assert.rejects(d.loeschen.loescheMappe(s), (e: unknown) => e instanceof Fachfehler);
   });
 
   it('Rechte: ohne Regeln alles außer Passwörter; Regeln mit der Rolle Systemkonto schränken ein; der Standard für Mitglieder gilt nicht', async () => {

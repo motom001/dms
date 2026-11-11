@@ -41,8 +41,8 @@ describe('Löschen vorab prüfen (#79)', () => {
     assert.equal(l.ok, false);
     assert.match(l.grund ?? '', /verweist noch eine andere Mappe/);
     assert.deepEqual(l.rueckverweise?.map((r) => r.quelleId), [vm.id]);
-    await assert.rejects(d.loescheMappe(pm.id, A));
-    await d.loescheMappe(vm.id, A);
+    await assert.rejects(d.loeschen.loescheMappe(pm.id, A));
+    await d.loeschen.loescheMappe(vm.id, A);
     assert.deepEqual((await d.mappen.holeMappe(pm.id)).loeschbar, { ok: true });
   });
 });

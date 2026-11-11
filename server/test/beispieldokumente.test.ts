@@ -174,7 +174,7 @@ function faelle(pg: boolean) {
       await assert.rejects(p.entferne('demo', ICH), (e) => gruende(/„SV-4712“ wurde geändert und bleibt/)(e) && gruende(/1 Mappe/)(e));
       assert.equal((await vertraege(d)).length, 2, 'beim Scheitern bleibt alles');
       // Geändertes Beispiel selbst löschen – dann geht das Paket samt den übrigen Beispielen.
-      await d.entferneMappenEndgueltig([strom.id]);
+      await d.loeschen.entferneMappenEndgueltig([strom.id]);
       const sha = (await d.listeDokumente((await vertraege(d))[0].id))[0].sha256;
       const r = await p.entferne('demo', ICH);
       assert.deepEqual(r.beispieleBehalten, []);

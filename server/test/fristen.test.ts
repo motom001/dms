@@ -125,8 +125,8 @@ function faelle(pg: boolean) {
       const { d, anna, vertrag, rufe } = await aufbauFristen(pg);
       const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, anna.id);
       await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: in_(9), text: 'Später' } });
-      await d.loescheMappe(m.id, anna.id);
-      await d.stelleWiederHer(m.id, { id: anna.id, rolle: 'mitglied' });
+      await d.loeschen.loescheMappe(m.id, anna.id);
+      await d.papierkorbVerwaltung.stelleWiederHer(m.id, { id: anna.id, rolle: 'mitglied' });
       assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen.length, 1);
     });
   });

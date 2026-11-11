@@ -315,8 +315,8 @@ for (const pg of [false, true]) {
       const golf = await d.mappen.legeMappeAn({ typId: f.typen.fahrzeug, werte: { name: 'Golf' } }, null);
       await d.mappen.legeMappeAn({ typId: r.typen.rechnung, werte: { nr: 'R1', betrifft: [golf.id] } }, null);
       // Fahrzeuge wieder entfernen (ohne Mappen): Rechnung bleibt, nur der Typ geht aus dem Feld; optional bleibt notiert.
-      await d.entferneMappenEndgueltig((await d.mappen.listeMappen(r.typen.rechnung)).map((m) => m.id));
-      await d.entferneMappenEndgueltig([golf.id]);
+      await d.loeschen.entferneMappenEndgueltig((await d.mappen.listeMappen(r.typen.rechnung)).map((m) => m.id));
+      await d.loeschen.entferneMappenEndgueltig([golf.id]);
       await p.entferne('fahrzeuge', { id: ICH.id, email: ICH.email } as never);
       assert.deepEqual((await feld('betrifft')).zielTypen, [r.typen.vertrag]);
       assert.deepEqual((await feld('betrifft')).zielOptional, ['fahrzeuge:fahrzeug']);

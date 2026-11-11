@@ -214,7 +214,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       for (const x of [m.p, m.v1, m.v2, m.r1]) await assert.rejects(d.mappen.holeMappe(x.id), status(404));
       const r2 = (await d.mappen.holeMappe(m.r2.id)).mappe;
       assert.deepEqual(r2.werte.vertrag, [m.vx.id], 'nur der Verweis auf V-1 ist weg');
-      const korb = (await d.papierkorb({ id: admin.id, rolle: 'admin' })).filter((x) => x.vorgang === m.p.id);
+      const korb = (await d.papierkorbVerwaltung.papierkorb({ id: admin.id, rolle: 'admin' })).filter((x) => x.vorgang === m.p.id);
       assert.equal(korb.length, 4);
       assert.deepEqual(korb.find((x) => x.id === m.v1.id)!.entkoppelt, [{ quelleId: m.r2.id, feldKey: 'vertrag' }]);
       // Historie ohne Inhalte, mit Vorgang
@@ -232,17 +232,17 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(v1.dokumente.length, 1);
       assert.deepEqual(new Set(v1.rueckverweise.map((x) => x.quelleId)), new Set([m.v2.id, m.r1.id, m.r2.id]));
       assert.deepEqual(new Set((await d.mappen.holeMappe(m.p.id)).rueckverweise.map((x) => x.quelleId)), new Set([m.v1.id, m.v2.id]));
-      assert.equal((await d.papierkorb({ id: admin.id, rolle: 'admin' })).length, 0);
-      await assert.rejects(d.stelleVorgangWiederHer(m.p.id, { id: admin.id, rolle: 'admin' }), status(404));
+      assert.equal((await d.papierkorbVerwaltung.papierkorb({ id: admin.id, rolle: 'admin' })).length, 0);
+      await assert.rejects(d.mitVerknuepften.stelleVorgangWiederHer(m.p.id, { id: admin.id, rolle: 'admin' }), status(404));
 
       // Noch einmal löschen, dann nur V-1 einzeln zurück: der entfernte Verweis der Rechnung kommt mit.
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
-      await d.loescheMitVerknuepften(m.p.id, { auswahl: (await d.loeschVorschau(m.p.id, {}, z)).vorschlag }, admin.id, z);
-      const einzeln = await d.stelleWiederHer(m.v1.id, { id: admin.id, rolle: 'admin' });
+      await d.mitVerknuepften.loescheMitVerknuepften(m.p.id, { auswahl: (await d.mitVerknuepften.loeschVorschau(m.p.id, {}, z)).vorschlag }, admin.id, z);
+      const einzeln = await d.papierkorbVerwaltung.stelleWiederHer(m.v1.id, { id: admin.id, rolle: 'admin' });
       assert.deepEqual((await d.mappen.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id, m.v1.id]);
       assert.equal(einzeln.verweiseEntfallen, 2, 'Partner und V-2 liegen noch im Papierkorb');
-      await assert.rejects(rufe({ id: admin.id }, 'POST', '/api/papierkorb/vorgang/:id/wiederherstellen', { params: { id: m.p.id } }).then(() => d.stelleVorgangWiederHer('00000000-0000-4000-8000-00000000ffff', { id: admin.id, rolle: 'admin' })), status(404));
-      assert.equal((await d.papierkorb({ id: admin.id, rolle: 'admin' })).length, 0, 'der Rest des Vorgangs ist auch zurück');
+      await assert.rejects(rufe({ id: admin.id }, 'POST', '/api/papierkorb/vorgang/:id/wiederherstellen', { params: { id: m.p.id } }).then(() => d.mitVerknuepften.stelleVorgangWiederHer('00000000-0000-4000-8000-00000000ffff', { id: admin.id, rolle: 'admin' })), status(404));
+      assert.equal((await d.papierkorbVerwaltung.papierkorb({ id: admin.id, rolle: 'admin' })).length, 0, 'der Rest des Vorgangs ist auch zurück');
     });
 
     it('🔒 Aufbewahrungsfrist: bleibt samt allem, worauf sie verweist; ohne Start eigene Vorgangs-Id', async () => {
@@ -250,7 +250,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const heute = new Date().toISOString().slice(0, 10);
       const r3 = await d.mappen.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-3', datum: heute, vertrag: [m.v2.id] } }, admin.id);
-      const v = await d.loeschVorschau(m.p.id, {}, z);
+      const v = await d.mitVerknuepften.loeschVorschau(m.p.id, {}, z);
       const k3 = v.baum.knoten.find((x) => x.id === r3.id)!;
       assert.equal(kennzeichen(v, k3), 'gesperrt');
       const plan = planeLoeschung(v, { ...v.vorschlag, [r3.id]: 'loeschen' });
@@ -258,7 +258,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(plan.loeschen, [m.r1.id]);
       assert.equal(plan.bleibt[r3.id].weil, 'frist');
       assert.equal(plan.bleibt[m.p.id].weil, 'verweis');
-      const e = await d.loescheMitVerknuepften(m.p.id, { auswahl: { ...v.vorschlag, [r3.id]: 'loeschen' } }, admin.id, z);
+      const e = await d.mitVerknuepften.loescheMitVerknuepften(m.p.id, { auswahl: { ...v.vorschlag, [r3.id]: 'loeschen' } }, admin.id, z);
       assert.deepEqual(e.loeschen, [m.r1.id]);
       assert.equal(e.vorgang.length, 36);
       assert.notEqual(e.vorgang, m.p.id, 'Start bleibt → eigene Vorgangs-Id');
@@ -281,7 +281,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(aufgaben[0].mappeId, m.p.id);
 
       // Nichts mehr zu löschen → 422
-      await assert.rejects(d.loescheMitVerknuepften(m.p.id, { auswahl: { [r3.id]: 'loeschen' } }, admin.id, z), status(422));
+      await assert.rejects(d.mitVerknuepften.loescheMitVerknuepften(m.p.id, { auswahl: { [r3.id]: 'loeschen' } }, admin.id, z), status(422));
     });
 
     it('nur innerhalb der Rechte: ⛔ kein Löschrecht hält; nicht Lesbares hält, ohne verraten zu werden; fremder Start 404', async () => {
@@ -289,7 +289,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       // Anna darf Rechnungen nicht löschen
       await d.berechtigungen.setzeBerechtigungen(typen.rechnung.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
       const za = await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' });
-      const v = await d.loeschVorschau(m.p.id, {}, za);
+      const v = await d.mitVerknuepften.loeschVorschau(m.p.id, {}, za);
       assert.equal(kennzeichen(v, v.baum.knoten.find((x) => x.id === m.r1.id)!), 'ohneRecht');
       const p = planeLoeschung(v, Object.fromEntries(v.baum.knoten.map((x) => [x.id, 'loeschen' as const])));
       assert.deepEqual(p.loeschen, [], 'R-1 hält V-1, der Kreis V-2 und den Partner');
@@ -301,7 +301,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{t}', felder: [{ key: 't', label: 'T', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: typen.vertrag.id }] });
       await d.berechtigungen.setzeBerechtigungen(geheim.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
       await d.mappen.legeMappeAn({ typId: geheim.id, werte: { t: 'intern', vertrag: m.v2.id } }, admin.id);
-      const v2 = await d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' }));
+      const v2 = await d.mitVerknuepften.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' }));
       assert.equal(v2.baum.verborgen, 1);
       const p2 = planeLoeschung(v2, v2.vorschlag);
       assert.equal(p2.bleibt[m.v2.id].weil, 'aussen');
@@ -310,7 +310,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       // Start nicht lesbar: 404
       await d.berechtigungen.setzeBerechtigungen(typen.partner.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
-      await assert.rejects(d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' })), status(404));
+      await assert.rejects(d.mitVerknuepften.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' })), status(404));
     });
 
     it('große Bäume: Obergrenze schneidet ab, Abgeschnittenes hält; ohne Papierkorb sofort endgültig', async () => {
@@ -318,20 +318,20 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const viele = pg ? 30 : 520;
       for (let i = 0; i < viele; i++) await d.mappen.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: `M-${i}`, datum: '2010-01-01', vertrag: [m.v2.id] } }, admin.id);
-      const ganz = await d.loeschVorschau(m.p.id, { max: 5000 }, z);
+      const ganz = await d.mitVerknuepften.loeschVorschau(m.p.id, { max: 5000 }, z);
       assert.equal(ganz.baum.knoten.length, viele + 5);
       assert.equal(planeLoeschung(ganz, ganz.vorschlag).loeschen.length, viele + 4, 'alle bis auf die geteilte Rechnung');
-      const knapp = await d.loeschVorschau(m.p.id, { max: 10 }, z);
+      const knapp = await d.mitVerknuepften.loeschVorschau(m.p.id, { max: 10 }, z);
       assert.equal(knapp.baum.abgeschnitten, true);
       const pk = planeLoeschung(knapp, knapp.vorschlag);
       assert.ok(!pk.loeschen.includes(m.v2.id), 'V-2 hat Rechnungen außerhalb der Obergrenze → bleibt');
       assert.equal(pk.bleibt[m.v2.id].weil, 'aussen');
 
-      await d.setzePapierkorbTage(0);
-      const e = await d.loescheMitVerknuepften(m.p.id, { max: 5000, auswahl: ganz.vorschlag }, admin.id, z);
+      await d.papierkorbVerwaltung.setzePapierkorbTage(0);
+      const e = await d.mitVerknuepften.loescheMitVerknuepften(m.p.id, { max: 5000, auswahl: ganz.vorschlag }, admin.id, z);
       assert.equal(e.endgueltig, true);
       assert.equal(e.zahlen.mappen, viele + 4);
-      assert.equal((await d.papierkorb({ id: admin.id, rolle: 'admin' }, true)).length, 0, 'nichts im Papierkorb');
+      assert.equal((await d.papierkorbVerwaltung.papierkorb({ id: admin.id, rolle: 'admin' }, true)).length, 0, 'nichts im Papierkorb');
       assert.deepEqual((await d.mappen.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id]);
     });
 
@@ -345,7 +345,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.mappen.aendereMappe(m.r1.id, { werte: { nr: 'R-1', datum: '2015-03-01', vertrag: [m.v1.id], ansprechpartner: m.p.id } }, admin.id);
       // Lieferschein zu R-1: geht mit; sein Weg nach oben wird nicht verfolgt.
       const l1 = await d.mappen.legeMappeAn({ typId: typen.lieferschein.id, werte: { nr: 'L-1', rechnung: m.r1.id } }, admin.id);
-      const v = await d.loeschVorschau(m.p.id, {}, z);
+      const v = await d.mitVerknuepften.loeschVorschau(m.p.id, {}, z);
       const k9 = v.baum.knoten.find((x) => x.id === r9.id)!;
       assert.equal(k9.nurBezug, true);
       assert.equal(k9.ueber?.verweisart, 'bezug');
@@ -361,7 +361,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(v.vorschlag[r9.id], 'entkoppeln');
       assert.ok(!v.geteilt.includes(r9.id));
 
-      const e = await d.loescheMitVerknuepften(m.p.id, { auswahl: { ...v.vorschlag, [r9.id]: 'loeschen' } }, admin.id, z);
+      const e = await d.mitVerknuepften.loescheMitVerknuepften(m.p.id, { auswahl: { ...v.vorschlag, [r9.id]: 'loeschen' } }, admin.id, z);
       assert.ok(e.loeschen.includes(m.r1.id) && e.loeschen.includes(l1.id));
       assert.ok(!e.loeschen.includes(r9.id));
       const nachher = (await d.mappen.holeMappe(r9.id)).mappe;
@@ -369,7 +369,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(nachher.werte.vertrag, [m.vx.id]);
       assert.ok(await d.mappen.holeMappe(l9.id));
       // Wiederherstellen setzt auch den Bezug-Verweis wieder
-      await d.stelleVorgangWiederHer(e.vorgang, { id: admin.id, rolle: 'admin' });
+      await d.mitVerknuepften.stelleVorgangWiederHer(e.vorgang, { id: admin.id, rolle: 'admin' });
       assert.equal((await d.mappen.holeMappe(r9.id)).mappe.werte.ansprechpartner, m.p.id);
     });
 

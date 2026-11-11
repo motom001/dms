@@ -64,7 +64,7 @@ async function aufbau(pg: boolean) {
   return { d, mieter, vertrag, m, v, dok, einstellungen };
 }
 
-const alle = async (d: Dienst, f: Record<string, unknown> = {}) => (await d.loeschprotokoll(f)).eintraege;
+const alle = async (d: Dienst, f: Record<string, unknown> = {}) => (await d.loeschprotokollVerwaltung.loeschprotokoll(f)).eintraege;
 const ohneGeheimes = (l: LoeschEintrag[]) => { const t = JSON.stringify(l); for (const g of GEHEIM) assert.ok(!t.includes(g), `nicht im Löschprotokoll: ${g}`); };
 
 describe('Löschprotokoll: Hilfsfunktionen (#470)', () => {
@@ -103,7 +103,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Mappe einzeln: Papierkorb, dann endgültig – mit Grund, Nummer und Prüfsummen, ohne Inhalte', async () => {
       const { d, mieter, vertrag, m, v, dok } = await aufbau(pg);
-      await d.loescheMappe(v.id, ANNA, undefined, { grund: 'verlangen', text: 'Anfrage vom 03.11.' });
+      await d.loeschen.loescheMappe(v.id, ANNA, undefined, { grund: 'verlangen', text: 'Anfrage vom 03.11.' });
       let l = await alle(d);
       const mp = l.find((e) => e.art === 'mappe')!;
       assert.equal(mp.schritt, 'papierkorb'); assert.equal(mp.weg, 'einzeln'); assert.equal(mp.typ, 'Mietvertrag'); assert.equal(mp.typId, vertrag.id);
@@ -114,14 +114,14 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       ohneGeheimes(l);
 
       // Endgültig von Hand: Grund kommt vom Schritt „in den Papierkorb“.
-      await d.loescheEndgueltig([v.id], anna);
+      await d.papierkorbVerwaltung.loescheEndgueltig([v.id], anna);
       l = await alle(d, { schritt: 'endgueltig' });
       assert.deepEqual(l.map((e) => [e.art, e.weg, e.grund, e.grundText]), [['mappe', 'papierkorb', 'verlangen', 'Anfrage vom 03.11.'], ['dokument', 'papierkorb', 'verlangen', 'Anfrage vom 03.11.']]);
       assert.equal(l[1].sha256, sha('%PDF-1.4 vertrag'));
 
       // Mieter mit Nummer aus dem Nummernkreis; Papierkorb ausgeschaltet → sofort endgültig.
-      await d.setzePapierkorbTage(0, ANNA);
-      await d.loescheMappe(m.id, ANNA, undefined, { grund: 'nicht_noetig' });
+      await d.papierkorbVerwaltung.setzePapierkorbTage(0, ANNA);
+      await d.loeschen.loescheMappe(m.id, ANNA, undefined, { grund: 'nicht_noetig' });
       const [mi] = await alle(d, { typId: mieter.id });
       assert.deepEqual([mi.schritt, mi.nummer, mi.grund], ['endgueltig', 'M-0001', 'nicht_noetig']);
       assert.equal((await alle(d, { suche: 'm-0001' })).length, 1, 'Suche nach Nummer');
@@ -132,19 +132,19 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('mit verknüpften Mappen: ein Vorgang mit Start-Mappe; Wiederherstellen; Ablauf automatisch', async () => {
       const { d, m, v } = await aufbau(pg);
       const z = await d.rechtepruefung.zugriff(admin);
-      const vorschau = await d.loeschVorschau(m.id, {}, z);
-      const r = await d.loescheMitVerknuepften(m.id, { auswahl: vorschau.vorschlag, grund: 'verlangen' }, admin.id, z);
+      const vorschau = await d.mitVerknuepften.loeschVorschau(m.id, {}, z);
+      const r = await d.mitVerknuepften.loescheMitVerknuepften(m.id, { auswahl: vorschau.vorschlag, grund: 'verlangen' }, admin.id, z);
       const l = await alle(d, { vorgang: r.vorgang, art: 'mappe' });
       assert.equal(l.length, 2);
       assert.ok(l.every((e) => e.vorgang === r.vorgang && e.startId === m.id && e.weg === 'verknuepft' && e.grund === 'verlangen'));
       ohneGeheimes(await alle(d));
 
-      await d.stelleVorgangWiederHer(r.vorgang, admin, true);
+      await d.mitVerknuepften.stelleVorgangWiederHer(r.vorgang, admin, true);
       assert.equal((await alle(d, { schritt: 'wiederhergestellt' })).length, 2);
 
       // Wieder löschen, dann abgelaufen → automatisch endgültig, Grund übernommen.
-      await d.loescheMappe(v.id, ANNA, undefined, { grund: 'frist' });
-      await d.raeumePapierkorbAuf(Date.now() + 40 * 24 * 3600 * 1000);
+      await d.loeschen.loescheMappe(v.id, ANNA, undefined, { grund: 'frist' });
+      await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 40 * 24 * 3600 * 1000);
       const [weg] = await alle(d, { schritt: 'endgueltig', art: 'mappe' });
       assert.deepEqual([weg.mappeId, weg.weg, weg.ausloeser, weg.von, weg.grund], [v.id, 'ablauf', 'automatisch', 'Ablago', 'frist']);
     });
@@ -154,10 +154,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.dokumente.loescheDokument(dok.id, ANNA, { grund: 'sonstiges', ausloeser: 'api', weg: 'dokument' });
       let [e] = await alle(d, { art: 'dokument' });
       assert.deepEqual([e.schritt, e.weg, e.ausloeser, e.grund, e.mappeId, e.typ], ['papierkorb', 'dokument', 'api', 'sonstiges', v.id, 'Mietvertrag']);
-      await d.stelleDokumentWiederHer(dok.id, anna, undefined, true);
+      await d.papierkorbVerwaltung.stelleDokumentWiederHer(dok.id, anna, undefined, true);
       assert.equal((await alle(d, { schritt: 'wiederhergestellt', art: 'dokument' }))[0].sha256, dok.sha256);
       await d.dokumente.loescheDokument(dok.id, ANNA, { weg: 'dokument' });
-      await d.leerePapierkorb(anna);
+      await d.papierkorbVerwaltung.leerePapierkorb(anna);
       [e] = await alle(d, { schritt: 'endgueltig' });
       assert.deepEqual([e.art, e.weg, e.dokumentId], ['dokument', 'leeren', dok.id]);
 
@@ -172,23 +172,23 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('nicht änderbar, eigene Aufbewahrung, im Vollexport', async () => {
       const { d, v } = await aufbau(pg);
-      await d.loescheMappe(v.id, ANNA);
-      assert.equal(await d.loeschprotokollJahre(), 10);
-      await assert.rejects(d.setzeLoeschprotokollJahre(0, 'x'));
-      assert.equal(await d.setzeLoeschprotokollJahre(2, 'x'), 2);
+      await d.loeschen.loescheMappe(v.id, ANNA);
+      assert.equal(await d.loeschprotokollVerwaltung.loeschprotokollJahre(), 10);
+      await assert.rejects(d.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(0, 'x'));
+      assert.equal(await d.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(2, 'x'), 2);
       assert.equal((await alle(d)).length, 2);
-      const csv = (await d.loeschprotokollAusgabe({}, 'csv', { von: 'Admin', mandant: 'Test', version: '0' })).inhalt.toString('utf8');
+      const csv = (await d.loeschprotokollVerwaltung.loeschprotokollAusgabe({}, 'csv', { von: 'Admin', mandant: 'Test', version: '0' })).inhalt.toString('utf8');
       assert.match(csv, /^\ufeffZeit;Schritt;Art;Mappentyp;Nummer/);
       assert.equal(csv.trim().split('\r\n').length, 3, 'Kopf und zwei Einträge');
       assert.match(csv, new RegExp(sha('%PDF-1.4 vertrag')));
       for (const g of GEHEIM) assert.ok(!csv.includes(g));
-      const pdf = await d.loeschprotokollAusgabe({ schritt: 'papierkorb' }, 'pdf', { von: 'Admin', mandant: 'Test', version: '0' });
+      const pdf = await d.loeschprotokollVerwaltung.loeschprotokollAusgabe({ schritt: 'papierkorb' }, 'pdf', { von: 'Admin', mandant: 'Test', version: '0' });
       assert.equal(pdf.inhalt.subarray(0, 5).toString(), '%PDF-');
-      await d.raeumePapierkorbAuf(Date.now() + 3 * 366 * 24 * 3600 * 1000);
+      await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 3 * 366 * 24 * 3600 * 1000);
       assert.equal((await alle(d, { schritt: 'papierkorb' })).length, 0, 'nach 2 Jahren weg');
       assert.match(EXPORT_TABELLEN.loeschprotokoll, /loeschprotokoll\.csv/);
       if (pg) {
-        await d.loescheMappe((await d.mappen.legeMappeAn({ typId: v.typId, werte: { titel: 'x' } }, ANNA)).id, ANNA);
+        await d.loeschen.loescheMappe((await d.mappen.legeMappeAn({ typId: v.typId, werte: { titel: 'x' } }, ANNA)).id, ANNA);
         await assert.rejects(pgSql!`UPDATE loeschprotokoll SET typ_name = 'x'`, /nicht ändern/);
         await assert.rejects(pgSql!`DELETE FROM loeschprotokoll`, /nicht ändern/);
       }

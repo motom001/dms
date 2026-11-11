@@ -2603,8 +2603,8 @@ export class Paketverwaltung {
       for (const [id, k] of kennungZurueck) await this.d.kern.repo.setzeTypKennung(id, k).catch(() => {});
       // Vorgaben (#1038): Vorlagen und geänderte Werte zurück, neue Vorgaben weg (nach den Beispielen, die auf sie zeigen).
       for (const r of vorgabenErg.rueck) await r().catch(() => {});
-      await this.d.entferneMappenEndgueltig(mappen).catch(() => {});
-      await this.d.entferneMappenEndgueltig(vorgabenErg.angelegt).catch(() => {});
+      await this.d.loeschen.entferneMappenEndgueltig(mappen).catch(() => {});
+      await this.d.loeschen.entferneMappenEndgueltig(vorgabenErg.angelegt).catch(() => {});
       for (const s of ersetzteSichten) await this.d.sichtenVerwaltung.aendereSicht(s.id, s).catch(() => {});
       for (const s of [...neueSichten].reverse()) await this.d.sichtenVerwaltung.loescheSicht(s).catch(() => {});
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.mappentypen.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
@@ -2811,7 +2811,7 @@ export class Paketverwaltung {
         }
         if (ohneZiel.size) log.info('Paket: Verweise in Beispielen ohne Ziel bleiben leer', { paket: m.id, ziele: [...ohneZiel] });
         // Stand direkt nach dem Anlegen (#878): Unveränderte Beispiele lassen sich später samt Dokumenten entfernen.
-        beispielStaende = await this.d.beispielStand(mappen);
+        beispielStaende = await this.d.beispielMappen.beispielStand(mappen);
       }
       // Einstellungen (#197): Vorgaben setzen bzw. überführen; nach dem Entfernen behaltene Werte zählen.
       if (paket.einstellungen) {
@@ -3420,8 +3420,8 @@ export class Paketverwaltung {
   async beispieleEntfernen(id: string, von: Handelnder): Promise<{ entfernt: number; behalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }> }> {
     const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
-    const b = await this.d.pruefeBeispiele(p.beispielMappen ?? []);
-    if (b.unveraendert.length) await this.d.entferneBeispielMappen(b.unveraendert, von.id);
+    const b = await this.d.beispielMappen.pruefeBeispiele(p.beispielMappen ?? []);
+    if (b.unveraendert.length) await this.d.beispielMappen.entferneBeispielMappen(b.unveraendert, von.id);
     const weg = new Set(b.unveraendert);
     const { beispielMappen: _bm, beispiele: alteSchluessel, ...rest } = p;
     const schluessel = Object.fromEntries(Object.entries(alteSchluessel ?? {}).filter(([, mid]) => !weg.has(mid)));
@@ -3491,7 +3491,7 @@ export class Paketverwaltung {
    * Vorlagen, die das Paket an Vorgaben anderer Pakete gehängt hat – nur diese, nur an der Mappe, an die es sie hängte.
    */
   private async entferneVorgaben(p: InstalliertesPaket, weg: string[], von: Handelnder): Promise<string[]> {
-    if (weg.length) await this.d.entferneBeispielMappen(weg, von.id, 'vorgaben');
+    if (weg.length) await this.d.beispielMappen.entferneBeispielMappen(weg, von.id, 'vorgaben');
     for (const e of p.ergaenzungen ?? []) {
       for (const v of e.vorlagen) {
         if ((await this.d.kern.repo.holeDokument(v.dokument))?.mappeId !== e.mappe) continue;
@@ -3516,7 +3516,7 @@ export class Paketverwaltung {
     const gruende: string[] = alle.filter((x) => x.id !== id && id in x.abhaengigkeiten).map((x) => t('meldungen.pakete.das-paket-braucht', { name: x.name, name2: p.name }));
     const typIds = Object.values(p.typen);
     // Beispiel-Mappen (#878): unveränderte gehen mit, geänderte in eigenen Mappentypen werden als Grund genannt.
-    const bsp = await this.d.pruefeBeispiele(p.beispielMappen ?? []);
+    const bsp = await this.d.beispielMappen.pruefeBeispiele(p.beispielMappen ?? []);
     const eigeneTypen = new Set(typIds);
     gruende.push(...bsp.geaendert.filter((g) => eigeneTypen.has(g.typId)).map((g) => (g.grund === 'verwiesen' ? t('meldungen.pakete.beispiel-behalten.verwiesen', { titel: g.titel }) : t('meldungen.pakete.beispiel-behalten.geaendert', { titel: g.titel }))));
     const vg = await this.vorgabenBeimEntfernen(p, eigeneTypen, bsp.unveraendert);
@@ -3524,7 +3524,7 @@ export class Paketverwaltung {
     gruende.push(...await this.d.mappentypen.belegteTypen(typIds, [...bsp.unveraendert, ...vg.eigenWeg, ...vg.eigenBenutzt.map((m) => m.id)]));
     if (gruende.length) throw new Fachfehler(409, t('meldungen.pakete.laesst-sich-noch-nicht', { name: p.name }), { gruende });
     if (vg.frage.length && !vorgabenWahl) throw new Fachfehler(409, t('meldungen.pakete.vorgaben.entfernen-frage', { name: p.name, anzahl: vg.frage.length }), { vorgaben: vg.frage });
-    if (bsp.unveraendert.length) await this.d.entferneBeispielMappen(bsp.unveraendert, von.id);
+    if (bsp.unveraendert.length) await this.d.beispielMappen.entferneBeispielMappen(bsp.unveraendert, von.id);
     const vorgabenWeg = await this.entferneVorgaben(p, [...vg.eigenWeg, ...(vorgabenWahl === 'entfernen' ? vg.frage.map((x) => x.id) : [])], von);
     // Untersichten zuerst, dann die Typen (Verweise untereinander: mehrere Runden).
     const sichten: Sicht[] = await this.d.sichtenVerwaltung.listeSichten();

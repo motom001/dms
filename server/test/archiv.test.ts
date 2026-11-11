@@ -15,7 +15,7 @@ const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
 async function aufbau(papierkorb = 0) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  if (papierkorb) await d.setzePapierkorbTage(papierkorb);
+  if (papierkorb) await d.papierkorbVerwaltung.setzePapierkorbTage(papierkorb);
   const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{name}', archiv: { jahre: 8, stichtag: 'datum' },
     felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionenBehalten: 2 }] });
@@ -46,7 +46,7 @@ describe('Archivmodus (#212)', () => {
 
   it('keine Löschung vor Fristende: Mappe, Dokument, auch als Administrator; danach geht es', async () => {
     const { d, jung, alt } = await aufbau();
-    await assert.rejects(d.loescheMappe(jung.id, ICH.id), gesperrt);
+    await assert.rejects(d.loeschen.loescheMappe(jung.id, ICH.id), gesperrt);
     const det = await d.mappen.holeMappe(jung.id);
     assert.equal(det.aufbewahrenBis, '2034-12-31');
     assert.equal(det.loeschbar.ok, false);
@@ -59,7 +59,7 @@ describe('Archivmodus (#212)', () => {
     // Abgelaufen: „Darf weg“, löschen geht
     const weg = await d.mappenArchiv.darfWeg();
     assert.deepEqual(weg.map((x) => [x.titel, x.aufbewahrenBis]), [['Alt', '2023-12-31']]);
-    await d.loescheMappe(alt.id, ICH.id);
+    await d.loeschen.loescheMappe(alt.id, ICH.id);
     assert.deepEqual(await d.mappenArchiv.darfWeg(), []);
   });
 
@@ -73,16 +73,16 @@ describe('Archivmodus (#212)', () => {
   it('Papierkorb: vor dem Einschalten Gelöschtes bleibt bis Fristende', async () => {
     const dateien = speicherDateien();
     const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-    await d.setzePapierkorbTage(30);
+    await d.papierkorbVerwaltung.setzePapierkorbTage(30);
     const t = await d.mappentypen.legeTypAn({ name: 'Brief', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'B' } });
-    await d.loescheMappe(m.id, ICH.id);
+    await d.loeschen.loescheMappe(m.id, ICH.id);
     await d.mappentypen.aendereTyp(t.id, { ...t, archiv: { jahre: 6, stichtag: null } });
-    await assert.rejects(d.loescheEndgueltig([m.id], ICH, true), gesperrt);
-    assert.equal(await d.raeumePapierkorbAuf(Date.now() + 365 * 86_400_000), 0);
+    await assert.rejects(d.papierkorbVerwaltung.loescheEndgueltig([m.id], ICH, true), gesperrt);
+    assert.equal(await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 365 * 86_400_000), 0);
     // Ausschalten: dann geht es
     await d.mappentypen.aendereTyp(t.id, { ...t, archiv: null });
-    assert.equal(await d.loescheEndgueltig([m.id], ICH, true), 1);
+    assert.equal(await d.papierkorbVerwaltung.loescheEndgueltig([m.id], ICH, true), 1);
   });
 
   it('Alle Dateien prüfen findet veränderte und fehlende Dateien', async () => {

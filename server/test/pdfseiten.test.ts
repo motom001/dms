@@ -87,7 +87,7 @@ describe('PDF bearbeiten (#335)', () => {
     assert.equal(r.dokumente[0].name, 'Scan.pdf');
     assert.deepEqual(await breiten(await inhalt(r.dokumente[0].id)), [2]);
     assert.deepEqual((await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name), ['Scan.pdf']);
-    assert.equal((await d.papierkorbDokumente({ id: ANNA, rolle: 'mitglied' })).length, 1, 'Original im Papierkorb');
+    assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente({ id: ANNA, rolle: 'mitglied' })).length, 1, 'Original im Papierkorb');
   });
 
   it('teilen in einer Mappe: Teil 1 als neue Version, weitere Teile als eigene Dokumente', async () => {

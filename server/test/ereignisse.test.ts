@@ -99,8 +99,8 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
     assert.equal(gesehen[0].daten.mappe, m.id);
     assert.equal(gesehen[0].daten.typ, vertrag.id);
     gesehen.length = 0;
-    await d.loescheMappe(m.id, admin.id);
-    await d.stelleWiederHer(m.id, { id: admin.id, rolle: 'admin' });
+    await d.loeschen.loescheMappe(m.id, admin.id);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, { id: admin.id, rolle: 'admin' });
     await verteile();
     assert.deepEqual(gesehen.map((e) => e.art).filter((a) => a.startsWith('mappe.')), ['mappe.geloescht', 'mappe.wiederhergestellt']);
   });
@@ -227,9 +227,9 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
       const offen = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
       const geheim = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim' } }, admin.id);
       const weg = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, admin.id);
-      await d.loescheMappe(offen.id, admin.id);
-      await d.loescheMappe(geheim.id, admin.id);
-      await d.loescheMappe(weg.id, admin.id);
+      await d.loeschen.loescheMappe(offen.id, admin.id);
+      await d.loeschen.loescheMappe(geheim.id, admin.id);
+      await d.loeschen.loescheMappe(weg.id, admin.id);
       assert.equal(await repo.holeMappe(geheim.id), undefined, 'im Papierkorb');
       // Papierkorb schon geleert, bevor verteilt wird: Das Leserecht lässt sich nicht mehr prüfen – nichts zustellen.
       await repo.leerePapierkorb([weg.id]);

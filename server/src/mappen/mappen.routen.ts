@@ -125,51 +125,51 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       return ok(r, 201);
     } },
     { methode: 'POST', pfad: '/api/mappen/loeschen', zugang: 'angemeldet', handler: async (a) => {
-      const r = await dienst.loescheMappen(b(a), ich(a).id, await zg(a), quelle(a));
+      const r = await dienst.loeschen.loescheMappen(b(a), ich(a).id, await zg(a), quelle(a));
       if (b(a).probe !== true) L.ablage.info('Mehrere Mappen gelöscht', { geloescht: r.geloescht, ausgelassen: r.ausgelassen.length });
       return ok(r);
     } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const papierkorb = (await dienst.kern.papierkorbTage()) > 0;
-      await dienst.loescheMappe(a.params.id, ich(a).id, await zg(a), { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'einzeln' });
+      await dienst.loeschen.loescheMappe(a.params.id, ich(a).id, await zg(a), { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'einzeln' });
       L.ablage.info(papierkorb ? 'Mappe in den Papierkorb gelegt' : 'Mappe gelöscht', { id: a.params.id });
       return leer;
     } },
 
     // Mit allen verknüpften Mappen löschen (#424): Vorschau als Baum, dann Ausführen mit derselben Prüfung.
-    { methode: 'GET', pfad: '/api/mappen/:id/loeschvorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.loeschVorschau(a.params.id, a.query, await zg(a))) },
-    { methode: 'POST', pfad: '/api/mappen/:id/mit-verknuepften-loeschen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.loescheMitVerknuepften(a.params.id, a.body, ich(a).id, await zg(a), quelle(a))) },
+    { methode: 'GET', pfad: '/api/mappen/:id/loeschvorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mitVerknuepften.loeschVorschau(a.params.id, a.query, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/mit-verknuepften-loeschen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mitVerknuepften.loescheMitVerknuepften(a.params.id, a.body, ich(a).id, await zg(a), quelle(a))) },
 
     /* ---------- Papierkorb (#43): in der Ablage nur, was ich gelöscht habe ---------- */
-    { methode: 'GET', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorb(ich(a))) },
+    { methode: 'GET', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorb(ich(a))) },
     // Einzelne Dokumente (#344): eigene Liste, damit die Antwort von /api/papierkorb gleich bleibt.
-    { methode: 'GET', pfad: '/api/papierkorb/dokumente', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbDokumente(ich(a))) },
-    { methode: 'POST', pfad: '/api/papierkorb/dokumente/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), await zg(a), false, quelle(a))) },
-    { methode: 'DELETE', pfad: '/api/papierkorb/dokumente/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },
-    { methode: 'DELETE', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), false, { quelle: quelle(a) }) }) },
-    { methode: 'GET', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a))) },
+    { methode: 'GET', pfad: '/api/papierkorb/dokumente', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorbDokumente(ich(a))) },
+    { methode: 'POST', pfad: '/api/papierkorb/dokumente/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbVerwaltung.stelleDokumentWiederHer(a.params.id, ich(a), await zg(a), false, quelle(a))) },
+    { methode: 'DELETE', pfad: '/api/papierkorb/dokumente/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.loescheDokumentEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },
+    { methode: 'DELETE', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.leerePapierkorb(ich(a), false, { quelle: quelle(a) }) }) },
+    { methode: 'GET', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorbEintrag(a.params.id, ich(a))) },
     { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => {
-      const r = await dienst.stelleWiederHer(a.params.id, ich(a), false, quelle(a));
+      const r = await dienst.papierkorbVerwaltung.stelleWiederHer(a.params.id, ich(a), false, quelle(a));
       // Eigener Papierkorb (#126): immer wiederherstellbar; danach gelten wieder die Regeln.
       const sichtbar = (await dienst.rechtepruefung.lesbare(await zg(a), [a.params.id])).has(a.params.id);
       return ok(sichtbar ? r : { ...r, hinweis: t('meldungen.routen.wiederhergestellt-diese-mappe-kannst') });
     } },
-    { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },
+    { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.loescheEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },
     // Ein Vorgang (#424): alle Mappen, die zusammen gelöscht wurden.
-    { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), false, quelle(a))) },
+    { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mitVerknuepften.stelleVorgangWiederHer(a.params.id, ich(a), false, quelle(a))) },
     /* … und in der Werkbank alles */
-    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
-    { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true, quelle(a))) },
-    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/dokumente/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(), eintraege: await dienst.papierkorbVerwaltung.papierkorb(ich(a), true), dokumente: await dienst.papierkorbVerwaltung.papierkorbDokumente(ich(a), true) }) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbVerwaltung.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true, quelle(a))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/dokumente/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.loescheDokumentEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
     { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => {
       const historieTage = b(a).historieTage === undefined ? await dienst.mappenHistorie.historieTage() : await dienst.mappenHistorie.setzeHistorieTage(b(a).historieTage);
-      const r = b(a).tage === undefined ? { tage: await dienst.kern.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage, ich(a).id);
+      const r = b(a).tage === undefined ? { tage: await dienst.kern.papierkorbTage(), geleert: 0 } : await dienst.papierkorbVerwaltung.setzePapierkorbTage(b(a).tage, ich(a).id);
       return ok({ ...r, historieTage });
     } },
-    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true, { quelle: quelle(a) }) }) },
-    { methode: 'GET', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a), true)) },
-    { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a), true, quelle(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/papierkorb/vorgang/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), true, quelle(a))) },
-    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.leerePapierkorb(ich(a), true, { quelle: quelle(a) }) }) },
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorbEintrag(a.params.id, ich(a), true)) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbVerwaltung.stelleWiederHer(a.params.id, ich(a), true, quelle(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/vorgang/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.mitVerknuepften.stelleVorgangWiederHer(a.params.id, ich(a), true, quelle(a))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.loescheEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
   ];
 }

@@ -264,7 +264,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
     version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',
-    loeschprotokoll: { jahre: await dienst.loeschprotokollJahre() },
+    loeschprotokoll: { jahre: await dienst.loeschprotokollVerwaltung.loeschprotokollJahre() },
   });
   /** Auskunft zustellen (#455): Einmal-Tickets der öffentlichen Abrufseite. */
   const abrufTickets = new AbrufTickets(Date.now, dienst.kurzzustand);

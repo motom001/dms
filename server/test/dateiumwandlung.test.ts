@@ -306,7 +306,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     assert.deepEqual(neu.map((e) => e.daten.dokument), [b]);
     // Löschen ohne Papierkorb: Datei weg → Fassung weg.
     const sha = (await x.dok(a)).sha256;
-    await x.d.setzePapierkorbTage(0);
+    await x.d.papierkorbVerwaltung.setzePapierkorbTage(0);
     await x.d.dokumente.loescheDokument(a, null);
     assert.equal(x.ablage.fassungen.has(sha), false);
   });

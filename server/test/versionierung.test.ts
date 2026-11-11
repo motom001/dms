@@ -92,7 +92,7 @@ describe('Versionierung von Dokumenten (#194)', () => {
     assert.deepEqual(v.aeltere.map((x) => x.nummer), [4, 3]);
     const sha1 = (await import('node:crypto')).createHash('sha256').update(PDF('p1')).digest('hex');
     await assert.rejects(dateien.lies(sha1));
-    await d.setzePapierkorbTage(0); // ohne Papierkorb (#344): endgültig wie bisher
+    await d.papierkorbVerwaltung.setzePapierkorbTage(0); // ohne Papierkorb (#344): endgültig wie bisher
     await d.dokumente.loescheDokument(a.id);
     const sha3 = (await import('node:crypto')).createHash('sha256').update(PDF('p3')).digest('hex');
     await assert.rejects(dateien.lies(sha3));
@@ -102,12 +102,12 @@ describe('Versionierung von Dokumenten (#194)', () => {
 
   it('Papierkorb: Versionen gehen mit und kommen wieder', async () => {
     const { d, m } = await aufbau();
-    await d.setzePapierkorbTage(30);
+    await d.papierkorbVerwaltung.setzePapierkorbTage(30);
     const a = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'A.pdf' }, PDF('a1'), null)).dokument;
     await d.dokumentVersionen.ersetzeDokument(a.id, {}, PDF('a2'), null);
-    await d.loescheMappe(m.id, null);
+    await d.loeschen.loescheMappe(m.id, null);
     await assert.rejects(d.dokumentVersionen.versionen(a.id), status(404));
-    await d.stelleWiederHer(m.id, { id: 'x', rolle: 'admin' }, true);
+    await d.papierkorbVerwaltung.stelleWiederHer(m.id, { id: 'x', rolle: 'admin' }, true);
     assert.deepEqual((await d.dokumentVersionen.versionen(a.id)).aeltere.map((v) => v.nummer), [1]);
     assert.equal((await d.dokumentVersionen.versionen(a.id)).aktuell.version, 2);
   });

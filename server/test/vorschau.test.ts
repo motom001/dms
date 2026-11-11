@@ -116,7 +116,7 @@ describe('Vorschaubilder (#332)', () => {
     assert.equal(r.body.eingereiht, 1);
     await v.fertig();
     assert.ok(await v.bild(b));
-    await d.setzePapierkorbTage(0); // ohne Papierkorb (#344): Datei sofort weg
+    await d.papierkorbVerwaltung.setzePapierkorbTage(0); // ohne Papierkorb (#344): Datei sofort weg
     await d.dokumente.loescheDokument(a.id, admin.id);
     assert.equal(ablage.bilder.has(a.sha256), false);
     assert.equal(ablage.bilder.has(b.sha256), true);

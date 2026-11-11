@@ -10,15 +10,11 @@ import { istVerschluesselt, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { type Repo } from './repo';
 import type { ExportQuelle } from './vollexport';
-import { type BaumQuelle } from './baum';
-import { type Baum } from '../../shared/src/baum';
-import { type LoeschVorschau } from '../../shared/src/loeschbaum';
 import { type AuskunftVorschau, type Datenschutz } from '../../shared/src/auskunft';
 import type { AuskunftEintrag, AuskunftLink } from '../../shared/src/auskunft';
-import { type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
-import { type InstalliertesPaket, type BeispielStand } from '../../shared/src/pakete';
+import { type InstalliertesPaket } from '../../shared/src/pakete';
 import { PaketVolltext } from './paketvolltext';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
@@ -308,7 +304,7 @@ export class Dienst {
     this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste) });
     this.nummernkreise = new Nummernkreise(this.kern, { archivKreis: () => this.mappenArchiv.archivKreis(), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), auftraege: this.auftraege });
     this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
-      schreibeSystemMappe: (typ, id, e, von, kennung) => this.postSystemmappen.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
+      schreibeSystemMappe: (typ, id, e, von, kennung) => this.postSystemmappen.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loeschen.loescheMappeIntern(id, typ, von),
       spiegleBenutzer: (b, von, abwesenheit) => this.postSystemmappen.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.vertretung.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
     });
     this.mappenHistorie = new MappenHistorie(this.kern);
@@ -321,7 +317,7 @@ export class Dienst {
     this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, hinweise: this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung) }, {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich),
       mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d), mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
-      loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
+      loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschen.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
@@ -422,7 +418,7 @@ export class Dienst {
     });
     const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen }, {
       legePostAn: (...a) => this.post.legePostAn(...a), postAufgaben: (id, von) => this.post.postAufgaben(id, von),
-      loeschPruefung: (m, typ, rueck) => this.loeschPruefung(m, typ, rueck), loescheMappe: (id, von, z, anlass) => this.loescheMappe(id, von, z, anlass),
+      loeschPruefung: (m, typ, rueck) => this.loeschen.loeschPruefung(m, typ, rueck), loescheMappe: (id, von, z, anlass) => this.loeschen.loescheMappe(id, von, z, anlass),
     });
     const post = new PostDienst(this.kern, {
       rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen,
@@ -433,7 +429,7 @@ export class Dienst {
       sichereZuordnung: (e, autoTypen) => sichereZuordnung(e as PostErkennung, autoTypen),
     });
     const eingang = new Eingangskanaele(this.kern, { rechte, historie: this.mappenHistorie, dokumente: this.dokumente });
-    const fotos = new PostFotos(this.kern, { rechte, ...mappen, ...doks, pdf, post, eingang }, { loescheMappe: (id, von, z, anlass) => this.loescheMappe(id, von, z, anlass) });
+    const fotos = new PostFotos(this.kern, { rechte, ...mappen, ...doks, pdf, post, eingang }, { loescheMappe: (id, von, z, anlass) => this.loeschen.loescheMappe(id, von, z, anlass) });
     const entsperrtZu = (inhalt: Buffer) => this.geschuetztePdfs.entsperrtZu(inhalt);
     const ausgang = new AusgangDienst(this.kern, {
       rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, versionen: this.dokumentVersionen,
@@ -712,26 +708,18 @@ export class Dienst {
   }
   entschluessele(wert: string): string | null { return this.tresor?.entschluessele(wert) ?? null; }
 
-  entferneMappenEndgueltig(ids: string[]) { return this.loeschen.entferneMappenEndgueltig(ids); }
 
   /* ---------- Beispiel-Mappen aus Paketen (#878, loeschen/beispiele.ts) ---------- */
 
-  beispielStand(ids: string[]): Promise<BeispielStand[]> { return this.beispielMappen.beispielStand(ids); }
-  pruefeBeispiele(staende: BeispielStand[]) { return this.beispielMappen.pruefeBeispiele(staende); }
-  entferneBeispielMappen(ids: string[], von: string | null, weg: 'beispiele' | 'vorgaben' = 'beispiele') { return this.beispielMappen.entferneBeispielMappen(ids, von, weg); }
 
   /* ---------- Nummernkreise (#171) ---------- */
 
-  private loeschPruefung(...a: Parameters<LoeschenDienst['loeschPruefung']>) { return this.loeschen.loeschPruefung(...a); }
 
   /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
 
 
   /* ---------- Wege nach draußen: die gemeinsame Prüfstelle (#723), Stempel, Fassungen (ausgang/ausgang.dienst.ts) ---------- */
 
-  loescheMappen(...a: Parameters<LoeschenDienst['loescheMappen']>) { return this.loeschen.loescheMappen(...a); }
-  loescheMappe(...a: Parameters<LoeschenDienst['loescheMappe']>): Promise<void> { return this.loeschen.loescheMappe(...a); }
-  private loescheMappeIntern(id: string, typ: Mappentyp | undefined, von: string | null = null) { return this.loeschen.loescheMappeIntern(id, typ, von); }
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
@@ -768,24 +756,9 @@ export class Dienst {
 
   /* ---------- Papierkorb (#43, loeschen/papierkorb.ts) ---------- */
 
-  setzePapierkorbTage(eingabe: unknown, von?: string | null): Promise<{ tage: number; geleert: number }> { return this.papierkorbVerwaltung.setzePapierkorbTage(eingabe, von); }
-  papierkorb(ich: { id: string; rolle: string }, alle = false) { return this.papierkorbVerwaltung.papierkorb(ich, alle); }
-  papierkorbDokumente(ich: { id: string; rolle: string }, alle = false): Promise<DokumentImKorb[]> { return this.papierkorbVerwaltung.papierkorbDokumente(ich, alle); }
-  stelleDokumentWiederHer(...a: Parameters<Papierkorb['stelleDokumentWiederHer']>) { return this.papierkorbVerwaltung.stelleDokumentWiederHer(...a); }
-  loescheDokumentEndgueltig(...a: Parameters<Papierkorb['loescheDokumentEndgueltig']>): Promise<number> { return this.papierkorbVerwaltung.loescheDokumentEndgueltig(...a); }
-  papierkorbEintrag(id: string, ich: { id: string; rolle: string }, alle = false) { return this.papierkorbVerwaltung.papierkorbEintrag(id, ich, alle); }
-  stelleWiederHer(...a: Parameters<Papierkorb['stelleWiederHer']>) { return this.papierkorbVerwaltung.stelleWiederHer(...a); }
-  loescheEndgueltig(...a: Parameters<Papierkorb['loescheEndgueltig']>): Promise<number> { return this.papierkorbVerwaltung.loescheEndgueltig(...a); }
-  leerePapierkorb(...a: Parameters<Papierkorb['leerePapierkorb']>): Promise<number> { return this.papierkorbVerwaltung.leerePapierkorb(...a); }
-  raeumePapierkorbAuf(...a: Parameters<Papierkorb['raeumePapierkorbAuf']>): Promise<number> { return this.papierkorbVerwaltung.raeumePapierkorbAuf(...a); }
 
   /* ---------- Löschprotokoll lesen (#470, loeschen/loeschprotokoll.ts) ---------- */
 
-  loeschprotokollJahre(): Promise<number> { return this.loeschprotokollVerwaltung.loeschprotokollJahre(); }
-  setzeLoeschprotokollJahre(eingabe: unknown, von: string): Promise<number> { return this.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(eingabe, von); }
-  loeschprotokoll(q: Record<string, unknown>) { return this.loeschprotokollVerwaltung.loeschprotokoll(q); }
-  loeschprotokollAusgabe(...a: Parameters<LoeschprotokollVerwaltung['loeschprotokollAusgabe']>) { return this.loeschprotokollVerwaltung.loeschprotokollAusgabe(...a); }
-  loeschprotokollAlle(): Promise<LoeschEintrag[]> { return this.loeschprotokollVerwaltung.loeschprotokollAlle(); }
 
   /* ---------- Demo-Daten (#248, datenschutz/datenschutz.dienst.ts) ---------- */
 
@@ -828,14 +801,9 @@ export class Dienst {
 
   /* ---------- Baum-Sammlung über Verweise (#396, #424, loeschen/mit-verknuepften.ts) ---------- */
 
-  baumQuelle(z: Zugriff): BaumQuelle { return this.mitVerknuepften.baumQuelle(z); }
-  baum(startId: string, eingabe: unknown, z: Zugriff): Promise<Baum> { return this.mitVerknuepften.baum(startId, eingabe, z); }
 
   /* ---------- Mappe mit allen verknüpften Mappen löschen (#424, loeschen/mit-verknuepften.ts) ---------- */
 
-  loeschVorschau(startId: string, eingabe: unknown, z: Zugriff): Promise<LoeschVorschau> { return this.mitVerknuepften.loeschVorschau(startId, eingabe, z); }
-  loescheMitVerknuepften(...a: Parameters<MitVerknuepften['loescheMitVerknuepften']>) { return this.mitVerknuepften.loescheMitVerknuepften(...a); }
-  stelleVorgangWiederHer(...a: Parameters<MitVerknuepften['stelleVorgangWiederHer']>) { return this.mitVerknuepften.stelleVorgangWiederHer(...a); }
 
   /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396, datenschutz/datenschutz.dienst.ts) ---------- */
 

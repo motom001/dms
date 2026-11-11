@@ -103,7 +103,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.mappenArchiv.setzeArchivnummer(a.id, 'A-000005', ANNA);
       await d.dokumente.loescheDokument(a.id, ANNA);
       await d.mappenArchiv.setzeArchivnummer(b.id, 'A-000005', ANNA);
-      const r = await d.stelleDokumentWiederHer(a.id, { id: ANNA, rolle: 'mitglied' }, undefined);
+      const r = await d.papierkorbVerwaltung.stelleDokumentWiederHer(a.id, { id: ANNA, rolle: 'mitglied' }, undefined);
       assert.equal(r.dokument.archivnummer ?? null, null);
     });
   });
