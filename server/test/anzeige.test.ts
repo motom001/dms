@@ -269,7 +269,7 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     const lesen = (beruflich: boolean) => rechteAn(mitRegel, m as Mappe, { id: 'jemand', rollen: [] }, { heute: '2026-11-10', ich: 'jemand', meineRollen: [], merkmale: liesMerkmale({ beruflich }) }, { dokumente: () => 0, verknuepfungen: () => 0 }).rechte.R;
     assert.deepEqual([lesen(false), lesen(true)], [true, false]);
     // Automatisierung: Und-Karte mit Merkmal braucht keine Mappe.
-    const ak = await d.automatisierungKontext();
+    const ak = await d.automatisierungshilfen.automatisierungKontext();
     const a = bereinigeAutomatisierung({ name: 'Beruflich', wenn: { art: 'zeitplan', uhrzeit: '08:00', tage: [1] }, und: { modus: 'alle', karten: [{ art: 'bedingung', bedingung: { art: 'merkmal', merkmal: 'beruflich' } }] }, dann: [{ id: 's', art: 'stopp' }] });
     assert.deepEqual(automatisierungsProbleme(a, ak), []);
     const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(), uhr: Date.now });

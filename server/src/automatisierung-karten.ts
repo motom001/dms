@@ -149,6 +149,6 @@ DANN_AUSFUEHRER.paket = async (k: DannKarte, c: KartenKontext) => {
   // Nur Ids, Kennung und Zeit – nie Inhalte der Ablage. Feste Id je Automatisierung, Karte und Tag: Läuft der Zeitplan auf
   // zwei Servern oder wird der Lauf wiederholt, bekommt das Paket den Tag trotzdem nur einmal.
   const id = uuidAus(`zeitplan.ausgefuehrt|${a.id}|${k.id}|${typeof c.daten.tag === 'string' ? c.daten.tag : c.ereignisId}`);
-  await c.dienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
+  await c.dienst.ereignisseDienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
   return uebersetzer2('automatisierung.karte.paket.ergebnis', zeile);
 };

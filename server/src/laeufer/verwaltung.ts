@@ -248,7 +248,7 @@ export class Paketlaeufer implements PaketLaeufer {
   codeGeaendert(): Promise<void> { this.nachlauf.clear(); this.suchvektoren.clear(); return this.synchronisiere().catch((e) => log.error('Paket-Läufer: Pakete nicht neu geladen', { fehler: (e as Error).message })); }
 
 
-  ereignis(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]) { void this.o.dienst.auftrag(paket, name, { felder }); }
+  ereignis(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]) { void this.o.dienst.ereignisseDienst.auftrag(paket, name, { felder }); }
 
   async aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string> {
     if (this.o.pausiert?.()) throw new Error('Während der Wartung laufen keine Pakete. Bitte danach noch einmal.');
@@ -532,7 +532,7 @@ export class Paketlaeufer implements PaketLaeufer {
       }
       if (Date.now() < n.pauseBis) return;
       if (((await this.o.dienst.kern.repo.ereignisStand())[paket]?.offen ?? 0) > 0) return;
-      const ids = await this.o.dienst.vektorNachlauf(paket, n.modell, NACHLAUF_JE_RUNDE, n.nach);
+      const ids = await this.o.dienst.ereignisseDienst.vektorNachlauf(paket, n.modell, NACHLAUF_JE_RUNDE, n.nach);
       if (ids.length) n.nach = ids[ids.length - 1];
       else { n.nach = null; n.pauseBis = Date.now() + NACHLAUF_PAUSE_MS; }
     } catch (e) {

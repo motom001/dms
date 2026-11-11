@@ -156,11 +156,11 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     const x = await aufbau();
     await x.d.ki.setzeKiTyp(x.vertrag.id, true, null);
     const vorher = (await x.repo.faelligeEreignisse(500)).length;
-    assert.equal(await x.d.auftrag('wolke', 'datei.volltext', { dokument: x.kniebrief, mappe: x.befund.id }), 'gesperrt');
+    assert.equal(await x.d.ereignisseDienst.auftrag('wolke', 'datei.volltext', { dokument: x.kniebrief, mappe: x.befund.id }), 'gesperrt');
     assert.equal((await x.repo.faelligeEreignisse(500)).length, vorher, 'gesperrt: kein Auftrag');
-    await x.d.auftrag('wolke', 'datei.volltext', { dokument: x.stromrechnung, mappe: x.strom.id });
+    await x.d.ereignisseDienst.auftrag('wolke', 'datei.volltext', { dokument: x.stromrechnung, mappe: x.strom.id });
     assert.equal((await x.repo.faelligeEreignisse(500)).length, vorher + 1);
-    const ids = await x.d.vektorNachlauf('wolke', 'modell-a', 50, null);
+    const ids = await x.d.ereignisseDienst.vektorNachlauf('wolke', 'modell-a', 50, null);
     assert.ok(ids.includes(x.kniebrief) && ids.includes(x.stromrechnung), 'Stelle rückt über alle weiter');
     const nach = (await x.repo.faelligeEreignisse(500)).filter((e) => e.paketId === 'wolke' && e.daten.nachberechnung);
     assert.deepEqual(nach.map((e) => e.daten.dokument), [x.stromrechnung]);

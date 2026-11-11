@@ -82,7 +82,7 @@ describe('Wenn-Karte „Zeitplan“ (#678)', () => {
     await motor.zeitplan();
     assert.ok(gesendet.includes(lena.id));
     // Nur eine Rolle: die Rolle prüft der Motor über ihre Mitglieder (hier nur Jonas).
-    d.mitgliederDerRolle = async () => [jonas.id];
+    d.automatisierungshilfen.mitgliederDerRolle = async () => [jonas.id];
     const rolle = (await motor.kontext()).rollen[0].id;
     const b = await motor.lege(zusammenfassung({ uhrzeit: '07:00', jeBenutzer: true, rolle, tage: [1, 2, 3, 4, 5, 6, 7] }), admin.id);
     await motor.schalte(b.id, true, admin.id);

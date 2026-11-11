@@ -57,7 +57,7 @@ describe('Automatisierungen (#674): Modell', () => {
 
   it('meldet fehlende Typen, Felder, Ansichten und leere Dann-Bereiche; Kurzform', async () => {
     const { vertrag, d } = await aufbau();
-    const k = await d.automatisierungKontext();
+    const k = await d.automatisierungshilfen.automatisierungKontext();
     const a = bereinigeAutomatisierung({ name: 'X', wenn: { art: 'datum', typ: vertrag.id, feld: 'kuendbar_bis', tage: 7 }, dann: [stopp] });
     assert.deepEqual(automatisierungsProbleme(a, k), []);
     assert.match(kurzform(a, k), /^Wenn Vertrag: Kündbar bis in 7 Tagen → danach keine weiteren$/);

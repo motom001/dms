@@ -1,4 +1,4 @@
-import type { Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Mappentyp, Werte } from '../../shared/src/model';
+import type { Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Mappentyp } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -29,7 +29,6 @@ import { type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
 import { Eingang } from './hochladen';
-import { type KatalogEreignis } from '../../shared/src/ereignisse';
 import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
@@ -326,7 +325,7 @@ export class Dienst {
     this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, hinweise: this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung) }, {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
       mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d), mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
-      loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
@@ -358,18 +357,18 @@ export class Dienst {
     this.ereignisse.abonniere('uebersetzung', (e) => this.uebersetzung.nachEreignis(e));
     this.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
     // Ereigniskatalog (#670): Mappen-Ereignisse und Fristen an die Pakete, die diese Mappentypen abonniert haben.
-    this.ereignisse.abonniere('pakete', (e) => this.ereignisAnPakete(e));
+    this.ereignisse.abonniere('pakete', (e) => this.ereignisseDienst.ereignisAnPakete(e));
     // Volltext aus Paketen (#614): zuständige Pakete mit dms:volltext, Ereignis datei.volltext an genau dieses.
-    this.paketVolltext = new PaketVolltext({ pakete: () => this.repo.listePakete(), melde: (paket, daten) => this.auftrag(paket, 'datei.volltext', daten) });
+    this.paketVolltext = new PaketVolltext({ pakete: () => this.repo.listePakete(), melde: (paket, daten) => this.ereignisseDienst.auftrag(paket, 'datei.volltext', daten) });
   }
   /** Dokumente (#1075): die Klassen in dokumente/; was noch im Dienst liegt, kommt über die Anschlüsse. */
   private baueDokumente() {
     const umwandlung = new DokumentUmwandlung(this.kern, {
       ocr: () => this.dokumente.ocr, entsperren: () => this.geschuetztePdfs.entsperren, paketVolltext: () => this.paketVolltext,
-      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
+      auftrag: (paket, art, daten) => this.ereignisseDienst.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
     });
     const archiv = new DokumentArchivfassung(this.kern, umwandlung, {
-      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
+      auftrag: (paket, art, daten) => this.ereignisseDienst.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
       paketEinstellungen: (paket) => paketEinstellungen(this.kern, paket),
     });
     const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.dokumente.ocr, listeTypen: () => this.mappentypen.listeTypen() });
@@ -420,7 +419,7 @@ export class Dienst {
       volltextFertig: (e, m, von) => this.volltextFertig(e, m, von),
     });
     const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
-      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       passungsAufgaben: (liste) => this.passungsAufgaben(liste), favoritenFreigabe: () => this.favoritenFreigabe(),
       vorgabeAufgabenEmpfaenger: (b) => this.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.sichereSystem(), konten: () => this.konten,
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
@@ -432,8 +431,8 @@ export class Dienst {
     const post = new PostDienst(this.kern, {
       rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen,
     }, {
-      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
-      verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.neueAufgabe(a, typ), leiteUm: (a) => this.leiteUm(a),
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
+      verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.ereignisseDienst.neueAufgabe(a, typ), leiteUm: (a) => this.leiteUm(a),
       eigeneAufgabe: (id, ich) => this.eigeneAufgabe(id, ich), erledigeNachAnlass: (id, passt, grund) => this.erledigeNachAnlass(id, passt, grund), konten: () => this.konten,
       sichereZuordnung: (e, autoTypen) => sichereZuordnung(e as PostErkennung, autoTypen),
     });
@@ -583,7 +582,6 @@ export class Dienst {
 
   /* ---------- Suche (#964: in suche/suche.dienst.ts) ---------- */
 
-  vektorNachlauf(paket: string, modell: string, max: number, nach: string | null): Promise<string[]> { return this.ereignisseDienst.vektorNachlauf(paket, modell, max, nach); }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion (Kern). */
   private get repo(): Repo { return this.kern.repo; }
@@ -793,10 +791,6 @@ export class Dienst {
   ereignisseRuhen?: () => boolean | Promise<boolean>;
 
 
-  private neueAufgabe(a: Aufgabe, typ?: string): Promise<Aufgabe> { return this.ereignisseDienst.neueAufgabe(a, typ); }
-  private meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) { return this.ereignisseDienst.meldeVerknuepft(typ, mappeId, alt, neu, von); }
-  private ereignisAnPakete(e: KatalogEreignis) { return this.ereignisseDienst.ereignisAnPakete(e); }
-  auftrag(...a: Parameters<EreignisseDienst['auftrag']>) { return this.ereignisseDienst.auftrag(...a); }
 
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
   verschluesselePaketGeheimnis(text: string): string {
@@ -893,15 +887,9 @@ export class Dienst {
 
   /* ---------- Hilfen für Automatisierungen (#674, ereignisse/automatisierung.ts) ---------- */
 
-  automatisierungKontext() { return this.automatisierungshilfen.automatisierungKontext(); }
-  mitgliederDerRolle(rolleId: string): Promise<string[]> { return this.automatisierungshilfen.mitgliederDerRolle(rolleId); }
-  trifftTeile(...a: Parameters<Automatisierungshilfen['trifftTeile']>) { return this.automatisierungshilfen.trifftTeile(...a); }
-  lesbareTitel(z: Zugriff, ids: string[]): Promise<Map<string, string>> { return this.automatisierungshilfen.lesbareTitel(z, ids); }
   aufgabenEmpfaenger(id: string): Promise<{ an: string | null; ueber: string[] }> { return this.aufgaben.aufgabenEmpfaenger(id); }
   aufgabeAusAutomatisierung(...a: Parameters<AufgabenDienst['aufgabeAusAutomatisierung']>) { return this.aufgaben.aufgabeAusAutomatisierung(...a); }
   private erledigeNachAnlass(...a: Parameters<AufgabenDienst['erledigeNachAnlass']>) { return this.aufgaben.erledigeNachAnlass(...a); }
-  datumVon(mappeId: string, feld: string): Promise<string | null> { return this.automatisierungshilfen.datumVon(mappeId, feld); }
-  mappenMitDatum(typId: string, feld: string, datum: string): Promise<string[]> { return this.automatisierungshilfen.mappenMitDatum(typId, feld, datum); }
 
   /* ---------- Papierkorb (#43, loeschen/papierkorb.ts) ---------- */
 
