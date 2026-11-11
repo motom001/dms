@@ -524,14 +524,14 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     const h = (await x.d.mappenHistorie.historie(x.m.id)).filter((e) => e.art === 'weitergegeben');
     assert.ok(h.some((e) => /über die API \(Archivfassung\)/.test(String(e.daten.text))), 'Historie vermerkt die Weitergabe');
     // Seitenbilder: aus der gestempelten Kopie (Graustufen); die Oberfläche bekommt sie wie abgelegt.
-    const ui = await x.d.seiteAlsGraubild(id, 1, 72);
+    const ui = await x.d.pdfBearbeiten.seiteAlsGraubild(id, 1, 72);
     const api = (await mensch('/api/dokumente/:id/seiten/:nr/scan', { id, nr: '1' }, { dpi: '72' })).datei.inhalt;
     assert.equal(api.length, ui.length, 'gleiche Größe');
     assert.ok(!api.equals(ui), 'mit Stempel');
-    assert.ok((await x.d.seiteAlsGraubild(id, 1, 72)).equals(ui), 'ohne API-Schlüssel wie abgelegt');
+    assert.ok((await x.d.pdfBearbeiten.seiteAlsGraubild(id, 1, 72)).equals(ui), 'ohne API-Schlüssel wie abgelegt');
     // Das Seitenbild der Seitenansicht ebenso.
     const bildApi = (await mensch('/api/dokumente/:id/seiten/:nr/bild', { id, nr: '1' })).datei.inhalt;
-    const bildUi = (await x.d.pdfSeitenbild(id, 1))!;
+    const bildUi = (await x.d.pdfBearbeiten.pdfSeitenbild(id, 1))!;
     assert.ok(!bildApi.equals(bildUi));
     // Ohne Pflicht: die Archivfassung, wie sie ist.
     await x.d.mappentypen.aendereTyp(typ.id, { ...typ, stempel: null } as never);

@@ -152,10 +152,10 @@ describe('Am Dokument (#393)', () => {
   it('neue Version, Volltext bleibt, Historie, kein Ereignis dokument.hochgeladen', async () => {
     const { d, m, dokument, ereignisse } = await aufbau();
     await (d as unknown as { repo: { ocrSetze(id: string, e: object): Promise<void> } }).repo.ocrSetze(dokument.id, { stand: 'fertig', text: 'erkannter Text', seiten: 2, info: 'Texterkennung' });
-    const v = await d.verkleinernVorschau(dokument.id);
+    const v = await d.pdfVerkleinern.verkleinernVorschau(dokument.id);
     assert.equal(v.versioniert, true);
     assert.equal(v.groesse, gross.length);
-    const r = await d.verkleinereDokument(dokument.id, { stufe: 'standard' }, ich.id);
+    const r = await d.pdfVerkleinern.verkleinereDokument(dokument.id, { stufe: 'standard' }, ich.id);
     assert.equal(r.unveraendert, false);
     assert.match(r.meldung, /^Verkleinert von \d+,\d MB auf \d+ KB \(−\d+ %\)\.$/);
     assert.equal(r.dokument.version, 2);
@@ -168,7 +168,7 @@ describe('Am Dokument (#393)', () => {
     assert.match(String(h.daten.text), /^verkleinert von .* MB auf .* KB \(−\d+ %\), Stufe Standard \(150 dpi\)$/);
     assert.deepEqual(ereignisse, [], 'eine neue Version löst kein dokument.hochgeladen aus');
     // Nochmal: lohnt nicht mehr → unverändert mit Meldung.
-    const z = await d.verkleinereDokument(dokument.id, { stufe: 'standard' }, ich.id);
+    const z = await d.pdfVerkleinern.verkleinereDokument(dokument.id, { stufe: 'standard' }, ich.id);
     assert.equal(z.unveraendert, true);
     assert.match(z.meldung, /bleibt unverändert/);
     assert.equal((await d.dokumente.holeDokument(dokument.id)).version, 2);
@@ -176,8 +176,8 @@ describe('Am Dokument (#393)', () => {
 
   it('ohne Versionierung: nur mit Bestätigung, das bisherige kommt in den Papierkorb', async () => {
     const { d, m, dokument } = await aufbau(false);
-    await assert.rejects(d.verkleinereDokument(dokument.id, {}, ich.id), status(409, /Bitte bestätigen/));
-    const r = await d.verkleinereDokument(dokument.id, { bestaetigt: true }, ich.id);
+    await assert.rejects(d.pdfVerkleinern.verkleinereDokument(dokument.id, {}, ich.id), status(409, /Bitte bestätigen/));
+    const r = await d.pdfVerkleinern.verkleinereDokument(dokument.id, { bestaetigt: true }, ich.id);
     assert.notEqual(r.dokument.id, dokument.id);
     assert.equal(r.dokument.name, 'scan.pdf');
     const liste = (await d.mappen.holeMappe(m.id)).dokumente;
@@ -188,12 +188,12 @@ describe('Am Dokument (#393)', () => {
   it('Sammelaktion: Liste nach Größe mit Schätzung, Hintergrundauftrag, ohne Original', async () => {
     const { d, m, dokument } = await aufbau();
     const klein = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf', typ: 'application/pdf' }, await textPdf(), null)).dokument;
-    const l = await d.grosseDokumente({ ab: 1 });
+    const l = await d.pdfVerkleinern.grosseDokumente({ ab: 1 });
     assert.deepEqual(l.eintraege.map((x) => x.id), [dokument.id], 'nur große PDFs');
     assert.equal(l.eintraege[0].mappeTitel, 'Strom');
     assert.ok(l.eintraege[0].lohnt && l.geschaetzteErsparnis > gross.length / 2);
-    assert.equal((await d.grosseDokumente({ ab: 0 })).eintraege.at(-1)!.id, klein.id, 'größte zuerst');
-    const a = d.verkleinereViele({ ids: [dokument.id, klein.id], stufe: 'bildschirm', ohneOriginal: true }, { id: ich.id, email: ich.email });
+    assert.equal((await d.pdfVerkleinern.grosseDokumente({ ab: 0 })).eintraege.at(-1)!.id, klein.id, 'größte zuerst');
+    const a = d.pdfVerkleinern.verkleinereViele({ ids: [dokument.id, klein.id], stufe: 'bildschirm', ohneOriginal: true }, { id: ich.id, email: ich.email });
     assert.equal(a.phasen[0].einheit, 'Dokumente');
     const fertig = (await d.auftraege.warte())!;
     assert.equal(fertig.status, 'fertig');
@@ -206,9 +206,9 @@ describe('Am Dokument (#393)', () => {
 
   it('automatisch verkleinern ab einer Größe (Standard aus)', async () => {
     const { d, m } = await aufbau();
-    assert.equal((await d.verkleinernEinstellung()).automatisch, false);
-    await assert.rejects(d.setzeVerkleinernEinstellung({ automatisch: true, abMb: 0, stufe: 'standard' }), status(422));
-    await d.setzeVerkleinernEinstellung({ automatisch: true, abMb: 1, stufe: 'standard' });
+    assert.equal((await d.pdfVerkleinern.verkleinernEinstellung()).automatisch, false);
+    await assert.rejects(d.pdfVerkleinern.setzeVerkleinernEinstellung({ automatisch: true, abMb: 0, stufe: 'standard' }), status(422));
+    await d.pdfVerkleinern.setzeVerkleinernEinstellung({ automatisch: true, abMb: 1, stufe: 'standard' });
     const r = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'neu.pdf', typ: 'application/pdf' }, gross, null);
     assert.ok(r.dokument.groesse < gross.length / 4);
     assert.ok('verkleinert' in r && r.verkleinert);
@@ -288,13 +288,13 @@ describe('Große PDFs in PostgreSQL (#393)', { skip: process.env.TEST_DATABASE_U
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom' } }, null);
     const g = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf' }, gross, null)).dokument;
     const k = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf' }, await textPdf(), null)).dokument;
-    assert.deepEqual((await d.grosseDokumente({ ab: 0 })).eintraege.map((x) => x.id), [g.id, k.id]);
-    d.verkleinereViele({ ids: [g.id], ohneOriginal: true }, { id: null, email: 'admin@example.org' });
+    assert.deepEqual((await d.pdfVerkleinern.grosseDokumente({ ab: 0 })).eintraege.map((x) => x.id), [g.id, k.id]);
+    d.pdfVerkleinern.verkleinereViele({ ids: [g.id], ohneOriginal: true }, { id: null, email: 'admin@example.org' });
     assert.equal((await d.auftraege.warte())!.status, 'fertig');
     const neu = await d.dokumente.holeDokument(g.id);
     assert.equal(neu.version, 2);
     assert.ok(neu.groesse < gross.length / 4);
     assert.equal((await d.dokumentVersionen.versionen(g.id)).aeltere.length, 0);
-    assert.deepEqual((await d.grosseDokumente({ ab: 1 })).eintraege, []);
+    assert.deepEqual((await d.pdfVerkleinern.grosseDokumente({ ab: 1 })).eintraege, []);
   });
 });

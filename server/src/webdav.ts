@@ -241,7 +241,7 @@ export class Webdav {
     if (hat('aktiv') && typeof x.aktiv !== 'boolean') throw new Fachfehler(422, t('meldungen.webdav.aktiv-true-oder-false'));
     if (hat('nurLesend') && typeof x.nurLesend !== 'boolean') throw new Fachfehler(422, t('api.webdav.nur-lesend-ungueltig'));
     if (hat('stempel') && x.stempel !== null && typeof x.stempel !== 'string') throw new Fachfehler(422, t('api.webdav.stempel-ungueltig'));
-    if (hat('stempel') && x.stempel && !(await this.d.dienst.stempelVorlagen()).some((v) => v.id === x.stempel)) throw new Fachfehler(422, t('api.webdav.vorlage-fehlt'));
+    if (hat('stempel') && x.stempel && !(await this.d.dienst.stempelvorlagen.stempelVorlagen()).some((v) => v.id === x.stempel)) throw new Fachfehler(422, t('api.webdav.vorlage-fehlt'));
     const vorher = await this.einstellung();
     const neu: WebdavEinstellung = {
       aktiv: hat('aktiv') ? x.aktiv as boolean : vorher.aktiv,
@@ -261,7 +261,7 @@ export class Webdav {
     return {
       einstellung: await this.einstellung(), adresse: `${basis}${WEBDAV_PFAD}/`, https: basis.startsWith('https://'),
       grenze: this.grenze.grenze, anfragen: this.anfragen, zugriffe: [...this.zugriffe].reverse(),
-      vorlagen: (await this.d.dienst.stempelVorlagen()).map((v) => ({ id: v.id, name: v.name, text: v.text })),
+      vorlagen: (await this.d.dienst.stempelvorlagen.stempelVorlagen()).map((v) => ({ id: v.id, name: v.name, text: v.text })),
     };
   }
 

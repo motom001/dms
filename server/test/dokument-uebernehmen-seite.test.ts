@@ -278,9 +278,9 @@ describe('Dokument übernehmen: Seitenbild der Archivfassung (#934)', () => {
     await d.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
     const post = await d.legePostAn({ betreff: 'Brief' }, { id: LENA, name: 'Lena' });
     const dok = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), LENA)).dokument;
-    assert.equal(await d.archivSeitenbild(dok.id, 1), null);
-    assert.equal(await d.archivSeitenbild(dok.id, 0), null);
-    await assert.rejects(d.archivSeitenbild('00000000-0000-4000-8000-00000000dead', 1), status(404));
+    assert.equal(await d.schwaerzen.archivSeitenbild(dok.id, 1), null);
+    assert.equal(await d.schwaerzen.archivSeitenbild(dok.id, 0), null);
+    await assert.rejects(d.schwaerzen.archivSeitenbild('00000000-0000-4000-8000-00000000dead', 1), status(404));
   });
 });
 

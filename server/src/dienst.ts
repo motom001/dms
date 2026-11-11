@@ -18,7 +18,6 @@ import type { AuskunftEintrag, AuskunftLink } from '../../shared/src/auskunft';
 import { type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
-import { type StempelTyp } from '../../shared/src/stempel';
 import { type InstalliertesPaket, type BeispielStand } from '../../shared/src/pakete';
 import { PaketVolltext } from './paketvolltext';
 import { FragenAnDieAblage } from './fragen';
@@ -27,7 +26,6 @@ import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
 import { type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
-import { Eingang } from './hochladen';
 import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
@@ -303,7 +301,7 @@ export class Dienst {
     this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.rechtepruefung.zugriff(ich) });
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
     this.mappentypen = new MappentypenDienst(this.kern, {
-      mitStempel: (typen) => this.mitStempel(typen), pruefeStempelTyp: (v) => this.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.setzeStempelTyp(id, st),
+      mitStempel: (typen) => this.mitStempel(typen), pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
       erkennung: () => this.erkennung, berechtigungenAusEingabe: (typ, e) => this.berechtigungen.berechtigungenAusEingabe(typ, e),
       protokolliereBerechtigungen: (typ, n) => Dienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => Dienst.konfigurationKonflikt(art, aktuell),
     });
@@ -376,7 +374,7 @@ export class Dienst {
       aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
     });
     const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
-      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.automatischVerkleinert(ein, name),
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.pdfVerkleinern.automatischVerkleinert(ein, name),
       volltextFertig: (e, m) => this.volltexte.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
       pruefeArchivDokument: (id, was) => this.mappenArchiv.pruefeArchivDokument(id, was),
     });
@@ -893,21 +891,9 @@ export class Dienst {
 
   /* ---------- Stempel beim Weitergeben (#394, pdf-bearbeiten/stempelvorlagen.ts) ---------- */
 
-  stempelVorlagen() { return this.stempelvorlagen.stempelVorlagen(); }
-  speichereStempelVorlage(id: string | null, eingabe: unknown, von: string) { return this.stempelvorlagen.speichereStempelVorlage(id, eingabe, von); }
-  loescheStempelVorlage(id: string, von: string) { return this.stempelvorlagen.loescheStempelVorlage(id, von); }
-  private pruefeStempelTyp(v: unknown) { return this.stempelvorlagen.pruefeStempelTyp(v); }
-  private setzeStempelTyp(typId: string, st: StempelTyp | null) { return this.stempelvorlagen.setzeStempelTyp(typId, st); }
 
   /* ---------- PDF bearbeiten (#335, pdf-bearbeiten/pdf-bearbeiten.dienst.ts) ---------- */
 
-  /** Seitenbilder der Seitenansicht (im Arbeitsspeicher, für die letzten Dokumente). */
-  get seitenbilder() { return this.pdfBearbeiten.seitenbilder; }
-  seiteAlsGraubild(...a: Parameters<PdfBearbeiten['seiteAlsGraubild']>) { return this.pdfBearbeiten.seiteAlsGraubild(...a); }
-  pdfSeiten(id: string) { return this.pdfBearbeiten.pdfSeiten(id); }
-  pdfSeitenbild(...a: Parameters<PdfBearbeiten['pdfSeitenbild']>) { return this.pdfBearbeiten.pdfSeitenbild(...a); }
-  bearbeitePdf(id: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.pdfBearbeiten.bearbeitePdf(id, eingabe, von, z); }
-  fuegePdfZusammen(eingabe: unknown, von: string | null, z?: Zugriff) { return this.pdfBearbeiten.fuegePdfZusammen(eingabe, von, z); }
 
   /* ---------- Post fotografieren (#490, post/foto.ts) ---------- */
 
@@ -917,20 +903,9 @@ export class Dienst {
 
   /* ---------- PDF verkleinern (#393, pdf-bearbeiten/verkleinern.ts) ---------- */
 
-  verkleinernVorschau(id: string) { return this.pdfVerkleinern.verkleinernVorschau(id); }
-  verkleinereDokument(id: string, eingabe: unknown, von: string | null) { return this.pdfVerkleinern.verkleinereDokument(id, eingabe, von); }
-  verkleinernEinstellung() { return this.pdfVerkleinern.verkleinernEinstellung(); }
-  setzeVerkleinernEinstellung(eingabe: unknown) { return this.pdfVerkleinern.setzeVerkleinernEinstellung(eingabe); }
-  private automatischVerkleinert(ein: Eingang, name: string) { return this.pdfVerkleinern.automatischVerkleinert(ein, name); }
-  grosseDokumente(f: { ab?: unknown; stufe?: unknown }) { return this.pdfVerkleinern.grosseDokumente(f); }
-  verkleinereViele(eingabe: unknown, von: { id: string | null; email: string }) { return this.pdfVerkleinern.verkleinereViele(eingabe, von); }
 
   /* ---------- Schwärzen (#392, pdf-bearbeiten/schwaerzen.ts) ---------- */
 
-  schwaerzenVorschau(id: string) { return this.schwaerzen.schwaerzenVorschau(id); }
-  schwaerzSeitenbild(...a: Parameters<Schwaerzen['schwaerzSeitenbild']>) { return this.schwaerzen.schwaerzSeitenbild(...a); }
-  archivSeitenbild(id: string, nr: number) { return this.schwaerzen.archivSeitenbild(id, nr); }
-  schwaerzeDokument(id: string, eingabe: unknown, von: string | null) { return this.schwaerzen.schwaerzeDokument(id, eingabe, von); }
 
   /* ---------- Archivnummer (#345) ---------- */
 

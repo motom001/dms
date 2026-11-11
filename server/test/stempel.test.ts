@@ -199,23 +199,23 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'weitergegeben');
     assert.match(String(h[0].daten.text), /an Steuerbüro \(als ZIP exportiert: ausweis\.pdf\)/);
     // Vorlage in Gebrauch lässt sich nicht löschen; unbekannte Vorlage am Typ wird abgelehnt.
-    await assert.rejects(d.loescheStempelVorlage('kopie', 'admin'), status(409, /Ausweis/));
+    await assert.rejects(d.stempelvorlagen.loescheStempelVorlage('kopie', 'admin'), status(409, /Ausweis/));
     await assert.rejects(d.mappentypen.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'weg' } }), status(422));
   });
 
   it('Vorlagen anlegen, ändern, prüfen und löschen', async () => {
     const { d } = await aufbau();
-    assert.deepEqual((await d.stempelVorlagen()).map((v) => v.name), ['Kopie für …', 'Nur zur Vorlage bei …', 'Entwurf', 'Vertraulich', 'Aus Ablago (Laufwerk)']);
-    const l = await d.speichereStempelVorlage(null, { name: 'Steuerberater', text: 'Für {empfänger} – {datum}', lage: 'fuss', deckkraft: 0.9 }, 'admin');
+    assert.deepEqual((await d.stempelvorlagen.stempelVorlagen()).map((v) => v.name), ['Kopie für …', 'Nur zur Vorlage bei …', 'Entwurf', 'Vertraulich', 'Aus Ablago (Laufwerk)']);
+    const l = await d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Steuerberater', text: 'Für {empfänger} – {datum}', lage: 'fuss', deckkraft: 0.9 }, 'admin');
     const neu = l.find((v) => v.name === 'Steuerberater')!;
     assert.equal(neu.lage, 'fuss');
-    await assert.rejects(d.speichereStempelVorlage(null, { name: 'entwurf', text: 'x' }, 'admin'), status(422, /Namen/));
-    await assert.rejects(d.speichereStempelVorlage(null, { name: 'Y', text: '{unbekannt}' }, 'admin'), status(422, /Platzhalter/));
-    await d.speichereStempelVorlage(neu.id, { text: 'Geändert' }, 'admin');
-    assert.equal((await d.stempelVorlagen()).find((v) => v.id === neu.id)!.text, 'Geändert');
-    assert.equal((await d.loescheStempelVorlage(neu.id, 'admin')).length, 5);
+    await assert.rejects(d.stempelvorlagen.speichereStempelVorlage(null, { name: 'entwurf', text: 'x' }, 'admin'), status(422, /Namen/));
+    await assert.rejects(d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Y', text: '{unbekannt}' }, 'admin'), status(422, /Platzhalter/));
+    await d.stempelvorlagen.speichereStempelVorlage(neu.id, { text: 'Geändert' }, 'admin');
+    assert.equal((await d.stempelvorlagen.stempelVorlagen()).find((v) => v.id === neu.id)!.text, 'Geändert');
+    assert.equal((await d.stempelvorlagen.loescheStempelVorlage(neu.id, 'admin')).length, 5);
     // Die Vorlage des WebDAV-Laufwerks (#722) lässt sich nicht löschen, solange das Laufwerk mit ihr stempelt.
-    await assert.rejects(d.loescheStempelVorlage('webdav', 'admin'), status(409, /WebDAV-Laufwerk/));
+    await assert.rejects(d.stempelvorlagen.loescheStempelVorlage('webdav', 'admin'), status(409, /WebDAV-Laufwerk/));
   });
 
   it('Bild herunterladen mit Stempel wird zum PDF', async () => {

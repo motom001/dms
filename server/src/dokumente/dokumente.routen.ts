@@ -79,7 +79,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       // Mit API-Schlüssel und Stempel (#799): Seite 1 der gestempelten Kopie statt des abgelegten Vorschaubilds.
       const q = await seitenquelle(a, mappeId);
       if (q) {
-        const s1 = await dienst.pdfSeitenbild(a.params.id, 1, q);
+        const s1 = await dienst.pdfBearbeiten.pdfSeitenbild(a.params.id, 1, q);
         if (!s1) throw new Fachfehler(404, t('meldungen.routen.fuer-dieses-dokument-gibt'));
         return abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: true }, { datei: { inhalt: s1, name: 'vorschau.jpg', mime: 'image/jpeg', anzeigen: true, groesse: s1.length, koepfe: { 'cache-control': 'no-store' } } });
       }
@@ -204,7 +204,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const farbe = a.query.farbe === '1' || a.query.farbe === 'true';
       // Mit API-Schlüssel und Stempel (#799): die Seite der gestempelten Kopie.
       const q = await seitenquelle(a, mappeId);
-      const bild = await dienst.seiteAlsGraubild(a.params.id, Number(a.params.nr), dpi, farbe, q);
+      const bild = await dienst.pdfBearbeiten.seiteAlsGraubild(a.params.id, Number(a.params.nr), dpi, farbe, q);
       return abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, { datei: { inhalt: bild, name: `seite-${a.params.nr}.${farbe ? 'ppm' : 'pgm'}`, mime: farbe ? 'image/x-portable-pixmap' : 'image/x-portable-graymap', anzeigen: false, groesse: bild.length } });
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung', zugang: 'angemeldet', handler: async (a) => {
@@ -250,13 +250,13 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     /* PDF bearbeiten (#335): Seiten ansehen mit „Lesen“, bearbeiten mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.pdfSeiten(a.params.id));
+      return ok(await dienst.pdfBearbeiten.pdfSeiten(a.params.id));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/bild', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       const q = await seitenquelle(a, mappeId);
-      const bild = await dienst.pdfSeitenbild(a.params.id, Number(a.params.nr), q);
+      const bild = await dienst.pdfBearbeiten.pdfSeitenbild(a.params.id, Number(a.params.nr), q);
       if (!bild) throw new Fachfehler(404, t('meldungen.routen.fuer-diese-seite-gibt'));
       const antwort: Antwort = { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': t('meldungen.routen.private-max-age-3600') } } };
       // Seitenbilder über einen API-Schlüssel sind ein Abruf (#799, #800); in der Oberfläche nur Anzeige.
@@ -264,42 +264,42 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/seiten', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      return ok(await dienst.bearbeitePdf(a.params.id, a.body, ich(a).id, await zg(a)), 201);
+      return ok(await dienst.pdfBearbeiten.bearbeitePdf(a.params.id, a.body, ich(a).id, await zg(a)), 201);
     } },
-    { methode: 'POST', pfad: '/api/dokumente/zusammenfuegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fuegePdfZusammen(a.body, ich(a).id, await zg(a)), 201) },
+    { methode: 'POST', pfad: '/api/dokumente/zusammenfuegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.pdfBearbeiten.fuegePdfZusammen(a.body, ich(a).id, await zg(a)), 201) },
     /* Schwärzen (#392): Ansehen und Analyse mit „Lesen“, Schwärzen (neues Dokument bzw. Version) mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.schwaerzenVorschau(a.params.id));
+      return ok(await dienst.schwaerzen.schwaerzenVorschau(a.params.id));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/schwaerzen/seiten/:nr', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       const q = await seitenquelle(a, mappeId);
       // ?fassung=archiv (#934): die Seite der Archivfassung (PDF/A) – nicht mit Pflichtstempel, der gilt dem Original.
-      const bild = a.query.fassung === 'archiv' && !q ? await dienst.archivSeitenbild(a.params.id, Number(a.params.nr)) : await dienst.schwaerzSeitenbild(a.params.id, Number(a.params.nr), q);
+      const bild = a.query.fassung === 'archiv' && !q ? await dienst.schwaerzen.archivSeitenbild(a.params.id, Number(a.params.nr)) : await dienst.schwaerzen.schwaerzSeitenbild(a.params.id, Number(a.params.nr), q);
       if (!bild) throw new Fachfehler(404, t('meldungen.routen.fuer-diese-seite-gibt'));
       const antwort: Antwort = { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': t('meldungen.routen.private-max-age-3600') } } };
       return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, antwort) : antwort;
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      return ok(await dienst.schwaerzeDokument(a.params.id, a.body, ich(a).id), 201);
+      return ok(await dienst.schwaerzen.schwaerzeDokument(a.params.id, a.body, ich(a).id), 201);
     } },
     /* PDF verkleinern (#393): Schätzung mit „Lesen“, Verkleinern (neue Version) mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.verkleinernVorschau(a.params.id));
+      return ok(await dienst.pdfVerkleinern.verkleinernVorschau(a.params.id));
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      const r = await dienst.verkleinereDokument(a.params.id, a.body, ich(a).id);
+      const r = await dienst.pdfVerkleinern.verkleinereDokument(a.params.id, a.body, ich(a).id);
       return ok(r, r.unveraendert ? 200 : 201);
     } },
-    { methode: 'GET', pfad: '/api/werkbank/verkleinern', zugang: 'admin', handler: async (a) => ok(await dienst.grosseDokumente(a.query)) },
-    { methode: 'POST', pfad: '/api/werkbank/verkleinern', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.verkleinereViele(a.body, { id: ich(a).id, email: ich(a).email })), 202) },
-    { methode: 'GET', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async () => ok(await dienst.verkleinernEinstellung()) },
-    { methode: 'PUT', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async (a) => ok(await dienst.setzeVerkleinernEinstellung(a.body)) },
+    { methode: 'GET', pfad: '/api/werkbank/verkleinern', zugang: 'admin', handler: async (a) => ok(await dienst.pdfVerkleinern.grosseDokumente(a.query)) },
+    { methode: 'POST', pfad: '/api/werkbank/verkleinern', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.pdfVerkleinern.verkleinereViele(a.body, { id: ich(a).id, email: ich(a).email })), 202) },
+    { methode: 'GET', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async () => ok(await dienst.pdfVerkleinern.verkleinernEinstellung()) },
+    { methode: 'PUT', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async (a) => ok(await dienst.pdfVerkleinern.setzeVerkleinernEinstellung(a.body)) },
     /* Archivnummer (#345): setzen mit „Bearbeiten“, suchen mit „Lesen“, Aufkleber in der Werkbank. */
     { methode: 'PUT', pfad: '/api/dokumente/:id/archivnummer', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');

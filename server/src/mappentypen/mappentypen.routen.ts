@@ -14,10 +14,10 @@ export function typenRouten(k: RoutenKontext): Route[] {
   const { dienst, typName, zg, demoPlatz } = k;
   return [
     /* ---------- Stempel beim Weitergeben (#394) ---------- */
-    { methode: 'GET', pfad: '/api/stempel/vorlagen', zugang: 'angemeldet', handler: async () => ok(await dienst.stempelVorlagen()) },
-    { methode: 'POST', pfad: '/api/werkbank/stempel/vorlagen', zugang: 'admin', handler: async (a) => ok(await dienst.speichereStempelVorlage(null, a.body, ich(a).email), 201) },
-    { methode: 'PUT', pfad: '/api/werkbank/stempel/vorlagen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.speichereStempelVorlage(a.params.id, a.body, ich(a).email)) },
-    { methode: 'DELETE', pfad: '/api/werkbank/stempel/vorlagen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.loescheStempelVorlage(a.params.id, ich(a).email)) },
+    { methode: 'GET', pfad: '/api/stempel/vorlagen', zugang: 'angemeldet', handler: async () => ok(await dienst.stempelvorlagen.stempelVorlagen()) },
+    { methode: 'POST', pfad: '/api/werkbank/stempel/vorlagen', zugang: 'admin', handler: async (a) => ok(await dienst.stempelvorlagen.speichereStempelVorlage(null, a.body, ich(a).email), 201) },
+    { methode: 'PUT', pfad: '/api/werkbank/stempel/vorlagen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.stempelvorlagen.speichereStempelVorlage(a.params.id, a.body, ich(a).email)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/stempel/vorlagen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.stempelvorlagen.loescheStempelVorlage(a.params.id, ich(a).email)) },
 
     /* ---------- Mappentypen ---------- */
     // Regeln (#123) sehen nur Administratoren; alle anderen erfahren, ob sie anlegen dürfen.

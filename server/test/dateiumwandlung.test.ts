@@ -226,9 +226,9 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     assert.equal(vf[0].daten.original, 'image/gif');
     assert.equal(vf[0].daten.text, false);
     // Das Paket Texterkennung holt die Seite – aus der Fassung (pdftoppm wie bei PNG).
-    const seite = await x.d.seiteAlsGraubild(id, 1, 300);
+    const seite = await x.d.pdfBearbeiten.seiteAlsGraubild(id, 1, 300);
     assert.equal(seite.subarray(0, 2).toString('latin1'), 'P5');
-    await assert.rejects(x.d.seiteAlsGraubild(id, 2, 300), (e: { status?: number }) => e.status === 404);
+    await assert.rejects(x.d.pdfBearbeiten.seiteAlsGraubild(id, 2, 300), (e: { status?: number }) => e.status === 404);
     // Schreibt es den Volltext, ist der als „aus der umgewandelten Fassung“ gekennzeichnet; das Ereignis nennt beides.
     await x.d.volltexte.schreibeVolltext(id, { text: TEXT }, { id: 'konto', herkunft: 'Texterkennung 2.0.0', paket: true });
     const dok = await x.dok(id);

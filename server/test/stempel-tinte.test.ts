@@ -54,7 +54,7 @@ describe('Deckkraft und „wie Tinte“ (#799)', () => {
     assert.equal(stempelAus({ tinte: 'false' }, NEUER_STEMPEL).tinte, false);
     // Im Dienst: neue Vorlage ohne Angaben bekommt die Vorgaben.
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const l = await d.speichereStempelVorlage(null, { name: 'Nur für Lena', text: 'Nur für {empfänger}' }, 'admin');
+    const l = await d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Nur für Lena', text: 'Nur für {empfänger}' }, 'admin');
     const neu = l.find((v) => v.name === 'Nur für Lena')!;
     assert.equal(neu.deckkraft, 0.7); assert.equal(neu.tinte, true);
   });
@@ -126,13 +126,13 @@ describe('Entfallene Haken (#799): Umstellung, bei der sich nichts heimlich änd
     const einstellungen = speicherEinstellungen();
     await einstellungen.schreibe('stempel', { vorlagen: ALT, typen: {} });
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
-    await d.speichereStempelVorlage('entwurf', { text: 'ENTWURF!' }, 'admin');
+    await d.stempelvorlagen.speichereStempelVorlage('entwurf', { text: 'ENTWURF!' }, 'admin');
     const gespeichert = (await einstellungen.lies('stempel')) as { vorlagen: Array<Record<string, unknown>> };
     assert.equal(gespeichert.vorlagen[0].umgestellt, true, 'Markierung bleibt gespeichert');
     assert.equal(gespeichert.vorlagen[0].text, 'Kopie für {empfänger}\n{archivnummer} · Seite {seite} von {seiten}');
     // „So lassen“ in der Werkbank speichert die Vorlage, wie sie ist – danach kein Hinweis mehr.
-    const k = (await d.stempelVorlagen()).find((v) => v.id === 'kopie')!;
-    const l = await d.speichereStempelVorlage('kopie', { name: k.name, text: k.text }, 'admin');
+    const k = (await d.stempelvorlagen.stempelVorlagen()).find((v) => v.id === 'kopie')!;
+    const l = await d.stempelvorlagen.speichereStempelVorlage('kopie', { name: k.name, text: k.text }, 'admin');
     assert.equal(l.find((v) => v.id === 'kopie')!.umgestellt, undefined);
   });
 
