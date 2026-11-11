@@ -13,6 +13,7 @@
   "umwandeln.grund.weg": "Die Mappe gibt es nicht mehr.",
   "umwandeln.grund.geaendert": "Seit der Umwandlung geändert – bitte von Hand prüfen.",
   "umwandeln.grund.frist": "Aufbewahrungsfrist bis {bis} (Archivmodus) – wird nicht geändert.",
+  "umwandeln.grund.frist-offen": "Aufbewahrungsfrist beginnt mit „{feld}“ (Archivmodus) – wird nicht geändert.",
   "umwandeln.grund.gesetzt": "Der Verweis ist schon gesetzt – der Text bleibt.",
   "umwandeln.grund.recht": "Diese Mappe darfst du nicht bearbeiten.",
   "umwandeln.historie": "Paket-Update: Text in Verweis umgewandelt",

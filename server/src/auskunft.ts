@@ -54,7 +54,8 @@ export interface AuskunftDaten {
   empfaenger: string;
   anmerkung: string;
   /** Speicherdauer je Mappentyp: Archivmodus (#212) und spätestes „aufbewahren bis“. */
-  aufbewahrung: Array<{ typ: string; archiv: { jahre: number; stichtag: string | null } | null; bis: string | null }>;
+  /** offen (#1051): Bei mindestens einer Mappe läuft die Frist noch nicht (Stichtag leer). */
+  aufbewahrung: Array<{ typ: string; archiv: { jahre: number; stichtag: string | null } | null; bis: string | null; offen?: boolean }>;
 }
 
 /** Phasen des Auftrags. */
@@ -143,7 +144,7 @@ async function deckblattRoh(d: AuskunftDaten, x: { von: string; jetzt: Date; man
   abschnitt(t('meldungen.auskunft.5-speicherdauer'));
   for (const a of d.aufbewahrung) {
     const w = a.archiv ? { typ: a.typ, anzahl: a.archiv.jahre, ab: a.archiv.stichtag ?? t('meldungen.auskunft.anlage'), bis: a.bis ? datumText(a.bis) : '' } : null;
-    punkt(!w ? t('meldungen.auskunft.speicher.ohne', { typ: a.typ }) : a.bis ? t('meldungen.auskunft.speicher.archiv-bis', w) : t('meldungen.auskunft.speicher.archiv', w));
+    punkt(!w ? t('meldungen.auskunft.speicher.ohne', { typ: a.typ }) : a.offen ? t('meldungen.auskunft.speicher.archiv-offen', w) : a.bis ? t('meldungen.auskunft.speicher.archiv-bis', w) : t('meldungen.auskunft.speicher.archiv', w));
   }
 
   abschnitt(eintrag('auskunft.deckblatt.rechte'));

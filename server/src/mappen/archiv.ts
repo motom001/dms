@@ -3,7 +3,7 @@
  * (#212: Frist, „darf weg“, Vorschau beim Einschalten) und „Alle Dateien prüfen“. Schicht 2.
  */
 import { createHash } from 'node:crypto';
-import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../../shared/src/archiv';
+import { aufbewahrenBis, datumText, gesperrt, inFrist, JAHRE_MAX, laeuftNochNicht, stichtagName } from '../../../shared/src/archiv';
 import type { Auftrag, Fortschritt, PhasenPlan } from '../../../shared/src/auftrag';
 import type { Dokument } from '../../../shared/src/model';
 import type { Nummernkreis } from '../../../shared/src/nummernkreis';
@@ -109,17 +109,22 @@ export class MappenArchiv {
   async pruefeArchivDokument(mappeId: string, was: string) {
     const m = await this.repo.holeMappe(mappeId);
     const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
+    if (m && laeuftNochNicht(typ?.archiv, m)) throw new Fachfehler(409, t('meldungen.dienst.aufbewahrungspflicht-offen-dokumente', { feld: stichtagName(typ), was }), { aufbewahrenBis: null });
     const bis = m ? aufbewahrenBis(typ?.archiv, m) : null;
     if (inFrist(bis)) throw new Fachfehler(409, t('meldungen.dienst.aufbewahrungspflicht-bis-dokumente', { datumText: datumText(bis!), was }), { aufbewahrenBis: bis });
   }
 
-  /** Vorschau beim Einschalten: wie viele Mappen betroffen, wie viele schon „darf weg“. */
+  /**
+   * Vorschau beim Einschalten: wie viele Mappen betroffen, wie viele schon „darf weg“ – und bei wie vielen das Stichtag-Feld
+   * leer ist (#1051: ab Anlagedatum oder „läuft noch nicht ab“).
+   */
   async archivVorschau(typId: string, e: unknown) {
     const typ = istUuid(typId) ? await this.repo.holeTyp(typId) : undefined;
     const archiv = bereinigeTyp({ felder: typ?.felder ?? [], archiv: e }).archiv;
     if (!archiv) throw new Fachfehler(422, t('meldungen.dienst.bitte-eine-frist-von', { JAHRE_MAX }));
     const mappen = typ ? await this.repo.listeMappen(typ.id) : [];
-    return { mappen: mappen.length, darfWeg: mappen.filter((m) => !inFrist(aufbewahrenBis(archiv, m))).length };
+    const stichtagLeer = archiv.stichtag ? mappen.filter((m) => laeuftNochNicht({ ...archiv, leererStichtag: 'laeuftNicht' }, m)).length : 0;
+    return { mappen: mappen.length, darfWeg: mappen.filter((m) => !gesperrt(archiv, m)).length, stichtagLeer };
   }
 
   /** „Darf weg“: Mappen in Typen mit Archivmodus, deren Frist abgelaufen ist. Gelöscht wird nichts automatisch. */

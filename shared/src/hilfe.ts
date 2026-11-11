@@ -118,6 +118,8 @@ export const HILFE = {
   // #1082: Dann-Karte „Paket nach Zeitplan ausführen“ und mitgelieferte Zeitpläne in der Rechte-Vorschau.
   'pakete.zeitplan': admin('automatisierungen/', '„Paket nach Zeitplan ausführen“', 'paket-nach-zeitplan'),
   'mappentyp.archiv': admin('archiv/', 'Archivmodus und Aufbewahrung'),
+  // #1051: „Ist der Stichtag leer: ab Anlagedatum · läuft noch nicht ab“.
+  'mappentyp.archiv.leer': admin('archiv/', '„Ist der Stichtag leer“', 'ist-der-stichtag-leer'),
   'werkbank.stempel': admin('stempel/', 'Stempel-Vorlagen'),
   'werkbank.automatisierungen': admin('automatisierungen/', 'Automatisierungen'),
   'werkbank.suche': admin('suche/', 'Suche: Tippfehler und gleichbedeutende Wörter'),

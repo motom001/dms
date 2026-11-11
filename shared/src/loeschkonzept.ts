@@ -129,7 +129,9 @@ export function datenarten(q: Pick<LoeschkonzeptQuelle, 'typen' | 'datenschutz' 
       : FEHLT('Betroffene');
     const a = loeschkonzeptTyp.archiv ?? null;
     const vorschlag = a ? FRISTEN.find((x) => x.jahre === a.jahre)?.text : undefined;
-    const stichtag = a ? t('gemeinsam.loeschkonzept.ab-ende-des-kalenderjahres', { wert: a.stichtag ? `„${loeschkonzeptTyp.felder.find((f) => f.key === a.stichtag)?.label ?? a.stichtag}“` : t('gemeinsam.loeschkonzept.anlagedatum-der-mappe') }) : FEHLT(t('gemeinsam.loeschkonzept.beginn-der-frist'));
+    const ab = a ? t('gemeinsam.loeschkonzept.ab-ende-des-kalenderjahres', { wert: a.stichtag ? `„${loeschkonzeptTyp.felder.find((f) => f.key === a.stichtag)?.label ?? a.stichtag}“` : t('gemeinsam.loeschkonzept.anlagedatum-der-mappe') }) : '';
+    // Ist der Stichtag leer (#1051): Die Frist läuft erst, wenn er gefüllt ist.
+    const stichtag = !a ? FEHLT(t('gemeinsam.loeschkonzept.beginn-der-frist')) : a.stichtag && a.leererStichtag === 'laeuftNicht' ? t('gemeinsam.loeschkonzept.leer-laeuft-nicht', { wert: ab }) : ab;
     zeilen.push({
       typId: loeschkonzeptTyp.id, typ: loeschkonzeptTyp.name, bezug, betroffene,
       zweck: zweck || FEHLT('Zweck'),

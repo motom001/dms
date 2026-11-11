@@ -790,6 +790,10 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
                   <input value={namen[eintrag.schluessel] ?? eintrag.name} aria-label={t('werkbank.pakete.name-fuer', { name: eintrag.name })} onChange={(e) => setNamen({ ...namen, [eintrag.schluessel]: e.target.value })} />
                   {eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase() && <span className="fehlertext klein">{eintrag.konflikt}</span>}
                 </label>}
+            {/* Archivmodus aus dem Paket (#1051): nur für neue Typen, danach am Mappentyp änderbar. */}
+            {!eintrag.vorhanden && !eintrag.geloescht && eintrag.archiv && <p className="leise klein">{eintrag.archiv.stichtag && eintrag.archiv.leererStichtag === 'laeuftNicht'
+              ? t('werkbank.pakete.archiv-laeuft-nicht', { anzahl: eintrag.archiv.jahre, ab: eintrag.archiv.stichtagName ?? '' })
+              : t('werkbank.pakete.archiv', { anzahl: eintrag.archiv.jahre, ab: eintrag.archiv.stichtagName ? `„${eintrag.archiv.stichtagName}“` : t('werkbank.pakete.archiv-anlagedatum') })}</p>}
             {/* Text → Verweis (#534): Das Update ändert vorhandene Angaben nicht; umgewandelt wird danach mit Vorschau. */}
             {eintrag.vorhanden && eintrag.umwandeln?.filter((u) => u.anzahl > 0).map((u) => <p key={u.feld} className="leise klein">{tx('pakete.update.umwandeln', { feld: u.feld, aus: u.aus, anzahl: u.anzahl })}</p>)}
           </li>

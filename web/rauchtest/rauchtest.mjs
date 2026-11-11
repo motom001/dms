@@ -246,6 +246,8 @@ async function vorbereiten(cookie) {
   daten.tabelle = await tabellenDaten(cookie);
   // Beim Auswählen übernehmen (#1037): Tarifart mit üblichen Angaben, Abo übernimmt sie.
   daten.vorbelegen = await vorbelegenDaten(cookie);
+  // Archivmodus „Ist der Stichtag leer: läuft noch nicht ab“ (#1051): ein laufender und ein beendeter Mietvertrag.
+  daten.archiv = await archivDaten(cookie);
   const einladung = (await api('POST', '/api/benutzer',{ cookie, body: { email: JONAS.email, name: JONAS.name, rolle: 'mitglied', rollen: [] } })).daten;
   await api('POST', '/api/konto/passwort-setzen', { body: { schluessel: einladung.link.split('/passwort/')[1], passwort: JONAS.passwort } });
 }
@@ -281,6 +283,16 @@ async function vorbelegenDaten(cookie) {
   const mobilfunk = (await api('POST', '/api/mappen', { cookie, body: { typId: tarifart.id, werte: { name: 'Mobilfunk', frist: 'P3M', hinweis: 'Rufnummer mitnehmen' } } })).daten;
   const strom = (await api('POST', '/api/mappen', { cookie, body: { typId: tarifart.id, werte: { name: 'Strom', frist: 'P2W', hinweis: 'Zählerstand notieren' } } })).daten;
   return { tarifart, abo, mobilfunk, strom };
+}
+
+/** Typ „Mietvertrag“ im Archivmodus, 6 Jahre ab „Beendet am“, leer: läuft noch nicht ab (#1051). */
+async function archivDaten(cookie) {
+  const typ = (await api('POST', '/api/typen', { cookie, body: { name: 'Mietvertrag', schluessel: 'mietvertrag', titelVorlage: '{objekt}',
+    archiv: { jahre: 6, stichtag: 'beendet', leererStichtag: 'laeuftNicht' },
+    felder: [{ key: 'objekt', label: 'Mietobjekt', typ: 'text', pflicht: true }, { key: 'beendet', label: 'Beendet am', typ: 'datum' }] } })).daten;
+  const laufend = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Lager Gartenstraße' } } })).daten;
+  const beendet = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Garage Hofweg', beendet: '2027-06-30' } } })).daten;
+  return { typ, laufend, beendet };
 }
 
 /* ---------- Desktop ---------- */
@@ -616,6 +628,21 @@ rauchtest('Teile: Suche findet den Auftrag über seine Position, „Teil von …
   await s.getByText('Mappen vom Typ Auftragsposition erscheinen nur an ihrer übergeordneten Mappe', { exact: false }).waitFor();
   await zurueck.click();
   await s.waitForURL(new RegExp(`/ablage/${auftrag.id}/${mappe.id}`));
+});
+
+rauchtest('Archivmodus: „Frist beginnt mit …“ an der Mappe, „Ist der Stichtag leer“ im Mappentyp (#1051)', { als: LENA }, async (s) => {
+  const { typ, laufend, beendet } = daten.archiv;
+  await s.goto(BASIS + `/ablage/${typ.id}/${laufend.id}`);
+  await s.getByText('aufbewahren, Frist beginnt mit „Beendet am“').waitFor();
+  await s.goto(BASIS + `/ablage/${typ.id}/${beendet.id}`);
+  await s.getByText('aufbewahren bis 31.12.2033').waitFor();
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/typen/${typ.id}#archiv`);
+  const wahl = s.getByLabel('Ist „Beendet am“ leer');
+  await wahl.waitFor();
+  assert.equal(await wahl.inputValue(), 'laeuftNicht');
+  await s.getByText('Bei 1 Mappe ist „Beendet am“ leer – dort läuft die Frist noch nicht.').waitFor();
+  await keineWaagerechteRolle(s);
 });
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */

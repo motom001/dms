@@ -1,6 +1,6 @@
 import { rechtsbuendig } from '../../../shared/src/feldarten';
 import { sichtBeschreibung, sichtName, typBeschreibung, typName } from '../../../shared/src/beschriftung';
-import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
+import { aufbewahrenBis, datumText, gesperrt, stichtagName } from '../../../shared/src/archiv';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { beschreibeBedingung, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
@@ -526,8 +526,8 @@ function Liste(p: {
                     {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />}
                     <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
                       <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{s.geaendert.has(m.id) && <GeaendertPunkt />}{m.verborgen ? t('ablage.ablage.nicht-sichtbare-mappe') : <Ehemalig id={m.id}>{k.titel}</Ehemalig>}
-                        {/* Archivmodus (#212): Hinweis, solange die Frist läuft. */}
-                        {!m.verborgen && typ?.archiv && inFrist(aufbewahrenBis(typ.archiv, m)) && <> <span className="chip archiv klein" title={t('ablage.ablage.archiv-aufbewahren-bis', { datumText: datumText(aufbewahrenBis(typ.archiv, m)!) })}>{t('ablage.ablage.archiv')}</span></>}</span>
+                        {/* Archivmodus (#212): Hinweis, solange die Frist läuft – oder noch nicht begonnen hat (#1051). */}
+                        {!m.verborgen && typ?.archiv && gesperrt(typ.archiv, m) && <> <span className="chip archiv klein" title={aufbewahrenBis(typ.archiv, m) ? t('ablage.ablage.archiv-aufbewahren-bis', { datumText: datumText(aufbewahrenBis(typ.archiv, m)!) }) : t('ablage.ablage.archiv-frist-beginnt-mit', { feld: stichtagName(typ) })}>{t('ablage.ablage.archiv')}</span></>}</span>
                       <Unter text={k.unter} />
                       {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
                       {p.sicht === 'eingang' && s.aufgaben[m.id]

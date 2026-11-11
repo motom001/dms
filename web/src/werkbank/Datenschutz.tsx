@@ -369,7 +369,9 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
         setGrund={(id, g) => setWahl((w) => ({ ...w, gruende: { ...w.gruende, [id]: g } }))}
         info={<>{k.ueber && <span className="leise klein"> · {k.ueber.richtung === 'verwiesenVon' ? t('werkbank.datenschutz.verweist-ueber-darauf', { feld: k.ueber.feld }) : t('werkbank.datenschutz.ueber', { feld: k.ueber.feld })}</span>}
           {k.auchUeber.length > 0 && <span className="chip" title={t('werkbank.datenschutz.diese-mappe-ist-auf')}>↻ {k.auchUeber.length}</span>}
-          {k.gesperrt && k.aufbewahrenBis && <span className="chip" title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>{tn('werkbank.datenschutz.bis', { symbol: <Symbol name="schloss" />, datumText: datumText(k.aufbewahrenBis) })}</span>}</>} />
+          {k.gesperrt && k.aufbewahrenBis && <span className="chip" title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>{tn('werkbank.datenschutz.bis', { symbol: <Symbol name="schloss" />, datumText: datumText(k.aufbewahrenBis) })}</span>}
+          {/* Die Frist läuft noch nicht (#1051): gesperrt ohne Datum. */}
+          {k.gesperrt && !k.aufbewahrenBis && <span className="chip" title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>{tn('werkbank.datenschutz.frist-offen', { symbol: <Symbol name="schloss" /> })}</span>}</>} />
       {kinderVon(vorschau!.baum, k.id).length > 0 && <ul className="auskunft-baum">{kinderVon(vorschau!.baum, k.id).map(zeigeKnoten)}</ul>}
     </li>
   ));

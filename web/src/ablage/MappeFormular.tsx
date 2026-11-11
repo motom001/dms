@@ -208,6 +208,8 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
           <div><dt>{t('ablage.mappeformular.angelegt')}</dt><dd>{t('ablage.mappeformular.von', { zeit: zeit(mappe.erstellt) })}{' '}<Person id={mappe.erstelltVon} /></dd></div>
           <div><dt>{t('ablage.mappeformular.zuletzt-geaendert')}</dt><dd>{t('ablage.mappeformular.von', { zeit: zeit(mappe.geaendert) })}{' '}<Person id={mappe.geaendertVon} /></dd></div>
           {/* Archivmodus (#212) */}
+          {/* Die Frist läuft noch nicht (#1051): aufbewahren, ohne Datum. */}
+          {details.fristBeginntMit !== undefined && <div><dt><span className="chip archiv" title={t('ablage.mappeformular.archivmodus-vor-fristende-nicht')}>{t('ablage.mappeformular.archiv')}</span></dt><dd>{t('ablage.mappeformular.aufbewahren-frist-beginnt-mit', { feld: details.fristBeginntMit })}</dd></div>}
           {details.aufbewahrenBis && <div><dt><span className="chip archiv" title={t('ablage.mappeformular.archivmodus-vor-fristende-nicht')}>{t('ablage.mappeformular.archiv')}</span></dt><dd>{inFrist(details.aufbewahrenBis) ? t('ablage.mappeformular.aufbewahren-bis') : t('ablage.mappeformular.frist-abgelaufen-am')} {datumText(details.aufbewahrenBis)}</dd></div>}
         </dl>
         {typ.system === 'benutzer' && ich.rolle === 'admin' && <p className="leise klein"><Link to={`/werkbank/benutzer/${mappe.id}`} className="verweis">{t('ablage.mappeformular.in-der-benutzerverwaltung-oeffnen')}</Link></p>}

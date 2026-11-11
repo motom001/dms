@@ -23,6 +23,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
+import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { bereinigeAutomatisierung, zeitplanText } from '../../shared/src/automatisierung';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
@@ -188,6 +189,11 @@ export interface PaketTyp {
    * Mappe, Pflicht. Ältere Ablago ignorieren es (die Teile stehen dort in den Ansichten).
    */
   gehoertZu?: string;
+  /**
+   * Archivmodus (#1051, Entwurf Compliance): Vorgabe für einen Typ, den das Paket neu anlegt – mit „beruflich genutzt“
+   * gilt jahreBeruflich. Vorhandene Typen ändert weder Installation noch Update; ältere Ablago ignorieren es.
+   */
+  archiv?: PaketArchiv;
 }
 /**
  * Mappentyp, den das Paket nicht mitbringt (#656): Das Zielsystem ordnet ihn über seine Kennung zu, wenn es ihn dort gibt –
@@ -497,6 +503,10 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       for (const b of a.bedingungen.filter(istObjekt)) if (b.art === 'verweistyp' && !TYPVERWEIS.test(str(b.typ))) fehler.push(`${wo}: „${key}“: anzeigen nennt den Mappentyp „${str(b.typ)}“ ungültig.`);
     }
     if (!register.length) fehler.push(`${wo}: mindestens ein Register nötig.`);
+    // Archivmodus (#1051): Schreibweise wie in der Registry; was nicht passt, verhindert die Installation.
+    const archivFehler = paketArchivFehler(t.archiv, felder, wo);
+    fehler.push(...archivFehler);
+    const archiv = istObjekt(t.archiv) && !archivFehler.length ? t.archiv as unknown as PaketArchiv : undefined;
     // Beschriftungen (#728): ein Objekt Sprache → Texte; was nicht passt, bereinigt das DMS beim Anlegen.
     if (t.beschriftungen !== undefined && !istObjekt(t.beschriftungen)) fehler.push(`${wo}: beschriftungen muss ein Objekt „Sprache → Texte“ sein.`);
     for (const x of [...felder, ...register] as unknown as Array<Record<string, unknown>>) if (x.beschriftungen !== undefined && !istObjekt(x.beschriftungen)) fehler.push(`${wo}: „${str(x.key)}“: beschriftungen muss ein Objekt „Sprache → Texte“ sein.`);
@@ -505,7 +515,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       ...(istObjekt(t.beschriftungen) ? { beschriftungen: t.beschriftungen as Beschriftungen<TypTeile> } : {}),
       ...(typeof t.ausPost === 'boolean' ? { ausPost: t.ausPost } : {}),
       ...(typeof t.erkennbarAn === 'string' && t.erkennbarAn.trim() ? { erkennbarAn: t.erkennbarAn.trim() } : {}),
-      ...(t.gehoertZu !== undefined && t.gehoertZu !== null ? { gehoertZu: str(t.gehoertZu) } : {}) };
+      ...(t.gehoertZu !== undefined && t.gehoertZu !== null ? { gehoertZu: str(t.gehoertZu) } : {}),
+      ...(archiv ? { archiv } : {}) };
   });
   // Beim Auswählen übernehmen (#1037): braucht alle Typen des Pakets.
   fehler.push(...vorbelegenFehler(typen, str(m.id)));
@@ -896,6 +907,11 @@ export interface TypPlan {
   konflikt: string | null; vorschlag: string | null;
   /** Fehlt im DMS, obwohl das Paket ihn installiert hatte (gelöscht) – wird nicht neu angelegt. */
   geloescht?: boolean;
+  /**
+   * Archivmodus, mit dem ein neuer Typ angelegt wird (#1051): Vorgabe des Pakets, mit „beruflich genutzt“ jahreBeruflich;
+   * stichtagName ist die Beschriftung des Stichtag-Felds. Fehlt bei vorhandenen Typen – deren Archivmodus bleibt.
+   */
+  archiv?: Archiv & { stichtagName: string | null };
 }
 export interface SichtPlan { schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; /** Wird nicht installiert (#656), mit Grund. */ ausgelassen?: string | null; /** Mappentypen, die hier fehlen – die Ansicht kommt ohne sie (#656). */ ohne?: string[] }
 export interface AbhaengigkeitPlan { id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }
@@ -1093,6 +1109,9 @@ function teilFehler(x: PaketTyp, typen: PaketTyp[], wo: string, paketId: string)
   else if (zielTyp?.gehoertZu !== undefined) fehler.push(`${wo}: gehoertZu „${x.gehoertZu}“: „${zielTyp.name}“ ist selbst Teil einer anderen Mappe – Ketten gibt es nicht.`);
   return fehler;
 }
+
+/** Archivmodus aus dem Typplan (#1051) ohne die Beschriftung des Stichtags. */
+const archivOhneName = ({ jahre, stichtag, leererStichtag }: NonNullable<TypPlan['archiv']>): Archiv => ({ jahre, stichtag, ...(leererStichtag ? { leererStichtag } : {}) });
 
 /** Bedingung aus dem Paket in die Form der Werkbank. */
 function bedingungAus(b: { feld: string; operator: string; wert?: unknown }): Bedingung {
@@ -1929,6 +1948,7 @@ export class Paketverwaltung {
     if (ueb) hinweise.push(t('meldungen.pakete.ablageort-uebernommen', { name: ueb.name }));
     // Vorgaben (#1038): Zustand je Vorgabe, Ergänzungen an Vorgaben anderer Pakete (die es geben muss).
     const { vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan } = await this.planeVorgaben(paket, ich, { installierte, typen, namen, herausgeber, hinweise });
+    const beruflich = paket.typen.some((x) => x.archiv?.jahreBeruflich) && (await this.d.kern.merkmale()).beruflich;
     const typPlaene = await Promise.all(paket.typen.map(async (paketTyp): Promise<TypPlan> => {
       // Kennung im DMS (#1084): Paket und Schlüssel getrennt, nach außen `paket:schluessel` – eindeutig auch bei „_“ in beiden.
       const dmsSchluessel = typKennung(m.id, paketTyp.schluessel);
@@ -1956,7 +1976,10 @@ export class Paketverwaltung {
       const konflikt = belegt.has(name.toLowerCase()) ? t('meldungen.pakete.einen-mappentyp-gibt-es', { name }) : null;
       const vorschlag = konflikt ? freierName(name, m.name, belegt) : null;
       belegt.add(name.toLowerCase());
-      return { schluessel: paketTyp.schluessel, dmsSchluessel, name, felder: paketTyp.felder.length, vorhanden: false, neueFelder: [], neueRegister: [], konflikt, vorschlag };
+      // Archivmodus (#1051): nur für neue Typen; der Administrator ändert ihn danach am Mappentyp.
+      const archiv = archivAusPaket(paketTyp.archiv, beruflich);
+      return { schluessel: paketTyp.schluessel, dmsSchluessel, name, felder: paketTyp.felder.length, vorhanden: false, neueFelder: [], neueRegister: [], konflikt, vorschlag,
+        ...(archiv ? { archiv: { ...archiv, stichtagName: archiv.stichtag ? paketTyp.felder.find((f) => f.key === archiv.stichtag)?.label ?? archiv.stichtag : null } } : {}) };
     }));
     for (const n of belegt) geplant?.typen.add(n);
     // Ansichten mit Mappentypen, die das Paket nicht mitbringt (#656): fehlt einer, kommt die Ansicht ohne ihn; fehlen
@@ -2294,7 +2317,11 @@ export class Paketverwaltung {
       const name = plan.typen.find((x) => x.schluessel === t.schluessel)!.name;
       return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
         // Ist Teil einer anderen Mappe (#1031): erst, wenn das Feld dabei ist (sonst im zweiten Durchgang).
-        teilVon: t.gehoertZu && !offen.has(t.gehoertZu) ? t.gehoertZu : null, sichtAnlegen: false } };
+        teilVon: t.gehoertZu && !offen.has(t.gehoertZu) ? t.gehoertZu : null,
+        // Archivmodus (#1051) wie in der Vorschau – zählt nur beim Anlegen (und im zweiten Durchgang desselben neuen Typs);
+        // das Update übernimmt den Archivmodus des vorhandenen Typs.
+        archiv: plan.typen.find((x) => x.schluessel === t.schluessel)?.archiv ? archivOhneName(plan.typen.find((x) => x.schluessel === t.schluessel)!.archiv!) : null,
+        sichtAnlegen: false } };
     };
     // Zurückrollen: angelegte Mappen, Sichten, Typen; geänderte Typen auf den alten Stand.
     const mappen: string[] = [];
@@ -2338,6 +2365,8 @@ export class Paketverwaltung {
         try { await this.d.legeTypAn(x.daten, m.id); } catch (f) { throw new Fachfehler((f as Fachfehler).status ?? 422, t('meldungen.pakete.mappentyp', { name: x.daten.name, meldungen: meldungen(f) })); }
         angelegt.add(paketTyp.schluessel);
         typMap[paketTyp.schluessel] = ids.get(paketTyp.schluessel)!;
+        // Archivmodus aus dem Paket (#1051): im Protokoll wie beim Einschalten in der Werkbank.
+        if (x.daten.archiv) protokoll.modul('werkbank').info('Archivmodus eingeschaltet', { typ: x.daten.name, paket: m.id, vorher: { an: false }, nachher: { an: true, jahre: x.daten.archiv.jahre, stichtag: x.daten.archiv.stichtag ?? 'Anlagedatum', ...(x.daten.archiv.leererStichtag ? { leererStichtag: 'läuft noch nicht ab' } : {}) } });
         if (x.unvollstaendig) nachtragen.push(paketTyp);
       }
       // Tabellen (#1030) zuletzt: Ihre Quelle braucht das Verweisfeld des anderen Typs, das vielleicht erst hier dazukommt.

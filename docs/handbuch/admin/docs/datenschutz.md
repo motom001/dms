@@ -151,7 +151,7 @@ Einmal einrichten. Verantwortlicher, Empfänger, Rechte und Anrede stehen über 
 - **Anrede in Unterlagen für Dritte:** siehe [unten](#anrede).
 - **Personendaten in Mappentypen** (beim Löschkonzept): Hake an, welche Mappentypen **eine Person betreffen** – z. B. Mieter, Kunde, Vertragspartner, Kontakt. Nur Mappen dieser Typen lassen sich als Betroffene wählen. Je Mappentyp trägst du den **Zweck** ein (z. B. „Durchführung des Mietverhältnisses“); er steht auf dem Deckblatt bei jeder Art von Daten, die herausgeht.
 
-Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): Hat ein Mappentyp eine Aufbewahrungsfrist, steht sie dort mit dem spätesten „aufbewahren bis“; sonst „solange für den Zweck nötig“.
+Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): Hat ein Mappentyp eine Aufbewahrungsfrist, steht sie dort mit dem spätesten „aufbewahren bis“; läuft sie bei einer Mappe noch nicht ([Ist der Stichtag leer](archiv.md#ist-der-stichtag-leer)), steht dort, dass sie erst mit dem Stichtag beginnt; sonst „solange für den Zweck nötig“.
 
 ### Anrede in Unterlagen für Dritte: du oder Sie { #anrede }
 

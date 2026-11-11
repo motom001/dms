@@ -37,12 +37,16 @@ const ok = (body: unknown, status = 200): Antwort => ({ status, body });
 
 /**
  * Archivmodus (#212, #373): genau ein Eintrag je gespeicherter Änderung, mit vorher/nachher
- * (an/aus, Frist, Stichtag). Ausschalten ist eine Warnung.
+ * (an/aus, Frist, Stichtag). Ausschalten ist eine Warnung. „Ist der Stichtag leer“ (#1051) steht auf beiden Seiten,
+ * sobald eine davon „läuft noch nicht ab“ ist.
  */
 function archivProtokoll(t: { name: string; archiv?: Mappentyp['archiv'] }, vorher: Mappentyp['archiv'] | null) {
   const nachher = t.archiv ?? null;
   if (JSON.stringify(vorher) === JSON.stringify(nachher)) return;
-  const zustand = (x: Mappentyp['archiv'] | null) => (x ? { an: true, jahre: x.jahre, stichtag: x.stichtag ?? 'Anlagedatum' } : { an: false });
+  const leer = [vorher, nachher].some((x) => x?.leererStichtag === 'laeuftNicht');
+  const zustand = (x: Mappentyp['archiv'] | null) => (x
+    ? { an: true, jahre: x.jahre, stichtag: x.stichtag ?? 'Anlagedatum', ...(leer && x.stichtag ? { leererStichtag: x.leererStichtag === 'laeuftNicht' ? 'läuft noch nicht ab' : 'ab Anlagedatum' } : {}) }
+    : { an: false });
   const daten = { typ: t.name, vorher: zustand(vorher), nachher: zustand(nachher) };
   if (!nachher) L.werkbank.warn('Archivmodus ausgeschaltet', daten);
   else L.werkbank.info(vorher ? 'Archivmodus geändert' : 'Archivmodus eingeschaltet', daten);

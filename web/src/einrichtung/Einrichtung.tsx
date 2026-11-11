@@ -41,6 +41,7 @@ import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EING
 import { gebietsschema } from '../../../shared/src/sprache';
 import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
 import { abfangen, Knopf } from '../bausteine';
+import { ArchivLeer, mitStichtag } from './ArchivLeer';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = t('mappentypen.editor.das-wird-erst-mit');
@@ -509,7 +510,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
 
       <RegisterEditor e={e} setE={setE} feldAblage={(key) => zf.ablage(`reg:${key}`)} klappe={klappe('register')} ausblendenFragen={ausblendenFragen} />
       <Bereich id="archiv" titel={t('mappentypen.editor.archivmodus')} hilfe={<Hilfe ort="mappentyp.archiv" />} klappe={klappe('archiv')}
-        kurz={e.archiv ? <>{t('mappentypen.editor.an-jahre-ab', { jahre: e.archiv.jahre })}{' '}{e.archiv.stichtag ? e.felder.find((f) => f.key === e.archiv!.stichtag)?.label ?? e.archiv.stichtag : t('mappentypen.editor.anlagedatum')}</> : t('mappentypen.editor.aus')}>
+        kurz={e.archiv ? <>{t('mappentypen.editor.an-jahre-ab', { jahre: e.archiv.jahre })}{' '}{e.archiv.stichtag ? e.felder.find((f) => f.key === e.archiv!.stichtag)?.label ?? e.archiv.stichtag : t('mappentypen.editor.anlagedatum')}{e.archiv.stichtag && e.archiv.leererStichtag === 'laeuftNicht' ? ` · ${t('mappentypen.editor.kurz-laeuft-nicht')}` : ''}</> : t('mappentypen.editor.aus')}>
         <ArchivEinstellung archiv={e.archiv} setze={(archiv) => setE({ ...e, archiv })} datumsfelder={e.felder.filter((f) => f.typ === 'datum' && f.key).map((f) => ({ key: f.key, label: f.label || f.key }))} typId={gespeichert?.id} />
       </Bereich>
 
@@ -1358,9 +1359,14 @@ function Spaltenwahl({ e, spalten, name, setze }: { e: Entwurf; spalten: string[
   );
 }
 
-/** Archivmodus (#212): Frist, Stichtag; beim Einschalten Vorschau, beim Ausschalten Rückfrage. */
+/**
+ * Archivmodus (#212): Frist, Stichtag; beim Einschalten Vorschau, beim Ausschalten Rückfrage. Mit Stichtag-Feld auch, was
+ * gilt, wenn es leer ist (#1051): ab Anlagedatum (Vorgabe) oder „läuft noch nicht ab“ – die Vorschau nennt, wie viele
+ * Mappen ein leeres Feld haben.
+ */
 function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Archiv | null; setze: (a: Archiv | null) => void; datumsfelder: Array<{ key: string; label: string }>; typId?: string }) {
-  const [vorschau, setVorschau] = useState<{ mappen: number; darfWeg: number } | null>(null);
+  const [vorschau, setVorschau] = useState<{ mappen: number; darfWeg: number; stichtagLeer?: number } | null>(null);
+  const feldName = datumsfelder.find((f) => f.key === archiv?.stichtag)?.label ?? archiv?.stichtag ?? '';
   const text = JSON.stringify(archiv);
   useEffect(() => {
     if (!archiv || !typId) { setVorschau(null); return; }
@@ -1385,12 +1391,14 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
             </select></label>
           {!vorschlag && <label className="eigenschaft"><span>{t('mappentypen.editor.jahre-2')}</span><input type="number" min={1} max={JAHRE_MAX} value={archiv.jahre} onChange={(ev) => setze({ ...archiv, jahre: Math.max(1, Math.min(JAHRE_MAX, Math.trunc(Number(ev.target.value) || 1))) })} /></label>}
           <label className="eigenschaft"><span>{tn('mappentypen.editor.stichtag', { klein: <small>{t('mappentypen.editor.frist-bis-ende-des')}</small> })}</span>
-            <select value={archiv.stichtag ?? ''} onChange={(ev) => setze({ ...archiv, stichtag: ev.target.value || null })}>
+            <select value={archiv.stichtag ?? ''} onChange={(ev) => setze(mitStichtag(archiv, ev.target.value || null))}>
               {datumsfelder.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
               <option value="">{t('mappentypen.editor.anlagedatum-der-mappe')}</option>
             </select></label>
+          {archiv.stichtag && <ArchivLeer archiv={archiv} feldName={feldName} setze={setze} />}
         </div>
-        {vorschau && <p className="hinweis info">{t('mappentypen.editor.mappen-sind-betroffen', { anzahl: vorschau.mappen, wert: vorschau.darfWeg ? t('mappentypen.editor.davon-waeren-schon-darf', { anzahl: vorschau.darfWeg }) : '' })}</p>}
+        {vorschau && <p className="hinweis info">{t('mappentypen.editor.mappen-sind-betroffen', { anzahl: vorschau.mappen, wert: vorschau.darfWeg ? t('mappentypen.editor.davon-waeren-schon-darf', { anzahl: vorschau.darfWeg }) : '' })}
+          {archiv.stichtag && !!vorschau.stichtagLeer && <> {archiv.leererStichtag === 'laeuftNicht' ? t('mappentypen.editor.leer-anzahl-laeuft-nicht', { anzahl: vorschau.stichtagLeer, feld: feldName }) : t('mappentypen.editor.leer-anzahl-ab-anlage', { anzahl: vorschau.stichtagLeer, feld: feldName })}</>}</p>}
       </>}
     </div>
   );

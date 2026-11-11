@@ -325,6 +325,9 @@ begriffe:
   Archivmodus:
     begriff: Archive mode
     beschreibung: A setting per folder type for retention obligations – with versions and a deletion lock until the end of the period.
+  Stichtag:
+    begriff: Reference date
+    beschreibung: The date field from which the period runs in archive mode – until 31.12. of its year plus the years. If it is empty, the folder's creation date counts or, with "doesn't expire yet", the period only starts once it is filled in.
   Aufbewahrung abgelaufen:
     begriff: Retention expired
     beschreibung: The list of folders whose retention period has expired (Workbench → Users and security). Formerly "May go".

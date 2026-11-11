@@ -9,6 +9,7 @@ This is deliberately **only this one attribute**. Everything else follows from t
 - **Folder types** use it to show their work-related fields and sections – via [Show if …](mappentypen.md#anzeigen-wenn) with the condition *Library is also used for work*. In a purely private Library Lena sees none of it; the folder type is the same.
 - **Conditions** of [permissions](berechtigungen.md), [views](sichten.md#bedingungen) and [automations](automatisierungen.md) can look at it (“Library is also used for work”, reversible). It applies to all folders alike.
 - The **Workbench template** (which areas are listed on the left) follows it: for work → *Business*, otherwise *Household*. It follows the attribute as long as nobody has adjusted the sidebar. The template stays a Workbench setting; the attribute applies to the Library.
+- **Packages** can suggest a longer [retention when used for work](archiv.md#archivmodus-aus-einem-paket) for their new folder types; it applies if the attribute is set when installing. If you switch it later, the archive mode stays as it is – you can change it on the folder type.
 
 Hiding is **for tidiness, not protection**: values of hidden fields stay saved and appear in the [API](api.md), the [full export](export.md) and [data access requests](datenschutz.md). Who may see what is set by the permissions.
 

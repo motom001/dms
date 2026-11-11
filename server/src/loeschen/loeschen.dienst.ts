@@ -15,7 +15,7 @@ import { istUuid, type Repo, type Rueckverweis } from '../repo';
 import type { SichtenDienst } from '../sichten';
 import { t } from '../sprache';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
-import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
+import { aufbewahrenBis, datumText, inFrist, laeuftNochNicht, stichtagName } from '../../../shared/src/archiv';
 import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/src/loeschprotokoll';
 import { darfLoeschen, type Mappe, type Mappentyp, MAX_AUSWAHL } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -101,6 +101,7 @@ export class LoeschenDienst {
     if (m.systemKennung) return { ok: false as const, status: 409, grund: t('meldungen.dienst.systemrollen-lassen-sich-nicht'), fremd: [], zuordnungen: [], emails: [] };
     if (typ && !darfLoeschen(typ)) return { ok: false as const, status: 403, grund: t('meldungen.dienst.mappen-vom-typ-lassen-2', { name: typ.name, wert: typ.system === 'benutzer' ? t('meldungen.dienst.benutzer-werden-in-der') : '' }), fremd: [], zuordnungen: [], emails: [] };
     // Archivmodus (#212): vor Fristende nicht löschen – auch nicht als Administrator.
+    if (laeuftNochNicht(typ?.archiv, m)) return { ok: false as const, status: 409, grund: t('meldungen.dienst.aufbewahrungspflicht-offen', { feld: stichtagName(typ) }), fremd: [], zuordnungen: [], emails: [], aufbewahrenBis: null };
     const bis = aufbewahrenBis(typ?.archiv, m);
     if (inFrist(bis)) return { ok: false as const, status: 409, grund: t('meldungen.dienst.aufbewahrungspflicht-bis-vorher', { datumText: datumText(bis!) }), fremd: [], zuordnungen: [], emails: [], aufbewahrenBis: bis };
     const typen = rueck.length ? alleTypen ?? await this.repo.listeTypen() : [];

@@ -13,6 +13,7 @@
   "umwandeln.grund.weg": "The folder no longer exists.",
   "umwandeln.grund.geaendert": "Changed since the conversion – please check by hand.",
   "umwandeln.grund.frist": "Retention period until {bis} (archive mode) – won’t be changed.",
+  "umwandeln.grund.frist-offen": "Retention period starts with “{feld}” (archive mode) – won’t be changed.",
   "umwandeln.grund.gesetzt": "The link is already set – the text stays.",
   "umwandeln.grund.recht": "You may not edit this folder.",
   "umwandeln.historie": "Package update: text converted into link",
