@@ -74,7 +74,7 @@ const TYPEN = (merkmal = 'merkmal: eigeneOrganisation, schreibschutz: verwaltung
       art: felder
       felder: [name, kuerzel, eigene_organisation, kundennummer, iban, kennwort, beschreibung, verantwortlicher, datenschutzbeauftragter]
       abschnitte:
-        - { vor: verantwortlicher, titel: Datenschutz, anzeigen: { bedingungen: [{ art: feld, bedingung: { feld: eigene_organisation, op: ja } }] } }
+        - { vor: verantwortlicher, titel: Datenschutz, anzeigen: { bedingungen: [{ art: feld, bedingung: { art: feld, feld: eigene_organisation, op: ja } }] } }
     - { key: kontakt, name: Kontakt, art: felder, felder: [telefon, email] }
     - { key: anschrift, name: Anschrift, art: felder, felder: [strasse, hausnummer, plz, ort] }
     - { key: dokumente, name: Dokumente, art: dokumente }

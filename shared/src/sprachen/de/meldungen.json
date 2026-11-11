@@ -1916,5 +1916,7 @@
   "pakete.umbau.bestaetigen": "„{name}“ baut vorhandene Mappentypen um. Bitte die Vorschau ansehen und den Umbau bestätigen.",
   "pakete.umbau.abgebrochen": "Der Umbau wurde abgebrochen, es ist nichts verändert: {meldungen}",
   "pakete.aktion-typ-fehlt": "mappenaktionen „{aktion}“: Den Mappentyp „{typ}“ bringt weder dieses Paket noch eine seiner Abhängigkeiten.",
-  "pakete.aktion-ohne-lesen": "mappenaktionen „{aktion}“: Der Code muss den Mappentyp „{typ}“ lesen dürfen (code.rechte.lesen) – er bekommt die Werte der Mappe."
+  "pakete.aktion-ohne-lesen": "mappenaktionen „{aktion}“: Der Code muss den Mappentyp „{typ}“ lesen dürfen (code.rechte.lesen) – er bekommt die Werte der Mappe.",
+  "pakete.sicht-bedingung-op": "Bei Ansichten heißt es operator, nicht op.",
+  "pakete.sicht-bedingungen-liste": "{wo}: bedingungen muss eine Liste sein."
 }
