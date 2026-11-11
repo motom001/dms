@@ -271,6 +271,41 @@ const melde = (e) => new Promise((fertig) => {
   process.send({ ...e, zeit: Date.now() }, () => fertig());
 });
 
+/** Laufende Messung vor den Durchgängen (#1117), höchstens eine. */
+let vorlauf = null;
+
+/**
+ * Werte für die Lasttest-Seite schon vor den Durchgängen (#1117): beim Einrichten, beim Anlegen der Demo-Mappen, beim
+ * Warten auf den Volltext und beim Vorbereiten. Dieselbe Messung wie im Durchgang ({@link serverStand} alle 2 s mit der
+ * Sitzung des Administrators) – nur im Lasttest-Modus (mit IPC-Kanal), ohne Durchgang und p95. Endet, sobald ein
+ * Durchgang selbst misst ({@link vorlaufStoppen}).
+ */
+export function vorlaufStarten(cookie, { senden = process.send ? melde : null, takt = 2000 } = {}) {
+  void vorlaufStoppen();
+  if (!senden || !cookie) return;
+  let aktiv = true;
+  let wecken = () => {};
+  /** Für CPU und Gruppen reichen die letzten beiden Stände (wie liveAus sie nimmt). */
+  const staende = [];
+  const fertig = (async () => {
+    while (aktiv) {
+      const s = { t: Date.now(), ...(await serverStand(cookie)) };
+      if (!aktiv) break;
+      if (!s.fehler) { staende.push(s); if (staende.length > 2) staende.shift(); }
+      await senden({ art: 'live', ...liveAus(staende, [], { name: null, n: null, seit: SKRIPT_START }) });
+      await new Promise((r) => { wecken = r; setTimeout(r, takt).unref?.(); });
+    }
+  })().catch(() => {});
+  vorlauf = { halt: () => { aktiv = false; wecken(); return fertig; } };
+}
+
+/** Messung vor den Durchgängen beenden (#1117); wartet, bis sie nichts mehr schickt. */
+export async function vorlaufStoppen() {
+  const v = vorlauf;
+  vorlauf = null;
+  await v?.halt();
+}
+
 /* ---------- Einrichten und Schutz der echten Ablage ---------- */
 
 async function code() {
@@ -302,6 +337,8 @@ async function einrichten() {
   const c0 = await code();
   const { cookie: admin } = await json('POST', '/api/konto/einrichten', { body: { mandant: HAUSHALT, email, name: 'Lena (Lasttest)', passwort }, koepfe: c0 ? { 'x-einrichtungscode': c0 } : {} });
   if (admin) kontoDerSitzung.set(admin, BENUTZER.admin);
+  // #1117: Auslastung auf der Lasttest-Seite, sobald es eine Sitzung gibt.
+  vorlaufStarten(admin);
   const c = { cookie: admin };
   // Den Assistenten schließen (#804): erst mit Schlüssel und heruntergeladenem Notfallblatt.
   await json('POST', '/api/werkbank/tresor/erzeugen', c).catch(() => {});
@@ -360,6 +397,7 @@ async function sicherstellen(mappen) {
   melde({ art: 'schritt', schritt: 'pruefen' });
   const p = await pruefen();
   const admin = p.frisch ? await einrichten() : p.admin;
+  if (!p.frisch) vorlaufStarten(admin);
   const c = { cookie: admin };
   let z = p.frisch ? await zaehle(c) : p.bestand;
   let neu = false;
@@ -775,6 +813,8 @@ export async function durchgang(v, { name, n, dauer, mitExport, speichern = null
     }
   }
 
+  // #1117: Ab hier misst der Durchgang selbst.
+  await vorlaufStoppen();
   const zurueck = await abfragenZuruecksetzen(v.sitzungen.admin);
   const start = Date.now();
   melde({ art: 'live', ...liveAus([], [], { name, n, seit: SKRIPT_START }) });
@@ -1382,9 +1422,11 @@ function datenText(e) {
   return `Demo-Daten (${e.stufe}): ${angelegt}; Datenbank ${db === null ? 'nicht lesbar' : gb(db)}, Dokumente ${dok === null ? 'nicht lesbar' : gb(dok)}.`;
 }
 
-function bericht(ergebnisse, x) {
+export function bericht(ergebnisse, x) {
   const z = [];
   z.push(`## Lasttest (${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC)`, '');
+  // #1117: welche Fassung gemessen hat (wie im Ergebnisblock).
+  if (x.version) z.push(`Ablago-Version: ${x.version}`, '');
   // Ohne Adresse des Ziels: Der Bericht soll sich ohne Netzadressen weitergeben lassen (#563).
   // #918: Mit abgeschalteten Zwischenspeichern ist die Messung nicht mit anderen vergleichbar.
   if (x.zwischenspeicherAus) z.push('**Hinweis:** Zwischenspeicher ausgeschaltet (`DMS_ZWISCHENSPEICHER=aus`) – Zahlen, Trefferzahlen und Termine wurden bei jeder Anfrage frisch gerechnet; nicht mit anderen Läufen vergleichbar.', '');
@@ -1596,6 +1638,7 @@ async function messen(stufen) {
   const u = await umgebung(v.sitzungen.admin);
   await personenAbmelden(v);
   x.zwischenspeicherAus = u.zwischenspeicher === 'aus';
+  x.version = u.version;
   const text = `${bericht(ergebnisse, x)}\n\n### Ergebnis zum Kopieren\n\nOhne Namen und Adressen – zum Einfügen in das Formular „Messergebnis Lasttest“.\n\n${ergebnisblock(ergebnisse, x, u)}`;
   console.log(`\n${text}`);
   await melde({ art: 'ergebnis', bericht: bericht(ergebnisse, x), vorlage: ergebnisblock(ergebnisse, x, u, PLATZHALTER), verfehlt: ergebnisse.some((e) => e.verfehlt.length) });
@@ -1651,9 +1694,13 @@ if (direkt) {
       await messen(stufen);
     }
   } catch (e) {
+    await vorlaufStoppen();
     if (!(e instanceof Abbruch)) { await melde({ art: 'fehler', text: e instanceof Error ? e.message : String(e) }); throw e; }
     await melde({ art: 'abbruch', text: e.message });
     console.error(`Abbruch: ${e.message}`);
     process.exitCode = 2;
+  } finally {
+    // #1117: z. B. nach --einrichten oder --gleichzeitig ohne Durchgang nichts mehr schicken.
+    await vorlaufStoppen();
   }
 }

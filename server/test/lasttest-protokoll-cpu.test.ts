@@ -25,7 +25,9 @@ after(() => rmSync(tmp, { recursive: true, force: true }));
 type Lt = Record<string, (...a: never[]) => unknown> & {
   gruppenAus(s: unknown[]): G | null; gruppenText(g: unknown): string | null; gruppenBericht(n: string, g: unknown): string[];
   protokollAus(s: unknown[]): P | null; mitDauer(t: string, d: unknown): string; protokollGesamt(a: unknown, z: unknown, l: unknown[]): P | null; protokollZeile(g: unknown): string | null; protokollBericht(g: unknown): string[];
-  liveAus(s: unknown[], ms: number[], o: { name: string; n: number; seit: string }): Record<string, unknown> & { gruppen: Array<{ art: string; nr?: number; cpu: number | null }> | null; meldungen: Array<{ text: string }> };
+  liveAus(s: unknown[], ms: number[], o: { name: string | null; n: number | null; seit: string }): Record<string, unknown> & { gruppen: Array<{ art: string; nr?: number; cpu: number | null }> | null; meldungen: Array<{ text: string }> };
+  vorlaufStarten(cookie: string, o: { senden: (m: Record<string, unknown>) => unknown; takt: number }): void;
+  vorlaufStoppen(): Promise<void>;
   ergebnisblock(e: unknown[], x: unknown, u: unknown, a: unknown): string;
   anmelden(k: [string, string]): Promise<string>;
   durchgang(v: unknown, o: { name: string; n: number; dauer: number; mitExport: boolean }): Promise<Record<string, unknown> & { gruppen: G | null; protokoll: P | null; beginn: number; ende: number }>;
@@ -440,7 +442,8 @@ describe('Lasttest-Seite (#895): Werte der laufenden Messung', () => {
       assert.deepEqual(s.live?.jetzt.gruppen?.map((g) => g.art), ['ablago'], 'unbekannte Gruppen weg');
       assert.deepEqual(s.live?.jetzt.meldungen.map((x) => x.stufe), ['error'], 'nur Warnungen und Fehler');
       assert.ok(!('geheim' in (s.live?.jetzt ?? {})));
-      assert.equal(liveAus({ art: 'live' }), null, 'ohne Namen des Durchgangs: nichts');
+      // #1117: vor den Durchgängen ohne Namen – Durchgang und Gleichzeitigkeit bleiben leer, der Rest gilt.
+      assert.deepEqual([liveAus({ art: 'live', cpu: 12 }).name, liveAus({ art: 'live', n: 5 }).n, liveAus({ art: 'live', cpu: 12 }).cpu], [null, null, 12]);
       kind!.emit('exit', 0);
       assert.equal((await holen()).live, null);
     } finally { await m.stop(); }
@@ -496,6 +499,29 @@ describe('Lasttest (#895): Route und Durchgang', () => {
     }
     const c = (await (await fetch(`${process.env.DMS_URL}/api/werkbank/last`, { headers: { 'x-dms': '1', 'x-dms-aktiv': '1', cookie: admin } })).json()) as { container: Record<string, unknown> | null };
     if (c.container) assert.ok('grenzeMb' in c.container && 'kerne' in c.container, 'Grenze und Kerne für die Prozentwerte der Seite');
+  });
+
+  it('#1117: schon vor den Durchgängen dieselbe Messung – ohne Durchgang und p95; der Durchgang beendet sie', async () => {
+    const admin = await lt.anmelden(LENA);
+    const gesendet: Array<Record<string, unknown>> = [];
+    gefragt = 0;
+    lt.vorlaufStarten(admin, { senden: (m) => { gesendet.push(m); }, takt: 50 });
+    for (let i = 0; i < 100 && gesendet.length < 3; i++) await new Promise((r) => setTimeout(r, 20));
+    assert.ok(gesendet.length >= 3, `${gesendet.length} Meldungen`);
+    const l = gesendet.at(-1)!;
+    assert.equal(l.art, 'live');
+    assert.deepEqual([l.name, l.n, l.p95, l.anfragen], [null, null, null, 0], 'ohne Durchgang');
+    assert.ok(gefragt >= 3, 'dieselbe Abfrage wie im Durchgang (/api/werkbank/last)');
+    const c = (await (await fetch(`${process.env.DMS_URL}/api/werkbank/last`, { headers: { 'x-dms': '1', 'x-dms-aktiv': '1', cookie: admin } })).json()) as { container: Record<string, unknown> | null };
+    if (c.container) assert.ok(typeof l.kerne === 'number' && typeof l.speicherMb === 'number', JSON.stringify(l));
+    if (process.platform === 'linux') assert.ok(Array.isArray(l.gruppen), 'CPU je Gruppe aus den letzten beiden Ständen');
+    // Ein Durchgang beendet die Messung davor: danach kommt nichts mehr ohne Namen.
+    const v = { sitzungen: { admin, mitRolle: admin, ohneRolle: admin }, ansichten: ['keine'], mappen: ['keine'], dokumente: [] };
+    await lt.durchgang(v, { name: 'klein', n: 1, dauer: 1, mitExport: false });
+    const n = gesendet.length;
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(gesendet.length, n, 'gestoppt');
+    await lt.vorlaufStoppen();
   });
 
   it('#909: Routenmuster der Anfrage im Kontext – lange Anfragen mit Muster und Dauer', async () => {

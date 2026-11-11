@@ -43,13 +43,20 @@ function herunterladen(name: string, text: string) {
 const MB = 1024 ** 2;
 const uhr = (iso: string) => new Date(iso).toLocaleTimeString(gebietsschema(), { timeStyle: 'medium' });
 
+/** Durchgang mit Gleichzeitigkeit; vor den Durchgängen (#1117) „–“ mit dem laufenden Schritt. */
+const durchgangText = (j: LasttestLiveStand['jetzt'], schritt: LasttestStand['schritt']) => (j.name === null
+  ? t('lasttest.live.durchgang.keiner', { schritt: t.frei(`lasttest.schritt.${schritt}`) })
+  : t('lasttest.live.durchgang.wert', { name: j.name, n: zahl(j.n ?? 0) }));
+
 /**
  * Live während des Laufs (#895): CPU und Arbeitsspeicher wie Werkbank → Systemzustand → Auslastung (dieselben Kacheln),
  * dazu Durchgang, Gleichzeitigkeit, p95 der letzten Sekunden, Warteschlange an der Datenbank, CPU je Gruppe und die
- * neuesten Warnungen und Fehler. Alles aus der Messung, die der Test ohnehin alle 2 Sekunden macht.
+ * neuesten Warnungen und Fehler. Alles aus der Messung, die der Test ohnehin alle 2 Sekunden macht – seit #1117 schon
+ * ab dem Einrichten; vor den Durchgängen steht statt des Durchgangs der Schritt, p95 bleibt „–“.
  */
-function Live({ l, stufe }: { l: LasttestLiveStand; stufe: LasttestStand['stufe'] }) {
+function Live({ l, stufe, schritt }: { l: LasttestLiveStand; stufe: LasttestStand['stufe']; schritt: LasttestStand['schritt'] }) {
   const j = l.jetzt;
+  const vorDemDurchgang = j.name === null;
   const verlauf: Messpunkt[] = l.verlauf.map((p) => ({ zeit: p.zeit, cpu: p.cpu, speicher: p.speicher, rx: null, tx: null }));
   const nv = t('systemzustand.auslastung.nicht-verfuegbar');
   const gruppe = (g: NonNullable<typeof j.gruppen>[number]) => (g.art !== 'ablago' ? t.frei(`lasttest.gruppe.${g.art}`)
@@ -57,7 +64,7 @@ function Live({ l, stufe }: { l: LasttestLiveStand; stufe: LasttestStand['stufe'
   return (
     <section className="lasttest-live" aria-labelledby="lasttest-live">
       <h2 id="lasttest-live">{t('lasttest.live.titel')}</h2>
-      <p className="klein leise">{t('lasttest.live.text', { zeit: uhr(j.zeit) })}</p>
+      <p className="klein leise">{t(vorDemDurchgang ? 'lasttest.live.text.vorbereitung' : 'lasttest.live.text', { zeit: uhr(j.zeit) })}</p>
       <div className="az-raster">
         <CpuKachel jetzt={j.cpu} verlauf={verlauf} art="live">
           <p className="leise klein">{j.kerne === null ? nv : j.kerneBegrenzt ? t('systemzustand.cpu.kerne', { anzahl: j.kerne }) : t('systemzustand.cpu.kerne.ohne', { anzahl: j.kerne })}</p>
@@ -71,7 +78,7 @@ function Live({ l, stufe }: { l: LasttestLiveStand; stufe: LasttestStand['stufe'
           <h3 className="az-titel">{t('lasttest.live.messung')}</h3>
           <dl className="eigenschaften klein">
             {stufe && <><dt>{t('lasttest.live.stufe')}</dt><dd>{t.frei(`lasttest.stufe.${stufe}`)}</dd></>}
-            <dt>{t('lasttest.live.durchgang')}</dt><dd>{t('lasttest.live.durchgang.wert', { name: j.name, n: zahl(j.n) })}</dd>
+            <dt>{t('lasttest.live.durchgang')}</dt><dd>{durchgangText(j, schritt)}</dd>
             <dt>{t('lasttest.live.p95')}</dt><dd>{j.p95 === null ? '–' : t('lasttest.live.p95.wert', { ms: zahl(j.p95), anfragen: zahl(j.anfragen) })}</dd>
             <dt>{t('lasttest.live.warteschlange')}</dt><dd>{j.warteschlange === null ? nv : t('lasttest.live.warteschlange.wert', { wartend: zahl(j.warteschlange), belegt: zahl(j.belegt ?? 0), von: zahl(j.verbindungen ?? 0) })}</dd>
           </dl>
@@ -107,6 +114,11 @@ function Live({ l, stufe }: { l: LasttestLiveStand; stufe: LasttestStand['stufe'
       )}
     </section>
   );
+}
+
+/** #1117: welcher Container misst – im Kopf, von Anfang an und auch nach „Beenden“. */
+function Version({ wert }: { wert?: string }) {
+  return wert ? <p className="klein leise">{t('lasttest.version', { version: wert })}</p> : null;
 }
 
 export function LasttestSeite() {
@@ -175,6 +187,7 @@ export function LasttestSeite() {
     <div className="kartenseite">
       <div className="karte breit lasttest">
         <h1>{t('lasttest.titel')}{stand.stufe ? ` – ${t.frei(`lasttest.stufe.${stand.stufe}`)}` : ''}</h1>
+        <Version wert={stand.version} />
         <p className="leise">{t('lasttest.unter')}</p>
 
         <div className="lasttest-stand" role="status" aria-live="polite">
@@ -198,7 +211,7 @@ export function LasttestSeite() {
             </ul>
           )}
         </div>
-        {zustand === 'laeuft' && stand.live && <Live l={stand.live} stufe={stand.stufe} />}
+        {zustand === 'laeuft' && stand.live && <Live l={stand.live} stufe={stand.stufe} schritt={stand.schritt} />}
         {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
 
         <div className="formular">

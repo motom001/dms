@@ -31,6 +31,8 @@ export const stufenVon = (w: LasttestWahl): LasttestStufe[] => (w === 'alle' ? [
 export type LasttestSchritt = 'start' | 'pruefen' | 'einrichten' | 'demo' | 'hintergrund' | 'vorbereiten' | 'messen' | 'aufraeumen' | 'auswerten';
 
 export interface LasttestStand {
+  /** Version des laufenden Containers (#1117), z. B. „0.244.0“ – im Kopf der Seite, von Anfang an. */
+  version?: string;
   wahl: LasttestWahl;
   /** Nur extrem (#739): gewählter Bestand (500.000 oder 1.000.000), sonst null. */
   mappen?: number | null;
@@ -64,7 +66,10 @@ export interface LasttestStand {
   speicherErkannt: 'HDD' | 'SSD' | 'NVMe' | null;
   /** Wo das Ergebnis im Container liegt (z. B. /data/ergebnis/lasttest-klein.md). */
   datei: string | null;
-  /** #895: Werte der laufenden Messung (das Skript schickt sie bei jeder Abfrage, alle 2 s) – null außerhalb der Durchgänge. */
+  /**
+   * #895: Werte der laufenden Messung (das Skript schickt sie bei jeder Abfrage, alle 2 s); seit #1117 schon ab dem
+   * Einrichten (ohne Durchgang). null vor der ersten Messung und nach dem Ende.
+   */
   live?: LasttestLiveStand | null;
 }
 
@@ -73,9 +78,9 @@ export type LiveGruppenArt = 'ablago' | 'lastgenerator' | 'postgres' | 'texterke
 
 /** Ein Wert der laufenden Messung (#895), wie ihn das Skript meldet. */
 export interface LasttestLive {
-  /** Durchgang und Gleichzeitigkeit. */
-  name: string;
-  n: number;
+  /** Durchgang und Gleichzeitigkeit; null vor den Durchgängen (#1117: Einrichten, Demo-Mappen, Volltext). */
+  name: string | null;
+  n: number | null;
   /** p95 der Antworten der letzten Sekunden (ms) und wie viele es waren. */
   p95: number | null;
   anfragen: number;

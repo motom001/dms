@@ -73,6 +73,17 @@ const json = async <T>(r: Response | Promise<Response>): Promise<T> => (await (a
 const post = (basis: string, pfad: string, body: unknown, koepfe: Record<string, string> = {}) =>
   fetch(basis + pfad, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json', ...koepfe }, body: JSON.stringify(body) });
 
+/** #1117: Werte vor den Durchgängen – beim Einrichten, Anlegen der Demo-Mappen oder Warten auf den Volltext. */
+const vorDenDurchgaengen = (s: LasttestStand) => (s.live && s.live.jetzt.name === null && ['einrichten', 'demo', 'hintergrund'].includes(s.schritt) ? s.live : null);
+
+/** #1117: Version des Containers im Stand, im Bericht und im Ergebnisblock; Auslastung schon vor den Durchgängen. */
+function pruefeVersionUndVorlauf(s: LasttestStand, vorher: LasttestStand['live']) {
+  assert.match(s.version ?? '', /^\d+\.\d+\.\d+/);
+  assert.ok(s.ergebnis!.bericht.includes(`\nAblago-Version: ${s.version}\n`), 'Version im Bericht');
+  assert.ok(s.ergebnis!.vorlage.includes(`\nAblago-Version: ${s.version} · `), 'Version im Ergebnisblock');
+  assert.ok(vorher && vorher.jetzt.p95 === null && vorher.jetzt.n === null, 'Auslastung schon beim Einrichten bzw. Anlegen der Demo-Mappen');
+}
+
 describe('Lasttest-Modus Ende zu Ende (#612)', { skip: !URL_DB && 'TEST_DATABASE_URL fehlt', timeout: 600_000 }, () => {
   it('nur DMS_LASTTEST=klein, ohne Ordner: Seite, Lauf bis zum Ergebnis, Herunterfahren, Neustart ohne zweiten Lauf', async () => {
     const db = await neueDatenbank('frisch');
@@ -88,9 +99,12 @@ describe('Lasttest-Modus Ende zu Ende (#612)', { skip: !URL_DB && 'TEST_DATABASE
     let s: LasttestStand;
     /** #895: Werte der laufenden Messung, wie sie die Seite zeigt. */
     let live: LasttestStand['live'] = null;
+    /** #1117: Werte schon beim Anlegen der Demo-Mappen (ohne Durchgang). */
+    let vorher: LasttestStand['live'] = null;
     for (let i = 0; ; i++) {
       s = await json<LasttestStand>(fetch(`${d.basis}/api/lasttest`));
-      if (s.live?.verlauf.length && s.live.verlauf.length >= (live?.verlauf.length ?? 0)) live = s.live;
+      if (s.live?.jetzt.name && s.live.verlauf.length >= (live?.verlauf.length ?? 0)) live = s.live;
+      vorher ??= vorDenDurchgaengen(s);
       if (s.zustand !== 'laeuft') break;
       if (i > 600) throw new Error(`Lasttest nicht fertig:\n${d.log()}`);
       await new Promise((r) => setTimeout(r, 500));
@@ -104,7 +118,8 @@ describe('Lasttest-Modus Ende zu Ende (#612)', { skip: !URL_DB && 'TEST_DATABASE
     assert.match(s.ergebnis!.vorlage, /\n  CPU je Gruppe klein \(% eines Kerns, Speicher RSS höchstens\): Ablago Prozess 1 \d+ % \d+ MB · Lastgenerator \d+ % /);
     assert.match(s.ergebnis!.vorlage, /\nProtokoll: (keine Warnungen und Fehler|[\d.]+ Warnungen und Fehler, \d+ (?:Art|Arten) – )/);
     assert.match(s.ergebnis!.bericht, /CPU und Speicher je Gruppe „klein“[\s\S]*Warnungen und Fehler im Protokoll \(#895/);
-    assert.ok(live && live.jetzt.name.startsWith('klein') && live.jetzt.n === 25, 'Werte der laufenden Messung auf der Seite');
+    assert.ok(live && live.jetzt.name?.startsWith('klein') && live.jetzt.n === 25, 'Werte der laufenden Messung auf der Seite');
+    pruefeVersionUndVorlauf(s, vorher);
     assert.ok(live.jetzt.gruppen?.some((g) => g.art === 'lastgenerator'), 'Lastgenerator erkannt');
     assert.equal(s.live, null, 'nach dem Lauf weg');
     // Engpass (#874): eigene Zeile je Durchgang, über alle Prozesse.
