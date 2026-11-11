@@ -7,7 +7,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | --- | --- |
 | **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Own organisation](organisation.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
-| **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Webhooks](webhooks.md), [Search and full text](texterkennung.md) |
+| **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Webhooks](webhooks.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Demo data](demo.md) |
@@ -152,7 +152,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 
 - **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
 <!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Sign-in protection, Themes, Log, Reported errors, Maintenance.
+- **Business**: additionally Number sequences, Automations, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
 <!-- /bereiche:organisation -->
 - **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
 

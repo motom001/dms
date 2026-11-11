@@ -45,7 +45,7 @@ SEITE = {
     'benutzer': 'benutzer.md', 'verschluesselung': 'verschluesselung.md', 'auskuenfte': 'datenschutz.md#auskunft-erteilen', 'loeschkonzept': 'loeschkonzept.md#aus-dem-dms-erzeugen',
     'aufbewahrung': 'archiv.md#nach-der-frist-aufbewahrung-abgelaufen', 'stempel': 'stempel.md',
     'postfaecher': 'postfaecher.md', 'eingangsordner': 'eingangsordner.md', 'webdav': 'webdav.md', 'webhooks': 'webhooks.md',
-    'texterkennung': 'texterkennung.md', 'sicherung': 'sicherung.md', 'vollexport': 'export.md', 'papierkorb': 'papierkorb.md',
+    'texterkennung': 'texterkennung.md', 'woerter': 'suche.md#gleichbedeutende-worter', 'sicherung': 'sicherung.md', 'vollexport': 'export.md', 'papierkorb': 'papierkorb.md',
     'nutzung': 'nutzung.md', 'organisation': 'organisation.md', 'betrieb': 'installation.md#e-mail-und-adresse', 'region': 'region.md', 'sprachen': 'sprachen.md', 'aufgaben': 'aufgaben.md', 'anmeldeschutz': 'anmeldeschutz.md',
     'designs': 'designs.md', 'anbindung': 'installation.md#datenbank-anbindung',
     'systemzustand': 'speicherplatz.md', 'protokoll': 'fehlersuche.md#protokoll', 'fehlermeldungen': 'fehlersuche.md#gemeldete-fehler',
