@@ -153,7 +153,7 @@ Manche Pakete bringen **Vorgaben** mit: Mappen zum **Behalten**, nicht zum Auspr
 
 Das Löschprotokoll vermerkt entfernte Vorgaben als „Unbenutzte Vorgaben eines Pakets entfernt“.
 
-## Aktualisieren
+## Aktualisieren { #aktualisieren }
 
 **Auf neue Versionen prüfen** fragt den Katalog ab (auf Knopfdruck) und markiert Pakete, für die es Neueres gibt. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen.
 
@@ -161,9 +161,16 @@ Ein Update **ergänzt nur** – außer es [baut um](#umbau), dann sagt die Vorsc
 
 - neue Mappentypen und Ansichten,
 - neue Felder und Register bei vorhandenen Mappentypen,
-- neue [Vorgaben](#vorgaben) und Vorlagen; unveränderte Vorgaben bekommen die neue Fassung.
+- neue [Vorgaben](#vorgaben) und Vorlagen; unveränderte Vorgaben bekommen die neue Fassung,
+- neue Fassungen der **Ansichten** des Pakets – nur für Ansichten, die noch so sind, wie das Paket sie angelegt hat (#1125).
 
-Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so. Den [Archivmodus](archiv.md#archivmodus-aus-einem-paket) eines vorhandenen Mappentyps ändert ein Update nie – weder kürzer noch länger, weder an noch aus.
+Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
+
+**Ansichten des Pakets** (#1125): Unter **Ansichten** sagt die Vorschau je vorhandener Ansicht, was geschieht:
+
+- „wird durch die neue Fassung im Paket ersetzt“ – du hast sie nicht geändert. Es bleibt dieselbe Ansicht (Links, Rechte an der Ansicht, Platz im Baum), nur Mappentypen, Bedingungen, Name und Beschreibung kommen aus dem Paket.
+- „von dir geändert, bleibt so“ – du hast sie umbenannt, Bedingungen oder Mappentypen geändert. Willst du trotzdem die Fassung des Pakets, setze **Trotzdem durch die Fassung im Paket ersetzen**.
+- „weicht von der Fassung im Paket ab und bleibt so“ – die Ansicht kam mit einer älteren Ablago-Version, Ablago weiß nicht, ob du sie geändert hast. Auch hier kannst du sie ersetzen lassen. Nach einem [Umbau](#umbau) ist das oft sinnvoll: Die alte Ansicht „Versicherungen“ zeigt danach alle Verträge, die neue Fassung nur Versicherungen. Den [Archivmodus](archiv.md#archivmodus-aus-einem-paket) eines vorhandenen Mappentyps ändert ein Update nie – weder kürzer noch länger, weder an noch aus.
 
 **Neue Id (Umzug, #1084):** Benennt ein Paket seine Id um – etwa die Zusatzsprachen der Texterkennung von `texterkennung_fra` auf `texterkennung.fra` –, erscheint das als gewöhnliches Update des installierten Pakets. Die Vorschau sagt „Das Paket heißt jetzt …“. Danach steht es unter der neuen Id da, mit allen Mappentypen, Mappen, Einstellungen und Daten; ein zweites Paket entsteht nicht. Das geht nur aus derselben Quelle und vom selben Herausgeber. Eine Id mit Punkt heißt übrigens immer: Das Paket **ergänzt** das Paket vor dem Punkt.
 
@@ -179,6 +186,8 @@ Die Vorschau zeigt unter **Umbau** je Schritt:
 - was **in die Notiz** kommt: Werte ohne passendes Feld stehen danach in einer Notiz an der Mappe. **Es geht nichts verloren.**
 - **Rückfragen** zu Feldern, die **du** am alten Mappentyp angelegt oder geändert hast: als eigenes Feld behalten, in die Notiz oder in ein Feld des neuen Typs. Vorausgewählt ist ein Vorschlag; ein Update überfährt deine Änderungen nie still.
 - was sich an **Rechten** ändert: Die Rechte-Regeln des alten Mappentyps gelten für die umgezogenen Mappen weiter (sie stehen danach vorn in den Regeln des neuen Typs, „Versicherung: …“, für Mappen mit „Übernommen aus = haushalt:versicherung“). War der alte Mappentyp für [KI-Dienste](#ki-dienste) nicht zugelassen, ist es der neue danach auch nicht. **Ein Umbau macht Mappen nie für mehr Personen oder Dienste lesbar.**
+- **Auswahl → Verweis** (#1125): Wird aus einer Auswahl ein Verweis – etwa die „Art“ eines Haushalt-Vertrags („Strom“) zur Vertragsart –, sucht Ablago die Mappe mit diesem Titel (die Vertragsart „Strom“). Werte, zu denen es keine oder mehrere solche Mappen gibt, nennt die Vorschau: Das Feld bleibt dort leer, der Wert steht in der Notiz. **Ablago legt dafür nie Mappen an** – lege die fehlende Vertragsart danach selbst an und wähle sie an der Mappe.
+- **Ansichten** über den alten Mappentyp (#1125): Geht er in einem anderen auf, zeigt eine Ansicht wie „Versicherungen“ danach **alle** Mappen des neuen Typs, also alle Verträge – die Vorschau sagt, wie viele dazukommen. Fragt eine Ansicht ein Feld ab, das es danach nicht mehr gibt, nennt die Vorschau es auch; die Bedingung trifft dann nicht mehr zu. Gehört die Ansicht zu einem Paket, bringt dessen nächstes Update meist eine passende Fassung (siehe [Ansichten des Pakets](#aktualisieren)); sonst passe sie selbst an.
 
 Bestätigen darf nur, wer **Gesamte Verwaltung** hat, mit einer erneuten Anmeldung. **Vorher sichern** ist vorausgewählt: Ablago startet eine [Sicherung](sicherung.md) und baut erst danach um. Der Umbau läuft **ganz oder gar nicht** – bricht er ab, ist nichts verändert, und die Meldung sagt das. Danach:
 

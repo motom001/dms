@@ -17,7 +17,9 @@ export { pruefeVorlage, vorlagenPlatzhalter, type VorlagenFehler } from './vorla
 /** Umbau (#1041): Umbau-Schritte lesen, planen, ausführen. */
 export { liesUmbau, planeUmbau, wendeEntscheidungenAn, type GeplanterSchritt, type UmbauDienst, type UmbauLage } from './umbau';
 export { fuehreUmbauAus, nimmEinstellungenZurueck, uebernahmeDaten, type UmbauErgebnis } from './umbau-ausfuehren';
-export { wandle } from './umbau-werte';
+export { titelKennung, wandle, type TitelSuche } from './umbau-werte';
+/** Ansichten aus Paketen mit Prüfwert (#1125): ersetzen, solange unverändert; Stand zieht beim Umbau mit. */
+export { sichtFassung, sichtPruefwert, sichtStandNach, sichtZustand, standNachUmbau } from './sichtstand';
 /** Installieren unabhängig von der Reihenfolge (#1122): zweiter Durchgang, optionale Ziele in Bedingungen, Quellen. */
 export { anzeigeTypIds, anzeigeWartet, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './installation';
 /** Namenskonflikte in der Vorschau (#1123). */

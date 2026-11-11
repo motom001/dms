@@ -7,7 +7,8 @@
  * - dms:<kennung> verweist auf einen Mappentyp, den das DMS selbst mitbringt (#310), z. B. dms:rolle; dms:ablageort ist
  *   seit #883 ein Alias für basis:ablageort (DMS_ALIAS).
  * - Scheitert etwas, wird zurückgerollt: Es bleibt nichts halb angelegt.
- * - Ein Update ergänzt nur (neue Typen, Felder, Register, Sichten); es löscht und überschreibt nichts.
+ * - Ein Update ergänzt nur (neue Typen, Felder, Register, Sichten); es löscht und überschreibt nichts – außer Ansichten
+ *   des Pakets, die noch so sind, wie das Paket sie geschrieben hat (Prüfwert, #1125, pakete/sichtstand.ts).
  */
 import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
 import { liesFeldErkennung, liesWiederfinden, wiederfindenVorgabe, type FeldErkennung } from '../../shared/src/erkennung';
@@ -24,7 +25,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import type { MappenAktion } from '../../shared/src/paketaktionen';
 import { liesMappenaktionen } from './paketaktionen';
-import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
@@ -50,7 +51,8 @@ import {
   anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
   setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
 } from './pakete/index';
-import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, uebernahmeDaten, wendeEntscheidungenAn, type UmbauErgebnis, type UmbauLage } from './pakete/index';
+import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, titelKennung, uebernahmeDaten, wendeEntscheidungenAn, type TitelSuche, type UmbauErgebnis, type UmbauLage } from './pakete/index';
+import { sichtFassung, sichtStandNach, sichtZustand } from './pakete/index';
 import { abhaengigeTypen, abhaengigkeitsKonflikte, anzeigeTypIds, anzeigeWartet, eigeneKonflikte, Namensherkunft, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './pakete/index';
 import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
 import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
@@ -946,7 +948,9 @@ export interface TypPlan {
    */
   archiv?: Archiv & { stichtagName: string | null };
 }
-export interface SichtPlan { schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; /** Wird nicht installiert (#656), mit Grund. */ ausgelassen?: string | null; /** Mappentypen, die hier fehlen – die Ansicht kommt ohne sie (#656). */ ohne?: string[] }
+export interface SichtPlan { schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; /** Wird nicht installiert (#656), mit Grund. */ ausgelassen?: string | null; /** Mappentypen, die hier fehlen – die Ansicht kommt ohne sie (#656). */ ohne?: string[];
+  /** Vorhandene Ansicht beim Update (#1125): bleibt, wird ersetzt oder ist geändert (auf Wunsch: `sichtenErsetzen`). */
+  zustand?: SichtZustand }
 export interface AbhaengigkeitPlan { id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }
 export interface Vorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null;
@@ -1034,9 +1038,23 @@ export interface InstallierenEingabe {
   umbauEntscheidungen?: UmbauEntscheidungen;
   /** Setzt die Route (nie aus der Anfrage): Die Person hat „Gesamte Verwaltung“ – nur sie bestätigt einen Umbau. */
   gesamteVerwaltung?: boolean;
+  /** Ansichten (Schlüssel), die das Update ersetzt, obwohl sie geändert sind (#1125, Zustand geaendert/unbekannt). */
+  sichtenErsetzen?: string[];
 }
 /** Was ein Update mit Umbau zusätzlich braucht (#1041); setzt die Route aus Anfrage und Anmeldung. */
-export interface UmbauEingabe { umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen; gesamteVerwaltung?: boolean }
+export interface UmbauEingabe { umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen; gesamteVerwaltung?: boolean; /** #1125, wie bei InstallierenEingabe. */ sichtenErsetzen?: string[] }
+
+/** Ansichten, die trotz Änderung ersetzt werden sollen (#1125): nur Schlüssel. */
+const ersetzenAus = (e: { sichtenErsetzen?: unknown }) => new Set(Array.isArray(e.sichtenErsetzen) ? e.sichtenErsetzen.map(String) : []);
+
+/**
+ * Eine Ansicht des Pakets, wie Ablago sie anlegt (#1125: auch zum Vergleichen und Ersetzen). `typId` löst Typverweise auf
+ * (null = gibt es nicht), `fremd` die Ids der `fremde_typen`, `zieltypenIn` „zeigt auf Mappe vom Typ …“ (#1036).
+ */
+function sichtAusPaket(s: PaketSicht, x: { typId: (vw: string) => string | null; fremd: string[]; zieltypenIn: (b: Bedingung) => Bedingung }) {
+  const typen = [...new Set([...(s.typen ?? []).map((vw) => (vw === ALLE_TYPEN ? ALLE_TYPEN : x.typId(vw))).filter((y): y is string => !!y), ...x.fremd])];
+  return { beschreibung: s.beschreibung ?? '', typen, bedingungen: (s.bedingungen ?? []).map(bedingungAus).map(x.zieltypenIn), trefferliste: s.trefferliste ?? null, symbol: s.symbol ?? null };
+}
 
 const modulInfo = (c: PaketCodeTeil) => {
   const m = c.dateien.find((d) => d.name === 'modul.wasm')!.inhalt;
@@ -1464,6 +1482,8 @@ export class Paketverwaltung {
   private uploads = new Map<string, Hochgeladen>();
   /** Umbau (#1041): die geplante Lage zur Vorschau, die die Installation gleich ausführt. */
   private umbauLagen = new WeakMap<Vorschau, UmbauLage>();
+  /** Ansichten, die trotz Änderung ersetzt werden (#1125) – je Vorschau, wie die Lage des Umbaus. */
+  private sichtenErsetzen = new WeakMap<Vorschau, Set<string>>();
 
   constructor(private d: Dienst, private o: PaketOptionen) {
     setInterval(() => { void this.raeumeUploadsAuf(); }, UPLOAD_AUFRAEUMEN_MS).unref();
@@ -2078,9 +2098,15 @@ export class Paketverwaltung {
     const beruflich = paket.typen.some((x) => x.archiv?.jahreBeruflich) && (await this.d.kern.merkmale()).beruflich;
     // Umbau (#1041): je Schritt die Vorschau; Übernahmen gelten unten wie neue Typen (mit der Id des alten).
     const umbauProbleme: Array<{ code: string; text: string }> = [];
+    // Typverweis → Id in dieser Installation (Vorschau: was es noch nicht gibt, ist null).
+    const typIdJetzt = (vw: string): string | null => {
+      const [p, sl] = vw.includes(':') ? vw.split(':') : [m.id, vw];
+      return (p === 'dms' ? dmsTypen.get(sl)?.id : p === m.id ? ich?.typen[sl] ?? ueb?.typen[sl] : installierte.find((x) => x.id === p)?.typen[sl]) ?? null;
+    };
     const umbau = await planeUmbau(this.d, {
       paket: { id: m.id, name: m.name, version: m.version, typen: paket.typen, umbau: paket.umbau ?? [] }, ich, installierte, typen, herausgeber,
       herausgeberVon: (p) => this.herausgeberVon(p), paketFelder: (s) => paketFelderAus(paket.typen.find((x) => x.schluessel === s), m.id),
+      zielTitel: (nach, feld) => this.zielTitel({ paket, nach, feld, typen, installierte, typId: typIdJetzt, vorgaben: vorgabenPlan }),
     }, umbauProbleme);
     for (const x of umbauProbleme) problem(x.code, x.text);
     // Sicherheit: Jeder Umbau braucht seine eigene Vorschau und Bestätigung – nie „alle auf einmal“ im Ablauf.
@@ -2143,7 +2169,16 @@ export class Paketverwaltung {
       if (ohne.length && !ich?.sichten[s.schluessel]) hinweise.push(t('meldungen.pakete.ansicht-kommt-ohne-den', { name: s.name, map: ohne.map((n) => `„${n}“`).join(', ') }));
       const vorhandenId = ich?.sichten[s.schluessel] ?? ueb?.sichten[s.schluessel];
       const vorhanden = vorhandenId ? sichten.find((x) => x.id === vorhandenId) : undefined;
-      if (vorhanden || vorhandenId) return { schluessel: s.schluessel, name: vorhanden?.name ?? s.name, eltern: s.eltern ?? null, vorhanden: true, konflikt: null, vorschlag: null };
+      if (vorhanden || vorhandenId) {
+        // Prüfwert (#1125): unverändert → neue Fassung; ohne Stand (vor #1125) nur „gleich“, wenn sie der Fassung entspricht.
+        const st = ich?.sichtStand?.[s.schluessel];
+        const wieImPaket = !st && vorhanden ? { name: vorhanden.name, elternId: s.eltern ? ich?.sichten[s.eltern] ?? null : null, ...sichtAusPaket(s, {
+          typId: typIdJetzt, fremd: (s.fremdeTypen ?? []).map((f) => fremderTyp(f.kennung, typen, installierte)?.id).filter((x): x is string => !!x),
+          zieltypenIn: (b) => (b.art === 'feld' && b.op === 'zeigtAufTyp' && b.wert?.art === 'fest' && Array.isArray(b.wert.wert) ? { ...b, wert: { art: 'fest', wert: b.wert.wert.map((vw) => typIdJetzt(str(vw))).filter((x): x is string => !!x) } } : b),
+        }) } : null;
+        const zustand = ich ? sichtZustand({ stand: st, fassung: sichtFassung(s), jetzt: vorhanden, wieImPaket }) : undefined;
+        return { schluessel: s.schluessel, name: vorhanden?.name ?? s.name, eltern: s.eltern ?? null, vorhanden: true, konflikt: null, vorschlag: null, ...(zustand ? { zustand } : {}) };
+      }
       const name = (sichtNamen[s.schluessel] ?? s.name).trim();
       // Konflikt nur auf oberster Ebene: Untersichten stehen unter der neuen Elternsicht.
       const geschwister = s.eltern ? [] : [...sichten.filter((x) => !x.elternId).map((x) => x.name.trim().toLowerCase()), ...(geplant?.sichten ?? [])];
@@ -2241,6 +2276,29 @@ export class Paketverwaltung {
   }
 
   /** Lesbarer Name eines Typverweises für die Rechte-Rückfrage. */
+  /**
+   * Auswahl → Verweis im Umbau (#1125), Vorschau: Mappen nach Titel unter den Zieltypen des Verweisfelds `feld` am Zieltyp
+   * `nach` – vorhandene Mappen und Vorgaben, die dieses Paket neu anlegt (Platzhalter-Id). undefined = kein Verweisfeld.
+   */
+  private async zielTitel(x: { paket: Paket; nach: string; feld: string; typen: Mappentyp[]; installierte: InstalliertesPaket[]; typId: (vw: string) => string | null; vorgaben: VorgabePlan[] }): Promise<TitelSuche | undefined> {
+    const m = x.paket.manifest;
+    const [p, sl] = x.nach.split(':');
+    const eigen = p === m.id ? x.paket.typen.find((y) => y.schluessel === sl)?.felder.find((f) => f.key === x.feld) : undefined;
+    const fremd = p !== m.id ? x.typen.find((y) => y.id === x.installierte.find((i) => i.id === p)?.typen[sl])?.felder.find((f) => f.key === x.feld) : undefined;
+    if ((eigen ?? fremd)?.typ !== 'referenz') return undefined;
+    const verweise = eigen ? paketZiele(eigen).map((vw) => (vw.includes(':') ? vw : typKennung(m.id, vw))) : [];
+    const ids = eigen ? verweise.map(x.typId).filter((y): y is string => !!y) : zieleVon(fremd!);
+    const index = new Map<string, string[]>();
+    const dazu = (titel: string, id: string) => { const k = titelKennung(titel); index.set(k, [...new Set([...(index.get(k) ?? []), id])]); };
+    for (const id of ids) for (const mp of await this.d.listeMappen(id)) if (mp.titel) dazu(mp.titel, mp.id);
+    // Vorgaben, die erst mit dieser Installation kommen (#1038) – z. B. die Vertragsart „Strom“.
+    for (const v of x.paket.vorgaben ?? []) {
+      const plan = x.vorgaben.find((y) => y.schluessel === v.schluessel && !y.fremd);
+      if (plan?.zustand === 'neu' && verweise.includes(v.typ.includes(':') ? v.typ : typKennung(m.id, v.typ))) dazu(plan.name, `vorgabe:${v.schluessel}`);
+    }
+    return (_typen, titel) => index.get(titelKennung(titel)) ?? [];
+  }
+
   private typName(vw: string, paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): string {
     const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
     if (p === paket.manifest.id) return paket.typen.find((t) => t.schluessel === s)?.name ?? s;
@@ -2312,6 +2370,7 @@ export class Paketverwaltung {
     Paketverwaltung.rechteBestaetigen(vorschau, e);
     Paketverwaltung.herausgeberBestaetigen(vorschau, e);
     this.umbauBestaetigen(vorschau, e);
+    this.sichtenErsetzen.set(vorschau, ersetzenAus(e));
     // Abhängigkeiten mit Code installiert das DMS nicht still mit: ihre Rechte bestätigt man an ihnen selbst (#338).
     for (const a of fehlen) {
       if (!a.verfuegbar) continue;
@@ -2532,6 +2591,10 @@ export class Paketverwaltung {
     const mappen: string[] = [];
     let beispielStaende: BeispielStand[] = [];
     const neueSichten: string[] = [];
+    // Ansichten (#1125): ersetzte (alter Stand zum Zurückrollen), geschriebene (Schlüssel, für den Stand), gewünschte.
+    const ersetzteSichten: Sicht[] = [];
+    const sichtGeschrieben = new Set<string>();
+    const ersetzenGewuenscht = this.sichtenErsetzen.get(plan) ?? new Set<string>();
     const geaendert: Mappentyp[] = [];
     // Abschnitte aus dem Update (#890) je Typ: gehören zum Paketstand (#653), nicht zu den eigenen Änderungen.
     const abschnittRegister = new Map<string, Set<string>>();
@@ -2542,6 +2605,7 @@ export class Paketverwaltung {
       for (const r of vorgabenErg.rueck) await r().catch(() => {});
       await this.d.entferneMappenEndgueltig(mappen).catch(() => {});
       await this.d.entferneMappenEndgueltig(vorgabenErg.angelegt).catch(() => {});
+      for (const s of ersetzteSichten) await this.d.aendereSicht(s.id, s).catch(() => {});
       for (const s of [...neueSichten].reverse()) await this.d.loescheSicht(s).catch(() => {});
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
       for (const t of geaendert) await this.d.aendereTyp(t.id, t).catch(() => {});
@@ -2640,25 +2704,38 @@ export class Paketverwaltung {
       await this.ergaenzeOptionaleZiele(paket, typMap, geaendert);
       // 2c. Quellen (#1122): Was jetzt geht, nachtragen; was das Paket vorsieht und nicht geht, ist ein Fehler mit Stelle.
       await this.quellenNachtragen(paket, { ids, neu: new Set(neueTypen.map((x) => x.schluessel)), vorher, geaendert, typId: (vw) => ziel(vw, false)! });
-      // 3. Neue Sichten, Elternsichten zuerst, am Ende ihrer Ebene.
+      // 3. Neue Sichten, Elternsichten zuerst, am Ende ihrer Ebene. Vorhandene (#1125): unverändert (Prüfwert) bzw. auf
+      // Wunsch → durch die neue Fassung ersetzt; was der Administrator geändert hat, bleibt sonst.
       for (const s of nachEltern(paket.sichten)) {
         const sp = plan.sichten.find((x) => x.schluessel === s.schluessel)!;
-        if (sp.vorhanden || sp.ausgelassen) continue;
+        if (sp.ausgelassen) continue;
+        const ersetzen = sp.zustand === 'aktualisiert' || ((sp.zustand === 'geaendert' || sp.zustand === 'unbekannt') && ersetzenGewuenscht.has(s.schluessel));
+        if (sp.vorhanden && !ersetzen) continue;
         const alle = await this.d.listeSichten();
-        const elternId = s.eltern ? sichtMap[s.eltern] ?? null : null;
+        const vorhanden = sp.vorhanden ? alle.find((x) => x.id === sichtMap[s.schluessel]) : undefined;
+        if (sp.vorhanden && !vorhanden) continue;
+        const elternId = s.eltern ? sichtMap[s.eltern] ?? vorhanden?.elternId ?? null : null;
         if (s.eltern && !elternId) throw new Fachfehler(422, t('meldungen.pakete.ansicht-elternsicht-fehlt', { name: s.name, eltern: s.eltern }));
-        const position = Math.max(0, ...kinderVon(alle, elternId).map((x) => x.position)) + 10;
+        const position = vorhanden && vorhanden.elternId === elternId ? vorhanden.position : Math.max(0, ...kinderVon(alle, elternId).map((x) => x.position)) + 10;
         // „*“ (#725): Ansicht über alle Mappentypen – bleibt, wie es ist.
         const jetzt = await this.d.listeTypen();
-        const fremd = (s.fremdeTypen ?? []).map((f) => fremderTyp(f.kennung, jetzt, installierte)?.id).filter((x): x is string => !!x);
-        const typen = [...new Set([...(s.typen ?? []).map((x) => (x === ALLE_TYPEN ? ALLE_TYPEN : ziel(x, false)!)).filter(Boolean), ...fremd])];
-        if (!typen.length && (s.fremdeTypen ?? []).length) continue;
+        const daten = sichtAusPaket(s, { typId: (vw) => ziel(vw, false), fremd: (s.fremdeTypen ?? []).map((f) => fremderTyp(f.kennung, jetzt, installierte)?.id).filter((x): x is string => !!x), zieltypenIn });
+        if (!daten.typen.length && (s.fremdeTypen ?? []).length) continue;
         try {
-          const neu = await this.d.legeSichtAn({ name: sp.name, beschreibung: s.beschreibung ?? '', ...(s.beschriftungen ? { beschriftungen: s.beschriftungen } : {}), elternId, position, typen, bedingungen: (s.bedingungen ?? []).map(bedingungAus).map(zieltypenIn), ...(s.trefferliste ? { trefferliste: s.trefferliste } : {}), ...(s.symbol ? { symbol: s.symbol } : {}) });
-          neueSichten.push(neu.id);
-          sichtMap[s.schluessel] = neu.id;
+          if (vorhanden) {
+            // Name des Pakets, außer er gibt es unter derselben Elternsicht schon; Rechte an der Ansicht (#148) bleiben.
+            const name = kinderVon(alle, elternId).some((x) => x.id !== vorhanden.id && x.name.trim().toLowerCase() === s.name.trim().toLowerCase()) ? vorhanden.name : s.name;
+            await this.d.aendereSicht(vorhanden.id, { ...vorhanden, ...daten, name, elternId, position, beschriftungen: { ...vorhanden.beschriftungen, ...s.beschriftungen } });
+            ersetzteSichten.push(vorhanden);
+          } else {
+            const neu = await this.d.legeSichtAn({ name: sp.name, ...daten, ...(s.beschriftungen ? { beschriftungen: s.beschriftungen } : {}), elternId, position });
+            neueSichten.push(neu.id);
+            sichtMap[s.schluessel] = neu.id;
+          }
+          sichtGeschrieben.add(s.schluessel);
         } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.ansicht', { name: sp.name, meldungen: meldungen(f) })); }
       }
+      if (ersetzteSichten.length) log.info('Paket: Ansichten durch die neue Fassung ersetzt', { paket: m.id, version: m.version, ansichten: ersetzteSichten.map((x) => x.name) });
       // 3b. Vorgaben (#1038): immer (keine Wahl wie bei Beispielen), ohne Ereignisse; Ersteller ist das Dienstkonto des
       // Pakets. Updates ergänzen; was der Administrator geändert oder gelöscht hat, bleibt so.
       if (paket.vorgaben?.length || paket.ergaenzungen?.length) {
@@ -2779,6 +2856,8 @@ export class Paketverwaltung {
         installiert: alt?.installiert ?? jetzt, installiertVon: alt ? alt.installiertVon : von.email,
         aktualisiert: alt ? jetzt : null, aktualisiertVon: alt ? von.email : null,
         typen: typMap, sichten: sichtMap, abhaengigkeiten: m.abhaengigkeiten,
+        // Ansichten mit Prüfwert (#1125): ein späteres Update ersetzt nur, was noch so ist.
+        sichtStand: sichtStandNach({ sichten: paket.sichten, alt, ids: sichtMap, geschrieben: sichtGeschrieben, zustand: (k) => plan.sichten.find((x) => x.schluessel === k)?.zustand, jetzt: await this.d.listeSichten(), umbau: umbauErg?.sichten }),
         // Beispiel-Mappen mit Schlüssel (#347), damit spätere Pakete auf sie verweisen können.
         ...(beispielIds.size ? { beispiele: Object.fromEntries(beispielIds) } : alt?.beispiele ? { beispiele: alt.beispiele } : {}),
         ...(beispielStaende.length ? { beispielMappen: beispielStaende } : alt?.beispielMappen?.length ? { beispielMappen: alt.beispielMappen } : {}),
@@ -2904,6 +2983,7 @@ export class Paketverwaltung {
     Paketverwaltung.rechteBestaetigen(plan, e);
     Paketverwaltung.herausgeberBestaetigen(plan, e);
     this.umbauBestaetigen(plan, e);
+    this.sichtenErsetzen.set(plan, ersetzenAus(e));
     const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, einzuschalten(e.automatisierungen, paket));
     log.info('Paket aktualisiert', { von: von.email, paket: id, ...(plan.umzug ? { neueId: neu.id } : {}), vorher: alt.version, version: neu.version, pruefung: pruefung.art, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
     return neu;

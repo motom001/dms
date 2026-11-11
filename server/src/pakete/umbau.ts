@@ -12,17 +12,18 @@
  * Den Dienst bekommt das Modul als `UmbauDienst` – Schicht 3 bindet dienst.ts nicht ein.
  */
 import { randomUUID } from 'node:crypto';
+import { hatZeitraumform, istZeitraum, leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
 import { SCHLUESSEL, TYPVERWEIS, teileKennung, typKennung } from '../../../shared/src/kennungen';
 import { istLeer, zieleVon, type Feld, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
 import type { Sicht } from '../../../shared/src/sichten';
-import { archivLockerer, regelnMitnehmen, UMBAU_MAX, type UmbauEntscheidungen, type UmbauPlan, type UmbauRueckfrage, type UmbauSchritt, type UmbauWahl } from '../../../shared/src/umbau';
+import { archivLockerer, regelnMitnehmen, UMBAU_MAX, type UmbauAnsicht, type UmbauEntscheidungen, type UmbauPlan, type UmbauRueckfrage, type UmbauSchritt, type UmbauWahl } from '../../../shared/src/umbau';
 import { istVorgabeWert } from '../../../shared/src/vorgaben';
 import type { Kern } from '../kern';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
-import { umziehbar, wandle, type Aktion, type FeldAktion } from './umbau-werte';
+import { ohneZiel, umziehbar, wandle, type Aktion, type FeldAktion, type TitelSuche } from './umbau-werte';
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));
@@ -38,7 +39,7 @@ export interface UmbauDienst {
 }
 
 /** Mappentyp eines Pakets, so weit der Umbau ihn braucht. */
-interface PaketTypKurz { schluessel: string; name: string; felder: Array<{ key: string; berechnet?: boolean }> }
+interface PaketTypKurz { schluessel: string; name: string; felder: Array<{ key: string; typ?: string; berechnet?: boolean }> }
 interface PaketKurz { id: string; abh: Record<string, unknown>; typen: PaketTypKurz[] }
 
 /* ---------- 1. Lesen ---------- */
@@ -57,15 +58,29 @@ function liesPaare(roh: unknown, wo: string, ziel: PaketTypKurz | undefined, feh
   return erg;
 }
 
-/** Feste Werte (`setzen`): Text, Zahl, Ja/Nein, Liste von Texten oder `{ vorgabe: … }`. */
+/**
+ * Ein fester Wert für ein Feld der Art `typ` (undefined = Feldart noch nicht bekannt): Zeiträume (#1125) als
+ * `{ anzahl, einheit }`; in ein Zeitraum-Feld auch als Text („P3M“, „3 Monate“). Sonst der Wert, wie er ist; null =
+ * passt nicht.
+ */
+export function setzenWert(w: unknown, typ: string | undefined): unknown {
+  if (hatZeitraumform(w)) { const z = leseZeitraum(w); return istZeitraum(z) && (typ === undefined || typ === 'zeitraum') ? z : null; }
+  if (typ === 'zeitraum' && !istVorgabeWert(w)) { const z = leseZeitraum(w); return istZeitraum(z) ? z : null; }
+  return w;
+}
+
+/** Feste Werte (`setzen`): Text, Zahl, Ja/Nein, Liste von Texten, `{ vorgabe: … }` oder ein Zeitraum (#1125). */
 function liesSetzen(roh: unknown, wo: string, ziel: PaketTypKurz | undefined, fehler: string[]): Record<string, unknown> {
   const erg: Record<string, unknown> = {};
   if (roh !== undefined && !istObjekt(roh)) fehler.push(t('meldungen.pakete.umbau.setzen', { wo }));
   for (const [k, w] of Object.entries(istObjekt(roh) ? roh : {})) {
     const einfach = ['string', 'number', 'boolean'].includes(typeof w) || (Array.isArray(w) && w.every((y) => typeof y === 'string'));
-    if (!SCHLUESSEL.test(k) || !(einfach || (istVorgabeWert(w) && TYPVERWEIS.test(w.vorgabe)))) { fehler.push(t('meldungen.pakete.umbau.setzen-wert', { wo, feld: k })); continue; }
-    if (ziel && !ziel.felder.some((f) => f.key === k)) { fehler.push(t('meldungen.pakete.umbau.feld-fehlt', { wo, feld: k, typ: ziel.name })); continue; }
-    erg[k] = w;
+    if (!SCHLUESSEL.test(k) || !(einfach || hatZeitraumform(w) || (istVorgabeWert(w) && TYPVERWEIS.test(w.vorgabe)))) { fehler.push(t('meldungen.pakete.umbau.setzen-wert', { wo, feld: k })); continue; }
+    const f = ziel?.felder.find((x) => x.key === k);
+    if (ziel && !f) { fehler.push(t('meldungen.pakete.umbau.feld-fehlt', { wo, feld: k, typ: ziel.name })); continue; }
+    const wert = setzenWert(w, f?.typ);
+    if (wert === null) { fehler.push(t(hatZeitraumform(w) && istZeitraum(leseZeitraum(w)) ? 'meldungen.pakete.umbau.setzen-kein-zeitraumfeld' : 'meldungen.pakete.umbau.setzen-zeitraum', { wo, feld: k })); continue; }
+    erg[k] = wert;
   }
   return erg;
 }
@@ -146,6 +161,11 @@ export interface UmbauKontext {
   herausgeberVon: (p: InstalliertesPaket) => string | null;
   /** Felder eines eigenen Typs, wie das Paket sie anlegt – für Umwandlung und Rückfragen. */
   paketFelder: (schluessel: string) => Feld[];
+  /**
+   * Auswahl → Verweis (#1125): Mappen nach Titel unter den Zieltypen des Verweisfelds `feld` am Zieltyp `nach` – samt
+   * Vorgaben, die das Paket erst anlegt. undefined = kein Verweisfeld (bzw. ohne Zuordnung).
+   */
+  zielTitel?: (nach: string, feld: string) => Promise<TitelSuche | undefined>;
 }
 
 type Problem = (code: string, text: string) => void;
@@ -251,6 +271,8 @@ function pruefeSchritt(s: UmbauSchritt, alt: Mappentyp, z: NonNullable<ReturnTyp
     const g = z.zielFelder.find((x) => x.key === n);
     if (!g) problem('umbau-ziel', t('meldungen.pakete.umbau.feld-fehlt', { wo: alt.name, feld: n, typ: z.name }));
     else if (g.berechnetVon) problem('umbau-ziel', t('meldungen.pakete.umbau.feld-berechnet', { wo: alt.name, feld: n }));
+    // Zeitraum (#1125): Am Typ einer Abhängigkeit steht die Feldart erst hier fest.
+    else if (n in s.setzen && setzenWert(s.setzen[n], g.typ) === null) problem('umbau-ziel', t(g.typ === 'zeitraum' ? 'meldungen.pakete.umbau.setzen-zeitraum' : 'meldungen.pakete.umbau.setzen-kein-zeitraumfeld', { wo: alt.name, feld: g.label }));
   }
   const umbenannt = umbenennung(felder);
   // Rechte-Regeln fragen Felder ab – jedes muss danach noch da sein (sonst wären es andere Regeln).
@@ -275,16 +297,63 @@ function rechteVon(alt: Mappentyp, z: NonNullable<ReturnType<typeof zielVon>>, f
   return { regeln, ki: !u.ki.has(alt.id) && u.ki.has(ziel.id), verwehrt: verwehrt.map((x) => u.k.installierte.find((y) => y.id === x)?.name ?? x) };
 }
 
-/** Je umziehendem Feld: wohin, wie viele Werte und wie viele davon (auch) in die Notiz. */
-function feldVorschau(felder: FeldPlan[], zielFelder: Feld[], mappen: Mappe[]): UmbauPlan['felder'] {
+/** Höchstens so viele Werte ohne passende Mappe nennt die Vorschau je Feld (#1125). */
+const OHNE_ZIEL_MAX = 10;
+
+/**
+ * Je umziehendem Feld: wohin, wie viele Werte und wie viele davon (auch) in die Notiz; bei Auswahl → Verweis (#1125) die
+ * Werte ohne passende Mappe. `titel` je Kennung des Zielfelds.
+ */
+function feldVorschau(felder: FeldPlan[], zielFelder: Feld[], mappen: Mappe[], titel: Map<string, TitelSuche>): UmbauPlan['felder'] {
   return felder.flatMap((x) => {
     if (x.aktion.art !== 'nach' || x.rueckfrage) return [];
     const key = x.aktion.ziel;
     const ziel = zielFelder.find((g) => g.key === key);
     const mit = mappen.filter((m) => !istLeer(m.werte[x.feld.key]));
-    const notiz = mit.filter((m) => { const w = ziel ? wandle(x.feld, ziel, m.werte[x.feld.key]) : null; return !w || !w.genau; }).length;
-    return [{ von: x.feld.label, nach: ziel?.label ?? key, anzahl: mit.length, notiz }];
+    const suche = titel.get(key);
+    const notiz = mit.filter((m) => { const w = ziel ? wandle(x.feld, ziel, m.werte[x.feld.key], { titel: suche }) : null; return !w || !w.genau; }).length;
+    const fehlt = ziel && suche ? ohneZiel(x.feld, ziel, mit.map((m) => m.werte[x.feld.key]!), suche) : [];
+    return [{ von: x.feld.label, nach: ziel?.label ?? key, anzahl: mit.length, notiz, ...(fehlt.length ? { ohneZiel: fehlt.slice(0, OHNE_ZIEL_MAX) } : {}) }];
   });
+}
+
+/** Mappen nach Titel für jedes Verweisfeld des Ziels, in das eine Auswahl oder ein Text zieht (#1125). */
+async function titelSuchen(s: UmbauSchritt, felder: FeldPlan[], zielFelder: Feld[], k: UmbauKontext): Promise<Map<string, TitelSuche>> {
+  const erg = new Map<string, TitelSuche>();
+  for (const x of felder) {
+    if (x.aktion.art !== 'nach' || !['auswahl', 'text'].includes(x.feld.typ)) continue;
+    const key = x.aktion.ziel;
+    if (erg.has(key) || zielFelder.find((g) => g.key === key)?.typ !== 'referenz') continue;
+    const suche = await k.zielTitel?.(s.nach, key);
+    if (suche) erg.set(key, suche);
+  }
+  return erg;
+}
+
+/** Feldkennungen, die eine Bedingung einer Ansicht abfragt (Felder und Fristen; Systemwerte nicht). */
+const sichtFelder = (s: Sicht): string[] => s.bedingungen.flatMap((b) => (b.art === 'feld' && !b.feld.startsWith('_') ? [b.feld] : b.art === 'frist' && b.feld ? [b.feld] : []));
+
+/**
+ * Ansichten über den alten Typ (#1125, Fund Clients und Pakete): Bedingungen auf Felder, die es danach nicht mehr gibt,
+ * und wie viele Mappen des Zieltyps eine Ansicht danach zusätzlich zeigt. Nur Ansichten mit etwas zu sagen.
+ */
+async function ansichtHinweise(d: UmbauDienst, alt: Mappentyp, felder: FeldPlan[], ziel: Mappentyp | undefined, u: Umgebung): Promise<UmbauAnsicht[]> {
+  const bleibt = new Set(umbenennung(felder).keys());
+  const breiter = ziel ? (await d.listeMappen(ziel.id)).length : 0;
+  const besitzer = (id: string) => u.k.installierte.find((p) => Object.values(p.sichten).includes(id))?.name ?? null;
+  return u.sichten.filter((s) => s.typen.includes(alt.id)).flatMap((s): UmbauAnsicht[] => {
+    const weg = [...new Set(sichtFelder(s).filter((f) => felder.some((x) => x.feld.key === f) && !bleibt.has(f)))].map((f) => alt.felder.find((g) => g.key === f)?.label ?? f);
+    const mehr = ziel && !s.typen.includes(ziel.id) ? breiter : 0;
+    return weg.length || mehr ? [{ name: s.name, paket: besitzer(s.id), felder: weg, breiter: mehr }] : [];
+  });
+}
+
+/** Ein fester Wert, wie die Vorschau ihn zeigt. */
+function setzenText(w: unknown, f: Feld | undefined): string {
+  if (istVorgabeWert(w)) return t('pakete.umbau.vorgabe', { name: w.vorgabe });
+  const z = setzenWert(w, f?.typ);
+  if (istZeitraum(z)) return zeitraumText(z);
+  return Array.isArray(w) ? w.join(', ') : str(w);
 }
 
 /** Einen Schritt planen; null = entfällt (nichts umzubauen) oder verhindert (steht unter `probleme`). */
@@ -299,17 +368,19 @@ async function planeSchritt(d: UmbauDienst, s: UmbauSchritt, u: Umgebung): Promi
   const uebernehmen = !z.vorhanden;
   if (uebernehmen) u.lage.uebernahme[z.eigenerZiel!] = alt.id;
   const anzahl = (key: string) => mappen.filter((m) => !istLeer(m.werte[key])).length;
+  const titel = await titelSuchen(s, felder, z.zielFelder, u.k);
   const plan: UmbauPlan = {
     von: { id: alt.id, kennung: s.von, name: alt.name, paket: quelle.name },
     nach: { id: z.vorhanden?.id ?? null, kennung: s.nach, name: z.name },
     art: uebernehmen ? 'uebernehmen' : 'zusammenlegen',
     mappen: mappen.length, imPapierkorb: (await d.kern.repo.papierkorb({ typId: alt.id })).length,
-    felder: feldVorschau(felder, z.zielFelder, mappen),
+    felder: feldVorschau(felder, z.zielFelder, mappen, titel),
     notiz: felder.filter((x) => x.aktion.art === 'notiz' && !x.rueckfrage && anzahl(x.feld.key) > 0).map((x) => ({ feld: x.feld.label, anzahl: anzahl(x.feld.key) })),
-    setzen: Object.entries(s.setzen).map(([key, w]) => ({ feld: z.zielFelder.find((g) => g.key === key)?.label ?? key, wert: istVorgabeWert(w) ? t('pakete.umbau.vorgabe', { name: w.vorgabe }) : Array.isArray(w) ? w.join(', ') : str(w) })),
+    setzen: Object.entries(s.setzen).map(([key, w]) => { const f = z.zielFelder.find((g) => g.key === key); return { feld: f?.label ?? key, wert: setzenText(w, f) }; }),
     rueckfragen: felder.flatMap((x) => (x.rueckfrage ? [x.rueckfrage] : [])),
     rechte: rechteVon(alt, z, felder, u, s.von),
     umgeleitet: { felder: u.k.typen.flatMap((x) => x.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(alt.id))).length, ansichten: u.sichten.filter((x) => x.typen.includes(alt.id)).length },
+    ansichten: await ansichtHinweise(d, alt, felder, z.vorhanden, u),
   };
   // Bei der Übernahme bleiben die eigenen Felder im Typ – auch für spätere Schritte in denselben Zieltyp.
   const zielFelder = uebernehmen ? [...z.zielFelder, ...felder.filter((x) => x.aktion.art === 'feld').map((x) => x.feld)] : z.zielFelder;

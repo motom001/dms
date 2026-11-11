@@ -1,0 +1,6 @@
+art: minor
+
+## Neu
+
+- **Paket-Updates ziehen ihre Ansichten nach** (#1125): Ansichten aus Paketen haben einen Prüfwert. Ein Update ersetzt eine Ansicht durch die neue Fassung im Paket, solange du sie nicht geändert hast; geänderte bleiben, die Vorschau sagt es und bietet „Trotzdem durch die Fassung im Paket ersetzen“ an. So zeigt „Versicherungen“ nach dem Umbau in das Paket Verträge mit dem nächsten Update von Haushalt wieder nur Versicherungen statt aller Verträge. Die Vorschau eines Umbaus nennt Ansichten, die danach mehr Mappen zeigen oder Felder abfragen, die es nicht mehr gibt.
+- **Umbau: Zeitraum setzen und Auswahl → Verweis** (#1125): Umbau-Schritte setzen auch Zeiträume (`{ anzahl, einheit }`), und eine Auswahl wird zum Verweis auf die Mappe mit demselben Titel – Haushalt-„Art“ „Strom“ wird zur Vertragsart „Strom“. Gibt es keine passende Mappe, bleibt das Feld leer und der Wert steht in der Notiz; Ablago legt nichts an. Die Vorschau nennt diese Werte.

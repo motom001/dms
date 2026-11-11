@@ -3,6 +3,9 @@
  * Ergänzen der Typen und Vorgaben. Je Schritt: beim Zusammenlegen den Zieltyp vorbereiten (eigene Felder, „Übernommen
  * aus“, Rechte-Regeln des alten Typs), Mappen umziehen (Werte, Notiz, Historie, Dokumente), Verweise umleiten, KI-Sperre
  * und „Paket verwehrt“ mitnehmen, den alten Typ abgeben bzw. entfernen.
+ *
+ * Ansichten (#1125): Was der Umbau an Ansichten anderer Pakete ändert, gilt nicht als Änderung des Administrators – ihr
+ * Stand zieht mit (sichtstand.ts), so ersetzt das nächste Update jenes Pakets sie durch seine Fassung.
  */
 import { randomUUID } from 'node:crypto';
 import { teileKennung } from '../../../shared/src/kennungen';
@@ -14,8 +17,9 @@ import { istVorgabeWert } from '../../../shared/src/vorgaben';
 import { Fachfehler } from '../fehler';
 import { protokoll } from '../protokoll';
 import { t } from '../sprache';
-import { archivDanach, benenneRegelnUm, paketVerwehrt, umbenennung, type GeplanterSchritt, type UmbauDienst, type UmbauLage } from './umbau';
-import { aenderungen, neueWerte, type TypVon } from './umbau-werte';
+import { merkeSichtAenderung, sichtPruefwert, standNachUmbau, type SichtAenderungen } from './sichtstand';
+import { archivDanach, benenneRegelnUm, paketVerwehrt, setzenWert, umbenennung, type GeplanterSchritt, type UmbauDienst, type UmbauLage } from './umbau';
+import { aenderungen, neueWerte, titelKennung, type TitelSuche, type TypVon } from './umbau-werte';
 
 const log = protokoll.modul('werkbank');
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -48,6 +52,8 @@ export interface UmbauErgebnis {
   eigeneWeg: string[];
   /** Einstellungen vor dem Umbau, zum Zurücknehmen (die Einstellungen laufen nicht in der Transaktion). */
   einstellungenVorher: { ki_typen: unknown; paket_verwehrt: unknown } | null;
+  /** Ansichten, die der Umbau geändert hat (#1125): Prüfwert vorher und nachher – für den Stand des eigenen Pakets. */
+  sichten: SichtAenderungen;
 }
 
 /** Zieltyp vorbereiten: eigene Felder, „Übernommen aus“ und Dokumentregister dazu, Regeln mitnehmen bzw. umbenennen. */
@@ -72,16 +78,45 @@ async function bereiteZielVor(d: UmbauDienst, g: GeplanterSchritt, ziel: Mappent
   return { ziel: rw ? await repo.setzeBerechtigungen(ziel.id, rw) : neu, mitnehmen: !!rw };
 }
 
-/** Feste Werte aus `setzen`; Vorgaben über ihre feste Kennung (#1038). */
+/** Feste Werte aus `setzen`; Vorgaben über ihre feste Kennung (#1038), Zeiträume als `{ anzahl, einheit }` (#1125). */
 async function festeWerte(g: GeplanterSchritt, ziel: Mappentyp, vorgabeId: UmbauAuftrag['vorgabeId']): Promise<Map<string, Wert>> {
   const erg = new Map<string, Wert>();
   for (const [k, w] of Object.entries(g.schritt.setzen)) {
-    if (!istVorgabeWert(w)) { erg.set(k, w as Wert); continue; }
+    if (!istVorgabeWert(w)) { const v = setzenWert(w, ziel.felder.find((f) => f.key === k)?.typ); if (v !== null) erg.set(k, v as Wert); continue; }
     const id = await vorgabeId(w.vorgabe);
     if (id) erg.set(k, ziel.felder.find((f) => f.key === k)?.mehrfach ? [id] : id);
   }
   return erg;
 }
+
+/**
+ * Mappen nach Titel (#1125, Auswahl → Verweis): je Typ einmal gelesen, im Stand dieses Schritts (Mappen früherer
+ * Schritte sind schon umgezogen, Vorgaben angelegt). `titel` merkt sich die Titel gefundener Mappen für die Historie.
+ */
+function titelSuche(d: UmbauDienst, typen: string[], titel: Map<string, string>): Promise<TitelSuche> {
+  return (async () => {
+    const index = new Map<string, Map<string, string[]>>();
+    for (const id of typen) {
+      const je = new Map<string, string[]>();
+      for (const m of await d.listeMappen(id)) {
+        if (!m.titel) continue;
+        const k = titelKennung(m.titel);
+        je.set(k, [...(je.get(k) ?? []), m.id]);
+        titel.set(m.id, m.titel);
+      }
+      index.set(id, je);
+    }
+    return (ziele: string[], text: string) => [...new Set(ziele.flatMap((z) => index.get(z)?.get(titelKennung(text)) ?? []))];
+  })();
+}
+
+/** Zieltypen der Verweisfelder, in die eine Auswahl oder ein Text zieht (#1125). */
+const titelTypen = (g: GeplanterSchritt, ziel: Mappentyp): string[] => [...new Set(g.felder.flatMap((x) => {
+  if (x.aktion.art !== 'nach' || !['auswahl', 'text'].includes(x.feld.typ)) return [];
+  const key = x.aktion.ziel;
+  const f = ziel.felder.find((y) => y.key === key);
+  return f?.typ === 'referenz' ? zieleVon(f) : [];
+}))];
 
 /** Ids, auf die ein Wert verweisen kann. */
 const verweisIds = (m: Mappe): string[] => Object.values(m.werte).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((x): x is string => typeof x === 'string' && UUID.test(x));
@@ -93,6 +128,7 @@ async function zieheMappenUm(d: UmbauDienst, g: GeplanterSchritt, x: { ziel: Map
   const mappen = await d.listeMappen(g.alt.id);
   if (!mappen.length) return 0;
   const titel = await repo.titelVon(mappen.flatMap(verweisIds));
+  const suche = await titelSuche(d, titelTypen(g, ziel), titel);
   const titelVon = (id: string) => titel.get(id) || t('meldungen.dienst.ohne-titel');
   const setzen = await festeWerte(g, ziel, a.vorgabeId);
   if (ziel.id !== g.alt.id) await repo.setzeMappenTyp(mappen.map((m) => m.id), ziel.id);
@@ -100,7 +136,7 @@ async function zieheMappenUm(d: UmbauDienst, g: GeplanterSchritt, x: { ziel: Map
   const kopf = t('pakete.umbau.notiz', { paket: a.paket.name, version: a.paket.version, typ: g.alt.name });
   const schritt = { alt: g.alt, ziel, felder: g.felder };
   for (const m of mappen) {
-    const { werte, notiz } = neueWerte(schritt, m.werte, titelVon, x.typVon);
+    const { werte, notiz } = neueWerte(schritt, m.werte, titelVon, { typVon: x.typVon, titel: suche });
     for (const [k, w] of setzen) if (istLeer(werte[k])) werte[k] = w;
     if (x.mitnehmen) werte[UMBAU_FELD] = g.schritt.von;
     await repo.aendereMappe(m.id, werte, verweiseVon(ziel, werte), a.von.id);
@@ -132,8 +168,11 @@ function feldUmgeleitet(f: Feld, altId: string, neuId: string, feld: (k: string)
 /**
  * Verweise umleiten: Verweisfelder, Tabellen und Verknüpfungsregister aller Typen zeigen auf den Zieltyp (mit den neuen
  * Feldkennungen), Ansichten über den alten Typ auf den Zieltyp. Bei der Übernahme (gleiche Id) nur die Feldkennungen.
+ * Geänderte Ansichten landen in `sichten` (#1125); Bedingungen auf Felder ohne Ziel bleiben stehen (die Vorschau sagt
+ * es, das Protokoll auch) – eine Ansicht zeigt so eher weniger als mehr.
  */
-async function leiteUm(d: UmbauDienst, altId: string, neuId: string, umbenannt: Map<string, string>) {
+async function leiteUm(d: UmbauDienst, g: GeplanterSchritt, neuId: string, umbenannt: Map<string, string>, sichten: SichtAenderungen) {
+  const altId = g.alt.id;
   const repo = d.kern.repo;
   const feld = (k: string) => umbenannt.get(k) ?? k;
   for (const typ of (await d.listeTypen()).filter((x) => x.id !== altId)) {
@@ -142,9 +181,11 @@ async function leiteUm(d: UmbauDienst, altId: string, neuId: string, umbenannt: 
     if (JSON.stringify([felder, register]) !== JSON.stringify([typ.felder, typ.register])) await repo.aendereTyp(typ.id, { ...typ, felder, register });
   }
   for (const s of (await d.listeSichten()).filter((x) => x.typen.includes(altId))) {
-    const bedingungen = s.bedingungen.map((b) => (b.art === 'feld' && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b));
-    await repo.aendereSicht(s.id, { ...s, typen: [...new Set(s.typen.map((x) => (x === altId ? neuId : x)))], bedingungen });
+    const bedingungen = s.bedingungen.map((b) => (b.art === 'feld' && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b.art === 'frist' && b.feld && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b));
+    const neu = await repo.aendereSicht(s.id, { ...s, typen: [...new Set(s.typen.map((x) => (x === altId ? neuId : x)))], bedingungen });
+    merkeSichtAenderung(sichten, s.id, sichtPruefwert(s), sichtPruefwert(neu));
   }
+  for (const a of g.plan.ansichten.filter((x) => x.felder.length)) log.info('Paket-Umbau: Ansicht fragt Felder ab, die es nicht mehr gibt', { ansicht: a.name, felder: a.felder, schritt: `${g.schritt.von} → ${g.schritt.nach}` });
 }
 
 /** KI-Sperre und „Paket verwehrt“ des alten Typs gelten danach auch für den Zieltyp (nie breiter, #796). */
@@ -183,7 +224,7 @@ async function gibAb(d: UmbauDienst, g: GeplanterSchritt, a: UmbauAuftrag, quell
  */
 export async function fuehreUmbauAus(d: UmbauDienst, a: UmbauAuftrag): Promise<UmbauErgebnis> {
   const e = d.kern.einstellungen;
-  const erg: UmbauErgebnis = { umgeleitet: [], eigeneWeg: [], einstellungenVorher: e ? { ki_typen: await e.lies('ki_typen'), paket_verwehrt: await e.lies('paket_verwehrt') } : null };
+  const erg: UmbauErgebnis = { umgeleitet: [], eigeneWeg: [], einstellungenVorher: e ? { ki_typen: await e.lies('ki_typen'), paket_verwehrt: await e.lies('paket_verwehrt') } : null, sichten: new Map() };
   // Typ jeder Mappe, auf die ein umziehender Wert verweist – nach dem Umbau (Mappen umgebauter Typen im Zieltyp).
   const zielId = (g: GeplanterSchritt) => g.ziel?.id ?? (g.eigenerZiel ? a.typId(g.eigenerZiel) : undefined) ?? g.alt.id;
   const nachUmbau = new Map(a.lage.schritte.map((g) => [g.alt.id, zielId(g)] as const));
@@ -196,12 +237,18 @@ export async function fuehreUmbauAus(d: UmbauDienst, a: UmbauAuftrag): Promise<U
     const umbenannt = umbenennung(g.felder);
     const { ziel, mitnehmen } = await bereiteZielVor(d, g, roh, umbenannt);
     const anzahl = await zieheMappenUm(d, g, { ziel, mitnehmen, a, typVon });
-    await leiteUm(d, g.alt.id, ziel.id, umbenannt);
+    await leiteUm(d, g, ziel.id, umbenannt, erg.sichten);
     if (ziel.id !== g.alt.id) await schraenkeEin(d, g, ziel.id);
     const weg = await gibAb(d, g, a, quellen);
     if (weg) erg.eigeneWeg.push(weg);
     erg.umgeleitet.push({ alt: g.alt.id, neu: ziel.id, felder: Object.fromEntries([...umbenannt].filter(([x, y]) => x !== y)) });
     log.info('Paket-Umbau', { paket: a.paket.id, version: a.paket.version, von: a.von.email, schritt: `${g.schritt.von} → ${g.schritt.nach}`, art: g.plan.art, mappen: anzahl, regelnMit: mitnehmen, kiGesperrt: g.plan.rechte.ki, verwehrt: g.plan.rechte.verwehrt });
+  }
+  // Ansichten anderer Pakete (#1125): Der Stand zieht mit, was nur der Umbau geändert hat, gilt als unverändert.
+  for (const p of await d.kern.repo.listePakete()) {
+    if (p.id === a.paket.id) continue;
+    const q = quellen.find((x) => x.id === p.id) ?? structuredClone(p);
+    if (standNachUmbau(q, erg.sichten) && !quellen.includes(q)) quellen.push(q);
   }
   for (const q of quellen) await d.kern.repo.speicherePaket(q);
   return erg;

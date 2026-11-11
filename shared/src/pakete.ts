@@ -220,6 +220,11 @@ export interface InstalliertesPaket {
   /** Lokaler Schlüssel → Id des Mappentyps bzw. der Sicht im DMS. */
   typen: Record<string, string>;
   sichten: Record<string, string>;
+  /**
+   * Ansichten des Pakets (#1125) je Schlüssel: Prüfwert, wie das Paket sie zuletzt geschrieben hat, und der Fassung im
+   * Paket. Fehlt bei Installationen vor #1125 (dann weiß Ablago nicht, ob der Administrator sie geändert hat).
+   */
+  sichtStand?: Record<string, SichtStand>;
   /** Schlüssel der Beispiel-Mappen → Id (#347), nur wenn Beispiele mit Schlüssel angelegt wurden. */
   beispiele?: Record<string, string>;
   /**
@@ -253,6 +258,23 @@ export interface InstalliertesPaket {
   /** Aktionen im Menü „Mappe“ (#1039, `mappenaktionen`), wie im Manifest; Mappentypen als Verweise. */
   mappenaktionen?: import('./paketaktionen').MappenAktion[];
 }
+
+/**
+ * Stand einer Ansicht aus einem Paket (#1125, wie Vorgaben #1038). Ein Update ersetzt sie durch die Fassung im Paket,
+ * solange sie noch so ist, wie das Paket sie geschrieben hat; was der Administrator geändert hat, bleibt.
+ */
+export interface SichtStand {
+  /** Prüfwert der Ansicht (Name, Beschreibung, Elternsicht, Mappentypen, Bedingungen, Trefferliste, Symbol) in Ablago. */
+  stand: string;
+  /** Prüfwert der Ansicht im Paket – ändert er sich, bringt das Paket eine neue Fassung. */
+  fassung: string;
+}
+/**
+ * Was ein Update mit einer vorhandenen Ansicht des Pakets tut (#1125): gleich – nichts Neues; aktualisiert – unverändert,
+ * wird durch die neue Fassung ersetzt; geaendert – vom Administrator geändert, bleibt (auf Wunsch ersetzen);
+ * unbekannt – vor #1125 installiert und anders als im Paket, bleibt (auf Wunsch ersetzen); geloescht – gelöscht, bleibt weg.
+ */
+export type SichtZustand = 'gleich' | 'aktualisiert' | 'geaendert' | 'unbekannt' | 'geloescht';
 
 /* ---------- Versionen ---------- */
 
