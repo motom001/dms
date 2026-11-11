@@ -854,6 +854,7 @@
   "model.von-einem-paket": "by a package",
   "model.in-ablago-bearbeitet": "edited in Ablago",
   "model.in-ablago-geschwaerzt": "redacted in Ablago",
+  "model.aus-einer-vorlage": "set from a template",
   "model.passt-nicht": "Doesn’t fit",
   "model.post-fuer-dich": "Post for you",
   "model.automatisch-zugeordnet": "Assigned automatically",

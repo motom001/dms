@@ -694,11 +694,19 @@ begriffe:
     code: vorgabe (Mappe), inhalt.vorgaben
   - begriff: Vorlage
     bereich: werkbank
-    beschreibung: Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://.
+    beschreibung: Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://. Mit „Brief aus Vorlage“ (Mappe ▾) wird daraus ein Brief als PDF mit den Angaben der Mappe.
     einsteiger: alltag
     begegnet: admin
-    verwandt: [Vorgabe, Paket]
+    verwandt: [Vorgabe, Paket, Brief aus Vorlage]
     code: inhalt/vorlagen/*.md
+  - begriff: Brief aus Vorlage
+    bereich: ablage
+    beschreibung: Aus einer Vorlage und den Angaben einer Mappe entsteht ein Brief als PDF (Mappe ▾ → Brief aus Vorlage …) – mit Briefkopf, Anschrift, Datum und Betreff, etwa eine Kündigung zum Vertrag. Eingesetzt wird nur, was die Person sehen darf, nie Passwörter; fehlt etwas, steht eine sichtbare Lücke wie [Vertragsnummer] im Brief. Ablegen als Dokument oder herunterladen.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Serienbrief, Seriendruck, Textbaustein]
+    verwandt: [Vorlage, Eigene Organisation]
+    code: textsatz, Text setzen
   - begriff: Herausgeber
     bereich: werkbank
     beschreibung: Wer ein Paket herausgibt, als umgedrehte Domain, z. B. app.ablago für die offiziellen Pakete (#1084). Steht neben dem Namen, z. B. „Verträge · app.ablago“. Ablago ersetzt ein installiertes Paket nie durch eines mit derselben Id von einem anderen Herausgeber.

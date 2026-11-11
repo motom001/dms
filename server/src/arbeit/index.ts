@@ -64,10 +64,22 @@ type Fn<K extends Vorgang> = Vorgaenge[K] extends (...a: infer A) => infer R ? {
 
 /** Führt einen Vorgang in einem Arbeiter aus – oder, ohne Pool, hier im Hauptfaden. */
 export async function arbeite<K extends Vorgang>(vorgang: K, ...args: Fn<K>['args']): Promise<Fn<K>['erg']> {
+  return arbeiteBis(ARBEIT_ZEIT_MS, vorgang, ...args);
+}
+
+/**
+ * Wie `arbeite`, aber mit eigener, kürzerer Zeitgrenze (#1040: Text setzen). Im Pool beendet die Grenze den Arbeiter;
+ * ohne Pool (`DMS_ARBEITER=0`, nur zur Fehlersuche) scheitert nur das Warten.
+ */
+export async function arbeiteBis<K extends Vorgang>(zeitMs: number, vorgang: K, ...args: Fn<K>['args']): Promise<Fn<K>['erg']> {
   if (!einstellung) richteArbeiterEin();
   if (!pool) {
     const { VORGAENGE } = await import('./vorgaenge');
-    return (VORGAENGE[vorgang] as (...a: unknown[]) => Promise<Fn<K>['erg']>)(...args);
+    const lauf = (VORGAENGE[vorgang] as (...a: unknown[]) => Promise<Fn<K>['erg']>)(...args);
+    if (zeitMs >= ARBEIT_ZEIT_MS) return lauf;
+    let uhr: NodeJS.Timeout | undefined;
+    const grenze = new Promise<never>((_, nein) => { uhr = setTimeout(() => nein(new Error(t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: Math.round(zeitMs / 1000) }))), zeitMs); });
+    try { return await Promise.race([lauf, grenze]); } finally { clearTimeout(uhr); }
   }
-  return pool.ausfuehren<Fn<K>['erg']>(vorgang, args);
+  return pool.ausfuehren<Fn<K>['erg']>(vorgang, args, zeitMs < ARBEIT_ZEIT_MS ? { zeitMs } : {});
 }

@@ -52,7 +52,7 @@ Die Werkbank listet das unter **Wo Ablago diese Angaben verwendet**:
 | Mappentypen mit [Anzeigen, wenn …](mappentypen.md#anzeigen-wenn) „zeigt auf eine eigene Organisation“ (z. B. Ausgangsrechnung) | verweist hierher |
 | Absendername beim E-Mail-Versand ([Betrieb](installation.md#e-mail-und-adresse)) | bleibt bewusst eigen – technischer Absender von Ablago, auch ohne Betrieb |
 | Deckblätter von Exporten und Auskünften: Name der Installation | bleibt bewusst eigen (Name der Ablage); der Verantwortliche kommt von hier |
-| Briefkopf der Text-Vorlagen (#1040) | soll hierher verweisen, sobald es Text-Vorlagen als PDF gibt |
+| [Brief aus Vorlage](https://help.ablago.app/benutzer/aktuell/versenden/#brief-aus-vorlage) (#1040): Briefkopf | verweist hierher – wenn der Brief nicht für eine bestimmte Person ist (Feld *Kunde* leer); nur Name, Anschrift, Telefon, E-Mail |
 | [Notfallblatt](verschluesselung.md) „Wen fragen?“ (#812) | bleibt bewusst eigen – dort stehen Vertrauenspersonen, nicht der Betrieb |
 
 ## Gut zu wissen

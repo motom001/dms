@@ -52,7 +52,7 @@ The Workbench lists this under **Where Ablago uses these details**:
 | Folder types with [Show if …](mappentypen.md#anzeigen-wenn) “refers to an own organisation” (e.g. outgoing invoice) | refers here |
 | Sender name for sending email ([Operation](installation.md#e-mail-und-adresse)) | deliberately stays separate – Ablago’s technical sender, also without a business |
 | Cover sheets of exports and requests: name of the installation | deliberately stays separate (name of the Library); the controller comes from here |
-| Letterhead of text templates (#1040) | is to refer here once text templates exist as PDF |
+| [Letter from template](https://help.ablago.app/benutzer/aktuell/en/versenden/#brief-aus-vorlage) (#1040): letterhead | refers here – when the letter is not for a particular person (*Customer* field empty); only name, address, phone, email |
 | [Emergency sheet](verschluesselung.md) “Whom to ask?” (#812) | deliberately stays separate – it lists trusted people, not the business |
 
 ## Good to know

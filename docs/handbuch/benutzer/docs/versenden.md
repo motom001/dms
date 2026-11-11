@@ -103,6 +103,20 @@ Viele E-Mail-Anbieter nehmen keine Anhänge über 10 bis 25 MB an. Beim Versende
 
 Passwörter erscheinen auch dort nur als „••••••••“.
 
+## Brief aus Vorlage { #brief-aus-vorlage }
+
+Für Briefe, die immer gleich aussehen – etwa eine **Kündigung** –, bringen Pakete **Text-Vorlagen** mit, z. B. das Paket Verträge an jeder Vertragsart. **Mappe ▾ → Brief aus Vorlage …** zeigt die Vorlagen, die zu dieser Mappe passen: an der Mappe selbst und an Mappen, auf die sie verweist (beim Vertrag also an seiner Vertragsart).
+
+- **Vorher sehen, was fehlt:** Der Dialog nennt Briefkopf und Empfänger und die Angaben, die noch fehlen, z. B. „2 Angaben fehlen: Vertragsnummer, Kundennummer“. Ein Klick auf eine Angabe springt zum Feld der Mappe. Du kannst den Brief auch trotzdem erstellen – dann steht im Brief eine sichtbare Lücke wie **[Vertragsnummer]**.
+- **Als Dokument ablegen** legt den Brief als PDF in das gewählte Register der Mappe (ohne Wahl ins Register „Dokumente“), daneben den ausgefüllten Text als `.md`. Dafür brauchst du das Recht Bearbeiten an der Mappe. Die Vorlage selbst bleibt, wie sie ist.
+- **PDF herunterladen** gibt dir nur das PDF. Das ist [Weitergeben](#weitergeben-mit-stempel) wie beim Herunterladen eines Dokuments und braucht das Exportrecht (E) in einer Ansicht, die die Mappe zeigt.
+
+**Wie der Brief aussieht:** A4 im Aufbau ähnlich DIN 5008 – oben rechts der **Briefkopf**, darunter die kleine Absenderzeile und die **Anschrift** (passend für Fensterumschläge), rechts **Ort und Datum**, dann der **Betreff** fett und der Text. Der Briefkopf kommt von der Person bzw. Organisation im Feld *Kunde* (Kennung `an`) – ist es leer, von der [eigenen Organisation](https://help.ablago.app/admin/aktuell/organisation/) (nur Name, Anschrift, Telefon und E-Mail). Die Anschrift kommt von der Mappe im Feld *Anbieter* bzw. *Rechnungssteller* (Kennung `von`). Datum und Beträge stehen im Format der Sprache der Vorlage, z. B. 31.12.2026 und 650,00 €. Das PDF ist getaggt (Überschriften, Absätze, Listen in Lesereihenfolge, Sprache und Titel), damit Vorleseprogramme es gut lesen können.
+
+**Nur, was du sehen darfst:** Eingesetzt werden nur Angaben, die du lesen darfst. Darfst du z. B. die Organisation des Anbieters nicht sehen, bleiben ihre Anschrift und ihre Kundennummer Lücken. **Passwörter** kommen nie in einen Brief. Werte erscheinen genau so, wie sie in der Mappe stehen – Sternchen oder geschweifte Klammern in einem Feld werden nicht zu Formatierung.
+
+Eigene Vorlagen kannst du auch selbst schreiben: als Markdown-Datei (`.md`) im Register **Vorlagen** einer Mappe, auf die deine Mappen verweisen (z. B. einer Vertragsart). Wie Platzhalter aussehen, steht im [Entwicklerhandbuch unter Text-Vorlagen](https://help.ablago.app/entwickler/aktuell/pakete/#text-vorlagen-schreiben).
+
 ## Link kopieren
 
 **Mappe ▾ → Link kopieren** legt einen Link auf die Mappe in die Zwischenablage, den du per Mail oder Chat an jemanden mit eigenem Zugang zu Ablago schicken kannst. Der Link nennt die Mappe nicht über eine Nummer, sondern über ihre Angaben, z. B.

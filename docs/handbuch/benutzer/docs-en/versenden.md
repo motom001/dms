@@ -103,6 +103,20 @@ Many email providers don't accept attachments over 10 to 25 MB. When sending by 
 
 Passwords only appear as "••••••••" there too.
 
+## Letter from template { #brief-aus-vorlage }
+
+For letters that always look the same – a **cancellation**, for instance – packages bring **text templates**, e.g. the Contracts package on every contract type. **Folder ▾ → Letter from template …** shows the templates that fit this folder: on the folder itself and on folders it refers to (for a contract, on its contract type).
+
+- **See what is missing first:** The dialog shows letterhead and recipient and the details that are still missing, e.g. "2 details are missing: Contract number, Customer number". Clicking a detail jumps to the field in the folder. You can also create the letter anyway – it then shows a visible gap such as **[Contract number]**.
+- **File as document** puts the letter as a PDF into the chosen tab of the folder (without a choice, into the "Documents" tab), next to it the filled-in text as `.md`. This needs the right to edit the folder. The template itself stays as it is.
+- **Download PDF** only gives you the PDF. Like downloading a document, this is [sharing](#weitergeben-mit-stempel) and needs the export right (E) in a view that shows the folder.
+
+**What the letter looks like:** A4, laid out similar to DIN 5008 – the **letterhead** top right, below it the small sender line and the **address** (fits window envelopes), on the right **place and date**, then the **subject** in bold and the text. The letterhead comes from the person or organisation in the *Customer* field (key `an`) – if it is empty, from your [own organisation](https://help.ablago.app/admin/aktuell/en/organisation/) (only name, address, phone and email). The address comes from the folder in the *Provider* or *Issuer* field (key `von`). Dates and amounts use the format of the template's language, e.g. 31.12.2026 and 650,00 € for German. The PDF is tagged (headings, paragraphs, lists in reading order, language and title) so screen readers can read it well.
+
+**Only what you may see:** Only details you are allowed to read are filled in. If, say, you may not see the provider's organisation, its address and customer number stay gaps. **Passwords** never go into a letter. Values appear exactly as they are in the folder – asterisks or curly brackets in a field do not turn into formatting.
+
+You can also write your own templates: as a Markdown file (`.md`) in the **Templates** tab of a folder your folders refer to (e.g. a contract type). The developer handbook explains placeholders under [Text templates](https://help.ablago.app/entwickler/aktuell/en/pakete/#text-vorlagen-schreiben).
+
 ## Copy link {#link-kopieren}
 
 **Folder ▾ → Copy link** puts a link to the folder on the clipboard, which you can send by email or chat to someone with their own access to Ablago. The link doesn't name the folder by a number but by its details, e.g.

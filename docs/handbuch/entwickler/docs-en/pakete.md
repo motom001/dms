@@ -184,7 +184,7 @@ The format is described by the JSON schemas in the registry: [`schema/manifest.s
     - **`typ`:** an own folder type or `paket:schluessel` of a package **under `abhaengigkeiten`** (Vehicles → contract type "car purchase contract" in Contracts); never `dms:`. The preset gets the permissions of the target type like every folder.
     - **`werte`:** as for examples (amounts as numbers, periods as `{ anzahl, einheit }`); no password fields, no links to examples. Links to presets use `{ vorgabe: miete }` or `{ vorgabe: "vertraege:miete" }` – also in `beispiele.yaml` (instead of a fixed ID there).
     - **`beschriftungen`:** language → field → text. Ablago creates the preset in the **installation's language** (fields without a translation stay German); values are data and don't change with the person's language.
-    - **`vorlagen`:** text templates under `inhalt/vorlagen/` (lower-case letters, digits, `-`, `_`, at most two folders, extension `.md`), each entry with `datei` (required), `titel` (document name) and `register` (documents tab; without: `vorlagen`, otherwise the first). At most 20 per preset. Placeholders as in automations (`{vertragsnummer}`, `{von.name}`); they are filled in later with "Set text" (dms #1040).
+    - **`vorlagen`:** text templates under `inhalt/vorlagen/` (lower-case letters, digits, `-`, `_`, at most two folders, extension `.md`), each entry with `datei` (required), `titel` (document name) and `register` (documents tab; without: `vorlagen`, otherwise the first). At most 20 per preset. Placeholders as in automations (`{vertragsnummer}`, `{von.name}`); they are filled in with "Set text" (dms #1040, see [Writing text templates](#text-vorlagen-schreiben)).
     - **What a template may be** (`server/src/pakete/vorlagen.ts`, the same rules in `pruefen.py`): UTF-8 text without control characters, at most `VORLAGE_MAX` (256 KB, `server/src/grenzen.ts`); **no HTML** – no comments `<!-- -->` either –, **no images** (`![…]`), links only `https://` (in `[text](…)`, `[x]: …` and `<https://…>`; `http:`, `mailto:`, `javascript:`, `data:` appear nowhere in the text); no placeholder names a **password field**. Ablago checks this when reading and again when installing (then against the password fields of all folder types).
     - **`ergaenzt: paket:kennung`:** a package may **only attach templates** to the preset of a package under `abhaengigkeiten` – Ablago rejects any other entry (`werte`, `beschriftungen`, permissions …). If the preset doesn't exist (deleted), the templates are left out; the preview says so.
     - **Installing:** without events (question 71); the creator is the package's service account (history: "Package …"). The preview (`vorgaben`, `ergaenzungen`) shows each preset's state; presets in other packages' types and additions also appear in the box "Adds to folders of other packages".
@@ -280,6 +280,37 @@ code:
 `werkzeuge/pruefen.py` checks keys, defaults, options, secrets and links. Expert mode with **Upload package** is suitable for trying things out.
 
 What the package does with the settings and which permissions it needs is described in [Packages with code](pakete-code.md).
+
+## Writing text templates { #text-vorlagen-schreiben }
+
+With **Set text** (dms #1040), Ablago turns a text template into a letter as a PDF – in the interface via **Folder ▾ → Letter from template …**, for packages and scripts via the API. How templates get into a package is described above under *Presets* (`vorlagen` on a preset or supplement); what a template may contain, likewise.
+
+```markdown
+# Cancellation of contract {vertragsnummer}
+
+Dear Sir or Madam,
+
+I hereby cancel the contract **{bezeichnung}** at the earliest possible date, which is {kuendigen_bis}.
+Customer number: {von.kundennummer}
+
+Please confirm the cancellation in writing.
+
+Yours faithfully
+
+
+
+Sample without guarantee, not legal advice – have it checked by an expert if in doubt.
+```
+
+- **Layout of the letter:** Ablago sets letterhead, address, place and date – the template only contains subject and text. The **first heading** (`# …`) becomes the **subject** (bold, and the PDF title); without one the PDF is named after the template. The **letterhead** comes from the folder in the reference field `an` (customer; person or organisation), otherwise from the own organisation (#995, only name, address, phone, email); the **address** from the folder in the reference field `von` (the other party). So use the [same keys](#paketarten) `von` and `an`.
+- **Markdown:** headings (`#`, `##`, `###`), paragraphs, lists (`-`, `1.`), quotes (`>`), **bold**, *italic*, `code`. A single line break stays a line break (closing, address in the text); **two or more blank lines** leave space, e.g. for the signature. Links appear as text with the address in brackets – nothing in the PDF is clickable.
+- **Placeholders** as in automations: `{feld}` for a field of the folder, `{verweis.feld}` for a field of the folder behind it (up to three levels, e.g. `{von.kundennummer}`), plus `{heute}`, `{titel}` and `{mappentyp}`. Values use the format of their field type in the **language of the template** (date `31.12.2026`, amount `650,00 €`, period `3 Monate` for German, choices with their label); references as the folder's title. **There are no free formats or expressions** (such as `{datum:TT.MM.JJJJ}`) – only the fixed list of field types.
+- **Values are text:** Ablago first parses the template and then inserts the values – in one pass. A field value such as `**bold**`, `[link](…)` or `{other_field}` appears as it is. In the filled-in text (`.md` next to the PDF) such characters are escaped with `\`.
+- **Gaps:** If a value is missing, the person may not read it (folder or referenced folder; when downloading also without export right E) or the placeholder names a field that does not exist, the letter shows **[Label]**, e.g. "[Contract number]". Password fields are forbidden as placeholders – checked when installing and before every typesetting.
+- **Language:** that of the template's full text if Ablago knows it, otherwise that of the installation – never that of the interface. It is written as `/Lang` into the PDF.
+- **Limits** (`server/src/grenzen.ts`): filled-in text at most 512 KB (`TEXTSATZ_TEXT_MAX`), PDF at most 30 pages and 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), typesetting at most 30 seconds in the worker (`TEXTSATZ_ZEIT_MS`). Beyond that: 413.
+
+**For packages (API):** `GET /api/v1/mappen/{id}/vorlagen` lists a folder's templates (on the folder itself and on folders it refers to) with the state of their placeholders; `POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen` with `{ "ziel": "ablegen", "register": "dokumente" }` files the PDF and the filled-in text as new documents (response: both documents and the gaps); with `{ "ziel": "herunterladen" }` the PDF is the response. The service account needs read access to the folder, `dokumente: lesen` for the list, `dokumente: schreiben` and edit rights on the folder for setting. The PDF names package and template in its metadata (subject). Minimum version: `dms: ">=0.241.0"` (`DMS_TEXTSATZ_AB` in `shared/src/textsatz.ts`).
 
 ## Checking { #prufen }
 

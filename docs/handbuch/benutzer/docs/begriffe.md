@@ -210,6 +210,10 @@ Siehe auch: [Dokument](#dokument), [Version](#version).
 Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnung, Zugewiesen (von Hand vergeben), Post für dich, Frist, Erinnerung, Vertretung und Auskunft.  
 Siehe auch: [Zu erledigen](#zu-erledigen), [Frist](#frist), [Erinnerung](#erinnerung), [Auftrag](#auftrag).
 
+<a id="brief-aus-vorlage"></a>**Brief aus Vorlage** · ✓ Alltagswort · alle  
+Aus einer Vorlage und den Angaben einer Mappe entsteht ein Brief als PDF (Mappe ▾ → Brief aus Vorlage …) – mit Briefkopf, Anschrift, Datum und Betreff, etwa eine Kündigung zum Vertrag. Eingesetzt wird nur, was die Person sehen darf, nie Passwörter; fehlt etwas, steht eine sichtbare Lücke wie [Vertragsnummer] im Brief. Ablegen als Dokument oder herunterladen.  
+Siehe auch: [Vorlage](#vorlage), [Eigene Organisation](#eigene-organisation).
+
 <a id="erinnerung"></a>**Erinnerung** · ✓ Alltagswort · alle  
 Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern).
 
@@ -400,6 +404,10 @@ Siehe auch: [Tägliche Zusammenfassung](#tagliche-zusammenfassung).
 Eine Gruppe von Benutzern, z. B. „Eltern“. Grundlage für Berechtigungsregeln. Nicht zu verwechseln mit der Systemrolle.  
 Siehe auch: [Systemrolle](#systemrolle).
 
+<a id="stichtag"></a>**Stichtag** · ~ mit Erklärung · Administratoren  
+Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines Jahres plus die Jahre. Ist es leer, zählt das Anlagedatum der Mappe oder, mit „läuft noch nicht ab“, die Frist beginnt erst, wenn es gefüllt ist.  
+Siehe auch: [Archivmodus](#archivmodus).
+
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
 Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern, Tippfehler und gleichbedeutende Wörter. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
 
@@ -422,8 +430,8 @@ Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „S
 Siehe auch: [Paket](#paket), [Beispiel-Mappe](#beispiel-mappe), [Vorlage](#vorlage).
 
 <a id="vorlage"></a>**Vorlage** · ✓ Alltagswort · Administratoren  
-Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://.  
-Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket).
+Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://. Mit „Brief aus Vorlage“ (Mappe ▾) wird daraus ein Brief als PDF mit den Angaben der Mappe.  
+Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket), [Brief aus Vorlage](#brief-aus-vorlage).
 
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
 Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
@@ -626,6 +634,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Berechtigungen | Permissions | `Rechte` |
 | Beruflich genutzt | – | `merkmale.beruflich` |
 | Betrieb | Organisation (für die Vorlage) | `organisation (Vorlage)` |
+| Brief aus Vorlage | Serienbrief, Seriendruck, Textbaustein | `textsatz, Text setzen` |
 | Darstellung | Theme, Ansicht (für das Aussehen) | – |
 | Design | Theme | – |
 | Dienstkonto | Systembenutzer, Bot, technischer Benutzer | `benutzer.art = 'dienst'` |
@@ -671,6 +680,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Rundgang | Tour, Onboarding, Tutorial | `Rundgang, rundgaenge.yaml` |
 | Sicherung | Backup (in der Oberfläche) | – |
 | Standardwert | Defaultwert | – |
+| Stichtag | – | `stichtag` |
 | Systemmappentyp | – | `Systemtyp` |
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
 | Systemzustand | Systemumgebung | – |

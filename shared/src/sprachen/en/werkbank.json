@@ -3179,6 +3179,7 @@
   "organisation.verwendung.auskunft": "Data protection requests: sender on the cover sheet and in the email to the person",
   "organisation.verwendung.loeschkonzept": "Deletion concept: controller",
   "organisation.verwendung.erkennung": "Recognition: the own organisation is never the sender of incoming post",
+  "organisation.verwendung.briefkopf": "Letters from text templates: letterhead, unless the letter is for a particular person",
   "organisation.verwendung.anzeige": "Folder type {typ}: “Show if …” refers to an own organisation",
   "organisation.nur-liste": "For this Ablago reads only name, address, email, phone, controller and data protection officer – even if you may not see the folder otherwise. Changes are only possible in the Library with your rights.",
   "organisation.keine-rechtsberatung": "No legal advice: whether and whom you must name as controller or data protection officer should be checked by an expert if in doubt.",

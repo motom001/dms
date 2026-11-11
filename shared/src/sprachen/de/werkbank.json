@@ -3179,6 +3179,7 @@
   "organisation.verwendung.auskunft": "Datenschutz-Auskünfte: Absender auf dem Deckblatt und in der E-Mail an die Person",
   "organisation.verwendung.loeschkonzept": "Löschkonzept: Verantwortlicher",
   "organisation.verwendung.erkennung": "Erkennung: die eigene Organisation ist nie Absender eingehender Post",
+  "organisation.verwendung.briefkopf": "Briefe aus Text-Vorlagen: Briefkopf, wenn der Brief nicht für eine bestimmte Person ist",
   "organisation.verwendung.anzeige": "Mappentyp {typ}: „Anzeigen, wenn …“ zeigt auf eine eigene Organisation",
   "organisation.nur-liste": "Ablago liest dafür nur Name, Anschrift, E-Mail, Telefon, Verantwortlichen und Datenschutzbeauftragten – auch, wenn du die Mappe sonst nicht sehen darfst. Ändern geht nur in der Ablage mit deinen Rechten.",
   "organisation.keine-rechtsberatung": "Keine Rechtsberatung: Ob und wen du als Verantwortlichen oder Datenschutzbeauftragten nennen musst, klärst du im Zweifel fachlich.",

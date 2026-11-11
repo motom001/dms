@@ -71,6 +71,16 @@ export const ARCHIV_MERKEN_MAX = 5 * MB;
  * Kündigungsschreiben – 256 KB sind viele Seiten Text. dms-registry prüft in `pruefen.py` dieselbe Grenze.
  */
 export const VORLAGE_MAX = 256 * KB;
+/**
+ * Text setzen (#1040): Vorlage mit eingesetzten Werten höchstens (der ausgefüllte Text) – die Vorlage selbst darf
+ * `VORLAGE_MAX` groß sein, Feldwerte kommen dazu. Das PDF darf höchstens `TEXTSATZ_SEITEN` Seiten und `TEXTSATZ_PDF_MAX`
+ * Bytes haben; der Satz läuft im Arbeiter und bricht nach `TEXTSATZ_ZEIT_MS` ab. Ein Brief hat wenige Seiten – die
+ * Grenzen fangen nur Ausreißer ab (sehr lange Feldwerte, Tabellen aus Platzhaltern).
+ */
+export const TEXTSATZ_TEXT_MAX = 512 * KB;
+export const TEXTSATZ_PDF_MAX = 4 * MB;
+export const TEXTSATZ_SEITEN = 30;
+export const TEXTSATZ_ZEIT_MS = 30_000;
 
 /* ---------- Läufer der Pakete ---------- */
 

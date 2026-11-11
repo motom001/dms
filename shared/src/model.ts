@@ -1167,7 +1167,7 @@ export interface Dokument {
 }
 
 /** Herkunft einer Dokumentversion (#194). */
-export const HERKUNFT = { hochgeladen: 'hochgeladen', api: t('gemeinsam.model.ueber-die-schnittstelle'), webdav: t('gemeinsam.model.ueber-webdav'), paket: t('gemeinsam.model.von-einem-paket'), eingang: 'Eingangskanal', zurueckgeholt: 'zurückgeholt', bearbeitet: t('gemeinsam.model.in-ablago-bearbeitet'), geschwaerzt: t('gemeinsam.model.in-ablago-geschwaerzt') } as const;
+export const HERKUNFT = { hochgeladen: 'hochgeladen', api: t('gemeinsam.model.ueber-die-schnittstelle'), webdav: t('gemeinsam.model.ueber-webdav'), paket: t('gemeinsam.model.von-einem-paket'), eingang: 'Eingangskanal', zurueckgeholt: 'zurückgeholt', bearbeitet: t('gemeinsam.model.in-ablago-bearbeitet'), geschwaerzt: t('gemeinsam.model.in-ablago-geschwaerzt'), vorlage: t('gemeinsam.model.aus-einer-vorlage') } as const;
 export type Herkunft = keyof typeof HERKUNFT;
 /** Eine ältere Version eines Dokuments (#194). */
 export interface DokumentVersion {

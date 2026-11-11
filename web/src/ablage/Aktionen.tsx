@@ -33,7 +33,7 @@ export interface Loeschweg { text: string; titel?: string; tu(): void; /** Nur a
  * die ganze Mappe – nicht die eigene Aufgabe im Banner darunter. `loeschwege` erscheinen
  * abgetrennt am Ende (Platz für #424).
  */
-export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft, loeschwege = [] }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[] }) {
+export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, auskunft, loeschwege = [] }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; /** Brief aus Vorlage (#1040). */ brief?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[] }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -45,6 +45,16 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft
     return () => { document.removeEventListener('mousedown', zu); document.removeEventListener('keydown', zu); };
   }, [offen]);
   const waehle = (f: () => void) => () => { setOffen(false); f(); };
+  // Einträge als Liste (#1040: „Brief aus Vorlage“ dazu) – ein Menüpunkt, ein Aussehen.
+  const eintraege = [
+    { key: 'aufgabe', tu: aufgabe, inhalt: tn('ablage.aktionen.aufgabe-vergeben', { symbol: <Symbol name="aufgabe" /> }) },
+    erinnern && { key: 'erinnern', tu: erinnern, titel: t('ablage.aktionen.zu-einem-datum-an'), inhalt: tn('ablage.aktionen.erinnern', { symbol: <Symbol name="erinnern" /> }) },
+    email && { key: 'email', tu: email, inhalt: tn('ablage.aktionen.per-e-mail-versenden', { symbol: <Symbol name="email" /> }) },
+    drucken && { key: 'drucken', tu: drucken, inhalt: tn('ablage.aktionen.als-pdf-exportieren', { symbol: <Symbol name="pdf" /> }) },
+    brief && { key: 'brief', tu: brief, titel: t('ablage.aktionen.brief-titel'), inhalt: tn('ablage.aktionen.brief-aus-vorlage', { symbol: <Symbol name="dokument" /> }) },
+    link && { key: 'link', tu: link, titel: t('ablage.aktionen.link-ueber-mappentyp-und'), inhalt: tn('ablage.aktionen.link-kopieren', { symbol: <Symbol name="link" /> }) },
+    auskunft && { key: 'auskunft', tu: auskunft, titel: t('ablage.aktionen.alles-zu-dieser-person'), inhalt: tn('ablage.aktionen.auskunft-erstellen', { symbol: <Symbol name="auskunft" /> }) },
+  ].filter((e): e is { key: string; tu: () => void; titel?: string; inhalt: ReturnType<typeof tn> } => !!e);
   return (
     <div className="aktionsmenue" ref={ref}>
       <button type="button" className={`knopf klein ${offen ? 'an' : ''}`} data-anker="mappe.aktionen" aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)} title={t('ablage.aktionen.was-du-mit-dieser')}>
@@ -52,12 +62,7 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft
       {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => setOffen(false)} />}
       {offen && (
         <div className="menue" role="menu">
-          <button type="button" role="menuitem" onClick={waehle(aufgabe)}>{tn('ablage.aktionen.aufgabe-vergeben', { symbol: <Symbol name="aufgabe" /> })}</button>
-          {erinnern && <button type="button" role="menuitem" onClick={waehle(erinnern)} title={t('ablage.aktionen.zu-einem-datum-an')}>{tn('ablage.aktionen.erinnern', { symbol: <Symbol name="erinnern" /> })}</button>}
-          {email && <button type="button" role="menuitem" onClick={waehle(email)}>{tn('ablage.aktionen.per-e-mail-versenden', { symbol: <Symbol name="email" /> })}</button>}
-          {drucken && <button type="button" role="menuitem" onClick={waehle(drucken)}>{tn('ablage.aktionen.als-pdf-exportieren', { symbol: <Symbol name="pdf" /> })}</button>}
-          {link && <button type="button" role="menuitem" onClick={waehle(link)} title={t('ablage.aktionen.link-ueber-mappentyp-und')}>{tn('ablage.aktionen.link-kopieren', { symbol: <Symbol name="link" /> })}</button>}
-          {auskunft && <button type="button" role="menuitem" onClick={waehle(auskunft)} title={t('ablage.aktionen.alles-zu-dieser-person')}>{tn('ablage.aktionen.auskunft-erstellen', { symbol: <Symbol name="auskunft" /> })}</button>}
+          {eintraege.map((e) => <button key={e.key} type="button" role="menuitem" onClick={waehle(e.tu)} title={e.titel}>{e.inhalt}</button>)}
           {loeschwege.length > 0 && <div role="separator" className={`aktionsmenue-trenner${loeschwege.every((w) => w.nurSchmal) ? ' hy-nur-schmal' : ''}`} />}
           {loeschwege.map((w) => <button key={w.text} type="button" role="menuitem" className={`aktionsmenue-gefahr${w.nurSchmal ? ' hy-nur-schmal' : ''}`} onClick={waehle(w.tu)} title={w.titel}>{w.text}</button>)}
         </div>
