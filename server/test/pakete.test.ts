@@ -379,7 +379,7 @@ function faelle(pg: boolean) {
       const ok = await p.installiere({ id: 'ordnerpaket' }, ICH);
       const urkunde = (await d.mappentypen.listeTypen()).find((t) => t.id === ok.typen.urkunde)!;
       assert.equal(urkunde.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], ablageort.id);
-      assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTypen?.[0], (await d.sichereSystem()).benutzer.id);
+      assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTypen?.[0], (await d.systemausstattung.sicherstellen()).benutzer.id);
       assert.deepEqual((await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === ok.sichten.orte)!.typen.sort(), [ablageort.id, urkunde.id].sort());
       // Unbekannter DMS-Typ und reservierte Id: schon beim Lesen abgelehnt.
       const falsch = { ...ordnerpaket, 'inhalt/mappentypen.yaml': ordnerpaket['inhalt/mappentypen.yaml'].replace('dms:benutzer', 'dms:post') };
@@ -390,7 +390,7 @@ function faelle(pg: boolean) {
 
     it('Basis 1.6.0 übernimmt den früheren Ablageort: gleiche Id, Mappen, Verweise und Ansicht bleiben (#883)', async () => {
       const { d, p, einstellungen } = await aufbau([{ dateien: basis16 }, { dateien: ordnerpaketNeu }], '0.212.0');
-      await d.sichereSystem();
+      await d.systemausstattung.sicherstellen();
       const a = await frueherAblageort(d, einstellungen);
       const ort = await d.mappen.legeMappeAn({ typId: a.id, werte: { name: 'roter Ordner' } });
       const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true },

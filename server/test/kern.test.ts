@@ -40,14 +40,14 @@ describe('Kern (#961)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), {});
     const [a, b] = await Promise.all([d.kern.system(), d.kern.system()]);
     assert.equal(a.benutzer.id, b.benutzer.id);
-    assert.equal((await d.sichereSystem()).post.id, a.post.id, 'die Fassade schlägt dasselbe nach');
+    assert.equal((await d.systemausstattung.sicherstellen()).post.id, a.post.id, 'die Fassade schlägt dasselbe nach');
     assert.equal((await d.kern.typen()).get(a.rolle.id)?.system, 'rolle');
   });
 
   it('system() schlägt nur nach (#963): ist alles da, legt es nichts an und ändert nichts', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien(), {});
-    const vorher = await d.sichereSystem();
+    const vorher = await d.systemausstattung.sicherstellen();
     const spur: string[] = [];
     const neu = new Dienst(new Proxy(repo, {
       get(ziel, prop, e) {
@@ -90,7 +90,7 @@ describe('Kern (#961)', () => {
 
   it('sicherstellen() (#963): eine gelöschte Ansicht eines Systemtyps kommt nicht wieder; system() merkt sich nichts aus einer Transaktion', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), {});
-    const s = await d.sichereSystem();
+    const s = await d.systemausstattung.sicherstellen();
     await d.kern.repo.loescheSicht(s.benutzer.id);
     await d.systemausstattung.sicherstellen();
     assert.equal((await d.sichtenVerwaltung.listeSichten()).some((x) => x.id === s.benutzer.id), false);

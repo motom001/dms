@@ -241,7 +241,7 @@ describe('Mappentyp Rolle (#27)', () => {
     await repo.legeMappeAn('00000000-0000-4000-8000-0000000000b1', benutzerTyp.id, { name: 'Lena', email: 'lena@example.org', rollen: [alt.id, mitglied], aktiv: true }, [], null);
     const nachher = new Dienst(repo, speicherDateien());
     // Der Start nach dem Update (#963: die Systemausstattung räumt auf; nachschlagen allein ändert nichts).
-    await nachher.sichereSystem();
+    await nachher.systemausstattung.sicherstellen();
     await nachher.postSystemmappen.listeRollen();
     const m = (await nachher.mappen.holeMappe(alt.id)).mappe;
     assert.equal(m.systemKennung, null, 'keine Systemrolle mehr');

@@ -17,7 +17,7 @@ const neu = (repo = speicherRepo(), einstellungen = speicherEinstellungen()) => 
 describe('Ablageort (#883): nicht mehr im Kern', () => {
   it('eine neue Ablage bringt nur Systemtypen mit – keinen Ablageort', async () => {
     const { d, einstellungen } = neu();
-    await d.sichereSystem();
+    await d.systemausstattung.sicherstellen();
     assert.equal(await d.systemtypen.ablageortTyp(), undefined);
     assert.deepEqual((await d.mappentypen.listeTypen()).filter((t) => !t.system).map((t) => t.name), []);
     assert.equal(await einstellungen.lies('ablageort'), null);

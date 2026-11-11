@@ -1031,7 +1031,7 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
     await repo.speicherePaket({ id: 'tx404', name: 'Tx', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
     const ereignisse = async () => { await d.ereignisse.verteile(); return (await sql`SELECT art, daten FROM paket_ereignisse WHERE paket_id = 'tx404' ORDER BY erstellt`) as Array<{ art: string; daten: Record<string, string> }>; };
     try {
-      const { post } = await d.sichereSystem();
+      const { post } = await d.systemausstattung.sicherstellen();
       const reg = post.register.find((x) => x.art === 'dokumente')!.key;
       const vorher = (await d.mappen.listeMappen(post.id)).length;
       stoeren = true;

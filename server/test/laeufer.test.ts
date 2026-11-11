@@ -346,7 +346,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const zb = await d.rechtepruefung.zugriff(blind), za = await d.rechtepruefung.zugriff(alles);
     assert.equal(zb.typen.size, 0);
     assert.equal(za.admin, false);
-    const sys = await d.sichereSystem();
+    const sys = await d.systemausstattung.sicherstellen();
     assert.ok(za.typen.has(sys.post.id) && !za.typen.has(sys.benutzer.id), '„*“ = alle außer Benutzer');
     const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     assert.equal((await d.rechtepruefung.rechteAn(za, post)).R, true);
@@ -386,7 +386,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const ohne = await konten.dienstkonto('ohnedok', 'Ohne');
     const mit = await konten.dienstkonto('mitdok', 'Mit');
     const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-    const sys = await d.sichereSystem();
+    const sys = await d.systemausstattung.sicherstellen();
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
     await d.dokumente.ladeHoch(post.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null);
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
@@ -412,7 +412,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const { d, konten, schluessel } = await aufbau();
     await installiere(d, 'trenner', ECHO, '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }');
     const konto = await konten.dienstkonto('trenner', 'Trenner');
-    const sys = await d.sichereSystem();
+    const sys = await d.systemausstattung.sicherstellen();
     const z = await d.rechtepruefung.zugriff(konto);
     assert.deepEqual([...z.typen.keys()], [sys.post.id], 'sieht nur den Mappentyp Post');
     const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
@@ -460,7 +460,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         const konto = await konten.dienstkonto('trenner', 'Trenner');
         const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
         const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
-        const sys = await d.sichereSystem();
+        const sys = await d.systemausstattung.sicherstellen();
         const z = await d.rechtepruefung.zugriff(konto);
         assert.equal((await d.rechtepruefung.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
         // „Für“ setzt ein Benutzer im DMS (hier: Anna als Administratorin).
@@ -510,7 +510,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     // Eigene Änderungen: was das Dienstkonto von echo hochlädt, meldet das DMS echo nicht.
     const konto = (await konten.listeDienstkonten()).find((b) => b.paketId === 'echo')!;
     const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-    const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
+    const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
     await d.dokumente.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
     await new Promise((r) => setTimeout(r, 300));
     assert.equal((await d.kern.repo.ereignisStand()).echo.offen + (await d.kern.repo.ereignisStand()).echo.zugestellt, 1, 'kein Ereignis für die eigene Änderung');
@@ -655,7 +655,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     // Zwei Briefe (Post) und ein Vertrag mit je einem Dokument und Volltext.
     const post = await d.post.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
     const post2 = await d.post.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
-    const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
+    const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const vertrag = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
     const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
@@ -747,7 +747,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const x = await aufbau({ ohneErsteNachberechnung: true });
     await x.installiere('ki', VEKTOR, KI_RECHTE);
     const neu = await x.d.post.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
-    const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
+    const reg = (await x.d.systemausstattung.sicherstellen()).post.register.find((r) => r.art === 'dokumente')!.key;
     const d4 = (await x.d.dokumente.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
     await x.d.volltexte.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
     assert.equal((await x.d.kern.repo.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');

@@ -226,7 +226,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     // schon umgestellt (an → an_adresse, absender → von), Bezeichnungen noch die alten.
     const repo = speicherRepo();
     const vorher = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    await vorher.sichereSystem();
+    await vorher.systemausstattung.sicherstellen();
     const typen0 = await vorher.mappentypen.listeTypen();
     const rolle = typen0.find((t) => t.system === 'rolle')!;
     // Den frisch angelegten Post-Typ durch die alte E-Mail-Definition ersetzen.
@@ -249,7 +249,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
 
     // Neuer Start (frischer Dienst, ohne Merker „Sichten angelegt“).
     const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const { post } = await d.sichereSystem();
+    const { post } = await d.systemausstattung.sicherstellen();
     assert.equal(post.id, post0.id);
     assert.equal(post.name, 'Post');
     assert.equal(post.felder.find((f) => f.key === 'bezug')!.label, 'Zugeordnet zu');
@@ -275,6 +275,6 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     // Ein weiterer Start ändert nichts mehr.
     const geaendert = post.geaendert;
     const d3 = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    assert.equal((await d3.sichereSystem()).post.geaendert, geaendert);
+    assert.equal((await d3.systemausstattung.sicherstellen()).post.geaendert, geaendert);
   });
 });

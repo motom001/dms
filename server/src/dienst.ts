@@ -30,7 +30,7 @@ import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fris
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
-import { ABO_ARTEN, Kern, PAPIERKORB_STANDARD_TAGE, type Anlass, type SystemIds, type Zugriff } from './kern';
+import { ABO_ARTEN, Kern, PAPIERKORB_STANDARD_TAGE, type Anlass, type Zugriff } from './kern';
 import { Systemausstattung } from './systemausstattung';
 import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
 export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
@@ -418,7 +418,7 @@ export class Dienst {
     const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       passungsAufgaben: (liste) => this.passungsAufgaben(liste), favoritenFreigabe: () => this.favoritenFreigabe(),
-      vorgabeAufgabenEmpfaenger: (b) => this.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.sichereSystem(), konten: () => this.konten,
+      vorgabeAufgabenEmpfaenger: (b) => this.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.systemausstattung.sicherstellen(), konten: () => this.konten,
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
     });
     const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen }, {
@@ -779,11 +779,6 @@ export class Dienst {
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
-  /**
-   * Legt die Systemausstattung an, soweit sie fehlt, und schlägt sie nach (#963: `systemausstattung.sicherstellen()`).
-   * Läuft beim Start; wer nur Ids braucht, nimmt `kern.system()`.
-   */
-  sichereSystem(): Promise<SystemIds> { return this.systemausstattung.sicherstellen(); }
 
 
   /* ---------- Post (#192, post/post.dienst.ts; Auflösen post/aufloesen.ts) ---------- */

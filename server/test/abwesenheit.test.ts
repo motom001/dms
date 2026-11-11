@@ -159,7 +159,7 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
     const m = await intern.repo.holeMappe(ben.id);
     await intern.repo.aendereMappe(ben.id, { name: m.werte.name, email: m.werte.email, rollen: m.werte.rollen, aktiv: true, vertreter: 'Onkel Willi' }, [], null);
     intern.kern.sichern = undefined;
-    const { benutzer } = await d.sichereSystem();
+    const { benutzer } = await d.systemausstattung.sicherstellen();
     assert.equal(benutzer.felder.find((f) => f.key === 'vertreter_alt')?.label, 'Mein Vertreter');
     assert.equal(benutzer.felder.find((f) => f.key === 'vertreter')?.typ, 'referenz');
     assert.equal((await d.mappen.holeMappe(ben.id)).mappe.werte.vertreter_alt, 'Onkel Willi', 'Werte gehen nicht verloren');

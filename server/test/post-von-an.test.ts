@@ -279,7 +279,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     const migration = readFileSync(join(MIGRATIONEN, '099_post_von_an.sql'), 'utf8');
     await sql.begin((tx) => tx.unsafe(migration));
     // Bezeichnungen zieht der Start nach (wandleZuPost).
-    await neuerDienst().sichereSystem();
+    await neuerDienst().systemausstattung.sicherstellen();
     const nachher = await bild();
 
     // Das eigene Feld „von“ heißt jetzt von_alt – samt Wert und Platz im Register.

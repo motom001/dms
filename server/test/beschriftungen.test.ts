@@ -256,13 +256,13 @@ function dienstFaelle(pg: boolean) {
     it('Systemtyp Post: Beschriftungen der festen Werte bleiben über einen Neustart', async () => {
       const { r } = await repo();
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      await d.sichereSystem();
+      await d.systemausstattung.sicherstellen();
       const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
       const geaendert = await d.mappentypen.aendereTyp(post.id, { ...post, felder: post.felder.map((f) => (f.key === 'stand' ? { ...f, beschriftungen: { en: { label: 'Status', optionen: { [POST_STAND.neu]: 'New' } } } } : f)) });
       assert.equal(geaendert.felder.find((f) => f.key === 'stand')!.beschriftungen?.en?.optionen?.Neu, 'New');
       // Start: Systemfelder werden nachgezogen – die Beschriftungen bleiben.
       const neu = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      await neu.sichereSystem();
+      await neu.systemausstattung.sicherstellen();
       const nachher = (await neu.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
       // Eigene Beschriftungen bleiben; Lücken füllt der Start aus den Sprachdateien (#729).
       const en = nachher.felder.find((f) => f.key === 'stand')!.beschriftungen?.en;
