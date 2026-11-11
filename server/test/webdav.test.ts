@@ -12,7 +12,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import type { Benutzer } from '../../shared/src/model';
 import { etagVon, MAX_UPLOADS, Webdav, type WebdavAntwort } from '../src/webdav';
 import { bereinige, eindeutig, href, istHilfsdatei, proppatchNamen, Ratenbegrenzung, xml, zerlege } from '../src/webdav-baum';
-import { pdfAus } from '../src/pdf';
+import { pdfAus } from './hilfen-einfach-pdf';
 import { readFileSync } from 'node:fs';
 import { eigeneDatenbank } from './hilfe-db';
 

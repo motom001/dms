@@ -6,7 +6,7 @@
  * Die Vorgänge nehmen und liefern einfache Daten (Bytes, Zahlen, Texte, Listen) – keine Objekte der
  * Bibliothek. Darum laufen sie in einem Arbeiter-Faden (#542, `arbeit/`): Die Funktionen unten geben den
  * Auftrag an den Pool und warten auf das Ergebnis; der Hauptfaden bleibt frei für andere Anfragen.
- * Kleine Helfer ohne Rechenaufwand (Bildart, WinAnsi, Auswerten von Texten) laufen direkt.
+ * Kleine Helfer ohne Rechenaufwand (Bildart, Dateigröße, Auswerten von Texten) laufen direkt.
  *
  * Aufbau:
  * - `seiten.ts`        Seiten zählen, drehen, löschen, umsortieren, teilen, zusammenfügen, Fotos als Seiten
@@ -21,8 +21,8 @@
  * - `anzeige.ts`       bereinigte Kopie für die Anzeige im Browser (#639)
  * - `erechnung.ts`     eingebettete E-Rechnung (ZUGFeRD/Factur-X) aus dem PDF holen (#1043)
  * - `demo-dokumente.ts` Demo-Dokumente für Wachstumstests (#248)
- * - `einfach.ts`      sehr kleiner Schreiber für Textseiten ohne Bibliothek (früher Notfallblatt, #106)
- * - `bild.ts`, `puffer.ts`, `text.ts` kleine Helfer (Bildart, EXIF, Umgehung #456, WinAnsi)
+ * - `schrift.ts`      Noto Sans als eingebettete Teilmenge für alle eigenen PDFs (#826), Ersatzzeichen für Fehlendes
+ * - `bild.ts`, `puffer.ts`, `text.ts` kleine Helfer (Bildart, EXIF, Umgehung #456, Dateigröße)
  */
 import { arbeite, arbeiteBis } from '../arbeit';
 import type { Zufall } from '../zufall';
@@ -42,10 +42,9 @@ import type * as Br from './brief';
 import { TEXTSATZ_ZEIT_MS } from '../grenzen';
 import type * as Er from './erechnung';
 
-export { pdfAus, type Absatz, type Schrift } from './einfach';
 export { bildArt, exifAusrichtung, jpegMasse } from './bild';
 export { eigenerPuffer } from './puffer';
-export { groesseText, pdfSicher } from './text';
+export { groesseText } from './text';
 export type { SeitenWahl } from './seiten';
 export type { StempelAuftrag } from './stempel';
 export { hatQpdf, operatoren, type Analyse as VerkleinerAnalyse, type Ergebnis as VerkleinerErgebnis } from './verkleinern';

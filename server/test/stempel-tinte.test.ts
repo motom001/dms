@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { after, describe, it } from 'node:test';
-import { PDFArray, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream, degrees } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import {
   DECKKRAFT_HINWEIS_AB, ersetzePlatzhalter, geltenderStempel, liesVorlagen, NEUER_STEMPEL, pruefeVorlage, STANDARD_VORLAGEN, stempelAus,
   stempelLayout, wunschAus, type Stempel,
@@ -17,20 +17,17 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { speicherRepo } from '../src/repo-speicher';
+import { inhaltsstrom } from './hilfen-schriften';
 
 after(() => beendeArbeiter());
 
-const hex = (t: string) => Buffer.from(t, 'latin1').toString('hex').toUpperCase();
 const S = (x: Partial<Stempel> = {}): Stempel => ({ ...NEUER_STEMPEL, text: 'KOPIE', ...x });
 const plan = (s: Stempel) => ({ stempel: s, empfaenger: 'Steuerbüro Petra', pflicht: false, vorlage: null });
 
+/** Entpackter Inhaltsstrom und der daraus ausgelesene Text, je gezeichnete Zeile eine Zeile (#826: eingebettete Schrift). */
 async function seiteninhalt(pdf: Buffer, i = 0): Promise<string> {
-  const doc = await PDFDocument.load(pdf);
-  const p = doc.getPage(i);
-  const c = p.node.Contents();
-  const roh = p.node.get(PDFName.of('Contents'));
-  const refs = c instanceof PDFArray ? c.asArray() : roh ? [roh] : [];
-  return refs.map((r) => Buffer.from(decodePDFRawStream(doc.context.lookup(r) as PDFRawStream).decode()).toString('latin1')).join('\n');
+  const s = await inhaltsstrom(pdf, i);
+  return `${s.roh}\n${s.text}`;
 }
 async function pdfMitSeiten(n: number, groesse: [number, number] = [595, 842]): Promise<Buffer> {
   const d = await PDFDocument.create();
@@ -85,21 +82,21 @@ describe('Text und Platzhalter (#799)', () => {
     assert.equal(ersetzePlatzhalter('Kopie für {empfänger}\n\n{datum}', { empfaenger: 'Petra', datum: '04.11.2026' }), 'Kopie für Petra\n04.11.2026');
     assert.match(pruefeVorlage({ name: 'x', text: 'a\nb\nc\nd\ne\nf\ng' }, []).text, /6 Zeilen/);
     const s = await seiteninhalt(await stempele(S({ text: 'KOPIE\nfür {empfänger}' })));
-    assert.ok(s.includes(hex('KOPIE')) && s.includes(hex('für Steuerbüro Petra')), 'beide Zeilen, getrennt gezeichnet');
-    assert.ok(!s.includes(hex('KOPIE für')), 'nicht zu einer Zeile zusammengezogen');
+    assert.ok(s.includes('KOPIE') && s.includes('für Steuerbüro Petra'), 'beide Zeilen, getrennt gezeichnet');
+    assert.ok(!s.includes('KOPIE für'), 'nicht zu einer Zeile zusammengezogen');
   });
 
   it('{seite}, {seiten}, {archivnummer}: je Seite ersetzt – auch bei „nur erste Seite“, ohne Einschränkung', async () => {
     assert.deepEqual(pruefeVorlage({ name: 'x', text: '{seite}/{seiten} {archivnummer} {datum} {empfänger} {benutzer} {mappe}' }, []), {});
     const alle = await stempele(S({ text: 'Seite {seite} von {seiten} · {archivnummer}' }), 3);
-    for (let i = 0; i < 3; i++) assert.ok((await seiteninhalt(alle, i)).includes(hex(`Seite ${i + 1} von 3 · A-000042`)), `Seite ${i + 1}`);
+    for (let i = 0; i < 3; i++) assert.ok((await seiteninhalt(alle, i)).includes(`Seite ${i + 1} von 3 · A-000042`), `Seite ${i + 1}`);
     const erste = await stempele(S({ text: 'Export aus Ablago – dieses Dokument umfasst {seiten} Seiten', seiten: 'erste' }), 3);
-    assert.ok((await seiteninhalt(erste, 0)).includes(hex(' dieses Dokument umfasst 3 Seiten')));
-    assert.ok(!(await seiteninhalt(erste, 1)).includes(hex('Export aus Ablago')));
+    assert.ok((await seiteninhalt(erste, 0)).includes(' dieses Dokument umfasst 3 Seiten'));
+    assert.ok(!(await seiteninhalt(erste, 1)).includes('Export aus Ablago'));
     assert.equal((await PDFDocument.load(erste)).getPageCount(), 3, 'kein Deckblatt');
     // Ohne Archivnummer: leer, ein übrig gebliebenes „·“ am Zeilenrand fällt weg.
     const ohne = await stempele(S({ text: '{archivnummer} · Seite {seite} von {seiten}' }), 1, null);
-    assert.ok((await seiteninhalt(ohne)).includes(`<${hex('Seite 1 von 1')}>`));
+    assert.ok((await seiteninhalt(ohne)).split('\n').includes('Seite 1 von 1'), 'eine Zeile ohne „·“ davor');
     // Historie: der Text wie auf Seite 1.
     const a = await fuerAusgabe({ name: 'b.pdf', mime: 'application/pdf', inhalt: await pdfMitSeiten(2) }, { stempel: plan(S({ text: 'KOPIE\nSeite {seite} von {seiten}' })) }, { benutzer: 'L', mappe: 'M' });
     assert.equal(a.stempeltext, 'KOPIE / Seite 1 von 2');
@@ -172,7 +169,7 @@ describe('Lage „Stempel“ und Drehen (#799)', () => {
   it('im PDF: Rahmen und Text in einem gedrehten Koordinatensystem auf der Seite selbst', async () => {
     const pdf = await stempele(S({ lage: 'stempel', text: 'BEZAHLT', drehung: 90, x: 0.5, y: 0.5 }));
     const s = await seiteninhalt(pdf);
-    assert.ok(s.includes(hex('BEZAHLT')));
+    assert.ok(s.includes('BEZAHLT'));
     assert.equal(s.match(/\bh\s+S\b/g)?.length, 2, 'doppelter Rahmen (zwei Pfade)');
     // Drehung 90° im Uhrzeigersinn: cm mit a ≈ 0, b = -1, c = 1.
     const cm = /(-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) cm/.exec(s)!;

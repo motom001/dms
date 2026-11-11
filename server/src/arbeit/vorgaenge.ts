@@ -15,6 +15,7 @@ import { briefPdf } from '../pdf/brief';
 import { analysiere as analysiereSchwaerzen, arbeitsPdf, schwaerze, seitenbild as schwaerzSeitenbild } from '../pdf/schwaerzen';
 import { baueSeiten, bilderZuPdf, bildSeitePdf, fuegeZusammen, seitenInfo, teileSeiten } from '../pdf/seiten';
 import { bildAlsA4Pdf, stempelePdf } from '../pdf/stempel';
+import { fehlendeZeichen } from '../pdf/schrift';
 import { analysiere as analysiereVerkleinern, verkleinere as verkleinerePdf } from '../pdf/verkleinern';
 import { csvAus, xlsxAus, type Zelle } from '../xlsx';
 import { readFile } from 'node:fs/promises';
@@ -59,6 +60,9 @@ export const VORGAENGE = {
   liesPdfA, textebeneWoerter, bereinigePdf, eingebetteteERechnung,
   demoDokument, exportTabellen, exportTabelleAusDatei,
 };
+
+/** Zeichen, die seit dem letzten Aufruf in einem PDF fehlten (#826) – der Arbeiter fragt nach jedem Auftrag. */
+export { fehlendeZeichen };
 
 export type Vorgaenge = typeof VORGAENGE;
 export type Vorgang = keyof Vorgaenge;

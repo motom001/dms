@@ -29,6 +29,8 @@ export interface PoolOptionen {
   /** Grenze für den Arbeitsspeicher (Heap) eines Arbeiters in MB. */
   speicherMb?: number;
   execArgv?: string[];
+  /** Ein Auftrag hat ein PDF mit Zeichen erzeugt, die die Schrift nicht hat (#826): einmal je Auftrag. */
+  zeichenFehlen?: (vorgang: string, zeichen: string[]) => void;
 }
 
 export interface PoolStand {
@@ -156,6 +158,7 @@ export class Arbeiterpool {
   private antwort(f: Faden, m: Antwort) {
     const a = f.offen;
     if (!a || a.id !== m.id) return;
+    if (m.ok && m.zeichen?.length) this.o.zeichenFehlen?.(a.vorgang, m.zeichen);
     if (m.ok) this.fertig(f, a, null, alsBuffer(m.ergebnis));
     else this.fertig(f, a, fehlerAus(m.fehler));
   }

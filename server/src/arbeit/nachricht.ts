@@ -6,7 +6,8 @@
 import { Fachfehler } from '../fehler';
 
 export interface Auftrag { id: number; vorgang: string; args: unknown[] }
-export type Antwort = { id: number; ok: true; ergebnis: unknown } | { id: number; ok: false; fehler: FehlerDaten };
+/** `zeichen`: Zeichen, die die Schrift eines erzeugten PDFs nicht hatte (#826) – der Pool meldet sie im Protokoll. */
+export type Antwort = { id: number; ok: true; ergebnis: unknown; zeichen?: string[] } | { id: number; ok: false; fehler: FehlerDaten };
 export interface FehlerDaten { message: string; status?: number; details?: unknown; stack?: string }
 
 /** Uint8Array → Buffer (ohne Kopie), in Listen und einfachen Objekten auch tiefer. */

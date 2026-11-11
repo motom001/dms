@@ -2,7 +2,8 @@
  * Aufkleberbogen als PDF (#345), gezeichnet in der PDF-Stelle (#541). Die Striche des Barcodes (Code 128)
  * berechnet `aufkleber.ts`; hier werden sie mit der lesbaren Nummer auf die Felder des Bogens gesetzt.
  */
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
+import { pdfText, schriften } from './schrift';
 import { t } from '../sprache';
 
 export interface Aufkleberbogen {
@@ -21,14 +22,14 @@ export async function aufkleberbogenPdf(b: Aufkleberbogen): Promise<Buffer> {
   const e = b.etikett;
   const doc = await PDFDocument.create();
   doc.setTitle('Archivnummern'); doc.setProducer('Ablago'); doc.setCreator('Ablago');
-  const schrift = await doc.embedFont(StandardFonts.Helvetica);
-  const fett = await doc.embedFont(StandardFonts.HelveticaBold);
+  const { normal: schrift, fett } = await schriften(doc, ['normal', 'fett']);
   const jeBogen = e.spalten * e.zeilen;
   const randX = (A4.breite - e.spalten * e.breite) / 2;
   const randY = (A4.hoehe - e.zeilen * e.hoehe) / 2;
   let seite = doc.addPage([A4.breite * MM, A4.hoehe * MM]);
   let feld = Math.max(0, Math.min(jeBogen - 1, b.start - 1));
-  for (const { nummer: nr, striche: breiten } of b.aufkleber) {
+  for (const { nummer, striche: breiten } of b.aufkleber) {
+    const nr = pdfText(nummer, fett);
     if (feld >= jeBogen) { seite = doc.addPage([A4.breite * MM, A4.hoehe * MM]); feld = 0; }
     const sp = feld % e.spalten, ze = Math.floor(feld / e.spalten);
     const x0 = (randX + sp * e.breite) * MM;
@@ -50,6 +51,6 @@ export async function aufkleberbogenPdf(b: Aufkleberbogen): Promise<Buffer> {
     feld++;
   }
   // Hinweis klein am Rand der ersten Seite: Drucker auf 100 % (nicht „an Seite anpassen“).
-  if (randY >= 6) doc.getPages()[0].drawText(t('meldungen.aufkleber.drucken-mit-100-nicht'), { x: 6 * MM, y: 3 * MM, size: 6, font: schrift, color: rgb(0.5, 0.5, 0.5) });
+  if (randY >= 6) doc.getPages()[0].drawText(pdfText(t('meldungen.aufkleber.drucken-mit-100-nicht'), schrift), { x: 6 * MM, y: 3 * MM, size: 6, font: schrift, color: rgb(0.5, 0.5, 0.5) });
   return Buffer.from(await doc.save());
 }

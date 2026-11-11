@@ -39,6 +39,7 @@ You find the section **Translate content** on this page:
 
 ## Good to know {#gut-zu-wissen}
 
+- **PDFs Ablago creates itself** (stamp, letter, export, labels, access copy, emergency sheet) show Latin with all accents (including Turkish, Polish, Czech, Vietnamese), Greek and Cyrillic correctly. Arabic, Hebrew, Chinese, Japanese, Korean and emoji aren't known to the font there yet: in their place there is “�”, and the [log](fehlersuche.md#protokoll) names the characters (module “Documents”). Such scripts are to come later with language packs. The interface isn't affected.
 - If a text is missing in a language, it appears in English, otherwise in German – a place never stays empty.
 - Machine-translated language packages show the notice "Machine-translated – improvements welcome" in My account, with a link to how to take part.
 - With several servers, a change applies immediately on the server where you save and on the others after a minute at the latest.

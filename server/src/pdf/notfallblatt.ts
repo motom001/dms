@@ -3,11 +3,11 @@
  * Die Texte kommen fertig aus `notfallblattPlan` (server/src/notfallblatt.ts); hier stehen nur Lage, Farben und Logo.
  *
  * Marke: Ablago-Blau #1F4E79, Bernstein #E8A33D, Tinte #141A22 (docs/marke/). Auch in Schwarzweiß lesbar: Text in
- * Tinte oder Blau auf Weiß, Bernstein nur als Zierde. Schrift: Helvetica (Überschriften, Text) und Courier fett
- * für Schlüssel und Ablage-Id – die Standardschriften des PDF, ohne eingebettete Datei.
+ * Tinte oder Blau auf Weiß, Bernstein nur als Zierde. Schrift: Noto Sans (Überschriften, Text; eingebettet als Teilmenge,
+ * #826) und Courier fett für Schlüssel, Codes und Ablage-Id – die bestehen nur aus ASCII, dafür reicht die Standardschrift.
  */
 import { PDFDocument, PDFName, PDFString, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
-import { pdfSicher } from './text';
+import { angabe, pdfText, schriften } from './schrift';
 import type { NotfallblattPlan } from '../notfallblatt';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -26,7 +26,7 @@ interface Schriften { normal: PDFFont; fett: PDFFont; mono: PDFFont }
 /** Zeilen umbrechen nach echter Breite. */
 function umbrechen(text: string, font: PDFFont, groesse: number, breite: number): string[] {
   const zeilen: string[] = [];
-  for (const absatz of pdfSicher(text).split('\n')) {
+  for (const absatz of pdfText(text, font).split('\n')) {
     let z = '';
     for (const wort of absatz.split(' ')) {
       const probe = z ? `${z} ${wort}` : wort;
@@ -60,30 +60,30 @@ function logo(seite: PDFPage, s: Schriften, x: number, oben: number, groesse: nu
 
 export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  doc.setTitle(pdfSicher(p.dokumenttitel)); doc.setProducer('Ablago'); doc.setCreator('Ablago'); doc.setLanguage(gebietsschema());
-  const s: Schriften = { normal: await doc.embedFont(StandardFonts.Helvetica), fett: await doc.embedFont(StandardFonts.HelveticaBold), mono: await doc.embedFont(StandardFonts.CourierBold) };
+  doc.setTitle(angabe(p.dokumenttitel)); doc.setProducer('Ablago'); doc.setCreator('Ablago'); doc.setLanguage(gebietsschema());
+  const s: Schriften = { ...await schriften(doc, ['normal', 'fett']), mono: await doc.embedFont(StandardFonts.CourierBold) };
   const seite = doc.addPage([BREITE, HOEHE]);
   let y = HOEHE - RAND;
 
   /** Text mit Umbruch ab der aktuellen Zeile; liefert die Höhe. */
   const text = (t: string, o: { x?: number; breite?: number; font?: PDFFont; groesse?: number; farbe?: RGB; abstand?: number } = {}) => {
-    const font = o.font ?? s.normal, g = o.groesse ?? 10, zh = g * 1.35, x = o.x ?? RAND;
+    const font = o.font ?? s.normal, g = o.groesse ?? 10, zh = g * 1.3, x = o.x ?? RAND; // 1,3 statt 1,35 (#826): Noto Sans ist breiter als Helvetica und bricht öfter um – so bleibt es bei einer Seite
     y -= o.abstand ?? 0;
     for (const z of umbrechen(t, font, g, o.breite ?? INNEN - (x - RAND))) { y -= zh; seite.drawText(z, { x, y: y + zh - g, size: g, font, color: o.farbe ?? TINTE }); }
   };
   const link = (marke: string, url: string, x: number, g = 10.5) => {
     y -= g * 1.5;
-    const m = pdfSicher(`${marke}: `);
+    const m = pdfText(`${marke}: `, s.fett);
     seite.drawText(m, { x, y, size: g, font: s.fett, color: TINTE });
-    const lx = x + s.fett.widthOfTextAtSize(m, g), lb = s.normal.widthOfTextAtSize(url, g);
-    seite.drawText(url, { x: lx, y, size: g, font: s.normal, color: BLAU });
+    const u = pdfText(url, s.normal), lx = x + s.fett.widthOfTextAtSize(m, g), lb = s.normal.widthOfTextAtSize(u, g);
+    seite.drawText(u, { x: lx, y, size: g, font: s.normal, color: BLAU });
     seite.drawLine({ start: { x: lx, y: y - 1.5 }, end: { x: lx + lb, y: y - 1.5 }, thickness: 0.6, color: BLAU });
     verlinke(doc, seite, url, lx, y - 3, lb, g + 3);
   };
   const abschnitt = (titel: string) => {
     y -= 20;
     seite.drawRectangle({ x: RAND, y: y - 2, width: 3, height: 13, color: BERNSTEIN });
-    seite.drawText(pdfSicher(titel), { x: RAND + 9, y, size: 13, font: s.fett, color: BLAU });
+    seite.drawText(pdfText(titel, s.fett), { x: RAND + 9, y, size: 13, font: s.fett, color: BLAU });
     y -= 6;
   };
 
@@ -115,15 +115,15 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
       let ebene = -1;
       gruppe.forEach((z, zi) => {
         const zx = RAND + 12 + gi * (4 * ZELLE + LUECKE) + zi * ZELLE;
-        const zb = s.mono.widthOfTextAtSize(z.zeichen, ZG);
+        const zeichen = pdfText(z.zeichen, s.mono), zb = s.mono.widthOfTextAtSize(zeichen, ZG);
         const x0 = zx + (ZELLE - zb) / 2;
-        seite.drawText(z.zeichen, { x: x0, y: grundlinie, size: ZG, font: s.mono, color: TINTE });
+        seite.drawText(zeichen, { x: x0, y: grundlinie, size: ZG, font: s.mono, color: TINTE });
         if (z.zeichen === '0') seite.drawLine({ start: { x: x0 + zb * 0.2, y: grundlinie + 1 }, end: { x: x0 + zb * 0.8, y: grundlinie + ZG * 0.6 }, thickness: 1.6, color: TINTE });
         if (z.hilfe) {
           ebene = ebene === 0 ? 1 : 0;
           const versatz = ebene * (HILFE_G + 1.5);
-          const hb = s.normal.widthOfTextAtSize(pdfSicher(z.hilfe), HILFE_G);
-          seite.drawText(pdfSicher(z.hilfe), { x: zx + (ZELLE - hb) / 2, y: grundlinie - 9 - versatz, size: HILFE_G, font: s.normal, color: LEISE });
+          const hilfe = pdfText(z.hilfe, s.normal), hb = s.normal.widthOfTextAtSize(hilfe, HILFE_G);
+          seite.drawText(hilfe, { x: zx + (ZELLE - hb) / 2, y: grundlinie - 9 - versatz, size: HILFE_G, font: s.normal, color: LEISE });
           tiefer = Math.max(tiefer, versatz);
         } else ebene = -1;
       });
@@ -134,9 +134,9 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
   y -= 4;
   text(p.schluessel.hinweis, { groesse: 8.5, farbe: LEISE, abstand: 4 });
   y -= 14;
-  const fm = pdfSicher(`${p.schluessel.fingerabdruckTitel}: `);
+  const fm = pdfText(`${p.schluessel.fingerabdruckTitel}: `, s.fett);
   seite.drawText(fm, { x: RAND, y, size: 10, font: s.fett, color: TINTE });
-  seite.drawText(pdfSicher(p.schluessel.fingerabdruck), { x: RAND + s.fett.widthOfTextAtSize(fm, 10), y, size: 10, font: s.mono, color: TINTE });
+  seite.drawText(pdfText(p.schluessel.fingerabdruck, s.mono), { x: RAND + s.fett.widthOfTextAtSize(fm, 10), y, size: 10, font: s.mono, color: TINTE });
   text(p.schluessel.fingerabdruckHinweis, { groesse: 8.5, farbe: LEISE, abstand: 3 });
 
   // Diese Ablage: Adresse, Ablage-Id, wo die Sicherungen liegen.
@@ -144,10 +144,10 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
   const MARKE = 96;
   for (const z of p.ablage.zeilen) {
     const oben = y;
-    seite.drawText(pdfSicher(z.marke), { x: RAND, y: oben - 10, size: 10, font: s.fett, color: TINTE });
+    seite.drawText(pdfText(z.marke, s.fett), { x: RAND, y: oben - 10, size: 10, font: s.fett, color: TINTE });
     if (z.link) {
-      const lb = s.normal.widthOfTextAtSize(pdfSicher(z.text), 10);
-      seite.drawText(pdfSicher(z.text), { x: RAND + MARKE, y: oben - 10, size: 10, font: s.normal, color: BLAU });
+      const lt = pdfText(z.text, s.normal), lb = s.normal.widthOfTextAtSize(lt, 10);
+      seite.drawText(lt, { x: RAND + MARKE, y: oben - 10, size: 10, font: s.normal, color: BLAU });
       seite.drawLine({ start: { x: RAND + MARKE, y: oben - 11.5 }, end: { x: RAND + MARKE + lb, y: oben - 11.5 }, thickness: 0.6, color: BLAU });
       verlinke(doc, seite, z.link, RAND + MARKE, oben - 13, lb, 13);
       y = oben - 13.5;
@@ -188,10 +188,10 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
     y -= 6;
     const oben = y;
     y -= 15;
-    const tt = pdfSicher(n.titel);
+    const tt = pdfText(n.titel, s.fett);
     seite.drawText(tt, { x: x0, y, size: 10.5, font: s.fett, color: BLAU });
     if (n.adresse) {
-      const ax = x0 + s.fett.widthOfTextAtSize(tt, 10.5) + 8, at = pdfSicher(n.adresse.text), ab = s.normal.widthOfTextAtSize(at, 10);
+      const ax = x0 + s.fett.widthOfTextAtSize(tt, 10.5) + 8, at = pdfText(n.adresse.text, n.adresse.link ? s.normal : s.fett), ab = s.normal.widthOfTextAtSize(at, 10);
       seite.drawText(at, { x: ax, y, size: 10, font: n.adresse.link ? s.normal : s.fett, color: n.adresse.link ? BLAU : TINTE });
       if (n.adresse.link) {
         seite.drawLine({ start: { x: ax, y: y - 1.5 }, end: { x: ax + ab, y: y - 1.5 }, thickness: 0.6, color: BLAU });
@@ -201,7 +201,7 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
     y -= 3;
     text(n.text, { x: x0, breite: INNEN - 16, groesse: 8.5 });
     y -= 16;
-    const code = pdfSicher(n.code);
+    const code = pdfText(n.code, s.mono);
     seite.drawText(code, { x: x0, y, size: 14, font: s.mono, color: TINTE });
     const hx = x0 + s.mono.widthOfTextAtSize(code, 14) + 12;
     let hy = y + 6;
@@ -212,7 +212,7 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
 
   // Fuß: Linie und eine Zeile.
   seite.drawLine({ start: { x: RAND, y: RAND - 6 }, end: { x: rechts, y: RAND - 6 }, thickness: 0.5, color: LINIE });
-  seite.drawText(pdfSicher(p.fuss), { x: RAND, y: RAND - 18, size: 7.5, font: s.normal, color: LEISE });
+  seite.drawText(pdfText(p.fuss, s.normal), { x: RAND, y: RAND - 18, size: 7.5, font: s.normal, color: LEISE });
   if (y < RAND) throw new Error(`Notfallblatt passt nicht auf eine Seite (${Math.round(RAND - y)} pt zu lang)`);
   return doc.save();
 }

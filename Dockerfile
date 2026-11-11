@@ -62,6 +62,9 @@ RUN npm ci --omit=dev --workspace server --no-audit --no-fund && npm cache clean
      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /root/.npm
 COPY --from=bau /app/server/dist server/dist
 COPY server/migrations server/migrations
+# Schriften für Ablagos eigene PDFs (#826): Noto Sans und Noto Sans Mono, schon aufbereitet (server/werkzeuge/schriften/),
+# zusammen 1,4 MB, mit der Lizenz (OFL.txt). Der Bau braucht dafür kein Python.
+COPY server/schriften server/schriften
 # Ablagos eigene Rundgänge, Tipps und die Ankerliste (#831, #832): YAML, liest der Server beim Start.
 COPY shared/entdecken shared/entdecken
 COPY --from=bau /app/web/dist web/dist

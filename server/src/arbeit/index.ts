@@ -13,7 +13,8 @@ import { ladeArgumente } from '../laeufer/modul';
 import { dateiLeser, liesCgroup } from '../systemlast';
 import { Arbeiterpool, type PoolStand } from './pool';
 import type { Vorgaenge, Vorgang } from './vorgaenge';
-import { t } from '../sprache';
+import { t, tDe } from '../sprache';
+import { protokoll } from '../protokoll';
 
 export const ARBEITER_MAX = 16;
 /** Zeitgrenze je Auftrag. */
@@ -38,6 +39,17 @@ export function arbeiterAus(env: Record<string, string | undefined>, kerne = lie
   return { groesse: n, quelle: 'umgebung', kerne: k };
 }
 
+/**
+ * Hinweis im Protokoll (#826), einmal je Auftrag: Ein erzeugtes PDF enthält Zeichen, die die eingebettete Schrift nicht
+ * hat (z. B. Arabisch, Chinesisch, Emoji) – im PDF steht dafür „�“. Höchstens 20 Zeichen, damit die Zeile kurz bleibt.
+ */
+export function meldeFehlendeZeichen(vorgang: string, zeichen: string[]) {
+  const liste = zeichen.slice(0, 20);
+  protokoll.modul('dokumente').warn(tDe('meldungen.schrift.zeichen-fehlen', { anzahl: zeichen.length, zeichen: liste.join(' ') }), {
+    vorgang, zeichen: liste.map((z) => `U+${z.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`),
+  });
+}
+
 let einstellung: ArbeiterEinstellung | null = null;
 let pool: Arbeiterpool | null = null;
 
@@ -46,7 +58,7 @@ const datei = () => new URL(import.meta.url.endsWith('.ts') ? './arbeitsfaden.ts
 /** Einstellung lesen und den Pool anlegen (beim Start des Servers; sonst beim ersten Auftrag). */
 export function richteArbeiterEin(env: Record<string, string | undefined> = process.env, o: { vorwaermen?: boolean; prozesse?: number } = {}): ArbeiterEinstellung {
   einstellung = arbeiterAus(env, undefined, o.prozesse);
-  pool = einstellung.groesse > 0 ? new Arbeiterpool({ datei: datei(), groesse: einstellung.groesse, zeitMs: ARBEIT_ZEIT_MS, warteschlangeMax: WARTESCHLANGE_MAX, execArgv: ladeArgumente(process.execArgv) }) : null;
+  pool = einstellung.groesse > 0 ? new Arbeiterpool({ datei: datei(), groesse: einstellung.groesse, zeitMs: ARBEIT_ZEIT_MS, warteschlangeMax: WARTESCHLANGE_MAX, execArgv: ladeArgumente(process.execArgv), zeichenFehlen: meldeFehlendeZeichen }) : null;
   if (o.vorwaermen) pool?.vorwaermen();
   return einstellung;
 }
@@ -74,8 +86,14 @@ export async function arbeite<K extends Vorgang>(vorgang: K, ...args: Fn<K>['arg
 export async function arbeiteBis<K extends Vorgang>(zeitMs: number, vorgang: K, ...args: Fn<K>['args']): Promise<Fn<K>['erg']> {
   if (!einstellung) richteArbeiterEin();
   if (!pool) {
-    const { VORGAENGE } = await import('./vorgaenge');
-    const lauf = (VORGAENGE[vorgang] as (...a: unknown[]) => Promise<Fn<K>['erg']>)(...args);
+    const { VORGAENGE, fehlendeZeichen } = await import('./vorgaenge');
+    // Ohne Pool (nur zur Fehlersuche) laufen Aufträge nebeneinander: Die fehlenden Zeichen gehören dann zum Auftrag, der
+    // zuerst fertig wird.
+    const lauf = (VORGAENGE[vorgang] as (...a: unknown[]) => Promise<Fn<K>['erg']>)(...args).then((erg) => {
+      const zeichen = fehlendeZeichen();
+      if (zeichen.length) meldeFehlendeZeichen(vorgang, zeichen);
+      return erg;
+    });
     if (zeitMs >= ARBEIT_ZEIT_MS) return lauf;
     let uhr: NodeJS.Timeout | undefined;
     const grenze = new Promise<never>((_, nein) => { uhr = setTimeout(() => nein(new Error(t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: Math.round(zeitMs / 1000) }))), zeitMs); });

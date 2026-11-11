@@ -7,8 +7,7 @@ import assert from 'node:assert/strict';
 import { wieImModus } from './hilfen';
 import type { Readable } from 'node:stream';
 import { describe, it } from 'node:test';
-import { inflateSync } from 'node:zlib';
-import { PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
+import { inhaltsstrom } from './hilfen-schriften';
 import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
 import { mitnehmbar, pruefeAlle, verboten } from '../src/ausgang';
 import { speicherDateien } from '../src/dateispeicher';
@@ -17,25 +16,19 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { pdfAus } from '../src/pdf';
+import { pdfAus } from './hilfen-einfach-pdf';
 import { speicherRepo } from '../src/repo-speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Webdav } from '../src/webdav';
 
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));
-const hex = (t: string) => Buffer.from(t, 'latin1').toString('hex').toUpperCase();
 const alsPuffer = async (x: Buffer | Readable) => (Buffer.isBuffer(x) ? x : Buffer.concat(await x.toArray() as Buffer[]));
 
 /** Text aller Inhaltsströme der ersten Seite (Stempel stehen als Hex-Text darin). */
+/** Inhaltsstrom der ersten Seite und der daraus ausgelesene Text (#826: Stempel in eingebetteter Schrift). */
 async function seitentext(pdf: Buffer): Promise<string> {
-  const doc = await PDFDocument.load(pdf);
-  const inhalt = doc.getPages()[0].node.get(PDFName.of('Contents'));
-  const refs = inhalt && 'asArray' in (inhalt as object) ? (inhalt as unknown as { asArray(): unknown[] }).asArray() : [inhalt];
-  return refs.map((r) => {
-    const s = doc.context.lookup(r as never);
-    if (s instanceof PDFRawStream) { try { return Buffer.from(decodePDFRawStream(s).decode()).toString('latin1'); } catch { return Buffer.from(inflateSync(s.contents)).toString('latin1'); } }
-    return '';
-  }).join('');
+  const s = await inhaltsstrom(pdf);
+  return `${s.roh}\n${s.text}`;
 }
 
 async function aufbau() {
@@ -199,18 +192,18 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
     await d.ausgangEmail.versendeMappen({ ids: [v1.id], an: 'steuer@example.org', betreff: 'Belege', dokumente: [pdf.id] }, ich, z, m as never);
     const angaben = mails[0].anhaenge.find((a) => a.name === 'V-1.pdf')!;
     assert.ok(angaben, 'Angaben-PDF ist dabei');
-    assert.ok((await seitentext(await alsPuffer(angaben.inhalt))).includes(hex('ENTWURF')), 'Angaben gestempelt');
-    assert.ok((await seitentext(await alsPuffer(mails[0].anhaenge.find((a) => a.name === 'Vertrag.pdf')!.inhalt))).includes(hex('ENTWURF')));
+    assert.ok((await seitentext(await alsPuffer(angaben.inhalt))).includes('ENTWURF'), 'Angaben gestempelt');
+    assert.ok((await seitentext(await alsPuffer(mails[0].anhaenge.find((a) => a.name === 'Vertrag.pdf')!.inhalt))).includes('ENTWURF'));
     // Eine Mappe: dieselben Regeln, das Angaben-PDF auf Wunsch.
     await d.ausgangEmail.versendeMappe(v1.id, { an: 'steuer@example.org', betreff: 'Eine', dokumente: [pdf.id], angaben: true }, ich, m as never, z);
     assert.deepEqual(mails[1].anhaenge.map((a) => a.name), ['V-1.pdf', 'Vertrag.pdf']);
-    assert.ok((await seitentext(await alsPuffer(mails[1].anhaenge[0].inhalt))).includes(hex('ENTWURF')));
+    assert.ok((await seitentext(await alsPuffer(mails[1].anhaenge[0].inhalt))).includes('ENTWURF'));
     // In der Post liegt, was verschickt wurde: das gestempelte Angaben-PDF.
     const post = await d.eingangskanaele.postTyp();
     const posts = (await d.sichten.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
     const doks = (await d.berechtigungen.laufwerkMappe(posts[0].id, z)).dokumente;
     const kopie = doks.find((x) => x.name === 'V-1.pdf')!;
-    assert.ok((await seitentext(await alsPuffer((await d.dokumente.dokumentInhalt(kopie.id)).inhalt))).includes(hex('ENTWURF')));
+    assert.ok((await seitentext(await alsPuffer((await d.dokumente.dokumentInhalt(kopie.id)).inhalt))).includes('ENTWURF'));
   });
 
   it('gleiche Prüfung und Wahl der Fassung bei einer und mehreren Mappen', async () => {

@@ -50,6 +50,7 @@ Den Abschnitt **Inhalte übersetzen** findest du auf dieser Seite:
 
 ## Gut zu wissen
 
+- **PDFs, die Ablago selbst erzeugt** (Stempel, Brief, Export, Aufkleber, Auskunft, Notfallblatt), schreiben Lateinisch mit allen Akzenten (auch Türkisch, Polnisch, Tschechisch, Vietnamesisch), Griechisch und Kyrillisch richtig. Arabisch, Hebräisch, Chinesisch, Japanisch, Koreanisch und Emoji kennt die Schrift dort noch nicht: An ihrer Stelle steht „�“, und das [Protokoll](fehlersuche.md#protokoll) nennt die Zeichen (Modul „Dokumente“). Solche Schriften sollen später mit Sprachpaketen kommen. Die Oberfläche ist davon nicht betroffen.
 - Fehlt in einer Sprache ein Text, erscheint er auf Englisch, sonst auf Deutsch – es bleibt nie eine leere Stelle.
 - Maschinell übersetzte Sprachpakete zeigen in Mein Konto den Hinweis „Maschinell übersetzt – Verbesserungen willkommen“ mit einem Link, wie man mitmacht.
 - Mit mehreren Servern gilt eine Änderung sofort an dem Server, an dem du speicherst, und an den anderen spätestens nach einer Minute.

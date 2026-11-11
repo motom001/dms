@@ -365,6 +365,7 @@ The check **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) reports 
 | `imapflow` | server | MIT | collecting post from mailboxes via IMAP |
 | `mailparser` | server | MIT | splitting collected emails into text and attachments |
 | `pdf-lib` | server | MIT | assembling, shrinking, redacting, stamping PDFs – only via the [PDF place](#pdf-stelle) |
+| `@pdf-lib/fontkit` (fixed 1.1.1) | server | MIT | embedding fonts of our own in PDFs (Noto Sans as a subset, [#826](#pdf-schriften)); its only dependency `pako` already comes with pdf-lib |
 | `yaml` | server | ISC | reading and writing packages in YAML format |
 | `@simplewebauthn/server` | server | MIT | verifying [passkeys](#passkeys) (WebAuthn: CBOR, COSE keys, signatures, counters) – pinned version; brings `@peculiar/*` and `asn1js` (MIT/BSD-3-Clause), `@levischuck/tiny-cbor`, `@hexagon/base64`, `tsyringe` (MIT), `reflect-metadata` (Apache-2.0) and `tslib` (0BSD) |
 | `react`, `react-dom` | interface | MIT | interface |
@@ -400,8 +401,8 @@ server/src/pdf/export.ts         PDF of several folders
 server/src/pdf/aufkleber.ts      label sheet with barcode
 server/src/pdf/anzeige.ts        cleaned copy for display in the browser (#639)
 server/src/pdf/demo-dokumente.ts demo documents
-server/src/pdf/einfach.ts        small writer for text pages without any library (emergency sheet)
-server/src/pdf/bild.ts, puffer.ts, text.ts   image kind, JPEG dimensions, EXIF; workaround #456; WinAnsi
+server/src/pdf/schrift.ts        Noto Sans as an embedded subset for all PDFs of our own, replacement character (#826)
+server/src/pdf/bild.ts, puffer.ts, text.ts   image kind, JPEG dimensions, EXIF; workaround #456; file size
 ```
 
 **Rules for new code**
@@ -410,7 +411,8 @@ server/src/pdf/bild.ts, puffer.ts, text.ts   image kind, JPEG dimensions, EXIF; 
 - The operations take and return **simple data** – bytes (`Buffer`/`Uint8Array`), numbers, texts, lists –, never pdf-lib objects. The caller describes text documents as a plan (`Anweisung[]`: text, line, spacing, table, new page) and has them drawn with `textdokumentPdf()`. That way all operations run in the [worker pool](#arbeiter-pool) (#542): `pdf/index.ts` passes them there; a new operation additionally goes into `arbeit/vorgaenge.ts`.
 - The PDF place only loads PDFs via `ladePdf()` (`pdf/laden.ts`, #823), never directly with `PDFDocument.load`: it first checks how large the object and cross-reference streams unpack (at most 64 MB per stream, 256 MB together) – otherwise a crafted PDF of a few MB occupies several GB when loading, bypassing the workers' memory limit. In addition, their entries (`/W`, `/Index`, `/Size`, `/N`, `/First`) must match the stream's length; otherwise pdf-lib would run almost endlessly when loading.
 - Images only go to pdf-lib via `eigenerPuffer()` (#456: pdf-lib overlooks a Buffer's offset in shared memory and reports "SOI not found" for JPEGs).
-- The PDF place writes nothing into the log and reads no settings. What the caller is to know is in the result (e.g. `hinweise` when shrinking).
+- Text only goes onto a PDF via `schriften()` and `pdfText()` from `pdf/schrift.ts` (#826): Noto Sans as a subset, text in NFC, missing characters as “�”. No standard fonts (`StandardFonts`) for new text; the only exception is the codes on the emergency sheet (Courier, plain ASCII). More under [Fonts of our own PDFs](#pdf-schriften).
+- The PDF place writes nothing into the log and reads no settings. What the caller is to know is in the result (e.g. `hinweise` when shrinking). The only exception is the note on missing characters: the worker returns it next to the result (`zeichen` in the answer), and the pool writes it into the log.
 - Domain errors with an understandable message (`Fachfehler(422, …)`) may come from the PDF place, for instance for encrypted or broken PDFs.
 
 ### Assessment of the PDF libraries (#822) { #pdf-bibliotheken }
@@ -454,7 +456,7 @@ The columns – what Ablago needs them for and where they come from:
 | **b) `@cantoo/pdf-lib`** (maintained fork) | same interface, regular versions (21 versions in 2026), MIT; fixes in parsing; `crypto-js` removed since 2.9.0 | almost all changes since 2025 by one person; since 2.11 only minified builds; packaging regressions (ESM build, `prepare: husky`); HTML parser and colours as dependencies |
 | **c) A copy of our own** in `server/src/pdf/` | no new dependency; only the fixes that concern us | we become maintainers ourselves; Dependabot and OSV no longer cover the copy |
 | `@pdfme/pdf-lib` (fork by the pdfme project) | same interface, maintained (6.2.8 of 23/10/2026), MIT | a single maintainer; also additional dependencies (HTML parser, colours) |
-| More via qpdf (already in the image, Apache-2.0) | robust and maintained (C++); can rotate, select, reorder, split, merge, overlay, decrypt pages (#827) and optimise structures – without a new dependency; a process of its own | draws no texts and embeds no images: stamps, export pages, labels, text documents and the rebuild when redacting would need a writer of their own (approach in `einfach.ts`); every call writes files |
+| More via qpdf (already in the image, Apache-2.0) | robust and maintained (C++); can rotate, select, reorder, split, merge, overlay, decrypt pages (#827) and optimise structures – without a new dependency; a process of its own | draws no texts and embeds no images: stamps, export pages, labels, text documents and the rebuild when redacting would need a writer of their own (approach in the test helper `server/test/hilfen-einfach-pdf.ts`); every call writes files |
 | PDFium as WebAssembly (Apache-2.0, Chrome's engine) | very capable: reads, edits, draws and renders; no native modules | the JavaScript wrapper is young and aimed at the browser; large (several MB of WebAssembly); interface close to C, so a lot of code of our own |
 | MuPDF, Ghostscript | very capable | AGPL – deliberately not in the image |
 
@@ -462,7 +464,21 @@ The columns – what Ablago needs them for and where they come from:
 
 ### Basis for the decision: stay, cantoo, own copy (#823) { #pdf-entscheidung }
 
-The maintainer decides between a, b and c. Here is what has been checked for it (as of 04/11/2026). What couldn't be checked from this environment is explicitly listed as open.
+**Decided (11/11/2026, maintainer): way a – pdf-lib 1.17.1 stays** and is only extended by the functions needed: `@pdf-lib/fontkit` 1.1.1 for embedded fonts, with three mandatory precautions (prepare the font, `ccmp: false`, NFC; see [Fonts of our own PDFs](#pdf-schriften)). `@cantoo/pdf-lib` will be reassessed as soon as Chinese, Japanese or Korean is needed in PDFs of our own. The basis for this:
+
+**Trial run (11/11/2026, comment in #826)** – test text in six languages, Noto Sans as a subset in letter and stamp:
+
+| | before | a: + `@pdf-lib/fontkit` 1.1.1 | b: cantoo + `@cantoo/fontkit` |
+| --- | --- | --- | --- |
+| runtime modules in the image | 21.8 MB | 26.1 MB | 42.8 MB |
+| “?” in the result | 229 | 0 | 0 |
+| Chinese, Japanese, Korean | – | doesn't work (subset of the CFF font invalid) | works |
+| Arabic mixed with digits | – | digits reversed (no bidi ordering) | likewise |
+| `npm audit` | 0 | 0 | 0 |
+
+With cantoo, 473 of 474 PDF tests ran green (the difference: #456 is fixed there), the bombs still fail at `ladePdf()`, but every import loads `culori`, an HTML parser and `html-entities`, and `@pdf-lib/fontkit` crashes with cantoo.
+
+What had been checked before the decision (as of 04/11/2026):
 
 **Signs of life** (npm registry): `pdf-lib` last 1.17.1, package last changed on 12/05/2022. `@cantoo/pdf-lib`: versions per year 2021: 20, 2022: 9, 2023: 39, 2024: 20, 2025: 13, 2026: 21; last 2.11.1 of 15/09/2026; six people may publish on npm; according to the preliminary review, the commits since 2025 almost all come from one person. `@pdfme/pdf-lib` last 6.2.8 of 23/10/2026. A revival of the original isn't known.
 
@@ -477,9 +493,48 @@ The maintainer decides between a, b and c. Here is what has been checked for it 
     - **Hangs and memory:** cross-reference streams with impossible widths (`/W [1 2 2147483647]`) or ranges (`/Index [0 2147483647]`) made pdf-lib 1.17.1 run billions of steps when loading – a PDF of a good 1 KB held a worker until the time limit of 10 minutes or filled its memory. `ladePdf()` now checks these entries against the stream's unpacked length (also `/N` and `/First` for object streams, at most 10 million entries) and rejects the impossible with 422. The examples are in the corpus (`querverweis-*.pdf`). Whether cantoo is more robust here belongs to the trial run.
     - **Messages:** broken structures (circular page tree, wrong object kinds) ended with errors from pdf-lib when stamping, with the pages and when shrinking. Now "can't be read as a PDF" or "couldn't be read and therefore not stamped" comes.
 
-**Open (couldn't be checked from this environment; the npm registry wasn't reachable for installations):** the trial run with `@cantoo/pdf-lib` – do all PDF tests stay green unchanged, is #456 fixed there, how big does the image get, how much memory does it need, does the bomb PDF also fail at `ladePdf()` there (it should: the check runs before the library) and which dependencies does it load with our calls. This is how it can be caught up without a change to the repository: install cantoo into an empty directory and start the tests with a load hook that redirects `pdf-lib` to this directory (`node --import <hook> --import tsx --test test/pdf*.test.ts test/stempel.test.ts …`). The list of changes compared with 1.17.1 (parsing, new functions, other) is in the preliminary review in #823 and is not re-checked here.
+**Open at the time, since answered by the trial run above:** the trial run with `@cantoo/pdf-lib` – do all PDF tests stay green unchanged, is #456 fixed there, how big does the image get, how much memory does it need, does the bomb PDF also fail at `ladePdf()` there (it should: the check runs before the library) and which dependencies does it load with our calls. This is how it can be caught up without a change to the repository: install cantoo into an empty directory and start the tests with a load hook that redirects `pdf-lib` to this directory (`node --import <hook> --import tsx --test test/pdf*.test.ts test/stempel.test.ts …`). The list of changes compared with 1.17.1 (parsing, new functions, other) is in the preliminary review in #823 and is not re-checked here.
 
 **Criteria from a security perspective** (comment on #823): a) only with the protective measures around pdf-lib; b) the main objection `crypto-js` is gone; minified builds, packaging and a single maintainer remain open – with a fixed version and checked lockfile; c) fixed comparison, note in `SECURITY.md`, fuzzing required. Workers, time limit, `ladePdf()` and the fuzz tests stay with every way.
+
+### Fonts of our own PDFs (#826) { #pdf-schriften }
+
+All PDFs Ablago creates itself – stamp, letter, folder export, labels, text documents (access request, deletion concept, deletion log), emergency sheet, demo documents and the invisible text layer when redacting – embed **Noto Sans** (SIL Open Font License 1.1) as a **subset**: only the characters that occur. Before, these were the standard fonts Helvetica and Courier with WinAnsi; everything outside Western Europe silently became “?”.
+
+- **Styles:** regular, bold, italic, bold italic and Noto Sans Mono for `code` in the letter. The emergency sheet keeps Courier bold for key, codes and library ID – they consist of ASCII only.
+- **Character range:** Latin with extensions (Turkish, Polish, Czech, Romanian …) and Vietnamese, Greek, Cyrillic, plus punctuation, currency and some special characters. The list is in `BEREICHE` of the script below.
+- **Files:** `server/schriften/` (five styles, 1.4 MB together, with `OFL.txt`) in the repository and in the image. That way the Docker build doesn't need Python.
+- **Once per worker:** `pdf/schrift.ts` reads the files once, fontkit parses each once and remembers shaped texts. After that, each PDF only embeds its subset. When saving, the name of the subset gets the usual tag of six capital letters (`ABCDEF+NotoSans-Regular`, from the characters used). The same characters give the same files, so the demo documents stay the same for the same seed.
+
+**Three mandatory precautions** – without them the result is wrong, although at first glance it looks right:
+
+1. **Prepare the font:** `server/werkzeuge/schriften/aufbereiten.py` (fontTools) cuts the font down to the ranges above, removes the hinting and writes it anew with `glyf.padding = 4`. With the original files, `@pdf-lib/fontkit` 1.1.1 damages the subset: in the trial run about 60 % of the characters were invisible, while `pdftotext` still reported everything correctly. New version of Noto Sans: `python3 server/werkzeuge/schriften/aufbereiten.py <source folder> server/schriften`, then `schriften.test.ts`.
+2. **`features: { ccmp: false }` when embedding:** otherwise fontkit combines characters, and copying or searching gives wrong text (“Thị Liste office” becomes “Thị Lịste offịce”). The features for spacing (`kern`, `mark`, `mkmk`) are off as well. pdf-lib doesn't use them, switching them off only saves time.
+3. **Text in NFC:** pdf-lib places combining characters without their offset. `pdfText()` converts every text first, so “ễ” is one character in the PDF.
+
+Plus a workaround in `schrift.ts`: fontkit remembers each glyph with the characters of its first use. Because the font is parsed only once per worker, `schrift.ts` adds the characters as soon as they are known. Otherwise, in the second PDF, the “u” (part of “ü”), for example, would lack its mapping, and copying would give “�”.
+
+**If a character is missing** from the font (Arabic, Hebrew, Chinese, emoji …), the PDF shows the replacement character “�”. Invisible characters such as variation selectors are dropped. The worker returns the missing characters next to the result, and the pool writes a warning into the log **once per job** (module “Documents”, with operation and Unicode numbers).
+
+**Measurement** (11/11/2026, letter with sample texts in six languages and all five styles from `server/test/hilfen-schriften.ts`, average over ten letters with changed text):
+
+| | before (Helvetica, WinAnsi) | Noto Sans as a subset |
+| --- | --- | --- |
+| size | 13.6 KB, 217 “?” | 41.9 KB, no “?” |
+| time per letter | 14 ms | 36–41 ms (first letter in the worker: 170 ms, reads and parses the fonts) |
+| stamp on an empty page (PDF 0.6 KB before) | 1.7 KB, 5 ms | 4.8 KB, 20 ms |
+
+**Standard fonts do not stay for plain WinAnsi text**, although they would be smaller and faster. Reasons: the archive version (PDF/A) requires embedded fonts. With two ways, a letter would look and wrap differently depending on its content. And the differences (around 30 KB, around 25 ms per PDF) hardly matter next to the documents themselves.
+
+**Limits:** right-to-left scripts (Arabic, Hebrew) and Chinese, Japanese, Korean are **not** included:
+
+- The CJK fonts are CFF fonts. fontkit 1.1.1 builds their subset invalid.
+- Arabic and Hebrew lack the bidi ordering, digits would be reversed.
+- A CJK font alone has a good 16 MB (Noto Sans CJK SC, one style). That doesn't fit the limit for the image size and mission 2 (“fast even on small hardware”).
+
+If such languages are added, the fonts belong in **language packs** ([#731](https://github.com/motom001/dms/issues/731)), and `@cantoo/pdf-lib` will be reassessed (see above). Until then, “�” appears with a note in the log.
+
+**Tests:** `server/test/schriften.test.ts`. It reads the sample texts back out of the letter, checks `ccmp` and NFC, embeds the subset with ToUnicode and tag and covers all generators. Above all it checks the **display**: each character of the samples is rendered individually per style with `pdftoppm` and must show ink, in the second PDF of the same worker. With an unprepared font, exactly this test fails.
 
 ### Tests with broken PDFs (#823) { #pdf-fuzz }
 
