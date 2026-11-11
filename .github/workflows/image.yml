@@ -281,6 +281,41 @@ jobs:
           if [ "${#dateien[@]}" -eq 0 ]; then echo "Keine geänderten Dateien mit Hinweisen."; exit 0; fi
           npx eslint --pass-on-unpruned-suppressions --format ./.github/werkzeuge/eslint-github.mjs "${dateien[@]}"
 
+  # Pakete aus dms-registry main gegen diesen Stand (#1124): Bricht eine strengere Prüfung im Kern Pakete aus dem Katalog
+  # (wie #1108 Basis, Verträge und Rechnungen), steht das hier als Warnung – kein Blocker, nicht in „pruefen“: Die
+  # Pakete ändert das Paket-Team in dms-registry, und der Fund gehört dorthin oder in diesen Pull Request. Installiert
+  # wird mit dem echten Installer in eine Ablage im Arbeitsspeicher (server/src/paketpruefung.ts), ohne Netz.
+  katalog-pakete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - name: dms-registry main holen
+        run: git clone --quiet --depth 1 https://github.com/motom001/dms-registry "$RUNNER_TEMP/registry"
+      - name: Alle Pakete mit diesem Stand installieren
+        shell: bash
+        run: |
+          set +e
+          node --import tsx server/src/pakete-pruefen.ts --ergebnis "$RUNNER_TEMP/ergebnis.json" "$RUNNER_TEMP/registry/pakete" > "$RUNNER_TEMP/ergebnis.txt"
+          code=$?
+          set -e
+          cat "$RUNNER_TEMP/ergebnis.txt"
+          { echo '### Pakete aus dms-registry main'; echo; echo '```'; cat "$RUNNER_TEMP/ergebnis.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -s "$RUNNER_TEMP/ergebnis.json" ]; then
+            echo "::warning title=Katalog-Pakete::pakete-pruefen lief nicht durch (Exit-Code $code), Ausgabe oben"
+          elif [ "$code" -ne 0 ]; then
+            node -e '
+              const e = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+              for (const p of e.pakete.filter((x) => !x.ok)) {
+                const was = p.id ? `${p.id} ${p.version}` : p.ordner;
+                console.log(`::warning title=Katalog-Paket ${was}::${p.gruende.join(" · ").replace(/[\r\n%]/g, " ")}`);
+              }' "$RUNNER_TEMP/ergebnis.json"
+          fi
+
   # Pull Requests: Image für beide Architekturen bauen (ohne Veröffentlichung), jeweils auf
   # einem passenden Rechner (#88), und prüfen, ob die Werkzeuge im Image laufen – so fallen
   # falsche Paketnamen und Probleme mit arm64 vor dem Merge auf.
@@ -314,6 +349,11 @@ jobs:
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
+      # Pakete prüfen im Image (#1124) – so, wie die CI von dms-registry es aufruft: Befehl statt CMD, Ordner schreibgeschützt.
+      - name: Pakete prüfen im Image
+        run: |
+          docker run --rm -v "$PWD/server/test/pakete:/pakete:ro" dms:probe pakete-pruefen /pakete/basis
+          if docker run --rm dms:probe pakete-pruefen; then echo "::error::pakete-pruefen ohne Ordner muss scheitern"; exit 1; fi
       # Einrichtungsskript für den Raspberry Pi (#578); shellcheck ist auf den GitHub-Rechnern vorinstalliert.
       - name: Einrichtungsskript prüfen
         if: matrix.plattform == 'linux/amd64'

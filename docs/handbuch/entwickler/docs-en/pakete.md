@@ -351,6 +351,34 @@ python3 werkzeuge/katalog.py --probe /tmp/katalog    # can the catalogue be buil
 
 The same checks run in the pull request. A published package never changes: every change needs a higher version and an entry in `CHANGELOG.md`.
 
+## Checking packages with Ablago { #pakete-mit-ablago-pruefen }
+
+`pruefen.py` checks the format; whether Ablago really installs a package only the installer can tell. It comes as the command `pakete-pruefen` in the image of every Ablago version: it reads the package folders (like `liesPaket` on upload), packs them like the registry and installs them with the real installer of this version into an empty library in memory – no database server, no network, no account.
+
+```sh
+docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete/basis /pakete/vertraege
+docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete    # all packages
+```
+
+- **Order:** the folders can be given in any order; Ablago installs the dependencies first. A folder without `manifest.yaml` but with package folders inside (e.g. `pakete/`) stands for all of them – inside the container no shell expands a `*`.
+- **Update old → new:** if the same id appears in several versions, Ablago installs the oldest and then updates version by version; a package with `ersetzt` counts as the update of the replaced id (move). The same version twice with the same content counts once; with different content it is an error (increase the version).
+- **Output:** `OK` or `FEHLER` (`ERROR` with `--sprache en`) per package with the reasons – the same texts the preview in Ablago shows – and below them the notes of the preview (they do not fail anything). Exit code 0 if everything is fine, 1 if at least one package fails, 2 for wrong usage.
+- **Options:** `--ablago <version>` checks `dms` in the manifest against another version, `--ohne-beispiele` leaves out the examples (otherwise Ablago installs them, like the tick box in the interface), `--json` or `--ergebnis <file>` give the result as JSON, `--sprache en` gives all output in English.
+
+What the command does **not** check: the origin (the packages sit in a catalogue in memory that counts as the official one – signature and confirmations do not apply), the code (`code/modul.wasm` is stored but not run; without a built module there is only a note) and rules only PostgreSQL knows. The library in memory is the same as in Ablago's server tests; there the installations of this command also run against PostgreSQL for comparison.
+
+**In the CI of dms-registry** – packages against a fixed Ablago version, in a pull request also the update from the state on `main` (unchanged packages count once):
+
+```yaml
+      - name: Check packages with Ablago
+        run: |
+          git worktree add -q "$RUNNER_TEMP/main" origin/main
+          docker run --rm -v "$RUNNER_TEMP/main/pakete:/alt:ro" -v "$PWD/pakete:/neu:ro" \
+            ghcr.io/motom001/dms:<version> pakete-pruefen /alt /neu
+```
+
+Without Docker, in Ablago's repository: `npm ci && npm run build`, then `node server/dist/pakete-pruefen.js <folder…>` (or during development `node --import tsx server/src/pakete-pruefen.ts <folder…>`). Ablago itself checks all packages from `dms-registry` `main` against its own state this way in every pull request (job `katalog-pakete`, warnings only) – so that a stricter check in the core does not silently break catalogue packages.
+
 ## Pull request and catalogue { #pull-request-und-katalog }
 
 1. Pull request with `Closes #…`; every commit carries a `Signed-off-by:` (`git commit -s`).
@@ -442,6 +470,8 @@ Before your package goes into the catalogue, you try it out in your own Ablago �
 2. Zip the package folder, e.g. `cd pakete/mein_paket && zip -r ../../mein_paket.zip .`, and choose it under **Upload package**. A folder before `manifest.yaml` (e.g. `mein_paket/manifest.yaml`) doesn't matter. Ablago checks the package like a catalogue package and shows the preview; format errors are collected there.
     - **Limits:** at most **128 MB** as a ZIP (the same limit in the catalogue, when uploading, in the bundle file and when creating a package; the registry's `pruefen.py` and `katalog.py` reject larger packages), unpacked at most 20 MB without `code/` (128 MB also apply to `code/`) and 500 files. An uploaded package stays ready for installation for 30 minutes; afterwards upload it again.
 3. Install (confirm the origin), look at it, change it. For an update, **raise the version** and upload again – Ablago updates as with an update from the catalogue (only adding). To start afresh, remove the package (works as long as there are no folders of its folder types).
+
+Whether Ablago installs your package – also as an update and together with its dependencies – you can check faster without your own Ablago using [`pakete-pruefen`](#pakete-mit-ablago-pruefen).
 
 You can also test several packages as your own catalogue: `python3 werkzeuge/katalog.py <folder>` builds `katalog.json` and the archives; put the folder on an HTTPS server and enter the address of `katalog.json` in expert mode under **Further sources**.
 

@@ -74,6 +74,10 @@ RUN printf '#!/bin/sh\nexec node /app/server/dist/dms.js "$@"\n' > /usr/local/bi
 # Fortschritt und Ergebnis unter seinem Port (server/src/lasttestmodus.ts).
 COPY server/test/lasttest.mjs /app/lasttest/lasttest.mjs
 RUN printf '#!/bin/sh\nexec node /app/lasttest/lasttest.mjs "$@"\n' > /usr/local/bin/dms-lasttest && chmod 755 /usr/local/bin/dms-lasttest
+# Pakete mit dem Installer dieser Version prüfen (#1124), ohne Datenbank-Server und ohne Netz – für die CI von
+# dms-registry: docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete/basis …
+# Der Befehl ersetzt CMD; das Entrypoint-Skript von node (bzw. tini in dms-komplett) startet ihn direkt.
+RUN printf '#!/bin/sh\nexec node --enable-source-maps /app/server/dist/pakete-pruefen.js "$@"\n' > /usr/local/bin/pakete-pruefen && chmod 755 /usr/local/bin/pakete-pruefen
 
 # Feste Ordner (#115): /data/files, /data/geheim, /data/sicherung – zugeordnet nur über Volumes.
 # Dazu /data/export (#797) für Exporte: ohne eigenes Volume im Container, nie im Sicherungsordner.
