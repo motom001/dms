@@ -224,9 +224,9 @@ export class Erkennung {
     return ergebnis;
   }
 
-  /** Text, an dem die Erkennung einer Post arbeitet: Absender, Betreff und Nachricht, dann die Volltexte. */
+  /** Text, an dem die Erkennung einer Post arbeitet: „von“, Betreff und Nachricht, dann die Volltexte. */
   private async postText(post: Mappe): Promise<{ text: string; dokumente: number }> {
-    const teile = [auswahlText(post.werte.absender), auswahlText(post.werte.betreff), auswahlText(post.werte.nachricht)].filter(Boolean);
+    const teile = [auswahlText(post.werte.von), auswahlText(post.werte.betreff), auswahlText(post.werte.nachricht)].filter(Boolean);
     let dokumente = 0;
     for (const d of await this.repo().listeDokumente(post.id)) {
       const t = d.ocr?.stand === 'fertig' ? await this.repo().volltext(d.id) : null;

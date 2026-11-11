@@ -558,14 +558,15 @@ function GeaendertPunkt() {
   return <><span className="abo-punkt" title={t('ablage.ablage.von-anderen-geaendert-seit')} aria-hidden="true" /><span className="sr">{t('ablage.ablage.geaendert-2')}{' '}</span></>;
 }
 
-const absenderFehlt = (typ: Mappentyp | undefined, m: Mappe) => typ?.system === 'post' && !m.werte.absender && auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend;
+/** Eingehende Post ohne „von“ (#494; bis #1042 „Absender“). */
+const absenderFehlt = (typ: Mappentyp | undefined, m: Mappe) => typ?.system === 'post' && !m.werte.von && auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend;
 
 /** Kompakter Eintrag: mit Trefferliste Spalte 1 fett, 2 und 3 darunter; sonst Titel und zwei Nebenfelder (bzw. der Typ). */
 function kompakt(liste: string[], einTyp: boolean, typ: Mappentyp | undefined, m: Mappe, bezuege: Bezuege, person: (id: string | null) => string) {
   if (liste.length) {
     const [a, ...rest] = liste.slice(0, 3).map((k) => zelle(k, m, typ, bezuege, person));
-    // Post ohne Absender (#494): Hinweis zum Ergänzen beim Zuordnen, auch wenn die Spalte nicht unter den ersten drei ist.
-    if (absenderFehlt(typ, m) && liste.includes('absender')) rest.push(t('ablage.ablage.absender-fehlt'));
+    // Post ohne „von“ (#494): Hinweis zum Ergänzen beim Zuordnen, auch wenn die Spalte nicht unter den ersten drei ist.
+    if (absenderFehlt(typ, m) && liste.includes('von')) rest.push(t('ablage.ablage.absender-fehlt'));
     return { titel: a || titelOder(m.titel), unter: rest.filter(Boolean).join(' · ') };
   }
   return { titel: titelOder(m.titel), unter: einTyp ? (typ ? unterzeile(typ, m, bezuege) : '') : typ ? typName(typ) : '' };
@@ -620,7 +621,7 @@ function Tabelle(p: {
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
                   // Post ohne Absender (#494): „–“ als Hinweis zum Ergänzen beim Zuordnen.
-                  const fehlt = i > 0 && k === 'absender' && absenderFehlt(typ, m);
+                  const fehlt = i > 0 && k === 'von' && absenderFehlt(typ, m);
                   return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <>{p.geaendert?.has(m.id) && <GeaendertPunkt />}<Link to={ziel}><Ehemalig id={m.id}>{text || titelOder(m.titel)}</Ehemalig></Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : fehlt ? <span className="leise" title={t('ablage.ablage.absender-fehlt-trag-ihn')}>–</span> : text}</td>;
                 })}
                 {p.sicht === 'eingang' && <td className="problemzelle">{p.aufgaben?.[m.id] ?? m.problem}</td>}

@@ -1,11 +1,12 @@
 import { ERKENNUNGSARTEN } from '../../shared/src/erkennung';
 import { FELDFORMATE } from '../../shared/src/feldformate';
-import { ABSCHNITT_TITEL_MAX, FELDTYPEN, feldtypName, HERKUNFT, HISTORIENGRUPPEN, REGISTERARTEN, ZIELTYPEN_MAX, type Benutzer, type Feldtyp } from '../../shared/src/model';
+import { ABSCHNITT_TITEL_MAX, FELDTYPEN, feldtypName, HERKUNFT, HISTORIENGRUPPEN, REGISTERARTEN, ZIELTYPEN_MAX, type Benutzer, type Feldtyp, type Werte } from '../../shared/src/model';
 import { inSprache } from '../../shared/src/sprache';
 import { TEXTSPRACHEN } from '../../shared/src/textsprache';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../shared/src/anzeige';
 import { MERKMALE } from '../../shared/src/merkmale';
 import { SCHLUESSEL, TYP_KENNUNG } from '../../shared/src/kennungen';
+import { postWerteMitAlten } from '../../shared/src/postfelder';
 import { Fachfehler } from './fehler';
 import type { Anfrage, Antwort, Route } from './routen';
 import { t } from './sprache';
@@ -71,12 +72,17 @@ const STEMPEL_BESCHREIBUNG = ' Stempel (#394): Mit Stempel-Parametern entsteht e
 
 const id = (was: string): Parameter => ({ name: 'id', wo: 'path', typ: 'string', pflicht: true, beschreibung: `Id ${was} (UUID)` });
 
+/**
+ * Post: „von“ und „an“ (#1042) – Hinweis in der Beschreibung der Schnittstelle, solange der Übergang gilt (uebergaenge.ts).
+ */
+const POST_UEBERGANG = 'Die Systemfelder der Post heißen seit 0.241 von („Von“, bisher absender) und an („An“, Verweis auf einen Benutzer, bisher fuer); das frühere Textfeld an (Adressen einer versendeten E-Mail) heißt an_adresse. Übergang bis 1.0.0: absender und fuer werden beim Schreiben als von und an angenommen (der neue Name geht vor) und beim Lesen einer Post zusätzlich mit demselben Wert geliefert; das Ereignis post.angelegt trägt an und fuer. Das frühere an (Adresse) gibt es unter diesem Namen nicht mehr.';
+
 export const V1_TABELLE: V1[] = [
   { methode: 'GET', pfad: '/ich', gruppe: 'Konto', zusammenfassung: 'Wer bin ich?', beschreibung: 'Benutzer und Rechte des verwendeten Schlüssels.', antwort: 'Ich',
     handler: async (a) => ({ body: { benutzer: a.benutzer, schluessel: a.apiSchluessel ? { name: a.apiSchluessel.name, recht: a.apiSchluessel.recht, passwoerter: a.apiSchluessel.passwoerter, ablauf: a.apiSchluessel.ablauf } : null } }) },
 
   { methode: 'GET', pfad: '/ich/zaehler', gruppe: 'Konto', zusammenfassung: 'Zähler: neue Post, Zu erledigen, Überfälliges (nur Zahlen)',
-    beschreibung: 'Nur Zahlen für den Benutzer des Schlüssels, in dessen Rechten – keine Titel, Namen, Absender oder Inhalte (#625). neuePost: Post im Stand „Neu“, deren „Für“ du bist oder leer ist; zuErledigen: wie „Zu erledigen“; ueberfaellig: eigene offene Fristen, Erinnerungen und Aufgaben mit Datum vor heute. Die frühere Zahl anstehend gibt es nicht mehr (#725). stand zählt hoch, sobald sich eine Zahl gegenüber dem letzten Abruf ändert; geaendert ist der Zeitpunkt dieser Änderung. Die Antwort trägt ein ETag: Mit If-None-Match und gleichem ETag kommt 304 ohne Inhalt. Dafür genügt ein Schlüssel der Stufe „nur Zähler“, der sonst nichts darf; „lesen“ und „lesen und schreiben“ dürfen ebenfalls.',
+    beschreibung: 'Nur Zahlen für den Benutzer des Schlüssels, in dessen Rechten – keine Titel, Namen, Absender oder Inhalte (#625). neuePost: Post im Stand „Neu“, deren „An“ (Kennung an, bis 0.240 „Für“, #1042) du bist oder leer ist – Zahl und Bedeutung unverändert; zuErledigen: wie „Zu erledigen“; ueberfaellig: eigene offene Fristen, Erinnerungen und Aufgaben mit Datum vor heute. Die frühere Zahl anstehend gibt es nicht mehr (#725). stand zählt hoch, sobald sich eine Zahl gegenüber dem letzten Abruf ändert; geaendert ist der Zeitpunkt dieser Änderung. Die Antwort trägt ein ETag: Mit If-None-Match und gleichem ETag kommt 304 ohne Inhalt. Dafür genügt ein Schlüssel der Stufe „nur Zähler“, der sonst nichts darf; „lesen“ und „lesen und schreiben“ dürfen ebenfalls.',
     intern: { methode: 'GET', pfad: '/api/ich/zaehler' }, antwort: 'Zaehlerstand', nichtGeaendert: true },
   { methode: 'GET', pfad: '/entdecken', gruppe: 'Konto', zusammenfassung: 'Rundgänge und Tipps für die Person (Ablago entdecken)', beschreibung: 'Wie in der Oberfläche (#831, #832): nur, was die Person nutzen darf (Verwaltungsrecht, eingeschaltete Funktionen), Texte in ihrer Sprache. Je Tipp Anker und Seite bzw. Rundgang, Herkunft (ablago, später paket:<id>), neu, ausgeblendet und clients – nur Tipps mit clients=true eignen sich für eine App (kein Rundgang, die Stelle gibt es dort auch). tipp ist der Tipp des Tages (höchstens einer), starten der Rundgang, der jetzt von selbst startet. Gesehen und ausgeblendet setzen geht vorerst nur über die Oberfläche. Dafür genügt ein Schlüssel der Stufe „lesen“.', intern: { methode: 'GET', pfad: '/api/entdecken' }, antwort: 'EntdeckenStand' },
   { methode: 'GET', pfad: '/konto/abwesenheit', gruppe: 'Konto', zusammenfassung: 'Eigene Abwesenheit', beschreibung: 'Abwesenheit mit Vertreter und Anzahl eigener offener Aufgaben.', intern: { methode: 'GET', pfad: '/api/konto/abwesenheit' }, antwort: 'AbwesenheitStand' },
@@ -153,13 +159,13 @@ export const V1_TABELLE: V1[] = [
   { methode: 'POST', pfad: '/mappen/email', gruppe: 'Ablage', zusammenfassung: 'Mehrere Mappen per E-Mail versenden', beschreibung: 'Mehrere Mappen in einer E-Mail (#151, höchstens 100). Anhänge: je Mappe ihre Angaben als PDF („Titel.pdf“, angaben=false lässt sie weg) und die Dokumente – dokumente=„alle“ oder eine Liste von Dokument-Ids (Standard: keine); zusammen höchstens 50 MB. Jede Mappe braucht Lesen und das Recht zu versenden (Recht E einer Ansicht, wie beim Export); fehlt es bei einer, wird nichts verschickt (403). Danach gibt es eine Post (Kanal E-Mail, ausgehend, erledigt), die auf alle Mappen verweist, und in jeder Mappe einen Eintrag in der Historie.', intern: { methode: 'POST', pfad: '/api/mappen/email' }, body: 'EmailMehrere', antwort: 'EmailMehrereVersendet', status: 201 },
   { methode: 'POST', pfad: '/mappen/{id}/email', gruppe: 'Ablage', zusammenfassung: 'Mappe per E-Mail versenden', beschreibung: 'Absender ist die Adresse von Ablago, „Antworten an“ der Benutzer des Schlüssels. Anhänge sind Dokumente der Mappe (zusammen höchstens 50 MB). Danach gibt es eine Post-Mappe (Kanal E-Mail, ausgehend, erledigt), die dieser Mappe zugeordnet ist, und einen Protokolleintrag. 409, wenn der Versand nicht eingerichtet ist; 502, wenn der Mailserver ablehnt.', intern: { methode: 'POST', pfad: '/api/mappen/:id/email' }, parameter: [id('der Mappe')], body: 'EmailEingabe', antwort: 'EmailVersendet', status: 201 },
   { methode: 'POST', pfad: '/post', gruppe: 'Ablage', zusammenfassung: 'Post anlegen',
-    beschreibung: 'Neue Post (Systemtyp Post, #192): Stand „Neu“, Richtung eingehend, Kanal „API“ (mit Schlüssel) bzw. „Hochgeladen“; Datum heute, wenn nicht angegeben. Dokumente danach mit POST /mappen/{id}/dokumente ins Register „dokumente“ hochladen. 403 ohne das Recht, Post anzulegen.',
+    beschreibung: `Neue Post (Systemtyp Post, #192): Stand „Neu“, Richtung eingehend, Kanal „API“ (mit Schlüssel) bzw. „Hochgeladen“; Datum heute, wenn nicht angegeben. Dokumente danach mit POST /mappen/{id}/dokumente ins Register „dokumente“ hochladen. 403 ohne das Recht, Post anzulegen. ${POST_UEBERGANG}`,
     intern: { methode: 'POST', pfad: '/api/post' }, body: 'PostEingabe', antwort: 'Mappe', status: 201 },
   { methode: 'POST', pfad: '/post/{id}/zuordnen', gruppe: 'Ablage', zusammenfassung: 'Post einer Mappe zuordnen',
     beschreibung: 'Die Post verweist danach auf die Mappe („Zugeordnet zu“) und hat Stand „Zugeordnet“. Die gewählten Dokumente (Standard: alle der Post) wandern in ein Dokumentenregister der Zielmappe; mit kopieren=true bleiben sie zusätzlich in der Post (gleiche Datei, kein zweiter Speicherplatz). Mehrmals möglich. Braucht Bearbeiten an Post und Zielmappe. Mit aufloesen=true (#936, #934) wird aus der Post die Zielmappe – eine neu angelegte wie eine bestehende: Die gewählten Dokumente wandern dorthin, die übrigen in eine neue Post (abgetrennt, mit Verweis auf die Herkunft in deren Historie); Historie, Notizen, Aufgaben und Erinnerungen der Post gehören danach der Zielmappe (Einträge mit ausPost), dort steht „Aus Post … angelegt“ (eben von diesem Benutzer angelegt) bzw. „Post … übernommen“. Die Post kommt in den Papierkorb (Weg „aufgeloest“ im Löschprotokoll) und lässt sich nicht wiederherstellen. Nicht aufgelöst, nur zugeordnet wird mit kopieren, bei versendeten E-Mails und beim automatischen Zuordnen. Darf der Benutzer die Post nicht löschen (bzw. für den abgetrennten Teil keine Post anlegen), bleibt es beim Zuordnen: aufgeloest=false mit hinweis.',
     intern: { methode: 'POST', pfad: '/api/mappen/:id/zuordnen' }, parameter: [id('der Post')], body: 'Zuordnen', antwort: 'Zugeordnet' },
   { methode: 'POST', pfad: '/post/{id}/abtrennen', gruppe: 'Ablage', zusammenfassung: 'Dokumente als neue Post abtrennen',
-    beschreibung: '„Ab hier abtrennen“ (#934): Die gewählten Dokumente kommen als neue Post „… (abgetrennt)“ nach „Neue Post“ – Datum, Absender, Kanal und „Für“ wie bisher, in ihrer Historie der Verweis auf die Herkunft. Mindestens ein Dokument bleibt in der Post (sonst 422); nicht bei versendeten E-Mails. Braucht Bearbeiten an der Post und das Recht, Post anzulegen.',
+    beschreibung: '„Ab hier abtrennen“ (#934): Die gewählten Dokumente kommen als neue Post „… (abgetrennt)“ nach „Neue Post“ – Datum, „Von“, Kanal und „An“ wie bisher, in ihrer Historie der Verweis auf die Herkunft. Mindestens ein Dokument bleibt in der Post (sonst 422); nicht bei versendeten E-Mails. Braucht Bearbeiten an der Post und das Recht, Post anzulegen.',
     intern: { methode: 'POST', pfad: '/api/mappen/:id/abtrennen' }, parameter: [id('der Post')], body: 'Abtrennen', antwort: 'Abgetrennt' },
   { methode: 'POST', pfad: '/abgleich', gruppe: 'Ablage', zusammenfassung: 'Dokumente mit vorhandenen Mappen abgleichen',
     beschreibung: 'Abgleich im Kern, ohne KI (#938, #934): Welche vorhandenen Mappen sich in den Volltexten der Dokumente (höchstens 10, Lesen nötig) über ihre Felder mit „Zum Wiederfinden nutzen“ wiederfinden – je Treffer mit Belegen (Feld, Wert, Fundstelle). Mit typ dazu Vorschläge für die Verweisfelder dieses Mappentyps (verweise) und Mappen dieses Typs, die es schon gibt (doppelt). Ohne typ dazu typ: ein Mappentyp aus „Wohin gehört das?“, dessen Name im Text steht. Nur Mappen, die der Benutzer lesen darf; nichts wird gespeichert. Dokumente ohne Volltext stehen in ohneText.',
@@ -346,14 +352,40 @@ export const V1_TABELLE: V1[] = [
 ];
 
 /** Routen /api/v1/… aus der Tabelle; Handler und Zugang kommen von den internen Routen. */
-export function v1Routen(intern: Route[]): Route[] {
+/**
+ * Post (#1042, Übergang bis 1.0.0): In jeder Antwort der Schnittstelle v1 bekommen Mappen vom Typ Post (typId) zu von
+ * und an zusätzlich die alten Namen absender und fuer mit demselben Wert. Sucht höchstens wenige Ebenen tief; Dateien
+ * und Ströme bleiben, wie sie sind.
+ */
+export function mitAltenPostNamen(body: unknown, postId: string, tiefe = 0): unknown {
+  if (tiefe > 6 || !body || typeof body !== 'object') return body;
+  if (Array.isArray(body)) return body.map((x) => mitAltenPostNamen(x, postId, tiefe + 1));
+  const o = body as Record<string, unknown>;
+  const aus: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) aus[k] = mitAltenPostNamen(v, postId, tiefe + 1);
+  if (o.typId === postId && o.werte && typeof o.werte === 'object' && !Array.isArray(o.werte)) aus.werte = postWerteMitAlten(o.werte as Werte);
+  return aus;
+}
+
+/** Was die Schnittstelle v1 für Übergänge braucht (#1042): die Id des Typs Post. */
+export interface V1Uebergang { postTypId(): Promise<string | null> }
+
+export function v1Routen(intern: Route[], uebergang?: V1Uebergang): Route[] {
   const finde = (m: Route['methode'], p: string) => {
     const r = intern.find((x) => x.methode === m && x.pfad === p);
     if (!r) throw new Error(`Interne Route fehlt: ${m} ${p}`);
     return r;
   };
+  // Post (#1042): alte Namen in Antworten mitliefern – nur, wenn die Antwort überhaupt Werte trägt.
+  const mitAlten = (h: Route['handler']): Route['handler'] => (uebergang ? async (a) => {
+    const antwort = await h(a);
+    if (!antwort?.body || antwort.datei || antwort.strom || typeof antwort.body !== 'object') return antwort;
+    const postId = await uebergang.postTypId().catch(() => null);
+    return postId ? { ...antwort, body: mitAltenPostNamen(antwort.body, postId) } : antwort;
+  } : h);
   return V1_TABELLE.map((e) => {
     const basis = e.intern ? finde(e.intern.methode, e.intern.pfad) : undefined;
+    const handler: Route['handler'] = e.handler ? (a: Anfrage) => e.handler!(a, finde) : basis!.handler;
     return {
       methode: e.methode,
       pfad: `/api/v1${e.pfad.replace(/\{(\w+)\}/g, ':$1')}`,
@@ -363,7 +395,7 @@ export function v1Routen(intern: Route[]): Route[] {
       roh: basis?.roh,
       strom: basis?.strom,
       api: true,
-      handler: e.handler ? (a: Anfrage) => e.handler!(a, finde) : basis!.handler,
+      handler: mitAlten(handler),
     } satisfies Route;
   });
 }
@@ -461,7 +493,7 @@ const SCHEMAS: Record<string, Schema> = {
   MappentypListe: liste('Mappentyp'),
   Werte: {
     type: 'object', additionalProperties: true,
-    description: 'Werte je Feldschlüssel: Text und Datum (JJJJ-MM-TT) als string, Zahl als number, Ja/Nein als boolean, Betrag als {betrag, waehrung} (negativ nur mit negativ am Feld, #1035), Prozent als number (19 für 19 %; „19 %“ als Text geht beim Schreiben auch), Zeitraum als {anzahl, einheit} mit anzahl 0–9999 und einheit tage|wochen|monate|jahre (beim Schreiben auch „P3M“ oder „3 Monate“), Auswahl als string (mehrfach: string[]), Verweis als Mappen-Id (mehrfach: string[]). Passwort: beim Lesen nur {gesetzt, lesbar} (Klartext mit ?passwoerter=anzeigen); zum Setzen ein Text oder {neu}, zum Entfernen null, unverändert lassen durch Weglassen. Zusammengesetzt (#1050): nur lesen – der Schlüssel als string, Verweise darin als Mappen-Id (den Text mit Titeln baut der Client aus vorlage, den Werten und bezuege; nicht lesbare Mappen sind dort verborgen); gesendete Werte übergeht Ablago und setzt das Feld aus seinen Teilen.',
+    description: `Werte je Feldschlüssel (Post: ${POST_UEBERGANG}): Text und Datum (JJJJ-MM-TT) als string, Zahl als number, Ja/Nein als boolean, Betrag als {betrag, waehrung} (negativ nur mit negativ am Feld, #1035), Prozent als number (19 für 19 %; „19 %“ als Text geht beim Schreiben auch), Zeitraum als {anzahl, einheit} mit anzahl 0–9999 und einheit tage|wochen|monate|jahre (beim Schreiben auch „P3M“ oder „3 Monate“), Auswahl als string (mehrfach: string[]), Verweis als Mappen-Id (mehrfach: string[]). Passwort: beim Lesen nur {gesetzt, lesbar} (Klartext mit ?passwoerter=anzeigen); zum Setzen ein Text oder {neu}, zum Entfernen null, unverändert lassen durch Weglassen. Zusammengesetzt (#1050): nur lesen – der Schlüssel als string, Verweise darin als Mappen-Id (den Text mit Titeln baut der Client aus vorlage, den Werten und bezuege; nicht lesbare Mappen sind dort verborgen); gesendete Werte übergeht Ablago und setzt das Feld aus seinen Teilen.`,
     example: { rechnungsnummer: 'R-2026-17', rechnungsdatum: '2026-10-01', betrag: { betrag: 49.9, waehrung: 'EUR' }, steuersatz: 19, kuendigungsfrist: { anzahl: 3, einheit: 'monate' }, bezahlt: false },
   },
   Mappe: {
@@ -606,8 +638,10 @@ const SCHEMAS: Record<string, Schema> = {
   Notiz: { type: 'object', properties: { id: uuid, mappeId: uuid, text: { type: 'string', description: 'Markdown' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, geaendert: zeit, geaendertVon: { ...uuid, nullable: true } } },
   NotizListe: liste('Notiz'),
   PostEingabe: { type: 'object', properties: {
-    betreff: { type: 'string', description: 'Standard „Neue Post“' }, datum: { type: 'string', format: 'date' }, absender: { type: 'string', description: 'Wer die Post geschickt hat; ohne Angabe leer (bis 0.99: Name des Benutzers, #494)' },
-    fuer: { ...uuid, description: 'Id eines Benutzers: Er bekommt die Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist.' }, nachricht: { type: 'string' },
+    betreff: { type: 'string', description: 'Standard „Neue Post“' }, datum: { type: 'string', format: 'date' }, von: { type: 'string', description: 'Wer die Post geschickt hat („Von“, #1042); ohne Angabe leer (bis 0.99: Name des Benutzers, #494)' },
+    an: { ...uuid, description: 'Id eines Benutzers („An“, #1042): Er bekommt die Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist.' },
+    absender: { type: 'string', deprecated: true, description: 'Alter Name für von (bis 1.0.0, #1042); gilt nur ohne von' },
+    fuer: { ...uuid, deprecated: true, description: 'Alter Name für an (bis 1.0.0, #1042); gilt nur ohne an' }, nachricht: { type: 'string' },
     kanal: { type: 'string', enum: ['Hochgeladen', 'E-Mail', 'Scan', 'Ordner', 'Import', 'API', 'WebDAV'] },
     werte: { ...ref('Werte'), description: 'Werte weiterer Felder, die der Administrator am Typ Post ergänzt hat' },
   } },
@@ -682,7 +716,7 @@ const SCHEMAS: Record<string, Schema> = {
     ziele: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, typId: uuid, titel: { type: 'string' }, punkte: { type: 'number' }, gruende: { type: 'array', items: { type: 'string' } } } } },
   } },
   FotoAbgelegt: { type: 'object', properties: { id: { ...uuid, description: 'Kennung des Fotos im Stapel' } } },
-  PostFotos: { type: 'object', required: ['stapel'], properties: { stapel: { type: 'array', items: uuid, description: 'Kennungen aus POST /fotostapel, höchstens 50' }, betreff: { type: 'string' }, fuer: uuid } },
+  PostFotos: { type: 'object', required: ['stapel'], properties: { stapel: { type: 'array', items: uuid, description: 'Kennungen aus POST /fotostapel, höchstens 50' }, betreff: { type: 'string' }, an: { ...uuid, description: 'Id eines Benutzers („An“, #1042)' }, fuer: { ...uuid, deprecated: true, description: 'Alter Name für an (bis 1.0.0, #1042)' } } },
   FotosAnhaengen: { type: 'object', required: ['stapel'], properties: { stapel: { type: 'array', items: uuid }, dokument: { ...uuid, description: 'PDF der Mappe, an das die Seiten kommen' }, register: { type: 'string' } } },
   FotosAngehaengt: { type: 'object', properties: { dokument: ref('Dokument'), seiten: { type: 'integer' } } },
   Zusammenlegen: { type: 'object', required: ['quelle'], properties: { quelle: { ...uuid, description: 'Id der Post, deren Seiten angehängt werden' } } },
@@ -861,7 +895,7 @@ const SCHEMAS: Record<string, Schema> = {
     tippsAn: { type: 'boolean' }, starten: { type: 'string', nullable: true } } },
   AbwesenheitStand: { type: 'object', properties: { abwesenheit: { ...ref('Abwesenheit'), nullable: true }, offeneAufgaben: { type: 'integer' } } },
   Zaehlerstand: { type: 'object', required: ['neuePost', 'zuErledigen', 'ueberfaellig', 'stand', 'geaendert'], additionalProperties: false, properties: {
-    neuePost: { type: 'integer', minimum: 0, description: 'Post im Stand „Neu“ für dich oder ohne „Für“' },
+    neuePost: { type: 'integer', minimum: 0, description: 'Post im Stand „Neu“ für dich oder ohne „An“ (bis 0.240 „Für“)' },
     zuErledigen: { type: 'integer', minimum: 0, description: 'Mappen unter „Zu erledigen“' },
     ueberfaellig: { type: 'integer', minimum: 0, description: 'Offene Fristen, Erinnerungen und Aufgaben mit Datum vor heute' },
     stand: { type: 'integer', minimum: 1, description: 'Zählt hoch, sobald sich eine Zahl ändert' },
@@ -909,7 +943,7 @@ export function openapi(version: string, serverUrl?: string): Schema {
     info: {
       title: 'Ablago API',
       version,
-      description: 'Schnittstelle von Ablago, selbst gehostet. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET, Schlüssel „nur Zähler“ nur GET /ich/zaehler (alles andere 403). Diese Beschreibung entsteht aus der installierten Version.',
+      description: 'Schnittstelle von Ablago, selbst gehostet. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET, Schlüssel „nur Zähler“ nur GET /ich/zaehler (alles andere 403). Diese Beschreibung entsteht aus der installierten Version. Übergänge bis 1.0.0: Post mit von/an statt absender/fuer (#1042, siehe Werte).',
       license: { name: 'Apache-2.0', url: 'https://www.apache.org/licenses/LICENSE-2.0' },
     },
     servers: [{ url: `${serverUrl?.replace(/\/$/, '') ?? ''}/api/v1` }],

@@ -18,14 +18,14 @@ In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht ob
 | **Frist** | Ein Datum in einer Mappe rückt näher, z. B. „Kündigung bis 30.09.2027“ – wann und für wen, legt eine Automatisierung fest. Daneben steht, wie viele Tage noch bleiben. | Klicke auf **Erledigt**. Ändert sich das Datum oder wird es geleert, erledigt sie sich von selbst. Wiederholt sich der Termin (z. B. jährlich), schlägt Ablago den nächsten vor: **Datum auf … setzen**. |
 | **Erinnerung** | Du oder jemand anderes hat über **Mappe ▾ → Erinnern** an diese Mappe erinnert, und der Tag ist da. | Klicke auf **Erledigt**. |
 | **Vertretung** | Jemand hat dich als [Vertreter](profil.md#abwesenheit) für seine Abwesenheit eingetragen. Die Aufgabe steht an seiner Benutzer-Mappe und nennt den Zeitraum. | **Erledigt** heißt „zur Kenntnis genommen“. Ändert sich die Abwesenheit oder endet sie, erledigt sie sich von selbst. |
-| **Post für dich** | Bei neuer [Post](post.md) steht dein Name unter **Für**. | Ordne die Post zu, erledige sie oder gib sie weiter. Dann erledigt sie sich von selbst. |
+| **Post für dich** | Bei neuer [Post](post.md) steht dein Name unter **An**. | Ordne die Post zu, erledige sie oder gib sie weiter. Dann erledigt sie sich von selbst. |
 | **Auskunft** | Eine Person hat ihre Auskunft nach Art. 15 DSGVO (eine Kopie aller Daten, die über sie gespeichert sind) über den Abruf-Link heruntergeladen – oder der Link wurde nach zu vielen falschen Abrufcodes gesperrt. Du bekommst das, wenn du die Auskunft erstellt hast oder die Mappe der Person ein [Favorit](ablage.md#favoriten) von dir ist. | **Erledigt** heißt „zur Kenntnis genommen“. Bis dahin kommt für denselben Link keine zweite Meldung. |
 
 Bei „Passt nicht“ löscht oder ändert Ablago nichts von selbst; die betroffenen Felder sind in der Mappe markiert, und geprüft wird beim nächsten Speichern.
 
 ### Aufgaben ohne Empfänger
 
-Hat eine Aufgabe keinen einzelnen Empfänger – etwa Post ohne **Für** –, bekommen sie die Administratoren und eine Person, die die Verwaltung dafür ausgewählt hat. Bist du das, stehen solche Aufgaben bei dir unter **Zu erledigen**, und du erledigst sie oder gibst sie weiter wie jede andere.
+Hat eine Aufgabe keinen einzelnen Empfänger – etwa Post ohne **An** –, bekommen sie die Administratoren und eine Person, die die Verwaltung dafür ausgewählt hat. Bist du das, stehen solche Aufgaben bei dir unter **Zu erledigen**, und du erledigst sie oder gibst sie weiter wie jede andere.
 
 Außerdem siehst du dann manchmal oben den Hinweis **„Für die Verwaltung liegt etwas an. Melde dich als Administrator an.“** Das betrifft Technisches wie die Sicherung. Wenn du das Admin-Konto hast, klick auf **Als Administrator anmelden**. Sonst sag der Person Bescheid, die Ablago verwaltet. Der Hinweis verschwindet, sobald alles erledigt ist.
 

@@ -14,6 +14,7 @@
 import { optionText, wertZuOption } from './beschriftung';
 import { istIndexplatzhalter, sortierbar, istSystemspalte, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from './model';
 import { bedingungsfelder, bedingungsProblem, beschreibeBedingung, OPERATOREN, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld, type Einheit, type Operator, type WertAngabe } from './sichten';
+import { postKennung } from './postfelder';
 import { t } from './texte';
 import { istZeitraum, leseProzent, leseZeitraum, zeitraumIso } from './feldarten';
 
@@ -155,7 +156,9 @@ export function liesDirektlink(parameter: Linkparameter, typen: Mappentyp[]): Li
     if (schluessel === 'typ') continue;
     if (schluessel === 'sortierung') {
       const absteigend = wert.trim().startsWith('-');
-      const spalte = wert.trim().replace(/^[-+]/, '').trim() || '_titel';
+      const roh = wert.trim().replace(/^[-+]/, '').trim() || '_titel';
+      // Post (#1042): absender und fuer gelten bis 1.0.0 als von und an.
+      const spalte = typ.system === 'post' ? postKennung(roh) : roh;
       if ((!istSystemspalte(spalte) && !typ.felder.some((f) => f.key === spalte)) || !sortierbar(spalte, typ) || spalte === '_typ') {
         fehler.push(t('gemeinsam.direktlink.nach-laesst-sich', { spalte, wert: typ.felder.some((f) => f.key === spalte) ? t('gemeinsam.direktlink.nicht-sortieren') : t('gemeinsam.direktlink.nicht-sortieren-das-feld', { name: typ.name }) }));
       } else sortierung = spalte === '_titel' && !absteigend ? null : { spalte, absteigend };
@@ -163,7 +166,8 @@ export function liesDirektlink(parameter: Linkparameter, typen: Mappentyp[]): Li
     }
     const teile = schluessel.split('.');
     if (teile.length > 2 || !teile[0]) { fehler.push(t('gemeinsam.direktlink.versteht-ablago-nicht-erwartet', { schluessel })); continue; }
-    const [feldKey, opName] = teile;
+    const [rohKey, opName] = teile;
+    const feldKey = typ.system === 'post' ? postKennung(rohKey) : rohKey;
     const f = felder.find((x) => x.key === feldKey);
     if (!f) { fehler.push(t('gemeinsam.direktlink.feld-gibt-es-bei', { feldKey, name: typ.name })); continue; }
     if (f.art === 'passwort') { fehler.push(t('gemeinsam.direktlink.nach-dem-passwortfeld-laesst', { label: f.label })); continue; }

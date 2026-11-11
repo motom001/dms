@@ -37,7 +37,7 @@
     - **Mention:** someone has mentioned you with **@**.
     - **Deadline** or **reminder:** a date is approaching, or the day of a reminder has come.
     - **Stand-in:** someone has entered you as their stand-in, or you are currently standing in for someone.
-    - **Post for you:** your name is under **For** on new post.
+    - **Post for you:** your name is under **To** on new post.
     - **Access request:** an access copy under Art. 15 GDPR for this person was retrieved (or its retrieval link blocked).
     - **Doesn't fit:** its folder type was changed, and the folder no longer fits it.
 

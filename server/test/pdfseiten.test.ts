@@ -109,7 +109,7 @@ describe('PDF bearbeiten (#335)', () => {
     const r = await d.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4].map((nr) => ({ nr })), teile: [1, 3] }, ANNA);
     assert.equal(r.posten.length, 3);
     assert.deepEqual(r.posten.map((p) => p.werte.betreff), ['Sammelscan (Teil 1)', 'Sammelscan (Teil 2)', 'Sammelscan (Teil 3)']);
-    assert.ok(r.posten.every((p) => auswahlText(p.werte.stand) === POST_STAND.neu && p.werte.absender === 'Scanner'));
+    assert.ok(r.posten.every((p) => auswahlText(p.werte.stand) === POST_STAND.neu && p.werte.von === 'Scanner'));
     assert.deepEqual(await breiten(await inhalt(r.dokumente[1].id)), [2, 3]);
     const alt = await d.holeMappe(post.id);
     assert.equal(auswahlText(alt.mappe.werte.stand), POST_STAND.erledigt);

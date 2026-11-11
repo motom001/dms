@@ -19,6 +19,7 @@ import { istDatum } from '../../../shared/src/fristen';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { type Aufgabe, type AufgabenAnlass, auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, verweiseVon, type Werte } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
+import { postWerteNeu } from '../../../shared/src/postfelder';
 import type { PostAufloesen } from './aufloesen';
 import type { KontenAnschluss, PostSystemmappen } from './systemmappen';
 
@@ -98,21 +99,22 @@ export class PostDienst {
   /**
    * Post anlegen. `ich.id` null: kein echter Benutzer, sondern ein Eingangskanal (#195: „Eingangsordner“);
    * `herkunft` steht dann als eigener Eintrag in der Historie.
-   * `alt` (Teilen, #445): Werte der Ausgangspost – Verweise, die dort schon stehen (z. B. „Für“), gelten nicht als neu.
+   * `alt` (Teilen, #445): Werte der Ausgangspost – Verweise, die dort schon stehen (z. B. „An“), gelten nicht als neu.
+   * „von“ und „an“ (#1042): bis 1.0.0 auch unter den alten Namen `absender` und `fuer` (Schnittstelle v1, uebergaenge.ts).
    */
   async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID(), alt: Werte = {}): Promise<Mappe> {
     const { post: typ } = await this.kern.system();
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
-    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);
     const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || t('meldungen.dienst.neue-post');
     const datum = istDatum(text(e.datum)) ? text(e.datum) : heuteIn();
     const werte = bereinigeWerte(typ, {
       ...(e.werte && typeof e.werte === 'object' ? e.werte as Record<string, unknown> : {}),
       betreff, datum, kanal: Object.values(POST_KANAL).includes(text(e.kanal) as never) ? text(e.kanal) : kanal,
       richtung: POST_RICHTUNG.eingehend, stand: POST_STAND.neu,
-      // Kein Rückgriff auf den Namen des Anlegenden (#494): Absender ist, wer den Brief geschickt hat.
-      absender: text(e.absender).trim().slice(0, 250) || null, bezug: null,
-      ...(e.fuer !== undefined ? { fuer: e.fuer || null } : {}), ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
+      // Kein Rückgriff auf den Namen des Anlegenden (#494): „von“ ist, wer den Brief geschickt hat.
+      von: text(e.von).trim().slice(0, 250) || null, bezug: null,
+      ...(e.an !== undefined ? { an: e.an || null } : {}), ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
     }, {}, this.verschluessele);
     if (z && !z.admin) {
       const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: ich.id, geaendert: new Date().toISOString(), geaendertVon: ich.id };
@@ -128,7 +130,9 @@ export class PostDienst {
       if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
       const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
       await this.postAufgaben(m.id, ich.id);
-      await this.ereignis('post.angelegt', { mappe: m.id, kanal: werte.kanal, fuer: typeof werte.fuer === 'string' ? werte.fuer : null }, ich.id);
+      // „an“ (#1042); „fuer“ mit demselben Wert bis 1.0.0 (uebergaenge.ts).
+      const an = typeof werte.an === 'string' ? werte.an : null;
+      await this.ereignis('post.angelegt', { mappe: m.id, kanal: werte.kanal, an, fuer: an }, ich.id);
       await this.meldeVerknuepft(typ, m.id, alt, werte, ich.id);
       return { m, titel };
     });
@@ -226,7 +230,7 @@ export class PostDienst {
     const s = this.sichereZuordnung(e, autoTypen);
     const nicht = (grund: string) => { log.info('Post nicht automatisch zugeordnet', { post: postId, grund }); return { nicht: grund }; };
     if (!s.ziel) return nicht(s.grund);
-    const empfaenger = alsListe(post.werte.fuer)[0] ?? post.erstelltVon;
+    const empfaenger = alsListe(post.werte.an)[0] ?? post.erstelltVon;
     if (!empfaenger) return nicht(t('meldungen.dienst.niemand-der-es-pruefen'));
     if (!(await this.sichtbarFuer(empfaenger, [s.ziel.mappeId])).has(s.ziel.mappeId)) return nicht(t('meldungen.dienst.der-empfaenger-darf-die'));
     const ziel = await this.repo.holeMappe(s.ziel.mappeId);
@@ -290,22 +294,24 @@ export class PostDienst {
   }
 
   /**
-   * „Für“ (#192): Solange Post neu ist und jemandem gilt, hat dieser eine Aufgabe „Neue Post“ im Eingang
-   * (bei Abwesenheit sein Vertreter). Zugeordnet, erledigt oder an jemand anderen → die Aufgabe ist erledigt.
+   * „An“ (#192, bis #1042 „Für“): Solange Post neu ist und einem Benutzer gilt, hat dieser eine Aufgabe „Post für dich“
+   * unter „Zu erledigen“ (bei Abwesenheit sein Vertreter). Nur ein Benutzer bekommt sie – zeigt „an“ auf etwas anderes,
+   * entsteht keine. Zugeordnet, erledigt oder an jemand anderen → die Aufgabe ist erledigt.
    */
   async postAufgaben(mappeId: string, von: string | null) {
     const m = await this.repo.holeMappe(mappeId);
     const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'post');
-    const fuer = m && auswahlText(m.werte.stand) === POST_STAND.neu ? alsListe(m.werte.fuer)[0] ?? null : null;
-    const schluessel = fuer ? `fuer:${fuer}` : null;
+    const an = m && auswahlText(m.werte.stand) === POST_STAND.neu ? alsListe(m.werte.an)[0] ?? null : null;
+    // Schlüssel der Aufgabe: an:<Benutzer> (bis #1042 fuer:<Benutzer>, Migration 099 zieht offene um).
+    const schluessel = an ? `an:${an}` : null;
     for (const a of offen) if (a.feldKey !== schluessel) await this.repo.erledigeAufgabe(a.id, von);
     // Aufgaben mit Anlass „Post“ (#724, z. B. aus „Wenn neue Post“): erledigt, sobald die Post nicht mehr neu ist.
     if (m && auswahlText(m.werte.stand) !== POST_STAND.neu) await this.erledigeNachAnlass(mappeId, (x) => x.art === 'post', t('meldungen.dienst.post-zugeordnet-2'));
-    if (!fuer || offen.some((a) => a.feldKey === schluessel)) return;
+    if (!an || offen.some((a) => a.feldKey === schluessel)) return;
     // Aufgaben gehen an Konten; ohne Kontenverwaltung (Tests) genügt der Verweis.
-    if (this.konten?.benutzer && !(await this.konten.benutzer()).some((b) => b.id === fuer)) return;
+    if (this.konten?.benutzer && !(await this.konten.benutzer()).some((b) => b.id === an)) return;
     const a = await this.neueAufgabe({
-      id: randomUUID(), mappeId, empfaengerId: fuer, art: 'post', text: t('meldungen.dienst.post-fuer-dich'), feldKey: schluessel,
+      id: randomUUID(), mappeId, empfaengerId: an, art: 'post', text: t('meldungen.dienst.post-fuer-dich'), feldKey: schluessel,
       erstellt: new Date().toISOString(), erstelltVon: von, erledigt: null, erledigtVon: null,
     });
     await this.leiteUm(a);

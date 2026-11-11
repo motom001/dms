@@ -144,7 +144,9 @@ function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Auflo
     case 'eigeneMappe': x = { k: 'filter', f: { art: 'id', ids: [wer.id] } }; break;
     case 'merkmal': x = bool(merkmalTrifft({ merkmal: b.merkmal }, a.merkmale)); break;
     case 'feld': {
-      if (bedingungsProblem(b.bedingung, [typ])) { x = FALSCH; break; }
+      // Unbekanntes Feld (#1042, z. B. eine Kennung von vor einem Umzug): im Zweifel geschlossen – eine gebende Regel trifft
+      // nicht zu, eine nehmende trifft zu, auch mit „nicht“ (sonst öffnete „ist nicht …“ auf ein fehlendes Feld).
+      if (bedingungsProblem(b.bedingung, [typ])) return zweifel === 'geben' ? FALSCH : WAHR;
       const [f] = filterFuer({ bedingungen: [b.bedingung] }, [typ], a);
       x = f ? { k: 'filter', f } : FALSCH;
       break;
@@ -263,7 +265,7 @@ export function rechteAn(typ: Mappentyp, m: Mappe, wer: Wer, a: Aufloesung, z: M
     // doch zutreffen. Spur und Stopp zeigen die Seite des Erteilens, wenn die Regel etwas erteilt, sonst die des Entziehens.
     const trifft = (zweifel: Zweifel) => regel.wenn.map((b) => (neu && b.art === 'aufgabe' ? !!b.nicht : werte(bedingungAusdruck(b, typ, wer, a, zweifel), m, z)));
     const geben = trifft('geben');
-    const nehmen = regel.wenn.some((b) => b.art === 'feld' && b.bedingung.op === 'zeigtAufTyp') ? trifft('nehmen') : geben;
+    const nehmen = regel.wenn.some((b) => b.art === 'feld' && (b.bedingung.op === 'zeigtAufTyp' || !!bedingungsProblem(b.bedingung, [typ]))) ? trifft('nehmen') : geben;
     const bedingungen = Object.values(regel.dann).includes('erteilen') || !Object.values(regel.dann).length ? geben : nehmen;
     const traf = bedingungen.every(Boolean);
     const gesetzt: Partial<Record<Recht, Wirkung>> = {};

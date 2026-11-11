@@ -312,9 +312,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const intern: Route[] = BEREICHE.flatMap((f) => f(k));
   // Öffentliche API /api/v1 und ihre Beschreibung (aus der installierten Version).
   const doku = async () => ok(openapi(eigeneVersion()));
+  // Die Id des Typs Post ändert sich nicht (Systemtyp); einmal nachgeschlagen.
+  let postId: string | undefined;
   const alle: Route[] = [
     ...intern,
-    ...v1Routen(intern),
+    // Post (#1042): alte Namen absender/fuer in Antworten der v1 mitliefern (Übergang bis 1.0.0).
+    ...v1Routen(intern, { postTypId: async () => (postId ??= (await dienst.kern.system()).post.id) }),
     { methode: 'GET', pfad: '/api/openapi.json', zugang: 'offen', handler: doku },
     { methode: 'GET', pfad: '/api/v1/openapi.json', zugang: 'offen', handler: doku },
   ];

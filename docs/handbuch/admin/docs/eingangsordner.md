@@ -18,7 +18,7 @@ Fehlt die Zeile, gibt es keinen Eingangsordner und die Werkbank zeigt ihn nicht 
 Den Ordner `eingang` gibst du im NAS für den Scanner frei (SMB), z. B. als Unterordner einer vorhandenen Freigabe. Im Scanner trägst du diese Freigabe als Ziel für „Scan to Folder“ ein.
 
 !!! warning "Geändert in dieser Version: nur noch die vollständige E-Mail-Adresse"
-    Bisher setzte auch ein Ordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ (z. B. `eingang/thomas/`) **Für**. Das gilt nicht mehr: Nur ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht, z. B. `eingang/thomas@example.org/`, setzt „Für“. Post aus einem bisherigen Ordner kommt ohne „Für“ an, und die Werkbank-Übersicht weist auf den Ordner hin („Ordner „thomas“ gehört zu keinem Benutzer“). Benenne solche Ordner um oder lege sie mit **Ordner für alle Benutzer anlegen** neu an und stelle den Scanner um.
+    Bisher setzte auch ein Ordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ (z. B. `eingang/thomas/`) **An**. Das gilt nicht mehr: Nur ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht, z. B. `eingang/thomas@example.org/`, setzt „An“. Post aus einem bisherigen Ordner kommt ohne „An“ an, und die Werkbank-Übersicht weist auf den Ordner hin („Ordner „thomas“ gehört zu keinem Benutzer“). Benenne solche Ordner um oder lege sie mit **Ordner für alle Benutzer anlegen** neu an und stelle den Scanner um.
 
 ## Einstellungen
 
@@ -36,27 +36,27 @@ Darunter stehen die Ordner je Person, die Überwachung, die letzte Prüfung, Dat
 
 ## Ordner je Person { #ordner-je-person }
 
-Ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht (ohne Unterschied der Groß-/Kleinschreibung), trägt diesen Benutzer bei **Für** ein, z. B. `eingang/lena@example.org/`. Die Post erscheint bei ihm unter „Zu erledigen“. Name, Vorname oder der Teil vor dem @ zählen bewusst nicht – nur die E-Mail-Adresse ist eindeutig, und ein Dokument darf nie bei der falschen Person landen.
+Ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht (ohne Unterschied der Groß-/Kleinschreibung), trägt diesen Benutzer bei **An** ein, z. B. `eingang/lena@example.org/`. Die Post erscheint bei ihm unter „Zu erledigen“. Name, Vorname oder der Teil vor dem @ zählen bewusst nicht – nur die E-Mail-Adresse ist eindeutig, und ein Dokument darf nie bei der falschen Person landen.
 
 - **Ordner für alle Benutzer anlegen** (Werkbank → Eingangsordner) legt für jede aktive Person ihren Ordner an, sofern es ihn noch nicht gibt. Mit **Ordner für neue Benutzer von selbst anlegen** geschieht das für jede neue Person.
 - **Ändert sich die E-Mail-Adresse**, benennt Ablago einen Ordner, den es selbst angelegt hat, mit um. Geht das nicht – etwa weil es den neuen Ordner schon gibt –, steht es als Warnung in der Werkbank-Übersicht. Von Hand angelegte Ordner fasst Ablago nicht an.
 - **Unterordner** unter einem Personenordner, z. B. Datumsordner, die manche Scanner anlegen (`eingang/lena@example.org/2026/11/`), gehören zur selben Person. Es zählt der nächste Personenordner über der Datei.
-- **Andere Unterordner** (z. B. `eingang/scanner/`) zählen wie der Hauptordner: Post ohne „Für“. Die Werkbank-Übersicht nennt jeden solchen Ordner, aus dem Post kam („Ordner „scanner“ gehört zu keinem Benutzer“); ist das so gewollt, nimmst du die Warnung zur Kenntnis.
+- **Andere Unterordner** (z. B. `eingang/scanner/`) zählen wie der Hauptordner: Post ohne „An“. Die Werkbank-Übersicht nennt jeden solchen Ordner, aus dem Post kam („Ordner „scanner“ gehört zu keinem Benutzer“); ist das so gewollt, nimmst du die Warnung zur Kenntnis.
 - **`erledigt/` je Person:** Übernommene Dateien aus einem Personenordner wandern nach `eingang/<e-mail>/erledigt/`, nicht in ein gemeinsames `erledigt/`. So sieht niemand über das NAS die Post der anderen.
 
 ### Freigaben im NAS je Ordner
 
 Gib im NAS jeden Personenordner nur **der Person selbst und Ablago** frei (Lesen und Schreiben). Den Hauptordner `eingang/` brauchen nur der Scanner, Ablago und wer Post ohne Empfänger einwirft. So kann am iPhone jede Person per SMB direkt in ihren Ordner sichern ([Als Laufwerk einbinden](https://help.ablago.app/benutzer/aktuell/laufwerk/#iphone-und-ipad-dateien-app)), ohne fremde Post zu sehen. Ablago selbst braucht Lesen, Schreiben und Löschen im ganzen Eingangsordner.
 
-## „Für“ ist kein Leserecht { #fuer-ist-kein-leserecht }
+## „An“ ist kein Leserecht { #fuer-ist-kein-leserecht }
 
-**Für** sagt, für wen die Post gedacht ist – sie erscheint bei dieser Person unter „Zu erledigen“. Wer die Post **lesen** darf, regeln allein die [Berechtigungen](berechtigungen.md) des Mappentyps *Post*. Ohne eigene Regeln sieht jeder, der Post lesen darf, auch Post für andere.
+**An** sagt, für wen die Post gedacht ist – sie erscheint bei dieser Person unter „Zu erledigen“. Wer die Post **lesen** darf, regeln allein die [Berechtigungen](berechtigungen.md) des Mappentyps *Post*. Ohne eigene Regeln sieht jeder, der Post lesen darf, auch Post für andere.
 
 Soll jede Person nur ihre eigene Post sehen, richtest du unter **Werkbank → Mappentypen → Post → Berechtigungen** Folgendes ein:
 
 1. **Standard:** Lesen aus (Anlegen nach Bedarf an, damit alle weiter Post erfassen können).
-2. **Regel „Meine Post“:** *Wenn* **Feld der Mappe** · **Für** · **zeigt auf** · **aktueller Benutzer** → Lesen und Bearbeiten erlaubt.
-3. **Regel „Post ohne Empfänger sortieren“:** *Wenn* **Benutzer hat Rolle** · *Posteingang* (eine eigene Rolle, z. B. für Lena bzw. die Büroleitung) *und* **Feld der Mappe** · **Für** · **ist leer** → Lesen und Bearbeiten erlaubt. So landet nichts im Niemandsland.
+2. **Regel „Meine Post“:** *Wenn* **Feld der Mappe** · **An** · **zeigt auf** · **aktueller Benutzer** → Lesen und Bearbeiten erlaubt.
+3. **Regel „Post ohne Empfänger sortieren“:** *Wenn* **Benutzer hat Rolle** · *Posteingang* (eine eigene Rolle, z. B. für Lena bzw. die Büroleitung) *und* **Feld der Mappe** · **An** · **ist leer** → Lesen und Bearbeiten erlaubt. So landet nichts im Niemandsland.
 4. **Regel „Vertretung“:** *Wenn* **Offene Aufgabe für den Benutzer** → Lesen erlaubt. Vertreter bekommen die Aufgabe über die [Vertretung](https://help.ablago.app/benutzer/aktuell/profil/#abwesenheit) und sehen damit die Post.
 5. Mit dem **Testlauf** je Person prüfen: Jonas sieht nur seine Post, Lena zusätzlich die ohne Empfänger.
 6. **Achtung:** Das ändert die Sichtbarkeit **aller** bestehenden Post, nicht nur der neuen.
@@ -79,7 +79,7 @@ Ablago rechnet die Übersicht mit der normalen Prüfung, aber höchstens alle f�
 ## Was beim Übernehmen passiert
 
 - **Jede Datei wird eine eigene Post** mit Kanal *Ordner*, Richtung eingehend, Stand *Neu*. Der Betreff ist der Dateiname ohne Endung. In der Historie steht „aus dem Eingangsordner übernommen (eingang/…)“; angelegt hat sie der *Eingangsordner*, kein Benutzer.
-- **Ordner je Person:** Liegt die Datei in einem Ordner mit der vollständigen E-Mail-Adresse eines Benutzers (z. B. `eingang/thomas@example.org/`) oder darunter, steht dieser Benutzer bei **Für** – siehe [Ordner je Person](#ordner-je-person). So wählt jeder am Scanner sein eigenes Ziel. Andere Unterordner zählen wie der Hauptordner. Ablago sieht in Unterordnern bis zu **5 Ebenen** tief nach; Dateien in tieferen Ordnern bleiben liegen und erscheinen in der [Überwachung](#uberwachung).
+- **Ordner je Person:** Liegt die Datei in einem Ordner mit der vollständigen E-Mail-Adresse eines Benutzers (z. B. `eingang/thomas@example.org/`) oder darunter, steht dieser Benutzer bei **An** – siehe [Ordner je Person](#ordner-je-person). So wählt jeder am Scanner sein eigenes Ziel. Andere Unterordner zählen wie der Hauptordner. Ablago sieht in Unterordnern bis zu **5 Ebenen** tief nach; Dateien in tieferen Ordnern bleiben liegen und erscheinen in der [Überwachung](#uberwachung).
 - **Nur fertige Dateien:** Eine Datei wird erst übernommen, wenn sich Größe und Änderungszeit über zwei Prüfungen nicht geändert haben – Scanner schreiben langsam.
 - **Übersprungen** werden versteckte und temporäre Dateien (`.*`, `~*`, `*.tmp`, `*.part`, `*.crdownload`, `*.partial`, `Thumbs.db`, `desktop.ini`), die Ordner der NAS-Systeme (`@eaDir`, `#recycle`, `.@__thumb`, `@Recycle`, `.Trash*`) sowie `erledigt/` (auch `<e-mail>/erledigt/`) und `fehler/`.
 - **Abgelehnt** werden leere Dateien und Dateien über 100 MB: Sie wandern nach **`fehler/`**, daneben eine Textdatei mit dem Grund; die Werkbank zeigt eine Meldung. Ist die Grenze für den [Speicherplatz](speicherplatz.md) erreicht, bleibt die Datei liegen und kommt dran, sobald wieder Platz ist.

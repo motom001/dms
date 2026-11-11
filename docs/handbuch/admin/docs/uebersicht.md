@@ -121,7 +121,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Eingangsordner: alle Dateien zusammen über der Grenze (Vorgabe 2 GB) | gelb | `eingangsordner.groesse` |
 | Eingangsordner: Dateien in `fehler/` | gelb | `eingangsordner.fehler` |
 | Eingangsordner: mehr Dateien als die Grenze (Vorgabe 100) | gelb | `eingangsordner.anzahl` |
-| Eingangsordner: Ordner gehört zu keinem Benutzer (Post ohne „Für“) | gelb | `eingangsordner.ohne-person` |
+| Eingangsordner: Ordner gehört zu keinem Benutzer (Post ohne „An“) | gelb | `eingangsordner.ohne-person` |
 | Eingangsordner: Personenordner ließ sich nach geänderter E-Mail-Adresse nicht umbenennen | gelb | `eingangsordner.umbenennen` |
 | Texterkennung ist jetzt ein Paket | Hinweis (gelb, sobald Scans warten) | `texterkennung.paket` |
 | Dokumente mit Fehler in der Texterkennung | gelb | `texterkennung.fehler` |

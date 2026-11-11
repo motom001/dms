@@ -430,9 +430,10 @@ function systemfelderRoh(s: Systemtyp, rolleTypId: string, benutzerTypId = ''): 
     { key: 'kanal', label: l('kanal'), typ: 'auswahl', pflicht: true, optionen: Object.values(POST_KANAL), system: true, hilfe: h('kanal') },
     { key: 'richtung', label: l('richtung'), typ: 'auswahl', pflicht: true, optionen: Object.values(POST_RICHTUNG), system: true },
     { key: 'datum', label: l('datum'), typ: 'datum', system: true },
-    { key: 'absender', label: l('absender'), typ: 'text', system: true },
-    { key: 'an', label: l('an'), typ: 'text', system: true },
-    { key: 'fuer', label: l('fuer'), typ: 'referenz', zielTypen: [benutzerTypId], verweisart: 'bezug', system: true, hilfe: h('fuer') },
+    // „von“ und „an“ (#1042): dieselben Kennungen wie an Vertrag und Rechnung; bis 0.240 absender, fuer und an (Adresse).
+    { key: 'von', label: l('von'), typ: 'text', system: true },
+    { key: 'an', label: l('an'), typ: 'referenz', zielTypen: [benutzerTypId], verweisart: 'bezug', system: true, hilfe: h('an') },
+    { key: 'an_adresse', label: l('an_adresse'), typ: 'text', system: true, hilfe: h('an_adresse') },
     { key: 'bezug', label: l('bezug'), typ: 'referenz', mehrfach: true, zielTypen: [BELIEBIGER_TYP], verweisart: 'bezug', system: true, hilfe: h('bezug') },
     { key: 'nachricht', label: l('nachricht'), typ: 'langtext', system: true },
   ];
@@ -474,7 +475,7 @@ export function geschuetzteFelder(eintrag: Pick<Mappentyp, 'system' | 'felder'> 
   if (eintrag?.system === 'post') {
     // Post (#192): Kanal hält das System fest, „Zugeordnet zu“ setzt „Zuordnen“; eine versendete E-Mail bleibt, wie sie verschickt wurde.
     const fest: Record<string, string> = { kanal: t('gemeinsam.model.wird-beim-eingang-festgehalten'), bezug: t('gemeinsam.model.wird-ueber-zuordnen-gesetzt') };
-    if (istVersendet(m?.werte)) for (const k of ['betreff', 'an', 'absender', 'datum', 'nachricht', 'richtung']) fest[k] = t('gemeinsam.model.wird-beim-versand-festgehalten');
+    if (istVersendet(m?.werte)) for (const k of ['betreff', 'an_adresse', 'von', 'datum', 'nachricht', 'richtung']) fest[k] = t('gemeinsam.model.wird-beim-versand-festgehalten');
     return fest;
   }
   // Nummernkreis (#171): die Nummer vergibt das DMS.

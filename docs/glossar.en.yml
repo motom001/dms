@@ -175,6 +175,12 @@ begriffe:
   Richtung (Post):
     begriff: Direction (post)
     beschreibung: Whether post is incoming or outgoing. "Send by email" creates outgoing post.
+  Von (Post):
+    begriff: From (post)
+    beschreibung: Who sent the post – for incoming post the sender, for a sent email Ablago with “Reply to”. The same key `von` as on contract and invoice, so that a list across several types can show the same column. Until 0.240 the field was called “Sender”.
+  An (Post):
+    begriff: To (post)
+    beschreibung: Who incoming post in the household is for – a person (user). While the post is new, it is listed under “To do” for them with the task “Post for you”; that only happens when “To” is a user. The addresses of a sent email are in “To (address)”. Until 0.240 the field was called “For”.
   Stand (Post):
     begriff: Status (post)
     beschreibung: How far post has been handled – New (not yet handled), Assigned (is with a matching folder) or Done (nothing more to do).

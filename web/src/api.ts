@@ -739,7 +739,7 @@ export const api = {
   papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
   emailBereit: () => anfrage<{ bereit: boolean }>('GET', '/api/email/bereit'),
   /** Post (#192): anlegen (Dokumente danach mit ladeHoch) und einer Mappe zuordnen. */
-  postAnlegen: (e: { betreff?: string; fuer?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
+  postAnlegen: (e: { betreff?: string; an?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
   /** Post auflösen (#936): `aufloesen` bei einer eben aus der Post angelegten Mappe; `hinweis`, wenn es beim Zuordnen blieb. */
   zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean; aufloesen?: boolean }) =>
     anfrage<{ post: Mappe; ziel: Mappe; aufgeloest: boolean; papierkorb?: boolean; abgetrennt?: Mappe; hinweis?: string }>('POST', `/api/mappen/${postId}/zuordnen`, e),

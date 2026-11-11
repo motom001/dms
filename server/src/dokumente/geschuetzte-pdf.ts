@@ -57,7 +57,7 @@ export class GeschuetztePdfs {
   }
 
   /**
-   * Wem gehört die Post (#827)? Das Konto aus „Für“ einer Post-Mappe; bei Post für alle und anderen Mappen null –
+   * Wem gehört die Post (#827)? Das Konto aus „An“ einer Post-Mappe (#1042, bis dahin „Für“); bei Post für alle und anderen Mappen null –
    * dann probiert Ablago keine gemerkten Passwörter.
    */
   async besitzerDerPost(mappeId: string): Promise<string | null> {
@@ -65,7 +65,7 @@ export class GeschuetztePdfs {
     if (!m) return null;
     const typ = (await this.listeTypen()).find((x) => x.id === m.typId);
     if (typ?.system !== 'post') return null;
-    return alsListe(m.werte.fuer)[0] ?? null;
+    return alsListe(m.werte.an)[0] ?? null;
   }
 
   /**

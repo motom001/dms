@@ -18,14 +18,14 @@ In the list, each folder shows what needs to be done. In the folder itself, at t
 | **Deadline** | A date in a folder is approaching, e.g. "Notice by 30.09.2027" – when and for whom is set by an automation. Next to it, it says how many days are left. | Click **Done**. If the date changes or is cleared, it completes itself. If the date repeats (e.g. yearly), Ablago suggests the next one: **Set date to …**. |
 | **Reminder** | You or someone else has set a reminder for this folder via **Folder ▾ → Remind**, and the day has come. | Click **Done**. |
 | **Stand-in** | Someone has entered you as their [Stand-in](profil.md#abwesenheit) for their absence. The task is on their user folder and names the period. | **Done** means "noted". If the absence changes or ends, it completes itself. |
-| **Post for you** | Your name is under **For** on new [post](post.md). | Assign the post, complete it or pass it on. Then it completes itself. |
+| **Post for you** | Your name is under **To** on new [post](post.md). | Assign the post, complete it or pass it on. Then it completes itself. |
 | **Access request** | A person has downloaded their access copy under Art. 15 GDPR (a copy of all data stored about them) via the retrieval link – or the link was blocked after too many wrong retrieval codes. You get this if you created the access copy or the person's folder is one of your [favourites](ablage.md#favoriten). | **Done** means "noted". Until then, no second message comes for the same link. |
 
 With "Doesn't fit", Ablago doesn't delete or change anything by itself; the affected fields are marked in the folder, and the check happens on the next save.
 
 ### Tasks without a recipient {#aufgaben-ohne-empfanger}
 
-If a task has no single recipient – such as post without **For** –, the administrators get it, plus one person the management has chosen for this. If that is you, such tasks appear under **To do** for you, and you complete them or pass them on like any other.
+If a task has no single recipient – such as post without **To** –, the administrators get it, plus one person the management has chosen for this. If that is you, such tasks appear under **To do** for you, and you complete them or pass them on like any other.
 
 You may then also sometimes see the notice at the top **"Something needs attention for administration. Sign in as an administrator."** This concerns technical matters such as the backup. If you have the admin account, click **Sign in as administrator**. Otherwise let the person who administers Ablago know. The notice disappears as soon as everything is done.
 

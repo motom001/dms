@@ -125,7 +125,7 @@ describe('Beschriftungen je Sprache (#728) – Grundlagen', () => {
 
   it('Systemfelder: Texte aus der Sprachdatei, unverändert gegenüber vorher', () => {
     const post = systemfelder('post', 'r', 'b');
-    assert.deepEqual(post.map((f) => f.label), ['Betreff', 'Stand', 'Kanal', 'Richtung', 'Datum', 'Absender', 'Empfänger', 'Für', 'Zugeordnet zu', 'Nachricht']);
+    assert.deepEqual(post.map((f) => f.label), ['Betreff', 'Stand', 'Kanal', 'Richtung', 'Datum', 'Von', 'An', 'An (Adresse)', 'Zugeordnet zu', 'Nachricht']);
     assert.equal(post.find((f) => f.key === 'stand')!.hilfe, 'Neu: noch nicht bearbeitet. Zugeordnet: liegt bei einer passenden Mappe. Erledigt: nichts mehr zu tun.');
     assert.deepEqual(post.find((f) => f.key === 'stand')!.optionen, ['Neu', 'Zugeordnet', 'Erledigt'], 'feste Werte unverändert');
     assert.deepEqual(systemfelder('benutzer', 'r', 'b').map((f) => f.label), ['Name', 'E-Mail-Adresse', 'Rollen', 'Aktiv', 'Abwesend', 'Abwesend von', 'Abwesend bis', 'Vertreter']);

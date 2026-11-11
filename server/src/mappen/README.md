@@ -9,7 +9,7 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
 - `eingaben.ts` – `MappenEingaben`: `pruefeWerte`, Formate (#535), Auswahlfilter (#172, #173), „folgt aus“ (#886), „beim Auswählen übernehmen“ (#1037, nur Vorschläge mit den Rechten der Person),
   Verweisziele, `rechteVorschau`/`hinweisDanach` (#126), `feldkonflikte` (#609); `bereinigeWerte` (Modulebene).
   Nicht verwechseln mit `mappentypen/eingabe.ts` (Eingaben für Mappentypen).
-- `titel.ts` – `MappenTitel`: `aktualisiereTitel`, `titelVorab` (#743), Nachziehen beim Start, „Absender bereinigen“.
+- `titel.ts` – `MappenTitel`: `aktualisiereTitel`, `titelVorab` (#743), Nachziehen beim Start, „„Von“ bereinigen“ (bis #1042 „Absender bereinigen“).
 - `historie.ts` – `MappenHistorie`: `historie` lesen (#800), `notiereAbruf`, `notiereBerechnet` (#1034, je Mappe und Tag ein Eintrag), Aufbewahrung; `notiere` schreibt über
   `kern.historie`.
 - `passwortfelder.ts` – `Passwortfelder` (#46): `zeigePasswort`, `entschluesselePasswoerter`, `unlesbarePasswoerter`.

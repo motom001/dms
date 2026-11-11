@@ -152,7 +152,7 @@ export const HILFE = {
   'werkbank.zweifaktor': admin('anmeldeschutz/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.wartung.volltext': admin('texterkennung/', 'Volltext neu erzeugen', 'volltext-neu-erzeugen'),
-  'werkbank.wartung.absender': admin('texterkennung/', 'Absender bereinigen', 'absender-bereinigen'),
+  'werkbank.wartung.absender': admin('texterkennung/', '„Von“ bereinigen', 'absender-bereinigen'),
   'werkbank.wartung.formate': admin('texterkennung/', 'Angaben, die nicht zum Format passen', 'angaben-die-nicht-zum-format-passen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Gemeldete Fehler', 'gemeldete-fehler'),

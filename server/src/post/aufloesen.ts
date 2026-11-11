@@ -135,14 +135,14 @@ export class PostAufloesen {
   }
 
   /**
-   * Abgetrennter Teil einer Post (#936, #934): neue Post in „Neue Post“ mit Betreff „… (abgetrennt)“, Datum, Absender,
-   * Kanal und „Für“ wie bisher; die Dokumente wandern dorthin, ihre Historie nennt die Herkunft.
+   * Abgetrennter Teil einer Post (#936, #934): neue Post in „Neue Post“ mit Betreff „… (abgetrennt)“, Datum, „Von“,
+   * Kanal und „An“ wie bisher; die Dokumente wandern dorthin, ihre Historie nennt die Herkunft.
    */
   private async legeAbgetrenntAn(post: Mappe, typ: Mappentyp, dokumente: Dokument[], von: string | null, herkunft: { text: string } & Record<string, unknown>): Promise<Mappe> {
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const neu = await this.legePostAn({
-      betreff: t('meldungen.dienst.abgetrennt-betreff', { betreff }), datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
-      fuer: alsListe(post.werte.fuer)[0] ?? null,
+      betreff: t('meldungen.dienst.abgetrennt-betreff', { betreff }), datum: post.werte.datum, von: post.werte.von ?? '', kanal: auswahlText(post.werte.kanal),
+      an: alsListe(post.werte.an)[0] ?? null,
     }, { id: von, name: '' }, undefined, undefined, undefined, undefined, post.werte);
     for (const d of dokumente) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
     await this.notiere(neu.id, von, 'post_geteilt', { ...herkunft, post: post.id, postTyp: typ.id, dokumente: dokumente.length });

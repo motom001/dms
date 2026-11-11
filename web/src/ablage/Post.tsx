@@ -215,7 +215,7 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
               <span className="chip">{t('ablage.post.vorschlag')}</span>{' '}
               <Link to={`/ablage/${absender.typId}/${absender.mappeId}`} className="verweis">{titelOder(absender.titel)}</Link>
               <span className="leise klein"> {' '}{t('ablage.post.gefunden', { gruende: absender.gruende.join(', '), wert: !absender.stark || !e.eindeutig ? t('ablage.post.unsicher') : '' })}</span>
-              {darf && auswahlText(post.werte.absender) !== absender.titel && <> <button type="button" className="textknopf klein" disabled={laeuft} onClick={() => void eintragen({ absender: absender.titel })}>{t('ablage.post.als-absender-eintragen')}</button></>}
+              {darf && auswahlText(post.werte.von) !== absender.titel && <> <button type="button" className="textknopf klein" disabled={laeuft} onClick={() => void eintragen({ von: absender.titel })}>{t('ablage.post.als-absender-eintragen')}</button></>}
               {weitere.length > 0 && <span className="leise klein er-weitere"> {' '}{t('ablage.post.auch-moeglich')}{' '}{weitere.map((x, i) => <span key={x.mappeId}>{i > 0 && ', '}<Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(x.titel)}</Link></span>)}</span>}
             </dd>
           </div>}

@@ -409,17 +409,17 @@ export class SichtenDienst {
   /** Webhooks (#627): nach jeder Änderung, die Zahlen der Ansichten oder die Termine ändern kann. */
   beiAenderung(f: () => void) { this.stand.beiAenderung(f); }
 
-  /** Neue Post für den Benutzer (#625): Stand „Neu“ und „Für“ ist er selbst oder leer; nur lesbare Post. */
+  /** Neue Post für den Benutzer (#625): Stand „Neu“ und „An“ (bis #1042 „Für“) ist er selbst oder leer; nur lesbare Post. */
   private async neuePostFuer(z: Zugriff): Promise<number> {
     const post = [...z.typen.values()].find((t) => t.system === 'post');
     if (!post) return 0;
     const schluessel = `${z.ich.id}|${z.ich.rolle}|${fingerabdruck({ lesen: z.lesen, rollen: z.a.meineRollen, post: post.id })}`;
     const r = await this.neuePostSpeicher.hole(schluessel, async () => {
       const neu = { art: 'feld' as const, feld: 'stand', op: 'einerVon' as const, wert: { art: 'fest' as const, wert: [POST_STAND.neu] } };
-      const klausel = (fuer: Bedingung) => ({ typen: [post.id], filter: filterFuer({ bedingungen: [neu, fuer] }, [post], z.a) });
+      const klausel = (an: Bedingung) => ({ typen: [post.id], filter: filterFuer({ bedingungen: [neu, an] }, [post], z.a) });
       const [n] = await this.repo.zaehleKlauseln([[
-        klausel({ art: 'feld', feld: 'fuer', op: 'zeigtAuf', wert: { art: 'ich' } }),
-        klausel({ art: 'feld', feld: 'fuer', op: 'leer' }),
+        klausel({ art: 'feld', feld: 'an', op: 'zeigtAuf', wert: { art: 'ich' } }),
+        klausel({ art: 'feld', feld: 'an', op: 'leer' }),
       ]], z.lesen);
       return { wert: n, zeitabhaengig: false };
     }, this.gueltigkeit());

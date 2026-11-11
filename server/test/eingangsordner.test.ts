@@ -47,7 +47,7 @@ describe('Eingangsordner (#195)', () => {
     assert.equal(p.length, 1);
     assert.equal(p[0].m.werte.kanal, POST_KANAL.ordner);
     assert.equal(p[0].m.werte.betreff, 'Scan_0042');
-    assert.equal(p[0].m.werte.absender ?? null, null, 'kein Absender „Eingangsordner“ (#494)');
+    assert.equal(p[0].m.werte.von ?? null, null, 'kein „Von“ „Eingangsordner“ (#494)');
     assert.equal(p[0].docs.length, 1);
     assert.ok(existsSync(join(ordner, 'erledigt', 'Scan_0042.pdf')));
     assert.ok(!existsSync(join(ordner, 'Scan_0042.pdf')));
@@ -65,7 +65,7 @@ describe('Eingangsordner (#195)', () => {
     assert.equal(await e.pruefe(), 0, 'Größe geändert: noch nicht fertig');
     assert.equal(await e.pruefe(), 1);
     const [p] = await posten();
-    assert.equal(p.m.werte.fuer, thomas.id);
+    assert.equal(p.m.werte.an, thomas.id);
     assert.deepEqual(await readdir(join(ordner, 'Thomas.M@Example.org')), [], 'gelöscht');
   });
 
@@ -77,7 +77,7 @@ describe('Eingangsordner (#195)', () => {
       await writeFile(join(ordner, o, `${o}.pdf`), `%PDF ${o}`);
     }
     await e.pruefe(); assert.equal(await e.pruefe(), 4);
-    for (const p of await posten()) assert.equal(p.m.werte.fuer ?? null, null, `${p.m.werte.betreff}: kein Raten`);
+    for (const p of await posten()) assert.equal(p.m.werte.an ?? null, null, `${p.m.werte.betreff}: kein Raten`);
     // Wie der Hauptordner: gemeinsames erledigt/.
     assert.ok(existsSync(join(ordner, 'erledigt', 'thomas', 'thomas.pdf')));
     const s = await e.stand();
@@ -104,7 +104,7 @@ describe('Eingangsordner (#195)', () => {
     await mkdir(tief, { recursive: true });
     await writeFile(join(tief, 'tief.pdf'), '%PDF tief');
     await e.pruefe(); assert.equal(await e.pruefe(), 2);
-    for (const p of await posten()) assert.equal(p.m.werte.fuer, anna.id);
+    for (const p of await posten()) assert.equal(p.m.werte.an, anna.id);
     assert.ok(existsSync(join(ordner, 'anna@example.org', 'erledigt', '2026', '11', 'scan.pdf')), 'erledigt/ der Person');
     assert.ok(existsSync(join(ordner, 'nas', 'anna@example.org', 'erledigt', 'b.pdf')));
     assert.ok(!existsSync(join(ordner, 'erledigt')), 'kein gemeinsames erledigt/');

@@ -18,6 +18,7 @@ import type { Rechte } from '../../../shared/src/rechte';
 import { type Aufloesung, auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, heuteIn, setzeEigeneWerte } from '../../../shared/src/sichten';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
+import { postWerteNeu } from '../../../shared/src/postfelder';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
@@ -29,7 +30,9 @@ const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
 
 /** Nur Werte zu bekannten Feldern; leere Eingaben werden zu null. */
 export function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, verschluessele: (k: string) => string = keinSchluessel): Werte {
-  const roh = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
+  const eingang = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
+  // Post (#1042): alte Namen absender und fuer gelten bis 1.0.0 als von und an (uebergaenge.ts).
+  const roh = typ.system === 'post' ? postWerteNeu(eingang) : eingang;
   // Tabellen (#1030) haben keinen Wert: Was unter ihrer Kennung gesendet wird, fällt weg; Gespeichertes (ein früheres
   // Feld gleicher Kennung) bleibt wie bei entfernten Feldern.
   const bekannt = new Set(wertfelder(typ.felder).map((f) => f.key));
@@ -59,7 +62,8 @@ function gleicheArtAn(f: Feld, v: Wert): Wert {
 }
 
 /** Felder, die eine Anfrage selbst setzt – auch leer. „Folgt aus“ (#886) füllt sie nicht. */
-export const gesendeteFelder = (w: unknown) => new Set(w && typeof w === 'object' && !Array.isArray(w) ? Object.keys(w) : []);
+export const gesendeteFelder = (w: unknown, typ?: Pick<Mappentyp, 'system'>) =>
+  new Set(w && typeof w === 'object' && !Array.isArray(w) ? Object.keys(typ?.system === 'post' ? postWerteNeu(w as Record<string, unknown>) : w) : []);
 
 /** Was die Eingaben außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht. */
 export interface MappenEingabenAnschluss {

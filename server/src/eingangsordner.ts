@@ -466,7 +466,7 @@ export class Eingangsordner {
     let mappeId: string;
     try {
       const gleich = await this.d.dienst.dokumenteMitInhalt(sha256);
-      const post = await this.d.dienst.legePostAn({ betreff: basename(rel, extname(rel)).slice(0, 250), ...(person ? { fuer: person.id } : {}) },
+      const post = await this.d.dienst.legePostAn({ betreff: basename(rel, extname(rel)).slice(0, 250), ...(person ? { an: person.id } : {}) },
         { id: null, name: SYSTEMNAME }, undefined, POST_KANAL.ordner,
         // Doppelt (#333): nur die Anzahl – Titel sähe jeder, der die Post lesen darf, auch für fremde Mappen.
         { text: t('meldungen.eingangsordner.aus-dem-eingangsordner-uebernommen', { anzeige }), datei: anzeige, ...(gleich.length ? { doppelt: gleich.length } : {}) });

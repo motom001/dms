@@ -103,7 +103,7 @@ Für andere Anbieter mit IMAP und OAuth 2.0 trägst du *Autorisierungs-Endpunkt*
 
 ## Was beim Übernehmen passiert
 
-- **Jede Mail wird eine Post**: Kanal *E-Mail*, Richtung eingehend, Stand *Neu*; Betreff, Datum und Absender (Name und Adresse) aus der Mail; *Für* aus dem Postfach. Angelegt hat sie das *Postfach*, kein Benutzer. Die Historie nennt Postfach, Absender und Zeit.
+- **Jede Mail wird eine Post**: Kanal *E-Mail*, Richtung eingehend, Stand *Neu*; Betreff, Datum und Absender (Name und Adresse, bei *Von*) aus der Mail; *An* aus dem Postfach. Angelegt hat sie das *Postfach*, kein Benutzer. Die Historie nennt Postfach, Absender und Zeit.
 - **Anhänge** werden einzelne Dokumente. Kleine eingebettete Bilder (Logos, Signaturen) werden übersprungen; angehängte Mails bleiben ein `.eml`-Dokument.
 - **Doppelte Anhänge:** Liegt ein Anhang schon in Ablago (gleicher Prüfwert), wird er trotzdem übernommen; die Historie der Post sagt „Doppelt: „Rechnung.pdf“ liegt schon in Ablago – vor dem Zuordnen prüfen.“ Wo, zeigt **Zuordnen** jedem, der die andere Mappe lesen darf.
 - Der **Text der Mail** steht als reiner Text an der Post. HTML wird in Text umgewandelt; Bilder oder andere Inhalte aus dem Internet lädt Ablago nie.

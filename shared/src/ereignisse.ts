@@ -46,7 +46,8 @@ export const EREIGNISKATALOG = {
   'frist.erreicht': { gruppe: 'zeit', felder: ['mappe', 'typ', 'feld', 'datum', 'zeitpunkt', 'empfaenger'], paket: true, mappentyp: true },
   // Für Personen
   'aufgabe.neu': { gruppe: 'person', felder: ['aufgabe', 'mappe', 'typ', 'empfaenger', 'aufgabenart'] },
-  'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'fuer'], paket: true },
+  // „an“ (#1042); „fuer“ mit demselben Wert nur noch bis 1.0.0 (server/src/uebergaenge.ts).
+  'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'an', 'fuer'], paket: true },
   'favorit.neu': { gruppe: 'person', felder: ['benutzer', 'mappe', 'typ'] },
   // #678: Jemand hat eine Mappe geändert, die andere als Favorit mit „benachrichtigen“ haben (Dann-Karte „Favoriten-Änderungen melden“).
   'favorit.geaendert': { gruppe: 'person', felder: ['mappe', 'typ', 'von'] },
