@@ -50,7 +50,7 @@ async function aufbau(o: Record<string, unknown> = {}) {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const server = new TestServer();
   const einstellungen = speicherEinstellungen();
   const meldungen: string[] = [];
@@ -61,7 +61,7 @@ async function aufbau(o: Record<string, unknown> = {}) {
   });
   const [p] = await pf.speichere({ name: 'Rechnungen', server: 'imap.example.org', port: 993, benutzer: 'dms@example.org', passwort: 'app-passwort', ...o }, null, 'test');
   const posten = async () => {
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     return Promise.all((await d.mappen.listeMappen(post.id)).map(async (m) => ({ m, x: await d.mappen.holeMappe(m.id) })));
   };
   return { d, pf, p, server, posten, einstellungen, anna, meldungen };
@@ -127,7 +127,7 @@ describe('Postfächer (#196)', () => {
     // Abbruch nach dem Anlegen der Post, vor dem Wegräumen: Journal liegt noch da.
     server.lege({ ...RECHNUNG, messageId: '<neu>' });
     const id = '11111111-2222-4333-8444-555555555555';
-    await d.legePostAn({ betreff: 'x' }, { id: null, name: 'Postfach' }, undefined, POST_KANAL.email, undefined, id);
+    await d.post.legePostAn({ betreff: 'x' }, { id: null, name: 'Postfach' }, undefined, POST_KANAL.email, undefined, id);
     await einstellungen.schreibe('postfach_journal', { postfach: p.id, uid: 2, schluessel: '<neu>', mappeId: id, erstellt: false });
     assert.equal(await pf.abrufen(p.id), 0);
     assert.equal((await posten()).length, 2, 'keine dritte Post');

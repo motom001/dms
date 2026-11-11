@@ -52,13 +52,13 @@ async function repo(pg: boolean): Promise<Repo> {
 async function aufbau(pg: boolean) {
   const r = await repo(pg);
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  await d.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
+  await d.postSystemmappen.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [FELDREG, BELEGE] });
   // Von jemand anderem angelegt (null = System) – früher hätte das Auflösen hier 422 geliefert.
   const bestehend = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2026-0700' } }, null);
-  const fruehere = await d.legePostAn({ betreff: 'Erste Mahnung' }, { id: LENA, name: 'Lena' });
-  await d.ordneZu(fruehere.id, { ziel: bestehend.id }, LENA);
-  const post = await d.legePostAn({ betreff: 'Zweite Mahnung' }, { id: LENA, name: 'Lena' });
+  const fruehere = await d.post.legePostAn({ betreff: 'Erste Mahnung' }, { id: LENA, name: 'Lena' });
+  await d.post.ordneZu(fruehere.id, { ziel: bestehend.id }, LENA);
+  const post = await d.post.legePostAn({ betreff: 'Zweite Mahnung' }, { id: LENA, name: 'Lena' });
   const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'mahnung.pdf', typ: 'application/pdf' }, PDF('a'), LENA)).dokument;
   const b = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'beilage.pdf', typ: 'application/pdf' }, PDF('b'), LENA)).dokument;
   return { d, r, rechnung, bestehend, post, a, b };
@@ -73,7 +73,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const notiz = await d.mappenNotizen.legeNotizAn(post.id, 'Mit Bank klären', LENA);
       const aufgabe = await d.legeAufgabeAn(post.id, { text: 'Überweisung prüfen', empfaengerId: LENA }, LENA);
       const eigene = (await d.mappenHistorie.historie(bestehend.id)).length;
-      const r = await d.ordneZu(post.id, { ziel: bestehend.id, register: 'belege', aufloesen: true }, LENA);
+      const r = await d.post.ordneZu(post.id, { ziel: bestehend.id, register: 'belege', aufloesen: true }, LENA);
       assert.equal(r.aufgeloest, true);
       assert.deepEqual((await d.mappen.holeMappe(bestehend.id)).dokumente.map((x) => x.id).sort(), [a.id, b.id].sort());
       await assert.rejects(d.mappen.holeMappe(post.id), status(404), 'die Post liegt im Papierkorb');
@@ -94,7 +94,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('nur ein Teil gewählt: der Rest wird eine neue Post, ihre Historie nennt die bestehende Mappe', async () => {
       const { d, bestehend, post, a, b } = await aufbau(pg);
-      const r = await d.ordneZu(post.id, { ziel: bestehend.id, dokumente: [a.id], aufloesen: true }, LENA);
+      const r = await d.post.ordneZu(post.id, { ziel: bestehend.id, dokumente: [a.id], aufloesen: true }, LENA);
       assert.ok(r.aufgeloest && 'abgetrennt' in r && r.abgetrennt);
       assert.deepEqual((await d.mappen.holeMappe(r.abgetrennt!.id)).dokumente.map((x) => x.id), [b.id]);
       const herkunft = (await d.mappenHistorie.historie(r.abgetrennt!.id)).find((x) => x.art === 'post_geteilt')!;
@@ -103,20 +103,20 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Ausnahmen: „Kopie in der Post behalten“ und automatisches Zuordnen lösen nicht auf', async () => {
       const { d, bestehend, post } = await aufbau(pg);
-      const kopie = await d.ordneZu(post.id, { ziel: bestehend.id, kopieren: true, aufloesen: true }, LENA);
+      const kopie = await d.post.ordneZu(post.id, { ziel: bestehend.id, kopieren: true, aufloesen: true }, LENA);
       assert.equal(kopie.aufgeloest, false);
       assert.equal((await d.mappen.holeMappe(post.id)).mappe.werte.stand, POST_STAND.zugeordnet);
       // Automatisch (#337) – auch wenn aufloesen gesetzt wäre: „Automatik rückgängig“ braucht die Post.
-      const zweite = await d.legePostAn({ betreff: 'Automatisch' }, { id: LENA, name: 'Lena' });
+      const zweite = await d.post.legePostAn({ betreff: 'Automatisch' }, { id: LENA, name: 'Lena' });
       await d.dokumente.ladeHoch(zweite.id, { register: 'dokumente', name: 'x.pdf', typ: 'application/pdf' }, PDF('x'), LENA);
-      const auto = await d.ordneZu(zweite.id, { ziel: bestehend.id, aufloesen: true }, null, undefined, { grund: 'Kundennummer' });
+      const auto = await d.post.ordneZu(zweite.id, { ziel: bestehend.id, aufloesen: true }, null, undefined, { grund: 'Kundennummer' });
       assert.equal(auto.aufgeloest, false);
       assert.equal((await d.mappen.holeMappe(zweite.id)).mappe.werte.stand, POST_STAND.zugeordnet);
     });
 
     it('„Ab hier abtrennen“: Folgedokumente als neue Post in „Neue Post“, mit Verweis auf die Herkunft auf beiden Seiten', async () => {
       const { d, post, a, b } = await aufbau(pg);
-      const r = await d.trennePostAb(post.id, { dokumente: [b.id] }, LENA);
+      const r = await d.postAufloesen.trennePostAb(post.id, { dokumente: [b.id] }, LENA);
       assert.equal(r.neu.werte.stand, POST_STAND.neu);
       assert.equal(r.neu.titel, 'Zweite Mahnung (abgetrennt)');
       assert.deepEqual((await d.mappen.holeMappe(post.id)).dokumente.map((x) => x.id), [a.id]);
@@ -128,9 +128,9 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.match(String(altH.daten.text), /1 Dokument als neue Post „Zweite Mahnung \(abgetrennt\)“ abgetrennt/);
       assert.equal(altH.daten.abgetrennt, r.neu.id);
       // Mindestens ein Dokument bleibt; fremde Dokumente gehen nicht.
-      await assert.rejects(d.trennePostAb(post.id, { dokumente: [a.id] }, LENA), status(422, /Mindestens ein Dokument/));
-      await assert.rejects(d.trennePostAb(post.id, { dokumente: [b.id] }, LENA), status(422));
-      await assert.rejects(d.trennePostAb(post.id, { dokumente: [] }, LENA), status(422));
+      await assert.rejects(d.postAufloesen.trennePostAb(post.id, { dokumente: [a.id] }, LENA), status(422, /Mindestens ein Dokument/));
+      await assert.rejects(d.postAufloesen.trennePostAb(post.id, { dokumente: [b.id] }, LENA), status(422));
+      await assert.rejects(d.postAufloesen.trennePostAb(post.id, { dokumente: [] }, LENA), status(422));
     });
   });
 }
@@ -143,7 +143,7 @@ async function mitKonten() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [FELDREG, BELEGE] });
   const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
   const tabelle = routen(d, konten, {});
@@ -157,7 +157,7 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
     const { d, lena, jonas, rechnung, postTyp, rufe } = await mitKonten();
     const alt = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'A-1' } }, lena.id);
     await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] } as Regelwerk, true);
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id);
     const r = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: alt.id, aufloesen: true } })).body as { aufgeloest: boolean; hinweis?: string };
     assert.equal(r.aufgeloest, false);
@@ -165,14 +165,14 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
     assert.equal((await d.mappen.holeMappe(post.id)).mappe.werte.stand, POST_STAND.zugeordnet);
     // Schreibrecht an der Ziel-Mappe fehlt: wie beim Zuordnen.
     await d.berechtigungen.setzeBerechtigungen(rechnung.id, { grund: { ...NICHTS, R: true }, regeln: [] } as Regelwerk, true);
-    const zweite = await d.legePostAn({ betreff: 'Noch einer' }, { id: lena.id, name: 'Lena' });
+    const zweite = await d.post.legePostAn({ betreff: 'Noch einer' }, { id: lena.id, name: 'Lena' });
     await assert.rejects(rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: zweite.id }, body: { ziel: alt.id, aufloesen: true } }), status(403));
   });
 
   it('mit Löschrecht wird in die bestehende Mappe aufgelöst – auch wenn jemand anderes sie vor langer Zeit angelegt hat', async () => {
     const { d, lena, jonas, rechnung, rufe } = await mitKonten();
     const alt = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'A-2' } }, lena.id);
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id);
     const r = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: alt.id, aufloesen: true } })).body as { aufgeloest: boolean };
     assert.equal(r.aufgeloest, true);
@@ -181,7 +181,7 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
 
   it('„Ab hier abtrennen“ braucht Bearbeiten an der Post und das Recht, Post anzulegen; nicht bei versendeten E-Mails', async () => {
     const { d, lena, jonas, rechnung, postTyp, rufe } = await mitKonten();
-    const post = await d.legePostAn({ betreff: 'Sammelbrief' }, { id: lena.id, name: 'Lena' });
+    const post = await d.post.legePostAn({ betreff: 'Sammelbrief' }, { id: lena.id, name: 'Lena' });
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id);
     const b = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, PDF('b'), lena.id)).dokument;
     await d.berechtigungen.setzeBerechtigungen(postTyp.id, { grund: { ...NICHTS, R: true, U: true }, regeln: [] } as Regelwerk, true);
@@ -196,7 +196,7 @@ describe('Dokument übernehmen: Rechte beim Auflösen in eine bestehende Mappe (
     await d.dokumente.ladeHoch(ziel.id, { register: 'belege', name: 'r.pdf', typ: 'application/pdf' }, PDF('r'), lena.id);
     const mailer = { async sende() { /* ok */ } };
     const mail = await d.versendeMappe(ziel.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: lena.id, name: 'Lena', email: 'lena@example.org' }, mailer);
-    await assert.rejects(d.trennePostAb(mail.id, { dokumente: [] }, lena.id), status(422, /versendete E-Mail/));
+    await assert.rejects(d.postAufloesen.trennePostAb(mail.id, { dokumente: [] }, lena.id), status(422, /versendete E-Mail/));
   });
 });
 
@@ -221,7 +221,7 @@ describe('Dokument übernehmen: Abgleich für Dokumente (#934)', () => {
     const sw = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, lena.id);
     const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
     const da = await d.mappen.legeMappeAn({ typId: beleg.id, werte: { rechnungsnummer: 'R-2026-0815' } }, lena.id);
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
     const dok = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, PDF('r'), lena.id)).dokument;
     const ohne = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, PDF('s'), lena.id)).dokument;
     await (d as unknown as { repo: Repo }).repo.ocrSetze(dok.id, { stand: 'fertig', text: RECHNUNG });
@@ -275,8 +275,8 @@ describe('Dokument übernehmen: Abgleich für Dokumente (#934)', () => {
 describe('Dokument übernehmen: Seitenbild der Archivfassung (#934)', () => {
   it('ohne Archivfassung gibt es kein Seitenbild (null), Seiten außerhalb der Grenzen auch nicht', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    await d.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: LENA, name: 'Lena' });
+    await d.postSystemmappen.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: LENA, name: 'Lena' });
     const dok = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), LENA)).dokument;
     assert.equal(await d.schwaerzen.archivSeitenbild(dok.id, 1), null);
     assert.equal(await d.schwaerzen.archivSeitenbild(dok.id, 0), null);

@@ -86,7 +86,7 @@ for (const pg of [false, true]) {
       const db = pg ? await pgRepoNeu() : { repo: speicherRepo(), ende: async () => {} };
       try {
         const d = new Dienst(db.repo, speicherDateien());
-        const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+        const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
         const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
         const ids: string[] = [];
         for (let i = 0; i < 3; i++) ids.push((await d.dokumente.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id);

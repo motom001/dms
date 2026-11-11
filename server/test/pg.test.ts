@@ -55,7 +55,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     texterkennung = new Texterkennung(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT), pgBetriebSpeicher(sql, HAUSHALT));
     dienst.dokumente.verbindeTexterkennung(texterkennung);
     await texterkennung.start();
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
         betrieb, tresor, texterkennung, sicher: () => betrieb.cookieNurHttps(),
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
@@ -1035,10 +1035,10 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
       const reg = post.register.find((x) => x.art === 'dokumente')!.key;
       const vorher = (await d.mappen.listeMappen(post.id)).length;
       stoeren = true;
-      await assert.rejects(d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' }), /Ablago fällt aus/);
+      await assert.rejects(d.post.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' }), /Ablago fällt aus/);
       assert.equal((await d.mappen.listeMappen(post.id)).length, vorher, 'keine Post ohne Ereignis');
       stoeren = false;
-      const p = await d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
+      const p = await d.post.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
       stoeren = true;
       await assert.rejects(d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
       const m = await d.mappen.holeMappe(p.id);

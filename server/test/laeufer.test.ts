@@ -348,7 +348,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.equal(za.admin, false);
     const sys = await d.sichereSystem();
     assert.ok(za.typen.has(sys.post.id) && !za.typen.has(sys.benutzer.id), '„*“ = alle außer Benutzer');
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     assert.equal((await d.rechtepruefung.rechteAn(za, post)).R, true);
     assert.equal((await d.rechtepruefung.rechteAn(za, post)).U, false, 'ohne „schreiben“ nicht bearbeiten');
     assert.equal((await d.rechtepruefung.rechteAn(zb, post)).R, false);
@@ -385,7 +385,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await installiere(d, 'mitdok', ECHO, '{ lesen: ["*"], dokumente: lesen }');
     const ohne = await konten.dienstkonto('ohnedok', 'Ohne');
     const mit = await konten.dienstkonto('mitdok', 'Mit');
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     const sys = await d.sichereSystem();
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
     await d.dokumente.ladeHoch(post.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null);
@@ -420,7 +420,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     ] });
     const vertrag = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
     const vdok = (await d.dokumente.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
-    const post = await d.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
+    const post = await d.post.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
     const pdok = (await d.dokumente.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
     assert.deepEqual(await d.rechtepruefung.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
@@ -464,7 +464,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         const z = await d.rechtepruefung.zugriff(konto);
         assert.equal((await d.rechtepruefung.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
         // „Für“ setzt ein Benutzer im DMS (hier: Anna als Administratorin).
-        const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'admin' }));
+        const post = await d.post.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'admin' }));
         assert.deepEqual(post.werte.an, ben.id);
         const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
         const pdok = (await d.dokumente.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
@@ -482,7 +482,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         // Neues „Für“ über die API: weiterhin abgelehnt – beim Anlegen und beim Ändern.
         const abgelehnt = (e: { status?: number; message?: string }) => e.status === 422 && /nicht sehen darfst/.test(e.message ?? '');
         await assert.rejects(rufe('POST', '/api/v1/post', {}, { betreff: 'Neu', fuer: ben.id }), abgelehnt);
-        const ohne = await d.legePostAn({ betreff: 'Ohne' }, { id: null, name: 'Test' });
+        const ohne = await d.post.legePostAn({ betreff: 'Ohne' }, { id: null, name: 'Test' });
         await assert.rejects(rufe('PUT', '/api/v1/mappen/:id', { id: ohne.id }, { werte: { fuer: ben.id } }), abgelehnt);
         await assert.rejects(rufe('PUT', '/api/v1/mappen/:id', { id: post.id }, { werte: { fuer: anna.id } }), abgelehnt);
         assert.equal((await rufe('POST', '/api/v1/post', {}, { betreff: 'Ohne Für' })).status, 201, 'ohne „Für“ geht es');
@@ -509,7 +509,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);
     // Eigene Änderungen: was das Dienstkonto von echo hochlädt, meldet das DMS echo nicht.
     const konto = (await konten.listeDienstkonten()).find((b) => b.paketId === 'echo')!;
-    const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+    const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
     await d.dokumente.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
     await new Promise((r) => setTimeout(r, 300));
@@ -653,8 +653,8 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
       return (await r.handler(a)).body;
     };
     // Zwei Briefe (Post) und ein Vertrag mit je einem Dokument und Volltext.
-    const post = await d.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
-    const post2 = await d.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
+    const post = await d.post.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
+    const post2 = await d.post.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
     const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const vertrag = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
@@ -746,7 +746,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     // hier, kehrte dieser sofort zurück, und das Modell stand noch nicht fest („Modell beim Paket erfragt“).
     const x = await aufbau({ ohneErsteNachberechnung: true });
     await x.installiere('ki', VEKTOR, KI_RECHTE);
-    const neu = await x.d.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
+    const neu = await x.d.post.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
     const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
     const d4 = (await x.d.dokumente.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
     await x.d.volltexte.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });

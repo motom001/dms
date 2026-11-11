@@ -278,7 +278,7 @@ describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFa
     const l = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, adminId);
     lenaId = l.benutzer.id;
     await konten.setzePasswortDirekt('lena@example.org', 'noch-ein-langes-passwort');
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const a = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'lena@example.org', passwort: 'noch-ein-langes-passwort' } });
     assert.equal(a.statusCode, 200, a.body);
     cookieLena = String(a.headers['set-cookie']).split(';')[0];
@@ -296,7 +296,7 @@ describe('Webhooks Ende zu Ende: neue Post → Meldung (#627)', { skip: echtesFa
     const { geheimnis, id } = JSON.parse(r.body);
     await bis(() => e.eingaenge.length === 1);
     const start = Date.now();
-    await dienst.legePostAn({ betreff: 'Brief Stadtwerke Musterstadt', absender: 'Absender Beispiel GmbH', fuer: lenaId }, { id: adminId, name: 'Markus' });
+    await dienst.post.legePostAn({ betreff: 'Brief Stadtwerke Musterstadt', absender: 'Absender Beispiel GmbH', fuer: lenaId }, { id: adminId, name: 'Markus' });
     await bis(() => e.eingaenge.length === 2, 5000);
     assert.ok(Date.now() - start < 3000, `innerhalb weniger Sekunden (${Date.now() - start} ms)`);
     const x = e.eingaenge[1];

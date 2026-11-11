@@ -309,8 +309,8 @@ export class Dienst {
     this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.passungsAufgaben(liste) });
     this.nummernkreise = new Nummernkreise(this.kern, { archivKreis: () => this.mappenArchiv.archivKreis(), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), auftraege: this.auftraege });
     this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
-      schreibeSystemMappe: (typ, id, e, von, kennung) => this.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
-      spiegleBenutzer: (b, von, abwesenheit) => this.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
+      schreibeSystemMappe: (typ, id, e, von, kennung) => this.postSystemmappen.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
+      spiegleBenutzer: (b, von, abwesenheit) => this.postSystemmappen.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
     });
     this.mappenHistorie = new MappenHistorie(this.kern);
     this.mappenTitel = new MappenTitel(this.kern, this.mappenHistorie);
@@ -409,7 +409,7 @@ export class Dienst {
     const doks = { dokumente: this.dokumente, versionen: this.dokumentVersionen };
     const stempelvorlagen = new Stempelvorlagen(this.kern);
     const pdf = new PdfBearbeiten(this.kern, { rechte, ...mappen, ...doks, umwandlung: this.dokumentUmwandlung }, {
-      legePostAn: (...a) => this.legePostAn(...a), schreibeSystemMappe: (...a) => this.schreibeSystemMappe(...a), postAufgaben: (id, von) => this.postAufgaben(id, von),
+      legePostAn: (...a) => this.post.legePostAn(...a), schreibeSystemMappe: (...a) => this.postSystemmappen.schreibeSystemMappe(...a), postAufgaben: (id, von) => this.post.postAufgaben(id, von),
     });
     const verkleinern = new PdfVerkleinern(this.kern, { pdf, ...mappen, ...doks }, { auftraege: this.auftraege });
     const schwaerzen = new Schwaerzen(this.kern, { verkleinern, historie: this.mappenHistorie, ...doks, archiv: this.dokumentArchiv }, {
@@ -422,7 +422,7 @@ export class Dienst {
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
     });
     const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen }, {
-      legePostAn: (...a) => this.legePostAn(...a), postAufgaben: (id, von) => this.postAufgaben(id, von),
+      legePostAn: (...a) => this.post.legePostAn(...a), postAufgaben: (id, von) => this.post.postAufgaben(id, von),
       loeschPruefung: (m, typ, rueck) => this.loeschPruefung(m, typ, rueck), loescheMappe: (id, von, z, anlass) => this.loescheMappe(id, von, z, anlass),
     });
     const post = new PostDienst(this.kern, {
@@ -476,7 +476,7 @@ export class Dienst {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), ereignisWecker: () => this.ereignisWecker,
       nachTexterkennungsEreignis: (paket, e, r) => this.volltexte.nachTexterkennungsEreignis(paket, e, r),
     });
-    const automatisierung = new Automatisierungshilfen(this.kern, this.rechtepruefung, { listeRollen: () => this.listeRollen() });
+    const automatisierung = new Automatisierungshilfen(this.kern, this.rechtepruefung, { listeRollen: () => this.postSystemmappen.listeRollen() });
     return { ki, notizen, ereignisse, automatisierung };
   }
 
@@ -540,7 +540,7 @@ export class Dienst {
       await this.fristenAbgleichen({ mappeIds: [e.mappe.id] });
     });
     // Post (#192): „Für“ und Stand bestimmen die Aufgabe „Post für dich“.
-    a.mappeGeaendert.anmelden('post.aufgaben', async (e) => { if (!e.angelegt && e.typ.system === 'post') await this.postAufgaben(e.mappe.id, e.von); });
+    a.mappeGeaendert.anmelden('post.aufgaben', async (e) => { if (!e.angelegt && e.typ.system === 'post') await this.post.postAufgaben(e.mappe.id, e.von); });
     // Mappentyp geändert: Ansicht umbenennen → Titel → Passung → Fristen.
     a.typGeaendert.anmelden('sichten.umbenennen', async ({ alt, typ }) => {
       // Die Sicht, die für diesen Typ entstanden ist, heißt weiter wie er – solange sie niemand umbenannt hat.
@@ -800,23 +800,9 @@ export class Dienst {
 
   /* ---------- Post (#192, post/post.dienst.ts; Auflösen post/aufloesen.ts) ---------- */
 
-  legePostAn(...a: Parameters<PostDienst['legePostAn']>) { return this.post.legePostAn(...a); }
-  ordneZu(...a: Parameters<PostDienst['ordneZu']>) { return this.post.ordneZu(...a); }
-  automatischZuordnen(postId: string, e: PostErkennung) { return this.post.automatischZuordnen(postId, e); }
-  automatikRueckgaengig(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) { return this.post.automatikRueckgaengig(aufgabeId, ich, z); }
-  private postAufgaben(mappeId: string, von: string | null) { return this.post.postAufgaben(mappeId, von); }
-  trennePostAb(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postAufloesen.trennePostAb(postId, eingabe, von, z); }
 
   /* ---------- Systemmappen, Benutzer-Mappen, Rollen, Systemkonten (#43, #673, post/systemmappen.ts) ---------- */
 
-  private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) { return this.postSystemmappen.schreibeSystemMappe(...a); }
-  spiegleBenutzer(...a: Parameters<PostSystemmappen['spiegleBenutzer']>) { return this.postSystemmappen.spiegleBenutzer(...a); }
-  gleicheBenutzerAb(...a: Parameters<PostSystemmappen['gleicheBenutzerAb']>) { return this.postSystemmappen.gleicheBenutzerAb(...a); }
-  pruefeRollen(eingabe: unknown) { return this.postSystemmappen.pruefeRollen(eingabe); }
-  setzeRollen(benutzerId: string, eingabe: unknown, von: string | null = null) { return this.postSystemmappen.setzeRollen(benutzerId, eingabe, von); }
-  listeRollen(mitKonten = false) { return this.postSystemmappen.listeRollen(mitKonten); }
-  systemkontenUebersicht(system: Benutzer[], dienst: Benutzer[]) { return this.postSystemmappen.systemkontenUebersicht(system, dienst); }
-  systemZugriff(kennung: Systemkonto = 'automatisierung') { return this.postSystemmappen.systemZugriff(kennung); }
 
   /** Systemkonten des DMS (#673), vom Start gesetzt (Konten legen sie bei Bedarf an). */
   systemkonten?: (kennung: Systemkonto) => Promise<Benutzer>;
@@ -874,14 +860,6 @@ export class Dienst {
 
   /* ---------- Eingangskanäle (#195, post/eingangskanaele.ts) ---------- */
 
-  postTyp() { return this.eingangskanaele.postTyp(); }
-  notiereSystem(mappeId: string, system: string, text: string) { return this.eingangskanaele.notiereSystem(mappeId, system, text); }
-  anzahlDokumente(mappeId: string) { return this.eingangskanaele.anzahlDokumente(mappeId); }
-  gibtMappe(id: string) { return this.eingangskanaele.gibtMappe(id); }
-  dokumenteMitInhalt(sha256: string) { return this.eingangskanaele.dokumenteMitInhalt(sha256); }
-  fundstellen(z: Zugriff | undefined, pruefwerte: unknown, ohneMappe?: string) { return this.eingangskanaele.fundstellen(z, pruefwerte, ohneMappe); }
-  postMitDatei(sha256: string, seit: string) { return this.eingangskanaele.postMitDatei(sha256, seit); }
-  demoTexterkennung(ids: string[]) { return this.eingangskanaele.demoTexterkennung(ids); }
 
   /** Dokumente einer Mappe ohne Rechteprüfung (#878: Paket erstellen mit Beispiel-Dokumenten, nur für Administratoren). */
   listeDokumente(mappeId: string) { return this.repo.listeDokumente(mappeId); }
@@ -897,9 +875,6 @@ export class Dienst {
 
   /* ---------- Post fotografieren (#490, post/foto.ts) ---------- */
 
-  postAusFotos(...a: Parameters<PostFotos['postAusFotos']>) { return this.postFotos.postAusFotos(...a); }
-  fotosAnMappe(...a: Parameters<PostFotos['fotosAnMappe']>) { return this.postFotos.fotosAnMappe(...a); }
-  legePostZusammen(zielId: string, eingabe: unknown, von: string | null, z?: Zugriff) { return this.postFotos.legePostZusammen(zielId, eingabe, von, z); }
 
   /* ---------- PDF verkleinern (#393, pdf-bearbeiten/verkleinern.ts) ---------- */
 

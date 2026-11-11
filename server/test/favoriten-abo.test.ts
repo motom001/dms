@@ -19,7 +19,7 @@ async function aufbau() {
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
   const { benutzer: carl } = await konten.legeBenutzerAn({ email: 'carl@example.org', name: 'Carl' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
   const B = { id: ben.id, rolle: 'mitglied' };
   const geaendert = async () => { await d.ereignisse.verteile(); return (await d.meineAufgaben(B)).filter((a) => a.art === 'aenderung'); };
@@ -117,7 +117,7 @@ describe('Favorit = Abo (#422)', () => {
     await d.mappen.setzeFavorit(B, m.id, true);
     await d.mappen.setzeFavorit(C, m.id, true);
     const geaendertC = async () => { await d.ereignisse.verteile(); return (await d.meineAufgaben(C)).filter((a) => a.art === 'aenderung'); };
-    const rollen = await d.listeRollen();
+    const rollen = await d.postSystemmappen.listeRollen();
     const mitglied = rollen.find((r) => r.system && r.name === 'Mitglied')!;
     assert.ok(mitglied, 'die Systemrolle steht in der Auswahl');
     assert.equal(rollen.some((r) => r.name === 'Administrator'), false, 'keine Systemrolle „Administrator“ mehr (#818)');
@@ -133,7 +133,7 @@ describe('Favorit = Abo (#422)', () => {
     assert.equal(await d.favoritenBenachrichtigungErlaubt(ben.id), false);
     // Je Rolle – fachliche Rolle „Buchhaltung“ nur für Carl.
     const rolle = await d.mappen.legeMappeAn({ typId: (await d.mappentypen.listeTypen()).find((x) => x.system === 'rolle')!.id, werte: { name: 'Buchhaltung' } }, anna.id);
-    await d.setzeRollen(carl.id, [rolle.id], anna.id);
+    await d.postSystemmappen.setzeRollen(carl.id, [rolle.id], anna.id);
     await d.setzeFavoritenFreigabe({ erlaubt: 'rollen', rollen: [rolle.id, 'gibt-es-nicht'], vorgabe: true }, 'anna@example.org');
     assert.deepEqual((await d.favoritenFreigabe()).rollen, [rolle.id], 'unbekannte Rollen fallen weg');
     assert.equal(await d.favoritenBenachrichtigungErlaubt(carl.id), true);

@@ -99,7 +99,7 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     ] } as never);

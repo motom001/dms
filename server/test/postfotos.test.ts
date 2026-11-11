@@ -39,7 +39,7 @@ async function aufbau() {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const wurzel = await mkdtemp(join(tmpdir(), 'dms-fotostapel-test-'));
   const stapel = new Fotostapel(wurzel);
   const tabelle = routen(d, konten, { fotostapel: stapel });

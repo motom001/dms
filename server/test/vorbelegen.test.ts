@@ -159,7 +159,7 @@ describe('Beim Auswählen übernehmen – Vorschläge (#1037)', () => {
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', x.d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
-    await x.d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await x.d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const zJ = await x.d.rechtepruefung.zugriff((await konten.listeBenutzer()).find((b) => b.id === jonas.id)!);
     assert.ok(!(await x.d.rechtepruefung.lesbare(zJ, [x.telekom.id])).has(x.telekom.id), 'Jonas darf die Organisation nicht lesen');
     const r = await x.d.mappenEingaben.vorbelegen({ typId: x.vertrag.id, feldKey: 'art', id: x.mobilfunk.id }, zJ);

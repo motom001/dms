@@ -52,7 +52,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
   const lena = await neu('Lena'); const jonas = await neu('Jonas'); const petra = await neu('Petra');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
@@ -75,7 +75,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const tabelle = routen(d, konten, {});
   const route = (mt: string, p: string) => tabelle.find((r) => r.methode === mt && r.pfad === p)!;
   const rufe = async (b: { id: string }, mt: string, p: string, x: Partial<Anfrage> = {}) => route(mt, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
-  const mitglied = (await d.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
+  const mitglied = (await d.postSystemmappen.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
   return { d, konten, markus, lena, jonas, petra, kontakt, vertrag, stadtwerke, m, motor, ereignis, ich, rufe, lesen, mitglied };
 }
 

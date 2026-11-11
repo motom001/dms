@@ -82,7 +82,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
       return ok(alle.filter((p) => sichtbar.has(p.id) || ('art' in p && (p.art === 'dienst' || p.art === 'system'))));
     } },
     // Systemkonten und Dienstkonten der Pakete (#673): sichtbar, aber nicht bearbeitbar.
-    { methode: 'GET', pfad: '/api/benutzer/systemkonten', zugang: 'admin', handler: async () => ok(await dienst.systemkontenUebersicht(await konten.listeSystemkonten(), await konten.listeDienstkonten())) },
+    { methode: 'GET', pfad: '/api/benutzer/systemkonten', zugang: 'admin', handler: async () => ok(await dienst.postSystemmappen.systemkontenUebersicht(await konten.listeSystemkonten(), await konten.listeDienstkonten())) },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => {
       const rollen = await dienst.systemtypen.weitereRollen();
       // Offene Aufgaben je Benutzer (#77): Deaktivieren geht erst ohne.
@@ -91,10 +91,10 @@ export function kontenRouten(k: RoutenKontext): Route[] {
       return ok((await konten.listeBenutzer()).map((x) => ({ ...x, rollen: rollen.get(x.id) ?? [], offeneAufgaben: offen.get(x.id) ?? 0 })));
     } },
     { methode: 'POST', pfad: '/api/benutzer', zugang: 'admin', handler: async (a) => {
-      if (b(a).rollen !== undefined) await dienst.pruefeRollen(b(a).rollen);
+      if (b(a).rollen !== undefined) await dienst.postSystemmappen.pruefeRollen(b(a).rollen);
       // Verwaltungsrecht beim Anlegen nur über den Befehl dms (`--admin`); in der Oberfläche danach mit frischer Anmeldung (#818).
       const r = await konten.legeBenutzerAn({ email: b(a).email, name: b(a).name, verwaltung: a.konsole ? b(a).verwaltung : undefined }, ich(a).id);
-      if (b(a).rollen !== undefined) await dienst.setzeRollen(r.benutzer.id, b(a).rollen, ich(a).id);
+      if (b(a).rollen !== undefined) await dienst.postSystemmappen.setzeRollen(r.benutzer.id, b(a).rollen, ich(a).id);
       L.konto.info('Benutzer angelegt', { email: r.benutzer.email, verwaltung: r.benutzer.verwaltung?.join(', ') || '–', mail: r.mailVerschickt });
       if (r.mailFehler) L.mail.warn('Einladung nicht verschickt', { an: r.benutzer.email, fehler: r.mailFehler });
       return ok({ ...r, benutzer: await mitRollen(r.benutzer) }, 201);
@@ -103,10 +103,10 @@ export function kontenRouten(k: RoutenKontext): Route[] {
       // Weitere Rollen zuerst prüfen, damit eine ungültige Auswahl nichts halb ändert.
       if (b(a).rollen !== undefined) {
         if (!(await konten.listeBenutzer()).some((x) => x.id === a.params.id)) throw new Fachfehler(404, t('meldungen.routen.diesen-benutzer-gibt-es'));
-        await dienst.pruefeRollen(b(a).rollen);
+        await dienst.postSystemmappen.pruefeRollen(b(a).rollen);
       }
       const r = await konten.aendereBenutzer(ich(a), a.params.id, b(a));
-      if (b(a).rollen !== undefined) await dienst.setzeRollen(r.id, b(a).rollen, ich(a).id);
+      if (b(a).rollen !== undefined) await dienst.postSystemmappen.setzeRollen(r.id, b(a).rollen, ich(a).id);
       L.konto.info('Benutzer geändert', { email: r.email, aenderung: b(a) });
       return ok(await mitRollen(r));
     } },
@@ -115,7 +115,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
       const r = await konten.setzeVerwaltung(ich(a), a.params.id, b(a).verwaltung, (m) => L.mail.warn(m));
       return ok(await mitRollen(r));
     } },
-    { methode: 'GET', pfad: '/api/rollen', zugang: 'admin', handler: async () => ok(await dienst.listeRollen()) },
+    { methode: 'GET', pfad: '/api/rollen', zugang: 'admin', handler: async () => ok(await dienst.postSystemmappen.listeRollen()) },
     { methode: 'DELETE', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => {
       await konten.loescheBenutzer(ich(a), a.params.id);
       // Gemerkte Passwörter für Dokumente (#827) gehören nur dieser Person: mit weg.

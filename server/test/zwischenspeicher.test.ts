@@ -152,13 +152,13 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     ids.jonas = await mitPasswort('jonas@example.org', 'Jonas');
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
     ids.petra = await mitPasswort('petra@example.org', 'Petra');
-    await A.dienst.gleicheBenutzerAb(await A.konten.listeBenutzer());
+    await A.dienst.postSystemmappen.gleicheBenutzerAb(await A.konten.listeBenutzer());
     const typen = await A.dienst.mappentypen.listeTypen();
     const rolleTyp = typen.find((t: { system?: string }) => t.system === 'rolle');
     ids.fibu = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, lena.id)).id;
     ids.andere = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
-    await A.dienst.setzeRollen(ids.jonas, [ids.fibu]);
-    await A.dienst.setzeRollen(ids.markus, [ids.fibu]);
+    await A.dienst.postSystemmappen.setzeRollen(ids.jonas, [ids.fibu]);
+    await A.dienst.postSystemmappen.setzeRollen(ids.markus, [ids.fibu]);
     ids.rechnung = (await A.dienst.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
     rw = (rollen) => ({ grund: NICHTS, regeln: [{ id: 'fibu', name: 'FiBu liest', wenn: [{ art: 'rolle', rollen }], dann: { R: 'erteilen', U: 'erteilen', C: 'erteilen' }, stopp: false }] }) as unknown as Regelwerk;
     await A.dienst.berechtigungen.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
@@ -190,10 +190,10 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 200);
     assert.equal((await rechnungen(B, c)).n, 2);
     // An der Person (Rollen, nie gemerkt): Jonas verliert FiBu.
-    await A.dienst.setzeRollen(ids.jonas, []);
+    await A.dienst.postSystemmappen.setzeRollen(ids.jonas, []);
     assert.equal((await rufe(B, c, 'GET', `/api/mappen/${ids.mappe}`)).status, 404);
     assert.equal((await rechnungen(B, c)).n, 0);
-    await A.dienst.setzeRollen(ids.jonas, [ids.fibu]);
+    await A.dienst.postSystemmappen.setzeRollen(ids.jonas, [ids.fibu]);
     assert.equal((await rechnungen(B, c)).n, 2);
   });
 

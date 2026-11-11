@@ -96,13 +96,13 @@ describe('Papierkorb (#43)', () => {
     const konten = new Konten(speicherKontoRepo(), null, 'x', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: ich } = await konten.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const { benutzer: neu } = await konten.legeBenutzerAn({ email: 'neu@example.org' });
     await konten.loescheBenutzer(ich, neu.id);
     assert.equal((await konten.listeBenutzer()).find((b) => b.id === neu.id)?.aktiv, false, 'deaktiviert, bis der Papierkorb geleert ist');
     const [e] = await d.papierkorb({ id: ich.id, rolle: 'admin' });
     assert.equal(e.id, neu.id);
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     await assert.rejects(d.mappen.holeMappe(neu.id), status(404), 'der Abgleich beim Start holt die Mappe nicht zurück');
 
     await d.stelleWiederHer(neu.id, { id: ich.id, rolle: 'admin' });

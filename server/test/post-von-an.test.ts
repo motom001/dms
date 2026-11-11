@@ -106,7 +106,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
@@ -148,7 +148,7 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
 
   it('Platzhalter {absender} und {fuer} in Automatisierungen und Links mit den alten Namen', async () => {
     const { d, markus, lena, post } = await aufbau();
-    const m = await d.legePostAn({ betreff: 'Brief', von: 'Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
+    const m = await d.post.legePostAn({ betreff: 'Brief', von: 'Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
     const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
     const z = await d.rechtepruefung.zugriff({ id: markus.id, rolle: 'admin' });
     const text = await motor.fuelle('{absender} an {fuer} – {von} an {an}', { a: { name: 'Test' } as never, mappe: m, typ: post, z, daten: {} });
@@ -190,7 +190,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
     const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id)).benutzer;
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, markus.id)).benutzer;
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const typen = await d.mappentypen.listeTypen();
     const post = typen.find((t) => t.system === 'post')!;
     const benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
@@ -205,11 +205,11 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
       { id: 'mail', name: 'Versendetes lesen', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'an_adresse', op: 'leer' } }], dann: { R: 'erteilen' }, stopp: false },
     ] };
     await sql`UPDATE mappentypen SET berechtigungen = ${sql.json(regeln as never)} WHERE id = ${post.id}`;
-    const p1 = await d.legePostAn({ betreff: 'Strom', von: 'Stadtwerke', an: lena.id }, ich);
-    const p2 = await d.legePostAn({ betreff: 'Steuer', an: jonas.id }, ich);
-    const p3 = await d.legePostAn({ betreff: 'Antwort', von: 'Markus' }, ich);
+    const p1 = await d.post.legePostAn({ betreff: 'Strom', von: 'Stadtwerke', an: lena.id }, ich);
+    const p2 = await d.post.legePostAn({ betreff: 'Steuer', an: jonas.id }, ich);
+    const p3 = await d.post.legePostAn({ betreff: 'Antwort', von: 'Markus' }, ich);
     await d.mappen.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
-    const p4 = await d.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
+    const p4 = await d.post.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
     await d.loescheMappe(p4.id, markus.id);
     const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
       { art: 'feld', feld: 'an', op: 'zeigtAuf', wert: { art: 'ich' } }, { art: 'feld', feld: 'von', op: 'nichtLeer' },

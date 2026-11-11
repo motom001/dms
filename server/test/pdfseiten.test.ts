@@ -103,7 +103,7 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('Post teilen: je Teil eine neue Post, die Ausgangspost ist erledigt und verweist auf die neuen', async () => {
     const { d, inhalt } = await aufbau();
-    const post = await d.legePostAn({ betreff: 'Sammelscan', absender: 'Scanner' }, { id: ANNA, name: 'Anna' });
+    const post = await d.post.legePostAn({ betreff: 'Sammelscan', absender: 'Scanner' }, { id: ANNA, name: 'Anna' });
     const reg = { key: await postRegister(d, post.typId) };
     const doc = (await d.dokumente.ladeHoch(post.id, { register: reg.key, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(4), ANNA)).dokument;
     const r = await d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4].map((nr) => ({ nr })), teile: [1, 3] }, ANNA);
@@ -121,8 +121,8 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('zusammenfügen: aus zwei Posts in die erste; die leere Post ist danach erledigt', async () => {
     const { d, inhalt } = await aufbau();
-    const p1 = await d.legePostAn({ betreff: 'Brief Seite 1' }, { id: ANNA, name: 'Anna' });
-    const p2 = await d.legePostAn({ betreff: 'Brief Seite 2' }, { id: ANNA, name: 'Anna' });
+    const p1 = await d.post.legePostAn({ betreff: 'Brief Seite 1' }, { id: ANNA, name: 'Anna' });
+    const p2 = await d.post.legePostAn({ betreff: 'Brief Seite 2' }, { id: ANNA, name: 'Anna' });
     const reg = await postRegister(d, p1.typId);
     const a = (await d.dokumente.ladeHoch(p1.id, { register: reg, name: 'Brief.pdf', typ: 'application/pdf' }, await pdf(2, 1), ANNA)).dokument;
     const b = (await d.dokumente.ladeHoch(p2.id, { register: reg, name: 'Brief2.pdf', typ: 'application/pdf' }, await pdf(1, 3), ANNA)).dokument;
@@ -179,7 +179,7 @@ describe('PDF bearbeiten (#335)', () => {
     const r2 = await d.pdfBearbeiten.fuegePdfZusammen({ dokumente: [r1.dokumente[1].id, r1.dokumente[2].id], name: 'Zusammen' }, ANNA);
     assert.deepEqual(await neue(), [`dokument.hochgeladen:${r2.dokument.id}`]);
     // Post teilen: je Teil die neue Post und ihr Dokument.
-    const post = await d.legePostAn({ betreff: 'Stapel' }, { id: ANNA, name: 'Anna' });
+    const post = await d.post.legePostAn({ betreff: 'Stapel' }, { id: ANNA, name: 'Anna' });
     const pdoc = (await d.dokumente.ladeHoch(post.id, { register: await postRegister(d, post.typId), name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), ANNA)).dokument;
     await neue();
     const r3 = await d.pdfBearbeiten.bearbeitePdf(pdoc.id, { seiten: [1, 2].map((nr) => ({ nr })), teile: [0, 1] }, ANNA);

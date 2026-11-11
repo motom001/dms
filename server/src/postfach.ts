@@ -248,7 +248,7 @@ export class Postfaecher {
     const l = await this.liste();
     const alt = id ? l.find((p) => p.id === id) ?? null : null;
     if (id && !alt) throw new Fachfehler(404, t('meldungen.postfach.dieses-postfach-gibt-es'));
-    if (x && typeof x === 'object' && typeof (x as { fuer?: unknown }).fuer === 'string' && (x as { fuer: string }).fuer && !(await this.d.dienst.gibtMappe((x as { fuer: string }).fuer))) throw new Fachfehler(422, t('meldungen.postfach.diesen-benutzer-gibt-es'));
+    if (x && typeof x === 'object' && typeof (x as { fuer?: unknown }).fuer === 'string' && (x as { fuer: string }).fuer && !(await this.d.dienst.eingangskanaele.gibtMappe((x as { fuer: string }).fuer))) throw new Fachfehler(422, t('meldungen.postfach.diesen-benutzer-gibt-es'));
     const neu = pruefePostfach(x, alt, this.d.verschluessele);
     await this.speichereListe(alt ? l.map((p) => (p.id === alt.id ? neu : p)) : [...l, neu]);
     // Verbindung oder Ordner geändert: wieder von vorn zählen (Message-IDs schützen vor Doppelten).
@@ -410,7 +410,7 @@ export class Postfaecher {
     const absender = mail.absenderName && mail.absenderAdresse ? `${mail.absenderName} <${mail.absenderAdresse}>` : mail.absenderAdresse || mail.absenderName;
     const datum = mail.datum && !Number.isNaN(mail.datum.getTime()) ? mail.datum : null;
     const abgelehnt: string[] = [];
-    const post = await this.d.dienst.legePostAn({
+    const post = await this.d.dienst.post.legePostAn({
       betreff: mail.betreff || t('meldungen.postfach.ohne-betreff'), von: absender, ...(datum ? { datum: datum.toISOString().slice(0, 10) } : {}),
       ...(p.fuer ? { an: p.fuer } : {}), nachricht: mail.text.slice(0, NOTIZ_MAX),
     }, { id: null, name: SYSTEMNAME }, undefined, POST_KANAL.email, {
@@ -428,7 +428,7 @@ export class Postfaecher {
 
   /** Anhänge (und wahlweise die Original-Mail) als Dokumente; Abgelehntes mit Grund in die Historie. */
   private async ladeAnhaenge(p: Postfach, postId: string, mail: GeleseneMail, quelle: Buffer, abgelehnt: string[] = []): Promise<number> {
-    const register = (await this.d.dienst.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
+    const register = (await this.d.dienst.eingangskanaele.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
     const dateien = mail.anhaenge.filter((a) => !a.eingebettet);
     if (p.original) dateien.push({ name: `${(mail.betreff || 'Mail').replace(/[\\/:*?"<>|\r\n]+/g, ' ').slice(0, 80).trim() || 'Mail'}.eml`, mime: 'message/rfc822', inhalt: quelle, eingebettet: false });
     let n = 0;
@@ -443,8 +443,8 @@ export class Postfaecher {
         if (r.gleicherInhalt.some((g) => g.mappeId !== postId)) doppelt.push(a.name);
       } catch (e) { abgelehnt.push(`${a.name}: ${(e as Error).message}`); }
     }
-    if (doppelt.length) await this.d.dienst.notiereSystem(postId, SYSTEMNAME, t('meldungen.postfach.doppelt-liegen-schon-in', { anzahl: doppelt.length, map: doppelt.map((x) => `„${x}“`).join(', ') }));
-    if (abgelehnt.length) await this.d.dienst.notiereSystem(postId, SYSTEMNAME, t('meldungen.postfach.nicht-uebernommene-anhaenge', { abgelehnt: abgelehnt.join('; ') }));
+    if (doppelt.length) await this.d.dienst.eingangskanaele.notiereSystem(postId, SYSTEMNAME, t('meldungen.postfach.doppelt-liegen-schon-in', { anzahl: doppelt.length, map: doppelt.map((x) => `„${x}“`).join(', ') }));
+    if (abgelehnt.length) await this.d.dienst.eingangskanaele.notiereSystem(postId, SYSTEMNAME, t('meldungen.postfach.nicht-uebernommene-anhaenge', { abgelehnt: abgelehnt.join('; ') }));
     return n;
   }
 
@@ -452,9 +452,9 @@ export class Postfaecher {
   private async raeumeJournalAuf(p: Postfach, s: ImapSitzung, m: Merker) {
     const j = (await this.d.einstellungen.lies('postfach_journal')) as Journal | null;
     if (!j || j.postfach !== p.id) return;
-    if (await this.d.dienst.gibtMappe(j.mappeId)) {
+    if (await this.d.dienst.eingangskanaele.gibtMappe(j.mappeId)) {
       // Abbruch vor den Anhängen? Dann jetzt nachholen.
-      if (!j.erstellt || !(await this.d.dienst.anzahlDokumente(j.mappeId))) {
+      if (!j.erstellt || !(await this.d.dienst.eingangskanaele.anzahlDokumente(j.mappeId))) {
         const quelle = await s.quelle(j.uid).catch(() => null);
         if (quelle) await this.ladeAnhaenge(p, j.mappeId, await this.d.lies(quelle), quelle).catch(() => 0);
       }

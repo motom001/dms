@@ -119,7 +119,7 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const p = new Paketverwaltung(d, { version: () => '0.242.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
   const hochladen = async (dateien: Record<string, string | Buffer>) => p.hochladen(archiv(dateien), ICH);
   const installiere = async (dateien: Record<string, string | Buffer>) => { const h = await hochladen(dateien); return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };

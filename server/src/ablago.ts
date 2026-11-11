@@ -696,7 +696,7 @@ if (leiter) {
   if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
   // Systemtypen Benutzer und Rolle anlegen und jedem Benutzer seine Mappe geben (auch nach einem Update).
   start.schritt('benutzer');
-  await dienst.gleicheBenutzerAb(await konten.listeBenutzer(), (f, g) => start.menge(f, g));
+  await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer(), (f, g) => start.menge(f, g));
   // Titel „… (ehemalig)“ aus älteren Versionen zurücksetzen (#663); deaktiviert zeigt die Oberfläche durchgestrichen.
   const ehemalig = await dienst.mappenTitel.ehemaligZuruecksetzen();
   if (ehemalig) log.info(`Titel von ${ehemalig} deaktivierten Benutzern ohne „(ehemalig)“ neu berechnet`);

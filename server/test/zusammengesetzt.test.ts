@@ -145,7 +145,7 @@ async function aufbau(pg: boolean, name: string) {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const zg = async (b: { id: string }) => d.rechtepruefung.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
   const org = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', titelVorlage: '{name}', felder: [

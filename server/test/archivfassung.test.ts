@@ -510,7 +510,7 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     assert.equal(paketAbruf.datei.koepfe?.['x-dms-stempel'], undefined);
     // Mensch mit API-Schlüssel (Administrator, also mit Exportrecht): gestempelte Kopie.
     const { benutzer: markus } = await x.konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-    await x.d.gleicheBenutzerAb(await x.konten.listeBenutzer());
+    await x.d.postSystemmappen.gleicheBenutzerAb(await x.konten.listeBenutzer());
     const mensch = async (pfad: string, params: Record<string, string>, query: Record<string, string> = {}) => {
       const r = x.tabelle.find((y) => y.methode === 'GET' && y.pfad === pfad)!;
       return r.handler({ body: undefined, params, query, ip: '1', benutzer: markus, apiSchluessel: { id: 'k', name: 'Skript', recht: 'lesen' } } as unknown as Anfrage) as Promise<{ datei: { inhalt: Buffer; name: string; koepfe?: Record<string, string> } }>;

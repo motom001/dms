@@ -2774,7 +2774,7 @@ export class Paketverwaltung {
           if (!istBeispielVerweis(w)) return undefined;
           const [p, s] = w.beispiel.includes(':') ? w.beispiel.split(':') : [m.id, w.beispiel];
           const zielId = p === m.id ? beispielIds.get(s) : installierte.find((x) => x.id === p)?.beispiele?.[s];
-          if (zielId && (p === m.id || (await this.d.gibtMappe(zielId)))) return zielId;
+          if (zielId && (p === m.id || (await this.d.eingangskanaele.gibtMappe(zielId)))) return zielId;
           ohneZiel.add(w.beispiel);
           return undefined;
         };
@@ -3123,7 +3123,7 @@ export class Paketverwaltung {
     const anzeige = {
       typen: typen.map((x) => ({ id: x.id, name: x.name, felder: x.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
       benutzer: this.o.benutzer ? await this.o.benutzer() : [],
-      rollen: (await this.d.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
+      rollen: (await this.d.postSystemmappen.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
       sichten: (await this.d.sichtenVerwaltung.listeSichten()).map((x) => ({ id: x.id, name: x.name })),
     };
     return {
@@ -3250,7 +3250,7 @@ export class Paketverwaltung {
     return {
       typen: typen.map((t) => ({ id: t.id, name: t.name, felder: t.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
       benutzer: this.o.benutzer ? await this.o.benutzer() : [],
-      rollen: (await this.d.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
+      rollen: (await this.d.postSystemmappen.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
       sichten: (await this.d.sichtenVerwaltung.listeSichten()).map((s) => ({ id: s.id, name: s.name })),
       typVon: (vw: string) => {
         const [paket, s] = vw.includes(':') ? vw.split(':') : [p.id, vw];

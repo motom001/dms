@@ -92,7 +92,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
     adminId = JSON.parse(e.body).benutzer.id;
     const l = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, adminId)).benutzer;
     const j = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, adminId)).benutzer;
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     lena = {
       id: l.id,
       zaehler: (await schluessel.lege(l, { name: 'Wand-Tablet', recht: 'zaehler' })).schluessel,
@@ -129,7 +129,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
 
   it('Stand und ETag ändern sich nach neuer Post; nur Zahlen, keine Inhalte', async () => {
     const vorher = await zaehler(lena.zaehler);
-    const post = await dienst.legePostAn({ betreff: 'Brief Stadtwerke Musterstadt', absender: 'Absender Beispiel GmbH', fuer: lena.id }, { id: adminId, name: 'Markus' });
+    const post = await dienst.post.legePostAn({ betreff: 'Brief Stadtwerke Musterstadt', absender: 'Absender Beispiel GmbH', fuer: lena.id }, { id: adminId, name: 'Markus' });
     const r = await zaehler(lena.zaehler, vorher.etag);
     assert.equal(r.status, 200);
     assert.notEqual(r.etag, vorher.etag);
@@ -142,7 +142,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
   });
 
   it('zählt Überfälliges; kommende Termine zählen nicht (#725: kein „anstehend“ mehr)', async () => {
-    const post = await dienst.legePostAn({ betreff: 'Vertrag', fuer: lena.id }, { id: adminId, name: 'Markus' });
+    const post = await dienst.post.legePostAn({ betreff: 'Vertrag', fuer: lena.id }, { id: adminId, name: 'Markus' });
     const vorher = (await zaehler(lena.zaehler)).body;
     await dienst.legeErinnerungAn(post.id, { datum: tagVersetzt(3), text: 'Kündigen', empfaengerId: lena.id }, adminId);
     await dienst.legeErinnerungAn(post.id, { datum: tagVersetzt(30), text: 'Später', empfaengerId: lena.id }, adminId);
@@ -157,7 +157,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
     const jVorher = (await zaehler(jonas.zaehler)).body;
     const lVorher = (await zaehler(lena.zaehler)).body;
     // Post für Jonas zählt bei Lena nicht; Post ohne „Für“ zählt bei beiden als neue Post.
-    await dienst.legePostAn({ betreff: 'Für Jonas', fuer: jonas.id }, { id: adminId, name: 'Markus' });
+    await dienst.post.legePostAn({ betreff: 'Für Jonas', fuer: jonas.id }, { id: adminId, name: 'Markus' });
     const j = (await zaehler(jonas.zaehler)).body;
     const l = (await zaehler(lena.zaehler)).body;
     assert.equal(j.neuePost, jVorher.neuePost + 1);
@@ -165,7 +165,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
     assert.equal(l.neuePost, lVorher.neuePost);
     assert.equal(l.zuErledigen, lVorher.zuErledigen);
     assert.equal(l.stand, lVorher.stand, 'Lenas Stand bleibt');
-    await dienst.legePostAn({ betreff: 'Ohne Für' }, { id: adminId, name: 'Markus' });
+    await dienst.post.legePostAn({ betreff: 'Ohne Für' }, { id: adminId, name: 'Markus' });
     assert.equal((await zaehler(lena.zaehler)).body.neuePost, l.neuePost + 1);
     assert.equal((await zaehler(jonas.zaehler)).body.neuePost, j.neuePost + 1);
     // Der Administrator (ohne API-Schlüssel, #128) über die Sitzung: eigene Zahlen, auch die interne Adresse.

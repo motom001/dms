@@ -21,7 +21,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
   let basic = '';
   let bearer = '';
   const post = async () => {
-    const typ = await dienst.postTyp();
+    const typ = await dienst.eingangskanaele.postTyp();
     return (await dienst.sichten.seite({ id: annaId, rolle: 'mitglied' }, { sicht: `typ:${typ.id}` })).mappen;
   };
 
@@ -41,7 +41,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
     const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
     annaId = anna.id;
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const k = (await schluessel.lege(anna, { name: 'Laufwerk', recht: 'schreiben' })).schluessel;
     basic = `Basic ${Buffer.from(`anna@example.org:${k}`).toString('base64')}`;

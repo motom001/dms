@@ -79,7 +79,7 @@ async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const tabelle = routen(d, konten, {});
   const rufe = (methode: string, pfad: string, body: Record<string, unknown> = {}) => {
     const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad);

@@ -23,7 +23,7 @@ async function aufbau() {
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
   /** Aufgabe ohne Empfänger, wie sie Post ohne „Für“ oder eine Frist ohne Zuständige anlegt. */
   const ohne = async (mappeId: string, text: string) => { const a = await repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: null, art: 'manuell', text, erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null }); void d.stand.erhoehe(); return a; };
@@ -87,7 +87,7 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     const { d, konten, A } = await aufbau();
     await d.setzeAufgabenEmpfaenger({ benutzerId: null }, A.id);
     await konten.legeBenutzerAn({ email: 'petra@example.org', name: 'Petra' });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     assert.equal((await d.alltagsEmpfaenger()).benutzerId, null);
   });
 });

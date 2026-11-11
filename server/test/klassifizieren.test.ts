@@ -51,7 +51,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', beschreibung: 'Verträge mit Firmen. Laufzeit und Kündigung.', erkennbarAn: 'Enthält eine Vertragsnummer und eine Laufzeit',
     felder: [{ key: 'vnr', label: 'Vertragsnummer', typ: 'text', erkennung: {}, wiederfinden: true }], register: [{ ...FELDER, felder: ['vnr'] }, DOKS] });
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', beschreibung: 'Rechnungen von Handwerkern und Firmen.', erkennbarAn: 'Enthält Rechnungsnummer, Betrag und Zahlungsziel',
@@ -73,7 +73,7 @@ async function aufbau() {
   const dokVertrag = await dok(wartung.id, 'vertrag.pdf', 'Wartungsvertrag Gastherme WV-1043');
   const dokBefund = await dok(befund.id, 'befund.pdf', 'Diagnose Meniskus');
   const dokAlt = await dok(alteRechnung.id, 'alt.pdf', 'Rechnung Wartung 2025');
-  const post = await d.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
+  const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: lena.id, name: 'Lena' });
   const brief = await dok(post.id, 'rechnung.pdf', BRIEF);
   await d.kern.repo.speicherePaket(paket('ki_assistent', 'KI-Assistent', ASSISTENT));
   await d.kern.repo.speicherePaket(paket('ki_aehnlich', 'KI lokal – Ähnlichkeit', AEHNLICH));

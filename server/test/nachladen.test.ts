@@ -45,7 +45,7 @@ async function aufbau() {
   const markus = await mitPasswort('markus@example.org', 'Markus');
   const petra = await mitPasswort('petra@example.org', 'Petra');
   await konten.setzeVerwaltung(imModus(lena), markus.id, ['benutzer']);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const { baueApp } = await import('../src/http');
   const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
   const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()) });

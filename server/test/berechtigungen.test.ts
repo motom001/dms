@@ -31,16 +31,16 @@ async function aufbau(repos?: { repo: ReturnType<typeof speicherRepo>; konto: Re
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
   const fibu = await neu('Fibu'); const max = await neu('Max'); const prakt = await neu('Prakt'); const api = await neu('Api');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const typen = await d.mappentypen.listeTypen();
   const rolleTyp = typen.find((t) => t.system === 'rolle')!;
   const benutzerTyp = typen.find((t) => t.system === 'benutzer')!;
   const rolle = async (name: string) => (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name } }, admin.id)).id;
   const R = { fibu: await rolle('FiBu'), praktikant: await rolle('Praktikant'), api: await rolle('API') };
-  await d.setzeRollen(fibu.id, [R.fibu]);
-  await d.setzeRollen(prakt.id, [R.praktikant]);
-  await d.setzeRollen(api.id, [R.api]);
-  const mitglied = (await d.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
+  await d.postSystemmappen.setzeRollen(fibu.id, [R.fibu]);
+  await d.postSystemmappen.setzeRollen(prakt.id, [R.praktikant]);
+  await d.postSystemmappen.setzeRollen(api.id, [R.api]);
+  const mitglied = (await d.postSystemmappen.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },

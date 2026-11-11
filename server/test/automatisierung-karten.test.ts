@@ -30,7 +30,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
@@ -111,7 +111,7 @@ describe('Dann-Karte „Aufgabe / Benachrichtigung“ (#676)', () => {
   it('Benachrichtigung an eine Rolle gebündelt; ohne Leserecht trotzdem an der Mappe (#798)', async () => {
     const { d, admin, lena, vertrag, motor, ereignis } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, admin.id);
-    const rollen = await d.listeRollen();
+    const rollen = await d.postSystemmappen.listeRollen();
     const mitglied = rollen.find((r) => r.system && /Mitglied/.test(r.name))!;
     // Mitglieder dürfen Verträge nicht lesen.
     await d.berechtigungen.setzeBerechtigungen(vertrag.id, { regeln: [{ wer: { art: 'rolle', id: rollen.find((r) => /Administrator/.test(r.name))?.id ?? '' }, rechte: ['C', 'R', 'U', 'D'] }] }, true).catch(() => null);

@@ -28,7 +28,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     // Post (#192): anlegen („+ Post“, Dokumente danach über das Hochladen) und einer Mappe zuordnen.
     { methode: 'POST', pfad: '/api/post', zugang: 'angemeldet', handler: async (a) => {
       const i = ich(a);
-      return ok(await dienst.legePostAn(b(a), { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen), 201);
+      return ok(await dienst.post.legePostAn(b(a), { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen), 201);
     } },
     // Post fotografieren (#490): Fotos einzeln in den Stapel, „Fertig“ macht ein PDF daraus.
     { methode: 'POST', pfad: '/api/fotostapel', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => ok({ id: await fotostapel.lege(ich(a).id, a.body) }, 201) },
@@ -36,7 +36,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       const i = ich(a);
       const ids = (b(a) as { stapel?: unknown }).stapel;
       const fotos = await fotostapel.nimm(i.id, ids);
-      const r = await dienst.postAusFotos(b(a), fotos, { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen);
+      const r = await dienst.postFotos.postAusFotos(b(a), fotos, { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen);
       await fotostapel.weg(i.id, ids as string[]);
       return ok(r, 201);
     } },
@@ -44,14 +44,14 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       const i = ich(a);
       const ids = (b(a) as { stapel?: unknown }).stapel;
       const fotos = await fotostapel.nimm(i.id, ids);
-      const r = await dienst.fotosAnMappe(a.params.id, b(a), fotos, i.id, await zg(a));
+      const r = await dienst.postFotos.fotosAnMappe(a.params.id, b(a), fotos, i.id, await zg(a));
       await fotostapel.weg(i.id, ids as string[]);
       return ok(r, 201);
     } },
-    { methode: 'POST', pfad: '/api/post/:id/zusammenlegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))) },
-    { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.ordneZu(a.params.id, b(a), ich(a).id, await zg(a), undefined, quelle(a))) },
+    { methode: 'POST', pfad: '/api/post/:id/zusammenlegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.postFotos.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.post.ordneZu(a.params.id, b(a), ich(a).id, await zg(a), undefined, quelle(a))) },
     // „Dokument übernehmen“ (#934): Folgedokumente als neue Post abtrennen; Abgleich mit vorhandenen Mappen (Belege, Doppelte, Typ).
-    { methode: 'POST', pfad: '/api/mappen/:id/abtrennen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.trennePostAb(a.params.id, b(a), ich(a).id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/abtrennen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.postAufloesen.trennePostAb(a.params.id, b(a), ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/abgleich', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.abgleichDokumente(b(a), await zg(a))) },
     // „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich – ein Vorschlag mit Belegen.
     { methode: 'POST', pfad: '/api/klassifizieren', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.klassifizierung.klassifiziere(b(a), await zg(a))) },

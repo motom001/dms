@@ -145,7 +145,7 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
     const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'privat', label: 'Privat', typ: 'janein' },
     ] });

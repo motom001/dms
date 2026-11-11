@@ -50,7 +50,7 @@ async function aufbau(o: { repo?: Repo; konto?: KontoRepo; zustand?: Kurzzustand
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
   let lena = await neu('Lena'); const petra = await neu('Petra');
   lena = await konten.aendereProfil(lena, { sprache: 'en' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const brief = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{betreff}', felder: [
     { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
     { key: 'inhalt', label: 'Inhalt', typ: 'langtext' },

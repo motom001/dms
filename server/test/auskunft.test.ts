@@ -98,7 +98,7 @@ async function aufbau(pg: boolean) {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const, versionierung: true }];
   const wohnungTyp = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
   const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
@@ -127,8 +127,8 @@ async function aufbau(pg: boolean) {
   const nk2 = await d.mappen.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2025', vertrag: v2.id, privat: true } }, admin.id);
   const hinweis = await d.mappen.legeMappeAn({ typId: hinweisTyp.id, werte: { text: 'Rückruf an max@example.net wegen Schlüssel' } }, admin.id);
   // Schriftverkehr als Post, zugeordnet zum Mieter
-  const post = await d.legePostAn({ betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id }, { id: admin.id, name: 'Vera' });
-  await d.ordneZu(post.id, { ziel: max.id, dokumente: [] }, admin.id);
+  const post = await d.post.legePostAn({ betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id }, { id: admin.id, name: 'Vera' });
+  await d.post.ordneZu(post.id, { ziel: max.id, dokumente: [] }, admin.id);
   // Dokumente: Nebenkostenabrechnung mit Daten der Nachbarin und eine geschwärzte Fassung davon
   const nkPdf = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024.pdf' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']), admin.id)).dokument;
   const nkGeschwaerzt = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']), admin.id)).dokument;

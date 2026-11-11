@@ -50,7 +50,7 @@ async function aufbau() {
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
   const lena = await neu('Lena'); const jonas = await neu('Jonas'); const petra = await neu('Petra'); const katrin = await neu('Katrin');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   // Wie beim Start (ablago.ts): Systemkonto, Automatisierungen am Ausgangskorb, Erinnerungen am Feld übernommen (#712).
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
@@ -190,7 +190,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
 
     it('Post: „Post für dich“ beim Anlegen, wandert mit „An“, erledigt sich beim Zuordnen', async () => {
       const { d, markus, lena, jonas, vertrag, offene, ereignisse } = await aufbau();
-      const post = await d.legePostAn({ betreff: 'Brief der Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
+      const post = await d.post.legePostAn({ betreff: 'Brief der Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
       let p = await offene(post.id, 'post');
       assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon]), [[lena.id, `an:${lena.id}`, 'Post für dich', markus.id]]);
       // #1042: an, dazu fuer mit demselben Wert bis 1.0.0.
@@ -210,7 +210,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
 
       // Zugeordnet: Stand „Zugeordnet“, die Aufgabe ist erledigt.
       const ziel = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, lena.id);
-      await d.ordneZu(post.id, { ziel: ziel.id }, jonas.id);
+      await d.post.ordneZu(post.id, { ziel: ziel.id }, jonas.id);
       assert.equal((await offene(post.id, 'post')).length, 0);
       assert.equal(String((await d.mappen.holeMappe(post.id)).mappe.werte.stand), 'Zugeordnet');
     });
@@ -265,7 +265,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       let x = await erwaehne(petra, 'Telefon');
       assert.equal(x.a.empfaengerId, jonas.id);
       assert.ok((await historie(x.m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'weitergegeben wegen Abwesenheit von Lena an Jonas: Erwähnt von Petra in „Notiz“'));
-      const post = await d.legePostAn({ betreff: 'Brief', fuer: lena.id }, { id: markus.id, name: 'Markus' });
+      const post = await d.post.legePostAn({ betreff: 'Brief', fuer: lena.id }, { id: markus.id, name: 'Markus' });
       assert.deepEqual((await offene(post.id, 'post')).map((a) => a.empfaengerId), [jonas.id]);
 
       // Abwesenheit beendet: Mappe zeigt es, neue Aufgaben wieder an Lena; Jonas' Vertretungsaufgabe erledigt sich.
@@ -289,7 +289,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
 
       // Spiegeln beim Start ändert an einer stimmigen Mappe nichts.
       const n = (await historie(lena.id)).length;
-      await d.gleicheBenutzerAb(await konten.listeBenutzer());
+      await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       assert.equal((await historie(lena.id)).length, n);
       assert.equal((await d.mappen.holeMappe(lena.id)).mappe.werte.vertreter, jonas.id);
     });
@@ -401,7 +401,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.deepEqual(await stand(), vorher);
       assert.equal((await konto(lena.id)).abwesenheit?.an, true, 'das Konto ist gespeichert (außerhalb der Transaktion)');
       // Das nächste Spiegeln zieht die Mappe nach.
-      await d.gleicheBenutzerAb(await konten.listeBenutzer());
+      await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       assert.equal((await d.mappen.holeMappe(lena.id)).mappe.werte.abwesend, true);
     });
   });

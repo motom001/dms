@@ -168,7 +168,7 @@ describe('Paket-Einstellungen (#197)', () => {
       (x) => x instanceof Fachfehler && x.status === 422 && Object.keys((x.details as { felderFehler: Record<string, string> }).felderFehler).sort().join() === 'ab,grenze,regeln.1.absender,sprache,token,typ');
 
     const typ = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.vorgang)!;
-    const rolle = (await d.listeRollen())[0].id;
+    const rolle = (await d.postSystemmappen.listeRollen())[0].id;
     const sicht = (await d.sichtenVerwaltung.legeSichtAn({ name: 'S', typen: [typ.id] })).id;
     const gueltig = {
       aktiv: false, titel: ' Eingang ', notiz: 'Zeile 1\nZeile 2', grenze: '2,5', ab: '2027-01-31', sprache: 'Englisch', tage: ['Mo', 'Mi'], token: 'geheim-123',

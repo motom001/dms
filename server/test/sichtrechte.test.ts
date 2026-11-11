@@ -40,10 +40,10 @@ async function aufbau(pg = false) {
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
   const eltern = await neu('Eltern'); const kind = await neu('Kind');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
   const kinderRolle = (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Kinder' } }, admin.id)).id;
-  await d.setzeRollen(kind.id, [kinderRolle]);
+  await d.postSystemmappen.setzeRollen(kind.id, [kinderRolle]);
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], sichtAnlegen: false });
   for (const nr of ['H', 'G']) await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr } }, admin.id);
   const nrIst = (nr: string) => [{ art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: nr } }];

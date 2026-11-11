@@ -25,7 +25,7 @@ async function aufbau() {
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
   const { benutzer: cora } = await konten.legeBenutzerAn({ email: 'cora@example.org', name: 'Cora' }, anna.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'text', label: 'Beschreibung', typ: 'formatiert' },

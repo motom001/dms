@@ -22,7 +22,7 @@ async function aufbau(repo = speicherRepo(), einstellungen = speicherEinstellung
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'belege', name: 'Belege', art: 'dokumente' },
@@ -58,7 +58,7 @@ describe('Systemtyp Post (#192)', () => {
 
   it('„+ Post“: neu, eingehend, heute; mit Dokumenten; zählt in „Neue Post“', async () => {
     const { d, A, anna, post } = await aufbau();
-    const m = await d.legePostAn({ betreff: 'Brief vom Finanzamt' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
+    const m = await d.post.legePostAn({ betreff: 'Brief vom Finanzamt' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     assert.equal(m.titel, 'Brief vom Finanzamt');
     assert.equal(m.werte.stand, POST_STAND.neu);
     assert.equal(m.werte.kanal, POST_KANAL.hochgeladen);
@@ -79,7 +79,7 @@ describe('Systemtyp Post (#192)', () => {
 
   it('„An“: Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist', async () => {
     const { d, anna, ben, B } = await aufbau();
-    const m = await d.legePostAn({ betreff: 'Für Ben', an: ben.id }, { id: anna.id, name: 'Anna' });
+    const m = await d.post.legePostAn({ betreff: 'Für Ben', an: ben.id }, { id: anna.id, name: 'Anna' });
     const offen = async () => (await d.meineAufgaben(B)).filter((a) => a.art === 'post');
     assert.equal((await offen()).length, 1);
     assert.equal((await offen())[0].mappeId, m.id);
@@ -97,10 +97,10 @@ describe('Systemtyp Post (#192)', () => {
 
   it('Zuordnen: Dokumente wandern ins gewählte Register, Post verweist, Stand „Zugeordnet“, Protokoll an beiden', async () => {
     const { d, anna, ben, r1, rechnung } = await aufbau();
-    const m = await d.legePostAn({ betreff: 'Rechnung Backofen', an: ben.id }, { id: anna.id, name: 'Anna' });
+    const m = await d.post.legePostAn({ betreff: 'Rechnung Backofen', an: ben.id }, { id: anna.id, name: 'Anna' });
     const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id)).dokument;
     const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 b'), anna.id)).dokument;
-    const r = await d.ordneZu(m.id, { ziel: r1.id, register: 'belege', dokumente: [a.id] }, anna.id);
+    const r = await d.post.ordneZu(m.id, { ziel: r1.id, register: 'belege', dokumente: [a.id] }, anna.id);
     assert.deepEqual(r.post.werte.bezug, [r1.id]);
     assert.equal(r.post.werte.stand, POST_STAND.zugeordnet);
     const ziel = await d.mappen.holeMappe(r1.id);
@@ -113,7 +113,7 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal((await d.meineAufgaben({ id: ben.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
     // Zweite Zielmappe, Rest kopiert: bleibt auch in der Post, dieselbe Datei.
     const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, anna.id);
-    const z2 = await d.ordneZu(m.id, { ziel: r2.id, kopieren: true }, anna.id);
+    const z2 = await d.post.ordneZu(m.id, { ziel: r2.id, kopieren: true }, anna.id);
     assert.deepEqual(z2.post.werte.bezug, [r1.id, r2.id]);
     const kopie = (await d.mappen.holeMappe(r2.id)).dokumente;
     assert.equal(kopie.length, 1);
@@ -127,21 +127,21 @@ describe('Systemtyp Post (#192)', () => {
 
   it('Zuordnen prüft Ziel, Register und Dokumente', async () => {
     const { d, anna, r1, post } = await aufbau();
-    const m = await d.legePostAn({}, { id: anna.id, name: 'Anna' });
+    const m = await d.post.legePostAn({}, { id: anna.id, name: 'Anna' });
     assert.equal(m.titel, 'Neue Post');
     await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
-    await assert.rejects(d.ordneZu(m.id, {}, anna.id), status(422));
-    await assert.rejects(d.ordneZu(m.id, { ziel: m.id }, anna.id), status(422));
-    await assert.rejects(d.ordneZu(m.id, { ziel: r1.id, register: 'gibtsnicht' }, anna.id), status(422));
-    await assert.rejects(d.ordneZu(m.id, { ziel: r1.id, dokumente: ['fremd'] }, anna.id), status(422));
-    await assert.rejects(d.ordneZu(r1.id, { ziel: m.id }, anna.id), status(422), 'nur Post lässt sich zuordnen');
-    const andere = await d.legePostAn({}, { id: anna.id, name: 'Anna' });
-    await assert.rejects(d.ordneZu(m.id, { ziel: andere.id }, anna.id), status(422), 'nicht Post zu Post');
+    await assert.rejects(d.post.ordneZu(m.id, {}, anna.id), status(422));
+    await assert.rejects(d.post.ordneZu(m.id, { ziel: m.id }, anna.id), status(422));
+    await assert.rejects(d.post.ordneZu(m.id, { ziel: r1.id, register: 'gibtsnicht' }, anna.id), status(422));
+    await assert.rejects(d.post.ordneZu(m.id, { ziel: r1.id, dokumente: ['fremd'] }, anna.id), status(422));
+    await assert.rejects(d.post.ordneZu(r1.id, { ziel: m.id }, anna.id), status(422), 'nur Post lässt sich zuordnen');
+    const andere = await d.post.legePostAn({}, { id: anna.id, name: 'Anna' });
+    await assert.rejects(d.post.ordneZu(m.id, { ziel: andere.id }, anna.id), status(422), 'nicht Post zu Post');
     // Ohne Dokumentenregister am Ziel geht es nur ohne Dokumente.
     const ohne = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['titel'] }] });
     const n = await d.mappen.legeMappeAn({ typId: ohne.id, werte: { titel: 'Ohne' } }, anna.id);
-    await assert.rejects(d.ordneZu(m.id, { ziel: n.id }, anna.id), status(422));
-    const ok = await d.ordneZu(m.id, { ziel: n.id, dokumente: [] }, anna.id);
+    await assert.rejects(d.post.ordneZu(m.id, { ziel: n.id }, anna.id), status(422));
+    const ok = await d.post.ordneZu(m.id, { ziel: n.id, dokumente: [] }, anna.id);
     assert.deepEqual(ok.post.werte.bezug, [n.id]);
     void post;
   });
@@ -173,36 +173,36 @@ describe('Systemtyp Post (#192)', () => {
 describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
   it('bleibt leer ohne Angabe – Hochladen, API, WebDAV; eine Angabe bleibt', async () => {
     const { d, anna, A, rufe } = await aufbau();
-    const hoch = await d.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
+    const hoch = await d.post.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     assert.equal(hoch.werte.von ?? null, null);
     const api = await rufe(A, 'POST', '/api/post', { body: { betreff: 'per API' }, apiSchluessel: { id: 'k', name: 'Skript' } as never }) as { body: { id: string; werte: Record<string, unknown> } };
     assert.equal((await d.mappen.holeMappe(api.body.id)).mappe.werte.kanal, POST_KANAL.api);
     assert.equal((await d.mappen.holeMappe(api.body.id)).mappe.werte.von ?? null, null);
-    const dav = await d.legePostAn({ betreff: 'x.pdf' }, { id: anna.id, name: 'Anna' }, undefined, POST_KANAL.webdav);
+    const dav = await d.post.legePostAn({ betreff: 'x.pdf' }, { id: anna.id, name: 'Anna' }, undefined, POST_KANAL.webdav);
     assert.equal(dav.werte.von ?? null, null);
-    const leer = await d.legePostAn({ betreff: 'Leerzeichen', von: '   ' }, { id: anna.id, name: 'Anna' });
+    const leer = await d.post.legePostAn({ betreff: 'Leerzeichen', von: '   ' }, { id: anna.id, name: 'Anna' });
     assert.equal(leer.werte.von ?? null, null);
-    const mit = await d.legePostAn({ betreff: 'Stadtwerke', von: 'Stadtwerke' }, { id: anna.id, name: 'Anna' });
+    const mit = await d.post.legePostAn({ betreff: 'Stadtwerke', von: 'Stadtwerke' }, { id: anna.id, name: 'Anna' });
     assert.equal(mit.werte.von, 'Stadtwerke');
     // Alter Name (#1042, Übergang bis 1.0.0): absender gilt als von, der neue Name geht vor.
-    const alt = await d.legePostAn({ betreff: 'Alt', absender: 'Stadtwerke' }, { id: anna.id, name: 'Anna' });
+    const alt = await d.post.legePostAn({ betreff: 'Alt', absender: 'Stadtwerke' }, { id: anna.id, name: 'Anna' });
     assert.equal(alt.werte.von, 'Stadtwerke');
     assert.equal('absender' in alt.werte, false);
-    const beide = await d.legePostAn({ betreff: 'Beide', absender: 'Alt', von: 'Neu' }, { id: anna.id, name: 'Anna' });
+    const beide = await d.post.legePostAn({ betreff: 'Beide', absender: 'Alt', von: 'Neu' }, { id: anna.id, name: 'Anna' });
     assert.equal(beide.werte.von, 'Neu');
   });
 
   it('Bestand bereinigen: Vorschau findet den eigenen Namen bzw. „Eingangsordner“, leert nur die gewählten, mit Historie', async () => {
     const { d, anna, ben, A, rufe } = await aufbau();
     // Altbestand wie bis 0.99: Absender = Name des Anlegenden.
-    const alt1 = await d.legePostAn({ betreff: 'Alt Anna', absender: 'Anna' }, { id: anna.id, name: 'Anna' });
-    const alt2 = await d.legePostAn({ betreff: 'Alt Ben', absender: 'Ben' }, { id: ben.id, name: 'Ben' });
-    const ordner = await d.legePostAn({ betreff: 'Scan', absender: 'Eingangsordner' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
+    const alt1 = await d.post.legePostAn({ betreff: 'Alt Anna', absender: 'Anna' }, { id: anna.id, name: 'Anna' });
+    const alt2 = await d.post.legePostAn({ betreff: 'Alt Ben', absender: 'Ben' }, { id: ben.id, name: 'Ben' });
+    const ordner = await d.post.legePostAn({ betreff: 'Scan', absender: 'Eingangsordner' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
     // Nicht betroffen: echter Absender, fremder Name, Postfach-Abruf, ohne Absender.
-    await d.legePostAn({ betreff: 'Echt', absender: 'Finanzamt' }, { id: anna.id, name: 'Anna' });
-    await d.legePostAn({ betreff: 'Von Ben an Anna', absender: 'Ben' }, { id: anna.id, name: 'Anna' });
-    await d.legePostAn({ betreff: 'Mail', absender: 'Anna' }, { id: null, name: 'Postfach' }, undefined, POST_KANAL.email);
-    await d.legePostAn({ betreff: 'Leer' }, { id: anna.id, name: 'Anna' });
+    await d.post.legePostAn({ betreff: 'Echt', absender: 'Finanzamt' }, { id: anna.id, name: 'Anna' });
+    await d.post.legePostAn({ betreff: 'Von Ben an Anna', absender: 'Ben' }, { id: anna.id, name: 'Anna' });
+    await d.post.legePostAn({ betreff: 'Mail', absender: 'Anna' }, { id: null, name: 'Postfach' }, undefined, POST_KANAL.email);
+    await d.post.legePostAn({ betreff: 'Leer' }, { id: anna.id, name: 'Anna' });
     const v = (await rufe(A, 'GET', '/api/werkbank/wartung/absender')) as { body: { posten: Array<{ id: string; absender: string }> } };
     assert.deepEqual(new Set(v.body.posten.map((p) => p.id)), new Set([alt1.id, alt2.id, ordner.id]));
     await assert.rejects(d.mappenTitel.absenderBereinigen([], { id: anna.id, email: 'anna@example.org' }), status(422));

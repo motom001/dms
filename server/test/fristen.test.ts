@@ -41,7 +41,7 @@ export async function aufbauFristen(pg = false) {
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, admin.id)).benutzer;
   const anna = await neu('Anna'); const ben = await neu('Ben');
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },

@@ -115,7 +115,7 @@ describe('Datenbank ohne Volume (#943)', () => {
       const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
       const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
       const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-      await d.gleicheBenutzerAb(await konten.listeBenutzer());
+      await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       const anbindung = new AnbindungVerwaltung('/gibt-es-nicht', A, null, () => {}, undefined, ohne);
       assert.equal(anbindung.stand().ohneVolume, ohne);
       const tabelle = routen(d, konten, { anbindung });

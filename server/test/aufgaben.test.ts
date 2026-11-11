@@ -19,7 +19,7 @@ async function aufbau() {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
     { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
@@ -119,7 +119,7 @@ describe('Sammel-Weitergabe (#415, #419)', () => {
     const { d, konten, t, A, B, ben, anna } = await aufbau();
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: carl } = await konten.legeBenutzerAn({ email: 'carl@example.org', name: 'Carl' });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const C = { id: carl.id, rolle: 'mitglied' };
     // „Privat“ darf Carl nicht lesen – auch nicht über eine Aufgabe.
     await d.berechtigungen.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [

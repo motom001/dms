@@ -387,7 +387,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
           const reg = z.eins(register);
           const r = await dienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
           if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
-          if (ocr.length >= 200) { await dienst.demoTexterkennung(ocr); ocr = []; }
+          if (ocr.length >= 200) { await dienst.eingangskanaele.demoTexterkennung(ocr); ocr = []; }
           statistik.anzahl++;
           erzeugtDok++;
           await weiter();
@@ -402,7 +402,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
           }
         }
       }
-      await dienst.demoTexterkennung(ocr);
+      await dienst.eingangskanaele.demoTexterkennung(ocr);
     } finally {
       if (erzeugtDok) await dienst.sichten.aktualisiereStatistik();
     }

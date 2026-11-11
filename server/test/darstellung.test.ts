@@ -149,7 +149,7 @@ describe('Felder und Register ausblenden (#655)', () => {
 
   it('Systemtypen: Systemfelder und ihre Register lassen sich nicht ausblenden, eigene Felder schon', async () => {
     const d = neuerDienst();
-    await d.postTyp();
+    await d.eingangskanaele.postTyp();
     const post = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
     const eigen = { key: 'notiz_x', label: 'Notiz', typ: 'text' };
     const reg = post.register.map((r) => ({ ...r, ausgeblendet: r.art === 'felder' }));

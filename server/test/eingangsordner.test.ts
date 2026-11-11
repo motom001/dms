@@ -24,12 +24,12 @@ async function aufbau(pause: () => string | null = () => null) {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna Muster', passwort: 'ein-langes-passwort' });
   const { benutzer: thomas } = await konten.legeBenutzerAn({ email: 'thomas.m@example.org', name: 'Thomas Meißner' }, anna.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ordner = await mkdtemp(join(tmpdir(), 'dms-eingang-'));
   const einstellungen = speicherEinstellungen();
   const e = new Eingangsordner(ordner, { dienst: d, einstellungen, benutzer: () => konten.listeBenutzer(), pause });
   const posten = async () => {
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     return Promise.all((await d.mappen.listeMappen(post.id)).map(async (m) => ({ m, docs: (await d.mappen.holeMappe(m.id)).dokumente })));
   };
   return { d, e, ordner, anna, thomas, einstellungen, posten };
@@ -221,7 +221,7 @@ describe('Eingangsordner (#195)', () => {
     await writeFile(join(ordner, 'Rechnung.pdf'), '%PDF-1.4 Rechnung');
     await e.pruefe();
     // Abbruch nach dem Anlegen der Post, vor dem Verschieben: Journal mit Mappe liegt noch da.
-    const post = await d.legePostAn({ betreff: 'Rechnung' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
+    const post = await d.post.legePostAn({ betreff: 'Rechnung' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
     const { createHash } = await import('node:crypto');
     const sha = createHash('sha256').update('%PDF-1.4 Rechnung').digest('hex');
     await einstellungen.schreibe('eingangsordner_journal', { pfad: join(ordner, 'Rechnung.pdf'), sha256: sha, groesse: 17, seit: new Date(0).toISOString(), mappeId: post.id });

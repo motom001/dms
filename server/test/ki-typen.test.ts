@@ -43,7 +43,7 @@ async function aufbau(repo: Repo = speicherRepo()) {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
   const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'titel', label: 'Titel', typ: 'text', erkennung: {} }], register });
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text', erkennung: {} }, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: gesundheit.id }], register });

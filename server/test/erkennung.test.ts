@@ -131,7 +131,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true, erkennung: {}, wiederfinden: true },
     { key: 'kundennummer', label: 'Kundennummer', typ: 'text', erkennung: { art: 'nummer' }, wiederfinden: true },
@@ -156,7 +156,7 @@ async function aufbau() {
   const A = { id: anna.id, rolle: 'admin' }; const B = { id: ben.id, rolle: 'mitglied' };
   /** Post mit einem Dokument und gegebenem Volltext (wie von einem Paket oder der API). */
   const post = async (text: string, betreff = 'Brief') => {
-    const p = await d.legePostAn({ betreff }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
+    const p = await d.post.legePostAn({ betreff }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok = (await d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${betreff}`), anna.id)).dokument;
     await d.volltexte.schreibeVolltext(dok.id, { text }, { id: anna.id, herkunft: 'Test', paket: false });
     return p;
@@ -188,7 +188,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
     assert.equal(e1.ziele[0].mappeId, gas.id);
     assert.match(e1.ziele[0].gruende[0], /gefunden: Vertragsnummer GV-998877/);
     // Diese Post geht an den Strom-Vertrag; die nächste vom selben Absender bekommt das als Grund.
-    await d.ordneZu(p1.id, { ziel: strom.id }, anna.id);
+    await d.post.ordneZu(p1.id, { ziel: strom.id }, anna.id);
     const p2 = await post(BRIEF, 'Zweiter Brief');
     const e2 = await d.erkennung.fuerBenutzer(p2.id, await d.rechtepruefung.zugriff(A));
     const z = e2.ziele.find((x) => x.mappeId === strom.id)!;
@@ -224,7 +224,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
 
   it('ohne gespeichertes Ergebnis (z. B. E-Mail ohne Anhang) rechnet das Lesen einmal; Absender aus dem Feld zählt mit', async () => {
     const { d, A, anna, bank } = await aufbau();
-    const p = await d.legePostAn({ betreff: 'Kontoauszug', nachricht: 'Ihre IBAN DE02120300000000202051 – Ihre Beispielbank' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
+    const p = await d.post.legePostAn({ betreff: 'Kontoauszug', nachricht: 'Ihre IBAN DE02120300000000202051 – Ihre Beispielbank' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const e = await d.erkennung.fuerBenutzer(p.id, await d.rechtepruefung.zugriff(A));
     assert.equal(e.eindeutig, bank.id);
     assert.ok(e.absender[0].gruende.includes('IBAN DE02 1203 0000 0000 2020 51'));
@@ -367,7 +367,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.equal((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!.autoZuordnen, true);
 
     // Für Ben: er bekommt die Aufgabe; das Dokument wandert zum Strom-Vertrag (der einzige, der auf den Absender verweist).
-    const p = await d.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
+    const p = await d.post.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok = (await d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'abschlag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 abschlag'), anna.id)).dokument;
     await d.volltexte.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
     const nachher = (await d.mappen.holeMappe(p.id)).mappe;
@@ -383,7 +383,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.equal(e.auto?.ziel, strom.id);
 
     // Rückgängig durch Ben: Dokument zurück, Stand neu, wieder „Post für dich“.
-    const r = await d.automatikRueckgaengig(aufgaben[0].id, B);
+    const r = await d.post.automatikRueckgaengig(aufgaben[0].id, B);
     assert.equal(r.dokumente, 1);
     const zurueck = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(zurueck.werte.stand, 'Neu');
@@ -391,7 +391,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.equal((await d.dokumente.holeDokument(dok.id)).mappeId, p.id);
     const offen = (await d.mappen.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
     assert.deepEqual(offen.map((a) => a.art), ['post']);
-    await assert.rejects(d.automatikRueckgaengig(aufgaben[0].id, B), (x: Error & { status?: number }) => x.status === 409);
+    await assert.rejects(d.post.automatikRueckgaengig(aufgaben[0].id, B), (x: Error & { status?: number }) => x.status === 409);
     // Neuer Volltext: nicht noch einmal automatisch.
     await d.volltexte.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.mappen.holeMappe(p.id)).mappe.werte.stand, 'Neu');
@@ -412,7 +412,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     assert.equal((await d.mappen.holeMappe(p2.id)).aufgaben.find((a) => a.art === 'zugeordnet')?.empfaengerId, anna.id, 'ohne „Für“: wer die Post in Ablago gebracht hat');
     // Empfänger Ben darf Verträge nicht lesen → nicht automatisch.
     await d.berechtigungen.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
-    const p3 = await d.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
+    const p3 = await d.post.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok3 = (await d.dokumente.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
     await d.volltexte.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.mappen.holeMappe(p3.id)).mappe.werte.stand, 'Neu');

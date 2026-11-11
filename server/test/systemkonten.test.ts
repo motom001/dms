@@ -33,7 +33,7 @@ async function aufbau() {
   d.systemkonten = (k) => konten.systemkonto(k);
   const admin = imModus((await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' })).benutzer);
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const auto = await konten.systemkonto('automatisierung');
   const typen = await d.mappentypen.listeTypen();
   const rolleTyp = typen.find((t) => t.system === 'rolle')!;
@@ -84,9 +84,9 @@ describe('Systemkonten (#673)', () => {
     const { d, jonas, rolleId } = await aufbau();
     const s = await rolleId('systemkonto'), p = await rolleId('paket');
     assert.ok(s && p);
-    assert.ok(!(await d.listeRollen()).some((r) => r.id === s || r.id === p), 'nicht in der Auswahl der Benutzerverwaltung');
-    assert.ok((await d.listeRollen(true)).some((r) => r.id === s && r.konto));
-    await assert.rejects(d.setzeRollen(jonas.id, [s]), status(422));
+    assert.ok(!(await d.postSystemmappen.listeRollen()).some((r) => r.id === s || r.id === p), 'nicht in der Auswahl der Benutzerverwaltung');
+    assert.ok((await d.postSystemmappen.listeRollen(true)).some((r) => r.id === s && r.konto));
+    await assert.rejects(d.postSystemmappen.setzeRollen(jonas.id, [s]), status(422));
     // Name fest, nicht löschbar wie die anderen Systemrollen.
     await assert.rejects(d.loescheMappe(s), (e: unknown) => e instanceof Fachfehler);
   });
@@ -108,7 +108,7 @@ describe('Systemkonten (#673)', () => {
     assert.deepEqual(r, { C: false, R: false, U: false, D: false, P: false });
     assert.equal((await d.rechtepruefung.lesbare(z, [m.id])).has(m.id), false, 'auch in Listen und Suche nicht lesbar');
     assert.equal(z.admin, false, 'das Systemkonto ist kein Administrator');
-    const sz = await d.systemZugriff();
+    const sz = await d.postSystemmappen.systemZugriff();
     assert.equal(sz.ich.id, auto.id);
   });
 

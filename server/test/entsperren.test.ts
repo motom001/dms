@@ -68,7 +68,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena Beispiel', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas Beispiel' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = new Texterkennung(repo, dateien, einstellungen, textebeneEngine, async () => ({ pdftotext: true, pdftoppm: true }));
   d.dokumente.verbindeTexterkennung(t);
   const bilder = speicherAblage();
@@ -81,11 +81,11 @@ async function aufbau() {
   const e = new PdfEntsperren(d.geschuetztePdfs.entsperrenAnbindung({ ablage, speicher: einstellungen, verschluessele: (k) => verschluesseleMit(schluessel, k), entschluessele: (w) => entschluesseleMit(schluessel, w) }));
   d.geschuetztePdfs.verbindeEntsperren(e);
   t.entsperrt = (sha) => e.fassung(sha);
-  const post = await d.postTyp();
+  const post = await d.eingangskanaele.postTyp();
   const register = post.register.find((r) => r.art === 'dokumente')!.key;
   /** Neue Post mit einem PDF; `fuer`: Konto aus „Für“. Wartet, bis der Volltext feststeht. */
   const ablegen = async (inhalt: Buffer, o: { fuer?: string; betreff?: string } = {}) => {
-    const m = await d.legePostAn({ betreff: o.betreff ?? 'Gehaltsabrechnung Oktober 2026', ...(o.fuer ? { fuer: o.fuer } : {}) }, { id: lena.id, name: 'Lena' });
+    const m = await d.post.legePostAn({ betreff: o.betreff ?? 'Gehaltsabrechnung Oktober 2026', ...(o.fuer ? { fuer: o.fuer } : {}) }, { id: lena.id, name: 'Lena' });
     const id = (await d.dokumente.ladeHoch(m.id, { register, name: 'abrechnung.pdf', typ: 'application/pdf' }, inhalt, lena.id)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr?.stand ?? 'wartet'));
     return { m, id };

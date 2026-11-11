@@ -195,8 +195,8 @@ function faelle(pg: boolean) {
       const r = await p.beispieleEntfernen('demo', ICH);
       assert.equal(r.entfernt, 1);
       assert.deepEqual(r.behalten.map((b) => [b.titel, b.grund]).sort(), [['Heizungsbau Beispiel GmbH', 'verwiesen'], ['WV-2023-17', 'geaendert']]);
-      assert.ok(!(await d.gibtMappe(strom.id)), 'unverändertes Beispiel samt Dokument weg');
-      assert.ok(await d.gibtMappe(wartung.id) && await d.gibtMappe(firma.id));
+      assert.ok(!(await d.eingangskanaele.gibtMappe(strom.id)), 'unverändertes Beispiel samt Dokument weg');
+      assert.ok(await d.eingangskanaele.gibtMappe(wartung.id) && await d.eingangskanaele.gibtMappe(firma.id));
       const nachher = (await d.kern.repo.listePakete()).find((x) => x.id === 'demo')!;
       assert.equal(nachher.beispielMappen, undefined, 'das Paket merkt sich keine Beispiele mehr');
       assert.deepEqual(Object.keys(nachher.beispiele ?? {}).sort(), ['heizung', 'wartung'], 'Schlüssel der gebliebenen bleiben für Verweise');

@@ -27,7 +27,7 @@ async function aufbau() {
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
   const LENA = randomUUID(), JONAS = randomUUID();
   await neuerBenutzer(LENA, 'Lena'); await neuerBenutzer(JONAS, 'Jonas');
-  await d.gleicheBenutzerAb([benutzer(LENA, 'Lena', 'admin'), benutzer(JONAS, 'Jonas', 'mitglied')]);
+  await d.postSystemmappen.gleicheBenutzerAb([benutzer(LENA, 'Lena', 'admin'), benutzer(JONAS, 'Jonas', 'mitglied')]);
   const partner = await d.mappentypen.legeTypAn({ name: 'Versicherer', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
   const typ = await d.mappentypen.legeTypAn({ name: 'Versicherung', titelVorlage: '{bezeichnung}', felder: [
     { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true },

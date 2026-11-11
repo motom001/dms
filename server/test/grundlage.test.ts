@@ -27,7 +27,7 @@ async function aufbau() {
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, admin.id);
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
@@ -101,7 +101,7 @@ describe('„Datum erreicht“ (#724)', () => {
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', ende: heuteIn(), verantwortlich: lena.id } }, admin.id);
     // Über die Werkbank geht Deaktivieren nur mit Vertreter – hier der Fall ohne (z. B. aus einer Anmeldung über Anbieter).
     await (konten as unknown as { repo: { aendereBenutzer(id: string, d: { aktiv: boolean }): Promise<unknown> } }).repo.aendereBenutzer(lena.id, { aktiv: false });
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const a = await motor.lege({ name: 'Heute', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'ende', vorlauf: 0, einheit: 'tage', uhrzeit: '00:00' },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'feld', feld: 'verantwortlich' }, { art: 'ersteller' }], text: 'Heute: {name}' }] }, admin.id);
     await motor.zeitplan();

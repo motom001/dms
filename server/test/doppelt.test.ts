@@ -31,7 +31,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ALLES = { C: true, R: true, U: true, D: true, P: true };
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
   const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
@@ -82,7 +82,7 @@ describe('Doppelte Dateien (#333)', () => {
     const e = new Eingangsordner(ordner, { dienst: d, einstellungen, benutzer: () => konten.listeBenutzer(), pause: () => null });
     await writeFile(join(ordner, 'Scan.pdf'), SCAN);
     await e.pruefe(); assert.equal(await e.pruefe(), 1);
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     const [p] = await d.mappen.listeMappen(post.id);
     const eintrag = (await d.mappenHistorie.historie(p.id)).find((h) => h.art === 'uebernommen')!;
     assert.equal((eintrag.daten as Record<string, unknown>).doppelt, 1);
@@ -111,7 +111,7 @@ describe('Doppelte Dateien (#333)', () => {
       verschluessele: (k) => k, entschluessele: (w) => w, anAdmins: async () => {} });
     const [p] = await pf.speichere({ name: 'Post', server: 'imap.example.org', port: 993, benutzer: 'a', passwort: 'b' }, null, 'test');
     assert.equal(await pf.abrufen(p.id), 1);
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     const [m] = await d.mappen.listeMappen(post.id);
     const texte = (await d.mappenHistorie.historie(m.id)).map((h) => String((h.daten as Record<string, unknown>).text ?? ''));
     assert.ok(texte.some((t) => t === 'Doppelt: „Rechnung.pdf“ liegt schon in Ablago – vor dem Zuordnen prüfen.'), texte.join(' | '));

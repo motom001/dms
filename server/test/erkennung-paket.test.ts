@@ -38,7 +38,7 @@ async function aufbau() {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
   const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', felder: [{ key: 'name', label: 'Name', typ: 'text', erkennung: {}, wiederfinden: true }], register });
   const person = await d.mappentypen.legeTypAn({ name: 'Person', felder: [

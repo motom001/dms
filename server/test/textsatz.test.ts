@@ -192,7 +192,7 @@ for (const pg of [false, true]) {
       d.verbindeKonten(konten.papierkorbHaken());
       const { benutzer: katrin } = await konten.einrichten({ email: 'katrin@example.org', name: 'Katrin', passwort: 'ein-langes-passwort' });
       const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, katrin.id)).benutzer;
-      await d.gleicheBenutzerAb(await konten.listeBenutzer());
+      await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       const p = new Paketverwaltung(d, { version: () => '0.238.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
       const ICH = { id: katrin.id, email: katrin.email };
       const h = await p.hochladen(archiv(PAKET), ICH);

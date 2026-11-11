@@ -38,7 +38,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true },
     { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', text: '{feld} {datum}' } },

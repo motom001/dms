@@ -239,7 +239,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena Muster', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas Muster' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const R = (key: string, name: string) => ({ key, name, art: 'felder' as const });
   const DOK = { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const };
   let org = await d.mappentypen.legeTypAn({ name: 'Organisation', schluessel: 'organisation', felder: [
@@ -345,8 +345,8 @@ Gesamtbetrag 1.190,00 €`;
 
   it('Post: eigene Organisation nie Absender; ausgehend nur als Hinweis, nie automatisch zugeordnet', async () => {
     const x = await aufbau();
-    await x.d.postTyp();
-    const p = await x.d.legePostAn({ betreff: 'Rechnung' }, { id: x.lena.id, name: 'Lena' });
+    await x.d.eingangskanaele.postTyp();
+    const p = await x.d.post.legePostAn({ betreff: 'Rechnung' }, { id: x.lena.id, name: 'Lena' });
     const dok = (await x.d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r'), x.lena.id)).dokument;
     await x.d.volltexte.schreibeVolltext(dok.id, { text: AUSGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
     const e = (await x.d.erkennung.fuerPost(p.id))!;

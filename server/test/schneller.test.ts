@@ -242,7 +242,7 @@ describe('Schneller (#743) – ohne Datenbank', () => {
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: admin } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const ALLES = { C: true, R: true, U: true, D: true, P: true };
     // Vertrauliche Verträge darf nur der Administrator lesen.
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [

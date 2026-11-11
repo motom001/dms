@@ -123,7 +123,7 @@ async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'ende', label: 'Läuft aus am', typ: 'datum' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }], register });
   const notiz = await d.mappentypen.legeTypAn({ name: 'Unterlage', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register });

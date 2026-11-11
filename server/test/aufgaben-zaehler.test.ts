@@ -83,7 +83,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     ids.jonas = await mitPasswort('jonas@example.org', 'Jonas');
     ids.petra = await mitPasswort('petra@example.org', 'Petra');
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
-    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     // Verträge lesen Lena, Jonas und Markus – Petra nicht.
     ids.vertrag = (await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
     const rw: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [ids.lena, ids.jonas, ids.markus] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] } as unknown as Regelwerk;

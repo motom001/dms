@@ -35,7 +35,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // Doppelte Dateien vor dem Hochladen erkennen (#333): Prüfwerte (SHA-256) → Fundstellen in lesbaren Mappen.
     { methode: 'POST', pfad: '/api/dokumente/gleiche', zugang: 'angemeldet', lesend: true, handler: async (a) => {
       const e = (a.body ?? {}) as { pruefwerte?: unknown; ohneMappe?: unknown };
-      return ok({ fundstellen: await dienst.fundstellen(await zg(a), e.pruefwerte, typeof e.ohneMappe === 'string' ? e.ohneMappe : undefined) });
+      return ok({ fundstellen: await dienst.eingangskanaele.fundstellen(await zg(a), e.pruefwerte, typeof e.ohneMappe === 'string' ? e.ohneMappe : undefined) });
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);

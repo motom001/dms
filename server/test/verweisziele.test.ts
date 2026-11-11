@@ -139,7 +139,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const lena = (await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const name = [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }];
   const fahrzeug = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', titelVorlage: '{name}', felder: name });
   const wohnung = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{name}', felder: name });

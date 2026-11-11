@@ -70,7 +70,7 @@ describe('Mappentyp: Kann aus Post angelegt werden, Woran man ihn erkennt (#937)
     await assert.rejects(d.mappentypen.aendereTyp(t.id, { ...t3, ausPost: false, stand: t2.geaendert }), (e) => e instanceof Fachfehler && e.status === 409);
     assert.equal((await d.mappentypen.listeTypen()).find((x) => x.id === t.id)!.ausPost, null);
     // Systemtyp Post: beide Angaben lassen sich nicht setzen.
-    await d.postTyp();
+    await d.eingangskanaele.postTyp();
     const post = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
     const p2 = await d.mappentypen.aendereTyp(post.id, { ...post, ausPost: true, erkennbarAn: 'Alles', beschriftungen: { en: { erkennbarAn: 'All' } } });
     assert.deepEqual([p2.ausPost, p2.erkennbarAn, kannAusPost(p2), p2.beschriftungen?.en?.erkennbarAn], [false, '', false, undefined]);
@@ -81,8 +81,8 @@ describe('Mappentyp: Kann aus Post angelegt werden, Woran man ihn erkennt (#937)
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    await d.postTyp();
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.eingangskanaele.postTyp();
     const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG, DOK] });
     await d.mappentypen.legeTypAn({ name: 'Ablagenotiz', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [FELDREG] });
     const aus = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'nr', label: 'Kennzeichen', typ: 'text' }], register: [FELDREG, DOK], ausPost: false });
@@ -199,7 +199,7 @@ describe('Feld: Aus Dokument füllen und Zum Wiederfinden nutzen (#938)', () => 
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', wiederfinden: true }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text', wiederfinden: true }], register: [FELDREG, DOK] });
     const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true }, { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id, wiederfinden: true }], register: [FELDREG, DOK] });
     const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, wiederfinden: true }], register: [FELDREG, DOK] });

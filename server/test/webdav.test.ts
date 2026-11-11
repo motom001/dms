@@ -31,7 +31,7 @@ async function aufbau(o: { grenze?: number } = {}) {
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   const bert = (await konten.legeBenutzerAn({ email: 'bert@example.org', name: 'Bert' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const schluesselRepo = speicherApiSchluesselRepo();
   const schluessel = new ApiSchluesselDienst(schluesselRepo);
   const annaKey = (await schluessel.lege(anna, { name: 'Laufwerk', recht: 'schreiben' })).schluessel;
@@ -251,7 +251,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
   it('Ablegen: Neue Post wird Post; im Register Dokument bzw. neue Version; ohne Versionierung kein Überschreiben', async () => {
     const { d, wd, rufe, A, anna, v1a, namen } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     const zahl = async () => (await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt;
     assert.equal(await zahl(), 0);
     // Wie der Finder: erst leer anlegen (und sperren), dann Inhalt.
@@ -291,7 +291,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
       assert.equal((await rufe('PROPFIND', `/webdav/Neue Post/${n}`, { auth: A, depth: '0' })).status, 404, n);
       assert.equal((await rufe('PUT', `/webdav/Ablage/${n}`, { auth: A, body: 'egal' })).status, 201, `${n} überall`);
     }
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     assert.equal((await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
     for (const m of ['MKCOL', 'DELETE', 'MOVE', 'COPY']) assert.equal((await rufe(m, '/webdav/Ablage/Verträge/neu/', { auth: A })).status, 403, m);
     assert.equal((await rufe('TRACE', '/webdav/', { auth: A })).status, 405);
@@ -377,7 +377,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.equal((await rufe('PUT', `${reg}/Rechnung.pdf`, { auth: A, body: PDF('n') })).status, 403, 'auch keine neue Version');
     assert.equal((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.length, 1);
     // Post: Anlegen (C) am Post-Typ entziehen.
-    const post = await d.postTyp();
+    const post = await d.eingangskanaele.postTyp();
     await d.mappentypen.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
     assert.equal((await rufe('PUT', '/webdav/Neue Post/Scan.pdf', { auth: A, body: PDF('s') })).status, 403);
     assert.equal((await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);

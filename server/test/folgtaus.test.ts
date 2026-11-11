@@ -180,7 +180,7 @@ describe('Folgt aus – nur lesbare Werte, auch über die Schnittstelle (#886)',
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, admin.id)).benutzer;
-    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const zu: Regelwerk = { grund: NICHTS, regeln: [] };
     const organisation = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], berechtigungen: zu });
     const niederlassung = await d.mappentypen.legeTypAn({ name: 'Niederlassung', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id }] });

@@ -719,8 +719,8 @@ export class Webdav {
     }
     const typ = MIME[extname(z.name).toLowerCase()];
     if (z.eltern.art === 'post') {
-      const post = await this.d.dienst.legePostAn({ betreff: z.name.replace(/\.[^.]{1,8}$/, '').slice(0, 250) || z.name }, { id: ctx.b.id, name: ctx.b.name }, ctx.z, POST_KANAL.webdav);
-      const register = (await this.d.dienst.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
+      const post = await this.d.dienst.post.legePostAn({ betreff: z.name.replace(/\.[^.]{1,8}$/, '').slice(0, 250) || z.name }, { id: ctx.b.id, name: ctx.b.name }, ctx.z, POST_KANAL.webdav);
+      const register = (await this.d.dienst.eingangskanaele.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
       await this.d.dienst.dokumente.ladeHoch(post.id, { register, name: z.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
       log.info('Post über WebDAV abgelegt', { datei: z.name, groesse, mappe: post.id, von: ctx.b.email });
       await this.merkeSchwebend(ctx, z.ort, z.name, groesse);

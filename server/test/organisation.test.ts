@@ -120,7 +120,7 @@ async function aufbau(pg: boolean, name: string) {
   const markus = (await konten.legeBenutzerAn({ email: 'markus@example.org', name: 'Markus' }, katrin.id)).benutzer;
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, katrin.id)).benutzer;
   await konten.setzeVerwaltung({ ...(await konten.listeBenutzer()).find((b) => b.id === katrin.id)!, rolle: 'admin' }, markus.id, ['organisation']);
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const p = new Paketverwaltung(d, { version: () => '0.238.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
   const ICH = { id: katrin.id, email: katrin.email };
   const h = await p.hochladen(archiv(PAKET()), ICH);
@@ -263,7 +263,7 @@ for (const pg of [false, true]) {
       assert.deepEqual((await x.d.mappen.holeMappe(wir.id, zm)).schreibschutz, []);
       // Freigegebene Rolle (Werkbank): Jonas bekommt eine Rolle „Büro“, die das Merkmal setzen darf.
       const buero = (await x.d.mappen.legeMappeAn({ typId: (await x.d.kern.system()).rolle.id, werte: { name: 'Büro' } }, x.katrin.id)).id;
-      await x.d.setzeRollen(x.jonas.id, [buero], x.katrin.id);
+      await x.d.postSystemmappen.setzeRollen(x.jonas.id, [buero], x.katrin.id);
       await x.verwaltend(x.markus, 'PUT', '/api/werkbank/organisation', { body: { rollen: [buero] } });
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: fremd.id }, body: { werte: { eigene_organisation: true } } });
       assert.equal((await x.d.mappen.holeMappe(fremd.id)).mappe.werte.eigene_organisation, true);
@@ -334,7 +334,7 @@ for (const pg of [false, true]) {
       const x = await aufbau(pg, 'org_erkennung');
       await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Tischlerei Brandt', eigene_organisation: true, email: 'info@tischlerei.example.org', telefon: '0123 45678' } } });
       const sw = (await x.d.mappen.legeMappeAn({ typId: x.org, werte: { name: 'Stadtwerke Musterstadt', email: 'kunden@stadtwerke.example.org' } }, x.katrin.id)).id;
-      const p = await x.d.legePostAn({ betreff: 'Ihre Rechnung', nachricht: 'An Tischlerei Brandt, info@tischlerei.example.org, Tel. 0123 45678. Stadtwerke Musterstadt, kunden@stadtwerke.example.org' }, { id: x.katrin.id, name: 'Katrin' }, await x.d.rechtepruefung.zugriff({ id: x.katrin.id, rolle: 'mitglied' }));
+      const p = await x.d.post.legePostAn({ betreff: 'Ihre Rechnung', nachricht: 'An Tischlerei Brandt, info@tischlerei.example.org, Tel. 0123 45678. Stadtwerke Musterstadt, kunden@stadtwerke.example.org' }, { id: x.katrin.id, name: 'Katrin' }, await x.d.rechtepruefung.zugriff({ id: x.katrin.id, rolle: 'mitglied' }));
       const e = await x.d.erkennung.fuerPost(p.id);
       assert.deepEqual(e?.absender.map((a) => a.mappeId), [sw]);
     });

@@ -24,7 +24,7 @@ async function aufbau(uhr: () => number = Date.now) {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
@@ -181,7 +181,7 @@ describe('Automatisierungen (#674): Ausführen', () => {
     const { motor, vertrag, admin, d } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: '2031-09-30' } }, admin.id);
     const a = await motor.lege({ name: 'P', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [stopp] }, admin.id);
-    const z = await d.systemZugriff('automatisierung');
+    const z = await d.postSystemmappen.systemZugriff('automatisierung');
     const mappe = await d.rechtepruefung.pruefeRecht(z, m.id, 'R');
     const text = await motor.fuelle('{name} kündbar bis {kuendbar_bis} ({mappentyp}, {automatisierung}) {unbekannt}', { a, mappe, typ: vertrag, z, daten: {} });
     assert.equal(text, 'Strom kündbar bis 30.09.2031 (Vertrag, P) {unbekannt}');
@@ -251,7 +251,7 @@ describe('Automatisierungen in PostgreSQL (#674)', { skip: url ? false : 'TEST_D
 describe('Automatisierungen: Ausprobieren und Rechte des Kontos (#709)', () => {
   it('nur Mappen, die die Automatisierung sehen darf; Meldung nennt das Konto; Warnung, wenn der Typ gar nicht lesbar ist', async () => {
     const { motor, vertrag, admin, d } = await aufbau();
-    const rolle = (await d.listeRollen(true)).find((r) => r.konto && r.name === 'Systemkonto')!.id;
+    const rolle = (await d.postSystemmappen.listeRollen(true)).find((r) => r.konto && r.name === 'Systemkonto')!.id;
     const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', status: 'offen' } }, admin.id);
     const geheim = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Geheim', status: 'erledigt' } }, admin.id);
     const a = await motor.lege({ name: 'Probe', wenn: { art: 'mappe.notiz', typ: vertrag.id }, dann: [stopp] }, admin.id);

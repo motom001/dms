@@ -89,7 +89,7 @@ async function aufbau() {
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
-  await d.gleicheBenutzerAb(await konten.listeBenutzer());
+  await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
   const fibu = (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
@@ -170,7 +170,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     await h.d.berechtigungen.setzeBerechtigungen(h.rechnung.id, h.privatNurFibu, true);
     await stimmt('Rechte zurück', { admin: [2, 2], max: [0, 0] });
     await pruefe('Rechte zurück');
-    await h.d.setzeRollen(h.max.id, [h.fibu], h.admin.id);
+    await h.d.postSystemmappen.setzeRollen(h.max.id, [h.fibu], h.admin.id);
     await stimmt('Rolle', { admin: [2, 2], max: [2, 2] });
     await pruefe('Rolle');
     // Ansicht ändern

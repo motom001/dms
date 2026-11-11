@@ -28,7 +28,7 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
     // Automatisch zugeordnet (#337): Rückgängig direkt aus der Aufgabe.
-    { methode: 'POST', pfad: '/api/aufgaben/:id/rueckgaengig', zugang: 'angemeldet', handler: async (a) => ok(await dienst.automatikRueckgaengig(a.params.id, ich(a), await zg(a))) },
+    { methode: 'POST', pfad: '/api/aufgaben/:id/rueckgaengig', zugang: 'angemeldet', handler: async (a) => ok(await dienst.post.automatikRueckgaengig(a.params.id, ich(a), await zg(a))) },
     // Sammel-Weitergabe und -Erledigen (#415, #419): Werkbank → Aufgaben und Profil → Abwesenheit.
     { methode: 'POST', pfad: '/api/aufgaben/weitergeben', zugang: 'angemeldet', handler: async (a) => {
       await empfaengerSichtbar(a, b(a).empfaengerId);

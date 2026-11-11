@@ -790,7 +790,7 @@ export class Automatisierungen {
     const typ = kontextTyp(a.wenn, k.typen);
     // Rechte des Kontos „Automatisierung“, nicht die des Admins – die Meldung sagt das auch so (#709).
     const roh = await this.d.dienst.rechtepruefung.pruefeRecht(undefined, mappeId, 'R');
-    const m = await this.d.dienst.rechtepruefung.pruefeRecht(await this.d.dienst.systemZugriff('automatisierung'), mappeId, 'R').catch((x: unknown) => {
+    const m = await this.d.dienst.rechtepruefung.pruefeRecht(await this.d.dienst.postSystemmappen.systemZugriff('automatisierung'), mappeId, 'R').catch((x: unknown) => {
       if (x instanceof Fachfehler && (x.status === 403 || x.status === 404)) throw new Fachfehler(403, t('automatisierung.test.rechte', { typ: k.typen.find((y) => y.id === roh.typId)?.name ?? '' }));
       throw x;
     });
@@ -932,7 +932,7 @@ export class Automatisierungen {
       }
       const typ = kontextTyp(a.wenn, k.typen);
       const konto = await this.konto();
-      const z = await this.d.dienst.systemZugriff('automatisierung');
+      const z = await this.d.dienst.postSystemmappen.systemZugriff('automatisierung');
       // Mappe mit den Rechten des Systemkontos: Was es nicht lesen darf, sieht die Automatisierung nicht.
       let mappe: Mappe | null = null;
       if (mappeId) {
