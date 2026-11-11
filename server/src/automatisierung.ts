@@ -1014,7 +1014,7 @@ export class Automatisierungen {
     // Merkmal der Ablage (#1032): gilt ohne Mappe – auch bei Zeitplänen.
     const merkmal = (k: UndKarte) => k.art === 'bedingung' && k.bedingung.art === 'merkmal';
     if (!mappe && !flach.every(merkmal)) return { ok: false, text: t('automatisierung.und.ohne-mappe') };
-    const merkmale = flach.some(merkmal) ? await this.d.dienst.merkmale() : undefined;
+    const merkmale = flach.some(merkmal) ? await this.d.dienst.werkbank.merkmale() : undefined;
     const mitMappe = flach.filter((k) => !merkmal(k));
     const teile = await Promise.all(mitMappe.map(async (k) => k.art === 'bedingung' ? { art: 'bedingungen' as const, bedingungen: [k.bedingung as Bedingung] }
       : k.art === 'ansicht' ? { art: 'sicht' as const, sicht: k.sicht }

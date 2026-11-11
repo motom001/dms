@@ -40,7 +40,7 @@ export function exportRouten(k: RoutenKontext): Route[] {
         // Region (#726): Land, Bundesland, Zeitzone als struktur/region.json.
         ...(x.region ? { region: () => x.region!.lies() } : {}),
         // Merkmale der Ablage (#1032) als struktur/merkmale.json.
-        merkmale: () => dienst.merkmale(),
+        merkmale: () => dienst.werkbank.merkmale(),
         // Eigene Organisation (#995): Verweis, Rollen und Notizen als struktur/organisation.json (die Angaben stehen in der Mappe).
         organisation: () => dienst.organisation.einstellung(),
       });

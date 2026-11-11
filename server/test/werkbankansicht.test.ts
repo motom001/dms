@@ -68,13 +68,13 @@ describe('Werkbank-Ansicht: Expertenmodus (#356)', () => {
     assert.deepEqual(liesEigene({ ein: [], experte: true }), { ein: [], experte: true });
     assert.deepEqual(liesEigene({ ein: [], experte: 'ja' }), { ein: [] });
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    await d.setzeWerkbankAnsicht(ICH, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: [], experte: true } });
-    const ich = await d.werkbankAnsicht(ICH);
+    await d.werkbank.setzeWerkbankAnsicht(ICH, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: [], experte: true } });
+    const ich = await d.werkbank.werkbankAnsicht(ICH);
     assert.equal(sichtbar(ich.installation, ich.eigene, 'texterkennung'), true);
-    const du = await d.werkbankAnsicht(DU);
+    const du = await d.werkbank.werkbankAnsicht(DU);
     assert.equal(sichtbar(du.installation, du.eigene, 'texterkennung'), false, 'gilt nur für mich');
-    await d.setzeWerkbankAnsicht(ICH, { eigene: { ein: [] } });
-    assert.deepEqual((await d.werkbankAnsicht(ICH)).eigene, { ein: [] });
+    await d.werkbank.setzeWerkbankAnsicht(ICH, { eigene: { ein: [] } });
+    assert.deepEqual((await d.werkbank.werkbankAnsicht(ICH)).eigene, { ein: [] });
   });
 });
 
@@ -82,7 +82,7 @@ describe('Werkbank-Ansicht: Dienst', () => {
   const neu = () => new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
 
   it('ohne Einstellung bleibt alles sichtbar', async () => {
-    const s = await neu().werkbankAnsicht(ICH);
+    const s = await neu().werkbank.werkbankAnsicht(ICH);
     assert.deepEqual(s.installation, OHNE_EINSTELLUNG);
     assert.equal(s.eingestellt, false);
     assert.deepEqual(s.eigene, { ein: [] });
@@ -90,31 +90,31 @@ describe('Werkbank-Ansicht: Dienst', () => {
 
   it('Installation gilt für alle, eigene Ergänzungen nur für einen Administrator', async () => {
     const d = neu();
-    await d.setzeWerkbankAnsicht(ICH, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: ['protokoll'] } });
-    const ich = await d.werkbankAnsicht(ICH);
-    const du = await d.werkbankAnsicht(DU);
+    await d.werkbank.setzeWerkbankAnsicht(ICH, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: ['protokoll'] } });
+    const ich = await d.werkbank.werkbankAnsicht(ICH);
+    const du = await d.werkbank.werkbankAnsicht(DU);
     assert.equal(ich.eingestellt, true);
     assert.equal(ich.installation.vorlage, 'haushalt');
     assert.deepEqual(ich.eigene.ein, ['protokoll']);
     assert.deepEqual(du.eigene.ein, []);
     assert.equal(du.installation.vorlage, 'haushalt');
     // Nur die eigene Ansicht ändern lässt die Installation unberührt.
-    await d.setzeWerkbankAnsicht(DU, { eigene: { ein: ['demo'] } });
-    assert.equal((await d.werkbankAnsicht(ICH)).installation.vorlage, 'haushalt');
-    assert.deepEqual((await d.werkbankAnsicht(DU)).eigene.ein, ['demo']);
+    await d.werkbank.setzeWerkbankAnsicht(DU, { eigene: { ein: ['demo'] } });
+    assert.equal((await d.werkbank.werkbankAnsicht(ICH)).installation.vorlage, 'haushalt');
+    assert.deepEqual((await d.werkbank.werkbankAnsicht(DU)).eigene.ein, ['demo']);
     // Leere eigene Ansicht wird gelöscht.
-    await d.setzeWerkbankAnsicht(ICH, { eigene: { ein: [] } });
-    assert.deepEqual((await d.werkbankAnsicht(ICH)).eigene.ein, []);
+    await d.werkbank.setzeWerkbankAnsicht(ICH, { eigene: { ein: [] } });
+    assert.deepEqual((await d.werkbank.werkbankAnsicht(ICH)).eigene.ein, []);
   });
 
   it('Administrator ohne Id (z. B. aus der Umgebung) wird über die E-Mail-Adresse unterschieden', async () => {
     const d = neu();
-    await d.setzeWerkbankAnsicht({ id: null, email: 'env@example.org' }, { eigene: { ein: ['demo'] } });
-    assert.deepEqual((await d.werkbankAnsicht({ id: null, email: 'env@example.org' })).eigene.ein, ['demo']);
+    await d.werkbank.setzeWerkbankAnsicht({ id: null, email: 'env@example.org' }, { eigene: { ein: ['demo'] } });
+    assert.deepEqual((await d.werkbank.werkbankAnsicht({ id: null, email: 'env@example.org' })).eigene.ein, ['demo']);
   });
 
   it('lehnt Unbrauchbares ab', async () => {
-    await assert.rejects(neu().setzeWerkbankAnsicht(ICH, { installation: 'haushalt' }), (e: unknown) => e instanceof Fachfehler && e.status === 422);
+    await assert.rejects(neu().werkbank.setzeWerkbankAnsicht(ICH, { installation: 'haushalt' }), (e: unknown) => e instanceof Fachfehler && e.status === 422);
   });
 });
 
