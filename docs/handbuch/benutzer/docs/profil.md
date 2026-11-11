@@ -151,8 +151,6 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
 
 - **Favoriten** – **Bei Änderungen an meinen Favoriten benachrichtigen** (Standard: an); das Hervorheben geänderter Mappen steht unter [Darstellung](#geaenderte). Was dahintersteckt, steht unter [Favoriten als Abo](ablage.md#favoriten-als-abo). Hat ein Administrator die Benachrichtigung für deine Rolle abgeschaltet, steht hier statt des ersten Schalters ein Hinweis.
 
-- **Sofort melden (Webhooks)** – Ablago meldet an eine Adresse, sobald sich deine Zahlen ändern (neue Post, Zu erledigen, Fristen), z. B. an Homey oder Node-RED. Nur Zahlen, keine Inhalte; nur an Ziele, die ein Administrator freigegeben hat. **Probe senden**, **Ein-/Ausschalten**, **Neues Geheimnis**, **Löschen** und die **letzten Meldungen** stehen an jedem Webhook. Wie du ihn einrichtest: [In die Hausautomatisierung einbinden](hausautomatisierung.md#sofort-melden-webhook).
-
 ![Mein Konto → Benachrichtigungen](bilder/profil-benachrichtigungen.png){ loading=lazy }
 
 ### Abwesenheit

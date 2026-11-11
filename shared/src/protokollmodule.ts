@@ -6,6 +6,6 @@
  */
 export const MODULE = [
   'system', 'http', 'konto', 'ablage', 'dokumente', 'werkbank', 'datenschutz', 'texterkennung', 'umwandlung', 'archivfassung',
-  'vorschau', 'datenbank', 'mail', 'sicherung', 'ereignisse', 'automatisierung', 'webhook',
+  'vorschau', 'datenbank', 'mail', 'sicherung', 'ereignisse', 'automatisierung',
 ] as const;
 export type Modul = (typeof MODULE)[number];

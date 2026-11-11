@@ -21,7 +21,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   type Sql = any;
   let haupt: Sql;
   const offen: Sql[] = [];
-  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`, `dms_wh_kennq_${process.pid}`, `dms_wh_kennz_${process.pid}`];
+  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`, `dms_wh_kennq_${process.pid}`, `dms_wh_kennz_${process.pid}`, `dms_wh_hookq_${process.pid}`, `dms_wh_hookz_${process.pid}`];
   const urlVon = (db: string) => { const u = new URL(url!); u.pathname = `/${db}`; return u.toString(); };
 
   before(async () => {
@@ -487,5 +487,39 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     ], 'haus_garten_pflanze gehört laut Paket zu haus, nicht zu haus_garten; der eigene Typ bleibt');
     assert.deepEqual(await neu`SELECT id::text, berechtigungen FROM mappentypen ORDER BY id`, rechteVorher, 'dieselben Rechte-Regeln je Typ');
     assert.equal((await neu`SELECT daten->>'herausgeber' AS h FROM pakete WHERE id = 'haus'`)[0].h, null, 'nicht aus dem offiziellen Katalog: Herausgeber bleibt offen');
+  });
+  it('ältere Sicherung mit Webhooks spielt sich ein; Webhooks, Ausgangskorb und freigegebene Ziele entfallen still (#991)', async () => {
+    const { cp } = await import('node:fs/promises');
+    // Quelle auf dem Stand vor #991: Migrationen bis 100, mit Webhook, Meldung und freigegebenen Zielen.
+    const vorher = await mkdtemp(join(tmpdir(), 'dms-wh-hook-'));
+    for (const f of (await readdir(MIGRATIONEN)).filter((x) => x.endsWith('.sql') && x < '101')) await cp(join(MIGRATIONEN, f), join(vorher, f));
+    const q = await system(dbs[8], { mitSchluessel: true, migrationen: vorher });
+    const [benutzer, hook] = ['00000000-0000-4000-8000-00000000a991', '00000000-0000-4000-8000-00000000b991'];
+    await q.sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${benutzer}, ${HAUSHALT}, 'lena@example.org', 'Lena', 'admin')`;
+    await q.sql`INSERT INTO webhooks (id, haushalt_id, benutzer_id, name, url, geheimnis) VALUES (${hook}, ${HAUSHALT}, ${benutzer}, 'Homey', 'http://homey.home.arpa/x', ${q.tresor.verschluessele('whsec_alt')})`;
+    await q.sql`INSERT INTO webhook_meldungen (id, haushalt_id, webhook_id, ereignis_id, art) VALUES (gen_random_uuid(), ${HAUSHALT}, ${hook}, gen_random_uuid(), 'zaehler.geaendert')`;
+    await q.sql`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${HAUSHALT}, 'webhook_ziele', ${q.sql.json(['http://homey.home.arpa'])}), (${HAUSHALT}, 'region', ${q.sql.json({ land: 'DE' })})`;
+    const meta = (await (await q.sicherung.starte('manuell', 'lena@example.org')).fertig)!;
+    assert.ok(meta.migrationen.every((x) => x < '101'), 'Sicherung im alten Stand');
+    assert.deepEqual((await q.sql`SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename LIKE 'webhook%' ORDER BY 1`).map((r: Record<string, unknown>) => r.tablename), ['webhook_meldungen', 'webhooks'], 'Gegenprobe: vorher da');
+    const name = meta.datei.replace('.dms-sicherung', '');
+    const z = await system(dbs[9]);
+    await cp(q.sicherung.ordner, z.sicherung.ordner, { recursive: true });
+    await z.w.starte({ name, schluessel: q.tresor.alsText()! }, null);
+    const lauf = await warte(z.w);
+    assert.equal(lauf.status, 'neustart', JSON.stringify(lauf, null, 1));
+    await new Promise((r) => setTimeout(r, 1700));
+    const neu = await frisch(dbs[9]);
+    const tabellen = await neu`SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename LIKE 'webhook%'`;
+    assert.deepEqual([...tabellen], [], 'Tabellen webhooks und webhook_meldungen entfallen');
+    assert.deepEqual((await neu`SELECT schluessel FROM einstellungen WHERE schluessel IN ('webhook_ziele', 'region') ORDER BY 1`).map((r: Record<string, unknown>) => r.schluessel), ['region'], 'nur die Ziele entfallen, andere Einstellungen bleiben');
+    assert.equal(Number((await neu`SELECT count(*)::int AS n FROM benutzer WHERE id = ${benutzer}`)[0].n), 1, 'der Benutzer bleibt');
+    assert.ok((await neu`SELECT name FROM schema_migrationen`).some((r: Record<string, unknown>) => r.name === '101_webhooks_ausbau.sql'), 'Migration 101 nachgeholt');
+    // Update der Quelle selbst (alle offenen Migrationen in einer Transaktion): ebenso still entfernt.
+    const { migriere } = await import('../src/db');
+    await migriere(q.sql, MIGRATIONEN, () => {});
+    assert.equal((await q.sql`SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename LIKE 'webhook%'`).length, 0);
+    assert.equal((await q.sql`SELECT schluessel FROM einstellungen WHERE schluessel = 'webhook_ziele'`).length, 0);
+    assert.equal((await q.sql`SELECT schluessel FROM einstellungen WHERE schluessel = 'region'`).length, 1);
   });
 });

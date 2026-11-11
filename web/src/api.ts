@@ -9,7 +9,6 @@ import type { StempelVorlage, StempelWunsch } from '../../shared/src/stempel';
 import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
 import type { Bereich, SchwaerzSeite } from '../../shared/src/schwaerzen';
 import type { Archiv } from '../../shared/src/archiv';
-import type { WebhookAnsicht, WebhookEingabe, WebhookErgebnis, WebhookVerlauf, WebhookWerkbank } from '../../shared/src/webhook';
 import type { UeberfluessigeVariable } from '../../shared/src/umgebungsvariablen';
 import type { LasttestStand } from '../../shared/src/lasttest';
 import type { Akzeptiert, Schwere } from '../../shared/src/meldungen';
@@ -705,14 +704,6 @@ export const api = {
   apiSchluesselAnlegen: (d: ApiSchluesselEingabe) => anfrage<ApiSchluessel & { schluessel: string }>('POST', '/api/konto/api-schluessel', d),
   apiSchluesselAendern: (id: string, d: ApiSchluesselEingabe) => anfrage<ApiSchluessel>('PUT', `/api/konto/api-schluessel/${id}`, d),
   apiSchluesselLoeschen: (id: string) => anfrage<null>('DELETE', `/api/konto/api-schluessel/${id}`),
-  // Webhooks (#627)
-  webhooks: () => anfrage<{ webhooks: WebhookAnsicht[]; ziele: string[] }>('GET', '/api/konto/webhooks'),
-  webhookAnlegen: (d: WebhookEingabe) => anfrage<WebhookAnsicht & { geheimnis: string }>('POST', '/api/konto/webhooks', d),
-  webhookAendern: (id: string, d: Partial<WebhookEingabe>) => anfrage<WebhookAnsicht>('PUT', `/api/konto/webhooks/${id}`, d),
-  webhookLoeschen: (id: string) => anfrage<null>('DELETE', `/api/konto/webhooks/${id}`),
-  webhookProbe: (id: string) => anfrage<WebhookErgebnis>('POST', `/api/konto/webhooks/${id}/probe`),
-  webhookGeheimnis: (id: string) => anfrage<{ geheimnis: string }>('POST', `/api/konto/webhooks/${id}/geheimnis`),
-  webhookVerlauf: (id: string) => anfrage<WebhookVerlauf[]>('GET', `/api/konto/webhooks/${id}/verlauf`),
   openapi: () => anfrage<Record<string, unknown>>('GET', '/api/openapi.json'),
   designAnlegen: (d: Omit<Design, 'id'>) => anfrage<Design>('POST', '/api/designs', d),
   designAendern: (id: string, d: Omit<Design, 'id'>) => anfrage<Design>('PUT', `/api/designs/${id}`, d),
@@ -1020,10 +1011,6 @@ export const api = {
   /** Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk, Wartezeit der Ereignisschleife (#477). */
   systemlast: () => anfrage<SystemlastAntwort>('GET', '/api/werkbank/systemlast'),
   eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
-  werkbankWebhooks: () => anfrage<{ webhooks: WebhookWerkbank[]; ziele: string[] }>('GET', '/api/werkbank/webhooks'),
-  werkbankWebhookSchalten: (id: string, aktiv: boolean) => anfrage<{ webhooks: WebhookWerkbank[]; ziele: string[] }>('PUT', `/api/werkbank/webhooks/${id}`, { aktiv }),
-  werkbankWebhookLoeschen: (id: string) => anfrage<null>('DELETE', `/api/werkbank/webhooks/${id}`),
-  werkbankWebhookZiele: (ziele: string[]) => anfrage<{ ziele: string[] }>('PUT', '/api/werkbank/webhooks/ziele', { ziele }),
   // Automatisierungen (#675)
   automatisierungen: () => anfrage<{ automatisierungen: AutomatisierungAnsicht[]; fehlgeschlagen: number; fehlschlaege: Fehlschlag[]; kontext: Kontextdaten; umgezogen: { am: string; anzahl: number } | null }>('GET', '/api/werkbank/automatisierungen'),
   automatisierungUmzugGesehen: () => anfrage<null>('POST', '/api/werkbank/automatisierungen/umzug-gesehen'),

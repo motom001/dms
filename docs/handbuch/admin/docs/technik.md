@@ -86,7 +86,7 @@ So arbeiten die Prozesse zusammen:
 - **Abstürze** eines Prozesses zählt der Hauptprozess (mit Nummer und Code bzw. Signal); der [Lasttest](lasttest.md) zeigt sie je Durchgang, zusammen mit den Fehlerarten (z. B. abgebrochene Verbindungen).
 - **Wann es sich lohnt:** Erst mit freien Kernen. Auf einem Rechner mit 2 Kernen (Ablago, PostgreSQL und die Last teilen sie) war ein zweiter Prozess in der Stufe mittel langsamer als einer; in der Stufe groß verschob er die Grenze von 100 auf 150 gleichzeitige Anfragen. Darum nimmt `auto` bei 2 Kernen einen Prozess. Einzelheiten: Entwicklerhandbuch → Leistung.
 
-**Verbindungen zur Datenbank – für alle zusammen:** `DMS_DB_VERBINDUNGEN` gilt für **alle Prozesse zusammen** (#874; vorher je Prozess). Prozess 1 hält dauerhaft 4 Verbindungen für Sperren (Lebenszeichen, Eingangsordner, Postfächer, Webhooks) und bekommt sie zuerst; den Rest teilen sich alle Prozesse gleich (jeder weitere mindestens 2, Prozess 1 insgesamt mindestens 6). Ohne die Variable sind es 10 wie bisher mit einem Prozess und je weiteren Prozess 4 mehr (2 Prozesse 14: Prozess 1 hat 9, Prozess 2 hat 5; 4 Prozesse 22 statt bisher 40). Ist die Zahl zu klein für die Prozesse, hebt Ablago sie auf das Mindestmaß an; wäre sie mehr, als die Datenbank erlaubt (`max_connections`, abzüglich 10 für andere), kürzt Ablago sie – beides steht im Protokoll.
+**Verbindungen zur Datenbank – für alle zusammen:** `DMS_DB_VERBINDUNGEN` gilt für **alle Prozesse zusammen** (#874; vorher je Prozess). Prozess 1 hält dauerhaft 4 Verbindungen für Sperren (Lebenszeichen, Eingangsordner, Postfächer und eine Reserve) und bekommt sie zuerst; den Rest teilen sich alle Prozesse gleich (jeder weitere mindestens 2, Prozess 1 insgesamt mindestens 6). Ohne die Variable sind es 10 wie bisher mit einem Prozess und je weiteren Prozess 4 mehr (2 Prozesse 14: Prozess 1 hat 9, Prozess 2 hat 5; 4 Prozesse 22 statt bisher 40). Ist die Zahl zu klein für die Prozesse, hebt Ablago sie auf das Mindestmaß an; wäre sie mehr, als die Datenbank erlaubt (`max_connections`, abzüglich 10 für andere), kürzt Ablago sie – beides steht im Protokoll.
 
 **Warum zusammen:** Mehr Verbindungen machen eine Datenbank, die sich die Kerne mit Ablago teilt, nicht schneller. Laufen mehr Abfragen gleichzeitig, als PostgreSQL Kerne hat, wartet jede länger auf Rechenzeit und auf Sperren anderer – das trifft gerade das Speichern. Mit 4 Prozessen öffnete Ablago bisher 40 Verbindungen, auf einem NAS mit 6 Threads.
 
@@ -126,7 +126,6 @@ Im Filter von **Werkbank → Protokoll** stehen alle Module mit ihrem Namen – 
 | Sicherung | `sicherung` | Sicherung, Notfallblatt, Wiederherstellung und Probe |
 | Ereignisse | `ereignisse` | Verteilen von Ereignissen an Pakete und Automatisierungen |
 | Automatisierungen | `automatisierung` | Läufe der Automatisierungen |
-| Webhooks | `webhook` | Meldungen an Webhooks, Abschalten nach Fehlern |
 
 Anmeldung und Anmeldeschutz bleiben bewusst in einem Modul: Eine Sperre ergibt sich aus Fehlversuchen bei der Anmeldung – wer nach einer Sperre sucht, sieht beides zusammen.
 

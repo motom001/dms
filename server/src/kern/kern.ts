@@ -350,7 +350,7 @@ export class Kern {
         id: randomUUID(), art, daten, ausloeser: { ...ausloeser, ...(still ? { still: true } : {}) },
         ...(k.buendelS && mappe ? { buendel: `${art}|${mappe}`, buendelS: k.buendelS } : {}),
       }, k.buendelS ? (alt) => mischeFelder(alt, daten) : undefined);
-      // #928: Der Verteiler (Automatisierungen, Pakete, Webhooks) teilte sich sonst Datenbank und Rechenzeit mit der
+      // #928: Der Verteiler (Automatisierungen, Pakete) teilte sich sonst Datenbank und Rechenzeit mit der
       // Anfrage, die das Ereignis auslöst; das Ereignis steht schon im Ausgangskorb.
       if (this.inAnfrage()) void this.nachDerAntwort(this.weckeVerteiler);
       else this.danach(() => this.wecke());

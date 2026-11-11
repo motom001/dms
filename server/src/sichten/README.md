@@ -6,7 +6,7 @@ und die mitgelieferten Ansichten. Schicht 3 der Zielaufteilung – über Mappen,
 
 - `sichten.dienst.ts` – `SichtenDienst`: `seite` (Ansicht, Typ, Verweisfeld #172, Link #98, erweiterte Suche #199,
   unscharf #356, ähnliche Treffer #442), `trefferIds` (#149), `zaehler` (#512, #742), `zaehlerRahmen`, `zaehlerAbruf`
-  (#625), `ablageStand` (#919), `beiAenderung` (#627), `aktualisiereStatistik` (#367); die Zwischenspeicher der
+  (#625), `ablageStand` (#919), `aktualisiereStatistik` (#367); die Zwischenspeicher der
   Zahlen und `sortierungAus` (Modulebene).
 - `verwalten.ts` – `SichtenVerwaltung` (#38): `listeSichten` und `verborgeneSichten` (#148), `sichtTestlauf`, anlegen,
   ändern (gleichzeitig bearbeiten #917, `konfigurationKonflikt`), löschen, ordnen, verschieben (#73),

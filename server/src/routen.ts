@@ -61,7 +61,6 @@ import { sicherungRouten } from './sicherung/sicherung.routen';
 import { betriebRouten, systemRouten, systemzustandRouten } from './system/system.routen';
 import { postfaecherRouten } from './post/post.routen';
 import { automatisierungRouten } from './automatisierung/automatisierung.routen';
-import { webhooksRouten, kontoWebhooksRouten } from './webhooks/webhooks.routen';
 import { ablageRouten } from './sichten/sichten.routen';
 import { aufgabenRouten } from './aufgaben/aufgaben.routen';
 import { mappenRouten } from './mappen/mappen.routen';
@@ -246,8 +245,6 @@ export interface RoutenExtras {
   eingangsordner?: Eingangsordner;
   /** WebDAV-Laufwerk (#346). */
   webdav?: Webdav;
-  /** Webhooks (#627): eigene im Profil, Übersicht, Abschalten und freigegebene Ziele in der Werkbank. */
-  webhooks?: import('./webhook').Webhooks;
   /** Automatisierungen (#674). */
   automatisierungen?: import('./automatisierung').Automatisierungen;
   /** Postfächer (#196). */
@@ -297,14 +294,12 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   systemRouten,
   postfaecherRouten,
   automatisierungRouten,
-  webhooksRouten,
   systemzustandRouten,
   ablageRouten,
   aufgabenRouten,
   werkbankEinstellungenRouten,
   mappenRouten,
   dokumenteRouten,
-  kontoWebhooksRouten,
   apiSchluesselRouten,
 ];
 

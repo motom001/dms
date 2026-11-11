@@ -37,7 +37,6 @@ Ablago sends **no usage data** – neither to the project nor to anyone else: no
 | **Access from outside** | when you make Ablago reachable via a tunnel (e.g. Cloudflare Tunnel, Tailscale Funnel) | all traffic runs via this provider ([Reachability from the internet](#erreichbarkeit-aus-dem-internet)) |
 | **Passing on links** | when someone sends a [link via field values](direktlinks.md) by email or chat | the field values in the link (e.g. a contract number) can be read in it |
 | **Sign-in via a provider** | when you [set it up](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) | your provider (OpenID Connect) |
-| **Webhooks** | when you approve a target under **Workbench → Webhooks** and a user creates a webhook there | only the approved targets, only numbers (new post, to do, deadlines) without titles or content ([Webhooks](webhooks.md)) |
 | **Packages with code** | only if a package needs it and you confirm it at installation | only the addresses the package states ([A package's permissions](pakete.md#recht-netzwerk-und-internet)) |
 | **Manual** | when you click **Help** or a **?** | the supplied manual under `/hilfe/` works without internet ([Help without internet](technik.md#hilfe-ohne-internet)); your browser opens links to the online manual. |
 

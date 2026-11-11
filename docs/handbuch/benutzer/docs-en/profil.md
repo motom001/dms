@@ -151,8 +151,6 @@ A link to reset the password also asks for the code afterwards. Lost your phone 
 
 - **Favourites** – **Notify me of changes to my favourites** (default: on); highlighting changed folders is under [Appearance](#geaenderte). What's behind it is described under [Favourites as a subscription](ablage.md#favoriten-als-abo). If an administrator has switched off the notification for your role, a notice appears here instead of the first switch.
 
-- **Report instantly (webhooks)** – Ablago reports to an address as soon as your numbers change (new post, To do, deadlines), e.g. to Homey or Node-RED. Only numbers, no contents; only to targets an administrator has approved. **Send test**, **Switch on/off**, **New secret**, **Delete** and the **last messages** are available on every webhook. How to set it up: [Connect to home automation](hausautomatisierung.md#sofort-melden-webhook).
-
 ![My account → Notifications](bilder/profil-benachrichtigungen.png){ loading=lazy }
 
 ### Absence { #abwesenheit }

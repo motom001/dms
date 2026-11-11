@@ -78,8 +78,6 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'postfaecher', gruppe: 'post', in: O },
   { pfad: 'eingangsordner', gruppe: 'post', in: O },
   { pfad: 'webdav', gruppe: 'post', in: H },
-  // Webhooks (#627): bei den anderen Anbindungen für Programme (Laufwerk); meldet neue Post nach außen.
-  { pfad: 'webhooks', gruppe: 'post', in: H },
   // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“,
   // im Haushalt nur im Expertenmodus – zusammengelegt erbt der Bereich die weiteste Sichtbarkeit).
   { pfad: 'texterkennung', gruppe: 'post', in: O, experte: ['haushalt'] },
@@ -224,7 +222,7 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
  * auch kleine wie die Stempel-Vorlagen): Liste in der Mitte mit „+ Neu“ oben, Bearbeitung rechts. Dazu Listen,
  * die man durchsieht (Protokoll, Fehlermeldungen, Papierkorb). Nur lesende Listen und Einstellungen, die zu
  * einem Abschnitt gehören (lange Datenbankzugriffe unter Datenbank-Anbindung #407, Demo-Übersicht, Technik,
- * Exporte, gesperrte Adressen, Löschkonzept #668, freigegebene Ziele der Webhooks #627), stehen rechts im
+ * Exporte, gesperrte Adressen, Löschkonzept #668), stehen rechts im
  * passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
 export const MIT_MITTE: ReadonlySet<string> = new Set([

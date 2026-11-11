@@ -75,7 +75,7 @@ Start, end, expiry and getting back into the mode are recorded in the log, as ar
 
 ## Notices to the administration { #hinweise-an-die-verwaltung }
 
-Technical notices – backup, storage space, mailboxes, webhooks, sign-in protection, packages, automations … – go by email to the people who administer the matching area and to everyone with "Full administration". In a household that is usually everyone who administers. Outside administration mode, the person only sees the notice at the top "Something needs attention for administration." with the button **Administer Ablago**.
+Technical notices – backup, storage space, mailboxes, sign-in protection, packages, automations … – go by email to the people who administer the matching area and to everyone with "Full administration". In a household that is usually everyone who administers. Outside administration mode, the person only sees the notice at the top "Something needs attention for administration." with the button **Administer Ablago**.
 
 ## After the update to this version { #umstellung }
 

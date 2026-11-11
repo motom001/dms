@@ -990,7 +990,7 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
   await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: '+ Neu' }).waitFor();
   await pruefe('Ablage → Vertrag');
-  // Mein Konto: API-Schlüssel und Webhooks.
+  // Mein Konto: API-Schlüssel.
   for (const b of ['sicherheit', 'benachrichtigungen']) {
     await s.goto(BASIS + `/profil/${b}`);
     await s.getByRole('heading', { level: 1 }).first().waitFor();
@@ -1040,7 +1040,7 @@ rauchtest('Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
   await bereiche.getByRole('link').first().waitFor();
   const alle = ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept',
-    'aufbewahrung', 'stempel', 'postfaecher', 'eingangsordner', 'webdav', 'webhooks', 'texterkennung', 'sicherung', 'vollexport', 'papierkorb',
+    'aufbewahrung', 'stempel', 'postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'sicherung', 'vollexport', 'papierkorb',
     'betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']
     .map((b) => `/werkbank/${b}`);
   const leiste = await bereiche.evaluate((b) => [...b.querySelectorAll('a[href^="/werkbank/"]')].map((a) => a.getAttribute('href').split(/[?#]/)[0]));
@@ -1056,8 +1056,8 @@ rauchtest('Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des
     mitHilfe.push(...r.inUeberschrift.map((x) => `${weg}: ${x}`));
   }
   assert.deepEqual(imText, [], `Hilfesymbol im Text eines Seitenkopfs statt hinter der Überschrift:\n${imText.join('\n')}`);
-  // Die Erkennung selbst: Eingangsordner, WebDAV, Webhooks und Stempel haben ihre Hilfe hinter der Überschrift.
-  for (const weg of ['/werkbank/eingangsordner', '/werkbank/webdav', '/werkbank/webhooks', '/werkbank/stempel/neu']) {
+  // Die Erkennung selbst: Eingangsordner, WebDAV und Stempel haben ihre Hilfe hinter der Überschrift.
+  for (const weg of ['/werkbank/eingangsordner', '/werkbank/webdav', '/werkbank/stempel/neu']) {
     if (wege.includes(weg)) assert.ok(mitHilfe.some((x) => x.startsWith(`${weg}: `)), `Keine Hilfe hinter der Überschrift auf ${weg}: ${mitHilfe.join(' | ')}`);
   }
   assert.ok(wege.length >= 20, `Zu wenige Bereiche der Werkbank gefunden: ${wege.join(' ')}`);

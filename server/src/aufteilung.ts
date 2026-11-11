@@ -7,8 +7,6 @@
  * - **Aufrufe beim Leiter** (mit Ergebnis): Sicherung, Prüfsumme, Probe und Wiederherstellung starten, Postfach abrufen,
  *   Eingangsordner prüfen, Vorschaubilder nachholen. Was dort läuft, spiegelt der Leiter jede Sekunde an alle
  *   (`laeuft()`/`aktuellerLauf()` bleiben in jedem Prozess gleich und ohne Warten).
- * - **Webhooks** bleiben, wie sie für mehrere Server gebaut sind (#627): Nach einer Änderung zählt und stellt der
- *   Prozess zu, in dem sie passiert ist (Ausgangskorb mit Zeilensperre und Frist); die regelmäßigen Läufe nur der Leiter.
  * - **Einstellungen im Arbeitsspeicher** (Schlüssel der Verschlüsselung, E-Mail-Versand, OIDC, Schwelle der
  *   Zeitmessung): Jeder Prozess liest alle 2 Sekunden den Haushaltsstand `lesen` (#741); hat er sich geändert, lädt er
  *   sie neu. Das gilt auch für weitere Server an derselben Datenbank.

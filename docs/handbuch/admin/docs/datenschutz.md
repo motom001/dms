@@ -37,7 +37,6 @@ Ablago sendet **keine Nutzungsdaten** – weder an das Projekt noch an sonst jem
 | **Zugang von außen** | wenn du Ablago über einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) erreichbar machst | aller Verkehr läuft über diesen Anbieter ([Erreichbarkeit aus dem Internet](#erreichbarkeit-aus-dem-internet)) |
 | **Links weitergeben** | wenn jemand einen [Link über Feldwerte](direktlinks.md) per Mail oder Chat schickt | die Feldwerte im Link (z. B. eine Vertragsnummer) sind darin lesbar |
 | **Anmeldung über einen Anbieter** | wenn du sie [einrichtest](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) | dein Anbieter (OpenID Connect) |
-| **Webhooks** | wenn du unter **Werkbank → Webhooks** ein Ziel freigibst und ein Benutzer dorthin einen Webhook anlegt | nur die freigegebenen Ziele, nur Zahlen (neue Post, Zu erledigen, Fristen) ohne Titel oder Inhalte ([Webhooks](webhooks.md)) |
 | **Pakete mit Code** | nur, wenn ein Paket es braucht und du es bei der Installation bestätigst | nur die Adressen, die das Paket angibt ([Rechte eines Pakets](pakete.md#recht-netzwerk-und-internet)) |
 | **Handbuch** | wenn du auf **Hilfe** oder ein **?** klickst | Das mitgelieferte Handbuch unter `/hilfe/` kommt ohne Internet aus ([Hilfe ohne Internet](technik.md#hilfe-ohne-internet)); Links auf das Online-Handbuch öffnet dein Browser. |
 

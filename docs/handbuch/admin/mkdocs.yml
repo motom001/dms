@@ -114,7 +114,6 @@ nav:
           - Postfächer: postfaecher.md
           - Eingangsordner: eingangsordner.md
           - WebDAV-Laufwerk: webdav.md
-          - Webhooks: webhooks.md
           - Texterkennung und Wartung: texterkennung.md
       - Daten sichern:
           - Sicherung: sicherung.md

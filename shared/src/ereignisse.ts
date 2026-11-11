@@ -1,6 +1,6 @@
 /**
  * Gemeinsamer Ereigniskatalog (#670): was im DMS passiert, an einer Stelle beschrieben – für Automatisierungen
- * (Wenn-Karten, #674), Pakete mit Code (`code.ereignisse`) und Webhooks (#627, #671).
+ * (Wenn-Karten, #674), und Pakete mit Code (`code.ereignisse`).
  *
  * - **Nur Ids, Art, Feldschlüssel und Datum** – nie Feldwerte, Titel oder Namen. Wer mehr wissen will, liest mit seinen
  *   eigenen Rechten nach (Paket: bestätigte Rechte, Automatisierung: Systemkonto, #673).
@@ -13,9 +13,9 @@
  */
 
 /** Wozu ein Ereignis gehört – zugleich der Kontext einer Wenn-Karte (welche Platzhalter es gibt). */
-export type Ereignisgruppe = 'mappe' | 'zeit' | 'person' | 'benutzer' | 'verarbeitung' | 'zaehler' | 'betrieb' | 'auftrag';
-/** Gruppen, die keine Wenn-Karte sind: Zahlen (Webhooks), Betrieb (kommt mit Stufe 2) und Aufträge an ein einzelnes Paket. */
-export const OHNE_WENN: readonly Ereignisgruppe[] = ['zaehler', 'betrieb', 'auftrag'];
+export type Ereignisgruppe = 'mappe' | 'zeit' | 'person' | 'benutzer' | 'verarbeitung' | 'betrieb' | 'auftrag';
+/** Gruppen, die keine Wenn-Karte sind: Betrieb (kommt mit Stufe 2) und Aufträge an ein einzelnes Paket. */
+export const OHNE_WENN: readonly Ereignisgruppe[] = ['betrieb', 'auftrag'];
 
 export interface Katalogeintrag {
   gruppe: Ereignisgruppe;
@@ -25,8 +25,6 @@ export interface Katalogeintrag {
   paket?: boolean;
   /** Zu einer Mappe: Pakete bekommen es nur, wenn ihr Paket-Benutzer Mappen dieses Typs lesen darf (#686). */
   mappentyp?: boolean;
-  /** Können Webhooks es melden? */
-  webhook?: boolean;
   /** Zusammenfassen: schnelle Folgen zur selben Mappe binnen so vieler Sekunden werden ein Ereignis. */
   buendelS?: number;
 }
@@ -75,8 +73,6 @@ export const EREIGNISKATALOG = {
   // #1082: Dann-Karte „Paket nach Zeitplan ausführen“ – nur an das Paket der Karte, nie an andere. automatisierung (Id),
   // aufgabe (Kennung oder null), zeitpunkt (geplant, ISO) und datum (Tag in der Zeitzone der Ablage).
   'zeitplan.ausgefuehrt': { gruppe: 'auftrag', felder: ['automatisierung', 'aufgabe', 'zeitpunkt', 'datum'], paket: true },
-  // Zahlen eines Benutzers (Webhooks, #627)
-  'zaehler.geaendert': { gruppe: 'zaehler', felder: ['zahlen', 'stand'], webhook: true },
 } as const satisfies Record<string, Katalogeintrag>;
 
 export type KatalogArt = keyof typeof EREIGNISKATALOG;
@@ -98,20 +94,15 @@ export type PaketKatalogArt = { [K in KatalogArt]: (typeof EREIGNISKATALOG)[K] e
  * (server/src/uebergaenge.ts, #902).
  */
 export const VERALTETE_EREIGNISSE = { 'texterkennung.fertig': 'volltext.fertig' } as const satisfies Record<string, KatalogArt>;
-/** Ereignisse, die Webhooks melden können (heute nur die Zahlen, #627). */
-export const WEBHOOK_KATALOG = KATALOG_ARTEN.filter((a) => (EREIGNISKATALOG[a] as Katalogeintrag).webhook);
 
 /**
  * Eine Regel für Wiederholungen (#724) – Ereignisse im Ausgangskorb und ihre Zustellung an Pakete: nach 1, 5 und
- * 30 Minuten, 2 und 6 Stunden; danach aufgegeben. Webhooks nutzen dieselbe Regel mit längerem Atem (Ziel im Heimnetz
- * kann über Nacht aus sein): {@link wiederholungNach} mit `lang`.
+ * 30 Minuten, 2 und 6 Stunden; danach aufgegeben.
  */
 export const WIEDERHOLEN_MIN: readonly number[] = [1, 5, 30, 120, 360];
-/** Langer Atem (Webhooks): zuerst schneller (30 s bis 10 min), dann dieselben Stufen bis 8 Stunden – zusammen gut 22 Stunden. */
-export const WIEDERHOLEN_LANG_S: readonly number[] = [30, 60, 120, 300, 600, 1800, 3600, 7200, 14400, 21600, 28800];
 /** Wartezeit in Sekunden vor dem nächsten Versuch nach `versuche` Fehlschlägen; null = aufgeben. */
-export function wiederholungNach(versuche: number, plan: 'kurz' | 'lang' = 'kurz'): number | null {
-  const liste = plan === 'lang' ? WIEDERHOLEN_LANG_S : WIEDERHOLEN_MIN.map((m) => m * 60);
+export function wiederholungNach(versuche: number): number | null {
+  const liste = WIEDERHOLEN_MIN.map((m) => m * 60);
   return versuche >= 0 && versuche < liste.length ? liste[versuche] : null;
 }
 

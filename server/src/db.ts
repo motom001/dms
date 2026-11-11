@@ -22,8 +22,8 @@ export const VERBINDUNGEN_MAX = 100;
  */
 export const VERBINDUNGEN_JE_WEITEREM = 4;
 /**
- * Der Leiter hält dauerhaft eigene Verbindungen für Sitzungssperren (Lebenszeichen, Eingangsordner, Postfächer,
- * Webhooks – je eine, `sql.reserve()`); dazu kommen Zeitpläne (`exklusiv`) und Anfragen. Ohne genug darüber hinaus
+ * Der Leiter hält dauerhaft eigene Verbindungen für Sitzungssperren (Lebenszeichen, Eingangsordner, Postfächer – je
+ * eine, `sql.reserve()`, dazu eine frei seit dem Ausbau der Webhooks, #991); dazu kommen Zeitpläne (`exklusiv`) und Anfragen. Ohne genug darüber hinaus
  * warten seine Abfragen endlos auf eine freie Verbindung – und mit ihnen alles, was die anderen Prozesse bei ihm aufrufen.
  */
 export const VERBINDUNGEN_LEITER_RESERVIERT = 4;

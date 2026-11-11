@@ -17,13 +17,12 @@ import pakete from '../../shared/src/sprachen/de/pakete.json';
 import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 import api from '../../shared/src/sprachen/de/api.json';
-import webhook from '../../shared/src/sprachen/de/webhook.json';
 import automatisierung from '../../shared/src/sprachen/de/automatisierung.json';
 import start from '../../shared/src/sprachen/de/start.json';
 import meldungen from '../../shared/src/sprachen/de/meldungen.json';
 import notfall from '../../shared/src/sprachen/de/notfall.json';
 
-export const t = uebersetzer({ api, anmeldung, einrichtung, entdecken, konten, mail, mappen, meldungen, notfall, pakete, start, systemzustand, webhook, werkbank });
+export const t = uebersetzer({ api, anmeldung, einrichtung, entdecken, konten, mail, mappen, meldungen, notfall, pakete, start, systemzustand, werkbank });
 
 /*
  * Sprache je Anfrage (#729): Meldungen gehen in der Sprache der angemeldeten Person hinaus, vor der Anmeldung in der,

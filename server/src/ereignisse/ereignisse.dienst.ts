@@ -78,7 +78,7 @@ export class EreignisseDienst {
 
   /**
    * Abnehmer „pakete“ (#670, #724): jedes Ereignis des Katalogs an die Pakete, die es abonniert haben – derselbe
-   * Ausgangskorb wie für Automatisierungen und Webhooks, die Zustellung samt Wiederholung macht der Paket-Läufer.
+   * Ausgangskorb wie für Automatisierungen, die Zustellung samt Wiederholung macht der Paket-Läufer.
    * - Ein Paket bekommt seine eigenen Änderungen nicht gemeldet (sonst Schleifen).
    * - Mappen-Ereignisse nur zu Typen unter `code.mappentypen` (eigene, fremde, „*“) und nur, wenn der Paket-Benutzer
    *   die Mappe gerade lesen darf (#686; sonst still nicht, Grund im Protokoll); Ereignisse aus Demo-Daten und Beispielen nur, wenn

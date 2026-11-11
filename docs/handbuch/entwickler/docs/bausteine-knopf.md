@@ -16,7 +16,7 @@
 
 Die Farben kommen aus den Tokens (`--gruen`, `--akzent`, `--schlecht`) und gelten in jedem Design. Größe: `groesse="klein"` in Listenköpfen, Tabellenzeilen und Leisten, sonst normal. Am Handy hat jeder Knopf eine Tippfläche von mindestens 44 × 44 px, auch der kleine ([Am Handy](bausteine.md#handy)).
 
-**„+ Neu“ (#989):** Steht auf einer Seite nur eine Sache zum Anlegen, heißt der Knopf genau „+ Neu“. Lassen sich auf einer Seite mehrere Dinge anlegen (z. B. Mein Konto mit API-Schlüsseln und Webhooks), heißt er „+ Neu…“ mit dem Gegenstand: „+ Neuer Schlüssel“, „+ Neuer Webhook“.
+**„+ Neu“ (#989):** Steht auf einer Seite nur eine Sache zum Anlegen, heißt der Knopf genau „+ Neu“. Lassen sich auf einer Seite mehrere Dinge anlegen, heißt er „+ Neu…“ mit dem Gegenstand, z. B. „+ Neuer Schlüssel“.
 
 ```tsx
 import { Knopf, KnopfLink, knopfAussehen, type KnopfErgebnis } from '../bausteine';

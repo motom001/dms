@@ -30,7 +30,6 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `system/` | operation, system status, connection, sign-in protection, inbox folder, WebDAV, error reports |
 | `post/` | mailboxes and other inbound channels; since #1077 [post](#post) |
 | `automatisierung/` | automations |
-| `webhooks/` | webhooks (Workbench and My account) |
 | `sichten/` | views, folder lists, start page |
 | `aufgaben/` | tasks; since #1078 the [tasks](#aufgaben) |
 | `mappen/` | folders, history, recycle bin |
@@ -885,27 +884,26 @@ This is stored per person in their settings (`entdecken_rundgaenge`, `entdecken_
 - **Group** (`Verbund` in `prozesse.ts`): `rufe` (call to the leader with result, parts and domain errors including status), `melde` (to the leader, to all, to the others), `frageAlle` (e.g. `prozess.stand`), `bereit`, `beendeAlle` (restart after a restore, changed database connection, end of the load test). The main process only passes things on (IPC with `serialization: 'advanced'`, so buffers and `Float32Array` too). With one process, `einzeln()` does everything in its own.
 - **What the leader does for the others** (`server/src/aufteilung.ts`): triggers for text recognition, thumbnails and the event dispatcher go to it as a message – the others process none of that themselves (a dispatcher without the automations' consumers would have marked events as dispatched). Starting backup, checksum, test and restore, fetching the mailbox, checking intake folders and catching up on thumbnails are calls to the leader; it mirrors running backups and restores to all every second so that `laeuft()` and `aktuellerLauf()` are right everywhere without waiting.
 - **Package runner** exactly once, in the leader – it holds the packages' API keys. The others use `Fernlaeufer` (`server/src/laeufer/fern.ts`): actions, vectors, "Ask your library" (parts of the answer come as parts of the call), "Fill in from document", overview. What they need without waiting (which package offers what, the packages' service accounts) the leader sends as a snapshot on every change.
-- **Webhooks** stay as they were built for several servers: after a change, the process in which it happened counts and delivers (outbox with row lock and deadline); only the leader has the regular runs.
 - **Workbench jobs** (`Auftraege.teile`): the job runs in the process that accepted it. "Only one at a time" is a claim in the short-term state with a 60 s deadline that the running process extends every second; it also writes the progress, and `stand()` reads it everywhere. Cancelling from another process sets a marker. Routes with 202 wait with `angemeldet()` until the progress is visible to all. If the process dies, the progress shows "Interrupted".
 - **Uploaded packages** are kept until installation (30 minutes) under `files/hochladen/pakete/` (archive and details, `0600`, name from the hash of the identifier) and are read again by the other process with the same checks.
 - **Own changes to the counters** (#742): after the household version is incremented, the new version per person is briefly kept in the short-term state (`eigene-aenderung`); another process only asks for it if the minimum validity would otherwise apply.
 - **Settings in memory** (encryption key, email sending, OIDC, timing threshold): every process reads the household version `lesen` every 2 seconds; if it changes, `Tresor.nachladen`, `Betrieb.nachladen`, `Oidc.vergiss` and `Messung.start` reload. If key file and fingerprint don't match at that moment (a change in another process), the next tick tries again.
-- **Per process:** overload protection, workers (default divided by the number of processes). **Shared** (#874): connections – `DMS_DB_VERBINDUNGEN` applies to all together (default `verbindungenVorgabe`: 10 + 4 per further process), `verbindungsaufteilung` first gives the leader the 4 connections it permanently reserves for session locks (`lebenszeichen`, intake folder, mailboxes, webhooks – without them its queries waited forever, and with them everything the others call on it), all share the rest equally (each further one at least 2, the leader at least 6 in total), together at most `max_connections` − 10; caches – `teileZwischenspeicher(anzahl)` gives each process `1/anzahl` of the limits of PDF display, WebDAV stamps and page images. **Heap:** the main process starts every process with `--max-old-space-size` (`haldeJeProzess`: the further ones with 60 % of their share of the memory, 1024–1536 MB; `haldeLeiter`, #891: the leader with 512 MB more, because it also does the work in the background) unless it is already set or only one process runs; the main process itself stays without a limit. The start-up log names both values (`haldeLeiterMb`, `haldeMb`). **Restarts** are counted by the main process (`Verbund.neustarts()`: number and the last ten with number, code, signal) and sent to all with the list of processes. The `dms` command uses a shared key from the main process; the leader writes the file. At start-up, a process only deletes temporary uploads next to others if they are older than 6 hours.
+- **Per process:** overload protection, workers (default divided by the number of processes). **Shared** (#874): connections – `DMS_DB_VERBINDUNGEN` applies to all together (default `verbindungenVorgabe`: 10 + 4 per further process), `verbindungsaufteilung` first gives the leader the 4 connections it permanently reserves for session locks (`lebenszeichen`, intake folder, mailboxes and one spare since webhooks were removed, #991 – without them its queries waited forever, and with them everything the others call on it), all share the rest equally (each further one at least 2, the leader at least 6 in total), together at most `max_connections` − 10; caches – `teileZwischenspeicher(anzahl)` gives each process `1/anzahl` of the limits of PDF display, WebDAV stamps and page images. **Heap:** the main process starts every process with `--max-old-space-size` (`haldeJeProzess`: the further ones with 60 % of their share of the memory, 1024–1536 MB; `haldeLeiter`, #891: the leader with 512 MB more, because it also does the work in the background) unless it is already set or only one process runs; the main process itself stays without a limit. The start-up log names both values (`haldeLeiterMb`, `haldeMb`). **Restarts** are counted by the main process (`Verbund.neustarts()`: number and the last ten with number, code, signal) and sent to all with the list of processes. The `dms` command uses a shared key from the main process; the leader writes the file. At start-up, a process only deletes temporary uploads next to others if they are older than 6 hours.
 - **System health:** `frageAlle('prozess.stand')` returns RSS, CPU time, event loop delay and running requests per process; plus Pss from `/proc`. For the load test, `/api/werkbank/last` asks `prozess.last`: the same plus the waiting time for connections (`Poolmessung`, #874), which this switches on; plus the restarts. `/api/werkbank/last` reports the memory of all processes together (including the main process) and the delay of the slowest, per process under `engpass.speicher`. Since #920 the load test limit (1.5 GB) applies per process; it compares the sum with the limit × processes.
 - **Load test mode:** if the leader is measuring, the others also only listen on the internal port (`listen(0)` shares the same port under `cluster`).
 - **Tests:** `prozesse.test.ts` (setting, group with a real `cluster` via `test/hilfen-prozesse.ts`, triggers, remote runner, uploads, counters, jobs, keys), `prozesse-e2e.test.ts` (all of Ablago with two processes: start page, migration once, system health, console, job, crash with restart without signing out, shutdown, downgrade).
 
 ## Event catalogue (#670) { #ereigniskatalog }
 
-What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), the texts in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – underscore as hyphen –, `gruppe.<gruppe>`). Packages (`code.ereignisse`, exactly the entries with `paket: true` plus the outdated names in `VERALTETE_EREIGNISSE`), webhooks and automations (#674) take their events from this catalogue. **The core reports every occurrence exactly once** (#724) – with `kern.ereignis(…)` (in the service `dienst.kern.ereignis(…)`) into the one outbox; there is no longer a second route for packages. The list for reference is in the Workbench with the package under **Which events exist**.
+What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), the texts in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – underscore as hyphen –, `gruppe.<gruppe>`). Packages (`code.ereignisse`, exactly the entries with `paket: true` plus the outdated names in `VERALTETE_EREIGNISSE`) and automations (#674) take their events from this catalogue. **The core reports every occurrence exactly once** (#724) – with `kern.ereignis(…)` (in the service `dienst.kern.ereignis(…)`) into the one outbox; there is no longer a second route for packages. The list for reference is in the Workbench with the package under **Which events exist**.
 
 **Rules**
 
 - **Only ids, kind, field keys and date** in `daten` – never values, titles or names. Anyone who wants to know more reads up with their own rights.
 - **At least once, in the same transaction:** `dienst.kern.ereignis(art, daten, von)` writes to the outbox (table `ereignisse`, migration 060). If a transaction is running (`inTransaktion`), the event belongs to the change – if one fails, neither is saved. Every event has a fixed id; a consumer recognises a repetition by it.
 - **Several servers:** the `Ereignisverteiler` (`server/src/ereignisse.ts`) fetches open events with `FOR UPDATE SKIP LOCKED` and a lock (`gesperrt_bis`, 120 s). Only when **all** consumers have accepted it does an event count as dispatched; otherwise it is retried after 1, 5, 30, 120 and 360 minutes, then given up (log). Dispatched events are kept for 7 days.
-- **One rule for retries:** `wiederholungNach(versuche, plan)` in `shared/src/ereignisse.ts`. `kurz` (1, 5, 30, 120, 360 minutes) applies to the outbox and delivery to packages, `lang` (30 s up to 8 hours, a good 22 hours in total) to webhooks, whose target on the home network may be switched off overnight.
-- **Consumers in the core:** `automatisierungen`, `pakete` (every subscribed event; ends up with a fixed id per package in the package runner's delivery, `paket_ereignisse`) and webhooks (recount after changes). **Jobs** for exactly one package (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, group `auftrag`) are not an occurrence for others: `dienst.ereignisseDienst.auftrag(paket, art, daten)` puts them straight into delivery.
+- **One rule for retries:** `wiederholungNach(versuche)` in `shared/src/ereignisse.ts` (1, 5, 30, 120, 360 minutes) applies to the outbox and delivery to packages.
+- **Consumers in the core:** `automatisierungen`, `pakete` (every subscribed event; ends up with a fixed id per package in the package runner's delivery, `paket_ereignisse`). **Jobs** for exactly one package (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, group `auftrag`) are not an occurrence for others: `dienst.ereignisseDienst.auftrag(paket, art, daten)` puts them straight into delivery.
 - **Outdated names:** the core no longer reports `texterkennung.fertig`. A package that subscribed to it gets `volltext.fertig` with `quelle: kern` under the old name (transition, `VERALTETE_EREIGNISSE`, dropped with 1.0.0). **All transitional exceptions** are listed with the version that drops them in `server/src/uebergaenge.ts` (#902); `uebergaenge.test.ts` fails as soon as Ablago reaches that version. New special paths for old packages or files only with an entry there.
 - **Bundling:** entries with `buendelS` (today `mappe.geaendert`, 5 s) combine quick successions for the same folder as long as the event hasn't been dispatched yet; the field keys are merged (`mischeFelder`).
 - **Deadline reached** exactly once: `frist_meldungen` (folder, field, date, time) as the primary key; remembering and event in one transaction.
@@ -929,7 +927,7 @@ await dienst.kern.mitAusloeser({ art: 'automatisierung', id: regel.id, konto: sy
 
 That way it recognises its own changes and can limit chains. A package isn't notified of its own changes.
 
-**New event:** an entry in `EREIGNISKATALOG` (group, fields, if needed `paket`, `mappentyp`, `webhook`, `buendelS`), texts in `ereignisse.json`, and `await this.ereignis(...)` where the change happens – inside the transaction if possible. If packages should be able to subscribe to it, also in `EREIGNISSE` (`shared/src/pakete.ts`) and in the registry (`schema`, `pruefen.py`).
+**New event:** an entry in `EREIGNISKATALOG` (group, fields, if needed `paket`, `mappentyp`, `buendelS`), texts in `ereignisse.json`, and `await this.ereignis(...)` where the change happens – inside the transaction if possible. If packages should be able to subscribe to it, also in `EREIGNISSE` (`shared/src/pakete.ts`) and in the registry (`schema`, `pruefen.py`).
 
 ## Automations (#674) { #automatisierungen }
 
@@ -1005,7 +1003,6 @@ Ablago **never opens a connection** to the internet on its own. Every route to t
 | Email | Administrator sets up the mail server; users send | sent folders and documents, daily summary (titles, links), invitations, data protection requests | `server/src/mail.ts`, `aufgabenmail.ts` |
 | Mailbox | Administrator sets it up | fetching from your own mail server | `server/src/postfach.ts`, `postfach-oauth.ts` |
 | Sign-in via a provider | Administrator | sign-in process with the provider | `server/src/oidc.ts` |
-| Webhooks | Administrator approves the target, user creates | only numbers, signed | `server/src/webhook.ts` |
 | Package network | Administrator confirms on installation | only to the addresses from the manifest or service address | package runner, right `netzwerk` |
 | Retrieval links (data protection request) | Administrator creates the link | the request, only after the retrieval code | `server/src/abruf.ts` |
 
@@ -1034,121 +1031,12 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 - **Key level "counters only"** (`recht = 'zaehler'`, `NUR_ZAEHLER` and `ZAEHLER_PFAD` in `apischluessel.ts`). `pruefeZugang` only lets it through to `GET /api/v1/ich/zaehler`; every other route under `/api/v1` and – explicitly – every internal route with such a key in the header gets `403` (`api.schluessel.nur-zaehler`), and so does the drive (`webdav.ts`). "Read passwords" doesn't exist for this level. A new interface that accepts API keys must reject this level in the same way.
 - **Limits.** The overload protection (#544) counts these requests too. There is no limit per key; a request answered from the cache costs a few milliseconds. If Ablago runs on several servers, each has its own cache (as with #512, at most 5 or 30 minutes old) – until then two servers may briefly return different numbers, and the version then increments more often than necessary.
 
-**Adding another number:** add a field to `Zaehlerzahlen` (`dienst.ts`) and to the OpenAPI schema, and to `ZAHLEN` in the test – and only numbers. If the meaning of an existing number changes, increase `v` in the hash so that every client reads once more. The [webhook](#webhooks) (#627) calls `zaehlerAbruf` per user and reports when `stand` changes.
+**Adding another number:** add a field to `Zaehlerzahlen` (`dienst.ts`) and to the OpenAPI schema, and to `ZAHLEN` in the test – and only numbers. If the meaning of an existing number changes, increase `v` in the hash so that every client reads once more.
 
-## Webhooks (#627) { #webhooks }
+## Reporting to the outside { #nach-aussen-melden }
 
-A webhook reports a user's changed numbers (the same as `GET /api/v1/ich/zaehler`) via `POST` to an address. Code: `server/src/webhook.ts` (service `Webhooks`, `pgWebhookRepo`, `speicherWebhookRepo`), shared types and rules in `shared/src/webhook.ts`, interface in `web/src/profil/Webhooks.tsx` and `web/src/werkbank/Webhooks.tsx`, tables `webhooks` and `webhook_meldungen` (migration 058).
+Ablago does **not** report changed numbers on its own: clients query `GET /api/v1/ich/zaehler` with `If-None-Match` (see above). The separate counter webhook (#627: `server/src/webhook.ts`, tables `webhooks` and `webhook_meldungen`, setting `webhook_ziele`, Workbench → Webhooks, My account) was removed with #991 – two ways for the same thing contradict "the same thing in one place" (pattern C9). Migration 101 drops the tables and the setting; old backups can still be restored, because the restore runs the migrations afterwards.
 
-### Format
-
-```http
-POST /dms HTTP/1.1
-Content-Type: application/json
-User-Agent: DMS-Webhook
-X-DMS-Art: zaehler.geaendert
-X-DMS-Ereignis: 7c0e6a8e-3d1f-4f0a-9c55-2b8f0d3e4a11
-X-DMS-Zeit: 1762154102
-X-DMS-Signatur: v1=5d2f…(64 hex characters)
-X-DMS-Versuch: 1
-X-DMS-Webhook: 0f8a…
-
-{"art":"zaehler.geaendert","id":"7c0e6a8e-3d1f-4f0a-9c55-2b8f0d3e4a11","zeit":"2026-11-03T07:15:02.000Z","daten":{"neuePost":2,"zuErledigen":5,"ueberfaellig":1,"stand":42,"geaendert":"2026-11-03T07:15:00.000Z"}}
-```
-
-- `art`: `zaehler.geaendert` or `probe` ("Send test", same `daten`). Further kinds (`post.neu` …) would be added as new values; a receiver ignores unknown ones.
-- `id`: event id. **The same on a retry** of the same data, new as soon as the data of a message already attempted changes. The receiver remembers the last ids and ignores duplicates.
-- `zeit`: when the message was created; `daten.geaendert`: when the numbers changed.
-- The body is compact JSON (`JSON.stringify`), ASCII characters only, keys in a fixed order – `JSON.stringify(JSON.parse(rumpf)) === rumpf`. That allows verification even where a framework only hands over the parsed JSON (Node-RED).
-- **Never content.** The test `server/test/webhook.test.ts` checks the body's keys and that no titles, senders or names slip in.
-- `2xx` counts as delivered; Ablago doesn't follow redirects (`3xx`) (`redirect: 'manual'`), timeout 5 s.
-
-### Verifying the signature {#signatur-prufen}
-
-`X-DMS-Signatur` is `v1=` followed by HMAC-SHA256 (hex) over `<X-DMS-Zeit>.<body>` with the webhook's secret (`whsec_…`, as UTF-8 text, not decoded). Several signatures (later, when the method changes) are separated by commas; one matching is enough. Verify the **body as bytes, exactly as it arrived**, compare in constant time and reject times that differ by more than 5 minutes.
-
-**JavaScript (Node.js):**
-
-```js
-import { createHmac, timingSafeEqual } from 'node:crypto';
-import { createServer } from 'node:http';
-
-const GEHEIMNIS = process.env.DMS_WEBHOOK_GEHEIMNIS; // whsec_…
-const gesehen = new Set();
-
-function echt(kopf, rumpf) {
-  const zeit = Number(kopf['x-dms-zeit']);
-  if (!Number.isInteger(zeit) || Math.abs(Date.now() / 1000 - zeit) > 300) return false;
-  const soll = Buffer.from('v1=' + createHmac('sha256', GEHEIMNIS).update(`${zeit}.${rumpf}`).digest('hex'));
-  return String(kopf['x-dms-signatur'] ?? '').split(',').some((s) => {
-    const ist = Buffer.from(s.trim());
-    return ist.length === soll.length && timingSafeEqual(ist, soll);
-  });
-}
-
-createServer((req, res) => {
-  let rumpf = '';
-  req.on('data', (c) => { rumpf += c; });
-  req.on('end', () => {
-    if (!echt(req.headers, rumpf)) return res.writeHead(401).end();
-    res.writeHead(204).end();                      // confirm first, then work
-    const m = JSON.parse(rumpf);
-    if (gesehen.has(m.id)) return;                 // retry
-    gesehen.add(m.id);
-    console.log(m.art, m.daten.neuePost, 'new post');
-  });
-}).listen(8080);
-```
-
-**Python:**
-
-```python
-import hashlib, hmac, json, os, time
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
-GEHEIMNIS = os.environ["DMS_WEBHOOK_GEHEIMNIS"].encode()  # whsec_…
-gesehen = set()
-
-def echt(kopf, rumpf: bytes) -> bool:
-    try:
-        zeit = int(kopf.get("x-dms-zeit", ""))
-    except ValueError:
-        return False
-    if abs(time.time() - zeit) > 300:
-        return False
-    soll = "v1=" + hmac.new(GEHEIMNIS, f"{zeit}.".encode() + rumpf, hashlib.sha256).hexdigest()
-    return any(hmac.compare_digest(s.strip(), soll) for s in kopf.get("x-dms-signatur", "").split(","))
-
-class Empfang(BaseHTTPRequestHandler):
-    def do_POST(self):
-        rumpf = self.rfile.read(int(self.headers.get("content-length", 0)))
-        if not echt(self.headers, rumpf):
-            self.send_response(401); self.end_headers(); return
-        self.send_response(204); self.end_headers()
-        m = json.loads(rumpf)
-        if m["id"] in gesehen:
-            return
-        gesehen.add(m["id"])
-        print(m["art"], m["daten"]["neuePost"], "new post")
-
-HTTPServer(("", 8080), Empfang).serve_forever()
-```
-
-The server has the same check as `pruefeSignatur` (`webhook.ts`) for tests.
-
-### Sequence and several servers {#ablauf-und-mehrere-server}
-
-- **Trigger:** `Haushaltsstand.beiAenderung` (`zaehlerspeicher.ts`) calls `Webhooks.anstossen()` after every changing repo method (via `SichtenDienst.beiAenderung`, for view numbers and dates). After 3 s, `pruefe()` counts `zaehlerAbruf` once for every user with a switched-on webhook (from the cache, usually milliseconds). Without a cause, the server holding the lock counts every minute (midnight, deadlines, changes on another server).
-- **Outbox in the database:** `merkeStand` sets `webhooks.gemeldet_stand` in a transaction with a row lock and creates the message – or replaces the data of the open one (at most one per webhook, unique partial index). So every version counts once, even if two servers check at the same time. New messages are due 30 s after the last send at the earliest (`webhooks.gesendet`) – that is the bundling.
-- **Delivery:** `faellige` fetches messages with `FOR UPDATE SKIP LOCKED`, increments the attempt and moves `faellig` on by 60 s (lease). If the server dies while sending, another one picks up the message afterwards – it may then arrive twice, with the same event id (**at least once**). If the data changes while sending, `zugestellt` doesn't close the message (the event id no longer matches) and it goes out again after the minimum interval.
-- **Retrying and giving up:** waiting times `WEBHOOK_WARTEN_S` (30 s up to 8 h, about 22 h in total, 12 attempts); after the last failure `zustand = 'aufgegeben'`, webhook off (`abgeschaltet.grund = 'fehler'`), log, email to the administrators and – if the owner isn't an administrator – to them too (`anBesitzer`).
-- **Regular runs** (counting every minute, delivering every 5 s, cleaning up after 7 days) only on the server with `pg_try_advisory_lock(4711197)`; the trigger after a change runs on the server where it happened. Paused in maintenance mode and during a restore.
-- **Gap under the build rule:** the household version and the number caches (#512) live in memory per server. Server B only notices a change on server A when its cache expires (at most 5 or 30 minutes). That's enough for correctness (the version in the database counts), not always for "immediately" – a shared event channel is a topic of its own.
-
-### Targets and secret {#ziele-und-geheimnis}
-
-- **Targets:** `zielProblem` (`shared/src/webhook.ts`) allows `https://`, and `http://` only on the home network (`imHeimnetz` from `heimnetz.ts`), no credentials and no `#`. In addition the origin must be listed in the `webhook_ziele` setting (Workbench). An administrator approves by creating it; Ablago checks again before every send.
-- **Secret:** `whsec_` + 32 random bytes (base64url), encrypted with Ablago's key in `webhooks.geheimnis`. `umschluesseln` and `verschluesselteFundstellen` (`repo-pg.ts`) include the column; in Workbench → Encryption the kind "Webhooks" appears.
-- **Adding a new kind:** a value in `WEBHOOK_EREIGNISSE` and, where needed, its own detection; the body keeps `art`, `id`, `zeit`, `daten` – and only numbers or ids.
+Whoever wants to report something to the outside in future uses an [automation](#automatisierungen) with the Then card "Call URL" (#671). It brings its own protection for destinations; nothing from the old webhook (destination list, signature, outbox) is reused for it.
 
 More background in the administrator handbook: [Technology](https://help.ablago.app/admin/aktuell/en/technik/) and [Decisions](https://help.ablago.app/admin/aktuell/en/entscheidungen/).

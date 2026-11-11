@@ -29,7 +29,7 @@ import { kontext, protokoll } from './protokoll';
  *   zählt nur dieser.
  * - **Mindestgültigkeit** (`MINDESTENS_MS`): Bei Anfragen gilt ein Eintrag nach einer Änderung **anderer** noch kurz
  *   weiter – speichert einer von 20, zählen nicht alle sofort neu. Eigene Änderungen (`Kontext.benutzerId`) zeigen
- *   die Zahlen sofort; Arbeit im Hintergrund (Webhooks, Zusammenfassung) zählt immer frisch.
+ *   die Zahlen sofort; Arbeit im Hintergrund (Zusammenfassung) zählt immer frisch.
  * - Der Schlüssel bestimmt, wer einen Eintrag teilt: für die Zahlen der Ablage ein Fingerabdruck der Rechte
  *   (dienst.ts, `zaehler`) – nie ein Wert über Mappen, die jemand nicht lesen darf.
  *
@@ -168,7 +168,6 @@ export class Haushaltsstand {
   /** Zählt diese Methode des Repos für diesen Stand? */
   zaehlt(methode: string): boolean { return !(OHNE_FOLGEN.has(methode) && !this.auch.has(methode)) && !this.ohne.has(methode); }
   private n = 0;
-  private hoerer: Array<() => void> = [];
   /** Letzte eigene Änderung je Person (Zahl der Änderungen in diesem Prozess danach). */
   private eigene = new Map<string, number>();
   private geplant = false;
@@ -229,16 +228,12 @@ export class Haushaltsstand {
         }).catch((e) => log.warn('Haushaltsstand nicht hochgezählt', { fehler: (e as Error).message })).finally(fertig);
       })));
     }
-    // Außerhalb der Anfrage (#742): Was der Hörer anstößt (Webhooks zählen nach 3 s), ist Hintergrund und zählt frisch.
-    for (const f of this.hoerer) kontext.exit(f);
   }
   /**
    * Wartet, bis das zuletzt geplante Hochzählen in der Datenbank durch ist (#900). Für Tests, die nach einer Änderung
    * denselben Stand in zwei Anfragen brauchen – statt einer festen Wartezeit.
    */
   async hochgezaehlt(): Promise<void> { await this.offen; }
-  /** Nach jeder Änderung benachrichtigen (Webhooks, #627). Der Hörer muss billig sein – er läuft bei jeder Änderung. */
-  beiAenderung(f: () => void) { this.hoerer.push(f); }
 
   /**
    * Umhüllt ein Repo: Ist eine ändernde Methode fertig (auch mit Fehler – sie kann halb gewirkt
