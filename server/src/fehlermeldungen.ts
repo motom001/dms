@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import type { Dateispeicher } from './dateispeicher';
-import { erkenneAnzeigbar } from './dienst';
+import { erkenneAnzeigbar } from './dokumente';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { t } from './sprache';

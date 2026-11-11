@@ -4,7 +4,7 @@
  */
 import { istPerson } from '../../../shared/src/model';
 import { hatMerkmalBedingung } from '../../../shared/src/anzeige';
-import { taugtAlsAufgabenEmpfaenger } from '../dienst';
+import { taugtAlsAufgabenEmpfaenger } from '../aufgaben';
 import { Fachfehler } from '../fehler';
 import { umzugHinweis } from '../exportordner';
 import { t } from '../sprache';

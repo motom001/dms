@@ -13,7 +13,8 @@ import { formatiere, POST_STAND, systemfelder, type Feld, type Mappentyp } from 
 import { beschreibeBedingung } from '../../shared/src/sichten';
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
 import { speicherDateien } from '../src/dateispeicher';
-import { behalteBeschriftungen, bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { behalteBeschriftungen, bereinigeTyp } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { spaltenKopf, zeile } from '../src/export';
 import { beschriftungenNeu, liesPaket, liesZip, Paketverwaltung } from '../src/pakete';

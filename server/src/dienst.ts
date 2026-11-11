@@ -17,38 +17,23 @@ import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
 import { fristFelder } from '../../shared/src/fristen';
-import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
-import { ABO_ARTEN, Kern, PAPIERKORB_STANDARD_TAGE, type Anlass, type Zugriff } from './kern';
+import { Kern } from './kern';
 import { Systemausstattung } from './systemausstattung';
-import { behalteBeschriftungen, bereinigeFeld, bereinigeTyp, KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete, type Benutzerspiegel } from './mappentypen';
-export { bereinigeFeld, bereinigeTyp, behalteBeschriftungen };
-export type { Benutzerspiegel };
-export { ABO_ARTEN, PAPIERKORB_STANDARD_TAGE };
-export type { Anlass, LeserechtAufZeit, Zugriff } from './kern';
+import { KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete } from './mappentypen';
 import { paketEinstellungen } from './pakete/index';
 import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHinweise, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
-export { ARCHIV_PRAEFIX, archivnummerAus, HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE } from './mappen';
-import { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, erkenneAnzeigbar, FehlendeDateien, GeschuetztePdfs, type TexterkennungAnbindung } from './dokumente';
-export { erkenneAnzeigbar };
-export type { TexterkennungAnbindung };
-import { SichtenDienst, SichtenVerwaltung, sortierungAus, Systemsichten, type Zaehlerzahlen } from './sichten';
-export { sortierungAus };
-export type { Zaehlerzahlen };
+import { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, FehlendeDateien, GeschuetztePdfs } from './dokumente';
+import { SichtenDienst, SichtenVerwaltung, Systemsichten } from './sichten';
 import { BerechtigungenDienst } from './berechtigungen';
 import { PdfBearbeiten, PdfVerkleinern, Schwaerzen, Stempelvorlagen } from './pdf-bearbeiten';
-export { GROSSE_MAX, GROSSE_MIT_SCHAETZUNG, VERKLEINERN_STANDARD, verkleinernEinstellungAus, type VerkleinernEinstellung } from './pdf-bearbeiten';
 import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostSystemmappen } from './post';
-export type { Fundstelle, SystemkontoEintrag } from './post';
 import { AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
-export { EMAIL_MAX_EMPFAENGER, EMAIL_MAX_MAPPEN } from './ausgang';
-import { type EreignisAufruf, VOLLTEXT_MAX, VolltextAusPaketen, VolltextDienst, type VolltextMeldung } from './volltext';
+import { type EreignisAufruf, VolltextAusPaketen, VolltextDienst } from './volltext';
 import { Automatisierungshilfen, EreignisseDienst } from './ereignisse/index';
 import { AufgabenDienst, type AufgabenTeile, AufgabenVertretung, Fristen, OhneEmpfaenger, OhneLeserecht } from './aufgaben';
-export { NAECHSTER_TERMIN_ERST_TAGE, SAMMEL_MAX, SAMMEL_WEITERGABE, taugtAlsAufgabenEmpfaenger } from './aufgaben';
-import { BeispielMappen, type DokumentImKorb, LoeschenDienst, type LoeschenTeile, LoeschprotokollVerwaltung, MitVerknuepften, Papierkorb } from './loeschen';
-export type { AufgeloestIn, DokumentImKorb } from './loeschen';
+import { BeispielMappen, LoeschenDienst, type LoeschenTeile, LoeschprotokollVerwaltung, MitVerknuepften, Papierkorb } from './loeschen';
 import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, VollexportQuellen } from './datenschutz';
 import { WerkbankDienst } from './werkbank';
 import { OrganisationDienst } from './organisation';
@@ -56,9 +41,6 @@ import { TextsatzDienst } from './textsatz';
 import { PaketAktionen } from './paketaktionen';
 import { ORGANISATION_BEREICH } from '../../shared/src/organisation';
 import type { MailText } from './mail';
-export { VOLLTEXT_MAX };
-export type { EreignisAufruf, VolltextMeldung };
-export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
 
 /** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
 export interface KontenHaken {
@@ -78,7 +60,6 @@ export interface KontenHaken {
   setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 
-export { EMAIL_MAX_ANHAENGE };
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
   tresor?: Tresor;

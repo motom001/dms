@@ -11,7 +11,8 @@
 import { auswahlText, type Feld, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { istZeitraum, prozentText, zeitraumText } from '../../shared/src/feldarten';
 import { ausschnittUm, ausschnitteAlsText, AUSSCHNITT_MAX, FRAGE_MAX, FRAGEN_STANDARD, frageWoerter, KI_HINWEIS, liesAntwort, liesVerlauf, pruefeGrenzen, saeubere, type FrageAusschnitt, type FragenGrenzen, type FrageZeile } from '../../shared/src/fragen';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';

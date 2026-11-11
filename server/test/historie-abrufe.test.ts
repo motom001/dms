@@ -14,7 +14,8 @@ import {
   HISTORIE_IMMER, HISTORIE_VORAUSWAHL, HISTORIENARTEN, HISTORIENGRUPPEN, historienartenVon, historiengruppenVon, pruefeMappentyp, type Historienart,
 } from '../../shared/src/model';
 import { speicherDateien } from '../src/dateispeicher';
-import { bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { bereinigeTyp } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';

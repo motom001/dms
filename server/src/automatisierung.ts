@@ -13,7 +13,8 @@ import { heuteIn, merkmalTrifft, verschiebe, type Bedingung } from '../../shared
 import { uebersetzer } from '../../shared/src/sprache';
 import texte from '../../shared/src/sprachen/de/automatisierung.json';
 import ereignisTexte from '../../shared/src/sprachen/de/ereignisse.json';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import type { PaketAutomatisierung } from './pakete';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';

@@ -10,7 +10,8 @@ import { eigenerAussteller, findeAngaben, vorschlaegeAus, wendeGutschriftAn, typ
 import { erechnungText, vorschlaegeAusERechnung } from '../../shared/src/erechnung';
 import type { Feld, Mappentyp } from '../../shared/src/model';
 import { speicherDateien } from '../src/dateispeicher';
-import { Dienst, type Zugriff } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { type Zugriff } from '../src/kern';
 import { liesERechnung } from '../src/erechnung';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { ERECHNUNG_XML_MAX } from '../src/grenzen';

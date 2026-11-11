@@ -8,7 +8,8 @@ import { ersetzePlatzhalter, kannStempeln, WEBDAV_VORLAGE, type GeltenderStempel
 import { pdfName } from './ausgabe';
 import { NUR_ZAEHLER, PRAEFIX, type ApiSchluessel, type ApiSchluesselDienst } from './apischluessel';
 import { t } from './sprache';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import { MIME } from './eingangsordner';
 import type { Einstellungen } from './einstellungen';
 import { DateiFehlt } from './dateispeicher';

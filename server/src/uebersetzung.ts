@@ -18,7 +18,8 @@ import {
   UEBERSETZUNG_TAGE, type UebersetzenAngebot, type UebersetzenEinstellung, type Uebersetzt, type Uebersetzungsquelle,
 } from '../../shared/src/uebersetzung';
 import type { Benutzer } from '../../shared/src/model';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import type { Kurzzustand } from './kurzzustand';

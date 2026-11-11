@@ -11,7 +11,8 @@ import { ERKENNBAR_AN_MAX, kannAusPost, type Feld, type Mappentyp } from '../../
 import { typErkennbarAn } from '../../shared/src/beschriftung';
 import { openapi } from '../src/api-v1';
 import { speicherDateien } from '../src/dateispeicher';
-import { bereinigeFeld, bereinigeTyp, Dienst } from '../src/dienst';
+import { Dienst } from '../src/dienst';
+import { bereinigeFeld, bereinigeTyp } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';

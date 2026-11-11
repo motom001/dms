@@ -21,7 +21,8 @@ import {
   type Kandidat, type Klassbeleg, type Klassifizierung as Ergebnis, type Wegstand,
 } from '../../shared/src/klassifizierung';
 import { zieleVon, type MappenBezug, type Mappentyp } from '../../shared/src/model';
-import type { Dienst, Zugriff } from './dienst';
+import type { Dienst } from './dienst';
+import type { Zugriff } from './kern';
 import type { Erkennung } from './erkennung';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
