@@ -21,7 +21,7 @@ Paketen. Schicht 3 der Zielaufteilung.
 - Alle Klassen bekommen den Kern und dieselben `LoeschenTeile`: Rechteprüfung, Passung, Historie, Dokumente,
   Versionen, Ausgang (Dokumente je Mappe), Sichten (Statistik), Systemmappen (`post/`) – und einander
   (`baueLoeschen()` im Dienst).
-- Über den Anschluss: Ereignis und `aktualisiereTitel` über die Fassade (Tests ersetzen beide am Dienst), Konten.
+- Über den Anschluss: Ereignis (`kern.ereignis`), `aktualisiereTitel` (`mappenTitel`) – Tests ersetzen beide dort –, Konten.
 - Importiert nur sich selbst, Kern, Fachordner (je über `index.ts`), `shared/`, die Basis und die Werkzeuge `baum`
   und `schriftstueck`.
 

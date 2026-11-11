@@ -2,7 +2,7 @@
  * E-Mail aus der Ablage (#58, #151, #723, #1077 aus dienst.ts): eine oder mehrere Mappen per E-Mail, mit Angaben-PDF,
  * Stempel, Verkleinern und Archivfassung; danach eine Post (Kanal E-Mail, ausgehend, erledigt) und Einträge in der
  * Historie. Schicht 3 – bekommt den Kern, die Rechteprüfung, Mappen, Dokumente, den Ausgang, die Stempel-Vorlagen und
- * die Systemmappen der Post. Die Prüfstelle (`pruefeAusgang`) ruft er über die Fassade des Dienstes.
+ * die Systemmappen der Post. Die Prüfstelle (`pruefeAusgang`) ruft er über seinen Anschluss.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
@@ -47,7 +47,7 @@ export interface EmailTeile { rechte: ZugriffDienst; historie: MappenHistorie; d
 
 /** Was die E-Mail außer dem Kern braucht – vom Dienst hereingereicht. */
 export interface EmailAnschluss {
-  /** Die gemeinsame Prüfstelle (#723) – über die Fassade des Dienstes, damit jeder Weg dieselbe Stelle fragt. */
+  /** Die gemeinsame Prüfstelle (#723) – über den Anschluss (`dienst.ausgang.pruefeAusgang`), damit jeder Weg dieselbe Stelle fragt. */
   pruefeAusgang(ich: { id: string; rolle: string }, z: Zugriff, ausgang: Ausgang, ids: string[]): Promise<void>;
   /** Inhalt der entsperrten Fassung (#827; geschützte PDFs, am Dienst). */
   entsperrtZu(inhalt: Buffer): Promise<Buffer | null>;

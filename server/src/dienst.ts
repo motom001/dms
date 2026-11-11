@@ -1,4 +1,4 @@
-import type { Systemkonto, Benutzer, Mappentyp } from '../../shared/src/model';
+import type { Systemkonto, Benutzer } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -72,10 +72,12 @@ export interface DienstOptionen {
   zustand?: Kurzzustand;
 }
 
-/** Dateiname ohne Pfadanteile und Steuerzeichen. */
-
-/* ---------- Fachlogik ---------- */
-
+/**
+ * Zusammenbau (#1079): baut den Kern und die Fachdienste der Fachordner, verdrahtet ihre Anschlüsse und hält sie als
+ * Felder. Fachlogik liegt in den Fachordnern; Routen, Module und Tests rufen sie direkt (`dienst.mappen.holeMappe(…)`).
+ * Hier bleibt, was der Start anbindet (Konten, Mail, Sicherung, Systemkonten, Automatisierungen), der Tresor und der
+ * Verteiler des Ereigniskatalogs.
+ */
 export class Dienst {
   /**
    * Zustand zwischen Anfragen (#744) – in PostgreSQL für alle Prozesse, sonst im Arbeitsspeicher: u. a. Abruf-Links,
@@ -274,7 +276,7 @@ export class Dienst {
     this.mappentypen = new MappentypenDienst(this.kern, {
       mitStempel: (typen) => this.ausgang.mitStempel(typen), pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
       erkennung: () => this.erkennung, berechtigungenAusEingabe: (typ, e) => this.berechtigungen.berechtigungenAusEingabe(typ, e),
-      protokolliereBerechtigungen: (typ, n) => Dienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => Dienst.konfigurationKonflikt(art, aktuell),
+      protokolliereBerechtigungen: (typ, n) => BerechtigungenDienst.protokolliereBerechtigungen(typ, n), konfigurationKonflikt: (art, aktuell) => SichtenVerwaltung.konfigurationKonflikt(art, aktuell),
     });
     this.typpakete = new TypPakete(this.kern, this.rechtepruefung, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
     this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste) });
@@ -342,11 +344,11 @@ export class Dienst {
     const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.dokumente.ocr, listeTypen: () => this.mappentypen.listeTypen() });
     const versionen = new DokumentVersionen(this.kern, {
       ocr: () => this.dokumente.ocr, neueDateien: (docs) => this.dokumente.neueDateien(docs), raeumeAuf: (sha) => this.dokumente.raeumeAuf(sha),
-      aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
+      aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), volltextAn: (typ, key) => VolltextDienst.volltextAn(typ, key),
     });
     const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.pdfVerkleinern.automatischVerkleinert(ein, name),
-      volltextFertig: (e, m) => this.volltexte.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
+      volltextFertig: (e, m) => this.volltexte.volltextFertig(e, m), volltextAn: (typ, key) => VolltextDienst.volltextAn(typ, key),
       pruefeArchivDokument: (id, was) => this.mappenArchiv.pruefeArchivDokument(id, was),
     });
     return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen };
@@ -372,7 +374,7 @@ export class Dienst {
   /**
    * PDF bearbeiten, Post und Ausgang (#1077): die Klassen in pdf-bearbeiten/, post/ und ausgang/. Was noch im Dienst
    * liegt und was im Kreis liefe (PDF bearbeiten und Auflösen → neue Post), kommt über die Anschlüsse; die Prüfstelle
-   * der Wege nach draußen (`pruefeAusgang`, `mitnehmbar`) rufen E-Mail und Export über die Fassade.
+   * der Wege nach draußen (`pruefeAusgang`, `mitnehmbar`) rufen E-Mail und Export über ihren Anschluss am `ausgang`.
    */
   private bauePdfPostAusgang() {
     const rechte = this.rechtepruefung;
@@ -436,7 +438,7 @@ export class Dienst {
 
   /**
    * KI-Freigabe, Notizen, Ereignisse und Hilfen für Automatisierungen (#1078): die Klassen in mappentypen/, mappen/ und
-   * ereignisse/. Ereignis auslösen, Erwähnungen, Übersetzungen, Rollen und die Texterkennung gehen über die Fassade.
+   * ereignisse/. Ereignis auslösen, Erwähnungen, Übersetzungen, Rollen und die Texterkennung gehen über den Anschluss.
    */
   private baueEreignisse() {
     const ki = new KiTypen(this.kern, this.rechtepruefung);
@@ -494,7 +496,7 @@ export class Dienst {
   /**
    * Anschlusspunkte (#962): alle sofortigen Empfänger an dieser einen Stelle, in fester Reihenfolge (Test:
    * anlaesse.test.ts, Liste im Entwicklerhandbuch). Eine andere Reihenfolge ist ein eigener Pull Request. Die Empfänger
-   * rufen ihre Methoden über `this`, damit Tests sie ersetzen können.
+   * rufen die Fachdienste erst beim Auslösen (`this.fristen.fristenAbgleichen(…)`), damit Tests sie dort ersetzen können.
    */
   private schliesseEmpfaengerAn() {
     const a = this.kern.anlaesse;
@@ -544,122 +546,20 @@ export class Dienst {
   /** Inhalte übersetzen auf Knopfdruck (#732): Paket mit dms:uebersetzen, Zwischenspeicher im Kurzzustand. */
   readonly uebersetzung: Uebersetzung;
 
-
-  /* ---------- Suche (#964: in suche/suche.dienst.ts) ---------- */
-
-
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion (Kern). */
   private get repo(): Repo { return this.kern.repo; }
 
-  /** Schlüssel wechseln (#47): alle Passwortfelder, der Papierkorb und die Einstellungen in einer Transaktion. */
-  async schluesselWechseln(von: string) {
-    if (!this.tresor) throw new Fachfehler(404, t('meldungen.dienst.die-verschluesselung-ist-nicht'));
-    return this.tresor.wechsle((um, einstellungen) => this.repo.umschluesseln(um, einstellungen), von);
-  }
+  /* ---------- Anbinden beim Start (index.ts, ablago.ts) ---------- */
 
   /** Konten anbinden: Benutzer-Mappen im Papierkorb (#43). */
   verbindeKonten(h: KontenHaken) { this.konten = h; }
   /** Mail an die Verwaltenden eines Bereichs anbinden (#995: Notiz zur eigenen Organisation). */
   verbindeVerwaltungsmail(f: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>) { this.verwaltungsmail = f; }
 
-  /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
-
-
-  /* ---------- Geschützte PDFs (#827, dokumente/geschuetzte-pdf.ts) ---------- */
-
-
-
-  /* ---------- Dateien umwandeln (#577, dokumente/umwandeln.ts) ---------- */
-
-
-  /* ---------- Archivfassung (PDF/A, #631, dokumente/archivfassung.ts) ---------- */
-
-
-  /* ---------- Volltext aus Paketen (#614, volltext/aus-paketen.ts) ---------- */
-
-
-  /* ---------- Volltext (#45, volltext/volltext.dienst.ts) ---------- */
-
-  private static volltextAn(typ: Mappentyp | undefined, registerKey: string) { return VolltextDienst.volltextAn(typ, registerKey); }
-
   /** Sicherung außer Haus (#585): ein Paket hat das Ereignis sicherung.fertig aufgegeben (index.ts verbindet mit der Sicherung). */
   sicherungAufgegeben?: (paket: string, name: string, fehler: string | null | undefined) => Promise<void>;
   /** Sicherung außer Haus (#636): Antwort des Pakets auf einen Aufruf von sicherung.fertig (index.ts verbindet mit der Sicherung). */
   sicherungAntwort?: (paket: string, name: string, r: EreignisAufruf) => Promise<void>;
-
-
-  private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
-
-  /* ---------- Passwortfelder (#46) ---------- */
-
-
-  /* ---------- Aufgaben (#54) und Erwähnungen (#56), aufgaben/aufgaben.dienst.ts ---------- */
-
-
-  /* ---------- Abwesenheit und Vertretung (#77, #78), aufgaben/vertretung.ts ---------- */
-
-
-  /* ---------- Aufgaben bei Personen ohne Leserecht (#798), aufgaben/ohne-leserecht.ts ---------- */
-
-
-  /* ---------- Fristen (#129–#133), aufgaben/fristen.ts ---------- */
-
-
-  /* ---------- Notizen (#55) ---------- */
-
-
-  /* ---------- E-Mail aus der Mappe (#58, #151, ausgang/email.ts) ---------- */
-
-
-  /* ---------- Notizen anlegen, ändern, löschen (#55, mappen/notizen.ts) ---------- */
-
-
-  /* ---------- Favorit = Abo (#422) ---------- */
-
-
-  /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506, aufgaben/aufgaben.dienst.ts) ---------- */
-
-
-  /* ---------- Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, aufgaben/ohne-empfaenger.ts) ---------- */
-
-
-  /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
-
-
-  /* ---------- Favoriten (#62) ---------- */
-
-
-  /* ---------- Berechtigungen (#123–#127) ---------- */
-
-  /* ---------- Rechte prüfen (#1072: in zugriff/zugriff.dienst.ts) ---------- */
-
-
-  /* ---------- Pakete am Mappentyp (#686) ---------- */
-
-
-  /* ---------- KI-Dienste und Mappentypen (#796, mappentypen/ki-typen.ts) ---------- */
-
-
-  /* ---------- Berechtigungen in der Werkbank (#123, #125, berechtigungen/berechtigungen.dienst.ts) ---------- */
-
-
-  private static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) { BerechtigungenDienst.protokolliereBerechtigungen(typ, niemand); }
-
-
-  /* ---------- Sichten verwalten (#38, sichten/verwalten.ts) ---------- */
-
-  private static konfigurationKonflikt(art: 'typ' | 'sicht', aktuell?: string): Fachfehler { return SichtenVerwaltung.konfigurationKonflikt(art, aktuell); }
-
-  /* ---------- Passung: passt eine Mappe zur aktuellen Definition? ---------- */
-
-
-  /* ---------- Titel ---------- */
-
-
-  /* ---------- Ansicht der Werkbank (#281, werkbank/werkbank.dienst.ts) ---------- */
-
-
-  /* ---------- Pakete (#188): die Logik steckt in pakete.ts; die Ablage ruft das Repo des Kerns bzw. pakete/pakete.einstellungen.ts (#961) ---------- */
 
   /** Wird beim Anlegen eines Ereignisses aufgerufen (der Läufer stellt dann gleich zu). */
   ereignisWecker: (() => void) | null = null;
@@ -671,7 +571,15 @@ export class Dienst {
   /** Wartung, Wiederherstellung (vom Start gesetzt): dann verteilt der Katalog nichts. */
   ereignisseRuhen?: () => boolean | Promise<boolean>;
 
+  /* ---------- Tresor (#39, #46, #47) ---------- */
 
+  private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
+
+  /** Schlüssel wechseln (#47): alle Passwortfelder, der Papierkorb und die Einstellungen in einer Transaktion. */
+  async schluesselWechseln(von: string) {
+    if (!this.tresor) throw new Fachfehler(404, t('meldungen.dienst.die-verschluesselung-ist-nicht'));
+    return this.tresor.wechsle((um, einstellungen) => this.repo.umschluesseln(um, einstellungen), von);
+  }
 
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
   verschluesselePaketGeheimnis(text: string): string {
@@ -680,28 +588,7 @@ export class Dienst {
   }
   entschluessele(wert: string): string | null { return this.tresor?.entschluessele(wert) ?? null; }
 
-
-  /* ---------- Beispiel-Mappen aus Paketen (#878, loeschen/beispiele.ts) ---------- */
-
-
-  /* ---------- Nummernkreise (#171) ---------- */
-
-
-  /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
-
-
-  /* ---------- Wege nach draußen: die gemeinsame Prüfstelle (#723), Stempel, Fassungen (ausgang/ausgang.dienst.ts) ---------- */
-
-
-  /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
-
-
-
-  /* ---------- Post (#192, post/post.dienst.ts; Auflösen post/aufloesen.ts) ---------- */
-
-
-  /* ---------- Systemmappen, Benutzer-Mappen, Rollen, Systemkonten (#43, #673, post/systemmappen.ts) ---------- */
-
+  /* ---------- Vom Start gesetzt (Systemkonten #673, Automatisierungen #674, #712, #1041) ---------- */
 
   /** Systemkonten des DMS (#673), vom Start gesetzt (Konten legen sie bei Bedarf an). */
   systemkonten?: (kennung: Systemkonto) => Promise<Benutzer>;
@@ -723,66 +610,9 @@ export class Dienst {
   /** Automatisierungen mit Änderungsverlauf für den Vollexport (#674 setzt das). */
   automatisierungenExport?: () => Promise<unknown[]>;
 
-  /* ---------- Hilfen für Automatisierungen (#674, ereignisse/automatisierung.ts) ---------- */
-
-
-  /* ---------- Papierkorb (#43, loeschen/papierkorb.ts) ---------- */
-
-
-  /* ---------- Löschprotokoll lesen (#470, loeschen/loeschprotokoll.ts) ---------- */
-
-
-  /* ---------- Demo-Daten (#248, datenschutz/datenschutz.dienst.ts) ---------- */
-
-
-  /* ---------- Eingangskanäle (#195, post/eingangskanaele.ts) ---------- */
-
-
-  /** Dokumente einer Mappe ohne Rechteprüfung (#878: Paket erstellen mit Beispiel-Dokumenten, nur für Administratoren). */
+  /**
+   * Dokumente einer Mappe ohne Rechteprüfung (#878: Paket erstellen mit Beispiel-Dokumenten, nur für Administratoren).
+   * Bleibt hier (#1079): ein Lesen am Repo vorbei, das nicht in die Routen gehört.
+   */
   listeDokumente(mappeId: string) { return this.repo.listeDokumente(mappeId); }
-
-  /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
-
-
-  /* ---------- Stempel beim Weitergeben (#394, pdf-bearbeiten/stempelvorlagen.ts) ---------- */
-
-
-  /* ---------- PDF bearbeiten (#335, pdf-bearbeiten/pdf-bearbeiten.dienst.ts) ---------- */
-
-
-  /* ---------- Post fotografieren (#490, post/foto.ts) ---------- */
-
-
-  /* ---------- PDF verkleinern (#393, pdf-bearbeiten/verkleinern.ts) ---------- */
-
-
-  /* ---------- Schwärzen (#392, pdf-bearbeiten/schwaerzen.ts) ---------- */
-
-
-  /* ---------- Archivnummer (#345) ---------- */
-
-
-  /* ---------- Vollexport (#254, datenschutz/vollexport.ts) ---------- */
-
-
-  /* ---------- Baum-Sammlung über Verweise (#396, #424, loeschen/mit-verknuepften.ts) ---------- */
-
-
-  /* ---------- Mappe mit allen verknüpften Mappen löschen (#424, loeschen/mit-verknuepften.ts) ---------- */
-
-
-  /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396, datenschutz/datenschutz.dienst.ts) ---------- */
-
-
-  /* ---------- Auskunft zustellen (#455, datenschutz/zustellen.ts) ---------- */
-
-
-  /* ---------- Archivmodus (#212) ---------- */
-
-
-  /* ---------- Fehlende Dateien (#877, dokumente/fehlende-dateien.ts) ---------- */
-
-
-  /* ---------- Versionierung (#194, dokumente/versionen.ts) ---------- */
-
 }

@@ -14,9 +14,9 @@ import { MappenDienst } from './mappen.dienst';
 
 /** Was die Notizen außer Kern und Historie brauchen – vom Dienst hereingereicht. */
 export interface NotizenAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
-  /** @-Erwähnungen abgleichen (#56, #81; aufgaben/, über die Fassade). */
+  /** @-Erwähnungen abgleichen (#56, #81; aufgaben/, über den Anschluss). */
   erwaehnungenAbgleichen(mappeId: string, quelle: { key: string; ort: string; auszug?: string }, altText: string, neuText: string, von: string | null): Promise<void>;
   /** Übersetzungen (#732; uebersetzung.ts bekommt noch den ganzen Dienst). */
   uebersetzung(): { vergiss(mappe: string, quelle?: string): Promise<unknown> };

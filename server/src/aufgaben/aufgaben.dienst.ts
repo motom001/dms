@@ -37,7 +37,7 @@ export interface AufgabenKonten {
 
 /** Was die Aufgaben außer dem Kern brauchen – vom Dienst hereingereicht. */
 export interface AufgabenAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   /** Konten (#43), vom Start angebunden. */
   konten(): AufgabenKonten | undefined;

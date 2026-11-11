@@ -43,7 +43,7 @@ export interface PostTeile {
 
 /** Was die Post außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface PostAnschluss {
-  /** Ereignis auslösen – über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`). */
+  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   /** Verknüpfte Mappen melden (#670; noch im Dienst). */
   meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null): Promise<void>;

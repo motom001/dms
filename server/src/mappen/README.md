@@ -28,7 +28,8 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
   `meldeVerknuepft`, Schlüssel (`verschluessele`, Tresor), Aufkleber, Aufträge.
 - Importiert nur sich selbst, Kern, Rechteprüfung und Mappentypen (je über `index.ts`), `shared/` und die Basis –
   geprüft mit `npm run lint:abh` (Regel `fachordner`, Schicht 2 in `SCHICHTEN`).
-- Wer Mappen braucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen).
+- Wer Mappen braucht, ruft die Klasse am Dienst (`dienst.mappen.…`, `dienst.mappenHistorie.…` usw.; seit #1079 ohne
+  Weiterleitungen im Dienst).
 
 **Regeln**
 

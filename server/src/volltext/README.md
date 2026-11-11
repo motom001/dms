@@ -16,7 +16,7 @@ Volltext lesen und schreiben, Sprache und Hinweis „Post teilen?“. Schicht 3 
 **Abhängigkeiten**
 
 - Bekommt den **Kern** und die Dokumente (Texterkennung, Umwandeln, Archivfassung) aus `dokumente/`. Was noch im
-  Dienst liegt, kommt über einen Anschluss: Ereignis (Fassade), Aufträge, `paketVolltext`, Sicherung außer Haus.
+  Dienst liegt, kommt über einen Anschluss: Ereignis (`kern.ereignis`), Aufträge, `paketVolltext`, Sicherung außer Haus.
 - Die Dokumente (Schicht 2) rufen `volltextFertig` und `volltextAn` weiter über ihren Anschluss am Dienst.
 - Importiert nur sich selbst, Kern, `dokumente/` (je über `index.ts`), `shared/` und die Basis – geprüft mit
   `npm run lint:abh` (Regel `fachordner`; Schicht 3, nicht eigens in `SCHICHTEN` genannt).
@@ -26,7 +26,7 @@ Volltext lesen und schreiben, Sprache und Hinweis „Post teilen?“. Schicht 3 
 - Reihenfolge bleibt: `volltextFertig` legt erst `volltext.fertig` in den Ausgangskorb, meldet dann die
   Archivfassung (`archivNachVolltext`, im Hintergrund) und ruft nur mit Text die Hörer (Erkennung #336) nacheinander.
   `nachTexterkennungsEreignis` verteilt wie bisher: Umwandeln, Archivfassung, Volltext aus Paketen, Sicherung.
-- Ereignisse über die Fassade des Dienstes (Tests ersetzen `dienst.ereignis`), Historie über `kern.historie`.
+- Ereignisse über den Anschluss (Tests ersetzen `dienst.kern.ereignis`), Historie über `kern.historie`.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: drei `complexity` und ein
   `no-control-regex` in `volltext.dienst.ts`, ein `complexity` in `aus-paketen.ts`).
 

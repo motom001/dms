@@ -20,7 +20,7 @@ Schicht 1 der Zielaufteilung: direkt über dem Kern, unter allen anderen Fachord
 - Importiert nur sich selbst, den Kern (über `kern/index.ts`), `shared/`, die Basis und `messung.ts`. Geprüft mit
   `npm run lint:abh` (Regel `fachordner` in `.dependency-cruiser.cjs`).
 - Der Kern bindet `zugriff/` nicht ein; `kern.zugriff(ich)` ruft, was der Dienst beim Zusammenbau hereinreicht.
-- Wer prüft, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen) oder als Fachordner den `ZugriffDienst`,
+- Wer prüft, ruft `dienst.rechtepruefung.…` (seit #1079 ohne Weiterleitungen im Dienst) oder als Fachordner den `ZugriffDienst`,
   den er beim Zusammenbau bekommt (wie die Suche).
 
 **Regeln**

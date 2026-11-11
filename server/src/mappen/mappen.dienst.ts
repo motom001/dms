@@ -50,7 +50,7 @@ export interface MappenAnschluss {
   meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null): Promise<unknown>;
   /** Passwortfelder verschlüsseln (#46; Schlüssel aus tresor.ts). */
   verschluessele(klartext: string): string;
-  /** Titel neu berechnen – über die Fassade des Dienstes, wie bisher (`MappenTitel.aktualisiereTitel`). */
+  /** Titel neu berechnen – über den Anschluss (`MappenTitel.aktualisiereTitel`). */
   aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
   /**
    * Eigene Organisation (#995): Merkmal oder Verantwortliche geändert – Notiz an die Verwaltung und Systemprotokoll

@@ -15,7 +15,7 @@
   `pruefeRecht`) und einen `SucheAnschluss` vom Dienst: `konten` (Dienstkonto eines Pakets für `aehnlicheTypen`).
 - Schicht 3: importiert nur sich selbst, tiefere Fachordner und den Kern (je über `index.ts`), `shared/`, die Basis und
   `vektoren.ts`. Geprüft mit `npm run lint:abh` (Regel `fachordner` in `.dependency-cruiser.cjs`).
-- Wer sucht, ruft weiter `dienst.…` (Fassade mit einzeiligen Weiterleitungen) oder `dienst.suche.…`.
+- Wer sucht, ruft `dienst.suche.…` (seit #1079 ohne Weiterleitungen im Dienst).
 
 **Regeln**
 
