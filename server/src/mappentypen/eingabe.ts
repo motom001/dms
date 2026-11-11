@@ -20,6 +20,7 @@ import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feld
 import { PAKET_ID, SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
 import { TABELLE_NEU_MAX, type Tabellenquelle } from '../../../shared/src/tabelle';
 import { istFeldmerkmal, istSchreibschutz } from '../../../shared/src/organisation';
+import { VORLAGE_MAX } from '../../../shared/src/zusammengesetzt';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -66,11 +67,11 @@ export function bereinigeFeld(e: unknown): Feld {
     // Deutsch ist der Ausgangstext; `beschriftungen.de.label` (z. B. aus einem Paket) gilt als Bezeichnung.
     label: ausgangAus(f.beschriftungen, 'label', text(f.label)),
     typ,
-    // Tabelle (#1030): kein Wert – nie Pflicht, kein Standard.
-    pflicht: !!f.pflicht && typ !== 'tabelle',
-    eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl'),
+    // Tabelle (#1030): kein Wert – nie Pflicht, kein Standard. Zusammengesetzt (#1050) berechnet Ablago – auch nie Pflicht.
+    pflicht: !!f.pflicht && typ !== 'tabelle' && typ !== 'zusammengesetzt',
+    eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl' || typ === 'zusammengesetzt'),
     hilfe: ausgangAus(f.beschriftungen, 'hilfe', text(f.hilfe)),
-    standard: std == null || std === '' || typ === 'passwort' || typ === 'tabelle' ? null : typeof std === 'boolean' ? std : standardText(typ, std),
+    standard: std == null || std === '' || typ === 'passwort' || typ === 'tabelle' || typ === 'zusammengesetzt' ? null : typeof std === 'boolean' ? std : standardText(typ, std),
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
@@ -115,8 +116,10 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(bereinigeAnzeige(f.anzeigen) ? { anzeigen: bereinigeAnzeige(f.anzeigen) } : {}),
     // Tabelle (#1030): Quelle wie beim Verknüpfungsregister, dazu die Beschriftung von „+ Neu“; geprüft im Mappentyp.
     ...(typ === 'tabelle' ? { quelle: bereinigeTabellenquelle(f.quelle) } : {}),
+    // Zusammengesetzt (#1050): die Vorlage; ob ihre Platzhalter passen, prüft der Mappentyp.
+    ...(typ === 'zusammengesetzt' ? { vorlage: text(f.vorlage).replace(/\s+/g, ' ').slice(0, VORLAGE_MAX + 1) } : {}),
     // Berechnet (#1034): Id des Pakets; ob es die Angabe setzen darf, entscheidet behalteBerechnet.
-    ...(typ !== 'passwort' && typ !== 'tabelle' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
+    ...(typ !== 'passwort' && typ !== 'tabelle' && typ !== 'zusammengesetzt' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
     // Eigene Organisation (#995): Merkmal nur am Ja/Nein-Feld, Schreibschutz nicht an Passwort und Tabelle – ob sie
     // bleiben dürfen, entscheidet behalteOrganisation (nur aus dem Paket).
     ...(typ === 'janein' && istFeldmerkmal(f.merkmal) ? { merkmal: f.merkmal } : {}),

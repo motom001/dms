@@ -18,6 +18,7 @@ import { liesLoeschAuswahl, LOESCH_TIEFE, loeschErinnerung, type LoeschKante, ty
 import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/src/loeschprotokoll';
 import { darfLoeschen, type Mappe, type Mappentyp, verweiseVon, type Werte } from '../../../shared/src/model';
 import { istTeilVerweis } from '../../../shared/src/teile';
+import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import type { LoeschenAnschluss, LoeschenDienst, LoeschenTeile } from './loeschen.dienst';
 import type { Papierkorb } from './papierkorb';
 
@@ -209,6 +210,8 @@ export class MitVerknuepften {
 
   /** Verweisfelder einer Mappe neu schreiben (#424) – mit Historie, Titel und Passung wie beim Speichern. */
   private async schreibeVerweisWerte(typ: Mappentyp, m: Mappe, werte: Werte, von: string | null) {
+    // Zusammengesetzt (#1050): Ein geleerter Verweis ändert die Kombination.
+    setzeZusammengesetzte(typ, werte);
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
     const neu = await this.repo.aendereMappe(m.id, werte, [], von, { basis: m.werte, verweise: (w) => verweiseVon(typ, w) });
     if (aenderungen.length) await this.notiere(m.id, von, 'geaendert', { aenderungen, stand: neu.geaendert });

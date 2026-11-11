@@ -321,7 +321,7 @@ function feldBedingung(sql: Sql, f: Extract<Filter, { art: 'feld' }>): Teil {
       if (f.feldart === 'person') return sql`${x} = ANY(${l}::text[])`;
       return sql`EXISTS (SELECT 1 FROM verweise v WHERE v.quelle_id = mappen.id AND v.feld_key = ${k} AND v.ziel_id::text = ANY(${l}::text[]))`;
     }
-    case 'gleich': return f.feldart === 'text' ? sql`lower(${x}) = lower(${String(f.a ?? '')})` : sql`${x} = ${wert(f.a)}`;
+    case 'gleich': return f.feldart === 'text' || f.feldart === 'zusammengesetzt' ? sql`lower(${x}) = lower(${String(f.a ?? '')})` : sql`${x} = ${wert(f.a)}`;
     case 'kleiner': return sql`${x} < ${wert(f.a)}`;
     case 'groesser': return sql`${x} > ${wert(f.a)}`;
     case 'zwischen': return sql`${x} BETWEEN ${wert(f.a)} AND ${wert(f.b)}`;

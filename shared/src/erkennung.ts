@@ -22,6 +22,7 @@ import { formatFehler, type Feldformat } from './feldformate';
 import { leseProzent, leseZeitraum, ZEITRAUM_ANZAHL_MAX, ZEITRAUM_EINHEITEN } from './feldarten';
 import { t } from './texte';
 import { PAKET_ID_TEIL } from './kennungen';
+import { teileVon } from './zusammengesetzt';
 
 /* ---------- Feld-Eigenschaft ---------- */
 
@@ -136,8 +137,11 @@ const ABSENDER_ARTEN: Erkennungsart[] = ['name', 'iban', 'ustid', 'email', 'inte
 
 /* ---------- Zum Wiederfinden nutzen (#938) ---------- */
 
-/** Feldarten für „Zum Wiederfinden nutzen“: Text (auch IBAN, E-Mail …), Zahl und Verweis. */
-export const WIEDERFINDEN_FELDTYPEN: readonly Feldtyp[] = ['text', 'zahl', 'referenz'];
+/**
+ * Feldarten für „Zum Wiederfinden nutzen“: Text (auch IBAN, E-Mail …), Zahl, Verweis und Zusammengesetzt (#1050: alle
+ * Teile aus Text und Zahl stehen im Text, verwiesene Mappen finden sich wieder – z. B. Rechnungsnummer je Absender).
+ */
+export const WIEDERFINDEN_FELDTYPEN: readonly Feldtyp[] = ['text', 'zahl', 'referenz', 'zusammengesetzt'];
 /** Haken aus einer Eingabe (Werkbank, API, Paket): nur bei geeigneten Feldarten. */
 export const liesWiederfinden = (v: unknown, typ: Feldtyp): boolean => v === true && WIEDERFINDEN_FELDTYPEN.includes(typ);
 /**
@@ -612,6 +616,14 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
       }
     }
   }
+  // 1b. Zusammengesetzt (#1050): Ein Beleg nur, wenn die ganze Kombination im Dokument steht.
+  for (const m of mappen) {
+    const typ = typVon.get(m.typId);
+    for (const f of typ?.felder.filter((x) => x.wiederfinden && x.typ === 'zusammengesetzt') ?? []) {
+      const b = kombinationsbeleg(t, typ!, f, m, direkt);
+      if (b) direkt.set(m.id, [...direkt.get(m.id) ?? [], b]);
+    }
+  }
   // 2. Über Verweise: Verweisfelder mit dem Haken, die auf eine wiedergefundene Mappe zeigen.
   const belegeJe = new Map<string, Beleg[]>(direkt);
   for (const m of mappen) {
@@ -638,8 +650,9 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
       const passend = treffer.filter((x) => zielErlaubt(f, x.typId)).slice(0, ABGLEICH_JE_FELD);
       if (passend.length) verweise[f.key] = passend;
     }
-    // Doppelt: jede gefüllte Angabe zum Wiederfinden der vorhandenen Mappe steht im Dokument, mindestens eine stark.
-    const felder = merkmalsfelder(ziel);
+    // Doppelt: jede gefüllte Angabe zum Wiederfinden der vorhandenen Mappe steht im Dokument, mindestens eine stark –
+    // ein zusammengesetztes Feld (#1050) als Ganzes.
+    const felder = [...merkmalsfelder(ziel), ...ziel.felder.filter((x) => x.wiederfinden && x.typ === 'zusammengesetzt').map((feld) => ({ feld }))];
     for (const x of treffer.filter((y) => y.typId === ziel.id)) {
       const m = mappen.find((y) => y.id === x.mappeId)!;
       const eigene = x.belege.filter((b) => !b.ueber);
@@ -648,6 +661,32 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
     }
   }
   return { treffer, verweise, doppelt };
+}
+
+/**
+ * Beleg für ein zusammengesetztes Feld mit „Zum Wiederfinden nutzen“ (#1050): Jeder gefüllte Teil aus Text oder Zahl steht
+ * im Text (als Nummer bzw. in seiner Merkmalsart), jeder gefüllte Verweis zeigt auf eine Mappe, die sich schon
+ * wiedergefunden hat (`direkt`). Andere Teile (Datum, Auswahl …) zählen nicht mit. Mindestens ein Teil aus Text oder Zahl.
+ */
+function kombinationsbeleg(text: string, typ: Pick<Mappentyp, 'felder'>, f: Feld, m: Vergleichsmappe, direkt: Map<string, Beleg[]>): Beleg | null {
+  const werte: string[] = [];
+  let fundstelle = '';
+  for (const q of teileVon(typ.felder, f)) {
+    const roh = m.werte[q.key];
+    if (roh == null || roh === '' || (Array.isArray(roh) && !roh.length)) continue;
+    if (q.typ === 'referenz') {
+      if (!(Array.isArray(roh) ? roh : [roh]).some((z) => typeof z === 'string' && z !== m.id && direkt.has(z))) return null;
+      continue;
+    }
+    if (q.typ !== 'text' && q.typ !== 'zahl') continue;
+    const w = String(roh).trim();
+    const fund = wertMuster(w, wiederfindenArt(q))?.exec(text);
+    if (!fund) return null;
+    if (!fundstelle) fundstelle = ausschnitt(text, fund.index, fund[0].length);
+    werte.push(w);
+  }
+  if (!werte.length) return null;
+  return { mappeId: m.id, typId: m.typId, feldKey: f.key, feld: f.label || f.key, wert: werte.join(' · '), fundstelle, stark: true };
 }
 
 /* ---------- Wohin gehört das? Einfacher Typ-Vorschlag ohne KI (#934) ---------- */

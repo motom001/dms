@@ -1,6 +1,8 @@
 import { AuswahlFilter } from '../werkbank/Sichten';
 import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
 import { TabellenEditor } from './Tabelle';
+import { ZusammengesetztEditor } from './Zusammengesetzt';
+import { teileVon } from '../../../shared/src/zusammengesetzt';
 import { VorbelegenEditor } from './Vorbelegen';
 import { TeilEinstellung } from './Teil';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
@@ -337,7 +339,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     if (weg.length) setAnsage(t('mappentypen.darstellung.pflicht-aufgehoben-ansage', { felder: weg.join(', ') }));
   }
 
-  async function speichern(bestaetigt = false) {
+  async function speichern(bestaetigt = false, doppelteBestaetigt = false) {
     setSendet(true); setMeldung(undefined); setGruende([]);
     const { trefferlisten: listen, _schluesselGetippt: _sg, _teilVon: teilUid, ...ohneListen } = e;
     // Beschriftungen (#728) immer mitschicken, leer als null – ohne die Angabe behielte der Server die bisherigen.
@@ -364,7 +366,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       })),
     };
     try {
-      const mappentyp = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, { ...daten, bestaetigt, stand });
+      const mappentyp = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, { ...daten, bestaetigt, stand, ...(doppelteBestaetigt ? { doppelteBestaetigt } : {}) });
       const sauber = entwurfAus(mappentyp);
       setE(sauber); setBasis(JSON.stringify(sauber)); setStand(mappentyp.geaendert); setFehler(null); setOffen(null); setFehlerOrte(new Set());
       // Ein neuer Typ bleibt nach dem Anlegen aufgeklappt wie gerade.
@@ -379,7 +381,12 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       // „Verwerfen“ zeigt ihn dann, die eigenen Änderungen bleiben bis dahin stehen.
       if (f.status === 409 && (f.details as { konflikt?: boolean } | undefined)?.konflikt) { setMeldung(f.message); await d.neuLaden(); return; }
       // Berechtigungen (#142): Danach könnte niemand mehr Mappen dieses Typs lesen – nachfragen.
-      if (f.status === 409 && (f.details as { niemand?: number } | undefined)?.niemand && !bestaetigt && await rueckfrage({ titel: t('mappentypen.editor.trotzdem-speichern'), text: f.message, ja: t('mappentypen.editor.trotzdem-speichern-2'), gefahr: true })) { setSendet(false); await speichern(true); return; }
+      if (f.status === 409 && (f.details as { niemand?: number } | undefined)?.niemand && !bestaetigt && await rueckfrage({ titel: t('mappentypen.editor.trotzdem-speichern'), text: f.message, ja: t('mappentypen.editor.trotzdem-speichern-2'), gefahr: true })) { setSendet(false); await speichern(true, doppelteBestaetigt); return; }
+      // Zusammengesetzt (#1050): Danach hätten mehrere Mappen dieselbe Kombination – mit Anzahl nachfragen, nie still speichern.
+      if (f.status === 409 && (f.details as { zusammengesetzt?: unknown[] } | undefined)?.zusammengesetzt?.length) {
+        if (!doppelteBestaetigt && await rueckfrage({ titel: t('mappentypen.zusammengesetzt.doppelte-titel'), text: f.message, ja: t('mappentypen.editor.trotzdem-speichern-2') })) { setSendet(false); await speichern(bestaetigt, true); return; }
+        setMeldung(t('mappentypen.zusammengesetzt.nicht-gespeichert')); return;
+      }
       // Bereiche mit Fehler markieren und aufklappen (#144).
       const orte = new Set<TypBereich>();
       if (f.pruefung) {
@@ -610,7 +617,9 @@ function FeldZeile(p: {
   const bPaket = bInfo?.name ?? berechnetVon ?? '';
   if (berechnetVon) chips.push(bInfo?.aktiv === false ? t('mappentypen.berechnet.chip-nicht-mehr') : t('mappentypen.berechnet.chip', { paket: bPaket }));
   if (f.ausgeblendet || p.registerAusgeblendet) chips.push(t('mappentypen.darstellung.chip.ausgeblendet'));
-  if (f.eindeutig && (f.typ === 'text' || f.typ === 'zahl')) chips.push('eindeutig');
+  if (f.eindeutig && (f.typ === 'text' || f.typ === 'zahl' || f.typ === 'zusammengesetzt')) chips.push('eindeutig');
+  // Zusammengesetzt (#1050): aus welchen Feldern.
+  if (f.typ === 'zusammengesetzt' && f.vorlage) { const teile = teileVon(p.alleFelder, f); if (teile.length) chips.push(t('mappentypen.zusammengesetzt.chip', { felder: teile.map((x) => x.label || x.key).join(', ') })); }
   if (f.typ === 'referenz') chips.push(`→ ${zielName}`, VERWEISARTEN[f.verweisart ?? 'bezug']);
   if (f.typ === 'tabelle' && f.quelle?.typId) chips.push(`← ${zielNameVon(f.quelle.typId)}`);
   if (f.typ === 'auswahl') chips.push(t('mappentypen.editor.werte', { zahl: (f.optionen ?? []).length }));
@@ -661,6 +670,8 @@ function FeldZeile(p: {
   </div>;
   else if (f.typ === 'datum') besonders = <><DatumGrenzen f={f} id={id} setze={setze} /><FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} /></>;
   else if (f.typ === 'passwort') besonders = <p className="leise klein">{t('mappentypen.editor.wird-verschluesselt-gespeichert-und')}</p>;
+  // Zusammengesetzt (#1050): Vorlage aus Platzhaltern, Knöpfe zum Einfügen der Felder dieses Typs.
+  else if (f.typ === 'zusammengesetzt') besonders = <ZusammengesetztEditor f={f} id={id} felder={p.alleFelder} setze={setze} />;
   // Tabelle (#1030): Quelle wie ein Verknüpfungsregister, Spalten aus einer Trefferliste des anderen Typs, „+ Neu“.
   else if (f.typ === 'tabelle') besonders = <TabellenEditor f={f} id={id} eigeneId={p.eigeneId} eigenerName={p.eigenerName} typen={p.typen} eigeneFelder={p.alleFelder} setze={setze} />;
   else if (f.typ === 'referenz') besonders = <><div className="raster">
@@ -758,12 +769,14 @@ function FeldZeile(p: {
           <div className="raster">
             {/* Ausgeblendete Felder (#655) können nicht Pflicht sein – sonst ließe sich keine Mappe speichern. */}
             {/* Tabellen (#1030) haben keinen Wert – nie Pflicht. */}
-            {f.typ !== 'tabelle' && <div className="eigenschaft unten">{f.ausgeblendet || p.registerAusgeblendet || berechnetVon
-              ? <label className="haken"><input type="checkbox" checked={false} disabled /><span><span className="haken-titel">{t('mappentypen.editor.pflichtfeld')}</span><small className="hilfe">{berechnetVon ? t('mappentypen.berechnet.nie-pflicht') : f._pflichtWeg ? t('mappentypen.darstellung.pflicht-aufgehoben') : t('mappentypen.darstellung.nie-pflicht')}</small></span></label>
+            {f.typ !== 'tabelle' && <div className="eigenschaft unten">{f.ausgeblendet || p.registerAusgeblendet || berechnetVon || f.typ === 'zusammengesetzt'
+              ? <label className="haken"><input type="checkbox" checked={false} disabled /><span><span className="haken-titel">{t('mappentypen.editor.pflichtfeld')}</span><small className="hilfe">{f.typ === 'zusammengesetzt' ? t('mappentypen.zusammengesetzt.nie-pflicht') : berechnetVon ? t('mappentypen.berechnet.nie-pflicht') : f._pflichtWeg ? t('mappentypen.darstellung.pflicht-aufgehoben') : t('mappentypen.darstellung.nie-pflicht')}</small></span></label>
               : haken('pflicht', t('mappentypen.editor.pflichtfeld'), t('mappentypen.editor.mappe-laesst-sich-ohne'))}</div>}
             <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={!!f.ausgeblendet} onChange={(ev) => p.ausblenden(ev.target.checked)} />
               <span><span className="haken-titel">{t('mappentypen.darstellung.ausblenden')}</span><small className="hilfe">{p.registerAusgeblendet && !f.ausgeblendet ? t('mappentypen.darstellung.register-ausgeblendet') : t('mappentypen.darstellung.ausblenden-hilfe')}</small></span></label></div>
             {(f.typ === 'text' || f.typ === 'zahl') && <div className="eigenschaft unten">{haken('eindeutig', t('mappentypen.editor.eindeutig'), t('mappentypen.editor.wert-darf-je-mappentyp'))}</div>}
+            {/* Zusammengesetzt (#1050): eindeutig als Kombination, z. B. Rechnungsnummer je Absender. */}
+            {f.typ === 'zusammengesetzt' && <div className="eigenschaft unten">{haken('eindeutig', t('mappentypen.editor.eindeutig'), t('mappentypen.zusammengesetzt.eindeutig-hilfe'))}</div>}
             {standard}
           </div>
           {/* Anzeigen, wenn … (#1033): nie an Systemfeldern. */}

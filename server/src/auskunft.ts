@@ -85,7 +85,7 @@ function htmlText(k: string, werte: Record<string, string> = {}): string {
 /** Felder einer Mappe als lesbare Paare (ohne leere). */
 function felderVon(m: Mappe, t: Mappentyp | undefined, titel: Record<string, string>): Array<[string, string]> {
   return (t?.felder ?? []).filter((f) => f.typ !== 'passwort' && !istLeer(m.werte[f.key]))
-    .map((f) => [f.label, formatiere(f, m.werte[f.key], (id) => titel[id] ?? '')] as [string, string]);
+    .map((f) => [f.label, formatiere(f, m.werte[f.key], (id) => titel[id] ?? '', { felder: t?.felder ?? [], werte: m.werte })] as [string, string]);
 }
 
 /* ---------- Deckblatt ---------- */

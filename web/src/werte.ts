@@ -1,5 +1,6 @@
 import { kreisVon } from '../../shared/src/nummernkreis';
 import { wertfelder } from '../../shared/src/tabelle';
+import { setzeZusammengesetzte } from '../../shared/src/zusammengesetzt';
 import { istPasswortWert, leseZahl, type Betrag, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import {  } from './sprache';
 import { istZeitraum, leseProzent, leseZeitraum, type Zeitraum, type Zeitraumeinheit } from '../../shared/src/feldarten';
@@ -104,5 +105,7 @@ export function standardRoh(mappentyp: Mappentyp): RohWerte {
 export function werteAusRoh(mappentyp: Mappentyp, r: RohWerte): Werte {
   const w: Werte = {};
   for (const f of wertfelder(mappentyp.felder)) w[f.key] = ausRoh(f, r[f.key]);
+  // Zusammengesetzt (#1050): aus den Teilen, wie der Server es beim Speichern tut – nie, was im Formular stand.
+  setzeZusammengesetzte(mappentyp, w);
   return w;
 }

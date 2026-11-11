@@ -57,7 +57,8 @@ export function eingabeart(f: Bedingungsfeld): Eingabeart | null {
     case 'person': return 'person';
     case 'auswahl': return 'auswahl';
     case 'janein': return 'janein';
-    case 'text': case 'langtext': case 'formatiert': return 'text';
+    // Zusammengesetzt (#1050): Text, der den gespeicherten Schlüssel durchsucht.
+    case 'text': case 'langtext': case 'formatiert': case 'zusammengesetzt': return 'text';
     default: return null;
   }
 }

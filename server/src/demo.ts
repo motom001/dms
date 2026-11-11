@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { grenzeAlsTag, ibanGruppen, pruefeFormate } from '../../shared/src/feldformate';
+import { setzeZusammengesetzte } from '../../shared/src/zusammengesetzt';
 import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, zieleVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import type { Zeitraum } from '../../shared/src/feldarten';
 import { dokumentRegister, MAX_DEMO, MAX_DEMO_DOKUMENTE, mengenWarnung, nichtErzeugbar, pflichtGrund, schaetzeMenge, verteilung, type NichtErzeugbar } from '../../shared/src/demodaten';
@@ -219,7 +220,7 @@ function inhaltVon(t: Mappentyp, werte: Werte, titel: string, titelVon: (id: str
   for (const f of t.felder) {
     const v = werte[f.key];
     if (v == null || f.typ === 'passwort' || f.typ === 'formatiert' || f.typ === 'langtext') continue;
-    const text = formatiere(f, v, titelVon);
+    const text = formatiere(f, v, titelVon, { felder: t.felder, werte });
     if (!text) continue;
     angaben.push([f.label, text]);
     if (f.typ === 'referenz' && !partner) partner = text.split(', ')[0];
@@ -305,13 +306,14 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
       const werte: Werte = {};
       let unmoeglich = '';
       for (const f of t.felder) {
-        // Berechnete Felder (#1034) füllt ihr Paket, nicht der Demo-Generator.
-        if (f.berechnetVon || (!f.pflicht && z.chance(0.2))) continue;
+        // Berechnete Felder (#1034) füllt ihr Paket, nicht der Demo-Generator; zusammengesetzte (#1050) setzt Ablago unten.
+        if (f.berechnetVon || f.typ === 'zusammengesetzt' || (!f.pflicht && z.chance(0.2))) continue;
         const w = wertFuer(f, ok + 1, pools, vergeben.get(f.key) ?? new Set());
         if (w === undefined) { if (f.pflicht) unmoeglich = pflichtGrund(f.label, f.typ === 'referenz' ? 'verweis' : f.typ === 'passwort' ? 'passwort' : f.eindeutig ? 'eindeutig' : 'sonst'); continue; }
         werte[f.key] = w;
       }
       if (unmoeglich) { letzterFehler = unmoeglich; break; }
+      setzeZusammengesetzte(t, werte);
       const p = pruefeMappe(t, werte, {
         typVon: (id) => typVon.get(id),
         doppelt: (k, v) => (vergeben.get(k)?.has(String(v).trim().toLowerCase()) ? 'eine andere Mappe' : undefined),

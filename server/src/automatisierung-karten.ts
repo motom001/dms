@@ -45,7 +45,8 @@ DANN_AUSFUEHRER.feld = async (k: DannKarte, c: KartenKontext) => {
   const werte: Record<string, unknown> = {};
   for (const [key, roh] of Object.entries(k.werte)) {
     const f = c.typ.felder.find((x) => x.key === key);
-    if (!f || f.typ === 'passwort') continue;
+    // Zusammengesetzt (#1050) setzt Ablago aus seinen Teilen – „Feld ändern“ lässt es aus.
+    if (!f || f.typ === 'passwort' || f.typ === 'zusammengesetzt') continue;
     werte[key] = await wertFuer(f, roh, c);
   }
   const zeile = Object.entries(werte).map(([key, v]) => { const f = c.typ!.felder.find((x) => x.key === key)!; return `${feldLabel(f)} = ${formatiere(f, v as never) || '–'}`; }).join(', ');

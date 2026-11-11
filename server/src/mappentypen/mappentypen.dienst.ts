@@ -19,6 +19,7 @@ import type { Kern, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
 import { t } from '../sprache';
+import { doppelteNachher, neuBerechnen } from './zusammengesetzt';
 import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, behalteOrganisation, behalteTeil, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
@@ -240,6 +241,14 @@ export class MappentypenDienst {
     const rechte = await this.berechtigungenAusEingabe({ ...alt, ...d }, eingabe);
     // Gerade „Ist Teil einer anderen Mappe“ eingeschaltet (#1031): ohne eigene Regeln die Leserechte der übergeordneten.
     const teilRechte = await this.leserechteFuerTeil({ ...alt, ...d }, alt, rechte?.rw ?? regelwerkVon(alt));
+    // Zusammengesetzt (#1050): Hätten danach mehrere Mappen dieselbe Kombination, erst nachfragen – nie still speichern.
+    // Pakete nicht: Ihr Update läuft ohne Rückfrage; die Mappen „passen nicht“ wie beim Einschalten von „eindeutig“.
+    if (!ausPaket && (eingabe as { doppelteBestaetigt?: unknown } | null)?.doppelteBestaetigt !== true) {
+      const doppelte = await doppelteNachher(this.repo, alt, d);
+      if (doppelte.length) {
+        throw new Fachfehler(409, t('meldungen.zusammengesetzt.doppelte', { liste: doppelte.map((x) => t('meldungen.zusammengesetzt.doppelte-feld', { anzahl: x.anzahl, label: x.label })).join(', ') }), { zusammengesetzt: doppelte });
+      }
+    }
     const bleiben = new Set(d.register.filter((r) => r.art === 'dokumente').map((r) => r.key));
     for (const [key, n] of await this.repo.dokumenteJeRegister(id)) {
       if (bleiben.has(key)) continue;
@@ -252,6 +261,9 @@ export class MappentypenDienst {
       let typ: Mappentyp;
       try { typ = await this.repo.aendereTyp(id, d, stand); }
       catch (f) { if (f instanceof KonfigurationVeraltet) throw this.anschluss.konfigurationKonflikt('typ'); throw f; }
+      // Zusammengesetzt (#1050): Werte aller Mappen nach der neuen Vorlage – vor Titel und Passung (Empfänger unten).
+      const neu = await neuBerechnen(this.repo, typ);
+      if (neu) protokoll.modul('werkbank').info('Zusammengesetzte Felder neu berechnet', { typ: typ.name, anzahl: neu });
       await this.kern.anlaesse.typGeaendert.melde({ alt, typ });
       if (teilRechte) {
         const mit = await this.repo.setzeBerechtigungen(id, teilRechte);

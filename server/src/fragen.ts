@@ -126,7 +126,7 @@ export class FragenAnDieAblage {
   }
 
   private wertText(f: Feld, v: unknown, titel: (id: string) => string | null): string {
-    if (v === null || v === undefined || v === '' || f.typ === 'passwort') return '';
+    if (v === null || v === undefined || v === '' || OHNE_TEXT.has(f.typ)) return '';
     if (NEUE_ARTEN.has(f.typ)) return neueArtText(f, v);
     if (typeof v === 'string' && v.startsWith('dms1$')) return '';
     switch (f.typ) {
@@ -189,6 +189,8 @@ export class FragenAnDieAblage {
 }
 
 const NEUE_ARTEN = new Set<Feld['typ']>(['zeitraum', 'prozent']);
+/** Nie als Text an die Frage: Passwörter; zusammengesetzte Felder (#1050) stehen schon in ihren Teilen – und ihr Schlüssel enthält Kennungen statt Titel. */
+const OHNE_TEXT = new Set<Feld['typ']>(['passwort', 'zusammengesetzt']);
 /** Zeitraum und Prozent (#1035) lesbar: „3 Monate“, „19 %“. */
 function neueArtText(f: Feld, v: unknown): string {
   if (f.typ === 'zeitraum') return istZeitraum(v) ? zeitraumText(v) : '';

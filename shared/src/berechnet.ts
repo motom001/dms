@@ -49,9 +49,10 @@ export const berechnetVon = (f: Pick<Feld, 'berechnetVon'> | undefined): string 
 /**
  * Darf ein Weg außer dem Paket selbst das Feld füllen – „Aus Dokument ausfüllen“, Erkennung, „folgt aus“,
  * Automatisierungen, Vorschläge aus der verwiesenen Mappe (#1037)? Nie bei berechneten Feldern (Hinweis Qualität:
- * „nie überschreiben“) und nie bei Tabellen (#1030, ohne eigenen Wert). Neue Wege fragen hier, der Server prüft beim Speichern ohnehin (mappen/berechnet.ts).
+ * „nie überschreiben“), nie bei Tabellen (#1030, ohne eigenen Wert) und nie bei zusammengesetzten Feldern (#1050 – die
+ * berechnet Ablago beim Speichern). Neue Wege fragen hier, der Server prüft beim Speichern ohnehin (mappen/berechnet.ts).
  */
-export const vonAussenFuellbar = (f: Pick<Feld, 'berechnetVon'> & { typ?: Feld['typ'] }): boolean => !f.berechnetVon && f.typ !== 'tabelle';
+export const vonAussenFuellbar = (f: Pick<Feld, 'berechnetVon'> & { typ?: Feld['typ'] }): boolean => !f.berechnetVon && f.typ !== 'tabelle' && f.typ !== 'zusammengesetzt';
 
 /** Felder des Typs, die ein Paket berechnet. */
 export const berechneteFelder = (typ: Pick<Mappentyp, 'felder'>): Feld[] => typ.felder.filter((f) => !!f.berechnetVon);

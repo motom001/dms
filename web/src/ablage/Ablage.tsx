@@ -254,7 +254,7 @@ function unterzeile(typ: Mappentyp, m: Mappe, bezuege: Bezuege) {
   const imTitel = new Set(vorlageFelder(wirksameVorlage(typ)));
   const aus = ausgeblendeteFelder(typ);
   const neben = typ.felder.filter((f) => !imTitel.has(f.key) && !aus.has(f.key) && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort').slice(0, 2);
-  return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel))).filter(Boolean).join(' · ');
+  return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel), { felder: typ.felder, werte: m.werte })).filter(Boolean).join(' · ');
 }
 
 /**

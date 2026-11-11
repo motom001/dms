@@ -9,6 +9,7 @@
  */
 import { trefferlistenVon, verweiseVon, type Mappe, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
 import { TABELLE_SEITE, tabellenSpalten } from '../../../shared/src/tabelle';
+import { teileVon } from '../../../shared/src/zusammengesetzt';
 import { Fachfehler } from '../fehler';
 import type { Repo, SortierungIntern } from '../repo';
 import { t } from '../sprache';
@@ -63,7 +64,10 @@ export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: s
     ...(von > 0 && Number.isInteger(bekannt) && bekannt >= 0 ? { gesamt: bekannt } : {}),
   });
   // Nur Werte der gezeigten Spalten verlassen den Server (keine Passwörter, nichts sonst aus der Mappe) – und nur deren Bezüge.
-  const mappen = r.mappen.map((m) => ({ ...m, werte: Object.fromEntries(spalten.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])) }));
+  // Eine zusammengesetzte Spalte (#1050) zeigt den Text aus ihren Teilen: deren Werte gehen mit (nie Passwörter).
+  const teilKeys = spalten.flatMap((k) => { const g = quelltyp.felder.find((x) => x.key === k); return g?.typ === 'zusammengesetzt' ? teileVon(quelltyp.felder, g).map((x) => x.key) : []; });
+  const mitWert = [...new Set([...spalten, ...teilKeys])];
+  const mappen = r.mappen.map((m) => ({ ...m, werte: Object.fromEntries(mitWert.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])) }));
   const ziele = mappen.flatMap((m) => verweiseVon(quelltyp, m.werte).map((v) => v.zielId));
   return { typId: quelltyp.id, spalten, gesamt: r.gesamt, von, mappen, bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)) };
 }

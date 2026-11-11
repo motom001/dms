@@ -75,8 +75,9 @@ Every field has a **label** (changeable), a **key** (fixed once saved) and a **f
 | Link | target folder types (one or several), kind of link, several folders allowed, all of the same type |
 | Password | – (stored encrypted, see below) |
 | Table | shows folders of the type … that link here through field …; columns from results list …; label of "+ New" (see [below](#tabelle)) |
+| Combined | template made of placeholders, unique as a combination (see [below](#zusammengesetzt)) |
 
-For all of them: **Required field** and a **help text** that is shown below the field when filling it in (in the field editor right next to the label); most folder types also have a **default value** for new folders. **Unique** means: the value may exist only once in this folder type – upper and lower case don't count.
+For all of them: **Required field** and a **help text** that is shown below the field when filling it in (in the field editor right next to the label); most folder types also have a **default value** for new folders. **Unique** means: the value may exist only once in this folder type – upper and lower case don't count. If two fields are unique, this applies to each on its own; if a **combination** should exist only once (invoice number per sender), use a [combined field](#zusammengesetzt).
 
 If the default value of a text field contains `{nummernkreis:<key>}`, every new folder gets a consecutive number from this [number sequence](nummernkreise.md); the field is then read-only.
 
@@ -110,6 +111,26 @@ In the folder the rows are sorted as in the results list of the other type, 50 a
 **No value of its own.** A table is pure presentation like a section: it is not part of the folder's values, not in the [export](export.md) and full export, not in conditions, columns or the title template, and never required. It does not add up totals – that is up to packages, such as *Invoices*, which checks whether the items match the amount. Editing values directly in the table is not possible; open the folder for that.
 
 As long as a table shows folders of a type, that type cannot be deleted and its link field cannot be removed; Ablago then names the table. Packages can include tables (`typ: tabelle` with `quelle`, see the developer manual).
+
+### Combined: unique as a combination { #zusammengesetzt }
+
+A **combined field** is made up of other fields of the same folder – following a **template** with placeholders and filters like the [title template](#titel-einer-mappe). Nobody maintains the value by hand: Ablago sets it when saving, the folder only shows it. Usually it is **unique** – that way Ablago prevents duplicates through a combination of values.
+
+**Example: invoice number per sender.** Different companies issue the same invoice numbers, so *Invoice number* alone can't be unique. Add a field *Identifier* to the *Invoice*:
+
+1. Field kind **Combined**, template `{von} · {rechnungsnummer}` – the buttons below the template insert the placeholders of the fields.
+2. Tick **Unique**.
+3. Save.
+
+If someone adds the same invoice a second time, the field *Sender* says: "This combination of Sender and Invoice number already exists in “RE-2026-17 from Stadtwerke Musterstadt”." – Ablago names the title of the existing folder only if the person may read it. The message is on the first field involved, because that's where you change something, not on the combined field.
+
+- **Links count by the folder itself**, not by its title: two organisations with the same name are two combinations. The title is shown – to each person only if they may read the linked folder, otherwise "folder not visible".
+- **Placeholders:** text, number, amount, percentage, date, period, yes/no, choice list and link. Not: passwords (as in the title template), long text and formatted text, tables, other combined fields and fields with a number sequence (they are unique anyway). Filters such as `{rechnungsdatum|jahr}` work as in the title – `{bereich} · {datum|jahr}` means "per area and year".
+- **Compared** without language: date as `2026-11-30`, choices as their fixed value, upper and lower case don't count. Empty parts disappear together with their separator; if all are empty, the field has no value and doesn't count.
+- **In the folder** the field is read-only with the note "combined from Sender and Invoice number" – in the same frame as a [calculated field](#berechnete-felder). It changes at once when you change a part. Never required.
+- **Changing the template:** Ablago then recalculates all folders of the type. If several folders would then have the same combination, the editor asks first with the number ("2 folders in “Identifier”") and doesn't save silently. If you save anyway, these folders don't match the definition until someone changes them – as when switching on *unique*.
+- **Usable everywhere:** as a column, in [conditions](sichten.md) and the advanced search (like text), in the search, in the title template, with [Use to find existing folders](#zum-wiederfinden-nutzen), in the [export](export.md) and [full export](export.md), in [packages](pakete.md) and through the [API](api.md) – there read-only. Conditions and the search compare the stored value; links are in it as the folder's key, a name doesn't find them there – use the condition on the link field for that.
+- **Not in the history:** the changes of the parts are there.
 
 ### Hiding fields instead of deleting them { #felder-ausblenden }
 
@@ -214,7 +235,7 @@ With the tick **Use to find existing folders** you tell Ablago which values it u
 | Invoice | Invoice number |
 | Vehicle | Registration number |
 
-Suitable are text (also with format IBAN, email or phone), number and link. The tick is independent of **Unique**: a customer number doesn't have to be unique to help find a folder again.
+Suitable are text (also with format IBAN, email or phone), number, link and [combined](#zusammengesetzt). For a combined field only the whole combination counts: every number and text in it is in the document, and every linked folder has been found itself – *invoice number per sender* thus finds only the invoice of the sender named in the letter. The tick is independent of **Unique**: a customer number doesn't have to be unique to help find a folder again.
 
 This is how Ablago uses it, without AI and only with the folders the person may read:
 

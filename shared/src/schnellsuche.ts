@@ -12,7 +12,7 @@ export const suchWoerter = (s: string) => suchNormal(s).split(/\s+/).filter(Bool
 export function trefferGrund(m: Pick<Mappe, 'werte'>, typ: Mappentyp | undefined, woerter: string[], titelVon: (id: string) => string = (id) => id): { feld: string; wert: string } | null {
   if (!typ || !woerter.length) return null;
   const kandidaten = typ.felder.filter((f) => f.typ !== 'passwort')
-    .map((f) => ({ feld: f.label, wert: formatiere(f, m.werte[f.key], titelVon) })).filter((x) => x.wert);
+    .map((f) => ({ feld: f.label, wert: formatiere(f, m.werte[f.key], titelVon, { felder: typ.felder, werte: m.werte }) })).filter((x) => x.wert);
   return kandidaten.find((x) => woerter.every((w) => suchNormal(x.wert).includes(w)))
     ?? kandidaten.find((x) => woerter.some((w) => suchNormal(x.wert).includes(w))) ?? null;
 }

@@ -75,8 +75,9 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 | Verweis | Ziel-Mappentypen (einer oder mehrere), Art des Verweises, mehrere Mappen erlaubt, alle vom selben Typ |
 | Passwort | – (wird verschlüsselt gespeichert, siehe unten) |
 | Tabelle | zeigt Mappen vom Typ …, die über Feld … hierher verweisen; Spalten aus Trefferliste …; Beschriftung von „+ Neu“ (siehe [unten](#tabelle)) |
+| Zusammengesetzt | Vorlage aus Platzhaltern, eindeutig als Kombination (siehe [unten](#zusammengesetzt)) |
 
-Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
+Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht. Sind zwei Felder eindeutig, gilt das für jedes einzeln; soll eine **Kombination** nur einmal vorkommen (Rechnungsnummer je Absender), nimm ein [zusammengesetztes Feld](#zusammengesetzt).
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
 
@@ -110,6 +111,26 @@ In der Mappe stehen die Zeilen sortiert wie in der Trefferliste des anderen Typs
 **Kein eigener Wert.** Eine Tabelle ist reine Darstellung wie ein Abschnitt: Sie steht nicht in den Werten der Mappe, nicht im [Export](export.md) und [Vollexport](export.md), nicht in Bedingungen, Spalten oder der Titel-Vorlage und ist nie Pflicht. Summen rechnet sie nicht – das ist Sache von Paketen, etwa *Rechnungen*, das prüft, ob die Positionen zum Betrag passen. Werte direkt in der Tabelle ändern geht nicht; dafür die Mappe öffnen.
 
 Solange eine Tabelle Mappen eines Typs zeigt, lässt sich dieser Typ nicht löschen und sein Verweisfeld nicht entfernen; Ablago nennt dann die Tabelle. Pakete bringen Tabellen mit (`typ: tabelle` mit `quelle`, siehe Entwicklerhandbuch).
+
+### Zusammengesetzt: eindeutig als Kombination { #zusammengesetzt }
+
+Ein **zusammengesetztes Feld** setzt sich aus anderen Feldern derselben Mappe zusammen – nach einer **Vorlage** mit Platzhaltern und Filtern wie die [Titel-Vorlage](#titel-einer-mappe). Niemand pflegt den Wert von Hand: Ablago setzt ihn beim Speichern, die Mappe zeigt ihn nur an. Meist ist es **eindeutig** – so verhindert Ablago Doppelte über eine Kombination von Werten.
+
+**Beispiel: Rechnungsnummer je Absender.** Verschiedene Firmen vergeben dieselben Rechnungsnummern; *Rechnungsnummer* allein kann also nicht eindeutig sein. Lege an der *Rechnung* ein Feld *Kennung* an:
+
+1. Feldart **Zusammengesetzt**, Vorlage `{von} · {rechnungsnummer}` – die Knöpfe unter der Vorlage fügen die Platzhalter der Felder ein.
+2. Haken **Eindeutig**.
+3. Speichern.
+
+Legt jemand dieselbe Rechnung ein zweites Mal an, steht am Feld *Absender*: „Diese Kombination aus Absender und Rechnungsnummer gibt es schon in „RE-2026-17 von Stadtwerke Musterstadt“.“ – den Titel der vorhandenen Mappe nennt Ablago nur, wenn die Person sie lesen darf. Die Meldung steht am ersten beteiligten Feld, weil man dort etwas ändert, nicht am zusammengesetzten Feld.
+
+- **Verweise zählen über die Mappe selbst**, nicht über ihren Titel: Zwei Organisationen mit gleichem Namen sind zwei Kombinationen. Angezeigt wird der Titel – für jede Person nur, wenn sie die verwiesene Mappe lesen darf, sonst „nicht sichtbare Mappe“.
+- **Platzhalter:** Text, Zahl, Betrag, Prozent, Datum, Zeitraum, Ja/Nein, Auswahlliste und Verweis. Nicht: Passwörter (wie in der Titel-Vorlage), Langtext und formatierter Text, Tabellen, andere zusammengesetzte Felder und Felder mit Nummernkreis (die sind ohnehin eindeutig). Filter wie `{rechnungsdatum|jahr}` wirken wie im Titel – `{bereich} · {datum|jahr}` heißt „je Bereich und Jahr“.
+- **Verglichen** wird ohne Sprache: Datum als `2026-11-30`, Auswahl als fester Wert, Groß- und Kleinschreibung zählen nicht. Leere Teile fallen samt Trenner weg; sind alle leer, hat das Feld keinen Wert und zählt nicht.
+- **In der Mappe** steht das Feld nur lesbar mit dem Hinweis „setzt sich zusammen aus Absender und Rechnungsnummer“ – im selben Rahmen wie ein [berechnetes Feld](#berechnete-felder). Es ändert sich sofort, wenn man einen Teil ändert. Nie Pflicht.
+- **Vorlage ändern:** Ablago rechnet danach alle Mappen des Typs neu. Hätten dann mehrere Mappen dieselbe Kombination, fragt der Editor vorher mit der Anzahl nach („2 Mappen in „Kennung““) und speichert nicht still. Speicherst du trotzdem, passen diese Mappen nicht zur Definition, bis jemand sie ändert – wie beim Einschalten von *eindeutig*.
+- **Überall nutzbar:** als Spalte, in [Bedingungen](sichten.md) und der erweiterten Suche (wie Text), in der Suche, in der Titel-Vorlage, mit [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen), im [Export](export.md) und [Vollexport](export.md), in [Paketen](pakete.md) und über die [Schnittstelle](api.md) – dort nur zum Lesen. Bedingungen und die Suche vergleichen den gespeicherten Wert; Verweise stehen darin als Kennung der Mappe, ein Name findet sie dort nicht – dafür gibt es die Bedingung am Verweisfeld.
+- **Nicht in der Historie:** Dort stehen die Änderungen der Teile.
 
 ### Felder ausblenden statt löschen { #felder-ausblenden }
 
@@ -214,7 +235,7 @@ Mit dem Haken **Zum Wiederfinden nutzen** sagst du Ablago, über welche Werte es
 | Rechnung | Rechnungsnummer |
 | Fahrzeug | Kennzeichen |
 
-Geeignet sind Text (auch mit Format IBAN, E-Mail oder Telefon), Zahl und Verweis. Der Haken ist unabhängig von **Eindeutig**: Eine Kundennummer muss nicht eindeutig sein, um beim Wiederfinden zu helfen.
+Geeignet sind Text (auch mit Format IBAN, E-Mail oder Telefon), Zahl, Verweis und [Zusammengesetzt](#zusammengesetzt). Bei einem zusammengesetzten Feld zählt nur die ganze Kombination: Jede Nummer und jeder Text daraus steht im Dokument, und jede verwiesene Mappe hat sich selbst wiedergefunden – *Rechnungsnummer je Absender* findet so nur die Rechnung des Absenders, der im Brief steht. Der Haken ist unabhängig von **Eindeutig**: Eine Kundennummer muss nicht eindeutig sein, um beim Wiederfinden zu helfen.
 
 So arbeitet Ablago damit, ohne KI und nur mit den Mappen, die die Person lesen darf:
 

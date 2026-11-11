@@ -1801,6 +1801,9 @@
   "tabelle.gibt-es-nicht": "Diese Tabelle gibt es an der Mappe nicht.",
   "tabelle.quelle-gebraucht": "Das Feld „{feld}“ braucht die Tabelle „{tabelle}“ in „{typ}“: Sie zeigt Mappen dieses Typs über dieses Feld. Entferne erst die Tabelle oder wähle dort ein anderes Feld.",
   "tabelle.typ-gebraucht": "Die Tabelle „{label}“ in „{name}“ zeigt Mappen dieses Typs.",
+  "zusammengesetzt.doppelte": "Nach dieser Änderung hätten mehrere Mappen dieselbe Kombination: {liste}. Sie passen dann nicht zur Definition, bis jemand sie ändert. Trotzdem speichern?",
+  "zusammengesetzt.doppelte-feld_one": "{anzahl} Mappe in „{label}“",
+  "zusammengesetzt.doppelte-feld_other": "{anzahl} Mappen in „{label}“",
   "pakete.tabelle-typ": "mappentypen: „{typ}“ → Feld „{feld}“: Die Tabelle zeigt Mappen vom Typ „{quelle}“, den das Paket nicht mitbringt.",
   "pakete.tabelle-feld": "mappentypen: „{typ}“ → Feld „{feld}“: Das Feld „{quellfeld}“ von „{quelle}“ ist kein Verweisfeld auf diesen Typ – die Tabelle zeigt nur Mappen, die über ein solches Feld hierher verweisen.",
   "paketerstellung.tabelle": "Feldart Tabelle",
@@ -1834,5 +1837,6 @@
   "organisation.nichts-bisher": "Es gibt keine bisherige Angabe zum Verantwortlichen, die sich übernehmen ließe.",
   "organisation.schon-da": "Es gibt schon eine eigene Organisation – die bisherige Angabe bitte dort von Hand ergänzen.",
   "organisation.ohne-basis": "Dafür braucht es einen Mappentyp mit dem Merkmal „eigene Organisation“ – das Paket Basis ab Version 1.7.0.",
-  "paketerstellung.organisation": "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung)"
+  "paketerstellung.organisation": "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung)",
+  "paketerstellung.zusammengesetzt": "Feldart Zusammengesetzt"
 }

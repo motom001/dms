@@ -68,6 +68,8 @@ export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   passwort: [],
   // Tabellen (#1030) haben keinen Wert.
   tabelle: [],
+  // Zusammengesetzt (#1050): wie Text – verglichen wird der gespeicherte Schlüssel (Verweise als Kennung).
+  zusammengesetzt: ['gleich', 'enthaelt', 'leer', 'nichtLeer'],
 };
 
 /** Operatoren für ein Feld: „zeigt auf Mappe vom Typ …“ nur bei Verweisen mit mehreren Zieltypen (#1036). */
@@ -501,7 +503,7 @@ export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
     const x = num ? Number(v) : String(v);
     const a = num ? Number(f.a) : String(f.a ?? '');
     const b = num ? Number(f.b) : String(f.b ?? '');
-    if (f.feldart === 'text') return f.op === 'gleich' && String(v).toLowerCase() === String(f.a ?? '').toLowerCase();
+    if (f.feldart === 'text' || f.feldart === 'zusammengesetzt') return f.op === 'gleich' && String(v).toLowerCase() === String(f.a ?? '').toLowerCase();
     switch (f.op) {
       case 'gleich': return x === a;
       case 'kleiner': return x < a;

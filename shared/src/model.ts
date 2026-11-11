@@ -18,9 +18,10 @@ import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, Z
 import { t, t as tx } from './texte';
 import { SCHLUESSEL, TYP_KENNUNG } from './kennungen';
 import { tabellenProbleme } from './tabelle';
+import { meldefeld, teileVon, zusammengesetztProbleme } from './zusammengesetzt';
 import { teilProbleme, type TeilKontext } from './teile';
 import { gebietsschema, registrierteSprachen, textNur } from './sprache';
-import { optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
+import { feldLabel as feldLabelVon, optionText, type AbschnittTeile, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from './beschriftung';
 export { zeitzone } from './region';
 
 export const FELDTYPEN = {
@@ -45,6 +46,12 @@ export const FELDTYPEN = {
    * Feldern. Kein eigener Wert – reine Darstellung wie ein Abschnitt (tabelle.ts).
    */
   tabelle: 'Tabelle',
+  /**
+   * Zusammengesetzt (#1050): schreibgeschützt aus anderen Feldern dieser Mappe nach der Vorlage `vorlage` (Platzhalter
+   * und Filter wie die Titel-Vorlage), auf Wunsch eindeutig als Kombination. Gespeichert der Schlüssel mit den Kennungen
+   * verwiesener Mappen, angezeigt der Text mit ihren Titeln (zusammengesetzt.ts).
+   */
+  zusammengesetzt: 'Zusammengesetzt',
 } as const;
 export type Feldtyp = keyof typeof FELDTYPEN;
 /**
@@ -66,7 +73,7 @@ export interface Feld {
   label: string;
   typ: Feldtyp;
   pflicht?: boolean;
-  /** Wert darf je Mappentyp nur einmal vorkommen (Text, Zahl). */
+  /** Wert darf je Mappentyp nur einmal vorkommen (Text, Zahl, Zusammengesetzt – dort die Kombination, #1050). */
   eindeutig?: boolean;
   hilfe?: string;
   standard?: string | boolean | null;
@@ -177,6 +184,11 @@ export interface Feld {
    * einer dort freigegebenen Rolle; sonst 403, auch über die Schnittstelle. Kommt aus dem Paket; die Werkbank lässt ihn.
    */
   schreibschutz?: import('./feldmerkmale').Schreibschutz;
+  /**
+   * Zusammengesetzt (#1050): Vorlage aus Platzhaltern und Filtern, z. B. „{bereich} · {zeitraum}“ (höchstens
+   * VORLAGE_MAX Zeichen). Nur bei `typ: 'zusammengesetzt'`.
+   */
+  vorlage?: string;
 }
 
 /**
@@ -827,6 +839,8 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
       }));
       if (f.pflicht || f.eindeutig) m.push(t('gemeinsam.tabelle.kein-wert'));
     }
+    // Zusammengesetzt (#1050): Vorlage mit Platzhaltern aus geeigneten Feldern dieses Typs.
+    if (f.typ === 'zusammengesetzt') m.push(...zusammengesetztProbleme(mappentypDaten.felder, f));
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push(t('gemeinsam.model.mindestens-einen-auswahlwert'));
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
       m.push(t('gemeinsam.model.mindestlaenge-ist-groesser-als'));
@@ -910,6 +924,10 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
       case 'datum':
         if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) fehler(f.key, t('gemeinsam.model.kein-gueltiges-datum'));
         break;
+      case 'zusammengesetzt':
+        // Berechnet beim Speichern (#1050) – ein Text.
+        if (typeof v !== 'string') fehler(f.key, t('gemeinsam.model.text-erwartet'));
+        break;
       case 'zeitraum':
         // Gespeichert immer als { anzahl, einheit } (#1035); Texte wie „3 Monate“ gleicht bereinigeWerte vorher an.
         if (!istZeitraum(v)) fehler(f.key, t('gemeinsam.feldarten.kein-zeitraum', { max: ZEITRAUM_ANZAHL_MAX }));
@@ -938,7 +956,15 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
         break;
       }
     }
-    if (!p.felder[f.key] && f.eindeutig && (f.typ === 'text' || f.typ === 'zahl')) {
+    if (!p.felder[f.key] && f.eindeutig && f.typ === 'zusammengesetzt') {
+      // Kombination (#1050): Meldung mit den beteiligten Feldern am ersten davon, das man sieht (Hinweis Qualität).
+      const titel = ctx.doppelt(f.key, v as string);
+      if (titel !== undefined) {
+        const felder = new Intl.ListFormat(gebietsschema(), { type: 'conjunction' }).format(teileVon(pick.felder, f).map((x) => feldLabelVon(x)));
+        const ort = meldefeld(pick.felder, f, ctx.verborgen);
+        (p.felder[ort] ??= []).push(titel ? t('gemeinsam.zusammengesetzt.doppelt-in', { felder, titel }) : t('gemeinsam.zusammengesetzt.doppelt', { felder }));
+      }
+    } else if (!p.felder[f.key] && f.eindeutig && (f.typ === 'text' || f.typ === 'zahl')) {
       const titel = ctx.doppelt(f.key, v as string | number);
       // Leer: die andere Mappe darf der Benutzer nicht sehen – dann ohne ihren Titel (#743).
       if (titel !== undefined) fehler(f.key, titel ? t('gemeinsam.model.bereits-vergeben-in', { titel }) : t('gemeinsam.model.bereits-vergeben'));
@@ -1018,7 +1044,21 @@ export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> & Pick<Pa
 }
 
 function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: Werte, titelVon: (id: string) => string, index: Indexwerte): string {
-  const ersetzt = wirksameVorlage(t)
+  return setzeEin(wirksameVorlage(t), t, werte, titelVon, index);
+}
+
+/**
+ * Text eines zusammengesetzten Felds (#1050) für eine Person: die Vorlage mit den formatierten Werten, Verweise mit dem
+ * Titel aus `titelVon` – der Aufrufer reicht nur Titel herein, die die Person sehen darf (sonst „(nicht sichtbar)“).
+ * Gespeichert ist der Schlüssel mit den Kennungen (zusammengesetzt.ts); dieser Text wird nie gespeichert.
+ */
+export function zusammengesetztText(felder: readonly Feld[], f: Pick<Feld, 'vorlage'>, werte: Werte, titelVon: (id: string) => string = (id) => id): string {
+  return setzeEin(f.vorlage ?? '', { felder: felder.filter((x) => x.typ !== 'zusammengesetzt') as Feld[] }, werte, titelVon, {});
+}
+
+/** Vorlage mit Platzhaltern und Filtern (#170) einsetzen – für Titel und zusammengesetzte Felder (#1050). */
+function setzeEin(vorlage: string, t: Pick<Mappentyp, 'felder'>, werte: Werte, titelVon: (id: string) => string, index: Indexwerte): string {
+  const ersetzt = vorlage
     .replace(PLATZHALTER, (_, k: string, kette: string) => {
       let text = '';
       let roh: unknown;
@@ -1031,7 +1071,9 @@ function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: W
       } else {
         const f = t.felder.find((x) => x.key === k);
         // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
-        if (f && f.typ !== 'passwort') { text = formatiere(f, werte[k], titelVon); roh = werte[k]; art = f.typ; }
+        // Zusammengesetzt (#1050): der Text aus seinen Teilen – Verweise mit Titel wie ein Verweis im Titel.
+        if (f && f.typ === 'zusammengesetzt') { text = zusammengesetztText(t.felder, f, werte, titelVon); roh = text; art = 'text'; }
+        else if (f && f.typ !== 'passwort') { text = formatiere(f, werte[k], titelVon); roh = werte[k]; art = f.typ; }
         // Verweis noch leer, alter Text da (#534): bis zur Umwandlung zählt der Text.
         const alt = f ? altesTextfeldVon(t, f) : undefined;
         if (alt && istLeer(werte[k]) && !istLeer(werte[alt.key])) { text = formatiere(alt, werte[alt.key], titelVon); roh = werte[alt.key]; art = alt.typ; }
@@ -1310,8 +1352,13 @@ export const MAX_DATEIGROESSE = 100 * 1024 * 1024;
 /** Höchstens so viele Mappen in einer Auswahl (#149). */
 export const MAX_AUSWAHL = 5000;
 
-/** Wert lesbar formatieren – in der Sprache des Benutzers (#729; Auswahl als Beschriftung, #728). `titelVon` löst Referenzen auf. */
-export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) => string = (id) => id): string {
+/**
+ * Wert lesbar formatieren – in der Sprache des Benutzers (#729; Auswahl als Beschriftung, #728). `titelVon` löst Referenzen
+ * auf. Zusammengesetzte Felder (#1050) brauchen `mappe` (Felder des Typs und Werte der Mappe) – ohne sie bleibt der Text
+ * leer; nie erscheint der gespeicherte Schlüssel mit Kennungen.
+ */
+export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) => string = (id) => id, mappe?: { felder: readonly Feld[]; werte: Werte }): string {
+  if (f.typ === 'zusammengesetzt') return mappe ? zusammengesetztText(mappe.felder, f, mappe.werte, titelVon) : '';
   if (v == null || v === '') return '';
   switch (f.typ) {
     case 'betrag': {

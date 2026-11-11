@@ -16,6 +16,8 @@ Passung der Mappen und Pakete am Typ. Schicht 2 der Zielaufteilung – über Ker
 - `systemtypen.ts` – `Systemtypen`: `sichereSystemtypen` (Schritt der Mappentypen in der Systemausstattung, #963),
   Benutzer-Mappen für die Benutzerverwaltung (`benutzerspiegel`, `entferneBenutzerMappe`, `weitereRollen`),
   `ablageortTyp` (#883), Spur im Verwaltungsmodus (#820).
+- `zusammengesetzt.ts` – Zusammengesetzte Felder (#1050) nach einer Änderung des Typs: `doppelteNachher` (Rückfrage mit
+  Anzahl, 409) und `neuBerechnen` (Werte aller Mappen in derselben Transaktion wie der Typ).
 - `pakete-am-typ.ts` – `TypPakete` (#686): `paketeAmTyp`, `setzePaketVerwehrt`, `paketSiehtNicht` (Zustellung).
 - `index.ts` – die einzige Tür. `mappentypen.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 

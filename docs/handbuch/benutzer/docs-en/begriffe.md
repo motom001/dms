@@ -37,6 +37,10 @@ See also: [Organisation](#organisation), [Person](#person).
 A field whose value a package works out, e.g. "Cancel by" or the status of a contract. In the folder it is read-only, with "calculated by …" and the name of the package underneath. If the package no longer calculates it, the last value stays ("no longer calculated") until the administrator releases the field again.  
 See also: [Field](#feld), [Package](#paket), [Note from a package](#hinweis-von-paketen).
 
+<a id="zusammengesetztes-feld"></a>**Combined field** (*Zusammengesetztes Feld*) · ~ with explanation · everyone  
+A field that Ablago puts together from other fields of the folder when saving, e.g. "Sender · Invoice number". In the folder it is read-only, with "combined from …" underneath. If it is unique, the combination may exist only once; links count by the folder itself, not by its name.  
+See also: [Field](#feld), [Calculated field](#berechnetes-feld).
+
 <a id="bedingung"></a>**Condition** (*Bedingung*) · ~ with explanation · administrators  
 A view's filter on field values, counts, deadlines, personal things or the Library attribute, e.g. a field equal to "current user", "is my favourite" or "Library is also used for work".
 

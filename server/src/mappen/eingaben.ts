@@ -11,6 +11,7 @@ import { wertfelder } from '../../../shared/src/tabelle';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
 import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgtaus';
 import { passtZusammen } from '../../../shared/src/vorbelegen';
+import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import type { Vorschlaege } from '../../../shared/src/erkennung';
 import { einzigesZiel, type Feld, pruefeMappe, zielErlaubt, type Feldkonflikt, formatiere, gemeinsameFelder, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte, zieleVon, zielTypenAus } from '../../../shared/src/model';
 import type { Rechte } from '../../../shared/src/rechte';
@@ -41,7 +42,10 @@ export function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte =
     werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : gleicheArtAn(f, v as Werte[string]);
   }
   // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
-  return gleicheFormateAn(typ, werte, bisher);
+  const angeglichen = gleicheFormateAn(typ, werte, bisher);
+  // Zusammengesetzt (#1050): schreibgeschützt – was die Anfrage dafür schickt, zählt nicht; Ablago setzt es aus den Teilen.
+  setzeZusammengesetzte(typ, angeglichen);
+  return angeglichen;
 }
 
 /**
@@ -88,7 +92,8 @@ export class MappenEingaben {
     const ids = [...new Set(verweiseVon(typ, werte).map((v) => v.zielId))].filter(istUuid);
     const typen = await this.repo.typenVon(ids);
     const doppelt = new Map<string, string>();
-    const eindeutig = typ.felder.filter((f) => f.eindeutig && !istLeer(werte[f.key]) && (f.typ === 'text' || f.typ === 'zahl'));
+    // Zusammengesetzt (#1050): die Kombination über ihren gespeicherten Schlüssel (Verweise als Kennung) – derselbe Index.
+    const eindeutig = typ.felder.filter((f) => f.eindeutig && !istLeer(werte[f.key]) && (f.typ === 'text' || f.typ === 'zahl' || f.typ === 'zusammengesetzt'));
     if (eindeutig.length) {
       const funde = await this.repo.findeDoppelte(typ.id, eindeutig.map((f) => ({ mappeId: eigeneId ?? null, feldKey: f.key, wert: String(werte[f.key]) })));
       const lesbar = await this.lesbare(z, [...new Set([...funde.values()].map((d) => d.id))]);
