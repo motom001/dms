@@ -356,6 +356,7 @@ export class Automatisierungen {
     };
     d.dienst.fristenUebernehmen = () => this.fristenUebernehmen();
     d.dienst.paketAutomatisierungen = (p, liste, ein) => this.ausPaket(p, liste, ein);
+    d.dienst.typUmgebaut = (alt, neu, felder) => this.typUmgebaut(alt, neu, felder);
     // Vollexport: Automatisierungen mit ihrem Änderungsverlauf (die Läufe sind Protokoll und bleiben draußen).
     d.dienst.automatisierungenExport = async () => Promise.all((await this.d.repo.liste()).map(async (a) => ({ ...a, fassungen: await this.d.repo.fassungen(a.id) })));
   }
@@ -393,6 +394,30 @@ export class Automatisierungen {
     if (typeof x.wenn.typ !== 'string' || !x.wenn.typ || typId(x.wenn.typ)) return null;
     log.warn('Mitgelieferte Automatisierung angehalten: Mappentyp unbekannt', { paket, automatisierung: x.schluessel, typ: x.wenn.typ });
     return { grund: 'fehlerhaft', text: t('automatisierung.angehalten.typ-unbekannt', { typ: x.wenn.typ }), zeit: this.iso() };
+  }
+
+  /**
+   * Paket-Umbau (#1041): Automatisierungen, die den alten Typ nennen, zeigen danach auf den Zieltyp; hängen sie an ihm
+   * (Auslöser), nennen ihre Karten die neuen Feldkennungen. Als neue Fassung im Änderungsverlauf, an/aus bleibt.
+   */
+  async typUmgebaut(alt: string, neu: string, felder: Record<string, string>): Promise<number> {
+    let n = 0;
+    const umbenennen = (x: unknown, typAm: boolean): unknown => {
+      if (typeof x === 'string') return x === alt ? neu : typAm ? x.replace(/\{([a-z][a-z0-9_]*)([|}])/g, (g, k: string, r: string) => (felder[k] ? `{${felder[k]}${r}` : g)) : x;
+      if (Array.isArray(x)) return x.map((y) => umbenennen(y, typAm));
+      if (!x || typeof x !== 'object') return x;
+      return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, typAm && (k === 'feld' || k === 'key') && typeof v === 'string' && felder[v] ? felder[v] : umbenennen(v, typAm)]));
+    };
+    for (const a of await this.d.repo.liste()) {
+      const roh = { wenn: a.wenn, und: a.und, dann: a.dann, sonst: a.sonst };
+      if (!JSON.stringify(roh).includes(alt)) continue;
+      const amTyp = (a.wenn as { typ?: string | null }).typ === alt;
+      const x = umbenennen(roh, amTyp) as typeof roh;
+      await this.d.repo.speichere(a.id, { ...a, ...x }, null, a.version);
+      n++;
+    }
+    if (n) log.info('Automatisierungen nach Paket-Umbau umgeleitet', { anzahl: n, typ: alt, ziel: neu });
+    return n;
   }
 
   async ausPaket(p: InstalliertesPaket, liste: PaketAutomatisierung[], ein: string[] = []): Promise<number> {

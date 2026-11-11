@@ -1065,5 +1065,9 @@
   "organisation.telefon": "Telefon: {wert}",
   "organisation.datenschutzbeauftragter": "Datenschutzbeauftragter: {wert}",
   "anzeige.eigene-organisation": "„{feld}“ zeigt auf eine eigene Organisation",
-  "anzeige.eigene-organisation-nicht": "„{feld}“ zeigt auf keine eigene Organisation"
+  "anzeige.eigene-organisation-nicht": "„{feld}“ zeigt auf keine eigene Organisation",
+  "umbau.regel-grund": "{name}: Grundeinstellung",
+  "umbau.regel": "{name}: {regel}",
+  "umbau.regel-ende": "{name}: Ende",
+  "umbau.schreiber": "Ablago beim Paket-Umbau"
 }

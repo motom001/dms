@@ -294,7 +294,7 @@ begriffe:
     beschreibung: One sentence showing what else you can do in Ablago – at most one a day as a quiet line on the start page; the sentence leads to the place or starts a tour. Hide it with ×, switch it off completely in My account.
   Paket:
     begriff: Package
-    beschreibung: An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing.
+    beschreibung: An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing – except a conversion, which the preview shows explicitly.
   Beispiel-Mappe:
     begriff: Sample folder
     beschreibung: A folder with invented data that a package creates on request when installing (tick "Create sample folders"), so you can see what belongs in a folder – to try out, not to keep. Unchanged examples can be removed again together with their documents. Unlike a preset.
@@ -310,6 +310,9 @@ begriffe:
   Herausgeber:
     begriff: Publisher
     beschreibung: Who publishes a package, as a reversed domain, e.g. app.ablago for the official packages (#1084). It is shown next to the name, e.g. "Contracts · app.ablago". Ablago never replaces an installed package with one of the same ID from a different publisher.
+  Umbau:
+    begriff: Conversion
+    beschreibung: A package update that moves existing folder types into another package – with all folders and values (#1041). A type is taken over (same ID) or merged into another; whatever fits no field is kept in a note. With preview and questions, only "Full administration", all or nothing. Permissions never become broader.
   Paketkatalog:
     begriff: Package catalogue
     beschreibung: The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue"). Further catalogues are entered in expert mode under "Further sources".

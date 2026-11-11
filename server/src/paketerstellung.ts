@@ -38,6 +38,7 @@ import { DMS_TEILE_AB } from '../../shared/src/teile';
 import { archivInsPaket, DMS_ARCHIV_PAKET_AB } from '../../shared/src/archiv';
 import { DMS_ZUSAMMENGESETZT_AB } from '../../shared/src/zusammengesetzt';
 import { DMS_VORGABEN_AB, teileVorgabe } from '../../shared/src/vorgaben';
+import { UMBAU_FELD } from '../../shared/src/umbau';
 import { DMS_ORGANISATION_AB } from '../../shared/src/organisation';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -387,8 +388,10 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   // 3. Mappentypen
   const paketTypen = eigene.map((mappentyp) => {
     const wo = (was: string) => `„${mappentyp.name}“ → ${was}`;
-    for (const f of mappentyp.felder.filter((x) => x.berechnetVon && !x.system)) hinweis(t('meldungen.paketerstellung.berechnet-weg', { wo: wo(`Feld „${f.label}“`) }));
-    const felder = mappentyp.felder.filter((f) => !f.system).map((f) => {
+    // „Übernommen aus“ (#1041) gehört zum Umbau dieser Installation – es kommt nicht ins Paket (wie Rechte-Regeln).
+    const eigeneFelder = mappentyp.felder.filter((f) => !f.system && f.key !== UMBAU_FELD);
+    for (const f of eigeneFelder.filter((x) => x.berechnetVon)) hinweis(t('meldungen.paketerstellung.berechnet-weg', { wo: wo(`Feld „${f.label}“`) }));
+    const felder = eigeneFelder.map((f) => {
       // ausText (#534) gehört zu einem Update aus der Registry, nicht in ein selbst erstelltes Paket.
       // berechnetVon (#1034) gehört dem Paket mit Code, das den Typ mitbringt – ein selbst erstelltes Paket rechnet nichts.
       const { zielTypen, zielOptional, system: _s, auswahlFilter, frist, standard, ausText: _a, anzeigen, ...rest } = f as Feld;

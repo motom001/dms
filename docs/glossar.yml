@@ -686,7 +686,7 @@ begriffe:
     code: Tipp, tipps.yaml
   - begriff: Paket
     bereich: werkbank
-    beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.
+    beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts – außer ein Umbau, den die Vorschau ausdrücklich zeigt.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Plugin, Erweiterung, App, Modul]
@@ -731,6 +731,14 @@ begriffe:
     nicht_verwenden: [Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher]
     verwandt: [Paket, Paketkatalog]
     code: herausgeber, InstalliertesPaket.herausgeber
+  - begriff: Umbau
+    bereich: werkbank
+    beschreibung: Ein Paket-Update, das vorhandene Mappentypen in ein anderes Paket zieht – mit allen Mappen und Werten (#1041). Ein Typ wird übernommen (gleiche Id) oder geht in einem anderen auf; was in kein Feld passt, steht in einer Notiz. Mit Vorschau und Rückfragen, nur „Gesamte Verwaltung“, ganz oder gar nicht. Rechte werden dabei nie breiter.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Migration (ist die Datenbank), Umzug (ist eine neue Paket-Id)]
+    verwandt: [Paket, Herausgeber]
+    code: umbau, shared/src/umbau.ts
   - begriff: Paketkatalog
     bereich: werkbank
     beschreibung: Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.

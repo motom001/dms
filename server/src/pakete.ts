@@ -48,6 +48,8 @@ import {
   anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
   setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
 } from './pakete/index';
+import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, uebernahmeDaten, wendeEntscheidungenAn, type UmbauErgebnis, type UmbauLage } from './pakete/index';
+import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
 import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
 
 const log = protokoll.modul('werkbank');
@@ -315,6 +317,8 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
   ergaenzungen?: PaketErgaenzung[];
   /** Inhalt der Text-Vorlagen (#1038) je `datei` (relativ zu inhalt/, vorlagen/…md). */
   vorlagenDateien?: Map<string, Buffer>;
+  /** Umbau-Schritte (#1041, `umbau` im Manifest): Mappentypen ziehen in Typen dieses Pakets (shared/src/umbau.ts). */
+  umbau?: UmbauSchritt[];
   /** Mitgelieferte Automatisierungen (#712, dms-registry #108), roh aus inhalt/automatisierungen.yaml; Typen als Paket-Schlüssel. */
   automatisierungen: PaketAutomatisierung[]; readme: string; einstellungen: Einstellungsbeschreibung | null; code: PaketCodeTeil | null;
   /** Sprachpaket (#731): Angaben, Texte und Beschriftungen der Standardpakete; null bei allen anderen Paketen. */
@@ -582,6 +586,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   }
   // Vorgaben (#1038): feste Kennung, eigene Typen oder Typen von Abhängigkeiten; Ergänzungen nur mit Vorlagen.
   const vt = liesVorgaben(liste('vorgaben'), { id: str(m.id), abh, typen, dateien }, fehler, `${VORLAGE_MAX / KB} KB`);
+  // Umbau (#1041): Schritte im Manifest; Ziele sind eigene Typen oder Typen einer Abhängigkeit.
+  const umbau = liesUmbau(m.umbau, { id: str(m.id), abh, typen }, fehler);
   const vk = { id: str(m.id), abh };
   for (const [i, b] of beispiele.entries()) fehler.push(...vorgabeVerweisFehler(vorgabeWerte(b.werte), `beispiele[${i + 1}]`, vt.vorgaben, vk));
   // Anzeigen, wenn … (#1033) „Verweis zeigt auf eine bestimmte Mappe“ über die Kennung einer Vorgabe: an einem Verweisfeld.
@@ -678,6 +684,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     typen, sichten, beispiele, wortlisten, automatisierungen, readme: dateien.get('README.md')?.toString('utf8') ?? '', einstellungen: einst.beschreibung, code,
     sprache, ...(beispielDateien.size ? { beispielDateien } : {}),
     ...(vt.vorgaben.length ? { vorgaben: vt.vorgaben } : {}), ...(vt.ergaenzungen.length ? { ergaenzungen: vt.ergaenzungen } : {}), ...(vt.vorlagenDateien.size ? { vorlagenDateien: vt.vorlagenDateien } : {}),
+    ...(umbau.length ? { umbau } : {}),
   };
 }
 
@@ -914,6 +921,8 @@ export interface TypPlan {
   konflikt: string | null; vorschlag: string | null;
   /** Fehlt im DMS, obwohl das Paket ihn installiert hatte (gelöscht) – wird nicht neu angelegt. */
   geloescht?: boolean;
+  /** Umbau (#1041): Der Typ entsteht nicht neu, sondern aus diesem vorhandenen (gleiche Id, Name des Pakets). */
+  uebernimmt?: string;
   /**
    * Archivmodus, mit dem ein neuer Typ angelegt wird (#1051): Vorgabe des Pakets, mit „beruflich genutzt“ jahreBeruflich;
    * stichtagName ist die Beschriftung des Stichtag-Felds. Fehlt bei vorhandenen Typen – deren Archivmodus bleibt.
@@ -948,6 +957,11 @@ export interface Vorschau {
   vorgaben: VorgabePlan[];
   /** Vorlagen an Vorgaben anderer Pakete (#1038, `ergaenzt`). */
   ergaenzungen: ErgaenzungPlan[];
+  /**
+   * Umbau (#1041): je Schritt, was umzieht, wohin, was in die Notiz kommt, Rückfragen und Rechte. Nicht leer = das
+   * Update braucht `umbauBestaetigt` (nur „Gesamte Verwaltung“, frische Anmeldung) und Antworten auf die Rückfragen.
+   */
+  umbau: UmbauPlan[];
   /** Was die Installation verhindert. */
   probleme: string[];
   /** Feste Kennungen zu `probleme` für die Oberfläche (#729: nicht am Text erkennen), z. B. „schon-installiert“. */
@@ -987,7 +1001,15 @@ export interface InstallierenEingabe {
   rechteBestaetigt?: boolean;
   /** Erstmals gesetzter Herausgeber eines Bestandspakets bestätigt (#1084, Vorschau.herausgeberBestaetigen). */
   herausgeberBestaetigt?: boolean;
+  /** Umbau bestätigt (#1041, Vorschau.umbau). */
+  umbauBestaetigt?: boolean;
+  /** Antworten auf die Rückfragen des Umbaus: je alter Typ (Kennung) und Feld. */
+  umbauEntscheidungen?: UmbauEntscheidungen;
+  /** Setzt die Route (nie aus der Anfrage): Die Person hat „Gesamte Verwaltung“ – nur sie bestätigt einen Umbau. */
+  gesamteVerwaltung?: boolean;
 }
+/** Was ein Update mit Umbau zusätzlich braucht (#1041); setzt die Route aus Anfrage und Anmeldung. */
+export interface UmbauEingabe { umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen; gesamteVerwaltung?: boolean }
 
 const modulInfo = (c: PaketCodeTeil) => {
   const m = c.dateien.find((d) => d.name === 'modul.wasm')!.inhalt;
@@ -1357,6 +1379,22 @@ export interface Sammeldatei {
 const SAMMEL_KATALOG = 'katalog.json';
 
 const mitPruefung = (v: Vorschau, pruefung: HerkunftPruefung): Vorschau => ({ ...v, pruefung });
+/** Vorschau eines Typs, den ein Umbau-Schritt übernimmt (#1041): Name des Pakets, Konflikt ohne den alten Typ selbst. */
+function uebernahmePlan(paketTyp: PaketTyp, umbau: UmbauLage, x: { m: Manifest; namen: Record<string, string>; typen: Mappentyp[]; geplant?: { typen: Set<string> }; belegt: Set<string> }): TypPlan | null {
+  const alt = umbau.schritte.find((g) => g.plan.art === 'uebernehmen' && g.eigenerZiel === paketTyp.schluessel)?.alt;
+  if (!alt) return null;
+  const name = (x.namen[paketTyp.schluessel] ?? paketTyp.name).trim();
+  const andere = new Set([...x.typen.filter((y) => y.id !== alt.id).map((y) => y.name.trim().toLowerCase()), ...(x.geplant?.typen ?? [])]);
+  const konflikt = andere.has(name.toLowerCase()) ? t('meldungen.pakete.einen-mappentyp-gibt-es', { name }) : null;
+  x.belegt.add(name.toLowerCase());
+  return { schluessel: paketTyp.schluessel, dmsSchluessel: typKennung(x.m.id, paketTyp.schluessel), name, felder: paketTyp.felder.length, vorhanden: false, neueFelder: [], neueRegister: [], konflikt, vorschlag: konflikt ? freierName(name, x.m.name, andere) : null, uebernimmt: alt.name };
+}
+/** Felder eines Pakettyps, wie Ablago sie anlegt – für die Vorschau des Umbaus (#1041); Verweisziele zählen dort nicht. */
+const paketFelderAus = (ty: PaketTyp | undefined, paketId: string): Feld[] => (ty?.felder ?? []).map((pf) => {
+  const f: Record<string, unknown> = { ...pf, ...(pf.berechnet === true ? { berechnetVon: paketId } : {}) };
+  for (const k of ['ziel', 'zielOptional', 'berechnet', 'quelle']) delete f[k];
+  return f as unknown as Feld;
+});
 const zeitText = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }); };
 /** Herkunft nicht bestätigt (#189, #594). */
 const herkunftFehler = (p: HerkunftPruefung) => new Fachfehler(409, p.art === 'ungueltig'
@@ -1366,6 +1404,8 @@ const herkunftFehler = (p: HerkunftPruefung) => new Fachfehler(409, p.art === 'u
 export class Paketverwaltung {
   private kataloge = new Map<string, { katalog: Katalog; pruefung: HerkunftPruefung; zeit: number }>();
   private uploads = new Map<string, Hochgeladen>();
+  /** Umbau (#1041): die geplante Lage zur Vorschau, die die Installation gleich ausführt. */
+  private umbauLagen = new WeakMap<Vorschau, UmbauLage>();
 
   constructor(private d: Dienst, private o: PaketOptionen) {
     setInterval(() => { void this.raeumeUploadsAuf(); }, UPLOAD_AUFRAEUMEN_MS).unref();
@@ -1764,7 +1804,7 @@ export class Paketverwaltung {
         upload, id: e.id, name: paket.manifest.name, version: e.version, gewaehlt: e.gewaehlt, abhaengigkeiten: paket.manifest.abhaengigkeiten,
         ...(paket.manifest.ergaenzt ? { ergaenzt: paket.manifest.ergaenzt } : {}),
         katalog: imKatalog(e) || drin ? 'gleich' : 'unbekannt', installiert: da, stand: !da ? 'neu' : c > 0 ? 'neuer' : c === 0 ? 'gleich' : 'aelter',
-        vorschau: mitPruefung(await this.plane(paket, undefined, katalog ?? signiert.katalog ?? undefined, {}, {}, { quelle: { herkunft: { art: 'hochgeladen', von: von.email, am }, pruefung }, sammel: sammelKennungen(gelesen.map((g) => g.paket)) }), pruefung),
+        vorschau: mitPruefung(await this.plane(paket, undefined, katalog ?? signiert.katalog ?? undefined, {}, {}, { quelle: { herkunft: { art: 'hochgeladen', von: von.email, am }, pruefung }, ablauf: true, sammel: sammelKennungen(gelesen.map((g) => g.paket)) }), pruefung),
       });
     }
     const sha256 = createHash('sha256').update(daten).digest('hex');
@@ -1866,8 +1906,8 @@ export class Paketverwaltung {
    * geplant (#405): Namen von Mappentypen und Ansichten (oberste Ebene), die Pakete davor im selben Ablauf anlegen –
    * sie zählen wie vorhandene; die eigenen kommen dazu.
    */
-  private async plane(paket: Paket, v?: KatalogVersion, katalog?: Katalog, namen: Record<string, string> = {}, sichtNamen: Record<string, string> = {}, mehr: { geplant?: { typen: Set<string>; sichten: Set<string> }; quelle?: PlanQuelle; sammel?: Set<string> } = {}): Promise<Vorschau> {
-    const { geplant, quelle, sammel } = mehr;
+  private async plane(paket: Paket, v?: KatalogVersion, katalog?: Katalog, namen: Record<string, string> = {}, sichtNamen: Record<string, string> = {}, mehr: { geplant?: { typen: Set<string>; sichten: Set<string> }; quelle?: PlanQuelle; sammel?: Set<string>; ablauf?: boolean } = {}): Promise<Vorschau> {
+    const { geplant, quelle, sammel, ablauf } = mehr;
     const m = paket.manifest;
     const installierte = await this.d.kern.repo.listePakete();
     // Umzug (#1084): Unter der neuen Id noch nicht da, aber unter einer früheren – dann ist es ein Update dieser Installation.
@@ -1973,6 +2013,15 @@ export class Paketverwaltung {
     // Vorgaben (#1038): Zustand je Vorgabe, Ergänzungen an Vorgaben anderer Pakete (die es geben muss).
     const { vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan } = await this.planeVorgaben(paket, ich, { installierte, typen, namen, herausgeber, hinweise });
     const beruflich = paket.typen.some((x) => x.archiv?.jahreBeruflich) && (await this.d.kern.merkmale()).beruflich;
+    // Umbau (#1041): je Schritt die Vorschau; Übernahmen gelten unten wie neue Typen (mit der Id des alten).
+    const umbauProbleme: Array<{ code: string; text: string }> = [];
+    const umbau = await planeUmbau(this.d, {
+      paket: { id: m.id, name: m.name, version: m.version, typen: paket.typen, umbau: paket.umbau ?? [] }, ich, installierte, typen, herausgeber,
+      herausgeberVon: (p) => this.herausgeberVon(p), paketFelder: (s) => paketFelderAus(paket.typen.find((x) => x.schluessel === s), m.id),
+    }, umbauProbleme);
+    for (const x of umbauProbleme) problem(x.code, x.text);
+    // Sicherheit: Jeder Umbau braucht seine eigene Vorschau und Bestätigung – nie „alle auf einmal“ im Ablauf.
+    if (ablauf && umbau.schritte.length) problem('umbau-einzeln', t('meldungen.pakete.umbau.einzeln', { name: m.name }));
     const typPlaene = await Promise.all(paket.typen.map(async (paketTyp): Promise<TypPlan> => {
       // Kennung im DMS (#1084): Paket und Schlüssel getrennt, nach außen `paket:schluessel` – eindeutig auch bei „_“ in beiden.
       const dmsSchluessel = typKennung(m.id, paketTyp.schluessel);
@@ -1995,6 +2044,9 @@ export class Paketverwaltung {
         };
       }
       if (vorhandenId) return { schluessel: paketTyp.schluessel, dmsSchluessel, name: paketTyp.name, felder: paketTyp.felder.length, vorhanden: false, neueFelder: [], neueRegister: [], konflikt: null, vorschlag: null, geloescht: true };
+      // Übernahme (#1041): Der alte Typ wird zu diesem – sein eigener Name zählt nicht als belegt.
+      const ueberPlan = uebernahmePlan(paketTyp, umbau, { m, namen, typen, geplant, belegt });
+      if (ueberPlan) return ueberPlan;
       if (typen.some((x) => x.schluessel === dmsSchluessel)) probleme.push(t('meldungen.pakete.die-kennung-hat-schon', { dmsSchluessel }));
       const name = (namen[paketTyp.schluessel] ?? paketTyp.name).trim();
       const konflikt = belegt.has(name.toLowerCase()) ? t('meldungen.pakete.einen-mappentyp-gibt-es', { name }) : null;
@@ -2036,13 +2088,13 @@ export class Paketverwaltung {
       if (!s.eltern) geplant?.sichten.add(name.toLowerCase());
       return { schluessel: s.schluessel, name, eltern: s.eltern ?? null, vorhanden: false, konflikt, vorschlag: konflikt ? freierName(name, m.name, new Set(geschwister)) : null, ...(ohne.length ? { ohne } : {}) };
     });
-    return {
+    const vorschau: Vorschau = {
       paket: { id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor, dms: m.dms, abhaengigkeiten: m.abhaengigkeiten, readme: v?.readme ?? null, changelog: v?.changelog ?? null, quelle: v?.quelle ?? null, herausgeber, herausgeberGeprueft: geprueft },
       dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich, umzug, herausgeberBestaetigen: herausgeberErstmals,
       herausgeberSchluessel: quelle?.pruefung.art === 'anbieter' && herausgeber ? quelle.pruefung.fingerabdruck ?? null : null,
       herkunft: ich?.herkunft ?? null,
       pruefung: null,
-      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, probleme, fehlercodes, hinweise,
+      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, umbau: umbau.schritte.map((g) => g.plan), probleme, fehlercodes, hinweise,
       automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
@@ -2050,6 +2102,8 @@ export class Paketverwaltung {
       laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) })), paketZeitplaene(paket)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
+    if (umbau.schritte.length) this.umbauLagen.set(vorschau, umbau);
+    return vorschau;
   }
 
   /** Sprache der Installation (#1038: Werte der Vorgaben); ohne Angabe Deutsch. */
@@ -2122,6 +2176,19 @@ export class Paketverwaltung {
     return `${typen.find((t) => t.id === id)?.name ?? s} (${p})`;
   }
 
+  /**
+   * Umbau (#1041, Sicherheit): nur „Gesamte Verwaltung“ (die Route setzt `gesamteVerwaltung`; die frische Anmeldung
+   * verlangt sie über `umbauBestaetigt`, verwaltungsbereiche.ts), ausdrücklich bestätigt und mit einer Antwort je
+   * Rückfrage. Danach steht in der Lage, was mit jedem Feld geschieht.
+   */
+  private umbauBestaetigen(plan: Vorschau, e: UmbauEingabe) {
+    const lage = this.umbauLagen.get(plan);
+    if (!lage?.schritte.length) return;
+    if (e.gesamteVerwaltung !== true) throw new Fachfehler(403, t('meldungen.pakete.umbau.nur-gesamt'), { umbau: 'gesamt' });
+    if (e.umbauBestaetigt !== true) throw new Fachfehler(409, t('meldungen.pakete.umbau.bestaetigen', { name: plan.paket.name }), { umbau: 'bestaetigen', schritte: plan.umbau });
+    wendeEntscheidungenAn(lage, e.umbauEntscheidungen);
+  }
+
   /** Erstmals ein Herausgeber (#1084, Sicherheit C): ohne ausdrückliche Bestätigung kein Update. */
   private static herausgeberBestaetigen(plan: Vorschau, e: { herausgeberBestaetigt?: boolean }) {
     if (plan.herausgeberBestaetigen && e.herausgeberBestaetigt !== true) {
@@ -2168,6 +2235,7 @@ export class Paketverwaltung {
     if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
     Paketverwaltung.rechteBestaetigen(vorschau, e);
     Paketverwaltung.herausgeberBestaetigen(vorschau, e);
+    this.umbauBestaetigen(vorschau, e);
     // Abhängigkeiten mit Code installiert das DMS nicht still mit: ihre Rechte bestätigt man an ihnen selbst (#338).
     for (const a of fehlen) {
       if (!a.verfuegbar) continue;
@@ -2197,10 +2265,10 @@ export class Paketverwaltung {
     // kommt die alte Id zurück.
     const umzugVon = alt && alt.id !== paket.manifest.id ? alt.id : null;
     const auftrag: LegeAuftrag = { paket, herkunft, v, plan, beispiele, von, alt, ein };
-    if (!umzugVon) return this.legeIntern(auftrag);
+    if (!umzugVon) return this.legeMitUmbau(auftrag);
     await this.zieheUm(umzugVon, paket.manifest.id);
     try {
-      const neu = await this.legeIntern({ ...auftrag, alt: { ...alt!, id: paket.manifest.id, ersetzt: [...new Set([...(alt!.ersetzt ?? []), umzugVon])] } });
+      const neu = await this.legeMitUmbau({ ...auftrag, alt: { ...alt!, id: paket.manifest.id, ersetzt: [...new Set([...(alt!.ersetzt ?? []), umzugVon])] } });
       log.info('Paket umgezogen', { von: von.email, paket: neu.id, vorher: umzugVon });
       return neu;
     } catch (f) {
@@ -2265,7 +2333,11 @@ export class Paketverwaltung {
     const vorher = new Map((await this.d.listeTypen()).map((t) => [t.id, t] as const));
     // Übernahme des früheren Ablageorts (#883): gleiche Id, gilt als vorhanden (die Vorschau zählt ihn genauso).
     const ueb = await this.uebernahme(paket, alt);
-    const ids = new Map<string, string>(Object.entries({ ...alt?.typen, ...ueb?.typen }));
+    // Umbau (#1041): geplant in der Vorschau, die Antworten auf die Rückfragen schon eingetragen. Übernommene Typen
+    // behalten ihre Id.
+    const lage: UmbauLage = this.umbauLagen.get(plan) ?? { schritte: [], uebernahme: {} };
+    const uebernimmt = (s: string) => lage.schritte.find((g) => g.plan.art === 'uebernehmen' && g.eigenerZiel === s);
+    const ids = new Map<string, string>(Object.entries({ ...alt?.typen, ...ueb?.typen, ...lage.uebernahme }));
     for (const t of paket.typen) if (!ids.has(t.schluessel)) ids.set(t.schluessel, randomUUID());
     const neueTypen = paket.typen.filter((t) => !plan.typen.find((x) => x.schluessel === t.schluessel)?.vorhanden && !plan.typen.find((x) => x.schluessel === t.schluessel)?.geloescht);
     const angelegt = new Set<string>();
@@ -2378,6 +2450,10 @@ export class Paketverwaltung {
     let spracheGeschrieben = false;
     const typMap: Record<string, string> = { ...(alt?.typen ?? {}), ...ueb?.typen };
     const sichtMap: Record<string, string> = { ...(alt?.sichten ?? {}), ...ueb?.sichten };
+    let umbauErg = null as UmbauErgebnis | null;
+    // Umbau (#1041): Alles läuft in einer Transaktion (legeMitUmbau). Was andere Verbindungen lesen (Läufer, Sprachen,
+    // Arbeit im Hintergrund), erst nach dem Speichern anstoßen – sonst sähen sie den alten Stand.
+    const spaeter = (f: () => Promise<unknown>): Promise<unknown> => (this.d.kern.inEigenerTransaktion() ? (this.d.kern.danach(() => { void f(); }), Promise.resolve()) : f());
     try {
       // 1. Neue Typen: Ziele zuerst; Verweise auf noch fehlende Typen dieses Pakets im zweiten Durchgang.
       const rest = [...neueTypen];
@@ -2386,8 +2462,13 @@ export class Paketverwaltung {
         const i = rest.findIndex((t) => !eingabe(t, true).unvollstaendig);
         const paketTyp = rest.splice(i < 0 ? 0 : i, 1)[0];
         const x = eingabe(paketTyp, true);
-        try { await this.d.legeTypAn(x.daten, m.id); } catch (f) { throw new Fachfehler((f as Fachfehler).status ?? 422, t('meldungen.pakete.mappentyp', { name: x.daten.name, meldungen: meldungen(f) })); }
-        angelegt.add(paketTyp.schluessel);
+        // Umbau (#1041): Den übernommenen Typ gibt es schon – er wird mit seiner Id zum Typ des Pakets.
+        const ueber = uebernimmt(paketTyp.schluessel);
+        try {
+          if (ueber) await this.uebernimmTyp(ueber.alt.id, typKennung(m.id, paketTyp.schluessel), uebernahmeDaten(ueber, x.daten), m.id, { vorher, geaendert, kennungZurueck });
+          else await this.d.legeTypAn(x.daten, m.id);
+        } catch (f) { throw new Fachfehler((f as Fachfehler).status ?? 422, t('meldungen.pakete.mappentyp', { name: x.daten.name, meldungen: meldungen(f) })); }
+        if (!ueber) angelegt.add(paketTyp.schluessel);
         typMap[paketTyp.schluessel] = ids.get(paketTyp.schluessel)!;
         // Archivmodus aus dem Paket (#1051): im Protokoll wie beim Einschalten in der Werkbank.
         if (x.daten.archiv) protokoll.modul('werkbank').info('Archivmodus eingeschaltet', { typ: x.daten.name, paket: m.id, vorher: { an: false }, nachher: { an: true, jahre: x.daten.archiv.jahre, stichtag: x.daten.archiv.stichtag ?? 'Anlagedatum', ...(x.daten.archiv.leererStichtag ? { leererStichtag: 'läuft noch nicht ab' } : {}) } });
@@ -2396,7 +2477,8 @@ export class Paketverwaltung {
       // Tabellen (#1030) zuletzt: Ihre Quelle braucht das Verweisfeld des anderen Typs, das vielleicht erst hier dazukommt.
       nachtragen.sort((a, b) => Number(a.felder.some((f) => f.typ === 'tabelle')) - Number(b.felder.some((f) => f.typ === 'tabelle')));
       for (const paketTyp of nachtragen) {
-        try { await this.d.aendereTyp(ids.get(paketTyp.schluessel)!, eingabe(paketTyp, false).daten, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: paketTyp.name, meldungen: meldungen(f) })); }
+        const ueber = uebernimmt(paketTyp.schluessel);
+        try { await this.d.aendereTyp(ids.get(paketTyp.schluessel)!, ueber ? uebernahmeDaten(ueber, eingabe(paketTyp, false).daten) : eingabe(paketTyp, false).daten, m.id); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: paketTyp.name, meldungen: meldungen(f) })); }
       }
       // 2. Update: vorhandene Typen um neue Felder und Register ergänzen – sonst nichts ändern.
       for (const paketTyp of paket.typen) {
@@ -2471,6 +2553,18 @@ export class Paketverwaltung {
           geheim: passwortFelder([...await this.d.listeTypen(), ...paket.typen]), maxText: `${VORLAGE_MAX / KB} KB`,
         }, vorgabenErg);
         if (vorgabenErg.ausgelassen.length) log.info('Paket: Vorlagen für Vorgaben, die es nicht gibt, ausgelassen', { paket: m.id, ziele: vorgabenErg.ausgelassen });
+      }
+      // 3c. Umbau (#1041): Werte umziehen, Typen zusammenlegen, Rechte mitnehmen, Verweise umleiten – nach Typen und
+      // Vorgaben (die `setzen` nennen kann). Frühere eigene Typen, die dabei aufgehen, fallen aus dem Eintrag.
+      if (lage.schritte.length) {
+        umbauErg = await fuehreUmbauAus(this.d, {
+          lage, paket: { id: m.id, name: m.name, version: m.version }, von,
+          typId: (s) => typMap[s] ?? ids.get(s),
+          vorgabeId: async (vw) => vorgabeId(vw) ?? (await this.vorgabeMappe(vw, m.id))?.id ?? null,
+        });
+        for (const s of umbauErg.eigeneWeg) if (!paket.typen.some((x) => x.schluessel === s)) delete typMap[s];
+        // Automatisierungen liegen in einem eigenen Speicher: erst nach dem Speichern auf den Zieltyp umleiten.
+        for (const u of umbauErg.umgeleitet) void spaeter(() => Promise.resolve(this.d.typUmgebaut?.(u.alt, u.neu, u.felder)).catch((e: Error) => log.error('Umbau: Automatisierungen nicht umgeleitet', { paket: m.id, typ: u.alt, fehler: e.message })));
       }
       // 4. Beispiele (nur bei der Installation, auf Wunsch).
       if (beispiele && !alt) {
@@ -2596,39 +2690,66 @@ export class Paketverwaltung {
       // Speichern, damit Typen und Herkunft stimmen).
       await Promise.resolve(this.d.paketAutomatisierungen?.(datensatz, paket.automatisierungen, ein))
         .catch((e: Error) => log.warn('Automatisierungen des Pakets nicht angelegt', { paket: m.id, fehler: e.message }));
-      if (paket.code || alt?.laeufer) await Promise.resolve(this.o.laeufer?.codeGeaendert?.()).catch(() => {});
+      if (paket.code || alt?.laeufer) await spaeter(() => Promise.resolve(this.o.laeufer?.codeGeaendert?.()).catch(() => {}));
       // Sprachpaket (#731): Sprache sofort in diesem Prozess (die anderen lesen sie binnen einer Minute), dann Beschriftungen
       // der Standardpakete – beim Sprachpaket für alle installierten Pakete, sonst die installierten Sprachen für dieses.
-      if (paket.sprache || alt?.sprache) await Promise.resolve(this.o.sprachen?.geaendert()).catch((e: Error) => log.warn('Sprachpaket nicht geladen', { paket: m.id, fehler: e.message }));
+      if (paket.sprache || alt?.sprache) await spaeter(() => Promise.resolve(this.o.sprachen?.geaendert()).catch((e: Error) => log.warn('Sprachpaket nicht geladen', { paket: m.id, fehler: e.message })));
       await this.sprachBeschriftungen(paket.sprache ? undefined : [m.id]).catch((e: Error) => log.warn('Beschriftungen aus Sprachpaketen nicht übernommen', { paket: m.id, fehler: e.message }));
       // Texterkennung als Paket (#459): Was ohne Paket wartete, geht jetzt an das neue Paket.
       if (hatSchnittstelle(datensatz.laeufer, 'dms:texterkennung') && !hatSchnittstelle(alt?.laeufer, 'dms:texterkennung')) {
-        void this.d.texterkennungPaketDa().catch((e: Error) => log.warn('Wartende Dokumente nicht an die Texterkennung gegeben', { paket: m.id, fehler: e.message }));
+        void spaeter(() => this.d.texterkennungPaketDa().catch((e: Error) => log.warn('Wartende Dokumente nicht an die Texterkennung gegeben', { paket: m.id, fehler: e.message })));
       }
       // Dateien umwandeln (#577): Vorhandene Dateien der (neuen) Dateitypen gehen an das Paket.
       const neueDateitypen = (datensatz.laeufer?.umwandeln ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:umwandeln') && alt?.laeufer?.umwandeln?.includes(x)));
       if (hatSchnittstelle(datensatz.laeufer, 'dms:umwandeln') && neueDateitypen.length) {
-        void this.d.umwandelPaketDa(neueDateitypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Umwandeln gemeldet', { paket: m.id, fehler: e.message }));
+        void spaeter(() => this.d.umwandelPaketDa(neueDateitypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Umwandeln gemeldet', { paket: m.id, fehler: e.message })));
       }
       // Volltext aus Paketen (#614): Vorhandene Dateien der (neuen) Dateitypen ohne Text gehen an das Paket.
       const neueVolltextTypen = (datensatz.laeufer?.volltext ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:volltext') && alt?.laeufer?.volltext?.includes(x)));
       if (hatSchnittstelle(datensatz.laeufer, 'dms:volltext') && neueVolltextTypen.length) {
-        void this.d.volltextPaketDa(neueVolltextTypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Volltext an das Paket gegeben', { paket: m.id, fehler: e.message }));
+        void spaeter(() => this.d.volltextPaketDa(neueVolltextTypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Volltext an das Paket gegeben', { paket: m.id, fehler: e.message })));
       }
       // Archivfassung (#631): Bestand der (neuen) Dateitypen mit fertigem Volltext geht an das Paket.
       const neueArchivTypen = (datensatz.laeufer?.archivfassung?.typen ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:archivfassung') && alt?.laeufer?.archivfassung?.typen.includes(x)));
       if (hatSchnittstelle(datensatz.laeufer, 'dms:archivfassung') && neueArchivTypen.length) {
-        void this.d.archivPaketDa(neueArchivTypen).catch((e: Error) => log.warn('Vorhandene Dokumente nicht zur Archivfassung gemeldet', { paket: m.id, fehler: e.message }));
+        void spaeter(() => this.d.archivPaketDa(neueArchivTypen).catch((e: Error) => log.warn('Vorhandene Dokumente nicht zur Archivfassung gemeldet', { paket: m.id, fehler: e.message })));
       }
       return datensatz;
     } catch (f) {
-      await zurueck();
+      // Mit Umbau nimmt die Transaktion alles in der Datenbank zurück; außerhalb liegen nur die Einstellungen.
+      if (!lage.schritte.length) await zurueck();
+      if (umbauErg) await nimmEinstellungenZurueck(this.d, umbauErg.einstellungenVorher).catch((e) => log.error('Umbau: Einstellungen nicht zurückgenommen', { paket: m.id, fehler: (e as Error).message }));
       if (codeGeschrieben) await (alterCode.length ? this.d.kern.repo.speicherePaketCode(m.id, alterCode) : this.d.kern.repo.loeschePaketCode(m.id)).catch((e) => log.error('Paket: alten Code nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
       if (spracheGeschrieben) await (alteSprache ? this.d.kern.repo.speichereSprachpaket(m.id, alteSprache) : this.d.kern.repo.loescheSprachpaket(m.id)).catch((e) => log.error('Sprachpaket: alte Texte nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
       if (einstellungenGeschrieben) await setzePaketEinstellungen(this.d.kern, m.id, alteEinstellungen).catch(() => {});
       if (wortlistenGeschrieben) await this.d.setzePaketSynonyme(m.id, alteWortlisten).catch(() => {});
       throw f;
     }
+  }
+
+  /**
+   * Umbau (#1041, Sicherheit): Mit Umbau-Schritten läuft das ganze Installieren bzw. Update in einer Transaktion – bricht
+   * etwas ab, ist nichts verändert, und die Meldung sagt das.
+   */
+  private async legeMitUmbau(a: LegeAuftrag): Promise<InstalliertesPaket> {
+    if (!this.umbauLagen.get(a.plan)?.schritte.length) return this.legeIntern(a);
+    try {
+      return await this.d.kern.inTransaktion(() => this.legeIntern(a));
+    } catch (f) {
+      log.warn('Paket-Umbau abgebrochen, nichts verändert', { paket: a.paket.manifest.id, version: a.paket.manifest.version, von: a.von.email, fehler: (f as Error).message });
+      throw new Fachfehler((f as Fachfehler).status ?? 500, t('meldungen.pakete.umbau.abgebrochen', { meldungen: meldungen(f) }), { umbau: 'abgebrochen', ...((f as Fachfehler).details as object ?? {}) });
+    }
+  }
+
+  /**
+   * Übernahme beim Umbau (#1041): Der vorhandene Typ bekommt die Kennung und die Definition des Pakets – Id, Mappen,
+   * Rechte, Archivmodus und KI-Zulassung bleiben. Zurückrollen ohne Transaktion wie ein geänderter Typ.
+   */
+  private async uebernimmTyp(id: string, kennung: string, daten: Record<string, unknown>, paketId: string, r: { vorher: Map<string, Mappentyp>; geaendert: Mappentyp[]; kennungZurueck: Map<string, string> }) {
+    const v = r.vorher.get(id);
+    if (v) r.geaendert.push(v);
+    if (v?.schluessel && v.schluessel !== kennung) { await this.d.kern.repo.setzeTypKennung(id, kennung); r.kennungZurueck.set(id, v.schluessel); }
+    await this.d.aendereTyp(id, daten, paketId);
   }
 
   /** Neuere Versionen (auf Knopfdruck) – je Paket nur in der Quelle, aus der es stammt. */
@@ -2651,7 +2772,7 @@ export class Paketverwaltung {
   }
 
   /** Update aus der Quelle des Pakets: ergänzt nur – neue Typen, Felder, Register, Sichten. */
-  async aktualisiere(id: string, e: { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen?: string[] }, von: Handelnder): Promise<InstalliertesPaket> {
+  async aktualisiere(id: string, e: { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen?: string[] } & UmbauEingabe, von: Handelnder): Promise<InstalliertesPaket> {
     const alt = (await this.d.kern.repo.listePakete()).find((p) => p.id === id);
     if (!alt) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
     if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, t('meldungen.pakete.ein-hochgeladenes-paket'));
@@ -2664,6 +2785,7 @@ export class Paketverwaltung {
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
     Paketverwaltung.rechteBestaetigen(plan, e);
     Paketverwaltung.herausgeberBestaetigen(plan, e);
+    this.umbauBestaetigen(plan, e);
     const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, einzuschalten(e.automatisierungen, paket));
     log.info('Paket aktualisiert', { von: von.email, paket: id, ...(plan.umzug ? { neueId: neu.id } : {}), vorher: alt.version, version: neu.version, pruefung: pruefung.art, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
     return neu;
@@ -2765,7 +2887,7 @@ export class Paketverwaltung {
     const pakete: AblaufPlan<Vorschau>['pakete'] = [];
     for (const x of teile) {
       const id = x.paket.manifest.id;
-      const vorschau = mitPruefung(await this.plane(x.paket, x.v, x.katalog ?? offizieller, namen[id] ?? {}, sichtNamen[id] ?? {}, { geplant, quelle: { herkunft: x.herkunft, pruefung: x.pruefung }, ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}) }), x.pruefung);
+      const vorschau = mitPruefung(await this.plane(x.paket, x.v, x.katalog ?? offizieller, namen[id] ?? {}, sichtNamen[id] ?? {}, { geplant, quelle: { herkunft: x.herkunft, pruefung: x.pruefung }, ablauf: true, ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}) }), x.pruefung);
       // Abhängigkeiten im selben Ablauf fehlen noch nicht – sie kommen vorher dran.
       vorschau.abhaengigkeiten = vorschau.abhaengigkeiten.map((a) => { const mit = teile.find((y) => y.paket.manifest.id === a.id); return mit && !a.installiert ? { ...a, verfuegbar: mit.paket.manifest.version } : a; });
       pakete.push({ schluessel: x.schluessel, id, name: x.paket.manifest.name, version: x.paket.manifest.version, gewaehlt: x.gewaehlt, fuer: x.fuer, ergaenzt: x.paket.manifest.ergaenzt ?? null, vorschau, einstellungen: await this.offenePflicht(x.paket) });
@@ -2889,7 +3011,7 @@ export class Paketverwaltung {
         const jetzt = await this.d.kern.repo.listePakete();
         const alt = jetzt.find((y) => y.id === p.id) ?? installierteErsetzt(jetzt, x.paket.manifest) ?? null;
         // Frisch planen: Die Pakete davor sind jetzt installiert (Verweise, Namen).
-        const vorschau = await this.plane(x.paket, x.v, x.katalog ?? await this.offiziell(), namen[p.id] ?? {}, sichtNamen[p.id] ?? {}, { quelle: { herkunft: x.herkunft, pruefung: x.pruefung }, ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}) });
+        const vorschau = await this.plane(x.paket, x.v, x.katalog ?? await this.offiziell(), namen[p.id] ?? {}, sichtNamen[p.id] ?? {}, { quelle: { herkunft: x.herkunft, pruefung: x.pruefung }, ablauf: true, ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}) });
         if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
         const k = [...vorschau.typen, ...vorschau.sichten].filter((y) => y.konflikt);
         if (k.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: k.map((y) => `${y.konflikt} Vorschlag: „${y.vorschlag}“.`), konflikte: true });

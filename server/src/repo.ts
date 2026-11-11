@@ -319,6 +319,11 @@ export interface Repo {
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, feldweise?: FeldweiseSchreiben): Promise<Mappe>;
   /** Setzt nur „zuletzt geändert“ (z. B. nach Dokumenten, #76); Werte, Verweise und Passung bleiben. */
   beruehreMappe(id: string, benutzerId: string | null): Promise<void>;
+  /**
+   * Paket-Umbau (#1041): Mappen wechseln in einen anderen Mappentyp – Ids, Werte, Verweise, Dokumente und Historie
+   * bleiben; die Werte zieht der Umbau danach mit `aendereMappe` um. Im Papierkorb nicht.
+   */
+  setzeMappenTyp(ids: string[], typId: string): Promise<void>;
   /** Viele neue Mappen auf einmal (Demo-Daten): eine Transaktion, Titel schon berechnet. */
   legeMappenAn(liste: NeueMappe[]): Promise<void>;
   /** Statistik der großen Tabellen auffrischen (ANALYZE, #367) – nach Massenläufen wie Demo-Daten. */

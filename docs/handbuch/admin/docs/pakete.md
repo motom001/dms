@@ -156,7 +156,7 @@ Das Löschprotokoll vermerkt entfernte Vorgaben als „Unbenutzte Vorgaben eines
 
 **Auf neue Versionen prüfen** fragt den Katalog ab (auf Knopfdruck) und markiert Pakete, für die es Neueres gibt. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen.
 
-Ein Update **ergänzt nur**:
+Ein Update **ergänzt nur** – außer es [baut um](#umbau), dann sagt die Vorschau das ausdrücklich:
 
 - neue Mappentypen und Ansichten,
 - neue Felder und Register bei vorhandenen Mappentypen,
@@ -165,6 +165,28 @@ Ein Update **ergänzt nur**:
 Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so. Den [Archivmodus](archiv.md#archivmodus-aus-einem-paket) eines vorhandenen Mappentyps ändert ein Update nie – weder kürzer noch länger, weder an noch aus.
 
 **Neue Id (Umzug, #1084):** Benennt ein Paket seine Id um – etwa die Zusatzsprachen der Texterkennung von `texterkennung_fra` auf `texterkennung.fra` –, erscheint das als gewöhnliches Update des installierten Pakets. Die Vorschau sagt „Das Paket heißt jetzt …“. Danach steht es unter der neuen Id da, mit allen Mappentypen, Mappen, Einstellungen und Daten; ein zweites Paket entsteht nicht. Das geht nur aus derselben Quelle und vom selben Herausgeber. Eine Id mit Punkt heißt übrigens immer: Das Paket **ergänzt** das Paket vor dem Punkt.
+
+
+## Umbau: Mappentypen ziehen in ein anderes Paket { #umbau }
+
+Manche Updates **bauen um** (#1041): Mappentypen ziehen in ein anderes Paket, mit allen Mappen und Werten. Beispiel: Haushalt 2.0 gibt *Vertrag* und *Versicherung* an das Paket *Verträge* ab – deine Verträge und Versicherungen landen danach im einen Mappentyp *Vertrag*, eine Versicherung mit der Vertragsart „Versicherung“. Solche Updates sind **Major-Versionen** (die erste Zahl steigt) und stehen im CHANGELOG.
+
+Die Vorschau zeigt unter **Umbau** je Schritt:
+
+- ob ein Mappentyp **übernommen** wird („Vertrag wird zu Vertrag“ – gleicher Mappentyp mit denselben Mappen, Rechten, Ansichten und Direktlinks, nur jetzt aus dem neuen Paket) oder in einem anderen **aufgeht** („Versicherung geht in Vertrag auf“) und wie viele Mappen umziehen,
+- welche Werte in welche Felder kommen und wie viele davon nicht genau passen – etwa eine Kündigungsfrist „3 Monate zum Ende der Laufzeit“, aus der der Zeitraum „3 Monate“ wird,
+- was **in die Notiz** kommt: Werte ohne passendes Feld stehen danach in einer Notiz an der Mappe. **Es geht nichts verloren.**
+- **Rückfragen** zu Feldern, die **du** am alten Mappentyp angelegt oder geändert hast: als eigenes Feld behalten, in die Notiz oder in ein Feld des neuen Typs. Vorausgewählt ist ein Vorschlag; ein Update überfährt deine Änderungen nie still.
+- was sich an **Rechten** ändert: Die Rechte-Regeln des alten Mappentyps gelten für die umgezogenen Mappen weiter (sie stehen danach vorn in den Regeln des neuen Typs, „Versicherung: …“, für Mappen mit „Übernommen aus = haushalt:versicherung“). War der alte Mappentyp für [KI-Dienste](#ki-dienste) nicht zugelassen, ist es der neue danach auch nicht. **Ein Umbau macht Mappen nie für mehr Personen oder Dienste lesbar.**
+
+Bestätigen darf nur, wer **Gesamte Verwaltung** hat, mit einer erneuten Anmeldung. **Vorher sichern** ist vorausgewählt: Ablago startet eine [Sicherung](sicherung.md) und baut erst danach um. Der Umbau läuft **ganz oder gar nicht** – bricht er ab, ist nichts verändert, und die Meldung sagt das. Danach:
+
+- Jede Mappe hat in der **Historie** den Eintrag „Umgebaut durch Paket Verträge 1.0.0“ mit vorher und nachher; das Systemprotokoll nennt jeden Schritt.
+- Verweisfelder, Ansichten, Rechte-Regeln und Automatisierungen zeigen auf den neuen Mappentyp, Direktlinks auf Mappen funktionieren weiter (die Mappen behalten ihre Id).
+- [Archivmodus](archiv.md) und Fristen bleiben. Würde der Archivmodus durch den Umbau lockerer, lehnt die Vorschau ihn ab – schalte ihn dann vorher am neuen Mappentyp mindestens genauso streng ein.
+- Liegen Mappen des alten Typs im Papierkorb, bleibt er als eigener Mappentyp stehen.
+
+Mehrere Pakete mit Umbau aktualisierst du **einzeln**, jedes mit seiner eigenen Vorschau – im gemeinsamen Ablauf lehnt Ablago sie ab.
 
 ## Text in Verweise umwandeln { #text-in-verweise-umwandeln }
 

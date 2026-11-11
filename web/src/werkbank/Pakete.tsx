@@ -20,6 +20,9 @@ import { useKonto } from '../konto';
 import { SammeldateiAnsicht, SammeldateiWahl } from './PaketeDazuholen';
 import { PaketAblauf } from './PaketAblauf';
 import { PaketUmwandeln } from './PaketUmwandeln';
+import { UmbauVorschau, umbauStart, type UmbauStand } from './PaketUmbau';
+import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
+import type { UmbauEntscheidungen } from '../../../shared/src/umbau';
 import { t as tx, t, tn } from '../sprache';
 import { KEINE_LIZENZ, lizenzArtVon, type SelbstErstellt } from '../../../shared/src/paketerstellung';
 import { HerkunftZeile } from './Herkunft';
@@ -374,7 +377,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
           los={async (x) => {
             try {
-              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
               await z.laden(); await d.neuLaden(); await z.abrufen(false);
               geheZu(`/werkbank/pakete/${r.id}`);
             } catch (e) { setMeldung(alsMeldung(e)); }
@@ -596,7 +599,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <VorschauBlock v={vorschau} warnung={offiziell || vorschau.pruefung?.bestaetigen === false ? null : t('werkbank.pakete.aus-dem-katalog', { wert: String(inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle) })} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
             if (vorschau.update) {
-              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt });
+              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen });
               // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
               if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);
               return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version });
@@ -714,7 +717,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   v: PaketVorschau; warnung: string | null; abbrechen(): void; titel?: string; abbrechenText?: string;
   /** Herkunft schon vorher bestätigt (Sammeldatei): kein zweiter Haken. */
   herkunftBestaetigt?: boolean;
-  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[] }): Promise<void>;
+  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[]; umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen }): Promise<void>;
 }) {
   // Mitgelieferte Automatisierungen (#712): abgewählte bleiben aus. Vorausgewählt (#1082): die mit eingeschaltet: true –
   // nennt das Paket das nirgends, wie bisher alle.
@@ -731,6 +734,22 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
   // Erstmals ein Herausgeber an einem Bestandspaket (#1084): eigener Haken, sonst kein Update.
   const [herausgeberOk, setHerausgeberOk] = useState(false);
   const herausgeberFehlt = !!v.herausgeberBestaetigen && !herausgeberOk;
+  // Umbau (#1041): Rückfragen, „Vorher sichern“ und Bestätigung – nur „Gesamte Verwaltung“.
+  const { ich } = useKonto();
+  const umbau = v.umbau ?? [];
+  const [umbauStand, setUmbauStand] = useState<UmbauStand>(() => umbauStart(umbau));
+  const [sicherungFehler, setSicherungFehler] = useState<string | null>(null);
+  const umbauFehlt = umbau.length > 0 && (!umbauStand.bestaetigt || !hatGesamt(ich));
+  /** „Vorher sichern“ (#702): eine Sicherung starten und abwarten; scheitert sie, kein Umbau. */
+  const sichereVorher = async (): Promise<boolean> => {
+    setSicherungFehler(null);
+    try {
+      let lauf: Awaited<ReturnType<typeof api.sicherungLauf>> = await api.sicherungJetzt();
+      while (lauf?.status === 'laeuft') { await new Promise((r) => setTimeout(r, 1500)); lauf = await api.sicherungLauf(); }
+      if (lauf?.status === 'fehler') { setSicherungFehler(t('pakete.umbau.vorschau.sicherung-fehler', { fehler: lauf.fehler ?? '' })); return false; }
+      return true;
+    } catch (e) { setSicherungFehler(t('pakete.umbau.vorschau.sicherung-fehler', { fehler: (e as Error).message })); return false; }
+  };
   const fehlend = v.abhaengigkeiten.filter((a) => !a.installiert);
   const konflikt = v.typen.some((eintrag) => !eintrag.vorhanden && eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase())
     || v.sichten.some((s) => !s.vorhanden && !s.ausgelassen && s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase());
@@ -776,7 +795,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
       )}
       {/* Nur, wenn wirklich etwas angelegt wird (#643); Namenskonflikte stehen direkt am betroffenen Namen. */}
       {v.update
-        ? <p className="leise">{tx('pakete.vorschau.update')}</p>
+        ? <p className="leise">{umbau.length ? tx('pakete.umbau.vorschau.update') : tx('pakete.vorschau.update')}</p>
         : legtEtwasAn(v) ? <p className="leise">{tx('pakete.vorschau.anlegen')}</p>
         : v.paket.beschreibung ? <p>{v.paket.beschreibung}</p> : null}
       {v.typen.length > 0 && <h3>{t('werkbank.pakete.mappentypen-2')}</h3>}
@@ -790,8 +809,10 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
                   <input value={namen[eintrag.schluessel] ?? eintrag.name} aria-label={t('werkbank.pakete.name-fuer', { name: eintrag.name })} onChange={(e) => setNamen({ ...namen, [eintrag.schluessel]: e.target.value })} />
                   {eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase() && <span className="fehlertext klein">{eintrag.konflikt}</span>}
                 </label>}
+            {/* Umbau (#1041): Der Typ entsteht aus einem vorhandenen – gleiche Mappen, Rechte und Ansichten. */}
+            {eintrag.uebernimmt && <p className="leise klein">{t('pakete.umbau.vorschau.typ-aus', { name: eintrag.uebernimmt })}</p>}
             {/* Archivmodus aus dem Paket (#1051): nur für neue Typen, danach am Mappentyp änderbar. */}
-            {!eintrag.vorhanden && !eintrag.geloescht && eintrag.archiv && <p className="leise klein">{eintrag.archiv.stichtag && eintrag.archiv.leererStichtag === 'laeuftNicht'
+            {!eintrag.vorhanden && !eintrag.geloescht && !eintrag.uebernimmt && eintrag.archiv && <p className="leise klein">{eintrag.archiv.stichtag && eintrag.archiv.leererStichtag === 'laeuftNicht'
               ? t('werkbank.pakete.archiv-laeuft-nicht', { anzahl: eintrag.archiv.jahre, ab: eintrag.archiv.stichtagName ?? '' })
               : t('werkbank.pakete.archiv', { anzahl: eintrag.archiv.jahre, ab: eintrag.archiv.stichtagName ? `„${eintrag.archiv.stichtagName}“` : t('werkbank.pakete.archiv-anlagedatum') })}</p>}
             {/* Text → Verweis (#534): Das Update ändert vorhandene Angaben nicht; umgewandelt wird danach mit Vorschau. */}
@@ -813,6 +834,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         ))}
       </ul>
       <VorgabenVorschau v={v} />
+      <UmbauVorschau plaene={umbau} stand={umbauStand} setze={setUmbauStand} gesamt={hatGesamt(ich)} />
+      {sicherungFehler && <div className="hinweis schlecht" role="alert"><p>{sicherungFehler}</p></div>}
       {v.abhaengigkeiten.length > 0 && (
         <>
           <h3>{t('werkbank.pakete.abhaengigkeiten')}</h3>
@@ -837,8 +860,15 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         </div>
       )}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt}
-          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
+        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt}
+          onClick={() => {
+            setLaeuft(true);
+            void (async () => {
+              if (umbau.length && umbauStand.sichern && !(await sichereVorher())) return;
+              await los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}),
+                ...(umbau.length ? { umbauBestaetigt: true, umbauEntscheidungen: umbauStand.entscheidungen } : {}) });
+            })().finally(() => setLaeuft(false));
+          }}>
           {laeuft ? (v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')) : v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
         </button>
         <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>

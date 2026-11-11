@@ -124,6 +124,9 @@ export function bereicheDerRoute(methode: string, pfad: string): string[] | null
   return null;
 }
 
+const UMBAU_ROUTEN = new Set(['POST /api/werkbank/pakete/installieren', 'POST /api/werkbank/pakete/:id/aktualisieren']);
+const umbauHandlung = (body: unknown): HeikleHandlung | null => ((body as { umbauBestaetigt?: unknown } | null)?.umbauBestaetigt === true ? 'rechte' : null);
+
 /**
  * Heikle Handlung dieser Anfrage (#819)? Dann braucht sie eine frische Anmeldung – auch im Verwaltungsmodus mit
  * Tagesmerker. Der Vollexport nur mit Passwörtern im Klartext, der Notfallzugang (#815) nur beim Erlauben aus dem
@@ -132,8 +135,11 @@ export function bereicheDerRoute(methode: string, pfad: string): string[] | null
  */
 export function heikleHandlung(methode: string, pfad: string, body: unknown): HeikleHandlung | null {
   const k = `${methode} ${pfad}`;
+  // Paket-Umbau (#1041): Mappen wechseln den Typ und damit Rechte – nur mit frischer Anmeldung bestätigen.
+  if (UMBAU_ROUTEN.has(k)) return umbauHandlung(body);
   switch (k) {
     case 'PUT /api/benutzer/:id/verwaltung': return 'rechte';
+
     case 'GET /api/werkbank/notfallblatt':
     case 'POST /api/werkbank/tresor/erzeugen':
     case 'POST /api/werkbank/tresor/wechseln': return 'schluessel';

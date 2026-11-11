@@ -318,6 +318,10 @@ See also: [Customise the workbench](#werkbank-anpassen), [Household](#haushalt).
 Tick in the basics of a folder type (#937). Only folder types with it can be chosen under "Where does this belong?" when a document is taken over from the post – for everyone who may create folders there. On by default for folder types with a documents tab; never for system folder types.  
 See also: [Folder type](#mappentyp), [Post](#post), [How to recognise it](#woran-man-ihn-erkennt).
 
+<a id="umbau"></a>**Conversion** (*Umbau*) · ~ with explanation · administrators  
+A package update that moves existing folder types into another package – with all folders and values (#1041). A type is taken over (same ID) or merged into another; whatever fits no field is kept in a note. With preview and questions, only "Full administration", all or nothing. Permissions never become broader.  
+See also: [Package](#paket), [Publisher](#herausgeber).
+
 <a id="beim-auswahlen-ubernehmen"></a>**Copy when selected** (*Beim Auswählen übernehmen*) · ~ with explanation · administrators  
 Setting on a link field (#1037) – pairs "field of the referenced folder → field of this folder". When a folder is chosen, Ablago suggests its values in empty fields, marked "suggested from …" (e.g. the notice period from the contract type). Never overwrites, never passwords, only values you may read.  
 See also: [Fill from document](#aus-dokument-fullen).
@@ -364,7 +368,7 @@ The first page of the workbench – what needs doing in Ablago right now, with n
 See also: [Workbench](#werkbank).
 
 <a id="paket"></a>**Package** (*Paket*) · ~ with explanation · administrators  
-An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing.  
+An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing – except a conversion, which the preview shows explicitly.  
 See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Package runner](#paket-laufer), [Publisher](#herausgeber).
 
 <a id="paketkatalog"></a>**Package catalogue** (*Paketkatalog*) · ~ with explanation · administrators  

@@ -1,16 +1,19 @@
 /**
  * Pakete (#960: aus routen.ts): Paketverwaltung, Paket erstellen, Läufer, Paket-Einstellungen und Umwandlungen.
  */
-import { ARCHIV_MAX, SAMMEL_MAX, type InstallierenEingabe } from '../pakete';
+import { ARCHIV_MAX, SAMMEL_MAX, type InstallierenEingabe, type UmbauEingabe } from '../pakete';
 import type { AblaufEingabe, AblaufInstallation } from '../../../shared/src/pakete';
 import { eigeneVersion } from '../system';
 import { KOERPER_SPIELRAUM } from '../grenzen';
 import { ok } from '../http/routen-hilfen';
+import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Anfrage, Route } from '../routen';
 
 export function paketeRouten(k: RoutenKontext): Route[] {
   const { x, pakete, paketerstellung, wer } = k;
+  // Umbau (#1041): Ob die Person „Gesamte Verwaltung“ hat, setzt der Server – nie die Anfrage.
+  const mitRecht = <T extends object>(a: Anfrage): T => ({ ...((a.body ?? {}) as T), gesamteVerwaltung: hatGesamt(a.benutzer) });
   return [
     /* ---------- Nummernkreise (#171) ---------- */
     // Paketverwaltung (#188, #189): Kataloge nur auf Knopfdruck; weitere Quellen und Hochladen in der erweiterten Ansicht.
@@ -41,12 +44,12 @@ export function paketeRouten(k: RoutenKontext): Route[] {
     // Ein Paket (höchstens PAKET_MAX, #644) oder eine Sammeldatei mit mehreren Paketen (#461, höchstens SAMMEL_MAX).
     { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: SAMMEL_MAX + KOERPER_SPIELRAUM, handler: async (a) => ok(await pakete.hochladenDatei(a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a)))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.installiere(mitRecht<InstallierenEingabe>(a), wer(a)))) },
     // Mehrere Pakete in einem Ablauf (#405): Plan (nichts wird gespeichert) und Installation mit allen Antworten.
     { methode: 'POST', pfad: '/api/werkbank/pakete/ablauf/plan', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.ablaufPlan((a.body ?? {}) as AblaufEingabe)) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/ablauf/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.ablaufInstallieren((a.body ?? {}) as AblaufInstallation, wer(a)))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; herausgeberBestaetigt?: boolean }, wer(a)))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.aktualisiere(a.params.id, mitRecht<{ version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; herausgeberBestaetigt?: boolean } & UmbauEingabe>(a), wer(a)))) },
     // Paket-Läufer (#338): Stand je Paket mit Code – geladen, Aufrufe, Fehler, Ereignisse.
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
   ];

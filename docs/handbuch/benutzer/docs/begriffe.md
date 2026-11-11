@@ -379,7 +379,7 @@ Siehe auch: [Mappentyp](#mappentyp), [Post](#post), [Woran man ihn erkennt](#wor
 Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.
 
 <a id="paket"></a>**Paket** · ~ mit Erklärung · Administratoren  
-Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.  
+Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts – außer ein Umbau, den die Vorschau ausdrücklich zeigt.  
 Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer), [Herausgeber](#herausgeber).
 
 <a id="paket-nach-zeitplan-ausfuhren"></a>**Paket nach Zeitplan ausführen** · ~ mit Erklärung · Administratoren  
@@ -432,6 +432,10 @@ Erkennt Text in Bildern und gescannten PDFs, damit er durchsuchbar wird.
 <a id="tagliche-zusammenfassung"></a>**Tägliche Zusammenfassung** · ✓ Alltagswort · alle  
 Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Einstellungen → Benachrichtigungen und Aufgaben ein; Uhrzeit und Wochentage wählt jeder unter Mein Konto.  
 Siehe auch: [Aufgabe](#aufgabe), [Zu erledigen](#zu-erledigen).
+
+<a id="umbau"></a>**Umbau** · ~ mit Erklärung · Administratoren  
+Ein Paket-Update, das vorhandene Mappentypen in ein anderes Paket zieht – mit allen Mappen und Werten (#1041). Ein Typ wird übernommen (gleiche Id) oder geht in einem anderen auf; was in kein Feld passt, steht in einer Notiz. Mit Vorschau und Rückfragen, nur „Gesamte Verwaltung“, ganz oder gar nicht. Rechte werden dabei nie breiter.  
+Siehe auch: [Paket](#paket), [Herausgeber](#herausgeber).
 
 <a id="vorgabe"></a>**Vorgabe** · ~ mit Erklärung · Administratoren  
 Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „Strom“ oder „Miete“ aus dem Paket Verträge, oft mit Vorlagen. Kommt immer mit, trägt die Kennzeichnung „Vorgabe aus dem Paket …“ und ist sonst eine gewöhnliche Mappe. Updates bringen neue Fassungen nur, solange niemand sie geändert hat; Gelöschtes bleibt gelöscht. Anders als ein Beispiel (erfundene Daten zum Ausprobieren, auf Wunsch, entfernbar).  
@@ -702,6 +706,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Tipp | Hinweis (für Tipps), Hilfe-Tipp | `Tipp, tipps.yaml` |
 | Trefferliste | – | `Trefferliste` |
 | Tägliche Zusammenfassung | Übersicht per E-Mail, Digest | – |
+| Umbau | Migration (ist die Datenbank), Umzug (ist eine neue Paket-Id) | `umbau, shared/src/umbau.ts` |
 | Unteransicht | Untersicht | – |
 | Verbleib Originaldokumente | Lagerort, Standort (für Papier) | `verbleib_original` |
 | Version | Revision, Stand (für Dokumente) | `DokumentVersion` |

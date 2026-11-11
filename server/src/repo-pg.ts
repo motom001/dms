@@ -432,7 +432,10 @@ export function ausdruckSql(sql: Sql, x: Ausdruck): Teil {
   switch (x.k) {
     case 'wahr': return sql`true`;
     case 'falsch': return sql`false`;
-    case 'filter': return sql`(${filterSql(sql, x.f)})`;
+    // Ein Feld ohne Wert ergibt in SQL NULL, im Arbeitsspeicher „trifft nicht zu“ (rechte.ts, werte). Ohne coalesce
+    // machte ein „nicht“ daraus wieder NULL – eine entziehende Regel auf ein leeres Feld (z. B. die mitgenommenen Regeln
+    // nach einem Paket-Umbau, #1041) sperrte dann in Listen auch Mappen, die sie gar nicht betrifft.
+    case 'filter': return sql`coalesce((${filterSql(sql, x.f)}), false)`;
     case 'nicht': return sql`NOT (${ausdruckSql(sql, x.a)})`;
     case 'und': return x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} AND ${ausdruckSql(sql, t)}`, sql`(${ausdruckSql(sql, x.teile[0])})`);
     case 'oder': return sql`(${x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${ausdruckSql(sql, t)}`, ausdruckSql(sql, x.teile[0]))})`;
@@ -1071,6 +1074,12 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         await schreibeVerweise(tx, id, verweise);
         return alsMappe(r);
       });
+    },
+    async setzeMappenTyp(ids, typId) {
+      const liste = ids.filter(istUuid);
+      if (!liste.length || !istUuid(typId)) return;
+      // Fristtermine ziehen per Trigger mit (Migration 086, „Typ wechseln“).
+      await sql`UPDATE mappen SET typ_id = ${typId}, geaendert = ${STAND_WEITER} WHERE haushalt_id = ${haushaltId} AND id = ANY(${liste}::uuid[])`;
     },
     async beruehreMappe(id, benutzerId) {
       await sql`UPDATE mappen SET geaendert = ${STAND_WEITER}, geaendert_von = ${benutzerId} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
