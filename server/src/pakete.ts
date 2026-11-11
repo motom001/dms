@@ -2613,7 +2613,7 @@ export class Paketverwaltung {
     const alteEinstellungen = await paketEinstellungen(this.d.kern, m.id);
     let einstellungenGeschrieben = false;
     // Wortlisten (#356): ersetzen die des Pakets; bei einem Fehler kommen die alten zurück.
-    const alteWortlisten = alt ? await this.d.paketSynonyme(m.id) : [];
+    const alteWortlisten = alt ? await this.d.suche.paketSynonyme(m.id) : [];
     let wortlistenGeschrieben = false;
     // Code (#403): Der alte Code kommt bei einem Fehler zurück – sonst liefe das alte Paket mit dem neuen Modul.
     const alterCode = alt?.laeufer ? await this.d.kern.repo.paketCode(m.id) : [];
@@ -2820,7 +2820,7 @@ export class Paketverwaltung {
         await setzePaketEinstellungen(this.d.kern, m.id, { ...vorher, werte });
         einstellungenGeschrieben = true;
       } else if (alteEinstellungen && alt) { await setzePaketEinstellungen(this.d.kern, m.id, null); einstellungenGeschrieben = true; }
-      if (paket.wortlisten.length || alteWortlisten.length) { wortlistenGeschrieben = true; await this.d.setzePaketSynonyme(m.id, paket.wortlisten); }
+      if (paket.wortlisten.length || alteWortlisten.length) { wortlistenGeschrieben = true; await this.d.suche.setzePaketSynonyme(m.id, paket.wortlisten); }
       const jetzt = new Date().toISOString();
       // Paketstand der Mappentypen (#653): neue Typen so, wie sie angelegt wurden; beim Update bleibt der alte Stand,
       // nur was das Update hinzufügt (Felder, Register), kommt dazu – eigene Änderungen gehören nicht dazu.
@@ -2919,7 +2919,7 @@ export class Paketverwaltung {
       if (codeGeschrieben) await (alterCode.length ? this.d.kern.repo.speicherePaketCode(m.id, alterCode) : this.d.kern.repo.loeschePaketCode(m.id)).catch((e) => log.error('Paket: alten Code nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
       if (spracheGeschrieben) await (alteSprache ? this.d.kern.repo.speichereSprachpaket(m.id, alteSprache) : this.d.kern.repo.loescheSprachpaket(m.id)).catch((e) => log.error('Sprachpaket: alte Texte nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
       if (einstellungenGeschrieben) await setzePaketEinstellungen(this.d.kern, m.id, alteEinstellungen).catch(() => {});
-      if (wortlistenGeschrieben) await this.d.setzePaketSynonyme(m.id, alteWortlisten).catch(() => {});
+      if (wortlistenGeschrieben) await this.d.suche.setzePaketSynonyme(m.id, alteWortlisten).catch(() => {});
       throw f;
     }
   }
@@ -3555,7 +3555,7 @@ export class Paketverwaltung {
       }
     }
     // Hinweise (#1034) gehen mit; berechnete Felder in Typen, die bleiben, behalten ihren letzten Wert.
-    await Promise.all([this.d.kern.repo.loeschePaket(id), this.d.setzePaketSynonyme(id, []), this.d.kern.repo.loescheHinweiseVon(id)]);
+    await Promise.all([this.d.kern.repo.loeschePaket(id), this.d.suche.setzePaketSynonyme(id, []), this.d.kern.repo.loescheHinweiseVon(id)]);
     // Sprachpaket (#731): Texte weg, Sprache aus der Einstellung, alle Prozesse laden neu. Beschriftungen an Mappentypen
     // bleiben – wie andere Beschriftungen einer nicht erlaubten Sprache stören sie nicht und gelten bei einer Neuinstallation.
     if (p.sprache) {

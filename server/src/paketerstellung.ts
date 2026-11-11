@@ -752,7 +752,7 @@ export class Paketerstellung {
         return { id: t.id, name: t.name, beschreibung: t.beschreibung ?? '', paket: herkunft((x) => x.typen, t.id), geaendert: a.geaendert, ...(a.geaendert ? { unterschiede: a.unterschiede } : {}) };
       }).sort((a, b) => a.name.localeCompare(b.name, 'de')),
       sichten: sichten.map((s) => ({ id: s.id, name: s.name, elternId: s.elternId ?? null, paket: herkunft((x) => x.sichten, s.id) })),
-      wortlisten: (await this.d.sucheStand()).synonyme.map((g) => ({ id: g.id, woerter: g.woerter, paket: g.quelle === 'werkbank' ? null : { id: g.quelle, name: g.paketName ?? g.quelle } })),
+      wortlisten: (await this.d.suche.sucheStand()).synonyme.map((g) => ({ id: g.id, woerter: g.woerter, paket: g.quelle === 'werkbank' ? null : { id: g.quelle, name: g.paketName ?? g.quelle } })),
       entwuerfe,
       dms: this.o.version(),
       // #652: nie ungefragt vorbelegen – „Neue Version von …“ wählt man im ersten Schritt.
@@ -794,7 +794,7 @@ export class Paketerstellung {
     const vorgaben = new Map((gezeigt.length ? await this.d.kern.repo.holeMappen(gezeigt) : []).filter((m) => m.vorgabe).map((m) => [m.id, m.vorgabe!] as const));
     return {
       dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}), vorgaben,
-      typen, sichten: await this.d.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.sucheStand()).synonyme,
+      typen, sichten: await this.d.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.suche.sucheStand()).synonyme,
       dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };
   }

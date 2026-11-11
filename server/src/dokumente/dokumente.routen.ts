@@ -178,21 +178,21 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // Vektoren zu Dokumenten (#442): schreiben nur Pakete mit dms:vektoren, die das Dokument lesen dürfen.
     { methode: 'PUT', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.setzeVektor(await zg(a), a.params.id, (b(a) as { modell?: unknown }).modell, a.body));
+      return ok(await dienst.suche.setzeVektor(await zg(a), a.params.id, (b(a) as { modell?: unknown }).modell, a.body));
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.loescheVektor(await zg(a), a.params.id, a.query.modell));
+      return ok(await dienst.suche.loescheVektor(await zg(a), a.params.id, a.query.modell));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/aehnliche', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.aehnlicheDokumente(await zg(a), { dokument: a.params.id, modell: a.query.modell, anzahl: a.query.anzahl, schwelle: a.query.schwelle }));
+      return ok(await dienst.suche.aehnlicheDokumente(await zg(a), { dokument: a.params.id, modell: a.query.modell, anzahl: a.query.anzahl, schwelle: a.query.schwelle }));
     } },
     { methode: 'POST', pfad: '/api/vektoren/aehnliche', zugang: 'angemeldet', lesend: true, handler: async (a) => {
       const e = b(a) as { modell?: unknown; vektor?: unknown; anzahl?: unknown; schwelle?: unknown };
-      return ok(await dienst.aehnlicheDokumente(await zg(a), { modell: e.modell, vektor: e.vektor, anzahl: e.anzahl, schwelle: e.schwelle }));
+      return ok(await dienst.suche.aehnlicheDokumente(await zg(a), { modell: e.modell, vektor: e.vektor, anzahl: e.anzahl, schwelle: e.schwelle }));
     } },
-    { methode: 'GET', pfad: '/api/mappen/:id/aehnliche', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.aehnlicheZurMappe(await zg(a), a.params.id)) },
+    { methode: 'GET', pfad: '/api/mappen/:id/aehnliche', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.suche.aehnlicheZurMappe(await zg(a), a.params.id)) },
     // Seite als Graustufenbild (#338): Eingabe für eine Texterkennung im Paket (PGM, 8 Bit).
     // Mit ?farbe=1 (#716) als Farbbild (PPM) – für die Archivfassung; wie das Graustufenbild nur mit Leserecht.
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/scan', zugang: 'angemeldet', handler: async (a) => {

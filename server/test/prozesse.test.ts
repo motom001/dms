@@ -281,8 +281,8 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
     await f.start();
     assert.equal(f.pid, 4711);
     assert.deepEqual([...d.kern.paketKonten], [['konto-1', 'paket.a']], 'Dienstkonten der Pakete kennt auch dieser Prozess');
-    assert.equal(d.vektorAnbieter!.paket(), 'paket.v');
-    assert.deepEqual([...(await d.vektorAnbieter!.vektorFuer('Strom', 1000))!.vektor], [0.5, 0.25]);
+    assert.equal(d.suche.vektorAnbieter!.paket(), 'paket.v');
+    assert.deepEqual([...(await d.suche.vektorAnbieter!.vektorFuer('Strom', 1000))!.vektor], [0.5, 0.25]);
     assert.deepEqual(d.fragen.anbieter!.paket(), { id: 'paket.f', name: 'Fragen' });
     const teile: string[] = [];
     assert.deepEqual(await d.fragen.anbieter!.antworte('paket.f', {}, (x) => teile.push(x)), { text: 'dms:antworten', ms: 1 });

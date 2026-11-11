@@ -127,7 +127,7 @@ export class Klassifizierung {
       }
       const eingang: Record<string, unknown> = { typen: kandidaten, schema: klassifizierSchema([...ids]), text: anfang, hinweis: KLASSIFIZIEREN_HINWEIS, sprache: 'de' };
       // Ähnlichkeit: nur ein Paket ohne Netz, das selbst die Vektoren liefert – nur Typ und Maß, mit den Rechten beider.
-      if (!p.netz && p.vektoren) eingang.aehnliche = await this.d.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null) ?? [];
+      if (!p.netz && p.vektoren) eingang.aehnliche = await this.d.suche.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null) ?? [];
       try {
         const r = await this.anbieter!.klassifiziere(p.id, eingang, KLASSIFIZIEREN_MS);
         const roh = r.text.trim();

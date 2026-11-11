@@ -189,7 +189,7 @@ export class Paketlaeufer implements PaketLaeufer {
     this.grenzen = { ...STANDARD_GRENZEN, ...o.grenzen };
     o.dienst.ereignisWecker = () => void this.stelleZu();
     // Vektoren (#442): Der Kern fragt das Paket mit dms:vektoren nach dem Vektor eines Suchbegriffs.
-    o.dienst.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
+    o.dienst.suche.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
     // „Frag deine Ablage“ (#444): Das Paket mit dms:antworten beantwortet Fragen aus den Ausschnitten des Kerns.
     o.dienst.fragen.anbieter = {
       paket: () => this.paketMit('dms:antworten'),
@@ -526,7 +526,7 @@ export class Paketlaeufer implements PaketLaeufer {
       if (!n) {
         const r = await this.vektorAnfrage('', 30_000);
         if (!r) return;
-        await this.o.dienst.merkeVektorModell(paket, r.modell);
+        await this.o.dienst.suche.merkeVektorModell(paket, r.modell);
         n = { modell: r.modell, nach: null, pauseBis: 0 };
         this.nachlauf.set(paket, n);
       }
@@ -544,7 +544,7 @@ export class Paketlaeufer implements PaketLaeufer {
   async vektorenNeu(): Promise<{ entfernt: number }> {
     const paket = this.vektorPaket();
     if (!paket) throw new Error('Es ist kein Paket mit dem Recht „dms:vektoren“ installiert.');
-    const r = await this.o.dienst.vektorenNeu(paket);
+    const r = await this.o.dienst.suche.vektorenNeu(paket);
     this.nachlauf.delete(paket);
     void this.nachberechnen();
     return r;

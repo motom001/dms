@@ -590,32 +590,6 @@ export class Dienst {
 
   /* ---------- Suche (#964: in suche/suche.dienst.ts) ---------- */
 
-  /** Wer den Vektor eines Suchbegriffs liefert (Paket-Läufer, index.ts) – liegt bei der Suche. */
-  get vektorAnbieter() { return this.suche.vektorAnbieter; }
-  set vektorAnbieter(a: SucheDienst['vektorAnbieter']) { this.suche.vektorAnbieter = a; }
-  suchVarianten(texte: Array<string | undefined>) { return this.suche.suchVarianten(texte); }
-  unscharfAn() { return this.suche.unscharfAn(); }
-  woerterEinarbeiten() { return this.suche.woerterEinarbeiten(); }
-  sucheStand() { return this.suche.sucheStand(); }
-  setzeSuche(e: unknown, von: string) { return this.suche.setzeSuche(e, von); }
-  legeSynonymAn(e: unknown, von: string) { return this.suche.legeSynonymAn(e, von); }
-  aendereSynonym(id: string, e: unknown, von: string) { return this.suche.aendereSynonym(id, e, von); }
-  loescheSynonym(id: string, von: string) { return this.suche.loescheSynonym(id, von); }
-  setzePaketSynonyme(paket: string, gruppen: string[][]) { return this.suche.setzePaketSynonyme(paket, gruppen); }
-  paketSynonyme(paket: string) { return this.suche.paketSynonyme(paket); }
-  woerterNeu(von: string) { return this.suche.woerterNeu(von); }
-  vektorEinstellung() { return this.suche.vektorEinstellung(); }
-  setzeVektorEinstellung(e: unknown) { return this.suche.setzeVektorEinstellung(e); }
-  merkeVektorModell(paket: string, modell: string) { return this.suche.merkeVektorModell(paket, modell); }
-  setzeVektor(z: Zugriff | undefined, dokumentId: string, modellRoh: unknown, eingabe: unknown) { return this.suche.setzeVektor(z, dokumentId, modellRoh, eingabe); }
-  loescheVektor(z: Zugriff | undefined, dokumentId: string, modellRoh: unknown) { return this.suche.loescheVektor(z, dokumentId, modellRoh); }
-  aehnlicheDokumente(...a: Parameters<SucheDienst['aehnlicheDokumente']>) { return this.suche.aehnlicheDokumente(...a); }
-  aehnlicheZurMappe(z: Zugriff | undefined, mappeId: string) { return this.suche.aehnlicheZurMappe(z, mappeId); }
-  aehnlicheZurSuche(...a: Parameters<SucheDienst['aehnlicheZurSuche']>) { return this.suche.aehnlicheZurSuche(...a); }
-  aehnlicheZuText(z: Zugriff | undefined, text: string, anzahl: number, ms: number) { return this.suche.aehnlicheZuText(z, text, anzahl, ms); }
-  aehnlicheTypen(...a: Parameters<SucheDienst['aehnlicheTypen']>) { return this.suche.aehnlicheTypen(...a); }
-  vektorStand() { return this.suche.vektorStand(); }
-  vektorenNeu(paket: string) { return this.suche.vektorenNeu(paket); }
   vektorNachlauf(paket: string, modell: string, max: number, nach: string | null): Promise<string[]> { return this.ereignisseDienst.vektorNachlauf(paket, modell, max, nach); }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion (Kern). */

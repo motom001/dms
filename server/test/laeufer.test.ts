@@ -692,7 +692,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     // An der Mappe (Oberfläche): je Mappe, ohne die eigene.
     await x.l.start();
     await warte(() => x.l.vektorPaket() === 'ki');
-    const anMappe = await x.d.aehnlicheZurMappe(undefined, x.post.id);
+    const anMappe = await x.d.suche.aehnlicheZurMappe(undefined, x.post.id);
     assert.equal(anMappe.verfuegbar, true);
     assert.deepEqual(anMappe.mappen.map((m) => [m.id, m.dokument.name]), [[x.vertrag.id, 'wartung.pdf']], 'nur ab der Schwelle');
     // Löschen: nur dieses Dokument und Modell.
@@ -700,7 +700,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await assert.rejects(x.rufe('ki', 'GET', '/api/v1/dokumente/:id/aehnliche', { id: x.d3 }), /noch\) keinen Vektor/);
     // Modellwechsel: alte Vektoren des Pakets sind ungültig und weg.
     await setze('ki', x.d3, [1, 0, 0, 0, 0, 0, 0, 0, 1], 'probe/9');
-    assert.deepEqual((await x.d.vektorStand()).modelle.map((m) => m.modell), ['probe/9']);
+    assert.deepEqual((await x.d.suche.vektorStand()).modelle.map((m) => m.modell), ['probe/9']);
   });
 
   it('Suche fragt das Paket nach dem Vektor (Kennzeichen „ähnlich“); ohne Antwort in der Zeit wie bisher', async () => {
@@ -721,11 +721,11 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true', von: 1 })).aehnlich, undefined);
     assert.equal((await x.d.seite(ich, { sicht: x.post.typId, suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
     // Einstellung aus: keine ähnlichen Treffer.
-    await x.d.setzeVektorEinstellung({ suche: false });
+    await x.d.suche.setzeVektorEinstellung({ suche: false });
     assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
-    await x.d.setzeVektorEinstellung({ suche: true });
+    await x.d.suche.setzeVektorEinstellung({ suche: true });
     // Werkbank: Stand.
-    const st = await x.d.vektorStand();
+    const st = await x.d.suche.vektorStand();
     assert.deepEqual([st.paket, st.modell, st.mitVektor, st.mitVolltext, st.suche], ['ki', 'probe/8', 2, 3, true]);
 
     // Ein Paket, das nicht antwortet: die Suche wartet höchstens die Zeitgrenze und läuft wie bisher.
@@ -734,7 +734,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await y.l.start();
     await warte(() => y.l.vektorPaket() === 'ki' && y.l.uebersicht().then((u) => u.pakete[0]?.geladen));
     const t0 = Date.now();
-    assert.equal(await y.d.aehnlicheZurSuche(undefined, 'Heizung', { typen: null, ohneMappen: new Set(), ms: 300 }).then((r) => r.length), 0);
+    assert.equal(await y.d.suche.aehnlicheZurSuche(undefined, 'Heizung', { typen: null, ohneMappen: new Set(), ms: 300 }).then((r) => r.length), 0);
     assert.ok(Date.now() - t0 < 2000, `${Date.now() - t0} ms`);
     const s2 = await y.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
     assert.deepEqual(s2.mappen.map((m) => m.id), [y.post.id]);
@@ -755,7 +755,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await warte(async () => (await x.d.kern.repo.ereignisStand()).ki?.offen === 0);
     // Bestand: die anderen 3 Dokumente (Volltext vor der Installation) holt die Nachberechnung.
     await x.l.nachberechnen();
-    assert.equal((await x.d.vektorStand()).modell, 'probe/8', 'Modell beim Paket erfragt');
+    assert.equal((await x.d.suche.vektorStand()).modell, 'probe/8', 'Modell beim Paket erfragt');
     const offen = (await x.d.kern.repo.ereignisStand()).ki?.offen ?? 0;
     const zugestellt = (await x.d.kern.repo.ereignisStand()).ki?.zugestellt ?? 0;
     assert.ok(offen + zugestellt >= 4, `${offen} offen, ${zugestellt} zugestellt`);

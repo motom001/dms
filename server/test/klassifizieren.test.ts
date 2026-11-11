@@ -94,11 +94,11 @@ async function aufbau() {
   };
   // Vektoren: Die Nachbildung liefert für jeden Text denselben Vektor; Vertrag, Befund und alte Rechnung liegen nah.
   const v = (x: number[]) => liesVektor(x);
-  d.vektorAnbieter = { paket: () => 'ki_aehnlich', vektorFuer: async () => ({ paket: 'ki_aehnlich', modell: 'test/8', vektor: v([1, 0, 0, 0, 0, 0, 0, 0]), schwelle: 0.1 }) };
+  d.suche.vektorAnbieter = { paket: () => 'ki_aehnlich', vektorFuer: async () => ({ paket: 'ki_aehnlich', modell: 'test/8', vektor: v([1, 0, 0, 0, 0, 0, 0, 0]), schwelle: 0.1 }) };
   const zp = await d.rechtepruefung.zugriff({ id: 'konto-ki_aehnlich', rolle: 'mitglied', art: 'dienst', paketId: 'ki_aehnlich' });
-  await d.setzeVektor(zp, dokVertrag, 'test/8', { vektor: [1, 0.1, 0, 0, 0, 0, 0, 0] });
-  await d.setzeVektor(zp, dokBefund, 'test/8', { vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
-  await d.setzeVektor(zp, dokAlt, 'test/8', { vektor: [1, 0.2, 0, 0, 0, 0, 0, 0] });
+  await d.suche.setzeVektor(zp, dokVertrag, 'test/8', { vektor: [1, 0.1, 0, 0, 0, 0, 0, 0] });
+  await d.suche.setzeVektor(zp, dokBefund, 'test/8', { vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
+  await d.suche.setzeVektor(zp, dokAlt, 'test/8', { vektor: [1, 0.2, 0, 0, 0, 0, 0, 0] });
   await d.erkennung.setzeStandard({ paket: 'ki_assistent', abfluss: true });
   return { d, konten, lena, jonas, A, vertrag, rechnung, gesundheit, ablageort, postTyp, post, brief, wartung, eingaenge, antworten, dokBefund };
 }

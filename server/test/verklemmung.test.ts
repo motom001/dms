@@ -82,14 +82,14 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
     }
     // Der Eingang landet vollständig im Wörterverzeichnis – mit denselben Wörtern wie ein Neuaufbau aus dem Bestand
     // (die Zahlen je Wort wachsen bei Änderungen nur, wie bisher).
-    assert.ok(await d.woerterEinarbeiten() > 0);
+    assert.ok(await d.suche.woerterEinarbeiten() > 0);
     assert.equal((await sql`SELECT count(*)::int AS n FROM suchwoerter_eingang`)[0].n, 0);
     const woerter = async () => (await sql`SELECT wort FROM suchwoerter WHERE haushalt_id = ${HAUSHALT} ORDER BY wort`).map((z) => z.wort as string);
     const eingearbeitet = await woerter();
     assert.ok(eingearbeitet.length > 400);
     await r.woerterNeu();
     assert.deepEqual(await woerter(), eingearbeitet);
-    assert.equal(await d.woerterEinarbeiten(), 0, 'nichts mehr offen');
+    assert.equal(await d.suche.woerterEinarbeiten(), 0, 'nichts mehr offen');
   });
 
   it('wiederholt das Speichern, wenn die Datenbank es abbricht (Verklemmung, Serialisierungsfehler)', async () => {

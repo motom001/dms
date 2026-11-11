@@ -72,7 +72,7 @@ export class FragenAnDieAblage {
     const erlaubt = (typId: string) => { const t = typen.get(typId); return !!t && t.system !== 'benutzer' && !kiGesperrt(typId); };
     const anzahl = g.ausschnitte;
     const f = await this.repo().fragenFundstellen({ woerter, lesen: z?.lesen ?? null, dokumente: anzahl * 2, mappen: anzahl });
-    const aehnlich = await this.d.aehnlicheZuText(z, frage, anzahl * 2, VEKTOR_MS).catch(() => []);
+    const aehnlich = await this.d.suche.aehnlicheZuText(z, frage, anzahl * 2, VEKTOR_MS).catch(() => []);
 
     const je = Math.max(200, Math.min(AUSSCHNITT_MAX, Math.floor((g.zeichen / Math.max(1, anzahl)) * 1.5)));
     type Kandidat = { mappeId: string; quelle: FrageAusschnitt['quelle']; text: () => Promise<string> };

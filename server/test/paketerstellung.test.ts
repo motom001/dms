@@ -209,8 +209,8 @@ describe('Paket selbst erstellen (#374)', () => {
 
   it('Wortlisten (#661): eigene Gruppen ankreuzen, auch ohne Typen; beim Empfänger „aus Paketen“; neue Version übernimmt die Auswahl', async () => {
     const q = await quelle('0.127.0');
-    await q.d.legeSynonymAn({ woerter: ['Kfz', 'Auto', 'PKW'] }, ICH.email);
-    await q.d.legeSynonymAn({ woerter: ['Strom', 'Energie'] }, ICH.email);
+    await q.d.suche.legeSynonymAn({ woerter: ['Kfz', 'Auto', 'PKW'] }, ICH.email);
+    await q.d.suche.legeSynonymAn({ woerter: ['Strom', 'Energie'] }, ICH.email);
     const stand = await q.e.stand();
     const ids = stand.wortlisten.filter((g) => !g.paket).map((g) => g.id);
     assert.equal(ids.length, 2);
@@ -226,7 +226,7 @@ describe('Paket selbst erstellen (#374)', () => {
     // Leeres Ablago: beide Gruppen „aus Paketen“.
     const z = dms('0.127.0');
     const { paket } = await hochladenUndInstallieren(z.p, z1.daten);
-    const gruppen = (await z.d.sucheStand()).synonyme.filter((g) => g.quelle === paket.id).map((g) => g.woerter);
+    const gruppen = (await z.d.suche.sucheStand()).synonyme.filter((g) => g.quelle === paket.id).map((g) => g.woerter);
     assert.deepEqual(gruppen.sort(), [['Kfz', 'Auto', 'PKW'], ['Strom', 'Energie']].sort());
     // Neue Version (#652): Das erstellte Paket merkt sich die Auswahl der Wortlisten.
     assert.deepEqual((await q.e.stand()).entwuerfe.find((x) => x.id === 'familie_vertraege')?.wortlisten, ids);

@@ -77,7 +77,7 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
 
   constructor(private v: Verbund, private dienst: Dienst) {
     dienst.ereignisWecker = () => v.melde('laeufer.stelleZu');
-    dienst.vektorAnbieter = {
+    dienst.suche.vektorAnbieter = {
       paket: () => this.z.vektorPaket,
       vektorFuer: (text, ms) => v.rufe('laeufer.vektorFuer', [text, ms], { ms: ms + 5000 }),
     };

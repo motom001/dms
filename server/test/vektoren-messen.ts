@@ -48,16 +48,16 @@ async function miss(n: number) {
     const rss0 = process.memoryUsage().rss;
     // Erste Abfrage: lädt den Zwischenspeicher.
     const [{ id: erstes }] = await sql`SELECT dokument_id AS id FROM vektoren LIMIT 1`;
-    await d.merkeVektorModell('ki_aehnlich', 'messung/256');
+    await d.suche.merkeVektorModell('ki_aehnlich', 'messung/256');
     t = performance.now();
-    await d.aehnlicheDokumente(undefined, { dokument: erstes as string, anzahl: 10 });
+    await d.suche.aehnlicheDokumente(undefined, { dokument: erstes as string, anzahl: 10 });
     const laden = performance.now() - t;
     gc();
     const rss = process.memoryUsage().rss - rss0;
-    const index = (await d.vektorStand()).zwischenspeicherMB;
+    const index = (await d.suche.vektorStand()).zwischenspeicherMB;
     const ids = (await sql`SELECT dokument_id AS id FROM vektoren ORDER BY random() LIMIT 21`).map((r) => r.id as string);
     const zeiten: number[] = [];
-    for (const id of ids) { t = performance.now(); await d.aehnlicheDokumente(undefined, { dokument: id, anzahl: 10 }); zeiten.push(performance.now() - t); }
+    for (const id of ids) { t = performance.now(); await d.suche.aehnlicheDokumente(undefined, { dokument: id, anzahl: 10 }); zeiten.push(performance.now() - t); }
     // Vergleich: Kosinus in SQL (unnest) und alle holen + JS.
     const q = Array.from({ length: D }, () => Math.random() - 0.5);
     const sqlZeiten: number[] = [], holenZeiten: number[] = [];

@@ -790,7 +790,7 @@ if (leiter) {
   let woerterFehler = '';
   setInterval(() => {
     if (wiederherstellung.laeuft()) return;
-    void dienst.woerterEinarbeiten().then(() => { woerterFehler = ''; }, (e) => {
+    void dienst.suche.woerterEinarbeiten().then(() => { woerterFehler = ''; }, (e) => {
       // Nur einmal je Fehlerbild melden, nicht alle fünf Sekunden.
       if ((e as Error).message !== woerterFehler) log.warn('Wörterverzeichnis: neue Wörter nicht übernommen', { fehler: (e as Error).message });
       woerterFehler = (e as Error).message;
