@@ -439,6 +439,9 @@
   "historie.version-zurueckgeholt": "Version {zurueckgeholt} brought back",
   "historie.version": "Version {wert}",
   "historie.datei": "File",
+  "historie.paketaktion-paket": "Package",
+  "historie.paketaktion-ergebnis": "Result",
+  "historie.paketaktion-herausgegeben": "Handed out",
   "historie.ersetzt": "(replaces {str})",
   "historie.version-2": "Version",
   "historie.version-zurueckgeholt-2": "– version {zurueckgeholt} brought back",
@@ -1316,5 +1319,17 @@
   "brief.abgelegt": "The letter is now filed as {name} in the tab {register}, next to the filled-in text.",
   "brief.mit-luecken_one": "One detail was missing – the letter shows a gap there.",
   "brief.mit-luecken_other": "{anzahl} details were missing – the letter shows gaps there.",
-  "brief.hinweis": "Only details you are allowed to see are filled in, never passwords. The template itself stays as it is."
+  "brief.hinweis": "Only details you are allowed to see are filled in, never passwords. The template itself stays as it is.",
+  "paketaktion.von": "Action from {paket}",
+  "paketaktion.arbeitet": "{paket} is working …",
+  "paketaktion.hinweis": "This action comes from the package {paket}. It acts on your behalf and only with rights you have yourself. Ablago never asks for your password here.",
+  "paketaktion.weiter": "Continue",
+  "paketaktion.keine-auswahl": "– please choose –",
+  "paketaktion.geaendert": "Changed: {felder}",
+  "paketaktion.ohne-titel": "(untitled)",
+  "paketaktion.dokument-oeffnen": "Open document",
+  "paketaktion.herunterladen": "Download {name}",
+  "paketaktion.fehler.pflicht": "Please fill in.",
+  "paketaktion.fehler.ungueltig": "Please choose a valid value.",
+  "paketaktion.fehler.lang": "Please keep it shorter."
 }

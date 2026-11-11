@@ -297,6 +297,7 @@ code:
 - **Required:** `pflicht: true` requires a value – in the form and when saving. It is the opposite that is marked: fields without `pflicht` are shown with “(optional)” after the name (not for `janein` – a checkbox is always on or off); required fields get no asterisk.
 - **Values** as the package gets them: section fields under their key, lists as a list of objects (with `_id` per entry). Links are ids (with `feld`: `{ typ, feld }`), secrets in plain text – only for the package itself.
 - `code` also includes `sprache`, `quelle`, `ereignisse`, `rechte` and `netz` (see [Packages with code](pakete-code.md#im-manifest)); the example above only shows settings and actions.
+- `code.aktionen` are buttons in the package's settings (for administrators). Actions for the **Folder ▾** menu on folders are separate, under `mappenaktionen` (see [Actions in the “Folder” menu](pakete-code.md#aktionen-im-menue-mappe)).
 - **Credentials only as `geheim`**, never as `text` and never with `standard`.
 - On an **update**, new fields get their default, existing values stay, dropped ones are removed.
 

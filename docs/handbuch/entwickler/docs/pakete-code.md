@@ -204,7 +204,7 @@ Die **Eingabe** ist JSON (UTF-8, ohne abschließende Null):
   "einstellungen": { … } }
 ```
 
-Bei einer Aktion: `{ "aktion": "<schluessel>", "paket": …, "einstellungen": … }`. Einstellungen kommen wie unter [Einstellungen beschreiben](pakete.md#einstellungen-beschreiben) beschrieben, Geheimnisse im Klartext.
+Bei einer Aktion: `{ "aktion": "<schluessel>", "paket": …, "einstellungen": … }`; Aktionen im Menü „Mappe“ kommen als `"aktion": "dms:mappenaktion"` (siehe [unten](#aktionen-im-menue-mappe)). Einstellungen kommen wie unter [Einstellungen beschreiben](pakete.md#einstellungen-beschreiben) beschrieben, Geheimnisse im Klartext.
 
 ### Importe aus `dms`
 
@@ -307,6 +307,79 @@ DELETE /mappen/{id}/hinweise/{schluessel}
 - Hinweise ändern die Mappe nicht (kein `geaendert`, keine Historie, kein Ereignis) und hindern das Speichern nie. `DELETE` geht auch, wenn es den Hinweis nicht gibt. Gelesen werden sie mit der Mappe: `GET /mappen/{id}` → `hinweise: [{ paket, paketName, schluessel, text, gesetzt }]`. Wird das Paket entfernt, gehen seine Hinweise mit.
 
 Die Rechte-Vorschau nennt beides: „Berechnet Felder, die nur dieses Paket schreibt …“, „Setzt Hinweise an Mappen …“ und „Schreibt Werte und Hinweise, die alle sehen, die die Mappe lesen“ – Werte, die das Paket aus anderen Mappen errechnet, sieht jeder, der die Mappe lesen darf. Lies deshalb nur, was die Rechnung wirklich braucht.
+
+## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
+
+Seit Ablago 0.245.0 (dms #1039) meldet ein Paket Aktionen für das Menü **Mappe ▾** an – z. B. „Vorlage hinzufügen“ am Vertrag oder „Als bezahlt markieren“ an der Rechnung. Das Paket bringt **keine Oberfläche** mit: Es antwortet mit einer **Dialog-Beschreibung als Daten** oder mit einem **Ergebnis**, Ablago zeigt den Dialog mit seinen Bausteinen und wendet das Ergebnis mit dem Zugriff der Person an. Nie HTML oder JavaScript aus Paketen.
+
+**Im Manifest** (oberste Ebene, nicht unter `code`, damit es auch Pakete ohne Code für den Kern-Dialog nutzen können):
+
+```yaml
+dms: ">=0.245.0"
+mappenaktionen:
+  - schluessel: vorlage_hinzufuegen
+    name: Vorlage hinzufügen
+    beschreibung: Kündigung und andere Briefe aus den Vorlagen der Vertragsart   # Tooltip, optional
+    mappentypen: [vertrag]                 # eigener Schlüssel oder paket:typ (aus abhaengigkeiten)
+    rechte: [dokument_hinzufuegen]         # was die Aktion am Ende braucht
+    dialog: dms:vorlage                    # optional: Kern-Dialog „Brief aus Vorlage“ statt Code
+    bedingung:                             # optional, wie anzeigen an Feldern (#1033)
+      modus: alle
+      bedingungen: [{ art: feld, bedingung: { art: feld, feld: vertragsart, op: nichtLeer } }]
+      grund: Erst eine Vertragsart wählen  # steht im Menü, solange die Bedingung nicht zutrifft
+  - schluessel: bezahlt
+    name: Als bezahlt markieren
+    mappentypen: [rechnung]
+    rechte: [aendern]
+  - schluessel: positionen
+    name: Rechnungspositionen auslesen
+    mappentypen: [rechnung]
+    rechte: [mappen_anlegen]
+    anlegen: [rechnungsposition]           # Pflicht bei mappen_anlegen: Zieltypen
+```
+
+- **Rechte:** `lesen` (R), `dokument_hinzufuegen` und `aendern` (Bearbeiten an der Mappe), `mappen_anlegen` (Anlegen im Zieltyp), `herausgeben` (Herunterladen mit Recht E, Pflicht-Stempel). Ablago zeigt die Aktion nur Personen, die genau diese Rechte haben, und nur, wenn das Paket sie laut `code.rechte` auch hat (`lesen` für die Mappentypen ist Pflicht – das Paket bekommt die Werte). Ein KI-Paket (mit Netz) bietet an nicht zugelassenen Mappentypen nichts an.
+- **`dialog: dms:vorlage`** öffnet „Brief aus Vorlage“ mit den Vorlagen dieses Pakets (siehe [Text-Vorlagen schreiben](pakete.md#text-vorlagen-schreiben)) – ohne eigenen Code. Rechte: `dokument_hinzufuegen`, dazu höchstens `herausgeben` (dann auch „PDF herunterladen“).
+- Höchstens 20 Aktionen; Name bis 60, Beschreibung und Grund bis 300 Zeichen. Die Rechte-Vorschau beim Installieren nennt jede Aktion mit ihren Rechten.
+
+**Aufruf:** Klickt die Person, ruft Ablago `dms_aktion` mit Antwort auf (Zeitgrenze 30 s, sonst „Das Paket antwortet gerade nicht“):
+
+```json
+{ "aktion": "dms:mappenaktion", "mappenaktion": "bezahlt", "schritt": 1, "kennung": "…",
+  "mappe": { "id": "…", "typ": "rechnungen:rechnung", "titel": "…", "werte": { … }, "dokumente": [ … ] },
+  "paket": { … }, "einstellungen": { … } }
+```
+
+`werte` ohne Passwortfelder; `dokumente` (id, name, mime, groesse, register) nur, wenn das Paket Dokumente lesen darf. Ab Schritt 2 kommen `antworten` (Werte des Dialogs) und `stand` (was das Paket beim Dialog mitgegeben hat, höchstens 16 KB) dazu. `kennung` ist nur eine Kennung – Mappe und Person bestimmt immer Ablago.
+
+**Antwort** per `ergebnis(…)` als JSON, genau eins von beiden:
+
+```json
+{ "dialog": { "titel": "Als bezahlt markieren", "knopf": "Markieren",
+    "felder": [ { "art": "text", "text": "Wann wurde bezahlt?" },
+                { "art": "datum", "schluessel": "am", "name": "Bezahlt am", "standard": "2026-11-11", "pflicht": true } ] },
+  "stand": { "betrag": 650 } }
+```
+
+```json
+{ "ergebnis": { "meldung": "Als bezahlt markiert.", "felder": { "bezahlt_am": "2026-11-11" } } }
+```
+
+- **Felder eines Dialogs:** `text` (Absatz zum Lesen), `auswahl` (`optionen` mit `wert` und `name`, `mehrfach: true` für Haken je Option), `haken`, `textfeld`, `datum`; je `schluessel`, `name`, optional `hilfe`, `standard`, `pflicht`. Keine Passwort-Eingabe, kein Datei-Upload, keine Links; Texte bleiben Text. Höchstens 30 Felder, Texte bis 2 000 Zeichen. `gefahr: true` färbt den Hauptknopf rot – nur, wenn das Paket etwas löscht.
+- **Höchstens zwei Dialoge** je Ablauf; danach muss ein Ergebnis kommen.
+- **Ergebnis:** `meldung` und, je nach angekündigtem Recht, `felder` (Werte der Mappe, `aendern`), `dokument` (`{ "datei": "d1", "register": "dokumente" }`, `dokument_hinzufuegen`), `mappen` (`[{ "typ": "rechnungsposition", "werte": { … } }]`, `mappen_anlegen`, nur Typen aus `anlegen`), `herausgeben` (`{ "datei": "d1" }`, die Person lädt die Datei herunter). Nicht Angekündigtes lehnt Ablago ab, ohne etwas zu ändern.
+
+**Zugriff während eines Schritts:** Das Paket fragt **nicht** mit seinem Dienstkonto. `api(…)` kennt dann nur:
+
+| Anfrage | Antwort |
+|---|---|
+| `GET /mappe` | die Mappe wie in der Eingabe |
+| `GET /dokumente/<id>` | Inhalt eines Dokuments **dieser** Mappe (nur mit Leserecht auf Dokumente) |
+| `POST /dateien?name=…&typ=…` (`api_binaer`) | legt eine Datei für das Ergebnis ab (höchstens 3 je Schritt, je 10 MB) → `{ "datei": "d1" }` |
+
+Alles andere beantwortet Ablago mit 403; `speicher_schreiben` geht nicht, `speicher_lesen` schon. Neue Dokumente laufen durch dieselben Prüfungen wie ein Upload (Größe, Typ, PDFs müssen sich laden lassen).
+
+**Nachvollziehbar:** Jede Ausführung steht in der Historie der Mappe (Person und Paket) und im Verlauf des Paket-Läufers. Höchstens ein Ablauf je Person und Paket gleichzeitig. Testen lässt sich eine Aktion über die API v1 (`POST /mappen/{id}/paketaktionen/{paket}/{aktion}`, `POST /paketaktionen/laeufe/{lauf}`) mit dem Schlüssel einer Person.
 
 ## Bauen mit C (wasi-sdk)
 

@@ -271,6 +271,9 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
       uebersicht: async () => ({ laeuft: true }),
       vektorenNeu: async () => ({ entfernt: 3 }),
       stelleZu: async () => { aufrufe.push('zustellen'); },
+      // Paket-Aktionen (#1039): geladene Pakete im Schnappschuss, Schritt mit Zugriff als Daten, Dateien zurück.
+      aktionPakete: () => ['paket.a'],
+      mappenaktion: async (p: string, _e: unknown, o: { zugang: { mappe: { id: string } } }) => { aufrufe.push(`mappenaktion ${p} ${o.zugang.mappe.id}`); return { ok: true, text: '{"ergebnis":{"meldung":"ok"}}', fehler: null, dateien: [{ kennung: 'd1', name: 'a.txt', typ: 'text/plain', inhalt: Buffer.from('A') }] }; },
     };
     bedieneLaeufer(v, echt as unknown as Paketlaeufer, leiterDienst);
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
@@ -287,11 +290,16 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
     assert.deepEqual(d.erkennung.anbieter!.pakete(), [{ id: 'paket.e', name: 'Erkennen', netz: false }]);
     assert.equal((await d.erkennung.anbieter!.erkenne('paket.e', {}, 1000)).text, 'dms:erkennen');
     assert.equal(await f.aktion('paket.a', 'testen', {}), 'Erledigt.');
+    assert.equal(d.paketaktionen.laeufer!.geladen('paket.a'), true);
+    assert.equal(d.paketaktionen.laeufer!.geladen('paket.x'), false);
+    const schritt = await d.paketaktionen.laeufer!.rufe('paket.a', { schritt: 1 }, { ms: 1000, bezeichnung: 'x', zugang: { mappe: { id: 'm1' }, dokumente: {} } });
+    assert.equal(schritt.text, '{"ergebnis":{"meldung":"ok"}}');
+    assert.equal(Buffer.from(schritt.dateien[0].inhalt).toString(), 'A');
     await f.codeGeaendert();
     assert.deepEqual(await f.vektorenNeu(), { entfernt: 3 });
     d.ereignisWecker!();
     await new Promise((r) => setTimeout(r, 5));
-    assert.deepEqual(aufrufe, ['aktion paket.a testen', 'code', 'zustellen']);
+    assert.deepEqual(aufrufe, ['aktion paket.a testen', 'mappenaktion paket.a m1', 'code', 'zustellen']);
   });
 });
 

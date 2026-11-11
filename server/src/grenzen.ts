@@ -92,6 +92,24 @@ export const NETZ_LANG_AB = MB;
 export const WEITER_MAX_BYTES = 4 * MB;
 /** Gespeicherter Zustand eines Pakets. */
 export const PAKET_SPEICHER_MAX = 64 * KB;
+/**
+ * Paket-Aktionen im Menü „Mappe“ (#1039, Ergänzung Sicherheit): Dialoge sind kurz – höchstens `AKTION_FELDER_MAX`
+ * Felder, Texte bis `AKTION_TEXT_MAX` Zeichen (Absatz) bzw. `AKTION_KURZ_MAX` (Name, Knopf, Option), höchstens
+ * `AKTION_OPTIONEN_MAX` Optionen, Antworten der Person bis `AKTION_ANTWORT_MAX` Zeichen je Feld. Den Stand zwischen zwei
+ * Schritten (`stand`) hält Ablago bis `AKTION_STAND_MAX` Bytes. Dateien, die das Paket während eines Schritts ablegt
+ * (neues Dokument, Herausgeben), höchstens `AKTION_DATEI_MAX` groß und `AKTION_DATEIEN_MAX` je Lauf. Ein Schritt wartet
+ * `AKTION_ZEIT_MS` auf das Paket, ein offener Dialog lebt `AKTION_LAUF_MS`.
+ */
+export const AKTION_FELDER_MAX = 30;
+export const AKTION_TEXT_MAX = 2000;
+export const AKTION_KURZ_MAX = 200;
+export const AKTION_OPTIONEN_MAX = 200;
+export const AKTION_ANTWORT_MAX = 2000;
+export const AKTION_STAND_MAX = 16 * KB;
+export const AKTION_DATEI_MAX = 10 * MB;
+export const AKTION_DATEIEN_MAX = 3;
+export const AKTION_ZEIT_MS = 30_000;
+export const AKTION_LAUF_MS = 30 * 60_000;
 
 /* ---------- PDF und Dateien ---------- */
 

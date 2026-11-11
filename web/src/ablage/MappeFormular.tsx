@@ -31,7 +31,9 @@ import { mitNotizen, NOTIZEN_REGISTER, startRegister, type AnsichtsRegister } fr
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
-import { BriefAusVorlage } from './BriefAusVorlage';
+import { BriefAusVorlage, type VorlagenAktion } from './BriefAusVorlage';
+import { PaketAktion } from './PaketAktion';
+import type { AktionenAnMappe, AngeboteneAktion } from '../../../shared/src/paketaktionen';
 import { LoeschBaum } from './LoeschBaum';
 import { merkeAufloesung, PostLeiste } from './Post';
 import { linkZuMappe } from '../../../shared/src/direktlink';
@@ -177,6 +179,15 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
   const [erinnernOffen, setErinnernOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
   const [briefOffen, setBriefOffen] = useState(false);
+  // Paket-Aktionen (#1039): was Pakete im Menü anbieten, die offene Aktion und – beim Kern-Dialog – ihr Lauf.
+  const [paketAktionen, setPaketAktionen] = useState<AktionenAnMappe | null>(null);
+  const [paketAktion, setPaketAktion] = useState<AngeboteneAktion | null>(null);
+  const [vorlagenAktion, setVorlagenAktion] = useState<VorlagenAktion | null>(null);
+  useEffect(() => {
+    let aktuell = true;
+    api.paketAktionen(mappe.id).then((a) => { if (aktuell) setPaketAktionen(a); }, () => { if (aktuell) setPaketAktionen(null); });
+    return () => { aktuell = false; };
+  }, [mappe.id, mappe.geaendert]);
   const [drucken, setDrucken] = useState(false);
   const [loeschBaum, setLoeschBaum] = useState(false);
   // Handy (#489): „Mappe löschen“ steht im Menü „Mappe ▾“ statt in der Speicherleiste; der Formular-Teil löscht.
@@ -209,7 +220,8 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
         <div className="titelzeile"><h1><Ehemalig id={mappe.id}>{titelOder(mappe.titel)}</Ehemalig></h1>
           <div className="mappenkopf-knoepfe">
             <Stern mappeId={mappe.id} an={!!details.favorit} anker="mappe.stern" />
-            <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
+            <Aktionsmenue aus={paketAktionen?.eingebautAus} pakete={(paketAktionen?.aktionen ?? []).map((x) => ({ key: `${x.paket.id}:${x.schluessel}`, name: x.name, paket: x.paket.name, titel: x.beschreibung, gesperrt: x.gesperrt, tu: () => { setVorlagenAktion(null); setPaketAktion(x); } }))}
+              aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
               brief={vorlagenMoeglich ? () => setBriefOffen(true) : undefined}
               link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
               auskunft={details.auskunft ? () => geheZu(`/werkbank/auskuenfte/neu?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined}
@@ -241,6 +253,9 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
       {loeschBaum && <LoeschBaum key={mappe.id} mappeId={mappe.id} titel={mappe.titel ?? ''} sicht={sicht} schliessen={() => setLoeschBaum(false)} neuLaden={neuLaden} />}
       {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
       {briefOffen && <BriefAusVorlage key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} zumFeld={zumFeld} schliessen={() => setBriefOffen(false)} />}
+      {paketAktion && <PaketAktion key={`${mappe.id}:${paketAktion.paket.id}:${paketAktion.schluessel}`} aktion={paketAktion} details={details} neuLaden={neuLaden}
+        kern={(k) => { setVorlagenAktion({ lauf: k.lauf, paket: k.paket, name: k.name, herunterladen: k.rechte.includes('herausgeben') }); setPaketAktion(null); }} schliessen={() => setPaketAktion(null)} />}
+      {vorlagenAktion && <BriefAusVorlage key={`${mappe.id}:${vorlagenAktion.lauf}`} typ={typ} details={details} neuLaden={neuLaden} zumFeld={zumFeld} aktion={vorlagenAktion} schliessen={() => setVorlagenAktion(null)} />}
       {drucken && <Druckansicht typ={typ} details={details} fertig={druckEnde} />}
       {mappe.passt === false && (
         <div className="hinweis warn"><p>{t('ablage.mappeformular.diese-mappe-passt-nicht', { name: typ.name, wert: mappe.problem ? ` (${mappe.problem})` : '' })}</p></div>

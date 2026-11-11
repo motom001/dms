@@ -212,6 +212,21 @@ export class AusgangDienst {
   }
 
   /**
+   * Datei einer Paket-Aktion herausgeben (#1039, „herausgeben“): zählt wie Herunterladen – die Route prüft vorher Recht
+   * E (Prüfstelle); hier der Pflicht-Stempel des Mappentyps (lässt sich die Datei nicht stempeln, geht sie nicht hinaus)
+   * und die Weitergabe in der Historie, wenn gestempelt.
+   */
+  async dateiFuerAusgabe(mappeId: string, d: { name: string; mime: string; inhalt: Buffer }, ich: { id: string; name: string }): Promise<{ name: string; mime: string; inhalt: Buffer }> {
+    const m = await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
+    const plan = await this.stempelPlan(m.typId, null);
+    if (!plan) return d;
+    const a = await fuerAusgabe(d, { stempel: plan }, { benutzer: ich.name, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: null }, true);
+    await this.notiereWeitergabe(m.id, ich.id, 'heruntergeladen', plan, [a]);
+    return { name: a.name, mime: a.mime, inhalt: a.inhalt };
+  }
+
+  /**
    * Abruf mit API-Schlüssel ist Herausgeben (#799): die Archivfassung (#631) oder die umgewandelte Fassung (#577) mit
    * dem Stempel, den der Abruf wünscht oder der Mappentyp verlangt – auf den Seiten des Dokuments selbst, ohne eigenes
    * Deckblatt. Die gespeicherte Fassung bleibt unverändert. Ohne geltenden Stempel `null`: Dann geht die Fassung so

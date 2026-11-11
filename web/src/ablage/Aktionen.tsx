@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { createPortal } from 'react-dom';
 import { formatiere, standardRegister, type Feld, type Mappentyp } from '../../../shared/src/model';
@@ -33,7 +33,11 @@ export interface Loeschweg { text: string; titel?: string; tu(): void; /** Nur a
  * die ganze Mappe – nicht die eigene Aufgabe im Banner darunter. `loeschwege` erscheinen
  * abgetrennt am Ende (Platz für #424).
  */
-export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, auskunft, loeschwege = [] }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; /** Brief aus Vorlage (#1040). */ brief?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[] }) {
+/** Aktion eines Pakets im Menü (#1039): immer mit dem Namen des Pakets; gesperrt = Bedingung trifft nicht zu, mit Grund. */
+export interface PaketEintrag { key: string; name: string; paket: string; titel?: string; gesperrt?: string; tu(): void }
+
+export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, auskunft, loeschwege = [], aus = [], pakete = [] }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; /** Brief aus Vorlage (#1040). */ brief?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[];
+  /** Eingebaute Aktionen, die die Werkbank ausgeblendet hat (#1039). */ aus?: readonly string[]; /** Aktionen von Paketen (#1039). */ pakete?: PaketEintrag[] }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -46,6 +50,7 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, a
   }, [offen]);
   const waehle = (f: () => void) => () => { setOffen(false); f(); };
   // Einträge als Liste (#1040: „Brief aus Vorlage“ dazu) – ein Menüpunkt, ein Aussehen.
+  // Paket-Aktionen (#1039) reihen sich nach den eingebauten ein – gekennzeichnet mit dem Paket; ausgeblendete fehlen.
   const eintraege = [
     { key: 'aufgabe', tu: aufgabe, inhalt: tn('ablage.aktionen.aufgabe-vergeben', { symbol: <Symbol name="aufgabe" /> }) },
     erinnern && { key: 'erinnern', tu: erinnern, titel: t('ablage.aktionen.zu-einem-datum-an'), inhalt: tn('ablage.aktionen.erinnern', { symbol: <Symbol name="erinnern" /> }) },
@@ -54,7 +59,12 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, a
     brief && { key: 'brief', tu: brief, titel: t('ablage.aktionen.brief-titel'), inhalt: tn('ablage.aktionen.brief-aus-vorlage', { symbol: <Symbol name="dokument" /> }) },
     link && { key: 'link', tu: link, titel: t('ablage.aktionen.link-ueber-mappentyp-und'), inhalt: tn('ablage.aktionen.link-kopieren', { symbol: <Symbol name="link" /> }) },
     auskunft && { key: 'auskunft', tu: auskunft, titel: t('ablage.aktionen.alles-zu-dieser-person'), inhalt: tn('ablage.aktionen.auskunft-erstellen', { symbol: <Symbol name="auskunft" /> }) },
-  ].filter((e): e is { key: string; tu: () => void; titel?: string; inhalt: ReturnType<typeof tn> } => !!e);
+  ].filter((e): e is { key: string; tu: () => void; titel?: string; inhalt: ReturnType<typeof tn> } => !!e && !aus.includes(e.key));
+  // Paket-Aktionen in derselben Liste – ein Menüpunkt, ein Aussehen; davor ein Trenner, gesperrte mit Grund.
+  const alle: Array<{ key: string; tu: () => void; titel?: string; inhalt: ReactNode; gesperrt?: string; trenner?: boolean }> = [...eintraege, ...pakete.map((p, i) => ({
+    key: `paket:${p.key}`, tu: p.tu, titel: p.gesperrt ?? p.titel, gesperrt: p.gesperrt, trenner: i === 0,
+    inhalt: <><Symbol name="paket" />{' '}{p.name}{' '}<span className="chip klein">{p.paket}</span>{p.gesperrt && <small className="aktionsmenue-grund">{p.gesperrt}</small>}</>,
+  }))];
   return (
     <div className="aktionsmenue" ref={ref}>
       <button type="button" className={`knopf klein ${offen ? 'an' : ''}`} data-anker="mappe.aktionen" aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)} title={t('ablage.aktionen.was-du-mit-dieser')}>
@@ -62,7 +72,8 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, a
       {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => setOffen(false)} />}
       {offen && (
         <div className="menue" role="menu">
-          {eintraege.map((e) => <button key={e.key} type="button" role="menuitem" onClick={waehle(e.tu)} title={e.titel}>{e.inhalt}</button>)}
+          {alle.map((e) => <Fragment key={e.key}>{e.trenner && <div role="separator" className="aktionsmenue-trenner" />}
+            <button type="button" role="menuitem" aria-disabled={e.gesperrt ? true : undefined} className={e.gesperrt ? 'aktionsmenue-gesperrt' : undefined} onClick={e.gesperrt ? undefined : waehle(e.tu)} title={e.titel}>{e.inhalt}</button></Fragment>)}
           {loeschwege.length > 0 && <div role="separator" className={`aktionsmenue-trenner${loeschwege.every((w) => w.nurSchmal) ? ' hy-nur-schmal' : ''}`} />}
           {loeschwege.map((w) => <button key={w.text} type="button" role="menuitem" className={`aktionsmenue-gefahr${w.nurSchmal ? ' hy-nur-schmal' : ''}`} onClick={waehle(w.tu)} title={w.titel}>{w.text}</button>)}
         </div>

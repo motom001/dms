@@ -13,6 +13,7 @@ import { VektorStandBlock } from '../ablage/Aehnlich';
 import { FragenGrenzenBlock } from './FragenGrenzen';
 import { ErkennungPaketBlock, KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenBlock } from './KiTypen';
+import { AktionenVorschau, MappenMenueBlock, PaketAktionenBlock } from './PaketAktionen';
 import { PaketErstellen, SELBST } from './PaketErstellen';
 import { SelbstErstelltAnsicht } from './SelbstErstellt';
 import { rueckfrage } from '../rueckfrage';
@@ -306,6 +307,8 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
         <p className="leise">{t('werkbank.pakete.ein-update-ergaenzt-nur')}</p>
         <p className="leise">{t('werkbank.pakete.eigene-mappentypen-und-ansichten')}</p>
       </div>
+      {/* Menü „Mappe“ (#1039): eingebaute Aktionen an einer Stelle, Aktionen der Pakete im Überblick. */}
+      {z.stand && <MappenMenueBlock pakete={z.stand.installiert} />}
     </div>
   );
   if (id === UPLOAD) return <UploadDetail z={z} />;
@@ -551,7 +554,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:erkennen') && <ErkennungPaketBlock paket={inst.id} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:klassifizieren') && <KlassifizierenBlock netz={hatNetz(inst.laeufer)} />}
         {/* KI-Dienste (#796): welche Mappentypen das Paket bekommt; zulassen und sperren. */}
-        {inst?.laeufer && istKiPaket(inst.laeufer) && <KiTypenBlock paket={inst.id} />}
+        {inst?.laeufer && istKiPaket(inst.laeufer) && <KiTypenBlock paket={inst.id} />}{!!inst?.mappenaktionen?.length && <PaketAktionenBlock paket={inst} />}
         {inst && (Object.keys(inst.typen).length > 0 || Object.keys(inst.sichten).length > 0) && (
           <>
             <h2 className="h3">{t('werkbank.pakete.gehoert-dazu')}</h2>
@@ -787,6 +790,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         </div>
       )}
       <FremdeMappenVorschau v={v} />
+      <AktionenVorschau aktionen={v.aktionen} update={v.update} />
       {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.hinweise?.length > 0 && <div className="hinweis info"><ul>{v.hinweise.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.sprache && <SprachVorschau s={v.sprache} />}

@@ -74,6 +74,7 @@ import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, Vollexport
 import { WerkbankDienst } from './werkbank';
 import { OrganisationDienst } from './organisation';
 import { TextsatzDienst } from './textsatz';
+import { PaketAktionen } from './paketaktionen';
 import { ORGANISATION_BEREICH } from '../../shared/src/organisation';
 import type { MailText } from './mail';
 export { VOLLTEXT_MAX };
@@ -275,6 +276,26 @@ export class Dienst {
       organisation: () => this.organisation.geltende(), mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
       ladeHoch: (id, e, inhalt, von) => this.ladeHoch(id, { ...e, herkunft: 'vorlage' }, inhalt, von),
       darfAblegen: async (z, id) => { const m = await this.repo.holeMappe(id); return !!m && (await this.rechtepruefung.rechteAn(z, m)).U; },
+    });
+  }
+  private paketaktionenDienst?: PaketAktionen;
+  /**
+   * Paket-Aktionen im Menü „Mappe“ (#1039) – beim ersten Gebrauch gebaut; den Paket-Läufer setzt er selbst. Das Paket
+   * handelt im Auftrag der Person: Ändern, Anlegen und Hochladen laufen mit dem Zugriff der Person.
+   */
+  get paketaktionen(): PaketAktionen {
+    return this.paketaktionenDienst ??= new PaketAktionen(this.kern, this.rechtepruefung, {
+      paketZugriff: async (paketId) => {
+        const konto = [...this.paketKonten].find(([, p]) => p === paketId)?.[0];
+        return konto ? this.zugriff({ id: konto, rolle: 'mitglied', art: 'dienst', paketId }) : null;
+      },
+      kiSperre: (paketId) => this.kiSperreFuer(paketId),
+      mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
+      ladeHoch: (id, e, inhalt, von) => this.ladeHoch(id, { ...e, herkunft: 'paket' }, inhalt, von),
+      aendereMappe: (id, werte, von, z, anlass) => this.aendereMappe(id, { werte }, von, z, { text: anlass }),
+      legeMappeAn: (typId, werte, von, z) => this.legeMappeAn({ typId, werte }, von, false, z),
+      ausgabe: (mappeId, d, ich) => this.ausgang.dateiFuerAusgabe(mappeId, d, ich),
+      kurzzustand: () => this.kurzzustand,
     });
   }
   /** Mail an die Verwaltenden eines Bereichs (#995) – beim Start verbunden (ablago.ts), sonst keine. */

@@ -36,6 +36,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
 | `textsatz/` | set text (#1040): templates of a folder, letter from template as PDF (`pdf/brief.ts`, tagged, in the worker) |
+| `paketaktionen/` | package actions in the “Folder” menu (#1039): offer per person, run with dialog and result, the package's restricted access, Workbench switches |
 
 The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves – first `suche/suche.dienst.ts` ([search](#suche), #964). Every subject folder with a `*.dienst.ts` has an `index.ts` as its door and a hand-written `README.md` (20–40 lines); CI checks this in the **stil** job (`.github/werkzeuge/fachordner-pruefen.mjs`). Which folders may import what is set by the [layers](#schichten). `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings – from outside via `pakete/index.ts` (imported as `./pakete/index` next to `pakete.ts`).
 

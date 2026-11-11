@@ -245,6 +245,18 @@ Some packages need settings – for instance rules by which they assign post, or
 
 The settings are **part of the backup**; secrets stay encrypted in it and are re-encrypted on a key change. They can't be read via API v1; the package itself gets them via the package runner. The log records "Settings of package … changed (fields …)" – never the values of secrets. Only administrators see and change settings.
 
+## Actions in the “Folder” menu { #aktionen-im-menue-mappe }
+
+Packages can add actions to the **Folder ▾** menu of matching folders, e.g. **Add template** on a contract or **Mark as paid** on an invoice. In its manifest, each action names the folder types it appears on and **which rights it needs in the end**: read, add document, edit, create folders, hand out (like downloading, right E).
+
+- **Before installing:** The preview lists every action with its folder types and rights under “Actions in the “Folder” menu”. If an update adds an action or one needs different rights, it is marked **new**, and the code's rights must be confirmed again.
+- **Who sees them:** Only people who have exactly these rights on the folder – and only if the package has them too (its confirmed rights, rules for the “Package” role, “Packages” on the folder type). A package with network access (AI service) offers no action on folder types that are not approved for AI services.
+- **On behalf of the person:** The package only acts within the intersection of announced rights, the person's rights and the package's rights; Ablago checks them again at every step. During an action, the package only sees this folder (and its documents, if it may read documents) – not via its service account. Dialogs are data only (text, choice, tick box, text field, date), never with password input; the package name is always shown in the header.
+- **Switching off:** **Workbench → Packages → *package*** lists every action with its rights under “Actions in the “Folder” menu”; without a tick it is in nobody's menu. You hide the **built-in** actions (Assign a to do, Remind, Send by email, Export as PDF, Copy link) in one place: **Workbench → Packages**, section **“Folder” menu**. Hiding is about tidiness, not rights – the API routes remain.
+- **Traceable:** Every run is listed in the folder's history (person and package, group “Package actions”) and in the package runner's history (“Action “…” for …, step 1”); the log names package, action and folder, never contents.
+
+At most one action per person and package runs at a time; a step waits at most 30 seconds for the package. The switches are part of the backup (setting `mappenaktionen`).
+
 ## Packages with code { #pakete-mit-code }
 
 Some packages bring **code** – for instance their own text recognition or rules that assign new post. The code reacts to events (new post, uploaded document, finished text recognition, finished full text, changed settings) and to the **actions** in the tab "Settings". Ablago runs it in the **package runner**:

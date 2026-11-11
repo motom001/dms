@@ -230,6 +230,21 @@ export const V1_TABELLE: V1[] = [
   { methode: 'POST', pfad: '/mappen/{id}/vorlagen/{dokument}/setzen', gruppe: 'Dokumente', zusammenfassung: 'Brief aus einer Vorlage setzen (PDF)',
     beschreibung: 'Text setzen (#1040): Markdown der Vorlage plus Werte der Mappe → Brief als PDF (A4, Aufbau ähnlich DIN 5008, getaggt, Sprache der Vorlage). Briefkopf aus der Mappe im Feld an (Person oder Organisation), sonst aus der eigenen Organisation (nur Name, Anschrift, E-Mail, Telefon, #995); Anschrift aus der Mappe im Feld von; Betreff aus der ersten Überschrift (#). Platzhalter wie {vertragsnummer} oder {von.name} nur mit Werten, die der Schlüssel lesen darf, nie aus Passwortfeldern; Werte erscheinen als Text (kein Markdown). Die Vorlage wird vor dem Satz noch einmal geprüft (422 bei HTML, Bildern, fremden Links, Passwortfeldern). ziel = ablegen (Standard): PDF und ausgefüllter Text (.md) kommen als neue Dokumente ins Register register (sonst „dokumente“ bzw. das erste Dokumentenregister); braucht Bearbeiten an der Mappe, Pakete das Recht „Dokumente schreiben“. ziel = herunterladen: nur das PDF als Antwort; Herunterladen ist Mitnehmen (#723) und braucht Lesen und das Exportrecht E, Werte verwiesener Mappen ebenso. Grenzen: ausgefüllter Text 512 KB, PDF 4 MB und 30 Seiten (413), 30 Sekunden.',
     intern: { methode: 'POST', pfad: '/api/mappen/:id/vorlagen/:dokument/setzen' }, parameter: [id('der Mappe'), { name: 'dokument', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Id der Vorlage (GET /mappen/{id}/vorlagen)' }], body: 'TextSetzen', antwort: 'TextGesetzt', status: 201 },
+  // Paket-Aktionen im Menü „Mappe“ (#1039): für Menschen (API-Schlüssel), nie für Pakete selbst (403).
+  { methode: 'GET', pfad: '/mappen/{id}/paketaktionen', gruppe: 'Ablage', zusammenfassung: 'Aktionen von Paketen an einer Mappe',
+    beschreibung: 'Was im Menü „Mappe“ von Paketen dazukommt (#1039): je Aktion Paket, Schlüssel, Name und die Rechte, die sie am Ende braucht. Nur Aktionen, für die der Schlüssel und das Paket genau diese Rechte an der Mappe haben (Schnittmenge); gesperrt = die Bedingung der Aktion trifft nicht zu (Grund als Text). eingebautAus: eingebaute Aktionen, die die Werkbank ausgeblendet hat. Braucht Lesen an der Mappe (sonst 404).',
+    intern: { methode: 'GET', pfad: '/api/mappen/:id/paketaktionen' }, parameter: [id('der Mappe')], antwort: 'AktionenAnMappe' },
+  { methode: 'POST', pfad: '/mappen/{id}/paketaktionen/{paket}/{aktion}', gruppe: 'Ablage', zusammenfassung: 'Aktion eines Pakets starten',
+    beschreibung: 'Startet die Aktion (#1039): Ablago prüft die Rechte (angekündigt ∩ Schlüssel ∩ Paket) und die Bedingung (409 mit Grund) und ruft das Paket mit Zeitgrenze auf (503 „Das Paket antwortet gerade nicht“). Antwort: ein Dialog (Felder text, auswahl, haken, textfeld, datum – nur Daten) mit der Kennung lauf, ein Ergebnis oder kern = dms:vorlage (dann „Brief aus Vorlage“ mit lauf im Körper von POST /mappen/{id}/vorlagen/{dokument}/setzen). Höchstens ein laufender Ablauf je Person und Paket (429).',
+    intern: { methode: 'POST', pfad: '/api/mappen/:id/paketaktionen/:paket/:aktion' }, parameter: [id('der Mappe'), { name: 'paket', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Id des Pakets' }, { name: 'aktion', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Schlüssel der Aktion' }], antwort: 'AktionsSchritt' },
+  { methode: 'POST', pfad: '/paketaktionen/laeufe/{lauf}', gruppe: 'Ablage', zusammenfassung: 'Dialog einer Paket-Aktion beantworten',
+    beschreibung: 'Antworten auf den Dialog (#1039) als antworten: { schluessel: wert } – Text, Datum (JJJJ-MM-TT), Wert einer Option, Liste von Werten bei mehrfach, true/false bei haken. Fehlt eine Pflichtangabe: 422 mit details.felderFehler. Rechte und Bedingung prüft Ablago bei jedem Schritt neu. Antwort wie beim Start: nächster Dialog (höchstens zwei) oder Ergebnis.',
+    intern: { methode: 'POST', pfad: '/api/paketaktionen/laeufe/:lauf' }, parameter: [{ name: 'lauf', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Kennung aus der Antwort auf den Start' }], body: 'AktionsAntworten', antwort: 'AktionsSchritt' },
+  { methode: 'DELETE', pfad: '/paketaktionen/laeufe/{lauf}', gruppe: 'Ablage', zusammenfassung: 'Paket-Aktion abbrechen',
+    beschreibung: 'Beendet einen offenen Dialog (#1039); auch, wenn es ihn nicht mehr gibt.', intern: { methode: 'DELETE', pfad: '/api/paketaktionen/laeufe/:lauf' }, parameter: [{ name: 'lauf', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Kennung des Laufs' }], antwort: null, status: 204 },
+  { methode: 'POST', pfad: '/paketaktionen/laeufe/{lauf}/datei', gruppe: 'Ablage', zusammenfassung: 'Datei einer Paket-Aktion abholen',
+    beschreibung: 'Herausgeben (#1039) zählt wie Herunterladen (#723): braucht Lesen und das Exportrecht E; der Pflicht-Stempel des Mappentyps gilt. Immer als Anhang (Content-Disposition: attachment). Danach ist der Lauf zu Ende.',
+    intern: { methode: 'POST', pfad: '/api/paketaktionen/laeufe/:lauf/datei' }, parameter: [{ name: 'lauf', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Kennung des Laufs' }], antwort: 'binaer' },
   {
     methode: 'POST', pfad: '/dokumente/{id}/ersetzen', gruppe: 'Dokumente', zusammenfassung: 'Neue Version eines Dokuments',
     beschreibung: 'Versionierung (#194): Rohe Bytes als Body; das Dokument behält seine Id, die bisherige Datei bleibt als ältere Version. Name und Dateityp dürfen sich ändern. 409, wenn die Versionierung des Registers aus ist.',
@@ -577,11 +592,38 @@ const SCHEMAS: Record<string, Schema> = {
       ablegen: { type: 'boolean', description: 'Recht Bearbeiten an der Mappe' }, herunterladen: { type: 'boolean', description: 'Lesen und Exportrecht E' },
     },
   },
-  TextSetzen: { type: 'object', properties: { ziel: { type: 'string', enum: ['ablegen', 'herunterladen'], description: 'Standard: ablegen' }, register: { type: 'string', description: 'Kennung eines Dokumentenregisters (nur ablegen)' } } },
+  TextSetzen: { type: 'object', properties: { ziel: { type: 'string', enum: ['ablegen', 'herunterladen'], description: 'Standard: ablegen' }, register: { type: 'string', description: 'Kennung eines Dokumentenregisters (nur ablegen)' }, lauf: { type: 'string', description: 'Paket-Aktion mit dms:vorlage (#1039): nur Vorlagen dieses Pakets; Historie nennt Person und Paket' } } },
   TextGesetzt: {
     type: 'object', description: 'Abgelegt (#1040); mit ziel = herunterladen kommt stattdessen das PDF (application/pdf)',
     properties: { pdf: ref('Dokument'), text: ref('Dokument'), luecken: { type: 'array', items: { type: 'string' }, description: 'Platzhalter, die als Lücke im Brief stehen' } },
   },
+  AktionenAnMappe: {
+    type: 'object', description: 'Aktionen von Paketen an einer Mappe (#1039)',
+    properties: {
+      aktionen: { type: 'array', items: { type: 'object', properties: {
+        paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } }, schluessel: { type: 'string' }, name: { type: 'string' }, beschreibung: { type: 'string' },
+        rechte: { type: 'array', items: { type: 'string', enum: ['lesen', 'dokument_hinzufuegen', 'aendern', 'mappen_anlegen', 'herausgeben'] } },
+        dialog: { type: 'string', enum: ['dms:vorlage'] }, gesperrt: { type: 'string', description: 'Grund, solange die Bedingung nicht zutrifft' },
+      } } },
+      eingebautAus: { type: 'array', items: { type: 'string', enum: ['aufgabe', 'erinnern', 'email', 'drucken', 'link'] } },
+    },
+  },
+  AktionsSchritt: {
+    type: 'object', description: 'Antwort eines Schritts (#1039): dialog, ergebnis oder kern',
+    properties: {
+      lauf: { type: 'string' }, paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } }, aktion: { type: 'string' }, name: { type: 'string' }, schritt: { type: 'integer' },
+      dialog: { type: 'object', properties: { titel: { type: 'string' }, knopf: { type: 'string' }, gefahr: { type: 'boolean' }, felder: { type: 'array', items: { type: 'object', properties: {
+        art: { type: 'string', enum: ['text', 'auswahl', 'haken', 'textfeld', 'datum'] }, schluessel: { type: 'string' }, name: { type: 'string' }, text: { type: 'string' }, hilfe: { type: 'string' },
+        optionen: { type: 'array', items: { type: 'object', properties: { wert: { type: 'string' }, name: { type: 'string' } } } }, mehrfach: { type: 'boolean' }, pflicht: { type: 'boolean' },
+      } } } } },
+      ergebnis: { type: 'object', properties: {
+        meldung: { type: 'string' }, dokument: { type: 'object', properties: { id: uuid, name: { type: 'string' }, registerKey: { type: 'string' } } }, geaendert: { type: 'array', items: { type: 'string' } },
+        mappen: { type: 'array', items: { type: 'object', properties: { id: uuid, typId: uuid, titel: { type: 'string' } } } }, datei: { type: 'object', properties: { name: { type: 'string' }, groesse: { type: 'integer' } } },
+      } },
+      kern: { type: 'string', enum: ['dms:vorlage'] },
+    },
+  },
+  AktionsAntworten: { type: 'object', properties: { antworten: { type: 'object', additionalProperties: true } } },
   HinweisEingabe: { type: 'object', required: ['text'], properties: { text: { type: 'string', maxLength: 300, description: 'Nur Text, ohne HTML, Markdown und Links' } } },
   PaketHinweis: {
     type: 'object', description: 'Hinweis eines Pakets an einer Mappe (#1034)',

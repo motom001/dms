@@ -250,6 +250,8 @@ export interface InstalliertesPaket {
   typStand?: Record<string, import('./typvergleich').TypBild>;
   /** Sprachpaket (#731): Sprache, Gebietsschema, Ablago-Version der Texte, maschinell/geprüft; die Texte selbst stehen extra. */
   sprache?: import('./sprachpaket').SprachpaketInfo;
+  /** Aktionen im Menü „Mappe“ (#1039, `mappenaktionen`), wie im Manifest; Mappentypen als Verweise. */
+  mappenaktionen?: import('./paketaktionen').MappenAktion[];
 }
 
 /* ---------- Versionen ---------- */
