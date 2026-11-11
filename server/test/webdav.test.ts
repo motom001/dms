@@ -54,7 +54,7 @@ async function aufbau(o: { grenze?: number } = {}) {
   const v1b = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
   const akte = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'Akte: 7?', bezug: v1a.id } }, anna.id);
   const g = await d.mappen.legeMappeAn({ typId: geheim.id, werte: { nr: 'G-1' } }, admin.id);
-  await d.ladeHoch(v1a.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF('r1'), anna.id);
+  await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF('r1'), anna.id);
   const wd = new Webdav({ dienst: d, konten, schluessel, einstellungen, adresse: () => 'https://dms.example.org', grenze: o.grenze });
   const auth = (email: string, pw: string) => `Basic ${Buffer.from(`${email}:${pw}`).toString('base64')}`;
   const A = auth('anna@example.org', annaKey);
@@ -388,13 +388,13 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     await wd.speichere({ aktiv: true }, 'admin');
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})/Belege`;
     // Echte Duplikate: zweites „X.pdf“ (erst „X (2).pdf“, dann per neuer Version umbenannt).
-    await d.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x1'), anna.id);
-    const zweit = (await d.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x2'), anna.id)).dokument;
+    await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x1'), anna.id);
+    const zweit = (await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'X.pdf' }, PDF('x2'), anna.id)).dokument;
     assert.equal(zweit.name, 'X (2).pdf');
-    await d.ersetzeDokument(zweit.id, { name: 'X.pdf' }, PDF('x2b'), anna.id);
+    await d.dokumentVersionen.ersetzeDokument(zweit.id, { name: 'X.pdf' }, PDF('x2b'), anna.id);
     // Nach dem Bereinigen gleich: „a:b.pdf“ und „a_b.pdf“.
-    await d.ladeHoch(v1a.id, { register: 'belege', name: 'a:b.pdf' }, PDF('ab1'), anna.id);
-    await d.ladeHoch(v1a.id, { register: 'belege', name: 'a_b.pdf' }, PDF('ab2'), anna.id);
+    await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'a:b.pdf' }, PDF('ab1'), anna.id);
+    await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'a_b.pdf' }, PDF('ab2'), anna.id);
     const liste = await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' });
     assert.deepEqual(namen(liste).slice(1).sort(), ['a_b (2).pdf', 'a_b.pdf', 'Rechnung.pdf', 'X (2).pdf', 'X.pdf'].sort());
     // Welches Dokument hinter welchem Laufwerksnamen steht: über den ETag (Id + Inhalt) im Listing.
@@ -413,7 +413,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
       const z = nach.find((x) => x.id === ziel.id)!;
       assert.equal(z.name, ziel.name, 'Name bleibt');
       assert.equal(z.herkunft, 'webdav');
-      assert.equal((await d.dokumentInhalt(z.id)).inhalt.toString(), PDF(`neu ${name}`).toString());
+      assert.equal((await d.dokumente.dokumentInhalt(z.id)).inhalt.toString(), PDF(`neu ${name}`).toString());
     }
   });
 
@@ -454,7 +454,7 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
     const x = await aufbau();
     await x.wd.speichere({ aktiv: true }, 'admin');
     const echt = pdfAus([{ text: 'Echter Vertrag' }]);
-    const dok = (await x.d.ladeHoch(x.v1a.id, { register: 'belege', name: 'Echt.pdf' }, echt, x.anna.id)).dokument;
+    const dok = (await x.d.dokumente.ladeHoch(x.v1a.id, { register: 'belege', name: 'Echt.pdf' }, echt, x.anna.id)).dokument;
     const reg = `/webdav/Ablage/Verträge/V-1 (${k(x.v1a.id)})`;
     return { ...x, echt, dok, reg, pfad: `${reg}/Belege/Echt.pdf` };
   }
@@ -520,7 +520,7 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
   it('Pflicht gewinnt: Einstellung „aus“ + Pflicht-Stempel → gestempelt (Bilder als PDF); Register schreibgeschützt', async () => {
     const { d, wd, rufe, A, vt, v1a, pfad, reg, namen } = await mitEcht();
     await wd.speichere({ stempel: null }, 'admin');
-    await d.ladeHoch(v1a.id, { register: 'briefe', name: 'foto.png', typ: 'image/png' }, PNG, null);
+    await d.dokumente.ladeHoch(v1a.id, { register: 'briefe', name: 'foto.png', typ: 'image/png' }, PNG, null);
     await d.mappentypen.aendereTyp(vt.id, { ...vt, stempel: { modus: 'pflicht', vorlage: 'entwurf' } } as never);
     const r = await rufe('GET', pfad, { auth: A });
     assert.equal(r.status, 200);

@@ -46,8 +46,8 @@ async function aufbau(pg: boolean, einstellungen = speicherEinstellungen()) {
     { key: 'belege', name: 'Belege', art: 'dokumente' },
   ] });
   const post = await d.legePostAn({ betreff: 'Brief der Stadtwerke' }, { id: LENA, name: 'Lena' });
-  const a = (await d.ladeHoch(post.id, { register: 'dokumente', name: 'rechnung.pdf', typ: 'application/pdf' }, PDF('a'), LENA)).dokument;
-  const b = (await d.ladeHoch(post.id, { register: 'dokumente', name: 'werbung.pdf', typ: 'application/pdf' }, PDF('b'), LENA)).dokument;
+  const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'rechnung.pdf', typ: 'application/pdf' }, PDF('a'), LENA)).dokument;
+  const b = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'werbung.pdf', typ: 'application/pdf' }, PDF('b'), LENA)).dokument;
   return { d, rechnung, post, a, b };
 }
 
@@ -202,7 +202,7 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const ohneLoeschen: Regelwerk = { grund: { ...NICHTS, R: true, U: true, C: true }, regeln: [] };
     await d.setzeBerechtigungen(postTyp.id, ohneLoeschen, true);
     const post = (await rufe(lena, 'POST', '/api/post', { body: { betreff: 'Brief vom Finanzamt' } })).body as { id: string };
-    await d.ladeHoch(post.id, { register: 'dokumente', name: 'bescheid.pdf', typ: 'application/pdf' }, PDF('f'), lena.id);
+    await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'bescheid.pdf', typ: 'application/pdf' }, PDF('f'), lena.id);
     const neu = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'St-1' } } })).body as { id: string };
     const r = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: neu.id, aufloesen: true } })).body as { aufgeloest: boolean; hinweis?: string; post: { werte: Record<string, unknown> } };
     assert.equal(r.aufgeloest, false);
@@ -222,15 +222,15 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const ohneAnlegen: Regelwerk = { grund: { ...NICHTS, R: true, U: true, D: true }, regeln: [] };
     await d.setzeBerechtigungen(postTyp.id, ohneAnlegen, true);
     const post = await d.legePostAn({ betreff: 'Zwei Briefe' }, { id: lena.id, name: 'Lena' });
-    const a = (await d.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id)).dokument;
-    await d.ladeHoch(post.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, PDF('b'), lena.id);
+    const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id)).dokument;
+    await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, PDF('b'), lena.id);
     const neu = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'Z-1' } } })).body as { id: string };
     const teil = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: neu.id, dokumente: [a.id], aufloesen: true } })).body as { aufgeloest: boolean; hinweis?: string };
     assert.equal(teil.aufgeloest, false);
     assert.match(teil.hinweis ?? '', /Post anlegen darfst du/);
     // Ganz übernommen geht es: Jonas darf die Post löschen.
     const zweite = await d.legePostAn({ betreff: 'Ein Brief' }, { id: lena.id, name: 'Lena' });
-    await d.ladeHoch(zweite.id, { register: 'dokumente', name: 'c.pdf', typ: 'application/pdf' }, PDF('c'), lena.id);
+    await d.dokumente.ladeHoch(zweite.id, { register: 'dokumente', name: 'c.pdf', typ: 'application/pdf' }, PDF('c'), lena.id);
     const neu2 = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'Z-2' } } })).body as { id: string };
     const ganz = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: zweite.id }, body: { ziel: neu2.id, aufloesen: true } })).body as { aufgeloest: boolean };
     assert.equal(ganz.aufgeloest, true);

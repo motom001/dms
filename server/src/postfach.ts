@@ -437,7 +437,7 @@ export class Postfaecher {
       if (a.inhalt.length > MAX_DATEIGROESSE) { abgelehnt.push(`${a.name}: größer als 100 MB`); continue; }
       if (!a.inhalt.length) { abgelehnt.push(`${a.name}: leer`); continue; }
       try {
-        const r = await this.d.dienst.ladeHoch(postId, { register, name: a.name, typ: a.mime }, a.inhalt, null);
+        const r = await this.d.dienst.dokumente.ladeHoch(postId, { register, name: a.name, typ: a.mime }, a.inhalt, null);
         n++;
         // Doppelt (#333): Hinweis ohne Titel – wer die Post liest, sieht beim Zuordnen nur die Fundstellen, die er lesen darf.
         if (r.gleicherInhalt.some((g) => g.mappeId !== postId)) doppelt.push(a.name);

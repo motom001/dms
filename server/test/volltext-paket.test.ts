@@ -68,7 +68,7 @@ async function aufbau(mitPaket = true) {
     return scan ? { text: '', seiten: 2, info: 'Textebene des PDFs', ohneText: [1, 2] } : { text: TEXT, seiten: 1, info: 'Textebene des PDFs', ohneText: [] };
   };
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-  d.verbindeTexterkennung(t);
+  d.dokumente.verbindeTexterkennung(t);
   t.paket = () => d.texterkennungPaket();
   t.nachher = (dok, e, k) => {
     if (e.stand !== 'fertig' && e.stand !== 'paket') return;
@@ -85,7 +85,7 @@ async function aufbau(mitPaket = true) {
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
   const hoch = async (name: string, mime: string, inhalt: Buffer, scan: boolean | 'gemischt' = false) => {
     scanJetzt = scan;
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: mime }, inhalt, null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: mime }, inhalt, null)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
     scanJetzt = false;
     return id;
@@ -338,7 +338,7 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
       await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
       const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
       const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
-      const hoch = async (n: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name: n, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
+      const hoch = async (n: string) => (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: n, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
       const mit = await hoch('mit.pdf'), ohne = await hoch('ohne.pdf');
       await repo.ocrSetze(mit, { stand: 'fertig', text: TEXT, info: 'Textebene des PDFs' });
       await repo.ocrSetze(ohne, { stand: 'paket', text: '', info: infoWartet({ name: 'Texterkennung' }) });

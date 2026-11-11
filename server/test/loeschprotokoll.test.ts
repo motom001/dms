@@ -59,7 +59,7 @@ async function aufbau(pg: boolean) {
   ] });
   const m = await d.mappen.legeMappeAn({ typId: mieter.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, ANNA);
   const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kündigung Mustermann', mieter: m.id } }, ANNA);
-  const dok = (await d.ladeHoch(v.id, { register: 'dokumente', name: 'mietvertrag-mustermann.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 vertrag'), ANNA)).dokument;
+  const dok = (await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'mietvertrag-mustermann.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 vertrag'), ANNA)).dokument;
   await d.mappenNotizen.legeNotizAn(v.id, 'Notiz zu Erika', ANNA);
   return { d, mieter, vertrag, m, v, dok, einstellungen };
 }
@@ -151,12 +151,12 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Dokumente einzeln, ältere Versionen, Papierkorb leeren, Schnittstelle', async () => {
       const { d, v, dok } = await aufbau(pg);
-      await d.loescheDokument(dok.id, ANNA, { grund: 'sonstiges', ausloeser: 'api', weg: 'dokument' });
+      await d.dokumente.loescheDokument(dok.id, ANNA, { grund: 'sonstiges', ausloeser: 'api', weg: 'dokument' });
       let [e] = await alle(d, { art: 'dokument' });
       assert.deepEqual([e.schritt, e.weg, e.ausloeser, e.grund, e.mappeId, e.typ], ['papierkorb', 'dokument', 'api', 'sonstiges', v.id, 'Mietvertrag']);
       await d.stelleDokumentWiederHer(dok.id, anna, undefined, true);
       assert.equal((await alle(d, { schritt: 'wiederhergestellt', art: 'dokument' }))[0].sha256, dok.sha256);
-      await d.loescheDokument(dok.id, ANNA, { weg: 'dokument' });
+      await d.dokumente.loescheDokument(dok.id, ANNA, { weg: 'dokument' });
       await d.leerePapierkorb(anna);
       [e] = await alle(d, { schritt: 'endgueltig' });
       assert.deepEqual([e.art, e.weg, e.dokumentId], ['dokument', 'leeren', dok.id]);
@@ -164,8 +164,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       // Versionen über die eingestellte Anzahl hinaus.
       const typ = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Mietvertrag')!;
       await d.mappentypen.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => (r.art === 'dokumente' ? { ...r, versionierung: true, versionenBehalten: 2 } : r)) });
-      const neu = (await d.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF v1'), ANNA)).dokument;
-      for (const x of ['%PDF v2', '%PDF v3']) await d.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf', gleicherName: 'version' }, Buffer.from(x), ANNA);
+      const neu = (await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF v1'), ANNA)).dokument;
+      for (const x of ['%PDF v2', '%PDF v3']) await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf', gleicherName: 'version' }, Buffer.from(x), ANNA);
       const ver = await alle(d, { suche: sha('%PDF v1') });
       assert.deepEqual(ver.map((x) => [x.weg, x.version, x.dokumentId]), [['version', 1, neu.id]]);
     });

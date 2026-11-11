@@ -119,7 +119,7 @@ export function kontenRouten(k: RoutenKontext): Route[] {
     { methode: 'DELETE', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => {
       await konten.loescheBenutzer(ich(a), a.params.id);
       // Gemerkte Passwörter für Dokumente (#827) gehören nur dieser Person: mit weg.
-      await dienst.pdfEntsperren?.vergiss(a.params.id).catch(() => {});
+      await dienst.geschuetztePdfs.pdfEntsperren?.vergiss(a.params.id).catch(() => {});
       L.konto.info('Benutzer gelöscht', { id: a.params.id });
       return leer;
     } },

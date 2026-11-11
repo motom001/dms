@@ -39,7 +39,7 @@ export function wartungRouten(k: RoutenKontext): Route[] {
     // „Volltext neu erzeugen“ (#458): erst die Anzahl für die Rückfrage, dann als Auftrag mit Fortschritt (abbrechbar).
     { methode: 'GET', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok({ ...(await dienst.volltextNeuAnzahl(a.query.umfang)), paket: await dienst.texterkennungPaket() }) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.volltextNeu((b(a) as { umfang?: unknown }).umfang, ich(a).email)), 202) },
-    { methode: 'POST', pfad: '/api/werkbank/wartung/vorschau', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.vorschauNachholen() }) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/vorschau', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.dokumente.vorschauNachholen() }) },
 
     /* ---------- Verschlüsselung (#39) ---------- */
     /* ---------- Wartungsmodus (#102) ---------- */

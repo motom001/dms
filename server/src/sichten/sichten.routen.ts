@@ -100,7 +100,7 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       return { ...ok(klartext ? { ...antwort, mappe: (await dienst.passwortfelder.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : antwort), danach };
     } },
     // Startseite (#334): zuletzt geöffnete Mappen (nur lesbare, höchstens 5) und ob es schon eigene Mappen gibt.
-    { methode: 'GET', pfad: '/api/startseite', zugang: 'angemeldet', handler: async (a) => ok({ zuletzt: await zuletztGeoeffnet(a, 5), leer: await dienst.ohneEigeneMappen() }) },
+    { methode: 'GET', pfad: '/api/startseite', zugang: 'angemeldet', handler: async (a) => ok({ zuletzt: await zuletztGeoeffnet(a, 5), leer: await dienst.dokumente.ohneEigeneMappen() }) },
     // „Zuletzt geöffnet“ als Liste (#940): die letzten 25 lesbaren Mappen der Person, neueste oben, mit Zeitpunkt.
     { methode: 'GET', pfad: '/api/startseite/zuletzt', zugang: 'angemeldet', handler: async (a) => ok(await zuletztGeoeffnet(a, ZULETZT_LISTE)) },
   ];

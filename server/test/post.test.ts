@@ -65,7 +65,7 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(m.werte.richtung, 'Eingehend');
     assert.equal(m.werte.von ?? null, null, '„Von“ bleibt leer, nicht der Name des Anlegenden (#494)');
     assert.match(String(m.werte.datum), /^\d{4}-\d{2}-\d{2}$/);
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
     const z = await d.zaehler(A, await d.rechtepruefung.zugriff(A));
     assert.equal(z.sichten[(await d.neuePostSicht())!], 1);
     assert.equal(z.neuePost, await d.neuePostSicht());
@@ -98,8 +98,8 @@ describe('Systemtyp Post (#192)', () => {
   it('Zuordnen: Dokumente wandern ins gewählte Register, Post verweist, Stand „Zugeordnet“, Protokoll an beiden', async () => {
     const { d, anna, ben, r1, rechnung } = await aufbau();
     const m = await d.legePostAn({ betreff: 'Rechnung Backofen', an: ben.id }, { id: anna.id, name: 'Anna' });
-    const a = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id)).dokument;
-    const b = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 b'), anna.id)).dokument;
+    const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id)).dokument;
+    const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 b'), anna.id)).dokument;
     const r = await d.ordneZu(m.id, { ziel: r1.id, register: 'belege', dokumente: [a.id] }, anna.id);
     assert.deepEqual(r.post.werte.bezug, [r1.id]);
     assert.equal(r.post.werte.stand, POST_STAND.zugeordnet);
@@ -129,7 +129,7 @@ describe('Systemtyp Post (#192)', () => {
     const { d, anna, r1, post } = await aufbau();
     const m = await d.legePostAn({}, { id: anna.id, name: 'Anna' });
     assert.equal(m.titel, 'Neue Post');
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
     await assert.rejects(d.ordneZu(m.id, {}, anna.id), status(422));
     await assert.rejects(d.ordneZu(m.id, { ziel: m.id }, anna.id), status(422));
     await assert.rejects(d.ordneZu(m.id, { ziel: r1.id, register: 'gibtsnicht' }, anna.id), status(422));

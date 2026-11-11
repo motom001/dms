@@ -83,7 +83,7 @@ function faelle(pg: boolean) {
       const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const dok = async (titel: string) => {
         const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel } });
-        return (await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.pdf`, typ: 'application/pdf' }, pdfMitText([titel]), null)).dokument;
+        return (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.pdf`, typ: 'application/pdf' }, pdfMitText([titel]), null)).dokument;
       };
       const schreibe = (id: string, body: Record<string, unknown>) => d.schreibeVolltext(id, body, { id: ICH.id, herkunft: 'Texterkennung 2.1.0', paket: true });
       const suche = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' }));
@@ -105,7 +105,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(v.seiten!.map((s) => [s.seite, s.sprachen, s.text.slice(0, 12)]), [[1, ['deu'], 'Sehr geehrte'], [2, ['fra'], 'Madame, nous'], [3, ['fra'], 'Madame, nous']]);
       // Hinweis wegklicken: für alle; ein neuer Volltext mit neuem Wechsel bringt ihn wieder.
       assert.equal((await d.teilenHinweisAus(x.id)).teilenAb, null);
-      assert.equal((await d.holeDokument(x.id)).teilenAb, null);
+      assert.equal((await d.dokumente.holeDokument(x.id)).teilenAb, null);
       assert.equal((await schreibe(x.id, { text: `${DEUTSCH}\f${FRANZOESISCH}`, seitensprachen: [['deu'], ['fra']] })).teilenAb, 2);
       // Mischseite (beide Sprachen auf einer Seite): enthält auch, aber kein Hinweis.
       const y = await schreibe((await dok('Misch')).id, { text: `${DEUTSCH}\n\n${FRANZOESISCH}`, seitensprachen: [['deu', 'fra']] });
@@ -200,10 +200,10 @@ describe('Textebene: Sprache je Seite im Kern (#579)', () => {
       const einstellungen = speicherEinstellungen();
       const d = new Dienst(repo, dateien, { einstellungen });
       const t = new Texterkennung(repo, dateien, einstellungen, textebeneEngine, async () => w);
-      d.verbindeTexterkennung(t);
+      d.dokumente.verbindeTexterkennung(t);
       const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Botschaft' } });
-      const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'botschaft.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'ab.pdf')), null);
+      const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'botschaft.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'ab.pdf')), null);
       const ende = Date.now() + 15_000;
       while ((await repo.holeDokument(dokument.id))?.ocr?.stand !== 'fertig') {
         if (Date.now() > ende) throw new Error(`Zeit abgelaufen: ${JSON.stringify((await repo.holeDokument(dokument.id))?.ocr)}`);
@@ -217,7 +217,7 @@ describe('Textebene: Sprache je Seite im Kern (#579)', () => {
       // Einsprachige PDFs bleiben wie bisher: keine Seiten gespeichert.
       execFileSync('pdfunite', [join(dir, 'a.pdf'), join(dir, 'a.pdf'), join(dir, 'aa.pdf')]);
       const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Deutsch' } });
-      const zwei = (await d.ladeHoch(m2.id, { register: 'dokumente', name: 'deutsch.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'aa.pdf')), null)).dokument;
+      const zwei = (await d.dokumente.ladeHoch(m2.id, { register: 'dokumente', name: 'deutsch.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'aa.pdf')), null)).dokument;
       while ((await repo.holeDokument(zwei.id))?.ocr?.stand !== 'fertig') {
         if (Date.now() > ende) throw new Error('Zeit abgelaufen');
         await new Promise((r) => setTimeout(r, 50));

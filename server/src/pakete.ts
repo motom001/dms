@@ -2804,7 +2804,7 @@ export class Paketverwaltung {
               if (!reg || !inhalt) throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: t('meldungen.pakete.beispiel-dokument-ohne-register', { wert: paket.beispiele.indexOf(b) + 1, datei: dok.datei, register: dok.register ?? '–' }) }));
               const name = beispielName(dok);
               try {
-                await this.d.kern.ohneEreignisse(() => this.d.ladeHoch(mappeId, { register: reg.key, name, typ: beispielDateiart(dok.datei, inhalt) ?? undefined, herkunft: 'paket', ...(dok.datum ? { erstellt: `${dok.datum}T12:00:00.000Z` } : {}) }, inhalt, von.id));
+                await this.d.kern.ohneEreignisse(() => this.d.dokumente.ladeHoch(mappeId, { register: reg.key, name, typ: beispielDateiart(dok.datei, inhalt) ?? undefined, herkunft: 'paket', ...(dok.datum ? { erstellt: `${dok.datum}T12:00:00.000Z` } : {}) }, inhalt, von.id));
               } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: `${name}: ${meldungen(f)}` })); }
             }
           }
@@ -2899,7 +2899,7 @@ export class Paketverwaltung {
       // Dateien umwandeln (#577): Vorhandene Dateien der (neuen) Dateitypen gehen an das Paket.
       const neueDateitypen = (datensatz.laeufer?.umwandeln ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:umwandeln') && alt?.laeufer?.umwandeln?.includes(x)));
       if (hatSchnittstelle(datensatz.laeufer, 'dms:umwandeln') && neueDateitypen.length) {
-        void spaeter(() => this.d.umwandelPaketDa(neueDateitypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Umwandeln gemeldet', { paket: m.id, fehler: e.message })));
+        void spaeter(() => this.d.dokumentUmwandlung.umwandelPaketDa(neueDateitypen).catch((e: Error) => log.warn('Vorhandene Dateien nicht zum Umwandeln gemeldet', { paket: m.id, fehler: e.message })));
       }
       // Volltext aus Paketen (#614): Vorhandene Dateien der (neuen) Dateitypen ohne Text gehen an das Paket.
       const neueVolltextTypen = (datensatz.laeufer?.volltext ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:volltext') && alt?.laeufer?.volltext?.includes(x)));
@@ -2909,7 +2909,7 @@ export class Paketverwaltung {
       // Archivfassung (#631): Bestand der (neuen) Dateitypen mit fertigem Volltext geht an das Paket.
       const neueArchivTypen = (datensatz.laeufer?.archivfassung?.typen ?? []).filter((x) => !(hatSchnittstelle(alt?.laeufer, 'dms:archivfassung') && alt?.laeufer?.archivfassung?.typen.includes(x)));
       if (hatSchnittstelle(datensatz.laeufer, 'dms:archivfassung') && neueArchivTypen.length) {
-        void spaeter(() => this.d.archivPaketDa(neueArchivTypen).catch((e: Error) => log.warn('Vorhandene Dokumente nicht zur Archivfassung gemeldet', { paket: m.id, fehler: e.message })));
+        void spaeter(() => this.d.dokumentArchiv.archivPaketDa(neueArchivTypen).catch((e: Error) => log.warn('Vorhandene Dokumente nicht zur Archivfassung gemeldet', { paket: m.id, fehler: e.message })));
       }
       return datensatz;
     } catch (f) {
@@ -3321,7 +3321,7 @@ export class Paketverwaltung {
       try { this.o.laeufer?.ereignis?.(id, 'paket.einstellungen_geaendert', geaendert); } catch { /* das Paket entscheidet selbst */ }
       // Archivfassung (#660): eine Art nachträglich angekreuzt – die passenden Dokumente werden nachgeholt.
       const auswahl = Object.values(p.laeufer?.archivfassung?.auswahl ?? {});
-      if (auswahl.some((k) => geaendert.includes(k) && r.werte[k] === true)) void this.d.archivPaketDa(p.laeufer!.archivfassung!.typen).catch(() => 0);
+      if (auswahl.some((k) => geaendert.includes(k) && r.werte[k] === true)) void this.d.dokumentArchiv.archivPaketDa(p.laeufer!.archivfassung!.typen).catch(() => 0);
     }
     return this.einstellungen(id);
   }
@@ -3495,7 +3495,7 @@ export class Paketverwaltung {
     for (const e of p.ergaenzungen ?? []) {
       for (const v of e.vorlagen) {
         if ((await this.d.kern.repo.holeDokument(v.dokument))?.mappeId !== e.mappe) continue;
-        await this.d.loescheDokument(v.dokument, von.id, { weg: 'dokument' }).catch((x: Error) => log.warn('Vorlage des Pakets nicht entfernt', { paket: p.id, dokument: v.dokument, fehler: x.message }));
+        await this.d.dokumente.loescheDokument(v.dokument, von.id, { weg: 'dokument' }).catch((x: Error) => log.warn('Vorlage des Pakets nicht entfernt', { paket: p.id, dokument: v.dokument, fehler: x.message }));
       }
     }
     return weg;

@@ -77,13 +77,13 @@ describe('Einstellung und Werkbank (#395)', () => {
     let text = BEISPIELE.fra;
     const engine: Engine = async () => ({ text, seiten: 1, info: 'Ersatz' });
     const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-    d.verbindeTexterkennung(t);
+    d.dokumente.verbindeTexterkennung(t);
     const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
       { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
-    const hoch = async (n: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name: `${n}.pdf`, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
+    const hoch = async (n: string) => (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${n}.pdf`, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
     const warte = async (id: string) => { for (let i = 0; i < 400 && (await repo.holeDokument(id))?.ocr?.stand !== 'fertig'; i++) await new Promise((r) => setTimeout(r, 25)); };
     const a = await hoch('a'); await warte(a);
     text = BEISPIELE.deu;
@@ -101,7 +101,7 @@ describe('Einstellung und Werkbank (#395)', () => {
       { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null)).dokument.id;
     // Eine Herkunft, die die Marke vortäuscht, zählt nicht.
     const doc = await d.schreibeVolltext(id, { text: BEISPIELE.tur }, { id: 'p', herkunft: 'Mein OCR · Sprache: eng (99 %)', paket: true });
     assert.ok(doc.ocr!.info!.startsWith(PAKET_TEXT));

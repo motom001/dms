@@ -37,7 +37,7 @@ async function aufbau(erzeuger?: Erzeuger) {
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
   const ablage = speicherAblage();
   const v = new Vorschaubilder(ablage, dateien, erzeuger);
-  d.verbindeVorschau(v);
+  d.dokumente.verbindeVorschau(v);
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
@@ -58,12 +58,12 @@ describe('Vorschaubilder (#332)', () => {
     let aufrufe = 0;
     const { d, v, ablage, typ, admin } = await aufbau(async (_inhalt, mime) => { aufrufe++; return Buffer.from(`bild ${mime}`); });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
-    const pdf = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf' }, pdfAus([{ text: 'Rechnung' }]), admin.id)).dokument;
-    const png = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'IMG_4711.png' }, PNG, admin.id)).dokument;
-    const txt = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur Text'), admin.id)).dokument;
+    const pdf = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf' }, pdfAus([{ text: 'Rechnung' }]), admin.id)).dokument;
+    const png = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'IMG_4711.png' }, PNG, admin.id)).dokument;
+    const txt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur Text'), admin.id)).dokument;
     // Gleicher Inhalt in einer zweiten Mappe: kein zweites Bild.
     const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '2' } }, admin.id);
-    await d.ladeHoch(m2.id, { register: 'dokumente', name: 'Kopie.pdf' }, pdfAus([{ text: 'Rechnung' }]), admin.id);
+    await d.dokumente.ladeHoch(m2.id, { register: 'dokumente', name: 'Kopie.pdf' }, pdfAus([{ text: 'Rechnung' }]), admin.id);
     await v.fertig();
     assert.equal(aufrufe, 2);
     assert.equal(ablage.bilder.size, 2);
@@ -81,7 +81,7 @@ describe('Vorschaubilder (#332)', () => {
     let aufrufe = 0;
     const { d, v, typ, admin } = await aufbau(async () => { aufrufe++; throw new Error('kaputt'); });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
-    const doc = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'defekt.pdf' }, Buffer.from('%PDF-1.4 kaputt'), admin.id)).dokument;
+    const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'defekt.pdf' }, Buffer.from('%PDF-1.4 kaputt'), admin.id)).dokument;
     await v.fertig();
     assert.equal(await v.bild(doc), null);
     await v.fertig();
@@ -91,10 +91,10 @@ describe('Vorschaubilder (#332)', () => {
   it('Route: gleiche Rechte wie das Dokument, 404 ohne Bild, Bild mit eigener Zwischenspeicherung', async () => {
     const { d, v, typ, geheim, admin, anna, rufe } = await aufbau(async () => Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
-    const doc = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf' }, pdfAus([{ text: 'x' }]), admin.id)).dokument;
-    const txt = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.txt' }, Buffer.from('x'), admin.id)).dokument;
+    const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf' }, pdfAus([{ text: 'x' }]), admin.id)).dokument;
+    const txt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.txt' }, Buffer.from('x'), admin.id)).dokument;
     const g = await d.mappen.legeMappeAn({ typId: geheim.id, werte: { nr: '1' } }, admin.id);
-    const arzt = (await d.ladeHoch(g.id, { register: 'dokumente', name: 'Befund.pdf' }, pdfAus([{ text: 'Befund' }]), admin.id)).dokument;
+    const arzt = (await d.dokumente.ladeHoch(g.id, { register: 'dokumente', name: 'Befund.pdf' }, pdfAus([{ text: 'Befund' }]), admin.id)).dokument;
     await v.fertig();
     const r = await rufe(anna, 'GET', '/api/dokumente/:id/vorschau', { params: { id: doc.id } }) as { datei: Datei };
     assert.equal(r.datei.mime, 'image/jpeg');
@@ -108,8 +108,8 @@ describe('Vorschaubilder (#332)', () => {
   it('Nachholen erzeugt nur Fehlendes; Löschen der Datei nimmt das Bild mit', async () => {
     const { d, v, ablage, typ, admin, rufe } = await aufbau(async () => Buffer.from('bild'));
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
-    const a = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, pdfAus([{ text: 'a' }]), admin.id)).dokument;
-    const b = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.png' }, PNG, admin.id)).dokument;
+    const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, pdfAus([{ text: 'a' }]), admin.id)).dokument;
+    const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.png' }, PNG, admin.id)).dokument;
     await v.fertig();
     await ablage.loesche(b.sha256);
     const r = await rufe(admin, 'POST', '/api/werkbank/wartung/vorschau') as { body: { eingereiht: number } };
@@ -117,7 +117,7 @@ describe('Vorschaubilder (#332)', () => {
     await v.fertig();
     assert.ok(await v.bild(b));
     await d.setzePapierkorbTage(0); // ohne Papierkorb (#344): Datei sofort weg
-    await d.loescheDokument(a.id, admin.id);
+    await d.dokumente.loescheDokument(a.id, admin.id);
     assert.equal(ablage.bilder.has(a.sha256), false);
     assert.equal(ablage.bilder.has(b.sha256), true);
   });

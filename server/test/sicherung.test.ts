@@ -215,7 +215,7 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
     // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
     const partner = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
     const m = (await d.mappen.listeMappen(partner.id))[0];
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo Welt'), null);
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo Welt'), null);
 
     const reihenfolge = (await tabellenIn(sql)).map((t) => t.name);
     assert.ok(reihenfolge.indexOf('haushalte') < reihenfolge.indexOf('mappen'));

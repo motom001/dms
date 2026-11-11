@@ -34,7 +34,7 @@ describe('Papierkorb (#43)', () => {
     const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
     const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1', partner: p.id } }, anna.id);
     await assert.rejects(d.loescheMappe(p.id, anna.id), status(409), 'Verweise verhindern das Löschen wie bisher');
-    await d.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 x'), anna.id);
+    await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 x'), anna.id);
     await d.loescheMappe(v.id, anna.id);
 
     await assert.rejects(d.mappen.holeMappe(v.id), status(404), 'woanders nicht mehr sichtbar');
@@ -65,7 +65,7 @@ describe('Papierkorb (#43)', () => {
     const a = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'A' } }, anna.id);
     const b = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
     const c = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'C' } }, admin.id);
-    const { dokument } = await d.ladeHoch(a.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
+    const { dokument } = await d.dokumente.ladeHoch(a.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
     for (const [m, wer] of [[a, anna], [b, anna], [c, admin]] as const) await d.loescheMappe(m.id, wer.id);
     assert.ok(await dateien.lies(dokument.sha256).then(() => true, () => false), 'Datei bleibt im Papierkorb');
 

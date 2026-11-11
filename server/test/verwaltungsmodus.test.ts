@@ -337,8 +337,8 @@ describe('Neues seit 0.188 im Modell von #818', () => {
   it('Passwörter für Dokumente (#827) bleiben auch im Verwaltungsmodus bei ihrer Person', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
-    const e = new PdfEntsperren(x.d.entsperrenAnbindung({ ablage: speicherFassungen(), speicher: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null) }));
-    x.d.verbindeEntsperren(e);
+    const e = new PdfEntsperren(x.d.geschuetztePdfs.entsperrenAnbindung({ ablage: speicherFassungen(), speicher: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null) }));
+    x.d.geschuetztePdfs.verbindeEntsperren(e);
     const fremd = await e.merke(x.petra.id, 'Gehaltsabrechnung', 'petras-geheimnis');
     const c = await x.anmelden('lena@example.org');
     assert.equal((await x.verwalten(c)).statusCode, 200);

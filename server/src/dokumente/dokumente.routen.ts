@@ -22,7 +22,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     /* ---------- Dokumente ---------- */
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, strom: true, handler: async (a) => {
       await darf(a, a.params.id, 'U');
-      const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ, gleicherName: a.query.gleicherName, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
+      const r = await dienst.dokumente.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ, gleicherName: a.query.gleicherName, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
       // Gleicher Inhalt (#333): nur Mappen, die der Benutzer lesen darf.
       const lesbar = await dienst.rechtepruefung.lesbare(await zg(a), r.gleicherInhalt.map((g) => g.mappeId));
       r.gleicherInhalt = r.gleicherInhalt.filter((g) => lesbar.has(g.mappeId));
@@ -46,17 +46,17 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         const r = await dienst.dokumentFuerAusgabe(a.params.id, { stempel: a.query, verkleinern: a.query.verkleinern, fassung: a.query.fassung, ich: ich(a) });
         return abgerufen(a, a.params.id, { fassung: a.query.fassung === 'archiv' ? 'archiv' : 'original', gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
       }
-      const d0 = await dienst.holeDokument(a.params.id);
+      const d0 = await dienst.dokumente.holeDokument(a.params.id);
       // Was der Browser nicht anzeigen kann (Word, Excel …), kommt nur zum Abspeichern: auch das ist Mitnehmen (#723).
       if (!d0.anzeigbar) await mitnehmen(a, mappeId);
-      const { dokument: d, inhalt } = await dienst.dokumentInhalt(a.params.id);
+      const { dokument: d, inhalt } = await dienst.dokumente.dokumentInhalt(a.params.id);
       // Abspeichern ist Herunterladen (#800); Anzeigen in der Oberfläche nicht.
       if (!d.anzeigbar) {
         L.dokumente.debug('Dokument heruntergeladen', { name: d.name, id: d.id });
         return abgerufen(a, d.id, {}, { datei: { inhalt, name: d.name, mime: 'application/octet-stream', anzeigen: false, groesse: d.groesse } });
       }
       // Geschütztes PDF (#827): Angezeigt wird die entsperrte Fassung (bereinigt); Herunterladen liefert das Original.
-      const frei = d.mime === 'application/pdf' && d.anzeigbar && !a.apiSchluessel ? await dienst.pdfEntsperren?.fassung(d.sha256).catch(() => null) : null;
+      const frei = d.mime === 'application/pdf' && d.anzeigbar && !a.apiSchluessel ? await dienst.geschuetztePdfs.pdfEntsperren?.fassung(d.sha256).catch(() => null) : null;
       if (frei) return fuerAnzeige(a, { inhalt: frei.inhalt, name: d.name, mime: 'application/pdf', anzeigen: true, groesse: frei.inhalt.length, koepfe: { 'x-dms-entsperrt': '1' } });
       const anzeigen = d.anzeigbar;
       L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
@@ -83,7 +83,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         if (!s1) throw new Fachfehler(404, t('meldungen.routen.fuer-dieses-dokument-gibt'));
         return abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: true }, { datei: { inhalt: s1, name: 'vorschau.jpg', mime: 'image/jpeg', anzeigen: true, groesse: s1.length, koepfe: { 'cache-control': 'no-store' } } });
       }
-      const d = await dienst.holeDokument(a.params.id);
+      const d = await dienst.dokumente.holeDokument(a.params.id);
       const bild = x.vorschau ? await x.vorschau.bild(d) : null;
       if (!bild) throw new Fachfehler(404, t('meldungen.routen.fuer-dieses-dokument-gibt'));
       // Die Adresse trägt den Prüfwert (?v=…): ein neues Bild hat eine neue Adresse, das Bild darf im Browser bleiben.
@@ -95,17 +95,17 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // dürfen (das Original bleibt unverändert, deshalb genügt Lesen); ansehen darf die Fassung, wer das Dokument liest.
     { methode: 'PUT', pfad: '/api/dokumente/:id/fassung', zugang: 'angemeldet', roh: FASSUNG_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.setzeFassung(await zg(a), a.params.id, a.query.sha256, a.body));
+      return ok(await dienst.dokumentUmwandlung.setzeFassung(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
     { methode: 'PUT', pfad: '/api/dokumente/:id/vorschaubild', zugang: 'angemeldet', roh: VORSCHAUBILD_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.setzeVorschaubild(await zg(a), a.params.id, a.query.sha256, a.body));
+      return ok(await dienst.dokumentUmwandlung.setzeVorschaubild(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
     // Geschützte PDFs (#827): mit dem Passwort eine entsperrte Fassung anlegen. Das Passwort geht nur an qpdf (über die
     // Standardeingabe), nie in Datenbank, Protokoll oder Historie – außer mit „merken“ verschlüsselt im eigenen Konto.
     { methode: 'POST', pfad: '/api/dokumente/:id/entsperren', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.entsperreDokument(a.params.id, ich(a).id, b(a), !a.apiSchluessel && !a.sitzungsDaten?.vertretungId));
+      return ok(await dienst.geschuetztePdfs.entsperreDokument(a.params.id, ich(a).id, b(a), !a.apiSchluessel && !a.sitzungsDaten?.vertretungId));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/fassung', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
@@ -113,7 +113,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       if (zumAbspeichern(a)) await mitnehmen(a, mappeId);
       const g = herausgeben(a) ? await dienst.fassungFuerAusgabe(a.params.id, 'umgewandelt', { stempel: a.query, ich: ich(a) }) : null;
       if (g) return abgerufen(a, a.params.id, { fassung: 'umgewandelt', gestempelt: true, datei: g.name }, ausgabeDatei({ name: g.name, mime: g.mime, anzeigbar: true, groesse: g.inhalt.length, inhalt: g.inhalt, gestempelt: true }));
-      const f = await dienst.fassungVon(a.params.id);
+      const f = await dienst.dokumentUmwandlung.fassungVon(a.params.id);
       const punkt = f.d.name.lastIndexOf('.');
       const endung = f.info.mime === 'application/pdf' ? 'pdf' : f.info.mime === 'image/png' ? 'png' : 'jpg';
       const name = `${punkt > 0 ? f.d.name.slice(0, punkt) : f.d.name} (${f.info.entsperrt ? 'entsperrt' : 'umgewandelt'}).${endung}`;
@@ -125,7 +125,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     // bleibt unverändert); ansehen, wer das Dokument liest. Wortpositionen ebenso mit Lesen (ohne weiteres Recht).
     { methode: 'PUT', pfad: '/api/dokumente/:id/archivfassung', zugang: 'angemeldet', roh: ARCHIVFASSUNG_MAX_BYTES + KOERPER_SPIELRAUM, handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.setzeArchivfassung(await zg(a), a.params.id, a.query.sha256, a.body));
+      return ok(await dienst.dokumentArchiv.setzeArchivfassung(await zg(a), a.params.id, a.query.sha256, a.body));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/archivfassung', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
@@ -135,7 +135,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       // Die gespeicherte Archivfassung bleibt unverändert; Pakete bekommen sie immer, wie sie ist.
       const g = herausgeben(a) ? await dienst.fassungFuerAusgabe(a.params.id, 'archiv', { stempel: a.query, ich: ich(a) }) : null;
       if (g) return abgerufen(a, a.params.id, { fassung: 'archiv', gestempelt: true, datei: g.name }, ausgabeDatei({ name: g.name, mime: g.mime, anzeigbar: true, groesse: g.inhalt.length, inhalt: g.inhalt, gestempelt: true }));
-      const f = await dienst.archivfassungVon(a.params.id);
+      const f = await dienst.dokumentArchiv.archivfassungVon(a.params.id);
       const name = f.info.imOriginal ? f.d.name : archivfassungName(f.d.name);
       const antwort = await fuerAnzeige(a, { inhalt: f.inhalt, name, mime: 'application/pdf', anzeigen: a.query.herunterladen === undefined, groesse: f.inhalt.length,
         koepfe: { 'x-dms-archivfassung': `${pdfaName(f.info.pdfa)}; ${f.info.paket.id} ${f.info.paket.version}${f.info.imOriginal ? '; original' : ''}`, 'cache-control': t('meldungen.routen.private-max-age-60') } });
@@ -143,7 +143,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/wortpositionen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.wortpositionen(a.params.id));
+      return ok(await dienst.dokumentArchiv.wortpositionen(a.params.id));
     } },
     // Volltext und Texterkennung (#45)
     { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
@@ -216,7 +216,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     /* Versionierung (#194): Ersetzen und Zurückholen mit dem Recht „Bearbeiten“, Versionen mit „Lesen“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/versionen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.versionen(a.params.id));
+      return ok(await dienst.dokumentVersionen.versionen(a.params.id));
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
@@ -227,7 +227,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         const r = await dienst.dokumentFuerAusgabe(a.params.id, { version: nummer, stempel: a.query, verkleinern: a.query.verkleinern, ich: ich(a) });
         return abgerufen(a, a.params.id, { fassung: 'version', version: nummer, gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
       }
-      const { version: v, inhalt } = await dienst.versionInhalt(a.params.id, nummer);
+      const { version: v, inhalt } = await dienst.dokumentVersionen.versionInhalt(a.params.id, nummer);
       if (!v.anzeigbar) {
         try { await mitnehmen(a, mappeId); } catch (e) { if (!Buffer.isBuffer(inhalt)) (inhalt as Readable).destroy(); throw e; }
       }
@@ -237,13 +237,13 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/ersetzen', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, strom: true, handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      const d = await dienst.ersetzeDokument(a.params.id, { name: a.query.name, typ: a.query.typ, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
+      const d = await dienst.dokumentVersionen.ersetzeDokument(a.params.id, { name: a.query.name, typ: a.query.typ, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
       L.dokumente.info('Neue Version eines Dokuments', { name: d.name, id: d.id, version: d.version });
       return ok(d, 201);
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/versionen/:nummer/zurueckholen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      const d = await dienst.holeVersionZurueck(a.params.id, Number(a.params.nummer), ich(a).id);
+      const d = await dienst.dokumentVersionen.holeVersionZurueck(a.params.id, Number(a.params.nummer), ich(a).id);
       L.dokumente.info('Ältere Version zurückgeholt', { name: d.name, id: d.id, version: d.version, von: Number(a.params.nummer) });
       return ok(d, 201);
     } },
@@ -315,7 +315,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       await darf(a, mappeId, 'U');
       // Vorgaben (#1038): Ein Paket löscht keine Dokumente an Vorgaben anderer Pakete.
       await dienst.mappen.pruefeFremdeVorgabe(await zg(a), mappeId);
-      const r = await dienst.loescheDokument(a.params.id, ich(a).id, { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'dokument' });
+      const r = await dienst.dokumente.loescheDokument(a.params.id, ich(a).id, { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'dokument' });
       L.dokumente.info(r.papierkorb ? 'Dokument in den Papierkorb gelegt' : 'Dokument gelöscht', { id: a.params.id });
       return leer;
     } },

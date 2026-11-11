@@ -32,8 +32,8 @@ describe('Vollexport (#254)', () => {
     ], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Unterlagen', art: 'dokumente', versionierung: true }] });
     const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' } });
     const z = await d.mappen.legeMappeAn({ typId: konto.id, werte: { name: 'Portal', benutzer: 'anna', pw: 'geheim123', partner: p.id, betrag: { betrag: 12.5, waehrung: 'EUR' }, ab: '2026-12-01' } });
-    const dok = (await d.ladeHoch(z.id, { register: 'dok', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 eins'), null)).dokument;
-    await d.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
+    const dok = (await d.dokumente.ladeHoch(z.id, { register: 'dok', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 eins'), null)).dokument;
+    await d.dokumentVersionen.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
     await d.mappenNotizen.legeNotizAn(z.id, 'Notiz zum Zugang', null);
 
     const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });

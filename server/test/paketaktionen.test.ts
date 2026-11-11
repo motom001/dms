@@ -334,8 +334,8 @@ for (const pg of [false, ...(url ? [true] : [])]) {
     it('Eingeschränkter Zugriff: nur diese Mappe, ihre Dokumente, Dateien ablegen; neues Dokument wie ein Upload', async () => {
       const t = await aufbau(pg, 'aktionen_zugang');
       const fremd = await t.d.mappen.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
-      const fremdDok = (await t.d.ladeHoch(fremd.id, { register: 'dokumente', name: 'gas.txt', typ: 'text/plain' }, Buffer.from('Gas'), t.lena.id)).dokument;
-      const eigenDok = (await t.d.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'strom.txt', typ: 'text/plain' }, Buffer.from('Strom'), t.lena.id)).dokument;
+      const fremdDok = (await t.d.dokumente.ladeHoch(fremd.id, { register: 'dokumente', name: 'gas.txt', typ: 'text/plain' }, Buffer.from('Gas'), t.lena.id)).dokument;
+      const eigenDok = (await t.d.dokumente.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'strom.txt', typ: 'text/plain' }, Buffer.from('Strom'), t.lena.id)).dokument;
       const gesehen: Record<string, number> = {};
       t.setzeSkript(async (_e, o) => {
         const q = async (methode: string, pfad: string, body?: Buffer) => { const r = await o.zugang({ methode, pfad, ...(body ? { body } : {}) }); gesehen[`${methode} ${pfad}`] = r.status; return r; };
@@ -396,7 +396,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       await assert.rejects(t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, null, false), fehler(404));
       await assert.rejects(t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', true), fehler(403));
       await t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', false);
-      const dok = (await t.d.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'Kündigung.pdf', typ: 'application/pdf' }, Buffer.from('x'), t.lena.id)).dokument;
+      const dok = (await t.d.dokumente.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'Kündigung.pdf', typ: 'application/pdf' }, Buffer.from('x'), t.lena.id)).dokument;
       await t.d.paketaktionen.vorlageErledigt(h, s.lauf, { dokument: dok });
       const e = (await t.d.mappenHistorie.historie(t.mappe.id)).find((x) => x.art === 'paketaktion');
       assert.equal(e?.daten.dokument, 'Kündigung.pdf');

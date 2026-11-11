@@ -287,14 +287,14 @@ for (const pg of [false, true]) {
     it('Passwortfelder nie – eigene Vorlage im Register „Vorlagen“ mit {zugang} oder {von.kennwort} wird abgelehnt', async () => {
       const x = await aufbau('textsatz_passwort');
       for (const platz of ['{zugang}', '{von.kennwort}']) {
-        const dok = (await x.d.ladeHoch(x.miete.id, { register: 'vorlagen', name: `eigen-${platz.length}.md`, typ: 'text/markdown' }, Buffer.from(`Zugang: ${platz}`), x.katrin.id)).dokument;
+        const dok = (await x.d.dokumente.ladeHoch(x.miete.id, { register: 'vorlagen', name: `eigen-${platz.length}.md`, typ: 'text/markdown' }, Buffer.from(`Zugang: ${platz}`), x.katrin.id)).dokument;
         await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: dok.id } }), fehler(422, /Passwortfeld/));
       }
       // HTML, das nachträglich in eine Vorlage kam, ebenso.
-      const html = (await x.d.ladeHoch(x.miete.id, { register: 'vorlagen', name: 'html.md', typ: 'text/markdown' }, Buffer.from('Hallo <img src=x>'), x.katrin.id)).dokument;
+      const html = (await x.d.dokumente.ladeHoch(x.miete.id, { register: 'vorlagen', name: 'html.md', typ: 'text/markdown' }, Buffer.from('Hallo <img src=x>'), x.katrin.id)).dokument;
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: html.id } }), fehler(422, /HTML/));
       // Ein Dokument, das keine Vorlage dieser Mappe ist: 404.
-      const fremd = (await x.d.ladeHoch(x.vertrag, { register: 'dokumente', name: 'notiz.md', typ: 'text/markdown' }, Buffer.from('Hallo'), x.katrin.id)).dokument;
+      const fremd = (await x.d.dokumente.ladeHoch(x.vertrag, { register: 'dokumente', name: 'notiz.md', typ: 'text/markdown' }, Buffer.from('Hallo'), x.katrin.id)).dokument;
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: fremd.id } }), fehler(404));
     });
 

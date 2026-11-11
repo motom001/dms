@@ -123,7 +123,7 @@ describe('Fotos als PDF (#490)', () => {
       const vorne = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40))], betreff: 'Brief Vorderseite' } })).body.post as { id: string };
       const hinten = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], betreff: 'Brief Rückseite' } })).body.post as { id: string };
       // Ein Foto als eigenes Dokument kommt auch mit.
-      await d.ladeHoch(hinten.id, { register: 'dokumente', name: 'image.jpg', typ: 'image/jpeg' }, jpeg(20, 20), anna.id);
+      await d.dokumente.ladeHoch(hinten.id, { register: 'dokumente', name: 'image.jpg', typ: 'image/jpeg' }, jpeg(20, 20), anna.id);
       const r = await rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: hinten.id } });
       assert.equal(r.body.seiten, 4);
       assert.equal((await seiten(await pdfVon(vorne.id))).length, 4);
@@ -132,7 +132,7 @@ describe('Fotos als PDF (#490)', () => {
       await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: vorne.id } }), status(422));
       // Andere Dateien lassen sich nicht anhängen.
       const word = (await rufe('POST', '/api/post', { body: { betreff: 'Word' } })).body as { id: string };
-      await d.ladeHoch(word.id, { register: 'dokumente', name: 'brief.docx', typ: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, Buffer.from('PK\x03\x04 docx'), anna.id);
+      await d.dokumente.ladeHoch(word.id, { register: 'dokumente', name: 'brief.docx', typ: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, Buffer.from('PK\x03\x04 docx'), anna.id);
       await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: word.id } }), status(422));
     } finally { await aufraeumen(); }
   });

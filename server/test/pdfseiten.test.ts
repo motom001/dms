@@ -37,9 +37,9 @@ async function aufbau(versionierung = true) {
     { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung },
   ] });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Strom' } }, ANNA);
-  const doc = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf', typ: 'application/pdf' }, await pdf(5), ANNA)).dokument;
+  const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf', typ: 'application/pdf' }, await pdf(5), ANNA)).dokument;
   const inhalt = async (id: string) => {
-    const s = (await d.dokumentInhalt(id)).inhalt;
+    const s = (await d.dokumente.dokumentInhalt(id)).inhalt;
     return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]);
   };
   return { d, typ, m, doc, inhalt };
@@ -71,7 +71,7 @@ describe('PDF bearbeiten (#335)', () => {
     const neu = await inhalt(doc.id);
     assert.deepEqual(await breiten(neu), [3, 1, 5]);
     assert.deepEqual(await drehungen(neu), [0, 90, 0]);
-    assert.equal((await d.versionen(doc.id)).aeltere.length, 1, 'Original als Version 1');
+    assert.equal((await d.dokumentVersionen.versionen(doc.id)).aeltere.length, 1, 'Original als Version 1');
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'pdf_bearbeitet');
     assert.match(String(h?.daten.text), /5 → 3 Seiten, 1 Seite gedreht/);
     // Noch einmal drehen addiert sich.
@@ -98,14 +98,14 @@ describe('PDF bearbeiten (#335)', () => {
     assert.deepEqual(await breiten(await inhalt(r.dokumente[1].id)), [3, 4]);
     assert.deepEqual(await breiten(await inhalt(r.dokumente[2].id)), [5]);
     assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 3);
-    assert.equal((await d.versionen(doc.id)).aeltere.length, 1, 'das ganze Original bleibt als Version 1');
+    assert.equal((await d.dokumentVersionen.versionen(doc.id)).aeltere.length, 1, 'das ganze Original bleibt als Version 1');
   });
 
   it('Post teilen: je Teil eine neue Post, die Ausgangspost ist erledigt und verweist auf die neuen', async () => {
     const { d, inhalt } = await aufbau();
     const post = await d.legePostAn({ betreff: 'Sammelscan', absender: 'Scanner' }, { id: ANNA, name: 'Anna' });
     const reg = { key: await postRegister(d, post.typId) };
-    const doc = (await d.ladeHoch(post.id, { register: reg.key, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(4), ANNA)).dokument;
+    const doc = (await d.dokumente.ladeHoch(post.id, { register: reg.key, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(4), ANNA)).dokument;
     const r = await d.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4].map((nr) => ({ nr })), teile: [1, 3] }, ANNA);
     assert.equal(r.posten.length, 3);
     assert.deepEqual(r.posten.map((p) => p.werte.betreff), ['Sammelscan (Teil 1)', 'Sammelscan (Teil 2)', 'Sammelscan (Teil 3)']);
@@ -124,8 +124,8 @@ describe('PDF bearbeiten (#335)', () => {
     const p1 = await d.legePostAn({ betreff: 'Brief Seite 1' }, { id: ANNA, name: 'Anna' });
     const p2 = await d.legePostAn({ betreff: 'Brief Seite 2' }, { id: ANNA, name: 'Anna' });
     const reg = await postRegister(d, p1.typId);
-    const a = (await d.ladeHoch(p1.id, { register: reg, name: 'Brief.pdf', typ: 'application/pdf' }, await pdf(2, 1), ANNA)).dokument;
-    const b = (await d.ladeHoch(p2.id, { register: reg, name: 'Brief2.pdf', typ: 'application/pdf' }, await pdf(1, 3), ANNA)).dokument;
+    const a = (await d.dokumente.ladeHoch(p1.id, { register: reg, name: 'Brief.pdf', typ: 'application/pdf' }, await pdf(2, 1), ANNA)).dokument;
+    const b = (await d.dokumente.ladeHoch(p2.id, { register: reg, name: 'Brief2.pdf', typ: 'application/pdf' }, await pdf(1, 3), ANNA)).dokument;
     await assert.rejects(d.fuegePdfZusammen({ dokumente: [a.id] }, ANNA), status(422, /mindestens zwei/));
     const r = await d.fuegePdfZusammen({ dokumente: [a.id, b.id], originaleEntfernen: true }, ANNA);
     assert.equal(r.dokument.name, 'Brief.pdf', 'Name des ersten ohne „(2)“');
@@ -140,11 +140,11 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('zusammenfügen ohne Entfernen lässt die Originale; Nicht-PDFs werden abgelehnt', async () => {
     const { d, m, doc } = await aufbau();
-    const b = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, await pdf(1, 9), ANNA)).dokument;
+    const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, await pdf(1, 9), ANNA)).dokument;
     const r = await d.fuegePdfZusammen({ dokumente: [doc.id, b.id], name: 'Alles' }, ANNA);
     assert.equal(r.dokument.name, 'Alles.pdf');
     assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 3);
-    const txt = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'n.txt', typ: 'text/plain' }, Buffer.from('hallo'), ANNA)).dokument;
+    const txt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'n.txt', typ: 'text/plain' }, Buffer.from('hallo'), ANNA)).dokument;
     await assert.rejects(d.fuegePdfZusammen({ dokumente: [doc.id, txt.id] }, ANNA), status(422, /kein PDF/));
     await assert.rejects(d.pdfSeiten(txt.id), status(422, /kein PDF/));
   });
@@ -180,7 +180,7 @@ describe('PDF bearbeiten (#335)', () => {
     assert.deepEqual(await neue(), [`dokument.hochgeladen:${r2.dokument.id}`]);
     // Post teilen: je Teil die neue Post und ihr Dokument.
     const post = await d.legePostAn({ betreff: 'Stapel' }, { id: ANNA, name: 'Anna' });
-    const pdoc = (await d.ladeHoch(post.id, { register: await postRegister(d, post.typId), name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), ANNA)).dokument;
+    const pdoc = (await d.dokumente.ladeHoch(post.id, { register: await postRegister(d, post.typId), name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), ANNA)).dokument;
     await neue();
     const r3 = await d.bearbeitePdf(pdoc.id, { seiten: [1, 2].map((nr) => ({ nr })), teile: [0, 1] }, ANNA);
     assert.deepEqual(await neue(), r3.posten.flatMap((p, i) => [`post.angelegt:${p.id}`, `dokument.hochgeladen:${r3.dokumente[i].id}`]));

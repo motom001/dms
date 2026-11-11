@@ -18,12 +18,12 @@ describe('Zuletzt geändert (#76)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'B-1' } }, A);
     await d.mappenNotizen.legeNotizAn(m.id, 'nur eine Notiz', B);
     assert.equal((await d.mappen.holeMappe(m.id)).mappe.geaendertVon, A, 'Notiz ändert nichts');
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), B);
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), B);
     let x = (await d.mappen.holeMappe(m.id)).mappe;
     assert.equal(x.geaendertVon, B);
     assert.ok(x.geaendert >= m.geaendert);
     assert.match(x.titel ?? '', /^B-1 \(\d\d\.\d\d\.\d{4}\)$/, 'Titel mit {geaendert} nachgezogen');
-    await d.loescheDokument(dokument.id, A);
+    await d.dokumente.loescheDokument(dokument.id, A);
     x = (await d.mappen.holeMappe(m.id)).mappe;
     assert.equal(x.geaendertVon, A);
   });

@@ -165,10 +165,10 @@ describe('Zuletzt geöffnet in einem Zugriff (#615)', () => {
 describe('Startseite (#334, #615): „noch keine eigene Mappe“ ohne alles zu zählen', () => {
   it('im Arbeitsspeicher', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    assert.equal(await d.ohneEigeneMappen(), true);
+    assert.equal(await d.dokumente.ohneEigeneMappen(), true);
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    assert.equal(await d.ohneEigeneMappen(), true);
+    assert.equal(await d.dokumente.ohneEigeneMappen(), true);
     await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } });
-    assert.equal(await d.ohneEigeneMappen(), false);
+    assert.equal(await d.dokumente.ohneEigeneMappen(), false);
   });
 });

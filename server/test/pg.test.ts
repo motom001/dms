@@ -53,7 +53,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     // Texterkennung wie im Betrieb (#45); in GitHub Actions sind tesseract und poppler installiert.
     const { Texterkennung } = await import('../src/texterkennung');
     texterkennung = new Texterkennung(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT), pgBetriebSpeicher(sql, HAUSHALT));
-    dienst.verbindeTexterkennung(texterkennung);
+    dienst.dokumente.verbindeTexterkennung(texterkennung);
     await texterkennung.start();
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
@@ -1040,12 +1040,12 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
       stoeren = false;
       const p = await d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
       stoeren = true;
-      await assert.rejects(d.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
+      await assert.rejects(d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
       const m = await d.mappen.holeMappe(p.id);
       assert.equal(m.dokumente.length, 0, 'kein Dokument ohne Ereignis');
       assert.ok(!(await d.mappenHistorie.historie(p.id)).some((h) => h.art === 'dokument_hochgeladen'), 'auch keine Historie');
       stoeren = false;
-      const doc = (await d.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null)).dokument;
+      const doc = (await d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null)).dokument;
       assert.deepEqual((await ereignisse()).map((e) => `${e.art}:${e.daten.mappe}:${e.daten.dokument ?? ''}`), [`post.angelegt:${p.id}:`, `dokument.hochgeladen:${p.id}:${doc.id}`]);
     } finally {
       await repo.loeschePaket('tx404');

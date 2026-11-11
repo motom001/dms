@@ -150,7 +150,7 @@ async function aufbau(stempel?: unknown) {
   ], ...(stempel !== undefined ? { stempel } : {}) });
   const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Personalausweis' } }, null);
   const pdf = await pdfMitSeiten(2);
-  const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'ausweis.pdf', typ: 'application/pdf' }, pdf, null);
+  const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'ausweis.pdf', typ: 'application/pdf' }, pdf, null);
   const mails: Array<{ an: string; o?: MailOptionen }> = [];
   const mailer: Mailer = { async sende(an, _b, _t, o) { mails.push({ an, o }); } };
   return { d, t, m, dokument, pdf, dateien, mails, mailer };
@@ -165,7 +165,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     const kopie = await alsPuffer(r.inhalt);
     assert.equal((await PDFDocument.load(kopie)).getPageCount(), 2);
     assert.ok((await seiteninhalt(kopie)).text.includes(hex('Kopie für Hausverwaltung Müller')));
-    assert.ok((await alsPuffer((await d.dokumentInhalt(dokument.id)).inhalt)).equals(pdf), 'gespeichertes Original unverändert');
+    assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(pdf), 'gespeichertes Original unverändert');
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
     assert.match(String(h.daten.text), /^mit Stempel „Kopie für Hausverwaltung Müller – \d{2}\.\d{2}\.\d{4}“ an Hausverwaltung Müller \(heruntergeladen: ausweis\.pdf\)$/);
     assert.equal(h.daten.an, 'Hausverwaltung Müller');
@@ -220,7 +220,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
 
   it('Bild herunterladen mit Stempel wird zum PDF', async () => {
     const { d, m } = await aufbau();
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'foto.png', typ: 'image/png' }, png(30, 50), null);
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'foto.png', typ: 'image/png' }, png(30, 50), null);
     const r = await d.dokumentFuerAusgabe(dokument.id, { stempel: { stempel: 'VERTRAULICH', lage: 'ecke' }, ich });
     assert.equal(r.name, 'foto.pdf'); assert.equal(r.mime, 'application/pdf');
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('VERTRAULICH')));

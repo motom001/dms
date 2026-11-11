@@ -48,9 +48,9 @@ async function aufbau() {
   const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
   const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', beginn: '2026-03-01', betrag: { betrag: 1234.5, waehrung: 'EUR' }, partner: p.id, kennwort: { neu: 'streng-geheim-123' }, notiz: '=SUMME(A1)' } }, anna.id);
   const v2 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', notiz: 'Zeile;mit "Zeichen"' } }, anna.id);
-  await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Dokument' }]), anna.id);
-  await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Foto.png' }, PNG, anna.id);
-  await d.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), anna.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Dokument' }]), anna.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Foto.png' }, PNG, anna.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), anna.id);
   const sicht = (await d.listeSichten()).find((s) => s.id === vertrag.id)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, { tresor });

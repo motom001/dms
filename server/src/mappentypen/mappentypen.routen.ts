@@ -86,7 +86,7 @@ export function typenArchivRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/darf-weg', zugang: 'admin', handler: async () => ok(await dienst.mappenArchiv.darfWeg()) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/dateien', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.mappenArchiv.pruefeDateien(ich(a).email)), 202) },
     // Nur Vorhandensein (#877), ohne zu lesen: für den Lasttest („Dokumente ohne Datei: n“) und Skripte.
-    { methode: 'GET', pfad: '/api/werkbank/wartung/dateien/fehlend', zugang: 'admin', handler: async () => ok(await dienst.dokumenteOhneDatei()) },
+    { methode: 'GET', pfad: '/api/werkbank/wartung/dateien/fehlend', zugang: 'admin', handler: async () => ok(await dienst.dateienFehlen.dokumenteOhneDatei()) },
     /* ---------- Auswahlfilter am Referenzfeld (#172, #173) ---------- */
     { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mappenEingaben.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
     // Folgt aus (#886): was aus den gewählten Quellen folgt – die Oberfläche füllt damit leere Felder und fragt bei Abweichung.

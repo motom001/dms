@@ -388,7 +388,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     const sys = await d.sichereSystem();
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
-    await d.ladeHoch(post.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+    await d.dokumente.ladeHoch(post.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null);
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     const rufe = async (b: typeof ohne, methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
       const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
@@ -419,10 +419,10 @@ describe('Paket-Läufer (#338): Ablauf', () => {
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Unterlagen', art: 'dokumente' },
     ] });
     const vertrag = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
-    const vdok = (await d.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
+    const vdok = (await d.dokumente.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
     const post = await d.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
-    const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
+    const pdok = (await d.dokumente.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
     assert.deepEqual(await d.rechtepruefung.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
     assert.equal((await d.rechtepruefung.rechteAn(z, vertrag)).R, false);
     assert.deepEqual([...await d.rechtepruefung.lesbare(z, [post.id, vertrag.id])], [post.id]);
@@ -467,7 +467,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'admin' }));
         assert.deepEqual(post.werte.an, ben.id);
         const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
-        const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
+        const pdok = (await d.dokumente.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
         const tabelle = routen(d, konten, { apiSchluessel: schluessel });
         const rufe = async (methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
           const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
@@ -511,7 +511,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const konto = (await konten.listeDienstkonten()).find((b) => b.paketId === 'echo')!;
     const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
     const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
-    await d.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
+    await d.dokumente.ladeHoch(post.id, { register: reg, name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), konto.id);
     await new Promise((r) => setTimeout(r, 300));
     assert.equal((await d.kern.repo.ereignisStand()).echo.offen + (await d.kern.repo.ereignisStand()).echo.zugestellt, 1, 'kein Ereignis für die eigene Änderung');
   });
@@ -660,7 +660,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const vertrag = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
     const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
     const dok = async (m: string, r: string, name: string, text: string) => {
-      const x = (await d.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;
+      const x = (await d.dokumente.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;
       await d.schreibeVolltext(x.id, { text }, { id: null as never, herkunft: 'Test', paket: false });
       return x.id;
     };
@@ -748,7 +748,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await x.installiere('ki', VEKTOR, KI_RECHTE);
     const neu = await x.d.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
     const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
-    const d4 = (await x.d.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
+    const d4 = (await x.d.dokumente.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
     await x.d.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
     assert.equal((await x.d.kern.repo.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');
     await x.l.start();

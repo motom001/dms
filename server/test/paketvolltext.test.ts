@@ -53,7 +53,7 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
   const gelesen: string[] = [];
   const engine: Engine = async (_pfad, mime) => { gelesen.push(mime); return { text: TEXT, seiten: 1, info: 'Textebene des PDFs', ohneText: [] }; };
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-  d.verbindeTexterkennung(t);
+  d.dokumente.verbindeTexterkennung(t);
   t.paket = () => d.texterkennungPaket();
   t.volltextPaket = d.paketVolltext;
   t.nachher = (dok, e, k) => {
@@ -70,7 +70,7 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } });
   const fertig = async (id: string) => warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
   const hoch = async (name: string, inhalt: Buffer, typAngabe = WORD) => {
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
     await fertig(id);
     return id;
   };
@@ -114,7 +114,7 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     assert.equal(dok.ocr?.stand, 'ausgelassen');
     assert.equal(dok.ocr?.info, 'Word-Dateien bekommen Volltext mit dem Paket „Office und E-Mail“ (Werkbank → Pakete).');
     assert.deepEqual(await x.ereignisse('datei.volltext'), []);
-    const stand = await x.d.umwandlungStand();
+    const stand = await x.d.dokumentUmwandlung.umwandlungStand();
     assert.deepEqual(stand.typen.map((t) => [t.name, t.volltext, t.volltextKatalog?.id]), [['Word', null, 'office_email']]);
   });
 
@@ -138,7 +138,7 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     const vf = await x.ereignisse('volltext.fertig');
     assert.deepEqual(vf.map((e) => [e.paketId, e.daten.quelle, e.daten.mime]), [['hoerer', 'paket', WORD]]);
     // Werkbank: zuständiges Paket je Dateityp.
-    const stand = await x.d.umwandlungStand();
+    const stand = await x.d.dokumentUmwandlung.umwandlungStand();
     assert.deepEqual(stand.typen.map((t) => [t.name, t.volltext?.id]), [['Word', 'office_email']]);
     // Gleiche Datei noch einmal: Text übernommen, kein neues Ereignis.
     const zwei = await x.hoch('angebot-kopie.docx', DOCX);
@@ -151,7 +151,7 @@ describe('Volltext aus Paketen (#614): Ablauf im Kern', () => {
     const id = await x.hoch('angebot.docx', DOCX);
     await x.schreibt(id);
     // Neue Version: die neue Datei geht an das Paket.
-    await x.d.ersetzeDokument(id, { name: 'angebot.docx', typ: WORD }, Buffer.concat([DOCX, Buffer.from(' Version 2')]), null);
+    await x.d.dokumentVersionen.ersetzeDokument(id, { name: 'angebot.docx', typ: WORD }, Buffer.concat([DOCX, Buffer.from(' Version 2')]), null);
     await x.fertig(id);
     let dok = await x.dok(id);
     assert.equal(dok.ocr?.stand, 'paket');

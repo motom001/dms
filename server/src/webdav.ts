@@ -428,7 +428,7 @@ export class Webdav {
     const d = k.dok;
     const original: Auslieferung = {
       gestempelt: false, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', groesse: d.groesse, etag: etagVon(d),
-      inhalt: async () => (await this.d.dienst.dokumentInhalt(d.id)).inhalt,
+      inhalt: async () => (await this.d.dienst.dokumente.dokumentInhalt(d.id)).inhalt,
     };
     const m = await this.mappe(k.mappeId, ctx);
     const s = await this.stempelFuer(m.mappe.typId, ctx);
@@ -721,7 +721,7 @@ export class Webdav {
     if (z.eltern.art === 'post') {
       const post = await this.d.dienst.legePostAn({ betreff: z.name.replace(/\.[^.]{1,8}$/, '').slice(0, 250) || z.name }, { id: ctx.b.id, name: ctx.b.name }, ctx.z, POST_KANAL.webdav);
       const register = (await this.d.dienst.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
-      await this.d.dienst.ladeHoch(post.id, { register, name: z.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
+      await this.d.dienst.dokumente.ladeHoch(post.id, { register, name: z.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
       log.info('Post über WebDAV abgelegt', { datei: z.name, groesse, mappe: post.id, von: ctx.b.email });
       await this.merkeSchwebend(ctx, z.ort, z.name, groesse);
       return { status: 201, koepfe: { 'content-length': '0' } };
@@ -733,11 +733,11 @@ export class Webdav {
       if (!reg.versionierung) throw new Fachfehler(409, t('meldungen.webdav.im-register-gibt-es', { name: reg.name, name2: z.k.dok.name }));
       // Per Dokument-Id, nicht per Name: Laufwerksnamen sind bereinigt und eindeutig gemacht („X (2).pdf“),
       // im DMS können zwei Dokumente gleich (oder nach dem Bereinigen gleich) heißen.
-      const neu = await this.d.dienst.ersetzeDokument(z.k.dok.id, { name: z.k.dok.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
+      const neu = await this.d.dienst.dokumentVersionen.ersetzeDokument(z.k.dok.id, { name: z.k.dok.name, typ, herkunft: 'webdav' }, inhalt, ctx.b.id);
       log.info('Neue Version über WebDAV abgelegt', { datei: neu.name, id: neu.id, groesse, mappe: z.eltern.mappeId, von: ctx.b.email });
       return { status: 204, koepfe: {} };
     }
-    const r = await this.d.dienst.ladeHoch(z.eltern.mappeId, { register: reg.key, name: z.name, typ, gleicherName: 'zaehler', herkunft: 'webdav' }, inhalt, ctx.b.id);
+    const r = await this.d.dienst.dokumente.ladeHoch(z.eltern.mappeId, { register: reg.key, name: z.name, typ, gleicherName: 'zaehler', herkunft: 'webdav' }, inhalt, ctx.b.id);
     await this.vergiss(ctx, z.ort, z.name);
     log.info('Dokument über WebDAV abgelegt', { datei: r.dokument.name, groesse, mappe: z.eltern.mappeId, von: ctx.b.email });
     return { status: 201, koepfe: { 'content-length': '0' } };

@@ -130,9 +130,9 @@ async function aufbau(pg: boolean) {
   const post = await d.legePostAn({ betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id }, { id: admin.id, name: 'Vera' });
   await d.ordneZu(post.id, { ziel: max.id, dokumente: [] }, admin.id);
   // Dokumente: Nebenkostenabrechnung mit Daten der Nachbarin und eine geschwärzte Fassung davon
-  const nkPdf = (await d.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024.pdf' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']), admin.id)).dokument;
-  const nkGeschwaerzt = (await d.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']), admin.id)).dokument;
-  const vertragPdf = (await d.ladeHoch(v2.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag MV-2024']), admin.id)).dokument;
+  const nkPdf = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024.pdf' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']), admin.id)).dokument;
+  const nkGeschwaerzt = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']), admin.id)).dokument;
+  const vertragPdf = (await d.dokumente.ladeHoch(v2.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag MV-2024']), admin.id)).dokument;
   const notizOk = await d.mappenNotizen.legeNotizAn(max.id, 'Zahlt immer pünktlich.', admin.id);
   const notizIntern = await d.mappenNotizen.legeNotizAn(max.id, 'Interne Einschätzung: Klage prüfen.', admin.id);
   const tabelle = routen(d, konten, {});
@@ -367,7 +367,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
         { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: wartungTyp.id, verweisart: 'zugehoerigkeit' },
       ] });
       const wartung = await d.mappen.legeMappeAn({ typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } }, admin.id);
-      const wDok = (await d.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)).dokument;
+      const wDok = (await d.dokumente.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)).dokument;
       await d.mappenNotizen.legeNotizAn(wartung.id, 'Internes Besprechungsprotokoll zur Wartung', admin.id);
       const wr = await d.mappen.legeMappeAn({ typId: rechnungTyp.id, werte: { nr: 'WR-1', vertrag: wartung.id } }, admin.id);
 

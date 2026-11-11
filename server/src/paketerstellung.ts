@@ -781,7 +781,7 @@ export class Paketerstellung {
           if (!['application/pdf', 'image/png', 'image/jpeg'].includes(x.mime)) { ausgelassen++; continue; }
           summe += x.groesse;
           if (summe > ARCHIV_MAX) continue;
-          const roh = (await this.d.dokumentInhalt(x.id)).inhalt;
+          const roh = (await this.d.dokumente.dokumentInhalt(x.id)).inhalt;
           const inhalt = Buffer.isBuffer(roh) ? roh : await alsPuffer(roh);
           if (!beispielDateiart(x.mime === 'application/pdf' ? 'a.pdf' : x.mime === 'image/png' ? 'a.png' : 'a.jpg', inhalt)) { ausgelassen++; continue; }
           dokumente.set(m.id, [...(dokumente.get(m.id) ?? []), { name: x.name, registerKey: x.registerKey, erstellt: x.erstellt, inhalt }]);

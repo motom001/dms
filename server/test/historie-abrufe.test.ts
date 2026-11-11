@@ -63,7 +63,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
     { key: 'abrufe', name: 'Abrufe', art: 'protokoll', zeigt: ['herunterladen', 'api', 'webdav'] },
   ] } as never);
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
-  const dok = (await d.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF, lena.id)).dokument;
+  const dok = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF, lena.id)).dokument;
   return { d, konten, lena, jonas, typ, m, dok };
 }
 
@@ -206,7 +206,7 @@ describe('Historie: Abrufe über HTTP (#800)', () => {
     assert.equal((await rufe('GET', `/api/dokumente/${x.dok.id}/inhalt?herunterladen`)).statusCode, 200);
     let h = await abrufe();
     assert.deepEqual(h.map((e) => [e.art, e.daten.weg, e.daten.fassung, e.daten.dokument]), [['heruntergeladen', 'oberflaeche', 'original', 'Rechnung.pdf']]);
-    await x.d.ersetzeDokument(x.dok.id, {}, Buffer.from('%PDF-1.4\n% Rechnung 2\n'), x.lena.id);
+    await x.d.dokumentVersionen.ersetzeDokument(x.dok.id, {}, Buffer.from('%PDF-1.4\n% Rechnung 2\n'), x.lena.id);
     assert.equal((await rufe('POST', `/api/dokumente/${x.dok.id}/herunterladen`, { version: 1 })).statusCode, 200);
     assert.equal((await abrufe()).length, 2, 'ältere Version ist eine eigene Fassung');
     assert.equal((await rufe('GET', `/api/dokumente/${x.dok.id}/inhalt?fassung=archiv`)).statusCode, 404);

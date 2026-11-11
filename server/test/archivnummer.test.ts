@@ -40,8 +40,8 @@ async function aufbau(pg: boolean) {
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Rechnung' } }, ANNA);
-  const a = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA)).dokument;
-  const b = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), ANNA)).dokument;
+  const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA)).dokument;
+  const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), ANNA)).dokument;
   return { d, m, a, b };
 }
 
@@ -101,7 +101,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('Wiederherstellen aus dem Papierkorb: inzwischen vergebene Nummer entfällt', async () => {
       const { d, a, b } = await aufbau(pg);
       await d.mappenArchiv.setzeArchivnummer(a.id, 'A-000005', ANNA);
-      await d.loescheDokument(a.id, ANNA);
+      await d.dokumente.loescheDokument(a.id, ANNA);
       await d.mappenArchiv.setzeArchivnummer(b.id, 'A-000005', ANNA);
       const r = await d.stelleDokumentWiederHer(a.id, { id: ANNA, rolle: 'mitglied' }, undefined);
       assert.equal(r.dokument.archivnummer ?? null, null);

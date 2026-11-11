@@ -317,7 +317,7 @@ const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'),
   tresor, einstellungen: pgBetriebSpeicher(sql, cfg.haushalt), zustand: zustandDb,
 });
 // Fehlende Dokumentdatei (#877): einmal je Datei mit Mappe ins Protokoll und als Hinweis in die Werkbank-Übersicht.
-beiFehlenderDatei((f) => { void dienst.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
+beiFehlenderDatei((f) => { void dienst.dateienFehlen.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
 dienst.verbindeKonten(konten.papierkorbHaken());
@@ -383,12 +383,12 @@ const abschluss = leiter ? await pgEinstellungen(sql, cfg.haushalt).lies('wieder
 if (abschluss) log.warn('Gestartet nach einer Wiederherstellung', { sicherung: abschluss.sicherung });
 start.schritt('ordner');
 const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(ordner.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
-dienst.verbindeTexterkennung(texterkennung);
+dienst.dokumente.verbindeTexterkennung(texterkennung);
 texterkennung.pause = () => wartung.aktiv;
 wartung.beimAusschalten(() => texterkennung.anstossen());
 // Vorschaubilder der ersten Seite (#332): außerhalb des Haushaltsordners, damit sie nicht in die Sicherung gehen.
 const vorschau = new Vorschaubilder(ordnerAblage(join(ordner.dateien, 'vorschau', cfg.haushalt)), ordnerSpeicher(ordner.dateien, cfg.haushalt));
-dienst.verbindeVorschau(vorschau);
+dienst.dokumente.verbindeVorschau(vorschau);
 vorschau.pause = () => wartung.aktiv;
 wartung.beimAusschalten(() => vorschau.anstossen());
 // Dateien umwandeln (#577): Fassungen aus Paketen mit dms:umwandeln im Haushaltsordner – sie gehen mit in die
@@ -406,20 +406,20 @@ if (leiter) try {
 } catch (e) { log.warn('Exporte nicht aus dem Sicherungsordner verschoben', { fehler: (e as Error).message }); }
 if (exporte.imSicherungsordner && leiter) log.warn('Der Export-Ordner liegt im Sicherungsordner: Unverschlüsselte Exporte gehen mit jeder Kopie der Sicherung mit. Lege das Volume für /data/export an einen anderen Ort.', { pfad: exporte.pfad });
 const fassungen = ordnerFassungen(fassungsOrdner(ordner.dateien, cfg.haushalt));
-const umwandlung = new Dateiumwandlung(dienst.umwandlungAnbindung(fassungen, vorschau));
-dienst.verbindeUmwandlung(umwandlung, vorschau);
+const umwandlung = new Dateiumwandlung(dienst.dokumentUmwandlung.umwandlungAnbindung(fassungen, vorschau));
+dienst.dokumentUmwandlung.verbindeUmwandlung(umwandlung, vorschau);
 vorschau.fassung = (sha) => umwandlung.lies(sha);
 texterkennung.umwandlung = { lies: (sha) => umwandlung.lies(sha), paketFuer: (m) => umwandlung.paketFuer(m), anfordern: (d) => umwandlung.anfordern(d), gesperrt: (sha) => umwandlung.gesperrt(sha) };
 // Geschützte PDFs (#827): entsperrte Fassungen (qpdf) neben den umgewandelten; gemerkte Passwörter je Konto verschlüsselt.
-const entsperren = new PdfEntsperren(dienst.entsperrenAnbindung({ ablage: fassungen, speicher: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), zustand: zustandDb }));
-dienst.verbindeEntsperren(entsperren);
+const entsperren = new PdfEntsperren(dienst.geschuetztePdfs.entsperrenAnbindung({ ablage: fassungen, speicher: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), zustand: zustandDb }));
+dienst.geschuetztePdfs.verbindeEntsperren(entsperren);
 texterkennung.entsperrt = (sha) => entsperren.fassung(sha);
 // Volltext aus Paketen (#614): Dateitypen, für die ein Paket mit dms:volltext den Text liefert.
 texterkennung.volltextPaket = dienst.paketVolltext;
 // Archivfassung (PDF/A, #631): Pakete mit dms:archivfassung legen sie im Haushaltsordner ab (Sicherung, Vollexport);
 // Wortpositionen der Texterkennung daneben. Der Kern meldet Dokumente erst mit feststehendem Volltext.
-const archivfassung = new Archivfassung(dienst.archivAnbindung(ordnerArchiv(archivOrdner(ordner.dateien, cfg.haushalt), woerterOrdner(ordner.dateien, cfg.haushalt))));
-dienst.verbindeArchivfassung(archivfassung);
+const archivfassung = new Archivfassung(dienst.dokumentArchiv.archivAnbindung(ordnerArchiv(archivOrdner(ordner.dateien, cfg.haushalt), woerterOrdner(ordner.dateien, cfg.haushalt))));
+dienst.dokumentArchiv.verbindeArchivfassung(archivfassung);
 // Tägliche Zusammenfassung der offenen Aufgaben (#54).
 const typName = async (id: string | undefined) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? '';
 const aufgabenmail = new Aufgabenmail({

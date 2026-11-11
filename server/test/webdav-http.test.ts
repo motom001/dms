@@ -51,7 +51,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
     ] } as never);
     const m = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, anna.id);
     mappeId = m.id;
-    await dienst.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF, anna.id);
+    await dienst.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF, anna.id);
     wd = new Webdav({ dienst, konten, schluessel, einstellungen: speicherEinstellungen(), adresse: () => 'https://dms.example.org' });
     app = await baueApp(dienst, konten, { apiSchluessel: schluessel, webdav: wd }) as unknown as App;
   });

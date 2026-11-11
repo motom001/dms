@@ -218,8 +218,8 @@ function faelle() {
       const { d, typ, mappe } = await mitBeispielen();
       const r = typ('Rechnung'); const p = typ('Vertragspartner'); const v = typ('Vertrag');
       const rechnung = mappe('rechnungsnummer', 'R-2026-117');
-      await d.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
-      await d.ladeHoch(rechnung.id, { register: 'dokumente', name: 's.pdf' }, Buffer.from('%PDF-1.4 b'), null);
+      await d.dokumente.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+      await d.dokumente.ladeHoch(rechnung.id, { register: 'dokumente', name: 's.pdf' }, Buffer.from('%PDF-1.4 b'), null);
       const n = async (typId: string, b: Bedingung) => (await d.seite(ICH, { sicht: (await sicht(d, 'x', [typId], [b])).id })).gesamt;
       assert.equal(await n(r.id, { art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }), 1, 'Rechnungen ohne Dokument');
       assert.equal(await n(r.id, { art: 'dokumente', register: 'dokumente', vergleich: 'mehr', anzahl: 1 }), 1);
@@ -247,7 +247,7 @@ function faelle() {
       const { d, typ, mappe } = await mitBeispielen();
       const r = typ('Rechnung'); const z = typ('Zahlung'); const p = typ('Vertragspartner');
       const rechnung = mappe('rechnungsnummer', 'R-2026-117');
-      await d.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+      await d.dokumente.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
       const n = async (typen: string[], b: Bedingung) => (await d.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
       const alle = (await d.seite(ICH, { sicht: (await sicht(d, 'alle', [r.id, z.id])).id })).gesamt;
       const mit = await n([r.id, z.id], { art: 'dokumenteGesamt', vergleich: 'mehr', anzahl: 0 });

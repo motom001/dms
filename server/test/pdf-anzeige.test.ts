@@ -88,7 +88,7 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
     ] });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'B-1' } });
     const original = await boesesPdf();
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, original, null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, original, null)).dokument.id;
     const tabelle = routen(d, konten, {});
     const inhalt = tabelle.find((r) => r.methode === 'GET' && r.pfad === '/api/dokumente/:id/inhalt')!;
     const rufe = async (x: Partial<Anfrage> = {}) => (await inhalt.handler({ body: {}, params: { id }, query: {}, ip: '1', benutzer: admin, ...x } as Anfrage)).datei as Datei;
@@ -108,7 +108,7 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
     assert.equal(api.koepfe?.['x-dms-anzeige'], undefined);
     assert.ok((await roh(api)).equals(original), 'API-Schlüssel: Original');
     // Unbereinigbar: Hinweis statt Anzeige, in der Sandbox.
-    const kaputt = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'kaputt.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.7\nkaputt'), null)).dokument;
+    const kaputt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'kaputt.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.7\nkaputt'), null)).dokument;
     assert.equal(kaputt.mime, 'application/pdf');
     const h = (await inhalt.handler({ body: {}, params: { id: kaputt.id }, query: {}, ip: '1', benutzer: admin } as Anfrage)).datei as Datei;
     assert.equal(h.koepfe?.['x-dms-anzeige'], 'nur-herunterladen');

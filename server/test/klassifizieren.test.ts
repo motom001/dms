@@ -63,7 +63,7 @@ async function aufbau() {
   const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
   for (const x of [vertrag.id, rechnung.id, postTyp.id]) await d.ki.setzeKiTyp(x, true, null);
   const dok = async (mappe: string, name: string, text: string) => {
-    const x = (await d.ladeHoch(mappe, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
+    const x = (await d.dokumente.ladeHoch(mappe, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
@@ -313,7 +313,7 @@ describe('Fundstellen in dms:erkennen (#939)', () => {
     const eingaenge: Array<Record<string, unknown>> = [];
     x.d.erkennung.anbieter = { pakete: () => [{ id: 'ki_assistent', name: 'KI-Assistent', netz: true }], erkenne: async (_p, e) => { eingaenge.push(e); return { text: JSON.stringify(antwort), ms: 1 }; } };
     const seite = { breite: 595, hoehe: 842, woerter: [['Rechnung', 0.1, 0.1, 0.15, 0.02], ['Rechnungsnummer', 0.1, 0.2, 0.2, 0.02], ['R-2026-117', 0.32, 0.2, 0.15, 0.02], ['Gesamtbetrag', 0.1, 0.3, 0.15, 0.02], ['184,20', 0.3, 0.3, 0.08, 0.02], ['EUR', 0.4, 0.3, 0.05, 0.02]] };
-    (x.d as unknown as { wortpositionen: (id: string) => Promise<unknown> }).wortpositionen = async (id) => ({ seiten: id === x.brief ? [seite] : [] });
+    (x.d.dokumentArchiv as unknown as { wortpositionen: (id: string) => Promise<unknown> }).wortpositionen = async (id) => ({ seiten: id === x.brief ? [seite] : [] });
     const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { dokumente: [x.brief] }, x.A);
     assert.deepEqual(r.engine, { art: 'paket', id: 'ki_assistent', name: 'KI-Assistent' });
     assert.match(String(eingaenge[0].hinweis), /wörtlicher Ausschnitt/);
@@ -331,7 +331,7 @@ describe('Fundstellen in dms:erkennen (#939)', () => {
     assert.deepEqual(alt.vorschlaege.betrag.wert, { betrag: 184.2, waehrung: 'EUR' });
     assert.ok(alt.vorschlaege.betrag.stelle, 'Betrag „184,20“ in der Textebene gefunden');
     // Ohne Wortpositionen (keine Textebene): Werte ohne Rahmen.
-    (x.d as unknown as { wortpositionen: () => Promise<unknown> }).wortpositionen = async () => { throw new Error('keine'); };
+    (x.d.dokumentArchiv as unknown as { wortpositionen: () => Promise<unknown> }).wortpositionen = async () => { throw new Error('keine'); };
     const ohne = await x.d.erkennung.fuerTyp(x.rechnung.id, { dokumente: [x.brief] }, x.A);
     assert.equal(ohne.vorschlaege.nr.wert, 'R-2026-117'); assert.equal(ohne.vorschlaege.nr.stelle, undefined);
   });

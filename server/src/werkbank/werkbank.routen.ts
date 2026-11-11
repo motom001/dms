@@ -83,13 +83,13 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
     /* ---------- E-Mail-Versand und Adresse (#37) ---------- */
     /* ---------- Texterkennung und Wartungsoperationen (#45) ---------- */
     // Mit den Dateitypen, die Pakete umwandeln bzw. umwandeln könnten (#577).
-    { methode: 'GET', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => ok({ ...(await ocr().status(a.query.neu !== undefined)), umwandlung: await dienst.umwandlungStand(), archivfassung: await dienst.archivStand() }) },
+    { methode: 'GET', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => ok({ ...(await ocr().status(a.query.neu !== undefined)), umwandlung: await dienst.dokumentUmwandlung.umwandlungStand(), archivfassung: await dienst.dokumentArchiv.archivStand() }) },
     // Aufträge der Texterkennung einsehen, neu starten, abbrechen (#61)
     { methode: 'GET', pfad: '/api/werkbank/texterkennung/auftraege', zugang: 'admin', handler: async (a) => ok(await ocr().auftraege(a.query)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/neu', zugang: 'admin', handler: async (a) => ok(await ocr().neuStarten(b(a).ids, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
-    { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok({ ...(await ocr().status()), umwandlung: await dienst.umwandlungStand(), archivfassung: await dienst.archivStand() }); } },
+    { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok({ ...(await ocr().status()), umwandlung: await dienst.dokumentUmwandlung.umwandlungStand(), archivfassung: await dienst.dokumentArchiv.archivStand() }); } },
   ];
 }
 
@@ -143,7 +143,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         // Eingangsordner (#915): Warnungen (zu alt, zu groß, fehler/, zu viele), Ordner ohne Person, nicht umbenannte Ordner.
         eingangsordner: x.eingangsordner?.vorhanden ? await sicher(() => x.eingangsordner!.meldungen()) : null,
         // #877: Dokumentdateien, die beim Lesen fehlten (und noch fehlen) – Volume vergessen, Datei gelöscht, Platte defekt.
-        dateienFehlen: (await sicher(() => dienst.fehlendeDateien())) ?? 0,
+        dateienFehlen: (await sicher(() => dienst.dateienFehlen.fehlendeDateien())) ?? 0,
         // #719: Wer im Alltag die Aufgaben ohne Empfänger bekommt; `moeglich` = aktive Benutzer ohne Admin-Rechte.
         aufgabenEmpfaenger: await sicher(async () => ({ benutzerId: (await dienst.alltagsEmpfaenger()).wirksam, moeglich: (await konten.listeBenutzer()).filter(taugtAlsAufgabenEmpfaenger).length })),
         unpassend: Object.values(z.typen).reduce((s, t) => s + (t.unpassend ?? 0), 0),

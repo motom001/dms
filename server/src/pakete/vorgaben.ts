@@ -307,9 +307,8 @@ export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<Ins
 export interface VorgabenDienst {
   mappentypen: { listeTypen(): Promise<Mappentyp[]> };
   mappen: { legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>; aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe> };
-  ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>;
+  dokumente: { ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>; loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown> };
   listeDokumente(mappeId: string): Promise<Dokument[]>;
-  loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown>;
   kern: { repo: { holeMappe(id: string): Promise<Mappe | undefined>; setzeVorgabe(id: string, kennung: string | null): Promise<void>; mappenMitVorgabe(praefix: string): Promise<Mappe[]> }; ohneEreignisse<T>(f: () => Promise<T>): Promise<T> };
 }
 
@@ -454,9 +453,9 @@ async function legeVorlagen(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgaben
     if (alt && !dok) continue; // gelöscht: bleibt weg
     if (alt && dok && (dok.sha256 !== alt.sha256 || !x.ersetzen || sha === alt.sha256)) { staende.push(alt); continue; }
     // Die bisherige Fassung zuerst in den Papierkorb (sonst hieße die neue „… (2).md“).
-    if (dok) await d.kern.ohneEreignisse(() => d.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
-    const neu = await d.kern.ohneEreignisse(() => d.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
-    erg.rueck.unshift(() => d.loescheDokument(neu.dokument.id, a.von, { weg: 'dokument' }));
+    if (dok) await d.kern.ohneEreignisse(() => d.dokumente.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
+    const neu = await d.kern.ohneEreignisse(() => d.dokumente.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
+    erg.rueck.unshift(() => d.dokumente.loescheDokument(neu.dokument.id, a.von, { weg: 'dokument' }));
     staende.push({ datei: v.datei, dokument: neu.dokument.id, sha256: neu.dokument.sha256 });
   }
   // Vorlagen, die das Paket nicht mehr mitbringt, bleiben stehen und gehören weiter dazu (beim Entfernen gehen sie mit).

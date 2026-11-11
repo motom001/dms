@@ -69,8 +69,8 @@ describe('Ist der Stichtag leer: läuft noch nicht ab (#1051)', () => {
     assert.equal(det.loeschbar.ok, false);
     assert.equal((await d.mappen.holeMappe(abgeloest.id) as { fristBeginntMit?: string }).fristBeginntMit, undefined);
     await assert.rejects(d.loescheMappe(aktuell.id, ICH.id), offen);
-    const { dokument } = await d.ladeHoch(aktuell.id, { register: 'belege', name: 'V.pdf' }, Buffer.from('%PDF-1.4 a'), null);
-    await assert.rejects(d.loescheDokument(dokument.id), (e) => e instanceof Fachfehler && e.status === 409 && /beginnt erst mit/.test(e.message));
+    const { dokument } = await d.dokumente.ladeHoch(aktuell.id, { register: 'belege', name: 'V.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+    await assert.rejects(d.dokumente.loescheDokument(dokument.id), (e) => e instanceof Fachfehler && e.status === 409 && /beginnt erst mit/.test(e.message));
     assert.deepEqual((await d.mappenArchiv.darfWeg()).map((x) => x.titel), ['Abgelöst']);
     // Baum (Löschen mit verknüpften Mappen, Auskunft): gesperrt ohne Datum.
     const baum = await d.baum(aktuell.id, {}, await d.rechtepruefung.zugriff({ id: ICH.id, rolle: 'admin' } as never));

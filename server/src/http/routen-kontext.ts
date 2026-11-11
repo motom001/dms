@@ -140,7 +140,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const nurSelbst = (a: Anfrage) => {
     if (a.apiSchluessel || !a.sitzungsDaten?.id) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.nur-browser'));
     if (a.sitzungsDaten.vertretungId) throw new Fachfehler(403, t('mappen.entsperren.gemerkt.vertretung'));
-    const e = dienst.pdfEntsperren;
+    const e = dienst.geschuetztePdfs.pdfEntsperren;
     if (!e) throw new Fachfehler(404, t('mappen.entsperren.gemerkt.aus'));
     return e;
   };
@@ -223,7 +223,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     const liste = zuletztListe((await konten.einstellungen(ich(a))).zuletzt_geoeffnet);
     const ids = liste.map((x) => x.id);
     const lesbar = await dienst.rechtepruefung.lesbare(await zg(a), ids);
-    const bezuege = await dienst.bezuegeVon(ids.filter((id) => lesbar.has(id)));
+    const bezuege = await dienst.dokumente.bezuegeVon(ids.filter((id) => lesbar.has(id)));
     // Teile (#1031) nicht: Sie erscheinen nur an ihrer übergeordneten Mappe.
     const teile = teiltypen((await zg(a)).typen.values());
     return liste.filter((x) => bezuege.has(x.id) && !teile.has(bezuege.get(x.id)!.typId)).slice(0, anzahl).map((x) => ({ id: x.id, typId: bezuege.get(x.id)!.typId, titel: bezuege.get(x.id)!.titel, am: x.am }));

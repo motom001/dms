@@ -191,7 +191,7 @@ function faelle(pg: boolean) {
       const firma = (await d.mappen.listeMappen(firmaTyp.id))[0];
       const vertragTyp = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
       await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'EIGEN-1', firma: firma.id } }, ICH.id);
-      await d.ladeHoch(wartung.id, { register: 'unterlagen', name: 'Nachtrag.pdf' }, PDF('Nachtrag Petra'), ICH.id);
+      await d.dokumente.ladeHoch(wartung.id, { register: 'unterlagen', name: 'Nachtrag.pdf' }, PDF('Nachtrag Petra'), ICH.id);
       const r = await p.beispieleEntfernen('demo', ICH);
       assert.equal(r.entfernt, 1);
       assert.deepEqual(r.behalten.map((b) => [b.titel, b.grund]).sort(), [['Heizungsbau Beispiel GmbH', 'verwiesen'], ['WV-2023-17', 'geaendert']]);
@@ -208,9 +208,9 @@ function faelle(pg: boolean) {
       // Eigener Typ (nicht aus einem Paket) mit Beispiel-Mappe und Dokumenten: PDF, PNG und eines, das draußen bleibt.
       const typ = await d.mappentypen.legeTypAn({ name: 'Urkunde', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name'] }, { key: 'scans', name: 'Scans', art: 'dokumente' }] } as never);
       const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Geburtsurkunde Katrin' } }, ICH.id);
-      await d.ladeHoch(m.id, { register: 'scans', name: 'Geburtsurkunde Katrin.pdf' }, PDF('Urkunde Katrin'), ICH.id);
-      await d.ladeHoch(m.id, { register: 'scans', name: 'Rückseite.png' }, PNG, ICH.id);
-      await d.ladeHoch(m.id, { register: 'scans', name: 'Notiz.txt', typ: 'text/plain' }, Buffer.from('Notiz'), ICH.id);
+      await d.dokumente.ladeHoch(m.id, { register: 'scans', name: 'Geburtsurkunde Katrin.pdf' }, PDF('Urkunde Katrin'), ICH.id);
+      await d.dokumente.ladeHoch(m.id, { register: 'scans', name: 'Rückseite.png' }, PNG, ICH.id);
+      await d.dokumente.ladeHoch(m.id, { register: 'scans', name: 'Notiz.txt', typ: 'text/plain' }, Buffer.from('Notiz'), ICH.id);
       const eingabe = { typen: [typ.id], sichten: [], beispiele: [m.id], wortlisten: [], id: 'urkunden', name: 'Urkunden', version: '1.0.0', beschreibung: 'Urkunden mit Beispielen.', autor: { name: 'Herr Özdemir', github: 'oezdemir' }, lizenz: 'MIT', lizenzArt: 'frei', dms: `>=${BEISPIEL_DOKUMENTE_AB}`, aenderungen: '' };
       const ohne = await e.pruefe(eingabe);
       assert.equal(ohne.inhalt.beispielDokumente, undefined);

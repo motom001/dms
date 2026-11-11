@@ -127,7 +127,7 @@ describe('Hochladen als Strom (#746)', () => {
       assert.equal(api.statusCode, 201, api.body);
       const leer = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dok&name=leer.pdf`, headers: koepfe, payload: Buffer.alloc(0) });
       assert.equal(leer.statusCode, 422);
-      const inhalt = await d.dokumentInhalt(dok.id);
+      const inhalt = await d.dokumente.dokumentInhalt(dok.id);
       assert.deepEqual(inhalt.inhalt, zwei);
       // Aufgeräumt wird nach dem Senden der Antwort (onResponse) – kurz darauf warten.
       for (let i = 0; i < 50 && (await restDateien()).length; i++) await new Promise((x) => setTimeout(x, 20));

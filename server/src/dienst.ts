@@ -1,4 +1,4 @@
-import type { Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Dokument, Herkunft, Mappentyp, Werte } from '../../shared/src/model';
+import type { Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Mappentyp, Werte } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -21,11 +21,7 @@ import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
 import { type StempelTyp } from '../../shared/src/stempel';
 import { type InstalliertesPaket, type BeispielStand } from '../../shared/src/pakete';
-import { type FassungInfo } from '../../shared/src/dateiumwandlung';
-import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from './dateiumwandlung';
 import { PaketVolltext } from './paketvolltext';
-import type { ArchivAblage, ArchivAnbindung, Archivfassung } from './archivfassung';
-import type { EntsperrenAnbindung, PdfEntsperren } from './entsperren';
 import { FragenAnDieAblage } from './fragen';
 import { Uebersetzung } from './uebersetzung';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
@@ -272,7 +268,7 @@ export class Dienst {
   get textsatz(): TextsatzDienst {
     return this.textsatzDienst ??= new TextsatzDienst(this.kern, this.rechtepruefung, {
       organisation: () => this.organisation.geltende(), mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
-      ladeHoch: (id, e, inhalt, von) => this.ladeHoch(id, { ...e, herkunft: 'vorlage' }, inhalt, von),
+      ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, { ...e, herkunft: 'vorlage' }, inhalt, von),
       darfAblegen: async (z, id) => { const m = await this.repo.holeMappe(id); return !!m && (await this.rechtepruefung.rechteAn(z, m)).U; },
     });
   }
@@ -289,7 +285,7 @@ export class Dienst {
       },
       kiSperre: (paketId) => this.ki.kiSperreFuer(paketId),
       mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
-      ladeHoch: (id, e, inhalt, von) => this.ladeHoch(id, { ...e, herkunft: 'paket' }, inhalt, von),
+      ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, { ...e, herkunft: 'paket' }, inhalt, von),
       aendereMappe: (id, werte, von, z, anlass) => this.mappen.aendereMappe(id, { werte }, von, z, { text: anlass }),
       legeMappeAn: (typId, werte, von, z) => this.mappen.legeMappeAn({ typId, werte }, von, false, z),
       ausgabe: (mappeId, d, ich) => this.ausgang.dateiFuerAusgabe(mappeId, d, ich),
@@ -326,11 +322,11 @@ export class Dienst {
     this.mappenEingaben = new MappenEingaben(this.kern, this.rechtepruefung, { verschluessele: (k) => this.verschluessele(k) });
     this.passwortfelder = new Passwortfelder(this.kern, this.mappenHistorie, { tresor: () => this.tresor, istVerschluesselt });
     this.mappenArchiv = new MappenArchiv(this.kern, this.rechtepruefung, this.mappenHistorie, {
-      aufkleber: { ETIKETTEN, aufkleberPdf }, auftraege: this.auftraege, schreibeFehlendeDateien: (shas) => this.schreibeFehlendeDateien(shas),
+      aufkleber: { ETIKETTEN, aufkleberPdf }, auftraege: this.auftraege, schreibeFehlendeDateien: (shas) => this.dateienFehlen.schreibeFehlendeDateien(shas),
     });
     this.mappen = new MappenDienst(this.kern, this.rechtepruefung, { historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, hinweise: this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung) }, {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
-      mitArchivStand: (d) => this.mitArchivStand(d), mitPdfSchutz: (d) => this.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
+      mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d), mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
@@ -370,16 +366,16 @@ export class Dienst {
   /** Dokumente (#1075): die Klassen in dokumente/; was noch im Dienst liegt, kommt über die Anschlüsse. */
   private baueDokumente() {
     const umwandlung = new DokumentUmwandlung(this.kern, {
-      ocr: () => this.ocr, entsperren: () => this.entsperren, paketVolltext: () => this.paketVolltext,
+      ocr: () => this.dokumente.ocr, entsperren: () => this.geschuetztePdfs.entsperren, paketVolltext: () => this.paketVolltext,
       auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
     });
     const archiv = new DokumentArchivfassung(this.kern, umwandlung, {
       auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
       paketEinstellungen: (paket) => paketEinstellungen(this.kern, paket),
     });
-    const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.ocr, listeTypen: () => this.mappentypen.listeTypen() });
+    const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.dokumente.ocr, listeTypen: () => this.mappentypen.listeTypen() });
     const versionen = new DokumentVersionen(this.kern, {
-      ocr: () => this.ocr, neueDateien: (docs) => this.neueDateien(docs), raeumeAuf: (sha) => this.raeumeAuf(sha),
+      ocr: () => this.dokumente.ocr, neueDateien: (docs) => this.dokumente.neueDateien(docs), raeumeAuf: (sha) => this.dokumente.raeumeAuf(sha),
       aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
     });
     const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
@@ -444,7 +440,7 @@ export class Dienst {
     });
     const eingang = new Eingangskanaele(this.kern, { rechte, historie: this.mappenHistorie, dokumente: this.dokumente });
     const fotos = new PostFotos(this.kern, { rechte, ...mappen, ...doks, pdf, post, eingang }, { loescheMappe: (id, von, z, anlass) => this.loescheMappe(id, von, z, anlass) });
-    const entsperrtZu = (inhalt: Buffer) => this.entsperrtZu(inhalt);
+    const entsperrtZu = (inhalt: Buffer) => this.geschuetztePdfs.entsperrtZu(inhalt);
     const ausgang = new AusgangDienst(this.kern, {
       rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, versionen: this.dokumentVersionen,
       umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, verwalten: this.sichtenVerwaltung, stempel: stempelvorlagen,
@@ -606,51 +602,17 @@ export class Dienst {
 
   /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
 
-  /** Texterkennung (#45) und Vorschaubilder (#332) anbinden, Text einer Datei sofort (#391), neue Dateien melden. */
-  private get ocr() { return this.dokumente.ocr; }
-  verbindeTexterkennung(t: TexterkennungAnbindung) { this.dokumente.verbindeTexterkennung(t); }
-  textAusDatei(inhalt: Buffer, name: string, mime: string): Promise<{ text: string; info: string }> { return this.dokumente.textAusDatei(inhalt, name, mime); }
-  verbindeVorschau(v: Parameters<DokumenteDienst['verbindeVorschau']>[0]) { this.dokumente.verbindeVorschau(v); }
-  vorschauNachholen(): Promise<number> { return this.dokumente.vorschauNachholen(); }
-  private neueDateien(docs: Dokument[]) { this.dokumente.neueDateien(docs); }
 
   /* ---------- Geschützte PDFs (#827, dokumente/geschuetzte-pdf.ts) ---------- */
 
-  private get entsperren() { return this.geschuetztePdfs.entsperren; }
-  verbindeEntsperren(e: PdfEntsperren) { this.geschuetztePdfs.verbindeEntsperren(e); }
-  get pdfEntsperren() { return this.geschuetztePdfs.pdfEntsperren; }
-  entsperrenAnbindung(o: Omit<EntsperrenAnbindung, 'datei' | 'dokumenteMitSha' | 'nachEntsperren'>): EntsperrenAnbindung { return this.geschuetztePdfs.entsperrenAnbindung(o); }
-  entsperreDokument(id: string, konto: string, e: { passwort?: unknown; merken?: unknown; name?: unknown }, merkenErlaubt: boolean) { return this.geschuetztePdfs.entsperreDokument(id, konto, e, merkenErlaubt); }
-  private mitPdfSchutz(docs: Dokument[]): Promise<Dokument[]> { return this.geschuetztePdfs.mitPdfSchutz(docs); }
 
-  private entsperrtZu = (inhalt: Buffer): Promise<Buffer | null> => this.geschuetztePdfs.entsperrtZu(inhalt);
 
   /* ---------- Dateien umwandeln (#577, dokumente/umwandeln.ts) ---------- */
 
-  verbindeUmwandlung(u: Dateiumwandlung, vorschau?: Parameters<DokumentUmwandlung['verbindeUmwandlung']>[1]) { this.dokumentUmwandlung.verbindeUmwandlung(u, vorschau); }
-  get dateiumwandlung() { return this.dokumentUmwandlung.dateiumwandlung; }
-  umwandlungAnbindung(ablage: FassungsAblage, vorschau?: { setze(sha: string, bild: Buffer, mime: string): Promise<void> }): UmwandlungsAnbindung { return this.dokumentUmwandlung.umwandlungAnbindung(ablage, vorschau); }
-  nachFassung(docs: Dokument[], info: FassungInfo) { return this.dokumentUmwandlung.nachFassung(docs, info); }
-  umwandelPaketDa(typen: string[]): Promise<number> { return this.dokumentUmwandlung.umwandelPaketDa(typen); }
-  setzeFassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentUmwandlung.setzeFassung(z, id, sha, inhalt); }
-  setzeVorschaubild(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentUmwandlung.setzeVorschaubild(z, id, sha, inhalt); }
-  fassungVon(id: string): Promise<{ d: Dokument; info: FassungInfo; inhalt: Buffer }> { return this.dokumentUmwandlung.fassungVon(id); }
-  umwandlungStand() { return this.dokumentUmwandlung.umwandlungStand(); }
-  private nachUmwandlungsEreignis(...a: Parameters<DokumentUmwandlung['nachUmwandlungsEreignis']>) { return this.dokumentUmwandlung.nachUmwandlungsEreignis(...a); }
 
   /* ---------- Archivfassung (PDF/A, #631, dokumente/archivfassung.ts) ---------- */
 
-  verbindeArchivfassung(a: Archivfassung) { this.dokumentArchiv.verbindeArchivfassung(a); }
-  get archivfassung() { return this.dokumentArchiv.archivfassung; }
-  archivAnbindung(ablage: ArchivAblage): ArchivAnbindung { return this.dokumentArchiv.archivAnbindung(ablage); }
-  private archivNachVolltext(id: string, neu?: boolean) { return this.dokumentArchiv.archivNachVolltext(id, neu); }
   volltextAusgelassen(id: string) { return this.volltexte.volltextAusgelassen(id); }
-  archivPaketDa(typen: string[]): Promise<number> { return this.dokumentArchiv.archivPaketDa(typen); }
-  setzeArchivfassung(z: Zugriff | undefined, id: string, sha: unknown, inhalt: unknown) { return this.dokumentArchiv.setzeArchivfassung(z, id, sha, inhalt); }
-  archivfassungVon(id: string) { return this.dokumentArchiv.archivfassungVon(id); }
-  wortpositionen(id: string) { return this.dokumentArchiv.wortpositionen(id); }
-  archivStand() { return this.dokumentArchiv.archivStand(); }
-  private mitArchivStand(docs: Dokument[]): Promise<Dokument[]> { return this.dokumentArchiv.mitArchivStand(docs); }
 
   /* ---------- Volltext aus Paketen (#614, volltext/aus-paketen.ts) ---------- */
 
@@ -993,12 +955,6 @@ export class Dienst {
 
   /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
 
-  private raeumeAuf(sha256: string) { return this.dokumente.raeumeAuf(sha256); }
-  ladeHoch(...a: Parameters<DokumenteDienst['ladeHoch']>) { return this.dokumente.ladeHoch(...a); }
-  bezuegeVon(ids: string[]) { return this.dokumente.bezuegeVon(ids); }
-  ohneEigeneMappen(): Promise<boolean> { return this.dokumente.ohneEigeneMappen(); }
-  holeDokument(id: string) { return this.dokumente.holeDokument(id); }
-  dokumentInhalt(id: string) { return this.dokumente.dokumentInhalt(id); }
 
   /* ---------- Stempel beim Weitergeben (#394, pdf-bearbeiten/stempelvorlagen.ts) ---------- */
 
@@ -1007,7 +963,6 @@ export class Dienst {
   loescheStempelVorlage(id: string, von: string) { return this.stempelvorlagen.loescheStempelVorlage(id, von); }
   private pruefeStempelTyp(v: unknown) { return this.stempelvorlagen.pruefeStempelTyp(v); }
   private setzeStempelTyp(typId: string, st: StempelTyp | null) { return this.stempelvorlagen.setzeStempelTyp(typId, st); }
-  loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) { return this.dokumente.loescheDokument(id, benutzerId, anlass); }
 
   /* ---------- PDF bearbeiten (#335, pdf-bearbeiten/pdf-bearbeiten.dienst.ts) ---------- */
 
@@ -1094,15 +1049,7 @@ export class Dienst {
 
   /* ---------- Fehlende Dateien (#877, dokumente/fehlende-dateien.ts) ---------- */
 
-  merkeFehlendeDatei(f: { sha256: string; pfad: string; ablage: string }) { return this.dateienFehlen.merkeFehlendeDatei(f); }
-  private schreibeFehlendeDateien(shas: string[]) { return this.dateienFehlen.schreibeFehlendeDateien(shas); }
-  fehlendeDateien(): Promise<number> { return this.dateienFehlen.fehlendeDateien(); }
-  dokumenteOhneDatei(): Promise<{ dateien: number; fehlend: number; dokumente: number }> { return this.dateienFehlen.dokumenteOhneDatei(); }
 
   /* ---------- Versionierung (#194, dokumente/versionen.ts) ---------- */
 
-  ersetzeDokument(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> { return this.dokumentVersionen.ersetzeDokument(id, e, inhalt, benutzerId); }
-  holeVersionZurueck(id: string, nummer: number, benutzerId: string | null): Promise<Dokument> { return this.dokumentVersionen.holeVersionZurueck(id, nummer, benutzerId); }
-  versionen(id: string) { return this.dokumentVersionen.versionen(id); }
-  versionInhalt(id: string, nummer: number) { return this.dokumentVersionen.versionInhalt(id, nummer); }
 }

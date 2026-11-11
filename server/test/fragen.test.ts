@@ -130,7 +130,7 @@ async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   const kfz = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kfz-Versicherung', ende: '2026-12-31' } }, lena.id);
   const garten = await d.mappen.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
-    const x = (await d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
+    const x = (await d.dokumente.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };

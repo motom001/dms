@@ -195,7 +195,7 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
   const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
   const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: reg });
   const max = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter' } }, admin.id);
-  const dok = (await d.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)).dokument;
+  const dok = (await d.dokumente.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)).dokument;
   // Anna hat Max als Favorit (Stern = Abo, #422) und bekommt die Benachrichtigung.
   await d.mappen.setzeFavorit(anna, max.id, true);
   const gesendet: Gesendet[] = [];

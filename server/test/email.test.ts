@@ -19,7 +19,7 @@ async function aufbau() {
     { key: 'emails', name: 'E-Mails', art: 'verknuepfungen', quellen: [] },
   ] });
   const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'R-1' } }, null);
-  const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'rechnung.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 test'), null);
+  const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'rechnung.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 test'), null);
   const mails: Array<{ an: string; betreff: string; text: string; o?: MailOptionen }> = [];
   const mailer: Mailer = { async sende(an, betreff, text, o) { mails.push({ an, betreff, text, o }); } };
   return { d, t, m, dokument, mails, mailer };

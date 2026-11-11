@@ -50,7 +50,7 @@ async function aufbau(repo: Repo = speicherRepo()) {
   const befund = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie' } }, lena.id);
   const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Stromvertrag', bezug: befund.id } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
-    const x = (await d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
+    const x = (await d.dokumente.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
@@ -134,7 +134,7 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     const x = await aufbau();
     await x.d.kern.repo.speicherePaket(paket('melder', code({ rechte: {}, ereignisse: ['dokument.hochgeladen'], netz: ['https://melder.example.org/v1'] })));
     await x.d.ki.setzeKiTyp(x.vertrag.id, true, null);
-    const hoch = (m: string, name: string) => x.d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), x.lena.id);
+    const hoch = (m: string, name: string) => x.d.dokumente.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), x.lena.id);
     await hoch(x.befund.id, 'roentgen-knie.pdf');
     const ok = (await hoch(x.strom.id, 'zaehlerstand.pdf')).dokument;
     await spaeter(10_000, () => x.d.ereignisse.verteile());

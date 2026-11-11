@@ -50,12 +50,12 @@ describe('Archivmodus (#212)', () => {
     const det = await d.mappen.holeMappe(jung.id);
     assert.equal(det.aufbewahrenBis, '2034-12-31');
     assert.equal(det.loeschbar.ok, false);
-    const { dokument } = await d.ladeHoch(jung.id, { register: 'belege', name: 'R.pdf' }, Buffer.from('%PDF-1.4 a'), null);
-    await assert.rejects(d.loescheDokument(dokument.id), gesperrt);
+    const { dokument } = await d.dokumente.ladeHoch(jung.id, { register: 'belege', name: 'R.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+    await assert.rejects(d.dokumente.loescheDokument(dokument.id), gesperrt);
     // Ändern nur als neue Version; ältere bleiben (kein „nur die letzten N“)
-    for (const x of ['b', 'c', 'd']) await d.ersetzeDokument(dokument.id, {}, Buffer.from(`%PDF-1.4 ${x}`), null);
-    assert.equal((await d.versionen(dokument.id)).aeltere.length, 3);
-    await assert.rejects(d.ladeHoch(jung.id, { register: 'belege', name: 'R.pdf', gleicherName: 'ersetzen' }, Buffer.from('x'), null), (e) => e instanceof Fachfehler && e.status === 409);
+    for (const x of ['b', 'c', 'd']) await d.dokumentVersionen.ersetzeDokument(dokument.id, {}, Buffer.from(`%PDF-1.4 ${x}`), null);
+    assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere.length, 3);
+    await assert.rejects(d.dokumente.ladeHoch(jung.id, { register: 'belege', name: 'R.pdf', gleicherName: 'ersetzen' }, Buffer.from('x'), null), (e) => e instanceof Fachfehler && e.status === 409);
     // Abgelaufen: „Darf weg“, löschen geht
     const weg = await d.mappenArchiv.darfWeg();
     assert.deepEqual(weg.map((x) => [x.titel, x.aufbewahrenBis]), [['Alt', '2023-12-31']]);
@@ -87,8 +87,8 @@ describe('Archivmodus (#212)', () => {
 
   it('Alle Dateien prüfen findet veränderte und fehlende Dateien', async () => {
     const { d, jung, dateien } = await aufbau();
-    await d.ladeHoch(jung.id, { register: 'belege', name: 'A.pdf' }, Buffer.from('%PDF-1.4 heil'), null);
-    const b = (await d.ladeHoch(jung.id, { register: 'belege', name: 'B.pdf' }, Buffer.from('%PDF-1.4 kaputt'), null)).dokument;
+    await d.dokumente.ladeHoch(jung.id, { register: 'belege', name: 'A.pdf' }, Buffer.from('%PDF-1.4 heil'), null);
+    const b = (await d.dokumente.ladeHoch(jung.id, { register: 'belege', name: 'B.pdf' }, Buffer.from('%PDF-1.4 kaputt'), null)).dokument;
     d.mappenArchiv.pruefeDateien('test');
     assert.deepEqual((await d.auftraege.warte())?.ergebnis, { dateien: 2, abweichungen: [] });
     // Datei manipulieren

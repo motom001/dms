@@ -139,7 +139,7 @@ async function aufbau(versionierung = true) {
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
   ] });
   const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom' } }, null);
-  const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, gross, null);
+  const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, gross, null);
   const mails: Array<{ an: string; o?: MailOptionen }> = [];
   const mailer: Mailer = { async sende(an, _b, _t, o) { mails.push({ an, o }); } };
   const ereignisse: string[] = [];
@@ -163,7 +163,7 @@ describe('Am Dokument (#393)', () => {
     assert.ok(r.dokument.groesse < gross.length / 4);
     assert.equal(r.dokument.ocr?.stand, 'fertig', 'keine neue Texterkennung');
     assert.equal((await d.volltext(dokument.id)).text, 'erkannter Text');
-    assert.equal((await d.versionen(dokument.id)).aeltere[0].groesse, gross.length, 'Original als Version 1');
+    assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere[0].groesse, gross.length, 'Original als Version 1');
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'pdf_bearbeitet')!;
     assert.match(String(h.daten.text), /^verkleinert von .* MB auf .* KB \(−\d+ %\), Stufe Standard \(150 dpi\)$/);
     assert.deepEqual(ereignisse, [], 'eine neue Version löst kein dokument.hochgeladen aus');
@@ -171,7 +171,7 @@ describe('Am Dokument (#393)', () => {
     const z = await d.verkleinereDokument(dokument.id, { stufe: 'standard' }, ich.id);
     assert.equal(z.unveraendert, true);
     assert.match(z.meldung, /bleibt unverändert/);
-    assert.equal((await d.holeDokument(dokument.id)).version, 2);
+    assert.equal((await d.dokumente.holeDokument(dokument.id)).version, 2);
   });
 
   it('ohne Versionierung: nur mit Bestätigung, das bisherige kommt in den Papierkorb', async () => {
@@ -187,7 +187,7 @@ describe('Am Dokument (#393)', () => {
 
   it('Sammelaktion: Liste nach Größe mit Schätzung, Hintergrundauftrag, ohne Original', async () => {
     const { d, m, dokument } = await aufbau();
-    const klein = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf', typ: 'application/pdf' }, await textPdf(), null)).dokument;
+    const klein = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf', typ: 'application/pdf' }, await textPdf(), null)).dokument;
     const l = await d.grosseDokumente({ ab: 1 });
     assert.deepEqual(l.eintraege.map((x) => x.id), [dokument.id], 'nur große PDFs');
     assert.equal(l.eintraege[0].mappeTitel, 'Strom');
@@ -199,9 +199,9 @@ describe('Am Dokument (#393)', () => {
     assert.equal(fertig.status, 'fertig');
     const e = fertig.ergebnis as { verkleinert: number; unveraendert: number; vorher: number; nachher: number };
     assert.equal(e.verkleinert, 1); assert.equal(e.unveraendert, 1);
-    const neu = await d.holeDokument(dokument.id);
+    const neu = await d.dokumente.holeDokument(dokument.id);
     assert.equal(neu.version, 2);
-    assert.equal((await d.versionen(dokument.id)).aeltere.length, 0, 'ohne Original: Version 1 ist weg');
+    assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere.length, 0, 'ohne Original: Version 1 ist weg');
   });
 
   it('automatisch verkleinern ab einer Größe (Standard aus)', async () => {
@@ -209,13 +209,13 @@ describe('Am Dokument (#393)', () => {
     assert.equal((await d.verkleinernEinstellung()).automatisch, false);
     await assert.rejects(d.setzeVerkleinernEinstellung({ automatisch: true, abMb: 0, stufe: 'standard' }), status(422));
     await d.setzeVerkleinernEinstellung({ automatisch: true, abMb: 1, stufe: 'standard' });
-    const r = await d.ladeHoch(m.id, { register: 'dokumente', name: 'neu.pdf', typ: 'application/pdf' }, gross, null);
+    const r = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'neu.pdf', typ: 'application/pdf' }, gross, null);
     assert.ok(r.dokument.groesse < gross.length / 4);
     assert.ok('verkleinert' in r && r.verkleinert);
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'dokument_hochgeladen' && x.daten.dokument === 'neu.pdf')!;
     assert.match(String(h.daten.verkleinert), /^automatisch von .* \(Standard\)$/);
     // Im DMS Bearbeitetes wird nicht automatisch verkleinert; kleine Dateien auch nicht.
-    const b = await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf', herkunft: 'bearbeitet' }, gross, null);
+    const b = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf', herkunft: 'bearbeitet' }, gross, null);
     assert.equal(b.dokument.groesse, gross.length);
   });
 });
@@ -241,8 +241,8 @@ describe('Ausgabe „verkleinert“ (#393)', () => {
     const r = await d.dokumentFuerAusgabe(dokument.id, { verkleinern: 'bildschirm', ich });
     assert.ok(r.verkleinert && r.groesse < gross.length / 4);
     assert.equal(r.gestempelt, false);
-    assert.ok((await alsPuffer((await d.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original unverändert');
-    assert.equal((await d.holeDokument(dokument.id)).version, 1);
+    assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original unverändert');
+    assert.equal((await d.dokumente.holeDokument(dokument.id)).version, 1);
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
     assert.match(String(h.daten.text), /^verkleinert \(.* MB → .* KB\) \(heruntergeladen: scan\.pdf\)$/);
 
@@ -255,9 +255,9 @@ describe('Ausgabe „verkleinert“ (#393)', () => {
     const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     const ex = await d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], verkleinern: 'standard' }, z);
     assert.ok(ex.groesse < gross.length / 2, 'ZIP mit verkleinertem PDF');
-    assert.ok((await alsPuffer((await d.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original weiter unverändert');
+    assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original weiter unverändert');
     // Kein PDF und ohne Stempel: beim einzelnen Herunterladen 422.
-    const { dokument: txt } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('hallo'), null);
+    const { dokument: txt } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('hallo'), null);
     await assert.rejects(d.dokumentFuerAusgabe(txt.id, { verkleinern: 'standard', ich }), status(422, /kein PDF/));
   });
 });
@@ -286,15 +286,15 @@ describe('Große PDFs in PostgreSQL (#393)', { skip: process.env.TEST_DATABASE_U
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
     ] });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom' } }, null);
-    const g = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf' }, gross, null)).dokument;
-    const k = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf' }, await textPdf(), null)).dokument;
+    const g = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf' }, gross, null)).dokument;
+    const k = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf' }, await textPdf(), null)).dokument;
     assert.deepEqual((await d.grosseDokumente({ ab: 0 })).eintraege.map((x) => x.id), [g.id, k.id]);
     d.verkleinereViele({ ids: [g.id], ohneOriginal: true }, { id: null, email: 'admin@example.org' });
     assert.equal((await d.auftraege.warte())!.status, 'fertig');
-    const neu = await d.holeDokument(g.id);
+    const neu = await d.dokumente.holeDokument(g.id);
     assert.equal(neu.version, 2);
     assert.ok(neu.groesse < gross.length / 4);
-    assert.equal((await d.versionen(g.id)).aeltere.length, 0);
+    assert.equal((await d.dokumentVersionen.versionen(g.id)).aeltere.length, 0);
     assert.deepEqual((await d.grosseDokumente({ ab: 1 })).eintraege, []);
   });
 });

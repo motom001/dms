@@ -20,7 +20,7 @@ describe('Historie (#57)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'V-1', betrag: { betrag: 10, waehrung: 'EUR' } } }, ich.id);
     await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
     await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 h'), ich.id);
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 h'), ich.id);
     await d.loescheMappe(m.id, ich.id);
     await d.stelleWiederHer(m.id, ich);
     const h = await d.mappenHistorie.historie(m.id);

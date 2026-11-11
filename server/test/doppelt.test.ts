@@ -37,9 +37,9 @@ async function aufbau() {
   const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
     berechtigungen: { grund: ALLES, regeln: [{ id: 'anna', name: 'Anna nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
   const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Stromvertrag Haus' } }, admin.id);
-  await d.ladeHoch(strom.id, { register: 'dokumente', name: 'Scan_2026-10-12.pdf' }, SCAN, admin.id);
+  await d.dokumente.ladeHoch(strom.id, { register: 'dokumente', name: 'Scan_2026-10-12.pdf' }, SCAN, admin.id);
   const arzt = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'Arztbrief' } }, admin.id);
-  await d.ladeHoch(arzt.id, { register: 'dokumente', name: 'Befund.pdf' }, BEFUND, admin.id);
+  await d.dokumente.ladeHoch(arzt.id, { register: 'dokumente', name: 'Befund.pdf' }, BEFUND, admin.id);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, pf: string, x: Partial<Anfrage> = {}) => tabelle.find((t) => t.methode === m && t.pfad === pf)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });

@@ -34,8 +34,8 @@ describe('Persönlicher Export (#255)', () => {
     const geheim = (await d.mappen.listeMappen(t.id)).find((m) => m.titel === 'Geheim')!;
     // Was der Admin im Haushalt löscht, gehört nicht in Max' Export (#683).
     const reg = t.register.find((x) => x.art === 'dokumente')!.key;
-    const dok = (await d.ladeHoch(geheim.id, { register: reg, name: 'kontoauszug-geheim.pdf' }, Buffer.from('%PDF-1.4 geheim'), admin.id)).dokument;
-    await d.loescheDokument(dok.id, admin.id);
+    const dok = (await d.dokumente.ladeHoch(geheim.id, { register: reg, name: 'kontoauszug-geheim.pdf' }, Buffer.from('%PDF-1.4 geheim'), admin.id)).dokument;
+    await d.dokumente.loescheDokument(dok.id, admin.id);
     await d.legeAufgabeAn(offen.id, { empfaengerId: max.id, text: 'Für Max' }, admin.id);
     await d.legeAufgabeAn(offen.id, { empfaengerId: admin.id, text: 'Für Admin' }, admin.id);
     await d.mappen.setzeFavorit({ id: max.id }, offen.id, true);

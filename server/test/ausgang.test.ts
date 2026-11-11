@@ -49,10 +49,10 @@ async function aufbau() {
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true }] } as never);
   const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1' } }, lena.id);
-  const pdf = (await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Vertrag' }]), lena.id)).dokument;
-  const txt = (await d.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), lena.id)).dokument;
+  const pdf = (await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Vertrag' }]), lena.id)).dokument;
+  const txt = (await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), lena.id)).dokument;
   // Zweite Version des PDFs (#194): ältere Versionen sind ein eigener Weg zum Herunterladen.
-  await d.ersetzeDokument(pdf.id, { name: 'Vertrag.pdf' }, pdfAus([{ text: 'Zweite Fassung' }]), lena.id);
+  await d.dokumentVersionen.ersetzeDokument(pdf.id, { name: 'Vertrag.pdf' }, pdfAus([{ text: 'Zweite Fassung' }]), lena.id);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
   const tabelle = routen(d, konten, { apiSchluessel: schluessel });
@@ -210,7 +210,7 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
     const posts = (await d.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
     const doks = (await d.laufwerkMappe(posts[0].id, z)).dokumente;
     const kopie = doks.find((x) => x.name === 'V-1.pdf')!;
-    assert.ok((await seitentext(await alsPuffer((await d.dokumentInhalt(kopie.id)).inhalt))).includes(hex('ENTWURF')));
+    assert.ok((await seitentext(await alsPuffer((await d.dokumente.dokumentInhalt(kopie.id)).inhalt))).includes(hex('ENTWURF')));
   });
 
   it('gleiche Prüfung und Wahl der Fassung bei einer und mehreren Mappen', async () => {

@@ -48,7 +48,7 @@ async function aufbau(r: Repo) {
   const P = { mm: await p('MediaMarkt'), saturn: await p('Saturn'), otto: await p('Otto'), ikea: await p('Ikea') };
   const mappe = async (typId: string, nr: string, datum: string, vp: string, text: string, extra: Record<string, unknown> = {}) => {
     const m = await d.mappen.legeMappeAn({ typId, werte: { nr, rechnungsdatum: datum, vertragspartner: vp, betrag: { betrag: 100, waehrung: 'EUR' }, ...extra } });
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
     await r.ocrSetze(dokument.id, { stand: 'fertig', text });
     return m;
   };

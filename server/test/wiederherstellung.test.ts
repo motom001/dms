@@ -63,7 +63,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
       const partner = (await dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
       const m = (await dienst.mappen.listeMappen(partner.id))[0];
-      await dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
+      await dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
       await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (gen_random_uuid(), ${HAUSHALT}, 'anna@example.org', 'Anna', 'admin')`;
       benutzer = 1;
     }
@@ -324,9 +324,9 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       const dateien = ordnerSpeicher(join(wurzel, 'files'), HAUSHALT);
       const d = dienst ?? new Dienst(pgRepo(s, HAUSHALT), dateien, {});
       const vorschau = new Vorschaubilder(speicherAblage(), dateien, async (inhalt, mime) => Buffer.from(`vorschau:${mime}:${inhalt.length}`));
-      d.verbindeVorschau(vorschau);
-      const u = new Dateiumwandlung(d.umwandlungAnbindung(ordnerFassungen(fassungsOrdner(join(wurzel, 'files'), HAUSHALT)), vorschau));
-      d.verbindeUmwandlung(u, vorschau);
+      d.dokumente.verbindeVorschau(vorschau);
+      const u = new Dateiumwandlung(d.dokumentUmwandlung.umwandlungAnbindung(ordnerFassungen(fassungsOrdner(join(wurzel, 'files'), HAUSHALT)), vorschau));
+      d.dokumentUmwandlung.verbindeUmwandlung(u, vorschau);
       vorschau.fassung = (sha) => u.lies(sha);
       return { d, u, vorschau };
     };
@@ -336,7 +336,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
     const m = await q.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Scans von Lena' } });
     const tiff = Buffer.concat([Buffer.from([0x49, 0x49, 42, 0, 8, 0, 0, 0]), Buffer.alloc(64, 7)]);
-    const dok = (await q.dienst.ladeHoch(m.id, { register: 'dokumente', name: 'scan.tif', typ: 'image/tiff' }, tiff, null)).dokument;
+    const dok = (await q.dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.tif', typ: 'image/tiff' }, tiff, null)).dokument;
     assert.equal(dok.mime, 'image/tiff');
     // Die Fassung, wie das Paket Bildformate sie geliefert hätte, und der Text daraus.
     const pdf = pdfMitText(['Kontoauszug Oktober']);
@@ -351,7 +351,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     // Archivfassung (PDF/A, #631) zu einem PDF, wie das Paket PDF/A sie abgelegt hätte, mit Stand und Wortpositionen.
     const { archivOrdner, ordnerArchiv, woerterOrdner } = await import('../src/archivfassung');
     const archivAblage = (w: string) => ordnerArchiv(archivOrdner(join(w, 'files'), HAUSHALT), woerterOrdner(join(w, 'files'), HAUSHALT));
-    const brief = (await q.dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief von Petra']), null)).dokument;
+    const brief = (await q.dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief von Petra']), null)).dokument;
     const pdfa = pdfMitText(['Brief von Petra als PDF/A']);
     const archivInfo = { mime: 'application/pdf' as const, groesse: pdfa.length, sha256: createHash('sha256').update(pdfa).digest('hex'), seiten: 1, pdfa: { teil: 2, stufe: 'B' }, paket: { id: 'pdfa', name: 'PDF/A', version: '1.0.0' }, erstellt: new Date().toISOString() };
     await archivAblage(q.wurzel).schreibe(brief.sha256, archivInfo, pdfa);
@@ -385,11 +385,11 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal((await zielU.u.pakete()).length, 0, 'auch hier kein Paket');
     // Archivfassung und Wortpositionen sind da – ohne Paket.
     const { Archivfassung } = await import('../src/archivfassung');
-    const za = new Archivfassung(zielU.d.archivAnbindung(archivAblage(z.wurzel)));
-    zielU.d.verbindeArchivfassung(za);
-    assert.deepEqual((await zielU.d.archivfassungVon(brief.id)).inhalt, pdfa, 'Archivfassung ansehen');
+    const za = new Archivfassung(zielU.d.dokumentArchiv.archivAnbindung(archivAblage(z.wurzel)));
+    zielU.d.dokumentArchiv.verbindeArchivfassung(za);
+    assert.deepEqual((await zielU.d.dokumentArchiv.archivfassungVon(brief.id)).inhalt, pdfa, 'Archivfassung ansehen');
     assert.equal((await archivAblage(z.wurzel).woerter(brief.sha256))?.seiten[0]?.[0][0], 'Brief');
-    const f = await zielU.d.fassungVon(dok.id);
+    const f = await zielU.d.dokumentUmwandlung.fassungVon(dok.id);
     assert.deepEqual(f.inhalt, pdf, 'Fassung ansehen: dieselbe Fassung wie vorher');
     assert.deepEqual(f.info.paket, info.paket);
     assert.equal(f.info.sha256, info.sha256);

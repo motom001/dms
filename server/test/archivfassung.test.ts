@@ -115,7 +115,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   const d = new Dienst(repo, dateien, { einstellungen });
   const engine: Engine = async () => ({ text: TEXT, seiten: 1, info: 'Textebene des PDFs', ohneText: [] });
   const t = new Texterkennung(repo, dateien, einstellungen, engine, async () => ({ pdftotext: true, pdftoppm: true }));
-  d.verbindeTexterkennung(t);
+  d.dokumente.verbindeTexterkennung(t);
   t.paket = () => d.texterkennungPaket();
   t.volltextPaket = d.paketVolltext;
   t.nachher = (dok, e, k) => {
@@ -125,8 +125,8 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
     void d.volltextFertig({ dokument: dok.id, mappe: dok.mappeId }, { quelle: 'kern', text: k.text, mime: dok.mime, seiten: e.seiten ?? null, neu: k.neu });
   };
   const ablage = speicherArchiv();
-  const a = new Archivfassung(d.archivAnbindung(ablage));
-  d.verbindeArchivfassung(a);
+  const a = new Archivfassung(d.dokumentArchiv.archivAnbindung(ablage));
+  d.dokumentArchiv.verbindeArchivfassung(a);
   // Texterkennung als Paket: Bilder warten auf sie; sie schreibt den Volltext mit Wortpositionen.
   await d.kern.repo.speicherePaket(paket('texterkennung', { sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'schreiben', schnittstellen: ['dms:texterkennung'] } }, 'Texterkennung'));
   if (o.mitPaket !== false) await d.kern.repo.speicherePaket(o.paket ?? pdfaPaket());
@@ -136,7 +136,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   ] });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
   const hoch = async (name: string, inhalt: Buffer, typAngabe = PDF) => {
-    const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
     return id;
   };
@@ -241,7 +241,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.equal(s.stand, 'fertig');
     assert.deepEqual(s.fassung?.pdfa, { teil: 2, stufe: 'B' });
     assert.equal(s.fassung?.paket.id, 'pdfa');
-    const f = await x.d.archivfassungVon(id);
+    const f = await x.d.dokumentArchiv.archivfassungVon(id);
     assert.equal(f.inhalt.subarray(0, 5).toString(), '%PDF-');
     assert.deepEqual(await x.repo.holeDokument(id).then((y) => y!.sha256), dok.sha256, 'das Original bleibt unverändert');
     const h = await x.d.mappenHistorie.historie(x.m.id);
@@ -268,7 +268,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.match(String((await x.a.stand(await x.dok(b)))!.info), /laut Einstellung bekommen PDFs mit Text keine Archivfassung/);
     // Wieder angekreuzt: der Bestand mit Text kommt dazu (wie nach dem Speichern der Einstellung).
     await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { pdf_text: true } });
-    assert.equal(await x.d.archivPaketDa([PDF]), 1);
+    assert.equal(await x.d.dokumentArchiv.archivPaketDa([PDF]), 1);
     // Schon gültiges PDF/A: gilt selbst als Archivfassung, kein Ereignis, keine zweite Datei.
     await x.laeufer();
     const c = await x.hoch('schon-pdfa.pdf', await pdf({ text: `${TEXT} schon archivfest`, pdfa: {} }));
@@ -277,7 +277,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     assert.equal(s.fassung?.imOriginal, true);
     assert.deepEqual(await x.offen(), []);
     assert.equal(x.ablage.fassungen.get((await x.dok(c)).sha256)!.inhalt.length, 0, 'kein eigener Inhalt');
-    assert.deepEqual((await x.d.archivfassungVon(c)).inhalt, (await x.d.dokumentInhalt(c).then(async (r) => Buffer.isBuffer(r.inhalt) ? r.inhalt : Buffer.concat(await (r.inhalt as NodeJS.ReadableStream & { toArray(): Promise<Buffer[]> }).toArray()))));
+    assert.deepEqual((await x.d.dokumentArchiv.archivfassungVon(c)).inhalt, (await x.d.dokumente.dokumentInhalt(c).then(async (r) => Buffer.isBuffer(r.inhalt) ? r.inhalt : Buffer.concat(await (r.inhalt as NodeJS.ReadableStream & { toArray(): Promise<Buffer[]> }).toArray()))));
   });
 
   it('Auswahl (#660): „Fotos und Bilder“ und „Gescannte PDFs“ abgewählt lassen diese aus, nachträglich angekreuzt werden sie nachgeholt', async () => {
@@ -299,7 +299,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await x.laeufer();
     // Bilder wieder angekreuzt: das Foto wird nachgeholt, der Scan bleibt ausgelassen.
     await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { bilder: true, pdf_scan: false } });
-    assert.equal(await x.d.archivPaketDa(['image/png', PDF]), 1);
+    assert.equal(await x.d.dokumentArchiv.archivPaketDa(['image/png', PDF]), 1);
     const [e] = await x.offen();
     assert.equal(e.daten.mime, 'image/png');
     assert.equal((await x.a.stand(await x.dok(scan)))?.stand, 'ausgelassen');
@@ -329,7 +329,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     const s = (await x.a.stand(await x.dok(id)))!;
     assert.equal(s.stand, 'fehler');
     assert.match(s.info ?? '', /^Archivfassung von Paket PDF\/A abgelehnt: .*Aktionen|externen/);
-    const w = (await x.d.archivStand())!;
+    const w = (await x.d.dokumentArchiv.archivStand())!;
     assert.equal(w.zaehler.fehler, 1);
     assert.deepEqual(w.liste.map((y) => [y.dokument, y.stand]), [[id, 'fehler']]);
   });
@@ -395,12 +395,12 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     const alt = await x.dok(id);
     assert.equal((await x.a.stand(alt))?.stand, 'fertig');
     // Neue Version: anderes Original → keine (veraltete) Archivfassung, bis das Paket neu erzeugt hat.
-    await x.d.ersetzeDokument(id, { name: 'vertrag.pdf', typ: PDF }, await pdf({ text: `${TEXT} Nachtrag` }), null);
+    await x.d.dokumentVersionen.ersetzeDokument(id, { name: 'vertrag.pdf', typ: PDF }, await pdf({ text: `${TEXT} Nachtrag` }), null);
     await warte(async () => (await x.offen()).length === 1);
     const neu = await x.dok(id);
     assert.notEqual(neu.sha256, alt.sha256);
     assert.equal((await x.a.stand(neu))?.stand, 'wartet');
-    await assert.rejects(x.d.archivfassungVon(id), /keine Archivfassung/);
+    await assert.rejects(x.d.dokumentArchiv.archivfassungVon(id), /keine Archivfassung/);
     await x.laeufer();
     // Volltext neu erzeugen: Ereignis mit neu, auch wenn es schon eine gibt.
     await x.d.texterkennungErneut(id);
@@ -418,13 +418,13 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     await y.hoch('b.pdf', await pdf({ text: `${TEXT} zwei` }));
     await new Promise((r) => setTimeout(r, 200));
     await y.d.kern.repo.speicherePaket(pdfaPaket());
-    assert.equal(await y.d.archivPaketDa([PDF]), 2);
+    assert.equal(await y.d.dokumentArchiv.archivPaketDa([PDF]), 2);
     assert.equal((await y.offen()).length, 2);
     // Löschen: Archivfassung, Stand und Wortpositionen mit weg.
     await y.laeufer();
     const sha = (await y.dok(b1)).sha256;
     assert.ok(y.ablage.fassungen.has(sha));
-    await y.d.loescheDokument(b1);
+    await y.d.dokumente.loescheDokument(b1);
     await warte(async () => !y.ablage.fassungen.has(sha), 5000).catch(() => {});
     // Papierkorb an (Vorgabe?) – dann bleibt sie bis zum endgültigen Löschen; ohne Papierkorb ist sie weg.
     if (y.ablage.fassungen.has(sha)) assert.ok(await y.repo.dateiBenutzt(sha), 'nur, solange die Datei noch gebraucht wird (Papierkorb)');
@@ -453,7 +453,7 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
       const ex = await vollexport(x.d.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), ziel, {});
       const rel = ex.pfade.dokumente.get(id)!;
       const a = await readFile(join(ex.ordner, ...`${rel}.pdfa.pdf`.split('/')));
-      assert.deepEqual(a, (await x.d.archivfassungVon(id)).inhalt);
+      assert.deepEqual(a, (await x.d.dokumentArchiv.archivfassungVon(id)).inhalt);
       const csv = await readFile(join(ex.ordner, 'daten', 'dokumente.csv'), 'utf8');
       assert.ok(csv.split('\r\n')[0].endsWith(',pfad,fassung,archivfassung'));
       assert.ok(csv.includes(`${rel}.pdfa.pdf`));
@@ -499,7 +499,7 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     const id = await x.hoch('rechnung.pdf', await pdf({ text: TEXT }));
     await warte(async () => (await x.offen()).length === 1);
     assert.deepEqual(await x.laeufer(), ['PDF/A-2b']);
-    const gespeichert = Buffer.from((await x.d.archivfassungVon(id)).inhalt);
+    const gespeichert = Buffer.from((await x.d.dokumentArchiv.archivfassungVon(id)).inhalt);
     const seiten = (await PDFDocument.load(gespeichert)).getPageCount();
     // Pflicht-Stempel am Mappentyp.
     const typ = (await x.d.mappentypen.listeTypen()).find((y) => y.name === 'Rechnung')!;
@@ -520,7 +520,7 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     assert.equal(k.datei.name, 'rechnung (PDF-A).pdf');
     assert.equal((await PDFDocument.load(k.datei.inhalt)).getPageCount(), seiten, 'kein eigenes Deckblatt');
     assert.ok((await seitentext(k.datei.inhalt)).includes(hex('ENTWURF')), 'Stempel auf der Seite des Dokuments');
-    assert.ok((await x.d.archivfassungVon(id)).inhalt.equals(gespeichert), 'gespeicherte Archivfassung unverändert');
+    assert.ok((await x.d.dokumentArchiv.archivfassungVon(id)).inhalt.equals(gespeichert), 'gespeicherte Archivfassung unverändert');
     const h = (await x.d.mappenHistorie.historie(x.m.id)).filter((e) => e.art === 'weitergegeben');
     assert.ok(h.some((e) => /über die API \(Archivfassung\)/.test(String(e.daten.text))), 'Historie vermerkt die Weitergabe');
     // Seitenbilder: aus der gestempelten Kopie (Graustufen); die Oberfläche bekommt sie wie abgelegt.
@@ -625,7 +625,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
       const s = (await x.a.stand(await x.dok(eml)))!;
       assert.equal(s.stand, 'fertig');
       assert.equal(s.fassung?.pdfa.teil, 2);
-      const v = await x.d.archivfassungVon(eml);
+      const v = await x.d.dokumentArchiv.archivfassungVon(eml);
       assert.equal(v.inhalt.subarray(0, 5).toString('latin1'), '%PDF-');
       assert.equal((await x.dok(eml)).anzeigbar, false, 'das Original zeigt der Browser nicht – „Original anzeigen“ lädt es herunter');
       // Ein PDF trägt die Zeitzone ebenso (alle Arten).
@@ -665,7 +665,7 @@ describe('Archivfassung für E-Mails (#946)', () => {
     await x.laeufer();
     // Wieder angekreuzt: beide Mails kommen nach (auch die als octet-stream mit Endung).
     await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { emails: true } });
-    assert.equal(await x.d.archivPaketDa(MANIFEST_MAIL.archivfassung.typen), 2);
+    assert.equal(await x.d.dokumentArchiv.archivPaketDa(MANIFEST_MAIL.archivfassung.typen), 2);
     assert.deepEqual((await x.offen()).map((y) => y.daten.name).sort(), ['Auftragsbestätigung.eml', 'Kündigung.eml']);
   });
 });

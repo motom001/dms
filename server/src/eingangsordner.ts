@@ -474,7 +474,7 @@ export class Eingangsordner {
       await this.d.einstellungen.schreibe('eingangsordner_journal', { ...journal, mappeId });
       const typ = await this.d.dienst.postTyp();
       const register = typ.register.find((r) => r.art === 'dokumente')?.key;
-      await this.d.dienst.ladeHoch(post.id, { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null);
+      await this.d.dienst.dokumente.ladeHoch(post.id, { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null);
     } catch (x) {
       await this.d.einstellungen.schreibe('eingangsordner_journal', null);
       const f = x as Error & { status?: number };
@@ -508,7 +508,7 @@ export class Eingangsordner {
         // Dokument fehlt noch (Absturz zwischen Post und Hochladen)? Dann jetzt nachholen.
         if (!(await this.d.dienst.postMitDatei(j.sha256, j.seit))) {
           const typ = await this.d.dienst.postTyp();
-          await this.d.dienst.ladeHoch(mappeId, { register: typ.register.find((r) => r.art === 'dokumente')?.key, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null).catch(() => {});
+          await this.d.dienst.dokumente.ladeHoch(mappeId, { register: typ.register.find((r) => r.art === 'dokumente')?.key, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null).catch(() => {});
         }
         await this.nachher(j.pfad, rel, e, this.personIn(rel, personen));
         log.warn('Eingangsordner: nach einem Abbruch aufgeräumt – keine doppelte Post', { datei: rel, mappe: mappeId });

@@ -173,7 +173,7 @@ describe('Ein Ereigniskatalog, ein Ausgangskorb, eine Regel für Wiederholungen 
     const katalog: string[] = [];
     d.ereignisse.abonniere('test', async (e) => { katalog.push(e.art); });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } });
-    await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo'), null);
+    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo'), null);
     await d.ereignisse.verteile();
     assert.equal(katalog.filter((a) => a === 'dokument.hochgeladen').length, 1, 'genau einmal');
     const [z] = (await d.kern.repo.faelligeEreignisse(10)).filter((x) => x.art === 'dokument.hochgeladen');

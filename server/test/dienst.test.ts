@@ -153,29 +153,29 @@ describe('Register und Dokumente', () => {
 
   it('lädt hoch, erkennt PDFs am Inhalt und speichert gleichen Inhalt nur einmal', async () => {
     const { d, dateien, r } = await aufbau();
-    await wirft(d.ladeHoch(r.id, { register: 'zahlungen', name: 'x.pdf' }, pdf, null), 422);
-    const a = await d.ladeHoch(r.id, { register: 'dokumente', name: '../../rechnung.pdf', typ: 'application/pdf' }, pdf, null);
+    await wirft(d.dokumente.ladeHoch(r.id, { register: 'zahlungen', name: 'x.pdf' }, pdf, null), 422);
+    const a = await d.dokumente.ladeHoch(r.id, { register: 'dokumente', name: '../../rechnung.pdf', typ: 'application/pdf' }, pdf, null);
     assert.equal(a.dokument.name, 'rechnung.pdf');
     assert.equal(a.dokument.anzeigbar, true);
-    const b = await d.ladeHoch(r.id, { register: 'dokumente', name: 'kopie.pdf' }, pdf, null);
+    const b = await d.dokumente.ladeHoch(r.id, { register: 'dokumente', name: 'kopie.pdf' }, pdf, null);
     assert.equal(b.gleicherInhalt.length, 1);
     assert.equal(dateien.anzahl(), 1);
-    const h = await d.ladeHoch(r.id, { register: 'dokumente', name: 'boese.html', typ: 'text/html' }, html, null);
+    const h = await d.dokumente.ladeHoch(r.id, { register: 'dokumente', name: 'boese.html', typ: 'text/html' }, html, null);
     assert.equal(h.dokument.anzeigbar, false);
-    const falsch = await d.ladeHoch(r.id, { register: 'dokumente', name: 'tarnung.pdf', typ: 'application/pdf' }, html, null);
+    const falsch = await d.dokumente.ladeHoch(r.id, { register: 'dokumente', name: 'tarnung.pdf', typ: 'application/pdf' }, html, null);
     assert.equal(falsch.dokument.anzeigbar, false); // Endung und Angabe zählen nicht, nur der Inhalt
     assert.equal((await d.mappen.holeMappe(r.id)).dokumente.length, 4);
 
-    await d.loescheDokument(a.dokument.id);
+    await d.dokumente.loescheDokument(a.dokument.id);
     assert.equal(dateien.anzahl(), 2); // PDF wird noch von „kopie.pdf“ genutzt
-    await d.loescheDokument(b.dokument.id);
+    await d.dokumente.loescheDokument(b.dokument.id);
     assert.equal(dateien.anzahl(), 1);
   });
 
   it('löscht Dokumente mit der Mappe und schützt Register mit Dokumenten', async () => {
     const { d, dateien, rechnung } = await aufbau();
     const ohneZahlung = (await d.mappen.listeMappen(rechnung.id)).find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
-    await d.ladeHoch(ohneZahlung.id, { register: 'dokumente', name: 'r.pdf' }, pdf, null);
+    await d.dokumente.ladeHoch(ohneZahlung.id, { register: 'dokumente', name: 'r.pdf' }, pdf, null);
     await wirft(d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, register: rechnung.register.filter((x) => x.art !== 'dokumente') }), 409);
     await d.loescheMappe(ohneZahlung.id);
     assert.equal(dateien.anzahl(), 0);

@@ -60,7 +60,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
     const { r, d, sql, typ } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Stapel' } });
     const dokumente: string[] = [];
-    for (let i = 0; i < 40; i++) dokumente.push((await d.ladeHoch(m.id, { register: 'dokumente', name: `s${i}.txt`, typ: 'text/plain' }, Buffer.from(`s${i}`), null)).dokument.id);
+    for (let i = 0; i < 40; i++) dokumente.push((await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `s${i}.txt`, typ: 'text/plain' }, Buffer.from(`s${i}`), null)).dokument.id);
     const seit = protokoll.letzteNr;
     const fehler: string[] = [];
     const arbeit: Array<Promise<unknown>> = [];
@@ -95,7 +95,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
   it('wiederholt das Speichern, wenn die Datenbank es abbricht (Verklemmung, Serialisierungsfehler)', async () => {
     const { r, d, sql, typ } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Brief' } });
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.txt', typ: 'text/plain' }, Buffer.from('b'), null);
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.txt', typ: 'text/plain' }, Buffer.from('b'), null);
     // Erzwungener Abbruch: die ersten beiden Versuche als Verklemmung, der dritte als Serialisierungsfehler.
     // Die Sequenz zählt auch über zurückgerollte Versuche weiter.
     await sql.unsafe(`
@@ -114,7 +114,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
     assert.equal(neueVersuche(seit), 3);
     // Auch innerhalb einer Transaktion (Sicherungspunkt): Die Transaktion übersteht den Abbruch.
     await sql`ALTER SEQUENCE abbruch_nr RESTART`;
-    const zweite = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'c.txt', typ: 'text/plain' }, Buffer.from('c'), null)).dokument;
+    const zweite = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'c.txt', typ: 'text/plain' }, Buffer.from('c'), null)).dokument;
     await r.transaktion(async (tx) => { await tx.ocrSetze(zweite.id, { stand: 'fertig', text: 'Zweiter Brief', seiten: 1 }); });
     assert.equal((await d.volltext(zweite.id)).text!, 'Zweiter Brief');
     // Andere Fehler werden nicht wiederholt.
@@ -127,14 +127,14 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
   it('scheitert das Speichern endgültig, bleibt es sichtbar: Stand „Fehler“ mit Hinweis, Protokoll, erneut versuchen', async () => {
     const { r, d, sql, typ, dateien, einstellungen } = await aufbau();
     const t = new Texterkennung(r, dateien, einstellungen, async () => ({ text: 'Stromrechnung der Stadtwerke', seiten: 1, info: 'Ersatz' }), async () => ({ pdftotext: true, pdftoppm: true }));
-    d.verbindeTexterkennung(t);
+    d.dokumente.verbindeTexterkennung(t);
     await sql.unsafe(`
       CREATE FUNCTION abbruch() RETURNS trigger LANGUAGE plpgsql AS $f$
       BEGIN RAISE EXCEPTION 'erzwungene Verklemmung' USING ERRCODE = 'deadlock_detected'; END $f$;
       CREATE TRIGGER abbruch BEFORE UPDATE OF volltext ON dokumente FOR EACH ROW EXECUTE FUNCTION abbruch();`);
     const seit = protokoll.letzteNr;
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Strom' } });
-    const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'strom.pdf', typ: 'application/pdf' }, pdfMitText(['Strom']), null);
+    const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'strom.pdf', typ: 'application/pdf' }, pdfMitText(['Strom']), null);
     await warte(async () => (await r.holeDokument(dokument.id))?.ocr?.stand === 'fehler');
     const dok = (await r.holeDokument(dokument.id))!;
     assert.ok(dok.ocr!.info!.startsWith(NICHT_GESPEICHERT), dok.ocr!.info!);

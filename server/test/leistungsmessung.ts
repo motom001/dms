@@ -105,7 +105,7 @@ async function unterLast() {
   const dateien = ordnerSpeicher(ordner, HAUSHALT);
   const d = new Dienst(pgRepo(lsql, HAUSHALT), dateien, { einstellungen: speicherEinstellungen() });
   const ocr = new Texterkennung(pgRepo(lsql, HAUSHALT), dateien, speicherEinstellungen());
-  d.verbindeTexterkennung(ocr);
+  d.dokumente.verbindeTexterkennung(ocr);
   await ocr.start();
   let stopp = false, phase = '', dokumente = 0;
   const demo = erzeugeDemo(d, { anzahl: 3000, startwert: 'last-367', dokumente: { anteil: 100, von: 1, bis: 3, stufe: 'realistisch' } }, BENUTZER, (f, _g, p) => {

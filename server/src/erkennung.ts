@@ -608,7 +608,7 @@ export class Erkennung {
     if (er && istXmlDatei(name, mime)) return { text: erechnungText(er), info: t('meldungen.erkennung.erechnung-gelesen'), erechnung: er };
     if (istXmlDatei(name, mime)) throw new Fachfehler(415, t('meldungen.erkennung.xml-keine-erechnung'));
     try {
-      return { ...(await this.d.textAusDatei(inhalt, name, mime)), erechnung: er };
+      return { ...(await this.d.dokumente.textAusDatei(inhalt, name, mime)), erechnung: er };
     } catch (x) {
       if (er && x instanceof Fachfehler && x.status === 503) return { text: erechnungText(er), info: t('meldungen.erkennung.erechnung-gelesen'), erechnung: er };
       throw x;
@@ -708,7 +708,7 @@ export class Erkennung {
     const seiten: Array<{ id: string; seiten: SchwaerzSeite[] }> = [];
     for (const id of dokIds) {
       try {
-        const w = await this.d.wortpositionen(id);
+        const w = await this.d.dokumentArchiv.wortpositionen(id);
         const s = w.seiten.map((x) => ({ breite: x.breite ?? 1, hoehe: x.hoehe ?? 1, woerter: x.woerter }));
         if (s.some((x) => x.woerter.length)) seiten.push({ id, seiten: s });
       } catch { /* ohne Wortpositionen: Werte ohne Rahmen */ }

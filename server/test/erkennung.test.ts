@@ -157,7 +157,7 @@ async function aufbau() {
   /** Post mit einem Dokument und gegebenem Volltext (wie von einem Paket oder der API). */
   const post = async (text: string, betreff = 'Brief') => {
     const p = await d.legePostAn({ betreff }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
-    const dok = (await d.ladeHoch(p.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${betreff}`), anna.id)).dokument;
+    const dok = (await d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${betreff}`), anna.id)).dokument;
     await d.schreibeVolltext(dok.id, { text }, { id: anna.id, herkunft: 'Test', paket: false });
     return p;
   };
@@ -325,7 +325,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
   it('Dokumente der Mappe und Dateien über die API: vCard direkt, unbekannte Dateiarten 415; Beschriftung am Mappentyp', async () => {
     const { d, A, person, anna, rufe } = await mitPerson();
     const m = await d.mappen.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
-    const dok = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'karte.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 karte'), anna.id)).dokument;
+    const dok = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'karte.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 karte'), anna.id)).dokument;
     await assert.rejects(d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.rechtepruefung.zugriff(A)), (e: Error & { status?: number }) => e.status === 409);
     await d.schreibeVolltext(dok.id, { text: KARTE }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.rechtepruefung.zugriff(A))).vorschlaege.mobil.wert, '0171 1234567');
@@ -350,9 +350,9 @@ describe('Aus Dokument ausfüllen: Texterkennung sofort (#391)', () => {
     const r = await ocr.erkenneSofort(pdfMitText(['Elektro Muster GmbH', 'anna.beispiel@elektro-muster.example'], 12), 'application/pdf');
     assert.match(r.text, /anna\.beispiel@elektro-muster\.example/);
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    d.verbindeTexterkennung(ocr);
-    assert.match((await d.textAusDatei(pdfMitText(['Mobil 0171 1234567']), 'karte.pdf', 'application/pdf')).text, /0171 1234567/);
-    await assert.rejects(d.textAusDatei(Buffer.from('PK\u0003\u0004'), 'x.zip', 'application/zip'), (e: Error & { status?: number }) => e.status === 415);
+    d.dokumente.verbindeTexterkennung(ocr);
+    assert.match((await d.dokumente.textAusDatei(pdfMitText(['Mobil 0171 1234567']), 'karte.pdf', 'application/pdf')).text, /0171 1234567/);
+    await assert.rejects(d.dokumente.textAusDatei(Buffer.from('PK\u0003\u0004'), 'x.zip', 'application/zip'), (e: Error & { status?: number }) => e.status === 415);
   });
 });
 
@@ -368,12 +368,12 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
 
     // Für Ben: er bekommt die Aufgabe; das Dokument wandert zum Strom-Vertrag (der einzige, der auf den Absender verweist).
     const p = await d.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
-    const dok = (await d.ladeHoch(p.id, { register: 'dokumente', name: 'abschlag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 abschlag'), anna.id)).dokument;
+    const dok = (await d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'abschlag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 abschlag'), anna.id)).dokument;
     await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
     const nachher = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(nachher.werte.stand, 'Zugeordnet');
     assert.deepEqual(nachher.werte.bezug, [strom.id]);
-    assert.equal((await d.holeDokument(dok.id)).mappeId, strom.id);
+    assert.equal((await d.dokumente.holeDokument(dok.id)).mappeId, strom.id);
     const aufgaben = (await d.mappen.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
     assert.deepEqual(aufgaben.map((a) => [a.art, a.empfaengerId, a.text]), [['zugeordnet', ben.id, 'Automatisch zugeordnet zu „Strom Haus“ – bitte prüfen']]);
     const hist = await d.mappenHistorie.historie(p.id);
@@ -388,7 +388,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     const zurueck = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(zurueck.werte.stand, 'Neu');
     assert.ok(!zurueck.werte.bezug || (zurueck.werte.bezug as string[]).length === 0);
-    assert.equal((await d.holeDokument(dok.id)).mappeId, p.id);
+    assert.equal((await d.dokumente.holeDokument(dok.id)).mappeId, p.id);
     const offen = (await d.mappen.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
     assert.deepEqual(offen.map((a) => a.art), ['post']);
     await assert.rejects(d.automatikRueckgaengig(aufgaben[0].id, B), (x: Error & { status?: number }) => x.status === 409);
@@ -413,7 +413,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     // Empfänger Ben darf Verträge nicht lesen → nicht automatisch.
     await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
     const p3 = await d.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
-    const dok3 = (await d.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
+    const dok3 = (await d.dokumente.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
     await d.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
     assert.equal((await d.mappen.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
     // Archivmodus: nie automatisch, auch wenn eingeschaltet.

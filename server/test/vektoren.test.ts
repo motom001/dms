@@ -89,7 +89,7 @@ for (const pg of [false, true]) {
         const post = await d.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
         const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
         const ids: string[] = [];
-        for (let i = 0; i < 3; i++) ids.push((await d.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id);
+        for (let i = 0; i < 3; i++) ids.push((await d.dokumente.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id);
         for (const id of ids.slice(0, 2)) await d.schreibeVolltext(id, { text: `Text ${id}` }, { id: null as never, herkunft: 'Test', paket: false });
         assert.equal(await db.repo.mitVolltext(), 2);
         const v = liesVektor([1, 2, 3, 4, 5, 6, 7, 8]);

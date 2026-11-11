@@ -184,8 +184,8 @@ async function aufbau(pg: boolean) {
   const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', datum: '2015-03-01', vertrag: [v1.id] } }, admin.id);
   // geteilt: R-2 gehört auch zum Vertrag X-1 des anderen Partners
   const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', datum: '2016-05-01', vertrag: [v1.id, vx.id] } }, admin.id);
-  await d.ladeHoch(v1.id, { register: 'dok', name: 'Vertrag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 v1'), admin.id);
-  await d.ladeHoch(r1.id, { register: 'dok', name: 'R-1.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r1'), admin.id);
+  await d.dokumente.ladeHoch(v1.id, { register: 'dok', name: 'Vertrag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 v1'), admin.id);
+  await d.dokumente.ladeHoch(r1.id, { register: 'dok', name: 'R-1.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r1'), admin.id);
   const tabelle = routen(d, konten, {});
   const route = (m: string, pf: string) => tabelle.find((x) => x.methode === m && x.pfad === pf)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;

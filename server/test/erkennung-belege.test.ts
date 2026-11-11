@@ -347,7 +347,7 @@ Gesamtbetrag 1.190,00 €`;
     const x = await aufbau();
     await x.d.postTyp();
     const p = await x.d.legePostAn({ betreff: 'Rechnung' }, { id: x.lena.id, name: 'Lena' });
-    const dok = (await x.d.ladeHoch(p.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r'), x.lena.id)).dokument;
+    const dok = (await x.d.dokumente.ladeHoch(p.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r'), x.lena.id)).dokument;
     await x.d.schreibeVolltext(dok.id, { text: AUSGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
     const e = (await x.d.erkennung.fuerPost(p.id))!;
     assert.ok(!e.absender.some((t) => t.mappeId === x.eigen.id));
@@ -374,7 +374,7 @@ Gesamtbetrag 1.190,00 €`;
     assert.match(r.dazu![0].gruende[0], /LS-2026-0042/);
     // Schon verknüpft: nicht noch einmal.
     const re = await x.d.mappen.legeMappeAn({ typId: x.rechnung.id, werte: { rechnungsnummer: 'R-2026-0815', von: x.garten.id } }, x.lena.id);
-    const dok = (await x.d.ladeHoch(re.id, { register: 'anlagen', name: 'rechnung.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 re'), x.lena.id)).dokument;
+    const dok = (await x.d.dokumente.ladeHoch(re.id, { register: 'anlagen', name: 'rechnung.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 re'), x.lena.id)).dokument;
     await x.d.schreibeVolltext(dok.id, { text: EINGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
     // Umgekehrt: neuer Lieferschein mit der Nummer, die die Rechnung nennt.
     const l = await x.d.erkennung.fuerTyp(x.lieferschein.id, { text: 'Gartenbau Beispiel GmbH · Am Wasserturm 3 · 01067 Musterstadt\nLieferschein\nLieferschein-Nr. LS-2026-0042' }, await x.z());
@@ -390,7 +390,7 @@ Gesamtbetrag 1.190,00 €`;
     const x = await aufbau();
     const re = await x.d.mappen.legeMappeAn({ typId: x.rechnung.id, werte: {} }, x.lena.id);
     const roh = Buffer.from(CII());
-    const dok = (await x.d.ladeHoch(re.id, { register: 'anlagen', name: 'xrechnung.xml', typ: 'application/xml' }, roh, x.lena.id)).dokument;
+    const dok = (await x.d.dokumente.ladeHoch(re.id, { register: 'anlagen', name: 'xrechnung.xml', typ: 'application/xml' }, roh, x.lena.id)).dokument;
     const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { dokumente: [dok.id], mappe: re.id }, await x.z());
     assert.deepEqual([r.vorschlaege.rechnungsnummer.wert, r.vorschlaege.datum.wert, r.vorschlaege.faellig_am.wert, r.vorschlaege.von.wert], ['R-2026-0815', '2026-11-05', '2026-11-19', x.garten.id]);
     assert.deepEqual(r.vorschlaege.betrag.wert, { betrag: 261.8, waehrung: 'EUR' });
