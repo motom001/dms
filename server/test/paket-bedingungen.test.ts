@@ -72,14 +72,13 @@ describe('Bedingungen in Paketen (#1108)', () => {
     assert.ok(p.typen[0].felder.find((f) => f.key === 'verlaengerung_um')?.anzeigen);
   });
 
-  it('Schreibweise aus dem Entwurf Verträge ({ feld, op } ohne art): Fehler mit Typ, Feld und Grund statt still weg', () => {
-    // Bisher: bereinigeAnzeige lässt sie weg – das Feld wäre immer zu sehen.
-    assert.equal(bereinigeAnzeige({ bedingungen: [{ art: 'feld', bedingung: { feld: 'verlaengerung', op: 'einerVon' } }] }), undefined);
-    const g = gruende(paket({ typen: typen(ENTWURF) }));
-    assert.equal(g.length, 1, g.join(' | '));
-    assert.match(g[0], /mappentypen\[1\] „vertrag“/);
-    assert.match(g[0], /„verlaengerung_um“/);
-    assert.match(g[0], /Bedingung 1: In bedingung fehlt art: feld\./);
+  it('Schreibweise der Pakete im Katalog ({ feld, op } ohne innere art): gilt als art: feld und wirkt', () => {
+    // Basis 1.7.0, Verträge und Rechnungen 1.0.x schreiben die innere Bedingung ohne art – das darf nicht abgelehnt werden.
+    const a = bereinigeAnzeige({ bedingungen: [{ art: 'feld', bedingung: { feld: 'verlaengerung', op: 'einerVon', wert: { art: 'fest', wert: ['endet'] } } }] });
+    assert.equal(a?.bedingungen[0].art, 'feld');
+    const p = liesPaket(paket({ typen: typen(ENTWURF) }));
+    const f = p.typen[0].felder.find((x) => x.key === 'verlaengerung_um');
+    assert.deepEqual(f?.anzeigen?.bedingungen.map((b) => b.art), ['feld']);
   });
 
   it('Anzeige-Bedingungen: unbekannte Art, Merkmal, Operator, Wert und modus – an Feldern und Abschnitten', () => {

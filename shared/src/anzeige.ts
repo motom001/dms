@@ -67,10 +67,19 @@ function bereinigeEine(e: unknown): Anzeigebedingung | null {
   // Eigene Organisation (#995): ein Verweisfeld zeigt auf eine Mappe mit dem Merkmal.
   if (x.art === 'eigeneOrganisation') return typeof x.feld === 'string' && x.feld ? { ...n, art: 'eigeneOrganisation', feld: x.feld.slice(0, 60) } : null;
   if (x.art === 'feld') {
-    const [b] = bereinigeBedingungen([x.bedingung]);
+    const [b] = bereinigeBedingungen([mitInnererArt(x.bedingung)]);
     return b?.art === 'feld' ? { ...n, art: 'feld', bedingung: b } : null;
   }
   return null;
+}
+
+/**
+ * Die innere Bedingung ist eine Bedingung der Ansichten (`art: feld`). Pakete schreiben sie oft ohne `art` – das
+ * heißt hier immer `feld`, denn eine andere Art ist innen nicht möglich. Basis 1.7.0, Verträge und Rechnungen 1.0.x
+ * im Katalog schreiben es so (Hotfix 0.245.x, #1108).
+ */
+function mitInnererArt(b: unknown): unknown {
+  return b && typeof b === 'object' && !Array.isArray(b) && (b as Record<string, unknown>).art === undefined ? { ...(b as object), art: 'feld' } : b;
 }
 
 /**
@@ -108,12 +117,11 @@ function anzeigeBedingungFehler(x: Record<string, unknown> | null): string | nul
   return x.art === 'verweistyp' && (typeof x.typ !== 'string' || !x.typ) ? t('gemeinsam.bedingungspruefung.typ-fehlt') : null;
 }
 
-/** Die innere Bedingung von `art: feld` ist eine Bedingung der Ansichten und braucht ihr eigenes `art: feld` (#1108). */
-function innereFehler(b: unknown): string | null {
-  if (!b || typeof b !== 'object' || Array.isArray(b)) return t('gemeinsam.bedingungspruefung.bedingung-fehlt');
-  const art = (b as Record<string, unknown>).art;
-  if (art === undefined) return t('gemeinsam.bedingungspruefung.innere-art-fehlt');
-  if (art !== 'feld') return t('gemeinsam.bedingungspruefung.innere-art', { art: String(art) });
+/** Die innere Bedingung von `art: feld` ist eine Bedingung der Ansichten; ohne `art` gilt `feld` (#1108). */
+function innereFehler(roh: unknown): string | null {
+  if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return t('gemeinsam.bedingungspruefung.bedingung-fehlt');
+  const b = mitInnererArt(roh) as Record<string, unknown>;
+  if (b.art !== 'feld') return t('gemeinsam.bedingungspruefung.innere-art', { art: String(b.art) });
   const grund = bedingungEingabeFehler(b);
   return grund ? t('gemeinsam.bedingungspruefung.innen', { grund }) : null;
 }

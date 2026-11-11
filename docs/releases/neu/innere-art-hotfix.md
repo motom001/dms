@@ -1,0 +1,3 @@
+art: patch
+
+Pakete: Eine Anzeige-Bedingung `art: feld` ohne inneres `art` gilt wieder als `art: feld`. Seit 0.245.1 ließen sich Basis 1.7.0, Verträge und Rechnungen deshalb nicht installieren.
