@@ -14,3 +14,7 @@ export {
   type PaketErgaenzung, type PaketVorgabe, type PaketVorgabenTeil, type PaketVorlage, type VorgabenDienst, type VorgabenErgebnis, type VorgabenLage,
 } from './vorgaben';
 export { pruefeVorlage, vorlagenPlatzhalter, type VorlagenFehler } from './vorlagen';
+/** Umbau (#1041): Umbau-Schritte lesen, planen, ausführen. */
+export { liesUmbau, planeUmbau, wendeEntscheidungenAn, type GeplanterSchritt, type UmbauDienst, type UmbauLage } from './umbau';
+export { fuehreUmbauAus, nimmEinstellungenZurueck, uebernahmeDaten, type UmbauErgebnis } from './umbau-ausfuehren';
+export { wandle } from './umbau-werte';

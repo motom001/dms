@@ -12,6 +12,7 @@
  *   einem eigenen Schlüssel. Sie stehen in der Hinweiszeile über den Registern, immer mit dem Namen des Pakets, und
  *   halten das Speichern nie auf.
  */
+import { t } from './texte';
 import type { Feld, Mappentyp } from './model';
 import type { InstalliertesPaket } from './pakete';
 
@@ -68,10 +69,18 @@ export function berechnungAktiv(p: Pick<InstalliertesPaket, 'id' | 'laeufer'> | 
   return p.laeufer.rechte.schreiben.some((v) => v === '*' || v === kennung || (eigen !== null && v === eigen));
 }
 
+/**
+ * `berechnetVon` des Felds „Übernommen aus“ (Paket-Umbau, #1041, shared/src/umbau.ts): „dms“ ist als Paket-Id verboten,
+ * kein Paket kann es schreiben – nur Ablago selbst beim Umbau.
+ */
+export const UMBAU_SCHREIBER = 'dms';
+
 /** Je Paket-Id, die an Feldern des Typs steht: Name und ob es noch rechnet. Leer, wenn der Typ keine berechneten Felder hat. */
 export function berechnungVon(typ: Pick<Mappentyp, 'felder' | 'schluessel'>, pakete: Array<Pick<InstalliertesPaket, 'id' | 'name' | 'laeufer'>>): Record<string, Berechnung> {
   const r: Record<string, Berechnung> = {};
   for (const id of new Set(berechneteFelder(typ).map((f) => f.berechnetVon!))) {
+    // „Übernommen aus“ (#1041) setzt Ablago selbst beim Paket-Umbau – kein Paket, und es bleibt so.
+    if (id === UMBAU_SCHREIBER) { r[id] = { name: t('gemeinsam.umbau.schreiber'), aktiv: true }; continue; }
     const p = pakete.find((x) => x.id === id);
     r[id] = { name: p?.name ?? id, aktiv: berechnungAktiv(p, typ) };
   }

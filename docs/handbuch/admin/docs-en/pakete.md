@@ -156,7 +156,7 @@ The deletion log records removed presets as "unused package presets removed".
 
 **Check for new versions** queries the catalogue (at the push of a button) and marks packages for which there is something newer. In the package, **Update to … …** shows a preview of what is added and a link to the changes.
 
-An update **only adds**:
+An update **only adds** – unless it [converts](#umbau); then the preview says so explicitly:
 
 - new folder types and views,
 - new fields and tabs on existing folder types,
@@ -165,6 +165,28 @@ An update **only adds**:
 It **deletes nothing** and **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so. An update never changes the [archive mode](archiv.md#archivmodus-aus-einem-paket) of an existing folder type – neither shorter nor longer, neither on nor off.
 
 **New ID (move, #1084):** if a package renames its ID – for instance the additional languages of text recognition from `texterkennung_fra` to `texterkennung.fra` –, this appears as an ordinary update of the installed package. The preview says "The package is now called …". Afterwards it is there under the new ID, with all folder types, folders, settings and data; no second package is created. This only works from the same source and the same publisher. By the way, an ID with a dot always means: the package **extends** the package before the dot.
+
+
+## Conversion: folder types move to another package { #umbau }
+
+Some updates **convert** (#1041): folder types move to another package, with all folders and values. Example: Household 2.0 hands over *Contract* and *Insurance* to the *Contracts* package – afterwards your contracts and insurance policies are in the one folder type *Contract*, an insurance policy with the contract type "Insurance". Such updates are **major versions** (the first number goes up) and are listed in the CHANGELOG.
+
+Under **Conversion**, the preview shows for each step:
+
+- whether a folder type is **taken over** ("Contract becomes Contract" – the same folder type with the same folders, permissions, views and direct links, only now from the new package) or **merged** into another ("Insurance is merged into Contract"), and how many folders move,
+- which values go into which fields and how many of them do not fit exactly – for instance a notice period "3 months to the end of the term", which becomes the period "3 months",
+- what goes **into the note**: values without a matching field are kept in a note on the folder afterwards. **Nothing is lost.**
+- **questions** about fields **you** created or changed on the old folder type: keep as own field, into the note or into a field of the new type. A suggestion is preselected; an update never silently overrides your changes.
+- what changes in **permissions**: the permission rules of the old folder type still apply to the moved folders (afterwards they are at the top of the new type's rules, "Insurance: …", for folders with "Taken over from = haushalt:versicherung"). If the old folder type was not allowed for [AI services](#ki-dienste), the new one is not either afterwards. **A conversion never makes folders readable for more people or services.**
+
+Only someone with **Full administration** can confirm, after signing in again. **Back up first** is preselected: Ablago starts a [backup](sicherung.md) and only converts afterwards. The conversion runs **completely or not at all** – if it stops, nothing has changed, and the message says so. Afterwards:
+
+- Each folder has the history entry "Converted by package Contracts 1.0.0" with before and after; the system log names every step.
+- Reference fields, views, permission rules and automations point to the new folder type, direct links to folders keep working (folders keep their ID).
+- [Archive mode](archiv.md) and deadlines stay. If the conversion would make archive mode less strict, the preview refuses it – then turn it on for the new folder type first, at least as strictly.
+- If folders of the old type are in the bin, it stays as your own folder type.
+
+Update several packages with conversions **one by one**, each with its own preview – Ablago refuses them in a combined flow.
 
 ## Converting text into links { #text-in-verweise-umwandeln }
 

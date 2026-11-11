@@ -1669,7 +1669,7 @@
   "pakete.hinzufuegen": "Add",
   "pakete.werkbank": "Workbench",
   "pakete.ein-paket-bringt-fertige": "A package brings ready-made folder types, views and, if you like, example folders – for example an “Organisation” with contact and address. Packages come from the Ablago project’s official catalogue; Ablago only queries it when you click “Fetch catalogue”.",
-  "pakete.ein-update-ergaenzt-nur": "An update only adds: new fields, tabs and views. Whatever you have changed yourself stays.",
+  "pakete.ein-update-ergaenzt-nur": "An update only adds: new fields, tabs and views. Whatever you have changed yourself stays. If an update converts folder types, the preview says so beforehand and asks.",
   "pakete.eigene-mappentypen-und-ansichten": "You take your own folder types and views to another Ablago installation as a package with “Create package”.",
   "pakete.der-katalog-laesst-sich": "The catalogue can’t be fetched.",
   "pakete.dieser-link-ist-ungueltig": "This link is invalid. Expected is {code}.",

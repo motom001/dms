@@ -1065,5 +1065,9 @@
   "organisation.telefon": "Phone: {wert}",
   "organisation.datenschutzbeauftragter": "Data protection officer: {wert}",
   "anzeige.eigene-organisation": "“{feld}” refers to an own organisation",
-  "anzeige.eigene-organisation-nicht": "“{feld}” does not refer to an own organisation"
+  "anzeige.eigene-organisation-nicht": "“{feld}” does not refer to an own organisation",
+  "umbau.regel-grund": "{name}: default",
+  "umbau.regel": "{name}: {regel}",
+  "umbau.regel-ende": "{name}: end",
+  "umbau.schreiber": "Ablago in the package conversion"
 }

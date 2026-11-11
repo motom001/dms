@@ -378,6 +378,9 @@ export function speicherRepo(): Repo {
       mappen.set(id, m); verweise.set(id, kopie(fw ? fw.verweise(neu) : vs));
       return kopie(m);
     },
+    async setzeMappenTyp(ids, typId) {
+      for (const id of ids) { const m = mappen.get(id); if (m) mappen.set(id, { ...m, typId, geaendert: standWeiter(m.geaendert) }); }
+    },
     async beruehreMappe(id, benutzerId) {
       const m = mappen.get(id);
       if (m) mappen.set(id, { ...m, geaendert: standWeiter(m.geaendert), geaendertVon: benutzerId });

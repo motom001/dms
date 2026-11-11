@@ -1669,7 +1669,7 @@
   "pakete.hinzufuegen": "Hinzufügen",
   "pakete.werkbank": "Werkbank",
   "pakete.ein-paket-bringt-fertige": "Ein Paket bringt fertige Mappentypen, Ansichten und auf Wunsch Beispiel-Mappen mit – etwa eine „Organisation“ mit Kontakt und Anschrift. Pakete kommen aus dem offiziellen Katalog des Ablago-Projekts; Ablago fragt ihn nur ab, wenn du „Katalog abrufen“ klickst.",
-  "pakete.ein-update-ergaenzt-nur": "Ein Update ergänzt nur: neue Felder, Register und Ansichten. Was du selbst geändert hast, bleibt.",
+  "pakete.ein-update-ergaenzt-nur": "Ein Update ergänzt nur: neue Felder, Register und Ansichten. Was du selbst geändert hast, bleibt. Baut ein Update Mappentypen um, sagt die Vorschau das vorher und fragt nach.",
   "pakete.eigene-mappentypen-und-ansichten": "Eigene Mappentypen und Ansichten nimmst du mit „Paket erstellen“ als Paket in eine andere Ablago-Installation mit.",
   "pakete.der-katalog-laesst-sich": "Der Katalog lässt sich nicht abrufen.",
   "pakete.dieser-link-ist-ungueltig": "Dieser Link ist ungültig. Erwartet ist {code}.",

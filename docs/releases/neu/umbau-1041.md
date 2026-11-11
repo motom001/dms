@@ -1,0 +1,9 @@
+art: minor
+
+## Neu
+
+- **Paket-Update baut um** (#1041): Ein Paket kann vorhandene Mappentypen in seine eigenen umziehen – etwa Verträge und Versicherungen aus Haushalt in das Paket Verträge. Die Vorschau zeigt je Schritt, welche Mappen und Werte wohin kommen, was als Notiz an der Mappe bleibt (nichts geht verloren) und was sich an Rechten ändert; zu Feldern, die du selbst angelegt oder geändert hast, fragt sie nach. Die Rechte-Regeln und die KI-Sperre des alten Typs gehen mit, Verweise, Ansichten und Automatisierungen zeigen weiter richtig, jede Mappe bekommt einen Eintrag in der Historie. Bestätigen darf nur „Gesamte Verwaltung“, „Vorher sichern“ ist vorausgewählt, und der Umbau läuft ganz oder gar nicht. Für Paketentwickler: `umbau` im Manifest.
+
+## Behoben
+
+- **Rechte in Listen** (#1041): Eine Regel, die Rechte entzieht und ein leeres Feld abfragt, sperrte in Listen, Zahlen und Suche auch Mappen, für die sie gar nicht galt (in der Mappe selbst stimmte es).
