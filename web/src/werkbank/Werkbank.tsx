@@ -30,6 +30,7 @@ import { BenutzerDetail, BenutzerListe, BenutzerNeu, SystemkontoDetail, useBenut
 import { BetriebPanel, useBetrieb } from './Betrieb';
 import { SichtEditor, SichtenListe } from './Sichten';
 import { DatenbankAbschnitte, useDatenbank } from './Datenbank';
+import { ExterneDiensteAbschnitt, KiKostenAbschnitt, useExtern } from './ExterneDienste';
 import { DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
@@ -107,6 +108,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
   const datenbank = useDatenbank(bereich === 'systemzustand');
+  const externeDienste = useExtern(bereich === 'systemzustand');
   const technik = useTechnik(bereich === 'systemzustand');
   const betrieb = useBetrieb();
   const tresor = useTresor(darf('verschluesselung'));
@@ -280,7 +282,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'systemzustand') {
     // Systemzustand (#725) nimmt Version und Updates (früher „Technik“) und die Auslastung der Datenbank auf.
     rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} auslastung={<><ErweiterungenHinweis liste={systemlast.stand?.erweiterungen} /><AuslastungAbschnitt z={systemlast} /></>}
-      unten={<><div id="datenbank"><DatenbankAbschnitte z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} /></div><TechnikPanel t={technik} abschnitt /></>} />;
+      unten={<><div id="datenbank"><DatenbankAbschnitte z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} /></div>
+        {/* Externe Dienste und KI-Kosten (#565). */}
+        <ExterneDiensteAbschnitt z={externeDienste} /><KiKostenAbschnitt sichtbar nachAenderung={() => void externeDienste.laden()} /><TechnikPanel t={technik} abschnitt /></>} />;
   } else if (bereich === 'papierkorb') {
     liste = <PapierkorbListe z={papierkorb} werkbank offen={id} />;
     rechts = id ? <PapierkorbDetail key={id} id={id} werkbank /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-eine-geloeschte')}</p></div>;

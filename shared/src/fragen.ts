@@ -1,4 +1,5 @@
 import { t } from './texte';
+import type { ExternMessung } from './extern';
 /**
  * „Frag deine Ablage“ (#444): Frage in eigenen Worten, Antwort mit Quellen. Der Kern hat keine KI – er sucht
  * selbst passende Stellen (nur mit den Rechten des Fragenden), schneidet wenige Ausschnitte heraus und gibt sie
@@ -154,5 +155,5 @@ function liesGekuerzt(g: unknown, nummern: number[]): FrageGekuerzt | undefined 
 export type FrageZeile =
   | { art: 'ausschnitte'; ausschnitte: FrageAusschnitt[]; mappen: number }
   | { art: 'teil'; text: string }
-  | { art: 'fertig'; text: string; quellen: Array<{ id: string; typId: string; titel: string; nr: number[] }>; ms: number; gekuerzt?: FrageGekuerzt }
-  | { art: 'fehler'; text: string };
+  | { art: 'fertig'; text: string; quellen: Array<{ id: string; typId: string; titel: string; nr: number[] }>; ms: number; gekuerzt?: FrageGekuerzt; extern?: ExternMessung[] }
+  | { art: 'fehler'; text: string; extern?: ExternMessung[] };

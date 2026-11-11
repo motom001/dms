@@ -147,6 +147,8 @@ Estimated for a **UGREEN DXP4800 Plus** (Intel Pentium Gold 8505, 5 cores, 16 GB
 
 ## Measurements { #messwerte }
 
+How long the AI service really takes in your installation is shown under **Workbench → System health → [External services](speicherplatz.md#externe-dienste)**: per package mean, p50 and p95, the time to first response (until the model starts writing), errors, timeouts and the tokens Ollama reports. If the total duration is far above the first response, the model is computing – a smaller model or graphics helps. A local service costs nothing; the tokens under [AI costs](speicherplatz.md#ki-kosten) still show how much work the NAS does.
+
 We enter measured values here – every line with date and versions, because new versions of Ollama and new models can be faster or slower.
 
 | Device | CPU / graphics | RAM | Variant | Model | Reading tokens/s | Writing tokens/s | Ask: first word / whole | Fill in (1 page) | Memory | Ollama / Ablago | As of |

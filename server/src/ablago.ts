@@ -29,6 +29,7 @@ import { Konten } from './konten';
 import { kuerzeIp } from './abruf';
 import { pgKontoRepo } from './konto-repo';
 import { Messung, pgMessSpeicher } from './messung';
+import { extern, pgExternSpeicher } from './externmessung';
 import { protokoll } from './protokoll';
 import { pgSystemQuelle } from './system';
 import { Designs, pgDesignRepo } from './designs';
@@ -281,6 +282,9 @@ if (leiter) await betrieb.uebernimmAlteVariablen(env);
 const messung = new Messung(pgMessSpeicher(sql, cfg.haushalt));
 await messung.start();
 messung.auslastung.start();
+// Externe Dienste (#565): Laufzeit, Datenmenge, Fehler, Token und Kosten – nur Metadaten, nichts geht nach außen.
+extern.setze({ speicher: pgExternSpeicher(sql), einstellungen: pgEinstellungen(sql, cfg.haushalt) });
+void extern.frisch();
 // Arbeit im Hintergrund mit niedrigerer Priorität (#893): Arbeiter, Paket-Läufer und gestartete Programme.
 const hintergrund = richteHintergrundEin(env);
 if (hintergrund.fehler && leiter) log.warn(hintergrund.fehler);
@@ -888,6 +892,7 @@ const beenden = async () => {
   await schritt('app.close', () => app.close());
   // Zusammenfassungen der letzten Minute (#920) noch ins Protokoll.
   await schritt('messung.leeren', () => messung.leeren());
+  await schritt('extern.schreibe', () => extern.schreibe());
   await schritt('ueberlast.leeren', () => ueberlast.leeren());
   await schritt('beendeArbeiter', () => beendeArbeiter());
   await schritt('verbindungswarten.stop', () => verbindungswarten.stop());

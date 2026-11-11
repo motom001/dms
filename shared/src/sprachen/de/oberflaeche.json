@@ -343,5 +343,8 @@
   "muster.tabelle.zeile1": "Ölfilter",
   "muster.tabelle.zeile2": "Inspektion",
   "muster.tabelle.neu": "+ Position",
-  "muster.tabelle.leer": "Noch keine Positionen"
+  "muster.tabelle.leer": "Noch keine Positionen",
+  "messpanel.externe-dienste": "Externe Dienste",
+  "messpanel.erste-antwort": "erste Antwort {ms}",
+  "messpanel.gesamt": "gesamt {ms}"
 }

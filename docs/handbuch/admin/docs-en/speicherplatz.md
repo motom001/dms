@@ -2,7 +2,7 @@
 
 How is the server doing right now? That is shown by **Workbench → Maintenance and troubleshooting → system health**: the **storage space** and the **load** of CPU, memory and network. (The area used to be called *Storage space* and was under *Settings*; old links and bookmarks lead here.)
 
-Since the workbench was tidied up, the same page also shows the **long database accesses** and what is running in the database right now (formerly under *Database connection*) as well as **Version and updates** (formerly an area of its own, *Technology*, see [Troubleshooting](fehlersuche.md#technik)).
+Since the workbench was tidied up, the same page also shows the **long database accesses** and what is running in the database right now (formerly under *Database connection*), the [external services](#externe-dienste) with the [AI costs](#ki-kosten) as well as **Version and updates** (formerly an area of its own, *Technology*, see [Troubleshooting](fehlersuche.md#technik)).
 
 So that nothing ever gets lost when saving and uploading, Ablago measures itself how much space is free, warns in good time and stops itself at the limit. At the top of the page are the **thresholds**, below them the [load](#auslastung), then the **folders** with their usage, at the very bottom **Shrinking large PDFs**.
 
@@ -98,6 +98,36 @@ Per folder, the page shows used, free and the size of the disk, as a bar with ma
 
 !!! note "The database is not measured"
     With two containers, PostgreSQL runs in a container of its own; Ablago can't see its volume. With [dms-komplett](https://help.ablago.app/installieren/aktuell/en/komplett/) the database is in the fourth folder `/data/postgres` – Ablago doesn't measure that either. If all folders are on the same disk of the NAS (the usual case), the measurement is still enough. If the database is on another disk, keep an eye on its space in the NAS's storage manager.
+
+## External services { #externe-dienste }
+
+Some things Ablago doesn't do itself but waits for another service: a package's **AI service** (e.g. "Ask your library" with a model on the NAS, see [Running AI locally](ki-lokal.md)), the mail server for **mailbox retrieval** (IMAP) and **sending** (SMTP), the provider for **sign-in through a provider** (OIDC) and the network access of other **packages**. The section **External services** shows per service – for packages per package – for the **last hour** or the **last 24 hours**:
+
+| Column | What it means |
+| --- | --- |
+| **Calls** | How often Ablago called the service. A mailbox retrieval is one session (sign in, fetch mails, sign out); for packages all network accesses of one call count together. |
+| **Mean, p50, p95** | Total duration on average, as the median (half were faster) and for 95 % of the calls. p95 shows the slow outliers. |
+| **First response** | Until the service started to answer (response header, sign-in at the mail server, mail accepted). If the first response is quick but the total duration long, the service is computing – e.g. a language model writing word by word. |
+| **Errors, timeouts** | Calls without a usable answer (no connection, error of the service, response 5xx) and calls that stopped at a time limit. |
+| **Data out / in** | Bytes that went out and came in (as far as known: for sending the size of the mail, for the provider the stated size of the response). |
+| **Tokens in / out** | Only for AI services: the tokens the service reports in its response (`usage`). |
+
+Below are the **latest calls** with time, service, function and duration. The same figures for a single package are under **Workbench → Packages → package** with the package runner.
+
+**Where is the time going?** If a page is slow and the time is here, it is the service or the network, not Ablago: for an AI service a smaller model or better hardware helps (see [How fast is it?](ki-lokal.md#geschwindigkeit)), for a mail server a look at its availability. In [developer mode](fehlersuche.md#zeitmessung-entwicklermodus) the timing shows the same values per request.
+
+**What is stored:** only service, package, function (e.g. "Ask your library" or the kind of an event), the person who triggered the call, duration, data volume, result and tokens – **never** questions, answers, emails, subjects, addresses or links. None of it leaves Ablago. Individual calls are kept for **35 days**, after that only monthly totals, which are kept for **24 months**. If an account is deleted, its figures remain without the person. The measurements are part of the [backup](sicherung.md) but not of the [full export](export.md).
+
+## AI costs and budget { #ki-kosten }
+
+An AI package with a provider on the internet costs money per token. The section **AI costs and budget** shows where the money went – per **month**, per **package**, per **person**, per **function** and the **most expensive requests** (time, person, function, tokens, duration, cost; without content).
+
+- **Price per 1 million tokens:** For each installed AI package you enter the price for input and output tokens as given in the provider's price list, plus the **currency**. Ablago uses it to calculate each response; the provider's invoice may differ (rounding, discounts, taxes). A new price applies to calls from now on.
+- **Local service:** Without a price a package costs nothing – the tokens are still counted and show how much work the device does (e.g. Ollama on the NAS).
+- **Monthly budget:** From **80 %** a notice appears here and under *External services*, and the [log](fehlersuche.md#protokoll) gets a warning once a month (module `system`), likewise when it is reached.
+- **Hard limit:** If it is on and the budget is reached, **paid AI features pause** (packages with a price) until the start of next month. Anyone using them reads "AI features paused until 1 December 2026 …"; *Fill in from document* and *Where does this belong?* then use the built-in recognition, search runs without similar documents, package actions in the *Folder* menu report the pause, events for the package wait and are delivered afterwards. A higher budget lifts the pause at once. A local service without a price keeps running.
+
+The figures are based on the tokens the service itself reports (OpenAI, Anthropic, Ollama, Gemini and compatible services). If a service reports none, Ablago counts duration and bytes but no tokens and no costs. The most expensive requests are only available for the last 35 days, older months only as totals.
 
 ## Shrinking large PDFs {#grosse-pdfs-verkleinern}
 

@@ -9,6 +9,7 @@ import { t } from './sprache';
 import { pgEinstellungen } from './einstellungen';
 import type { Mailer } from './mail';
 import { kontext, protokoll } from './protokoll';
+import { extern } from './externmessung';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 
 /**
@@ -123,6 +124,24 @@ export function transport(m: MailEinstellungen, passwort: string, zugriff?: stri
     socketTimeout: 20_000,
   });
 }
+/**
+ * Externe Dienste (#565): Versand und Verbindungsprüfung über den Mailserver messen – Dauer, bis der Server den
+ * Umschlag angenommen hat, Gesamtdauer, Größe der Mail, Ergebnis. Nie Empfänger, Betreff oder Inhalt.
+ */
+function gemessen(baue: typeof transport): typeof transport {
+  return (m, passwort, zugriff) => {
+    const tr = baue(m, passwort, zugriff);
+    return {
+      sendMail: ((mail: Parameters<typeof tr.sendMail>[0]) => extern.messe({ dienst: 'smtp', funktion: 'versand' }, async (p) => {
+        const info = await tr.sendMail(mail) as { envelopeTime?: number; messageSize?: number } | undefined;
+        if (typeof info?.envelopeTime === 'number') p.ersteNach(info.envelopeTime); else p.erste();
+        p.bytes(Number(info?.messageSize) || 0, 0);
+        return info;
+      })) as typeof tr.sendMail,
+      verify: (() => extern.messe({ dienst: 'smtp', funktion: 'pruefen' }, () => tr.verify())) as typeof tr.verify,
+    };
+  };
+}
 const absenderVon = (m: MailEinstellungen) => m.absender || m.benutzer || `dms@${m.host}`;
 
 /**
@@ -170,7 +189,7 @@ export class Betrieb {
   /** `o.suche` und `o.transport` stellen Tests nach (DNS, Autoconfig, SMTP). */
   constructor(private speicher: BetriebSpeicher, private standardAdresse = 'http://localhost:3000', private tresor?: Tresor, o: { suche?: SucheDeps; transport?: typeof transport } = {}) {
     this.suche = o.suche ?? standardSuche();
-    this.baue = o.transport ?? transport;
+    this.baue = gemessen(o.transport ?? transport);
     tresor?.registriere(async () => this.betroffen(), async () => this.verschluesseleAltes(), async (um) => this.nachWechsel(um));
   }
 

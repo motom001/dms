@@ -64,8 +64,9 @@ If a page seems slow, switch on **developer mode** under **My account**. Then Ab
 | Preparation | The remaining time in the server. |
 | JSON | Converting the answer into text in the server. |
 | Transfer, parsing, rendering | Sending the answer, reading and drawing it in the browser. |
+| External services | What the server waited for in this request: AI service (with package), mailbox, sending, sign-in provider or a package's network – per call the time to first response, the total duration, the size and whether it was an error or a timeout. The time is part of *Preparation*. For "Ask your library" it appears as a line of its own once the answer is complete. |
 
-The values come from the server in the header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) and from the browser's timing. For the views' numbers (`/api/sichten`) there is additionally `zs`: `treffer` if they came from the cache, `neu` if they were counted – counting happens after every change in the household, otherwise at the latest after 5 minutes (views with a date reference) or 30 minutes and at midnight.
+The values come from the server in the header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`, for external services `extern` with total and number and per call `extern-1` …) and from the browser's timing. What went to external services in the last hour or 24 hours is shown under [System health → External services](speicherplatz.md#externe-dienste). For the views' numbers (`/api/sichten`) there is additionally `zs`: `treffer` if they came from the cache, `neu` if they were counted – counting happens after every change in the household, otherwise at the latest after 5 minutes (views with a date reference) or 30 minutes and at midnight.
 
 ### Is it the cache? { #zwischenspeicher }
 

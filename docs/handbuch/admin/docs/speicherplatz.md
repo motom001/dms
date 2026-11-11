@@ -2,7 +2,7 @@
 
 Wie geht es dem Server gerade? Das zeigt **Werkbank → Wartung und Fehlersuche → Systemzustand**: den **Speicherplatz** und die **Auslastung** von CPU, Arbeitsspeicher und Netzwerk. (Früher hieß der Bereich *Speicherplatz* und stand unter *Einstellungen*; alte Links und Lesezeichen führen hierher.)
 
-Auf derselben Seite stehen seit dem Aufräumen der Werkbank auch die **langen Datenbankzugriffe** und was gerade in der Datenbank läuft (früher unter *Datenbank-Anbindung*) sowie **Version und Updates** (früher eigener Bereich *Technik*, siehe [Fehlersuche](fehlersuche.md#technik)).
+Auf derselben Seite stehen seit dem Aufräumen der Werkbank auch die **langen Datenbankzugriffe** und was gerade in der Datenbank läuft (früher unter *Datenbank-Anbindung*), die [externen Dienste](#externe-dienste) mit den [KI-Kosten](#ki-kosten) sowie **Version und Updates** (früher eigener Bereich *Technik*, siehe [Fehlersuche](fehlersuche.md#technik)).
 
 Damit beim Speichern und Hochladen nie etwas verloren geht, misst Ablago selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die **Schwellen**, darunter die [Auslastung](#auslastung), dann die **Ordner** mit ihrer Belegung, ganz unten **Große PDFs verkleinern**.
 
@@ -98,6 +98,36 @@ Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Ba
 
 !!! note "Die Datenbank wird nicht gemessen"
     Bei zwei Containern läuft PostgreSQL in einem eigenen Container; sein Volume kann Ablago nicht sehen. Bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) liegt die Datenbank im vierten Ordner `/data/postgres` – auch den misst Ablago nicht. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.
+
+## Externe Dienste { #externe-dienste }
+
+Manches erledigt Ablago nicht selbst, sondern wartet auf einen anderen Dienst: den **KI-Dienst** eines Pakets (z. B. „Frag deine Ablage“ mit einem Modell auf dem NAS, siehe [KI lokal betreiben](ki-lokal.md)), den Mailserver beim **Postfach-Abruf** (IMAP) und beim **Versand** (SMTP), den Anbieter bei der **Anmeldung über einen Anbieter** (OIDC) und die Netzzugriffe anderer **Pakete**. Der Abschnitt **Externe Dienste** zeigt je Dienst – bei Paketen je Paket – für die **letzte Stunde** oder die **letzten 24 Stunden**:
+
+| Spalte | Was sie bedeutet |
+| --- | --- |
+| **Aufrufe** | Wie oft Ablago den Dienst aufgerufen hat. Ein Postfach-Abruf ist eine Sitzung (anmelden, Mails holen, abmelden), bei Paketen zählen alle Netzzugriffe eines Aufrufs zusammen. |
+| **Mittel, p50, p95** | Gesamtdauer im Mittel, im Median (die Hälfte war schneller) und bei 95 % der Aufrufe. p95 zeigt die langsamen Ausreißer. |
+| **Erste Antwort** | Bis der Dienst zu antworten begann (Kopf der Antwort, Anmeldung am Mailserver, Mail angenommen). Ist die erste Antwort schnell, die Gesamtdauer aber lang, rechnet der Dienst – z. B. ein Sprachmodell, das Wort für Wort schreibt. |
+| **Fehler, Zeitüberschr.** | Aufrufe ohne brauchbare Antwort (keine Verbindung, Fehler des Dienstes, Antwort 5xx) und Aufrufe, die an einer Zeitgrenze abbrachen. |
+| **Daten hin / zurück** | Bytes, die hinausgingen und hereinkamen (soweit bekannt: beim Versand die Größe der Mail, beim Anbieter die angegebene Größe der Antwort). |
+| **Token ein / aus** | Nur bei KI-Diensten: die Token, die der Dienst in seiner Antwort meldet (`usage`). |
+
+Darunter stehen die **letzten Aufrufe** mit Zeit, Dienst, Funktion und Dauer. Dieselben Zahlen für ein einzelnes Paket stehen unter **Werkbank → Pakete → Paket** beim Paket-Läufer.
+
+**Woran liegt es?** Ist eine Seite langsam und die Zeit steckt hier, liegt es am Dienst oder am Netz, nicht an Ablago: Bei einem KI-Dienst helfen ein kleineres Modell oder bessere Hardware (siehe [Wie schnell ist das?](ki-lokal.md#geschwindigkeit)), bei einem Mailserver ein Blick auf dessen Erreichbarkeit. Im [Entwicklermodus](fehlersuche.md#zeitmessung-entwicklermodus) zeigt die Zeitmessung dieselben Werte je Anfrage.
+
+**Was gespeichert wird:** nur Dienst, Paket, Funktion (z. B. „Frag deine Ablage“ oder die Art eines Ereignisses), die Person, die den Aufruf auslöste, Dauer, Datenmenge, Ergebnis und Token – **nie** Fragen, Antworten, Mails, Betreffs, Adressen oder Links. Nichts davon verlässt Ablago. Einzelne Aufrufe bleiben **35 Tage**, danach nur noch Summen je Monat, die **24 Monate** bleiben. Wird ein Konto gelöscht, bleiben seine Werte ohne Person stehen. Die Messwerte sind Teil der [Sicherung](sicherung.md), aber nicht des [Vollexports](export.md).
+
+## KI-Kosten und Budget { #ki-kosten }
+
+Ein KI-Paket mit einem Anbieter im Internet kostet je Token Geld. Der Abschnitt **KI-Kosten und Budget** zeigt, wohin das Geld geflossen ist – je **Monat**, je **Paket**, je **Person**, je **Funktion** und die **teuersten Abfragen** (Zeit, Person, Funktion, Token, Dauer, Kosten; ohne Inhalt).
+
+- **Preis je 1 Mio. Token:** Je installiertem KI-Paket trägst du den Preis für Eingabe- und Ausgabe-Token ein, wie er in der Preisliste des Anbieters steht, dazu die **Währung**. Ablago rechnet damit jede Antwort aus; die Rechnung des Anbieters kann abweichen (Rundung, Rabatte, Steuern). Ein neuer Preis gilt für Aufrufe ab jetzt.
+- **Lokaler Dienst:** Ohne Preis kostet ein Paket nichts – die Token zählen trotzdem und zeigen, wie viel das Gerät leistet (z. B. Ollama auf dem NAS).
+- **Monatsbudget:** Ab **80 %** steht ein Hinweis hier und unter *Externe Dienste*, und im [Protokoll](fehlersuche.md#protokoll) steht einmal im Monat eine Warnung (Modul `system`), ebenso beim Erreichen.
+- **Harte Grenze:** Ist sie an und das Budget erreicht, **pausieren die kostenpflichtigen KI-Funktionen** (Pakete mit Preis) bis zum nächsten Monatsanfang. Wer sie nutzt, liest „KI-Funktionen pausiert bis 1. Dezember 2026 …“; *Aus Dokument ausfüllen* und *Wohin gehört das?* nehmen dann die eingebaute Erkennung, die Suche sucht ohne ähnliche Dokumente, Paket-Aktionen im Menü *Mappe* melden die Pause, Ereignisse an das Paket warten und kommen danach an. Ein höheres Budget hebt die Pause sofort auf. Ein lokaler Dienst ohne Preis läuft weiter.
+
+Die Zahlen beruhen auf den Token, die der Dienst selbst meldet (OpenAI, Anthropic, Ollama, Gemini und kompatible Dienste). Meldet ein Dienst keine, zählt Ablago Dauer und Bytes, aber keine Token und keine Kosten. Die teuersten Abfragen stehen nur für die letzten 35 Tage zur Verfügung, ältere Monate nur als Summen.
 
 ## Große PDFs verkleinern {#grosse-pdfs-verkleinern}
 

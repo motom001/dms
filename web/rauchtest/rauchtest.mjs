@@ -1084,6 +1084,29 @@ rauchtest('Werte aus der gewählten Mappe vorschlagen (#1037)', { als: LENA }, a
   assert.deepEqual([gespeichert.frist, gespeichert.notiz], [{ anzahl: 2, einheit: 'wochen' }, 'Vertrag läuft über Jonas']);
 });
 
+// Externe Dienste und KI-Kosten (#565): Systemzustand zeigt beide Abschnitte; Zeitraum umschalten, Monatsbudget mit harter
+// Grenze speichern und wieder leeren (ohne KI-Paket ohne Wirkung).
+rauchtest('Systemzustand: Externe Dienste und KI-Kosten, Monatsbudget speichern (#565)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/systemzustand');
+  const extern = s.locator('#externe-dienste');
+  await extern.getByRole('heading', { name: 'Externe Dienste' }).waitFor();
+  await extern.getByRole('button', { name: 'Letzte Stunde' }).click();
+  await extern.getByText(/In der letzten Stunde hat Ablago keinen externen Dienst aufgerufen|Aufrufe/).first().waitFor();
+  const kosten = s.locator('#ki-kosten');
+  await kosten.getByRole('heading', { name: 'KI-Kosten und Budget' }).waitFor();
+  await kosten.getByLabel(/^Monatsbudget/).fill('20');
+  await kosten.getByLabel(/^Harte Grenze/).check();
+  await kosten.getByRole('button', { name: /speichern$/ }).click();
+  await kosten.getByText('Gespeichert.', { exact: true }).first().waitFor();
+  assert.equal(await kosten.getByLabel(/^Monatsbudget/).inputValue(), '20');
+  assert.ok(await kosten.getByLabel(/^Harte Grenze/).isChecked());
+  await kosten.getByLabel(/^Monatsbudget/).fill('');
+  await kosten.getByRole('button', { name: /speichern$/ }).click();
+  await s.waitForFunction(() => document.querySelector('#ki-kosten-budget')?.value === '' && !document.querySelector('#ki-kosten-hart')?.checked);
+});
+
 /* ---------- Hilfen ---------- */
 
 /** Am Handy darf die Seite nicht waagerecht rollen (die genaue Prüfung je Element macht mobil-pruefen.mjs). */

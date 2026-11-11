@@ -11,6 +11,7 @@ import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { VektorStandBlock } from '../ablage/Aehnlich';
 import { FragenGrenzenBlock } from './FragenGrenzen';
+import { PaketExternBlock } from './ExterneDienste';
 import { ErkennungPaketBlock, KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenBlock } from './KiTypen';
 import { AktionenVorschau, MappenMenueBlock, PaketAktionenBlock } from './PaketAktionen';
@@ -549,7 +550,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             {/* Paketseite im offiziellen Katalog mit der Ablago-Version nur im Fragment (#622). */}
             {imKatalog && <>{(v?.readme || inst?.links?.readme) && ' · '}<a className="verweis" href={katalogSeiteMitVersion(z.stand?.dms ?? '', id)} target="_blank" rel={KATALOG_LINK_REL} title={tx('pakete.katalog.hinweis')}>{tx('pakete.katalog.ansehen')} <Symbol name="extern" /></a></>}</dd></>}
         </dl>
-        {inst?.laeufer && <LaeuferStand paket={inst.id} abonniert={inst.laeufer.ereignisse} />}
+        {inst?.laeufer && <LaeuferStand paket={inst.id} abonniert={inst.laeufer.ereignisse} netz={hatNetz(inst.laeufer)} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:vektoren') && <VektorStandBlock />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:antworten') && <FragenGrenzenBlock />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:erkennen') && <ErkennungPaketBlock paket={inst.id} />}
@@ -675,7 +676,8 @@ export function EreignisKatalogListe() {
 }
 
 /** Paket mit Code (#338): läuft es, was ist zuletzt passiert, offene und aufgegebene Ereignisse. */
-function LaeuferStand({ paket, abonniert = [] }: { paket: string; abonniert?: readonly string[] }) {
+/** netz: Das Paket darf ins Netz – dann seine Messwerte als externer Dienst (#565). */
+function LaeuferStand({ paket, abonniert = [], netz = false }: { paket: string; abonniert?: readonly string[]; netz?: boolean }) {
   const [s, setS] = useState<PaketlaeuferStand | null | undefined>(undefined);
   const laden = useCallback(() => { api.paketLaeufer().then(setS, () => setS(null)); }, []);
   useEffect(() => { laden(); }, [laden]);
@@ -706,6 +708,7 @@ function LaeuferStand({ paket, abonniert = [] }: { paket: string; abonniert?: re
           {p.protokoll.length > 0 && <details className="klein"><summary>{t('werkbank.pakete.ausgaben-des-pakets')}</summary><ul>{p.protokoll.slice(0, 30).map((x, i) => <li key={i} className={x.stufe >= 2 ? 'fehlertext' : undefined}>{datum(x.zeit)} · {x.text}</li>)}</ul></details>}
         </>
       )}
+      {netz && <PaketExternBlock paket={paket} />}
       <EreignisKatalogListe />
     </>
   );

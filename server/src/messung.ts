@@ -5,6 +5,7 @@ import { kontext, protokoll, type Kontext } from './protokoll';
 import { zusammenfassungZusatz } from './protokollsammlung';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
+import { externTiming, type ExternAufruf } from '../../shared/src/extern';
 
 /**
  * Messung der Datenbankzugriffe (#11, #12).
@@ -212,12 +213,14 @@ export function zeitaufteilung(p: { eingang: number; start: number; ende: number
 
 /**
  * Header Server-Timing: vor, app (Handler), db (Anzahl in desc), rechte, json, gesamt; dazu zs, wenn
- * die Anfrage die Zahlen der Ansichten brauchte (#512): Dauer und in desc „treffer“ oder „neu“.
+ * die Anfrage die Zahlen der Ansichten brauchte (#512): Dauer und in desc „treffer“ oder „neu“. Dazu `extern` (#565),
+ * wenn die Anfrage auf externe Dienste wartete: Summe, Anzahl und je Aufruf Dienst, Paket, erste Antwort, Bytes, Ergebnis.
  */
-export function serverTiming(zeitaufteilung2: Zeitaufteilung, zs?: { art: string; ms: number }): string {
+export function serverTiming(zeitaufteilung2: Zeitaufteilung, zs?: { art: string; ms: number }, extern?: ExternAufruf[]): string {
   const d = (x: number) => x.toFixed(1);
+  const x = extern?.length ? externTiming(extern) : '';
   return t('meldungen.messung.vor-dur-app-dur', { d: d(zeitaufteilung2.vor), d2: d(zeitaufteilung2.app), d3: d(zeitaufteilung2.db), dbAnzahl: zeitaufteilung2.dbAnzahl, d4: d(zeitaufteilung2.rechte), d5: d(zeitaufteilung2.json), d6: d(zeitaufteilung2.gesamt) })
-    + (zs ? t('meldungen.messung.zs-dur-desc', { d: d(zs.ms), art: zs.art }) : '');
+    + (zs ? t('meldungen.messung.zs-dur-desc', { d: d(zs.ms), art: zs.art }) : '') + (x ? `, ${x}` : '');
 }
 
 /** Kurztext für Langläufer und Protokoll: „1.234 ms gesamt · vor 3 · Datenbank 120 (5) · …“. */

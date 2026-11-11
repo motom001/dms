@@ -253,7 +253,7 @@
   "aufgabenempfaenger.abwesend": "Gerade abwesend – bis zur Rückkehr bekommt sie {vertreter} als Vertretung.",
   "bereich.texterkennung.auch": "Texterkennung|Suche|OCR|Gleichbedeutende Wörter|Synonyme|Tippfehler|Verkleinern",
   "bereich.sicherung.auch": "Wiederherstellen|Wiederherstellung",
-  "bereich.systemzustand.auch": "Technik|Version|Updates|Speicherplatz|Auslastung|Lange Datenbankzugriffe",
+  "bereich.systemzustand.auch": "Technik|Version|Updates|Speicherplatz|Auslastung|Lange Datenbankzugriffe|Externe Dienste|KI-Kosten|Budget",
   "bereich.wartung.auch": "Wartungsmodus|Wartungsoperationen|Volltext neu erzeugen",
   "bereich.aufgaben.auch": "Benachrichtigungen und Aufgaben|Benachrichtigungen|Tägliche Zusammenfassung|Favoriten benachrichtigen",
   "bereich.webdav.auch": "Laufwerk|Netzlaufwerk",
