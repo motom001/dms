@@ -43,19 +43,19 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, A.id);
     const a = await ohne(m.id, 'Bitte zuordnen');
     assert.equal(a.empfaengerId, null);
-    assert.equal((await d.zaehler(L)).eingang, 1);
-    assert.equal((await d.zaehler(A)).eingang, 1, 'im Verwaltungsmodus weiterhin sichtbar');
-    assert.equal((await d.zaehler({ id: A.id, rolle: 'mitglied' })).eingang, 0, 'Markus im Alltag nicht');
-    assert.equal((await d.zaehler(J)).eingang, 0);
+    assert.equal((await d.sichten.zaehler(L)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(A)).eingang, 1, 'im Verwaltungsmodus weiterhin sichtbar');
+    assert.equal((await d.sichten.zaehler({ id: A.id, rolle: 'mitglied' })).eingang, 0, 'Markus im Alltag nicht');
+    assert.equal((await d.sichten.zaehler(J)).eingang, 0);
     assert.deepEqual((await d.meineAufgaben(L)).map((x) => x.id), [a.id]);
     assert.deepEqual(await d.meineAufgaben(J), []);
     // „Zu erledigen“ und der Zähler-Endpunkt (#625)
-    const seite = await d.seite(L, { sicht: 'eingang' }) as { mappen: Array<{ id: string }> };
+    const seite = await d.sichten.seite(L, { sicht: 'eingang' }) as { mappen: Array<{ id: string }> };
     assert.deepEqual(seite.mappen.map((x) => x.id), [m.id]);
-    assert.equal((await d.zaehlerAbruf(await d.rechtepruefung.zugriff(L))).zahlen.zuErledigen, 1);
+    assert.equal((await d.sichten.zaehlerAbruf(await d.rechtepruefung.zugriff(L))).zahlen.zuErledigen, 1);
     await assert.rejects(d.erledigeAufgabe(a.id, J), status(403));
     await d.erledigeAufgabe(a.id, L);
-    assert.equal((await d.zaehler(A)).eingang, 0);
+    assert.equal((await d.sichten.zaehler(A)).eingang, 0);
   });
 
   it('Werkbank wählt jemand anderen oder niemanden; Deaktivierte sind nicht wählbar, Verwaltende schon', async () => {
@@ -65,12 +65,12 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     await d.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id);
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '2' } }, A.id);
     await ohne(m.id, 'Post ohne Für');
-    assert.equal((await d.zaehler(L)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(L)).eingang, 1);
     assert.equal((await d.setzeAufgabenEmpfaenger({ benutzerId: jonas.id }, A.id)).benutzerId, jonas.id);
-    assert.equal((await d.zaehler(L)).eingang, 0, 'Zwischenspeicher kennt die neue Wahl');
-    assert.equal((await d.zaehler(J)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(L)).eingang, 0, 'Zwischenspeicher kennt die neue Wahl');
+    assert.equal((await d.sichten.zaehler(J)).eingang, 1);
     await d.setzeAufgabenEmpfaenger({ benutzerId: null }, A.id);
-    assert.equal((await d.zaehler(J)).eingang, 0);
+    assert.equal((await d.sichten.zaehler(J)).eingang, 0);
     // Gewählt, dann deaktiviert: gilt niemand, bis die Werkbank neu wählt.
     await d.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id);
     const ich = imModus((await konten.listeBenutzer()).find((b) => b.id === admin.id)!);
@@ -78,8 +78,8 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     await konten.aendereBenutzer(ich, lena.id, { aktiv: false });
     const e = await d.alltagsEmpfaenger();
     assert.deepEqual([e.benutzerId, e.gespeichert, e.wirksam], [null, lena.id, jonas.id], 'deaktiviert: der Vertreter übernimmt');
-    assert.equal((await d.zaehler(J)).eingang, 1);
-    assert.equal((await d.zaehler(A)).eingang, 1, 'im Verwaltungsmodus weiter sichtbar');
+    assert.equal((await d.sichten.zaehler(J)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(A)).eingang, 1, 'im Verwaltungsmodus weiter sichtbar');
     await assert.rejects(d.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id), status(422));
   });
 

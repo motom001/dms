@@ -197,13 +197,13 @@ function faelle(pg: boolean) {
       const typ = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'basis:organisation')!;
       assert.equal(typ.id, inst.typen.organisation);
       assert.deepEqual(typ.register.map((r) => r.key), ['stammdaten', 'kontakt', 'anschrift', 'dokumente', 'protokoll']);
-      const sichten = await d.listeSichten();
+      const sichten = await d.sichtenVerwaltung.listeSichten();
       const oben = sichten.find((s) => s.id === inst.sichten.organisationen)!;
       assert.equal(sichten.filter((s) => s.elternId === oben.id).length, 4);
       assert.ok(!sichten.some((s) => s.id === typ.id), 'keine automatische Sicht je Typ');
       const ADMIN = { id: ICH.id, rolle: 'admin' };
-      assert.equal((await d.seite(ADMIN, { sicht: oben.id })).gesamt, 2);
-      assert.deepEqual((await d.seite(ADMIN, { sicht: inst.sichten.aerzte })).mappen.map((m) => m.titel), ['Praxis Dr. Beispiel']);
+      assert.equal((await d.sichten.seite(ADMIN, { sicht: oben.id })).gesamt, 2);
+      assert.deepEqual((await d.sichten.seite(ADMIN, { sicht: inst.sichten.aerzte })).mappen.map((m) => m.titel), ['Praxis Dr. Beispiel']);
       assert.equal((await d.kern.repo.listePakete()).length, 1);
 
       // Der Administrator ändert selbst: Name, ein eigenes Feld. Das Update überschreibt das nicht.
@@ -228,18 +228,18 @@ function faelle(pg: boolean) {
       assert.deepEqual(t2.felder.find((f) => f.key === 'name')!.erkennung, { art: 'name', hinweis: 'eigener' }, 'bleibt, wie der Administrator es eingestellt hat');
       assert.equal(t2.felder.find((f) => f.key === 'telefon')!.format, 'telefon');
       assert.deepEqual([t2.felder.find((f) => f.key === 'plz')!.format, t2.felder.find((f) => f.key === 'plz')!.landFeld], ['plz', 'land']);
-      assert.ok((await d.listeSichten()).some((s) => s.id === neu.sichten.vereine && s.elternId === oben.id));
+      assert.ok((await d.sichtenVerwaltung.listeSichten()).some((s) => s.id === neu.sichten.vereine && s.elternId === oben.id));
       await assert.rejects(p.aktualisiere('basis', {}, ICH), /schon installiert/);
 
       // Entfernen geht erst ohne eigene Mappen; unveränderte Beispiel-Mappen gehen mit (#878), geänderte werden genannt.
-      const praxis = (await d.seite(ADMIN, { sicht: oben.id })).mappen.find((m) => m.titel === 'Praxis Dr. Beispiel')!;
+      const praxis = (await d.sichten.seite(ADMIN, { sicht: oben.id })).mappen.find((m) => m.titel === 'Praxis Dr. Beispiel')!;
       await d.mappen.aendereMappe(praxis.id, { werte: { ...praxis.werte, beschreibung: 'Neue Sprechzeiten.' } }, ICH.id);
       await assert.rejects(p.entferne('basis', ICH), (e) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('1 Mappe') && JSON.stringify(e.details).includes('„Praxis Dr. Beispiel“ wurde geändert'));
-      assert.equal((await d.seite(ADMIN, { sicht: oben.id })).gesamt, 2, 'beim Scheitern bleiben beide Beispiele');
+      assert.equal((await d.sichten.seite(ADMIN, { sicht: oben.id })).gesamt, 2, 'beim Scheitern bleiben beide Beispiele');
       await d.entferneMappenEndgueltig([praxis.id]);
       await p.entferne('basis', ICH);
       assert.ok(!(await d.mappentypen.listeTypen()).some((t) => t.id === typ.id));
-      assert.ok(!(await d.listeSichten()).some((s) => Object.values(neu.sichten).includes(s.id)));
+      assert.ok(!(await d.sichtenVerwaltung.listeSichten()).some((s) => Object.values(neu.sichten).includes(s.id)));
       assert.deepEqual(await d.kern.repo.listePakete(), []);
     });
 
@@ -292,11 +292,11 @@ function faelle(pg: boolean) {
       assert.equal(v.typen[0].konflikt, 'Einen Mappentyp „Organisation“ gibt es schon.');
       assert.equal(v.typen[0].vorschlag, 'Organisation (Basis)');
       await assert.rejects(p.installiere({ id: 'basis' }, ICH), (e) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('Organisation (Basis)'));
-      const typen = (await d.mappentypen.listeTypen()).length, sichten = (await d.listeSichten()).length;
+      const typen = (await d.mappentypen.listeTypen()).length, sichten = (await d.sichtenVerwaltung.listeSichten()).length;
       // Beispiel ohne Pflichtfeld Name: alles wird zurückgenommen.
       await assert.rejects(p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' }, beispiele: true }, ICH), /Beispiel/);
       assert.equal((await d.mappentypen.listeTypen()).length, typen);
-      assert.equal((await d.listeSichten()).length, sichten);
+      assert.equal((await d.sichtenVerwaltung.listeSichten()).length, sichten);
       assert.deepEqual(await d.kern.repo.listePakete(), []);
       const ok = await p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' } }, ICH);
       assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === ok.typen.organisation)!.name, 'Organisation (Basis)');
@@ -380,7 +380,7 @@ function faelle(pg: boolean) {
       const urkunde = (await d.mappentypen.listeTypen()).find((t) => t.id === ok.typen.urkunde)!;
       assert.equal(urkunde.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], ablageort.id);
       assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTypen?.[0], (await d.sichereSystem()).benutzer.id);
-      assert.deepEqual((await d.listeSichten()).find((s) => s.id === ok.sichten.orte)!.typen.sort(), [ablageort.id, urkunde.id].sort());
+      assert.deepEqual((await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === ok.sichten.orte)!.typen.sort(), [ablageort.id, urkunde.id].sort());
       // Unbekannter DMS-Typ und reservierte Id: schon beim Lesen abgelehnt.
       const falsch = { ...ordnerpaket, 'inhalt/mappentypen.yaml': ordnerpaket['inhalt/mappentypen.yaml'].replace('dms:benutzer', 'dms:post') };
       assert.throws(() => liesPaket(liesZip(archiv(falsch))), (e) => e instanceof Fachfehler && (e.details as { gruende: string[] }).gruende.some((g) => /dms:post.*nicht mit/.test(g)));
@@ -397,7 +397,7 @@ function faelle(pg: boolean) {
         { key: 'verbleib_original', label: 'Verbleib Originaldokumente', typ: 'referenz', zielTyp: a.id, verweisart: 'bezug' }] });
       const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', verbleib_original: ort.id } });
       const typenVorher = (await d.mappentypen.listeTypen()).length;
-      const sichtenVorher = (await d.listeSichten()).length;
+      const sichtenVorher = (await d.sichtenVerwaltung.listeSichten()).length;
       const plan = await p.vorschau({ id: 'basis' });
       assert.deepEqual(plan.probleme, []);
       assert.equal(plan.typen.find((x) => x.schluessel === 'ablageort')!.vorhanden, true, 'gilt als vorhanden, nicht neu');
@@ -407,7 +407,7 @@ function faelle(pg: boolean) {
       assert.equal(inst.typen.ablageort, a.id, 'gleiche Id, Herkunft danach Basis');
       assert.equal(inst.sichten.ablageorte, a.id, 'die vorhandene Ansicht gehört jetzt zu Basis');
       assert.equal((await d.mappentypen.listeTypen()).length, typenVorher + 1, 'nur Organisation kommt dazu – kein zweiter Ablageort');
-      assert.equal((await d.listeSichten()).length, sichtenVorher + 5, 'nur die Ansichten der Organisation');
+      assert.equal((await d.sichtenVerwaltung.listeSichten()).length, sichtenVorher + 5, 'nur die Ansichten der Organisation');
       assert.equal((await d.mappen.listeMappen(a.id)).length, 1, 'Mappen bleiben');
       assert.equal((await d.mappen.holeMappe(v1.id)).mappe.werte.verbleib_original, ort.id, 'Verweise bleiben');
       const jetzt = (await d.systemtypen.ablageortTyp())!;

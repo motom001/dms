@@ -738,7 +738,7 @@ export class Paketerstellung {
 
   /** Was es zur Auswahl gibt, gemerkte Entwürfe und Vorschläge für den nächsten Export. */
   async stand(): Promise<ErstellenStand> {
-    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.mappentypen.listeTypen(), await this.d.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
+    const [typen, sichten, pakete, dmsTypen, entwuerfe] = [await this.d.mappentypen.listeTypen(), await this.d.sichtenVerwaltung.listeSichten(), await this.d.kern.repo.listePakete(), await this.dmsTypen(), await paketEntwuerfe(this.d.kern)];
     const herkunft = (map: (p: InstalliertesPaket) => Record<string, string>, id: string) => {
       const p = pakete.find((x) => Object.values(map(x)).includes(id));
       return p ? { id: p.id, name: p.name, version: p.version } : null;
@@ -794,7 +794,7 @@ export class Paketerstellung {
     const vorgaben = new Map((gezeigt.length ? await this.d.kern.repo.holeMappen(gezeigt) : []).filter((m) => m.vorgabe).map((m) => [m.id, m.vorgabe!] as const));
     return {
       dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}), vorgaben,
-      typen, sichten: await this.d.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.suche.sucheStand()).synonyme,
+      typen, sichten: await this.d.sichtenVerwaltung.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.suche.sucheStand()).synonyme,
       dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };
   }
@@ -866,7 +866,7 @@ export class Paketerstellung {
   async selbstErstelltDetail(id: string): Promise<SelbstErstelltDetail> {
     const e = (await paketEntwuerfe(this.d.kern)).find((x) => x.id === id);
     if (!e) throw new Fachfehler(404, t('meldungen.paketerstellung.dieses-selbst-erstellte-paket'));
-    const [typen, sichten] = [await this.d.mappentypen.listeTypen(), await this.d.listeSichten()];
+    const [typen, sichten] = [await this.d.mappentypen.listeTypen(), await this.d.sichtenVerwaltung.listeSichten()];
     return {
       ...this.kurz(e, await this.archive(id)), beschreibung: e.beschreibung, dms: e.dms, autor: e.autor, aenderungen: e.aenderungen, verlauf: e.verlauf,
       typen: e.typen.map((tid) => { const t = typen.find((x) => x.id === tid); return { id: tid, name: t?.name ?? null, geaendert: !!t && t.geaendert > e.exportiert }; }),

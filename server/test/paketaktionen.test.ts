@@ -145,7 +145,7 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   const starte = async (b: { id: string }, mappeId: string, aktion: string) => (await oberflaeche(b, 'POST', '/api/mappen/:id/paketaktionen/:paket/:aktion', { params: { id: mappeId, paket: 'vertraege', aktion } })).body as AktionsSchritt;
   const weiter = async (b: { id: string }, lauf: string, antworten: unknown) => (await oberflaeche(b, 'POST', '/api/paketaktionen/laeufe/:lauf', { params: { lauf }, body: { antworten } })).body as AktionsSchritt;
   // Herausgeben braucht das Exportrecht E – über eine Ansicht mit dem Mappentyp (#723).
-  await d.legeSichtAn({ name: 'Verträge', typen: [typId], bedingungen: [] });
+  await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [typId], bedingungen: [] });
   const mappe = await d.mappen.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', anbieter: 'Stadtwerke Beispielstadt', kundenkennwort: 'geheim-123' } }, lena.id);
   return { d, p, konten, lena, jonas, typId, kuendigungTyp: v.typen.kuendigung, mappe, aufrufe, setzeSkript, oberflaeche, angebot, starte, weiter, hochladen, installiere, repo: r.repo };
 }

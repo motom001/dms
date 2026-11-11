@@ -47,9 +47,9 @@ async function aufbau(pg = false) {
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], sichtAnlegen: false });
   for (const nr of ['H', 'G']) await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr } }, admin.id);
   const nrIst = (nr: string) => [{ art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: nr } }];
-  const haus = await d.legeSichtAn({ name: 'Haus', typen: [] });
-  const heizung = await d.legeSichtAn({ name: 'Heizung', elternId: haus.id, typen: [rechnung.id], bedingungen: nrIst('H') });
-  const garten = await d.legeSichtAn({ name: 'Garten', elternId: haus.id, typen: [rechnung.id], bedingungen: nrIst('G') });
+  const haus = await d.sichtenVerwaltung.legeSichtAn({ name: 'Haus', typen: [] });
+  const heizung = await d.sichtenVerwaltung.legeSichtAn({ name: 'Heizung', elternId: haus.id, typen: [rechnung.id], bedingungen: nrIst('H') });
+  const garten = await d.sichtenVerwaltung.legeSichtAn({ name: 'Garten', elternId: haus.id, typen: [rechnung.id], bedingungen: nrIst('G') });
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
@@ -98,11 +98,11 @@ describe(`Berechtigungen an Sichten (#148)${pg ? ' – PostgreSQL' : ''}`, { ski
 
   it('vererbt: Elternsicht verborgen → Untersichten auch; Admins ohne Regeln', async () => {
     const { admin, kind, haus, d, sichten, zaehler } = await aufbau(pg);
-    await d.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [regel('Kind nicht', [{ art: 'benutzer', benutzer: [kind.id] }], { R: 'entziehen' })] } });
+    await d.sichtenVerwaltung.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [regel('Kind nicht', [{ art: 'benutzer', benutzer: [kind.id] }], { R: 'entziehen' })] } });
     assert.deepEqual(await sichten(kind), []);
     assert.deepEqual(await zaehler(kind), {});
     assert.equal((await sichten(admin)).length, 3);
-    assert.equal((await d.listeSichten()).length > 3, true);
+    assert.equal((await d.sichtenVerwaltung.listeSichten()).length > 3, true);
   });
 
   it('C an der Sicht; Untersicht nur ✗; ohne Angabe bleiben Regeln', async () => {
@@ -112,9 +112,9 @@ describe(`Berechtigungen an Sichten (#148)${pg ? ' – PostgreSQL' : ''}`, { ski
     assert.deepEqual((await sichten(eltern)).find((s) => s.id === garten.id)?.rechte, { R: true, C: true, E: true });
     await assert.rejects(setze(garten, { grund: { R: true, C: true, E: true }, regeln: [regel('Eltern dürfen', [{ art: 'benutzer', benutzer: [eltern.id] }], { C: 'erteilen' })] }), status(422));
     // Ohne „berechtigungen“ in der Eingabe bleiben sie (z. B. über die Schnittstelle).
-    const { berechtigungen: _b, ...ohne } = (await d.listeSichten()).find((s) => s.id === garten.id)!;
-    await d.aendereSicht(garten.id, { ...ohne, name: 'Garten neu' });
-    assert.equal((await d.listeSichten()).find((s) => s.id === garten.id)?.berechtigungen?.regeln.length, 1);
+    const { berechtigungen: _b, ...ohne } = (await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === garten.id)!;
+    await d.sichtenVerwaltung.aendereSicht(garten.id, { ...ohne, name: 'Garten neu' });
+    assert.equal((await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === garten.id)?.berechtigungen?.regeln.length, 1);
     // Oberste Sicht darf ✓ und Standard ✗.
     await setze(haus, { grund: { R: false, C: false, E: true }, regeln: [regel('Eltern sehen', [{ art: 'benutzer', benutzer: [eltern.id] }], { R: 'erteilen' })] });
     assert.deepEqual((await sichten(kind)).map((s) => s.name), []);

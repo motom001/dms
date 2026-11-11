@@ -69,8 +69,8 @@ describe('Trefferlisten (#75)', () => {
     assert.equal(v.gesamt, 1); assert.equal(v.mappen[0].typId, r.id); assert.ok(Object.keys(v.bezuege).length > 0);
     assert.equal((await d.mappen.verweisende(partner.id, r.id, 'gibtsnicht')).gesamt, 0);
     // Gespeichert wird nur der Schlüssel.
-    const s = await d.legeSichtAn({ name: 'Kurz', typen: [r.id, z.id], bedingungen: [], trefferliste: 'kurz' });
+    const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Kurz', typen: [r.id, z.id], bedingungen: [], trefferliste: 'kurz' });
     assert.equal(s.trefferliste, 'kurz');
-    assert.equal((await d.aendereSicht(s.id, { ...s, trefferliste: '' })).trefferliste, null);
+    assert.equal((await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, trefferliste: '' })).trefferliste, null);
   });
 });

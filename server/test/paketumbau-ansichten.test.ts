@@ -153,7 +153,7 @@ for (const pg of [false, true]) {
       const hoch = async (dateien: Record<string, string>) => p.hochladen(zip(dateien), ICH);
       const installiere = async (dateien: Record<string, string>, mehr: Record<string, unknown> = {}) => p.installiere({ upload: (await hoch(dateien)).upload, bestaetigt: true, ...mehr }, ICH);
       const typ = async (k: string) => (await d.mappentypen.listeTypen()).find((x) => x.schluessel === k);
-      const sicht = async (id: string) => (await d.listeSichten()).find((x) => x.id === id)!;
+      const sicht = async (id: string) => (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === id)!;
       const paket = async (id: string) => (await p.installierte()).find((x) => x.id === id)!;
       return { d, p, hoch, installiere, typ, sicht, paket };
     }
@@ -165,7 +165,7 @@ for (const pg of [false, true]) {
       assert.deepEqual(Object.keys(h1.sichtStand ?? {}).sort(), ['haftpflicht', 'haushalt', 'versicherungen', 'vertraege'], 'jede Ansicht hat einen Prüfwert');
       // Lena benennt „Haftpflicht“ um – eine Änderung des Administrators.
       const haft = await x.sicht(h1.sichten.haftpflicht);
-      await x.d.aendereSicht(haft.id, { ...haft, name: 'Haftpflicht (Lena)' });
+      await x.d.sichtenVerwaltung.aendereSicht(haft.id, { ...haft, name: 'Haftpflicht (Lena)' });
       const vertrag = (await x.typ('haushalt:vertrag'))!, versicherung = (await x.typ('haushalt:versicherung'))!;
       const strom = await x.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Strom' } }, ICH.id);
       const waerme = await x.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Fernwärme' } }, ICH.id);
@@ -222,7 +222,7 @@ for (const pg of [false, true]) {
       const x = await aufbau();
       const g1 = await x.installiere(garten('1.0.0', GARTEN1));
       const sonnig = await x.sicht(g1.sichten.sonnig);
-      await x.d.aendereSicht(sonnig.id, { ...sonnig, beschreibung: 'Jonas’ Beete' });
+      await x.d.sichtenVerwaltung.aendereSicht(sonnig.id, { ...sonnig, beschreibung: 'Jonas’ Beete' });
       // Wie eine Installation vor #1125: ohne Prüfwerte.
       const ohne = await x.paket('garten');
       delete ohne.sichtStand;
@@ -236,7 +236,7 @@ for (const pg of [false, true]) {
       assert.deepEqual(Object.keys(g2.sichtStand ?? {}).sort(), ['beete', 'schattig'], '„sonnig“ bleibt ohne Prüfwert – das nächste Update fragt wieder');
       // Geändert und gewählt: ersetzt (die Rechte an der Ansicht bleiben).
       const sch = await x.sicht(g1.sichten.schattig);
-      await x.d.aendereSicht(sch.id, { ...sch, name: 'Schatten' });
+      await x.d.sichtenVerwaltung.aendereSicht(sch.id, { ...sch, name: 'Schatten' });
       const v2 = (await x.hoch(garten('1.2.0', GARTEN2.replace('Schatten]', 'Schatten, Sonne]')))).vorschau;
       assert.equal(v2.sichten.find((y) => y.schluessel === 'schattig')?.zustand, 'geaendert');
       await x.installiere(garten('1.2.0', GARTEN2.replace('Schatten]', 'Schatten, Sonne]')), { sichtenErsetzen: ['schattig'] });
@@ -248,13 +248,13 @@ for (const pg of [false, true]) {
     it('gelöschte Ansicht kommt nicht wieder; nichts ersetzt, wenn die Fassung gleich bleibt', async () => {
       const x = await aufbau();
       const g1 = await x.installiere(garten('1.0.0', GARTEN1));
-      await x.d.loescheSicht(g1.sichten.schattig);
+      await x.d.sichtenVerwaltung.loescheSicht(g1.sichten.schattig);
       const sonnig = await x.sicht(g1.sichten.sonnig);
-      await x.d.aendereSicht(sonnig.id, { ...sonnig, name: 'Sonnenbeete' });
+      await x.d.sichtenVerwaltung.aendereSicht(sonnig.id, { ...sonnig, name: 'Sonnenbeete' });
       const v = (await x.hoch(garten('1.0.1', GARTEN1))).vorschau;
       assert.deepEqual(Object.fromEntries(v.sichten.map((y) => [y.schluessel, y.zustand])), { beete: 'gleich', sonnig: 'gleich', schattig: 'geloescht' });
       await x.installiere(garten('1.0.1', GARTEN1));
-      assert.equal((await x.d.listeSichten()).some((s) => s.id === g1.sichten.schattig), false);
+      assert.equal((await x.d.sichtenVerwaltung.listeSichten()).some((s) => s.id === g1.sichten.schattig), false);
       assert.equal((await x.sicht(g1.sichten.sonnig)).name, 'Sonnenbeete');
     });
   });

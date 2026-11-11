@@ -52,7 +52,7 @@ function faelle(pg: boolean) {
         const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
         return d.schreibeVolltext(dokument.id, { text, ...(sprache !== undefined ? { sprache } : {}) }, { id: ICH.id, herkunft: 'Test', paket: false });
       };
-      const suche = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' })).mappen.map((m) => m.titel).sort();
+      const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' })).mappen.map((m) => m.titel).sort();
       return { d, r, sql, brief, suche };
     }
 
@@ -101,7 +101,7 @@ function faelle(pg: boolean) {
       const { pgRepo } = await import('../src/repo-pg');
       const d2 = new Dienst(pgRepo(sql!, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
       const typ = (await d2.mappentypen.listeTypen()).find((t) => t.name === 'Brief')!;
-      assert.deepEqual((await d2.seite(ICH, { sicht: `typ:${typ.id}`, suche: '"cheval"', volltext: 'true' })).mappen.map((m) => m.titel), ['Lettre']);
+      assert.deepEqual((await d2.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: '"cheval"', volltext: 'true' })).mappen.map((m) => m.titel), ['Lettre']);
       // Die API zeigt für ältere deutsche Dokumente die Sprache aus dem Hinweis.
       assert.equal((await d2.dokumente.holeDokument(brief2.id)).sprache, 'deu');
     });

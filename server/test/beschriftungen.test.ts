@@ -222,14 +222,14 @@ function dienstFaelle(pg: boolean) {
       const { r } = await repo();
       const { d, typ, m1 } = await aufbau(r);
       await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
-      const s = await d.legeSichtAn({ name: 'Strom', beschriftungen: { en: { name: 'Electricity', beschreibung: 'Power meters' }, xx1: { name: 'ungültig' } }, typen: [typ.id],
+      const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Strom', beschriftungen: { en: { name: 'Electricity', beschreibung: 'Power meters' }, xx1: { name: 'ungültig' } }, typen: [typ.id],
         bedingungen: [{ art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Strom'] } }] });
       assert.deepEqual(s.beschriftungen, { en: { name: 'Electricity', beschreibung: 'Power meters' } });
-      assert.deepEqual((await d.seite(ICH, { sicht: s.id })).mappen.map((m) => m.id), [m1.id]);
+      assert.deepEqual((await d.sichten.seite(ICH, { sicht: s.id })).mappen.map((m) => m.id), [m1.id]);
       // Ändern ohne Angabe behält, mit null entfernt.
-      const s2 = await d.aendereSicht(s.id, { name: 'Strom!', typen: [typ.id], bedingungen: s.bedingungen });
+      const s2 = await d.sichtenVerwaltung.aendereSicht(s.id, { name: 'Strom!', typen: [typ.id], bedingungen: s.bedingungen });
       assert.equal(s2.beschriftungen?.en?.name, 'Electricity');
-      const s3 = await d.aendereSicht(s.id, { ...s2, beschriftungen: null });
+      const s3 = await d.sichtenVerwaltung.aendereSicht(s.id, { ...s2, beschriftungen: null });
       assert.ok(!s3.beschriftungen);
     });
 
@@ -239,7 +239,7 @@ function dienstFaelle(pg: boolean) {
       const t = await d.mappentypen.aendereTyp(typ.id, {
         ...typ, felder: typ.felder.map((f) => (f.key === 'art' ? { ...f, beschriftungen: { de: { optionen: { Strom: 'Elektrizität' } }, en: { optionen: { Strom: 'Electricity' } } } } : f)),
       });
-      const treffer = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.id);
+      const treffer = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.id);
       assert.deepEqual(await treffer('Electricity'), [m1.id]);
       assert.deepEqual(await treffer('Strom'), [m1.id]);
       // Der Titel ist die Beschriftung in der Sprache des Servers (Deutsch); der Wert bleibt.
@@ -284,7 +284,7 @@ describe('Vollexport (#728)', () => {
     const { vollexport } = await import('../src/vollexport');
     const { d, typ } = await aufbau();
     await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
-    await d.legeSichtAn({ name: 'Alle Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
+    await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
     const ziel = await mkdtemp(join(process.env.TMPDIR ?? '/tmp', 'a728-export-'));
@@ -349,7 +349,7 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     assert.deepEqual(typ.felder.find((f) => f.key === 'art')!.optionen, ['Strom', 'Gas', 'Wasser']);
     assert.ok(!typ.beschriftungen && typ.felder.every((f) => !f.beschriftungen));
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1', art: 'Strom' } });
-    assert.deepEqual((await d.seite(ICH, { sicht: inst.sichten.strom })).mappen.map((x) => x.id), [m.id]);
+    assert.deepEqual((await d.sichten.seite(ICH, { sicht: inst.sichten.strom })).mappen.map((x) => x.id), [m.id]);
   });
 
   it('Paket mit Beschriftungen: Installation übernimmt sie; das Update ergänzt nur, was fehlt', async () => {
@@ -364,7 +364,7 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     assert.deepEqual(typ.beschriftungen, { en: { name: 'Meter', beschreibung: 'Electricity, gas and water' } });
     assert.deepEqual(typ.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity', Wasser: 'Water' } } }, 'Beschriftung eines unbekannten Werts fällt weg');
     assert.equal(typ.register[0].beschriftungen?.en?.name, 'General');
-    assert.equal((await a.d.listeSichten()).find((s) => s.id === inst.sichten.strom)!.beschriftungen?.en?.name, 'Electricity meters');
+    assert.equal((await a.d.sichtenVerwaltung.listeSichten()).find((s) => s.id === inst.sichten.strom)!.beschriftungen?.en?.name, 'Electricity meters');
 
     // Update von 1.0.0 (ohne) auf 1.1.0 (mit): Der Administrator hat „Strom“ schon selbst beschriftet.
     const b = dms();
@@ -393,7 +393,7 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
       ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['art'], beschriftungen: { en: { name: 'General' } } }] });
       return { typ: t };
     })();
-    const s = await q.d.legeSichtAn({ name: 'Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
+    const s = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });
     const z = await q.e.exportiere({ typen: [typ.id], sichten: [s.id], beispiele: [], id: 'meine_zaehler', name: 'Meine Zähler', version: '1.0.0', beschreibung: 'Zähler mit Beschriftungen auf Englisch.', autor: { name: 'Lena', github: 'lena' }, lizenz: 'MIT', dms: '>=0.86.0', aenderungen: '' }, ICH);
     const ziel = dms();
     const inst = await installiere(ziel.p, z.daten);
@@ -402,6 +402,6 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     assert.deepEqual(t.felder[0].beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity' } } });
     assert.equal(t.register[0].beschriftungen?.en?.name, 'General');
     assert.equal(Object.values(inst.sichten).length, 1);
-    assert.equal((await ziel.d.listeSichten()).find((x) => x.id === Object.values(inst.sichten)[0])!.beschriftungen?.en?.name, 'Meters');
+    assert.equal((await ziel.d.sichtenVerwaltung.listeSichten()).find((x) => x.id === Object.values(inst.sichten)[0])!.beschriftungen?.en?.name, 'Meters');
   });
 });

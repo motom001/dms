@@ -234,7 +234,7 @@ describe('Sprachpaket installieren und nutzen (#731)', () => {
       assert.equal(typ.felder.find((f) => f.key === 'art')?.beschriftungen?.fr?.optionen?.Bank, 'Banque');
       assert.equal(typ.felder.find((f) => f.key === 'name')?.beschriftungen?.fr?.label, 'Nom');
       assert.equal(typ.register.find((r) => r.key === 'stammdaten')?.beschriftungen?.fr?.name, 'Données de base');
-      const sicht = (await d.listeSichten()).find((s) => s.name === 'Organisationen')!;
+      const sicht = (await d.sichtenVerwaltung.listeSichten()).find((s) => s.name === 'Organisationen')!;
       assert.equal(sicht.beschriftungen?.fr?.name, 'Organismes');
       // Was der Administrator schon beschriftet hat, bleibt bei einem Update des Sprachpakets.
       await d.mappentypen.aendereTyp(typ.id, { ...typ, beschriftungen: { ...typ.beschriftungen, fr: { name: 'Organisation (eigene)' } } });

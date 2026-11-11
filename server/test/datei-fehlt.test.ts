@@ -103,7 +103,7 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     ] } as never);
-    await d.legeSichtAn({ name: 'Verträge', typen: [typ.id] });
+    await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [typ.id] });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
     weg = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF('Rechnung von Jonas'), lena.id)).dokument;
     da = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Vertrag.pdf', typ: 'application/pdf' }, PDF('Vertrag mit Petra'), lena.id)).dokument;

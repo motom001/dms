@@ -51,9 +51,9 @@ describe('Texterkennung (#45)', () => {
     assert.equal(aufrufe, 1, 'gleicher Inhalt: Text übernommen');
     assert.match((await repo.holeDokument(kopie.id))!.ocr!.info!, /übernommen/);
 
-    const ohne = await d.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke' });
+    const ohne = await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke' });
     assert.equal(ohne.gesamt, 0, 'ohne Häkchen nur Titel und Werte');
-    const mit = await d.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke', volltext: 'true' });
+    const mit = await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: 'stadtwerke', volltext: 'true' });
     assert.equal(mit.gesamt, 2);
     const a = (mit as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id];
     assert.equal(a.dokument, 'r.pdf');

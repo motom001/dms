@@ -573,7 +573,7 @@ const webhooks = new Webhooks({
   repo: messung.umhuelle(pgWebhookRepo(sql, cfg.haushalt), 'webhooks'),
   einstellungen: pgEinstellungen(sql, cfg.haushalt),
   verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w),
-  zahlen: async (b) => { const r = await dienst.zaehlerAbruf(await dienst.rechtepruefung.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
+  zahlen: async (b) => { const r = await dienst.sichten.zaehlerAbruf(await dienst.rechtepruefung.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
   benutzer: (id) => konten.benutzerMitId(id),
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
   anAdmins: anVerwaltendeVon('webhooks'),
@@ -585,7 +585,7 @@ const webhooks = new Webhooks({
     return r.ok as boolean;
   })()),
 });
-dienst.beiAenderung(() => webhooks.anstossen());
+dienst.sichten.beiAenderung(() => webhooks.anstossen());
 // Automatisierungen (#674): Wenn · Und · Dann unter dem Systemkonto „Automatisierung“; Läufe je Ereignis genau einmal.
 const automatisierungen = new Automatisierungen({
   dienst, repo: messung.umhuelle(pgAutomatisierungRepo(sql, cfg.haushalt), 'automatisierungen'),

@@ -22,7 +22,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
   let bearer = '';
   const post = async () => {
     const typ = await dienst.postTyp();
-    return (await dienst.seite({ id: annaId, rolle: 'mitglied' }, { sicht: `typ:${typ.id}` })).mappen;
+    return (await dienst.sichten.seite({ id: annaId, rolle: 'mitglied' }, { sicht: `typ:${typ.id}` })).mappen;
   };
 
   before(async () => {

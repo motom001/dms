@@ -653,7 +653,7 @@ export class Automatisierungen {
     const typ = kontextTyp(a.wenn, (await this.kontext()).typen);
     if (!typ) return { mappen: [], gesamt: 0 };
     const konto = await this.konto();
-    const s = await this.d.dienst.seite(konto, { sicht: `typ:${typ.id}`, suche, anzahl: 20 }, await this.d.dienst.rechtepruefung.zugriff(konto), 20);
+    const s = await this.d.dienst.sichten.seite(konto, { sicht: `typ:${typ.id}`, suche, anzahl: 20 }, await this.d.dienst.rechtepruefung.zugriff(konto), 20);
     return { mappen: s.mappen.map((m) => ({ id: m.id, titel: m.titel ?? '', typId: m.typId })), gesamt: s.gesamt };
   }
 

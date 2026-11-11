@@ -38,9 +38,9 @@ describe('Papierkorb (#43)', () => {
     await d.loescheMappe(v.id, anna.id);
 
     await assert.rejects(d.mappen.holeMappe(v.id), status(404), 'woanders nicht mehr sichtbar');
-    assert.equal((await d.seite(anna, { sicht: `typ:${vertrag.id}` })).gesamt, 0);
-    assert.equal((await d.zaehler(anna)).papierkorb, 1);
-    assert.equal((await d.zaehler(admin)).papierkorb, 0, 'je Benutzer');
+    assert.equal((await d.sichten.seite(anna, { sicht: `typ:${vertrag.id}` })).gesamt, 0);
+    assert.equal((await d.sichten.zaehler(anna)).papierkorb, 1);
+    assert.equal((await d.sichten.zaehler(admin)).papierkorb, 0, 'je Benutzer');
     assert.deepEqual((await d.papierkorb(anna)).map((e) => [e.titel, e.dokumente]), [['V-1', 1]]);
     assert.equal((await d.papierkorb(admin)).length, 0, 'in der Ablage nur Eigenes');
     assert.equal((await d.papierkorb(admin, true)).length, 1, 'in der Werkbank alles');
@@ -57,7 +57,7 @@ describe('Papierkorb (#43)', () => {
     const details = await d.mappen.holeMappe(v.id);
     assert.equal(details.dokumente.length, 1, 'Dokumente kommen mit');
     assert.deepEqual((await d.mappen.holeMappe(p.id)).rueckverweise.map((x) => x.quelleId), [v.id], 'Verweise kommen mit');
-    assert.equal((await d.zaehler(anna)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(anna)).eingang, 1);
   });
 
   it('löscht endgültig: einzeln, beim Leeren und nach Ablauf – Dateien erst, wenn nichts mehr daran hängt', async () => {
@@ -88,7 +88,7 @@ describe('Papierkorb (#43)', () => {
     const b = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
     await d.loescheMappe(b.id, anna.id);
     assert.equal((await d.papierkorb(anna)).length, 0, 'sofort endgültig');
-    assert.equal((await d.zaehler(anna)).papierkorbTage, 0);
+    assert.equal((await d.sichten.zaehler(anna)).papierkorbTage, 0);
   });
 
   it('Benutzer: Einladung wird deaktiviert und erst beim Leeren gelöscht; Wiederherstellen aktiviert sie wieder', async () => {

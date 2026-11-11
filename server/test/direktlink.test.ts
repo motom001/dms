@@ -25,7 +25,7 @@ async function mitBeispielen() {
 }
 const lies = (q: string, typen: Parameters<typeof liesDirektlink>[1]) => liesDirektlink(new URLSearchParams(q), typen);
 const titel = async (d: Dienst, link: string, extra: Record<string, unknown> = {}) =>
-  (await d.seite(ICH, { sicht: 'link', link, anzahl: 500, ...extra })).mappen.map((m) => m.titel);
+  (await d.sichten.seite(ICH, { sicht: 'link', link, anzahl: 500, ...extra })).mappen.map((m) => m.titel);
 
 function faelle() {
 describe('Sprechende Links (#98)', () => {
@@ -88,7 +88,7 @@ describe('Sprechende Links (#98)', () => {
     assert.deepEqual(await titel(d, 'typ=Rechnung&rechnungsnummer=gibtsnicht'), []);
     const morgen = verschiebe(heuteIn(), 1);
     assert.deepEqual(await titel(d, `typ=Rechnung&rechnungsdatum.groesser=${morgen}`), []);
-    await assert.rejects(d.seite(ICH, { sicht: 'link', link: 'typ=Rechnung&rechnungsnumer=1' }),
+    await assert.rejects(d.sichten.seite(ICH, { sicht: 'link', link: 'typ=Rechnung&rechnungsnumer=1' }),
       (e: unknown) => e instanceof Fachfehler && e.status === 422 && /rechnungsnumer/.test(e.message));
   });
 
@@ -105,7 +105,7 @@ describe('Sprechende Links (#98)', () => {
       const t = (await d.mappentypen.listeTypen()).find((x) => x.id === m.typId)!;
       const link = linkZuMappe(t, m);
       if (!link) continue;
-      const ids = (await d.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
+      const ids = (await d.sichten.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
       assert.ok(ids.includes(m.id), `${link} findet ${m.titel}`);
     }
     // Felder mit festem Parameternamen gehen über „feld.operator“.
@@ -113,7 +113,7 @@ describe('Sprechende Links (#98)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
     const ld = linkZuMappe(t, m)!;
     assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);
-    assert.deepEqual((await d.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);
+    assert.deepEqual((await d.sichten.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);
   });
 });
 }

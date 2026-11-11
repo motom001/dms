@@ -139,7 +139,7 @@ describe('Folgt aus – Speichern in Oberfläche und Schnittstelle (#886)', () =
   it('Auswahlfilter (dms-registry #139): nur Niederlassungen der Organisation; leer: alle; neu Unpassendes lehnt der Server ab', async () => {
     const { d, person, sparkasse, nord, markt, lose } = await aufbau();
     const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
-    const titel = async (eigene: Record<string, unknown>) => (await d.seite(ICH, { sicht: `feld:${person.id}:niederlassung`, eigene: JSON.stringify(eigene) })).mappen.map((m) => m.titel).sort();
+    const titel = async (eigene: Record<string, unknown>) => (await d.sichten.seite(ICH, { sicht: `feld:${person.id}:niederlassung`, eigene: JSON.stringify(eigene) })).mappen.map((m) => m.titel).sort();
     assert.deepEqual(await titel({ organisation: sparkasse.id }), ['Zweigstelle Nordviertel']);
     assert.deepEqual(await titel({}), ['Außenstelle ohne Träger', 'Filiale Marktplatz', 'Zweigstelle Nordviertel']);
     await assert.rejects(d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'X', organisation: sparkasse.id, niederlassung: markt.id } }), meldet(/passt nicht zur Auswahl/));

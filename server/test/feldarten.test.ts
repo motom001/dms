@@ -160,14 +160,14 @@ async function sortierenUndFiltern(d: Dienst) {
   await m('D', { frist: '14 Tage' });
   await m('E', {});
   const nrn = async (sortierung: string, absteigend = false) =>
-    (await d.seite(ADMIN, { sicht: typ.id, sortierung, absteigend: String(absteigend) })).mappen.map((x) => String(x.werte.nr)).join('');
+    (await d.sichten.seite(ADMIN, { sicht: typ.id, sortierung, absteigend: String(absteigend) })).mappen.map((x) => String(x.werte.nr)).join('');
   assert.equal(await nrn('frist'), 'DBACE', '14 Tage < 13 Wochen < 3 Monate < 1 Jahr, leer zuletzt');
   assert.equal(await nrn('frist', true), 'CABDE');
   assert.equal(await nrn('steuersatz'), 'CBADE');
   // Bedingungen: Zeitraum in Tagen, Prozent wie Zahl.
   const treffer = async (bedingungen: Bedingung[]) => {
-    const s = await d.legeSichtAn({ name: `S ${Math.random()}`, typen: [typ.id], bedingungen });
-    return (await d.seite(ADMIN, { sicht: s.id, sortierung: 'nr' })).mappen.map((x) => String(x.werte.nr)).join('');
+    const s = await d.sichtenVerwaltung.legeSichtAn({ name: `S ${Math.random()}`, typen: [typ.id], bedingungen });
+    return (await d.sichten.seite(ADMIN, { sicht: s.id, sortierung: 'nr' })).mappen.map((x) => String(x.werte.nr)).join('');
   };
   assert.equal(await treffer([{ art: 'feld', feld: 'frist', op: 'groesser', wert: { art: 'fest', wert: 'P2M' } }]), 'ABC');
   assert.equal(await treffer([{ art: 'feld', feld: 'frist', op: 'gleich', wert: { art: 'fest', wert: 'P3M' } }]), 'A');
@@ -297,7 +297,7 @@ describe('Paketformat (#1035)', () => {
     const zt = (await z.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.vertrag)!;
     assert.deepEqual(zt.felder.map((f) => [f.key, f.typ]).slice(1, 4), [['frist', 'zeitraum'], ['laufzeit', 'zeitraum'], ['steuersatz', 'prozent']]);
     assert.equal(zt.felder.find((f) => f.key === 'gutschrift')!.negativ, true);
-    const [beispiel] = (await z.d.seite(ADMIN, { sicht: zt.id })).mappen;
+    const [beispiel] = (await z.d.sichten.seite(ADMIN, { sicht: zt.id })).mappen;
     assert.deepEqual(beispiel.werte.frist, { anzahl: 3, einheit: 'monate' });
     assert.deepEqual(beispiel.werte.gutschrift, { betrag: -25, waehrung: 'EUR' });
 

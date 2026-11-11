@@ -161,7 +161,7 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     assert.equal(await d.kern.einstellungen!.lies('merkmale'), null);
     assert.equal((await d.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'angepasste Leiste bleibt');
     assert.equal(vorlageFuer({ beruflich: false }), 'haushalt');
-    assert.deepEqual((await d.zaehlerRahmen()).merkmale, { beruflich: false }, 'die Oberfläche bekommt es mit dem Rahmen der Ablage');
+    assert.deepEqual((await d.sichten.zaehlerRahmen()).merkmale, { beruflich: false }, 'die Oberfläche bekommt es mit dem Rahmen der Ablage');
   });
 
   it('nur „Gesamte Verwaltung“ ändert es; der Bereich lässt sich nicht einzeln vergeben', () => {
@@ -255,8 +255,8 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     const { d, admin, vertrag } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
     // Ansicht
-    const s = await d.legeSichtAn({ name: 'Beruflich', typen: [vertrag.id], bedingungen: [{ art: 'merkmal', merkmal: 'beruflich' }] });
-    const zahl = async () => (await d.zaehler({ id: admin.id, rolle: 'admin' })).sichten[s.id];
+    const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Beruflich', typen: [vertrag.id], bedingungen: [{ art: 'merkmal', merkmal: 'beruflich' }] });
+    const zahl = async () => (await d.sichten.zaehler({ id: admin.id, rolle: 'admin' })).sichten[s.id];
     assert.equal(await zahl(), 0);
     await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
     assert.equal(await zahl(), 1);

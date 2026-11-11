@@ -116,7 +116,7 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     // Rechte-Regel, Ansicht und Automatisierung am Typ (alle per uuid).
     const regel = { grund: { C: 'immer', R: 'nie', U: 'nie', D: 'nie', P: 'nie' }, regeln: [] };
     await sql`UPDATE mappentypen SET berechtigungen = ${sql.json(regel)} WHERE id = ${pflanze.id}`;
-    const sicht = await d.legeSichtAn({ name: 'Garten', beschreibung: '', elternId: null, position: 10, typen: [pflanze.id, beet.id], bedingungen: [] });
+    const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Garten', beschreibung: '', elternId: null, position: 10, typen: [pflanze.id, beet.id], bedingungen: [] });
     await sql`INSERT INTO automatisierungen (id, haushalt_id, name, daten, herkunft, paket_id) VALUES
       ('00000000-0000-4000-8000-00000000a108', ${HAUSHALT}, 'Gießen', ${sql.json({ wenn: { art: 'mappe.angelegt', typ: pflanze.id }, dann: [] })}, 'paket', 'haus')`;
     const bild = async () => ({

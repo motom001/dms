@@ -86,7 +86,7 @@ function faelle(pg: boolean) {
         return (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.pdf`, typ: 'application/pdf' }, pdfMitText([titel]), null)).dokument;
       };
       const schreibe = (id: string, body: Record<string, unknown>) => d.schreibeVolltext(id, body, { id: ICH.id, herkunft: 'Texterkennung 2.1.0', paket: true });
-      const suche = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' }));
+      const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' }));
       const titel = async (s: string) => (await suche(s)).mappen.map((m) => m.titel).sort();
       return { d, r, sql, dok, schreibe, suche, titel };
     }

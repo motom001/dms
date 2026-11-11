@@ -81,11 +81,11 @@ describe('Kern (#961)', () => {
       'post.sicherePostSichten', 'sichten.sichereFavoritenSicht',
     ]);
     // Die eigenen Ansichten der Systemtypen gibt es; ein zweites Sicherstellen legt keine neuen an.
-    const sichten = (await d.listeSichten()).length;
+    const sichten = (await d.sichtenVerwaltung.listeSichten()).length;
     spur.length = 0;
     await d.systemausstattung.sicherstellen();
     assert.deepEqual(spur, ['mappentypen.sichereSystemtypen', 'post.sicherePostSichten', 'sichten.sichereFavoritenSicht']);
-    assert.equal((await d.listeSichten()).length, sichten);
+    assert.equal((await d.sichtenVerwaltung.listeSichten()).length, sichten);
   });
 
   it('sicherstellen() (#963): eine gelöschte Ansicht eines Systemtyps kommt nicht wieder; system() merkt sich nichts aus einer Transaktion', async () => {
@@ -93,7 +93,7 @@ describe('Kern (#961)', () => {
     const s = await d.sichereSystem();
     await d.kern.repo.loescheSicht(s.benutzer.id);
     await d.systemausstattung.sicherstellen();
-    assert.equal((await d.listeSichten()).some((x) => x.id === s.benutzer.id), false);
+    assert.equal((await d.sichtenVerwaltung.listeSichten()).some((x) => x.id === s.benutzer.id), false);
     // In einer Transaktion nachgeschlagen: nicht gemerkt (sie könnte zurückgerollt werden).
     const frisch = new Dienst(d.kern.repo, speicherDateien(), {});
     await frisch.kern.inTransaktion(() => frisch.kern.system());

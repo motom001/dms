@@ -29,7 +29,7 @@ describe('Ablageort (#883): nicht mehr im Kern', () => {
     const typen = await d.mappentypen.listeTypen();
     assert.deepEqual(typen.filter((t) => !t.system).map((t) => t.name).sort(), ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung']);
     assert.ok(!typen.some((t) => t.felder.some((f) => f.key === 'verbleib_original')));
-    assert.ok(!(await d.listeSichten()).some((s) => s.name === 'Originale nach Ort'));
+    assert.ok(!(await d.sichtenVerwaltung.listeSichten()).some((s) => s.name === 'Originale nach Ort'));
   });
 });
 
@@ -95,6 +95,6 @@ describe('Ablageort (#168): der frühere aus einer älteren Ablage', () => {
     const orte = await d.mappen.listeMappen(a.id);
     assert.ok(orte.some((m) => m.titel === 'zu Hause › Arbeitszimmer Schrank › roter Ordner'));
     assert.ok(orte.some((m) => m.titel === 'vernichtet'));
-    assert.ok((await d.listeSichten()).some((s) => s.name === 'Originale nach Ort'));
+    assert.ok((await d.sichtenVerwaltung.listeSichten()).some((s) => s.name === 'Originale nach Ort'));
   });
 });

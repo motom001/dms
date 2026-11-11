@@ -344,7 +344,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   if (uebersprungen.length) fortschritt(fertig, mappenZiel, 'mappen', { uebersprungen: mappenZiel - fertig, gruende: uebersprungen.map(uebersprungenText) });
   const mappen = fertig;
   // Statistik nach dem Massen-Einfügen (#367), sonst plant PostgreSQL mit veralteten Zahlen.
-  if (mappen) await dienst.aktualisiereStatistik();
+  if (mappen) await dienst.sichten.aktualisiereStatistik();
   const ergebnis: DemoErgebnis = { erzeugt, uebersprungen, gesamt: mappen, startwert: z.startwert, dauerMs: 0, dokumente: null };
 
   if (o.dokumente) {
@@ -392,7 +392,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
           erzeugtDok++;
           await weiter();
           // Zwischendurch die Statistik auffrischen (#367): Bei vielen Dokumenten wächst die Tabelle stark.
-          if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.aktualisiereStatistik(); }
+          if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.sichten.aktualisiereStatistik(); }
           if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
           // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
           if (platz && seitPruefung > DEMO_PLATZ_PRUEFEN) {
@@ -404,7 +404,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
       }
       await dienst.demoTexterkennung(ocr);
     } finally {
-      if (erzeugtDok) await dienst.aktualisiereStatistik();
+      if (erzeugtDok) await dienst.sichten.aktualisiereStatistik();
     }
     statistik.dauerMs = Date.now() - docBeginn;
     ergebnis.dokumente = statistik;

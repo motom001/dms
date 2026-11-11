@@ -121,7 +121,7 @@ export function berechtigungenRouten(k: RoutenKontext): Route[] {
       return ok(r);
     } },
     { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.berechtigungen.testlauf(b(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/sichten/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.sichtTestlauf(b(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/sichten/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.sichtenVerwaltung.sichtTestlauf(b(a))) },
     { methode: 'GET', pfad: '/api/werkbank/berechtigungen/sicht/:benutzerId', zugang: 'admin', handler: async (a) => ok(await dienst.rechtepruefung.wasSieht(a.params.benutzerId)) },
   ];
 }

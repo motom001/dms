@@ -1540,7 +1540,7 @@ export class Paketverwaltung {
     const frueher = await this.d.kern.frueherAblageortTyp();
     if (!frueher) return null;
     const sichten: Record<string, string> = {};
-    const vorhanden = (await this.d.listeSichten()).filter((x) => !x.elternId && x.typen.length === 1 && x.typen[0] === frueher.id && !x.bedingungen.length);
+    const vorhanden = (await this.d.sichtenVerwaltung.listeSichten()).filter((x) => !x.elternId && x.typen.length === 1 && x.typen[0] === frueher.id && !x.bedingungen.length);
     for (const s of paket.sichten) {
       if (s.eltern || ich?.sichten[s.schluessel] || (s.bedingungen ?? []).length || (s.typen ?? []).length !== 1 || s.typen![0] !== 'ablageort') continue;
       const x = vorhanden.find((v) => !Object.values(sichten).includes(v.id));
@@ -1992,7 +1992,7 @@ export class Paketverwaltung {
     const ich = installierte.find((p) => p.id === m.id) ?? installierteErsetzt(installierte, m) ?? null;
     const umzug = ich && ich.id !== m.id ? ich.id : null;
     const typen = await this.d.mappentypen.listeTypen();
-    const sichten = await this.d.listeSichten();
+    const sichten = await this.d.sichtenVerwaltung.listeSichten();
     const probleme: string[] = [];
     const fehlercodes: string[] = [];
     const dmsVersion = this.o.version();
@@ -2605,8 +2605,8 @@ export class Paketverwaltung {
       for (const r of vorgabenErg.rueck) await r().catch(() => {});
       await this.d.entferneMappenEndgueltig(mappen).catch(() => {});
       await this.d.entferneMappenEndgueltig(vorgabenErg.angelegt).catch(() => {});
-      for (const s of ersetzteSichten) await this.d.aendereSicht(s.id, s).catch(() => {});
-      for (const s of [...neueSichten].reverse()) await this.d.loescheSicht(s).catch(() => {});
+      for (const s of ersetzteSichten) await this.d.sichtenVerwaltung.aendereSicht(s.id, s).catch(() => {});
+      for (const s of [...neueSichten].reverse()) await this.d.sichtenVerwaltung.loescheSicht(s).catch(() => {});
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.mappentypen.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
       for (const t of geaendert) await this.d.mappentypen.aendereTyp(t.id, t).catch(() => {});
     };
@@ -2711,7 +2711,7 @@ export class Paketverwaltung {
         if (sp.ausgelassen) continue;
         const ersetzen = sp.zustand === 'aktualisiert' || ((sp.zustand === 'geaendert' || sp.zustand === 'unbekannt') && ersetzenGewuenscht.has(s.schluessel));
         if (sp.vorhanden && !ersetzen) continue;
-        const alle = await this.d.listeSichten();
+        const alle = await this.d.sichtenVerwaltung.listeSichten();
         const vorhanden = sp.vorhanden ? alle.find((x) => x.id === sichtMap[s.schluessel]) : undefined;
         if (sp.vorhanden && !vorhanden) continue;
         const elternId = s.eltern ? sichtMap[s.eltern] ?? vorhanden?.elternId ?? null : null;
@@ -2725,10 +2725,10 @@ export class Paketverwaltung {
           if (vorhanden) {
             // Name des Pakets, außer er gibt es unter derselben Elternsicht schon; Rechte an der Ansicht (#148) bleiben.
             const name = kinderVon(alle, elternId).some((x) => x.id !== vorhanden.id && x.name.trim().toLowerCase() === s.name.trim().toLowerCase()) ? vorhanden.name : s.name;
-            await this.d.aendereSicht(vorhanden.id, { ...vorhanden, ...daten, name, elternId, position, beschriftungen: { ...vorhanden.beschriftungen, ...s.beschriftungen } });
+            await this.d.sichtenVerwaltung.aendereSicht(vorhanden.id, { ...vorhanden, ...daten, name, elternId, position, beschriftungen: { ...vorhanden.beschriftungen, ...s.beschriftungen } });
             ersetzteSichten.push(vorhanden);
           } else {
-            const neu = await this.d.legeSichtAn({ name: sp.name, ...daten, ...(s.beschriftungen ? { beschriftungen: s.beschriftungen } : {}), elternId, position });
+            const neu = await this.d.sichtenVerwaltung.legeSichtAn({ name: sp.name, ...daten, ...(s.beschriftungen ? { beschriftungen: s.beschriftungen } : {}), elternId, position });
             neueSichten.push(neu.id);
             sichtMap[s.schluessel] = neu.id;
           }
@@ -2857,7 +2857,7 @@ export class Paketverwaltung {
         aktualisiert: alt ? jetzt : null, aktualisiertVon: alt ? von.email : null,
         typen: typMap, sichten: sichtMap, abhaengigkeiten: m.abhaengigkeiten,
         // Ansichten mit Prüfwert (#1125): ein späteres Update ersetzt nur, was noch so ist.
-        sichtStand: sichtStandNach({ sichten: paket.sichten, alt, ids: sichtMap, geschrieben: sichtGeschrieben, zustand: (k) => plan.sichten.find((x) => x.schluessel === k)?.zustand, jetzt: await this.d.listeSichten(), umbau: umbauErg?.sichten }),
+        sichtStand: sichtStandNach({ sichten: paket.sichten, alt, ids: sichtMap, geschrieben: sichtGeschrieben, zustand: (k) => plan.sichten.find((x) => x.schluessel === k)?.zustand, jetzt: await this.d.sichtenVerwaltung.listeSichten(), umbau: umbauErg?.sichten }),
         // Beispiel-Mappen mit Schlüssel (#347), damit spätere Pakete auf sie verweisen können.
         ...(beispielIds.size ? { beispiele: Object.fromEntries(beispielIds) } : alt?.beispiele ? { beispiele: alt.beispiele } : {}),
         ...(beispielStaende.length ? { beispielMappen: beispielStaende } : alt?.beispielMappen?.length ? { beispielMappen: alt.beispielMappen } : {}),
@@ -3124,7 +3124,7 @@ export class Paketverwaltung {
       typen: typen.map((x) => ({ id: x.id, name: x.name, felder: x.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
       benutzer: this.o.benutzer ? await this.o.benutzer() : [],
       rollen: (await this.d.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
-      sichten: (await this.d.listeSichten()).map((x) => ({ id: x.id, name: x.name })),
+      sichten: (await this.d.sichtenVerwaltung.listeSichten()).map((x) => ({ id: x.id, name: x.name })),
     };
     return {
       anzeige, typen: anzeige.typen, benutzer: anzeige.benutzer.map((x) => x.id), rollen: anzeige.rollen.map((x) => x.id), sichten: anzeige.sichten.map((x) => x.id),
@@ -3251,7 +3251,7 @@ export class Paketverwaltung {
       typen: typen.map((t) => ({ id: t.id, name: t.name, felder: t.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
       benutzer: this.o.benutzer ? await this.o.benutzer() : [],
       rollen: (await this.d.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
-      sichten: (await this.d.listeSichten()).map((s) => ({ id: s.id, name: s.name })),
+      sichten: (await this.d.sichtenVerwaltung.listeSichten()).map((s) => ({ id: s.id, name: s.name })),
       typVon: (vw: string) => {
         const [paket, s] = vw.includes(':') ? vw.split(':') : [p.id, vw];
         if (paket === 'dms') return dmsTypen.get(s)?.id ?? null;
@@ -3391,14 +3391,14 @@ export class Paketverwaltung {
           await this.d.mappentypen.aendereTyp(typ.id, { ...typ, felder: neu.typ.felder, register: neu.typ.register, beschriftungen: neu.typ.beschriftungen ?? null });
           anzahl += neu.anzahl;
         }
-        const sichten = await this.d.listeSichten();
+        const sichten = await this.d.sichtenVerwaltung.listeSichten();
         for (const [schluessel, x] of Object.entries(b.sichten ?? {})) {
           const sicht = sichten.find((y) => y.id === p.sichten[schluessel]);
           if (!sicht) continue;
           const vorher = JSON.stringify(sicht.beschriftungen ?? {});
           const erg = ergaenzeBeschriftungen(sicht.beschriftungen ?? undefined, { [s.kennung]: x });
           if (JSON.stringify(erg ?? {}) === vorher) continue;
-          await this.d.aendereSicht(sicht.id, { ...sicht, beschriftungen: erg });
+          await this.d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, beschriftungen: erg });
           anzahl++;
         }
       }
@@ -3527,9 +3527,9 @@ export class Paketverwaltung {
     if (bsp.unveraendert.length) await this.d.entferneBeispielMappen(bsp.unveraendert, von.id);
     const vorgabenWeg = await this.entferneVorgaben(p, [...vg.eigenWeg, ...(vorgabenWahl === 'entfernen' ? vg.frage.map((x) => x.id) : [])], von);
     // Untersichten zuerst, dann die Typen (Verweise untereinander: mehrere Runden).
-    const sichten: Sicht[] = await this.d.listeSichten();
+    const sichten: Sicht[] = await this.d.sichtenVerwaltung.listeSichten();
     const tiefe = (sid: string): number => { const s = sichten.find((x) => x.id === sid); return s?.elternId ? 1 + tiefe(s.elternId) : 0; };
-    for (const sid of Object.values(p.sichten).filter((x) => sichten.some((s) => s.id === x)).sort((a, b) => tiefe(b) - tiefe(a))) await this.d.loescheSicht(sid);
+    for (const sid of Object.values(p.sichten).filter((x) => sichten.some((s) => s.id === x)).sort((a, b) => tiefe(b) - tiefe(a))) await this.d.sichtenVerwaltung.loescheSicht(sid);
     let offen = [...typIds];
     for (let runde = 0; offen.length; runde++) {
       let typen = await this.d.mappentypen.listeTypen();

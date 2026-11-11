@@ -222,7 +222,7 @@ for (const pg of [false, true]) {
       const { d, p, hoch, installiere } = await aufbau(pg);
       await installiere(BASIS);
       await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      await d.legeSichtAn({ name: 'Verträge', typen: [] });
+      await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [] });
       const { vorschau: v } = await hoch(VERTRAEGE);
       const erwartet = [
         'Mappentyp „Vertrag“: Den Namen hat schon ein selbst angelegter Mappentyp. Bitte einen anderen wählen, etwa „Vertrag (Verträge)“.',

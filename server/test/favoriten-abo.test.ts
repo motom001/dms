@@ -23,7 +23,7 @@ async function aufbau() {
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
   const B = { id: ben.id, rolle: 'mitglied' };
   const geaendert = async () => { await d.ereignisse.verteile(); return (await d.meineAufgaben(B)).filter((a) => a.art === 'aenderung'); };
-  const hervorgehoben = async () => ((await d.seite(B, { sicht: t.id })) as { geaendert: string[] }).geaendert;
+  const hervorgehoben = async () => ((await d.sichten.seite(B, { sicht: t.id })) as { geaendert: string[] }).geaendert;
   return { d, konten, anna, ben, carl, t, A: { id: anna.id, rolle: 'admin' }, B, C: { id: carl.id, rolle: 'mitglied' }, geaendert, hervorgehoben };
 }
 
@@ -83,7 +83,7 @@ describe('Favorit = Abo (#422)', () => {
     await konten.setzeEinstellung(ben, 'favoriten_benachrichtigen', null);
     await d.mappen.aendereMappe(m.id, { werte: { nr: '4' } }, anna.id);
     assert.equal((await geaendert()).length, 1);
-    const s = (await d.seite(B, { sicht: 'favoriten' })) as { stumm: string[] };
+    const s = (await d.sichten.seite(B, { sicht: 'favoriten' })) as { stumm: string[] };
     assert.deepEqual(s.stumm, []);
   });
 

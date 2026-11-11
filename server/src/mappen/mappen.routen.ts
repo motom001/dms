@@ -115,7 +115,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.groesse, koepfe: { 'x-dms-ausgelassen': String(r.ausgelassen) } } };
     } },
     // Auswahl (#149): alle Treffer einer Sicht (mit Suche) als Ids; mehrere Mappen löschen (#150).
-    { methode: 'GET', pfad: '/api/mappen/auswahl', zugang: 'angemeldet', handler: async (a) => ok(await dienst.trefferIds(ich(a), a.query, await zg(a))) },
+    { methode: 'GET', pfad: '/api/mappen/auswahl', zugang: 'angemeldet', handler: async (a) => ok(await dienst.sichten.trefferIds(ich(a), a.query, await zg(a))) },
     // Mehrere Mappen per E-Mail (#151): Lesen und Versenden (Recht E einer Ansicht) je Mappe.
     { methode: 'POST', pfad: '/api/mappen/email', zugang: 'angemeldet', handler: async (a) => {
       const i = ich(a);

@@ -279,7 +279,7 @@ for (const pg of [false, true]) {
       await assert.rejects(p.ablaufInstallieren({ uploads, bestaetigt: true }, ICH), gruende(/Alles im Garten/));
       await assert.rejects(p.installiere({ upload: uploads[0], bestaetigt: true }, ICH), gruende(/Alles im Garten/), 'auch einzeln nicht');
       assert.deepEqual((await p.installierte()).map((x) => x.id), [], 'nichts installiert');
-      assert.equal((await d.listeSichten()).some((x) => x.name === 'Alles im Garten'), false);
+      assert.equal((await d.sichtenVerwaltung.listeSichten()).some((x) => x.name === 'Alles im Garten'), false);
       // Bringt die Sammeldatei den Typ mit, ist es kein Fehler (auch in der alten Schreibweise).
       const haus = { ...paket('haus', '1.0.0', '', true), 'inhalt/mappentypen.yaml': '- schluessel: garten_pflanze\n  name: Pflanze\n  felder:\n    - { key: name, label: Name, typ: text }\n  register:\n    - { key: daten, name: Daten, art: felder, felder: [name] }\n' };
       for (const kennung of ['haus:garten_pflanze', 'haus_garten_pflanze']) {

@@ -195,7 +195,7 @@ for (const pg of [false, true]) {
       // Ein Fahrzeug verweist auf die Versicherung, eine Ansicht zeigt Versicherungen mit Nummer.
       const fz = (await typ('haushalt:fahrzeug'))!;
       const auto = await d.mappen.legeMappeAn({ typId: fz.id, werte: { kennzeichen: 'B-LB 1', versicherung: haft.id } }, ICH.id);
-      const sicht = await d.legeSichtAn({ name: 'Versicherungen mit Nummer', typen: [versicherung.id], bedingungen: [{ art: 'feld', feld: 'versicherungsnummer', op: 'nichtLeer' }] });
+      const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Versicherungen mit Nummer', typen: [versicherung.id], bedingungen: [{ art: 'feld', feld: 'versicherungsnummer', op: 'nichtLeer' }] });
       return { d, p, r, einstellungen, hoch, typ, vertrag, versicherung, strom, handy, haft, hausrat, auto, sicht, stadtwerke, versicherer };
     }
     const ENTSCHEIDUNGEN = { 'haushalt:versicherung': { zustand: 'feld' } };
@@ -282,7 +282,7 @@ for (const pg of [false, true]) {
       const fz = (await x.typ('haushalt:fahrzeug'))!;
       assert.deepEqual(fz.felder.find((f) => f.key === 'versicherung')?.zielTypen, [vertrag.id]);
       assert.equal((await m(x.auto.id)).werte.versicherung, x.haft.id);
-      const sicht = (await x.d.listeSichten()).find((s) => s.id === x.sicht.id)!;
+      const sicht = (await x.d.sichtenVerwaltung.listeSichten()).find((s) => s.id === x.sicht.id)!;
       assert.deepEqual(sicht.typen, [vertrag.id]);
       assert.deepEqual(sicht.bedingungen.map((b) => (b as { feld?: string }).feld), ['vertragsnummer']);
       // Ein zweites Update baut nichts zweimal um; Haushalt 2.0.0 (Major) gibt die Typen ab, ohne sie neu anzulegen.

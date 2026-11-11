@@ -33,7 +33,7 @@ export interface UmbauDienst {
   kern: Kern;
   mappentypen: { listeTypen(): Promise<Mappentyp[]>; loescheTyp(id: string): Promise<void> };
   mappen: { listeMappen(typId?: string): Promise<Mappe[]> };
-  listeSichten(): Promise<Sicht[]>;
+  sichtenVerwaltung: { listeSichten(): Promise<Sicht[]> };
   mappenTitel: { aktualisiereTitel(ids: string[]): Promise<Map<string, string>> };
 }
 
@@ -393,7 +393,7 @@ async function planeSchritt(d: UmbauDienst, s: UmbauSchritt, u: Umgebung): Promi
 export async function planeUmbau(d: UmbauDienst, k: UmbauKontext, probleme: Array<{ code: string; text: string }>): Promise<UmbauLage> {
   const lage: UmbauLage = { schritte: [], uebernahme: {} };
   if (!k.paket.umbau.length) return lage;
-  const u: Umgebung = { k, lage, problem: (code, text) => probleme.push({ code, text }), ki: await kiTypen(d), verwehrt: await paketVerwehrt(d), sichten: await d.listeSichten() };
+  const u: Umgebung = { k, lage, problem: (code, text) => probleme.push({ code, text }), ki: await kiTypen(d), verwehrt: await paketVerwehrt(d), sichten: await d.sichtenVerwaltung.listeSichten() };
   // Übernahmen zuerst: Ein späterer Schritt in denselben (neuen) Zieltyp legt dann mit dem übernommenen zusammen.
   const neu = (s: UmbauSchritt) => { const nk = teileKennung(s.nach); return nk.paket === k.paket.id && !k.ich?.typen[nk.schluessel]; };
   for (const s of [...k.paket.umbau].sort((a, b) => Number(!neu(a)) - Number(!neu(b)))) {

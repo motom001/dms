@@ -211,8 +211,8 @@ function faelle(pg: boolean) {
       assert.deepEqual(treffer({ art: 'frist', feld: null, tage: 30, nurMeine: true }), ['A']);
       assert.deepEqual(treffer({ art: 'frist', feld: 'tuev', tage: 30 }), ['C']);
       // Über eine Sicht (Zähler laufen über dasselbe Repo).
-      const s = await d.legeSichtAn({ name: 'Bald', typen: [vertrag.id], bedingungen: [{ art: 'frist', feld: null, tage: 30 }] });
-      const seite = await d.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: s.id });
+      const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Bald', typen: [vertrag.id], bedingungen: [{ art: 'frist', feld: null, tage: 30 }] });
+      const seite = await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: s.id });
       assert.deepEqual(seite.mappen.map((m) => m.werte.name).sort(), ['A', 'B']);
     });
   });

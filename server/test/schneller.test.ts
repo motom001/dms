@@ -87,27 +87,27 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
       ['geändert ↓', { sortierung: '_geaendert', absteigend: 'true' }, nach((i) => -((i * 7) % 10))],
     ];
     for (const [name, q, erwartet] of faelle) {
-      const s = await d.seite(ICH, { ...alle, ...q, von: 0, anzahl: 4 });
+      const s = await d.sichten.seite(ICH, { ...alle, ...q, von: 0, anzahl: 4 });
       assert.equal(s.gesamt, 10, name);
       assert.deepEqual(titel(s), erwartet.slice(0, 4), name);
       // Blättern mit der Zahl vom ersten Blatt: dieselbe Reihenfolge, nicht neu gezählt (die Zahl kommt zurück).
-      const s2 = await d.seite(ICH, { ...alle, ...q, von: 4, anzahl: 4, gesamt: 10 });
+      const s2 = await d.sichten.seite(ICH, { ...alle, ...q, von: 4, anzahl: 4, gesamt: 10 });
       assert.deepEqual(titel(s2), erwartet.slice(4, 8), `${name}, Blatt 2`);
       // Letztes Blatt (nicht voll): genaue Zahl auch ohne Zählen.
-      const s3 = await d.seite(ICH, { ...alle, ...q, von: 8, anzahl: 4, gesamt: 99 });
+      const s3 = await d.sichten.seite(ICH, { ...alle, ...q, von: 8, anzahl: 4, gesamt: 99 });
       assert.deepEqual([titel(s3), s3.gesamt], [erwartet.slice(8), 10], `${name}, Blatt 3`);
       // Je Typ dieselbe Reihenfolge.
       const nurVertrag = erwartet.filter((n) => namen.indexOf(n) % 2 === 0);
-      assert.deepEqual(titel(await d.seite(ICH, { sicht: `typ:${vertrag.id}`, ...q, von: 0, anzahl: 10 })), nurVertrag, `${name}, ein Typ`);
+      assert.deepEqual(titel(await d.sichten.seite(ICH, { sicht: `typ:${vertrag.id}`, ...q, von: 0, anzahl: 10 })), nurVertrag, `${name}, ein Typ`);
     }
     // Ohne bekannte Zahl beim Blättern wird gezählt (API ohne „gesamt“).
-    assert.equal((await d.seite(ICH, { ...alle, von: 4, anzahl: 4 })).gesamt, 10);
+    assert.equal((await d.sichten.seite(ICH, { ...alle, von: 4, anzahl: 4 })).gesamt, 10);
     // Mit Suche: Gesamtzahl und Seite in einer Abfrage; Blatt hinter dem Ende zählt eigens.
     const mitE = namen.filter((n) => /e/i.test(n));
-    const s = await d.seite(ICH, { ...alle, suche: 'e', von: 0, anzahl: 2, sortierung: '_titel', absteigend: 'true' });
+    const s = await d.sichten.seite(ICH, { ...alle, suche: 'e', von: 0, anzahl: 2, sortierung: '_titel', absteigend: 'true' });
     assert.equal(s.gesamt, mitE.length);
     assert.deepEqual(titel(s), [...mitE].sort((a, b) => b.toLowerCase().localeCompare(a.toLowerCase())).slice(0, 2));
-    assert.equal((await d.seite(ICH, { ...alle, suche: 'e', von: 50, anzahl: 2, gesamt: 1 })).gesamt, mitE.length, 'mit Suche gilt „gesamt“ nicht');
+    assert.equal((await d.sichten.seite(ICH, { ...alle, suche: 'e', von: 50, anzahl: 2, gesamt: 1 })).gesamt, mitE.length, 'mit Suche gilt „gesamt“ nicht');
   });
 
   it('Treffer aus Mappe, Notizen und Textfilter als eine Menge – wie vorher; „Meintest du“ fragt nur, ob es etwas gibt', async () => {
@@ -118,19 +118,19 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     const c = await d.mappen.legeMappeAn({ typId: zettel.id, werte: { name: 'Garten', nr: 'Heizstrom-Tarif' } });
     await d.mappen.legeMappeAn({ typId: zettel.id, werte: { name: 'Fahrrad' } });
     const alle = { sicht: 'suche', link: '' };
-    const s1 = await d.seite(ICH, { ...alle, suche: 'strom' });
+    const s1 = await d.sichten.seite(ICH, { ...alle, suche: 'strom' });
     assert.deepEqual(titel(s1).sort(), ['Garten', 'Stromvertrag Haus']);
-    const s2 = await d.seite(ICH, { ...alle, suche: 'strom', notizen: 'true' });
+    const s2 = await d.sichten.seite(ICH, { ...alle, suche: 'strom', notizen: 'true' });
     assert.deepEqual(titel(s2).sort(), ['Einkauf', 'Garten', 'Stromvertrag Haus']);
     assert.equal(s2.gesamt, 3);
     assert.match(s2.ausschnitte?.[b.id]?.text ?? '', /Strom/);
     // Ein Typ: Typ und Treffer zusammen.
-    assert.deepEqual(titel(await d.seite(ICH, { sicht: `typ:${zettel.id}`, suche: 'strom', notizen: 'true' })).sort(), ['Einkauf', 'Garten']);
+    assert.deepEqual(titel(await d.sichten.seite(ICH, { sicht: `typ:${zettel.id}`, suche: 'strom', notizen: 'true' })).sort(), ['Einkauf', 'Garten']);
     // Erweiterte Suche: Begriff in einer Notiz (Textfilter) als Treffermenge, ohne und mit Suche.
     const notizfilter = { sicht: 'suche', link: 'volltext=Freitag&in=notizen' };
-    assert.deepEqual(titel(await d.seite(ICH, notizfilter)), ['Einkauf']);
-    assert.deepEqual(titel(await d.seite(ICH, { ...notizfilter, suche: 'kauf' })), ['Einkauf']);
-    assert.deepEqual(titel(await d.seite(ICH, { ...notizfilter, suche: 'garten' })), []);
+    assert.deepEqual(titel(await d.sichten.seite(ICH, notizfilter)), ['Einkauf']);
+    assert.deepEqual(titel(await d.sichten.seite(ICH, { ...notizfilter, suche: 'kauf' })), ['Einkauf']);
+    assert.deepEqual(titel(await d.sichten.seite(ICH, { ...notizfilter, suche: 'garten' })), []);
     // Ob es Treffer gibt – ohne Seite und ohne Zahl.
     assert.equal(await r.gibtTreffer({ suche: 'heizstrom', von: 0, anzahl: 1 }), true);
     assert.equal(await r.gibtTreffer({ suche: 'heizstrom', typId: vertrag.id, von: 0, anzahl: 1 }), false);

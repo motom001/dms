@@ -126,7 +126,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/uebersicht', zugang: 'admin', handler: async (a) => {
       const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
       const ts = x.tresor ? await sicher(() => x.tresor!.status()) : null;
-      const z = await dienst.zaehler(ich(a));
+      const z = await dienst.sichten.zaehler(ich(a));
       const aufgaben = await dienst.alleAufgaben(false);
       const korb = await dienst.papierkorb(ich(a), true);
       const sys = await uebersicht(system, x.betrieb?.kurz());

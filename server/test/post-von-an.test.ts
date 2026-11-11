@@ -211,7 +211,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     await d.mappen.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
     const p4 = await d.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
     await d.loescheMappe(p4.id, markus.id);
-    const sicht = await d.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
+    const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
       { art: 'feld', feld: 'an', op: 'zeigtAuf', wert: { art: 'ich' } }, { art: 'feld', feld: 'von', op: 'nichtLeer' },
     ] });
     const auto = { name: 'Post prüfen', beschreibung: '', reihenfolge: 50, wenn: { art: 'mappe.geaendert', typ: post.id, felder: ['an', 'von'] },

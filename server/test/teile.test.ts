@@ -122,12 +122,12 @@ describe('Einstellung am Mappentyp (#1031)', () => {
 
   it('keine eigene Ansicht; einschalten nimmt den Typ aus den Ansichten, ausschalten gibt ihm seine zurück', async () => {
     const { d, rechnung, position } = await aufbau();
-    const sichten = async () => d.listeSichten();
+    const sichten = async () => d.sichtenVerwaltung.listeSichten();
     assert.ok((await sichten()).some((s) => s.id === rechnung.id));
     assert.equal((await sichten()).some((s) => s.id === position.id), false);
     // Ein eigenständiger Typ mit Ansicht und einer gemeinsamen Ansicht mit der Rechnung.
     const notiz = await d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'text', label: 'Text', typ: 'text' }] });
-    const gemeinsam = await d.legeSichtAn({ name: 'Belege', typen: [rechnung.id, notiz.id], bedingungen: [] });
+    const gemeinsam = await d.sichtenVerwaltung.legeSichtAn({ name: 'Belege', typen: [rechnung.id, notiz.id], bedingungen: [] });
     assert.ok((await sichten()).some((s) => s.id === notiz.id));
     const an = await d.mappentypen.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
     assert.equal((await sichten()).some((s) => s.id === notiz.id), false);
@@ -156,7 +156,7 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
 
   it('nicht in Ansichten (auch „alle Mappentypen“), nicht in der erweiterten Suche, aber über typ:<Id> wie alle Mappen', async () => {
     const { d, admin, suche, rechnung, position, r1, r2, r3, p1 } = await mitMappen();
-    const alle = await d.legeSichtAn({ name: 'Alles', typen: [ALLE_TYPEN], bedingungen: [] });
+    const alle = await d.sichtenVerwaltung.legeSichtAn({ name: 'Alles', typen: [ALLE_TYPEN], bedingungen: [] });
     // Neben Benutzern und Rollen die drei Rechnungen – keine Position.
     const ohneSystem = async (q: Record<string, string>) => (await suche(admin, q)).mappen.filter((m) => m.typId === rechnung.id || m.typId === position.id).map((m) => m.id).sort();
     assert.deepEqual(await ohneSystem({ sicht: alle.id }), [r1.id, r2.id, r3.id].sort());
@@ -164,7 +164,7 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
     assert.deepEqual(ids(await suche(admin, { sicht: 'suche', link: `typ=${position.schluessel}` })), []);
     assert.equal((await suche(admin, { sicht: `typ:${position.id}` })).gesamt, 3);
     // Zahlen der Ansichten zählen sie nicht.
-    const z = await d.zaehler({ id: admin.id, rolle: 'admin' });
+    const z = await d.sichten.zaehler({ id: admin.id, rolle: 'admin' });
     assert.equal(z.sichten[alle.id], (await suche(admin, { sicht: alle.id })).gesamt);
     assert.equal(z.sichten[rechnung.id], 3);
     assert.ok(p1.id);
@@ -371,7 +371,7 @@ ${gehoert}
     const paket = await a.p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
     const pos = (await a.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.rechnungsposition)!;
     assert.equal(pos.teilVon, 'rechnung');
-    assert.equal((await a.d.listeSichten()).some((s) => s.id === pos.id), false);
+    assert.equal((await a.d.sichtenVerwaltung.listeSichten()).some((s) => s.id === pos.id), false);
     // Paket erstellen schreibt gehoertZu und hebt die Mindestversion.
     assert.equal(mindestversion(['teile']).version, DMS_TEILE_AB);
     const b = dms();

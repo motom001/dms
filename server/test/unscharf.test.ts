@@ -78,7 +78,7 @@ function faelle(pg: boolean) {
       const suche = async (s: string, volltext = true, sicht = `typ:${typ.id}`) => {
         // Neue Wörter kommen über den Eingang ins Wörterverzeichnis (#575); im Betrieb alle paar Sekunden.
         await d.suche.woerterEinarbeiten();
-        const x = await d.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['seite']>> & { unscharf?: { statt: string; vorschlag: string | null } };
+        const x = await d.sichten.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['sichten']['seite']>> & { unscharf?: { statt: string; vorschlag: string | null } };
         return { titel: x.mappen.map((m) => m.titel).sort(), unscharf: x.unscharf ?? null };
       };
       return { d, r, sql, typ, lese, mappe, suche };
@@ -146,7 +146,7 @@ function faelle(pg: boolean) {
       await mappe('Offen', 'Kein passendes Wort');
       // Lesefilter nur auf „Unterlage“: Der Tippfehler findet nichts aus „Gesperrt“ und schlägt nichts von dort vor.
       const lesen = { offen: [typ.id], je: [] };
-      const x = await d.seite(ICH, { sicht: 'suche', link: '', suche: 'Steuererklarung', volltext: 'true' }, { lesen } as never) as unknown as { gesamt: number; unscharf?: { vorschlag: string | null } };
+      const x = await d.sichten.seite(ICH, { sicht: 'suche', link: '', suche: 'Steuererklarung', volltext: 'true' }, { lesen } as never) as unknown as { gesamt: number; unscharf?: { vorschlag: string | null } };
       assert.equal(x.gesamt, 0);
       assert.equal(x.unscharf, undefined);
       // Ohne Filter (Administrator) findet sie es

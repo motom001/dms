@@ -43,7 +43,7 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [
       { key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }, { key: 'notiz', label: 'Notiz', typ: 'text' },
     ] });
-    const suche = async (s: string) => (await d.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.titel).sort();
+    const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.titel).sort();
     return { sql, r, d, typ, suche };
   }
 

@@ -45,15 +45,15 @@ describe('Systemtyp Post (#192)', () => {
     for (const k of ['betreff', 'stand', 'kanal', 'richtung', 'datum', 'von', 'an', 'an_adresse', 'bezug', 'nachricht']) assert.ok(post.felder.some((f) => f.key === k && f.system), k);
     assert.equal(post.felder.find((f) => f.key === 'bezug')!.mehrfach, true);
     assert.deepEqual(post.register.map((r) => r.art), ['felder', 'dokumente', 'protokoll']);
-    const sichten = await d.listeSichten();
+    const sichten = await d.sichtenVerwaltung.listeSichten();
     const neu = sichten.find((s) => s.name === 'Neue Post')!;
     assert.ok(neu && neu.elternId === null);
     assert.ok(sichten.every((s) => s.elternId !== null || s.position >= neu.position), 'Neue Post steht oben');
-    assert.equal(await d.neuePostSicht(), neu.id);
+    assert.equal(await d.systemsichten.neuePostSicht(), neu.id);
     assert.deepEqual(sichten.filter((s) => s.elternId === post.id).map((s) => s.name), ['Eingegangen', 'Versendet']);
     // Ein zweiter Start legt nichts doppelt an; gelöschte Sichten kommen nicht wieder.
-    await d.loescheSicht(neu.id);
-    assert.equal((await d.listeSichten()).filter((s) => s.name === 'Neue Post').length, 0);
+    await d.sichtenVerwaltung.loescheSicht(neu.id);
+    assert.equal((await d.sichtenVerwaltung.listeSichten()).filter((s) => s.name === 'Neue Post').length, 0);
   });
 
   it('„+ Post“: neu, eingehend, heute; mit Dokumenten; zählt in „Neue Post“', async () => {
@@ -66,9 +66,9 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(m.werte.von ?? null, null, '„Von“ bleibt leer, nicht der Name des Anlegenden (#494)');
     assert.match(String(m.werte.datum), /^\d{4}-\d{2}-\d{2}$/);
     await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
-    const z = await d.zaehler(A, await d.rechtepruefung.zugriff(A));
-    assert.equal(z.sichten[(await d.neuePostSicht())!], 1);
-    assert.equal(z.neuePost, await d.neuePostSicht());
+    const z = await d.sichten.zaehler(A, await d.rechtepruefung.zugriff(A));
+    assert.equal(z.sichten[(await d.systemsichten.neuePostSicht())!], 1);
+    assert.equal(z.neuePost, await d.systemsichten.neuePostSicht());
     // Das allgemeine Formular legt keine Post an; Kanal und „Zugeordnet zu“ ändert man nicht von Hand.
     await assert.rejects(d.mappen.legeMappeAn({ typId: post.id, werte: { betreff: 'x' } }, anna.id), status(403));
     await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { kanal: 'Scan' } }, anna.id), status(403));
@@ -264,7 +264,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     assert.equal(post.register.find((r) => r.key === 'anhaenge')!.name, 'Dokumente');
     assert.equal(post.felder.find((f) => f.key === 'an')!.zielTypen?.[0], (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!.id);
     void rolle; void systemfelder;
-    const sichten = await d.listeSichten();
+    const sichten = await d.sichtenVerwaltung.listeSichten();
     assert.equal(sichten.find((s) => s.id === post.id)!.name, 'Post');
     assert.ok(sichten.some((s) => s.name === 'Neue Post'));
     // Die alte Mappe passt zur neuen Definition.

@@ -32,15 +32,15 @@ describe('Aufgaben (#54, #56)', () => {
     const { d, t, B } = await aufbau();
     const a = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
     await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
-    assert.equal((await d.zaehler(B)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(B)).eingang, 1);
     const [auf] = await d.meineAufgaben(B);
     assert.equal(auf.art, 'passung');
     assert.match(auf.text, /Pflicht/);
-    const e = await d.seite(B, { sicht: 'eingang' });
+    const e = await d.sichten.seite(B, { sicht: 'eingang' });
     assert.match((e as { aufgaben?: Record<string, string> }).aufgaben![a.id], /Passt nicht/);
     await assert.rejects(d.erledigeAufgabe(auf.id, B), status(409));
     await d.mappen.aendereMappe(a.id, { werte: { nr: '1', pflicht: 'ja' } }, B.id);
-    assert.equal((await d.zaehler(B)).eingang, 0);
+    assert.equal((await d.sichten.zaehler(B)).eingang, 0);
   });
 
   it('vergibt Aufgaben von Hand; der Empfänger erledigt oder gibt weiter (mit Historie)', async () => {
@@ -49,14 +49,14 @@ describe('Aufgaben (#54, #56)', () => {
     await assert.rejects(d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: '' }, A.id), status(422));
     await assert.rejects(d.legeAufgabeAn(m.id, { empfaengerId: m.id, text: 'x' }, A.id), status(422), 'nur Benutzer');
     const a = await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Bitte Rechnung prüfen' }, A.id);
-    assert.equal((await d.zaehler(B)).eingang, 1);
-    assert.equal((await d.zaehler(A)).eingang, 0);
+    assert.equal((await d.sichten.zaehler(B)).eingang, 1);
+    assert.equal((await d.sichten.zaehler(A)).eingang, 0);
     const fremd = { id: '00000000-0000-4000-8000-0000000000cc', rolle: 'mitglied' };
     await assert.rejects(d.erledigeAufgabe(a.id, fremd), status(403));
     await d.delegiereAufgabe(a.id, A.id, B);
-    assert.equal((await d.zaehler(A)).eingang, 1, 'weitergegeben an Anna');
+    assert.equal((await d.sichten.zaehler(A)).eingang, 1, 'weitergegeben an Anna');
     await d.erledigeAufgabe(a.id, A);
-    assert.equal((await d.zaehler(A)).eingang, 0);
+    assert.equal((await d.sichten.zaehler(A)).eingang, 0);
     const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'aufgabe').map((x) => x.daten.text);
     assert.deepEqual(h, ['erledigt: Bitte Rechnung prüfen', 'weitergegeben von Ben an Anna: Bitte Rechnung prüfen', 'für Ben: Bitte Rechnung prüfen']);
   });

@@ -9,7 +9,6 @@ import { aufkleberPdf, ETIKETTEN } from './aufkleber';
 import { istVerschluesselt, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { type Repo } from './repo';
-import { type Sicht } from '../../shared/src/sichten';
 import type { ExportQuelle } from './vollexport';
 import { type BaumQuelle } from './baum';
 import { type Baum } from '../../shared/src/baum';
@@ -336,8 +335,8 @@ export class Dienst {
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
       mappentypen: { sichereSystemtypen: () => this.systemtypen.sichereSystemtypen() },
-      sichten: { sichtFuerTyp: (typ) => this.sichtFuerTyp(typ), sichereFavoritenSicht: () => this.sichereFavoritenSicht() },
-      post: { sicherePostSichten: (post) => this.sicherePostSichten(post) },
+      sichten: { sichtFuerTyp: (typ) => this.sichtenVerwaltung.sichtFuerTyp(typ), sichereFavoritenSicht: () => this.systemsichten.sichereFavoritenSicht() },
+      post: { sicherePostSichten: (post) => this.systemsichten.sicherePostSichten(post) },
     });
     ({ ki: this.ki, notizen: this.mappenNotizen, ereignisse: this.ereignisseDienst, automatisierung: this.automatisierungshilfen, aufgaben: this.aufgaben, vertretung: this.vertretung, ohneLeserecht: this.ohneLeserecht, fristen: this.fristen, ohneEmpfaenger: this.ohneEmpfaenger,
       loeschen: this.loeschen, papierkorb: this.papierkorbVerwaltung, protokoll: this.loeschprotokollVerwaltung, verknuepft: this.mitVerknuepften, beispiele: this.beispielMappen, datenschutz: this.datenschutzDienst, vollexport: this.vollexport, zustellen: this.auskunftZustellen, werkbank: this.werkbank, organisation: this.organisation } = this.baueAufgabenUndLoeschen());
@@ -558,7 +557,7 @@ export class Dienst {
     // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
     a.typGeaendert.anmelden('aufgaben.fristen', async ({ typ }) => { await this.fristenAbgleichen({ typId: typ.id }); });
     // Neue Mappentypen bekommen eine eigene Sicht (#38), außer der Administrator wählt das ab.
-    a.typAngelegt.anmelden('sichten.eigeneSicht', async ({ typ, sicht }) => { if (sicht) await this.sichtFuerTyp(typ); });
+    a.typAngelegt.anmelden('sichten.eigeneSicht', async ({ typ, sicht }) => { if (sicht) await this.sichtenVerwaltung.sichtFuerTyp(typ); });
     // Abwesenheit (#78): Historie an der Benutzer-Mappe, Ereignisse, Aufgaben mit Anlass „Abwesenheit“.
     a.benutzerGespiegelt.anmelden('aufgaben.abwesenheit', async ({ benutzer, von, abwesenheit }) => {
       if (abwesenheit) await this.abwesenheitGeaendert(benutzer, abwesenheit.vorher, von, abwesenheit.wegen);
@@ -722,13 +721,6 @@ export class Dienst {
 
   /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
 
-  seite(...a: Parameters<SichtenDienst['seite']>) { return this.sichten.seite(...a); }
-  tabelle(...a: Parameters<SichtenDienst['tabelle']>) { return this.sichten.tabelle(...a); }
-  zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) { return this.sichten.zaehler(ich, zg); }
-  zaehlerRahmen() { return this.sichten.zaehlerRahmen(); }
-  zaehlerAbruf(z: Zugriff) { return this.sichten.zaehlerAbruf(z); }
-  ablageStand(ich: { rolle: string }): Promise<string> { return this.sichten.ablageStand(ich); }
-  beiAenderung(f: () => void) { this.sichten.beiAenderung(f); }
 
   /* ---------- Favoriten (#62) ---------- */
 
@@ -752,18 +744,7 @@ export class Dienst {
 
   /* ---------- Sichten verwalten (#38, sichten/verwalten.ts) ---------- */
 
-  listeSichten(z?: Zugriff): Promise<Sicht[]> { return this.sichtenVerwaltung.listeSichten(z); }
-  verborgeneSichten(alle: Sicht[], z?: Zugriff): Set<string> { return this.sichtenVerwaltung.verborgeneSichten(alle, z); }
-  sichtTestlauf(e: unknown): Promise<unknown> { return this.sichtenVerwaltung.sichtTestlauf(e); }
-  legeSichtAn(e: unknown): Promise<Sicht> { return this.sichtenVerwaltung.legeSichtAn(e); }
-  aendereSicht(id: string, e: unknown): Promise<Sicht> { return this.sichtenVerwaltung.aendereSicht(id, e); }
   private static konfigurationKonflikt(art: 'typ' | 'sicht', aktuell?: string): Fachfehler { return SichtenVerwaltung.konfigurationKonflikt(art, aktuell); }
-  loescheSicht(id: string): Promise<void> { return this.sichtenVerwaltung.loescheSicht(id); }
-  ordneSichten(elternId: unknown, ids: unknown): Promise<Sicht[]> { return this.sichtenVerwaltung.ordneSichten(elternId, ids); }
-  verschiebeSicht(id: string, elternId: unknown, stelle: unknown): Promise<Sicht[]> { return this.sichtenVerwaltung.verschiebeSicht(id, elternId, stelle); }
-  sichtVorschau(ich: { id: string }, id: unknown, e: unknown): Promise<{ anzahl: number }> { return this.sichtenVerwaltung.sichtVorschau(ich, id, e); }
-  private sichtFuerTyp(t: Mappentyp) { return this.sichtenVerwaltung.sichtFuerTyp(t); }
-  belegung(typId: string) { return this.sichtenVerwaltung.belegung(typId); }
 
   /* ---------- Passung: passt eine Mappe zur aktuellen Definition? ---------- */
 
@@ -809,7 +790,6 @@ export class Dienst {
 
   /* ---------- Nummernkreise (#171) ---------- */
 
-  aktualisiereStatistik() { return this.sichten.aktualisiereStatistik(); }
   private loeschPruefung(...a: Parameters<LoeschenDienst['loeschPruefung']>) { return this.loeschen.loeschPruefung(...a); }
 
   /* ---------- Export mehrerer Mappen (#152, ausgang/export.ts) ---------- */
@@ -827,7 +807,6 @@ export class Dienst {
   dokumentFuerAusgabe(...a: Parameters<AusgangDienst['dokumentFuerAusgabe']>) { return this.ausgang.dokumentFuerAusgabe(...a); }
   fassungFuerAusgabe(...a: Parameters<AusgangDienst['fassungFuerAusgabe']>) { return this.ausgang.fassungFuerAusgabe(...a); }
   gestempelteSeiten(...a: Parameters<AusgangDienst['gestempelteSeiten']>) { return this.ausgang.gestempelteSeiten(...a); }
-  trefferIds(...a: Parameters<SichtenDienst['trefferIds']>) { return this.sichten.trefferIds(...a); }
   loescheMappen(...a: Parameters<LoeschenDienst['loescheMappen']>) { return this.loeschen.loescheMappen(...a); }
   loescheMappe(...a: Parameters<LoeschenDienst['loescheMappe']>): Promise<void> { return this.loeschen.loescheMappe(...a); }
   private loescheMappeIntern(id: string, typ: Mappentyp | undefined, von: string | null = null) { return this.loeschen.loescheMappeIntern(id, typ, von); }
@@ -840,10 +819,6 @@ export class Dienst {
    */
   sichereSystem(): Promise<SystemIds> { return this.systemausstattung.sicherstellen(); }
 
-  private sicherePostSichten(post: Mappentyp) { return this.systemsichten.sicherePostSichten(post); }
-  private sichereFavoritenSicht() { return this.systemsichten.sichereFavoritenSicht(); }
-  favoritenSicht(): Promise<string | null> { return this.systemsichten.favoritenSicht(); }
-  neuePostSicht(): Promise<string | null> { return this.systemsichten.neuePostSicht(); }
 
   /* ---------- Post (#192, post/post.dienst.ts; Auflösen post/aufloesen.ts) ---------- */
 

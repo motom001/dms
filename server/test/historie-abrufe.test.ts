@@ -161,7 +161,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Export mit Dokumenten: je Mappe ein Eintrag mit ihren Dateien; Vollexport und Auskunft enthalten die Abrufe', async () => {
       const x = await aufbau(pg ? await pgRepos() : undefined);
-      const sicht = await x.d.legeSichtAn({ name: 'Verträge', typen: [x.typ.id] });
+      const sicht = await x.d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [x.typ.id] });
       const ohne = await x.d.mappen.legeMappeAn({ typId: x.typ.id, werte: { nr: 'V-2' } }, x.lena.id);
       const ich = { id: x.lena.id, rolle: 'admin', name: 'Lena' };
       const z = await x.d.rechtepruefung.zugriff(ich);

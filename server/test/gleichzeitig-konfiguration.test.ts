@@ -22,9 +22,9 @@ async function aufbau() {
   const repo = await neuesRepo();
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
   const typ = await d.mappentypen.legeTypAn({ name: 'Versicherung', titelVorlage: '{bezeichnung}', felder: [{ key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true }] });
-  const haus = await d.legeSichtAn({ name: 'Haus', typen: [] });
-  const sicht = await d.legeSichtAn({ name: 'Versicherungen', elternId: haus.id, typen: [typ.id], bedingungen: [] });
-  const zweite = await d.legeSichtAn({ name: 'Verträge', elternId: haus.id, typen: [typ.id] });
+  const haus = await d.sichtenVerwaltung.legeSichtAn({ name: 'Haus', typen: [] });
+  const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Versicherungen', elternId: haus.id, typen: [typ.id], bedingungen: [] });
+  const zweite = await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', elternId: haus.id, typen: [typ.id] });
   return { d, repo, typ, haus, sicht, zweite };
 }
 
@@ -77,39 +77,39 @@ function faelle() {
     const { d, sicht } = await aufbau();
     const stand = sicht.geaendert;
     const bedingung = { art: 'feld', feld: 'bezeichnung', op: 'enthaelt', wert: 'Kfz' };
-    await d.aendereSicht(sicht.id, { ...sicht, bedingungen: [bedingung], stand });
-    const f = await fehler(d.aendereSicht(sicht.id, { ...sicht, name: 'Policen', stand }), 409);
+    await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, bedingungen: [bedingung], stand });
+    const f = await fehler(d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, name: 'Policen', stand }), 409);
     assert.equal(f.message, t('meldungen.dienst.sicht-konflikt'));
-    const jetzt = (await d.listeSichten()).find((x) => x.id === sicht.id)!;
+    const jetzt = (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === sicht.id)!;
     assert.equal(jetzt.bedingungen.length, 1, 'Petras Bedingung ist noch da');
     assert.equal(jetzt.name, 'Versicherungen', 'Markus hat nichts überschrieben');
-    const r = await d.aendereSicht(sicht.id, { ...jetzt, name: 'Policen', stand: jetzt.geaendert });
+    const r = await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...jetzt, name: 'Policen', stand: jetzt.geaendert });
     assert.equal(r.name, 'Policen');
     assert.equal(r.bedingungen.length, 1);
     // Ohne Stand wie bisher.
-    assert.equal((await d.aendereSicht(sicht.id, { ...sicht, name: 'Ohne Stand' })).name, 'Ohne Stand');
+    assert.equal((await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, name: 'Ohne Stand' })).name, 'Ohne Stand');
   });
 
   it('Ansicht: Ordnen unter Geschwistern lässt den Stand, ohne Stelle bleibt sie; neue Elternsicht ist eine Änderung', async () => {
     const { d, haus, sicht, zweite } = await aufbau();
-    await d.ordneSichten(haus.id, [zweite.id, sicht.id]);
-    let jetzt = (await d.listeSichten()).find((x) => x.id === sicht.id)!;
+    await d.sichtenVerwaltung.ordneSichten(haus.id, [zweite.id, sicht.id]);
+    let jetzt = (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === sicht.id)!;
     assert.equal(jetzt.geaendert, sicht.geaendert, 'Umnummerieren ist keine Änderung der Ansicht');
     // Die offene Bearbeitung (ohne Stelle) gilt weiter und setzt die neue Reihenfolge nicht zurück.
-    await d.aendereSicht(sicht.id, { ...sicht, position: undefined, name: 'Policen', stand: sicht.geaendert });
-    const reihe = (await d.listeSichten()).filter((x) => x.elternId === haus.id).sort((a, b) => a.position - b.position).map((x) => x.id);
+    await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, position: undefined, name: 'Policen', stand: sicht.geaendert });
+    const reihe = (await d.sichtenVerwaltung.listeSichten()).filter((x) => x.elternId === haus.id).sort((a, b) => a.position - b.position).map((x) => x.id);
     assert.deepEqual(reihe, [zweite.id, sicht.id]);
     // Verschieben unter eine andere Elternsicht ändert die Ansicht (sie erbt andere Berechtigungen).
-    jetzt = (await d.listeSichten()).find((x) => x.id === sicht.id)!;
-    await d.verschiebeSicht(sicht.id, null, 0);
-    await fehler(d.aendereSicht(sicht.id, { ...jetzt, position: undefined, stand: jetzt.geaendert }), 409);
-    assert.equal((await d.listeSichten()).find((x) => x.id === sicht.id)!.elternId, null, 'Das Verschieben bleibt');
+    jetzt = (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === sicht.id)!;
+    await d.sichtenVerwaltung.verschiebeSicht(sicht.id, null, 0);
+    await fehler(d.sichtenVerwaltung.aendereSicht(sicht.id, { ...jetzt, position: undefined, stand: jetzt.geaendert }), 409);
+    assert.equal((await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === sicht.id)!.elternId, null, 'Das Verschieben bleibt');
   });
 
   it('Ansicht: Löschen einer Elternsicht ändert die Untersichten', async () => {
     const { d, haus, sicht } = await aufbau();
-    await d.loescheSicht(haus.id);
-    await fehler(d.aendereSicht(sicht.id, { ...sicht, stand: sicht.geaendert }), 409);
+    await d.sichtenVerwaltung.loescheSicht(haus.id);
+    await fehler(d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, stand: sicht.geaendert }), 409);
   });
 }
 

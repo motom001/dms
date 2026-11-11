@@ -109,7 +109,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
   await dienst.mappen.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'R-2026-117', aussteller: hb.id, vertrag: wv.id, vertragsnummer_gedruckt: 'WV-2023-17', rechnungsdatum: '2026-03-02', betrag: { betrag: 189, waehrung: 'EUR' }, bezahlt: false } }, benutzerId);
   await dienst.mappen.legeMappeAn({ typId: id.zahlung, werte: { verwendungszweck: 'Nachzahlung Jahresabrechnung 2025', zahlungsdatum: '2026-01-29', betrag: { betrag: 214.37, waehrung: 'EUR' }, rechnungen: [r1.id] } }, benutzerId);
   if (ablageort) {
-    await dienst.legeSichtAn({
+    await dienst.sichtenVerwaltung.legeSichtAn({
       name: 'Originale nach Ort', beschreibung: 'Verträge und Rechnungen, bei denen eingetragen ist, wo das Papier liegt',
       typen: [id.vertrag, id.rechnung], bedingungen: [{ art: 'feld', feld: 'verbleib_original', op: 'nichtLeer' }],
     });

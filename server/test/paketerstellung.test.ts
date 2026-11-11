@@ -80,9 +80,9 @@ async function quelle(version?: string) {
   const v2 = (await q.d.mappentypen.listeTypen()).find((t) => t.id === vertrag.id)!;
   await q.d.mappentypen.aendereTyp(vertrag.id, { ...v2, register: [...v2.register, { key: 'zahlungen', name: 'Zahlungen', art: 'verknuepfungen', quellen: [{ typId: zahlung.id, feldKey: 'vertrag' }] }] });
   const notiz = await q.d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
-  const vertraege = await q.d.legeSichtAn({ name: 'Verträge', typen: [vertrag.id], symbol: 'signature' });
-  const teuer = await q.d.legeSichtAn({ name: 'Teure Verträge', elternId: vertraege.id, typen: [vertrag.id], bedingungen: [{ art: 'feld', feld: 'monatlich', op: 'groesser', wert: { art: 'fest', wert: 100 } }] });
-  const meine = await q.d.legeSichtAn({ name: 'Meine Verträge', elternId: vertraege.id, typen: [vertrag.id], bedingungen: [
+  const vertraege = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [vertrag.id], symbol: 'signature' });
+  const teuer = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Teure Verträge', elternId: vertraege.id, typen: [vertrag.id], bedingungen: [{ art: 'feld', feld: 'monatlich', op: 'groesser', wert: { art: 'fest', wert: 100 } }] });
+  const meine = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Meine Verträge', elternId: vertraege.id, typen: [vertrag.id], bedingungen: [
     { art: 'feld', feld: 'verantwortlich', op: 'zeigtAuf', wert: { art: 'ich' } },
     { art: 'feld', feld: 'kuendigung', op: 'kleiner', wert: { art: 'heute', versatz: 3, einheit: 'monate' } },
   ] });
@@ -92,7 +92,7 @@ async function quelle(version?: string) {
   const z = await q.d.mappen.legeMappeAn({ typId: zahlung.id, werte: { datum: '2026-01-31', betrag: { betrag: 89, waehrung: 'EUR' }, vertrag: v.id } });
   const echt = await q.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'GEHEIM-4711' } });
   // Bedingung mit fester Mappe: gehört nie ins Paket.
-  const fest = await q.d.legeSichtAn({ name: 'Nur ein Partner', typen: [vertrag.id], bedingungen: [{ art: 'feld', feld: 'partner', op: 'zeigtAuf', wert: { art: 'fest', wert: stadtwerke.id } }] });
+  const fest = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Nur ein Partner', typen: [vertrag.id], bedingungen: [{ art: 'feld', feld: 'partner', op: 'zeigtAuf', wert: { art: 'fest', wert: stadtwerke.id } }] });
   return { ...q, org, vertrag, zahlung, notiz, sichten: { vertraege, teuer, meine, fest }, mappen: { v, z, echt } };
 }
 
@@ -156,7 +156,7 @@ describe('Paket selbst erstellen (#374)', () => {
     const a = await frueherAblageort(q.d, q.einstellungen);
     const brief = await q.d.mappentypen.legeTypAn({ name: 'Brief', schluessel: 'brief', felder: [{ key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
       { key: 'original', label: 'Original liegt in', typ: 'referenz', zielTyp: a.id, verweisart: 'bezug' }] });
-    const orte = await q.d.legeSichtAn({ name: 'Briefe und Orte', typen: [brief.id, a.id] });
+    const orte = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Briefe und Orte', typen: [brief.id, a.id] });
     const st = await q.e.stand();
     assert.ok(!st.typen.some((t) => t.id === a.id), 'nicht als eigener Typ zur Auswahl');
     const z = await q.e.exportiere(angaben({ id: 'briefe', typen: [brief.id], sichten: [orte.id] }), ICH);
@@ -193,16 +193,16 @@ describe('Paket selbst erstellen (#374)', () => {
     assert.deepEqual(h.vorschau.sichten.map((x) => [x.name, !!x.ausgelassen]), [['Verträge', true], ['Teure Verträge', true]]);
     assert.ok(h.vorschau.hinweise.some((x) => /Ansicht „Verträge“ wird nicht installiert: Den Mappentyp „Vertrag“ gibt es in dieser Installation nicht\./.test(x)), h.vorschau.hinweise.join('\n'));
     assert.ok(h.vorschau.hinweise.some((x) => /Ansicht „Teure Verträge“ wird nicht installiert: Sie steht unter „Verträge“/.test(x)));
-    const vorher = (await ohne.d.listeSichten()).length;
+    const vorher = (await ohne.d.sichtenVerwaltung.listeSichten()).length;
     const p1 = await ohne.p.installiere({ upload: h.upload, bestaetigt: true, beispiele: false }, ICH);
     assert.equal(p1.version, '1.0.0');
-    assert.equal((await ohne.d.listeSichten()).length, vorher, 'keine Ansicht angelegt');
+    assert.equal((await ohne.d.sichtenVerwaltung.listeSichten()).length, vorher, 'keine Ansicht angelegt');
 
     // Empfänger mit einem Typ dieser Kennung: zugeordnet.
     const mit = dms('0.178.0');
     const t = await mit.d.mappentypen.legeTypAn({ name: 'Mein Vertrag', schluessel: 'vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'monatlich', label: 'Monatlich', typ: 'betrag', waehrung: 'EUR' }] });
     await hochladenUndInstallieren(mit.p, z1.daten);
-    const zs = await mit.d.listeSichten();
+    const zs = await mit.d.sichtenVerwaltung.listeSichten();
     assert.deepEqual(zs.find((x) => x.name === 'Verträge')!.typen, [t.id]);
     assert.deepEqual(zs.find((x) => x.name === 'Teure Verträge')!.typen, [t.id]);
   });
@@ -299,7 +299,7 @@ describe('Paket selbst erstellen (#374)', () => {
       assert.equal(ziel.schluessel, `familie_vertraege:${k}`);
       assert.deepEqual(bild(ziel, zt), bild(qt.find((t) => t.id === quell.id)!, qt), k);
     }
-    const qs = await q.d.listeSichten(), zs = await z.d.listeSichten();
+    const qs = await q.d.sichtenVerwaltung.listeSichten(), zs = await z.d.sichtenVerwaltung.listeSichten();
     for (const quell of [s.vertraege, s.teuer, s.meine]) {
       const ziel = zs.find((x) => x.name === quell.name)!;
       assert.deepEqual(sichtBild(ziel, zs, zt), sichtBild(qs.find((x) => x.id === quell.id)!, qs, qt), quell.name);
@@ -315,7 +315,7 @@ describe('Paket selbst erstellen (#374)', () => {
     // Weiterentwickeln: neues Feld, neue Ansicht; der nächste Export schlägt dieselbe Id mit höherer Version vor.
     const vt = (await q.d.mappentypen.listeTypen()).find((t) => t.id === q.vertrag.id)!;
     await q.d.mappentypen.aendereTyp(vt.id, { ...vt, felder: [...vt.felder, { key: 'kundennummer', label: 'Kundennummer', typ: 'text' }], register: vt.register.map((x) => (x.art === 'felder' ? { ...x, felder: [...(x.felder ?? []), 'kundennummer'] } : x)) });
-    const neueSicht = await q.d.legeSichtAn({ name: 'Zahlungen', typen: [q.zahlung.id] });
+    const neueSicht = await q.d.sichtenVerwaltung.legeSichtAn({ name: 'Zahlungen', typen: [q.zahlung.id] });
     const stand = await q.e.stand();
     assert.equal(stand.entwuerfe.length, 1);
     // #652: „Paket erstellen“ öffnet leer; „Neue Version von …“ übernimmt Auswahl und Angaben.
@@ -342,7 +342,7 @@ describe('Paket selbst erstellen (#374)', () => {
     const n = await z.p.installiere({ upload: up.upload, bestaetigt: true }, ICH);
     assert.equal(n.version, '1.1.0');
     assert.ok((await z.d.mappentypen.listeTypen()).find((t) => t.id === n.typen.vertrag)!.felder.some((f) => f.key === 'kundennummer'));
-    assert.ok((await z.d.listeSichten()).some((x) => x.name === 'Zahlungen'));
+    assert.ok((await z.d.sichtenVerwaltung.listeSichten()).some((x) => x.name === 'Zahlungen'));
     assert.equal((await z.d.mappentypen.listeTypen()).filter((t) => t.schluessel?.startsWith('familie_vertraege:')).length, 2);
   });
 
@@ -449,7 +449,7 @@ describe('Paket selbst erstellen (#374)', () => {
     assert.deepEqual(await q.e.ausListeNehmen('familie_vertraege', ICH), []);
     await assert.rejects(q.e.archiv('familie_vertraege', '1.0.0'), Fachfehler);
     assert.ok((await q.d.mappentypen.listeTypen()).some((t) => t.id === q.vertrag.id));
-    assert.ok((await q.d.listeSichten()).some((x) => x.id === q.sichten.vertraege.id));
+    assert.ok((await q.d.sichtenVerwaltung.listeSichten()).some((x) => x.id === q.sichten.vertraege.id));
     await assert.rejects(q.e.selbstErstelltDetail('familie_vertraege'), (e) => e instanceof Fachfehler && e.status === 404);
   });
 

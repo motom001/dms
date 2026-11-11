@@ -712,17 +712,17 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     await x.rufe('ki', 'PUT', '/api/v1/dokumente/:id/vektor', { id: x.d3 }, { modell: 'probe/8', vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
     const ich = { id: 'u1', rolle: 'admin' };
     // „Heizung“ trifft die Post per Wort; der Vertrag (Gastherme) kommt als ähnlicher Treffer dazu.
-    const s1 = await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
+    const s1 = await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
     assert.deepEqual(s1.mappen.map((m) => m.id), [x.post.id]);
     assert.deepEqual(s1.aehnlich?.map((a) => [a.id, a.dokument.name]), [[x.vertrag.id, 'wartung.pdf']]);
     assert.ok(s1.aehnlich![0].aehnlichkeit > 0.9);
     // Nur mit „auch in Dokumenten“, nur auf der ersten Seite, nicht in Ansichten.
-    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung' })).aehnlich, undefined);
-    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true', von: 1 })).aehnlich, undefined);
-    assert.equal((await x.d.seite(ich, { sicht: x.post.typId, suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung' })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true', von: 1 })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: x.post.typId, suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
     // Einstellung aus: keine ähnlichen Treffer.
     await x.d.suche.setzeVektorEinstellung({ suche: false });
-    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
+    assert.equal((await x.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
     await x.d.suche.setzeVektorEinstellung({ suche: true });
     // Werkbank: Stand.
     const st = await x.d.suche.vektorStand();
@@ -736,7 +736,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const t0 = Date.now();
     assert.equal(await y.d.suche.aehnlicheZurSuche(undefined, 'Heizung', { typen: null, ohneMappen: new Set(), ms: 300 }).then((r) => r.length), 0);
     assert.ok(Date.now() - t0 < 2000, `${Date.now() - t0} ms`);
-    const s2 = await y.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
+    const s2 = await y.d.sichten.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
     assert.deepEqual(s2.mappen.map((m) => m.id), [y.post.id]);
     assert.equal(s2.aehnlich, undefined);
   });

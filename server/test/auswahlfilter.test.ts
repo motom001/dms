@@ -43,11 +43,11 @@ describe('Auswahlfilter am Referenzfeld (#172)', () => {
 
   it('Auswahl bietet nur passende Mappen an; Vorbelegung zum Anlegen', async () => {
     const { d, bericht, partner } = await aufbau();
-    const s = await d.seite(ICH, { sicht: `feld:${bericht.id}:arzt` });
+    const s = await d.sichten.seite(ICH, { sicht: `feld:${bericht.id}:arzt` });
     assert.deepEqual(s.mappen.map((m) => m.titel).sort(), ['Dr. Meier', 'Dr. Müller']);
-    const s2 = await d.seite(ICH, { sicht: `feld:${bericht.id}:arzt`, suche: 'Mei' });
+    const s2 = await d.sichten.seite(ICH, { sicht: `feld:${bericht.id}:arzt`, suche: 'Mei' });
     assert.deepEqual(s2.mappen.map((m) => m.titel), ['Dr. Meier']);
-    await assert.rejects(d.seite(ICH, { sicht: `feld:${bericht.id}:gibtsnicht` }), status(404));
+    await assert.rejects(d.sichten.seite(ICH, { sicht: `feld:${bericht.id}:gibtsnicht` }), status(404));
     assert.deepEqual(vorbelegungAus(bericht.felder[0].auswahlFilter!, partner), { art: 'Arzt', aktiv: true });
   });
 
@@ -107,7 +107,7 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
 
   it('Auswahl folgt dem eigenen Wert; leer = alle', async () => {
     const { d, bericht } = await aufbau2();
-    const titel = async (eigene: unknown) => (await d.seite(ICH, { sicht: `feld:${bericht.id}:arzt`, eigene: JSON.stringify(eigene) })).mappen.map((m) => m.titel).sort();
+    const titel = async (eigene: unknown) => (await d.sichten.seite(ICH, { sicht: `feld:${bericht.id}:arzt`, eigene: JSON.stringify(eigene) })).mappen.map((m) => m.titel).sort();
     assert.deepEqual(await titel({ gebiet: 'Kardiologie' }), ['Dr. Herz']);
     assert.deepEqual(await titel({ gebiet: 'Orthopädie' }), ['Dr. Knie']);
     assert.deepEqual(await titel({}), ['Dr. Herz', 'Dr. Knie', 'Dr. Zahn']);

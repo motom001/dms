@@ -512,7 +512,7 @@ export class Webdav {
       case 'wurzel': return [{ name: NEUE_POST, k: { art: 'post' } }, { name: ABLAGE, k: { art: 'ablage' } }];
       case 'post': return (await this.schwebende(ctx, 'post')).map((s) => ({ name: s.name, k: { art: 'schwebend', s } }));
       case 'ablage': {
-        const sichten = await this.d.dienst.listeSichten(ctx.z);
+        const sichten = await this.d.dienst.sichtenVerwaltung.listeSichten(ctx.z);
         // Reihenfolge wie im Baum der Ablage; alle Ansichten auf einer Ebene.
         const reihe: Sicht[] = [];
         const besuche = (eltern: string | null) => { for (const s of kinderVon(sichten, eltern)) { if (!reihe.includes(s)) { reihe.push(s); besuche(s.id); } } };
@@ -522,7 +522,7 @@ export class Webdav {
         return reihe.map((s, i) => ({ name: namen[i], k: { art: 'sicht', sicht: s } }));
       }
       case 'sicht': {
-        const r = await this.d.dienst.seite(ctx.b, { sicht: k.sicht.id, anzahl: MAX_EINTRAEGE }, ctx.z, MAX_EINTRAEGE);
+        const r = await this.d.dienst.sichten.seite(ctx.b, { sicht: k.sicht.id, anzahl: MAX_EINTRAEGE }, ctx.z, MAX_EINTRAEGE);
         const mappen = (r.mappen as Array<Mappe & { verborgen?: boolean }>).filter((m) => !m.verborgen)
           .sort((x, y) => (x.titel ?? '').localeCompare(y.titel ?? '', 'de') || x.erstellt.localeCompare(y.erstellt) || x.id.localeCompare(y.id));
         if (r.gesamt > MAX_EINTRAEGE) log.debug('WebDAV: Ansicht gekürzt', { sicht: k.sicht.name, gesamt: r.gesamt, gezeigt: MAX_EINTRAEGE });

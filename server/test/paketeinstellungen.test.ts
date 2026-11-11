@@ -169,7 +169,7 @@ describe('Paket-Einstellungen (#197)', () => {
 
     const typ = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.vorgang)!;
     const rolle = (await d.listeRollen())[0].id;
-    const sicht = (await d.legeSichtAn({ name: 'S', typen: [typ.id] })).id;
+    const sicht = (await d.sichtenVerwaltung.legeSichtAn({ name: 'S', typen: [typ.id] })).id;
     const gueltig = {
       aktiv: false, titel: ' Eingang ', notiz: 'Zeile 1\nZeile 2', grenze: '2,5', ab: '2027-01-31', sprache: 'Englisch', tage: ['Mo', 'Mi'], token: 'geheim-123',
       typ: typ.id, feld: { typ: typ.id, feld: 'name' }, wer: 'u1', rolle, sicht,

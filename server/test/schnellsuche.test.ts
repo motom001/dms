@@ -39,7 +39,7 @@ describe('Schnell finden (#497)', () => {
     await d.mappen.legeMappeAn({ typId: v.id, werte: { name: 'Kfz-Versicherung', nr: 'KV-123456' } }, null);
     await d.mappen.legeMappeAn({ typId: f.id, werte: { kz: 'DD-AB 123' } }, null);
     await d.mappen.legeMappeAn({ typId: v.id, werte: { name: 'Hausrat', nr: 'HR-9' } }, null);
-    const s = await d.seite({ id: 'x', rolle: 'admin' }, { sicht: 'suche', link: '', suche: '123' });
+    const s = await d.sichten.seite({ id: 'x', rolle: 'admin' }, { sicht: 'suche', link: '', suche: '123' });
     assert.equal(s.gesamt, 2);
     assert.deepEqual(new Set(s.mappen.map((m) => m.typId)), new Set([v.id, f.id]));
   });

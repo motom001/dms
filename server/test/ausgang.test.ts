@@ -63,11 +63,11 @@ async function aufbau() {
   };
   /** Recht E an allen Ansichten mit Verträgen für Lena entziehen (Lesen bleibt). */
   const ohneE = async () => {
-    for (const s of (await d.listeSichten()).filter((x) => x.typen.includes(vertrag.id))) {
-      await d.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [lena.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    for (const s of (await d.sichtenVerwaltung.listeSichten()).filter((x) => x.typen.includes(vertrag.id))) {
+      await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [lena.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
     }
   };
-  const sichtId = (await d.listeSichten()).find((s) => s.typen.includes(vertrag.id))!.id;
+  const sichtId = (await d.sichtenVerwaltung.listeSichten()).find((s) => s.typen.includes(vertrag.id))!.id;
   return { d, konten, admin, lena, vertrag, v1, pdf, txt, rufe, ohneE, einstellungen, schluessel, sichtId };
 }
 
@@ -207,7 +207,7 @@ describe('E-Mail auf einem Weg (#723, Sicherheit aus #683)', () => {
     assert.ok((await seitentext(await alsPuffer(mails[1].anhaenge[0].inhalt))).includes(hex('ENTWURF')));
     // In der Post liegt, was verschickt wurde: das gestempelte Angaben-PDF.
     const post = await d.postTyp();
-    const posts = (await d.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
+    const posts = (await d.sichten.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).mappen;
     const doks = (await d.berechtigungen.laufwerkMappe(posts[0].id, z)).dokumente;
     const kopie = doks.find((x) => x.name === 'V-1.pdf')!;
     assert.ok((await seitentext(await alsPuffer((await d.dokumente.dokumentInhalt(kopie.id)).inhalt))).includes(hex('ENTWURF')));

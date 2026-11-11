@@ -186,7 +186,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
 
   it('„nur Zähler“ bekommt bei jedem anderen Aufruf 403, auch intern und im Laufwerk', async () => {
     const auth = { authorization: `Bearer ${lena.zaehler}` };
-    const post = (await dienst.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: 'eingang' })).mappen[0];
+    const post = (await dienst.sichten.seite({ id: lena.id, rolle: 'mitglied' }, { sicht: 'eingang' })).mappen[0];
     assert.ok(post);
     const proben: Array<[string, string, unknown?]> = [
       ['GET', '/api/v1/ich'], ['GET', '/api/v1/typen'], ['GET', `/api/v1/mappen/${post.id}`],

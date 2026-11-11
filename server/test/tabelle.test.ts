@@ -301,11 +301,11 @@ describe('Tabelle – PostgreSQL (#1030)', { skip: !process.env.TEST_DATABASE_UR
       const andere = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
       for (let i = 1; i <= 55; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Teil ${i}` } });
       await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: andere.id, nr: 1, beschreibung: 'Fremd' } });
-      const s1 = await d.tabelle(r.id, 'positionen', { sortierung: 'nr', absteigend: 'true' });
+      const s1 = await d.sichten.tabelle(r.id, 'positionen', { sortierung: 'nr', absteigend: 'true' });
       assert.deepEqual([s1.gesamt, s1.mappen.length, s1.mappen[0].werte.nr], [55, TABELLE_SEITE, 55]);
-      const s2 = await d.tabelle(r.id, 'positionen', { sortierung: 'nr', von: 50, gesamt: 55 });
+      const s2 = await d.sichten.tabelle(r.id, 'positionen', { sortierung: 'nr', von: 50, gesamt: 55 });
       assert.deepEqual(s2.mappen.map((m) => m.werte.nr), [51, 52, 53, 54, 55]);
-      assert.equal((await d.tabelle(andere.id, 'positionen', {})).gesamt, 1);
+      assert.equal((await d.sichten.tabelle(andere.id, 'positionen', {})).gesamt, 1);
     } finally { await db.ende(); }
   });
 });

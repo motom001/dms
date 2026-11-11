@@ -101,27 +101,27 @@ async function aufbau() {
     { id: 'privat', name: 'Privat nur FiBu', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }, { art: 'rolle', rollen: [fibu], nicht: true }], dann: { R: 'entziehen' }, stopp: true },
   ] };
   await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurFibu, true);
-  const alle = await d.legeSichtAn({ name: 'Alle Rechnungen', typen: [rechnung.id], bedingungen: [] });
-  const privat = await d.legeSichtAn({ name: 'Privat', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }] });
-  const faellig = await d.legeSichtAn({ name: 'Fällig bis heute', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }] });
+  const alle = await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Rechnungen', typen: [rechnung.id], bedingungen: [] });
+  const privat = await d.sichtenVerwaltung.legeSichtAn({ name: 'Privat', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }] });
+  const faellig = await d.sichtenVerwaltung.legeSichtAn({ name: 'Fällig bis heute', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }] });
   const ich = async (id: string) => { const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!); return { id: b.id, rolle: b.rolle }; };
   /** Zahlen wie der Server sie liefert, und ob der Zwischenspeicher traf. */
   const zahlen = async (id: string) => {
     const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
     const b = await ich(id);
-    const z = await kontext.run(k, async () => d.zaehler(b, await d.rechtepruefung.zugriff(b)));
+    const z = await kontext.run(k, async () => d.sichten.zaehler(b, await d.rechtepruefung.zugriff(b)));
     return { z, art: k.zwischenspeicher?.art };
   };
   /** Dieselben Zahlen frisch gezählt (ein neuer Dienst auf demselben Bestand, ohne Zwischenspeicher). */
   const frisch = async (id: string) => {
     const f = new Dienst(repo, speicherDateien(), { einstellungen });
     const b = await ich(id);
-    return f.zaehler(b, await f.rechtepruefung.zugriff(b));
+    return f.sichten.zaehler(b, await f.rechtepruefung.zugriff(b));
   };
   return { d, admin, max, fibu, rechnung, privatNurFibu, alle, privat, faellig, zahlen, frisch };
 }
 
-const teil = (z: Awaited<ReturnType<Dienst['zaehler']>>) => ({ typen: z.typen, eingang: z.eingang, favoriten: z.favoriten, sichten: z.sichten, papierkorb: z.papierkorb });
+const teil = (z: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({ typen: z.typen, eingang: z.eingang, favoriten: z.favoriten, sichten: z.sichten, papierkorb: z.papierkorb });
 
 describe('Dienst: Zahlen der Ansichten (#512)', () => {
   it('wiederholtes Laden ohne Änderung zählt nicht neu', async () => {
@@ -134,7 +134,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     // Rahmen ist immer frisch dabei.
     assert.equal('papierkorbTage' in zweites.z && 'neuePost' in zweites.z, true);
     // Lesen ändert den Stand nicht.
-    await h.d.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.rechtepruefung.zugriff({ id: h.max.id, rolle: 'mitglied' }));
+    await h.d.sichten.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.rechtepruefung.zugriff({ id: h.max.id, rolle: 'mitglied' }));
     assert.equal((await h.zahlen(h.max.id)).art, 'treffer');
   });
 
@@ -174,7 +174,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     await stimmt('Rolle', { admin: [2, 2], max: [2, 2] });
     await pruefe('Rolle');
     // Ansicht ändern
-    await h.d.aendereSicht(h.privat.id, { name: 'Nicht privat', typen: [h.rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'nein' }] });
+    await h.d.sichtenVerwaltung.aendereSicht(h.privat.id, { name: 'Nicht privat', typen: [h.rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'nein' }] });
     await stimmt('Ansicht ändern', { admin: [2, 0], max: [2, 0] });
     await pruefe('Ansicht ändern');
     // Aufgabe vergeben und erledigen (Eingang)

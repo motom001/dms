@@ -19,10 +19,10 @@ describe('Notizen (#55)', () => {
     const n = await d.mappenNotizen.legeNotizAn(m.id, 'Kündigung **telefonisch** angekündigt', anna);
     await d.mappenNotizen.aendereNotiz(n.id, 'Kündigung schriftlich bestätigt', ben);
     assert.equal((await d.mappen.holeMappe(m.id)).notizen[0].geaendertVon, ben, 'auch andere dürfen ändern');
-    const s = await d.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich', notizen: 'true' });
+    const s = await d.sichten.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich', notizen: 'true' });
     assert.equal(s.gesamt, 1);
     assert.match((s as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id].text, /\u0002schriftlich\u0003/);
-    assert.equal((await d.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich' })).gesamt, 0, 'nur mit Haken');
+    assert.equal((await d.sichten.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich' })).gesamt, 0, 'nur mit Haken');
 
     await d.loescheMappe(m.id, anna);
     await d.stelleWiederHer(m.id, { id: anna, rolle: 'admin' });

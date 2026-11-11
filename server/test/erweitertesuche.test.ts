@@ -64,7 +64,7 @@ async function aufbau(r: Repo) {
 }
 
 const treffer = async (d: Dienst, q: string, ich = ICH, extra: Record<string, unknown> = {}) =>
-  (await d.seite(ich, { sicht: 'suche', link: q, anzahl: 500, ...extra })).mappen.map((m) => m.titel).sort();
+  (await d.sichten.seite(ich, { sicht: 'suche', link: q, anzahl: 500, ...extra })).mappen.map((m) => m.titel).sort();
 
 describe('Erweiterte Suche: Formular und Adresse (#199)', () => {
   it('liest und schreibt die Adresse, Chips entfernen einzelne Bedingungen', () => {
@@ -100,7 +100,7 @@ function faelle(pg: boolean) {
       const { d, P } = await aufbau(await repo(pg));
       const q = `typ=rechnung&rechnungsdatum.von=2025-03-01&rechnungsdatum.bis=2025-11-30&vertragspartner=${P.mm}&vertragspartner=${P.saturn}&vertragspartner=${P.otto}&volltext=Backofen`;
       assert.deepEqual(await treffer(d, q), ['R-1', 'R-5']);
-      const s = await d.seite(ICH, { sicht: 'suche', link: q });
+      const s = await d.sichten.seite(ICH, { sicht: 'suche', link: q });
       assert.equal(s.ausschnitte?.[s.mappen.find((m) => m.titel === 'R-5')!.id]?.dokument, 'Notiz');
       assert.ok(s.ausschnitte?.[s.mappen.find((m) => m.titel === 'R-1')!.id]?.text.includes('Backofen'));
     });
@@ -111,7 +111,7 @@ function faelle(pg: boolean) {
       assert.ok(!suchfelder([rechnung]).some((f) => f.key === 'pw'), 'nie Passwortfelder');
       assert.deepEqual(await treffer(d, `typ=rechnung&typ=gutschrift&vertragspartner=${P.otto}`), ['G-1', 'R-4']);
       assert.deepEqual((await treffer(d, 'volltext=Backofen&in=dokumente')), ['G-1', 'G-2', 'R-1', 'R-2', 'R-3']);
-      await assert.rejects(d.seite(ICH, { sicht: 'suche', link: 'typ=gibtsnicht' }), (e) => e instanceof Fachfehler && e.status === 422);
+      await assert.rejects(d.sichten.seite(ICH, { sicht: 'suche', link: 'typ=gibtsnicht' }), (e) => e instanceof Fachfehler && e.status === 422);
     });
 
     it('Datum nur von bzw. nur bis, Zahlen, Ja/Nein, Auswahl, Text, leer', async () => {
@@ -123,7 +123,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(await treffer(d, 'typ=rechnung&art=Elektro&art=möbel'), ['R-1', 'R-4']);
       assert.deepEqual(await treffer(d, 'typ=rechnung&art.leer=1'), ['R-2', 'R-3', 'R-5']);
       assert.deepEqual(await treffer(d, 'typ=rechnung&nr=r-3'), ['R-3']);
-      await assert.rejects(d.seite(ICH, { sicht: 'suche', link: 'typ=rechnung&rechnungsdatum.von=gestern' }), /kein Datum/);
+      await assert.rejects(d.sichten.seite(ICH, { sicht: 'suche', link: 'typ=rechnung&rechnungsdatum.von=gestern' }), /kein Datum/);
     });
 
     it('Volltext nur in Notizen, nur in Dokumenten, in beiden', async () => {
@@ -161,8 +161,8 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     assert.deepEqual(await treffer(d, link, a, { }), ['Geheim', 'Strom']);
     const m = { id: max.id, rolle: 'mitglied' };
     const z = await d.rechtepruefung.zugriff(m);
-    assert.deepEqual((await d.seite(m, { sicht: 'suche', link, anzahl: 500 }, z)).mappen.map((x) => x.titel), ['Strom']);
-    assert.deepEqual((await d.trefferIds(m, { sicht: 'suche', link }, z)).ids, [strom.id], 'Auswahl „alle Treffer“');
+    assert.deepEqual((await d.sichten.seite(m, { sicht: 'suche', link, anzahl: 500 }, z)).mappen.map((x) => x.titel), ['Strom']);
+    assert.deepEqual((await d.sichten.trefferIds(m, { sicht: 'suche', link }, z)).ids, [strom.id], 'Auswahl „alle Treffer“');
   });
 });
 

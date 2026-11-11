@@ -50,7 +50,7 @@ function faelle(pg: boolean) {
       await text('G-4', 'Waschmaschine');
       const ich = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
       const suche = async (s: string) => {
-        const x = await d.seite(ich, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' });
+        const x = await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: s, volltext: 'true' });
         return { titel: x.mappen.map((m) => m.titel).sort(), ausschnitte: (x as { ausschnitte?: Record<string, { text: string }> }).ausschnitte ?? {} };
       };
       const ofen = await suche('Ofen');

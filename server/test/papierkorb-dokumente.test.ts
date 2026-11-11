@@ -56,7 +56,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(await d.dokumente.loescheDokument(doc.id, ANNA.id), { papierkorb: true });
       assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 0, 'in der Mappe nicht mehr zu sehen');
       assert.equal(dateien.anzahl(), vorher, 'Dateien bleiben, solange es im Papierkorb liegt');
-      assert.equal((await d.zaehler(ANNA)).papierkorb, 1);
+      assert.equal((await d.sichten.zaehler(ANNA)).papierkorb, 1);
       const [e] = await d.papierkorbDokumente(ANNA);
       assert.equal(e.name, 'Vertrag.pdf');
       assert.equal(e.mappeTitel, 'Stromvertrag');

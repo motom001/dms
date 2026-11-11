@@ -350,7 +350,7 @@ describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.T
 
   it('neue Version: die Suche findet den Begriff nicht mehr, den Rest schon', async () => {
     const { d, t, dokument } = await aufbau(await pgRepo());
-    const suche = (q: string) => d.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
+    const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
     assert.equal((await suche('Mustermann')).gesamt, 1, 'vorher gefunden');
     await d.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], muster: ['iban'], ziel: 'version' }, null);
     assert.equal((await suche('Mustermann')).gesamt, 0);
@@ -361,7 +361,7 @@ describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.T
   it('Kopie in einer Transaktion; ohne das Original findet die Suche nichts mehr', async () => {
     const { d, t, m, dokument } = await aufbau(await pgRepo(), false);
     const r = await d.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'] }, null);
-    const suche = (q: string) => d.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
+    const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
     assert.ok(!(await d.volltext(r.dokument.id)).text!.includes('Mustermann'));
     await d.dokumente.loescheDokument(dokument.id, null);
     assert.equal((await suche('Mustermann')).gesamt, 0);

@@ -29,12 +29,12 @@ describe('Symbol je Ansicht (#428)', () => {
 
   it('wird gespeichert, unbekannt heißt ohne Symbol, fehlt die Angabe, bleibt es', async () => {
     const d = dienst();
-    const s = await d.legeSichtAn({ name: 'Auto', typen: [], bedingungen: [], symbol: 'car' });
+    const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Auto', typen: [], bedingungen: [], symbol: 'car' });
     assert.equal(s.symbol, 'car');
-    assert.equal((await d.aendereSicht(s.id, { name: 'Auto und Rad' })).symbol, 'car', 'ohne Angabe bleibt das Symbol');
-    assert.equal((await d.aendereSicht(s.id, { name: 'Auto', symbol: 'gibt-es-nicht' })).symbol, null);
-    assert.equal((await d.aendereSicht(s.id, { name: 'Auto', symbol: 'bike' })).symbol, 'bike');
-    assert.equal((await d.aendereSicht(s.id, { name: 'Auto', symbol: null })).symbol, null);
+    assert.equal((await d.sichtenVerwaltung.aendereSicht(s.id, { name: 'Auto und Rad' })).symbol, 'car', 'ohne Angabe bleibt das Symbol');
+    assert.equal((await d.sichtenVerwaltung.aendereSicht(s.id, { name: 'Auto', symbol: 'gibt-es-nicht' })).symbol, null);
+    assert.equal((await d.sichtenVerwaltung.aendereSicht(s.id, { name: 'Auto', symbol: 'bike' })).symbol, 'bike');
+    assert.equal((await d.sichtenVerwaltung.aendereSicht(s.id, { name: 'Auto', symbol: null })).symbol, null);
   });
 
   it('Paketformat: symbol an der Ansicht – gültig, unbekannt (ohne Fehler), fehlt', () => {

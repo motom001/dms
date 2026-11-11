@@ -247,11 +247,11 @@ async function pruefeZahlen(h: Aufbau) {
   const { d, lena, jonas, vertrag } = h;
   const zahlen = async (ich: { id: string; rolle: string }, benutzerId?: string) => {
     const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 }, ...(benutzerId ? { benutzerId } : {}) };
-    const z = await kontext.run(k, async () => d.zaehler(ich, await d.rechtepruefung.zugriff(ich)));
+    const z = await kontext.run(k, async () => d.sichten.zaehler(ich, await d.rechtepruefung.zugriff(ich)));
     return { z, art: k.zwischenspeicher?.art };
   };
-  const frisch = async (ich: { id: string; rolle: string }) => { const f = h.neu(); return f.zaehler(ich, await f.rechtepruefung.zugriff(ich)); };
-  const teil = (x: Awaited<ReturnType<Dienst['zaehler']>>) => ({ typen: x.typen, eingang: x.eingang, favoriten: x.favoriten, sichten: x.sichten, papierkorb: x.papierkorb });
+  const frisch = async (ich: { id: string; rolle: string }) => { const f = h.neu(); return f.sichten.zaehler(ich, await f.rechtepruefung.zugriff(ich)); };
+  const teil = (x: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({ typen: x.typen, eingang: x.eingang, favoriten: x.favoriten, sichten: x.sichten, papierkorb: x.papierkorb });
   const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z1' } }, lena.id);
   await ruhe();
   await zahlen(jonas); await zahlen(lena);
@@ -288,7 +288,7 @@ async function pruefeZahlen(h: Aufbau) {
 
 async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
   const { d, lena, jonas, vertrag } = h;
-  const seite = async (x: Dienst, ich: { id: string; rolle: string }, q: Record<string, unknown>) => x.seite(ich, { sicht: `typ:${vertrag.id}`, anzahl: 5, ...q }, await x.rechtepruefung.zugriff(ich));
+  const seite = async (x: Dienst, ich: { id: string; rolle: string }, q: Record<string, unknown>) => x.sichten.seite(ich, { sicht: `typ:${vertrag.id}`, anzahl: 5, ...q }, await x.rechtepruefung.zugriff(ich));
   /** Wie oft der Dienst (nicht der frische zum Vergleich) gezählt hat. */
   const gezaehlt = () => aufrufe.filter((a) => a.zahl === undefined).length;
   const vergleiche = async (q: Record<string, unknown>, was: string) => {
@@ -325,7 +325,7 @@ async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
   await d.mappenNotizen.legeNotizAn(notiz.id, 'Wasserschaden im Keller', lena.id);
   assert.equal(await vergleiche({ suche: 'Wasserschaden', notizen: 'true' }, 'Suche in Notizen nach neuer Notiz'), 1);
   // Favoriten: am Haushaltsstand – ein Stern gilt sofort.
-  const fav = async () => (await d.seite(lena, { sicht: 'favoriten' }, await d.rechtepruefung.zugriff(lena))).gesamt;
+  const fav = async () => (await d.sichten.seite(lena, { sicht: 'favoriten' }, await d.rechtepruefung.zugriff(lena))).gesamt;
   const f0 = await fav();
   await d.mappen.setzeFavorit({ id: lena.id }, notiz.id, true);
   assert.equal(await fav(), f0 + 1, 'Favoriten: Stern sofort gezählt');

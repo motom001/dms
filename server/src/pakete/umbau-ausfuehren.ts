@@ -180,7 +180,7 @@ async function leiteUm(d: UmbauDienst, g: GeplanterSchritt, neuId: string, umben
     const register = typ.register.map((r) => (r.quellen?.some((q) => q.typId === altId) ? { ...r, quellen: r.quellen.map((q) => (q.typId === altId ? { typId: neuId, feldKey: feld(q.feldKey) } : q)) } : r));
     if (JSON.stringify([felder, register]) !== JSON.stringify([typ.felder, typ.register])) await repo.aendereTyp(typ.id, { ...typ, felder, register });
   }
-  for (const s of (await d.listeSichten()).filter((x) => x.typen.includes(altId))) {
+  for (const s of (await d.sichtenVerwaltung.listeSichten()).filter((x) => x.typen.includes(altId))) {
     const bedingungen = s.bedingungen.map((b) => (b.art === 'feld' && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b.art === 'frist' && b.feld && umbenannt.has(b.feld) ? { ...b, feld: feld(b.feld) } : b));
     const neu = await repo.aendereSicht(s.id, { ...s, typen: [...new Set(s.typen.map((x) => (x === altId ? neuId : x)))], bedingungen });
     merkeSichtAenderung(sichten, s.id, sichtPruefwert(s), sichtPruefwert(neu));

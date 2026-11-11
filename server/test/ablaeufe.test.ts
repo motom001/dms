@@ -359,7 +359,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
           (SELECT count(*) FROM aufgaben)::int AS aufgaben,
           (SELECT json_agg(json_build_object('id', id, 'titel', titel, 'problem', problem) ORDER BY id) FROM mappen WHERE typ_id = ${vertrag.id}) AS mappen`;
         const typ = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
-        return { ...z, name: typ.name, felder: typ.felder, sicht: (await d.listeSichten()).find((x) => x.id === vertrag.id)?.name };
+        return { ...z, name: typ.name, felder: typ.felder, sicht: (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === vertrag.id)?.name };
       };
       const vorher = await stand();
       const t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
@@ -375,7 +375,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.deepEqual(await stand(), vorher);
       // Ohne den Fehler geht dasselbe durch.
       await d.mappentypen.aendereTyp(vertrag.id, { ...t, name: 'Verträge', felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f)) });
-      assert.equal((await d.listeSichten()).find((x) => x.id === vertrag.id)?.name, 'Verträge');
+      assert.equal((await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === vertrag.id)?.name, 'Verträge');
       for (const m of [a, b]) assert.match(String((await d.mappen.holeMappe(m.id)).mappe.problem), /Vertragsnummer/);
     });
 

@@ -129,7 +129,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
       assert.equal(mit[wer].eingang, erwartet[wer as keyof typeof erwartet], `${wer}: Zahl wie bisher`);
     }
     assert.equal(mit.jonas.favoriten, 2);
-    const favSicht = await dienst.favoritenSicht();
+    const favSicht = await dienst.systemsichten.favoritenSicht();
     assert.ok(favSicht, 'Ansicht „Favoriten“ gibt es');
     assert.equal(mit.jonas.sichten[favSicht], 2, 'Ansicht „Favoriten“ zählt nur die eigenen');
     assert.equal(mit.lena.sichten[favSicht], 0);

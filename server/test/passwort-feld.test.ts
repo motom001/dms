@@ -77,8 +77,8 @@ describe('Passwortfeld (#46)', () => {
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', kennwort: { neu: 'geheim' } } });
     const roh = (await d.mappen.holeMappe(m.id)).mappe.werte.kennwort as string;
     const ich = { id: 'x', rolle: 'admin' };
-    assert.equal((await d.seite(ich, { sicht: `typ:${typ.id}`, suche: roh.slice(5, 15) })).gesamt, 0, 'Geheimtext ist nicht durchsuchbar');
-    assert.equal((await d.seite(ich, { sicht: `typ:${typ.id}`, suche: 'geheim' })).gesamt, 0, 'Klartext erst recht nicht');
+    assert.equal((await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: roh.slice(5, 15) })).gesamt, 0, 'Geheimtext ist nicht durchsuchbar');
+    assert.equal((await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: 'geheim' })).gesamt, 0, 'Klartext erst recht nicht');
   });
 
   it('gibt nie Geheimtext heraus; Anzeigen einzeln mit Protokoll, API nur mit eigenem Recht', async () => {
