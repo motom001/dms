@@ -8,17 +8,35 @@ The home page uses the full width next to the views: on a large screen the tiles
 
 ## Find quickly {#schnell-finden}
 
-At the very top of the home page there is a **search field**: "Search – name, number, registration …". It searches as you type (from two characters) across **all folders you may read** – you don't need to know which view something is in. It searches titles and field values as the search in the views does; with **also in documents** additionally the full text (takes a little longer).
+At the very top of the home page there is **one box**. On the right next to it, **Advanced search** leads to the [advanced search](ablage.md#erweiterte-suche) – for questions such as "all invoices that have not been paid yet".
+
+Without "Ask your library" the box is a **search field**: "Search – name, number, registration …". With "Ask your library" you switch between the two with **Ask · Search** above it ([see below](#fragen-oder-suchen)). The search searches as you type (from two characters) across **all folders you may read** – you don't need to know which view something is in. It searches titles and field values as the search in the views does; with **also in documents** additionally the full text (takes a little longer).
 
 The hits are grouped by folder type, with folders that have the search term in the title first. Below each hit it says **why it matches**, with the term highlighted – for example "Contract number: KV-123456". A tap opens the folder. More than 60 hits: search more precisely or use the [advanced search](ablage.md#erweiterte-suche).
 
 With **also in documents** and a package such as **AI local – similarity**, **"Similar hits"** additionally appear below the hits: folders in which your search term doesn't occur but whose document matches it – "invoice for the heating" thus also finds "gas boiler maintenance". They carry the label **similar**; below it is the matching document. More under [Similar documents](dokumente.md#aehnliche-dokumente).
 
-On the phone you can also **dictate** (the keyboard's microphone). If you type an **archive number** and then Enter or "Search", you jump directly to the document – as in the views. If you empty the field, the tiles appear again.
+On the phone you can also **dictate** (the keyboard's microphone). If you type an **archive number** and then Enter or "Search", you jump directly to the document – as in the views. If you empty the field (with **×** or Esc), the tiles appear again.
 
 ## Ask your Library { #frag-deine-ablage }
 
-If your administrator has set up a package such as **AI assistant**, there is a second field below the search field: **"Ask your Library"**. Here you ask a question in your own words – for example "When does the car insurance run out?" – and get an answer with links to the matching folders. Without such a package, the field isn't there.
+If your administrator has set up a package such as **AI assistant**, the box at the top is **"Ask your library"** at first. Here you ask a question in your own words – for example "When does the car insurance run out?" – and get an answer below it with links to the matching folders. Without such a package there is only the search.
+
+### Ask or search { #fragen-oder-suchen }
+
+Above the box is the toggle **Ask · Search** – on the phone above the box as well:
+
+- **Ask** – the box is "Ask your library".
+- **Search** – the box is the search with **also in documents**, as described [above](#schnell-finden).
+- **Advanced search** next to it on the right is there in both cases.
+
+![Home page with “Ask · Search” above the box](bilder/startseite-fragen.png)
+
+What you have typed stays when you switch – if you started a question and would rather search, just click **Search**. Ablago remembers what you chose last, on your other devices too; the first time it is **Ask**.
+
+With the keyboard: Tab goes to the chosen side of the toggle, the arrow keys switch, Tab moves on into the box. A screen reader says "Ask or search" and which side is chosen; the box is called "Ask your library" or "Search all folders" accordingly. If you switch with the mouse or your finger, you stay in the box.
+
+### Asking a question {#eine-frage-stellen}
 
 - **Ask:** type your question, then **Ask** or Enter (new line with Shift + Enter). The answer appears as it is written; **Cancel** stops it.
 - **Sources:** below the answer are the folders it comes from, as links. The numbers in square brackets, e.g. "[2]", point to the passages below.
@@ -32,7 +50,7 @@ The answer is written by an AI service. It can be wrong or fail to find somethin
 
 ## Tip of the day {#tipp-des-tages}
 
-Below *Ask your library* or below the search box there is now and then a quiet line with a tip – at most one a day. The sentence is the link; the small × hides the tip. More under [Discover Ablago](entdecken.md#tipps).
+Below the box there is now and then a quiet line with a tip – at most one a day. The sentence is the link; the small × hides the tip. More under [Discover Ablago](entdecken.md#tipps).
 
 ## The tiles {#die-kacheln}
 

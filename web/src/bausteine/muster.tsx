@@ -9,6 +9,7 @@ import { KnopfMuster } from './knopf/muster';
 import { EinheitMuster } from './einheit/muster';
 import { TabelleMuster } from './tabelle/muster';
 import { SucheMuster } from './suche/muster';
+import { UmschalterMuster } from './umschalter/muster';
 import s from './muster.module.css';
 
 /**
@@ -26,6 +27,7 @@ const BAUSTEINE: Musterbereich[] = [
   { id: 'einheit', titel: () => t('oberflaeche.muster.einheit.titel'), text: () => t('oberflaeche.muster.einheit.text'), Muster: EinheitMuster },
   { id: 'tabelle', titel: () => t('oberflaeche.muster.tabelle.titel'), text: () => t('oberflaeche.muster.tabelle.text'), Muster: TabelleMuster },
   { id: 'suche', titel: () => t('oberflaeche.muster.suche.titel'), text: () => t('oberflaeche.muster.suche.text'), Muster: SucheMuster },
+  { id: 'umschalter', titel: () => t('oberflaeche.muster.umschalter.titel'), text: () => t('oberflaeche.muster.umschalter.text'), Muster: UmschalterMuster },
 ];
 
 const DARSTELLUNGEN = Object.keys(GRUNDLAGEN) as Grundlage[];

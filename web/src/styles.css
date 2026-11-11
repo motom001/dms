@@ -1772,8 +1772,15 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 /* Schnell finden auf der Startseite (#497). Präfix ss-. */
 .ss-suche { display: flex; flex-direction: column; gap: 16px; }
 .ss-suche form { display: flex; flex-direction: column; gap: 6px; }
-.ss-feld { font-size: calc(16px * var(--skala, 1)); padding: 11px 14px; border-radius: 10px; border-width: 1.5px; }
-.ss-volltext { align-self: flex-start; }
+/* Ein Feld (#1002): darüber Umschalter „Fragen · Suchen“ (mit Antwort-Paket) und rechts „Erweiterte Suche“; am Handy
+   genauso – der Umschalter steht über dem Feld. Suchen und Fragen haben dieselbe große Schrift. */
+.sf-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: -10px; }
+.sf-art { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.sf-erweitert { margin-left: auto; }
+.ss-feld input, .frag-feld { font-size: calc(16px * var(--skala, 1)); padding-top: 11px; padding-bottom: 11px; border-radius: 10px; border-width: 1.5px; }
+.ss-form > .suche { flex: none; max-width: none; }
+.ss-volltext { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+@media (pointer: coarse) { .sf-erweitert { display: inline-flex; align-items: center; min-height: 44px; } }
 .ss-treffer { display: flex; flex-direction: column; gap: 12px; }
 .ss-gruppe .ueber { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .ss-mark { background: var(--warn-zart); color: inherit; border-radius: 2px; padding: 0 1px; }
@@ -1898,10 +1905,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .aehnl-fortschritt { width: min(12rem, 100%); vertical-align: middle; }
 
 /* „Frag deine Ablage“ (#444) */
-.frag { margin-bottom: 1rem; }
-.frag h2 { display: flex; align-items: center; gap: 0.4rem; }
 .frag-form { display: flex; flex-direction: column; gap: 0.5rem; }
-.frag-feld { width: 100%; resize: vertical; min-height: 2.6rem; }
+.frag-feld { width: 100%; resize: vertical; min-height: 2.6rem; padding-left: 14px; padding-right: 14px; }
 .frag-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
 .frag-runde { display: grid; gap: 0.4rem; min-width: 0; }
 .frag-frage { justify-self: end; max-width: 85%; margin: 0; padding: 0.45rem 0.75rem; border-radius: var(--r); background: var(--auswahl, var(--linie)); overflow-wrap: anywhere; white-space: pre-wrap; }

@@ -924,6 +924,13 @@ async function main() {
   await s.locator('.zuletzt .eintrag').first().click();
   await s.locator('.spalte.mappe .mappenkopf h1').waitFor();
   await bild(s, 'startseite-mappe');
+  // Ein Feld mit „Fragen · Suchen“ darüber (#1002). Ein Antwort-Paket gibt es bei den Aufnahmen nicht – die Seite bekommt
+  // es nur gemeldet. Gewartet wird auf den Umschalter (eindeutig, anders als eine Überschrift mit Hilfesymbol).
+  await s.route('**/api/fragen', (r) => r.fulfill({ json: { verfuegbar: true, paket: 'KI-Assistent' } }));
+  await geheZu(s, '/ablage/start');
+  await s.getByRole('radiogroup', { name: w('Fragen oder suchen') }).getByRole('radio', { checked: true }).waitFor();
+  await bild(s, 'startseite-fragen');
+  await s.unroute('**/api/fragen');
   await api('PUT', `/api/typen/${partner.id}`, partner);
 
   // Sichten als Baum in der Ablage und in der Werkbank (#38)

@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useRef, useSyncExternalStore, type RefObject } from 'react';
 import type { FrageAusschnitt, FrageGekuerzt, VerlaufEintrag } from '../../../shared/src/fragen';
-import { api, frageStellen } from '../api';
-import { Hilfe } from '../Hilfe';
+import { frageStellen } from '../api';
+import { Knopf } from '../bausteine';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
-import { Symbol } from '../Symbol';
 
 /**
- * „Frag deine Ablage“ (#444): eigenes Eingabefeld, getrennt von der Suche – nur, wenn ein Paket mit dem Recht
- * dms:antworten installiert ist. Antwort als Chat, entsteht beim Schreiben; darunter Quellen als Links und
- * aufklappbar genau die Stellen, die an die KI gingen. Die Antwort ist nur Text (kein HTML, keine Links aus der
- * Antwort) – sie kann nichts ändern. Der Chat liegt nur hier im Speicher der Seite: weg beim Neuladen.
+ * „Frag deine Ablage“ (#444): nur, wenn ein Paket mit dem Recht dms:antworten installiert ist. Antwort als Chat, entsteht
+ * beim Schreiben; darunter Quellen als Links und aufklappbar genau die Stellen, die an die KI gingen. Die Antwort ist nur
+ * Text (kein HTML, keine Links aus der Antwort) – sie kann nichts ändern. Der Chat liegt nur hier im Speicher der Seite:
+ * weg beim Neuladen.
+ *
+ * Seit #1002 kein eigenes zweites Feld mehr, sondern eine Art des Felds der Startseite (`StartFeld`, Umschalter
+ * „Fragen · Suchen“): Die Eingabe gehört dem Feld, Antwort, Quellen und Ausschnitte stehen darunter.
  */
 
 interface Runde {
@@ -36,17 +38,9 @@ const aendereLetzte = (f: (r: Runde) => Runde) => setzeChat(chat.map((r, i) => (
 /** Verlauf für die nächste Frage: nur fertige Runden, Fragen und Antworten. */
 const verlauf = (): VerlaufEintrag[] => chat.filter((r) => r.antwort).flatMap((r) => [{ rolle: 'frage' as const, text: r.frage }, { rolle: 'antwort' as const, text: r.antwort! }]);
 
-export function FragAblage() {
-  const [stand, setStand] = useState<{ verfuegbar: boolean; paket: string | null } | null>(null);
+export function FragAblage({ eingabe, setEingabe, paket, feldRef }: { eingabe: string; setEingabe(wert: string): void; paket: string | null; feldRef?: RefObject<HTMLTextAreaElement | null> }) {
   const runden = useSyncExternalStore((h) => { hoerer.add(h); return () => { hoerer.delete(h); }; }, () => chat);
-  const [eingabe, setEingabe] = useState('');
   const abbruch = useRef<AbortController | null>(null);
-  useEffect(() => {
-    let aktuell = true;
-    api.fragenVerfuegbar().then((s) => { if (aktuell) setStand(s); }, () => { if (aktuell) setStand({ verfuegbar: false, paket: null }); });
-    return () => { aktuell = false; };
-  }, []);
-  if (!stand?.verfuegbar) return null;
   const laeuft = runden.some((r) => r.laeuft);
 
   async function fragen() {
@@ -71,27 +65,26 @@ export function FragAblage() {
   }
 
   return (
-    <section className="frag blatt" aria-label={t('fragen.titel')} data-kachel="fragen" data-anker="startseite.fragen">
-      <h2 className="h3"><Symbol name="frage" /> {t('fragen.titel')} <Hilfe ort="ablage.fragen" /></h2>
+    <>
+      <form className="frag-form" data-kachel="fragen" data-anker="startseite.fragen" onSubmit={(e) => { e.preventDefault(); void fragen(); }}>
+        <label className="sr" htmlFor="frag-feld">{t('fragen.titel')}</label>
+        <textarea id="frag-feld" ref={feldRef} className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.platzhalter')}
+          onChange={(e) => setEingabe(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void fragen(); } }} />
+        <div className="knoepfe">
+          {laeuft
+            ? <Knopf onClick={() => abbruch.current?.abort()}>{t('fragen.abbrechen')}</Knopf>
+            : <Knopf art="haupt" type="submit" gesperrt={!eingabe.trim()}>{t('fragen.fragen')}</Knopf>}
+          {runden.length > 0 && !laeuft && <Knopf art="link" onClick={() => setzeChat([])}>{t('fragen.neu')}</Knopf>}
+        </div>
+      </form>
       {runden.length > 0 && (
         <ol className="frag-chat" aria-live="polite">
           {runden.map((r, i) => <RundeAnzeige key={i} r={r} />)}
         </ol>
       )}
-      <form className="frag-form" onSubmit={(e) => { e.preventDefault(); void fragen(); }}>
-        <label className="sr" htmlFor="frag-feld">{t('fragen.feld')}</label>
-        <textarea id="frag-feld" className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.beispiel')}
-          onChange={(e) => setEingabe(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void fragen(); } }} />
-        <div className="knoepfe">
-          {laeuft
-            ? <button type="button" className="knopf" onClick={() => abbruch.current?.abort()}>{t('fragen.abbrechen')}</button>
-            : <button type="submit" className="knopf primaer" disabled={!eingabe.trim()}>{t('fragen.fragen')}</button>}
-          {runden.length > 0 && !laeuft && <button type="button" className="textknopf" onClick={() => setzeChat([])}>{t('fragen.neu')}</button>}
-        </div>
-      </form>
-      <p className="leise klein">{t('fragen.hinweis', { paket: stand.paket ?? '' })} {t('fragen.verlauf')}</p>
-    </section>
+      <p className="leise klein">{t('fragen.hinweis', { paket: paket ?? '' })} {t('fragen.verlauf')}</p>
+    </>
   );
 }
 

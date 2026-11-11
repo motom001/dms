@@ -94,7 +94,7 @@ Mit dem Haken **Notizen** sucht Ablago auch in den [Notizen](zusammenarbeit.md#n
 
 ## Erweiterte Suche
 
-Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Ansichten und als Link **Erweiterte Suche** neben dem Suchfeld einer Liste (dann ist der Mappentyp der Liste schon gewählt).
+Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Ansichten, als Link **Erweiterte Suche** am Feld der [Startseite](startseite.md#schnell-finden) und neben dem Suchfeld einer Liste (dann ist der Mappentyp der Liste schon gewählt).
 
 Das Suchformular steht **oben in der Mitte**, die Treffer darunter; links bleiben die Ansichten. Solange du keine Mappe geöffnet hast, nutzt die Suche die ganze Breite bis zum rechten Rand. Öffnest du einen Treffer, erscheint er rechts und die Mitte wird schmaler.
 

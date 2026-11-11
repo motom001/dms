@@ -1,7 +1,6 @@
 {
   "titel": "Ask your library",
-  "feld": "Your question",
-  "beispiel": "e.g. When does the car insurance expire?",
+  "platzhalter": "Ask your library … e.g. When does the car insurance expire?",
   "fragen": "Ask",
   "neu": "New chat",
   "laeuft": "Writing the answer …",

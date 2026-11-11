@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Ausschnitt, Mappe } from '../../../shared/src/model';
 import { typName } from '../../../shared/src/beschriftung';
 import { gruppiereTreffer, suchWoerter } from '../../../shared/src/schnellsuche';
@@ -10,12 +10,16 @@ import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Ehemalig } from '../Person';
+import { FilterHaken, Suchfeld } from '../bausteine';
 
 /**
  * Suchfeld der Startseite (#497): sucht sofort über alle Mappen, die man lesen darf (Titel und
  * Feldwerte wie die Schnellsuche der Ansichten, auf Wunsch auch in Dokumenten). Treffer nach
  * Mappentyp gruppiert, Titeltreffer zuerst, je Treffer das passende Feld („Vertragsnummer: KV-123456“).
  * Eine Archivnummer mit Enter springt wie in den Ansichten zum Dokument (#345).
+ *
+ * Seit #1002 ein Teil des Felds der Startseite (`StartFeld`): Die Eingabe gehört dem Feld, damit sie beim Umschalten
+ * zwischen „Fragen“ und „Suchen“ stehen bleibt. Das Feld ist der Baustein `Suchfeld`.
  */
 
 const MAX = 60;
@@ -29,9 +33,9 @@ function Hervor({ text, woerter }: { text: string; woerter: string[] }) {
 }
 
 /** `sonst`: was ohne Suchbegriff darunter steht (Kacheln, zuletzt geöffnet). */
-export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; ohneSuche?: boolean }) {
+/** `daneben`: rechts neben „auch in Dokumenten“, z. B. der Link „Erweiterte Suche“ (#1002, ohne Umschalter darüber). */
+export function StartSuche({ eingabe, setEingabe, sonst, daneben, feldRef }: { eingabe: string; setEingabe(wert: string): void; sonst?: ReactNode; daneben?: ReactNode; feldRef?: RefObject<HTMLInputElement | null> }) {
   const d = useDaten();
-  const [eingabe, setEingabe] = useState('');
   const [volltext, setVolltext] = useState(false);
   const [stand, setStand] = useState<{ such: string; gesamt: number; mappen: Mappe[]; bezuege: Bezuege; aehnlich: AehnlicheMappe[]; unscharf: Unscharf | null; ausschnitte: Record<string, Ausschnitt> } | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -56,9 +60,6 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
   const woerter = useMemo(() => [...suchWoerter(stand?.such ?? ''), ...Object.values(stand?.unscharf?.begriffe ?? {}).flat()], [stand?.such, stand?.unscharf]);
   const gruppen = useMemo(() => (stand ? gruppiereTreffer(stand.mappen, d.typ, woerter, (id) => titelOder(stand.bezuege[id]?.titel)) : []), [stand, woerter, d]);
 
-  // Leere Ablage: erst die Einstiege, ohne Suchfeld.
-  if (ohneSuche) return <>{sonst}</>;
-
   async function absenden() {
     // Archivnummer (#345): springt zum Dokument; sonst bleibt es bei der Trefferliste.
     if (!such || /\s/.test(such) || !/\d/.test(such) || such.length > 50) return;
@@ -69,12 +70,11 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
   }
 
   return (
-    <section className="ss-suche" aria-label={t('ablage.startsuche.schnell-finden')}>
-      <form role="search" data-anker="startseite.suche" onSubmit={(e) => { e.preventDefault(); (document.activeElement as HTMLElement | null)?.blur?.(); void absenden(); }}>
-        <label className="sr" htmlFor="ss-feld">{t('ablage.startsuche.alle-mappen-durchsuchen')}</label>
-        <input id="ss-feld" className="ss-feld" type="search" enterKeyHint="search" autoComplete="off" spellCheck={false}
-          placeholder={t('ablage.startsuche.suchen-name-nummer-kennzeichen')} value={eingabe} onChange={(e) => setEingabe(e.target.value)} />
-        <label className="haken klein ss-volltext"><input type="checkbox" checked={volltext} onChange={(e) => setVolltext(e.target.checked)} /><span>{t('ablage.startsuche.auch-in-dokumenten')}</span></label>
+    <>
+      <form role="search" className="ss-form" data-anker="startseite.suche" onSubmit={(e) => { e.preventDefault(); (document.activeElement as HTMLElement | null)?.blur?.(); void absenden(); }}>
+        <Suchfeld className="ss-feld" feldRef={feldRef} wert={eingabe} setze={setEingabe} beschriftung={t('ablage.startsuche.alle-mappen-durchsuchen')}
+          platzhalter={t('ablage.startsuche.suchen-name-nummer-kennzeichen')} />
+        <div className="ss-volltext"><FilterHaken an={volltext} setze={setVolltext}>{t('ablage.startsuche.auch-in-dokumenten')}</FilterHaken>{daneben}</div>
       </form>
       {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
       {such.length > 0 && such.length < 2 && <p className="leise klein">{t('ablage.startsuche.noch-ein-zeichen')}</p>}
@@ -120,7 +120,7 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
         </div>
       )}
       {such.length < 2 && sonst}
-    </section>
+    </>
   );
 }
 

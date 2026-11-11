@@ -102,7 +102,9 @@ describe('Baustein Suche (#978, #994)', () => {
   it('Suchfeld wie in der Ablage: Klasse „suche“, Beschriftung für Screenreader, Platzhalter, Lupe; „×“ nur mit Inhalt', () => {
     const leer = zeichne(h(Suchfeld, { wert: '', setze: nichts, beschriftung: 'Mappentypen durchsuchen', platzhalter: 'Suchen in Name …' }));
     assert.match(leer, /^<div class="suche [^"]*"/);
-    assert.match(leer, /<label[^>]*><span class="sr">Mappentypen durchsuchen<\/span><svg[^>]*aria-hidden="true"[^>]*>.*<input type="search" placeholder="Suchen in Name …" value=""\/><\/label>/);
+    assert.match(leer, /<label[^>]*><span class="sr">Mappentypen durchsuchen<\/span><svg[^>]*aria-hidden="true"[^>]*>.*<input type="search" [^>]*placeholder="Suchen in Name …" value=""\/><\/label>/);
+    // #1002: ohne Vorschläge des Browsers und Rechtschreibprüfung, Bildschirmtastatur mit „Suchen“.
+    assert.match(leer, /<input type="search" enterKeyHint="search" autoComplete="off" spellCheck="false"/);
     assert.doesNotMatch(leer, /<button/);
     const voll = zeichne(h(Suchfeld, { wert: 'kündigen', setze: nichts, beschriftung: 'Mappentypen durchsuchen' }));
     assert.match(voll, /<\/label><button[^>]*aria-label="Suche leeren"/, 'der Knopf steht außerhalb der Beschriftung – sie bleibt der Name des Felds');

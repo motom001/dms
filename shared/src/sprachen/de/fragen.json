@@ -1,7 +1,6 @@
 {
   "titel": "Frag deine Ablage",
-  "feld": "Deine Frage",
-  "beispiel": "z. B. Wann läuft die Kfz-Versicherung aus?",
+  "platzhalter": "Frag deine Ablage … z. B. Wann läuft die Kfz-Versicherung aus?",
   "fragen": "Fragen",
   "neu": "Neuer Chat",
   "laeuft": "Antwort entsteht …",

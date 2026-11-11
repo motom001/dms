@@ -94,7 +94,7 @@ With the tick **Notes**, Ablago also searches the folders' [notes](zusammenarbei
 
 ## Advanced search {#erweiterte-suche}
 
-If you can only roughly describe a folder, the **advanced search** helps. You find it at the very top of the views and as the link **Advanced search** next to the search field of a list (then the list's folder type is already chosen).
+If you can only roughly describe a folder, the **advanced search** helps. You find it at the very top of the views, as the link **Advanced search** next to the box on the [home page](startseite.md#schnell-finden) and next to the search field of a list (then the list's folder type is already chosen).
 
 The search form is **at the top in the middle**, the hits below it; the views stay on the left. As long as you haven't opened a folder, the search uses the full width up to the right edge. When you open a hit, it appears on the right and the middle becomes narrower.
 

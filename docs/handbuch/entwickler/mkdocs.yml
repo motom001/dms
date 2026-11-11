@@ -85,6 +85,7 @@ nav:
       - Eingaben mit Einheit: bausteine-einheit.md
       - Tabelle: bausteine-tabelle.md
       - Suche: bausteine-suche.md
+      - Umschalter: bausteine-umschalter.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md

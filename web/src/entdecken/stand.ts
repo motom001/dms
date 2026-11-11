@@ -65,11 +65,29 @@ export function findeAnker(anker: string): HTMLElement | null {
   return null;
 }
 
+/**
+ * Ein Tipp oder Rundgang sucht diese Anker (#1002). Seiten, die eine Stelle erst zeigen, wenn man umschaltet, hören
+ * darauf und schalten um – z. B. die Startseite mit „Fragen · Suchen“: `startseite.suche` zeigt die Suche. Nur für den
+ * Moment; gemerkt wird nichts.
+ */
+const ANKER_GESUCHT = 'ablago:anker-gesucht';
+export function ankerGesucht(anker: readonly string[]) {
+  window.dispatchEvent(new CustomEvent<readonly string[]>(ANKER_GESUCHT, { detail: anker }));
+}
+/** Hört auf gesuchte Anker (siehe `ankerGesucht`); liefert die Funktion zum Abmelden (für useEffect). */
+export function beiAnkerGesucht(f: (anker: readonly string[]) => void): () => void {
+  const h = (e: Event) => f((e as CustomEvent<readonly string[]>).detail);
+  window.addEventListener(ANKER_GESUCHT, h);
+  return () => window.removeEventListener(ANKER_GESUCHT, h);
+}
+
 /** Wartet bis zu `ms`, bis einer der Anker sichtbar ist; liefert den ersten sichtbaren (in der Reihenfolge der Liste). */
 export async function warteAufAnker(anker: readonly string[], ms = 2500): Promise<{ anker: string; el: HTMLElement } | null> {
   const ende = Date.now() + ms;
   for (;;) {
     for (const a of anker) { const el = findeAnker(a); if (el) return { anker: a, el }; }
+    // Noch nicht sichtbar: Bescheid sagen – vielleicht steht die Stelle hinter einem Umschalter (oder die Seite lädt noch).
+    ankerGesucht(anker);
     if (Date.now() > ende) return null;
     await new Promise((r) => setTimeout(r, 100));
   }
