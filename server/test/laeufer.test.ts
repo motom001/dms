@@ -418,7 +418,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Unterlagen', art: 'dokumente' },
     ] });
-    const vertrag = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
+    const vertrag = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
     const vdok = (await d.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
     const post = await d.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
     const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
@@ -478,7 +478,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         };
         const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }, { nr: 3 }], teile: [0, 2] })).body as { posten: Array<{ id: string }> };
         assert.equal(geteilt.posten.length, 2);
-        for (const p of geteilt.posten) assert.deepEqual((await d.holeMappe(p.id)).mappe.werte.an, ben.id, 'dasselbe „An“ wie die Ausgangspost');
+        for (const p of geteilt.posten) assert.deepEqual((await d.mappen.holeMappe(p.id)).mappe.werte.an, ben.id, 'dasselbe „An“ wie die Ausgangspost');
         // Neues „Für“ über die API: weiterhin abgelehnt – beim Anlegen und beim Ändern.
         const abgelehnt = (e: { status?: number; message?: string }) => e.status === 422 && /nicht sehen darfst/.test(e.message ?? '');
         await assert.rejects(rufe('POST', '/api/v1/post', {}, { betreff: 'Neu', fuer: ben.id }), abgelehnt);
@@ -657,7 +657,7 @@ describe('Vektoren (#442): Schnittstelle und Suche', () => {
     const post2 = await d.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
     const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    const vertrag = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
+    const vertrag = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
     const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
     const dok = async (m: string, r: string, name: string, text: string) => {
       const x = (await d.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;

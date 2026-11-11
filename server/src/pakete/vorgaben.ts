@@ -306,8 +306,7 @@ export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<Ins
 /** Was das Anlegen vom Dienst braucht – die Paketverwaltung gibt ihren Dienst hinein. */
 export interface VorgabenDienst {
   mappentypen: { listeTypen(): Promise<Mappentyp[]> };
-  legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
-  aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
+  mappen: { legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>; aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe> };
   ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>;
   listeDokumente(mappeId: string): Promise<Dokument[]>;
   loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown>;
@@ -365,7 +364,7 @@ async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgabe
   const ohne = <T>(f: () => Promise<T>) => d.kern.ohneEreignisse(f);
   const fehler = (f: unknown) => new Fachfehler(422, t('meldungen.pakete.vorgaben.anlegen', { name: v.schluessel, meldungen: (f as Error).message }));
   if (l.zustand === 'neu') {
-    try { await ohne(() => d.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von)); } catch (f) { throw fehler(f); }
+    try { await ohne(() => d.mappen.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von)); } catch (f) { throw fehler(f); }
     erg.angelegt.push(l.id);
     await d.kern.repo.setzeVorgabe(l.id, vorgabeKennung(a.paketId, v.schluessel));
     return;
@@ -375,8 +374,8 @@ async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgabe
   const leer = (keys: string[]) => Object.fromEntries(keys.map((k) => [k, null]));
   // Was das Paket jetzt weglässt, wird leer: Alle Werte dieser Mappe kamen vom Paket.
   const neu = { ...leer(Object.keys(m.werte).filter((k) => !(k in werte))), ...werte };
-  try { await ohne(() => d.aendereMappe(m.id, { werte: neu }, a.von)); } catch (f) { throw fehler(f); }
-  erg.rueck.unshift(() => ohne(() => d.aendereMappe(m.id, { werte: { ...leer(Object.keys(neu)), ...m.werte } }, a.von)));
+  try { await ohne(() => d.mappen.aendereMappe(m.id, { werte: neu }, a.von)); } catch (f) { throw fehler(f); }
+  erg.rueck.unshift(() => ohne(() => d.mappen.aendereMappe(m.id, { werte: { ...leer(Object.keys(neu)), ...m.werte } }, a.von)));
 }
 
 /** Eine eigene Vorgabe anlegen bzw. aktualisieren, samt Vorlagen; gelöschte bleiben gelöscht. */

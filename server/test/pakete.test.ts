@@ -233,7 +233,7 @@ function faelle(pg: boolean) {
 
       // Entfernen geht erst ohne eigene Mappen; unveränderte Beispiel-Mappen gehen mit (#878), geänderte werden genannt.
       const praxis = (await d.seite(ADMIN, { sicht: oben.id })).mappen.find((m) => m.titel === 'Praxis Dr. Beispiel')!;
-      await d.aendereMappe(praxis.id, { werte: { ...praxis.werte, beschreibung: 'Neue Sprechzeiten.' } }, ICH.id);
+      await d.mappen.aendereMappe(praxis.id, { werte: { ...praxis.werte, beschreibung: 'Neue Sprechzeiten.' } }, ICH.id);
       await assert.rejects(p.entferne('basis', ICH), (e) => e instanceof Fachfehler && e.status === 409 && JSON.stringify(e.details).includes('1 Mappe') && JSON.stringify(e.details).includes('„Praxis Dr. Beispiel“ wurde geändert'));
       assert.equal((await d.seite(ADMIN, { sicht: oben.id })).gesamt, 2, 'beim Scheitern bleiben beide Beispiele');
       await d.entferneMappenEndgueltig([praxis.id]);
@@ -337,11 +337,11 @@ function faelle(pg: boolean) {
       const bas = pakete.find((x) => x.id === 'basis')!;
       assert.ok(bas.beispiele?.stadtwerke, 'Beispiele der Abhängigkeit kamen mit und sind gemerkt');
       assert.ok(inst.beispiele?.strom);
-      const vertrag = await d.listeMappen(inst.typen.vertrag);
+      const vertrag = await d.mappen.listeMappen(inst.typen.vertrag);
       const s1 = vertrag.find((m) => m.werte.nr === 'S-1')!;
       assert.equal(s1.werte.partner, bas.beispiele!.stadtwerke, 'Vertrag → Organisation aus Basis');
       assert.ok(!vertrag.find((m) => m.werte.nr === 'S-2')!.werte.partner, 'unbekanntes Ziel in der Abhängigkeit: Feld bleibt leer');
-      const [z] = await d.listeMappen(inst.typen.zahlung);
+      const [z] = await d.mappen.listeMappen(inst.typen.zahlung);
       assert.equal(z.werte.vertrag, s1.id, 'Zahlung → Vertrag, obwohl sie zuerst steht');
 
       // Basis schon ohne Beispiele installiert: Hinweis in der Vorschau, Verweis bleibt leer.
@@ -351,7 +351,7 @@ function faelle(pg: boolean) {
       const v = await zwei.p.vorschau({ id: 'vertraege' });
       assert.ok(v.hinweise.some((h) => /Beispiele von „Basis“/.test(h)), v.hinweise.join(' | '));
       const i2 = await zwei.p.installiere({ id: 'vertraege', beispiele: true }, ICH);
-      assert.ok(!(await zwei.d.listeMappen(i2.typen.vertrag)).find((m) => m.werte.nr === 'S-1')!.werte.partner);
+      assert.ok(!(await zwei.d.mappen.listeMappen(i2.typen.vertrag)).find((m) => m.werte.nr === 'S-1')!.werte.partner);
 
       // Prüfung beim Lesen: unbekannter Schlüssel, fremdes Paket ohne Abhängigkeit, doppelter Schlüssel, Kreis.
       const mit = (y: string) => ({ ...vertraegeMitBeispielen, 'inhalt/beispiele.yaml': y });
@@ -392,10 +392,10 @@ function faelle(pg: boolean) {
       const { d, p, einstellungen } = await aufbau([{ dateien: basis16 }, { dateien: ordnerpaketNeu }], '0.212.0');
       await d.sichereSystem();
       const a = await frueherAblageort(d, einstellungen);
-      const ort = await d.legeMappeAn({ typId: a.id, werte: { name: 'roter Ordner' } });
+      const ort = await d.mappen.legeMappeAn({ typId: a.id, werte: { name: 'roter Ordner' } });
       const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true },
         { key: 'verbleib_original', label: 'Verbleib Originaldokumente', typ: 'referenz', zielTyp: a.id, verweisart: 'bezug' }] });
-      const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', verbleib_original: ort.id } });
+      const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', verbleib_original: ort.id } });
       const typenVorher = (await d.mappentypen.listeTypen()).length;
       const sichtenVorher = (await d.listeSichten()).length;
       const plan = await p.vorschau({ id: 'basis' });
@@ -408,8 +408,8 @@ function faelle(pg: boolean) {
       assert.equal(inst.sichten.ablageorte, a.id, 'die vorhandene Ansicht gehört jetzt zu Basis');
       assert.equal((await d.mappentypen.listeTypen()).length, typenVorher + 1, 'nur Organisation kommt dazu – kein zweiter Ablageort');
       assert.equal((await d.listeSichten()).length, sichtenVorher + 5, 'nur die Ansichten der Organisation');
-      assert.equal((await d.listeMappen(a.id)).length, 1, 'Mappen bleiben');
-      assert.equal((await d.holeMappe(v1.id)).mappe.werte.verbleib_original, ort.id, 'Verweise bleiben');
+      assert.equal((await d.mappen.listeMappen(a.id)).length, 1, 'Mappen bleiben');
+      assert.equal((await d.mappen.holeMappe(v1.id)).mappe.werte.verbleib_original, ort.id, 'Verweise bleiben');
       const jetzt = (await d.systemtypen.ablageortTyp())!;
       assert.equal(jetzt.id, a.id);
       assert.equal(jetzt.beschriftungen?.en?.name, 'Storage location', 'Beschriftungen von Basis ergänzt');

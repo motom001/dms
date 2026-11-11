@@ -87,10 +87,10 @@ async function quelle(version?: string) {
     { art: 'feld', feld: 'kuendigung', op: 'kleiner', wert: { art: 'heute', versatz: 3, einheit: 'monate' } },
   ] });
   // Echte Daten: Mappen; Beispiele werden nur aus ausdrücklich gewählten.
-  const stadtwerke = await q.d.legeMappeAn({ typId: org.id, werte: { name: 'Stadtwerke' } });
-  const v = await q.d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'S-1', partner: stadtwerke.id, zahlweise: 'monatlich', monatlich: { betrag: 89, waehrung: 'EUR' } } });
-  const z = await q.d.legeMappeAn({ typId: zahlung.id, werte: { datum: '2026-01-31', betrag: { betrag: 89, waehrung: 'EUR' }, vertrag: v.id } });
-  const echt = await q.d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'GEHEIM-4711' } });
+  const stadtwerke = await q.d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Stadtwerke' } });
+  const v = await q.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'S-1', partner: stadtwerke.id, zahlweise: 'monatlich', monatlich: { betrag: 89, waehrung: 'EUR' } } });
+  const z = await q.d.mappen.legeMappeAn({ typId: zahlung.id, werte: { datum: '2026-01-31', betrag: { betrag: 89, waehrung: 'EUR' }, vertrag: v.id } });
+  const echt = await q.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'GEHEIM-4711' } });
   // Bedingung mit fester Mappe: gehört nie ins Paket.
   const fest = await q.d.legeSichtAn({ name: 'Nur ein Partner', typen: [vertrag.id], bedingungen: [{ art: 'feld', feld: 'partner', op: 'zeigtAuf', wert: { art: 'fest', wert: stadtwerke.id } }] });
   return { ...q, org, vertrag, zahlung, notiz, sichten: { vertraege, teuer, meine, fest }, mappen: { v, z, echt } };
@@ -307,8 +307,8 @@ describe('Paket selbst erstellen (#374)', () => {
     assert.equal(zs.find((x) => x.name === 'Verträge')!.symbol, 'signature', 'Symbol der Ansicht kommt mit (#428)');
     assert.deepEqual(zs.find((x) => x.name === 'Nur ein Partner')!.bedingungen, [], 'Bedingung mit fester Mappe bleibt draußen');
     // Beispiele angelegt, Verweis zwischen ihnen aufgelöst.
-    const zv = (await z.d.listeMappen(paket.typen.vertrag))[0];
-    const zz = (await z.d.listeMappen(paket.typen.zahlung))[0];
+    const zv = (await z.d.mappen.listeMappen(paket.typen.vertrag))[0];
+    const zz = (await z.d.mappen.listeMappen(paket.typen.zahlung))[0];
     assert.equal(zv.werte.nr, 'S-1');
     assert.equal(zz.werte.vertrag, zv.id);
 

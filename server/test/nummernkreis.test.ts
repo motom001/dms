@@ -55,19 +55,19 @@ describe('Nummernkreise (#171)', () => {
   it('vergibt beim Anlegen, schreibgeschützt, keine Lücke bei Fehlern, keine doppelten Nummern', async () => {
     const { d, t } = await aufbau();
     // Eingabe zählt nicht
-    const a = await d.legeMappeAn({ typId: t.id, werte: { nr: 'eigene', betreff: 'A' } });
+    const a = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'eigene', betreff: 'A' } });
     assert.match(String(a.werte.nr), /^\d{6}-R0000001$/);
     assert.equal(a.titel, a.werte.nr);
     // Pflichtfehler in einem anderen Feld: keine Nummer verbraucht
-    await assert.rejects(d.legeMappeAn({ typId: t.id, werte: {} }), status(422));
-    const b = await d.legeMappeAn({ typId: t.id, werte: { betreff: 'B' } });
+    await assert.rejects(d.mappen.legeMappeAn({ typId: t.id, werte: {} }), status(422));
+    const b = await d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: 'B' } });
     assert.match(String(b.werte.nr), /-R0000002$/);
     // Gleichzeitig
-    const viele = await Promise.all(Array.from({ length: 25 }, (_, i) => d.legeMappeAn({ typId: t.id, werte: { betreff: `x${i}` } })));
+    const viele = await Promise.all(Array.from({ length: 25 }, (_, i) => d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: `x${i}` } })));
     assert.equal(new Set(viele.map((m) => m.werte.nr)).size, 25);
     // Ändern abgelehnt, sonst speichern ok
-    await assert.rejects(d.aendereMappe(a.id, { werte: { ...a.werte, nr: '1' } }), status(403));
-    const a2 = await d.aendereMappe(a.id, { werte: { ...a.werte, betreff: 'A2' } });
+    await assert.rejects(d.mappen.aendereMappe(a.id, { werte: { ...a.werte, nr: '1' } }), status(403));
+    const a2 = await d.mappen.aendereMappe(a.id, { werte: { ...a.werte, betreff: 'A2' } });
     assert.equal(a2.werte.nr, a.werte.nr);
     assert.ok(geschuetzteFelder(t, a).nr);
     assert.match(geschuetzteFelder(t).nr, /beim Speichern/);
@@ -86,7 +86,7 @@ describe('Nummernkreise (#171)', () => {
     await assert.rejects(d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Doppelt', muster: '{zaehler}' }, 't'), status(409));
     await assert.rejects(d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'Falsch!', name: 'x', muster: '{zaehler}' }, 't'), status(422));
     await d.nummernkreise.setzeZaehler('rechnung', { naechster: 500 }, 'test');
-    const m = await d.legeMappeAn({ typId: t.id, werte: { betreff: 'Umstieg' } });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: 'Umstieg' } });
     assert.match(String(m.werte.nr), /-R0000500$/);
     await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'frei', name: 'Frei', muster: 'F{zaehler}', start: 0 }, 't');
     await d.nummernkreise.loescheNummernkreis('frei', 'test');
@@ -97,7 +97,7 @@ describe('Nummernkreise (#171)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'name', label: 'Name', typ: 'text' }] });
     const alt = [];
-    for (const n of ['a', 'b', 'c']) { alt.push(await d.legeMappeAn({ typId: t.id, werte: { name: n } })); await new Promise((r) => setTimeout(r, 2)); }
+    for (const n of ['a', 'b', 'c']) { alt.push(await d.mappen.legeMappeAn({ typId: t.id, werte: { name: n } })); await new Promise((r) => setTimeout(r, 2)); }
     await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'vertrag', name: 'Verträge', muster: 'V-{zaehler:3}', start: 1 }, 't');
     await d.mappentypen.aendereTyp(t.id, { ...t, felder: [{ key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:vertrag}' }, { key: 'name', label: 'Name', typ: 'text' }] });
     assert.deepEqual(await d.nummernkreise.nummernVorschau(t.id, 'nr'), { anzahl: 3, von: 'V-001', bis: 'V-003' });
@@ -105,7 +105,7 @@ describe('Nummernkreise (#171)', () => {
     d.nummernkreise.nummernNachtragen(t.id, 'nr', 'test');
     const a = await d.auftraege.warte();
     assert.deepEqual(a?.ergebnis, { vergeben: 3, erste: 'V-001', letzte: 'V-003' });
-    assert.deepEqual(await Promise.all(alt.map(async (m) => (await d.holeMappe(m.id)).mappe.werte.nr)), ['V-001', 'V-002', 'V-003']);
+    assert.deepEqual(await Promise.all(alt.map(async (m) => (await d.mappen.holeMappe(m.id)).mappe.werte.nr)), ['V-001', 'V-002', 'V-003']);
     assert.deepEqual(await d.nummernkreise.nummernVorschau(t.id, 'nr'), { anzahl: 0, von: null, bis: null });
   });
 });

@@ -39,7 +39,7 @@ function faelle(pg: boolean) {
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
       const typ = await d.mappentypen.legeTypAn({ name: 'Gerät', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
       const text = async (nr: string, inhalt: string) => {
-        const m = await d.legeMappeAn({ typId: typ.id, werte: { nr } });
+        const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr } });
         const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
         await r.ocrSetze(dokument.id, { stand: 'fertig', text: inhalt });
         return m;

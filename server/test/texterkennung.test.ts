@@ -41,11 +41,11 @@ describe('Texterkennung (#45)', () => {
   it('reiht neue Dokumente ein, arbeitet sie ab, übernimmt Text bei gleichem Inhalt und findet ihn in der Suche', async () => {
     let aufrufe = 0;
     const { d, t, repo, typ } = await aufbau(async () => { aufrufe++; return { text: 'Stromrechnung der Stadtwerke Musterstadt für Januar', seiten: 1, info: 'Ersatz' }; });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'r.pdf', typ: 'application/pdf' }, pdfMitText(['x']), null);
     assert.equal(dokument.ocr?.stand, 'wartet');
     await warte(async () => (await repo.holeDokument(dokument.id))?.ocr?.stand === 'fertig');
-    const zweite = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-2' } });
+    const zweite = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-2' } });
     const kopie = (await d.ladeHoch(zweite.id, { register: 'dokumente', name: 'kopie.pdf', typ: 'application/pdf' }, pdfMitText(['x']), null)).dokument;
     await warte(async () => (await repo.holeDokument(kopie.id))?.ocr?.stand === 'fertig');
     assert.equal(aufrufe, 1, 'gleicher Inhalt: Text übernommen');
@@ -65,7 +65,7 @@ describe('Texterkennung (#45)', () => {
   it('beachtet Register, Dateityp, Ausschalten, Fehler und „erneut versuchen“', async () => {
     let fehler = true;
     const { d, t, repo, typ } = await aufbau(async () => { if (fehler) throw new Error('kaputt'); return { text: 'Stromrechnung der Stadtwerke Musterstadt', seiten: 1, info: 'Ersatz' }; });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
     const hoch = async (name: string, typ2: string, inhalt: Buffer) => (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typ2 }, inhalt, null)).dokument.id;
     const pdf = await hoch('a.pdf', 'application/pdf', pdfMitText(['a']));
     await warte(async () => (await repo.holeDokument(pdf))?.ocr?.stand === 'fehler');
@@ -94,7 +94,7 @@ describe('Texterkennung (#45)', () => {
 
   it('holt Volltext für vorhandene Dokumente nach – nur in Registern mit Volltext', async () => {
     const { d, repo, typ } = await aufbau(async () => ({ text: 'Stromrechnung der Stadtwerke Musterstadt', seiten: 1, info: 'Ersatz' }), { volltext: false });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, pdfMitText(['a']), null);
     assert.equal(dokument.ocr?.stand, 'keiner', 'Register ohne Volltext');
     assert.equal(await d.volltextNachholen(), 0);
@@ -143,7 +143,7 @@ describe('Aufträge der Texterkennung in der Werkbank (#61)', () => {
       if (modus === 'haengt') await new Promise((_r, nein) => o.signal?.addEventListener('abort', () => nein(new Error('abgebrochen'))));
       return { text: 'Stromrechnung der Stadtwerke Musterstadt', seiten: 1, info: 'Ersatz' };
     });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
     const hoch = async (name: string, i: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: 'application/pdf' }, pdfMitText([i]), null)).dokument.id;
     const a = await hoch('a.pdf', 'a');
     await warte(async () => (await repo.holeDokument(a))?.ocr?.stand === 'fehler');

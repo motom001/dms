@@ -123,7 +123,7 @@ function faelle(pg: boolean) {
     }
     const vertraege = async (d: Dienst) => {
       const typ = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
-      return (await d.listeMappen(typ.id)).sort((a, b) => String(a.werte.nr).localeCompare(String(b.werte.nr)));
+      return (await d.mappen.listeMappen(typ.id)).sort((a, b) => String(a.werte.nr).localeCompare(String(b.werte.nr)));
     };
 
     it('legt die Dokumente wie beim Hochladen an: Register, Name, Datum, Herkunft, Volltext; ohne Mappen-Ereignisse', async () => {
@@ -170,7 +170,7 @@ function faelle(pg: boolean) {
       await installiere(p);
       const [strom] = await vertraege(d);
       const typ = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
-      await d.aendereMappe(strom.id, { werte: { ...strom.werte, nr: 'SV-4712' } }, ICH.id);
+      await d.mappen.aendereMappe(strom.id, { werte: { ...strom.werte, nr: 'SV-4712' } }, ICH.id);
       await assert.rejects(p.entferne('demo', ICH), (e) => gruende(/„SV-4712“ wurde geändert und bleibt/)(e) && gruende(/1 Mappe/)(e));
       assert.equal((await vertraege(d)).length, 2, 'beim Scheitern bleibt alles');
       // Geändertes Beispiel selbst löschen – dann geht das Paket samt den übrigen Beispielen.
@@ -188,9 +188,9 @@ function faelle(pg: boolean) {
       const firmaTyp = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:firma')!;
       const [strom, wartung] = await vertraege(d);
       // Ein eigener Vertrag verweist auf die Beispiel-Firma; an den Wartungsvertrag kommt ein weiteres Dokument.
-      const firma = (await d.listeMappen(firmaTyp.id))[0];
+      const firma = (await d.mappen.listeMappen(firmaTyp.id))[0];
       const vertragTyp = (await d.mappentypen.listeTypen()).find((t) => t.schluessel === 'demo:vertrag')!;
-      await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'EIGEN-1', firma: firma.id } }, ICH.id);
+      await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'EIGEN-1', firma: firma.id } }, ICH.id);
       await d.ladeHoch(wartung.id, { register: 'unterlagen', name: 'Nachtrag.pdf' }, PDF('Nachtrag Petra'), ICH.id);
       const r = await p.beispieleEntfernen('demo', ICH);
       assert.equal(r.entfernt, 1);
@@ -207,7 +207,7 @@ function faelle(pg: boolean) {
       const { d, p, e } = await aufbau();
       // Eigener Typ (nicht aus einem Paket) mit Beispiel-Mappe und Dokumenten: PDF, PNG und eines, das draußen bleibt.
       const typ = await d.mappentypen.legeTypAn({ name: 'Urkunde', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [{ key: 'daten', name: 'Daten', art: 'felder', felder: ['name'] }, { key: 'scans', name: 'Scans', art: 'dokumente' }] } as never);
-      const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Geburtsurkunde Katrin' } }, ICH.id);
+      const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Geburtsurkunde Katrin' } }, ICH.id);
       await d.ladeHoch(m.id, { register: 'scans', name: 'Geburtsurkunde Katrin.pdf' }, PDF('Urkunde Katrin'), ICH.id);
       await d.ladeHoch(m.id, { register: 'scans', name: 'Rückseite.png' }, PNG, ICH.id);
       await d.ladeHoch(m.id, { register: 'scans', name: 'Notiz.txt', typ: 'text/plain' }, Buffer.from('Notiz'), ICH.id);
@@ -233,7 +233,7 @@ function faelle(pg: boolean) {
       const ziel = await aufbau();
       await installiere(ziel.p, Object.fromEntries([...inhalt].map(([n, b]) => [n, b])));
       const zt = (await ziel.d.mappentypen.listeTypen()).find((t) => t.schluessel === 'urkunden:urkunde')!;
-      const zm = (await ziel.d.listeMappen(zt.id))[0];
+      const zm = (await ziel.d.mappen.listeMappen(zt.id))[0];
       assert.deepEqual((await ziel.d.listeDokumente(zm.id)).map((x) => x.name).sort(), ['Geburtsurkunde Katrin.pdf', 'Rückseite.png']);
       assert.ok(p);
     });

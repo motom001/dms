@@ -237,8 +237,8 @@ function faelle(pg: boolean) {
       const typen = await d.mappentypen.listeTypen();
       const kontaktTyp = typen.find((x) => x.id === inst.find((y) => y.id === 'kontakte')!.typen.kontakt)!;
       assert.equal(kontaktTyp.name, 'Kontakt (Kontakte)');
-      assert.equal((await d.listeMappen(kontaktTyp.id)).length, 2, 'Beispiele nur für Kontakte');
-      assert.equal((await d.listeMappen(inst.find((y) => y.id === 'basis')!.typen.organisation)).length, 0, 'für Basis abgewählt');
+      assert.equal((await d.mappen.listeMappen(kontaktTyp.id)).length, 2, 'Beispiele nur für Kontakte');
+      assert.equal((await d.mappen.listeMappen(inst.find((y) => y.id === 'basis')!.typen.organisation)).length, 0, 'für Basis abgewählt');
     });
 
     it('Einstellungen später: installiert mit „Einstellungen nötig“', async () => {

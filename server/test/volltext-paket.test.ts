@@ -82,7 +82,7 @@ async function aufbau(mitPaket = true) {
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
   const hoch = async (name: string, mime: string, inhalt: Buffer, scan: boolean | 'gemischt' = false) => {
     scanJetzt = scan;
     const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: mime }, inhalt, null)).dokument.id;
@@ -337,7 +337,7 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
       const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
       await d.kern.repo.speicherePaket(paket('texterkennung', { schnittstellen: ['dms:texterkennung'], dms: '>=0.133.0' }));
       const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-      const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
+      const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } });
       const hoch = async (n: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name: n, typ: 'application/pdf' }, pdfMitText([n]), null)).dokument.id;
       const mit = await hoch('mit.pdf'), ohne = await hoch('ohne.pdf');
       await repo.ocrSetze(mit, { stand: 'fertig', text: TEXT, info: 'Textebene des PDFs' });

@@ -19,7 +19,7 @@ async function aufbau(behalten?: number) {
     { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true, versionenBehalten: behalten },
     { key: 'sonstiges', name: 'Sonstiges', art: 'dokumente' },
   ] });
-  const m = await d.legeMappeAn({ typId: t.id, werte: { name: 'Einkauf' } });
+  const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Einkauf' } });
   return { d, t, m, dateien };
 }
 
@@ -45,8 +45,8 @@ describe('Versionierung von Dokumenten (#194)', () => {
     assert.equal(v.aeltere[0].name, 'Kassenbon.jpg');
     assert.deepEqual((await d.versionInhalt(bon.id, 1)).inhalt, PNG);
     // Nur die neueste in der Mappe
-    assert.deepEqual((await d.holeMappe(m.id)).dokumente.map((x) => x.name), ['Kassenbon.pdf']);
-    const h = (await d.historie(m.id)).find((x) => x.art === 'dokument_version');
+    assert.deepEqual((await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name), ['Kassenbon.pdf']);
+    const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'dokument_version');
     assert.equal(h?.daten.vorher, 'Kassenbon.jpg');
     const { dokument: s } = await d.ladeHoch(m.id, { register: 'sonstiges', name: 'x.pdf' }, PDF('x'), null);
     await assert.rejects(d.ersetzeDokument(s.id, {}, PDF('y'), null), (e) => e instanceof Fachfehler && e.status === 409 && /Versionierung ausgeschaltet/.test(e.message));
@@ -67,7 +67,7 @@ describe('Versionierung von Dokumenten (#194)', () => {
     const e = await d.ladeHoch(m.id, { register: 'sonstiges', name: 'Brief.pdf', gleicherName: 'ersetzen' }, PDF('b3'), null);
     assert.notEqual(e.dokument.id, s.id);
     assert.equal(e.dokument.name, 'Brief.pdf');
-    assert.equal((await d.holeMappe(m.id)).dokumente.filter((x) => x.registerKey === 'sonstiges').length, 1);
+    assert.equal((await d.mappen.holeMappe(m.id)).dokumente.filter((x) => x.registerKey === 'sonstiges').length, 1);
   });
 
   it('Zurückholen: als neue, höchste Version; nichts geht verloren', async () => {
@@ -96,7 +96,7 @@ describe('Versionierung von Dokumenten (#194)', () => {
     await d.loescheDokument(a.id);
     const sha3 = (await import('node:crypto')).createHash('sha256').update(PDF('p3')).digest('hex');
     await assert.rejects(dateien.lies(sha3));
-    const h = (await d.historie(m.id)).find((x) => x.art === 'dokument_geloescht');
+    const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'dokument_geloescht');
     assert.equal(h?.daten.versionen, 3);
   });
 

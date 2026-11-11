@@ -82,18 +82,18 @@ export function typenArchivRouten(k: RoutenKontext): Route[] {
   const { dienst, zg } = k;
   return [
     /* ---------- Archivmodus (#212) ---------- */
-    { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },
-    { methode: 'GET', pfad: '/api/werkbank/darf-weg', zugang: 'admin', handler: async () => ok(await dienst.darfWeg()) },
-    { methode: 'POST', pfad: '/api/werkbank/wartung/dateien', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.pruefeDateien(ich(a).email)), 202) },
+    { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.mappenArchiv.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },
+    { methode: 'GET', pfad: '/api/werkbank/darf-weg', zugang: 'admin', handler: async () => ok(await dienst.mappenArchiv.darfWeg()) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/dateien', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.angemeldet(dienst.mappenArchiv.pruefeDateien(ich(a).email)), 202) },
     // Nur Vorhandensein (#877), ohne zu lesen: für den Lasttest („Dokumente ohne Datei: n“) und Skripte.
     { methode: 'GET', pfad: '/api/werkbank/wartung/dateien/fehlend', zugang: 'admin', handler: async () => ok(await dienst.dokumenteOhneDatei()) },
     /* ---------- Auswahlfilter am Referenzfeld (#172, #173) ---------- */
-    { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mappenEingaben.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
     // Folgt aus (#886): was aus den gewählten Quellen folgt – die Oberfläche füllt damit leere Felder und fragt bei Abweichung.
-    { methode: 'POST', pfad: '/api/mappen/folgen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.folgen(a.body, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/folgen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mappenEingaben.folgen(a.body, await zg(a))) },
     // Beim Auswählen übernehmen (#1037): Werte der gewählten Mappe als Vorschlag für leere Felder – nur, was die Person lesen darf.
-    { methode: 'POST', pfad: '/api/mappen/vorbelegen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.vorbelegen(a.body, await zg(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
+    { methode: 'POST', pfad: '/api/mappen/vorbelegen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mappenEingaben.vorbelegen(a.body, await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.mappenEingaben.zaehleAuswahl(a.body, ich(a).id)) },
   ];
 }
 

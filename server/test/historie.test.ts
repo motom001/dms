@@ -16,14 +16,14 @@ describe('Historie (#57)', () => {
       { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }, { key: 'betrag', label: 'Betrag', typ: 'betrag' },
       { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }, { key: 'pw', label: 'Kennwort', typ: 'passwort' },
     ] });
-    const a = await d.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, ich.id);
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'V-1', betrag: { betrag: 10, waehrung: 'EUR' } } }, ich.id);
-    await d.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
-    await d.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
+    const a = await d.mappen.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, ich.id);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'V-1', betrag: { betrag: 10, waehrung: 'EUR' } } }, ich.id);
+    await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
+    await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
     await d.ladeHoch(m.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 h'), ich.id);
     await d.loescheMappe(m.id, ich.id);
     await d.stelleWiederHer(m.id, ich);
-    const h = await d.historie(m.id);
+    const h = await d.mappenHistorie.historie(m.id);
     assert.deepEqual(h.map((e) => e.art), ['wiederhergestellt', 'papierkorb', 'dokument_hochgeladen', 'geaendert', 'angelegt'], 'unverändertes Speichern ohne Eintrag');
     const g = h.find((e) => e.art === 'geaendert')!;
     assert.equal(g.benutzerId, ich.id);
@@ -38,16 +38,16 @@ describe('Historie (#57)', () => {
   it('behält die Historie endgültig gelöschter Mappen bis zur Frist', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const t = await d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text' }] });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { n: 'a' } }, ich.id);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { n: 'a' } }, ich.id);
     await d.setzePapierkorbTage(0);
     await d.loescheMappe(m.id, ich.id);
-    assert.equal(await d.historieTage(), 365);
+    assert.equal(await d.mappenHistorie.historieTage(), 365);
     await d.raeumePapierkorbAuf(Date.now() + 100 * 86_400_000);
     // Die Mappe gibt es nicht mehr; die Historie steht noch im Repo.
     const repo = (d as unknown as { repo: { historie(id: string): Promise<unknown[]> } }).repo;
     assert.equal((await repo.historie(m.id)).length, 2);
     await d.raeumePapierkorbAuf(Date.now() + 400 * 86_400_000);
     assert.equal((await repo.historie(m.id)).length, 0);
-    await assert.rejects(d.setzeHistorieTage(-1), /ganze Zahl/);
+    await assert.rejects(d.mappenHistorie.setzeHistorieTage(-1), /ganze Zahl/);
   });
 });

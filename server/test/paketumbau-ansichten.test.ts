@@ -167,9 +167,9 @@ for (const pg of [false, true]) {
       const haft = await x.sicht(h1.sichten.haftpflicht);
       await x.d.aendereSicht(haft.id, { ...haft, name: 'Haftpflicht (Lena)' });
       const vertrag = (await x.typ('haushalt:vertrag'))!, versicherung = (await x.typ('haushalt:versicherung'))!;
-      const strom = await x.d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Strom' } }, ICH.id);
-      const waerme = await x.d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Fernwärme' } }, ICH.id);
-      const hv = await x.d.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'HV-4711', versicherung_art: 'Haftpflicht' } }, ICH.id);
+      const strom = await x.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Strom' } }, ICH.id);
+      const waerme = await x.d.mappen.legeMappeAn({ typId: vertrag.id, werte: { art: 'Fernwärme' } }, ICH.id);
+      const hv = await x.d.mappen.legeMappeAn({ typId: versicherung.id, werte: { versicherungsnummer: 'HV-4711', versicherung_art: 'Haftpflicht' } }, ICH.id);
 
       const { vorschau, upload } = await x.hoch(vertraege);
       assert.deepEqual(vorschau.probleme, []);
@@ -188,7 +188,7 @@ for (const pg of [false, true]) {
       assert.equal((await m(strom.id)).werte.art, await art('strom'), 'Auswahl „Strom“ → Vertragsart „Strom“');
       assert.equal((await m(waerme.id)).werte.art, undefined, 'keine Vertragsart „Fernwärme“: bleibt leer, nichts angelegt');
       assert.match((await x.d.kern.repo.notizen(waerme.id))[0]?.text ?? '', /Art: Fernwärme/);
-      assert.equal((await x.d.listeMappen((await x.typ('vertraege:vertragsart'))!.id)).length, 3, 'keine neuen Vertragsarten');
+      assert.equal((await x.d.mappen.listeMappen((await x.typ('vertraege:vertragsart'))!.id)).length, 3, 'keine neuen Vertragsarten');
       const hist = await x.d.kern.repo.historie(strom.id);
       assert.ok(hist.some((h) => JSON.stringify(h.daten.aenderungen ?? []).includes('Vertragsart: Strom')), 'Historie nennt den Titel');
       const neuHv = await m(hv.id);

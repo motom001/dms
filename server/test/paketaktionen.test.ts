@@ -146,7 +146,7 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   const weiter = async (b: { id: string }, lauf: string, antworten: unknown) => (await oberflaeche(b, 'POST', '/api/paketaktionen/laeufe/:lauf', { params: { lauf }, body: { antworten } })).body as AktionsSchritt;
   // Herausgeben braucht das Exportrecht E – über eine Ansicht mit dem Mappentyp (#723).
   await d.legeSichtAn({ name: 'Verträge', typen: [typId], bedingungen: [] });
-  const mappe = await d.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', anbieter: 'Stadtwerke Beispielstadt', kundenkennwort: 'geheim-123' } }, lena.id);
+  const mappe = await d.mappen.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', anbieter: 'Stadtwerke Beispielstadt', kundenkennwort: 'geheim-123' } }, lena.id);
   return { d, p, konten, lena, jonas, typId, kuendigungTyp: v.typen.kuendigung, mappe, aufrufe, setzeSkript, oberflaeche, angebot, starte, weiter, hochladen, installiere, repo: r.repo };
 }
 const antwort = (x: unknown) => ({ ok: true, text: JSON.stringify(x), fehler: null });
@@ -227,7 +227,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.ok(!jonas.includes('gekuendigt') && !jonas.includes('notiz') && !jonas.includes('vorlage_hinzufuegen'), jonas.join());
       assert.ok(jonas.includes('kuendigung_anlegen'));
       // Bedingung: ohne Anbieter gesperrt mit Grund – Start antwortet 409 mit dem Grund.
-      await t.d.aendereMappe(t.mappe.id, { werte: { anbieter: '' } }, t.lena.id);
+      await t.d.mappen.aendereMappe(t.mappe.id, { werte: { anbieter: '' } }, t.lena.id);
       assert.equal((await t.angebot(t.lena, t.mappe.id)).aktionen.find((a) => a.schluessel === 'vorlage_hinzufuegen')?.gesperrt, 'Erst einen Anbieter eintragen');
       await assert.rejects(t.starte(t.lena, t.mappe.id, 'vorlage_hinzufuegen'), fehler(409, /Anbieter/));
       // In den Einstellungen des Pakets ausgeschaltet: weg, auch beim Start; eingebaute an einer Stelle.
@@ -273,7 +273,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       const m = (await t.d.kern.repo.holeMappe(t.mappe.id))!;
       assert.equal(m.werte.gekuendigt_am, '2026-11-11');
       assert.equal(m.geaendertVon, t.lena.id);
-      const h = await t.d.historie(t.mappe.id);
+      const h = await t.d.mappenHistorie.historie(t.mappe.id);
       const eintrag = h.find((x) => x.art === 'paketaktion');
       assert.equal(eintrag?.benutzerId, t.lena.id);
       assert.equal(eintrag?.daten.paket, 'vertraege');
@@ -285,7 +285,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Rechte bei jedem Schritt; Mappe nie aus der Antwort; Nicht-Angekündigtes ändert nichts', async () => {
       const t = await aufbau(pg, 'aktionen_schritt');
-      const andere = await t.d.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
+      const andere = await t.d.mappen.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
       t.setzeSkript(async (e) => (e.schritt === 1 ? antwort(dialog) : antwort({ ergebnis: { meldung: 'ok', mappe: andere.id, felder: { gekuendigt_am: '2026-01-01' } } })));
       const s1 = await t.starte(t.lena, t.mappe.id, 'gekuendigt');
       const s2 = await t.weiter(t.lena, s1.lauf, { am: '2026-11-11' });
@@ -333,7 +333,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Eingeschränkter Zugriff: nur diese Mappe, ihre Dokumente, Dateien ablegen; neues Dokument wie ein Upload', async () => {
       const t = await aufbau(pg, 'aktionen_zugang');
-      const fremd = await t.d.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
+      const fremd = await t.d.mappen.legeMappeAn({ typId: t.typId, werte: { bezeichnung: 'Gas' } }, t.lena.id);
       const fremdDok = (await t.d.ladeHoch(fremd.id, { register: 'dokumente', name: 'gas.txt', typ: 'text/plain' }, Buffer.from('Gas'), t.lena.id)).dokument;
       const eigenDok = (await t.d.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'strom.txt', typ: 'text/plain' }, Buffer.from('Strom'), t.lena.id)).dokument;
       const gesehen: Record<string, number> = {};
@@ -398,7 +398,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       await t.d.paketaktionen.vorlageLauf(h, s.lauf, t.mappe.id, 'vertraege', false);
       const dok = (await t.d.ladeHoch(t.mappe.id, { register: 'dokumente', name: 'Kündigung.pdf', typ: 'application/pdf' }, Buffer.from('x'), t.lena.id)).dokument;
       await t.d.paketaktionen.vorlageErledigt(h, s.lauf, { dokument: dok });
-      const e = (await t.d.historie(t.mappe.id)).find((x) => x.art === 'paketaktion');
+      const e = (await t.d.mappenHistorie.historie(t.mappe.id)).find((x) => x.art === 'paketaktion');
       assert.equal(e?.daten.dokument, 'Kündigung.pdf');
       assert.equal(e?.benutzerId, t.lena.id);
     });

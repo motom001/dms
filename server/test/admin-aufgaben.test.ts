@@ -40,7 +40,7 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
   it('Lena sieht, zählt und erledigt Aufgaben ohne Empfänger; Jonas nicht; im Verwaltungsmodus sieht man sie weiterhin', async () => {
     const { d, t, ohne, lena, A, L, J } = await aufbau();
     await d.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id);
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, A.id);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, A.id);
     const a = await ohne(m.id, 'Bitte zuordnen');
     assert.equal(a.empfaengerId, null);
     assert.equal((await d.zaehler(L)).eingang, 1);
@@ -63,7 +63,7 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     assert.equal((await d.setzeAufgabenEmpfaenger({ benutzerId: admin.id }, A.id)).benutzerId, admin.id);
     await assert.rejects(d.setzeAufgabenEmpfaenger({ benutzerId: '00000000-0000-4000-8000-0000000000cc' }, A.id), status(422));
     await d.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id);
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '2' } }, A.id);
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '2' } }, A.id);
     await ohne(m.id, 'Post ohne Für');
     assert.equal((await d.zaehler(L)).eingang, 1);
     assert.equal((await d.setzeAufgabenEmpfaenger({ benutzerId: jonas.id }, A.id)).benutzerId, jonas.id);

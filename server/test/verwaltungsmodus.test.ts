@@ -383,8 +383,8 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     const gesperrt = await x.d.mappentypen.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
     await x.d.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
     const offenTyp = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    const m = await x.d.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
-    const eigen = await x.d.legeMappeAn({ typId: offenTyp.id, werte: { name: 'Einkauf' } });
+    const m = await x.d.mappen.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
+    const eigen = await x.d.mappen.legeMappeAn({ typId: offenTyp.id, werte: { name: 'Einkauf' } });
     const c = await x.anmelden('lena@example.org');
     assert.equal((await x.rufe(c, 'GET', `/api/mappen/${m.id}`)).statusCode, 404, 'ohne Modus nicht lesbar');
     await x.verwalten(c);
@@ -395,9 +395,9 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     const eigeneSicht = await x.rufe(c, 'GET', `/api/mappen/${eigen.id}`);
     assert.equal(eigeneSicht.json().nurImVerwaltungsmodus, undefined);
     assert.equal((await x.rufe(c, 'PUT', `/api/mappen/${m.id}`, { werte: { name: 'Akte Herr Özdemir (2)' } })).statusCode, 200);
-    const h = (await x.d.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus');
+    const h = (await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus');
     assert.deepEqual(h.map((e) => [e.daten.was, e.benutzerId]).sort(), [['angesehen', x.lena.id], ['geaendert', x.lena.id]], 'kurz hintereinander nur einmal');
-    assert.equal((await x.d.historie(eigen.id)).some((e) => e.art === 'verwaltungsmodus'), false);
+    assert.equal((await x.d.mappenHistorie.historie(eigen.id)).some((e) => e.art === 'verwaltungsmodus'), false);
     // Werkbank: Liste nur für „Gesamte Verwaltung“.
     const liste = (await x.rufe(c, 'GET', '/api/werkbank/verwaltungsmodus')).json() as Array<{ person: string; titel: string; was: string }>;
     assert.deepEqual(liste.map((e) => [e.person, e.was]).sort(), [['Lena', 'angesehen'], ['Lena', 'geaendert']]);
@@ -407,7 +407,7 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     // Nach der Sperrfrist wieder ein Eintrag.
     await x.d.kurzzustand.loesche('modusspur');
     await x.rufe(c, 'GET', `/api/mappen/${m.id}`);
-    assert.equal((await x.d.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus' && e.daten.was === 'angesehen').length, 2);
+    assert.equal((await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus' && e.daten.was === 'angesehen').length, 2);
   });
 
   it('nicht löschbar: auch das Aufräumen der Historie gelöschter Mappen lässt sie stehen', async () => {

@@ -44,10 +44,10 @@ async function aufbau(r: Repo) {
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [...felder,
     { key: 'bezahlt', label: 'Bezahlt', typ: 'janein' }, { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Elektro', 'Möbel', 'Sonstiges'] }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
   const gutschrift = await d.mappentypen.legeTypAn({ name: 'Gutschrift', schluessel: 'gutschrift', titelVorlage: '{nr}', felder });
-  const p = async (name: string) => (await d.legeMappeAn({ typId: partner.id, werte: { name } })).id;
+  const p = async (name: string) => (await d.mappen.legeMappeAn({ typId: partner.id, werte: { name } })).id;
   const P = { mm: await p('MediaMarkt'), saturn: await p('Saturn'), otto: await p('Otto'), ikea: await p('Ikea') };
   const mappe = async (typId: string, nr: string, datum: string, vp: string, text: string, extra: Record<string, unknown> = {}) => {
-    const m = await d.legeMappeAn({ typId, werte: { nr, rechnungsdatum: datum, vertragspartner: vp, betrag: { betrag: 100, waehrung: 'EUR' }, ...extra } });
+    const m = await d.mappen.legeMappeAn({ typId, werte: { nr, rechnungsdatum: datum, vertragspartner: vp, betrag: { betrag: 100, waehrung: 'EUR' }, ...extra } });
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${nr}.txt`, typ: 'text/plain' }, Buffer.from(nr), null);
     await r.ocrSetze(dokument.id, { stand: 'fertig', text });
     return m;
@@ -57,7 +57,7 @@ async function aufbau(r: Repo) {
   await mappe(rechnung.id, 'R-3', '2025-08-15', P.ikea, 'Backofen bei Ikea');
   await mappe(rechnung.id, 'R-4', '2025-09-01', P.otto, 'Kühlschrank', { art: 'Möbel' });
   const r5 = await mappe(rechnung.id, 'R-5', '2025-11-30', P.saturn, 'Waschmaschine');
-  await d.legeNotizAn(r5.id, 'Kam zusammen mit dem Backofen', null);
+  await d.mappenNotizen.legeNotizAn(r5.id, 'Kam zusammen mit dem Backofen', null);
   await mappe(gutschrift.id, 'G-1', '2025-06-01', P.otto, 'Gutschrift Backofen');
   await mappe(gutschrift.id, 'G-2', '2026-01-10', P.mm, 'Gutschrift Backofen später');
   return { d, partner, rechnung, gutschrift, P };
@@ -152,10 +152,10 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
     await d.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
       { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: true },
     ] }, true);
-    const strom = await d.legeMappeAn({ typId: t.id, werte: { name: 'Strom', privat: false } }, admin.id);
-    const geheim = await d.legeMappeAn({ typId: t.id, werte: { name: 'Geheim', privat: true } }, admin.id);
-    await d.legeNotizAn(strom.id, 'Vertrag kündigen', admin.id);
-    await d.legeNotizAn(geheim.id, 'Vertrag kündigen', admin.id);
+    const strom = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom', privat: false } }, admin.id);
+    const geheim = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Geheim', privat: true } }, admin.id);
+    await d.mappenNotizen.legeNotizAn(strom.id, 'Vertrag kündigen', admin.id);
+    await d.mappenNotizen.legeNotizAn(geheim.id, 'Vertrag kündigen', admin.id);
     const link = 'typ=vertrag&volltext=kündigen&in=notizen';
     const a = { id: admin.id, rolle: 'admin' };
     assert.deepEqual(await treffer(d, link, a, { }), ['Geheim', 'Strom']);

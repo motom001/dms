@@ -78,7 +78,7 @@ describe('„Datum erreicht“ (#724)', () => {
   it('3 Monate vorher → Frist für Lena; Abwesenheit → an Jonas; erledigt sich, wenn das Datum geändert wird; Folgetermin', async () => {
     const { d, konten, admin, lena, jonas, vertrag, motor } = await aufbau();
     const datum = verschiebe(heuteIn(), 3, 'monate');
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', ende: datum, verantwortlich: lena.id } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', ende: datum, verantwortlich: lena.id } }, admin.id);
     await konten.setzeAbwesenheit(lena, lena.id, { an: true, vertreterId: jonas.id });
     const a = await motor.lege({ name: 'Ende', aktiv: true, wenn: { art: 'datum', typ: vertrag.id, feld: 'ende', vorlauf: 3, einheit: 'monate', uhrzeit: '00:00', wiederholung: 12 },
       dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'feld', feld: 'verantwortlich' }], text: '{name} endet am {ende}.' }] }, admin.id);
@@ -89,16 +89,16 @@ describe('„Datum erreicht“ (#724)', () => {
     assert.equal(f.art, 'frist', 'Art bleibt erkennbar');
     assert.equal(f.empfaengerId, jonas.id, 'Vertretung');
     assert.equal(f.datum, datum);
-    assert.ok((await d.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Lena/.test(String(h.daten.text))));
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Lena/.test(String(h.daten.text))));
     // Datum verschoben → die Frist erledigt sich selbst.
-    await d.aendereMappe(m.id, { werte: { ende: verschiebe(datum, 1) } }, admin.id);
+    await d.mappen.aendereMappe(m.id, { werte: { ende: verschiebe(datum, 1) } }, admin.id);
     assert.ok((await d.aufgabenVon(m.id)).find((x) => x.id === f.id)?.erledigt, 'erledigt sich selbst');
-    assert.ok((await d.historie(m.id)).some((h) => /erledigt \(verschoben auf/.test(String(h.daten.text))));
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /erledigt \(verschoben auf/.test(String(h.daten.text))));
   });
 
   it('deaktivierter Empfänger ohne Vertretung: Lauf bricht nicht ab, Aufgabe an die Administratoren; Ersteller wählbar', async () => {
     const { d, konten, admin, lena, vertrag, motor } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', ende: heuteIn(), verantwortlich: lena.id } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', ende: heuteIn(), verantwortlich: lena.id } }, admin.id);
     // Über die Werkbank geht Deaktivieren nur mit Vertreter – hier der Fall ohne (z. B. aus einer Anmeldung über Anbieter).
     await (konten as unknown as { repo: { aendereBenutzer(id: string, d: { aktiv: boolean }): Promise<unknown> } }).repo.aendereBenutzer(lena.id, { aktiv: false });
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
@@ -116,7 +116,7 @@ describe('„Datum erreicht“ (#724)', () => {
     const { d, admin, vertrag, motor } = await aufbau();
     assert.equal(await motor.fristenUebernehmen(), 2, 'Erinnerung am Feld → Automatisierung, dazu „Vertretung eingetragen“');
     const datum = verschiebe(heuteIn(), 30);
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: datum } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendbar_bis: datum } }, admin.id);
     assert.equal((await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist').length, 0, 'das Feld legt selbst keine an');
     await motor.ereignis({ id: crypto.randomUUID(), art: 'mappe.angelegt', daten: { mappe: m.id, typ: vertrag.id }, ausloeser: { art: 'benutzer', id: admin.id, konto: admin.id }, erstellt: new Date().toISOString() });
     const eingebaut = (await d.alleAufgaben()).filter((x) => x.mappeId === m.id && x.art === 'frist');
@@ -172,7 +172,7 @@ describe('Ein Ereigniskatalog, ein Ausgangskorb, eine Regel für Wiederholungen 
     await d.kern.repo.speicherePaket({ id: 'echo', name: 'Echo', version: '1.0.0', beschreibung: '', typen: {}, sichten: {}, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), laeufer: { sprache: 'wasm', ereignisse: ['dokument.hochgeladen'], rechte: { lesen: [], schreiben: [], dokumente: 'keine' }, netz: [] } } as never);
     const katalog: string[] = [];
     d.ereignisse.abonniere('test', async (e) => { katalog.push(e.art); });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } });
     await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo'), null);
     await d.ereignisse.verteile();
     assert.equal(katalog.filter((a) => a === 'dokument.hochgeladen').length, 1, 'genau einmal');

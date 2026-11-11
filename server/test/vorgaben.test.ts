@@ -204,7 +204,7 @@ function faelle(pg: boolean) {
       const ereignisse = await r.holeKatalogEreignisse(100, 1);
       assert.ok(!ereignisse.some((x) => x.art.startsWith('mappe.')), 'keine Mappen-Ereignisse');
       // Herkunft an der Mappe: „Vorgabe aus Paket Verträge“.
-      assert.deepEqual((await d.holeMappe(miete.id) as { vorgabe?: unknown }).vorgabe, { paket: 'vertraege', paketName: 'Verträge' });
+      assert.deepEqual((await d.mappen.holeMappe(miete.id) as { vorgabe?: unknown }).vorgabe, { paket: 'vertraege', paketName: 'Verträge' });
     });
 
     it('Anzeige-Bedingung „zeigt auf die Vorgabe“ wird beim Installieren zur Id; Beispiele zeigen auf Vorgaben', async () => {
@@ -213,7 +213,7 @@ function faelle(pg: boolean) {
       const miete = (await vorgabe(r, 'vertraege', 'miete'))!;
       const vertrag = await typVon(d, 'vertraege:vertrag');
       assert.deepEqual(vertrag.register.find((x) => x.key === 'daten')!.abschnitte![0].anzeigen, { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'art', op: 'zeigtAuf', wert: { art: 'fest', wert: [miete.id] } } }] });
-      const [wohnung] = await d.listeMappen(vertrag.id);
+      const [wohnung] = await d.mappen.listeMappen(vertrag.id);
       assert.equal(wohnung.werte.art, miete.id, 'Beispiel zeigt auf die Vorgabe');
     });
 
@@ -223,7 +223,7 @@ function faelle(pg: boolean) {
       const vorher = { strom: (await vorgabe(r, 'vertraege', 'strom'))!, miete: (await vorgabe(r, 'vertraege', 'miete'))!, wasser: (await vorgabe(r, 'vertraege', 'wasser'))! };
       const stromDok = (await d.listeDokumente(vorher.strom.id))[0];
       const mieteDok = (await d.listeDokumente(vorher.miete.id))[0];
-      await d.aendereMappe(vorher.miete.id, { werte: { beschreibung: 'Unsere Wohnung: 6 Monate' } }, ICH.id);
+      await d.mappen.aendereMappe(vorher.miete.id, { werte: { beschreibung: 'Unsere Wohnung: 6 Monate' } }, ICH.id);
       await d.loescheMappe(vorher.wasser.id, ICH.id);
       const h = await p.hochladen(zip(vertraege11), ICH);
       const plan = Object.fromEntries(h.vorschau.vorgaben.map((v) => [v.schluessel, v]));
@@ -267,9 +267,9 @@ function faelle(pg: boolean) {
       assert.deepEqual((await d.listeDokumente(miete.id)).map((x) => x.name).sort(), ['Garage kündigen.md', 'Kündigung Mietvertrag.md']);
       assert.deepEqual((await r.holeMappe(miete.id))!.werte, mieteVorher, 'Werte der fremden Vorgabe unverändert');
       // Ein Paket ändert keine Vorgabe eines anderen Pakets (auch nicht über die Schnittstelle).
-      await assert.rejects(d.pruefeFremdeVorgabe({ paket: { id: 'fahrzeuge' } } as never, miete.id), (e: Fachfehler) => e.status === 403);
-      await d.pruefeFremdeVorgabe({ paket: { id: 'vertraege' } } as never, miete.id);
-      await d.pruefeFremdeVorgabe(undefined, miete.id);
+      await assert.rejects(d.mappen.pruefeFremdeVorgabe({ paket: { id: 'fahrzeuge' } } as never, miete.id), (e: Fachfehler) => e.status === 403);
+      await d.mappen.pruefeFremdeVorgabe({ paket: { id: 'vertraege' } } as never, miete.id);
+      await d.mappen.pruefeFremdeVorgabe(undefined, miete.id);
       // Entfernen: Die unbenutzte Vorgabe in Verträge braucht eine Antwort; danach gehen nur die eigenen Dokumente mit.
       await assert.rejects(p.entferne('fahrzeuge', ICH), (e: Fachfehler) => e.status === 409 && (e.details as { vorgaben: Array<{ titel: string }> }).vorgaben[0].titel === 'Pkw-Kaufvertrag');
       const erg = await p.entferne('fahrzeuge', ICH, false, false, 'entfernen');
@@ -284,7 +284,7 @@ function faelle(pg: boolean) {
       await installiere(p, fahrzeuge);
       const pkw = (await vorgabe(r, 'fahrzeuge', 'pkw'))!;
       const vertrag = await typVon(d, 'vertraege:vertrag');
-      const golf = await d.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Golf Jonas', art: pkw.id } }, ICH.id);
+      const golf = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Golf Jonas', art: pkw.id } }, ICH.id);
       const erg = await p.entferne('fahrzeuge', ICH);
       assert.deepEqual(erg.vorgabenBehalten.map((x) => x.titel), ['Pkw-Kaufvertrag'], 'benutzt – bleibt, keine Rückfrage');
       assert.equal((await r.holeMappe(golf.id))!.werte.art, pkw.id, 'Verweis bricht nicht');
@@ -295,7 +295,7 @@ function faelle(pg: boolean) {
       // Eine benutzte Vorgabe im eigenen Typ verhindert das Entfernen von Verträge (nach Fahrzeuge).
       await p.entferne('fahrzeuge', ICH, false, false, 'behalten');
       const miete = (await vorgabe(r, 'vertraege', 'miete'))!;
-      await d.aendereMappe(golf.id, { werte: { art: miete.id } }, ICH.id);
+      await d.mappen.aendereMappe(golf.id, { werte: { art: miete.id } }, ICH.id);
       await assert.rejects(p.entferne('vertraege', ICH), gruende(/„Miete“ wird noch verwendet/));
     });
 
@@ -331,7 +331,7 @@ function faelle(pg: boolean) {
     it('Umzug (#1084): die feste Kennung zieht mit dem Paket um', async () => {
       const { d, r } = await aufbau();
       const typ = await d.mappentypen.legeTypAn({ name: 'Art', schluessel: 'art', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } }, ICH.id);
+      const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } }, ICH.id);
       await r.setzeVorgabe(m.id, 'paket:alt:strom');
       await r.benennePaketUm('alt', 'neu');
       assert.equal((await r.holeMappe(m.id))!.vorgabe, 'paket:neu:strom');

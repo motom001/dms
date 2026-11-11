@@ -66,8 +66,8 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const lesen = (ids: string[]): Regelwerk => ({ grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: ids }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] });
   await d.setzeBerechtigungen(kontakt.id, lesen([lena.id]), true);
   await d.setzeBerechtigungen(vertrag.id, lesen([lena.id, jonas.id]), true);
-  const stadtwerke = await d.legeMappeAn({ typId: kontakt.id, werte: { name: 'Stadtwerke' } }, lena.id);
-  const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', partner: stadtwerke.id, kuendbar_bis: verschiebe(heuteIn(), 30) } }, lena.id);
+  const stadtwerke = await d.mappen.legeMappeAn({ typId: kontakt.id, werte: { name: 'Stadtwerke' } }, lena.id);
+  const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', partner: stadtwerke.id, kuendbar_bis: verschiebe(heuteIn(), 30) } }, lena.id);
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
   const ereignis = (art: string, daten: Record<string, unknown>): KatalogEreignis =>
     ({ id: crypto.randomUUID(), art: art as KatalogEreignis['art'], daten, ausloeser: { art: 'benutzer', id: lena.id, konto: lena.id }, erstellt: new Date().toISOString() });
@@ -180,7 +180,7 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
   it('Leserecht auf Zeit: nur diese Mappe, nur Lesen, Historie für Vergabe und Entzug, Testlauf mit Grund; endet mit dem Erledigen', async () => {
     for (const repos of [undefined, ...(url ? [await pgRepos()] : [])]) {
       const { d, markus, lena, petra, vertrag, m, stadtwerke, rufe, ich } = await aufbau(repos);
-      const andere = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, lena.id);
+      const andere = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas' } }, lena.id);
       const auf = await d.legeAufgabeAn(m.id, { empfaengerId: petra.id, text: 'Bitte unterschreiben' }, lena.id);
       const [fall] = (await d.faelleUebersicht()).offen;
       await assert.rejects(rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404));
@@ -198,7 +198,7 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
       assert.deepEqual(test.aufZeit && [test.aufZeit.aufgabe, test.aufZeit.von, test.aufZeit.wirkt], ['Bitte unterschreiben', 'Markus', true]);
       await d.erledigeAufgabe(auf.id, { id: petra.id, rolle: 'mitglied' });
       await assert.rejects(rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404), 'Recht endet mit dem Erledigen');
-      const h = (await d.historie(m.id)).filter((x) => x.art === 'leserecht').map((x) => x.daten.text);
+      const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'leserecht').map((x) => x.daten.text);
       assert.deepEqual(h.sort(), ['Leserecht an Petra wegen Aufgabe „Bitte unterschreiben“ vergeben (von Markus)', 'Leserecht von Petra nach Erledigen der Aufgabe wieder entzogen'].sort());
       const u = await d.faelleUebersicht();
       assert.equal(u.offen.length, 0);
@@ -215,7 +215,7 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
     assert.ok((await d.rechtepruefung.sichtbarFuer(petra.id, [m.id])).has(m.id));
     await d.delegiereAufgabe(auf.id, jonas.id, { id: petra.id, rolle: 'mitglied' });
     assert.ok(!(await d.rechtepruefung.sichtbarFuer(petra.id, [m.id])).has(m.id));
-    assert.ok((await d.historie(m.id)).some((x) => x.art === 'leserecht' && x.daten.text === 'Leserecht von Petra nach Weitergeben der Aufgabe wieder entzogen'));
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((x) => x.art === 'leserecht' && x.daten.text === 'Leserecht von Petra nach Weitergeben der Aufgabe wieder entzogen'));
     // Rechte nachträglich geändert: erst sieht Jonas den Vertrag nicht mehr (neuer Fall), dann wieder (Fall endet).
     await d.setzeBerechtigungen(vertrag.id, lesen([lena.id]), true);
     assert.deepEqual(await d.faelleAbgleichen(), { neu: 1, beendet: 0 });

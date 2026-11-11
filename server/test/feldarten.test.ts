@@ -45,7 +45,7 @@ function dienst(repo: Repo = speicherRepo()) {
 }
 async function vertraege(d: Dienst) {
   const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{nr} – {frist}', felder: FELDER.map((f) => ({ ...f })), trefferliste: ['nr', 'frist', 'steuersatz', 'gutschrift'] });
-  const m = async (nr: string, werte: Record<string, unknown>) => d.legeMappeAn({ typId: typ.id, werte: { nr, ...werte } });
+  const m = async (nr: string, werte: Record<string, unknown>) => d.mappen.legeMappeAn({ typId: typ.id, werte: { nr, ...werte } });
   return { typ, m };
 }
 
@@ -341,7 +341,7 @@ describe('Zeitraum, Prozent und Migration 094 – PostgreSQL (#1035)', { skip: !
         { key: 'skonto', label: 'Skonto', typ: 'betrag', waehrung: 'EUR' },
       ] });
       // So, als stünde aus einer älteren Version schon eine Gutschrift in der Datenbank.
-      await d.legeMappeAn({ typId: typ.id, werte: { nr: 'G-1', betrag: { betrag: 10, waehrung: 'EUR' }, skonto: { betrag: 2, waehrung: 'EUR' } } });
+      await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'G-1', betrag: { betrag: 10, waehrung: 'EUR' }, skonto: { betrag: 2, waehrung: 'EUR' } } });
       await db.sql`UPDATE mappen SET werte = jsonb_set(werte, '{betrag,betrag}', '-49.9'::jsonb) WHERE typ_id = ${typ.id}`;
       await db.sql.unsafe(readFileSync(`${MIGRATIONEN}/093_betrag_negativ.sql`, 'utf8'));
       const [t] = await db.sql<Array<{ felder: Feld[] }>>`SELECT felder FROM mappentypen WHERE id = ${typ.id}`;

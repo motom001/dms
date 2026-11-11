@@ -75,7 +75,7 @@ function faelle(pg: boolean) {
   describe(`Fristen: Aufgaben aus Datumsfeldern (#129, #130)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
     it('Das Feld legt selbst keine Frist-Aufgaben mehr an (#712 – das tut die übernommene Automatisierung, test/fristen-umzug.test.ts)', async () => {
       const { d, anna, vertrag } = await aufbauFristen(pg);
-      await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, anna.id);
+      await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, anna.id);
       assert.deepEqual(await d.fristenLauf(), { angelegt: 0, erledigt: 0, erinnerungen: 0 });
       assert.equal((await d.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).filter((a) => a.art === 'frist').length, 0);
     });
@@ -91,7 +91,7 @@ function faelle(pg: boolean) {
   describe(`Erinnerungen und Termine (#131, #725)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
     it('Erinnerung anlegen, ändern, fällig werden; Termine zeigen Fristen und Erinnerungen', async () => {
       const { d, anna, ben, vertrag, rufe } = await aufbauFristen(pg);
-      const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(20), verantwortlich: anna.id } }, ben.id);
+      const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(20), verantwortlich: anna.id } }, ben.id);
       const e = (await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: in_(5), text: 'Angebote vergleichen' } })).body as { id: string; empfaengerId: string };
       assert.equal(e.empfaengerId, anna.id);
       await assert.rejects(rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: 'morgen', text: 'x' } }), status(422));
@@ -110,24 +110,24 @@ function faelle(pg: boolean) {
       const auf = (await d.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).filter((x) => x.art === 'erinnerung');
       assert.equal(auf.length, 1);
       assert.equal(auf[0].datum, in_(5));
-      assert.equal((await d.holeMappe(m.id)).erinnerungen.length, 0);
+      assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen.length, 0);
       // Heute oder früher: gleich als Aufgabe; ändern und löschen.
       const e2 = (await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: in_(2), text: 'Zweite', empfaengerId: ben.id } })).body as { id: string };
       await rufe(ben, 'PUT', '/api/erinnerungen/:id', { params: { id: e2.id }, body: { datum: in_(3), text: 'Zweite, später' } });
-      assert.equal((await d.holeMappe(m.id)).erinnerungen[0].text, 'Zweite, später');
+      assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen[0].text, 'Zweite, später');
       await rufe(anna, 'DELETE', '/api/erinnerungen/:id', { params: { id: e2.id } });
-      assert.equal((await d.holeMappe(m.id)).erinnerungen.length, 0);
+      assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen.length, 0);
       await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: heute, text: 'Sofort' } });
       assert.ok((await d.meineAufgaben({ id: anna.id, rolle: 'mitglied' })).some((x) => x.text === 'Sofort'));
     });
 
     it('Papierkorb nimmt Erinnerungen mit', async () => {
       const { d, anna, vertrag, rufe } = await aufbauFristen(pg);
-      const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, anna.id);
+      const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } }, anna.id);
       await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: in_(9), text: 'Später' } });
       await d.loescheMappe(m.id, anna.id);
       await d.stelleWiederHer(m.id, { id: anna.id, rolle: 'mitglied' });
-      assert.equal((await d.holeMappe(m.id)).erinnerungen.length, 1);
+      assert.equal((await d.mappen.holeMappe(m.id)).erinnerungen.length, 1);
     });
   });
 
@@ -136,10 +136,10 @@ function faelle(pg: boolean) {
     it('Zeitraum mit künftigen Terminen wiederkehrender Fristen, Überfälligem und Aufgaben mit Datum; Fristen aller lesbaren Mappen, nur Favoriten', async () => {
       const { d, admin, anna, ben, vertrag, rufe } = await aufbauFristen(pg);
       // Jährlich (wiederholung 12), Anna verantwortlich, erstellt von Ben.
-      const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(20), verantwortlich: anna.id } }, ben.id);
+      const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(20), verantwortlich: anna.id } }, ben.id);
       // Wiederkehrend mit Datum weit vorn im Zeitraum davor: die Folgetermine stehen trotzdem im Kalender.
       const basis = verschiebe(in_(5), -24, 'monate');
-      const alt = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', kuendigung: basis, verantwortlich: anna.id } }, ben.id);
+      const alt = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', kuendigung: basis, verantwortlich: anna.id } }, ben.id);
       // Überfällig: Erinnerung mit vergangenem Datum wird gleich Aufgabe.
       await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: in_(-12), text: 'Zählerstand melden' } });
       const bis = in_(399);
@@ -171,7 +171,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(a.eintraege.filter((x) => x.art === 'aufgabe').map((x) => [x.faellig, x.mappeId]), [[true, alt.id]]);
       // Zwischenspeicher: eine geänderte Erinnerung, ein geändertes Datum zeigen sich sofort.
       await rufe(anna, 'POST', '/api/mappen/:id/erinnerungen', { params: { id: m.id }, body: { datum: in_(30), text: 'Angebote vergleichen' } });
-      await d.aendereMappe(alt.id, { werte: { kuendigung: null } }, ben.id);
+      await d.mappen.aendereMappe(alt.id, { werte: { kuendigung: null } }, ben.id);
       const neu = (await rufe(anna, 'GET', '/api/termine', { query: { von: heute, bis } })).body as Antwort;
       assert.ok(neu.eintraege.some((x) => x.art === 'erinnerung' && x.datum === in_(30)));
       assert.ok(!neu.eintraege.some((x) => x.mappeId === alt.id));
@@ -202,9 +202,9 @@ function faelle(pg: boolean) {
       assert.equal(bedingungsProblem({ art: 'frist', feld: null, tage: 30 }, [t]), null);
       assert.match(bedingungsProblem({ art: 'frist', feld: 'name', tage: 30 }, [t]) ?? '', /Datumsfeld/);
       assert.match(beschreibeBedingung({ art: 'frist', feld: 'kuendigung', tage: 90, nurMeine: true }, [t]), /nächsten 90 Tagen \(„Kündigung bis“\), nur meine/);
-      const m1 = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'A', kuendigung: in_(10) } }, anna.id);
-      const m2 = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'B', kuendigung: in_(10), verantwortlich: ben.id } }, anna.id);
-      const m3 = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'C', kuendigung: in_(100), tuev: in_(5) } }, anna.id);
+      const m1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'A', kuendigung: in_(10) } }, anna.id);
+      const m2 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'B', kuendigung: in_(10), verantwortlich: ben.id } }, anna.id);
+      const m3 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'C', kuendigung: in_(100), tuev: in_(5) } }, anna.id);
       const z = { dokumente: () => 0, verknuepfungen: () => 0 };
       const treffer = (b: Parameters<typeof filterFuer>[0]['bedingungen'][number]) => [m1, m2, m3].filter((m) => erfuellt(m, filterFuer({ bedingungen: [b] }, [t], a), z)).map((m) => m.werte.name);
       assert.deepEqual(treffer({ art: 'frist', feld: null, tage: 30 }), ['A', 'B']);

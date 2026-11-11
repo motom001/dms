@@ -119,8 +119,8 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
 
     // Passwortfeld in einer Mappe und im Papierkorb.
     const typ = await dienst.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
-    const m1 = await dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
-    const m2 = await dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
+    const m1 = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
+    const m2 = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
     await einst.schreibe('papierkorb', { tage: 30 });
     await dienst.loescheMappe(m2.id);
     // Mailserver.
@@ -171,7 +171,7 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     assert.deepEqual(danach.arten.map((a) => a.unlesbar).filter(Boolean), []);
 
     // Und die Bereiche lesen ihre Werte wie vorher.
-    assert.equal((await dienst.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+    assert.equal((await dienst.passwortfelder.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
     assert.equal(e(((await einst.lies('mail')) as { passwort: string }).passwort), 'mail-geheim');
     assert.ok(betrieb.ansicht().mail.passwortLesbar);
     assert.equal(e(((await einst.lies('postfaecher')) as Array<{ passwort: string }>)[0].passwort), 'imap-geheim');
@@ -185,7 +185,7 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     assert.equal(e(paket.token), 'paket-geheim');
     assert.equal(e(paket.liste[0].pw), 'listen-geheim');
     await dienst.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
-    assert.equal((await dienst.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
+    assert.equal((await dienst.passwortfelder.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
   });
 
   it('meldet nicht lesbare Postfach- und Zwei-Faktor-Werte mit Namen', async () => {

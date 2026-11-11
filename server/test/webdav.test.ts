@@ -50,10 +50,10 @@ async function aufbau(o: { grenze?: number } = {}) {
     berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
   const sicht = await d.legeSichtAn({ name: 'Verträge', typen: [vt.id] });
   const sichtG = await d.legeSichtAn({ name: 'Geheimes', typen: [geheim.id] });
-  const v1a = await d.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
-  const v1b = await d.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
-  const akte = await d.legeMappeAn({ typId: vt.id, werte: { nr: 'Akte: 7?', bezug: v1a.id } }, anna.id);
-  const g = await d.legeMappeAn({ typId: geheim.id, werte: { nr: 'G-1' } }, admin.id);
+  const v1a = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
+  const v1b = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
+  const akte = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'Akte: 7?', bezug: v1a.id } }, anna.id);
+  const g = await d.mappen.legeMappeAn({ typId: geheim.id, werte: { nr: 'G-1' } }, admin.id);
   await d.ladeHoch(v1a.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF('r1'), anna.id);
   const wd = new Webdav({ dienst: d, konten, schluessel, einstellungen, adresse: () => 'https://dms.example.org', grenze: o.grenze });
   const auth = (email: string, pw: string) => `Basic ${Buffer.from(`${email}:${pw}`).toString('base64')}`;
@@ -209,7 +209,7 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     await wd.speichere({ aktiv: true }, 'admin');
     const mappe = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})`;
     const pfad = `${mappe}/Belege/Rechnung.pdf`;
-    const abrufe = async () => (await d.historie(v1a.id)).filter((e) => e.art === 'abruf_webdav');
+    const abrufe = async () => (await d.mappenHistorie.historie(v1a.id)).filter((e) => e.art === 'abruf_webdav');
     assert.equal((await rufe('PROPFIND', `${mappe}/Belege/`, { auth: A, depth: '1' })).status, 207);
     assert.equal((await rufe('HEAD', pfad, { auth: A })).status, 200);
     assert.equal((await abrufe()).length, 0, 'Ordnerabfragen und HEAD sind keine Abrufe');

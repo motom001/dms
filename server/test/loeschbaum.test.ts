@@ -173,17 +173,17 @@ async function aufbau(pg: boolean) {
   const lieferschein = await d.mappentypen.legeTypAn({ name: 'Lieferschein', titelVorlage: '{nr}', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTyp: rechnung.id, verweisart: 'zugehoerigkeit' },
   ], register: reg });
-  const k = await d.legeMappeAn({ typId: kategorie.id, werte: { name: 'Strom' } }, admin.id);
-  const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Beispiel' } }, admin.id);
-  const q = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Andere GmbH' } }, admin.id);
-  const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', partner: p.id, kategorie: k.id } }, admin.id);
+  const k = await d.mappen.legeMappeAn({ typId: kategorie.id, werte: { name: 'Strom' } }, admin.id);
+  const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Beispiel' } }, admin.id);
+  const q = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Andere GmbH' } }, admin.id);
+  const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', partner: p.id, kategorie: k.id } }, admin.id);
   // Kreis: V-2 bezieht sich auf V-1, V-1 auf V-2
-  const v2 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', partner: p.id, bezug: v1.id } }, admin.id);
-  await d.aendereMappe(v1.id, { werte: { nr: 'V-1', partner: p.id, kategorie: k.id, bezug: v2.id } }, admin.id);
-  const vx = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'X-1', partner: q.id } }, admin.id);
-  const r1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', datum: '2015-03-01', vertrag: [v1.id] } }, admin.id);
+  const v2 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', partner: p.id, bezug: v1.id } }, admin.id);
+  await d.mappen.aendereMappe(v1.id, { werte: { nr: 'V-1', partner: p.id, kategorie: k.id, bezug: v2.id } }, admin.id);
+  const vx = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'X-1', partner: q.id } }, admin.id);
+  const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', datum: '2015-03-01', vertrag: [v1.id] } }, admin.id);
   // geteilt: R-2 gehört auch zum Vertrag X-1 des anderen Partners
-  const r2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', datum: '2016-05-01', vertrag: [v1.id, vx.id] } }, admin.id);
+  const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', datum: '2016-05-01', vertrag: [v1.id, vx.id] } }, admin.id);
   await d.ladeHoch(v1.id, { register: 'dok', name: 'Vertrag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 v1'), admin.id);
   await d.ladeHoch(r1.id, { register: 'dok', name: 'R-1.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 r1'), admin.id);
   const tabelle = routen(d, konten, {});
@@ -211,27 +211,27 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const e = (await rufe(admin, 'POST', '/api/mappen/:id/mit-verknuepften-loeschen', { params: { id: m.p.id }, body: { auswahl: v.vorschlag } })).body as { vorgang: string; zahlen: { mappen: number; dokumente: number; verweise: number }; endgueltig: boolean };
       assert.equal(e.vorgang, m.p.id);
       assert.deepEqual([e.zahlen.mappen, e.zahlen.dokumente, e.zahlen.verweise, e.endgueltig], [4, 2, 1, false]);
-      for (const x of [m.p, m.v1, m.v2, m.r1]) await assert.rejects(d.holeMappe(x.id), status(404));
-      const r2 = (await d.holeMappe(m.r2.id)).mappe;
+      for (const x of [m.p, m.v1, m.v2, m.r1]) await assert.rejects(d.mappen.holeMappe(x.id), status(404));
+      const r2 = (await d.mappen.holeMappe(m.r2.id)).mappe;
       assert.deepEqual(r2.werte.vertrag, [m.vx.id], 'nur der Verweis auf V-1 ist weg');
       const korb = (await d.papierkorb({ id: admin.id, rolle: 'admin' })).filter((x) => x.vorgang === m.p.id);
       assert.equal(korb.length, 4);
       assert.deepEqual(korb.find((x) => x.id === m.v1.id)!.entkoppelt, [{ quelleId: m.r2.id, feldKey: 'vertrag' }]);
       // Historie ohne Inhalte, mit Vorgang
-      const h = (await d.historie(m.p.id)).find((x) => x.art === 'papierkorb')!;
+      const h = (await d.mappenHistorie.historie(m.p.id)).find((x) => x.art === 'papierkorb')!;
       assert.equal(h.daten.vorgang, m.p.id);
       assert.match(String(h.daten.text), /4 Mappen, 2 Dokumente/);
       assert.ok(!JSON.stringify(h.daten).includes('Stadtwerke'));
-      assert.ok((await d.historie(m.r2.id)).some((x) => x.art === 'geaendert' && JSON.stringify(x.daten).includes('vertrag')));
+      assert.ok((await d.mappenHistorie.historie(m.r2.id)).some((x) => x.art === 'geaendert' && JSON.stringify(x.daten).includes('vertrag')));
 
       // Gemeinsam wiederherstellen: Mappen, Dokumente, Verweise untereinander (Kreis) und der gekappte Verweis
       const w = (await rufe(admin, 'POST', '/api/papierkorb/vorgang/:id/wiederherstellen', { params: { id: m.p.id } })).body as { mappen: number; verweiseWieder: number; verweiseEntfallen: number };
       assert.deepEqual(w, { mappen: 4, verweiseWieder: 1, verweiseEntfallen: 0, startId: m.p.id } as never);
-      assert.deepEqual((await d.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id, m.v1.id]);
-      const v1 = await d.holeMappe(m.v1.id);
+      assert.deepEqual((await d.mappen.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id, m.v1.id]);
+      const v1 = await d.mappen.holeMappe(m.v1.id);
       assert.equal(v1.dokumente.length, 1);
       assert.deepEqual(new Set(v1.rueckverweise.map((x) => x.quelleId)), new Set([m.v2.id, m.r1.id, m.r2.id]));
-      assert.deepEqual(new Set((await d.holeMappe(m.p.id)).rueckverweise.map((x) => x.quelleId)), new Set([m.v1.id, m.v2.id]));
+      assert.deepEqual(new Set((await d.mappen.holeMappe(m.p.id)).rueckverweise.map((x) => x.quelleId)), new Set([m.v1.id, m.v2.id]));
       assert.equal((await d.papierkorb({ id: admin.id, rolle: 'admin' })).length, 0);
       await assert.rejects(d.stelleVorgangWiederHer(m.p.id, { id: admin.id, rolle: 'admin' }), status(404));
 
@@ -239,7 +239,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       await d.loescheMitVerknuepften(m.p.id, { auswahl: (await d.loeschVorschau(m.p.id, {}, z)).vorschlag }, admin.id, z);
       const einzeln = await d.stelleWiederHer(m.v1.id, { id: admin.id, rolle: 'admin' });
-      assert.deepEqual((await d.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id, m.v1.id]);
+      assert.deepEqual((await d.mappen.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id, m.v1.id]);
       assert.equal(einzeln.verweiseEntfallen, 2, 'Partner und V-2 liegen noch im Papierkorb');
       await assert.rejects(rufe({ id: admin.id }, 'POST', '/api/papierkorb/vorgang/:id/wiederherstellen', { params: { id: m.p.id } }).then(() => d.stelleVorgangWiederHer('00000000-0000-4000-8000-00000000ffff', { id: admin.id, rolle: 'admin' })), status(404));
       assert.equal((await d.papierkorb({ id: admin.id, rolle: 'admin' })).length, 0, 'der Rest des Vorgangs ist auch zurück');
@@ -249,7 +249,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, admin, m, typen } = await aufbau(pg);
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const heute = new Date().toISOString().slice(0, 10);
-      const r3 = await d.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-3', datum: heute, vertrag: [m.v2.id] } }, admin.id);
+      const r3 = await d.mappen.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-3', datum: heute, vertrag: [m.v2.id] } }, admin.id);
       const v = await d.loeschVorschau(m.p.id, {}, z);
       const k3 = v.baum.knoten.find((x) => x.id === r3.id)!;
       assert.equal(kennzeichen(v, k3), 'gesperrt');
@@ -262,18 +262,18 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(e.loeschen, [m.r1.id]);
       assert.equal(e.vorgang.length, 36);
       assert.notEqual(e.vorgang, m.p.id, 'Start bleibt → eigene Vorgangs-Id');
-      assert.ok(await d.holeMappe(r3.id));
-      assert.ok(await d.holeMappe(m.p.id));
+      assert.ok(await d.mappen.holeMappe(r3.id));
+      assert.ok(await d.mappen.holeMappe(m.p.id));
 
       // Option D: Erinnerung für den Löschenden an der Start-Mappe zum Tag nach dem Fristende
       const bis = k3.aufbewahrenBis!;
       const ab = `${Number(bis.slice(0, 4)) + 1}-01-01`;
       assert.equal(e.erinnerung?.datum, ab);
       assert.match(e.erinnerung!.text, /^„Stadtwerke Beispiel“ kann ab \d\d\.\d\d\.\d{4} gelöscht werden – „Mit verknüpften Mappen löschen“ erneut ausführen$/);
-      const er = (await d.holeMappe(m.p.id)).erinnerungen;
+      const er = (await d.mappen.holeMappe(m.p.id)).erinnerungen;
       assert.equal(er.length, 1);
       assert.equal(er[0].empfaengerId, admin.id);
-      assert.ok((await d.historie(m.p.id)).some((x) => x.art === 'aufgabe' && String(x.daten.text).includes('kann ab')));
+      assert.ok((await d.mappenHistorie.historie(m.p.id)).some((x) => x.art === 'aufgabe' && String(x.daten.text).includes('kann ab')));
       // Fällig → Aufgabe „Erinnerung“ unter „Zu erledigen“, verlinkt mit der Start-Mappe
       await d.erinnerungenFaellig(ab);
       const aufgaben = (await d.meineAufgaben({ id: admin.id, rolle: 'admin' })).filter((a) => a.art === 'erinnerung');
@@ -294,13 +294,13 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const p = planeLoeschung(v, Object.fromEntries(v.baum.knoten.map((x) => [x.id, 'loeschen' as const])));
       assert.deepEqual(p.loeschen, [], 'R-1 hält V-1, der Kreis V-2 und den Partner');
       await assert.rejects(rufe(anna, 'POST', '/api/mappen/:id/mit-verknuepften-loeschen', { params: { id: m.p.id }, body: { auswahl: Object.fromEntries(v.baum.knoten.map((x) => [x.id, 'loeschen'])) } }), status(422));
-      assert.ok(await d.holeMappe(m.r1.id));
+      assert.ok(await d.mappen.holeMappe(m.r1.id));
 
       // Eine Mappe, die Anna nicht sehen darf, verweist auf V-2: V-2 bleibt
       await d.setzeBerechtigungen(typen.rechnung.id, { grund: ALLES, regeln: [] }, true);
       const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{t}', felder: [{ key: 't', label: 'T', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: typen.vertrag.id }] });
       await d.setzeBerechtigungen(geheim.id, { grund: { ...ALLES, R: false }, regeln: [] }, true);
-      await d.legeMappeAn({ typId: geheim.id, werte: { t: 'intern', vertrag: m.v2.id } }, admin.id);
+      await d.mappen.legeMappeAn({ typId: geheim.id, werte: { t: 'intern', vertrag: m.v2.id } }, admin.id);
       const v2 = await d.loeschVorschau(m.p.id, {}, await d.rechtepruefung.zugriff({ id: anna.id, rolle: 'mitglied' }));
       assert.equal(v2.baum.verborgen, 1);
       const p2 = planeLoeschung(v2, v2.vorschlag);
@@ -317,7 +317,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, admin, m, typen } = await aufbau(pg);
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       const viele = pg ? 30 : 520;
-      for (let i = 0; i < viele; i++) await d.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: `M-${i}`, datum: '2010-01-01', vertrag: [m.v2.id] } }, admin.id);
+      for (let i = 0; i < viele; i++) await d.mappen.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: `M-${i}`, datum: '2010-01-01', vertrag: [m.v2.id] } }, admin.id);
       const ganz = await d.loeschVorschau(m.p.id, { max: 5000 }, z);
       assert.equal(ganz.baum.knoten.length, viele + 5);
       assert.equal(planeLoeschung(ganz, ganz.vorschlag).loeschen.length, viele + 4, 'alle bis auf die geteilte Rechnung');
@@ -332,19 +332,19 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(e.endgueltig, true);
       assert.equal(e.zahlen.mappen, viele + 4);
       assert.equal((await d.papierkorb({ id: admin.id, rolle: 'admin' }, true)).length, 0, 'nichts im Papierkorb');
-      assert.deepEqual((await d.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id]);
+      assert.deepEqual((await d.mappen.holeMappe(m.r2.id)).mappe.werte.vertrag, [m.vx.id]);
     });
 
     it('nur nach unten und nur über Zugehörigkeit: Bezug-Mappe bleibt (nur Verweis weg), über sie nichts weiter; nie nach oben', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
       // R-9 gehört zum Vertrag X-1 des anderen Partners, nennt die Stadtwerke aber als Ansprechpartner (Bezug).
-      const r9 = await d.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-9', datum: '2014-01-01', vertrag: [m.vx.id], ansprechpartner: m.p.id } }, admin.id);
-      const l9 = await d.legeMappeAn({ typId: typen.lieferschein.id, werte: { nr: 'L-9', rechnung: r9.id } }, admin.id);
+      const r9 = await d.mappen.legeMappeAn({ typId: typen.rechnung.id, werte: { nr: 'R-9', datum: '2014-01-01', vertrag: [m.vx.id], ansprechpartner: m.p.id } }, admin.id);
+      const l9 = await d.mappen.legeMappeAn({ typId: typen.lieferschein.id, werte: { nr: 'L-9', rechnung: r9.id } }, admin.id);
       // R-1 nennt die Stadtwerke auch als Ansprechpartner – gehört aber über V-1 dazu: wird gelöscht.
-      await d.aendereMappe(m.r1.id, { werte: { nr: 'R-1', datum: '2015-03-01', vertrag: [m.v1.id], ansprechpartner: m.p.id } }, admin.id);
+      await d.mappen.aendereMappe(m.r1.id, { werte: { nr: 'R-1', datum: '2015-03-01', vertrag: [m.v1.id], ansprechpartner: m.p.id } }, admin.id);
       // Lieferschein zu R-1: geht mit; sein Weg nach oben wird nicht verfolgt.
-      const l1 = await d.legeMappeAn({ typId: typen.lieferschein.id, werte: { nr: 'L-1', rechnung: m.r1.id } }, admin.id);
+      const l1 = await d.mappen.legeMappeAn({ typId: typen.lieferschein.id, werte: { nr: 'L-1', rechnung: m.r1.id } }, admin.id);
       const v = await d.loeschVorschau(m.p.id, {}, z);
       const k9 = v.baum.knoten.find((x) => x.id === r9.id)!;
       assert.equal(k9.nurBezug, true);
@@ -364,13 +364,13 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const e = await d.loescheMitVerknuepften(m.p.id, { auswahl: { ...v.vorschlag, [r9.id]: 'loeschen' } }, admin.id, z);
       assert.ok(e.loeschen.includes(m.r1.id) && e.loeschen.includes(l1.id));
       assert.ok(!e.loeschen.includes(r9.id));
-      const nachher = (await d.holeMappe(r9.id)).mappe;
+      const nachher = (await d.mappen.holeMappe(r9.id)).mappe;
       assert.equal(nachher.werte.ansprechpartner, undefined, 'nur der Verweis ist weg');
       assert.deepEqual(nachher.werte.vertrag, [m.vx.id]);
-      assert.ok(await d.holeMappe(l9.id));
+      assert.ok(await d.mappen.holeMappe(l9.id));
       // Wiederherstellen setzt auch den Bezug-Verweis wieder
       await d.stelleVorgangWiederHer(e.vorgang, { id: admin.id, rolle: 'admin' });
-      assert.equal((await d.holeMappe(r9.id)).mappe.werte.ansprechpartner, m.p.id);
+      assert.equal((await d.mappen.holeMappe(r9.id)).mappe.werte.ansprechpartner, m.p.id);
     });
 
     it('API v1: Vorschau, Ausführen und Wiederherstellen des Vorgangs sind beschrieben', () => {

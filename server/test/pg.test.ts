@@ -1033,17 +1033,17 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
     try {
       const { post } = await d.sichereSystem();
       const reg = post.register.find((x) => x.art === 'dokumente')!.key;
-      const vorher = (await d.listeMappen(post.id)).length;
+      const vorher = (await d.mappen.listeMappen(post.id)).length;
       stoeren = true;
       await assert.rejects(d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' }), /Ablago fällt aus/);
-      assert.equal((await d.listeMappen(post.id)).length, vorher, 'keine Post ohne Ereignis');
+      assert.equal((await d.mappen.listeMappen(post.id)).length, vorher, 'keine Post ohne Ereignis');
       stoeren = false;
       const p = await d.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
       stoeren = true;
       await assert.rejects(d.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
-      const m = await d.holeMappe(p.id);
+      const m = await d.mappen.holeMappe(p.id);
       assert.equal(m.dokumente.length, 0, 'kein Dokument ohne Ereignis');
-      assert.ok(!(await d.historie(p.id)).some((h) => h.art === 'dokument_hochgeladen'), 'auch keine Historie');
+      assert.ok(!(await d.mappenHistorie.historie(p.id)).some((h) => h.art === 'dokument_hochgeladen'), 'auch keine Historie');
       stoeren = false;
       const doc = (await d.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null)).dokument;
       assert.deepEqual((await ereignisse()).map((e) => `${e.art}:${e.daten.mappe}:${e.daten.dokument ?? ''}`), [`post.angelegt:${p.id}:`, `dokument.hochgeladen:${p.id}:${doc.id}`]);

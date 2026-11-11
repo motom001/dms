@@ -93,7 +93,7 @@ describe('Systemkonten (#673)', () => {
 
   it('Rechte: ohne Regeln alles außer Passwörter; Regeln mit der Rolle Systemkonto schränken ein; der Standard für Mitglieder gilt nicht', async () => {
     const { d, auto, admin, gesundheit, rolleId } = await aufbau();
-    const m = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung', kennwort: { neu: 'geheim' } } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung', kennwort: { neu: 'geheim' } } }, admin.id);
     let z = await d.rechtepruefung.zugriff(auto);
     let r = await d.rechtepruefung.rechteAn(z, m);
     assert.deepEqual(r, { C: true, R: true, U: true, D: true, P: false });
@@ -122,8 +122,8 @@ describe('Systemkonten (#673)', () => {
       laeufer: { sprache: 'wasm', ereignisse: [], rechte: { lesen: ['gesundheit', 'notiz'], schreiben: ['notiz'], dokumente: 'keine' }, netz: [] } as never,
     });
     const konto = await konten.dienstkonto('probe', 'Probe');
-    const g = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
-    const n = await d.legeMappeAn({ typId: andere.id, werte: { titel: 'Zettel' } }, admin.id);
+    const g = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
+    const n = await d.mappen.legeMappeAn({ typId: andere.id, werte: { titel: 'Zettel' } }, admin.id);
     let z = await d.rechtepruefung.zugriff(konto);
     assert.deepEqual(await d.rechtepruefung.rechteAn(z, g), { C: false, R: true, U: false, D: false, P: false }, 'wie bestätigt: nur lesen');
     assert.deepEqual(await d.rechtepruefung.rechteAn(z, n), { C: true, R: true, U: true, D: false, P: false });
@@ -148,8 +148,8 @@ describe('Systemkonten (#673)', () => {
       laeufer: { sprache: 'wasm', ereignisse: [], rechte: { lesen: ['notiz'], schreiben: [], dokumente: 'keine' }, netz: [] } as never,
     });
     const konto = await konten.dienstkonto('probe', 'Probe');
-    const g = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
-    const n = await d.legeMappeAn({ typId: andere.id, werte: { titel: 'Zettel' } }, admin.id);
+    const g = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
+    const n = await d.mappen.legeMappeAn({ typId: andere.id, werte: { titel: 'Zettel' } }, admin.id);
     // Eine Regel für die Rolle Paket, die nur das Löschen nimmt: Lesen bleibt für „Notiz“ offen.
     await d.setzeBerechtigungen(andere.id, { grund: NICHTS, regeln: [{ id: 'p', name: 'Pakete löschen nicht', wenn: [{ art: 'rolle', rollen: [await rolleId('paket')] }], dann: { D: 'entziehen' }, stopp: false }] }, true);
     const z = await d.rechtepruefung.zugriff(konto);
@@ -160,7 +160,7 @@ describe('Systemkonten (#673)', () => {
 
   it('Testlauf der Rechte (#710): Systemkonten und Paket-Benutzer wählbar, mit entscheidender Regel', async () => {
     const { d, repo, konten, admin, auto, gesundheit, rolleId, rufe } = await aufbau();
-    const m = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Impfung' } }, admin.id);
     const verbot = { grund: NICHTS, regeln: [{ id: 's', name: 'System- und Paketrollen verboten', wenn: [{ art: 'rolle' as const, rollen: [await rolleId('systemkonto'), await rolleId('paket')] }], dann: { C: 'entziehen' as const, R: 'entziehen' as const, U: 'entziehen' as const, D: 'entziehen' as const, P: 'entziehen' as const }, stopp: true }] };
     type T = { konto?: string; admin: boolean; wirksam: Record<string, boolean>; spur: Array<{ name: string; traf: boolean | null }>; benutzer: { name: string }; unbestaetigt?: boolean };
     const lauf = async (benutzerId: string, berechtigungen?: unknown) => (await rufe('POST', '/api/werkbank/berechtigungen/testlauf', { body: { mappeId: m.id, benutzerId, ...(berechtigungen ? { berechtigungen } : {}) } })).body as T;

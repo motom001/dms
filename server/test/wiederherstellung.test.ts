@@ -62,7 +62,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       await ladeBeispiele(dienst, null);
       // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
       const partner = (await dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
-      const m = (await dienst.listeMappen(partner.id))[0];
+      const m = (await dienst.mappen.listeMappen(partner.id))[0];
       await dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
       await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (gen_random_uuid(), ${HAUSHALT}, 'anna@example.org', 'Anna', 'admin')`;
       benutzer = 1;
@@ -196,7 +196,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const q = quelle;
     // Nach der Sicherung kommt etwas dazu, das die Wiederherstellung wieder entfernt.
     const typ = (await q.dienst.mappentypen.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
-    await q.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Nach der Sicherung GmbH' } });
+    await q.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Nach der Sicherung GmbH' } });
     const vorher = await zaehle(q.sql);
     await assert.rejects(q.w.pruefeZugang(false), /Verwaltungsmodus/);
     await assert.rejects(q.w.pruefeZugang(true), /Wartungsmodus/);
@@ -334,7 +334,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const quelleU = verbinde(q.sql, q.wurzel, q.dienst);
     const typ = await q.dienst.mappentypen.legeTypAn({ name: 'Scan', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-    const m = await q.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'Scans von Lena' } });
+    const m = await q.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Scans von Lena' } });
     const tiff = Buffer.concat([Buffer.from([0x49, 0x49, 42, 0, 8, 0, 0, 0]), Buffer.alloc(64, 7)]);
     const dok = (await q.dienst.ladeHoch(m.id, { register: 'dokumente', name: 'scan.tif', typ: 'image/tiff' }, tiff, null)).dokument;
     assert.equal(dok.mime, 'image/tiff');
@@ -419,8 +419,8 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const { pgRepo } = await import('../src/repo-pg');
     const repo = pgRepo(x.sql, HAUSHALT);
     const typ = await x.dienst.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
-    const a = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
-    const b = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
+    const a = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
+    const b = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
     await x.dienst.loescheMappe(b.id);
     const meta = (await (await x.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
     const name = meta.datei.replace('.dms-sicherung', '');
@@ -441,7 +441,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(w.umgeschluesselt, 2);
     const nachher = await roh();
     assert.notEqual(nachher.a, vorher.a); assert.notEqual(nachher.b, vorher.b); assert.notEqual(nachher.pruefwort, vorher.pruefwort);
-    assert.equal((await x.dienst.zeigePasswort(a.id, 'pw')).wert, 'geheim-a');
+    assert.equal((await x.dienst.passwortfelder.zeigePasswort(a.id, 'pw')).wert, 'geheim-a');
     assert.equal((await x.sql`SELECT wert FROM einstellungen WHERE schluessel = 'tresor'`)[0].wert.fingerabdruck, w.neu);
     // Die Sicherung von vorher: früherer Schlüssel, Wiederherstellen fragt nach dem alten.
     const eintrag = (await x.sicherung.liste()).find((e) => e.name === name)!;

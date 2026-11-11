@@ -771,7 +771,7 @@ export class Paketerstellung {
   private async daten(e: PaketErstellenEingabe): Promise<ErstellenDaten> {
     const typen = await this.d.mappentypen.listeTypen();
     const gewaehlt = new Set(e.beispiele);
-    const mappen = gewaehlt.size ? (await Promise.all(e.typen.filter((t) => typen.some((x) => x.id === t)).map((t) => this.d.listeMappen(t)))).flat().filter((m) => gewaehlt.has(m.id)) : [];
+    const mappen = gewaehlt.size ? (await Promise.all(e.typen.filter((t) => typen.some((x) => x.id === t)).map((t) => this.d.mappen.listeMappen(t)))).flat().filter((m) => gewaehlt.has(m.id)) : [];
     // Beispiel-Dokumente (#878): nur PDF, PNG und JPEG; zusammen höchstens so viel, wie ins Archiv passt.
     const dokumente = new Map<string, Array<{ name: string; registerKey: string; erstellt: string; inhalt: Buffer }>>();
     let ausgelassen = 0, summe = 0;
@@ -824,7 +824,7 @@ export class Paketerstellung {
     const { bau, zip, daten } = await this.baueUndPruefe(e);
     const eigene = daten.typen.filter((t) => e.typen.includes(t.id) && !t.system && !daten.dmsTypen.has(t.id) && !daten.pakete.some((p) => Object.values(p.typen).includes(t.id)));
     const beispielMappen = await Promise.all(eigene.map(async (mappentyp) => {
-      const alle = (await this.d.listeMappen(mappentyp.id)).filter((m) => !m.systemKennung).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
+      const alle = (await this.d.mappen.listeMappen(mappentyp.id)).filter((m) => !m.systemKennung).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
       return { typId: mappentyp.id, typ: mappentyp.name, mappen: alle.slice(0, BEISPIELMAPPEN_MAX).map((m) => ({ id: m.id, titel: m.titel || t('meldungen.paketerstellung.ohne-titel'), demo: !!m.demo })), mehr: alle.length > BEISPIELMAPPEN_MAX };
     }));
     return {

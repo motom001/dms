@@ -62,7 +62,7 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
     { key: 'verlauf', name: 'Verlauf', art: 'protokoll' },
     { key: 'abrufe', name: 'Abrufe', art: 'protokoll', zeigt: ['herunterladen', 'api', 'webdav'] },
   ] } as never);
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
   const dok = (await d.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF, lena.id)).dokument;
   return { d, konten, lena, jonas, typ, m, dok };
 }
@@ -101,7 +101,7 @@ for (const pg of [false, ...(url ? [true] : [])]) {
   describe(`Historie: Abrufe mitschreiben (#800, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
     it('einmal je Person, Datei, Fassung, Weg und Tag; ein späterer Tag bekommt einen eigenen Eintrag', async (t) => {
       const x = await aufbau(pg ? await pgRepos() : undefined);
-      const abruf = (o: Partial<Parameters<Dienst['notiereAbruf']>[0]> = {}) => x.d.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'oberflaeche', ...o });
+      const abruf = (o: Partial<Parameters<Dienst['mappenHistorie']['notiereAbruf']>[0]> = {}) => x.d.mappenHistorie.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'oberflaeche', ...o });
       assert.equal(await abruf(), true);
       assert.equal(await abruf(), false, 'derselbe Abruf am selben Tag');
       // Gleichzeitig (z. B. Explorer liest parallel): trotzdem nur einer.
@@ -111,8 +111,8 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.equal(await abruf({ fassung: 'archiv' }), true, 'andere Fassung');
       assert.equal(await abruf({ fassung: 'version', version: 1 }), true, 'ältere Version');
       assert.equal(await abruf({ fassung: 'version', version: 1 }), false);
-      assert.equal(await x.d.notiereAbruf({ dokumentId: '00000000-0000-4000-8000-00000000dead', benutzerId: x.lena.id, weg: 'api' }), false, 'unbekanntes Dokument');
-      const h = (await x.d.historie(x.m.id)).filter((e) => ABRUFE.includes(e.art));
+      assert.equal(await x.d.mappenHistorie.notiereAbruf({ dokumentId: '00000000-0000-4000-8000-00000000dead', benutzerId: x.lena.id, weg: 'api' }), false, 'unbekanntes Dokument');
+      const h = (await x.d.mappenHistorie.historie(x.m.id)).filter((e) => ABRUFE.includes(e.art));
       assert.equal(h.length, 6);
       const api = h.find((e) => e.art === 'abruf_api')!;
       assert.deepEqual({ ...api.daten }, { dokument: 'Rechnung.pdf', dokumentId: x.dok.id, weg: 'api', fassung: 'original', schluessel: 'Scanner' });
@@ -126,15 +126,15 @@ for (const pg of [false, ...(url ? [true] : [])]) {
         assert.equal(await abruf(), true);
         assert.equal(await abruf(), false);
       } finally { if (!pg) t.mock.timers.reset(); }
-      assert.equal((await x.d.historie(x.m.id)).filter((e) => e.art === 'heruntergeladen').length, 5);
+      assert.equal((await x.d.mappenHistorie.historie(x.m.id)).filter((e) => e.art === 'heruntergeladen').length, 5);
     });
 
     it('je Register nur seine Gruppen, „Im Verwaltungsmodus“ immer; seitenweise; ohne Angaben alles', async () => {
       const x = await aufbau(pg ? await pgRepos() : undefined);
-      await x.d.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'webdav' });
+      await x.d.mappenHistorie.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'webdav' });
       const repo = (x.d as unknown as { repo: Repo }).repo;
       await repo.historieSchreibe([{ mappeId: x.m.id, benutzerId: x.jonas.id, art: 'verwaltungsmodus', daten: { was: 'angesehen' } }]);
-      const arten = async (register?: string) => [...new Set((await x.d.historie(x.m.id, { register })).map((e) => e.art))].sort();
+      const arten = async (register?: string) => [...new Set((await x.d.mappenHistorie.historie(x.m.id, { register })).map((e) => e.art))].sort();
       assert.deepEqual(await arten('abrufe'), ['abruf_webdav', 'verwaltungsmodus']);
       assert.ok(!(await arten('verlauf')).includes('abruf_webdav'));
       assert.ok((await arten('verlauf')).includes('verwaltungsmodus'));
@@ -143,37 +143,37 @@ for (const pg of [false, ...(url ? [true] : [])]) {
       assert.ok((await arten()).includes('abruf_webdav'), 'ohne Register alles (API wie bisher)');
       // Seitenweise: 250 weitere Einträge, Seiten zu 100 ohne Lücke und ohne Doppel.
       await repo.historieSchreibe(Array.from({ length: 250 }, (_, i) => ({ mappeId: x.m.id, benutzerId: x.lena.id, art: 'notiz' as const, daten: { text: `n${i}` } })));
-      const alle = await x.d.historie(x.m.id);
+      const alle = await x.d.mappenHistorie.historie(x.m.id);
       const seiten: number[] = [];
       let vor: number | undefined;
       for (;;) {
-        const s = await x.d.historie(x.m.id, { max: 100, vor });
+        const s = await x.d.mappenHistorie.historie(x.m.id, { max: 100, vor });
         seiten.push(...s.map((e) => e.id));
         if (s.length < 100) break;
         vor = s[s.length - 1].id;
       }
       assert.deepEqual(seiten, alle.map((e) => e.id));
-      assert.equal((await x.d.historie(x.m.id, { register: 'abrufe', max: 1 })).length, 1);
-      await assert.rejects(x.d.historie(x.m.id, { max: 0 }), status(422));
-      await assert.rejects(x.d.historie(x.m.id, { max: 5000 }), status(422));
-      await assert.rejects(x.d.historie(x.m.id, { vor: 'x' }), status(422));
+      assert.equal((await x.d.mappenHistorie.historie(x.m.id, { register: 'abrufe', max: 1 })).length, 1);
+      await assert.rejects(x.d.mappenHistorie.historie(x.m.id, { max: 0 }), status(422));
+      await assert.rejects(x.d.mappenHistorie.historie(x.m.id, { max: 5000 }), status(422));
+      await assert.rejects(x.d.mappenHistorie.historie(x.m.id, { vor: 'x' }), status(422));
     });
 
     it('Export mit Dokumenten: je Mappe ein Eintrag mit ihren Dateien; Vollexport und Auskunft enthalten die Abrufe', async () => {
       const x = await aufbau(pg ? await pgRepos() : undefined);
       const sicht = await x.d.legeSichtAn({ name: 'Verträge', typen: [x.typ.id] });
-      const ohne = await x.d.legeMappeAn({ typId: x.typ.id, werte: { nr: 'V-2' } }, x.lena.id);
+      const ohne = await x.d.mappen.legeMappeAn({ typId: x.typ.id, werte: { nr: 'V-2' } }, x.lena.id);
       const ich = { id: x.lena.id, rolle: 'admin', name: 'Lena' };
       const z = await x.d.rechtepruefung.zugriff(ich);
       const r = await x.d.exportiere(ich, { format: 'zip', sicht: sicht.id }, z, undefined, 'api');
       (r.inhalt as NodeJS.ReadableStream).resume?.();
-      const e = (await x.d.historie(x.m.id)).find((h) => h.art === 'abruf_api')!;
+      const e = (await x.d.mappenHistorie.historie(x.m.id)).find((h) => h.art === 'abruf_api')!;
       assert.deepEqual(e.daten.dokumente, ['Rechnung.pdf']);
       assert.equal(e.daten.fassung, 'export');
-      assert.ok(!(await x.d.historie(ohne.id)).some((h) => ABRUFE.includes(h.art)), 'ohne Dokumente kein Abruf');
+      assert.ok(!(await x.d.mappenHistorie.historie(ohne.id)).some((h) => ABRUFE.includes(h.art)), 'ohne Dokumente kein Abruf');
       await x.d.exportiere(ich, { format: 'csv', sicht: sicht.id }, z);
-      assert.equal((await x.d.historie(x.m.id)).filter((h) => ABRUFE.includes(h.art)).length, 1, 'Tabelle allein: keine Dateien');
-      await x.d.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'webdav' });
+      assert.equal((await x.d.mappenHistorie.historie(x.m.id)).filter((h) => ABRUFE.includes(h.art)).length, 1, 'Tabelle allein: keine Dateien');
+      await x.d.mappenHistorie.notiereAbruf({ dokumentId: x.dok.id, benutzerId: x.lena.id, weg: 'webdav' });
       // Vollexport: daten/historie.jsonl
       const quelle = x.d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => x.konten.exportDaten(), designs: async () => [], protokoll: () => [] });
       const v = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-a800-')), {});
@@ -197,7 +197,7 @@ describe('Historie: Abrufe über HTTP (#800)', () => {
     const an = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email: 'lena@example.org', passwort: PW }, headers: { 'x-dms': '1' } });
     const cookie = ([] as string[]).concat(an.headers['set-cookie'] as string | string[])[0].split(';')[0];
     const rufe = (method: 'GET' | 'POST', u: string, payload?: object) => app.inject({ method, url: u, ...(payload ? { payload } : {}), headers: { 'x-dms': '1', cookie } });
-    const abrufe = async () => (await x.d.historie(x.m.id)).filter((e) => ABRUFE.includes(e.art));
+    const abrufe = async () => (await x.d.mappenHistorie.historie(x.m.id)).filter((e) => ABRUFE.includes(e.art));
 
     assert.equal((await rufe('GET', `/api/dokumente/${x.dok.id}/inhalt`)).statusCode, 200);
     assert.equal((await abrufe()).length, 0, 'Anzeigen im Browser ist kein Abruf');

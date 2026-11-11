@@ -41,7 +41,7 @@ export class Umwandlung {
       for (const f of typ.felder) {
         const alt = altesTextfeldVon(typ, f);
         if (!alt) continue;
-        const mappen = await this.d.listeMappen(typ.id);
+        const mappen = await this.d.mappen.listeMappen(typ.id);
         felder.push(this.feld(typ, f, alt, typen, mappen.filter((m) => !istLeer(m.werte[alt.key]) && istLeer(m.werte[f.key])).length));
       }
     }
@@ -84,7 +84,7 @@ export class Umwandlung {
     try {
       for (const zl of plan.vorschau.zeilen) {
         if (wahl.get(zl.schluessel)?.art !== 'neu' || !gebraucht.has(zl.schluessel)) continue;
-        const m = await this.d.legeMappeAn({ typId: ziel.id, werte: neueMappeWerte(ziel, zl.name) }, ich, false, z);
+        const m = await this.d.mappen.legeMappeAn({ typId: ziel.id, werte: neueMappeWerte(ziel, zl.name) }, ich, false, z);
         neu.set(zl.schluessel, m.id);
       }
     } catch (f) {
@@ -103,7 +103,7 @@ export class Umwandlung {
     for (const m of umwandeln) {
       const ids = [...new Set(m.namen.map(idVon))];
       try {
-        await this.d.aendereMappe(m.mappe.id, { werte: { [plan.feld.key]: plan.feld.mehrfach ? ids : ids[0], [plan.alt.key]: null } }, ich, z, anlass);
+        await this.d.mappen.aendereMappe(m.mappe.id, { werte: { [plan.feld.key]: plan.feld.mehrfach ? ids : ids[0], [plan.alt.key]: null } }, ich, z, anlass);
         vorgang.mappen.push({ id: m.mappe.id, alt: m.text, neu: ids });
       } catch (f) {
         ausgelassen.push({ mappeId: m.mappe.id, titel: m.mappe.titel ?? '', grund: (f as Error).message });
@@ -124,14 +124,14 @@ export class Umwandlung {
     if (!typ) throw new Fachfehler(409, t('pakete.umwandeln.fehler.typ'));
     const ausgelassen: Array<{ mappeId: string; titel: string; grund: string }> = [];
     const anlass = { umwandlung: v.id, rueckgaengig: true, text: t('pakete.umwandeln.historie.zurueck') };
-    const jetzt = new Map((await this.d.listeMappen(typ.id)).map((m) => [m.id, m] as const));
+    const jetzt = new Map((await this.d.mappen.listeMappen(typ.id)).map((m) => [m.id, m] as const));
     let zurueck = 0;
     for (const e of v.mappen) {
       const m = jetzt.get(e.id);
       const grund = !m ? t('pakete.umwandeln.grund.weg') : this.sperre(typ, m) ?? (!gleich(alsListe(m.werte[v.feldKey]), e.neu) || !istLeer(m.werte[v.ausKey]) ? t('pakete.umwandeln.grund.geaendert') : null);
       if (grund) { ausgelassen.push({ mappeId: e.id, titel: m?.titel ?? '', grund }); continue; }
       try {
-        await this.d.aendereMappe(e.id, { werte: { [v.feldKey]: null, [v.ausKey]: e.alt } }, von.id, z, anlass);
+        await this.d.mappen.aendereMappe(e.id, { werte: { [v.feldKey]: null, [v.ausKey]: e.alt } }, von.id, z, anlass);
         zurueck++;
       } catch (f) { ausgelassen.push({ mappeId: e.id, titel: m!.titel ?? '', grund: (f as Error).message }); }
     }
@@ -152,7 +152,7 @@ export class Umwandlung {
     if (a.register && JSON.stringify(feldregister(register)) === JSON.stringify(a.register.nachher)) register = register.map((r) => (r.art === 'felder' ? { ...r, felder: a.register!.vorher[r.key] ?? r.felder } : r));
     if (a.reihenfolge && gleich(felder.map((f) => f.key), a.reihenfolge.nachher)) felder = sortiere(felder, a.reihenfolge.vorher);
     // Pflicht nur zurück, wenn wieder jede Mappe einen Text hat.
-    if (a.pflicht && (await this.d.listeMappen(typ.id)).every((m) => !istLeer(m.werte[v.ausKey]))) felder = felder.map((f) => (f.key === v.ausKey ? { ...f, pflicht: true } : f));
+    if (a.pflicht && (await this.d.mappen.listeMappen(typ.id)).every((m) => !istLeer(m.werte[v.ausKey]))) felder = felder.map((f) => (f.key === v.ausKey ? { ...f, pflicht: true } : f));
     if (felder !== t2.felder || titelVorlage !== t2.titelVorlage || JSON.stringify(trefferlisten) !== JSON.stringify(trefferlistenVon(t2)) || register !== t2.register) {
       await this.d.mappentypen.aendereTyp(t2.id, { ...t2, felder, titelVorlage, trefferlisten, trefferliste: (trefferlisten.find((l) => l.standard) ?? trefferlisten[0])?.spalten ?? [], register });
     }
@@ -192,10 +192,10 @@ export class Umwandlung {
     // Umwandeln (#534) nur mit genau einem Zieltyp: Neue Mappen entstehen in diesem Typ (#1036).
     const ziel = typen.find((x) => x.id === einzigesZiel(feld));
     if (!ziel) throw new Fachfehler(409, t('pakete.umwandeln.fehler.ziel'));
-    const kandidaten = (await this.d.listeMappen(ziel.id)).map((m) => ({ id: m.id, titel: m.titel || t('pakete.umwandeln.ohnetitel'), namen: namenVon(m) }))
+    const kandidaten = (await this.d.mappen.listeMappen(ziel.id)).map((m) => ({ id: m.id, titel: m.titel || t('pakete.umwandeln.ohnetitel'), namen: namenVon(m) }))
       .sort((a, b) => a.titel.localeCompare(b.titel, 'de'));
     const bekannt = (n: string) => kandidaten.some((k) => k.namen.includes(namensSchluessel(n)));
-    const mitText = (await this.d.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]));
+    const mitText = (await this.d.mappen.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]));
     const rechte = await this.d.rechtepruefung.rechteAnVielen(z, mitText);
     const ausgelassen: UmwandlungsVorschau['ausgelassen'] = [];
     const mappen: Array<{ mappe: Mappe; text: string; namen: string[] }> = [];

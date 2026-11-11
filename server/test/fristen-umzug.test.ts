@@ -86,28 +86,28 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
   it('Datum im Vorlauf: sofort eine Frist (an den Ersteller, wenn kein Verantwortlicher) – das Feld selbst legt keine an', async () => {
     const { d, lena, jonas, vertrag, motor, verteile, fristen } = await aufbau();
     // Ohne Automatisierung: das Feld erinnert nicht mehr selbst.
-    const ohne = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', kuendigung: in_(10) } }, lena.id);
+    const ohne = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', kuendigung: in_(10) } }, lena.id);
     assert.equal((await d.fristenLauf()).angelegt, 0);
     assert.equal((await fristen(lena.id)).length, 0);
     await d.loescheMappe(ohne.id, lena.id).catch(() => {});
     await motor.fristenUebernehmen();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, lena.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10) } }, lena.id);
     await verteile();
     let offen = await fristen(lena.id);
     assert.equal(offen.length, 1);
     assert.equal(offen[0].datum, in_(10));
     assert.match(offen[0].text, /^Kündigung bis \d\d\.\d\d\.\d{4}$/);
     // Noch einmal gespeichert: keine zweite.
-    await d.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, lena.id);
     await verteile();
     assert.equal((await fristen(lena.id)).length, 1);
     // Datum verschoben: alte erledigt sich; neues Datum noch nicht im Vorlauf → nichts.
-    await d.aendereMappe(m.id, { werte: { kuendigung: in_(60), verantwortlich: jonas.id } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { kuendigung: in_(60), verantwortlich: jonas.id } }, lena.id);
     await verteile();
     assert.equal((await fristen(lena.id)).length, 0);
     assert.equal((await fristen(jonas.id)).length, 0);
     // Wieder in den Vorlauf: an den Verantwortlichen.
-    await d.aendereMappe(m.id, { werte: { kuendigung: in_(5) } }, lena.id);
+    await d.mappen.aendereMappe(m.id, { werte: { kuendigung: in_(5) } }, lena.id);
     await verteile();
     offen = await fristen(jonas.id);
     assert.equal(offen.length, 1);
@@ -117,8 +117,8 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
   it('vergangene Daten und Daten weit voraus erinnern beim Speichern nicht', async () => {
     const { d, lena, vertrag, motor, verteile, fristen } = await aufbau();
     await motor.fristenUebernehmen();
-    await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Alt', kuendigung: in_(-3) } }, lena.id);
-    await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Später', kuendigung: in_(40) } }, lena.id);
+    await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Alt', kuendigung: in_(-3) } }, lena.id);
+    await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Später', kuendigung: in_(40) } }, lena.id);
     await verteile();
     assert.equal((await fristen(lena.id)).length, 0);
   });

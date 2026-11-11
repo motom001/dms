@@ -147,7 +147,7 @@ for (const pg of [false, true]) {
       const alt = await p.installiere({ id: 'texterkennung_fra' }, ICH);
       const typId = alt.typen.sprache;
       assert.equal((await d.mappentypen.listeTypen()).find((x) => x.id === typId)?.schluessel, 'texterkennung_fra:sprache');
-      await d.legeMappeAn({ typId, werte: { name: 'Französisch' } });
+      await d.mappen.legeMappeAn({ typId, werte: { name: 'Französisch' } });
       await einstellungen.schreibe('paketspeicher:texterkennung_fra', { stand: 3 });
       await einstellungen.schreibe('paket_verwehrt', { [typId]: ['texterkennung_fra'] });
       // Die Registry zieht um: neue Id mit ersetzt, die alte fehlt im Katalog.
@@ -170,7 +170,7 @@ for (const pg of [false, true]) {
       assert.equal(neu.installiert, alt.installiert, 'dieselbe Installation');
       assert.deepEqual((await p.installierte()).map((x) => x.id).sort(), ['texterkennung', 'texterkennung.fra'], 'kein doppelter Eintrag');
       assert.equal((await d.mappentypen.listeTypen()).find((x) => x.id === typId)?.schluessel, 'texterkennung.fra:sprache');
-      assert.equal((await d.listeMappen(typId)).length, 1, 'Mappen bleiben');
+      assert.equal((await d.mappen.listeMappen(typId)).length, 1, 'Mappen bleiben');
       assert.deepEqual(await einstellungen.lies('paketspeicher:texterkennung.fra'), { stand: 3 }, 'Speicher des Pakets zieht mit');
       assert.equal(await einstellungen.lies('paketspeicher:texterkennung_fra') ?? null, null);
       assert.deepEqual(await einstellungen.lies('paket_verwehrt'), { [typId]: ['texterkennung.fra'] });

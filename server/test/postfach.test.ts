@@ -62,7 +62,7 @@ async function aufbau(o: Record<string, unknown> = {}) {
   const [p] = await pf.speichere({ name: 'Rechnungen', server: 'imap.example.org', port: 993, benutzer: 'dms@example.org', passwort: 'app-passwort', ...o }, null, 'test');
   const posten = async () => {
     const post = await d.postTyp();
-    return Promise.all((await d.listeMappen(post.id)).map(async (m) => ({ m, x: await d.holeMappe(m.id) })));
+    return Promise.all((await d.mappen.listeMappen(post.id)).map(async (m) => ({ m, x: await d.mappen.holeMappe(m.id) })));
   };
   return { d, pf, p, server, posten, einstellungen, anna, meldungen };
 }
@@ -131,7 +131,7 @@ describe('Postfächer (#196)', () => {
     await einstellungen.schreibe('postfach_journal', { postfach: p.id, uid: 2, schluessel: '<neu>', mappeId: id, erstellt: false });
     assert.equal(await pf.abrufen(p.id), 0);
     assert.equal((await posten()).length, 2, 'keine dritte Post');
-    assert.equal((await d.holeMappe(id)).dokumente.length, 2, 'Anhänge nachgeholt');
+    assert.equal((await d.mappen.holeMappe(id)).dokumente.length, 2, 'Anhänge nachgeholt');
   });
 
   it('meldet Fehler verständlich, wartet länger und benachrichtigt nach dem dritten Mal', async () => {
@@ -157,7 +157,7 @@ describe('Postfächer (#196)', () => {
     await pf.abrufen(p.id);
     const [{ m, x }] = await posten();
     assert.deepEqual(x.dokumente.map((dok) => dok.name), ['ok.pdf']);
-    const h = await d.historie(m.id);
+    const h = await d.mappenHistorie.historie(m.id);
     assert.ok(h.some((e) => e.art === 'uebernommen' && /riesig\.bin: größer als 100 MB/.test(String(e.daten.text))));
   });
 });

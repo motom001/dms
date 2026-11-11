@@ -45,9 +45,9 @@ async function aufbau() {
     { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
     { key: 'notiz', label: 'Notiz', typ: 'text' },
   ] });
-  const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
-  const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', beginn: '2026-03-01', betrag: { betrag: 1234.5, waehrung: 'EUR' }, partner: p.id, kennwort: { neu: 'streng-geheim-123' }, notiz: '=SUMME(A1)' } }, anna.id);
-  const v2 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', notiz: 'Zeile;mit "Zeichen"' } }, anna.id);
+  const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
+  const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', beginn: '2026-03-01', betrag: { betrag: 1234.5, waehrung: 'EUR' }, partner: p.id, kennwort: { neu: 'streng-geheim-123' }, notiz: '=SUMME(A1)' } }, anna.id);
+  const v2 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', notiz: 'Zeile;mit "Zeichen"' } }, anna.id);
   await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Dokument' }]), anna.id);
   await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Foto.png' }, PNG, anna.id);
   await d.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), anna.id);

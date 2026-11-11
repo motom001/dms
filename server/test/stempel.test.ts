@@ -148,7 +148,7 @@ async function aufbau(stempel?: unknown) {
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ], ...(stempel !== undefined ? { stempel } : {}) });
-  const m = await d.legeMappeAn({ typId: t.id, werte: { name: 'Personalausweis' } }, null);
+  const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Personalausweis' } }, null);
   const pdf = await pdfMitSeiten(2);
   const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'ausweis.pdf', typ: 'application/pdf' }, pdf, null);
   const mails: Array<{ an: string; o?: MailOptionen }> = [];
@@ -166,13 +166,13 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.equal((await PDFDocument.load(kopie)).getPageCount(), 2);
     assert.ok((await seiteninhalt(kopie)).text.includes(hex('Kopie für Hausverwaltung Müller')));
     assert.ok((await alsPuffer((await d.dokumentInhalt(dokument.id)).inhalt)).equals(pdf), 'gespeichertes Original unverändert');
-    const h = (await d.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
+    const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
     assert.match(String(h.daten.text), /^mit Stempel „Kopie für Hausverwaltung Müller – \d{2}\.\d{2}\.\d{4}“ an Hausverwaltung Müller \(heruntergeladen: ausweis\.pdf\)$/);
     assert.equal(h.daten.an, 'Hausverwaltung Müller');
     // Ohne Stempel: unverändert, keine Historie.
     const ohne = await d.dokumentFuerAusgabe(dokument.id, { stempel: {}, ich });
     assert.equal(ohne.gestempelt, false);
-    assert.equal((await d.historie(m.id)).filter((x) => x.art === 'weitergegeben').length, 1);
+    assert.equal((await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'weitergegeben').length, 1);
   });
 
   it('Pflicht je Mappentyp erzwingt den Stempel – beim Herunterladen, beim Export und per E-Mail', async () => {
@@ -187,16 +187,16 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     await d.versendeMappe(m.id, { an: 'bank@example.org', betreff: 'Ausweis', dokumente: [dokument.id] }, ich, mailer);
     const anhang = mails[0].o!.anhaenge![0];
     assert.ok((await seiteninhalt(anhang.inhalt as Buffer)).text.includes(hex('Kopie für bank@example.org')));
-    const email = (await d.historie(m.id)).find((x) => x.art === 'email')!;
+    const email = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'email')!;
     assert.match(String(email.daten.text), /mit Stempel „Kopie für bank@example\.org – /);
     // Die Post enthält die gestempelte Kopie, nicht das Original.
-    const post = await d.holeMappe(String(email.daten.email));
+    const post = await d.mappen.holeMappe(String(email.daten.email));
     assert.notEqual(post.dokumente[0].sha256, dokument.sha256);
     // Export als ZIP: Pflicht greift auch hier.
     const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
     await assert.rejects(d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id] }, z), status(422, /Empfänger/));
     await d.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], stempel: { vorlage: 'kopie', empfaenger: 'Steuerbüro' } }, z);
-    const h = (await d.historie(m.id)).filter((x) => x.art === 'weitergegeben');
+    const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'weitergegeben');
     assert.match(String(h[0].daten.text), /an Steuerbüro \(als ZIP exportiert: ausweis\.pdf\)/);
     // Vorlage in Gebrauch lässt sich nicht löschen; unbekannte Vorlage am Typ wird abgelehnt.
     await assert.rejects(d.loescheStempelVorlage('kopie', 'admin'), status(409, /Ausweis/));

@@ -89,8 +89,8 @@ describe('Abschnitte im Feldregister (#890)', () => {
   it('nur Darstellung: Werte, Prüfung und Felder ändern sich nicht', async () => {
     const d = neuerDienst();
     const t = await d.mappentypen.legeTypAn(PERSON);
-    await assert.rejects(d.legeMappeAn({ typId: t.id, werte: { vorname: 'Lena' } }), (e) => e instanceof Fachfehler && e.status === 422, 'Pflicht im eingeklappten Abschnitt gilt weiter');
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', iban: 'DE02120300000000202051' } });
+    await assert.rejects(d.mappen.legeMappeAn({ typId: t.id, werte: { vorname: 'Lena' } }), (e) => e instanceof Fachfehler && e.status === 422, 'Pflicht im eingeklappten Abschnitt gilt weiter');
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', iban: 'DE02120300000000202051' } });
     assert.equal(m.werte.iban, 'DE02120300000000202051');
   });
 });
@@ -116,10 +116,10 @@ describe('Felder und Register ausblenden (#655)', () => {
   it('Werte bleiben; Ausblenden und Abschnitte bleiben ohne Nennung (ältere Programme), Konfliktschutz (#917) gilt', async () => {
     const d = neuerDienst();
     const t = await d.mappentypen.legeTypAn(PERSON);
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', bic: 'GENODEF1S12' } });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nachname: 'Beispiel', bic: 'GENODEF1S12' } });
     const t2 = await d.mappentypen.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'bic' || f.key === 'nachname' ? { ...f, ausgeblendet: true } : f)), stand: t.geaendert });
     assert.deepEqual(t2.felder.filter((f) => f.ausgeblendet).map((f) => [f.key, f.pflicht]), [['nachname', false], ['bic', false]]);
-    assert.equal((await d.holeMappe(m.id)).mappe.werte.bic, 'GENODEF1S12', 'Werte bleiben gespeichert');
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.bic, 'GENODEF1S12', 'Werte bleiben gespeichert');
     // Älteres Programm über die API: ohne ausgeblendet und abschnitte gespeichert – nichts geht verloren.
     const t3 = await d.mappentypen.aendereTyp(t.id, { ...t2, beschreibung: 'neu', felder: t2.felder.map(({ ausgeblendet: _a, ...f }) => f), register: t2.register.map(({ abschnitte: _x, ...r }) => r) });
     assert.deepEqual(t3.felder.filter((f) => f.ausgeblendet).map((f) => f.key), ['nachname', 'bic']);
@@ -139,11 +139,11 @@ describe('Felder und Register ausblenden (#655)', () => {
   it('unverändert Ungültiges in ausgeblendeten Feldern hält das Speichern nicht auf; Neues wird geprüft', async () => {
     const d = neuerDienst();
     const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'alt', label: 'Altes Kürzel', typ: 'text' }], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, DOK] });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'WV-1043', alt: 'ABCDEF' } });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'WV-1043', alt: 'ABCDEF' } });
     const t2 = await d.mappentypen.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'alt' ? { ...f, maxLen: 3, ausgeblendet: true } : f)) });
-    const m2 = await d.aendereMappe(m.id, { werte: { ...m.werte, nr: 'WV-1044' } });
+    const m2 = await d.mappen.aendereMappe(m.id, { werte: { ...m.werte, nr: 'WV-1044' } });
     assert.deepEqual([m2.werte.nr, m2.werte.alt], ['WV-1044', 'ABCDEF']);
-    await assert.rejects(d.aendereMappe(m.id, { werte: { ...m2.werte, alt: 'GHIJKL' } }), (e) => e instanceof Fachfehler && e.status === 422, 'über die API geänderte Werte prüft Ablago weiter');
+    await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { ...m2.werte, alt: 'GHIJKL' } }), (e) => e instanceof Fachfehler && e.status === 422, 'über die API geänderte Werte prüft Ablago weiter');
     assert.ok(t2.felder.find((f) => f.key === 'alt')!.ausgeblendet);
   });
 
@@ -252,7 +252,7 @@ function paketFaelle(pg: boolean) {
       const inst = await p.installiere({ id: 'basis_test', version: '1.0.0' }, ICH);
       const holen = async () => (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.organisation)!;
       const o = await holen();
-      const m = await d.legeMappeAn({ typId: o.id, werte: { name: 'Stadtwerke Musterstadt', handelsregister: 'HRB 4711' } });
+      const m = await d.mappen.legeMappeAn({ typId: o.id, werte: { name: 'Stadtwerke Musterstadt', handelsregister: 'HRB 4711' } });
       // Markus blendet das Handelsregister aus (Pflicht fällt weg) und gliedert „Kontakt“ selbst.
       const o2 = await d.mappentypen.aendereTyp(o.id, {
         ...o, felder: o.felder.map((f) => (f.key === 'handelsregister' ? { ...f, ausgeblendet: true } : f)),
@@ -271,7 +271,7 @@ function paketFaelle(pg: boolean) {
       assert.deepEqual(reg('stammdaten').abschnitte, [{ vor: 'handelsregister', titel: 'Register', eingeklappt: true, beschriftungen: { en: { titel: 'Registry' } } }]);
       assert.deepEqual(reg('kontakt').abschnitte, [{ vor: 'telefon', titel: 'Erreichbar' }], 'eigene Abschnitte bleiben');
       assert.deepEqual(reg('kontakt').felder, ['telefon', 'email', 'fax']);
-      assert.equal((await d.holeMappe(m.id)).mappe.werte.handelsregister, 'HRB 4711', 'Werte bleiben');
+      assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.handelsregister, 'HRB 4711', 'Werte bleiben');
       // Paketstand (#653): Die Abschnitte aus dem Update gehören dazu – eigene Änderungen sind nur Ausblenden und „Kontakt“.
       const ip = (await p.installierte()).find((x) => x.id === 'basis_test')!;
       const u = aenderung(o3, ip).unterschiede;

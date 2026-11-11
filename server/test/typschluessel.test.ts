@@ -26,7 +26,7 @@ describe('Schlüssel am Mappentyp (#145)', () => {
     assert.equal(um.name, 'Arztrechnung');
     assert.equal(um.schluessel, 'rechnung_aerzte');
     // Links: mit Schlüssel und weiter mit dem Namen.
-    const m = await d.legeMappeAn({ typId: r.id, werte: { nr: 'A-1' } });
+    const m = await d.mappen.legeMappeAn({ typId: r.id, werte: { nr: 'A-1' } });
     const typen = await d.mappentypen.listeTypen();
     const link = linkZuMappe(typen.find((t) => t.id === r.id)!, m)!;
     assert.match(link, /typ=rechnung_aerzte&nr=A-1/);
@@ -41,10 +41,10 @@ describe('Schlüssel am Mappentyp (#145)', () => {
     const d = new Dienst(repo, speicherDateien());
     await repo.legeTypAn('00000000-0000-4000-8000-0000000000a1', { name: 'Benutzer', beschreibung: '', titelVorlage: '', felder: [], register: [] });
     await repo.legeTypAn('00000000-0000-4000-8000-0000000000a2', { name: 'Leute', beschreibung: '', titelVorlage: '', felder: [], register: [] }, 'benutzer');
-    assert.equal(await d.typSchluesselNachziehen(), 2);
+    assert.equal(await d.mappenTitel.typSchluesselNachziehen(), 2);
     const typen = await d.mappentypen.listeTypen();
     assert.equal(typen.find((t) => t.system === 'benutzer')!.schluessel, 'benutzer');
     assert.equal(typen.find((t) => t.name === 'Benutzer')!.schluessel, 'benutzer_2');
-    assert.equal(await d.typSchluesselNachziehen(), 0);
+    assert.equal(await d.mappenTitel.typSchluesselNachziehen(), 0);
   });
 });

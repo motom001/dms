@@ -48,7 +48,7 @@ async function aufbau() {
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
     register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true }] } as never);
-  const v1 = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1' } }, lena.id);
+  const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1' } }, lena.id);
   const pdf = (await d.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Vertrag' }]), lena.id)).dokument;
   const txt = (await d.ladeHoch(v1.id, { register: 'dokumente', name: 'notiz.txt' }, Buffer.from('nur genannt'), lena.id)).dokument;
   // Zweite Version des PDFs (#194): ältere Versionen sind ein eigener Weg zum Herunterladen.

@@ -67,9 +67,9 @@ async function aufbau() {
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
     return x.id;
   };
-  const wartung = await d.legeMappeAn({ typId: vertrag.id, werte: { vnr: 'WV-1043' } }, lena.id);
-  const befund = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie geheim' } }, lena.id);
-  const alteRechnung = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2025-001' } }, lena.id);
+  const wartung = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { vnr: 'WV-1043' } }, lena.id);
+  const befund = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie geheim' } }, lena.id);
+  const alteRechnung = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2025-001' } }, lena.id);
   const dokVertrag = await dok(wartung.id, 'vertrag.pdf', 'Wartungsvertrag Gastherme WV-1043');
   const dokBefund = await dok(befund.id, 'befund.pdf', 'Diagnose Meniskus');
   const dokAlt = await dok(alteRechnung.id, 'alt.pdf', 'Rechnung Wartung 2025');
@@ -292,9 +292,9 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     await x.d.setzeBerechtigungen(x.gesundheit.id, { grund: { ...NICHTS }, regeln: [] } as Regelwerk, true);
     const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await assert.rejects(x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.dokBefund] }, J));
-    const vorher = JSON.stringify((await x.d.holeMappe(x.post.id)).mappe);
+    const vorher = JSON.stringify((await x.d.mappen.holeMappe(x.post.id)).mappe);
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
-    assert.equal(JSON.stringify((await x.d.holeMappe(x.post.id)).mappe), vorher);
+    assert.equal(JSON.stringify((await x.d.mappen.holeMappe(x.post.id)).mappe), vorher);
   });
 
   it('wechselt die Person den Typ, läuft nur die Extraktion – nicht die Klassifizierung', async () => {

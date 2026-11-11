@@ -144,12 +144,12 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
     const { d, admin, rechnung, position } = a;
     await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
     await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
-    const r1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
-    const r2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
-    const r3 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, admin.id);
-    const p1 = await d.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, admin.id);
-    const p2 = await d.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } }, admin.id);
-    const p3 = await d.legeMappeAn({ typId: position.id, werte: { rechnung: r3.id, nr: 1, beschreibung: 'Stichsäge' } }, admin.id);
+    const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
+    const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
+    const r3 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, admin.id);
+    const p1 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, admin.id);
+    const p2 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } }, admin.id);
+    const p3 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r3.id, nr: 1, beschreibung: 'Stichsäge' } }, admin.id);
     return { ...a, r1, r2, r3, p1, p2, p3 };
   }
   const ids = (s: Seite) => s.mappen.map((m) => m.id).sort();
@@ -193,10 +193,10 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
 
   it('direkter Link und Schnittstelle prüfen die normalen Rechte; „Zuletzt geöffnet“ zeigt keine Teile', async () => {
     const { d, lena, rufe, zg, p1, p2, r1 } = await mitMappen();
-    const m = await d.holeMappe(p1.id, await zg(lena));
+    const m = await d.mappen.holeMappe(p1.id, await zg(lena));
     assert.equal(m.mappe.id, p1.id);
     assert.equal(m.bezuege[r1.id]?.titel, 'R-1');
-    await assert.rejects(d.holeMappe(p2.id, await zg(lena)), status(404));
+    await assert.rejects(d.mappen.holeMappe(p2.id, await zg(lena)), status(404));
     // Öffnen merkt die Mappe nach der Antwort (#741).
     for (const id of [p1.id, r1.id]) for (const f of (await rufe(lena, 'GET', '/api/mappen/:id', { params: { id } })).danach ?? []) await f();
     const start = (await rufe(lena, 'GET', '/api/startseite/zuletzt')).body as Array<{ id: string }>;
@@ -242,15 +242,15 @@ describe('Leserechte als Vorgabe (#1031)', () => {
 describe('Löschen und Papierkorb (#1031)', () => {
   async function mitRechnung(repo?: Repo) {
     const a = await aufbau(repo);
-    const r = await a.d.legeMappeAn({ typId: a.rechnung.id, werte: { nr: 'R-7' } }, a.lena.id);
-    const p1 = await a.d.legeMappeAn({ typId: a.position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Schrauben' } }, a.lena.id);
-    const p2 = await a.d.legeMappeAn({ typId: a.position.id, werte: { rechnung: r.id, nr: 2, beschreibung: 'Dübel' } }, a.lena.id);
+    const r = await a.d.mappen.legeMappeAn({ typId: a.rechnung.id, werte: { nr: 'R-7' } }, a.lena.id);
+    const p1 = await a.d.mappen.legeMappeAn({ typId: a.position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Schrauben' } }, a.lena.id);
+    const p2 = await a.d.mappen.legeMappeAn({ typId: a.position.id, werte: { rechnung: r.id, nr: 2, beschreibung: 'Dübel' } }, a.lena.id);
     return { ...a, r, p1, p2 };
   }
 
   it('die Teile gehen mit – ein Vorgang, Löschprotokoll „mit ihren Teilen“; die Mappe zeigt vorher, wie viele', async () => {
     const { d, lena, zg, r, p1, p2 } = await mitRechnung();
-    const vorher = await d.holeMappe(r.id, await zg(lena));
+    const vorher = await d.mappen.holeMappe(r.id, await zg(lena));
     assert.deepEqual(vorher.loeschbar, { ok: true, teile: 2 });
     await d.loescheMappe(r.id, lena.id, await zg(lena));
     for (const id of [r.id, p1.id, p2.id]) assert.equal(await d.kern.repo.holeMappe(id), undefined);
@@ -264,7 +264,7 @@ describe('Löschen und Papierkorb (#1031)', () => {
     const { d, admin, lena, zg, r, position, p1 } = await mitRechnung();
     // Eine Position hat der Administrator angelegt und als privat markiert – Lena darf sie weder lesen noch löschen.
     await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
-    await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 3, beschreibung: 'Privat', privat: true } }, admin.id);
+    await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 3, beschreibung: 'Privat', privat: true } }, admin.id);
     await assert.rejects(d.loescheMappe(r.id, lena.id, await zg(lena)), status(403, /1 Teil/));
     assert.ok(await d.kern.repo.holeMappe(r.id));
     assert.ok(await d.kern.repo.holeMappe(p1.id));
@@ -403,10 +403,10 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
       const { d, admin, lena, suche, zg, rechnung, position } = await aufbau(pgRepo(db.sql, haushalt) as never as Repo, pgKontoRepo(db.sql, haushalt));
       assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === position.id)?.teilVon, 'rechnung');
       await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
-      const r1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, lena.id);
-      const r2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
-      const p1 = await d.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, lena.id);
-      await d.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } }, admin.id);
+      const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, lena.id);
+      const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
+      const p1 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, lena.id);
+      await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } }, admin.id);
       const s = await suche(lena, { sicht: 'suche', link: '', suche: 'bohrmaschine' });
       assert.deepEqual(s.mappen.map((m) => m.id), [r1.id]);
       assert.equal(s.ausschnitte?.[r1.id]?.teil?.id, p1.id);

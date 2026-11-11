@@ -58,9 +58,9 @@ async function aufbau(pg = false) {
     { key: 'niederlassung', label: 'Niederlassung', typ: 'referenz', zielTyp: niederlassung.id,
       auswahlFilter: [{ art: 'feld', feld: 'organisation', op: 'zeigtAuf', wert: { art: 'eigenesFeld', feld: 'organisation' } }] },
   ] });
-  const org = async (name: string) => d.legeMappeAn({ typId: organisation.id, werte: { name } });
+  const org = async (name: string) => d.mappen.legeMappeAn({ typId: organisation.id, werte: { name } });
   const sparkasse = await org('Sparkasse Musterstadt'), volksbank = await org('Volksbank Beispiel');
-  const nl = async (name: string, o: string | null) => d.legeMappeAn({ typId: niederlassung.id, werte: { name, organisation: o } });
+  const nl = async (name: string, o: string | null) => d.mappen.legeMappeAn({ typId: niederlassung.id, werte: { name, organisation: o } });
   return {
     d, organisation, niederlassung, person, sparkasse, volksbank,
     nord: await nl('Zweigstelle Nordviertel', sparkasse.id), markt: await nl('Filiale Marktplatz', volksbank.id), lose: await nl('Außenstelle ohne Träger', null),
@@ -110,28 +110,28 @@ describe('Folgt aus – Speichern in Oberfläche und Schnittstelle (#886)', () =
     it(`leeres Feld füllt sich aus der Quelle; nie überschreibend, nicht ohne Wert am Ziel${pg ? ' (PostgreSQL)' : ''}`, async () => {
       const { d, person, sparkasse, volksbank, nord, markt, lose } = await aufbau(pg);
       // Niederlassung gewählt, Organisation nicht genannt → füllt sich.
-      const lena = await d.legeMappeAn({ typId: person.id, werte: { name: 'Lena', niederlassung: nord.id } });
+      const lena = await d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'Lena', niederlassung: nord.id } });
       assert.equal(lena.werte.organisation, sparkasse.id);
       // Die Anfrage nennt das Feld selbst (auch leer): bleibt, wie es ist.
-      const jonas = await d.legeMappeAn({ typId: person.id, werte: { name: 'Jonas', niederlassung: nord.id, organisation: null } });
+      const jonas = await d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'Jonas', niederlassung: nord.id, organisation: null } });
       assert.equal(jonas.werte.organisation, null);
       // Ziel ohne Wert: nichts übernehmen.
-      const petra = await d.legeMappeAn({ typId: person.id, werte: { name: 'Petra', niederlassung: lose.id } });
+      const petra = await d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'Petra', niederlassung: lose.id } });
       assert.equal(petra.werte.organisation, null);
       // Später die Niederlassung wechseln: nur ein leeres Feld füllt sich, ein gesetztes bleibt.
-      const p2 = await d.aendereMappe(petra.id, { werte: { niederlassung: nord.id } });
+      const p2 = await d.mappen.aendereMappe(petra.id, { werte: { niederlassung: nord.id } });
       assert.equal(p2.werte.organisation, sparkasse.id);
-      const l2 = await d.aendereMappe(lena.id, { werte: { name: 'Lena B.' } });
+      const l2 = await d.mappen.aendereMappe(lena.id, { werte: { name: 'Lena B.' } });
       assert.equal(l2.werte.organisation, sparkasse.id, 'unverändert');
       // Bestehende Mappen werden nicht umgeschrieben: Die Niederlassung wechselt die Organisation – Lena bleibt.
-      await d.aendereMappe(nord.id, { werte: { organisation: volksbank.id } });
-      assert.equal((await d.holeMappe(lena.id)).mappe.werte.organisation, sparkasse.id);
+      await d.mappen.aendereMappe(nord.id, { werte: { organisation: volksbank.id } });
+      assert.equal((await d.mappen.holeMappe(lena.id)).mappe.werte.organisation, sparkasse.id);
       // … und der Hinweis an der Mappe nennt Feld und eigenes Feld (#887).
-      const det = await d.holeMappe(lena.id);
+      const det = await d.mappen.holeMappe(lena.id);
       assert.deepEqual(det.konflikte, [{ feld: 'niederlassung', eigeneFelder: ['organisation'], ids: [nord.id] }]);
       assert.deepEqual(det.unpassend, { niederlassung: [nord.id] });
       // Speichern bleibt möglich (bestehender Wert), Ändern anderer Felder auch.
-      await d.aendereMappe(lena.id, { werte: { name: 'Lena C.' } });
+      await d.mappen.aendereMappe(lena.id, { werte: { name: 'Lena C.' } });
       assert.ok(markt);
     });
   }
@@ -142,9 +142,9 @@ describe('Folgt aus – Speichern in Oberfläche und Schnittstelle (#886)', () =
     const titel = async (eigene: Record<string, unknown>) => (await d.seite(ICH, { sicht: `feld:${person.id}:niederlassung`, eigene: JSON.stringify(eigene) })).mappen.map((m) => m.titel).sort();
     assert.deepEqual(await titel({ organisation: sparkasse.id }), ['Zweigstelle Nordviertel']);
     assert.deepEqual(await titel({}), ['Außenstelle ohne Träger', 'Filiale Marktplatz', 'Zweigstelle Nordviertel']);
-    await assert.rejects(d.legeMappeAn({ typId: person.id, werte: { name: 'X', organisation: sparkasse.id, niederlassung: markt.id } }), meldet(/passt nicht zur Auswahl/));
+    await assert.rejects(d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'X', organisation: sparkasse.id, niederlassung: markt.id } }), meldet(/passt nicht zur Auswahl/));
     // Zuerst die Niederlassung, die Organisation folgt – passt also zum Filter.
-    const x = await d.legeMappeAn({ typId: person.id, werte: { name: 'Y', niederlassung: nord.id } });
+    const x = await d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'Y', niederlassung: nord.id } });
     assert.equal(x.werte.organisation, sparkasse.id);
     assert.ok(lose);
   });
@@ -152,25 +152,25 @@ describe('Folgt aus – Speichern in Oberfläche und Schnittstelle (#886)', () =
   it('Gründe (#887): eigenes Feld, „Auswahlregel“ bei festen Bedingungen; die Prüfung vor dem Speichern liefert sie', async () => {
     const { d, person, organisation, sparkasse, volksbank, nord, markt } = await aufbau();
     const ICH = '00000000-0000-4000-8000-0000000000aa';
-    const r = await d.auswahlPruefen({ typId: person.id, feldKey: 'niederlassung', ids: [nord.id, markt.id], werte: { organisation: volksbank.id } }, ICH);
+    const r = await d.mappenEingaben.auswahlPruefen({ typId: person.id, feldKey: 'niederlassung', ids: [nord.id, markt.id], werte: { organisation: volksbank.id } }, ICH);
     assert.deepEqual(r.unpassend, [nord.id]);
     assert.deepEqual(r.gruende, { [nord.id]: ['organisation'] });
     // Feste Bedingung ohne eigenes Feld: Grund leer = „Auswahlregel dieses Felds“.
     const regel = await d.mappentypen.legeTypAn({ name: 'Vermerk', felder: [{ key: 'bank', label: 'Bank', typ: 'referenz', zielTyp: organisation.id, auswahlFilter: [{ art: 'feld', feld: 'name', op: 'enthaelt', wert: { art: 'fest', wert: 'Sparkasse' } }] }] });
-    const v = await d.legeMappeAn({ typId: regel.id, werte: { bank: sparkasse.id } });
-    await d.aendereMappe(sparkasse.id, { werte: { name: 'Stadtbank Musterstadt' } });
-    assert.deepEqual((await d.holeMappe(v.id)).konflikte, [{ feld: 'bank', eigeneFelder: [], regel: true, ids: [sparkasse.id] }]);
-    const r2 = await d.auswahlPruefen({ typId: regel.id, feldKey: 'bank', ids: [sparkasse.id], werte: {} }, ICH);
+    const v = await d.mappen.legeMappeAn({ typId: regel.id, werte: { bank: sparkasse.id } });
+    await d.mappen.aendereMappe(sparkasse.id, { werte: { name: 'Stadtbank Musterstadt' } });
+    assert.deepEqual((await d.mappen.holeMappe(v.id)).konflikte, [{ feld: 'bank', eigeneFelder: [], regel: true, ids: [sparkasse.id] }]);
+    const r2 = await d.mappenEingaben.auswahlPruefen({ typId: regel.id, feldKey: 'bank', ids: [sparkasse.id], werte: {} }, ICH);
     assert.deepEqual(r2, { unpassend: [sparkasse.id], gruende: { [sparkasse.id]: [] } });
     // Felder ohne Filter und ohne „folgt aus“: nichts zu prüfen.
-    assert.deepEqual(await d.auswahlPruefen({ typId: person.id, feldKey: 'organisation', ids: [sparkasse.id], werte: {} }, ICH), { unpassend: [], gruende: {} });
+    assert.deepEqual(await d.mappenEingaben.auswahlPruefen({ typId: person.id, feldKey: 'organisation', ids: [sparkasse.id], werte: {} }, ICH), { unpassend: [], gruende: {} });
   });
 
   it('Oberfläche: /api/mappen/folgen sagt, was aus der Quelle folgt (null ohne Wert am Ziel)', async () => {
     const { d, person, sparkasse, nord, lose } = await aufbau();
-    assert.deepEqual(await d.folgen({ typId: person.id, werte: { niederlassung: nord.id } }), { felder: { organisation: { quelle: 'niederlassung', wert: sparkasse.id, titel: 'Sparkasse Musterstadt', typId: sparkasse.typId } } });
-    assert.deepEqual(await d.folgen({ typId: person.id, werte: { niederlassung: lose.id } }), { felder: { organisation: { quelle: 'niederlassung', wert: null } } });
-    assert.deepEqual(await d.folgen({ typId: person.id, werte: {} }), { felder: {} });
+    assert.deepEqual(await d.mappenEingaben.folgen({ typId: person.id, werte: { niederlassung: nord.id } }), { felder: { organisation: { quelle: 'niederlassung', wert: sparkasse.id, titel: 'Sparkasse Musterstadt', typId: sparkasse.typId } } });
+    assert.deepEqual(await d.mappenEingaben.folgen({ typId: person.id, werte: { niederlassung: lose.id } }), { felder: { organisation: { quelle: 'niederlassung', wert: null } } });
+    assert.deepEqual(await d.mappenEingaben.folgen({ typId: person.id, werte: {} }), { felder: {} });
   });
 });
 
@@ -189,14 +189,14 @@ describe('Folgt aus – nur lesbare Werte, auch über die Schnittstelle (#886)',
       { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: organisation.id, folgtAus: { feld: 'niederlassung', zielFeld: 'organisation' } },
       { key: 'niederlassung', label: 'Niederlassung', typ: 'referenz', zielTyp: niederlassung.id },
     ] });
-    const sk = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Sparkasse Musterstadt' } }, admin.id);
-    const nord = await d.legeMappeAn({ typId: niederlassung.id, werte: { name: 'Nordviertel', organisation: sk.id } }, admin.id);
+    const sk = await d.mappen.legeMappeAn({ typId: organisation.id, werte: { name: 'Sparkasse Musterstadt' } }, admin.id);
+    const nord = await d.mappen.legeMappeAn({ typId: niederlassung.id, werte: { name: 'Nordviertel', organisation: sk.id } }, admin.id);
     const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
     const zJ = await d.rechtepruefung.zugriff(await ich(jonas.id));
     assert.ok(!(await d.rechtepruefung.lesbare(zJ, [sk.id])).has(sk.id), 'Jonas darf die Organisation nicht lesen');
-    const m = await d.legeMappeAn({ typId: person.id, werte: { name: 'Markus', niederlassung: nord.id } }, jonas.id, false, zJ);
+    const m = await d.mappen.legeMappeAn({ typId: person.id, werte: { name: 'Markus', niederlassung: nord.id } }, jonas.id, false, zJ);
     assert.equal(m.werte.organisation, null);
-    assert.deepEqual((await d.folgen({ typId: person.id, werte: { niederlassung: nord.id } }, zJ)).felder.organisation.wert, null);
+    assert.deepEqual((await d.mappenEingaben.folgen({ typId: person.id, werte: { niederlassung: nord.id } }, zJ)).felder.organisation.wert, null);
     // Über die Route (dieselbe wie POST /api/v1/mappen) als Lena im Verwaltungsmodus (darf alles lesen): füllt sich.
     const tabelle = routen(d, konten, {});
     const route = tabelle.find((r) => r.methode === 'POST' && r.pfad === '/api/mappen')!;
@@ -220,8 +220,8 @@ describe('Folgt aus – aus Dokument ausfüllen (#886)', () => {
       { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, erkennung: {} },
       { key: 'aussteller', label: 'Aussteller', typ: 'referenz', zielTyp: partner.id, folgtAus: { feld: 'vertrag', zielFeld: 'partner' } },
     ] });
-    const hb = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Heizungsbau Beispiel GmbH' } });
-    const wv = await d.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Wartungsvertrag Heizung', nummer: 'WV-2023-17', partner: hb.id } });
+    const hb = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Heizungsbau Beispiel GmbH' } });
+    const wv = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Wartungsvertrag Heizung', nummer: 'WV-2023-17', partner: hb.id } });
     const r = await d.erkennung.fuerTyp(rechnung.id, { text: 'Rechnung R-2026-117\nVertragsnummer WV-2023-17\nWartung der Heizungsanlage' });
     assert.equal(r.vorschlaege.vertrag?.wert, wv.id);
     assert.equal(r.vorschlaege.aussteller?.wert, hb.id);

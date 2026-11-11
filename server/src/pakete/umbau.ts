@@ -32,9 +32,9 @@ const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String
 export interface UmbauDienst {
   kern: Kern;
   mappentypen: { listeTypen(): Promise<Mappentyp[]>; loescheTyp(id: string): Promise<void> };
-  listeMappen(typId?: string): Promise<Mappe[]>;
+  mappen: { listeMappen(typId?: string): Promise<Mappe[]> };
   listeSichten(): Promise<Sicht[]>;
-  aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
+  mappenTitel: { aktualisiereTitel(ids: string[]): Promise<Map<string, string>> };
 }
 
 /** Mappentyp eines Pakets, so weit der Umbau ihn braucht. */
@@ -338,7 +338,7 @@ const sichtFelder = (s: Sicht): string[] => s.bedingungen.flatMap((b) => (b.art 
  */
 async function ansichtHinweise(d: UmbauDienst, alt: Mappentyp, felder: FeldPlan[], ziel: Mappentyp | undefined, u: Umgebung): Promise<UmbauAnsicht[]> {
   const bleibt = new Set(umbenennung(felder).keys());
-  const breiter = ziel ? (await d.listeMappen(ziel.id)).length : 0;
+  const breiter = ziel ? (await d.mappen.listeMappen(ziel.id)).length : 0;
   const besitzer = (id: string) => u.k.installierte.find((p) => Object.values(p.sichten).includes(id))?.name ?? null;
   return u.sichten.filter((s) => s.typen.includes(alt.id)).flatMap((s): UmbauAnsicht[] => {
     const weg = [...new Set(sichtFelder(s).filter((f) => felder.some((x) => x.feld.key === f) && !bleibt.has(f)))].map((f) => alt.felder.find((g) => g.key === f)?.label ?? f);
@@ -361,7 +361,7 @@ async function planeSchritt(d: UmbauDienst, s: UmbauSchritt, u: Umgebung): Promi
   const z = q ? zielVon(s, q.alt, u) : null;
   if (!q || !z) return null;
   const { alt, quelle } = q;
-  const mappen = await d.listeMappen(alt.id);
+  const mappen = await d.mappen.listeMappen(alt.id);
   const felder = feldPlaene(s, alt, { stand: quelle.typStand?.[alt.id]?.felder, zielFelder: z.zielFelder, mappen, problem: u.problem });
   pruefeSchritt(s, alt, z, felder, u.problem);
   const uebernehmen = !z.vorhanden;

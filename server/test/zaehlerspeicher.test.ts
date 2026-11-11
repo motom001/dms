@@ -91,7 +91,7 @@ async function aufbau() {
   const max = (await konten.legeBenutzerAn({ email: 'max@example.org', name: 'Max' }, admin.id)).benutzer;
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
-  const fibu = (await d.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
+  const fibu = (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
     { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
     { key: 'privat', label: 'Privat', typ: 'janein' },
@@ -126,7 +126,7 @@ const teil = (z: Awaited<ReturnType<Dienst['zaehler']>>) => ({ typen: z.typen, e
 describe('Dienst: Zahlen der Ansichten (#512)', () => {
   it('wiederholtes Laden ohne Änderung zählt nicht neu', async () => {
     const h = await aufbau();
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
     assert.equal((await h.zahlen(h.max.id)).art, 'neu');
     const zweites = await h.zahlen(h.max.id);
     assert.equal(zweites.art, 'treffer');
@@ -155,12 +155,12 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     };
     await pruefe('Anfang');
     // Mappe anlegen
-    const r1 = await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
-    const r2 = await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2', privat: true } }, h.admin.id);
+    const r1 = await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
+    const r2 = await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2', privat: true } }, h.admin.id);
     await stimmt('anlegen', { admin: [2, 1], max: [1, 0] });
     await pruefe('anlegen');
     // Mappe ändern
-    await h.d.aendereMappe(r1.id, { werte: { nr: 'R1', privat: true } }, h.admin.id);
+    await h.d.mappen.aendereMappe(r1.id, { werte: { nr: 'R1', privat: true } }, h.admin.id);
     await stimmt('ändern', { admin: [2, 2], max: [0, 0] });
     await pruefe('ändern');
     // Rechte ändern: Regeln weg …
@@ -185,7 +185,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     assert.equal((await h.zahlen(h.max.id)).z.eingang, 0, 'Aufgabe erledigt');
     await stimmt('Aufgabe erledigt', { admin: [2, 0], max: [2, 0] });
     // Favorit
-    await h.d.setzeFavorit({ id: h.max.id }, r1.id, true);
+    await h.d.mappen.setzeFavorit({ id: h.max.id }, r1.id, true);
     assert.equal((await h.zahlen(h.max.id)).z.favoriten, 1);
     // Mappe löschen
     await h.d.loescheMappe(r1.id, h.admin.id);
@@ -201,13 +201,13 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
       await kontext.run(k, async () => h.d.naechsterTermin(await h.d.rechtepruefung.zugriff(b)));
       return k.zwischenspeicher?.art;
     };
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
     await h.d.ereignisse.verteile();
     await h.zahlen(h.max.id); await termine();
     const vorher = h.d.fristenstand.stand;
     // Nichts fällig und einmal mit einem Ereignis im Ausgangskorb: holen, verteilen, aufräumen.
     await h.d.ereignisse.verteile();
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2' } }, h.admin.id);
     await h.zahlen(h.max.id); await termine();
     const nachAenderung = h.d.fristenstand.stand;
     assert.ok(nachAenderung > vorher, 'die Änderung zählt');
@@ -235,7 +235,7 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     // 23:30 in Berlin; die Rechnung ist morgen fällig.
     t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-01T22:30:00Z') });
     const h = await aufbau();
-    await h.d.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1', faellig: '2026-11-02' } }, h.admin.id);
+    await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1', faellig: '2026-11-02' } }, h.admin.id);
     assert.equal((await h.zahlen(h.admin.id)).z.sichten[h.faellig.id], 0);
     assert.equal((await h.zahlen(h.admin.id)).art, 'treffer');
     t.mock.timers.setTime(Date.parse('2026-11-01T22:40:00Z'));

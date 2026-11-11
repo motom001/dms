@@ -182,20 +182,20 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     ];
     for (const f of faelle) {
       await d.setzeMerkmale({ beruflich: f.beruflich }, 'markus@example.org');
-      const server = await fehlerFelder(d.legeMappeAn({ typId: vertrag.id, werte: f.werte }, admin.id));
+      const server = await fehlerFelder(d.mappen.legeMappeAn({ typId: vertrag.id, werte: f.werte }, admin.id));
       const geteilt = Object.keys(pruefeMitAnzeige(vertrag, { ...f.werte }, { ...ctx, merkmale: { beruflich: f.beruflich } }).felder).sort();
       assert.deepEqual(server, geteilt, `gleiche Auswertung für ${JSON.stringify(f)}`);
     }
     // Ausgeblendete Werte bleiben gespeichert: Vertragsart von Miete auf Strom.
     await d.setzeMerkmale({ beruflich: false }, 'markus@example.org');
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wohnung', art: 'Miete', kaltmiete: BETRAG, kaution: { betrag: 2850, waehrung: 'EUR' }, vermieter: 'Petra' } }, admin.id);
-    const n = await d.aendereMappe(m.id, { werte: { art: 'Strom' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wohnung', art: 'Miete', kaltmiete: BETRAG, kaution: { betrag: 2850, waehrung: 'EUR' }, vermieter: 'Petra' } }, admin.id);
+    const n = await d.mappen.aendereMappe(m.id, { werte: { art: 'Strom' } }, admin.id);
     assert.deepEqual([n.werte.kaltmiete, n.werte.vermieter], [BETRAG, 'Petra'], 'Werte bleiben (wie #655)');
-    assert.equal((await d.holeMappe(m.id)).mappe.werte.vermieter, 'Petra', 'API zeigt alle Werte');
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.werte.vermieter, 'Petra', 'API zeigt alle Werte');
     assert.deepEqual(anzeigestand(vertrag, n.werte, {}).abschnitte.map((a) => a.abschnitt.titel), ['Miete', 'Abschluss']);
     // Pflicht kommt zurück, sobald der Abschnitt wieder zu sehen ist.
-    const o = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
-    assert.deepEqual(await fehlerFelder(d.aendereMappe(o.id, { werte: { art: 'Miete' } }, admin.id)), ['kaltmiete']);
+    const o = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
+    assert.deepEqual(await fehlerFelder(d.mappen.aendereMappe(o.id, { werte: { art: 'Miete' } }, admin.id)), ['kaltmiete']);
   });
 
   it('Speichern des Typs prüft die Bedingungen; Systemfelder bekommen keine', async () => {
@@ -218,19 +218,19 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
 
   it('Merkmal ändern zieht die Passung nach (Pflicht hängt daran)', async () => {
     const { d, admin, vertrag } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
     await d.setzeMerkmale({ beruflich: true }, 'markus@example.org');
     await d.passung.pruefePassung(vertrag.id);
-    assert.match((await d.holeMappe(m.id)).mappe.problem ?? '', /Kostenstelle/);
+    assert.match((await d.mappen.holeMappe(m.id)).mappe.problem ?? '', /Kostenstelle/);
     await d.setzeMerkmale({ beruflich: false }, 'markus@example.org');
     await d.passung.pruefePassung(vertrag.id);
-    assert.equal((await d.holeMappe(m.id)).mappe.problem ?? null, null);
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.problem ?? null, null);
   });
 
   it('Paketformat: Paket erstellen nimmt die Einstellung mit, das Lesen prüft sie; Typ-Verweis statt Id, bestimmte Mappe bleibt weg', async () => {
     const { d, vertrag, admin } = await aufbau();
     const fahrzeug = await d.mappentypen.legeTypAn({ name: 'Fahrzeug', felder: [{ key: 'kennzeichen', label: 'Kennzeichen', typ: 'text' }] });
-    const auto = await d.legeMappeAn({ typId: fahrzeug.id, werte: { kennzeichen: 'B-LN 1' } }, admin.id);
+    const auto = await d.mappen.legeMappeAn({ typId: fahrzeug.id, werte: { kennzeichen: 'B-LN 1' } }, admin.id);
     const t = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder,
       { key: 'betrifft', label: 'betrifft', typ: 'referenz', zielTyp: fahrzeug.id },
       { key: 'kfz', label: 'Kfz-Steuer', typ: 'betrag', anzeigen: { modus: 'eine', bedingungen: [{ art: 'verweistyp', feld: 'betrifft', typ: fahrzeug.id }, { art: 'feld', bedingung: { art: 'feld', feld: 'betrifft', op: 'zeigtAuf', wert: { art: 'fest', wert: [auto.id] } } }] } },
@@ -253,7 +253,7 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
 
   it('Merkmal in Bedingungen von Ansichten, Rechten und Automatisierungen – Sichtbarkeit von Feldern zählt dort nie', async () => {
     const { d, admin, vertrag } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', art: 'Strom' } }, admin.id);
     // Ansicht
     const s = await d.legeSichtAn({ name: 'Beruflich', typen: [vertrag.id], bedingungen: [{ art: 'merkmal', merkmal: 'beruflich' }] });
     const zahl = async () => (await d.zaehler({ id: admin.id, rolle: 'admin' })).sichten[s.id];
@@ -329,6 +329,6 @@ describe('Paket installieren mit Anzeige-Bedingungen (#1033)', () => {
     assert.deepEqual(v.felder.find((f) => f.key === 'kfz')!.anzeigen, { modus: 'alle', bedingungen: [{ art: 'verweistyp', feld: 'betrifft', typ: inst.typen.fahrzeug }] });
     assert.deepEqual(v.register[0].abschnitte, [{ vor: 'kostenstelle', anzeigen: BERUFLICH, titel: 'Abschluss' }]);
     // Privat: Kostenstelle ist nicht Pflicht.
-    await d.legeMappeAn({ typId: v.id, werte: { name: 'Haftpflicht' } }, admin.id);
+    await d.mappen.legeMappeAn({ typId: v.id, werte: { name: 'Haftpflicht' } }, admin.id);
   });
 });

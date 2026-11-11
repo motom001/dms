@@ -30,11 +30,11 @@ export function wartungRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) =>
       ok(await dienst.auftraege.angemeldet(dienst.nummernkreise.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email)), 202) },
     // Absender bereinigen (#494): Vorschau, dann nur die gewählten Posts.
-    { methode: 'GET', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async () => ok(await dienst.absenderVorschau()) },
+    { methode: 'GET', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async () => ok(await dienst.mappenTitel.absenderVorschau()) },
     // Angaben, die nicht zum Format passen (#535): je Mappentyp und Feld, mit Sprung zur Mappe.
-    { methode: 'GET', pfad: '/api/werkbank/wartung/formate', zugang: 'admin', handler: async () => ok({ typen: await dienst.unpassendeFormate() }) },
+    { methode: 'GET', pfad: '/api/werkbank/wartung/formate', zugang: 'admin', handler: async () => ok({ typen: await dienst.mappenEingaben.unpassendeFormate() }) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async (a) =>
-      ok(await dienst.absenderBereinigen((a.body as { ids?: unknown })?.ids, { id: ich(a).id, email: ich(a).email })) },
+      ok(await dienst.mappenTitel.absenderBereinigen((a.body as { ids?: unknown })?.ids, { id: ich(a).id, email: ich(a).email })) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
     // „Volltext neu erzeugen“ (#458): erst die Anzahl für die Rückfrage, dann als Auftrag mit Fortschritt (abbrechbar).
     { methode: 'GET', pfad: '/api/werkbank/wartung/volltext-neu', zugang: 'admin', handler: async (a) => ok({ ...(await dienst.volltextNeuAnzahl(a.query.umfang)), paket: await dienst.texterkennungPaket() }) },

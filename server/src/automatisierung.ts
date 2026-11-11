@@ -1172,7 +1172,7 @@ export class Automatisierungen {
         let t_ = takt(w.uhrzeit, w.tage, w.feiertage);
         if (w.profilzeit) {
           // Wie bisher die Tägliche Zusammenfassung: Uhrzeit, Wochentage und Feiertage aus dem Profil, sonst die Karte.
-          const z = wirksameZeit((await this.d.dienst.persoenlicheEinstellungen(b.id)).aufgaben_mail_zeit, { aktiv: true, uhrzeit: w.uhrzeit, bundesland });
+          const z = wirksameZeit((await this.d.dienst.mappen.persoenlicheEinstellungen(b.id)).aufgaben_mail_zeit, { aktiv: true, uhrzeit: w.uhrzeit, bundesland });
           t_ = takt(z.uhrzeit, z.tage, z.feiertage);
         }
         await laufeFaellige(merker(`zeitplan_zuletzt:${sk}:${b.id}`), ort, t_, async (tag) => {

@@ -114,7 +114,7 @@ async function aufbau(pg: boolean, name: string) {
     await pruefeZugang(r as Route, anfrage, (n) => (n === 'authorization' ? `Bearer ${k}` : undefined), konten, schluessel);
     return r.handler(anfrage);
   };
-  const mappe = await d.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', beginn: '2025-04-01' } }, lena.id);
+  const mappe = await d.mappen.legeMappeAn({ typId, werte: { bezeichnung: 'Strom Wohnung', beginn: '2025-04-01' } }, lena.id);
   return { d, p, konten, lena, jonas, typId, typ, installiere, oberflaeche, api, alsPaket, mappe, repo: r.repo };
 }
 
@@ -180,9 +180,9 @@ for (const pg of [false, true]) {
       await assert.rejects(x.alsPaket('rechnungen', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { status: 'von Rechnungen' } } }), fehler(400, /Verträge/));
       await x.alsPaket('rechnungen', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { bezeichnung: 'Strom Wohnung (Rechnungen)' } } });
       // Wer die ganze Mappe zurückschickt, wie er sie gelesen hat, stört nicht.
-      const m = (await x.d.holeMappe(id)).mappe;
+      const m = (await x.d.mappen.holeMappe(id)).mappe;
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { ...m.werte, bezeichnung: 'Strom' } } });
-      assert.equal((await x.d.holeMappe(id)).mappe.werte.bezeichnung, 'Strom');
+      assert.equal((await x.d.mappen.holeMappe(id)).mappe.werte.bezeichnung, 'Strom');
       // Nichts davon hat einen berechneten Wert gesetzt.
       assert.deepEqual([m.werte.status, m.werte.kuendigen_bis, m.werte.aktiv], [null, null, false]);
     });
@@ -190,20 +190,20 @@ for (const pg of [false, true]) {
     it('das Paket selbst: schon beim Anlegen, beim Ändern – und durch dieselben Prüfungen wie alle (#917, Formular)', async () => {
       const x = await aufbau(pg, 'berechnet_paket');
       const neu = (await x.alsPaket('vertraege', 'POST', '/mappen', { body: { typId: x.typId, werte: { bezeichnung: 'Handy Jonas', status: 'läuft', kuendigen_bis: '2028-02-14', aktiv: true } } })).body as { id: string };
-      assert.deepEqual((await x.d.holeMappe(neu.id)).mappe.werte.status, 'läuft');
+      assert.deepEqual((await x.d.mappen.holeMappe(neu.id)).mappe.werte.status, 'läuft');
       const id = x.mappe.id;
       await x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { status: 'läuft – kündigen bis 14.02.2028' } } });
-      assert.equal((await x.d.holeMappe(id)).mappe.werte.status, 'läuft – kündigen bis 14.02.2028');
+      assert.equal((await x.d.mappen.holeMappe(id)).mappe.werte.status, 'läuft – kündigen bis 14.02.2028');
       // Formularprüfung: Länge, Datum.
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { status: 'x'.repeat(201) } } }), fehler(422));
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { kuendigen_bis: 'morgen' } } }), fehler(422));
       // Gleichzeitig bearbeiten (#609): Mit altem Stand und einem inzwischen geänderten Feld gewinnt der Mensch (409).
-      const stand = (await x.d.holeMappe(id)).mappe.geaendert;
+      const stand = (await x.d.mappen.holeMappe(id)).mappe.geaendert;
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { bezeichnung: 'Strom neu' } } });
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id }, body: { werte: { bezeichnung: 'vom Paket' }, stand } }), fehler(409));
       // Rechte: ein Typ ohne Schreibrecht des Pakets.
       const fremd = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
-      const n = await x.d.legeMappeAn({ typId: fremd.id, werte: { text: 'a' } }, x.lena.id);
+      const n = await x.d.mappen.legeMappeAn({ typId: fremd.id, werte: { text: 'a' } }, x.lena.id);
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id', { params: { id: n.id }, body: { werte: { text: 'b' } } }), (e: unknown) => e instanceof Fachfehler && [403, 404].includes(e.status));
     });
 
@@ -213,7 +213,7 @@ for (const pg of [false, true]) {
       // Automatisierung: Systemkonto über denselben Weg wie die Karte „Feld ändern“.
       const auto = await x.konten.systemkonto?.('automatisierung').catch(() => undefined);
       const z = await x.d.rechtepruefung.zugriff({ id: auto?.id ?? '00000000-0000-4000-8000-0000000000ff', rolle: 'mitglied', art: 'system', systemkonto: 'automatisierung' });
-      await assert.rejects(x.d.aendereMappe(id, { werte: { status: 'von der Automatisierung' } }, auto?.id ?? null, z, { automatisierung: 'Test' }), fehler(400, /Verträge/));
+      await assert.rejects(x.d.mappen.aendereMappe(id, { werte: { status: 'von der Automatisierung' } }, auto?.id ?? null, z, { automatisierung: 'Test' }), fehler(400, /Verträge/));
       // Erkennung und „Aus Dokument ausfüllen“ fragen berechnete Felder nicht an und nehmen keine Vorschläge dafür.
       const t = await x.typ();
       assert.deepEqual(fuellfelder(t).map((f) => f.feld.key).sort(), ['beginn', 'bezeichnung']);
@@ -238,7 +238,7 @@ for (const pg of [false, true]) {
       const z = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
       assert.deepEqual((await x.d.mappentypen.typenFuer(z)).find((y) => y.id === x.typId)!.berechnung, { vertraege: { name: 'Verträge', aktiv: false } });
       assert.equal(berechnungAktiv(undefined, { schluessel: 'vertraege:vertrag' }), false);
-      assert.equal((await x.d.holeMappe(id)).mappe.werte.status, 'läuft');
+      assert.equal((await x.d.mappen.holeMappe(id)).mappe.werte.status, 'läuft');
       await assert.rejects(x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { status: 'anders' } } }), fehler(400));
       // Über die Werkbank lässt sich kein Feld zum berechneten machen – und ohne ausdrückliche Freigabe bleibt es berechnet.
       const t = await x.typ();
@@ -250,7 +250,7 @@ for (const pg of [false, true]) {
       const r2 = await x.oberflaeche(x.lena, 'PUT', '/api/typen/:id', { params: { id: x.typId }, body: { ...t, felder: t.felder.map((f) => (f.key === 'status' ? { ...f, berechnetVon: null } : f)) } });
       assert.deepEqual((r2.body as Mappentyp).felder.filter((f) => f.berechnetVon).map((f) => f.key), ['kuendigen_bis', 'aktiv']);
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { status: 'von Hand' } } });
-      assert.equal((await x.d.holeMappe(id)).mappe.werte.status, 'von Hand');
+      assert.equal((await x.d.mappen.holeMappe(id)).mappe.werte.status, 'von Hand');
     });
 
     it('Update: neu berechnet bzw. nicht mehr berechnet; ein Update rechnet wieder', async () => {
@@ -266,7 +266,7 @@ for (const pg of [false, true]) {
     it('Historie ohne Rauschen: Änderungen des Pakets an berechneten Feldern je Mappe und Tag ein Eintrag', async () => {
       const x = await aufbau(pg, 'berechnet_historie');
       const id = x.mappe.id;
-      const geaendert = async () => (await x.d.historie(id)).filter((h) => h.art === 'geaendert');
+      const geaendert = async () => (await x.d.mappenHistorie.historie(id)).filter((h) => h.art === 'geaendert');
       let gemeldet = 0;
       const ereignis = x.d.kern.ereignis.bind(x.d.kern);
       x.d.kern.ereignis = (async (...a: Parameters<typeof ereignis>) => { if (a[0] === 'mappe.geaendert' && (a[1] as { mappe?: string }).mappe === id) gemeldet++; return ereignis(...a); }) as typeof ereignis;
@@ -307,22 +307,22 @@ for (const pg of [false, true]) {
     it('setzen, lesen mit Paketname, ersetzen, entfernen – ohne Änderung an der Mappe', async () => {
       const x = await aufbau(pg, 'hinweise');
       const id = x.mappe.id;
-      const vorher = (await x.d.holeMappe(id)).mappe.geaendert;
-      const historie = (await x.d.historie(id)).length;
+      const vorher = (await x.d.mappen.holeMappe(id)).mappe.geaendert;
+      const historie = (await x.d.mappenHistorie.historie(id)).length;
       const r = await x.alsPaket('vertraege', 'PUT', '/mappen/:id/hinweise/:schluessel', { params: { id, schluessel: 'summe' }, body: { text: 'Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €.' } });
       assert.deepEqual(Object.fromEntries(Object.entries(r.body as Record<string, unknown>).filter(([k]) => k !== 'gesetzt')), { paket: 'vertraege', paketName: 'Verträge', schluessel: 'summe', text: 'Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €.' });
       // Jede Person, die die Mappe lesen darf, sieht ihn – mit dem Namen des Pakets.
       const lesen = await x.oberflaeche(x.jonas, 'GET', '/api/mappen/:id', { params: { id } });
       assert.deepEqual((lesen.body as { hinweise: Array<{ paketName: string; text: string }> }).hinweise.map((h) => [h.paketName, h.text]), [['Verträge', 'Die Positionen ergeben 118,40 €, die Rechnung sagt 120,80 €.']]);
       // Mappe unverändert: kein „zuletzt geändert“, kein Historieneintrag.
-      assert.equal((await x.d.holeMappe(id)).mappe.geaendert, vorher);
-      assert.equal((await x.d.historie(id)).length, historie);
+      assert.equal((await x.d.mappen.holeMappe(id)).mappe.geaendert, vorher);
+      assert.equal((await x.d.mappenHistorie.historie(id)).length, historie);
       // Ersetzen unter demselben Schlüssel; Speichern hindert er nie.
       await x.alsPaket('vertraege', 'PUT', '/mappen/:id/hinweise/:schluessel', { params: { id, schluessel: 'summe' }, body: { text: 'Zeile\nzwei  ' } });
-      assert.deepEqual((await x.d.holeMappe(id)).hinweise.map((h) => h.text), ['Zeile zwei']);
+      assert.deepEqual((await x.d.mappen.holeMappe(id)).hinweise.map((h) => h.text), ['Zeile zwei']);
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id }, body: { werte: { bezeichnung: 'trotz Hinweis' } } });
       await x.alsPaket('vertraege', 'DELETE', '/mappen/:id/hinweise/:schluessel', { params: { id, schluessel: 'summe' } });
-      assert.deepEqual((await x.d.holeMappe(id)).hinweise, []);
+      assert.deepEqual((await x.d.mappen.holeMappe(id)).hinweise, []);
       await x.alsPaket('vertraege', 'DELETE', '/mappen/:id/hinweise/:schluessel', { params: { id, schluessel: 'summe' } });
     });
 
@@ -348,7 +348,7 @@ for (const pg of [false, true]) {
       await x.installiere(ANDERES);
       await setze('von Rechnungen', 'a', 'rechnungen');
       await x.alsPaket('rechnungen', 'DELETE', '/mappen/:id/hinweise/:schluessel', { params: { id, schluessel: 'b' } });
-      const hinweise = (await x.d.holeMappe(id)).hinweise;
+      const hinweise = (await x.d.mappen.holeMappe(id)).hinweise;
       assert.deepEqual(hinweise.map((h) => `${h.paketName}:${h.schluessel}=${h.text}`).sort(), ['Rechnungen:a=von Rechnungen', 'Verträge:a=a ersetzt', 'Verträge:b=Hinweis b', 'Verträge:c=Hinweis c']);
       // Menschen und Schlüssel von Personen setzen keine Hinweise.
       await assert.rejects(x.api(x.lena, 'PUT', '/mappen/:id/hinweise/:schluessel', { params: { id, schluessel: 'a' }, body: { text: 'von Lena' } }), fehler(403));
@@ -359,12 +359,12 @@ for (const pg of [false, true]) {
       await assert.rejects(setze('ohne Recht', 'a', 'rechnen'), fehler(403, /dms:hinweise/));
       // Nur an Mappen, die das Paket schreiben darf.
       const fremd = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
-      const n = await x.d.legeMappeAn({ typId: fremd.id, werte: { text: 'a' } }, x.lena.id);
+      const n = await x.d.mappen.legeMappeAn({ typId: fremd.id, werte: { text: 'a' } }, x.lena.id);
       await assert.rejects(x.alsPaket('vertraege', 'PUT', '/mappen/:id/hinweise/:schluessel', { params: { id: n.id, schluessel: 'a' }, body: { text: 'nicht hier' } }), (e: unknown) => e instanceof Fachfehler && [403, 404].includes(e.status));
       // Mit dem Paket gehen seine Hinweise.
       await x.p.entferne('rechnen', ICH);
       await x.p.entferne('rechnungen', ICH);
-      assert.deepEqual((await x.d.holeMappe(id)).hinweise.map((h) => h.paket), ['vertraege', 'vertraege', 'vertraege']);
+      assert.deepEqual((await x.d.mappen.holeMappe(id)).hinweise.map((h) => h.paket), ['vertraege', 'vertraege', 'vertraege']);
       assert.deepEqual(await x.repo.hinweise(id).then((l) => l.filter((h) => h.paket === 'rechnungen')), []);
     });
   });

@@ -208,8 +208,8 @@ for (const pg of [false, true]) {
       const wir = ((await verwaltend(katrin, 'POST', '/api/mappen', { body: { typId: inst.typen.organisation, werte: {
         name: 'Tischlerei Brandt', eigene_organisation: true, kundennummer: 'EIGEN-1', strasse: 'Hauptstraße', hausnummer: '5', plz: '01067', ort: 'Dresden', email: 'info@example.org',
       } } })).body as { id: string }).id;
-      const anbieter = (await d.legeMappeAn({ typId: inst.typen.organisation, werte: { name: 'Stadtwerke Musterstadt', kundennummer: 'K-4711', kennwort: 'streng-geheim', strasse: 'Am Werk', hausnummer: '1', plz: '12345', ort: 'Musterstadt' } }, katrin.id)).id;
-      const vertrag = (await d.legeMappeAn({ typId: inst.typen.vertrag, werte: {
+      const anbieter = (await d.mappen.legeMappeAn({ typId: inst.typen.organisation, werte: { name: 'Stadtwerke Musterstadt', kundennummer: 'K-4711', kennwort: 'streng-geheim', strasse: 'Am Werk', hausnummer: '1', plz: '12345', ort: 'Musterstadt' } }, katrin.id)).id;
+      const vertrag = (await d.mappen.legeMappeAn({ typId: inst.typen.vertrag, werte: {
         bezeichnung: 'Wohnung **Lena**', von: anbieter, art: miete.id, vertragsnummer: 'V-{art}-42', kuendigen_bis: '2026-12-31', betrag: { betrag: 650, waehrung: 'EUR' },
         zugang: { neu: 'auch-geheim' }, notiz: '- erste Zeile\n[Link](https://example.org)',
       } }, katrin.id)).id;
@@ -325,8 +325,8 @@ for (const pg of [false, true]) {
 
     it('Briefkopf aus der Person im Feld „an“; ohne eigene Organisation und ohne „an“ kein Briefkopf', async () => {
       const x = await aufbau('textsatz_an');
-      const lena = (await x.d.legeMappeAn({ typId: x.inst.typen.person, werte: { vorname: 'Lena', nachname: 'Beispiel', strasse: 'Lindenweg', hausnummer: '3', plz: '01099', ort: 'Dresden' } }, x.katrin.id)).id;
-      await x.d.aendereMappe(x.vertrag, { werte: { an: lena } }, x.katrin.id);
+      const lena = (await x.d.mappen.legeMappeAn({ typId: x.inst.typen.person, werte: { vorname: 'Lena', nachname: 'Beispiel', strasse: 'Lindenweg', hausnummer: '3', plz: '01099', ort: 'Dresden' } }, x.katrin.id)).id;
+      await x.d.mappen.aendereMappe(x.vertrag, { werte: { an: lena } }, x.katrin.id);
       const v = ((await x.als(x.katrin, 'GET', '/api/mappen/:id/vorlagen', { params: { id: x.vertrag } })).body as VorlagenListe).vorlagen[0];
       assert.equal(v.absender, 'Lena Beispiel');
       const e = (await x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId } })).body as TextGesetzt;
@@ -336,7 +336,7 @@ for (const pg of [false, true]) {
 
     it('Grenze: mehr Seiten als erlaubt ergibt 413', async () => {
       const x = await aufbau('textsatz_grenze');
-      await x.d.aendereMappe(x.vertrag, { werte: { notiz: 'Zeile mit etwas Text, der den Brief lang macht.\n'.repeat(TEXTSATZ_SEITEN * 60) } }, x.katrin.id);
+      await x.d.mappen.aendereMappe(x.vertrag, { werte: { notiz: 'Zeile mit etwas Text, der den Brief lang macht.\n'.repeat(TEXTSATZ_SEITEN * 60) } }, x.katrin.id);
       const v = ((await x.als(x.katrin, 'GET', '/api/mappen/:id/vorlagen', { params: { id: x.vertrag } })).body as VorlagenListe).vorlagen[0];
       await assert.rejects(x.als(x.katrin, 'POST', '/api/mappen/:id/vorlagen/:dokument/setzen', { params: { id: x.vertrag, dokument: v.dokumentId } }), fehler(413, new RegExp(`${TEXTSATZ_SEITEN} Seiten`)));
     });

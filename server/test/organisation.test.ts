@@ -251,22 +251,22 @@ for (const pg of [false, true]) {
       const fremd = (await x.oberflaeche(x.jonas, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Stadtwerke Musterstadt', eigene_organisation: false } } })).body as { id: string };
       // Markus (nur Bereich „Eigene Organisation“) im Verwaltungsmodus: ja.
       const wir = (await x.verwaltend(x.markus, 'POST', '/api/mappen', neu)).body as { id: string };
-      assert.equal((await x.d.holeMappe(wir.id)).mappe.werte.eigene_organisation, true);
+      assert.equal((await x.d.mappen.holeMappe(wir.id)).mappe.werte.eigene_organisation, true);
       // Jonas darf die Mappe bearbeiten, aber das Merkmal nicht ändern – Oberfläche und API v1; andere Felder gehen.
       await assert.rejects(x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: wir.id }, body: { werte: { eigene_organisation: false } } }), fehler(403));
       await assert.rejects(x.api(x.jonas, 'PUT', '/mappen/:id', { params: { id: fremd.id }, body: { werte: { eigene_organisation: true } } }), fehler(403));
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: wir.id }, body: { werte: { eigene_organisation: true, telefon: '0123 4567' } } });
       // Das Formular erfährt, was gesperrt ist.
       const z = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
-      assert.deepEqual((await x.d.holeMappe(wir.id, z)).schreibschutz, ['eigene_organisation']);
+      assert.deepEqual((await x.d.mappen.holeMappe(wir.id, z)).schreibschutz, ['eigene_organisation']);
       const zm = await x.d.rechtepruefung.zugriff({ ...(await x.konten.listeBenutzer()).find((b) => b.id === x.markus.id)!, rolle: 'admin' });
-      assert.deepEqual((await x.d.holeMappe(wir.id, zm)).schreibschutz, []);
+      assert.deepEqual((await x.d.mappen.holeMappe(wir.id, zm)).schreibschutz, []);
       // Freigegebene Rolle (Werkbank): Jonas bekommt eine Rolle „Büro“, die das Merkmal setzen darf.
-      const buero = (await x.d.legeMappeAn({ typId: (await x.d.kern.system()).rolle.id, werte: { name: 'Büro' } }, x.katrin.id)).id;
+      const buero = (await x.d.mappen.legeMappeAn({ typId: (await x.d.kern.system()).rolle.id, werte: { name: 'Büro' } }, x.katrin.id)).id;
       await x.d.setzeRollen(x.jonas.id, [buero], x.katrin.id);
       await x.verwaltend(x.markus, 'PUT', '/api/werkbank/organisation', { body: { rollen: [buero] } });
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: fremd.id }, body: { werte: { eigene_organisation: true } } });
-      assert.equal((await x.d.holeMappe(fremd.id)).mappe.werte.eigene_organisation, true);
+      assert.equal((await x.d.mappen.holeMappe(fremd.id)).mappe.werte.eigene_organisation, true);
       // Rollen nur aus der Liste der Rollen.
       await assert.rejects(x.verwaltend(x.markus, 'PUT', '/api/werkbank/organisation', { body: { rollen: [fremd.id] } }), fehler(422));
       // Die Routen gehören zum Bereich „Eigene Organisation“.
@@ -275,7 +275,7 @@ for (const pg of [false, true]) {
 
     it('Werkbank liest nur die feste Liste – auch ohne Leserecht; die Mappe selbst bleibt verschlossen', async () => {
       const x = await aufbau(pg, 'org_lesen');
-      const dsb = (await x.d.legeMappeAn({ typId: x.person, werte: { vorname: 'Petra', nachname: 'Muster', email: 'dsb@example.org', geburtstag: '1980-02-03', notiz: 'nur intern' } }, x.katrin.id)).id;
+      const dsb = (await x.d.mappen.legeMappeAn({ typId: x.person, werte: { vorname: 'Petra', nachname: 'Muster', email: 'dsb@example.org', geburtstag: '1980-02-03', notiz: 'nur intern' } }, x.katrin.id)).id;
       const wir = (await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: {
         name: 'Tischlerei Brandt', kuerzel: 'TB', eigene_organisation: true, kundennummer: 'K-1', iban: 'DE02120300000000202051', beschreibung: 'intern',
         telefon: '0123 4567', email: 'info@example.org', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt', datenschutzbeauftragter: dsb,
@@ -316,7 +316,7 @@ for (const pg of [false, true]) {
     it('Notiz an die Verwaltung bei Merkmal und Verantwortlichem; Mail an den Bereich; zur Kenntnis nehmen', async () => {
       const x = await aufbau(pg, 'org_notiz');
       const wir = (await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Tischlerei Brandt', eigene_organisation: true } } })).body as { id: string };
-      const katrin = (await x.d.legeMappeAn({ typId: x.person, werte: { vorname: 'Katrin', nachname: 'Brandt' } }, x.katrin.id)).id;
+      const katrin = (await x.d.mappen.legeMappeAn({ typId: x.person, werte: { vorname: 'Katrin', nachname: 'Brandt' } }, x.katrin.id)).id;
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: wir.id }, body: { werte: { verantwortlicher: katrin } } });
       // Andere Felder einer eigenen Organisation und fremde Organisationen geben keine Notiz.
       await x.oberflaeche(x.jonas, 'PUT', '/api/mappen/:id', { params: { id: wir.id }, body: { werte: { telefon: '0123' } } });
@@ -333,7 +333,7 @@ for (const pg of [false, true]) {
     it('Erkennung: die eigene Organisation ist nie Absender eingehender Post', async () => {
       const x = await aufbau(pg, 'org_erkennung');
       await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Tischlerei Brandt', eigene_organisation: true, email: 'info@tischlerei.example.org', telefon: '0123 45678' } } });
-      const sw = (await x.d.legeMappeAn({ typId: x.org, werte: { name: 'Stadtwerke Musterstadt', email: 'kunden@stadtwerke.example.org' } }, x.katrin.id)).id;
+      const sw = (await x.d.mappen.legeMappeAn({ typId: x.org, werte: { name: 'Stadtwerke Musterstadt', email: 'kunden@stadtwerke.example.org' } }, x.katrin.id)).id;
       const p = await x.d.legePostAn({ betreff: 'Ihre Rechnung', nachricht: 'An Tischlerei Brandt, info@tischlerei.example.org, Tel. 0123 45678. Stadtwerke Musterstadt, kunden@stadtwerke.example.org' }, { id: x.katrin.id, name: 'Katrin' }, await x.d.rechtepruefung.zugriff({ id: x.katrin.id, rolle: 'mitglied' }));
       const e = await x.d.erkennung.fuerPost(p.id);
       assert.deepEqual(e?.absender.map((a) => a.mappeId), [sw]);
@@ -342,11 +342,11 @@ for (const pg of [false, true]) {
     it('Anzeige-Bedingung im Kern: Pflicht im Abschnitt „Ausgangsrechnung“ nur, wenn „Von“ eine eigene Organisation ist', async () => {
       const x = await aufbau(pg, 'org_anzeige');
       const wir = ((await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Tischlerei Brandt', eigene_organisation: true } } })).body as { id: string }).id;
-      const sw = (await x.d.legeMappeAn({ typId: x.org, werte: { name: 'Stadtwerke Musterstadt' } }, x.katrin.id)).id;
+      const sw = (await x.d.mappen.legeMappeAn({ typId: x.org, werte: { name: 'Stadtwerke Musterstadt' } }, x.katrin.id)).id;
       // Eingangsrechnung: Abschnitt ausgeblendet, Zahlungseingang nicht Pflicht.
-      await x.d.legeMappeAn({ typId: x.rechnung, werte: { nummer: 'E-1', von: sw } }, x.katrin.id);
+      await x.d.mappen.legeMappeAn({ typId: x.rechnung, werte: { nummer: 'E-1', von: sw } }, x.katrin.id);
       // Ausgangsrechnung: Abschnitt zu sehen – Zahlungseingang ist Pflicht.
-      await assert.rejects(x.d.legeMappeAn({ typId: x.rechnung, werte: { nummer: 'A-1', von: wir } }, x.katrin.id), fehler(422, /Zahlungseingang/));
+      await assert.rejects(x.d.mappen.legeMappeAn({ typId: x.rechnung, werte: { nummer: 'A-1', von: wir } }, x.katrin.id), fehler(422, /Zahlungseingang/));
       const st = (await x.verwaltend(x.katrin, 'GET', '/api/werkbank/organisation')).body as { verwendungen: Array<{ art: string; typ?: string }> };
       assert.ok(st.verwendungen.some((v) => v.art === 'anzeige' && v.typ === 'Rechnung'));
       // Die Ablage bekommt die Ids für das Formular.
@@ -360,7 +360,7 @@ for (const pg of [false, true]) {
       const s = (await x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/uebernehmen')).body as { organisationen: EigeneOrganisation[]; bisher: string };
       assert.equal(s.bisher, '');
       assert.deepEqual(s.organisationen.map((o) => [o.angaben, o.verantwortlicher]), [[{ name: 'Tischlerei Brandt', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt' }, { selbst: true }]]);
-      assert.equal((await x.d.holeMappe(s.organisationen[0].mappeId)).mappe.werte.verantwortlicher, s.organisationen[0].mappeId);
+      assert.equal((await x.d.mappen.holeMappe(s.organisationen[0].mappeId)).mappe.werte.verantwortlicher, s.organisationen[0].mappeId);
       await assert.rejects(x.verwaltend(x.katrin, 'POST', '/api/werkbank/organisation/uebernehmen'), fehler(409));
     });
 
@@ -374,7 +374,7 @@ for (const pg of [false, true]) {
         body: { name: ' Katrin  Beispiel Grafikdesign ', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt', email: 'katrin@example.org', telefon: '', iban: 'DE00', kennwort: 'geheim' },
       })).body as { organisationen: EigeneOrganisation[] };
       assert.deepEqual(s.organisationen.map((o) => [o.angaben, o.verantwortlicher]), [[{ name: 'Katrin Beispiel Grafikdesign', strasse: 'Hauptstraße', hausnummer: '5', plz: '12345', ort: 'Musterstadt', email: 'katrin@example.org' }, { selbst: true }]]);
-      const m = (await x.d.holeMappe(s.organisationen[0].mappeId)).mappe;
+      const m = (await x.d.mappen.holeMappe(s.organisationen[0].mappeId)).mappe;
       assert.equal(m.werte.eigene_organisation, true);
       assert.equal(m.werte.verantwortlicher, m.id);
       assert.ok(!m.werte.iban && !m.werte.kennwort, 'nur die feste Liste – sonst nichts');

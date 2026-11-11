@@ -2086,7 +2086,7 @@ export class Paketverwaltung {
       for (const f of t.felder) {
         const alt = f.ausText ? typ?.felder.find((x) => x.key === f.ausText && (x.typ === 'text' || x.typ === 'langtext')) : undefined;
         if (!typ || !alt) continue;
-        const anzahl = (await this.d.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]) && istLeer(m.werte[f.key])).length;
+        const anzahl = (await this.d.mappen.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]) && istLeer(m.werte[f.key])).length;
         erg.push({ feld: typ.felder.find((x) => x.key === f.key)?.label ?? f.label, aus: alt.label, anzahl });
       }
       return erg;
@@ -2290,7 +2290,7 @@ export class Paketverwaltung {
     const ids = eigen ? verweise.map(x.typId).filter((y): y is string => !!y) : zieleVon(fremd!);
     const index = new Map<string, string[]>();
     const dazu = (titel: string, id: string) => { const k = titelKennung(titel); index.set(k, [...new Set([...(index.get(k) ?? []), id])]); };
-    for (const id of ids) for (const mp of await this.d.listeMappen(id)) if (mp.titel) dazu(mp.titel, mp.id);
+    for (const id of ids) for (const mp of await this.d.mappen.listeMappen(id)) if (mp.titel) dazu(mp.titel, mp.id);
     // Vorgaben, die erst mit dieser Installation kommen (#1038) – z. B. die Vertragsart „Strom“.
     for (const v of x.paket.vorgaben ?? []) {
       const plan = x.vorgaben.find((y) => y.schluessel === v.schluessel && !y.fremd);
@@ -2791,7 +2791,7 @@ export class Paketverwaltung {
             else werte[k] = w;
           }
           let mappeId: string;
-          try { mappeId = (await this.d.kern.ohneEreignisse(() => this.d.legeMappeAn({ typId, werte }, von.id))).id; } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: meldungen(f) })); }
+          try { mappeId = (await this.d.kern.ohneEreignisse(() => this.d.mappen.legeMappeAn({ typId, werte }, von.id))).id; } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: meldungen(f) })); }
           mappen.push(mappeId);
           if (b.schluessel) beispielIds.set(b.schluessel, mappeId);
           // Beispiel-Dokumente (#878): wie beim Hochladen (Größe, Art, Vorschau, Volltext, Archivfassung), ohne

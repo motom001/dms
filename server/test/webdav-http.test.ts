@@ -49,7 +49,7 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
     const typ = await dienst.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
       { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     ] } as never);
-    const m = await dienst.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, anna.id);
+    const m = await dienst.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, anna.id);
     mappeId = m.id;
     await dienst.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf' }, PDF, anna.id);
     wd = new Webdav({ dienst, konten, schluessel, einstellungen: speicherEinstellungen(), adresse: () => 'https://dms.example.org' });

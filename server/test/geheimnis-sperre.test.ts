@@ -132,7 +132,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     const einrichtung = new Einrichtung({ konten, code: null, einstellungen, mandant: { name: async () => 'Familie Brandt', umbenennen: async () => {} } });
 
     const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' }] });
-    const mappe = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Portal', pw: G.passwortfeld } }, lena.id);
+    const mappe = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Portal', pw: G.passwortfeld } }, lena.id);
     ids.typ = typ.id; ids.mappe = mappe.id; ids.benutzer = lena.id;
 
     const { baueApp } = await import('../src/http');

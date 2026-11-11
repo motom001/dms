@@ -47,8 +47,8 @@ async function aufbau(repo: Repo = speicherRepo()) {
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
   const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'titel', label: 'Titel', typ: 'text', erkennung: {} }], register });
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text', erkennung: {} }, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: gesundheit.id }], register });
-  const befund = await d.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie' } }, lena.id);
-  const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Stromvertrag', bezug: befund.id } }, lena.id);
+  const befund = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { titel: 'Befund Knie' } }, lena.id);
+  const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Stromvertrag', bezug: befund.id } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
     const x = (await d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
@@ -118,8 +118,8 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     await x.d.ki.setzeKiTyp(x.vertrag.id, true, null);
     await x.d.schreibeVolltext(x.kniebrief, { text: 'Neu: Knie operiert.' }, { id: x.lena.id, herkunft: 'Test', paket: false });
     await x.d.schreibeVolltext(x.stromrechnung, { text: 'Neu: Abschlag 85 Euro.' }, { id: x.lena.id, herkunft: 'Test', paket: false });
-    await x.d.legeMappeAn({ typId: x.gesundheit.id, werte: { titel: 'Zahnarzt' } }, x.lena.id);
-    const neuerVertrag = await x.d.legeMappeAn({ typId: x.vertrag.id, werte: { titel: 'Handy' } }, x.lena.id);
+    await x.d.mappen.legeMappeAn({ typId: x.gesundheit.id, werte: { titel: 'Zahnarzt' } }, x.lena.id);
+    const neuerVertrag = await x.d.mappen.legeMappeAn({ typId: x.vertrag.id, werte: { titel: 'Handy' } }, x.lena.id);
     await spaeter(10_000, () => x.d.ereignisse.verteile());
     const alle = await spaeter(30 * 60_000, () => x.repo.faelligeEreignisse(200));
     const wolke = alle.filter((e) => e.paketId === 'wolke');

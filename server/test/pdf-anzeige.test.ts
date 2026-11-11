@@ -86,7 +86,7 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
     const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
     ] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'B-1' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'B-1' } });
     const original = await boesesPdf();
     const id = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, original, null)).dokument.id;
     const tabelle = routen(d, konten, {});

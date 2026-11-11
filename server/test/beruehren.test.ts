@@ -15,16 +15,16 @@ describe('Zuletzt geändert (#76)', () => {
     const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr} ({geaendert})', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
       { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
     ] });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: 'B-1' } }, A);
-    await d.legeNotizAn(m.id, 'nur eine Notiz', B);
-    assert.equal((await d.holeMappe(m.id)).mappe.geaendertVon, A, 'Notiz ändert nichts');
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'B-1' } }, A);
+    await d.mappenNotizen.legeNotizAn(m.id, 'nur eine Notiz', B);
+    assert.equal((await d.mappen.holeMappe(m.id)).mappe.geaendertVon, A, 'Notiz ändert nichts');
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), B);
-    let x = (await d.holeMappe(m.id)).mappe;
+    let x = (await d.mappen.holeMappe(m.id)).mappe;
     assert.equal(x.geaendertVon, B);
     assert.ok(x.geaendert >= m.geaendert);
     assert.match(x.titel ?? '', /^B-1 \(\d\d\.\d\d\.\d{4}\)$/, 'Titel mit {geaendert} nachgezogen');
     await d.loescheDokument(dokument.id, A);
-    x = (await d.holeMappe(m.id)).mappe;
+    x = (await d.mappen.holeMappe(m.id)).mappe;
     assert.equal(x.geaendertVon, A);
   });
 });
@@ -34,15 +34,15 @@ describe('Löschen vorab prüfen (#79)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const p = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
     const v = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }] });
-    const pm = await d.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, A);
-    assert.deepEqual((await d.holeMappe(pm.id)).loeschbar, { ok: true });
-    const vm = await d.legeMappeAn({ typId: v.id, werte: { nr: 'V-1', partner: pm.id } }, A);
-    const l = (await d.holeMappe(pm.id)).loeschbar;
+    const pm = await d.mappen.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, A);
+    assert.deepEqual((await d.mappen.holeMappe(pm.id)).loeschbar, { ok: true });
+    const vm = await d.mappen.legeMappeAn({ typId: v.id, werte: { nr: 'V-1', partner: pm.id } }, A);
+    const l = (await d.mappen.holeMappe(pm.id)).loeschbar;
     assert.equal(l.ok, false);
     assert.match(l.grund ?? '', /verweist noch eine andere Mappe/);
     assert.deepEqual(l.rueckverweise?.map((r) => r.quelleId), [vm.id]);
     await assert.rejects(d.loescheMappe(pm.id, A));
     await d.loescheMappe(vm.id, A);
-    assert.deepEqual((await d.holeMappe(pm.id)).loeschbar, { ok: true });
+    assert.deepEqual((await d.mappen.holeMappe(pm.id)).loeschbar, { ok: true });
   });
 });

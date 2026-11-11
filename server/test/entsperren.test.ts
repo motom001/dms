@@ -90,7 +90,7 @@ async function aufbau() {
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr?.stand ?? 'wartet'));
     return { m, id };
   };
-  const inMappe = async (mappeId: string, id: string) => (await d.holeMappe(mappeId)).dokumente.find((x) => x.id === id)!;
+  const inMappe = async (mappeId: string, id: string) => (await d.mappen.holeMappe(mappeId)).dokumente.find((x) => x.id === id)!;
   return { d, e, t, repo, dateien, einstellungen, ablage, vorschau, erzeugt, lena, jonas, ablegen, inMappe, schluessel };
 }
 

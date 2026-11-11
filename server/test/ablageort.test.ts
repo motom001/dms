@@ -59,23 +59,23 @@ describe('Ablageort (#168): der frühere aus einer älteren Ablage', () => {
   it('zeigt den Pfad im Titel und zieht ihn beim Umzug nach – bis zu den Mappen darin', async () => {
     const { d, einstellungen } = neu();
     const a = await frueherAblageort(d, einstellungen);
-    const ort = async (name: string, liegtIn?: string) => (await d.legeMappeAn({ typId: a.id, werte: { name, ...(liegtIn ? { liegt_in: liegtIn } : {}) } })).id;
+    const ort = async (name: string, liegtIn?: string) => (await d.mappen.legeMappeAn({ typId: a.id, werte: { name, ...(liegtIn ? { liegt_in: liegtIn } : {}) } })).id;
     const haus = await ort('zu Hause');
     const schrank = await ort('Arbeitszimmer Schrank', haus);
     const ordner = await ort('roter Ordner', schrank);
-    const titel = async (id: string) => (await d.holeMappe(id)).mappe.titel;
+    const titel = async (id: string) => (await d.mappen.holeMappe(id)).mappe.titel;
     assert.equal(await titel(haus), 'zu Hause', 'ganz oben ohne Trenner');
     assert.equal(await titel(ordner), 'zu Hause › Arbeitszimmer Schrank › roter Ordner');
     const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{bezeichnung} ({verbleib_original})', felder: [
       { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true },
       { key: 'verbleib_original', label: 'Verbleib Originaldokumente', typ: 'referenz', zielTyp: a.id, verweisart: 'bezug' },
     ] });
-    const v = await d.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Strom', verbleib_original: ordner } });
+    const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Strom', verbleib_original: ordner } });
     assert.equal(await titel(v.id), 'Strom (zu Hause › Arbeitszimmer Schrank › roter Ordner)');
     // Umzug: Der Schrank steht jetzt im Wohnzimmer – nur „Liegt in“ am Schrank ändert sich.
     const wohnzimmer = await ort('Wohnzimmer', haus);
-    const s = (await d.holeMappe(schrank)).mappe;
-    await d.aendereMappe(schrank, { werte: { ...s.werte, liegt_in: wohnzimmer } });
+    const s = (await d.mappen.holeMappe(schrank)).mappe;
+    await d.mappen.aendereMappe(schrank, { werte: { ...s.werte, liegt_in: wohnzimmer } });
     assert.equal(await titel(ordner), 'zu Hause › Wohnzimmer › Arbeitszimmer Schrank › roter Ordner');
     assert.equal(await titel(v.id), 'Strom (zu Hause › Wohnzimmer › Arbeitszimmer Schrank › roter Ordner)');
   });
@@ -92,7 +92,7 @@ describe('Ablageort (#168): der frühere aus einer älteren Ablage', () => {
       assert.equal(f.zielTypen?.[0], a.id);
     }
     assert.ok(!typen.find((x) => x.name === 'Vertragspartner')!.felder.some((f) => f.key === 'verbleib_original'));
-    const orte = await d.listeMappen(a.id);
+    const orte = await d.mappen.listeMappen(a.id);
     assert.ok(orte.some((m) => m.titel === 'zu Hause › Arbeitszimmer Schrank › roter Ordner'));
     assert.ok(orte.some((m) => m.titel === 'vernichtet'));
     assert.ok((await d.listeSichten()).some((s) => s.name === 'Originale nach Ort'));

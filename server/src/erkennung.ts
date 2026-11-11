@@ -553,10 +553,10 @@ export class Erkennung {
     // Lieferschein und Rechnung (#1043): Eine Mappe des Zieltyps, in deren Dokumenten die Nummer dieses Belegs steht.
     await this.nenntNummer(typ, vorschlaege, bezuege, erlaubt, z);
     // Folgt aus (#886): Felder, die aus einem vorgeschlagenen Verweis folgen, bekommen ihren Vorschlag dazu.
-    await this.d.folgeVorschlaege(typ, { vorschlaege, bezuege, neu }, z);
+    await this.d.mappenEingaben.folgeVorschlaege(typ, { vorschlaege, bezuege, neu }, z);
     // Beim Auswählen übernehmen (#1037): Werte aus vorgeschlagenen Mappen, mit den Rechten der Person – erst hier, nach
     // einer Erkennung per Paket, damit sie nie an ein KI-Paket gehen (#796).
-    await this.d.vorbelegenVorschlaege(typ, { vorschlaege, bezuege, neu }, erlaubt, mappe, z);
+    await this.d.mappenEingaben.vorbelegenVorschlaege(typ, { vorschlaege, bezuege, neu }, erlaubt, mappe, z);
     if (verworfen.length) log.warn('Vorschläge der Erkennung verworfen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; ') });
     // Fundstellen (#939): Seite und Rahmen aus der Textebene bzw. Texterkennung; nicht gefunden = Wert ohne Rahmen.
     if (dokIds.length && Object.keys(vorschlaege).length) await this.stellen(typ, vorschlaege, dokIds);

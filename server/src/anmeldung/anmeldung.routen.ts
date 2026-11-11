@@ -47,7 +47,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       // #416: ausstehend = vorgeschrieben, aber diese Sitzung lief schon vorher – Hinweis statt Sperre.
       zweifaktor: a.benutzer && konten.zweifaktor ? await zweifaktorStatus(konten.zweifaktor, a.benutzer, a.sitzungsDaten) : null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
-      passwoerterMoeglich: dienst.passwoerterMoeglich,
+      passwoerterMoeglich: dienst.passwortfelder.passwoerterMoeglich,
       // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
       marke: x.designs ? await x.designs.marke() : null,
       // Zeitzone der Region (#726): die Oberfläche rechnet „heute“ und Uhrzeiten wie der Server.

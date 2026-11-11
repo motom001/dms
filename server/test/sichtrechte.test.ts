@@ -42,10 +42,10 @@ async function aufbau(pg = false) {
   const eltern = await neu('Eltern'); const kind = await neu('Kind');
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
-  const kinderRolle = (await d.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Kinder' } }, admin.id)).id;
+  const kinderRolle = (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Kinder' } }, admin.id)).id;
   await d.setzeRollen(kind.id, [kinderRolle]);
   const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], sichtAnlegen: false });
-  for (const nr of ['H', 'G']) await d.legeMappeAn({ typId: rechnung.id, werte: { nr } }, admin.id);
+  for (const nr of ['H', 'G']) await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr } }, admin.id);
   const nrIst = (nr: string) => [{ art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: nr } }];
   const haus = await d.legeSichtAn({ name: 'Haus', typen: [] });
   const heizung = await d.legeSichtAn({ name: 'Heizung', elternId: haus.id, typen: [rechnung.id], bedingungen: nrIst('H') });

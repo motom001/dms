@@ -127,8 +127,8 @@ async function ablage(db?: { repo: Repo; konto: KontoRepo }) {
   const register = [{ key: 'allgemein', name: 'Allgemein', art: 'felder' as const }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' as const }];
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'ende', label: 'Läuft aus am', typ: 'datum' }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' }], register });
   const notiz = await d.mappentypen.legeTypAn({ name: 'Unterlage', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }], register });
-  const kfz = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kfz-Versicherung', ende: '2026-12-31' } }, lena.id);
-  const garten = await d.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
+  const kfz = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kfz-Versicherung', ende: '2026-12-31' } }, lena.id);
+  const garten = await d.mappen.legeMappeAn({ typId: notiz.id, werte: { titel: 'Gartenhaus' } }, lena.id);
   const dok = async (m: string, name: string, text: string) => {
     const x = (await d.ladeHoch(m, { register: 'dokumente', name, typ: 'application/pdf' }, Buffer.from(`%PDF-1.4 ${name}`), lena.id)).dokument;
     await d.schreibeVolltext(x.id, { text }, { id: lena.id, herkunft: 'Test', paket: false });
@@ -167,7 +167,7 @@ for (const pg of [false, true]) {
 
     it('Ausschnitte nur aus lesbaren Mappen; Angaben ohne Passwortfelder; Höchstmenge greift', async () => {
       const x = await aufbau();
-      await x.d.aendereMappe(x.kfz.id, { werte: { kennwort: { neu: 'geheim-123' } } }, x.lena.id).catch(() => {});
+      await x.d.mappen.aendereMappe(x.kfz.id, { werte: { kennwort: { neu: 'geheim-123' } } }, x.lena.id).catch(() => {});
       const fuerLena = await x.d.fragen.ausschnitte(x.L, 'Wann läuft die Kfz-Versicherung aus?', [], FRAGEN_STANDARD);
       assert.ok(fuerLena.some((a) => a.quelle.art === 'dokument' && a.quelle.id === x.police && /31\.12\.2026/.test(a.text)), JSON.stringify(fuerLena));
       const angaben = fuerLena.find((a) => a.quelle.art === 'angaben' && a.mappe.id === x.kfz.id)!;

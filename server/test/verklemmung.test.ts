@@ -58,7 +58,7 @@ const neueVersuche = (seit: number) => protokoll.eintraege({ seit, suche: 'neuer
 describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('viele gleichzeitige Mappen und Ergebnisse der Texterkennung: keine Verklemmung, alle Dokumente mit Volltext', async () => {
     const { r, d, sql, typ } = await aufbau();
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Stapel' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Stapel' } });
     const dokumente: string[] = [];
     for (let i = 0; i < 40; i++) dokumente.push((await d.ladeHoch(m.id, { register: 'dokumente', name: `s${i}.txt`, typ: 'text/plain' }, Buffer.from(`s${i}`), null)).dokument.id);
     const seit = protokoll.letzteNr;
@@ -69,7 +69,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
     for (let i = 0; i < 20; i++) {
       arbeit.push(r.legeMappenAn(Array.from({ length: 20 }, () => ({ id: randomUUID(), typId: typ.id, werte: { titel: text(3), text: text(30) }, titel: text(3), benutzerId: null, demo: true, verweise: [] })))
         .catch((e) => { fehler.push(`Mappen: ${(e as Error).message}`); }));
-      arbeit.push(d.legeMappeAn({ typId: typ.id, werte: { titel: text(3), text: text(30) } }).catch((e) => { fehler.push(`Mappe: ${(e as Error).message}`); }));
+      arbeit.push(d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: text(3), text: text(30) } }).catch((e) => { fehler.push(`Mappe: ${(e as Error).message}`); }));
     }
     await Promise.all(arbeit);
     assert.deepEqual(fehler, []);
@@ -94,7 +94,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
 
   it('wiederholt das Speichern, wenn die Datenbank es abbricht (Verklemmung, Serialisierungsfehler)', async () => {
     const { r, d, sql, typ } = await aufbau();
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Brief' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Brief' } });
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'b.txt', typ: 'text/plain' }, Buffer.from('b'), null);
     // Erzwungener Abbruch: die ersten beiden Versuche als Verklemmung, der dritte als Serialisierungsfehler.
     // Die Sequenz zählt auch über zurückgerollte Versuche weiter.
@@ -133,7 +133,7 @@ describe('Verklemmung im Wörterverzeichnis (#575)', { skip: !process.env.TEST_D
       BEGIN RAISE EXCEPTION 'erzwungene Verklemmung' USING ERRCODE = 'deadlock_detected'; END $f$;
       CREATE TRIGGER abbruch BEFORE UPDATE OF volltext ON dokumente FOR EACH ROW EXECUTE FUNCTION abbruch();`);
     const seit = protokoll.letzteNr;
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Strom' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Strom' } });
     const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'strom.pdf', typ: 'application/pdf' }, pdfMitText(['Strom']), null);
     await warte(async () => (await r.holeDokument(dokument.id))?.ocr?.stand === 'fehler');
     const dok = (await r.holeDokument(dokument.id))!;

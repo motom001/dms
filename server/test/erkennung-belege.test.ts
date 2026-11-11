@@ -276,10 +276,10 @@ async function aufbau() {
     feld('lieferscheinnummer', 'Lieferscheinnummer', 'text', { erkennung: { art: 'nummer' }, wiederfinden: true }),
     feld('rechnung', 'Gehört zu Rechnung', 'referenz', { zielTypen: [rechnung.id], verweisart: 'zugehoerigkeit' }),
   ], register: [R('lieferschein', 'Lieferschein'), DOK] });
-  const eigen = await d.legeMappeAn({ typId: org.id, werte: { name: 'Tischlerei Brandt', eigene_organisation: true, ustid: 'DE999999999' } }, lena.id);
-  const garten = await d.legeMappeAn({ typId: org.id, werte: { name: 'Gartenbau Beispiel GmbH', ustid: 'DE123456789' } }, lena.id);
-  const kunde = await d.legeMappeAn({ typId: org.id, werte: { name: 'Autohaus Özdemir', kundennummer: 'KD-5544' } }, lena.id);
-  const lenaP = await d.legeMappeAn({ typId: person.id, werte: { vorname: 'Lena', nachname: 'Muster', email: 'lena@example.org' } }, lena.id);
+  const eigen = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Tischlerei Brandt', eigene_organisation: true, ustid: 'DE999999999' } }, lena.id);
+  const garten = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Gartenbau Beispiel GmbH', ustid: 'DE123456789' } }, lena.id);
+  const kunde = await d.mappen.legeMappeAn({ typId: org.id, werte: { name: 'Autohaus Özdemir', kundennummer: 'KD-5544' } }, lena.id);
+  const lenaP = await d.mappen.legeMappeAn({ typId: person.id, werte: { vorname: 'Lena', nachname: 'Muster', email: 'lena@example.org' } }, lena.id);
   const A = { id: lena.id, rolle: 'admin' };
   const z = async (): Promise<Zugriff> => d.rechtepruefung.zugriff(A);
   const tabelle = routen(d, konten, {});
@@ -368,12 +368,12 @@ Gesamtbetrag 1.190,00 €`;
 
   it('Lieferschein ↔ Rechnung: Lieferschein auf der Rechnung „gehört dazu“; am Lieferschein die Rechnung, die seine Nummer nennt', async () => {
     const x = await aufbau();
-    const ls = await x.d.legeMappeAn({ typId: x.lieferschein.id, werte: { von: x.garten.id, lieferscheinnummer: 'LS-2026-0042' } }, x.lena.id);
+    const ls = await x.d.mappen.legeMappeAn({ typId: x.lieferschein.id, werte: { von: x.garten.id, lieferscheinnummer: 'LS-2026-0042' } }, x.lena.id);
     const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: EINGEHEND }, await x.z());
     assert.deepEqual(r.dazu?.map((d) => [d.mappeId, d.feldKey]), [[ls.id, 'rechnung']]);
     assert.match(r.dazu![0].gruende[0], /LS-2026-0042/);
     // Schon verknüpft: nicht noch einmal.
-    const re = await x.d.legeMappeAn({ typId: x.rechnung.id, werte: { rechnungsnummer: 'R-2026-0815', von: x.garten.id } }, x.lena.id);
+    const re = await x.d.mappen.legeMappeAn({ typId: x.rechnung.id, werte: { rechnungsnummer: 'R-2026-0815', von: x.garten.id } }, x.lena.id);
     const dok = (await x.d.ladeHoch(re.id, { register: 'anlagen', name: 'rechnung.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 re'), x.lena.id)).dokument;
     await x.d.schreibeVolltext(dok.id, { text: EINGEHEND }, { id: x.lena.id, herkunft: 'Test', paket: false });
     // Umgekehrt: neuer Lieferschein mit der Nummer, die die Rechnung nennt.
@@ -381,14 +381,14 @@ Gesamtbetrag 1.190,00 €`;
     assert.equal(l.vorschlaege.lieferscheinnummer.wert, 'LS-2026-0042');
     assert.equal(l.vorschlaege.rechnung?.wert, re.id);
     assert.match(l.vorschlaege.rechnung.fundstelle, /LS-2026-0042/);
-    await x.d.aendereMappe(ls.id, { werte: { rechnung: re.id } }, x.lena.id);
+    await x.d.mappen.aendereMappe(ls.id, { werte: { rechnung: re.id } }, x.lena.id);
     const r2 = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: EINGEHEND }, await x.z());
     assert.equal(r2.dazu, undefined);
   });
 
   it('E-Rechnung als XML-Dokument und als Datei: Felder, Positionen (Teile), Original unverändert', async () => {
     const x = await aufbau();
-    const re = await x.d.legeMappeAn({ typId: x.rechnung.id, werte: {} }, x.lena.id);
+    const re = await x.d.mappen.legeMappeAn({ typId: x.rechnung.id, werte: {} }, x.lena.id);
     const roh = Buffer.from(CII());
     const dok = (await x.d.ladeHoch(re.id, { register: 'anlagen', name: 'xrechnung.xml', typ: 'application/xml' }, roh, x.lena.id)).dokument;
     const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { dokumente: [dok.id], mappe: re.id }, await x.z());
@@ -414,12 +414,12 @@ Gesamtbetrag 1.190,00 €`;
 
   it('Mappe hat schon Positionen: ohne ausdrückliches positionen keine Zeilen, mit nur „vorhanden“ (Haken in der Oberfläche aus)', async () => {
     const x = await aufbau();
-    const re = await x.d.legeMappeAn({ typId: x.rechnung.id, werte: {} }, x.lena.id);
+    const re = await x.d.mappen.legeMappeAn({ typId: x.rechnung.id, werte: {} }, x.lena.id);
     const er = liesERechnung(CII()).er;
     const leer = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x', mappe: re.id }, await x.z(), { erechnung: er });
     assert.equal(leer.positionen?.zeilen.length, 2, 'leere Tabelle: Positionen angeboten');
     assert.equal(leer.positionen?.vorhanden, undefined);
-    await x.d.legeMappeAn({ typId: x.position.id, werte: { rechnung: re.id, beschreibung: 'Schon da' } }, x.lena.id);
+    await x.d.mappen.legeMappeAn({ typId: x.position.id, werte: { rechnung: re.id, beschreibung: 'Schon da' } }, x.lena.id);
     const ohne = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x', mappe: re.id }, await x.z(), { erechnung: er });
     assert.deepEqual([ohne.positionen?.zeilen.length, ohne.positionen?.vorhanden, ohne.positionen?.zurueckgehalten], [0, 1, 2]);
     const mit = await x.d.erkennung.fuerTyp(x.rechnung.id, { text: 'x', mappe: re.id, positionen: true }, await x.z(), { erechnung: er });

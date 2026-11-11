@@ -57,12 +57,12 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Dokumente wandern ins Register der neuen Mappe, die Post kommt in den Papierkorb', async () => {
       const { d, rechnung, post, a, b } = await aufbau(pg);
-      const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2026-0815' } }, LENA);
+      const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2026-0815' } }, LENA);
       const r = await d.ordneZu(post.id, { ziel: neu.id, register: 'belege', aufloesen: true }, LENA);
       assert.equal(r.aufgeloest, true);
       assert.ok('papierkorb' in r && r.papierkorb);
-      assert.deepEqual((await d.holeMappe(neu.id)).dokumente.map((x) => [x.id, x.registerKey]).sort(), [[a.id, 'belege'], [b.id, 'belege']].sort());
-      await assert.rejects(d.holeMappe(post.id), status(404), 'die Post ist weg');
+      assert.deepEqual((await d.mappen.holeMappe(neu.id)).dokumente.map((x) => [x.id, x.registerKey]).sort(), [[a.id, 'belege'], [b.id, 'belege']].sort());
+      await assert.rejects(d.mappen.holeMappe(post.id), status(404), 'die Post ist weg');
       const korb = await d.papierkorb({ id: LENA, rolle: 'admin' }, true);
       const e = korb.find((x) => x.id === post.id)!;
       assert.equal(e.dokumente, 0, 'keine Dokumente mehr in der Post');
@@ -74,14 +74,14 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('die ganze Historie der Post steht bei der Mappe – mit Herkunft, Änderungen, Notizen, Aufgaben – dazu „Aus Post … angelegt“', async () => {
       const { d, rechnung, post } = await aufbau(pg);
       await d.notiereSystem(post.id, 'Postfach „Rechnungen“', 'aus Postfach „Rechnungen“ übernommen');
-      await d.aendereMappe(post.id, { werte: { betreff: 'Abschlag Strom' } }, LENA);
-      const notiz = await d.legeNotizAn(post.id, 'Bitte bis Freitag zahlen', LENA);
+      await d.mappen.aendereMappe(post.id, { werte: { betreff: 'Abschlag Strom' } }, LENA);
+      const notiz = await d.mappenNotizen.legeNotizAn(post.id, 'Bitte bis Freitag zahlen', LENA);
       const aufgabe = await d.legeAufgabeAn(post.id, { text: 'Betrag prüfen', empfaengerId: LENA }, LENA);
       await d.legeErinnerungAn(post.id, { datum: '2099-01-01', text: 'Zahlung nachsehen' }, LENA);
-      const vorher = (await d.historie(post.id)).map((h) => h.art);
-      const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, LENA);
+      const vorher = (await d.mappenHistorie.historie(post.id)).map((h) => h.art);
+      const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, LENA);
       await d.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
-      const h = await d.historie(neu.id);
+      const h = await d.mappenHistorie.historie(neu.id);
       const ausPost = h.filter((x) => x.daten.ausPost === post.id);
       for (const art of ['angelegt', 'uebernommen', 'geaendert', 'dokument_hochgeladen', 'notiz', 'aufgabe']) assert.ok(ausPost.some((x) => x.art === art), art);
       assert.ok(ausPost.length >= vorher.length, 'nichts geht verloren');
@@ -90,19 +90,19 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(ursprung.daten.post, post.id);
       assert.equal(ursprung.daten.ausPost, undefined, 'der Ursprung ist ein eigener Eintrag der Mappe');
       // Notizen, Aufgaben und Erinnerungen gehören jetzt der Mappe.
-      const m = await d.holeMappe(neu.id);
+      const m = await d.mappen.holeMappe(neu.id);
       assert.deepEqual(m.notizen.map((n) => n.id), [notiz.id]);
       assert.ok(m.aufgaben.some((x) => x.id === aufgabe.id));
       assert.equal((m.erinnerungen ?? []).length, 1);
       // Bei der Post bleibt nur, was zum Auflösen gehört: „Aufgelöst in …“ und „in den Papierkorb gelegt“.
-      const rest = await d.historie(post.id);
+      const rest = await d.mappenHistorie.historie(post.id);
       assert.deepEqual(rest.map((x) => x.art).sort(), ['papierkorb', 'zugeordnet']);
       assert.match(String(rest.find((x) => x.art === 'zugeordnet')!.daten.text), /Aufgelöst in Rechnung „R-1“/);
     });
 
     it('Löschprotokoll: Weg „aufgelöst“, Grund mit Mappentyp und Id, ohne Titel; wiederherstellen geht nicht', async () => {
       const { d, rechnung, post } = await aufbau(pg);
-      const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-77' } }, LENA);
+      const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-77' } }, LENA);
       await d.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
       const p = (await d.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
       assert.deepEqual(p.map((x) => x.art), ['mappe'], 'kein Dokument der Post ist gelöscht');
@@ -121,55 +121,55 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('nur ein Teil übernommen: der abgetrennte Teil wird eine neue Post mit Verweis auf die Herkunft', async () => {
       const { d, rechnung, post, a, b } = await aufbau(pg);
-      const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, LENA);
+      const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, LENA);
       const r = await d.ordneZu(post.id, { ziel: neu.id, dokumente: [a.id], aufloesen: true }, LENA);
       assert.ok('abgetrennt' in r && r.abgetrennt);
       const ab = r.abgetrennt!;
       assert.equal(ab.werte.stand, POST_STAND.neu);
       assert.equal(ab.titel, 'Brief der Stadtwerke (abgetrennt)');
-      assert.deepEqual((await d.holeMappe(ab.id)).dokumente.map((x) => x.id), [b.id]);
-      assert.deepEqual((await d.holeMappe(neu.id)).dokumente.map((x) => x.id), [a.id]);
-      const herkunft = (await d.historie(ab.id)).find((x) => x.art === 'post_geteilt')!;
+      assert.deepEqual((await d.mappen.holeMappe(ab.id)).dokumente.map((x) => x.id), [b.id]);
+      assert.deepEqual((await d.mappen.holeMappe(neu.id)).dokumente.map((x) => x.id), [a.id]);
+      const herkunft = (await d.mappenHistorie.historie(ab.id)).find((x) => x.art === 'post_geteilt')!;
       assert.match(String(herkunft.daten.text), /Abgetrennt aus Post „Brief der Stadtwerke“ mit 1 Dokument, als daraus Rechnung „R-2“ wurde/);
       assert.equal(herkunft.daten.ziel, neu.id);
       assert.equal(herkunft.daten.post, post.id);
-      assert.match(String((await d.historie(neu.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /1 Dokument als neue Post abgetrennt/);
+      assert.match(String((await d.mappenHistorie.historie(neu.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /1 Dokument als neue Post abgetrennt/);
     });
 
     it('nicht aufgelöst: mit „Kopie behalten“ und bei versendeten E-Mails; in eine bestehende Mappe schon (#934)', async () => {
       const { d, rechnung, post } = await aufbau(pg);
-      const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3' } }, LENA);
+      const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3' } }, LENA);
       const kopie = await d.ordneZu(post.id, { ziel: neu.id, kopieren: true, aufloesen: true }, LENA);
       assert.equal(kopie.aufgeloest, false);
-      assert.equal((await d.holeMappe(post.id)).dokumente.length, 2);
+      assert.equal((await d.mappen.holeMappe(post.id)).dokumente.length, 2);
       // Seit #934 fällt die Grenze „nur eben aus dieser Post angelegt“: auch eine Mappe, die schon Post hat, und eine,
       // die jemand anderes angelegt hat, kann die Post aufnehmen.
       const wieder = await d.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
       assert.equal(wieder.aufgeloest, true);
       const zweite = await d.legePostAn({ betreff: 'Noch ein Brief' }, { id: LENA, name: 'Lena' });
-      const fremd = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-4' } }, null);
+      const fremd = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-4' } }, null);
       const inFremd = await d.ordneZu(zweite.id, { ziel: fremd.id, aufloesen: true }, LENA);
       assert.equal(inFremd.aufgeloest, true);
-      assert.match(String((await d.historie(fremd.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /^Post „Noch ein Brief“ übernommen/);
+      assert.match(String((await d.mappenHistorie.historie(fremd.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /^Post „Noch ein Brief“ übernommen/);
       // Versendete E-Mails bleiben Post, wie sie verschickt wurden.
       const mailer = { async sende() { /* ok */ } };
       const mail = await d.versendeMappe(fremd.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: LENA, name: 'Lena', email: 'lena@example.org' }, mailer);
-      const ziel = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-5' } }, LENA);
+      const ziel = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-5' } }, LENA);
       const v = await d.ordneZu(mail.id, { ziel: ziel.id, dokumente: [], aufloesen: true }, LENA);
       assert.equal(v.aufgeloest, false);
-      await d.holeMappe(mail.id);
+      await d.mappen.holeMappe(mail.id);
     });
 
     it('ohne Papierkorb ist die Post sofort weg, Dokumente und Historie bleiben bei der Mappe', async () => {
       const einstellungen = speicherEinstellungen();
       await einstellungen.schreibe('papierkorb', { tage: 0 });
       const { d, rechnung, post } = await aufbau(pg, einstellungen);
-      const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-6' } }, LENA);
+      const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-6' } }, LENA);
       const r = await d.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
       assert.ok(r.aufgeloest && !r.papierkorb);
       assert.equal((await d.papierkorb({ id: LENA, rolle: 'admin' }, true)).length, 0);
-      assert.equal((await d.holeMappe(neu.id)).dokumente.length, 2);
-      assert.ok((await d.historie(neu.id)).some((x) => x.daten.ausPost === post.id && x.art === 'angelegt'));
+      assert.equal((await d.mappen.holeMappe(neu.id)).dokumente.length, 2);
+      assert.ok((await d.mappenHistorie.historie(neu.id)).some((x) => x.daten.ausPost === post.id && x.art === 'angelegt'));
       const p = (await d.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
       assert.deepEqual(p.map((x) => [x.art, x.schritt, x.weg]), [['mappe', 'endgueltig', 'aufgeloest']]);
     });
@@ -208,11 +208,11 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     assert.equal(r.aufgeloest, false);
     assert.match(r.hinweis ?? '', /bleibt als „Zugeordnet“ stehen.*kein Recht zum Löschen/);
     assert.equal(r.post.werte.stand, POST_STAND.zugeordnet);
-    const p = await d.holeMappe(post.id);
+    const p = await d.mappen.holeMappe(post.id);
     assert.deepEqual(p.mappe.werte.bezug, [neu.id]);
     assert.equal(p.dokumente.length, 0, 'die Dokumente wandern trotzdem');
     assert.equal((await d.papierkorb({ id: jonas.id, rolle: 'mitglied' })).length, 0);
-    assert.ok(!(await d.historie(neu.id)).some((h) => h.daten.ausPost), 'die Historie bleibt bei der Post');
+    assert.ok(!(await d.mappenHistorie.historie(neu.id)).some((h) => h.daten.ausPost), 'die Historie bleibt bei der Post');
     // Auch den Löschweg selbst sperrt das Recht.
     await assert.rejects(rufe(jonas, 'DELETE', '/api/mappen/:id', { params: { id: post.id } }), status(403));
   });
@@ -251,10 +251,10 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     await d.legePostAn({ betreff: 'Nächste Post' }, { id: lena.id, name: 'Lena' });
     assert.equal((await d.zaehler({ id: lena.id, rolle: 'admin' }, z)).sichten[sicht], 2);
     assert.equal((await d.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 1);
-    const neu = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'J-1' } }, lena.id);
+    const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'J-1' } }, lena.id);
     await d.ordneZu(post.id, { ziel: neu.id, dokumente: [], aufloesen: true }, lena.id, z);
     assert.equal((await d.zaehler({ id: lena.id, rolle: 'admin' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }))).sichten[sicht], 1);
     assert.equal((await d.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
-    assert.ok(!(await d.holeMappe(neu.id)).aufgaben.some((x) => x.art === 'post'), '„Post für dich“ gehört nicht zur Rechnung');
+    assert.ok(!(await d.mappen.holeMappe(neu.id)).aufgaben.some((x) => x.art === 'post'), '„Post für dich“ gehört nicht zur Rechnung');
   });
 });

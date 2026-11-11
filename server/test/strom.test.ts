@@ -106,7 +106,7 @@ describe('Hochladen als Strom (#746)', () => {
     await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const typ = await d.mappentypen.legeTypAn({ name: 'Akte', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }],
       register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Dokumente', art: 'dokumente', versionierung: true }] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Akte Jonas' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Akte Jonas' } });
     const { baueApp } = await import('../src/http');
     const app = await baueApp(d, konten, {});
     try {

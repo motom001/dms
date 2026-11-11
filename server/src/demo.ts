@@ -276,7 +276,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   const mappenZiel = [...ziel.values()].reduce((a, b) => a + b, 0);
 
   // Schlank laden (#248): Id, Typ, Titel – Werte nur für eindeutige Felder.
-  const vorhanden = await dienst.mappenKurz();
+  const vorhanden = await dienst.mappen.mappenKurz();
   const pools = new Map<string, string[]>();
   const typVon = new Map<string, string>();
   const titel = new Map<string, string>();
@@ -294,12 +294,12 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   let paket: NeueMappe[] = [];
   const weiter = takt();
   // Kleinere Transaktionen (#367): 250 Mappen je Paket, danach nachgeben.
-  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); await weiter(); };
+  const schreibe = async () => { await dienst.mappen.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); await weiter(); };
   const jetzt = new Date().toISOString();
 
   for (const t of typen) {
     const vergeben = new Map<string, Set<string>>();
-    for (const f of t.felder.filter((x) => x.eindeutig)) vergeben.set(f.key, new Set((await dienst.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
+    for (const f of t.felder.filter((x) => x.eindeutig)) vergeben.set(f.key, new Set((await dienst.mappen.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
     const mitRegister = o.dokumente && dokumentRegister(t).length > 0;
     let ok = 0, fehlversuche = 0, letzterFehler = '';
     while (ok < ziel.get(t.id)! && fehlversuche < 25) {

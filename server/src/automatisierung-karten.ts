@@ -51,7 +51,7 @@ DANN_AUSFUEHRER.feld = async (k: DannKarte, c: KartenKontext) => {
   }
   const zeile = Object.entries(werte).map(([key, v]) => { const f = c.typ!.felder.find((x) => x.key === key)!; return `${feldLabel(f)} = ${formatiere(f, v as never) || '–'}`; }).join(', ');
   if (c.trocken) return uebersetzer2('automatisierung.karte.feld.trocken', { felder: zeile });
-  await c.dienst.aendereMappe(c.mappe.id, { werte }, c.konto.id, c.z, c.anlass);
+  await c.dienst.mappen.aendereMappe(c.mappe.id, { werte }, c.konto.id, c.z, c.anlass);
   return uebersetzer2('automatisierung.karte.feld.ergebnis', { felder: zeile });
 };
 

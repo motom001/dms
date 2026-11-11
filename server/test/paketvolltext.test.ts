@@ -67,7 +67,7 @@ async function aufbau(o: { mitPaket?: boolean } = {}) {
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } });
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } });
   const fertig = async (id: string) => warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
   const hoch = async (name: string, inhalt: Buffer, typAngabe = WORD) => {
     const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;

@@ -17,7 +17,7 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       const klartext = passwoerterAnzeigen(a);
       const z = await zg(a);
       if (!a.query.sicht) {
-        const alle = await dienst.listeMappen(a.query.typ);
+        const alle = await dienst.mappen.listeMappen(a.query.typ);
         const sichtbar = await dienst.rechtepruefung.lesbare(z, alle.map((m) => m.id));
         const liste = alle.filter((m) => sichtbar.has(m.id));
         return ok(klartext ? await entschluessele(a, liste, klartext) : liste);
@@ -30,11 +30,11 @@ export function ablageRouten(k: RoutenKontext): Route[] {
     // Feldart Tabelle (#1030): verweisende Mappen seitenweise – nur lesbare, auch in der Zahl.
     { methode: 'GET', pfad: '/api/mappen/:id/tabelle/:feld', zugang: 'angemeldet', handler: async (a) => ok(await dienst.tabelle(a.params.id, a.params.feld, a.query, await zg(a))) },
     // Favoriten (#62)
-    { methode: 'PUT', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.setzeFavorit(ich(a), a.params.id, true)); } },
-    { methode: 'DELETE', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFavorit(ich(a), a.params.id, false)) },
+    { methode: 'PUT', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.mappen.setzeFavorit(ich(a), a.params.id, true)); } },
+    { methode: 'DELETE', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappen.setzeFavorit(ich(a), a.params.id, false)) },
     // Favorit = Abo (#422): je Favorit benachrichtigen an/aus; Mappen als gesehen markieren (Hervorhebung, „Geändert“).
-    { methode: 'PUT', pfad: '/api/mappen/:id/favorit/benachrichtigen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFavoritBenachrichtigen(ich(a), a.params.id, b(a).an)) },
-    { methode: 'POST', pfad: '/api/gesehen', zugang: 'angemeldet', handler: async (a) => { await dienst.gesehen(ich(a), b(a).ids); return leer; } },
+    { methode: 'PUT', pfad: '/api/mappen/:id/favorit/benachrichtigen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappen.setzeFavoritBenachrichtigen(ich(a), a.params.id, b(a).an)) },
+    { methode: 'POST', pfad: '/api/gesehen', zugang: 'angemeldet', handler: async (a) => { await dienst.mappen.gesehen(ich(a), b(a).ids); return leer; } },
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a), await zg(a))) },
     // Stand der Ablage (#919): ein Fingerabdruck ohne Inhalt; die Oberfläche lädt Startseite und Zähler nur bei Änderung.
     // Nur für die eigene Oberfläche (nicht in /api/v1); zählt nicht als Aktivität (`still`).
@@ -78,7 +78,7 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       const klartext = passwoerterAnzeigen(a);
       const z = await zg(a);
       // Unabhängiges gleichzeitig (#741): Der Stern ist nur ein Ja/Nein der Person und geht nur mit der Mappe hinaus.
-      const [m, favorit] = await Promise.all([dienst.holeMappe(a.params.id, z), dienst.istFavorit(ich(a), a.params.id)]);
+      const [m, favorit] = await Promise.all([dienst.mappen.holeMappe(a.params.id, z), dienst.mappen.istFavorit(ich(a), a.params.id)]);
       const d = { ...m, favorit, exportierbar: false };
       if (klartext && !d.rechte.P) throw new Fachfehler(403, t('meldungen.routen.passwoerter-dieser-mappe-darfst'));
       // Exportrecht (#294, #723): Herunterladen, Versenden, „Als PDF exportieren“ nur für lesbare Mappen, die in einer
@@ -96,8 +96,8 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       const b = a.benutzer;
       if (!a.apiSchluessel && b) danach.push(() => konten.merkeGeoeffnet(b, a.params.id));
       // Favorit = Abo (#422): geöffnet = gesehen – Hervorhebung weg, offene „Geändert“-Benachrichtigung erledigt.
-      if (!a.apiSchluessel && b && !a.sitzungsDaten?.vertretungId) danach.push(() => dienst.gesehen(b, a.params.id, d.aufgaben));
-      return { ...ok(klartext ? { ...antwort, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : antwort), danach };
+      if (!a.apiSchluessel && b && !a.sitzungsDaten?.vertretungId) danach.push(() => dienst.mappen.gesehen(b, a.params.id, d.aufgaben));
+      return { ...ok(klartext ? { ...antwort, mappe: (await dienst.passwortfelder.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : antwort), danach };
     } },
     // Startseite (#334): zuletzt geöffnete Mappen (nur lesbare, höchstens 5) und ob es schon eigene Mappen gibt.
     { methode: 'GET', pfad: '/api/startseite', zugang: 'angemeldet', handler: async (a) => ok({ zuletzt: await zuletztGeoeffnet(a, 5), leer: await dienst.ohneEigeneMappen() }) },

@@ -82,7 +82,7 @@ function faelle(pg: boolean) {
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
       const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const dok = async (titel: string) => {
-        const m = await d.legeMappeAn({ typId: typ.id, werte: { titel } });
+        const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel } });
         return (await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.pdf`, typ: 'application/pdf' }, pdfMitText([titel]), null)).dokument;
       };
       const schreibe = (id: string, body: Record<string, unknown>) => d.schreibeVolltext(id, body, { id: ICH.id, herkunft: 'Texterkennung 2.1.0', paket: true });
@@ -202,7 +202,7 @@ describe('Textebene: Sprache je Seite im Kern (#579)', () => {
       const t = new Texterkennung(repo, dateien, einstellungen, textebeneEngine, async () => w);
       d.verbindeTexterkennung(t);
       const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
-      const m = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Botschaft' } });
+      const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Botschaft' } });
       const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'botschaft.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'ab.pdf')), null);
       const ende = Date.now() + 15_000;
       while ((await repo.holeDokument(dokument.id))?.ocr?.stand !== 'fertig') {
@@ -216,7 +216,7 @@ describe('Textebene: Sprache je Seite im Kern (#579)', () => {
       assert.deepEqual((await repo.seitensprachen(x.id))?.map((s) => s.sprachen), [['deu'], ['fra']]);
       // Einsprachige PDFs bleiben wie bisher: keine Seiten gespeichert.
       execFileSync('pdfunite', [join(dir, 'a.pdf'), join(dir, 'a.pdf'), join(dir, 'aa.pdf')]);
-      const m2 = await d.legeMappeAn({ typId: typ.id, werte: { titel: 'Deutsch' } });
+      const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel: 'Deutsch' } });
       const zwei = (await d.ladeHoch(m2.id, { register: 'dokumente', name: 'deutsch.pdf', typ: 'application/pdf' }, await readFile(join(dir, 'aa.pdf')), null)).dokument;
       while ((await repo.holeDokument(zwei.id))?.ocr?.stand !== 'fertig') {
         if (Date.now() > ende) throw new Error('Zeit abgelaufen');

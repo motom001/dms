@@ -303,18 +303,18 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     /* Archivnummer (#345): setzen mit „Bearbeiten“, suchen mit „Lesen“, Aufkleber in der Werkbank. */
     { methode: 'PUT', pfad: '/api/dokumente/:id/archivnummer', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
-      return ok(await dienst.setzeArchivnummer(a.params.id, (b(a) as { archivnummer?: unknown }).archivnummer, ich(a).id));
+      return ok(await dienst.mappenArchiv.setzeArchivnummer(a.params.id, (b(a) as { archivnummer?: unknown }).archivnummer, ich(a).id));
     } },
-    { methode: 'GET', pfad: '/api/archivnummern/:nr', zugang: 'angemeldet', handler: async (a) => ok(await dienst.findeArchivnummer(a.params.nr, await zg(a))) },
+    { methode: 'GET', pfad: '/api/archivnummern/:nr', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappenArchiv.findeArchivnummer(a.params.nr, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/archivnummern/aufkleber', zugang: 'admin', handler: async (a) => {
-      const r = await dienst.archivAufkleber(a.body, ich(a).email);
+      const r = await dienst.mappenArchiv.archivAufkleber(a.body, ich(a).email);
       return { datei: { inhalt: r.pdf, name: t('meldungen.routen.archivnummern-bis-pdf', { erste: r.erste, letzte: r.letzte }), mime: 'application/pdf', anzeigen: false, groesse: r.pdf.length } };
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'U');
       // Vorgaben (#1038): Ein Paket löscht keine Dokumente an Vorgaben anderer Pakete.
-      await dienst.pruefeFremdeVorgabe(await zg(a), mappeId);
+      await dienst.mappen.pruefeFremdeVorgabe(await zg(a), mappeId);
       const r = await dienst.loescheDokument(a.params.id, ich(a).id, { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'dokument' });
       L.dokumente.info(r.papierkorb ? 'Dokument in den Papierkorb gelegt' : 'Dokument gelöscht', { id: a.params.id });
       return leer;

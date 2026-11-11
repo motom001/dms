@@ -151,10 +151,10 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
     // Alte Form (#1036): ein Zieltyp in „zielTyp“ gilt weiter.
     { key: 'fahrzeug', label: 'Fahrzeug', typ: 'referenz', zielTyp: fahrzeug.id },
   ] });
-  const golf = await d.legeMappeAn({ typId: fahrzeug.id, werte: { name: 'Golf' } }, markus.id);
-  const polo = await d.legeMappeAn({ typId: fahrzeug.id, werte: { name: 'Polo' } }, markus.id);
-  const haus = await d.legeMappeAn({ typId: wohnung.id, werte: { name: 'Haus' } }, markus.id);
-  const geheim = await d.legeMappeAn({ typId: akte.id, werte: { name: 'Geheim' } }, markus.id);
+  const golf = await d.mappen.legeMappeAn({ typId: fahrzeug.id, werte: { name: 'Golf' } }, markus.id);
+  const polo = await d.mappen.legeMappeAn({ typId: fahrzeug.id, werte: { name: 'Polo' } }, markus.id);
+  const haus = await d.mappen.legeMappeAn({ typId: wohnung.id, werte: { name: 'Haus' } }, markus.id);
+  const geheim = await d.mappen.legeMappeAn({ typId: akte.id, werte: { name: 'Geheim' } }, markus.id);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const route = (mt: string, p: string) => tabelle.find((r) => r.methode === mt && r.pfad === p)!;
@@ -180,17 +180,17 @@ for (const pg of [false, true]) {
 
     it('Server prüft beim Speichern Zieltypen und „alle vom selben Typ“ – auch über die Schnittstelle', async () => {
       const { d, rechnung, golf, polo, haus, markus, lena, fahrzeug, rufe } = await neu('pruefen');
-      const ok = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [golf.id, polo.id] } }, markus.id);
+      const ok = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [golf.id, polo.id] } }, markus.id);
       assert.deepEqual(ok.werte.betrifft, [golf.id, polo.id]);
-      await assert.rejects(d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R2', betrifft: [golf.id, haus.id] } }, markus.id), status(422, /selben Mappentyp/));
+      await assert.rejects(d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R2', betrifft: [golf.id, haus.id] } }, markus.id), status(422, /selben Mappentyp/));
       await assert.rejects(rufe(lena, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'R3', betrifft: [golf.id, haus.id] } } }), status(422, /selben Mappentyp/));
       // Ein fremder Typ (die Rechnung selbst) geht nie – auch nicht über das Feld mit einem Ziel.
       await assert.rejects(rufe(lena, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'R4', betrifft: [ok.id] } } }), status(422, /anderen Mappentyps/));
-      await assert.rejects(d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R5', fahrzeug: haus.id } }, markus.id), status(422, /anderen Mappentyps/));
+      await assert.rejects(d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R5', fahrzeug: haus.id } }, markus.id), status(422, /anderen Mappentyps/));
       // Ohne „alle vom selben Typ“ gehen gemischte Typen.
       const t = (await d.mappentypen.listeTypen()).find((x) => x.id === rechnung.id)!;
       await d.mappentypen.aendereTyp(rechnung.id, { ...t, felder: t.felder.map((f) => (f.key === 'betrifft' ? { ...f, gleicherTyp: false } : f)) });
-      const gemischt = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R6', betrifft: [golf.id, haus.id] } }, markus.id);
+      const gemischt = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R6', betrifft: [golf.id, haus.id] } }, markus.id);
       assert.deepEqual(gemischt.werte.betrifft, [golf.id, haus.id]);
       // Ein Zieltyp von mehreren lässt sich löschen (ohne Mappen) – er geht aus dem Feld; ist er der einzige, nicht.
       const leer = await d.mappentypen.legeTypAn({ name: 'Leer', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
@@ -206,11 +206,11 @@ for (const pg of [false, true]) {
     it('„(nicht sichtbar)“ ohne Titel und ohne Typ; Auswahl über alle Zieltypen, nur lesbare', async () => {
       const { d, rechnung, golf, haus, geheim, markus, lena, rufe } = await neu('maske');
       await d.setzeBerechtigungen(rechnung.id, { grund: ALLES, regeln: [] }, true);
-      const r = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [geheim.id] } }, markus.id);
+      const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [geheim.id] } }, markus.id);
       const sicht = (await rufe(lena, 'GET', '/api/mappen/:id', { params: { id: r.id } })).body as { bezuege: Record<string, unknown> };
       assert.deepEqual(sicht.bezuege[geheim.id], { titel: 'nicht sichtbare Mappe', typId: '', verborgen: true });
       const s = (await rufe(lena, 'GET', '/api/mappen', { query: { sicht: `feld:${rechnung.id}:betrifft`, anzahl: '50' } })).body as { mappen: Array<{ id: string }>; gesamt: number };
-      assert.deepEqual(new Set(s.mappen.map((m) => m.id)), new Set([golf.id, haus.id, (await d.listeMappen(golf.typId)).find((m) => m.titel === 'Polo')!.id]));
+      assert.deepEqual(new Set(s.mappen.map((m) => m.id)), new Set([golf.id, haus.id, (await d.mappen.listeMappen(golf.typId)).find((m) => m.titel === 'Polo')!.id]));
       assert.equal(s.gesamt, 3, 'die Akte zählt nicht mit');
     });
 
@@ -227,7 +227,7 @@ for (const pg of [false, true]) {
         const rw: Regelwerk = { grund: fall.wirkung === 'erteilen' ? { ...NICHTS, C: true } : ALLES, regeln: [{ id: 'r', name: 'Typ', stopp: false, dann: { R: fall.wirkung },
           wenn: [{ art: 'feld', ...(fall.nicht ? { nicht: true } : {}), bedingung: { art: 'feld', feld: 'betrifft', op: 'zeigtAufTyp', wert: { art: 'fest', wert: [x[fall.typ].id] } } }] }] };
         await d.setzeBerechtigungen(rechnung.id, rw, true);
-        const r = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [x[fall.ziel].id] } }, markus.id);
+        const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R1', betrifft: [x[fall.ziel].id] } }, markus.id);
         const z = await d.rechtepruefung.zugriff(await x.ich(lena.id));
         assert.equal(z.a.sichtbareTypen?.includes(x.akte.id), false, 'die Akte sieht Lena nicht');
         assert.equal((await d.rechtepruefung.rechteAn(z, r)).R, fall.lesbar, 'Rechte an der Mappe');
@@ -312,10 +312,10 @@ for (const pg of [false, true]) {
       const rt = (await d.mappentypen.listeTypen()).find((x) => x.id === r.typen.rechnung)!;
       assert.equal(aenderung(rt, rp, (id) => (id === f.typen.fahrzeug ? 'fahrzeuge:fahrzeug' : undefined)).geaendert, false);
       // Speichern mit einem Fahrzeug geht.
-      const golf = await d.legeMappeAn({ typId: f.typen.fahrzeug, werte: { name: 'Golf' } }, null);
-      await d.legeMappeAn({ typId: r.typen.rechnung, werte: { nr: 'R1', betrifft: [golf.id] } }, null);
+      const golf = await d.mappen.legeMappeAn({ typId: f.typen.fahrzeug, werte: { name: 'Golf' } }, null);
+      await d.mappen.legeMappeAn({ typId: r.typen.rechnung, werte: { nr: 'R1', betrifft: [golf.id] } }, null);
       // Fahrzeuge wieder entfernen (ohne Mappen): Rechnung bleibt, nur der Typ geht aus dem Feld; optional bleibt notiert.
-      await d.entferneMappenEndgueltig((await d.listeMappen(r.typen.rechnung)).map((m) => m.id));
+      await d.entferneMappenEndgueltig((await d.mappen.listeMappen(r.typen.rechnung)).map((m) => m.id));
       await d.entferneMappenEndgueltig([golf.id]);
       await p.entferne('fahrzeuge', { id: ICH.id, email: ICH.email } as never);
       assert.deepEqual((await feld('betrifft')).zielTypen, [r.typen.vertrag]);

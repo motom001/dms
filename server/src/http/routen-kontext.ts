@@ -94,7 +94,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const abgerufen = async <T extends Antwort>(a: Anfrage, dokumentId: string, o: { fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; datei?: string }, antwort: T): Promise<T> => {
     if (a.benutzer?.art === 'dienst') return antwort;
     try {
-      await dienst.notiereAbruf({ dokumentId, benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' : 'oberflaeche', schluessel: a.apiSchluessel?.name ?? null, ...o });
+      await dienst.mappenHistorie.notiereAbruf({ dokumentId, benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' : 'oberflaeche', schluessel: a.apiSchluessel?.name ?? null, ...o });
     } catch (e) {
       const inhalt = antwort.datei?.inhalt;
       if (inhalt && !Buffer.isBuffer(inhalt)) (inhalt as Readable).destroy();
@@ -231,7 +231,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
   const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {
     const { mit } = await dienst.rechtepruefung.mitPasswortRecht(await zg(a), mappen);
-    const klar = new Map((await dienst.entschluesselePasswoerter(mit, klartext, ich(a).id)).map((m) => [m.id, m]));
+    const klar = new Map((await dienst.passwortfelder.entschluesselePasswoerter(mit, klartext, ich(a).id)).map((m) => [m.id, m]));
     return mappen.map((m) => klar.get(m.id) ?? m);
   };
   /** Benutzer mit ihren weiteren Rollen (#27). */
@@ -260,7 +260,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
     // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
     typen: await dienst.mappentypen.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
-    papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.historieTage(),
+    papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
     version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',

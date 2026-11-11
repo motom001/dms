@@ -147,8 +147,8 @@ async function aufbau(repo: Repo = speicherRepo()) {
     { key: 'art', label: 'Art', typ: 'auswahl', optionen: ['Strom', 'Gas', 'Wasser'] },
     { key: 'mehr', label: 'Mehr', typ: 'auswahl', mehrfach: true, optionen: ['Keller', 'Garage'] },
   ] });
-  const m1 = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-1', art: 'Strom', mehr: ['Keller'] } });
-  const m2 = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-2', art: 'Gas' } });
+  const m1 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-1', art: 'Strom', mehr: ['Keller'] } });
+  const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Z-2', art: 'Gas' } });
   return { d, typ, m1, m2 };
 }
 const beschriftet = (typ: Mappentyp) => ({
@@ -170,7 +170,7 @@ function dienstFaelle(pg: boolean) {
     it('Migration ohne Änderung an gespeicherten Werten: vorhandene Mappen passen und behalten ihre Werte', async () => {
       const { r, sql } = await repo();
       const { d, typ, m1, m2 } = await aufbau(r);
-      const vorher = JSON.stringify([(await d.holeMappe(m1.id)).mappe.werte, (await d.holeMappe(m2.id)).mappe.werte]);
+      const vorher = JSON.stringify([(await d.mappen.holeMappe(m1.id)).mappe.werte, (await d.mappen.holeMappe(m2.id)).mappe.werte]);
       if (sql) {
         // Die Spalten der Migration 080 gibt es, und bisher steht dort nichts.
         const spalten = await sql`SELECT table_name FROM information_schema.columns WHERE column_name = 'beschriftungen' ORDER BY table_name`;
@@ -182,13 +182,13 @@ function dienstFaelle(pg: boolean) {
       assert.deepEqual(neu.beschriftungen, { en: { name: 'Meter', beschreibung: 'Meters' } });
       assert.deepEqual(neu.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { label: 'Kind', optionen: { Strom: 'Electricity', Wasser: 'Water' } } });
       assert.deepEqual(neu.register.find((r) => r.key === 'allgemein')!.beschriftungen, { en: { name: 'General' } });
-      const nachher = JSON.stringify([(await d.holeMappe(m1.id)).mappe.werte, (await d.holeMappe(m2.id)).mappe.werte]);
+      const nachher = JSON.stringify([(await d.mappen.holeMappe(m1.id)).mappe.werte, (await d.mappen.holeMappe(m2.id)).mappe.werte]);
       assert.equal(nachher, vorher, 'gespeicherte Werte unverändert');
-      for (const m of [m1, m2]) assert.equal((await d.holeMappe(m.id)).mappe.passt, true);
+      for (const m of [m1, m2]) assert.equal((await d.mappen.holeMappe(m.id)).mappe.passt, true);
       // Gespeichert wird weiter der feste Wert; eine Beschriftung ist kein gültiger Wert.
-      await d.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Wasser' } });
-      assert.equal((await d.holeMappe(m2.id)).mappe.werte.art, 'Wasser');
-      await assert.rejects(d.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Water' } }), /Art/);
+      await d.mappen.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Wasser' } });
+      assert.equal((await d.mappen.holeMappe(m2.id)).mappe.werte.art, 'Wasser');
+      await assert.rejects(d.mappen.aendereMappe(m2.id, { werte: { nr: 'Z-2', art: 'Water' } }), /Art/);
       // Neu gelesen (Datenbank) – alles noch da.
       const gelesen = (await d.mappentypen.listeTypen()).find((t) => t.id === typ.id)!;
       assert.deepEqual(gelesen.beschriftungen, neu.beschriftungen);
@@ -243,7 +243,7 @@ function dienstFaelle(pg: boolean) {
       assert.deepEqual(await treffer('Electricity'), [m1.id]);
       assert.deepEqual(await treffer('Strom'), [m1.id]);
       // Der Titel ist die Beschriftung in der Sprache des Servers (Deutsch); der Wert bleibt.
-      const m = (await d.holeMappe(m1.id)).mappe;
+      const m = (await d.mappen.holeMappe(m1.id)).mappe;
       assert.equal(m.titel, 'Z-1 Elektrizität');
       assert.equal(m.werte.art, 'Strom');
       assert.deepEqual(await treffer('Elektrizität'), [m1.id]);
@@ -348,7 +348,7 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     const typ = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.zaehler)!;
     assert.deepEqual(typ.felder.find((f) => f.key === 'art')!.optionen, ['Strom', 'Gas', 'Wasser']);
     assert.ok(!typ.beschriftungen && typ.felder.every((f) => !f.beschriftungen));
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1', art: 'Strom' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1', art: 'Strom' } });
     assert.deepEqual((await d.seite(ICH, { sicht: inst.sichten.strom })).mappen.map((x) => x.id), [m.id]);
   });
 
@@ -370,7 +370,7 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     const b = dms();
     const alt = await installiere(b.p, zip('1.0.0', TYP_ALT, SICHT(false)));
     const t0 = (await b.d.mappentypen.listeTypen()).find((t) => t.id === alt.typen.zaehler)!;
-    const m = await b.d.legeMappeAn({ typId: t0.id, werte: { nr: '1', art: 'Wasser' } });
+    const m = await b.d.mappen.legeMappeAn({ typId: t0.id, werte: { nr: '1', art: 'Wasser' } });
     await b.d.mappentypen.aendereTyp(t0.id, { ...t0, felder: t0.felder.map((f) => (f.key === 'art' ? { ...f, beschriftungen: { en: { optionen: { Strom: 'Power' } } } } : f)) });
     const h = await b.p.hochladen(zip('1.1.0', TYP_NEU, SICHT(true)), ICH);
     const plan = h.vorschau.typen.find((x) => x.schluessel === 'zaehler')!;
@@ -380,7 +380,7 @@ describe('Paketformat mit Beschriftungen (#728)', () => {
     assert.deepEqual(t1.felder.find((f) => f.key === 'art')!.beschriftungen, { en: { optionen: { Strom: 'Power', Wasser: 'Water' }, label: 'Kind' } });
     assert.equal(t1.beschriftungen?.en?.name, 'Meter');
     assert.equal(t1.register[0].beschriftungen?.en?.name, 'General');
-    assert.equal((await b.d.holeMappe(m.id)).mappe.werte.art, 'Wasser', 'Werte der Mappen unverändert');
+    assert.equal((await b.d.mappen.holeMappe(m.id)).mappe.werte.art, 'Wasser', 'Werte der Mappen unverändert');
     // Unmittelbar: nichts mehr zu ergänzen.
     assert.equal(beschriftungenNeu(liesPaket(liesZip(zip('1.1.0', TYP_NEU, ''))).typen[0], t1).anzahl, 0);
   });

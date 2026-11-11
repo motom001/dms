@@ -79,31 +79,31 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     // Übersetzung anzeigen (#732): nur Kennungen – den Text liest der Kern mit den Rechten der Person; je Aufruf ein Abschnitt.
     // Gespeichert wird nichts an der Mappe; die Übersetzung liegt nur im Zwischenspeicher.
     { methode: 'POST', pfad: '/api/uebersetzung', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.uebersetzung.uebersetze(liesQuelle(b(a).quelle), { teil: b(a).teil, nach: (await spracheFuer(a)).sprache, ich: ich(a), z: await zg(a) })) },
-    { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },
-    { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },
-    { methode: 'PUT', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.rechtepruefung.mappeVon('notiz', a.params.id), 'R'); return ok(await dienst.aendereNotiz(a.params.id, b(a).text, ich(a).id)); } },
-    { methode: 'DELETE', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.rechtepruefung.mappeVon('notiz', a.params.id), 'R'); await dienst.loescheNotiz(a.params.id, ich(a).id); return leer; } },
+    { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.mappen.notizen(a.params.id)); } },
+    { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.mappenNotizen.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },
+    { methode: 'PUT', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.rechtepruefung.mappeVon('notiz', a.params.id), 'R'); return ok(await dienst.mappenNotizen.aendereNotiz(a.params.id, b(a).text, ich(a).id)); } },
+    { methode: 'DELETE', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.rechtepruefung.mappeVon('notiz', a.params.id), 'R'); await dienst.mappenNotizen.loescheNotiz(a.params.id, ich(a).id); return leer; } },
     // Änderungshistorie (#57)
-    { methode: 'GET', pfad: '/api/mappen/:id/verweisende', zugang: 'angemeldet', handler: async (a) => ok(await dienst.verweisende(a.params.id, String(a.query.typ ?? ''), String(a.query.feld ?? ''), await zg(a))) },
+    { methode: 'GET', pfad: '/api/mappen/:id/verweisende', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappen.verweisende(a.params.id, String(a.query.typ ?? ''), String(a.query.feld ?? ''), await zg(a))) },
     { methode: 'GET', pfad: '/api/mappen/:id/historie', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, a.params.id, 'R');
       // #800: ?register=… zeigt, was dieses Register „Historie“ zeigt; ?max=…&vor=… seitenweise. Ohne Angaben alles.
-      return ok(await dienst.historie(a.params.id, { register: a.query.register, max: a.query.max, vor: a.query.vor }));
+      return ok(await dienst.mappenHistorie.historie(a.params.id, { register: a.query.register, max: a.query.max, vor: a.query.vor }));
     } },
     // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
-    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'P'); return ok(await dienst.zeigePasswort(a.params.id, a.params.feld, ich(a).id)); } },
+    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'P'); return ok(await dienst.passwortfelder.zeigePasswort(a.params.id, a.params.feld, ich(a).id)); } },
     // Hinweise von Paketen (#1034): nur Dienstkonten mit dms:hinweise; das Paket ergibt sich aus dem Konto.
     { methode: 'PUT', pfad: '/api/mappen/:id/hinweise/:schluessel', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappenHinweise.setze(await zg(a), a.params.id, a.params.schluessel, b(a))) },
     { methode: 'DELETE', pfad: '/api/mappen/:id/hinweise/:schluessel', zugang: 'angemeldet', handler: async (a) => { await dienst.mappenHinweise.entferne(await zg(a), a.params.id, a.params.schluessel); return leer; } },
     // Vor dem Speichern (#126): Rechte mit den neuen Werten – für die Warnung beim Selbst-Entziehen.
-    { methode: 'POST', pfad: '/api/mappen/:id/rechte-vorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.rechteVorschau(a.params.id, a.body, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/rechte-vorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.mappenEingaben.rechteVorschau(a.params.id, a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
-      const m = await dienst.legeMappeAn(a.body, ich(a).id, false, await zg(a));
+      const m = await dienst.mappen.legeMappeAn(a.body, ich(a).id, false, await zg(a));
       L.ablage.info('Mappe angelegt', { typ: await typName(m.typId), titel: m.titel, id: m.id });
       return ok(m, 201);
     } },
     { methode: 'PUT', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
-      const m = await dienst.aendereMappe(a.params.id, a.body, ich(a).id, await zg(a));
+      const m = await dienst.mappen.aendereMappe(a.params.id, a.body, ich(a).id, await zg(a));
       await modusSpur(a, [m.id], 'geaendert');
       L.ablage.info('Mappe geändert', { typ: await typName(m.typId), titel: m.titel, id: m.id });
       return ok(m);
@@ -158,11 +158,11 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     // Ein Vorgang (#424): alle Mappen, die zusammen gelöscht wurden.
     { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), false, quelle(a))) },
     /* … und in der Werkbank alles */
-    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.kern.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
     { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true, quelle(a))) },
     { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/dokumente/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
     { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => {
-      const historieTage = b(a).historieTage === undefined ? await dienst.historieTage() : await dienst.setzeHistorieTage(b(a).historieTage);
+      const historieTage = b(a).historieTage === undefined ? await dienst.mappenHistorie.historieTage() : await dienst.mappenHistorie.setzeHistorieTage(b(a).historieTage);
       const r = b(a).tage === undefined ? { tage: await dienst.kern.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage, ich(a).id);
       return ok({ ...r, historieTage });
     } },

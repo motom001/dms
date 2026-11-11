@@ -203,8 +203,8 @@ describe('Feld: Aus Dokument füllen und Zum Wiederfinden nutzen (#938)', () => 
     const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', wiederfinden: true }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text', wiederfinden: true }], register: [FELDREG, DOK] });
     const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }, { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', wiederfinden: true }, { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: partner.id, wiederfinden: true }], register: [FELDREG, DOK] });
     const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'rechnungsnummer', label: 'Rechnungsnummer', typ: 'text', wiederfinden: true }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: vertrag.id, wiederfinden: true }], register: [FELDREG, DOK] });
-    const sw = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, lena.id);
-    const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
+    const sw = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, lena.id);
+    const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom', vertragsnummer: 'WV-1043', partner: sw.id } }, lena.id);
     // Jonas darf Verträge nicht lesen.
     await d.setzeBerechtigungen(vertrag.id, { grund: { C: false, R: false, U: false, D: false, P: false }, regeln: [] }, true);
     const fuerLena = await d.erkennung.abgleich(RECHNUNG, rechnung.id, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }));

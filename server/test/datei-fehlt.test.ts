@@ -104,7 +104,7 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
       { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
     ] } as never);
     await d.legeSichtAn({ name: 'Verträge', typen: [typ.id] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
     weg = (await d.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF('Rechnung von Jonas'), lena.id)).dokument;
     da = (await d.ladeHoch(m.id, { register: 'belege', name: 'Vertrag.pdf', typ: 'application/pdf' }, PDF('Vertrag mit Petra'), lena.id)).dokument;
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());

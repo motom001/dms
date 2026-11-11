@@ -30,7 +30,7 @@ async function aufbau(pause: () => string | null = () => null) {
   const e = new Eingangsordner(ordner, { dienst: d, einstellungen, benutzer: () => konten.listeBenutzer(), pause });
   const posten = async () => {
     const post = await d.postTyp();
-    return Promise.all((await d.listeMappen(post.id)).map(async (m) => ({ m, docs: (await d.holeMappe(m.id)).dokumente })));
+    return Promise.all((await d.mappen.listeMappen(post.id)).map(async (m) => ({ m, docs: (await d.mappen.holeMappe(m.id)).dokumente })));
   };
   return { d, e, ordner, anna, thomas, einstellungen, posten };
 }

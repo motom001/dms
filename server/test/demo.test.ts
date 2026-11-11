@@ -76,16 +76,16 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
     assert.ok(r.dokumente!.bytes > 0 && r.dokumente!.seiten >= r.dokumente!.anzahl - r.dokumente!.duplikate);
     assert.equal(r.dokumente!.jeArt.scan + r.dokumente!.jeArt.bild + r.dokumente!.jeArt.gross, 0);
     assert.deepEqual(stände.at(-1)![0], stände.at(-1)![1], 'Fortschritt endet vollständig');
-    const demo = (await d.listeMappen()).filter((m) => m.demo);
+    const demo = (await d.mappen.listeMappen()).filter((m) => m.demo);
     let docs = 0;
-    for (const m of demo) docs += (await d.holeMappe(m.id)).dokumente.length;
+    for (const m of demo) docs += (await d.mappen.holeMappe(m.id)).dokumente.length;
     assert.equal(docs, r.dokumente!.anzahl);
 
     const entf: number[] = [];
     const e = await d.entferneDemo((f) => entf.push(f), 25);
     assert.equal(e.entfernt, demo.length);
     assert.ok(entf.length >= 3, 'mehrere Pakete');
-    assert.equal((await d.listeMappen()).filter((m) => m.demo).length, 0);
+    assert.equal((await d.mappen.listeMappen()).filter((m) => m.demo).length, 0);
   });
 
   it('weniger als bestellt: übersprungen mit Grund je Mappentyp, sofort nach dem Schritt Mappen und schon vorab (#711)', async () => {
@@ -121,7 +121,7 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
     assert.ok(s.mappenMitRegister > 0 && s.dokumente!.dokumente > 0 && s.dokumente!.bytes > 0);
     assert.equal(s.reicht, false);
     await assert.rejects(erzeugeDemo(d, o, null, () => {}, knapp), status(507));
-    assert.equal((await d.listeMappen()).filter((m) => m.demo).length, 0, 'nichts angelegt');
+    assert.equal((await d.mappen.listeMappen()).filter((m) => m.demo).length, 0, 'nichts angelegt');
     const e = schaetze(100, { anteil: 100, von: 1, bis: 1, mischung: { ...MISCHUNGEN.leicht }, duplikate: 0 });
     assert.equal(e.dokumente, 100);
     assert.deepEqual(Object.keys(e.jeArt), [...DOKUMENTARTEN]);

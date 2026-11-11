@@ -26,7 +26,7 @@ async function aufbau() {
     { key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: filter },
     { key: 'kopie', label: 'Kopie an', typ: 'referenz', zielTyp: partner.id, mehrfach: true, auswahlFilter: filter },
   ] });
-  const p = async (name: string, art: string, aktiv = true) => d.legeMappeAn({ typId: partner.id, werte: { name, art, aktiv } });
+  const p = async (name: string, art: string, aktiv = true) => d.mappen.legeMappeAn({ typId: partner.id, werte: { name, art, aktiv } });
   return { d, partner, bericht, mueller: await p('Dr. Müller', 'Arzt'), meier: await p('Dr. Meier', 'Arzt'), alt: await p('Dr. Alt', 'Arzt', false), allianz: await p('Allianz', 'Versicherung') };
 }
 
@@ -38,7 +38,7 @@ describe('Auswahlfilter am Referenzfeld (#172)', () => {
       (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('Auswahlfilter'));
     const dok = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'x', label: 'X', typ: 'text' }] });
     assert.equal(dok.felder[0].auswahlFilter, undefined);
-    assert.deepEqual(await d.zaehleAuswahl({ zielTyp: partner.id, bedingungen: bericht.felder[0].auswahlFilter }, ICH.id), { passen: 2, gesamt: 4, probleme: [] });
+    assert.deepEqual(await d.mappenEingaben.zaehleAuswahl({ zielTyp: partner.id, bedingungen: bericht.felder[0].auswahlFilter }, ICH.id), { passen: 2, gesamt: 4, probleme: [] });
   });
 
   it('Auswahl bietet nur passende Mappen an; Vorbelegung zum Anlegen', async () => {
@@ -53,21 +53,21 @@ describe('Auswahlfilter am Referenzfeld (#172)', () => {
 
   it('streng: neue und geänderte Werte müssen passen; bestehende bleiben mit Hinweis', async () => {
     const { d, bericht, partner, mueller, meier, allianz, alt } = await aufbau();
-    await assert.rejects(d.legeMappeAn({ typId: bericht.id, werte: { arzt: allianz.id } }), (e) => e instanceof Fachfehler && e.status === 422 && JSON.stringify(e.details).includes('Allianz'));
-    await assert.rejects(d.legeMappeAn({ typId: bericht.id, werte: { kopie: [mueller.id, alt.id] } }), status(422));
-    const b = await d.legeMappeAn({ typId: bericht.id, werte: { arzt: mueller.id, kopie: [meier.id] } });
+    await assert.rejects(d.mappen.legeMappeAn({ typId: bericht.id, werte: { arzt: allianz.id } }), (e) => e instanceof Fachfehler && e.status === 422 && JSON.stringify(e.details).includes('Allianz'));
+    await assert.rejects(d.mappen.legeMappeAn({ typId: bericht.id, werte: { kopie: [mueller.id, alt.id] } }), status(422));
+    const b = await d.mappen.legeMappeAn({ typId: bericht.id, werte: { arzt: mueller.id, kopie: [meier.id] } });
     // Dr. Müller passt später nicht mehr (Art geändert): bleibt gültig, mit Hinweis
-    await d.aendereMappe(mueller.id, { werte: { ...mueller.werte, art: 'Handwerker' } });
-    const det = await d.holeMappe(b.id);
+    await d.mappen.aendereMappe(mueller.id, { werte: { ...mueller.werte, art: 'Handwerker' } });
+    const det = await d.mappen.holeMappe(b.id);
     assert.deepEqual(det.unpassend, { arzt: [mueller.id] });
-    await d.aendereMappe(b.id, { werte: { ...b.werte, kopie: [meier.id] } });
+    await d.mappen.aendereMappe(b.id, { werte: { ...b.werte, kopie: [meier.id] } });
     // Neu hinzu muss passen
-    await assert.rejects(d.aendereMappe(b.id, { werte: { ...b.werte, kopie: [meier.id, allianz.id] } }), status(422));
+    await assert.rejects(d.mappen.aendereMappe(b.id, { werte: { ...b.werte, kopie: [meier.id, allianz.id] } }), status(422));
     // Wechsel auf eine andere unpassende geht nicht, zurück auf die alte unpassende auch nicht (sie ist dann neu)
-    await assert.rejects(d.aendereMappe(b.id, { werte: { ...b.werte, arzt: allianz.id } }), status(422));
+    await assert.rejects(d.mappen.aendereMappe(b.id, { werte: { ...b.werte, arzt: allianz.id } }), status(422));
     // Filter geändert: bestehende Werte bleiben
     await d.mappentypen.aendereTyp(bericht.id, { ...bericht, felder: [{ ...bericht.felder[0], auswahlFilter: [{ art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Versicherung'] } }] }, bericht.felder[1]] });
-    const b2 = await d.aendereMappe(b.id, { werte: { ...b.werte } });
+    const b2 = await d.mappen.aendereMappe(b.id, { werte: { ...b.werte } });
     assert.equal(b2.werte.arzt, mueller.id);
     assert.ok(partner);
   });
@@ -86,7 +86,7 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
       { key: 'gebiet', label: 'Fachgebiet', typ: 'auswahl', optionen: ['Kardiologie', 'Orthopädie'] },
       { key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: filter },
     ] });
-    const a = (name: string, fach: string) => d.legeMappeAn({ typId: partner.id, werte: { name, fach } });
+    const a = (name: string, fach: string) => d.mappen.legeMappeAn({ typId: partner.id, werte: { name, fach } });
     return { d, partner, bericht, herz: await a('Dr. Herz', 'Kardiologie'), knie: await a('Dr. Knie', 'Orthopädie'), zahn: await a('Dr. Zahn', 'Zahnmedizin') };
   }
 
@@ -115,14 +115,14 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
 
   it('Server prüft mit den Werten, die gespeichert werden; Hinweis vor dem Speichern', async () => {
     const { d, bericht, herz, knie } = await aufbau2();
-    await assert.rejects(d.legeMappeAn({ typId: bericht.id, werte: { gebiet: 'Kardiologie', arzt: knie.id } }), status(422));
-    const b = await d.legeMappeAn({ typId: bericht.id, werte: { gebiet: 'Kardiologie', arzt: herz.id } });
+    await assert.rejects(d.mappen.legeMappeAn({ typId: bericht.id, werte: { gebiet: 'Kardiologie', arzt: knie.id } }), status(422));
+    const b = await d.mappen.legeMappeAn({ typId: bericht.id, werte: { gebiet: 'Kardiologie', arzt: herz.id } });
     // Beide Felder im selben Zug geändert: passt
-    const b2 = await d.aendereMappe(b.id, { werte: { gebiet: 'Orthopädie', arzt: knie.id } });
+    const b2 = await d.mappen.aendereMappe(b.id, { werte: { gebiet: 'Orthopädie', arzt: knie.id } });
     assert.equal(b2.werte.arzt, knie.id);
     // Nur das Fachgebiet geändert: bestehender Arzt bleibt, Hinweis
-    await d.aendereMappe(b.id, { werte: { gebiet: 'Kardiologie', arzt: knie.id } });
-    assert.deepEqual((await d.holeMappe(b.id)).unpassend, { arzt: [knie.id] });
-    assert.deepEqual(await d.auswahlPruefen({ typId: bericht.id, feldKey: 'arzt', ids: [knie.id, herz.id], werte: { gebiet: 'Kardiologie' } }, ICH.id), { unpassend: [knie.id], gruende: { [knie.id]: ['gebiet'] } });
+    await d.mappen.aendereMappe(b.id, { werte: { gebiet: 'Kardiologie', arzt: knie.id } });
+    assert.deepEqual((await d.mappen.holeMappe(b.id)).unpassend, { arzt: [knie.id] });
+    assert.deepEqual(await d.mappenEingaben.auswahlPruefen({ typId: bericht.id, feldKey: 'arzt', ids: [knie.id, herz.id], werte: { gebiet: 'Kardiologie' } }, ICH.id), { unpassend: [knie.id], gruende: { [knie.id]: ['gebiet'] } });
   });
 });

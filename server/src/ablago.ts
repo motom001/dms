@@ -692,13 +692,13 @@ if (leiter) {
   log.info(`E-Mail-Versand: ${kurz.mail === 'aus' ? 'aus – Links werden in der Benutzerverwaltung angezeigt (einrichten in Werkbank → E-Mail und Adresse)' : kurz.mail}`);
   log.info(`Adresse für Links: ${kurz.adresse}`);
   start.schritt('titel');
-  const nachgezogen = await dienst.titelNachziehen();
+  const nachgezogen = await dienst.mappenTitel.titelNachziehen();
   if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
   // Systemtypen Benutzer und Rolle anlegen und jedem Benutzer seine Mappe geben (auch nach einem Update).
   start.schritt('benutzer');
   await dienst.gleicheBenutzerAb(await konten.listeBenutzer(), (f, g) => start.menge(f, g));
   // Titel „… (ehemalig)“ aus älteren Versionen zurücksetzen (#663); deaktiviert zeigt die Oberfläche durchgestrichen.
-  const ehemalig = await dienst.ehemaligZuruecksetzen();
+  const ehemalig = await dienst.mappenTitel.ehemaligZuruecksetzen();
   if (ehemalig) log.info(`Titel von ${ehemalig} deaktivierten Benutzern ohne „(ehemalig)“ neu berechnet`);
 }
 // Systemkonto „Automatisierung“ (#673): sichtbar, nie anmeldbar; Automatisierungen (#674) laufen darunter.
@@ -713,9 +713,9 @@ if (leiter) {
   wartung.beimAusschalten(() => dienst.ereignisse.wecke());
   // Schlüssel für Mappentypen (#145), einmalig nach dem Update.
   start.schritt('typen');
-  await dienst.typSchluesselNachziehen();
+  await dienst.mappenTitel.typSchluesselNachziehen();
   // Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146), einmalig nach dem Update.
-  await dienst.hakenUeberfuehren();
+  await dienst.mappenTitel.hakenUeberfuehren();
   const geprueft = await dienst.passung.passungNachziehen((f, g) => start.menge(f, g));
   if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 }

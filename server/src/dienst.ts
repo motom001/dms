@@ -1,4 +1,4 @@
-import type { Abrufweg, Abruffassung, Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Dokument, Herkunft, Notiz, Historieneintrag, Mappe, Mappentyp, MappenBezug, Wert, Werte } from '../../shared/src/model';
+import type { Systemkonto, Aufgabe, FallOhneLeserecht, Benutzer, Dokument, Herkunft, Mappentyp, Werte } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -6,9 +6,9 @@ import { EIGENE_MAPPEN, Haushaltsstand, MINDESTENS_MS, NUR_FAVORITEN, ZAEHLT_FUE
 import { speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { Fachfehler } from './fehler';
 import { aufkleberPdf, ETIKETTEN } from './aufkleber';
-import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
+import { istVerschluesselt, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
-import { type NeueMappe, type Repo } from './repo';
+import { type Repo } from './repo';
 import { type Sicht } from '../../shared/src/sichten';
 import type { ExportQuelle } from './vollexport';
 import { type BaumQuelle } from './baum';
@@ -19,7 +19,6 @@ import type { AuskunftEintrag, AuskunftLink } from '../../shared/src/auskunft';
 import { type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
-import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import { type StempelTyp } from '../../shared/src/stempel';
 import { type InstalliertesPaket, type BeispielStand } from '../../shared/src/pakete';
 import { type FassungInfo } from '../../shared/src/dateiumwandlung';
@@ -36,7 +35,7 @@ import { Ereignisverteiler } from './ereignisse';
 import { Eingang } from './hochladen';
 import { type KatalogEreignis } from '../../shared/src/ereignisse';
 import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
-import type { Regelwerk, Rechte } from '../../shared/src/rechte';
+import type { Regelwerk } from '../../shared/src/rechte';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
 import { SucheDienst } from './suche';
 import { ZugriffDienst } from './zugriff';
@@ -291,8 +290,8 @@ export class Dienst {
       kiSperre: (paketId) => this.ki.kiSperreFuer(paketId),
       mitnehmbar: (ich, z, ids) => this.mitnehmbar(ich, z, ids),
       ladeHoch: (id, e, inhalt, von) => this.ladeHoch(id, { ...e, herkunft: 'paket' }, inhalt, von),
-      aendereMappe: (id, werte, von, z, anlass) => this.aendereMappe(id, { werte }, von, z, { text: anlass }),
-      legeMappeAn: (typId, werte, von, z) => this.legeMappeAn({ typId, werte }, von, false, z),
+      aendereMappe: (id, werte, von, z, anlass) => this.mappen.aendereMappe(id, { werte }, von, z, { text: anlass }),
+      legeMappeAn: (typId, werte, von, z) => this.mappen.legeMappeAn({ typId, werte }, von, false, z),
       ausgabe: (mappeId, d, ich) => this.ausgang.dateiFuerAusgabe(mappeId, d, ich),
       kurzzustand: () => this.kurzzustand,
     });
@@ -317,7 +316,7 @@ export class Dienst {
     });
     this.typpakete = new TypPakete(this.kern, this.rechtepruefung, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
     this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.passungsAufgaben(liste) });
-    this.nummernkreise = new Nummernkreise(this.kern, { archivKreis: () => this.archivKreis(), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), auftraege: this.auftraege });
+    this.nummernkreise = new Nummernkreise(this.kern, { archivKreis: () => this.mappenArchiv.archivKreis(), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), auftraege: this.auftraege });
     this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
       schreibeSystemMappe: (typ, id, e, von, kennung) => this.schreibeSystemMappe(typ, id, e, von, kennung), loescheMappeIntern: (id, typ, von) => this.loescheMappeIntern(id, typ, von),
       spiegleBenutzer: (b, von, abwesenheit) => this.spiegleBenutzer(b, von, abwesenheit), aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von), kurzzustand: () => this.kurzzustand,
@@ -333,7 +332,7 @@ export class Dienst {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
       mitArchivStand: (d) => this.mitArchivStand(d), mitPdfSchutz: (d) => this.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
-      verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
+      verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
@@ -352,7 +351,7 @@ export class Dienst {
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
-    this.tresor?.registriere(() => this.unlesbarePasswoerter());
+    this.tresor?.registriere(() => this.passwortfelder.unlesbarePasswoerter());
     // Was verschlüsselt ist, je Art (#410): dieselben Stellen, die der Schlüsselwechsel umschlüsselt.
     // Passwortfelder meldet unlesbarePasswoerter genauer (mit Feldnamen), den Mailserver der Betrieb.
     this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
@@ -381,12 +380,12 @@ export class Dienst {
     const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.ocr, listeTypen: () => this.mappentypen.listeTypen() });
     const versionen = new DokumentVersionen(this.kern, {
       ocr: () => this.ocr, neueDateien: (docs) => this.neueDateien(docs), raeumeAuf: (sha) => this.raeumeAuf(sha),
-      aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
+      aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
     });
     const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.automatischVerkleinert(ein, name),
       volltextFertig: (e, m) => this.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
-      pruefeArchivDokument: (id, was) => this.pruefeArchivDokument(id, was),
+      pruefeArchivDokument: (id, was) => this.mappenArchiv.pruefeArchivDokument(id, was),
     });
     return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen };
   }
@@ -508,7 +507,7 @@ export class Dienst {
       rechte: this.rechtepruefung, passung: this.passung, historie: this.mappenHistorie, dokumente: this.dokumente, versionen: this.dokumentVersionen,
       ausgang: this.ausgang, sichten: this.sichten, systemmappen: this.postSystemmappen,
     } as LoeschenTeile;
-    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), aktualisiereTitel: (ids: string[]) => this.aktualisiereTitel(ids), konten: () => this.konten };
+    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), aktualisiereTitel: (ids: string[]) => this.mappenTitel.aktualisiereTitel(ids), konten: () => this.konten };
     teile.loeschen = new LoeschenDienst(this.kern, teile, anschluss);
     teile.papierkorb = new Papierkorb(this.kern, teile, anschluss);
     teile.protokoll = new LoeschprotokollVerwaltung(this.kern, teile);
@@ -560,7 +559,7 @@ export class Dienst {
     // Ist Teil einer anderen Mappe (#1031) umgeschaltet: aus den Ansichten heraus bzw. wieder mit eigener Ansicht.
     a.typGeaendert.anmelden('sichten.teile', async ({ alt, typ }) => { await this.sichtenVerwaltung.teilUmgeschaltet(alt, typ); });
     // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
-    a.typGeaendert.anmelden('mappen.titel', async ({ typ }) => { await this.aktualisiereTitel((await this.repo.listeMappen(typ.id)).map((m) => m.id)); });
+    a.typGeaendert.anmelden('mappen.titel', async ({ typ }) => { await this.mappenTitel.aktualisiereTitel((await this.repo.listeMappen(typ.id)).map((m) => m.id)); });
     a.typGeaendert.anmelden('mappentypen.passung', async ({ typ }) => { await this.passung.pruefePassung(typ.id); });
     // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
     a.typGeaendert.anmelden('aufgaben.fristen', async ({ typ }) => { await this.fristenAbgleichen({ typId: typ.id }); });
@@ -686,10 +685,6 @@ export class Dienst {
 
   /* ---------- Passwortfelder (#46) ---------- */
 
-  get passwoerterMoeglich() { return this.passwortfelder.passwoerterMoeglich; }
-  unlesbarePasswoerter(): Promise<Betroffen[]> { return this.passwortfelder.unlesbarePasswoerter(); }
-  zeigePasswort(mappeId: string, feldKey: string, benutzerId: string | null = null): Promise<{ wert: string }> { return this.passwortfelder.zeigePasswort(mappeId, feldKey, benutzerId); }
-  entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string, benutzerId: string | null = null): Promise<T[]> { return this.passwortfelder.entschluesselePasswoerter<T>(mappen, wer, benutzerId); }
 
   /* ---------- Aufgaben (#54) und Erwähnungen (#56), aufgaben/aufgaben.dienst.ts ---------- */
 
@@ -739,7 +734,6 @@ export class Dienst {
 
   /* ---------- Notizen (#55) ---------- */
 
-  notizen(mappeId: string): Promise<Notiz[]> { return this.mappen.notizen(mappeId); }
 
   /* ---------- E-Mail aus der Mappe (#58, #151, ausgang/email.ts) ---------- */
 
@@ -748,13 +742,9 @@ export class Dienst {
 
   /* ---------- Notizen anlegen, ändern, löschen (#55, mappen/notizen.ts) ---------- */
 
-  legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> { return this.mappenNotizen.legeNotizAn(mappeId, text, von); }
-  aendereNotiz(id: string, text: unknown, von: string | null): Promise<Notiz> { return this.mappenNotizen.aendereNotiz(id, text, von); }
-  loescheNotiz(id: string, von: string | null) { return this.mappenNotizen.loescheNotiz(id, von); }
 
   /* ---------- Favorit = Abo (#422) ---------- */
 
-  persoenlicheEinstellungen(benutzerId: string): Promise<Record<string, unknown>> { return this.mappen.persoenlicheEinstellungen(benutzerId); }
 
   /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506, aufgaben/aufgaben.dienst.ts) ---------- */
 
@@ -770,19 +760,6 @@ export class Dienst {
   favoritenBenachrichtigungErlaubt(benutzerId: string): Promise<boolean> { return this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(benutzerId); }
   favoritenVorgabeAnwenden(von: string): Promise<number> { return this.ohneEmpfaenger.favoritenVorgabeAnwenden(von); }
   favoritenMelden(mappeId: string, von: string): Promise<number> { return this.ohneEmpfaenger.favoritenMelden(mappeId, von); }
-  gesehen(ich: { id: string }, mappeIds: unknown, aufgaben?: Aufgabe[]) { return this.mappen.gesehen(ich, mappeIds, aufgaben); }
-  setzeFavoritBenachrichtigen(ich: { id: string }, mappeId: string, an: unknown) { return this.mappen.setzeFavoritBenachrichtigen(ich, mappeId, an); }
-  historie(mappeId: string, o: { register?: unknown; max?: unknown; vor?: unknown } = {}): Promise<Historieneintrag[]> { return this.mappenHistorie.historie(mappeId, o); }
-  notiereAbruf(x: { dokumentId: string; benutzerId: string | null; weg: Abrufweg; fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; schluessel?: string | null; datei?: string }): Promise<boolean> { return this.mappenHistorie.notiereAbruf(x); }
-  historieTage(): Promise<number> { return this.mappenHistorie.historieTage(); }
-  setzeHistorieTage(eingabe: unknown): Promise<number> { return this.mappenHistorie.setzeHistorieTage(eingabe); }
-  listeMappen(typId?: string) { return this.mappen.listeMappen(typId); }
-  mappenKurz() { return this.mappen.mappenKurz(); }
-  feldwerte(typId: string, key: string) { return this.mappen.feldwerte(typId, key); }
-  verweisende(id: string, typId: string, feldKey: string, z?: Zugriff) { return this.mappen.verweisende(id, typId, feldKey, z); }
-  holeMappe(id: string, z?: Zugriff) { return this.mappen.holeMappe(id, z); }
-  /** Vorgaben (#1038): Ein Paket ändert keine Vorgabe eines anderen Pakets (403). */
-  pruefeFremdeVorgabe(z: Zugriff | undefined, mappeId: string) { return this.mappen.pruefeFremdeVorgabe(z, mappeId); }
 
   /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
 
@@ -796,8 +773,6 @@ export class Dienst {
 
   /* ---------- Favoriten (#62) ---------- */
 
-  setzeFavorit(ich: { id: string }, mappeId: string, an: boolean) { return this.mappen.setzeFavorit(ich, mappeId, an); }
-  istFavorit(ich: { id: string }, mappeId: string) { return this.mappen.istFavorit(ich, mappeId); }
 
   /* ---------- Berechtigungen (#123–#127) ---------- */
 
@@ -843,9 +818,6 @@ export class Dienst {
 
   /* ---------- Titel ---------- */
 
-  aktualisiereTitel(ids: string[]): Promise<Map<string, string>> { return this.mappenTitel.aktualisiereTitel(ids); }
-  hakenUeberfuehren(): Promise<number> { return this.mappenTitel.hakenUeberfuehren(); }
-  typSchluesselNachziehen(): Promise<number> { return this.mappenTitel.typSchluesselNachziehen(); }
 
   /* ---------- Ansicht der Werkbank (#281, werkbank/werkbank.dienst.ts) ---------- */
 
@@ -889,22 +861,6 @@ export class Dienst {
 
   /* ---------- Nummernkreise (#171) ---------- */
 
-  absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> { return this.mappenTitel.absenderVorschau(); }
-  absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> { return this.mappenTitel.absenderBereinigen(ids, von); }
-  titelNachziehen(): Promise<number> { return this.mappenTitel.titelNachziehen(); }
-  ehemaligZuruecksetzen(): Promise<number> { return this.mappenTitel.ehemaligZuruecksetzen(); }
-  unpassendeFormate(): Promise<Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }>> { return this.mappenEingaben.unpassendeFormate(); }
-  legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> { return this.mappen.legeMappeAn(eingabe, benutzerId, demo, z); }
-  auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) { return this.mappenEingaben.auswahlPruefen(e, benutzerId, z); }
-  folgen(e: unknown, z?: Zugriff) { return this.mappenEingaben.folgen(e, z); }
-  folgeVorschlaege(typ: Mappentyp, v: { vorschlaege: Record<string, { wert: Wert; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string }>; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, z?: Zugriff): Promise<void> { return this.mappenEingaben.folgeVorschlaege(typ, v, z); }
-  /** Beim Auswählen übernehmen (#1037): Vorschläge aus der gewählten Mappe, mit den Rechten der Person. */
-  vorbelegen(e: unknown, z?: Zugriff) { return this.mappenEingaben.vorbelegen(e, z); }
-  vorbelegenVorschlaege(...a: Parameters<MappenEingaben['vorbelegenVorschlaege']>): Promise<void> { return this.mappenEingaben.vorbelegenVorschlaege(...a); }
-  zaehleAuswahl(e: unknown, benutzerId: string) { return this.mappenEingaben.zaehleAuswahl(e, benutzerId); }
-  rechteVorschau(id: string, eingabe: unknown, z: Zugriff): Promise<Rechte> { return this.mappenEingaben.rechteVorschau(id, eingabe, z); }
-  aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> { return this.mappen.aendereMappe(id, eingabe, benutzerId, z, anlass); }
-  legeMappenAn(liste: NeueMappe[]) { return this.mappen.legeMappenAn(liste); }
   aktualisiereStatistik() { return this.sichten.aktualisiereStatistik(); }
   private loeschPruefung(...a: Parameters<LoeschenDienst['loeschPruefung']>) { return this.loeschen.loeschPruefung(...a); }
 
@@ -1088,10 +1044,6 @@ export class Dienst {
 
   /* ---------- Archivnummer (#345) ---------- */
 
-  archivKreis(): Promise<Nummernkreis> { return this.mappenArchiv.archivKreis(); }
-  setzeArchivnummer(id: string, eingabe: unknown, von: string | null): Promise<Dokument> { return this.mappenArchiv.setzeArchivnummer(id, eingabe, von); }
-  findeArchivnummer(eingabe: unknown, z?: Zugriff) { return this.mappenArchiv.findeArchivnummer(eingabe, z); }
-  archivAufkleber(eingabe: unknown, von: string) { return this.mappenArchiv.archivAufkleber(eingabe, von); }
 
   /* ---------- Vollexport (#254, datenschutz/vollexport.ts) ---------- */
 
@@ -1139,10 +1091,6 @@ export class Dienst {
 
   /* ---------- Archivmodus (#212) ---------- */
 
-  private pruefeArchivDokument(mappeId: string, was: string) { return this.mappenArchiv.pruefeArchivDokument(mappeId, was); }
-  archivVorschau(typId: string, e: unknown) { return this.mappenArchiv.archivVorschau(typId, e); }
-  darfWeg() { return this.mappenArchiv.darfWeg(); }
-  pruefeDateien(von: string) { return this.mappenArchiv.pruefeDateien(von); }
 
   /* ---------- Fehlende Dateien (#877, dokumente/fehlende-dateien.ts) ---------- */
 

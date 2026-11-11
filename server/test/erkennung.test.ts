@@ -146,10 +146,10 @@ async function aufbau() {
     { key: 'partner', label: 'Vertragspartner', typ: 'referenz', zielTyp: organisation.id },
     { key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text', erkennung: {}, wiederfinden: true },
   ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-  const sw = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, anna.id);
-  const bank = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Beispielbank', iban: 'DE02 1203 0000 0000 2020 51' } }, anna.id);
-  const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom Haus', partner: sw.id } }, anna.id);
-  const gas = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Gas Haus', vertragsnummer: 'GV-998877' } }, anna.id);
+  const sw = await d.mappen.legeMappeAn({ typId: organisation.id, werte: { name: 'Stadtwerke Musterstadt', kundennummer: '100-4711' } }, anna.id);
+  const bank = await d.mappen.legeMappeAn({ typId: organisation.id, werte: { name: 'Beispielbank', iban: 'DE02 1203 0000 0000 2020 51' } }, anna.id);
+  const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Strom Haus', partner: sw.id } }, anna.id);
+  const gas = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Gas Haus', vertragsnummer: 'GV-998877' } }, anna.id);
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!) });
@@ -207,7 +207,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
   it('zeigt nur Mappen, die der Benutzer lesen darf; neu rechnen über die API', async () => {
     const { d, A, B, ben, anna, organisation, sw, post, rufe } = await aufbau();
     const p = await post(BRIEF);
-    await d.aendereMappe(p.id, { werte: { fuer: ben.id } }, anna.id);
+    await d.mappen.aendereMappe(p.id, { werte: { fuer: ben.id } }, anna.id);
     // Ben darf keine Organisationen lesen.
     const nichts: Regelwerk = { grund: { ...NICHTS }, regeln: [] };
     await d.setzeBerechtigungen(organisation.id, nichts, true);
@@ -290,7 +290,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
     assert.deepEqual(r.neu.organisation, { typId: organisation.id, werte: { name: 'Elektro Muster GmbH', strasse: 'Musterweg', hausnummer: '12', plz: '01234', ort: 'Musterstadt' }, fundstelle: 'Elektro Muster GmbH · Musterweg 12 · 01234 Musterstadt' });
     assert.ok(r.zeichen > 50);
     // Gibt es die Organisation schon (hier am Namen), ist sie vorgeschlagen.
-    const elektro = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Elektro Muster GmbH' } }, null);
+    const elektro = await d.mappen.legeMappeAn({ typId: organisation.id, werte: { name: 'Elektro Muster GmbH' } }, null);
     const r2 = await d.erkennung.fuerTyp(person.id, { text: KARTE }, await d.rechtepruefung.zugriff(A));
     assert.equal(r2.vorschlaege.organisation.wert, elektro.id);
     assert.equal(r2.bezuege[elektro.id].titel, 'Elektro Muster GmbH');
@@ -314,7 +314,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
     const { d, A, B, person, anna } = await mitPerson();
     await d.setzeBerechtigungen(person.id, { grund: { ...NICHTS, R: true }, regeln: [] }, true);
     await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE }, await d.rechtepruefung.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
-    const m = await d.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
+    const m = await d.mappen.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
     await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.rechtepruefung.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
     const r = await d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.rechtepruefung.zugriff(A));
     assert.equal(r.vorschlaege.nachname.wert, 'Beispiel', 'Vorschlag auch für gefüllte Felder – die Oberfläche zeigt ihn als Alternative');
@@ -324,7 +324,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
 
   it('Dokumente der Mappe und Dateien über die API: vCard direkt, unbekannte Dateiarten 415; Beschriftung am Mappentyp', async () => {
     const { d, A, person, anna, rufe } = await mitPerson();
-    const m = await d.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
+    const m = await d.mappen.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
     const dok = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'karte.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 karte'), anna.id)).dokument;
     await assert.rejects(d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.rechtepruefung.zugriff(A)), (e: Error & { status?: number }) => e.status === 409);
     await d.schreibeVolltext(dok.id, { text: KARTE }, { id: anna.id, herkunft: 'Test', paket: false });
@@ -360,7 +360,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
   it('Standard aus; an je Mappentyp: sicher = Absender eindeutig und genau eine Zielmappe; Aufgabe mit Rückgängig', async () => {
     const { d, A, B, anna, ben, vertrag, strom, post } = await aufbau();
     const aus = await post(BRIEF, 'Ohne Einstellung');
-    assert.equal((await d.holeMappe(aus.id)).mappe.werte.stand, 'Neu', 'Standard: aus');
+    assert.equal((await d.mappen.holeMappe(aus.id)).mappe.werte.stand, 'Neu', 'Standard: aus');
     const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
     assert.equal(typ.autoZuordnen, false);
     await d.mappentypen.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
@@ -370,31 +370,31 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     const p = await d.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok = (await d.ladeHoch(p.id, { register: 'dokumente', name: 'abschlag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 abschlag'), anna.id)).dokument;
     await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
-    const nachher = (await d.holeMappe(p.id)).mappe;
+    const nachher = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(nachher.werte.stand, 'Zugeordnet');
     assert.deepEqual(nachher.werte.bezug, [strom.id]);
     assert.equal((await d.holeDokument(dok.id)).mappeId, strom.id);
-    const aufgaben = (await d.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
+    const aufgaben = (await d.mappen.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
     assert.deepEqual(aufgaben.map((a) => [a.art, a.empfaengerId, a.text]), [['zugeordnet', ben.id, 'Automatisch zugeordnet zu „Strom Haus“ – bitte prüfen']]);
-    const hist = await d.historie(p.id);
+    const hist = await d.mappenHistorie.historie(p.id);
     assert.ok(hist.some((h) => h.art === 'zugeordnet' && /automatisch zugeordnet zu „Strom Haus“.*Absender „Stadtwerke Musterstadt“ eindeutig erkannt \(.*Kundennummer 100-4711.*\)/.test(String(h.daten.text))), JSON.stringify(hist.map((h) => h.daten.text)));
-    assert.ok((await d.historie(strom.id)).some((h) => h.art === 'zugeordnet' && /automatisch zugeordnet/.test(String(h.daten.text))));
+    assert.ok((await d.mappenHistorie.historie(strom.id)).some((h) => h.art === 'zugeordnet' && /automatisch zugeordnet/.test(String(h.daten.text))));
     const e = await d.erkennung.fuerBenutzer(p.id, await d.rechtepruefung.zugriff(B));
     assert.equal(e.auto?.ziel, strom.id);
 
     // Rückgängig durch Ben: Dokument zurück, Stand neu, wieder „Post für dich“.
     const r = await d.automatikRueckgaengig(aufgaben[0].id, B);
     assert.equal(r.dokumente, 1);
-    const zurueck = (await d.holeMappe(p.id)).mappe;
+    const zurueck = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(zurueck.werte.stand, 'Neu');
     assert.ok(!zurueck.werte.bezug || (zurueck.werte.bezug as string[]).length === 0);
     assert.equal((await d.holeDokument(dok.id)).mappeId, p.id);
-    const offen = (await d.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
+    const offen = (await d.mappen.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
     assert.deepEqual(offen.map((a) => a.art), ['post']);
     await assert.rejects(d.automatikRueckgaengig(aufgaben[0].id, B), (x: Error & { status?: number }) => x.status === 409);
     // Neuer Volltext: nicht noch einmal automatisch.
     await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
-    assert.equal((await d.holeMappe(p.id)).mappe.werte.stand, 'Neu');
+    assert.equal((await d.mappen.holeMappe(p.id)).mappe.werte.stand, 'Neu');
     void A;
   });
 
@@ -403,24 +403,24 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
     await d.mappentypen.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
     // Zweiter Vertrag mit dem Absender: zwei Kandidaten → nicht eindeutig.
-    await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Fernwärme', partner: sw.id } }, anna.id);
+    await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Fernwärme', partner: sw.id } }, anna.id);
     const p1 = await post(BRIEF, 'Zwei Kandidaten');
-    assert.equal((await d.holeMappe(p1.id)).mappe.werte.stand, 'Neu');
+    assert.equal((await d.mappen.holeMappe(p1.id)).mappe.werte.stand, 'Neu');
     // Mit Vertragsnummer im Text: genau dieser Vertrag.
     const p2 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Mit Nummer');
-    assert.deepEqual((await d.holeMappe(p2.id)).mappe.werte.bezug, [gas.id]);
-    assert.equal((await d.holeMappe(p2.id)).aufgaben.find((a) => a.art === 'zugeordnet')?.empfaengerId, anna.id, 'ohne „Für“: wer die Post in Ablago gebracht hat');
+    assert.deepEqual((await d.mappen.holeMappe(p2.id)).mappe.werte.bezug, [gas.id]);
+    assert.equal((await d.mappen.holeMappe(p2.id)).aufgaben.find((a) => a.art === 'zugeordnet')?.empfaengerId, anna.id, 'ohne „Für“: wer die Post in Ablago gebracht hat');
     // Empfänger Ben darf Verträge nicht lesen → nicht automatisch.
     await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
     const p3 = await d.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     const dok3 = (await d.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
     await d.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
-    assert.equal((await d.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
+    assert.equal((await d.mappen.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
     // Archivmodus: nie automatisch, auch wenn eingeschaltet.
     await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS, C: true, R: true, U: true, D: true, P: true }, regeln: [] }, true);
     const t2 = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
     await d.mappentypen.aendereTyp(vertrag.id, { ...t2, archiv: { jahre: 10, stichtag: null } });
     const p4 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Archiv');
-    assert.equal((await d.holeMappe(p4.id)).mappe.werte.stand, 'Neu');
+    assert.equal((await d.mappen.holeMappe(p4.id)).mappe.werte.stand, 'Neu');
   });
 });

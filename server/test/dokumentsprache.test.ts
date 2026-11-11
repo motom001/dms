@@ -48,7 +48,7 @@ function faelle(pg: boolean) {
       const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
       const typ = await d.mappentypen.legeTypAn({ name: 'Brief', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const brief = async (titel: string, text: string, sprache?: string | null) => {
-        const m = await d.legeMappeAn({ typId: typ.id, werte: { titel } });
+        const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { titel } });
         const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
         return d.schreibeVolltext(dokument.id, { text, ...(sprache !== undefined ? { sprache } : {}) }, { id: ICH.id, herkunft: 'Test', paket: false });
       };

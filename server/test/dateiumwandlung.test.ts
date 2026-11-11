@@ -90,7 +90,7 @@ async function aufbau(o: { mitPaket?: boolean; mitTexterkennung?: boolean; mitHo
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
   const hoch = async (name: string, inhalt: Buffer, typAngabe = 'application/octet-stream') => {
     const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
@@ -204,7 +204,7 @@ describe('Dateien umwandeln (#577): Ablauf im Kern', () => {
     await x.vorschau.fertig();
     assert.equal((await x.vorschau.bild(dok))?.toString(), `vorschau:application/pdf:${pdf.length}`);
     // Historie der Mappe: umgewandelte Fassung.
-    const h = (await x.d.historie(x.m.id)).find((e) => e.art === 'umgewandelt');
+    const h = (await x.d.mappenHistorie.historie(x.m.id)).find((e) => e.art === 'umgewandelt');
     assert.ok(h, 'Eintrag in der Historie');
     assert.match(String(h.daten?.text), /TIFF → PDF \(Bildformate 1\.0\.0\)/);
     // Zum Ansehen.
@@ -388,7 +388,7 @@ describe('Dateien umwandeln (#796): KI-Sperre je Mappentyp', () => {
   async function mitSperre() {
     const x = await aufbau({ mitNetz: true });
     const gesundheit = await x.d.mappentypen.legeTypAn({ name: 'Gesundheit', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
-    const befund = await x.d.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'B-1' } });
+    const befund = await x.d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'B-1' } });
     const hochGesperrt = async (name: string, inhalt: Buffer) => {
       const id = (await x.d.ladeHoch(befund.id, { register: 'dokumente', name, typ: 'image/tiff' }, inhalt, null)).dokument.id;
       await x.warte(async () => !['wartet', 'laeuft'].includes((await x.repo.holeDokument(id))!.ocr!.stand));

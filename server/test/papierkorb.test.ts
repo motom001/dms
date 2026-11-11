@@ -31,13 +31,13 @@ describe('Papierkorb (#43)', () => {
   it('legt Gelöschtes in den Papierkorb, zeigt es nur dem, der es gelöscht hat, und stellt es wieder her', async () => {
     const { d, partner, vertrag } = await aufbau();
     assert.equal(await d.kern.papierkorbTage(), 30, 'Standard: 30 Tage');
-    const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
-    const v = await d.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1', partner: p.id } }, anna.id);
+    const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
+    const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1', partner: p.id } }, anna.id);
     await assert.rejects(d.loescheMappe(p.id, anna.id), status(409), 'Verweise verhindern das Löschen wie bisher');
     await d.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 x'), anna.id);
     await d.loescheMappe(v.id, anna.id);
 
-    await assert.rejects(d.holeMappe(v.id), status(404), 'woanders nicht mehr sichtbar');
+    await assert.rejects(d.mappen.holeMappe(v.id), status(404), 'woanders nicht mehr sichtbar');
     assert.equal((await d.seite(anna, { sicht: `typ:${vertrag.id}` })).gesamt, 0);
     assert.equal((await d.zaehler(anna)).papierkorb, 1);
     assert.equal((await d.zaehler(admin)).papierkorb, 0, 'je Benutzer');
@@ -47,24 +47,24 @@ describe('Papierkorb (#43)', () => {
     await assert.rejects(d.stelleWiederHer(v.id, admin), status(404), 'Fremdes nur über die Werkbank');
 
     // Eindeutige Werte werden frei, solange die Mappe im Papierkorb liegt.
-    const neu = await d.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1' } }, admin.id);
+    const neu = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1' } }, admin.id);
     await assert.rejects(d.mappentypen.loescheTyp(vertrag.id), status(409), 'Typ mit Mappen im Papierkorb bleibt');
 
     const w = await d.stelleWiederHer(v.id, anna);
     assert.equal(w.mappe.passt, false, 'Nummer inzwischen vergeben → Eingang');
     assert.match(w.mappe.problem ?? '', /Bereits vergeben/);
-    assert.equal((await d.holeMappe(neu.id)).mappe.passt, true, 'die andere Mappe bleibt in Ordnung');
-    const details = await d.holeMappe(v.id);
+    assert.equal((await d.mappen.holeMappe(neu.id)).mappe.passt, true, 'die andere Mappe bleibt in Ordnung');
+    const details = await d.mappen.holeMappe(v.id);
     assert.equal(details.dokumente.length, 1, 'Dokumente kommen mit');
-    assert.deepEqual((await d.holeMappe(p.id)).rueckverweise.map((x) => x.quelleId), [v.id], 'Verweise kommen mit');
+    assert.deepEqual((await d.mappen.holeMappe(p.id)).rueckverweise.map((x) => x.quelleId), [v.id], 'Verweise kommen mit');
     assert.equal((await d.zaehler(anna)).eingang, 1);
   });
 
   it('löscht endgültig: einzeln, beim Leeren und nach Ablauf – Dateien erst, wenn nichts mehr daran hängt', async () => {
     const { d, dateien, partner } = await aufbau();
-    const a = await d.legeMappeAn({ typId: partner.id, werte: { name: 'A' } }, anna.id);
-    const b = await d.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
-    const c = await d.legeMappeAn({ typId: partner.id, werte: { name: 'C' } }, admin.id);
+    const a = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'A' } }, anna.id);
+    const b = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
+    const c = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'C' } }, admin.id);
     const { dokument } = await d.ladeHoch(a.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
     for (const [m, wer] of [[a, anna], [b, anna], [c, admin]] as const) await d.loescheMappe(m.id, wer.id);
     assert.ok(await dateien.lies(dokument.sha256).then(() => true, () => false), 'Datei bleibt im Papierkorb');
@@ -81,11 +81,11 @@ describe('Papierkorb (#43)', () => {
 
   it('0 Tage schaltet den Papierkorb aus und leert ihn', async () => {
     const { d, partner } = await aufbau();
-    const a = await d.legeMappeAn({ typId: partner.id, werte: { name: 'A' } }, anna.id);
+    const a = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'A' } }, anna.id);
     await d.loescheMappe(a.id, anna.id);
     await assert.rejects(d.setzePapierkorbTage(-1), status(422));
     assert.deepEqual(await d.setzePapierkorbTage(0), { tage: 0, geleert: 1 });
-    const b = await d.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
+    const b = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
     await d.loescheMappe(b.id, anna.id);
     assert.equal((await d.papierkorb(anna)).length, 0, 'sofort endgültig');
     assert.equal((await d.zaehler(anna)).papierkorbTage, 0);
@@ -103,11 +103,11 @@ describe('Papierkorb (#43)', () => {
     const [e] = await d.papierkorb({ id: ich.id, rolle: 'admin' });
     assert.equal(e.id, neu.id);
     await d.gleicheBenutzerAb(await konten.listeBenutzer());
-    await assert.rejects(d.holeMappe(neu.id), status(404), 'der Abgleich beim Start holt die Mappe nicht zurück');
+    await assert.rejects(d.mappen.holeMappe(neu.id), status(404), 'der Abgleich beim Start holt die Mappe nicht zurück');
 
     await d.stelleWiederHer(neu.id, { id: ich.id, rolle: 'admin' });
     assert.equal((await konten.listeBenutzer()).find((b) => b.id === neu.id)?.aktiv, true);
-    assert.equal((await d.holeMappe(neu.id)).mappe.werte.aktiv, true);
+    assert.equal((await d.mappen.holeMappe(neu.id)).mappe.werte.aktiv, true);
 
     await konten.loescheBenutzer(ich, neu.id);
     await d.leerePapierkorb({ id: ich.id, rolle: 'admin' });

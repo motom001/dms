@@ -149,12 +149,12 @@ function faelle(pg: boolean) {
       const personTyp = pakete.find((x) => x.id === 'personen')!.typen.person;
       const autoTyp = pakete.find((x) => x.id === 'autos')!.typen.auto;
       const kontoTyp = pakete.find((x) => x.id === 'autos')!.typen.konto;
-      const lena = await d.legeMappeAn({ typId: personTyp, werte: { vorname: 'Lena', nachname: 'Muster' } }, ICH.id);
-      const a1 = await d.legeMappeAn({ typId: autoTyp, werte: { bez: 'Golf', halter: 'lena muster', ab: '2000-01-01' } }, ICH.id);
-      const a2 = await d.legeMappeAn({ typId: autoTyp, werte: { bez: 'Polo', halter: 'Tom Muster', ab: '2000-01-01' } }, ICH.id);
-      const a3 = await d.legeMappeAn({ typId: autoTyp, werte: { bez: 'Bus', halter: 'Familie', ab: '2000-01-01' } }, ICH.id);
-      const a4 = await d.legeMappeAn({ typId: autoTyp, werte: { bez: 'Rad', halter: 'Jonas Muster', ab: '2026-01-01' } }, ICH.id);
-      const k1 = await d.legeMappeAn({ typId: kontoTyp, werte: { art: 'Giro', inhaber: 'Lena und Tom Muster' } }, ICH.id);
+      const lena = await d.mappen.legeMappeAn({ typId: personTyp, werte: { vorname: 'Lena', nachname: 'Muster' } }, ICH.id);
+      const a1 = await d.mappen.legeMappeAn({ typId: autoTyp, werte: { bez: 'Golf', halter: 'lena muster', ab: '2000-01-01' } }, ICH.id);
+      const a2 = await d.mappen.legeMappeAn({ typId: autoTyp, werte: { bez: 'Polo', halter: 'Tom Muster', ab: '2000-01-01' } }, ICH.id);
+      const a3 = await d.mappen.legeMappeAn({ typId: autoTyp, werte: { bez: 'Bus', halter: 'Familie', ab: '2000-01-01' } }, ICH.id);
+      const a4 = await d.mappen.legeMappeAn({ typId: autoTyp, werte: { bez: 'Rad', halter: 'Jonas Muster', ab: '2026-01-01' } }, ICH.id);
+      const k1 = await d.mappen.legeMappeAn({ typId: kontoTyp, werte: { art: 'Giro', inhaber: 'Lena und Tom Muster' } }, ICH.id);
       // Archivmodus (#212): Mappen in der Aufbewahrungsfrist bleiben, wie sie sind.
       const at = (await d.mappentypen.listeTypen()).find((t) => t.id === autoTyp)!;
       await d.mappentypen.aendereTyp(autoTyp, { ...at, archiv: { jahre: 1, stichtag: 'ab' } });
@@ -170,7 +170,7 @@ function faelle(pg: boolean) {
       assert.equal(auto.felder.find((f) => f.key === 'halter_verweis')!.ausText, 'halter');
       assert.equal(auto.felder.find((f) => f.key === 'halter')!.pflicht, true, 'das Update ändert das alte Feld nicht');
       assert.equal(auto.titelVorlage, '{bez} – {halter}');
-      const m1 = (await d.listeMappen(autoTyp)).find((m) => m.id === a1.id)!;
+      const m1 = (await d.mappen.listeMappen(autoTyp)).find((m) => m.id === a1.id)!;
       assert.equal(m1.werte.halter, 'lena muster');
       assert.equal(m1.titel, 'Golf – lena muster');
 
@@ -192,9 +192,9 @@ function faelle(pg: boolean) {
       assert.equal(r.umgewandelt, 2);
       assert.equal(r.neuePersonen, 1);
       assert.deepEqual(r.ausgelassen.map((x) => x.mappeId).sort(), [a3.id, a4.id].sort());
-      const tom = (await d.listeMappen(personTyp)).find((m) => m.werte.nachname === 'Muster' && m.werte.vorname === 'Tom')!;
+      const tom = (await d.mappen.listeMappen(personTyp)).find((m) => m.werte.nachname === 'Muster' && m.werte.vorname === 'Tom')!;
       assert.ok(tom, 'neue Person Tom Muster');
-      const nach = new Map((await d.listeMappen(autoTyp)).map((m) => [m.id, m] as const));
+      const nach = new Map((await d.mappen.listeMappen(autoTyp)).map((m) => [m.id, m] as const));
       assert.equal(nach.get(a1.id)!.werte.halter_verweis, lena.id);
       assert.equal(nach.get(a1.id)!.werte.halter, null);
       assert.equal(nach.get(a1.id)!.titel, 'Golf – Lena Muster');
@@ -208,7 +208,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(auto.trefferliste, ['bez', 'halter_verweis']);
       assert.deepEqual(auto.register.find((r) => r.key === 'allgemein')!.felder, ['bez', 'halter_verweis', 'halter', 'ab']);
       assert.deepEqual(auto.felder.map((f) => f.key), ['bez', 'halter_verweis', 'halter', 'ab'], 'im Formular steht der Verweis vor dem alten Text');
-      const h = (await d.historie(a1.id)).find((x) => x.daten.umwandlung === r.vorgang.id)!;
+      const h = (await d.mappenHistorie.historie(a1.id)).find((x) => x.daten.umwandlung === r.vorgang.id)!;
       assert.equal(h.art, 'geaendert');
       assert.equal(h.daten.text, 'Paket-Update: Text in Verweis umgewandelt');
       assert.deepEqual(h.daten.aenderungen!.map((a) => [a.label, a.alt, a.neu]), [['Halter', '', 'Lena Muster'], ['Halter (Text)', 'lena muster', '']]);
@@ -218,14 +218,14 @@ function faelle(pg: boolean) {
       assert.deepEqual(vk.zeilen.map((x) => [x.name, x.vorschlag]), [['Lena Muster', { art: 'person', id: lena.id }], ['Tom Muster', { art: 'person', id: tom.id }]]);
       const rk = await u.umwandeln('autos', { typId: kontoTyp, feldKey: 'inhaber_verweis' }, ICH, z);
       assert.equal(rk.umgewandelt, 1);
-      assert.deepEqual((await d.listeMappen(kontoTyp)).find((m) => m.id === k1.id)!.werte.inhaber_verweis, [lena.id, tom.id]);
+      assert.deepEqual((await d.mappen.listeMappen(kontoTyp)).find((m) => m.id === k1.id)!.werte.inhaber_verweis, [lena.id, tom.id]);
       await assert.rejects(u.umwandeln('autos', { typId: kontoTyp, feldKey: 'inhaber_verweis' }, ICH, z), /nichts umzuwandeln/);
 
       // Rückgängig (Autos): Text zurück, Verweis leer. Tom bleibt – das Konto verweist auf ihn.
       const zr = await u.rueckgaengig(r.vorgang.id, ICH, z);
       assert.equal(zr.zurueck, 2);
       assert.equal(zr.personenBehalten, 1);
-      const zurueck = new Map((await d.listeMappen(autoTyp)).map((m) => [m.id, m] as const));
+      const zurueck = new Map((await d.mappen.listeMappen(autoTyp)).map((m) => [m.id, m] as const));
       assert.equal(zurueck.get(a1.id)!.werte.halter, 'lena muster');
       assert.equal(zurueck.get(a1.id)!.werte.halter_verweis, null);
       assert.equal(zurueck.get(a2.id)!.werte.halter, 'Tom Muster');
@@ -235,11 +235,11 @@ function faelle(pg: boolean) {
       assert.deepEqual(auto.register.find((r) => r.key === 'allgemein')!.felder, ['bez', 'halter', 'ab', 'halter_verweis']);
       assert.deepEqual(auto.felder.map((f) => f.key), ['bez', 'halter', 'ab', 'halter_verweis']);
       assert.equal(auto.felder.find((f) => f.key === 'halter')!.pflicht, true, 'jede Mappe hat wieder einen Text');
-      assert.ok((await d.historie(a1.id)).some((x) => x.daten.umwandlung === r.vorgang.id && x.daten.rueckgaengig === true));
+      assert.ok((await d.mappenHistorie.historie(a1.id)).some((x) => x.daten.umwandlung === r.vorgang.id && x.daten.rueckgaengig === true));
       await assert.rejects(u.rueckgaengig(r.vorgang.id, ICH, z), /schon rückgängig/);
 
       // Rückgängig (Konto) nach einer eigenen Änderung: bleibt, mit Grund.
-      await d.aendereMappe(k1.id, { werte: { inhaber_verweis: [lena.id] } }, ICH.id, z);
+      await d.mappen.aendereMappe(k1.id, { werte: { inhaber_verweis: [lena.id] } }, ICH.id, z);
       const zk = await u.rueckgaengig(rk.vorgang.id, ICH, z);
       assert.equal(zk.zurueck, 0);
       assert.deepEqual(zk.ausgelassen.map((x) => x.grund), ['Seit der Umwandlung geändert – bitte von Hand prüfen.']);
@@ -254,7 +254,7 @@ function faelle(pg: boolean) {
       const p = new Paketverwaltung(d, { version: () => '0.121.0', abruf: katalog([personen, autos10, mitGrenze]), katalogUrl: KATALOG });
       await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
       const auto = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Auto')!;
-      const m = await d.legeMappeAn({ typId: auto.id, werte: { bez: 'Familienauto', halter: 'Lena Muster', ab: '2099-01-01' } });
+      const m = await d.mappen.legeMappeAn({ typId: auto.id, werte: { bez: 'Familienauto', halter: 'Lena Muster', ab: '2099-01-01' } });
       const v = await p.vorschau({ id: 'autos' });
       const plan = v.typen.find((t) => t.name === 'Auto')!;
       assert.deepEqual(plan.formate, ['Seit']);
@@ -264,8 +264,8 @@ function faelle(pg: boolean) {
       assert.equal(neu.felder.find((f) => f.key === 'ab')!.max, 'heute');
       assert.equal(neu.felder.find((f) => f.key === 'halter_verweis')!.ausText, 'halter');
       // Der Bestand bleibt gültig; die Werkbank listet das Datum in der Zukunft.
-      assert.deepEqual((await d.unpassendeFormate())[0].felder.map((f) => f.label), ['Seit']);
-      const nachher = await d.aendereMappe(m.id, { werte: { bez: 'Familienauto' } });
+      assert.deepEqual((await d.mappenEingaben.unpassendeFormate())[0].felder.map((f) => f.label), ['Seit']);
+      const nachher = await d.mappen.aendereMappe(m.id, { werte: { bez: 'Familienauto' } });
       assert.equal(nachher.werte.ab, '2099-01-01');
     });
 
@@ -276,15 +276,15 @@ function faelle(pg: boolean) {
       await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
       const pk = (await d.kern.repo.listePakete()).find((x) => x.id === 'personen')!.typen.person;
       const autoTyp = (await d.kern.repo.listePakete()).find((x) => x.id === 'autos')!.typen.auto;
-      const a = await d.legeMappeAn({ typId: autoTyp, werte: { bez: 'Golf', halter: 'Tom Muster' } }, ICH.id);
+      const a = await d.mappen.legeMappeAn({ typId: autoTyp, werte: { bez: 'Golf', halter: 'Tom Muster' } }, ICH.id);
       await p.aktualisiere('autos', {}, ICH);
       // Die Person bekommt ein weiteres Pflichtfeld: Anlegen scheitert, die Mappe bleibt unverändert.
       const pt = (await d.mappentypen.listeTypen()).find((t) => t.id === pk)!;
       await d.mappentypen.aendereTyp(pk, { ...pt, felder: [...pt.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }] });
       const z = await d.rechtepruefung.zugriff(ADMIN);
       await assert.rejects(u.umwandeln('autos', { typId: autoTyp, feldKey: 'halter_verweis', entscheidungen: { [namensSchluessel('Tom Muster')]: { art: 'neu' } } }, ICH, z), /ließ sich nicht anlegen/);
-      assert.equal((await d.listeMappen(autoTyp)).find((m) => m.id === a.id)!.werte.halter, 'Tom Muster');
-      assert.equal((await d.listeMappen(pk)).length, 0);
+      assert.equal((await d.mappen.listeMappen(autoTyp)).find((m) => m.id === a.id)!.werte.halter, 'Tom Muster');
+      assert.equal((await d.mappen.listeMappen(pk)).length, 0);
       assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === autoTyp)!.felder.find((f) => f.key === 'halter')!.pflicht, true);
       // Ungültige Wahl wird abgelehnt.
       await assert.rejects(u.umwandeln('autos', { typId: autoTyp, feldKey: 'halter_verweis', entscheidungen: { [namensSchluessel('Tom Muster')]: { art: 'person', id: 'x' } } }, ICH, z), /keine gültige Auswahl/);

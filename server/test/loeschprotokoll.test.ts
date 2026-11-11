@@ -57,10 +57,10 @@ async function aufbau(pg: boolean) {
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{titel}', felder: [
     { key: 'titel', label: 'Titel', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieter.id, verweisart: 'zugehoerigkeit' },
   ] });
-  const m = await d.legeMappeAn({ typId: mieter.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, ANNA);
-  const v = await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kündigung Mustermann', mieter: m.id } }, ANNA);
+  const m = await d.mappen.legeMappeAn({ typId: mieter.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, ANNA);
+  const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kündigung Mustermann', mieter: m.id } }, ANNA);
   const dok = (await d.ladeHoch(v.id, { register: 'dokumente', name: 'mietvertrag-mustermann.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 vertrag'), ANNA)).dokument;
-  await d.legeNotizAn(v.id, 'Notiz zu Erika', ANNA);
+  await d.mappenNotizen.legeNotizAn(v.id, 'Notiz zu Erika', ANNA);
   return { d, mieter, vertrag, m, v, dok, einstellungen };
 }
 
@@ -188,7 +188,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal((await alle(d, { schritt: 'papierkorb' })).length, 0, 'nach 2 Jahren weg');
       assert.match(EXPORT_TABELLEN.loeschprotokoll, /loeschprotokoll\.csv/);
       if (pg) {
-        await d.loescheMappe((await d.legeMappeAn({ typId: v.typId, werte: { titel: 'x' } }, ANNA)).id, ANNA);
+        await d.loescheMappe((await d.mappen.legeMappeAn({ typId: v.typId, werte: { titel: 'x' } }, ANNA)).id, ANNA);
         await assert.rejects(pgSql!`UPDATE loeschprotokoll SET typ_name = 'x'`, /nicht ändern/);
         await assert.rejects(pgSql!`DELETE FROM loeschprotokoll`, /nicht ändern/);
       }

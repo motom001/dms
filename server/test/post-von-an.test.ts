@@ -122,13 +122,13 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     assert.equal(angelegt.werte.an, lena.id);
     assert.equal(angelegt.werte.absender, 'Stadtwerke', 'alter Name in der Antwort');
     assert.equal(angelegt.werte.fuer, lena.id);
-    const gespeichert = (await d.holeMappe(angelegt.id)).mappe;
+    const gespeichert = (await d.mappen.holeMappe(angelegt.id)).mappe;
     assert.deepEqual([gespeichert.werte.von, gespeichert.werte.an, 'absender' in gespeichert.werte, 'fuer' in gespeichert.werte], ['Stadtwerke', lena.id, false, false]);
     // „Post für dich“ entsteht über an.
     assert.deepEqual((await d.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((a) => a.art === 'post').map((a) => a.feldKey), [`an:${lena.id}`]);
 
     await rufe(markus, 'PUT', '/api/v1/mappen/:id', { params: { id: angelegt.id }, body: { werte: { absender: 'Finanzamt', fuer: markus.id } } });
-    const geaendert = (await d.holeMappe(angelegt.id)).mappe;
+    const geaendert = (await d.mappen.holeMappe(angelegt.id)).mappe;
     assert.deepEqual([geaendert.werte.von, geaendert.werte.an], ['Finanzamt', markus.id]);
     const v1 = (await rufe(markus, 'GET', '/api/v1/mappen/:id', { params: { id: angelegt.id } })).body as { mappe: Mappe };
     assert.deepEqual([v1.mappe.werte.von, v1.mappe.werte.absender, v1.mappe.werte.an, v1.mappe.werte.fuer], ['Finanzamt', 'Finanzamt', markus.id, markus.id]);
@@ -140,9 +140,9 @@ describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
     const zl = (await rufe(lena, 'GET', '/api/v1/ich/zaehler')).body as Record<string, unknown>;
     assert.deepEqual(Object.keys(zl).sort(), ['geaendert', 'neuePost', 'stand', 'ueberfaellig', 'zuErledigen']);
     assert.equal(zl.neuePost, 0, 'die Post ist jetzt an Markus');
-    await d.aendereMappe(angelegt.id, { werte: { an: lena.id } }, markus.id);
+    await d.mappen.aendereMappe(angelegt.id, { werte: { an: lena.id } }, markus.id);
     assert.equal(((await rufe(lena, 'GET', '/api/v1/ich/zaehler')).body as { neuePost: number }).neuePost, 1);
-    await d.aendereMappe(angelegt.id, { werte: { stand: POST_STAND.erledigt } }, markus.id);
+    await d.mappen.aendereMappe(angelegt.id, { werte: { stand: POST_STAND.erledigt } }, markus.id);
     void post;
   });
 
@@ -208,7 +208,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     const p1 = await d.legePostAn({ betreff: 'Strom', von: 'Stadtwerke', an: lena.id }, ich);
     const p2 = await d.legePostAn({ betreff: 'Steuer', an: jonas.id }, ich);
     const p3 = await d.legePostAn({ betreff: 'Antwort', von: 'Markus' }, ich);
-    await d.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
+    await d.mappen.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
     const p4 = await d.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
     await d.loescheMappe(p4.id, markus.id);
     const sicht = await d.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
@@ -242,7 +242,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
       for (const b of [lena, jonas]) {
         const z = await dd.rechtepruefung.zugriff({ id: b.id, rolle: 'mitglied' });
         const lesbar = await dd.rechtepruefung.lesbare(z, alle);
-        for (const id of alle) ergebnis[`${b.email} ${id}`] = { ...(await dd.rechtepruefung.rechteAn(z, (await dd.holeMappe(id)).mappe)), sql: lesbar.has(id) };
+        for (const id of alle) ergebnis[`${b.email} ${id}`] = { ...(await dd.rechtepruefung.rechteAn(z, (await dd.mappen.holeMappe(id)).mappe)), sql: lesbar.has(id) };
       }
       return ergebnis;
     };
@@ -300,7 +300,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     // Effektive Rechte genau wie vorher – im Arbeitsspeicher und als SQL-Filter.
     assert.deepEqual(await rechte(), rechteVorher);
     // Offene „Post für dich“ bleiben dieselben Aufgaben; ein Speichern legt keine zweite an.
-    await neuerDienst().aendereMappe(p1.id, { werte: { betreff: 'Strom 2026' } }, markus.id);
+    await neuerDienst().mappen.aendereMappe(p1.id, { werte: { betreff: 'Strom 2026' } }, markus.id);
     assert.deepEqual((await sql`SELECT feld_key FROM aufgaben WHERE mappe_id = ${p1.id} AND art = 'post' AND erledigt IS NULL`).map((x) => x.feld_key), [`an:${lena.id}`]);
 
     // Wiederholbar: ein zweiter Lauf ändert nichts.

@@ -41,11 +41,11 @@ describe('Postfächer mit GreenMail (#196)', { skip: HOST ? false : 'IMAP_TEST_H
     const [p] = await pf.speichere(zugang, null, 'test');
     assert.equal(await pf.abrufen(p.id), 1, 'nur die Mail der Stadtwerke');
     const post = await d.postTyp();
-    const [m] = await d.listeMappen(post.id);
+    const [m] = await d.mappen.listeMappen(post.id);
     assert.equal(m.werte.kanal, POST_KANAL.email);
     assert.equal(m.werte.betreff, 'Rechnung Oktober');
     assert.match(String(m.werte.von), /rechnung@stadtwerke\.example/);
-    assert.deepEqual((await d.holeMappe(m.id)).dokumente.map((x) => x.name).sort(), ['Rechnung Oktober.eml', 'Rechnung.pdf']);
+    assert.deepEqual((await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name).sort(), ['Rechnung Oktober.eml', 'Rechnung.pdf']);
     assert.equal(await pf.abrufen(p.id), 0, 'keine Doppelten');
 
     const s = await verbindeImap({ server: HOST!, port: 3143, verschluesselung: 'keine', benutzer: 'dms', passwort: 'geheim' }, 'Ablago');

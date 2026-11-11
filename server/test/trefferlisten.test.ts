@@ -63,11 +63,11 @@ describe('Trefferlisten (#75)', () => {
     assert.deepEqual(spaltenDerSicht([r, z], 'kurz').spalten, ['_titel', '_typ', 'betrag'], 'bei mehreren Typen Titel und Typ vorn');
     assert.deepEqual(spaltenDerSicht([r, z]).spalten, ['_titel', '_typ', 'betrag'], 'gemeinsamer Standard');
     // Verknüpfungsregister: verweisende Mappen vollständig, für die Tabelle.
-    const mappen = await d.listeMappen();
+    const mappen = await d.mappen.listeMappen();
     const partner = mappen.find((m) => m.werte.name === 'Stadtwerke Musterstadt')!;
-    const v = await d.verweisende(partner.id, r.id, 'aussteller');
+    const v = await d.mappen.verweisende(partner.id, r.id, 'aussteller');
     assert.equal(v.gesamt, 1); assert.equal(v.mappen[0].typId, r.id); assert.ok(Object.keys(v.bezuege).length > 0);
-    assert.equal((await d.verweisende(partner.id, r.id, 'gibtsnicht')).gesamt, 0);
+    assert.equal((await d.mappen.verweisende(partner.id, r.id, 'gibtsnicht')).gesamt, 0);
     // Gespeichert wird nur der Schlüssel.
     const s = await d.legeSichtAn({ name: 'Kurz', typen: [r.id, z.id], bedingungen: [], trefferliste: 'kurz' });
     assert.equal(s.trefferliste, 'kurz');

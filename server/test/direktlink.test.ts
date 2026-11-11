@@ -94,7 +94,7 @@ describe('Sprechende Links (#98)', () => {
 
   it('baut Links aus einem eindeutigen Feld oder aus den Titelfeldern, die wieder zur Mappe führen', async () => {
     const { d, typ } = await mitBeispielen();
-    const mappen = await d.listeMappen();
+    const mappen = await d.mappen.listeMappen();
     const vertrag = mappen.find((m) => m.werte.vertragsnummer === 'SV-4711')!;
     const l = linkZuMappe(typ('Vertrag'), vertrag)!;
     assert.equal(l, `${LINK_PFAD}?typ=vertrag&vertragsnummer=SV-4711`, 'eindeutiges Feld');
@@ -110,7 +110,7 @@ describe('Sprechende Links (#98)', () => {
     }
     // Felder mit festem Parameternamen gehen über „feld.operator“.
     const t = await d.mappentypen.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
-    const m = await d.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
     const ld = linkZuMappe(t, m)!;
     assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);
     assert.deepEqual((await d.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);

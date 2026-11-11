@@ -68,7 +68,7 @@ function faelle(pg: boolean) {
       const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }] });
       const lese = await d.mappentypen.legeTypAn({ name: 'Gesperrt', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
       const mappe = async (titel: string, text?: string, von?: string, t = typ) => {
-        const m = await d.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
+        const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
         if (text !== undefined) {
           const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
           await r.ocrSetze(dokument.id, { stand: 'fertig', text });

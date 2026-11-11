@@ -97,7 +97,7 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
   it('Tägliche Zusammenfassung: derselbe Text wie bisher; abbestellt, abwesend, nichts offen → nichts', async () => {
     const { d, konten, lena, admin } = await aufbau();
     const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
     await d.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
     const mailer = { sende: async (an: string, betreff: string, text: string) => { mails.push({ an, betreff, text }); } };
@@ -120,15 +120,15 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
   it('Favoriten-Änderungen melden: Ereignis „Favorit geändert“ → gebündelte Benachrichtigung', async () => {
     const { d, motor, lena, admin } = await aufbau();
     const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
     const L = { id: lena.id, rolle: 'mitglied' };
-    await d.setzeFavorit(L, m.id, true);
+    await d.mappen.setzeFavorit(L, m.id, true);
     await d.ereignisse.verteile();
     const a = await motor.lege({ name: 'F', wenn: { art: 'favorit.geaendert', typ: null }, dann: [{ id: 'f1', art: 'favoriten' }] }, admin.id);
     await motor.schalte(a.id, true, admin.id);
     motor.start();
     try {
-      await d.aendereMappe(m.id, { werte: { nr: '2' } }, admin.id);
+      await d.mappen.aendereMappe(m.id, { werte: { nr: '2' } }, admin.id);
       await d.ereignisse.verteile();
       const n = (await d.meineAufgaben(L)).filter((x) => x.art === 'aenderung');
       assert.equal(n.length, 1);

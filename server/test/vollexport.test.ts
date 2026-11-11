@@ -30,11 +30,11 @@ describe('Vollexport (#254)', () => {
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'benutzer', label: 'Benutzername', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' },
       { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id }, { key: 'betrag', label: 'Betrag', typ: 'betrag' }, { key: 'ab', label: 'Ab', typ: 'datum' },
     ], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Unterlagen', art: 'dokumente', versionierung: true }] });
-    const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' } });
-    const z = await d.legeMappeAn({ typId: konto.id, werte: { name: 'Portal', benutzer: 'anna', pw: 'geheim123', partner: p.id, betrag: { betrag: 12.5, waehrung: 'EUR' }, ab: '2026-12-01' } });
+    const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' } });
+    const z = await d.mappen.legeMappeAn({ typId: konto.id, werte: { name: 'Portal', benutzer: 'anna', pw: 'geheim123', partner: p.id, betrag: { betrag: 12.5, waehrung: 'EUR' }, ab: '2026-12-01' } });
     const dok = (await d.ladeHoch(z.id, { register: 'dok', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 eins'), null)).dokument;
     await d.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
-    await d.legeNotizAn(z.id, 'Notiz zum Zugang', null);
+    await d.mappenNotizen.legeNotizAn(z.id, 'Notiz zum Zugang', null);
 
     const quelle = d.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
     const ziel = await mkdtemp(join(tmpdir(), 'dms-export-'));

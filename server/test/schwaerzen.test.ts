@@ -240,7 +240,7 @@ async function aufbau(repo: Repo, versionierung = true) {
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
   ] });
-  const m = await d.legeMappeAn({ typId: t.id, werte: { name: 'Gehalt' } }, null);
+  const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Gehalt' } }, null);
   const pdf = await pdfMitAllem();
   const { dokument } = await d.ladeHoch(m.id, { register: 'dokumente', name: 'nachweis.pdf', typ: 'application/pdf' }, pdf, null);
   // Der Volltext des Originals (wie nach der Texterkennung).
@@ -274,7 +274,7 @@ describe('Schwärzen am Dokument (#392)', () => {
     assert.equal(original.sha256, dokument.sha256, 'Original unverändert');
     assert.equal(original.version ?? 1, 1);
     assert.ok(ereignisse.includes('dokument.hochgeladen'));
-    const h = await d.historie(m.id);
+    const h = await d.mappenHistorie.historie(m.id);
     const e = h.find((x) => x.art === 'geschwaerzt')!;
     assert.match(String(e.daten.text), /^geschwärzte Fassung „nachweis \(geschwärzt\)\.pdf“ von „nachweis\.pdf“ erstellt \(2 Stellen auf 1 Seite\)$/);
     assert.equal(e.benutzerId, ich);
@@ -301,7 +301,7 @@ describe('Schwärzen am Dokument (#392)', () => {
     const o = await aufbau(speicherRepo(), false);
     await assert.rejects(o.d.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich), status(409, /nur ein eigenes Dokument/));
     const k = await o.d.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'] }, ich);
-    assert.equal((await o.d.holeMappe(o.m.id)).dokumente.length, 2);
+    assert.equal((await o.d.mappen.holeMappe(o.m.id)).dokumente.length, 2);
     assert.equal(k.dokument.name, 'nachweis (geschwärzt).pdf');
     const txt = (await o.d.ladeHoch(o.m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('Mustermann'), null)).dokument;
     await assert.rejects(o.d.schwaerzenVorschau(txt.id), status(422, /PDFs und Bildern/));
@@ -368,6 +368,6 @@ describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.T
     const s = await suche('brutto') as { gesamt: number; ausschnitte?: Record<string, { dokument: string }> };
     assert.equal(s.gesamt, 1);
     assert.equal(s.ausschnitte?.[m.id]?.dokument, 'nachweis (geschwärzt).pdf');
-    assert.ok((await d.historie(m.id)).some((h) => h.art === 'geschwaerzt'));
+    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'geschwaerzt'));
   });
 });

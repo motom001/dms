@@ -193,7 +193,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
           pakete: () => pakete.installierte(),
           benutzer: () => konten.listeBenutzer(),
           postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
-          darfWeg: () => dienst.darfWeg(),
+          darfWeg: () => dienst.mappenArchiv.darfWeg(),
         }),
         // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
         postfachAnmeldung: x.postfaecher ? await sicher(() => x.postfaecher!.anmeldungFehlt()) ?? [] : [],

@@ -130,18 +130,18 @@ describe('Tabelle in der Ablage (#1030)', () => {
     const { d, rechnung } = await aufbau();
     const f = rechnung.felder.find((x) => x.key === 'positionen')!;
     assert.deepEqual([f.typ, f.pflicht, f.standard, f.quelle?.feldKey, f.quelle?.neu], ['tabelle', false, null, 'rechnung', '+ Position']);
-    const m = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', positionen: ['etwas'] } });
+    const m = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1', positionen: ['etwas'] } });
     assert.equal('positionen' in m.werte, false);
     assert.deepEqual(exportSpalten([rechnung], 'alle').filter((k) => !k.startsWith('_')), ['nr', 'privat']);
   });
 
   it('Zeilen: verweisende Mappen mit den Spalten der Trefferliste, sortiert, je 50 mit „weitere“', async () => {
     const { d, admin, rechnung, position, seite } = await aufbau();
-    const r = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
-    const andere = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
+    const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
+    const andere = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
     assert.deepEqual((await seite(admin, r.id)).gesamt, 0);
-    for (let i = 1; i <= 60; i++) await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Teil ${String(i).padStart(2, '0')}`, menge: 1, einzelpreis: { betrag: i, waehrung: 'EUR' }, pin: 'geheim' } });
-    await d.legeMappeAn({ typId: position.id, werte: { rechnung: andere.id, nr: 1, beschreibung: 'Fremd' } });
+    for (let i = 1; i <= 60; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Teil ${String(i).padStart(2, '0')}`, menge: 1, einzelpreis: { betrag: i, waehrung: 'EUR' }, pin: 'geheim' } });
+    await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: andere.id, nr: 1, beschreibung: 'Fremd' } });
     const s1 = await seite(admin, r.id, { sortierung: 'nr', absteigend: 'true' });
     assert.deepEqual([s1.typId, s1.spalten, s1.gesamt, s1.mappen.length], [position.id, ['nr', 'beschreibung', 'menge', 'einzelpreis'], 60, TABELLE_SEITE]);
     assert.deepEqual(s1.mappen.slice(0, 2).map((m) => m.werte.nr), [60, 59]);
@@ -155,21 +155,21 @@ describe('Tabelle in der Ablage (#1030)', () => {
 
   it('nur lesbare Zeilen – auch die Zahl zählt keine anderen; Verweise in Zellen ohne Titel (Ergänzung Sicherheit)', async () => {
     const { d, admin, lena, rechnung, position, seite, rufe } = await aufbau();
-    const r = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
-    await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Öffentlich' } }, admin.id);
-    for (let i = 2; i <= 4; i++) await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Privat ${i}`, privat: true } }, admin.id);
+    const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
+    await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Öffentlich' } }, admin.id);
+    for (let i = 2; i <= 4; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Privat ${i}`, privat: true } }, admin.id);
     await d.setzeBerechtigungen(position.id, privatNurErsteller, true);
     const s = await seite(lena, r.id);
     assert.deepEqual([s.gesamt, s.mappen.map((m) => m.werte.beschreibung)], [1, ['Öffentlich']]);
     assert.equal((await seite(admin, r.id)).gesamt, 4);
     // Mappe selbst nicht lesbar: keine Tabelle (wie die Mappe: 404).
     await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
-    const geheim = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-geheim', privat: true } }, admin.id);
+    const geheim = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-geheim', privat: true } }, admin.id);
     await assert.rejects(seite(lena, geheim.id), status(404));
     // Eine Spalte, die auf eine nicht lesbare Mappe zeigt: nur „nicht sichtbar“, ohne Titel.
     const pt = (await d.mappentypen.listeTypen()).find((t) => t.id === position.id)!;
     await d.mappentypen.aendereTyp(position.id, { ...pt, felder: [...pt.felder, { key: 'siehe', label: 'Siehe', typ: 'referenz', zielTypen: [rechnung.id] }], trefferliste: ['beschreibung', 'siehe'] });
-    await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 5, beschreibung: 'Mit Verweis', siehe: geheim.id } }, admin.id);
+    await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 5, beschreibung: 'Mit Verweis', siehe: geheim.id } }, admin.id);
     const s3 = await seite(lena, r.id);
     const zeile = s3.mappen.find((m) => m.werte.beschreibung === 'Mit Verweis')!;
     assert.equal(zeile.werte.siehe, geheim.id);
@@ -183,8 +183,8 @@ describe('Tabelle in der Ablage (#1030)', () => {
   it('„+ Neu“ per Schnittstelle: Anlegerecht am anderen Typ und Leserecht auf die Mappe prüft der Server', async () => {
     const { d, admin, lena, rechnung, position, rufe } = await aufbau();
     await d.setzeBerechtigungen(rechnung.id, privatNurErsteller, true);
-    const offen = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
-    const geheim = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', privat: true } }, admin.id);
+    const offen = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
+    const geheim = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', privat: true } }, admin.id);
     const neu = (rechnungId: string) => rufe(lena, 'POST', '/api/mappen', { body: { typId: position.id, werte: { rechnung: rechnungId, beschreibung: 'Neu' } } });
     // Auf die Rechnung, die Lena lesen darf: geht.
     await neu(offen.id);
@@ -297,10 +297,10 @@ describe('Tabelle – PostgreSQL (#1030)', { skip: !process.env.TEST_DATABASE_UR
     try {
       const d = new Dienst(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
       const { rechnung, position } = await rechnungen(d);
-      const r = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
-      const andere = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
-      for (let i = 1; i <= 55; i++) await d.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Teil ${i}` } });
-      await d.legeMappeAn({ typId: position.id, werte: { rechnung: andere.id, nr: 1, beschreibung: 'Fremd' } });
+      const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
+      const andere = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
+      for (let i = 1; i <= 55; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Teil ${i}` } });
+      await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: andere.id, nr: 1, beschreibung: 'Fremd' } });
       const s1 = await d.tabelle(r.id, 'positionen', { sortierung: 'nr', absteigend: 'true' });
       assert.deepEqual([s1.gesamt, s1.mappen.length, s1.mappen[0].werte.nr], [55, TABELLE_SEITE, 55]);
       const s2 = await d.tabelle(r.id, 'positionen', { sortierung: 'nr', von: 50, gesamt: 55 });

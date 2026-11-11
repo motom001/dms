@@ -155,14 +155,14 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     await A.dienst.gleicheBenutzerAb(await A.konten.listeBenutzer());
     const typen = await A.dienst.mappentypen.listeTypen();
     const rolleTyp = typen.find((t: { system?: string }) => t.system === 'rolle');
-    ids.fibu = (await A.dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, lena.id)).id;
-    ids.andere = (await A.dienst.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
+    ids.fibu = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, lena.id)).id;
+    ids.andere = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
     await A.dienst.setzeRollen(ids.jonas, [ids.fibu]);
     await A.dienst.setzeRollen(ids.markus, [ids.fibu]);
     ids.rechnung = (await A.dienst.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
     rw = (rollen) => ({ grund: NICHTS, regeln: [{ id: 'fibu', name: 'FiBu liest', wenn: [{ art: 'rolle', rollen }], dann: { R: 'erteilen', U: 'erteilen', C: 'erteilen' }, stopp: false }] }) as unknown as Regelwerk;
     await A.dienst.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
-    for (const nr of ['R1', 'R2']) ids.mappe = (await A.dienst.legeMappeAn({ typId: ids.rechnung, werte: { nr } }, lena.id)).id;
+    for (const nr of ['R1', 'R2']) ids.mappe = (await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr } }, lena.id)).id;
     for (const p of [A, B]) p.dienst.mindestensMs = 3000;
   });
   after(async () => { for (const p of prozesse) { await p.app.close(); await p.sql.end(); } });
@@ -230,7 +230,7 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     B.dienst.mindestensMs = 0;
     try {
       // Eine Änderung, damit alle frisch zählen.
-      await A.dienst.legeMappeAn({ typId: ids.rechnung, werte: { nr: 'R3' } }, ids.lena);
+      await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr: 'R3' } }, ids.lena);
       // Der Stand in der Datenbank zählt kurz nach der Änderung hoch (auch nach den Anmeldungen in B). Darauf warten
       // (#900) statt auf eine feste Zeit – danach sehen Jonas und Markus denselben Stand.
       await A.dienst.stand.hochgezaehlt(); await B.dienst.stand.hochgezaehlt();

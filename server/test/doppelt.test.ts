@@ -36,9 +36,9 @@ async function aufbau() {
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
   const gesundheit = await d.mappentypen.legeTypAn({ name: 'Gesundheit', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
     berechtigungen: { grund: ALLES, regeln: [{ id: 'anna', name: 'Anna nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
-  const strom = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Stromvertrag Haus' } }, admin.id);
+  const strom = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Stromvertrag Haus' } }, admin.id);
   await d.ladeHoch(strom.id, { register: 'dokumente', name: 'Scan_2026-10-12.pdf' }, SCAN, admin.id);
-  const arzt = await d.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'Arztbrief' } }, admin.id);
+  const arzt = await d.mappen.legeMappeAn({ typId: gesundheit.id, werte: { nr: 'Arztbrief' } }, admin.id);
   await d.ladeHoch(arzt.id, { register: 'dokumente', name: 'Befund.pdf' }, BEFUND, admin.id);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
@@ -69,7 +69,7 @@ describe('Doppelte Dateien (#333)', () => {
 
   it('Hochladen (auch per API) nennt gleichen Inhalt nur aus lesbaren Mappen', async () => {
     const { d, anna, vertrag, rufe } = await aufbau();
-    const m = await d.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Neu' } }, anna.id);
+    const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Neu' } }, anna.id);
     const hoch = async (inhalt: Buffer, name: string) => ((await rufe(anna, 'POST', '/api/mappen/:id/dokumente', { params: { id: m.id }, query: { register: 'dokumente', name }, body: inhalt })) as { body: { gleicherInhalt: Array<{ titel?: string }> } }).body.gleicherInhalt;
     assert.deepEqual((await hoch(SCAN, 'a.pdf')).map((g) => g.titel), ['Stromvertrag Haus']);
     assert.deepEqual(await hoch(BEFUND, 'b.pdf'), [], 'kein Titel aus der Gesundheitsmappe');
@@ -83,8 +83,8 @@ describe('Doppelte Dateien (#333)', () => {
     await writeFile(join(ordner, 'Scan.pdf'), SCAN);
     await e.pruefe(); assert.equal(await e.pruefe(), 1);
     const post = await d.postTyp();
-    const [p] = await d.listeMappen(post.id);
-    const eintrag = (await d.historie(p.id)).find((h) => h.art === 'uebernommen')!;
+    const [p] = await d.mappen.listeMappen(post.id);
+    const eintrag = (await d.mappenHistorie.historie(p.id)).find((h) => h.art === 'uebernommen')!;
     assert.equal((eintrag.daten as Record<string, unknown>).doppelt, 1);
     assert.equal(JSON.stringify(eintrag.daten).includes('Stromvertrag'), false, 'kein Titel einer anderen Mappe');
 
@@ -93,7 +93,7 @@ describe('Doppelte Dateien (#333)', () => {
     await writeFile(join(ordner, 'Nochmal.pdf'), SCAN);
     await writeFile(join(ordner, 'Neu.pdf'), '%PDF-1.4 etwas Neues');
     await e.pruefe(); await e.pruefe();
-    assert.deepEqual((await d.listeMappen(post.id)).map((m) => m.werte.betreff).sort(), ['Neu', 'Scan'], 'keine Post für die doppelte Datei');
+    assert.deepEqual((await d.mappen.listeMappen(post.id)).map((m) => m.werte.betreff).sort(), ['Neu', 'Scan'], 'keine Post für die doppelte Datei');
     assert.ok(existsSync(join(ordner, 'erledigt', 'Nochmal.pdf')), 'weggeräumt wie eine übernommene Datei');
     assert.ok((await e.stand()).uebernommen.some((x) => x.datei.endsWith('Nochmal.pdf') && /doppelt/.test(x.grund ?? '')));
   });
@@ -112,8 +112,8 @@ describe('Doppelte Dateien (#333)', () => {
     const [p] = await pf.speichere({ name: 'Post', server: 'imap.example.org', port: 993, benutzer: 'a', passwort: 'b' }, null, 'test');
     assert.equal(await pf.abrufen(p.id), 1);
     const post = await d.postTyp();
-    const [m] = await d.listeMappen(post.id);
-    const texte = (await d.historie(m.id)).map((h) => String((h.daten as Record<string, unknown>).text ?? ''));
+    const [m] = await d.mappen.listeMappen(post.id);
+    const texte = (await d.mappenHistorie.historie(m.id)).map((h) => String((h.daten as Record<string, unknown>).text ?? ''));
     assert.ok(texte.some((t) => t === 'Doppelt: „Rechnung.pdf“ liegt schon in Ablago – vor dem Zuordnen prüfen.'), texte.join(' | '));
   });
 });

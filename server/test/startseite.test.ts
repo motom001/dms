@@ -40,8 +40,8 @@ describe('Startseite (#334)', () => {
     const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
       berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
     const m = [];
-    for (let i = 1; i <= 6; i++) m.push(await d.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, anna.id));
-    const g = await d.legeMappeAn({ typId: geheim.id, werte: { nr: 'G' } }, admin.id);
+    for (let i = 1; i <= 6; i++) m.push(await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, anna.id));
+    const g = await d.mappen.legeMappeAn({ typId: geheim.id, werte: { nr: 'G' } }, admin.id);
     for (const x of m) await rufe(anna, 'GET', '/api/mappen/:id', { params: { id: x.id } });
     await rufe(anna, 'GET', '/api/mappen/:id', { params: { id: m[0].id } });
     const s = (await rufe(anna, 'GET', '/api/startseite')).body as Start;
@@ -57,7 +57,7 @@ describe('Startseite (#334)', () => {
   it('über einen API-Schlüssel wird nichts gemerkt', async () => {
     const { d, admin, anna, rufe } = await aufbau();
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
-    const x = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, admin.id);
+    const x = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, admin.id);
     await rufe(anna, 'GET', '/api/mappen/:id', { params: { id: x.id }, apiSchluessel: { id: 'k', name: 'Skript' } as never });
     assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite')).body as Start).zuletzt, []);
   });
@@ -70,7 +70,7 @@ describe('Liste „Zuletzt geöffnet“ (#940)', () => {
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     // Admin legt an – zählt für Admin, nicht für Anna.
     const m = [];
-    for (let i = 1; i <= 30; i++) m.push(await d.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, admin.id));
+    for (let i = 1; i <= 30; i++) m.push(await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, admin.id));
     for (const x of m) await rufe(anna, 'GET', '/api/mappen/:id', { params: { id: x.id } });
     const liste = (await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt;
     assert.equal(liste.length, 25, 'höchstens 25');
@@ -92,16 +92,16 @@ describe('Liste „Zuletzt geöffnet“ (#940)', () => {
   it('Anlegen und Ändern zählen als geöffnet – nur für die Person, die es tut', async () => {
     const { d, admin, anna, rufe } = await aufbau();
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
-    const a = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, anna.id);
-    const b = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'B' } }, anna.id);
+    const a = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, anna.id);
+    const b = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'B' } }, anna.id);
     assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['B', 'A'], 'Anlegen');
-    await d.aendereMappe(a.id, { werte: { nr: 'A2' } }, anna.id);
+    await d.mappen.aendereMappe(a.id, { werte: { nr: 'A2' } }, anna.id);
     assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['A2', 'B'], 'Ändern');
     // Ändert jemand anderes, rückt die Mappe bei Anna nicht nach oben.
-    await d.aendereMappe(b.id, { werte: { nr: 'B2' } }, admin.id);
+    await d.mappen.aendereMappe(b.id, { werte: { nr: 'B2' } }, admin.id);
     assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['A2', 'B2']);
     // Ohne Benutzer (System, Eingangsordner) zählt nichts.
-    await d.legeMappeAn({ typId: typ.id, werte: { nr: 'S' } }, null);
+    await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'S' } }, null);
     assert.equal(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).length, 2);
     // Die Startseite zeigt davon die ersten fünf, ebenfalls mit Zeitpunkt.
     assert.ok(((await rufe(anna, 'GET', '/api/startseite')).body as { zuletzt: Zuletzt }).zuletzt[0].am);

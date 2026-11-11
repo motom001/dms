@@ -653,7 +653,7 @@ export class Webdav {
     // Explorer, Finder und Office lesen dieselbe Datei oft viele Male (auch für Vorschaubilder): Je Person, Datei und
     // Tag bleibt es bei einem Eintrag. Scheitert das Schreiben, geht die Datei nicht hinaus.
     try {
-      await this.d.dienst.notiereAbruf({ dokumentId: d.id, benutzerId: ctx.b.id, weg: 'webdav', schluessel: ctx.s.name, gestempelt: aus.gestempelt, datei: aus.name });
+      await this.d.dienst.mappenHistorie.notiereAbruf({ dokumentId: d.id, benutzerId: ctx.b.id, weg: 'webdav', schluessel: ctx.s.name, gestempelt: aus.gestempelt, datei: aus.name });
     } catch (e) {
       if (!Buffer.isBuffer(inhalt)) (inhalt as Readable).destroy();
       throw e;

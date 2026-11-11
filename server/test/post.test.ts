@@ -28,7 +28,7 @@ async function aufbau(repo = speicherRepo(), einstellungen = speicherEinstellung
     { key: 'belege', name: 'Belege', art: 'dokumente' },
     { key: 'sonstiges', name: 'Sonstiges', art: 'dokumente', volltext: false },
   ] });
-  const r1 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, anna.id);
+  const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, anna.id);
   const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
@@ -70,10 +70,10 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(z.sichten[(await d.neuePostSicht())!], 1);
     assert.equal(z.neuePost, await d.neuePostSicht());
     // Das allgemeine Formular legt keine Post an; Kanal und „Zugeordnet zu“ ändert man nicht von Hand.
-    await assert.rejects(d.legeMappeAn({ typId: post.id, werte: { betreff: 'x' } }, anna.id), status(403));
-    await assert.rejects(d.aendereMappe(m.id, { werte: { kanal: 'Scan' } }, anna.id), status(403));
+    await assert.rejects(d.mappen.legeMappeAn({ typId: post.id, werte: { betreff: 'x' } }, anna.id), status(403));
+    await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { kanal: 'Scan' } }, anna.id), status(403));
     // Betreff, Stand, Absender schon.
-    const n = await d.aendereMappe(m.id, { werte: { betreff: 'Steuerbescheid', stand: POST_STAND.erledigt } }, anna.id);
+    const n = await d.mappen.aendereMappe(m.id, { werte: { betreff: 'Steuerbescheid', stand: POST_STAND.erledigt } }, anna.id);
     assert.equal(n.titel, 'Steuerbescheid');
   });
 
@@ -84,14 +84,14 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal((await offen()).length, 1);
     assert.equal((await offen())[0].mappeId, m.id);
     // Speichern ohne Änderung legt keine zweite an.
-    await d.aendereMappe(m.id, { werte: { betreff: 'Für Ben!' } }, anna.id);
+    await d.mappen.aendereMappe(m.id, { werte: { betreff: 'Für Ben!' } }, anna.id);
     assert.equal((await offen()).length, 1);
     // An Anna weitergeben: Bens Aufgabe erledigt, Anna hat eine.
-    await d.aendereMappe(m.id, { werte: { an: anna.id } }, anna.id);
+    await d.mappen.aendereMappe(m.id, { werte: { an: anna.id } }, anna.id);
     assert.equal((await offen()).length, 0);
     assert.equal((await d.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 1);
     // Erledigt: keine Aufgabe mehr.
-    await d.aendereMappe(m.id, { werte: { stand: POST_STAND.erledigt } }, anna.id);
+    await d.mappen.aendereMappe(m.id, { werte: { stand: POST_STAND.erledigt } }, anna.id);
     assert.equal((await d.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 0);
   });
 
@@ -103,26 +103,26 @@ describe('Systemtyp Post (#192)', () => {
     const r = await d.ordneZu(m.id, { ziel: r1.id, register: 'belege', dokumente: [a.id] }, anna.id);
     assert.deepEqual(r.post.werte.bezug, [r1.id]);
     assert.equal(r.post.werte.stand, POST_STAND.zugeordnet);
-    const ziel = await d.holeMappe(r1.id);
+    const ziel = await d.mappen.holeMappe(r1.id);
     assert.deepEqual(ziel.dokumente.map((x) => [x.name, x.registerKey]), [['a.pdf', 'belege']]);
-    assert.deepEqual((await d.holeMappe(m.id)).dokumente.map((x) => x.name), ['b.pdf']);
+    assert.deepEqual((await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name), ['b.pdf']);
     assert.ok(ziel.rueckverweise.some((v) => v.quelleId === m.id && v.feldKey === 'bezug'));
-    assert.match(String((await d.historie(r1.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /Post „Rechnung Backofen“ zugeordnet mit 1 Dokument ins Register „Belege“/);
-    assert.match(String((await d.historie(m.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /zugeordnet zu „R-1“/);
+    assert.match(String((await d.mappenHistorie.historie(r1.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /Post „Rechnung Backofen“ zugeordnet mit 1 Dokument ins Register „Belege“/);
+    assert.match(String((await d.mappenHistorie.historie(m.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /zugeordnet zu „R-1“/);
     // Aufgabe „Neue Post“ ist erledigt.
     assert.equal((await d.meineAufgaben({ id: ben.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
     // Zweite Zielmappe, Rest kopiert: bleibt auch in der Post, dieselbe Datei.
-    const r2 = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, anna.id);
+    const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, anna.id);
     const z2 = await d.ordneZu(m.id, { ziel: r2.id, kopieren: true }, anna.id);
     assert.deepEqual(z2.post.werte.bezug, [r1.id, r2.id]);
-    const kopie = (await d.holeMappe(r2.id)).dokumente;
+    const kopie = (await d.mappen.holeMappe(r2.id)).dokumente;
     assert.equal(kopie.length, 1);
     assert.equal(kopie[0].sha256, b.sha256);
     assert.equal(kopie[0].registerKey, 'belege');
-    assert.equal((await d.holeMappe(m.id)).dokumente.length, 1);
+    assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 1);
     // Löscht man eine Zielmappe, entfällt nur ihr Verweis.
     await d.loescheMappe(r2.id, anna.id);
-    assert.deepEqual((await d.holeMappe(m.id)).mappe.werte.bezug, [r1.id]);
+    assert.deepEqual((await d.mappen.holeMappe(m.id)).mappe.werte.bezug, [r1.id]);
   });
 
   it('Zuordnen prüft Ziel, Register und Dokumente', async () => {
@@ -139,7 +139,7 @@ describe('Systemtyp Post (#192)', () => {
     await assert.rejects(d.ordneZu(m.id, { ziel: andere.id }, anna.id), status(422), 'nicht Post zu Post');
     // Ohne Dokumentenregister am Ziel geht es nur ohne Dokumente.
     const ohne = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['titel'] }] });
-    const n = await d.legeMappeAn({ typId: ohne.id, werte: { titel: 'Ohne' } }, anna.id);
+    const n = await d.mappen.legeMappeAn({ typId: ohne.id, werte: { titel: 'Ohne' } }, anna.id);
     await assert.rejects(d.ordneZu(m.id, { ziel: n.id }, anna.id), status(422));
     const ok = await d.ordneZu(m.id, { ziel: n.id, dokumente: [] }, anna.id);
     assert.deepEqual(ok.post.werte.bezug, [n.id]);
@@ -164,9 +164,9 @@ describe('Systemtyp Post (#192)', () => {
     const { d, anna, r1 } = await aufbau();
     const mailer = { async sende() { /* ok */ } };
     const r = await d.versendeMappe(r1.id, { an: 'a@example.org', betreff: 'Hallo' }, { id: anna.id, name: 'Anna', email: 'anna@example.org' }, mailer);
-    await assert.rejects(d.aendereMappe(r.id, { werte: { betreff: 'anders' } }, anna.id), status(403));
+    await assert.rejects(d.mappen.aendereMappe(r.id, { werte: { betreff: 'anders' } }, anna.id), status(403));
     // Stand und „Für“ bleiben änderbar.
-    await d.aendereMappe(r.id, { werte: { stand: POST_STAND.neu } }, anna.id);
+    await d.mappen.aendereMappe(r.id, { werte: { stand: POST_STAND.neu } }, anna.id);
   });
 });
 
@@ -176,8 +176,8 @@ describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
     const hoch = await d.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     assert.equal(hoch.werte.von ?? null, null);
     const api = await rufe(A, 'POST', '/api/post', { body: { betreff: 'per API' }, apiSchluessel: { id: 'k', name: 'Skript' } as never }) as { body: { id: string; werte: Record<string, unknown> } };
-    assert.equal((await d.holeMappe(api.body.id)).mappe.werte.kanal, POST_KANAL.api);
-    assert.equal((await d.holeMappe(api.body.id)).mappe.werte.von ?? null, null);
+    assert.equal((await d.mappen.holeMappe(api.body.id)).mappe.werte.kanal, POST_KANAL.api);
+    assert.equal((await d.mappen.holeMappe(api.body.id)).mappe.werte.von ?? null, null);
     const dav = await d.legePostAn({ betreff: 'x.pdf' }, { id: anna.id, name: 'Anna' }, undefined, POST_KANAL.webdav);
     assert.equal(dav.werte.von ?? null, null);
     const leer = await d.legePostAn({ betreff: 'Leerzeichen', von: '   ' }, { id: anna.id, name: 'Anna' });
@@ -205,18 +205,18 @@ describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
     await d.legePostAn({ betreff: 'Leer' }, { id: anna.id, name: 'Anna' });
     const v = (await rufe(A, 'GET', '/api/werkbank/wartung/absender')) as { body: { posten: Array<{ id: string; absender: string }> } };
     assert.deepEqual(new Set(v.body.posten.map((p) => p.id)), new Set([alt1.id, alt2.id, ordner.id]));
-    await assert.rejects(d.absenderBereinigen([], { id: anna.id, email: 'anna@example.org' }), status(422));
+    await assert.rejects(d.mappenTitel.absenderBereinigen([], { id: anna.id, email: 'anna@example.org' }), status(422));
     // Nur die gewählten; eine fremde Id wird übergangen.
     const r = await rufe(A, 'POST', '/api/werkbank/wartung/absender', { body: { ids: [alt1.id, ordner.id, '00000000-0000-4000-8000-000000000001'] } }) as { body: { bereinigt: number } };
     assert.equal(r.body.bereinigt, 2);
-    assert.equal((await d.holeMappe(alt1.id)).mappe.werte.von ?? null, null);
-    assert.equal((await d.holeMappe(ordner.id)).mappe.werte.von ?? null, null);
-    assert.equal((await d.holeMappe(alt2.id)).mappe.werte.von, 'Ben');
-    const h = (await d.historie(alt1.id)).find((x) => x.art === 'geaendert')!;
+    assert.equal((await d.mappen.holeMappe(alt1.id)).mappe.werte.von ?? null, null);
+    assert.equal((await d.mappen.holeMappe(ordner.id)).mappe.werte.von ?? null, null);
+    assert.equal((await d.mappen.holeMappe(alt2.id)).mappe.werte.von, 'Ben');
+    const h = (await d.mappenHistorie.historie(alt1.id)).find((x) => x.art === 'geaendert')!;
     assert.equal(h.benutzerId, anna.id);
     assert.deepEqual(h.daten.aenderungen!.map((a) => [a.feld, a.alt]), [['von', 'Anna']]);
     assert.match(String(h.daten.text), /Absender bereinigt/);
-    assert.deepEqual((await d.absenderVorschau()).posten.map((p) => p.id), [alt2.id]);
+    assert.deepEqual((await d.mappenTitel.absenderVorschau()).posten.map((p) => p.id), [alt2.id]);
   });
 });
 
@@ -268,7 +268,7 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     assert.equal(sichten.find((s) => s.id === post.id)!.name, 'Post');
     assert.ok(sichten.some((s) => s.name === 'Neue Post'));
     // Die alte Mappe passt zur neuen Definition.
-    const h = await d.holeMappe(m.id);
+    const h = await d.mappen.holeMappe(m.id);
     assert.equal(h.mappe.titel || 'Alt', 'Alt');
     // Alte sprechende Links mit typ=email gelten weiter.
     assert.equal(typImLink('email', await d.mappentypen.listeTypen())?.id, post.id);

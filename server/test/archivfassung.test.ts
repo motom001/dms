@@ -134,7 +134,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
   const hoch = async (name: string, inhalt: Buffer, typAngabe = PDF) => {
     const id = (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: typAngabe }, inhalt, null)).dokument.id;
     await warte(async () => !['wartet', 'laeuft'].includes((await repo.holeDokument(id))!.ocr!.stand));
@@ -235,16 +235,16 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
     const wp = (await x.rufe('pdfa', 'GET', '/api/v1/dokumente/:id/wortpositionen', { id }, undefined)).body as { vollstaendig: boolean; seiten: Array<{ quelle: string; breite: number; woerter: unknown[] }> };
     assert.equal(wp.vollstaendig, true);
     assert.deepEqual(wp.seiten.map((s) => [s.quelle, s.breite, s.woerter.length]), [['texterkennung', 40, 2]]);
-    assert.equal(((await x.d.holeMappe(x.m.id)).dokumente.find((y) => y.id === id))!.archivfassung?.stand, 'wartet', 'am Dokument: wird erstellt');
+    assert.equal(((await x.d.mappen.holeMappe(x.m.id)).dokumente.find((y) => y.id === id))!.archivfassung?.stand, 'wartet', 'am Dokument: wird erstellt');
     assert.deepEqual(await x.laeufer(), ['PDF/A-2b']);
-    const s = ((await x.d.holeMappe(x.m.id)).dokumente.find((y) => y.id === id))!.archivfassung!;
+    const s = ((await x.d.mappen.holeMappe(x.m.id)).dokumente.find((y) => y.id === id))!.archivfassung!;
     assert.equal(s.stand, 'fertig');
     assert.deepEqual(s.fassung?.pdfa, { teil: 2, stufe: 'B' });
     assert.equal(s.fassung?.paket.id, 'pdfa');
     const f = await x.d.archivfassungVon(id);
     assert.equal(f.inhalt.subarray(0, 5).toString(), '%PDF-');
     assert.deepEqual(await x.repo.holeDokument(id).then((y) => y!.sha256), dok.sha256, 'das Original bleibt unverändert');
-    const h = await x.d.historie(x.m.id);
+    const h = await x.d.mappenHistorie.historie(x.m.id);
     assert.ok(h.some((y) => y.art === 'archivfassung' && /PNG → PDF\/A-2b \(PDF\/A 1\.0\.0\)/.test(String(y.daten?.text))), JSON.stringify(h.map((y) => y.art)));
   });
 
@@ -521,7 +521,7 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     assert.equal((await PDFDocument.load(k.datei.inhalt)).getPageCount(), seiten, 'kein eigenes Deckblatt');
     assert.ok((await seitentext(k.datei.inhalt)).includes(hex('ENTWURF')), 'Stempel auf der Seite des Dokuments');
     assert.ok((await x.d.archivfassungVon(id)).inhalt.equals(gespeichert), 'gespeicherte Archivfassung unverändert');
-    const h = (await x.d.historie(x.m.id)).filter((e) => e.art === 'weitergegeben');
+    const h = (await x.d.mappenHistorie.historie(x.m.id)).filter((e) => e.art === 'weitergegeben');
     assert.ok(h.some((e) => /über die API \(Archivfassung\)/.test(String(e.daten.text))), 'Historie vermerkt die Weitergabe');
     // Seitenbilder: aus der gestempelten Kopie (Graustufen); die Oberfläche bekommt sie wie abgelegt.
     const ui = await x.d.seiteAlsGraubild(id, 1, 72);

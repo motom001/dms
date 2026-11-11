@@ -40,7 +40,7 @@ async function aufbau(pg: boolean) {
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
     { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung: true },
   ] });
-  const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Stromvertrag' } }, ANNA.id);
+  const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Stromvertrag' } }, ANNA.id);
   const doc = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 Version 1'), ANNA.id)).dokument;
   await d.ersetzeDokument(doc.id, {}, Buffer.from('%PDF-1.4 Version 2'), ANNA.id);
   return { d, dateien, r, typ, m, doc };
@@ -54,7 +54,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, dateien, m, doc } = await aufbau(pg);
       const vorher = dateien.anzahl();
       assert.deepEqual(await d.loescheDokument(doc.id, ANNA.id), { papierkorb: true });
-      assert.equal((await d.holeMappe(m.id)).dokumente.length, 0, 'in der Mappe nicht mehr zu sehen');
+      assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 0, 'in der Mappe nicht mehr zu sehen');
       assert.equal(dateien.anzahl(), vorher, 'Dateien bleiben, solange es im Papierkorb liegt');
       assert.equal((await d.zaehler(ANNA)).papierkorb, 1);
       const [e] = await d.papierkorbDokumente(ANNA);
@@ -66,17 +66,17 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(e.geloeschtVon, ANNA.id);
       assert.equal((await d.papierkorbDokumente(ADMIN)).length, 0, 'in der Ablage nur Eigenes');
       assert.equal((await d.papierkorbDokumente(ADMIN, true)).length, 1, 'in der Werkbank alles');
-      assert.ok((await d.historie(m.id)).some((h) => h.art === 'dokument_papierkorb'));
+      assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_papierkorb'));
 
       await assert.rejects(d.stelleDokumentWiederHer(doc.id, ADMIN, undefined), status(404), 'Fremdes nur über die Werkbank');
       const r = await d.stelleDokumentWiederHer(doc.id, ANNA, undefined);
       assert.equal(r.dokument.registerKey, 'dokumente');
       assert.equal(r.dokument.version, 2);
-      const x = (await d.holeMappe(m.id)).dokumente;
+      const x = (await d.mappen.holeMappe(m.id)).dokumente;
       assert.deepEqual(x.map((y) => y.name), ['Vertrag.pdf']);
       assert.equal((await d.versionen(doc.id)).aeltere.length, 1, 'ältere Version wieder da');
       assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
-      assert.ok((await d.historie(m.id)).some((h) => h.art === 'dokument_wiederhergestellt'));
+      assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_wiederhergestellt'));
     });
 
     it('Mappe im Papierkorb oder weg: erklärt den Weg; endgültig löschen räumt die Dateien auf', async () => {
@@ -103,7 +103,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
       assert.equal(dateien.anzahl(), 0);
 
-      const m2 = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'Zwei' } }, ANNA.id);
+      const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Zwei' } }, ANNA.id);
       const d2 = (await d.ladeHoch(m2.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA.id)).dokument;
       await d.loescheDokument(d2.id, ANNA.id);
       assert.equal(await d.raeumePapierkorbAuf(Date.now() + 29 * 86_400_000), 0);
@@ -127,7 +127,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(await d.loescheDokument(doc.id, ANNA.id), { papierkorb: false });
       assert.equal((await d.papierkorbDokumente(ANNA)).length, 0);
       assert.equal(dateien.anzahl(), 0);
-      assert.ok((await d.historie(m.id)).some((h) => h.art === 'dokument_geloescht'));
+      assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_geloescht'));
     });
   });
 }

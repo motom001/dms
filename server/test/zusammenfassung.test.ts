@@ -22,7 +22,7 @@ async function aufbau() {
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
   await d.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
-  const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, anna.id);
+  const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, anna.id);
   await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, anna.id);
   await d.legeAufgabeAn(m.id, { empfaengerId: anna.id, text: 'Ablegen' }, anna.id);
   const an: string[] = [];

@@ -154,13 +154,13 @@ describe('Feldformate (#535): im Dienst', () => {
 
   it('neue Mappe: unpassende Angaben abgelehnt mit Feldname, passende angeglichen', async () => {
     const { d, typ } = await aufbau();
-    await assert.rejects(d.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357asda', telefon: '0351 abc' } }),
+    await assert.rejects(d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357asda', telefon: '0351 abc' } }),
       (e) => e instanceof Fachfehler && e.status === 422 && /Telefon, PLZ/.test(e.message) && !!(e.details as { felder: Record<string, string[]> }).felder.plz);
-    await assert.rejects(d.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', geburtstag: '2999-01-01' } }), (e) => e instanceof Fachfehler && /Geburtstag/.test(e.message));
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357', internetseite: 'www.example.org', iban: 'DE89370400440532013000' } });
+    await assert.rejects(d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', geburtstag: '2999-01-01' } }), (e) => e instanceof Fachfehler && /Geburtstag/.test(e.message));
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357', internetseite: 'www.example.org', iban: 'DE89370400440532013000' } });
     assert.equal(m.werte.internetseite, 'https://www.example.org');
     assert.equal(m.werte.iban, 'DE89 3704 0044 0532 0130 00');
-    const wien = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Jonas', plz: '1010', land: 'Österreich' } });
+    const wien = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Jonas', plz: '1010', land: 'Österreich' } });
     assert.equal(wien.werte.plz, '1010');
   });
 
@@ -169,20 +169,20 @@ describe('Feldformate (#535): im Dienst', () => {
     const typ = await d.mappentypen.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
       { key: 'name', label: 'Name', typ: 'text' }, { key: 'plz', label: 'PLZ', typ: 'text' }, { key: 'telefon', label: 'Telefon', typ: 'text' },
     ] });
-    const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Markus', plz: '01357asda', telefon: '0351 abc' } });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Markus', plz: '01357asda', telefon: '0351 abc' } });
     await d.mappentypen.aendereTyp(typ.id, { ...typ, felder: typ.felder.map((x) => (x.key === 'plz' ? { ...x, format: 'plz' } : x.key === 'telefon' ? { ...x, format: 'telefon' } : x)) });
     // Passung bleibt: nichts unter „Zu erledigen“.
-    assert.notEqual((await d.holeMappe(m.id))?.mappe.passt, false);
+    assert.notEqual((await d.mappen.holeMappe(m.id))?.mappe.passt, false);
     // Anderes Feld ändern geht, die alten Angaben bleiben unverändert.
-    const n = await d.aendereMappe(m.id, { werte: { ...m.werte, name: 'Markus B.' } });
+    const n = await d.mappen.aendereMappe(m.id, { werte: { ...m.werte, name: 'Markus B.' } });
     assert.equal(n.werte.plz, '01357asda');
     // Das Feld selbst ändern: muss passen.
-    await assert.rejects(d.aendereMappe(m.id, { werte: { ...n.werte, telefon: '0351 abd' } }), (e) => e instanceof Fachfehler && /Telefon/.test(e.message));
-    const liste = await d.unpassendeFormate();
+    await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { ...n.werte, telefon: '0351 abd' } }), (e) => e instanceof Fachfehler && /Telefon/.test(e.message));
+    const liste = await d.mappenEingaben.unpassendeFormate();
     assert.equal(liste.length, 1);
     assert.deepEqual(liste[0].felder.map((x) => `${x.label}:${x.anzahl}`), ['PLZ:1', 'Telefon:1']);
     assert.equal(liste[0].felder[0].mappen[0].titel, 'Markus B.');
-    await d.aendereMappe(m.id, { werte: { ...n.werte, plz: '01357', telefon: '0351 12345' } });
-    assert.deepEqual(await d.unpassendeFormate(), []);
+    await d.mappen.aendereMappe(m.id, { werte: { ...n.werte, plz: '01357', telefon: '0351 12345' } });
+    assert.deepEqual(await d.mappenEingaben.unpassendeFormate(), []);
   });
 });
