@@ -151,7 +151,7 @@ Set up once. Controller, recipients, rights and form of address are above the li
 - **Form of address in documents for third parties:** see [below](#anrede).
 - **Personal data in folder types** (at the deletion concept): tick which folder types **concern a person** – e.g. tenant, customer, contract partner, contact. Only folders of these types can be chosen as data subjects. Per folder type you enter the **purpose** (e.g. "Performance of the tenancy"); it is shown on the cover sheet for every kind of data that goes out.
 
-The **storage period** on the cover sheet comes from [archive mode](archiv.md): if a folder type has a retention period, it is shown there with the latest "keep until"; otherwise "as long as necessary for the purpose".
+The **storage period** on the cover sheet comes from [archive mode](archiv.md): if a folder type has a retention period, it is shown there with the latest "keep until"; if it isn't running yet for a folder ([If the reference date is empty](archiv.md#ist-der-stichtag-leer)), it says that it only starts with the reference date; otherwise "as long as necessary for the purpose".
 
 ### Form of address in documents for third parties: du or Sie { #anrede }
 

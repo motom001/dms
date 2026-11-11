@@ -109,7 +109,8 @@ export function planeLoeschung(v: Quelle, auswahl: Record<string, LoeschAktion>)
   for (const k of v.baum.knoten) {
     const gewuenscht = auswahl[k.id] ?? 'behalten';
     const wunsch = k.nurBezug && gewuenscht === 'loeschen' ? 'entkoppeln' : gewuenscht;
-    if (k.gesperrt) { bleibt[k.id] = { weil: 'frist', text: k.nurBezug ? t('gemeinsam.loeschbaum.aufbewahrungsfrist-bis-auch-der', { datumText: datumText(k.aufbewahrenBis!) }) : t('gemeinsam.loeschbaum.darf-erst-nach-dem', { datumText: datumText(k.aufbewahrenBis!) }) }; zahlen.frist++; continue; }
+    // Ohne Ende (#1051): Die Frist läuft noch nicht – gesperrt ohne Datum.
+    if (k.gesperrt) { bleibt[k.id] = { weil: 'frist', text: !k.aufbewahrenBis ? t('gemeinsam.loeschbaum.frist-laeuft-noch-nicht') : k.nurBezug ? t('gemeinsam.loeschbaum.aufbewahrungsfrist-bis-auch-der', { datumText: datumText(k.aufbewahrenBis) }) : t('gemeinsam.loeschbaum.darf-erst-nach-dem', { datumText: datumText(k.aufbewahrenBis) }) }; zahlen.frist++; continue; }
     if (wunsch === 'entkoppeln') {
       if (k.rechte.U) E.add(k.id);
       else { bleibt[k.id] = { weil: 'recht', text: t('gemeinsam.loeschbaum.kein-recht-zum-bearbeiten') }; zahlen.ohneRecht++; }

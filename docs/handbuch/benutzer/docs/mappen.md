@@ -31,6 +31,8 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 !!! info "Archiv – aufbewahren bis"
     Steht an einer Mappe **Archiv · aufbewahren bis 31.12.JJJJ**, muss sie bis dahin aufbewahrt werden: Bis zu diesem Tag lassen sich weder die Mappe noch ihre Dokumente löschen; Dokumente ersetzt du als neue Version. Danach darf sie löschen, wer das Recht dazu hat; Administratoren finden alle abgelaufenen Mappen gesammelt unter **Werkbank → Aufbewahrung abgelaufen**.
 
+    Steht dort **Archiv · aufbewahren, Frist beginnt mit ‹Feld›** (etwa *Beendet am*), läuft die Frist noch nicht: Die Mappe ist gesperrt, solange das Feld leer ist – etwa bei einem laufenden Vertrag. Trägst du das Datum ein, beginnt die Frist; das steht in der Historie.
+
 !!! info "Nur passende Mappen"
     Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind, oder bei einer Person nur die Niederlassungen der gewählten Organisation. Steht neben einer gewählten Mappe gelb, womit sie nicht passt – etwa „passt nicht zu „Organisation““ oder „passt nicht zur Auswahlregel dieses Felds“ –, bleibt sie gültig, und speichern kannst du trotzdem; neu wählen kannst du nur, was passt. Darfst du die Mappe bearbeiten, steht über den Registern außerdem „Achtung: Niederlassung passt nicht zu „Organisation“.“ – ein Klick führt zum Feld.
 

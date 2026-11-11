@@ -31,6 +31,8 @@ After document and link tabs it says how much is in them. A red dot shows on whi
 !!! info "Archive – keep until"
     If a folder shows **Archive · keep until 31.12.YYYY**, it must be kept until then: until that day, neither the folder nor its documents can be deleted; you replace documents as a new version. After that, whoever has the permission may delete it; administrators find all expired folders collected under **Workbench → Retention expired**.
 
+    If it says **Archive · keep, period starts with ‹field›** (for example *Ended on*), the period isn't running yet: the folder is locked while the field is empty – for example for a running contract. Once you enter the date, the period starts; this is recorded in the history.
+
 !!! info "Only matching folders"
     Some link fields only offer certain folders, e.g. for the field *Doctor* only contract partners who are doctors, or for a person only the branches of the chosen organisation. If a chosen folder shows in yellow what it doesn't match – such as "doesn’t match “Organisation”" or "doesn’t match this field’s selection rule" –, it remains valid and you can still save; you can only newly choose what matches. If you may edit the folder, "Note: Branch doesn’t match “Organisation”." also appears above the tabs – a click takes you to the field.
 

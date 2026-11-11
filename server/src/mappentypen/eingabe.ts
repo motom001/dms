@@ -14,7 +14,7 @@ import { bereinigeVorbelegen } from '../../../shared/src/vorbelegen';
 import { HEUTE, type Feldformat } from '../../../shared/src/feldformate';
 import { bereinigeAuswahlfilter } from '../../../shared/src/sichten';
 import { bereinigeFrist } from '../../../shared/src/fristen';
-import { JAHRE_MAX } from '../../../shared/src/archiv';
+import { archivAus } from '../../../shared/src/archiv';
 import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennung';
 import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
 import { PAKET_ID, SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
@@ -241,10 +241,9 @@ export function bereinigeTrefferlisten(t: Record<string, unknown>, felder: Feld[
 export function bereinigeTyp(e: unknown): MappentypDaten {
   const t = (e ?? {}) as Record<string, unknown>;
   const felder = Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [];
-  // Archivmodus (#212): Frist 1–30 Jahre, Stichtag ein Feldschlüssel oder null (Anlagedatum).
-  const a = t.archiv && typeof t.archiv === 'object' ? t.archiv as Record<string, unknown> : null;
-  const jahre = a ? Math.trunc(Number(a.jahre)) : 0;
-  const archiv = a && jahre >= 1 && jahre <= JAHRE_MAX ? { jahre, stichtag: text(a.stichtag) || null } : null;
+  // Archivmodus (#212): Frist 1–30 Jahre, Stichtag ein Feldschlüssel oder null (Anlagedatum); ist er leer, läuft die
+  // Frist ab Anlagedatum oder noch nicht (#1051, nur mit Stichtag).
+  const archiv = archivAus(t.archiv);
   const register = bereinigeRegister(t.register, felder);
   // Im Archivmodus ist die Versionierung Pflicht, und ältere Versionen bleiben bis zum Fristende.
   if (archiv) for (const r of register) if (r.art === 'dokumente') { r.versionierung = true; delete r.versionenBehalten; }

@@ -40,8 +40,8 @@ describe('Archivmodus (#212)', () => {
     assert.equal(t.register.find((r) => r.key === 'belege')?.versionierung, true);
     assert.equal(t.register.find((r) => r.key === 'belege')?.versionenBehalten, undefined);
     await assert.rejects(d.legeTypAn({ name: 'X', archiv: { jahre: 8, stichtag: 'name' }, felder: [{ key: 'name', label: 'N', typ: 'text' }] }), (e) => e instanceof Fachfehler && e.status === 422);
-    assert.deepEqual(await d.archivVorschau(t.id, { jahre: 8, stichtag: 'datum' }), { mappen: 2, darfWeg: 1 });
-    assert.deepEqual(await d.archivVorschau(t.id, { jahre: 30, stichtag: 'datum' }), { mappen: 2, darfWeg: 0 });
+    assert.deepEqual(await d.archivVorschau(t.id, { jahre: 8, stichtag: 'datum' }), { mappen: 2, darfWeg: 1, stichtagLeer: 0 });
+    assert.deepEqual(await d.archivVorschau(t.id, { jahre: 30, stichtag: 'datum' }), { mappen: 2, darfWeg: 0, stichtagLeer: 0 });
   });
 
   it('keine Löschung vor Fristende: Mappe, Dokument, auch als Administrator; danach geht es', async () => {

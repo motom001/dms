@@ -764,6 +764,13 @@ begriffe:
     einsteiger: erklaeren
     begegnet: admin
     code: Archiv
+  - begriff: Stichtag
+    bereich: werkbank
+    beschreibung: Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines Jahres plus die Jahre. Ist es leer, zählt das Anlagedatum der Mappe oder, mit „läuft noch nicht ab“, die Frist beginnt erst, wenn es gefüllt ist.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Archivmodus]
+    code: stichtag
   - begriff: Aufbewahrung abgelaufen
     bereich: werkbank
     beschreibung: Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist (Werkbank → Benutzer und Sicherheit). Früher „Darf weg“.

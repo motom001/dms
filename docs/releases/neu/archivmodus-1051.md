@@ -1,0 +1,6 @@
+art: minor
+
+## Neu
+
+- **Archivmodus: „Ist der Stichtag leer: läuft noch nicht ab“** (#1051): Am Mappentyp lässt sich einstellen, dass eine Mappe mit leerem Stichtag noch nicht abläuft – etwa ein laufender Vertrag oder der aktuelle Dokumentationsstand. Sie bleibt gesperrt und zeigt „Archiv · aufbewahren, Frist beginnt mit …“; wird das Feld gefüllt, beginnt die Frist ab diesem Datum, das steht in der Historie. Die Vorschau nennt beim Umschalten die Mappen mit leerem Stichtag, das Protokoll den Zustand vorher und nachher. Vorgabe bleibt „ab Anlagedatum“.
+- **Archivmodus aus Paketen** (#1051): Pakete können für die Mappentypen, die sie neu anlegen, einen Archivmodus vorgeben (`archiv: { jahre, jahreBeruflich, stichtag, leererStichtag }`, mit „beruflich genutzt“ die längere Frist); die Vorschau beim Installieren zeigt ihn. Den Archivmodus vorhandener Mappentypen ändert ein Paket nie, auch kein Update. „Paket erstellen“ nimmt den Archivmodus mit.

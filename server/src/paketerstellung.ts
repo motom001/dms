@@ -35,6 +35,7 @@ import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
 import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
 import { DMS_TEILE_AB } from '../../shared/src/teile';
+import { archivInsPaket, DMS_ARCHIV_PAKET_AB } from '../../shared/src/archiv';
 import { DMS_VORGABEN_AB, teileVorgabe } from '../../shared/src/vorgaben';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -65,6 +66,7 @@ export const MINDEST_FUNKTIONEN = {
   vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },
   teile: { ab: DMS_TEILE_AB, grund: t('meldungen.paketerstellung.teile') },
   vorgaben: { ab: DMS_VORGABEN_AB, grund: t('meldungen.paketerstellung.vorgaben') },
+  archiv: { ab: DMS_ARCHIV_PAKET_AB, grund: t('meldungen.paketerstellung.archiv') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -429,8 +431,11 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     mappentyp.register.forEach((r, i) => { if (r.volltext === false) (register[i] as Record<string, unknown>).volltext = false; });
     const liste = standardliste(mappentyp);
     if (trefferlistenVon(mappentyp).length > 1) hinweis(t('meldungen.paketerstellung.nur-die-standard-trefferliste', { name: mappentyp.name, name2: liste.name }));
-    const weg = [mappentyp.berechtigungen ? 'Berechtigungen' : '', mappentyp.archiv ? 'Archivmodus' : '', mappentyp.erstellenErlaubt === false || mappentyp.loeschenErlaubt === false ? t('meldungen.paketerstellung.anlegen-loeschen-gesperrt') : ''].filter(Boolean);
+    // Archivmodus (#1051) gehört seit DMS_ARCHIV_PAKET_AB zum Paketformat – als Vorgabe für den neuen Typ beim Empfänger.
+    const weg = [mappentyp.berechtigungen ? 'Berechtigungen' : '', mappentyp.erstellenErlaubt === false || mappentyp.loeschenErlaubt === false ? t('meldungen.paketerstellung.anlegen-loeschen-gesperrt') : ''].filter(Boolean);
     if (weg.length) hinweis(t('meldungen.paketerstellung.gehoeren-nicht-zum-paketformat', { name: mappentyp.name, weg: weg.join(', ') }));
+    const archiv = archivInsPaket(mappentyp.archiv, felder.map((f) => ({ key: String(f.key) })));
+    if (mappentyp.archiv?.stichtag && !archiv?.stichtag) hinweis(t('meldungen.paketerstellung.archiv-ohne-stichtag', { name: mappentyp.name }));
     // Das Schema verlangt beschreibung und felder auch leer.
     return {
       schluessel: schluessel[mappentyp.id], name: mappentyp.name, beschreibung: mappentyp.beschreibung ?? '',
@@ -442,6 +447,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
       ...ohneLeere({ erkennbarAn: mappentyp.erkennbarAn || undefined }),
       // Ist Teil einer anderen Mappe (#1031): wie im Entwurf Rechnungen die Kennung des Verweisfelds.
       ...(mappentyp.teilVon && felder.some((f) => f.key === mappentyp.teilVon) ? { gehoertZu: mappentyp.teilVon } : {}),
+      // Archivmodus (#1051): Schreibweise der Registry; beim Empfänger nur für den neu angelegten Typ.
+      ...(archiv ? { archiv } : {}),
     };
   });
 
@@ -602,6 +609,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length))) genutzt.push('vorbelegen');
   if (paketTypen.some((t) => 'gehoertZu' in t)) genutzt.push('teile');
+  if (paketTypen.some((t) => 'archiv' in t)) genutzt.push('archiv');
   // Anzeige-Bedingung „zeigt auf die Vorgabe …“ (#1038): Ältere Ablago ließen sie weg (Feld immer zu sehen).
   if (JSON.stringify(paketTypen).includes('"art":"vorgabe"')) genutzt.push('vorgaben');
   const mindest = mindestversion(genutzt);

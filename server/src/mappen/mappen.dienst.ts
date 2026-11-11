@@ -5,7 +5,7 @@
  */
 import { istTeilVerweis } from '../../../shared/src/teile';
 import { randomUUID } from 'node:crypto';
-import { aufbewahrenBis, datumText } from '../../../shared/src/archiv';
+import { aufbewahrenBis, datumText, laeuftNochNicht, stichtagName } from '../../../shared/src/archiv';
 import type { Datenschutz } from '../../../shared/src/auskunft';
 import { alsText } from '../../../shared/src/markdown';
 import { type Aufgabe, darfErstellen, type Dokument, geschuetzteFelder, type Mappe, type Mappenkonflikt, type Mappentyp, type Notiz, NOTIZ_MAX, verweiseVon, type Werte } from '../../../shared/src/model';
@@ -216,6 +216,8 @@ export class MappenDienst {
       ...(vorgabe ? { vorgabe } : {}),
       /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
       aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
+      /** Die Frist läuft noch nicht (#1051): Sie beginnt mit diesem Feld (Beschriftung); die Mappe ist gesperrt. */
+      ...(laeuftNochNicht(typ?.archiv, mappe) ? { fristBeginntMit: stichtagName(typ) } : {}),
       /** Auskunft nach Art. 15 DSGVO (#396): Administratoren, Mappentyp „betrifft eine Person“. */
       ...(z?.admin && datenschutz?.typen[mappe.typId]?.person ? { auskunft: true } : {}),
     };
@@ -346,9 +348,13 @@ export class MappenDienst {
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
     await this.pruefeWerte(typ, werte, id, m.werte, z);
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
-    // Archivmodus (#212): eine neue Frist steht in der Historie.
-    const bisAlt = aufbewahrenBis(typ.archiv, m), bisNeu = aufbewahrenBis(typ.archiv, { ...m, werte });
-    if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: t('meldungen.dienst.aufbewahren-bis'), alt: bisAlt ? datumText(bisAlt) : '', neu: bisNeu ? datumText(bisNeu) : '' });
+    // Archivmodus (#212): eine neue Frist steht in der Historie – auch, wenn sie erst jetzt beginnt (#1051) oder wieder offen ist.
+    const fristText = (w: Mappe['werte']) => {
+      const bis = aufbewahrenBis(typ.archiv, { ...m, werte: w });
+      return bis ? datumText(bis) : laeuftNochNicht(typ.archiv, { ...m, werte: w }) ? t('meldungen.dienst.frist-laeuft-noch-nicht', { feld: stichtagName(typ) }) : '';
+    };
+    const bisAlt = fristText(m.werte), bisNeu = fristText(werte);
+    if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: t('meldungen.dienst.aufbewahren-bis'), alt: bisAlt, neu: bisNeu });
     // Feldweise (#609); mit Stand nur, wenn sich die Mappe seit dem Lesen oben nicht geändert hat.
     const titelFuer = await this.titelVorab(typ, werte, m);
     const neu = await this.repo.aendereMappe(id, werte, [], benutzerId, { basis: m.werte, verweise: (w) => verweiseVon(typ, w), titel: titelFuer, ...(stand ? { stand: m.geaendert } : {}) });

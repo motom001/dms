@@ -10,7 +10,7 @@
  * weitergesammelt. Erreicht die Sammlung sie später doch über eine „Zugehörigkeit“, hängt sie dort ein
  * und wird weiterverfolgt; innerhalb einer Ebene haben Wege über Zugehörigkeit Vorrang.
  */
-import { aufbewahrenBis, inFrist } from '../../shared/src/archiv';
+import { aufbewahrenBis, gesperrt } from '../../shared/src/archiv';
 import { AUSSEN_MAX, verweisartVon, type AussenVerweis, type Baum, type BaumKante, type BaumKnoten, type BaumOptionen, type BaumRichtung } from '../../shared/src/baum';
 import type { Mappe, MappenBezug, Mappentyp } from '../../shared/src/model';
 import { NICHTS, type Rechte } from '../../shared/src/rechte';
@@ -192,7 +192,7 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
     const bis = aufbewahrenBis(typ?.archiv, e.mappe);
     return {
       id, typId: e.mappe.typId, typ: typ?.name ?? '', titel: e.mappe.titel ?? '', ebene: e.ebene, ueber: e.ueber, auchUeber: e.auchUeber, ...(e.bezug ? { nurBezug: true } : {}),
-      dokumente: doks.get(id) ?? 0, aussen, aufbewahrenBis: bis, gesperrt: inFrist(bis, jetzt), rechte: rechte.get(id) ?? { ...NICHTS },
+      dokumente: doks.get(id) ?? 0, aussen, aufbewahrenBis: bis, gesperrt: gesperrt(typ?.archiv, e.mappe, jetzt), rechte: rechte.get(id) ?? { ...NICHTS },
     };
   });
   return { startId: start.id, optionen: opt, knoten, abgeschnitten, kreise, verborgen: verborgen.size, tieferMoeglich };

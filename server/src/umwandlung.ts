@@ -6,7 +6,7 @@
  * der Mappe, der ganze Vorgang lässt sich rückgängig machen. Grundsatz: Updates ändern nichts heimlich.
  */
 import { randomUUID } from 'node:crypto';
-import { aufbewahrenBis, datumText, inFrist } from '../../shared/src/archiv';
+import { aufbewahrenBis, datumText, inFrist, laeuftNochNicht, stichtagName } from '../../shared/src/archiv';
 import { altesTextfeldVon, einzigesZiel, istLeer, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
 import { namensSchluessel, namenVon, neueMappeWerte, registerUmstellen, spaltenUmstellen, teileNamen, vorlageUmstellen, vorschlag, type Entscheidung, type TypAenderung, type UmwandlungsFeld, type Umwandlungsvorgang, type UmwandlungsVorschau, type VorschauZeile } from '../../shared/src/umwandlung';
 import type { Dienst, Zugriff } from './dienst';
@@ -177,6 +177,7 @@ export class Umwandlung {
 
   /** Archivmodus (#212): in der Aufbewahrungsfrist wird nichts umgeschrieben. */
   private sperre(typ: Mappentyp, m: Mappe): string | null {
+    if (laeuftNochNicht(typ.archiv, m)) return t('pakete.umwandeln.grund.frist-offen', { feld: stichtagName(typ) });
     const bis = aufbewahrenBis(typ.archiv, m);
     return typ.archiv && inFrist(bis) ? t('pakete.umwandeln.grund.frist', { bis: datumText(bis!) }) : null;
   }

@@ -10,7 +10,7 @@ import { protokoll } from '../protokoll';
 import type { DokumentImPapierkorb, PapierkorbEintrag, Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
-import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
+import { aufbewahrenBis, datumText, gesperrt, stichtagName } from '../../../shared/src/archiv';
 import type { Ausloeser, LoeschDokument, LoeschEintrag, LoeschKontext, Loeschweg } from '../../../shared/src/loeschprotokoll';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
 import { istTeiltyp, uebergeordneteId } from '../../../shared/src/teile';
@@ -250,8 +250,12 @@ export class Papierkorb {
     if (ids.length) {
       const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
       const korb = (await this.repo.papierkorb()).filter((e) => ids.includes(e.id));
-      const geschuetzt = korb.filter((e) => inFrist(aufbewahrenBis(typen.get(e.typId)?.archiv, e)));
-      if (geschuetzt.length && streng) throw new Fachfehler(409, t('meldungen.dienst.aufbewahrungspflicht-bis-vorher-2', { datumText: datumText(aufbewahrenBis(typen.get(geschuetzt[0].typId)?.archiv, geschuetzt[0])!), wert: geschuetzt[0].titel || t('meldungen.dienst.die-mappe') }));
+      // Läuft die Frist noch nicht (#1051), bleibt die Mappe genauso.
+      const geschuetzt = korb.filter((e) => gesperrt(typen.get(e.typId)?.archiv, e));
+      if (geschuetzt.length && streng) {
+        const erste = geschuetzt[0], typ = typen.get(erste.typId), bis = aufbewahrenBis(typ?.archiv, erste), wert = erste.titel || t('meldungen.dienst.die-mappe');
+        throw new Fachfehler(409, bis ? t('meldungen.dienst.aufbewahrungspflicht-bis-vorher-2', { datumText: datumText(bis), wert }) : t('meldungen.dienst.aufbewahrungspflicht-offen-endgueltig', { feld: stichtagName(typ), wert }));
+      }
       ids = ids.filter((id) => !geschuetzt.some((e) => e.id === id));
     }
     if (!ids.length) return 0;

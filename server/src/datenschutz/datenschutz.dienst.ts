@@ -25,7 +25,7 @@ import { istVerschluesselt } from '../tresor';
 import type { ExportQuelle } from '../vollexport';
 import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
-import { aufbewahrenBis, datumText } from '../../../shared/src/archiv';
+import { aufbewahrenBis, datumText, laeuftNochNicht } from '../../../shared/src/archiv';
 import { AUSKUNFT_PASSWORT_MIN, type AuskunftEintrag, type AuskunftErwaehnung, type AuskunftMappe, type AuskunftStand, auskunftVerzeichnis, type AuskunftVorschau, auswahlProbleme as auskunftProbleme, type Datenschutz, FRIST_SCHLUESSEL, FRIST_TEXT_ANFANG, fristBis, liesAuswahl, liesDatenschutz, personenTypen } from '../../../shared/src/auskunft';
 import { erkenneBildtyp } from '../../../shared/src/dateiumwandlung';
 import { alsText } from '../../../shared/src/markdown';
@@ -251,7 +251,9 @@ export class DatenschutzDienst {
       anmerkung: typeof o.anmerkung === 'string' ? o.anmerkung.trim().slice(0, 2000) : '',
       aufbewahrung: typen.map((t) => {
         const bis = (jeTyp.get(t.id) ?? []).map((m) => aufbewahrenBis(t.archiv, m)).filter((b): b is string => !!b).sort();
-        return { typ: t.name, archiv: t.archiv ? { jahre: t.archiv.jahre, stichtag: t.archiv.stichtag ? t.felder.find((f) => f.key === t.archiv!.stichtag)?.label ?? t.archiv.stichtag : null } : null, bis: bis.at(-1) ?? null };
+        // Läuft die Frist bei einer Mappe noch nicht (#1051), gibt es kein „längstens bis“.
+        const offen = (jeTyp.get(t.id) ?? []).some((m) => laeuftNochNicht(t.archiv, m));
+        return { typ: t.name, archiv: t.archiv ? { jahre: t.archiv.jahre, stichtag: t.archiv.stichtag ? t.felder.find((f) => f.key === t.archiv!.stichtag)?.label ?? t.archiv.stichtag : null } : null, bis: offen ? null : bis.at(-1) ?? null, ...(offen ? { offen: true } : {}) };
       }),
     };
   }
