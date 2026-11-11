@@ -56,7 +56,10 @@ import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
 import { istOffen } from '../../../shared/src/auskunft';
 import { useBeiWiederErreichbar } from '../erreichbar';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, useListenSuche } from '../bausteine';
+import { paketVonTyp, paketWahl, quellenTyp } from './listensuche';
+import { uebergeordneterTyp } from '../../../shared/src/teile';
+import { typName } from '../../../shared/src/beschriftung';
 
 /**
  * Umgezogen (#717, #725): /werkbank/darfweg → aufbewahrung, /werkbank/suche → texterkennung#suche,
@@ -136,7 +139,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const darfWeg = useDarfWeg(bereich === 'aufbewahrung');
   const datenschutz = useDatenschutz(bereich === 'auskuenfte' || bereich === 'loeschkonzept');
   const vollexport = useVollexport(bereich === 'vollexport');
-  const pakete = usePakete(bereich === 'pakete' || bereich === 'typen');
+  // Herkunft und Paketfilter (#978) in Mappentypen, Ansichten und Nummernkreisen – nur mit Recht auf die Pakete (#818),
+  // sonst gilt die Kennung des Typs (`typ.paket`).
+  const pakete = usePakete(bereich === 'pakete' || (['typen', 'sichten', 'nummernkreise'].includes(bereich) && darf('pakete')));
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
   const nutzung = useNutzung(bereich === 'nutzung');
@@ -204,7 +209,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       rechts = <div className="platzhalter"><p>{tn('werkbank.werkbank.noch-keine-mappentypen-lege', { link: <Link to="/werkbank/demo" className="verweis">{t('werkbank.werkbank.demo-daten')}</Link> })}</p></div>;
     }
   } else if (bereich === 'sichten') {
-    liste = <SichtenListe offen={id} />;
+    liste = <SichtenListe offen={id} pakete={pakete.stand?.installiert ?? []} />;
     rechts = id ? <SichtEditor key={`${id}-${d.sicht(id)?.geaendert ?? ''}`} id={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-eine-ansicht')}</p></div>;
   } else if (bereich === 'benutzer') {
     liste = <BenutzerListe liste={benutzer.liste} offen={id} alltag={aufgabenEmpfaenger.stand?.benutzerId ?? null} />;
@@ -261,7 +266,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'loeschkonzept') {
     rechts = <LoeschkonzeptPanel z={datenschutz} />;
   } else if (bereich === 'nummernkreise') {
-    liste = <NummernkreiseListe z={nummernkreise} offen={id} />;
+    liste = <NummernkreiseListe z={nummernkreise} offen={id} pakete={pakete.stand?.installiert ?? []} />;
     rechts = id ? <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-einen-nummernkreis')}</p></div>;
   } else if (bereich === 'automatisierungen') {
     liste = <AutomatisierungenListe z={automatisierungen} offen={id} />;
@@ -375,28 +380,47 @@ export function Werkbank({ teile }: { teile: string[] }) {
   );
 }
 
+/**
+ * Mappentypen in der Mitte (#978): Suche wie in der Ablage (Baustein Suche) in Name, Beschreibung, Feldern, Trefferlisten,
+ * Registern, Berechtigungen, Paket und übergeordnetem Typ; jeder Treffer zeigt, wo gefunden wurde. Filter nach Paket.
+ */
 function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPaket[] }) {
   const d = useDaten();
+  const z = useListenSuche(d.typen, {
+    quellen: (typ) => quellenTyp(typ, { pakete, typen: d.typen, person: d.person }),
+    herkunft: (typ) => paketVonTyp(typ, pakete),
+  });
   return (
     <>
       <Listenkopf titel={t('werkbank.werkbank.mappentypen')} hilfe="werkbank.typen" beschreibung={t('werkbank.werkbank.welche-arten-von-mappen')}>
         <KnopfLink to="/werkbank/typen/neu" art="anlegen" groesse="klein">{t('werkbank.werkbank.neu')}</KnopfLink>
       </Listenkopf>
+      {d.typen.length > 0 && (
+        <ListenSuche wert={z.eingabe} setze={z.setEingabe} beschriftung={t('werkbank.listensuche.typen.beschriftung')} platzhalter={t('werkbank.listensuche.typen.platzhalter')} anker="werkbank.typen.suche"
+          treffer={z.treffer.length} aktiv={z.aktiv} anzahl={t('werkbank.listensuche.typen.anzahl', { anzahl: d.typen.length })}
+          filter={<PaketFilter wert={z.paket} setze={z.setPaket} pakete={paketWahl(z.paketeDa, pakete)} eigene={z.eigeneDa} />} />
+      )}
       {!d.typen.length
         ? <p className="leise leerliste">{t('werkbank.werkbank.noch-keine-mappentypen')}</p>
+        : !z.treffer.length && offen !== 'neu' ? <KeineTreffer zuruecksetzen={z.zuruecksetzen} />
         : <ul className="mappenliste">
             {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">{t('werkbank.werkbank.neuer-mappentyp')}</span><span className="unter">{t('werkbank.werkbank.noch-nicht-gespeichert')}</span></span></li>}
-            {d.typen.map((mappentyp) => {
-              const z = d.zaehler.typen[mappentyp.id];
-              const anzahl = z?.anzahl ?? 0;
-              const unpassend = z?.unpassend ?? 0;
+            {z.treffer.map(({ eintrag: mappentyp, funde, titel }) => {
+              const zz = d.zaehler.typen[mappentyp.id];
+              const anzahl = zz?.anzahl ?? 0;
+              const unpassend = zz?.unpassend ?? 0;
+              const p = pakete.find((x) => Object.values(x.typen).includes(mappentyp.id));
+              // Teile (#1031): „Teil von Rechnung“ – sie erscheinen in der Ablage nur an der übergeordneten Mappe.
+              const eltern = d.typ(uebergeordneterTyp(mappentyp));
               return (
                 <li key={mappentyp.id}>
                   <Link to={`/werkbank/typen/${mappentyp.id}`} className={`eintrag werk ${offen === mappentyp.id ? 'an' : ''}`}>
-                    <span className="titel">{mappentyp.name}{mappentyp.system && <span className="chip" title={t('werkbank.werkbank.systemmappentyp-laesst-sich')}>{t('werkbank.werkbank.system')}</span>}
-                      {(() => { const p = pakete.find((x) => Object.values(x.typen).includes(mappentyp.id)); return p ? <> <span className="chip" title={t('werkbank.werkbank.aus-dem-paket', { name: p.name, version: p.version })}>{t('werkbank.werkbank.paket', { name: p.name })}</span></> : null; })()}</span>
-                    <span className="unter">{t('werkbank.werkbank.felder-register', { felder: mappentyp.felder.length, register: mappentyp.register.length })}{d.zahlenDa && <> · {anzahl.toLocaleString(gebietsschema())} {t('werkbank.werkbank.mappen', { anzahl })}</>}</span>
+                    <span className="titel"><Hervorgehoben teile={titel} text={mappentyp.name} />{mappentyp.system && <span className="chip" title={t('werkbank.werkbank.systemmappentyp-laesst-sich')}>{t('werkbank.werkbank.system')}</span>}
+                      {p && <> <span className="chip" title={t('werkbank.werkbank.aus-dem-paket', { name: p.name, version: p.version })}>{t('werkbank.werkbank.paket', { name: p.name })}</span></>}</span>
+                    <span className="unter">{t('werkbank.werkbank.felder-register', { felder: mappentyp.felder.length, register: mappentyp.register.length })}{d.zahlenDa && <> · {anzahl.toLocaleString(gebietsschema())} {t('werkbank.werkbank.mappen', { anzahl })}</>}
+                      {eltern && <> · {t('werkbank.listensuche.teil-von', { name: typName(eltern) })}</>}</span>
                     {unpassend > 0 && <span className="problem">{t('werkbank.werkbank.passen-nicht-zur-definition', { unpassend })}</span>}
+                    <Fundstellen funde={funde} />
                   </Link>
                 </li>
               );

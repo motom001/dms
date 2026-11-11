@@ -1239,7 +1239,7 @@
       "count": 1
     },
     "ablago/bausteine": {
-      "count": 20
+      "count": 19
     },
     "complexity": {
       "count": 3
@@ -1761,7 +1761,7 @@
   },
   "web/src/werkbank/Aufgaben.tsx": {
     "ablago/bausteine": {
-      "count": 9
+      "count": 8
     },
     "complexity": {
       "count": 1
@@ -1819,7 +1819,7 @@
   },
   "web/src/werkbank/Datenschutz.tsx": {
     "ablago/bausteine": {
-      "count": 29
+      "count": 26
     },
     "complexity": {
       "count": 2
@@ -1862,7 +1862,7 @@
   },
   "web/src/werkbank/Fehlermeldungen.tsx": {
     "ablago/bausteine": {
-      "count": 3
+      "count": 2
     }
   },
   "web/src/werkbank/FragenGrenzen.tsx": {
@@ -1982,7 +1982,7 @@
   },
   "web/src/werkbank/Protokoll.tsx": {
     "ablago/bausteine": {
-      "count": 11
+      "count": 10
     }
   },
   "web/src/werkbank/Region.tsx": {
@@ -2010,7 +2010,7 @@
   },
   "web/src/werkbank/Sichten.tsx": {
     "ablago/bausteine": {
-      "count": 40
+      "count": 39
     },
     "complexity": {
       "count": 1

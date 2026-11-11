@@ -2,7 +2,7 @@
 
 A **view** decides what the Library offers on the left: which folders a list shows and how the views are arranged into a tree. A view is a saved query – users only see the result.
 
-You maintain views under **Workbench → Views**. On the left is the tree, on the right the chosen view. How users work with views is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/).
+You maintain views under **Workbench → Views**. On the left is the tree, on the right the chosen view. Above the tree, the search field searches name and description, the folder types, the columns of the result list and the fields of the conditions, and the name of the package; the filter **Package** shows only the views of one package or your own ([Searching and filtering](uebersicht.md#suchen-und-filtern)). While you search or filter, the results stand without indentation and without handle – arranging happens in the whole tree. How users work with views is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/).
 
 ![A view with a condition in the workbench](bilder/werkbank-sichten.png)
 

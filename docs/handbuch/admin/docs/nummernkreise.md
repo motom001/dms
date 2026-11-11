@@ -2,6 +2,8 @@
 
 Ein Nummernkreis vergibt fortlaufende Nummern, z. B. Rechnungsnummern wie `202610-R0000001`. Du legst ihn unter **Werkbank → Nummernkreise** an und nutzt ihn in einem Textfeld eines Mappentyps.
 
+Das Suchfeld über der Liste sucht in Name, Kennung und Muster, im Mappentyp und Feld, die den Kreis nutzen, und im Namen des Pakets ([Suchen und filtern](uebersicht.md#suchen-und-filtern)). Nummernkreise selbst gehören nicht zu einem Paket: Der Filter **Paket** ordnet einen Kreis dem Paket des Mappentyps zu, dessen Feld ihn nutzt; ohne solches Feld zählt er zu den eigenen.
+
 --8<-- "ausgeblendet-organisation.md"
 
 ## Anlegen

@@ -1079,6 +1079,11 @@ async function main() {
   // Fristen (#129): Erinnerung am Datumsfeld
   await s.locator('.fristeditor').evaluate((e) => e.scrollIntoView({ block: 'center' }));
   await bild(s, 'werkbank-frist');
+  // Suche über der Liste (#978): Treffer mit Fundstellen, darunter der Filter „Paket“.
+  await geheZu(s, '/werkbank/typen');
+  await s.getByRole('searchbox', { name: w('Mappentypen durchsuchen') }).fill(vertrag.name.slice(0, 6));
+  await s.locator('.spalte.liste .eintrag').first().waitFor();
+  await bild(s, 'werkbank-typen-suche');
   await geheZu(s, `/werkbank/typen/${d.benutzerTyp.id}`);
   await bild(s, 'werkbank-systemtyp');
   await geheZu(s, `/werkbank/benutzer/${d.mitglied.id}`);

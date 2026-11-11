@@ -39,7 +39,7 @@ import { AufgabenWeitergeben } from '../profil/Abwesenheit';
 import { ErledigenUmschalter, MeineAufgabenWeitergeben, TermineSicht, useErledigenAnsicht } from './Termine';
 import { Ehemalig } from '../Person';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink } from '../bausteine';
+import { KnopfLink, Suchfeld } from '../bausteine';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -453,10 +453,9 @@ function Liste(p: {
       {p.kopf}
       {zeigeSuche && (
         <div className={`suchzeile${filter ? '' : ' lk-zu'}`}>
-          <label className="suche"><span className="sr">{t('ablage.ablage.suchen')}</span>
-            <input type="search" placeholder={volltext ? t('ablage.ablage.suchen-in-titel-werten') : t('ablage.ablage.suchen-in-titel-und')} value={eingabe} onChange={(e) => setEingabe(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') void zurArchivnummer(eingabe); }} />
-          </label>
+          {/* Baustein Suchfeld (#978): dasselbe Feld wie in den Listen der Werkbank. Enter mit einer Archivnummer springt zum Dokument. */}
+          <Suchfeld wert={eingabe} setze={setEingabe} beschriftung={t('ablage.ablage.suchen')} platzhalter={volltext ? t('ablage.ablage.suchen-in-titel-werten') : t('ablage.ablage.suchen-in-titel-und')}
+            onEnter={(w) => void zurArchivnummer(w)} />
           <label className="haken klein" title={t('ablage.ablage.auch-im-text-der')}>
             <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} /><span>{t('ablage.ablage.volltext-durchsuchen')}</span>
           </label>

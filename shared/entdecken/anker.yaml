@@ -169,3 +169,34 @@
   beschreibung: Eintrag eines Bereichs in der Werkbank, z. B. werkbank.bereich:pakete
   handy: true
   clients: false
+# Suche über den Listen in der Mitte (#978, #994): Suchfeld, darunter die Filter.
+- anker: werkbank.typen.suche
+  seite: /werkbank/typen
+  beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Mappentypen
+  handy: true
+  clients: false
+- anker: werkbank.sichten.suche
+  seite: /werkbank/sichten
+  beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Ansichten
+  handy: true
+  clients: false
+- anker: werkbank.nummernkreise.suche
+  seite: /werkbank/nummernkreise
+  beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Nummernkreise
+  handy: true
+  clients: false
+- anker: werkbank.auskuenfte.suche
+  seite: /werkbank/auskuenfte
+  beschreibung: Suchfeld über der Liste der Datenschutz-Auskünfte
+  handy: true
+  clients: false
+- anker: werkbank.auskuenfte.nur-offene
+  seite: /werkbank/auskuenfte
+  beschreibung: Haken „Nur offene zeigen“ unter dem Suchfeld der Datenschutz-Auskünfte
+  handy: true
+  clients: false
+- anker: werkbank.fehlermeldungen.suche
+  seite: /werkbank/fehlermeldungen
+  beschreibung: Suchfeld mit Haken „Erledigte zeigen“ über den gemeldeten Fehlern
+  handy: true
+  clients: false

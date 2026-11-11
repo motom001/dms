@@ -6,37 +6,65 @@ import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { useDaten } from '../daten';
+import { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, useListenSuche } from '../bausteine';
 
 /** Werkbank → Wartung und Fehlersuche → Fehlermeldungen (#70). */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.round(b / 1024)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
 
 export function useFehlermeldungen(aktiv: boolean) {
+  // „Erledigte zeigen“ (#994): offene und erledigte zusammen, neueste zuerst; sonst nur die offenen.
   const [erledigt, setErledigt] = useState(false);
   const [liste, setListe] = useState<Fehlermeldung[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setListe(await api.fehlermeldungen(erledigt)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try {
+      const [offen, zu] = await Promise.all([api.fehlermeldungen(false), erledigt ? api.fehlermeldungen(true) : Promise.resolve([])]);
+      setListe([...offen, ...zu].sort((a, b) => b.erstellt.localeCompare(a.erstellt)));
+      setFehler(undefined);
+    } catch (e) { setFehler((e as Error).message); }
   }, [erledigt]);
   useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
   return { liste, erledigt, setErledigt, fehler, laden };
 }
 export type FehlermeldungenZustand = ReturnType<typeof useFehlermeldungen>;
 
+const titelVon = (m: Fehlermeldung) => m.text.split('\n')[0].slice(0, 80) || t('werkbank.fehlermeldungen.ohne-beschreibung');
+
+/** Gemeldete Fehler in der Mitte (#994): Suchfeld oben (Text und wer gemeldet hat), „Erledigte zeigen“ als Haken darunter. */
 export function FehlermeldungenListe({ z, offen }: { z: FehlermeldungenZustand; offen?: string }) {
+  const d = useDaten();
+  const liste = z.liste ?? [];
+  const such = useListenSuche(liste, {
+    quellen: (m) => {
+      const titel = titelVon(m);
+      const rest = m.text.startsWith(titel) ? m.text.slice(titel.length).trim() : m.text;
+      return [
+        { wo: '', text: titel, titel: true },
+        ...(rest ? [{ wo: t('werkbank.listensuche.meldung.text'), text: rest }] : []),
+        ...(m.benutzerId ? [{ wo: t('werkbank.listensuche.meldung.von'), text: d.person(m.benutzerId) }] : []),
+      ];
+    },
+  });
+  const aktiv = such.aktiv || z.erledigt;
   return (
     <>
-      <Listenkopf titel={t('werkbank.fehlermeldungen.gemeldete-fehler')} hilfe="werkbank.fehlermeldungen" beschreibung={z.erledigt ? t('werkbank.fehlermeldungen.erledigte-meldungen-der-benutzer') : t('werkbank.fehlermeldungen.was-benutzer-gemeldet-haben')}>
-        <button type="button" className="knopf klein" onClick={() => z.setErledigt(!z.erledigt)}>{z.erledigt ? t('werkbank.fehlermeldungen.offene-zeigen') : t('werkbank.fehlermeldungen.erledigte-zeigen')}</button>
-      </Listenkopf>
+      <Listenkopf titel={t('werkbank.fehlermeldungen.gemeldete-fehler')} hilfe="werkbank.fehlermeldungen" beschreibung={t('werkbank.fehlermeldungen.was-benutzer-gemeldet-haben')} />
+      <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.listensuche.meldungen.beschriftung')} platzhalter={t('werkbank.listensuche.meldungen.platzhalter')} anker="werkbank.fehlermeldungen.suche"
+        treffer={z.liste === null ? null : such.treffer.length} aktiv={aktiv} anzahl={t('werkbank.listensuche.meldungen.anzahl', { anzahl: liste.length })}
+        filter={<FilterHaken an={z.erledigt} setze={z.setErledigt}>{t('werkbank.fehlermeldungen.erledigte-zeigen')}</FilterHaken>} />
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {z.liste === null ? <p className="leise">{t('werkbank.fehlermeldungen.lade')}</p> : !z.liste.length ? <p className="leise leerliste">{z.erledigt ? t('werkbank.fehlermeldungen.keine-erledigten-meldungen') : t('werkbank.fehlermeldungen.keine-offenen-meldungen')}</p> : (
+      {z.liste === null ? <p className="leise">{t('werkbank.fehlermeldungen.lade')}</p>
+        : !liste.length ? <p className="leise leerliste">{z.erledigt ? t('werkbank.listensuche.meldungen.keine') : t('werkbank.fehlermeldungen.keine-offenen-meldungen')}</p>
+        : !such.treffer.length ? <KeineTreffer zuruecksetzen={() => { such.zuruecksetzen(); z.setErledigt(false); }} /> : (
         <ul className="mappenliste">
-          {z.liste.map((m) => (
+          {such.treffer.map(({ eintrag: m, funde, titel }) => (
             <li key={m.id}>
               <Link to={`/werkbank/fehlermeldungen/${m.id}`} className={`eintrag werk ${offen === m.id ? 'an' : ''}`}>
-                <span className="titel">{m.text.split('\n')[0].slice(0, 80) || t('werkbank.fehlermeldungen.ohne-beschreibung')}</span>
+                <span className="titel"><Hervorgehoben teile={titel} text={titelVon(m)} />{m.erledigt && <> <span className="chip">{t('werkbank.listensuche.meldung.erledigt')}</span></>}</span>
                 <span className="unter">{zeit(m.erstellt)}{m.bilder.length ? t('werkbank.fehlermeldungen.bilder', { anzahl: m.bilder.length }) : ''}</span>
+                <Fundstellen funde={funde} />
               </Link>
             </li>
           ))}

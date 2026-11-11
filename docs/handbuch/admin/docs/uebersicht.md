@@ -25,6 +25,14 @@ Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der 
 
 Bereiche, in denen du etwas anlegst und bearbeitest – egal ob viele oder wenige Einträge: Mappentypen, Ansichten, Nummernkreise, Automatisierungen, Pakete, Benutzer, Datenschutz-Auskünfte, Stempel, Aufgaben, Designs, Postfächer –, und Listen, die du durchsiehst – Papierkorb, Protokoll und Gemeldete Fehler –, sind **dreiteilig**: Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
 
+### Suchen und filtern in der Mitte { #suchen-und-filtern }
+
+Über den Listen in der Mitte steht dasselbe **Suchfeld wie in der Ablage**, darunter die Filter der Liste und die Zahl der Treffer – bei Mappentypen, Ansichten, Nummernkreisen, Datenschutz-Auskünften und gemeldeten Fehlern; Aufgaben und Protokoll nutzen das Suchfeld bei ihren Filtern. Gesucht wird beim Tippen, ohne Groß- und Kleinschreibung und mit Umlaut-Varianten: „kuendigen“ und „kundigen“ finden „kündigen“. Mehrere Wörter müssen alle vorkommen. Das **×** im Feld oder **Esc** leert es.
+
+Unter jedem Treffer steht, **wo** Ablago das Wort gefunden hat – fett der Bereich, dahinter die Stelle mit dem hervorgehobenen Wort, z. B. „Feld „Kündigen bis“ · Hilfetext: … bis wann du **kündigen** musst …“. Mehr als zwei Fundstellen fasst „+ 3 weitere“ zusammen. Ein Treffer im Namen ist im Namen selbst hervorgehoben. Findet die Suche nichts, setzt **Suche und Filter zurücksetzen** alles zurück.
+
+Wo Einträge aus [Paketen](pakete.md) kommen, gibt es den Filter **Paket**: *Alle*, *Eigene (ohne Paket)* oder ein Paket, z. B. nur *Haushalt*. Zur Wahl stehen die Pakete, die in der Liste vorkommen. Suche und Filter wirken zusammen; die Trefferzahl zeigt das Ergebnis.
+
 Alle anderen Bereiche sind **zweiteilig**: links die Bereiche, rechts die ganze Seite. Kleine oder nur lesende Listen – etwa die langen Datenbankzugriffe, die gesperrten Adressen, die vorhandenen Exporte oder die letzten Zugriffe auf das WebDAV-Laufwerk – stehen dort als eigener Abschnitt mit fester Höhe, in dem du scrollst. Am Smartphone führt **← Bereiche** von einer solchen Seite direkt zurück zur Auswahl der Bereiche.
 
 Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar bleibt: rechts der Hauptknopf mit dem Gegenstand im Namen – etwa **Nummernkreis anlegen** oder **Postfach speichern** –, links daneben **Verwerfen**:

@@ -49,7 +49,7 @@ Whoever wants to tell the project that and how they use Ablago does so deliberat
 
 Ablago gives you tools. These points stay with you as the controller:
 
-- **Record of processing activities** (Art. 30), **legal bases and information obligations** (Art. 13, 14) – for instance the privacy notice in the tenancy agreement. The details for this are in Ablago: folder types, purposes from the [settings](#einstellungen), periods from archive mode.
+- **Record of processing activities** (Art. 30), **legal bases and information obligations** (Art. 13, 14) – for instance the privacy notice in the tenancy agreement. The details for this are in Ablago: folder types, purposes from the [defaults for access requests](#einstellungen), periods from archive mode.
 - **Which period applies:** you clarify retention periods with your tax adviser; Ablago implements what you enter.
 - **Deleting after the period ends:** Ablago never deletes by itself. You check **Retention expired** regularly.
 - **Copies outside the Library:** deleted data is still in older [backups](sicherung.md#zeitplan-und-aufbewahrung) until they go according to your retention (default: up to 12 months; manually created ones stay until you delete them), in full exports and personal exports in the [export folder](export.md#export-ordner) (deleted after downloading or after 7 days), in off-site copies, downloaded files and printouts.
@@ -72,7 +72,7 @@ A family member or someone from the business who has an account in Ablago wants 
 
 A tenant, customer or contact asks for their data. **Workbench → Data protection requests** takes care of this; the details are [further below](#auskunft-nach-art-15-dsgvo).
 
-1. **Set up once:** controller (at the [own organisation](organisation.md)), recipients and the folder types that concern a person, each with a purpose ([Settings](#einstellungen)).
+1. **Set up once:** controller (at the [own organisation](organisation.md)), recipients and the folder types that concern a person, each with a purpose ([Defaults for every access request](#einstellungen)).
 2. **Choose the person** – or on their folder **Folder ▾ → Create access copy …** – and enter when the request came in. **Create deadline as a task** reminds you under "To do".
 3. **Collect:** Ablago follows the links from the person's folder (tenancy agreement, statements, flat) – completely only what belongs to them via **belonging**. Folders in which they are only named via a **reference** (e.g. as contact person) appear without their content ([Belonging or reference](#zugehorigkeit-oder-bezug)).
 4. **Keep searching** if the person also occurs elsewhere: Ablago deliberately doesn't do a full-text search ([why](#warum-keine-volltext-suche)). Search yourself in the Library with the [advanced search](https://help.ablago.app/benutzer/aktuell/en/ablage/#erweiterte-suche) without a chosen folder type, with **full text** also in documents and notes. What really belongs to the person you link with their folder (as belonging) and collect again.
@@ -137,13 +137,13 @@ In the middle are all access copies with person, date and **status**:
 | *retrieved* | The person has fetched the access copy via the retrieval link. |
 | *deleted* | The file is gone (downloaded, expired or deleted). The entry stays as **proof** – without the file. |
 
-As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). The default is the filter **Open**; **All** also shows delivered and deleted ones, and the search field filters by person. At the top right is **+ New**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
+As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). Above the list is the search field (person and status, [as everywhere in the Workbench](uebersicht.md#suchen-und-filtern)), below it the tick box **Only show open ones** – it is ticked by default. Untick it to see delivered and deleted ones too. If the tick box hides something and the list is empty, Ablago says so: “No open access requests. **Show all**”. At the top right is **+ New**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
 
 If you choose an access copy, everything is in one place on the right: **Details** (person, created, response deadline, content), **Deliver …**, **Download** and **Delete** (the proof stays), the **retrieval links** with status and **Withdraw**, and the **history** – created, delivered, retrieved, wrong code. The history comes from the person's history and only contains numbers, no content.
 
-### Settings { #einstellungen }
+### Defaults for every access request { #einstellungen }
 
-Set up once. Recipients, rights and form of address are above the list under **Settings**, the controller is kept at the [own organisation](organisation.md); which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
+Set up once. Recipients, rights and form of address are on the right under **Defaults for every access request** as long as no access copy is chosen; the assistant (**+ New**) points to them in its header – on a phone that is the way there. The controller is kept at the [own organisation](organisation.md); which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
 
 - **Controller:** since #995 name and address come from the [own organisation](organisation.md) (plus email, phone and – if there is one – the data protection officer) and appear as sender on the cover sheet and in the email to the person. If there is no own organisation yet, the previous entry applies; the Workbench offers to take it over as own organisation.
 - **Recipients:** to whom you pass on data (e.g. tax adviser, caretaker service). This is the suggestion for every access copy; you can change it per access copy.
@@ -155,7 +155,7 @@ The **storage period** on the cover sheet comes from [archive mode](archiv.md): 
 
 ### Form of address in documents for third parties: du or Sie { #anrede }
 
-In German, Ablago addresses you with the informal "du" – and by default also the people to whom an access copy goes. If you otherwise write to your tenants or customers with the formal "Sie", switch to **Sie** under **Settings → Form of address in documents for third parties**. An example sentence shows both forms side by side; the choice takes effect with **Save**. It applies to the whole installation and to everything that goes to people **outside** Ablago. In English there is only "you"; the setting only makes a difference to German documents (texts for third parties are in the installation's language, see [Languages](sprachen.md)).
+In German, Ablago addresses you with the informal "du" – and by default also the people to whom an access copy goes. If you otherwise write to your tenants or customers with the formal "Sie", switch to **Sie** under **Defaults for every access request → Form of address in documents for third parties**. An example sentence shows both forms side by side; the choice takes effect with **Save**. It applies to the whole installation and to everything that goes to people **outside** Ablago. In English there is only "you"; the setting only makes a difference to German documents (texts for third parties are in the installation's language, see [Languages](sprachen.md)).
 
 | What | Where |
 | --- | --- |

@@ -4,6 +4,12 @@ A **folder type** decides which kind of folder exists – *Contract*, *Invoice*,
 
 You maintain folder types under **Workbench → Folder types**. With **+ New** you create one; a click on an existing one opens it for editing.
 
+### Searching folder types { #suchen }
+
+With many folder types, the search field above the list helps ([how it works](uebersicht.md#suchen-und-filtern)). It searches name and description, label and help text of the **fields**, the names of the **result lists** and **tabs**, the **permissions** (name of the rule and users in its conditions), the name of the **package** and – for a [part](#ist-teil-einer-anderen-mappe) – the name of the parent folder type; such types carry the note “Part of …”. System folder types carry the mark *System* and are included in the search. The filter **Package** shows, for example, only the types from *Household* or only your own.
+
+![Workbench → Folder types: search with the places found under every result](bilder/werkbank-typen-suche.png)
+
 ![Folder type Contract in the Workbench](bilder/werkbank-mappentyp.png)
 
 How users work with the folders is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/mappen/).

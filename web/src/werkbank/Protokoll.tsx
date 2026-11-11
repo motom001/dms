@@ -3,6 +3,7 @@ import { api, type DebugStand, type ModusEintrag, type Protokolleintrag, type St
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Listenkopf } from '../Listenkopf';
+import { Suchfeld } from '../bausteine';
 import { istWeg } from '../erreichbar';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -75,7 +76,7 @@ export function ProtokollListe({ p, offen }: { p: ProtokollZustand; offen?: stri
           <select value={f.modul} onChange={(e) => setze({ modul: e.target.value })}><option value="">{t('werkbank.protokoll.alle-module')}</option>{p.module.map((m) => <option key={m} value={m}>{modulName(m)}{p.jeModul[m] ? '' : ` ${t('werkbank.protokoll.modul.leer')}`}</option>)}</select></label>
         <label><span className="sr">{t('werkbank.protokoll.benutzer')}</span>
           <select value={f.benutzer} onChange={(e) => setze({ benutzer: e.target.value })}><option value="">{t('werkbank.protokoll.alle-benutzer')}</option>{benutzer.map((b) => <option key={b}>{b}</option>)}{f.benutzer && !benutzer.includes(f.benutzer) && <option>{f.benutzer}</option>}</select></label>
-        <label className="suche"><span className="sr">{t('werkbank.protokoll.text')}</span><input type="search" placeholder={t('werkbank.protokoll.text-2')} value={f.suche} onChange={(e) => setze({ suche: e.target.value })} /></label>
+        <Suchfeld wert={f.suche} setze={(suche) => setze({ suche })} beschriftung={t('werkbank.protokoll.text')} platzhalter={t('werkbank.protokoll.text-2')} />
         <label className="haken klein"><input type="checkbox" checked={p.live} onChange={(e) => p.setLive(e.target.checked)} /><span>{t('werkbank.protokoll.live')}</span></label>
       </div>
       {f.anfrage && <div className="hinweis info"><p>{tn('werkbank.protokoll.nur-anfrage', { span: <span className="mono">{f.anfrage}</span> })}</p><button className="textknopf" onClick={() => setze({ anfrage: '' })}>{t('werkbank.protokoll.alle-zeigen')}</button></div>}

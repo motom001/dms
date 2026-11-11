@@ -1166,3 +1166,75 @@ async function keineWaagerechteRolle(s) {
   const { breit, sicht } = await s.evaluate(() => ({ breit: document.documentElement.scrollWidth, sicht: document.documentElement.clientWidth }));
   assert.ok(breit <= sicht, `Die Seite ist am Handy breiter als der Bildschirm (${breit} > ${sicht} px)`);
 }
+
+// #978: Suche über der Liste der Mappentypen wie in der Ablage – Fundstelle, Trefferzahl, Esc, keine Treffer, zurücksetzen.
+rauchtest('Werkbank: Mappentypen und Ansichten durchsuchen, Fundstellen, keine Treffer (#978)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/typen');
+  const elemente = s.getByRole('region', { name: 'Elemente' });
+  const suche = elemente.getByRole('searchbox', { name: 'Mappentypen durchsuchen' });
+  await suche.fill('einzelpreis');
+  // Gefunden im Feld der Auftragsposition (Teil von Auftrag, #1031) – mit Fundstelle unter dem Namen.
+  const treffer = elemente.getByRole('link', { name: /^Auftragsposition/ });
+  await treffer.waitFor();
+  await treffer.getByText('Teil von Auftrag').waitFor();
+  await treffer.locator('mark', { hasText: 'Einzelpreis' }).waitFor();
+  await elemente.getByText('1 Treffer', { exact: true }).waitFor();
+  assert.equal(await elemente.getByRole('link', { name: /^Vertrag \d+ Felder/ }).count(), 0, 'Vertrag passt nicht und steht nicht da');
+  // Esc leert das Feld, die Liste ist wieder vollständig.
+  await suche.press('Escape');
+  assert.equal(await suche.inputValue(), '');
+  await elemente.getByRole('link', { name: /^Vertrag \d+ Felder/ }).waitFor();
+  await elemente.getByText(/^\d+ Mappentypen$/).waitFor();
+  // Nichts gefunden: ruhiger Satz und der Weg zurück.
+  await suche.fill('xylofonunterricht');
+  await elemente.getByText('Keine Treffer.').waitFor();
+  await elemente.getByRole('button', { name: 'Suche und Filter zurücksetzen' }).click();
+  assert.equal(await suche.inputValue(), '');
+  // „×“ leert ebenfalls; Ansichten haben dasselbe Feld.
+  await suche.fill('vertrag');
+  await elemente.getByRole('button', { name: 'Suche leeren' }).click();
+  assert.equal(await suche.inputValue(), '');
+  await s.goto(BASIS + '/werkbank/sichten');
+  await elemente.getByRole('searchbox', { name: 'Ansichten durchsuchen' }).fill('xylofonunterricht');
+  await elemente.getByText('Keine Treffer.').waitFor();
+});
+
+// #994: Auskünfte – Haken „Nur offene zeigen“ statt „offen · alle“, die Vorgaben rechts statt „Einstellungen“ in der Liste;
+// gemeldete Fehler mit Suchfeld und „Erledigte zeigen“ darunter.
+rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter darunter (#994)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/auskuenfte');
+  const elemente = s.getByRole('region', { name: 'Elemente' });
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await elemente.getByRole('searchbox', { name: 'Auskünfte durchsuchen' }).waitFor();
+  const offene = elemente.getByRole('checkbox', { name: 'Nur offene zeigen' });
+  assert.equal(await offene.isChecked(), true, 'Vorgabe: nur offene');
+  assert.equal(await elemente.getByRole('link', { name: 'Einstellungen' }).count(), 0, 'kein Link „Einstellungen“ mehr in der Liste');
+  await bearbeitung.getByRole('heading', { name: 'Vorgaben für jede Auskunft' }).waitFor();
+  await bearbeitung.getByRole('button', { name: 'Einstellungen speichern' }).waitFor();
+  await offene.uncheck();
+  await elemente.getByText('Noch keine Auskunft.').waitFor();
+  // Der Assistent verweist auf die Vorgaben (am Handy der Weg dorthin).
+  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await bearbeitung.getByRole('link', { name: 'Vorgaben für jede Auskunft' }).click();
+  await s.waitForURL(/\/werkbank\/auskuenfte\/einstellungen$/);
+  await bearbeitung.getByRole('heading', { name: 'Vorgaben für jede Auskunft', level: 1 }).waitFor();
+  // Gemeldete Fehler.
+  await s.goto(BASIS + '/werkbank/fehlermeldungen');
+  await elemente.getByRole('searchbox', { name: 'Gemeldete Fehler durchsuchen' }).waitFor();
+  await elemente.getByRole('checkbox', { name: 'Erledigte zeigen' }).check();
+  await elemente.getByText('Noch keine Meldungen.').waitFor();
+});
+
+rauchtest('Handy: Mappentypen durchsuchen (#978)', { handy: true, als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/typen');
+  const suche = s.getByRole('searchbox', { name: 'Mappentypen durchsuchen' });
+  await suche.fill('einzelpreis');
+  await s.getByRole('link', { name: /^Auftragsposition/ }).waitFor();
+  await keineWaagerechteRolle(s);
+});

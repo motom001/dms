@@ -1,0 +1,43 @@
+/* Baustein Suche (#978, #994): Suchfeld, Muster „Suchfeld oben, Filter darunter“, Fundstellen. Nur Werte aus tokens.css. */
+
+/* Suchfeld: Lupe links im Feld, „×“ rechts; das eingebaute Leeren des Browsers weicht dem eigenen Knopf. */
+.suchfeld { position: relative; display: flex; align-items: center; min-width: 0; }
+.feld { position: relative; display: flex; align-items: center; flex: 1; min-width: 0; }
+.lupe { position: absolute; left: 10px; color: var(--leise); pointer-events: none; }
+.feld input { padding-left: 32px; padding-right: 34px; }
+.feld input::-webkit-search-cancel-button { appearance: none; }
+.feld input:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.suchfeld .leeren { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; padding: 0; color: var(--leise); text-decoration: none; }
+.suchfeld .leeren:hover { color: var(--tinte); }
+
+/* Suchfeld oben, Filter darunter, darunter die Trefferzahl. */
+.listensuche { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.listensuche > .suchfeld { flex: none; max-width: none; }
+.filter { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.filter :global(.haken.klein) { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.zahl { margin: 0; min-height: 1em; }
+.zahl:empty { display: none; }
+
+/* Auswahl im Filter (Paket): Beschriftung davor, kompakt. */
+.wahl { display: inline-flex; align-items: center; gap: 6px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); min-width: 0; }
+.wahl select { width: auto; max-width: 16em; padding: 3px 6px; font-size: inherit; color: var(--tinte); }
+
+.keine { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+
+/* Fundstellen: wie in der Volltextsuche der Ablage – klein, leise, Bereich fett, Treffer markiert. */
+.funde { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; font-size: calc(12px * var(--skala, 1)); color: var(--leise); line-height: 1.4; overflow-wrap: anywhere; }
+.fund { display: block; }
+.wo { font-weight: 600; }
+.weitere { font-style: italic; }
+.mark { background: var(--warn-zart); color: var(--tinte); border-radius: 2px; padding: 0 1px; }
+
+/* Am Handy (#1027, D6): Suchregion bleibt oben stehen; Auswahl mit Tippfläche von 44 px Höhe. */
+@media (max-width: 600px) {
+  .listensuche { position: sticky; top: -18px; z-index: 2; padding: 6px 0; background: var(--flaeche); }
+}
+@media (pointer: coarse) {
+  .feld input { min-height: 44px; padding-right: 48px; }
+  .suchfeld .leeren { right: 0; min-width: 44px; min-height: 44px; }
+  .wahl select { min-height: 44px; }
+  .filter :global(.haken.klein) { min-height: 44px; align-items: center; }
+}

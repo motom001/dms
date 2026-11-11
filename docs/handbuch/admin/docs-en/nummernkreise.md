@@ -2,6 +2,8 @@
 
 A number sequence assigns sequential numbers, e.g. invoice numbers like `202610-R0000001`. You create it under **Workbench → number sequences** and use it in a text field of a folder type.
 
+The search field above the list searches name, identifier and pattern, the folder type and field that use the sequence, and the name of the package ([Searching and filtering](uebersicht.md#suchen-und-filtern)). Number sequences themselves don't belong to a package: the filter **Package** assigns a sequence to the package of the folder type whose field uses it; without such a field it counts as your own.
+
 --8<-- "ausgeblendet-organisation.md"
 
 ## Creating {#anlegen}

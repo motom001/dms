@@ -25,6 +25,14 @@ Next to the areas it says how much is set up there – for instance the number o
 
 Areas in which you create and edit something – whether there are many entries or few: folder types, views, number sequences, automations, packages, users, data protection requests, stamps, tasks, designs, mailboxes – and lists you look through – bin, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; with **+ New** you create one.
 
+### Searching and filtering in the middle { #suchen-und-filtern }
+
+Above the lists in the middle is the same **search field as in the Library**, below it the list's filters and the number of results – for folder types, views, number sequences, data protection requests and reported problems; tasks and the log use the search field with their filters. The search runs as you type, ignores upper and lower case and knows umlaut variants: “kuendigen” and “kundigen” find “kündigen”. Several words must all occur. The **×** in the field or **Esc** clears it.
+
+Under every result it says **where** Ablago found the word – the area in bold, then the passage with the word highlighted, e.g. “Field “Cancel by” · help text: … the date by which you have to **cancel** …”. More than two places are summed up as “+ 3 more”. A match in the name is highlighted in the name itself. If the search finds nothing, **Reset search and filters** resets everything.
+
+Where entries come from [packages](pakete.md), there is the filter **Package**: *All*, *Own (no package)* or one package, e.g. only *Household*. You can choose the packages that occur in the list. Search and filter work together; the number of results shows the outcome.
+
 All other areas have **two parts**: the areas on the left, the whole page on the right. Small or read-only lists – for instance the long database accesses, the blocked addresses, the existing exports or the latest accesses to the WebDAV drive – are there as a section of their own with a fixed height that you scroll. On a smartphone, **← Areas** leads from such a page directly back to the choice of areas.
 
 Every form ends with the same bar, which stays visible at the bottom when scrolling: on the right the main button with the subject in its name – for instance **Create number sequence** or **Save mailbox** –, to its left **Discard**:
