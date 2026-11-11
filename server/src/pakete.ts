@@ -1537,7 +1537,7 @@ export class Paketverwaltung {
    */
   private async uebernahme(paket: Paket, ich: InstalliertesPaket | null): Promise<{ typen: Record<string, string>; sichten: Record<string, string>; name: string } | null> {
     if (paket.manifest.id !== 'basis' || ich?.typen.ablageort || !paket.typen.some((t) => t.schluessel === 'ablageort')) return null;
-    const frueher = await this.d.frueherAblageortTyp();
+    const frueher = await this.d.kern.frueherAblageortTyp();
     if (!frueher) return null;
     const sichten: Record<string, string> = {};
     const vorhanden = (await this.d.listeSichten()).filter((x) => !x.elternId && x.typen.length === 1 && x.typen[0] === frueher.id && !x.bedingungen.length);
@@ -2791,7 +2791,7 @@ export class Paketverwaltung {
             else werte[k] = w;
           }
           let mappeId: string;
-          try { mappeId = (await this.d.ohneEreignisse(() => this.d.legeMappeAn({ typId, werte }, von.id))).id; } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: meldungen(f) })); }
+          try { mappeId = (await this.d.kern.ohneEreignisse(() => this.d.legeMappeAn({ typId, werte }, von.id))).id; } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: meldungen(f) })); }
           mappen.push(mappeId);
           if (b.schluessel) beispielIds.set(b.schluessel, mappeId);
           // Beispiel-Dokumente (#878): wie beim Hochladen (Größe, Art, Vorschau, Volltext, Archivfassung), ohne
@@ -2804,7 +2804,7 @@ export class Paketverwaltung {
               if (!reg || !inhalt) throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: t('meldungen.pakete.beispiel-dokument-ohne-register', { wert: paket.beispiele.indexOf(b) + 1, datei: dok.datei, register: dok.register ?? '–' }) }));
               const name = beispielName(dok);
               try {
-                await this.d.ohneEreignisse(() => this.d.ladeHoch(mappeId, { register: reg.key, name, typ: beispielDateiart(dok.datei, inhalt) ?? undefined, herkunft: 'paket', ...(dok.datum ? { erstellt: `${dok.datum}T12:00:00.000Z` } : {}) }, inhalt, von.id));
+                await this.d.kern.ohneEreignisse(() => this.d.ladeHoch(mappeId, { register: reg.key, name, typ: beispielDateiart(dok.datei, inhalt) ?? undefined, herkunft: 'paket', ...(dok.datum ? { erstellt: `${dok.datum}T12:00:00.000Z` } : {}) }, inhalt, von.id));
               } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: `${name}: ${meldungen(f)}` })); }
             }
           }

@@ -106,7 +106,7 @@ async function aufbau(pg: boolean, name: string) {
   /** Wie der Paket-Läufer: Dienstkonto des Pakets mit seinem Schlüssel. */
   const alsPaket = async (paketId: string, m: string, pfad: string, x: Partial<Anfrage> = {}) => {
     const konto = await konten.dienstkonto(paketId, paketId);
-    d.paketKonten.set(konto.id, paketId);
+    d.kern.paketKonten.set(konto.id, paketId);
     const laeufer = (await d.kern.repo.listePakete()).find((y) => y.id === paketId)!.laeufer!;
     const k = await schluessel.fuerDienstkonto(konto, schluesselRecht(laeufer));
     const anfrage = { body: {}, params: {}, query: {}, ip: '127.0.0.1', ...x } as Anfrage;

@@ -303,7 +303,7 @@ export class Paketlaeufer implements PaketLaeufer {
       if (b.aktiv && b.paketId && !this.pakete.some((p) => p.id === b.paketId)) { await this.o.konten.dienstkontoAus(b.paketId); this.schluessel.delete(b.paketId); this.schluesselRecht.delete(b.paketId); this.konto.delete(b.paketId); }
     }
     // Auch entfernte Pakete: ihre Konten bleiben als Paket-Konten bekannt (Historie), lösen aber nichts mehr aus.
-    this.o.dienst.paketKonten = new Map((await this.o.konten.listeDienstkonten()).filter((b) => b.paketId).map((b) => [b.id, b.paketId!]));
+    this.o.dienst.kern.paketKonten = new Map((await this.o.konten.listeDienstkonten()).filter((b) => b.paketId).map((b) => [b.id, b.paketId!]));
     if (!this.pakete.length) { if (this.kind) await this.beendeKind(); return; }
     if (!this.kind) this.starteKind();
     else if (this.bereit) await this.sendePakete();

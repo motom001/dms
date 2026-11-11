@@ -30,7 +30,7 @@ async function aufbau() {
 describe('Papierkorb (#43)', () => {
   it('legt Gelöschtes in den Papierkorb, zeigt es nur dem, der es gelöscht hat, und stellt es wieder her', async () => {
     const { d, partner, vertrag } = await aufbau();
-    assert.equal(await d.papierkorbTage(), 30, 'Standard: 30 Tage');
+    assert.equal(await d.kern.papierkorbTage(), 30, 'Standard: 30 Tage');
     const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
     const v = await d.legeMappeAn({ typId: vertrag.id, werte: { nummer: 'V-1', partner: p.id } }, anna.id);
     await assert.rejects(d.loescheMappe(p.id, anna.id), status(409), 'Verweise verhindern das Löschen wie bisher');

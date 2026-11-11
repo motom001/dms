@@ -125,7 +125,7 @@ async function aufbau(pg: boolean, name: string, o: { code?: string; aktionen?: 
   const installiere = async (dateien: Record<string, string | Buffer>) => { const h = await hochladen(dateien); return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };
   const v = await installiere(paket(o));
   const konto = await konten.dienstkonto('vertraege', 'Verträge');
-  d.paketKonten.set(konto.id, 'vertraege');
+  d.kern.paketKonten.set(konto.id, 'vertraege');
   const typId = v.typen.vertrag;
   // Ersatz für den Paket-Läufer: Antworten nach Skript, Aufrufe gezählt.
   const aufrufe: Array<Record<string, unknown>> = [];

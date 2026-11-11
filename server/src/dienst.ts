@@ -35,7 +35,7 @@ import { type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
 import { Ereignisverteiler } from './ereignisse';
 import { Eingang } from './hochladen';
-import { type Ausloeser as EreignisAusloeser, type KatalogArt, type KatalogEreignis } from '../../shared/src/ereignisse';
+import { type KatalogEreignis } from '../../shared/src/ereignisse';
 import { fristFelder, type Erinnerung, type Termin } from '../../shared/src/fristen';
 import type { Regelwerk, Mappenquelle, Recht, Rechte } from '../../shared/src/rechte';
 import { EMAIL_MAX_ANHAENGE } from './grenzen';
@@ -286,7 +286,7 @@ export class Dienst {
   get paketaktionen(): PaketAktionen {
     return this.paketaktionenDienst ??= new PaketAktionen(this.kern, this.rechtepruefung, {
       paketZugriff: async (paketId) => {
-        const konto = [...this.paketKonten].find(([, p]) => p === paketId)?.[0];
+        const konto = [...this.kern.paketKonten].find(([, p]) => p === paketId)?.[0];
         return konto ? this.zugriff({ id: konto, rolle: 'mitglied', art: 'dienst', paketId }) : null;
       },
       kiSperre: (paketId) => this.kiSperreFuer(paketId),
@@ -373,10 +373,10 @@ export class Dienst {
   private baueDokumente() {
     const umwandlung = new DokumentUmwandlung(this.kern, {
       ocr: () => this.ocr, entsperren: () => this.entsperren, paketVolltext: () => this.paketVolltext,
-      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.ereignis(art, daten, von),
+      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
     });
     const archiv = new DokumentArchivfassung(this.kern, umwandlung, {
-      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.ereignis(art, daten, von),
+      auftrag: (paket, art, daten) => this.auftrag(paket, art, daten), ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von),
       paketEinstellungen: (paket) => paketEinstellungen(this.kern, paket),
     });
     const pdfs = new GeschuetztePdfs(this.kern, { umwandlung, archiv }, { ocr: () => this.ocr, listeTypen: () => this.listeTypen() });
@@ -385,7 +385,7 @@ export class Dienst {
       aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
     });
     const dokumente = new DokumenteDienst(this.kern, { umwandlung, archiv, pdfs, versionen }, {
-      ereignis: (art, daten, von) => this.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.automatischVerkleinert(ein, name),
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), automatischVerkleinert: (ein, name) => this.automatischVerkleinert(ein, name),
       volltextFertig: (e, m) => this.volltextFertig(e, m), volltextAn: (typ, key) => Dienst.volltextAn(typ, key),
       pruefeArchivDokument: (id, was) => this.pruefeArchivDokument(id, was),
     });
@@ -403,7 +403,7 @@ export class Dienst {
     const berechtigungen = new BerechtigungenDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     const ausPaketen = new VolltextAusPaketen(this.kern, { dokumente: this.dokumente, archiv: this.dokumentArchiv }, { paketVolltext: () => this.paketVolltext });
     const volltext = new VolltextDienst(this.kern, { dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, ausPaketen }, {
-      ereignis: (art, daten, von) => this.ereignis(art, daten, von), auftraege: this.auftraege, paketVolltext: () => this.paketVolltext,
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), auftraege: this.auftraege, paketVolltext: () => this.paketVolltext,
       sicherungAufgegeben: (paket, name, fehler) => this.sicherungAufgegeben?.(paket, name, fehler), sicherungAntwort: (paket, name, r) => this.sicherungAntwort?.(paket, name, r),
     });
     return { verwalten, systemsichten, sichten, berechtigungen, ausPaketen, volltext };
@@ -427,7 +427,7 @@ export class Dienst {
       volltextFertig: (e, m, von) => this.volltextFertig(e, m, von),
     });
     const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
-      ereignis: (art, daten, von) => this.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
       passungsAufgaben: (liste) => this.passungsAufgaben(liste), favoritenFreigabe: () => this.favoritenFreigabe(),
       vorgabeAufgabenEmpfaenger: (b) => this.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.sichereSystem(), konten: () => this.konten,
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
@@ -439,7 +439,7 @@ export class Dienst {
     const post = new PostDienst(this.kern, {
       rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen,
     }, {
-      ereignis: (art, daten, von) => this.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.neueAufgabe(a, typ), leiteUm: (a) => this.leiteUm(a),
       eigeneAufgabe: (id, ich) => this.eigeneAufgabe(id, ich), erledigeNachAnlass: (id, passt, grund) => this.erledigeNachAnlass(id, passt, grund), konten: () => this.konten,
       sichereZuordnung: (e, autoTypen) => sichereZuordnung(e as PostErkennung, autoTypen),
@@ -481,10 +481,10 @@ export class Dienst {
   private baueEreignisse() {
     const ki = new KiTypen(this.kern, this.rechtepruefung);
     const notizen = new MappenNotizen(this.kern, this.mappenHistorie, {
-      ereignis: (art, daten, von) => this.ereignis(art, daten, von), erwaehnungenAbgleichen: (...a) => this.erwaehnungenAbgleichen(...a), uebersetzung: () => this.uebersetzung,
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), erwaehnungenAbgleichen: (...a) => this.erwaehnungenAbgleichen(...a), uebersetzung: () => this.uebersetzung,
     });
     const ereignisse = new EreignisseDienst(this.kern, { rechte: this.rechtepruefung, typpakete: this.typpakete, ki }, {
-      ereignis: (art, daten, von) => this.ereignis(art, daten, von), ereignisWecker: () => this.ereignisWecker,
+      ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), ereignisWecker: () => this.ereignisWecker,
       nachTexterkennungsEreignis: (paket, e, r) => this.nachTexterkennungsEreignis(paket, e, r),
     });
     const automatisierung = new Automatisierungshilfen(this.kern, this.rechtepruefung, { listeRollen: () => this.listeRollen() });
@@ -494,7 +494,7 @@ export class Dienst {
   /** Aufgaben (#1078): die Klassen in aufgaben/ kennen einander über `teile`; Ereignis, Konten und Gültigkeit über den Anschluss. */
   private baueAufgaben(ereignisse: EreignisseDienst) {
     const teile = { rechte: this.rechtepruefung, historie: this.mappenHistorie, mappen: this.mappen, ereignisse, systemmappen: this.postSystemmappen } as AufgabenTeile;
-    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.ereignis(...a), konten: () => this.konten, gueltigkeit: () => this.gueltigkeit() };
+    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), konten: () => this.konten, gueltigkeit: () => this.gueltigkeit() };
     teile.aufgaben = new AufgabenDienst(this.kern, teile, anschluss);
     teile.vertretung = new AufgabenVertretung(this.kern, teile, anschluss);
     teile.ohneLeserecht = new OhneLeserecht(this.kern, teile, anschluss);
@@ -509,7 +509,7 @@ export class Dienst {
       rechte: this.rechtepruefung, passung: this.passung, historie: this.mappenHistorie, dokumente: this.dokumente, versionen: this.dokumentVersionen,
       ausgang: this.ausgang, sichten: this.sichten, systemmappen: this.postSystemmappen,
     } as LoeschenTeile;
-    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.ereignis(...a), aktualisiereTitel: (ids: string[]) => this.aktualisiereTitel(ids), konten: () => this.konten };
+    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), aktualisiereTitel: (ids: string[]) => this.aktualisiereTitel(ids), konten: () => this.konten };
     teile.loeschen = new LoeschenDienst(this.kern, teile, anschluss);
     teile.papierkorb = new Papierkorb(this.kern, teile, anschluss);
     teile.protokoll = new LoeschprotokollVerwaltung(this.kern, teile);
@@ -720,8 +720,6 @@ export class Dienst {
 
   /* ---------- Aufgaben (#54) und Erwähnungen (#56), aufgaben/aufgaben.dienst.ts ---------- */
 
-  /** Anzeigename eines Benutzers (auch für Platzhalter in Automatisierungen, #678). */
-  name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
   private pruefeErwaehnungen(...a: Parameters<AufgabenDienst['pruefeErwaehnungen']>) { return this.aufgaben.pruefeErwaehnungen(...a); }
   private erwaehnungenAbgleichen(...a: Parameters<AufgabenDienst['erwaehnungenAbgleichen']>) { return this.aufgaben.erwaehnungenAbgleichen(...a); }
 
@@ -854,8 +852,6 @@ export class Dienst {
 
   /* ---------- Pakete am Mappentyp (#686) ---------- */
 
-  /** Je Mappentyp-Id die Pakete, denen der Admin diesen Typ verwehrt hat (Kern). */
-  paketVerwehrt(): Promise<Record<string, string[]>> { return this.kern.paketVerwehrt(); }
 
   /* ---------- KI-Dienste und Mappentypen (#796, mappentypen/ki-typen.ts) ---------- */
 
@@ -919,9 +915,6 @@ export class Dienst {
 
   /** Wird beim Anlegen eines Ereignisses aufgerufen (der Läufer stellt dann gleich zu). */
   ereignisWecker: (() => void) | null = null;
-  /** Dienstkonten der Pakete (Benutzer-Id → Paket-Id), vom Paket-Läufer gepflegt (Kern). */
-  get paketKonten(): Map<string, string> { return this.kern.paketKonten; }
-  set paketKonten(m: Map<string, string>) { this.kern.paketKonten = m; }
 
   /* ---------- Ereigniskatalog (#670; Verteiler hier, Zustellung an Pakete in ereignisse/ereignisse.dienst.ts) ---------- */
 
@@ -929,16 +922,8 @@ export class Dienst {
   readonly ereignisse = new Ereignisverteiler({ repo: () => this.kern.repoOhneTransaktion, ruht: () => this.ereignisseRuhen?.() ?? false });
   /** Wartung, Wiederherstellung (vom Start gesetzt): dann verteilt der Katalog nichts. */
   ereignisseRuhen?: () => boolean | Promise<boolean>;
-  /** Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern durch eine Person (vom Start gesetzt, Kern). */
-  get beiEigenerAenderung() { return this.kern.beiEigenerAenderung; }
-  set beiEigenerAenderung(f: ((benutzerId: string, mappeId: string) => Promise<void>) | undefined) { this.kern.beiEigenerAenderung = f; }
 
-  /** `f` im Namen eines bestimmten Auslösers ausführen (#674); ohne Ereignisse (Import, Beispiele) – Kern. */
-  mitAusloeser<T>(a: EreignisAusloeser, f: () => Promise<T>): Promise<T> { return this.kern.mitAusloeser(a, f); }
-  ohneEreignisse<T>(f: () => Promise<T>): Promise<T> { return this.kern.ohneEreignisse(f); }
 
-  /** Ein Ereignis des Katalogs (#670) in den Ausgangskorb (Kern). */
-  ereignis(art: KatalogArt, daten: Record<string, unknown>, von?: string | null): Promise<void> { return this.kern.ereignis(art, daten, von); }
   private neueAufgabe(a: Aufgabe, typ?: string): Promise<Aufgabe> { return this.ereignisseDienst.neueAufgabe(a, typ); }
   private meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) { return this.ereignisseDienst.meldeVerknuepft(typ, mappeId, alt, neu, von); }
   private ereignisAnPakete(e: KatalogEreignis) { return this.ereignisseDienst.ereignisAnPakete(e); }
@@ -1015,10 +1000,7 @@ export class Dienst {
    */
   sichereSystem(): Promise<SystemIds> { return this.systemausstattung.sicherstellen(); }
   ablageortTyp(): Promise<Mappentyp | undefined> { return this.systemtypen.ablageortTyp(); }
-  private ablageortId(): Promise<string | undefined> { return this.kern.ablageortId(); }
 
-  /** Der Ablageort, den der Kern vor #883 angelegt hat (Kern). */
-  frueherAblageortTyp(): Promise<Mappentyp | undefined> { return this.kern.frueherAblageortTyp(); }
   vermerkeVerwaltungsmodus(alltag: { id: string; rolle: string; name?: string; email?: string }, ids: string[], was: Modusspur): Promise<Set<string>> { return this.systemtypen.vermerkeVerwaltungsmodus(alltag, ids, was); }
   imVerwaltungsmodus(max?: number) { return this.systemtypen.imVerwaltungsmodus(max); }
   private sicherePostSichten(post: Mappentyp) { return this.systemsichten.sicherePostSichten(post); }
@@ -1083,8 +1065,6 @@ export class Dienst {
 
   /* ---------- Papierkorb (#43, loeschen/papierkorb.ts) ---------- */
 
-  /** Aufbewahrung in Tagen; 0 = kein Papierkorb (Löschen ist sofort endgültig) – Kern. */
-  papierkorbTage(): Promise<number> { return this.kern.papierkorbTage(); }
   setzePapierkorbTage(eingabe: unknown, von?: string | null): Promise<{ tage: number; geleert: number }> { return this.papierkorbVerwaltung.setzePapierkorbTage(eingabe, von); }
   papierkorb(ich: { id: string; rolle: string }, alle = false) { return this.papierkorbVerwaltung.papierkorb(ich, alle); }
   papierkorbDokumente(ich: { id: string; rolle: string }, alle = false): Promise<DokumentImKorb[]> { return this.papierkorbVerwaltung.papierkorbDokumente(ich, alle); }

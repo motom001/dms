@@ -989,7 +989,7 @@ export class Automatisierungen {
           const art = (karte as DannKarte).art;
           const ausf = DANN_AUSFUEHRER[art];
           if (!ausf) throw new Fachfehler(422, t('automatisierung.karte.unbekannt', { art }));
-          const text = await this.d.dienst.mitAusloeser({ art: 'automatisierung', id: a.id, konto: konto.id, kette: anlass.kette + 1 }, () => ausf(karte, kontext));
+          const text = await this.d.dienst.kern.mitAusloeser({ art: 'automatisierung', id: a.id, konto: konto.id, kette: anlass.kette + 1 }, () => ausf(karte, kontext));
           await schritt(si, { zustand: 'ok', text });
         } catch (x) {
           const text = (x as Error).message;
@@ -1062,7 +1062,7 @@ export class Automatisierungen {
     const siehtPersonen = empf && personen.length ? await this.d.dienst.lesbare(empf, personen.map((k) => daten[k] as string)) : null;
     for (const k of personen) {
       const id = daten[k] as string;
-      if (siehtPersonen && !siehtPersonen.has(id)) { fest[k] = versteckt; verdeckt.add(k); } else fest[k] = await this.d.dienst.name(id);
+      if (siehtPersonen && !siehtPersonen.has(id)) { fest[k] = versteckt; verdeckt.add(k); } else fest[k] = await this.d.dienst.kern.name(id);
     }
     if ('von' in daten || 'bis' in daten) {
       fest.von = tag(daten.von); fest.bis = tag(daten.bis);

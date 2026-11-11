@@ -731,7 +731,7 @@ export class Paketerstellung {
   private async dmsTypen(): Promise<Map<string, string>> {
     const s = await this.d.kern.system();
     // Den Ablageort von Basis behandelt die Erstellung wie jeden Paket-Typ; den früheren des Kerns gibt es nur noch hier (#883).
-    const a = await this.d.frueherAblageortTyp();
+    const a = await this.d.kern.frueherAblageortTyp();
     return new Map<string, string>([[s.benutzer.id, 'benutzer'], [s.rolle.id, 'rolle'], ...(a ? [[a.id, 'ablageort'] as [string, string]] : [])]);
   }
 

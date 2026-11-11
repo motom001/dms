@@ -143,8 +143,8 @@ async function aufbau(versionierung = true) {
   const mails: Array<{ an: string; o?: MailOptionen }> = [];
   const mailer: Mailer = { async sende(an, _b, _t, o) { mails.push({ an, o }); } };
   const ereignisse: string[] = [];
-  const melde = d.ereignis.bind(d);
-  d.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
+  const melde = d.kern.ereignis.bind(d.kern);
+  d.kern.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
   return { d, t, m, dokument, mails, mailer, ereignisse };
 }
 

@@ -38,7 +38,7 @@ describe('Ablageort (#168): der frühere aus einer älteren Ablage', () => {
     const { d, repo, einstellungen } = neu();
     const a = await frueherAblageort(d, einstellungen);
     assert.equal((await d.ablageortTyp())!.id, a.id);
-    assert.equal((await d.frueherAblageortTyp())!.id, a.id);
+    assert.equal((await d.kern.frueherAblageortTyp())!.id, a.id);
     const d2 = new Dienst(repo, speicherDateien(), { einstellungen });
     assert.equal((await d2.ablageortTyp())!.id, a.id, 'kein zweiter, keiner neu');
     assert.equal((await d2.listeTypen()).filter((t) => t.schluessel?.startsWith('ablageort')).length, 1);

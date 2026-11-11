@@ -130,7 +130,7 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       return ok(r);
     } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
-      const papierkorb = (await dienst.papierkorbTage()) > 0;
+      const papierkorb = (await dienst.kern.papierkorbTage()) > 0;
       await dienst.loescheMappe(a.params.id, ich(a).id, await zg(a), { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'einzeln' });
       L.ablage.info(papierkorb ? 'Mappe in den Papierkorb gelegt' : 'Mappe gelöscht', { id: a.params.id });
       return leer;
@@ -158,12 +158,12 @@ export function mappenRouten(k: RoutenKontext): Route[] {
     // Ein Vorgang (#424): alle Mappen, die zusammen gelöscht wurden.
     { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), false, quelle(a))) },
     /* … und in der Werkbank alles */
-    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.kern.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
     { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true, quelle(a))) },
     { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/dokumente/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
     { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => {
       const historieTage = b(a).historieTage === undefined ? await dienst.historieTage() : await dienst.setzeHistorieTage(b(a).historieTage);
-      const r = b(a).tage === undefined ? { tage: await dienst.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage, ich(a).id);
+      const r = b(a).tage === undefined ? { tage: await dienst.kern.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage, ich(a).id);
       return ok({ ...r, historieTage });
     } },
     { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true, { quelle: quelle(a) }) }) },

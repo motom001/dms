@@ -246,8 +246,8 @@ async function aufbau(repo: Repo, versionierung = true) {
   // Der Volltext des Originals (wie nach der Texterkennung).
   await (d as unknown as { repo: Repo }).repo.ocrSetze(dokument.id, { stand: 'fertig', text: ZEILEN.join('\n'), seiten: 1, info: 'Textebene des PDFs' });
   const ereignisse: string[] = [];
-  const melde = d.ereignis.bind(d);
-  d.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
+  const melde = d.kern.ereignis.bind(d.kern);
+  d.kern.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
   return { d, t, m, dokument, pdf, ereignisse };
 }
 

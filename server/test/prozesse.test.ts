@@ -256,7 +256,7 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
   it('Paket-Läufer aus der Ferne: Schnappschuss, Vektoren, Antworten in Teilen, Erkennen, Aktion', async () => {
     const v = einzeln();
     const leiterDienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    leiterDienst.paketKonten = new Map([['konto-1', 'paket.a']]);
+    leiterDienst.kern.paketKonten = new Map([['konto-1', 'paket.a']]);
     leiterDienst.erkennung.anbieter = { pakete: () => [{ id: 'paket.e', name: 'Erkennen', netz: false }], erkenne: async () => ({ text: '', ms: 0 }) };
     const aufrufe: string[] = [];
     const echt = {
@@ -280,7 +280,7 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
     const f = new Fernlaeufer(v, d);
     await f.start();
     assert.equal(f.pid, 4711);
-    assert.deepEqual([...d.paketKonten], [['konto-1', 'paket.a']], 'Dienstkonten der Pakete kennt auch dieser Prozess');
+    assert.deepEqual([...d.kern.paketKonten], [['konto-1', 'paket.a']], 'Dienstkonten der Pakete kennt auch dieser Prozess');
     assert.equal(d.vektorAnbieter!.paket(), 'paket.v');
     assert.deepEqual([...(await d.vektorAnbieter!.vektorFuer('Strom', 1000))!.vektor], [0.5, 0.25]);
     assert.deepEqual(d.fragen.anbieter!.paket(), { id: 'paket.f', name: 'Fragen' });

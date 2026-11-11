@@ -413,7 +413,7 @@ function faelle(pg: boolean) {
       const jetzt = (await d.ablageortTyp())!;
       assert.equal(jetzt.id, a.id);
       assert.equal(jetzt.beschriftungen?.en?.name, 'Storage location', 'Beschriftungen von Basis ergänzt');
-      assert.equal(await d.frueherAblageortTyp(), undefined, 'kein früherer mehr');
+      assert.equal(await d.kern.frueherAblageortTyp(), undefined, 'kein früherer mehr');
       // Pakete mit basis:ablageort zeigen auf denselben Typ.
       const o = await p.installiere({ id: 'ordnerpaket' }, ICH);
       assert.equal((await d.listeTypen()).find((t) => t.id === o.typen.urkunde)!.felder.find((f) => f.key === 'verbleib_original')!.zielTypen?.[0], a.id);

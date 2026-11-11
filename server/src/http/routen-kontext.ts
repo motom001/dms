@@ -260,7 +260,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
     // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
     typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
-    papierkorbTage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(),
+    papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
     version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',

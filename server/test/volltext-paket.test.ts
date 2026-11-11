@@ -144,7 +144,7 @@ describe('Volltext-Ablauf mit Texterkennung als Paket (#458)', () => {
   it('Paket schreibt den Volltext: fertig, Herkunft Paket, Ereignis an die anderen (nicht an sich selbst)', async () => {
     const { d, repo, hoch, ereignisse } = await aufbau();
     const scan = await hoch('scan.pdf', 'application/pdf', pdfMitText(['scan']), true);
-    d.paketKonten.set('konto-texterkennung', 'texterkennung');
+    d.kern.paketKonten.set('konto-texterkennung', 'texterkennung');
     await d.schreibeVolltext(scan, { text: TEXT, seiten: 2 }, { id: 'konto-texterkennung', herkunft: 'Texterkennung 2.0.0', paket: true });
     const s = (await repo.holeDokument(scan))!;
     assert.equal(s.ocr?.stand, 'fertig');

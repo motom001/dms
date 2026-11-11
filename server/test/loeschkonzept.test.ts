@@ -106,7 +106,7 @@ describe('Löschkonzept (#469)', () => {
     const k = await d.legeTypAn({ name: 'Mieter', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'iban', label: 'IBAN', typ: 'text' }] });
     await d.legeMappeAn({ typId: k.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, null);
     await d.setzeDatenschutz({ typen: { [k.id]: { person: true, zweck: 'Mietverhältnis' } } }, 'admin@example.org');
-    const q = { ...basis(await d.listeTypen(), await d.datenschutz()), papierkorbTage: await d.papierkorbTage() };
+    const q = { ...basis(await d.listeTypen(), await d.datenschutz()), papierkorbTage: await d.kern.papierkorbTage() };
     const lk = loeschkonzept(q);
     const s = { titel: lk.titel, untertitel: lk.untertitel, stand: lk.stand, vorbemerkung: lk.vorbemerkung, abschnitte: lk.abschnitte };
     const docx = entpacke(schriftstueckDocx(s));

@@ -306,13 +306,12 @@ export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<Ins
 /** Was das Anlegen vom Dienst braucht – die Paketverwaltung gibt ihren Dienst hinein. */
 export interface VorgabenDienst {
   listeTypen(): Promise<Mappentyp[]>;
-  ohneEreignisse<T>(f: () => Promise<T>): Promise<T>;
   legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
   aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
   ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>;
   listeDokumente(mappeId: string): Promise<Dokument[]>;
   loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown>;
-  kern: { repo: { holeMappe(id: string): Promise<Mappe | undefined>; setzeVorgabe(id: string, kennung: string | null): Promise<void>; mappenMitVorgabe(praefix: string): Promise<Mappe[]> } };
+  kern: { repo: { holeMappe(id: string): Promise<Mappe | undefined>; setzeVorgabe(id: string, kennung: string | null): Promise<void>; mappenMitVorgabe(praefix: string): Promise<Mappe[]> }; ohneEreignisse<T>(f: () => Promise<T>): Promise<T> };
 }
 
 export interface VorgabenAuftrag {
@@ -363,7 +362,7 @@ export async function legeVorgaben(d: VorgabenDienst, a: VorgabenAuftrag, erg: V
 /** Werte einer Vorgabe schreiben – nur neu oder unverändert seit dem letzten Schreiben (dann alle Felder vom Paket). */
 async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis, x: { v: PaketVorgabe; l: VorgabenLage['je'] extends Map<string, infer L> ? L : never; typ: Mappentyp; werte: Record<string, unknown> }) {
   const { v, l, typ, werte } = x;
-  const ohne = <T>(f: () => Promise<T>) => d.ohneEreignisse(f);
+  const ohne = <T>(f: () => Promise<T>) => d.kern.ohneEreignisse(f);
   const fehler = (f: unknown) => new Fachfehler(422, t('meldungen.pakete.vorgaben.anlegen', { name: v.schluessel, meldungen: (f as Error).message }));
   if (l.zustand === 'neu') {
     try { await ohne(() => d.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von)); } catch (f) { throw fehler(f); }
@@ -456,8 +455,8 @@ async function legeVorlagen(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgaben
     if (alt && !dok) continue; // gelöscht: bleibt weg
     if (alt && dok && (dok.sha256 !== alt.sha256 || !x.ersetzen || sha === alt.sha256)) { staende.push(alt); continue; }
     // Die bisherige Fassung zuerst in den Papierkorb (sonst hieße die neue „… (2).md“).
-    if (dok) await d.ohneEreignisse(() => d.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
-    const neu = await d.ohneEreignisse(() => d.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
+    if (dok) await d.kern.ohneEreignisse(() => d.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
+    const neu = await d.kern.ohneEreignisse(() => d.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
     erg.rueck.unshift(() => d.loescheDokument(neu.dokument.id, a.von, { weg: 'dokument' }));
     staende.push({ datei: v.datei, dokument: neu.dokument.id, sha256: neu.dokument.sha256 });
   }

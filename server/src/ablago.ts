@@ -322,7 +322,7 @@ beiFehlenderDatei((f) => { void dienst.merkeFehlendeDatei(f).catch((e) => log.wa
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
 dienst.verbindeKonten(konten.papierkorbHaken());
 // Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern zählen wie Öffnen.
-dienst.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
+dienst.kern.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
 konten.verbindeZustand(zustandDb);
 // Sprachpakete (#731): ihre Sprachen kommen dazu, sobald die Pakete lesbar sind; danach lädt der SprachDienst sie mit.
 const personenMitSprache = async (k: string) => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false && b.sprache === k).length;
@@ -348,7 +348,7 @@ konten.verbindeSperre(anmeldesperre);
 // Ereigniskatalog (#670): Kontosperre als Ereignis (Id des Benutzers, Zeitpunkt, Fehlversuche, IP gekürzt).
 anmeldesperre.beiKontosperre = async (x) => {
   const b = await konten.personMitEmail(x.email);
-  if (b) await dienst.ereignis('benutzer.gesperrt', { benutzer: b.id, zeitpunkt: new Date().toISOString(), fehlversuche: x.versuche, bis: x.bis, ip: kuerzeIp(x.ip) });
+  if (b) await dienst.kern.ereignis('benutzer.gesperrt', { benutzer: b.id, zeitpunkt: new Date().toISOString(), fehlversuche: x.versuche, bis: x.bis, ip: kuerzeIp(x.ip) });
 };
 // Zwei-Faktor-Anmeldung (#242): Geheimnis verschlüsselt mit dem Schlüssel des DMS.
 konten.verbindeZweifaktor(new Zweifaktor(pgEinstellungen(sql, cfg.haushalt), (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w), Date.now, zustandDb));
@@ -557,7 +557,7 @@ sicherung.extern = {
     const adresse = p.einstellungen ? adressfelder(p.einstellungen).map((f) => werte[f.schluessel]).find((v): v is string => typeof v === 'string' && !!v) ?? null : null;
     return { id: p.id, name: p.name, adresse };
   })),
-  melde: (daten) => dienst.ereignis('sicherung.fertig', { ...daten }),
+  melde: (daten) => dienst.kern.ereignis('sicherung.fertig', { ...daten }),
 };
 dienst.sicherungAufgegeben = (paket, name, fehler) => sicherung.externAufgegeben(paket, name, fehler);
 dienst.sicherungAntwort = (paket, name, r) => sicherung.externAntwort(paket, name, r);
@@ -627,7 +627,7 @@ const verwaltung = new Verwaltung({
     async () => { const n = (await texterkennung.zaehler()).fehler; return n ? [{ bereich: 'texterkennung', schluessel: `texterkennung:${n}`, text: t('werkbank.verwaltung.texterkennung', { anzahl: n }) }] : []; },
     async () => ((await liesErweiterungen(sql)).some((e) => e.zustand !== 'ok') ? [{ bereich: 'systemzustand', schluessel: 'erweiterungen', text: t('werkbank.verwaltung.erweiterungen') }] : []),
     // Aufgaben bei Personen ohne Leserecht (#798): je Fall einmal gemeldet; der Alltags-Benutzer sieht nur „etwas liegt an“.
-    async () => Promise.all((await dienst.offeneFaelle()).map(async (f) => ({ bereich: 'aufgaben', schluessel: `ohne-leserecht:${f.id}`, text: t('werkbank.verwaltung.ohne-leserecht', { name: await dienst.name(f.benutzerId) }) }))),
+    async () => Promise.all((await dienst.offeneFaelle()).map(async (f) => ({ bereich: 'aufgaben', schluessel: `ohne-leserecht:${f.id}`, text: t('werkbank.verwaltung.ohne-leserecht', { name: await dienst.kern.name(f.benutzerId) }) }))),
   ],
 });
 // WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).

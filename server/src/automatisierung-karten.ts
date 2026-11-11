@@ -72,7 +72,7 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
     for (const id of an) {
       const wer = (await c.dienst.aufgabenEmpfaenger(id)).an;
       const f = await c.fuelleFuer(k.text, wer);
-      if (!f.mappe) gar.push(await c.dienst.name(wer)); else if (f.verborgen) teils.push(await c.dienst.name(wer));
+      if (!f.mappe) gar.push(await c.dienst.kern.name(wer)); else if (f.verborgen) teils.push(await c.dienst.kern.name(wer));
     }
     return [uebersetzer2('automatisierung.karte.aufgabe.trocken', { als, anzahl: an.length, text }),
       ...(teils.length ? [uebersetzer2('automatisierung.karte.aufgabe.trocken.nicht-sichtbar', { anzahl: teils.length, namen: teils.join(', ') })] : []),

@@ -51,7 +51,7 @@ export function typenRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'POST', pfad: '/api/beispiele', zugang: 'admin', handler: async (a) => {
       // Beispiele lösen keine Ereignisse aus (#670).
-      await dienst.ohneEreignisse(() => ladeBeispiele(dienst, ich(a).id));
+      await dienst.kern.ohneEreignisse(() => ladeBeispiele(dienst, ich(a).id));
       L.werkbank.info('Beispiel-Mappentypen geladen');
       return leer;
     } },
@@ -63,7 +63,7 @@ export function typenRouten(k: RoutenKontext): Route[] {
       L.werkbank.info('Demo-Mappen werden erzeugt', { anzahl: o.anzahl, dokumente: !!o.dokumente, startwert: o.startwert ?? null });
       const titel = t('meldungen.routen.demo-mappen-erzeugen', { zahl: o.anzahl.toLocaleString(gebietsschema()), wert: o.dokumente ? t('meldungen.routen.mit-dokumenten') : '' });
       return ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('demo-erzeugen', titel, async (f) => {
-        const r = await dienst.ohneEreignisse(() => erzeugeDemo(dienst, o, benutzerId, f, demoPlatz));
+        const r = await dienst.kern.ohneEreignisse(() => erzeugeDemo(dienst, o, benutzerId, f, demoPlatz));
         L.werkbank.info('Demo-Daten erzeugt', { mappen: r.gesamt, dokumente: r.dokumente?.anzahl ?? 0, bytes: r.dokumente?.bytes ?? 0, dauerMs: r.dauerMs, startwert: r.startwert, abgebrochen: r.abgebrochen ?? null });
         return r;
       }, demoPhasen(!!o.dokumente))), 202);
@@ -71,7 +71,7 @@ export function typenRouten(k: RoutenKontext): Route[] {
     // Abschätzung vor dem Start (#248): Mappen, Dokumente, Größe, Seiten für die Texterkennung, freier Platz.
     { methode: 'POST', pfad: '/api/werkbank/demo/abschaetzung', zugang: 'admin', lesend: true, handler: async (a) => ok(await schaetzeDemo(dienst, pruefeDemoOptionen(b(a)), demoPlatz)) },
     { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
-      ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.ohneEreignisse(() => dienst.entferneDemo(f)), [{ key: 'mappen', name: 'Demo-Mappen entfernen', einheit: 'Mappen' }])), 202) },
+      ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.kern.ohneEreignisse(() => dienst.entferneDemo(f)), [{ key: 'mappen', name: 'Demo-Mappen entfernen', einheit: 'Mappen' }])), 202) },
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(await dienst.auftraege.stand()) },
     // Abbrechen (#458) – nur Aufträge, die das erlauben (z. B. „Volltext neu erzeugen“).
     { methode: 'POST', pfad: '/api/werkbank/auftrag/abbrechen', zugang: 'admin', handler: async (a) => ok(await dienst.auftraege.abbrechen((b(a) as { id?: unknown }).id)) },

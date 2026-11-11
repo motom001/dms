@@ -148,7 +148,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   const tabelle = routen(d, konten, { apiSchluessel: schluessel });
   const rufe = async (paketId: string, methode: string, pfad: string, params: Record<string, string>, body: unknown, query: Record<string, string> = {}) => {
     const konto = await konten.dienstkonto(paketId, paketId);
-    d.paketKonten.set(konto.id, paketId);
+    d.kern.paketKonten.set(konto.id, paketId);
     const r = tabelle.find((y) => y.methode === methode && y.pfad === pfad)!;
     assert.ok(r, `${methode} ${pfad}`);
     const anfrage = { body, params, query, ip: '127.0.0.1' } as unknown as Anfrage;

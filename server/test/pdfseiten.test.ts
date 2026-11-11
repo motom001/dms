@@ -186,7 +186,7 @@ describe('PDF bearbeiten (#335)', () => {
     assert.deepEqual(await neue(), r3.posten.flatMap((p, i) => [`post.angelegt:${p.id}`, `dokument.hochgeladen:${r3.dokumente[i].id}`]));
     // Was das Dienstkonto des Pakets selbst teilt oder zusammenfügt, meldet das DMS ihm nicht.
     const konto = '00000000-0000-4000-8000-0000000000cc';
-    d.paketKonten.set(konto, 'ocr');
+    d.kern.paketKonten.set(konto, 'ocr');
     const r4 = await d.bearbeitePdf(r2.dokument.id, { seiten: [1, 2, 3].map((nr) => ({ nr })), teile: [0, 1], bestaetigt: true }, konto);
     await d.fuegePdfZusammen({ dokumente: r4.dokumente.map((x) => x.id) }, konto);
     assert.deepEqual(await neue(), []);

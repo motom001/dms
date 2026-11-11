@@ -121,8 +121,8 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
 
   it('mitAusloeser kennzeichnet eine Automatisierung; ohneEreignisse (Beispiele, Demo) ist still', async () => {
     const { d, admin, notiz, gesehen, verteile } = await aufbau();
-    await d.mitAusloeser({ art: 'automatisierung', id: 'regel-1', konto: 'sys', kette: 1 }, () => d.legeMappeAn({ typId: notiz.id, werte: { name: 'B' } }, admin.id));
-    await d.ohneEreignisse(() => d.legeMappeAn({ typId: notiz.id, werte: { name: 'C' } }, admin.id));
+    await d.kern.mitAusloeser({ art: 'automatisierung', id: 'regel-1', konto: 'sys', kette: 1 }, () => d.legeMappeAn({ typId: notiz.id, werte: { name: 'B' } }, admin.id));
+    await d.kern.ohneEreignisse(() => d.legeMappeAn({ typId: notiz.id, werte: { name: 'C' } }, admin.id));
     await verteile();
     assert.equal(gesehen.length, 1);
     assert.deepEqual(gesehen[0].ausloeser, { art: 'automatisierung', id: 'regel-1', konto: 'sys', kette: 1 });

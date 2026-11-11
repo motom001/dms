@@ -245,7 +245,7 @@ describe('Volltext aus Paketen (#614): API für Pakete', () => {
     const tabelle = routen(x.d, konten, { apiSchluessel: schluessel });
     const rufe = async (paketId: string, methode: string, pfad: string, params: Record<string, string>, body: unknown, query: Record<string, string> = {}) => {
       const konto = await konten.dienstkonto(paketId, paketId);
-      x.d.paketKonten.set(konto.id, paketId);
+      x.d.kern.paketKonten.set(konto.id, paketId);
       const r = tabelle.find((y) => y.methode === methode && y.pfad === pfad)!;
       assert.ok(r, `${methode} ${pfad}`);
       const a = { body, params, query, ip: '127.0.0.1' } as unknown as Anfrage;
