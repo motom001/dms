@@ -317,11 +317,13 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 
     it('Bremse: höchstens ein laufender Ablauf je Person und Paket', async () => {
       const t = await aufbau(pg, 'aktionen_bremse');
-      let los!: () => void;
+      let los!: () => void, drin!: () => void;
       const warten = new Promise<void>((ok) => { los = ok; });
-      t.setzeSkript(async () => { await warten; return antwort({ ergebnis: { meldung: 'fertig' } }); });
+      const imSkript = new Promise<void>((ok) => { drin = ok; });
+      t.setzeSkript(async () => { drin(); await warten; return antwort({ ergebnis: { meldung: 'fertig' } }); });
       const erster = t.starte(t.lena, t.mappe.id, 'zusammenfassung');
-      await new Promise((ok) => setTimeout(ok, 20));
+      // Erst prüfen, wenn der erste Ablauf wirklich läuft – eine feste Wartezeit reichte mit PostgreSQL in der CI nicht.
+      await Promise.race([imSkript, erster]);
       await assert.rejects(t.starte(t.lena, t.mappe.id, 'gekuendigt'), fehler(429));
       los();
       assert.ok('ergebnis' in await erster);
