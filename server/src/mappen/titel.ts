@@ -102,7 +102,7 @@ export class MappenTitel {
   }
 
   /**
-   * Wartung „Absender bereinigen“ (#494): Bis 0.99 bekam eingehende Post ohne Absender den Namen dessen,
+   * Wartung „„Von“ bereinigen“ (#494; bis #1042 „Absender“): Bis 0.99 bekam eingehende Post ohne Absender den Namen dessen,
    * der sie angelegt hat (beim Eingangsordner „Eingangsordner“). Gesucht wird eingehende Post aus
    * Hochladen, API, WebDAV und Eingangsordner, deren Absender genau so lautet. Postfach-Abrufe und
    * versendete Post bleiben außen vor – dort kommt der Absender aus der E-Mail bzw. ist richtig.
@@ -111,11 +111,11 @@ export class MappenTitel {
     const typ = (await this.kern.system()).post;
     const kanaele = new Set<string>([POST_KANAL.hochgeladen, POST_KANAL.api, POST_KANAL.webdav, POST_KANAL.ordner]);
     const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend
-      && kanaele.has(auswahlText(m.werte.kanal)) && typeof m.werte.absender === 'string' && m.werte.absender.trim() !== '');
+      && kanaele.has(auswahlText(m.werte.kanal)) && typeof m.werte.von === 'string' && m.werte.von.trim() !== '');
     const namen = new Map<string, string>();
     const posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> = [];
     for (const m of kandidaten) {
-      const absender = String(m.werte.absender).trim();
+      const absender = String(m.werte.von).trim();
       let passt = auswahlText(m.werte.kanal) === POST_KANAL.ordner && absender === 'Eingangsordner';
       if (!passt && m.erstelltVon) {
         if (!namen.has(m.erstelltVon)) namen.set(m.erstelltVon, await this.kern.name(m.erstelltVon));
@@ -136,7 +136,7 @@ export class MappenTitel {
     for (const p of passend) {
       const m = await this.repo.holeMappe(p.id);
       if (!m) continue;
-      const werte = { ...m.werte, absender: null };
+      const werte = { ...m.werte, von: null };
       setzeZusammengesetzte(typ, werte);
       await this.inTransaktion(async () => {
         const neu = await this.repo.aendereMappe(m.id, werte, [], von.id, { basis: m.werte, verweise: (w) => verweiseVon(typ, w) });

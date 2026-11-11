@@ -137,7 +137,7 @@ On the document, all users see the status (*waiting*, *running*, *waiting for te
 - **Catch up thumbnails** creates, for older PDFs and images, the small image of the first page shown next to every document. New documents get it straight after upload, older ones otherwise on first display. The images are created one after the other with `pdftoppm` (poppler, included in the image). Files of other types without a version (e.g. TIFF) are given to the [package for converting](#andere-dateitypen), if one is installed.
 - **Check all files** reads every stored file, including older versions, and compares it with its checksum. That way it becomes apparent if a file was changed on the storage or is missing. More under [Check all files](archiv.md#alle-dateien-prufen).
 - **Assign numbers afterwards** gives a number to folders created before their field got a number sequence. More under [Assign numbers afterwards](nummernkreise.md#nummern-nachtraglich-vergeben).
-- **Clean up senders** clears wrong senders on older post, see below.
+- **Clean up “From”** clears wrong entries under *From* (until 0.240 *Sender*) on older post, see below.
 - **Values that don't fit the format** lists stored values that don't fit a format or date limits, see below.
 
 All run in the background; Ablago stays usable meanwhile.
@@ -153,11 +153,11 @@ Only documents in tabs that create a full text. It runs as a **job with progress
 
 If no package for text recognition is installed, the page says so with the way to **Workbench → Packages**.
 
-### Cleaning up senders { #absender-bereinigen }
+### Clean up “From” { #absender-bereinigen }
 
-Up to version 0.99, for uploaded post without a sender, Ablago entered the **name of whoever created it** – for post from the intake folder "Intake folder". But the sender is whoever sent the letter. Since then, new post gets no sender as long as nobody enters one.
+Up to version 0.99, for uploaded post without a sender, Ablago entered the **name of whoever created it** – for post from the intake folder "Intake folder". But *From* (until 0.240 *Sender*) is whoever sent the letter. Since then, new post stays empty there as long as nobody enters the sender.
 
-For the existing stock, **Clean up senders** shows a preview: incoming post with channel *Uploaded*, *API*, *WebDAV* or *Folder* whose sender is exactly the creator's name (or "Intake folder"). Post from mailboxes and sent emails are never included. Remove the tick where the sender is right after all, and tap **Clear sender**. Afterwards the history of every post says what was in the field before and who cleaned up.
+For the existing stock, **Clean up “From”** shows a preview: incoming post with channel *Uploaded*, *API*, *WebDAV* or *Folder* whose *From* is exactly the creator's name (or "Intake folder"). Post from mailboxes and sent emails are never included. Remove the tick where the name is right after all, and tap **Clear “From”**. Afterwards the history of every post says what was in the field before and who cleaned up.
 
 ### Values that don't fit the format { #angaben-die-nicht-zum-format-passen }
 

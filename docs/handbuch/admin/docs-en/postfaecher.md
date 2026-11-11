@@ -103,7 +103,7 @@ For other providers with IMAP and OAuth 2.0 you enter the *authorization endpoin
 
 ## What happens when taking over { #was-beim-ubernehmen-passiert }
 
-- **Every email becomes a post**: channel *Email*, direction incoming, status *New*; subject, date and sender (name and address) from the email; *For* from the mailbox. It was created by the *mailbox*, not by a user. The history names mailbox, sender and time.
+- **Every email becomes a post**: channel *Email*, direction incoming, status *New*; subject, date and sender (name and address, under *From*) from the email; *To* from the mailbox. It was created by the *mailbox*, not by a user. The history names mailbox, sender and time.
 - **Attachments** become individual documents. Small embedded images (logos, signatures) are skipped; attached emails stay an `.eml` document.
 - **Duplicate attachments:** if an attachment is already in Ablago (same checksum), it is taken over anyway; the post's history says "Duplicate: "Invoice.pdf" is already in Ablago – check before assigning." Where, **Assign** shows to everyone who may read the other folder.
 - The **Email's text** appears as plain text on the post. HTML is converted into text; Ablago never loads images or other content from the internet.

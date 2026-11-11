@@ -176,8 +176,8 @@ export class PdfBearbeiten {
       // Je Teil: neue Post mit ihrem Dokument und beiden Ereignissen (post.angelegt, dokument.hochgeladen) ganz oder gar nicht (#404).
       await this.inTransaktion(async () => {
         const neu = await this.legePostAn({
-          betreff: t('meldungen.dienst.teil', { betreff, wert: i + 1 }), datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
-          fuer: alsListe(post.werte.fuer)[0] ?? null,
+          betreff: t('meldungen.dienst.teil', { betreff, wert: i + 1 }), datum: post.werte.datum, von: post.werte.von ?? '', kanal: auswahlText(post.werte.kanal),
+          an: alsListe(post.werte.an)[0] ?? null,
         }, { id: von, name: '' }, z, undefined, undefined, undefined, post.werte);
         await this.notiere(neu.id, von, 'post_geteilt', { text: t('meldungen.dienst.teil-von-aus', { wert: i + 1, teileBuf: teileBuf.length, betreff }), post: post.id, postTyp: typ.id });
         dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);

@@ -14,6 +14,7 @@ import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { auswahlText, type Dokument, fotoBetreff, istVersendet, type Mappe, MAX_DATEIGROESSE, POST_KANAL } from '../../../shared/src/model';
+import { postWerteNeu } from '../../../shared/src/postfelder';
 import type { Eingangskanaele } from './eingangskanaele';
 import type { PostDienst } from './post.dienst';
 
@@ -54,11 +55,12 @@ export class PostFotos {
    * Fotostapel; ein mehrseitiger Brief ist so ein PDF und eine Post.
    */
   async postAusFotos(eingabe: unknown, fotos: Buffer[], ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen): Promise<{ post: Mappe; dokument: Dokument; seiten: number }> {
-    const e = (eingabe ?? {}) as Record<string, unknown>;
+    // „an“ (#1042), bis 1.0.0 auch „fuer“ (uebergaenge.ts).
+    const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);
     const pdf = await bilderZuPdf(fotos);
     if (pdf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.als-pdf-waeren-die'));
     const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || fotoBetreff();
-    const post = await this.legePostAn({ betreff, ...(e.fuer ? { fuer: e.fuer } : {}) }, ich, z, kanal);
+    const post = await this.legePostAn({ betreff, ...(e.an ? { an: e.an } : {}) }, ich, z, kanal);
     const typ = await this.postTyp();
     const register = typ.register.find((r) => r.art === 'dokumente')?.key;
     const dokument = (await this.ladeHoch(post.id, { register, name: `${dateiname(betreff)}.pdf`, typ: 'application/pdf', herkunft: 'hochgeladen' }, pdf, ich.id)).dokument;

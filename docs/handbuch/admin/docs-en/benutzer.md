@@ -16,7 +16,7 @@ If email sending is set up, the user gets an invitation. Otherwise Ablago shows 
 
 ## Tasks without a recipient {#aufgaben-ohne-empfanger}
 
-Some tasks have no single recipient: tasks without a recipient, post without **For** and deadlines without anyone responsible. In [Administration mode](verwalten.md#der-verwaltungsmodus) everyone who manages sees them. Because you don't work in administration mode in everyday life, **one person** gets them in addition – it may well be you.
+Some tasks have no single recipient: tasks without a recipient, post without **To** and deadlines without anyone responsible. In [Administration mode](verwalten.md#der-verwaltungsmodus) everyone who manages sees them. Because you don't work in administration mode in everyday life, **one person** gets them in addition – it may well be you.
 
 - Open **Workbench → Users** without selecting a user. On the right it says **Tasks without a recipient go to**.
 - Choose a person as in a link field: type the name and choose it. All active users can be chosen. **Remove** and **Save** means: they are only seen in administration mode.

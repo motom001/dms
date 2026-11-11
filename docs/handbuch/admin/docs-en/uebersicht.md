@@ -121,7 +121,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Intake folder: all files together above the limit (default 2 GB) | yellow | `eingangsordner.groesse` |
 | Intake folder: files in `fehler/` | yellow | `eingangsordner.fehler` |
 | Intake folder: more files than the limit (default 100) | yellow | `eingangsordner.anzahl` |
-| Intake folder: folder belongs to no user (post without “For”) | yellow | `eingangsordner.ohne-person` |
+| Intake folder: folder belongs to no user (post without “To”) | yellow | `eingangsordner.ohne-person` |
 | Intake folder: a person’s folder could not be renamed after the e-mail address changed | yellow | `eingangsordner.umbenennen` |
 | Text recognition is now a package | notice (yellow as soon as scans are waiting) | `texterkennung.paket` |
 | Documents with an error in text recognition | yellow | `texterkennung.fehler` |

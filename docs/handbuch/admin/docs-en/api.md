@@ -67,7 +67,7 @@ Content-Type: application/json; charset=utf-8
 
 | Field | Meaning |
 | --- | --- |
-| `neuePost` | [post](https://help.ablago.app/benutzer/aktuell/en/post/) in the status *New* whose *For* is the user or empty – only post they may read |
+| `neuePost` | [post](https://help.ablago.app/benutzer/aktuell/en/post/) in the status *New* whose *To* (until 0.241 *For*) is the user or empty – only post they may read |
 | `zuErledigen` | like **To do** in the Library: folders with open tasks for them |
 | `ueberfaellig` | own open deadlines, reminders and tasks with a date before today |
 | `stand` | counts up by one as soon as one of the numbers has changed compared with the last retrieval |
@@ -141,13 +141,17 @@ A script, a scanner or Home Assistant creates new [post](https://help.ablago.app
 
 ```sh
 curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/json" \
-  -d '{"betreff": "Scan from the printer", "fuer": "<id of a user>"}' \
+  -d '{"betreff": "Scan from the printer", "an": "<id of a user>"}' \
   http://<NAS>:8080/api/v1/post
 curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/octet-stream" \
   --data-binary @scan.pdf "http://<NAS>:8080/api/v1/mappen/<id of the post>/dokumente?register=dokumente&name=scan.pdf"
 ```
 
 The post is then in **New post** with channel *API* and status *New*. `POST /api/v1/post/<id>/zuordnen` with `{"ziel": "<id of a folder>"}` assigns it; the documents move into the folder's first documents tab (or into `register`; with `kopieren: true` they also stay in the post). For post created as an email before 0.41, the documents tab is called `anhaenge`.
+
+#### From and To { #post-von-und-an }
+
+Since 0.242 (#1042) the fields of post are called the same as on contracts and invoices: `von` (who sent the post, text; until 0.241 `absender`) and `an` (id of the user the post is for; until 0.241 `fuer`). The former text field `an` with the addresses of a sent email is now called `an_adresse`. **Transition until 1.0.0:** the interface still accepts `absender` and `fuer` when writing (`POST /api/v1/post`, `POST /api/v1/post/fotos`, `PUT /api/v1/mappen/{id}`; the new name takes precedence) and returns them in addition with the same value when reading a post. The event `post.angelegt` carries `an` and `fuer`. Links via folder type and field values also understand `absender` and `fuer`. The [counter](#zaehler) stays as it is.
 
 Deleted folders are in the [Bin](papierkorb.md): `GET /api/v1/papierkorb` (own), `POST /api/v1/papierkorb/<id>/wiederherstellen`, `DELETE /api/v1/papierkorb/<id>` and `DELETE /api/v1/papierkorb` (empty).
 
@@ -157,6 +161,7 @@ Here is what has changed in API v1 in a way that existing programs notice. New f
 
 | Since | Change | What to do? |
 | --- | --- | --- |
+| #1042 (post: von and an) | **The fields of post are called `von` and `an`** instead of `absender` and `fuer`; the former `an` (addresses of a sent email) is called `an_adresse`. Until 1.0.0, `absender` and `fuer` still work when writing and come along when reading a post (see [From and To](#post-von-und-an)); `an` with an address no longer works – it now holds the link. | Scripts and apps (e.g. the Homey app) write and read `von` and `an`, `an_adresse` for addresses. Switch over before 1.0.0. |
 | #1050 (combined fields) | **New field kind `zusammengesetzt` (combined), read-only.** The field has `vorlage` (placeholders like `titelVorlage`); `werte` holds a key without language, links in it as folder ids (build the text from `vorlage`, the values and `bezuege`). Ablago ignores values sent for this field and sets it from its parts. If it is unique, a duplicate gets **422**, with the message in `details.felder` on the first field involved. If you change the template through `PUT /api/v1/typen/{id}` and several folders would then have the same combination, you get **409** with `details.zusammengesetzt` – with `doppelteBestaetigt: true` Ablago saves anyway. | Anyone listing field kinds explicitly (e.g. in a JSON schema) adds `zusammengesetzt`; scripts don't send the field. |
 | #1034 (calculated fields) | **Calculated fields are written only by their package.** Fields with `berechnetVon` (on the field in `GET /api/v1/typen`) can only be changed through `POST`/`PUT /api/v1/mappen` by the package that calculates them; any other key gets **400** with the name of the package and, in `details.berechnet`, `feld`, `label`, `paket` and `paketName` per field. Values sent back unchanged do no harm. New on the folder: `hinweise` (notes from packages); on the folder type when reading, `berechnung` (per package its name and whether it still calculates). `berechnetVon: null` when changing a folder type releases a field again. | Scripts only send what they want to change (see [Change a folder](#mappe-aendern)) and leave calculated fields out. |
 | #1084 (identifiers) | **Folder types from packages are called `package:key`** instead of `<package>_<key>`, e.g. `basis:person` instead of `basis_person` – in `schluessel` of folder types (`GET /api/v1/typen`), in links (`/ablage/link?typ=…`), in the advanced search (`typ=`) and in the full export (file `daten/basis.person.csv`). New on the folder type: `paket` (ID of the package, missing for your own types). Ablago converted existing identifiers during the update; your own folder types keep their identifier. Package IDs may now have up to 40 characters and one dot (`texterkennung.fra`), identifiers up to 60 characters; packages name their `herausgeber` (publisher). | Whoever looks up folder types by identifier uses the new form (or the ID). Re-create saved links and bookmarks with `typ=basis_…` or change them to `basis:…` – otherwise they only find the folder type by its name. |

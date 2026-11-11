@@ -37,7 +37,7 @@
     - **Erwähnung:** Jemand hat dich mit **@** erwähnt.
     - **Frist** oder **Erinnerung:** Ein Datum rückt näher, oder der Tag einer Erinnerung ist da.
     - **Vertretung:** Jemand hat dich als Vertreter eingetragen, oder du vertrittst gerade jemanden.
-    - **Post für dich:** Bei neuer Post steht dein Name unter **Für**.
+    - **Post für dich:** Bei neuer Post steht dein Name unter **An**.
     - **Auskunft:** Eine Auskunft nach Art. 15 DSGVO an diese Person wurde abgerufen (oder ihr Abruf-Link gesperrt).
     - **Passt nicht:** Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu.
 

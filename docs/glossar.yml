@@ -366,6 +366,22 @@ begriffe:
     einsteiger: alltag
     begegnet: alle
     verwandt: [Post]
+  - begriff: Von (Post)
+    bereich: ablage
+    beschreibung: Wer die Post geschickt hat – bei eingehender Post der Absender, bei versendeter E-Mail Ablago mit „Antworten an“. Dieselbe Kennung `von` wie bei Vertrag und Rechnung, damit eine Trefferliste über mehrere Typen dieselbe Spalte zeigen kann. Bis 0.240 hieß das Feld „Absender“.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Absender (als Feldname)]
+    verwandt: [Post, An (Post)]
+    code: von
+  - begriff: An (Post)
+    bereich: ablage
+    beschreibung: Für wen eingehende Post im Haushalt ist – eine Person (Benutzer). Solange die Post neu ist, steht sie bei ihr unter „Zu erledigen“ mit der Aufgabe „Post für dich“; die gibt es nur, wenn „An“ ein Benutzer ist. Die Adressen einer versendeten E-Mail stehen in „An (Adresse)“. Bis 0.240 hieß das Feld „Für“.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Für (als Feldname), Empfänger (als Feldname)]
+    verwandt: [Post, Von (Post)]
+    code: an
   - begriff: Stand (Post)
     bereich: ablage
     beschreibung: Wie weit Post bearbeitet ist – Neu (noch nicht bearbeitet), Zugeordnet (liegt bei einer passenden Mappe) oder Erledigt (nichts mehr zu tun).
@@ -1093,3 +1109,8 @@ konflikte:
     vorschlag: „Organisation“ ist eine Vorlage unter „Werkbank anpassen“, das geplante Wort für den Haushalt im Sprachprofil für Firmen und ein Mappentyp im Paket Basis. Klären, welches das Wort behält; bis dahin im Text immer sagen, welches gemeint ist.
     entschieden: '2026-10-31'
     entscheidung: „Organisation“ bleibt nur für den Mappentyp im Paket Basis. Die Werkbank-Vorlage und das geplante Sprachprofil für Firmen heißen „Betrieb“ (Paar Haushalt ↔ Betrieb).
+  - nr: 24
+    titel: „Absender“ und „Für“ an der Post, „Anbieter“ und „Rechnungssteller“ in Paketen
+    vorschlag: Überall dieselben Wörter „von“ und „an“ (#1042, dms-registry #157).
+    entschieden: '2026-11-10'
+    entscheidung: Die Felder der Post heißen „Von“ und „An“ (Kennungen von und an), das frühere „Empfänger“ heißt „An (Adresse)“. Beschriftungen beginnen groß, in Sätzen klein („von Stadtwerke“). Die Aufgabenart bleibt „Post für dich“. In erklärendem Text darf „Absender“ für die Rolle stehen (z. B. bei der Erkennung oder der Absenderadresse des E-Mail-Versands).

@@ -465,7 +465,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         assert.equal((await d.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
         // „Für“ setzt ein Benutzer im DMS (hier: Anna als Administratorin).
         const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.zugriff({ id: anna.id, rolle: 'admin' }));
-        assert.deepEqual(post.werte.fuer, ben.id);
+        assert.deepEqual(post.werte.an, ben.id);
         const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
         const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
         const tabelle = routen(d, konten, { apiSchluessel: schluessel });
@@ -478,7 +478,7 @@ describe('Paket-Läufer (#338): Ablauf', () => {
         };
         const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }, { nr: 3 }], teile: [0, 2] })).body as { posten: Array<{ id: string }> };
         assert.equal(geteilt.posten.length, 2);
-        for (const p of geteilt.posten) assert.deepEqual((await d.holeMappe(p.id)).mappe.werte.fuer, ben.id, 'dasselbe „Für“ wie die Ausgangspost');
+        for (const p of geteilt.posten) assert.deepEqual((await d.holeMappe(p.id)).mappe.werte.an, ben.id, 'dasselbe „An“ wie die Ausgangspost');
         // Neues „Für“ über die API: weiterhin abgelehnt – beim Anlegen und beim Ändern.
         const abgelehnt = (e: { status?: number; message?: string }) => e.status === 422 && /nicht sehen darfst/.test(e.message ?? '');
         await assert.rejects(rufe('POST', '/api/v1/post', {}, { betreff: 'Neu', fuer: ben.id }), abgelehnt);

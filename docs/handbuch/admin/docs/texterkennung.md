@@ -137,7 +137,7 @@ Am Dokument sehen alle Benutzer den Stand (*wartet*, *läuft*, *wartet auf Texte
 - **Vorschaubilder nachholen** erzeugt für ältere PDFs und Bilder das kleine Bild der ersten Seite, das neben jedem Dokument steht. Neue Dokumente bekommen es gleich nach dem Hochladen, ältere sonst beim ersten Anzeigen. Die Bilder entstehen eins nach dem anderen mit `pdftoppm` (poppler, im Image enthalten). Dateien anderer Typen ohne Fassung (z. B. TIFF) gibt es dabei an das [Paket zum Umwandeln](#andere-dateitypen), falls eins installiert ist.
 - **Alle Dateien prüfen** liest jede gespeicherte Datei, auch ältere Versionen, und vergleicht sie mit ihrem Prüfwert. So fällt auf, wenn eine Datei auf dem Speicher verändert wurde oder fehlt. Mehr dazu unter [Alle Dateien prüfen](archiv.md#alle-dateien-prufen).
 - **Nummern nachträglich vergeben** gibt Mappen eine Nummer, die angelegt wurden, bevor ihr Feld einen Nummernkreis bekam. Mehr dazu unter [Nummern nachträglich vergeben](nummernkreise.md#nummern-nachtraglich-vergeben).
-- **Absender bereinigen** leert falsche Absender bei älterer Post, siehe unten.
+- **„Von“ bereinigen** leert falsche Angaben bei *Von* (bis 0.240 *Absender*) in älterer Post, siehe unten.
 - **Angaben, die nicht zum Format passen** listet gespeicherte Werte auf, die nicht zu einem Format oder zu Datumsgrenzen passen, siehe unten.
 
 Alle laufen im Hintergrund; Ablago bleibt dabei benutzbar.
@@ -153,11 +153,11 @@ Nur Dokumente in Registern, die einen Volltext erzeugen. Es läuft als **Auftrag
 
 Ist kein Paket für die Texterkennung installiert, sagt die Seite das mit dem Weg zu **Werkbank → Pakete**.
 
-### Absender bereinigen
+### „Von“ bereinigen { #absender-bereinigen }
 
-Bis Version 0.99 trug Ablago bei hochgeladener Post ohne Absender den **Namen dessen ein, der sie angelegt hat** – bei Post aus dem Eingangsordner „Eingangsordner“. Absender ist aber, wer den Brief geschickt hat. Neue Post bekommt seitdem keinen Absender mehr, solange niemand ihn einträgt.
+Bis Version 0.99 trug Ablago bei hochgeladener Post ohne Absender den **Namen dessen ein, der sie angelegt hat** – bei Post aus dem Eingangsordner „Eingangsordner“. Bei *Von* (bis 0.240 *Absender*) steht aber, wer den Brief geschickt hat. Neue Post bleibt dort seitdem leer, solange niemand den Absender einträgt.
 
-Für den Bestand zeigt **Absender bereinigen** eine Vorschau: eingehende Post mit Kanal *Hochgeladen*, *API*, *WebDAV* oder *Ordner*, deren Absender genau der Name des Anlegenden (bzw. „Eingangsordner“) ist. Post aus Postfächern und versendete E-Mails sind nie dabei. Nimm den Haken weg, wo der Absender doch stimmt, und tippe auf **Absender leeren**. In der Historie jeder Post steht danach, was vorher im Feld stand und wer bereinigt hat.
+Für den Bestand zeigt **„Von“ bereinigen** eine Vorschau: eingehende Post mit Kanal *Hochgeladen*, *API*, *WebDAV* oder *Ordner*, bei der unter *Von* genau der Name des Anlegenden (bzw. „Eingangsordner“) steht. Post aus Postfächern und versendete E-Mails sind nie dabei. Nimm den Haken weg, wo der Name doch stimmt, und tippe auf **„Von“ leeren**. In der Historie jeder Post steht danach, was vorher im Feld stand und wer bereinigt hat.
 
 ### Angaben, die nicht zum Format passen
 

@@ -93,7 +93,7 @@ describe('Postfächer (#196)', () => {
     const [{ m, x }] = await posten();
     assert.equal(m.werte.kanal, POST_KANAL.email);
     assert.equal(m.werte.betreff, 'Ihre Rechnung 4711');
-    assert.equal(m.werte.absender, 'Stadtwerke <rechnung@stadtwerke.example>');
+    assert.equal(m.werte.von, 'Stadtwerke <rechnung@stadtwerke.example>');
     assert.equal(m.werte.datum, '2026-10-30');
     assert.equal(m.werte.nachricht, 'Anbei Ihre Rechnung.');
     assert.deepEqual(x.dokumente.map((dok) => dok.name).sort(), ['Ihre Rechnung 4711.eml', 'Rechnung 4711.pdf'], 'Logo übersprungen, Original dabei');

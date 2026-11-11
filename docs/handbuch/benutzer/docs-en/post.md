@@ -18,7 +18,7 @@ In the Library, the view **New post** is above the other views (an administrator
 
 **Does a file already exist?** Before the post is created, Ablago checks every file. If one is already in a folder you may see, it asks: for each file it says where it is (with a link), and you tick **file anyway** or leave it out. **Continue** creates the post with the remaining files, **Cancel** creates nothing at all, a click on the link takes you to the existing folder.
 
-Ablago takes the subject from the first file name; you can change it at any time. The **sender** stays empty until you enter it – after all, you only captured the letter, you didn't send it (who captured it is shown under "Created" and in the history). The list *New post* then shows "–". The channel is called *Uploaded*. Files over 100 MB or when the storage limit is reached are reported with a reason; the others are filed anyway.
+Ablago takes the subject from the first file name; you can change it at any time. **From** stays empty until you enter the sender – after all, you only captured the letter, you didn't send it (who captured it is shown under "Created" and in the history). The list *New post* then shows "–". The channel is called *Uploaded*. Files over 100 MB or when the storage limit is reached are reported with a reason; the others are filed anyway.
 
 **On an open folder** with a document tab, the area splits: **Into this folder** puts the files into the tab as before (taken over with *Save folder*), **As new post** makes a new post from them.
 
@@ -45,7 +45,7 @@ This way you capture several letters one after another without opening a folder 
 
 ### Into Ablago by email { #per-e-mail-ins-dms }
 
-If your administrator has set up a [mailbox](https://help.ablago.app/admin/aktuell/en/postfaecher/) (e.g. `dms@…`), **you simply forward emails there** – or have invoices sent there right away. Every email becomes new post with the channel *Email*: subject, sender and date from the email, the attachments as documents, the text of the email on the post and, if desired, the whole email as `.eml`.
+If your administrator has set up a [mailbox](https://help.ablago.app/admin/aktuell/en/postfaecher/) (e.g. `dms@…`), **you simply forward emails there** – or have invoices sent there right away. Every email becomes new post with the channel *Email*: subject, sender (under *From*) and date from the email, the attachments as documents, the text of the email on the post and, if desired, the whole email as `.eml`.
 
 **Scan to email:** many scanners and multifunction devices send scans by e-mail. Enter the mailbox's address as the target – every scan becomes new post.
 
@@ -65,15 +65,18 @@ Under the view **Post** you find all post, including assigned and completed post
 | **Status** | *New* – not yet handled · *Assigned* – belongs to a folder · *Done* – nothing more to do |
 | **Channel** | how it came into Ablago: *Uploaded*, *Email*, *Scan*, *Folder*, *Import*, *API*, *WebDAV* |
 | **Direction** | *Incoming* or *Outgoing* |
-| **Date, sender, recipient, message** | as far as known |
-| **For** | who should take care of it |
+| **Date, From, message** | as far as known; **From** is who sent the post |
+| **To** | who in the household the post is for – a person who takes care of it |
+| **To (address)** | only for sent emails: the addresses it went to |
 | **Assigned to** | the folders the post belongs to |
 
 Ablago sets channel and *Assigned to* itself. You can change everything else as with any folder.
 
-## For someone { #fur-jemanden }
+**From** and **To** are called the same as on contracts and invoices (the same keys `von` and `an`). Up to version 0.240 the fields were called **Sender** and **For**.
 
-If you enter a user under **For**, the post appears under [To do](eingang.md) for them with the task **Post for you**. When it is assigned, completed or given to someone else, the task completes itself. If the user is absent, their stand-in gets it.
+## To someone { #fur-jemanden }
+
+If you enter a user under **To**, the post appears under [To do](eingang.md) for them with the task **Post for you**. When it is assigned, completed or given to someone else, the task completes itself. If the user is absent, their stand-in gets it.
 
 ## Take over document { #zuordnen }
 
@@ -99,7 +102,7 @@ Below that:
 - **Keep a copy in the post** – the documents also stay in the post (see below).
 - **Put it into an existing folder "…" …** – instead of a new folder, search for an existing one of this type and **Put it into "…"**.
 - **Done, without a folder** – for advertising or things already dealt with: the post stays with status *Done*.
-- **Open as post** – the post itself, e.g. to change *For* or write a note.
+- **Open as post** – the post itself, e.g. to change *To* or write a note.
 
 ### Taking values from the document { #werte-ubernehmen }
 
@@ -129,7 +132,7 @@ If you create a folder from a post – or put it into an **existing** one –, t
 - The post itself goes to the [Bin](ablage.md#papierkorb). There it says "Turned into *Invoice* “…”" with a link to the folder. It **can’t be restored** – if the folder was newly created, delete it to undo this. If the Bin is switched off, the empty post is deleted straight away.
 - The page then shows the **next post** from *New post*, with a link to the folder at the top; the number next to *New post* goes down by one. If there is no more post, the folder opens.
 
-If only some of the documents go along via the interface (API), the rest go to *New post* as a **new post** – subject with "(split off)", date, sender and *For* as before, with a link to its origin in its history.
+If only some of the documents go along via the interface (API), the rest go to *New post* as a **new post** – subject with "(split off)", date, *From* and *To* as before, with a link to its origin in its history.
 
 It stays with assigning (the post stays with status *Assigned* and links to the folder):
 
@@ -142,7 +145,7 @@ It stays with assigning (the post stays with status *Assigned* and links to the 
 
 As soon as a post's text is available (from text recognition, a PDF's text layer or an email's text), Ablago searches it – without AI and without the internet, only with patterns and by matching against your folders. On the page *Take over document* this goes into the folder's suggestions. In the post itself (**Open as post**) it appears in the box **Recognised**:
 
-- **Sender:** an organisation (or branch, person) whose customer number, IBAN, email address, website, phone number or name appears in the letter – with a reason, e.g. "found: customer number 100-4711". **Enter as sender** writes the name into the post's field *Sender*. If none matches but the letterhead can be recognised reliably (e.g. the small sender line above the address field), it shows **Create as new organisation** – with name and address prefilled.
+- **From:** the sender – an organisation (or branch, person) whose customer number, IBAN, email address, website, phone number or name appears in the letter – with a reason, e.g. "found: customer number 100-4711". **Enter under “From”** writes the name into the post's field *From*. If none matches but the letterhead can be recognised reliably (e.g. the small sender line above the address field), it shows **Create as new organisation** – with name and address prefilled.
 - **Date** of the letter (not the service period or due date) – **Enter as date of the post** takes it over.
 - **Amount** (the total amount) and **numbers** such as customer, invoice or contract number.
 
@@ -152,7 +155,7 @@ What Ablago uses to recognise senders and other folders is set by the folder typ
 
 If the recognition is **certain**, Ablago can assign post itself – but only if an administrator has switched this on for the target folder's type (default: off). Certain means: the sender is clearly recognised (e.g. by customer number or IBAN) **and** there is exactly one matching folder of this type – or exactly one whose number (e.g. contract number) appears in the letter. Ablago never creates new folders in doing so.
 
-Afterwards, the task **Assigned automatically to "…" – please check** appears under [To do](eingang.md) – for the person under *For*, otherwise for the person who brought the post into Ablago (if they are absent, their stand-in). The same task appears at the top of the post with two buttons:
+Afterwards, the task **Assigned automatically to "…" – please check** appears under [To do](eingang.md) – for the person under *To*, otherwise for the person who brought the post into Ablago (if they are absent, their stand-in). The same task appears at the top of the post with two buttons:
 
 - **Fits** confirms the assignment.
 - **Undo** takes the documents back into the post, removes the link and sets the status back to *New*. Ablago then no longer assigns this post by itself.
@@ -174,13 +177,13 @@ If you scanned several letters at once, they arrive as **one post** with a long 
 3. At the first page of each further letter, click **Split from here**. You can **delete** blank backs straight away and **rotate** crooked pages.
 4. **Apply** and confirm the question.
 
-For each part, a **new post** with status *New* is created: subject "Batch scan (part 1)", "Batch scan (part 2)" …, date, sender and "For" as in the original post. You can then [assign](#zuordnen) each one as usual. The original post keeps the whole PDF, is *Done* and links to the new ones under "Assigned to" – nothing is lost. At the top there is a notice with links to the new posts.
+For each part, a **new post** with status *New* is created: subject "Batch scan (part 1)", "Batch scan (part 2)" …, date, “From” and “To” as in the original post. You can then [assign](#zuordnen) each one as usual. The original post keeps the whole PDF, is *Done* and links to the new ones under "Assigned to" – nothing is lost. At the top there is a notice with links to the new posts.
 
 It also works the other way round: if two posts belong together (e.g. front and back scanned separately), open the first one, choose its PDFs and **Merge** – see [Edit PDF](dokumente.md#pdf-bearbeiten). Via the interface (API), a program can also merge PDFs from several posts; a post that becomes empty as a result is completed.
 
 ## Emails sent { #versendete-e-mails }
 
-When you send a folder [by email](versenden.md), Ablago files the email as post: channel *Email*, direction *Outgoing*, status *Done*, assigned to the folder. Subject, recipients, sender, date and message stay as they were sent. You can change status and *For*.
+When you send a folder [by email](versenden.md), Ablago files the email as post: channel *Email*, direction *Outgoing*, status *Done*, assigned to the folder. Subject, recipients (under *To (address)*), sender (under *From*), date and message stay as they were sent. You can change status and *To*.
 
 If a folder is deleted, the post is kept. Only the link to this folder is removed.
 

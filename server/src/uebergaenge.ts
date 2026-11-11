@@ -68,4 +68,20 @@ export const UEBERGAENGE: Uebergang[] = [
       { datei: 'server/src/einrichtungsdatei.ts', text: 'function aelter(wert: unknown)' },
     ],
   },
+  {
+    was: 'Post: alte Feldnamen absender und fuer (jetzt von und an) – Schnittstelle v1 nimmt sie beim Schreiben an und liefert sie an der Post mit; '
+      + 'Post anlegen und aus Fotos mit absender/fuer; Ereignis post.angelegt mit fuer; Platzhalter {absender}/{fuer}; Links über Mappentyp und Feldwerte',
+    seit: '#1042, 0.242',
+    entfaelltMit: '1.0.0',
+    fundstellen: [
+      { datei: 'shared/src/postfelder.ts', text: "export const POST_ALTE_KENNUNGEN = { absender: 'von', fuer: 'an' } as const;" },
+      { datei: 'server/src/mappen/eingaben.ts', text: "const roh = typ.system === 'post' ? postWerteNeu(eingang) : eingang;" },
+      { datei: 'server/src/api-v1.ts', text: 'export function mitAltenPostNamen(body: unknown, postId: string, tiefe = 0): unknown' },
+      { datei: 'server/src/post/post.dienst.ts', text: 'const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);' },
+      { datei: 'server/src/post/foto.ts', text: 'const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);' },
+      { datei: 'shared/src/ereignisse.ts', text: "'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'an', 'fuer'], paket: true }," },
+      { datei: 'server/src/automatisierung.ts', text: "const alias = typ?.system === 'post';" },
+      { datei: 'shared/src/direktlink.ts', text: "typ.system === 'post' ? postKennung(rohKey) : rohKey" },
+    ],
+  },
 ];

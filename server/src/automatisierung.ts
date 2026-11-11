@@ -8,6 +8,7 @@ import {
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, OHNE_WENN, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { tagVon, titelAus, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
+import { postKennung, postVorlageNeu } from '../../shared/src/postfelder';
 import { heuteIn, merkmalTrifft, verschiebe, type Bedingung } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
 import texte from '../../shared/src/sprachen/de/automatisierung.json';
@@ -1044,13 +1045,16 @@ export class Automatisierungen {
         : fest.bis ? t('automatisierung.platzhalter.zeitraum.bis', { bis: fest.bis }) : t('automatisierung.platzhalter.zeitraum.offen');
     }
     let verborgen = 0;
+    // Post (#1042): {absender} und {fuer} gelten bis 1.0.0 als {von} und {an} (uebergaenge.ts).
+    const alias = typ?.system === 'post';
     const erg = text.replace(/\{([a-z][a-z0-9_]*)((?:\|[^{}|]*)*)\}/g, (ganz, key: string) => {
       if (key in fest) { if (verdeckt.has(key)) verborgen++; return fest[key]; }
-      const f = typ?.felder.find((x) => x.key === key);
+      const k = alias ? postKennung(key) : key;
+      const f = typ?.felder.find((x) => x.key === k);
       if (!f || f.typ === 'passwort' || !mappe) return ganz;
       if (!mappeSichtbar) { verborgen++; return versteckt; }
       let fehlt = false;
-      const w = titelAus({ felder: typ!.felder, titelVorlage: ganz }, mappe.werte, (id) => { const x = titel.get(id); if (x === undefined) fehlt = true; return x ?? versteckt; });
+      const w = titelAus({ felder: typ!.felder, titelVorlage: alias ? postVorlageNeu(ganz) : ganz }, mappe.werte, (id) => { const x = titel.get(id); if (x === undefined) fehlt = true; return x ?? versteckt; });
       if (fehlt) verborgen++;
       return w;
     });

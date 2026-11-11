@@ -137,7 +137,7 @@ export class AusgangEmail {
     const { post: typ } = await this.kern.system();
     const id = randomUUID();
     await this.schreibeSystemMappe(typ, id, {
-      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum: heuteIn(), bezug: ids, ...(nachricht.trim() ? { nachricht } : {}),
+      betreff, an_adresse: an.join(', '), von: antwortAn.replace(/"/g, ''), datum: heuteIn(), bezug: ids, ...(nachricht.trim() ? { nachricht } : {}),
       kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
     }, ich.id);
     await this.legeVersandAb(typ, id, je, namen, ich.id);
@@ -288,7 +288,7 @@ export class AusgangEmail {
     const id = randomUUID();
     const datum = heuteIn();
     await this.schreibeSystemMappe(typ, id, {
-      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum, bezug: [mappeId], ...(nachricht.trim() ? { nachricht } : {}),
+      betreff, an_adresse: an.join(', '), von: antwortAn.replace(/"/g, ''), datum, bezug: [mappeId], ...(nachricht.trim() ? { nachricht } : {}),
       kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
     }, ich.id);
     await this.legeVersandAb(typ, id, [teil], namen, ich.id);

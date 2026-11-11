@@ -188,18 +188,19 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal((await offene(c.id, 'passung')).length, 0);
     });
 
-    it('Post: „Post für dich“ beim Anlegen, wandert mit „Für“, erledigt sich beim Zuordnen', async () => {
+    it('Post: „Post für dich“ beim Anlegen, wandert mit „An“, erledigt sich beim Zuordnen', async () => {
       const { d, markus, lena, jonas, vertrag, offene, ereignisse } = await aufbau();
-      const post = await d.legePostAn({ betreff: 'Brief der Stadtwerke', fuer: lena.id }, { id: markus.id, name: 'Markus' });
+      const post = await d.legePostAn({ betreff: 'Brief der Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
       let p = await offene(post.id, 'post');
-      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon]), [[lena.id, `fuer:${lena.id}`, 'Post für dich', markus.id]]);
-      assert.deepEqual((await ereignisse('post.angelegt', post.id)).map((e) => e.fuer), [lena.id]);
+      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon]), [[lena.id, `an:${lena.id}`, 'Post für dich', markus.id]]);
+      // #1042: an, dazu fuer mit demselben Wert bis 1.0.0.
+      assert.deepEqual((await ereignisse('post.angelegt', post.id)).map((e) => [e.an, e.fuer]), [[lena.id, lena.id]]);
       const lenas = p[0].id;
 
-      // Für Jonas: Lenas Aufgabe erledigt (von Markus), Jonas bekommt eine.
+      // An Jonas (alter Name fuer, Übergang #1042): Lenas Aufgabe erledigt (von Markus), Jonas bekommt eine.
       await d.aendereMappe(post.id, { werte: { fuer: jonas.id } }, markus.id);
       p = await offene(post.id, 'post');
-      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey]), [[jonas.id, `fuer:${jonas.id}`]]);
+      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey]), [[jonas.id, `an:${jonas.id}`]]);
       const erledigt = (await d.aufgabenVon(post.id)).find((a) => a.id === lenas)!;
       assert.ok(erledigt.erledigt);
       assert.equal(erledigt.erledigtVon, markus.id);

@@ -16,7 +16,7 @@ Ist E-Mail-Versand eingerichtet, bekommt der Benutzer eine Einladung. Sonst zeig
 
 ## Aufgaben ohne Empfänger { #aufgaben-ohne-empfanger }
 
-Manche Aufgaben haben keinen einzelnen Empfänger: Aufgaben ohne Empfänger, Post ohne **Für** und Fristen ohne Zuständige. Im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus) sieht sie jede Person, die verwaltet. Weil man im Alltag nicht im Verwaltungsmodus arbeitet, bekommt sie zusätzlich **eine Person** – gern auch du selbst.
+Manche Aufgaben haben keinen einzelnen Empfänger: Aufgaben ohne Empfänger, Post ohne **An** und Fristen ohne Zuständige. Im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus) sieht sie jede Person, die verwaltet. Weil man im Alltag nicht im Verwaltungsmodus arbeitet, bekommt sie zusätzlich **eine Person** – gern auch du selbst.
 
 - Öffne **Werkbank → Benutzer**, ohne einen Benutzer auszuwählen. Rechts steht **Aufgaben ohne Empfänger gehen an**.
 - Wähle eine Person wie in einem Verweisfeld: Tippe den Namen und wähle ihn aus. Wählbar sind alle aktiven Benutzer. **Entfernen** und **Speichern** heißt: Man sieht sie nur im Verwaltungsmodus.

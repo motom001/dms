@@ -408,8 +408,8 @@ export class Postfaecher {
     const datum = mail.datum && !Number.isNaN(mail.datum.getTime()) ? mail.datum : null;
     const abgelehnt: string[] = [];
     const post = await this.d.dienst.legePostAn({
-      betreff: mail.betreff || t('meldungen.postfach.ohne-betreff'), absender, ...(datum ? { datum: datum.toISOString().slice(0, 10) } : {}),
-      ...(p.fuer ? { fuer: p.fuer } : {}), nachricht: mail.text.slice(0, NOTIZ_MAX),
+      betreff: mail.betreff || t('meldungen.postfach.ohne-betreff'), von: absender, ...(datum ? { datum: datum.toISOString().slice(0, 10) } : {}),
+      ...(p.fuer ? { an: p.fuer } : {}), nachricht: mail.text.slice(0, NOTIZ_MAX),
     }, { id: null, name: SYSTEMNAME }, undefined, POST_KANAL.email, {
       text: t('meldungen.postfach.aus-postfach-uebernommen-mail', { name: p.name, wert: absender || t('meldungen.postfach.unbekannt'), wert2: datum ? t('meldungen.postfach.vom', { datum: datum.toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) }) : '' }),
       postfach: p.name,

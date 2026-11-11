@@ -271,9 +271,9 @@ export class MappenDienst {
     if (!darfErstellen(typ)) throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-lassen', { name: typ.name, wert: typ.system === 'benutzer' ? t('meldungen.dienst.benutzer-legt-ein-administrator') : '' }));
     const werte = bereinigeWerte(typ, e.werte, {}, this.verschluessele);
     // Berechnete Felder (#1034): schon beim Anlegen nur das Paket, das sie berechnet (sonst 400 mit seinem Namen).
-    await pruefeBerechnete(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
+    await pruefeBerechnete(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte, typ) }, z);
     // Geschützte Felder (#995): z. B. das Merkmal „eigene Organisation“ nur mit Verwaltungsrecht oder freigegebener Rolle.
-    await pruefeSchreibschutz(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
+    await pruefeSchreibschutz(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte, typ) }, z);
     // Berechtigungen (#123): Anlegen wird mit den eingegebenen Werten geprüft.
     if (z && !z.admin) {
       const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: z.ich.id, geaendert: new Date().toISOString(), geaendertVon: z.ich.id };
@@ -288,7 +288,7 @@ export class MappenDienst {
       if (fehlt) throw new Fachfehler(409, t('meldungen.dienst.den-nummernkreis-fuer-gibt', { kreis: fehlt.kreis, label: String(typ.felder.find((f) => f.key === fehlt.feldKey)?.label) }));
     }
     // Folgt aus (#886): leere Felder füllen sich aus ihrer Quelle – was die Anfrage selbst setzt, bleibt.
-    await this.folgeFuellen(typ, werte, {}, gesendeteFelder(e.werte), z);
+    await this.folgeFuellen(typ, werte, {}, gesendeteFelder(e.werte, typ), z);
     // Zusammengesetzt (#1050): nach „folgt aus“ – auch gefolgte Verweise gehören zur Kombination.
     setzeZusammengesetzte(typ, werte);
     await this.pruefeVerweisziele(z, typ, werte, {});
@@ -342,9 +342,9 @@ export class MappenDienst {
     const stand = liesStand(e.stand);
     const werte = bereinigeWerte(typ, e.werte, m.werte, this.verschluessele);
     // Berechnete Felder (#1034): nur das Paket, das sie berechnet – vor allen anderen Prüfungen, die für es genauso gelten.
-    const berechnet = await pruefeBerechnete(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
+    const berechnet = await pruefeBerechnete(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte, typ) }, z);
     // Geschützte Felder (#995): nur mit Verwaltungsrecht oder freigegebener Rolle – sonst 403, auch über API v1.
-    await pruefeSchreibschutz(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
+    await pruefeSchreibschutz(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte, typ) }, z);
     // Stand (#609): Hat sich seitdem ein Feld geändert, das diese Eingabe anders setzen will? Dann fragen.
     if (stand && stand !== m.geaendert) {
       const gesendet = e.werte && typeof e.werte === 'object' ? Object.keys(e.werte) : [];
@@ -360,7 +360,7 @@ export class MappenDienst {
         throw new Fachfehler(403, t('meldungen.dienst.laesst-sich-hier-nicht', { wert: typ.felder.find((f) => f.key === k)?.label ?? k, grund }));
       }
     }
-    await this.folgeFuellen(typ, werte, m.werte, gesendeteFelder(e.werte), z);
+    await this.folgeFuellen(typ, werte, m.werte, gesendeteFelder(e.werte, typ), z);
     setzeZusammengesetzte(typ, werte);
     await this.pruefeVerweisziele(z, typ, werte, m.werte);
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);

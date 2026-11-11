@@ -77,7 +77,7 @@ describe('Fotos als PDF (#490)', () => {
       assert.match(String(post.werte.betreff), /^Post vom \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/);
       assert.equal(post.werte.kanal, POST_KANAL.hochgeladen);
       assert.equal(post.werte.stand, POST_STAND.neu);
-      assert.equal(post.werte.absender ?? null, null);
+      assert.equal(post.werte.von ?? null, null);
       const doks = (await d.holeMappe(post.id)).dokumente;
       assert.equal(doks.length, 1);
       assert.equal(doks[0].mime, 'application/pdf');

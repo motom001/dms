@@ -202,6 +202,10 @@ Ein Zeitraum, in dem ein Benutzer nicht da ist – mit einem Vertreter, der sein
 <a id="aktionen"></a>**Aktionen** · ✓ Alltagswort · alle  
 Das Menü „Mappe ▾“ neben dem Titel einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr. Hieß früher selbst „Aktionen“.
 
+<a id="an-post"></a>**An (Post)** · ✓ Alltagswort · alle  
+Für wen eingehende Post im Haushalt ist – eine Person (Benutzer). Solange die Post neu ist, steht sie bei ihr unter „Zu erledigen“ mit der Aufgabe „Post für dich“; die gibt es nur, wenn „An“ ein Benutzer ist. Die Adressen einer versendeten E-Mail stehen in „An (Adresse)“. Bis 0.240 hieß das Feld „Für“.  
+Siehe auch: [Post](#post), [Von (Post)](#von-post).
+
 <a id="archivfassung"></a>**Archivfassung** · ~ mit Erklärung · alle  
 Ein durchsuchbares PDF/A, das ein Paket wie PDF/A zusätzlich zu einem Dokument ablegt – ein Format, das sich auch in vielen Jahren und ohne Ablago noch öffnen lässt. Das Original bleibt unverändert. Gibt es eine, zeigt Ablago sie an („Ansicht: Archivfassung (PDF/A)“). Auch PDFs, Scans, Fotos und E-Mails (.eml, .msg) bekommen eine; eine E-Mail liest man darin wie einen Brief.  
 Siehe auch: [Dokument](#dokument), [Version](#version).
@@ -275,6 +279,10 @@ Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen. D
 <a id="volltext"></a>**Volltext** · ✗ Fachwort · alle  
 Der durchsuchbare Text in den Dokumenten – aus der Textebene der Datei oder aus der Texterkennung.  
 Siehe auch: [Texterkennung](#texterkennung), [Erweiterte Suche](#erweiterte-suche).
+
+<a id="von-post"></a>**Von (Post)** · ✓ Alltagswort · alle  
+Wer die Post geschickt hat – bei eingehender Post der Absender, bei versendeter E-Mail Ablago mit „Antworten an“. Dieselbe Kennung `von` wie bei Vertrag und Rechnung, damit eine Trefferliste über mehrere Typen dieselbe Spalte zeigen kann. Bis 0.240 hieß das Feld „Absender“.  
+Siehe auch: [Post](#post), [An (Post)](#an-post).
 
 <a id="vorschaubild"></a>**Vorschaubild** · ✓ Alltagswort · alle  
 Kleines Bild der ersten Seite neben einem PDF oder Bild in der Dokumentliste; entsteht im Hintergrund und wird nicht gesichert.  
@@ -605,6 +613,9 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <a id="offen-23"></a>**23. „Organisation“ für drei Dinge** (31.10.2026)  
 „Organisation“ bleibt nur für den Mappentyp im Paket Basis. Die Werkbank-Vorlage und das geplante Sprachprofil für Firmen heißen „Betrieb“ (Paar Haushalt ↔ Betrieb).
 
+<a id="offen-24"></a>**24. „Absender“ und „Für“ an der Post, „Anbieter“ und „Rechnungssteller“ in Paketen** (10.11.2026)  
+Die Felder der Post heißen „Von“ und „An“ (Kennungen von und an), das frühere „Empfänger“ heißt „An (Adresse)“. Beschriftungen beginnen groß, in Sätzen klein („von Stadtwerke“). Die Aufgabenart bleibt „Post für dich“. In erklärendem Text darf „Absender“ für die Rolle stehen (z. B. bei der Erkennung oder der Absenderadresse des E-Mail-Versands).
+
 ## Für alle, die Texte schreiben
 
 Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet die Begriffe oben und nicht die Wörter in der Spalte „nicht verwenden“. Neue Begriffe kommen mit dem Release ins Glossar: [`docs/glossar.yml`](https://github.com/motom001/dms/blob/main/docs/glossar.yml).
@@ -616,6 +627,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ablago | Ablago DMS, ABLAGO, „das DMS“ für das eigene Programm | – |
 | Abwesenheit | – | `Abwesenheit` |
 | Administrator | Admin (in der Oberfläche) | – |
+| An (Post) | Für (als Feldname), Empfänger (als Feldname) | `an` |
 | Anmeldung über einen Anbieter | SSO, OIDC (in der Oberfläche) | – |
 | Ansicht | Sicht, Filter, View | `Sicht` |
 | Anzeigen, wenn … | Sichtbarkeitsregel, bedingtes Feld | `anzeigen (Anzeigeregel)` |
@@ -697,6 +709,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |
 | Verweis | Referenz, Link, Relation | `referenz, Feld.zielTypen` |
 | Verweisart | – | `Verweisart, VERWEISARTEN` |
+| Von (Post) | Absender (als Feldname) | `von` |
 | Vorgabe | Stammdaten, Standardmappe, Voreinstellung | `vorgabe (Mappe), inhalt.vorgaben` |
 | Vorlage | – | `inhalt/vorlagen/*.md` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |

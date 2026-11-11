@@ -18,7 +18,7 @@ In der Ablage steht die Ansicht **Neue Post** über den übrigen Ansichten (ein 
 
 **Gibt es eine Datei schon?** Bevor die Post entsteht, prüft Ablago jede Datei. Liegt eine schon in einer Mappe, die du sehen darfst, fragt es nach: je Datei steht, wo sie liegt (mit Link), und du hakst **trotzdem ablegen** an oder lässt sie weg. **Weiter** legt die Post mit den übrigen Dateien an, **Abbrechen** legt gar nichts an, ein Klick auf den Link bringt dich zur vorhandenen Mappe.
 
-Den Betreff nimmt Ablago aus dem ersten Dateinamen; ändern kannst du ihn jederzeit. Der **Absender** bleibt leer, bis du ihn einträgst – du hast den Brief ja nur erfasst, nicht geschickt (wer erfasst hat, steht unter „Angelegt“ und in der Historie). In der Liste *Neue Post* steht dann „–“. Der Kanal heißt *Hochgeladen*. Dateien über 100 MB oder bei erreichter Speicherplatz-Grenze werden mit Grund gemeldet, die übrigen trotzdem abgelegt.
+Den Betreff nimmt Ablago aus dem ersten Dateinamen; ändern kannst du ihn jederzeit. **Von** bleibt leer, bis du den Absender einträgst – du hast den Brief ja nur erfasst, nicht geschickt (wer erfasst hat, steht unter „Angelegt“ und in der Historie). In der Liste *Neue Post* steht dann „–“. Der Kanal heißt *Hochgeladen*. Dateien über 100 MB oder bei erreichter Speicherplatz-Grenze werden mit Grund gemeldet, die übrigen trotzdem abgelegt.
 
 **Auf einer geöffneten Mappe** mit Dokumentenregister teilt sich die Fläche: **In diese Mappe** legt die Dateien wie bisher ins Register (übernommen mit *Mappe speichern*), **Als neue Post** macht eine neue Post daraus.
 
@@ -45,7 +45,7 @@ So erfasst du mehrere Briefe hintereinander, ohne eine Mappe zu öffnen – zuor
 
 ### Per E-Mail in Ablago { #per-e-mail-ins-dms }
 
-Hat dein Administrator ein [Postfach](https://help.ablago.app/admin/aktuell/postfaecher/) eingerichtet (z. B. `dms@…`), **leitest du Mails einfach dorthin weiter** – oder lässt Rechnungen gleich dorthin schicken. Jede Mail wird eine neue Post mit Kanal *E-Mail*: Betreff, Absender und Datum aus der Mail, die Anhänge als Dokumente, der Text der Mail an der Post und auf Wunsch die ganze Mail als `.eml`.
+Hat dein Administrator ein [Postfach](https://help.ablago.app/admin/aktuell/postfaecher/) eingerichtet (z. B. `dms@…`), **leitest du Mails einfach dorthin weiter** – oder lässt Rechnungen gleich dorthin schicken. Jede Mail wird eine neue Post mit Kanal *E-Mail*: Betreff, Absender (bei *Von*) und Datum aus der Mail, die Anhänge als Dokumente, der Text der Mail an der Post und auf Wunsch die ganze Mail als `.eml`.
 
 **Scan to E-Mail:** Viele Scanner und Multifunktionsgeräte schicken Scans per Mail. Trag die Adresse des Postfachs als Ziel ein – jeder Scan wird neue Post.
 
@@ -65,15 +65,18 @@ Unter der Ansicht **Post** findest du alle Post, auch die zugeordnete und erledi
 | **Stand** | *Neu* – noch nicht bearbeitet · *Zugeordnet* – gehört zu einer Mappe · *Erledigt* – nichts mehr zu tun |
 | **Kanal** | wie sie in Ablago kam: *Hochgeladen*, *E-Mail*, *Scan*, *Ordner*, *Import*, *API*, *WebDAV* |
 | **Richtung** | *Eingehend* oder *Ausgehend* |
-| **Datum, Absender, Empfänger, Nachricht** | soweit bekannt |
-| **Für** | wer sich darum kümmern soll |
+| **Datum, Von, Nachricht** | soweit bekannt; **Von** ist, wer die Post geschickt hat |
+| **An** | für wen im Haushalt die Post ist – eine Person, die sich darum kümmert |
+| **An (Adresse)** | nur bei versendeten E-Mails: an welche Adressen sie ging |
 | **Zugeordnet zu** | die Mappen, zu denen die Post gehört |
 
 Kanal und *Zugeordnet zu* setzt Ablago selbst. Alles andere kannst du ändern wie bei jeder Mappe.
 
-## Für jemanden
+**Von** und **An** heißen so wie bei Verträgen und Rechnungen (dieselben Kennungen `von` und `an`). Bis Version 0.240 hießen die Felder **Absender** und **Für**.
 
-Trägst du bei **Für** einen Benutzer ein, steht die Post bei ihm unter [Zu erledigen](eingang.md) mit der Aufgabe **Post für dich**. Wird sie zugeordnet, erledigt oder an jemand anderen gegeben, erledigt sich die Aufgabe von selbst. Ist der Benutzer abwesend, bekommt sie sein Vertreter.
+## An jemanden { #fur-jemanden }
+
+Trägst du bei **An** einen Benutzer ein, steht die Post bei ihm unter [Zu erledigen](eingang.md) mit der Aufgabe **Post für dich**. Wird sie zugeordnet, erledigt oder an jemand anderen gegeben, erledigt sich die Aufgabe von selbst. Ist der Benutzer abwesend, bekommt sie sein Vertreter.
 
 ## Dokument übernehmen { #zuordnen }
 
@@ -99,7 +102,7 @@ Darunter:
 - **Kopie in der Post behalten** – die Dokumente bleiben zusätzlich in der Post (siehe unten).
 - **In eine vorhandene Mappe „…“ legen …** – statt einer neuen eine bestehende Mappe dieses Typs suchen und **Zu „…“ legen**.
 - **Erledigt, ohne Mappe** – für Werbung oder was schon erledigt ist: Die Post bleibt mit Stand *Erledigt* stehen.
-- **Als Post öffnen** – die Post selbst, etwa um *Für* zu ändern oder eine Notiz zu schreiben.
+- **Als Post öffnen** – die Post selbst, etwa um *An* zu ändern oder eine Notiz zu schreiben.
 
 ### Werte vom Dokument übernehmen { #werte-ubernehmen }
 
@@ -129,7 +132,7 @@ Legst du aus einer Post eine Mappe an – oder legst du sie in eine **vorhandene
 - Die Post selbst kommt in den [Papierkorb](ablage.md#papierkorb). Dort steht „Aufgelöst in *Rechnung* „…““ mit Link zur Mappe. **Wiederherstellen** gibt es für sie nicht – war die Mappe dabei neu, löschst du sie, um es rückgängig zu machen. Ist der Papierkorb ausgeschaltet, ist die leere Post gleich gelöscht.
 - Die Seite zeigt danach die **nächste Post** aus *Neue Post*, oben mit einem Link zur Mappe; die Zahl bei *Neue Post* ist um eins kleiner. Ist keine Post mehr da, öffnet sich die Mappe.
 
-Geht über die Schnittstelle (API) nur ein Teil der Dokumente mit, kommen die übrigen als **neue Post** nach *Neue Post* – Betreff mit „(abgetrennt)“, Datum, Absender und *Für* wie bisher, mit Verweis auf die Herkunft in ihrer Historie.
+Geht über die Schnittstelle (API) nur ein Teil der Dokumente mit, kommen die übrigen als **neue Post** nach *Neue Post* – Betreff mit „(abgetrennt)“, Datum, *Von* und *An* wie bisher, mit Verweis auf die Herkunft in ihrer Historie.
 
 So bleibt es beim Zuordnen (die Post bleibt mit Stand *Zugeordnet* stehen und verweist auf die Mappe):
 
@@ -142,7 +145,7 @@ So bleibt es beim Zuordnen (die Post bleibt mit Stand *Zugeordnet* stehen und ve
 
 Sobald der Text einer Post da ist (aus der Texterkennung, der Textebene eines PDFs oder dem Text einer E-Mail), sucht Ablago darin – ohne KI und ohne Internet, nur mit Mustern und dem Abgleich mit deinen Mappen. Auf der Seite *Dokument übernehmen* fließt das in die Vorschläge der Mappe ein. In der Post selbst (**Als Post öffnen**) steht es im Kasten **Erkannt**:
 
-- **Absender:** eine Organisation (oder Niederlassung, Person), deren Kundennummer, IBAN, E-Mail-Adresse, Internetseite, Telefonnummer oder Name im Brief steht – mit Begründung, z. B. „gefunden: Kundennummer 100-4711“. **Als Absender eintragen** schreibt den Namen ins Feld *Absender* der Post. Passt keine, aber der Briefkopf ist sicher erkennbar (z. B. die kleine Absenderzeile über dem Anschriftfeld), steht dort **Als neue Organisation anlegen** – mit Name und Anschrift vorbelegt.
+- **Von:** der Absender – eine Organisation (oder Niederlassung, Person), deren Kundennummer, IBAN, E-Mail-Adresse, Internetseite, Telefonnummer oder Name im Brief steht – mit Begründung, z. B. „gefunden: Kundennummer 100-4711“. **Bei „Von“ eintragen** schreibt den Namen ins Feld *Von* der Post. Passt keine, aber der Briefkopf ist sicher erkennbar (z. B. die kleine Absenderzeile über dem Anschriftfeld), steht dort **Als neue Organisation anlegen** – mit Name und Anschrift vorbelegt.
 - **Datum** des Schreibens (nicht Leistungszeitraum oder Fälligkeit) – **Als Datum der Post eintragen** übernimmt es.
 - **Betrag** (der Gesamtbetrag) und **Nummern** wie Kunden-, Rechnungs- oder Vertragsnummer.
 
@@ -152,7 +155,7 @@ Woran Ablago Absender und andere Mappen wiedererkennt, legt der Mappentyp fest: 
 
 Ist die Erkennung **sicher**, kann Ablago Post selbst zuordnen – aber nur, wenn ein Administrator das für den Mappentyp der Zielmappe eingeschaltet hat (Standard: aus). Sicher heißt: Der Absender ist eindeutig erkannt (z. B. an Kundennummer oder IBAN) **und** es gibt genau eine passende Mappe dieses Typs – oder genau eine, deren Nummer (z. B. Vertragsnummer) im Brief steht. Neue Mappen legt Ablago dabei nie an.
 
-Danach steht bei dir unter [Zu erledigen](eingang.md) die Aufgabe **Automatisch zugeordnet zu „…“ – bitte prüfen** – bei der Person aus *Für*, sonst bei der, die die Post in Ablago gebracht hat (ist sie abwesend, bei ihrer Vertretung). In der Post steht dieselbe Aufgabe oben mit zwei Knöpfen:
+Danach steht bei dir unter [Zu erledigen](eingang.md) die Aufgabe **Automatisch zugeordnet zu „…“ – bitte prüfen** – bei der Person aus *An*, sonst bei der, die die Post in Ablago gebracht hat (ist sie abwesend, bei ihrer Vertretung). In der Post steht dieselbe Aufgabe oben mit zwei Knöpfen:
 
 - **Passt** bestätigt die Zuordnung.
 - **Rückgängig** holt die Dokumente zurück in die Post, entfernt den Verweis und setzt den Stand wieder auf *Neu*. Diese Post ordnet Ablago danach nicht mehr von selbst zu.
@@ -174,13 +177,13 @@ Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit ein
 3. Klicke bei der ersten Seite jedes weiteren Briefs auf **Teilen ab hier**. Leere Rückseiten kannst du gleich **löschen**, schiefe Seiten **drehen**.
 4. **Übernehmen** und die Rückfrage bestätigen.
 
-Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil 1)“, „Sammelscan (Teil 2)“ …, Datum, Absender und „Für“ wie bei der Ausgangspost. Jede kannst du dann wie gewohnt [zuordnen](#zuordnen). Die Ausgangspost behält das ganze PDF, ist *Erledigt* und verweist unter „Zugeordnet zu“ auf die neuen – nichts geht verloren. Oben steht ein Hinweis mit Links zu den neuen Posts.
+Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil 1)“, „Sammelscan (Teil 2)“ …, Datum, „Von“ und „An“ wie bei der Ausgangspost. Jede kannst du dann wie gewohnt [zuordnen](#zuordnen). Die Ausgangspost behält das ganze PDF, ist *Erledigt* und verweist unter „Zugeordnet zu“ auf die neuen – nichts geht verloren. Oben steht ein Hinweis mit Links zu den neuen Posts.
 
 Umgekehrt geht es auch: Gehören zwei Posts zusammen (z. B. Vorder- und Rückseite einzeln gescannt), öffne die erste, wähle ihre PDFs und **Zusammenfügen** – siehe [PDF bearbeiten](dokumente.md#pdf-bearbeiten). Über die Schnittstelle (API) fügt ein Programm auch PDFs aus mehreren Posts zusammen; eine Post, die dadurch leer ist, wird erledigt.
 
 ## Versendete E-Mails
 
-Verschickst du eine Mappe [per E-Mail](versenden.md), legt Ablago die E-Mail als Post ab: Kanal *E-Mail*, Richtung *Ausgehend*, Stand *Erledigt*, zugeordnet zur Mappe. Betreff, Empfänger, Absender, Datum und Nachricht bleiben, wie sie verschickt wurden. Stand und *Für* kannst du ändern.
+Verschickst du eine Mappe [per E-Mail](versenden.md), legt Ablago die E-Mail als Post ab: Kanal *E-Mail*, Richtung *Ausgehend*, Stand *Erledigt*, zugeordnet zur Mappe. Betreff, Empfänger (bei *An (Adresse)*), Absender (bei *Von*), Datum und Nachricht bleiben, wie sie verschickt wurden. Stand und *An* kannst du ändern.
 
 Wird eine Mappe gelöscht, bleibt die Post erhalten. Nur der Verweis auf diese Mappe entfällt.
 

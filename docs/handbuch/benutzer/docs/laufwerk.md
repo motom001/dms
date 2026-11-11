@@ -50,7 +50,7 @@ Das Laufwerk erscheint links in der Seitenleiste unter **Orte**. Mit dem **+** i
 2. Trage die Adresse deines NAS ein, z. B. `smb://nas.example.org`, tippe auf **Verbinden** und melde dich mit deinem Konto **am NAS** an (nicht mit dem Ablago-Schlüssel).
 3. Öffne die Freigabe mit dem Eingangsordner und darin deinen Ordner.
 
-Aus jeder App legst du jetzt mit **Teilen → In Dateien sichern** in diesen Ordner – Ablago macht daraus eine neue Post mit dir bei **Für**. Das geht nur im Heimnetz (oder über ein VPN dorthin).
+Aus jeder App legst du jetzt mit **Teilen → In Dateien sichern** in diesen Ordner – Ablago macht daraus eine neue Post mit dir bei **An**. Das geht nur im Heimnetz (oder über ein VPN dorthin).
 
 **Das ganze Laufwerk – mit einer WebDAV-App.** Für Ansichten, Mappen und Dokumente brauchst du eine App aus dem App Store, die WebDAV kann und sich in die Dateien-App einklinkt (als „Ort“). Welche, ist dir überlassen.
 

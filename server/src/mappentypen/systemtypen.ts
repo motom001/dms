@@ -21,7 +21,7 @@ import { mitBeschriftungen, mitSystemBeschriftung } from './eingabe';
 
 /** Post (#192): Beschreibung und Spalten der Standard-Trefferliste. */
 const POST_BESCHREIBUNG = t('meldungen.dienst.alles-was-in-ablago');
-const POST_SPALTEN = ['datum', 'stand', 'kanal', 'absender'];
+const POST_SPALTEN = ['datum', 'stand', 'kanal', 'von'];
 
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 
@@ -246,16 +246,22 @@ export class Systemtypen {
    */
   private async wandleZuPost(mappentyp: Mappentyp, rolleId: string, benutzerId: string): Promise<Mappentyp> {
     const soll = systemfelder('post', rolleId, benutzerId);
-    // Alte Standardbezeichnungen weichen den neuen; eigene des Administrators bleiben.
-    const alteNamen: Record<string, string[]> = { an: ['An'], bezug: ['Bezug'] };
-    const alteHilfen = [t('meldungen.dienst.wer-die-e-mail'), t('meldungen.dienst.die-mappe-aus-der')];
+    // Alte Standardbezeichnungen weichen den neuen; eigene des Administrators bleiben. „von“ und „an“ (#1042, Migration
+    // 099): bis 0.240 „Absender“ (absender), „Für“ (fuer) und „Empfänger“ (an, jetzt an_adresse) – dann auch die
+    // Beschriftungen in weiteren Sprachen neu (sonst bliebe englisch „Sender“).
+    const alteNamen: Record<string, string[]> = {
+      bezug: ['Bezug'], von: ['Absender', 'Sender'], an: ['Für', 'For'], an_adresse: ['An', 'Empfänger', 'Recipient'],
+    };
+    const alteHilfen = [t('meldungen.dienst.wer-die-e-mail'), t('meldungen.dienst.die-mappe-aus-der'), t('meldungen.dienst.post-hilfe-fuer-bis-0-237')];
     let geaendert = false;
     const felder = mappentyp.felder.map((f) => {
       const s = soll.find((x) => x.key === f.key);
       if (!s || !f.system) return f;
-      const label = alteNamen[f.key]?.includes(f.label) ? s.label : f.label || s.label;
+      const altName = !!alteNamen[f.key]?.includes(f.label);
+      const label = altName ? s.label : f.label || s.label;
       const hilfe = !f.hilfe || alteHilfen.includes(f.hilfe) ? s.hilfe : f.hilfe;
-      const neu: Feld = { ...s, label, ...(hilfe ? { hilfe } : {}), ...mitSystemBeschriftung({ ...f, label, hilfe }, s) };
+      const bisher = altName && ['von', 'an', 'an_adresse'].includes(f.key) ? { ...f, beschriftungen: undefined } : f;
+      const neu: Feld = { ...s, label, ...(hilfe ? { hilfe } : {}), ...mitSystemBeschriftung({ ...bisher, label, hilfe }, s) };
       if (!hilfe) delete neu.hilfe;
       if (JSON.stringify(neu) !== JSON.stringify(f)) geaendert = true;
       return neu;
@@ -271,7 +277,7 @@ export class Systemtypen {
       mappentyp = await this.repo.aendereTyp(mappentyp.id, { ...mappentyp, name, beschreibung, felder, register, trefferlisten, trefferliste: undefined });
       protokoll.modul('werkbank').info('Systemmappentyp Post nachgezogen', { typ: mappentyp.name });
     }
-    // Neue Systemfelder (Stand, Kanal, Richtung, Für) ergänzen – wie bei jedem Systemtyp.
+    // Neue Systemfelder (Stand, Kanal, Richtung, An) ergänzen – wie bei jedem Systemtyp.
     return this.ergaenzeSystemfelder(mappentyp, rolleId, benutzerId);
   }
 

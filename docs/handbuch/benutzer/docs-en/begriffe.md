@@ -234,6 +234,10 @@ See also: [Full export](#vollexport), [Export my data](#meine-daten-exportieren)
 <a id="formatierter-text"></a>**Formatted text** (*Formatierter Text*) · ~ with explanation · everyone  
 Text with headings, lists and emphasis (Markdown) – as a field kind and in notes.
 
+<a id="von-post"></a>**From (post)** (*Von (Post)*) · ✓ everyday word · everyone  
+Who sent the post – for incoming post the sender, for a sent email Ablago with “Reply to”. The same key `von` as on contract and invoice, so that a list across several types can show the same column. Until 0.240 the field was called “Sender”.  
+See also: [Post](#post), [To (post)](#an-post).
+
 <a id="volltext"></a>**Full text** (*Volltext*) · ✗ technical term · everyone  
 The searchable text in the documents – from the file's text layer or from text recognition.  
 See also: [Text recognition](#texterkennung), [Advanced search](#erweiterte-suche).
@@ -289,6 +293,10 @@ See also: [Post](#post), [New post](#neue-post).
 <a id="aufgabe"></a>**Task** (*Aufgabe*) · ✓ everyday word · everyone  
 Something a person should do on a folder. Kinds are Doesn't fit, Mention, Assigned (given by hand), Post for you, Deadline, Reminder, stand-in and Access request.  
 See also: [To do](#zu-erledigen), [Deadline](#frist), [Reminder](#erinnerung), [Job](#auftrag).
+
+<a id="an-post"></a>**To (post)** (*An (Post)*) · ✓ everyday word · everyone  
+Who incoming post in the household is for – a person (user). While the post is new, it is listed under “To do” for them with the task “Post for you”; that only happens when “To” is a user. The addresses of a sent email are in “To (address)”. Until 0.240 the field was called “For”.  
+See also: [Post](#post), [From (post)](#von-post).
 
 <a id="zu-erledigen"></a>**To do** (*Zu erledigen*) · ✓ everyday word · everyone  
 The top view – as a list, the folders where I should do something (my open tasks); as month and year, my dates in a calendar.  

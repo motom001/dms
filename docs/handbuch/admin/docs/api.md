@@ -67,7 +67,7 @@ Content-Type: application/json; charset=utf-8
 
 | Feld | Bedeutung |
 | --- | --- |
-| `neuePost` | [Post](https://help.ablago.app/benutzer/post/) im Stand *Neu*, deren *Für* der Benutzer ist oder leer ist – nur Post, die er lesen darf |
+| `neuePost` | [Post](https://help.ablago.app/benutzer/post/) im Stand *Neu*, deren *An* (bis 0.241 *Für*) der Benutzer ist oder leer ist – nur Post, die er lesen darf |
 | `zuErledigen` | wie **Zu erledigen** in der Ablage: Mappen mit offenen Aufgaben für ihn |
 | `ueberfaellig` | eigene offene Fristen, Erinnerungen und Aufgaben mit Datum vor heute |
 | `stand` | zählt um eins hoch, sobald sich eine der Zahlen gegenüber dem letzten Abruf geändert hat |
@@ -141,13 +141,17 @@ Ein Skript, ein Scanner oder Home Assistant legt neue [Post](https://help.ablago
 
 ```sh
 curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/json" \
-  -d '{"betreff": "Scan vom Drucker", "fuer": "<Id eines Benutzers>"}' \
+  -d '{"betreff": "Scan vom Drucker", "an": "<Id eines Benutzers>"}' \
   http://<NAS>:8080/api/v1/post
 curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/octet-stream" \
   --data-binary @scan.pdf "http://<NAS>:8080/api/v1/mappen/<Id der Post>/dokumente?register=dokumente&name=scan.pdf"
 ```
 
 Die Post steht dann mit Kanal *API* und Stand *Neu* in **Neue Post**. `POST /api/v1/post/<Id>/zuordnen` mit `{"ziel": "<Id einer Mappe>"}` ordnet sie zu; die Dokumente wandern ins erste Dokumentenregister der Mappe (oder in `register`, mit `kopieren: true` bleiben sie auch in der Post). Bei Post, die vor 0.41 als E-Mail angelegt wurde, heißt das Dokumentenregister `anhaenge`.
+
+#### Von und An { #post-von-und-an }
+
+Die Felder der Post heißen seit 0.242 (#1042) wie bei Verträgen und Rechnungen: `von` (wer die Post geschickt hat, Text; bis 0.241 `absender`) und `an` (Id eines Benutzers, für den die Post ist; bis 0.241 `fuer`). Das frühere Textfeld `an` mit den Adressen einer versendeten E-Mail heißt jetzt `an_adresse`. **Übergang bis 1.0.0:** `absender` und `fuer` nimmt die Schnittstelle beim Schreiben weiter an (`POST /api/v1/post`, `POST /api/v1/post/fotos`, `PUT /api/v1/mappen/{id}`; der neue Name geht vor) und liefert sie beim Lesen einer Post zusätzlich mit demselben Wert. Das Ereignis `post.angelegt` trägt `an` und `fuer`. Links über Mappentyp und Feldwerte verstehen `absender` und `fuer` ebenfalls. Der [Zähler](#zaehler) bleibt, wie er ist.
 
 Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb` (eigener), `POST /api/v1/papierkorb/<Id>/wiederherstellen`, `DELETE /api/v1/papierkorb/<Id>` und `DELETE /api/v1/papierkorb` (leeren).
 
@@ -157,6 +161,7 @@ Hier steht, was sich an der API v1 so geändert hat, dass bestehende Programme e
 
 | Seit | Änderung | Was tun? |
 | --- | --- | --- |
+| #1042 (Post: von und an) | **Die Felder der Post heißen `von` und `an`** statt `absender` und `fuer`; das frühere `an` (Adressen einer versendeten E-Mail) heißt `an_adresse`. Bis 1.0.0 gelten `absender` und `fuer` beim Schreiben weiter und kommen beim Lesen einer Post mit (siehe [Von und An](#post-von-und-an)); `an` mit einer Adresse geht nicht mehr – dort steht jetzt der Verweis. | Skripte und Apps (z. B. die Homey-App) schreiben und lesen `von` und `an`, für Adressen `an_adresse`. Bis 1.0.0 umstellen. |
 | #1050 (zusammengesetzte Felder) | **Neue Feldart `zusammengesetzt`, nur zum Lesen.** Am Feld steht `vorlage` (Platzhalter wie `titelVorlage`); in `werte` steht ein Schlüssel ohne Sprache, Verweise darin als Mappen-Id (den Text baut man aus `vorlage`, den Werten und `bezuege`). Gesendete Werte für dieses Feld übergeht Ablago und setzt es aus seinen Teilen. Ist es eindeutig, kommt bei Doppelung **422**, die Meldung steht in `details.felder` am ersten beteiligten Feld. Ändert man die Vorlage über `PUT /api/v1/typen/{id}` und hätten danach mehrere Mappen dieselbe Kombination, kommt **409** mit `details.zusammengesetzt` – mit `doppelteBestaetigt: true` speichert Ablago trotzdem. | Wer Feldarten fest aufzählt (z. B. in einem JSON-Schema), nimmt `zusammengesetzt` dazu; Skripte schicken das Feld nicht mit. |
 | #1034 (berechnete Felder) | **Berechnete Felder schreibt nur ihr Paket.** Felder mit `berechnetVon` (am Feld in `GET /api/v1/typen`) ändert über `POST`/`PUT /api/v1/mappen` nur das Paket, das sie berechnet; jeder andere Schlüssel bekommt **400** mit dem Namen des Pakets und in `details.berechnet` je Feld `feld`, `label`, `paket` und `paketName`. Unverändert mitgeschickte Werte stören nicht. Neu an der Mappe: `hinweise` (Hinweise von Paketen); am Mappentyp beim Lesen `berechnung` (je Paket Name und ob es noch rechnet). `berechnetVon: null` beim Ändern eines Mappentyps gibt ein Feld wieder frei. | Skripte schicken nur, was sie ändern wollen (siehe [Mappe ändern](#mappe-aendern)) und lassen berechnete Felder weg. |
 | #1084 (Kennungen) | **Mappentypen aus Paketen heißen `paket:schluessel`** statt `<paket>_<schluessel>`, z. B. `basis:person` statt `basis_person` – in `schluessel` der Mappentypen (`GET /api/v1/typen`), in Links (`/ablage/link?typ=…`), in der erweiterten Suche (`typ=`) und im Vollexport (Datei `daten/basis.person.csv`). Neu am Mappentyp: `paket` (Id des Pakets, fehlt bei eigenen Typen). Bestehende Kennungen hat Ablago beim Update umgestellt; eigene Mappentypen behalten ihre Kennung. Paket-Ids dürfen jetzt bis 40 Zeichen und einen Punkt haben (`texterkennung.fra`), Kennungen bis 60 Zeichen; Pakete nennen ihren `herausgeber`. | Wer Mappentypen über die Kennung sucht, nimmt die neue Form (oder die Id). Gespeicherte Links und Lesezeichen mit `typ=basis_…` neu anlegen bzw. auf `basis:…` ändern – sie finden den Mappentyp sonst nur noch über seinen Namen. |

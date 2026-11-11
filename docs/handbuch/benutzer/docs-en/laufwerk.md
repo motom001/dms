@@ -50,7 +50,7 @@ The drive appears on the left in the sidebar under **Locations**. With the **+**
 2. Enter your NAS's address, e.g. `smb://nas.example.org`, tap **Connect** and sign in with your account **on the NAS** (not with the Ablago key).
 3. Open the share with the intake folder and your folder in it.
 
-From any app you now save into this folder with **Share → Save to Files** – Ablago turns it into new post with you under **For**. This only works on your home network (or via a VPN to it).
+From any app you now save into this folder with **Share → Save to Files** – Ablago turns it into new post with you under **To**. This only works on your home network (or via a VPN to it).
 
 **The whole drive – with a WebDAV app.** For views, folders and documents you need an app from the App Store that can do WebDAV and plugs into the Files app (as a "location"). Which one is up to you.
 
