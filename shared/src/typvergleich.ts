@@ -3,7 +3,7 @@
  * Statt „irgendwann nach der Installation gespeichert“ zählt nur, was sich wirklich unterscheidet:
  * Felder (hinzugefügt, entfernt, geändert), Register, Beschreibung, Titel.
  */
-import type { Feld, Mappentyp } from './model';
+import type { Anzeigeregel, Feld, Mappentyp } from './model';
 import { t } from './texte';
 
 /** Was vom Mappentyp verglichen wird – ohne Ids anderer Typen (Verweisziele bleiben als Id, die bleibt im selben DMS gleich). */
@@ -45,8 +45,22 @@ export function typBild(t: Mappentyp, kennungVon?: (typId: string) => string | u
     name: t.name, beschreibung: t.beschreibung ?? '', titelVorlage: t.titelVorlage ?? '',
     ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}),
     felder: t.felder.filter((f) => !f.system).map(feld),
-    register: t.register.map((r) => ({ key: r.key, name: r.name, werte: sauber({ art: r.art, felder: r.felder, quellen: r.quellen, beschriftungen: r.beschriftungen, abschnitte: r.abschnitte, ausgeblendet: r.ausgeblendet }) })),
+    register: t.register.map((r) => ({ key: r.key, name: r.name, werte: sauber({ art: r.art, felder: r.felder, quellen: r.quellen, beschriftungen: r.beschriftungen, abschnitte: r.abschnitte?.map((a) => (a.anzeigen ? { ...a, anzeigen: optionaleAlsKennung(a.anzeigen, t, kennungVon) } : a)), ausgeblendet: r.ausgeblendet }) })),
   };
+}
+
+/**
+ * Anzeige-Bedingungen „zeigt auf Mappe vom Typ …“ auf ein optionales Ziel (#1122): Bis das Paket da ist, steht die
+ * Kennung darin, danach die Id – für den Vergleich gilt beides als die Kennung, das spätere Paket ist keine eigene Änderung.
+ */
+function optionaleAlsKennung(a: Anzeigeregel, typ: Mappentyp, kennungVon?: (typId: string) => string | undefined): Anzeigeregel {
+  if (!kennungVon) return a;
+  const k = (feld: string, id: string) => { const opt = typ.felder.find((f) => f.key === feld)?.zielOptional; const x = kennungVon(id); return x && opt?.includes(x) ? x : id; };
+  return { ...a, bedingungen: a.bedingungen.map((b) => {
+    if (b.art === 'verweistyp') return { ...b, typ: k(b.feld, b.typ) };
+    if (b.art !== 'feld' || b.bedingung.op !== 'zeigtAufTyp' || b.bedingung.wert?.art !== 'fest' || !Array.isArray(b.bedingung.wert.wert)) return b;
+    return { ...b, bedingung: { ...b.bedingung, wert: { ...b.bedingung.wert, wert: b.bedingung.wert.wert.map((x) => k(b.bedingung.feld, String(x))) } } };
+  }) };
 }
 
 export interface TypUnterschiede {

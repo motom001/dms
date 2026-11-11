@@ -136,6 +136,10 @@ Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schem
     ```yaml
     - { key: betrifft, label: betrifft, typ: referenz, mehrfach: true, ziel: [vertrag], zielOptional: [fahrzeuge:fahrzeug, wohnen:wohnung] }
     ```
+
+    In Anzeige-Bedingungen („zeigt auf eine Mappe vom Typ …“, `art: verweistyp` und `op: zeigtAufTyp`) darf ein Ziel aus `zielOptional` stehen, auch wenn sein Paket fehlt (dms #1122): Das ist kein Fehler, die Bedingung trifft dann nie zu (mit `nicht: true` immer). Kommt das Paket später, gilt sie ab dann. `zeigtAufTyp` geht mit `zielOptional` auch, solange erst ein Zieltyp da ist. Ein Typ, der weder unter `ziel` noch unter `zielOptional` des Felds steht, bleibt ein Fehler.
+
+    Die Reihenfolge der Mappentypen im Paket und der Pakete untereinander spielt beim Installieren keine Rolle (dms #1122): Verweise, Tabellen, Anzeige-Bedingungen und Quellen von Verknüpfungsregistern, die auf etwas zeigen, das erst später entsteht, legt Ablago im zweiten Durchgang an – Quellen über `zielOptional` (etwa *Fahrzeug → Rechnungen* über *Betrifft* der Rechnung) erst, wenn das Feld des anderen Pakets auf den neuen Typ zeigt. Was sich am Ende nicht anlegen lässt, etwa eine Quelle über ein Feld, das nicht auf diesen Typ zeigt, bricht die Installation mit Mappentyp, Register und Quelle ab – nichts fällt still weg.
 - **Beim Auswählen übernehmen** (`vorbelegen`, dms #1037): an einem Verweisfeld eine Liste von Paaren `[{ von, nach }]` – `von` ein Feld des Zieltyps, `nach` ein Feld dieses Typs. Wählt man eine Mappe, schlägt Ablago deren Werte in **leeren** Feldern vor (markiert „vorgeschlagen aus …“, änderbar, nie überschrieben; auch bei „Aus Dokument ausfüllen“ und „Dokument übernehmen“). Beispiel aus dem Entwurf Verträge:
 
     ```yaml

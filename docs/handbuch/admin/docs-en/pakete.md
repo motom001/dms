@@ -31,7 +31,7 @@ GitHub counts how often a release file is downloaded; the numbers in the catalog
 2. Click **Install …**. The [common process](#mehrere-pakete-in-einem-schritt-installieren) opens: at the top the package, below it what it needs ("Needs: …"), and its **add-ons** as ticks – for text recognition, for instance, **Further languages?** with French, Spanish, Turkish …
 3. Click **Continue with … packages**. On **one page**, Ablago now asks everything that is necessary, and only that:
     - for packages with code **what the code may do** – per package as a list, events as a sub-list, with **?** for an explanation (see [A package's permissions](#rechte-eines-pakets)). Below it **one** tick for all, otherwise **Install** stays grey
-    - **names** that already exist: if there is already a folder type or a view (at the top level) with the same name, Ablago suggests another, e.g. "Organisation (Basis)". Everything else gets the name from the package, without asking
+    - **names** that already exist: if there is already a folder type or a view (at the top level) with the same name, Ablago suggests another, e.g. "Organisation (Basis)". Everything else gets the name from the package, without asking. Who already has the name (a package, created yourself, a package earlier in the run) is listed before **Install** under **Names already in use**; if a conversion takes over the existing type, that is not a conflict (#1123)
     - **sample folders** – only if you set the tick; if they bring **example documents**, their number and size are shown (see [Examples](#beispiele))
     - **settings** without which a package doesn't run – or **Fill in later** (see [Settings](#einstellungen))
 4. At the bottom is the **summary**: which packages in which order, how many folder types and views, examples, packages with code. Below that the package's notes, e.g. whether it brings **synonyms** for the search (word lists, see [Search](suche.md#gleichbedeutende-worter)) or uses folder types from Ablago.
@@ -41,6 +41,7 @@ Before creating anything, Ablago checks:
 
 - whether **its own version** fits (otherwise [update](aktualisieren.md) Ablago first),
 - whether all **dependencies** are installed and in a fitting version,
+- whether a **name** is already taken – also by a folder type of a dependency that would be installed along (#1123). This already shows in the preview; you change names of the package itself there, a dependency you install on its own first,
 - whether the downloaded archive matches the **checksum (SHA-256)** in the catalogue. If it doesn't, Ablago installs nothing.
 
 Creation uses the same functions as in the Workbench, with all validation rules. Folder types from packages have the [identifier](mappentypen.md) `package:key`, e.g. `basis:person` – so packages don't get in each other's way, even if the package ID and the key contain an underscore themselves (up to Ablago 0.228 it was `basis_person`; during the update Ablago converted all identifiers, #1084). Your own folder types have an identifier without a colon. Ablago resolves links to other packages' folder types. **If something fails, Ablago undoes everything** – nothing is left half-created.

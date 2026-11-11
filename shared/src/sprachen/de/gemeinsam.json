@@ -1032,6 +1032,7 @@
   "anzeige.kein-verweis": "„{feld}“ ist kein Verweisfeld.",
   "anzeige.anderer-typ": "„{feld}“ zeigt nur auf Mappen eines anderen Typs – die Bedingung träfe nie zu.",
   "anzeige.typ-fehlt": "Den Mappentyp gibt es nicht (mehr).",
+  "anzeige.typ-wartet": "{typ} (Paket noch nicht installiert)",
   "anzeige.nur-feste-werte": "Hier gehen nur feste Werte und „heute“ – was zu sehen ist, hängt nicht davon ab, wer die Mappe ansieht.",
   "anzeige.verweistyp": "„{feld}“ zeigt auf eine Mappe vom Typ {typ}",
   "anzeige.verweistyp-nicht": "„{feld}“ zeigt auf keine Mappe vom Typ {typ}",

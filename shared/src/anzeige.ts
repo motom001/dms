@@ -153,10 +153,21 @@ export function anzeigeBedingungProblem(b: Anzeigebedingung, typ: TypTeil, eigen
 
 function verweistypProblem(b: { typ: string }, f: Feld, existiertTyp?: (id: string) => boolean): string | null {
   if (f.typ !== 'referenz') return t('gemeinsam.anzeige.kein-verweis', { feld: feldLabel(f) });
+  // Optionales Ziel (#1122), dessen Paket fehlt: kein Problem – die Bedingung trifft nie zu, bis es den Typ gibt.
+  if (wartetAufPaket(f, b.typ)) return null;
   // Mehrere Zieltypen (#1036): „zeigt auf Mappe vom Typ …“ für jeden davon; bei genau einem Typ ist die Bedingung fest.
   if (!jedeMappe(f) && !zielErlaubt(f, b.typ)) return t('gemeinsam.anzeige.anderer-typ', { feld: feldLabel(f) });
   if (existiertTyp && !existiertTyp(b.typ)) return t('gemeinsam.anzeige.typ-fehlt');
   return null;
+}
+
+/**
+ * Optionales Ziel (#1036, #1122): Ein Paket nennt in „zeigt auf Mappe vom Typ …“ einen Typ aus `zielOptional` des Felds,
+ * dessen Paket (noch) fehlt. Bis es installiert ist, steht dort die Kennung `paket:schluessel` statt einer Id – sie
+ * passt zu keiner Mappe, die Bedingung trifft also nie zu; die Installation des Pakets setzt die Id ein.
+ */
+export function wartetAufPaket(f: Pick<Feld, 'zielOptional'> | undefined, typ: unknown): boolean {
+  return typeof typ === 'string' && typ.includes(':') && !!f?.zielOptional?.includes(typ);
 }
 
 /** Probleme einer Regel, je Bedingung ein Text (leer = in Ordnung). */
@@ -299,7 +310,7 @@ export function beschreibeAnzeigeBedingung(b: Anzeigebedingung, typ: TypTeil, na
   if (b.art === 'merkmal') return merkmalText(b.merkmal, b.nicht);
   if (b.art === 'verweistyp') {
     const f = typ.felder.find((x) => x.key === b.feld);
-    const werte = { feld: f ? feldLabel(f) : b.feld, typ: namen.typ?.(b.typ) ?? b.typ };
+    const werte = { feld: f ? feldLabel(f) : b.feld, typ: wartetAufPaket(f, b.typ) ? t('gemeinsam.anzeige.typ-wartet', { typ: b.typ }) : namen.typ?.(b.typ) ?? b.typ };
     return b.nicht ? t('gemeinsam.anzeige.verweistyp-nicht', werte) : t('gemeinsam.anzeige.verweistyp', werte);
   }
   if (b.art === 'eigeneOrganisation') {
@@ -310,7 +321,9 @@ export function beschreibeAnzeigeBedingung(b: Anzeigebedingung, typ: TypTeil, na
   // Umgekehrt lesbar, wo es ein Gegenstück gibt („ist leer“ → „ist nicht leer“), sonst „nicht (…)“.
   const gegen: Partial<Record<string, Feldbedingung['op']>> = { leer: 'nichtLeer', nichtLeer: 'leer', ja: 'nein', nein: 'ja' };
   const op = b.nicht ? gegen[b.bedingung.op] : undefined;
-  const text = beschreibeBedingung(op ? { ...b.bedingung, op } : b.bedingung, [alsTyp(typ)], namen.mappe);
+  const f = typ.felder.find((x) => x.key === b.bedingung.feld);
+  const typName = (id: string) => (wartetAufPaket(f, id) ? t('gemeinsam.anzeige.typ-wartet', { typ: id }) : namen.typ?.(id));
+  const text = beschreibeBedingung(op ? { ...b.bedingung, op } : b.bedingung, [alsTyp(typ)], namen.mappe, undefined, typName);
   return b.nicht && !op ? t('gemeinsam.anzeige.nicht', { bedingung: text }) : text;
 }
 

@@ -1032,6 +1032,7 @@
   "anzeige.kein-verweis": "“{feld}” is not a reference field.",
   "anzeige.anderer-typ": "“{feld}” only refers to folders of another type – the condition would never apply.",
   "anzeige.typ-fehlt": "This folder type no longer exists.",
+  "anzeige.typ-wartet": "{typ} (package not installed yet)",
   "anzeige.nur-feste-werte": "Only fixed values and “today” work here – what is shown does not depend on who is looking at the folder.",
   "anzeige.verweistyp": "“{feld}” refers to a folder of type {typ}",
   "anzeige.verweistyp-nicht": "“{feld}” does not refer to a folder of type {typ}",

@@ -138,6 +138,10 @@ The format is described by the JSON schemas in the registry: [`schema/manifest.s
     ```yaml
     - { key: betrifft, label: concerns, typ: referenz, mehrfach: true, ziel: [vertrag], zielOptional: [fahrzeuge:fahrzeug, wohnen:wohnung] }
     ```
+
+    Display conditions ("refers to a folder of type …", `art: verweistyp` and `op: zeigtAufTyp`) may name a target from `zielOptional` even if its package is missing (dms #1122): this is not an error, the condition then never applies (with `nicht: true` always). If the package comes later, it applies from then on. `zeigtAufTyp` also works with `zielOptional` while only one target type exists. A type that is neither under `ziel` nor under `zielOptional` of the field remains an error.
+
+    The order of the folder types in the package and of the packages among each other does not matter when installing (dms #1122): links, tables, display conditions and sources of link tabs that point to something created later are added in a second pass – sources via `zielOptional` (such as *Vehicle → Invoices* via *Concerns* of the invoice) only once the other package's field refers to the new type. Whatever cannot be created in the end, such as a source via a field that does not refer to this type, stops the installation naming folder type, tab and source – nothing is dropped silently.
 - **Copy when selected** (`vorbelegen`, dms #1037): on a link field a list of pairs `[{ von, nach }]` – `von` a field of the target type, `nach` a field of this type. When a folder is chosen, Ablago suggests its values in **empty** fields (marked "suggested from …", editable, never overwritten; also with "Fill in from document" and "Take over document"). Example from the Contracts draft:
 
     ```yaml

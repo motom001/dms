@@ -51,6 +51,7 @@ import {
   setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
 } from './pakete/index';
 import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, uebernahmeDaten, wendeEntscheidungenAn, type UmbauErgebnis, type UmbauLage } from './pakete/index';
+import { abhaengigeTypen, abhaengigkeitsKonflikte, anzeigeTypIds, anzeigeWartet, eigeneKonflikte, Namensherkunft, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './pakete/index';
 import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
 import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
 
@@ -982,6 +983,11 @@ export interface Vorschau {
   probleme: string[];
   /** Feste Kennungen zu `probleme` für die Oberfläche (#729: nicht am Text erkennen), z. B. „schon-installiert“. */
   fehlercodes: string[];
+  /**
+   * Namenskonflikte (#1123): die Einträge aus `probleme`, die sich in der Vorschau durch Umbenennen lösen lassen (Typen
+   * und Ansichten des Pakets selbst). Mit `namen` bzw. `sichtNamen` beim Installieren fallen sie weg.
+   */
+  namenskonflikte: string[];
   /** Hinweise, die nicht verhindern (z. B. Code läuft noch nicht). */
   hinweise: string[];
   /**
@@ -2048,6 +2054,11 @@ export class Paketverwaltung {
       if (a.installiert && !a.ok) probleme.push(t('meldungen.pakete.ist-in-version-installiert', { id: a.id, installiert: a.installiert, bereich: a.bereich }));
     }
     const belegt = new Set([...typen.map((t) => t.name.trim().toLowerCase()), ...(geplant?.typen ?? [])]);
+    // Namenskonflikte (#1123): Typen von Abhängigkeiten, die mitinstalliert würden, zählen wie vorhandene (im Ablauf und
+    // in der Sammeldatei sind sie eigene Pakete des Plans).
+    const abhaengig = ablauf || sammel ? [] : abhaengigeTypen(m.abhaengigkeiten, katalog, (id) => installierte.some((p) => p.id === id));
+    const namensHerkunft = new Namensherkunft({ typen, sichten, installierte, abhaengig });
+    for (const k of abhaengigkeitsKonflikte(abhaengig, belegt, namensHerkunft)) problem('namenskonflikt-abhaengigkeit', k);
     // Text → Verweis (#534): Angaben im alten Textfeld, deren Verweis noch leer ist.
     const umwandelbar = async (t: PaketTyp) => {
       const typ = typen.find((x) => x.id === ich?.typen[t.schluessel]);
@@ -2140,6 +2151,9 @@ export class Paketverwaltung {
       if (!s.eltern) geplant?.sichten.add(name.toLowerCase());
       return { schluessel: s.schluessel, name, eltern: s.eltern ?? null, vorhanden: false, konflikt, vorschlag: konflikt ? freierName(name, m.name, new Set(geschwister)) : null, ...(ohne.length ? { ohne } : {}) };
     });
+    // Namenskonflikte (#1123) vor dem Installieren: je Typ bzw. Ansicht mit Herkunft – in der Vorschau durch Umbenennen lösbar.
+    const namenskonflikte = eigeneKonflikte({ typen: typPlaene, sichten: sichtPlaene, herkunft: namensHerkunft, uebernommen: new Set(umbau.schritte.flatMap((g) => (g.plan.art === 'uebernehmen' && g.alt ? [g.alt.id] : []))) });
+    for (const k of namenskonflikte) problem('namenskonflikt', k);
     // Aktionen im Menü „Mappe“ (#1039): jede mit ihren Rechten; neu = beim Update dazugekommen oder mit anderen Rechten.
     const aktionen = (paket.mappenaktionen ?? []).map((a) => {
       const alt = ich?.mappenaktionen?.find((x) => x.schluessel === a.schluessel);
@@ -2152,7 +2166,7 @@ export class Paketverwaltung {
       herausgeberSchluessel: quelle?.pruefung.art === 'anbieter' && herausgeber ? quelle.pruefung.fingerabdruck ?? null : null,
       herkunft: ich?.herkunft ?? null,
       pruefung: null,
-      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, umbau: umbau.schritte.map((g) => g.plan), probleme, fehlercodes, hinweise,
+      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, umbau: umbau.schritte.map((g) => g.plan), probleme, fehlercodes, namenskonflikte, hinweise,
       automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
@@ -2291,6 +2305,9 @@ export class Paketverwaltung {
     if (fehlen.length && (!e.mitAbhaengigkeiten || alt)) {
       throw new Fachfehler(409, t('meldungen.pakete.es-fehlen-pakete-die', { name: paket.manifest.name, map: fehlen.map((a) => `${a.id} ${a.bereich}`).join(', ') }), { gruende: fehlen.map((a) => (a.verfuegbar ? `${a.id}: im Katalog gibt es ${a.verfuegbar}` : `${a.id}: nicht im Katalog`)) });
     }
+    // Namen zuerst (#1123): Was sich umbenennen lässt, meldet die Installation mit Vorschlag – bevor etwas angelegt wird.
+    const konflikte = [...vorschau.typen, ...vorschau.sichten].filter((x) => x.konflikt);
+    if (konflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: vorschau.namenskonflikte, konflikte: true });
     if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
     Paketverwaltung.rechteBestaetigen(vorschau, e);
     Paketverwaltung.herausgeberBestaetigen(vorschau, e);
@@ -2307,8 +2324,6 @@ export class Paketverwaltung {
       // Beispiele der Abhängigkeit mit, wenn welche gewünscht sind – die eigenen Beispiele können auf sie zeigen (#347).
       await this.installiere({ id: a.id, version: a.verfuegbar, beispiele: e.beispiele === true, mitAbhaengigkeiten: true, quelle: quelle ?? this.katalogUrl, bestaetigt: e.bestaetigt }, von);
     }
-    const konflikte = [...vorschau.typen, ...vorschau.sichten].filter((x) => x.konflikt);
-    if (konflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: konflikte.map((x) => `${x.konflikt} Vorschlag: „${x.vorschlag}“.`), konflikte: true });
     const datensatz = await this.lege(paket, herkunft, v, vorschau, e.beispiele === true && !alt, von, alt, einzuschalten(e.automatisierungen, paket));
     if (hoch) await this.vergissUpload(String(e.upload));
     log.info(alt ? 'Paket aktualisiert (hochgeladen)' : 'Paket installiert', { von: von.email, paket: id, version: paket.manifest.version, ...(alt ? { vorher: alt.version } : {}), herkunft: hoch ? 'hochgeladen' : quelle, pruefung: geladen.pruefung.art + (geladen.pruefung.stand ? ` (Katalog vom ${geladen.pruefung.stand})` : ''), typen: Object.keys(datensatz.typen).length, sichten: Object.keys(datensatz.sichten).length });
@@ -2363,7 +2378,8 @@ export class Paketverwaltung {
   /**
    * Optionale Ziele (#1036) nachziehen: An den Feldern der Typen von `paket` die `zielOptional` des Pakets ergänzen
    * (vereinigt, nie gekürzt), dann an allen Verweisfeldern jede optionale Kennung, die es als Typ gibt, in `zielTypen`
-   * aufnehmen. Geänderte Typen landen in `geaendert` (Zurückrollen).
+   * aufnehmen – und in Anzeige-Bedingungen die Kennung durch die Id ersetzen (#1122). Geänderte Typen landen in
+   * `geaendert` (Zurückrollen).
    */
   private async ergaenzeOptionaleZiele(paket: Pick<Paket, 'manifest' | 'typen'> | null, typMap: Record<string, string>, geaendert: Mappentyp[]) {
     const typen = await this.d.listeTypen();
@@ -2380,10 +2396,34 @@ export class Paketverwaltung {
         anders = true;
         return { ...f, zielTypen: [...zieleVon(f), ...dazu], ...(opt.length ? { zielOptional: opt } : {}) };
       });
-      if (!anders) continue;
+      // Anzeige-Bedingungen (#1122): „zeigt auf Mappe vom Typ …“ mit der Kennung eines Typs, den es jetzt gibt → Id.
+      const mitAnzeige = optionaleInTyp({ felder, register: typ.register }, kennung);
+      if (!anders && !mitAnzeige) continue;
       if (!geaendert.some((x) => x.id === typ.id)) geaendert.push(typ);
-      try { await this.d.aendereTyp(typ.id, { ...typ, felder }); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: typ.name, meldungen: meldungen(f) })); }
+      try { await this.d.aendereTyp(typ.id, { ...typ, felder, ...mitAnzeige }); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: typ.name, meldungen: meldungen(f) })); }
     }
+  }
+
+  /**
+   * Quellen von Verknüpfungsregistern (#1122) am Ende: an neuen Typen alle, an vorhandenen die neuer Register. Was erst
+   * nach dem Anlegen ging (optionale Ziele, Felder aus dem Update), kommt jetzt dazu; was nicht geht, bricht mit Stelle ab.
+   */
+  private async quellenNachtragen(paket: Pick<Paket, 'typen'>, x: { ids: Map<string, string>; neu: Set<string>; vorher: Map<string, Mappentyp>; geaendert: Mappentyp[]; typId: (vw: string) => string }) {
+    const typen = new Map((await this.d.listeTypen()).map((y) => [y.id, y] as const));
+    const fehler: string[] = [];
+    for (const pt of paket.typen) {
+      const typ = typen.get(x.ids.get(pt.schluessel) ?? '');
+      const alt = x.vorher.get(typ?.id ?? '');
+      if (!typ || (!x.neu.has(pt.schluessel) && !alt)) continue;
+      const soll: SollQuelle[] = pt.register.filter((r) => x.neu.has(pt.schluessel) || !alt!.register.some((g) => g.key === r.key))
+        .flatMap((r) => (r.quellen ?? []).map((q) => ({ register: r.key, typId: x.typId(q.typ), feldKey: q.feld, quelle: `${q.typ}.${q.feld}` })));
+      const erg = quellenNachtragen(typ, soll, typen);
+      fehler.push(...erg.fehlen.map((q) => t('meldungen.pakete.quelle-fehlt', { typ: typ.name, register: typ.register.find((r) => r.key === q.register)?.name ?? q.register, quelle: q.quelle, feld: q.feldKey })));
+      if (!erg.geaendert || erg.fehlen.length) continue;
+      if (alt && !x.geaendert.some((y) => y.id === typ.id)) x.geaendert.push(typ);
+      try { await this.d.aendereTyp(typ.id, { ...typ, register: erg.register }); } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: typ.name, meldungen: meldungen(f) })); }
+    }
+    if (fehler.length) throw new Fachfehler(422, fehler[0], { gruende: fehler });
   }
 
   private async legeIntern({ paket, herkunft, v, plan, beispiele, von, alt, ein }: LegeAuftrag): Promise<InstalliertesPaket> {
@@ -2440,23 +2480,32 @@ export class Paketverwaltung {
       const ids = b.wert.wert.map((vw) => { try { return ziel(str(vw), false); } catch { return str(vw).includes(':') ? optional(str(vw)) : null; } }).filter((x): x is string => !!x);
       return { ...b, wert: { art: 'fest', wert: ids } };
     };
-    // Anzeigen, wenn … (#1033): „zeigt auf eine Mappe vom Typ …“ nennt im Paket einen Typverweis – hier die Id; „zeigt auf
-    // die Vorgabe …“ (#1038) die feste Kennung – hier die Id der Mappe („zeigt auf“).
-    const anzeige = (roh: unknown) => {
-      const a = anzeigeMitVorgaben(roh, vorgabeId);
-      if (!istObjekt(a) || !Array.isArray(a.bedingungen)) return a;
-      return { ...a, bedingungen: a.bedingungen.map((b) => (istObjekt(b) && b.art === 'verweistyp' ? { ...b, typ: ziel(str(b.typ), false) } : b)) };
-    };
     // Optionale Ziele (#1036): ein Typ eines anderen Pakets, wenn es ihn schon gibt – sonst still nichts.
     const optional = (vw: string): string | null => {
       const [p, sl] = vw.split(':');
       const id = installierte.find((x) => x.id === p)?.typen[sl];
       return id && vorher.has(id) ? id : null;
     };
+    // Anzeigen, wenn … (#1033): „zeigt auf eine Mappe vom Typ …“ (verweistyp, zeigtAufTyp) nennt im Paket Typverweise –
+    // hier Ids; ein optionales Ziel, dessen Paket fehlt, bleibt als Kennung und trifft nie zu (#1122). „zeigt auf die
+    // Vorgabe …“ (#1038) nennt die feste Kennung – hier die Id der Mappe („zeigt auf“).
+    const anzeige = (roh: unknown, felder: PaketFeld[]) => anzeigeTypIds(anzeigeMitVorgaben(roh, vorgabeId), felder, (vw) => ziel(vw, false)!, optional);
+    // Stand der Typen beim Anlegen (#1122): Eine Quelle kommt erst dazu, wenn ihr Feld auf den neuen Typ zeigen darf.
+    const stand = new Map(vorher);
+    const auffrischen = async () => { for (const x of await this.d.listeTypen()) stand.set(x.id, x); };
+    const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
+    // Erster Durchgang (#1122): Was auf einen Typ dieses Pakets zeigt, den es noch nicht gibt (außer auf sich selbst), wartet.
+    const typFehlt = (t: PaketTyp, nurAngelegt: boolean) => (vw: string) => nurAngelegt && eigen(vw) && vw.split(':').pop() !== t.schluessel && ziel(vw, true) === null;
+    // Quellen (#1122): erst, wenn das Feld des anderen Typs auf diesen zeigen darf – sonst fiele die Quelle beim Speichern still weg.
+    const quelleId = (t: PaketTyp, q: { typ: string; feld: string }, nurAngelegt: boolean, felder: Feld[]) => {
+      const typId = ziel(q.typ, nurAngelegt);
+      return typId && (!nurAngelegt || quelleAnlegbar({ typId, feldKey: q.feld }, ids.get(t.schluessel)!, stand, felder)) ? typId : null;
+    };
     const eingabe = (t: PaketTyp, nurAngelegt: boolean) => {
-      const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
       // Tabellen (#1030) auf einen Typ, den es noch nicht gibt, kommen im zweiten Durchgang – wie Verweise.
       const offen = new Set(t.felder.filter((f) => [...paketZiele(f), ...tabellenTyp(f)].some((z) => !(eigen(z) && z.split(':').pop() === t.schluessel) && ziel(z, nurAngelegt) === null)).map((f) => f.key));
+      // Anzeige-Bedingungen (#1122) auf Felder oder Typen, die erst im zweiten Durchgang kommen, ebenso.
+      const wartet = (roh: unknown) => !!roh && anzeigeWartet(roh, offen, typFehlt(t, nurAngelegt));
       const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, zielOptional: opt, berechnet, quelle: q, ...f }) => {
         const ziele = [...paketZiele({ ziel: z }).map((x) => ziel(x, false)!), ...(opt ?? []).map(optional).filter((x): x is string => !!x)];
         // Tabelle (#1030): Typverweis → Id; „standard“ ist die Standard-Trefferliste (Pakete bringen nur sie mit).
@@ -2464,11 +2513,12 @@ export class Paketverwaltung {
         // Berechnet (#1034): gehört dem Paket, das den Typ mitbringt; null gibt ein Feld frei, das das Paket nicht mehr berechnet.
         // Beim Auswählen übernehmen (#1037): Zielfelder, die erst im zweiten Durchgang kommen, auch erst dann.
         const vorbelegen = f.vorbelegen?.filter((p) => !offen.has(p.nach));
-        return { ...f, ...(vorbelegen ? { vorbelegen } : {}), wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: anzeige(f.anzeigen) } : {}), ...(quelle ? { quelle } : {}), berechnetVon: berechnet === true ? m.id : null };
+        return { ...f, ...(vorbelegen ? { vorbelegen } : {}), wiederfinden: wiederfindenAus(f as PaketFeld), ...(f.typ === 'referenz' ? { zielTypen: [...new Set(ziele)] } : {}), ...(opt?.length ? { zielOptional: opt } : {}), ...(f.anzeigen ? { anzeigen: wartet(f.anzeigen) ? undefined : anzeige(f.anzeigen, t.felder) } : {}), ...(quelle ? { quelle } : {}), berechnetVon: berechnet === true ? m.id : null };
       });
-      const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}),
-        ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? { ...x, anzeigen: anzeige(x.anzeigen) } : x)) } : {}) }));
-      const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => ziel(q.typ, nurAngelegt) === null));
+      const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: quelleId(t, q, nurAngelegt, felder as Feld[]), feldKey: q.feld })).filter((q) => q.typId) } : {}),
+        ...(Array.isArray(r.abschnitte) ? { abschnitte: (r.abschnitte as unknown[]).map((x) => (istObjekt(x) && x.anzeigen ? (wartet(x.anzeigen) ? { ...x, anzeigen: undefined } : { ...x, anzeigen: anzeige(x.anzeigen, t.felder) }) : x)) } : {}) }));
+      const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => quelleId(t, q, nurAngelegt, felder as Feld[]) === null))
+        || t.felder.some((f) => wartet(f.anzeigen)) || t.register.some((r) => Array.isArray(r.abschnitte) && (r.abschnitte as unknown[]).some((x) => istObjekt(x) && wartet(x.anzeigen)));
       const name = plan.typen.find((x) => x.schluessel === t.schluessel)!.name;
       return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
         // Ist Teil einer anderen Mappe (#1031): erst, wenn das Feld dabei ist (sonst im zweiten Durchgang).
@@ -2529,10 +2579,15 @@ export class Paketverwaltung {
         } catch (f) { throw new Fachfehler((f as Fachfehler).status ?? 422, t('meldungen.pakete.mappentyp', { name: x.daten.name, meldungen: meldungen(f) })); }
         if (!ueber) angelegt.add(paketTyp.schluessel);
         typMap[paketTyp.schluessel] = ids.get(paketTyp.schluessel)!;
+        await auffrischen();
         // Archivmodus aus dem Paket (#1051): im Protokoll wie beim Einschalten in der Werkbank.
         if (x.daten.archiv) protokoll.modul('werkbank').info('Archivmodus eingeschaltet', { typ: x.daten.name, paket: m.id, vorher: { an: false }, nachher: { an: true, jahre: x.daten.archiv.jahre, stichtag: x.daten.archiv.stichtag ?? 'Anlagedatum', ...(x.daten.archiv.leererStichtag ? { leererStichtag: 'läuft noch nicht ab' } : {}) } });
         if (x.unvollstaendig) nachtragen.push(paketTyp);
       }
+      // Optionale Ziele (#1036) vor dem zweiten Durchgang (#1122): Verweisfelder anderer Pakete zeigen jetzt auch auf die
+      // neuen Typen – erst dann gehen Quellen über diese Felder (Fahrzeug ← Rechnung „Betrifft“).
+      await this.ergaenzeOptionaleZiele(paket, typMap, geaendert);
+      await auffrischen();
       // Tabellen (#1030) zuletzt: Ihre Quelle braucht das Verweisfeld des anderen Typs, das vielleicht erst hier dazukommt.
       nachtragen.sort((a, b) => Number(a.felder.some((f) => f.typ === 'tabelle')) - Number(b.felder.some((f) => f.typ === 'tabelle')));
       for (const paketTyp of nachtragen) {
@@ -2566,7 +2621,7 @@ export class Paketverwaltung {
         const register = besch.typ.register.map((r) => {
           const dazu = neueFelderAuf(paketTyp, aktuell, r);
           const mit = dazu.length ? { ...r, felder: [...(r.felder ?? []), ...dazu] } : r;
-          return abschnitte.has(r.key) ? { ...mit, abschnitte: abschnitte.get(r.key)!.map((a) => (a.anzeigen ? { ...a, anzeigen: anzeige(a.anzeigen) as Anzeigeregel } : a)) } : mit;
+          return abschnitte.has(r.key) ? { ...mit, abschnitte: abschnitte.get(r.key)!.map((a) => (a.anzeigen ? { ...a, anzeigen: anzeige(a.anzeigen, paketTyp.felder) as Anzeigeregel } : a)) } : mit;
         });
         for (const r of neu.register) if (!register.some((g) => g.key === r.key)) { const { ausgeblendet: _a, ...ohne } = r as Register; register.push(ohne); }
         geaendert.push(aktuell);
@@ -2583,6 +2638,8 @@ export class Paketverwaltung {
       // jedes Feld (auch anderer Pakete) die optionalen Ziele auf, die es jetzt gibt – etwa die Fahrzeuge, wenn das Paket
       // Fahrzeuge nach den Rechnungen kommt. Entfernt wird dabei nichts.
       await this.ergaenzeOptionaleZiele(paket, typMap, geaendert);
+      // 2c. Quellen (#1122): Was jetzt geht, nachtragen; was das Paket vorsieht und nicht geht, ist ein Fehler mit Stelle.
+      await this.quellenNachtragen(paket, { ids, neu: new Set(neueTypen.map((x) => x.schluessel)), vorher, geaendert, typId: (vw) => ziel(vw, false)! });
       // 3. Neue Sichten, Elternsichten zuerst, am Ende ihrer Ebene.
       for (const s of nachEltern(paket.sichten)) {
         const sp = plan.sichten.find((x) => x.schluessel === s.schluessel)!;
@@ -3023,6 +3080,9 @@ export class Paketverwaltung {
     const namen = karte(e.namen), sichtNamen = karte(e.sichtNamen);
     const { plan, teile } = await this.ablaufIntern(e, namen, sichtNamen);
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
+    // Namen zuerst (#1123), wie beim einzelnen Paket.
+    const konflikte = plan.pakete.flatMap((p) => p.vorschau.namenskonflikte.map((x) => `${p.name}: ${x}`));
+    if (konflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: konflikte, konflikte: true });
     const pp = plan.pakete.flatMap((p) => p.vorschau.probleme.map((x) => `${p.name}: ${x}`));
     if (pp.length) throw new Fachfehler(409, pp[0], { gruende: pp });
     if (plan.herkunftBestaetigen && e.bestaetigt !== true) throw herkunftFehler(plan.herkunft ?? { art: 'unsigniert', offiziell: false, bestaetigen: true });
@@ -3035,8 +3095,6 @@ export class Paketverwaltung {
       const rechte = plan.pakete.filter((p) => p.vorschau.laeufer?.bestaetigen).flatMap((p) => rechteZeilen(p.vorschau.laeufer!.rechte).map((z) => `${p.name}: ${z}`));
       throw new Fachfehler(409, t(e.rechteStand ? 'pakete.ablauf.fehler.rechteneu' : 'pakete.ablauf.fehler.rechte'), { rechte, rechteStand: plan.rechte.stand });
     }
-    const konflikte = plan.pakete.flatMap((p) => [...p.vorschau.typen, ...p.vorschau.sichten].filter((x) => x.konflikt).map((x) => `${p.name}: ${x.konflikt} Vorschlag: „${x.vorschlag}“.`));
-    if (konflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: konflikte, konflikte: true });
     // Pflicht-Einstellungen: ausgefüllt und gültig – oder bewusst später.
     const spaeter = new Set(Array.isArray(e.spaeter) ? e.spaeter.map(String) : []);
     const eingaben = e.einstellungen && typeof e.einstellungen === 'object' ? e.einstellungen as Record<string, Record<string, unknown>> : {};
@@ -3073,9 +3131,8 @@ export class Paketverwaltung {
         const alt = jetzt.find((y) => y.id === p.id) ?? installierteErsetzt(jetzt, x.paket.manifest) ?? null;
         // Frisch planen: Die Pakete davor sind jetzt installiert (Verweise, Namen).
         const vorschau = await this.plane(x.paket, x.v, x.katalog ?? await this.offiziell(), namen[p.id] ?? {}, sichtNamen[p.id] ?? {}, { quelle: { herkunft: x.herkunft, pruefung: x.pruefung }, ablauf: true, ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}) });
+        if (vorschau.namenskonflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: vorschau.namenskonflikte, konflikte: true });
         if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
-        const k = [...vorschau.typen, ...vorschau.sichten].filter((y) => y.konflikt);
-        if (k.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: k.map((y) => `${y.konflikt} Vorschlag: „${y.vorschlag}“.`), konflikte: true });
         const ds = await this.lege(x.paket, x.herkunft, x.v, vorschau, beispiele.has(p.id) && !alt, von, alt, einzuschalten(ein[p.id], x.paket));
         if (x.upload) await this.vergissUpload(x.upload);
         log.info(alt ? 'Paket aktualisiert (Ablauf)' : 'Paket installiert (Ablauf)', { von: von.email, paket: p.id, version: ds.version, ...(alt ? { vorher: alt.version } : {}), herkunft: x.herkunft.art === 'katalog' ? x.herkunft.url : 'hochgeladen', pruefung: x.pruefung.art, gebrauchtVon: p.fuer.join(', ') || '–' });
