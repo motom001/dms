@@ -26,7 +26,7 @@ Mehr: [Benutzer und Rollen](benutzer.md)
 
 Pakete bringen fertige **Mappentypen** mit – für Verträge, Versicherungen, Fahrzeuge, die Vermietung oder den Betrieb. Unter **Werkbank → Pakete** siehst du den Katalog; installiere, was zu dir passt. Viele Pakete bringen auch **Erinnerungen** mit, etwa an eine Kündigungsfrist oder die nächste Hauptuntersuchung. Sie arbeiten als Automatisierungen; welche eingeschaltet sind, siehst du unter **Werkbank → Ablage aufbauen → Automatisierungen**.
 
-*Schon erledigt, wenn du im Assistenten beim Schritt „Pakete“ etwas angekreuzt und mit „Jetzt einrichten“ eingerichtet hast.*
+*Schon erledigt, wenn du im Assistenten beim Schritt „Pakete“ etwas angekreuzt und mit „Jetzt einrichten“ eingerichtet hast. Die Frage „Wofür nutzt du Ablago?“ davor hat dort schon passende Pakete vorgewählt – für zu Hause, für die Arbeit oder für beides.*
 
 ![Pakete in der Werkbank](bilder/werkbank-pakete.png)
 

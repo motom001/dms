@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { DateiFehler, Einrichtungsplan, PlanDatenbank, Planprobleme, PlanPaket, PlanVerbindung, Sammelschritt } from '../../../shared/src/einrichtungsplan';
+import { beruflichBei, type DateiFehler, type Einrichtungsplan, type Nutzung, type PlanDatenbank, type PlanOrganisation, type Planprobleme, type PlanPaket, type PlanVerbindung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
 import type { AblaufErgebnis } from '../../../shared/src/pakete';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
 import { t } from '../sprache';
@@ -17,7 +17,9 @@ export type Ansicht = Sammelschritt | 'zusammenfassung';
 export interface MailSammlung { aktiv: boolean; host: string; port: number; verbindung: PlanVerbindung; benutzer: string; absender: string; selbstsigniert: boolean; /** Im Formular ein Passwort eingegeben (der Wert selbst nur im Speicher). */ mitPasswort: boolean }
 
 /** Ausführen bei „Jetzt einrichten“: in dieser Reihenfolge, jede Stufe einzeln wiederholbar. */
-export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'beispiele', 'pakete'] as const;
+// „nutzung“ vor „pakete“: Pakete schlagen bei beruflicher Nutzung eine längere Aufbewahrung vor (#1051). „organisation“
+// nach „pakete“: Den Mappentyp mit dem Merkmal „eigene Organisation“ bringt das Paket Basis mit (#1045).
+export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'beispiele', 'pakete', 'organisation'] as const;
 export type Stufe = (typeof STUFEN)[number];
 export interface StufeStand { zustand: 'wartet' | 'laeuft' | 'fertig' | 'ausgelassen' | 'fehler'; meldung?: string }
 export interface Lauf {
@@ -40,8 +42,12 @@ export interface Sammlung {
   pakete: PaketWahl | null;
   /** Aus einer Datei, noch nicht bestätigt (#806). */
   paketeVorgabe: PlanPaket[] | null;
-  /** beruflich (#1032): bis #1045 nur aus einer Datei (#806), steht dann in der Zusammenfassung. */
+  /** beruflich: Merkmal „beruflich genutzt“ (#1032) – seit #1045 aus dem Schritt „Nutzung“, bei älteren Dateien direkt. */
   optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean };
+  /** „Wofür nutzt du Ablago?“ (#1045); null = noch nicht beantwortet. */
+  nutzung: Nutzung | null;
+  /** „Deine Organisation“ (#1045) – nur bei beruflich und beides; null = keine. */
+  organisation: PlanOrganisation | null;
   /** Schritte, die schon einmal mit „Weiter“ verlassen wurden. */
   besucht: Ansicht[];
   ansicht: Ansicht;
@@ -74,7 +80,7 @@ export const geheim: { konto: string; mail: string; paketEinstellungen: PaketWah
 
 export const leereSammlung = (): Sammlung => ({
   ablage: '', konto: { name: '', email: '' },
-  pakete: null, paketeVorgabe: null,
+  pakete: null, paketeVorgabe: null, nutzung: null, organisation: null,
   // Vorschlag, sichtbar im Feld: die Adresse, unter der Ablago gerade aufgerufen wird (#803).
   optional: { adresse: typeof location === 'undefined' ? '' : location.origin, bundesland: '', beispiele: false, mail: null },
   besucht: [], ansicht: 'ablage', zurZusammenfassung: false, probleme: {}, verweise: {}, datenbank: null, hinweise: [], pruefungOffen: false,
@@ -87,7 +93,8 @@ function lies(): Assistentenstand {
     const x = JSON.parse(sessionStorage.getItem(SPEICHER) ?? 'null') as Assistentenstand | null;
     if (x && x.sammlung) {
       // Neu geladen, während eine Stufe lief: Sie gilt als unterbrochen und lässt sich erneut versuchen.
-      const lauf = x.lauf ? { ...x.lauf, laeuft: false, stufen: Object.fromEntries(Object.entries(x.lauf.stufen).map(([k, v]) => [k, v.zustand === 'laeuft' ? { zustand: 'fehler', meldung: t('einrichtung.lauf.neugeladen') } : v])) as Lauf['stufen'] } : null;
+      // Stufen, die eine neuere Version dazubrachte (#1045: „organisation“), warten noch.
+      const lauf = x.lauf ? { ...x.lauf, laeuft: false, stufen: Object.fromEntries(STUFEN.map((k) => [k, x.lauf!.stufen[k] ?? { zustand: 'wartet' }]).map(([k, v]) => [k, (v as StufeStand).zustand === 'laeuft' ? { zustand: 'fehler', meldung: t('einrichtung.lauf.neugeladen') } : v])) as Lauf['stufen'] } : null;
       // Ein Stand aus 0.191/0.192 (#821): Schritt „Administrator“ heißt jetzt „Dein Konto“, den ersten Benutzer gibt es nicht mehr.
       const alt = x.sammlung as Sammlung & { administrator?: Sammlung['konto'] };
       const sammlung = { ...leereSammlung(), ...x.sammlung, konto: x.sammlung.konto ?? alt.administrator ?? { name: '', email: '' } };
@@ -145,6 +152,8 @@ export function planAus(s: Sammlung, db: PlanDatenbank | null = s.datenbank): Ei
       ...(s.optional.beruflich ? { beruflich: true } : {}),
       mail: m ? { aktiv: m.aktiv, host: m.host.trim(), port: m.port, verbindung: m.verbindung, benutzer: m.benutzer.trim(), absender: m.absender.trim(), selbstsigniert: m.selbstsigniert, ...(s.verweise.mail ? { passwort: s.verweise.mail } : {}) } : null,
     },
+    ...(s.nutzung ? { nutzung: s.nutzung } : {}),
+    ...(s.organisation && s.nutzung && beruflichBei(s.nutzung) ? { organisation: s.organisation } : {}),
   };
 }
 
@@ -156,12 +165,15 @@ export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
     ablage: p.ablage,
     konto: { name: p.konto.name, email: p.konto.email },
     paketeVorgabe: p.pakete,
+    nutzung: p.nutzung ?? null,
+    organisation: p.organisation ?? null,
     optional: {
       adresse: p.optional.adresse ?? '', bundesland: p.optional.bundesland ?? '', beispiele: p.optional.beispiele,
       ...(p.optional.beruflich ? { beruflich: true } : {}),
       mail: m ? { aktiv: m.aktiv, host: m.host, port: m.port, verbindung: m.verbindung, benutzer: m.benutzer, absender: m.absender, selbstsigniert: m.selbstsigniert, mitPasswort: false } : null,
     },
-    besucht: ['ablage', 'konto', ...(p.pakete ? ['pakete' as const] : []), 'optional'],
+    // Ohne `nutzung` (Datei vor #1045) fragt der Assistent den Schritt „Nutzung“ noch ab.
+    besucht: ['ablage', 'konto', ...(p.nutzung ? ['nutzung' as const] : []), ...(p.pakete ? ['pakete' as const] : []), 'optional'],
     zurZusammenfassung: true,
     verweise: { konto: p.konto.passwort, mail: m?.passwort, datenbank: p.datenbank?.passwort },
     datenbank: p.datenbank,

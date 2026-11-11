@@ -379,6 +379,15 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByLabel(w('Passwort wiederholen')).fill(ADMIN.passwort);
   await bild(s, 'einrichtung-konto');
   await s.getByRole('button', { name: w('Weiter') }).click();
+  // Wofür nutzt du Ablago? (#1045): fürs Bild „Beides“ mit Katrins Organisation; weiter geht es mit „Für zu Hause“,
+  // damit die übrigen Bilder die Werkbank-Vorlage Haushalt zeigen (ohne Paket Basis ginge die Organisation nicht).
+  await s.getByRole('heading', { name: w('Wofür nutzt du Ablago?') }).waitFor();
+  await s.getByRole('radio', { name: w(/^Beides/) }).check();
+  await s.getByLabel(w('Name'), { exact: true }).fill('Katrin Beispiel Grafikdesign');
+  await bild(s, 'einrichtung-nutzung', { fullPage: true });
+  await s.getByLabel(w('Name'), { exact: true }).fill('');
+  await s.getByRole('radio', { name: w(/^Für zu Hause/) }).check();
+  await s.getByRole('button', { name: w('Weiter') }).click();
   // Pakete dazuholen (#460): Katalog abrufen (ohne Internet: Hinweis), dann überspringen.
   await s.getByRole('heading', { name: w('Pakete dazuholen') }).waitFor();
   await s.getByRole('button', { name: w('Überspringen') }).waitFor({ timeout: 30_000 });

@@ -49,7 +49,7 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     if (!b) return 'ausgelassen';
     await api.regionSetzen({ bundesland: b as never });
   },
-  // Merkmal „beruflich genutzt“ (#1032): bis #1045 nur aus einer Datei; die Werkbank-Vorlage folgt ihm.
+  // Merkmal „beruflich genutzt“ (#1032) aus dem Schritt „Nutzung“ (#1045); die Werkbank-Vorlage folgt ihm.
   async nutzung() {
     if (!holeStand().sammlung.optional.beruflich) return 'ausgelassen';
     await api.setzeMerkmale({ beruflich: true });
@@ -79,6 +79,17 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     setzeLauf((l) => ({ ...l, pakete: e }));
     const nicht = [...e.fehlgeschlagen.map((f) => f.name), ...e.nichtInstalliert.map((f) => f.name)];
     if (nicht.length) return t('einrichtung.lauf.pakete.teil', { namen: nicht.join(', ') });
+  },
+  // „Deine Organisation“ (#1045, #995): nach den Paketen, weil Basis den Mappentyp mitbringt. Gibt es schon eine eigene
+  // Organisation (etwa nach „Erneut versuchen“), ist nichts zu tun; fehlt der Mappentyp, bleibt ein Hinweis statt eines
+  // Fehlers – die Organisation lässt sich danach in der Ablage anlegen.
+  async organisation() {
+    const s = holeStand().sammlung;
+    if (!s.organisation || !s.optional.beruflich) return 'ausgelassen';
+    const st = await api.organisation();
+    if (st.organisationen.length) return;
+    if (!st.typen.length) return t('einrichtung.lauf.organisation.ohne-basis', { name: s.organisation.name });
+    await api.organisationAnlegen(s.organisation);
   },
 };
 
@@ -121,7 +132,7 @@ export function stufenZuruecksetzen(stufen: Stufe[]) {
 
 /** Welche Stufen ein Schritt des Assistenten betrifft – und umgekehrt (für „Ändern“ nach einem Fehler). */
 export const STUFEN_JE_SCHRITT = {
-  ablage: ['ablage'], konto: ['ablage'], pakete: ['pakete'], optional: ['adresse', 'region', 'mail', 'beispiele'],
+  ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'beispiele'],
 } as const satisfies Record<string, readonly Stufe[]>;
 
 /** Für die Konfigurationsdatei (#806): aktueller Plan. */

@@ -19,7 +19,7 @@ import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte
 import type { AblaufEingabe, AblaufErgebnis, AblaufInstallation, AblaufPlan, Ergaenzung, HerkunftPruefung, InstalliertesPaket, Katalog, KiUebersicht, LaeuferZustand, RechtePunkt } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
 import type { EntdeckenStand } from '../../shared/src/entdecken';
-import type { DateiFehler, Einrichtungsplan, Planprobleme } from '../../shared/src/einrichtungsplan';
+import type { DateiFehler, Einrichtungsplan, PlanOrganisation, Planprobleme } from '../../shared/src/einrichtungsplan';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstellt, SelbstErstelltDetail } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
 import type { Merkmale } from '../../shared/src/merkmale';
@@ -962,6 +962,8 @@ export const api = {
   organisation: () => anfrage<OrganisationStand>('GET', '/api/werkbank/organisation'),
   setzeOrganisation: (e: Record<string, unknown>) => anfrage<OrganisationStand>('PUT', '/api/werkbank/organisation', e),
   organisationUebernehmen: () => anfrage<OrganisationStand>('POST', '/api/werkbank/organisation/uebernehmen'),
+  /** „Deine Organisation“ aus dem Einrichtungsassistenten (#1045). */
+  organisationAnlegen: (o: PlanOrganisation) => anfrage<OrganisationStand>('POST', '/api/werkbank/organisation/anlegen', o),
   sprachen: () => anfrage<SprachenStand>('GET', '/api/werkbank/sprachen'),
   sprachenSetzen: (e: Partial<SprachenStand['einstellung']>) => anfrage<SprachenStand>('PUT', '/api/werkbank/sprachen', e),
   uebersetzenStand: () => anfrage<UebersetzenStand>('GET', '/api/werkbank/uebersetzen'),

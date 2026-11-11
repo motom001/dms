@@ -17,6 +17,8 @@ Name, Anschrift, Kontakt und die Verantwortlichen im Sinne der DSGVO pflegst du 
 
 Gab es schon einen Verantwortlichen in den Einstellungen der [Auskunft](datenschutz.md), zeigt die Werkbank ihn unter *Bisherige Angabe der Auskunft*. **Als eigene Organisation anlegen** macht daraus eine Organisation mit dem Merkmal (Name, Straße, PLZ und Ort, E-Mail und Telefon, so weit Ablago sie im Text erkennt; der Rest steht in der Beschreibung). Bis dahin gilt die bisherige Angabe weiter.
 
+Im **Einrichtungsassistenten** geht es noch einfacher: Wählst du bei „Wofür nutzt du Ablago?“ die Arbeit oder beides, fragt er nach **Deiner Organisation** (nur der Name ist Pflicht) und legt sie mit „Jetzt einrichten“ samt Merkmal an, verantwortlich ist sie selbst ([Nutzung](installation.md#nutzung)).
+
 ## Wer das Merkmal setzen darf
 
 Das Merkmal entscheidet, wer auf Auskünften und im Löschkonzept als Verantwortlicher steht. Darum ist das Feld geschützt:

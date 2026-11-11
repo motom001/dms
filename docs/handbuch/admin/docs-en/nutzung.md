@@ -17,5 +17,5 @@ Hiding is **for tidiness, not protection**: values of hidden fields stay saved a
 
 - Only people with **Full administration** may change the attribute ([Who may administer Ablago?](verwalten.md)); the area can’t be granted on its own. Everyone signed in may read it – the folder form needs it.
 - When you switch it, Ablago checks right away which folders now have required fields left open (for example in a section only shown for work) and shows them as “doesn’t fit” as usual.
-- The [setup file](einrichtungsdatei.md) knows it as `optionales: beruflich: true`. The setup assistant will ask about it itself later.
+- The setup assistant asks for it in the [Use](installation.md#nutzung) step ("What will you use Ablago for?") and, for work use, can create your [own organisation](organisation.md) straight away. The [setup file](einrichtungsdatei.md) knows it as `nutzung: beruflich` or `beides` (older files: `optionales: beruflich: true`).
 - The attribute is stored in the database and is therefore in every [backup](sicherung.md). The [full export](export.md) stores it as `struktur/merkmale.json`, and the API returns it read-only at `GET /api/v1/merkmale`.

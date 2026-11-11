@@ -17,6 +17,8 @@ You keep name, address, contact and the controllers under the GDPR **once** – 
 
 If there already was a controller in the [request](datenschutz.md) settings, the Workbench shows it under *Previous entry for requests*. **Create as own organisation** turns it into an organisation with the attribute (name, street, postcode and town, email and phone as far as Ablago recognises them in the text; the rest goes into the description). Until then the previous entry still applies.
 
+The **setup wizard** makes it even simpler: if you choose work or both under "What will you use Ablago for?", it asks for **Your organisation** (only the name is required) and creates it with "Set up now", including the attribute, with itself as controller ([Use](installation.md#nutzung)).
+
 ## Who may set the attribute
 
 The attribute decides who appears as controller on requests and in the deletion concept. That is why the field is protected:

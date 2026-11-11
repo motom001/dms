@@ -24,6 +24,8 @@ export const HILFE = {
   'einrichtung.wahl': admin('installation/', 'Neu einrichten oder wiederherstellen', 'neu-einrichten-oder-wiederherstellen'),
   'einrichtung.mandant': admin('installation/', 'Name deiner Ablage', 'haushalt'),
   'einrichtung.konto': admin('installation/', 'Dein Konto', 'dein-konto'),
+  // #1045: „Wofür nutzt du Ablago?“ – privat, beruflich, beides und die eigene Organisation.
+  'einrichtung.nutzung': admin('installation/', 'Nutzung', 'nutzung'),
   'einrichtung.pakete': admin('installation/', 'Pakete dazuholen', 'pakete-dazuholen'),
   'einrichtung.optional': admin('installation/', 'Optionales', 'optionales'),
   'einrichtung.zusammenfassung': admin('installation/', 'Zusammenfassung', 'zusammenfassung'),

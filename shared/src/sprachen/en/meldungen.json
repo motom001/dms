@@ -1838,5 +1838,8 @@
   "organisation.schon-da": "There already is an own organisation – please add the previous entry there by hand.",
   "organisation.ohne-basis": "This needs a folder type with the attribute “own organisation” – the package Basis from version 1.7.0.",
   "paketerstellung.organisation": "Own organisation (attribute, write protection, display condition)",
-  "paketerstellung.zusammengesetzt": "Field type Combined"
+  "paketerstellung.zusammengesetzt": "Field type Combined",
+  "einrichtungsdatei.nutzung": "What Ablago is used for: privat (home), beruflich (work) or beides (both). Work and both set the attribute “used for work” and preselect suitable packages in the wizard; if missing, the wizard asks.",
+  "einrichtungsdatei.organisation": "Your organisation (only for work and both): name required, address, email and phone optional. “Set up now” creates it as your own organisation with the Basis package.",
+  "organisation.name-fehlt": "Please enter a name for the organisation."
 }

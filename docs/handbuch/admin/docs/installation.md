@@ -11,9 +11,9 @@ Ablago läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io/
 
 ## Der Einrichtungsassistent
 
-Beim ersten Aufruf führt ein Assistent in zehn Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet.
+Beim ersten Aufruf führt ein Assistent in elf Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet.
 
-**Erst sammeln, dann einrichten:** Sprache, Code, Datenbank und „Neu oder Sicherung“ wirken sofort, weil sie technisch nötig sind. Ab „Ablage“ sammelt der Assistent nur: Name der Ablage, dein Konto, Pakete und Optionales. Angelegt wird dabei **nichts**. Mit **Zurück** oder einem Klick in die Schrittleiste kommst du jederzeit zu jedem dieser Schritte. Am Ende zeigt die [Zusammenfassung](#zusammenfassung) alles auf einer Seite, und erst **Jetzt einrichten** legt los. Brichst du vorher ab oder lädst die Seite neu, bleibt keine halbe Einrichtung zurück. Deine Eingaben merkt sich der Browser bis dahin, Passwörter nicht.
+**Erst sammeln, dann einrichten:** Sprache, Code, Datenbank und „Neu oder Sicherung“ wirken sofort, weil sie technisch nötig sind. Ab „Ablage“ sammelt der Assistent nur: Name der Ablage, dein Konto, wofür du Ablago nutzt, Pakete und Optionales. Angelegt wird dabei **nichts**. Mit **Zurück** oder einem Klick in die Schrittleiste kommst du jederzeit zu jedem dieser Schritte. Am Ende zeigt die [Zusammenfassung](#zusammenfassung) alles auf einer Seite, und erst **Jetzt einrichten** legt los. Brichst du vorher ab oder lädst die Seite neu, bleibt keine halbe Einrichtung zurück. Deine Eingaben merkt sich der Browser bis dahin, Passwörter nicht.
 
 **Keine einzelnen Speichern-Knöpfe:** In jedem Schritt übernimmt **Weiter** alles, was in den Feldern steht, auch Vorschläge, die du nicht geändert hast (sie tragen den Hinweis „vorgeschlagen – wird mit „Weiter“ übernommen“). Leer gelassene Felder bleiben leer, und es gibt keine versteckten Vorgaben. **Zurück** und **Weiter** stehen in jedem Schritt unten an derselben Stelle.
 
@@ -66,13 +66,25 @@ Name, E-Mail-Adresse und Passwort **deines eigenen Kontos** – mit deiner einen
 
 **Weiter** prüft Adresse und Passwort gleich, angelegt wird das Konto aber erst mit **Jetzt einrichten**. Danach bist du angemeldet, und zwar gleich im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus). Die **Zwei-Faktor-Anmeldung** bietet dir der Assistent am Ende an ([Fertig](#fertig)). Weitere Personen lädst du nach der Einrichtung unter **Werkbank → Benutzer** ein – die Übersicht erinnert daran, dass eine zweite Person verwalten können sollte.
 
+### Nutzung { #nutzung }
+
+![Nutzung](bilder/einrichtung-nutzung.png)
+
+**Wofür nutzt du Ablago?** Drei Antworten: **Für zu Hause**, **Für meine Arbeit oder meinen Betrieb** oder **Beides**. Weiter geht es erst mit einer Antwort; ändern kannst du sie später unter **Werkbank → [Nutzung](nutzung.md)**.
+
+- **Für meine Arbeit oder meinen Betrieb** und **Beides** setzen das Merkmal [beruflich genutzt](nutzung.md): Mappentypen zeigen dann ihre beruflichen Felder, und Pakete, die bei beruflicher Nutzung länger aufbewahren, richten das beim Installieren gleich so ein.
+- Die Antwort **wählt im nächsten Schritt Pakete vor**: zu Hause Basis, Haushalt, Verträge und Rechnungen; beruflich Basis, Verträge, Rechnungen und Compliance; bei „Beides“ alle davon. Vorgewählt wird nur, was es im Katalog gibt – abwählen kannst du alles.
+- Die **Werkbank** startet zu Hause mit der Vorlage *Haushalt*, beruflich mit *Betrieb* (siehe [Übersicht](uebersicht.md)).
+
+**Deine Organisation:** Bei beruflicher Nutzung fragt der Schritt gleich darunter nach deiner eigenen Organisation – Name, Anschrift, E-Mail und Telefon. Nur der Name ist Pflicht, alles andere ist freiwillig. Mit **Jetzt einrichten** legt Ablago daraus eine Organisation mit dem Merkmal [eigene Organisation](organisation.md) an; so weiß Ablago, wer „wir“ sind, etwa für Auskünfte nach der DSGVO. Dafür braucht es das Paket **Basis** (ab 1.7.0) – ist eine Organisation angegeben, ist Basis Pflicht, und die Zusammenfassung meldet, wenn es fehlt. Lässt du alle Felder leer, legt Ablago keine an; das geht auch später in der Ablage.
+
 ### Pakete dazuholen
 
 ![Pakete dazuholen](bilder/einrichtung-pakete.png)
 
 Installiert wird erst mit **Jetzt einrichten**; hier wählst du nur. Erst in diesem Schritt fragt Ablago den [offiziellen Paketkatalog](pakete.md) ab – vorher baut es keine Verbindung dafür auf. Die Anfrage geht an catalog.ablago.app (ausgeliefert von GitHub Pages); dabei geht nur die Anfrage selbst hinaus, keine Daten aus deiner Ablage. Die Liste zeigt je Paket Name, Beschreibung und was es anlegt; Pakete mit Code tragen „mit Code“.
 
-- **Texterkennung und Benachrichtigungen sind vorausgewählt** – ohne Texterkennung werden gescannte Dokumente nicht durchsuchbar, ohne Benachrichtigungen kommt keine Tägliche Zusammenfassung. Darunter fragt **Weitere Sprachen?** nach Zusatzsprachen (Deutsch und Englisch sind immer dabei). Alles andere kreuzt du an.
+- **Vorgewählt ist, was zu deiner Antwort im Schritt [Nutzung](#nutzung) passt, dazu Texterkennung und Benachrichtigungen** – ohne Texterkennung werden gescannte Dokumente nicht durchsuchbar, ohne Benachrichtigungen kommt keine Tägliche Zusammenfassung. Darunter fragt **Weitere Sprachen?** nach Zusatzsprachen (Deutsch und Englisch sind immer dabei). Alles andere kreuzt du an.
 - **Abhängigkeiten kommen mit**, z. B. „Basis“ für „Haushalt“; sie sind mit „kommt mit – gebraucht von …“ markiert.
 - **Weiter** führt zu **einer** Seite mit allen Fragen: die [Rechte](pakete.md#rechte-eines-pakets) aller Pakete mit Code (ein Haken für alle), Namen nur bei Konflikten, Beispiel-Mappen, mitgelieferte Automatisierungen und Pflicht-Einstellungen, dann **Pakete übernehmen und weiter**. Siehe [Mehrere Pakete in einem Schritt installieren](pakete.md#mehrere-pakete-in-einem-schritt-installieren).
 - **Überspringen** geht jederzeit; Pakete holst du später unter **Werkbank → [Pakete](pakete.md)**.
@@ -96,11 +108,11 @@ Alles lässt sich auch später in der Werkbank einstellen.
 
 ![Zusammenfassung](bilder/einrichtung-zusammenfassung.png)
 
-Alles auf einer Seite, je Abschnitt mit **Ändern**: Ablage, dein Konto (mit „Gesamte Verwaltung“), Pakete (mit der Zahl der eingeschalteten Automatisierungen) und Optionales. Passwörter stehen dort nur als „gesetzt“. Nach **Ändern** führt **Weiter** zurück zur Zusammenfassung; alles andere bleibt, wie es war.
+Alles auf einer Seite, je Abschnitt mit **Ändern**: Ablage, dein Konto (mit „Gesamte Verwaltung“), Nutzung (mit Vorlage der Werkbank und deiner Organisation), Pakete (mit der Zahl der eingeschalteten Automatisierungen) und Optionales. Passwörter stehen dort nur als „gesetzt“. Nach **Ändern** führt **Weiter** zurück zur Zusammenfassung; alles andere bleibt, wie es war.
 
 **Als Datei speichern** legt die Einrichtung als [Konfigurationsdatei](einrichtungsdatei.md) ab, ohne Passwörter und ohne Schlüssel.
 
-**Jetzt einrichten** prüft alles noch einmal und führt es dann aus, mit Fortschritt: Ablage und dein Konto anlegen, Schlüssel erzeugen, Adresse, Bundesland und E-Mail-Versand speichern, Beispiele laden, Pakete installieren. Klappt etwas nicht, steht dort, was und warum. Was schon erledigt ist, bleibt erhalten; mit **Ändern** korrigierst du die Angabe, mit **Erneut versuchen** geht es an dieser Stelle weiter. Doppelt angelegt wird nichts.
+**Jetzt einrichten** prüft alles noch einmal und führt es dann aus, mit Fortschritt: Ablage und dein Konto anlegen, Schlüssel erzeugen, Adresse, Bundesland, Nutzung und E-Mail-Versand speichern, Beispiele laden, Pakete installieren, deine Organisation anlegen. Klappt etwas nicht, steht dort, was und warum. Was schon erledigt ist, bleibt erhalten; mit **Ändern** korrigierst du die Angabe, mit **Erneut versuchen** geht es an dieser Stelle weiter. Doppelt angelegt wird nichts.
 
 ### Fertig: Notfallblatt { #fertig }
 
@@ -116,7 +128,7 @@ Dazu Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub
 
 Danach: Wie es weitergeht, steht kurz unter [Einrichten in fünf Schritten](fuenf-schritte.md) – unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, eigene [Mappentypen](mappentypen.md) anlegen und weitere [Benutzer einladen](benutzer.md) – am besten auch eine zweite Person, die verwalten darf.
 
-**Für Selbständige und kleine Betriebe:** Die Werkbank startet mit der schlanken Vorlage *Haushalt*. Stell unter **Werkbank → Werkbank anpassen** die Vorlage **Betrieb** ein – dann siehst du auch Nummernkreise, Archivmodus, Postfächer, Datenschutz und die übrigen Bereiche, die ein Betrieb braucht (siehe [Übersicht](uebersicht.md)).
+**Für Selbständige und kleine Betriebe:** Hast du im Schritt [Nutzung](#nutzung) „Für meine Arbeit oder meinen Betrieb“ oder „Beides“ gewählt, startet die Werkbank mit der Vorlage **Betrieb** – mit Nummernkreisen, Archivmodus, Postfächern, Datenschutz und den übrigen Bereichen, die ein Betrieb braucht. Sonst startet sie mit der schlanken Vorlage *Haushalt*; umstellen kannst du jederzeit unter **Werkbank → Werkbank anpassen** (siehe [Übersicht](uebersicht.md)).
 
 ## Datenbank-Anbindung
 

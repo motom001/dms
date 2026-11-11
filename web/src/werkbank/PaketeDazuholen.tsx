@@ -24,13 +24,15 @@ export const VORAUSWAHL = ['texterkennung', 'benachrichtigungen'];
  * Auswahl aus dem offiziellen Katalog und Installation, z. B. im Einrichtungsassistenten (#460).
  * Ist der Katalog nicht erreichbar: Sammeldatei hochladen (#461) oder überspringen.
  */
-export function PaketeDazuholen({ weiter, ueberspringen, geaendert, erneut, zurueck, sammeln, start, vorgabe }: {
+export function PaketeDazuholen({ weiter, ueberspringen, geaendert, erneut, zurueck, sammeln, start, vorgabe, empfohlen = VORAUSWAHL }: {
   weiter(e: AblaufErgebnis): void; ueberspringen(): void;
   /** Einrichtungsassistent (#804): nur sammeln, installiert wird erst mit „Jetzt einrichten“. */
   sammeln?(w: PaketWahl): void;
   /** Vorgewählt statt der Empfehlung, z. B. beim „Ändern“ oder aus einer Konfigurationsdatei (#806). */
   start?: string[];
   vorgabe?: PaketVorgabe;
+  /** Als „empfohlen“ markiert und oben (#1045: je nach Antwort auf „Wofür nutzt du Ablago?“); Vorgabe VORAUSWAHL. */
+  empfohlen?: string[];
   /** Im Assistenten erneut geöffnet (#647): Installiertes oben zeigen, „Überspringen“ heißt „Weiter“. */
   erneut?: boolean;
   /** „Zurück“ im Assistenten (#647). */
@@ -89,11 +91,11 @@ export function PaketeDazuholen({ weiter, ueberspringen, geaendert, erneut, zuru
   const schonDa = erneut && stand.installiert.length > 0
     ? <div className="hinweis gut klein" role="status"><p><strong>{t('werkbank.paketedazuholen.schon-installiert')}</strong> {stand.installiert.map((p) => p.name).join(', ')}{t('werkbank.paketedazuholen.waehle-weitere-pakete-oder')}</p></div> : null;
   // Vorauswahl: Texterkennung, wenn sie hier passt und noch fehlt; empfohlene oben, sonst wie im Katalog nach Namen.
-  const sortiert: Katalog = { ...katalog, pakete: [...katalog.pakete].sort((a, b) => Number(VORAUSWAHL.includes(b.id)) - Number(VORAUSWAHL.includes(a.id))) };
+  const sortiert: Katalog = { ...katalog, pakete: [...katalog.pakete].sort((a, b) => Number(empfohlen.includes(b.id)) - Number(empfohlen.includes(a.id))) };
   return (
     <>
       {schonDa}
-      <PaketAblauf quelle={{ art: 'katalog', katalog: sortiert, dms: stand.dms, installiert: stand.installiert }} start={start ?? (erneut ? [] : VORAUSWAHL)} empfohlen={VORAUSWAHL} sammeln={sammeln} vorgabe={vorgabe}
+      <PaketAblauf quelle={{ art: 'katalog', katalog: sortiert, dms: stand.dms, installiert: stand.installiert }} start={start ?? (erneut ? [] : empfohlen)} empfohlen={empfohlen} sammeln={sammeln} vorgabe={vorgabe}
         aktionen={<>{zurueckKnopf}<button type="button" className="knopf" onClick={ueberspringen}>{erneut ? t('werkbank.paketedazuholen.weiter-ohne-weitere-pakete') : t('werkbank.paketedazuholen.ueberspringen')}</button></>}
         geaendert={geaendert} fertig={weiter} />
     </>

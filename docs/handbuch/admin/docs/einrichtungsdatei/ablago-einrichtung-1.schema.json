@@ -84,6 +84,55 @@
         }
       }
     },
+    "nutzung": {
+      "enum": [
+        "privat",
+        "beruflich",
+        "beides"
+      ],
+      "description": "Wofür Ablago genutzt wird: privat, beruflich oder beides. Beruflich und beides setzen das Merkmal „beruflich genutzt“ und wählen im Assistenten passende Pakete vor; fehlt die Angabe, fragt der Assistent."
+    },
+    "organisation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "description": "Deine Organisation (nur bei beruflich und beides): Name Pflicht, Anschrift, E-Mail und Telefon freiwillig. „Jetzt einrichten“ legt sie mit dem Paket Basis als eigene Organisation an.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "strasse": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "hausnummer": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "plz": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "ort": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200,
+          "pattern": "^[^\\s@]+@[^\\s@]+$"
+        },
+        "telefon": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    },
     "pakete": {
       "type": "array",
       "maxItems": 100,
