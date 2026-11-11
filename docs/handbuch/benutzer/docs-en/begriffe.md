@@ -358,6 +358,10 @@ See also: [Package](#paket), [Service account](#dienstkonto).
 <a id="berechtigungen"></a>**Permissions** (*Berechtigungen*) · ✓ everyday word · administrators  
 Who may do what. On the folder type – create, read, edit, delete, see passwords – with a default plus rules; on the view – see, create, export – inherited by the sub-views. They don't apply to administrators.
 
+<a id="vorgabe"></a>**Preset** (*Vorgabe*) · ~ with explanation · administrators  
+A folder a package brings to keep – such as the contract types "Electricity" or "Rent" from the Contracts package, often with templates. Always comes along, carries the marking "Preset from the package …" and is otherwise an ordinary folder. Updates only bring new versions as long as nobody has changed it; whatever was deleted stays deleted. Unlike an example (invented data to try out, on request, removable).  
+See also: [Package](#paket), [Sample folder](#beispiel-mappe), [Template](#vorlage).
+
 <a id="herausgeber"></a>**Publisher** (*Herausgeber*) · ~ with explanation · administrators  
 Who publishes a package, as a reversed domain, e.g. app.ablago for the official packages (#1084). It is shown next to the name, e.g. "Contracts · app.ablago". Ablago never replaces an installed package with one of the same ID from a different publisher.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).
@@ -383,6 +387,10 @@ An if-then building block of the permissions – a condition, then grant or with
 Then card of an automation with the trigger "Schedule" – it tells a package that its time has been reached (e.g. "Check contracts daily" at 5 a.m.) so that it recalculates something that depends only on the date. The package works with its own rights; an automation supplied with a package only calls its own package.  
 See also: [Package](#paket), [Calculated field](#berechnetes-feld), [Switched on straight away](#gleich-eingeschaltet).
 
+<a id="beispiel-mappe"></a>**Sample folder** (*Beispiel-Mappe*) · ✓ everyday word · administrators  
+A folder with invented data that a package creates on request when installing (tick "Create sample folders"), so you can see what belongs in a folder – to try out, not to keep. Unchanged examples can be removed again together with their documents. Unlike a preset.  
+See also: [Package](#paket), [Preset](#vorgabe), [Demo data](#demo-daten).
+
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
 The workbench area under Post and incoming for text recognition, archive version, automatic shrinking, typos and synonyms. Combines the former areas "Text recognition" and "Search".
 
@@ -403,6 +411,10 @@ See also: [Package](#paket), [Run package on schedule](#paket-nach-zeitplan-ausf
 <a id="systemrolle"></a>**System role** (*Systemrolle*) · ~ with explanation · administrators  
 Whether a user is an administrator or a member. Only administrators get into the workbench.  
 See also: [Role](#rolle), [Administrator](#administrator).
+
+<a id="vorlage"></a>**Template** (*Vorlage*) · ✓ everyday word · administrators  
+Plain text (Markdown) with placeholders such as {vertragsnummer}, e.g. a cancellation letter on a contract type. Packages bring templates with their presets; they are stored as a document in the folder's tab. No HTML, no images, links only https://.  
+See also: [Preset](#vorgabe), [Package](#paket).
 
 <a id="testlauf"></a>**Test run** (*Testlauf*) · ~ with explanation · administrators  
 Checks which permissions a particular user ends up with.
@@ -507,4 +519,4 @@ See also: [Version](#version).
 
 Which German words are still being discussed, which questions have been decided and which words the German texts avoid is listed on the [German page](../../begriffe/). It concerns the German wording.
 
-*As of: 2026-11-10*
+*As of: 2026-11-11*

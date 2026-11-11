@@ -424,6 +424,7 @@
   "loeschprotokoll.paketinstallation-zurueckgenommen": "Paketinstallation zurückgenommen",
   "loeschprotokoll.post-aufgeloest": "Post in eine Mappe aufgelöst",
   "loeschprotokoll.beispiele-eines-pakets": "Beispiele eines Pakets entfernt",
+  "loeschprotokoll.vorgaben-eines-pakets": "Unbenutzte Vorgaben eines Pakets entfernt",
   "loeschprotokoll.mappen-id": "Mappen-Id",
   "loeschprotokoll.dokument-id": "Dokument-Id",
   "loeschprotokoll.groesse-bytes": "Größe (Bytes)",

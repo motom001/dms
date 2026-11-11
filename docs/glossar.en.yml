@@ -283,6 +283,15 @@ begriffe:
   Paket:
     begriff: Package
     beschreibung: An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing.
+  Beispiel-Mappe:
+    begriff: Sample folder
+    beschreibung: A folder with invented data that a package creates on request when installing (tick "Create sample folders"), so you can see what belongs in a folder – to try out, not to keep. Unchanged examples can be removed again together with their documents. Unlike a preset.
+  Vorgabe:
+    begriff: Preset
+    beschreibung: A folder a package brings to keep – such as the contract types "Electricity" or "Rent" from the Contracts package, often with templates. Always comes along, carries the marking "Preset from the package …" and is otherwise an ordinary folder. Updates only bring new versions as long as nobody has changed it; whatever was deleted stays deleted. Unlike an example (invented data to try out, on request, removable).
+  Vorlage:
+    begriff: Template
+    beschreibung: Plain text (Markdown) with placeholders such as {vertragsnummer}, e.g. a cancellation letter on a contract type. Packages bring templates with their presets; they are stored as a document in the folder's tab. No HTML, no images, links only https://.
   Herausgeber:
     begriff: Publisher
     beschreibung: Who publishes a package, as a reversed domain, e.g. app.ablago for the official packages (#1084). It is shown next to the name, e.g. "Contracts · app.ablago". Ablago never replaces an installed package with one of the same ID from a different publisher.

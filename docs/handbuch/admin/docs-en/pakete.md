@@ -130,6 +130,28 @@ Many packages bring **sample folders** with invented data so that you can see wh
 
 For packages installed before 0.223.0, Ablago doesn't know the examples as such; you delete them like other folders.
 
+## Presets { #vorgaben }
+
+Some packages bring **presets**: folders to **keep**, not to try out. The *Contracts* package, for instance, creates the usual **contract types** – electricity, gas, mobile, rent, insurance … – with typical periods and templates such as a cancellation letter. Unlike [examples](#beispiele), presets **always** come along (no tick) and are real data of your Library.
+
+- **In the preview:** under **Presets** you see per folder type what will be created. If the package supplies presets in folder types of **another package** or attaches templates to its presets (for instance *Vehicles* the contract type "Car purchase contract" in *Contracts*), the box **Adds to folders of other packages** says so as well – with the package's name. If that package comes from another publisher, the preview says so explicitly.
+- **Marking:** a preset shows "Preset from the package *Contracts*" above the tabs – the same badge as for notes from packages. Otherwise it is an ordinary folder: you can change it, delete it and attach documents; permissions apply as for every folder of its folder type. The history names the package's account ("Package Contracts") as creator.
+- **Language:** if the package brings texts in several languages, Ablago creates the presets in the **installation's language** (see [Languages](sprachen.md)) – "Electricity" instead of "Strom" when it is English.
+- **Templates:** presets can bring **text templates** (plain Markdown, e.g. "Cancel tenancy.md"). They are stored as documents in the preset's tab, origin *from a package*. Templates are plain text: no HTML, no images, links only `https://`, at most 256 KB per template – Ablago checks this again when installing.
+- **Quiet:** presets trigger no [automations](automatisierungen.md) and no folder events when installing – like examples.
+
+**Updates** add new presets and templates. A preset that is still exactly as the package created it gets the new version. **If you changed it, it stays as it is** – the preview then says "changed by you – stays as it is; the new version in the package is not applied". **If you deleted a preset, it stays deleted**; an update doesn't create it again. Nothing is created twice: every preset has a fixed key by which Ablago finds it again.
+
+**Removing** the package:
+
+- Presets that are **in use** – another folder refers to them, they have notes or documents that don't come from the package – **stay**. In the package's own folder types they prevent the removal; Ablago names them ("The preset "Rent" is still in use").
+- Unused presets in the package's own folder types go with the package.
+- Unused presets in folder types of **other** packages: Ablago **asks** – **Remove them too** or **Keep** (then they stay as ordinary folders).
+- Templates the package attached to presets of other packages go with it – **only those**; whatever you or other packages put there stays.
+- Presets that stay keep their key: if you install the package again later, it takes them back in instead of creating them twice (preview: "already exists – taken back in without changes"). It doesn't change them.
+
+The deletion log records removed presets as "unused package presets removed".
+
 ## Updating { #aktualisieren }
 
 **Check for new versions** queries the catalogue (at the push of a button) and marks packages for which there is something newer. In the package, **Update to … …** shows a preview of what is added and a link to the changes.
@@ -137,7 +159,8 @@ For packages installed before 0.223.0, Ablago doesn't know the examples as such;
 An update **only adds**:
 
 - new folder types and views,
-- new fields and tabs on existing folder types.
+- new fields and tabs on existing folder types,
+- new [presets](#vorgaben) and templates; unchanged presets get the new version.
 
 It **deletes nothing** and **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so.
 
@@ -171,7 +194,7 @@ For package authors, the format (`aus_text`) is in the [registry's rules](https:
 
 ## Removing { #entfernen }
 
-**Remove** deletes the package's folder types, views and word lists and its entry – and **unchanged sample folders** together with their documents (see [Examples](#beispiele)). That only works
+**Remove** deletes the package's folder types, views and word lists and its entry – and **unchanged sample folders** together with their documents (see [Examples](#beispiele)) as well as unused [presets](#vorgaben). That only works
 
 - as long as there are **no other folders** of these folder types (not in the bin either) and
 - **no other package** depends on it.

@@ -1260,6 +1260,8 @@
   "suche.vom-typ": "points to a folder of type",
   "paket-hinweis.titel": "Notes from packages",
   "paket-hinweis.marke-titel": "Note from the package {paket} – not from Ablago",
+  "vorgabe.zeile": "Preset from the package",
+  "vorgabe.marke-titel": "Supplied by the package {paket} – you can change it; updates don’t overwrite your changes",
   "tabelle.leer": "No {name} yet",
   "tabelle.nach-dem-speichern": "You can add {name} after saving – with “{neu}” below the table.",
   "tabelle.weitere": "Show {anzahl} more (of {gesamt})",

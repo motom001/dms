@@ -227,6 +227,10 @@ export interface InstalliertesPaket {
    * Entfernen des Pakets und mit „Beispiele entfernen“ samt ihren Dokumenten weg; fehlt bei älteren Installationen.
    */
   beispielMappen?: BeispielStand[];
+  /** Vorgaben (#1038) je Schlüssel: Mappe, Stand nach dem letzten Schreiben, gelöscht, Vorlagen (shared/src/vorgaben.ts). */
+  vorgaben?: Record<string, import('./vorgaben').VorgabeStand>;
+  /** Vorlagen an Vorgaben anderer Pakete (#1038, `ergaenzt`) – nur diese Dokumente nimmt das Entfernen mit. */
+  ergaenzungen?: Array<import('./vorgaben').ErgaenzungStand>;
   abhaengigkeiten: Record<string, string>;
   /** Einstellungen, wie das Paket sie beschreibt (#197); null = keine. */
   einstellungen?: import('./paketeinstellungen').Einstellungsbeschreibung | null;
@@ -646,8 +650,10 @@ export const inMB = (bytes: number): string => (Math.round(bytes / 104857.6) / 1
  * Legt eine Neuinstallation sichtbar etwas an – Mappentypen, Ansichten oder Beispiele (#643)? Nur dann zeigt die
  * Vorschau „Das wird angelegt“; Pakete nur mit Code (z. B. Texterkennung) beschreiben stattdessen, was sie tun.
  */
-export function legtEtwasAn(v: { typen: Array<{ vorhanden: boolean; geloescht?: boolean }>; sichten: Array<{ vorhanden: boolean }>; beispiele: number }): boolean {
-  return v.typen.some((t) => !t.vorhanden && !t.geloescht) || v.sichten.some((s) => !s.vorhanden) || v.beispiele > 0;
+export function legtEtwasAn(v: { typen: Array<{ vorhanden: boolean; geloescht?: boolean }>; sichten: Array<{ vorhanden: boolean }>; beispiele: number; vorgaben?: Array<{ zustand: string }>; ergaenzungen?: Array<{ fehlt?: boolean }> }): boolean {
+  return v.typen.some((t) => !t.vorhanden && !t.geloescht) || v.sichten.some((s) => !s.vorhanden) || v.beispiele > 0
+    // Vorgaben (#1038): neue Mappen und Vorlagen an Vorgaben anderer Pakete.
+    || !!v.vorgaben?.some((x) => x.zustand === 'neu') || !!v.ergaenzungen?.some((x) => !x.fehlt);
 }
 
 /**

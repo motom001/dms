@@ -307,6 +307,10 @@ export interface Repo {
   holeSystemMappe(kennung: string): Promise<Mappe | undefined>;
   /** Kennung einer Systemmappe ändern oder (null) entfernen – #818: frühere Systemrolle „Administrator“. */
   setzeSystemKennung(id: string, kennung: string | null): Promise<void>;
+  /** Vorgaben aus Paketen (#1038): feste Kennung an einer Mappe setzen oder (null) entfernen. */
+  setzeVorgabe(id: string, kennung: string | null): Promise<void>;
+  /** Mappen mit einer Vorgabe-Kennung, die so beginnt (z. B. `paket:vertraege:`) – nicht die im Papierkorb. */
+  mappenMitVorgabe(praefix: string): Promise<Mappe[]>;
   /**
    * Werte ersetzen. Mit `feldweise` (#609) nur die Felder, die sich gegenüber dessen `basis` ändern – so
    * setzt ein Schreiber, der einen älteren Stand gelesen hat, keine Felder anderer zurück. „Zuletzt geändert“

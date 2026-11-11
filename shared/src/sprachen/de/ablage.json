@@ -1260,6 +1260,8 @@
   "suche.vom-typ": "zeigt auf eine Mappe vom Typ",
   "paket-hinweis.titel": "Hinweise von Paketen",
   "paket-hinweis.marke-titel": "Hinweis vom Paket {paket} – nicht von Ablago",
+  "vorgabe.zeile": "Vorgabe aus dem Paket",
+  "vorgabe.marke-titel": "Mitgeliefert vom Paket {paket} – du kannst sie ändern; Updates überschreiben deine Änderungen nicht",
   "tabelle.leer": "Noch keine {name}",
   "tabelle.nach-dem-speichern": "{name} kannst du nach dem Speichern anlegen – mit „{neu}“ unter der Tabelle.",
   "tabelle.weitere": "{anzahl} weitere anzeigen (von {gesamt})",

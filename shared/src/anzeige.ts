@@ -15,8 +15,9 @@
  * - Bedingungen schauen auf die Werte der Mappe, auch auf Werte ausgeblendeter Felder. Eine Bedingung mit Problem
  *   (Feld entfernt …) zählt nicht; ohne gültige Bedingung ist das Feld zu sehen.
  *
- * Eine bestimmte Mappe steht vorerst als Id in der Bedingung (`zeigtAuf`); mit festen Kennungen mitgelieferter Mappen
- * (#1038) kann ein Paket sie über deren Kennung nennen.
+ * Eine bestimmte Mappe steht als Id in der Bedingung (`zeigtAuf`). Pakete nennen eine mitgelieferte Mappe über ihre
+ * feste Kennung (#1038): `{ art: vorgabe, feld: art, vorgabe: [miete] }` – beim Installieren wird daraus „zeigt auf“ mit
+ * der Id der Vorgabe (server/src/pakete/vorgaben.ts, anzeigeMitVorgaben); „Paket erstellen“ schreibt es umgekehrt.
  */
 import { feldLabel, abschnittTitel, typName } from './beschriftung';
 import { istMerkmal, merkmalText, type Merkmale } from './merkmale';

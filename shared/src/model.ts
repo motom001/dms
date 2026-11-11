@@ -529,6 +529,11 @@ export interface Mappe {
   problem?: string | null;
   /** Mappen, die das System pflegt: Systemrollen (rolle:mitglied, rolle:systemkonto, rolle:paket). */
   systemKennung?: string | null;
+  /**
+   * Vorgabe aus einem Paket (#1038): feste Kennung `paket:<id>:<schluessel>` (siehe shared/src/vorgaben.ts). Fehlt bei
+   * allen anderen Mappen. Eine Vorgabe ist eine gewöhnliche Mappe – sie lässt sich ändern und löschen.
+   */
+  vorgabe?: string | null;
   /** Berechtigungen (#124): im Eingang wegen einer Aufgabe, aber nicht lesbar – ohne Titel und Werte. */
   verborgen?: boolean;
 }

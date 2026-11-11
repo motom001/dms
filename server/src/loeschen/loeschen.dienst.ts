@@ -20,6 +20,7 @@ import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/
 import { darfLoeschen, type Mappe, type Mappentyp, MAX_AUSWAHL } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { istTeilVerweis } from '../../../shared/src/teile';
+import { fremdeVorgabe } from '../../../shared/src/vorgaben';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
 import type { Papierkorb } from './papierkorb';
@@ -169,6 +170,8 @@ export class LoeschenDienst {
     if (z) await this.pruefeRecht(z, id, 'D');
     const m = await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
+    // Vorgaben (#1038): Ein Paket löscht keine Vorgabe eines anderen Pakets.
+    if (z?.paket?.id && fremdeVorgabe(m, z.paket.id)) throw new Fachfehler(403, t('meldungen.dienst.vorgabe-fremdes-paket', { titel: m.titel || m.id }));
     const typ = await this.repo.holeTyp(m.typId);
     const rueckverweise = await this.repo.rueckverweise(id);
     // Teile (#1031): Hat die Mappe Teile (Rechnungspositionen einer Rechnung), gehen sie mit – in einem Vorgang.

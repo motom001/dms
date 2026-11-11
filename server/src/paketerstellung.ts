@@ -35,6 +35,7 @@ import { wiederfindenVorgabe } from '../../shared/src/erkennung';
 import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
 import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
 import { DMS_TEILE_AB } from '../../shared/src/teile';
+import { DMS_VORGABEN_AB, teileVorgabe } from '../../shared/src/vorgaben';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
@@ -63,6 +64,7 @@ export const MINDEST_FUNKTIONEN = {
   tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
   vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },
   teile: { ab: DMS_TEILE_AB, grund: t('meldungen.paketerstellung.teile') },
+  vorgaben: { ab: DMS_VORGABEN_AB, grund: t('meldungen.paketerstellung.vorgaben') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -151,6 +153,11 @@ export interface ErstellenDaten {
   dmsTypen: Map<string, string>;
   /** Gewählte Beispiel-Mappen (nur aus gewählten eigenen Typen). */
   mappen: Mappe[];
+  /**
+   * Vorgaben aus Paketen (#1038), auf die Anzeige-Bedingungen „zeigt auf“ der Typen zeigen: Mappen-Id → feste Kennung
+   * (`paket:<id>:<schluessel>`). So kommt die Bedingung mit der Kennung ins Paket statt mit der Id dieser Installation.
+   */
+  vorgaben?: Map<string, string>;
   /**
    * Beispiel-Dokumente (#878) je gewählter Mappe, wenn „mit Dokumenten“ gewählt ist: nur PDF, PNG und JPEG.
    * `ausgelassen`: Dokumente anderer Art, die nicht mitkommen.
@@ -333,10 +340,25 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
    * bestimmte Mappe (Id dieser Installation) kommt nicht mit – das geht erst mit festen Kennungen mitgelieferter Mappen
    * (#1038). Ohne Bedingung bleibt keine Regel.
    */
+  /** „Zeigt auf“ nur Vorgaben installierter Pakete (#1038)? Dann deren Verweise `paket:schluessel` und die Pakete. */
+  const vorgabenIn = (b: Extract<Bedingung, { art: 'feld' }>): { verweise: string[]; pakete: InstalliertesPaket[] } | null => {
+    const ids = b.op === 'zeigtAuf' && b.wert?.art === 'fest' && Array.isArray(b.wert.wert) && !b.bis ? b.wert.wert.map(String) : [];
+    const teile = ids.map((x) => teileVorgabe(d.vorgaben?.get(x)));
+    const pakete = teile.map((v) => (v ? d.pakete.find((p) => p.id === v.paket) : undefined));
+    if (!ids.length || pakete.some((p) => !p)) return null;
+    return { verweise: [...new Set(teile.map((v) => `${v!.paket}:${v!.schluessel}`))], pakete: pakete as InstalliertesPaket[] };
+  };
   const anzeigeFuersPaket = (r: Anzeigeregel | undefined, wo: string): Anzeigeregel | undefined => {
     if (!r) return undefined;
     const bedingungen = r.bedingungen.flatMap((b): Anzeigeregel['bedingungen'] => {
       if (b.art === 'verweistyp') { const z = ziel(b.typ, wo); return z ? [{ ...b, typ: z }] : []; }
+      // Vorgaben (#1038): zeigt die Bedingung nur auf Vorgaben installierter Pakete, kommt sie mit deren Kennung – das
+      // Paket hängt dann von ihnen ab. Andere Mappen dieser Installation kommen nicht mit.
+      const vorgaben = b.art === 'feld' ? vorgabenIn(b.bedingung) : null;
+      if (b.art === 'feld' && vorgaben) {
+        for (const p of vorgaben.pakete) abhaengig(p);
+        return [{ ...(b.nicht ? { nicht: true } : {}), art: 'vorgabe', feld: b.bedingung.feld, vorgabe: vorgaben.verweise } as unknown as Anzeigeregel['bedingungen'][number]];
+      }
       if (b.art === 'feld' && mitId(b.bedingung)) { hinweis(t('meldungen.paketerstellung.anzeige-mappe', { wo })); return []; }
       return [b];
     });
@@ -580,6 +602,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length))) genutzt.push('vorbelegen');
   if (paketTypen.some((t) => 'gehoertZu' in t)) genutzt.push('teile');
+  // Anzeige-Bedingung „zeigt auf die Vorgabe …“ (#1038): Ältere Ablago ließen sie weg (Feld immer zu sehen).
+  if (JSON.stringify(paketTypen).includes('"art":"vorgabe"')) genutzt.push('vorgaben');
   const mindest = mindestversion(genutzt);
   const optionen = dmsOptionen(mindest.version, d.dmsVersion);
   const unten = untergrenze(dms);
@@ -745,8 +769,12 @@ export class Paketerstellung {
         }
       }
     }
+    // Vorgaben (#1038), auf die Anzeige-Bedingungen „zeigt auf“ zeigen: Id → feste Kennung.
+    const gezeigt = [...new Set(typen.flatMap((x) => [...x.felder.map((f) => f.anzeigen), ...x.register.flatMap((r) => (r.abschnitte ?? []).map((a) => a.anzeigen))])
+      .flatMap((r) => r?.bedingungen ?? []).flatMap((b) => (b.art === 'feld' && b.bedingung.op === 'zeigtAuf' && b.bedingung.wert?.art === 'fest' && Array.isArray(b.bedingung.wert.wert) ? b.bedingung.wert.wert.map(String) : [])))];
+    const vorgaben = new Map((gezeigt.length ? await this.d.kern.repo.holeMappen(gezeigt) : []).filter((m) => m.vorgabe).map((m) => [m.id, m.vorgabe!] as const));
     return {
-      dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}),
+      dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}), vorgaben,
       typen, sichten: await this.d.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.sucheStand()).synonyme,
       dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };

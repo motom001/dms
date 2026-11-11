@@ -776,6 +776,8 @@ export class Dienst {
   feldwerte(typId: string, key: string) { return this.mappen.feldwerte(typId, key); }
   verweisende(id: string, typId: string, feldKey: string, z?: Zugriff) { return this.mappen.verweisende(id, typId, feldKey, z); }
   holeMappe(id: string, z?: Zugriff) { return this.mappen.holeMappe(id, z); }
+  /** Vorgaben (#1038): Ein Paket ändert keine Vorgabe eines anderen Pakets (403). */
+  pruefeFremdeVorgabe(z: Zugriff | undefined, mappeId: string) { return this.mappen.pruefeFremdeVorgabe(z, mappeId); }
 
   /* ---------- Sichten: seitenweise und gezählt (sichten/sichten.dienst.ts) ---------- */
 
@@ -914,7 +916,7 @@ export class Dienst {
 
   beispielStand(ids: string[]): Promise<BeispielStand[]> { return this.beispielMappen.beispielStand(ids); }
   pruefeBeispiele(staende: BeispielStand[]) { return this.beispielMappen.pruefeBeispiele(staende); }
-  entferneBeispielMappen(ids: string[], von: string | null) { return this.beispielMappen.entferneBeispielMappen(ids, von); }
+  entferneBeispielMappen(ids: string[], von: string | null, weg: 'beispiele' | 'vorgaben' = 'beispiele') { return this.beispielMappen.entferneBeispielMappen(ids, von, weg); }
 
   /* ---------- Nummernkreise (#171) ---------- */
 

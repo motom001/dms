@@ -55,7 +55,7 @@ export function paketeRouten(k: RoutenKontext): Route[] {
 export function paketeEinstellungenRouten(k: RoutenKontext): Route[] {
   const { pakete, umwandlung, wer, zg } = k;
   return [
-    { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.entferne(a.params.id, wer(a), a.query.einstellungenBehalten === '1', a.query.spracheBestaetigt === '1'))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.entferne(a.params.id, wer(a), a.query.einstellungenBehalten === '1', a.query.spracheBestaetigt === '1', a.query.vorgaben === 'entfernen' || a.query.vorgaben === 'behalten' ? a.query.vorgaben : undefined))) },
     // Beispiele entfernen (#878): unveränderte Beispiel-Mappen samt Dokumenten; geänderte bleiben und stehen in der Antwort.
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/beispiele/entfernen', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => pakete.beispieleEntfernen(a.params.id, wer(a)))) },
     // Paket-Einstellungen (#197): nur Administratoren, nicht über die API v1.

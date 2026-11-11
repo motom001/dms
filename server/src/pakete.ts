@@ -16,7 +16,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { liesWortgruppe } from '../../shared/src/suche';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
-import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, zieleVon, ZIELTYPEN_MAX, type Abschnitt, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
+import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, zieleVon, ZIELTYPEN_MAX, type Abschnitt, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
 import { bereinigeAbschnitte } from '../../shared/src/darstellung';
 import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
@@ -40,8 +40,12 @@ import { abdeckung, anzahlTexte, BESCHRIFTUNGEN_ORDNER, liesSprachangabe, liesSp
 import { gebietsschema } from '../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ARCHIV_MAX, ENTPACKT_MAX, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX } from './grenzen';
-import { paketEinstellungen, paketKatalogStaende, paketQuellen, setzePaketEinstellungen, setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher } from './pakete/index';
+import { ARCHIV_MAX, ENTPACKT_MAX, KB, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX, VORLAGE_MAX } from './grenzen';
+import {
+  anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
+  setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
+} from './pakete/index';
+import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
 
 const log = protokoll.modul('werkbank');
 
@@ -298,6 +302,11 @@ export interface PaketCodeTeil { info: PaketCode; dateien: Array<{ name: string;
 export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; /** Gleichbedeutende Wörter für die Suche (#356). */ wortlisten: string[][];
   /** Inhalt der Beispiel-Dokumente (#878) je `datei` (relativ zu inhalt/). */
   beispielDateien?: Map<string, Buffer>;
+  /** Vorgaben (#1038): Mappen zum Behalten mit fester Kennung; Ergänzungen hängen nur Vorlagen an Vorgaben anderer Pakete. */
+  vorgaben?: PaketVorgabe[];
+  ergaenzungen?: PaketErgaenzung[];
+  /** Inhalt der Text-Vorlagen (#1038) je `datei` (relativ zu inhalt/, vorlagen/…md). */
+  vorlagenDateien?: Map<string, Buffer>;
   /** Mitgelieferte Automatisierungen (#712, dms-registry #108), roh aus inhalt/automatisierungen.yaml; Typen als Paket-Schlüssel. */
   automatisierungen: PaketAutomatisierung[]; readme: string; einstellungen: Einstellungsbeschreibung | null; code: PaketCodeTeil | null;
   /** Sprachpaket (#731): Angaben, Texte und Beschriftungen der Standardpakete; null bei allen anderen Paketen. */
@@ -553,6 +562,19 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       fehler.push(t('meldungen.pakete.beispiele-die-verweise-zwischen'));
     }
   }
+  // Vorgaben (#1038): feste Kennung, eigene Typen oder Typen von Abhängigkeiten; Ergänzungen nur mit Vorlagen.
+  const vt = liesVorgaben(liste('vorgaben'), { id: str(m.id), abh, typen, dateien }, fehler, `${VORLAGE_MAX / KB} KB`);
+  const vk = { id: str(m.id), abh };
+  for (const [i, b] of beispiele.entries()) fehler.push(...vorgabeVerweisFehler(vorgabeWerte(b.werte), `beispiele[${i + 1}]`, vt.vorgaben, vk));
+  // Anzeigen, wenn … (#1033) „Verweis zeigt auf eine bestimmte Mappe“ über die Kennung einer Vorgabe: an einem Verweisfeld.
+  for (const ty of typen) {
+    for (const b of anzeigeVorgaben(ty)) {
+      const wo = `mappentypen „${ty.schluessel}“, anzeigen`;
+      if (ty.felder.find((f) => f.key === b.feld)?.typ !== 'referenz') fehler.push(t('meldungen.pakete.vorgaben.bedingung-feld', { wo, feld: b.feld }));
+      if (!b.verweise.length) fehler.push(t('meldungen.pakete.vorgaben.bedingung-leer', { wo, feld: b.feld }));
+      fehler.push(...vorgabeVerweisFehler(b.verweise, wo, vt.vorgaben, vk));
+    }
+  }
   // Mitgelieferte Automatisierungen (#712): Schlüssel, Name, genau eine Wenn-Karte; Typen als eigener Schlüssel oder paket:typ.
   const zeitplanKarten: string[] = [];
   const automatisierungen = liste('automatisierungen').map((a, i): PaketAutomatisierung => {
@@ -637,6 +659,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     },
     typen, sichten, beispiele, wortlisten, automatisierungen, readme: dateien.get('README.md')?.toString('utf8') ?? '', einstellungen: einst.beschreibung, code,
     sprache, ...(beispielDateien.size ? { beispielDateien } : {}),
+    ...(vt.vorgaben.length ? { vorgaben: vt.vorgaben } : {}), ...(vt.ergaenzungen.length ? { ergaenzungen: vt.ergaenzungen } : {}), ...(vt.vorlagenDateien.size ? { vorlagenDateien: vt.vorlagenDateien } : {}),
   };
 }
 
@@ -898,6 +921,10 @@ export interface Vorschau {
   typen: TypPlan[]; sichten: SichtPlan[]; beispiele: number;
   /** Beispiel-Dokumente zu den Beispielen (#878): Anzahl und Größe zusammen in Bytes. */
   beispielDokumente: { anzahl: number; bytes: number };
+  /** Vorgaben (#1038): was angelegt, aktualisiert oder belassen wird – auch in Mappentypen anderer Pakete. */
+  vorgaben: VorgabePlan[];
+  /** Vorlagen an Vorgaben anderer Pakete (#1038, `ergaenzt`). */
+  ergaenzungen: ErgaenzungPlan[];
   /** Was die Installation verhindert. */
   probleme: string[];
   /** Feste Kennungen zu `probleme` für die Oberfläche (#729: nicht am Text erkennen), z. B. „schon-installiert“. */
@@ -1096,6 +1123,13 @@ export interface PaketOptionen {
   projektSchluessel?: readonly Projektschluessel[];
   /** Benutzer zur Auswahl in Paket-Einstellungen (#197). */
   benutzer?: () => Promise<Array<{ id: string; name: string }>>;
+  /** Sprache der Installation (#1038: Werte der Vorgaben je Sprache, #728); ohne (Tests): Deutsch. */
+  standardSprache?: () => Promise<string>;
+  /**
+   * Dienstkonto eines Pakets (#1038): Ersteller seiner Vorgaben und Vorlagen, damit die Historie die Herkunft zeigt.
+   * Gibt die Id zurück; ohne (Tests) legt an, wer installiert.
+   */
+  dienstkonto?: (paketId: string, name: string, code: boolean) => Promise<string | null>;
   /** Paket-Läufer (Pakete mit Code): Aktionen ausführen, Ereignisse zustellen. Fehlt noch im Betrieb. */
   laeufer?: PaketLaeufer;
   /**
@@ -1893,6 +1927,8 @@ export class Paketverwaltung {
     };
     const ueb = await this.uebernahme(paket, ich);
     if (ueb) hinweise.push(t('meldungen.pakete.ablageort-uebernommen', { name: ueb.name }));
+    // Vorgaben (#1038): Zustand je Vorgabe, Ergänzungen an Vorgaben anderer Pakete (die es geben muss).
+    const { vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan } = await this.planeVorgaben(paket, ich, { installierte, typen, namen, herausgeber, hinweise });
     const typPlaene = await Promise.all(paket.typen.map(async (paketTyp): Promise<TypPlan> => {
       // Kennung im DMS (#1084): Paket und Schlüssel getrennt, nach außen `paket:schluessel` – eindeutig auch bei „_“ in beiden.
       const dmsSchluessel = typKennung(m.id, paketTyp.schluessel);
@@ -1959,7 +1995,7 @@ export class Paketverwaltung {
       herausgeberSchluessel: quelle?.pruefung.art === 'anbieter' && herausgeber ? quelle.pruefung.fingerabdruck ?? null : null,
       herkunft: ich?.herkunft ?? null,
       pruefung: null,
-      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), probleme, fehlercodes, hinweise,
+      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, probleme, fehlercodes, hinweise,
       automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
@@ -1967,6 +2003,67 @@ export class Paketverwaltung {
       laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen), paket.typen.map((x) => ({ typ: x.name, felder: x.felder.filter((f) => f.berechnet === true).map((f) => f.label) })), paketZeitplaene(paket)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
+  }
+
+  /** Sprache der Installation (#1038: Werte der Vorgaben); ohne Angabe Deutsch. */
+  private async sprache(): Promise<string> { return (await Promise.resolve(this.o.standardSprache?.()).catch(() => undefined)) ?? 'de'; }
+
+  /**
+   * Lage der Vorgaben eines Pakets (#1038): seine Mappen mit fester Kennung und was mit jeder geschieht. Beim Umzug
+   * (#1084) stehen sie noch unter der früheren Id – die Kennung zieht erst mit dem Umzug um.
+   */
+  private async vorgabenLage(paket: Paket, ich: InstalliertesPaket | null): Promise<VorgabenLage> {
+    const id = ich?.id ?? paket.manifest.id;
+    const mappen = paket.vorgaben?.length ? await vorgabeMappen(this.d, id) : [];
+    return vorgabenLage(paket.vorgaben ?? [], ich, id, mappen, await this.sprache());
+  }
+
+  /** Mappe einer Vorgabe über ihre feste Kennung (`paket:schluessel` bzw. eigener Schlüssel); im Papierkorb zählt nicht. */
+  private async vorgabeMappe(verweis: string, eigenes: string): Promise<Mappe | undefined> {
+    const v = vorgabeVerweis(verweis, eigenes);
+    const k = vorgabeKennung(v.paket, v.schluessel);
+    return (await this.d.kern.repo.mappenMitVorgabe(k)).find((x) => x.vorgabe === k);
+  }
+
+  /**
+   * Vorschau der Vorgaben (#1038). Hinweise: Vorlagen für eine Vorgabe, die es nicht gibt, kommen nicht; ein Paket
+   * eines anderen Herausgebers ergänzt Mappen eines Pakets (steht so in der Vorschau, #1084).
+   */
+  private async planeVorgaben(paket: Paket, ich: InstalliertesPaket | null, x: { installierte: InstalliertesPaket[]; typen: Mappentyp[]; namen: Record<string, string>; herausgeber: string | null; hinweise: string[] }): Promise<{ vorgaben: VorgabePlan[]; ergaenzungen: ErgaenzungPlan[] }> {
+    const m = paket.manifest;
+    const { installierte, typen, namen, herausgeber, hinweise } = x;
+    if (!paket.vorgaben?.length && !paket.ergaenzungen?.length) return { vorgaben: [], ergaenzungen: [] };
+    const lage = await this.vorgabenLage(paket, ich);
+    const typ = (vw: string) => {
+      const v = vorgabeVerweis(vw, m.id);
+      if (v.paket === m.id) {
+        const pt = paket.typen.find((x) => x.schluessel === v.schluessel);
+        const da = typen.find((x) => x.id === ich?.typen[v.schluessel]);
+        return { daten: da ?? (pt as unknown as Mappentyp | undefined), name: da?.name ?? namen[v.schluessel] ?? pt?.name ?? v.schluessel, fremd: null };
+      }
+      const p = installierte.find((x) => x.id === v.paket);
+      const da = typen.find((x) => x.id === p?.typen[v.schluessel]);
+      return { daten: da, name: da?.name ?? v.schluessel, fremd: p?.name ?? v.paket };
+    };
+    const vorgaben = planeVorgaben({ vorgaben: paket.vorgaben ?? [], lage, ich, sprache: await this.sprache(), typ });
+    const ziele = new Map<string, Mappe | undefined>();
+    for (const e of paket.ergaenzungen ?? []) ziele.set(e.ziel, await this.vorgabeMappe(e.ziel, m.id));
+    const ergaenzungen = planeErgaenzungen(paket.ergaenzungen ?? [], ich, (z) => { const p = vorgabeVerweis(z, m.id).paket; return { mappe: ziele.get(z), paket: installierte.find((x) => x.id === p)?.name ?? p }; });
+    for (const e of ergaenzungen.filter((x) => x.fehlt)) hinweise.push(t('meldungen.pakete.vorgaben.ergaenzung-ohne-ziel', { ziel: e.name, paket: e.paket }));
+    // Herausgeber (#1084): Ergänzt das Paket Mappen eines Pakets, das jemand anderes herausgibt, steht das ausdrücklich da.
+    const fremdePakete = new Set([...vorgaben.filter((v) => v.fremd).map((v) => vorgabeVerweis(paket.vorgaben!.find((x) => x.schluessel === v.schluessel)!.typ, m.id).paket), ...ergaenzungen.map((e) => vorgabeVerweis(e.ziel, m.id).paket)]);
+    for (const pid of fremdePakete) {
+      const p = installierte.find((x) => x.id === pid);
+      const h = p ? this.herausgeberVon(p) : null;
+      if (p && h !== herausgeber) hinweise.push(t('meldungen.pakete.vorgaben.anderer-herausgeber', { name: p.name, herausgeber: h ?? t('meldungen.pakete.herausgeber-unbekannt') }));
+    }
+    return { vorgaben, ergaenzungen };
+  }
+
+  /** Ersteller der Vorgaben (#1038): das Dienstkonto des Pakets – ohne (Tests, Fehler) wer installiert. */
+  private async ersteller(m: Manifest, code: boolean, von: Handelnder): Promise<string | null> {
+    if (!this.o.dienstkonto) return von.id;
+    try { return (await this.o.dienstkonto(m.id, m.name, code)) ?? von.id; } catch (e) { log.warn('Dienstkonto für Vorgaben nicht angelegt', { paket: m.id, fehler: (e as Error).message }); return von.id; }
   }
 
   /** Lesbarer Name eines Typverweises für die Rechte-Rückfrage. */
@@ -2127,6 +2224,21 @@ export class Paketverwaltung {
     const angelegt = new Set<string>();
     const beispielIds = new Map<string, string>();
     const dmsTypen = await this.dmsTypen();
+    // Vorgaben (#1038): Ihre Ids stehen vor den Typen fest – Anzeige-Bedingungen „zeigt auf die Vorgabe …“ nennen sie schon.
+    const vorgabenJetzt = await this.vorgabenLage(paket, alt);
+    const fremdeVorgaben = new Map<string, string | null>();
+    for (const ty of paket.typen) {
+      for (const vw of anzeigeVorgaben(ty).flatMap((b) => b.verweise)) {
+        if (vorgabeVerweis(vw, m.id).paket !== m.id && !fremdeVorgaben.has(vw)) fremdeVorgaben.set(vw, (await this.vorgabeMappe(vw, m.id))?.id ?? null);
+      }
+    }
+    const vorgabeId = (vw: string): string | null => {
+      const v = vorgabeVerweis(vw, m.id);
+      if (v.paket !== m.id) return fremdeVorgaben.get(vw) ?? null;
+      const l = vorgabenJetzt.je.get(v.schluessel);
+      return l && l.zustand !== 'geloescht' ? l.id : null;
+    };
+    const vorgabenErg: VorgabenErgebnis = { vorgaben: {}, ergaenzungen: [], angelegt: [], rueck: [], ausgelassen: [] };
     const ziel = (vw: string, nurAngelegt: boolean): string | null => {
       const [p, s] = vw.includes(':') ? vw.split(':') : [m.id, vw];
       if (p === 'dms') {
@@ -2150,8 +2262,10 @@ export class Paketverwaltung {
       const ids = b.wert.wert.map((vw) => { try { return ziel(str(vw), false); } catch { return str(vw).includes(':') ? optional(str(vw)) : null; } }).filter((x): x is string => !!x);
       return { ...b, wert: { art: 'fest', wert: ids } };
     };
-    // Anzeigen, wenn … (#1033): „zeigt auf eine Mappe vom Typ …“ nennt im Paket einen Typverweis – hier die Id.
-    const anzeige = (a: unknown) => {
+    // Anzeigen, wenn … (#1033): „zeigt auf eine Mappe vom Typ …“ nennt im Paket einen Typverweis – hier die Id; „zeigt auf
+    // die Vorgabe …“ (#1038) die feste Kennung – hier die Id der Mappe („zeigt auf“).
+    const anzeige = (roh: unknown) => {
+      const a = anzeigeMitVorgaben(roh, vorgabeId);
       if (!istObjekt(a) || !Array.isArray(a.bedingungen)) return a;
       return { ...a, bedingungen: a.bedingungen.map((b) => (istObjekt(b) && b.art === 'verweistyp' ? { ...b, typ: ziel(str(b.typ), false) } : b)) };
     };
@@ -2192,7 +2306,10 @@ export class Paketverwaltung {
     const kennungZurueck = new Map<string, string>();
     const zurueck = async () => {
       for (const [id, k] of kennungZurueck) await this.d.kern.repo.setzeTypKennung(id, k).catch(() => {});
+      // Vorgaben (#1038): Vorlagen und geänderte Werte zurück, neue Vorgaben weg (nach den Beispielen, die auf sie zeigen).
+      for (const r of vorgabenErg.rueck) await r().catch(() => {});
       await this.d.entferneMappenEndgueltig(mappen).catch(() => {});
+      await this.d.entferneMappenEndgueltig(vorgabenErg.angelegt).catch(() => {});
       for (const s of [...neueSichten].reverse()) await this.d.loescheSicht(s).catch(() => {});
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
       for (const t of geaendert) await this.d.aendereTyp(t.id, t).catch(() => {});
@@ -2291,12 +2408,29 @@ export class Paketverwaltung {
           sichtMap[s.schluessel] = neu.id;
         } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.ansicht', { name: sp.name, meldungen: meldungen(f) })); }
       }
+      // 3b. Vorgaben (#1038): immer (keine Wahl wie bei Beispielen), ohne Ereignisse; Ersteller ist das Dienstkonto des
+      // Pakets. Updates ergänzen; was der Administrator geändert oder gelöscht hat, bleibt so.
+      if (paket.vorgaben?.length || paket.ergaenzungen?.length) {
+        await legeVorgaben(this.d, {
+          paketId: m.id, teil: { vorgaben: paket.vorgaben ?? [], ergaenzungen: paket.ergaenzungen ?? [], vorlagenDateien: paket.vorlagenDateien ?? new Map() }, lage: vorgabenJetzt, alt,
+          sprache: await this.sprache(), von: await this.ersteller(m, !!paket.code, von), typId: (vw) => ziel(vw, false),
+          vorgabeId: async (vw) => vorgabeId(vw) ?? (await this.vorgabeMappe(vw, m.id))?.id ?? null,
+          geheim: passwortFelder([...await this.d.listeTypen(), ...paket.typen]), maxText: `${VORLAGE_MAX / KB} KB`,
+        }, vorgabenErg);
+        if (vorgabenErg.ausgelassen.length) log.info('Paket: Vorlagen für Vorgaben, die es nicht gibt, ausgelassen', { paket: m.id, ziele: vorgabenErg.ausgelassen });
+      }
       // 4. Beispiele (nur bei der Installation, auf Wunsch).
       if (beispiele && !alt) {
         // Verweise zwischen Beispielen (#347): erst die Ziele anlegen; fremde Beispiele aus dem Eintrag der Abhängigkeit.
         const reihenfolge = ordneBeispiele(paket.beispiele.map((b) => ({ ...b, werte: eigeneVerweise(b.werte, m.id) }))) ?? paket.beispiele;
         const ohneZiel = new Set<string>();
         const aufloesen = async (w: unknown): Promise<string | undefined> => {
+          // Verweis auf eine Vorgabe (#1038): eigene über die Lage, fremde über die feste Kennung.
+          if (istVorgabeWert(w)) {
+            const id = vorgabeId(w.vorgabe) ?? (vorgabeVerweis(w.vorgabe, m.id).paket !== m.id ? (await this.vorgabeMappe(w.vorgabe, m.id))?.id : undefined);
+            if (!id) ohneZiel.add(w.vorgabe);
+            return id ?? undefined;
+          }
           if (!istBeispielVerweis(w)) return undefined;
           const [p, s] = w.beispiel.includes(':') ? w.beispiel.split(':') : [m.id, w.beispiel];
           const zielId = p === m.id ? beispielIds.get(s) : installierte.find((x) => x.id === p)?.beispiele?.[s];
@@ -2312,8 +2446,8 @@ export class Paketverwaltung {
             const f = felder.find((x) => x.key === k);
             // Beträge dürfen im Paket als Zahl stehen; Zeiträume als P3M oder { anzahl, einheit } gleicht bereinigeWerte an (#1035).
             if (f?.typ === 'betrag' && typeof w === 'number') werte[k] = { betrag: w, waehrung: f.waehrung || 'EUR' };
-            else if (Array.isArray(w) && w.some(istBeispielVerweis)) { const l = (await Promise.all(w.map(aufloesen))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
-            else if (istBeispielVerweis(w)) { const z = await aufloesen(w); if (z) werte[k] = f?.mehrfach ? [z] : z; }
+            else if (Array.isArray(w) && w.some((x) => istBeispielVerweis(x) || istVorgabeWert(x))) { const l = (await Promise.all(w.map(aufloesen))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
+            else if (istBeispielVerweis(w) || istVorgabeWert(w)) { const z = await aufloesen(w); if (z) werte[k] = f?.mehrfach ? [z] : z; }
             else werte[k] = w;
           }
           let mappeId: string;
@@ -2385,6 +2519,9 @@ export class Paketverwaltung {
         // Beispiel-Mappen mit Schlüssel (#347), damit spätere Pakete auf sie verweisen können.
         ...(beispielIds.size ? { beispiele: Object.fromEntries(beispielIds) } : alt?.beispiele ? { beispiele: alt.beispiele } : {}),
         ...(beispielStaende.length ? { beispielMappen: beispielStaende } : alt?.beispielMappen?.length ? { beispielMappen: alt.beispielMappen } : {}),
+        // Vorgaben (#1038): auch die, die die neue Version nicht mehr nennt – sie bleiben und gehören weiter zum Paket.
+        ...(() => { const v = { ...alt?.vorgaben, ...vorgabenErg.vorgaben }; return Object.keys(v).length ? { vorgaben: v } : {}; })(),
+        ...(vorgabenErg.ergaenzungen.length ? { ergaenzungen: vorgabenErg.ergaenzungen } : alt?.ergaenzungen?.length ? { ergaenzungen: alt.ergaenzungen } : {}),
         einstellungen: paket.einstellungen, code: m.code !== undefined,
         ...(paket.automatisierungen.length ? { automatisierungen: paket.automatisierungen.map((a) => a.schluessel) } : {}),
         ...(paket.code ? { laeufer: { ...paket.code.info, modul: modulInfo(paket.code), daten: paket.code.dateien.filter((d) => d.name !== 'modul.wasm').map((d) => d.name) } } : {}),
@@ -2929,32 +3066,93 @@ export class Paketverwaltung {
   }
 
   /**
+   * Vorgaben eines Pakets beim Entfernen (#1038): Was benutzt wird – Verweise anderer Mappen, Notizen, Dokumente, die
+   * nicht vom Paket kommen –, bleibt. Unbenutzte in eigenen Typen gehen mit dem Typ; in Typen anderer Pakete erst nach
+   * Rückfrage. Verweisen Vorgaben aufeinander, zählt nur, was von außen kommt (bis nichts mehr dazukommt).
+   */
+  private async vorgabenBeimEntfernen(p: InstalliertesPaket, eigeneTypen: Set<string>, auchWeg: string[]) {
+    const repo = this.d.kern.repo;
+    const mappen = await vorgabeMappen(this.d, p.id);
+    if (!mappen.length) return { eigenWeg: [] as string[], eigenBenutzt: [] as Mappe[], frage: [] as VorgabeFrage[], fremdBenutzt: [] as Mappe[] };
+    const vonPaketen = new Set([
+      ...Object.values(p.vorgaben ?? {}).flatMap((v) => (v.vorlagen ?? []).map((x) => x.dokument)),
+      ...(await repo.listePakete()).flatMap((x) => (x.ergaenzungen ?? []).flatMap((e) => e.vorlagen.map((v) => v.dokument))),
+    ]);
+    const eigenesHat = new Map<string, boolean>();
+    for (const m of mappen) {
+      const fremdeDoks = (await repo.listeDokumente(m.id)).some((d) => !vonPaketen.has(d.id));
+      eigenesHat.set(m.id, fremdeDoks || (await repo.notizen(m.id)).length > 0);
+    }
+    const rueck = new Map<string, string[]>();
+    for (const m of mappen) rueck.set(m.id, (await repo.rueckverweise(m.id)).map((r) => r.quelleId));
+    const weg = new Set(mappen.filter((m) => !eigenesHat.get(m.id)).map((m) => m.id));
+    const draussen = (q: string) => !weg.has(q) && !auchWeg.includes(q);
+    for (let geaendert = true; geaendert;) {
+      geaendert = false;
+      for (const m of mappen) if (weg.has(m.id) && rueck.get(m.id)!.some(draussen)) { weg.delete(m.id); geaendert = true; }
+    }
+    const typen = new Map((await this.d.listeTypen()).map((x) => [x.id, x] as const));
+    const eigen = (m: Mappe) => eigeneTypen.has(m.typId);
+    return {
+      eigenWeg: mappen.filter((m) => eigen(m) && weg.has(m.id)).map((m) => m.id),
+      eigenBenutzt: mappen.filter((m) => eigen(m) && !weg.has(m.id)),
+      frage: mappen.filter((m) => !eigen(m) && weg.has(m.id)).map((m): VorgabeFrage => ({ id: m.id, titel: m.titel || m.id, typ: typen.get(m.typId)?.name ?? '' })),
+      fremdBenutzt: mappen.filter((m) => !eigen(m) && !weg.has(m.id)),
+    };
+  }
+
+  /** Sprachpaket in Gebrauch (#731): ohne Bestätigung nicht entfernen – 409 mit den Betroffenen. */
+  private async spracheInGebrauch(p: InstalliertesPaket) {
+    if (!p.sprache) return;
+    const n = await this.o.sprachen?.nutzung(p.sprache.kennung) ?? { personen: 0, standard: false };
+    if (!n.personen && !n.standard) return;
+    const gruende = [
+      ...(n.personen ? [t('meldungen.sprachpakete.entfernen.personen', { anzahl: n.personen })] : []),
+      ...(n.standard ? [t('meldungen.sprachpakete.entfernen.standard')] : []),
+    ];
+    throw new Fachfehler(409, t('meldungen.sprachpakete.entfernen.frage', { name: p.name }), { gruende, sprache: { kennung: p.sprache.kennung, ...n } });
+  }
+
+  /**
+   * Vorgaben beim Entfernen (#1038): die genannten Vorgabe-Mappen endgültig (Löschprotokoll „Vorgaben“), dazu die
+   * Vorlagen, die das Paket an Vorgaben anderer Pakete gehängt hat – nur diese, nur an der Mappe, an die es sie hängte.
+   */
+  private async entferneVorgaben(p: InstalliertesPaket, weg: string[], von: Handelnder): Promise<string[]> {
+    if (weg.length) await this.d.entferneBeispielMappen(weg, von.id, 'vorgaben');
+    for (const e of p.ergaenzungen ?? []) {
+      for (const v of e.vorlagen) {
+        if ((await this.d.kern.repo.holeDokument(v.dokument))?.mappeId !== e.mappe) continue;
+        await this.d.loescheDokument(v.dokument, von.id, { weg: 'dokument' }).catch((x: Error) => log.warn('Vorlage des Pakets nicht entfernt', { paket: p.id, dokument: v.dokument, fehler: x.message }));
+      }
+    }
+    return weg;
+  }
+
+  /**
    * Paket entfernen. Unveränderte Beispiel-Mappen (#878) gehen samt Dokumenten mit; geänderte bleiben – in eigenen
    * Mappentypen verhindern sie das Entfernen und stehen in den Gründen, in fremden bleiben sie und stehen im Ergebnis.
+   * Vorgaben (#1038): benutzte bleiben (in eigenen Typen verhindern sie das Entfernen), unbenutzte in Typen anderer
+   * Pakete nur mit `vorgaben` („entfernen“ oder „behalten“) – ohne Angabe fragt Ablago (409 mit `vorgaben`). Vorlagen,
+   * die das Paket an Vorgaben anderer Pakete gehängt hat, gehen mit – nur diese.
    */
-  async entferne(id: string, von: Handelnder, behalten = false, spracheBestaetigt = false): Promise<{ beispieleBehalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }> }> {
+  async entferne(id: string, von: Handelnder, behalten = false, spracheBestaetigt = false, vorgabenWahl?: 'entfernen' | 'behalten'): Promise<{ beispieleBehalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }>; vorgabenBehalten: Array<{ id: string; titel: string }> }> {
     const alle = await this.d.kern.repo.listePakete();
     const p = alle.find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
-    if (p.sprache && !spracheBestaetigt) {
-      const n = await this.o.sprachen?.nutzung(p.sprache.kennung) ?? { personen: 0, standard: false };
-      if (n.personen || n.standard) {
-        const gruende = [
-          ...(n.personen ? [t('meldungen.sprachpakete.entfernen.personen', { anzahl: n.personen })] : []),
-          ...(n.standard ? [t('meldungen.sprachpakete.entfernen.standard')] : []),
-        ];
-        throw new Fachfehler(409, t('meldungen.sprachpakete.entfernen.frage', { name: p.name }), { gruende, sprache: { kennung: p.sprache.kennung, ...n } });
-      }
-    }
+    if (!spracheBestaetigt) await this.spracheInGebrauch(p);
     const gruende: string[] = alle.filter((x) => x.id !== id && id in x.abhaengigkeiten).map((x) => t('meldungen.pakete.das-paket-braucht', { name: x.name, name2: p.name }));
     const typIds = Object.values(p.typen);
     // Beispiel-Mappen (#878): unveränderte gehen mit, geänderte in eigenen Mappentypen werden als Grund genannt.
     const bsp = await this.d.pruefeBeispiele(p.beispielMappen ?? []);
     const eigeneTypen = new Set(typIds);
     gruende.push(...bsp.geaendert.filter((g) => eigeneTypen.has(g.typId)).map((g) => (g.grund === 'verwiesen' ? t('meldungen.pakete.beispiel-behalten.verwiesen', { titel: g.titel }) : t('meldungen.pakete.beispiel-behalten.geaendert', { titel: g.titel }))));
-    gruende.push(...await this.d.belegteTypen(typIds, bsp.unveraendert));
+    const vg = await this.vorgabenBeimEntfernen(p, eigeneTypen, bsp.unveraendert);
+    gruende.push(...vg.eigenBenutzt.map((m) => t('meldungen.pakete.vorgaben.benutzt', { titel: m.titel || m.id })));
+    gruende.push(...await this.d.belegteTypen(typIds, [...bsp.unveraendert, ...vg.eigenWeg, ...vg.eigenBenutzt.map((m) => m.id)]));
     if (gruende.length) throw new Fachfehler(409, t('meldungen.pakete.laesst-sich-noch-nicht', { name: p.name }), { gruende });
+    if (vg.frage.length && !vorgabenWahl) throw new Fachfehler(409, t('meldungen.pakete.vorgaben.entfernen-frage', { name: p.name, anzahl: vg.frage.length }), { vorgaben: vg.frage });
     if (bsp.unveraendert.length) await this.d.entferneBeispielMappen(bsp.unveraendert, von.id);
+    const vorgabenWeg = await this.entferneVorgaben(p, [...vg.eigenWeg, ...(vorgabenWahl === 'entfernen' ? vg.frage.map((x) => x.id) : [])], von);
     // Untersichten zuerst, dann die Typen (Verweise untereinander: mehrere Runden).
     const sichten: Sicht[] = await this.d.listeSichten();
     const tiefe = (sid: string): number => { const s = sichten.find((x) => x.id === sid); return s?.elternId ? 1 + tiefe(s.elternId) : 0; };
@@ -2999,7 +3197,9 @@ export class Paketverwaltung {
     if (wartetAuf.length) await this.d.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
     if (!behalten) await setzePaketEinstellungen(this.d.kern, id, null);
-    log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten, beispieleEntfernt: bsp.unveraendert.length });
-    return { beispieleBehalten: bsp.geaendert.filter((g) => !eigeneTypen.has(g.typId)).map(({ typId: _t, ...g }) => g) };
+    log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten, beispieleEntfernt: bsp.unveraendert.length, vorgabenEntfernt: vorgabenWeg.length });
+    // Vorgaben, die bleiben, behalten ihre feste Kennung: Eine neue Installation nimmt sie wieder auf, statt sie doppelt anzulegen.
+    const vorgabenBehalten = [...vg.fremdBenutzt.map((m) => ({ id: m.id, titel: m.titel || m.id })), ...(vorgabenWahl === 'entfernen' ? [] : vg.frage.map(({ id: x, titel }) => ({ id: x, titel })))];
+    return { beispieleBehalten: bsp.geaendert.filter((g) => !eigeneTypen.has(g.typId)).map(({ typId: _t, ...g }) => g), vorgabenBehalten };
   }
 }

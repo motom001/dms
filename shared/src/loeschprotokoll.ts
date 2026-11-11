@@ -40,6 +40,8 @@ export const LOESCHWEGE = {
   /** #936: Aus der Post wurde eine neue Mappe; Dokumente und Historie liegen dort, die leere Post kommt weg. */
   aufgeloest: t('gemeinsam.loeschprotokoll.post-aufgeloest'),
   beispiele: t('gemeinsam.loeschprotokoll.beispiele-eines-pakets'),
+  /** #1038: unbenutzte Vorgaben eines Pakets, das entfernt wird. */
+  vorgaben: t('gemeinsam.loeschprotokoll.vorgaben-eines-pakets'),
 } as const;
 export type Loeschweg = keyof typeof LOESCHWEGE;
 

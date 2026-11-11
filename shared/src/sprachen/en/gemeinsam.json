@@ -424,6 +424,7 @@
   "loeschprotokoll.paketinstallation-zurueckgenommen": "package installation rolled back",
   "loeschprotokoll.post-aufgeloest": "post turned into a folder",
   "loeschprotokoll.beispiele-eines-pakets": "package examples removed",
+  "loeschprotokoll.vorgaben-eines-pakets": "unused package presets removed",
   "loeschprotokoll.mappen-id": "Folder ID",
   "loeschprotokoll.dokument-id": "Document ID",
   "loeschprotokoll.groesse-bytes": "Size (bytes)",

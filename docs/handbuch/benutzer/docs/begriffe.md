@@ -307,6 +307,10 @@ Siehe auch: [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen).
 Einstellung an einem Verweisfeld (#1037) – Paare „Feld der verwiesenen Mappe → Feld dieser Mappe“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor, markiert „vorgeschlagen aus …“ (z. B. Kündigungsfrist aus der Vertragsart). Nie überschreiben, nie Passwörter, nur Werte, die man lesen darf.  
 Siehe auch: [Aus Dokument füllen](#aus-dokument-fullen).
 
+<a id="beispiel-mappe"></a>**Beispiel-Mappe** · ✓ Alltagswort · Administratoren  
+Eine Mappe mit erfundenen Daten, die ein Paket auf Wunsch beim Installieren anlegt (Haken „Beispiel-Mappen anlegen“), damit man sieht, was in eine Mappe gehört – zum Ausprobieren, nicht zum Behalten. Unveränderte Beispiele lassen sich samt Dokumenten wieder entfernen. Anders als eine Vorgabe.  
+Siehe auch: [Paket](#paket), [Vorgabe](#vorgabe), [Demo-Daten](#demo-daten).
+
 <a id="benutzer"></a>**Benutzer** · ✓ Alltagswort · alle  
 Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe in Ablago. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.
 
@@ -404,6 +408,14 @@ Erkennt Text in Bildern und gescannten PDFs, damit er durchsuchbar wird.
 <a id="tagliche-zusammenfassung"></a>**Tägliche Zusammenfassung** · ✓ Alltagswort · alle  
 Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Einstellungen → Benachrichtigungen und Aufgaben ein; Uhrzeit und Wochentage wählt jeder unter Mein Konto.  
 Siehe auch: [Aufgabe](#aufgabe), [Zu erledigen](#zu-erledigen).
+
+<a id="vorgabe"></a>**Vorgabe** · ~ mit Erklärung · Administratoren  
+Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „Strom“ oder „Miete“ aus dem Paket Verträge, oft mit Vorlagen. Kommt immer mit, trägt die Kennzeichnung „Vorgabe aus dem Paket …“ und ist sonst eine gewöhnliche Mappe. Updates bringen neue Fassungen nur, solange niemand sie geändert hat; Gelöschtes bleibt gelöscht. Anders als ein Beispiel (erfundene Daten zum Ausprobieren, auf Wunsch, entfernbar).  
+Siehe auch: [Paket](#paket), [Beispiel-Mappe](#beispiel-mappe), [Vorlage](#vorlage).
+
+<a id="vorlage"></a>**Vorlage** · ✓ Alltagswort · Administratoren  
+Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://.  
+Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket).
 
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
 Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
@@ -600,6 +612,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Aus Dokument füllen | Für die Erkennung nutzen (alter Name) | `Feld.erkennung` |
 | Bedingung | – | `Bedingung` |
 | Beim Auswählen übernehmen | Vorbelegen (in der Oberfläche), Erben | `Feld.vorbelegen` |
+| Beispiel-Mappe | Demo-Mappe | `inhalt/beispiele, beispielMappen` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechnetes Feld | Formelfeld, berechnete Spalte, automatisches Feld | `Feld.berechnetVon, berechnet (Paket)` |
 | Berechtigungen | Permissions | `Rechte` |
@@ -665,6 +678,8 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |
 | Verweis | Referenz, Link, Relation | `referenz, Feld.zielTypen` |
 | Verweisart | – | `Verweisart, VERWEISARTEN` |
+| Vorgabe | Stammdaten, Standardmappe, Voreinstellung | `vorgabe (Mappe), inhalt.vorgaben` |
+| Vorlage | – | `inhalt/vorlagen/*.md` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Woran man ihn erkennt | – | `Mappentyp.erkennbarAn` |
@@ -675,4 +690,4 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 | Übergeordnete Mappe | Elternmappe, Hauptmappe | `uebergeordneteId, shared/src/teile.ts` |
 
-*Stand: 2026-11-10*
+*Stand: 2026-11-11*

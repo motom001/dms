@@ -459,6 +459,7 @@ const SCHEMAS: Record<string, Schema> = {
       erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, geaendert: zeit, geaendertVon: { ...uuid, nullable: true },
       passt: { type: 'boolean', description: 'Passt zur aktuellen Definition des Typs' }, problem: { type: 'string', nullable: true }, demo: { type: 'boolean' },
       systemKennung: { type: 'string', nullable: true, description: 'Mappen, die das System pflegt, z. B. rolle:mitglied' },
+      vorgabe: { type: 'string', description: 'Vorgabe aus einem Paket (#1038): feste Kennung paket:<id>:<schluessel>. Fehlt bei allen anderen Mappen. Ein Paket ändert und löscht keine Vorgabe eines anderen Pakets und löscht keine Dokumente daran (403).' },
     },
   },
   MappeEingabe: { type: 'object', required: ['typId', 'werte'], properties: { typId: uuid, werte: ref('Werte') } },
@@ -528,6 +529,7 @@ const SCHEMAS: Record<string, Schema> = {
     type: 'object',
     properties: {
       hinweise: { type: 'array', items: ref('PaketHinweis'), description: 'Hinweise von Paketen (#1034), älteste zuerst – für alle, die die Mappe lesen' },
+      vorgabe: { type: 'object', description: 'Vorgabe aus einem Paket (#1038), solange es installiert ist: Id und Name des Pakets', properties: { paket: { type: 'string' }, paketName: { type: 'string' } } },
       mappe: ref('Mappe'), favorit: { type: 'boolean', description: 'Favorit des Benutzers dieses Schlüssels' }, dokumente: liste('Dokument'), notizen: liste('Notiz'), aufgaben: liste('Aufgabe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
       rueckverweise: { type: 'array', items: { type: 'object', properties: { quelleId: uuid, quelleTypId: uuid, feldKey: { type: 'string' }, titel: { type: 'string' } } } },
       aufbewahrenBis: { type: 'string', format: 'date', nullable: true, description: 'Archivmodus (#212): Ende der Aufbewahrungsfrist (JJJJ-12-31); vorher antwortet Löschen mit 409' },
