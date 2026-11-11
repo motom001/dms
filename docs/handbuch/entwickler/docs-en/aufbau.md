@@ -1035,7 +1035,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 
 ## Reporting to the outside { #nach-aussen-melden }
 
-Ablago does **not** report changed numbers on its own: clients query `GET /api/v1/ich/zaehler` with `If-None-Match` (see above). The separate counter webhook (#627: `server/src/webhook.ts`, tables `webhooks` and `webhook_meldungen`, setting `webhook_ziele`, Workbench → Webhooks, My account) was removed with #991 – two ways for the same thing contradict "the same thing in one place" (pattern C9). Migration 101 drops the tables and the setting; old backups can still be restored, because the restore runs the migrations afterwards.
+Ablago does **not** report changed numbers on its own: clients query `GET /api/v1/ich/zaehler` with `If-None-Match` (see above). The separate counter webhook (#627: `server/src/webhook.ts`, tables `webhooks` and `webhook_meldungen`, setting `webhook_ziele`, Workbench → Webhooks, My account) was removed with #991 – two ways for the same thing contradict "the same thing in one place" (pattern C9). Migration 102 drops the tables and the setting; old backups can still be restored, because the restore runs the migrations afterwards.
 
 Whoever wants to report something to the outside in future uses an [automation](#automatisierungen) with the Then card "Call URL" (#671). It brings its own protection for destinations; nothing from the old webhook (destination list, signature, outbox) is reused for it.
 

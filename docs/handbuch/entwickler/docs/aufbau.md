@@ -1035,7 +1035,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 
 ## Nach außen melden { #nach-aussen-melden }
 
-Ablago meldet geänderte Zahlen **nicht** von sich aus: Clients fragen `GET /api/v1/ich/zaehler` mit `If-None-Match` ab (siehe oben). Den eigenen Zähler-Webhook (#627: `server/src/webhook.ts`, Tabellen `webhooks` und `webhook_meldungen`, Einstellung `webhook_ziele`, Werkbank → Webhooks, Mein Konto) hat #991 ausgebaut – zwei Wege für dasselbe widersprechen „gleiche Sache an einer Stelle“ (Muster C9). Migration 101 löscht Tabellen und Einstellung; alte Sicherungen spielen sich weiter ein, weil die Wiederherstellung die Migrationen danach nachholt.
+Ablago meldet geänderte Zahlen **nicht** von sich aus: Clients fragen `GET /api/v1/ich/zaehler` mit `If-None-Match` ab (siehe oben). Den eigenen Zähler-Webhook (#627: `server/src/webhook.ts`, Tabellen `webhooks` und `webhook_meldungen`, Einstellung `webhook_ziele`, Werkbank → Webhooks, Mein Konto) hat #991 ausgebaut – zwei Wege für dasselbe widersprechen „gleiche Sache an einer Stelle“ (Muster C9). Migration 102 löscht Tabellen und Einstellung; alte Sicherungen spielen sich weiter ein, weil die Wiederherstellung die Migrationen danach nachholt.
 
 Wer künftig etwas nach außen melden will, nimmt eine [Automatisierung](#automatisierungen) mit der Dann-Karte „URL aufrufen“ (#671). Sie bringt ihren eigenen Schutz für Ziele mit; nichts vom alten Webhook (Ziel-Liste, Signatur, Ausgangskorb) wird dafür weiterverwendet.
 

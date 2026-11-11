@@ -514,7 +514,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.deepEqual([...tabellen], [], 'Tabellen webhooks und webhook_meldungen entfallen');
     assert.deepEqual((await neu`SELECT schluessel FROM einstellungen WHERE schluessel IN ('webhook_ziele', 'region') ORDER BY 1`).map((r: Record<string, unknown>) => r.schluessel), ['region'], 'nur die Ziele entfallen, andere Einstellungen bleiben');
     assert.equal(Number((await neu`SELECT count(*)::int AS n FROM benutzer WHERE id = ${benutzer}`)[0].n), 1, 'der Benutzer bleibt');
-    assert.ok((await neu`SELECT name FROM schema_migrationen`).some((r: Record<string, unknown>) => r.name === '101_webhooks_ausbau.sql'), 'Migration 101 nachgeholt');
+    assert.ok((await neu`SELECT name FROM schema_migrationen`).some((r: Record<string, unknown>) => r.name === '102_webhooks_ausbau.sql'), 'Migration 102 nachgeholt');
     // Update der Quelle selbst (alle offenen Migrationen in einer Transaktion): ebenso still entfernt.
     const { migriere } = await import('../src/db');
     await migriere(q.sql, MIGRATIONEN, () => {});
