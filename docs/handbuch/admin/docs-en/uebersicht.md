@@ -161,7 +161,7 @@ Afterwards you can deviate per area:
 - **for everyone**: the area is in the bar for every person who may manage it.
 - **only for me**: the area is additionally only in your bar, for example *Log* if you like to check it but the others don't.
 
-**Expert mode:** a household rarely needs some areas, but they are useful if you want to dig deeper – currently the [search](suche.md) with typos and synonyms. The template **Household** hides them; with the tick **Expert mode – only for me** they appear in your bar. That only applies to you and is not a permission – the others who manage see their own bar. In the list of areas they are marked "in expert mode". With **Business** and **Everything** they are visible anyway.
+**Expert mode:** a household rarely needs some areas, but they are useful if you want to dig deeper – currently *Search and full text* with the [search](suche.md) and the [synonyms](suche.md#gleichbedeutende-worter). The template **Household** hides them; with the tick **Expert mode – only for me** they appear in your bar. That only applies to you and is not a permission – the others who manage see their own bar. In the list of areas they are marked "in expert mode". With **Business** and **Everything** they are visible anyway.
 
 If a hidden area is set up, for instance a mailbox or sign-in via a provider, it says "set up, but hidden". At the bottom of the bar it says how many areas are hidden. A click on it shows them all temporarily.
 
@@ -189,7 +189,8 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Intake folder](eingangsordner.md) | Take over scans from a folder | Business |
 | [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | Household, Business |
 | [Webhooks](webhooks.md) | See and switch off where Ablago reports new post, tasks and deadlines (home automation), and approve destinations | Household, Business |
-| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, shrink PDFs, typos and synonyms (e.g. car, vehicle) for the search | Business, Household in expert mode |
+| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, shrink PDFs, typos and the word index for the search | Business, Household in expert mode |
+| [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | Business, Household in expert mode |
 | [Backup](sicherung.md) | Set up, check and restore backups | Household, Business |
 | [Full export](export.md) | Take all data with you in open formats | Household, Business |
 | [Bin](papierkorb.md) | Bring back deleted folders | Household, Business |

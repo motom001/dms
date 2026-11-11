@@ -2100,15 +2100,22 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return Number(r.n);
     },
     async synonyme() {
-      return (await sql`SELECT id, woerter, quelle FROM synonyme WHERE haushalt_id = ${haushaltId} ORDER BY quelle <> 'werkbank', quelle, erstellt, id`)
-        .map((z) => ({ id: z.id as string, woerter: z.woerter as string[], quelle: z.quelle as string }));
+      return (await sql`SELECT id, woerter, quelle, geaendert FROM synonyme WHERE haushalt_id = ${haushaltId} ORDER BY quelle <> 'werkbank', quelle, erstellt, id`)
+        .map((z) => ({ id: z.id as string, woerter: z.woerter as string[], quelle: z.quelle as string, geaendert: iso(z.geaendert) }));
     },
     async legeSynonymAn(g) {
       await sql`INSERT INTO synonyme (id, haushalt_id, woerter, quelle) VALUES (${g.id}, ${haushaltId}, ${g.woerter}::text[], ${g.quelle})`;
     },
-    async aendereSynonym(id, woerter) {
+    async aendereSynonym(id, woerter, erwartet) {
       if (!istUuid(id)) return false;
-      return (await sql`UPDATE synonyme SET woerter = ${woerter}::text[] WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank'`).count > 0;
+      return sql.begin(async (tx) => {
+        // Gleichzeitig bearbeitet (#917, #992): nur auf dem Stand, auf dem die Bearbeitung beruht.
+        if (erwartet !== undefined) {
+          const [a] = await tx`SELECT geaendert FROM synonyme WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank' FOR UPDATE`;
+          if (a && iso(a.geaendert) !== erwartet) throw new KonfigurationVeraltet();
+        }
+        return (await tx`UPDATE synonyme SET woerter = ${woerter}::text[], geaendert = ${STAND_WEITER} WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank'`).count > 0;
+      });
     },
     async loescheSynonym(id) {
       if (!istUuid(id)) return false;

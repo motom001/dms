@@ -2,7 +2,7 @@
 
 So that the search also finds the text of documents, Ablago creates a **full text** for every new document – in the background, without anyone having to wait:
 
-The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, synonyms) and "Shrink new PDFs automatically". The area belongs to the template **Business**; in a household it appears in expert mode. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
+The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own directly below since #992) and "Shrink new PDFs automatically". The area belongs to the template **Business**; in a household it appears in expert mode. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
 
 --8<-- "ausgeblendet-schritt.md"
 

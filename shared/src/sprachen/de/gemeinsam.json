@@ -724,6 +724,7 @@
   "suche.ist-zu-kurz-mindestens": "„{w}“ ist zu kurz (mindestens 2 Zeichen).",
   "suche.eine-gruppe-braucht-mindestens": "Eine Gruppe braucht mindestens zwei verschiedene Wörter.",
   "suche.hoechstens-woerter-je-gruppe": "Höchstens {SYNONYM_MAX} Wörter je Gruppe.",
+  "suche.doppelt": "„{w}“ steht doppelt in der Gruppe.",
   "titelfilter.jahr-eines-datums": "Jahr eines Datums",
   "titelfilter.monat-eines-datums-01": "Monat eines Datums (01–12)",
   "titelfilter.datum-im-eigenen-format": "Datum im eigenen Format, z. B. datum:\"MM/JJJJ\"",

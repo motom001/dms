@@ -12,7 +12,8 @@ import { MB } from '../grenzen';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
 import type { ZugriffDienst } from '../zugriff';
 import { protokoll } from '../protokoll';
-import { WOERTER_JE_LAUF, type Repo } from '../repo';
+import { KonfigurationVeraltet, WOERTER_JE_LAUF, type Repo } from '../repo';
+import { liesStand } from '../mappentypen';
 import { t } from '../sprache';
 import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from '../vektoren';
 
@@ -127,17 +128,31 @@ export class SucheDienst {
     if (g.fehler) throw new Fachfehler(422, g.fehler);
     return g.woerter;
   }
+  /** Neue eigene Gruppe; die Antwort nennt ihre Id (`id`, #992: die Werkbank öffnet sie danach). */
   async legeSynonymAn(e: unknown, von: string) {
     const woerter = this.wortgruppe((e as { woerter?: unknown } | null)?.woerter);
     if ((await this.repo.synonyme()).filter((g) => g.quelle === 'werkbank').length >= SYNONYM_GRUPPEN_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-eigene-gruppen', { SYNONYM_GRUPPEN_MAX }));
-    await this.repo.legeSynonymAn({ id: randomUUID(), woerter, quelle: 'werkbank' });
+    const id = randomUUID();
+    await this.repo.legeSynonymAn({ id, woerter, quelle: 'werkbank' });
     this.synonymZwischen = null;
     protokoll.modul('werkbank').info('Suche: gleichbedeutende Wörter angelegt', { von, woerter: woerter.length });
-    return this.sucheStand();
+    return { ...await this.sucheStand(), id };
   }
+  /**
+   * Eigene Gruppe ändern. Gleichzeitig bearbeiten (#917, #992): Mit `stand` (`geaendert` der Gruppe, wie gelesen)
+   * speichert Ablago nur, wenn seitdem niemand die Gruppe geändert hat – sonst 409, nichts wird überschrieben. Ohne
+   * `stand` keine Prüfung (wie bisher).
+   */
   async aendereSynonym(id: string, e: unknown, von: string) {
     const woerter = this.wortgruppe((e as { woerter?: unknown } | null)?.woerter);
-    if (!(await this.repo.aendereSynonym(id, woerter))) throw new Fachfehler(404, t('meldungen.dienst.diese-gruppe-gibt-es'));
+    const stand = liesStand((e as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
+    try {
+      if (!(await this.repo.aendereSynonym(id, woerter, stand))) throw new Fachfehler(404, t('meldungen.dienst.diese-gruppe-gibt-es'));
+    } catch (f) {
+      if (!(f instanceof KonfigurationVeraltet)) throw f;
+      const jetzt = (await this.repo.synonyme()).find((g) => g.id === id)?.geaendert;
+      throw new Fachfehler(409, t('meldungen.dienst.synonym-konflikt'), { konflikt: true, ...(jetzt ? { stand: jetzt } : {}) });
+    }
     this.synonymZwischen = null;
     protokoll.modul('werkbank').info('Suche: gleichbedeutende Wörter geändert', { von, woerter: woerter.length });
     return this.sucheStand();

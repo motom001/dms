@@ -56,7 +56,7 @@ describe('Werkbank-Ansicht: Expertenmodus (#356)', () => {
     assert.equal(nurImExpertenmodus('haushalt', 'texterkennung'), true);
     assert.equal(nurImExpertenmodus('organisation', 'texterkennung'), false);
     assert.equal(fuerAlle({ vorlage: 'organisation', ein: [], aus: [] }, 'texterkennung'), true);
-    assert.deepEqual(expertenBereiche('haushalt').map((b) => b.pfad), ['automatisierungen', 'texterkennung']);
+    assert.deepEqual(expertenBereiche('haushalt').map((b) => b.pfad), ['automatisierungen', 'texterkennung', 'woerter']);
     assert.deepEqual(expertenBereiche('alles'), []);
     // Der Expertenmodus zeigt nur, was die Vorlage dafür vorsieht – nicht alles.
     assert.equal(sichtbar(haushalt, { ein: [], experte: true }, 'protokoll'), false);
@@ -183,7 +183,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     // Nutzung (#1032) vorn bei „Ablage aufbauen“: Sie bestimmt, was die Mappentypen zeigen.
     assert.deepEqual(je('ablage'), ['nutzung', 'pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen']);
     assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
-    assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'webhooks', 'texterkennung']);
+    assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'webhooks', 'texterkennung', 'woerter']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
     assert.deepEqual(je('wartung'), ['systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']);
@@ -276,7 +276,9 @@ describe('Werkbank neu geordnet (#717, #725)', () => {
     assert.ok(finde('Aufbewahrung abgelaufen').includes('aufbewahrung'));
     assert.ok(finde('technik').includes('systemzustand'));
     assert.ok(finde('wiederherstellen').includes('sicherung'));
-    assert.ok(finde('gleichbedeutende').includes('texterkennung'));
+    // Gleichbedeutende Wörter haben seit #992 einen eigenen Bereich.
+    assert.ok(finde('gleichbedeutende').includes('woerter'));
+    assert.ok(finde('Synonyme').includes('woerter'));
     assert.ok(finde('wartungsmodus').includes('wartung'));
     assert.ok(finde('STEMPEL').includes('stempel'));
     // Notfallblatt (#993): nur noch unter Verschlüsselung.

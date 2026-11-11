@@ -309,6 +309,7 @@
   "dienst.diese-ansicht-gibt-es": "This view doesn’t exist.",
   "dienst.typ-konflikt": "Someone has changed this folder type in the meantime. Reload it and apply your changes again.",
   "dienst.sicht-konflikt": "Someone has changed this view in the meantime. Reload it and apply your changes again.",
+  "dienst.synonym-konflikt": "Someone has changed this group in the meantime. Reload it and apply your changes again.",
   "dienst.stand-ungueltig": "“stand” must be a point in time – ideally the “geaendert” value as you read it.",
   "dienst.die-reihenfolge-muss-genau": "The order must contain exactly the views of this level.",
   "dienst.bitte-eine-vorlage-waehlen": "Please choose a template: Household, Business or Everything.",

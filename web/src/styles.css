@@ -1913,12 +1913,6 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .frag-ausschnitte li { min-width: 0; overflow-wrap: anywhere; }
 .frag-zitat { margin: 0.25rem 0 0; padding: 0.35rem 0.6rem; border-left: 3px solid var(--linie); white-space: pre-wrap; max-height: 14rem; overflow: auto; }
 .frag-grenzen { display: grid; gap: 0.6rem; max-width: 28rem; }
-/* Werkbank → Suche (#356): Gruppen gleichbedeutender Wörter. */
-.synonymliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.synonymliste > li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; padding: 6px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
-.synonymwoerter { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
-.synonymliste form, .synonymneu { flex: 1 1 100%; flex-wrap: wrap; gap: 8px; align-items: center; }
-.synonymliste form input, .synonymneu input { flex: 1 1 14em; min-width: 0; }
 .hinweis.unscharf { margin: 4px 0; }
 
 /* „Zu erledigen“ mit Liste · Monat · Jahr (#528, #725) – Kalender nur lesen, wie am Handy. Präfix ka-. */
@@ -2277,3 +2271,13 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
 .vorbelegen-paar > .chip { white-space: normal; }
 .ad-hinweis.vorbelegt .chip { white-space: normal; text-align: left; }
 @media (max-width: 600px) { .vorbelegen-paar .pfeil { display: none; } }
+
+/* Gleichbedeutende Wörter (#992): Wörter einer Gruppe einzeln untereinander, mit Knöpfen zum Ordnen und Entfernen. */
+.wortgruppe { overflow-wrap: anywhere; }
+.wortliste { margin: 0; padding-left: 1.4em; }
+.wortzeilen { flex: 1 1 100%; max-width: 36rem; margin: 0 0 8px; padding-left: 1.6em; display: flex; flex-direction: column; gap: 6px; }
+.wortzeilen > li { display: flex; flex-direction: column; gap: 2px; }
+.wortzeilen .zeile { flex-wrap: nowrap; gap: 4px; align-items: center; }
+.wortzeilen .zeile input { flex: 1 1 auto; min-width: 0; }
+.wortzeilen > li:first-child input { font-weight: 600; }
+.wortdazu { flex: 1 1 100%; padding-left: 1.6em; }

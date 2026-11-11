@@ -309,6 +309,7 @@
   "dienst.diese-ansicht-gibt-es": "Diese Ansicht gibt es nicht.",
   "dienst.typ-konflikt": "Jemand hat diesen Mappentyp inzwischen geändert. Lade ihn neu und übernimm deine Änderungen noch einmal.",
   "dienst.sicht-konflikt": "Jemand hat diese Ansicht inzwischen geändert. Lade sie neu und übernimm deine Änderungen noch einmal.",
+  "dienst.synonym-konflikt": "Jemand hat diese Gruppe inzwischen geändert. Lade sie neu und übernimm deine Änderungen noch einmal.",
   "dienst.stand-ungueltig": "„stand“ muss ein Zeitpunkt sein – am besten der Wert „geaendert“, so wie du ihn gelesen hast.",
   "dienst.die-reihenfolge-muss-genau": "Die Reihenfolge muss genau die Ansichten dieser Ebene enthalten.",
   "dienst.bitte-eine-vorlage-waehlen": "Bitte eine Vorlage wählen: Haushalt, Betrieb oder Alles.",

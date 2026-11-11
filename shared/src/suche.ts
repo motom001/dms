@@ -74,6 +74,42 @@ export function liesWortgruppe(roh: unknown): { woerter: string[]; fehler: strin
 }
 
 /**
+ * Gruppe gleichbedeutender Wörter, wie Werkbank und Schnittstelle sie sehen (#356, #992). Die Wörter stehen in ihrer
+ * Reihenfolge: Unter dem ersten steht die Gruppe in der Liste. `quelle` ist „werkbank“ (eigene Gruppe) oder die Id des
+ * Pakets, das sie mitbringt; `geaendert` der Stand für den Konfliktschutz (#917).
+ *
+ * Später je Wort eine Sprache (#992, „Andere Sprachen“): kommt als eigene, freiwillige Angabe dazu (z. B.
+ * `sprachen: { [wort]: 'en' }`), `woerter` bleibt eine Liste von Texten. So bleiben Schnittstelle, Vollexport
+ * (`struktur/synonyme.json`), Wortlisten der Pakete und bestehende Gruppen unverändert gültig.
+ */
+export interface Wortgruppe { id: string; woerter: string[]; quelle: string; geaendert: string; paketName?: string }
+/** Quelle eigener Gruppen (Werkbank → Gleichbedeutende Wörter). */
+export const EIGENE_WOERTER = 'werkbank';
+
+/**
+ * Prüfung einer Gruppe beim Bearbeiten (#992): leere Zeilen zählen nicht; doppelte Wörter (gefaltet verglichen,
+ * „Kfz“ = „KFZ“) sind ein Fehler statt still zusammengelegt zu werden – `doppelt` nennt die Stellen der Wiederholungen.
+ * Sonst gelten die Regeln von `liesWortgruppe` (2 bis 20 Wörter, je 2 bis 60 Zeichen).
+ */
+export function pruefeWortgruppe(woerter: readonly string[]): { fehler: string | null; doppelt: number[] } {
+  const doppelt: number[] = [];
+  const gesehen = new Set<string>();
+  woerter.forEach((w, i) => {
+    const k = falte(w.replace(/\s+/g, ' ').trim());
+    if (!k) return;
+    if (gesehen.has(k)) doppelt.push(i); else gesehen.add(k);
+  });
+  if (doppelt.length) return { fehler: t('gemeinsam.suche.doppelt', { w: woerter[doppelt[0]].trim() }), doppelt };
+  return { fehler: liesWortgruppe([...woerter]).fehler, doppelt };
+}
+
+/** Andere Gruppen, in denen dieses Wort (gefaltet verglichen) schon steht – für den Hinweis beim Bearbeiten (#992). */
+export function gruppenMitWort<G extends { id: string; woerter: readonly string[] }>(gruppen: readonly G[], wort: string, ausser?: string): G[] {
+  const k = falte(wort.replace(/\s+/g, ' ').trim());
+  return k ? gruppen.filter((g) => g.id !== ausser && g.woerter.some((w) => falte(w) === k)) : [];
+}
+
+/**
  * Varianten der Begriffe: gleichbedeutende Wörter (ganze Begriffe, gefaltet verglichen) und die Schreibweise ohne
  * Bindestrich („Kfz-Versicherung“ → „Kfzversicherung“).
  */

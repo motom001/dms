@@ -1,5 +1,6 @@
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { SuchePanel } from './SucheEinstellungen';
+import { useWoerter, WoerterListe, WoerterRechts } from './Woerter';
 import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
@@ -81,6 +82,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/verschluesselung        Schlüssel für Passwörter (#39)
  * /werkbank/papierkorb[/:id]        Papierkorb aller Benutzer und Aufbewahrung (#43)
  * /werkbank/texterkennung           Suche und Volltext: Texterkennung, automatisch verkleinern, Suche (#45, #356, #725)
+ * /werkbank/woerter[/:id|/neu[?kopie=:id]]  Gleichbedeutende Wörter (#992), dreiteilig
  * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter (#54, #366, #354; seit #725 „Aufgaben“)
  * /werkbank/wartung                 Wartung: Wartungsmodus und Wartungsoperationen, z. B. Volltext neu erzeugen (#45, #458, #725)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
@@ -123,6 +125,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const favoritenFreigabe = useFavoritenFreigabe(bereich === 'aufgaben');
   const aufgabenEmpfaenger = useAufgabenEmpfaenger(bereich === 'benutzer');
   const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
+  const woerter = useWoerter(bereich === 'woerter');
   const uebersicht = useUebersicht();
   const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
   const wartungsmodus = useWartungsmodus(bereich === 'wartung');
@@ -157,7 +160,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     void uebersicht.laden();
     const offen: Record<string, (() => Promise<unknown>) | undefined> = {
       protokoll: protokoll.neu, betrieb: betrieb.laden,
-      verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
+      verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden, woerter: woerter.laden,
       wartung: async () => { await ocr.laden(); await wartungsmodus.laden(); }, fehlermeldungen: meldungen.laden, sicherung: sicherung.laden,
       systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); await technik.laden(); await datenbank.laden(); }, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden, webhooks: webhooks.laden, automatisierungen: automatisierungen.laden,
       auskuenfte: datenschutz.laden, loeschkonzept: datenschutz.laden,
@@ -234,6 +237,10 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'texterkennung') {
     // Suche und Volltext (#725): Texterkennung, automatisch verkleinern, Tippfehler und gleichbedeutende Wörter.
     rechts = <><TexterkennungPanel t={ocr} wartungAn={wartungAn} /><div className="einspaltig"><AutomatischVerkleinern /></div><SuchePanel abschnitt /></>;
+  } else if (bereich === 'woerter') {
+    // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
+    liste = <WoerterListe z={woerter} offen={id} />;
+    rechts = <WoerterRechts z={woerter} id={id} />;
   } else if (bereich === 'wartung') {
     // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.
     rechts = <><WartungsmodusPanel w={wartungsmodus} /><WartungPanel t={ocr} wartungAn={wartungAn} abschnitt /></>;
@@ -327,6 +334,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'webdav', name: n('webdav'), gruppe: 'post', warn: webdav.stand?.einstellung.aktiv ? t('werkbank.leiste.an') : undefined, warnTitel: t('werkbank.leiste.webdav') },
     { pfad: 'webhooks', name: n('webhooks'), gruppe: 'post', zahl: webhooks.stand?.webhooks.length || undefined, warn: webhookWarnungen(webhooks.stand) ? '!' : undefined, warnTitel: t('webhook.werkbank.leiste') },
     { pfad: 'texterkennung', name: n('texterkennung'), gruppe: 'post', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: t('werkbank.leiste.texterkennung') },
+    { pfad: 'woerter', name: n('woerter'), gruppe: 'post', zahl: woerter.gruppen?.length || undefined },
     // Daten sichern
     { pfad: 'sicherung', name: n('sicherung'), gruppe: 'sichern', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: t('werkbank.leiste.sicherung') },
     { pfad: 'vollexport', name: n('vollexport'), gruppe: 'sichern' },
