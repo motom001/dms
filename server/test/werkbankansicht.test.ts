@@ -182,7 +182,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
     // Nutzung (#1032) vorn bei „Ablage aufbauen“: Sie bestimmt, was die Mappentypen zeigen.
     assert.deepEqual(je('ablage'), ['nutzung', 'pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen']);
-    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
+    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'webhooks', 'texterkennung']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);

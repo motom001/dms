@@ -40,6 +40,8 @@ export interface Anzeigekontext {
   typVon?: (mappeId: string) => string | undefined;
   /** Datum heute (JJJJ-MM-TT) für Datumsvergleiche; fehlt = heute in der Zeitzone der Ablage. */
   heute?: string;
+  /** Ist die Mappe mit dieser Id eine eigene Organisation (#995)? Fehlt = keine. */
+  eigeneOrganisation?: (mappeId: string) => boolean;
 }
 
 type TypTeil = Pick<MappentypDaten, 'felder'> & { register?: Register[] };
@@ -62,6 +64,8 @@ function bereinigeEine(e: unknown): Anzeigebedingung | null {
   if (x.art === 'verweistyp') {
     return typeof x.feld === 'string' && x.feld && typeof x.typ === 'string' && x.typ ? { ...n, art: 'verweistyp', feld: x.feld.slice(0, 60), typ: x.typ.slice(0, 80) } : null;
   }
+  // Eigene Organisation (#995): ein Verweisfeld zeigt auf eine Mappe mit dem Merkmal.
+  if (x.art === 'eigeneOrganisation') return typeof x.feld === 'string' && x.feld ? { ...n, art: 'eigeneOrganisation', feld: x.feld.slice(0, 60) } : null;
   if (x.art === 'feld') {
     const [b] = bereinigeBedingungen([x.bedingung]);
     return b?.art === 'feld' ? { ...n, art: 'feld', bedingung: b } : null;
@@ -85,6 +89,7 @@ export function anzeigeBedingungProblem(b: Anzeigebedingung, typ: TypTeil, eigen
   if (!f || key.startsWith('_')) return t('gemeinsam.anzeige.feld-fehlt', { feld: key });
   if (eigene.includes(key)) return t('gemeinsam.anzeige.eigenes-feld', { feld: feldLabel(f) });
   if (b.art === 'verweistyp') return verweistypProblem(b, f, existiertTyp);
+  if (b.art === 'eigeneOrganisation') return f.typ === 'referenz' ? null : t('gemeinsam.anzeige.kein-verweis', { feld: feldLabel(f) });
   const w = [b.bedingung.wert, b.bedingung.bis];
   // Nur feste Werte und „heute“: Wer die Mappe ansieht, ändert nichts daran, was zu sehen ist.
   if (w.some((x) => x && x.art !== 'fest' && x.art !== 'heute')) return t('gemeinsam.anzeige.nur-feste-werte');
@@ -158,6 +163,8 @@ export function anzeigeBedingungTrifft(b: Anzeigebedingung, typ: TypTeil, werte:
     // Genau ein Zieltyp: jede gewählte Mappe ist davon. Sonst der Typ der Mappe – für nicht sichtbare unbekannt (#1036).
     const fest = einzigesZiel(f) ?? null;
     ja = alsListe(werte[b.feld]).some((id) => (fest ?? k.typVon?.(id)) === b.typ);
+  } else if (b.art === 'eigeneOrganisation') {
+    ja = alsListe(werte[b.feld]).some((id) => !!k.eigeneOrganisation?.(id));
   } else {
     const filter = filterFuer({ bedingungen: [b.bedingung] }, [alsTyp(typ)], { heute: k.heute ?? heuteIn(), ich: '', meineRollen: [] });
     const m = { id: '', typId: '', titel: '', werte, erstellt: '', geaendert: '' } as unknown as Mappe;
@@ -217,12 +224,18 @@ export function hatMerkmalBedingung(typ: TypTeil): boolean {
   return regeln.some((r) => r?.bedingungen.some((b) => b.art === 'merkmal'));
 }
 
+/** Schaut eine Bedingung des Typs, ob ein Verweis auf eine eigene Organisation zeigt (#995)? */
+export function hatEigeneOrganisationBedingung(typ: TypTeil): boolean {
+  const regeln = [...typ.felder.map((f) => f.anzeigen), ...registerVon(typ).flatMap((r) => (r.abschnitte ?? []).map((a) => a.anzeigen))];
+  return regeln.some((r) => r?.bedingungen.some((b) => b.art === 'eigeneOrganisation'));
+}
+
 /**
  * Eine Mappe prüfen wie `pruefeMappe`, mit den Anzeige-Bedingungen: Was gerade nicht zu sehen ist, ist nicht Pflicht.
  * Server (Speichern, Passung) und Oberfläche rufen beide diese Funktion.
  */
 export function pruefeMitAnzeige(typ: Pick<Mappentyp, 'felder'> & { register?: Register[] }, werte: Werte, ctx: MappenKontext & Omit<Anzeigekontext, 'typVon'>): Pruefergebnis {
-  const verborgen = hatAnzeige(typ) ? verborgeneFelder(typ, werte, { merkmale: ctx.merkmale, heute: ctx.heute, typVon: ctx.typVon }) : undefined;
+  const verborgen = hatAnzeige(typ) ? verborgeneFelder(typ, werte, { merkmale: ctx.merkmale, heute: ctx.heute, typVon: ctx.typVon, eigeneOrganisation: ctx.eigeneOrganisation }) : undefined;
   return pruefeMappe(typ, werte, { ...ctx, ...(verborgen?.size ? { verborgen } : {}) });
 }
 
@@ -235,6 +248,11 @@ export function beschreibeAnzeigeBedingung(b: Anzeigebedingung, typ: TypTeil, na
     const f = typ.felder.find((x) => x.key === b.feld);
     const werte = { feld: f ? feldLabel(f) : b.feld, typ: namen.typ?.(b.typ) ?? b.typ };
     return b.nicht ? t('gemeinsam.anzeige.verweistyp-nicht', werte) : t('gemeinsam.anzeige.verweistyp', werte);
+  }
+  if (b.art === 'eigeneOrganisation') {
+    const f = typ.felder.find((x) => x.key === b.feld);
+    const werte = { feld: f ? feldLabel(f) : b.feld };
+    return b.nicht ? t('gemeinsam.anzeige.eigene-organisation-nicht', werte) : t('gemeinsam.anzeige.eigene-organisation', werte);
   }
   // Umgekehrt lesbar, wo es ein Gegenstück gibt („ist leer“ → „ist nicht leer“), sonst „nicht (…)“.
   const gegen: Partial<Record<string, Feldbedingung['op']>> = { leer: 'nichtLeer', nichtLeer: 'leer', ja: 'nein', nein: 'ja' };

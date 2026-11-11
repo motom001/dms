@@ -67,6 +67,8 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/datenschutz*', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/auskunft*', 'auskuenfte'),
   R('*', '/api/werkbank/loeschprotokoll*', 'loeschkonzept'),
+  // Eigene Organisation (#995): Verweis auf die Mappe, Rollen für das Merkmal, Notizen.
+  R('*', '/api/werkbank/organisation*', 'organisation'),
   R('*', '/api/werkbank/darf-weg', 'aufbewahrung'),
   R('*', '/api/werkbank/stempel/*', 'stempel'),
 

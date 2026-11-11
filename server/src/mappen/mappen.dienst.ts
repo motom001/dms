@@ -20,6 +20,8 @@ import { istUuid, type NeueMappe, type Repo, type Rueckverweis, StandVeraltet } 
 import { t } from '../sprache';
 import { maskiert, NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import { pruefeBerechnete } from './berechnet';
+import { gesperrteSchreibfelder, organisationsNotizen, pruefeSchreibschutz } from './schreibschutz';
+import type { OrganisationNotiz } from '../../../shared/src/organisation';
 import { bereinigeWerte, gesendeteFelder, type MappenEingaben } from './eingaben';
 import type { MappenHinweise } from './hinweise';
 import type { MappenHistorie } from './historie';
@@ -49,6 +51,11 @@ export interface MappenAnschluss {
   verschluessele(klartext: string): string;
   /** Titel neu berechnen – über die Fassade des Dienstes, wie bisher (`MappenTitel.aktualisiereTitel`). */
   aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
+  /**
+   * Eigene Organisation (#995): Merkmal oder Verantwortliche geändert – Notiz an die Verwaltung und Systemprotokoll
+   * (Fachbereich Organisation). Erst nach dem Speichern gerufen, Fehler nur im Protokoll.
+   */
+  organisationGeaendert?(e: { mappeId: string; was: Array<OrganisationNotiz['was']>; von: string | null }): Promise<void>;
 }
 
 export class MappenDienst {
@@ -195,6 +202,8 @@ export class MappenDienst {
       rueckverweise,
       /** Wirksame Rechte des Benutzers an dieser Mappe (#126). */
       rechte: rechte ?? { C: true, R: true, U: true, D: true, P: true },
+      /** Geschützte Felder (#995), die diese Person nicht ändern darf – im Formular nur lesbar. */
+      schreibschutz: await gesperrteSchreibfelder(this.kern, typ, z),
       /** Ob „Mappe löschen“ geht, sonst warum nicht (#79). */
       loeschbar: p.ok ? { ok: true, ...(teile.size ? { teile: teile.size } : {}) } : { ok: false, grund: p.grund, rueckverweise: fremd },
       dokumente,
@@ -262,6 +271,8 @@ export class MappenDienst {
     const werte = bereinigeWerte(typ, e.werte, {}, this.verschluessele);
     // Berechnete Felder (#1034): schon beim Anlegen nur das Paket, das sie berechnet (sonst 400 mit seinem Namen).
     await pruefeBerechnete(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
+    // Geschützte Felder (#995): z. B. das Merkmal „eigene Organisation“ nur mit Verwaltungsrecht oder freigegebener Rolle.
+    await pruefeSchreibschutz(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
     // Berechtigungen (#123): Anlegen wird mit den eingegebenen Werten geprüft.
     if (z && !z.admin) {
       const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: z.ich.id, geaendert: new Date().toISOString(), geaendertVon: z.ich.id };
@@ -292,6 +303,7 @@ export class MappenDienst {
       await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: m, alt: {}, neu: werte, von: benutzerId, angelegt: true, demo });
       return { m, titel };
     });
+    if (!demo) this.organisationNotiz(typ, {}, m.werte, m.id, benutzerId);
     const hinweis = z ? await this.hinweisDanach(z, m.id) : undefined;
     return { ...m, titel, ...(hinweis ? { hinweis } : {}) };
   }
@@ -328,6 +340,8 @@ export class MappenDienst {
     const werte = bereinigeWerte(typ, e.werte, m.werte, this.verschluessele);
     // Berechnete Felder (#1034): nur das Paket, das sie berechnet – vor allen anderen Prüfungen, die für es genauso gelten.
     const berechnet = await pruefeBerechnete(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
+    // Geschützte Felder (#995): nur mit Verwaltungsrecht oder freigegebener Rolle – sonst 403, auch über API v1.
+    await pruefeSchreibschutz(this.kern, typ, { alt: m.werte, neu: werte, gesendet: gesendeteFelder(e.werte) }, z);
     // Stand (#609): Hat sich seitdem ein Feld geändert, das diese Eingabe anders setzen will? Dann fragen.
     if (stand && stand !== m.geaendert) {
       const gesendet = e.werte && typeof e.werte === 'object' ? Object.keys(e.werte) : [];
@@ -371,7 +385,16 @@ export class MappenDienst {
     else if (vorab !== m.titel) await this.aktualisiereTitel(await this.repo.quellenVon([id]));
     // Passung, Erwähnungen, Fristen, Post-Aufgaben (#962).
     await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: neu, alt: m.werte, neu: werte, von: benutzerId, angelegt: false, demo: false });
+    this.organisationNotiz(typ, m.werte, neu.werte, id, benutzerId);
     return { ...neu, titel };
+  }
+
+  /** Eigene Organisation (#995): nach dem Speichern die Notiz an die Verwaltung (wird die Transaktion zurückgerollt, nie). */
+  private organisationNotiz(typ: Mappentyp, alt: Werte, neu: Werte, mappeId: string, von: string | null) {
+    const was = organisationsNotizen(typ, alt, neu);
+    const f = this.anschluss.organisationGeaendert;
+    if (!was.length || !f) return;
+    this.kern.danach(() => { void this.kern.nachDerAntwort(() => f({ mappeId, was, von })); });
   }
 
   /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */

@@ -136,6 +136,7 @@ Bedingungen kommen aus demselben Baukasten wie bei [Ansichten](sichten.md#beding
 - **Feldwert der Mappe** – gleich, ist einer von, leer, nicht leer und die übrigen Vergleiche der Feldart, mit festen Werten (bei Datum auch „heute“);
 - **Verweis zeigt auf eine bestimmte Mappe** – ein Verweisfeld mit „zeigt auf“, z. B. Vertragsart *Miete*;
 - **Verweis zeigt auf eine Mappe vom Typ …** – z. B. „*betrifft* ist ein Fahrzeug“; sinnvoll bei Verweisen auf Mappen verschiedener Typen.
+- **Verweis zeigt auf eine eigene Organisation** – z. B. Abschnitt *Ausgangsrechnung*, wenn *Von* die [eigene Organisation](organisation.md) ist.
 
 Jede Bedingung lässt sich umkehren (**trifft nicht zu**); bei mehreren wählst du **alle zutreffen** oder **eine davon zutrifft**. Ohne Bedingung ist alles zu sehen. Eine Bedingung schaut nie auf das eigene Feld bzw. auf Felder des eigenen Abschnitts – es ließe sich sonst nicht mehr einblenden. Bedingungen auf den angemeldeten Benutzer gibt es hier nicht: Was zu sehen ist, hängt nicht davon ab, wer die Mappe ansieht.
 

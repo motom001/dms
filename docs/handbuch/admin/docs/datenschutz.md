@@ -72,7 +72,7 @@ Ein Familienmitglied oder jemand aus dem Betrieb, der ein Konto in Ablago hat, m
 
 Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank → Datenschutz-Auskünfte**; die Einzelheiten stehen [weiter unten](#auskunft-nach-art-15-dsgvo).
 
-1. **Einmal einrichten:** Verantwortlicher, Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Einstellungen](#einstellungen)).
+1. **Einmal einrichten:** Verantwortlicher (an der [eigenen Organisation](organisation.md)), Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Einstellungen](#einstellungen)).
 2. **Person wählen** – oder an ihrer Mappe **Mappe ▾ → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
 3. **Sammeln:** Ablago folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Wohnung) – vollständig nur, was über eine **Zugehörigkeit** zu ihr gehört. Mappen, in denen sie nur über einen **Bezug** genannt ist (z. B. als Ansprechpartner), stehen ohne ihre Inhalte da ([Zugehörigkeit oder Bezug](#zugehorigkeit-oder-bezug)).
 4. **Weitersuchen**, wenn die Person auch anderswo vorkommt: Eine Volltext-Suche macht Ablago bewusst nicht ([warum](#warum-keine-volltext-suche)). Such selbst in der Ablage mit der [erweiterten Suche](https://help.ablago.app/benutzer/aktuell/ablage/#erweiterte-suche) ohne gewählten Mappentyp, mit **Volltext** auch in Dokumenten und Notizen. Was wirklich zur Person gehört, verknüpfst du mit ihrer Mappe (als Zugehörigkeit) und sammelst neu.
@@ -143,9 +143,9 @@ Wählst du eine Auskunft, steht rechts alles an einer Stelle: **Angaben** (Perso
 
 ### Einstellungen { #einstellungen }
 
-Einmal einrichten. Verantwortlicher, Empfänger, Rechte und Anrede stehen über der Liste unter **Einstellungen**; welche Mappentypen eine Person betreffen, steht beim **[Löschkonzept](loeschkonzept.md) → Personendaten in Mappentypen**, weil das Löschkonzept daraus entsteht:
+Einmal einrichten. Empfänger, Rechte und Anrede stehen über der Liste unter **Einstellungen**, den Verantwortlichen pflegst du an der [eigenen Organisation](organisation.md); welche Mappentypen eine Person betreffen, steht beim **[Löschkonzept](loeschkonzept.md) → Personendaten in Mappentypen**, weil das Löschkonzept daraus entsteht:
 
-- **Verantwortlicher:** Name und Anschrift – steht als Absender auf dem Deckblatt.
+- **Verantwortlicher:** Name und Anschrift kommen seit #995 von der [eigenen Organisation](organisation.md) (dazu E-Mail, Telefon und – falls es einen gibt – der Datenschutzbeauftragte) und stehen als Absender auf dem Deckblatt und in der E-Mail an die Person. Gibt es noch keine eigene Organisation, gilt die bisherige Angabe; die Werkbank bietet an, sie als eigene Organisation zu übernehmen.
 - **Empfänger:** an wen du Daten weitergibst (z. B. Steuerberatung, Hausmeisterdienst). Das ist der Vorschlag für jede Auskunft; du kannst ihn je Auskunft ändern.
 - **Rechte der Person:** der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin – in der eingestellten [Anrede](#anrede). Du kannst den Text hier anpassen; einen eigenen Text ändert Ablago beim Wechsel der Anrede nicht.
 - **Anrede in Unterlagen für Dritte:** siehe [unten](#anrede).

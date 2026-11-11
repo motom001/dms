@@ -12,8 +12,8 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { routen } from '../src/routen';
 
-/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern). */
-const ANZAHL = 630;
+/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern; #995: eigene Organisation lesen, setzen, übernehmen, intern). */
+const ANZAHL = 633;
 
 /**
  * Alle Routen ohne Anmeldung (`zugang: 'offen'`) mit Grund (#1029). Eine neue offene Route oder ein Wechsel der Stufe

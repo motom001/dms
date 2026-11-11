@@ -72,6 +72,9 @@ import { BeispielMappen, type DokumentImKorb, LoeschenDienst, type LoeschenTeile
 export type { AufgeloestIn, DokumentImKorb } from './loeschen';
 import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, VollexportQuellen } from './datenschutz';
 import { WerkbankDienst } from './werkbank';
+import { OrganisationDienst } from './organisation';
+import { ORGANISATION_BEREICH } from '../../shared/src/organisation';
+import type { MailText } from './mail';
 export { VOLLTEXT_MAX };
 export type { EreignisAufruf, VolltextMeldung };
 export type { KatalogSchluessel, PaketQuelleEintrag } from './pakete/index';
@@ -262,6 +265,10 @@ export class Dienst {
   readonly auskunftZustellen: AuskunftZustellen;
   /** Ansicht der Werkbank (#281, #1078). */
   readonly werkbank: WerkbankDienst;
+  /** Eigene Organisation (#995): Angaben mit der festen Liste, Werkbank-Bereich, Notizen an die Verwaltung. */
+  readonly organisation: OrganisationDienst;
+  /** Mail an die Verwaltenden eines Bereichs (#995) – beim Start verbunden (ablago.ts), sonst keine. */
+  private verwaltungsmail?: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>;
 
   constructor(grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
     // Stand aus der Datenbank (#742), sonst nur dieser Prozess (speicherRepo in Tests).
@@ -296,7 +303,7 @@ export class Dienst {
       konten: () => this.konten, favoritenBenachrichtigungErlaubt: (id) => this.favoritenBenachrichtigungErlaubt(id), ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserechtText(liste, lesbar, ich),
       mitArchivStand: (d) => this.mitArchivStand(d), mitPdfSchutz: (d) => this.mitPdfSchutz(d), datenschutz: () => this.datenschutz(),
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.meldeVerknuepft(typ, id, alt, neu, von),
-      verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids),
+      verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
@@ -310,7 +317,7 @@ export class Dienst {
       post: { sicherePostSichten: (post) => this.sicherePostSichten(post) },
     });
     ({ ki: this.ki, notizen: this.mappenNotizen, ereignisse: this.ereignisseDienst, automatisierung: this.automatisierungshilfen, aufgaben: this.aufgaben, vertretung: this.vertretung, ohneLeserecht: this.ohneLeserecht, fristen: this.fristen, ohneEmpfaenger: this.ohneEmpfaenger,
-      loeschen: this.loeschen, papierkorb: this.papierkorbVerwaltung, protokoll: this.loeschprotokollVerwaltung, verknuepft: this.mitVerknuepften, beispiele: this.beispielMappen, datenschutz: this.datenschutzDienst, vollexport: this.vollexport, zustellen: this.auskunftZustellen, werkbank: this.werkbank } = this.baueAufgabenUndLoeschen());
+      loeschen: this.loeschen, papierkorb: this.papierkorbVerwaltung, protokoll: this.loeschprotokollVerwaltung, verknuepft: this.mitVerknuepften, beispiele: this.beispielMappen, datenschutz: this.datenschutzDienst, vollexport: this.vollexport, zustellen: this.auskunftZustellen, werkbank: this.werkbank, organisation: this.organisation } = this.baueAufgabenUndLoeschen());
     this.schliesseEmpfaengerAn();
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
@@ -481,14 +488,16 @@ export class Dienst {
 
   /** Datenschutz (#1078): die Klassen in datenschutz/ kennen einander über `teile`; Konten, Kurzzustand und Tresor über den Anschluss. */
   private baueDatenschutz(ereignisse: EreignisseDienst, vertretung: AufgabenVertretung, loeschen: LoeschenTeile) {
+    // Eigene Organisation (#995): vor dem Datenschutz, der den Verantwortlichen von dort nimmt.
+    const organisation = new OrganisationDienst(this.kern, { mappen: () => this.mappen, anVerwaltende: () => this.verwaltungsmail?.(ORGANISATION_BEREICH) });
     const teile = {
-      rechte: this.rechtepruefung, historie: this.mappenHistorie, mappen: this.mappen, dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung,
+      organisation, rechte: this.rechtepruefung, historie: this.mappenHistorie, mappen: this.mappen, dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung,
       archiv: this.dokumentArchiv, sichten: this.sichten, ereignisse, vertretung, verknuepft: loeschen.verknuepft, loeschprotokoll: loeschen.protokoll,
     } as DatenschutzTeile;
     const anschluss = { konten: () => this.konten, kurzzustand: () => this.kurzzustand, tresor: () => this.tresor, automatisierungenExport: () => this.automatisierungenExport };
     teile.datenschutz = new DatenschutzDienst(this.kern, teile, anschluss);
     teile.vollexport = new VollexportQuellen(this.kern, teile, anschluss);
-    return { datenschutz: teile.datenschutz, vollexport: teile.vollexport, zustellen: new AuskunftZustellen(this.kern, teile, anschluss) };
+    return { datenschutz: teile.datenschutz, vollexport: teile.vollexport, zustellen: new AuskunftZustellen(this.kern, teile, anschluss), organisation };
   }
 
   /**
@@ -589,6 +598,8 @@ export class Dienst {
 
   /** Konten anbinden: Benutzer-Mappen im Papierkorb (#43). */
   verbindeKonten(h: KontenHaken) { this.konten = h; }
+  /** Mail an die Verwaltenden eines Bereichs anbinden (#995: Notiz zur eigenen Organisation). */
+  verbindeVerwaltungsmail(f: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>) { this.verwaltungsmail = f; }
 
   /* ---------- Dokumente (#1075, dokumente/dokumente.dienst.ts) ---------- */
 
@@ -1155,6 +1166,8 @@ export class Dienst {
   /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396, datenschutz/datenschutz.dienst.ts) ---------- */
 
   datenschutz(): Promise<Datenschutz> { return this.datenschutzDienst.datenschutz(); }
+  /** Für Unterlagen an Dritte (#995): Verantwortlicher aus der eigenen Organisation, sonst wie eingestellt. */
+  datenschutzFuerUnterlagen(): Promise<Datenschutz> { return this.datenschutzDienst.datenschutzFuerUnterlagen(); }
   setzeDatenschutz(eingabe: unknown, von: string): Promise<Datenschutz> { return this.datenschutzDienst.setzeDatenschutz(eingabe, von); }
   auskunftVorschau(e: unknown, z: Zugriff): Promise<AuskunftVorschau> { return this.datenschutzDienst.auskunftVorschau(e, z); }
   auskunftDaten(...a: Parameters<DatenschutzDienst['auskunftDaten']>): Promise<AuskunftDaten> { return this.datenschutzDienst.auskunftDaten(...a); }

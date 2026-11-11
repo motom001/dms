@@ -4,6 +4,7 @@ import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
 import { NutzungPanel, useNutzung } from './Nutzung';
+import { OrganisationPanel, useOrganisation } from './Organisation';
 import { SprachenPanel, useSprachen } from './Sprachen';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
@@ -137,6 +138,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
   const nutzung = useNutzung(bereich === 'nutzung');
+  const organisation = useOrganisation(bereich === 'organisation');
   const sprachen = useSprachen(bereich === 'sprachen');
   const anbindung = useAnbindung(bereich === 'anbindung');
   const ansicht = useWerkbankAnsicht();
@@ -237,6 +239,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <RegionPanel z={region} />;
   } else if (bereich === 'nutzung') {
     rechts = <NutzungPanel z={nutzung} />;
+  } else if (bereich === 'organisation') {
+    rechts = <OrganisationPanel z={organisation} />;
   } else if (bereich === 'sprachen') {
     rechts = <SprachenPanel z={sprachen} />;
   } else if (bereich === 'anmeldeschutz') {
@@ -302,6 +306,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     // Benutzer und Sicherheit
     { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
     { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },
+    // Eigene Organisation (#995): Notizen an die Verwaltung (Merkmal oder Verantwortliche geändert).
+    { pfad: 'organisation', name: n('organisation'), gruppe: 'benutzer', warn: organisation.stand?.neu ? String(organisation.stand.neu) : undefined, warnTitel: t('werkbank.organisation.notizen.titel') },
     { pfad: 'auskuenfte', name: n('auskuenfte'), gruppe: 'benutzer', zahl: datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length || undefined },
     { pfad: 'loeschkonzept', name: n('loeschkonzept'), gruppe: 'benutzer', warn: datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined, warnTitel: t('werkbank.loeschkonzept.personendaten') },
     ...(d.typen.some((x) => x.archiv) ? [{ pfad: 'aufbewahrung', name: n('aufbewahrung'), gruppe: 'benutzer' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),

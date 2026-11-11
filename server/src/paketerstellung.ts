@@ -37,6 +37,7 @@ import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
 import { DMS_TEILE_AB } from '../../shared/src/teile';
 import { archivInsPaket, DMS_ARCHIV_PAKET_AB } from '../../shared/src/archiv';
 import { DMS_VORGABEN_AB, teileVorgabe } from '../../shared/src/vorgaben';
+import { DMS_ORGANISATION_AB } from '../../shared/src/organisation';
 import { zipPuffer } from './zip';
 import { gebietsschema } from '../../shared/src/sprache';
 import { ARCHIV_MERKEN_MAX } from './grenzen';
@@ -67,6 +68,7 @@ export const MINDEST_FUNKTIONEN = {
   teile: { ab: DMS_TEILE_AB, grund: t('meldungen.paketerstellung.teile') },
   vorgaben: { ab: DMS_VORGABEN_AB, grund: t('meldungen.paketerstellung.vorgaben') },
   archiv: { ab: DMS_ARCHIV_PAKET_AB, grund: t('meldungen.paketerstellung.archiv') },
+  organisation: { ab: DMS_ORGANISATION_AB, grund: t('meldungen.paketerstellung.organisation') },
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
@@ -610,6 +612,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length))) genutzt.push('vorbelegen');
   if (paketTypen.some((t) => 'gehoertZu' in t)) genutzt.push('teile');
   if (paketTypen.some((t) => 'archiv' in t)) genutzt.push('archiv');
+  // Eigene Organisation (#995): Merkmal, Schreibschutz oder die Anzeige-Bedingung „zeigt auf eine eigene Organisation“.
+  if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => f.merkmal || f.schreibschutz)) || JSON.stringify(paketTypen).includes('"art":"eigeneOrganisation"')) genutzt.push('organisation');
   // Anzeige-Bedingung „zeigt auf die Vorgabe …“ (#1038): Ältere Ablago ließen sie weg (Feld immer zu sehen).
   if (JSON.stringify(paketTypen).includes('"art":"vorgabe"')) genutzt.push('vorgaben');
   const mindest = mindestversion(genutzt);

@@ -37,6 +37,7 @@ import type { WortSeite } from '../../shared/src/archivfassung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../shared/src/umwandlung';
 import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../shared/src/fragen';
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
+import type { OrganisationStand } from '../../shared/src/organisation';
 
 /** Vorschläge beim Zuordnen (#336), wie GET /api/mappen/:id/erkennung sie liefert. */
 export interface ErkFund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
@@ -309,6 +310,8 @@ export interface Zaehler {
   favoritenSicht?: string | null;
   /** Merkmale der Ablage (#1032) für die Anzeige-Bedingungen im Formular (#1033); fehlt bei älteren Servern. */
   merkmale?: Merkmale;
+  /** Ids der eigenen Organisationen (#995) für „zeigt auf eine eigene Organisation“; fehlt bei älteren Servern. */
+  eigeneOrganisationen?: string[];
 }
 /** Eine Mappe im Papierkorb (#43). */
 /** Einzelnes Dokument im Papierkorb (#344). mappe: da · papierkorb (erst die Mappe wiederherstellen) · weg. */
@@ -668,7 +671,7 @@ export const api = {
   /** Werkbank (#921): wer außer mir gerade im Verwaltungsmodus ist (Name und Beginn), nur im Verwaltungsmodus. */
   geradeImModus: () => stilleAnfrage<Array<{ name: string; seit: string }>>('/api/werkbank/gerade-im-modus'),
   /** Ohne Zählen (#512): Papierkorb-Tage und „Neue Post“ – vor den Zahlen. */
-  sichtenRahmen: () => anfrage<Pick<Zaehler, 'papierkorbTage' | 'neuePost' | 'favoritenSicht' | 'merkmale'>>('GET', '/api/sichten/rahmen'),
+  sichtenRahmen: () => anfrage<Pick<Zaehler, 'papierkorbTage' | 'neuePost' | 'favoritenSicht' | 'merkmale' | 'eigeneOrganisationen'>>('GET', '/api/sichten/rahmen'),
   /* Sichten verwalten (#38) */
   sichtDefinitionen: () => anfrage<Sicht[]>('GET', '/api/sichten/definitionen'),
   sichtAnlegen: (s: Partial<SichtDaten>) => anfrage<Sicht>('POST', '/api/sichten/definitionen', s),
@@ -955,6 +958,10 @@ export const api = {
   /** Merkmale der Ablage (#1032): lesen alle, die verwalten; ändern nur „Gesamte Verwaltung“. */
   merkmale: () => anfrage<Merkmale>('GET', '/api/werkbank/merkmale'),
   setzeMerkmale: (e: Partial<Merkmale>) => anfrage<Merkmale>('PUT', '/api/werkbank/merkmale', e),
+  /** Eigene Organisation (#995): Verweis auf die Mappe(n) mit dem Merkmal, Wahl für Auskünfte, Rollen, Notizen. */
+  organisation: () => anfrage<OrganisationStand>('GET', '/api/werkbank/organisation'),
+  setzeOrganisation: (e: Record<string, unknown>) => anfrage<OrganisationStand>('PUT', '/api/werkbank/organisation', e),
+  organisationUebernehmen: () => anfrage<OrganisationStand>('POST', '/api/werkbank/organisation/uebernehmen'),
   sprachen: () => anfrage<SprachenStand>('GET', '/api/werkbank/sprachen'),
   sprachenSetzen: (e: Partial<SprachenStand['einstellung']>) => anfrage<SprachenStand>('PUT', '/api/werkbank/sprachen', e),
   uebersetzenStand: () => anfrage<UebersetzenStand>('GET', '/api/werkbank/uebersetzen'),
@@ -1183,7 +1190,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[]; /** Teile (#1031), die beim Löschen mitgehen. */ teile?: number }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Die Frist läuft noch nicht (#1051): beginnt mit diesem Feld. */ fristBeginntMit?: string; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean; /** Hinweise von Paketen (#1034). */ hinweise?: import('../../shared/src/berechnet').PaketHinweis[]; /** Vorgabe aus einem Paket (#1038). */ vorgabe?: import('../../shared/src/vorgaben').VorgabeHerkunft }
+export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[]; /** Teile (#1031), die beim Löschen mitgehen. */ teile?: number }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Die Frist läuft noch nicht (#1051): beginnt mit diesem Feld. */ fristBeginntMit?: string; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean; /** Hinweise von Paketen (#1034). */ hinweise?: import('../../shared/src/berechnet').PaketHinweis[]; /** Vorgabe aus einem Paket (#1038). */ vorgabe?: import('../../shared/src/vorgaben').VorgabeHerkunft; /** Geschützte Felder (#995), die diese Person nicht ändern darf. */ schreibschutz?: string[] }
 /** Werkbank → Datenschutz (#396, #455). */
 export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; /** #668 */ verzeichnis: AuskunftEintrag[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean; /** #469 */ loeschkonzept?: { luecken: Luecke[] } }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }

@@ -19,6 +19,7 @@ import { liesFeldErkennung, liesWiederfinden } from '../../../shared/src/erkennu
 import { leseProzent, leseZeitraum, zeitraumIso } from '../../../shared/src/feldarten';
 import { PAKET_ID, SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen';
 import { TABELLE_NEU_MAX, type Tabellenquelle } from '../../../shared/src/tabelle';
+import { istFeldmerkmal, istSchreibschutz } from '../../../shared/src/organisation';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
@@ -116,7 +117,31 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(typ === 'tabelle' ? { quelle: bereinigeTabellenquelle(f.quelle) } : {}),
     // Berechnet (#1034): Id des Pakets; ob es die Angabe setzen darf, entscheidet behalteBerechnet.
     ...(typ !== 'passwort' && typ !== 'tabelle' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
+    // Eigene Organisation (#995): Merkmal nur am Ja/Nein-Feld, Schreibschutz nicht an Passwort und Tabelle – ob sie
+    // bleiben dürfen, entscheidet behalteOrganisation (nur aus dem Paket).
+    ...(typ === 'janein' && istFeldmerkmal(f.merkmal) ? { merkmal: f.merkmal } : {}),
+    ...(typ !== 'passwort' && typ !== 'tabelle' && istSchreibschutz(f.schreibschutz) ? { schreibschutz: f.schreibschutz } : {}),
   };
+}
+
+/**
+ * Merkmal „eigene Organisation“ und Schreibschutz (#995): bringt nur ein Paket mit (`ausPaket`). Über die Werkbank und
+ * die Schnittstelle bleiben sie, wie sie sind – sonst könnte, wer Mappentypen ändern darf, den Schutz abschalten oder
+ * einen anderen Typ zur eigenen Organisation machen. Höchstens ein Feld je Typ trägt das Merkmal (das erste).
+ */
+export function behalteOrganisation(d: MappentypDaten, alt: Pick<MappentypDaten, 'felder'> | undefined, ausPaket?: string): MappentypDaten {
+  let merkmal = false;
+  const felder = d.felder.map((f) => {
+    const { merkmal: m, schreibschutz: s, ...ohne } = f;
+    const vorher = alt?.felder.find((y) => y.key === f.key && y.typ === f.typ);
+    const quelle = ausPaket ? { merkmal: m, schreibschutz: s } : { merkmal: vorher?.merkmal, schreibschutz: vorher?.schreibschutz };
+    if (f.system) return ohne;
+    const mitMerkmal = quelle.merkmal && f.typ === 'janein' && !merkmal;
+    if (mitMerkmal) merkmal = true;
+    const mitSchutz = quelle.schreibschutz && f.typ !== 'passwort' && f.typ !== 'tabelle';
+    return { ...ohne, ...(mitMerkmal ? { merkmal: quelle.merkmal } : {}), ...(mitSchutz ? { schreibschutz: quelle.schreibschutz } : {}) };
+  });
+  return { ...d, felder };
 }
 
 /** Quelle einer Tabelle (#1030): Typ, Verweisfeld, Trefferliste und „+ Neu“ – Texte gekürzt, Leeres weg. */

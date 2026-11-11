@@ -107,6 +107,10 @@ See also: [Calculated field](#berechnetes-feld), [Package](#paket).
 A company, authority, bank, practice, club or other body you deal with. Folder type from the package Basis; other packages link to it (contract partner, insurer, bank …).  
 See also: [Branch](#niederlassung), [Person](#person).
 
+<a id="eigene-organisation"></a>**Own organisation** (*Eigene Organisation*) · ✓ everyday word · administrators  
+The organisation in the Library that is "us" – your own business, company or trade. Marked by the field "Own organisation" (package Basis); only someone managing the own organisation may set it. Name, address, contact, controller and data protection officer are kept there once and used by requests and the deletion concept; recognition never takes it as sender. Several are possible.  
+See also: [Used for work](#beruflich-genutzt).
+
 <a id="prozent"></a>**Percentage** (*Prozent*) · ✓ everyday word · everyone  
 Field kind for a percentage, e.g. the tax rate "19%" – with decimals, freely chosen (foreign rates too). "19", "19%" and "19.0" mean the same.  
 See also: [Field kind](#feldart).

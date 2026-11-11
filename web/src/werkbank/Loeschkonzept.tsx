@@ -50,7 +50,7 @@ export function LoeschkonzeptBlatt({ luecken }: { luecken: Luecke[] }) {
                   {l.fehlt.includes('frist') && <Link to={`/werkbank/typen/${l.typId}#archiv`} className="knopf klein">{t('werkbank.loeschkonzept.fristFestlegen')}</Link>}
                 </span>
               </> : l.art === 'verantwortlicher'
-                ? <Link to="/werkbank/auskuenfte/einstellungen" className="verweis">{l.text}</Link>
+                ? <Link to="/werkbank/organisation" className="verweis">{l.text}</Link>
                 : <a href="#personendaten" className="verweis">{l.text}</a>}
             </li>
           ))}</ul>

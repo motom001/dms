@@ -16,6 +16,8 @@ import { Knopf, NurLesenFeld, ProzentEingabe, ZeitraumEingabe } from '../baustei
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
+import { darfBereich } from '../../../shared/src/verwaltungsrecht';
+import { ORGANISATION_BEREICH } from '../../../shared/src/organisation';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { ausRoh, leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte, type RohZeitraum } from '../werte';
 import { titelOder } from '../seiten';
@@ -362,7 +364,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const register = mitNotizen(registerVon(typ));
   // Nur lesbar: Systemfelder von Benutzern, Name einer Systemrolle (#26, #27) – und berechnete Felder (#1034): die schreibt
   // nur ihr Paket. So lassen auch „folgt aus“ und „Aus Dokument ausfüllen“ sie aus („nie überschreiben“).
-  const geschuetzt = { ...geschuetzteFelder(typ, mappe), ...berechnetGesperrt(typ) };
+  // Geschützte Felder (#995), z. B. das Merkmal „eigene Organisation“: Der Server sagt je Mappe, was diese Person nicht
+  // ändern darf; bei einer neuen Mappe gilt: nur im Verwaltungsmodus mit dem Bereich „Eigene Organisation“.
+  const geschuetzt = { ...geschuetzteFelder(typ, mappe), ...berechnetGesperrt(typ), ...schreibschutzGesperrt(typ, mappe ? details?.schreibschutz ?? [] : (ich.rolle === 'admin' && darfBereich(ich, ORGANISATION_BEREICH) ? [] : null)) };
   // Berechtigungen (#126): ohne „Bearbeiten“ nur ansehen; Löschen und Passwörter je nach Recht.
   const rechte = mappe ? details?.rechte : undefined;
   const nurLesen = !!rechte && !rechte.U;
@@ -455,7 +459,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
    * „anzeigen“ holt Feld oder Abschnitt für diese Mappe zurück (`aufgedeckt`, nur bis zum Verlassen).
    */
   const merkmale = d.zaehler.merkmale;
-  const anz: Anzeigestand = useMemo(() => anzeigeImFormular(typ, roh, { merkmale, bekannt }), [typ, roh, merkmale, bekannt]);
+  const eigene = d.zaehler.eigeneOrganisationen;
+  const anz: Anzeigestand = useMemo(() => anzeigeImFormular(typ, roh, { merkmale, eigene, bekannt }), [typ, roh, merkmale, eigene, bekannt]);
   const [aufgedeckt, setAufgedeckt] = useState<Set<string>>(() => new Set());
   const decke = (k: string) => setAufgedeckt((x) => new Set([...x, k]));
   const hatWert = (f: Feld) => mitWert(f, roh);
@@ -556,7 +561,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const neu = leereVorschlaege(typ, r.felder, rohRef.current, (n) => geschuetzt[n] === undefined && !ausgeblendet.has(n));
     // Anzeigen, wenn … (#1033): mit den neuen Werten zusammen – „Verlängert sich um“ zeigt sich erst mit „Danach“.
     const mitNeuen: Bezuege = { ...bekanntRef.current, ...r.bezuege, [id]: { titel: r.titel, typId: r.typId } };
-    const sicht = anzeigeImFormular(typ, { ...rohRef.current, ...neu }, { merkmale, bekannt: mitNeuen });
+    const sicht = anzeigeImFormular(typ, { ...rohRef.current, ...neu }, { merkmale, eigene, bekannt: mitNeuen });
     for (const n of Object.keys(neu)) if (sicht.verborgen.has(n)) delete neu[n];
     if (!Object.keys(neu).length) return;
     const text = t('ablage.vorbelegen.aus', { feld: feldLabel(f), titel: titelOder(r.titel) });
@@ -803,7 +808,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     for (const [k, m] of Object.entries(pruefeFormate(typ, werte, mappe?.werte))) p.felder[k] ??= m;
     // Ausgeblendete Felder (#655): Was dort unverändert steht, hält das Speichern nicht auf (wie auf dem Server).
     // Genauso, was eine Anzeige-Bedingung gerade ausblendet (#1033).
-    const verborgen = anzeigestand(typ, werte, { merkmale, typVon: (id) => bekannt[id]?.typId }).verborgen;
+    const verborgen = anzeigestand(typ, werte, { merkmale, typVon: (id) => bekannt[id]?.typId, eigeneOrganisation: (id) => !!eigene?.includes(id) }).verborgen;
     for (const k of Object.keys(p.felder)) if ((ausgeblendet.has(k) || verborgen.has(k)) && !geaenderteFelder.includes(k)) delete p.felder[k];
     if (!istOk(p)) { zeigeFehler(p); setMeldung(t('ablage.mappeformular.bitte-die-markierten-felder')); return; }
     // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
@@ -1137,6 +1142,11 @@ function VorgabeZeile({ paketName }: { paketName: string }) {
       {t('ablage.vorgabe.zeile')} <span className="paketmarke" title={t('ablage.vorgabe.marke-titel', { paket: paketName })}><Symbol name="paket" />{paketName}</span>
     </p>
   );
+}
+
+/** Geschützte Felder (#995): nur lesbar mit dem Hinweis, wer sie ändert. `null` = alle geschützten Felder des Typs. */
+function schreibschutzGesperrt(typ: Mappentyp, gesperrt: string[] | null): Record<string, string> {
+  return Object.fromEntries(typ.felder.filter((f) => f.schreibschutz && (gesperrt === null || gesperrt.includes(f.key))).map((f) => [f.key, t('felder.schreibschutz.nur-verwaltung')]));
 }
 
 /** Berechnete Felder (#1034): nur lesbar, darunter „berechnet von …“ bzw. „nicht mehr berechnet“ mit dem Paketnamen. */

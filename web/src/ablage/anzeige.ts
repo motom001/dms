@@ -8,8 +8,8 @@ import type { Merkmale } from '../../../shared/src/merkmale';
 import { istLeer, type Feld, type Mappentyp } from '../../../shared/src/model';
 import { ausRoh, werteAusRoh, type RohWerte } from '../werte';
 
-export function anzeigeImFormular(typ: Mappentyp, roh: RohWerte, k: { merkmale?: Merkmale; bekannt: Record<string, { typId: string } | undefined> }): Anzeigestand {
-  return anzeigestand(typ, werteAusRoh(typ, roh), { merkmale: k.merkmale, typVon: (id) => k.bekannt[id]?.typId });
+export function anzeigeImFormular(typ: Mappentyp, roh: RohWerte, k: { merkmale?: Merkmale; eigene?: string[]; bekannt: Record<string, { typId: string } | undefined> }): Anzeigestand {
+  return anzeigestand(typ, werteAusRoh(typ, roh), { merkmale: k.merkmale, typVon: (id) => k.bekannt[id]?.typId, eigeneOrganisation: (id) => !!k.eigene?.includes(id) });
 }
 
 /** Steht im Feld etwas? Ein Ja/Nein-Feld zählt nur mit „ja“ – „nein“ ist seine Vorgabe, kein eingetragener Wert. */

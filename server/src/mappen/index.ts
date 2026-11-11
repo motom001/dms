@@ -7,4 +7,5 @@ export { keinSchluessel, Passwortfelder, type PasswortfelderAnschluss } from './
 export { ARCHIV_PRAEFIX, archivnummerAus, MappenArchiv, type MappenArchivAnschluss } from './archiv';
 export { MappenNotizen, type NotizenAnschluss } from './notizen';
 export { geaenderteBerechnete, pruefeBerechnete, type BerechnetAbgelehnt } from './berechnet';
+export { darfSchreibschutz, geaenderteGeschuetzte, gesperrteSchreibfelder, organisationsNotizen, pruefeSchreibschutz, type SchreibschutzAbgelehnt } from './schreibschutz';
 export { MappenHinweise } from './hinweise';

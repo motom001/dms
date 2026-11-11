@@ -105,6 +105,7 @@ nav:
       - Benutzer und Sicherheit:
           - Wer darf Ablago verwalten?: verwalten.md
           - Benutzer und Rollen: benutzer.md
+          - Eigene Organisation: organisation.md
           - Berechtigungen: berechtigungen.md
           - Datenschutz in Ablago: datenschutz.md
           - Löschkonzept (Vorlage): loeschkonzept.md

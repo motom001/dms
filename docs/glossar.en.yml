@@ -139,6 +139,9 @@ begriffe:
   Beruflich genutzt:
     begriff: Used for work
     beschreibung: The one attribute of the Library – the Library is also used for work (self-employed, club, business). Default no. Folder types then show their work-related fields and sections; permissions, views and automations can look at it. Applies to the whole Library, not per person; set it in Workbench → Use.
+  Eigene Organisation:
+    begriff: Own organisation
+    beschreibung: The organisation in the Library that is "us" – your own business, company or trade. Marked by the field "Own organisation" (package Basis); only someone managing the own organisation may set it. Name, address, contact, controller and data protection officer are kept there once and used by requests and the deletion concept; recognition never takes it as sender. Several are possible.
   Favoriten:
     begriff: Favourites
     beschreibung: Folders a user has marked with the star. The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite).

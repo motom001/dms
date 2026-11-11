@@ -335,6 +335,8 @@ wartung.start();
 // dürfen (auch „Gesamte Verwaltung“); ohne Bereich an „Gesamte Verwaltung“.
 const anVerwaltendeVon = (bereich?: string) => async (betreff: import('./mail').MailText, text: import('./mail').MailText) => { await anVerwaltende(await konten.listeBenutzer(), betrieb.mailer(), betreff, text, bereich); };
 spDeps.wartung = wartung;
+// Eigene Organisation (#995): Notiz an die Verwaltenden, wenn sich Merkmal oder Verantwortliche ändern.
+dienst.verbindeVerwaltungsmail((bereich) => anVerwaltendeVon(bereich));
 spDeps.anAdmins = anVerwaltendeVon('systemzustand');
 // Anmeldeschutz (#240): Sperren in der Datenbank, einstellbar in der Werkbank.
 const anmeldesperre = new Anmeldesperre(pgEinstellungen(sql, cfg.haushalt), anVerwaltendeVon('anmeldeschutz'), Date.now, zustandDb);

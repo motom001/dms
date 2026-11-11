@@ -258,7 +258,8 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const auskunftZiel = () => auskunftOrdner(x.exporte?.pfad);
   /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
-    typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutz(),
+    // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
+    typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutzFuerUnterlagen(),
     papierkorbTage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
     sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,

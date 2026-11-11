@@ -136,6 +136,7 @@ Conditions come from the same toolkit as for [views](sichten.md#bedingungen):
 - **Field value of the folder** – equal, is one of, empty, not empty and the other comparisons of the field type, with fixed values (for dates also “today”);
 - **Reference points to a particular folder** – a reference field with “points to”, e.g. contract type *Rent*;
 - **Reference points to a folder of type …** – e.g. “*concerns* is a vehicle”; useful for references to folders of different types.
+- **Reference points to an own organisation** – e.g. section *Outgoing invoice* if *From* is the [own organisation](organisation.md).
 
 Each condition can be reversed (**does not apply**); with several you choose **all apply** or **one of them applies**. Without a condition everything is shown. A condition never looks at its own field or at fields of its own section – otherwise it could never be shown again. Conditions on the signed-in user don’t exist here: what is shown doesn’t depend on who is looking at the folder.
 

@@ -11,7 +11,8 @@ import type { Fund, Nummernfund, Briefkopf, Treffer } from '../../shared/src/erk
 import { eindeutigerTreffer, ENGINE_EINGEBAUT, typAusText, type TypFund, ERKENNEN_HINWEIS, findeAngaben, findeMappen, fuellfelder, gleicheAb, istAbsenderTyp, merkmalsfelder, type Abgleich, pruefeVorschlaege, schemaFuer, vorschlaegeAus, type Angaben, type AusDokument, type Vergleichsmappe, type Vorschlaege } from '../../shared/src/erkennung';
 import { hatNetz, hatSchnittstelle } from '../../shared/src/pakete';
 import type { Einstellungen } from './einstellungen';
-import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug } from '../../shared/src/model';
+import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug, type Werte } from '../../shared/src/model';
+import { istEigeneOrganisation } from '../../shared/src/organisation';
 import type { Dienst, Zugriff } from './dienst';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -257,7 +258,10 @@ export class Erkennung {
     const angaben = findeAngaben(text);
     const { typen, mappen } = await this.vergleich();
     const typVon = new Map(typen.map((t) => [t.id, t]));
-    const treffer = findeMappen(text, typen, mappen);
+    // Eigene Organisation (#995, #1043): ist nie Absender eingehender Post – auch wenn ihr Briefkopf im Text steht
+    // (z. B. auf einer Antwort, einer eigenen Rechnung oder im Anschreiben). Auch kein Ziel über „gefunden“.
+    const eigene = new Set(mappen.filter((m) => istEigeneOrganisation(typVon.get(m.typId), m.werte as Werte)).map((m) => m.id));
+    const treffer = findeMappen(text, typen, mappen).filter((x) => !eigene.has(x.mappeId));
     const absender = treffer.filter((x) => istAbsenderTyp(typVon.get(x.typId)!)).slice(0, MAX_ABSENDER);
     const eindeutig = eindeutigerTreffer(absender);
     const haupt = eindeutig ?? (absender[0]?.stark ? absender[0] : null);

@@ -33,12 +33,15 @@ import { type Aufgabe, auswahlText, type Benutzer, istLeer, type Mappe, type Map
 import { geschwaerztName, kannSchwaerzen } from '../../../shared/src/schwaerzen';
 import { heuteIn } from '../../../shared/src/sichten';
 import type { VollexportQuellen } from './vollexport';
+import type { OrganisationDienst } from '../organisation';
 
 /** Die Teile, die der Datenschutz ruft – dazu alle Klassen dieses Ordners (zusammengesetzt im Dienst). */
 export interface DatenschutzTeile {
   rechte: ZugriffDienst; historie: MappenHistorie; mappen: MappenDienst; dokumente: DokumenteDienst; umwandlung: DokumentUmwandlung; archiv: DokumentArchivfassung;
   sichten: SichtenDienst; ereignisse: EreignisseDienst; vertretung: AufgabenVertretung; verknuepft: MitVerknuepften; loeschprotokoll: LoeschprotokollVerwaltung;
   datenschutz: DatenschutzDienst; vollexport: VollexportQuellen;
+  /** Eigene Organisation (#995): Verantwortlicher für Auskunft und Löschkonzept. */
+  organisation: OrganisationDienst;
 }
 
 /** Was der Datenschutz außer dem Kern braucht – vom Dienst hereingereicht. */
@@ -119,6 +122,16 @@ export class DatenschutzDienst {
   }
 
   async datenschutz(): Promise<Datenschutz> { return liesDatenschutz(await this.einstellungen?.lies('datenschutz')); }
+
+  /**
+   * Einstellungen für Unterlagen an Dritte (#995): Deckblatt und E-Mails der Auskunft, Löschkonzept. Der Verantwortliche
+   * kommt von der eigenen Organisation (Werkbank → Eigene Organisation); ohne sie gilt die bisherige Angabe.
+   */
+  async datenschutzFuerUnterlagen(): Promise<Datenschutz> {
+    const d = await this.datenschutz();
+    const text = await this.teile.organisation.verantwortlicherText();
+    return text ? { ...d, verantwortlicher: text } : d;
+  }
 
   async setzeDatenschutz(eingabe: unknown, von: string): Promise<Datenschutz> {
     const sys = await this.kern.system();
@@ -201,7 +214,7 @@ export class DatenschutzDienst {
     const passwort = typeof o.passwort === 'string' && o.passwort ? o.passwort : null;
     if (passwort && passwort.length < AUSKUNFT_PASSWORT_MIN) throw new Fachfehler(422, t('meldungen.dienst.das-passwort-fuer-die', { AUSKUNFT_PASSWORT_MIN }));
     const start = (await this.repo.holeMappe(vorschau.baum.startId))!;
-    const ds = await this.datenschutz();
+    const ds = await this.datenschutzFuerUnterlagen();
     const ohneGeheim = (t: Mappentyp, w: Werte): Werte => Object.fromEntries(Object.entries(w).filter(([k, v]) => !istVerschluesselt(v) && t.felder.find((f) => f.key === k)?.typ !== 'passwort'));
     const mappen = (await this.repo.holeMappen(a.mappen)).filter((m) => z.typen.has(m.typId)).map((m) => ({ ...m, werte: ohneGeheim(z.typen.get(m.typId)!, m.werte) }));
     const typIds = new Set(mappen.map((m) => m.typId));

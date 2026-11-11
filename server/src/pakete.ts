@@ -17,6 +17,7 @@ import { liesWortgruppe } from '../../shared/src/suche';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import { FELDTYPEN, istLeer, MAX_DATEIGROESSE, zieleVon, ZIELTYPEN_MAX, type Abschnitt, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
+import { FELDMERKMALE, istFeldmerkmal, istSchreibschutz, SCHREIBSCHUTZ } from '../../shared/src/organisation';
 import { bereinigeAbschnitte } from '../../shared/src/darstellung';
 import type { Anzeigeregel } from '../../shared/src/anzeige';
 import { typBild, type TypBild } from '../../shared/src/typvergleich';
@@ -479,6 +480,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       else if (f.berechnet === true && f.typ === 'passwort') fehler.push(`${wo}: Feld „${f.key}“: Passwortfelder lassen sich nicht berechnen.`);
       // Ältere Pakete hätten berechnetVon selbst setzen können – das vergibt nur Ablago.
       delete (f as Partial<Feld>).berechnetVon;
+      // Eigene Organisation (#995): `merkmal: eigeneOrganisation` nur am Ja/Nein-Feld, `schreibschutz: verwaltung`.
+      if (f.merkmal !== undefined && (!istFeldmerkmal(f.merkmal) || f.typ !== 'janein')) fehler.push(`${wo}: Feld „${f.key}“: merkmal gibt es nur am Ja/Nein-Feld (typ: janein), möglich: ${FELDMERKMALE.join(', ')}.`);
+      if (f.schreibschutz !== undefined && (!istSchreibschutz(f.schreibschutz) || f.typ === 'passwort' || f.typ === 'tabelle')) fehler.push(`${wo}: Feld „${f.key}“: schreibschutz ist ${SCHREIBSCHUTZ.join(', ')} – nicht an Passwort und Tabelle.`);
       fehler.push(...tabellenFehler(f, `${wo}: Feld „${f.key}“`));
       // Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText.
       const roh = f as unknown as Record<string, unknown>;
@@ -493,6 +497,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
         delete roh.aus_text;
       }
     }
+    if (felder.filter((f) => f.merkmal !== undefined).length > 1) fehler.push(`${wo}: höchstens ein Feld mit merkmal je Mappentyp.`);
     // Anzeigen, wenn … (#1033) an Feldern und Abschnitten: ein Objekt; Typen als Verweis wie bei ziel. Was im Einzelnen
     // nicht passt, meldet die Prüfung des Mappentyps beim Anlegen.
     const anzeigen = [...felder.map((f) => ({ key: f.key, a: (f as unknown as Record<string, unknown>).anzeigen })),

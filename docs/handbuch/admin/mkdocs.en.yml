@@ -100,6 +100,7 @@ nav:
       - Users and security:
           - Who may administer Ablago?: verwalten.md
           - Users and roles: benutzer.md
+          - Own organisation: organisation.md
           - Permissions: berechtigungen.md
           - Data protection in Ablago: datenschutz.md
           - Deletion concept (template): loeschkonzept.md

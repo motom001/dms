@@ -288,6 +288,14 @@ begriffe:
     begegnet: admin
     verwandt: ["Anzeigen, wenn …", Bedingung]
     code: merkmale.beruflich
+  - begriff: Eigene Organisation
+    bereich: grundbegriffe
+    beschreibung: Die Organisation in der Ablage, die „wir“ sind – der eigene Betrieb, die eigene Firma oder das Gewerbe. Gekennzeichnet über das Feld „Eigene Organisation“ (Paket Basis); setzen darf es nur, wer die eigene Organisation verwaltet. Name, Anschrift, Kontakt, Verantwortlicher und Datenschutzbeauftragter werden dort einmal gepflegt und von Auskünften und Löschkonzept genutzt; die Erkennung nimmt sie nie als Absender. Mehrere sind möglich.
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Mandant, Betrieb und Verantwortliche, Impressum]
+    verwandt: [Beruflich genutzt]
+    code: merkmal eigeneOrganisation
   - begriff: Favoriten
     bereich: grundbegriffe
     beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).

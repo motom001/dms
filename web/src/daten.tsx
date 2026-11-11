@@ -125,7 +125,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
       personen,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? t('oberflaeche.daten.geloeschter-benutzer') : 'unbekannt'),
       // Anzeige-Bedingungen (#1033): wie der Server – was nicht zu sehen ist, ist nicht Pflicht.
-      pruefe: (mappentyp, werte, typVon) => pruefeMitAnzeige(mappentyp, werte, { typVon, doppelt: () => undefined, merkmale: zaehler.merkmale }),
+      pruefe: (mappentyp, werte, typVon) => pruefeMitAnzeige(mappentyp, werte, { typVon, doppelt: () => undefined, merkmale: zaehler.merkmale, eigeneOrganisation: (id) => !!zaehler.eigeneOrganisationen?.includes(id) }),
     };
   }, [typen, sichten, zaehler, zahlenDa, personen, geladen, fehler, stand, neuLaden, frisch, auffrischen, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
 
