@@ -4,7 +4,7 @@
  */
 import { parentPort } from 'node:worker_threads';
 import { alsBuffer, fehlerDaten, type Antwort, type Auftrag } from './nachricht';
-import { VORGAENGE } from './vorgaenge';
+import { fehlendeZeichen, VORGAENGE } from './vorgaenge';
 import { senkePrioritaet } from '../hintergrund';
 
 // Niedrigere Priorität (#893): unter Linux nur dieser Faden – der Hauptfaden beantwortet die Anfragen weiter mit seiner.
@@ -17,8 +17,11 @@ port.on('message', (a: Auftrag) => void (async () => {
   try {
     const f = (VORGAENGE as Record<string, (...x: unknown[]) => unknown>)[a.vorgang];
     if (!f) throw new Error(`Unbekannter Vorgang: ${a.vorgang}`);
-    antwort = { id: a.id, ok: true, ergebnis: await f(...alsBuffer(a.args)) };
+    const ergebnis = await f(...alsBuffer(a.args));
+    const zeichen = fehlendeZeichen();
+    antwort = zeichen.length ? { id: a.id, ok: true, ergebnis, zeichen } : { id: a.id, ok: true, ergebnis };
   } catch (e) {
+    fehlendeZeichen();
     antwort = { id: a.id, ok: false, fehler: fehlerDaten(e) };
   }
   try { port.postMessage(antwort); } catch (e) { port.postMessage({ id: a.id, ok: false, fehler: fehlerDaten(e) } satisfies Antwort); }

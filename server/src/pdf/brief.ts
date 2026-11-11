@@ -7,12 +7,11 @@
  * in der Lesereihenfolge Absender, Anschrift, Datum, Betreff, Text; jeder Text als markierter Inhalt mit MCID,
  * Linien und Seitenzahlen als Artefakt; Sprache (/Lang), Titel (im Fenstertitel), /MarkInfo und /Tabs /S.
  *
- * Schrift: die Standardschriften Helvetica und Courier (WinAnsi) wie bei allen eigenen PDFs; eine eingebettete Schrift
- * mit allen Zeichen (Noto Sans) kommt mit #826 für alle Erzeuger zugleich.
+ * Schrift: Noto Sans in vier Schnitten und Noto Sans Mono für `Code`, eingebettet als Teilmenge (#826, `schrift.ts`).
  */
-import { PDFDocument, PDFName, PDFNumber, PDFOperator, PDFOperatorNames, StandardFonts, rgb, type PDFFont, type PDFObject, type PDFPage } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFNumber, PDFOperator, PDFOperatorNames, rgb, type PDFFont, type PDFObject, type PDFPage } from 'pdf-lib';
 import type { Brief, BriefBlock, Lauf } from '../../../shared/src/textsatz';
-import { pdfSicher } from './text';
+import { angabe, pdfText, schriften } from './schrift';
 
 const MM = 72 / 25.4;
 const A4 = { b: 595.28, h: 841.89 };
@@ -130,7 +129,7 @@ function woerter(laeufe: Lauf[], f: Schriften, g: number): Array<Wort | null> {
   const fertig = () => { if (akt) { akt.breite = breiteVon(akt.stuecke, g); aus.push(akt); akt = null; } };
   for (const l of laeufe) {
     const font = schrift(f, l);
-    for (const teil of pdfSicher(l.text).split(/(\n| +)/)) {
+    for (const teil of pdfText(l.text, font).split(/(\n| +)/)) {
       if (!teil) continue;
       if (teil === '\n') { fertig(); aus.push(null); leer = false; continue; }
       if (teil.startsWith(' ')) { fertig(); leer = true; continue; }
@@ -258,18 +257,14 @@ export async function briefPdf(b: Brief): Promise<{ pdf: Uint8Array; seiten: num
 
 async function zeichneBrief(b: Brief): Promise<{ pdf: Uint8Array; seiten: number }> {
   const doc = await PDFDocument.create({ updateMetadata: false });
-  const titel = pdfSicher(b.titel).slice(0, 300);
+  const titel = angabe(b.titel).slice(0, 300);
   doc.setTitle(titel, { showInWindowTitleBar: true });
-  doc.setSubject(pdfSicher(b.herkunft).slice(0, 500));
+  doc.setSubject(angabe(b.herkunft).slice(0, 500));
   doc.setCreator('Ablago'); doc.setProducer('Ablago');
   doc.setLanguage(b.sprache);
   const jetzt = new Date();
   doc.setCreationDate(jetzt); doc.setModificationDate(jetzt);
-  const f: Schriften = {
-    normal: await doc.embedFont(StandardFonts.Helvetica), fett: await doc.embedFont(StandardFonts.HelveticaBold),
-    kursiv: await doc.embedFont(StandardFonts.HelveticaOblique), fettKursiv: await doc.embedFont(StandardFonts.HelveticaBoldOblique),
-    mono: await doc.embedFont(StandardFonts.Courier),
-  };
+  const f: Schriften = await schriften(doc, ['normal', 'fett', 'kursiv', 'fettKursiv', 'mono']);
   const s = new Satz(doc, f, Math.max(1, b.seitenMax));
   s.neueSeite();
 
@@ -307,7 +302,7 @@ async function zeichneBrief(b: Brief): Promise<{ pdf: Uint8Array; seiten: number
   const n = s.seiten.length;
   if (n > 1) {
     s.seiten.forEach((seite, i) => {
-      const t = pdfSicher(b.seitenText.replace('{seite}', String(i + 1)).replace('{seiten}', String(n)));
+      const t = pdfText(b.seitenText.replace('{seite}', String(i + 1)).replace('{seiten}', String(n)), f.normal);
       const w = f.normal.widthOfTextAtSize(t, 8);
       s.artefakt(seite, () => seite.drawText(t, { x: LINKS + BREITE - w, y: 12 * MM, size: 8, font: f.normal, color: LEISE }));
     });

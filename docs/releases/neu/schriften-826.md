@@ -1,0 +1,6 @@
+art: minor
+
+## Neu
+
+- **Alle Buchstaben in Ablagos PDFs** (#826): Stempel, Brief, Export, Aufkleber, Auskunft, Notfallblatt und die Textebene beim Schwärzen schreiben Namen mit türkischen, polnischen, tschechischen oder vietnamesischen Buchstaben jetzt richtig, dazu Griechisch und Kyrillisch. Bisher stand dort ein „?“. Ablago nutzt dafür die Schrift Noto Sans und packt nur die Buchstaben in das PDF, die vorkommen. Kopieren und Suchen im PDF liefern dieselben Buchstaben.
+- **Sichtbares Ersatzzeichen** (#826): Kennt die Schrift ein Zeichen nicht (zum Beispiel Arabisch, Chinesisch oder Emoji), steht im PDF „�“ statt eines stillen „?“, und das Protokoll nennt die Zeichen.

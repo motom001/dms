@@ -46,6 +46,14 @@ describe('Gemeinsame PDF-Stelle (#541)', () => {
     assert.deepEqual(funde.map((p) => relative(WURZEL, p)), [], 'pdf-lib bitte nur über die PDF-Stelle server/src/pdf/ nutzen (#541).');
   });
 
+  it('fontkit (#826) nur in der PDF-Stelle, mit fester Version', () => {
+    const FONTKIT = /['"]@pdf-lib\/fontkit(?:\/[^'"]*)?['"]/;
+    const funde = ORDNER.flatMap(dateien).filter((p) => !p.startsWith(STELLE) && FONTKIT.test(readFileSync(p, 'utf8')));
+    assert.deepEqual(funde.map((p) => relative(WURZEL, p)), [], 'Schriften bitte nur über server/src/pdf/schrift.ts einbetten (#826).');
+    const pk = JSON.parse(readFileSync(join(WURZEL, 'server/package.json'), 'utf8')) as { dependencies: Record<string, string> };
+    assert.match(pk.dependencies['@pdf-lib/fontkit'], /^\d+\.\d+\.\d+$/, 'feste Version: Die Vorkehrungen in schrift.ts sind für 1.1.1 geprüft');
+  });
+
   it('pdf-lib ist nur im Server eine Abhängigkeit', () => {
     for (const p of ['package.json', 'web/package.json', 'shared/package.json']) {
       let pk: { dependencies?: Record<string, string> };

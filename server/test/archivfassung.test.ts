@@ -14,7 +14,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { deflateSync } from 'node:zlib';
-import { PDFArray, PDFDocument, PDFName, PDFRawStream, PDFString, StandardFonts, decodePDFRawStream } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFString, StandardFonts } from 'pdf-lib';
+import { inhaltsstrom } from './hilfen-schriften';
 import { mailTyp, pdfaKennungAus, pruefeWoerter } from '../../shared/src/archivfassung';
 import { HILFE } from '../../shared/src/hilfe';
 import { liesBeschreibung } from '../../shared/src/paketeinstellungen';
@@ -485,14 +486,8 @@ describe('Archivfassung (#631): Ablage im Haushaltsordner', () => {
 
 describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüssel stempelt die Kopie', () => {
   /** Inhalt aller Inhaltsströme einer Seite als Text (Stempel steht als Hex darin). */
-  const seitentext = async (b: Buffer, i = 0) => {
-    const doc = await PDFDocument.load(b);
-    const p = doc.getPage(i);
-    const c = p.node.Contents();
-    const refs = c instanceof PDFArray ? c.asArray() : [p.node.get(PDFName.of('Contents'))!];
-    return refs.map((r) => Buffer.from(decodePDFRawStream(doc.context.lookup(r) as PDFRawStream).decode()).toString('latin1')).join('\n');
-  };
-  const hex = (t: string) => Buffer.from(t, 'latin1').toString('hex').toUpperCase();
+  const seitentext = async (b: Buffer, i = 0) => { const s = await inhaltsstrom(b, i); return `${s.roh}\n${s.text}`; };
+
 
   it('Paket bekommt die Archivfassung unverändert; Mensch mit API-Schlüssel und Pflicht-Stempel eine gestempelte Kopie ohne Deckblatt; Seitenbilder ebenso', async () => {
     const x = await aufbau();
@@ -519,7 +514,7 @@ describe('Archivfassung (#799): bleibt unverändert, Herausgeben mit API-Schlüs
     assert.equal(k.datei.koepfe?.['x-dms-stempel'], '1');
     assert.equal(k.datei.name, 'rechnung (PDF-A).pdf');
     assert.equal((await PDFDocument.load(k.datei.inhalt)).getPageCount(), seiten, 'kein eigenes Deckblatt');
-    assert.ok((await seitentext(k.datei.inhalt)).includes(hex('ENTWURF')), 'Stempel auf der Seite des Dokuments');
+    assert.ok((await seitentext(k.datei.inhalt)).includes('ENTWURF'), 'Stempel auf der Seite des Dokuments');
     assert.ok((await x.d.dokumentArchiv.archivfassungVon(id)).inhalt.equals(gespeichert), 'gespeicherte Archivfassung unverändert');
     const h = (await x.d.mappenHistorie.historie(x.m.id)).filter((e) => e.art === 'weitergegeben');
     assert.ok(h.some((e) => /über die API \(Archivfassung\)/.test(String(e.daten.text))), 'Historie vermerkt die Weitergabe');

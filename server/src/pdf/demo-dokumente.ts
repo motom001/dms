@@ -4,11 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { crc32, deflate, deflateSync } from 'node:zlib';
 import { promisify } from 'node:util';
-import { concatTransformationMatrix, degrees, drawObject, PDFDocument, popGraphicsState, pushGraphicsState, rgb, setGraphicsState, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib';
+import { concatTransformationMatrix, degrees, drawObject, PDFDocument, popGraphicsState, pushGraphicsState, rgb, setGraphicsState, type PDFFont, type PDFPage } from 'pdf-lib';
 import type { Dokumentart } from '../../../shared/src/demodaten';
 import { absatz, anschrift, euro, person, position, satz, ueberschrift } from '../demo-text';
 import type { Zufall } from '../zufall';
 import { eigenerPuffer } from './puffer';
+import { angabe, pdfText, schriften } from './schrift';
 import { AUSGABE_MITTEL, DEMO_GROSS_MAX as MAX_GROSS, MB } from '../grenzen';
 
 const deflateAsync = promisify(deflate);
@@ -43,9 +44,6 @@ export interface ErzeugtesDokument { name: string; mime: string; inhalt: Buffer;
 const A4: [number, number] = [595.28, 841.89];
 const RAND = 56;
 
-/** Zeichen, die die Standardschrift (WinAnsi) nicht kennt, ersetzen. */
-const winAnsi = (s: string) => s.replace(/[  ]/g, ' ').replace(/[^\x20-\x7e¡-ÿ€„“”‚‘’–—…•]/g, '?');
-
 class Blatt {
   seite!: PDFPage;
   y = 0;
@@ -74,7 +72,7 @@ class Blatt {
     const zeilen: string[] = [];
     for (const absatz of t.split('\n')) {
       let zeile = '';
-      for (const wort of winAnsi(absatz).split(' ')) {
+      for (const wort of pdfText(absatz, f).split(' ')) {
         const probe = zeile ? `${zeile} ${wort}` : wort;
         if (zeile && f.widthOfTextAtSize(probe, g) > breite) { zeilen.push(zeile); zeile = wort; } else zeile = probe;
       }
@@ -93,7 +91,7 @@ class Blatt {
       this.platz(h);
       this.y -= h;
       let x = this.rand;
-      z.forEach((c, i) => { this.seite.drawText(winAnsi(c).slice(0, 60), { x, y: this.y, size: g, font: fett ? this.fett : this.schrift }); x += spalten[i] * passend; });
+      z.forEach((c, i) => { const f = fett ? this.fett : this.schrift; this.seite.drawText([...pdfText(c, f)].slice(0, 60).join(''), { x, y: this.y, size: g, font: f }); x += spalten[i] * passend; });
     };
     zeichne(kopf, true);
     this.seite.drawLine({ start: { x: this.rand, y: this.y - 3 }, end: { x: this.groesse[0] - this.rand, y: this.y - 3 }, thickness: 0.5, color: rgb(0.4, 0.4, 0.4) });
@@ -103,12 +101,13 @@ class Blatt {
 
 async function neuesPdf(titel: string) {
   const doc = await PDFDocument.create();
-  doc.setTitle(winAnsi(titel));
+  doc.setTitle(angabe(titel));
   doc.setProducer('Ablago Demo-Daten');
   // Feste Zeitstempel: gleicher Startwert ergibt gleiche Dateien.
   doc.setCreationDate(new Date(Date.UTC(2026, 0, 1)));
   doc.setModificationDate(new Date(Date.UTC(2026, 0, 1)));
-  return { doc, schrift: await doc.embedFont(StandardFonts.Helvetica), fett: await doc.embedFont(StandardFonts.HelveticaBold) };
+  const { normal: schrift, fett } = await schriften(doc, ['normal', 'fett']);
+  return { doc, schrift, fett };
 }
 
 /** Kleines PNG ohne Bibliothek (RGB, Filter 0). */

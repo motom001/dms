@@ -1,7 +1,8 @@
-import { t } from '../sprache';
 /**
- * Sehr kleiner PDF-Schreiber für Textseiten (Notfallblatt, #106) – ohne Bibliothek.
- * Standardschriften Helvetica und Courier mit WinAnsi-Kodierung (deutsche Umlaute, €, „“, –).
+ * Sehr kleiner PDF-Schreiber für Textseiten – ohne Bibliothek, nur für Tests: Er liefert schnell ein gültiges PDF mit
+ * Textebene (Vorschau, WebDAV, Export, Ausgang). Früher schrieb er das Notfallblatt (#106); seit #826 liegt er hier,
+ * denn alle PDFs, die Ablago selbst erzeugt, betten Noto Sans ein (`server/src/pdf/schrift.ts`).
+ * Standardschriften Helvetica und Courier mit WinAnsi-Kodierung (deutsche Umlaute, €, „“, –), anderes wird „?“.
  * Zeilen werden nach geschätzter Breite umbrochen; neue Seiten entstehen von selbst.
  */
 
@@ -10,8 +11,8 @@ export interface Absatz { text: string; schrift?: Schrift; groesse?: number; /**
 
 const SCHRIFTEN: Record<Schrift, { name: string; breite: number }> = {
   normal: { name: 'Helvetica', breite: 0.52 },
-  fett: { name: t('meldungen.einfach.helvetica-bold'), breite: 0.56 },
-  mono: { name: t('meldungen.einfach.courier-bold'), breite: 0.6 },
+  fett: { name: 'Helvetica-Bold', breite: 0.56 },
+  mono: { name: 'Courier-Bold', breite: 0.6 },
 };
 const NR: Record<Schrift, string> = { normal: 'F1', fett: 'F2', mono: 'F3' };
 const BREITE = 595; const HOEHE = 842; const RAND = 56;

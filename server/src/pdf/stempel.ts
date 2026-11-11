@@ -8,13 +8,13 @@
  * Stempel nicht als eigener, leicht löschbarer Strom übrig bleibt.
  */
 import {
-  BlendMode, PDFArray, PDFContentStream, PDFDocument, PDFName, PDFRawStream, PDFRef, StandardFonts, concatTransformationMatrix, decodePDFRawStream,
+  BlendMode, PDFArray, PDFContentStream, PDFDocument, PDFName, PDFRawStream, PDFRef, concatTransformationMatrix, decodePDFRawStream,
   popGraphicsState, pushGraphicsState, rgb, type PDFFont, type PDFPage,
 } from 'pdf-lib';
 import { ersetzePlatzhalter, STEMPEL_FARBEN, stempelLayout, type Stempel } from '../../../shared/src/stempel';
 import { Fachfehler } from '../fehler';
 import { eigenerPuffer } from './puffer';
-import { pdfSicher } from './text';
+import { pdfText, schriften } from './schrift';
 import { ladePdf } from './laden';
 import { t } from '../sprache';
 
@@ -71,12 +71,12 @@ async function bildDokument(bild: Uint8Array, png: boolean): Promise<PDFDocument
  * zusammen. Das Layout kommt aus `stempelLayout` (shared) – dieselbe Rechnung wie die Vorschau der Werkbank.
  */
 async function stempele(doc: PDFDocument, s: Stempel, text: string) {
-  const fett = await doc.embedFont(StandardFonts.HelveticaBold);
+  const { fett } = await schriften(doc, ['fett']);
   const seiten = doc.getPages();
   const gestempelt: PDFPage[] = [];
   seiten.forEach((p, i) => {
     if (s.seiten === 'erste' && i > 0) return;
-    const t = pdfSicher(ersetzePlatzhalter(text, { seite: i + 1, seiten: seiten.length }));
+    const t = pdfText(ersetzePlatzhalter(text, { seite: i + 1, seiten: seiten.length }), fett);
     if (!t.trim()) return;
     zeichneStempel(p, s, t, fett);
     gestempelt.push(p);

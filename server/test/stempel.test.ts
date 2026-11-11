@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { deflateSync } from 'node:zlib';
-import { PDFArray, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 import { ersetzePlatzhalter, geltenderStempel, platzhalterIn, STANDARD_VORLAGEN, StempelFehler, wunschAus, type Stempel } from '../../shared/src/stempel';
 import { bildAlsPdf, fuerAusgabe } from '../src/ausgabe';
 import { speicherDateien } from '../src/dateispeicher';
@@ -13,22 +13,17 @@ import type { Mailer, MailOptionen } from '../src/mail';
 import { speicherRepo } from '../src/repo-speicher';
 import { crc32 } from '../src/zip';
 import { pdfMitText } from './hilfen';
+import { inhaltsstrom } from './hilfen-schriften';
 
 const ich = { id: '00000000-0000-4000-8000-000000000001', name: 'Anna Beispiel', email: 'anna@example.org' };
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));
-/** Text, wie pdf-lib ihn mit Standardschriften schreibt: WinAnsi als Hex. */
-const hex = (t: string) => Buffer.from(t, 'latin1').toString('hex').toUpperCase();
-
-/** Inhalt aller Inhaltsströme einer Seite, entpackt. */
+/**
+ * Inhalt aller Inhaltsströme einer Seite, entpackt; `text` hängt den ausgelesenen Text an (seit #826 schreibt der Stempel
+ * Glyphen von Noto Sans – ausgelesen über die ToUnicode-Tabelle, wie Kopieren und Suchen es auch tun).
+ */
 async function seiteninhalt(pdf: Buffer, i = 0): Promise<{ text: string; stroeme: number }> {
-  const doc = await PDFDocument.load(pdf);
-  const p = doc.getPage(i);
-  const c = p.node.Contents();
-  const roh = p.node.get(PDFName.of('Contents'));
-  const refs = c instanceof PDFArray ? c.asArray() : roh ? [roh] : [];
-  let text = '';
-  for (const r of refs) { const s = doc.context.lookup(r) as PDFRawStream; text += Buffer.from(decodePDFRawStream(s).decode()).toString('latin1'); }
-  return { text, stroeme: refs.length };
+  const s = await inhaltsstrom(pdf, i);
+  return { text: `${s.roh}\n${s.text}`, stroeme: s.stroeme };
 }
 
 async function pdfMitSeiten(n: number): Promise<Buffer> {
@@ -106,9 +101,9 @@ describe('PDF mit Stempel (#394)', () => {
     for (let i = 0; i < 3; i++) {
       const s = await seiteninhalt(a.inhalt, i);
       assert.equal(s.stroeme, 1, 'ein zusammengeführter Inhaltsstrom');
-      assert.ok(s.text.includes(hex('ENTWURF')), 'Stempeltext im Inhaltsstrom');
-      assert.ok(s.text.includes(hex(`A-000007 · Seite ${i + 1} von 3`)), 'Zeile mit Archivnummer und Seitenzahl je Seite');
-      assert.ok(s.text.includes('Seite') || s.text.includes(hex(`Seite ${i + 1}`)), 'Seiteninhalt bleibt');
+      assert.ok(s.text.includes('ENTWURF'), 'Stempeltext im Inhaltsstrom');
+      assert.ok(s.text.includes(`A-000007 · Seite ${i + 1} von 3`), 'Zeile mit Archivnummer und Seitenzahl je Seite');
+      assert.ok(s.text.includes(`Seite ${i + 1}`), 'Seiteninhalt bleibt');
       assert.equal(doc.getPage(i).node.Annots()?.size() ?? 0, 0, 'keine Anmerkungen');
     }
   });
@@ -120,8 +115,8 @@ describe('PDF mit Stempel (#394)', () => {
     const a = await fuerAusgabe({ name: 'v.pdf', mime: 'application/pdf', inhalt: Buffer.from(await zwei.save()) }, { stempel: plan }, { benutzer: 'A', mappe: 'M' });
     const s1 = await seiteninhalt(a.inhalt, 0), s2 = await seiteninhalt(a.inhalt, 1);
     assert.ok(s1.text.includes('(Mietvertrag) Tj'));
-    assert.ok(s1.text.includes(hex('ENTWURF')));
-    assert.ok(!s2.text.includes(hex('ENTWURF')));
+    assert.ok(s1.text.includes('ENTWURF'));
+    assert.ok(!s2.text.includes('ENTWURF'));
   });
 
   it('Bild → PDF mit Stempel; andere Dateien nur mit Fehler bei Pflicht oder streng', async () => {
@@ -130,7 +125,7 @@ describe('PDF mit Stempel (#394)', () => {
     const a = await fuerAusgabe({ name: 'ausweis.png', mime: 'image/png', inhalt: b }, { stempel: plan }, { benutzer: 'A', mappe: 'M' });
     assert.equal(a.name, 'ausweis.pdf'); assert.equal(a.mime, 'application/pdf');
     assert.equal((await PDFDocument.load(a.inhalt)).getPageCount(), 1);
-    assert.ok((await seiteninhalt(a.inhalt)).text.includes(hex('Kopie für Bank')));
+    assert.ok((await seiteninhalt(a.inhalt)).text.includes('Kopie für Bank'));
     const quer = await PDFDocument.load(await bildAlsPdf(b, true));
     assert.ok(quer.getPage(0).getWidth() > quer.getPage(0).getHeight());
     const txt = { name: 'x.txt', mime: 'text/plain', inhalt: Buffer.from('hallo') };
@@ -164,7 +159,7 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.equal(r.gestempelt, true);
     const kopie = await alsPuffer(r.inhalt);
     assert.equal((await PDFDocument.load(kopie)).getPageCount(), 2);
-    assert.ok((await seiteninhalt(kopie)).text.includes(hex('Kopie für Hausverwaltung Müller')));
+    assert.ok((await seiteninhalt(kopie)).text.includes('Kopie für Hausverwaltung Müller'));
     assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(pdf), 'gespeichertes Original unverändert');
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
     assert.match(String(h.daten.text), /^mit Stempel „Kopie für Hausverwaltung Müller – \d{2}\.\d{2}\.\d{4}“ an Hausverwaltung Müller \(heruntergeladen: ausweis\.pdf\)$/);
@@ -180,13 +175,13 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.deepEqual((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
     const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { ich });
     assert.equal(r.gestempelt, true);
-    assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('ENTWURF')));
+    assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes('ENTWURF'));
     // Vorlage mit {empfänger}: ohne Empfänger 422; per E-Mail gelten die Adressen.
     await d.mappentypen.aendereTyp(t.id, { ...t, stempel: { modus: 'pflicht', vorlage: 'kopie' } });
     await assert.rejects(d.ausgang.dokumentFuerAusgabe(dokument.id, { ich }), status(422, /Empfänger/));
     await d.ausgangEmail.versendeMappe(m.id, { an: 'bank@example.org', betreff: 'Ausweis', dokumente: [dokument.id] }, ich, mailer);
     const anhang = mails[0].o!.anhaenge![0];
-    assert.ok((await seiteninhalt(anhang.inhalt as Buffer)).text.includes(hex('Kopie für bank@example.org')));
+    assert.ok((await seiteninhalt(anhang.inhalt as Buffer)).text.includes('Kopie für bank@example.org'));
     const email = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'email')!;
     assert.match(String(email.daten.text), /mit Stempel „Kopie für bank@example\.org – /);
     // Die Post enthält die gestempelte Kopie, nicht das Original.
@@ -223,6 +218,6 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'foto.png', typ: 'image/png' }, png(30, 50), null);
     const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { stempel: { stempel: 'VERTRAULICH', lage: 'ecke' }, ich });
     assert.equal(r.name, 'foto.pdf'); assert.equal(r.mime, 'application/pdf');
-    assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes(hex('VERTRAULICH')));
+    assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes('VERTRAULICH'));
   });
 });

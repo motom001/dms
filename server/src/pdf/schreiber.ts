@@ -4,8 +4,8 @@
  * braucht (Auskunft, Löschkonzept, Löschprotokoll), beschreibt es als Plan; gezeichnet wird nur hier.
  * Ein Plan besteht aus einfachen Daten und lässt sich darum auch an einen Arbeiter geben (#542).
  */
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import { pdfSicher } from './text';
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
+import { angabe, pdfText, schriften } from './schrift';
 
 export const A4 = { b: 595.28, h: 841.89 };
 export const RAND = 50;
@@ -25,7 +25,7 @@ export class PdfSchreiber {
   zeilen(text: string, groesse: number, breite: number, fett = false): string[] {
     const font = fett ? this.f.fett : this.f.normal;
     const erg: string[] = [];
-    for (const absatz of pdfSicher(text).split('\n')) {
+    for (const absatz of pdfText(text, font).split('\n')) {
       let z = '';
       for (const wort of absatz.split(' ')) {
         const probe = z ? `${z} ${wort}` : wort;
@@ -91,12 +91,11 @@ export class PdfSchreiber {
   }
 }
 
-/** Neues PDF mit Titel und den beiden Standardschriften. */
+/** Neues PDF mit Titel und Noto Sans normal und fett (#826). */
 export async function neuesDokument(titel: string): Promise<{ doc: PDFDocument; f: Schriften }> {
   const doc = await PDFDocument.create();
-  doc.setTitle(pdfSicher(titel)); doc.setProducer('Ablago'); doc.setCreator('Ablago');
-  const f = { normal: await doc.embedFont(StandardFonts.Helvetica), fett: await doc.embedFont(StandardFonts.HelveticaBold) };
-  return { doc, f };
+  doc.setTitle(angabe(titel)); doc.setProducer('Ablago'); doc.setCreator('Ablago');
+  return { doc, f: await schriften(doc, ['normal', 'fett']) };
 }
 
 /** Eine Anweisung eines Textdokuments. */

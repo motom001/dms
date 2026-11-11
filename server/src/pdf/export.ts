@@ -7,7 +7,8 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 import { eigenerPuffer } from './puffer';
 import { A4, neuesDokument, PdfSchreiber, RAND } from './schreiber';
-import { groesseText, pdfSicher } from './text';
+import { groesseText } from './text';
+import { pdfText } from './schrift';
 import { ladePdf } from './laden';
 import { t } from '../sprache';
 
@@ -88,7 +89,7 @@ export async function mappenPdfZeichnen(daten: MappenPdfDaten): Promise<Buffer> 
         const seite = doc.addPage([A4.b, A4.h]);
         const max = { b: A4.b - 2 * RAND, h: A4.h - 2 * RAND - 24 };
         const k = Math.min(1, max.b / bild.width, max.h / bild.height);
-        seite.drawText(pdfSicher(`${m.titel} – ${b.name}`).slice(0, 120), { x: RAND, y: A4.h - RAND, size: 9, font: f.normal, color: rgb(0.4, 0.42, 0.46) });
+        seite.drawText([...pdfText(`${m.titel} – ${b.name}`, f.normal).replace(/\n/g, ' ')].slice(0, 120).join(''), { x: RAND, y: A4.h - RAND, size: 9, font: f.normal, color: rgb(0.4, 0.42, 0.46) });
         seite.drawImage(bild, { x: RAND, y: A4.h - RAND - 18 - bild.height * k, width: bild.width * k, height: bild.height * k });
       } catch { /* defektes Bild: genannt ist es schon */ }
     }

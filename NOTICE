@@ -15,3 +15,9 @@ Die Symbole der Oberfläche (web/src/Symbol.tsx, web/src/ansichtsymbol-formen.ts
 Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part
 of Feather (MIT). All other copyright (c) for Lucide are held by Lucide
 Contributors 2022.
+
+Die Schriften für die PDFs, die Ablago selbst erzeugt (server/schriften/: Noto Sans, Noto Sans Mono,
+gekürzt mit server/werkzeuge/schriften/aufbereiten.py), stammen aus dem Noto-Projekt
+(https://github.com/notofonts/latin-greek-cyrillic) und stehen unter der SIL Open Font License,
+Version 1.1 (server/schriften/OFL.txt):
+Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)

@@ -25,13 +25,14 @@ import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
   beginText, degrees, endText, PDFDocument, PDFName, PDFRawStream, popGraphicsState, pushGraphicsState, setCharacterSqueeze,
-  setFontAndSize, setTextMatrix, setTextRenderingMode, showText, StandardFonts, TextRenderingMode, type PDFFont,
+  setFontAndSize, setTextMatrix, setTextRenderingMode, showText, TextRenderingMode, type PDFFont,
 } from 'pdf-lib';
 import { Fachfehler } from '../fehler';
 import { SCHWAERZEN_MAX_SEITEN, wortIn, type Bereich, type SchwaerzSeite, type Wort } from '../../../shared/src/schwaerzen';
 import { exifAusrichtung, jpegMasse } from './bild';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
+import { pdfText, schriften } from './schrift';
 import { t } from '../sprache';
 import { AUSGABE_GROSS } from '../grenzen';
 
@@ -311,12 +312,12 @@ export function textAus(seiten: Wort[][]): string {
 }
 
 /** Unsichtbarer Text (Darstellungsart 3) genau über den Wörtern – zum Suchen und Kopieren. */
-function textebene(doc: PDFDocument, font: PDFFont, zeichen: Set<number>, seite: ReturnType<PDFDocument['addPage']>, woerter: Wort[], b: number, h: number) {
+function textebene(doc: PDFDocument, font: PDFFont, seite: ReturnType<PDFDocument['addPage']>, woerter: Wort[], b: number, h: number) {
   if (!woerter.length) return;
   const name = seite.node.newFontDictionary('T', font.ref);
   const ops = [pushGraphicsState(), beginText(), setTextRenderingMode(TextRenderingMode.Invisible)];
   for (const [roh, x, y, wb, wh] of woerter) {
-    const t = [...roh].map((c) => (zeichen.has(c.codePointAt(0)!) ? c : '?')).join('');
+    const t = pdfText(roh, font);
     // Senkrechte Wörter (z. B. auf gedrehten Seiten) laufen von oben nach unten.
     const senkrecht = t.length > 1 && wh * h > wb * b * 1.5;
     const groesse = Math.max(1, (senkrecht ? wb * b : wh * h) * 0.8);
@@ -398,8 +399,8 @@ export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, 
     if (bild) return { inhalt: fertig[0].daten, mime, text, seiten: 1, bereiche: bereiche.length, betroffen };
 
     const doc = await PDFDocument.create({ updateMetadata: false });
-    const font = await doc.embedFont(StandardFonts.Helvetica);
-    const zeichen = new Set(font.getCharacterSet());
+    // Unsichtbare Textebene in Noto Sans (#826): Kopieren und Suchen liefern dieselben Buchstaben wie im Original.
+    const { normal: font } = await schriften(doc, ['normal']);
     for (const [i, f] of fertig.entries()) {
       const m = jpegMasse(f.daten);
       if (!m) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-liessen-sich-2'));
@@ -407,7 +408,7 @@ export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, 
       const seite = doc.addPage([b, h]);
       const jpg = await doc.embedJpg(eigenerPuffer(f.daten));
       seite.drawImage(jpg, { x: 0, y: 0, width: b, height: h });
-      textebene(doc, font, zeichen, seite, bleiben[i], b, h);
+      textebene(doc, font, seite, bleiben[i], b, h);
       seite.node.delete(PDFName.of('Annots')); // pdf-lib legt eine leere Liste an
     }
     const aus = Buffer.from(await doc.save({ useObjectStreams: true }));
