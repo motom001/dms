@@ -64,7 +64,7 @@ Above the list of every view with folders there is a search field. The search fi
 
 ![Search in the contracts](bilder/suche.png)
 
-Above the list it says how many hits there are. If the search field is empty, you see all folders again.
+Above the list it says how many hits there are. If the search field is empty, you see all folders again; you clear it with the **×** at its end or with **Esc**.
 
 [Parts of a folder](mappen.md#teile) – such as invoice items – are not in the list themselves: if the term is in a part, you find the parent folder with "found in …", provided you may see both.
 

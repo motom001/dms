@@ -79,6 +79,7 @@ nav:
       - Button: bausteine-knopf.md
       - Inputs with a unit: bausteine-einheit.md
       - Table: bausteine-tabelle.md
+      - Search: bausteine-suche.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

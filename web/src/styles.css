@@ -1579,7 +1579,7 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .fz-rollen-titel { margin: 6px 0 2px; font-weight: 600; }
 /* Werkbank → Aufgaben (#366): Filter in der Mitte. */
 .aufgabenfilter { gap: 8px; }
-.aufgabenfilter input[type="search"] { width: 100%; }
+.aufgabenfilter > .suche { flex: none; max-width: none; }
 .filterraster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 10px; }
 .filterraster select { width: 100%; }
 .zwischen .zusatz { text-transform: none; letter-spacing: 0; font-weight: normal; }
@@ -2085,6 +2085,7 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 @media (prefers-reduced-motion: reduce) { .schalter-spur, .schalter-knopf { transition: none; } }
 /* Symbol je Ansicht (#428): Auswahl als Raster in der Werkbank. */
 .symbolwahl .knoepfe { margin-top: 4px; }
+.symbolraster-rahmen > .suche { flex: none; max-width: none; }
 .symbolraster-rahmen { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; max-height: 360px; overflow: auto; padding: 8px; border: 1px solid var(--linie); border-radius: 8px; }
 .symbolgruppe { border: 0; margin: 0; padding: 0; min-width: 0; }
 .symbolraster { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -2093,10 +2094,7 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .symbolknopf.an { border-color: var(--akzent); box-shadow: 0 0 0 2px var(--akzent) inset; }
 @media (max-width: 820px) { .symbolknopf { width: 44px; height: 44px; } }
 
-/* Datenschutz-Auskünfte (#668): Filter über der Liste, Frist, Verlauf. */
-.listenfilter { gap: 8px; align-items: center; margin: 6px 0 8px; }
-.listenfilter .segmente { flex: 0 0 auto; }
-.listenfilter input[type="search"] { flex: 1 1 140px; min-width: 0; }
+/* Datenschutz-Auskünfte (#668): Frist, Verlauf. Suche und Filter über der Liste: Baustein Suche (#994). */
 .frist-ueber { color: var(--schlecht); font-weight: 600; }
 .frist-bald { color: var(--warn); }
 .chip.aus { opacity: .7; }

@@ -2,7 +2,7 @@
 
 Eine **Ansicht** legt fest, was die Ablage links anbietet: welche Mappen eine Liste zeigt und wie die Ansichten zu einem Baum geordnet sind. Eine Ansicht ist eine gespeicherte Abfrage – die Benutzer sehen nur das Ergebnis.
 
-Ansichten pflegst du unter **Werkbank → Ansichten**. Links steht der Baum, rechts die gewählte Ansicht. Wie Benutzer mit Ansichten arbeiten, beschreibt das [Benutzerhandbuch](https://help.ablago.app/benutzer/ablage/).
+Ansichten pflegst du unter **Werkbank → Ansichten**. Links steht der Baum, rechts die gewählte Ansicht. Über dem Baum sucht das Suchfeld in Name und Beschreibung, in den Mappentypen, in den Spalten der Trefferliste und den Feldern der Bedingungen und im Namen des Pakets; der Filter **Paket** zeigt nur die Ansichten eines Pakets oder die eigenen ([Suchen und filtern](uebersicht.md#suchen-und-filtern)). Solange gesucht oder gefiltert wird, stehen die Treffer ohne Einrückung und ohne Griff da – geordnet wird im ganzen Baum. Wie Benutzer mit Ansichten arbeiten, beschreibt das [Benutzerhandbuch](https://help.ablago.app/benutzer/ablage/).
 
 ![Eine Ansicht mit Bedingung in der Werkbank](bilder/werkbank-sichten.png)
 

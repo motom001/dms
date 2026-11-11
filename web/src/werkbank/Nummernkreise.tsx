@@ -10,7 +10,9 @@ import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Knopf, KnopfLink } from '../bausteine';
+import { abfangen, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketFilter, useListenSuche } from '../bausteine';
+import { paketVonKreis, paketWahl, quellenKreis } from './listensuche';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
 
 /**
  * Werkbank → Nummernkreise (#171): fortlaufende Nummern für Textfelder.
@@ -28,20 +30,34 @@ export function useNummernkreise(offen: boolean) {
 }
 export type NummernkreisZustand = ReturnType<typeof useNummernkreise>;
 
-export function NummernkreiseListe({ z, offen }: { z: NummernkreisZustand; offen?: string }) {
+/** Nummernkreise in der Mitte, mit Suche und Paketfilter (#978). */
+export function NummernkreiseListe({ z, offen, pakete = [] }: { z: NummernkreisZustand; offen?: string; pakete?: InstalliertesPaket[] }) {
+  const d = useDaten();
+  const liste = z.liste ?? [];
+  const such = useListenSuche(liste, {
+    quellen: (k) => quellenKreis(k, { pakete, typen: d.typen }),
+    herkunft: (k) => paketVonKreis(k, d.typen, pakete),
+  });
   return (
     <>
       <Listenkopf titel={t('werkbank.nummernkreise.nummernkreise')} hilfe="werkbank.nummernkreise" beschreibung={t('werkbank.nummernkreise.fortlaufende-nummern-fuer-felder')}>
         <KnopfLink to="/werkbank/nummernkreise/neu" art="anlegen" groesse="klein">{t('werkbank.nummernkreise.neu')}</KnopfLink>
       </Listenkopf>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!z.liste ? <p className="leise">{t('werkbank.nummernkreise.lade')}</p> : !z.liste.length ? <p className="leise leerliste">{t('werkbank.nummernkreise.noch-kein-nummernkreis')}</p> : (
+      {liste.length > 0 && (
+        <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.listensuche.kreise.beschriftung')} platzhalter={t('werkbank.listensuche.kreise.platzhalter')} anker="werkbank.nummernkreise.suche"
+          treffer={such.treffer.length} aktiv={such.aktiv} anzahl={t('werkbank.listensuche.kreise.anzahl', { anzahl: liste.length })}
+          filter={<PaketFilter wert={such.paket} setze={such.setPaket} pakete={paketWahl(such.paketeDa, pakete)} eigene={such.eigeneDa} />} />
+      )}
+      {!z.liste ? <p className="leise">{t('werkbank.nummernkreise.lade')}</p> : !z.liste.length ? <p className="leise leerliste">{t('werkbank.nummernkreise.noch-kein-nummernkreis')}</p>
+        : !such.treffer.length ? <KeineTreffer zuruecksetzen={such.zuruecksetzen} /> : (
         <ul className="mappenliste">
-          {z.liste.map((k) => (
+          {such.treffer.map(({ eintrag: k, funde, titel }) => (
             <li key={k.schluessel}><Link to={`/werkbank/nummernkreise/${k.schluessel}`} className={`eintrag werk ${offen === k.schluessel ? 'an' : ''}`}>
-              <span className="titel">{k.name}</span>
+              <span className="titel"><Hervorgehoben teile={titel} text={k.name} /></span>
               <span className="unter mono">{t('werkbank.nummernkreise.naechste', { naechste: k.naechste })}</span>
               {!k.verwendet.length && <span className="leise klein">{t('werkbank.nummernkreise.unbenutzt')}</span>}
+              <Fundstellen funde={funde} />
             </Link></li>
           ))}
         </ul>

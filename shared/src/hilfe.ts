@@ -132,6 +132,8 @@ export const HILFE = {
   'werkbank.datenschutz': admin('datenschutz/', 'Datenschutz in Ablago'),
   'werkbank.datenschutz.anrede': admin('datenschutz/', 'Anrede in Unterlagen für Dritte', 'anrede'),
   'werkbank.auskunft': admin('datenschutz/', 'Auskunft nach Art. 15 DSGVO', 'auskunft-nach-art-15-dsgvo'),
+  // #994: Empfänger, Rechte der Person und Anrede – rechts ohne Auswahl und als Seite vom Assistenten aus.
+  'werkbank.auskunft.vorgaben': admin('datenschutz/', 'Vorgaben für jede Auskunft', 'einstellungen'),
   'werkbank.auskunft.zustellen': admin('datenschutz/', 'Auskunft zustellen', 'auskunft-zustellen'),
   'werkbank.loeschkonzept': admin('loeschkonzept/', 'Löschkonzept aus Ablago erzeugen', 'aus-dem-dms-erzeugen'),
   'werkbank.loeschprotokoll': admin('datenschutz/', 'Löschprotokoll', 'loschprotokoll'),

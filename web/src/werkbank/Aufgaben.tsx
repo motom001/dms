@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { AUFGABENARTEN, formatiere, type Aufgabe, type Aufgabenart } from '../../../shared/src/model';
 import { FAELLIGKEITEN, filterAktiv, filterInAdresse, filtereAufgaben, type AufgabenFilter, type Faelligkeit } from '../../../shared/src/aufgabenfilter';
-import { Knopf, type KnopfErgebnis } from '../bausteine';
+import { Knopf, Suchfeld, type KnopfErgebnis } from '../bausteine';
 import { api, type MailEinstellung, type MappeDetails } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
@@ -73,7 +73,7 @@ export function AufgabenListe({ z, filter, offen, mailAn, favoriten }: { z: Aufg
       {favoriten && <FavoritenFreigabeBlock z={favoriten} />}
       <section className="aufgabenfilter stapel" aria-label={t('werkbank.aufgaben.filter')}>
         <h2 className="h3">{z.erledigt ? t('werkbank.aufgaben.erledigte-aufgaben') : t('werkbank.aufgaben.offene-aufgaben')}</h2>
-        <input type="search" aria-label={t('werkbank.aufgaben.im-titel-suchen')} placeholder={t('werkbank.aufgaben.im-titel-suchen-2')} value={filter.text ?? ''} onChange={(e) => setze({ text: e.target.value || undefined })} />
+        <Suchfeld wert={filter.text ?? ''} setze={(text) => setze({ text: text || undefined })} beschriftung={t('werkbank.aufgaben.im-titel-suchen')} platzhalter={t('werkbank.aufgaben.im-titel-suchen-2')} />
         <div className="filterraster">
           <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.empfaenger')}</span>
             <select value={filter.empfaenger ?? ''} onChange={(e) => setze({ empfaenger: e.target.value || undefined })}>

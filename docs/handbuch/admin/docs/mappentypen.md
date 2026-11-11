@@ -4,6 +4,12 @@ Ein **Mappentyp** legt fest, welche Art von Mappe es gibt – *Vertrag*, *Rechnu
 
 Mappentypen pflegst du unter **Werkbank → Mappentypen**. Mit **+ Neu** legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.
 
+### Mappentypen suchen { #suchen }
+
+Bei vielen Mappentypen hilft das Suchfeld über der Liste ([so funktioniert es](uebersicht.md#suchen-und-filtern)). Es sucht in Name und Beschreibung, in Bezeichnung und Hilfetext der **Felder**, in den Namen der **Trefferlisten** und **Register**, in den **Berechtigungen** (Name der Regel und Benutzer in ihren Bedingungen), im Namen des **Pakets** und – bei einem [Teil](#ist-teil-einer-anderen-mappe) – im Namen des übergeordneten Mappentyps; solche Typen tragen den Hinweis „Teil von …“. Systemmappentypen tragen das Zeichen *System* und lassen sich mitsuchen. Der Filter **Paket** zeigt z. B. nur die Typen aus *Haushalt* oder nur die eigenen.
+
+![Werkbank → Mappentypen: Suche mit Fundstellen unter jedem Treffer](bilder/werkbank-typen-suche.png)
+
 ![Mappentyp Vertrag in der Werkbank](bilder/werkbank-mappentyp.png)
 
 Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://help.ablago.app/benutzer/mappen/).

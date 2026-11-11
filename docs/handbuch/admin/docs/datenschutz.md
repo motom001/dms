@@ -49,7 +49,7 @@ Wer dem Projekt sagen möchte, dass und wie er Ablago nutzt, tut das bewusst und
 
 Ablago gibt dir Werkzeuge. Diese Punkte bleiben bei dir als Verantwortlichem:
 
-- **Verzeichnis der Verarbeitungstätigkeiten** (Art. 30), **Rechtsgrundlagen und Informationspflichten** (Art. 13, 14) – etwa der Datenschutzhinweis im Mietvertrag. Die Angaben dafür stehen in Ablago: Mappentypen, Zwecke aus den [Einstellungen](#einstellungen), Fristen aus dem Archivmodus.
+- **Verzeichnis der Verarbeitungstätigkeiten** (Art. 30), **Rechtsgrundlagen und Informationspflichten** (Art. 13, 14) – etwa der Datenschutzhinweis im Mietvertrag. Die Angaben dafür stehen in Ablago: Mappentypen, Zwecke aus den [Vorgaben der Auskunft](#einstellungen), Fristen aus dem Archivmodus.
 - **Welche Frist gilt:** Aufbewahrungsfristen klärst du mit deiner Steuerberatung; Ablago setzt um, was du einträgst.
 - **Löschen nach Fristende:** Ablago löscht nie von selbst. Du prüfst **Aufbewahrung abgelaufen** regelmäßig.
 - **Kopien außerhalb der Ablage:** Gelöschtes steckt noch in älteren [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung), bis sie nach deiner Aufbewahrung wegfallen (Standard: bis zu 12 Monate; von Hand angelegte bleiben, bis du sie löschst), in Vollexporten und persönlichen Exporten im [Export-Ordner](export.md#export-ordner) (nach dem Herunterladen bzw. nach 7 Tagen gelöscht), in Kopien außer Haus, heruntergeladenen Dateien und Ausdrucken.
@@ -72,7 +72,7 @@ Ein Familienmitglied oder jemand aus dem Betrieb, der ein Konto in Ablago hat, m
 
 Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank → Datenschutz-Auskünfte**; die Einzelheiten stehen [weiter unten](#auskunft-nach-art-15-dsgvo).
 
-1. **Einmal einrichten:** Verantwortlicher (an der [eigenen Organisation](organisation.md)), Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Einstellungen](#einstellungen)).
+1. **Einmal einrichten:** Verantwortlicher (an der [eigenen Organisation](organisation.md)), Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Vorgaben für jede Auskunft](#einstellungen)).
 2. **Person wählen** – oder an ihrer Mappe **Mappe ▾ → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
 3. **Sammeln:** Ablago folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Wohnung) – vollständig nur, was über eine **Zugehörigkeit** zu ihr gehört. Mappen, in denen sie nur über einen **Bezug** genannt ist (z. B. als Ansprechpartner), stehen ohne ihre Inhalte da ([Zugehörigkeit oder Bezug](#zugehorigkeit-oder-bezug)).
 4. **Weitersuchen**, wenn die Person auch anderswo vorkommt: Eine Volltext-Suche macht Ablago bewusst nicht ([warum](#warum-keine-volltext-suche)). Such selbst in der Ablage mit der [erweiterten Suche](https://help.ablago.app/benutzer/aktuell/ablage/#erweiterte-suche) ohne gewählten Mappentyp, mit **Volltext** auch in Dokumenten und Notizen. Was wirklich zur Person gehört, verknüpfst du mit ihrer Mappe (als Zugehörigkeit) und sammelst neu.
@@ -137,13 +137,13 @@ In der Mitte stehen alle Auskünfte mit Person, Datum und **Zustand**:
 | *abgerufen* | Die Person hat die Auskunft über den Abruf-Link geholt. |
 | *gelöscht* | Die Datei ist weg (heruntergeladen, abgelaufen oder gelöscht). Der Eintrag bleibt als **Nachweis** – ohne Datei. |
 
-Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Vorgabe ist der Filter **Offen**; **Alle** zeigt auch Zugestelltes und Gelöschtes, das Suchfeld filtert nach der Person. Oben rechts steht **+ Neu**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
+Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Über der Liste steht das Suchfeld (Person und Zustand, [wie überall in der Werkbank](uebersicht.md#suchen-und-filtern)), darunter der Haken **Nur offene zeigen** – er ist vorgegeben. Nimmst du ihn weg, siehst du auch Zugestelltes und Gelöschtes. Blendet der Haken etwas aus und die Liste ist leer, sagt Ablago das: „Keine offenen Auskünfte. **Alle zeigen**“. Oben rechts steht **+ Neu**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
 
 Wählst du eine Auskunft, steht rechts alles an einer Stelle: **Angaben** (Person, Erstellt, Antwortfrist, Inhalt), **Zustellen …**, **Herunterladen** und **Löschen** (der Nachweis bleibt), die **Abruf-Links** mit Zustand und **Zurückziehen** und der **Verlauf** – erstellt, zugestellt, abgerufen, falscher Code. Der Verlauf kommt aus der Historie der Person und enthält nur Zahlen, keine Inhalte.
 
-### Einstellungen { #einstellungen }
+### Vorgaben für jede Auskunft { #einstellungen }
 
-Einmal einrichten. Empfänger, Rechte und Anrede stehen über der Liste unter **Einstellungen**, den Verantwortlichen pflegst du an der [eigenen Organisation](organisation.md); welche Mappentypen eine Person betreffen, steht beim **[Löschkonzept](loeschkonzept.md) → Personendaten in Mappentypen**, weil das Löschkonzept daraus entsteht:
+Einmal einrichten. Empfänger, Rechte und Anrede stehen rechts, solange keine Auskunft gewählt ist, unter **Vorgaben für jede Auskunft**; der Assistent (**+ Neu**) verweist im Kopf darauf – am Handy der Weg dorthin. Den Verantwortlichen pflegst du an der [eigenen Organisation](organisation.md); welche Mappentypen eine Person betreffen, steht beim **[Löschkonzept](loeschkonzept.md) → Personendaten in Mappentypen**, weil das Löschkonzept daraus entsteht:
 
 - **Verantwortlicher:** Name und Anschrift kommen seit #995 von der [eigenen Organisation](organisation.md) (dazu E-Mail, Telefon und – falls es einen gibt – der Datenschutzbeauftragte) und stehen als Absender auf dem Deckblatt und in der E-Mail an die Person. Gibt es noch keine eigene Organisation, gilt die bisherige Angabe; die Werkbank bietet an, sie als eigene Organisation zu übernehmen.
 - **Empfänger:** an wen du Daten weitergibst (z. B. Steuerberatung, Hausmeisterdienst). Das ist der Vorschlag für jede Auskunft; du kannst ihn je Auskunft ändern.
@@ -155,7 +155,7 @@ Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): 
 
 ### Anrede in Unterlagen für Dritte: du oder Sie { #anrede }
 
-Ablago spricht dich mit „du“ an – und standardmäßig auch die Personen, an die eine Auskunft geht. Schreibst du deinen Mietern oder Kunden sonst mit „Sie“, stellst du unter **Einstellungen → Anrede in Unterlagen für Dritte** auf **Sie** um. Ein Beispielsatz zeigt beide Formen nebeneinander; wirksam wird die Wahl mit **Speichern**. Sie gilt für die ganze Installation und für alles, was an Personen **außerhalb** von Ablago geht:
+Ablago spricht dich mit „du“ an – und standardmäßig auch die Personen, an die eine Auskunft geht. Schreibst du deinen Mietern oder Kunden sonst mit „Sie“, stellst du unter **Vorgaben für jede Auskunft → Anrede in Unterlagen für Dritte** auf **Sie** um. Ein Beispielsatz zeigt beide Formen nebeneinander; wirksam wird die Wahl mit **Speichern**. Sie gilt für die ganze Installation und für alles, was an Personen **außerhalb** von Ablago geht:
 
 | Was | Wo |
 | --- | --- |

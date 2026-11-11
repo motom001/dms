@@ -25,7 +25,9 @@ import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { FeldGruppe, KnopfLink, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
+import { FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, Suchfeld, useListenSuche, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
+import { paketVonSicht, paketWahl, quellenSicht } from './listensuche';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 
 /**
@@ -41,9 +43,19 @@ function baumzeilen(alle: Sicht[]): Zeile[] {
   return erg;
 }
 
-export function SichtenListe({ offen }: { offen?: string }) {
+/**
+ * Ansichten in der Mitte: Baum zum Ordnen (#73). Mit Suche oder Paketfilter (#978) stehen nur die passenden Ansichten
+ * da, mit Fundstellen und ohne Griffe – geordnet wird im ganzen Baum.
+ */
+export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: InstalliertesPaket[] }) {
   const d = useDaten();
-  const zeilen = baumzeilen(d.sichten);
+  const alleZeilen = baumzeilen(d.sichten);
+  const such = useListenSuche(alleZeilen, {
+    quellen: ({ s }) => quellenSicht(s, { pakete, typen: d.typen }),
+    herkunft: ({ s }) => paketVonSicht(s, pakete),
+  });
+  const zeilen = such.treffer.map((x) => x.eintrag);
+  const fund = new Map(such.treffer.map((x) => [x.eintrag.s.id, x]));
   const typen = (s: Sicht) => typenDerSicht(s, d.typen.map((mappentyp) => mappentyp.id)).map((text) => d.typ(text)).filter((eintrag): eintrag is Mappentyp => !!eintrag);
   const [ansage, setAnsage] = useState('');
   const [fehler, setFehler] = useState<string>();
@@ -105,9 +117,15 @@ export function SichtenListe({ offen }: { offen?: string }) {
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       {hinweis && <div className="hinweis info"><p>{hinweis}</p><button type="button" className="textknopf klein" onClick={() => setHinweis(undefined)}>{t('werkbank.sichten.ausblenden')}</button></div>}
       <Ansage text={ansage} />
-      {zeilen.length > 1 && <p className="leise klein">{t('werkbank.sichten.zum-ordnen-am-griff')}</p>}
-      {!zeilen.length && offen !== 'neu'
+      {alleZeilen.length > 0 && (
+        <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.listensuche.sichten.beschriftung')} platzhalter={t('werkbank.listensuche.sichten.platzhalter')} anker="werkbank.sichten.suche"
+          treffer={such.treffer.length} aktiv={such.aktiv} anzahl={t('werkbank.listensuche.sichten.anzahl', { anzahl: alleZeilen.length })}
+          filter={<PaketFilter wert={such.paket} setze={such.setPaket} pakete={paketWahl(such.paketeDa, pakete)} eigene={such.eigeneDa} />} />
+      )}
+      {!such.aktiv && zeilen.length > 1 && <p className="leise klein">{t('werkbank.sichten.zum-ordnen-am-griff')}</p>}
+      {!alleZeilen.length && offen !== 'neu'
         ? <p className="leise leerliste">{t('werkbank.sichten.noch-keine-ansichten-ohne')}</p>
+        : !zeilen.length && offen !== 'neu' ? <KeineTreffer zuruecksetzen={such.zuruecksetzen} />
         : <ul className="mappenliste">
             {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">{t('werkbank.sichten.neue-ansicht')}</span><span className="unter">{t('werkbank.sichten.noch-nicht-gespeichert')}</span></span></li>}
             {zeilen.map(({ s, tiefe }) => {
@@ -116,11 +134,10 @@ export function SichtenListe({ offen }: { offen?: string }) {
               const probleme = s.bedingungen.filter((b) => bedingungsProblem(b, eintrag2)).length;
               const listenProblem = trefferlistenProblem(s.trefferliste, wirksameTypen(d.sichten, s.id, d.typen.map((x) => x.id)).map((x) => d.typ(x)).filter((x): x is Mappentyp => !!x));
               const kinder = kinderVon(d.sichten, s.id).length;
-              return (
-                <li key={s.id} {...e} className={`ziehbar ${e.className}`} style={{ paddingLeft: tiefe * 16 }}>
-                  <button {...z.griff(s.id, s.name)} onKeyDown={(ev) => ziehTasten(ev, tasten(s))}><span aria-hidden="true">⠿</span></button>
-                  <Link to={`/werkbank/sichten/${s.id}`} className={`eintrag werk ${offen === s.id ? 'an' : ''}`}>
-                    <span className="titel">{tiefe > 0 && <span className="leise" aria-hidden="true">└ </span>}{s.name}</span>
+              const f = fund.get(s.id);
+              const inhalt = (
+                <Link to={`/werkbank/sichten/${s.id}`} className={`eintrag werk ${offen === s.id ? 'an' : ''}`}>
+                    <span className="titel">{tiefe > 0 && !such.aktiv && <span className="leise" aria-hidden="true">└ </span>}<Hervorgehoben teile={f?.titel} text={s.name} /></span>
                     <span className="unter">
                       {zeigtAlleTypen(s) ? t('werkbank.sichten.alle-mappentypen') : eintrag2.length ? eintrag2.map((x) => x.name).join(', ') : t('werkbank.sichten.nur-zum-gruppieren')}
                       {s.bedingungen.length > 0 && t('werkbank.sichten.bedingungen', { anzahl: s.bedingungen.length })}
@@ -130,7 +147,15 @@ export function SichtenListe({ offen }: { offen?: string }) {
                     </span>
                     {probleme > 0 && <span className="problem">{t('werkbank.sichten.bedingungen-ohne-wirkung-bitte', { anzahl: probleme })}</span>}
                     {listenProblem && <span className="problem">{t('werkbank.sichten.trefferliste-fehlt-zeigt-die')}</span>}
+                    {f && <Fundstellen funde={f.funde} />}
                   </Link>
+              );
+              // Gefiltert (#978): ohne Griff und Einrückung – Ordnen geht nur im ganzen Baum.
+              if (such.aktiv) return <li key={s.id}>{inhalt}</li>;
+              return (
+                <li key={s.id} {...e} className={`ziehbar ${e.className}`} style={{ paddingLeft: tiefe * 16 }}>
+                  <button {...z.griff(s.id, s.name)} onKeyDown={(ev) => ziehTasten(ev, tasten(s))}><span aria-hidden="true">⠿</span></button>
+                  {inhalt}
                 </li>
               );
             })}
@@ -323,7 +348,7 @@ function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: string | nu
       </div>
       {offen && (
         <div className="symbolraster-rahmen">
-          <input type="search" className="klein" aria-label={t('werkbank.sicht.symbol.suchen')} placeholder={t('werkbank.sicht.symbol.suchen')} value={suche} onChange={(x) => setSuche(x.target.value)} />
+          <Suchfeld wert={suche} setze={setSuche} beschriftung={t('werkbank.sicht.symbol.suchen')} platzhalter={t('werkbank.sicht.symbol.suchen')} />
           {ANSICHT_SYMBOLE.map((g) => {
             const liste = g.symbole.filter((x) => !q || x.titel.toLowerCase().includes(q) || x.name.includes(q) || g.gruppe.toLowerCase().includes(q));
             if (!liste.length) return null;

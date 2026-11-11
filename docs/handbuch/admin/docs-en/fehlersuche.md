@@ -14,7 +14,7 @@ If a page cannot be displayed because the interface runs into an error while dra
 
 ![Workbench → Reported problems](bilder/werkbank-fehlermeldung.png)
 
-Under **Workbench → Reported problems** are the reports, newest first; the counter in the sidebar and in the overview names the open ones. In the report you see description, screenshots and details and can **mark it as done** (and reopen it) or **delete** it – permanently, including images. Deliberately, there is no reply to the user in Ablago; you handle that your own way.
+Under **Workbench → Reported problems** are the reports, newest first; the counter in the sidebar and in the overview names the open ones. The search field above the list searches the text of the reports and the person who reported; the tick box **Show completed** below it adds the completed ones (they carry the mark *done*). In the report you see description, screenshots and details and can **mark it as done** (and reopen it) or **delete** it – permanently, including images. Deliberately, there is no reply to the user in Ablago; you handle that your own way.
 
 ## Log { #protokoll }
 

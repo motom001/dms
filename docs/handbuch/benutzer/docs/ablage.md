@@ -64,7 +64,7 @@ Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten habe
 
 ![Suche in den Verträgen](bilder/suche.png)
 
-Über der Liste steht, wie viele Treffer es gibt. Ist das Suchfeld leer, siehst du wieder alle Mappen.
+Über der Liste steht, wie viele Treffer es gibt. Ist das Suchfeld leer, siehst du wieder alle Mappen; leeren kannst du es mit dem **×** am Ende oder mit **Esc**.
 
 [Teile einer Mappe](mappen.md#teile) – etwa Rechnungspositionen – stehen nicht selbst in der Liste: Steht der Begriff in einem Teil, findest du die übergeordnete Mappe mit „gefunden in …“, sofern du beide sehen darfst.
 

@@ -14,7 +14,7 @@ Lässt sich eine Seite nicht anzeigen, weil die Oberfläche beim Zeichnen auf ei
 
 ![Werkbank → Gemeldete Fehler](bilder/werkbank-fehlermeldung.png)
 
-Unter **Werkbank → Gemeldete Fehler** stehen die Meldungen, neueste zuerst; der Zähler in der Leiste und in der Übersicht nennt die offenen. In der Meldung siehst du Beschreibung, Screenshots und Angaben und kannst sie **als erledigt markieren** (und wieder öffnen) oder **löschen** – endgültig, samt Bildern. Eine Rückmeldung an den Benutzer gibt es in Ablago bewusst nicht; die erledigst du auf deinem Weg.
+Unter **Werkbank → Gemeldete Fehler** stehen die Meldungen, neueste zuerst; der Zähler in der Leiste und in der Übersicht nennt die offenen. Das Suchfeld über der Liste sucht im Text der Meldungen und nach der Person, die gemeldet hat; der Haken **Erledigte zeigen** darunter nimmt die erledigten dazu (sie tragen das Zeichen *erledigt*). In der Meldung siehst du Beschreibung, Screenshots und Angaben und kannst sie **als erledigt markieren** (und wieder öffnen) oder **löschen** – endgültig, samt Bildern. Eine Rückmeldung an den Benutzer gibt es in Ablago bewusst nicht; die erledigst du auf deinem Weg.
 
 ## Protokoll
 

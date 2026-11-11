@@ -24,7 +24,7 @@ import { falte } from '../../../shared/src/suche';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Knopf, KnopfLink } from '../bausteine';
+import { FilterHaken, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, useListenSuche } from '../bausteine';
 import { Kopf } from './Kopf';
 
 /**
@@ -61,30 +61,39 @@ function FristText({ frist }: { frist: string }) {
   return <span className={n < 0 ? 'frist-ueber' : n <= 7 ? 'frist-bald' : ''} title={t('werkbank.auskunft.frist.bis', { datum: datumText(frist) })}>{text}</span>;
 }
 
+/**
+ * Auskünfte in der Mitte (#994): Suchfeld wie in der Ablage, darunter der Haken „Nur offene zeigen“ (Vorgabe an).
+ * Die Vorgaben für Auskünfte stehen rechts (ohne Auswahl) und sind vom Assistenten aus verlinkt.
+ */
 export function AuskuenfteListe({ z, offen }: { z: DatenschutzZustand; offen?: string }) {
-  const [alle, setAlle] = useState(false);
-  const [suche, setSuche] = useState('');
-  const liste = (z.stand?.verzeichnis ?? []).filter((e) => (alle || istOffen(e.zustand)) && (!suche.trim() || falte(e.titel).includes(falte(suche.trim()))));
+  const [nurOffene, setNurOffene] = useState(true);
+  const alle = z.stand?.verzeichnis ?? [];
+  const sichtbar = nurOffene ? alle.filter((e) => istOffen(e.zustand)) : alle;
+  const such = useListenSuche(sichtbar, {
+    quellen: (e) => [{ wo: '', text: titelOder(e.titel), titel: true }, { wo: t('werkbank.listensuche.auskunft.zustand'), text: t(`werkbank.auskunft.zustand.${e.zustand}`) }],
+  });
+  const ausgeblendet = nurOffene && alle.length > sichtbar.length;
   return (
     <>
       <Listenkopf titel={bereichName('auskuenfte')} hilfe="werkbank.auskunft" beschreibung={t('werkbank.auskunft.liste.beschreibung')}>
         <KnopfLink to="/werkbank/auskuenfte/neu" art="anlegen" groesse="klein">{t('werkbank.auskunft.liste.neu')}</KnopfLink>
       </Listenkopf>
-      <div className="zeile-umbruch listenfilter">
-        <span className="segmente" role="group">
-          <button type="button" className={alle ? '' : 'an'} aria-pressed={!alle} onClick={() => setAlle(false)}>{t('werkbank.auskunft.liste.offen')}</button>
-          <button type="button" className={alle ? 'an' : ''} aria-pressed={alle} onClick={() => setAlle(true)}>{t('werkbank.auskunft.liste.alle')}</button>
-        </span>
-        <input type="search" value={suche} placeholder={t('werkbank.auskunft.liste.suche')} aria-label={t('werkbank.auskunft.liste.suche')} onChange={(e) => setSuche(e.target.value)} />
-        <Link to="/werkbank/auskuenfte/einstellungen" className={`verweis klein${offen === 'einstellungen' ? ' an' : ''}`}>{t('werkbank.auskunft.liste.einstellungen')}</Link>
-      </div>
+      <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.listensuche.auskunft.beschriftung')} platzhalter={t('werkbank.auskunft.liste.suche')} anker="werkbank.auskuenfte.suche"
+        treffer={z.stand ? such.treffer.length : null} aktiv={such.aktiv || !nurOffene} anzahl={t('werkbank.listensuche.auskunft.anzahl', { anzahl: sichtbar.length })}
+        filter={<FilterHaken an={nurOffene} setze={setNurOffene} anker="werkbank.auskuenfte.nur-offene">{t('werkbank.listensuche.auskunft.nur-offene')}</FilterHaken>} />
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!z.stand ? <p className="leise">{t('werkbank.datenschutz.lade')}</p> : !liste.length ? <p className="leise leerliste">{alle ? t('werkbank.auskunft.liste.leer.alle') : t('werkbank.auskunft.liste.leer.offen')}</p> : (
+      {!z.stand ? <p className="leise">{t('werkbank.datenschutz.lade')}</p>
+        : !such.treffer.length
+          // Blendet der Haken etwas aus, sagt der leere Zustand das und bietet „Alle zeigen“ (Suche bleibt).
+          ? (ausgeblendet ? <KeineTreffer zuruecksetzen={() => setNurOffene(false)} text={such.gesucht ? t('werkbank.listensuche.auskunft.keine-offenen-treffer') : t('werkbank.auskunft.liste.leer.offen')} knopf={t('werkbank.listensuche.auskunft.alle-zeigen')} />
+            : such.gesucht ? <KeineTreffer zuruecksetzen={such.zuruecksetzen} />
+            : <p className="leise leerliste">{t('werkbank.auskunft.liste.leer.alle')}</p>)
+          : (
         <ul className="mappenliste">
-          {liste.map((e) => (
+          {such.treffer.map(({ eintrag: e, titel }) => (
             <li key={e.id}>
               <Link to={`/werkbank/auskuenfte/${e.id}`} className={`eintrag werk ${offen === e.id ? 'an' : ''}`}>
-                <span className="titel">{titelOder(e.titel)}</span>
+                <span className="titel"><Hervorgehoben teile={titel} text={titelOder(e.titel)} /></span>
                 <span className="unter">
                   <span className={`chip ${ZUSTAND_CHIP[e.zustand]}`}>{t(`werkbank.auskunft.zustand.${e.zustand}`)}</span>{' '}
                   {zeit(e.zeit)}{e.mappen !== undefined ? ` · ${t('werkbank.auskunft.liste.mappen', { anzahl: e.mappen })}` : ''}
@@ -110,17 +119,30 @@ export function AuskunftRechts({ z, id }: { z: DatenschutzZustand; id?: string }
     <div className="einspaltig">
       <Kopf titel={t('werkbank.auskunft.neu.titel')} ueber={bereichName('auskuenfte')} hilfe="werkbank.datenschutz">
         <p className="leise">{t('werkbank.datenschutz.fragt-ein-kunde-mieter')}</p>
+        {/* #994: Woher Empfänger, Rechte-Text und Anrede kommen – am Handy der Weg zu den Vorgaben. */}
+        <p className="leise klein">{tn('werkbank.auskunft.neu.vorgaben', { link: <Link to="/werkbank/auskuenfte/einstellungen" className="verweis">{t('werkbank.auskunft.neu.vorgaben.link')}</Link> })}</p>
       </Kopf>
       <AuskunftErteilen einstellung={s.einstellung} nachher={z.laden} zustellen={(aid) => geheZu(`/werkbank/auskuenfte/${aid}?zustellen=1`)} />
     </div>
   );
+  // Vorgaben für jede Auskunft (#994): ohne Auswahl im Kopf der rechten Spalte; über den Assistenten (und alte Links)
+  // auch als eigene Seite – am Handy steht die rechte Spalte ohne Auswahl nicht da.
   if (id === 'einstellungen') return (
     <div className="einspaltig">
-      <div className="mappenkopf"><p className="ueber">{bereichName('auskuenfte')}</p><h1>{t('werkbank.auskunft.einstellungen.titel')}</h1><p className="leise">{t('werkbank.auskunft.einstellungen.text')}</p></div>
+      <Kopf titel={t('werkbank.auskunft.einstellungen.titel')} ueber={bereichName('auskuenfte')} hilfe="werkbank.auskunft.vorgaben">
+        <p className="leise">{t('werkbank.auskunft.einstellungen.text')}</p>
+      </Kopf>
       <AuskunftEinstellungen z={z} />
     </div>
   );
-  if (!id) return <div className="platzhalter"><p>{t('werkbank.auskunft.rechts.waehlen')}</p></div>;
+  if (!id) return (
+    <div className="einspaltig">
+      <Kopf titel={bereichName('auskuenfte')} hilfe="werkbank.auskunft"><p className="leise">{t('werkbank.auskunft.rechts.waehlen')}</p></Kopf>
+      <h2 className="h3">{t('werkbank.auskunft.einstellungen.titel')}</h2>
+      <p className="leise klein">{t('werkbank.auskunft.einstellungen.text')}</p>
+      <AuskunftEinstellungen z={z} />
+    </div>
+  );
   const e = s.verzeichnis.find((x) => x.id === id);
   if (!e) return <div className="leer"><p>{t('werkbank.auskunft.rechts.fehlt')}</p></div>;
   return <AuskunftDetail key={e.id} e={e} z={z} />;
