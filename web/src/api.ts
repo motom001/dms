@@ -366,6 +366,16 @@ export type AnbieterStand = Omit<AnbieterEingabe, 'clientSecret' | 'clientSecret
 /** Zwei-Faktor-Anmeldung (#242). */
 export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUebrig: number; pflicht: boolean }
 export interface ZweifaktorPflicht { admin: boolean; mitglied: boolean }
+/** Passkeys (#811): ein eigener Passkey in Mein Konto → Sicherheit. `passt` = gilt für die Adresse von Ablago. */
+export interface Passkey { nr: string; name: string; erstellt: string; zuletzt: string | null; mehrgeraete: boolean; passt: boolean; rpId: string }
+export interface PasskeyStand { liste: Passkey[]; moeglich: boolean; adresse: string | null; pflicht: boolean; hoechstens: number }
+export type PasskeyPflicht = ZweifaktorPflicht & { moeglich: boolean };
+/** Optionen und Kennung einer Herausforderung zum Anmelden mit Passkey (Optionen im JSON-Format von WebAuthn). */
+export interface PasskeyAnfrage { kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }
+/** Antwort des Geräts mit der Kennung der Herausforderung – so geht sie an den Server. */
+export interface PasskeyAntwort { kennung: string; antwort: unknown }
+/** Zweiter Schritt der Anmeldung (#242, #811): welche Wege gehen? */
+export interface ZweiteWege { code: boolean; passkey: boolean }
 /** Sprache für die Oberfläche (#729). */
 export interface SprachStatus { sprache: string; standard: string; erlaubt: string[]; maschinell: string[] }
 /** Werkbank → Sprachen (#729). */
@@ -392,6 +402,8 @@ export interface KontoStatus {
    * ausstehend: die Sitzung lief schon vor dem Einschalten der Pflicht – weiterarbeiten mit Hinweis, #416).
    */
   zweifaktor?: { aktiv: boolean; fehlt: boolean; ausstehend?: boolean } | null;
+  /** Passkeys (#811): gehen sie über diese Adresse (HTTPS)? Angemeldet zusätzlich: eigener vorhanden, Pflicht offen. */
+  passkey?: { moeglich: boolean; aktiv?: boolean; fehlt?: boolean; ausstehend?: boolean } | null;
   /** Anmeldung über einen Anbieter (#241), nur ohne Anmeldung. */
   anbieter?: { knopf: string; lokalNurAdmins: boolean } | null;
   /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */
@@ -528,9 +540,9 @@ export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; lin
 export const api = {
   status: () => anfrage<KontoStatus>('GET', '/api/konto/status'),
   /** Verwaltungsmodus (#819): beginnen (ohne Angaben: Wiedereinstieg oder frische Anmeldung), beenden, frisch bestätigen. */
-  verwaltungBeginnen: (angaben: { passwort?: string; code?: string } = {}) => anfrage<Verwaltungsstand>('POST', '/api/konto/verwaltung', angaben),
+  verwaltungBeginnen: (angaben: { passwort?: string; code?: string; passkey?: PasskeyAntwort } = {}) => anfrage<Verwaltungsstand>('POST', '/api/konto/verwaltung', angaben),
   verwaltungBeenden: () => anfrage<Verwaltungsstand>('POST', '/api/konto/verwaltung/beenden'),
-  verwaltungBestaetigen: (angaben: { passwort: string; code?: string }) => anfrage<{ frisch: true }>('POST', '/api/konto/verwaltung/bestaetigen', angaben),
+  verwaltungBestaetigen: (angaben: { passwort?: string; code?: string; passkey?: PasskeyAntwort }) => anfrage<{ frisch: true }>('POST', '/api/konto/verwaltung/bestaetigen', angaben),
   /** Verwaltungsrecht einer Person (#818): nur mit „Gesamte Verwaltung“ und frischer Anmeldung. */
   verwaltungSetzen: (id: string, verwaltung: string[]) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}/verwaltung`, { verwaltung }),
   imVerwaltungsmodus: () => anfrage<ModusEintrag[]>('GET', '/api/werkbank/verwaltungsmodus'),
@@ -581,9 +593,22 @@ export const api = {
   wartungAus: () => anfrage<unknown>('POST', '/api/werkbank/wartung/aus'),
   einrichten: (d: { mandant?: string; email: string; name: string; passwort: string; sprache?: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
   /** Mit Zwei-Faktor (#242) kommt statt des Benutzers eine Kennung für den zweiten Schritt. */
-  anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string }>('POST', '/api/konto/anmelden', d),
+  anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/anmelden', d),
   anmeldenCode: (kennung: string, code: string) => anfrage<{ benutzer: Benutzer; wiederherstellung: boolean }>('POST', '/api/konto/anmelden/code', { kennung, code }),
   zweifaktor: () => anfrage<ZweifaktorStand>('GET', '/api/konto/zweifaktor'),
+  /** Passkeys (#811): anmelden (ohne E-Mail-Adresse oder als zweiter Schritt), eigene verwalten, Pflicht, Zurücksetzen. */
+  passkeyOptionen: (zweiterSchritt?: string) => anfrage<PasskeyAnfrage>('POST', '/api/konto/passkey/optionen', zweiterSchritt ? { zweiterSchritt } : {}),
+  passkeyAnmelden: (a: PasskeyAntwort & { zweiterSchritt?: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passkey/anmelden', a),
+  passkeys: () => anfrage<PasskeyStand>('GET', '/api/konto/passkeys'),
+  passkeyBeginnen: () => anfrage<PublicKeyCredentialCreationOptionsJSON>('POST', '/api/konto/passkeys/beginnen'),
+  passkeyHinzufuegen: (antwort: unknown, name: string) => anfrage<Passkey>('POST', '/api/konto/passkeys', { antwort, name }),
+  passkeyBenennen: (nr: string, name: string) => anfrage<Passkey[]>('PUT', `/api/konto/passkeys/${encodeURIComponent(nr)}`, { name }),
+  passkeyEntfernen: (nr: string) => anfrage<Passkey[]>('DELETE', `/api/konto/passkeys/${encodeURIComponent(nr)}`),
+  passkeyBestaetigenOptionen: () => anfrage<PasskeyAnfrage>('POST', '/api/konto/passkeys/bestaetigen/optionen'),
+  passkeyPflicht: () => anfrage<PasskeyPflicht>('GET', '/api/werkbank/passkeys'),
+  passkeyPflichtSetzen: (p: Partial<ZweifaktorPflicht>) => anfrage<PasskeyPflicht>('PUT', '/api/werkbank/passkeys', p),
+  benutzerPasskeys: (id: string) => anfrage<{ anzahl: number }>('GET', `/api/benutzer/${id}/passkeys`),
+  benutzerPasskeysZuruecksetzen: (id: string) => anfrage<null>('POST', `/api/benutzer/${id}/passkeys/zuruecksetzen`),
   zweifaktorBeginnen: () => anfrage<{ geheimnis: string; uri: string }>('POST', '/api/konto/zweifaktor/beginnen'),
   zweifaktorBestaetigen: (code: string) => anfrage<{ codes: string[] }>('POST', '/api/konto/zweifaktor/bestaetigen', { code }),
   zweifaktorCodes: (passwort: string) => anfrage<{ codes: string[] }>('POST', '/api/konto/zweifaktor/codes', { passwort }),
@@ -599,7 +624,7 @@ export const api = {
   anbieterPruefen: () => anfrage<{ aussteller: string; abmelden: boolean; schluessel: number }>('POST', '/api/werkbank/anbieter/pruefen'),
   passwortVergessen: (email: string) => anfrage<null>('POST', '/api/konto/passwort-vergessen', { email }),
   linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
-  passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
+  passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
 
   personen: () => anfrage<Person[]>('GET', '/api/personen'),
   /* Abwesenheit mit Vertreter (#78) */

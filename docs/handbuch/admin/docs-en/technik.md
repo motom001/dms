@@ -23,6 +23,7 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 | Editing PDFs | pdf-lib (MIT), encapsulated only via one shared place in the server (#541); evaluation of the alternatives in the [Developer manual](https://help.ablago.app/entwickler/aktuell/en/aufbau/#pdf-stelle) | Stamps, export, editing pages, redacting, shrinking, preview, access copy, labels |
 | Workers | `node:worker_threads`, without an additional library: a small pool next to the main thread (#542), see [System health](speicherplatz.md#arbeiter-fur-pdf-und-exporte) | PDF work and large exports without other users waiting |
 | Encryption | AES-256-GCM (Node.js crypto), key as a file under `/data/geheim` | Stored passwords (#39, #46) |
+| Passkeys | WebAuthn; verified with `@simplewebauthn/server` (MIT), in the browser the built-in interface; only public keys in the database | Signing in without a password, second factor, signing in again ([Passkeys](anmeldeschutz.md#passkeys), #811) |
 | Image | `node:24-alpine`, multi-stage build, for amd64 and arm64 – each architecture on its own matching GitHub machine (without emulation), then merged into one image | Runs on the NAS next to the PostgreSQL image |
 | dms-komplett | The same image with PostgreSQL 17 (Alpine package) in the same container; database in the folder `/data/postgres` | Ablago and database in one container |
 | Checks | GitHub Actions: type check, tests against PostgreSQL, image build | Every push to `main`, every pull request, every version tag and once a week |
@@ -45,6 +46,7 @@ How large something may be at most. Ablago checks every limit before it processe
 | Error report (with screenshot and attachments) | 30 MB, the screenshot 10 MB |
 | Logo of a design | 1 MB |
 | Setup file | 64 KB |
+| Passkeys | 20 per person, name 60 characters, device response 16 KB |
 | E-invoice (XML as a file or from the PDF attachment) | 4 MB, at most 64 levels deep, 200,000 elements, 500 items are taken over; without DTD and entities. Ablago doesn't read anything larger as an e-invoice |
 | All other requests (forms, settings) | 2 MB; they do not accept a file at all |
 

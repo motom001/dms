@@ -9,6 +9,8 @@
   "app.die-zwei-faktor-anmeldung": "Die Zwei-Faktor-Anmeldung ist für deine Rolle vorgeschrieben.",
   "app.richte-sie-jetzt-ein": "{b} Richte sie jetzt ein – spätestens bei der nächsten Anmeldung geht es sonst erst nach der Einrichtung weiter.",
   "app.jetzt-einrichten": "Jetzt einrichten",
+  "app.passkey.vorgeschrieben": "Ein Passkey ist für deine Rolle vorgeschrieben.",
+  "app.passkey.richte-ihn-ein": "{b} Füge jetzt einen hinzu – spätestens bei der nächsten Anmeldung geht es sonst erst danach weiter.",
   "app.zur-startseite": "Zur Startseite",
   "app.startseite": "{wert} – Startseite",
   "app.bereiche": "Bereiche",

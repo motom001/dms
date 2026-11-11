@@ -113,6 +113,8 @@ export interface Verwaltungsstand {
   code: boolean;
   /** Hat die Person ein Passwort? Ohne (nur Anbieter) geht die erneute Anmeldung über den Anbieter. */
   passwort: boolean;
+  /** Geht die erneute Anmeldung auch mit einem Passkey (#811)? Nur, wenn einer zur Adresse passt (HTTPS). */
+  passkey?: boolean;
   /** Eigene Bereiche; `null` = Gesamte Verwaltung. */
   bereiche: string[] | null;
 }

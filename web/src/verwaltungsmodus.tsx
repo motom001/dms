@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { api, ApiFehler, setzeBestaetigung } from './api';
 import { t } from './sprache';
+import { Knopf } from './bausteine';
+import { passkeysImBrowser, passkeyVerwenden } from './passkey';
+import { Symbol } from './Symbol';
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 
 /**
@@ -11,6 +14,7 @@ import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
  * - Abgelaufen während der Arbeit: Die Anfrage wartet, der Dialog fragt; danach geht sie noch einmal hinaus (api.ts).
  *   Heute in diesem Browser schon bestätigt: Wiedereinstieg mit einem Klick, aktiv zu wählen.
  * - Heikle Handlung: immer Passwort (und Code), gilt dann 10 Minuten.
+ * - Statt Passwort und Code geht überall ein Passkey (#811) – auch für Personen, die sich sonst über einen Anbieter anmelden.
  */
 type Art = 'beginnen' | 'modus' | 'frisch';
 interface Offen { art: Art; heuteBestaetigt: boolean; fertig(ok: boolean): void }
@@ -48,6 +52,14 @@ export function Verwaltungsanmeldung({ stand, nachher }: { stand: Verwaltungssta
   return <Dialog o={offen} stand={stand} schliesse={schliesse} />;
 }
 
+/** Überschrift und Text des Dialogs je Anlass. */
+function dialogTexte(art: Art, wieder: boolean) {
+  if (art === 'frisch') return { titel: t('konten.verwaltung.dialog.frisch.titel'), text: t('konten.verwaltung.dialog.frisch.text') };
+  if (wieder) return { titel: t('konten.verwaltung.dialog.wieder.titel'), text: t('konten.verwaltung.dialog.wieder.text') };
+  if (art === 'modus') return { titel: t('konten.verwaltung.dialog.abgelaufen.titel'), text: t('konten.verwaltung.dialog.abgelaufen.text') };
+  return { titel: t('konten.verwaltung.dialog.titel'), text: t('konten.verwaltung.dialog.text') };
+}
+
 function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | null; schliesse(ok: boolean): void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const feld = useRef<HTMLInputElement>(null);
@@ -55,6 +67,7 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
   const [passwort, setPasswort] = useState('');
   const [code, setCode] = useState('');
   const [mitCode, setMitCode] = useState(!!stand?.code);
+  const [passkey, setPasskey] = useState(() => !!stand?.passkey && passkeysImBrowser());
   const [fehler, setFehler] = useState<string>();
   const [sendet, setSendet] = useState(false);
   const ohnePasswort = stand?.passwort === false;
@@ -67,8 +80,9 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
   async function tu(f: () => Promise<unknown>) {
     setSendet(true); setFehler(undefined);
     try { await f(); schliesse(true); } catch (e) {
-      const d = e instanceof ApiFehler ? e.details as { code?: boolean } | undefined : undefined;
+      const d = e instanceof ApiFehler ? e.details as { code?: boolean; passkey?: boolean } | undefined : undefined;
       if (d?.code) setMitCode(true);
+      if (d?.passkey) setPasskey(passkeysImBrowser());
       setFehler((e as Error).message);
     } finally { setSendet(false); }
   }
@@ -80,14 +94,14 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
     try { sessionStorage.setItem('dms:nach-anmeldung', '/werkbank?verwalten=1'); } catch { /* ohne */ }
     location.href = '/api/konto/anbieter/start';
   };
-  const titel = o.art === 'frisch' ? t('konten.verwaltung.dialog.frisch.titel') : wieder ? t('konten.verwaltung.dialog.wieder.titel') : o.art === 'modus' ? t('konten.verwaltung.dialog.abgelaufen.titel') : t('konten.verwaltung.dialog.titel');
-  const text = o.art === 'frisch' ? t('konten.verwaltung.dialog.frisch.text') : wieder ? t('konten.verwaltung.dialog.wieder.text') : o.art === 'modus' ? t('konten.verwaltung.dialog.abgelaufen.text') : t('konten.verwaltung.dialog.text');
+  const { titel, text } = dialogTexte(o.art, wieder);
   return (
     <dialog ref={ref} className="rueckfrage verwaltungsdialog" role="dialog" aria-modal="true" aria-labelledby={`${id}-t`} aria-describedby={`${id}-x`}
       onCancel={(e) => { e.preventDefault(); schliesse(false); }}>
       <form method="dialog" onSubmit={(e) => { e.preventDefault(); if (wieder) void tu(() => api.verwaltungBeginnen()); else if (!ohnePasswort) void anmelden(); }}>
         <h2 id={`${id}-t`}>{titel}</h2>
         <div id={`${id}-x`} className="rueckfrage-text"><p>{text}</p></div>
+        {!wieder && passkey && <PasskeyBestaetigen frisch={o.art === 'frisch'} haupt={ohnePasswort} tu={tu} />}
         {!wieder && !ohnePasswort && <>
           <label className="eigenschaft"><span>{t('anmeldung.passwort')}</span>
             <input ref={feld} id="verwaltung-passwort" type="password" value={passwort} onChange={(e) => setPasswort(e.target.value)} autoComplete="current-password" required />
@@ -107,6 +121,23 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
         </div>
       </form>
     </dialog>
+  );
+}
+
+/** Erneute Anmeldung mit Passkey (#811): Optionen nur mit den eigenen Passkeys, dann an dieselbe Stelle wie Passwort und Code. */
+function PasskeyBestaetigen({ frisch, haupt, tu }: { frisch: boolean; haupt: boolean; tu: (f: () => Promise<unknown>) => Promise<void> }) {
+  const bestaetigen = async () => {
+    const p = await api.passkeyBestaetigenOptionen();
+    const antwort = await passkeyVerwenden(p.optionen);
+    const passkey = { kennung: p.kennung, antwort };
+    await tu(() => (frisch ? api.verwaltungBestaetigen({ passkey }) : api.verwaltungBeginnen({ passkey })));
+  };
+  return (
+    <div className="anmelden-passkey">
+      <Knopf id="verwaltung-passkey" art={haupt ? 'haupt' : 'neben'} className="breit" laeuftText={t('anmeldung.passkey.warte')} onClick={bestaetigen}>
+        <Symbol name="passkey" /> {t('anmeldung.passkey.bestaetigen')}</Knopf>
+      {!haupt && <p className="trenner">{t('anmeldung.passkey.oder')}</p>}
+    </div>
   );
 }
 

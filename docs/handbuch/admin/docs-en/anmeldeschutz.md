@@ -92,6 +92,36 @@ The secret is stored in the database encrypted with [Ablago's key](verschluessel
 !!! tip "Locked yourself out?"
     If you have lost your phone and codes, `dms zweifaktor-zuruecksetzen <email>` in the container removes your two-factor sign-in (see [command `dms`](konsole.md)). If you can't get to the container, [emergency access](notfall.md) helps.
 
+## Passkeys {#passkeys}
+
+With a **passkey** (WebAuthn) someone signs in without a password: phone, computer or security key ask for fingerprint, face or PIN. Each passkey only works for the address of Ablago it was created under – a fake sign-in page cannot use it (protection against phishing). Everyone creates, names and removes their own passkeys under **My account → Security**; several per person are possible. What this looks like is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/profil/#passkeys).
+
+A passkey is good for three ways:
+
+- **A way of its own:** **Sign in with a passkey** on the sign-in page, without email address and password. A passkey always requires confirmation on the device (PIN or biometrics) and therefore counts as a sign-in with all factors.
+- **Second factor:** anyone who has set up two-factor sign-in can use the passkey instead of the code after the password. Code and recovery codes keep working.
+- **Signing in again:** in [administration mode](verwalten.md) and before sensitive actions, instead of password and code – also for people who otherwise only sign in via a [provider](#anmeldung-uber-einen-anbieter-openid-connect).
+
+### Only over HTTPS {#nur-uber-https}
+
+Passkeys only work when Ablago can be reached over **HTTPS** with a name (e.g. `https://ablago.example.org`, not via an IP address); for trying out also on `http://localhost`. Ablago uses [Ablago's address](installation.md#e-mail-und-adresse) from **Workbench → Email and address** for this; if none is maintained there, the address the page was just called under. Without HTTPS, the button is replaced by the notice "Passkeys work as soon as Ablago can be reached over HTTPS", and the setup assistant offers no passkey at the end. How to run Ablago behind a proxy with a certificate is described under [HTTPS and certificates](installation.md#https-und-zertifikate).
+
+**Address changed?** If Ablago gets a different name, existing passkeys no longer fit – that is intended, because exactly this protects against fake sites. The Workbench points this out when you change the address. Everyone then signs in with their password; in **My account → Security** each old passkey shows which address it was for, and they add a new one.
+
+### Requiring them {#vorschreiben}
+
+In the block **Passkeys** you require them per system role, like two-factor sign-in: **Require for everyone who may administer** and **Require for everyone else**. The requirement takes effect **at the next sign-in**: whoever has no passkey then first adds one and only continues afterwards; whoever is signed in right now keeps working and sees a notice at the top. With the requirement, the passkey is needed as a **second step** when signing in with a password (with a code app the code works too), and nobody can remove their last passkey themselves. Without HTTPS the requirement cannot be switched on and locks nobody out. Administrators can always switch it off, also on the page after signing in.
+
+!!! warning "Without a code app there is no fallback"
+    Without the requirement, the password alone stays a fallback when the device is missing. With the requirement and without a code app, someone who loses their only passkey needs your help. So recommend a second passkey (e.g. a security key) or additionally two-factor sign-in with recovery codes.
+
+### Lost device, log, backup {#gerat-verloren-protokoll-sicherung}
+
+- **Reset:** under **Workbench → Users** the person shows how many passkeys they have; **Reset** in the block **Passkeys** removes all of them. In the container, `dms passkeys-zuruecksetzen <email>` does the same (see [command `dms`](konsole.md)), and [emergency access](notfall.md) removes them together with two-factor sign-in.
+- **Sign-in protection:** failed attempts with a passkey count like wrong passwords for the [blocks](#zwei-sperren) per account and per IP address. Every challenge is valid for five minutes and only once.
+- **Copied passkeys:** if a passkey reports a counter that does not increase, Ablago refuses and writes *Passkey abgelehnt: Zähler nicht gestiegen – womöglich kopiert* to the [log](fehlersuche.md#protokoll). Adding, renaming, removing and every sign-in are logged there with account and passkey name – never keys or identifiers.
+- **Storage:** for each passkey Ablago only stores the **public key**, name, counter and times. That is nothing secret: whoever reads the database cannot sign in with it. Passkeys are part of the [backup](sicherung.md) and come back when restoring – at the same address they keep working. The [full export](export.md) only contains name and times per person, the setup file nothing of it.
+
 ## Sign-in via a provider (OpenID Connect) {#anmeldung-uber-einen-anbieter-openid-connect}
 
 Instead of with a password, users sign in with the account of an identity provider – such as **Microsoft Entra ID** (Microsoft 365), **Google Workspace**, **Keycloak**, **Authentik** or **Authelia**. A button such as **Sign in with company account** then appears on the sign-in page. The provider sees every sign-in (who, when) – it doesn't see your documents.

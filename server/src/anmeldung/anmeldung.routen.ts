@@ -4,17 +4,23 @@
  */
 import { Fachfehler } from '../fehler';
 import { pflichtRolle } from '../zweifaktor';
+import { PASSKEYS_HOECHSTENS } from '../passkeys';
 import { t } from '../sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { eigeneVersion, standKennung } from '../system';
 import { zeitzone } from '../../../shared/src/region';
 import { istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
-import { L, SITZUNG_SEKUNDEN, ok, leer, b, info, ich, leseCookie, BINDUNG_COOKIE, ANBIETER_COOKIE, kurzCookie, zweifaktorStatus } from '../http/routen-hilfen';
+import { L, SITZUNG_SEKUNDEN, ok, leer, b, info, ich, leseCookie, BINDUNG_COOKIE, ANBIETER_COOKIE, kurzCookie, zweifaktorStatus, passkeyStatus } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
 
+/** Eigene Anmeldung ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
+function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }) {
+  if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, t('anmeldung.passkey.fehler.vertretung'));
+}
+
 export function anmeldungRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, x, log, pakete, einrichtungZugang, betrieb, spracheFuer, verwaltungHinweis, oidc, adresse, zf, whStand, nurAdminsInWartung } = k;
+  const { dienst, konten, x, log, pakete, einrichtungZugang, betrieb, spracheFuer, verwaltungHinweis, oidc, adresse, zf, pk, whStand, nurAdminsInWartung } = k;
   return [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true, zustand: 'laeuft', stand: standKennung() }) },
     // Wartungsmodus (#102): für Banner und Anmeldeseite, auch ohne Anmeldung.
@@ -46,6 +52,8 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       // Zwei-Faktor (#242): eingerichtet? Für die Rolle vorgeschrieben, aber noch nicht eingerichtet?
       // #416: ausstehend = vorgeschrieben, aber diese Sitzung lief schon vorher – Hinweis statt Sperre.
       zweifaktor: a.benutzer && konten.zweifaktor ? await zweifaktorStatus(konten.zweifaktor, a.benutzer, a.sitzungsDaten) : null,
+      // Passkeys (#811): Gehen sie über diese Adresse (HTTPS)? Angemeldet: eigener vorhanden, Pflicht offen.
+      passkey: konten.passkeys ? await passkeyStatus(konten.passkeys, a.benutzer, a.sitzungsDaten) : null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
       passwoerterMoeglich: dienst.passwortfelder.passwoerterMoeglich,
       // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
@@ -157,8 +165,8 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
         L.konto.warn('Anmeldung fehlgeschlagen', { email: String(b(a).email ?? ''), ip: a.ip, grund: (e as Error).message });
         throw e;
       }
-      // Zwei-Faktor (#242): Passwort stimmt, jetzt der Code.
-      if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
+      // Zwei-Faktor (#242): Passwort stimmt, jetzt der Code – oder ein Passkey (#811).
+      if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt, wege: r.wege });
       if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
       await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       L.konto.info('Angemeldet', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
@@ -192,7 +200,9 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
         raus.push(kurzCookie(ANBIETER_COOKIE, '1', SITZUNG_SEKUNDEN, '/'));
         if ('zweiterSchritt' in r && r.zweiterSchritt) {
           L.konto.info('Anbieter bestätigt, Zwei-Faktor folgt', { email: id.email, ip: a.ip });
-          return { weiterleiten: `/anmelden/code#${r.zweiterSchritt}`, cookies: raus };
+          // Wege im Anker (#811): c = Code, p = Passkey – die Oberfläche zeigt nur, was geht.
+          const w = `${r.wege.code ? 'c' : ''}${r.wege.passkey ? 'p' : ''}`;
+          return { weiterleiten: `/anmelden/code#${r.zweiterSchritt}.${w}`, cookies: raus };
         }
         if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
         await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
@@ -233,6 +243,59 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       await konten.zweifaktorGeaendert(ich(a).id);
       return leer;
     } },
+    /* ---------- Passkeys (#811) ---------- */
+    // Anmelden: Optionen holen (ohne E-Mail-Adresse oder als zweiter Schritt), dann die Antwort des Geräts prüfen.
+    { methode: 'POST', pfad: '/api/konto/passkey/optionen', zugang: 'offen', handler: async (a) => ok(await konten.passkeyOptionen(b(a), a.ip)) },
+    { methode: 'POST', pfad: '/api/konto/passkey/anmelden', zugang: 'offen', handler: async (a) => {
+      const zweiter = b(a).zweiterSchritt !== undefined && b(a).zweiterSchritt !== null;
+      let r;
+      try { r = await konten.anmeldenMitPasskey(b(a), a.ip, a.geraet); } catch (e) {
+        L.konto.warn(zweiter ? 'Zweiter Faktor falsch (Passkey)' : 'Anmeldung mit Passkey fehlgeschlagen', { ip: a.ip, grund: (e as Error).message });
+        throw e;
+      }
+      await nurAdminsInWartung(r);
+      L.konto.info(zweiter ? 'Angemeldet (Passwort und Passkey)' : 'Angemeldet mit Passkey', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet, passkey: r.passkey });
+      return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
+    } },
+    // Mein Konto → Sicherheit: eigene Passkeys. Nicht in einer Vertretung – dort ändert niemand die Anmeldung eines anderen.
+    { methode: 'GET', pfad: '/api/konto/passkeys', zugang: 'angemeldet', handler: async (a) => ok({
+      liste: await pk().liste(ich(a).id), moeglich: !!pk().rp(), adresse: pk().rp()?.rpId ?? null,
+      pflicht: (await pk().pflicht())[pflichtRolle(ich(a))], hoechstens: PASSKEYS_HOECHSTENS,
+    }) },
+    { methode: 'POST', pfad: '/api/konto/passkeys/beginnen', zugang: 'angemeldet', handler: async (a) => {
+      ohneVertretung(a);
+      return ok(await pk().beginneRegistrierung(ich(a)));
+    } },
+    { methode: 'POST', pfad: '/api/konto/passkeys', zugang: 'angemeldet', handler: async (a) => {
+      ohneVertretung(a);
+      return { status: 201, body: await pk().bestaetigeRegistrierung(ich(a), b(a).antwort, b(a).name) };
+    } },
+    { methode: 'PUT', pfad: '/api/konto/passkeys/:nr', zugang: 'angemeldet', handler: async (a) => {
+      ohneVertretung(a);
+      return ok(await pk().benenne(ich(a), a.params.nr, b(a).name));
+    } },
+    // Entfernen nur mit frischer Anmeldung (#819): Wer nur kurz an einem fremden, angemeldeten Gerät sitzt, entfernt nichts.
+    { methode: 'DELETE', pfad: '/api/konto/passkeys/:nr', zugang: 'angemeldet', handler: async (a) => {
+      ohneVertretung(a);
+      if (!konten.istFrisch(a.sitzungsDaten)) throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung: 'passkey-entfernen' });
+      // Vorgeschrieben (wie bei der Zwei-Faktor-Anmeldung): den letzten passenden nicht entfernen.
+      const liste = await pk().liste(ich(a).id);
+      const der = liste.find((p) => p.nr === a.params.nr);
+      if (der?.passt && liste.filter((p) => p.passt).length === 1 && (await pk().pflichtGilt(ich(a)))) throw new Fachfehler(409, t('anmeldung.passkey.fehler.letzter'));
+      return ok(await pk().entferne(ich(a), a.params.nr, ich(a).email));
+    } },
+    // Erneute Anmeldung mit Passkey (Verwaltungsmodus, heikle Handlungen): Optionen nur mit den eigenen Passkeys.
+    { methode: 'POST', pfad: '/api/konto/passkeys/bestaetigen/optionen', zugang: 'angemeldet', handler: async (a) => ok(await konten.passkeyBestaetigungOptionen(ich(a), a.sitzungsDaten)) },
+    // Werkbank → Anmeldeschutz: Passkey je Rolle vorschreiben; Verwaltung: Passkeys einer Person zurücksetzen.
+    { methode: 'GET', pfad: '/api/werkbank/passkeys', zugang: 'admin', handler: async () => ok({ ...(await pk().pflicht()), moeglich: !!pk().rp() }) },
+    { methode: 'PUT', pfad: '/api/werkbank/passkeys', zugang: 'admin', handler: async (a) => ok({ ...(await pk().setzePflicht(a.body, ich(a).email)), moeglich: !!pk().rp() }) },
+    { methode: 'GET', pfad: '/api/benutzer/:id/passkeys', zugang: 'admin', handler: async (a) => ok({ anzahl: await pk().anzahl(a.params.id) }) },
+    { methode: 'POST', pfad: '/api/benutzer/:id/passkeys/zuruecksetzen', zugang: 'admin', handler: async (a) => {
+      await konten.pruefeKontoVon(ich(a), a.params.id);
+      const ziel = (await konten.listeBenutzer()).find((x) => x.id === a.params.id);
+      if (!ziel || !(await pk().entferneAlle(ziel.id, ziel.email, ich(a).email))) throw new Fachfehler(404, t('anmeldung.passkey.fehler.keine'));
+      return leer;
+    } },
     { methode: 'GET', pfad: '/api/werkbank/zweifaktor', zugang: 'admin', handler: async () => ok(await zf().pflicht()) },
     { methode: 'PUT', pfad: '/api/werkbank/zweifaktor', zugang: 'admin', handler: async (a) => ok(await zf().setzePflicht(a.body, ich(a).email)) },
     { methode: 'GET', pfad: '/api/benutzer/:id/zweifaktor', zugang: 'admin', handler: async (a) => ok(await zf().status(a.params.id)) },
@@ -262,7 +325,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/konto/passwort-setzen', zugang: 'offen', handler: async (a) => {
       const r = await konten.passwortSetzen(b(a), info(a));
       L.konto.info('Passwort über Link gesetzt', { email: r.benutzer.email });
-      if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
+      if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt, wege: r.wege });
       if (!r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
       await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };

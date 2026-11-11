@@ -36,6 +36,12 @@ export function BetriebPanel({ b }: { b: BetriebZustand }) {
   );
 }
 
+/** Anderer Name (Domain) als bisher? Dann passen vorhandene Passkeys nicht mehr (#811). Port und Pfad zählen nicht. */
+function anderer(neu: string, alt: string | null | undefined): boolean {
+  const name = (x: string) => { try { return new URL(/^[a-z]+:\/\//i.test(x) ? x : `http://${x}`).hostname.toLowerCase(); } catch { return ''; } };
+  return !!neu.trim() && !!alt && name(neu.trim()) !== '' && name(neu.trim()) !== name(alt);
+}
+
 function Adresse({ b }: { b: BetriebZustand }) {
   const s = b.stand!;
   const [adresse, setAdresse] = useState(s.adresse);
@@ -60,6 +66,8 @@ function Adresse({ b }: { b: BetriebZustand }) {
       {s.adresse.startsWith('https://') && s.vorschlag?.startsWith('http://') && (
         <div className="hinweis warn"><p>{tn('werkbank.betrieb.du-rufst-ablago-gerade', { span: <span className="mono">{t('werkbank.betrieb.trust-proxy')}</span>, span2: <span className="mono">{t('werkbank.betrieb.false')}</span> })}</p></div>
       )}
+      {/* Passkeys (#811) gelten nur für den Namen, unter dem sie angelegt wurden: vor dem Speichern darauf hinweisen. */}
+      {anderer(adresse, s.adresse || s.vorschlag) && <div className="hinweis warn" id="adresse-passkeys"><p>{t('werkbank.betrieb.passkeys')}</p></div>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.betrieb.adresse-2')} />
     </form>

@@ -3240,5 +3240,20 @@
   "organisation.notiz.verantwortlicher": "controller changed",
   "organisation.notiz.datenschutzbeauftragter": "data protection officer changed",
   "datenschutz.verantwortlicher-organisation": "Controller: name and address come from the own organisation – {link}.",
-  "datenschutz.zur-organisation": "Workbench → Own organisation"
+  "datenschutz.zur-organisation": "Workbench → Own organisation",
+  "anmeldeschutz.passkey.titel": "Passkeys",
+  "anmeldeschutz.passkey.text": "Everyone can add passkeys under My account → Security and use them to sign in without a password. Here you can require them per role: anyone who has none adds one after their next sign-in; when signing in with a password it is then needed as a second step.",
+  "anmeldeschutz.passkey.admin": "Require for everyone who may administer",
+  "anmeldeschutz.passkey.mitglied": "Require for everyone else",
+  "anmeldeschutz.passkey.hinweis": "Anyone who loses their passkey and has no code app needs you: Users → person → reset passkeys.",
+  "anmeldeschutz.passkey.selbst": "No passkey of your own yet?",
+  "anmeldeschutz.passkey.selbst.text": "You have no passkey yet. After your next sign-in you must add one before you can continue.",
+  "anmeldeschutz.passkey.jetzt": "Add now",
+  "betrieb.passkeys": "Passkeys only work for the name they were created under. With a different name (domain), existing passkeys no longer fit – everyone then signs in with their password and adds new ones.",
+  "benutzer.passkeys": "Passkeys",
+  "benutzer.passkeys.anzahl_one": "{anzahl} passkey added.",
+  "benutzer.passkeys.anzahl_other": "{anzahl} passkeys added.",
+  "benutzer.passkeys.keine": "No passkeys.",
+  "benutzer.passkeys.frage": "Remove all passkeys of {name}?",
+  "benutzer.passkeys.frage.text": "{name} then signs in with the password and can add new passkeys. Useful if a device is lost."
 }

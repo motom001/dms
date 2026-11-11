@@ -36,7 +36,7 @@ Kommt trotzdem niemand mehr hinein, führen der [Notfallcode vom Notfallblatt](w
 Im Alltag arbeitet auch eine Person mit Verwaltungsrecht ohne diese Rechte – sie sieht nur, was die [Berechtigungen](berechtigungen.md) ihr erlauben. In die Verwaltung wechselt sie bewusst:
 
 1. Benutzermenü (oben rechts) → direkt unter **Mein Konto**: **Ablago verwalten**.
-2. **Erneut anmelden** – mit Passwort und, falls eingerichtet, dem Code der Zwei-Faktor-Anmeldung. Liegt die Anmeldung höchstens 10 Minuten zurück, entfällt die Abfrage. Wer sich nur über einen Anbieter anmeldet, meldet sich dort erneut an.
+2. **Erneut anmelden** – mit Passwort und, falls eingerichtet, dem Code der Zwei-Faktor-Anmeldung – oder mit einem [Passkey](anmeldeschutz.md#passkeys) (**Mit Passkey bestätigen**). Liegt die Anmeldung höchstens 10 Minuten zurück, entfällt die Abfrage. Wer sich nur über einen Anbieter anmeldet, meldet sich dort erneut an.
 3. Ablago öffnet die Werkbank. Oben steht ein **roter Balken**: „Du verwaltest gerade Ablago. So solltest du nicht täglich arbeiten. Du siehst alle Mappen, auch gesperrte.“ mit dem Knopf **Verwaltung beenden**.
 
 Der Modus **endet** mit **Verwaltung beenden** (Balken oder Benutzermenü) oder nach **15 Minuten ohne Aktivität**. Läuft er während einer Bearbeitung ab, geht nichts verloren: Ablago fragt nur erneut nach der Anmeldung und speichert dann. Am selben Tag im selben Browser geht der **Wiedereinstieg mit einem Klick** („Wieder verwalten“) – gewählt werden muss er trotzdem.
@@ -49,7 +49,7 @@ Im Modus ist die **Ablage** wie sonst zu bedienen – zum Nachsehen und für die
 
 ### Frische Anmeldung für heikle Handlungen { #frische-anmeldung }
 
-Für die heikelsten Handlungen fragt Ablago **immer** das Passwort (und den Code) ab, auch mitten im Verwaltungsmodus. Danach gilt die Bestätigung 10 Minuten:
+Für die heikelsten Handlungen fragt Ablago **immer** das Passwort (und den Code) oder einen Passkey ab, auch mitten im Verwaltungsmodus. Danach gilt die Bestätigung 10 Minuten:
 
 - Verwaltungsrechte vergeben oder entziehen
 - Schlüssel erzeugen oder wechseln, Notfallblatt herunterladen

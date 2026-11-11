@@ -67,6 +67,7 @@ At the bottom of the area *Account*, below name and email address, it says what 
 ### Security {#sicherheit}
 
 - **Password** – enter your current password and the new one twice (at least 10 characters). After changing it, all other sign-ins are ended.
+- **Passkeys** – sign in without a password, with your fingerprint, face or device PIN; see [below](#passkeys).
 - **Two-factor sign-in** – see [below](#zwei-faktor-anmeldung).
 - **My signed-in devices** – everywhere you are currently signed in, with browser, device and last activity; *this device* is marked. **Sign out** ends a single sign-in, **Sign out all others** all except this one – for instance if you have lost a phone. Then it's best to change your password too.
 - <span id="passwoerter-fuer-dokumente"></span>**Passwords for documents** – the passwords of protected PDFs that you stored with **Remember for further documents** when [unlocking](dokumente.md#passwortgeschuetzte-pdfs). For each password you see the name, the password hidden and when Ablago last used it. The eye shows it, **Change** lets you enter a new name or a new password, and the small red **×** deletes it. Documents already unlocked stay unlocked.
@@ -85,6 +86,33 @@ At the bottom of the area *Account*, below name and email address, it says what 
 !!! note "Signing in with your company account"
     If the sign-in page has a button like **Sign in with company account**, you sign in through it with the account of your company or your sign-in service. You then don't need your Ablago password; the provider manages password and sign-out. It sees when you sign in – it doesn't see your paperwork.
 
+#### Passkeys {#passkeys}
+
+With a **passkey** you sign in without a password: your phone or computer asks for your fingerprint, face or its PIN, and you are in. A passkey belongs to exactly this address of Ablago – a fake site that merely looks like it cannot use it. That makes it better protection than any password.
+
+**Add a passkey**
+
+1. Under **My account → Security**, at **Passkeys**, tap **Add a passkey**.
+2. Give it a name you will recognise later – Ablago suggests the kind of device, e.g. "My iPhone".
+3. Tap **Continue** and confirm on the device (fingerprint, face or PIN). With a security key, plug it in and touch it.
+
+You can have **several** passkeys, for example one on your phone, one on your laptop and a security key as a spare. Many phones and password managers also copy a passkey to your other devices; the list then says *on several devices*.
+
+**Sign in**
+
+On the sign-in page, tap **Sign in with a passkey** and confirm on the device – without email address and password. Password (and the code from the app, if set up) still work; they are your fallback when the device is not at hand.
+
+If you have set up [two-factor sign-in](#zwei-faktor-anmeldung), you can also **Confirm with a passkey** after the password instead of entering the code. If a passkey is required for your role, it is always needed after the password. Anyone who administers Ablago can also use the passkey instead of password and code to sign in again when [administering](#ablago-verwalten) and before sensitive actions.
+
+**Rename and remove**
+
+The list shows each passkey's name, when you added it and when you last used it. **Rename** changes the name. **Remove** takes effect immediately; if you signed in more than ten minutes ago, Ablago first asks again for your password (and code) or a passkey. The passkey stays stored on the device itself – delete it there in the settings.
+
+**Lost a device?** Sign in with your password and remove that device's passkey. If you cannot get in at all, someone who administers Ablago resets your passkeys.
+
+!!! note "Only over HTTPS"
+    Passkeys only work when Ablago can be reached over **HTTPS** (for example `https://ablago.example.org`). If you open Ablago at an address without `https://`, the button is replaced by the notice "Passkeys work as soon as Ablago can be reached over HTTPS". If Ablago gets a new address (a different name), existing passkeys no longer fit: Ablago shows this in the list, you sign in with your password and add a new one.
+
 #### Two-factor sign-in {#zwei-faktor-anmeldung}
 
 With two-factor sign-in, Ablago asks after the password additionally for a six-digit code that an app on your phone generates anew every 30 seconds. Anyone who only knows your password can't get in then.
@@ -94,7 +122,7 @@ With two-factor sign-in, Ablago asks after the password additionally for a six-d
 3. Enter the code from the app and **Confirm**.
 4. You receive **ten recovery codes**. Save or print them and keep them separate from your phone – they are only shown this one time.
 
-From now on you sign in with password **and** code. If your phone isn't at hand, click **Use recovery code** when signing in; each code only works once. When they run low, **New recovery codes** creates fresh ones (the old ones then no longer work). **Switch off** switches two-factor sign-in off again; you confirm both with your password.
+From now on you sign in with password **and** code – or, if you have a [passkey](#passkeys), with the passkey alone. If your phone isn't at hand, click **Use recovery code** when signing in; each code only works once. When they run low, **New recovery codes** creates fresh ones (the old ones then no longer work). **Switch off** switches two-factor sign-in off again; you confirm both with your password.
 
 A link to reset the password also asks for the code afterwards. Lost your phone and no codes left? Then an administrator resets two-factor sign-in for your user.
 

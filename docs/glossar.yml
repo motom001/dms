@@ -856,7 +856,7 @@ begriffe:
     code: OcrStand
   - begriff: Anmeldeschutz
     bereich: werkbank
-    beschreibung: Sperre nach Fehlversuchen, gesperrte IP-Adressen, Vorgaben zur Zwei-Faktor-Anmeldung und die Anmeldung über einen Anbieter.
+    beschreibung: Sperre nach Fehlversuchen, gesperrte IP-Adressen, Vorgaben zur Zwei-Faktor-Anmeldung und zu Passkeys und die Anmeldung über einen Anbieter.
     einsteiger: erklaeren
     begegnet: admin
   - begriff: Zwei-Faktor-Anmeldung
@@ -865,6 +865,14 @@ begriffe:
     einsteiger: erklaeren
     begegnet: alle
     nicht_verwenden: [2FA, MFA (in der Oberfläche)]
+  - begriff: Passkey
+    bereich: werkbank
+    beschreibung: Anmelden ohne Passwort, mit Fingerabdruck, Gesicht oder der PIN von Handy oder Rechner (#811). Gilt nur für die Adresse von Ablago, unter der er angelegt wurde, und geht nur über HTTPS. Mehrere je Person; auch als zweiter Faktor und für die erneute Anmeldung.
+    einsteiger: erklaeren
+    begegnet: alle
+    nicht_verwenden: [Passschlüssel, Zugangsschlüssel, FIDO2-Schlüssel, WebAuthn (in der Oberfläche)]
+    verwandt: [Zwei-Faktor-Anmeldung]
+    code: Passkeys, passkeys_<Konto>
   - begriff: Anmeldung über einen Anbieter
     bereich: werkbank
     beschreibung: Anmelden mit einem fremden Konto, z. B. Microsoft 365 (OpenID Connect).

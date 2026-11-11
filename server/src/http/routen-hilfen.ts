@@ -7,6 +7,7 @@ import { Fachfehler } from '../fehler';
 import { SITZUNG_TAGE } from '../konten';
 import type { SitzungIntern } from '../konto-repo';
 import type { Zweifaktor } from '../zweifaktor';
+import type { Passkeys } from '../passkeys';
 import type { KontaktZuordnung } from '../vollexport';
 import { t } from '../sprache';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
@@ -172,6 +173,17 @@ async function zweifaktorStatus(zf: Zweifaktor, b: Benutzer, s?: SitzungIntern) 
   return { aktiv: await zf.aktiv(b.id), fehlt: lage === 'fehlt', ausstehend: lage === 'ausstehend' };
 }
 
+/**
+ * Passkeys für /api/konto/status (#811): `moeglich` = über diese Adresse gehen Passkeys (HTTPS oder localhost) – für den
+ * Knopf auf der Anmeldeseite, auch ohne Anmeldung. Angemeldet zusätzlich: eigener Passkey vorhanden, Pflicht offen.
+ */
+async function passkeyStatus(pk: Passkeys, b: Benutzer | undefined, s?: SitzungIntern) {
+  const moeglich = !!pk.rp();
+  if (!b) return { moeglich };
+  const lage = s?.vertretungId ? 'ok' : await pk.lage(b, s?.erstellt);
+  return { moeglich, aktiv: await pk.nutzbar(b.id), fehlt: lage === 'fehlt', ausstehend: lage === 'ausstehend' };
+}
+
 /** If-None-Match (RFC 9110): Liste von ETags, auch schwach (W/…) oder „*“. */
 export function passtEtag(kopf: string | undefined, etag: string): boolean {
   if (!kopf) return false;
@@ -224,4 +236,4 @@ export function kontaktVorschlaege(typen: Mappentyp[]): Array<{ typId: string; t
   return erg;
 }
 
-export { L, ok, archivProtokoll, leer, b, info, quelle, ich, grenzenUndEngpaesse, prozessZeilen, engpassStand, zweifaktorStatus };
+export { L, ok, archivProtokoll, leer, b, info, quelle, ich, grenzenUndEngpaesse, prozessZeilen, engpassStand, zweifaktorStatus, passkeyStatus };

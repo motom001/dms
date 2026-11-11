@@ -67,6 +67,7 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 ### Sicherheit
 
 - **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.
+- **Passkeys** – anmelden ohne Passwort, mit Fingerabdruck, Gesicht oder Geräte-PIN; siehe [unten](#passkeys).
 - **Zwei-Faktor-Anmeldung** – siehe [unten](#zwei-faktor-anmeldung).
 - **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.
 - <span id="passwoerter-fuer-dokumente"></span>**Passwörter für Dokumente** – die Passwörter geschützter PDFs, die du beim [Entsperren](dokumente.md#passwortgeschuetzte-pdfs) mit **Für weitere Dokumente merken** abgelegt hast. Je Passwort siehst du den Namen, das Passwort verdeckt und wann Ablago es zuletzt benutzt hat. Mit dem Auge zeigst du es an, mit **Ändern** gibst du einen neuen Namen oder ein neues Passwort ein, und das kleine rote **×** löscht es. Bereits entsperrte Dokumente bleiben dabei entsperrt.
@@ -85,6 +86,33 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 !!! note "Anmelden mit dem Firmenkonto"
     Steht auf der Anmeldeseite ein Knopf wie **Mit Firmenkonto anmelden**, meldest du dich darüber mit dem Konto deiner Firma oder deines Anmeldedienstes an. Dein Passwort für Ablago brauchst du dann nicht; Passwort und Abmelden verwaltet der Anbieter. Er sieht dabei, wann du dich anmeldest – deine Unterlagen sieht er nicht.
 
+#### Passkeys
+
+Mit einem **Passkey** meldest du dich ohne Passwort an: Dein Handy oder Rechner fragt nach Fingerabdruck, Gesicht oder seiner PIN, und schon bist du drin. Ein Passkey gehört zu genau dieser Adresse von Ablago – eine gefälschte Seite, die nur so aussieht, kann ihn nicht benutzen. So schützt er besser als jedes Passwort.
+
+**Passkey hinzufügen**
+
+1. Unter **Mein Konto → Sicherheit** bei **Passkeys** auf **Passkey hinzufügen** tippen.
+2. Einen Namen vergeben, an dem du ihn später erkennst – Ablago schlägt die Art des Geräts vor, z. B. „Mein iPhone“.
+3. Auf **Weiter** tippen und auf dem Gerät bestätigen (Fingerabdruck, Gesicht oder PIN). Mit einem Sicherheitsschlüssel steckst du ihn ein und tippst ihn an.
+
+Du kannst **mehrere** Passkeys haben, etwa einen auf dem Handy, einen auf dem Laptop und einen Sicherheitsschlüssel als Reserve. Viele Handys und Passwortmanager übertragen einen Passkey auch auf deine anderen Geräte; in der Liste steht dann *auf mehreren Geräten*.
+
+**Anmelden**
+
+Auf der Anmeldeseite auf **Mit Passkey anmelden** tippen und auf dem Gerät bestätigen – ohne E-Mail-Adresse und Passwort. Passwort (und, falls eingerichtet, der Code aus der App) gehen weiterhin; sie sind dein Rückfall, wenn das Gerät nicht zur Hand ist.
+
+Hast du die [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung) eingerichtet, kannst du nach dem Passwort statt des Codes auch **Mit Passkey bestätigen**. Ist ein Passkey für deine Rolle vorgeschrieben, gehört er nach dem Passwort immer dazu. Auch wer Ablago verwaltet, kann sich beim [Verwalten](#ablago-verwalten) und vor heiklen Handlungen mit dem Passkey statt mit Passwort und Code erneut anmelden.
+
+**Umbenennen und entfernen**
+
+In der Liste stehen je Passkey der Name, wann du ihn hinzugefügt und wann zuletzt benutzt hast. **Umbenennen** ändert den Namen. **Entfernen** gilt sofort; liegt deine Anmeldung länger als zehn Minuten zurück, fragt Ablago vorher noch einmal nach Passwort (und Code) oder einem Passkey. Auf dem Gerät selbst bleibt der Passkey gespeichert – dort löschst du ihn in den Einstellungen.
+
+**Gerät verloren?** Melde dich mit Passwort an und entferne den Passkey dieses Geräts. Kommst du gar nicht mehr hinein, setzt jemand, der Ablago verwaltet, deine Passkeys zurück.
+
+!!! note "Nur über HTTPS"
+    Passkeys gehen nur, wenn Ablago über **HTTPS** erreichbar ist (zum Beispiel `https://ablago.example.org`). Öffnest du Ablago über eine Adresse ohne `https://`, steht statt des Knopfs der Hinweis „Passkeys gehen, sobald Ablago über HTTPS erreichbar ist“. Bekommt Ablago eine neue Adresse (einen anderen Namen), passen vorhandene Passkeys nicht mehr: Ablago zeigt das in der Liste an, du meldest dich mit Passwort an und fügst einen neuen hinzu.
+
 #### Zwei-Faktor-Anmeldung
 
 Mit der Zwei-Faktor-Anmeldung fragt Ablago nach dem Passwort zusätzlich einen sechsstelligen Code ab, den eine App auf deinem Handy alle 30 Sekunden neu erzeugt. Wer nur dein Passwort kennt, kommt dann nicht hinein.
@@ -94,7 +122,7 @@ Mit der Zwei-Faktor-Anmeldung fragt Ablago nach dem Passwort zusätzlich einen s
 3. Den Code aus der App eingeben und **Bestätigen**.
 4. Du bekommst **zehn Wiederherstellungscodes**. Speichere oder drucke sie und bewahre sie getrennt vom Handy auf – sie werden nur dieses eine Mal angezeigt.
 
-Ab jetzt meldest du dich mit Passwort **und** Code an. Ist das Handy nicht zur Hand, klickst du bei der Anmeldung auf **Wiederherstellungscode verwenden**; jeder Code gilt nur einmal. Gehen sie zur Neige, erzeugst du mit **Neue Wiederherstellungscodes** frische (die alten gelten dann nicht mehr). **Abschalten** schaltet die Zwei-Faktor-Anmeldung wieder aus; beides bestätigst du mit deinem Passwort.
+Ab jetzt meldest du dich mit Passwort **und** Code an – oder, wenn du einen [Passkey](#passkeys) hast, mit dem Passkey allein. Ist das Handy nicht zur Hand, klickst du bei der Anmeldung auf **Wiederherstellungscode verwenden**; jeder Code gilt nur einmal. Gehen sie zur Neige, erzeugst du mit **Neue Wiederherstellungscodes** frische (die alten gelten dann nicht mehr). **Abschalten** schaltet die Zwei-Faktor-Anmeldung wieder aus; beides bestätigst du mit deinem Passwort.
 
 Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy verloren und keine Codes mehr? Dann setzt ein Administrator die Zwei-Faktor-Anmeldung bei deinem Benutzer zurück.
 

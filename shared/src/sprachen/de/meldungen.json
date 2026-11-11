@@ -622,6 +622,8 @@
   "dms.die-zwei-faktor-anmeldung": "Die Zwei-Faktor-Anmeldung ist eingerichtet. Ohne Handy: dms zweifaktor-zuruecksetzen {email}",
   "dms.zwei-faktor-anmeldung-von": "Zwei-Faktor-Anmeldung von {email} zurücksetzen?",
   "dms.zwei-faktor-anmeldung-von-2": "Zwei-Faktor-Anmeldung von {email} entfernt.",
+  "dms.passkeys-von": "Alle Passkeys von {email} entfernen?",
+  "dms.passkeys-von-2": "Passkeys von {email} entfernt.",
   "dms.bis-entsperrt": "bis entsperrt",
   "dms.keine-adresse-gesperrt": "Keine Adresse gesperrt.",
   "dms.aufruf-dms-entsperren-ip": "Aufruf: dms entsperren <ip>   (Liste: dms gesperrt)",

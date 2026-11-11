@@ -30,6 +30,7 @@ Alle Einzelheiten stehen unter [Neues NAS, alte Sicherung](wiederherstellen.md#n
 - **Passwort vergessen:** Wähle auf der Anmeldeseite **Passwort vergessen** – das geht, wenn der E-Mail-Versand eingerichtet ist. Sonst erzeugt eine andere Person, die Ablago verwalten darf, unter **Werkbank → Benutzer** einen Passwort-Link für dich.
 - **Niemand kommt mehr hinein, der verwalten darf:** Nimm den **Notfallcode** vom Notfallblatt – siehe unten. Ohne Notfallblatt hilft die [RESCUE-Datei auf dem Gerät](notfall.md).
 - **Handy für die Zwei-Faktor-Anmeldung verloren:** Eine andere Person mit „Gesamte Verwaltung“ setzt sie zurück, du nimmst einen Wiederherstellungscode – oder den Notfallcode (er setzt die Zwei-Faktor-Anmeldung zurück).
+- **Gerät mit dem Passkey verloren:** Melde dich mit Passwort an und entferne den Passkey unter **Mein Konto → Sicherheit**. Ist ein Passkey vorgeschrieben und du hast keinen anderen, setzt eine andere Person mit „Gesamte Verwaltung“ deine Passkeys zurück – oder der Notfallcode (er entfernt auch die Passkeys).
 
 ### Mit dem Notfallcode wieder hinein { #notfallcode }
 
@@ -39,7 +40,7 @@ Unten auf dem Notfallblatt steht im Kasten **Ausgesperrt?** ein langer Code in V
 2. Tippe den **Notfallcode** ein. Groß- und Kleinschreibung, Leerzeichen und Bindestriche zählen nicht. **Nicht den Schlüssel** vom Notfallblatt – der gehört nie in den Browser.
 3. Tippst du dich vertan, steht dort „Der Notfallcode war falsch“, und die Eingabe ist **30 Sekunden gesperrt** – ein Countdown zählt herunter. Das gilt nur für dein Gerät bzw. deinen Anschluss; wer anderswo Fehlversuche macht, sperrt dich damit nicht aus.
 4. Stimmt der Code, wählst du das **Konto**, für das du ein neues Passwort festlegst. Zur Wahl stehen nur Personen, die Ablago verwalten dürfen.
-5. Leg das **neue Passwort** fest. Ablago beendet dabei alle Anmeldungen dieses Kontos und setzt die Zwei-Faktor-Anmeldung zurück – richte sie danach neu ein. API-Schlüssel des Kontos bleiben gültig.
+5. Leg das **neue Passwort** fest. Ablago beendet dabei alle Anmeldungen dieses Kontos und setzt die Zwei-Faktor-Anmeldung zurück und entfernt die Passkeys – richte sie danach neu ein. API-Schlüssel des Kontos bleiben gültig.
 6. Lade das **neue Notfallblatt** herunter. Der alte Code gilt nur einmal – auf dem neuen Blatt steht ein neuer. Druck es aus und vernichte das alte.
 7. **Melde dich an** – mit der E-Mail-Adresse des Kontos und dem neuen Passwort.
 

@@ -2,7 +2,7 @@
  * Passwörter und Geheimnisse gibt Ablago nie heraus (#1055).
  *
  * Der Test legt eine Ablage mit bekannten Testgeheimnissen an (Konto, Passwortfeld, E-Mail-Versand, Postfach mit
- * OAuth, Webhook, API-Schlüssel, Zwei-Faktor, Tresor, Sitzung) und durchsucht jede Ausgabe danach – roh, Base64,
+ * OAuth, Webhook, API-Schlüssel, Zwei-Faktor, Passkey, Tresor, Sitzung) und durchsucht jede Ausgabe danach – roh, Base64,
  * Base64url, URL-kodiert und hexadezimal, dazu verschlüsselte Werte (`dms1$`) und Passwort-Hashes (`scrypt$`).
  *
  * Geprüft werden alle GET-Routen der Oberfläche und der API v1 (als Person mit „Gesamte Verwaltung“ im
@@ -39,6 +39,8 @@ import { Tresor } from '../src/tresor';
 import { vollexport } from '../src/vollexport';
 import { Webhooks, speicherWebhookRepo } from '../src/webhook';
 import { Zweifaktor } from '../src/zweifaktor';
+import { Passkeys } from '../src/passkeys';
+import { Authenticator } from './hilfen-authenticator';
 
 type App = { inject(o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string | string[]> }>; close(): Promise<void> };
 
@@ -101,7 +103,14 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
     const zweifaktor = new Zweifaktor(einstellungen, (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w));
     konten.verbindeZweifaktor(zweifaktor);
+    // Passkeys (#811): gespeichert sind nur öffentliche Schlüssel; die Kennung einer offenen Herausforderung ist ein
+    // Einmal-Ticket und darf nirgends auftauchen.
+    const passkeys = new Passkeys(einstellungen, () => 'https://ablago.example.org');
+    konten.verbindePasskeys(passkeys);
     const lena = (await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: G.kontoPasswort })).benutzer;
+    const geraet = new Authenticator();
+    await passkeys.bestaetigeRegistrierung(lena, geraet.anlegen(await passkeys.beginneRegistrierung(lena)), 'Handy von Lena');
+    G.passkeyTicket = (await passkeys.beginneAnmeldung('anmelden')).kennung;
     G.kontoHash = (await kontoRepo.holeHash(lena.email))!.hash!;
 
     const apiSchluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());

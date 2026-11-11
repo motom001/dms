@@ -98,6 +98,7 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/favoriten-freigabe*', 'aufgaben'),
   R('*', '/api/werkbank/anmeldeschutz*', 'anmeldeschutz'),
   R('*', '/api/werkbank/zweifaktor', 'anmeldeschutz'),
+  R('*', '/api/werkbank/passkeys', 'anmeldeschutz'),
   R('*', '/api/werkbank/anbieter*', 'anmeldeschutz'),
   R('*', '/api/designs*', 'designs'),
   R('*', '/api/werkbank/anbindung*', 'anbindung'),

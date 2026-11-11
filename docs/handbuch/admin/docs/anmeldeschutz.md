@@ -92,6 +92,36 @@ Das Geheimnis liegt mit dem [Schlüssel von Ablago](verschluesselung.md) verschl
 !!! tip "Selbst ausgesperrt?"
     Hast du Handy und Codes verloren, entfernt `dms zweifaktor-zuruecksetzen <email>` im Container deine Zwei-Faktor-Anmeldung (siehe [Befehl `dms`](konsole.md)). Kommst du nicht an den Container, hilft der [Notfallzugang](notfall.md).
 
+## Passkeys
+
+Mit einem **Passkey** (WebAuthn) meldet sich jemand ohne Passwort an: Handy, Rechner oder Sicherheitsschlüssel fragen nach Fingerabdruck, Gesicht oder PIN. Jeder Passkey gilt nur für die Adresse von Ablago, unter der er angelegt wurde – eine nachgemachte Anmeldeseite kann ihn nicht benutzen (Schutz gegen Phishing). Jede Person legt ihre Passkeys selbst unter **Mein Konto → Sicherheit** an, benennt und entfernt sie; mehrere je Person sind möglich. Wie das aussieht, beschreibt das [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/profil/#passkeys).
+
+Ein Passkey taugt für drei Wege:
+
+- **Eigener Weg:** **Mit Passkey anmelden** auf der Anmeldeseite, ohne E-Mail-Adresse und Passwort. Ein Passkey verlangt immer die Bestätigung am Gerät (PIN oder Biometrie) und zählt deshalb als Anmeldung mit allen Faktoren.
+- **Zweiter Faktor:** Wer die Zwei-Faktor-Anmeldung eingerichtet hat, kann nach dem Passwort statt des Codes den Passkey nehmen. Code und Wiederherstellungscodes gelten weiter.
+- **Erneute Anmeldung:** im [Verwaltungsmodus](verwalten.md) und vor heiklen Handlungen statt Passwort und Code – auch für Personen, die sich sonst nur über einen [Anbieter](#anmeldung-uber-einen-anbieter-openid-connect) anmelden.
+
+### Nur über HTTPS
+
+Passkeys gehen nur, wenn Ablago über **HTTPS** mit einem Namen erreichbar ist (z. B. `https://ablago.example.org`, nicht über eine IP-Adresse); zum Ausprobieren auch auf `http://localhost`. Ablago nimmt dafür die [Adresse von Ablago](installation.md#e-mail-und-adresse) aus **Werkbank → E-Mail und Adresse**; ist dort keine gepflegt, die Adresse, unter der die Seite gerade aufgerufen wurde. Ohne HTTPS steht statt des Knopfs der Hinweis „Passkeys gehen, sobald Ablago über HTTPS erreichbar ist“, und der Einrichtungsassistent bietet am Ende keinen Passkey an. Wie du Ablago hinter einem Proxy mit Zertifikat betreibst, steht unter [HTTPS und Zertifikate](installation.md#https-und-zertifikate).
+
+**Adresse geändert?** Bekommt Ablago einen anderen Namen, passen vorhandene Passkeys nicht mehr – das ist so gewollt, denn genau das schützt vor gefälschten Seiten. Beim Ändern der Adresse weist die Werkbank darauf hin. Alle melden sich dann mit Passwort an; in **Mein Konto → Sicherheit** steht an jedem alten Passkey, für welche Adresse er galt, und man fügt einen neuen hinzu.
+
+### Vorschreiben
+
+Im Block **Passkeys** schreibst du sie je Systemrolle vor, wie die Zwei-Faktor-Anmeldung: **Für alle vorschreiben, die verwalten dürfen** und **Für alle anderen vorschreiben**. Die Pflicht greift **bei der nächsten Anmeldung**: Wer dann noch keinen Passkey hat, fügt erst einen hinzu und kommt danach weiter; wer gerade angemeldet ist, arbeitet weiter und sieht oben einen Hinweis. Mit Pflicht gehört der Passkey beim Anmelden mit Passwort als **zweiter Schritt** dazu (mit Code-App geht auch der Code), und den letzten Passkey kann niemand selbst entfernen. Ohne HTTPS lässt sich die Pflicht nicht einschalten und sperrt niemanden aus. Ausschalten geht für Verwaltende immer, auch auf der Seite nach der Anmeldung.
+
+!!! warning "Ohne Code-App kein Rückfall"
+    Ohne Pflicht bleibt das Passwort allein ein Rückfall, wenn das Gerät fehlt. Mit Pflicht und ohne Code-App braucht jemand, der seinen einzigen Passkey verliert, deine Hilfe. Empfiehl darum einen zweiten Passkey (z. B. Sicherheitsschlüssel) oder zusätzlich die Zwei-Faktor-Anmeldung mit Wiederherstellungscodes.
+
+### Gerät verloren, Protokoll, Sicherung
+
+- **Zurücksetzen:** Unter **Werkbank → Benutzer** steht bei der Person, wie viele Passkeys sie hat; **Zurücksetzen** im Block **Passkeys** entfernt alle. Im Container geht das mit `dms passkeys-zuruecksetzen <email>` (siehe [Befehl `dms`](konsole.md)), und der [Notfallzugang](notfall.md) entfernt sie mit der Zwei-Faktor-Anmeldung zusammen.
+- **Anmeldeschutz:** Fehlversuche mit Passkey zählen wie falsche Passwörter für die [Sperren](#zwei-sperren) je Konto und je IP-Adresse. Jede Herausforderung gilt fünf Minuten und nur einmal.
+- **Kopierte Passkeys:** Meldet ein Passkey einen Zählerstand, der nicht steigt, lehnt Ablago ab und schreibt *Passkey abgelehnt: Zähler nicht gestiegen – womöglich kopiert* ins [Protokoll](fehlersuche.md#protokoll). Hinzufügen, Umbenennen, Entfernen und jede Anmeldung stehen dort mit Konto und Name des Passkeys – nie Schlüssel oder Kennungen.
+- **Speicher:** Ablago speichert je Passkey nur den **öffentlichen Schlüssel**, Name, Zähler und Zeitpunkte. Das ist nichts Geheimes: Wer die Datenbank liest, kann sich damit nicht anmelden. Die Passkeys sind Teil der [Sicherung](sicherung.md) und kommen beim Wiederherstellen mit – unter derselben Adresse gelten sie weiter. Der [Vollexport](export.md) enthält je Person nur Name und Zeitpunkte, die Einrichtungsdatei gar nichts davon.
+
 ## Anmeldung über einen Anbieter (OpenID Connect)
 
 Statt mit Passwort melden sich Benutzer mit dem Konto eines Identitätsanbieters an – etwa **Microsoft Entra ID** (Microsoft 365), **Google Workspace**, **Keycloak**, **Authentik** oder **Authelia**. Auf der Anmeldeseite erscheint dann ein Knopf wie **Mit Firmenkonto anmelden**. Der Anbieter sieht dabei jede Anmeldung (wer, wann) – deine Unterlagen sieht er nicht.

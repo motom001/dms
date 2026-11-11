@@ -12,8 +12,8 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { routen } from '../src/routen';
 
-/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern; #995: eigene Organisation lesen, setzen, übernehmen, intern; #1045: eigene Organisation anlegen, intern; #1040: Vorlagen einer Mappe und Text setzen, intern und /api/v1; #1039: Paket-Aktionen – Angebot, Start, Schritt, Abbrechen, Datei, intern und /api/v1, dazu drei Schalter der Werkbank; #565: externe Dienste, Kosten lesen und setzen, je Paket, intern). */
-const ANZAHL = 655;
+/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern; #995: eigene Organisation lesen, setzen, übernehmen, intern; #1045: eigene Organisation anlegen, intern; #1040: Vorlagen einer Mappe und Text setzen, intern und /api/v1; #1039: Paket-Aktionen – Angebot, Start, Schritt, Abbrechen, Datei, intern und /api/v1, dazu drei Schalter der Werkbank; #565: externe Dienste, Kosten lesen und setzen, je Paket, intern; #811: Passkeys – Anmeldung (2), eigene Passkeys (6), Pflicht (2), Zurücksetzen durch die Verwaltung (2), intern). */
+const ANZAHL = 667;
 
 /**
  * Alle Routen ohne Anmeldung (`zugang: 'offen'`) mit Grund (#1029). Eine neue offene Route oder ein Wechsel der Stufe
@@ -37,6 +37,8 @@ const OFFEN: Record<string, string> = {
   'POST /api/konto/einrichten': 'Erstes Konto anlegen, nur solange nicht eingerichtet',
   'POST /api/konto/anmelden': 'Anmeldung mit Passwort',
   'POST /api/konto/anmelden/code': 'Anmeldung, zweiter Faktor',
+  'POST /api/konto/passkey/optionen': 'Anmeldung mit Passkey (#811): nur Optionen mit einer Herausforderung (5 Minuten, einmal); gesperrte Adressen bekommen keine, Zahl offener begrenzt',
+  'POST /api/konto/passkey/anmelden': 'Anmeldung mit Passkey (#811), auch als zweiter Faktor: Signatur über die Herausforderung; zählt in den Anmeldeschutz',
   'GET /api/konto/anbieter/start': 'Anmeldung über einen Anbieter (OIDC)',
   'GET /api/konto/anbieter/rueckkehr': 'Anmeldung über einen Anbieter, Rückkehr mit state',
   'POST /api/konsole/passwort': 'Konsole: nur mit Konsolen-Schlüssel und von localhost',

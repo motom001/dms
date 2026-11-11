@@ -36,7 +36,7 @@ If nobody can get in any more after all, the [emergency code from the emergency 
 Day to day, even a person with the administration permission works without these permissions – they only see what the [permissions](berechtigungen.md) allow them. They switch into administration deliberately:
 
 1. User menu (top right) → directly below **My account**: **Administer Ablago**.
-2. **Sign in again** – with password and, if set up, the two-factor code. If the sign-in was at most 10 minutes ago, the question is skipped. Whoever only signs in via a provider signs in there again.
+2. **Sign in again** – with password and, if set up, the two-factor code – or with a [passkey](anmeldeschutz.md#passkeys) (**Confirm with a passkey**). If the sign-in was at most 10 minutes ago, the question is skipped. Whoever only signs in via a provider signs in there again.
 3. Ablago opens the workbench. At the top there is a **red bar**: "You are currently administering Ablago. You shouldn't work like this every day. You see all folders, including locked ones." with the button **End administration**.
 
 The mode **ends** with **End administration** (bar or user menu) or after **15 minutes without activity**. If it expires during editing, nothing is lost: Ablago only asks for the sign-in again and then saves. On the same day in the same browser, **getting back in takes one click** ("Administer again") – but it still has to be chosen.
@@ -49,7 +49,7 @@ In the mode, the **Library** can be used as usual – for looking things up and 
 
 ### Fresh sign-in for sensitive actions { #frische-anmeldung }
 
-For the most sensitive actions, Ablago **always** asks for the password (and the code), even in the middle of administration mode. Afterwards the confirmation applies for 10 minutes:
+For the most sensitive actions, Ablago **always** asks for the password (and the code) or a passkey, even in the middle of administration mode. Afterwards the confirmation applies for 10 minutes:
 
 - granting or withdrawing administration permissions
 - creating or changing the key, downloading the emergency sheet

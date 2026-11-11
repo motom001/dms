@@ -9,6 +9,8 @@
   "app.die-zwei-faktor-anmeldung": "Two-factor sign-in is required for your role.",
   "app.richte-sie-jetzt-ein": "{b} Set it up now – otherwise, at the next sign-in at the latest, you can only continue after setting it up.",
   "app.jetzt-einrichten": "Set up now",
+  "app.passkey.vorgeschrieben": "A passkey is required for your role.",
+  "app.passkey.richte-ihn-ein": "{b} Add one now – otherwise, from your next sign-in, you can only continue after adding it.",
   "app.zur-startseite": "Go to the start page",
   "app.startseite": "{wert} – start page",
   "app.bereiche": "Areas",

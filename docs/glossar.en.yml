@@ -366,10 +366,13 @@ begriffe:
     beschreibung: Recognises text in images and scanned PDFs so that it becomes searchable.
   Anmeldeschutz:
     begriff: Sign-in protection
-    beschreibung: Lock after failed attempts, blocked IP addresses, requirements for two-factor sign-in and sign-in via a provider.
+    beschreibung: Lock after failed attempts, blocked IP addresses, requirements for two-factor sign-in and for passkeys, and sign-in via a provider.
   Zwei-Faktor-Anmeldung:
     begriff: Two-factor sign-in
     beschreibung: An additional code from an app when signing in.
+  Passkey:
+    begriff: Passkey
+    beschreibung: Signing in without a password, with the fingerprint, face or PIN of a phone or computer (#811). Only works for the address of Ablago it was created under, and only over HTTPS. Several per person; also as a second factor and for signing in again.
   Anmeldung über einen Anbieter:
     begriff: Sign-in via a provider
     beschreibung: Signing in with someone else's account, e.g. Microsoft 365 (OpenID Connect).

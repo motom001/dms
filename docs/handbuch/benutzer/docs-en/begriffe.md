@@ -379,13 +379,13 @@ See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Pa
 The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue"). Further catalogues are entered in expert mode under "Further sources".  
 See also: [Package](#paket), [Expert mode](#expertenmodus).
 
-<a id="paket-aktion"></a>**Package action** (*Paket-Aktion*) · ✓ everyday word · everyone  
-An entry a package adds to the "Folder ▾" menu, e.g. "Add template" on a contract – with the package icon and the package name. It only appears for people who have the necessary rights to the folder; the package's questions appear with "Action from …" in the header and never ask for a password.  
-See also: [Package](#paket), [Letter from template](#brief-aus-vorlage).
-
 <a id="paket-laufer"></a>**Package runner** (*Paket-Läufer*) · ✗ technical term · advanced users  
 The part of Ablago that runs the code of packages – isolated in its own process, with limits for memory and time and only with the permissions an administrator confirmed during installation. The code only reaches the network and the internet at the addresses the package names – the preview shows this as "no access to network and internet" or "access to network/internet only to …". Its status is shown under Workbench → Packages → package in the section "Package runner".  
 See also: [Package](#paket), [Service account](#dienstkonto).
+
+<a id="passkey"></a>**Passkey** · ~ with explanation · everyone  
+Signing in without a password, with the fingerprint, face or PIN of a phone or computer (#811). Only works for the address of Ablago it was created under, and only over HTTPS. Several per person; also as a second factor and for signing in again.  
+See also: [Two-factor sign-in](#zwei-faktor-anmeldung).
 
 <a id="berechtigungen"></a>**Permissions** (*Berechtigungen*) · ✓ everyday word · administrators  
 Who may do what. On the folder type – create, read, edit, delete, see passwords – with a default plus rules; on the view – see, create, export – inherited by the sub-views. They don't apply to administrators.
@@ -435,7 +435,7 @@ The account with which a package with code works in Ablago, e.g. "Package Text r
 See also: [Package runner](#paket-laufer), [User](#benutzer).
 
 <a id="anmeldeschutz"></a>**Sign-in protection** (*Anmeldeschutz*) · ~ with explanation · administrators  
-Lock after failed attempts, blocked IP addresses, requirements for two-factor sign-in and sign-in via a provider.
+Lock after failed attempts, blocked IP addresses, requirements for two-factor sign-in and for passkeys, and sign-in via a provider.
 
 <a id="anmeldung-uber-einen-anbieter"></a>**Sign-in via a provider** (*Anmeldung über einen Anbieter*) · ~ with explanation · everyone  
 Signing in with someone else's account, e.g. Microsoft 365 (OpenID Connect).

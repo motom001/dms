@@ -33,6 +33,8 @@ export const JSON_KOERPER_MAX = 2 * MB;
 export const EINRICHTUNG_KOERPER_MAX = 64 * KB;
 /** Start- und Lasttestmodus: nur Formulare und Statusabfragen. */
 export const MODUS_KOERPER_MAX = 16 * KB;
+/** Antwort eines Geräts beim Anlegen oder Anmelden mit Passkey (#811), als JSON gezählt – echte sind wenige KB. */
+export const PASSKEY_ANTWORT_MAX = 16 * KB;
 /** Fehlermeldung mit Bildschirmfoto und Anhängen (Konto → Fehler melden). */
 export const FEHLERMELDUNG_KOERPER_MAX = 30 * MB;
 /** Bildschirmfoto einer Fehlermeldung, einzeln. */

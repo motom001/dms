@@ -307,5 +307,10 @@
   "datei.kommentar.nutzung": "Wofür Ablago genutzt wird: privat, beruflich oder beides.",
   "datei.kommentar.organisation": "Deine Organisation (nur bei beruflich und beides): wird mit dem Paket Basis angelegt.",
   "datei.fehler.beruflich": "Passt nicht zu „nutzung: {nutzung}“ – die Angabe kann entfallen.",
-  "datei.fehler.organisation": "Eine eigene Organisation gibt es nur bei „nutzung: beruflich“ oder „beides“."
+  "datei.fehler.organisation": "Eine eigene Organisation gibt es nur bei „nutzung: beruflich“ oder „beides“.",
+  "abschluss.passkey": "Passkey (empfohlen)",
+  "abschluss.passkey.text": "Melde dich künftig mit Fingerabdruck, Gesicht oder der PIN deines Geräts an – ohne Passwort und geschützt vor gefälschten Seiten. Das Passwort bleibt als Rückfall.",
+  "abschluss.passkey.jetzt": "Jetzt hinzufügen",
+  "abschluss.passkey.fertig": "Passkey hinzugefügt.",
+  "abschluss.passkey.spaeter.text": "Du kannst ihn jederzeit unter Mein Konto → Sicherheit hinzufügen."
 }

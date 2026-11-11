@@ -417,7 +417,8 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByRole('button', { name: w('Notfallblatt herunterladen') }).click();
   await (await download).cancel().catch(() => {});
   await s.getByText(w(/Notfallblatt heruntergeladen/)).waitFor({ timeout: 15_000 });
-  await s.getByRole('button', { name: w('Später') }).click();
+  // Auf localhost bietet der Assistent danach auch einen Passkey an (#811), ebenfalls mit „Später“: der erste ist die Zwei-Faktor-Anmeldung.
+  await s.getByRole('button', { name: w('Später') }).first().click();
   await s.getByRole('button', { name: w('Einrichtung abschließen') }).click();
   await s.waitForURL(/\/werkbank/);
   const sitzung = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
@@ -527,7 +528,7 @@ async function main() {
     const k = await kontext(false, 1100, 700);
     const s = await k.newPage();
     await geheZu(s, '/');
-    await s.getByRole('button', { name: w('Anmelden') }).waitFor();
+    await s.getByRole('button', { name: w('Anmelden'), exact: true }).waitFor();
     await bild(s, 'anmelden');
     await k.close();
   }

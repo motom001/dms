@@ -305,6 +305,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, t('meldungen.routen.die-anmeldung-ueber-einen')); return x.oidc; };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
   const zf = () => { if (!konten.zweifaktor) throw new Fachfehler(404, t('meldungen.routen.die-zwei-faktor-anmeldung')); return konten.zweifaktor; };
+  const pk = () => { if (!konten.passkeys) throw new Fachfehler(404, t('anmeldung.passkey.fehler.aus')); return konten.passkeys; };
   const postfaecher = () => { if (!x.postfaecher) throw new Fachfehler(404, t('meldungen.routen.postfaecher-sind-nicht-eingerichtet')); return x.postfaecher; };
   const pfOAuth = () => { if (!x.postfachOAuth) throw new Fachfehler(404, t('meldungen.routen.die-anmeldung-per-oauth')); return x.postfachOAuth; };
   /** #358: Rückruf-Adresse fest aus der eingestellten Adresse des DMS – nie aus der Anfrage. */
@@ -355,7 +356,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     zg, empfaengerSichtbar, leseHinweis, darf, zuletztGeoeffnet, entschluessele, mitRollen, sicherung,
     sicherungsPaket, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, auskunftZiel, loeschkonzeptQuelle, abrufTickets, abrufBremse,
     notfallblattErzeugen, notfallblattDatei, nf, abrufText, exportZiel, danachLoeschen, oidc, adresse,
-    zf, postfaecher, pfOAuth, pfRueckruf, oauthPostfach, demoPlatz, wh, anbindung,
+    zf, pk, postfaecher, pfOAuth, pfRueckruf, oauthPostfach, demoPlatz, wh, anbindung,
     speicherplatz, whStand, wartung, darfWiederherstellen, nurAdminsInWartung,
   };
 }

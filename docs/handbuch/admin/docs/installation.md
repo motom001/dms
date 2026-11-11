@@ -122,7 +122,9 @@ Beim Einrichten hat Ablago einen neuen **Schlüssel** erzeugt. Er verschlüsselt
 
 Das Notfallblatt herunterzuladen ist eine [heikle Handlung](verwalten.md#frische-anmeldung): Dauerte „Jetzt einrichten“ länger als 10 Minuten (etwa mit vielen Paketen), fragt Ablago vorher noch einmal dein Passwort ab.
 
-Darunter bietet der Assistent die **Zwei-Faktor-Anmeldung** an – mit **Jetzt einrichten** (Authenticator-App am Handy, danach die Wiederherstellungscodes sichern) oder **Später**. Sie ist freiwillig; einrichten lässt sie sich jederzeit unter **Mein Konto → Sicherheit**. Richtest du sie jetzt ein, fragt Ablago beim Abschließen einmal Passwort und Code ab, weil sich deine Anmeldung geändert hat. Passkeys gibt es noch nicht.
+Darunter bietet der Assistent die **Zwei-Faktor-Anmeldung** an – mit **Jetzt einrichten** (Authenticator-App am Handy, danach die Wiederherstellungscodes sichern) oder **Später**. Sie ist freiwillig; einrichten lässt sie sich jederzeit unter **Mein Konto → Sicherheit**. Richtest du sie jetzt ein, fragt Ablago beim Abschließen einmal Passwort und Code ab, weil sich deine Anmeldung geändert hat.
+
+Läuft der Assistent über **HTTPS** (oder auf `localhost`), bietet er danach einen **Passkey** an: **Jetzt hinzufügen** legt ihn auf diesem Gerät an (Fingerabdruck, Gesicht oder PIN), **Später** geht auch – jederzeit unter **Mein Konto → Sicherheit**. Ohne HTTPS fehlt das Angebot, weil Passkeys dort nicht gehen (siehe [Passkeys](anmeldeschutz.md#passkeys)).
 
 Dazu Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub-Issue und der Hinweis auf GitHub Sponsors.
 
@@ -168,7 +170,7 @@ Unter **Werkbank → E-Mail und Adresse** stellst du ein, was früher Umgebungsv
 
 ![E-Mail und Adresse in der Werkbank](bilder/werkbank-betrieb.png)
 
-- **Adresse von Ablago** – unter dieser Adresse öffnen die Benutzer Ablago, z. B. `http://nas.home.arpa:8080` oder `https://ablage.example.org`. Sie steht in den Links der E-Mails. Solange keine gepflegt ist, nimmt Ablago die Adresse, unter der es gerade aufgerufen wird; **Diese Adresse übernehmen** speichert sie. Beginnt sie mit `https://`, gilt die Anmeldung nur noch über HTTPS.
+- **Adresse von Ablago** – unter dieser Adresse öffnen die Benutzer Ablago, z. B. `http://nas.home.arpa:8080` oder `https://ablage.example.org`. Sie steht in den Links der E-Mails. Solange keine gepflegt ist, nimmt Ablago die Adresse, unter der es gerade aufgerufen wird; **Diese Adresse übernehmen** speichert sie. Beginnt sie mit `https://`, gilt die Anmeldung nur noch über HTTPS. An diesen Namen sind auch die [Passkeys](anmeldeschutz.md#passkeys) gebunden: Ändert er sich, passen vorhandene Passkeys nicht mehr – die Werkbank weist beim Ändern darauf hin.
 - **E-Mail-Versand** – eigene Adresse und Passwort; Server, Port, Benutzer und Absender schlägt Ablago vor, alle Felder stehen unter *Erweitert*. Auch die Anmeldung über OAuth für Microsoft 365 und Google. **Verbindung prüfen** meldet sich am Server an, ohne etwas zu senden; **Testmail senden** schickt eine Mail an eine Adresse deiner Wahl – beides mit den Werten im Formular, auch bevor du speicherst. Schlägt etwas fehl, nennt Ablago die Ursache, darunter steht die Antwort des Servers. Alles dazu, mit Hinweisen je Anbieter: [E-Mail-Versand](e-mail-versand.md).
 - **Selbstsigniertes Zertifikat erlauben** – nur für einen eigenen Mailserver im Heimnetz.
 - Der **Absender** ist auch der Absender, wenn Benutzer eine Mappe [per E-Mail versenden](https://help.ablago.app/benutzer/versenden/). Ablago trägt dabei die Adresse des Benutzers als **Antworten an** ein – so kommen Antworten bei ihm an, ohne dass Ablago fremde Absender vortäuscht (das würden viele Empfänger als Spam einstufen). Dieselbe Einstellung braucht die [tägliche Zusammenfassung der Aufgaben](aufgaben.md#tagliche-zusammenfassung).

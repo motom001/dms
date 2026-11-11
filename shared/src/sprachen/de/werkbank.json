@@ -3240,5 +3240,20 @@
   "organisation.notiz.verantwortlicher": "Verantwortlicher geändert",
   "organisation.notiz.datenschutzbeauftragter": "Datenschutzbeauftragter geändert",
   "datenschutz.verantwortlicher-organisation": "Verantwortlicher: Name und Anschrift kommen von der eigenen Organisation – {link}.",
-  "datenschutz.zur-organisation": "Werkbank → Eigene Organisation"
+  "datenschutz.zur-organisation": "Werkbank → Eigene Organisation",
+  "anmeldeschutz.passkey.titel": "Passkeys",
+  "anmeldeschutz.passkey.text": "Jede Person kann unter Mein Konto → Sicherheit Passkeys hinzufügen und sich damit ohne Passwort anmelden. Hier kannst du sie je Rolle vorschreiben: Wer noch keinen hat, fügt ihn nach der nächsten Anmeldung hinzu; beim Anmelden mit Passwort gehört er dann als zweiter Schritt dazu.",
+  "anmeldeschutz.passkey.admin": "Für alle vorschreiben, die verwalten dürfen",
+  "anmeldeschutz.passkey.mitglied": "Für alle anderen vorschreiben",
+  "anmeldeschutz.passkey.hinweis": "Wer seinen Passkey verliert und keine Code-App hat, braucht dich: Benutzer → Person → Passkeys zurücksetzen.",
+  "anmeldeschutz.passkey.selbst": "Selbst noch ohne Passkey?",
+  "anmeldeschutz.passkey.selbst.text": "Du hast noch keinen Passkey. Nach deiner nächsten Anmeldung musst du erst einen hinzufügen, bevor es weitergeht.",
+  "anmeldeschutz.passkey.jetzt": "Jetzt hinzufügen",
+  "betrieb.passkeys": "Passkeys gelten nur für den Namen, unter dem sie angelegt wurden. Mit einem anderen Namen (Domain) passen vorhandene Passkeys nicht mehr – alle melden sich dann mit Passwort an und fügen neue hinzu.",
+  "benutzer.passkeys": "Passkeys",
+  "benutzer.passkeys.anzahl_one": "{anzahl} Passkey hinzugefügt.",
+  "benutzer.passkeys.anzahl_other": "{anzahl} Passkeys hinzugefügt.",
+  "benutzer.passkeys.keine": "Keine Passkeys.",
+  "benutzer.passkeys.frage": "Alle Passkeys von {name} entfernen?",
+  "benutzer.passkeys.frage.text": "Danach meldet sich {name} mit dem Passwort an und kann neue Passkeys hinzufügen. Gut, wenn ein Gerät verloren ist."
 }

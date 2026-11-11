@@ -32,6 +32,8 @@ export interface Lauf {
   unterbrochen?: boolean;
   /** Zwei-Faktor auf der Abschlussseite (#821): eingerichtet oder „Später“ gewählt. */
   zweifaktor?: 'eingerichtet' | 'spaeter';
+  /** Passkey angeboten (#811, nur über HTTPS): hinzugefügt oder später. */
+  passkey?: 'eingerichtet' | 'spaeter';
 }
 
 export interface Sammlung {

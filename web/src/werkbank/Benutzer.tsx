@@ -1,4 +1,5 @@
 import { WasSiehtBlatt } from './Berechtigungen';
+import { PasskeysVon, ZweifaktorVon } from './AnmeldemittelVon';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { abwesenheitWirkt, AKTIV_MINUTEN, geraetText, istGeradeAktiv, KEINE_ABWESENHEIT, type Benutzer, type Sitzung } from '../../../shared/src/model';
 import { darfVerwalten, GESAMT, hatGesamt, verwaltungsbaum } from '../../../shared/src/verwaltungsrecht';
@@ -218,6 +219,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         nachSpeichern={async () => { await neuLaden(); if (selbst) await aktualisieren(); }} />
 
       <ZweifaktorVon b={b} />
+      <PasskeysVon b={b} />
       <Sitzungen b={b} neuLaden={neuLaden} />
 
       <WasSiehtBlatt key={b.id} benutzerId={b.id} admin={false} />
@@ -277,29 +279,6 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
           }
         }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
       </div>
-    </div>
-  );
-}
-
-/** Zwei-Faktor-Anmeldung des Benutzers (#242): Stand und Zurücksetzen (z. B. Handy verloren). */
-function ZweifaktorVon({ b }: { b: Benutzer }) {
-  const [stand, setStand] = useState<{ aktiv: boolean; seit: string | null; codesUebrig: number } | null>(null);
-  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const laden = useCallback(async () => { try { setStand(await api.benutzerZweifaktor(b.id)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, [b.id]);
-  useEffect(() => { void laden(); }, [laden]);
-  const name = b.name || b.email;
-  return (
-    <div className="blatt">
-      <h2 className="h3">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h2>
-      {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
-        <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
-        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
-          if (await rueckfrage({ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen'), gefahr: true })) {
-            void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
-          }
-        }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
-      </> : <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>}
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
   );
 }
