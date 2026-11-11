@@ -15,6 +15,7 @@ import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 import { GB, MB, STUECK_MAX } from './grenzen';
+import type { Abrufbar } from './http/teilabruf';
 
 /**
  * Sicherungen (#103–#105): Datenbank und Dateien zum selben Zeitpunkt, verschlüsselt mit dem
@@ -389,6 +390,35 @@ export class Sicherung {
     await rm(join(this.ordner, `${name}.json`), { force: true });
     await this.vergissExtern([name]);
     log.warn('Sicherung gelöscht', { name, von });
+  }
+
+  /**
+   * Eine Sicherung zum Herunterladen (#975): die verschlüsselte Datei unverändert, nie entschlüsselt. Gelesen wird erst
+   * beim Ausliefern und nur der verlangte Teil (`oeffne`, Range). Dateiname wie im Ordner (`<name>.dms-sicherung`, mit
+   * Datum im Namen) – so findet die Wiederherstellung sie samt Metadaten wieder. ETag ist die SHA-256 aus den
+   * Metadaten; fehlen sie, gibt es keinen, und Weiterlesen nach Abbruch beginnt von vorn.
+   */
+  async datei(name: string): Promise<Abrufbar & { name: string; sha256: string | null }> {
+    const p = this.pfad(name);
+    const s = await stat(p).catch(() => null);
+    if (!s?.isFile()) throw new Fachfehler(404, t('meldungen.sicherung.diese-sicherung-gibt-es'));
+    const j = JSON.parse(await readFile(join(this.ordner, `${name}.json`), 'utf8').catch(() => 'null')) as { sha256?: unknown } | null;
+    const sha256 = typeof j?.sha256 === 'string' && /^[0-9a-f]{64}$/.test(j.sha256) ? j.sha256 : null;
+    return { name, dateiname: `${name}${ENDUNG}`, groesse: s.size, sha256, etag: sha256, oeffne: ({ start, ende }) => oeffneStrom(p, { start, end: ende }) };
+  }
+
+  /** Die Metadaten (`<name>.json`) unverändert zum Herunterladen (#975): ohne sie lässt sich die Sicherung nicht einspielen. */
+  async metadatenDatei(name: string): Promise<{ inhalt: Buffer; dateiname: string }> {
+    this.pfad(name);
+    const inhalt = await readFile(join(this.ordner, `${name}.json`)).catch(() => null);
+    if (!inhalt) throw new Fachfehler(404, t('meldungen.sicherung.zu-dieser-sicherung-fehlen'));
+    return { inhalt, dateiname: `${name}.json` };
+  }
+
+  /** Protokoll (#975): wer welche Sicherung heruntergeladen hat – bei Weiterlesen nach Abbruch mit der Stelle. */
+  merkeHerunterladen(name: string, von: string, bereich: { start: number; ende: number } | null, groesse: number) {
+    if (!bereich) log.info('Sicherung heruntergeladen', { name, von, bytes: groesse });
+    else log.info('Sicherung heruntergeladen (Teil)', { name, von, ab: bereich.start, bis: bereich.ende, bytes: groesse });
   }
 
   /** Prüfsummen-Check: Ist die Datei unverändert seit dem Anlegen? */

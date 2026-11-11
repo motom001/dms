@@ -73,6 +73,7 @@ const AUSGENOMMEN: Record<string, string> = {
   'GET /api/werkbank/pakete/selbst/:id/zip': 'selbst erstelltes Paket: Inhalt kommt von der Person, keine Daten der Ablage',
   'GET /api/sicherungen/:name/datei': 'Sicherungsdatei (verschlüsselt) für Pakete mit dms:sicherung-lesen – trägt bewusst alles',
   'GET /api/v1/sicherungen/:name/datei': 'Sicherungsdatei (verschlüsselt) für Pakete mit dms:sicherung-lesen – trägt bewusst alles',
+  'GET /api/werkbank/sicherung/:name/datei': 'Sicherung herunterladen (#975): die verschlüsselte Datei unverändert, mit Bereich „Sicherung“ und frischer Anmeldung – trägt bewusst alles',
   'GET /api/werkbank/loeschprotokoll/datei': 'Löschprotokoll (Titel, Zeit, Person) – geprüft mit allen GET-Routen',
   'GET /api/v1/werkbank/loeschprotokoll/datei': 'Löschprotokoll – geprüft mit allen GET-Routen',
 };

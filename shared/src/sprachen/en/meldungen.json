@@ -810,6 +810,7 @@
   "http.arbeit-nach-der-antwort": "Arbeit nach der Antwort fehlgeschlagen",
   "http.interner-fehler-bei": "Interner Fehler bei {method} {split}",
   "http.interner-fehler-anfrage-details": "Internal error (request {id}). Details are in the log.",
+  "http.bereich-unerfuellbar": "This range lies beyond the end of the file ({groesse} bytes).",
   "http.keine-datei-erwartet": "This address does not accept a file as the request body.",
   "http.ohne-verwaltungsrecht": "ohne Verwaltungsrecht",
   "http.im-verwaltungsmodus": " (im Verwaltungsmodus)",

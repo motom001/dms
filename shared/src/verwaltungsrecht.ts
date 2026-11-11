@@ -36,9 +36,10 @@ export const HEIKLE_BEREICHE: ReadonlySet<string> = new Set([
 
 /**
  * Handlungen, für die immer eine frische Anmeldung nötig ist (#819, Frage 7 von Sicherheit). Danach gilt sie
- * `FRISCH_MINUTEN`. Die Zuordnung zu Schnittstellen steht im Server (`verwaltungsbereiche.ts`).
+ * `FRISCH_MINUTEN`. Die Zuordnung zu Schnittstellen steht im Server (`verwaltungsbereiche.ts`). `sicherung`: eine
+ * Sicherung herunterladen (#975).
  */
-export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall' | 'anmeldung';
+export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'sicherung' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall' | 'anmeldung';
 
 /**
  * Bereiche nur für „Gesamte Verwaltung“: Sie lassen sich nicht einzeln vergeben. Nutzung (#1032) ändert, was alle

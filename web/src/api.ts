@@ -589,6 +589,9 @@ export const api = {
   probeLauf: () => anfrage<WhLauf | null>('GET', '/api/werkbank/sicherung/probe'),
   probePlan: (p: { aktiv?: boolean; wochentag?: number; uhrzeit?: string }) => anfrage<unknown>('PUT', '/api/werkbank/sicherung/probe-plan', p),
   sicherungLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/sicherung/${encodeURIComponent(name)}`),
+  /** Herunterladen (#975): die verschlüsselte Datei (heikle Handlung, frische Anmeldung) und die Metadaten daneben. */
+  sicherungDateiUrl: (name: string) => `/api/werkbank/sicherung/${encodeURIComponent(name)}/datei`,
+  sicherungMetadatenUrl: (name: string) => `/api/werkbank/sicherung/${encodeURIComponent(name)}/metadaten`,
   werkbankWartung: () => anfrage<WartungWerkbank>('GET', '/api/werkbank/wartung'),
   /** beginn (ISO) statt vorlauf (#402); sofort = „Jetzt sofort sperren“ (wie vorlauf 0). */
   wartungEin: (d: { text: string; ende: string | null; vorlauf?: number; beginn?: string; sofort?: boolean }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),

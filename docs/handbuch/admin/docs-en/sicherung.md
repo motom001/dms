@@ -33,9 +33,37 @@ At the top of the section, the status is in one line: last backup, number and si
 
 **Back up now** starts a backup in the background, with progress. You can leave the page. If less space is free than the [minimum storage space](#zeitplan-und-aufbewahrung), no backup begins.
 
-The list shows all backups in the folder with time, kind, size and content. **Check** recalculates the file's checksum and compares it with the one from the metadata – "unchanged" means: the file is as Ablago wrote it. **Delete** removes both files.
+The list shows all backups in the folder with time, kind, size and content. Each row has **Download · Check · Delete**. [Download](#sicherung-herunterladen) fetches a copy to your computer. **Check** recalculates the file's checksum and compares it with the one from the metadata – "unchanged" means: the file is as Ablago wrote it. **Delete** removes both files.
 
 In the container this also works without a browser with the [command `dms`](konsole.md#betrieb): `dms sicherung` lists the backups, `dms sicherung jetzt` starts one, `dms sicherung pruefen <name>` checks one.
+
+## Downloading a backup { #sicherung-herunterladen }
+
+For a copy on a USB stick, at relatives' or for moving to a new device, you download a backup directly from the Workbench – without having to reach the folder in the container.
+
+1. In the list, choose **Download** for the backup you want.
+2. If your last sign-in was more than 10 minutes ago, Ablago first asks for your password (and the code) or a passkey – downloading is a [sensitive action](verwalten.md#frische-anmeldung).
+3. Your browser downloads the file `<name>.dms-sicherung`, e.g. `2026-10-29_0200-automatisch.dms-sicherung` – the date is in the name. You will find progress, cancel and resume in the browser's downloads. Several GB work too: Ablago delivers the file as a stream, piece by piece.
+4. Below the list, the notice **"To restore, you need your emergency sheet (key)."** appears with the file name, size (to the byte) and **checksum (SHA-256)**. Download the **metadata** (`.json`) there too and keep it next to the backup: without it, the backup cannot be restored on a new device (see [New NAS, old backup](wiederherstellen.md#neues-nas-alte-sicherung)).
+
+Good to know:
+
+- The backup is downloaded **encrypted and unchanged**, exactly as it is in the backup folder. Without the key from the [emergency sheet](verschluesselung.md#notfallblatt) nobody can read it – so the emergency sheet doesn't belong on the same stick.
+- You need the **Backup** area in your [administration permission](verwalten.md). The metadata contains no key; for it, Ablago doesn't ask for the password again.
+- If the download breaks off, the browser resumes it where it stopped (HTTP range). If your sign-in is then more than 10 minutes old, choose **Download** again in the Workbench.
+- Every download is recorded in the [log](fehlersuche.md#protokoll), module *sicherung*: who, when, which backup (when resuming, with the position). Ablago doesn't create a new file for it – neither in the backup folder nor in the export folder.
+
+### Checking the copy on your computer { #kopie-prufen }
+
+Compare the checksum of the downloaded file with the SHA-256 from the Workbench (or from the `.json`, field `sha256`). If both match, the copy is unchanged:
+
+| System | Command |
+| --- | --- |
+| Windows (PowerShell) | `Get-FileHash .\2026-10-29_0200-automatisch.dms-sicherung -Algorithm SHA256` |
+| macOS | `shasum -a 256 2026-10-29_0200-automatisch.dms-sicherung` |
+| Linux | `sha256sum 2026-10-29_0200-automatisch.dms-sicherung` |
+
+Windows shows the checksum in capital letters – that makes no difference.
 
 ## Schedule and retention { #zeitplan-und-aufbewahrung }
 

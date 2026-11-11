@@ -12,6 +12,7 @@ import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
 import { useKontoOptional } from '../konto-kontext';
+import { heikelLaden } from '../verwaltungsmodus';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
@@ -187,6 +188,8 @@ export function useVerwaltetVerschluesselung(): boolean {
 export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [prueft, setPrueft] = useState<string>();
+  // Herunterladen (#975): Name der zuletzt geladenen Sicherung – darunter Hinweis, Größe und Prüfsumme.
+  const [geladen, setGeladen] = useState<string>();
   const handbuch = useHandbuch();
   const mitNotfallblatt = useVerwaltetVerschluesselung();
   const s = z.stand;
@@ -209,6 +212,12 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
     <Knopf art="link" gesperrt={(laeuft && prueft !== name) || !moeglich} laeuft={laeuft && prueft === name} laeuftText={t('werkbank.sicherung.prueft')}
       onClick={async () => { setPrueft(name); await api.sicherungPruefen(name); await z.laden(); }}>{t('werkbank.sicherung.pruefen')}</Knopf>
   );
+
+  // „Herunterladen“ (#975): heikle Handlung (frische Anmeldung), dann lädt der Browser selbst – mit Fortschritt und Abbrechen.
+  const ladeKnopf = (name: string) => (
+    <Knopf art="link" onClick={async () => { if (await heikelLaden(api.sicherungDateiUrl(name))) setGeladen(name); }}>{t('werkbank.sicherung.herunterladen')}</Knopf>
+  );
+  const gewaehlt = geladen ? s.liste.find((x) => x.name === geladen) : undefined;
 
   return (
     <div className="einspaltig">
@@ -254,7 +263,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
           <div className="trefferliste"><table>
             <thead><tr><th>{t('werkbank.sicherung.zeitpunkt')}</th><th>{t('werkbank.sicherung.art')}</th><th className="rechts">{t('werkbank.sicherung.groesse')}</th><th>{t('werkbank.sicherung.inhalt')}</th>{ortSpalte && <th>{t('werkbank.sicherung.extern.spalte')}</th>}<th>{t('werkbank.sicherung.pruefsumme')}</th><th>{t('werkbank.sicherung.probe')}</th><th><span className="sr">{t('werkbank.sicherung.aktionen')}</span></th></tr></thead>
             <tbody>{s.liste.map((x) => (
-              <tr key={x.name}>
+              <tr key={x.name} className={geladen === x.name ? 'an' : undefined}>
                 <td className="kurz" title={x.name}>{x.meta ? zeit(x.meta.beginn) : x.schlank ? zeit(x.schlank.beginn) : x.name}</td>
                 <td>{x.meta ? ART[x.meta.art] ?? x.meta.art : x.schlank ? <span className="leise">{t('werkbank.sicherung.extern.zurueck')}</span> : <span className="fehlertext">{t('werkbank.sicherung.metadaten-fehlen')}</span>}
                   {x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck && <> <span className="chip warn" title={t('werkbank.sicherung.schluessel-braucht-das-notfallblatt', { fingerabdruck: x.meta.verschluesselung.fingerabdruck })}>{t('werkbank.sicherung.frueherer-schluessel')}</span></>}</td>
@@ -264,6 +273,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td>{x.pruefung ? <span className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`} title={t('werkbank.sicherung.geprueft', { zeit: zeit(x.pruefung.am) })}>{x.pruefung.ok ? t('werkbank.sicherung.unveraendert') : t('werkbank.sicherung.weicht-ab')}</span> : <span className="leise">–</span>}</td>
                 <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? t('werkbank.sicherung.in-ordnung') : t('werkbank.sicherung.fehler')}</span> : <span className="leise">–</span>}</td>
                 <td className="kurz">
+                  {ladeKnopf(x.name)}{' · '}
                   {pruefKnopf(x.name, !!(x.meta || x.schlank))}{' · '}
                   <Knopf art="link" gesperrt={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
                 </td>
@@ -271,6 +281,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
             ))}</tbody>
           </table></div>
         )}
+        {gewaehlt && <Heruntergeladen e={gewaehlt} schliessen={() => setGeladen(undefined)} />}
         <p className="leise klein">{t('werkbank.sicherung.pruefen-rechnet-die-pruefsumme')}</p>
       </section>
 
@@ -301,6 +312,31 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       </section>
 
       <AusserHaus x={s.zustand.extern} handbuch={handbuch('admin', 'sicherung-ausser-haus/')} />
+    </div>
+  );
+}
+
+/**
+ * Nach „Herunterladen“ (#975): der Hinweis auf das Notfallblatt, Größe und Prüfsumme zum späteren Prüfen der Kopie und
+ * die Metadaten (.json), ohne die sich die Sicherung auf einem neuen Gerät nicht einspielen lässt.
+ */
+function Heruntergeladen({ e, schliessen }: { e: SicherungEintrag; schliessen(): void }) {
+  const handbuch = useHandbuch();
+  const sha = e.meta?.sha256 ?? e.schlank?.sha256 ?? null;
+  const beginn = e.meta?.beginn ?? e.schlank?.beginn;
+  return (
+    <div className="hinweis info" role="status">
+      <p><strong>{t('werkbank.sicherung.laden.notfallblatt')}</strong> {t('werkbank.sicherung.laden.text', { zeit: beginn ? zeit(beginn) : e.name })}</p>
+      <dl className="eigenschaften">
+        <dt>{t('werkbank.sicherung.laden.datei')}</dt><dd className="mono">{`${e.name}.dms-sicherung`}</dd>
+        <dt>{t('werkbank.sicherung.groesse')}</dt><dd>{t('werkbank.sicherung.laden.bytes', { bytes: bytes(e.bytes), genau: e.bytes.toLocaleString(gebietsschema()) })}</dd>
+        <dt>{t('werkbank.sicherung.laden.sha256')}</dt><dd className="mono umbruch">{sha ?? t('werkbank.sicherung.metadaten-fehlen')}</dd>
+      </dl>
+      {(e.meta || e.schlank) && <p>{tn('werkbank.sicherung.laden.metadaten', { link: <a href={api.sicherungMetadatenUrl(e.name)} download className="verweis">{t('werkbank.sicherung.laden.metadaten-link')}</a> })}</p>}
+      <div className="knoepfe">
+        <a href={`${handbuch('admin', 'sicherung/')}#kopie-prufen`} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.laden.handbuch')}</a>
+        <Knopf groesse="klein" onClick={schliessen}>{t('werkbank.sicherung.laden.schliessen')}</Knopf>
+      </div>
     </div>
   );
 }

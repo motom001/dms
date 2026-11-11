@@ -54,7 +54,7 @@ For the most sensitive actions, Ablago **always** asks for the password (and the
 - granting or withdrawing administration permissions
 - creating or changing the key, downloading the emergency sheet
 - full export with passwords in plain text
-- restoring a backup
+- restoring a backup, [downloading](sicherung.md#sicherung-herunterladen) a backup
 - changing the database connection
 - changing sign-in via a provider
 - changing email sending

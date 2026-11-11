@@ -16,7 +16,7 @@ Eine [Sicherung](sicherung.md) spielst du in der Werkbank ein – ohne Kommandoz
 
 ## Neues NAS, alte Sicherung
 
-Du brauchst: die beiden Sicherungsdateien (`.dms-sicherung` und `.json`) und das [Notfallblatt](verschluesselung.md#notfallblatt).
+Du brauchst: die beiden Sicherungsdateien (`.dms-sicherung` und `.json`) und das [Notfallblatt](verschluesselung.md#notfallblatt). Läuft das alte Gerät noch, lädst du beide in der Werkbank [herunter](sicherung.md#sicherung-herunterladen).
 
 1. Auf dem neuen NAS den Ordner für Ablago anlegen, darin `postgres`, `files`, `geheim` und `sicherung` (siehe [Installation](installation.md)).
 2. Ablago neu installieren, wie unter [Wie komme ich an ein DMS?](https://help.ablago.app/installieren/aktuell/) beschrieben – empfohlen mit zwei Containern (z. B. die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) mit einer `.env` mit neuem `DB_PASSWORD`), oder mit [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) ohne Passwort.

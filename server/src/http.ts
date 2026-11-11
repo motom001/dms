@@ -302,7 +302,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         }
         if (antwort.datei) {
           for (const [k, v] of Object.entries({ ...dateiKoepfe(antwort.datei), ...antwort.datei.koepfe })) reply.header(k, v);
-          return reply.send(antwort.datei.inhalt);
+          return reply.code(antwort.status ?? 200).send(antwort.datei.inhalt); // 206: Teil einer Datei (#975)
         }
         // Stück für Stück (#444): ohne Länge, nicht zwischenspeichern (auch nicht in nginx: X-Accel-Buffering).
         if (antwort.strom) {

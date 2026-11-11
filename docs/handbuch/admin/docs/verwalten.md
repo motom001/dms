@@ -54,7 +54,7 @@ Für die heikelsten Handlungen fragt Ablago **immer** das Passwort (und den Code
 - Verwaltungsrechte vergeben oder entziehen
 - Schlüssel erzeugen oder wechseln, Notfallblatt herunterladen
 - Vollexport mit Passwörtern im Klartext
-- Wiederherstellen einer Sicherung
+- Wiederherstellen einer Sicherung, eine Sicherung [herunterladen](sicherung.md#sicherung-herunterladen)
 - Datenbank-Anbindung ändern
 - Anmeldung über einen Anbieter ändern
 - E-Mail-Versand ändern
