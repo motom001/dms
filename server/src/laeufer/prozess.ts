@@ -14,7 +14,8 @@ import { MessageChannel, Worker } from 'node:worker_threads';
 import type { ArbeiterDaten, ArbeiterMeldung, Hostanfrage, Hostantwort } from './arbeiter';
 import { ladeArgumente, pruefeModul, SEITE, type Modulpruefung } from './modul';
 import { t } from '../sprache';
-import { MB, NETZ_LANG_AB, NETZ_MAX } from '../grenzen';
+import { MB, NETZ_LANG_AB, NETZ_MAX, NETZ_TOKEN_LESEN } from '../grenzen';
+import { liesToken } from '../../../shared/src/extern';
 
 export interface Grenzen { speicherMB: number; sekunden: number; parallel: number }
 /** adressen: bestätigte Dienst-Adressen aus den Einstellungen (#444) – auch http, z. B. ein Ollama im Heimnetz. */
@@ -35,7 +36,63 @@ export type VomLaeufer =
   /** Teil einer Antwort (#444, dms.teil), gehört zum Aufruf nr. */
   | { art: 'teil'; nr: number; paket: string; text: string }
   | { art: 'log'; paket: string; stufe: number; text: string }
-  | { art: 'ergebnis'; nr: number; paket: string; ok: boolean; rc: number | null; text: string; ms: number; speicherMB: number; fehler: string | null; netz?: NetzEintrag[] };
+  | { art: 'ergebnis'; nr: number; paket: string; ok: boolean; rc: number | null; text: string; ms: number; speicherMB: number; fehler: string | null; netz?: NetzEintrag[]; messung?: NetzMessung };
+
+/**
+ * Messung der Netzaufrufe eines Aufrufs (#565), im Läufer gestoppt und mit dem Ergebnis zurückgegeben: Anzahl, Dauer
+ * bis zur ersten Antwort (Kopf) und gesamt (Summe), Bytes, Fehler, Zeitüberschreitungen und Token aus der Antwort
+ * eines KI-Dienstes (`usage`). Nur Zahlen – keine Hosts, keine Inhalte. Abgelehnte Aufrufe zählen nicht (nichts ging hinaus).
+ */
+export interface NetzMessung { anzahl: number; ersteMs: number; ms: number; hin: number; zurueck: number; fehler: number; zeit: number; tokenEin: number; tokenAus: number }
+/** Ein einzelner Netzaufruf, solange er läuft. */
+interface NetzUhr { start: number; erste: number | null; zurueck: number; ein: number | null; aus: number | null; rest: string; fertig: boolean; json: boolean; status: number }
+/** Messung eines einzelnen Netzaufrufs (#565): Kopf da, Stücke der Antwort, Ende. */
+export interface NetzAufrufMessung { kopf(r: { status: number; headers: { get(n: string): string | null } }): void; stueck(b: Uint8Array): void; ende(x: 'ok' | 'fehler' | 'zeit'): void }
+/** Messung der Netzaufrufe eines Aufrufs (#565). */
+export function netzMesser() {
+  const m: NetzMessung = { anzahl: 0, ersteMs: 0, ms: 0, hin: 0, zurueck: 0, fehler: 0, zeit: 0, tokenEin: 0, tokenAus: 0 };
+  const offen = new Set<NetzUhr>();
+  const ende = (u: NetzUhr, ergebnis: 'ok' | 'fehler' | 'zeit') => {
+    if (u.fertig) return;
+    u.fertig = true; offen.delete(u);
+    const jetzt = performance.now();
+    m.anzahl++; m.ms += jetzt - u.start; m.ersteMs += (u.erste ?? jetzt) - u.start; m.zurueck += u.zurueck;
+    m.tokenEin += u.ein ?? 0; m.tokenAus += u.aus ?? 0;
+    // Eine Antwort 5xx zählt als Fehler des Dienstes.
+    const x = ergebnis === 'ok' && u.status >= 500 ? 'fehler' : ergebnis;
+    if (x === 'fehler') m.fehler++; else if (x === 'zeit') m.zeit++;
+  };
+  /** Ein Stück der Antwort: Bytes zählen, Token lesen (das Ende des vorigen Stücks davor, falls ein Name geteilt wurde). */
+  const stueck = (u: NetzUhr, b: Uint8Array) => {
+    u.zurueck += b.length;
+    if (!u.json) return;
+    const text = u.rest + new TextDecoder().decode(b.length > NETZ_TOKEN_LESEN ? b.subarray(b.length - NETZ_TOKEN_LESEN) : b);
+    const x = liesToken(text);
+    if (x.ein !== null) u.ein = x.ein;
+    if (x.aus !== null) u.aus = x.aus;
+    u.rest = text.slice(-200);
+  };
+  return {
+    /** Ab hier geht etwas hinaus (`hin` Bytes). */
+    aufruf(hin: number): NetzAufrufMessung {
+      m.hin += hin;
+      const u: NetzUhr = { start: performance.now(), erste: null, zurueck: 0, ein: null, aus: null, rest: '', fertig: false, json: false, status: 0 };
+      offen.add(u);
+      return {
+        kopf: (r) => { u.erste ??= performance.now(); u.status = r.status; u.json = /json|event-stream|ndjson/i.test(r.headers.get('content-type') ?? ''); },
+        stueck: (b) => stueck(u, b),
+        ende: (x) => ende(u, x),
+      };
+    },
+    /** Am Ende des Aufrufs: offene (z. B. abgebrochene Ströme) schließen; null ohne Netzaufruf. */
+    ergebnis(): NetzMessung | null {
+      for (const u of [...offen]) ende(u, 'ok');
+      return m.anzahl ? { ...m, ms: Math.round(m.ms), ersteMs: Math.round(m.ersteMs) } : null;
+    },
+  };
+}
+type NetzMesser = ReturnType<typeof netzMesser>;
+const istZeit = (e: unknown) => /zeitgrenze|timeout/i.test(`${(e as Error)?.name ?? ''} ${(e as Error)?.message ?? ''} ${String((e as Error & { cause?: unknown })?.cause ?? '')}`);
 
 /**
  * Netzaufrufe eines Aufrufs fürs Protokoll (#807): je Methode, Host, Status und ob abgelehnt zusammengefasst – mit
@@ -123,9 +180,10 @@ export function netzErlaubt(url: string, erlaubt: string[], adressen: string[] =
 }
 
 /** Eine mit netz_strom geöffnete Antwort (#444): wird Stück für Stück gelesen, je Aufruf höchstens eine. */
-interface Strom { leser: ReadableStreamDefaultReader<Uint8Array>; gelesen: number; ende: AbortController; eintrag?: NetzEintrag }
+interface Strom { leser: ReadableStreamDefaultReader<Uint8Array>; gelesen: number; ende: AbortController; eintrag?: NetzEintrag; messung?: NetzAufrufMessung }
 
-async function netz(g: Geladen, json: string, body: Uint8Array | undefined, strom: { setze(s: Strom | null): void; ms: number } | null, log: NetzLog): Promise<Hostantwort> {
+async function netz(g: Geladen, json: string, body: Uint8Array | undefined, strom: { setze(s: Strom | null): void; ms: number } | null, z: { log: NetzLog; messer: NetzMesser }): Promise<Hostantwort> {
+  const { log } = z;
   let a: { methode?: string; url?: string; kopf?: Record<string, string> };
   try { a = JSON.parse(json); } catch { return fehlerAntwort(-1, t('meldungen.prozess.ungueltige-anfrage-json')); }
   const url = String(a.url ?? '');
@@ -143,22 +201,28 @@ async function netz(g: Geladen, json: string, body: Uint8Array | undefined, stro
   const uhr = setTimeout(() => ende.abort(new Error('Zeitgrenze erreicht')), strom ? strom.ms : lang ? grenzen.sekunden * 1000 : NETZ_MS);
   uhr.unref?.();
   let r: Response;
+  // Messung (#565): ab hier geht etwas hinaus.
+  const mu = z.messer.aufruf(hin);
+  const fehlerArt = (e: unknown) => (istZeit(e) || ende.signal.aborted ? 'zeit' : 'fehler');
   try {
     r = await fetch(url, { method: methode, headers: kopf, body: body && body.length ? body : undefined, redirect: 'manual', signal: ende.signal });
-  } catch (e) { clearTimeout(uhr); log({ methode, url, status: null, hin, zurueck: 0 }); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
+  } catch (e) { clearTimeout(uhr); mu.ende(fehlerArt(e)); log({ methode, url, status: null, hin, zurueck: 0 }); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
+  mu.kopf(r);
   // Ins Protokoll (#807): Bytes hin und zurück; bei einer Antwort Stück für Stück zählt netzWeiter nach.
   const eintrag = log({ methode, url, status: r.status, hin, zurueck: 0 });
   try {
     if (strom && r.body) {
-      strom.setze({ leser: r.body.getReader(), gelesen: 0, ende, eintrag });
+      strom.setze({ leser: r.body.getReader(), gelesen: 0, ende, eintrag, messung: mu });
       return { status: r.status, body: new Uint8Array(0) };
     }
     const buf = new Uint8Array(await r.arrayBuffer());
     clearTimeout(uhr);
     eintrag.zurueck += buf.length;
+    mu.stueck(buf);
+    mu.ende('ok');
     if (buf.length > NETZ_MAX) return fehlerAntwort(-3, t('meldungen.prozess.antwort-zu-gross'));
     return { status: r.status, body: buf };
-  } catch (e) { clearTimeout(uhr); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
+  } catch (e) { clearTimeout(uhr); mu.ende(fehlerArt(e)); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
 }
 
 /** Nächstes Stück einer geöffneten Antwort: 200 mit Bytes, 0 am Ende, < 0 bei Fehler. */
@@ -170,12 +234,13 @@ async function netzWeiter(s: Strom | null): Promise<Hostantwort> {
       s.leser.read(),
       new Promise<never>((_, nein) => { uhr = setTimeout(() => nein(new Error(`kein Stück innerhalb von ${NETZ_MS / 1000} s`)), NETZ_MS); }),
     ]);
-    if (r.done) return { status: 0, body: new Uint8Array(0) };
+    if (r.done) { s.messung?.ende('ok'); return { status: 0, body: new Uint8Array(0) }; }
     s.gelesen += r.value.length;
     if (s.eintrag) s.eintrag.zurueck += r.value.length;
-    if (s.gelesen > NETZ_MAX) { s.ende.abort(); return fehlerAntwort(-3, t('meldungen.prozess.antwort-zu-gross')); }
+    s.messung?.stueck(r.value);
+    if (s.gelesen > NETZ_MAX) { s.ende.abort(); s.messung?.ende('fehler'); return fehlerAntwort(-3, t('meldungen.prozess.antwort-zu-gross')); }
     return { status: 200, body: r.value };
-  } catch (e) { s.ende.abort(); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
+  } catch (e) { s.ende.abort(); s.messung?.ende(istZeit(e) ? 'zeit' : 'fehler'); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
   finally { clearTimeout(uhr); }
 }
 
@@ -212,13 +277,15 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
   let fertig = false;
   let strom: Strom | null = null;
   const netzLog = netzSammler();
+  const messer = netzMesser();
   const schluss = (x: Parameters<typeof ende>[0]) => {
     if (fertig) return;
     fertig = true; clearTimeout(uhr); kanal.port1.close();
     strom?.ende.abort(); strom = null;
     void w.terminate();
     const n = netzLog.liste();
-    laufend--; ende({ ...x, ...(n.length ? { netz: n } : {}) }); weiter();
+    const m = messer.ergebnis();
+    laufend--; ende({ ...x, ...(n.length ? { netz: n } : {}), ...(m ? { messung: m } : {}) }); weiter();
   };
   const uhr = setTimeout(() => schluss({ ok: false, rc: null, text: '', speicherMB: 0, fehler: t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: grenzen.sekunden }) }), grenzen.sekunden * 1000);
   const antworte = (r: Hostantwort) => { if (fertig) return; kanal.port1.postMessage(r); Atomics.store(sig, 0, 1); Atomics.notify(sig, 0); };
@@ -231,7 +298,7 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
     if (q.art === 'netz') {
       // Eine neue Anfrage schließt eine noch offene Antwort.
       if (q.strom) { strom?.ende.abort(); strom = null; }
-      void netz(g, q.json, q.body, q.strom ? { setze: (x) => { if (fertig) x?.ende.abort(); else strom = x; }, ms: grenzen.sekunden * 1000 } : null, netzLog.log).then(antworte);
+      void netz(g, q.json, q.body, q.strom ? { setze: (x) => { if (fertig) x?.ende.abort(); else strom = x; }, ms: grenzen.sekunden * 1000 } : null, { log: netzLog.log, messer }).then(antworte);
       return;
     }
     if (q.art === 'netz_weiter') { void netzWeiter(strom).then((r) => { if (r.status !== 200) strom = null; antworte(r); }); return; }

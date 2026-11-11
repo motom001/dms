@@ -88,6 +88,8 @@ export const TEXTSATZ_ZEIT_MS = 30_000;
 export const NETZ_MAX = 10 * MB;
 /** Ab diesem Körper darf ein Netzaufruf eines Pakets so lange dauern wie der ganze Aufruf (Hochladen in Teilen, #585). */
 export const NETZ_LANG_AB = MB;
+/** Token einer Antwort (#565): höchstens so viele Bytes am Ende eines Stücks liest der Läufer nach `usage` ab. */
+export const NETZ_TOKEN_LESEN = 16 * KB;
 /** Was ein Paket an das nächste weiterreicht (Ergebnis eines Aufrufs). */
 export const WEITER_MAX_BYTES = 4 * MB;
 /** Gespeicherter Zustand eines Pakets. */

@@ -343,5 +343,8 @@
   "muster.tabelle.zeile1": "Oil filter",
   "muster.tabelle.zeile2": "Service",
   "muster.tabelle.neu": "+ Item",
-  "muster.tabelle.leer": "No items yet"
+  "muster.tabelle.leer": "No items yet",
+  "messpanel.externe-dienste": "External services",
+  "messpanel.erste-antwort": "first response {ms}",
+  "messpanel.gesamt": "total {ms}"
 }

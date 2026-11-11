@@ -65,6 +65,8 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   aufgaben_ohne_leserecht: t('meldungen.vollexport.nicht-enthalten-aufgaben-bei'),
   fehlermeldungen: t('meldungen.vollexport.nicht-enthalten-gemeldete-fehler'),
   langlaeufer: t('meldungen.vollexport.nicht-enthalten-messwerte-langsamer'),
+  extern_aufrufe: t('meldungen.vollexport.nicht-enthalten-messwerte-extern'),
+  extern_monate: t('meldungen.vollexport.nicht-enthalten-messwerte-extern'),
   einstellungen: t('meldungen.vollexport.nicht-enthalten'),
   api_schluessel: t('meldungen.vollexport.nicht-enthalten-geheimnisse'),
   paket_code: t('meldungen.vollexport.nicht-enthalten-code-installierter'),

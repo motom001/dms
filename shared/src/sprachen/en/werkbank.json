@@ -253,7 +253,7 @@
   "aufgabenempfaenger.abwesend": "Currently absent – until they return, {vertreter} gets them as the stand-in.",
   "bereich.texterkennung.auch": "Text recognition|Search|OCR|Synonyms|Typos|Shrink",
   "bereich.sicherung.auch": "Restore|Restoring",
-  "bereich.systemzustand.auch": "Technical details|Version|Updates|Storage|Load|Long database accesses",
+  "bereich.systemzustand.auch": "Technical details|Version|Updates|Storage|Load|Long database accesses|External services|AI costs|Budget",
   "bereich.wartung.auch": "Maintenance mode|Maintenance operations|Recreate full text",
   "bereich.aufgaben.auch": "Notifications and tasks|Notifications|Daily summary|Notify about favourites",
   "bereich.webdav.auch": "Drive|Network drive",

@@ -1942,5 +1942,7 @@
   "pakete.aktion-typ-fehlt": "mappenaktionen „{aktion}“: Den Mappentyp „{typ}“ bringt weder dieses Paket noch eine seiner Abhängigkeiten.",
   "pakete.aktion-ohne-lesen": "mappenaktionen „{aktion}“: Der Code muss den Mappentyp „{typ}“ lesen dürfen (code.rechte.lesen) – er bekommt die Werte der Mappe.",
   "pakete.sicht-bedingung-op": "Bei Ansichten heißt es operator, nicht op.",
-  "pakete.sicht-bedingungen-liste": "{wo}: bedingungen muss eine Liste sein."
+  "pakete.sicht-bedingungen-liste": "{wo}: bedingungen muss eine Liste sein.",
+  "extern.pausiert": "KI-Funktionen pausiert bis {datum}: Das Monatsbudget für KI-Dienste ist erreicht. Die Verwaltung kann das Budget unter Werkbank → Systemzustand → KI-Kosten anpassen.",
+  "vollexport.nicht-enthalten-messwerte-extern": "nicht enthalten: Messwerte externer Dienste und KI-Kosten (technisch, ohne Inhalte)"
 }

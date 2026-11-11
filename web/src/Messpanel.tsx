@@ -28,6 +28,7 @@ export function Messpanel() {
             <div key={m.nr} className="messung">
               <p className="mono klein"><strong>{m.methode}</strong> {m.url.replace(/^\/api/, '').replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, (x) => `${x.slice(0, 8)}…`)} <span className={m.status >= 400 ? 'fehlertext' : 'leise'}>{m.status}</span> · <strong>{ms(m.gesamt + (m.darstellung ?? 0))}</strong></p>
               <Balken m={m} />
+              {m.extern && <Extern m={m} />}
               <ul className="klein">
                 {TEILE.map((eintrag) => eintrag.k === 'db'
                   ? <li key={eintrag.k} className={eintrag.k}>{m.dbAnzahl ?? '?'} {m.dbAnzahl === 1 ? t('oberflaeche.messpanel.datenbankzugriff') : t('oberflaeche.messpanel.datenbankzugriffe')} {ms(m.db)}</li>
@@ -55,6 +56,32 @@ const TEILE: Array<{ k: string; feld: keyof Anfragemessung; name: string; erklae
   { k: 'ausw', feld: 'auswerten', name: t('oberflaeche.messpanel.auswerten'), erklaerung: t('oberflaeche.messpanel.antwort-im-browser-lesen') },
   { k: 'darst', feld: 'darstellung', name: t('oberflaeche.messpanel.darstellung'), erklaerung: t('oberflaeche.messpanel.bis-der-browser-das') },
 ];
+
+const groesse = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB` : b >= 1024 ? `${Math.round(b / 1024)} KB` : `${b} B`);
+
+/**
+ * Externe Dienste (#565): Worauf der Server in dieser Anfrage wartete – je Aufruf Dienst (bei Paketen mit Kennung), Dauer
+ * bis zur ersten Antwort, Gesamtdauer, Größe und Ergebnis. Die Zeit ist ein Teil von „Aufbereitung“ (der Server wartet im
+ * Handler); bei Antworten als Strom („Frag deine Ablage“) steht sie als eigene Zeile.
+ */
+function Extern({ m }: { m: Anfragemessung }) {
+  return (
+    <div className="messextern klein">
+      <p><strong>{t('oberflaeche.messpanel.externe-dienste')}</strong> {ms(m.externMs)}</p>
+      <ul>
+        {m.extern!.map((x, i) => (
+          <li key={i} className={x.ergebnis === 'ok' ? undefined : 'fehlertext'}>
+            {t.frei(`systemzustand.extern.dienst.${x.dienst}`)}{x.paket ? <span className="mono"> {x.paket}</span> : null}
+            {' · '}{t('oberflaeche.messpanel.erste-antwort', { ms: ms(x.ersteMs ?? undefined) })}
+            {' · '}{t('oberflaeche.messpanel.gesamt', { ms: ms(x.ms) })}
+            {x.bytes ? ` · ${groesse(x.bytes)}` : ''}
+            {x.ergebnis === 'ok' ? '' : ` · ${t.frei(`systemzustand.extern.ergebnis.${x.ergebnis}`)}`}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function Balken({ m }: { m: Anfragemessung }) {
   const teile = TEILE.map((eintrag) => ({ k: eintrag.k, w: m[eintrag.feld] as number | undefined }));

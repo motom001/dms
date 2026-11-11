@@ -14,6 +14,9 @@ import { FEHLERMELDUNG_KOERPER_MAX, MB } from '../grenzen';
 import { L, ok, leer, b, ich, grenzenUndEngpaesse, prozessZeilen, engpassStand, POSTFACH_BINDUNG_COOKIE, kurzCookie } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
+import { extern } from '../externmessung';
+import { monatAus } from '../../../shared/src/extern';
+import { istKiPaket } from '../../../shared/src/pakete';
 
 export function betriebRouten(k: RoutenKontext): Route[] {
   const { x, system, betrieb, meldungen, pfOAuth, pfRueckruf } = k;
@@ -99,8 +102,27 @@ export function systemRouten(k: RoutenKontext): Route[] {
 }
 
 export function systemzustandRouten(k: RoutenKontext): Route[] {
-  const { x, messung, system, speicherplatz } = k;
+  const { x, messung, system, speicherplatz, konten, pakete } = k;
+  /** Namen zu den Ids der Auswertung (#565): Personen (gelöschte fehlen) und KI-Pakete (für die Preise). */
+  const namen = async () => {
+    const [benutzer, installiert] = await Promise.all([konten.listeBenutzer(), pakete.installierte().catch(() => [])]);
+    return {
+      personen: Object.fromEntries(benutzer.map((b) => [b.id, b.name || b.email])),
+      pakete: Object.fromEntries(installiert.map((p) => [p.id, p.name])),
+      kiPakete: installiert.filter((p) => istKiPaket(p.laeufer)).map((p) => ({ id: p.id, name: p.name })),
+    };
+  };
   return [
+    /* ---------- Externe Dienste (#565): Laufzeit, Datenmenge, Fehler; KI-Kosten und Budget ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/system/extern', zugang: 'admin', handler: async (a) => ok({ ...await extern.uebersicht(Number(a.query.stunden) || 24), budget: extern.budget(), pakete: (await namen()).pakete }) },
+    { methode: 'GET', pfad: '/api/werkbank/system/extern/kosten', zugang: 'admin', handler: async (a) => {
+      const monat = monatAus(a.query.monat) ?? new Date();
+      return ok({ ...await extern.auswertung(monat), ...await namen() });
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/system/extern/kosten', zugang: 'admin', handler: async (a) => {
+      await extern.setzeKosten(a.body, ich(a).email);
+      return ok({ ...await extern.auswertung(new Date()), ...await namen() });
+    } },
     { methode: 'GET', pfad: '/api/werkbank/webdav', zugang: 'admin', handler: async () => {
       if (!x.webdav) throw new Fachfehler(404, t('meldungen.routen.das-webdav-laufwerk-ist'));
       return ok(await x.webdav.stand());

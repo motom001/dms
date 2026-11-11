@@ -414,6 +414,8 @@ The package runner writes every call a package makes to the network into the **p
 
 This is how you check a package you trusted: when it sent how much to which service.
 
+How **long** the network calls take is shown below under **External services** (last hour or 24 hours): mean, p50, p95, time to first response, errors, timeouts, data and – for an AI service – tokens. The runner measures this itself and returns it with the result; more under [System health → External services](speicherplatz.md#externe-dienste), costs and budget under [AI costs](speicherplatz.md#ki-kosten).
+
 ### Recognition by a package { #erkennung-durch-ein-paket }
 
 **Fill in from document** (button in the folder) normally uses the **built-in recognition** – patterns for email, phone, date, amount and the like, without AI. A package with the permission [Suggest fields from documents](#recht-erkennen) – for instance an AI assistant via Ollama – also recognises free text, letterheads and difficult receipts. The package **Read QR code** takes over the details from the QR code (vCard) on business cards and, without a code, lets the built-in recognition work; for this it reads the page images of documents that have already been filed (permission *Read documents*) and needs no network.

@@ -6,6 +6,7 @@ import type { AblaufEingabe, AblaufInstallation } from '../../../shared/src/pake
 import { eigeneVersion } from '../system';
 import { KOERPER_SPIELRAUM } from '../grenzen';
 import { ok } from '../http/routen-hilfen';
+import { extern } from '../externmessung';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Anfrage, Route } from '../routen';
@@ -67,6 +68,8 @@ export function paketeEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await umwandlung.vorschau(a.params.id, (a.body ?? {}) as { typId?: unknown; feldKey?: unknown }, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen', zugang: 'admin', handler: async (a) => ok(await umwandlung.umwandeln(a.params.id, (a.body ?? {}) as { typId?: unknown; feldKey?: unknown; entscheidungen?: unknown }, wer(a), await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen/:vorgang/rueckgaengig', zugang: 'admin', handler: async (a) => ok(await umwandlung.rueckgaengig(a.params.vorgang, wer(a), await zg(a))) },
+    // Externe Dienste je Paket (#565): Dauer, Bytes, Fehler, Token der Netzaufrufe – nur Metadaten.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/extern', zugang: 'admin', handler: async (a) => ok(await extern.uebersicht(Number(a.query.stunden) || 24, a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.speichereEinstellungen(a.params.id, a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktionen/:aktion', zugang: 'admin', handler: async (a) => ok(await pakete.aktion(a.params.id, a.params.aktion, wer(a))) },

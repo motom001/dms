@@ -72,6 +72,8 @@ export interface Kontext {
    * sofort.
    */
   nachAntwort?: Array<() => Promise<unknown>>;
+  /** Aufrufe externer Dienste in dieser Anfrage (#565, externmessung.ts): für Server-Timing `extern` – nur Metadaten. */
+  extern?: import('../../shared/src/extern').ExternAufruf[];
 }
 export const kontext = new AsyncLocalStorage<Kontext>();
 

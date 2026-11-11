@@ -64,8 +64,9 @@ Wirkt eine Seite langsam, schalte unter **Mein Konto** den **Entwicklermodus** e
 | Aufbereitung | Die übrige Zeit im Server. |
 | JSON | Die Antwort im Server in Text umwandeln. |
 | Übertragung, Auswerten, Darstellung | Antwort senden, im Browser lesen und zeichnen. |
+| Externe Dienste | Worauf der Server in dieser Anfrage gewartet hat: KI-Dienst (mit Paket), Postfach, Versand, Anmeldeanbieter oder das Netz eines Pakets – je Aufruf die Zeit bis zur ersten Antwort, die Gesamtdauer, die Größe und ob es ein Fehler oder eine Zeitüberschreitung war. Die Zeit ist ein Teil von *Aufbereitung*. Bei „Frag deine Ablage“ steht sie als eigene Zeile, sobald die Antwort fertig ist. |
 
-Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) und aus der Zeitmessung des Browsers. Bei den Zahlen der Ansichten (`/api/sichten`) steht dort zusätzlich `zs`: `treffer`, wenn sie aus dem Zwischenspeicher kamen, `neu`, wenn sie gezählt wurden – gezählt wird nach jeder Änderung im Haushalt, sonst spätestens nach 5 Minuten (Ansichten mit Datumsbezug) bzw. 30 Minuten und um Mitternacht.
+Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`, bei externen Diensten `extern` mit Summe und Anzahl und je Aufruf `extern-1` …) und aus der Zeitmessung des Browsers. Was in der letzten Stunde bzw. den letzten 24 Stunden auf externe Dienste entfiel, zeigt [Systemzustand → Externe Dienste](speicherplatz.md#externe-dienste). Bei den Zahlen der Ansichten (`/api/sichten`) steht dort zusätzlich `zs`: `treffer`, wenn sie aus dem Zwischenspeicher kamen, `neu`, wenn sie gezählt wurden – gezählt wird nach jeder Änderung im Haushalt, sonst spätestens nach 5 Minuten (Ansichten mit Datumsbezug) bzw. 30 Minuten und um Mitternacht.
 
 ### Liegt es am Zwischenspeicher? { #zwischenspeicher }
 

@@ -1111,5 +1111,8 @@
   "bedingungspruefung.und-stelle": "{wo}: {grund}",
   "bedingungspruefung.sicht-fehlt": "sicht is missing.",
   "bedingungspruefung.von-fehlt": "von is not a valid recipient.",
-  "bedingungspruefung.gruppe-in-gruppe": "A group inside a group is not possible."
+  "bedingungspruefung.gruppe-in-gruppe": "A group inside a group is not possible.",
+  "extern.preis-bereich": "Please enter a price from 0 to {max}.",
+  "extern.waehrung": "Please enter a three-letter currency, e.g. EUR.",
+  "extern.budget-bereich": "Please enter a budget above 0 and at most {max} – or leave the field empty."
 }

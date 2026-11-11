@@ -4,6 +4,7 @@ import type { Dienst } from './dienst';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
+import { imapGemessen } from './externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -71,6 +72,8 @@ export interface ImapSitzung {
   loesche(uid: number): Promise<void>;
   ordnerListe(): Promise<string[]>;
   schliessen(): Promise<void>;
+  /** Bytes hin und zurück in dieser Sitzung (#565, Messung externer Dienste), soweit bekannt. */
+  bytes?(): { hin: number; zurueck: number };
 }
 export type ImapVerbinder = (z: Zugang, ordner: string) => Promise<ImapSitzung>;
 
@@ -199,7 +202,7 @@ export class Postfaecher {
   private naechster = new Map<string, number>();
   private gesperrt = false;
 
-  constructor(private d: PostfachDeps) {}
+  constructor(private d: PostfachDeps) { this.d = { ...d, verbinde: imapGemessen(d.verbinde) }; }
   private jetzt() { return this.d.jetzt?.() ?? Date.now(); }
 
   async liste(): Promise<Postfach[]> { return ((await this.d.einstellungen.lies('postfaecher')) as Postfach[] | null) ?? []; }

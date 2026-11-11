@@ -416,6 +416,8 @@ Jeden Aufruf eines Pakets ins Netz schreibt der Paket-Läufer ins **Protokoll de
 
 So prüfst du ein Paket, dem du vertraut hast: wann es wie viel an welchen Dienst geschickt hat.
 
+Wie **lange** die Netzaufrufe dauern, steht darunter unter **Externe Dienste** (letzte Stunde oder 24 Stunden): Mittel, p50, p95, Zeit bis zur ersten Antwort, Fehler, Zeitüberschreitungen, Daten und – bei einem KI-Dienst – Token. Der Läufer misst das selbst und gibt es mit dem Ergebnis zurück; mehr unter [Systemzustand → Externe Dienste](speicherplatz.md#externe-dienste), Kosten und Budget unter [KI-Kosten](speicherplatz.md#ki-kosten).
+
 ### Erkennung durch ein Paket { #erkennung-durch-ein-paket }
 
 **Aus Dokument ausfüllen** (Knopf in der Mappe) nutzt normalerweise die **eingebaute Erkennung** – Muster für E-Mail, Telefon, Datum, Betrag und Ähnliches, ohne KI. Ein Paket mit dem Recht [Felder aus Dokumenten vorschlagen](#recht-erkennen) – etwa ein KI-Assistent über Ollama – erkennt auch Freitext, Briefköpfe und schwierige Belege. Das Paket **QR-Code lesen** übernimmt bei Visitenkarten die Angaben aus dem QR-Code (vCard) und lässt ohne Code die eingebaute Erkennung arbeiten; es liest dafür die Seitenbilder der Dokumente, die schon abgelegt sind (Recht *Dokumente lesen*), und braucht kein Netz.

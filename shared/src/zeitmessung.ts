@@ -2,6 +2,7 @@
  * Zeitmessung (#11, #477): Server-Timing lesen und mit Resource Timing des Browsers zu einer
  * Aufteilung je Anfrage zusammenführen. Reine Funktionen für web/src/messung.ts (und Tests).
  */
+import type { ExternMessung } from './extern';
 
 /** Zeitpunkte aus Resource Timing (ms seit Seitenstart); 0 = unbekannt. */
 export interface RessourcenZeiten { startTime: number; requestStart: number; responseStart: number; responseEnd: number; connectStart: number; connectEnd: number }
@@ -23,6 +24,9 @@ export interface Anfragemessung {
   uebertragung?: number;
   auswerten: number;
   darstellung?: number;
+  /** Externe Dienste (#565): Summe der Wartezeit (ms) und je Aufruf Dienst, Paket, erste Antwort, Dauer, Bytes, Ergebnis. */
+  externMs?: number;
+  extern?: ExternMessung[];
 }
 
 /** Server-Timing lesen: Name → Dauer (ms), dazu die Anzahl der Datenbankzugriffe aus desc. */

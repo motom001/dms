@@ -1942,5 +1942,7 @@
   "pakete.aktion-typ-fehlt": "mappenaktionen “{aktion}”: The folder type “{typ}” is neither part of this package nor of one of its dependencies.",
   "pakete.aktion-ohne-lesen": "mappenaktionen “{aktion}”: The code must be allowed to read the folder type “{typ}” (code.rechte.lesen) – it receives the folder's values.",
   "pakete.sicht-bedingung-op": "Views use operator, not op.",
-  "pakete.sicht-bedingungen-liste": "{wo}: bedingungen must be a list."
+  "pakete.sicht-bedingungen-liste": "{wo}: bedingungen must be a list.",
+  "extern.pausiert": "AI features paused until {datum}: the monthly budget for AI services has been reached. An administrator can change the budget under Workbench → System health → AI costs.",
+  "vollexport.nicht-enthalten-messwerte-extern": "not included: measurements of external services and AI costs (technical, without content)"
 }

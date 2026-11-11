@@ -53,6 +53,8 @@ export const verbindeImap: ImapVerbinder = async (z, ordner) => {
     async loesche(uid) { await client.messageDelete(String(uid), { uid: true }); },
     async ordnerListe() { return (await client.list()).map((x) => x.path); },
     async schliessen() { lock?.release(); await client.logout().catch(() => {}); },
+    // Externe Dienste (#565): Bytes der Sitzung laut imapflow.
+    bytes() { const s = client.stats(); return { hin: s.sent, zurueck: s.received }; },
   };
   return sitzung;
 };

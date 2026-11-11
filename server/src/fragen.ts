@@ -15,6 +15,7 @@ import type { Dienst, Zugriff } from './dienst';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
+import { extern, externDerAnfrage } from './externmessung';
 import type { Repo } from './repo';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -150,6 +151,8 @@ export class FragenAnDieAblage {
     if (!paket || !this.anbieter) throw new Fachfehler(409, t('meldungen.fragen.es-ist-kein-paket'));
     if (this.laufend.has(z.ich.id)) throw new Fachfehler(429, t('meldungen.fragen.deine-vorige-frage-laeuft'));
     if (this.laufend.size >= GLEICHZEITIG) throw new Fachfehler(429, t('meldungen.fragen.gerade-werden-schon-mehrere'));
+    // Monatsbudget mit harter Grenze (#565): gleich sagen, bis wann die KI-Funktionen pausieren – vor den Ausschnitten.
+    await extern.pruefePause(paket.id);
     this.laufend.add(z.ich.id);
     const start = Date.now();
     let ausschnitte: FrageAusschnitt[] = [];
@@ -176,12 +179,15 @@ export class FragenAnDieAblage {
       const ok = await this.d.lesbare(z, [...jeMappe.keys()]);
       const quellen = [...jeMappe].filter(([id]) => ok.has(id)).map(([id, nr]) => { const m = ausschnitte.find((y) => y.mappe.id === id)!.mappe; return { id, typId: m.typId, titel: m.titel, nr }; });
       // Hat das Paket für den Dienst gekürzt (#564), sieht der Fragende das: welche Ausschnitte hingingen, ob Chat wegfiel.
-      schreibe({ art: 'fertig', text: a.text || t('meldungen.fragen.das-paket-hat-keine'), quellen, ms: Date.now() - start, ...(a.gekuerzt ? { gekuerzt: a.gekuerzt } : {}) });
+      // Messpanel (#565): Der Kopf mit Server-Timing ging vor der Antwort – die Zeiten des KI-Dienstes stehen hier.
+      const ext = externDerAnfrage();
+      schreibe({ art: 'fertig', text: a.text || t('meldungen.fragen.das-paket-hat-keine'), quellen, ms: Date.now() - start, ...(a.gekuerzt ? { gekuerzt: a.gekuerzt } : {}), ...(ext ? { extern: ext } : {}) });
       log.info('Frage an die Ablage gestellt', { von: z.ich.id, paket: paket.id, ausschnitte: ausschnitte.length, mappen, quellen: quellen.length, ms: Date.now() - start, ...(a.gekuerzt ? { geschickt: a.gekuerzt.geschickt.length, verlaufWeg: a.gekuerzt.verlauf } : {}) });
     } catch (x) {
       if (!geschrieben) throw x;
       log.warn('Frage an die Ablage nicht beantwortet', { von: z.ich.id, paket: paket.id, ausschnitte: ausschnitte.length, ms: Date.now() - start, fehler: (x as Error).message.slice(0, 300) });
-      schreibe({ art: 'fehler', text: t('meldungen.fragen.keine-antwort', { message: (x as Error).message }) });
+      const ext = externDerAnfrage();
+      schreibe({ art: 'fehler', text: t('meldungen.fragen.keine-antwort', { message: (x as Error).message }), ...(ext ? { extern: ext } : {}) });
     } finally {
       this.laufend.delete(z.ich.id);
     }

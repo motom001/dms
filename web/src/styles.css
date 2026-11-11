@@ -564,6 +564,13 @@ a.textknopf { text-decoration: none; }
 .messbalken .m-rechte, .messung li.m-rechte::before { background: var(--m-rechte); }
 .messbalken .m-json, .messung li.m-json::before { background: var(--m-json); }
 .messung li::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+/* Externe Dienste (#565): eine Zeile je Aufruf, ohne Farbpunkt (die Zeit liegt im Server, nicht im Balken). */
+.messextern { margin-top: 4px; padding-left: 6px; border-left: 2px solid var(--linie-stark); }
+.messextern p { margin: 0; }
+.messextern ul { list-style: none; margin: 2px 0 0; padding: 0; display: block; }
+.messextern li::before { content: none; }
+/* Externe Dienste und KI-Kosten (#565, Werkbank → Systemzustand): Zahlen rechtsbündig. */
+.tabelle th.rechts, .tabelle td.rechts { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Technik */
 .technikgruppe { display: flex; flex-direction: column; gap: 4px; }

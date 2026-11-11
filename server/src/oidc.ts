@@ -8,6 +8,7 @@ import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { hashe, speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { protokoll } from './protokoll';
+import { extern } from './externmessung';
 import { t } from './sprache';
 
 /**
@@ -20,7 +21,7 @@ const log = protokoll.modul('konto');
 
 /** Das Nötigste von fetch (ohne DOM-Typen), damit Tests einen Anbieter nachstellen können. */
 export type Abruf = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal }) =>
-  Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>;
+  Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string>; headers?: { get(name: string): string | null } }>;
 
 export interface OidcEinstellung {
   aktiv: boolean;
@@ -163,9 +164,16 @@ export class Oidc {
   }) { this.zustand = deps.zustand ?? speicherKurzzustand(() => this.jetzt); }
 
   private get jetzt() { return this.deps.jetzt?.() ?? Date.now(); }
-  private abruf(url: string, init?: Parameters<Abruf>[1]) {
+  /** Externe Dienste (#565): jeder Abruf beim Anbieter wird gemessen (Dauer bis zur Antwort, Bytes, Ergebnis) – ohne Adresse. */
+  private abruf(url: string, init: Parameters<Abruf>[1] | undefined, funktion: 'konfiguration' | 'schluessel' | 'token') {
     const f = this.deps.abruf ?? (fetch as unknown as Abruf);
-    return f(url, { ...init, signal: AbortSignal.timeout(15_000) }).catch((e: Error) => {
+    return extern.messe({ dienst: 'oidc', funktion }, async (m) => {
+      const r = await f(url, { ...init, signal: AbortSignal.timeout(15_000) });
+      m.erste();
+      m.bytes(init?.body ? Buffer.byteLength(init.body) : 0, Number(r.headers?.get('content-length')) || 0);
+      if (!r.ok) m.ergebnis('fehler');
+      return r;
+    }).catch((e: Error) => {
       throw new Fachfehler(502, t('meldungen.oidc.der-anbieter-ist-nicht', { host: new URL(url).host, message: e.message }));
     });
   }
@@ -217,7 +225,7 @@ export class Oidc {
 
   private async discovery(aussteller: string, frisch = false): Promise<Discovery> {
     if (!frisch && this.disc && this.disc.fuer === aussteller && this.disc.bis > this.jetzt) return this.disc.d;
-    const r = await this.abruf(`${aussteller}/.well-known/openid-configuration`);
+    const r = await this.abruf(`${aussteller}/.well-known/openid-configuration`, undefined, 'konfiguration');
     if (!r.ok) throw new Fachfehler(502, t('meldungen.oidc.der-anbieter-liefert-keine-2', { status: r.status }));
     const d = (await r.json().catch(() => null)) as Discovery | null;
     if (!d || !d.authorization_endpoint || !d.token_endpoint || !d.jwks_uri) throw new Fachfehler(502, t('meldungen.oidc.die-openid-konfiguration-des'));
@@ -230,7 +238,7 @@ export class Oidc {
     if (!neu && this.jwks && this.jwks.fuer === d.jwks_uri && this.jwks.bis > this.jetzt) return this.jwks.k;
     // Neu holen höchstens einmal je Minute (unbekannte kid).
     if (neu && this.jwks && this.jwks.fuer === d.jwks_uri && this.jetzt - this.jwks.geholt < 60_000) return this.jwks.k;
-    const r = await this.abruf(d.jwks_uri);
+    const r = await this.abruf(d.jwks_uri, undefined, 'schluessel');
     if (!r.ok) throw new Fachfehler(502, t('meldungen.oidc.die-schluessel-des-anbieters', { status: r.status }));
     const k = ((await r.json().catch(() => null)) as { keys?: JsonWebKey[] } | null)?.keys;
     if (!Array.isArray(k)) throw new Fachfehler(502, t('meldungen.oidc.die-schluessel-des-anbieters-2'));
@@ -282,7 +290,7 @@ export class Oidc {
     if (!secret) body.set('client_id', e.clientId);
     else if (methoden.includes('client_secret_basic')) koepfe.authorization = `Basic ${Buffer.from(`${encodeURIComponent(e.clientId)}:${encodeURIComponent(secret)}`).toString('base64')}`;
     else { body.set('client_id', e.clientId); body.set('client_secret', secret); }
-    const r = await this.abruf(d.token_endpoint, { method: 'POST', headers: koepfe, body: body.toString() });
+    const r = await this.abruf(d.token_endpoint, { method: 'POST', headers: koepfe, body: body.toString() }, 'token');
     const antwort = (await r.json().catch(() => null)) as { id_token?: string; error?: string; error_description?: string } | null;
     if (!r.ok || !antwort?.id_token) {
       throw new Fachfehler(502, t('meldungen.oidc.der-anbieter-hat-den', { wert: antwort?.error_description || antwort?.error || t('meldungen.oidc.http', { status: r.status }) }));

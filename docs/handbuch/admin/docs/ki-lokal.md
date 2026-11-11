@@ -147,6 +147,8 @@ Geschätzt für ein **UGREEN DXP4800 Plus** (Intel Pentium Gold 8505, 5 Kerne, 1
 
 ## Messwerte { #messwerte }
 
+Wie lange der KI-Dienst in deiner Installation wirklich braucht, zeigt **Werkbank → Systemzustand → [Externe Dienste](speicherplatz.md#externe-dienste)**: je Paket Mittel, p50 und p95, die Zeit bis zur ersten Antwort (bis das Modell zu schreiben beginnt), Fehler, Zeitüberschreitungen und die Token, die Ollama meldet. Liegt die Gesamtdauer weit über der ersten Antwort, rechnet das Modell – dann hilft ein kleineres Modell oder Grafik. Ein lokaler Dienst kostet nichts; die Token unter [KI-Kosten](speicherplatz.md#ki-kosten) zeigen trotzdem, wie viel das NAS leistet.
+
 Gemessene Werte tragen wir hier ein – jede Zeile mit Datum und Versionen, denn neue Versionen von Ollama und neue Modelle können schneller oder langsamer sein.
 
 | Gerät | CPU / Grafik | RAM | Variante | Modell | Lesen Token/s | Schreiben Token/s | Frag: erstes Wort / ganz | Ausfüllen (1 Seite) | Speicher | Ollama / Ablago | Stand |

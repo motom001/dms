@@ -38,6 +38,7 @@ import type { Klassifizierung } from '../../shared/src/klassifizierung';
 import type { WortSeite } from '../../shared/src/archivfassung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../shared/src/umwandlung';
 import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../shared/src/fragen';
+import type { BudgetStand, ExternAufruf, ExternerDienst, ExternKennzahlen, KostenEinstellung } from '../../shared/src/extern';
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import type { OrganisationStand } from '../../shared/src/organisation';
 
@@ -251,6 +252,10 @@ export interface FragenStand { verfuegbar: boolean; paket: string | null; grenze
  */
 export async function frageStellen(frage: string, verlauf: VerlaufEintrag[], zeile: (z: FrageZeile) => void, signal?: AbortSignal): Promise<void> {
   let r: Response;
+  const start = performance.now();
+  const seite = messung.seite;
+  // Messpanel (#565): Die letzte Zeile bringt die Zeiten der externen Dienste mit.
+  const mitMessung = (z: FrageZeile) => { if (z.art === 'fertig' || z.art === 'fehler') messung.erfasseStrom(seite, { methode: 'POST', url: '/api/fragen', status: r.status, start, extern: z.extern }); zeile(z); };
   try {
     r = await fetch('/api/fragen', { method: 'POST', credentials: 'same-origin', signal, headers: { 'x-dms': '1', 'x-sprache': sprache(), 'content-type': 'application/json' }, body: JSON.stringify({ frage, verlauf }) });
   } catch (e) {
@@ -272,11 +277,23 @@ export async function frageStellen(frage: string, verlauf: VerlaufEintrag[], zei
     while ((i = rest.indexOf('\n')) >= 0) {
       const z = rest.slice(0, i).trim();
       rest = rest.slice(i + 1);
-      if (z) zeile(JSON.parse(z) as FrageZeile);
+      if (z) mitMessung(JSON.parse(z) as FrageZeile);
     }
     if (done) break;
   }
-  if (rest.trim()) zeile(JSON.parse(rest) as FrageZeile);
+  if (rest.trim()) mitMessung(JSON.parse(rest) as FrageZeile);
+}
+
+/** Externe Dienste (#565): je Dienst und Paket Kennzahlen, die letzten Aufrufe – nur Metadaten. */
+export interface ExternZeile extends ExternAufruf { id?: number; zeit: string; benutzerId: string | null; kosten: number }
+export interface ExternUebersicht { stunden: number; dienste: Array<{ dienst: ExternerDienst; paket: string | null } & ExternKennzahlen>; letzte: ExternZeile[] }
+export type ExterneDiensteStand = ExternUebersicht & { budget: BudgetStand & { waehrung: string }; pakete: Record<string, string> };
+export interface ExternSummeZeile { schluessel: string | null; anzahl: number; fehler: number; ms: number; tokenEin: number; tokenAus: number; kosten: number }
+export interface ExternKosten {
+  monat: string; monate: string[]; einstellung: KostenEinstellung; gesamt: ExternSummeZeile; budget: BudgetStand & { waehrung: string };
+  jePaket: ExternSummeZeile[]; jePerson: ExternSummeZeile[]; jeFunktion: ExternSummeZeile[]; teuerste: ExternZeile[];
+  rohTage: number; monateAufbewahrt: number;
+  personen: Record<string, string>; pakete: Record<string, string>; kiPakete: Array<{ id: string; name: string }>;
 }
 
 /** Vektoren in der Werkbank (#442). */
@@ -950,6 +967,11 @@ export const api = {
     anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),
   debug: (an: boolean) => anfrage<DebugStand>('PUT', '/api/werkbank/debug', { an }),
   datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
+  /** Externe Dienste (#565): Kennzahlen der letzten Stunden, Budget; Kosten je Monat; je Paket. */
+  extern: (stunden: number) => anfrage<ExterneDiensteStand>('GET', `/api/werkbank/system/extern?stunden=${stunden}`),
+  externKosten: (monat?: string) => anfrage<ExternKosten>('GET', `/api/werkbank/system/extern/kosten${monat ? `?monat=${encodeURIComponent(monat)}` : ''}`),
+  setzeExternKosten: (e: KostenEinstellung) => anfrage<ExternKosten>('PUT', '/api/werkbank/system/extern/kosten', e),
+  paketExtern: (id: string, stunden: number) => anfrage<ExternUebersicht>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/extern?stunden=${stunden}`),
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
   /** Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk, Wartezeit der Ereignisschleife (#477). */

@@ -1111,5 +1111,8 @@
   "bedingungspruefung.und-stelle": "{wo}: {grund}",
   "bedingungspruefung.sicht-fehlt": "sicht fehlt.",
   "bedingungspruefung.von-fehlt": "von ist kein gültiger Empfänger.",
-  "bedingungspruefung.gruppe-in-gruppe": "Eine Gruppe in einer Gruppe gibt es nicht."
+  "bedingungspruefung.gruppe-in-gruppe": "Eine Gruppe in einer Gruppe gibt es nicht.",
+  "extern.preis-bereich": "Bitte einen Preis von 0 bis {max} eingeben.",
+  "extern.waehrung": "Bitte eine Währung mit drei Buchstaben angeben, z. B. EUR.",
+  "extern.budget-bereich": "Bitte ein Budget über 0 und höchstens {max} eingeben – oder das Feld leer lassen."
 }

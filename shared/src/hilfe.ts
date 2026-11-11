@@ -167,6 +167,9 @@ export const HILFE = {
   'wartungsmodus.sofort': admin('wartungsmodus/', 'Jetzt sofort sperren', 'jetzt-sofort-sperren'),
   'werkbank.speicherplatz': admin('speicherplatz/', 'Systemzustand'),
   'werkbank.auslastung': admin('speicherplatz/', 'Auslastung', 'auslastung'),
+  // Externe Dienste und KI-Kosten (#565).
+  'werkbank.extern': admin('speicherplatz/', 'Externe Dienste', 'externe-dienste'),
+  'werkbank.kikosten': admin('speicherplatz/', 'KI-Kosten und Budget', 'ki-kosten'),
   'werkbank.grenzen': admin('technik/', 'Viele gleichzeitige Anfragen', 'last'),
   'werkbank.erweiterungen': admin('suche/', 'Erweiterungen der Datenbank', 'erweiterungen-der-datenbank'),
   'werkbank.verkleinern': admin('speicherplatz/', 'Große PDFs verkleinern', 'grosse-pdfs-verkleinern'),

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { WIEDERHOLEN_MIN } from '../../../shared/src/ereignisse';
 import type { Benutzer } from '../../../shared/src/model';
-import { hatNetz, hatSchnittstelle, type InstalliertesPaket, type LaeuferZustand, type PaketCode, type Schnittstelle } from '../../../shared/src/pakete';
+import { hatNetz, hatSchnittstelle, istKiPaket, type InstalliertesPaket, type LaeuferZustand, type PaketCode, type Schnittstelle } from '../../../shared/src/pakete';
 import { adressfelder, pruefeAdresse } from '../../../shared/src/paketeinstellungen';
 import { liesModell, liesVektor, SCHWELLE_STANDARD } from '../vektoren';
 import type { ApiSchluesselDienst } from '../apischluessel';
@@ -18,8 +18,9 @@ import type { Konten } from '../konten';
 import type { PaketLaeufer } from '../pakete';
 import { ladeArgumente } from './modul';
 import { protokoll } from '../protokoll';
+import { extern } from '../externmessung';
 import { senkePrioritaet, senkeProzess } from '../hintergrund';
-import type { AnLaeufer, Grenzen, NetzEintrag, VomLaeufer } from './prozess';
+import type { AnLaeufer, Grenzen, NetzEintrag, NetzMessung, VomLaeufer } from './prozess';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
 import { t, t as tx } from '../sprache';
@@ -140,6 +141,19 @@ type Ergebnis = Extract<VomLaeufer, { art: 'ergebnis' }> & { ohneVersuch?: boole
 /** Ergebnis ohne Aufruf (Läufer beendet, abgestürzt, Zeit abgelaufen). ohneVersuch: zählt nicht als Versuch des Ereignisses. */
 const abbruch = (fehler: string, ohneVersuch = false): Ergebnis => ({ art: 'ergebnis', nr: 0, paket: '', ok: false, rc: null, text: '', ms: 0, speicherMB: 0, fehler, ohneVersuch });
 
+/**
+ * Externe Dienste (#565): Dauer, Bytes und Token der Netzaufrufe eines Aufrufs, im Läufer gemessen. KI-Dienst ist ein
+ * Paket mit Inhalten und Netz (#796); Funktion ist die Schnittstelle bzw. die Art des Ereignisses –
+ * nie ein Text des Pakets. Ereignisse laufen im Hintergrund: ohne Anfrage und Person.
+ */
+function erfasseNetz(p: InstalliertesPaket, a: { ereignis: boolean; funktion?: string; art: string }, m: NetzMessung | undefined) {
+  if (!m?.anzahl) return;
+  extern.erfasse({
+    dienst: istKiPaket(p.laeufer) ? 'ki' : 'netz', paket: p.id, funktion: a.ereignis ? a.art : a.funktion ?? 'aktion',
+    ersteMs: m.ersteMs, ms: m.ms, hin: m.hin, zurueck: m.zurueck, ergebnis: m.zeit ? 'zeit' : m.fehler ? 'fehler' : 'ok', tokenEin: m.tokenEin, tokenAus: m.tokenAus,
+  }, { hintergrund: a.ereignis });
+}
+
 export class Paketlaeufer implements PaketLaeufer {
   private kind: ChildProcess | null = null;
   private bereit = false;
@@ -255,8 +269,11 @@ export class Paketlaeufer implements PaketLaeufer {
    */
   async mappenaktion(paket: string, eingang: Record<string, unknown>, a: { ms: number; zugang: Zugang; bezeichnung: string }): Promise<{ ok: boolean; text: string; fehler: string | null; dateien: AktionsDatei[] }> {
     if (this.o.pausiert?.()) return { ok: false, text: '', fehler: t('meldungen.verwaltung.der-paket-laeufer-laeuft'), dateien: [] };
+    // Monatsbudget mit harter Grenze (#565): auch Paket-Aktionen kostenpflichtiger KI-Pakete pausieren bis zum Monatsanfang.
+    try { await extern.pruefePause(paket); } catch (e) { return { ok: false, text: '', fehler: (e as Error).message, dateien: [] }; }
     const dateien: AktionsDatei[] = [];
-    const r = await this.rufe(paket, 'aktion', eingang, { ms: a.ms, vorrang: true, bezeichnung: a.bezeichnung, zugang: { zugang: a.zugang, dateien }, ohneInhalt: true });
+    const funktion = typeof eingang.mappenaktion === 'string' ? `mappenaktion:${eingang.mappenaktion}` : 'mappenaktion';
+    const r = await this.rufe(paket, 'aktion', eingang, { ms: a.ms, vorrang: true, bezeichnung: a.bezeichnung, zugang: { zugang: a.zugang, dateien }, ohneInhalt: true, funktion });
     return { ok: r.ok, text: r.text, fehler: r.fehler, dateien };
   }
 
@@ -479,7 +496,9 @@ export class Paketlaeufer implements PaketLaeufer {
   private async vektorAnfrage(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array | null; schwelle: number } | null> {
     const paket = this.vektorPaket();
     if (!paket || !this.laeuft()) return null;
-    const r = await this.rufe(paket, 'aktion', { aktion: 'dms:vektor', text: text.slice(0, 2000) }, { ms, vorrang: true, bezeichnung: text ? t('meldungen.verwaltung.vektor-eines-suchbegriffs') : t('meldungen.verwaltung.modell-abfragen') });
+    // Harte Grenze des Monatsbudgets (#565): ohne Vektor sucht die Suche wie ohne Paket.
+    if (extern.pausiertBis(paket)) return null;
+    const r = await this.rufe(paket, 'aktion', { aktion: 'dms:vektor', text: text.slice(0, 2000) }, { ms, vorrang: true, funktion: 'vektoren', bezeichnung: text ? t('meldungen.verwaltung.vektor-eines-suchbegriffs') : t('meldungen.verwaltung.modell-abfragen') });
     if (!r.ok) return null;
     try {
       const j = JSON.parse(r.text) as { modell?: unknown; vektor?: unknown; schwelle?: unknown };
@@ -558,13 +577,15 @@ export class Paketlaeufer implements PaketLaeufer {
   async schnittstelle(paket: string, aktion: string, eingang: Record<string, unknown>, opt: { bezeichnung: string; teil?: (text: string) => void; ms?: number }): Promise<{ text: string; ms: number }> {
     if (this.o.pausiert?.()) throw new Error('Während der Wartung laufen keine Pakete.');
     if (!this.laeuft()) throw new Error('Der Paket-Läufer läuft gerade nicht.');
-    const r = await this.rufe(paket, 'aktion', { ...eingang, aktion }, { vorrang: true, ohneInhalt: true, bezeichnung: opt.bezeichnung, ...(opt.teil ? { teil: opt.teil } : {}), ...(opt.ms ? { ms: opt.ms } : {}) });
+    // Monatsbudget mit harter Grenze (#565): kostenpflichtige KI-Funktionen pausieren bis zum Monatsanfang.
+    await extern.pruefePause(paket);
+    const r = await this.rufe(paket, 'aktion', { ...eingang, aktion }, { vorrang: true, ohneInhalt: true, bezeichnung: opt.bezeichnung, funktion: aktion.replace(/^dms:/, ''), ...(opt.teil ? { teil: opt.teil } : {}), ...(opt.ms ? { ms: opt.ms } : {}) });
     if (!r.ok) throw new Error(r.fehler ?? 'Das Paket hat nicht geantwortet.');
     return { text: r.text, ms: r.ms };
   }
 
   /** Einen Aufruf ausführen und auf das Ergebnis warten. ms: eigene, kürzere Wartezeit; vorrang: vor die Warteschlange. */
-  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'> } = {}): Promise<Ergebnis> {
+  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'>; funktion?: string } = {}): Promise<Ergebnis> {
     if (!this.kind || !this.bereit) return abbruch(t('meldungen.verwaltung.der-paket-laeufer-laeuft'), true);
     const p = this.pakete.find((x) => x.id === paket);
     if (!p) throw new Error('Dieses Paket hat keinen Code.');
@@ -588,6 +609,7 @@ export class Paketlaeufer implements PaketLaeufer {
     s.letzte.push({ zeit: s.letzterAufruf, art: opt.bezeichnung ?? (art === 'aktion' ? `Aktion ${String(eingang.aktion)}` : String(eingang.art)), ok: r.ok, text: anzeige.slice(0, 300) });
     if (s.letzte.length > LETZTE) s.letzte.splice(0, s.letzte.length - LETZTE);
     if (!r.ok) log.warn(`Paket ${paket}: Aufruf fehlgeschlagen`, { paket, art, fehler: r.fehler, ms: r.ms });
+    erfasseNetz(p, { ereignis: art === 'ereignis', funktion: opt.funktion, art: String(eingang.art) }, r.messung);
     // Netzaufrufe (#807): ins Protokoll des Pakets und eine Zeile mit der Summe ins Systemprotokoll – Hosts und Bytes, nie Inhalte.
     if (r.netz?.length) {
       merkeNetz(s.protokoll, r.netz);
@@ -615,7 +637,8 @@ export class Paketlaeufer implements PaketLaeufer {
       const jePaket = new Map<string, typeof liste>();
       for (const e of liste) jePaket.set(e.paketId, [...(jePaket.get(e.paketId) ?? []), e]);
       for (const [paket, es] of jePaket) {
-        if (this.zustellend.has(paket)) continue;
+        // Harte Grenze des Monatsbudgets (#565): Ereignisse kostenpflichtiger KI-Pakete warten bis zum Monatsanfang.
+        if (this.zustellend.has(paket) || extern.pausiertBis(paket)) continue;
         this.zustellend.add(paket);
         void this.stellePaketZu(paket, es)
           .catch((e) => log.error('Paket-Läufer: Zustellung unterbrochen', { paket, fehler: (e as Error).message }))
