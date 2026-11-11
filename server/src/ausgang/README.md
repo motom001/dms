@@ -28,8 +28,8 @@ Export (Tabelle, ZIP, PDF) und das WebDAV-Laufwerk. Schicht 3 der Zielaufteilung
 
 **Regeln**
 
-- Ein neuer Weg nach draußen fragt `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar`, bevor irgendetwas geschieht –
-  nie eine eigene Prüfung. Er steht im Entwicklerhandbuch unter *Wege nach draußen*.
+- Ein neuer Weg nach draußen fragt `dienst.ausgang.pruefeAusgang` bzw. `dienst.ausgang.mitnehmbar`, bevor irgendetwas
+  geschieht – nie eine eigene Prüfung. Er steht im Entwicklerhandbuch unter *Wege nach draußen*.
 - Reihenfolge bleibt: E-Mail erst prüfen, dann Mailserver, versenden, Post anlegen, Historie; Export erst Ansicht und
   Prüfstelle, dann Verwaltungsmodus-Spur, Datei, Historie.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity` und `max-params` in

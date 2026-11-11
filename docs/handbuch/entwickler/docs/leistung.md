@@ -8,7 +8,7 @@ Bei **10.000 Mappen und 20.000–30.000 Dokumenten** (Volltext je Dokument 5–5
 
 | Vorgang | Grenze |
 |---|---:|
-| Mappe öffnen (`Dienst.holeMappe`) | 200 ms |
+| Mappe öffnen (`MappenDienst.holeMappe`) | 200 ms |
 | Dokumentliste einer Mappe (`listeDokumente`) | 200 ms |
 
 Das gilt auch, **während** im selben Prozess Demo-Daten mit Dokumenten entstehen und die Texterkennung läuft. Gemessen auf einem gewöhnlichen Rechner liegen die Werte heute im einstelligen Millisekundenbereich; die Grenze lässt Platz für ein langsames NAS.
@@ -55,7 +55,7 @@ vor;dur=0.1, app;dur=211.5, db;dur=154.7;desc="8", rechte;dur=2.6, json;dur=0.7,
 | `vor` | Eingang der Anfrage (Hook `onRequest`) bis Beginn des Handlers |
 | `app` | Handler, enthält `db` und `rechte` |
 | `db` | Summe der Datenbankzugriffe (`Messung.umhuelle`), in `desc` ihre Anzahl |
-| `rechte` | Rechte auswerten (`Dienst.zugriff`, `rechteAn`, `rechteAnVielen`, `lesbare`), überlappende Aufrufe einmal, ohne die Datenbankzugriffe darin (`rechteMessen` in `messung.ts`) |
+| `rechte` | Rechte auswerten (`ZugriffDienst.zugriff`, `rechteAn`, `rechteAnVielen`, `lesbare`), überlappende Aufrufe einmal, ohne die Datenbankzugriffe darin (`rechteMessen` in `messung.ts`) |
 | `json` | `reply.send` bis zum Hook `onSend` – die Antwort in Text umwandeln |
 | `gesamt` | Eingang bis `onSend` |
 | `zs` | Nur bei Anfragen, die die Zahlen der Ansichten brauchen (#512): Dauer und in `desc` `treffer` (Zwischenspeicher) oder `neu` (gezählt) |
@@ -96,7 +96,7 @@ Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens
 
 ## Zahlen der Ansichten (#512)
 
-Die Zahlen neben den Ansichten (`GET /api/sichten` → `Dienst.zaehler`) zählen mit **einer** Abfrage alle sichtbaren Ansichten per `count(*) FILTER (WHERE …)` über alle Mappen des Haushalts, dazu Typen, Eingang, Favoriten und Papierkorb – bei 50.000 Mappen 120–150 ms allein, unter Last der Seite 150–260 ms. Zwei Mittel:
+Die Zahlen neben den Ansichten (`GET /api/sichten` → `SichtenDienst.zaehler`) zählen mit **einer** Abfrage alle sichtbaren Ansichten per `count(*) FILTER (WHERE …)` über alle Mappen des Haushalts, dazu Typen, Eingang, Favoriten und Papierkorb – bei 50.000 Mappen 120–150 ms allein, unter Last der Seite 150–260 ms. Zwei Mittel:
 
 1. **Nicht blockieren.** Die Oberfläche (`web/src/daten.tsx`) lädt Typen, Personen, Ansichten und den Rahmen (`GET /api/sichten/rahmen`: Papierkorb-Tage, Ansicht „Neue Post“ – ohne Zählen) und zeigt die Ablage; die Zahlen kommen danach (`zahlenDa`). Bis dahin steht an ihrer Stelle „…“ (`ZahlWarte`, Kacheln der Startseite ebenso), es springt nichts. Beim Neuladen bleiben die alten Zahlen stehen, bis die neuen da sind. Was aus den Zahlen etwas ableitet (Suchfeld der Liste, Belegung beim Entfernen eines Feldes), wartet nicht auf sie.
 2. **Zwischenspeichern** (`server/src/zaehlerspeicher.ts`). Der **Stand des Haushalts** (`Haushaltsstand`) zählt hoch, sobald eine ändernde Methode des Repos fertig ist – der `Dienst` umhüllt sein Repo damit (`transaktion` zählt als Ganzes). Lesende und folgenlose Methoden (Historie, Ereignisse, Texterkennung, „gesehen“ …) stehen in `OHNE_FOLGEN`; eine neue Methode zählt, bis sie dort steht. Der Schlüssel je Eintrag: Benutzer, Rolle und ein Fingerabdruck von Lesefilter, verborgenen Ansichten und eigenen Rollen (seit #742 ein Fingerabdruck der Rechte ohne die Person, siehe [unten](#sparsam-gemerkt)); gültig bei gleichem Stand und gleichem `heute`, also höchstens bis Mitternacht. Ansichten mit Datumsbezug (`heute`, Monat, Jahr, Frist) gelten höchstens 5 Minuten (`ZEITABHAENGIG_MS`), alle anderen höchstens 30 Minuten (`HOECHSTENS_MS`, Sicherheitsnetz für Änderungen an der Datenbank vorbei, etwa von Hand). Gleichzeitige Anfragen mit gleichem Schlüssel warten auf dieselbe Zählung. Ein Treffer kostet etwa 7 ms (Sitzung, Rechte, Ansichten laden), neu zählen 110–150 ms.
@@ -287,7 +287,7 @@ Lasttest mittel auf dem Testrechner (2 Kerne, Lasttest auf demselben Rechner, Po
 3. **Dublettenprüfung über einen Index.** `dms_gleichwerte(werte)` liefert je Text- und Zahlwert einen Fingerabdruck aus Feldschlüssel und `lower(trim(wert))` (md5 als uuid); der GIN-Index darüber findet gleiche Werte, danach wird genau verglichen. `findeDoppelte` prüft viele Mappen in einer Abfrage (Passung nach dem Speichern).
 4. **Speichern in einem Zug.** Anlegen und Ändern laufen in einer Transaktion (bei Verklemmung von vorn), der Titel steht im selben UPDATE wie die Werte. Der Ereignisverteiler setzt „verteilt“ je Abholung in einer Anweisung.
 
-Gemessen mit 50.000 Demo-Mappen und 25.000 Dokumenten (Mess-Skript, Median aus 7 Läufen, `Dienst.seite` bzw. `aendereMappe`, 2 Kerne, PostgreSQL 16):
+Gemessen mit 50.000 Demo-Mappen und 25.000 Dokumenten (Mess-Skript, Median aus 7 Läufen, `SichtenDienst.seite` bzw. `aendereMappe`, 2 Kerne, PostgreSQL 16):
 
 | Fall | vorher | nachher |
 |---|---:|---:|
@@ -421,7 +421,7 @@ Im Alltag bremsen selten viele Menschen gleichzeitig, sondern große Stapel Scan
 - **Kein `SELECT *` auf Tabellen mit großen Spalten.** Dokumente immer mit `DOKUMENT_SPALTEN`, Mappen mit `MAPPEN_SPALTEN` (ohne `suchtext`, #615); den Volltext nur über `volltext(id)` oder gebündelt über `volltexte(ids)` lesen. EXPLAIN zeigt das nicht: Der Volltext liegt ausgelagert (TOAST) und wird erst beim Senden an den Server entpackt.
 - **Nicht alle Mappen laden, um im Arbeitsspeicher zu filtern.** Was sich in SQL eingrenzen lässt (Datum im Zeitraum, offene Aufgaben), grenzt die Abfrage ein (#477: `mappenMitDatum`, Eingang im Zähler).
 - **Keine Zugriffe in Schleifen über Mappen oder Dokumente.** Für Massenarbeit gibt es gebündelte Methoden (`dokumenteVon`, `volltexte`, `versionenVonDokumenten`, `notizenVon`, `aufgabenVonMappen`, `historieVon`). Ein Zugriff kostet auch lokal etwa eine halbe Millisekunde – bei 10.000 Mappen sind das Sekunden.
-- **Nach Massenläufen die Statistik auffrischen:** `Dienst.aktualisiereStatistik()` (Demo-Daten erzeugen und entfernen; die Wiederherstellung macht es selbst). Für `dokumente` nur über die Spalten in `STATISTIK_SPALTEN`: Ohne Spaltenliste berechnet PostgreSQL auch die Statistik des Index `to_tsvector('german', volltext)` – über eine Minute bei 20.000 Dokumenten statt 0,1 Sekunden.
+- **Nach Massenläufen die Statistik auffrischen:** `SichtenDienst.aktualisiereStatistik()` (Demo-Daten erzeugen und entfernen; die Wiederherstellung macht es selbst). Für `dokumente` nur über die Spalten in `STATISTIK_SPALTEN`: Ohne Spaltenliste berechnet PostgreSQL auch die Statistik des Index `to_tsvector('german', volltext)` – über eine Minute bei 20.000 Dokumenten statt 0,1 Sekunden.
 - **Lange Rechenarbeit gibt nach.** Server und Oberfläche teilen sich einen Node-Prozess: Was die Ereignisschleife blockiert, verzögert jede Anfrage – und erscheint in der Messung der Datenbankzugriffe als „langer Zugriff“, obwohl die Datenbank schnell war. Schleifen über viele Elemente geben mit `takt()` (`server/src/demo.ts`) oder `setImmediate` nach; große Daten werden mit dem asynchronen `zlib` gepackt statt im Hauptthread.
 - **Große Dateien als Strom** (#746): Uploads bis 100 MB gehen in eine temporäre Datei, die Prüfsumme entsteht beim Lesen (`strom: true` an der Route, `nimmAuf`). Lange Listen (CSV, JSON Lines) schreibt der Vollexport Zeile für Zeile mit Gegendruck und Pausen nach Rechenzeit (`Zeilen` in `vollexport.ts`), statt sie als einen Text zu bauen. Große Tabellen gehen nicht als Nachricht an den Arbeiter (die Kopie hält den Hauptfaden fest), sondern als Datei, die der Arbeiter selbst liest (`exportTabelleAusDatei`).
 - **Schwere Arbeit in den Arbeiter.** Was Sekunden rechnet (PDF, große Tabellen), gehört in den [Arbeiter-Pool](aufbau.md#arbeiter-pool) (#542), nicht in den Hauptfaden – auch nicht mit Pausen.
