@@ -3,6 +3,7 @@ import { MAX_DATEIGROESSE, NOTIZ_MAX, POST_KANAL } from '../../shared/src/model'
 import type { Dienst } from './dienst';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
+import { ohne } from '../../shared/src/fassungen';
 import { protokoll } from './protokoll';
 import { imapGemessen } from './externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
@@ -174,6 +175,11 @@ export function pruefePostfach(x: unknown, alt: Postfach | null, verschluessele:
   };
 }
 
+/** Stand eines Postfachs für die Fassungen (#1006): ohne Id und ohne Passwort – nur, ob eines gesetzt ist. */
+export function postfachStand(p: Postfach): Record<string, unknown> & { name: string; passwortGesetzt: boolean } {
+  return { ...ohne(p, 'id', 'passwort'), passwortGesetzt: !!p.passwort };
+}
+
 /** Gleicher Server, Port und gleiche Verschlüsselung – nur dann darf ein gespeichertes Geheimnis mit (#358). */
 export function gleicherServer(a: Pick<Postfach, 'server' | 'port' | 'verschluesselung'>, b: Pick<Postfach, 'server' | 'port' | 'verschluesselung'>): boolean {
   return a.server.toLowerCase() === b.server.toLowerCase() && a.port === b.port && a.verschluesselung === b.verschluesselung;
@@ -208,7 +214,17 @@ export class Postfaecher {
   private naechster = new Map<string, number>();
   private gesperrt = false;
 
-  constructor(private d: PostfachDeps) { this.d = { ...d, verbinde: imapGemessen(d.verbinde) }; }
+  constructor(private d: PostfachDeps) {
+    this.d = { ...d, verbinde: imapGemessen(d.verbinde) };
+    // Fassungen (#1006): ohne Passwort – nur, ob eines gesetzt ist. Wiederherstellen über das normale Speichern; das
+    // Passwort bleibt, wie es ist (geht nur an denselben Server, #358).
+    d.dienst.fassungen.registriere({
+      art: 'postfach',
+      stand: async (id) => { const p = (await this.liste()).find((x) => x.id === id); return p && { name: p.name, daten: postfachStand(p) }; },
+      alle: async () => (await this.liste()).map((p) => p.id),
+      stelleHer: async (id, daten, o) => { await this.speichere({ ...(daten as Record<string, unknown>), passwort: undefined, unverschluesseltBestaetigt: true }, id, o.von.email ?? ''); },
+    });
+  }
   private jetzt() { return this.d.jetzt?.() ?? Date.now(); }
 
   async liste(): Promise<Postfach[]> { return ((await this.d.einstellungen.lies('postfaecher')) as Postfach[] | null) ?? []; }
@@ -257,6 +273,7 @@ export class Postfaecher {
     if (x && typeof x === 'object' && typeof (x as { fuer?: unknown }).fuer === 'string' && (x as { fuer: string }).fuer && !(await this.d.dienst.eingangskanaele.gibtMappe((x as { fuer: string }).fuer))) throw new Fachfehler(422, t('meldungen.postfach.diesen-benutzer-gibt-es'), { orte: ['grunddaten'] });
     const neu = pruefePostfach(x, alt, this.d.verschluessele);
     await this.speichereListe(alt ? l.map((p) => (p.id === alt.id ? neu : p)) : [...l, neu]);
+    await this.d.dienst.kern.fassungen.halte('postfach', neu.id);
     // Verbindung oder Ordner geändert: wieder von vorn zählen (Message-IDs schützen vor Doppelten).
     if (alt && (alt.server !== neu.server || alt.benutzer !== neu.benutzer || alt.ordner !== neu.ordner)) {
       const m = await this.merker(neu.id);
@@ -274,7 +291,7 @@ export class Postfaecher {
     const l = await this.liste();
     const p = l.find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.postfach.dieses-postfach-gibt-es'));
-    await this.speichereListe(l.filter((x) => x.id !== id));
+    await this.d.dienst.kern.fassungen.geloescht('postfach', id, () => this.speichereListe(l.filter((x) => x.id !== id)));
     for (const k of ['stand', 'merker']) await this.d.einstellungen.schreibe(`postfach_${k}_${id}`, null);
     if (p.anmeldung === 'oauth') await this.d.oauth?.abmelden(id, von);
     await this.d.oauth?.vergiss(id);

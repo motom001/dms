@@ -6,7 +6,7 @@ Ansichten pflegst du unter **Werkbank → Ansichten**. Links steht der Baum, rec
 
 ![Eine Ansicht mit Bedingung in der Werkbank](bilder/werkbank-sichten.png)
 
-Der Editor ist wie beim [Mappentyp](mappentypen.md#aufbau-des-editors) in Bereiche gegliedert: **Grunddaten → Mappentypen → Trefferliste → Bedingungen → Berechtigungen → Testlauf**. Jeder Bereich lässt sich einklappen und zeigt dann eine Kurzinfo, z. B. die Elternansicht, die Mappentypen oder „erbt von „Haus“ · 1 eigene Regel“. Eine neue Ansicht ist ganz aufgeklappt, eine bestehende startet eingeklappt; dein Gerät merkt sich, was du aufklappst. Die Sprungleiste oben führt zu jedem Bereich und markiert Bereiche mit Fehler.
+Der Editor ist wie beim [Mappentyp](mappentypen.md#aufbau-des-editors) in Bereiche gegliedert: **Grunddaten → Mappentypen → Trefferliste → Bedingungen → Berechtigungen → Testlauf → Fassungen** ([wer hat was geändert](fassungen.md)). Jeder Bereich lässt sich einklappen und zeigt dann eine Kurzinfo, z. B. die Elternansicht, die Mappentypen oder „erbt von „Haus“ · 1 eigene Regel“. Eine neue Ansicht ist ganz aufgeklappt, eine bestehende startet eingeklappt; dein Gerät merkt sich, was du aufklappst. Die Sprungleiste oben führt zu jedem Bereich und markiert Bereiche mit Fehler.
 
 ## Grunddaten
 

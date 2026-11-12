@@ -74,3 +74,4 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Suche](bausteine-suche.md) | Das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |
 | [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Suchen“ auf der Startseite |
 | [Bereiche](bausteine-bereiche.md) | Das Muster „Editor rechts: Sprungleiste + Bereiche“: Sprungleiste mit „Alle aufklappen“, Bereiche zum Auf- und Zuklappen, Gedächtnis je Gerät, Fehler öffnen ihren Bereich |
+| [Fassungen](bausteine-fassungen.md) | Wer hat wann was geändert: Liste mit lesbaren Änderungen, zwei Fassungen vergleichen, wiederherstellen mit Vorschau; gelöschte Einträge unter einer Liste |

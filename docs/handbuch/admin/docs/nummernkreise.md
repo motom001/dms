@@ -8,7 +8,7 @@ Das Suchfeld über der Liste sucht in Name, Kennung und Muster, im Mappentyp und
 
 ## Aufbau des Editors { #aufbau-des-editors }
 
-Ein gespeicherter Nummernkreis ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten → Stand → Aufkleber drucken** (nur bei der Archivnummer) **→ Verwendet in**. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa das Muster oder die nächste Nummer; was du aufklappst, merkt sich dein Gerät. Ein neuer Nummernkreis hat nur die Grunddaten – ohne Sprungleiste.
+Ein gespeicherter Nummernkreis ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten → Stand → Aufkleber drucken** (nur bei der Archivnummer) **→ Verwendet in → Fassungen** ([wer hat was geändert](fassungen.md); Zählerstände gehören nicht dazu). Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa das Muster oder die nächste Nummer; was du aufklappst, merkt sich dein Gerät. Ein neuer Nummernkreis hat nur die Grunddaten – ohne Sprungleiste.
 
 Gespeichert wird nur, was in den Grunddaten steht (**Nummernkreis speichern** unten); ein Fehler im Muster markiert die Grunddaten rot. **Zählerstand setzen** und **Aufkleber als PDF** wirken sofort.
 

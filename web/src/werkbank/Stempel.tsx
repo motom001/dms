@@ -4,7 +4,7 @@ import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
-import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
 import { merkeStempelVorlagen } from '../ablage/Stempel';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from '../ablage/StempelVorschau';
 import { t } from '../sprache';
@@ -12,7 +12,7 @@ import {
   DECKKRAFT_HINWEIS_AB, einzeilig, NEUER_STEMPEL, pruefeVorlage, STEMPEL_FARBEN, STEMPEL_LAGEN, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_SEITEN, STEMPEL_TEXT_MAX,
   type Stempel, type StempelFarbe, type StempelLage, type StempelSeiten, type StempelVorlage,
 } from '../../../shared/src/stempel';
-import { Bereich, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
 import { Kopf } from './Kopf';
 
 /**
@@ -61,15 +61,16 @@ export function StempelListe({ z, offen }: { z: StempelZustand; offen?: string }
           })}
         </ul>
       )}
+      <GeloeschteEintraege art="stempel" />
     </>
   );
 }
 
 /** Bereiche einer Stempelvorlage (#1000). */
-type StempelBereich = 'grunddaten' | 'aussehen' | 'vorschau' | 'verwendet';
+type StempelBereich = 'grunddaten' | 'aussehen' | 'vorschau' | 'verwendet' | 'fassungen';
 const stempelBereiche = (neu: boolean): BereichListe<StempelBereich> => [
   ['grunddaten', t('werkbank.stempel.bereich.grunddaten')], ['aussehen', t('werkbank.stempel.bereich.aussehen')], ['vorschau', t('werkbank.stempel.vorschau')],
-  ...(neu ? [] : [['verwendet', t('werkbank.stempel.bereich.verwendet')] as const]),
+  ...(neu ? [] : [['verwendet', t('werkbank.stempel.bereich.verwendet')] as const, ['fassungen', t('oberflaeche.fassungen.titel')] as const]),
 ];
 
 interface Entwurf extends Stempel { name: string }
@@ -94,6 +95,8 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
   const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/stempel', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; neu ohne „Verwendet in“.
   const b = useBereiche(stempelBereiche(neu), 'stempel', neu ? null : id);
+  // Nach dem Wiederherstellen einer Fassung (#1006).
+  useGespeichertNachziehen(gespeichert, e, setE);
   if (!neu && !v) return z.liste ? <div className="leer"><p>{t('werkbank.stempel.diese-vorlage-gibt-es')}</p></div> : <p className="leise">{t('werkbank.stempel.lade')}</p>;
   const fehler = pruefeVorlage(e, (z.liste ?? []).filter((x) => x.id !== v?.id).map((x) => x.name));
   const genutzt = d.typen.filter((mappentyp) => mappentyp.stempel?.vorlage === v?.id);
@@ -143,6 +146,7 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
             : t('werkbank.stempel.keinem-mappentyp-das-stellst')}</p>
         </Bereich>
       )}
+      {v && <Fassungen art="stempel" eintrag={v.id} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={b.klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.stempel.vorlage')} sendet={sendet} ungueltig={Object.keys(fehler).length > 0}
         links={!neu && <Knopf art="link" className="gefahr" gesperrt={genutzt.length > 0 && t('werkbank.stempel.ein-mappentyp-verwendet-sie')} onClick={loeschen}>{t('werkbank.stempel.vorlage-loeschen-2')}</Knopf>} />
     </form>

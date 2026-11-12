@@ -373,6 +373,10 @@ Ein Ordner, den Ablago beobachtet, z. B. für „Scan to Folder“. Jede Datei d
 Ein aufklappbarer Abschnitt unter Werkbank → Pakete, direkt unter den Knöpfen. Aufgeklappt zeigt er „Weitere Quellen“ und „Paket hochladen“ – für Paketentwickler und Ablago ohne Internet. Zu Beginn zugeklappt; der Browser merkt sich je Benutzer, ob er offen ist.  
 Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 
+<a id="fassung"></a>**Fassung** · ~ mit Erklärung · Administratoren  
+Ein gespeicherter Stand eines Eintrags der Werkbank – Mappentyp (mit Rechte-Regeln), Ansicht, Nummernkreis, Stempel-Vorlage, Postfach, Paket-Einstellungen oder Automatisierung – mit Zeitpunkt, wer gespeichert hat (Person, Paket mit Version, Automatisierung, Update von Ablago) und einer lesbaren Liste der Änderungen. Jedes Speichern ergibt eine Fassung; dieselbe Person innerhalb von 10 Minuten bleibt eine. Zwei Fassungen lassen sich vergleichen, eine frühere wiederherstellen – das ist selbst eine neue Fassung. Wird ein Eintrag gelöscht, bleibt seine letzte Fassung mit Löschvermerk als Nachweis.  
+Siehe auch: [Version](#version), [Version von Ablago](#version-von-ablago).
+
 <a id="fehler-nachstellen"></a>**Fehler nachstellen** · ~ mit Erklärung · Administratoren  
 Ein Administrator arbeitet vorübergehend unter dem Konto eines anderen Benutzers, um einen Fehler zu sehen. Zurück geht es mit „Zurück zum eigenen Konto“.
 
@@ -686,6 +690,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Erinnerung | – | `MappenAblauf, Vorlage erinnern` |
 | Erweiterte Suche | – | `Suchformular` |
 | Expertenmodus | Erweiterte Ansicht | `useExperteOffen` |
+| Fassung | Version (für Einstellungen), Revision, Änderungsverlauf | `fassungen, Fassungen` |
 | Fehler nachstellen | Impersonation, Vertretung beenden | `Vertretung` |
 | Feld | – | `Feld` |
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
@@ -758,4 +763,4 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 | Übergeordnete Mappe | Elternmappe, Hauptmappe | `uebergeordneteId, shared/src/teile.ts` |
 
-*Stand: 2026-11-11*
+*Stand: 2026-11-12*

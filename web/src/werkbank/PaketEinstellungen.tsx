@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, MEHRFACH_VERWEISE, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
-import { Feld, FeldGruppe, type FeldVerknuepfung, HakenFeld, Knopf, type KnopfErgebnis } from '../bausteine';
+import { Fassungen, Feld, FeldGruppe, type FeldVerknuepfung, HakenFeld, Knopf, type KnopfErgebnis } from '../bausteine';
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -16,6 +16,8 @@ import { gebietsschema } from '../../../shared/src/sprache';
 type Werte = Record<string, unknown>;
 const zeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : '–');
 let zaehler = 0;
+/** Die Seite hat keine Sprungleiste: Bereiche stehen fest offen. */
+const FEST = { offen: true, umschalten: () => {}, fest: true };
 const neueId = () => `n${Date.now().toString(36)}${(zaehler++).toString(36)}`;
 
 /** Gespeicherte Werte → Formular: Geheimnisse als „behalten“, wenn gesetzt. */
@@ -94,6 +96,9 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
         <dl className="eigenschaften"><dt>{t('werkbank.paketeinstellungen.letzter-lauf')}</dt><dd>{zeit(stand.status?.letzterLauf ?? null)}</dd></dl>
         {stand.status?.meldungen.length ? <ul className="klein">{stand.status.meldungen.map((m, i) => <li key={i}>{m}</li>)}</ul> : <p className="leise klein">{t('werkbank.paketeinstellungen.noch-keine-meldungen')}</p>}
       </section>
+      {/* Fassungen (#1006): wer wann welche Einstellung geändert hat; Geheimnisse nur als „geändert“. */}
+      <Fassungen art="paketeinstellungen" eintrag={id} stand={JSON.stringify(stand.werte)} klappe={FEST}
+        nachher={async () => { const s = await api.paketEinstellungen(id); setStand(s); if (!ent.geaendert) setWerte(zumFormular(s)); }} />
     </div>
   );
 }

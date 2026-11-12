@@ -246,6 +246,7 @@ Some packages need settings – for instance rules by which they assign post, or
 - On **saving**, Ablago checks folder type, required fields, choice values and whether links exist, and shows errors at the field.
 - The package's **actions** appear as buttons (e.g. "Apply rules now"); the package's answer is shown above. A time limit prevents a button from hanging.
 - The **status** (last run, messages) comes from the package itself and is read-only.
+- Below it are the **[versions](fassungen.md)**: who changed which setting when – including the package itself when it is installed or updated. Secrets only appear as “changed”, never with their value.
 
 **Life cycle:**
 

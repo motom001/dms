@@ -932,7 +932,7 @@ Damit erkennt sie ihre eigenen Änderungen und kann Ketten begrenzen. Ein Paket 
 
 ## Automatisierungen (#674) { #automatisierungen }
 
-Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Modell und Prüfungen in `shared/src/automatisierung.ts`, Motor und Speicher in `server/src/automatisierung.ts` (Tabellen `automatisierungen`, `automatisierung_fassungen`, `automatisierung_laeufe`, Migration 061), Texte in `shared/src/sprachen/de/automatisierung.json`.
+Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Modell und Prüfungen in `shared/src/automatisierung.ts`, Motor und Speicher in `server/src/automatisierung.ts` (Tabellen `automatisierungen` und `automatisierung_laeufe`, Migration 061; die Fassungen seit #1006 in `fassungen`, Migration 103), Texte in `shared/src/sprachen/de/automatisierung.json`.
 
 **Modell**
 
@@ -966,7 +966,7 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Mo
 - Keine Selbstauslösung (eigene Änderungen lösen dieselbe Automatisierung nicht aus), Ketten höchstens 3 tief, Bremse 30 Läufe je Minute (dann angehalten), Laufzeit 60 s, 200 Automatisierungen, je Bereich 20 Karten, Verlauf 200 Läufe bzw. 30 Tage.
 - **Bearbeiten geht vor Automatisierung:** Fehlt etwas (Mappentyp, Feld, Ansicht), blockiert das nie das Arbeiten – die Automatisierung wird rot und angehalten (`angehalten.grund = 'fehlerhaft'`), spätestens beim nächsten Lauf oder Zeitplan-Durchgang. Speichern geht nur mit gültigem Stand.
 - Demo-Daten und Beispiele lösen nichts aus (`ohneEreignisse`), in Wartung und Wiederherstellung ruht der Verteiler. Nach einer Wiederherstellung sind alle eingeschalteten Automatisierungen angehalten, bis ein Admin sie wieder einschaltet.
-- Speichern mit `version` (veralteter Stand → 409); jede Fassung steht in `automatisierung_fassungen` und lässt sich wiederherstellen. Im Vollexport: `struktur/automatisierungen.json` mit Änderungsverlauf; in der Sicherung alle Tabellen.
+- Speichern mit `version` (veralteter Stand → 409). Fassungen wie bei allen Einstellungen der Werkbank (#1006, `server/src/fassungen/`, Tabelle `fassungen`): wiederherstellen über das normale Speichern. Im Vollexport: `struktur/automatisierungen.json` (je Automatisierung ihre Fassungen, `version` = Nummer der Fassung) und `struktur/fassungen.json`; in der Sicherung alle Tabellen.
 
 ## Automatisierungsvorlagen und Mappen-Abläufe (#1044) { #ablaufvorlagen }
 

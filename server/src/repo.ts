@@ -11,6 +11,7 @@ import type { Fundstelle } from './geheimnisse';
 import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/src/loeschprotokoll';
 import type { Varianten } from '../../shared/src/suche';
 import type { Seitensprache } from '../../shared/src/seitensprachen';
+import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../shared/src/fassungen';
 import type { Leerseiten } from '../../shared/src/leerseiten';
 import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
 import { t } from './sprache';
@@ -791,6 +792,26 @@ export interface Repo {
   historieArt(art: Historienart, max: number): Promise<Historieneintrag[]>;
   /** Löscht die Historie von Mappen, die vor diesem Zeitpunkt endgültig gelöscht wurden. */
   historieAufraeumen(vor: string): Promise<number>;
+
+  /* ---------- Fassungen (#1006) ---------- */
+  /** Fassungen eines Eintrags, neueste zuerst; höchstens `max`. */
+  fassungen(art: FassungArt, eintrag: string, max?: number): Promise<GespeicherteFassung[]>;
+  /** Anzahl Fassungen eines Eintrags. */
+  zaehleFassungen(art: FassungArt, eintrag: string): Promise<number>;
+  /** Eine Fassung; undefined, wenn es sie nicht gibt. */
+  fassung(art: FassungArt, eintrag: string, nr: number): Promise<GespeicherteFassung | undefined>;
+  /** Die neueste Fassung je Eintrag einer Art (Abgleich beim Start). */
+  letzteFassungen(art: FassungArt): Promise<Map<string, GespeicherteFassung>>;
+  legeFassungAn(f: GespeicherteFassung): Promise<void>;
+  /** Fassung fortschreiben (Zusammenfassen): Stand, Name und letzte Änderung. */
+  schreibeFassungFort(art: FassungArt, eintrag: string, nr: number, d: Pick<GespeicherteFassung, 'name' | 'daten' | 'bis'>): Promise<void>;
+  loescheFassung(art: FassungArt, eintrag: string, nr: number): Promise<void>;
+  /** Eintrag gelöscht: nur die neueste Fassung bleibt, mit Löschvermerk. */
+  vermerkeLoeschung(art: FassungArt, eintrag: string, vermerk: Loeschvermerk): Promise<void>;
+  /** Gelöschte Einträge mit ihrer letzten Fassung, neueste Löschung zuerst. */
+  geloeschteFassungen(arten: readonly FassungArt[]): Promise<GespeicherteFassung[]>;
+  /** Alle Fassungen (Vollexport), nach Art, Eintrag und Nummer. */
+  alleFassungen(): Promise<GespeicherteFassung[]>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -461,7 +461,7 @@ export class MappenAblaeufe {
 
   async stelleWieder(kennung: string, version: number, von: string): Promise<AblaufvorlageAnsicht> {
     const f = (await this.repo.ablaufvorlageFassungen(kennung)).find((x) => x.version === version);
-    if (!f) throw new Fachfehler(404, tAuto('automatisierung.fassung.fehlt'));
+    if (!f) throw new Fachfehler(404, t('meldungen.fassungen.fehlt'));
     return this.aendereVorlage(kennung, { ...f.daten, version: (await this.vorlage(kennung)).version }, von);
   }
 

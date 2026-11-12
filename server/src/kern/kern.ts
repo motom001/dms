@@ -17,6 +17,7 @@ import { t } from '../sprache';
 import { Anlaesse } from './anlaesse';
 import { Historie } from './historie';
 import { Loeschprotokoll } from './loeschprotokoll';
+import type { FassungArt, Urheber } from '../../../shared/src/fassungen';
 
 /** Laufende Transaktion je Aufruf (#404): Repo der Transaktion und was erst nach dem Speichern geschehen soll. */
 const transaktionen = new AsyncLocalStorage<{ kern: object; repo: Repo; nachher: Array<() => void> }>();
@@ -25,6 +26,19 @@ const transaktionen = new AsyncLocalStorage<{ kern: object; repo: Repo; nachher:
  * werden soll (Import, Beispiel-Mappen, Wiederherstellung).
  */
 const ereignisKontext = new AsyncLocalStorage<{ ausloeser?: EreignisAusloeser; still?: boolean }>();
+/**
+ * Fassungen (#1006): Wer gerade Einstellungen der Werkbank ändert, wenn es nicht schon aus Anfrage oder Auslöser folgt
+ * (Paket-Installation, Update von Ablago), welcher Vorgang das ist (Schritte desselben Vorgangs sind eine Fassung) und
+ * ob gerade eine Fassung wiederhergestellt wird.
+ */
+const fassungsKontext = new AsyncLocalStorage<FassungsKontext>();
+/** Was der Kern über die Fassungen wissen muss – der Dienst setzt die Fassungen ein (`fassungen/`). */
+export interface FassungsKontext { urheber?: Urheber; vorgang?: string; wiederhergestellt?: number }
+/** Fassungen festhalten (#1006): Stand eines Eintrags nach dem Speichern bzw. Löschvermerk – von Fachbereichen ohne Repo-Hülle. */
+export interface FassungsAnschluss {
+  halte(art: FassungArt, eintrag: string): Promise<void>;
+  geloescht(art: FassungArt, eintrag: string, vorher: () => Promise<void>): Promise<void>;
+}
 export const PAPIERKORB_STANDARD_TAGE = 30;
 /** Höchstzahl eigener Organisationen, die Ablago kennt (#995) – mehrere sind möglich, aber nicht viele. */
 export const EIGENE_ORGANISATIONEN_MAX = 50;
@@ -80,7 +94,11 @@ export interface KernOptionen {
   ausstatten: () => Promise<void>;
   /** Zugriff bilden (Schicht „zugriff“, `zugriff/` – der Kern bindet sie nicht ein, der Dienst reicht sie herein). */
   zugriff: (ich: Zugreifender) => Promise<Zugriff>;
+  /** Fassungen (#1006, `fassungen/`): erst beim ersten Gebrauch gebaut; ohne sie geschieht nichts. */
+  fassungen?: () => FassungsAnschluss;
 }
+
+const OHNE_FASSUNGEN: FassungsAnschluss = { halte: async () => {}, geloescht: async (_a, _e, vorher) => vorher() };
 
 /**
  * Der Kern (#961): was alle Fachbereiche brauchen – Repo und Transaktion, Arbeit nach der Antwort, Ereignisse in den
@@ -95,6 +113,12 @@ export class Kern {
   paketKonten = new Map<string, string>();
   /** Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern durch eine Person (vom Start gesetzt: Konten merken es). */
   beiEigenerAenderung?: (benutzerId: string, mappeId: string) => Promise<void>;
+  /**
+   * Fassungen (#1006): Einstellungen außerhalb des Repos (Stempel, Postfächer, Paket-Einstellungen) melden hier ihren
+   * neuen Stand. Ohne Dienst (Tests einzelner Teile) geschieht nichts.
+   */
+  get fassungen(): FassungsAnschluss { return this.fassungsQuelle?.() ?? OHNE_FASSUNGEN; }
+  private readonly fassungsQuelle?: () => FassungsAnschluss;
   /** Historie der Mappen schreiben (#57). */
   readonly historie = new Historie(this);
   /** Löschprotokoll schreiben (#470). */
@@ -120,6 +144,7 @@ export class Kern {
     this.wecke = o.wecke;
     this.ausstatten = o.ausstatten;
     this.zugriffBilden = o.zugriff;
+    this.fassungsQuelle = o.fassungen;
   }
 
   /* ---------- Repo und Transaktion (#404) ---------- */
@@ -310,6 +335,33 @@ export class Kern {
     }
     return { benutzer, rolle, post, systemrollen, kontorollen };
   }
+
+  /* ---------- Fassungen (#1006) ---------- */
+
+  /** `f` mit Urheber, Vorgang bzw. Wiederherstellung für die Fassungen; ein neuer Vorgang, wenn keiner genannt ist. */
+  mitFassungsKontext<T>(k: FassungsKontext, f: () => Promise<T>): Promise<T> {
+    const alt = fassungsKontext.getStore();
+    return fassungsKontext.run({ ...alt, ...k, vorgang: k.vorgang ?? (k.urheber ? randomUUID() : alt?.vorgang) }, f);
+  }
+  /**
+   * Wer gerade ändert: ausdrücklich gesetzt (Paket, Update), sonst die Automatisierung bzw. das Paket als Auslöser, sonst
+   * die angemeldete Person der Anfrage (Dienstkonten als ihr Paket), sonst Ablago selbst.
+   */
+  urheber(): Urheber {
+    const k = fassungsKontext.getStore();
+    if (k?.urheber) return k.urheber;
+    const a = ereignisKontext.getStore()?.ausloeser;
+    if (a?.art === 'automatisierung' && a.id) return { art: 'automatisierung', id: a.id };
+    if (a?.art === 'paket' && a.id) return { art: 'paket', id: a.id };
+    const b = kontext.getStore()?.benutzerId;
+    if (b) { const p = this.paketKonten.get(b); return p ? { art: 'paket', id: p } : { art: 'person', id: b }; }
+    if (a?.art === 'benutzer' && a.id) return { art: 'person', id: a.id };
+    return { art: 'system' };
+  }
+  /** Vorgang für die Fassungen: ausdrücklich gesetzt, sonst die laufende Anfrage. */
+  vorgang(): string | null { return fassungsKontext.getStore()?.vorgang ?? kontext.getStore()?.anfrage ?? null; }
+  /** Aus welcher Fassung gerade wiederhergestellt wird; sonst null. */
+  wiederhergestellt(): number | null { return fassungsKontext.getStore()?.wiederhergestellt ?? null; }
 
   /* ---------- Ereigniskatalog (#670) ---------- */
 

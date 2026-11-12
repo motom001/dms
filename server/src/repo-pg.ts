@@ -23,6 +23,7 @@ import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
 import { teileKennung, typKennung } from '../../shared/src/kennungen';
 import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
+import type { FassungArt, GespeicherteFassung } from '../../shared/src/fassungen';
 /** Sprachmarke im Hinweis der Texterkennung (#395) samt Konfidenz, zum Ersetzen (#400). */
 const log = protokoll.modul('texterkennung');
 const SPRACHE_INFO_SQL = ' · Sprache: [a-z_]{3,10}( \\(\\d{1,3} %\\))?';
@@ -250,6 +251,12 @@ const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
 };
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
+/** Eine Zeile der Tabelle fassungen (#1006). */
+const alsFassung = (r: postgres.Row): GespeicherteFassung => ({
+  art: r.art as FassungArt, eintrag: r.eintrag as string, nr: Number(r.nr), name: r.name as string, daten: r.daten, urheber: r.urheber as GespeicherteFassung['urheber'],
+  vorgang: (r.vorgang as string | null) ?? null, wiederhergestellt: r.wiederhergestellt == null ? null : Number(r.wiederhergestellt),
+  zeit: iso(r.zeit), bis: iso(r.bis), geloescht: (r.geloescht as GespeicherteFassung['geloescht']) ?? null,
+});
 
 /* Löschprotokoll (#470) */
 const loeschDok = (d: Zeile): LoeschDokument => ({
@@ -2569,6 +2576,48 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       }
       return m;
     },
+    /* ---------- Fassungen (#1006) ---------- */
+    async fassungen(art, eintrag, max) {
+      return (await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}
+        ORDER BY nr DESC ${max !== undefined ? sql`LIMIT ${max}` : sql``}`).map(alsFassung);
+    },
+    async zaehleFassungen(art, eintrag) {
+      return Number((await sql`SELECT count(*)::int AS n FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}`)[0].n);
+    },
+    async fassung(art, eintrag, nr) {
+      const [r] = await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${nr}`;
+      return r ? alsFassung(r) : undefined;
+    },
+    async letzteFassungen(art) {
+      const rows = await sql`SELECT DISTINCT ON (eintrag) * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} ORDER BY eintrag, nr DESC`;
+      return new Map(rows.map((r) => [r.eintrag as string, alsFassung(r)] as const));
+    },
+    async legeFassungAn(f) {
+      await sql`INSERT INTO fassungen (haushalt_id, art, eintrag, nr, name, daten, urheber, vorgang, wiederhergestellt, zeit, bis, geloescht)
+        VALUES (${haushaltId}, ${f.art}, ${f.eintrag}, ${f.nr}, ${f.name}, ${json(sql, f.daten)}, ${json(sql, f.urheber)}, ${f.vorgang}, ${f.wiederhergestellt},
+          ${f.zeit}, ${f.bis}, ${f.geloescht ? json(sql, f.geloescht) : null})`;
+    },
+    async schreibeFassungFort(art, eintrag, nr, d) {
+      await sql`UPDATE fassungen SET name = ${d.name}, daten = ${json(sql, d.daten)}, bis = ${d.bis}
+        WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${nr}`;
+    },
+    async loescheFassung(art, eintrag, nr) {
+      await sql`DELETE FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${nr}`;
+    },
+    async vermerkeLoeschung(art, eintrag, vermerk) {
+      const [r] = await sql`SELECT max(nr) AS nr FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}`;
+      if (r?.nr == null) return;
+      await sql`DELETE FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr < ${r.nr}`;
+      await sql`UPDATE fassungen SET geloescht = ${json(sql, vermerk)} WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${r.nr}`;
+    },
+    async geloeschteFassungen(arten) {
+      return (await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND geloescht IS NOT NULL AND art = ANY(${[...arten] as string[]}::text[])
+        ORDER BY geloescht->>'zeit' DESC, art, eintrag`).map(alsFassung);
+    },
+    async alleFassungen() {
+      return (await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} ORDER BY art, eintrag, nr`).map(alsFassung);
+    },
+
     async historieAufraeumen(vor) {
       const r = await sql`
         DELETE FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id IN (

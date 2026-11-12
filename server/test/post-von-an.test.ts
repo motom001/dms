@@ -228,6 +228,9 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
         { id: 'f', art: 'feld', werte: { von: '{von} (geprüft)' } }], sonst: [] };
     const autoId = '00000000-0000-4000-8000-00000000a142';
     await sql`INSERT INTO automatisierungen (id, haushalt_id, name, daten, herkunft) VALUES (${autoId}, ${HAUSHALT}, 'Post prüfen', ${sql.json(auto as never)}, 'eigen')`;
+    // Die Tabelle gab es zur Zeit von 099; seit 103 (#1006) stehen Fassungen in `fassungen` – hier wie damals anlegen.
+    await sql`CREATE TABLE IF NOT EXISTS automatisierung_fassungen (automatisierung_id uuid NOT NULL REFERENCES automatisierungen(id) ON DELETE CASCADE,
+      version int NOT NULL, daten jsonb NOT NULL, von uuid, zeit timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (automatisierung_id, version))`;
     await sql`INSERT INTO automatisierung_fassungen (automatisierung_id, version, daten) VALUES (${autoId}, 1, ${sql.json(auto as never)})`;
     const benReg = [...benutzerTyp.register, { key: 'post', name: 'Post', art: 'verknuepfungen', quellen: [{ typId: post.id, feldKey: 'an' }] }];
     await sql`UPDATE mappentypen SET register = ${sql.json(benReg as never)} WHERE id = ${benutzerTyp.id}`;

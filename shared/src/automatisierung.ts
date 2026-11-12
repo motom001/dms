@@ -530,20 +530,29 @@ const NAMEN: Record<string, string> = {
 /** „Wenn Vertrag gespeichert → Aufgabe an Verantwortlich“. */
 export function kurzform(a: AutomatisierungDaten, k: Pick<Kontextdaten, 'typen' | 'benutzer' | 'rollen' | 'pakete'>, ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x): string {
   const typ = kontextTyp(a.wenn, k.typen);
-  const w = a.wenn;
-  const wenn = w.art === 'datum'
+  const dann = a.dann.map((d) => dannText(d, typ, k)).join(', ');
+  return t('gemeinsam.automatisierung.wenn', { wenn: wennText(a.wenn, k, ereignisName), wert: a.und.karten.length ? ` und ${t('gemeinsam.automatisierung.bedingungen', { anzahl: a.und.karten.length })}` : '', wert2: dann || '…' });
+}
+
+/** Der Wenn-Teil der Kurzform, z. B. „Vertrag angelegt“ – auch für die Fassungen (#1006). */
+export function wennText(w: WennKarte, k: Pick<Kontextdaten, 'typen' | 'rollen'>, ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x): string {
+  const typ = kontextTyp(w, k.typen);
+  return w.art === 'datum'
     ? `${typ?.name ?? '?'}: ${feldIn(typ, w.feld)?.label ?? (w.feld || '?')} ${vorlaufText(w.vorlauf, w.einheit)}`
     : w.art === 'zeitplan' ? `${zeitplanText(w)}${w.jeBenutzer ? t('gemeinsam.automatisierung.fuer-jeden-benutzer', { wert: w.rolle ? t('gemeinsam.automatisierung.der-rolle', { wert: k.rollen.find((r) => r.id === w.rolle)?.name ?? '?' }) : '' }) : ''}`
     : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${w.art === 'mappe.geaendert' && w.angelegt ? t('gemeinsam.automatisierung.angelegt-oder', { wert: ereignisName(w.art) }) : ereignisName(w.art)}`;
+}
+
+/** Eine Dann- oder Sonst-Karte kurz, z. B. „Aufgabe an Markus“ – Kurzform und Fassungen (#1006). */
+export function dannText(d: DannKarte, typ: Mappentyp | null, k: Pick<Kontextdaten, 'benutzer' | 'rollen' | 'pakete'>): string {
   const wer = (e: Empfaenger) => e.art === 'person' ? k.benutzer.find((b) => b.id === e.id)?.name ?? '?' : e.art === 'rolle' ? k.rollen.find((r) => r.id === e.id)?.name ?? '?' : e.art === 'ersteller' ? 'Ersteller' : e.art === 'ereignis' ? EREIGNIS_PERSON[e.feld] ?? e.feld : feldIn(typ, e.feld)?.label ?? e.feld;
-  const dann = a.dann.map((d) => d.art === 'stopp' ? t('gemeinsam.automatisierung.danach-keine-weiteren')
+  return d.art === 'stopp' ? t('gemeinsam.automatisierung.danach-keine-weiteren')
     : d.art === 'zusammenfassung' ? t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden-2')
     : d.art === 'favoriten' ? (d.rollen?.length ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden-an', { rollen: d.rollen.map((r) => k.rollen.find((x) => x.id === r)?.name ?? '?').join(', ') }) : t('gemeinsam.automatisierung.favoriten-aenderungen-melden'))
     : d.art === 'anmeldeschutz' ? (d.was === 'sammel' ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden') : t('gemeinsam.automatisierung.kontosperre-an-administratoren'))
     : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${d.aufgabe})` : '' })
     : d.art === 'feld' ? `${Object.keys(d.werte).map((x) => feldIn(typ, x)?.label ?? x).join(', ')} setzen`
-      : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`).join(', ');
-  return t('gemeinsam.automatisierung.wenn', { wenn, wert: a.und.karten.length ? ` und ${t('gemeinsam.automatisierung.bedingungen', { anzahl: a.und.karten.length })}` : '', wert2: dann || '…' });
+      : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`;
 }
 
 const TAG_KURZ = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];

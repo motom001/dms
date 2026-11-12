@@ -62,6 +62,7 @@ import { sicherungRouten } from './sicherung/sicherung.routen';
 import { betriebRouten, systemRouten, systemzustandRouten } from './system/system.routen';
 import { postfaecherRouten } from './post/post.routen';
 import { automatisierungRouten } from './automatisierung/automatisierung.routen';
+import { fassungenRouten } from './fassungen/fassungen.routen';
 import { ablageRouten } from './sichten/sichten.routen';
 import { aufgabenRouten } from './aufgaben/aufgaben.routen';
 import { mappenRouten } from './mappen/mappen.routen';
@@ -296,6 +297,7 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   systemRouten,
   postfaecherRouten,
   automatisierungRouten,
+  fassungenRouten,
   systemzustandRouten,
   ablageRouten,
   aufgabenRouten,

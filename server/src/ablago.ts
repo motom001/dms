@@ -702,9 +702,14 @@ if (leiter) {
   wartung.beimAusschalten(() => dienst.ereignisse.wecke());
   // Schlüssel für Mappentypen (#145), einmalig nach dem Update.
   start.schritt('typen');
-  await dienst.mappenTitel.typSchluesselNachziehen();
-  // Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146), einmalig nach dem Update.
-  await dienst.mappenTitel.hakenUeberfuehren();
+  // Fassungen (#1006): Umzüge beim Start erscheinen als „Update auf Ablago <Version>“.
+  await dienst.kern.mitFassungsKontext({ urheber: { art: 'update', version } }, async () => {
+    await dienst.mappenTitel.typSchluesselNachziehen();
+    // Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146), einmalig nach dem Update.
+    await dienst.mappenTitel.hakenUeberfuehren();
+  });
+  // Was die Migrationen geändert haben, bekommt seine Fassung – einmal je Version; Einträge ohne Fassung ihre erste.
+  await dienst.fassungen.abgleich(version).catch((e: unknown) => log.warn('Fassungen nicht abgeglichen', { fehler: (e as Error).message }));
   const geprueft = await dienst.passung.passungNachziehen((f, g) => start.menge(f, g));
   if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 }

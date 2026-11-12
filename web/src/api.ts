@@ -1,6 +1,7 @@
 import type { TextGesetzt, VorlagenListe } from '../../shared/src/textsatz';
 import type { AktionenAnMappe, AktionenEinstellung, AktionRecht, AktionsSchritt, EingebauteAktion, KernDialog } from '../../shared/src/paketaktionen';
-import type { AutomatisierungAnsicht, AutomatisierungDaten, Fassung, Fehlschlag, Kontextdaten, Lauf } from '../../shared/src/automatisierung';
+import type { AutomatisierungAnsicht, AutomatisierungDaten, Fehlschlag, Kontextdaten, Lauf } from '../../shared/src/automatisierung';
+import { FASSUNG_PFAD, type FassungArt, type FassungsListe, type FassungsVorschau, type GeloeschterEintrag } from '../../shared/src/fassungen';
 import type { Design } from './design';
 import { messung } from './messung';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
@@ -96,6 +97,9 @@ import { istAusfall } from '../../shared/src/erreichbarkeit';
 import { t } from './sprache';
 import { sprache } from '../../shared/src/sprache';
 import type { Abdeckung, Sprachangabe, SprachpaketInfo } from '../../shared/src/sprachpaket';
+
+/** Adresse eines Eintrags für die Fassungen (#1006). */
+const fassungsPfad = (art: FassungArt, eintrag: string) => FASSUNG_PFAD[art].replace(/:(id|schluessel)/, encodeURIComponent(eintrag));
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -1029,8 +1033,13 @@ export const api = {
   automatisierungLaufNichtWiederholen: (laufId: string) => anfrage<unknown>('POST', `/api/werkbank/automatisierungen/laeufe/${laufId}/nicht-wiederholen`),
   automatisierungenNichtWiederholen: () => anfrage<unknown>('POST', '/api/werkbank/automatisierungen/nicht-wiederholen'),
   automatisierungenWiederholen: (id?: string) => anfrage<unknown>('POST', id ? `/api/werkbank/automatisierungen/${id}/wiederholen` : '/api/werkbank/automatisierungen/wiederholen'),
-  automatisierungFassungen: (id: string) => anfrage<Fassung[]>('GET', `/api/werkbank/automatisierungen/${id}/fassungen`),
-  automatisierungFassungWiederherstellen: (id: string, version: number) => anfrage<AutomatisierungAnsicht>('POST', `/api/werkbank/automatisierungen/${id}/fassungen/${version}`),
+  // Fassungen (#1006): je Gegenstand unter der Adresse seines Eintrags.
+  fassungen: (art: FassungArt, eintrag: string) => anfrage<FassungsListe>('GET', `${fassungsPfad(art, eintrag)}/fassungen`),
+  fassungenVergleich: (art: FassungArt, eintrag: string, von: number, bis: number) => anfrage<{ von: number; bis: number; aenderungen: string[] }>('GET', `${fassungsPfad(art, eintrag)}/fassungen/vergleich?von=${von}&bis=${bis}`),
+  fassungVorschau: (art: FassungArt, eintrag: string, nr: number) => anfrage<FassungsVorschau>('GET', `${fassungsPfad(art, eintrag)}/fassungen/${nr}`),
+  fassungWiederherstellen: (art: FassungArt, eintrag: string, nr: number, e: { stand: string | null; bestaetigt?: boolean; doppelteBestaetigt?: boolean; adresseBestaetigt?: boolean }) =>
+    anfrage<FassungsListe>('POST', `${fassungsPfad(art, eintrag)}/fassungen/${nr}/wiederherstellen`, e),
+  fassungenGeloescht: (arten: FassungArt[]) => anfrage<GeloeschterEintrag[]>('GET', `/api/werkbank/fassungen/geloescht?art=${arten.join(',')}`),
   automatisierungTestmappen: (id: string, suche: string) => anfrage<{ mappen: Array<{ id: string; titel: string; typId: string }>; gesamt: number }>('GET', `/api/werkbank/automatisierungen/${id}/testmappen?suche=${encodeURIComponent(suche)}`),
   automatisierungWiedergeben: (id: string, mappeId: string, trocken: boolean) => anfrage<Lauf>('POST', `/api/werkbank/automatisierungen/${id}/wiedergeben`, { mappeId, trocken }),
   webdav: () => anfrage<WebdavStand>('GET', '/api/werkbank/webdav'),

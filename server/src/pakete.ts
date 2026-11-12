@@ -39,6 +39,7 @@ import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesB
 import type { Dienst } from './dienst';
 import type { PaketQuelleEintrag } from './pakete/index';
 import { Fachfehler } from './fehler';
+import { istVerschluesselt } from './tresor';
 import { protokoll } from './protokoll';
 import { liesSchluessel, nurTestschluessel, projektSchluessel, pruefeSignatur, SCHLUESSEL_DATEI, SIGNATUR_DATEI, SIGNATUR_MAX, WECHSEL_DATEI, zeitVon, type Schluessel } from './katalogsignatur';
 import type { Projektschluessel } from './projektschluessel';
@@ -1523,6 +1524,13 @@ const herkunftFehler = (p: HerkunftPruefung) => new Fachfehler(409, p.art === 'u
   ? t('pakete.herkunft.fehler.ungueltig')
   : t('meldungen.pakete.dieses-paket-kommt-nicht'), { warnung: true });
 
+/** Fassungen (#1006): Geheimnisse (verschlüsselt gespeichert) nur als „gesetzt“ – nie der Wert, auch nicht verschlüsselt. */
+function ohneGeheimnisse(w: unknown): Record<string, unknown> {
+  const maske = (v: unknown): unknown => (istVerschluesselt(v) ? { gesetzt: true }
+    : Array.isArray(v) ? v.map(maske) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, maske(x)])) : v);
+  return (w && typeof w === 'object' ? maske(w) : {}) as Record<string, unknown>;
+}
+
 export class Paketverwaltung {
   private kataloge = new Map<string, { katalog: Katalog; pruefung: HerkunftPruefung; zeit: number }>();
   private uploads = new Map<string, Hochgeladen>();
@@ -1533,6 +1541,37 @@ export class Paketverwaltung {
 
   constructor(private d: Dienst, private o: PaketOptionen) {
     setInterval(() => { void this.raeumeUploadsAuf(); }, UPLOAD_AUFRAEUMEN_MS).unref();
+    this.fassungenAnmelden();
+  }
+
+  /**
+   * Fassungen der Paket-Einstellungen (#1006): die Werte ohne Status; Geheimnisse nur als „gesetzt“ – beim
+   * Wiederherstellen bleibt das heutige Geheimnis. Wiederherstellen über das normale Speichern (Prüfung, Dienst-Adresse).
+   */
+  private fassungenAnmelden() {
+    const beschreibung = async (id: string) => { try { return (await this.beschreibungVon(id)).b; } catch { return null; } };
+    this.d.fassungen.registriere({
+      art: 'paketeinstellungen',
+      stand: async (id) => {
+        const e = await paketEinstellungen(this.d.kern, id);
+        if (!e) return undefined;
+        const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+        return { name: p?.name ?? id, daten: { werte: ohneGeheimnisse(e.werte ?? {}) } };
+      },
+      alle: async () => {
+        const ids: string[] = [];
+        for (const p of await this.d.kern.repo.listePakete()) if (await paketEinstellungen(this.d.kern, p.id)) ids.push(p.id);
+        return ids;
+      },
+      stelleHer: async (id, daten, o) => {
+        await this.speichereEinstellungen(id, { werte: (daten as { werte?: unknown }).werte ?? {}, adresseBestaetigt: o.adresseBestaetigt }, o.von);
+      },
+      kontext: async (id) => {
+        const b = await beschreibung(id);
+        const felder = b ? [...abschnittsfelder(b), ...listen(b)] : [];
+        return { einstellung: (k: string) => { const f = felder.find((x) => x.schluessel === k); return f ? { name: f.name, geheim: (f as { typ?: string }).typ === 'geheim' } : undefined; } };
+      },
+    });
   }
 
   /**
@@ -2993,7 +3032,20 @@ export class Paketverwaltung {
    * Umbau (#1041, Sicherheit): Mit Umbau-Schritten läuft das ganze Installieren bzw. Update in einer Transaktion – bricht
    * etwas ab, ist nichts verändert, und die Meldung sagt das.
    */
+  /**
+   * Fassungen (#1006): Was die Installation bzw. das Update an Mappentypen, Ansichten, Nummernkreisen, Automatisierungen
+   * und Einstellungen ändert, erscheint als Fassung „durch Paket <Name> <Version>“ (mit der Person, die es angestoßen hat).
+   */
   private async legeMitUmbau(a: LegeAuftrag): Promise<InstalliertesPaket> {
+    const urheber = { art: 'paket' as const, id: a.paket.manifest.id, name: a.paket.manifest.name, version: a.paket.manifest.version, person: a.von.id };
+    return this.d.kern.mitFassungsKontext({ urheber }, async () => {
+      const neu = await this.legeMitUmbauIntern(a);
+      await this.d.kern.fassungen.halte('paketeinstellungen', neu.id);
+      return neu;
+    });
+  }
+
+  private async legeMitUmbauIntern(a: LegeAuftrag): Promise<InstalliertesPaket> {
     if (!this.umbauLagen.get(a.plan)?.schritte.length) return this.legeIntern(a);
     try {
       return await this.d.kern.inTransaktion(() => this.legeIntern(a));
@@ -3376,6 +3428,7 @@ export class Paketverwaltung {
       throw new Fachfehler(409, t('meldungen.pakete.bitte-die-adresse-bestaetigen', { name: p.name, map: adressen.map((f) => String(r.werte[f.schluessel])).join(', ') }), { adresse: adressen.map((f) => ({ feld: f.name, wert: r.werte[f.schluessel] })) });
     }
     await setzePaketEinstellungen(this.d.kern, id, { ...alt, werte: r.werte });
+    await this.d.kern.fassungen.halte('paketeinstellungen', id);
     if (geaendert.length) {
       log.info(`Einstellungen von Paket ${p.name} geändert (Felder ${geaendert.join(', ')})`, { von: von.email, paket: id, felder: geaendert });
       for (const f of adressfelder(b).filter((x) => geaendert.includes(x.schluessel))) {
@@ -3574,6 +3627,13 @@ export class Paketverwaltung {
    * die das Paket an Vorgaben anderer Pakete gehängt hat, gehen mit – nur diese.
    */
   async entferne(id: string, von: Handelnder, behalten = false, spracheBestaetigt = false, vorgabenWahl?: 'entfernen' | 'behalten'): Promise<{ beispieleBehalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }>; vorgabenBehalten: Array<{ id: string; titel: string }> }> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    // Fassungen (#1006): Was das Entfernen löscht oder ändert, steht „durch Paket <Name> <Version>“ im Verlauf.
+    return this.d.kern.mitFassungsKontext({ urheber: { art: 'paket', id, name: p.name, version: p.version, person: von.id } }, () => this.entferneIntern(id, von, behalten, spracheBestaetigt, vorgabenWahl));
+  }
+
+  private async entferneIntern(id: string, von: Handelnder, behalten: boolean, spracheBestaetigt: boolean, vorgabenWahl?: 'entfernen' | 'behalten'): Promise<{ beispieleBehalten: Array<{ id: string; titel: string; grund: 'geaendert' | 'verwiesen' }>; vorgabenBehalten: Array<{ id: string; titel: string }> }> {
     const alle = await this.d.kern.repo.listePakete();
     const p = alle.find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
@@ -3636,7 +3696,7 @@ export class Paketverwaltung {
     const wartetAuf = [...(hatSchnittstelle(p.laeufer, 'dms:volltext') ? p.laeufer?.volltext ?? [] : []), ...(hatSchnittstelle(p.laeufer, 'dms:umwandeln') ? p.laeufer?.umwandeln ?? [] : [])];
     if (wartetAuf.length) await this.d.volltextAusPaketen.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
-    if (!behalten) await setzePaketEinstellungen(this.d.kern, id, null);
+    if (!behalten) await this.d.kern.fassungen.geloescht('paketeinstellungen', id, () => setzePaketEinstellungen(this.d.kern, id, null));
     log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten, beispieleEntfernt: bsp.unveraendert.length, vorgabenEntfernt: vorgabenWeg.length });
     // Vorgaben, die bleiben, behalten ihre feste Kennung: Eine neue Installation nimmt sie wieder auf, statt sie doppelt anzulegen.
     const vorgabenBehalten = [...vg.fremdBenutzt.map((m) => ({ id: m.id, titel: m.titel || m.id })), ...(vorgabenWahl === 'entfernen' ? [] : vg.frage.map(({ id: x, titel }) => ({ id: x, titel })))];

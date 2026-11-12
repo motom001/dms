@@ -8,7 +8,7 @@ The search field above the list searches name, identifier and pattern, the folde
 
 ## How the editor is built { #aufbau-des-editors }
 
-On the right, a saved number sequence is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details → Status → Print stickers** (only for the archive number) **→ Used in**. Collapsed, each area shows a summary, such as the pattern or the next number; your device remembers what you expand. A new number sequence only has the basic details – without a jump bar.
+On the right, a saved number sequence is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details → Status → Print stickers** (only for the archive number) **→ Used in → Versions** ([who changed what](fassungen.md); counter states are not part of it). Collapsed, each area shows a summary, such as the pattern or the next number; your device remembers what you expand. A new number sequence only has the basic details – without a jump bar.
 
 Only what is in the basic details is saved (**Save number sequence** at the bottom); an error in the pattern marks the basic details red. **Set counter** and **Stickers as PDF** take effect immediately.
 

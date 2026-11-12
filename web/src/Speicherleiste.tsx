@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { istGeaendert, leistenknoepfe, verwerfenSchritt } from '../../shared/src/entwurf';
 import { geheZu, loeseWache, useUngespeichert } from './ort';
 import { rueckfrage } from './rueckfrage';
@@ -25,6 +25,20 @@ export interface Entwurf {
   verwerfen(ausloeser?: 'knopf' | 'esc'): Promise<void>;
   /** Als `onKeyDown` an das Formular: Esc = Verwerfen. */
   tasten(e: KeyboardEvent): void;
+}
+
+/**
+ * Neuer gespeicherter Stand von außen (z. B. eine wiederhergestellte Fassung, #1006): Ist im Entwurf nichts geändert,
+ * gilt gleich der neue Stand; sonst bleibt der Entwurf, und „Verwerfen“ zeigt den neuen.
+ */
+export function useGespeichertNachziehen<T>(gespeichert: T, aktuell: T, setze: (x: T) => void) {
+  const text = JSON.stringify(gespeichert);
+  const vorher = useRef(text);
+  useEffect(() => {
+    if (vorher.current === text) return;
+    if (JSON.stringify(aktuell) === vorher.current) setze(gespeichert);
+    vorher.current = text;
+  }, [text]); // eslint-disable-line react-hooks/exhaustive-deps -- nur, wenn sich der gespeicherte Stand ändert
 }
 
 export function useEntwurf<T>(gespeichert: T, aktuell: T, o: { neu?: boolean; zuruecksetzen(): void; liste?: string; aus?: boolean }): Entwurf {

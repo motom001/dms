@@ -11,3 +11,4 @@ export { Tabelle, type TabelleProps, type TabelleSpalte, type TabelleZeile } fro
 export { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, PaketFilter, Suchfeld, useListenSuche, type ListenSucheOptionen, type ListenSucheProps, type ListenSucheZustand, type PaketFilterProps, type SuchfeldProps } from './suche/Suche';
 export { Umschalter, zielDerTaste, type UmschalterProps, type UmschalterWahl } from './umschalter/Umschalter';
 export { Bereich, fehlerBereiche, liesOffen, merkeOffen, SPRUNGLEISTE_AB, useBereiche, type BereicheOptionen, type BereicheZustand, type BereichListe, type Klappe } from './bereiche/Bereiche';
+export { Fassungen, GeloeschteEintraege, type FassungenProps, type FassungenQuelle } from './fassungen/Fassungen';

@@ -77,17 +77,23 @@ describe('Automatisierungen (#674): Modell', () => {
 
 describe('Automatisierungen (#674): Verwalten', () => {
   it('nur gültig speicherbar, neu ausgeschaltet, Änderungsverlauf mit Wiederherstellen, Konflikt bei veraltetem Stand', async () => {
-    const { motor, vertrag, admin } = await aufbau();
+    const { motor, vertrag, admin, d } = await aufbau();
     await assert.rejects(motor.lege({ name: '', wenn: { art: 'mappe.angelegt' }, dann: [] }, admin.id), /Namen/);
     // Die Antwort nennt die Bereiche des Editors (#1000), damit die Oberfläche sie öffnet.
     await assert.rejects(motor.lege({ name: '', wenn: { art: 'mappe.angelegt' }, dann: [] }, admin.id), (e: { details?: { orte?: string[] } }) => (assert.deepEqual(e.details?.orte, ['grunddaten', 'dann']), true));
     const a = await motor.lege({ name: 'Neu', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [stopp] }, admin.id);
     assert.equal(a.aktiv, false);
     assert.equal(a.reihenfolge, 50);
-    const b = await motor.aendere(a.id, { name: 'Umbenannt', version: a.version }, admin.id);
+    // Fassungen (#1006): eine andere Person speichert – eigene Fassung; Wiederherstellen ist selbst eine neue Fassung.
+    const b = await d.kern.mitFassungsKontext({ urheber: { art: 'person', id: 'petra' } }, () => motor.aendere(a.id, { name: 'Umbenannt', version: a.version }, admin.id));
     await assert.rejects(motor.aendere(a.id, { name: 'Alt', version: a.version }, admin.id), /inzwischen geändert/);
-    assert.deepEqual((await motor.fassungen(a.id)).map((f) => f.daten.name), ['Umbenannt', 'Neu']);
-    const c = await motor.stelleWieder(a.id, 1, admin.id);
+    const liste = await d.fassungen.liste('automatisierung', a.id);
+    assert.deepEqual(liste.fassungen.map((f) => f.name), ['Umbenannt', 'Neu']);
+    assert.deepEqual(liste.fassungen[0].aenderungen, ['Name „Neu“ → „Umbenannt“']);
+    const nach = await d.fassungen.stelleWiederHer('automatisierung', a.id, 1, { stand: liste.stand }, { id: admin.id, email: 'markus@example.org' });
+    assert.equal(nach.fassungen[0].wiederhergestellt, 1);
+    assert.equal(nach.fassungen.length, 3);
+    const c = await motor.hole(a.id);
     assert.equal(c.name, 'Neu');
     assert.equal(c.version, b.version + 1);
     const kopie = await motor.kopiere(a.id, admin.id);
@@ -220,14 +226,13 @@ describe('Automatisierungen in PostgreSQL (#674)', { skip: url ? false : 'TEST_D
   });
   after(async () => { await sql?.end(); await haupt?.unsafe(`DROP DATABASE IF EXISTS ${db}`); await haupt?.end(); });
 
-  it('Fassungen mit Versionsschutz, genau ein Lauf je Ereignis (auch zwei Server), Zustand, Aufräumen', async () => {
+  it('Versionsschutz, genau ein Lauf je Ereignis (auch zwei Server), Zustand, Aufräumen', async () => {
     const repo = pgAutomatisierungRepo(sql, HAUSHALT);
     const jetzt = new Date().toISOString();
     const a: Automatisierung = { ...bereinigeAutomatisierung({ name: 'Test', wenn: { art: 'mappe.angelegt' }, dann: [{ id: 's', art: 'stopp' }] }), id: A, aktiv: true, angehalten: null, herkunft: 'eigen', version: 1, erstellt: jetzt, erstelltVon: null, geaendert: jetzt, geaendertVon: null };
     await repo.lege(a);
     assert.equal(await repo.speichere(A, { ...a, name: 'Zwei' }, null, 1), true);
     assert.equal(await repo.speichere(A, { ...a, name: 'Alt' }, null, 1), false, 'veralteter Stand');
-    assert.deepEqual((await repo.fassungen(A)).map((f) => f.daten.name), ['Zwei', 'Test']);
     await repo.setze(A, { letzterTag: '2026-11-03', angehalten: { grund: 'bremse', text: 'x', zeit: jetzt } });
     const x = await repo.hole(A);
     assert.equal(x!.letzterTag, '2026-11-03');

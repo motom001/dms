@@ -16,7 +16,7 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 
 ## Aufbau des Editors
 
-Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Stempel beim Weitergeben → Erkennung → Berechtigungen → Testlauf → Pakete → KI-Dienste**.
+Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Stempel beim Weitergeben → Erkennung → Berechtigungen → Testlauf → Pakete → KI-Dienste → Fassungen**. Unter **Fassungen** steht, wer den Mappentyp wann wie geändert hat – auch seine Rechte-Regeln –, mit Vergleichen und Wiederherstellen ([Fassungen](fassungen.md)).
 
 - Jeder Bereich lässt sich mit einem Klick auf seine Überschrift **ein- und ausklappen**. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 Frist“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.
 - Ein **neuer** Mappentyp ist ganz aufgeklappt, ein **bestehender** startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.

@@ -24,7 +24,7 @@ import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Bereich, FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
 import { paketVonSicht, paketWahl, quellenSicht } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
@@ -159,6 +159,7 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
               );
             })}
           </ul>}
+      <GeloeschteEintraege art="sicht" />
     </>
   );
 }
@@ -167,6 +168,8 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
 const SICHT_BEREICHE = [
   ['grunddaten', t('mappentypen.bereich.grunddaten')], ['mappentypen', t('mappentypen.bereich.mappentypen')], ['trefferliste', t('mappentypen.bereich.trefferliste')], ['bedingungen', t('mappentypen.bereich.bedingungen')],
   ['berechtigungen', t('mappentypen.bereich.berechtigungen')], ['testlauf', t('mappentypen.bereich.testlauf')],
+  // Fassungen (#1006): erst nach dem Anlegen.
+  ['fassungen', t('oberflaeche.fassungen.titel')],
 ] as const;
 type SichtBereich = (typeof SICHT_BEREICHE)[number][0];
 
@@ -193,7 +196,7 @@ export function SichtEditor({ id }: { id: string }) {
     setBasis(frisch); setE(JSON.parse(frisch)); setStand(vorhanden.geaendert);
   }, [vorhanden?.geaendert, geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- nur übernehmen, wenn sich der gespeicherte Stand ändert; die übrigen Werte gelten zu diesem Zeitpunkt
   // Bereiche (#148) wie am Mappentyp: neu offen, bestehend eingeklappt bzw. wie zuletzt.
-  const b = useBereiche(SICHT_BEREICHE, 'sicht', neu ? null : id);
+  const b = useBereiche(neu ? SICHT_BEREICHE.filter(([k]) => k !== 'fassungen') : SICHT_BEREICHE, 'sicht', neu ? null : id);
   const [fehlerOrte, setFehlerOrte] = useState<Set<SichtBereich>>(new Set());
   const untersicht = !!e.elternId;
   const liveFehler = (k: SichtBereich) => (k === 'berechtigungen' && (e.berechtigungen?.regeln ?? []).some((r) => !!sichtRegelProblem(r, untersicht)))
@@ -321,6 +324,7 @@ export function SichtEditor({ id }: { id: string }) {
       <SichtBerechtigungen e={e} setE={setE} alle={d.sichten.filter((s) => !ausgeschlossen.has(s.id))} klappe={klappe('berechtigungen')} />
 
       <SichtTestlauf id={neu ? null : id} e={e} klappe={klappe('testlauf')} />
+      {vorhanden && <Fassungen art="sicht" eintrag={vorhanden.id} stand={vorhanden.geaendert} nachher={() => d.neuLaden()} klappe={klappe('fassungen')} />}
 
       <div className="hinweis info" role="status">
         <p>{vorschau === null ? t('werkbank.sichten.vorschau-wird-berechnet') : <>{tn('werkbank.sichten.diese-ansicht-zeigt-zurzeit', { b: <strong>{vorschau.toLocaleString(gebietsschema())} {t('werkbank.sichten.mappen-2', { anzahl: vorschau })}</strong>, wert: untersichten > 0 ? t('werkbank.sichten.mit-unteransichten') : '' })}</>}</p>

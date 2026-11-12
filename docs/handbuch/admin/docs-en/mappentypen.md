@@ -16,7 +16,7 @@ How users work with the folders is described in the [User manual](https://help.a
 
 ## How the editor is built {#aufbau-des-editors}
 
-The editor is built in the order in which you create a folder type: **Basics → Fields → Title → Result lists → Tabs → Archive mode → Stamp when handing over → Recognition → Permissions → Test run → Packages → AI services**.
+The editor is built in the order in which you create a folder type: **Basics → Fields → Title → Result lists → Tabs → Archive mode → Stamp when handing over → Recognition → Permissions → Test run → Packages → AI services → Versions**. **Versions** shows who changed the folder type when and how – including its permission rules – with comparing and restoring ([Versions](fassungen.md)).
 
 - Every area can be **expanded and collapsed** with a click on its heading. Collapsed, it shows the essentials in one line, e.g. "8 fields, 2 required, 1 deadline", the title template with an example or "Default: R · 3 rules".
 - A **new** folder type is fully expanded, an **existing** one starts collapsed. Your device remembers per folder type what you expand or collapse.

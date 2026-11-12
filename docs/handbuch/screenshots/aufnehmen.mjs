@@ -1413,6 +1413,30 @@ async function main() {
   await s.locator('#wechseln').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-schluesselwechsel');
 
+  // Fassungen (#1006): der Systemtyp Post (erste Fassung von Ablago beim Einrichten), dann vom Administrator geändert –
+  // Feld dazu, Spalte weg. Dieselbe Person innerhalb von 10 Minuten bliebe eine Fassung; so sind es zwei mit verschiedenen
+  // Urhebern. Bereich „Fassungen“ aufgeklappt, die neueste Fassung offen; hell und dunkel.
+  {
+    const alle = await api('GET', '/api/typen');
+    const t0 = alle.find((x) => x.system === 'post');
+    const pflicht = t0.felder.find((f) => f.pflicht && !f.system);
+    const liste = (t0.trefferlisten ?? []).map((l, i) => (i === 0 && l.spalten.length > 2 ? { ...l, spalten: l.spalten.slice(0, -1) } : l));
+    await api('PUT', `/api/typen/${t0.id}`, { ...t0, trefferlisten: liste,
+      felder: [...t0.felder.map((f) => (f === pflicht ? { ...f, pflicht: false } : f)), { key: 'interne_notiz', label: SPRACHE === 'de' ? 'Interne Notiz' : 'Internal note', typ: 'text' }] });
+    for (const [name, schema] of [['werkbank-fassungen', 'light'], ['werkbank-fassungen-dunkel', 'dark']]) {
+      const kf = await browser.newContext({ viewport: { width: 1440, height: 860 }, colorScheme: schema, locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+      const [cn, cw] = d.adminCookie.split('=');
+      await kf.addCookies([{ name: cn, value: cw, url: BASIS }]);
+      const sf = await kf.newPage();
+      await geheZu(sf, `/werkbank/typen/${t0.id}#fassungen`);
+      await sf.locator('#fassungen .historie').waitFor();
+      await sf.locator('#fassungen .historie summary').first().click();
+      await sf.locator('#fassungen').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await bild(sf, name);
+      await kf.close();
+    }
+  }
+
   // Lasttest-Modus (#612): Die Seite gibt es nur mit DMS_LASTTEST – hier mit nachgestellten Antworten (laufend und
   // fertig), hell, dunkel und am Handy. Werte erfunden, Gerät ohne Namen.
   await lasttestSeite(browser, bild);

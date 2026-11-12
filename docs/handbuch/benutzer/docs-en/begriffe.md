@@ -485,6 +485,10 @@ See also: [Fill from document](#aus-dokument-fullen).
 <a id="benutzer"></a>**User** (*Benutzer*) · ✓ everyday word · everyone  
 An account with which someone signs in. Stored as a system folder in Ablago. People and companies you deal with (contacts) are not users, but ordinary folders of the folder type "Person" or "Organisation" from the package Basis.
 
+<a id="fassung"></a>**Version (of a setting)** (*Fassung*) · ~ with explanation · administrators  
+A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.  
+See also: [Version](#version), [Version of Ablago](#version-von-ablago).
+
 ## Operation and security {#betrieb-und-sicherheit}
 
 <a id="api"></a>**API** · ✗ technical term · advanced users  
@@ -572,4 +576,4 @@ See also: [Version](#version).
 
 Which German words are still being discussed, which questions have been decided and which words the German texts avoid is listed on the [German page](../../begriffe/). It concerns the German wording.
 
-*As of: 2026-11-11*
+*As of: 2026-11-12*

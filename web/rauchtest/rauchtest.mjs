@@ -770,6 +770,21 @@ rauchtest('Archivmodus: „Frist beginnt mit …“ an der Mappe, „Ist der Sti
   await keineWaagerechteRolle(s);
 });
 
+rauchtest('Fassungen: Bereich im Mappentyp, Liste mit der ersten Fassung (#1006)', { als: LENA }, async (s) => {
+  const { typ } = daten.archiv;
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/typen/${typ.id}#fassungen`);
+  const bereich = s.locator('#fassungen');
+  // Der Anker öffnet den Bereich; die Liste nennt die Fassung mit lesbarer Änderung und „Aktuell“.
+  await bereich.locator('.historie').waitFor();
+  await bereich.getByText('Aktuell', { exact: true }).waitFor();
+  await bereich.locator('.historie summary').first().click();
+  await bereich.getByText('Angelegt', { exact: false }).first().waitFor();
+  assert.ok(await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Fassungen' }).count() > 0, 'Fassungen in der Sprungleiste');
+  await keineWaagerechteRolle(s);
+});
+
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */
 
 /** Eigene Post für einen Test am Ende: Briefe als PDFs mit einer Zeile Text (die Textebene liest Ablago selbst). */
@@ -967,7 +982,7 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 1
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 12, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.equal(bilder.length, 14, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });

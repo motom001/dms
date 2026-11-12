@@ -235,7 +235,7 @@ export class DatenschutzDienst {
       mappen: async (typId) => jeTyp.get(typId) ?? [],
       papierkorb: async () => [], papierkorbDokumente: async () => [],
       // Nicht für Dritte (#683): Löschprotokoll, Synonyme und Automatisierungen betreffen den ganzen Haushalt.
-      loeschprotokoll: undefined, synonyme: undefined, automatisierungen: undefined,
+      loeschprotokoll: undefined, synonyme: undefined, automatisierungen: undefined, fassungen: undefined,
       // Notfallkontakte (#812, Suche nach Adresse): eingetragen mit einer Adresse, die in den aufgenommenen Mappen steht –
       // so bekommt auch ein Notfallkontakt, der Auskunft verlangt, seine Angaben.
       notfallkontakte: async () => {
