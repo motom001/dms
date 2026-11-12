@@ -133,7 +133,7 @@ export function speicherAussenGeheimnisRepo(): AussenGeheimnisRepo {
   };
 }
 
-/* ---------- PostgreSQL (Migration 113) ---------- */
+/* ---------- PostgreSQL (Migration 115) ---------- */
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Zeilen aus der Datenbank, Spalten werden einzeln übernommen */
 const iso = (d: any) => (d instanceof Date ? d.toISOString() : d == null ? null : String(d));
