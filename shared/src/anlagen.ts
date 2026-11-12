@@ -12,7 +12,7 @@
 import { t } from './texte';
 
 /** Ab dieser Version kennt Ablago Anlagen (#998) und die Schnittstelle `dms:anlagen`; ältere lehnen sie beim Installieren ab. */
-export const DMS_ANLAGEN_AB = '0.262.0';
+export const DMS_ANLAGEN_AB = '0.263.0';
 /** Höchstens so viele Anlagen je Hauptdokument (ein Sammelscan mit Trennblättern hat selten mehr als eine Handvoll). */
 export const ANLAGEN_MAX = 99;
 
