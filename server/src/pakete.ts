@@ -29,7 +29,7 @@ import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKE
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
-import { bereinigeAutomatisierung, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
+import { bereinigeAutomatisierung, DMS_POST, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
 import { bereinigeVorlage, istKernVorlage, KERN_VORLAGEN, karteText, vorlagenEingabeFehler, vorlagenProbleme } from '../../shared/src/ablaufvorlagen';
 import type { PaketAblaufvorlage } from './aufgaben';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
@@ -615,6 +615,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     if (!Array.isArray(a.dann) || !a.dann.length) fehler.push(`${wo}: dann braucht mindestens eine Karte.`);
     const typ = istObjekt(a.wenn) && a.wenn.typ != null ? str(a.wenn.typ) : '';
     if (typ && !TYPVERWEIS.test(typ)) fehler.push(`${wo}: wenn.typ „${typ}“ ist kein gültiger Mappentyp-Verweis.`);
+    fehler.push(...postUndRollenFehler(a, typ, wo));
     const empf = (Array.isArray(a.dann) ? a.dann : []).filter(istObjekt).flatMap((k) => (Array.isArray(k.empfaenger) ? k.empfaenger : [])).filter(istObjekt);
     if (istObjekt(a.wenn) && a.wenn.rolle) fehler.push(`${wo}: wenn.rolle – feste Rollen gibt es in Paketen nicht; „für jeden Benutzer“ gilt für alle aktiven Benutzer.`);
     if (empf.some((e) => e.art === 'person' || e.art === 'rolle')) fehler.push(`${wo}: feste Personen und Rollen gibt es in Paketen nicht – Empfänger aus einem Feld oder der Ersteller der Mappe.`);
@@ -780,6 +781,18 @@ function pruefeZeitplanKarten(a: Record<string, unknown>, wo: string, paketId: s
   const zeitplan = istObjekt(a.wenn) && a.wenn.art === 'zeitplan' && a.wenn.jeBenutzer !== true;
   if (karten.length && !zeitplan) fehler.push(t('meldungen.pakete.automatisierung-paket-zeitplan', { wo }));
   return karten.length > 0;
+}
+
+/**
+ * #1001: Von Ablago gibt es in mitgelieferten Automatisierungen nur die Post (`dms:post`, „Post für dich“) – andere Typen
+ * von Ablago haben keine Mappen-Ereignisse für Pakete. Feste Rollen an „Favoriten-Änderungen melden“ gibt es nicht.
+ */
+function postUndRollenFehler(a: Record<string, unknown>, typ: string, wo: string): string[] {
+  const f: string[] = [];
+  if (typ.startsWith('dms:') && typ !== DMS_POST) f.push(t('meldungen.pakete.automatisierung-dms-typ', { wo, typ }));
+  const karten = (Array.isArray(a.dann) ? a.dann : []).filter(istObjekt);
+  if (karten.some((k) => k.art === 'favoriten' && Array.isArray(k.rollen) && k.rollen.length)) f.push(t('meldungen.pakete.automatisierung-favoriten-rollen', { wo }));
+  return f;
 }
 
 /** Liste von Schlüsseln aus einer Eingabe (#712: anzuschaltende Automatisierungen); alles andere → leer. */

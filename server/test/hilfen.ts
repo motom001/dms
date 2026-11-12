@@ -75,3 +75,25 @@ export const basisMitAblageort = (basis: Record<string, string>): Record<string,
   'inhalt/mappentypen.yaml': `${basis['inhalt/mappentypen.yaml'].trimEnd()}\n\n${ABLAGEORT_YAML}`,
   'inhalt/sichten.yaml': `${basis['inhalt/sichten.yaml'].trimEnd()}\n\n- { schluessel: ablageorte, name: Ablageorte, typen: [ablageort] }\n`,
 });
+
+/**
+ * „Post für dich“ (#1001) einschalten wie das Paket Benachrichtigungen: Motor am Ausgangskorb (Speicher-Repo), dieselben
+ * Karten (`postFuerDichDaten`). Seit #1001 legt der Kern die Aufgabe nicht mehr selbst an. `verteile` stellt auch
+ * gebündelte Ereignisse („Mappe geändert“, 5 s) gleich zu.
+ */
+export async function postFuerDich(d: Dienst, konten: { systemkonto(k: 'automatisierung'): Promise<import('../../shared/src/model').Benutzer> }) {
+  const { Automatisierungen, speicherAutomatisierungRepo, postFuerDichDaten } = await import('../src/automatisierung');
+  await import('../src/automatisierung-karten');
+  await konten.systemkonto('automatisierung');
+  d.systemkonten = (k) => konten.systemkonto(k as 'automatisierung');
+  const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
+  d.ereignisse.abonniere('automatisierungen', (e) => motor.ereignis(e));
+  const postTyp = (await d.kern.system()).post.id;
+  const a = await motor.lege({ ...postFuerDichDaten(postTyp, { name: 'Post für dich', beschreibung: '', text: 'Post für dich – bitte zuordnen' }), aktiv: true }, null);
+  const verteile = async () => {
+    const echt = Date.now;
+    Date.now = () => echt() + 6000;
+    try { await d.ereignisse.verteile(); } finally { Date.now = echt; }
+  };
+  return { motor, automatisierung: a, verteile };
+}

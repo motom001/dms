@@ -23,6 +23,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { UEBERGAENGE } from '../src/uebergaenge';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
+import { postFuerDich } from './hilfen';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000001042';
 
@@ -116,8 +117,10 @@ async function aufbau() {
 
 describe('Schnittstelle v1 und Platzhalter mit den alten Namen (#1042)', () => {
   it('POST /post und PUT /mappen/{id} nehmen absender/fuer an; Antworten liefern beide Namen; Zähler unverändert', async () => {
-    const { d, markus, lena, post, rufe } = await aufbau();
+    const { d, konten, markus, lena, post, rufe } = await aufbau();
+    const { verteile } = await postFuerDich(d, konten);
     const angelegt = (await rufe(markus, 'POST', '/api/v1/post', { body: { betreff: 'Brief', absender: 'Stadtwerke', fuer: lena.id } })).body as Mappe;
+    await verteile();
     assert.equal(angelegt.werte.von, 'Stadtwerke');
     assert.equal(angelegt.werte.an, lena.id);
     assert.equal(angelegt.werte.absender, 'Stadtwerke', 'alter Name in der Antwort');
@@ -205,11 +208,16 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
       { id: 'mail', name: 'Versendetes lesen', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'an_adresse', op: 'leer' } }], dann: { R: 'erteilen' }, stopp: false },
     ] };
     await sql`UPDATE mappentypen SET berechtigungen = ${sql.json(regeln as never)} WHERE id = ${post.id}`;
+    // „Post für dich“, wie der Kern sie bis 0.256 selbst anlegte (seit #1001 tut das eine Automatisierung).
+    const altePostAufgabe = (m: { id: string }, an: string) => d.kern.repo.legeAufgabeAn({ id: crypto.randomUUID(), mappeId: m.id, empfaengerId: an, art: 'post', text: 'Post für dich', feldKey: `an:${an}`, erstellt: new Date().toISOString(), erstelltVon: markus.id, erledigt: null, erledigtVon: null });
     const p1 = await d.post.legePostAn({ betreff: 'Strom', von: 'Stadtwerke', an: lena.id }, ich);
+    await altePostAufgabe(p1, lena.id);
     const p2 = await d.post.legePostAn({ betreff: 'Steuer', an: jonas.id }, ich);
+    await altePostAufgabe(p2, jonas.id);
     const p3 = await d.post.legePostAn({ betreff: 'Antwort', von: 'Markus' }, ich);
     await d.mappen.aendereMappe(p3.id, { werte: { an_adresse: 'info@example.org' } }, markus.id);
     const p4 = await d.post.legePostAn({ betreff: 'Weg', von: 'Bank', an: lena.id }, ich);
+    await altePostAufgabe(p4, lena.id);
     await d.loeschen.loescheMappe(p4.id, markus.id);
     const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Meine Post', beschreibung: '', elternId: null, position: 50, typen: [post.id], bedingungen: [
       { art: 'feld', feld: 'an', op: 'zeigtAuf', wert: { art: 'ich' } }, { art: 'feld', feld: 'von', op: 'nichtLeer' },

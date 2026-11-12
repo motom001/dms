@@ -28,7 +28,6 @@ import type { DateiFehler, Einrichtungsplan, PlanOrganisation, Planprobleme } fr
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstellt, SelbstErstelltDetail } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
 import type { Merkmale } from '../../shared/src/merkmale';
-import type { FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Termin, TermineAntwort } from '../../shared/src/fristen';
 import type { AblaufAntworten, AblaufVerlauf, AblaufvorlageAnsicht, AblaufvorlageDaten, MappenAblauf, VorlageZumAnwenden } from '../../shared/src/ablaufvorlagen';
@@ -452,7 +451,6 @@ export interface KontoStatus {
 export interface ModusEintrag { id: number; zeit: string; mappeId: string; typId: string | null; benutzerId: string | null; person: string; was: string; titel: string }
 /** #719: gewählter Alltags-Benutzer (null = nur Administratoren); `gespeichert` kann ein inzwischen ungeeigneter sein. */
 export type AufgabenEmpfaenger = { benutzerId: string | null; wirksam: string | null; gesetzt: boolean; gespeichert: string | null };
-type FreigabeStand = { freigabe: FavoritenFreigabe; rollen: Array<{ id: string; name: string; system: boolean }> };
 export interface AnbindungAnsicht { host: string; port: number; datenbank: string; benutzer: string; passwortGesetzt: boolean }
 export interface AnbindungEingabe { host: string; port: number; datenbank: string; benutzer: string; passwort: string }
 export type AnbindungPruefung = { ok: true; postgres: string; eingerichtet: boolean; benutzer: number } | { ok: false; art: 'nicht_erreichbar' | 'anmeldung' | 'datenbank_fehlt' | 'sonst'; text: string; anlegenMoeglich?: boolean; technisch: string };
@@ -535,7 +533,6 @@ export interface WartungWerkbank extends WartungOeffentlich { beginn: string | n
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person { id: string; name: string; aktiv?: boolean; /** Datum der Deaktivierung (#663) */ deaktiviert?: string | null; /** Dienstkonto eines Pakets (#338) bzw. Systemkonto (#673) */ art?: 'dienst' | 'system'; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
 /** Werkbank: tägliche Zusammenfassung (#54, #92, #94). */
-export interface MailEinstellung { aktiv: boolean; uhrzeit: string; bundesland: string | null }
 export interface Zusammenfassung {
   aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean;
   standard: { uhrzeit: string; tage: number[]; bundesland: string | null }; versand: boolean;
@@ -888,19 +885,13 @@ export const api = {
   leserechtAufZeit: (fallId: string) => anfrage<FallOhneLeserecht>('POST', `/api/werkbank/aufgaben/ohne-leserecht/${fallId}/leserecht`),
   /** Vor dem Zuweisen (#798): Darf dieser Benutzer die Mappe lesen? */
   darfLesen: (mappeId: string, benutzerId: string) => anfrage<{ lesen: boolean }>('GET', `/api/mappen/${mappeId}/leserecht/${benutzerId}`),
-  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: MailEinstellung | null; unlesbar?: string[] }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
-  aufgabenMailSpeichern: (e: MailEinstellung) => anfrage<MailEinstellung>('PUT', '/api/werkbank/aufgaben/mail', e),
+  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; unlesbar?: string[] }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
   /** Eigene tägliche Zusammenfassung (#92, #94). */
   zusammenfassung: () => anfrage<Zusammenfassung>('GET', '/api/konto/zusammenfassung'),
   zusammenfassungSetzen: (z: { aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean }) => anfrage<Zusammenfassung>('PUT', '/api/konto/zusammenfassung', z),
-  aufgabenMailSenden: () => anfrage<{ verschickt: number }>('POST', '/api/werkbank/aufgaben/mail/senden'),
-  /** Favoriten benachrichtigen (#506): Freigabe für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer. */
   // Aufgaben ohne Empfänger gehen an einen Alltags-Benutzer (#719).
   aufgabenEmpfaenger: () => anfrage<AufgabenEmpfaenger>('GET', '/api/werkbank/aufgaben-empfaenger'),
   aufgabenEmpfaengerSpeichern: (benutzerId: string | null) => anfrage<AufgabenEmpfaenger>('PUT', '/api/werkbank/aufgaben-empfaenger', { benutzerId }),
-  favoritenFreigabe: () => anfrage<FreigabeStand>('GET', '/api/werkbank/favoriten-freigabe'),
-  favoritenFreigabeSpeichern: (f: FavoritenFreigabe) => anfrage<FreigabeStand>('PUT', '/api/werkbank/favoriten-freigabe', f),
-  favoritenVorgabeAnwenden: () => anfrage<{ benutzer: number }>('POST', '/api/werkbank/favoriten-freigabe/anwenden'),
   notizAnlegen: (mappeId: string, text: string) => anfrage<Notiz>('POST', `/api/mappen/${mappeId}/notizen`, { text }),
   notizAendern: (id: string, text: string) => anfrage<Notiz>('PUT', `/api/notizen/${id}`, { text }),
   /** Übersetzung anzeigen (#732): ein Abschnitt; den Text liest der Server selbst. */
@@ -1430,7 +1421,7 @@ export interface WerkbankUebersicht {
   /** Automatisierungen (#675): mit fehlgeschlagenen Läufen bzw. angehalten oder fehlerhaft. */
   /** Angehaltene Mappen-Abläufe (#1044). */
   ablaeufe?: { angehalten: Array<{ id: string; vorlage: string; mappeId: string; grund: string }> } | null;
-  automatisierungen?: { fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: string }>; /** Erinnerungen am Feld beim Update übernommen (#712), bis gelesen. */ umgezogen?: { am: string; anzahl: number } | null; /** Keine Automatisierung schickt die Tägliche Zusammenfassung (#678). */ ohneBenachrichtigungen?: boolean };
+  automatisierungen?: { fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: string }>; /** Erinnerungen am Feld beim Update übernommen (#712), bis gelesen. */ umgezogen?: { am: string; anzahl: number } | null; /** Keine Automatisierung schickt die Tägliche Zusammenfassung (#678). */ ohneBenachrichtigungen?: boolean; /** Keine eingeschaltete Automatisierung legt „Post für dich“ an (#1001). */ ohnePostFuerDich?: boolean };
   /** Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind. */
   notfallzugaenge?: Array<{ id: string; name: string; erstellt: string }>;
   /** Notfallcode benutzt (#815), bis jemand den Hinweis als gelesen markiert. */

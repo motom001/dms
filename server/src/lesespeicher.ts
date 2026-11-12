@@ -28,7 +28,7 @@ export const IN_ANFRAGE_MS = 10_000;
  */
 export const GEMERKTE_EINSTELLUNGEN: ReadonlySet<string> = new Set([
   'zweifaktor_pflicht', 'zweifaktor_pflicht_seit', 'passkey_pflicht', 'passkey_pflicht_seit', 'aufgaben_empfaenger', 'post', 'papierkorb', 'favoriten_sicht',
-  'favoriten_freigabe', 'stempel', 'erkennung_typen', 'ablageort', 'datenschutz', 'paket_verwehrt', 'ki_typen', 'suche', 'vektoren',
+  'stempel', 'erkennung_typen', 'ablageort', 'datenschutz', 'paket_verwehrt', 'ki_typen', 'suche', 'vektoren',
   'historie', 'wiederherstellung_abschluss',
   // Merkmale der Ablage (#1032): jede Prüfung von Rechten, Ansichten und Pflichtfeldern liest sie.
   'merkmale',

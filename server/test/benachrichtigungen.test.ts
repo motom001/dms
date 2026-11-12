@@ -102,15 +102,14 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
     const mailer = { sende: async (an: string, betreff: string, text: string) => { mails.push({ an, betreff, text }); } };
     const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.vertretung.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)), typName: async () => 'Vorgang' };
-    const am_ = new Aufgabenmail(quelle as never, () => mailer as never, () => 'http://nas', speicherEinstellungen());
+    const am_ = new Aufgabenmail(quelle as never, () => mailer as never, () => 'http://nas');
     const offen = (await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
     assert.equal(offen, 1, 'Lena hat eine offene Aufgabe');
-    await am_.sende();
-    const bisher = mails.filter((x) => x.an === 'lena@example.org');
-    mails.length = 0;
     const r = await am_.fuerAutomatisierung(lena.id, false);
     assert.equal(r.schluessel, 'gesendet');
-    assert.deepEqual(mails, bisher, 'Vergleich: gleiche Mail wie bisher');
+    // Derselbe Text wie bis #678 („Jetzt senden“ gibt es seit #1001 nicht mehr).
+    assert.deepEqual(mails.map((x) => [x.an, x.betreff]), [['lena@example.org', 'Ablago: eine offene Aufgabe']]);
+    assert.match(mails[0].text, /^Hallo Lena,/);
     assert.equal((await am_.fuerAutomatisierung(lena.id, true)).schluessel, 'trocken');
     await konten.setzeEinstellung(lena, 'aufgaben_mail', false);
     assert.equal((await am_.fuerAutomatisierung(lena.id, false)).schluessel, 'abbestellt');

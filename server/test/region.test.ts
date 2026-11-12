@@ -4,7 +4,6 @@ import { afterEach, describe, it } from 'node:test';
 import { tagVon } from '../../shared/src/model';
 import { istZeitzone, liesRegion, REGION_STANDARD, setzeZeitzone, tagIn, zeitzone } from '../../shared/src/region';
 import { heuteIn } from '../../shared/src/sichten';
-import { Aufgabenmail } from '../src/aufgabenmail';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { RegionDienst } from '../src/region';
@@ -25,13 +24,7 @@ describe('Region (#726)', () => {
     await e.schreibe('aufgaben_mail', { aktiv: true, uhrzeit: '07:00', bundesland: 'SN' });
     const r = new RegionDienst(e);
     assert.deepEqual(await r.lies(), { land: 'DE', bundesland: 'SN', zeitzone: 'Europe/Berlin' });
-    // Die Zusammenfassung liest es weiter – jetzt aus der Region.
-    const mail = new Aufgabenmail({ benutzer: async () => [], einstellungenVon: async () => ({}), aufgabenVon: async () => [], typName: async () => '' }, () => null, () => '', e);
-    assert.equal((await mail.einstellung()).bundesland, 'SN');
     await r.speichere({ bundesland: 'BY' });
-    assert.equal((await mail.einstellung()).bundesland, 'BY');
-    // Speichern der Zusammenfassung ändert das Bundesland nicht mehr.
-    await mail.speichere({ uhrzeit: '08:00', bundesland: 'HH' });
     assert.equal((await r.lies()).bundesland, 'BY');
     await r.speichere({ bundesland: null });
     assert.equal((await r.lies()).bundesland, null, 'kein Rückfall auf das alte Bundesland, sobald die Region gespeichert ist');

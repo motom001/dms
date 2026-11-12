@@ -1,22 +1,19 @@
-import { feiertagAm, istBundesland, type Bundesland } from '../../shared/src/feiertage';
+import type { Bundesland } from '../../shared/src/feiertage';
 import { abwesenheitWirkt, type Aufgabe, type Benutzer } from '../../shared/src/model';
 import { heuteIn } from '../../shared/src/sichten';
-import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import type { Mailer } from './mail';
 import { protokoll } from './protokoll';
-import { einstellungsMerker, laufeFaellige, wochentagVon } from './zeitplan';
-import { datumsformat, liesRegion } from '../../shared/src/region';
 import { mitSpracheVon, t } from './sprache';
-import { gebietsschema } from '../../shared/src/sprache';
 
 /**
- * Tägliche Zusammenfassung der offenen Aufgaben (#54): keine Mail je Aufgabe, sondern einmal
- * am Tag zur eingestellten Uhrzeit eine Übersicht an jeden, der offene Aufgaben hat.
- * Abbestellen im Profil (Einstellung aufgaben_mail = false).
+ * Tägliche Zusammenfassung der offenen Aufgaben (#54): keine Mail je Aufgabe, sondern einmal am Tag eine Übersicht an
+ * jeden, der offene Aufgaben hat. Wann und für wen, entscheidet seit #678 die Automatisierung (Wenn „Zeitplan“ für jeden
+ * Benutzer, Dann „Tägliche Zusammenfassung senden“); seit #1001 gibt es dafür keine Einstellung in der Werkbank mehr.
+ * Hier stehen nur noch die Mail selbst und die persönlichen Zeiten. Abbestellen im Profil (Einstellung aufgaben_mail = false).
  */
 
-/** Werkbank: Versand an/aus, Standard-Uhrzeit (#92); Bundesland für Feiertage (#94) nur lesend aus der Region (#726). */
+/** Vorgaben für das Profil: Versand an (eine Automatisierung schickt sie), Uhrzeit der Automatisierung, Bundesland der Region. */
 export interface MailEinstellung { aktiv: boolean; uhrzeit: string; bundesland: Bundesland | null }
 export const MAIL_STANDARD: MailEinstellung = { aktiv: true, uhrzeit: '07:00', bundesland: null };
 /** Je Benutzer (#92, #94): eigene Uhrzeit (null = Standard), Wochentage 1 = Mo … 7 = So, „nicht an Feiertagen“. */
@@ -52,79 +49,13 @@ export interface AufgabenQuelle {
   typName(id: string | undefined): Promise<string>;
 }
 
-const HEUTE = () => datumsformat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' });
-const UHR = () => datumsformat(gebietsschema(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 export class Aufgabenmail {
   constructor(
     private quelle: AufgabenQuelle,
     private mailer: () => Mailer | null,
     private adresse: () => string,
-    private einstellungen?: Einstellungen,
   ) {}
-
-  async einstellung(): Promise<MailEinstellung> {
-    const e = (this.einstellungen ? await this.einstellungen.lies('aufgaben_mail') : null) as Partial<MailEinstellung> | null;
-    const x = { ...MAIL_STANDARD, ...(e ?? {}) };
-    // Das Bundesland steht seit #726 unter Werkbank → Region; hier nur noch lesend für die Feiertage.
-    const region = this.einstellungen ? liesRegion(await this.einstellungen.lies('region'), x.bundesland) : null;
-    return { aktiv: x.aktiv, uhrzeit: x.uhrzeit, bundesland: region ? region.bundesland : istBundesland(x.bundesland) ? x.bundesland : null };
-  }
-
-  async speichere(e: unknown): Promise<MailEinstellung> {
-    if (!this.einstellungen) throw new Fachfehler(404, t('mail.aufgabenmail.einstellungen-sind-nicht'));
-    const x = (e ?? {}) as Record<string, unknown>;
-    const alt = await this.einstellung();
-    const uhrzeit = x.uhrzeit === undefined ? alt.uhrzeit : String(x.uhrzeit);
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(uhrzeit)) throw new Fachfehler(422, t('mail.aufgabenmail.uhrzeit-als-hh-mm-2'));
-    // Bundesland: seit #726 unter Werkbank → Region (PUT /api/werkbank/region); hier wird es nicht mehr gespeichert.
-    const gespeichert = (await this.einstellungen.lies('aufgaben_mail')) as Partial<MailEinstellung> | null;
-    const neu = { aktiv: x.aktiv === undefined ? alt.aktiv : x.aktiv === true, uhrzeit, ...(gespeichert?.bundesland !== undefined ? { bundesland: gespeichert.bundesland } : {}) };
-    await this.einstellungen.schreibe('aufgaben_mail', neu);
-    protokoll.modul('werkbank').info('Tägliche Aufgaben-Mail eingestellt', { aktiv: neu.aktiv, uhrzeit: neu.uhrzeit });
-    return { aktiv: neu.aktiv, uhrzeit: neu.uhrzeit, bundesland: alt.bundesland };
-  }
-
-  /**
-   * Regelmäßig aufgerufen: je Benutzer höchstens einmal am Tag, frühestens zu seiner Uhrzeit, nur an
-   * seinen Wochentagen und – wenn gewünscht – nicht an Feiertagen (#92, #94). War das DMS zur Uhrzeit
-   * nicht erreichbar, kommt die Mail noch am selben Tag; am nächsten Tag wird nichts nachgeholt.
-   */
-  async pruefe(jetzt = new Date()): Promise<number> {
-    const e = await this.einstellung();
-    const mailer = this.mailer();
-    if (!e.aktiv || !mailer || !this.einstellungen) return 0;
-    const heute = HEUTE().format(jetzt);
-    // Bis 0.16 gab es nur einen gemeinsamen Zeitpunkt: wurde heute schon so verschickt, nicht noch einmal.
-    if ((await this.einstellungen.lies('aufgaben_mail_zuletzt')) === heute) return 0;
-    const ort = { datum: heute, uhr: UHR().format(jetzt) };
-    let n = 0;
-    for (const b of await this.quelle.benutzer()) {
-      if (!b.aktiv || !b.email) continue;
-      const einst = await this.quelle.einstellungenVon(b);
-      if (einst.aufgaben_mail === false) continue;
-      const z = wirksameZeit(einst.aufgaben_mail_zeit, e);
-      // Zeitplan-Baustein (#724): je Benutzer zu seiner Uhrzeit, an seinen Wochentagen; verpasst noch am selben Tag.
-      const takt = { uhrzeit: z.uhrzeit, an: (tag: string) => z.tage.includes(wochentagVon(tag)) && !(z.feiertage && feiertagAm(tag, e.bundesland)) };
-      await laufeFaellige(einstellungsMerker(this.einstellungen, `aufgaben_mail_zuletzt:${b.id}`), ort, takt, async () => { if (await this.sendeAn(b, mailer)) n++; });
-    }
-    if (n) protokoll.modul('mail').info('Tägliche Aufgaben-Mails verschickt', { anzahl: n });
-    return n;
-  }
-
-  /** Jetzt senden (auch aus der Werkbank zum Ausprobieren). Liefert die Anzahl verschickter Mails. */
-  async sende(): Promise<number> {
-    const mailer = this.mailer();
-    if (!mailer) throw new Fachfehler(409, t('mail.aufgabenmail.der-e-mail-versand'));
-    let n = 0;
-    for (const b of await this.quelle.benutzer()) {
-      if (!b.aktiv || !b.email) continue;
-      if ((await this.quelle.einstellungenVon(b)).aufgaben_mail === false) continue;
-      if (await this.sendeAn(b, mailer)) n++;
-    }
-    protokoll.modul('mail').info('Tägliche Aufgaben-Mails verschickt', { anzahl: n });
-    return n;
-  }
 
   /**
    * Dann-Karte „Tägliche Zusammenfassung senden“ (#678): an genau einen Benutzer, mit Grund für den Verlauf. Abbestellt

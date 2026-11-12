@@ -1,7 +1,7 @@
 /**
  * Post (#192, #337, #1077 aus dienst.ts): Post anlegen, einer Mappe zuordnen, automatisch zuordnen und rückgängig
- * machen, die Aufgabe „Post für dich“. Schicht 3 – über Mappen und Dokumenten; bekommt den Kern, die Rechteprüfung,
- * Mappentypen, Mappen, Dokumente und die übrigen Teile dieses Ordners. Aufgaben, Ereignis und Verknüpfungen kommen
+ * machen, die Aufgabe „Post für dich“ erledigen (anlegen tut sie seit #1001 eine Automatisierung). Schicht 3 – über
+ * Mappen und Dokumenten; bekommt den Kern, die Rechteprüfung, Mappentypen, Mappen, Dokumente und die übrigen Teile dieses Ordners. Aufgaben, Ereignis und Verknüpfungen kommen
  * über den Anschluss (noch im Dienst).
  */
 import { randomUUID } from 'node:crypto';
@@ -309,26 +309,19 @@ export class PostDienst {
   }
 
   /**
-   * „An“ (#192, bis #1042 „Für“): Solange Post neu ist und einem Benutzer gilt, hat dieser eine Aufgabe „Post für dich“
-   * unter „Zu erledigen“ (bei Abwesenheit sein Vertreter). Nur ein Benutzer bekommt sie – zeigt „an“ auf etwas anderes,
-   * entsteht keine. Zugeordnet, erledigt oder an jemand anderen → die Aufgabe ist erledigt.
+   * „Post für dich“ erledigen (#192, #1001): Die Aufgabe legt seit #1001 die mitgelieferte Automatisierung „Post für dich“
+   * an (Paket „Benachrichtigungen“; Art „Post für dich“, Schlüssel an:<Person aus „An“>, bis #1042 fuer:<…>) – der Kern
+   * erledigt sie weiter selbst, auch die vor dem Update angelegten: Ist die Post zugeordnet oder erledigt oder zeigt
+   * „An“ auf jemand anderen, ist die Aufgabe erledigt. Ebenso Aufgaben mit Anlass „Post“ (#724), sobald die Post nicht
+   * mehr neu ist. Wer sie bekommt und wann sie entsteht, steht in der Automatisierung.
    */
   async postAufgaben(mappeId: string, von: string | null) {
     const m = await this.repo.holeMappe(mappeId);
     const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'post');
-    const an = m && auswahlText(m.werte.stand) === POST_STAND.neu ? alsListe(m.werte.an)[0] ?? null : null;
-    // Schlüssel der Aufgabe: an:<Benutzer> (bis #1042 fuer:<Benutzer>, Migration 099 zieht offene um).
+    const neu = !!m && auswahlText(m.werte.stand) === POST_STAND.neu;
+    const an = neu ? alsListe(m!.werte.an)[0] ?? null : null;
     const schluessel = an ? `an:${an}` : null;
     for (const a of offen) if (a.feldKey !== schluessel) await this.repo.erledigeAufgabe(a.id, von);
-    // Aufgaben mit Anlass „Post“ (#724, z. B. aus „Wenn neue Post“): erledigt, sobald die Post nicht mehr neu ist.
-    if (m && auswahlText(m.werte.stand) !== POST_STAND.neu) await this.erledigeNachAnlass(mappeId, (x) => x.art === 'post', t('meldungen.dienst.post-zugeordnet-2'));
-    if (!an || offen.some((a) => a.feldKey === schluessel)) return;
-    // Aufgaben gehen an Konten; ohne Kontenverwaltung (Tests) genügt der Verweis.
-    if (this.konten?.benutzer && !(await this.konten.benutzer()).some((b) => b.id === an)) return;
-    const a = await this.neueAufgabe({
-      id: randomUUID(), mappeId, empfaengerId: an, art: 'post', text: t('meldungen.dienst.post-fuer-dich'), feldKey: schluessel,
-      erstellt: new Date().toISOString(), erstelltVon: von, erledigt: null, erledigtVon: null,
-    });
-    await this.leiteUm(a);
+    if (m && !neu) await this.erledigeNachAnlass(mappeId, (x) => x.art === 'post', t('meldungen.dienst.post-zugeordnet-2'));
   }
 }

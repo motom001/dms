@@ -431,7 +431,7 @@ const aufgabenmail = new Aufgabenmail({
   // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
   aufgabenVon: async (b) => dienst.vertretung.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
   typName,
-}, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
+}, () => betrieb.mailer(), () => betrieb.adresseFuerLinks());
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
 // Einrichtungsassistent (#119): Mandant und Administrator mit Code, danach die weiteren Schritte.
 const einrichtungNoetig = await konten.einrichtungNoetig();

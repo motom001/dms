@@ -1,5 +1,5 @@
 /**
- * Aufgaben (#960: aus routen.ts): Aufgaben, Fristen und Termine, Erinnerungen, tägliche Zusammenfassung.
+ * Aufgaben (#960: aus routen.ts): Aufgaben, Fristen und Termine, Erinnerungen, persönliche Zeiten der täglichen Zusammenfassung.
  */
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
@@ -46,7 +46,6 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
       await dienst.ohneLeserecht.faelleAbgleichen();
       return ok({
         aufgaben: await dienst.ohneLeserecht.alleAufgaben(a.query.erledigt !== undefined),
-        mail: x.aufgabenmail ? await x.aufgabenmail.einstellung() : null,
         unlesbar: (await dienst.ohneLeserecht.offeneFaelle()).map((f) => f.aufgabeId),
       });
     } },
@@ -57,7 +56,7 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/aufgaben/:id/folgetermin', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fristen.setzeFolgetermin(a.params.id, ich(a), await zg(a))) },
     // Termine für „Zu erledigen“ → Monat und Jahr (?von=&bis=&favoriten=1, #528, #725) – mit den Feiertagen der Region (#726).
     { methode: 'GET', pfad: '/api/termine', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fristen.termine(await zg(a), { von: a.query.von, bis: a.query.bis, favoriten: a.query.favoriten },
-      x.region ? (await x.region.lies()).bundesland : x.aufgabenmail ? (await x.aufgabenmail.einstellung()).bundesland : null)) },
+      x.region ? (await x.region.lies()).bundesland : null)) },
     // Startseite (#725): Kachel „Nächster Termin“.
     { methode: 'GET', pfad: '/api/termine/naechster', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fristen.naechsterTermin(await zg(a))) },
     // Alte Adresse (#725): „Anstehend“ gibt es nicht mehr.

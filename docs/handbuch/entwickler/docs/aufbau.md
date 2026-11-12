@@ -219,7 +219,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
-| `post.dienst.ts` | `PostDienst` (`dienst.post`) | `legePostAn`, `ordneZu` (#192), `automatischZuordnen`, `automatikRueckgaengig` (#337), `postAufgaben` („Post für dich“) |
+| `post.dienst.ts` | `PostDienst` (`dienst.post`) | `legePostAn`, `ordneZu` (#192), `automatischZuordnen`, `automatikRueckgaengig` (#337), `postAufgaben` („Post für dich“ erledigen; anlegen tut sie seit #1001 die Automatisierung) |
 | `aufloesen.ts` | `PostAufloesen` (`dienst.postAufloesen`) | Post auflösen und abtrennen (#934, #936): `loesePostAuf`, `trennePostAb`, `verschiebeInRegister` |
 | `systemmappen.ts` | `PostSystemmappen` (`dienst.postSystemmappen`) | `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, Rollen, Systemkonten (#673); `SystemkontoEintrag` |
 | `eingangskanaele.ts` | `Eingangskanaele` (`dienst.eingangskanaele`) | was Eingangsordner und Postfächer brauchen (#195, #196), gleiche Dateien und `fundstellen` (#333); `Fundstelle` |
@@ -228,7 +228,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 - **Tür:** `post/index.ts`; die Routen der Postfächer (`post.routen.ts`) holt nur `routen.ts` direkt. `wandleZuPost` und `ergaenzeSystemfelder` liegen seit #1073 bei den [Mappentypen](#mappentypen).
 - **Bekommt den Kern**, die [Rechteprüfung](#zugriff), [Mappentypen](#mappentypen), [Mappen](#mappen), [Dokumente](#dokumente) und die Teile dieses Ordners, `PostFotos` dazu [PDF bearbeiten](#pdf-bearbeiten). Über den Anschluss: Ereignis (`kern.ereignis`), `meldeVerknuepft`, Aufgaben, Konten, Passung, Systemausstattung, Mappen löschen und `sichereZuordnung` aus `erkennung.ts` (die Erkennung bekommt noch den ganzen Dienst und liegt darum nicht unter Schicht 3).
-- **Reihenfolge:** `legePostAn` schreibt Mappe, Historie, Titel, „Post für dich“, `post.angelegt` und die Verknüpfungen in einer Transaktion; der Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` bleibt der letzte in der Reihe und ruft `post.postAufgaben`.
+- **Reihenfolge:** `legePostAn` schreibt Mappe, Historie, Titel, `post.angelegt` und die Verknüpfungen in einer Transaktion (die Aufgabe „Post für dich“ legt seit #1001 danach die Automatisierung an – Wenn `mappe.geaendert` mit `angelegt`); der Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` bleibt der letzte in der Reihe und ruft `post.postAufgaben`.
 
 ## Ausgang (#1077) { #ausgang }
 
@@ -937,7 +937,7 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Mo
 
 **Modell**
 
-- **Genau eine Wenn-Karte:** ein Ereignis aus dem Katalog (alle Gruppen außer `zaehler`, optional nur ein Mappentyp, bei `mappe.geaendert` optional nur bestimmte Felder) oder `datum` – „Datumsfeld in N Tagen erreicht“ (negativ: vor N Tagen), täglich ab einer Uhrzeit in der Zeitzone des Haushalts. Die Wenn-Karte legt den **Kontext** fest: die Mappe des Ereignisses (`daten.mappe`, bei Benutzer-Ereignissen die Benutzer-Mappe) und ihren Mappentyp.
+- **Genau eine Wenn-Karte:** ein Ereignis aus dem Katalog (alle Gruppen außer `zaehler`, optional nur ein Mappentyp, bei `mappe.geaendert` optional nur bestimmte Felder und mit `angelegt` auch beim Anlegen – der Motor hört dann zusätzlich auf `mappe.angelegt`, #1001) oder `datum` – „Datumsfeld in N Tagen erreicht“ (negativ: vor N Tagen), täglich ab einer Uhrzeit in der Zeitzone des Haushalts. Die Wenn-Karte legt den **Kontext** fest: die Mappe des Ereignisses (`daten.mappe`, bei Benutzer-Ereignissen die Benutzer-Mappe) und ihren Mappentyp.
 - **Und:** Bedingungen aus dem Baukasten der Ansichten (`Bedingung` aus `sichten.ts`), dazu „Mappe ist in Ansicht …“ und „Mappe ist in den Favoriten von …“ (Person, Rolle, Feld). Jede umkehrbar (`nicht`), Gruppen `alle`/`eine` eine Ebene tief. Ausgewertet in der Datenbank (`Automatisierungshilfen.trifftTeile` → `repo.inKlauseln`), „ich“ ist das Systemkonto.
 - **Dann:** Karten in ihrer Reihenfolge; ausführen tun sie die Einträge in `DANN_AUSFUEHRER` (`(karte, kontext) => Promise<string>` – die Zeile fürs Protokoll; im Probelauf (`trocken`) nur beschreiben). „Danach keine weiteren Automatisierungen ausführen“ (`stopp`) erledigt der Motor selbst.
 - **Platzhalter** wie beim Mappentitel (`{feld}`, `{feld|filter}`), dazu `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}`, bei `datum` auch `{datum}` und `{tage}`. Werte mit den Rechten des Systemkontos; Titel verknüpfter Mappen, die es nicht lesen darf, erscheinen als „(nicht sichtbar)“; Passwörter nie.

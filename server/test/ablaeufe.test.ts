@@ -10,7 +10,7 @@
  * - Passung: gespeichert heißt „passt“; andere Mappen desselben Typs, die wegen eines doppelten Werts nicht passten,
  *   werden neu geprüft; „Passt nicht“-Aufgaben entstehen bzw. erledigen sich.
  * - Erwähnungen in formatierten Feldern: neue werden Aufgaben, entfernte stehen nur in der Historie.
- * - Post: „Für“ und Stand bestimmen die Aufgabe „Post für dich“.
+ * - Post: „An“ und Stand erledigen die Aufgabe „Post für dich“; anlegen tut sie seit #1001 die Automatisierung.
  * - Vertretung: Aufgaben für Abwesende bzw. Deaktivierte gehen an den Vertreter; die Benutzer-Mappe spiegelt das Konto.
  * - Zurückrollen: wirft ein Teil davon, steht nichts in der Datenbank.
  *
@@ -42,7 +42,7 @@ async function aufbau() {
   const { pgKontoRepo } = await import('../src/konto-repo');
   const { speicherDateien } = await import('../src/dateispeicher');
   const { pgEinstellungen } = await import('../src/einstellungen');
-  const { Automatisierungen, pgAutomatisierungRepo } = await import('../src/automatisierung');
+  const { Automatisierungen, pgAutomatisierungRepo, postFuerDichDaten } = await import('../src/automatisierung');
   await import('../src/automatisierung-karten');
   const d = new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
   const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.systemtypen.benutzerspiegel());
@@ -65,6 +65,9 @@ async function aufbau() {
     { key: 'notiz', label: 'Notiz', typ: 'formatiert' },
   ] });
   await motor.fristenUebernehmen();
+  // „Post für dich“ (#1001) wie aus dem Paket Benachrichtigungen.
+  const post = await motor.lege({ ...postFuerDichDaten((await d.kern.system()).post.id, { name: 'Post für dich', beschreibung: '', text: 'Post für dich – bitte zuordnen' }), aktiv: true }, null);
+  const automatisierungKonto = (await konten.systemkonto('automatisierung')).id;
 
   /** Ausgangskorb verteilen; gebündelte Ereignisse (z. B. „Mappe geändert“, 5 s) nicht erst abwarten. */
   const verteile = async () => {
@@ -79,7 +82,7 @@ async function aufbau() {
       .filter((x) => !mappeId || x.mappe === mappeId);
   const historie = async (mappeId: string) => d.mappenHistorie.historie(mappeId);
   const konto = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)! as Benutzer;
-  return { sql, d, konten, motor, markus, lena, jonas, petra, katrin, vertrag, benutzerTyp, verteile, aufgaben, offene, ereignisse, historie, konto };
+  return { sql, d, konten, motor, markus, lena, jonas, petra, katrin, vertrag, benutzerTyp, verteile, aufgaben, offene, ereignisse, historie, konto, postFuerDich: post, automatisierungKonto };
 }
 
 describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
@@ -188,17 +191,21 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal((await offene(c.id, 'passung')).length, 0);
     });
 
-    it('Post: „Post für dich“ beim Anlegen, wandert mit „An“, erledigt sich beim Zuordnen', async () => {
-      const { d, markus, lena, jonas, vertrag, offene, ereignisse } = await aufbau();
+    it('Post: „Post für dich“ beim Anlegen, wandert mit „An“, erledigt sich beim Zuordnen (#1001: Automatisierung)', async () => {
+      const { d, motor, markus, lena, jonas, vertrag, offene, ereignisse, verteile, automatisierungKonto, postFuerDich } = await aufbau();
       const post = await d.post.legePostAn({ betreff: 'Brief der Stadtwerke', an: lena.id }, { id: markus.id, name: 'Markus' });
+      assert.equal((await offene(post.id, 'post')).length, 0, 'der Kern legt sie nicht mehr selbst an');
+      await verteile();
       let p = await offene(post.id, 'post');
-      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon]), [[lena.id, `an:${lena.id}`, 'Post für dich', markus.id]]);
+      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon, a.anlass?.art, a.anlass?.automatisierung]),
+        [[lena.id, `an:${lena.id}`, 'Post für dich – bitte zuordnen', automatisierungKonto, 'post', postFuerDich.id]]);
       // #1042: an, dazu fuer mit demselben Wert bis 1.0.0.
       assert.deepEqual((await ereignisse('post.angelegt', post.id)).map((e) => [e.an, e.fuer]), [[lena.id, lena.id]]);
       const lenas = p[0].id;
 
       // An Jonas (alter Name fuer, Übergang #1042): Lenas Aufgabe erledigt (von Markus), Jonas bekommt eine.
       await d.mappen.aendereMappe(post.id, { werte: { fuer: jonas.id } }, markus.id);
+      await verteile();
       p = await offene(post.id, 'post');
       assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey]), [[jonas.id, `an:${jonas.id}`]]);
       const erledigt = (await d.ohneLeserecht.aufgabenVon(post.id)).find((a) => a.id === lenas)!;
@@ -206,6 +213,9 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal(erledigt.erledigtVon, markus.id);
       // Noch einmal gespeichert, „Für“ gleich: keine zweite.
       await d.mappen.aendereMappe(post.id, { werte: { betreff: 'Brief der Stadtwerke (Abschlag)' } }, markus.id);
+      await verteile();
+      // Läuft die Automatisierung noch einmal (z. B. Ausprobieren), entsteht auch keine zweite.
+      await motor.wiedergeben(postFuerDich.id, post.id, false);
       assert.equal((await offene(post.id, 'post')).length, 1);
 
       // Zugeordnet: Stand „Zugeordnet“, die Aufgabe ist erledigt.
@@ -266,6 +276,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal(x.a.empfaengerId, jonas.id);
       assert.ok((await historie(x.m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'weitergegeben wegen Abwesenheit von Lena an Jonas: Erwähnt von Petra in „Notiz“'));
       const post = await d.post.legePostAn({ betreff: 'Brief', fuer: lena.id }, { id: markus.id, name: 'Markus' });
+      await verteile();
       assert.deepEqual((await offene(post.id, 'post')).map((a) => a.empfaengerId), [jonas.id]);
 
       // Abwesenheit beendet: Mappe zeigt es, neue Aufgaben wieder an Lena; Jonas' Vertretungsaufgabe erledigt sich.

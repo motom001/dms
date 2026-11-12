@@ -91,7 +91,8 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Geplante Abläufe angehalten (die Person darf sie nicht mehr ausführen) | gelb | `ablaeufe.angehalten` |
 | Automatisierungen mit fehlgeschlagenen Läufen | gelb | `automatisierung.fehlgeschlagen` |
 | Erinnerungen beim Update übernommen | Hinweis | `automatisierung.umgezogen` |
-| Ohne Paket „Benachrichtigungen“ keine Tägliche Zusammenfassung | Hinweis | `automatisierung.ohne-benachrichtigungen` |
+| Ohne Paket „Benachrichtigungen“ keine Tägliche Zusammenfassung, keine Favoriten-Meldungen und kein „Post für dich“ | Hinweis | `automatisierung.ohne-benachrichtigungen` |
+| Keine eingeschaltete Automatisierung „Post für dich“ (Paket älter als 1.3.0 oder ausgeschaltet) | Hinweis | `automatisierung.ohne-post-fuer-dich` |
 | CPU oder Arbeitsspeicher seit 5 Minuten über 90 % | gelb | `auslastung` |
 | Engpass (Wartezeit, Verbindungen, Arbeiter, Überlast) | gelb | `engpass` |
 | Erweiterungen der Suche fehlen oder liegen falsch | gelb | `erweiterungen` |

@@ -220,3 +220,18 @@
   beschreibung: Suchfeld mit Haken „Erledigte zeigen“ über den gemeldeten Fehlern
   handy: true
   clients: false
+- anker: werkbank.aufgaben.suche
+  seite: /werkbank/aufgaben
+  beschreibung: Suchfeld über der Liste der Aufgaben, darunter die Filter (Empfänger, Art, Mappentyp, Fälligkeit)
+  handy: true
+  clients: false
+- anker: werkbank.aufgaben.erledigte
+  seite: /werkbank/aufgaben
+  beschreibung: Haken „Erledigte zeigen“ unter dem Suchfeld der Aufgaben
+  handy: true
+  clients: false
+- anker: werkbank.aufgaben.automatisierungen
+  seite: /werkbank/aufgaben
+  beschreibung: Satz mit Link „Wer wann benachrichtigt wird, stellst du unter Automatisierungen ein.“ über der Liste der Aufgaben
+  handy: true
+  clients: false

@@ -1,0 +1,15 @@
+art: minor
+
+## Neu
+
+- **Automatisierungen: „auch beim Anlegen“** (#1001): Die Wenn-Karte „Mappe gespeichert“ kann auch beim Anlegen auslösen – z. B. „neue Post oder ‚An‘ geändert“ in einer Karte. Pakete dürfen Automatisierungen auf die Post von Ablago mitbringen (`typ: dms:post`).
+- **Favoriten-Änderungen melden** (#1001): In der Karte stellst du jetzt selbst ein, an welche Rollen die Meldung geht und ob neue Benutzer sie gleich bekommen.
+
+## Geändert
+
+- **Werkbank → Aufgaben** (#1001) zeigt nur noch die Liste der Aufgaben – mit Suchfeld oben, Filtern darunter und „Erledigte zeigen“. Wer wann benachrichtigt wird, stellst du unter Automatisierungen ein: Die Blöcke „Tägliche Zusammenfassung“ und „Favoriten benachrichtigen“ sind entfallen. Deine bisherige Freigabe für Favoriten (für niemanden, nur bestimmte Rollen, Vorgabe für neue Benutzer) übernimmt das Update in die Automatisierung „Favoriten-Änderungen melden“; „Vorgabe auf alle anwenden“ und „Jetzt senden“ gibt es nicht mehr – zum Ausprobieren der Zusammenfassung wählst du in der Automatisierung die Benutzer-Mappe einer Person.
+- **„Post für dich“** (#1001) legt Ablago nicht mehr selbst an, sondern die gleichnamige Automatisierung aus dem Paket **Benachrichtigungen** (ab 1.3.0) – mit demselben Verhalten: Vertretung, erledigt sich beim Zuordnen, Erledigen oder Weitergeben, keine doppelten Aufgaben. Ist das Paket installiert, schaltet das Update die Automatisierung ein; offene Aufgaben bleiben und erledigen sich wie bisher. **Ohne das Paket bekommt bei neuer Post niemand mehr die Aufgabe** – die Werkbank-Übersicht weist darauf hin. Die Zahl „Neue Post“ bleibt, wie sie ist.
+
+## Behoben
+
+- **Zeitplan-Automatisierungen** (#1001) beachten die Feiertage des Bundeslands unter Werkbank → Region; bisher galt das Bundesland, das bis 0.159 bei der Täglichen Zusammenfassung stand.

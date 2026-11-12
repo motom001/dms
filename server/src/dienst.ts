@@ -394,7 +394,7 @@ export class Dienst {
     });
     const systemmappen = new PostSystemmappen(this.kern, { rechte, passung: this.passung, historie: this.mappenHistorie, titel: this.mappenTitel }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
-      passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste), favoritenFreigabe: () => this.aufgaben.favoritenFreigabe(),
+      passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste), favoritenVorgabe: () => this.ohneEmpfaenger.favoritenVorgabe(),
       vorgabeAufgabenEmpfaenger: (b) => this.ohneEmpfaenger.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.systemausstattung.sicherstellen(), konten: () => this.konten,
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
     });
@@ -461,7 +461,7 @@ export class Dienst {
   /** Aufgaben (#1078): die Klassen in aufgaben/ kennen einander über `teile`; Ereignis, Konten und Gültigkeit über den Anschluss. */
   private baueAufgaben(ereignisse: EreignisseDienst) {
     const teile = { rechte: this.rechtepruefung, historie: this.mappenHistorie, mappen: this.mappen, ereignisse, systemmappen: this.postSystemmappen } as AufgabenTeile;
-    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), konten: () => this.konten, gueltigkeit: () => this.gueltigkeit(), ablaufPlatzhalter: () => this.ablaufPlatzhalter };
+    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), konten: () => this.konten, gueltigkeit: () => this.gueltigkeit(), ablaufPlatzhalter: () => this.ablaufPlatzhalter, favoritenRegeln: () => this.favoritenRegeln?.() };
     teile.aufgaben = new AufgabenDienst(this.kern, teile, anschluss);
     teile.vertretung = new AufgabenVertretung(this.kern, teile, anschluss);
     teile.ohneLeserecht = new OhneLeserecht(this.kern, teile, anschluss);
@@ -518,7 +518,7 @@ export class Dienst {
       if (e.angelegt && (e.demo || !fristFelder(e.typ).length)) return;
       await this.fristen.fristenAbgleichen({ mappeIds: [e.mappe.id] });
     });
-    // Post (#192): „Für“ und Stand bestimmen die Aufgabe „Post für dich“.
+    // Post (#192, #1001): „An“ und Stand erledigen die Aufgabe „Post für dich“ (anlegen tut sie die Automatisierung).
     a.mappeGeaendert.anmelden('post.aufgaben', async (e) => { if (!e.angelegt && e.typ.system === 'post') await this.post.postAufgaben(e.mappe.id, e.von); });
     // Mappentyp geändert: Ansicht umbenennen → Titel → Passung → Fristen.
     a.typGeaendert.anmelden('sichten.umbenennen', async ({ alt, typ }) => {
@@ -619,6 +619,14 @@ export class Dienst {
   paketAblaufvorlagen?: (p: InstalliertesPaket, liste: PaketAblaufvorlage[]) => Promise<number>;
   /** Automatisierungen mit Änderungsverlauf für den Vollexport (#674 setzt das). */
   automatisierungenExport?: () => Promise<unknown[]>;
+  /**
+   * Wer Favoriten-Änderungen bekommt (#1001, bis dahin Werkbank → Aufgaben): je eingeschalteter Automatisierung mit der
+   * Karte „Favoriten-Änderungen melden“ ihre Rollen (leer = alle) und die Vorgabe für neue Benutzer. Setzt der Motor;
+   * ohne ihn (Tests ohne Automatisierungen) gilt: für alle, Vorgabe an.
+   */
+  favoritenRegeln?: () => Promise<Array<{ rollen: string[]; vorgabe: boolean }>>;
+  /** Uhrzeit der Täglichen Zusammenfassung (#1001, Profil „Standard“) aus der eingeschalteten Automatisierung; null = keine. */
+  zusammenfassungVorgabe?: () => Promise<{ uhrzeit: string } | null>;
 
   /**
    * Dokumente einer Mappe ohne Rechteprüfung (#878: Paket erstellen mit Beispiel-Dokumenten, nur für Administratoren).

@@ -91,7 +91,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | Planned runs paused (the person may no longer carry them out) | yellow | `ablaeufe.angehalten` |
 | Automations with failed runs | yellow | `automatisierung.fehlgeschlagen` |
 | Reminders taken over on the update | notice | `automatisierung.umgezogen` |
-| No daily summary without the package "Notifications" | notice | `automatisierung.ohne-benachrichtigungen` |
+| No daily summary, favourite reports or “Post for you” without the package "Notifications" | notice | `automatisierung.ohne-benachrichtigungen` |
+| No switched-on automation “Post for you” (package older than 1.3.0 or switched off) | notice | `automatisierung.ohne-post-fuer-dich` |
 | CPU or memory above 90 % for 5 minutes | yellow | `auslastung` |
 | Bottleneck (waiting time, connections, workers, overload) | yellow | `engpass` |
 | Search extensions missing or in the wrong place | yellow | `erweiterungen` |

@@ -58,7 +58,7 @@ describe('Entwurf in Werkbank-Formularen (#370)', () => {
 
   it('alle Werkbank-Formulare nutzen die gemeinsame Speicherleiste', () => {
     const wb = new URL('../../web/src/werkbank', import.meta.url).pathname;
-    const erwartet = ['Nummernkreise', 'Benutzer', 'Postfaecher', 'Eingangsordner', 'Anmeldeschutz', 'Aufgaben', 'Datenbank', 'Sicherung', 'Speicherplatz', 'PaketEinstellungen', 'Sichten', 'Designs', 'Betrieb', 'Ansicht'];
+    const erwartet = ['Nummernkreise', 'Benutzer', 'Postfaecher', 'Eingangsordner', 'Anmeldeschutz', 'Datenbank', 'Sicherung', 'Speicherplatz', 'PaketEinstellungen', 'Sichten', 'Designs', 'Betrieb', 'Ansicht'];
     const dateien = new Set(readdirSync(wb).map((d) => d.replace(/\.tsx$/, '')));
     for (const f of erwartet) {
       assert.ok(dateien.has(f), f);

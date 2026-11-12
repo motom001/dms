@@ -8,7 +8,7 @@ On the left are all automations with name, short form ("If Contract: Cancel by i
 
 | Area | What goes in |
 |---|---|
-| **If** | exactly one card: an event (folder created, saved, note, document uploaded, favourite changed, account block …), **Date reached** or **Schedule** |
+| **If** | exactly one card: an event (folder created, saved – optionally only for certain fields and **also when created** –, note, document uploaded, favourite changed, account block …), **Date reached** or **Schedule** |
 | **And** | none, one or several conditions: field values as in [views](sichten.md), "Folder is in view …", "Folder is a favourite of …", groups with "all" or "one is enough"; every condition can be reversed with **not** |
 | **Then** | one or more cards, in order: **Change field**, **Task / notification**, **Send daily summary**, **Report favourite changes**, **Report sign-in protection**, **No further automations afterwards** |
 
@@ -83,9 +83,10 @@ The stock only shows what matches the If card: **Change field**, for instance, o
 - **Placeholders with the recipient's permissions:** Ablago fills in the text for every recipient individually – for a role per person, for a stand-in with the stand-in's permissions. What the person may not see appears as "(not visible)", for instance the title of a linked contact. That way the daily summary doesn't give anything away either. The **test run** in the editor says who may not see something ("Jonas may not see everything …").
 - **Without read permission on the folder**, the task still arrives. But the person only sees "Task on a folder you may not see – ask …" and the due date (for tasks on a date field not even that). You find the case under [Tasks with people without read permission](aufgaben.md#aufgaben-bei-personen-ohne-leserecht).
 - Tasks from automations behave like the built-in ones: if someone is **absent or deactivated**, the task goes to their **Stand-in** (the history says "passed on because of absence …"). If there is none, the administrators get it – the run doesn't stop.
-- A task **completes itself** when its reason goes away: with **Date reached** when the date is changed or cleared; with **New post** when the post is assigned or completed; with **Absence set** when the absence ends.
+- A task **completes itself** when its reason goes away: with **Date reached** when the date is changed or cleared; with **New post** and with *post created or saved* when the post is assigned or completed; with **Absence set** when the absence ends.
+- If a task on a post goes to the **person under “To”**, it is a **Post for you** task: only one per post and person, and it also completes itself as soon as the post goes to someone else (see [Post for you](#post-fur-dich)).
 - **Send daily summary** (only with *Schedule for every user*) sends the person their open tasks by email – the same content as before. Whoever has unsubscribed under My account, is absent or has nothing open gets none; the run history names the reason.
-- **Report favourite changes** (only with *Favourite changed*) gives everyone who has the folder as a favourite the bundled notification "Changed" – as before. The [approval for favourites](aufgaben.md#favoriten-benachrichtigen) and the switch under My account still apply; one's own changes are never reported.
+- **Report favourite changes** (only with *Favourite changed*) gives everyone who has the folder as a favourite the bundled notification "Changed" – as before. **Only to members of these roles** narrows it down (no role = everyone), **New users get the notification** sets the default – both were under Workbench → Tasks up to 0.256 ([Notify about favourites](aufgaben.md#favoriten-benachrichtigen)). The switch under My account still applies; one's own changes are never reported.
 - **Report sign-in protection** sends everyone who manages sign-in protection either the **summary** of the blocks (with *Schedule*, not per user) or immediately an email when a **user account was blocked** (with *User account blocked*, at most once a day per account). See [Sign-in protection](anmeldeschutz.md#mail-an-die-administratoren).
 - **Run package on schedule** (only with *Schedule*, not per user) tells a package that its time has been reached – see [below](#paket-nach-zeitplan).
 - **No further automations afterwards** ends the sequence: automations with a higher number no longer run for this event (in the run history "Skipped by …").
@@ -138,9 +139,23 @@ If an **absence with a stand-in** is entered for someone, the stand-in gets a ta
 
 ### Notifications {#benachrichtigungen}
 
-The **daily summary**, reporting changed **favourites** and the emails of **sign-in protection** are automations. The package **Notifications** brings them; in the setup assistant it is preselected. Without an automation with *Send daily summary*, the Workbench overview points this out: "No automatic notifications" with **Install package**.
+The **daily summary**, reporting changed **favourites**, the task **Post for you** and the emails of **sign-in protection** are automations – they are set only here, no longer under [Workbench → Tasks](aufgaben.md#werkbank-aufgaben). The package **Notifications** brings them; in the setup assistant it is preselected. Without an automation with *Send daily summary*, the Workbench overview points this out: "No automatic notifications" with **Install package**; if only *Post for you* is missing (or switched off), the notice reads “No ‘Post for you’ task”.
 
 On the update to this version, Ablago created four automations **once** in existing libraries with the previous values: *Daily summary* (time from My account, on or off as before), *Report favourite changes*, *Sign-in protection summary* and *Report account block immediately* (on if the ticks in sign-in protection were set). Nothing changes for users. If you install the package, they merge into its automations as long as you haven't changed them.
+
+### Post for you {#post-fur-dich}
+
+If someone is under **To** on new [post](https://help.ablago.app/benutzer/aktuell/en/post/), they get the task **Post for you – please assign**. Up to version 0.256 this was built in; since 0.257 the automation **Post for you** from the package **Notifications** (1.3.0 or later) does it:
+
+| Card | Content |
+| --- | --- |
+| If | *Folder saved*, folder type **Post**, only when **To** or **Status** changes, **also when created** |
+| And | *To* is not empty, *Status* is *New* |
+| Then | *Task* to the person in **To**, text “Post for you – please assign” |
+
+The behaviour is the same as before: if the person is away, the task goes to their **stand-in**. It **completes itself** as soon as the post is assigned or completed or someone else is under *To* – who then gets their own. There is **only one** per post and person, even if the post is saved several times. The number **New post** on the start page still counts the post, not the tasks – it does not change.
+
+**When updating to 0.257:** if the Notifications package is installed, Ablago creates a switched-on automation *Post for you* with these cards **once**; updating the package to 1.3.0 replaces it as long as you haven't changed it (on or off stays). Open “Post for you” tasks from before stay and complete themselves as before. **If the package is not installed, nobody gets this task on new post any more** – the workbench overview points this out; if you install the package, it is back.
 
 ### Reminders from earlier versions {#erinnerungen-aus-fruheren-versionen}
 

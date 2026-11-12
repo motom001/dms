@@ -716,7 +716,7 @@ const SCHEMAS: Record<string, Schema> = {
   NotizListe: liste('Notiz'),
   PostEingabe: { type: 'object', properties: {
     betreff: { type: 'string', description: 'Standard „Neue Post“' }, datum: { type: 'string', format: 'date' }, von: { type: 'string', description: 'Wer die Post geschickt hat („Von“, #1042); ohne Angabe leer (bis 0.99: Name des Benutzers, #494)' },
-    an: { ...uuid, description: 'Id eines Benutzers („An“, #1042): Er bekommt die Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist.' },
+    an: { ...uuid, description: 'Id eines Benutzers („An“, #1042): Mit der Automatisierung „Post für dich“ (Paket Benachrichtigungen, #1001) bekommt er eine Aufgabe unter „Zu erledigen“, solange die Post neu ist.' },
     absender: { type: 'string', deprecated: true, description: 'Alter Name für von (bis 1.0.0, #1042); gilt nur ohne von' },
     fuer: { ...uuid, deprecated: true, description: 'Alter Name für an (bis 1.0.0, #1042); gilt nur ohne an' }, nachricht: { type: 'string' },
     kanal: { type: 'string', enum: ['Hochgeladen', 'E-Mail', 'Scan', 'Ordner', 'Import', 'API', 'WebDAV'] },

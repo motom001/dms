@@ -1230,8 +1230,8 @@ async function main() {
   await s.getByRole('heading', { name: w(/^Schlüssel\b/) }).first().waitFor();
   await bild(s, 'werkbank-verschluesselung');
   await geheZu(s, '/werkbank/aufgaben');
-  await s.getByRole('heading', { name: w('Tägliche Zusammenfassung') }).waitFor();
-  // #366: Mitte Zusammenfassung und Liste mit Filter, rechts die Mappe der ersten Aufgabe.
+  await s.locator('[data-anker="werkbank.aufgaben.suche"]').waitFor();
+  // #366, #1001: Mitte nur die Liste mit Suchfeld und Filtern, rechts die Mappe der ersten Aufgabe.
   if (await s.locator('.spalte.liste a.eintrag').count()) await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-aufgaben');
   // #415: Mehrfachauswahl mit Leiste „Ausgewählte weitergeben an“ (nur auswählen, nichts weitergeben).

@@ -1756,7 +1756,7 @@
   },
   "web/src/werkbank/Aufgaben.tsx": {
     "ablago/bausteine": {
-      "count": 8
+      "count": 5
     },
     "complexity": {
       "count": 1
@@ -1776,11 +1776,6 @@
     },
     "max-lines": {
       "count": 1
-    }
-  },
-  "web/src/werkbank/Benachrichtigungen.tsx": {
-    "ablago/bausteine": {
-      "count": 5
     }
   },
   "web/src/werkbank/Benutzer.tsx": {

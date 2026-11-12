@@ -220,7 +220,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 | File | Class (in the service) | Content |
 |---|---|---|
-| `post.dienst.ts` | `PostDienst` (`dienst.post`) | `legePostAn`, `ordneZu` (#192), `automatischZuordnen`, `automatikRueckgaengig` (#337), `postAufgaben` (“post for you”) |
+| `post.dienst.ts` | `PostDienst` (`dienst.post`) | `legePostAn`, `ordneZu` (#192), `automatischZuordnen`, `automatikRueckgaengig` (#337), `postAufgaben` (completes “post for you”; since #1001 the automation creates it) |
 | `aufloesen.ts` | `PostAufloesen` (`dienst.postAufloesen`) | dissolving and splitting off post (#934, #936): `loesePostAuf`, `trennePostAb`, `verschiebeInRegister` |
 | `systemmappen.ts` | `PostSystemmappen` (`dienst.postSystemmappen`) | `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, roles, system accounts (#673); `SystemkontoEintrag` |
 | `eingangskanaele.ts` | `Eingangskanaele` (`dienst.eingangskanaele`) | what inbox folders and mailboxes need (#195, #196), identical files and `fundstellen` (#333); `Fundstelle` |
@@ -229,7 +229,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 - **Door:** `post/index.ts`; only `routen.ts` loads the mailbox routes (`post.routen.ts`) directly. Since #1073 `wandleZuPost` and `ergaenzeSystemfelder` live with the [folder types](#mappentypen).
 - **Gets the core**, [checking permissions](#zugriff), [folder types](#mappentypen), [folders](#mappen), [documents](#dokumente) and the classes of this folder, `PostFotos` also [editing PDFs](#pdf-bearbeiten). Through the connector: event (`kern.ereignis`), `meldeVerknuepft`, tasks, accounts, fit, system setup, deleting folders and `sichereZuordnung` from `erkennung.ts` (recognition still gets the whole service and so does not sit below layer 3).
-- **Order:** `legePostAn` writes folder, history, title, “post for you”, `post.angelegt` and the links in one transaction; the receiver `post.aufgaben` at the connection point `mappeGeaendert` stays last in line and calls `post.postAufgaben`.
+- **Order:** `legePostAn` writes folder, history, title, `post.angelegt` and the links in one transaction (since #1001 the automation creates the “post for you” task afterwards – When `mappe.geaendert` with `angelegt`); the receiver `post.aufgaben` at the connection point `mappeGeaendert` stays last in line and calls `post.postAufgaben`.
 
 ## Outgoing (#1077) { #ausgang }
 
@@ -937,7 +937,7 @@ Small routines without code: **When · And · Then** (Otherwise comes with stage
 
 **Model**
 
-- **Exactly one When card:** an event from the catalogue (all groups except `zaehler`, optionally only one folder type, for `mappe.geaendert` optionally only certain fields) or `datum` – "date field reached in N days" (negative: N days ago), daily from a time of day in the household's time zone. The When card sets the **context**: the event's folder (`daten.mappe`, for user events the user folder) and its folder type.
+- **Exactly one When card:** an event from the catalogue (all groups except `zaehler`, optionally only one folder type, for `mappe.geaendert` optionally only certain fields and with `angelegt` also on creation – the engine then also listens to `mappe.angelegt`, #1001) or `datum` – "date field reached in N days" (negative: N days ago), daily from a time of day in the household's time zone. The When card sets the **context**: the event's folder (`daten.mappe`, for user events the user folder) and its folder type.
 - **And:** conditions from the views' toolkit (`Bedingung` from `sichten.ts`), plus "folder is in view …" and "folder is in the favourites of …" (person, role, field). Each can be inverted (`nicht`), groups `alle`/`eine` one level deep. Evaluated in the database (`Automatisierungshilfen.trifftTeile` → `repo.inKlauseln`); "me" is the system account.
 - **Then:** cards in their order; they are carried out by the entries in `DANN_AUSFUEHRER` (`(karte, kontext) => Promise<string>` – the line for the log; in a dry run (`trocken`) they only describe). "Don't run any further automations afterwards" (`stopp`) is handled by the engine itself.
 - **Placeholders** as for the folder title (`{feld}`, `{feld|filter}`), plus `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}`, for `datum` also `{datum}` and `{tage}`. Values with the system account's rights; titles of linked folders it may not read appear as "(not visible)"; passwords never.
