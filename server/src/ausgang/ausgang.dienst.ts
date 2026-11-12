@@ -18,7 +18,9 @@ import type { Repo } from '../repo';
 import type { SichtenVerwaltung } from '../sichten';
 import { t } from '../sprache';
 import { stufeAus } from '../verkleinern';
+import { zipGroesse, zipStrom, type ZipEintrag } from '../zip';
 import type { ZugriffDienst } from '../zugriff';
+import { mitAnlagen, stammUndEndung } from '../../../shared/src/anlagen';
 import { archivfassungName } from '../../../shared/src/archivfassung';
 import { type FassungInfo, kernTyp } from '../../../shared/src/dateiumwandlung';
 import type { Dokument, Mappe, Mappentyp } from '../../../shared/src/model';
@@ -209,6 +211,43 @@ export class AusgangDienst {
     if (plan) protokoll.modul('dokumente').info('Dokument mit Stempel heruntergeladen', { id, mappe: m!.id, pflicht: plan.pflicht });
     if (a.verkleinert) protokoll.modul('dokumente').info('Dokument verkleinert heruntergeladen', { id, mappe: m!.id, vorher: a.verkleinert.vorher, nachher: a.verkleinert.nachher });
     return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: !!a.gestempelt, verkleinert: a.verkleinert ?? null };
+  }
+
+  /**
+   * Anlagen beim Weitergeben (#998): „mit Anlagen?“ – Vorgabe ja. Die gewählten Dokumente, hinter jedem Hauptdokument
+   * seine Anlagen (nur aus derselben Mappe, also mit denselben Rechten wie das Hauptdokument). Ein Weg nach draußen
+   * fragt vorher die Prüfstelle für die Mappe; die Anlagen brauchen keine eigene Prüfung, weil sie dort liegen.
+   */
+  mitAnlagen(gewaehlt: Dokument[], alle: Dokument[], an: unknown): Dokument[] {
+    const liste = mitAnlagen(gewaehlt, alle, an !== false);
+    // Sicherheit: nie etwas aus einer anderen Mappe als das gewählte Hauptdokument.
+    return liste.filter((d) => !d.anlageZu || gewaehlt.some((g) => g.id === d.id || (g.id === d.anlageZu && g.mappeId === d.mappeId)));
+  }
+
+  /**
+   * Herunterladen „mit Anlagen“ (#998): das Dokument und seine Anlagen als ZIP „<Name> mit Anlagen.zip“ – jede Datei wie
+   * beim einzelnen Herunterladen (Original oder Archivfassung, Stempel, Verkleinern). Ohne Anlagen das Dokument allein.
+   * Die Route hat Lesen und Exportrecht an der Mappe geprüft (Prüfstelle); die Anlagen liegen in derselben Mappe.
+   */
+  async dokumentMitAnlagenFuerAusgabe(id: string, o: { stempel?: unknown; verkleinern?: unknown; fassung?: unknown; ich: { id: string | null; name: string } }) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
+    const anlagen = (await this.repo.anlagenVon(id)).filter((a) => a.mappeId === d.mappeId);
+    if (!anlagen.length) return { ...(await this.dokumentFuerAusgabe(id, o)), anlagen: 0 };
+    const eintraege: ZipEintrag[] = [];
+    const namen = new Set<string>();
+    let gestempelt = false;
+    for (const x of [d, ...anlagen]) {
+      const r = await this.dokumentFuerAusgabe(x.id, o);
+      gestempelt ||= r.gestempelt;
+      let name = r.name;
+      const [stamm, endung] = stammUndEndung(r.name);
+      for (let i = 2; namen.has(name.toLowerCase()); i++) name = `${stamm} (${i})${endung}`;
+      namen.add(name.toLowerCase());
+      eintraege.push({ name, groesse: r.groesse, inhalt: async () => r.inhalt });
+    }
+    const name = t('meldungen.anlagen.zip-name', { name: stammUndEndung(d.name)[0] });
+    return { name, mime: 'application/zip', anzeigbar: true, groesse: zipGroesse(eintraege), inhalt: zipStrom(eintraege) as Buffer | Readable, gestempelt, verkleinert: null, anlagen: anlagen.length };
   }
 
   /**

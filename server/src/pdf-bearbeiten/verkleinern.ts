@@ -126,8 +126,10 @@ export class PdfVerkleinern {
         neu = (await this.repo.holeDokument(d.id)) ?? neu;
       }
     } else {
-      await this.loescheDokument(d.id, von);
+      const { anlagen } = await this.loescheDokument(d.id, von);
       neu = (await this.ladeHoch(d.mappeId, { register: reg.key, name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet', ...(ocr ? { volltext: ocr } : {}) }, r.inhalt, von)).dokument;
+      // Anlagen (#998) hängen am verkleinerten Dokument; war es selbst eine Anlage, bleibt sie es.
+      await this.teile.dokumente.nimmAnlagenMit(d, anlagen, neu);
       if (d.archivnummer) neu = await this.setzeArchivnummer(neu.id, d.archivnummer, von).catch(() => neu);
     }
     const text = t('meldungen.dienst.verkleinert-stufe-dpi', { ergebnisText: ergebnisText(r.vorher, r.nachher), name: STUFEN[stufe].name, dpi: STUFEN[stufe].dpi });

@@ -313,6 +313,8 @@ export class Erkennung {
     const teile = [auswahlText(post.werte.von), auswahlText(post.werte.betreff), auswahlText(post.werte.nachricht)].filter(Boolean);
     let dokumente = 0;
     for (const d of await this.repo().listeDokumente(post.id)) {
+      // Anlagen (#998): AGB, Preislisten und Protokolle stören das Auslesen – nur Hauptdokumente.
+      if (d.anlageZu) continue;
       const t = d.ocr?.stand === 'fertig' ? await this.repo().volltext(d.id) : null;
       if (t?.trim()) { teile.push(t); dokumente++; }
     }
@@ -478,6 +480,8 @@ export class Erkennung {
       const d = await this.repo().holeDokument(id);
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
       quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, d.mappeId, 'R')).typId);
+      // Anlagen (#998): Erkennung und KI nutzen nur Hauptdokumente.
+      if (d.anlageZu) continue;
       if (!er && (istXmlDatei(d.name, d.mime) || d.mime === 'application/pdf')) er = await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse);
       const eintrag = await this.repo().volltext(id);
       // Eine E-Rechnung als XML hat keinen Volltext – dann ist ihr Text der lesbare Auszug.
@@ -490,7 +494,7 @@ export class Erkennung {
     const erlaubt = this.erlaubteFelder(typ, mappe);
     const angaben = findeAngaben(text);
     // Erkennung per Paket (#511), wenn gewählt; sonst bzw. wenn das Paket nicht antwortet: eingebaut.
-    const dokIds = (Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10);
+    const dokIds = (await this.ohneAnlagen((Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10)));
     let engine: TypVorschlaege['engine'] = { art: 'eingebaut' };
     let hinweis: string | undefined;
     let ausPaket: Record<string, unknown> | null = null;
@@ -824,6 +828,8 @@ export class Erkennung {
       const d = await this.repo().holeDokument(id);
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
       await this.d.rechtepruefung.pruefeRecht(z, d.mappeId, 'R');
+      // Anlagen (#998): Abgleich nur mit Hauptdokumenten.
+      if (d.anlageZu) continue;
       const text = await this.repo().volltext(id);
       // E-Rechnung als XML (#1043): ohne Volltext zählt ihr lesbarer Auszug.
       const er = !text?.trim() && istXmlDatei(d.name, d.mime) ? await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse) : null;
@@ -833,6 +839,13 @@ export class Erkennung {
     const erg = await this.abgleich(text, typ, z);
     if (typ) return { ...erg, ohneText };
     return { ...erg, ohneText, typ: text.trim() ? typAusText(text, await this.d.mappentypen.ausPostZiele(z)) : null };
+  }
+
+  /** Anlagen (#998) weglassen: Erkennung, Fundstellen und KI arbeiten nur mit Hauptdokumenten. */
+  private async ohneAnlagen(ids: string[]): Promise<string[]> {
+    const erg: string[] = [];
+    for (const id of ids) if (!(await this.repo().holeDokument(id))?.anlageZu) erg.push(id);
+    return erg;
   }
 
   /** „Neue Organisation anlegen“: der erste Absender-Typ mit Namensfeld, den der Benutzer sieht und anlegen darf. */

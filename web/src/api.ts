@@ -45,6 +45,9 @@ import type { BudgetStand, ExternAufruf, ExternerDienst, ExternKennzahlen, Koste
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import type { OrganisationStand } from '../../shared/src/organisation';
 import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, NotfallMailStand } from '../../shared/src/notfallkontakte';
+
+/** Ein Dokument und seine Anlagen (#998, GET/POST/PUT/DELETE …/anlagen). */
+export interface AnlagenStand { dokument: Dokument; anlagen: Dokument[] }
 /** Antwort auf eine Änderung an einem Notfallkontakt (#812). */
 export interface NotfallkontaktErgebnis { kontakt: Notfallkontakt | null; mail: NotfallMailStand | 'keine' | 'grenze' }
 
@@ -355,6 +358,8 @@ export interface Zaehler {
 export interface DokumentImKorb {
   id: string; art: 'dokument'; mappeId: string; typId: string; mappeTitel: string; registerKey: string; register: string;
   name: string; mime: string; groesse: number; versionen: number; geloescht: string; geloeschtVon: string | null; mappe: 'da' | 'papierkorb' | 'weg';
+  /** Anlagen (#998): Hauptdokument, an dem es hing – kommt mit ihm zurück. */
+  anlageZu?: string | null;
 }
 export interface PapierkorbEintrag {
   id: string; typId: string; titel: string; werte: Werte; demo: boolean;
@@ -837,10 +842,10 @@ export const api = {
   mappenaktionenEinstellung: () => anfrage<AktionenEinstellung>('GET', '/api/werkbank/pakete/mappenaktionen'),
   eingebauteAktionenSetzen: (eingebautAus: EingebauteAktion[]) => anfrage<AktionenEinstellung>('PUT', '/api/werkbank/pakete/mappenaktionen', { eingebautAus }),
   paketAktionenAusSetzen: (id: string, aus: string[]) => anfrage<AktionenEinstellung>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/mappenaktionen`, { aus }),
-  herunterladenMitStempel: (id: string, stempel: StempelWunsch | null, name: string, version?: number, verkleinern?: KleinStufe | null, fassung?: 'archiv' | 'original') => speichereDatei(`/api/dokumente/${id}/herunterladen`, { stempel, version, verkleinern, fassung }, name),
-  emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) =>
+  herunterladenMitStempel: (id: string, stempel: StempelWunsch | null, name: string, version?: number, verkleinern?: KleinStufe | null, fassung?: 'archiv' | 'original', mitAnlagen?: boolean) => speichereDatei(`/api/dokumente/${id}/herunterladen`, { stempel, version, verkleinern, fassung, ...(mitAnlagen ? { mitAnlagen } : {}) }, name),
+  emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[]; mitAnlagen?: boolean; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) =>
     anfrage<{ id: string; typId: string; mappen: number; anhaenge: number }>('POST', '/api/mappen/email', e),
-  emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
+  emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[]; mitAnlagen?: boolean; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */
   /** Mit folgetermin bei wiederkehrenden Fristen (#130). */
@@ -1190,6 +1195,14 @@ export const api = {
   archivnummer: (nr: string) => anfrage<{ dokument: Dokument; mappeId: string; typId: string; titel: string }>('GET', `/api/archivnummern/${encodeURIComponent(nr)}`),
   setzeArchivnummer: (id: string, archivnummer: string) => anfrage<Dokument>('PUT', `/api/dokumente/${id}/archivnummer`, { archivnummer }),
   /** Hinweis „Post teilen?“ wegklicken (#579). */
+  // Anlagen (#998): lesen, „Als Anlage an … hängen“, umsortieren, umbenennen, „Zum eigenen Dokument machen“.
+  anlagen: (id: string) => anfrage<AnlagenStand>('GET', `/api/dokumente/${id}/anlagen`),
+  anlageAnhaengen: (haupt: string, dokument: string, name?: string) => anfrage<AnlagenStand>('POST', `/api/dokumente/${haupt}/anlagen`, { dokument, ...(name ? { name } : {}) }),
+  anlagenSortieren: (haupt: string, reihenfolge: string[]) => anfrage<AnlagenStand>('PUT', `/api/dokumente/${haupt}/anlagen`, { reihenfolge }),
+  anlageUmbenennen: (haupt: string, anlage: string, name: string) => anfrage<AnlagenStand>('PUT', `/api/dokumente/${haupt}/anlagen/${anlage}`, { name }),
+  anlageLoesen: (haupt: string, anlage: string) => anfrage<AnlagenStand>('DELETE', `/api/dokumente/${haupt}/anlagen/${anlage}`),
+  /** Herunterladen „mit Anlagen“ (#998): das Dokument und seine Anlagen als ZIP. */
+  herunterladenMitAnlagen: (id: string, name: string, fassung?: 'archiv' | 'original') => speichereDatei(`/api/dokumente/${id}/herunterladen`, { mitAnlagen: true, ...(fassung ? { fassung } : {}) }, name),
   teilenHinweisAus: (id: string) => anfrage<{ id: string; teilenAb: number | null }>('DELETE', `/api/dokumente/${id}/teilen-hinweis`),
   /** Leerseiten (#997): je Seite „Doch behalten“ (weglassen false) bzw. „Auch weglassen“ (true) – gelöscht wird erst beim Übernehmen. */
   leerseiteWaehlen: (id: string, nr: number, weglassen: boolean) => anfrage<{ dokument: string; sha256: string; seiten: number; leerseiten: Leerseiten | null; wegfallend: number[] }>('PUT', `/api/dokumente/${id}/leerseiten/${nr}`, { weglassen }),

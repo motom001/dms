@@ -74,6 +74,8 @@ export class Klassifizierung {
       const dok = await this.repo().holeDokument(id);
       if (!dok) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
       quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, dok.mappeId, 'R')).typId);
+      // Anlagen (#998): Klassifizieren und KI nutzen nur Hauptdokumente – AGB und Protokolle stören den Vorschlag.
+      if (dok.anlageZu) continue;
       const text = await this.repo().volltext(id);
       if (text?.trim()) teile.push(text); else ohneText.push(id);
     }

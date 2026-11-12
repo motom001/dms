@@ -15,6 +15,7 @@ import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
+import { anlagenVon, mitAnlagen, zumVerschieben } from '../../../shared/src/anlagen';
 import { istDatum } from '../../../shared/src/fristen';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { type Aufgabe, type AufgabenAnlass, auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, type Register, verweiseVon, type Werte } from '../../../shared/src/model';
@@ -164,27 +165,31 @@ export class PostDienst {
     if (zielTyp.system === 'post') throw new Fachfehler(422, t('meldungen.dienst.post-laesst-sich-nicht-2'));
     const alle = await this.repo.listeDokumente(postId);
     const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id);
-    const dokumente = ids.map((id) => alle.find((d) => d.id === id));
-    if (dokumente.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
+    const auswahl = ids.map((id) => alle.find((d) => d.id === id));
+    if (auswahl.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
+    // Anlagen (#998) wandern mit ihrem Hauptdokument; eine Anlage allein lässt sich nicht übernehmen.
+    const { bewegen: dokumente, allein } = zumVerschieben(auswahl as Dokument[]);
+    if (allein.length) throw new Fachfehler(422, t('meldungen.anlagen.allein', { name: allein[0].name }));
+    const mit = mitAnlagen(dokumente, alle);
     const regs = zielTyp.register.filter((r) => r.art === 'dokumente');
     const reg = regs.find((r) => r.key === text(e.register)) ?? (e.register ? undefined : regs[0]);
     if (dokumente.length && !reg) throw new Fachfehler(422, regs.length ? t('meldungen.dienst.dieses-dokumentenregister-gibt-es') : t('meldungen.dienst.hat-kein-dokumentenregister-ordne', { name: zielTyp.name }));
     const kopieren = e.kopieren === true;
     // Auflösen (#936, #934): auf Wunsch – in eine neue wie in eine bestehende Mappe. Nie automatisch (wegen „Automatik
     // rückgängig“), nie mit „Kopie in der Post behalten“ und nie bei versendeten E-Mails (Nachweis des Versands).
-    const rest = alle.filter((d) => !ids.includes(d.id));
+    const rest = alle.filter((d) => !mit.some((x) => x.id === d.id));
     // Leerseiten (#997): beim Übernehmen weglassen (Vorgabe), nie beim automatischen Zuordnen – da hat niemand hingesehen.
-    const leer: Map<string, LeerseitenPlan> = auto ? new Map() : await this.teile.leerseiten.plane(dokumente as Dokument[], e.leerseiten === 'behalten' ? 'behalten' : 'weglassen');
+    const leer: Map<string, LeerseitenPlan> = auto ? new Map() : await this.teile.leerseiten.plane(mit, e.leerseiten === 'behalten' ? 'behalten' : 'weglassen');
     let hinweis: string | undefined;
     if (e.aufloesen === true && !auto && !kopieren && !istVersendet(post.werte)) {
       const grund = await this.aufloesenSperre(post, typ, rest.length > 0, z);
-      if (!grund) return this.loesePostAuf({ post, typ, ziel, zielTyp, reg, dokumente: dokumente as Dokument[], rest, von, quelle, neu: await this.ebenAngelegt(ziel, von), leer });
+      if (!grund) return this.loesePostAuf({ post, typ, ziel, zielTyp, reg, dokumente, rest, von, quelle, neu: await this.ebenAngelegt(ziel, von), leer });
       hinweis = t('meldungen.dienst.post-bleibt-zugeordnet', { grund });
     }
-    for (const d of dokumente as Dokument[]) await this.uebertrage(d, { ziel, zielTyp, reg: reg!, kopieren, auto: !!auto, von }, leer.get(d.id));
+    for (const d of dokumente) await this.uebertrage(d, { ziel, zielTyp, reg: reg!, kopieren, auto: !!auto, von }, leer, anlagenVon(alle, d.id));
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const zielTitel = await this.titel(ziel);
-    const n = dokumente.length;
+    const n = mit.length;
     const doks = n ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: kopieren ? ' (kopiert)' : '', name: reg!.name }) : '';
     const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id])];
     await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.zugeordnet }, von);
@@ -207,18 +212,30 @@ export class PostDienst {
    * (#997): mit Plan entsteht dort die neue Fassung ohne sie – bei der Kopie nur an der Kopie, die Post behält ihr
    * Dokument samt Markierung; ohne Plan geht die Markierung beim Verschieben weg (außer beim automatischen Zuordnen).
    */
-  private async uebertrage(d: Dokument, x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; kopieren: boolean; auto: boolean; von: string | null }, plan: LeerseitenPlan | undefined) {
+  private async uebertrage(d: Dokument, x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; kopieren: boolean; auto: boolean; von: string | null }, leer: Map<string, LeerseitenPlan>, anlagen: Dokument[]) {
     if (x.kopieren) {
-      const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: x.ziel.id, registerKey: x.reg.key, erstellt: new Date().toISOString(), erstelltVon: x.von });
-      const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
-      if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info, sprache: fertig.sprache ?? null });
-      else if (VolltextDienst.volltextAn(x.zielTyp, x.reg.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
-      if (plan) await this.teile.leerseiten.lasseWeg(neu.id, plan, x.von);
+      // Anlagen (#998): Die Kopien hängen an der Kopie des Hauptdokuments.
+      const neu = await this.kopiere(d, x, leer.get(d.id));
+      for (const [i, a] of anlagen.entries()) await this.repo.setzeAnlage((await this.kopiere(a, x, leer.get(a.id))).id, neu.id, a.anlageNr ?? i + 1);
       return;
     }
+    // Die Anlagen wandern mit (Repo); Leerseiten gelten für jede einzeln.
     await this.verschiebeInRegister(d, x.ziel.id, x.zielTyp, x.reg.key);
-    if (plan) await this.teile.leerseiten.lasseWeg(d.id, plan, x.von);
-    else if (!x.auto && d.leerseiten) await this.teile.leerseiten.vergiss(d.id);
+    for (const y of [d, ...anlagen]) {
+      const plan = leer.get(y.id);
+      if (plan) await this.teile.leerseiten.lasseWeg(y.id, plan, x.von);
+      else if (!x.auto && y.leerseiten) await this.teile.leerseiten.vergiss(y.id);
+    }
+  }
+
+  /** Kopie beim Zuordnen mit „Kopie in der Post behalten“: dieselbe Datei, Volltext mitnehmen, Leerseiten an der Kopie. */
+  private async kopiere(d: Dokument, x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; von: string | null }, plan: LeerseitenPlan | undefined): Promise<Dokument> {
+    const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: x.ziel.id, registerKey: x.reg.key, erstellt: new Date().toISOString(), erstelltVon: x.von });
+    const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
+    if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info, sprache: fertig.sprache ?? null });
+    else if (VolltextDienst.volltextAn(x.zielTyp, x.reg.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
+    if (plan) await this.teile.leerseiten.lasseWeg(neu.id, plan, x.von);
+    return neu;
   }
 
   /** Mappentypen mit „Post automatisch zuordnen“ (#337); Archivmodus- und Systemtypen nie (dort nur mit Bestätigung). */
@@ -288,6 +305,8 @@ export class PostDienst {
     await this.inTransaktion(async () => {
       for (const x of auto.dokumente) {
         const d = await this.repo.holeDokument(x.id);
+        // Anlagen (#998) kommen mit ihrem Hauptdokument zurück.
+        if (d?.anlageZu && auto.dokumente.some((y) => y.id === d.anlageZu)) { if (d.mappeId === auto.ziel || d.mappeId === post.id) zurueck++; continue; }
         if (!d || d.mappeId !== auto.ziel) continue;
         const reg = typ.register.find((r) => r.key === x.register && r.art === 'dokumente') ?? typ.register.find((r) => r.art === 'dokumente');
         if (!reg) continue;

@@ -1,0 +1,15 @@
+/* Anlagen (#998): eingeklappte Zeilen „Anlage 1 · HU/AU-Protokoll · 2 Seiten“ unter dem Hauptdokument, eingerückt mit
+   einer Linie links; ein Klick zeigt die Anlage in der Vorschau. Werte nur aus web/src/tokens.css. */
+.zeile { margin-left: 28px; border-left: 2px solid var(--linie-stark); padding-left: 10px; }
+.kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; min-width: 0; }
+.titel { min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.aktionen { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-left: auto; }
+.form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; margin: 6px 0; }
+.form > :first-child { flex: 1 1 220px; min-width: 0; }
+.mitAnlagen { display: inline-flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.uebersicht { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.uebersicht li { margin-left: 18px; color: var(--leise); }
+@media (max-width: 600px) {
+  .zeile { margin-left: 12px; }
+  .aktionen { margin-left: 0; }
+}

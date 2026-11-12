@@ -172,6 +172,8 @@ export interface KorbInhalt { id: string; typId: string; werte: Werte; demo: boo
 export interface DokumentImPapierkorb {
   id: string; mappeId: string; registerKey: string; name: string; mime: string; groesse: number; sha256: string;
   erstellt: string; erstelltVon: string | null;
+  /** Anlagen (#998): Hauptdokument, an dem es beim Löschen hing (kommt mit ihm zurück). */
+  anlageZu?: string | null;
   /** Anzahl älterer Versionen, die mitgegangen sind. */
   versionen: number;
   geloescht: string; geloeschtVon: string | null;
@@ -489,8 +491,18 @@ export interface Repo {
   /** Ältere Versionen über die letzten `behalten` hinaus entfernen; liefert deren Dateien (sha256). */
   kuerzeVersionen(dokumentId: string, behalten: number): Promise<string[]>;
   loescheDokument(id: string): Promise<void>;
-  /** Zuordnen (#192): Dokument samt Volltext in eine andere Mappe und ein anderes Register. */
+  /**
+   * Zuordnen (#192): Dokument samt Volltext in eine andere Mappe und ein anderes Register. Anlagen (#998) wandern mit;
+   * eine Anlage, die ohne ihr Hauptdokument in eine andere Mappe kommt, ist danach ein eigenes Dokument.
+   */
   verschiebeDokument(id: string, mappeId: string, registerKey: string): Promise<void>;
+  /** Anlagen (#998): die Anlagen eines Dokuments, Anlage 1 zuerst. */
+  anlagenVon(id: string): Promise<Dokument[]>;
+  /**
+   * Anlagen (#998): Dokument als Anlage `nr` an `anlageZu` hängen (null: zum eigenen Dokument machen); `name` benennt es
+   * dabei um. Mappe und Register prüft der Dienst. false, wenn es das Dokument nicht gibt.
+   */
+  setzeAnlage(id: string, anlageZu: string | null, nr: number | null, name?: string): Promise<boolean>;
   /** Andere Dokumente mit derselben Datei (gleicher Inhalt). */
   dokumenteMitSha(sha256: string): Promise<Dokument[]>;
   /** Dateien umwandeln (#577): lebende Dokumente dieser Dateitypen, ältere zuerst. */

@@ -16,6 +16,10 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
 - `geschuetzte-pdf.ts` – `GeschuetztePdfs` (#827): Entsperren anbinden, `entsperreDokument`, `nachEntsperren`,
   `mitPdfSchutz`.
 - `fehlende-dateien.ts` – `FehlendeDateien` (#877): merken, zählen, `dokumenteOhneDatei`, `pruefeVorhanden`.
+- `anlagen.ts` – `DokumentAnlagen` (#998): `liste`, `haengeAn` („Als Anlage an … hängen“), `loese` („Zum eigenen
+  Dokument machen“), `sortiere`, `benenne`, `alsAnlagen` (beim Teilen einer Post, `dms:anlagen`). Mitwandern:
+  `verschiebeDokument` im Repo, `loescheDokument` (Anlagen mit in den Papierkorb, beim Ersetzen `nimmAnlagenMit`),
+  Wiederherstellen im Papierkorb.
 - `index.ts` – die einzige Tür. `dokumente.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 
 **Abhängigkeiten**

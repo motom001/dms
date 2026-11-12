@@ -24,7 +24,7 @@ import { Systemausstattung } from './systemausstattung';
 import { KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete } from './mappentypen';
 import { paketEinstellungen } from './pakete/index';
 import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHinweise, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
-import { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, FehlendeDateien, GeschuetztePdfs } from './dokumente';
+import { DokumentAnlagen, DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, FehlendeDateien, GeschuetztePdfs } from './dokumente';
 import { SichtenDienst, SichtenVerwaltung, Systemsichten } from './sichten';
 import { BerechtigungenDienst } from './berechtigungen';
 import { PdfBearbeiten, PdfVerkleinern, Schwaerzen, Stempelvorlagen } from './pdf-bearbeiten';
@@ -153,6 +153,8 @@ export class Dienst {
   readonly dateienFehlen: FehlendeDateien;
   /** Versionen (#194, #1075). */
   readonly dokumentVersionen: DokumentVersionen;
+  /** Anlagen (#998): lesen, anhängen, lösen, umsortieren, umbenennen. */
+  readonly dokumentAnlagen: DokumentAnlagen;
   /** Suche (#964): unscharfe Suche, gleichbedeutende Wörter, Vektoren und ähnliche Dokumente. */
   readonly suche: SucheDienst;
   /** Sichten verwalten (#38, #148, #1076). */
@@ -310,7 +312,7 @@ export class Dienst {
       loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschen.loeschPruefung(m, typ, rueck, alleTypen), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids), organisationGeaendert: (e) => this.organisation.geaendert(e),
     });
-    ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
+    ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen, anlagen: this.dokumentAnlagen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     ({ verwalten: this.sichtenVerwaltung, systemsichten: this.systemsichten, sichten: this.sichten, berechtigungen: this.berechtigungen, ausPaketen: this.volltextAusPaketen, volltext: this.volltexte } = this.baueSichtenUndVolltext());
     ({ stempelvorlagen: this.stempelvorlagen, pdf: this.pdfBearbeiten, verkleinern: this.pdfVerkleinern, schwaerzen: this.schwaerzen, systemmappen: this.postSystemmappen, aufloesen: this.postAufloesen, leerseiten: this.postLeerseiten,
@@ -389,7 +391,7 @@ export class Dienst {
       volltextFertig: (e, m) => this.volltexte.volltextFertig(e, m), volltextAn: (typ, key) => VolltextDienst.volltextAn(typ, key),
       pruefeArchivDokument: (id, was) => this.mappenArchiv.pruefeArchivDokument(id, was),
     });
-    return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen };
+    return { dokumente, umwandlung, archiv, pdfs, fehlend: new FehlendeDateien(this.kern), versionen, anlagen: new DokumentAnlagen(this.kern, { versionen }) };
   }
 
   /** Sichten, Berechtigungen und Volltext (#1076): die Klassen in sichten/, berechtigungen/ und volltext/. */
@@ -419,7 +421,7 @@ export class Dienst {
     const mappen = { historie: this.mappenHistorie, titel: this.mappenTitel, archiv: this.mappenArchiv };
     const doks = { dokumente: this.dokumente, versionen: this.dokumentVersionen };
     const stempelvorlagen = new Stempelvorlagen(this.kern);
-    const pdf = new PdfBearbeiten(this.kern, { rechte, ...mappen, ...doks, umwandlung: this.dokumentUmwandlung }, {
+    const pdf = new PdfBearbeiten(this.kern, { rechte, ...mappen, ...doks, umwandlung: this.dokumentUmwandlung, anlagen: this.dokumentAnlagen }, {
       legePostAn: (...a) => this.post.legePostAn(...a), schreibeSystemMappe: (...a) => this.postSystemmappen.schreibeSystemMappe(...a), postAufgaben: (id, von) => this.post.postAufgaben(id, von),
     });
     const verkleinern = new PdfVerkleinern(this.kern, { pdf, ...mappen, ...doks }, { auftraege: this.auftraege });

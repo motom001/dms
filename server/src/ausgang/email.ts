@@ -122,7 +122,10 @@ export class AusgangEmail {
     const stempelDaten = await this.stempelDaten();
     const je: Versandteil[] = [];
     for (const m of mappen) {
-      const docs = (dokJe.get(m.id) ?? []).filter((d) => !gewaehlt || gewaehlt.has(d.id));
+      // Anlagen (#998): „mit Anlagen?“ – Vorgabe ja; hinter jedem gewählten Hauptdokument seine Anlagen.
+      const alleDocs = dokJe.get(m.id) ?? [];
+      const docs = gewaehlt ? this.teile.ausgang.mitAnlagen(alleDocs.filter((d) => gewaehlt.has(d.id)), alleDocs, e.mitAnlagen)
+        : alleDocs.filter((d) => e.mitAnlagen !== false || !d.anlageZu);
       je.push(await this.versandTeil(m, docs, { e, an, ich, quelle, stempelDaten }));
     }
     const groesse = je.reduce((a, x) => a + x.groesse, 0);
@@ -275,7 +278,8 @@ export class AusgangEmail {
     const dokumente = ids.map((id) => alle.find((d) => d.id === id));
     if (dokumente.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-2'));
     const quelle = e.angaben === true ? await this.angabenQuelle(z, [m]) : null;
-    const teil = await this.versandTeil(m, dokumente as Dokument[], { e, an, ich, quelle, stempelDaten: await this.stempelDaten() });
+    // Anlagen (#998): „mit Anlagen?“ – Vorgabe ja; hinter jedem gewählten Hauptdokument seine Anlagen.
+    const teil = await this.versandTeil(m, this.teile.ausgang.mitAnlagen(dokumente as Dokument[], alle, e.mitAnlagen), { e, an, ich, quelle, stempelDaten: await this.stempelDaten() });
     if (teil.groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, t('meldungen.dienst.die-anhaenge-sind-zusammen-2', { round: Math.round(EMAIL_MAX_ANHAENGE / 1e6) }));
     const { namen, anhaenge } = await this.versandAnhaenge([teil]);
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;

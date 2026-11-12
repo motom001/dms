@@ -83,7 +83,7 @@ If you enter a user under **To**, the post appears under [To do](eingang.md) for
 When you click a post in **New post**, the page **Take over document** opens – no matter whether the post was filed, photographed, scanned, emailed or came via the network drive. **Assign …** in a post and [Fill in from document](mappen.md#aus-dokument-ausfullen) in a folder open the same page. It always looks the same:
 
 - **On the left** the usual views, with *New post* highlighted.
-- **In the middle** the document; if the post has several, they are shown one below the other. At the top right you browse through *New post* with **‹ Post 1 of 3 ›**. If there is an [archive version](dokumente.md#archivfassung-pdfa) (PDF/A), **Original | PDF/A** appears above the document and the archive version is shown. At the very bottom there is the area **Drag more documents here**: what you drop there (or anywhere in the window, target *Into this post*) is added to this post as a further document.
+- **In the middle** the document; if the post has several, they are shown one below the other. [Enclosures](dokumente.md#anlagen) are collapsed behind their document ("Enclosure 1 · MOT report · 2 pages") and go with it when taking over; suggestions and frames only come from main documents. At the top right you browse through *New post* with **‹ Post 1 of 3 ›**. If there is an [archive version](dokumente.md#archivfassung-pdfa) (PDF/A), **Original | PDF/A** appears above the document and the archive version is shown. At the very bottom there is the area **Drag more documents here**: what you drop there (or anywhere in the window, target *Into this post*) is added to this post as a further document.
 - **On the right** the folder the document goes into – as everywhere else with type, title (as it will be called after saving), tabs, fields and save bar. The star and **Folder ▾** work after saving.
 
 ### Where does this belong? { #wohin-gehort-das }
@@ -195,6 +195,8 @@ If you scanned several letters at once, they arrive as **one post** with a long 
 2. Next to the PDF, click **Pages**.
 3. At the first page of each further letter, click **Split from here**. You can **delete** blank backs straight away and **rotate** crooked pages.
 4. **Apply** and confirm the question.
+
+With the package **Trennblatt** this happens by itself: a separator sheet between the letters starts a new post. With a second barcode for **enclosures** (once the package knows it), "invoice, report, work done, parts order" becomes one main document with **enclosure 1, 2, 3** in the same new post – see [Enclosures](dokumente.md#anlagen).
 
 For each part, a **new post** with status *New* is created: subject "Batch scan (part 1)", "Batch scan (part 2)" …, date, “From” and “To” as in the original post. You can then [assign](#zuordnen) each one as usual. The original post keeps the whole PDF, is *Done* and links to the new ones under "Assigned to" – nothing is lost. At the top there is a notice with links to the new posts.
 

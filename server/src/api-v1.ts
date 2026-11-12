@@ -310,6 +310,22 @@ export const V1_TABELLE: V1[] = [
   { methode: 'PUT', pfad: '/dokumente/{id}/leerseiten/{nr}', gruppe: 'Dokumente', zusammenfassung: 'Seite behalten oder weglassen',
     beschreibung: 'Wahl einer Person (#997) für eine Seite eines Dokuments in Post: weglassen=true („Auch weglassen“) – die Seite fällt beim Übernehmen weg; false („Doch behalten“) – sie bleibt. Geht auch ohne Markierung eines Pakets. Nichts wird jetzt gelöscht. Braucht Bearbeiten an der Post; Pakete bekommen 403, versendete E-Mails 422.',
     intern: { methode: 'PUT', pfad: '/api/dokumente/:id/leerseiten/:nr' }, parameter: [id('des Dokuments'), { name: 'nr', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Seitennummer ab 1' }], body: 'LeerseiteWahl', antwort: 'LeerseitenStand' },
+  // Anlagen (#998): lesen mit Lesen, ändern mit Bearbeiten an der Mappe; Pakete ändern nur mit dms:anlagen und nur in Post.
+  { methode: 'GET', pfad: '/dokumente/{id}/anlagen', gruppe: 'Dokumente', zusammenfassung: 'Anlagen eines Dokuments',
+    beschreibung: 'Anlagen (#998): das Dokument und seine Anlagen in ihrer Reihenfolge (anlageNr 1, 2 …). Bei einer Anlage kommt ihr Hauptdokument mit allen Anlagen. Anlagen liegen immer in derselben Mappe und demselben Register wie ihr Hauptdokument; Rechte wie beim Hauptdokument. Braucht Lesen.',
+    intern: { methode: 'GET', pfad: '/api/dokumente/:id/anlagen' }, parameter: [id('des Dokuments')], antwort: 'Anlagen' },
+  { methode: 'POST', pfad: '/dokumente/{id}/anlagen', gruppe: 'Dokumente', zusammenfassung: 'Dokument als Anlage anhängen',
+    beschreibung: '„Als Anlage an … hängen“ (#998): dokument wird die nächste Anlage dieses Dokuments – nur ein Dokument derselben Mappe (sonst 422), es kommt ins Register des Hauptdokuments; name benennt es dabei um (sonst bleibt sein Name). Hängt es an einem anderen Hauptdokument, wechselt es; hat es selbst Anlagen, kommen sie gleich dahinter mit. Eine Anlage kann keine Anlagen haben (409). Höchstens 99 Anlagen. Historie der Mappe. Braucht Bearbeiten; Pakete zusätzlich das Recht dms:anlagen und nur in Post (sonst 403).',
+    intern: { methode: 'POST', pfad: '/api/dokumente/:id/anlagen' }, parameter: [id('des Hauptdokuments')], body: 'AnlageAnhaengen', antwort: 'Anlagen', status: 201 },
+  { methode: 'PUT', pfad: '/dokumente/{id}/anlagen', gruppe: 'Dokumente', zusammenfassung: 'Anlagen umsortieren',
+    beschreibung: 'Reihenfolge der Anlagen (#998): reihenfolge nennt genau die Anlagen des Dokuments, jede einmal (sonst 422); sie heißen danach Anlage 1, 2 … in dieser Reihenfolge. Historie der Mappe. Braucht Bearbeiten; Pakete wie oben.',
+    intern: { methode: 'PUT', pfad: '/api/dokumente/:id/anlagen' }, parameter: [id('des Hauptdokuments')], body: 'AnlagenReihenfolge', antwort: 'Anlagen' },
+  { methode: 'PUT', pfad: '/dokumente/{id}/anlagen/{anlage}', gruppe: 'Dokumente', zusammenfassung: 'Anlage umbenennen',
+    beschreibung: 'Anlage umbenennen (#998): Der Vorgabe-Name „<Name des Dokuments> – Anlage 1“ ist nur ein Vorschlag. 404, wenn anlage keine Anlage dieses Dokuments ist. Historie der Mappe. Braucht Bearbeiten; Pakete wie oben.',
+    intern: { methode: 'PUT', pfad: '/api/dokumente/:id/anlagen/:anlage' }, parameter: [id('des Hauptdokuments'), { name: 'anlage', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Id der Anlage' }], body: 'AnlageName', antwort: 'Anlagen' },
+  { methode: 'DELETE', pfad: '/dokumente/{id}/anlagen/{anlage}', gruppe: 'Dokumente', zusammenfassung: 'Anlage lösen (zum eigenen Dokument machen)',
+    beschreibung: '„Zum eigenen Dokument machen“ (#998): Die Anlage bleibt in Mappe und Register, hat danach kein Hauptdokument mehr; die übrigen rücken auf. Nichts wird gelöscht. 404, wenn anlage keine Anlage dieses Dokuments ist. Historie der Mappe. Braucht Bearbeiten; Pakete wie oben.',
+    intern: { methode: 'DELETE', pfad: '/api/dokumente/:id/anlagen/:anlage' }, parameter: [id('des Hauptdokuments'), { name: 'anlage', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Id der Anlage' }], antwort: 'Anlagen' },
   { methode: 'GET', pfad: '/dokumente/{id}/seiten', gruppe: 'Dokumente', zusammenfassung: 'Seiten eines PDFs', beschreibung: 'PDF bearbeiten (#335): Seitenzahl und Drehung je Seite (Grad). 422 bei anderen Dateitypen.', intern: { methode: 'GET', pfad: '/api/dokumente/:id/seiten' }, parameter: [id('des Dokuments')], antwort: 'Seiten' },
   { methode: 'GET', pfad: '/dokumente/{id}/seiten/{nr}/bild', gruppe: 'Dokumente', zusammenfassung: 'Bild einer Seite', beschreibung: 'Kleines JPEG (längste Seite 260 px) für eine Seitenansicht; für die ersten 400 Seiten. Mit API-Schlüssel eines Menschen gilt der Abruf als Herausgeben (#799): Exportrecht E nötig; gilt ein Stempel (Pflicht des Mappentyps oder Stempel-Parameter), entsteht das Bild aus der gestempelten Kopie (Bilder und umgewandelte Dateien dabei als PDF-Seite). Pakete bekommen die Seiten, wie sie abgelegt sind.', intern: { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/bild' }, parameter: [id('des Dokuments'), { name: 'nr', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Seitennummer ab 1' }], antwort: 'binaer' },
   {
@@ -317,7 +333,8 @@ export const V1_TABELLE: V1[] = [
     beschreibung: 'PDF bearbeiten (#335). seiten = die Seiten des Ergebnisses in der gewünschten Reihenfolge (nr im Original ab 1, drehung zusätzlich im Uhrzeigersinn: 0/90/180/270); fehlende Seiten fallen weg. teile = Positionen in seiten (ab 0), an denen ein neuer Teil beginnt. '
       + 'Ohne teile: neue Version des Dokuments; ist die Versionierung des Registers aus, ersetzt das Ergebnis das Dokument nur mit bestaetigt=true (sonst 409 mit rueckfrage), das bisherige kommt in den Papierkorb. '
       + 'Mit teile in einer Mappe: Teil 1 wird die neue Version, die weiteren Teile werden eigene Dokumente „Name (Teil n).pdf“ im selben Register. '
-      + 'Mit teile bei Post („Post teilen nach Seitenbereichen“): je Teil eine neue Post (Stand Neu, Betreff „… (Teil n)“); die Ausgangspost behält ihr Dokument, hat Stand Erledigt und verweist auf die neuen. Texterkennung läuft für die Ergebnisse neu.',
+      + 'Mit teile bei Post („Post teilen nach Seitenbereichen“): je Teil eine neue Post (Stand Neu, Betreff „… (Teil n)“); die Ausgangspost behält ihr Dokument, hat Stand Erledigt und verweist auf die neuen. Texterkennung läuft für die Ergebnisse neu. '
+      + 'Anlagen (#998, z. B. Trennblatt mit zweitem Barcode): anlagen = Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt (nie am Anfang eines Teils, höchstens 99 je Teil; sonst 422). Nur bei Post (sonst 409): Jeder Teil wird eine neue Post, sein Dokument bekommt dort die Anlagen „<Name> – Anlage 1.pdf“, „– Anlage 2.pdf“ …; bei nur einem Teil behält die neue Post den Betreff. Anlagen entstehen nie in anderen Mappen. Pakete brauchen dafür das Recht dms:anlagen (sonst 403).',
     intern: { methode: 'POST', pfad: '/api/dokumente/:id/seiten' }, parameter: [id('des Dokuments')], body: 'SeitenBearbeiten', antwort: 'SeitenErgebnis', status: 201,
   },
   {
@@ -603,8 +620,14 @@ const SCHEMAS: Record<string, Schema> = {
       archivnummer: { type: 'string', nullable: true, description: 'Archivnummer des Papieroriginals (#345)' },
       aeltere: { type: 'integer', description: 'Anzahl älterer Versionen' },
       leerseiten: { ...ref('Leerseiten'), nullable: true, description: 'Leerseiten (#997): Markierung eines Pakets und Wahl je Seite; fehlt ohne Markierung. Gilt nur, solange sha256 gleich ist.' },
+      anlageZu: { ...uuid, nullable: true, description: 'Anlagen (#998): Id des Hauptdokuments, an dem dieses Dokument als Anlage hängt (gleiche Mappe, gleiches Register); fehlt bei eigenen Dokumenten' },
+      anlageNr: { type: 'integer', nullable: true, description: 'Anlagen (#998): Reihenfolge ab 1 („Anlage 1“); nur mit anlageZu' },
     },
   },
+  Anlagen: { type: 'object', description: 'Ein Dokument und seine Anlagen (#998)', properties: { dokument: ref('Dokument'), anlagen: { type: 'array', items: ref('Dokument'), description: 'Anlage 1 zuerst' } } },
+  AnlageAnhaengen: { type: 'object', required: ['dokument'], properties: { dokument: { ...uuid, description: 'Dokument derselben Mappe, das Anlage wird' }, name: { type: 'string', maxLength: 200, description: 'Neuer Name (sonst bleibt seiner)' } } },
+  AnlagenReihenfolge: { type: 'object', required: ['reihenfolge'], properties: { reihenfolge: { type: 'array', items: uuid, description: 'Alle Anlagen des Dokuments in neuer Reihenfolge' } } },
+  AnlageName: { type: 'object', required: ['name'], properties: { name: { type: 'string', maxLength: 200 } } },
   Leerseiten: { type: 'object', description: 'Markierung leerer Seiten (#997)', properties: {
     paket: { type: 'string', nullable: true, description: 'Id des Pakets, das markiert hat; null, wenn nur eine Person gewählt hat' }, paketName: { type: 'string', nullable: true },
     sha256: { type: 'string', description: 'Prüfwert der Datei, für die die Markierung gilt' }, seiten: { type: 'integer', description: 'Seitenzahl der Datei' },
@@ -825,7 +848,7 @@ const SCHEMAS: Record<string, Schema> = {
   FotosAngehaengt: { type: 'object', properties: { dokument: ref('Dokument'), seiten: { type: 'integer' } } },
   Zusammenlegen: { type: 'object', required: ['quelle'], properties: { quelle: { ...uuid, description: 'Id der Post, deren Seiten angehängt werden' } } },
   PostAusFotos: { type: 'object', properties: { post: ref('Mappe'), dokument: ref('Dokument'), seiten: { type: 'integer' } } },
-  EmailEingabe: { type: 'object', required: ['an', 'betreff'], properties: { an: { type: 'string', description: 'Eine oder mehrere Adressen, durch Komma getrennt' }, betreff: { type: 'string' }, nachricht: { type: 'string' }, dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten dieser Mappe' } } },
+  EmailEingabe: { type: 'object', required: ['an', 'betreff'], properties: { an: { type: 'string', description: 'Eine oder mehrere Adressen, durch Komma getrennt' }, betreff: { type: 'string' }, nachricht: { type: 'string' }, dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten dieser Mappe' }, mitAnlagen: { type: 'boolean', description: 'Anlagen (#998): hinter jedem gewählten Dokument seine Anlagen (Standard: ja)' } } },
   EmailVersendet: { type: 'object', properties: { id: { ...uuid, description: 'Id der neuen E-Mail-Mappe' }, typId: uuid } },
   NotizEingabe: { type: 'object', required: ['text'], properties: { text: { type: 'string' } } },
   Erinnerung: { type: 'object', properties: { id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true }, datum: { type: 'string', format: 'date' }, text: { type: 'string' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, hinweis: { type: 'string', description: 'Wenn der Empfänger die Mappe nicht lesen darf' } } },
@@ -915,6 +938,7 @@ const SCHEMAS: Record<string, Schema> = {
   SeitenBearbeiten: { type: 'object', required: ['seiten'], properties: {
     seiten: { type: 'array', minItems: 1, items: { type: 'object', required: ['nr'], properties: { nr: { type: 'integer', minimum: 1 }, drehung: { type: 'integer', enum: [0, 90, 180, 270] } } } },
     teile: { type: 'array', items: { type: 'integer', minimum: 0 }, description: 'Positionen in seiten, an denen ein neuer Teil beginnt' },
+    anlagen: { type: 'array', items: { type: 'integer', minimum: 1 }, description: 'Anlagen (#998, nur Post): Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt; Pakete brauchen dms:anlagen' },
     bestaetigt: { type: 'boolean', description: 'Ersetzen ohne Versionierung bestätigen' },
   } },
   SeitenErgebnis: { type: 'object', properties: { dokumente: { type: 'array', items: ref('Dokument') }, posten: { type: 'array', items: ref('Mappe'), description: 'Neue Posts beim Teilen einer Post' } } },
@@ -927,6 +951,7 @@ const SCHEMAS: Record<string, Schema> = {
     ids: { type: 'array', minItems: 1, maxItems: 100, items: uuid }, an: { type: 'string', description: 'Empfänger, mehrere durch Komma getrennt (höchstens 20)' },
     betreff: { type: 'string', maxLength: 250 }, nachricht: { type: 'string' }, angaben: { type: 'boolean', description: 'Angaben je Mappe als PDF (Standard: ja)' },
     dokumente: { oneOf: [{ type: 'string', enum: ['alle'] }, { type: 'array', items: uuid }] },
+    mitAnlagen: { type: 'boolean', description: 'Anlagen (#998): hinter jedem gewählten Dokument seine Anlagen (Standard: ja); false mit dokumente=alle lässt Anlagen weg' },
   } },
   EmailMehrereVersendet: { type: 'object', properties: { id: { ...uuid, description: 'Id der Post' }, typId: uuid, mappen: { type: 'integer' }, anhaenge: { type: 'integer' } } },
   Archivnummer: { type: 'object', properties: { archivnummer: { type: 'string', nullable: true, maxLength: 40, description: 'leer oder null entfernt die Nummer' } } },

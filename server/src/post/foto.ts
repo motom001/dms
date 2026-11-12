@@ -82,8 +82,10 @@ export class PostFotos {
     let dokument: Dokument;
     if (reg.versionierung) dokument = await this.ersetzeDokument(d.id, { name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von);
     else {
-      await this.loescheDokument(d.id, von);
+      const { anlagen } = await this.loescheDokument(d.id, von);
       dokument = (await this.ladeHoch(m.id, { register: reg.key, name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
+      // Anlagen (#998) hängen am neuen Dokument; war es selbst eine Anlage, bleibt es eine.
+      await this.teile.dokumente.nimmAnlagenMit(d, anlagen, dokument);
     }
     const seiten = (await seitenInfo(buf)).anzahl;
     await this.notiere(m.id, von, 'pdf_bearbeitet', { dokument: d.name, seiten, vorher: (await seitenInfo(inhalt)).anzahl, text });

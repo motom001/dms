@@ -96,6 +96,27 @@ Every row has a box; **Select all** above the list selects all (and deselects ag
 
 The selection only applies to the tab you are currently in.
 
+## Enclosures { #anlagen }
+
+![Garage invoice with three enclosures in the post](bilder/dokumente-anlagen.png)
+
+Some letters consist of a **main document** and **enclosures**: the garage invoice at the front, behind it the MOT report, the list of work done and the parts order. In Ablago each enclosure is a **PDF (or image) of its own** that belongs to the main document – as **enclosure 1, 2, 3**. In post, in a folder and on *Take over document* the main document is at the top, below it every enclosure as a collapsed row **"Enclosure 1 · MOT report · 2 pages"**. A click shows it in the preview. Wherever documents are listed (bin, email attachments, Workbench), an enclosure carries the mark **Enclosure**.
+
+- **As enclosure to …** – on a document: choose the document it belongs to as the next enclosure (only documents of the same folder). If it has enclosures itself, they come right behind it. You need this for documents uploaded without a [separator sheet](post.md#sammelscan-teilen), or to correct things.
+- **Make it a document of its own** – on an enclosure: it stays in the folder and tab but no longer belongs to a document; the others move up.
+- **Rename** and **Move up** – the default name "Garage invoice – Enclosure 1.pdf" is only a suggestion; you decide the order.
+
+Every step is recorded in the folder's [history](mappen.md).
+
+**What happens to enclosures:**
+
+- They **go with** their main document: when post is taken over into a folder, when splitting off, into the bin and back out. An enclosure alone cannot be taken over into another folder – make it a document of its own first.
+- They are **documents like any other**: with [versions](versionen.md), full text and text recognition, archive version (PDF/A), stamps and the folder's retention. Whoever may see the folder also sees its enclosures; the same rights apply.
+- **Recognition, "Where does this belong?" and AI** only read the main document – terms and conditions, price lists and reports do not get in the way of reading out values.
+- **Search** also finds text in enclosures; the hit names it with "in enclosure 2".
+- **Download** and **passing on** ask **"with enclosures?"** – *yes* is preselected. With enclosures, downloading gives a ZIP file "Garage invoice with enclosures.zip"; in an email every enclosure follows its document. Without the [export right](#ohne-exportrecht) neither works – as with a single document.
+- In the [drive](laufwerk.md) enclosures come right after their document with the suffix "– Enclosure 1".
+
 ## Edit PDF { #pdf-bearbeiten }
 
 Scanned crookedly, one blank back too many, three letters in one scan? You fix that directly in Ablago – without another program.

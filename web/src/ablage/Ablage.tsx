@@ -1,3 +1,4 @@
+import { anlageVermerk } from '../../../shared/src/anlagen';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
 import { sichtBeschreibung, sichtName, typBeschreibung, typName } from '../../../shared/src/beschriftung';
 import { aufbewahrenBis, datumText, gesperrt, stichtagName } from '../../../shared/src/archiv';
@@ -709,7 +710,8 @@ function Fundstelle({ a }: { a: Ausschnitt }) {
     const wo = t('ablage.teile.gefunden-in', { typ: teiltyp ? typName(teiltyp) : '…', titel: titelOder(a.teil.titel) });
     return <span className="fundstelle"><span className="dok">{a.dokument ? `${wo} · ${a.dokument}:` : wo}</span>{a.text ? <> {teile}</> : null}</span>;
   }
-  return <span className="fundstelle"><span className="dok" title={t('ablage.ablage.fundstelle-im-dokument')}>{a.dokument}:</span> {teile}</span>;
+  // Anlagen (#998): „Rechnung – Anlage 2.pdf · in Anlage 2:“.
+  return <span className="fundstelle"><span className="dok" title={t('ablage.ablage.fundstelle-im-dokument')}>{a.dokument}{a.anlage ? ` · ${anlageVermerk(a.anlage)}` : ''}:</span> {teile}</span>;
 }
 
 /**

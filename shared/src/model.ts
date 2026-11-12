@@ -1170,6 +1170,13 @@ export interface Dokument {
    * („Doch behalten“, „Auch weglassen“). Gilt nur für die Datei mit diesem Prüfwert; fehlt, wenn nichts markiert ist.
    */
   leerseiten?: import('./leerseiten').Leerseiten | null;
+  /**
+   * Anlagen (#998): Id des Hauptdokuments, an dem dieses Dokument als Anlage hängt (gleiche Mappe, gleiches Register);
+   * null bzw. fehlt bei eigenen Dokumenten. Siehe shared/src/anlagen.ts.
+   */
+  anlageZu?: string | null;
+  /** Reihenfolge der Anlage ab 1 („Anlage 1“); nur mit `anlageZu`. */
+  anlageNr?: number | null;
 }
 
 /** Herkunft einer Dokumentversion (#194). */
@@ -1253,6 +1260,8 @@ export const HISTORIENARTEN = {
   abruf_webdav: t('gemeinsam.model.abruf-webdav'),
   /** #1039: Aktion eines Pakets im Menü „Mappe“ – Person (benutzerId) und Paket (daten.paket). */
   paketaktion: t('gemeinsam.model.paketaktion'),
+  /** #998: Anlage angehängt, gelöst (zum eigenen Dokument gemacht), umbenannt oder umsortiert. */
+  anlage: t('gemeinsam.model.anlage'),
 } as const;
 /** Was im Verwaltungsmodus mit einer fremden Mappe geschah (#820). */
 export type Modusspur = 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet';
@@ -1267,7 +1276,7 @@ export const HISTORIENGRUPPEN = {
   anlegen: ['angelegt', 'papierkorb', 'wiederhergestellt', 'endgueltig', 'uebernommen', 'zugeordnet', 'post_geteilt', 'archivnummer'],
   felder: ['geaendert', 'passwort_angezeigt'],
   dokumente: ['dokument_hochgeladen', 'dokument_geloescht', 'dokument_version', 'dokument_papierkorb', 'dokument_wiederhergestellt', 'pdf_bearbeitet',
-    'volltext', 'geschwaerzt', 'umgewandelt', 'archivfassung', 'entsperrt'],
+    'volltext', 'geschwaerzt', 'umgewandelt', 'archivfassung', 'entsperrt', 'anlage'],
   notizen: ['notiz'],
   aufgaben: ['aufgabe', 'abwesenheit'],
   weitergeben: ['email', 'weitergegeben', 'auskunft'],
@@ -1336,6 +1345,8 @@ export interface Historieneintrag {
 /** Fundstelle im Volltext: Dokument und Textausschnitt; Treffer zwischen TREFFER_ANFANG und TREFFER_ENDE. */
 export interface Ausschnitt {
   dokument: string; text: string;
+  /** Anlagen (#998): gefunden in Anlage n eines Dokuments – die Liste zeigt „in Anlage 2“. */
+  anlage?: number;
   /**
    * Teile (#1031): gefunden in einem Teil dieser Mappe („gefunden in Rechnungsposition …“) – nur, wenn die Person den Teil
    * lesen darf. `dokument` und `text` sind dann die Fundstelle im Teil (leer, wenn der Begriff in seinen Feldern steht).

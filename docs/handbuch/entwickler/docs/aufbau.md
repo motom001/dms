@@ -166,6 +166,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 |---|---|---|
 | `dokumente.dienst.ts` | `DokumenteDienst` (`dienst.dokumente`) | `ladeHoch`, `loescheDokument`, `holeDokument`, `dokumentInhalt`, `textAusDatei`, Texterkennung und Vorschaubilder anbinden, `neueDateien`, `raeumeAuf`; `dateiname`, `erkenneAnzeigbar` |
 | `versionen.ts` | `DokumentVersionen` (`dienst.dokumentVersionen`) | `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion`, `versionen`, `versionInhalt`, `beruehre` |
+| `anlagen.ts` | `DokumentAnlagen` (`dienst.dokumentAnlagen`) | Anlagen (#998): `liste`, `haengeAn` („Als Anlage an … hängen“), `loese` („Zum eigenen Dokument machen“), `sortiere`, `benenne`, `alsAnlagen` (beim Teilen einer Post); das Mitwandern machen Repo (`verschiebeDokument`), `loescheDokument` und der Papierkorb |
 | `umwandeln.ts` | `DokumentUmwandlung` (`dienst.dokumentUmwandlung`) | Dateien umwandeln (#577): `nachFassung`, `umwandelPaketDa`, `setzeFassung`, `fassungVon`, `umwandlungStand` |
 | `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | Archivfassung (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `archivStand` |
 | `geschuetzte-pdf.ts` | `GeschuetztePdfs` (`dienst.geschuetztePdfs`) | geschützte PDFs (#827): `entsperreDokument`, `nachEntsperren`, `mitPdfSchutz` |
@@ -1009,7 +1010,7 @@ Ablago baut **von sich aus keine Verbindung** ins Internet auf. Jeder Weg nach d
 | Paket-Netz | Administrator bestätigt bei der Installation | nur an die Adressen aus Manifest bzw. Dienst-Adresse | Paket-Läufer, Recht `netzwerk` |
 | Abruf-Links (Auskunft) | Administrator erzeugt den Link | die Auskunft, nur nach Abrufcode | `server/src/abruf.ts` |
 
-Herunterladen (auch ein Brief aus Vorlage, #1040), E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über `dienst.ausgang.pruefeAusgang` bzw. `dienst.ausgang.mitnehmbar`.
+Herunterladen (auch ein Brief aus Vorlage, #1040), E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über `dienst.ausgang.pruefeAusgang` bzw. `dienst.ausgang.mitnehmbar`. „Mit Anlagen?“ (#998, Vorgabe ja) erweitert die Auswahl erst danach über `dienst.ausgang.mitAnlagen` – nur um Anlagen derselben Mappe, also mit denselben Rechten; Herunterladen mit Anlagen (`dokumentMitAnlagenFuerAusgabe`) gibt jede Datei wie einzeln heraus (Stempel, Archivfassung) und packt sie in ein ZIP.
 
 **Regel für neue Wege:** Ein neuer Weg nach draußen braucht ein freigegebenes Issue, ist **ausgeschaltet**, bis ihn jemand ausdrücklich einschaltet, schickt so wenig wie möglich (Zahlen statt Inhalte, wo es reicht), steht in dieser Tabelle und in der Übersicht im Administratorhandbuch und wird von Sicherheit geprüft.
 

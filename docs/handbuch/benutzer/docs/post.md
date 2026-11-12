@@ -83,7 +83,7 @@ Trägst du bei **An** einen Benutzer ein, steht die Post bei ihm unter [Zu erled
 Klickst du in **Neue Post** eine Post an, öffnet sich die Seite **Dokument übernehmen** – egal ob die Post abgelegt, fotografiert, gescannt, gemailt oder über das Laufwerk kam. Dieselbe Seite öffnet **Zuordnen …** in einer Post und [Aus Dokument ausfüllen](mappen.md#aus-dokument-ausfullen) in einer Mappe. Sie sieht immer gleich aus:
 
 - **Links** die gewohnten Ansichten, *Neue Post* ist markiert.
-- **In der Mitte** das Dokument; hat die Post mehrere, stehen sie untereinander. Oben rechts blätterst du mit **‹ Post 1 von 3 ›** durch *Neue Post*. Gibt es eine [Archivfassung](dokumente.md#archivfassung-pdfa) (PDF/A), steht über dem Dokument **Original | PDF/A**, gezeigt wird die Archivfassung. Ganz unten liegt die Fläche **Weitere Dokumente hierher ziehen**: Was du dort (oder irgendwo ins Fenster, Ziel *In diese Post*) ablegst, kommt als weiteres Dokument in diese Post.
+- **In der Mitte** das Dokument; hat die Post mehrere, stehen sie untereinander. [Anlagen](dokumente.md#anlagen) stehen eingeklappt hinter ihrem Dokument („Anlage 1 · HU/AU-Protokoll · 2 Seiten“) und wandern beim Übernehmen mit; Vorschläge und Rahmen kommen nur aus den Hauptdokumenten. Oben rechts blätterst du mit **‹ Post 1 von 3 ›** durch *Neue Post*. Gibt es eine [Archivfassung](dokumente.md#archivfassung-pdfa) (PDF/A), steht über dem Dokument **Original | PDF/A**, gezeigt wird die Archivfassung. Ganz unten liegt die Fläche **Weitere Dokumente hierher ziehen**: Was du dort (oder irgendwo ins Fenster, Ziel *In diese Post*) ablegst, kommt als weiteres Dokument in diese Post.
 - **Rechts** die Mappe, in die das Dokument kommt – wie überall sonst mit Typ, Titel (so, wie er nach dem Speichern heißt), Registern, Feldern und Speicherleiste. Stern und **Mappe ▾** gehen erst nach dem Speichern.
 
 ### Wohin gehört das? { #wohin-gehort-das }
@@ -195,6 +195,8 @@ Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit ein
 2. Klicke neben dem PDF auf **Seiten**.
 3. Klicke bei der ersten Seite jedes weiteren Briefs auf **Teilen ab hier**. Leere Rückseiten kannst du gleich **löschen**, schiefe Seiten **drehen**.
 4. **Übernehmen** und die Rückfrage bestätigen.
+
+Mit dem Paket **Trennblatt** geht das von selbst: Ein Trennblatt zwischen den Briefen beginnt eine neue Post. Mit einem zweiten Barcode für **Anlagen** (sobald das Paket ihn kennt) wird aus „Rechnung, Protokoll, Arbeiten, Teilebestellung“ ein Hauptdokument mit **Anlage 1, 2, 3** in derselben neuen Post – siehe [Anlagen](dokumente.md#anlagen).
 
 Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil 1)“, „Sammelscan (Teil 2)“ …, Datum, „Von“ und „An“ wie bei der Ausgangspost. Jede kannst du dann wie gewohnt [zuordnen](#zuordnen). Die Ausgangspost behält das ganze PDF, ist *Erledigt* und verweist unter „Zugeordnet zu“ auf die neuen – nichts geht verloren. Oben steht ein Hinweis mit Links zu den neuen Posts.
 

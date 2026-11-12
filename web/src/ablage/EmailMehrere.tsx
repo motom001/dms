@@ -12,6 +12,8 @@ import { VerkleinertWahl } from './VerkleinertWahl';
 import type { Stufe } from '../../../shared/src/verkleinern';
 import { FassungWahl, hatArchivfassung, type Fassung } from './FassungWahl';
 import { t, tn } from '../sprache';
+import { gruppiere } from '../../../shared/src/anlagen';
+import { AnlageMarke } from './Anlagen';
 
 /**
  * Mehrere Mappen per E-Mail (#151): eine E-Mail, je Mappe ihre Angaben als PDF und – wählbar – ihre
@@ -78,7 +80,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null, fassung });
+      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], mitAnlagen: umfang !== 'auswahl', stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null, fassung });
       setErgebnis(r); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -116,8 +118,8 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
               <ul className="emailmappen">
                 {liste.map((m) => (
                   <li key={m.id}><strong className="klein">{m.titel}</strong>
-                    {!m.dokumente.length ? <p className="leise klein">{t('ablage.emailmehrere.keine-dokumente-2')}</p> : <ul>{m.dokumente.map((x) => (
-                      <li key={x.id}><label className="haken"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><span>{x.name} <small className="leise">{groesse(x.groesse)}</small></span></label></li>
+                    {!m.dokumente.length ? <p className="leise klein">{t('ablage.emailmehrere.keine-dokumente-2')}</p> : <ul>{gruppiere(m.dokumente).flatMap((g) => [g.haupt, ...g.anlagen]).map((x) => (
+                      <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}><label className="haken"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><span>{x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small></span></label></li>
                     ))}</ul>}
                   </li>
                 ))}

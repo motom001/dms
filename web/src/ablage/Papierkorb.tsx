@@ -11,6 +11,7 @@ import { hinweis, rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { typName, feldLabel } from '../../../shared/src/beschriftung';
+import { AnlageMarke } from './Anlagen';
 
 /**
  * Papierkorb (#43). In der Ablage sieht jeder, was er selbst gelöscht hat; in der Werkbank
@@ -196,7 +197,7 @@ function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: bool
         {z.dokumente.map((x) => (
           <li key={x.id} className="korbdokument">
             <div className="eintrag">
-              <span className="titel"><span className="chip" title={t('ablage.papierkorb.art')}>{t('ablage.papierkorb.dokument')}</span> {x.name}</span>
+              <span className="titel"><span className="chip" title={t('ablage.papierkorb.art')}>{t('ablage.papierkorb.dokument')}</span> {x.name} <AnlageMarke d={x} /></span>
               <span className="unter">
                 {tn('ablage.papierkorb.aus-register-geloescht', { wert: x.mappe === 'da' ? <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(x.mappeTitel)}</Link> : titelOder(x.mappeTitel), register: x.register, groesseText: groesseText(x.groesse), wert2: x.versionen ? t('ablage.papierkorb.versionen', { wert: x.versionen + 1 }) : '', datumZeit: datumZeit(x.geloescht), wert3: werkbank ? t('ablage.papierkorb.von', { person: d.person(x.geloeschtVon) }) : '' })}</span>
               {x.mappe === 'papierkorb' && <span className="leise klein">{t('ablage.papierkorb.die-mappe-liegt-selbst')}</span>}

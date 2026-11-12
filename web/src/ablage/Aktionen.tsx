@@ -1,7 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { createPortal } from 'react-dom';
-import { formatiere, standardRegister, type Feld, type Mappentyp } from '../../../shared/src/model';
+import { formatiere, standardRegister, type Dokument, type Feld, type Mappentyp } from '../../../shared/src/model';
+import { gruppiere } from '../../../shared/src/anlagen';
+import { HakenFeld } from '../bausteine';
+import { AnlageMarke } from './Anlagen';
 import { ausgeblendeteFelder, sichtbareRegister } from '../../../shared/src/darstellung';
 import { api, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
@@ -98,12 +101,17 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   const [fehler, setFehler] = useState<string>();
   const [fertig, setFertig] = useState<{ id: string; typId: string }>();
   useEffect(() => { api.emailBereit().then((r) => setBereit(r.bereit), () => setBereit(false)); }, []);
-  const summe = details.dokumente.filter((x) => gewaehlt.has(x.id)).reduce((a, x) => a + x.groesse, 0);
+  // Anlagen (#998): „mit Anlagen?“ (Vorgabe ja) – dann gehen sie mit ihrem Hauptdokument; ohne einzeln wählbar.
+  const [mitAnlagen, setMitAnlagen] = useState(true);
+  const liste = gruppiere(details.dokumente).flatMap((g) => [g.haupt, ...g.anlagen]);
+  const folgt = (x: Dokument) => mitAnlagen && !!x.anlageZu && details.dokumente.some((y) => y.id === x.anlageZu);
+  const istGewaehlt = (x: Dokument) => (folgt(x) ? gewaehlt.has(x.anlageZu!) : gewaehlt.has(x.id));
+  const summe = details.dokumente.filter(istGewaehlt).reduce((a, x) => a + x.groesse, 0);
   // Verkleinert senden (#393): die Größe danach kennt erst der Server; er prüft sie vor dem Versand.
   const [klein, setKlein] = useState<Stufe | null>(null);
   // Archivfassung oder Original (#715), Vorgabe wie beim Herunterladen.
   const [fassung, setFassung] = useState<Fassung>('archiv');
-  const mitPdf = details.dokumente.some((x) => gewaehlt.has(x.id) && (x.mime === 'application/pdf' || (fassung === 'archiv' && hatArchivfassung(x))));
+  const mitPdf = details.dokumente.some((x) => istGewaehlt(x) && (x.mime === 'application/pdf' || (fassung === 'archiv' && hatArchivfassung(x))));
   const zuGross = summe > EMAIL_HOECHSTENS && !(klein && mitPdf);
   // Stempel (#394): Vorschlag oder Pflicht des Mappentyps; {empfänger} ohne Angabe = die Adressen.
   const vorlagen = useStempelVorlagen();
@@ -115,7 +123,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: [...gewaehlt], stempel: alsWunsch(stempel), verkleinern: mitPdf ? klein : null, fassung }));
+      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: liste.filter(istGewaehlt).map((x) => x.id), mitAnlagen, stempel: alsWunsch(stempel), verkleinern: mitPdf ? klein : null, fassung }));
       await neuLaden(); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -142,14 +150,17 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
             <legend>{t('ablage.aktionen.anhaenge')}</legend>
             {!details.dokumente.length ? <p className="leise klein">{t('ablage.aktionen.diese-mappe-hat-keine')}</p> : (
               <ul>
-                {details.dokumente.map((x) => (
-                  <li key={x.id}><label className="haken"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><span>{x.name} <small className="leise">{groesse(x.groesse)}</small></span></label></li>
+                {liste.map((x) => (
+                  <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}><label className="haken"><input type="checkbox" checked={istGewaehlt(x)} disabled={folgt(x)} onChange={() => umschalten(x.id)} /><span>{x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small></span></label></li>
                 ))}
               </ul>
             )}
+            {details.dokumente.some((x) => x.anlageZu) && <HakenFeld beschriftung={t('ablage.anlagen.email-mit')} hinweis={t('ablage.anlagen.email-mit-hinweis')} hilfe="dokumente.anlagen">
+              <input type="checkbox" checked={mitAnlagen} onChange={(e) => setMitAnlagen(e.target.checked)} />
+            </HakenFeld>}
             {details.dokumente.length > 0 && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} pflicht={typ.stempel?.modus === 'pflicht'}
               mappe={titelOder(mappe.titel)} empfaengerErsatz={an.trim() || t('ablage.aktionen.die-adressen-unter-an')} id="email-stempel" />}
-            {gewaehlt.size > 0 && <FassungWahl wert={fassung} setze={setFassung} dokumente={details.dokumente.filter((x) => gewaehlt.has(x.id))} id="email-fassung" />}
+            {gewaehlt.size > 0 && <FassungWahl wert={fassung} setze={setFassung} dokumente={details.dokumente.filter(istGewaehlt)} id="email-fassung" />}
             {mitPdf && <VerkleinertWahl wert={klein} setze={setKlein} id="email-verkleinert" />}
             {details.dokumente.length > 0 && <p className={`klein ${summe > EMAIL_WARNUNG && !(klein && mitPdf) ? 'fehlertext' : 'leise'}`}>
               {t('ablage.aktionen.zusammen', { groesse: groesse(summe), wert: klein && mitPdf ? t('ablage.aktionen.vor-dem-verkleinern') : '', wert2: zuGross ? t('ablage.aktionen.das-ist-zu-gross') : summe > EMAIL_WARNUNG && !(klein && mitPdf) ? t('ablage.aktionen.viele-mailserver-nehmen-e', { wert: mitPdf ? t('ablage.aktionen.tipp-pdfs-verkleinert-senden') : '' }) : '' })}</p>}
