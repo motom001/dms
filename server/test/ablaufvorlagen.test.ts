@@ -260,10 +260,10 @@ if (url) {
       const { pgRepo } = await import('../src/repo-pg');
       const { pgKontoRepo } = await import('../src/konto-repo');
       const db = await eigeneDatenbank('ablaufvorlagen_umstellung', { migrieren: false });
-      // Stand vor 105.
+      // Stand vor 105. Die Tabelle der Fassungen (#1006) kommt dazu, weil der heutige Code beim Anlegen von Typ und Mappe Fassungen schreibt.
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
-        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '105')) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && (x < '105' || x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage')))) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});
       } finally { rmSync(vorher, { recursive: true, force: true }); }
       const sql = db.sql;
