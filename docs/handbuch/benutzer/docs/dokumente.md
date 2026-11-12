@@ -84,7 +84,7 @@ Alle Knöpfe sind am Handy mindestens 44 Punkte groß. Muss das Dokument lange z
 
 ## Sortieren
 
-Über der Liste wählst du die Reihenfolge: **Name A–Z** (Standard), **Name Z–A**, **Neueste zuerst**, **Älteste zuerst** (nach dem Hochladen) oder **Größte zuerst**. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben.
+Über der Liste wählst du die Reihenfolge: **Name A–Z** (Standard), **Name Z–A**, **Neueste zuerst**, **Älteste zuerst** (nach dem Hochladen) oder **Größte zuerst**. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben. In einer **Post** gibt es keine Wahl: Dort stehen die Dokumente **wie eingegangen** – bei einer [E-Mail](post.md#per-e-mail-ins-dms) in der Reihenfolge ihrer Anhänge, sonst nach dem Hochladen.
 
 ## Mehrere auf einmal
 
@@ -114,7 +114,7 @@ Jeder Schritt steht in der [Historie](mappen.md) der Mappe.
 - Sie sind **Dokumente wie alle anderen**: mit [Versionen](versionen.md), Volltext und Texterkennung, Archivfassung (PDF/A), Stempel und Aufbewahrung der Mappe. Wer die Mappe sehen darf, sieht auch ihre Anlagen; es gelten dieselben Rechte.
 - **Erkennung, „Wohin gehört das?“ und KI** lesen nur das Hauptdokument – AGB, Preislisten und Protokolle stören das Auslesen nicht.
 - Die **Suche** findet auch Text in Anlagen; der Treffer nennt sie mit „in Anlage 2“.
-- **Herunterladen** und **Weitergeben** fragen **„mit Anlagen?“** – vorgewählt ist *ja*. Mit Anlagen kommt beim Herunterladen eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“, in der E-Mail hängt jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument. In der Historie der Mappe steht der Abruf für das Dokument und für jede Anlage einzeln (mit Weg und gegebenenfalls dem Namen des API-Schlüssels), beim Versand die E-Mail mit allen Anhängen.
+- **Herunterladen** und **Weitergeben** fragen **„mit Anlagen?“** – vorgewählt ist *ja*. Mit Anlagen kommt beim Herunterladen eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“, in der E-Mail hängt jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument. In der Historie der Mappe steht der Abruf für das Dokument und für jede Anlage einzeln (mit Weg und gegebenenfalls dem Namen des API-Schlüssels), beim Versand die E-Mail mit allen Anhängen. Hängt die [Original-E-Mail](post.md#original-e-mail) daran, steht sie mit ihrem Kennzeichen darunter (**Original-E-Mail mitnehmen**, vorgewählt) und lässt sich mit einem Klick abwählen: Sie enthält alle Anhänge der Mail.
 - Im [Laufwerk](laufwerk.md) stehen Anlagen gleich hinter ihrem Dokument mit dem Zusatz „– Anlage 1“.
 
 ## PDF bearbeiten

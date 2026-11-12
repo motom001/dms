@@ -365,6 +365,7 @@ POST /dokumente/{id}/seiten   { "seiten": [{"nr":1}, …, {"nr":5}], "teile": [0
 - **Nur in Post, nur in den neuen Posts:** Jeder Teil wird eine neue Post, sein Dokument bekommt dort die Anlagen „<Name> – Anlage 1.pdf“, „– Anlage 2.pdf“ … (bei nur einem Teil behält die neue Post den Betreff). Die Ausgangspost behält ihr Original und ist erledigt. In anderen Mappen lehnt der Kern ab (409); ohne `dms:anlagen` 403.
 - **Höchstens 99 Anlagen je Teil.** Die Seiten lädt das Paket wie bisher über `GET /dokumente/{id}/seiten/{nr}/scan`.
 - Von Hand (`POST/PUT/DELETE /dokumente/{id}/anlagen…`) darf ein Paket Anlagen nur mit `dms:anlagen` und nur in Post ändern. Erkennung, Klassifizieren und KI-Pakete bekommen nie den Text von Anlagen.
+- **Nie Post aus dem E-Mail-Postfach** (seit 0.264.0, dms #999): Eine E-Mail ist genau eine Post. Post mit Kanal *E-Mail* teilt der Kern für kein Paket (`teile` oder `anlagen`: 409) – Trennblätter gelten im Postfach nicht. Lass den Kanal in der Auswahl „Nur Post aus diesen Kanälen“ weg. Die abgeholte E-Mail selbst trägt `originalEmail: true` (letzte Anlage am letzten Anhang, ohne Anhänge das Hauptdokument), `eingangNr` die Reihenfolge der Anhänge; Erkennung, Klassifizieren und KI-Pakete bekommen ihren Text nie.
 
 ## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
 

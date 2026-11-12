@@ -17,7 +17,7 @@ export const DMS_ANLAGEN_AB = '0.263.0';
 export const ANLAGEN_MAX = 99;
 
 /** Was die Funktionen hier von einem Dokument brauchen. */
-export interface AnlageTeil { id: string; name: string; anlageZu?: string | null; anlageNr?: number | null }
+export interface AnlageTeil { id: string; name: string; anlageZu?: string | null; anlageNr?: number | null; eingangNr?: number | null; originalEmail?: boolean }
 
 /** Ist das eine Anlage (hängt an einem Hauptdokument)? */
 export const istAnlage = (d: Pick<AnlageTeil, 'anlageZu'>): boolean => !!d.anlageZu;
@@ -36,22 +36,48 @@ export function gruppiere<T extends AnlageTeil>(liste: readonly T[]): Array<{ ha
   return liste.filter((d) => !d.anlageZu || !ids.has(d.anlageZu)).map((haupt) => ({ haupt, anlagen: anlagenVon(liste, haupt.id) }));
 }
 
-/** Nur Hauptdokumente und eigene Dokumente – ohne Anlagen (für Erkennung, Klassifizieren und KI). */
-export const nurHauptdokumente = <T extends Pick<AnlageTeil, 'anlageZu'>>(liste: readonly T[]): T[] => liste.filter((d) => !d.anlageZu);
+/**
+ * Lassen Erkennung, Klassifizieren und KI dieses Dokument weg? Anlagen (#998) und die Original-E-Mail (#999) – auch dann,
+ * wenn die E-Mail ohne Anhänge selbst das Hauptdokument ist: Ihr Text steht schon als Nachricht an der Post.
+ */
+export const ohneErkennung = (d: Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>): boolean => !!d.anlageZu || !!d.originalEmail;
+
+/** Nur Hauptdokumente und eigene Dokumente – ohne Anlagen und ohne Original-E-Mail (für Erkennung, Klassifizieren und KI). */
+export const nurHauptdokumente = <T extends Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>>(liste: readonly T[]): T[] => liste.filter((d) => !ohneErkennung(d));
+
+/**
+ * Eingangsreihenfolge einer Post (#999): erst, was aus dem Postfach kam, in der Reihenfolge der E-Mail (`eingangNr`),
+ * dann alles andere nach dem Zeitpunkt des Hochladens – älteste zuerst. Keine Sortierung nach Namen. Anlagen ordnet
+ * `gruppiere` danach unter ihr Hauptdokument.
+ */
+export function eingangsreihenfolge<T extends AnlageTeil & { erstellt: string }>(liste: readonly T[]): T[] {
+  const nr = (d: T) => d.eingangNr ?? Number.MAX_SAFE_INTEGER;
+  return [...liste].sort((a, b) => nr(a) - nr(b) || a.erstellt.localeCompare(b.erstellt) || a.id.localeCompare(b.id));
+}
 
 /**
  * Die Auswahl samt Anlagen: hinter jedem gewählten Hauptdokument seine Anlagen, jedes Dokument einmal. `mitAnlagen`
- * false: nur, was gewählt ist („mit Anlagen?“ beim Herunterladen und Weitergeben, Vorgabe ja).
+ * false: nur, was gewählt ist („mit Anlagen?“ beim Herunterladen und Weitergeben, Vorgabe ja). `originalEmail` false
+ * (#999): die Original-E-Mail geht nicht als Anlage mit – sie enthält alle Anhänge der Mail; ausdrücklich gewählt geht sie.
  */
-export function mitAnlagen<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[], an = true): T[] {
+export function mitAnlagen<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[], an = true, originalEmail = true): T[] {
   const erg: T[] = [];
   const drin = new Set<string>();
   const nimm = (d: T) => { if (!drin.has(d.id)) { drin.add(d.id); erg.push(d); } };
   for (const d of auswahl) {
     nimm(d);
-    if (an) for (const a of anlagenVon(alle, d.id)) nimm(a);
+    if (an) for (const a of anlagenVon(alle, d.id)) if (originalEmail || !a.originalEmail) nimm(a);
   }
   return erg;
+}
+
+/**
+ * Die Original-E-Mails (#999), die mit der Auswahl als Anlage mitgehen würden – für die Liste „Was geht mit?“ beim
+ * Übernehmen und im Dialog „mit Anlagen?“, damit man sie sieht und mit einem Klick abwählen kann.
+ */
+export function mitgehendeOriginalEmails<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[]): T[] {
+  const ids = new Set(auswahl.map((d) => d.id));
+  return mitAnlagen(auswahl, alle).filter((d) => d.originalEmail && !!d.anlageZu && !ids.has(d.id));
 }
 
 /**

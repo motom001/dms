@@ -101,6 +101,11 @@ const alsMappe = (r: Zeile): Mappe => ({
   systemKennung: (r.system_kennung as string | null) ?? null,
   ...(r.vorgabe ? { vorgabe: r.vorgabe as string } : {}),
 });
+/** E-Mail-Postfach (#999): Eingangsreihenfolge und Kennzeichen „Original-E-Mail“ – nur, wo gesetzt. */
+const eingangsfelder = (r: Zeile): Pick<Dokument, 'eingangNr' | 'originalEmail'> => ({
+  ...(r.eingang_nr ? { eingangNr: r.eingang_nr as number } : {}),
+  ...(r.original_email ? { originalEmail: true } : {}),
+});
 const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
   mappeId: r.mappe_id as string,
@@ -122,6 +127,7 @@ const alsDokument = (r: Zeile): Dokument => ({
   ...(r.leerseiten ? { leerseiten: alsLeerseiten(r.leerseiten) } : {}),
   // Anlagen (#998): nur an Anlagen.
   ...(r.anlage_zu ? { anlageZu: r.anlage_zu as string, anlageNr: (r.anlage_nr as number | null) ?? null } : {}),
+  ...eingangsfelder(r),
   ocr: {
     stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
     info: (r.ocr_info as string | null) ?? null,
@@ -139,7 +145,7 @@ const alsDokument = (r: Zeile): Dokument => ({
  */
 export const DOKUMENT_SPALTEN = ['id', 'haushalt_id', 'mappe_id', 'register_key', 'name', 'mime', 'groesse', 'sha256', 'anzeigbar', 'erstellt', 'erstellt_von',
   'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer', 'sprache', 'weitere_sprachen', 'seitensprachen', 'teilen_hinweis_aus', 'leerseiten',
-  'anlage_zu', 'anlage_nr'] as const;
+  'anlage_zu', 'anlage_nr', 'eingang_nr', 'original_email'] as const;
 /**
  * Spalten einer Mappe ohne `suchtext` (#615): Der gefaltete Suchtext (Migration 055) ist nur für die Suche da und
  * etwa so groß wie Titel und Werte zusammen – Listen und „Mappe öffnen“ lesen ihn nie.
@@ -1529,10 +1535,17 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async legeDokumentAn(d) {
       const [r] = await sql`
-        INSERT INTO dokumente (id, haushalt_id, mappe_id, register_key, name, mime, groesse, sha256, anzeigbar, erstellt_von, herkunft)
-        VALUES (${d.id}, ${haushaltId}, ${d.mappeId}, ${d.registerKey}, ${d.name}, ${d.mime}, ${d.groesse}, ${d.sha256}, ${d.anzeigbar}, ${d.erstelltVon}, ${d.herkunft ?? null})
+        INSERT INTO dokumente (id, haushalt_id, mappe_id, register_key, name, mime, groesse, sha256, anzeigbar, erstellt_von, herkunft, original_email)
+        VALUES (${d.id}, ${haushaltId}, ${d.mappeId}, ${d.registerKey}, ${d.name}, ${d.mime}, ${d.groesse}, ${d.sha256}, ${d.anzeigbar}, ${d.erstelltVon}, ${d.herkunft ?? null}, ${d.originalEmail === true ? true : null})
         RETURNING ${DOK_RUECK}`;
       return alsDokument(r);
+    },
+    async setzeEingang(id, x) {
+      if (!istUuid(id) || (x.nr === undefined && x.originalEmail === undefined)) return;
+      await sql`UPDATE dokumente SET
+        eingang_nr = ${x.nr === undefined ? sql`eingang_nr` : x.nr && x.nr > 0 ? Math.round(x.nr) : null},
+        original_email = ${x.originalEmail === undefined ? sql`original_email` : x.originalEmail}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     /* ---------- Versionierung (#194) ---------- */
     async versionenVon(dokumentId) {

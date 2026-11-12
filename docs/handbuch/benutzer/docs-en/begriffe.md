@@ -119,6 +119,10 @@ See also: [Calculated field](#berechnetes-feld), [Package](#paket).
 A company, authority, bank, practice, club or other body you deal with. Folder type from the package Basis; other packages link to it (contract partner, insurer, bank …).  
 See also: [Branch](#niederlassung), [Person](#person).
 
+<a id="original-e-mail"></a>**Original email** (*Original-E-Mail*) · ✓ everyday word · everyone  
+The email itself (.eml) fetched from a mailbox, at the very end of its post – as the last enclosure on the last attachment or, if the email had no attachments, as the post's document. It goes along when assigning; recognition, classifying and AI never read it, because its text is on the post already.  
+See also: [Enclosure](#anlage), [Post](#post), [Mailbox](#postfach).
+
 <a id="eigene-organisation"></a>**Own organisation** (*Eigene Organisation*) · ✓ everyday word · administrators  
 The organisation in the Library that is "us" – your own business, company or trade. Marked by the field "Own organisation" (package Basis); only someone managing the own organisation may set it. Name, address, contact, controller and data protection officer are kept there once and used by requests and the deletion concept; recognition never takes it as sender ("from"); if it is the issuer, recognition only suggests "outgoing" with a note (#1043). Several are possible.  
 See also: [Used for work](#beruflich-genutzt).

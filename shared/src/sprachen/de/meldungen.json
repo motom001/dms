@@ -1409,6 +1409,7 @@
   "postfach.doppelt-liegen-schon-in_one": "Doppelt: {map} liegt schon in Ablago – vor dem Zuordnen prüfen.",
   "postfach.doppelt-liegen-schon-in_other": "Doppelt: {map} liegen schon in Ablago – vor dem Zuordnen prüfen.",
   "postfach.nicht-uebernommene-anhaenge": "Nicht übernommene Anhänge: {abgelehnt}",
+  "postfach.paket-teilt-nicht": "Post aus dem E-Mail-Postfach teilt kein Paket – eine E-Mail bleibt eine Post. Aufteilen geht von Hand („Seiten“ → teilen oder „Post ab hier teilen“).",
   "protokoll.debug-modus-nach-einer": "Debug-Modus nach einer Stunde automatisch ausgeschaltet",
   "protokoll.ohne-text": "(ohne Text)",
   "proxy.automatisch-eigener-rechner-und": "automatisch (eigener Rechner und private Netze)",

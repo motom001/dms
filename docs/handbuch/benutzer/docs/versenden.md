@@ -12,6 +12,8 @@ Rechts neben dem Titel einer Mappe, neben dem Stern, steht das Menü **Mappe ▾
 4. Wähle unter **Anhänge**, welche Dokumente der Mappe mitgehen. Darunter steht, wie groß sie zusammen sind; ab 20 MB warnt Ablago, weil viele Mailserver größere E-Mails nicht annehmen; mehr als 50 MB lassen sich nicht versenden.
 5. **Senden**.
 
+Hängt an einem Dokument die [Original-E-Mail](post.md#original-e-mail), steht sie mit ihrem Kennzeichen in der Liste und geht mit – ein Klick auf ihr Kästchen wählt sie ab. **Die Original-E-Mail enthält alle Anhänge der Mail. Gehören nicht alle in diese Mappe, lös sie vorher oder lösch sie.**
+
 ![E-Mail aus einer Mappe](bilder/email.png)
 
 Absender ist die Adresse von Ablago; **Antworten** des Empfängers gehen an deine E-Mail-Adresse.
@@ -31,7 +33,7 @@ Alle Belege eines Jahres an den Steuerberater, die Unterlagen zum Auto an die Ve
 3. **An**, **Betreff** und **Nachricht** wie bei einer Mappe.
 4. Unter **Anhänge** wählst du:
     - **Angaben je Mappe als PDF** – je Mappe eine Datei „Titel.pdf“ mit allen Feldern (Passwörter nie). Vorausgewählt. Verlangt der Mappentyp einen Stempel, ist auch dieses PDF gestempelt.
-    - **Dokumente:** **alle** Dokumente der Mappen, **keine** oder **Auswählen …** – dann stehen die Dokumente je Mappe mit Kästchen da.
+    - **Dokumente:** **alle** Dokumente der Mappen, **keine** oder **Auswählen …** – dann stehen die Dokumente je Mappe mit Kästchen da. Bei **alle** steht eine [Original-E-Mail](post.md#original-e-mail) darunter mit eigenem Haken **Original-E-Mail mitnehmen**.
 5. **Senden**.
 
 Darunter steht wieder, wie groß die Anhänge zusammen sind (Warnung ab 20 MB, höchstens 50 MB – die PDFs mit den Angaben zählen mit). Für Stempel, Archivfassung und Verkleinern gelten dieselben Regeln wie bei einer Mappe. In eine E-Mail passen höchstens 100 Mappen.

@@ -122,10 +122,11 @@ export class AusgangEmail {
     const stempelDaten = await this.stempelDaten();
     const je: Versandteil[] = [];
     for (const m of mappen) {
-      // Anlagen (#998): „mit Anlagen?“ – Vorgabe ja; hinter jedem gewählten Hauptdokument seine Anlagen.
+      // Anlagen (#998): „mit Anlagen?“ – Vorgabe ja; hinter jedem gewählten Hauptdokument seine Anlagen. Die
+      // Original-E-Mail (#999) geht mit, außer `originalEmail: false` – bei „alle“ dann gar nicht.
       const alleDocs = dokJe.get(m.id) ?? [];
-      const docs = gewaehlt ? this.teile.ausgang.mitAnlagen(alleDocs.filter((d) => gewaehlt.has(d.id)), alleDocs, e.mitAnlagen)
-        : alleDocs.filter((d) => e.mitAnlagen !== false || !d.anlageZu);
+      const docs = gewaehlt ? this.teile.ausgang.mitAnlagen(alleDocs.filter((d) => gewaehlt.has(d.id)), alleDocs, e.mitAnlagen, e.originalEmail)
+        : alleDocs.filter((d) => (e.mitAnlagen !== false || !d.anlageZu) && (e.originalEmail !== false || !d.originalEmail));
       je.push(await this.versandTeil(m, docs, { e, an, ich, quelle, stempelDaten }));
     }
     const groesse = je.reduce((a, x) => a + x.groesse, 0);
@@ -278,8 +279,9 @@ export class AusgangEmail {
     const dokumente = ids.map((id) => alle.find((d) => d.id === id));
     if (dokumente.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-2'));
     const quelle = e.angaben === true ? await this.angabenQuelle(z, [m]) : null;
-    // Anlagen (#998): „mit Anlagen?“ – Vorgabe ja; hinter jedem gewählten Hauptdokument seine Anlagen.
-    const teil = await this.versandTeil(m, this.teile.ausgang.mitAnlagen(dokumente as Dokument[], alle, e.mitAnlagen), { e, an, ich, quelle, stempelDaten: await this.stempelDaten() });
+    // Anlagen (#998): „mit Anlagen?“ – Vorgabe ja; hinter jedem gewählten Hauptdokument seine Anlagen; die
+    // Original-E-Mail (#999) als Anlage nur ohne `originalEmail: false`.
+    const teil = await this.versandTeil(m, this.teile.ausgang.mitAnlagen(dokumente as Dokument[], alle, e.mitAnlagen, e.originalEmail), { e, an, ich, quelle, stempelDaten: await this.stempelDaten() });
     if (teil.groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, t('meldungen.dienst.die-anhaenge-sind-zusammen-2', { round: Math.round(EMAIL_MAX_ANHAENGE / 1e6) }));
     const { namen, anhaenge } = await this.versandAnhaenge([teil]);
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;

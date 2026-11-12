@@ -153,7 +153,8 @@ export class DokumenteDienst {
    * „version“ (neue Version des vorhandenen, nur mit Versionierung) oder „ersetzen“ (vorhandenes löschen,
    * nur ohne Versionierung).
    */
-  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; gleicherName?: string; herkunft?: Herkunft; volltext?: Volltextuebernahme; /** Nur intern (#878: Beispiel-Dokumente mit Datum). */ erstellt?: string }, inhalt: unknown, benutzerId: string | null) {
+  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; gleicherName?: string; herkunft?: Herkunft; volltext?: Volltextuebernahme; /** Nur intern (#878: Beispiel-Dokumente mit Datum). */ erstellt?: string;
+    /** Nur intern (E-Mail-Postfach, #999): Platz in der Eingangsreihenfolge und Kennzeichen „Original-E-Mail“. */ eingang?: { nr?: number; originalEmail?: boolean } }, inhalt: unknown, benutzerId: string | null) {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
     const typ = await this.repo.holeTyp(m.typId);
@@ -179,9 +180,12 @@ export class DokumenteDienst {
       return { dokument: await this.ersetzeDokument(gleich.id, { name: e.name, typ: e.typ, herkunft: e.herkunft }, ein, benutzerId), gleicherInhalt: [], version: true };
     }
     let anlagen: string[] | undefined;
+    // Ersetzen ohne Versionierung: Eingangsreihenfolge und Kennzeichen (#999) gehen aufs neue Dokument über.
+    let eingang = e.eingang;
     if (gleich && art === 'ersetzen') {
       if (reg.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-2'));
       anlagen = (await this.loescheDokument(gleich.id, benutzerId)).anlagen;
+      eingang ??= eingangVon(gleich);
     }
     let name = dateiname(e.name);
     if (gleich && art === 'zaehler') {
@@ -207,6 +211,11 @@ export class DokumenteDienst {
         groesse, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
       });
       if (e.erstellt) { await this.repo.setzeDokumentErstellt(dokument.id, e.erstellt); dokument.erstellt = e.erstellt; }
+      if (eingang) {
+        await this.repo.setzeEingang(dokument.id, eingang);
+        if (eingang.nr) dokument.eingangNr = eingang.nr;
+        if (eingang.originalEmail) dokument.originalEmail = true;
+      }
       // Anlagen (#998) des ersetzten Dokuments hängen am neuen.
       await this.uebertrageAnlagen(anlagen, dokument);
       this.danach(() => this.neueDateien([dokument]));
@@ -297,6 +306,9 @@ export class DokumenteDienst {
   async nimmAnlagenMit(alt: Dokument, anlagen: string[] | undefined, neu: Dokument): Promise<void> {
     await this.haengeUm(anlagen, neu);
     if (alt.anlageZu) await this.repo.setzeAnlage(neu.id, alt.anlageZu, alt.anlageNr ?? 1);
+    // E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge und Kennzeichen „Original-E-Mail“ bleiben.
+    const eingang = eingangVon(alt);
+    if (eingang) await this.repo.setzeEingang(neu.id, eingang);
   }
 
   private async haengeUm(anlagen: string[] | undefined, neu: Dokument): Promise<void> {
@@ -307,4 +319,10 @@ export class DokumenteDienst {
       if (a && !a.anlageZu && a.mappeId === neu.mappeId) await this.repo.setzeAnlage(a.id, neu.id, ++nr);
     }
   }
+}
+
+/** E-Mail-Postfach (#999): was ein ersetztes Dokument an Eingangsreihenfolge und Kennzeichen weitergibt – oder nichts. */
+function eingangVon(d: Dokument): { nr?: number; originalEmail?: boolean } | undefined {
+  if (!d.eingangNr && !d.originalEmail) return undefined;
+  return { ...(d.eingangNr ? { nr: d.eingangNr } : {}), ...(d.originalEmail ? { originalEmail: true } : {}) };
 }

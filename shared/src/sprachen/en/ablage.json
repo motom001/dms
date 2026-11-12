@@ -257,6 +257,14 @@
   "dokumente.zusammenfuegen": "Merge",
   "dokumente.loeschen": "Delete",
   "dokumente.sortieren": "Sort:",
+  "dokumente.eingangsreihenfolge": "As received",
+  "dokumente.post-teilen-ab": "Split post from here",
+  "dokumente.post-teilen-ab-titel": "This document and all after it go to “New post” as a new post",
+  "dokumente.post-teilen-ab-frage": "Split the post from “{name}”?",
+  "dokumente.post-teilen-ab-text_one": "This document goes to “New post” as a new post, with its enclosures. The documents before it stay in this post.",
+  "dokumente.post-teilen-ab-text_other": "These {anzahl} documents go to “New post” as a new post, with their enclosures. The documents before them stay in this post.",
+  "dokumente.post-geteilt_one": "One document is now a post of its own:",
+  "dokumente.post-geteilt_other": "{anzahl} documents are now a post of their own:",
   "dokumente.pdfs-zusammenfuegen": "Merge PDFs",
   "dokumente.pdfs-in-der-reihenfolge": "{pdfAuswahl} PDFs in the order of the list into one:",
   "dokumente.name": "Name",
@@ -1389,5 +1397,11 @@
   "anlagen.zip-name": "{name} with enclosures.zip",
   "anlagen.nicht-erkannt": "Recognition and AI only read the main document",
   "anlagen.email-mit": "With enclosures",
-  "anlagen.email-mit-hinweis": "Enclosures go with their document. Without the tick you choose each one yourself."
+  "anlagen.email-mit-hinweis": "Enclosures go with their document. Without the tick you choose each one yourself.",
+  "anlagen.original-email": "Original email",
+  "anlagen.original-email-titel": "The fetched email itself (.eml). Recognition and AI do not read it; it goes wherever the document it hangs on goes.",
+  "anlagen.original-mit": "Include original email: {name}",
+  "anlagen.original-mit-hinweis": "It contains all attachments of the email. If not all of them belong, untick it.",
+  "anlagen.original-uebernehmen": "Take original email along: {name}",
+  "anlagen.original-uebernehmen-hinweis": "It contains all attachments of the email. If not all of them belong in this folder, untick it – it then stays in the post."
 }

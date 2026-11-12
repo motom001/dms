@@ -12,6 +12,8 @@ To the right of a folder's title, next to the star, is the menu **Folder ▾** (
 4. Under **Attachments**, choose which documents of the folder go along. Below it, it says how large they are together; from 20 MB Ablago warns, because many mail servers don't accept larger emails; more than 50 MB cannot be sent.
 5. **Send**.
 
+If the [original email](post.md#original-e-mail) hangs on a document, it is listed with its label and goes along – one click on its box unticks it. **The original email contains all attachments of the email. If not all of them belong in this folder, free it first or delete it.**
+
 ![Email from a folder](bilder/email.png)
 
 The sender is Ablago's address; the recipient's **replies** go to your email address.
@@ -31,7 +33,7 @@ All receipts of a year to the tax adviser, the car documents to the insurance: t
 3. **To**, **Subject** and **Message** as for one folder.
 4. Under **Attachments** you choose:
     - **Details per folder as PDF** – one file "Title.pdf" per folder with all fields (never passwords). Preselected. If the folder type requires a stamp, this PDF is stamped too.
-    - **Documents:** **all** documents of the folders, **none** or **Choose …** – then the documents are listed per folder with boxes.
+    - **Documents:** **all** documents of the folders, **none** or **Choose …** – then the documents are listed per folder with boxes. With **all**, an [original email](post.md#original-e-mail) is listed below with its own box **Include original email**.
 5. **Send**.
 
 Below it, it again says how large the attachments are together (warning from 20 MB, at most 50 MB – the PDFs with the details count too). The same rules as for one folder apply to stamps, archive versions and shrinking. At most 100 folders fit in one e-mail.

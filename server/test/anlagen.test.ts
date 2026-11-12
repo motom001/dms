@@ -475,10 +475,10 @@ describe('Anlagen (#998): Volltext und Vollexport', () => {
     try {
       const r = await vollexport(quelle, ziel, {});
       const zeilen = (await readFile(join(r.ordner, 'daten/dokumente.csv'), 'utf8')).replace(/^\uFEFF/, '').trim().split('\r\n');
-      assert.match(zeilen[0], /,archivfassung,anlage_zu,anlage_nr$/);
+      assert.match(zeilen[0], /,archivfassung,anlage_zu,anlage_nr,eingang_nr,original_email$/);
       const hu = zeilen.find((z) => z.startsWith(x.hu.id))!;
-      assert.ok(hu.endsWith(`,${x.rechnung.id},1`), hu);
-      assert.ok(zeilen.find((z) => z.startsWith(x.rechnung.id))!.endsWith(',,'));
+      assert.ok(hu.endsWith(`,${x.rechnung.id},1,,`), hu);
+      assert.ok(zeilen.find((z) => z.startsWith(x.rechnung.id))!.endsWith(',,,,'));
     } finally { await rm(ziel, { recursive: true, force: true }); }
   });
 });

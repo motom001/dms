@@ -120,6 +120,10 @@ Siehe auch: [Organisation](#organisation), [Person](#person).
 Firma, Behörde, Bank, Praxis, Verein oder andere Stelle, mit der man zu tun hat. Mappentyp aus dem Paket Basis; andere Pakete verweisen darauf (Vertragspartner, Versicherer, Bank …).  
 Siehe auch: [Niederlassung](#niederlassung), [Person](#person).
 
+<a id="original-e-mail"></a>**Original-E-Mail** · ✓ Alltagswort · alle  
+Die aus einem Postfach abgeholte E-Mail selbst (.eml), ganz hinten in ihrer Post – als letzte Anlage am letzten Anhang oder, wenn die E-Mail keine Anhänge hatte, als Dokument der Post. Sie wandert beim Zuordnen mit; Erkennung, Klassifizieren und KI lesen sie nie, denn ihr Text steht schon an der Post.  
+Siehe auch: [Anlage](#anlage), [Post](#post), [Postfach](#postfach).
+
 <a id="papierkorb"></a>**Papierkorb** · ✓ Alltagswort · alle  
 Gelöschte Mappen. Sie lassen sich wiederherstellen, bis die eingestellte Zahl an Tagen abgelaufen ist.
 
@@ -733,6 +737,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Notiz | – | `Notiz` |
 | Nummernkreis | – | `Nummernkreis` |
 | Organisation | – | `basis:organisation` |
+| Original-E-Mail | Mail-Datei, Quellmail | `Dokument.originalEmail` |
 | Paket | Plugin, Erweiterung, App, Modul | `InstalliertesPaket` |
 | Paket nach Zeitplan ausführen | Cronjob, Tagesereignis, Paketlauf | `DannKarte art: paket, zeitplan.ausgefuehrt` |
 | Paket-Läufer | Code im Paket-Läufer, Plugin-Host | `Paketlaeufer, PaketLaeufer` |

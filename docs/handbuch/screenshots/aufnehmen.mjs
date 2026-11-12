@@ -28,6 +28,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { musterAufnehmen } from '../../../web/rauchtest/muster.mjs';
+import { imapAttrappe } from './imap-attrappe.mjs';
 
 const BASIS = process.env.DMS_URL ?? 'http://localhost:3000';
 const ZIEL = process.argv[2] ?? 'bilder';
@@ -817,6 +818,37 @@ async function main() {
   await s.locator('[data-anlage="3"]').scrollIntoViewIfNeeded();
   await bild(s, 'dokumente-anlagen');
   await api('PUT', `/api/mappen/${werkstatt.id}`, { werte: { stand: 'Erledigt' } });
+
+  // E-Mail-Postfach (#999): eine abgeholte E-Mail mit drei Anhängen (und einem Logo in der Signatur) – drei Dokumente in
+  // der Reihenfolge der E-Mail, ganz hinten die Original-E-Mail. Abgeholt über die IMAP-Attrappe; Postfach danach
+  // gelöscht und Post erledigt, damit die Werkbank und „Neue Post“ in den folgenden Bildern gleich bleiben.
+  {
+    const b64 = (x) => Buffer.from(x).toString('base64').replace(/.{76}/g, '$&\r\n');
+    const teil = (typ, name, inhalt, art = 'attachment', cid) => `--aussen\r\nContent-Type: ${typ}; name="${name}"\r\nContent-Disposition: ${art}; filename="${name}"\r\n`
+      + `Content-Transfer-Encoding: base64\r\n${cid ? `Content-ID: <${cid}>\r\n` : ''}\r\n${b64(inhalt)}\r\n`;
+    const mail = Buffer.from('From: Autohaus Beispiel <service@autohaus.example.org>\r\nTo: ablage@example.org\r\nSubject: Ihr Auftrag W-2026-0815: Unterlagen\r\n'
+      + 'Date: Tue, 10 Nov 2026 09:12:00 +0100\r\nMessage-ID: <auftrag-0815@autohaus.example.org>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="aussen"\r\n\r\n'
+      + '--aussen\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nGuten Tag Herr Özdemir,\r\nanbei Rechnung, HU-Bericht und Garantiebedingungen zu Ihrem Auftrag.\r\n'
+      + teil('image/png', 'logo.png', 'logo', 'inline', 'logo1')
+      + teil('application/pdf', 'Rechnung W-2026-0815.pdf', beispielPdf('Rechnung W-2026-0815'))
+      + teil('application/pdf', 'HU-Bericht.pdf', beispielPdf(['HU-Bericht', 'Seite 2']))
+      + teil('application/pdf', 'Garantiebedingungen.pdf', beispielPdf('Garantiebedingungen'))
+      + '--aussen--\r\n', 'utf8');
+    const attrappe = await imapAttrappe([mail]);
+    try {
+      const pf = (await api('POST', '/api/werkbank/postfaecher', { name: 'Autohaus', aktiv: false, server: '127.0.0.1', port: attrappe.port, verschluesselung: 'keine', unverschluesseltBestaetigt: true,
+        benutzer: 'ablage@example.org', passwort: 'nur-fuer-bilder', nachher: 'verschieben' })).at(-1);
+      await api('POST', `/api/werkbank/postfaecher/${pf.id}/abrufen`, {});
+      const emailPost = (await api('GET', '/api/werkbank/postfaecher')).find((x) => x.id === pf.id).stand.uebernommen[0].mappeId;
+      await api('DELETE', `/api/werkbank/postfaecher/${pf.id}`);
+      await geheZu(s, `/ablage/${neuePost}/${emailPost}?als=post`);
+      await s.getByRole('tab', { name: w(/^Dokumente/) }).click();
+      await s.locator('[data-anlage="1"]').waitFor();
+      await s.locator('[data-anlage="1"]').scrollIntoViewIfNeeded();
+      await bild(s, 'post-email-anhaenge');
+      await api('PUT', `/api/mappen/${emailPost}`, { werte: { stand: 'Erledigt' } });
+    } finally { await attrappe.schliessen(); }
+  }
 
   // Neue Post von überall (#193): zwei Dateien irgendwo ins Fenster ziehen → eine Post mit beiden.
   await geheZu(s, `/ablage/${vertrag.id}`);

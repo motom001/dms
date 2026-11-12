@@ -334,7 +334,8 @@ export const V1_TABELLE: V1[] = [
       + 'Ohne teile: neue Version des Dokuments; ist die Versionierung des Registers aus, ersetzt das Ergebnis das Dokument nur mit bestaetigt=true (sonst 409 mit rueckfrage), das bisherige kommt in den Papierkorb. '
       + 'Mit teile in einer Mappe: Teil 1 wird die neue Version, die weiteren Teile werden eigene Dokumente „Name (Teil n).pdf“ im selben Register. '
       + 'Mit teile bei Post („Post teilen nach Seitenbereichen“): je Teil eine neue Post (Stand Neu, Betreff „… (Teil n)“); die Ausgangspost behält ihr Dokument, hat Stand Erledigt und verweist auf die neuen. Texterkennung läuft für die Ergebnisse neu. '
-      + 'Anlagen (#998, z. B. Trennblatt mit zweitem Barcode): anlagen = Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt (nie am Anfang eines Teils, höchstens 99 je Teil; sonst 422). Nur bei Post (sonst 409): Jeder Teil wird eine neue Post, sein Dokument bekommt dort die Anlagen „<Name> – Anlage 1.pdf“, „– Anlage 2.pdf“ …; bei nur einem Teil behält die neue Post den Betreff. Anlagen entstehen nie in anderen Mappen. Pakete brauchen dafür das Recht dms:anlagen (sonst 403).',
+      + 'Anlagen (#998, z. B. Trennblatt mit zweitem Barcode): anlagen = Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt (nie am Anfang eines Teils, höchstens 99 je Teil; sonst 422). Nur bei Post (sonst 409): Jeder Teil wird eine neue Post, sein Dokument bekommt dort die Anlagen „<Name> – Anlage 1.pdf“, „– Anlage 2.pdf“ …; bei nur einem Teil behält die neue Post den Betreff. Anlagen entstehen nie in anderen Mappen. Pakete brauchen dafür das Recht dms:anlagen (sonst 403). '
+      + 'E-Mail-Postfach (#999): Post mit Kanal „E-Mail“ teilt kein Paket (teile oder anlagen: 409) – eine E-Mail bleibt eine Post; Menschen und API-Schlüssel von Personen dürfen.',
     intern: { methode: 'POST', pfad: '/api/dokumente/:id/seiten' }, parameter: [id('des Dokuments')], body: 'SeitenBearbeiten', antwort: 'SeitenErgebnis', status: 201,
   },
   {
@@ -622,6 +623,8 @@ const SCHEMAS: Record<string, Schema> = {
       leerseiten: { ...ref('Leerseiten'), nullable: true, description: 'Leerseiten (#997): Markierung eines Pakets und Wahl je Seite; fehlt ohne Markierung. Gilt nur, solange sha256 gleich ist.' },
       anlageZu: { ...uuid, nullable: true, description: 'Anlagen (#998): Id des Hauptdokuments, an dem dieses Dokument als Anlage hängt (gleiche Mappe, gleiches Register); fehlt bei eigenen Dokumenten' },
       anlageNr: { type: 'integer', nullable: true, description: 'Anlagen (#998): Reihenfolge ab 1 („Anlage 1“); nur mit anlageZu' },
+      eingangNr: { type: 'integer', nullable: true, description: 'E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (1, 2, 3 … wie die Anhänge in der E-Mail stehen); fehlt bei allem, was nicht aus dem Postfach kam' },
+      originalEmail: { type: 'boolean', description: 'E-Mail-Postfach (#999): die abgeholte E-Mail selbst („Original-E-Mail“, .eml) – letzte Anlage am letzten Anhang oder, ohne Anhänge, das Hauptdokument; Erkennung und KI lassen sie weg. Fehlt sonst.' },
     },
   },
   Anlagen: { type: 'object', description: 'Ein Dokument und seine Anlagen (#998)', properties: { dokument: ref('Dokument'), anlagen: { type: 'array', items: ref('Dokument'), description: 'Anlage 1 zuerst' } } },
@@ -767,6 +770,7 @@ const SCHEMAS: Record<string, Schema> = {
     ziel: { ...uuid, description: 'Id der Mappe, zu der die Post gehört' }, register: { type: 'string', description: 'Kennung eines Dokumentenregisters der Zielmappe; Standard: das erste' },
     dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten der Post; Standard: alle' }, kopieren: { type: 'boolean', description: 'true = Dokumente bleiben auch in der Post' },
     aufloesen: { type: 'boolean', description: 'Post auflösen (#936, #934): aus der Post wird die Zielmappe (neu oder bestehend); siehe Beschreibung' },
+    originalEmail: { type: 'boolean', description: 'Original-E-Mail (#999): geht mit dem Dokument, an dem sie hängt (Standard: ja); false – sie bleibt als eigenes Dokument in der Post, denn sie enthält alle Anhänge der Mail' },
     leerseiten: { type: 'string', enum: ['weglassen', 'behalten'], description: 'Leerseiten (#997): weglassen (Standard) – markierte Seiten fallen weg, das Dokument in der Mappe ist eine neue Fassung ohne sie, das Original bleibt als frühere Version; behalten – alle Seiten bleiben' },
   } },
   Abtrennen: { type: 'object', required: ['dokumente'], properties: { dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten der Post, die als neue Post abgetrennt werden' } } },
@@ -848,7 +852,7 @@ const SCHEMAS: Record<string, Schema> = {
   FotosAngehaengt: { type: 'object', properties: { dokument: ref('Dokument'), seiten: { type: 'integer' } } },
   Zusammenlegen: { type: 'object', required: ['quelle'], properties: { quelle: { ...uuid, description: 'Id der Post, deren Seiten angehängt werden' } } },
   PostAusFotos: { type: 'object', properties: { post: ref('Mappe'), dokument: ref('Dokument'), seiten: { type: 'integer' } } },
-  EmailEingabe: { type: 'object', required: ['an', 'betreff'], properties: { an: { type: 'string', description: 'Eine oder mehrere Adressen, durch Komma getrennt' }, betreff: { type: 'string' }, nachricht: { type: 'string' }, dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten dieser Mappe' }, mitAnlagen: { type: 'boolean', description: 'Anlagen (#998): hinter jedem gewählten Dokument seine Anlagen (Standard: ja)' } } },
+  EmailEingabe: { type: 'object', required: ['an', 'betreff'], properties: { an: { type: 'string', description: 'Eine oder mehrere Adressen, durch Komma getrennt' }, betreff: { type: 'string' }, nachricht: { type: 'string' }, dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten dieser Mappe' }, mitAnlagen: { type: 'boolean', description: 'Anlagen (#998): hinter jedem gewählten Dokument seine Anlagen (Standard: ja)' }, originalEmail: { type: 'boolean', description: 'Original-E-Mail (#999): geht als Anlage mit (Standard: ja); false lässt sie weg – sie enthält alle Anhänge der Mail' } } },
   EmailVersendet: { type: 'object', properties: { id: { ...uuid, description: 'Id der neuen E-Mail-Mappe' }, typId: uuid } },
   NotizEingabe: { type: 'object', required: ['text'], properties: { text: { type: 'string' } } },
   Erinnerung: { type: 'object', properties: { id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true }, datum: { type: 'string', format: 'date' }, text: { type: 'string' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, hinweis: { type: 'string', description: 'Wenn der Empfänger die Mappe nicht lesen darf' } } },
@@ -952,6 +956,7 @@ const SCHEMAS: Record<string, Schema> = {
     betreff: { type: 'string', maxLength: 250 }, nachricht: { type: 'string' }, angaben: { type: 'boolean', description: 'Angaben je Mappe als PDF (Standard: ja)' },
     dokumente: { oneOf: [{ type: 'string', enum: ['alle'] }, { type: 'array', items: uuid }] },
     mitAnlagen: { type: 'boolean', description: 'Anlagen (#998): hinter jedem gewählten Dokument seine Anlagen (Standard: ja); false mit dokumente=alle lässt Anlagen weg' },
+    originalEmail: { type: 'boolean', description: 'Original-E-Mail (#999): geht als Anlage mit (Standard: ja); false lässt sie weg – mit dokumente=alle auch eine Original-E-Mail ohne Anhänge; sie enthält alle Anhänge der Mail' },
   } },
   EmailMehrereVersendet: { type: 'object', properties: { id: { ...uuid, description: 'Id der Post' }, typId: uuid, mappen: { type: 'integer' }, anhaenge: { type: 'integer' } } },
   Archivnummer: { type: 'object', properties: { archivnummer: { type: 'string', nullable: true, maxLength: 40, description: 'leer oder null entfernt die Nummer' } } },

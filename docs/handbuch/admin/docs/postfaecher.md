@@ -26,7 +26,7 @@ Ablago kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede 
 | Nur von diesen Absendern | optional: Adressen (`rechnung@stadtwerke.example`) oder Domains (`bank.example`, auch Unterdomains) |
 | Nach dem Übernehmen | **in einen Ordner verschieben** (Standard `DMS`, wird angelegt), **nur als gelesen markieren** oder **löschen** |
 | Nur Mails mit Anhang | andere bleiben unverändert im Postfach |
-| Original-Mail als .eml | Standard ein: die ganze Mail liegt zusätzlich als Dokument an der Post |
+| Original-Mail als .eml | Standard ein: die ganze Mail liegt ganz hinten als Dokument mit dem Kennzeichen „Original-E-Mail“ an der Post |
 
 **Verbindung testen** meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. Ein gespeichertes Passwort (oder die OAuth-Anmeldung) geht dabei nur an den gespeicherten Server, Port und die gespeicherte Verschlüsselung: Änderst du eins davon, gib das Passwort neu ein (bzw. speichere und melde dich neu an). **Jetzt abrufen** (Bereich *Stand*) holt sofort ab. **Postfach entfernen** (links unten) löscht das Postfach aus Ablago, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.
 
@@ -106,7 +106,10 @@ Für andere Anbieter mit IMAP und OAuth 2.0 trägst du *Autorisierungs-Endpunkt*
 ## Was beim Übernehmen passiert
 
 - **Jede Mail wird eine Post**: Kanal *E-Mail*, Richtung eingehend, Stand *Neu*; Betreff, Datum und Absender (Name und Adresse, bei *Von*) aus der Mail; *An* aus dem Postfach. Angelegt hat sie das *Postfach*, kein Benutzer. Die Historie nennt Postfach, Absender und Zeit.
-- **Anhänge** werden einzelne Dokumente. Kleine eingebettete Bilder (Logos, Signaturen) werden übersprungen; angehängte Mails bleiben ein `.eml`-Dokument.
+- **Eine Mail, eine Post** (seit 0.264): Jeder **Anhang** wird ein eigenes Dokument mit seinem Dateinamen, in der Reihenfolge der Mail (MIME-Struktur) – ohne Sortierung, ohne Namensregel; nur ein gleicher Name im Register bekommt wie beim Hochladen „(2)“. Kleine eingebettete Bilder (Logos, Signaturen: eingebunden oder `inline` unter 100 KB) werden übersprungen; angehängte Mails bleiben ein `.eml`-Dokument.
+- Die **Original-E-Mail** (`.eml`, wenn eingeschaltet) steht ganz hinten: als letzte [Anlage](https://help.ablago.app/benutzer/aktuell/dokumente/#anlagen) am letzten Anhang, ohne Anhänge als Dokument der Post. Sie trägt das Kennzeichen „Original-E-Mail“, wandert mit beim Zuordnen und wird von Erkennung, Klassifizieren und KI nie gelesen. Ein [Paket für die Archivfassung](texterkennung.md#archivfassung-pdfa) macht daraus wie bei jedem Dokument ein PDF/A daneben.
+- **Kein Teilen:** Trennblätter gelten im Postfach nicht. Ablago lässt kein Paket eine Post mit Kanal *E-Mail* teilen (409); Pakete wie *Trennblatt* nehmen den Kanal ohnehin aus. Aufteilen tun die Benutzer selbst – **Post ab hier teilen** oder **Seiten** → teilen.
+- Post von vor 0.264 bleibt, wie sie ist: Ihre `.eml` hat kein Kennzeichen (sie lässt sich nicht sicher von angehängten Mails unterscheiden); ihre Dokumente stehen in der Reihenfolge des Eingangs.
 - **Doppelte Anhänge:** Liegt ein Anhang schon in Ablago (gleicher Prüfwert), wird er trotzdem übernommen; die Historie der Post sagt „Doppelt: „Rechnung.pdf“ liegt schon in Ablago – vor dem Zuordnen prüfen.“ Wo, zeigt **Zuordnen** jedem, der die andere Mappe lesen darf.
 - Der **Text der Mail** steht als reiner Text an der Post. HTML wird in Text umgewandelt; Bilder oder andere Inhalte aus dem Internet lädt Ablago nie.
 - Es gelten die Grenzen wie beim Hochladen. Ein zu großer Anhang steht mit Grund in der Historie; die übrigen werden übernommen. Ist die Grenze für den [Speicherplatz](speicherplatz.md) erreicht, bleibt die Mail im Postfach.

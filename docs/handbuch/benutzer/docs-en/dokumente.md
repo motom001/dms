@@ -84,7 +84,7 @@ All buttons are at least 44 points large on the phone. If the document needs to 
 
 ## Sorting { #sortieren }
 
-Above the list you choose the order: **Name A–Z** (default), **Name Z–A**, **Newest first**, **Oldest first** (by upload) or **Largest first**. Names are sorted "naturally" – "Invoice 2" before "Invoice 10", regardless of upper and lower case. The choice applies to all document tabs and for you on all devices. Files not yet saved are always at the top.
+Above the list you choose the order: **Name A–Z** (default), **Name Z–A**, **Newest first**, **Oldest first** (by upload) or **Largest first**. Names are sorted "naturally" – "Invoice 2" before "Invoice 10", regardless of upper and lower case. The choice applies to all document tabs and for you on all devices. Files not yet saved are always at the top. In a **post** there is no choice: documents stand **as received** – for an [email](post.md#per-e-mail-ins-dms) in the order of its attachments, otherwise by upload.
 
 ## Several at once { #mehrere-auf-einmal }
 
@@ -114,7 +114,7 @@ Every step is recorded in the folder's [history](mappen.md).
 - They are **documents like any other**: with [versions](versionen.md), full text and text recognition, archive version (PDF/A), stamps and the folder's retention. Whoever may see the folder also sees its enclosures; the same rights apply.
 - **Recognition, "Where does this belong?" and AI** only read the main document – terms and conditions, price lists and reports do not get in the way of reading out values.
 - **Search** also finds text in enclosures; the hit names it with "in enclosure 2".
-- **Download** and **passing on** ask **"with enclosures?"** – *yes* is preselected. With enclosures, downloading gives a ZIP file "Garage invoice with enclosures.zip"; in an email every enclosure follows its document. Without the [export right](#ohne-exportrecht) neither works – as with a single document. The folder history records the download for the document and for each enclosure separately (with the route and, where applicable, the name of the API key); when sending, the email with all attachments.
+- **Download** and **passing on** ask **"with enclosures?"** – *yes* is preselected. With enclosures, downloading gives a ZIP file "Garage invoice with enclosures.zip"; in an email every enclosure follows its document. Without the [export right](#ohne-exportrecht) neither works – as with a single document. The folder history records the download for the document and for each enclosure separately (with the route and, where applicable, the name of the API key); when sending, the email with all attachments. If the [original email](post.md#original-e-mail) hangs on it, it is listed below with its label (**Include original email**, preselected) and can be unticked with one click: it contains all attachments of the email.
 - In the [drive](laufwerk.md) enclosures come right after their document with the suffix "– Enclosure 1".
 
 ## Edit PDF { #pdf-bearbeiten }

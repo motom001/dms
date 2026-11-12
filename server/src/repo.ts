@@ -503,6 +503,11 @@ export interface Repo {
    * dabei um. Mappe und Register prüft der Dienst. false, wenn es das Dokument nicht gibt.
    */
   setzeAnlage(id: string, anlageZu: string | null, nr: number | null, name?: string): Promise<boolean>;
+  /**
+   * E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (`nr`, null = keiner) und Kennzeichen
+   * „Original-E-Mail“ setzen – was fehlt, bleibt. Auch beim Ersetzen ohne Versionierung (das neue Dokument übernimmt es).
+   */
+  setzeEingang(id: string, x: { nr?: number | null; originalEmail?: boolean }): Promise<void>;
   /** Andere Dokumente mit derselben Datei (gleicher Inhalt). */
   dokumenteMitSha(sha256: string): Promise<Dokument[]>;
   /** Dateien umwandeln (#577): lebende Dokumente dieser Dateitypen, ältere zuerst. */

@@ -14,16 +14,23 @@ import s from './Anlagen.module.css';
  * Rechte wie beim Hauptdokument: Wer die Mappe bearbeiten darf, ändert Anlagen; herunterladen braucht das Exportrecht.
  */
 
-/** Kennzeichen „Anlage“ – überall, wo Dokumente gelistet werden. */
-export function AnlageMarke({ d }: { d: Pick<Dokument, 'anlageZu'> }) {
+/**
+ * Kennzeichen „Anlage“ – überall, wo Dokumente gelistet werden. Die abgeholte E-Mail selbst (#999) trägt stattdessen
+ * „Original-E-Mail“, als Anlage wie als Hauptdokument (E-Mail ohne Anhänge).
+ */
+export function AnlageMarke({ d }: { d: Pick<Dokument, 'anlageZu' | 'originalEmail'> }) {
+  if (d.originalEmail) return <span className="chip" title={t('ablage.anlagen.original-email-titel')}>{t('ablage.anlagen.original-email')}</span>;
   if (!d.anlageZu) return null;
   return <span className="chip" title={t('ablage.anlagen.marke-titel')}>{t('ablage.anlagen.marke')}</span>;
 }
 
-/** „Anlage 1 · HU/AU-Protokoll · 2 Seiten“. */
+/**
+ * „Anlage 1 · HU/AU-Protokoll · 2 Seiten“. Die Original-E-Mail (#999) zählt nicht als „Anlage n“ – nur ihr Name, das
+ * Kennzeichen daneben sagt „Original-E-Mail“.
+ */
 export function anlageZeilentext(a: Dokument): string {
   const seiten = a.ocr?.seiten ? t('ablage.anlagen.seiten', { anzahl: a.ocr.seiten }) : '';
-  return [anlageText(a.anlageNr ?? 1), a.name, seiten].filter(Boolean).join(' · ');
+  return [a.originalEmail ? '' : anlageText(a.anlageNr ?? 1), a.name, seiten].filter(Boolean).join(' · ');
 }
 
 /**
@@ -98,19 +105,44 @@ export function AlsAnlage({ d, ziele, schliessen, fertig }: { d: Dokument; ziele
 }
 
 /**
- * „mit Anlagen?“ beim Herunterladen eines Dokuments mit Anlagen (Vorgabe ja): mit Haken ein ZIP „… mit Anlagen.zip“,
- * ohne der gewohnte Weg (`ohne`, z. B. Original oder Archivfassung).
+ * Die Original-E-Mail (#999) in der Liste dessen, was mitgeht – mit Name, Kennzeichen und einem Haken zum Abwählen
+ * (Vorgabe: sie geht mit). Sie enthält alle Anhänge der Mail; gehören nicht alle dorthin, wählt man sie hier ab.
+ * Beim Übernehmen, im Dialog „mit Anlagen?“ (Herunterladen, Stempeln) und beim E-Mail-Versand.
  */
-export function HerunterladenMitAnlagen({ d, anzahl, archiv, ohne }: { d: Dokument; anzahl: number; archiv: boolean; ohne: ReactNode }) {
+export function OriginalEmailWahl({ emails, an, setze, wie = 'mit' }: {
+  emails: ReadonlyArray<Pick<Dokument, 'id' | 'name' | 'anlageZu' | 'originalEmail'>>; an: boolean; setze(an: boolean): void;
+  /** „mit“ (Herunterladen, Versand) oder „uebernehmen“ (bleibt sonst in der Post). */ wie?: 'mit' | 'uebernehmen';
+}) {
+  if (!emails.length) return null;
+  const name = emails.map((x) => x.name).join(', ');
+  return (
+    <HakenFeld className={s.original} beschriftung={<>{t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen' : 'ablage.anlagen.original-mit', { name })} <AnlageMarke d={emails[0]} /></>}
+      hinweis={t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen-hinweis' : 'ablage.anlagen.original-mit-hinweis')} hilfe="dokumente.anlagen">
+      <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} data-original-email="" />
+    </HakenFeld>
+  );
+}
+
+/**
+ * „mit Anlagen?“ beim Herunterladen eines Dokuments mit Anlagen (Vorgabe ja): mit Haken ein ZIP „… mit Anlagen.zip“,
+ * ohne der gewohnte Weg (`ohne`, z. B. Original oder Archivfassung). Hängt die Original-E-Mail (#999) daran, steht sie
+ * darunter mit eigenem Haken.
+ */
+export function HerunterladenMitAnlagen({ d, anlagen, archiv, ohne }: { d: Dokument; anlagen: Dokument[]; archiv: boolean; ohne: ReactNode }) {
   const [mit, setMit] = useState(true);
+  const [eml, setEml] = useState(true);
+  const emails = anlagen.filter((a) => a.originalEmail);
+  // Nur die Original-E-Mail als Anlage und abgewählt: dann ist es das Dokument allein, kein ZIP.
+  const zip = mit && (eml || anlagen.length > emails.length);
   return (
     <span className={s.mitAnlagen}>
-      {mit
-        ? <Knopf art="link" onClick={() => api.herunterladenMitAnlagen(d.id, t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined)}>{t('ablage.anlagen.herunterladen')}</Knopf>
+      {zip
+        ? <Knopf art="link" onClick={() => api.herunterladenMitAnlagen(d.id, t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined, eml)}>{t('ablage.anlagen.herunterladen')}</Knopf>
         : ohne}
-      <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl })}>
+      <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl: anlagen.length })}>
         <input type="checkbox" checked={mit} onChange={(e) => setMit(e.target.checked)} />
       </HakenFeld>
+      {mit && <OriginalEmailWahl emails={emails} an={eml} setze={setEml} />}
       <Hilfe ort="dokumente.anlagen" />
     </span>
   );
