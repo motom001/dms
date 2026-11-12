@@ -17,10 +17,11 @@ import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
 import { istDatum } from '../../../shared/src/fristen';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
-import { type Aufgabe, type AufgabenAnlass, auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, verweiseVon, type Werte } from '../../../shared/src/model';
+import { type Aufgabe, type AufgabenAnlass, auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, type Register, verweiseVon, type Werte } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { postWerteNeu } from '../../../shared/src/postfelder';
 import type { PostAufloesen } from './aufloesen';
+import { entfernteSeiten, type LeerseitenPlan, type PostLeerseiten } from './leerseiten';
 import type { KontenAnschluss, PostSystemmappen } from './systemmappen';
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
@@ -38,7 +39,7 @@ interface PostErkennung {
 /** Die Teile, die die Post ruft: Rechteprüfung, Mappentypen, Mappen, Dokumente und die Teile dieses Ordners. */
 export interface PostTeile {
   rechte: ZugriffDienst; mappentypen: MappentypenDienst; historie: MappenHistorie; titel: MappenTitel; eingaben: MappenEingaben;
-  dokumente: DokumenteDienst; versionen: DokumentVersionen; aufloesen: PostAufloesen; systemmappen: PostSystemmappen;
+  dokumente: DokumenteDienst; versionen: DokumentVersionen; aufloesen: PostAufloesen; systemmappen: PostSystemmappen; leerseiten: PostLeerseiten;
 }
 
 /** Was die Post außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
@@ -172,20 +173,15 @@ export class PostDienst {
     // Auflösen (#936, #934): auf Wunsch – in eine neue wie in eine bestehende Mappe. Nie automatisch (wegen „Automatik
     // rückgängig“), nie mit „Kopie in der Post behalten“ und nie bei versendeten E-Mails (Nachweis des Versands).
     const rest = alle.filter((d) => !ids.includes(d.id));
+    // Leerseiten (#997): beim Übernehmen weglassen (Vorgabe), nie beim automatischen Zuordnen – da hat niemand hingesehen.
+    const leer: Map<string, LeerseitenPlan> = auto ? new Map() : await this.teile.leerseiten.plane(dokumente as Dokument[], e.leerseiten === 'behalten' ? 'behalten' : 'weglassen');
     let hinweis: string | undefined;
     if (e.aufloesen === true && !auto && !kopieren && !istVersendet(post.werte)) {
       const grund = await this.aufloesenSperre(post, typ, rest.length > 0, z);
-      if (!grund) return this.loesePostAuf({ post, typ, ziel, zielTyp, reg, dokumente: dokumente as Dokument[], rest, von, quelle, neu: await this.ebenAngelegt(ziel, von) });
+      if (!grund) return this.loesePostAuf({ post, typ, ziel, zielTyp, reg, dokumente: dokumente as Dokument[], rest, von, quelle, neu: await this.ebenAngelegt(ziel, von), leer });
       hinweis = t('meldungen.dienst.post-bleibt-zugeordnet', { grund });
     }
-    for (const d of dokumente as Dokument[]) {
-      if (kopieren) {
-        const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: ziel.id, registerKey: reg!.key, erstellt: new Date().toISOString(), erstelltVon: von });
-        const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
-        if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info, sprache: fertig.sprache ?? null });
-        else if (VolltextDienst.volltextAn(zielTyp, reg!.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
-      } else await this.verschiebeInRegister(d, ziel.id, zielTyp, reg!.key);
-    }
+    for (const d of dokumente as Dokument[]) await this.uebertrage(d, { ziel, zielTyp, reg: reg!, kopieren, auto: !!auto, von }, leer.get(d.id));
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const zielTitel = await this.titel(ziel);
     const n = dokumente.length;
@@ -203,7 +199,26 @@ export class PostDienst {
     }
     await this.postAufgaben(post.id, von);
     protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren, aufloesenGesperrt: hinweis ? true : undefined });
-    return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: false as const, ...(hinweis ? { hinweis } : {}) };
+    return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: false as const, ...(hinweis ? { hinweis } : {}), ...(leer.size ? { leerseiten: entfernteSeiten(leer) } : {}) };
+  }
+
+  /**
+   * Ein Dokument beim Zuordnen in die Mappe: verschieben oder kopieren (dieselbe Datei, Volltext mitnehmen). Leerseiten
+   * (#997): mit Plan entsteht dort die neue Fassung ohne sie – bei der Kopie nur an der Kopie, die Post behält ihr
+   * Dokument samt Markierung; ohne Plan geht die Markierung beim Verschieben weg (außer beim automatischen Zuordnen).
+   */
+  private async uebertrage(d: Dokument, x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; kopieren: boolean; auto: boolean; von: string | null }, plan: LeerseitenPlan | undefined) {
+    if (x.kopieren) {
+      const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: x.ziel.id, registerKey: x.reg.key, erstellt: new Date().toISOString(), erstelltVon: x.von });
+      const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
+      if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info, sprache: fertig.sprache ?? null });
+      else if (VolltextDienst.volltextAn(x.zielTyp, x.reg.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
+      if (plan) await this.teile.leerseiten.lasseWeg(neu.id, plan, x.von);
+      return;
+    }
+    await this.verschiebeInRegister(d, x.ziel.id, x.zielTyp, x.reg.key);
+    if (plan) await this.teile.leerseiten.lasseWeg(d.id, plan, x.von);
+    else if (!x.auto && d.leerseiten) await this.teile.leerseiten.vergiss(d.id);
   }
 
   /** Mappentypen mit „Post automatisch zuordnen“ (#337); Archivmodus- und Systemtypen nie (dort nur mit Bestätigung). */

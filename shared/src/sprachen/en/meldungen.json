@@ -1950,5 +1950,18 @@
   "pakete.sicht-bedingung-op": "Views use operator, not op.",
   "pakete.sicht-bedingungen-liste": "{wo}: bedingungen must be a list.",
   "extern.pausiert": "AI features paused until {datum}: the monthly budget for AI services has been reached. An administrator can change the budget under Workbench → System health → AI costs.",
-  "vollexport.nicht-enthalten-messwerte-extern": "not included: measurements of external services and AI costs (technical, without content)"
+  "vollexport.nicht-enthalten-messwerte-extern": "not included: measurements of external services and AI costs (technical, without content)",
+  "leerseiten.nur-post": "Blank pages only exist on documents in post.",
+  "leerseiten.nur-pdf": "“{name}” is neither a PDF nor an image – blank pages only exist for PDFs, JPEG and PNG.",
+  "leerseiten.nur-pakete": "Only packages mark blank pages; a person chooses “Keep after all” or “Leave out too” for each page.",
+  "leerseiten.ohne-recht": "This package does not have the right “Mark blank pages in new post” (dms:leerseiten).",
+  "leerseiten.andere-datei": "The file of “{name}” has changed in the meantime – please check the current file.",
+  "leerseiten.liste.liste": "seiten: list of page numbers expected.",
+  "leerseiten.liste.seite": "seiten: whole numbers from 1 to {seiten} only.",
+  "leerseiten.liste.zu-viele": "seiten: too many entries.",
+  "leerseiten.wahl-nur-menschen": "Whether a page stays or goes is chosen by a person – packages only mark.",
+  "leerseiten.versendet": "All pages stay in sent emails.",
+  "leerseiten.weglassen-ja-nein": "weglassen: true or false expected.",
+  "leerseiten.entfernt_one": "One blank page removed",
+  "leerseiten.entfernt_other": "{anzahl} blank pages removed"
 }

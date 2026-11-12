@@ -231,6 +231,14 @@ begriffe:
     nicht_verwenden: [Warnung, Fehler, Meldung von Ablago]
     verwandt: [Berechnetes Feld, Paket]
     code: PaketHinweis, dms:hinweise
+  - begriff: Leerseite
+    bereich: grundbegriffe
+    beschreibung: Eine Seite in neuer Post, die ein Paket wie „Leerseiten“ als leer erkannt hat, z. B. die Rückseite eines beidseitigen Scans. Sie ist in der Seitenleiste blass („Leerseite – fällt beim Übernehmen weg“); mit „Doch behalten“ bleibt sie. Weggelassen wird sie erst beim Übernehmen in eine Mappe, das Original bleibt als frühere Version.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Blindseite, Vakatseite, leeres Blatt]
+    verwandt: [Post, Paket, Version]
+    code: Dokument.leerseiten, dms:leerseiten
   - begriff: Verknüpfungen
     bereich: grundbegriffe
     beschreibung: Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.

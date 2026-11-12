@@ -225,6 +225,7 @@ The first subject area with its own business logic in its subject folder (trial 
 | `systemmappen.ts` | `PostSystemmappen` (`dienst.postSystemmappen`) | `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, roles, system accounts (#673); `SystemkontoEintrag` |
 | `eingangskanaele.ts` | `Eingangskanaele` (`dienst.eingangskanaele`) | what inbox folders and mailboxes need (#195, #196), identical files and `fundstellen` (#333); `Fundstelle` |
 | `foto.ts` | `PostFotos` (`dienst.postFotos`) | photographing post (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen` |
+| `leerseiten.ts` | `PostLeerseiten` (`dienst.postLeerseiten`) | blank pages (#997): `lies`, `markiere` (packages with `dms:leerseiten` only), `waehleSeite` (people only); when taking over `plane` (before moving) and `lasseWeg` (new version, original kept as an earlier version) |
 
 - **Door:** `post/index.ts`; only `routen.ts` loads the mailbox routes (`post.routen.ts`) directly. Since #1073 `wandleZuPost` and `ergaenzeSystemfelder` live with the [folder types](#mappentypen).
 - **Gets the core**, [checking permissions](#zugriff), [folder types](#mappentypen), [folders](#mappen), [documents](#dokumente) and the classes of this folder, `PostFotos` also [editing PDFs](#pdf-bearbeiten). Through the connector: event (`kern.ereignis`), `meldeVerknuepft`, tasks, accounts, fit, system setup, deleting folders and `sichereZuordnung` from `erkennung.ts` (recognition still gets the whole service and so does not sit below layer 3).

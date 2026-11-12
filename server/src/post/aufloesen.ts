@@ -14,6 +14,7 @@ import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, POST_STAND, type Register, type Werte } from '../../../shared/src/model';
+import { entfernteSeiten, type LeerseitenPlan, type PostLeerseiten } from './leerseiten';
 import type { PostSystemmappen } from './systemmappen';
 
 /** Wert eines Mehrfachverweises als Liste. */
@@ -22,7 +23,7 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
 const AUFLOESEN_FRIST_MS = 60 * 60 * 1000;
 
 /** Die Teile, die das Auflösen ruft: Rechteprüfung, Historie, Titel, Dokumente, Versionen, Systemmappen. */
-export interface AufloesenTeile { rechte: ZugriffDienst; historie: MappenHistorie; titel: MappenTitel; dokumente: DokumenteDienst; versionen: DokumentVersionen; systemmappen: PostSystemmappen }
+export interface AufloesenTeile { rechte: ZugriffDienst; historie: MappenHistorie; titel: MappenTitel; dokumente: DokumenteDienst; versionen: DokumentVersionen; systemmappen: PostSystemmappen; leerseiten: PostLeerseiten }
 
 /** Was das Auflösen außer dem Kern braucht – über den Dienst (neue Post und Post-Aufgaben liefen sonst im Kreis). */
 export interface AufloesenAnschluss {
@@ -95,12 +96,18 @@ export class PostAufloesen {
    * „Aufgelöst in …“ in den Papierkorb (bei ausgeschaltetem Papierkorb endgültig weg); wiederherstellen lässt sie sich
    * nicht – der Weg zurück ist, die neue Mappe zu löschen (Thomas, 07.11.2026). Alles in einer Transaktion.
    */
-  async loesePostAuf(x: { post: Mappe; typ: Mappentyp; ziel: Mappe; zielTyp: Mappentyp; reg: Register | undefined; dokumente: Dokument[]; rest: Dokument[]; von: string | null; quelle?: Ausloeser; neu: boolean }) {
+  async loesePostAuf(x: { post: Mappe; typ: Mappentyp; ziel: Mappe; zielTyp: Mappentyp; reg: Register | undefined; dokumente: Dokument[]; rest: Dokument[]; von: string | null; quelle?: Ausloeser; neu: boolean; leer?: Map<string, LeerseitenPlan> }) {
     const { post, typ, ziel, zielTyp, reg, dokumente, rest, von } = x;
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const zielTitel = await this.titel(ziel);
     const erg = await this.inTransaktion(async () => {
-      for (const d of dokumente) await this.verschiebeInRegister(d, ziel.id, zielTyp, reg!.key);
+      for (const d of dokumente) {
+        await this.verschiebeInRegister(d, ziel.id, zielTyp, reg!.key);
+        // Leerseiten (#997): neue Fassung ohne sie, das Original bleibt als frühere Version.
+        const plan = x.leer?.get(d.id);
+        if (plan) await this.teile.leerseiten.lasseWeg(d.id, plan, von);
+        else if (d.leerseiten) await this.teile.leerseiten.vergiss(d.id);
+      }
       // Abgetrennt: die übrigen Dokumente als neue Post in „Neue Post“, Betreff, Datum, Absender, Kanal und „Für“ wie bisher.
       const abgetrennt = rest.length ? await this.legeAbgetrenntAn(post, typ, rest, von, {
         text: t(x.neu ? 'meldungen.dienst.abgetrennt-aus' : 'meldungen.dienst.abgetrennt-aus-uebernommen', { anzahl: rest.length, betreff, typ: zielTyp.name, zielTitel }),
@@ -130,6 +137,7 @@ export class PostAufloesen {
     protokoll.modul('ablage').info('Post aufgelöst', { post: post.id, ziel: ziel.id, dokumente: dokumente.length, abgetrennt: erg.abgetrennt?.id, papierkorb, ...erg.mit });
     return {
       post: erg.vorher, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: true as const, papierkorb,
+      ...(x.leer?.size ? { leerseiten: entfernteSeiten(x.leer) } : {}),
       ...(erg.abgetrennt ? { abgetrennt: (await this.repo.holeMappe(erg.abgetrennt.id))! } : {}),
     };
   }

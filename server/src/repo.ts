@@ -11,6 +11,7 @@ import type { Fundstelle } from './geheimnisse';
 import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/src/loeschprotokoll';
 import type { Varianten } from '../../shared/src/suche';
 import type { Seitensprache } from '../../shared/src/seitensprachen';
+import type { Leerseiten } from '../../shared/src/leerseiten';
 import { t } from './sprache';
 
 /** Seitenweises Lesen der Historie (#800). */
@@ -619,6 +620,11 @@ export interface Repo {
   seitensprachen(id: string): Promise<Seitensprache[] | null>;
   /** Hinweis „Post teilen?“ an einem Dokument wegklicken (#579); false, wenn es das Dokument nicht gibt. */
   teilenHinweisAus(id: string): Promise<boolean>;
+  /**
+   * Leerseiten eines Dokuments setzen oder (null) entfernen (#997); false, wenn es das Dokument nicht gibt oder – beim
+   * Setzen – seine Datei inzwischen eine andere ist (`l.sha256`).
+   */
+  setzeLeerseiten(id: string, l: Leerseiten | null): Promise<boolean>;
   /** Nach einem Neustart: „läuft“ → „wartet“. */
   ocrZurueckstellen(): Promise<number>;
   ocrZaehler(): Promise<OcrZaehler>;

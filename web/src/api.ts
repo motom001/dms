@@ -15,6 +15,7 @@ import type { LasttestStand } from '../../shared/src/lasttest';
 import type { Akzeptiert, Schwere } from '../../shared/src/meldungen';
 import type { SystemkontoFehler } from '../../shared/src/systemkonten';
 import type { GemerktesPasswort, PdfSchutz } from '../../shared/src/entsperren';
+import type { Leerseiten, LeerseitenWahl } from '../../shared/src/leerseiten';
 import type { UebersetzenAngebot, UebersetzenEinstellung, Uebersetzt, Uebersetzungsquelle } from '../../shared/src/uebersetzung';
 import type { Verweiskonflikt, Abwesenheit, Aufgabe, Ausschnitt, FallOhneLeserecht, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Wert, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
@@ -803,8 +804,8 @@ export const api = {
   /** Post (#192): anlegen (Dokumente danach mit ladeHoch) und einer Mappe zuordnen. */
   postAnlegen: (e: { betreff?: string; an?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
   /** Post auflösen (#936): `aufloesen` bei einer eben aus der Post angelegten Mappe; `hinweis`, wenn es beim Zuordnen blieb. */
-  zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean; aufloesen?: boolean }) =>
-    anfrage<{ post: Mappe; ziel: Mappe; aufgeloest: boolean; papierkorb?: boolean; abgetrennt?: Mappe; hinweis?: string }>('POST', `/api/mappen/${postId}/zuordnen`, e),
+  zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean; aufloesen?: boolean; leerseiten?: LeerseitenWahl }) =>
+    anfrage<{ post: Mappe; ziel: Mappe; aufgeloest: boolean; papierkorb?: boolean; abgetrennt?: Mappe; hinweis?: string; /** Leerseiten (#997): so viele Seiten sind weggelassen. */ leerseiten?: number }>('POST', `/api/mappen/${postId}/zuordnen`, e),
   /** „Dokument übernehmen“ (#934): Abgleich mit vorhandenen Mappen, Folgedokumente abtrennen, Wörter mit Lage. */
   abgleich: (e: { dokumente: string[]; typ?: string }) => anfrage<Abgleich & { bezuege: Bezuege; ohneText: string[]; typ?: TypFund | null }>('POST', '/api/abgleich', e),
   /** „Wohin gehört das?“ mehrstufig (#939): Pakete, Kern-Erkennung und Abgleich – ein Vorschlag mit Belegen. */
@@ -1176,6 +1177,8 @@ export const api = {
   setzeArchivnummer: (id: string, archivnummer: string) => anfrage<Dokument>('PUT', `/api/dokumente/${id}/archivnummer`, { archivnummer }),
   /** Hinweis „Post teilen?“ wegklicken (#579). */
   teilenHinweisAus: (id: string) => anfrage<{ id: string; teilenAb: number | null }>('DELETE', `/api/dokumente/${id}/teilen-hinweis`),
+  /** Leerseiten (#997): je Seite „Doch behalten“ (weglassen false) bzw. „Auch weglassen“ (true) – gelöscht wird erst beim Übernehmen. */
+  leerseiteWaehlen: (id: string, nr: number, weglassen: boolean) => anfrage<{ dokument: string; sha256: string; seiten: number; leerseiten: Leerseiten | null; wegfallend: number[] }>('PUT', `/api/dokumente/${id}/leerseiten/${nr}`, { weglassen }),
   /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
   /** Doppelte Dateien (#333): Prüfwerte → Fundstellen in Mappen, die man lesen darf. */
   gleicheDateien: (pruefwerte: string[], ohneMappe?: string) => anfrage<{ fundstellen: Record<string, Fundstelle[]> }>('POST', '/api/dokumente/gleiche', { pruefwerte, ...(ohneMappe ? { ohneMappe } : {}) }),

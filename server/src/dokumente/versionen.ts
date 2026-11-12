@@ -50,6 +50,24 @@ export class DokumentVersionen {
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     const { typ, reg } = await this.registerVon(d);
     if (!reg?.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-6'));
+    return this.legeFassungAn({ d, typ, reg }, e, inhalt, benutzerId);
+  }
+
+  /**
+   * Neue Fassung auch ohne Versionierung (#997, Leerseiten beim Übernehmen weglassen): Das Bisherige bleibt immer als
+   * frühere Version – die Mappe zeigt sie dann am Dokument („Version 2“), auch wenn das Register sonst keine Versionen hat.
+   */
+  async neueFassung(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
+    const { typ, reg } = await this.registerVon(d);
+    if (!reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
+    return this.legeFassungAn({ d, typ, reg }, e, inhalt, benutzerId);
+  }
+
+  private async legeFassungAn(wo: { d: Dokument; typ: Mappentyp | undefined; reg: Register }, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
+    const { d, typ, reg } = wo;
+    const id = d.id;
     // Upload als temporäre Datei (#746) oder Puffer.
     const ein = Eingang.aus(inhalt);
     if (!ein || ein.groesse === 0) throw new Fachfehler(422, t('meldungen.dienst.die-datei-ist-leer'));

@@ -170,6 +170,23 @@ Warum zugeordnet wurde („Absender … eindeutig erkannt (Kundennummer 100-4711
 
 Ohne Zuordnung geht es auch: **Erledigt, ohne Mappe** für Werbung oder Dinge, die schon erledigt sind; in der Post selbst (**Als Post öffnen**) gibt es dafür **Erledigt** und **Wieder neu**, wenn doch noch etwas zu tun ist. Unnötige Post löschst du wie jede Mappe.
 
+### Leerseiten { #leerseiten }
+
+![Seitenleiste mit Leerseiten auf der Seite „Dokument übernehmen“](bilder/post-leerseiten.png)
+
+Beidseitig gescannte Briefe haben oft leere Rückseiten. Ist das Paket **Leerseiten** installiert (das richtet ein Administrator ein), prüft es jede Seite neuer Post und markiert leere Seiten. Auf der Seite *Dokument übernehmen* steht dann über dem Dokument eine Zeile wie **„3 leere Seiten erkannt · 3 fallen beim Übernehmen weg“**, und links neben den Seiten eine **Seitenleiste** mit kleinen Bildern aller Seiten (am Handy waagerecht über dem Dokument). Die markierten Seiten sind blass und tragen **„Leerseite – fällt beim Übernehmen weg“**.
+
+- **Doch behalten:** Die Seite ist doch nicht leer, etwa wegen einer Bleistiftnotiz? Dann bleibt sie.
+- **Auch weglassen:** Eine Seite, die das Paket nicht markiert hat, soll trotzdem weg – z. B. ein Deckblatt.
+
+Das gilt sofort, gelöscht wird aber noch nichts. Erst wenn du die Post in eine Mappe übernimmst, entsteht das Dokument dort **ohne** diese Seiten. Das ursprüngliche PDF bleibt als **frühere Version** am Dokument (wie bei [PDF bearbeiten](dokumente.md#pdf-bearbeiten)), in der Historie der Mappe steht „3 leere Seiten entfernt“, und Texterkennung, Archivfassung und Erkennung arbeiten mit der Fassung ohne Leerseiten. Nicht weggelassen wird:
+
+- solange die Post Post bleibt – auch mit *Erledigt, ohne Mappe* bleibt alles, wie es ist;
+- beim [automatischen Zuordnen](#automatisch-zugeordnet) – da hat noch niemand hingesehen;
+- wenn alle Seiten markiert sind – ein Dokument fällt nie ganz weg.
+
+In der Post selbst (**Als Post öffnen**) steht dieselbe Leiste unter dem Dokument.
+
 ## Sammelscan teilen
 
 Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit einem langen PDF an. So machst du daraus einzelne Posts:

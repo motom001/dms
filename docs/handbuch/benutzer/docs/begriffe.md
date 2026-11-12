@@ -93,6 +93,10 @@ Siehe auch: [Berechnetes Feld](#berechnetes-feld), [Paket](#paket).
 <a id="kennung"></a>**Kennung** · ✗ Fachwort · Administratoren  
 Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer (bis 60 Zeichen). Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen. Mappentypen aus Paketen haben die Kennung Paket:Kennung, z. B. basis:person (#1084); eigene Mappentypen eine ohne Doppelpunkt.
 
+<a id="leerseite"></a>**Leerseite** · ✓ Alltagswort · alle  
+Eine Seite in neuer Post, die ein Paket wie „Leerseiten“ als leer erkannt hat, z. B. die Rückseite eines beidseitigen Scans. Sie ist in der Seitenleiste blass („Leerseite – fällt beim Übernehmen weg“); mit „Doch behalten“ bleibt sie. Weggelassen wird sie erst beim Übernehmen in eine Mappe, das Original bleibt als frühere Version.  
+Siehe auch: [Post](#post), [Paket](#paket), [Version](#version).
+
 <a id="mappe"></a>**Mappe** · ✓ Alltagswort · alle  
 Die Grundeinheit von Ablago, wie eine Pappmappe im Regal. Sie fasst Angaben, Dokumente und Verweise zu einem Ding zusammen, z. B. zu einem Vertrag, einer Rechnung oder einem Vertragspartner.  
 Siehe auch: [Mappentyp](#mappentyp), [Register](#register), [Dokument](#dokument).
@@ -425,7 +429,7 @@ Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines
 Siehe auch: [Archivmodus](#archivmodus).
 
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
-Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern und Tippfehler. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen; die gleichbedeutenden Wörter haben seit #992 einen eigenen Bereich direkt darunter.
+Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern, Tippfehler und gleichbedeutende Wörter. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
 
 <a id="systemrolle"></a>**Systemrolle** · ~ mit Erklärung · Administratoren  
 Ob ein Benutzer Administrator oder Mitglied ist. Nur Administratoren kommen in die Werkbank.  
@@ -681,6 +685,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ist Teil einer anderen Mappe | Untertyp, Untermappentyp, Vererbung | `Mappentyp.teilVon, gehoertZu, shared/src/teile.ts` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
+| Leerseite | Blindseite, Vakatseite, leeres Blatt | `Dokument.leerseiten, dms:leerseiten` |
 | Link | Direktlink, sprechender Link | `Direktlink` |
 | Mappe | Akte, Ordner, Datensatz | `Mappe` |
 | Mappentyp | Typ (allein), Vorlage, Klasse | `Mappentyp` |

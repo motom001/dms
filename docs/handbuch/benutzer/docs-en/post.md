@@ -170,6 +170,23 @@ Why it was assigned ("Sender … clearly recognised (customer number 100-4711), 
 
 It also works without assigning: **Done, without a folder** for advertising or things already dealt with; in the post itself (**Open as post**) there are **Done** and **New again** if there is something to do after all. You delete unnecessary post like any folder.
 
+### Blank pages { #leerseiten }
+
+![Page strip with blank pages on the page “Take over document”](bilder/post-leerseiten.png)
+
+Letters scanned on both sides often have blank backs. If the package **Leerseiten** is installed (an administrator sets that up), it checks every page of new post and marks blank pages. On the page *Take over document* a line like **"3 blank pages detected · 3 left out when filing"** then appears above the document, and to the left of the pages a **page strip** with small pictures of all pages (on a phone horizontally above the document). The marked pages are faded and say **"Blank page – left out when filing"**.
+
+- **Keep after all:** the page is not blank after all, say because of a pencil note? Then it stays.
+- **Leave out too:** a page the package did not mark should go anyway – e.g. a cover sheet.
+
+This applies at once, but nothing is deleted yet. Only when you take the post over into a folder is the document created there **without** these pages. The original PDF stays as an **earlier version** of the document (as with [Edit PDF](dokumente.md#pdf-bearbeiten)), the folder's history says "3 blank pages removed", and text recognition, archive version and recognition work with the version without blank pages. Nothing is left out:
+
+- as long as the post stays post – even with *Done, without a folder* everything stays as it is;
+- with [automatic assignment](#automatisch-zugeordnet) – nobody has looked yet;
+- if all pages are marked – a document never disappears completely.
+
+In the post itself (**Open as post**) the same strip appears below the document.
+
 ## Splitting a batch scan {#sammelscan-teilen}
 
 If you scanned several letters at once, they arrive as **one post** with a long PDF. This is how you make separate posts from it:

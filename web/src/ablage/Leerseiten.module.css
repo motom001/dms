@@ -1,0 +1,37 @@
+/* Leerseiten (#997): Seitenleiste mit Vorschaubildern in der Post und auf „Dokument übernehmen“. Markierte Seiten sind
+   blass und tragen „Leerseite – fällt beim Übernehmen weg“. Waagerecht in der Post und am Handy, senkrecht neben dem
+   Dokument auf „Dokument übernehmen“ (breit). */
+.block { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; min-width: 0; max-width: 100%; contain: inline-size; }
+.hinweis { display: flex; align-items: flex-start; gap: 6px; margin: 0; }
+.hinweis > span { flex: 1; min-width: 0; }
+
+.leiste { min-width: 0; max-width: 100%; contain: inline-size; } /* die Bilder bestimmen nicht die Breite: sonst schöbe die Leiste die Liste der Dokumente auseinander */
+.seiten { list-style: none; margin: 0; padding: 2px 2px 6px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; }
+.seite { flex: 0 0 auto; width: 96px; display: flex; flex-direction: column; align-items: center; gap: 2px; scroll-snap-align: start; }
+.bild { margin: 0; width: 100%; display: flex; flex-direction: column; gap: 2px; }
+.bild img, .ohneBild { display: block; width: 100%; aspect-ratio: 1 / 1.414; object-fit: contain; background: var(--papier); border: 1px solid var(--linie); border-radius: 4px; }
+.bild figcaption { display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--leise); line-height: 1.25; }
+.marke { color: var(--warn); font-weight: 600; }
+.weg .bild img, .weg .ohneBild { opacity: .4; border-style: dashed; border-color: var(--warn); }
+
+/* Neben dem Dokument (Seite „Dokument übernehmen“): senkrecht, schmal; am Handy wieder waagerecht. */
+.senkrecht .seiten { flex-direction: column; overflow-x: visible; overflow-y: auto; max-height: 80vh; padding: 2px 6px 2px 2px; }
+.senkrecht .seite { width: 100%; }
+.senkrecht .bild img, .senkrecht .ohneBild { width: 88px; margin: 0 auto; }
+@media (max-width: 720px) {
+  .senkrecht .seiten { flex-direction: row; overflow-x: auto; overflow-y: visible; max-height: none; }
+  .senkrecht .seite { width: 96px; }
+  .senkrecht .bild img, .senkrecht .ohneBild { width: 100%; }
+}
+
+/* Große Seite auf „Dokument übernehmen“, die beim Übernehmen wegfällt. */
+.grossWeg { opacity: .45; }
+.grossMarke { color: var(--warn); font-weight: 600; }
+
+/* Dokument mit Leiste: links die Leiste, rechts die Seiten; am Handy untereinander. */
+.mitLeiste { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 10px; align-items: start; }
+.mitLeiste > .leiste { position: sticky; top: 0; }
+@media (max-width: 720px) {
+  .mitLeiste { grid-template-columns: minmax(0, 1fr); }
+  .mitLeiste > .leiste { position: static; }
+}

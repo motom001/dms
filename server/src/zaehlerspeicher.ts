@@ -111,7 +111,7 @@ export const OHNE_FOLGEN = new Set<string>([
   // der Seiten, Hinweis „Post teilen?“, Fragen an die Ablage, Verzeichnis der Auskünfte).
   'papierkorbInhalt', 'papierkorbDokumentInhalt', 'loeschprotokoll', 'loeschprotokollSchreibe', 'loeschprotokollAufraeumen',
   'erkennungLies', 'erkennungSchreibe', 'erkennungenMitAbsender', 'vektorSetze', 'vektorLoesche', 'vektorenLoeschePaket',
-  'vektorenLaden', 'vektorVon', 'vektorStand', 'ohneVektor', 'mitVolltext', 'seitensprachen', 'teilenHinweisAus',
+  'vektorenLaden', 'vektorVon', 'vektorStand', 'ohneVektor', 'mitVolltext', 'seitensprachen', 'teilenHinweisAus', 'setzeLeerseiten',
   'fragenFundstellen', 'historieArt',
   // #936: Wohin eine Post aufgelöst wurde (nur lesend).
   'aufgeloesteIn',

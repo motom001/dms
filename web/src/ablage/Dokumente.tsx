@@ -1,5 +1,6 @@
 import { Vorschaubild } from './Vorschaubild';
 import { PdfSeiten } from './PdfSeiten';
+import { LeerseitenBlock, useLeerseiten } from './Leerseiten';
 import { Link } from '../ort';
 import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useMappenZiel } from './NeuePost';
@@ -135,6 +136,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const offenRef = useRef<HTMLLIElement>(null);
   const sortierung = (d.einstellungen.dokumente_sortierung as Dokumentsortierung | undefined) ?? 'name';
   const dokumente = sortiereDokumente(roh, sortierung in DOKUMENT_SORTIERUNGEN ? sortierung : 'name');
+  // Leerseiten (#997): nur an der Post – Seitenleiste mit „Doch behalten“ / „Auch weglassen“.
+  const leer = useLeerseiten(post ? roh : []);
   // Auswahl (#87): je Register; verschwindet mit dem Register bzw. der Mappe (eigene Instanz).
   const [gewaehlt, setGewaehlt] = useState<Set<string>>(new Set());
   const [anker, setAnker] = useState<string>();
@@ -211,7 +214,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   };
   const zeilenKlick = (x: Dokument, e: MouseEvent) => {
     // Knöpfe, Links, Kästchen, der Volltext und die Dialoge (Seiten, Verkleinern, Schwärzen) behalten ihre eigene Funktion.
-    if ((e.target as HTMLElement).closest('a, button, input, label, pre, .dokansicht, .pdfseiten, .hy-schleier, .dk-blatt, form')) return;
+    if ((e.target as HTMLElement).closest('a, button, input, label, pre, .dokansicht, .pdfseiten, .leerseiten, .hy-schleier, .dk-blatt, form')) return;
     umschalten(x);
   };
 
@@ -445,6 +448,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         </span>
                       </div>
                     )}
+                    {post && !weg && seitenOffen !== x.id && <LeerseitenBlock x={x} l={leer.von(x)} darf={bearbeitbar} geaendert={(l) => leer.setze(x.id, l)} />}
                     {seitenOffen === x.id && !weg && (
                       <PdfSeiten d={x} post={!!post} versioniert={versioniert} papierkorb={!!d.zaehler.papierkorbTage} teilAb={teilVorschlag?.id === x.id ? teilVorschlag.ab : undefined}
                         schliessen={() => { setSeitenOffen(undefined); setTeilVorschlag(undefined); }} fertig={(r) => { setTeilVorschlag(undefined); void pdfFertig(r); }} />

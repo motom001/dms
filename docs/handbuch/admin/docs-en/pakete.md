@@ -255,6 +255,16 @@ Some packages need settings – for instance rules by which they assign post, or
 
 The settings are **part of the backup**; secrets stay encrypted in it and are re-encrypted on a key change. They can't be read via API v1; the package itself gets them via the package runner. The log records "Settings of package … changed (fields …)" – never the values of secrets. Only administrators see and change settings.
 
+### Example: Leerseiten (blank pages) { #leerseiten }
+
+The package **Leerseiten** checks every page of new post and marks blank pages, e.g. the backs of a double-sided scan – also without separator sheets. Almost only white, noise and punched holes do not count as content; a pencil note, a stamp or writing showing through from the front do, depending on the sensitivity. In the **Settings** tab:
+
+- **Sensitivity:** **vorsichtig** (cautious, the default) only marks pages that are really blank – a pencil note or a small stamp keeps the page. **normal** ignores noise and writing that shows through. **streng** (strict) also marks pages with very little content (single strokes, small spots). When in doubt, a page stays – better choose **Leave out too** once than lose something.
+- **Only post from these channels:** by default **Scan**, **Inbox folder** and **Uploaded**; empty = all channels.
+- **At most this many pages:** the package does not check longer documents (time limit of the package runner).
+
+The package runs isolated in the package runner, **without network access**, with the rights [Mark blank pages in new post](#recht-leerseiten), read post and read documents. What it did is shown under **Package runner** with the latest calls ("3 von 8 Seiten leer"). Since its version 1.1.0, the package **Trennblatt** detects the blank back of a separator sheet with the same detection (level "vorsichtig") and still removes it right when splitting; that is not duplicated, because *Leerseiten* afterwards only sees the pages of the letters.
+
 ## Actions in the “Folder” menu { #aktionen-im-menue-mappe }
 
 Packages can add actions to the **Folder ▾** menu of matching folders, e.g. **Add template** on a contract or **Mark as paid** on an invoice. In its manifest, each action names the folder types it appears on and **which rights it needs in the end**: read, add document, edit, create folders, hand out (like downloading, right E).
@@ -347,6 +357,11 @@ If an update wants other addresses, Ablago asks again.
 #### Set notes on folders { #recht-hinweise }
 
 **"Sets notes on folders it may change (e.g. "The items add up to €118.40") – text only, always with the package's name; they never stop you saving (dms:hinweise)"** – Since version 0.231. The package can set and remove short notes on folders it may [create and change](#recht-mappen-anlegen-und-andern), for example when the items of an invoice do not match the amount. They appear in yellow in the notes line above the tabs, always with the name of the package in front – never in red and never so that they look like a message from Ablago. Ablago only accepts text: no HTML, no Markdown, no links, at most 300 characters and at most 3 notes per package and folder. A note does not change the folder (no "last changed", no history entry) and never stops anyone saving. If you remove the package, its notes go with it.
+
+
+#### Mark blank pages in new post { #recht-leerseiten }
+
+**"Marks blank pages in new post – deletes nothing; they are only left out when someone files the post into a folder (dms:leerseiten)"** – Since version 0.255. The package (e.g. *Leerseiten* from the catalogue) may mark pages of documents in **post** as blank; for that it needs the rights [read folders](#recht-mappen-lesen) for post and [read documents](#recht-dokumente). That is all it may do: it deletes no page, changes neither the file nor the post (no "last changed", no history entry) and only sees the page images of post it may read. The mark only applies to the file the package checked. Whether a page really goes is decided by a person: in the post, each page has **Keep after all** or **Leave out too**, and pages are only left out when the post is taken over into a folder – with the original kept as an earlier version (see [Blank pages](https://help.ablago.app/benutzer/aktuell/post/#leerseiten) in the user manual). Automatic assignment never leaves out a page.
 
 #### Calculated fields { #recht-berechnet }
 

@@ -175,6 +175,11 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const d = await dienst.volltexte.teilenHinweisAus(a.params.id);
       return ok({ id: d.id, teilenAb: d.teilenAb ?? null });
     } },
+    // Leerseiten (#997): lesen mit Lesen an der Post; markieren nur Pakete mit dms:leerseiten (nur Markierung, nichts wird
+    // gelöscht); je Seite wählen („Doch behalten“ / „Auch weglassen“) nur Menschen mit Bearbeiten. Rechte prüft der Dienst.
+    { methode: 'GET', pfad: '/api/dokumente/:id/leerseiten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.postLeerseiten.lies(await zg(a), a.params.id)) },
+    { methode: 'PUT', pfad: '/api/dokumente/:id/leerseiten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.postLeerseiten.markiere(await zg(a), a.params.id, b(a))) },
+    { methode: 'PUT', pfad: '/api/dokumente/:id/leerseiten/:nr', zugang: 'angemeldet', handler: async (a) => ok(await dienst.postLeerseiten.waehleSeite(await zg(a), a.params.id, Number(a.params.nr), b(a))) },
     // Vektoren zu Dokumenten (#442): schreiben nur Pakete mit dms:vektoren, die das Dokument lesen dürfen.
     { methode: 'PUT', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');

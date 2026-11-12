@@ -20,6 +20,7 @@ Neben Ereignissen und der [API v1](#nutzliche-endpunkte-der-api-v1) bietet der K
 | `dms:sicherung-lesen` | 0.142.0 | Jede Sicherung verschlüsselt lesen und außer Haus kopieren, Stand in der Antwort melden (nur Leseschlüssel) | **[Sicherung außer Haus](#sicherung-ausser-haus)** – Ereignis, Lesen in Stücken, Rückmeldung |
 | `dms:klassifizieren` | 0.226.0 | Mappentyp für „Wohin gehört das?“ vorschlagen – aus dem Anfang des Dokuments und der Liste der Kandidaten; ohne Netz auch aus den Typen ähnlicher Dokumente | **[Mappentyp vorschlagen](#klassifizieren)** – Aufruf, Antwort, Prüfung, Ähnlichkeit |
 | `dms:hinweise` | 0.231.0 | Hinweise an Mappen setzen und entfernen, die das Paket schreiben darf (z. B. „Die Positionen ergeben 118,40 €“) – nur Text, mit Paketnamen, Speichern hindern sie nie | **[Berechnete Felder und Hinweise](#berechnet-und-hinweise)** |
+| `dms:leerseiten` | 0.255.0 | Leere Seiten an Dokumenten in neuer Post markieren – nur markieren, nie löschen; braucht `lesen: [dms:post]` und `dokumente: lesen` | **[Leerseiten markieren](#leerseiten)** |
 | `dms:uebersetzen` | 0.204.0 | Einen Text (Feld, Notiz, Volltext) auf Knopfdruck übersetzen – der Kern liest ihn mit den Rechten der Person | **[Inhalte übersetzen](#inhalte-ubersetzen)** – Aufruf, Abschnitte, Antwort, Zwischenspeicher |
 
 ## So läuft Code in Ablago { #so-lauft-code-im-dms }
@@ -58,7 +59,7 @@ code:
   ```
 
 - **Dokumente:** `lesen` erlaubt Dokumente zu lesen (Datei, Volltext, Seiten als Bild), `schreiben` zusätzlich hochzuladen, zu ersetzen und den Volltext zu setzen. Dokumente gibt es nur in Mappen, die das Paket lesen darf.
-- **Schnittstellen des Kerns (`schnittstellen`):** zusätzliche Rechte für Schnittstellen, bei denen der Kern nur speichert, vergleicht oder weitergibt (Übersicht: [Schnittstellen des Kerns](#schnittstellen)). Es gibt `dms:vektoren` (seit 0.120.0, braucht `dokumente: lesen`) – siehe [Vektoren und Ähnlichkeit](#vektoren-und-ahnlichkeit) –, `dms:antworten` (seit 0.124.0) – siehe [Fragen beantworten](#fragen-beantworten) – `dms:erkennen` (seit 0.125.0) – siehe [Erkennung: Feldbeschreibung und Antwort](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (seit 0.133.0, braucht `dokumente: schreiben`) – siehe [Texterkennung übernehmen](#texterkennung) – `dms:umwandeln` (seit 0.137.0, braucht `dokumente: lesen`, `code.umwandeln` und das Ereignis `datei.umwandeln`) – siehe [Dateien umwandeln](#dateien-umwandeln) – `dms:sicherung-lesen` (seit 0.142.0, braucht das Ereignis `sicherung.fertig`) – siehe [Sicherung außer Haus](#sicherung-ausser-haus) – `dms:volltext` (seit 0.145.0, braucht `dokumente: lesen`, `code.volltext` und das Ereignis `datei.volltext`) – siehe [Volltext liefern](#volltext-liefern) – `dms:uebersetzen` (seit 0.204.0, braucht sonst nichts) – siehe [Inhalte übersetzen](#inhalte-ubersetzen) – `dms:klassifizieren` (seit 0.226.0, braucht sonst nichts) – siehe [Mappentyp vorschlagen](#klassifizieren) – und `dms:hinweise` (seit 0.231.0, braucht `schreiben`) – siehe [Berechnete Felder und Hinweise](#berechnet-und-hinweise).
+- **Schnittstellen des Kerns (`schnittstellen`):** zusätzliche Rechte für Schnittstellen, bei denen der Kern nur speichert, vergleicht oder weitergibt (Übersicht: [Schnittstellen des Kerns](#schnittstellen)). Es gibt `dms:vektoren` (seit 0.120.0, braucht `dokumente: lesen`) – siehe [Vektoren und Ähnlichkeit](#vektoren-und-ahnlichkeit) –, `dms:antworten` (seit 0.124.0) – siehe [Fragen beantworten](#fragen-beantworten) – `dms:erkennen` (seit 0.125.0) – siehe [Erkennung: Feldbeschreibung und Antwort](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (seit 0.133.0, braucht `dokumente: schreiben`) – siehe [Texterkennung übernehmen](#texterkennung) – `dms:umwandeln` (seit 0.137.0, braucht `dokumente: lesen`, `code.umwandeln` und das Ereignis `datei.umwandeln`) – siehe [Dateien umwandeln](#dateien-umwandeln) – `dms:sicherung-lesen` (seit 0.142.0, braucht das Ereignis `sicherung.fertig`) – siehe [Sicherung außer Haus](#sicherung-ausser-haus) – `dms:volltext` (seit 0.145.0, braucht `dokumente: lesen`, `code.volltext` und das Ereignis `datei.volltext`) – siehe [Volltext liefern](#volltext-liefern) – `dms:uebersetzen` (seit 0.204.0, braucht sonst nichts) – siehe [Inhalte übersetzen](#inhalte-ubersetzen) – `dms:klassifizieren` (seit 0.226.0, braucht sonst nichts) – siehe [Mappentyp vorschlagen](#klassifizieren) – `dms:hinweise` (seit 0.231.0, braucht `schreiben`) – siehe [Berechnete Felder und Hinweise](#berechnet-und-hinweise) – und `dms:leerseiten` (seit 0.255.0, braucht `lesen` mit `dms:post` und `dokumente: lesen`) – siehe [Leerseiten markieren](#leerseiten).
 - **Dateitypen zum Umwandeln (`code.umwandeln`, seit 0.137.0):** nur mit `dms:umwandeln` – die MIME-Typen, für die das Paket zuständig ist, z. B. `[image/tiff, image/webp]`. PDF, JPEG und PNG liest der Kern selbst; die sind hier nicht erlaubt. Höchstens 20.
 - **Dateitypen für den Volltext (`code.volltext`, seit 0.145.0):** nur mit `dms:volltext` – die MIME-Typen, für die das Paket den Volltext liefert, z. B. `[message/rfc822, text/plain]`. PDF, JPEG und PNG sind nicht erlaubt. Höchstens 40.
 - **Mappentypen für Ereignisse (`code.mappentypen`, seit 0.153.0):** Pflicht, sobald das Paket eines der Mappen-Ereignisse `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` oder `frist.erreicht` abonniert – und nur dann erlaubt. Darin stehen die Kennungen **eigener** Mappentypen (ohne Präfix, z. B. `[vertrag]`) und – seit 0.166.0 – Verweise auf **fremde** Mappentypen wie in `code.rechte` (`basis:organisation`, `dms:post`) oder `*` für alle, die das Paket lesen darf (nur mit `code.rechte.lesen: ["*"]`). Das Paket muss jeden genannten Typ lesen dürfen. Ein Paket damit gibt `dms: ">=0.153.0"` an, mit fremden Typen oder `*` `dms: ">=0.166.0"`.
@@ -309,6 +310,35 @@ DELETE /mappen/{id}/hinweise/{schluessel}
 - Hinweise ändern die Mappe nicht (kein `geaendert`, keine Historie, kein Ereignis) und hindern das Speichern nie. `DELETE` geht auch, wenn es den Hinweis nicht gibt. Gelesen werden sie mit der Mappe: `GET /mappen/{id}` → `hinweise: [{ paket, paketName, schluessel, text, gesetzt }]`. Wird das Paket entfernt, gehen seine Hinweise mit.
 
 Die Rechte-Vorschau nennt beides: „Berechnet Felder, die nur dieses Paket schreibt …“, „Setzt Hinweise an Mappen …“ und „Schreibt Werte und Hinweise, die alle sehen, die die Mappe lesen“ – Werte, die das Paket aus anderen Mappen errechnet, sieht jeder, der die Mappe lesen darf. Lies deshalb nur, was die Rechnung wirklich braucht.
+
+## Leerseiten markieren { #leerseiten }
+
+Seit Ablago 0.255.0 (dms #997) markiert ein Paket mit `dms:leerseiten` leere Seiten an Dokumenten in **Post** – das Paket *Leerseiten* aus dem Katalog tut das für beidseitige Scans. Der Kern zeigt die Markierung (Seitenleiste mit „Doch behalten“ / „Auch weglassen“) und lässt die Seiten erst weg, wenn eine Person die Post in eine Mappe übernimmt; das Original bleibt als frühere Version.
+
+```yaml
+dms: ">=0.255.0"
+code:
+  ereignisse: [dokument.hochgeladen]
+  rechte:
+    lesen: [dms:post]
+    dokumente: lesen
+    schnittstellen: [dms:leerseiten]
+  netz: []
+```
+
+```text
+GET /mappen/{mappe}                         Post, Stand, Kanal, Dokumente mit sha256
+GET /dokumente/{id}/seiten                  Seitenzahl
+GET /dokumente/{id}/seiten/{nr}/scan?dpi=…  Seite als Graustufenbild (PGM)
+PUT /dokumente/{id}/leerseiten              { "sha256": "<Prüfwert der geprüften Datei>", "seiten": [2, 4, 6] }
+```
+
+- **Nur markieren:** `PUT …/leerseiten` ersetzt die erkannten Seiten (leer = keine). Der Kern ändert dabei weder Datei noch Post (kein `geaendert`, keine Historie, kein Ereignis). Löschen kann das Paket damit nichts.
+- **Dieselbe Datei:** `sha256` muss der Prüfwert der aktuellen Datei sein, sonst 409 – eine neue Fassung dazwischen (z. B. *PDF bearbeiten*) setzt die Markierung zurück.
+- **Nur Post:** Dokumente in anderen Mappen lehnt der Kern mit 409 ab; Post, die das Paket nicht lesen darf, mit 404. PDF, JPEG und PNG; Seitennummern ab 1 bis zur Seitenzahl, höchstens 400 (sonst 400 mit `details.grund`: `liste`, `seite`, `zu-viele`).
+- **Die Wahl trifft ein Mensch:** „Doch behalten“ / „Auch weglassen“ (`PUT /dokumente/{id}/leerseiten/{nr}`) geht nur mit dem Schlüssel einer Person mit Bearbeiten an der Post – Pakete bekommen 403. Eine neue Erkennung derselben Datei lässt die Wahl stehen.
+- **Kanäle und Stand prüft das Paket selbst** (wie *Trennblatt*): z. B. nur Post mit Stand *Neu*, Richtung nicht *Ausgehend*, Kanal aus der Einstellung. Der Kern prüft nur, dass es Post ist.
+- **Vorsichtig erkennen:** Lieber eine Seite stehen lassen als eine mit Bleistiftnotiz markieren – die Person kann jederzeit **Auch weglassen** wählen.
 
 ## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
 

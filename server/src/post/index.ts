@@ -4,3 +4,4 @@ export { PostAufloesen, type AufloesenAnschluss, type AufloesenTeile } from './a
 export { PostSystemmappen, type SystemkontoEintrag, type SystemmappenAnschluss, type SystemmappenTeile } from './systemmappen';
 export { Eingangskanaele, type EingangskanaeleTeile, type Fundstelle } from './eingangskanaele';
 export { PostFotos, type FotoAnschluss, type FotoTeile } from './foto';
+export { PostLeerseiten, type LeerseitenPlan, type LeerseitenStand, type LeerseitenTeile } from './leerseiten';
