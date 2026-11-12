@@ -30,7 +30,8 @@ import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankan
 import type { Merkmale } from '../../shared/src/merkmale';
 import type { FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
-import type { Erinnerung, Termin, TermineAntwort } from '../../shared/src/fristen';
+import type { Termin, TermineAntwort } from '../../shared/src/fristen';
+import type { AblaufAntworten, AblaufVerlauf, AblaufvorlageAnsicht, AblaufvorlageDaten, MappenAblauf, VorlageZumAnwenden } from '../../shared/src/ablaufvorlagen';
 import type { Auftrag } from '../../shared/src/auftrag';
 import type { Baum } from '../../shared/src/baum';
 import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
@@ -845,7 +846,6 @@ export const api = {
   emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null; fassung?: 'archiv' | 'original' }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */
-  aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
   /** Mit folgetermin bei wiederkehrenden Fristen (#130). */
   aufgabeErledigt: (id: string) => anfrage<Aufgabe & { folgetermin?: string }>('POST', `/api/aufgaben/${id}/erledigt`),
   /** Automatisch zugeordnet (#337): Rückgängig aus der Aufgabe. */
@@ -860,9 +860,24 @@ export const api = {
   termine: (von: string, bis: string, favoriten = false) => anfrage<TermineAntwort>('GET', `/api/termine?von=${von}&bis=${bis}${favoriten ? '&favoriten=1' : ''}`),
   /** Startseite (#725): Kachel „Nächster Termin“. */
   naechsterTermin: () => anfrage<{ termin: Termin | null; ueberfaellig: number }>('GET', '/api/termine/naechster'),
-  erinnerungAnlegen: (mappeId: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/erinnerungen`, e),
-  erinnerungAendern: (id: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('PUT', `/api/erinnerungen/${id}`, e),
-  erinnerungLoeschen: (id: string) => anfrage<null>('DELETE', `/api/erinnerungen/${id}`),
+  /** Automatisierungsvorlage an einer Mappe anwenden (#1044): „Aufgabe vergeben“, „Erinnern“, Wiedervorlage … */
+  ablaufAnwenden: (mappeId: string, vorlage: string, e: AblaufAntworten) => anfrage<{ aufgaben: Aufgabe[]; ablauf: MappenAblauf | null; hinweis?: string }>('POST', `/api/mappen/${mappeId}/ablaeufe`, { ...e, vorlage }),
+  ablaufAendern: (id: string, e: { datum: string; text?: string; empfaengerId?: string }) => anfrage<MappenAblauf & { hinweis?: string }>('PUT', `/api/ablaeufe/${id}`, e),
+  ablaufLoeschen: (id: string) => anfrage<null>('DELETE', `/api/ablaeufe/${id}`),
+  ablaufFortsetzen: (id: string) => anfrage<MappenAblauf | null>('POST', `/api/werkbank/ablaeufe/${id}/fortsetzen`),
+  /* Werkbank → Automatisierungsvorlagen (#1044) */
+  ablaufvorlagen: () => anfrage<{ vorlagen: AblaufvorlageAnsicht[]; angehalten: Array<{ id: string; vorlage: string; mappeId: string; grund: string }> }>('GET', '/api/werkbank/ablaufvorlagen'),
+  ablaufvorlageAnlegen: (v: Partial<AblaufvorlageDaten> & { aktiv?: boolean }) => anfrage<AblaufvorlageAnsicht>('POST', '/api/werkbank/ablaufvorlagen', v),
+  ablaufvorlageAendern: (kennung: string, v: Partial<AblaufvorlageDaten> & { version: number; aktiv?: boolean }) => anfrage<AblaufvorlageAnsicht>('PUT', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}`, v),
+  ablaufvorlageLoeschen: (kennung: string) => anfrage<null>('DELETE', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}`),
+  ablaufvorlageSchalten: (kennung: string, aktiv: boolean) => anfrage<AblaufvorlageAnsicht>('PUT', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/aktiv`, { aktiv }),
+  ablaufvorlageKopieren: (kennung: string) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/kopieren`),
+  ablaufvorlageZuruecksetzen: (kennung: string) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/zuruecksetzen`),
+  ablaufvorlageFassungen: (kennung: string) => anfrage<Array<{ version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }>>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/fassungen`),
+  ablaufvorlageWiederherstellen: (kennung: string, version: number) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/fassungen/${version}`),
+  ablaufvorlageVerlauf: (kennung: string) => anfrage<AblaufVerlauf[]>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/verlauf`),
+  ablaufvorlageBenutzt: (kennung: string) => anfrage<MappenAblauf[]>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/benutzt`),
+  ablaufvorlageAusprobieren: (kennung: string, mappeId: string, e: AblaufAntworten) => anfrage<{ zeilen: string[] }>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/ausprobieren`, { ...e, mappeId }),
   aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
   /** Sammel-Weitergabe und -Erledigen (#415, #419). */
   aufgabenWeitergeben: (ids: string[], empfaengerId: string) => anfrage<{ weitergegeben: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/weitergeben', { ids, empfaengerId }),
@@ -1253,6 +1268,8 @@ export interface PaketVorschau {
   /** Mitgelieferte Automatisierungen (#712); neu = steht beim Installieren zur Wahl. */
   /** eingeschaltet (#1082): wie im Paket angegeben; fehlt = nicht angegeben (siehe vorausgewaehlt in shared/src/pakete.ts). */
   automatisierungen?: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
+  /** Automatisierungsvorlagen (#1044) für die Rechte-Vorschau: Karten in Klartext, ersetzte Kern-Vorlage, neu bzw. mit anderen Karten. */
+  ablaufvorlagen?: Array<{ schluessel: string; name: string; karten: string[]; ersetzt: string | null; neu: boolean; geaendert: boolean }>;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */
   laeufer?: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
   /** Sprachpaket (#731): Sprache, Abdeckung gegen diese Version, übergangene Texte, Pakete mit Beschriftungen. */
@@ -1286,7 +1303,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[]; /** Teile (#1031), die beim Löschen mitgehen. */ teile?: number }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Die Frist läuft noch nicht (#1051): beginnt mit diesem Feld. */ fristBeginntMit?: string; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean; /** Hinweise von Paketen (#1034). */ hinweise?: import('../../shared/src/berechnet').PaketHinweis[]; /** Vorgabe aus einem Paket (#1038). */ vorgabe?: import('../../shared/src/vorgaben').VorgabeHerkunft; /** Geschützte Felder (#995), die diese Person nicht ändern darf. */ schreibschutz?: string[] }
+export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Geplante Mappen-Abläufe (#1044; früher nur Erinnerungen, #131) – Bereich „Geplant“. */ erinnerungen?: MappenAblauf[]; /** Automatisierungsvorlagen fürs Menü „Mappe“ (#1044). */ ablaufvorlagen?: VorlageZumAnwenden[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[]; /** Teile (#1031), die beim Löschen mitgehen. */ teile?: number }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Die Frist läuft noch nicht (#1051): beginnt mit diesem Feld. */ fristBeginntMit?: string; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean; /** Hinweise von Paketen (#1034). */ hinweise?: import('../../shared/src/berechnet').PaketHinweis[]; /** Vorgabe aus einem Paket (#1038). */ vorgabe?: import('../../shared/src/vorgaben').VorgabeHerkunft; /** Geschützte Felder (#995), die diese Person nicht ändern darf. */ schreibschutz?: string[] }
 /** Werkbank → Datenschutz (#396, #455). */
 export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; /** #668 */ verzeichnis: AuskunftEintrag[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean; /** #469 */ loeschkonzept?: { luecken: Luecke[] } }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
@@ -1411,6 +1428,8 @@ export interface WerkbankUebersicht {
   bestand: { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number } | null;
   fehlermeldungen: number | null;
   /** Automatisierungen (#675): mit fehlgeschlagenen Läufen bzw. angehalten oder fehlerhaft. */
+  /** Angehaltene Mappen-Abläufe (#1044). */
+  ablaeufe?: { angehalten: Array<{ id: string; vorlage: string; mappeId: string; grund: string }> } | null;
   automatisierungen?: { fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: string }>; /** Erinnerungen am Feld beim Update übernommen (#712), bis gelesen. */ umgezogen?: { am: string; anzahl: number } | null; /** Keine Automatisierung schickt die Tägliche Zusammenfassung (#678). */ ohneBenachrichtigungen?: boolean };
   /** Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind. */
   notfallzugaenge?: Array<{ id: string; name: string; erstellt: string }>;

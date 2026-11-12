@@ -30,6 +30,8 @@ import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
 import { bereinigeAutomatisierung, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
+import { bereinigeVorlage, istKernVorlage, KERN_VORLAGEN, karteText, vorlagenEingabeFehler, vorlagenProbleme } from '../../shared/src/ablaufvorlagen';
+import type { PaketAblaufvorlage } from './aufgaben';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
@@ -330,7 +332,9 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
   /** Sprachpaket (#731): Angaben, Texte und Beschriftungen der Standardpakete; null bei allen anderen Paketen. */
   sprache?: PaketSprache | null;
   /** Aktionen im Menü „Mappe“ (#1039). */
-  mappenaktionen?: MappenAktion[] }
+  mappenaktionen?: MappenAktion[];
+  /** Automatisierungsvorlagen (#1044), roh aus inhalt/ablaufvorlagen.yaml; nur erlaubte Karten. */
+  ablaufvorlagen?: PaketAblaufvorlage[] }
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */
 export interface PaketSprache { angabe: Sprachangabe; texte: Sprachtexte; uebergangen: string[]; beschriftungen: Record<string, SprachBeschriftung> }
 
@@ -621,6 +625,28 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       ...eingeschaltetVon(a) };
   });
   for (const k of new Set(automatisierungen.map((a) => a.schluessel).filter((x, j, l) => l.indexOf(x) !== j))) fehler.push(t('meldungen.pakete.automatisierungen-schluessel-doppelt', { k }));
+  // Automatisierungsvorlagen (#1044): nur Karten aus der erlaubten Liste (Aufgabe/Benachrichtigung) – sonst ist das
+  // Paket ungültig, auch bei einem Update (Sicherheit). Typen als eigener Schlüssel oder paket:typ einer Abhängigkeit.
+  const ablaufvorlagen = liste('ablaufvorlagen').map((a, i): PaketAblaufvorlage => {
+    const wo = `ablaufvorlagen[${i + 1}]`;
+    if (!SCHLUESSEL.test(str(a.schluessel))) fehler.push(t('meldungen.pakete.ablaufvorlage-schluessel', { wo, wert: str(a.schluessel) }));
+    if (!str(a.name).trim()) fehler.push(t('meldungen.pakete.ablaufvorlage-name', { wo }));
+    if (a.ersetzt !== undefined && a.ersetzt !== null && !istKernVorlage(a.ersetzt)) fehler.push(t('meldungen.pakete.ablaufvorlage-ersetzt', { wo, wert: str(a.ersetzt), erlaubt: KERN_VORLAGEN.join(', ') }));
+    for (const g of vorlagenEingabeFehler(a)) fehler.push(`${wo}: ${g}`);
+    const d = bereinigeVorlage(a);
+    const vw = Array.isArray(a.typen) ? a.typen.map(str) : [];
+    for (const x of vw) {
+      const [pk, sl] = x.includes(':') ? x.split(':') : [str(m.id), x];
+      if (!TYPVERWEIS.test(x) || (pk === str(m.id) ? !typen.some((y) => y.schluessel === sl) : !(pk in abh))) fehler.push(t('meldungen.pakete.ablaufvorlage-typ', { wo, typ: x }));
+    }
+    // Aufbau prüfen wie im Editor; Felder als Empfänger nur mit Mappentypen des Pakets (geprüft beim Anlegen).
+    const ohneFeld = { ...d, typen: [], karten: d.karten.map((k) => ({ ...k, empfaenger: k.empfaenger.map((e) => (e.art === 'feld' ? { art: 'selbst' as const } : e)) })) };
+    for (const g of vorlagenProbleme(ohneFeld, [])) fehler.push(`${wo}: ${g}`);
+    if (!vw.length && d.karten.some((k) => k.empfaenger.some((e) => e.art === 'feld'))) fehler.push(t('meldungen.pakete.ablaufvorlage-feld', { wo }));
+    return { schluessel: str(a.schluessel), ersetzt: istKernVorlage(a.ersetzt) ? a.ersetzt : null, daten: a };
+  });
+  for (const k of new Set(ablaufvorlagen.map((a) => a.schluessel).filter((x, j, l) => l.indexOf(x) !== j))) fehler.push(t('meldungen.pakete.ablaufvorlage-doppelt', { k }));
+  for (const k of new Set(ablaufvorlagen.flatMap((a) => (a.ersetzt ? [a.ersetzt] : [])).filter((x, j, l) => l.indexOf(x) !== j))) fehler.push(t('meldungen.pakete.ablaufvorlage-ersetzt-doppelt', { k }));
   // Wortlisten (#356): Gruppen gleichbedeutender Wörter für die Suche, z. B. - woerter: [Kfz, Auto, PKW].
   const wortlisten = liste('wortlisten').map((w, i): string[] => {
     const g = liesWortgruppe(Array.isArray(w.woerter) ? w.woerter : null);
@@ -705,6 +731,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     ...(vt.vorgaben.length ? { vorgaben: vt.vorgaben } : {}), ...(vt.ergaenzungen.length ? { ergaenzungen: vt.ergaenzungen } : {}), ...(vt.vorlagenDateien.size ? { vorlagenDateien: vt.vorlagenDateien } : {}),
     ...(umbau.length ? { umbau } : {}),
     ...(ma.aktionen.length ? { mappenaktionen: ma.aktionen } : {}),
+    ...(ablaufvorlagen.length ? { ablaufvorlagen } : {}),
   };
 }
 
@@ -1000,6 +1027,11 @@ export interface Vorschau {
    * Wahl). eingeschaltet (#1082): wie im Paket angegeben – true = mit gesetztem Haken anbieten; fehlt = nicht angegeben.
    */
   automatisierungen: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
+  /**
+   * Automatisierungsvorlagen (#1044) für die Rechte-Vorschau: jede mit ihren Karten in Klartext („Aufgabe an die gewählte
+   * Person“), ob sie eine Kern-Vorgabe ersetzt und ob sie neu oder geändert ist (bei einem Update).
+   */
+  ablaufvorlagen?: Array<{ schluessel: string; name: string; karten: string[]; ersetzt: string | null; neu: boolean; geaendert: boolean }>;
   /** Einstellungen des Pakets (#197): bei einem Update neue und wegfallende Felder. */
   einstellungen: { neu: string[]; weg: string[] } | null;
   /** Code (#338): Rechte, Netzwerkzugriff, Ereignisse (#449) – muss bestätigt werden (bei einem Update nur, wenn sie sich ändern). */
@@ -2203,6 +2235,7 @@ export class Paketverwaltung {
       herkunft: ich?.herkunft ?? null,
       pruefung: null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, umbau: umbau.schritte.map((g) => g.plan), probleme, fehlercodes, namenskonflikte, hinweise,
+      ...(paket.ablaufvorlagen?.length ? { ablaufvorlagen: await this.vorlagenPlan(paket, typen) } : {}),
       automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
@@ -2213,6 +2246,21 @@ export class Paketverwaltung {
     };
     if (umbau.schritte.length) this.umbauLagen.set(vorschau, umbau);
     return vorschau;
+  }
+
+  /**
+   * Rechte-Vorschau der Automatisierungsvorlagen (#1044): Karten in Klartext; neu oder mit anderen Karten als die
+   * installierte Fassung (Sicherheit: ein Update ändert keine Karte ohne neue Vorschau).
+   */
+  private async vorlagenPlan(paket: Paket, typen: Mappentyp[]): Promise<NonNullable<Vorschau['ablaufvorlagen']>> {
+    const da = await this.d.ablaeufe.vorlagen();
+    const felder = [...typen, ...(paket.typen as unknown as Mappentyp[])];
+    return (paket.ablaufvorlagen ?? []).map((a) => {
+      const d = bereinigeVorlage(a.daten);
+      const alt = da.find((v) => v.kennung === (a.ersetzt ?? `${paket.manifest.id}:${a.schluessel}`) && v.herkunft === 'paket' && v.paketId === paket.manifest.id);
+      const karten = d.karten.map((k) => karteText(k, felder));
+      return { schluessel: a.schluessel, name: d.name, karten, ersetzt: a.ersetzt ?? null, neu: !alt, geaendert: !!alt && JSON.stringify(alt.karten.map((k) => karteText(k, felder))) !== JSON.stringify(karten) };
+    });
   }
 
   /** Sprache der Installation (#1038: Werte der Vorgaben); ohne Angabe Deutsch. */
@@ -2888,6 +2936,9 @@ export class Paketverwaltung {
       // Speichern, damit Typen und Herkunft stimmen).
       await Promise.resolve(this.d.paketAutomatisierungen?.(datensatz, paket.automatisierungen, ein))
         .catch((e: Error) => log.warn('Automatisierungen des Pakets nicht angelegt', { paket: m.id, fehler: e.message }));
+      // #1044: mitgelieferte Automatisierungsvorlagen – sofort im Menü „Mappe“; überlagert eine die Kern-Vorgabe, gilt sie.
+      await this.d.ablaeufe.ausPaket(datensatz, paket.ablaufvorlagen ?? [])
+        .catch((e: Error) => log.warn('Automatisierungsvorlagen des Pakets nicht angelegt', { paket: m.id, fehler: e.message }));
       if (paket.code || alt?.laeufer) await spaeter(() => Promise.resolve(this.o.laeufer?.codeGeaendert?.()).catch(() => {}));
       // Sprachpaket (#731): Sprache sofort in diesem Prozess (die anderen lesen sie binnen einer Minute), dann Beschriftungen
       // der Standardpakete – beim Sprachpaket für alle installierten Pakete, sonst die installierten Sprachen für dieses.
@@ -3565,6 +3616,8 @@ export class Paketverwaltung {
     }
     // #712: mitgelieferte Automatisierungen, die aus und unverändert sind, gehen mit; geänderte bleiben (rot, wenn ihr Typ fehlt).
     await this.d.paketAutomatisierungen?.(p, []).catch((e: Error) => log.warn('Automatisierungen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
+    // #1044: Vorlagen gehen mit; überlagerte Kern-Vorgaben gelten wieder, Vorlagen mit offenen Abläufen bleiben als eigene.
+    await this.d.ablaeufe.ausPaket(p, []).catch((e: Error) => log.warn('Automatisierungsvorlagen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
     if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
     // Volltext und Umwandeln (Frage 51): Was noch auf dieses Paket wartete, wartet nicht mehr.
     const wartetAuf = [...(hatSchnittstelle(p.laeufer, 'dms:volltext') ? p.laeufer?.volltext ?? [] : []), ...(hatSchnittstelle(p.laeufer, 'dms:umwandeln') ? p.laeufer?.umwandeln ?? [] : [])];

@@ -125,6 +125,7 @@ export const HILFE = {
   'mappentyp.archiv.leer': admin('archiv/', '„Ist der Stichtag leer“', 'ist-der-stichtag-leer'),
   'werkbank.stempel': admin('stempel/', 'Stempel-Vorlagen'),
   'werkbank.automatisierungen': admin('automatisierungen/', 'Automatisierungen'),
+  'werkbank.ablaufvorlagen': admin('automatisierungsvorlagen/', 'Automatisierungsvorlagen'),
   'werkbank.suche': admin('suche/', 'Suche: Tippfehler und Wörterverzeichnis'),
   'werkbank.woerter': admin('suche/', 'Gleichbedeutende Wörter', 'gleichbedeutende-worter'),
   'mappentyp.stempel': admin('stempel/', 'Stempel je Mappentyp', 'stempel-je-mappentyp'),

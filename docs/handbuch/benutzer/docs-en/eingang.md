@@ -35,15 +35,21 @@ To the right of a folder's title, next to the star, is the menu **Folder ▾**; 
 
 ![Assign task](bilder/aufgabe-vergeben.png)
 
-Tasks always go to a user, not to a role – so it is clear who takes care of it. If the recipient may not read the folder under the [permissions](mappen.md#was-du-sehen-und-andern-darfst), Ablago asks first: "Jonas may not see this folder. The task reaches Jonas, but the folder doesn't. The admin will be informed." With **Assign anyway** it goes out, with **Cancel** it doesn't. You can't give permissions here – the administrator does that.
+The task reaches the recipient straight away. Tasks always go to a user, not to a role – so it is clear who takes care of it. If the recipient may not read the folder under the [permissions](mappen.md#was-du-sehen-und-andern-darfst), Ablago asks first: "Jonas may not see this folder. The task reaches Jonas, but the folder doesn't. The admin will be informed." With **Assign anyway** it goes out, with **Cancel** it doesn't. You can't give permissions here – the administrator does that.
 
 If you see a **Folder you can't see** under "To do", you have a task on a folder you may not read. If someone gave it to you by hand, its text is shown. If it was created automatically, you only see "Task on a folder you may not see – ask Lena" and the due date – the same in the Daily summary. For a deadline the date is left out too, as it comes from the folder. When you open it, you can complete the task or pass it on to someone who may see the folder. If the administrator gives you read permission for the duration of the task, you can read the folder until the task is done or passed on.
 
 ## Remind { #erinnern }
 
-Via **Folder ▾ → Remind** in a folder you have yourself – or someone else – reminded of the folder on a particular day, e.g. "on 15.11.: compare offers". Until then, the reminder appears at the top of the folder and in the [calendar](#monat-und-jahr); whoever created it and whoever receives it can change or delete it there. On the chosen day, the folder lands under "To do".
+Via **Folder ▾ → Remind** in a folder you have yourself – or someone else – reminded of the folder on a particular day, e.g. "on 15.11.: compare offers". Until then, the reminder appears at the top of the folder under **Planned** and in the [calendar](#monat-und-jahr); whoever created it and whoever receives it can change or delete it there. On the chosen day, the folder lands under "To do".
 
 ![Reminder on a folder](bilder/erinnerung.png)
+
+### Planned, follow-up and other templates { #geplant }
+
+"Assign task" and "Remind" are **automation templates**: small runs you apply to a folder. The administrators can set up more or get them from a package – the **Notifications** package, for example, brings **Follow-up**: one click, and in six months the folder is back in your "To do". Such templates appear in the **Folder ▾** menu below "Remind"; the small dialog asks exactly what the template needs.
+
+Everything still to come on a folder is listed at the top under **Planned** – with date, for whom and which template. Once something has run, it disappears there; the folder history keeps what happened. A run always uses **your** rights as they are on the day itself: if by then you are deactivated or may no longer read the folder, it is shown as **paused**, and the administrators decide how to continue.
 
 ## Month and year {#monat-und-jahr}
 

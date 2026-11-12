@@ -356,6 +356,9 @@ export class Automatisierungen {
       return konto?.id === kontoId ? (await this.d.repo.liste()).filter((a) => a.herkunft !== 'paket').map((a) => ({ id: a.id, name: a.name, ...(a.aktiv && a.angehalten ? { angehalten: true } : {}) })) : [];
     };
     d.dienst.fristenUebernehmen = () => this.fristenUebernehmen();
+    // Automatisierungsvorlagen (#1044): ein Motor – Platzhalter wie in jeder Automatisierung, mit den Rechten der Person,
+    // die den Ablauf angelegt hat, und denen des Empfängers (#795). {automatisierung} ist der Name der Vorlage.
+    d.dienst.ablaufPlatzhalter = (text, c, empf) => this.fuelleMit(text, { a: { name: c.name }, mappe: c.mappe, typ: c.typ, z: c.z, daten: c.daten }, empf);
     d.dienst.paketAutomatisierungen = (p, liste, ein) => this.ausPaket(p, liste, ein);
     d.dienst.typUmgebaut = (alt, neu, felder) => this.typUmgebaut(alt, neu, felder);
     // Vollexport: Automatisierungen mit ihrem Änderungsverlauf (die Läufe sind Protokoll und bleiben draußen).
@@ -1043,7 +1046,7 @@ export class Automatisierungen {
    * Datum, Tage und alle Felder; sonst für Titel verknüpfter Mappen und Personen, die er nicht sehen darf.
    * `verborgen` zählt die Platzhalter mit verdecktem Inhalt.
    */
-  async fuelleMit(text: string, c: { a: Automatisierung; mappe: Mappe | null; typ: Mappentyp | null; z: Zugriff; daten: Record<string, unknown>; art?: string }, empf: Zugriff | null): Promise<{ text: string; verborgen: number; mappe: boolean }> {
+  async fuelleMit(text: string, c: { a: Pick<Automatisierung, 'name'>; mappe: Mappe | null; typ: Mappentyp | null; z: Zugriff; daten: Record<string, unknown>; art?: string }, empf: Zugriff | null): Promise<{ text: string; verborgen: number; mappe: boolean }> {
     const { a, mappe, typ, z, daten } = c;
     const versteckt = t('automatisierung.platzhalter.nicht-sichtbar');
     const mappeSichtbar = !empf || !mappe || (await this.d.dienst.rechtepruefung.lesbare(empf, [mappe.id])).has(mappe.id);

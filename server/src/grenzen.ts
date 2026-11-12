@@ -12,6 +12,7 @@ import { ARCHIVFASSUNG_MAX_BYTES } from '../../shared/src/archivfassung';
 import { FASSUNG_MAX_BYTES, UMWANDELN_MAX_BYTES, VORSCHAUBILD_MAX_BYTES } from '../../shared/src/dateiumwandlung';
 import { CODE_MAX, PAKET_MAX } from '../../shared/src/pakete';
 import { VOLLTEXT_KOERPER_MAX, VOLLTEXT_PAKET_MAX_BYTES } from '../../shared/src/paketvolltext';
+import { AUTOMATISIERUNG_GRENZEN } from '../../shared/src/automatisierung';
 
 /* ---------- Einheiten ---------- */
 
@@ -199,3 +200,10 @@ export const ZUFALL_STUECK = MB;
 export const DEMO_GROSS_MAX = 95 * MB;
 export const DEMO_VORRAT_MAX = 5 * MB;
 export const DEMO_PLATZ_PRUEFEN = 200 * MB;
+
+/* ---------- Mappen-Abläufe (#1044, Bremse) ---------- */
+
+/** Höchstens so viele offene Abläufe je Person und Mappe – niemand plant über die API tausende Aufgaben an andere. */
+export const ABLAEUFE_JE_PERSON_UND_MAPPE = 20;
+/** Höchstens so viele angewendete Vorlagen je Person und Minute – dieselbe Bremse wie bei Automatisierungen (07b). */
+export const ABLAEUFE_JE_MINUTE = AUTOMATISIERUNG_GRENZEN.laeufeJeMinute;

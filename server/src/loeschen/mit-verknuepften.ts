@@ -201,9 +201,10 @@ export class MitVerknuepften {
     const x = loeschErinnerung(v, plan);
     if (!x) return null;
     const startId = v.baum.knoten[0].id;
-    const da = (await this.repo.erinnerungen({ mappeId: startId, empfaengerId: benutzerId })).find((e) => e.text === x.text && e.datum === x.datum);
+    const da = (await this.repo.ablaeufe({ mappeId: startId, empfaengerId: benutzerId, vorlage: 'erinnern' })).find((e) => e.text === x.text && e.datum === x.datum);
     if (da) return { id: da.id, datum: da.datum, text: da.text };
-    const r = await this.repo.legeErinnerungAn({ id: randomUUID(), mappeId: startId, empfaengerId: benutzerId, datum: x.datum, text: x.text, erstellt: '', erstelltVon: benutzerId });
+    // Ein Ablauf der Vorlage „Erinnern“ (#1044) – mit den Rechten des Löschenden.
+    const r = await this.repo.legeAblaufAn({ id: randomUUID(), vorlage: 'erinnern', mappeId: startId, empfaengerId: benutzerId, datum: x.datum, text: x.text, erstellt: '', erstelltVon: benutzerId, angehalten: null });
     await this.notiere(startId, benutzerId, 'aufgabe', { text: t('meldungen.dienst.erinnerung-fuer-am', { name: await this.name(benutzerId), datumDe: datumDe(x.datum), text: x.text }), aufgabenart: 'erinnerung', fuer: benutzerId, aufgabentext: x.text });
     return { id: r.id, datum: r.datum, text: r.text };
   }

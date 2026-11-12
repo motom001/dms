@@ -227,7 +227,8 @@ Rechnung als strukturierte Daten (XML) nach EN 16931 – XRechnung (UBL oder CII
 Siehe auch: [Archivfassung](#archivfassung).
 
 <a id="erinnerung"></a>**Erinnerung** · ✓ Alltagswort · alle  
-Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern).
+Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern). Bis zum Tag steht sie an der Mappe unter „Geplant“; seit 0.256 ein Ablauf der Automatisierungsvorlage „Erinnern“.  
+Siehe auch: [Geplant](#geplant), [Automatisierungsvorlage](#automatisierungsvorlage).
 
 <a id="erweiterte-suche"></a>**Erweiterte Suche** · ✓ Alltagswort · alle  
 Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten.
@@ -245,6 +246,10 @@ Text mit Überschriften, Listen und Hervorhebungen (Markdown) – als Feldart un
 <a id="frist"></a>**Frist** · ✓ Alltagswort · alle  
 Eine Aufgabe, die aus einem Datumsfeld mit Vorlauf entsteht, z. B. „Kündigen bis …“.  
 Siehe auch: [Erinnerung](#erinnerung), [Zu erledigen](#zu-erledigen).
+
+<a id="geplant"></a>**Geplant** · ✓ Alltagswort · alle  
+Bereich oben in einer Mappe mit allem, was dort noch kommt – Erinnerungen, Wiedervorlagen und andere Abläufe aus Automatisierungsvorlagen. Was gelaufen ist, verschwindet und steht in der Historie. „angehalten“ heißt, die Person, die ihn angelegt hat, darf ihn nicht mehr ausführen; die Verwaltung sieht das.  
+Siehe auch: [Erinnerung](#erinnerung), [Automatisierungsvorlage](#automatisierungsvorlage).
 
 <a id="gutschrift"></a>**Gutschrift** · ✓ Alltagswort · alle  
 Ein Betrag, den man zurückbekommt (auch Erstattung) – in Ablago ein Betrag mit Minus, z. B. „−25,00 €“. Das geht nur bei Betragsfeldern, an denen der Administrator „Negative Beträge erlauben“ angehakt hat; dort steht der Hinweis „Mit Minus eintragen“.  
@@ -330,6 +335,10 @@ Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist (Werkbank → Benu
 <a id="aus-dokument-fullen"></a>**Aus Dokument füllen** · ~ mit Erklärung · Administratoren  
 Haken an einem Feld (#938, früher „Für die Erkennung nutzen“) – der Knopf „Aus Dokument ausfüllen“ darf dieses Feld aus einem Foto oder Dokument als Vorschlag füllen. Mit Art („Was steht im Feld?“) und Erkennungshinweis.  
 Siehe auch: [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen).
+
+<a id="automatisierungsvorlage"></a>**Automatisierungsvorlage** · ~ mit Erklärung · Administratoren  
+Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten, fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.  
+Siehe auch: [Geplant](#geplant), [Erinnerung](#erinnerung), [Paket](#paket).
 
 <a id="beim-auswahlen-ubernehmen"></a>**Beim Auswählen übernehmen** · ~ mit Erklärung · Administratoren  
 Einstellung an einem Verweisfeld (#1037) – Paare „Feld der verwiesenen Mappe → Feld dieser Mappe“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor, markiert „vorgeschlagen aus …“ (z. B. Kündigungsfrist aus der Vertragsart). Nie überschreiben, nie Passwörter, nur Werte, die man lesen darf.  
@@ -654,6 +663,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Aufgabe | Auftrag, Task, Todo | `Aufgabe, AUFGABENARTEN` |
 | Auftrag | Job | `Auftrag` |
 | Aus Dokument füllen | Für die Erkennung nutzen (alter Name) | `Feld.erkennung` |
+| Automatisierungsvorlage | Makro, Workflow-Vorlage, Ablaufvorlage | `Ablaufvorlage, ablaufvorlagen, inhalt.ablaufvorlagen` |
 | Bedingung | – | `Bedingung` |
 | Beim Auswählen übernehmen | Vorbelegen (in der Oberfläche), Erben | `Feld.vorbelegen` |
 | Beispiel-Mappe | Demo-Mappe | `inhalt/beispiele, beispielMappen` |
@@ -669,7 +679,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Dokument | – | `Dokument` |
 | E-Rechnung | – | `erechnung` |
 | Eigene Organisation | Mandant, Betrieb und Verantwortliche, Impressum | `merkmal eigeneOrganisation` |
-| Erinnerung | – | `Erinnerung` |
+| Erinnerung | – | `MappenAblauf, Vorlage erinnern` |
 | Erweiterte Suche | – | `Suchformular` |
 | Expertenmodus | Erweiterte Ansicht | `useExperteOffen` |
 | Fehler nachstellen | Impersonation, Vertretung beenden | `Vertretung` |
@@ -677,6 +687,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
 | Format | Validierung, Datentyp | `Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts` |
 | Gemeldete Fehler | Fehlermeldungen | – |
+| Geplant | Ausstehend, Warteschlange | `mappen_ablaeufe, MappenAblauf` |
 | Gleich eingeschaltet | – | `eingeschaltet (Paket)` |
 | Gutschrift | – | `Feld.negativ` |
 | Herausgeber | Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher | `herausgeber, InstalliertesPaket.herausgeber` |

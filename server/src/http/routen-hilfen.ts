@@ -206,7 +206,7 @@ const UEBERSICHT_BEREICHE: Record<string, { bereich: string; leer: unknown }> = 
   exporte: { bereich: 'vollexport', leer: null }, speicherplatz: { bereich: 'systemzustand', leer: null }, auslastung: { bereich: 'systemzustand', leer: [] },
   engpaesse: { bereich: 'systemzustand', leer: [] }, erweiterungen: { bereich: 'systemzustand', leer: [] }, variablen: { bereich: 'systemzustand', leer: [] },
   bestand: { bereich: 'systemzustand', leer: null }, lasttestAbbruch: { bereich: 'systemzustand', leer: null }, anbindung: { bereich: 'anbindung', leer: null },
-  einrichtung: { bereich: NUR_GESAMT, leer: null }, automatisierungen: { bereich: 'automatisierungen', leer: null },
+  einrichtung: { bereich: NUR_GESAMT, leer: null }, automatisierungen: { bereich: 'automatisierungen', leer: null }, ablaeufe: { bereich: 'ablaufvorlagen', leer: null },
   paketeEinstellungen: { bereich: 'pakete', leer: [] }, kiTypen: { bereich: 'pakete', leer: null }, postfachAnmeldung: { bereich: 'postfaecher', leer: [] },
   eingangsordner: { bereich: 'eingangsordner', leer: null },
 };

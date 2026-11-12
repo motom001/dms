@@ -41,7 +41,7 @@ SPRACHEN = {
 
 # Seite im Administratorhandbuch je Bereich (Pfad unter /werkbank).
 SEITE = {
-    'pakete': 'pakete.md', 'typen': 'mappentypen.md', 'sichten': 'sichten.md', 'nummernkreise': 'nummernkreise.md', 'automatisierungen': 'automatisierungen.md',
+    'pakete': 'pakete.md', 'typen': 'mappentypen.md', 'sichten': 'sichten.md', 'nummernkreise': 'nummernkreise.md', 'automatisierungen': 'automatisierungen.md', 'ablaufvorlagen': 'automatisierungsvorlagen.md',
     'benutzer': 'benutzer.md', 'verschluesselung': 'verschluesselung.md', 'auskuenfte': 'datenschutz.md#auskunft-erteilen', 'loeschkonzept': 'loeschkonzept.md#aus-dem-dms-erzeugen',
     'aufbewahrung': 'archiv.md#nach-der-frist-aufbewahrung-abgelaufen', 'stempel': 'stempel.md',
     'postfaecher': 'postfaecher.md', 'eingangsordner': 'eingangsordner.md', 'webdav': 'webdav.md', 'webhooks': 'webhooks.md',

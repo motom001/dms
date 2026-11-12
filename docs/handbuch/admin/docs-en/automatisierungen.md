@@ -12,6 +12,8 @@ On the left are all automations with name, short form ("If Contract: Cancel by i
 | **And** | none, one or several conditions: field values as in [views](sichten.md), "Folder is in view …", "Folder is a favourite of …", groups with "all" or "one is enough"; every condition can be reversed with **not** |
 | **Then** | one or more cards, in order: **Change field**, **Task / notification**, **Send daily summary**, **Report favourite changes**, **Report sign-in protection**, **No further automations afterwards** |
 
+What you trigger by hand on **one** folder – “Assign task”, “Remind”, follow-up – are [automation templates](automatisierungsvorlagen.md). They run on the same engine, with the rights of the person who applies them.
+
 ## Example: reminding of the notice period {#beispiel-an-die-kundigungsfrist-erinnern}
 
 Petra is to get a task 30 days before the notice period of a contract runs out – but only if someone is entered as responsible in the contract.

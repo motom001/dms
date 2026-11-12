@@ -280,6 +280,10 @@ See also: [Parent folder](#ubergeordnete-mappe), [Is part of another folder](#is
 <a id="weitergeben"></a>**Pass on** (*Weitergeben*) · ✓ everyday word · everyone  
 Transferring a task to another user.
 
+<a id="geplant"></a>**Planned** (*Geplant*) · ✓ everyday word · everyone  
+Area at the top of a folder with everything still to come there – reminders, follow-ups and other runs from automation templates. What has run disappears and is in the history. “paused” means the person who set it up may no longer carry it out; the administrators see this.  
+See also: [Reminder](#erinnerung), [Automation template](#automatisierungsvorlage).
+
 <a id="post"></a>**Post** · ✓ everyday word · everyone  
 Everything that comes into Ablago or goes out – scan, upload, email. Post is a system folder type with channel, direction and status.  
 See also: [New post](#neue-post), [Assign](#zuordnen), [Channel](#kanal), [Direction (post)](#richtung-post), [Status (post)](#stand-post).
@@ -289,7 +293,8 @@ A small image of the first page next to a PDF or image in the document list; cre
 See also: [Document](#dokument).
 
 <a id="erinnerung"></a>**Reminder** (*Erinnerung*) · ✓ everyday word · everyone  
-A task set by hand for a particular day (folder ▾ → Remind).
+A to do set by hand for a particular day (folder ▾ → Remind). Until that day it is listed on the folder under “Planned”; since 0.256 a run of the automation template “Remind”.  
+See also: [Planned](#geplant), [Automation template](#automatisierungsvorlage).
 
 <a id="vertretung"></a>**Stand-in** (*Vertretung*) · ✓ everyday word · everyone  
 A user takes over another's tasks during an absence. The stand-in gets a task of the kind "Stand-in" for this.
@@ -317,6 +322,10 @@ A user with access to the workbench. Permissions don't restrict them.
 
 <a id="archivmodus"></a>**Archive mode** (*Archivmodus*) · ~ with explanation · administrators  
 A setting per folder type for retention obligations – with versions and a deletion lock until the end of the period.
+
+<a id="automatisierungsvorlage"></a>**Automation template** (*Automatisierungsvorlage*) · ~ with explanation · administrators  
+An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months, asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.  
+See also: [Planned](#geplant), [Reminder](#erinnerung), [Package](#paket).
 
 <a id="betrieb"></a>**Business** (*Betrieb*) · ✓ everyday word · administrators  
 The template under "Customise the workbench" for the self-employed and small businesses – with number sequences, archive mode, mailboxes and further areas. Its counterpart is the template "Household".  

@@ -3313,5 +3313,8 @@
   "listensuche.auskunft.keine-offenen-treffer": "Keine offene Auskunft passt.",
   "listensuche.auskunft.alle-zeigen": "Alle zeigen",
   "auskunft.neu.vorgaben": "Empfänger, Rechte der Person und Anrede kommen aus den {link}; hier passt du den Empfänger für diese Auskunft an.",
-  "auskunft.neu.vorgaben.link": "Vorgaben für jede Auskunft"
+  "auskunft.neu.vorgaben.link": "Vorgaben für jede Auskunft",
+  "verwaltung.ablauf": "Ein geplanter Ablauf an einer Mappe ist angehalten – die Person, die ihn angelegt hat, darf ihn nicht mehr ausführen.",
+  "bereich.ablaufvorlagen.name": "Automatisierungsvorlagen",
+  "bereich.ablaufvorlagen.wann": "Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird"
 }

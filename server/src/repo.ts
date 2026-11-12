@@ -1,7 +1,7 @@
 import type { Aufgabe, Ausschnitt, FallEnde, FallOhneLeserecht, Dokument, DokumentVersion, Herkunft, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
-import type { Erinnerung } from '../../shared/src/fristen';
+import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, AblaufvorlageDaten, MappenAblauf } from '../../shared/src/ablaufvorlagen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import type { SprachBeschriftung, Sprachtexte } from '../../shared/src/sprachpaket';
@@ -701,12 +701,27 @@ export interface Repo {
    */
   verschluesselteFundstellen(): Promise<Fundstelle[]>;
 
-  /* ---------- Freie Erinnerungen (#131), solange nicht fällig ---------- */
-  erinnerungen(f?: { mappeId?: string; empfaengerId?: string; bis?: string }): Promise<Erinnerung[]>;
-  holeErinnerung(id: string): Promise<Erinnerung | undefined>;
-  legeErinnerungAn(e: Erinnerung): Promise<Erinnerung>;
-  aendereErinnerung(id: string, e: { datum: string; text: string; empfaengerId: string | null }): Promise<Erinnerung | undefined>;
-  loescheErinnerung(id: string): Promise<void>;
+  /* ---------- Mappen-Abläufe (#1044; früher freie Erinnerungen, #131), solange sie nicht gelaufen sind ---------- */
+  /** `empfaengerId`: Antwort auf „Empfänger“; `personId`: wer ihn angelegt hat; `bis`: läuft bis dahin. */
+  ablaeufe(f?: { mappeId?: string; empfaengerId?: string; personId?: string; vorlage?: string; bis?: string; angehalten?: boolean }): Promise<MappenAblauf[]>;
+  holeAblauf(id: string): Promise<MappenAblauf | undefined>;
+  legeAblaufAn(e: MappenAblauf): Promise<MappenAblauf>;
+  aendereAblauf(id: string, e: { datum: string; text: string; empfaengerId: string | null }): Promise<MappenAblauf | undefined>;
+  setzeAblaufAngehalten(id: string, a: AblaufAngehalten | null): Promise<void>;
+  /** Löscht ihn; true nur für den, der ihn gelöscht hat (mehrere Server: genau einer lässt ihn laufen). */
+  loescheAblauf(id: string): Promise<boolean>;
+
+  /* ---------- Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Änderungsverlauf, Verlauf der Abläufe ---------- */
+  ablaufvorlagen(): Promise<Ablaufvorlage[]>;
+  /** Neu (`erwartet` null; false, wenn es die Kennung schon gibt) oder geändert (nur mit passender Fassung); mit Änderungsverlauf. */
+  speichereAblaufvorlage(v: Ablaufvorlage, von: string | null, erwartet: number | null): Promise<boolean>;
+  loescheAblaufvorlage(kennung: string): Promise<void>;
+  ablaufvorlageFassungen(kennung: string): Promise<Array<{ version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }>>;
+  vermerkeAblauf(e: AblaufVerlauf): Promise<void>;
+  ablaufVerlauf(f: { vorlage?: string; mappeId?: string; anzahl: number }): Promise<AblaufVerlauf[]>;
+  /** Bremse (#1044): Einträge einer Person seit `seit` mit diesen Arten. */
+  zaehleAblaufVerlauf(personId: string, seit: string, arten: AblaufVerlauf['art'][]): Promise<number>;
+  raeumeAblaufVerlaufAuf(tage: number, jeVorlage: number): Promise<number>;
 
   /* ---------- Hinweise von Paketen (#1034) ---------- */
   /** Hinweise an einer Mappe (alle Pakete), älteste zuerst; `paketName` ergänzt der Dienst. */
@@ -752,7 +767,7 @@ export interface Repo {
    * Post auflösen (#936): Historie, Notizen, Aufgaben (ohne „Post für dich“) und Erinnerungen der Mappe `von` gehören
    * danach der Mappe `nach`. Jeder Historieneintrag bekommt `ausPost: von` dazu, damit man sieht, woher er stammt.
    */
-  uebertrageAnMappe(von: string, nach: string): Promise<{ historie: number; notizen: number; aufgaben: number; erinnerungen: number }>;
+  uebertrageAnMappe(von: string, nach: string): Promise<{ historie: number; notizen: number; aufgaben: number; ablaeufe: number }>;
   /** Aufgelöste Post (#936): Id → Zielmappe aus dem Eintrag „Aufgelöst in …“ in ihrer Historie. */
   aufgeloesteIn(ids: string[]): Promise<Map<string, { ziel: string; zielTyp: string }>>;
   /** Alle Einträge einer Art, neueste zuerst (#668: Verzeichnis der Auskünfte). */

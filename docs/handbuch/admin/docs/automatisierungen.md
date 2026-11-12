@@ -12,6 +12,8 @@ Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündig
 | **Und** | keine, eine oder mehrere Bedingungen: Feldwerte wie bei den [Ansichten](sichten.md), „Mappe ist in Ansicht …“, „Mappe ist Favorit von …“, Gruppen mit „alle“ oder „eine genügt“; jede Bedingung lässt sich mit **nicht** umkehren |
 | **Dann** | eine oder mehrere Karten, der Reihe nach: **Feld ändern**, **Aufgabe / Benachrichtigung**, **Tägliche Zusammenfassung senden**, **Favoriten-Änderungen melden**, **Anmeldeschutz melden**, **Danach keine weiteren Automatisierungen** |
 
+Was man an **einer** Mappe von Hand anstößt – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage –, sind [Automatisierungsvorlagen](automatisierungsvorlagen.md). Sie laufen über denselben Motor, mit den Rechten der Person, die sie anwendet.
+
 ## Beispiel: an die Kündigungsfrist erinnern
 
 Petra soll 30 Tage vor Ablauf der Kündigungsfrist eines Vertrags eine Aufgabe bekommen – aber nur, wenn im Vertrag jemand als verantwortlich eingetragen ist.

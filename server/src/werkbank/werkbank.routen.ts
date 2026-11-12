@@ -183,6 +183,8 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,
         // Automatisierungen (#674): fehlgeschlagene Läufe und angehaltene Automatisierungen.
         automatisierungen: x.automatisierungen ? await sicher(() => x.automatisierungen!.warnungen()) : null,
+        // Mappen-Abläufe (#1044): angehalten, weil die Person die Mappe nicht mehr lesen darf, deaktiviert ist …
+        ablaeufe: await sicher(() => dienst.ablaeufe.warnungen()),
         // Pflicht-Einstellungen eines Pakets fehlen (#405: im Ablauf „später ausfüllen“) – Aufgabe für den Administrator.
         paketeEinstellungen: (await sicher(() => pakete.installierte()))?.filter((p) => p.einstellungenNoetig).map((p) => ({ id: p.id, name: p.name })) ?? [],
         // KI-Dienste (#796): nach dem Update einmal sagen, dass sich Mappentypen jetzt ausschließen lassen (nur mit KI-Paketen).

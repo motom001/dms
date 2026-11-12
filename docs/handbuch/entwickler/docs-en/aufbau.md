@@ -283,8 +283,9 @@ The first subject area with its own business logic in its subject folder (trial 
 | `aufgaben.dienst.ts` | `AufgabenDienst` (`dienst.aufgaben`) | `pruefeEmpfaenger`, mentions (#56, #81), approval for favourites (#506), `aufgabeAusAutomatisierung` (#676, #724), `erledigeNachAnlass` |
 | `vertretung.ts` | `AufgabenVertretung` (`dienst.vertretung`) | deputies (#78), assign, complete, pass on (also in bulk, #415), `abwesenheitGeaendert`, `meineAufgaben` |
 | `ohne-leserecht.ts` | `OhneLeserecht` (`dienst.ohneLeserecht`) | tasks for people without read permission, cases, temporary read permission (#798, #958) |
-| `fristen.ts` | `Fristen` (`dienst.fristen`) | deadlines, reminders, dates with their cache, follow-up date (#129–#133, #528, #725) |
+| `fristen.ts` | `Fristen` (`dienst.fristen`) | deadlines, dates with their cache, follow-up date (#129–#133, #528, #725); the daily run calls the due folder runs |
 | `ohne-empfaenger.ts` | `OhneEmpfaenger` (`dienst.ohneEmpfaenger`) | everyday user (#719), notifying favourites (#422) |
+| `ablaeufe.ts` | `MappenAblaeufe` (`dienst.ablaeufe`) | [automation templates and folder runs](#ablaufvorlagen) (#1044): apply, run planned ones (rights at run time), workbench, templates from packages |
 
 - **Gets the core** and `AufgabenTeile` (permission check, history and folders, events, roles from [post](#post) and each other); through the connector the event (`kern.ereignis`), accounts and the validity of the counts.
 - The receivers at the [connection points](#anschlusspunkte) are unchanged; they call `aufgaben.pruefeErwaehnungen`, `fristen.fristenAbgleichen` and `vertretung.abwesenheitGeaendert` only when triggered – tests replace them there.
@@ -967,6 +968,31 @@ Small routines without code: **When · And · Then** (Otherwise comes with stage
 - **Working comes before automating:** if something is missing (folder type, field, view), that never blocks work – the automation turns red and is paused (`angehalten.grund = 'fehlerhaft'`), at the latest on the next run or schedule pass. Saving only works with a valid state.
 - Demo data and examples trigger nothing (`ohneEreignisse`); during maintenance and restore the dispatcher rests. After a restore all switched-on automations are paused until an admin switches them on again.
 - Saving with `version` (outdated state → 409); every version is kept in `automatisierung_fassungen` and can be restored. In the full export: `struktur/automatisierungen.json` with change history; all tables in the backup.
+
+## Automation templates and folder runs (#1044) { #ablaufvorlagen }
+
+An **automation template** is an automation with gaps that you apply to one folder; an applied one is a **folder run**. “Assign task” and “Remind” are such templates – there is no separate path for reminders and tasks assigned by hand any more. Model and checks in `shared/src/ablaufvorlagen.ts`, the flow in `server/src/aufgaben/ablaeufe.ts` (`MappenAblaeufe`, `dienst.ablaeufe`), routes in `aufgaben.routen.ts`, UI in `web/src/werkbank/Ablaufvorlagen.tsx` and `web/src/ablage/Aufgaben.tsx` (`Geplant`, `NeueAufgabe`, `ErinnerungFormular`, `AblaufFormular`). Migration 105.
+
+**Model**
+
+- **Template** (`Ablaufvorlage`): `wann` (`sofort`, `datum` – asked when applying –, `in` with `anzahl` and `einheit`), `fragen` (`empfaenger`, `datum`, `text`), `karten` – only `aufgabe` (`VORLAGEN_KARTEN`, task or notification) with recipients `frage` (the answer), `selbst` (who applies), `ersteller` (who created the folder) or `feld` (reference to users; only with fixed `typen`). `vorlagenEingabeFehler` rejects anything else (no silent clean-up), `vorlagenProbleme` checks the structure.
+- **Key** instead of id: core defaults `aufgabe_vergeben`, `erinnern` (`KERN_VORLAGEN`, `kernVorlage()`), from packages `paket:schluessel`, own ones `eigen:<uuid>`. A core default is only stored (`ablaufvorlagen`, versions in `ablaufvorlage_fassungen`) once an admin changes it or a package **overlays** it with `ersetzt` – then under its key; without a row the core default applies. Runs name the key (`mappen_ablaeufe.vorlage`) and stay valid whoever delivers the template.
+- **Folder run** (`MappenAblauf`, table `mappen_ablaeufe`, formerly `erinnerungen`): template, folder, answers (`empfaengerId`, `text`), `datum` (when it runs), `erstelltVon` (the person) and `angehalten`. “Straight away” creates none.
+
+**Flow**
+
+1. `anwenden(folder, key, answers, person)` – the route has checked read access and recipient (`darf`, `empfaengerSichtbar`). Answers as the dialogs did before (same messages), **brake** `ABLAEUFE_JE_PERSON_UND_MAPPE` (open per person and folder) and `ABLAEUFE_JE_MINUTE` (applied per person and minute, via `ablauf_verlauf`) from `grenzen.ts` – otherwise 429.
+2. **Straight away** runs in the same request: as fast as before (without further placeholders no engine, no recipient access). Otherwise the run is created; if its date is today or earlier it runs at once.
+3. The daily run (`Fristen.fristenLauf` → `ablaeufe.faellige`) takes each due run out of the table in **one transaction** (`loescheAblauf` returns true to exactly one caller – several servers) and executes its cards.
+4. **Rights at run time** (`pruefePerson`): the person is an active user (no package or system account) and may read the folder **now**. Otherwise `angehalten` (`person`, `deaktiviert`, `leserecht`, `vorlage`) – note in the workbench overview and in the email to the administrators; `fortsetzen` checks again.
+5. **Cards** go the to-do way: straight away `manuell`, otherwise `erinnerung` with date, creator = person, the same history entries (for `erinnern` word for word as before), deputy (`leiteUm`), case without read access (`faelleNach`, #798); notifications bundled (`benachrichtigeGebuendelt`, key `ablauf:<key>`). The **engine** fills placeholders (`dienst.ablaufPlatzhalter` → `Automatisierungen.fuelleMit`) with the rights of the person and the recipient (#795); `MappenAblaeufe` inserts `{eingabe}`, `{person}`, `{empfaenger}` afterwards so an input never becomes a placeholder itself. Hand-written text stays visible to recipients without read access (no `anlass`).
+6. **History** per template in `ablauf_verlauf` (applied, planned, ran, paused, deleted, resumed), cleaned up like the runs of automations.
+
+**Templates from packages** (`inhalt.ablaufvorlagen`, from `DMS_ABLAUFVORLAGEN_AB` = 0.256.0): `pakete.ts` reads and checks them (only allowed cards, `ersetzt` only for core defaults, types of the package or its dependencies); the permissions preview lists each with its cards (on an update “new” or “different cards”). `MappenAblaeufe.ausPaket` creates or replaces unchanged ones; on removal overlays return the core default, templates with open runs stay as own ones.
+
+**Conversion** (migration 105): `erinnerungen` → `mappen_ablaeufe` with `vorlage = 'erinnern'`; `erstellt_von` stays; if it is empty or not a human, it becomes the recipient. The bin reads older entries as runs of “Remind”. `AufgabenVertretung.legeAufgabeAn` is now just the template “Assign task”.
+
+**API:** `GET`/`POST /api/v1/mappen/{id}/ablaeufe`, `PUT`/`DELETE /api/v1/ablaeufe/{id}`; the endpoints for tasks and reminders stay and go through the same templates. In the full export `struktur/ablaufvorlagen.json` and `daten/ablaeufe.jsonl`.
 
 ## Routes to the outside { #wege-nach-draussen }
 

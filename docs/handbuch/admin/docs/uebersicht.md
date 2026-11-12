@@ -5,7 +5,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage aufbauen** | [Nutzung](nutzung.md), [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md) |
+| **Ablage aufbauen** | [Nutzung](nutzung.md), [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Eigene Organisation](organisation.md), [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Webhooks](webhooks.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md) |
@@ -88,6 +88,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Der Speicherplatz wird knapp | gelb | `speicherplatz.knapp` |
 | Wieder genug Platz – Wartung beenden? | gelb | `speicherplatz.wartung-beenden` |
 | Automatisierungen angehalten | rot | `automatisierung.angehalten` |
+| Geplante Abläufe angehalten (die Person darf sie nicht mehr ausführen) | gelb | `ablaeufe.angehalten` |
 | Automatisierungen mit fehlgeschlagenen Läufen | gelb | `automatisierung.fehlgeschlagen` |
 | Erinnerungen beim Update übernommen | Hinweis | `automatisierung.umgezogen` |
 | Ohne Paket „Benachrichtigungen“ keine Tägliche Zusammenfassung | Hinweis | `automatisierung.ohne-benachrichtigungen` |
@@ -152,7 +153,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was eine Familie zum Einrichten und Sichern braucht. Neue Installationen beginnen damit. **Selbständige und kleine Betriebe** wählen gleich nach der Einrichtung **Betrieb**.
 <!-- bereiche:organisation -->
-- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Eigene Organisation, Datenschutz-Auskünfte, Löschkonzept, Aufbewahrung abgelaufen, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
+- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Automatisierungsvorlagen, Eigene Organisation, Datenschutz-Auskünfte, Löschkonzept, Aufbewahrung abgelaufen, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -178,6 +179,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Betrieb |
 | [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | Betrieb |
 | [Automatisierungen](automatisierungen.md) | Abläufe nach dem Muster Wenn – Und – Dann einrichten: bei einem Ereignis oder Datum Felder setzen oder jemandem eine Aufgabe geben | Betrieb, Haushalt im Expertenmodus |
+| [Automatisierungsvorlagen](automatisierungsvorlagen.md) | Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird | Betrieb, Haushalt im Expertenmodus |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
 | [Eigene Organisation](organisation.md) | Name, Anschrift und Verantwortliche des eigenen Betriebs – gepflegt an der Organisation in der Ablage | Betrieb |

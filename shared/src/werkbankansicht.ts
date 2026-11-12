@@ -63,6 +63,8 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'nummernkreise', gruppe: 'ablage', in: O },
   // Automatisierungen (#675): für Betriebe sichtbar, im Haushalt nur im Expertenmodus.
   { pfad: 'automatisierungen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
+  // Automatisierungsvorlagen (#1044): daneben, gleich sichtbar – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage …
+  { pfad: 'ablaufvorlagen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
   // Eigene Organisation (#995): Verweis auf die Organisation mit dem Merkmal – erst mit der Vorlage für Betriebe.
@@ -227,7 +229,7 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
  */
 export const MIT_MITTE: ReadonlySet<string> = new Set([
   'uebersicht', 'typen', 'sichten', 'nummernkreise', 'pakete', 'benutzer', 'aufgaben',
-  'designs', 'papierkorb', 'automatisierungen', 'postfaecher', 'protokoll', 'fehlermeldungen',
+  'designs', 'papierkorb', 'automatisierungen', 'ablaufvorlagen', 'postfaecher', 'protokoll', 'fehlermeldungen',
   // Datenschutz-Auskünfte (#668): die Sammlung wächst mit jeder Anfrage.
   'auskuenfte',
   // Stempel-Vorlagen (#990): klein, aber man legt sie an und bearbeitet sie – wie Nummernkreise und Designs.

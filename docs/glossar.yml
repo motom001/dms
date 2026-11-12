@@ -432,10 +432,19 @@ begriffe:
     verwandt: [Erinnerung, Zu erledigen]
   - begriff: Erinnerung
     bereich: ablage
-    beschreibung: Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern).
+    beschreibung: Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern). Bis zum Tag steht sie an der Mappe unter „Geplant“; seit 0.256 ein Ablauf der Automatisierungsvorlage „Erinnern“.
     einsteiger: alltag
     begegnet: alle
-    code: Erinnerung
+    verwandt: [Geplant, Automatisierungsvorlage]
+    code: "MappenAblauf, Vorlage erinnern"
+  - begriff: Geplant
+    bereich: ablage
+    beschreibung: Bereich oben in einer Mappe mit allem, was dort noch kommt – Erinnerungen, Wiedervorlagen und andere Abläufe aus Automatisierungsvorlagen. Was gelaufen ist, verschwindet und steht in der Historie. „angehalten“ heißt, die Person, die ihn angelegt hat, darf ihn nicht mehr ausführen; die Verwaltung sieht das.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Ausstehend, Warteschlange]
+    verwandt: [Erinnerung, Automatisierungsvorlage]
+    code: "mappen_ablaeufe, MappenAblauf"
   - begriff: Weitergeben
     bereich: ablage
     beschreibung: Eine Aufgabe einem anderen Benutzer übertragen.
@@ -650,6 +659,14 @@ begriffe:
     nicht_verwenden: [Cronjob, Tagesereignis, Paketlauf]
     verwandt: [Paket, Berechnetes Feld, Gleich eingeschaltet]
     code: "DannKarte art: paket, zeitplan.ausgefuehrt"
+  - begriff: Automatisierungsvorlage
+    bereich: werkbank
+    beschreibung: Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten, fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Makro, Workflow-Vorlage, Ablaufvorlage]
+    verwandt: [Geplant, Erinnerung, Paket]
+    code: "Ablaufvorlage, ablaufvorlagen, inhalt.ablaufvorlagen"
   - begriff: Gleich eingeschaltet
     bereich: werkbank
     beschreibung: Eine mitgelieferte Automatisierung, die das Paket beim Installieren mit gesetztem Haken anbietet. Der Administrator kann sie abwählen; ein Update ändert an oder aus danach nie.

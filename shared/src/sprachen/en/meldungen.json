@@ -1605,7 +1605,10 @@
   "vollexport.daten-dokumente-csv-und": "daten/dokumente.csv and ablage/",
   "vollexport.daten-dokumente-csv-und-2": "daten/dokumente.csv and ablage/…/Versionen/",
   "vollexport.daten-aufgaben-jsonl-und": "daten/aufgaben.jsonl and kalender/fristen.ics",
-  "vollexport.daten-erinnerungen-jsonl-und": "daten/erinnerungen.jsonl and kalender/fristen.ics",
+  "vollexport.daten-ablaeufe-jsonl-und": "daten/ablaeufe.jsonl (planned folder runs, #1044) and kalender/fristen.ics",
+  "vollexport.struktur-ablaufvorlagen-json": "struktur/ablaufvorlagen.json (#1044, automation templates)",
+  "vollexport.struktur-ablaufvorlagen-json-2": "struktur/ablaufvorlagen.json (#1044, change history per template)",
+  "vollexport.nicht-enthalten-ablauf-verlauf": "not included: history of folder runs (#1044, log; what happened is in the folder history)",
   "vollexport.daten-papierkorb-dokumente-jsonl": "daten/papierkorb-dokumente.jsonl (without file)",
   "vollexport.daten-loeschprotokoll-csv-470": "daten/loeschprotokoll.csv (#470, evidence of deleted folders and documents without contents)",
   "vollexport.nicht-enthalten-aufgaben-bei": "not included: tasks with people without read access (#798, overview for the admin; granting and withdrawing temporary read access is in daten/historie.jsonl)",
@@ -1963,5 +1966,12 @@
   "leerseiten.versendet": "All pages stay in sent emails.",
   "leerseiten.weglassen-ja-nein": "weglassen: true or false expected.",
   "leerseiten.entfernt_one": "One blank page removed",
-  "leerseiten.entfernt_other": "{anzahl} blank pages removed"
+  "leerseiten.entfernt_other": "{anzahl} blank pages removed",
+  "pakete.ablaufvorlage-schluessel": "{wo}: invalid key “{wert}”.",
+  "pakete.ablaufvorlage-name": "{wo}: name missing.",
+  "pakete.ablaufvorlage-ersetzt": "{wo}: replaces “{wert}” – only Ablago’s templates can be replaced ({erlaubt}).",
+  "pakete.ablaufvorlage-typ": "{wo}: folder type “{typ}” is neither in the package nor in its dependencies.",
+  "pakete.ablaufvorlage-feld": "{wo}: a field as recipient needs folder types (typen).",
+  "pakete.ablaufvorlage-doppelt": "ablaufvorlagen: key “{k}” appears twice.",
+  "pakete.ablaufvorlage-ersetzt-doppelt": "ablaufvorlagen: “{k}” is replaced more than once."
 }

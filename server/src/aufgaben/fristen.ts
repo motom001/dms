@@ -3,7 +3,6 @@
  * erreicht“ melden, freie Erinnerungen, die Termine für „Zu erledigen“ mit ihrem Zwischenspeicher, Folgetermine.
  * Schicht 3 – Teile und Anschluss wie `AufgabenDienst` (aufgaben.dienst.ts); dazu die beiden Stände des Haushalts.
  */
-import { randomUUID } from 'node:crypto';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenDienst, MappenHistorie } from '../mappen';
@@ -13,7 +12,7 @@ import { t } from '../sprache';
 import { fingerabdruck, type Haushaltsstand, mitFavoriten, Zaehlerspeicher } from '../zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
 import { type Bundesland, feiertageZwischen } from '../../../shared/src/feiertage';
-import { datumDe, type Erinnerung, ERINNERUNG_TEXT_MAX, folgetermine, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Termin, type TermineAntwort } from '../../../shared/src/fristen';
+import { datumDe, folgetermine, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Termin, type TermineAntwort } from '../../../shared/src/fristen';
 import { zeitraumProblem } from '../../../shared/src/kalender';
 import type { Aufgabe, Feld, Mappe } from '../../../shared/src/model';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
@@ -37,15 +36,10 @@ export class Fristen {
   }
 
   private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
   private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
   private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
   private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
   private gueltigkeit() { return this.anschluss.gueltigkeit(); }
-  private neueAufgabe(a: Aufgabe, typ?: string) { return this.teile.ereignisse.neueAufgabe(a, typ); }
-  private leiteUm(a: Aufgabe) { return this.teile.vertretung.leiteUm(a); }
-  private pruefeEmpfaenger(id: unknown) { return this.teile.aufgaben.pruefeEmpfaenger(id); }
   private siehtOhneEmpfaenger(ich: { id: string; rolle: string }) { return this.teile.ohneEmpfaenger.siehtOhneEmpfaenger(ich); }
   private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.teile.rechte.lesbare(...a); }
   private aendereMappe(...a: Parameters<MappenDienst['aendereMappe']>) { return this.teile.mappen.aendereMappe(...a); }
@@ -113,68 +107,15 @@ export class Fristen {
     } catch (e) { protokoll.modul('ablage').warn('„Frist erreicht“ nicht gemeldet', { mappe: m.id, feld, fehler: (e as Error).message }); }
   }
 
-  /** Fällige freie Erinnerungen (#131) werden zu Aufgaben. */
-  async erinnerungenFaellig(heute = heuteIn()): Promise<number> {
-    let n = 0;
-    for (const e of await this.repo.erinnerungen({ bis: heute })) {
-      const a = await this.neueAufgabe({ id: randomUUID(), mappeId: e.mappeId, empfaengerId: e.empfaengerId, art: 'erinnerung', text: e.text, datum: e.datum, erstellt: '', erstelltVon: e.erstelltVon, erledigt: null, erledigtVon: null });
-      await this.repo.loescheErinnerung(e.id);
-      await this.notiere(e.mappeId, null, 'aufgabe', { text: t('meldungen.dienst.erinnerung-faellig-fuer', { name: await this.name(e.empfaengerId), text: e.text }), aufgabe: a.id, aufgabenart: 'erinnerung', fuer: e.empfaengerId, aufgabentext: e.text });
-      await this.leiteUm(a);
-      n++;
-    }
-    return n;
-  }
-
-  /** Täglicher (bzw. stündlicher) Lauf: Fristen und fällige Erinnerungen. */
+  /**
+   * Täglicher (bzw. stündlicher) Lauf: Fristen und fällige Mappen-Abläufe (#1044; früher freie Erinnerungen, #131 – sie
+   * sind seit dem Update Abläufe der Vorlage „Erinnern“ und werden am Datum dieselbe Aufgabe „Erinnerung“).
+   */
   async fristenLauf(heute = heuteIn()) {
     const f = await this.fristenAbgleichen({}, heute);
-    return { ...f, erinnerungen: await this.erinnerungenFaellig(heute) };
-  }
-
-  private static erinnerungEingabe(e: unknown): { datum: string; text: string; empfaengerId?: unknown } {
-    const x = (e ?? {}) as Record<string, unknown>;
-    if (!istDatum(x.datum)) throw new Fachfehler(422, t('meldungen.dienst.bitte-ein-datum-angeben'));
-    const text = typeof x.text === 'string' ? x.text.replace(/\s+/g, ' ').trim() : '';
-    if (!text) throw new Fachfehler(422, t('meldungen.dienst.woran-soll-erinnert-werden'));
-    if (text.length > ERINNERUNG_TEXT_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-zeichen-2', { ERINNERUNG_TEXT_MAX }));
-    return { datum: x.datum, text, empfaengerId: x.empfaengerId };
-  }
-
-  /** Erinnerung an einer Mappe (#131): für mich oder einen anderen Benutzer; ist das Datum schon da, gleich als Aufgabe. */
-  async legeErinnerungAn(mappeId: string, e: unknown, von: string): Promise<Erinnerung | Aufgabe> {
-    const x = Fristen.erinnerungEingabe(e);
-    const an = x.empfaengerId ? await this.pruefeEmpfaenger(x.empfaengerId) : von;
-    const r = await this.repo.legeErinnerungAn({ id: randomUUID(), mappeId, empfaengerId: an, datum: x.datum, text: x.text, erstellt: '', erstelltVon: von });
-    await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erinnerung-fuer-am', { name: await this.name(an), datumDe: datumDe(x.datum), text: x.text }), aufgabenart: 'erinnerung', fuer: an, aufgabentext: x.text });
-    if (x.datum <= heuteIn()) await this.erinnerungenFaellig();
-    return r;
-  }
-
-  /** Ändern und Löschen: Ersteller, Empfänger oder ein Administrator. */
-  private async eigeneErinnerung(id: string, ich: { id: string; rolle: string }): Promise<Erinnerung> {
-    const e = await this.repo.holeErinnerung(id);
-    if (!e) throw new Fachfehler(404, t('meldungen.dienst.diese-erinnerung-gibt-es'));
-    if (e.erstelltVon !== ich.id && e.empfaengerId !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, t('meldungen.dienst.aendern-kann-eine-erinnerung'));
-    return e;
-  }
-
-  async erinnerungMappe(id: string) { const e = await this.repo.holeErinnerung(id); if (!e) throw new Fachfehler(404, t('meldungen.dienst.diese-erinnerung-gibt-es-2')); return e.mappeId; }
-
-  async aendereErinnerung(id: string, e: unknown, ich: { id: string; rolle: string }): Promise<Erinnerung> {
-    const alt = await this.eigeneErinnerung(id, ich);
-    const x = Fristen.erinnerungEingabe(e);
-    const an = x.empfaengerId ? await this.pruefeEmpfaenger(x.empfaengerId) : alt.empfaengerId;
-    const neu = (await this.repo.aendereErinnerung(id, { datum: x.datum, text: x.text, empfaengerId: an }))!;
-    await this.notiere(alt.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.erinnerung-geaendert-fuer-am', { name: await this.name(an), datumDe: datumDe(x.datum), text: x.text }), aufgabenart: 'erinnerung', fuer: an, aufgabentext: x.text });
-    if (x.datum <= heuteIn()) await this.erinnerungenFaellig();
-    return neu;
-  }
-
-  async loescheErinnerung(id: string, ich: { id: string; rolle: string }) {
-    const e = await this.eigeneErinnerung(id, ich);
-    await this.repo.loescheErinnerung(id);
-    await this.notiere(e.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.erinnerung-geloescht', { text: e.text }), aufgabenart: 'erinnerung', fuer: e.empfaengerId, aufgabentext: e.text });
+    const erinnerungen = await this.teile.ablaeufe.faellige(heute);
+    await this.teile.ablaeufe.raeumeAuf();
+    return { ...f, erinnerungen };
   }
 
   /**
@@ -268,8 +209,8 @@ export class Fristen {
         }
       }
     }
-    // Eigene freie Erinnerungen.
-    const erinnerungen = (await this.repo.erinnerungen({ empfaengerId: ich, bis })).filter((e) => e.datum >= von);
+    // Eigene geplante Abläufe (#1044, früher freie Erinnerungen): an mich bzw. ohne gefragten Empfänger von mir angelegt.
+    const erinnerungen = (await this.repo.ablaeufe({ bis })).filter((e) => e.datum >= von && (e.empfaengerId ?? e.erstelltVon) === ich);
     const ok = await this.lesbare(z, erinnerungen.map((e) => e.mappeId));
     for (const e of erinnerungen) {
       if (!ok.has(e.mappeId)) continue;

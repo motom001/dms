@@ -623,6 +623,8 @@ const verwaltung = new Verwaltung({
         ...(w.fehlgeschlagen ? [{ bereich: 'automatisierungen', schluessel: `automatisierung-fehler:${w.fehlgeschlagen}`, text: t('werkbank.verwaltung.automatisierung.fehler', { anzahl: w.fehlgeschlagen }) }] : []),
       ];
     },
+    // Angehaltene Mappen-Abläufe (#1044, Sicherheit): je Ablauf und Grund einmal gemeldet.
+    async () => (await dienst.ablaeufe.warnungen()).angehalten.map((a) => ({ bereich: 'ablaufvorlagen', schluessel: `ablauf:${a.id}:${a.grund}`, text: t('werkbank.verwaltung.ablauf') })),
     async () => { const z = (await speicherplatz.stand()).zustand; return z === 'ok' ? [] : [{ bereich: 'systemzustand', schluessel: `speicher:${z}`, text: t('werkbank.verwaltung.speicher'), eigeneMail: true }]; },
     async () => (await postfaecher.anmeldungFehlt()).map((p) => ({ bereich: 'postfaecher', schluessel: `postfach:${p.id}:${p.zustand}`, text: t('werkbank.verwaltung.postfach', { name: p.name }) })),
     async () => { const n = await fehlermeldungen.offen(); return n ? [{ bereich: 'fehlermeldungen', schluessel: `fehlermeldungen:${n}`, text: t('werkbank.verwaltung.fehlermeldungen', { anzahl: n }) }] : []; },

@@ -27,6 +27,7 @@ import { UmbauVorschau, umbauStart, type UmbauStand } from './PaketUmbau';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { UmbauEntscheidungen } from '../../../shared/src/umbau';
 import { t as tx, t, tn } from '../sprache';
+import { istKernVorlage, kernVorlage } from '../../../shared/src/ablaufvorlagen';
 import { KEINE_LIZENZ, lizenzArtVon, type SelbstErstellt } from '../../../shared/src/paketerstellung';
 import { HerkunftZeile } from './Herkunft';
 import { EREIGNISKATALOG, ereignisSchluessel, istKatalogArt, KATALOG_ARTEN } from '../../../shared/src/ereignisse';
@@ -865,6 +866,19 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
               <span>{a.name}{a.zeitplan && <> <small className="leise">{tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}</small></>}{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
           ))}
         </fieldset>
+      )}
+      {/* Automatisierungsvorlagen (#1044, Rechte-Vorschau): jede mit ihren Karten – nur Aufgaben und Benachrichtigungen. */}
+      {!!v.ablaufvorlagen?.length && (
+        <div className="stapel" data-anker="pakete.ablaufvorlagen">
+          <p><strong>{tx('pakete.ablauf.vorlagen')}</strong></p>
+          <p className="leise klein">{tx('pakete.ablauf.vorlagen.text')}</p>
+          <ul>{v.ablaufvorlagen.map((a) => (
+            <li key={a.schluessel}>{a.name}: {a.karten.join(', ')}
+              {istKernVorlage(a.ersetzt) && <> <small className="leise">{tx('pakete.ablauf.vorlagen.ersetzt', { name: kernVorlage(a.ersetzt).name })}</small></>}
+              {v.update && (a.neu || a.geaendert) && <> <span className="chip warn klein">{a.neu ? tx('pakete.ablauf.vorlagen.neu') : tx('pakete.ablauf.vorlagen.geaendert')}</span></>}
+            </li>
+          ))}</ul>
+        </div>
       )}
       {v.herausgeberBestaetigen && (
         <div className="hinweis warn">

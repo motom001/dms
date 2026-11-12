@@ -77,7 +77,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.mappen.aendereMappe(post.id, { werte: { betreff: 'Abschlag Strom' } }, LENA);
       const notiz = await d.mappenNotizen.legeNotizAn(post.id, 'Bitte bis Freitag zahlen', LENA);
       const aufgabe = await d.vertretung.legeAufgabeAn(post.id, { text: 'Betrag prüfen', empfaengerId: LENA }, LENA);
-      await d.fristen.legeErinnerungAn(post.id, { datum: '2099-01-01', text: 'Zahlung nachsehen' }, LENA);
+      await d.ablaeufe.anwenden(post.id, 'erinnern', { datum: '2099-01-01', text: 'Zahlung nachsehen' }, LENA);
       const vorher = (await d.mappenHistorie.historie(post.id)).map((h) => h.art);
       const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, LENA);
       await d.post.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);

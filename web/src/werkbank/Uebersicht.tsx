@@ -53,6 +53,9 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
   // Automatisierungen (#675): angehaltene zuerst, dann fehlgeschlagene Läufe.
   const au = u.automatisierungen;
   if (au?.angehalten.length) h.push({ schluessel: 'automatisierung.angehalten', art: 'schlecht', text: <><strong>{t('automatisierung.ui.uebersicht.angehalten', { anzahl: au.angehalten.length })}</strong> {au.angehalten.map((x) => `„${x.name}“`).join(', ')}</>, ziel: au.angehalten.length === 1 ? `/werkbank/automatisierungen/${au.angehalten[0].id}` : '/werkbank/automatisierungen', knopf: t('automatisierung.ui.uebersicht.knopf') });
+  // Mappen-Abläufe (#1044, Sicherheit): angehalten, weil die Person sie nicht mehr ausführen darf.
+  const ab = u.ablaeufe?.angehalten ?? [];
+  if (ab.length) h.push({ schluessel: 'ablaeufe.angehalten', art: 'warn', text: <><strong>{t('automatisierung.vorlage.ui.uebersicht', { anzahl: ab.length })}</strong> {t('automatisierung.vorlage.ui.uebersicht.text')}</>, ziel: `/werkbank/ablaufvorlagen/${encodeURIComponent(ab[0].vorlage)}`, knopf: t('automatisierung.vorlage.ui.uebersicht.knopf') });
   if (au?.umgezogen) h.push({ schluessel: 'automatisierung.umgezogen', datum: au.umgezogen.am, art: 'info', text: <><strong>{t('automatisierung.ui.umgezogen', { anzahl: au.umgezogen.anzahl })}</strong> {t('automatisierung.ui.umgezogen.text')}</>, ziel: '/werkbank/automatisierungen', knopf: t('automatisierung.ui.uebersicht.knopf') });
   // #678: Ohne Paket „Benachrichtigungen“ schickt niemand die Tägliche Zusammenfassung.
   if (au?.ohneBenachrichtigungen) h.push({ schluessel: 'automatisierung.ohne-benachrichtigungen', art: 'info', text: <><strong>{t('automatisierung.ui.ohne-benachrichtigungen')}</strong> {t('automatisierung.ui.ohne-benachrichtigungen.text')}</>, ziel: '/werkbank/pakete', knopf: t('automatisierung.ui.ohne-benachrichtigungen.knopf') });

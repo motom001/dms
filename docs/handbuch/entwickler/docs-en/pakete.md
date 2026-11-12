@@ -44,6 +44,7 @@ Then fill in:
 | `inhalt/vorlagen/…` | optional (dms #1038): text templates of the presets, plain Markdown (`.md`) |
 | `inhalt/wortlisten.yaml` | optional (from Ablago 0.127.0): groups of synonyms for the search |
 | `inhalt/automatisierungen.yaml` | optional (from Ablago 0.177.0): ready-made automations, off after installation – except the ticked ones (since 0.233.0 preselected with `eingeschaltet: true`) |
+| `inhalt/ablaufvorlagen.yaml` | optional (from Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [automation templates](#automatisierungsvorlagen) for the “Folder” menu – only tasks and notifications |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | description, licence text, changes per version |
 | `tests/erwartung.yaml` | what must be there after installation |
 
@@ -277,6 +278,29 @@ On an **update**, Ablago only adds: new folder types, fields, tabs and views. Re
 If a conversion (dms #1041) changes a view, its checksum moves along – it still counts as unchanged. So a new version is worthwhile when the folder types or conditions of a view change (e.g. after a conversion); renaming a view also reaches installed Ablago this way, as long as nobody has changed it.
 
 The texts in a package (names, labels, examples) are German as the source text; English and other languages come via `beschriftungen`.
+
+## Automation templates { #automatisierungsvorlagen }
+
+A package can bring **automation templates** (dms #1044, from Ablago 0.256.0): runs you apply to a folder from the “Folder” menu, e.g. “Follow-up in 6 months”. In the manifest `inhalt.ablaufvorlagen: inhalt/ablaufvorlagen.yaml` and `dms: ">=0.256.0"`.
+
+```yaml
+- schluessel: wiedervorlage
+  name: Wiedervorlage
+  beschreibung: In sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“.
+  wann: { art: in, anzahl: 6, einheit: monate }   # or { art: sofort } or { art: datum }
+  fragen: []                                      # empfaenger, datum (required with art: datum), text
+  karten:
+    - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }
+```
+
+- **Only the `aufgabe` card** (task or notification, `als`). Any other card – email, web call, setting fields – makes the package invalid, also in an update. The permissions preview lists every template with its cards.
+- **Recipients:** `frage` (the person chosen when applying, needs `fragen: [empfaenger]`), `selbst` (who applies it), `ersteller` (who created the folder) or `feld` (reference field to users; only with `typen`). There are no fixed people or roles.
+- **Text** with placeholders as in the folder title, plus `{eingabe}` (answer to “Text”), `{person}`, `{empfaenger}`. Ablago fills them with the recipient’s rights.
+- `typen` (optional): folder types of the package or `paket:typ` of a dependency where the template appears in the menu; without: all.
+- `ersetzt: aufgabe_vergeben` or `ersetzt: erinnern` overlays Ablago’s template (at most one package per template; one changed by the admin stays). Removing the package brings back Ablago’s.
+- **On** after installation; an update only replaces unchanged ones. On removal the templates go too – except those that still have planned runs (they stay as own ones).
+- A run always uses the rights of the person who set it up – checked when it runs – never those of the package.
+- `tests/erwartung.yaml` gives the number: `ablaufvorlagen: 3`.
 
 ## Describing settings { #einstellungen-beschreiben }
 

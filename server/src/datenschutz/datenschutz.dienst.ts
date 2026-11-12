@@ -54,6 +54,8 @@ export interface DatenschutzAnschluss {
   tresor(): { entschluessele(wert: string): string | null } | undefined;
   /** Automatisierungen mit Änderungsverlauf für den Vollexport (#674 setzt das am Dienst). */
   automatisierungenExport(): (() => Promise<unknown[]>) | undefined;
+  /** Automatisierungsvorlagen mit Änderungsverlauf für den Vollexport (#1044). */
+  ablaufvorlagenExport?(): Promise<unknown[]>;
 }
 
 export class DatenschutzDienst {
@@ -240,7 +242,7 @@ export class DatenschutzDienst {
       fassung: undefined,
       archivfassung: undefined,
       notizen: async (ids) => (await this.repo.notizenVon(ids)).filter((n) => not.has(n.id)),
-      aufgaben: async () => [], erinnerungen: async () => [], favoriten: async () => [],
+      aufgaben: async () => [], ablaeufe: async () => [], favoriten: async () => [],
       // Historie: ohne frühere Auskünfte (deren Begründungen sind intern); Mappen mit zurückgehaltenen
       // Notizen ohne Notiz-Einträge – die Historie nennt den Text einer Notiz.
       historie: async (ids) => (await this.repo.historieVon(ids)).filter((h) => hist.has(h.mappeId) && h.art !== 'auskunft' && !(h.art === 'notiz' && mitZurueckgehaltenen.has(h.mappeId))),
