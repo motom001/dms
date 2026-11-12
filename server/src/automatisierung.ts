@@ -5,9 +5,14 @@ import {
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
   PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST, istBetrieb, protokollPasst, PROTOKOLL_ABSTAND_MIN, BETRIEB_PLATZHALTER, SYSTEMKONTO_WERKBANK, werkbankBereiche, wennBereich, laufFuer,
-  istAufruf,
+  istAufruf, aussenKarten, zielFuer,
 } from '../../shared/src/automatisierung';
-import { Aufrufe, speicherAufrufRepo, type AufrufRepo, type AufrufStand } from './automatisierung/index';
+import {
+  Aufrufe, Ausleitung, speicherAufrufRepo, speicherAusgangRepo, speicherAussenGeheimnisRepo, type AufrufRepo, type AufrufStand, type AusgangRepo, type AusgangVerlauf,
+  type AussenGeheimnisRepo, type SichererAbruf,
+} from './automatisierung/index';
+import { speicherEinstellungen } from './einstellungen';
+import type { Mailer } from './mail';
 import type { Kurzzustand } from './kurzzustand';
 import { EREIGNISKATALOG, istBetriebWenn, wennFaehig, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { darfBereich } from '../../shared/src/verwaltungsrecht';
@@ -281,10 +286,20 @@ export interface KartenKontext {
   fuelleFuer(text: string, an: string | null): Promise<{ text: string; verborgen: number; mappe: boolean }>;
   /** Personen hinter einem Empfänger (aktive Benutzer). */
   personen(e: Empfaenger): Promise<string[]>;
+  /**
+   * Auslösende Person (#671): Benutzer-Id, wenn ein Mensch das Ereignis ausgelöst hat; sonst null (Zeitplan, Datum,
+   * System, Paket, Automatisierung, Probelauf). Mails an ein Feld füllen ihre Platzhalter mit deren Rechten.
+   */
+  person: string | null;
   /** Vermerk für die Historie der Mappe: „durch Automatisierung ‚…‘ (eingerichtet von …)“. */
   anlass: Record<string, unknown>;
   /** Werkbank-Rechte des Systemkontos (#677) – genau die Liste, sonst nichts; fehlt in Tests ohne Werkbank. */
   werkbank?: SystemWerkbank;
+  /** Id des Laufs und Art des Ereignisses (#671: Karten nach außen nennen sie in der Meldung). */
+  laufId?: string;
+  anlassArt?: string;
+  /** Karten nach außen (#671): Ausgangskorb und Adresse von Ablago (für Links und den Hinweissatz der E-Mail). */
+  aussen?: { ausleitung: Ausleitung; basis: () => string };
 }
 /**
  * Die Karte hat nichts zu tun, weil ihr Ziel fehlt (#1082: Paket entfernt oder ohne das Ereignis) – der Schritt gilt als
@@ -311,6 +326,12 @@ export interface AutomatisierungDeps {
    * Ver- und Entschlüsseln des Geheimnisses, Adresse von Ablago. Ohne: im Arbeitsspeicher, Tresor des Dienstes.
    */
   aufruf?: { repo?: AufrufRepo; zustand?: () => Kurzzustand; verschluessele?: (k: string) => string; entschluessele?: (w: string) => string | null; basis?: () => string };
+  /**
+   * Karten nach außen (#671): Ausgangskorb und Geheimnisse (Datenbank), Einstellungen (freigegebene Ziele), Mailversand,
+   * Adresse von Ablago; `abruf` nur für Tests. Ohne: im Arbeitsspeicher, Einstellungen des Kerns, ohne Mailversand.
+   */
+  aussen?: { repo?: AusgangRepo; geheimnisse?: AussenGeheimnisRepo; mailer?: () => Mailer | null; basis?: () => string; abruf?: SichererAbruf;
+    verschluessele?: (k: string) => string; entschluessele?: (w: string) => string | null };
 }
 
 /** Ereignis, wie der Motor es verarbeitet (aus dem Katalog oder vom Zeitplan). */
@@ -406,8 +427,9 @@ function gleicherStand(a: unknown, b: unknown): boolean {
  * mit? Dann wird sie übergangen – eine Adresse ohne Anmeldung legt nur die Verwaltung selbst an.
  */
 function mitWerkbankKarte(paket: string, x: PaketAutomatisierung): boolean {
-  const d = bereinigeAutomatisierung({ wenn: x.wenn, dann: x.dann });
-  const ja = werkbankBereiche(d).length > 0 || istAufruf(d.wenn);
+  const d = bereinigeAutomatisierung({ wenn: x.wenn, dann: x.dann, sonst: (x as { sonst?: unknown }).sonst });
+  // Karten nach außen (#671): Ausleiten bleibt eine bewusste Entscheidung der Verwaltung – nie aus einem Paket.
+  const ja = werkbankBereiche(d).length > 0 || istAufruf(d.wenn) || aussenKarten(d).length > 0;
   if (ja) log.warn('Mitgelieferte Automatisierung mit Werkbank-Karte übergangen', { paket, automatisierung: x.schluessel });
   return ja;
 }
@@ -424,6 +446,9 @@ export class Automatisierungen {
   private merkerOhneSpeicher = new Map<string, string>();
   /** „Aufruf von außen“ (#679): Adressen, Geheimnisse, Signatur und Bremse (`automatisierung/aufruf.ts`). */
   readonly aufrufe: Aufrufe;
+  /** Karten nach außen (#671): Ziele, Geheimnisse, Ausgangskorb und Zustellung (`automatisierung/ausleitung.ts`). */
+  readonly ausleitung: Ausleitung;
+  private aussenBasis: () => string;
   constructor(private d: AutomatisierungDeps) {
     this.d = { ...d, repo: mitFassungen(d.repo, d.dienst) };
     const x = d.aufruf ?? {};
@@ -433,6 +458,17 @@ export class Automatisierungen {
       basis: x.basis, uhr: d.uhr,
       automatisierung: (id) => this.d.repo.hole(id),
       ausloesen: (a, id, daten) => this.reihe([a], { id, art: 'aufruf', daten, kette: 0 }),
+    });
+    const y = d.aussen ?? {};
+    this.aussenBasis = y.basis ?? x.basis ?? (() => '');
+    this.ausleitung = new Ausleitung({
+      repo: y.repo ?? speicherAusgangRepo(), geheimnisse: y.geheimnisse ?? speicherAussenGeheimnisRepo(),
+      einstellungen: d.dienst.kern.einstellungen ?? speicherEinstellungen(),
+      verschluessele: y.verschluessele ?? x.verschluessele ?? ((k) => d.dienst.verschluesseleGeheimnis(k)), entschluessele: y.entschluessele ?? x.entschluessele ?? ((w) => d.dienst.entschluessele(w)),
+      automatisierung: (id) => this.d.repo.hole(id),
+      // Dauerfehler (#671): anhalten mit Grund „ziel“ – Werkbank-Übersicht und Mail der technischen Aufgaben melden es.
+      anhalten: async (id, text) => { await this.d.repo.setze(id, { angehalten: { grund: 'ziel', text, zeit: this.iso() } }); },
+      mailer: y.mailer ?? (() => null), pause: d.pause, abruf: y.abruf, uhr: d.uhr,
     });
     d.dienst.automatisierungenVon = async (kontoId) => {
       const konto = await this.konto().catch(() => null);
@@ -486,6 +522,8 @@ export class Automatisierungen {
   /** Abnehmer anmelden und den Zeitplan starten (Start des Servers). */
   start() {
     this.d.dienst.ereignisse.abonniere('automatisierungen', (e) => this.ereignis(e));
+    // Karten nach außen (#671): den Ausgangskorb zustellen (nur der Leiter startet den Motor).
+    this.ausleitung.start();
     // #712: Erinnerungen am Feld werden zu Automatisierungen – erst die Fristen übernehmen; frühere Beispiele des Kerns räumen (#883).
     void this.fristenUebernehmen().catch((e) => log.warn('Erinnerungen nicht übernommen', { fehler: (e as Error).message }))
       .then(() => this.benachrichtigungenUebernehmen()).catch((e) => log.warn('Benachrichtigungen nicht übernommen', { fehler: (e as Error).message }))
@@ -496,7 +534,7 @@ export class Automatisierungen {
     this.uhr ??= setInterval(() => { void this.zeitplan().catch((e) => log.error('Zeitplan fehlgeschlagen', { fehler: (e as Error).message })); }, ZEITPLAN_MS);
     this.uhr.unref?.();
   }
-  stop() { if (this.uhr) clearInterval(this.uhr); this.uhr = null; this.d.dienst.ereignisse.abbestellen('automatisierungen'); }
+  stop() { if (this.uhr) clearInterval(this.uhr); this.uhr = null; this.ausleitung.stop(); this.d.dienst.ereignisse.abbestellen('automatisierungen'); }
 
   /**
    * Mitgelieferte Automatisierungen eines Pakets (#712, dms-registry #108): je Schlüssel eine mit fester Id, Herkunft
@@ -773,7 +811,8 @@ export class Automatisierungen {
     // mitgelieferten Automatisierungen nennen (zur Auswahl im Editor).
     const aufgaben = (id: string) => [...new Set(liste.filter((a) => a.herkunft === 'paket' && a.paketId === id)
       .flatMap((a) => a.dann.flatMap((d) => (d.art === 'paket' && d.aufgabe ? [d.aufgabe] : []))))].sort();
-    return { ...k, pakete: pakete.map((p) => ({ id: p.id, name: p.name, zeitplan: !!p.laeufer?.ereignisse.includes('zeitplan.ausgefuehrt'), aufgaben: aufgaben(p.id) })) };
+    // Ziele nach außen (#671): Eine Karte „URL aufrufen“ ohne freigegebenes Ziel ist ein Problem (rot, angehalten).
+    return { ...k, pakete: pakete.map((p) => ({ id: p.id, name: p.name, zeitplan: !!p.laeufer?.ereignisse.includes('zeitplan.ausgefuehrt'), aufgaben: aufgaben(p.id) })), ziele: await this.ausleitung.ziele() };
   }
 
   private async ansicht(a: Automatisierung, k: Kontextdaten, letzte: Map<string, Lauf>, unlesbar: Set<string>, kontoId: string | null): Promise<AutomatisierungAnsicht> {
@@ -788,6 +827,8 @@ export class Automatisierungen {
     const leer = [...new Set(a.dann.flatMap((d) => (ziel(d) ? [paketKarteLeer(ziel(d), k.pakete)] : [])).filter((x): x is string => !!x))];
     // Aufruf von außen (#679): Adresse ohne Geheimnis; je Automatisierung ein eigener Auslöser (laufen nie gemeinsam).
     const aufruf = istAufruf(a.wenn) ? await this.aufrufStand(a.id) : undefined;
+    // URL aufrufen (#671): welche Karten ein Geheimnis haben (ohne das Geheimnis).
+    const geheimnisse = [...a.dann, ...a.sonst].some((x) => x.art === 'url') ? await this.ausleitung.geheimnisStand(a.id) : undefined;
     return {
       ...ohne, kurz: kurzform(a, k, (art) => (art === 'datum' ? t('automatisierung.wenn.datum') : t.frei(`ereignisse.name.${art.replace(/_/g, '-')}`))), probleme: automatisierungsProbleme(a, k),
       ausloeser: istAufruf(a.wenn) ? `aufruf|${a.id}` : ausloeserSchluessel(a.wenn),
@@ -795,6 +836,7 @@ export class Automatisierungen {
       ...(rechte ? { rechte } : {}),
       ...(leer.length ? { leer } : {}),
       ...(aufruf === undefined ? {} : { aufruf }),
+      ...(geheimnisse === undefined ? {} : { geheimnisse }),
     };
   }
 
@@ -851,6 +893,32 @@ export class Automatisierungen {
     if (n) log.info('Aufrufe von außen abgeschaltet', { anzahl: n });
     return n;
   }
+
+  /* ---------- Nach außen (#671) ---------- */
+
+  /** Freigegebene Ziele (Werkbank → Automatisierungen → Ziele nach außen). */
+  ziele() { return this.ausleitung.ziele(); }
+
+  /**
+   * Ziele setzen (ganze Liste, frische Anmeldung). Fällt ein Ziel weg, halten Automatisierungen mit Karten dorthin beim
+   * nächsten Lauf an (Problem „Ziel nicht freigegeben“); offene Zustellungen gibt der Ausgangskorb auf.
+   */
+  async setzeZiele(roh: unknown, von: string | null) {
+    const ziele = await this.ausleitung.setzeZiele(roh, von);
+    const ohneZiel = (a: Automatisierung) => aussenKarten(a).some((k) => k.art === 'url' && !zielFuer(k.adresse, ziele));
+    return { ziele, betroffen: (await this.d.repo.liste()).filter((a) => a.aktiv && !a.angehalten && ohneZiel(a)).map((a) => ({ id: a.id, name: a.name })) };
+  }
+
+  /** Geheimnis für die Signatur einer Karte „URL aufrufen“ anlegen bzw. erneuern – nur in dieser Antwort. */
+  async aussenGeheimnis(id: string, karte: string, von: string | null) {
+    return this.ausleitung.geheimnisAnlegen(await this.gibt(id), karte, von);
+  }
+
+  /** Geheimnis einer Karte entfernen: Danach gehen ihre Aufrufe ohne Signatur hinaus. */
+  async aussenGeheimnisEntfernen(id: string, karte: string) { await this.gibt(id); await this.ausleitung.geheimnisEntfernen(id, karte); }
+
+  /** Zustellungen nach außen einer Automatisierung (ohne Inhalte): Ziel, Zustand, Status, Fehler, Versuche, Zeiten. */
+  async zustellungen(id: string): Promise<AusgangVerlauf[]> { await this.gibt(id); return this.ausleitung.verlauf(id); }
 
   /** Mappentypen, die das Konto „Automatisierung“ überhaupt nicht lesen darf (#709). */
   private async unlesbar(): Promise<{ typen: Set<string>; kontoId: string | null }> {
@@ -969,6 +1037,9 @@ export class Automatisierungen {
     if (!(await this.d.repo.speichere(id, { ...d, aktiv }, von, version))) throw new Fachfehler(409, t('automatisierung.konflikt'));
     // Aufruf von außen (#679): Ist die Wenn-Karte keine mehr, gilt auch ihre Adresse nicht mehr.
     if (istAufruf(alt.wenn) && !istAufruf(d.wenn)) await this.aufrufe.entferne(id, 'Wenn-Karte geändert');
+    // URL aufrufen (#671): Fällt eine Karte weg, auch ihr Geheimnis.
+    const urlKarten = new Set([...d.dann, ...d.sonst].filter((k) => k.art === 'url').map((k) => k.id));
+    for (const k of [...alt.dann, ...alt.sonst]) if (k.art === 'url' && !urlKarten.has(k.id)) await this.ausleitung.geheimnisEntfernen(id, k.id);
     // Gespeichert mit gültigem Stand: „fehlerhaft“ ist damit behoben (Bremse und Wiederherstellung hebt nur „einschalten“ auf).
     if (alt.angehalten?.grund === 'fehlerhaft' || (aktiv && !alt.aktiv)) await this.d.repo.setze(id, { angehalten: null });
     return this.hole(id);
@@ -989,6 +1060,9 @@ export class Automatisierungen {
     if (a.herkunft !== 'eigen') throw new Fachfehler(409, t('automatisierung.loeschen.herkunft'));
     await this.d.repo.loesche(id);
     await this.aufrufe.entferne(id, 'Automatisierung gelöscht');
+    // Karten nach außen (#671): in der Datenbank gehen Geheimnisse und Ausgangskorb mit (ON DELETE CASCADE).
+    await this.ausleitung.geheimnisEntfernen(id);
+    await this.ausleitung.verwerfe(id, 'Automatisierung gelöscht');
     log.info('Automatisierung gelöscht', { id, name: a.name });
   }
 
@@ -1250,6 +1324,7 @@ export class Automatisierungen {
       if (!und.ok && !a.sonst.length) return await ende('unzutreffend');
       const kontext: KartenKontext = {
         dienst: this.d.dienst, z, konto, automatisierung: a, mappe, typ, daten: anlass.daten, ereignisId: o.test ? l.id : anlass.id, trocken: o.trocken, personen,
+        person: anlass.ausloeser?.art === 'benutzer' && istUuid(anlass.ausloeser.id) ? anlass.ausloeser.id : null,
         fuelle: (text) => this.fuelle(text, { a, mappe, typ, z, daten: anlass.daten, art: anlass.art }),
         fuelleFuer: async (text, an) => {
           const c = { a, mappe, typ, z, daten: anlass.daten, art: anlass.art };
@@ -1261,6 +1336,8 @@ export class Automatisierungen {
         },
         anlass: { automatisierung: { id: a.id, name: a.name, eingerichtetVon: a.erstelltVon } },
         werkbank: this.d.werkbank,
+        laufId: l.id, anlassArt: anlass.art,
+        aussen: { ausleitung: this.ausleitung, basis: this.aussenBasis },
       };
       const begonnen = this.jetzt();
       let leer = 0;

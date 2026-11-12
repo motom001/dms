@@ -42,7 +42,7 @@ Die Apps fragen Ablago in einem festen Abstand ab (welcher, steht im README der 
 Ablago trennt die beiden Richtungen:
 
 - **Abfragen über die Schnittstelle:** Die Hausautomatisierung holt die Zahlen selbst – mit dem Schlüssel *nur Zähler* (siehe oben). So arbeiten die Homey-App, Node-RED, ioBroker und eigene Skripte.
-- **Melden über Automatisierungen:** Soll Ablago von sich aus etwas nach außen melden, richtet das künftig ein Administrator unter **Werkbank → Automatisierungen** ein, mit der Dann-Karte **„URL aufrufen“**. Diese Karte kommt mit einer späteren Version ([#671](https://github.com/motom001/dms/issues/671)); bis dahin fragt die Hausautomatisierung ab.
+- **Melden über Automatisierungen:** Soll Ablago von sich aus etwas nach außen melden – etwa eine Push-Meldung, sobald neue Post da ist –, richtet das ein Administrator unter **Werkbank → Automatisierungen** ein, mit der Dann-Karte **„URL aufrufen“** an ein freigegebenes Ziel (zum Beispiel ein Webhook von Home Assistant im Heimnetz). Wie das geht, steht im Administratorhandbuch unter [Nach außen melden](https://help.ablago.app/admin/aktuell/automatisierungen/#nach-aussen).
 
 !!! note "Kein eigener Webhook mehr unter Mein Konto"
     Früher konnte jede Person unter **Mein Konto** einen Webhook eintragen, der ihre Zahlen sofort meldete; dazu gehörte in der Werkbank der Bereich **Webhooks** mit freigegebenen Zielen. Beides ist entfallen ([#991](https://github.com/motom001/dms/issues/991)), eingetragene Webhooks hat Ablago beim Update entfernt. Die Abfrage mit dem Schlüssel *nur Zähler* bleibt, wie sie ist.

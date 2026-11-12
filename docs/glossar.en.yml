@@ -295,6 +295,9 @@ begriffe:
   Aufruf von außen:
     begriff: Call from outside
     beschreibung: When card of an automation with its own address and secret – another system (monitoring, home automation) triggers it by POST with a signature. The administration creates the address explicitly; the response only says "accepted". Parameters sent along are available as placeholders, only as text. The Workbench overview and the emergency sheet list all addresses that accept calls.
+  Ziel nach außen:
+    begriff: Destination outside
+    beschreibung: Approved beginning of an address (host and path) to which the Then card "Call URL" of an automation may report – under Workbench → Automations → Destinations outside. Only https; "On the home network" explicitly also allows http and devices on your own network. Ablago does not call other addresses and never follows redirects. The emergency sheet lists the hosts.
   Werkbank-Karte:
     begriff: Workbench card
     beschreibung: Card of an automation that concerns the operation of Ablago instead of a folder – When "Error reported", "Log message", "New version available" and Then "Start a backup". The system account "Automation" has precisely defined Workbench permissions for them; only someone who manages the area themselves may set them up.

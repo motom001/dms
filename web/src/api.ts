@@ -1,6 +1,8 @@
 import type { TextGesetzt, VorlagenListe } from '../../shared/src/textsatz';
 import type { AktionenAnMappe, AktionenEinstellung, AktionRecht, AktionsSchritt, EingebauteAktion, KernDialog } from '../../shared/src/paketaktionen';
-import type { AutomatisierungAnsicht, AutomatisierungDaten, Fehlschlag, Kontextdaten, Lauf } from '../../shared/src/automatisierung';
+import type { AussenZiel, AutomatisierungAnsicht, AutomatisierungDaten, Fehlschlag, Kontextdaten, Lauf } from '../../shared/src/automatisierung';
+/** Eine Zustellung nach außen (#671) – ohne Inhalte. */
+export interface AussenZustellung { id: string; automatisierungId: string; karte: string; art: 'url' | 'email'; ziel: string; zustand: 'offen' | 'zugestellt' | 'aufgegeben' | 'verworfen'; versuche: number; status: number | null; fehler: string | null; erstellt: string; erledigt: string | null }
 import { FASSUNG_PFAD, type FassungArt, type FassungsListe, type FassungsVorschau, type GeloeschterEintrag } from '../../shared/src/fassungen';
 import type { Design } from './design';
 import { messung } from './messung';
@@ -1034,6 +1036,12 @@ export const api = {
   /** Aufruf von außen (#679): Adresse anlegen/erneuern oder neues Geheimnis – das Geheimnis steht nur in dieser Antwort. */
   automatisierungAufruf: (id: string, was: 'adresse' | 'geheimnis') => anfrage<{ adresse: string; erstellt: string; geheimnisSeit: string; geheimnis: string; oeffentlich: boolean }>('POST', `/api/werkbank/automatisierungen/${id}/aufruf`, { was }),
   automatisierungAufrufEntfernen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/automatisierungen/${id}/aufruf`),
+  // Nach außen (#671): Ziele, Geheimnis je Karte „URL aufrufen“ (nur in dieser Antwort), Zustellungen ohne Inhalte.
+  automatisierungZiele: () => anfrage<{ ziele: AussenZiel[] }>('GET', '/api/werkbank/automatisierungen/ziele'),
+  automatisierungZieleSetzen: (ziele: AussenZiel[]) => anfrage<{ ziele: AussenZiel[]; betroffen: Array<{ id: string; name: string }> }>('PUT', '/api/werkbank/automatisierungen/ziele', { ziele }),
+  automatisierungGeheimnis: (id: string, karte: string) => anfrage<{ geheimnis: string; erstellt: string }>('POST', `/api/werkbank/automatisierungen/${id}/geheimnis/${encodeURIComponent(karte)}`),
+  automatisierungGeheimnisEntfernen: (id: string, karte: string) => anfrage<void>('DELETE', `/api/werkbank/automatisierungen/${id}/geheimnis/${encodeURIComponent(karte)}`),
+  automatisierungZustellungen: (id: string) => anfrage<AussenZustellung[]>('GET', `/api/werkbank/automatisierungen/${id}/zustellungen`),
   automatisierungLaeufe: (id: string) => anfrage<Lauf[]>('GET', `/api/werkbank/automatisierungen/${id}/laeufe?anzahl=30`),
   automatisierungLaufWiederholen: (laufId: string) => anfrage<Lauf>('POST', `/api/werkbank/automatisierungen/laeufe/${laufId}/wiederholen`),
   automatisierungLaufNichtWiederholen: (laufId: string) => anfrage<unknown>('POST', `/api/werkbank/automatisierungen/laeufe/${laufId}/nicht-wiederholen`),

@@ -39,7 +39,11 @@ Ablago sends **no usage data** – neither to the project nor to anyone else: no
 | **Passing on links** | when someone sends a [link via field values](direktlinks.md) by email or chat | the field values in the link (e.g. a contract number) can be read in it |
 | **Sign-in via a provider** | when you [set it up](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) | your provider (OpenID Connect) |
 | **Packages with code** | only if a package needs it and you confirm it at installation | only the addresses the package states ([A package's permissions](pakete.md#recht-netzwerk-und-internet)) |
+| **Automation: Call URL** | only if you approve a [destination outside](automatisierungen.md#ziele-nach-aussen) (fresh sign-in) and switch on an automation with the card **Call URL** – there is none by default | only to approved destinations, as much as the [content level](automatisierungen.md#inhaltsstufen) allows: *Notification only* (event, time), *With IDs* (plus folder ID, folder type, link) or *With values* (plus title and field values – only after confirmation, never passwords or encrypted values). Packages never set this up |
+| **Automation: Send e-mail** | only if you switch on an automation with the card **Send e-mail** | subject and text you write, with placeholders – to people, roles, e-mail fields or any addresses, via your mail server; limited per day |
 | **Manual** | when you click **Help** or a **?** | the supplied manual under `/hilfe/` works without internet ([Help without internet](technik.md#hilfe-ohne-internet)); your browser opens links to the online manual. |
+
+**Example – only what is necessary goes out:** Markus wants to know on his phone when new post arrives. His home automation (Home Assistant on the home network) only gets *Notification only* via [Call URL](automatisierungen.md#url-aufrufen) – "something happened" – and then fetches the number itself via the [counter](api.md#zaehler). The title and sender of the post do not leave Ablago. So that the home automation can tell the call really comes from Ablago, it checks the [signature](automatisierungen.md#signatur-pruefen).
 
 ### What your Library accepts from outside { #was-deine-ablage-annimmt }
 

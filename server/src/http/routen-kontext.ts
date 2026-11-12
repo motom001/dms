@@ -2,6 +2,7 @@
  * Hilfen der Routen, die Dienste brauchen (#960): einmal je Aufruf von routen() gebaut und jeder Routendatei
  * als Parameter übergeben. Aus routen() hierher verschoben, unverändert.
  */
+import { zielHost } from '../../../shared/src/automatisierung';
 import { teiltypen } from '../../../shared/src/teile';
 import type { Readable } from 'node:stream';
 import { buffer as alsPuffer } from 'node:stream/consumers';
@@ -297,6 +298,8 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
       notfallcode: await konten.neuerNotfallcode(),
       // Aufruf von außen (#679): Adressen, die gerade Aufrufe annehmen.
       aufrufe: x.automatisierungen ? await x.automatisierungen.aufrufListe().catch(() => []) : [],
+      // Ziele nach außen (#671): nur die Rechner.
+      ziele: x.automatisierungen ? (await x.automatisierungen.ziele().catch(() => [])).map((z) => zielHost(z.adresse)) : [],
     });
     await dienst.notfallkontakte.blattErstellt(kontakte);
     if (x.sicherung) await x.sicherung.notfallblattErstellt(von);

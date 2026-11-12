@@ -18,6 +18,7 @@ import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher'
 import { EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useWebdav, WebdavPanel } from './Webdav';
 import { AutomatisierungEditor, AutomatisierungenListe, automatisierungWarnungen, useAutomatisierungen } from './Automatisierungen';
+import { AussenZiele } from './AutomatisierungAussen';
 import { AblaufvorlageEditor, AblaufvorlagenListe, useAblaufvorlagen } from './Ablaufvorlagen';
 import { useEffect, type ReactNode } from 'react';
 import { useKonto } from '../konto';
@@ -93,7 +94,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/systemzustand         Systemzustand: Warnschwelle und Grenze, darunter Speicherplatz je Ordner
  *                                 (#115, #116; #408, früher /werkbank/speicherplatz, leitet weiter)
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
- * /werkbank/automatisierungen[/:id|/neu]  Automatisierungen Wenn – Und – Dann (#675), dreiteilig
+ * /werkbank/automatisierungen[/:id|/neu|/ziele]  Automatisierungen Wenn – Und – Dann (#675), dreiteilig; Ziele nach außen (#671)
  * /werkbank/stempel[/:id|/neu]     Vorlagen für Stempel beim Weitergeben (#394), dreiteilig seit #990
  * /werkbank/auskuenfte[/:id|/neu|/einstellungen][?mappe=]  Datenschutz-Auskünfte (#396, #668), dreiteilig;
  *                                  früher /werkbank/datenschutz (leitet um)
@@ -275,7 +276,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = id ? <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-einen-nummernkreis')}</p></div>;
   } else if (bereich === 'automatisierungen') {
     liste = <AutomatisierungenListe z={automatisierungen} offen={id} />;
-    rechts = id ? <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} /> : <div className="platzhalter"><p>{t('automatisierung.ui.waehlen')}</p></div>;
+    // Ziele nach außen (#671): eigene Seite rechts, neben der Liste.
+    rechts = id === 'ziele' ? <AussenZiele nachher={() => void automatisierungen.laden()} />
+      : id ? <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} /> : <div className="platzhalter"><p>{t('automatisierung.ui.waehlen')}</p></div>;
   } else if (bereich === 'ablaufvorlagen') {
     // Automatisierungsvorlagen (#1044): dreiteilig wie die Automatisierungen.
     const kennung = id ? decodeURIComponent(id) : undefined;

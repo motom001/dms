@@ -42,7 +42,7 @@ The apps query Ablago at a fixed interval (which one is in the app's README). If
 Ablago keeps the two directions apart:
 
 - **Querying via the interface:** the home automation fetches the numbers itself – with the *counters only* key (see above). This is how the Homey app, Node-RED, ioBroker and your own scripts work.
-- **Reporting via automations:** if Ablago should report something to the outside on its own, an administrator will set this up under **Workbench → Automations**, with the Then card **"Call URL"**. This card comes with a later version ([#671](https://github.com/motom001/dms/issues/671)); until then the home automation queries.
+- **Reporting via automations:** if Ablago should report something to the outside on its own – such as a push message as soon as new post arrives –, an administrator sets this up under **Workbench → Automations**, with the Then card **"Call URL"** to an approved destination (for example a Home Assistant webhook on the home network). How this works is described in the administrator manual under [Reporting to the outside](https://help.ablago.app/admin/aktuell/en/automatisierungen/#nach-aussen).
 
 !!! note "No personal webhook under My account any more"
     Previously, every person could enter a webhook under **My account** that reported their numbers instantly; it came with the **Webhooks** area in the Workbench with approved destinations. Both have been removed ([#991](https://github.com/motom001/dms/issues/991)); Ablago removed any webhooks during the update. Querying with the *counters only* key stays as it is.

@@ -12,6 +12,8 @@
  *   „Sicherung anstoßen“ – mit genau den Werkbank-Rechten des Systemkontos (`automatisierung-werkbank.ts`).
  * - **Aufruf von außen** (#679): Wenn-Karte mit eigener Adresse und Geheimnis, Parameter als Platzhalter
  *   (`automatisierung-aufruf.ts`).
+ * - **Nach außen** (#671): Dann-Karten „URL aufrufen“ (nur freigegebene Ziele, Inhaltsstufen, Signatur) und „E-Mail
+ *   senden“ (`automatisierung-aussen.ts`).
  *
  * Gespeichert wird nur, was hier steht; `bereinigeAutomatisierung` schneidet alles andere ab. Was zu einer
  * Automatisierung nicht (mehr) passt (Mappentyp gelöscht, Feld fehlt …), meldet `automatisierungsProbleme` –
@@ -20,10 +22,13 @@
 import { EREIGNISKATALOG, KATALOG_ARTEN, wennFaehig, type BetriebWenn, type KatalogArt } from './ereignisse';
 import { bereinigeBetrieb, betriebKurz, betriebPlatzhalter, betriebProbleme, istBetrieb, type WennBetrieb } from './automatisierung-werkbank';
 import { aufrufKurz, aufrufPlatzhalter, bereinigeAufruf, istAufruf, type WennAufruf } from './automatisierung-aufruf';
-import { VORLAUF_EINHEITEN, type VorlaufEinheit } from './fristen';
+import { aussenKurz, aussenProbleme, bereinigeAussen, istAussenKarte, type AussenZiel, type DannEmail, type DannUrl } from './automatisierung-aussen';
+import { VORLAUF_EINHEITEN, vorlaufText, type VorlaufEinheit } from './fristen';
+// „Datum erreicht“ (#724): seit #671 in fristen.ts (dort passt es hin, und diese Datei bleibt unter 400 Zeilen).
+export { erreichteDaten, vorlaufText } from './fristen';
 import type { Feld, Mappentyp } from './model';
 import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
-import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, verschiebe, type Bedingung, type Sicht } from './sichten';
+import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, type Bedingung, type Sicht } from './sichten';
 import { t } from './texte';
 import { PAKET_ID, SCHLUESSEL } from './kennungen';
 
@@ -60,6 +65,7 @@ export const DMS_POST_AUTOMATISIERUNG_AB = '0.257.0';
 
 export * from './automatisierung-werkbank';
 export * from './automatisierung-aufruf';
+export * from './automatisierung-aussen';
 
 /** Reihenfolge (1–99): kleiner = früher; Vorgaben je Herkunft. */
 export const REIHENFOLGE = { min: 1, max: 99, eigen: 50, dms: 10, paket: 30 } as const;
@@ -155,14 +161,17 @@ export type DannKarte =
    */
   | { id: string; art: 'paket'; paket: string; aufgabe?: string | null }
   /** „Sicherung anstoßen“ (#677): eine neue Sicherung – Ergebnis nur „angestoßen“ oder „läuft schon“. */
-  | { id: string; art: 'sicherung' };
+  | { id: string; art: 'sicherung' }
+  /** Nach außen (#671): „URL aufrufen“ (freigegebenes Ziel, Inhaltsstufe, signiert) und „E-Mail senden“ – über den Ausgangskorb. */
+  | DannUrl | DannEmail;
 export type DannArt = DannKarte['art'];
-export const DANN_ARTEN: DannArt[] = ['feld', 'aufgabe', 'zusammenfassung', 'favoriten', 'anmeldeschutz', 'paket', 'sicherung', 'stopp'];
+export const DANN_ARTEN: DannArt[] = ['feld', 'aufgabe', 'zusammenfassung', 'favoriten', 'anmeldeschutz', 'paket', 'sicherung', 'url', 'email', 'stopp'];
 
 export type Herkunft = 'eigen' | 'dms' | 'paket';
 
 /** Warum eine Automatisierung angehalten ist (getrennt von „von Hand aus“). */
-export interface Angehalten { grund: 'fehlerhaft' | 'bremse' | 'wiederherstellung'; text: string; zeit: string }
+/** `ziel` (#671): Eine Zustellung nach außen ist dauerhaft gescheitert (Ziel nicht erreichbar, abgelehnt, nicht mehr freigegeben). */
+export interface Angehalten { grund: 'fehlerhaft' | 'bremse' | 'wiederherstellung' | 'ziel'; text: string; zeit: string }
 
 export interface AutomatisierungDaten {
   name: string;
@@ -229,6 +238,8 @@ export interface AutomatisierungAnsicht extends Automatisierung {
    * Ablago sieht nach Internet aus (sonst nur im Heimnetz nutzbar). null = noch keine Adresse angelegt.
    */
   aufruf?: { adresse: string; erstellt: string; geheimnisSeit: string; oeffentlich: boolean } | null;
+  /** „URL aufrufen“ (#671): Karten mit Geheimnis für die Signatur (ohne Geheimnis) – nur, wenn es solche Karten gibt. */
+  geheimnisse?: Array<{ karte: string; erstellt: string }>;
 }
 
 /* ---------- Kontext ---------- */
@@ -242,7 +253,8 @@ export interface KontextPaket { id: string; name: string; zeitplan: boolean; auf
 /** Was eine Prüfung über das DMS wissen muss. */
 export interface Kontextdaten { typen: Mappentyp[]; sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[]; benutzer: Array<{ id: string; name: string; aktiv?: boolean }>; rollen: Array<{ id: string; name: string }>;
   /** Installierte Pakete (#1082); fehlt bei älteren Aufrufern. */
-  pakete?: KontextPaket[] }
+  /** Dazu die freigegebenen Ziele nach außen (#671); fehlt = nicht geprüft (z. B. Vorschau beim Installieren eines Pakets). */
+  pakete?: KontextPaket[]; ziele?: AussenZiel[] }
 
 /** Passt die Wenn-Karte zur Karte „Paket nach Zeitplan ausführen“ (#1082)? Nur „Zeitplan“, nicht „für jeden Benutzer“. */
 export const zeitplanFuerPaket = (w: WennKarte) => w.art === 'zeitplan' && !w.jeBenutzer;
@@ -273,26 +285,6 @@ export function ausloeserSchluessel(w: WennKarte): string {
   // Aufruf von außen (#679): je Automatisierung eine eigene Adresse – der Server hängt die Id an (laufen nie gemeinsam).
   if (istBetrieb(w) || istAufruf(w)) return w.art;
   return w.art === 'datum' ? `datum|${w.typ}|${w.feld}|${w.vorlauf}|${w.einheit}` : `${w.art}|${w.typ ?? ''}`;
-}
-
-/**
- * „Datum erreicht“ (#724): Welche Feld-Daten sind an `tag` erreicht? Genau die D mit D − Vorlauf = tag. Bei Monaten
- * kappt das Monatsende (31.05. − 3 Monate = 28./29.02.) – am letzten Tag des Februars sind dann 28.–31.05. erreicht.
- */
-export function erreichteDaten(tag: string, vorlauf: number, einheit: VorlaufEinheit): string[] {
-  if (einheit !== 'monate') return [verschiebe(tag, vorlauf * (einheit === 'wochen' ? 7 : 1))];
-  const ziel = verschiebe(tag, vorlauf, 'monate');
-  const erg: string[] = [];
-  for (let d = `${ziel.slice(0, 8)}01`; d.slice(0, 7) === ziel.slice(0, 7); d = verschiebe(d, 1)) if (verschiebe(d, -vorlauf, 'monate') === tag) erg.push(d);
-  return erg;
-}
-
-/** Vorlauf lesbar: „heute“, „in 3 Monaten“, „vor 2 Wochen“. */
-export function vorlaufText(vorlauf: number, einheit: VorlaufEinheit): string {
-  if (!vorlauf) return 'heute';
-  const n = Math.abs(vorlauf);
-  const wort = einheit === 'tage' ? (t('gemeinsam.automatisierung.tagen', { anzahl: n })) : einheit === 'wochen' ? (t('gemeinsam.automatisierung.wochen', { anzahl: n })) : (t('gemeinsam.automatisierung.monaten', { anzahl: n }));
-  return `${vorlauf > 0 ? 'in' : 'vor'} ${n} ${wort}`;
 }
 
 /** Feste Platzhalter (außer den Feldern des Mappentyps). */
@@ -437,6 +429,8 @@ function bereinigeDann(e: unknown, i: number): DannKarte | null {
   // Karten ohne Einstellungen (#677: „Sicherung anstoßen“).
   if (OHNE_EINSTELLUNG.has(String(x.art))) return { id: kid, art: x.art as 'stopp' | 'zusammenfassung' | 'sicherung' };
   if (x.art === 'favoriten') return bereinigeFavoriten(x, kid);
+  // Nach außen (#671).
+  if (istAussenKarte({ art: String(x.art) })) return bereinigeAussen(x, kid, bereinigeEmpfaenger);
   if (x.art === 'anmeldeschutz') return { id: kid, art: 'anmeldeschutz', was: x.was === 'konto' ? 'konto' : 'sammel' };
   if (x.art === 'feld') {
     const w = x.werte && typeof x.werte === 'object' && !Array.isArray(x.werte) ? (x.werte as Record<string, unknown>) : {};
@@ -546,6 +540,8 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
     // #1082: Ein entferntes Paket ist kein Problem (die Karte läuft ins Leere, s. paketKarteLeer) – nur Wenn-Karte und Wahl.
     if (d.art === 'paket' && !zeitplanFuerPaket(w)) p.push(t('gemeinsam.automatisierung.paket-braucht-zeitplan'));
     if (d.art === 'paket' && !d.paket) p.push(t('gemeinsam.automatisierung.paket-waehlen'));
+    // Nach außen (#671): Ziel freigegeben, Inhaltsstufe passt zu Methode und Platzhaltern; E-Mail mit gültigem „An“.
+    p.push(...aussenProbleme(d, w, typ, k.ziele, (e) => empfaengerProblem(e, typ, k)));
     if (d.art === 'aufgabe') {
       if (!d.text) p.push(t('gemeinsam.automatisierung.aufgabe-bitte-beschreiben-was'));
       if (!d.empfaenger.length) p.push(t('gemeinsam.automatisierung.aufgabe-bitte-mindestens-einen'));
@@ -588,6 +584,7 @@ export function dannText(d: DannKarte, typ: Mappentyp | null, k: Pick<Kontextdat
     : d.art === 'favoriten' ? (d.rollen?.length ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden-an', { rollen: d.rollen.map((r) => k.rollen.find((x) => x.id === r)?.name ?? '?').join(', ') }) : t('gemeinsam.automatisierung.favoriten-aenderungen-melden'))
     : d.art === 'anmeldeschutz' ? (d.was === 'sammel' ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden') : t('gemeinsam.automatisierung.kontosperre-an-administratoren'))
     : d.art === 'sicherung' ? t('gemeinsam.automatisierung.sicherung-anstossen')
+    : d.art === 'url' || d.art === 'email' ? aussenKurz(d, wer)
     : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${d.aufgabe})` : '' })
     : d.art === 'feld' ? `${Object.keys(d.werte).map((x) => feldIn(typ, x)?.label ?? x).join(', ')} setzen`
       : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`;

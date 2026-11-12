@@ -2038,5 +2038,20 @@
   "anlagen.nur-pakete-mit-recht": "A package may only change enclosures with the right dms:anlagen and only in post.",
   "anlagen.post-mit-anlagen_one": "Split from “{betreff}”: document with one enclosure",
   "anlagen.post-mit-anlagen_other": "Split from “{betreff}”: document with {anzahl} enclosures",
-  "anlagen.zip-name": "{name} with enclosures.zip"
+  "anlagen.zip-name": "{name} with enclosures.zip",
+  "aussen.paket": "Automations supplied by a package do not call addresses.",
+  "aussen.keine-karte": "This automation has no \"Call URL\" card with this ID.",
+  "aussen.ziel": "{host} is not an approved destination.",
+  "aussen.bremse": "Limit: this automation has already sent {anzahl} e-mails in 24 hours.",
+  "aussen.bremse-alle": "Limit: all automations together have already sent {anzahl} e-mails in 24 hours.",
+  "aussen.verworfen": "discarded – automation paused or deleted",
+  "aussen.angehalten": "Delivery to {ziel} given up ({fehler}). Please check the destination and switch the automation on again.",
+  "aussen.geheimnis": "The secret for the signature cannot be read (key changed?) – please create a new one.",
+  "aussen.kein-mailversand": "Sending e-mail is not set up (Workbench → E-mail and address).",
+  "geheimnisse.aussen": "Call URL (secret for the signature)",
+  "geheimnisse.aussen.wo": "choose \"New secret\" on the \"Call URL\" card and enter it at the receiver",
+  "geheimnisse.aussen.was": "Secret of \"Call URL\" in \"{wert}\"",
+  "vollexport.nicht-enthalten-ausgang": "not included: deliveries to the outside (#671, log, technical)",
+  "vollexport.nicht-enthalten-aussen-geheimnisse": "not included: secrets of \"Call URL\" (#671) – create new ones after importing",
+  "pakete.automatisierung-aussen": "{wo}: \"Call URL\" and \"Send e-mail\" exist only in the Workbench, not in packages – passing data to the outside is decided by the administration itself."
 }

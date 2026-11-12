@@ -158,3 +158,23 @@ export interface Erinnerung {
   /** Für Listen. */
   mappeTitel?: string; typId?: string;
 }
+
+/**
+ * „Datum erreicht“ (#724): Welche Feld-Daten sind an `tag` erreicht? Genau die D mit D − Vorlauf = tag. Bei Monaten
+ * kappt das Monatsende (31.05. − 3 Monate = 28./29.02.) – am letzten Tag des Februars sind dann 28.–31.05. erreicht.
+ */
+export function erreichteDaten(tag: string, vorlauf: number, einheit: VorlaufEinheit): string[] {
+  if (einheit !== 'monate') return [verschiebe(tag, vorlauf * (einheit === 'wochen' ? 7 : 1))];
+  const ziel = verschiebe(tag, vorlauf, 'monate');
+  const erg: string[] = [];
+  for (let d = `${ziel.slice(0, 8)}01`; d.slice(0, 7) === ziel.slice(0, 7); d = verschiebe(d, 1)) if (verschiebe(d, -vorlauf, 'monate') === tag) erg.push(d);
+  return erg;
+}
+
+/** Vorlauf lesbar: „heute“, „in 3 Monaten“, „vor 2 Wochen“. */
+export function vorlaufText(vorlauf: number, einheit: VorlaufEinheit): string {
+  if (!vorlauf) return 'heute';
+  const n = Math.abs(vorlauf);
+  const wort = einheit === 'tage' ? (t('gemeinsam.automatisierung.tagen', { anzahl: n })) : einheit === 'wochen' ? (t('gemeinsam.automatisierung.wochen', { anzahl: n })) : (t('gemeinsam.automatisierung.monaten', { anzahl: n }));
+  return `${vorlauf > 0 ? 'in' : 'vor'} ${n} ${wort}`;
+}

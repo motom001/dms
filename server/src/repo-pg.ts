@@ -2380,6 +2380,11 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           const x = umschluesseleTief(r.geheimnis as string, um); zaehle(x);
           if (x.geaendert) await tx`UPDATE automatisierung_aufrufe SET geheimnis = ${x.wert} WHERE automatisierung_id = ${r.automatisierung_id}`;
         }
+        // URL aufrufen (#671): Geheimnis je Karte für die Signatur.
+        for (const r of await tx`SELECT automatisierung_id, karte, geheimnis FROM automatisierung_geheimnisse WHERE haushalt_id = ${haushaltId} AND geheimnis LIKE ${muster} FOR UPDATE`) {
+          const x = umschluesseleTief(r.geheimnis as string, um); zaehle(x);
+          if (x.geaendert) await tx`UPDATE automatisierung_geheimnisse SET geheimnis = ${x.wert} WHERE automatisierung_id = ${r.automatisierung_id} AND karte = ${r.karte}`;
+        }
         for (const [k, w] of Object.entries(einstellungen)) {
           await tx`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${tx.json(w as postgres.JSONValue)})
             ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
@@ -2389,7 +2394,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
 
     async verschluesselteFundstellen() {
-      // Dieselben Stellen wie umschluesseln (#410); Benutzername für die Zwei-Faktor-Anmeldung; Aufruf von außen (#679).
+      // Dieselben Stellen wie umschluesseln (#410); Benutzername für die Zwei-Faktor-Anmeldung; Aufruf von außen (#679); URL aufrufen (#671).
       const muster = '%dms1$%';
       const mappen = await sql`SELECT id, titel, werte FROM mappen WHERE haushalt_id = ${haushaltId} AND werte::text LIKE ${muster}`;
       const korb = await sql`SELECT id, mappe FROM papierkorb WHERE haushalt_id = ${haushaltId} AND mappe::text LIKE ${muster}`;
@@ -2399,11 +2404,14 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         WHERE e.haushalt_id = ${haushaltId} AND e.wert::text LIKE ${muster} ORDER BY e.schluessel`;
       const aufrufe = await sql`SELECT x.automatisierung_id, x.geheimnis, a.name FROM automatisierung_aufrufe x JOIN automatisierungen a ON a.id = x.automatisierung_id
         WHERE x.haushalt_id = ${haushaltId} AND x.geheimnis LIKE ${muster} ORDER BY x.erstellt, x.automatisierung_id`;
+      const aussen = await sql`SELECT x.automatisierung_id, x.karte, x.geheimnis, a.name FROM automatisierung_geheimnisse x JOIN automatisierungen a ON a.id = x.automatisierung_id
+        WHERE x.haushalt_id = ${haushaltId} AND x.geheimnis LIKE ${muster} ORDER BY x.erstellt, x.automatisierung_id, x.karte`;
       return [
         ...mappen.map((r) => ({ quelle: 'mappe' as const, schluessel: String(r.id), wert: r.werte, titel: r.titel as string })),
         ...korb.map((r) => ({ quelle: 'papierkorb' as const, schluessel: String(r.id), wert: r.mappe, titel: (r.mappe as { titel?: string }).titel ?? null })),
         ...einst.map((r) => ({ quelle: 'einstellung' as const, schluessel: r.schluessel as string, wert: r.wert, titel: (r.titel as string | null) ?? null })),
         ...aufrufe.map((r) => ({ quelle: 'aufruf' as const, schluessel: String(r.automatisierung_id), wert: r.geheimnis, titel: r.name as string })),
+        ...aussen.map((r) => ({ quelle: 'aussen' as const, schluessel: `${String(r.automatisierung_id)}:${String(r.karte)}`, wert: r.geheimnis, titel: r.name as string })),
       ];
     },
 

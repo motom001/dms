@@ -2038,5 +2038,20 @@
   "anlagen.nur-pakete-mit-recht": "Anlagen ändern darf ein Paket nur mit dem Recht dms:anlagen und nur in Post.",
   "anlagen.post-mit-anlagen_one": "Aus „{betreff}“ geteilt: Dokument mit einer Anlage",
   "anlagen.post-mit-anlagen_other": "Aus „{betreff}“ geteilt: Dokument mit {anzahl} Anlagen",
-  "anlagen.zip-name": "{name} mit Anlagen.zip"
+  "anlagen.zip-name": "{name} mit Anlagen.zip",
+  "aussen.paket": "Mitgelieferte Automatisierungen rufen keine Adressen auf.",
+  "aussen.keine-karte": "Diese Automatisierung hat keine Karte „URL aufrufen“ mit dieser Kennung.",
+  "aussen.ziel": "{host} ist kein freigegebenes Ziel.",
+  "aussen.bremse": "Bremse: Diese Automatisierung hat in 24 Stunden schon {anzahl} E-Mails verschickt.",
+  "aussen.bremse-alle": "Bremse: Alle Automatisierungen zusammen haben in 24 Stunden schon {anzahl} E-Mails verschickt.",
+  "aussen.verworfen": "verworfen – Automatisierung angehalten oder gelöscht",
+  "aussen.angehalten": "Zustellung an {ziel} aufgegeben ({fehler}). Bitte Ziel prüfen und die Automatisierung wieder einschalten.",
+  "aussen.geheimnis": "Das Geheimnis für die Signatur lässt sich nicht lesen (Schlüssel gewechselt?) – bitte ein neues anlegen.",
+  "aussen.kein-mailversand": "Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).",
+  "geheimnisse.aussen": "URL aufrufen (Geheimnis für die Signatur)",
+  "geheimnisse.aussen.wo": "an der Karte „URL aufrufen“ „Neues Geheimnis“ wählen und beim Empfänger eintragen",
+  "geheimnisse.aussen.was": "Geheimnis von „URL aufrufen“ in „{wert}“",
+  "vollexport.nicht-enthalten-ausgang": "nicht enthalten: Zustellungen nach außen (#671, Protokoll, technisch)",
+  "vollexport.nicht-enthalten-aussen-geheimnisse": "nicht enthalten: Geheimnisse von „URL aufrufen“ (#671) – nach dem Übernehmen neu anlegen",
+  "pakete.automatisierung-aussen": "{wo}: „URL aufrufen“ und „E-Mail senden“ gibt es nur in der Werkbank, nicht in Paketen – Daten nach außen zu geben, entscheidet die Verwaltung selbst."
 }

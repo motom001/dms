@@ -156,6 +156,9 @@ const HEIKEL: Record<string, HeikleHandlung> = {
   'POST /api/werkbank/betrieb/mail/oauth/abmelden': 'mailversand',
   // Aufruf von außen (#679): Adresse ohne Anmeldung anlegen oder erneuern, neues Geheimnis – Entfernen geht ohne.
   'POST /api/werkbank/automatisierungen/:id/aufruf': 'aufruf',
+  // Nach außen (#671): Ziele freigeben (wohin Daten gehen dürfen) und Geheimnis für die Signatur – Entfernen geht ohne.
+  'PUT /api/werkbank/automatisierungen/ziele': 'aussen',
+  'POST /api/werkbank/automatisierungen/:id/geheimnis/:karte': 'aussen',
 };
 
 /**

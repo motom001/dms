@@ -93,6 +93,7 @@ Der Vorrat zeigt nur, was zur Wenn-Karte passt: **Feld ändern** etwa nur, wenn 
 - **Anmeldeschutz melden** schickt allen, die den Anmeldeschutz verwalten, entweder die **Sammelmeldung** über die Sperren (mit *Zeitplan*, nicht je Benutzer) oder sofort eine Mail, wenn ein **Benutzerkonto gesperrt** wurde (mit *Benutzerkonto gesperrt*, je Konto höchstens einmal am Tag). Siehe [Anmeldeschutz](anmeldeschutz.md#mail-an-die-administratoren).
 - **Paket nach Zeitplan ausführen** (nur mit *Zeitplan*, nicht je Benutzer) sagt einem Paket, dass sein Zeitpunkt erreicht ist – siehe [unten](#paket-nach-zeitplan).
 - **Sicherung anstoßen** stößt eine neue Sicherung an – siehe [Werkbank-Karten](#sicherung-anstossen).
+- **URL aufrufen** meldet an ein freigegebenes Ziel, **E-Mail senden** schickt eine Mail – siehe [Nach außen melden](#nach-aussen).
 - **Danach keine weiteren Automatisierungen** beendet die Reihe: Automatisierungen mit höherer Nummer laufen für dieses Ereignis nicht mehr (im Verlauf „Übersprungen durch …“).
 
 Automatisierungen arbeiten mit dem **Systemkonto „Automatisierung“** (Werkbank → Benutzer). Was dieses Konto nicht lesen darf, überspringt die Automatisierung; Platzhalter zeigen dann „(nicht sichtbar)“. Bei Aufgaben gelten zusätzlich die Rechte des Empfängers (siehe oben).
@@ -228,6 +229,93 @@ Die [Übersicht der Werkbank](uebersicht.md) nennt jede eingeschaltete Automatis
 !!! note "Heimnetz"
     Die Adresse beginnt mit der Adresse von Ablago unter Werkbank → E-Mail und Adresse. Sieht sie nach Heimnetz aus, weist die Karte darauf hin: Aufrufe kommen dann nur aus deinem eigenen Netz an – für die Hausautomatisierung zu Hause genau richtig. Von unterwegs geht es nur, wenn Ablago [von außen erreichbar](datenschutz.md#erreichbarkeit-aus-dem-internet) ist. Wer am Reverse-Proxy nur die Aufrufe nach außen geben will, gibt `/api/aufruf/` frei.
 
+## Nach außen melden { #nach-aussen }
+
+Zwei Dann-Karten geben etwas aus Ablago hinaus: **URL aufrufen** (an ein anderes System, etwa die Hausautomatisierung oder ein Monitoring) und **E-Mail senden**. Beides ist eine bewusste Entscheidung der Verwaltung: Einrichten darf nur, wer *Automatisierungen* verwaltet; [Pakete](#aus-paketen) bringen diese Karten nie mit. Was hinausgeht, steht auch unter [Was deine Ablage verlässt](datenschutz.md#was-deine-ablage-verlasst).
+
+### Ziele nach außen { #ziele-nach-aussen }
+
+**URL aufrufen** ruft nur Adressen auf, die unter **Werkbank → Automatisierungen → Ziele nach außen** freigegeben sind (Link über der Liste). Ein Ziel ist der Anfang einer Adresse – Rechner und Pfad, z. B. `https://hooks.example.org/ablago`; alles darunter ist erlaubt, `https://hooks.example.org/ablagox` oder ein anderer Rechner nicht. Ändern fragt nach deinem Passwort (frische Anmeldung).
+
+- **https ist Pflicht.** Für Geräte im eigenen Netz (z. B. `http://homeassistant.local:8123/api/webhook`) hakst du **Im Heimnetz** an – erst dann gehen `http://` und Adressen im eigenen Netz.
+- **Schutz:** Ablago folgt **keinen Weiterleitungen**, löst den Namen selbst auf und verbindet sich nur mit öffentlichen Adressen (Heimnetz-Adressen nur bei Heimnetz-Zielen; die Metadaten-Adressen von Cloud-Anbietern nie). Ein Aufruf darf 10 Sekunden dauern; von der Antwort liest Ablago höchstens 64 KB und **verwirft** sie – es wertet sie nicht aus.
+- Fällt ein Ziel weg, nennt die Seite die betroffenen Automatisierungen; sie halten an, bis du die Karte änderst oder das Ziel wieder freigibst.
+
+![Ziele nach außen mit einem Ziel im Internet und einem im Heimnetz](bilder/werkbank-automatisierung-ziele.png)
+
+### URL aufrufen { #url-aufrufen }
+
+1. Ziel freigeben (siehe oben).
+2. Dann-Karte **URL aufrufen**: **Adresse** (unter einem Ziel, ohne Platzhalter), **Methode** `POST` oder `GET`, **Inhalt** (siehe unten) und optional **Parameter** – Name (klein, wie ein Platzhalter) und Wert mit Platzhaltern, z. B. `raum` = `{raum}`.
+3. Speichern. Danach kannst du an der Karte ein **Geheimnis** für die Signatur anlegen (frische Anmeldung). Es steht nur einmal vollständig da – kopiere es gleich in das empfangende System.
+
+![Dann-Karte „URL aufrufen“ mit Ziel, Inhalt und Parametern](bilder/werkbank-automatisierung-url.png)
+
+Bei `POST` schickt Ablago ein JSON-Objekt, bei `GET` dieselben Angaben in der Abfrage der Adresse:
+
+```json
+{
+  "ereignis": "post.angelegt",
+  "id": "1b6c…",
+  "zeit": "2026-11-12T08:15:00.000Z",
+  "automatisierung": "Neue Post melden",
+  "parameter": { "raum": "Flur" }
+}
+```
+
+Ablago ist dabei **kein API-Client**: keine eigenen Köpfe, keine Anmeldung beim anderen System, keine Vorlagen für den Inhalt, und die Antwort wertet es nicht aus. Braucht das andere System mehr, holt es sich das über die [Schnittstelle](api.md) – mit seinem eigenen Schlüssel und seinen Rechten.
+
+### Inhaltsstufen { #inhaltsstufen }
+
+| Inhalt | Was mitgeht |
+|---|---|
+| **Nur Meldung** (Vorgabe) | Ereignis, Ereignis-Id, Zeit, Name der Automatisierung – „da ist etwas passiert“ |
+| **Mit Kennungen** | dazu Mappen-Id, Mappentyp, die geänderten Feldschlüssel und ein Link in die Ablage – keine Werte |
+| **Mit Werten** | dazu Titel und Feldwerte der Mappe; bei *Mappe gespeichert* nur die geänderten Felder |
+
+- **Mit Werten** geht nur mit `POST` (Adressen mit Werten landen sonst in fremden Protokollen) und erst, wenn du bestätigst, dass **Daten Ablago verlassen**. Mit geht nur, was das Systemkonto „Automatisierung“ lesen darf – **nie** Passwortfelder oder verschlüsselte Werte.
+- **Platzhalter in Parametern** passen sich an: Bei *Nur Meldung* und *Mit Kennungen* nur solche ohne Inhalt der Ablage (`{heute}`, `{automatisierung}`, `{mappentyp}`, `{zeitpunkt}` … und die Parameter eines [Aufrufs von außen](#aufruf-von-aussen)). `{titel}` oder ein Feld gehen erst mit *Mit Werten* – sonst lässt sich die Karte nicht speichern.
+
+### Signatur prüfen beim Empfänger { #signatur-pruefen }
+
+Mit Geheimnis trägt jeder Aufruf dieselben Köpfe wie der [Aufruf von außen](#aufruf-von-aussen), nur in die andere Richtung:
+
+| Kopf | Inhalt |
+|---|---|
+| `X-DMS-Zeit` | Zeitpunkt in Sekunden seit 1970 |
+| `X-DMS-Signatur` | `v1=` und HMAC-SHA256 (hex) über `<X-DMS-Zeit>.<Inhalt>` mit dem Geheimnis – bei `GET` statt des Inhalts Pfad und Abfrage (`/hook?ereignis=…`) |
+| `X-DMS-Ereignis` | Id des Ereignisses – kommt ein Aufruf doppelt (Wiederholung), hat er dieselbe |
+
+So prüft das empfangende System (Beispiel in Python, Inhalt als Bytes, wie er ankam):
+
+```python
+import hmac, hashlib, time
+
+def von_ablago(geheimnis: str, zeit: str, signatur: str, inhalt: bytes) -> bool:
+    if abs(time.time() - int(zeit)) > 300:          # höchstens 5 Minuten alt
+        return False
+    soll = hmac.new(geheimnis.encode(), zeit.encode() + b"." + inhalt, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(f"v1={soll}", s.strip()) for s in signatur.split(","))
+```
+
+Oder in der Kommandozeile: `printf '%s.%s' "$ZEIT" "$INHALT" | openssl dgst -sha256 -hmac "$GEHEIMNIS"`. Ohne Geheimnis gehen die Aufrufe unsigniert hinaus – das empfangende System kann dann nicht prüfen, dass sie von Ablago kommen.
+
+### Zustellen, wiederholen, anhalten { #zustellen }
+
+Die Karte legt den Aufruf in den **Ausgangskorb**; Ablago stellt ihn gleich danach zu. Scheitert er (keine Verbindung, Zeitlimit, `408`, `429`, `5xx`), versucht Ablago es nach 1, 5 und 30 Minuten, 2 und 6 Stunden noch einmal. **Dauerfehler** – der letzte Versuch scheitert, eine Weiterleitung, `4xx`, eine gesperrte Adresse oder ein Ziel, das nicht mehr freigegeben ist – halten die Automatisierung an („Zustellung an … aufgegeben“); offene Aufrufe verwirft Ablago. Du siehst das in der Liste, in der [Übersicht](uebersicht.md) und in der Mail der technischen Aufgaben; nach dem Prüfen schaltest du die Automatisierung wieder ein.
+
+Im Bereich **Zustellungen** der Automatisierung stehen die letzten Aufrufe und Mails mit Ziel, Zustand und Fehler – **nie der Inhalt**; er wird nach der Zustellung gelöscht. Der Probelauf **trocken** zeigt nur, was hinausginge.
+
+### E-Mail senden { #e-mail-senden }
+
+**E-Mail senden** schickt eine Mail mit **Betreff** und **Text** (nur Text, mit Platzhaltern). Unter **An** stehen Personen, Rollen, Felder der Mappe (Verweis auf einen Benutzer oder ein Textfeld mit dem Format E-Mail), wer die Mappe angelegt hat – oder beliebige Adressen.
+
+- **Je Empfänger eine Mail.** Platzhalter füllt Ablago für Personen mit Konto mit **ihren Rechten** – was sie nicht sehen dürfen, steht als „(nicht sichtbar)“ da. Für feste Adressen gelten die Rechte des Systemkontos „Automatisierung“; überlege also, was du an fremde Adressen schreibst.
+- **Felder als Empfänger:** Wer das Feld ändern darf, bestimmt, wohin die Mail geht – das kann auch jemand ohne Verwaltung sein. Deshalb füllt Ablago die Platzhalter bei E-Mail-Feldern mit den Rechten der **Person, die das Ereignis ausgelöst hat** (zum Beispiel wer die Mappe gespeichert hat): Was sie nicht sehen darf, etwa den Titel einer verwiesenen Mappe, steht als „(nicht sichtbar)“ da. Nur ohne auslösende Person (Zeitplan, Datum erreicht, System, Probelauf) gelten die Rechte des Systemkontos. Der Editor zeigt diesen Hinweis, sobald unter **An** ein Feld steht.
+- **Hinweissatz:** Unter jeder Mail steht, welche Automatisierung von welcher Ablage sie verschickt hat und dass man sich zum Abbestellen an die Verwaltung wendet.
+- **Bremse:** höchstens 50 Mails je Automatisierung und 200 für alle zusammen in 24 Stunden, höchstens 50 Empfänger je Lauf; darüber scheitert der Lauf. Ist der E-Mail-Versand gestört, versucht Ablago es wie bei *URL aufrufen* später noch einmal.
+- Bei Fehlern im Modul *E-Mail* hilft eine Mail wenig – nimm dort eine Aufgabe oder **URL aufrufen**.
+
 ## Reihenfolge
 
 Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Nach Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
@@ -254,7 +342,7 @@ Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird 
 - In der Liste erkennst du sie an der Herkunft **aus Paket …**. Du kannst sie einschalten, anpassen und kopieren.
 - Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
 - Entfernst du das Paket, gehen seine Automatisierungen mit, wenn sie aus und unverändert sind.
-- [Werkbank-Karten](#werkbank-karten) und den [Aufruf von außen](#aufruf-von-aussen) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen.
+- [Werkbank-Karten](#werkbank-karten), den [Aufruf von außen](#aufruf-von-aussen) und die Karten [nach außen](#nach-aussen) (*URL aufrufen*, *E-Mail senden*) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen. Wohin Daten gehen, kann die Rechte-Vorschau eines Pakets nicht zeigen; das entscheidest du selbst.
 
 ### Vertretung
 
