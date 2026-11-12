@@ -66,6 +66,8 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/tresor*', 'verschluesselung'),
   // Das Notfallblatt trägt den Schlüssel aller Sicherungen: nur, wer die Verschlüsselung verwaltet (#993, Thomas 10.11.2026).
   R('GET', '/api/werkbank/notfallblatt', 'verschluesselung'),
+  // Notfallkontakte (#812, Durchsicht Sicherheit): gehören zum Notfallblatt; wer sie pflegt, verschickt Mails im Namen der Ablage.
+  R('*', '/api/werkbank/notfallkontakte*', 'verschluesselung'),
   R('GET', '/api/werkbank/datenschutz', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/datenschutz*', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/auskunft*', 'auskuenfte'),

@@ -87,6 +87,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
  * /werkbank/sicherung              Sicherung, Zeitplan, Probe, darunter Wiederherstellen (#103–#109, #725)
  * /werkbank/verschluesselung#notfallblatt  Notfallblatt (#106), seit #993 nur hier
+ * /werkbank/verschluesselung#notfallkontakte  Notfallkontakte (#812) für „Wen fragen?“ auf dem Notfallblatt
  * /werkbank/anbindung[?offen=:id] Datenbank-Anbindung (#119), darunter lange Zugriffe, aufklappbar,
  *                                 und was gerade läuft (#407; früher /werkbank/datenbank, leitet weiter)
  * /werkbank/systemzustand         Systemzustand: Warnschwelle und Grenze, darunter Speicherplatz je Ordner

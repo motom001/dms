@@ -22,6 +22,7 @@ import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/sr
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
 import { teileKennung, typKennung } from '../../shared/src/kennungen';
+import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
 /** Sprachmarke im Hinweis der Texterkennung (#395) samt Konfidenz, zum Ersetzen (#400). */
 const log = protokoll.modul('texterkennung');
 const SPRACHE_INFO_SQL = ' · Sprache: [a-z_]{3,10}( \\(\\d{1,3} %\\))?';
@@ -31,6 +32,13 @@ type Zeile = Record<string, unknown>;
 
 const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v));
 const isoOder = (v: unknown) => (v === null || v === undefined ? null : iso(v));
+/** Zeile der Tabelle notfallkontakte (#812). */
+const notfallkontaktAus = (z: Record<string, unknown>): Notfallkontakt => ({
+  id: z.id as string, name: z.name as string, email: z.email as string, telefon: z.telefon as string, notiz: z.notiz as string,
+  antwortAn: z.antwort_an === true, eingetragenVon: (z.eingetragen_von as string | null) ?? null, eingetragenVonName: z.eingetragen_von_name as string,
+  mailStand: z.mail_stand as Notfallkontakt['mailStand'], mailAm: isoOder(z.mail_am), mailFehler: (z.mail_fehler as string | null) ?? null,
+  erstellt: iso(z.erstellt), geaendert: iso(z.geaendert),
+});
 /** Abruf-Link (#455) aus einer Zeile. */
 const alsLink = (r: Record<string, unknown>): AuskunftLinkIntern => ({
   id: r.id as string, auskunftId: r.auskunft_id as string, mappeId: r.mappe_id as string, titel: (r.titel as string) ?? '',
@@ -2153,6 +2161,45 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         await tx`DELETE FROM synonyme WHERE haushalt_id = ${haushaltId} AND quelle = ${quelle}`;
         for (const g of gruppen) await tx`INSERT INTO synonyme (id, haushalt_id, woerter, quelle) VALUES (gen_random_uuid(), ${haushaltId}, ${g}::text[], ${quelle})`;
       });
+    },
+
+
+    /* ---------- Notfallkontakte (#812) ---------- */
+    async notfallkontakte() {
+      return (await sql`SELECT * FROM notfallkontakte WHERE haushalt_id = ${haushaltId} ORDER BY erstellt, id`).map(notfallkontaktAus);
+    },
+    async holeNotfallkontakt(id) {
+      if (!istUuid(id)) return null;
+      const [z] = await sql`SELECT * FROM notfallkontakte WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return z ? notfallkontaktAus(z) : null;
+    },
+    async legeNotfallkontaktAn(k, max) {
+      return sql.begin(async (tx) => {
+        // Grenze auch bei gleichzeitigen Anfragen und mehreren Prozessen (Durchsicht Sicherheit): Sperre je Haushalt
+        // bis zum Ende der Transaktion, dann zählen und anlegen.
+        await tx`SELECT pg_advisory_xact_lock(812, hashtext(${haushaltId}::text))`;
+        const [{ n }] = await tx`SELECT count(*)::int AS n FROM notfallkontakte WHERE haushalt_id = ${haushaltId}`;
+        if (Number(n) >= max) return false;
+        await tx`INSERT INTO notfallkontakte (id, haushalt_id, name, email, telefon, notiz, antwort_an, eingetragen_von, eingetragen_von_name, mail_stand, mail_am, mail_fehler, erstellt, geaendert)
+          VALUES (${k.id}, ${haushaltId}, ${k.name}, ${k.email}, ${k.telefon}, ${k.notiz}, ${k.antwortAn}, ${k.eingetragenVon}, ${k.eingetragenVonName}, ${k.mailStand}, ${k.mailAm}, ${k.mailFehler},
+            date_trunc('milliseconds', now()), date_trunc('milliseconds', now()))`;
+        return true;
+      });
+    },
+    async aendereNotfallkontakt(id, w) {
+      if (!istUuid(id)) return false;
+      return (await sql`UPDATE notfallkontakte SET name = ${w.name}, email = ${w.email}, telefon = ${w.telefon}, notiz = ${w.notiz}, antwort_an = ${w.antwortAn},
+        mail_stand = ${w.mailStand}, mail_am = ${w.mailAm}, mail_fehler = ${w.mailFehler}, geaendert = ${STAND_WEITER}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`).count > 0;
+    },
+    async setzeNotfallkontaktMail(id, m) {
+      if (!istUuid(id)) return false;
+      return (await sql`UPDATE notfallkontakte SET mail_stand = ${m.mailStand}, mail_am = ${m.mailAm}, mail_fehler = ${m.mailFehler} WHERE haushalt_id = ${haushaltId} AND id = ${id}`).count > 0;
+    },
+    async loescheNotfallkontakt(id) {
+      if (!istUuid(id)) return null;
+      const [z] = await sql`DELETE FROM notfallkontakte WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
+      return z ? notfallkontaktAus(z) : null;
     },
 
     /* ---------- Aufgaben (#54) ---------- */

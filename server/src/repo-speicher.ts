@@ -18,6 +18,7 @@ import { istZeitraum, zeitraumTage } from '../../shared/src/feldarten';
 import { feldweise, KonfigurationVeraltet, StandVeraltet, type AuskunftLinkIntern, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern, type Synonymgruppe, type Verweis } from './repo';
 import { passt as passtLoesch, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { t } from './sprache';
+import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
 
 /** Trefferlisten (#75) immer in beiden Formen: Liste der Trefferlisten und Spalten der Standardliste. */
 const listen = (d: MappentypDaten) => ({ trefferlisten: structuredClone(trefferlistenVon(d)), trefferliste: [...standardliste(d).spalten] });
@@ -114,6 +115,7 @@ export function speicherRepo(): Repo {
     return (b?.length === 1 ? [q, ...(v[falte(b[0])] ?? [])] : [q]).some((x) => normal(wert).includes(normal(x)));
   };
   const synonymListe: Synonymgruppe[] = [];
+  const notfallListe: Notfallkontakt[] = [];
   /** Wörter aus Titeln, Werten, Notizen und Volltexten mit ihrer Häufigkeit (wie dms_woerter in PostgreSQL). */
   const alleWoerter = () => {
     const n = new Map<string, number>();
@@ -496,6 +498,18 @@ export function speicherRepo(): Repo {
       for (let i = synonymListe.length - 1; i >= 0; i--) if (synonymListe[i].quelle === quelle) synonymListe.splice(i, 1);
       for (const g of gruppen) synonymListe.push({ id: randomUUID(), woerter: [...g], quelle, geaendert: jetzt() });
     },
+    // Notfallkontakte (#812): ein Prozess – die Grenze gilt ohne Sperre.
+    async notfallkontakte() { return notfallListe.map(kopie); },
+    async holeNotfallkontakt(id) { const k = notfallListe.find((x) => x.id === id); return k ? kopie(k) : null; },
+    async legeNotfallkontaktAn(k, max) { if (notfallListe.length >= max) return false; notfallListe.push(kopie(k)); return true; },
+    async aendereNotfallkontakt(id, w) {
+      const k = notfallListe.find((x) => x.id === id);
+      if (!k) return false;
+      Object.assign(k, kopie(w), { geaendert: standWeiter(k.geaendert) });
+      return true;
+    },
+    async setzeNotfallkontaktMail(id, m) { const k = notfallListe.find((x) => x.id === id); if (!k) return false; Object.assign(k, kopie(m)); return true; },
+    async loescheNotfallkontakt(id) { const i = notfallListe.findIndex((x) => x.id === id); return i < 0 ? null : notfallListe.splice(i, 1)[0]; },
     async gibtMappen(typIds) { const t = new Set(typIds); for (const m of mappen.values()) if (t.has(m.typId)) return true; return false; },
     async zaehler(benutzerId, admin, lesen) {
       const typen = new Map<string, { anzahl: number; unpassend: number; demo: number }>();

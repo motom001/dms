@@ -58,11 +58,24 @@ function logo(seite: PDFPage, s: Schriften, x: number, oben: number, groesse: nu
   seite.drawText('Ablago', { x: x + groesse * 1.2, y: oben - groesse * 0.69, size: groesse * 0.58, font: s.fett, color: BLAU });
 }
 
+/**
+ * Passen viele Notfallkontakte nicht mehr auf die Seite (#812), stehen sie auf einer zweiten Seite; auf der ersten
+ * verweist „Wen fragen?“ dorthin. Alles andere bleibt auf der ersten Seite.
+ */
 export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> {
+  try { return await zeichne(p, false); } catch (e) {
+    if (!(e instanceof ZuLang) || !p.fragen.kontakte.length) throw e;
+    return zeichne(p, true);
+  }
+}
+
+class ZuLang extends Error {}
+
+async function zeichne(p: NotfallblattPlan, fragenAufSeite2: boolean): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(angabe(p.dokumenttitel)); doc.setProducer('Ablago'); doc.setCreator('Ablago'); doc.setLanguage(gebietsschema());
   const s: Schriften = { ...await schriften(doc, ['normal', 'fett']), mono: await doc.embedFont(StandardFonts.CourierBold) };
-  const seite = doc.addPage([BREITE, HOEHE]);
+  let seite = doc.addPage([BREITE, HOEHE]);
   let y = HOEHE - RAND;
 
   /** Text mit Umbruch ab der aktuellen Zeile; liefert die Höhe. */
@@ -156,9 +169,27 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
   }
   if (p.ablage.warnung) text(p.ablage.warnung, { groesse: 8.5, farbe: LEISE });
 
-  // Wen fragen? Notfallkontakte (#812) – oder Zeilen zum Eintragen.
+  // Wen fragen? Notfallkontakte (#812) in zwei Spalten: Name fett, darunter Telefon und E-Mail, dann die Notiz leise.
+  // Passen sie nicht mehr auf die Seite, stehen sie auf Seite 2 – hier dann nur der Verweis – oder Zeilen zum Eintragen.
+  const SPALTE = (INNEN - 16) / 2;
+  const kontakte = () => {
+    for (let i = 0; i < p.fragen.kontakte.length; i += 2) {
+      const oben = y;
+      let unten = y;
+      p.fragen.kontakte.slice(i, i + 2).forEach((k, sp) => {
+        y = oben;
+        const x = RAND + sp * (SPALTE + 16);
+        text(k.name, { x, breite: SPALTE, font: s.fett, groesse: 9.5, abstand: 2 });
+        if (k.erreichbar) text(k.erreichbar, { x, breite: SPALTE, groesse: 9 });
+        if (k.notiz) text(k.notiz, { x, breite: SPALTE, groesse: 8, farbe: LEISE });
+        unten = Math.min(unten, y);
+      });
+      y = unten - 2;
+    }
+  };
   abschnitt(p.fragen.titel);
-  for (const k of p.fragen.kontakte) text(`${k.name} · ${k.erreichbar}`);
+  if (fragenAufSeite2) text(p.fragen.seite2, { groesse: 9.5 });
+  else kontakte();
   if (p.fragen.leer) {
     text(p.fragen.leer, { groesse: 9.5 });
     for (let i = 0; i < 2; i++) { y -= 20; seite.drawLine({ start: { x: RAND, y }, end: { x: RAND + INNEN, y }, thickness: 0.5, color: LINIE, dashArray: [2, 2] }); }
@@ -213,6 +244,21 @@ export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> 
   // Fuß: Linie und eine Zeile.
   seite.drawLine({ start: { x: RAND, y: RAND - 6 }, end: { x: rechts, y: RAND - 6 }, thickness: 0.5, color: LINIE });
   seite.drawText(pdfText(p.fuss, s.normal), { x: RAND, y: RAND - 18, size: 7.5, font: s.normal, color: LEISE });
-  if (y < RAND) throw new Error(`Notfallblatt passt nicht auf eine Seite (${Math.round(RAND - y)} pt zu lang)`);
+  /** Seite 2 (#812): Titel und Name der Ablage, „Wen fragen?“ mit allen Kontakten, derselbe Fuß. */
+  const zweiteSeite = () => {
+    seite = doc.addPage([BREITE, HOEHE]);
+    y = HOEHE - RAND;
+    seite.drawText(pdfText(p.kopf.titel, s.fett), { x: RAND, y: y - 14, size: 14, font: s.fett, color: TINTE });
+    const nb = s.fett.widthOfTextAtSize(pdfText(p.kopf.name, s.fett), 10);
+    seite.drawText(pdfText(p.kopf.name, s.fett), { x: rechts - Math.min(nb, 300), y: y - 14, size: 10, font: s.fett, color: BLAU });
+    y -= 24;
+    seite.drawLine({ start: { x: RAND, y }, end: { x: rechts, y }, thickness: 1.5, color: BLAU });
+    abschnitt(p.fragen.titel);
+    kontakte();
+    seite.drawLine({ start: { x: RAND, y: RAND - 6 }, end: { x: rechts, y: RAND - 6 }, thickness: 0.5, color: LINIE });
+    seite.drawText(pdfText(p.fuss, s.normal), { x: RAND, y: RAND - 18, size: 7.5, font: s.normal, color: LEISE });
+  };
+  if (y < RAND) throw new ZuLang(`Notfallblatt passt nicht auf eine Seite (${Math.round(RAND - y)} pt zu lang)`);
+  if (fragenAufSeite2) zweiteSeite();
   return doc.save();
 }

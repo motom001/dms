@@ -95,6 +95,8 @@ export const OHNE_FOLGEN = new Set<string>([
   'legeNotizAn', 'aendereNotiz', 'loescheNotiz', 'historieSchreibe', 'historieAufraeumen', 'kuerzeVersionen',
   // Unscharfe Suche (#356): Wörterverzeichnis und gleichbedeutende Wörter ändern keine Zahlen.
   'aehnlicheWoerter', 'woerterAnzahl', 'woerterNeu', 'woerterEinarbeiten', 'synonyme', 'legeSynonymAn', 'aendereSynonym', 'loescheSynonym', 'setzeSynonyme',
+  // Notfallkontakte (#812): stehen nur in der Werkbank und auf dem Notfallblatt.
+  'notfallkontakte', 'holeNotfallkontakt', 'legeNotfallkontaktAn', 'aendereNotfallkontakt', 'setzeNotfallkontaktMail', 'loescheNotfallkontakt',
   // Sprache eines Dokuments (#400): nur für die Volltextsuche.
   'setzeDokumentSprache',
   // Zähler-Endpunkt (#625): merkt sich nur den Stand der Zahlen.

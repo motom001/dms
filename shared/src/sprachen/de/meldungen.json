@@ -1967,5 +1967,22 @@
   "pakete.ablaufvorlage-typ": "{wo}: Mappentyp „{typ}“ gibt es weder im Paket noch in seinen Abhängigkeiten.",
   "pakete.ablaufvorlage-feld": "{wo}: Ein Feld als Empfänger geht nur mit Mappentypen (typen).",
   "pakete.ablaufvorlage-doppelt": "ablaufvorlagen: Schlüssel „{k}“ doppelt.",
-  "pakete.ablaufvorlage-ersetzt-doppelt": "ablaufvorlagen: „{k}“ wird mehrmals ersetzt."
+  "pakete.ablaufvorlage-ersetzt-doppelt": "ablaufvorlagen: „{k}“ wird mehrmals ersetzt.",
+  "notfallkontakte.name-leer": "Bitte einen Namen eingeben.",
+  "notfallkontakte.name-lang": "Der Name darf höchstens 60 Zeichen haben.",
+  "notfallkontakte.name-link": "Der Name darf weder „://“ noch „www.“ noch „@“ enthalten – ein Mailprogramm machte daraus sonst einen Link.",
+  "notfallkontakte.email": "Bitte eine gültige E-Mail-Adresse eingeben.",
+  "notfallkontakte.telefon-lang": "Die Telefonnummer darf höchstens 40 Zeichen haben.",
+  "notfallkontakte.notiz-lang": "Die Notiz darf höchstens 120 Zeichen haben.",
+  "notfallkontakte.eigener-name": "Die Info-Mail nennt dich mit Namen. Trage in deinem Profil einen Namen ohne „://“, „www.“ und „@“ ein.",
+  "notfallkontakte.ablage-name": "Der Name der Ablage enthält „://“, „www.“ oder „@“ und käme so in die Info-Mail. Ändere ihn zuerst.",
+  "notfallkontakte.max": "Höchstens {max} Notfallkontakte je Ablage.",
+  "notfallkontakte.unbekannt": "Diesen Notfallkontakt gibt es nicht (mehr).",
+  "notfallkontakte.antwort-nur-selbst": "„Antworten an meine E-Mail-Adresse“ kann nur die Person einschalten, die den Kontakt eingetragen hat.",
+  "notfallkontakte.ohne-versand": "Der E-Mail-Versand ist nicht eingerichtet. Die Info-Mail geht raus, sobald er eingerichtet ist.",
+  "notfallkontakte.erneut-heute": "Die Info-Mail an diesen Kontakt wurde heute schon erneut gesendet. Morgen geht es wieder.",
+  "notfallkontakte.grenze": "Heute sind schon {max} Mails an Notfallkontakte verschickt worden. Morgen geht es wieder.",
+  "notfallkontakte.mail-name": "Ein Name für die Mail fehlt oder sieht aus wie ein Link (eigener Name, Name der Ablage oder des Kontakts).",
+  "notfallkontakte.vertretung": "Notfallkontakte pflegt nur, wer selbst angemeldet ist – nicht in einer Vertretung.",
+  "vollexport.struktur-notfallkontakte-json": "struktur/notfallkontakte.json (#812, Notfallkontakte)"
 }

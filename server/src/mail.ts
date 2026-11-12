@@ -3,8 +3,11 @@ import { mitSpracheVon, t } from './sprache';
 import { darfBereich, hatGesamt } from '../../shared/src/verwaltungsrecht';
 /** Anhang einer E-Mail (#58). */
 export interface MailAnhang { name: string; mime: string; inhalt: Buffer | Readable }
-/** Weitere Angaben einer E-Mail: „Antworten an“ und Anhänge (#58). */
-export interface MailOptionen { antwortAn?: string; anhaenge?: MailAnhang[] }
+/**
+ * Weitere Angaben einer E-Mail: „Antworten an“ und Anhänge (#58). `anImProtokoll` (#812): So steht der Empfänger im
+ * Protokoll – etwa gekürzt (`l***@example.org`) bei Mails an Dritte, deren volle Adresse nicht ins Protokoll gehört.
+ */
+export interface MailOptionen { antwortAn?: string; anhaenge?: MailAnhang[]; anImProtokoll?: string }
 export interface Mailer { sende(an: string, betreff: string, text: string, optionen?: MailOptionen): Promise<void> }
 
 /**

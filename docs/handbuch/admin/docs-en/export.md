@@ -52,7 +52,7 @@ The folder and file names in the export are German:
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            structure, formats, check script
   manifest.json          format version, counts, size and SHA-256 of every file, where every table is
-  struktur/              Folder types, views, number sequences, packages (pakete.json), designs, automations and templates, users (without passwords)
+  struktur/              Folder types, views, number sequences, packages (pakete.json), designs, automations and templates, users (without passwords), emergency contacts
   daten/
     <typ>.csv  .jsonl  .xlsx   per folder type (identifier, from packages package.key): one row per folder, one column per field identifier
     verweise.csv           folder → field → folder

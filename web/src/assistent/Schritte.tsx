@@ -16,6 +16,8 @@ import { Symbol } from '../Symbol';
 import { PaketApiKontext, type PaketApi, type PaketWahl } from '../werkbank/PaketAblauf';
 import { PaketeDazuholen, VORAUSWAHL } from '../werkbank/PaketeDazuholen';
 import { MailSammeln, type MailGriff } from '../werkbank/MailVersand';
+import { eingabeFehler, KontaktFormular, leererKontakt } from '../werkbank/NotfallkontaktFormular';
+import { erreichbar, NOTFALLKONTAKTE_MAX, pruefeNotfallkontakt, type NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
 import { ZweifaktorEinrichten } from '../profil/Zweifaktor';
 import { PasskeyHinzufuegen } from '../profil/Passkeys';
 import { passkeysImBrowser } from '../passkey';
@@ -384,6 +386,51 @@ function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => voi
 
 const neueMail = (): MailSammlung => ({ aktiv: true, host: '', port: 587, verbindung: 'starttls', benutzer: '', absender: '', selbstsigniert: false, mitPasswort: false });
 
+/**
+ * Notfallkontakte im Schritt „Optionales“ (#812): nur gesammelt; angelegt werden sie bei „Jetzt einrichten“ mit dem
+ * Zugang des Assistenten (erstes Konto). Dasselbe Formular wie in Werkbank → Verschlüsselung.
+ */
+function NotfallSammeln({ liste, setze }: { liste: NotfallkontaktEingabe[]; setze: (l: NotfallkontaktEingabe[]) => void }) {
+  const [neu, setNeu] = useState<NotfallkontaktEingabe | null>(null);
+  const [fehler, setFehler] = useState<string[]>();
+  return (
+    <section className="blatt stapel" id="notfallkontakte">
+      <h2 className="h3">{t('einrichtung.optional.notfall.titel')}</h2>
+      <p className="leise klein">{t('einrichtung.optional.notfall.text')}</p>
+      {liste.length > 0 && (
+        <ul className="liste-einfach">
+          {liste.map((k, i) => (
+            <li key={`${k.email}-${i}`}>
+              <strong>{k.name}</strong> <span>{erreichbar(k)}</span>{k.notiz && <span className="leise"> – {k.notiz}</span>}{' '}
+              <Knopf art="link" groesse="klein" onClick={() => setze(liste.filter((_, j) => j !== i))}>{t('einrichtung.optional.notfall.entfernen')}</Knopf>
+            </li>
+          ))}
+        </ul>
+      )}
+      {neu ? (
+        <>
+          <KontaktFormular wert={neu} setze={setNeu} fehler={fehler} />
+          <div className="knoepfe">
+            <Knopf art="haupt" onClick={() => {
+              const f = eingabeFehler(neu);
+              setFehler(f);
+              if (f.length) return;
+              setze([...liste, pruefeNotfallkontakt(neu).wert]);
+              setNeu(null);
+            }}>{t('einrichtung.optional.notfall.uebernehmen')}</Knopf>
+            <Knopf art="link" onClick={() => { setNeu(null); setFehler(undefined); }}>{t('werkbank.notfallkontakte.abbrechen')}</Knopf>
+          </div>
+        </>
+      ) : (
+        <div className="knoepfe">
+          <Knopf art="anlegen" gesperrt={liste.length >= NOTFALLKONTAKTE_MAX ? t('werkbank.notfallkontakte.max', { max: NOTFALLKONTAKTE_MAX }) : false}
+            onClick={() => { setFehler(undefined); setNeu(leererKontakt()); }}>{t('werkbank.notfallkontakte.neu')}</Knopf>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void; leiste: Leiste }) {
   const [o, setO] = useState(s.optional);
   const [probleme, setProbleme] = useState<string[] | undefined>(s.probleme.optional);
@@ -436,6 +483,7 @@ function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
             <p className="leise klein">{t('einrichtung.optional.mail.testen')}</p>
           </>}
         </section>
+        <NotfallSammeln liste={o.notfallkontakte ?? []} setze={(l) => setO({ ...o, notfallkontakte: l })} />
         <Navigation sendet={x.sendet} fehler={x.fehler} zurueck={() => { merke(); zurueckVon('optional', zurWahl); }}
           weiter={() => void x.los(async () => {
             merke();
@@ -499,6 +547,7 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
             <dt>{t('einrichtung.optional.adresse')}</dt><dd>{s.optional.adresse.trim() || <span className="leise">{t('einrichtung.zf.adresse.keine')}</span>}</dd>
             <dt>{t('einrichtung.optional.bundesland')}</dt><dd>{s.optional.bundesland ? BUNDESLAENDER[s.optional.bundesland as keyof typeof BUNDESLAENDER] : <span className="leise">{t('einrichtung.optional.bundesland.keins')}</span>}</dd>
             <dt>{t('einrichtung.optional.beispiele.titel')}</dt><dd>{s.optional.beispiele ? t('einrichtung.zf.ja') : t('einrichtung.zf.nein')}</dd>
+            <dt>{t('einrichtung.optional.notfall.titel')}</dt><dd>{s.optional.notfallkontakte?.length ? s.optional.notfallkontakte.map((k) => `${k.name} (${k.email})`).join(', ') : <span className="leise">{t('einrichtung.zf.notfall.keine')}</span>}</dd>
             <dt>{t('einrichtung.optional.mail')}</dt><dd>{m ? `${m.host}:${m.port}${m.benutzer ? ` · ${m.benutzer}` : ''} · ${m.mitPasswort && geheim.mail ? t('einrichtung.zf.passwort.gesetzt') : t('einrichtung.zf.mail.ohne')}${m.aktiv ? '' : ` · ${t('einrichtung.zf.mail.aus')}`}` : <span className="leise">{t('einrichtung.zf.mail.keine')}</span>}</dd>
           </dl>
         </Abschnitt>
@@ -527,11 +576,11 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
 
 const STUFE_TEXT: Record<Stufe, string> = {
   ablage: 'einrichtung.lauf.ablage', schluessel: 'einrichtung.lauf.schluessel', adresse: 'einrichtung.lauf.adresse', region: 'einrichtung.lauf.region',
-  nutzung: 'einrichtung.lauf.nutzung', mail: 'einrichtung.lauf.mail', beispiele: 'einrichtung.lauf.beispiele', pakete: 'einrichtung.lauf.pakete',
+  nutzung: 'einrichtung.lauf.nutzung', mail: 'einrichtung.lauf.mail', notfallkontakte: 'einrichtung.lauf.notfallkontakte', beispiele: 'einrichtung.lauf.beispiele', pakete: 'einrichtung.lauf.pakete',
   organisation: 'einrichtung.lauf.organisation',
 };
 /** Welcher Schritt eine Stufe ändert (nach einem Fehler). */
-const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'nutzung', mail: 'optional', beispiele: 'optional', pakete: 'pakete', organisation: 'nutzung' };
+const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'nutzung', mail: 'optional', notfallkontakte: 'optional', beispiele: 'optional', pakete: 'pakete', organisation: 'nutzung' };
 
 function LaufAnsicht() {
   const st = useAssistent();

@@ -74,7 +74,7 @@ In the section **Emergency sheet** on this page, **Download emergency sheet** cr
 1. **Header:** logo, name of your Library, date and Ablago version.
 2. **Key:** large in groups of four for typing, plus its **fingerprint**. The zero is struck through, and below easily confused characters (`0` and `O`, `l`, `I` and `1`, `-` and `_`) it says in small print which one is meant. There is deliberately no QR code with the key – that would be one more way to get at it.
 3. **This Library:** address, **Library id** and, in one sentence, where the backups are – since 0.142 also the target of the [off-site copy](sicherung-ausser-haus.md) (package and address, without user and password).
-4. **Whom to ask?** Lines in which you enter who helps you in an emergency.
+4. **Whom to ask?** Your [emergency contacts](#notfallkontakte) with name, phone, email and note – without contacts, lines in which you enter by hand who helps you in an emergency. If many contacts with long details no longer fit on the page, they go on a second page and this section points there.
 5. **Something has happened?** The links to the help page [What has happened to you?](was-ist-passiert.md) – clickable and always written out with `https://`: `https://help.ablago.app/notfall` (English `https://help.ablago.app/emergency`) – and a **QR code** for it. Scan it with your phone, read there and work on the computer at the same time.
 6. **Locked out?** The **emergency code**: 28 characters in groups of four and your Library's address with `/notfall`. With it you get back in if you have locked yourself out – see [Getting back in with the emergency code](was-ist-passiert.md#notfallcode). It isn't the key and opens no backup.
 
@@ -101,6 +101,24 @@ It isn't on the emergency sheet. For a new system a new password is enough anywa
 **Keeping it:** printed in a safe place (e.g. with the family documents or in the business's safe) or as a PDF in a password safe – in any case **separately from the NAS** and not next to the backups. Whoever has the sheet can read the backups.
 
 Every download is recorded in the log (without the key). If the key changes ([Changing the key](#schlussel-wechseln)), the workbench points out that a new emergency sheet should be created; older backups still need the old one – keep it as long as there are such backups. How to spot them under [Backup](sicherung.md#notfallblatt) is described there.
+
+## Emergency contacts { #notfallkontakte }
+
+Below the emergency sheet you add **people you trust** who should be asked in an emergency – someone from the family who helped with the setup, for example. They then know that your Library exists **without getting access**: no account, no rights, no link.
+
+- **Add, edit, delete** with **Add emergency contact**, **Edit** and **Delete**: name and email, optionally phone and a **note** (e.g. "my brother, helped with the setup"). The note only appears on the emergency sheet, never in the email. At most **10** contacts per Library.
+- **Info email:** Ablago sends the contact a short email, text only, without a link, without an attachment and without your Library's address. It names you, the Library and the contact, says that they have **no access** and that they should tell you if they don't want to be listed. A mistyped address is harmless this way: whoever doesn't know you ignores the email.
+- **When an email goes out:** when adding, for a new address (to the new one) and when deleting (only if the contact received the info email). A changed name, phone or note sends nothing. **Send again** works once per contact and day. Without [email sending](e-mail-versand.md) set up, it says "Info email will be sent as soon as email is set up" – Ablago catches up within a few minutes once sending works.
+- **Replies to my email address:** with this tick (off by default) the contact's replies go to your address. Without it your address isn't in the email. Only the person who added the contact can switch it on.
+- **Names:** a name with `://`, `www.` or `@` is rejected – otherwise an email program would turn it into a link. This also applies to your own name and the Library name, because both appear in the email.
+- **Limits:** at most 20 of these emails per Library and day. Above that, Ablago refuses adding, a new address and send again for today. Deleting always works; the notice is then skipped.
+- **Print the emergency sheet again:** if the contacts change after the last emergency sheet, both sections remind you.
+
+Whoever manages the **Encryption** area (or has full administration) may manage the contacts, not while acting on someone's behalf. Each contact records who added it – the email names that person. The [log](fehlersuche.md#protokoll) records adding, editing, deleting and every info email with the contact's name and a **shortened address** (`j***@example.org`). You can also add emergency contacts in the [setup assistant](installation.md#optionales).
+
+![Workbench → Encryption, section Emergency contacts](bilder/werkbank-notfallkontakte.png)
+
+**Data protection:** emergency contacts are third-party data. They are in every [backup](sicherung.md) and in the [full export](export.md) (`struktur/notfallkontakte.json`), in the personal export of the person who added them, and in an [access copy](datenschutz.md#auskunft-nach-art-15-dsgvo) if the contact's address appears in the included folders. If you delete a contact, it's gone; backups keep it until they expire.
 
 ## States {#zustande}
 

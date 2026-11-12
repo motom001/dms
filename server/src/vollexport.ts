@@ -44,6 +44,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   pakete: 'struktur/pakete.json',
   designs: 'struktur/designs.json',
   synonyme: t('meldungen.vollexport.struktur-synonyme-json-356'),
+  notfallkontakte: t('meldungen.vollexport.struktur-notfallkontakte-json'),
   automatisierungen: t('meldungen.vollexport.struktur-automatisierungen-json-674'),
   automatisierung_fassungen: t('meldungen.vollexport.struktur-automatisierungen-json-674-2'),
   automatisierung_laeufe: t('meldungen.vollexport.nicht-enthalten-laeufe-der'),
@@ -127,6 +128,11 @@ export interface ExportQuelle {
   organisation?(): Promise<unknown>;
   /** Automatisierungen mit Änderungsverlauf (#674); fehlt bei Auskunft und persönlichem Export. */
   automatisierungen?(): Promise<unknown[]>;
+  /**
+   * Notfallkontakte (#812): im Vollexport alle; im persönlichen Export die selbst eingetragenen; in einer Auskunft die,
+   * deren Adresse in den aufgenommenen Mappen steht. Fehlt, wenn es keine gibt.
+   */
+  notfallkontakte?(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;
   papierkorb(): Promise<PapierkorbEintrag[]>;
   /** Einzeln gelöschte Dokumente (#344); fehlt bei älteren Quellen. */
@@ -381,6 +387,10 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   if (q.organisation) await w.schreibe('struktur/organisation.json', json(await q.organisation()));
   if (q.automatisierungen) await w.schreibe('struktur/automatisierungen.json', json(await q.automatisierungen()));
   if (q.ablaufvorlagen) await w.schreibe('struktur/ablaufvorlagen.json', json(await q.ablaufvorlagen()));
+  if (q.notfallkontakte) {
+    const k = await q.notfallkontakte();
+    if (k.length) await w.schreibe('struktur/notfallkontakte.json', json(k));
+  }
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
 
   // Daten je Mappentyp
@@ -593,7 +603,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | Ordner/Datei | Inhalt |
 | --- | --- |
 | \`manifest.json\` | Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht |
-| \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter) |
+| \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter), Notfallkontakte (\`notfallkontakte.json\`, falls vorhanden) |
 | \`daten/<typ>.csv\` | je Mappentyp eine Tabelle: eine Zeile je Mappe, eine Spalte je Feldschlüssel; Verweise als Id und \`_titel\`, bei mehreren Zieltypen dazu \`_typ\` |
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |

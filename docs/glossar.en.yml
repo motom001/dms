@@ -406,6 +406,9 @@ begriffe:
   Notfallblatt:
     begriff: Emergency sheet
     beschreibung: A PDF with the key and instructions for restoring.
+  Notfallkontakt:
+    begriff: Emergency contact
+    beschreibung: A person you trust who should be asked in an emergency. They appear on the emergency sheet and get a short info email, but no access.
   Sicherung:
     begriff: Backup
     beschreibung: An encrypted complete backup that can be restored in Ablago. Not an export – not readable without Ablago.

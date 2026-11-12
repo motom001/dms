@@ -451,7 +451,7 @@ Prüft, welche Rechte ein bestimmter Benutzer am Ende hat.
 Erkennt Text in Bildern und gescannten PDFs, damit er durchsuchbar wird.
 
 <a id="tagliche-zusammenfassung"></a>**Tägliche Zusammenfassung** · ✓ Alltagswort · alle  
-Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Automatisierungen ein (Automatisierung „Tägliche Zusammenfassung“ aus dem Paket Benachrichtigungen); Uhrzeit und Wochentage wählt jeder unter Mein Konto.  
+Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Einstellungen → Benachrichtigungen und Aufgaben ein; Uhrzeit und Wochentage wählt jeder unter Mein Konto.  
 Siehe auch: [Aufgabe](#aufgabe), [Zu erledigen](#zu-erledigen).
 
 <a id="umbau"></a>**Umbau** · ~ mit Erklärung · Administratoren  
@@ -524,6 +524,10 @@ Ein Benutzer lädt unter Mein Konto seine eigenen Daten herunter.
 
 <a id="notfallblatt"></a>**Notfallblatt** · ✓ Alltagswort · Administratoren  
 Ein PDF mit dem Schlüssel und einer Anleitung zur Wiederherstellung.
+
+<a id="notfallkontakt"></a>**Notfallkontakt** · ✓ Alltagswort · Administratoren  
+Eine Vertrauensperson, die im Ernstfall gefragt ist. Sie steht auf dem Notfallblatt und bekommt eine kurze Info-Mail, aber keinen Zugang.  
+Siehe auch: [Notfallblatt](#notfallblatt).
 
 <a id="probe-wiederherstellung"></a>**Probe-Wiederherstellung** · ~ mit Erklärung · Administratoren  
 Prüft eine Sicherung, ohne die echten Daten anzutasten.

@@ -394,6 +394,16 @@ async function einrichtenImBrowser(browser, bild) {
   await bild(s, 'einrichtung-pakete', { fullPage: true });
   await s.getByRole('button', { name: w('Überspringen') }).click();
   await s.getByRole('heading', { name: w('Optionales') }).waitFor();
+  // Notfallkontakte (#812): Markus als Vertrauensperson – angelegt mit „Jetzt einrichten“, auf dem Notfallblatt unter
+  // „Wen fragen?“ und unter Werkbank → Verschlüsselung (ohne E-Mail-Versand: „wird verschickt, sobald …“).
+  const nk = s.locator('#notfallkontakte');
+  await nk.getByRole('button', { name: w('Notfallkontakt hinzufügen') }).click();
+  await nk.getByLabel(w('Name'), { exact: true }).fill('Markus Beispiel');
+  await nk.getByLabel(w('E-Mail'), { exact: true }).fill('markus@example.org');
+  await nk.getByLabel(w('Telefon')).fill('0151 0000000');
+  await nk.getByLabel(w('Notiz')).fill('mein Bruder, hat beim Einrichten geholfen');
+  await nk.getByRole('button', { name: w('Übernehmen') }).click();
+  await nk.getByText('markus@example.org').waitFor();
   await bild(s, 'einrichtung-optional', { fullPage: true });
   // E-Mail-Versand im Assistenten (#813, #804): Häkchen setzen, Adresse ist die des Administrators; beim Verlassen
   // des Felds sucht Ablago den Server. Fürs Bild nur ausgefüllt, danach wieder abgewählt – gespeichert wird nichts.
@@ -1329,6 +1339,10 @@ async function main() {
   await geheZu(s, '/werkbank/verschluesselung#notfallblatt');
   await s.locator('#notfallblatt').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-notfallblatt');
+  // Notfallkontakte (#812): der Abschnitt unter dem Notfallblatt, mit Markus aus dem Einrichtungsassistenten.
+  await s.locator('#notfallkontakte').getByText('markus@example.org').waitFor();
+  await s.locator('#notfallkontakte').screenshot({ path: join(ZIEL, 'werkbank-notfallkontakte.png') });
+  erstellt.push('werkbank-notfallkontakte');
   const download = s.waitForEvent('download');
   await s.locator('#notfallblatt').getByRole('link', { name: w(/Notfallblatt herunterladen/) }).click();
   const pdf = join(ZIEL, 'notfallblatt.pdf');

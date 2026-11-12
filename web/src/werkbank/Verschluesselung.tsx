@@ -10,11 +10,13 @@ import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
+import { NotfallkontakteAbschnitt } from './Notfallkontakte';
 
 /**
  * Schlüssel für verschlüsselte Zugangsdaten (#39): Status, Fingerabdruck, Erzeugen
  * und die Liste der Werte, die (noch) nicht lesbar sind. Das Notfallblatt (#106, Notfallcode #815) steht seit #993
- * nur hier; Sicherung, Übersicht und Anmeldeschutz verlinken auf den Abschnitt `#notfallblatt`.
+ * nur hier; Sicherung, Übersicht und Anmeldeschutz verlinken auf den Abschnitt `#notfallblatt`. Darunter die
+ * Notfallkontakte (#812) für „Wen fragen?“ – sie gehören zum Notfallblatt.
  */
 
 const GEAENDERT = 'dms:tresor';
@@ -159,6 +161,8 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
 
       <Notfallblatt stand={s.notfallblatt} schluessel={s.zustand === 'vorhanden'} geladen={() => void eintrag.laden()} />
 
+      <NotfallkontakteAbschnitt geaendert={() => void eintrag.laden()} />
+
       {s.arten && s.arten.length > 0 && (
         <section className="blatt" id="arten">
           <h2 className="h3">{t('werkbank.verschluesselung.was-verschluesselt-ist')} <Hilfe ort="verschluesselung.arten" /></h2>
@@ -194,6 +198,7 @@ export function Notfallblatt({ stand, schluessel, geladen }: { stand: Notfallbla
       {stand?.am && <p className="leise klein">{t('werkbank.sicherung.zuletzt-heruntergeladen', { zeit: zeit(stand.am), wert: stand.von ? t('werkbank.sicherung.von-2', { von: stand.von }) : '' })}</p>}
       {stand && !stand.aktuell && stand.am && <div className="hinweis warn"><p><NotfallblattGrund n={stand} /></p></div>}
       {schluessel && stand && !stand.am && <div className="hinweis warn"><p><strong>{t('werkbank.sicherung.das-notfallblatt-fehlt')}</strong></p></div>}
+      {stand?.am && stand.aktuell && stand.kontakteGeaendert && <div className="hinweis warn" role="status"><p>{t('werkbank.notfallkontakte.blatt-neu')}</p></div>}
       <div className="knoepfe">
         {schluessel
           ? <a className="knopf primaer" href={NOTFALLBLATT_URL} download onClick={(e) => void heikelHerunterladen(e, NOTFALLBLATT_URL, () => { setTimeout(geladen, 1500); setTimeout(meldeSicherung, 1500); })}>{t('werkbank.sicherung.notfallblatt-herunterladen-pdf')}</a>

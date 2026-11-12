@@ -29,7 +29,7 @@ import { aufbewahrenBis, datumText, laeuftNochNicht } from '../../../shared/src/
 import { AUSKUNFT_PASSWORT_MIN, type AuskunftEintrag, type AuskunftErwaehnung, type AuskunftMappe, type AuskunftStand, auskunftVerzeichnis, type AuskunftVorschau, auswahlProbleme as auskunftProbleme, type Datenschutz, FRIST_SCHLUESSEL, FRIST_TEXT_ANFANG, fristBis, liesAuswahl, liesDatenschutz, personenTypen } from '../../../shared/src/auskunft';
 import { erkenneBildtyp } from '../../../shared/src/dateiumwandlung';
 import { alsText } from '../../../shared/src/markdown';
-import { type Aufgabe, auswahlText, type Benutzer, istLeer, type Mappe, type Mappentyp, MAX_DATEIGROESSE, verweiseVon, type Werte } from '../../../shared/src/model';
+import { type Aufgabe, auswahlText, type Benutzer, istEmail, istLeer, type Mappe, type Mappentyp, MAX_DATEIGROESSE, verweiseVon, type Werte } from '../../../shared/src/model';
 import { geschwaerztName, kannSchwaerzen } from '../../../shared/src/schwaerzen';
 import { heuteIn } from '../../../shared/src/sichten';
 import type { VollexportQuellen } from './vollexport';
@@ -236,6 +236,13 @@ export class DatenschutzDienst {
       papierkorb: async () => [], papierkorbDokumente: async () => [],
       // Nicht für Dritte (#683): Löschprotokoll, Synonyme und Automatisierungen betreffen den ganzen Haushalt.
       loeschprotokoll: undefined, synonyme: undefined, automatisierungen: undefined,
+      // Notfallkontakte (#812, Suche nach Adresse): eingetragen mit einer Adresse, die in den aufgenommenen Mappen steht –
+      // so bekommt auch ein Notfallkontakt, der Auskunft verlangt, seine Angaben.
+      notfallkontakte: async () => {
+        const adressen = new Set(mappen.flatMap((m) => Object.values(m.werte)).flatMap((v) => (Array.isArray(v) ? v : [v]))
+          .filter((v): v is string => typeof v === 'string' && istEmail(v.trim())).map((v) => v.trim().toLowerCase()));
+        return adressen.size ? (await this.repo.notfallkontakte()).filter((k) => adressen.has(k.email.toLowerCase())) : [];
+      },
       dokumente: async (ids) => (await this.repo.dokumenteVon(ids)).filter((d) => dok.has(d.id)),
       versionen: async () => [],
       // Die Auskunft enthält die Dokumente, wie sie abgelegt sind – ohne Fassungen von Paketen (#577).

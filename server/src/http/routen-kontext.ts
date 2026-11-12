@@ -22,6 +22,7 @@ import { t } from '../sprache';
 import type { LoeschkonzeptQuelle } from '../../../shared/src/loeschkonzept';
 import { AbrufBremse, AbrufTickets } from '../abruf';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
+import { erreichbar } from '../../../shared/src/notfallkontakte';
 import { Paketverwaltung } from '../pakete';
 import { Paketerstellung } from '../paketerstellung';
 import { Umwandlung } from '../umwandlung';
@@ -279,14 +280,18 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     const text = tresor2.alsText();
     if (!text || !tresor2.fingerabdruck) throw new Fachfehler(409, t('meldungen.routen.es-gibt-noch-keinen'));
     // #814: keine Ordner oder Dateinamen aus Docker oder vom NAS auf dem Blatt – nur Verweise ins Handbuch.
+    // Notfallkontakte (#812) unter „Wen fragen?“: Name, Telefon, E-Mail und Notiz.
+    const kontakte = await dienst.notfallkontakte.liste();
     const inhalt = await notfallblatt({
       name: (x.designs ? (await x.designs.marke()).schriftzug : null) || 'Ablago',
       haushaltId: x.sicherung?.haushaltId ?? '–',
       adresse: x.betrieb ? x.betrieb.ansicht().adresse || x.betrieb.adresseFuerLinks() : '',
       version: eigeneVersion(), erstellt: new Date(), schluessel: text, fingerabdruck: tresor2.fingerabdruck,
       aussenziele: x.sicherung ? await x.sicherung.externZiele().catch(() => []) : [],
+      kontakte: kontakte.map((k) => ({ name: k.name, erreichbar: erreichbar(k), notiz: k.notiz })),
       notfallcode: await konten.neuerNotfallcode(),
     });
+    await dienst.notfallkontakte.blattErstellt(kontakte);
     if (x.sicherung) await x.sicherung.notfallblattErstellt(von);
     else L.system.warn('Notfallblatt heruntergeladen', { von, fingerabdruck: tresor2.fingerabdruck });
     return inhalt;

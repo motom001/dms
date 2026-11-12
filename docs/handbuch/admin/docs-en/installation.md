@@ -95,12 +95,13 @@ If the catalogue can't be reached (no internet), the step says so clearly: then 
 
 ![Optional items](bilder/einrichtung-optional.png)
 
-Four sections of the same structure, without save buttons of their own:
+Five sections of the same structure, without save buttons of their own:
 
 - **Ablago's address**, suggested with the address in the browser. Clear the field if Ablago is not to have a fixed address.
 - **Region:** the state for public holidays, at first *none*. You set country and time zone under [Workbench → Settings → Region](region.md).
 - **Examples:** load sample folder types (only without packages that bring their own folder types).
 - **Email sending:** only after the tick "Set up email sending now". For [email sending](e-mail-versand.md) your address and password are usually enough; the assistant suggests server, user and sender and marks them, **Next** takes them over into the summary. Sending is only set up with **Set up now**. You can test it after setup under **Workbench → Email and address**.
+- **Emergency contacts:** people you trust for an emergency, with name, email and optionally phone and note. They get no access, only a short info email without a link once sending is set up, and appear on the emergency sheet under "Whom to ask?". They are added with **Set up now**; later you manage them under [Workbench → Encryption](verschluesselung.md#notfallkontakte). They are deliberately not in the configuration file – it's third-party data.
 
 Everything can also be set later in the Workbench.
 

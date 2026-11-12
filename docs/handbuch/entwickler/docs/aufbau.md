@@ -35,6 +35,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `mappen/` | Mappen, Historie, Papierkorb |
 | `dokumente/` | Dokumente, Fassungen, Inhalte |
 | `textsatz/` | Text setzen (#1040): Vorlagen einer Mappe, Brief aus Vorlage als PDF (`pdf/brief.ts`, getaggt, im Arbeiter) |
+| `notfallkontakte/` | Notfallkontakte (#812): Werkbank → Verschlüsselung, Info-Mail an Vertrauenspersonen (Grenzen im Kurzzustand), „Wen fragen?“ auf dem Notfallblatt |
 | `paketaktionen/` | Aktionen von Paketen im Menü „Mappe“ (#1039): Angebot je Person, Ablauf mit Dialog und Ergebnis, eingeschränkter Zugriff des Pakets, Schalter der Werkbank |
 
 Die Ordner heißen wie die Dienst-Module der Zielaufteilung; deren `*.dienst.ts` ziehen beim jeweiligen Umzug dazu – als Erstes `suche/suche.dienst.ts` ([Suche](#suche), #964). Jeder Fachordner mit `*.dienst.ts` hat eine `index.ts` als Tür und eine von Hand geschriebene `README.md` (20–40 Zeilen); das prüft die CI im Job **stil** (`.github/werkzeuge/fachordner-pruefen.mjs`). Welche Ordner was einbinden dürfen, regeln die [Schichten](#schichten). In `pakete/` liegt außerdem `pakete.einstellungen.ts` (#961): Katalogquellen, Paket-Einstellungen, Paket-Speicher, Entwürfe und Umwandlungen in den Einstellungen – von außen über `pakete/index.ts` (neben `pakete.ts` als `./pakete/index` importiert).
@@ -1000,7 +1001,7 @@ Ablago baut **von sich aus keine Verbindung** ins Internet auf. Jeder Weg nach d
 | --- | --- | --- | --- |
 | Paketkatalog | Administrator auf Knopfdruck, Einrichtungsassistent im Schritt „Pakete“ | nur die Anfrage an den Katalog | `server/src/pakete.ts`, `katalogsignatur.ts` |
 | Versionsabgleich | Administrator auf Knopfdruck (Werkbank → Technik) | Commit-Kennung, keine Daten der Ablage | `server/src/system.ts` |
-| E-Mail | Administrator richtet den Mailserver ein; Benutzer versenden | versandte Mappen und Dokumente, Tägliche Zusammenfassung (Titel, Links), Einladungen, Auskünfte | `server/src/mail.ts`, `aufgabenmail.ts` |
+| E-Mail | Administrator richtet den Mailserver ein; Benutzer versenden | versandte Mappen und Dokumente, Tägliche Zusammenfassung (Titel, Links), Einladungen, Auskünfte, Info-Mail an Notfallkontakte (#812: nur Text, kein Link, nur drei Namen; höchstens 20 je Tag) | `server/src/mail.ts`, `aufgabenmail.ts`, `notfallkontakte/` |
 | Postfach | Administrator richtet es ein | Abruf beim eigenen Mailserver | `server/src/postfach.ts`, `postfach-oauth.ts` |
 | Anmeldung über einen Anbieter | Administrator | Anmeldevorgang beim Anbieter | `server/src/oidc.ts` |
 | Paket-Netz | Administrator bestätigt bei der Installation | nur an die Adressen aus Manifest bzw. Dienst-Adresse | Paket-Läufer, Recht `netzwerk` |

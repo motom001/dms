@@ -41,6 +41,8 @@ export class VollexportQuellen {
       papierkorbDokumente: () => r.papierkorbDokumente(),
       loeschprotokoll: () => this.loeschprotokollAlle(),
       synonyme: () => r.synonyme(),
+      // Notfallkontakte (#812): personenbezogene Daten Dritter, gehören in den Vollexport (keine Geheimnisse).
+      notfallkontakte: () => r.notfallkontakte(),
       automatisierungen: () => this.automatisierungenExport?.() ?? Promise.resolve([]),
       // Gebündelt (#367): ein Zugriff je Paket, nicht je Mappe oder Dokument.
       dokumente: (ids) => r.dokumenteVon(ids),
@@ -111,6 +113,8 @@ export class VollexportQuellen {
       // gehören dem ganzen Haushalt (Werkbank) und stehen nur im Vollexport.
       papierkorbDokumente: async () => (await this.repo.papierkorbDokumente({ von: ich })),
       loeschprotokoll: undefined, synonyme: undefined, automatisierungen: undefined, ablaufvorlagen: undefined,
+      // Notfallkontakte (#812): die, die er selbst eingetragen hat.
+      notfallkontakte: async () => (await this.repo.notfallkontakte()).filter((k) => k.eingetragenVon === ich),
       aufgaben: async (ids) => (await this.repo.aufgabenVonMappen(ids)).filter((a) => a.empfaengerId === ich || a.erstelltVon === ich),
       // Geplante Abläufe (#1044): an ihn bzw. von ihm angelegt, an Mappen, die er lesen darf.
       ablaeufe: async () => (await this.repo.ablaeufe()).filter((e) => (e.empfaengerId === ich || e.erstelltVon === ich) && lesbar.has(e.mappeId)),

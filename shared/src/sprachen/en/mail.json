@@ -43,5 +43,13 @@
   "aufgabenmail.hallo-du-hast-offene_one": "Hello {name},\n\nyou have one open task in Ablago:\n\n{zeilen}\n\nYou’ll find all of them under “To do”: {basis}/ablage/eingang\n\nYou set the time and weekdays of this summary under “My account”; you can also unsubscribe there.\n",
   "aufgabenmail.hallo-du-hast-offene_other": "Hello {name},\n\nyou have {anzahl} open tasks in Ablago:\n\n{zeilen}\n\nYou’ll find all of them under “To do”: {basis}/ablage/eingang\n\nYou set the time and weekdays of this summary under “My account”; you can also unsubscribe there.\n",
   "aufgabenmail.offene-aufgaben_one": "one open task",
-  "aufgabenmail.offene-aufgaben_other": "{anzahl} open tasks"
+  "aufgabenmail.offene-aufgaben_other": "{anzahl} open tasks",
+  "notfallkontakt.info.betreff": "{wer} has added you as an emergency contact",
+  "notfallkontakt.info.text": "{wer} has added you as an emergency contact for the library “{ablage}” in Ablago. Ablago is a program in which {wer} keeps important documents.",
+  "notfallkontakt.info.zugang": "This gives you no access, and you don’t need to do anything. If {wer} needs help or something has happened, you are the one meant: then talk to {wer} or the family.",
+  "notfallkontakt.info.widerspruch": "If you don’t want to be an emergency contact, tell {wer}.",
+  "notfallkontakt.fremd": "If you don’t know {wer}, someone probably mistyped the address. Then you can ignore this message.",
+  "notfallkontakt.geloescht.betreff": "You are no longer an emergency contact of {wer}",
+  "notfallkontakt.geloescht.text": "{wer} has removed you as an emergency contact for the library “{ablage}” in Ablago. You don’t need to do anything.",
+  "notfallkontakt.ablage-ohne-name": "without a name"
 }

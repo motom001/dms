@@ -51,6 +51,7 @@ import { typenRouten, typenArchivRouten, berechtigungenRouten } from './mappenty
 import { werkbankRouten, werkbankUebersichtRouten, werkbankEinstellungenRouten } from './werkbank/werkbank.routen';
 import { exportRouten } from './ausgang/ausgang.routen';
 import { datenschutzRouten, abrufRouten } from './datenschutz/datenschutz.routen';
+import { notfallkontakteRouten } from './notfallkontakte/notfallkontakte.routen';
 import { organisationRouten } from './organisation/organisation.routen';
 import { textsatzRouten } from './textsatz/textsatz.routen';
 import { paketaktionenRouten } from './paketaktionen/paketaktionen.routen';
@@ -278,6 +279,7 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   exportRouten,
   datenschutzRouten,
   notfallRouten,
+  notfallkontakteRouten,
   abrufRouten,
   organisationRouten,
   textsatzRouten,

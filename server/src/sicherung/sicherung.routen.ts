@@ -69,7 +69,11 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
     { methode: 'PUT', pfad: '/api/sicherungen/:name/extern', zugang: 'angemeldet', handler: async (a) => ok(await sicherung().externRueckmeldung(await sicherungsPaket(a), a.params.name, a.body)) },
     { methode: 'GET', pfad: '/api/werkbank/notfallblatt', zugang: 'admin', handler: async (a) => notfallblattDatei(ich(a).email) },
 
-    { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => ok({ ...await tresor().status(), notfallblatt: x.sicherung ? await x.sicherung.notfallblatt() : null }) },
+    { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => {
+      const blatt = x.sicherung ? await x.sicherung.notfallblatt() : null;
+      // Notfallkontakte (#812) seit dem letzten Blatt geändert: „Notfallblatt neu ausdrucken“.
+      return ok({ ...await tresor().status(), notfallblatt: blatt ? { ...blatt, kontakteGeaendert: await dienst.notfallkontakte.blattVeraltet(blatt.am) } : null });
+    } },
     { methode: 'POST', pfad: '/api/werkbank/tresor/erzeugen', zugang: 'admin', handler: async () => ok(await tresor().erzeuge()) },
     // Schlüssel wechseln (#47): nur mit Bestätigung; danach neues Notfallblatt und neue Sicherung.
     { methode: 'POST', pfad: '/api/werkbank/tresor/wechseln', zugang: 'admin', handler: async (a) => {

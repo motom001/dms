@@ -35,6 +35,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `mappen/` | folders, history, recycle bin |
 | `dokumente/` | documents, versions, contents |
 | `textsatz/` | set text (#1040): templates of a folder, letter from template as PDF (`pdf/brief.ts`, tagged, in the worker) |
+| `notfallkontakte/` | emergency contacts (#812): Workbench → Encryption, info email to trusted people (limits in the short-lived state), “Whom to ask?” on the emergency sheet |
 | `paketaktionen/` | package actions in the “Folder” menu (#1039): offer per person, run with dialog and result, the package's restricted access, Workbench switches |
 
 The folders are named after the service modules of the target structure; their `*.dienst.ts` files join them when each one moves – first `suche/suche.dienst.ts` ([search](#suche), #964). Every subject folder with a `*.dienst.ts` has an `index.ts` as its door and a hand-written `README.md` (20–40 lines); CI checks this in the **stil** job (`.github/werkzeuge/fachordner-pruefen.mjs`). Which folders may import what is set by the [layers](#schichten). `pakete/` also holds `pakete.einstellungen.ts` (#961): catalogue sources, package settings, package storage, drafts and conversions in the settings – from outside via `pakete/index.ts` (imported as `./pakete/index` next to `pakete.ts`).
@@ -1000,7 +1001,7 @@ Ablago **never opens a connection** to the internet on its own. Every route to t
 | --- | --- | --- | --- |
 | Package catalogue | Administrator at the push of a button, setup assistant in the "Packages" step | only the request to the catalogue | `server/src/pakete.ts`, `katalogsignatur.ts` |
 | Version check | Administrator at the push of a button (Workbench → Technology) | commit identifier, no data from the Library | `server/src/system.ts` |
-| Email | Administrator sets up the mail server; users send | sent folders and documents, daily summary (titles, links), invitations, data protection requests | `server/src/mail.ts`, `aufgabenmail.ts` |
+| Email | Administrator sets up the mail server; users send | sent folders and documents, daily summary (titles, links), invitations, data protection requests, info email to emergency contacts (#812: text only, no link, only three names; at most 20 per day) | `server/src/mail.ts`, `aufgabenmail.ts`, `notfallkontakte/` |
 | Mailbox | Administrator sets it up | fetching from your own mail server | `server/src/postfach.ts`, `postfach-oauth.ts` |
 | Sign-in via a provider | Administrator | sign-in process with the provider | `server/src/oidc.ts` |
 | Package network | Administrator confirms on installation | only to the addresses from the manifest or service address | package runner, right `netzwerk` |

@@ -43,5 +43,13 @@
   "aufgabenmail.hallo-du-hast-offene_one": "Hallo {name},\n\ndu hast eine offene Aufgabe in Ablago:\n\n{zeilen}\n\nAlle findest du unter „Zu erledigen“: {basis}/ablage/eingang\n\nUhrzeit und Wochentage dieser Zusammenfassung stellst du unter „Mein Konto“ ein; dort kannst du sie auch abbestellen.\n",
   "aufgabenmail.hallo-du-hast-offene_other": "Hallo {name},\n\ndu hast {anzahl} offene Aufgaben in Ablago:\n\n{zeilen}\n\nAlle findest du unter „Zu erledigen“: {basis}/ablage/eingang\n\nUhrzeit und Wochentage dieser Zusammenfassung stellst du unter „Mein Konto“ ein; dort kannst du sie auch abbestellen.\n",
   "aufgabenmail.offene-aufgaben_one": "eine offene Aufgabe",
-  "aufgabenmail.offene-aufgaben_other": "{anzahl} offene Aufgaben"
+  "aufgabenmail.offene-aufgaben_other": "{anzahl} offene Aufgaben",
+  "notfallkontakt.info.betreff": "{wer} hat dich als Notfallkontakt eingetragen",
+  "notfallkontakt.info.text": "{wer} hat dich als Notfallkontakt für die Ablage „{ablage}“ in Ablago eingetragen. Ablago ist ein Programm, in dem {wer} wichtige Unterlagen aufbewahrt.",
+  "notfallkontakt.info.zugang": "Du hast dadurch keinen Zugang und musst nichts tun. Wenn {wer} Hilfe braucht oder etwas passiert ist, bist du gemeint: Sprich dann mit {wer} oder der Familie.",
+  "notfallkontakt.info.widerspruch": "Möchtest du nicht als Notfallkontakt eingetragen sein, sag es {wer}.",
+  "notfallkontakt.fremd": "Kennst du {wer} nicht, hat sich wohl jemand bei der Adresse vertippt. Dann kannst du diese Mail ignorieren.",
+  "notfallkontakt.geloescht.betreff": "Du bist nicht mehr Notfallkontakt von {wer}",
+  "notfallkontakt.geloescht.text": "{wer} hat dich als Notfallkontakt für die Ablage „{ablage}“ in Ablago ausgetragen. Du musst nichts tun.",
+  "notfallkontakt.ablage-ohne-name": "ohne Namen"
 }

@@ -341,6 +341,12 @@ const anVerwaltendeVon = (bereich?: string) => async (betreff: import('./mail').
 spDeps.wartung = wartung;
 // Eigene Organisation (#995): Notiz an die Verwaltenden, wenn sich Merkmal oder Verantwortliche ändern.
 dienst.verbindeVerwaltungsmail((bereich) => anVerwaltendeVon(bereich));
+// Notfallkontakte (#812): Info-Mail über den Versand von Ablago, Name der Ablage, eintragende Person.
+dienst.notfallkontakte.verbinde({
+  mailer: () => betrieb.mailer(),
+  ablageName: async () => (await mandantNamen(sql, cfg.haushalt).name().catch(() => '')) || (await designs.marke().catch(() => null))?.schriftzug || '',
+  person: (id) => konten.benutzerMitId(id),
+});
 spDeps.anAdmins = anVerwaltendeVon('systemzustand');
 // Anmeldeschutz (#240): Sperren in der Datenbank, einstellbar in der Werkbank.
 const anmeldesperre = new Anmeldesperre(pgEinstellungen(sql, cfg.haushalt), anVerwaltendeVon('anmeldeschutz'), Date.now, zustandDb);
@@ -779,6 +785,11 @@ if (leiter) {
     });
   }, 5000).unref();
   setInterval(() => void nurEiner('probe', () => wiederherstellung.tick()).catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })), 60_000).unref();
+  // Notfallkontakte (#812): Info-Mails, die auf den E-Mail-Versand gewartet haben – sobald er eingerichtet ist.
+  setInterval(() => {
+    if (wartung.aktiv || wiederherstellung.laeuft()) return;
+    void nurEiner('notfallkontakte', () => dienst.notfallkontakte.zustellen()).catch((e) => log.warn('Info-Mails an Notfallkontakte nicht verschickt', { fehler: (e as Error).message }));
+  }, 5 * 60_000).unref();
   // Abgelaufenes aus dem Kurzzustand (#744) wegräumen – Fehlversuche, Tickets, Merker.
   setInterval(() => void nurEiner('kurzzustand', () => zustandDb.raeumeAuf()).catch((e) => log.warn('Kurzzustand nicht aufgeräumt', { fehler: (e as Error).message })), 10 * 60_000).unref();
 } else {
