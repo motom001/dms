@@ -116,7 +116,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
   return (
     <div className="editorform">
       <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.nummernkreise.werkbank-nummernkreis')}</p>
+        <p className="ueber">{t('werkbank.nummernkreise.nummernkreis-2')}</p>
         <h1>{neu ? t('werkbank.nummernkreise.neuer-nummernkreis') : k!.name}</h1>
         {!neu && <p className="leise">{tn('werkbank.nummernkreise.im-standardwert-eines-textfelds', { code: <code className="mono">{t('werkbank.nummernkreise.nummernkreis', { schluessel: k!.schluessel })}</code> })}</p>}
       </div>

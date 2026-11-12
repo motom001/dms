@@ -8,7 +8,9 @@ import s from './Bereiche.module.css';
  * der Ansicht (#148) begann. Anleitung im Entwicklerhandbuch, „Gestaltung und Bausteine → Bereiche“.
  *
  * - `useBereiche(liste, editor, id)` hält, welche Bereiche offen sind: neu (`id` null) = alles offen, bestehend = wie
- *   zuletzt auf diesem Gerät (sonst zu), ein Anker in der Adresse (`#felder`) öffnet seinen Bereich und springt hin.
+ *   zuletzt auf diesem Gerät (sonst zu, mit `{ offen: true }` offen – für Editoren ohne Speichern), ein Anker in der
+ *   Adresse (`#felder`) öffnet seinen Bereich und springt hin.
+ * - Ein Sprung aus der Leiste öffnet den Bereich, rollt hin und setzt den Fokus auf seinen Kopf.
  * - `leiste()` zeichnet oben die Sprungleiste mit „Alle aufklappen / Alle zuklappen“ – erst ab drei Bereichen
  *   (`SPRUNGLEISTE_AB`). Kleinere Editoren zeigen ihre Bereiche fest offen, ohne Leiste und ohne Klappen.
  * - `Bereich` ist ein Blatt mit Kopf (Titel, Hilfe, Kurzinfo im zugeklappten Zustand) und Inhalt. Eingeklappt bleibt
@@ -93,7 +95,14 @@ export function fehlerBereiche<K extends string>(x: unknown, liste: BereichListe
 }
 
 const anker = () => (typeof location === 'undefined' ? '' : decodeURIComponent(location.hash.slice(1)));
-const springe = (k: string) => setTimeout(() => document.getElementById(k)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
+/**
+ * Zum Bereich rollen. `fokus`: danach den Fokus auf seinen Kopf setzen (nach einem Sprung aus der Leiste), damit Tab im
+ * Bereich weitergeht und nicht in der Sprungleiste bleibt (#1000, Musterkatalog C15).
+ */
+const springe = (k: string, fokus = false) => setTimeout(() => {
+  document.getElementById(k)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  if (fokus) document.getElementById(`${k}-kopf`)?.focus({ preventScroll: true });
+}, 30);
 
 export interface BereicheZustand<K extends string> {
   /** Offene Bereiche. */
@@ -102,21 +111,34 @@ export interface BereicheZustand<K extends string> {
   mitLeiste: boolean;
   /** Zustand eines Bereichs für `<Bereich klappe={…}>`; `fehler` färbt ihn. */
   klappe(k: K, fehler?: boolean): Klappe;
-  /** Bereiche öffnen und (Vorgabe) zum ersten springen – z. B. nach einem Fehler beim Speichern. */
-  oeffne(ks: K[], springen?: boolean): void;
+  /**
+   * Bereiche öffnen und (Vorgabe) zum ersten springen – z. B. nach einem Fehler beim Speichern. `fokus`: auch den
+   * Fokus auf seinen Kopf setzen, wie ein Sprung aus der Leiste (z. B. für einen Verweis „im Bereich …“ im Text).
+   */
+  oeffne(ks: K[], springen?: boolean, fokus?: boolean): void;
   /** Die Sprungleiste (oder nichts, unter drei Bereichen). `fehler` markiert Sprünge, `beschriftung` nennt den Editor. */
   leiste(fehler?: (k: K) => boolean, beschriftung?: string): ReactNode;
   /** Nach dem Anlegen: den offenen Zustand für die neue Kennung merken (bleibt aufgeklappt wie gerade). */
   merke(neueId: string): void;
 }
 
+/** Wahlweise Einstellungen für `useBereiche`. */
+export interface BereicheOptionen {
+  /**
+   * Bestehende Einträge offen starten, solange dieses Gerät nichts gemerkt hat – für Editoren ohne Speichern (nur
+   * Ansehen und Sofortaktionen, z. B. die Datenschutz-Auskunft), wo man sonst vor jeder Handlung erst aufklappen müsste.
+   */
+  offen?: boolean;
+}
+
 /**
  * Auf- und Zuklappen samt Sprungleiste für einen Editor. `editor` benennt den Speicherort (z. B. `'postfach'`),
  * `id` den Eintrag; `null` für „neu“ (dann ist alles offen und nichts wird gemerkt).
  */
-export function useBereiche<K extends string>(liste: BereichListe<K>, editor: string, id: string | null): BereicheZustand<K> {
+export function useBereiche<K extends string>(liste: BereichListe<K>, editor: string, id: string | null, optionen: BereicheOptionen = {}): BereicheZustand<K> {
   const [auf, setAuf] = useState<Set<K>>(() => {
-    const x = new Set<K>(!id ? liste.map(([k]) => k) : liesOffen<K>(editor, id) ?? []);
+    const alle = liste.map(([k]) => k);
+    const x = new Set<K>(!id ? alle : liesOffen<K>(editor, id) ?? (optionen.offen ? alle : []));
     const h = anker();
     if (liste.some(([k]) => k === h)) x.add(h as K);
     return x;
@@ -132,10 +154,10 @@ export function useBereiche<K extends string>(liste: BereichListe<K>, editor: st
   }, [neueKeys.join(' ')]); // eslint-disable-line react-hooks/exhaustive-deps -- nur wenn wirklich neue Bereiche dazukommen
   const stelle = (n: Set<K>) => { if (id) merkeOffen(editor, id, n); return n; };
   useEffect(() => { const h = anker(); if (liste.some(([k]) => k === h)) springe(h); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Sprungziel aus der Adresse nur beim ersten Anzeigen
-  const oeffne = (ks: K[], springen = true) => {
+  const oeffne = (ks: K[], springen = true, fokus = false) => {
     if (!ks.length) return;
     setAuf((x) => stelle(new Set([...x, ...ks])));
-    if (springen) springe(ks[0]);
+    if (springen) springe(ks[0], fokus);
   };
   const klappe = (k: K, fehler?: boolean): Klappe => (mitLeiste ? {
     offen: auf.has(k), fehler,
@@ -145,7 +167,7 @@ export function useBereiche<K extends string>(liste: BereichListe<K>, editor: st
   const leiste = (fehler: (k: K) => boolean = () => false, beschriftung = t('oberflaeche.bereiche.leiste')) => (!mitLeiste ? null : (
     <nav className={s.leiste} aria-label={beschriftung} data-sprungleiste="">
       {liste.map(([k, name]) => (
-        <button key={k} type="button" className={klassen(s.sprung, auf.has(k) && s.an, fehler(k) && s.fehler)} onClick={() => oeffne([k])}
+        <button key={k} type="button" className={klassen(s.sprung, auf.has(k) && s.an, fehler(k) && s.fehler)} onClick={() => oeffne([k], true, true)}
           title={fehler(k) ? t('oberflaeche.bereiche.fehler-name', { name }) : name}>
           {name}{fehler(k) && <span className={s.fehlerpunkt} aria-label={t('oberflaeche.bereiche.mit-fehler')}>!</span>}
         </button>

@@ -167,7 +167,7 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
   const links = s.links.filter((l) => l.auskunftId === e.id);
   const b = e.bereit;
   // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; gemerkt je Auskunft. Aus „Erzeugen → Zustellen“ steht Zustellen offen.
-  const bereiche = useBereiche(auskunftBereiche(e, links.length), 'auskunft', e.id);
+  const bereiche = useBereiche(auskunftBereiche(e, links.length), 'auskunft', e.id, { offen: true });
   useEffect(() => { if (zustellen && b) bereiche.oeffne(['zustellen']); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim ersten Anzeigen
   return (
     <div className="editorform">

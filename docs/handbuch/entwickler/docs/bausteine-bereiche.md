@@ -7,9 +7,9 @@
 ## Verhalten { #verhalten }
 
 - **Neu** (`id` ist `null`): alles offen, nichts wird gemerkt.
-- **Bestehend:** wie zuletzt auf diesem Gerät (`localStorage`, je Editor die zuletzt bearbeiteten 200 Einträge); ohne Gedächtnis zugeklappt. Mappentypen und Ansichten behalten ihre bisherigen Speicherorte (`dms.typeditor.offen`, `dms.sichteditor.offen`), alle anderen heißen `dms.<editor>editor.offen`.
+- **Bestehend:** wie zuletzt auf diesem Gerät (`localStorage`, je Editor die zuletzt bearbeiteten 200 Einträge); ohne Gedächtnis zugeklappt. **Editoren ohne Speichern** (nur Ansehen und Sofortaktionen, z. B. die Datenschutz-Auskunft) übergeben `{ offen: true }` und starten offen, solange das Gerät nichts gemerkt hat. Mappentypen und Ansichten behalten ihre bisherigen Speicherorte (`dms.typeditor.offen`, `dms.sichteditor.offen`), alle anderen heißen `dms.<editor>editor.offen`.
 - **Anker in der Adresse** (`…/werkbank/postfaecher/<id>#verbindung`) öffnet seinen Bereich und springt hin.
-- **Sprungleiste:** jeder Sprung öffnet seinen Bereich und rollt dorthin; ein Bereich mit Fehler ist rot und trägt „!“. Am Desktop bleibt die Leiste unter dem Seitenkopf stehen, am Handy (bis 700 px) rollt sie mit.
+- **Sprungleiste:** jeder Sprung öffnet seinen Bereich, rollt dorthin und setzt den Fokus auf den Kopf des Bereichs (`focus({ preventScroll: true })`) – mit der Tastatur geht Tab danach im Bereich weiter; ein Bereich mit Fehler ist rot und trägt „!“. Am Desktop bleibt die Leiste unter dem Seitenkopf stehen, am Handy (bis 700 px) rollt sie mit.
 - **Unter drei Bereichen** (`SPRUNGLEISTE_AB`) gibt es weder Leiste noch Klappen: Die Bereiche stehen fest offen, nur mit ihrem Titel.
 - **Eingeklappt** bleibt der Inhalt im Dokument (nur verborgen) – Eingaben, Ergebnisse und laufende Abfragen gehen nicht verloren. Die Kurzinfo (`kurz`) steht dann unter dem Titel.
 
@@ -40,7 +40,7 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 
 | Teil | Wofür |
 | --- | --- |
-| `useBereiche(liste, editor, id)` | Zustand: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste` |
+| `useBereiche(liste, editor, id, optionen?)` | Zustand: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?, fokus?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste`; `optionen.offen` für Editoren ohne Speichern |
 | `Bereich` | `id` (zugleich Anker), `titel`, `klappe`; dazu `hilfe` (Hilfesymbol hinter dem Titel), `kurz` (Kurzinfo zugeklappt), `beschreibung` (Satz über dem Inhalt), `className` |
 | `fehlerBereiche(fehler, liste, ersatz)` | Bereiche eines Fehlers beim Speichern: `details.orte` der Antwort des Servers, nur bekannte; sonst `ersatz` |
 | `liesOffen`, `merkeOffen` | das Gedächtnis direkt, z. B. für Tests |
@@ -51,7 +51,9 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 - **Sofortaktionen bleiben sofort:** Testen, Abrufen, Zurücksetzen, Abmelden, Sperren – alles, was eine eigene Handlung ist und nicht zum Entwurf gehört.
 - **Fehler öffnen ihren Bereich.** Prüft die Oberfläche selbst (z. B. ein unbekannter Platzhalter), markiert `klappe(k, true)` den Bereich schon beim Tippen. Was erst der Server findet, nennt er als `details.orte` (`Fachfehler(422, text, { orte: ['verbindung'] })`); `fehlerBereiche` liest es, `oeffne(orte)` klappt auf und springt hin.
 - **Bereichsnamen kurz und gleich:** *Grunddaten* zuerst, dann in der Reihenfolge, in der man den Eintrag einrichtet; Ausprobieren, Stand und Verlauf ans Ende.
-- **Überschriften:** Der Bereich trägt die `h2`; Abschnitte darin nehmen `h3` (`className="h4"`), nicht noch ein `blatt`.
+- **Überschriften:** Der Bereich trägt die `h2`; Abschnitte darin nehmen `h3` (`className="h4"`), nicht noch ein `blatt` oder einen Kasten mit derselben Überschrift.
+- **Rot heißt Fehler.** Bereiche werden nicht als Gefahrenzone gefärbt – Rot bedeutet im Editor „hier ist beim Speichern etwas schiefgegangen“. Gefährliches zeigen der rote Knopf (`art="gefahr"`) und die Rückfrage.
+- **Verweise auf einen anderen Bereich** („wähle einen im Bereich *Vertretung*“) sind ein Sprung: ein `Knopf` der Art Link, der `oeffne([k], true, true)` ruft.
 
 ## Am Handy { #handy }
 

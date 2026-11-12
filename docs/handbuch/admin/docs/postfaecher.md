@@ -9,7 +9,7 @@ Ablago kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede 
 
 ## Postfach einrichten
 
-**Werkbank → Postfächer → + Neu**. Rechts ist das Postfach wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Abrufen, Name, Für) **→ Verbindung** (Server bis Passwort, mit **Verbindung testen**) **→ Abholen** (Ordner bis Original-Mail) **→ Anmeldung per OAuth 2.0** (nur mit OAuth) **→ Stand** (nach dem Anlegen). Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „Ordner INBOX · alle 5 Minuten“; was du aufklappst, merkt sich dein Gerät je Postfach. **Postfach speichern** unten speichert Grunddaten, Verbindung und Abholen auf einmal; lehnt Ablago eine Angabe ab, ist ihr Bereich rot markiert und aufgeklappt.
+**Werkbank → Postfächer → + Neu**. Rechts ist das Postfach wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Automatisch abrufen, Name, Für) **→ Verbindung** (Server bis Passwort, mit **Verbindung testen**) **→ Anmeldung per OAuth 2.0** (nur mit OAuth, gleich nach der Wahl in *Verbindung*) **→ Abholen** (Ordner bis Original-Mail) **→ Stand** (nach dem Anlegen). Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „Ordner INBOX · alle 5 Minuten“; was du aufklappst, merkt sich dein Gerät je Postfach. **Postfach speichern** unten speichert Grunddaten, Verbindung und Abholen auf einmal; lehnt Ablago eine Angabe ab, ist ihr Bereich rot markiert und aufgeklappt.
 
 ![Ein Postfach am Handy: Sprungleiste und Bereiche](bilder/werkbank-postfach-handy.png){ width="320" }
 

@@ -77,7 +77,7 @@
   "ui.fehlgeschlagen.einer": "1 run failed: {name}, {zeit}.",
   "ui.fehlgeschlagen_one": "{anzahl} run failed.",
   "ui.fehlgeschlagen_other": "{anzahl} runs failed.",
-  "ui.gegenstand": "the automation",
+  "ui.gegenstand": "Automation",
   "ui.geloescht": "Deleted.",
   "ui.gespeichert": "Saved.",
   "ui.herkunft.dms": "from Ablago",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { geraetText, istGeradeAktiv, KEINE_ABWESENHEIT, type Abwesenheit, type Benutzer, type Sitzung } from '../../../shared/src/model';
 import { GESAMT, verwaltungsbaum } from '../../../shared/src/verwaltungsrecht';
 import { bereichName } from '../../../shared/src/werkbankansicht';
@@ -71,23 +71,38 @@ const rechteKurz = (e: Entwurf) => (!e.verwaltung.length ? t('werkbank.benutzer.
 const vertretungKurz = (a: Abwesenheit, person: (id: string | null) => string) => (a.an ? t('werkbank.benutzer.vertreten-durch', { person: person(a.vertreterId) }) : t('werkbank.benutzer.bereich.vertretung.aus'));
 const gleich = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+/** Teile, die „Benutzer speichern“ einzeln schickt – für die Meldung, was gespeichert ist und was nicht. */
+type Teil = 'name' | 'rollen' | 'verwaltung' | 'vertretung';
+const teilName = (teil: Teil) => t(`werkbank.benutzer.teil.${teil}`);
+
 /**
  * Ein Speichern für den ganzen Benutzer (#1000): nacheinander nur die geänderten Teile – Name und Rollen, das
  * Verwaltungsrecht (mit frischer Anmeldung, #819) und die Vertretung. Scheitert ein Teil, ist das Vorige gespeichert;
- * der Fehler nennt seinen Bereich.
+ * der Fehler nennt seinen Bereich, den gescheiterten Teil und was schon gespeichert ist.
  */
 async function speichereBenutzer(b: Benutzer, e: Entwurf, darfVerwaltung: boolean): Promise<void> {
   const alt = entwurfVon(b);
-  const schritte: Array<[BenutzerBereich, boolean, () => Promise<unknown>]> = [
-    ['grunddaten', alt.name !== e.name, () => api.benutzerAendern(b.id, { name: e.name })],
-    ['rechte', !gleich(alt.rollen, [...e.rollen].sort()), () => api.benutzerAendern(b.id, { rollen: e.rollen })],
-    ['rechte', darfVerwaltung && !gleich(alt.verwaltung, [...e.verwaltung].sort()), () => api.verwaltungSetzen(b.id, e.verwaltung)],
-    ['vertretung', !gleich(alt.abwesenheit, e.abwesenheit), () => api.benutzerAbwesenheit(b.id, e.abwesenheit)],
+  const schritte: Array<[BenutzerBereich, Teil, boolean, () => Promise<unknown>]> = [
+    ['grunddaten', 'name', alt.name !== e.name, () => api.benutzerAendern(b.id, { name: e.name })],
+    ['rechte', 'rollen', !gleich(alt.rollen, [...e.rollen].sort()), () => api.benutzerAendern(b.id, { rollen: e.rollen })],
+    ['rechte', 'verwaltung', darfVerwaltung && !gleich(alt.verwaltung, [...e.verwaltung].sort()), () => api.verwaltungSetzen(b.id, e.verwaltung)],
+    ['vertretung', 'vertretung', !gleich(alt.abwesenheit, e.abwesenheit), () => api.benutzerAbwesenheit(b.id, e.abwesenheit)],
   ];
-  for (const [ort, noetig, f] of schritte) {
+  const gespeichert: Teil[] = [];
+  for (const [ort, teil, noetig, f] of schritte) {
     if (!noetig) continue;
-    try { await f(); } catch (x) { throw Object.assign(x as Error, { ort }); }
+    try { await f(); } catch (x) { throw Object.assign(x as Error, { ort, teil, gespeichert }); }
+    gespeichert.push(teil);
   }
+}
+
+/** Meldung an der Speicherleiste nach einem Fehler: was gespeichert ist, was nicht und warum. */
+function teilweiseText(x: { message: string; teil?: Teil; gespeichert?: Teil[] }): string {
+  if (!x.teil) return x.message;
+  const werte = { fehlt: teilName(x.teil), fehler: x.message };
+  return x.gespeichert?.length
+    ? t('werkbank.benutzer.teilweise-gespeichert', { ...werte, gespeichert: x.gespeichert.map(teilName).join(', ') })
+    : t('werkbank.benutzer.nicht-gespeichert', werte);
 }
 
 export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void> }) {
@@ -99,11 +114,13 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
   const gespeichert = entwurfVon(b);
   const [e, setE] = useState<Entwurf>(gespeichert);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  // Fehler beim Speichern stehen nur an der Speicherleiste (B2), Meldungen der Sofortaktionen oben.
+  const [speicherFehler, setSpeicherFehler] = useState<string>();
   const [ergebnis, setErgebnis] = useState<LinkErgebnis>();
   const [sendet, setSendet] = useState(false);
   const [fehlerOrt, setFehlerOrt] = useState<BenutzerBereich | null>(null);
   // Reihenfolge der Haken zählt nicht als Änderung.
-  const ent = useEntwurf(gespeichert, { ...e, rollen: [...e.rollen].sort(), verwaltung: [...e.verwaltung].sort() }, { zuruecksetzen: () => { setE(gespeichert); setFehlerOrt(null); } });
+  const ent = useEntwurf(gespeichert, { ...e, rollen: [...e.rollen].sort(), verwaltung: [...e.verwaltung].sort() }, { zuruecksetzen: () => { setE(gespeichert); setFehlerOrt(null); setSpeicherFehler(undefined); } });
   const selbst = b.id === ich.id;
   const s = status(b);
   // Verwaltungsrecht ändern darf nur, wer selbst „Gesamte Verwaltung“ hat (#818).
@@ -119,14 +136,14 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   async function speichern() {
-    setSendet(true); setMeldung(undefined); setFehlerOrt(null);
+    setSendet(true); setMeldung(undefined); setSpeicherFehler(undefined); setFehlerOrt(null);
     try {
       await speichereBenutzer(b, e, darfVerwaltung);
       setMeldung({ art: 'gut', text: t('werkbank.benutzer.gespeichert') });
       uebernehmen.current = true;
     } catch (x) {
       const ort = (x as { ort?: BenutzerBereich }).ort ?? 'grunddaten';
-      setMeldung({ art: 'schlecht', text: (x as Error).message });
+      setSpeicherFehler(teilweiseText(x as Error & { teil?: Teil; gespeichert?: Teil[] }));
       setFehlerOrt(ort); b2.oeffne([ort]);
     } finally {
       // Auch nach einem Fehler neu laden: Was davor gelang, ist gespeichert und zählt nicht mehr als Änderung.
@@ -139,7 +156,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
   return (
     <div className="editorform">
       <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.benutzer.benutzer')}</p>
+        <p className="ueber">{t('werkbank.benutzer.ueber')}</p>
         <h1>{b.name || b.email}</h1>
         <dl className="index">
           <div><dt>{t('werkbank.benutzer.status')}</dt><dd><span className={`chip ${s.art}`}>{s.text}</span></dd></div>
@@ -177,7 +194,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
       </form>
       <Sicherheit b={b} b2={b2} aktion={aktion} setErgebnis={setErgebnis} neuLaden={neuLaden} loeschbar={loeschbar} />
       {(!selbst || !b.aktiv) && <Zugang b={b} b2={b2} selbst={selbst} loeschbar={loeschbar} aktion={aktion} />}
-      <Speicherleiste ent={ent} gegenstand={t('werkbank.benutzer.benutzer')} sendet={sendet} formular="benutzer-formular" meldung={meldung?.art === 'schlecht' ? meldung : undefined} />
+      <Speicherleiste ent={ent} gegenstand={t('werkbank.benutzer.ueber')} sendet={sendet} formular="benutzer-formular" meldung={speicherFehler ? { art: 'schlecht', text: speicherFehler } : undefined} />
     </div>
   );
 }
@@ -223,9 +240,15 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
     </Bereich>
   );
   if (selbst) return null;
-  const gruende = [!vertreter && t('werkbank.benutzer.es-ist-kein-vertreter'), offen > 0 && t('werkbank.benutzer.hat-noch-offene-aufgaben', { anzahl: offen, name, wert: vertreter ? t('werkbank.benutzer.gib-sie-oben-an', { vertreter }) : '.' })].filter(Boolean) as string[];
+  // „im Bereich Vertretung“ als Sprung: öffnet ihn, rollt hin und setzt den Fokus auf seinen Kopf.
+  const bereich = <Knopf art="link" onClick={() => b2.oeffne(['vertretung'], true, true)}>{t('werkbank.benutzer.bereich.vertretung')}</Knopf>;
+  const gruende: Array<[string, ReactNode]> = [];
+  if (!vertreter) gruende.push(['vertreter', tn('werkbank.benutzer.es-ist-kein-vertreter', { bereich })]);
+  if (offen > 0) gruende.push(['aufgaben', tn('werkbank.benutzer.hat-noch-offene-aufgaben', { anzahl: offen, name, wert: vertreter ? tn('werkbank.benutzer.gib-sie-oben-an', { vertreter, bereich }) : '.' })]);
+  // Kein Rot für den Bereich (Musterkatalog C15): Rot heißt hier „Fehler beim Speichern“; die Gefahr zeigen der rote
+  // Knopf (C14) und die Rückfrage (B4).
   return (
-    <Bereich id="zugang" titel={t('werkbank.benutzer.bereich.zugang')} className="gefahrenzone" klappe={b2.klappe('zugang')} kurz={t('werkbank.benutzer.bereich.zugang.kurz')}>
+    <Bereich id="zugang" titel={t('werkbank.benutzer.bereich.zugang')} klappe={b2.klappe('zugang')} kurz={t('werkbank.benutzer.bereich.zugang.kurz')}>
       <div>
         <h3 className="h4">{t('werkbank.benutzer.fehler-nachstellen')}</h3>
         <p className="leise">{t('werkbank.benutzer.du-siehst-und-bedienst', { wert: name })}</p>
@@ -243,7 +266,7 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
           <li>{t('werkbank.benutzer.der-vertreter-bleibt-hinterlegt', { name })}</li>
           <li>{tn('werkbank.benutzer.macht-es-jederzeit-rueckgaengig', { b: <strong>{t('werkbank.benutzer.aktivieren')}</strong> })}</li>
         </ul>
-        {gruende.length > 0 && <div className="hinweis warn stapel"><p>{t('konten.sperren.nochnicht')}</p><ul>{gruende.map((g) => <li key={g}>{g}</li>)}</ul></div>}
+        {gruende.length > 0 && <div className="hinweis warn stapel"><p>{t('konten.sperren.nochnicht')}</p><ul>{gruende.map(([k, g]) => <li key={k}>{g}</li>)}</ul></div>}
         <div className="knoepfe">
           {loeschbar && <Knopf className="gefahr-rand" onClick={async () => {
             if (await rueckfrage({ titel: t('werkbank.benutzer.einladung-loeschen'), text: t('werkbank.benutzer.die-einladung-an-wird', { email: b.email }), ja: t('werkbank.benutzer.einladung-loeschen-2'), gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); });

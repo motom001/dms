@@ -36,7 +36,7 @@ If the folder type has a tab **History**, it shows the story of the folder, newe
 
 ![History of a folder](bilder/protokoll.png)
 
-Entries with a **▸** in front can be expanded; at the end it says what's behind them (e.g. "3 fields", "before/after", "2 attachments"). **Expand all** opens all at once. Names lead to the user's folder.
+Entries with a **▸** in front can be expanded; at the end it says what's behind them (e.g. "3 fields", "before/after", "2 attachments"). **Expand all entries** opens all at once. Names lead to the user's folder.
 
 **Retrievals:** Ablago also records who **downloaded** a file and when – in the interface (with and without a stamp, also as an export), with an **API key** or via the [drive](laufwerk.md) – with the route, the file and the version (original, older version, archive version …). Viewing in the browser doesn't count. If the same person retrieves the same file the same way several times on the same day – Explorer and Office often read a file many times – it appears once; a retrieval on a later day gets its own entry.
 

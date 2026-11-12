@@ -1,6 +1,6 @@
 /**
  * Baustein Bereiche (#1000): Sprungleiste ab drei Bereichen mit „Alle aufklappen / Alle zuklappen“, neu alles offen,
- * bestehend wie zuletzt auf diesem Gerät (sonst zu), Anker in der Adresse öffnet seinen Bereich, unter drei Bereichen
+ * bestehend wie zuletzt auf diesem Gerät (sonst zu, mit `{ offen: true }` offen), Anker in der Adresse öffnet seinen Bereich, unter drei Bereichen
  * fest offen ohne Klappen; Fehler am Bereich und in der Leiste; `fehlerBereiche` liest `details.orte`.
  * Gezeichnet mit react-dom/server wie baustein-knopf.test.ts.
  */
@@ -32,8 +32,8 @@ const VIER = [['grunddaten', 'Grunddaten'], ['verbindung', 'Verbindung'], ['abho
 const ZWEI = [['grunddaten', 'Grunddaten'], ['rechte', 'Rollen und Rechte']] as const;
 
 /** Ein kleiner Editor: Leiste und Bereiche; `fehler` markiert einen Bereich. */
-function Editor({ liste, id, fehler }: { liste: ReadonlyArray<readonly [string, string]>; id: string | null; fehler?: string }) {
-  const b = useBereiche(liste, 'test', id);
+function Editor({ liste, id, fehler, offenStart }: { liste: ReadonlyArray<readonly [string, string]>; id: string | null; fehler?: string; offenStart?: boolean }) {
+  const b = useBereiche(liste, 'test', id, { offen: offenStart });
   return h('div', null, b.leiste((k: string) => k === fehler, 'Bereiche des Tests'),
     ...liste.map(([k, name]) => h(Bereich, { key: k, id: k, titel: name, kurz: `kurz ${k}`, klappe: b.klappe(k, k === fehler) }, h('p', null, `inhalt ${k}`))));
 }
@@ -60,6 +60,14 @@ describe('Baustein Bereiche (#1000)', () => {
     html = zeichne(h(Editor, { liste: VIER, id: 'c' }));
     assert.ok(offen(html, 'stand') && !offen(html, 'abholen'));
     g.location = new URL('http://127.0.0.1/');
+  });
+
+  it('Editoren ohne Speichern ({ offen: true }): offen, solange das Gerät nichts gemerkt hat', () => {
+    let html = zeichne(h(Editor, { liste: VIER, id: 'o', offenStart: true }));
+    for (const [k] of VIER) assert.ok(offen(html, k), k);
+    merkeOffen('test', 'o', ['stand']);
+    html = zeichne(h(Editor, { liste: VIER, id: 'o', offenStart: true }));
+    assert.ok(offen(html, 'stand') && !offen(html, 'grunddaten'));
   });
 
   it('Mappentypen und Ansichten behalten ihren Speicherort', () => {

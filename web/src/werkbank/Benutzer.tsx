@@ -167,7 +167,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
         <WeitereRollen gewaehlt={rollen} setze={setRollen} />
         <p className="leise klein">{t('werkbank.verwaltungsrecht.neu')}</p>
       </Bereich>
-      <Speicherleiste ent={ent} gegenstand={t('werkbank.benutzer.benutzer')} sendet={sendet} haupttext={mail ? t('werkbank.benutzer.benutzer-anlegen-und-einladen') : undefined} />
+      <Speicherleiste ent={ent} gegenstand={t('werkbank.benutzer.ueber')} sendet={sendet} haupttext={mail ? t('werkbank.benutzer.benutzer-anlegen-und-einladen') : undefined} />
     </form>
   );
 }

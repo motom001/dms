@@ -302,7 +302,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
         <Bereich id="wenn" titel={t('automatisierung.ui.wenn')} klappe={klappe('wenn')} kurz={kurzWenn}>
           <div className="zeile"><Knopf art="link" groesse="klein" aria-expanded={vorratOffen} onClick={() => setVorratOffen(!vorratOffen)}>{t('automatisierung.ui.vorrat')}</Knopf></div>
           {vorratOffen && <Vorrat ablage={ablage} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}
-          <Bereichskasten titel={t('automatisierung.ui.wenn')} hinweis={t('automatisierung.ui.wenn.hinweis')} ablage={ablage.ablage('wenn')}>
+          <Bereichskasten hinweis={t('automatisierung.ui.wenn.hinweis')} ablage={ablage.ablage('wenn')}>
             <WennEditor w={e.wenn} k={k} setze={(w) => setE({ ...e, wenn: w })} />
           </Bereichskasten>
           <div className="automatisierung-pfeil" aria-hidden="true">↓</div>
@@ -317,7 +317,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
         </Bereich>
         <Bereich id="dann" titel={t('automatisierung.ui.dann')} klappe={klappe('dann')}
           kurz={e.dann.length ? e.dann.map((x) => vorratName({ bereich: 'dann', art: x.art })).join(' · ') : t('automatisierung.ui.dann.leer')}>
-          <Bereichskasten titel={t('automatisierung.ui.dann')} hinweis={e.dann.length ? undefined : t('automatisierung.ui.dann.leer')} ablage={ablage.ablage('dann')} fuss={<KarteHinzu bereich="dann" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
+          <Bereichskasten hinweis={e.dann.length ? undefined : t('automatisierung.ui.dann.leer')} ablage={ablage.ablage('dann')} fuss={<KarteHinzu bereich="dann" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
             <ol className="automatisierung-karten">
               {e.dann.map((karte, i) => (
                 <li key={karte.id} {...reihe.eintrag(karte.id)}>
@@ -361,15 +361,20 @@ function Probleme({ liste, ort }: { liste: Array<{ ort: AutomatisierungOrt; text
   return hier.length ? <ul className="fehlertext klein">{hier.map((p) => <li key={p}>{p}</li>)}</ul> : null;
 }
 
-function Bereichskasten({ titel, hinweis, ablage, kopf, fuss, children }: { titel: string; hinweis?: string; ablage: Record<string, unknown>; kopf?: ReactNode; fuss?: ReactNode; children: ReactNode }) {
+/**
+ * Ablagestelle für Karten in „Wenn“ (mit „Und“) und „Dann“. Kein Kasten und keine zweite Überschrift (#1000,
+ * Musterkatalog C15): Der Bereich trägt die `h2`; nur „Und“ als Abschnitt darin bekommt eine `h3`.
+ */
+function Bereichskasten({ titel, hinweis, ablage, kopf, fuss, children }: { titel?: string; hinweis?: string; ablage: Record<string, unknown>; kopf?: ReactNode; fuss?: ReactNode; children: ReactNode }) {
   const { className, ...rest } = ablage as { className?: string };
+  const Huelle = titel ? 'section' : 'div';
   return (
-    <section className={`automatisierung-bereich ${className ?? ''}`} {...rest}>
-      <div className="zeile"><h3 className="h4">{titel}</h3>{kopf}</div>
+    <Huelle className={`automatisierung-bereich ${className ?? ''}`} {...rest}>
+      {(titel || kopf) && <div className="zeile">{titel && <h3 className="h4">{titel}</h3>}{kopf}</div>}
       {hinweis && <p className="leise klein">{hinweis}</p>}
       {children}
       {fuss}
-    </section>
+    </Huelle>
   );
 }
 

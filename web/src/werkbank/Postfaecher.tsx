@@ -1,5 +1,5 @@
 import { t, tn } from '../sprache';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type OAuthAnbieter, type OAuthAppEingabe, type OAuthAppsStand, type OAuthStatus, type PostfachAnsicht, type PostfachEingabe } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
@@ -103,8 +103,9 @@ export function PostfaecherListe({ z, offen }: { z: PostfachZustand; offen?: str
 type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand';
 function postfachBereiche(oauth: boolean, gespeichert: boolean): BereichListe<PostfachBereich> {
   return [
-    ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')], ['verbindung', t('werkbank.postfaecher.bereich.verbindung')], ['abholen', t('werkbank.postfaecher.bereich.abholen')],
+    ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')], ['verbindung', t('werkbank.postfaecher.bereich.verbindung')],
     ...(oauth ? [['anbieter', t('werkbank.postfaecher.anmeldung-per-oauth-2')] as const] : []),
+    ['abholen', t('werkbank.postfaecher.bereich.abholen')],
     ...(gespeichert ? [['stand', t('werkbank.postfaecher.stand')] as const] : []),
   ];
 }
@@ -168,18 +169,19 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
     try { await api.postfachLoeschen(vorhanden.id); await z.laden(); loeseWache(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 
+  const absenden = (x: FormEvent) => { x.preventDefault(); void speichern(); };
   const hatFehler = (k: PostfachBereich) => fehlerOrte.has(k);
   const klappe = (k: PostfachBereich) => b.klappe(k, hatFehler(k));
   return (
     <div className="editorform">
       <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.postfaecher.werkbank-postfaecher')}</p>
+        <p className="ueber">{t('werkbank.postfaecher.postfach')}</p>
         <h1>{vorhanden?.name || t('werkbank.postfaecher.neues-postfach')}</h1>
         <p className="leise">{tn('werkbank.postfaecher.am-besten-ein-eigenes', { code: <code>{t('werkbank.postfaecher.dms')}</code>, b: <strong>{t('werkbank.postfaecher.app-passwort')}</strong>, b2: <strong>{t('werkbank.postfaecher.oauth-2-0')}</strong> })}</p>
       </div>
       {b.leiste(hatFehler, t('werkbank.postfaecher.bereiche'))}
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
-      <form id="pf-formular" className="editorform" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+      <form id="pf-formular" className="editorform" onSubmit={absenden} onKeyDown={ent.tasten}>
         <Bereich id="grunddaten" titel={t('werkbank.postfaecher.bereich.grunddaten')} klappe={klappe('grunddaten')}
           kurz={[e.name, e.aktiv ? t('werkbank.postfaecher.bereich.an') : t('werkbank.postfaecher.aus')].filter(Boolean).join(' · ')}>
           <label className="haken"><input id="pf-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setze({ aktiv: x.target.checked })} /><span>{t('werkbank.postfaecher.abrufen')}</span></label>
@@ -193,6 +195,17 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
           </div>
         </Bereich>
         <Verbindung e={e} vorhanden={vorhanden} setze={setze} bestaetigt={bestaetigt} setBestaetigt={setBestaetigt} klappe={klappe('verbindung')} testen={testen} />
+      </form>
+      {/* „Anmeldung per OAuth 2.0“ hängt an der Wahl in „Verbindung“ und steht darum gleich danach. Die App beim Anbieter
+          gilt für alle Postfächer (und den E-Mail-Versand) – darum mit eigenem Speichern (#370) und außerhalb des
+          Formulars; „Abholen“ ist ein zweites Formular, das dieselbe Speicherleiste speichert. */}
+      {e.anmeldung === 'oauth' && (
+        <Bereich id="anbieter" titel={t('werkbank.postfaecher.anmeldung-per-oauth-2')} hilfe={<Hilfe ort="werkbank.postfaecher.oauth" />} klappe={klappe('anbieter')}
+          kurz={vorhanden?.oauth?.zustand === 'ok' ? t('werkbank.postfaecher.bereich.angemeldet') : t('werkbank.postfaecher.nicht-angemeldet')}>
+          <OAuthBereich anbieter={e.anbieter ?? 'microsoft'} ziel={vorhanden?.anmeldung === 'oauth' ? postfachZiel(vorhanden, z) : undefined} geaendert={ent.geaendert} setMeldung={setMeldung} eingebettet />
+        </Bereich>
+      )}
+      <form className="editorform" onSubmit={absenden} onKeyDown={ent.tasten}>
         <Bereich id="abholen" titel={t('werkbank.postfaecher.bereich.abholen')} klappe={klappe('abholen')}
           kurz={t('werkbank.postfaecher.bereich.abholen.kurz', { ordner: e.ordner, anzahl: e.abstand })}>
           <div className="raster">
@@ -210,13 +223,6 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
           <label className="haken"><input id="pf-original" type="checkbox" checked={e.original} onChange={(x) => setze({ original: x.target.checked })} /><span>{t('werkbank.postfaecher.original-mail-als-eml')}</span></label>
         </Bereich>
       </form>
-      {/* Die App beim Anbieter gilt für alle Postfächer (und den E-Mail-Versand) – darum mit eigenem Speichern (#370). */}
-      {e.anmeldung === 'oauth' && (
-        <Bereich id="anbieter" titel={t('werkbank.postfaecher.anmeldung-per-oauth-2')} hilfe={<Hilfe ort="werkbank.postfaecher.oauth" />} klappe={klappe('anbieter')}
-          kurz={vorhanden?.oauth?.zustand === 'ok' ? t('werkbank.postfaecher.bereich.angemeldet') : t('werkbank.postfaecher.nicht-angemeldet')}>
-          <OAuthBereich anbieter={e.anbieter ?? 'microsoft'} ziel={vorhanden?.anmeldung === 'oauth' ? postfachZiel(vorhanden, z) : undefined} geaendert={ent.geaendert} setMeldung={setMeldung} eingebettet />
-        </Bereich>
-      )}
       {vorhanden && <PostfachStand p={vorhanden} klappe={klappe('stand')} geaendert={ent.geaendert} abrufen={abrufen} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.postfaecher.postfach')} sendet={sendet} formular="pf-formular"
         links={vorhanden && <Knopf art="link" className="gefahr" onClick={loeschen}>{t('werkbank.postfaecher.postfach-entfernen-2')}</Knopf>} />

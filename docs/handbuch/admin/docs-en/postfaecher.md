@@ -9,7 +9,7 @@ Ablago can **fetch one or more email mailboxes via IMAP** and take over **every 
 
 ## Setting up a mailbox { #postfach-einrichten }
 
-**Workbench → Mailboxes → + New**. On the right, the mailbox is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (fetch, name, for) **→ Connection** (server to password, with **Test connection**) **→ Fetching** (folder to original email) **→ Sign-in via OAuth 2.0** (only with OAuth) **→ Status** (after creating). Collapsed, each area shows a summary, such as "Folder INBOX · every 5 minutes"; your device remembers what you expand per mailbox. **Save mailbox** at the bottom saves basic details, connection and fetching at once; if Ablago rejects a detail, its area is marked red and expanded.
+**Workbench → Mailboxes → + New**. On the right, the mailbox is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (fetch automatically, name, for) **→ Connection** (server to password, with **Test connection**) **→ Sign-in via OAuth 2.0** (only with OAuth, right after the choice in *Connection*) **→ Fetching** (folder to original email) **→ Status** (after creating). Collapsed, each area shows a summary, such as "Folder INBOX · every 5 minutes"; your device remembers what you expand per mailbox. **Save mailbox** at the bottom saves basic details, connection and fetching at once; if Ablago rejects a detail, its area is marked red and expanded.
 
 ![A mailbox on the phone: jump bar and areas](bilder/werkbank-postfach-handy.png){ width="320" }
 

@@ -1034,8 +1034,6 @@ body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: n
 /* Abwesenheit (#78) */
 .abwesend-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); margin-left: 6px; vertical-align: middle; }
 .menuekopf a.chip { text-decoration: none; align-self: flex-start; }
-.gefahrenzone { border-color: var(--schlecht); }
-.gefahrenzone h2 { color: var(--schlecht); }
 .eintrag.werk.grau { opacity: .6; }
 .knopf.gefahr { background: var(--schlecht); border-color: var(--schlecht); color: var(--schlecht-tinte); }
 .knopf.gefahr:disabled { opacity: .45; }
@@ -2026,7 +2024,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .dokansicht-kopf { margin: 0; padding: 6px 10px; border-bottom: 1px solid var(--linie); background: var(--flaeche, transparent); display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 
 /* Automatisierungen (#675): Wenn · Und · Dann untereinander, Karten auf- und zuklappbar, Schritte leuchten im Lauf auf. */
-.automatisierung-bereich { border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); padding: 10px 12px; margin: 4px 0; }
+/* Ablagestelle in „Wenn“, „Und“ und „Dann“: ohne eigenen Kasten, der Bereich ist das Blatt (#1000). */
+.automatisierung-bereich { border-radius: var(--r); margin: 4px 0; }
 .automatisierung-bereich > .zeile { justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .automatisierung-bereich .h3 { margin: 0; }
 .automatisierung-pfeil { text-align: center; color: var(--leise); font-size: 1.2rem; line-height: 1; }

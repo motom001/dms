@@ -77,7 +77,7 @@
   "ui.fehlgeschlagen.einer": "1 Lauf ist fehlgeschlagen: {name}, {zeit}.",
   "ui.fehlgeschlagen_one": "{anzahl} Lauf ist fehlgeschlagen.",
   "ui.fehlgeschlagen_other": "{anzahl} Läufe sind fehlgeschlagen.",
-  "ui.gegenstand": "die Automatisierung",
+  "ui.gegenstand": "Automatisierung",
   "ui.geloescht": "Gelöscht.",
   "ui.gespeichert": "Gespeichert.",
   "ui.herkunft.dms": "von Ablago",

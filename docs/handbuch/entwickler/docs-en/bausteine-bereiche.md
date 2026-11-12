@@ -7,9 +7,9 @@
 ## Behaviour { #verhalten }
 
 - **New** (`id` is `null`): everything open, nothing is remembered.
-- **Existing:** as last time on this device (`localStorage`, per editor the 200 entries edited last); without memory collapsed. Folder types and views keep their previous storage keys (`dms.typeditor.offen`, `dms.sichteditor.offen`), all others are called `dms.<editor>editor.offen`.
+- **Existing:** as last time on this device (`localStorage`, per editor the 200 entries edited last); without memory collapsed. **Editors without saving** (viewing and immediate actions only, e.g. the data protection request) pass `{ offen: true }` and start expanded as long as the device has remembered nothing. Folder types and views keep their previous storage keys (`dms.typeditor.offen`, `dms.sichteditor.offen`), all others are called `dms.<editor>editor.offen`.
 - **Anchor in the address** (`…/werkbank/postfaecher/<id>#verbindung`) opens its area and jumps there.
-- **Jump bar:** every jump opens its area and scrolls there; an area with an error is red and carries "!". On the desktop the bar stays below the page header, on the phone (up to 700 px) it scrolls along.
+- **Jump bar:** every jump opens its area, scrolls there and moves the focus to the head of the area (`focus({ preventScroll: true })`) – with the keyboard, Tab then continues inside the area; an area with an error is red and carries "!". On the desktop the bar stays below the page header, on the phone (up to 700 px) it scrolls along.
 - **Fewer than three areas** (`SPRUNGLEISTE_AB`): neither bar nor collapsing. The areas are always open, only with their title.
 - **Collapsed**, the content stays in the document (only hidden) – inputs, results and running requests are not lost. The summary (`kurz`) is then shown below the title.
 
@@ -40,7 +40,7 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 
 | Part | What for |
 | --- | --- |
-| `useBereiche(liste, editor, id)` | state: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste` |
+| `useBereiche(liste, editor, id, optionen?)` | state: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?, fokus?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste`; `optionen.offen` for editors without saving |
 | `Bereich` | `id` (also the anchor), `titel`, `klappe`; plus `hilfe` (help symbol after the title), `kurz` (summary when collapsed), `beschreibung` (sentence above the content), `className` |
 | `fehlerBereiche(fehler, liste, ersatz)` | areas of an error on saving: `details.orte` of the server's response, known ones only; otherwise `ersatz` |
 | `liesOffen`, `merkeOffen` | the memory directly, e.g. for tests |
@@ -51,7 +51,9 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 - **Immediate actions stay immediate:** test, fetch, reset, sign out, lock – everything that is an action of its own and not part of the draft.
 - **Errors open their area.** If the interface checks something itself (e.g. an unknown placeholder), `klappe(k, true)` marks the area while typing. What only the server finds it names as `details.orte` (`Fachfehler(422, text, { orte: ['verbindung'] })`); `fehlerBereiche` reads it, `oeffne(orte)` expands and jumps there.
 - **Short, consistent area names:** *Basic details* first, then in the order in which the entry is set up; try out, status and history at the end.
-- **Headings:** the area carries the `h2`; sections inside it use `h3` (`className="h4"`), not another `blatt`.
+- **Headings:** the area carries the `h2`; sections inside it use `h3` (`className="h4"`), not another `blatt` or a box with the same heading.
+- **Red means error.** Areas are not coloured as a danger zone – in the editor, red means “something went wrong here when saving”. Dangerous actions are shown by the red button (`art="gefahr"`) and the confirmation.
+- **References to another area** (“choose one in the area *Stand-in*”) are a jump: a `Knopf` of type link that calls `oeffne([k], true, true)`.
 
 ## On the phone { #handy }
 

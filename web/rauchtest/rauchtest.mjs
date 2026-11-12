@@ -549,10 +549,16 @@ rauchtest('Werkbank: Sprungleiste und Bereiche in allen Editoren (#1000)', { als
   await s.reload();
   await bearbeitung.getByRole('textbox', { name: 'Name' }).waitFor();
   await leiste.getByRole('button', { name: 'Alle zuklappen' }).waitFor();
+  // Tastatur: Enter auf einem Sprung setzt den Fokus auf den Kopf des Bereichs, Tab geht im Bereich weiter.
+  await leiste.getByRole('button', { name: 'Stand', exact: true }).focus();
+  await s.keyboard.press('Enter');
+  await s.waitForFunction(() => document.activeElement?.id === 'stand-kopf', null, { timeout: 5000 });
+  assert.equal(await s.evaluate(() => document.activeElement?.closest('[data-sprungleiste]') === null), true, 'Fokus nicht mehr in der Sprungleiste');
   // Neues Postfach: alles offen, ohne „Stand“; ohne Namen und Benutzer meldet der Server Grunddaten und Verbindung.
   await s.goto(BASIS + '/werkbank/postfaecher/neu');
   const pf = bearbeitung.getByRole('navigation', { name: 'Bereiche des Postfachs' });
   await pf.getByRole('button', { name: 'Abholen', exact: true }).waitFor();
+  await bearbeitung.getByRole('checkbox', { name: 'Automatisch abrufen' }).waitFor();
   assert.equal(await pf.getByRole('button', { name: 'Stand', exact: true }).count(), 0, 'Ein neues Postfach hat noch keinen Stand');
   await bearbeitung.getByRole('textbox', { name: 'Server' }).fill('imap.example.org');
   await s.getByRole('button', { name: 'Postfach anlegen' }).click();
@@ -564,6 +570,7 @@ rauchtest('Werkbank: Sprungleiste und Bereiche in allen Editoren (#1000)', { als
   await s.getByRole('region', { name: 'Elemente' }).getByRole('link', { name: /^Lena/ }).first().click();
   const bl = bearbeitung.getByRole('navigation', { name: 'Bereiche des Benutzers' });
   for (const name of ['Grunddaten', 'Rollen und Rechte', 'Vertretung', 'Anmeldung und Sicherheit']) await bl.getByRole('button', { name, exact: true }).waitFor();
+  await bearbeitung.locator('.ueber', { hasText: /^Benutzer$/ }).waitFor();
 });
 
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
