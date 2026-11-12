@@ -367,6 +367,10 @@ See also: [Task](#aufgabe), [To do](#zu-erledigen).
 What the interface looks like – logo, lettering, colours (light, dark, high contrast or following the device) and your own CSS. Administrators create designs under Workbench → Designs and set the default; every user chooses theirs under My account in "Appearance".  
 See also: [Appearance](#darstellung).
 
+<a id="ziel-nach-auen"></a>**Destination outside** (*Ziel nach außen*) · ~ with explanation · administrators  
+Approved beginning of an address (host and path) to which the Then card "Call URL" of an automation may report – under Workbench → Automations → Destinations outside. Only https; "On the home network" explicitly also allows http and devices on your own network. Ablago does not call other addresses and never follows redirects. The emergency sheet lists the hosts.  
+See also: [Call from outside](#aufruf-von-auen), [Emergency sheet](#notfallblatt).
+
 <a id="expertenmodus"></a>**Expert mode** (*Expertenmodus*) · ✗ technical term · advanced users  
 An expandable section under Workbench → Packages, directly below the buttons. Expanded, it shows "Further sources" and "Upload package" – for package developers and Ablago without the internet. Collapsed at first; the browser remembers per user whether it is open.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).

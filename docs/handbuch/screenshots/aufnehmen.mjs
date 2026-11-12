@@ -1244,6 +1244,32 @@ async function main() {
     await s.locator('#aufruf-titel').evaluate((e) => e.scrollIntoView({ block: 'center' }));
     await bild(s, 'werkbank-automatisierung-aufruf');
   }
+  // Nach außen (#671): Ziel freigegeben (frische Anmeldung), Karte „URL aufrufen“ aufgeklappt – Adresse unter dem Ziel,
+  // Inhalt „Mit Kennungen“, ein Parameter; darunter das Geheimnis (angelegt, nicht sichtbar). Und die Seite der Ziele.
+  {
+    await api('POST', '/api/konto/verwaltung/bestaetigen', { passwort: ADMIN.passwort });
+    await api('PUT', '/api/werkbank/automatisierungen/ziele', { ziele: [{ adresse: 'https://hooks.example.org/ablago', heimnetz: false, notiz: 'Monitoring' }, { adresse: 'http://homeassistant.local:8123/api/webhook', heimnetz: true }] });
+    const post = await api('POST', '/api/werkbank/automatisierungen', { name: 'Neue Post melden', aktiv: true,
+      wenn: { art: 'post.angelegt', typ: null },
+      dann: [{ id: 'u1', art: 'url', adresse: 'http://homeassistant.local:8123/api/webhook/ablago-post', methode: 'POST', inhalt: 'kennungen', parameter: [{ name: 'quelle', wert: '{automatisierung}' }] }] });
+    await api('POST', `/api/werkbank/automatisierungen/${post.id}/geheimnis/u1`);
+    await geheZu(s, `/werkbank/automatisierungen/${post.id}`);
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+    const kopf = s.locator('ol.automatisierung-karten .karte-kopf button[aria-expanded]').first();
+    await kopf.click();
+    // Nach dem Aufklappen springt der Fokus kurz – erst danach an die Stelle rollen: Kopf der Karte oben, unter der Sprungleiste.
+    await s.waitForTimeout(30);
+    await kopf.evaluate((e) => {
+      e.scrollIntoView({ block: 'start' });
+      let p = e.parentElement;
+      while (p && p.scrollHeight <= p.clientHeight) p = p.parentElement;
+      (p ?? document.scrollingElement)?.scrollBy(0, -140);
+    });
+    await bild(s, 'werkbank-automatisierung-url');
+    await geheZu(s, '/werkbank/automatisierungen/ziele');
+    await s.getByRole('heading', { name: w('Ziele nach außen'), level: 1 }).waitFor();
+    await bild(s, 'werkbank-automatisierung-ziele');
+  }
   // Automatisierungsvorlagen (#1044): „Erinnern“ mit Wann, Fragen und Karte; darunter „Gerade benutzt bei“ mit den
   // Erinnerungen von oben.
   await geheZu(s, '/werkbank/ablaufvorlagen/erinnern');

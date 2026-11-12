@@ -29,7 +29,7 @@ import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKE
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
-import { bereinigeAutomatisierung, DMS_POST, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
+import { bereinigeAutomatisierung, DMS_POST, istAussenKarte, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
 import { bereinigeVorlage, istKernVorlage, KERN_VORLAGEN, karteText, vorlagenEingabeFehler, vorlagenProbleme } from '../../shared/src/ablaufvorlagen';
 import type { PaketAblaufvorlage } from './aufgaben';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
@@ -171,6 +171,9 @@ function werkbankKartenFehler(a: Record<string, unknown>, wo: string): string[] 
   // Aufruf von außen (#679): eine Adresse ohne Anmeldung legt nur die Verwaltung selbst an, nie ein Paket.
   if (wenn === 'aufruf') f.push(t('meldungen.pakete.automatisierung-aufruf', { wo }));
   if ((Array.isArray(a.dann) ? a.dann : []).some((k) => istObjekt(k) && k.art === 'sicherung')) f.push(t('meldungen.pakete.automatisierung-werkbank-dann', { wo }));
+  // Karten nach außen (#671): „URL aufrufen“ und „E-Mail senden“ richtet nur die Verwaltung selbst ein – Ausleiten bleibt
+  // eine bewusste Entscheidung, die die Rechte-Vorschau eines Pakets nicht abbilden kann.
+  if ([...(Array.isArray(a.dann) ? a.dann : []), ...(Array.isArray(a.sonst) ? a.sonst : [])].some((k) => istObjekt(k) && typeof k.art === 'string' && istAussenKarte({ art: k.art }))) f.push(t('meldungen.pakete.automatisierung-aussen', { wo }));
   return f;
 }
 

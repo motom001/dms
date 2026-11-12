@@ -87,7 +87,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 
 ### Nach außen melden { #nach-aussen-melden }
 
-Ablago meldet geänderte Zahlen nicht von sich aus an eine Adresse – der [Zähler](#zaehler) wird abgefragt. Mit `If-None-Match` kostet „nichts Neues“ praktisch nichts, ein Abstand von wenigen Minuten ist unbedenklich. Soll Ablago selbst etwas nach außen melden, geht das künftig über eine [Automatisierung](automatisierungen.md) mit der Dann-Karte „URL aufrufen“ ([#671](https://github.com/motom001/dms/issues/671)). Den früheren Zähler-Webhook gibt es nicht mehr (siehe [Änderungen der API](#aenderungen)).
+Ablago meldet geänderte Zahlen nicht von sich aus an eine Adresse – der [Zähler](#zaehler) wird abgefragt. Mit `If-None-Match` kostet „nichts Neues“ praktisch nichts, ein Abstand von wenigen Minuten ist unbedenklich. Soll Ablago selbst etwas nach außen melden, geht das über eine [Automatisierung](automatisierungen.md#nach-aussen) mit der Dann-Karte „URL aufrufen“. Den früheren Zähler-Webhook gibt es nicht mehr (siehe [Änderungen der API](#aenderungen)).
 
 ### Mappe ändern, auch gleichzeitig mit anderen { #mappe-aendern }
 

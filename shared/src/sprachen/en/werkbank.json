@@ -3343,5 +3343,11 @@
   "benutzer.bereich.sicherheit.kurz": "last signed in: {datumZeit}",
   "benutzer.bereich.zugang": "Access",
   "benutzer.bereich.zugang.kurz": "Reproduce an error, lock access",
-  "benutzer.bereich.passwort": "Password and invitation"
+  "benutzer.bereich.passwort": "Password and invitation",
+  "notfallblatt.ablage.ziele": "Destinations outside",
+  "notfallblatt.ablage.ziele.text": "Automations report to: {liste}.",
+  "notfallblatt.ablage.aussen.kurz.aufrufe_one": "{anzahl} address accepts calls.",
+  "notfallblatt.ablage.aussen.kurz.aufrufe_other": "{anzahl} addresses accept calls.",
+  "notfallblatt.ablage.aussen.kurz.ziele_one": "Automations report to {anzahl} host (list in the Workbench under Automations).",
+  "notfallblatt.ablage.aussen.kurz.ziele_other": "Automations report to {anzahl} hosts (list in the Workbench under Automations)."
 }

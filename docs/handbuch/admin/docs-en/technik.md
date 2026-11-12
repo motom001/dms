@@ -48,6 +48,8 @@ How large something may be at most. Ablago checks every limit before it processe
 | Logo of a design | 1 MB |
 | Setup file | 64 KB |
 | [Call from outside](automatisierungen.md#aufruf-von-aussen) | body 16 KB, 10 parameters of 500 characters each; 30 calls per minute from one network (IPv4 /24, IPv6 /64), 12 accepted per minute per address; failed attempts: 12 per minute per address, 600 per minute in total |
+| [Call URL](automatisierungen.md#url-aufrufen) | 50 destinations; content at most 256 KB, 8 KB of text per field value, 10 parameters of 500 characters each; 10 seconds per call; Ablago reads at most 64 KB of the response and discards it |
+| [Send e-mail](automatisierungen.md#e-mail-senden) | 50 recipients per run, 50 e-mails per automation and 200 for all together in 24 hours; subject 200, text 4000 characters |
 | Passkeys | 20 per person, name 60 characters, device response 16 KB; signing in without email address: 20 challenges per IP address or IPv6 /64 in 5 minutes, 20,000 open in total |
 | E-invoice (XML as a file or from the PDF attachment) | 4 MB, at most 64 levels deep, 200,000 elements, 500 items are taken over; without DTD and entities. Ablago doesn't read anything larger as an e-invoice |
 | All other requests (forms, settings) | 2 MB; they do not accept a file at all |

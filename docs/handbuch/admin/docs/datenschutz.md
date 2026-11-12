@@ -39,7 +39,11 @@ Ablago sendet **keine Nutzungsdaten** – weder an das Projekt noch an sonst jem
 | **Links weitergeben** | wenn jemand einen [Link über Feldwerte](direktlinks.md) per Mail oder Chat schickt | die Feldwerte im Link (z. B. eine Vertragsnummer) sind darin lesbar |
 | **Anmeldung über einen Anbieter** | wenn du sie [einrichtest](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) | dein Anbieter (OpenID Connect) |
 | **Pakete mit Code** | nur, wenn ein Paket es braucht und du es bei der Installation bestätigst | nur die Adressen, die das Paket angibt ([Rechte eines Pakets](pakete.md#recht-netzwerk-und-internet)) |
+| **Automatisierung: URL aufrufen** | nur, wenn du ein [Ziel nach außen](automatisierungen.md#ziele-nach-aussen) freigibst (frische Anmeldung) und eine Automatisierung mit der Karte **URL aufrufen** einschaltest – von Haus aus gibt es keins | nur an freigegebene Ziele, so viel wie die [Inhaltsstufe](automatisierungen.md#inhaltsstufen) erlaubt: *Nur Meldung* (Ereignis, Zeit), *Mit Kennungen* (dazu Mappen-Id, Mappentyp, Link) oder *Mit Werten* (dazu Titel und Feldwerte – nur nach Bestätigung, nie Passwörter oder verschlüsselte Werte). Pakete richten das nie ein |
+| **Automatisierung: E-Mail senden** | nur, wenn du eine Automatisierung mit der Karte **E-Mail senden** einschaltest | Betreff und Text, die du schreibst, mit Platzhaltern – an Personen, Rollen, E-Mail-Felder oder beliebige Adressen, über deinen Mailserver; je Tag gebremst |
 | **Handbuch** | wenn du auf **Hilfe** oder ein **?** klickst | Das mitgelieferte Handbuch unter `/hilfe/` kommt ohne Internet aus ([Hilfe ohne Internet](technik.md#hilfe-ohne-internet)); Links auf das Online-Handbuch öffnet dein Browser. |
+
+**Beispiel – nur das Nötigste hinaus:** Markus will auf dem Handy erfahren, wenn neue Post eingeht. Seine Hausautomatisierung (Home Assistant im Heimnetz) bekommt per [URL aufrufen](automatisierungen.md#url-aufrufen) nur *Nur Meldung* – „da ist etwas passiert“ – und holt sich die Zahl dann selbst über den [Zähler](api.md#zaehler). Titel und Absender der Post verlassen Ablago dabei nicht. Damit die Hausautomatisierung erkennt, dass der Aufruf wirklich von Ablago kommt, prüft sie die [Signatur](automatisierungen.md#signatur-pruefen).
 
 ### Was deine Ablage von außen annimmt { #was-deine-ablage-annimmt }
 

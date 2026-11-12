@@ -8,6 +8,8 @@ import { DANN_AUSFUEHRER, KarteLeer, uuidAus, type KartenKontext } from './autom
 import { zeitpunktIn } from './zeitplan';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
+// Karten nach außen (#671): „URL aufrufen“ und „E-Mail senden“ melden sich mit an.
+import './automatisierung-aussen';
 
 /**
  * Dann-Karten der Automatisierungen, Stufe 1 (#676).

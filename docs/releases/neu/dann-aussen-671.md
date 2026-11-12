@@ -1,0 +1,5 @@
+art: minor
+
+## Neu
+
+- **Automatisierungen: nach außen melden** (#671): Zwei neue Dann-Karten. **URL aufrufen** meldet per `POST` oder `GET` an ein anderes System – etwa die Hausautomatisierung oder ein Monitoring –, mit einfachen Parametern und Platzhaltern. Was mitgeht, wählst du in drei Stufen: *Nur Meldung*, *Mit Kennungen* oder *Mit Werten* (nur `POST`, nur nach Bestätigung „Daten verlassen Ablago“, nie Passwörter oder verschlüsselte Werte). Aufgerufen werden nur Adressen unter einem freigegebenen Ziel (Werkbank → Automatisierungen → Ziele nach außen, https Pflicht, Heimnetz nur ausdrücklich); Ablago folgt keinen Weiterleitungen, prüft die aufgelösten Adressen, hat ein Zeitlimit und verwirft die Antwort. Signiert wie der Aufruf von außen (Geheimnis je Karte, nur einmal sichtbar); zugestellt über einen Ausgangskorb mit Wiederholung – nach Dauerfehlern hält die Automatisierung mit Hinweis an. **E-Mail senden** schickt Betreff und Text mit Platzhaltern an Personen, Rollen, E-Mail-Felder oder beliebige Adressen, nur als Text mit Hinweissatz, gebremst je Tag. Pakete bringen beide Karten nicht mit; das Notfallblatt nennt die Ziele.

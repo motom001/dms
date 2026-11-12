@@ -24,6 +24,9 @@ export function automatisierungRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/umzug-gesehen', zugang: 'admin', handler: async () => { await autos().umzugGesehen(); return ok(null); } },
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen', zugang: 'admin', handler: async (a) => ok(await autos().lege(a.body, ich(a).id, 'eigen', darf(a)), 201) },
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/wiederholen', zugang: 'admin', handler: async () => ok(await autos().wiederholeAlle()) },
+    // Ziele nach außen (#671): nur diese Adressen ruft „URL aufrufen“ auf. Ändern ist eine heikle Handlung (frische Anmeldung).
+    { methode: 'GET', pfad: '/api/werkbank/automatisierungen/ziele', zugang: 'admin', handler: async () => ok({ ziele: await autos().ziele() }) },
+    { methode: 'PUT', pfad: '/api/werkbank/automatisierungen/ziele', zugang: 'admin', handler: async (a) => ok(await autos().setzeZiele((b(a) as { ziele?: unknown }).ziele, ich(a).id)) },
     { methode: 'GET', pfad: '/api/werkbank/automatisierungen/laeufe/:id', zugang: 'admin', handler: async (a) => ok(await autos().lauf(a.params.id, darf(a))) },
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/laeufe/:id/wiederholen', zugang: 'admin', handler: async (a) => ok(laufFuer(await autos().wiederhole(a.params.id), darf(a))) },
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/laeufe/:id/nicht-wiederholen', zugang: 'admin', handler: async (a) => ok(await autos().nichtWiederholen({ laufId: a.params.id }, ich(a).id)) },
@@ -41,6 +44,11 @@ export function automatisierungRouten(k: RoutenKontext): Route[] {
     // das Geheimnis steht nur in dieser Antwort; Adresse entfernen.
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/:id/aufruf', zugang: 'admin', handler: async (a) => ok(await autos().aufrufAnlegen(a.params.id, (b(a) as { was?: unknown }).was, ich(a).id)) },
     { methode: 'DELETE', pfad: '/api/werkbank/automatisierungen/:id/aufruf', zugang: 'admin', handler: async (a) => { await autos().aufrufEntfernen(a.params.id); return leer; } },
+    // URL aufrufen (#671): Geheimnis je Karte anlegen bzw. erneuern (frische Anmeldung) – nur in dieser Antwort; entfernen.
+    // Zustellungen: Ziel, Zustand, Status, Fehler und Zeiten – nie Inhalte.
+    { methode: 'POST', pfad: '/api/werkbank/automatisierungen/:id/geheimnis/:karte', zugang: 'admin', handler: async (a) => ok(await autos().aussenGeheimnis(a.params.id, a.params.karte ?? '', ich(a).id)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/automatisierungen/:id/geheimnis/:karte', zugang: 'admin', handler: async (a) => { await autos().aussenGeheimnisEntfernen(a.params.id, a.params.karte ?? ''); return leer; } },
+    { methode: 'GET', pfad: '/api/werkbank/automatisierungen/:id/zustellungen', zugang: 'admin', handler: async (a) => ok(await autos().zustellungen(a.params.id)) },
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/:id/wiedergeben', zugang: 'admin', handler: async (a) => {
       const e = b(a) as { mappeId?: unknown; trocken?: unknown };
       return ok(laufFuer(await autos().wiedergeben(a.params.id, e.mappeId, e.trocken !== false), darf(a)));

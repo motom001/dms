@@ -11,7 +11,7 @@ import { gebietsschema } from '../../shared/src/sprache';
  * Der Schlüssel steht nur hier (und in der Schlüsseldatei), nie in einer Sicherung – und nie als QR-Code.
  *
  * Aufbau: Kopf mit Logo, Name der Ablage, Datum und Version · Schlüssel groß mit Lesehilfe und Fingerabdruck ·
- * Diese Ablage (Adresse, Ablage-Id, wo die Sicherungen liegen, Adressen für Aufrufe von außen #679) · Wen fragen? · Etwas ist passiert? mit Links
+ * Diese Ablage (Adresse, Ablage-Id, wo die Sicherungen liegen, Adressen für Aufrufe von außen #679, Ziele nach außen #671) · Wen fragen? · Etwas ist passiert? mit Links
  * (immer https://) und QR-Code zur Hilfeseite, darin der Notfallcode für „Ich komme nicht mehr hinein“ (#815). Keine Pfade oder Dateinamen aus Docker oder vom NAS: Die
  * ausführliche Anleitung steht im Handbuch.
  *
@@ -36,6 +36,8 @@ export interface Notfalldaten {
   notfallcode?: string;
   /** Aufruf von außen (#679): Adressen, die gerade Aufrufe annehmen – Name und Adresse (nie das Geheimnis). */
   aufrufe?: Array<{ name: string; adresse: string }>;
+  /** Ziele nach außen (#671): wohin Automatisierungen melden dürfen – nur die Rechner (nie Pfad oder Geheimnis). */
+  ziele?: string[];
 }
 
 /** So viele Adressen nennt das Blatt einzeln (eine Seite); die übrigen als „und N weitere“. */
@@ -50,6 +52,20 @@ export function aufrufZeile(liste: Array<{ name: string; adresse: string }>): st
   const teile = liste.slice(0, AUFRUFE_AUF_DEM_BLATT).map((x) => `${x.name} (${kurz(x.adresse)})`);
   if (liste.length > AUFRUFE_AUF_DEM_BLATT) teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
   return t('werkbank.notfallblatt.ablage.aufrufe.text', { liste: teile.join(', ') });
+}
+
+/** Ziele nach außen (#671) auf dem Blatt: die Rechner, höchstens fünf, dann „und N weitere“. */
+export function zieleZeile(rechner: string[]): string {
+  const liste = [...new Set(rechner)];
+  const teile = liste.slice(0, AUFRUFE_AUF_DEM_BLATT);
+  if (liste.length > AUFRUFE_AUF_DEM_BLATT) teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
+  return t('werkbank.notfallblatt.ablage.ziele.text', { liste: teile.join(', ') });
+}
+
+/** Aufrufe und Ziele nur gezählt (#671) – wenn das Blatt mit den Listen nicht auf eine Seite passt. */
+function aussenKurz(d: Pick<Notfalldaten, 'aufrufe' | 'ziele'>): string {
+  const aufrufe = d.aufrufe?.length ?? 0, ziele = new Set(d.ziele ?? []).size;
+  return [aufrufe ? t('werkbank.notfallblatt.ablage.aussen.kurz.aufrufe', { anzahl: aufrufe }) : '', ziele ? t('werkbank.notfallblatt.ablage.aussen.kurz.ziele', { anzahl: ziele }) : ''].filter(Boolean).join(' ');
 }
 
 /** In Vierergruppen, gut abschreibbar; Leerzeichen zählen bei der Eingabe nicht. */
@@ -76,7 +92,8 @@ export interface NotfallblattPlan {
   kopf: { titel: string; name: string; unter: string };
   einleitung: string;
   schluessel: { titel: string; gruppen: Array<Array<{ zeichen: string; hilfe: string | null }>>; hinweis: string; fingerabdruckTitel: string; fingerabdruck: string; fingerabdruckHinweis: string };
-  ablage: { titel: string; zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean }>; warnung: string | null };
+  /** `kurz` (#671): knappere Fassung der Zeile, wenn das Blatt sonst nicht auf eine Seite passt (Aufrufe und Ziele nur gezählt). */
+  ablage: { titel: string; zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean; kurz?: string }>; warnung: string | null };
   /** `seite2`: Verweis, wenn die Kontakte auf eine zweite Seite ausweichen (#812). */
   fragen: { titel: string; kontakte: Array<{ name: string; erreichbar: string; notiz?: string }>; leer: string | null; seite2: string };
   hilfe: { titel: string; text: string; links: Array<{ marke: string; url: string }>; qr: readonly string[]; qrText: string; handbuch: string };
@@ -112,7 +129,10 @@ export function notfallblattPlan(d: Notfalldaten): NotfallblattPlan {
         { marke: t('werkbank.notfallblatt.ablage.id'), text: d.haushaltId, mono: true },
         { marke: t('werkbank.notfallblatt.ablage.sicherungen'), text: ziele.length ? t('werkbank.notfallblatt.ablage.sicherungen.aussen', { ziele: ziele.join(', ') }) : t('werkbank.notfallblatt.ablage.sicherungen.text') },
         // Aufruf von außen (#679): „diese Adressen nehmen Aufrufe an“ – nur, wenn es welche gibt.
-        ...(d.aufrufe?.length ? [{ marke: t('werkbank.notfallblatt.ablage.aufrufe'), text: aufrufZeile(d.aufrufe) }] : []),
+        // Ziele nach außen (#671): „an diese Rechner melden Automatisierungen“ – mit Aufrufen von außen in einer Zeile
+        // (das Blatt bleibt eine Seite), sonst als eigene Zeile; nur, wenn es welche gibt.
+        ...(d.aufrufe?.length ? [{ marke: t('werkbank.notfallblatt.ablage.aufrufe'), text: [aufrufZeile(d.aufrufe), ...(d.ziele?.length ? [zieleZeile(d.ziele)] : [])].join(' '), kurz: aussenKurz(d) }]
+          : d.ziele?.length ? [{ marke: t('werkbank.notfallblatt.ablage.ziele'), text: zieleZeile(d.ziele), kurz: aussenKurz(d) }] : []),
       ],
       warnung: ziele.length ? t('werkbank.notfallblatt.ablage.aussen.warnung') : null,
     },

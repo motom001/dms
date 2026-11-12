@@ -87,7 +87,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 
 ### Reporting to the outside { #nach-aussen-melden }
 
-Ablago does not report changed numbers to an address on its own – the [counter](#zaehler) is queried. With `If-None-Match`, "nothing new" costs practically nothing; an interval of a few minutes is fine. If Ablago itself should report something to the outside, this will be done via an [automation](automatisierungen.md) with the Then card "Call URL" ([#671](https://github.com/motom001/dms/issues/671)). The former counter webhook no longer exists (see [API changes](#aenderungen)).
+Ablago does not report changed numbers to an address on its own – the [counter](#zaehler) is queried. With `If-None-Match`, "nothing new" costs practically nothing; an interval of a few minutes is fine. If Ablago itself should report something to the outside, this is done via an [automation](automatisierungen.md#nach-aussen) with the Then card "Call URL". The former counter webhook no longer exists (see [API changes](#aenderungen)).
 
 ### Changing a folder, also at the same time as others { #mappe-aendern }
 

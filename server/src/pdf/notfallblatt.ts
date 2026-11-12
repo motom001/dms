@@ -60,13 +60,22 @@ function logo(seite: PDFPage, s: Schriften, x: number, oben: number, groesse: nu
 
 /**
  * Passen viele Notfallkontakte nicht mehr auf die Seite (#812), stehen sie auf einer zweiten Seite; auf der ersten
- * verweist „Wen fragen?“ dorthin. Alles andere bleibt auf der ersten Seite.
+ * verweist „Wen fragen?“ dorthin. Alles andere bleibt auf der ersten Seite. Vorher (#671) werden Aufrufe von außen und
+ * Ziele nach außen nur gezählt; passt es dann immer noch nicht, fehlt diese Zeile (die Werkbank zeigt sie).
  */
 export async function notfallblattPdf(p: NotfallblattPlan): Promise<Uint8Array> {
-  try { return await zeichne(p, false); } catch (e) {
-    if (!(e instanceof ZuLang) || !p.fragen.kontakte.length) throw e;
-    return zeichne(p, true);
+  // #671: Zuerst die Zeilen „Aufrufe von außen“ / „Ziele nach außen“ knapp (nur gezählt), dann die Kontakte auf Seite 2.
+  const kurz: NotfallblattPlan = { ...p, ablage: { ...p.ablage, zeilen: p.ablage.zeilen.map((z) => (z.kurz ? { ...z, text: z.kurz } : z)) } };
+  const versuche: Array<[NotfallblattPlan, boolean]> = [[p, false], ...(kurz.ablage.zeilen.some((z, i) => z.text !== p.ablage.zeilen[i].text) ? [[kurz, false]] as Array<[NotfallblattPlan, boolean]> : [])];
+  if (p.fragen.kontakte.length) versuche.push([kurz, true]);
+  // Zuletzt ohne diese Zeilen (sehr langer Name, viele Ziele der Sicherung …): Sie stehen ohnehin in der Werkbank.
+  const ohne: NotfallblattPlan = { ...p, ablage: { ...p.ablage, zeilen: p.ablage.zeilen.filter((z) => !z.kurz) } };
+  if (ohne.ablage.zeilen.length < p.ablage.zeilen.length) versuche.push([ohne, p.fragen.kontakte.length > 0]);
+  let letzter: unknown;
+  for (const [plan, seite2] of versuche) {
+    try { return await zeichne(plan, seite2); } catch (e) { if (!(e instanceof ZuLang)) throw e; letzter = e; }
   }
+  throw letzter;
 }
 
 class ZuLang extends Error {}

@@ -498,6 +498,10 @@ Siehe auch: [Sonst](#sonst), [Sicherung](#sicherung).
 Kurzer Satz in den Grunddaten eines Mappentyps (#937, höchstens 300 Zeichen), z. B. „Enthält Rechnungsnummer, Betrag und Zahlungsziel“. Hilft der Erkennung, ein Dokument dem richtigen Mappentyp zuzuordnen. Die Beschreibung ist für Menschen, dieser Satz für die Erkennung.  
 Siehe auch: [Kann aus Post angelegt werden](#kann-aus-post-angelegt-werden).
 
+<a id="ziel-nach-auen"></a>**Ziel nach außen** · ~ mit Erklärung · Administratoren  
+Freigegebener Anfang einer Adresse (Rechner und Pfad), an den die Dann-Karte „URL aufrufen“ einer Automatisierung melden darf – unter Werkbank → Automatisierungen → Ziele nach außen. Nur https; „Im Heimnetz“ erlaubt ausdrücklich auch http und Geräte im eigenen Netz. Andere Adressen ruft Ablago nicht auf, Weiterleitungen folgt es nie. Das Notfallblatt nennt die Rechner.  
+Siehe auch: [Aufruf von außen](#aufruf-von-auen), [Notfallblatt](#notfallblatt).
+
 <a id="zum-wiederfinden-nutzen"></a>**Zum Wiederfinden nutzen** · ~ mit Erklärung · Administratoren  
 Haken an einem Feld (#938) – über diesen Wert findet Ablago vorhandene Mappen in einem Dokument wieder, z. B. Kundennummer, Vertragsnummer, Rechnungsnummer oder Kennzeichen. Daraus entstehen Vorschläge mit Belegen („Woran Ablago das erkennt“) und die Warnung, wenn es eine Mappe schon gibt. Unabhängig von „Eindeutig“.  
 Siehe auch: [Aus Dokument füllen](#aus-dokument-fullen).
@@ -781,6 +785,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Werkbank-Karte | Betriebskarte, Systemkarte | `BETRIEB_WENN, DannKarte art: sicherung, SYSTEMKONTO_WERKBANK` |
 | Woran man ihn erkennt | – | `Mappentyp.erkennbarAn` |
 | Zeitraum | Dauer (als Feldart), Periode, Intervall | `zeitraum, Zeitraum, shared/src/feldarten.ts` |
+| Ziel nach außen | Webhook-Ziel, Allowlist, Whitelist | `AussenZiel, automatisierung_ziele, zielFuer` |
 | Zieltyp | Zielklasse, Referenztyp | `Feld.zielTypen, Feld.gleicherTyp, Feld.zielOptional, zielOptional (Paket)` |
 | Zu erledigen | Eingang, Inbox, Posteingang, Anstehend | `eingang` |
 | Zum Wiederfinden nutzen | – | `Feld.wiederfinden` |

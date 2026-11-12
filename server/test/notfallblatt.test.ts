@@ -44,7 +44,14 @@ describe('Notfallblatt (#814): Gestaltung und Umfang', () => {
       // #815: mit Notfallcode und einer langen Adresse ohne https.
       adresse: 'http://nas-im-keller.home.arpa:8080', notfallcode: 'WXYZ2345ABCDEFGHJKLMNPQRSTUV',
     });
-    for (const d of [daten(), daten({ notfallcode: 'WXYZ2345ABCDEFGHJKLMNPQRSTUV' }), lang]) {
+    // #679/#671: dazu Aufrufe von außen (mehr als fünf) und Ziele nach außen (mehr als fünf).
+    const aussen = { ...lang, aufrufe: Array.from({ length: 7 }, (_, i) => ({ name: `Wassermelder ${i}`, adresse: `https://ablage.example.org/api/aufruf/${'K'.repeat(43)}` })),
+      ziele: Array.from({ length: 7 }, (_, i) => `hooks-${i}.example.org`) };
+    // Mit vielen Aufrufen und Zielen darf das Blatt die Kontakte auf Seite 2 legen (#812) – es wirft nie „zu lang“ (#671).
+    for (const d of [aussen, { ...lang, ziele: aussen.ziele }, daten({ ...aussen, name: 'Familie Beispiel' })]) assert.ok((await ladePdf(await notfallblatt(d))).getPageCount() <= 2);
+    const knapp = notfallblattPlan(daten({ aufrufe: aussen.aufrufe.slice(0, 1), ziele: ['hooks.example.org'] })).ablage.zeilen.find((z) => z.kurz);
+    assert.match(knapp!.kurz!, /1 Adresse nimmt Aufrufe an\. Automatisierungen melden an 1 Rechner/);
+    for (const d of [daten(), daten({ notfallcode: 'WXYZ2345ABCDEFGHJKLMNPQRSTUV' }), lang, daten({ aufrufe: aussen.aufrufe.slice(0, 2), ziele: aussen.ziele.slice(0, 2) })]) {
       const doc = await ladePdf(await notfallblatt(d));
       assert.equal(doc.getPageCount(), 1);
       const { width, height } = doc.getPage(0).getSize();

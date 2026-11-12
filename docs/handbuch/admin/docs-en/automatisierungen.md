@@ -93,6 +93,7 @@ The stock only shows what matches the If card: **Change field**, for instance, o
 - **Report sign-in protection** sends everyone who manages sign-in protection either the **summary** of the blocks (with *Schedule*, not per user) or immediately an email when a **user account was blocked** (with *User account blocked*, at most once a day per account). See [Sign-in protection](anmeldeschutz.md#mail-an-die-administratoren).
 - **Run package on schedule** (only with *Schedule*, not per user) tells a package that its time has been reached – see [below](#paket-nach-zeitplan).
 - **Start a backup** starts a new backup – see [Workbench cards](#sicherung-anstossen).
+- **Call URL** reports to an approved destination, **Send e-mail** sends an e-mail – see [Reporting to the outside](#nach-aussen).
 - **No further automations afterwards** ends the sequence: automations with a higher number no longer run for this event (in the run history "Skipped by …").
 
 Automations work with the **system account "Automation"** (Workbench → Users). What this account may not read, the automation skips; placeholders then show "(not visible)". For tasks, the recipient's permissions apply additionally (see above).
@@ -228,6 +229,92 @@ The [Workbench overview](uebersicht.md) names every switched-on automation that 
 !!! note "Home network"
     The address starts with Ablago's address under Workbench → Email and address. If it looks like a home network, the card points this out: calls then only arrive from your own network – just right for home automation. From elsewhere it only works if Ablago is [reachable from outside](datenschutz.md#erreichbarkeit-aus-dem-internet). If you only want to expose the calls at the reverse proxy, allow `/api/aufruf/`.
 
+## Reporting to the outside { #nach-aussen }
+
+Two Then cards pass something out of Ablago: **Call URL** (to another system, such as the home automation or a monitoring) and **Send e-mail**. Both are a deliberate decision of the administration: only someone who manages *Automations* may set them up; [packages](#aus-paketen) never bring these cards. What leaves is also listed under [What leaves your Library](datenschutz.md#was-deine-ablage-verlasst).
+
+### Destinations outside { #ziele-nach-aussen }
+
+**Call URL** only calls addresses approved under **Workbench → Automations → Destinations outside** (link above the list). A destination is the beginning of an address – host and path, e.g. `https://hooks.example.org/ablago`; everything below it is allowed, `https://hooks.example.org/ablagox` or another host is not. Changing asks for your password (fresh sign-in).
+
+- **https is required.** For devices on your own network (e.g. `http://homeassistant.local:8123/api/webhook`) tick **On the home network** – only then are `http://` and addresses on your own network allowed.
+- **Protection:** Ablago follows **no redirects**, resolves the name itself and only connects to public addresses (home-network addresses only for home-network destinations; never the metadata addresses of cloud providers). A call may take 10 seconds; Ablago reads at most 64 KB of the response and **discards** it – it does not evaluate it.
+- If a destination is removed, the page names the affected automations; they pause until you change the card or approve the destination again.
+
+![Destinations outside with one destination on the internet and one on the home network](bilder/werkbank-automatisierung-ziele.png)
+
+### Call URL { #url-aufrufen }
+
+1. Approve the destination (see above).
+2. Then card **Call URL**: **Address** (below a destination, without placeholders), **Method** `POST` or `GET`, **Content** (see below) and optionally **Parameters** – name (lower case, like a placeholder) and value with placeholders, e.g. `raum` = `{raum}`.
+3. Save. Afterwards you can create a **secret** for the signature on the card (fresh sign-in). It is shown in full only once – copy it straight into the receiving system.
+
+![Then card "Call URL" with destination, content and parameters](bilder/werkbank-automatisierung-url.png)
+
+With `POST` Ablago sends a JSON object, with `GET` the same details in the query of the address:
+
+```json
+{
+  "ereignis": "post.angelegt",
+  "id": "1b6c…",
+  "zeit": "2026-11-12T08:15:00.000Z",
+  "automatisierung": "Report new post",
+  "parameter": { "raum": "Hall" }
+}
+```
+
+Ablago is **not an API client**: no own headers, no sign-in at the other system, no templates for the content, and it does not evaluate the response. If the other system needs more, it fetches it via the [API](api.md) – with its own key and its own permissions.
+
+### Content levels { #inhaltsstufen }
+
+| Content | What is sent |
+|---|---|
+| **Notification only** (default) | event, event ID, time, name of the automation – "something happened" |
+| **With IDs** | in addition folder ID, folder type, the changed field keys and a link into the library – no values |
+| **With values** | in addition title and field values of the folder; with *Folder saved* only the changed fields |
+
+- **With values** only works with `POST` (otherwise addresses containing values end up in other systems' logs) and only after you confirm that **data leaves Ablago**. Only what the system account "Automation" may read is sent – **never** password fields or encrypted values.
+- **Placeholders in parameters** follow suit: with *Notification only* and *With IDs* only those without library content (`{heute}`, `{automatisierung}`, `{mappentyp}`, `{zeitpunkt}` … and the parameters of a [call from outside](#aufruf-von-aussen)). `{titel}` or a field only work with *With values* – otherwise the card cannot be saved.
+
+### Checking the signature at the receiver { #signatur-pruefen }
+
+With a secret, every call carries the same headers as the [call from outside](#aufruf-von-aussen), just in the other direction:
+
+| Header | Content |
+|---|---|
+| `X-DMS-Zeit` | time in seconds since 1970 |
+| `X-DMS-Signatur` | `v1=` and HMAC-SHA256 (hex) over `<X-DMS-Zeit>.<content>` with the secret – with `GET` path and query instead of the content (`/hook?ereignis=…`) |
+| `X-DMS-Ereignis` | ID of the event – if a call arrives twice (retry), it has the same one |
+
+This is how the receiving system checks it (example in Python, content as bytes as received):
+
+```python
+import hmac, hashlib, time
+
+def from_ablago(secret: str, zeit: str, signatur: str, content: bytes) -> bool:
+    if abs(time.time() - int(zeit)) > 300:          # at most 5 minutes old
+        return False
+    soll = hmac.new(secret.encode(), zeit.encode() + b"." + content, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(f"v1={soll}", s.strip()) for s in signatur.split(","))
+```
+
+Or on the command line: `printf '%s.%s' "$ZEIT" "$CONTENT" | openssl dgst -sha256 -hmac "$SECRET"`. Without a secret the calls go out unsigned – the receiving system then cannot check that they come from Ablago.
+
+### Delivering, retrying, pausing { #zustellen }
+
+The card puts the call in the **outbox**; Ablago delivers it straight afterwards. If it fails (no connection, time limit, `408`, `429`, `5xx`), Ablago tries again after 1, 5 and 30 minutes, 2 and 6 hours. **Persistent errors** – the last attempt fails, a redirect, `4xx`, a blocked address or a destination that is no longer approved – pause the automation ("Delivery to … given up"); Ablago discards open calls. You see this in the list, in the [overview](uebersicht.md) and in the e-mail about technical tasks; after checking, switch the automation on again.
+
+The automation's **Deliveries** area lists the latest calls and e-mails with destination, state and error – **never the content**; it is deleted after delivery. A **dry run** only shows what would be sent.
+
+### Send e-mail { #e-mail-senden }
+
+**Send e-mail** sends an e-mail with **Subject** and **Text** (text only, with placeholders). Under **To** you list people, roles, fields of the folder (a link to a user or a text field with the format e-mail), whoever created the folder – or any addresses.
+
+- **One e-mail per recipient.** For people with an account Ablago fills placeholders with **their permissions** – what they may not see appears as "(not visible)". For addresses and e-mail fields the permissions of the system account "Automation" apply; so think about what you write to outside addresses.
+- **Note:** below every e-mail it says which automation of which library sent it and that people should contact the administration to unsubscribe.
+- **Limit:** at most 50 e-mails per automation and 200 for all together in 24 hours, at most 50 recipients per run; above that the run fails. If sending e-mail is disrupted, Ablago tries again later as with *Call URL*.
+- For errors in the *E-mail* module an e-mail does not help much – use a task or **Call URL** there.
+
 ## Order {#reihenfolge}
 
 If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **By trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
@@ -254,7 +341,7 @@ Packages bring **ready-made automations**, for example "MOT due soon" (package V
 - In the list you recognise them by the origin **from package …**. You can switch them on, adjust and copy them.
 - On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is. New automations from the update are offered again when updating.
 - If you remove the package, its automations go with it if they are off and unchanged.
-- Packages do not bring [Workbench cards](#werkbank-karten) or [Call from outside](#aufruf-von-aussen) – they only exist in automations you create yourself.
+- Packages do not bring [Workbench cards](#werkbank-karten), [Call from outside](#aufruf-von-aussen) or the cards [to the outside](#nach-aussen) (*Call URL*, *Send e-mail*) – they only exist in automations you create yourself. Where data goes cannot be shown by a package's permission preview; you decide that yourself.
 
 ### Stand-in {#vertretung}
 

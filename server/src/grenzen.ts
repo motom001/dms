@@ -68,6 +68,15 @@ export const AUFRUF_FEHLVERSUCHE_JE_ADRESSE = 12;
 export const AUFRUF_FEHLVERSUCHE_GESAMT = 600;
 /** Angenommene Aufrufe je Adresse – steht in `shared/` (die Werkbank nennt die Zahl). */
 export const AUFRUF_ANGENOMMEN_JE_ADRESSE = AUFRUF_GRENZEN.jeAdresseJeMinute;
+/**
+ * „URL aufrufen“ (#671): Antwort des Ziels – Ablago wertet sie nicht aus (kein API-Client), liest höchstens so viel und
+ * verwirft es; mehr bricht den Abruf ab (der Status zählt trotzdem).
+ */
+export const AUSSEN_ANTWORT_MAX = 64 * KB;
+/** „URL aufrufen“ (#671): Rumpf eines POST – Meldung, Kennungen und Werte einer Mappe (lange Texte gekürzt). */
+export const AUSSEN_RUMPF_MAX = 256 * KB;
+/** „URL aufrufen“ mit Werten (#671): ein einzelner Feldwert höchstens so viele Zeichen (lange Texte gekürzt). */
+export const AUSSEN_WERT_MAX = 8 * KB;
 
 /* ---------- Pakete ---------- */
 

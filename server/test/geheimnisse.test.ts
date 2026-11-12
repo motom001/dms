@@ -48,6 +48,7 @@ describe('Geheimnisse je Art (#410)', () => {
       { quelle: 'einstellung', schluessel: 'dokpasswoerter_u1', wert: { eintraege: [{ id: 'd1', name: 'Lohn', passwort: g('kaputt-5') }, { id: 'd2', name: 'Arzt', passwort: g(10) }] }, titel: 'Anna' },
       { quelle: 'einstellung', schluessel: 'paket:konten', wert: { werte: { token: g(9) } } },
       { quelle: 'aufruf', schluessel: 'a1', wert: g(11), titel: 'Wassermelder' },
+      { quelle: 'aussen', schluessel: 'a1:u', wert: g(12), titel: 'Monitoring' },
       { quelle: 'einstellung', schluessel: 'pruefwort', wert: g('kaputt-3') },
     ];
     const lesbar = (v: string) => !v.includes('kaputt') && !v.includes('alt');
@@ -55,7 +56,7 @@ describe('Geheimnisse je Art (#410)', () => {
     const je = Object.fromEntries(b.arten.map((a) => [a.art, [a.anzahl, a.unlesbar]]));
     assert.deepEqual(je, {
       passwortfeld: [1, 0], papierkorb: [1, 1], mail: [1, 0], postfach: [1, 1], postfach_oauth_app: [1, 0],
-      postfach_oauth: [2, 0], oidc: [1, 0], zweifaktor: [1, 1], dokpasswort: [2, 1], paket: [1, 0], aufruf: [1, 0],
+      postfach_oauth: [2, 0], oidc: [1, 0], zweifaktor: [1, 1], dokpasswort: [2, 1], paket: [1, 0], aufruf: [1, 0], aussen: [1, 0],
     });
     assert.ok(!b.arten.some((a) => a.art === 'pruefwort' || a.art === 'sonstige'), 'Prüfwort intern, „Weitere“ nur mit Funden');
     assert.deepEqual(b.betroffen.map((x) => x.was), ['Alt: pw', 'Postfach „Privat“: Passwort', 'Zwei-Faktor-Anmeldung von Anna', 'Gemerktes Passwort für Dokumente von Anna']);
@@ -150,11 +151,14 @@ describe('Schlüssel wechseln mit allen Geheimnissen in PostgreSQL (#410)', { sk
     await pgAutomatisierungRepo(sql, HAUSHALT).lege({ name: 'Wassermelder', beschreibung: '', reihenfolge: 50, wenn: { art: 'aufruf', parameter: [] }, und: { modus: 'alle', karten: [] }, dann: [{ id: 'a', art: 'stopp' }], sonst: [],
       id: autoId, aktiv: true, angehalten: null, herkunft: 'eigen', version: 1, erstellt: jetzt, erstelltVon: null, geaendert: jetzt, geaendertVon: null });
     await pgAufrufRepo(sql, HAUSHALT).setze({ automatisierungId: autoId, kennung: 'W'.repeat(43), geheimnis: dienst.verschluesseleGeheimnis('whsec_aufruf-geheim'), erstellt: jetzt, erstelltVon: null, geheimnisSeit: jetzt });
+    // URL aufrufen (#671): Geheimnis je Karte für die Signatur.
+    const { pgAussenGeheimnisRepo } = await import('../src/automatisierung/index');
+    await pgAussenGeheimnisRepo(sql, HAUSHALT).setze({ automatisierungId: autoId, karte: 'u', geheimnis: dienst.verschluesseleGeheimnis('whsec_aussen-geheim'), erstellt: jetzt, erstelltVon: null });
 
     // (a) Bestand: jede Art mit ihrer Anzahl, nichts unbekannt, nichts unlesbar.
     const vorher = await tresor.status();
     const je = Object.fromEntries(vorher.arten.map((a) => [a.art, a.anzahl]));
-    assert.deepEqual(je, { passwortfeld: 1, papierkorb: 1, mail: 1, postfach: 1, postfach_oauth_app: 1, postfach_oauth: 2, oidc: 1, zweifaktor: 1, dokpasswort: 1, paket: 2, aufruf: 1 });
+    assert.deepEqual(je, { passwortfeld: 1, papierkorb: 1, mail: 1, postfach: 1, postfach_oauth_app: 1, postfach_oauth: 2, oidc: 1, zweifaktor: 1, dokpasswort: 1, paket: 2, aufruf: 1, aussen: 1 });
     assert.deepEqual(vorher.betroffen, []);
     const alleVorher = await alleGeheimnisse();
     const gezaehlt = vorher.arten.reduce((n, a) => n + a.anzahl, 0) + 1; // + Prüfwort

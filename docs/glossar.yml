@@ -691,6 +691,14 @@ begriffe:
     nicht_verwenden: [Webhook (eingehend), Trigger-URL, Endpunkt]
     verwandt: [Werkbank-Karte, Notfallblatt]
     code: "WennAufruf, art: aufruf, /api/aufruf/:kennung"
+  - begriff: Ziel nach außen
+    bereich: werkbank
+    beschreibung: Freigegebener Anfang einer Adresse (Rechner und Pfad), an den die Dann-Karte „URL aufrufen“ einer Automatisierung melden darf – unter Werkbank → Automatisierungen → Ziele nach außen. Nur https; „Im Heimnetz“ erlaubt ausdrücklich auch http und Geräte im eigenen Netz. Andere Adressen ruft Ablago nicht auf, Weiterleitungen folgt es nie. Das Notfallblatt nennt die Rechner.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Webhook-Ziel, Allowlist, Whitelist]
+    verwandt: [Aufruf von außen, Notfallblatt]
+    code: "AussenZiel, automatisierung_ziele, zielFuer"
   - begriff: Werkbank-Karte
     bereich: werkbank
     beschreibung: Karte einer Automatisierung, die den Betrieb von Ablago betrifft statt einer Mappe – Wenn „Fehler gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ und Dann „Sicherung anstoßen“. Das Systemkonto „Automatisierung“ hat dafür genau festgelegte Werkbank-Rechte; einrichten darf sie nur, wer den Bereich selbst verwaltet.

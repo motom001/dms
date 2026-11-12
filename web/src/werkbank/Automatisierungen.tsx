@@ -2,7 +2,7 @@ import { feldLabel, optionText } from '../../../shared/src/beschriftung';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   AUTOMATISIERUNG_GRENZEN, automatisierungsProblemOrte, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, platzhalterFuer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
-  istBetrieb, istAufruf, PROTOKOLL_FILTER_MAX, PROTOKOLL_STUFEN, type WennBetrieb,
+  istBetrieb, istAufruf, PROTOKOLL_FILTER_MAX, PROTOKOLL_STUFEN, type WennBetrieb, aussenKarten, zielHost, type MailEmpfaenger,
   type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fehlschlag, type Kontextdaten,
   type Lauf, type Schritt, type UndKarte, type WennKarte,
 } from '../../../shared/src/automatisierung';
@@ -24,6 +24,7 @@ import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AufrufAdresse, AufrufParameterZeile, AufrufWenn } from './AutomatisierungAufruf';
+import { EmailKarte, UrlKarte, Zustellungen } from './AutomatisierungAussen';
 import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
 
 /**
@@ -33,7 +34,8 @@ import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereic
  * zur Kurzzeile. Darunter Wiedergeben (auch trocken), der Verlauf mit Live-Fortschritt und der Änderungsverlauf.
  * Sonst (#677): dieselben Karten wie Dann, wenn die Bedingungen nicht zutreffen. Werkbank-Karten (#677): Wenn „Fehler
  * gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ (ohne Mappe) und Dann „Sicherung anstoßen“. „Aufruf von
- * außen“ (#679): Parameter an der Karte, Adresse und Geheimnis darunter (`AutomatisierungAufruf.tsx`).
+ * außen“ (#679): Parameter an der Karte, Adresse und Geheimnis darunter (`AutomatisierungAufruf.tsx`). Nach außen
+ * (#671): Dann „URL aufrufen“ und „E-Mail senden“, Zustellungen und Ziele nach außen (`AutomatisierungAussen.tsx`).
  */
 
 type Stand = { automatisierungen: AutomatisierungAnsicht[]; fehlgeschlagen: number; fehlschlaege: Fehlschlag[]; kontext: Kontextdaten; umgezogen?: { am: string; anzahl: number } | null };
@@ -123,6 +125,8 @@ export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZusta
       <Listenkopf titel={t('automatisierung.ui.titel')} hilfe="werkbank.automatisierungen" beschreibung={t('automatisierung.ui.beschreibung')}>
         <KnopfLink to="/werkbank/automatisierungen/neu" art="anlegen" groesse="klein">{t('automatisierung.ui.neu')}</KnopfLink>
       </Listenkopf>
+      {/* Ziele nach außen (#671): wohin „URL aufrufen“ darf – eine eigene Seite rechts. */}
+      <p className="klein"><Link to="/werkbank/automatisierungen/ziele" className={`verweis${offen === 'ziele' ? ' an' : ''}`}>{t('automatisierung.ui.ziele.link', { anzahl: s?.kontext.ziele?.length ?? 0 })}</Link></p>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       {s?.umgezogen && (
@@ -189,6 +193,8 @@ const VORRAT: Array<{ bereich: 'wenn' | 'und' | 'dann'; art: string }> = [
   { bereich: 'dann', art: 'paket' },
   // #677: Werkbank-Recht des Systemkontos – passt zu jeder Wenn-Karte.
   { bereich: 'dann', art: 'sicherung' },
+  // #671: nach außen – passen zu jeder Wenn-Karte.
+  { bereich: 'dann', art: 'url' }, { bereich: 'dann', art: 'email' },
   { bereich: 'dann', art: 'stopp' },
 ];
 type Zweig = 'dann' | 'sonst';
@@ -203,11 +209,14 @@ const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: W
 const vorratName = (v: { bereich: string; art: string }) => (v.bereich === 'wenn' ? ereignisName(v.art) : t.frei(`automatisierung.ui.karte.${v.bereich}.${v.art}`));
 
 /** Bereiche einer Automatisierung (#1000): neu Grunddaten, Wenn und Dann; gespeichert dazu Ausprobieren, Verlauf, Fassungen. */
-type AutoBereich = 'grunddaten' | 'wenn' | 'dann' | 'ausprobieren' | 'verlauf' | 'fassungen';
-function automatisierungBereiche(gespeichert: boolean): BereichListe<AutoBereich> {
+type AutoBereich = 'grunddaten' | 'wenn' | 'dann' | 'ausprobieren' | 'verlauf' | 'zustellungen' | 'fassungen';
+/** Zustellungen (#671) nur mit Karten nach außen. */
+function automatisierungBereiche(gespeichert: boolean, aussen = false): BereichListe<AutoBereich> {
   return [
     ['grunddaten', t('automatisierung.ui.bereich.grunddaten')], ['wenn', t('automatisierung.ui.wenn')], ['dann', t('automatisierung.ui.dann')],
-    ...(gespeichert ? [['ausprobieren', t('automatisierung.ui.wiedergeben')], ['verlauf', t('automatisierung.ui.verlauf')], ['fassungen', t('oberflaeche.fassungen.titel')]] as const : []),
+    ...(gespeichert ? [['ausprobieren', t('automatisierung.ui.wiedergeben')], ['verlauf', t('automatisierung.ui.verlauf')]] as const : []),
+    ...(gespeichert && aussen ? [['zustellungen', t('automatisierung.ui.zustellungen')]] as const : []),
+    ...(gespeichert ? [['fassungen', t('oberflaeche.fassungen.titel')]] as const : []),
   ];
 }
 
@@ -227,7 +236,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
   const [fehlerOrte, setFehlerOrte] = useState<Set<AutoBereich>>(new Set());
   const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => { setE(kopie(gespeichert)); setFehlerOrte(new Set()); }, liste: '/werkbank/automatisierungen' });
   // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; Ausprobieren, Verlauf und Fassungen erst nach dem Anlegen.
-  const liste = automatisierungBereiche(!!a);
+  const liste = automatisierungBereiche(!!a, !!a && aussenKarten(a).length > 0);
   const b = useBereiche(liste, 'automatisierung', a ? id : null);
   // Karten aus dem Vorrat in Wenn, Und, Dann oder Sonst ziehen (Sonst nimmt die Dann-Karten); umsortieren in KartenListe.
   const vorratFuer = (ziel: string) => (ziel === 'sonst' ? 'dann' : ziel);
@@ -336,7 +345,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
             <Bereichskasten key={zweig} titel={zweig === 'sonst' ? t('automatisierung.ui.sonst') : undefined} hinweis={e[zweig].length ? (zweig === 'sonst' ? t('automatisierung.ui.sonst.hinweis') : undefined) : t.frei(`automatisierung.ui.${zweig}.leer`)}
               ablage={ablage.ablage(zweig)} fuss={<KarteHinzu bereich={zweig} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
               <KartenListe zweig={zweig} karten={e[zweig]} setze={(x) => setE((alt) => ({ ...alt, [zweig]: x }))} offen={offenKarte} setOffen={setOffenKarte}
-                editor={(karte, setze) => <DannEditor karte={karte} typ={typ} wenn={e.wenn} k={k} eigenesPaket={a?.herkunft === 'paket' ? a.paketId ?? null : undefined} setze={setze} />}
+                editor={(karte, setze) => <DannEditor karte={karte} typ={typ} wenn={e.wenn} k={k} a={a} eigenesPaket={a?.herkunft === 'paket' ? a.paketId ?? null : undefined} setze={setze} />}
                 kurz={(karte) => dannKurz(karte, typ, k)} />
             </Bereichskasten>
           ))}
@@ -346,6 +355,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
       {a && <>
         <Wiedergeben a={a} typ={kontextTyp(a.wenn, k.typen)} nachher={() => void z.laden()} klappe={klappe('ausprobieren')} />
         <Verlauf a={a} k={k} d={d.typ} klappe={klappe('verlauf')} />
+        {aussenKarten(a).length > 0 && <Zustellungen a={a} klappe={klappe('zustellungen')} />}
         <Fassungen art="automatisierung" eintrag={a.id} stand={a.version} nachher={() => z.laden()} klappe={klappe('fassungen')} />
       </>}
       <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} formular="auto-formular"
@@ -586,6 +596,7 @@ function ProtokollFilter({ w, setze }: { w: Extract<WennBetrieb, { art: 'protoko
     <Feld beschriftung={t('automatisierung.ui.wenn.protokoll.enthaelt')} hinweis={t('automatisierung.ui.wenn.protokoll.enthaelt.hilfe')} className="breit">
       <input value={w.enthaelt ?? ''} maxLength={PROTOKOLL_FILTER_MAX} onChange={(x) => setze({ ...w, enthaelt: x.target.value || null })} />
     </Feld>
+    {/* #671: „URL aufrufen“ (z. B. Push über die Hausautomatisierung) statt einer E-Mail – der Text nennt beides. */}
     {w.modul === 'mail' && <div className="hinweis info breit" role="status"><p>{t('automatisierung.ui.wenn.protokoll.mail')}</p></div>}
   </>;
 }
@@ -631,7 +642,7 @@ function UndListe({ karten, typ, k, setze, tief = 0 }: { karten: UndKarte[]; typ
                 {sichtenFuer(k, typ).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             )}
-            {u.art === 'favorit' && <EmpfaengerWahl e={u.von} typ={typ} k={k} setze={(v) => aendere(i, { ...u, von: v })} />}
+            {u.art === 'favorit' && <EmpfaengerWahl e={u.von} typ={typ} k={k} setze={(v) => aendere(i, { ...u, von: v as Empfaenger })} />}
             {u.art === 'gruppe' && (
               <select aria-label={t('automatisierung.ui.und.modus')} value={u.modus} onChange={(x) => aendere(i, { ...u, modus: x.target.value as 'alle' | 'eine' })}>
                 <option value="alle">{t('automatisierung.ui.und.alle')}</option><option value="eine">{t('automatisierung.ui.und.eine')}</option>
@@ -669,7 +680,8 @@ function undKurz(u: UndKarte, typ: Mappentyp | null, k: Kontextdaten, titelVon: 
   return nicht + t.frei(`automatisierung.ui.und.gruppe.${u.modus}`, { anzahl: u.karten.length });
 }
 
-function EmpfaengerWahl({ e, typ, k, setze, wenn }: { e: Empfaenger; typ: Mappentyp | null; k: Kontextdaten; setze: (e: Empfaenger) => void; wenn?: WennKarte }) {
+/** `extra` (#671, E-Mail): weitere Optionen – „Adresse eingeben“ (`adresse:`) und E-Mail-Felder (`feld:…`). */
+function EmpfaengerWahl({ e, typ, k, setze, wenn, extra }: { e: Empfaenger; typ: Mappentyp | null; k: Kontextdaten; setze: (e: Empfaenger | MailEmpfaenger) => void; wenn?: WennKarte; extra?: ReactNode }) {
   const benutzerTyp = k.typen.find((x) => x.system === 'benutzer');
   const felder = (typ?.felder ?? []).filter((f) => f.typ === 'referenz' && ((!zieleVon(f).length && !jedeMappe(f)) || einzigesZiel(f) === benutzerTyp?.id));
   const ausEreignis = wenn ? PERSONEN_IM_EREIGNIS[wenn.art] ?? [] : [];
@@ -680,9 +692,10 @@ function EmpfaengerWahl({ e, typ, k, setze, wenn }: { e: Empfaenger; typ: Mappen
     <select aria-label={t('automatisierung.ui.empfaenger')} value={wert} onChange={(x) => {
       const [art, ...rest] = x.target.value.split(':');
       const v = rest.join(':');
-      setze(art === 'feld' ? { art: 'feld', feld: v } : art === 'ereignis' ? { art: 'ereignis', feld: v } : art === 'ersteller' ? { art: 'ersteller' } : { art: art as 'person' | 'rolle', id: v });
+      setze(art === 'adresse' ? { art: 'adresse', adresse: '' } : art === 'feld' ? { art: 'feld', feld: v } : art === 'ereignis' ? { art: 'ereignis', feld: v } : art === 'ersteller' ? { art: 'ersteller' } : { art: art as 'person' | 'rolle', id: v });
     }}>
       <option value="person:">{t('automatisierung.ui.empfaenger.waehlen')}</option>
+      {extra}
       {!ohneMappe && <option value="ersteller:">{t('automatisierung.ui.empfaenger.ersteller')}</option>}
       {ausEreignis.length > 0 && <optgroup label={t('automatisierung.ui.empfaenger.ereignis')}>{ausEreignis.map((p) => <option key={p} value={`ereignis:${p}`}>{EREIGNIS_PERSON[p] ?? p}</option>)}</optgroup>}
       {felder.length > 0 && <optgroup label={t('automatisierung.ui.empfaenger.felder')}>{felder.map((f) => <option key={f.key} value={`feld:${f.key}`}>{f.label}</option>)}</optgroup>}
@@ -698,6 +711,9 @@ function neueDann(art: string, w?: WennKarte, k?: Kontextdaten): DannKarte {
   if (art === 'paket') return { id: neueId(), art: 'paket', paket: (k?.pakete ?? []).find((p) => p.zeitplan)?.id ?? '', aufgabe: null };
   if (art === 'feld') return { id: neueId(), art: 'feld', werte: {} };
   if (art === 'zusammenfassung' || art === 'favoriten' || art === 'sicherung') return { id: neueId(), art };
+  // Nach außen (#671): Adresse vorbelegt mit dem ersten freigegebenen Ziel; Inhalt „nur Meldung“.
+  if (art === 'url') return { id: neueId(), art: 'url', adresse: k?.ziele?.[0]?.adresse ?? '', methode: 'POST', parameter: [], inhalt: 'meldung' };
+  if (art === 'email') return { id: neueId(), art: 'email', an: [], betreff: '', text: '' };
   if (art === 'anmeldeschutz') return { id: neueId(), art: 'anmeldeschutz', was: w?.art === 'benutzer.gesperrt' ? 'konto' : 'sammel' };
   if (art === 'aufgabe') return { id: neueId(), art: 'aufgabe', als: 'aufgabe', empfaenger: [], text: '', faellig: 7 };
   return { id: neueId(), art: 'stopp' };
@@ -708,6 +724,8 @@ function dannKurz(k: DannKarte, typ: Mappentyp | null, kx: Kontextdaten): string
   if (k.art === 'stopp' || k.art === 'zusammenfassung' || k.art === 'sicherung') return '';
   if (k.art === 'anmeldeschutz') return t.frei(`automatisierung.ui.karte.dann.anmeldeschutz.${k.was}`);
   if (k.art === 'paket') return `${kx.pakete?.find((p) => p.id === k.paket)?.name ?? k.paket}${k.aufgabe ? ` · ${k.aufgabe}` : ''}`;
+  if (k.art === 'url') return `${k.methode} ${k.adresse ? zielHost(k.adresse) : '?'} · ${t.frei(`automatisierung.ui.karte.dann.url.inhalt.${k.inhalt}`)}`;
+  if (k.art === 'email') return `${k.betreff || '?'} → ${k.an.map((e) => (e.art === 'adresse' ? e.adresse : empfaengerName(e, typ, kx))).join(', ') || '?'}`;
   if (k.art === 'feld') return Object.entries(k.werte).map(([key, v]) => `${typ?.felder.find((f) => f.key === key)?.label ?? key} = ${String(v ?? '')}`).join(', ');
   return `${t.frei(`automatisierung.karte.aufgabe.als-${k.als}`)} → ${k.empfaenger.map((e) => empfaengerName(e, typ, kx)).join(', ') || '?'}`;
 }
@@ -721,8 +739,12 @@ function Platzhalter({ wenn, typ, einfuegen }: { wenn: WennKarte; typ: Mappentyp
   );
 }
 
-function DannEditor({ karte, typ, wenn, k, eigenesPaket, setze }: { karte: DannKarte; typ: Mappentyp | null; wenn: WennKarte; k: Kontextdaten; eigenesPaket?: string | null; setze: (k: DannKarte) => void }) {
+function DannEditor({ karte, typ, wenn, k, a, eigenesPaket, setze }: { karte: DannKarte; typ: Mappentyp | null; wenn: WennKarte; k: Kontextdaten; a?: AutomatisierungAnsicht; eigenesPaket?: string | null; setze: (k: DannKarte) => void }) {
   if (karte.art === 'paket') return <PaketKarte karte={karte} k={k} eigenesPaket={eigenesPaket} setze={setze} />;
+  // Nach außen (#671).
+  if (karte.art === 'url') return <UrlKarte karte={karte} wenn={wenn} typ={typ} k={k} a={a} setze={setze} />;
+  if (karte.art === 'email') return <EmailKarte karte={karte} wenn={wenn} typ={typ} ohneMappe={ohneMappeWenn(wenn)} setze={setze}
+    wahl={(e, s, extra) => <EmpfaengerWahl e={e} typ={typ} k={k} wenn={wenn} setze={s} extra={extra} />} />;
   if (karte.art === 'stopp') return <p className="leise klein">{t('automatisierung.ui.karte.dann.stopp.text')}</p>;
   if (karte.art === 'zusammenfassung') return <p className="leise klein">{t('automatisierung.ui.karte.dann.zusammenfassung.text')}</p>;
   if (karte.art === 'sicherung') return <p className="leise klein">{t('automatisierung.ui.karte.dann.sicherung.text')}</p>;
@@ -800,7 +822,7 @@ function DannEditor({ karte, typ, wenn, k, eigenesPaket, setze }: { karte: DannK
         <ul className="stapel">
           {karte.empfaenger.map((e, i) => (
             <li key={i} className="bedingungszeile">
-              <EmpfaengerWahl e={e} typ={typ} k={k} wenn={wenn} setze={(n) => setze({ ...karte, empfaenger: karte.empfaenger.map((x, j) => (j === i ? n : x)) })} />
+              <EmpfaengerWahl e={e} typ={typ} k={k} wenn={wenn} setze={(n) => setze({ ...karte, empfaenger: karte.empfaenger.map((x, j) => (j === i ? n as Empfaenger : x)) })} />
               <button type="button" className="textknopf gefahr klein" onClick={() => setze({ ...karte, empfaenger: karte.empfaenger.filter((_, j) => j !== i) })}>{t('automatisierung.ui.entfernen')}</button>
             </li>
           ))}
