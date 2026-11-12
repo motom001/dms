@@ -7,7 +7,7 @@ Other programs – a scanner, a script, a household app – access Ablago via th
 The complete description in **OpenAPI format** (version 3.1):
 
 - **Readable** in every installation under **My account → Security → API keys** (click your name at the top right) via the link **API documentation** – matching the installed version.
-- **Machine-readable** under `/api/openapi.json` or `/api/v1/openapi.json` of your own installation, e.g. `http://<NAS>:8080/api/openapi.json`. This can be loaded into tools such as Swagger UI, Postman or a code generator.
+- **Machine-readable** under `/api/openapi.json` or `/api/v1/openapi.json` of your own installation, e.g. `http://<NAS>:8080/api/openapi.json`. This can be loaded into tools such as Swagger UI, Postman or a code generator. The exact Ablago version (`info.version`) is only included when you are signed in or send an API key; without, it says `1`, the API version (#1067).
 - The description of the current version is also here: [openapi.json](api/openapi.json).
 
 ![API documentation in Ablago](bilder/api-doku.png)
@@ -161,6 +161,7 @@ Here is what has changed in API v1 in a way that existing programs notice. New f
 
 | Since | Change | What to do? |
 | --- | --- | --- |
+| #1067 | `openapi.json` only states the exact Ablago version in `info.version` when signed in or with an API key; without, it says `1`. A *counters only* key gets 403 there. | If you need the version: `GET /api/v1/openapi.json` with `Authorization: Bearer dms_…`. |
 | #997 (blank pages) | **Assigning leaves out marked blank pages.** If a package such as *Leerseiten* has marked pages of a document in post as blank (`leerseiten` on the document, `GET /api/v1/dokumente/{id}/leerseiten`), `POST /api/v1/post/{id}/zuordnen` creates the document in the folder without these pages – as a new version, the original stays as an earlier one; the response gives `leerseiten` (count). Never with automatic assignment. Without the package installed nothing changes. | To keep all pages, send `"leerseiten": "behalten"`. |
 | #991 (webhooks removed) | **The counter webhook no longer exists.** Ablago no longer reports changed numbers to an address by itself: the webhooks under My account (`/api/konto/webhooks`) and the approved destinations under Workbench → Webhooks (`/api/werkbank/webhooks`) have been removed; Ablago silently removed any existing webhooks during the update. `GET /api/v1/ich/zaehler` stays unchanged, including `ETag` and `304`. Reporting to the outside will be done via automations (Then card "Call URL", #671). | Whoever received webhooks so far queries the [counter](#zaehler) at a fixed interval. |
 | #1042 (post: von and an) | **The fields of post are called `von` and `an`** instead of `absender` and `fuer`; the former `an` (addresses of a sent email) is called `an_adresse`. Until 1.0.0, `absender` and `fuer` still work when writing and come along when reading a post (see [From and To](#post-von-und-an)); `an` with an address no longer works – it now holds the link. | Scripts and apps (e.g. the Homey app) write and read `von` and `an`, `an_adresse` for addresses. Switch over before 1.0.0. |

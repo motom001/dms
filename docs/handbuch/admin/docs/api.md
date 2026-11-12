@@ -7,7 +7,7 @@ Andere Programme – ein Scanner, ein Skript, eine Haushalts-App – greifen üb
 Die vollständige Beschreibung im **OpenAPI-Format** (Version 3.1):
 
 - **Lesbar** in jeder Installation unter **Mein Konto → Sicherheit → API-Schlüssel** (oben rechts auf deinen Namen klicken) über den Link **API-Dokumentation** – passend zur installierten Version.
-- **Maschinenlesbar** unter `/api/openapi.json` oder `/api/v1/openapi.json` der eigenen Installation, z. B. `http://<NAS>:8080/api/openapi.json`. Das lässt sich in Werkzeuge wie Swagger UI, Postman oder einen Code-Generator laden.
+- **Maschinenlesbar** unter `/api/openapi.json` oder `/api/v1/openapi.json` der eigenen Installation, z. B. `http://<NAS>:8080/api/openapi.json`. Das lässt sich in Werkzeuge wie Swagger UI, Postman oder einen Code-Generator laden. Die genaue Version von Ablago (`info.version`) steht nur darin, wenn du angemeldet bist oder einen API-Schlüssel mitschickst; ohne Anmeldung steht dort `1`, die Version der API (#1067).
 - Die Beschreibung der aktuellen Version liegt auch hier: [openapi.json](api/openapi.json).
 
 ![API-Dokumentation in Ablago](bilder/api-doku.png)
@@ -161,6 +161,7 @@ Hier steht, was sich an der API v1 so geändert hat, dass bestehende Programme e
 
 | Seit | Änderung | Was tun? |
 | --- | --- | --- |
+| #1067 | `openapi.json` nennt die genaue Version von Ablago in `info.version` nur mit Anmeldung oder API-Schlüssel; ohne steht dort `1`. Ein Schlüssel „nur Zähler“ bekommt dort 403. | Wer die Version braucht: `GET /api/v1/openapi.json` mit `Authorization: Bearer dms_…`. |
 | #997 (Leerseiten) | **Zuordnen lässt markierte Leerseiten weg.** Hat ein Paket wie *Leerseiten* Seiten eines Dokuments in Post als leer markiert (`leerseiten` am Dokument, `GET /api/v1/dokumente/{id}/leerseiten`), entsteht beim `POST /api/v1/post/{id}/zuordnen` das Dokument in der Mappe ohne diese Seiten – als neue Version, das Original bleibt als frühere; die Antwort nennt `leerseiten` (Anzahl). Beim automatischen Zuordnen nie. Ohne installiertes Paket ändert sich nichts. | Sollen alle Seiten bleiben, `"leerseiten": "behalten"` mitschicken. |
 | #991 (Webhooks ausgebaut) | **Den Zähler-Webhook gibt es nicht mehr.** Ablago meldet geänderte Zahlen nicht mehr selbst an eine Adresse: Die Webhooks unter Mein Konto (`/api/konto/webhooks`) und die freigegebenen Ziele unter Werkbank → Webhooks (`/api/werkbank/webhooks`) sind entfallen, eingetragene Webhooks hat Ablago beim Update still entfernt. `GET /api/v1/ich/zaehler` bleibt unverändert, auch mit `ETag` und `304`. Nach außen melden geht künftig über Automatisierungen (Dann-Karte „URL aufrufen“, #671). | Wer bisher Webhooks empfangen hat, fragt den [Zähler](#zaehler) in einem festen Abstand ab. |
 | #1042 (Post: von und an) | **Die Felder der Post heißen `von` und `an`** statt `absender` und `fuer`; das frühere `an` (Adressen einer versendeten E-Mail) heißt `an_adresse`. Bis 1.0.0 gelten `absender` und `fuer` beim Schreiben weiter und kommen beim Lesen einer Post mit (siehe [Von und An](#post-von-und-an)); `an` mit einer Adresse geht nicht mehr – dort steht jetzt der Verweis. | Skripte und Apps (z. B. die Homey-App) schreiben und lesen `von` und `an`, für Adressen `an_adresse`. Bis 1.0.0 umstellen. |

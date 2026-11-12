@@ -242,7 +242,8 @@ describe('API-Schlüssel und OpenAPI', () => {
     const { speicherRepo } = await import('../src/repo-speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const alle = routen(new Dienst(speicherRepo(), speicherDateien()), new Konten(speicherKontoRepo(), null, 'x'));
-    const v1 = alle.filter((r) => r.pfad.startsWith('/api/v1/') && r.api);
+    // Die Beschreibung selbst (openapi.json) nimmt API-Schlüssel an (#1067), steht aber nicht in der Tabelle.
+    const v1 = alle.filter((r) => r.pfad.startsWith('/api/v1/') && r.api && r.pfad !== '/api/v1/openapi.json');
     assert.equal(v1.length, V1_TABELLE.length);
     assert.ok(v1Routen(alle.filter((r) => !r.api)).length > 0);
     const doc = openapi('0.0.0') as { paths: Record<string, Record<string, unknown>>; components: { schemas: Record<string, unknown> } };

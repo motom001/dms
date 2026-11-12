@@ -4,7 +4,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
-import { openapi, v1Routen } from './api-v1';
+import { API_VERSION_OHNE_ANMELDUNG, openapi, v1Routen } from './api-v1';
 import { NUR_ZAEHLER, ZAEHLER_PFAD, type ApiSchluessel, type ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Oidc } from './oidc';
@@ -307,16 +307,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const k = routenKontext(dienst, konten, x);
   const { zg } = k;
   const intern: Route[] = BEREICHE.flatMap((f) => f(k));
-  // Öffentliche API /api/v1 und ihre Beschreibung (aus der installierten Version).
-  const doku = async () => ok(openapi(eigeneVersion()));
+  // Öffentliche API /api/v1 und ihre Beschreibung (aus der installierten Version). Die genaue Version nur angemeldet
+  // (Sitzung oder API-Schlüssel), wie bei /api/konto/status – ohne Anmeldung nur die Version der API (#1067).
+  const doku = async (a: Anfrage) => ok(openapi(a.benutzer ? eigeneVersion() : API_VERSION_OHNE_ANMELDUNG));
   // Die Id des Typs Post ändert sich nicht (Systemtyp); einmal nachgeschlagen.
   let postId: string | undefined;
   const alle: Route[] = [
     ...intern,
     // Post (#1042): alte Namen absender/fuer in Antworten der v1 mitliefern (Übergang bis 1.0.0).
     ...v1Routen(intern, { postTypId: async () => (postId ??= (await dienst.kern.system()).post.id) }),
-    { methode: 'GET', pfad: '/api/openapi.json', zugang: 'offen', handler: doku },
-    { methode: 'GET', pfad: '/api/v1/openapi.json', zugang: 'offen', handler: doku },
+    // `api`: Mit API-Schlüssel gilt man hier als angemeldet (genaue Version, #1067); ohne bleibt sie offen.
+    { methode: 'GET', pfad: '/api/openapi.json', zugang: 'offen', api: true, handler: doku },
+    { methode: 'GET', pfad: '/api/v1/openapi.json', zugang: 'offen', api: true, handler: doku },
   ];
   // Kein verschlüsselter Wert verlässt den Server: Passwortfelder erscheinen als { gesetzt, lesbar } (#46).
   const lesbar = (v: string) => !!x.tresor?.lesbar(v);
