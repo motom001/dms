@@ -3313,5 +3313,8 @@
   "listensuche.auskunft.keine-offenen-treffer": "No open access request matches.",
   "listensuche.auskunft.alle-zeigen": "Show all",
   "auskunft.neu.vorgaben": "Recipients, the person’s rights and the form of address come from the {link}; here you adjust the recipients for this access request.",
-  "auskunft.neu.vorgaben.link": "defaults for every access request"
+  "auskunft.neu.vorgaben.link": "defaults for every access request",
+  "verwaltung.ablauf": "A planned run on a folder is paused – the person who set it up may no longer carry it out.",
+  "bereich.ablaufvorlagen.name": "Automation templates",
+  "bereich.ablaufvorlagen.wann": "Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them"
 }

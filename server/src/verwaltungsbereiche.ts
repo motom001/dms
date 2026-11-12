@@ -53,6 +53,9 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/nummernkreise*', 'nummernkreise'),
   R('*', '/api/werkbank/archivnummern/*', 'nummernkreise'),
   R('*', '/api/werkbank/automatisierungen*', 'automatisierungen'),
+  // Automatisierungsvorlagen (#1044) und angehaltene Mappen-Abläufe fortsetzen.
+  R('*', '/api/werkbank/ablaufvorlagen*', 'ablaufvorlagen'),
+  R('*', '/api/werkbank/ablaeufe*', 'ablaufvorlagen'),
 
   // Benutzer und Sicherheit – die Liste der Benutzer lesen auch die Testläufe der Rechte (Typen, Ansichten) und die
   // Automatisierungen; Verwaltungsrechte selbst vergibt nur „Gesamte Verwaltung“ (prüft konten.setzeVerwaltung).

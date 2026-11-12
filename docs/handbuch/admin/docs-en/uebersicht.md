@@ -5,7 +5,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
-| **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md) |
+| **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Own organisation](organisation.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Webhooks](webhooks.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
@@ -88,6 +88,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Storage space is getting tight | yellow | `speicherplatz.knapp` |
 | Enough space again – end maintenance? | yellow | `speicherplatz.wartung-beenden` |
 | Automations paused | red | `automatisierung.angehalten` |
+| Planned runs paused (the person may no longer carry them out) | yellow | `ablaeufe.angehalten` |
 | Automations with failed runs | yellow | `automatisierung.fehlgeschlagen` |
 | Reminders taken over on the update | notice | `automatisierung.umgezogen` |
 | No daily summary without the package "Notifications" | notice | `automatisierung.ohne-benachrichtigungen` |
@@ -152,7 +153,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 
 - **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
 <!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
+- **Business**: additionally Number sequences, Automations, Automation templates, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
 <!-- /bereiche:organisation -->
 - **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
 
@@ -178,6 +179,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Views](sichten.md) | Arrange the collections on the left in the library | Household, Business |
 | [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | Business |
 | [Automations](automatisierungen.md) | Set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task | Business, Household in expert mode |
+| [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | Business, Household in expert mode |
 | [Users](benutzer.md) | Create users and roles | Household, Business |
 | [Encryption](verschluesselung.md) | The key for passwords and backups | Household, Business |
 | [Own organisation](organisation.md) | Name, address and controllers of your own business – kept at the organisation in the Library | Business |

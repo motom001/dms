@@ -178,7 +178,7 @@ function quelle(n: number, kaputtBei?: number) {
     mandant: 'Test', version: '0',
     typen: async () => [typ], sichten: async () => [], nummernkreise: async () => [], pakete: async () => [], designs: async () => [],
     mappen: async () => mappen, papierkorb: async () => [], dokumente: async () => [], versionen: async () => [], volltexte: async () => new Map(),
-    datei: async () => Buffer.alloc(0), notizen: async () => [], aufgaben: async () => [], erinnerungen: async () => [],
+    datei: async () => Buffer.alloc(0), notizen: async () => [], aufgaben: async () => [], ablaeufe: async () => [],
     historie: async (ids: string[]) => ids.map((id) => ({ mappeId: id, art: 'geaendert' })),
     favoriten: async () => [], benutzer: async () => ({ benutzer: [], vertretungen: [] }), passwort: () => null, protokoll: () => [],
     pdf: async () => { if (kaputtBei !== undefined && ++pdfs > kaputtBei) throw new Error('PDF kaputt'); return Buffer.from('%PDF-1.4'); },

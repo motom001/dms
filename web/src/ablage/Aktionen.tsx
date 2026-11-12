@@ -36,7 +36,7 @@ export interface Loeschweg { text: string; titel?: string; tu(): void; /** Nur a
 /** Aktion eines Pakets im Menü (#1039): immer mit dem Namen des Pakets; gesperrt = Bedingung trifft nicht zu, mit Grund. */
 export interface PaketEintrag { key: string; name: string; paket: string; titel?: string; gesperrt?: string; tu(): void }
 
-export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, auskunft, loeschwege = [], aus = [], pakete = [] }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; /** Brief aus Vorlage (#1040). */ brief?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[];
+export function Aktionsmenue({ aufgabe, erinnern, vorlagen = [], email, drucken, brief, link, auskunft, loeschwege = [], aus = [], pakete = [] }: { aufgabe?: () => void; erinnern?: () => void; /** Weitere Automatisierungsvorlagen (#1044), z. B. „Wiedervorlage“. */ vorlagen?: Array<{ key: string; name: string; titel?: string; tu(): void }>; email?: () => void; drucken?: () => void; /** Brief aus Vorlage (#1040). */ brief?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[];
   /** Eingebaute Aktionen, die die Werkbank ausgeblendet hat (#1039). */ aus?: readonly string[]; /** Aktionen von Paketen (#1039). */ pakete?: PaketEintrag[] }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -51,15 +51,18 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, brief, link, a
   const waehle = (f: () => void) => () => { setOffen(false); f(); };
   // Einträge als Liste (#1040: „Brief aus Vorlage“ dazu) – ein Menüpunkt, ein Aussehen.
   // Paket-Aktionen (#1039) reihen sich nach den eingebauten ein – gekennzeichnet mit dem Paket; ausgeblendete fehlen.
-  const eintraege = [
-    { key: 'aufgabe', tu: aufgabe, inhalt: tn('ablage.aktionen.aufgabe-vergeben', { symbol: <Symbol name="aufgabe" /> }) },
+  type Eintrag = { key: string; tu: () => void; titel?: string; inhalt: ReactNode };
+  const eintraege = ([
+    aufgabe && { key: 'aufgabe', tu: aufgabe, inhalt: tn('ablage.aktionen.aufgabe-vergeben', { symbol: <Symbol name="aufgabe" /> }) },
     erinnern && { key: 'erinnern', tu: erinnern, titel: t('ablage.aktionen.zu-einem-datum-an'), inhalt: tn('ablage.aktionen.erinnern', { symbol: <Symbol name="erinnern" /> }) },
+    // Automatisierungsvorlagen (#1044): gleich hinter „Erinnern“ – sie gehören zu denselben Abläufen.
+    ...vorlagen.map((v): Eintrag => ({ key: `vorlage:${v.key}`, tu: v.tu, ...(v.titel ? { titel: v.titel } : {}), inhalt: <><Symbol name="erinnern" />{' '}{v.name}</> })),
     email && { key: 'email', tu: email, inhalt: tn('ablage.aktionen.per-e-mail-versenden', { symbol: <Symbol name="email" /> }) },
     drucken && { key: 'drucken', tu: drucken, inhalt: tn('ablage.aktionen.als-pdf-exportieren', { symbol: <Symbol name="pdf" /> }) },
     brief && { key: 'brief', tu: brief, titel: t('ablage.aktionen.brief-titel'), inhalt: tn('ablage.aktionen.brief-aus-vorlage', { symbol: <Symbol name="dokument" /> }) },
     link && { key: 'link', tu: link, titel: t('ablage.aktionen.link-ueber-mappentyp-und'), inhalt: tn('ablage.aktionen.link-kopieren', { symbol: <Symbol name="link" /> }) },
     auskunft && { key: 'auskunft', tu: auskunft, titel: t('ablage.aktionen.alles-zu-dieser-person'), inhalt: tn('ablage.aktionen.auskunft-erstellen', { symbol: <Symbol name="auskunft" /> }) },
-  ].filter((e): e is { key: string; tu: () => void; titel?: string; inhalt: ReturnType<typeof tn> } => !!e && !aus.includes(e.key));
+  ] as Array<Eintrag | false | undefined | null | ''>).filter((e): e is Eintrag => !!e && !aus.includes(e.key));
   // Paket-Aktionen in derselben Liste – ein Menüpunkt, ein Aussehen; davor ein Trenner, gesperrte mit Grund.
   const alle: Array<{ key: string; tu: () => void; titel?: string; inhalt: ReactNode; gesperrt?: string; trenner?: boolean }> = [...eintraege, ...pakete.map((p, i) => ({
     key: `paket:${p.key}`, tu: p.tu, titel: p.gesperrt ?? p.titel, gesperrt: p.gesperrt, trenner: i === 0,

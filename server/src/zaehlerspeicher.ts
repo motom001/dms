@@ -82,14 +82,16 @@ export const OHNE_FOLGEN = new Set<string>([
   'aufgabenZurPassung', 'holeAufgabe', 'aufgabenVon', 'aufgabenVonMappen', 'offeneAufgaben', 'erledigteAufgaben', 'fristAufgaben',
   // Aufgaben bei Personen ohne Leserecht (#798): Lesen und neue Fälle ändern keine Zahl; Leserecht auf Zeit und Ende schon.
   'faelleOhneLeserecht', 'leserechteAufZeit', 'legeFallAn',
-  'verschluesselteFundstellen', 'erinnerungen', 'holeErinnerung', 'notizen', 'notizenVon', 'holeNotiz', 'historie', 'historieVon', 'letzterAbruf',
+  'verschluesselteFundstellen', 'ablaeufe', 'holeAblauf', 'notizen', 'notizenVon', 'holeNotiz', 'historie', 'historieVon', 'letzterAbruf',
   // schreiben, ohne Folgen für die Zahlen
   'legeEreignisseAn', 'ereignisZugestellt', 'ereignisDaten', 'ereignisFehlgeschlagen', 'loescheEreignisse', 'loescheOffeneEreignisse', 'speicherePaketCode', 'loeschePaketCode',
   // Sprachpakete (#731): nur Texte.
   'sprachpakete', 'speichereSprachpaket', 'loescheSprachpaket',
   'speichereNummernkreis', 'loescheNummernkreis', 'setzeZaehler', 'zieheNummern', 'aktualisiereStatistik',
   'legeAuskunftLinkAn', 'auskunftLinkFehlversuch', 'auskunftLinkAbruf', 'widerrufeAuskunftLink', 'setzeFavoritBenachrichtigen',
-  'merkeGesehen', 'ocrEinreihen', 'ocrSetze', 'ocrZurueckstellen', 'legeErinnerungAn', 'aendereErinnerung', 'loescheErinnerung',
+  'merkeGesehen', 'ocrEinreihen', 'ocrSetze', 'ocrZurueckstellen', 'legeAblaufAn', 'aendereAblauf', 'loescheAblauf', 'setzeAblaufAngehalten',
+  // Automatisierungsvorlagen (#1044): Vorlagen, Änderungs- und Ablaufverlauf ändern keine Zahl.
+  'ablaufvorlagen', 'speichereAblaufvorlage', 'loescheAblaufvorlage', 'ablaufvorlageFassungen', 'vermerkeAblauf', 'ablaufVerlauf', 'zaehleAblaufVerlauf', 'raeumeAblaufVerlaufAuf',
   'legeNotizAn', 'aendereNotiz', 'loescheNotiz', 'historieSchreibe', 'historieAufraeumen', 'kuerzeVersionen',
   // Unscharfe Suche (#356): Wörterverzeichnis und gleichbedeutende Wörter ändern keine Zahlen.
   'aehnlicheWoerter', 'woerterAnzahl', 'woerterNeu', 'woerterEinarbeiten', 'synonyme', 'legeSynonymAn', 'aendereSynonym', 'loescheSynonym', 'setzeSynonyme',
@@ -143,10 +145,10 @@ export function richteZwischenspeicherEin(env: Record<string, string | undefined
 export const zwischenspeicherAus = (): boolean => aus ?? !richteZwischenspeicherEin();
 
 /**
- * Die Termine (#528, #725) hängen zusätzlich an den freien Erinnerungen und an den Datumsfeldern: Diese Methoden
+ * Die Termine (#528, #725) hängen zusätzlich an den Mappen-Abläufen (#1044, früher freie Erinnerungen) und an den Datumsfeldern: Diese Methoden
  * zählen für dessen Stand mit, obwohl sie keine Zahl einer Ansicht ändern.
  */
-export const ZAEHLT_FUER_TERMINE: ReadonlySet<string> = new Set(['legeErinnerungAn', 'aendereErinnerung', 'loescheErinnerung']);
+export const ZAEHLT_FUER_TERMINE: ReadonlySet<string> = new Set(['legeAblaufAn', 'aendereAblauf', 'loescheAblauf']);
 
 /** Stand in der Datenbank (#742): lesen (in einer Anfrage aus der Sitzungsabfrage) und hochzählen. */
 export interface Standquelle { lies(): Promise<number>; erhoehe(): Promise<number> }

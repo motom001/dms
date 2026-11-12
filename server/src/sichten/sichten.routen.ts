@@ -84,13 +84,18 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       // Exportrecht (#294, #723): Herunterladen, Versenden, „Als PDF exportieren“ nur für lesbare Mappen, die in einer
       // Sicht mit Recht E liegen – dieselbe Prüfstelle wie beim Herunterladen selbst.
       // Verwaltungsmodus (#820): ohne Modus nicht lesbar → Historie und Hinweis in der Oberfläche.
-      const [mitnehmbar, spur] = await Promise.all([
-        d.rechte?.R !== false ? dienst.ausgang.mitnehmbar(ich(a), z, [a.params.id]) : Promise.resolve(new Set<string>()),
+      // Automatisierungsvorlagen (#1044): fürs Menü „Mappe“ und die Namen im Bereich „Geplant“ – im selben Zug.
+      const lesen = d.rechte?.R !== false;
+      const [mitnehmbar, spur, vorlagen] = await Promise.all([
+        lesen ? dienst.ausgang.mitnehmbar(ich(a), z, [a.params.id]) : Promise.resolve(new Set<string>()),
         modusSpur(a, [a.params.id], 'angesehen'),
+        lesen ? dienst.ablaeufe.vorlagen() : Promise.resolve([]),
       ]);
       d.exportierbar = mitnehmbar.has(a.params.id);
       const nurImVerwaltungsmodus = spur.has(a.params.id);
-      const antwort = { ...d, ...(nurImVerwaltungsmodus ? { nurImVerwaltungsmodus } : {}) };
+      const namen = new Map(vorlagen.map((v) => [v.kennung, v.name] as const));
+      const ablaufvorlagen = lesen ? dienst.ablaeufe.zumAnwendenAus(vorlagen, m.mappe.typId, [...z.typen.values()]) : [];
+      const antwort = { ...d, ...(nurImVerwaltungsmodus ? { nurImVerwaltungsmodus } : {}), erinnerungen: (d.erinnerungen ?? []).map((e) => ({ ...e, vorlageName: namen.get(e.vorlage) ?? e.vorlage })), ablaufvorlagen };
       const danach: Array<() => Promise<unknown>> = [];
       // Startseite (#334): „Zuletzt geöffnet“ – nur in der Oberfläche, nicht über API-Schlüssel. Nach der Antwort (#741).
       const b = a.benutzer;

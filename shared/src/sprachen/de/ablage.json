@@ -1353,5 +1353,13 @@
   "paketaktion.herunterladen": "{name} herunterladen",
   "paketaktion.fehler.pflicht": "Bitte ausfüllen.",
   "paketaktion.fehler.ungueltig": "Bitte einen gültigen Wert wählen.",
-  "paketaktion.fehler.lang": "Bitte kürzer fassen."
+  "paketaktion.fehler.lang": "Bitte kürzer fassen.",
+  "aufgaben.geplant": "Geplant",
+  "aufgaben.ablauf-loeschen": "„{name}“ löschen?",
+  "aufgaben.angehalten": "angehalten",
+  "aufgaben.ablauf-aendern": "Ändern",
+  "aufgaben.text": "Text",
+  "aufgaben.laeuft-am": "Läuft am {datum} – bis dahin steht es hier unter „Geplant“.",
+  "aufgaben.laeuft-sofort": "Läuft sofort.",
+  "aufgaben.laeuft-am-gewaehlten": "Läuft am gewählten Tag – bis dahin steht es hier unter „Geplant“."
 }

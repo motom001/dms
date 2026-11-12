@@ -182,7 +182,7 @@ export class MappenDienst {
     const [alleRueck, roheBezuege, dokumente, notizen, erinnerungen, unpassend, datenschutz, hinweise] = await Promise.all([
       this.repo.rueckverweise(id), this.repo.bezuege(ziele),
       this.repo.listeDokumente(id).then((d) => this.mitArchivStand(d)).then((d) => this.mitPdfSchutz(d)),
-      this.repo.notizen(id), this.repo.erinnerungen({ mappeId: id }),
+      this.repo.notizen(id), this.repo.ablaeufe({ mappeId: id }),
       this.verweiskonflikte(typ, mappe.werte, z?.ich.id ?? '', alleTypen && z?.a ? { typen: alleTypen, a: z.a } : undefined, z),
       z?.admin ? this.datenschutz() : Promise.resolve(null),
       this.teile.hinweise.von(id),
@@ -212,7 +212,7 @@ export class MappenDienst {
       notizen,
       /** Aufgaben an der Mappe, offene zuerst (#54). */
       aufgaben,
-      /** Noch nicht fällige Erinnerungen (#131). */
+      /** Geplante Mappen-Abläufe (#1044; früher nur Erinnerungen, #131) – der Bereich „Geplant“. */
       erinnerungen,
       /** Titel und Typ der Mappen, auf die diese verweist (nicht lesbare ohne Titel). */
       bezuege: maskiert(roheBezuege, sichtbar),

@@ -19,6 +19,7 @@ import { EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useWebdav, WebdavPanel } from './Webdav';
 import { useWebhooks, webhookWarnungen, WebhooksPanel } from './Webhooks';
 import { AutomatisierungEditor, AutomatisierungenListe, automatisierungWarnungen, useAutomatisierungen } from './Automatisierungen';
+import { AblaufvorlageEditor, AblaufvorlagenListe, useAblaufvorlagen } from './Ablaufvorlagen';
 import { useEffect, type ReactNode } from 'react';
 import { useKonto } from '../konto';
 import { Dreiteilung } from '../bereiche';
@@ -136,6 +137,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const webdav = useWebdav(bereich === 'webdav');
   const webhooks = useWebhooks((bereich === 'webhooks' || bereich === 'uebersicht') && darf('webhooks'));
   const automatisierungen = useAutomatisierungen(bereich === 'automatisierungen');
+  const ablaufvorlagen = useAblaufvorlagen(bereich === 'ablaufvorlagen');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const stempel = useStempelVorlagenWerkbank(bereich === 'stempel');
@@ -162,7 +164,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       protokoll: protokoll.neu, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden, woerter: woerter.laden,
       wartung: async () => { await ocr.laden(); await wartungsmodus.laden(); }, fehlermeldungen: meldungen.laden, sicherung: sicherung.laden,
-      systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); await technik.laden(); await datenbank.laden(); }, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden, webhooks: webhooks.laden, automatisierungen: automatisierungen.laden,
+      systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); await technik.laden(); await datenbank.laden(); }, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden, webhooks: webhooks.laden, automatisierungen: automatisierungen.laden, ablaufvorlagen: ablaufvorlagen.laden,
       auskuenfte: datenschutz.laden, loeschkonzept: datenschutz.laden,
     };
     void offen[bereich]?.();
@@ -278,6 +280,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'automatisierungen') {
     liste = <AutomatisierungenListe z={automatisierungen} offen={id} />;
     rechts = id ? <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} /> : <div className="platzhalter"><p>{t('automatisierung.ui.waehlen')}</p></div>;
+  } else if (bereich === 'ablaufvorlagen') {
+    // Automatisierungsvorlagen (#1044): dreiteilig wie die Automatisierungen.
+    const kennung = id ? decodeURIComponent(id) : undefined;
+    liste = <AblaufvorlagenListe z={ablaufvorlagen} offen={kennung} />;
+    rechts = kennung ? <AblaufvorlageEditor key={`${kennung}-${ablaufvorlagen.stand ? 1 : 0}`} z={ablaufvorlagen} kennung={kennung} /> : <div className="platzhalter"><p>{t('automatisierung.vorlage.ui.waehlen')}</p></div>;
   } else if (bereich === 'stempel') {
     // Dreiteilig seit #990: Vorlagen in der Mitte, rechts die gewählte mit Live-Vorschau (#799).
     liste = <StempelListe z={stempel} offen={id} />;
@@ -319,6 +326,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'nummernkreise', name: n('nummernkreise'), gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },
     { pfad: 'automatisierungen', name: n('automatisierungen'), gruppe: 'ablage', zahl: automatisierungen.stand?.automatisierungen.length || undefined,
       warn: automatisierungWarnungen(automatisierungen.stand) || uebersicht.stand?.automatisierungen?.angehalten.length ? '!' : undefined, warnTitel: t('automatisierung.ui.leiste') },
+    { pfad: 'ablaufvorlagen', name: n('ablaufvorlagen'), gruppe: 'ablage', zahl: ablaufvorlagen.stand?.vorlagen.length || undefined,
+      warn: (ablaufvorlagen.stand?.angehalten.length ?? uebersicht.stand?.ablaeufe?.angehalten.length) ? '!' : undefined, warnTitel: t('automatisierung.vorlage.ui.leiste') },
     // Benutzer und Sicherheit
     { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
     { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },

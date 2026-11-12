@@ -50,12 +50,12 @@ Vollexporte, [Meine Daten exportieren](#meine-daten-exportieren) und die [Auskü
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            Aufbau, Formate, Prüfskript
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
-  struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Benutzer (ohne Passwörter)
+  struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Automatisierungen und -vorlagen, Benutzer (ohne Passwörter)
   daten/
     <typ>.csv  .jsonl  .xlsx   je Mappentyp (Kennung, aus Paketen paket.schluessel): eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe
     dokumente.csv          alle Dokumente und älteren Versionen mit Pfad im Export
-    notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,
+    notizen.jsonl, aufgaben.jsonl, ablaeufe.jsonl (geplante Erinnerungen und andere Abläufe), historie.jsonl,
     papierkorb.jsonl, papierkorb-dokumente.jsonl, vertretungen.jsonl, favoriten.csv,
     loeschprotokoll.csv  (Löschprotokoll, ohne Inhalte)
   ablage/<Typ>/<Titel> [Id]/

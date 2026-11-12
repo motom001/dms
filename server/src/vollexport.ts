@@ -13,7 +13,7 @@ import { kernTyp } from '../../shared/src/dateiumwandlung';
 import { auswahlText, formatiere, istLeer, mehrereZiele, verweiseVon, type Aufgabe, type Dokument, type DokumentVersion, type Mappe, type Mappentyp, type Notiz, type Vertretung, type Werte } from '../../shared/src/model';
 import { istZeitraum, zeitraumIso } from '../../shared/src/feldarten';
 import { wertfelder } from '../../shared/src/tabelle';
-import type { Erinnerung } from '../../shared/src/fristen';
+import type { MappenAblauf } from '../../shared/src/ablaufvorlagen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Sicht } from '../../shared/src/sichten';
 import { exportSpalten, sichererName, spaltenKopf, zeile } from './export';
@@ -55,7 +55,10 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   dokument_versionen: t('meldungen.vollexport.daten-dokumente-csv-und-2'),
   notizen: 'daten/notizen.jsonl',
   aufgaben: t('meldungen.vollexport.daten-aufgaben-jsonl-und'),
-  erinnerungen: t('meldungen.vollexport.daten-erinnerungen-jsonl-und'),
+  mappen_ablaeufe: t('meldungen.vollexport.daten-ablaeufe-jsonl-und'),
+  ablaufvorlagen: t('meldungen.vollexport.struktur-ablaufvorlagen-json'),
+  ablaufvorlage_fassungen: t('meldungen.vollexport.struktur-ablaufvorlagen-json-2'),
+  ablauf_verlauf: t('meldungen.vollexport.nicht-enthalten-ablauf-verlauf'),
   historie: 'daten/historie.jsonl',
   favoriten: 'daten/favoriten.csv',
   papierkorb: 'daten/papierkorb.jsonl',
@@ -148,7 +151,10 @@ export interface ExportQuelle {
   archivfassung?(sha256: string): Promise<{ inhalt: Buffer | null } | { imOriginal: true } | null>;
   notizen(mappeIds: string[]): Promise<Notiz[]>;
   aufgaben(mappeIds: string[]): Promise<Aufgabe[]>;
-  erinnerungen(): Promise<Erinnerung[]>;
+  /** Geplante Mappen-Abläufe (#1044; früher freie Erinnerungen). */
+  ablaeufe(): Promise<MappenAblauf[]>;
+  /** Automatisierungsvorlagen mit Änderungsverlauf (#1044); fehlt beim persönlichen Export. */
+  ablaufvorlagen?(): Promise<unknown[]>;
   historie(mappeIds: string[]): Promise<Array<{ mappeId: string }>>;
   favoriten(): Promise<Array<{ benutzerId: string; mappeId: string }>>;
   benutzer(): Promise<{ benutzer: Array<Record<string, unknown>>; vertretungen: Vertretung[] }>;
@@ -376,6 +382,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   if (q.merkmale) await w.schreibe('struktur/merkmale.json', json(await q.merkmale()));
   if (q.organisation) await w.schreibe('struktur/organisation.json', json(await q.organisation()));
   if (q.automatisierungen) await w.schreibe('struktur/automatisierungen.json', json(await q.automatisierungen()));
+  if (q.ablaufvorlagen) await w.schreibe('struktur/ablaufvorlagen.json', json(await q.ablaufvorlagen()));
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
 
   // Daten je Mappentyp
@@ -539,8 +546,8 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   await w.schliesse(dokListe);
   await w.schliesse(notizDatei);
   await w.schliesse(aufgabeDatei);
-  const erinnerungen = await q.erinnerungen();
-  await w.schreibe('daten/erinnerungen.jsonl', jsonl(erinnerungen));
+  const erinnerungen = await q.ablaeufe();
+  await w.schreibe('daten/ablaeufe.jsonl', jsonl(erinnerungen));
   await w.schliesse(historieDatei);
   await w.schreibe('daten/favoriten.csv', csv(['benutzer_id', 'mappe_id'], (await q.favoriten()).map((f) => [f.benutzerId, f.mappeId])));
   await w.schreibe('daten/papierkorb.jsonl', jsonl((await q.papierkorb()).map((p) => ({ ...p, werte: ohnePasswoerter(typVon.get(p.typId), p.werte) }))));
@@ -566,7 +573,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   if (opt.protokolle) await w.schreibe('protokolle/protokoll.jsonl', jsonl(q.protokoll()));
   abschluss();
 
-  const anzahlen = { mappentypen: typen.length, mappen: alleMappen.size, dokumente, verweise: zahl.verweise, notizen: zahl.notizen, aufgaben: zahl.aufgaben, erinnerungen: erinnerungen.length, historie: zahl.historie };
+  const anzahlen = { mappentypen: typen.length, mappen: alleMappen.size, dokumente, verweise: zahl.verweise, notizen: zahl.notizen, aufgaben: zahl.aufgaben, ablaeufe: erinnerungen.length, historie: zahl.historie };
   await w.schreibe('LIESMICH.md', Buffer.from(opt.liesmich ?? liesmich(q, jetzt, anzahlen, opt), 'utf8'));
   // Manifest zuletzt; es nennt alle anderen Dateien mit Größe und Prüfwert.
   const manifest = { format: 'dms-vollexport', formatversion: FORMATVERSION, erstellt: jetzt.toISOString(), dms: q.version, mandant: q.mandant, anzahlen, passwoerter: !!opt.passwoerter, protokolle: !!opt.protokolle, ...(opt.zweck ? { zweck: opt.zweck } : {}), tabellen: EXPORT_TABELLEN, dateien: w.dateien };
@@ -594,10 +601,10 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |
 | \`daten/verweise.csv\` | Mappe → Feld → Mappe |
 | \`daten/dokumente.csv\` | alle Dokumente und ihre älteren Versionen mit Pfad im Export |
-| \`daten/*.jsonl\` | Notizen, Aufgaben (mit Fristen), Erinnerungen, Historie, Papierkorb, Vertretungen; \`favoriten.csv\` |
+| \`daten/*.jsonl\` | Notizen, Aufgaben (mit Fristen), geplante Abläufe (Erinnerungen, Wiedervorlagen), Historie, Papierkorb, Vertretungen; \`favoriten.csv\` |
 | \`ablage/<Typ>/<Titel> [Id]/\` | je Mappe \`mappe.json\`, \`mappe.pdf\` und die Dokumente im Original je Register; \`.txt\` = erkannter Text; \`.fassung.pdf\` (bzw. \`.png\`, \`.jpg\`) = umgewandelte Fassung eines Pakets für Dateitypen wie TIFF; \`.pdfa.pdf\` = Archivfassung (PDF/A) eines Pakets, durchsuchbar, zum langfristigen Aufbewahren; \`Versionen/\` = ältere Versionen |
 | \`uebersicht/<typ>.pdf\` | Übersicht je Mappentyp mit allen Mappen |
-| \`kalender/fristen.ics\` | offene Fristen, Aufgaben mit Datum und Erinnerungen (iCalendar) |
+| \`kalender/fristen.ics\` | offene Fristen, Aufgaben mit Datum und geplante Abläufe (iCalendar) |
 | \`kontakte/<typ>.vcf\` | Kontakte als vCard 4.0 (nur, wenn beim Export zugeordnet) |
 
 ## Formate

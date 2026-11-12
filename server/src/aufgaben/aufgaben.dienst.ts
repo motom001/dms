@@ -18,6 +18,7 @@ import type { ZugriffDienst } from '../zugriff';
 import { type FavoritenFreigabe, freigabeZumSpeichern, liesFavoritenFreigabe } from '../../../shared/src/favoritenfreigabe';
 import { erwaehnungen } from '../../../shared/src/markdown';
 import { type Aufgabe, AUFGABE_MAX, type AufgabenAnlass, type Benutzer, type Mappentyp, type Werte } from '../../../shared/src/model';
+import type { AblaufPlatzhalter, MappenAblaeufe } from './ablaeufe';
 import type { Fristen } from './fristen';
 import type { OhneEmpfaenger } from './ohne-empfaenger';
 import type { OhneLeserecht } from './ohne-leserecht';
@@ -27,6 +28,8 @@ import type { AufgabenVertretung } from './vertretung';
 export interface AufgabenTeile {
   rechte: ZugriffDienst; historie: MappenHistorie; mappen: MappenDienst; ereignisse: EreignisseDienst; systemmappen: PostSystemmappen;
   aufgaben: AufgabenDienst; vertretung: AufgabenVertretung; ohneLeserecht: OhneLeserecht; fristen: Fristen; ohneEmpfaenger: OhneEmpfaenger;
+  /** Mappen-Abläufe aus Automatisierungsvorlagen (#1044). */
+  ablaeufe: MappenAblaeufe;
 }
 
 /** Konten (#43, #78, #506), vom Start angebunden: alle Personen mit Abwesenheit, persönliche Einstellungen. */
@@ -43,6 +46,8 @@ export interface AufgabenAnschluss {
   konten(): AufgabenKonten | undefined;
   /** Gültigkeit der Zahlen in dieser Anfrage (#742; `mindestensMs` setzen Tests am Dienst). */
   gueltigkeit(): Gueltigkeit;
+  /** Platzhalter der Automatisierungsvorlagen füllen (#1044, #795) – setzt der Motor (automatisierung.ts). */
+  ablaufPlatzhalter?(): AblaufPlatzhalter | undefined;
 }
 
 export class AufgabenDienst {

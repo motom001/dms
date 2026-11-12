@@ -282,8 +282,9 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `aufgaben.dienst.ts` | `AufgabenDienst` (`dienst.aufgaben`) | `pruefeEmpfaenger`, Erwähnungen (#56, #81), Freigabe der Favoriten (#506), `aufgabeAusAutomatisierung` (#676, #724), `erledigeNachAnlass` |
 | `vertretung.ts` | `AufgabenVertretung` (`dienst.vertretung`) | Vertretung (#78), vergeben, erledigen, weitergeben (auch gesammelt, #415), `abwesenheitGeaendert`, `meineAufgaben` |
 | `ohne-leserecht.ts` | `OhneLeserecht` (`dienst.ohneLeserecht`) | Aufgaben bei Personen ohne Leserecht, Fälle, Leserecht auf Zeit (#798, #958) |
-| `fristen.ts` | `Fristen` (`dienst.fristen`) | Fristen, Erinnerungen, Termine samt Zwischenspeicher, Folgetermin (#129–#133, #528, #725) |
+| `fristen.ts` | `Fristen` (`dienst.fristen`) | Fristen, Termine samt Zwischenspeicher, Folgetermin (#129–#133, #528, #725); der tägliche Lauf ruft die fälligen Mappen-Abläufe |
 | `ohne-empfaenger.ts` | `OhneEmpfaenger` (`dienst.ohneEmpfaenger`) | Alltags-Benutzer (#719), Favoriten benachrichtigen (#422) |
+| `ablaeufe.ts` | `MappenAblaeufe` (`dienst.ablaeufe`) | [Automatisierungsvorlagen und Mappen-Abläufe](#ablaufvorlagen) (#1044): anwenden, geplante laufen lassen (Rechte zur Laufzeit), Werkbank, Vorlagen aus Paketen |
 
 - **Bekommt den Kern** und `AufgabenTeile` (Rechteprüfung, Historie und Mappen, Ereignisse, Rollen der [Post](#post) und einander); über den Anschluss Ereignis (`kern.ereignis`), Konten und die Gültigkeit der Zahlen.
 - Die Empfänger an den [Anschlusspunkten](#anschlusspunkte) sind unverändert; sie rufen `aufgaben.pruefeErwaehnungen`, `fristen.fristenAbgleichen` und `vertretung.abwesenheitGeaendert` erst beim Auslösen – Tests ersetzen sie dort.
@@ -967,6 +968,31 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Mo
 - **Bearbeiten geht vor Automatisierung:** Fehlt etwas (Mappentyp, Feld, Ansicht), blockiert das nie das Arbeiten – die Automatisierung wird rot und angehalten (`angehalten.grund = 'fehlerhaft'`), spätestens beim nächsten Lauf oder Zeitplan-Durchgang. Speichern geht nur mit gültigem Stand.
 - Demo-Daten und Beispiele lösen nichts aus (`ohneEreignisse`), in Wartung und Wiederherstellung ruht der Verteiler. Nach einer Wiederherstellung sind alle eingeschalteten Automatisierungen angehalten, bis ein Admin sie wieder einschaltet.
 - Speichern mit `version` (veralteter Stand → 409); jede Fassung steht in `automatisierung_fassungen` und lässt sich wiederherstellen. Im Vollexport: `struktur/automatisierungen.json` mit Änderungsverlauf; in der Sicherung alle Tabellen.
+
+## Automatisierungsvorlagen und Mappen-Abläufe (#1044) { #ablaufvorlagen }
+
+Eine **Automatisierungsvorlage** ist eine Automatisierung mit Lücken, die man an einer Mappe anwendet; die angewendete heißt **Mappen-Ablauf**. „Aufgabe vergeben“ und „Erinnern“ sind solche Vorlagen – es gibt keinen eigenen Weg für Erinnerungen und von Hand vergebene Aufgaben mehr. Modell und Prüfungen in `shared/src/ablaufvorlagen.ts`, Ablauf in `server/src/aufgaben/ablaeufe.ts` (`MappenAblaeufe`, `dienst.ablaeufe`), Routen in `aufgaben.routen.ts`, Oberfläche in `web/src/werkbank/Ablaufvorlagen.tsx` und `web/src/ablage/Aufgaben.tsx` (`Geplant`, `NeueAufgabe`, `ErinnerungFormular`, `AblaufFormular`). Migration 105.
+
+**Modell**
+
+- **Vorlage** (`Ablaufvorlage`): `wann` (`sofort`, `datum` – beim Anwenden gefragt –, `in` mit `anzahl` und `einheit`), `fragen` (`empfaenger`, `datum`, `text`), `karten` – nur `aufgabe` (`VORLAGEN_KARTEN`, Aufgabe oder Benachrichtigung) mit Empfängern `frage` (die Antwort), `selbst` (wer anwendet), `ersteller` (wer die Mappe angelegt hat) oder `feld` (Verweis auf Benutzer; nur mit festen `typen`). `vorlagenEingabeFehler` lehnt alles andere ab (keine stille Bereinigung), `vorlagenProbleme` prüft den Aufbau.
+- **Kennung** statt Id: Kern-Vorgaben `aufgabe_vergeben`, `erinnern` (`KERN_VORLAGEN`, `kernVorlage()`), aus Paketen `paket:schluessel`, eigene `eigen:<uuid>`. Gespeichert (`ablaufvorlagen`, Fassungen in `ablaufvorlage_fassungen`) wird eine Kern-Vorgabe erst, wenn ein Admin sie ändert oder ein Paket sie mit `ersetzt` **überlagert** – dann unter ihrer Kennung; ohne Zeile gilt die Vorgabe des Kerns. Abläufe nennen die Kennung (`mappen_ablaeufe.vorlage`) und bleiben gültig, wer auch immer die Vorlage gerade liefert.
+- **Mappen-Ablauf** (`MappenAblauf`, Tabelle `mappen_ablaeufe`, früher `erinnerungen`): Vorlage, Mappe, Antworten (`empfaengerId`, `text`), `datum` (wann er läuft), `erstelltVon` (die Person) und `angehalten`. „Sofort“ legt keinen an.
+
+**Ablauf**
+
+1. `anwenden(mappe, kennung, antworten, person)` – die Route hat Leserecht und Empfänger geprüft (`darf`, `empfaengerSichtbar`). Antworten wie früher die Dialoge (gleiche Meldungen), **Bremse** `ABLAEUFE_JE_PERSON_UND_MAPPE` (offene je Person und Mappe) und `ABLAEUFE_JE_MINUTE` (angewendete je Person und Minute, über `ablauf_verlauf`) aus `grenzen.ts` – sonst 429.
+2. **Sofort** läuft in derselben Anfrage: so schnell wie früher (ohne weitere Platzhalter kein Motor, kein Zugriff des Empfängers). Sonst entsteht der Ablauf; liegt sein Datum heute oder früher, läuft er gleich.
+3. Der tägliche Lauf (`Fristen.fristenLauf` → `ablaeufe.faellige`) nimmt jeden fälligen Ablauf in **einer Transaktion** aus der Tabelle (`loescheAblauf` liefert nur dem einen true – mehrere Server) und führt seine Karten aus.
+4. **Rechte zur Laufzeit** (`pruefePerson`): Person ist ein aktiver Benutzer (kein Paket- oder Systemkonto) und darf die Mappe **jetzt** lesen. Sonst `angehalten` (`person`, `deaktiviert`, `leserecht`, `vorlage`) – Hinweis in der Übersicht der Werkbank und in der Mail an die Verwaltung; `fortsetzen` prüft erneut.
+5. **Karten** auf dem Weg der Aufgaben: sofort `manuell`, sonst `erinnerung` mit Datum, Ersteller = Person, dieselben Einträge in der Historie (bei `erinnern` wörtlich wie bisher), Vertretung (`leiteUm`), Fall ohne Leserecht (`faelleNach`, #798); Benachrichtigungen gebündelt (`benachrichtigeGebuendelt`, Schlüssel `ablauf:<kennung>`). Platzhalter füllt der **Motor** (`dienst.ablaufPlatzhalter` → `Automatisierungen.fuelleMit`) mit den Rechten der Person und des Empfängers (#795); `{eingabe}`, `{person}`, `{empfaenger}` setzt `MappenAblaeufe` danach ein, damit eine Eingabe nie selbst Platzhalter wird. Von Hand geschriebener Text bleibt für Empfänger ohne Leserecht sichtbar (kein `anlass`).
+6. **Verlauf** je Vorlage in `ablauf_verlauf` (angewendet, geplant, gelaufen, angehalten, gelöscht, fortgesetzt), aufgeräumt wie die Läufe der Automatisierungen.
+
+**Vorlagen aus Paketen** (`inhalt.ablaufvorlagen`, ab `DMS_ABLAUFVORLAGEN_AB` = 0.256.0): `pakete.ts` liest und prüft sie (nur erlaubte Karten, `ersetzt` nur für Kern-Vorgaben, Typen des Pakets oder seiner Abhängigkeiten), die Rechte-Vorschau nennt jede mit ihren Karten (bei einem Update „neu“ bzw. „andere Karten“). `MappenAblaeufe.ausPaket` legt an bzw. ersetzt Unverändertes; beim Entfernen geben Überlagerungen die Kern-Vorgabe zurück, Vorlagen mit offenen Abläufen bleiben als eigene.
+
+**Umstellung** (Migration 105): `erinnerungen` → `mappen_ablaeufe` mit `vorlage = 'erinnern'`; `erstellt_von` bleibt, ist er leer oder kein Mensch, wird es der Empfänger. Der Papierkorb liest ältere Einträge als Abläufe von „Erinnern“. `AufgabenVertretung.legeAufgabeAn` ist nur noch die Vorlage „Aufgabe vergeben“.
+
+**Schnittstelle:** `GET`/`POST /api/v1/mappen/{id}/ablaeufe`, `PUT`/`DELETE /api/v1/ablaeufe/{id}`; die Adressen für Aufgaben und Erinnerungen bleiben und gehen über dieselben Vorlagen. Im Vollexport `struktur/ablaufvorlagen.json` und `daten/ablaeufe.jsonl`.
 
 ## Wege nach draußen { #wege-nach-draussen }
 

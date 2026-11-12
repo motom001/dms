@@ -144,24 +144,13 @@ export class AufgabenVertretung {
     }
   }
 
-  /** Aufgabe von Hand vergeben, z. B. „Bitte Rechnung prüfen“. */
-  async legeAufgabeAn(mappeId: string, e: unknown, von: string | null): Promise<Aufgabe> {
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
-    const x = (e ?? {}) as Record<string, unknown>;
-    const text = typeof x.text === 'string' ? x.text.trim() : '';
-    if (!text) throw new Fachfehler(422, t('meldungen.dienst.bitte-beschreiben-was-zu'));
-    if (text.length > AUFGABE_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-zeichen', { AUFGABE_MAX }));
-    const an = await this.pruefeEmpfaenger(x.empfaengerId);
-    // #928: Typ und Name nur einmal lesen (je eine Abfrage weniger).
-    const a = await this.neueAufgabe({ id: randomUUID(), mappeId, empfaengerId: an, art: 'manuell', text, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null }, m.typId);
-    const name = await this.name(an);
-    await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.fuer', { name, text }), aufgabe: a.id, aufgabenart: 'manuell', fuer: an, aufgabentext: text });
-    protokoll.modul('ablage').info('Aufgabe vergeben', { mappeId, an: name });
-    const erg = await this.leiteUm(a);
-    // #798: Darf der Empfänger die Mappe nicht lesen, entsteht ein Fall – der Admin erfährt davon.
-    await this.faelleNach([mappeId]);
-    return erg;
+  /**
+   * Aufgabe von Hand vergeben, z. B. „Bitte Rechnung prüfen“ – seit #1044 die Automatisierungsvorlage „Aufgabe vergeben“
+   * (sofort): ein Weg für alle, auch für API und Tests.
+   */
+  async legeAufgabeAn(mappeId: string, e: unknown, von: string): Promise<Aufgabe> {
+    const x = (e ?? {}) as { empfaengerId?: unknown; text?: unknown };
+    return (await this.teile.ablaeufe.anwenden(mappeId, 'aufgabe_vergeben', { empfaengerId: x.empfaengerId, text: x.text }, von)).aufgaben[0];
   }
 
   async eigeneAufgabe(id: string, ich: { id: string; rolle: string }) {

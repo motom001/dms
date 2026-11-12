@@ -52,12 +52,12 @@ The folder and file names in the export are German:
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            structure, formats, check script
   manifest.json          format version, counts, size and SHA-256 of every file, where every table is
-  struktur/              Folder types, views, number sequences, packages (pakete.json), designs, users (without passwords)
+  struktur/              Folder types, views, number sequences, packages (pakete.json), designs, automations and templates, users (without passwords)
   daten/
     <typ>.csv  .jsonl  .xlsx   per folder type (identifier, from packages package.key): one row per folder, one column per field identifier
     verweise.csv           folder → field → folder
     dokumente.csv          all documents and older versions with path in the export
-    notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,
+    notizen.jsonl, aufgaben.jsonl, ablaeufe.jsonl (planned reminders and other runs), historie.jsonl,
     papierkorb.jsonl, papierkorb-dokumente.jsonl, vertretungen.jsonl, favoriten.csv,
     loeschprotokoll.csv  (deletion log, without contents)
   ablage/<type>/<title> [id]/

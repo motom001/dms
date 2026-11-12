@@ -1153,6 +1153,11 @@ async function main() {
       await ka.close();
     }
   }
+  // Automatisierungsvorlagen (#1044): „Erinnern“ mit Wann, Fragen und Karte; darunter „Gerade benutzt bei“ mit den
+  // Erinnerungen von oben.
+  await geheZu(s, '/werkbank/ablaufvorlagen/erinnern');
+  await s.getByRole('heading', { name: w('Gerade benutzt bei'), exact: true }).waitFor();
+  await bild(s, 'werkbank-automatisierungsvorlagen');
   // Datenschutz (#396): Vertragspartner „betrifft eine Person“, Auskunft für die Stadtwerke gesammelt – Prüfliste.
   await api('PUT', '/api/werkbank/datenschutz', { verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01234 Musterstadt', empfaenger: '', typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } } });
   await geheZu(s, `/werkbank/auskuenfte/neu?mappe=${d.stadtwerke.id}`);

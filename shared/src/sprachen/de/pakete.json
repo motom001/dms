@@ -492,5 +492,10 @@
   "umbau.vorschau.rueckfrage-eigen_other": "„{feld}“ hast du selbst angelegt ({anzahl} Werte) – wohin damit?",
   "umbau.vorschau.rueckfrage-geaendert_one": "„{feld}“ hast du geändert (ein Wert) – wohin damit?",
   "umbau.vorschau.rueckfrage-geaendert_other": "„{feld}“ hast du geändert ({anzahl} Werte) – wohin damit?",
-  "umbau.vorgabe": "Vorgabe „{name}“"
+  "umbau.vorgabe": "Vorgabe „{name}“",
+  "ablauf.vorlagen": "Automatisierungsvorlagen",
+  "ablauf.vorlagen.text": "Erscheinen im Menü „Mappe“. Sie legen nur Aufgaben und Benachrichtigungen an – an Personen der Ablage, nie nach außen.",
+  "ablauf.vorlagen.ersetzt": "ersetzt „{name}“ von Ablago",
+  "ablauf.vorlagen.neu": "neu",
+  "ablauf.vorlagen.geaendert": "andere Karten"
 }

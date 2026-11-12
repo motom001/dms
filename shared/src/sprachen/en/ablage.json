@@ -1353,5 +1353,13 @@
   "paketaktion.herunterladen": "Download {name}",
   "paketaktion.fehler.pflicht": "Please fill in.",
   "paketaktion.fehler.ungueltig": "Please choose a valid value.",
-  "paketaktion.fehler.lang": "Please keep it shorter."
+  "paketaktion.fehler.lang": "Please keep it shorter.",
+  "aufgaben.geplant": "Planned",
+  "aufgaben.ablauf-loeschen": "Delete “{name}”?",
+  "aufgaben.angehalten": "paused",
+  "aufgaben.ablauf-aendern": "Change",
+  "aufgaben.text": "Text",
+  "aufgaben.laeuft-am": "Runs on {datum} – until then it is listed here under “Planned”.",
+  "aufgaben.laeuft-sofort": "Runs straight away.",
+  "aufgaben.laeuft-am-gewaehlten": "Runs on the chosen day – until then it is listed here under “Planned”."
 }

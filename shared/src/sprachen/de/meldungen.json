@@ -1605,7 +1605,10 @@
   "vollexport.daten-dokumente-csv-und": "daten/dokumente.csv und ablage/",
   "vollexport.daten-dokumente-csv-und-2": "daten/dokumente.csv und ablage/…/Versionen/",
   "vollexport.daten-aufgaben-jsonl-und": "daten/aufgaben.jsonl und kalender/fristen.ics",
-  "vollexport.daten-erinnerungen-jsonl-und": "daten/erinnerungen.jsonl und kalender/fristen.ics",
+  "vollexport.daten-ablaeufe-jsonl-und": "daten/ablaeufe.jsonl (geplante Mappen-Abläufe, #1044) und kalender/fristen.ics",
+  "vollexport.struktur-ablaufvorlagen-json": "struktur/ablaufvorlagen.json (#1044, Automatisierungsvorlagen)",
+  "vollexport.struktur-ablaufvorlagen-json-2": "struktur/ablaufvorlagen.json (#1044, Änderungsverlauf je Vorlage)",
+  "vollexport.nicht-enthalten-ablauf-verlauf": "nicht enthalten: Verlauf der Mappen-Abläufe (#1044, Protokoll; was passiert ist, steht in der Historie der Mappe)",
   "vollexport.daten-papierkorb-dokumente-jsonl": "daten/papierkorb-dokumente.jsonl (ohne Datei)",
   "vollexport.daten-loeschprotokoll-csv-470": "daten/loeschprotokoll.csv (#470, Nachweis gelöschter Mappen und Dokumente ohne Inhalte)",
   "vollexport.nicht-enthalten-aufgaben-bei": "nicht enthalten: Aufgaben bei Personen ohne Leserecht (#798, Übersicht für den Admin; Vergabe und Entzug eines Leserechts auf Zeit stehen in daten/historie.jsonl)",
@@ -1963,5 +1966,12 @@
   "leerseiten.versendet": "Bei versendeten E-Mails bleiben alle Seiten.",
   "leerseiten.weglassen-ja-nein": "weglassen: true oder false erwartet.",
   "leerseiten.entfernt_one": "Eine leere Seite entfernt",
-  "leerseiten.entfernt_other": "{anzahl} leere Seiten entfernt"
+  "leerseiten.entfernt_other": "{anzahl} leere Seiten entfernt",
+  "pakete.ablaufvorlage-schluessel": "{wo}: ungültiger Schlüssel „{wert}“.",
+  "pakete.ablaufvorlage-name": "{wo}: Name fehlt.",
+  "pakete.ablaufvorlage-ersetzt": "{wo}: ersetzt „{wert}“ – ersetzen lassen sich nur die Vorlagen von Ablago ({erlaubt}).",
+  "pakete.ablaufvorlage-typ": "{wo}: Mappentyp „{typ}“ gibt es weder im Paket noch in seinen Abhängigkeiten.",
+  "pakete.ablaufvorlage-feld": "{wo}: Ein Feld als Empfänger geht nur mit Mappentypen (typen).",
+  "pakete.ablaufvorlage-doppelt": "ablaufvorlagen: Schlüssel „{k}“ doppelt.",
+  "pakete.ablaufvorlage-ersetzt-doppelt": "ablaufvorlagen: „{k}“ wird mehrmals ersetzt."
 }

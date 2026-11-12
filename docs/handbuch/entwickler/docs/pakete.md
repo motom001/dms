@@ -44,6 +44,7 @@ Dann ausfüllen:
 | `inhalt/vorlagen/…` | optional (dms #1038): Text-Vorlagen der Vorgaben, schlichtes Markdown (`.md`) |
 | `inhalt/wortlisten.yaml` | optional (ab Ablago 0.127.0): Gruppen gleichbedeutender Wörter für die Suche |
 | `inhalt/automatisierungen.yaml` | optional (ab Ablago 0.177.0): vorgefertigte Automatisierungen, nach der Installation aus – außer den angehakten (seit 0.233.0 mit `eingeschaltet: true` vorausgewählt) |
+| `inhalt/ablaufvorlagen.yaml` | optional (ab Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [Automatisierungsvorlagen](#automatisierungsvorlagen) für das Menü „Mappe“ – nur Aufgaben und Benachrichtigungen |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
 
@@ -273,6 +274,29 @@ Bei einem **Update** ergänzt Ablago nur: neue Mappentypen, Felder, Register und
 | gelöscht | bleibt gelöscht |
 
 Ändert ein Umbau (dms #1041) eine Ansicht, zieht ihr Prüfwert mit – sie gilt weiter als unverändert. Eine neue Fassung lohnt sich also, wenn sich Mappentypen oder Bedingungen einer Ansicht ändern (etwa nach einem Umbau); Umbenennen einer Ansicht erreicht so ebenfalls installierte Ablago, solange sie niemand geändert hat.
+
+## Automatisierungsvorlagen { #automatisierungsvorlagen }
+
+Ein Paket kann **Automatisierungsvorlagen** mitbringen (dms #1044, ab Ablago 0.256.0): Abläufe, die man im Menü „Mappe“ an einer Mappe anwendet, z. B. „Wiedervorlage in 6 Monaten“. Im Manifest `inhalt.ablaufvorlagen: inhalt/ablaufvorlagen.yaml` und `dms: ">=0.256.0"`.
+
+```yaml
+- schluessel: wiedervorlage
+  name: Wiedervorlage
+  beschreibung: In sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“.
+  wann: { art: in, anzahl: 6, einheit: monate }   # oder { art: sofort } bzw. { art: datum }
+  fragen: []                                      # empfaenger, datum (Pflicht bei art: datum), text
+  karten:
+    - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }
+```
+
+- **Nur die Karte `aufgabe`** (Aufgabe oder Benachrichtigung, `als`). Jede andere Karte – E-Mail, Adresse aufrufen, Felder ändern – macht das Paket ungültig, auch in einem Update. Die Rechte-Vorschau nennt jede Vorlage mit ihren Karten.
+- **Empfänger:** `frage` (die beim Anwenden gewählte Person, braucht `fragen: [empfaenger]`), `selbst` (wer anwendet), `ersteller` (wer die Mappe angelegt hat) oder `feld` (Verweisfeld auf Benutzer; nur mit `typen`). Feste Personen oder Rollen gibt es nicht.
+- **Text** mit Platzhaltern wie beim Mappentitel, dazu `{eingabe}` (Antwort auf „Text“), `{person}`, `{empfaenger}`. Ablago füllt sie mit den Rechten des Empfängers.
+- `typen` (optional): Mappentypen des Pakets oder `paket:typ` einer Abhängigkeit, an denen die Vorlage im Menü steht; ohne: bei allen.
+- `ersetzt: aufgabe_vergeben` bzw. `ersetzt: erinnern` überlagert die Vorlage von Ablago (höchstens ein Paket je Vorlage; eine vom Admin geänderte bleibt). Entfernt man das Paket, gilt wieder die von Ablago.
+- Nach der Installation **an**; ein Update ersetzt nur Unverändertes. Beim Entfernen gehen die Vorlagen mit – außer solchen, an denen noch geplante Abläufe hängen (sie bleiben als eigene).
+- Ein Ablauf läuft immer mit den Rechten der Person, die ihn angelegt hat – geprüft, wenn er läuft – nie mit denen des Pakets.
+- `tests/erwartung.yaml` nennt die Zahl: `ablaufvorlagen: 3`.
 
 ## Einstellungen beschreiben
 

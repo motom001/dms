@@ -29,7 +29,8 @@ import { Uebersetzbar } from './Uebersetzung';
 import { Historie } from './Historie';
 import { mitNotizen, NOTIZEN_REGISTER, startRegister, type AnsichtsRegister } from '../../../shared/src/mappenansicht';
 import { Notizen } from './Notizen';
-import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
+import { AblaufFormular, AufgabenHinweis, ErinnerungFormular, Geplant, NeueAufgabe } from './Aufgaben';
+import { istKernVorlage } from '../../../shared/src/ablaufvorlagen';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
 import { BriefAusVorlage, type VorlagenAktion } from './BriefAusVorlage';
 import { PaketAktion } from './PaketAktion';
@@ -177,6 +178,11 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
   const [registerWunsch, setRegisterWunsch] = useState<{ key: string; n: number }>();
   const [aufgabeOffen, setAufgabeOffen] = useState(false);
   const [erinnernOffen, setErinnernOffen] = useState(false);
+  // Automatisierungsvorlagen (#1044): „Aufgabe vergeben“ und „Erinnern“ wie bisher, weitere (Wiedervorlage …) dahinter.
+  const [vorlageOffen, setVorlageOffen] = useState<string | null>(null);
+  const vorlagen = details.ablaufvorlagen;
+  const kern = (k: string) => (vorlagen ? vorlagen.find((v) => v.kennung === k) : undefined);
+  const weitere = (vorlagen ?? []).filter((v) => !istKernVorlage(v.kennung));
   const [emailOffen, setEmailOffen] = useState(false);
   const [briefOffen, setBriefOffen] = useState(false);
   // Paket-Aktionen (#1039): was Pakete im Menü anbieten, die offene Aktion und – beim Kern-Dialog – ihr Lauf.
@@ -221,7 +227,8 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
           <div className="mappenkopf-knoepfe">
             <Stern mappeId={mappe.id} an={!!details.favorit} anker="mappe.stern" />
             <Aktionsmenue aus={paketAktionen?.eingebautAus} pakete={(paketAktionen?.aktionen ?? []).map((x) => ({ key: `${x.paket.id}:${x.schluessel}`, name: x.name, paket: x.paket.name, titel: x.beschreibung, gesperrt: x.gesperrt, tu: () => { setVorlagenAktion(null); setPaketAktion(x); } }))}
-              aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
+              aufgabe={!vorlagen || kern('aufgabe_vergeben') ? () => setAufgabeOffen(true) : undefined} erinnern={!vorlagen || kern('erinnern') ? () => setErinnernOffen(true) : undefined}
+              vorlagen={weitere.map((v) => ({ key: v.kennung, name: v.name, titel: v.beschreibung || undefined, tu: () => setVorlageOffen(v.kennung) }))} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
               brief={vorlagenMoeglich ? () => setBriefOffen(true) : undefined}
               link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
               auskunft={details.auskunft ? () => geheZu(`/werkbank/auskuenfte/neu?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined}
@@ -247,9 +254,10 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
       {details.nurImVerwaltungsmodus && <NurImModus mappeId={mappe.id} />}
       {typ.system === 'post' && <PostLeiste typ={typ} details={details} neuLaden={neuLaden} />}
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} zuNotizen={() => setRegisterWunsch((w) => ({ key: NOTIZEN_REGISTER, n: (w?.n ?? 0) + 1 }))} />
-      <Erinnerungen liste={details.erinnerungen ?? []} neuLaden={neuLaden} />
-      {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
-      {erinnernOffen && <ErinnerungFormular mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setErinnernOffen(false)} />}
+      <Geplant liste={details.erinnerungen ?? []} vorlagen={vorlagen} neuLaden={neuLaden} />
+      {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} vorlage={kern('aufgabe_vergeben')} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
+      {erinnernOffen && <ErinnerungFormular mappeId={mappe.id} vorlage={kern('erinnern')} neuLaden={neuLaden} schliessen={() => setErinnernOffen(false)} />}
+      {vorlageOffen && weitere.some((v) => v.kennung === vorlageOffen) && <AblaufFormular key={vorlageOffen} mappeId={mappe.id} vorlage={weitere.find((v) => v.kennung === vorlageOffen)!} neuLaden={neuLaden} schliessen={() => setVorlageOffen(null)} />}
       {loeschBaum && <LoeschBaum key={mappe.id} mappeId={mappe.id} titel={mappe.titel ?? ''} sicht={sicht} schliessen={() => setLoeschBaum(false)} neuLaden={neuLaden} />}
       {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
       {briefOffen && <BriefAusVorlage key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} zumFeld={zumFeld} schliessen={() => setBriefOffen(false)} />}

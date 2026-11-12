@@ -35,15 +35,21 @@ Rechts neben dem Titel einer Mappe, neben dem Stern, steht das Menü **Mappe ▾
 
 ![Aufgabe vergeben](bilder/aufgabe-vergeben.png)
 
-Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, wer sich kümmert. Darf der Empfänger die Mappe nach den [Berechtigungen](mappen.md#was-du-sehen-und-andern-darfst) nicht lesen, fragt Ablago vorher: „Jonas darf diese Mappe nicht sehen. Die Aufgabe kommt bei Jonas an, die Mappe aber nicht. Der Admin wird informiert.“ Mit **Trotzdem zuweisen** geht sie raus, mit **Abbrechen** nicht. Rechte geben kannst du dabei nicht – das macht der Administrator.
+Die Aufgabe steht sofort beim Empfänger. Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, wer sich kümmert. Darf der Empfänger die Mappe nach den [Berechtigungen](mappen.md#was-du-sehen-und-andern-darfst) nicht lesen, fragt Ablago vorher: „Jonas darf diese Mappe nicht sehen. Die Aufgabe kommt bei Jonas an, die Mappe aber nicht. Der Admin wird informiert.“ Mit **Trotzdem zuweisen** geht sie raus, mit **Abbrechen** nicht. Rechte geben kannst du dabei nicht – das macht der Administrator.
 
 Steht bei dir unter „Zu erledigen“ eine **nicht sichtbare Mappe**, hast du eine Aufgabe an einer Mappe, die du nicht lesen darfst. Hat jemand sie dir von Hand gegeben, steht ihr Text da. Ist sie automatisch entstanden, siehst du nur „Aufgabe zu einer Mappe, die du nicht sehen darfst – frag Lena“ und die Fälligkeit – in der Täglichen Zusammenfassung genauso. Bei einer Frist fehlt auch das Datum, denn es stammt aus der Mappe. Öffnest du sie, kannst du die Aufgabe erledigen oder an jemanden weitergeben, der die Mappe sehen darf. Gibt dir der Administrator ein Leserecht für die Dauer der Aufgabe, kannst du die Mappe lesen, bis die Aufgabe erledigt oder weitergegeben ist.
 
 ## Erinnern
 
-Über **Mappe ▾ → Erinnern** in einer Mappe lässt du dich – oder jemand anderen – an einem bestimmten Tag an die Mappe erinnern, z. B. „am 15.11.: Angebote vergleichen“. Bis dahin steht die Erinnerung oben in der Mappe und im [Kalender](#monat-und-jahr); wer sie angelegt hat und wer sie bekommt, kann sie dort ändern oder löschen. Am gewählten Tag landet die Mappe unter „Zu erledigen“.
+Über **Mappe ▾ → Erinnern** in einer Mappe lässt du dich – oder jemand anderen – an einem bestimmten Tag an die Mappe erinnern, z. B. „am 15.11.: Angebote vergleichen“. Bis dahin steht die Erinnerung oben in der Mappe unter **Geplant** und im [Kalender](#monat-und-jahr); wer sie angelegt hat und wer sie bekommt, kann sie dort ändern oder löschen. Am gewählten Tag landet die Mappe unter „Zu erledigen“.
 
 ![Erinnerung an einer Mappe](bilder/erinnerung.png)
+
+### Geplant, Wiedervorlage und andere Vorlagen { #geplant }
+
+„Aufgabe vergeben“ und „Erinnern“ sind **Automatisierungsvorlagen**: kleine Abläufe, die du an einer Mappe anwendest. Die Verwaltung kann weitere einrichten oder über ein Paket bekommen – mit dem Paket **Benachrichtigungen** etwa **Wiedervorlage**: ein Klick, und in sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“. Solche Vorlagen stehen im Menü **Mappe ▾** unter „Erinnern“; der kleine Dialog fragt genau das, was die Vorlage braucht.
+
+Alles, was an einer Mappe noch kommt, steht oben unter **Geplant** – mit Datum, für wen und welcher Vorlage. Ist etwas gelaufen, verschwindet es dort; die Historie der Mappe behält, was passiert ist. Ein Ablauf läuft immer mit **deinen** Rechten, wie sie am Tag selbst sind: Bist du dann deaktiviert oder darfst die Mappe nicht mehr lesen, steht er als **angehalten** da, und die Verwaltung entscheidet, wie es weitergeht.
 
 ## Monat und Jahr
 

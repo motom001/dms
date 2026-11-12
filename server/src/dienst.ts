@@ -32,7 +32,7 @@ import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostLeerseiten, 
 import { AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
 import { type EreignisAufruf, VolltextAusPaketen, VolltextDienst } from './volltext';
 import { Automatisierungshilfen, EreignisseDienst } from './ereignisse/index';
-import { AufgabenDienst, type AufgabenTeile, AufgabenVertretung, Fristen, OhneEmpfaenger, OhneLeserecht } from './aufgaben';
+import { type AblaufPlatzhalter, AufgabenDienst, type AufgabenTeile, AufgabenVertretung, Fristen, MappenAblaeufe, OhneEmpfaenger, OhneLeserecht, type PaketAblaufvorlage } from './aufgaben';
 import { BeispielMappen, LoeschenDienst, type LoeschenTeile, LoeschprotokollVerwaltung, MitVerknuepften, Papierkorb } from './loeschen';
 import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, VollexportQuellen } from './datenschutz';
 import { WerkbankDienst } from './werkbank';
@@ -213,6 +213,8 @@ export class Dienst {
   readonly fristen: Fristen;
   /** Aufgaben ohne Empfänger, Favoriten benachrichtigen (#719, #422, #1078). */
   readonly ohneEmpfaenger: OhneEmpfaenger;
+  /** Automatisierungsvorlagen und Mappen-Abläufe: Aufgabe vergeben, Erinnern, Wiedervorlage (#1044). */
+  readonly ablaeufe: MappenAblaeufe;
   /** Mappen löschen (#79, #150, #1078). */
   readonly loeschen: LoeschenDienst;
   /** Papierkorb (#43, #344, #1078). */
@@ -311,7 +313,7 @@ export class Dienst {
       sichten: { sichtFuerTyp: (typ) => this.sichtenVerwaltung.sichtFuerTyp(typ), sichereFavoritenSicht: () => this.systemsichten.sichereFavoritenSicht() },
       post: { sicherePostSichten: (post) => this.systemsichten.sicherePostSichten(post) },
     });
-    ({ ki: this.ki, notizen: this.mappenNotizen, ereignisse: this.ereignisseDienst, automatisierung: this.automatisierungshilfen, aufgaben: this.aufgaben, vertretung: this.vertretung, ohneLeserecht: this.ohneLeserecht, fristen: this.fristen, ohneEmpfaenger: this.ohneEmpfaenger,
+    ({ ki: this.ki, notizen: this.mappenNotizen, ereignisse: this.ereignisseDienst, automatisierung: this.automatisierungshilfen, aufgaben: this.aufgaben, vertretung: this.vertretung, ohneLeserecht: this.ohneLeserecht, fristen: this.fristen, ohneEmpfaenger: this.ohneEmpfaenger, ablaeufe: this.ablaeufe,
       loeschen: this.loeschen, papierkorb: this.papierkorbVerwaltung, protokoll: this.loeschprotokollVerwaltung, verknuepft: this.mitVerknuepften, beispiele: this.beispielMappen, datenschutz: this.datenschutzDienst, vollexport: this.vollexport, zustellen: this.auskunftZustellen, werkbank: this.werkbank, organisation: this.organisation } = this.baueAufgabenUndLoeschen());
     this.schliesseEmpfaengerAn();
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
@@ -434,7 +436,7 @@ export class Dienst {
     const { teile: l, beispiele } = this.baueLoeschen();
     const d = this.baueDatenschutz(e.ereignisse, a.vertretung, l);
     return {
-      ...e, aufgaben: a.aufgaben, vertretung: a.vertretung, ohneLeserecht: a.ohneLeserecht, fristen: a.fristen, ohneEmpfaenger: a.ohneEmpfaenger,
+      ...e, aufgaben: a.aufgaben, vertretung: a.vertretung, ohneLeserecht: a.ohneLeserecht, fristen: a.fristen, ohneEmpfaenger: a.ohneEmpfaenger, ablaeufe: a.ablaeufe,
       loeschen: l.loeschen, papierkorb: l.papierkorb, protokoll: l.protokoll, verknuepft: l.verknuepft, beispiele, ...d, werkbank: new WerkbankDienst(this.kern),
     };
   }
@@ -459,12 +461,13 @@ export class Dienst {
   /** Aufgaben (#1078): die Klassen in aufgaben/ kennen einander über `teile`; Ereignis, Konten und Gültigkeit über den Anschluss. */
   private baueAufgaben(ereignisse: EreignisseDienst) {
     const teile = { rechte: this.rechtepruefung, historie: this.mappenHistorie, mappen: this.mappen, ereignisse, systemmappen: this.postSystemmappen } as AufgabenTeile;
-    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), konten: () => this.konten, gueltigkeit: () => this.gueltigkeit() };
+    const anschluss = { ereignis: (...a: Parameters<Kern['ereignis']>) => this.kern.ereignis(...a), konten: () => this.konten, gueltigkeit: () => this.gueltigkeit(), ablaufPlatzhalter: () => this.ablaufPlatzhalter };
     teile.aufgaben = new AufgabenDienst(this.kern, teile, anschluss);
     teile.vertretung = new AufgabenVertretung(this.kern, teile, anschluss);
     teile.ohneLeserecht = new OhneLeserecht(this.kern, teile, anschluss);
     teile.fristen = new Fristen(this.kern, teile, anschluss, { stand: this.stand, mappenstand: this.mappenstand });
     teile.ohneEmpfaenger = new OhneEmpfaenger(this.kern, teile, anschluss);
+    teile.ablaeufe = new MappenAblaeufe(this.kern, teile, anschluss);
     return teile;
   }
 
@@ -490,7 +493,7 @@ export class Dienst {
       organisation, rechte: this.rechtepruefung, historie: this.mappenHistorie, mappen: this.mappen, dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung,
       archiv: this.dokumentArchiv, sichten: this.sichten, ereignisse, vertretung, verknuepft: loeschen.verknuepft, loeschprotokoll: loeschen.protokoll,
     } as DatenschutzTeile;
-    const anschluss = { konten: () => this.konten, kurzzustand: () => this.kurzzustand, tresor: () => this.tresor, automatisierungenExport: () => this.automatisierungenExport };
+    const anschluss = { konten: () => this.konten, kurzzustand: () => this.kurzzustand, tresor: () => this.tresor, automatisierungenExport: () => this.automatisierungenExport, ablaufvorlagenExport: () => this.ablaeufe.exportDaten() };
     teile.datenschutz = new DatenschutzDienst(this.kern, teile, anschluss);
     teile.vollexport = new VollexportQuellen(this.kern, teile, anschluss);
     return { datenschutz: teile.datenschutz, vollexport: teile.vollexport, zustellen: new AuskunftZustellen(this.kern, teile, anschluss), organisation };
@@ -610,6 +613,10 @@ export class Dienst {
    * neu; setzt automatisierung.ts. Ergebnis: wie viele geändert wurden.
    */
   typUmgebaut?: (alt: string, neu: string, felder: Record<string, string>) => Promise<number>;
+  /** Platzhalter der Automatisierungsvorlagen (#1044, #795) – setzt der Motor (automatisierung.ts); ohne ihn bleiben sie stehen. */
+  ablaufPlatzhalter?: AblaufPlatzhalter;
+  /** Mitgelieferte Automatisierungsvorlagen eines Pakets anlegen bzw. aktualisieren (#1044); leere Liste beim Entfernen. */
+  paketAblaufvorlagen?: (p: InstalliertesPaket, liste: PaketAblaufvorlage[]) => Promise<number>;
   /** Automatisierungen mit Änderungsverlauf für den Vollexport (#674 setzt das). */
   automatisierungenExport?: () => Promise<unknown[]>;
 

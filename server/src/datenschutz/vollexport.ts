@@ -53,7 +53,8 @@ export class VollexportQuellen {
       archivfassung: async (sha) => { const i = await this.archiv?.info(sha); if (!i) return null; return i.imOriginal ? { imOriginal: true } : { inhalt: (await this.archiv!.lies(sha))?.inhalt ?? null }; },
       notizen: (ids) => r.notizenVon(ids),
       aufgaben: (ids) => r.aufgabenVonMappen(ids),
-      erinnerungen: () => r.erinnerungen(),
+      ablaeufe: () => r.ablaeufe(),
+      ablaufvorlagen: () => this.anschluss.ablaufvorlagenExport?.() ?? Promise.resolve([]),
       historie: (ids) => r.historieVon(ids),
       favoriten: () => r.alleFavoriten(),
       passwort: (w) => (istVerschluesselt(w) ? this.tresor?.entschluessele(w) ?? null : null),
@@ -109,9 +110,10 @@ export class VollexportQuellen {
       // Nur Eigenes (#683): Dokumente im Papierkorb, die er gelöscht hat; Löschprotokoll, Synonyme und Automatisierungen
       // gehören dem ganzen Haushalt (Werkbank) und stehen nur im Vollexport.
       papierkorbDokumente: async () => (await this.repo.papierkorbDokumente({ von: ich })),
-      loeschprotokoll: undefined, synonyme: undefined, automatisierungen: undefined,
+      loeschprotokoll: undefined, synonyme: undefined, automatisierungen: undefined, ablaufvorlagen: undefined,
       aufgaben: async (ids) => (await this.repo.aufgabenVonMappen(ids)).filter((a) => a.empfaengerId === ich || a.erstelltVon === ich),
-      erinnerungen: async () => (await this.repo.erinnerungen({ empfaengerId: ich })).filter((e) => lesbar.has(e.mappeId)),
+      // Geplante Abläufe (#1044): an ihn bzw. von ihm angelegt, an Mappen, die er lesen darf.
+      ablaeufe: async () => (await this.repo.ablaeufe()).filter((e) => (e.empfaengerId === ich || e.erstelltVon === ich) && lesbar.has(e.mappeId)),
       favoriten: async () => (await this.repo.alleFavoriten()).filter((f) => f.benutzerId === ich),
       passwort: (w) => (passwortVon.get(w) ? voll.passwort(w) : null),
     };

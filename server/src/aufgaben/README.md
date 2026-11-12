@@ -11,8 +11,10 @@ Aufgaben ohne Empfänger. Schicht 3 der Zielaufteilung – über Mappen, Ereigni
   `abwesenheitGeaendert`, vergeben, erledigen, weitergeben (auch gesammelt), gebündelt benachrichtigen, „Zu erledigen“.
 - `ohne-leserecht.ts` – `OhneLeserecht` (#798, #958): Hinweis statt Text, Fälle abgleichen, Leserecht auf Zeit.
 - `fristen.ts` – `Fristen` (#129–#133, #528, #725): Frist-Aufgaben abgleichen, „Frist erreicht“, Erinnerungen,
-  Termine samt Zwischenspeicher, Folgetermin.
+  Termine samt Zwischenspeicher, Folgetermin; der tägliche Lauf ruft die fälligen Mappen-Abläufe.
 - `ohne-empfaenger.ts` – `OhneEmpfaenger` (#719, #422): Alltags-Benutzer, Favoriten benachrichtigen.
+- `ablaeufe.ts` – `MappenAblaeufe` (#1044): Automatisierungsvorlagen („Aufgabe vergeben“, „Erinnern“, aus Paketen,
+  eigene) und Mappen-Abläufe – anwenden, laufen lassen mit den Rechten der Person zur Laufzeit, Werkbank.
 - `index.ts` – die einzige Tür. `aufgaben.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 
 **Abhängigkeiten**

@@ -492,5 +492,10 @@
   "umbau.vorschau.rueckfrage-eigen_other": "You created “{feld}” yourself ({anzahl} values) – where should it go?",
   "umbau.vorschau.rueckfrage-geaendert_one": "You changed “{feld}” (one value) – where should it go?",
   "umbau.vorschau.rueckfrage-geaendert_other": "You changed “{feld}” ({anzahl} values) – where should it go?",
-  "umbau.vorgabe": "preset “{name}”"
+  "umbau.vorgabe": "preset “{name}”",
+  "ablauf.vorlagen": "Automation templates",
+  "ablauf.vorlagen.text": "Appear in the “Folder” menu. They only create tasks and notifications – for people in the library, never anything outside.",
+  "ablauf.vorlagen.ersetzt": "replaces Ablago’s “{name}”",
+  "ablauf.vorlagen.neu": "new",
+  "ablauf.vorlagen.geaendert": "different cards"
 }
