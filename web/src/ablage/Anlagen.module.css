@@ -13,3 +13,5 @@
   .zeile { margin-left: 12px; }
   .aktionen { margin-left: 0; }
 }
+/* Original-E-Mail (#999) in der Liste dessen, was mitgeht: eigene Zeile mit Haken und Kennzeichen. */
+.original { flex-basis: 100%; }

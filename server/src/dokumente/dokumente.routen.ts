@@ -77,11 +77,11 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       await mitnehmen(a, mappeId);
-      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown; fassung?: unknown; mitAnlagen?: unknown };
+      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown; fassung?: unknown; mitAnlagen?: unknown; originalEmail?: unknown };
       const version = e.version == null ? undefined : Number(e.version);
       // „mit Anlagen?“ (#998): das Dokument und seine Anlagen als ZIP – dieselbe Prüfstelle (oben), dieselbe Mappe.
       if (e.mitAnlagen === true && !Number.isInteger(version)) {
-        const r = await dienst.ausgang.dokumentMitAnlagenFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, ich: ich(a) });
+        const r = await dienst.ausgang.dokumentMitAnlagenFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, originalEmail: e.originalEmail, ich: ich(a) });
         // Abruf (#800) für das Hauptdokument und je Anlage – mit Weg und Name des API-Schlüssels.
         return abgerufen(a, a.params.id, { fassung: e.fassung === 'archiv' ? 'archiv' : 'original', gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r), r.teile);
       }

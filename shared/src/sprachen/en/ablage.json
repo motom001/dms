@@ -1399,5 +1399,9 @@
   "anlagen.email-mit": "With enclosures",
   "anlagen.email-mit-hinweis": "Enclosures go with their document. Without the tick you choose each one yourself.",
   "anlagen.original-email": "Original email",
-  "anlagen.original-email-titel": "The fetched email itself (.eml). Recognition and AI do not read it; it goes wherever the document it hangs on goes."
+  "anlagen.original-email-titel": "The fetched email itself (.eml). Recognition and AI do not read it; it goes wherever the document it hangs on goes.",
+  "anlagen.original-mit": "Include original email: {name}",
+  "anlagen.original-mit-hinweis": "It contains all attachments of the email. If not all of them belong, untick it.",
+  "anlagen.original-uebernehmen": "Take original email along: {name}",
+  "anlagen.original-uebernehmen-hinweis": "It contains all attachments of the email. If not all of them belong in this folder, untick it – it then stays in the post."
 }

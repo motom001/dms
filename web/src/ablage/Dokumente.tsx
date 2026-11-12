@@ -428,7 +428,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                             <div className="dk-blatt" role="menu" aria-label={t('ablage.dokumente.aktionen-fuer', { name: x.name })} onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) setMenue(undefined); }}>
                               <p className="dk-titel">{x.name}</p>
                         {!weg && !stempelPflicht && mitnehmen && (anlagen.length
-                          ? <HerunterladenMitAnlagen d={x} anzahl={anlagen.length} archiv={sicht?.art === 'archiv'} ohne={<Herunterladen x={x} archiv={sicht?.art === 'archiv'} />} />
+                          ? <HerunterladenMitAnlagen d={x} anlagen={anlagen} archiv={sicht?.art === 'archiv'} ohne={<Herunterladen x={x} archiv={sicht?.art === 'archiv'} />} />
                           : <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />)}
                         {bearbeitbar && !weg && !x.anlageZu && ziele.length > 0 && <Knopf art="link" aria-expanded={alsAnlage === x.id} title={t('ablage.anlagen.als-anlage-knopf-titel')}
                           onClick={() => setAlsAnlage(alsAnlage === x.id ? undefined : x.id)}>{t('ablage.anlagen.als-anlage-knopf')}</Knopf>}
@@ -458,7 +458,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={sicht!.url} target="_blank" rel="noreferrer" title={t('ablage.dokumente.in-neuem-tab-oeffnen')} aria-label={t('ablage.dokumente.in-neuem-tab-oeffnen-2', { name: x.name })}>↗</a>}
                         {!weg && !stempelPflicht && mitnehmen && (anlagen.length
-                          ? <HerunterladenMitAnlagen d={x} anzahl={anlagen.length} archiv={sicht?.art === 'archiv'} ohne={<Herunterladen x={x} archiv={sicht?.art === 'archiv'} />} />
+                          ? <HerunterladenMitAnlagen d={x} anlagen={anlagen} archiv={sicht?.art === 'archiv'} ohne={<Herunterladen x={x} archiv={sicht?.art === 'archiv'} />} />
                           : <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />)}
                         {bearbeitbar && !weg && !x.anlageZu && ziele.length > 0 && <Knopf art="link" aria-expanded={alsAnlage === x.id} title={t('ablage.anlagen.als-anlage-knopf-titel')}
                           onClick={() => setAlsAnlage(alsAnlage === x.id ? undefined : x.id)}>{t('ablage.anlagen.als-anlage-knopf')}</Knopf>}
@@ -485,7 +485,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     </div>
                     {alsAnlage === x.id && !weg && <AlsAnlage d={x} ziele={ziele} schliessen={() => setAlsAnlage(undefined)} fertig={anlagenFertig} />}
                     {stempelOffen?.id === x.id && !weg && (
-                      <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} anlagen={anlagen.length} schliessen={() => setStempelOffen(undefined)} />
+                      <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} anlagen={anlagen} schliessen={() => setStempelOffen(undefined)} />
                     )}
                     {kleinOffen === x.id && !weg && (
                       <PdfVerkleinern d={x} bearbeitbar={bearbeitbar} mitnehmen={mitnehmen} schliessen={() => setKleinOffen(undefined)}

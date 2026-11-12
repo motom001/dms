@@ -1399,5 +1399,9 @@
   "anlagen.email-mit": "Mit Anlagen",
   "anlagen.email-mit-hinweis": "Anlagen gehen mit ihrem Dokument mit. Ohne Haken wählst du jede einzeln.",
   "anlagen.original-email": "Original-E-Mail",
-  "anlagen.original-email-titel": "Die abgeholte E-Mail selbst (.eml). Erkennung und KI lesen sie nicht; sie geht mit dem Dokument, an dem sie hängt."
+  "anlagen.original-email-titel": "Die abgeholte E-Mail selbst (.eml). Erkennung und KI lesen sie nicht; sie geht mit dem Dokument, an dem sie hängt.",
+  "anlagen.original-mit": "Original-E-Mail mitnehmen: {name}",
+  "anlagen.original-mit-hinweis": "Sie enthält alle Anhänge der Mail. Gehören nicht alle dazu, nimm den Haken weg.",
+  "anlagen.original-uebernehmen": "Original-E-Mail mit übernehmen: {name}",
+  "anlagen.original-uebernehmen-hinweis": "Sie enthält alle Anhänge der Mail. Gehören nicht alle in diese Mappe, nimm den Haken weg – dann bleibt sie in der Post."
 }

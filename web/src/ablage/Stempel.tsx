@@ -10,6 +10,7 @@ import { api } from '../api';
 import { HakenFeld } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { VerkleinertWahl } from './VerkleinertWahl';
+import { OriginalEmailWahl } from './Anlagen';
 import type { Stufe } from '../../../shared/src/verkleinern';
 import { useKonto } from '../konto';
 import { FassungWahl, hatArchivfassung, type Fassung } from './FassungWahl';
@@ -127,9 +128,11 @@ export function StempelFelder({ wahl, setze, vorlagen, pflicht, mappe, empfaenge
 }
 
 /** Dialog „Herunterladen mit Stempel“ an einem Dokument (auch für ältere Versionen). */
-export function StempelDialog({ d, typ, mappe, version, anlagen = 0, schliessen }: { d: Dokument; typ?: Mappentyp; mappe: string; version?: number; /** Anlagen (#998): „mit Anlagen?“, Vorgabe ja. */ anlagen?: number; schliessen(): void }) {
+export function StempelDialog({ d, typ, mappe, version, anlagen = [], schliessen }: { d: Dokument; typ?: Mappentyp; mappe: string; version?: number; /** Anlagen (#998): „mit Anlagen?“, Vorgabe ja. */ anlagen?: Dokument[]; schliessen(): void }) {
   const [mitAnlagen, setMitAnlagen] = useState(true);
-  const { zusammen, dateiname } = mitAnlagenName(d, anlagen, mitAnlagen, version);
+  // Original-E-Mail (#999): steht mit Kennzeichen in der Liste und lässt sich abwählen (Vorgabe: geht mit).
+  const [eml, setEml] = useState(true);
+  const { zusammen, dateiname } = mitAnlagenName(d, anlagen.filter((a) => eml || !a.originalEmail).length, mitAnlagen, version);
   const vorlagen = useStempelVorlagen();
   const [wahl, setWahl] = useState<StempelWahl | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -146,7 +149,7 @@ export function StempelDialog({ d, typ, mappe, version, anlagen = 0, schliessen 
     if (!wahl) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), dateiname, version, d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv') ? klein : null, mitArchiv ? fassung : undefined, zusammen);
+      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), dateiname, version, d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv') ? klein : null, mitArchiv ? fassung : undefined, zusammen, eml);
       setMeldung({ art: 'gut', text: t('ablage.stempel.gespeichert-die-historie-der', { name: r.name }) });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
   }
@@ -161,7 +164,7 @@ export function StempelDialog({ d, typ, mappe, version, anlagen = 0, schliessen 
           <StempelFelder wahl={{ ...wahl, an: true }} setze={setWahl} vorlagen={vorlagen} pflicht={pflicht} mappe={mappe} id={`stempel-${d.id}`} immer />
           {!version && <FassungWahl wert={fassung} setze={setFassung} dokumente={[d]} id={`stempel-fassung-${d.id}`} />}
           {(d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv')) && <VerkleinertWahl wert={klein} setze={setKlein} wie="herunterladen" id={`stempel-klein-${d.id}`} />}
-          <MitAnlagenWahl anzahl={version ? 0 : anlagen} an={mitAnlagen} setze={setMitAnlagen} />
+          <MitAnlagenWahl anlagen={version ? [] : anlagen} an={mitAnlagen} setze={setMitAnlagen} eml={eml} setzeEml={setEml} />
           {fehler && <p className="leise klein">{fehler}</p>}
           {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
           <div className="knoepfe">
@@ -180,12 +183,18 @@ function mitAnlagenName(d: Dokument, anlagen: number, an: boolean, version?: num
   return { zusammen, dateiname: zusammen ? t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }) : d.name };
 }
 
-/** „mit Anlagen?“ im Dialog (#998, Vorgabe ja): nur bei einem Dokument mit Anlagen. */
-function MitAnlagenWahl({ anzahl, an, setze }: { anzahl: number; an: boolean; setze(an: boolean): void }) {
-  if (!anzahl) return null;
+/**
+ * „mit Anlagen?“ im Dialog (#998, Vorgabe ja): nur bei einem Dokument mit Anlagen. Darunter die Original-E-Mail (#999)
+ * mit Kennzeichen und eigenem Haken, wenn sie mitginge.
+ */
+function MitAnlagenWahl({ anlagen, an, setze, eml, setzeEml }: { anlagen: Dokument[]; an: boolean; setze(an: boolean): void; eml: boolean; setzeEml(an: boolean): void }) {
+  if (!anlagen.length) return null;
   return (
-    <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl })} hinweis={t('ablage.anlagen.mit-anlagen-stempel')}>
-      <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} />
-    </HakenFeld>
+    <>
+      <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl: anlagen.length })} hinweis={t('ablage.anlagen.mit-anlagen-stempel')}>
+        <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} />
+      </HakenFeld>
+      {an && <OriginalEmailWahl emails={anlagen.filter((a) => a.originalEmail)} an={eml} setze={setzeEml} />}
+    </>
   );
 }

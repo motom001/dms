@@ -51,7 +51,7 @@ Hat dein Administrator ein [Postfach](https://help.ablago.app/admin/aktuell/post
 
 #### Original-E-Mail { #original-e-mail }
 
-Ganz hinten steht die Mail selbst als `.eml` mit dem Kennzeichen **Original-E-Mail** – einmal je Post. Sie hängt als letzte [Anlage](dokumente.md#anlagen) am letzten Anhang und geht mit ihm mit, wenn du die Post zuordnest oder dieses Dokument übernimmst. Kam die Mail ohne Anhänge, ist sie selbst das Dokument der Post. Erkennung, Klassifizieren und KI lesen die Original-E-Mail nie – ihr Text steht ja schon an der Post. Soll sie woanders hin, machst du sie mit **Zum eigenen Dokument machen** frei oder hängst sie mit **Als Anlage an …** um. Ob die Original-E-Mail mitkommt, stellt dein Administrator am Postfach ein (Standard: ja).
+Ganz hinten steht die Mail selbst als `.eml` mit dem Kennzeichen **Original-E-Mail** – einmal je Post. Sie hängt als letzte [Anlage](dokumente.md#anlagen) am letzten Anhang und geht mit ihm mit, wenn du die Post zuordnest oder dieses Dokument übernimmst. Kam die Mail ohne Anhänge, ist sie selbst das Dokument der Post. Erkennung, Klassifizieren und KI lesen die Original-E-Mail nie – ihr Text steht ja schon an der Post. Soll sie woanders hin, machst du sie mit **Zum eigenen Dokument machen** frei oder hängst sie mit **Als Anlage an …** um. Beim [Übernehmen](#zuordnen), Herunterladen „mit Anlagen“ und beim [Versand](versenden.md) steht sie mit ihrem Kennzeichen in der Liste dessen, was mitgeht, und lässt sich dort mit einem Haken abwählen. Ob die Original-E-Mail mitkommt, stellt dein Administrator am Postfach ein (Standard: ja).
 
 **Aufteilen tust du selbst:** Ablago macht aus einer Mail nie von allein mehrere Posts – auch ein [Trennblatt](#sammelscan-teilen) gilt im Postfach nicht. Gehören die Anhänge zu verschiedenen Vorgängen, nimm **Post ab hier teilen** am ersten Dokument, das woandershin gehört (siehe [Post teilen ab einem Dokument](#post-ab-hier-teilen)); ein langes PDF teilst du über **Seiten** (siehe [Sammelscan teilen](#sammelscan-teilen)).
 
@@ -93,6 +93,8 @@ Klickst du in **Neue Post** eine Post an, öffnet sich die Seite **Dokument übe
 - **Links** die gewohnten Ansichten, *Neue Post* ist markiert.
 - **In der Mitte** das Dokument; hat die Post mehrere, stehen sie untereinander. [Anlagen](dokumente.md#anlagen) stehen eingeklappt hinter ihrem Dokument („Anlage 1 · HU/AU-Protokoll · 2 Seiten“) und wandern beim Übernehmen mit; Vorschläge und Rahmen kommen nur aus den Hauptdokumenten. Oben rechts blätterst du mit **‹ Post 1 von 3 ›** durch *Neue Post*. Gibt es eine [Archivfassung](dokumente.md#archivfassung-pdfa) (PDF/A), steht über dem Dokument **Original | PDF/A**, gezeigt wird die Archivfassung. Ganz unten liegt die Fläche **Weitere Dokumente hierher ziehen**: Was du dort (oder irgendwo ins Fenster, Ziel *In diese Post*) ablegst, kommt als weiteres Dokument in diese Post.
 - **Rechts** die Mappe, in die das Dokument kommt – wie überall sonst mit Typ, Titel (so, wie er nach dem Speichern heißt), Registern, Feldern und Speicherleiste. Stern und **Mappe ▾** gehen erst nach dem Speichern.
+
+Kam die Post per E-Mail, steht die [Original-E-Mail](#original-e-mail) mit ihrem Kennzeichen in der Mitte unter dem Dokument, an dem sie hängt, und geht mit in die Mappe. **Die Original-E-Mail enthält alle Anhänge der Mail. Gehören nicht alle in diese Mappe, lös sie vorher oder lösch sie.** Am schnellsten nimmst du dort den Haken bei **Original-E-Mail mit übernehmen** weg – dann bleibt sie als eigenes Dokument in der Post.
 
 ### Wohin gehört das? { #wohin-gehort-das }
 

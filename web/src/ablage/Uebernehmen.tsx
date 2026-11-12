@@ -18,7 +18,7 @@ import { t, tn } from '../sprache';
 import { Symbol } from '../Symbol';
 import { BrueckeKontext, farbeVon, setzeNutzlast, type Bruecke, type FormularAnschluss, type Marke, type Nutzlast } from './bruecke';
 import { ansichtVon } from './Dokumente';
-import { AnlageMarke, anlageZeilentext } from './Anlagen';
+import { AnlageMarke, anlageZeilentext, OriginalEmailWahl } from './Anlagen';
 import { eingangsreihenfolge, gruppiere, nurHauptdokumente } from '../../../shared/src/anlagen';
 import { Knopf } from '../bausteine';
 import { GrosseSeiteMarke, grosseSeite, MitLeerseiten, useLeerseiten } from './Leerseiten';
@@ -101,6 +101,11 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const doks = post ? gruppiere(eingangsreihenfolge(details.dokumente)).flatMap((g) => [g.haupt, ...g.anlagen]) : details.dokumente.filter((x) => x.id === dokId);
   const erkennDoks = nurHauptdokumente(doks).filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
   const [offeneAnlagen, setOffeneAnlagen] = useState<Set<string>>(new Set());
+  // Original-E-Mail (#999): geht mit dem Dokument, an dem sie hängt (Vorgabe). Sie enthält alle Anhänge der Mail –
+  // abgewählt bleibt sie als eigenes Dokument in der Post.
+  const [eml, setEml] = useState(true);
+  const mitDoks = useMemo(() => details.dokumente.filter((x) => eml || !x.originalEmail).map((x) => x.id), [details.dokumente, eml]);
+  const emlAus = eml ? {} : { originalEmail: false as const };
   // Leerseiten (#997): nur bei Post – die Wahl je Seite gilt sofort, gelöscht wird erst beim Übernehmen.
   const leer = useLeerseiten(doks);
   const erkennKey = erkennDoks.map((x) => x.id).join(',');
@@ -301,7 +306,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     const reg = zt?.register.find((r) => r.art === 'dokumente')?.key;
     if (details.dokumente.length && !reg) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: t('ablage.uebernehmen.ohne-dokumentenregister', { typ: zt ? typName(zt) : '' }) }); return; }
     try {
-      const r = await api.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: details.dokumente.map((x) => x.id), kopieren, aufloesen: !kopieren });
+      const r = await api.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: mitDoks, kopieren, aufloesen: !kopieren, ...emlAus });
       if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
       await weiter(r.aufgeloest ? { ...ziel, titel: r.ziel.titel ?? ziel.titel, vorhanden: true, leerseiten: r.leerseiten } : undefined);
     } catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: (e as Error).message }); }
@@ -353,8 +358,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const kopf = useCallback((werte: Werte, bekannt: Bezuege) => zielTyp ? <NeuKopf typ={zielTyp} werte={werte} bekannt={bekannt} /> : null, [zielTyp]);
   const zuordnen = useMemo(() => {
     const reg = zielTyp?.register.find((r) => r.art === 'dokumente')?.key;
-    return { post: m.id, register: reg, dokumente: details.dokumente.map((x) => x.id), kopieren, vorschlag: {} as Record<string, Wert> };
-  }, [m.id, details.dokumente, kopieren, zielTyp]);
+    return { post: m.id, register: reg, dokumente: mitDoks, kopieren, vorschlag: {} as Record<string, Wert>, ...(eml ? {} : { originalEmail: false as const }) };
+  }, [m.id, mitDoks, kopieren, zielTyp, eml]);
   const ohneRegister = post && !!zielTyp && details.dokumente.length > 0 && !zielTyp.register.some((r) => r.art === 'dokumente');
   const doppelt = (erkannt?.abgleich?.doppelt ?? []).filter((x) => x.mappeId !== m.id);
 
@@ -387,6 +392,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
                 <Knopf art="link" aria-expanded={offeneAnlagen.has(x.id)} onClick={() => setOffeneAnlagen((o) => { const n = new Set(o); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; })}>{anlageZeilentext(x)}</Knopf>
                 <AnlageMarke d={x} /> <span className="leise klein">{t('ablage.anlagen.nicht-erkannt')}</span>
               </p>
+              {post && x.originalEmail && <OriginalEmailWahl emails={[x]} an={eml} setze={setEml} wie="uebernehmen" />}
               {offeneAnlagen.has(x.id) && <DokumentBlatt x={x} w={woerter[x.id]} marken={[]} hervor={hervor} setHervor={setHervor} insAktive={insAktive}
                 leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} />}
             </div>

@@ -104,8 +104,11 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   // Anlagen (#998): „mit Anlagen?“ (Vorgabe ja) – dann gehen sie mit ihrem Hauptdokument; ohne einzeln wählbar.
   const [mitAnlagen, setMitAnlagen] = useState(true);
   const liste = gruppiere(details.dokumente).flatMap((g) => [g.haupt, ...g.anlagen]);
+  // Original-E-Mail (#999): geht als Anlage mit, steht aber mit eigenem Haken in der Liste – ein Klick wählt sie ab.
+  const [eml, setEml] = useState(true);
   const folgt = (x: Dokument) => mitAnlagen && !!x.anlageZu && details.dokumente.some((y) => y.id === x.anlageZu);
-  const istGewaehlt = (x: Dokument) => (folgt(x) ? gewaehlt.has(x.anlageZu!) : gewaehlt.has(x.id));
+  const istGewaehlt = (x: Dokument) => (folgt(x) ? gewaehlt.has(x.anlageZu!) && (eml || !x.originalEmail) : gewaehlt.has(x.id));
+  const emlWahl = (x: Dokument) => folgt(x) && !!x.originalEmail;
   const summe = details.dokumente.filter(istGewaehlt).reduce((a, x) => a + x.groesse, 0);
   // Verkleinert senden (#393): die Größe danach kennt erst der Server; er prüft sie vor dem Versand.
   const [klein, setKlein] = useState<Stufe | null>(null);
@@ -123,7 +126,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: liste.filter(istGewaehlt).map((x) => x.id), mitAnlagen, stempel: alsWunsch(stempel), verkleinern: mitPdf ? klein : null, fassung }));
+      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: liste.filter(istGewaehlt).map((x) => x.id), mitAnlagen, originalEmail: eml, stempel: alsWunsch(stempel), verkleinern: mitPdf ? klein : null, fassung }));
       await neuLaden(); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -151,7 +154,9 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
             {!details.dokumente.length ? <p className="leise klein">{t('ablage.aktionen.diese-mappe-hat-keine')}</p> : (
               <ul>
                 {liste.map((x) => (
-                  <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}><label className="haken"><input type="checkbox" checked={istGewaehlt(x)} disabled={folgt(x)} onChange={() => umschalten(x.id)} /><span>{x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small></span></label></li>
+                  <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}><label className="haken"><input type="checkbox" checked={istGewaehlt(x)} disabled={folgt(x) && !(emlWahl(x) && gewaehlt.has(x.anlageZu!))} data-original-email={emlWahl(x) ? '' : undefined}
+                    onChange={() => (emlWahl(x) ? setEml(!eml) : umschalten(x.id))} /><span>{x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small></span></label>
+                  {x.originalEmail && istGewaehlt(x) && <p className="leise klein">{t('ablage.anlagen.original-mit-hinweis')}</p>}</li>
                 ))}
               </ul>
             )}

@@ -217,9 +217,10 @@ export class AusgangDienst {
    * Anlagen beim Weitergeben (#998): „mit Anlagen?“ – Vorgabe ja. Die gewählten Dokumente, hinter jedem Hauptdokument
    * seine Anlagen (nur aus derselben Mappe, also mit denselben Rechten wie das Hauptdokument). Ein Weg nach draußen
    * fragt vorher die Prüfstelle für die Mappe; die Anlagen brauchen keine eigene Prüfung, weil sie dort liegen.
+   * `originalEmail` false (#999): die Original-E-Mail (alle Anhänge der Mail) bleibt weg, außer sie ist selbst gewählt.
    */
-  mitAnlagen(gewaehlt: Dokument[], alle: Dokument[], an: unknown): Dokument[] {
-    const liste = mitAnlagen(gewaehlt, alle, an !== false);
+  mitAnlagen(gewaehlt: Dokument[], alle: Dokument[], an: unknown, originalEmail?: unknown): Dokument[] {
+    const liste = mitAnlagen(gewaehlt, alle, an !== false, originalEmail !== false);
     // Sicherheit: nie etwas aus einer anderen Mappe als das gewählte Hauptdokument.
     return liste.filter((d) => !d.anlageZu || gewaehlt.some((g) => g.id === d.id || (g.id === d.anlageZu && g.mappeId === d.mappeId)));
   }
@@ -229,10 +230,11 @@ export class AusgangDienst {
    * beim einzelnen Herunterladen (Original oder Archivfassung, Stempel, Verkleinern). Ohne Anlagen das Dokument allein.
    * Die Route hat Lesen und Exportrecht an der Mappe geprüft (Prüfstelle); die Anlagen liegen in derselben Mappe.
    */
-  async dokumentMitAnlagenFuerAusgabe(id: string, o: { stempel?: unknown; verkleinern?: unknown; fassung?: unknown; ich: { id: string | null; name: string } }) {
+  async dokumentMitAnlagenFuerAusgabe(id: string, o: { stempel?: unknown; verkleinern?: unknown; fassung?: unknown; originalEmail?: unknown; ich: { id: string | null; name: string } }) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const anlagen = (await this.repo.anlagenVon(id)).filter((a) => a.mappeId === d.mappeId);
+    // Original-E-Mail (#999): geht mit, außer `originalEmail: false` („Original-E-Mail mitnehmen“ abgewählt).
+    const anlagen = (await this.repo.anlagenVon(id)).filter((a) => a.mappeId === d.mappeId && (o.originalEmail !== false || !a.originalEmail));
     if (!anlagen.length) return { ...(await this.dokumentFuerAusgabe(id, o)), anlagen: 0, teile: [] };
     const eintraege: ZipEintrag[] = [];
     const namen = new Set<string>();

@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { PDFDocument } from 'pdf-lib';
-import { DMS_ANLAGEN_AB, eingangsreihenfolge, gruppiere, nurHauptdokumente, ohneErkennung } from '../../shared/src/anlagen';
+import { DMS_ANLAGEN_AB, eingangsreihenfolge, gruppiere, mitAnlagen, mitgehendeOriginalEmails, nurHauptdokumente, ohneErkennung } from '../../shared/src/anlagen';
 import { POST_KANAL, type Dokument } from '../../shared/src/model';
 import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
 import { speicherDateien } from '../src/dateispeicher';
@@ -157,6 +157,16 @@ describe('E-Mail-Postfach (#999): Regeln', () => {
     assert.deepEqual(nurHauptdokumente([{ id: 'a', originalEmail: true }, { id: 'b' }, { id: 'c', anlageZu: 'b' }]).map((x) => x.id), ['b']);
   });
 
+  it('Original-E-Mail geht als Anlage mit, sichtbar in der Liste und abwählbar (Wunsch Sicherheit, PR #1159)', () => {
+    const alle = [{ id: 'a', name: 'A.pdf' }, { id: 'm', name: 'M.pdf' }, { id: 'h', name: 'HU.pdf', anlageZu: 'm', anlageNr: 1 }, { id: 'e', name: 'Mail.eml', anlageZu: 'm', anlageNr: 2, originalEmail: true }];
+    const m = alle.filter((x) => x.id === 'm');
+    assert.deepEqual(mitAnlagen(m, alle).map((x) => x.id), ['m', 'h', 'e'], 'Vorgabe: geht mit');
+    assert.deepEqual(mitAnlagen(m, alle, true, false).map((x) => x.id), ['m', 'h'], 'abgewählt');
+    assert.deepEqual(mitAnlagen(alle.filter((x) => x.id === 'm' || x.id === 'e'), alle, true, false).map((x) => x.id), ['m', 'h', 'e'], 'ausdrücklich gewählt geht sie');
+    assert.deepEqual(mitgehendeOriginalEmails(m, alle).map((x) => x.id), ['e']);
+    assert.deepEqual(mitgehendeOriginalEmails(alle.filter((x) => x.id === 'a'), alle), []);
+  });
+
   it('Anhänge in der Reihenfolge der E-Mail, ohne eingebettete; Name der Original-E-Mail aus dem Betreff', () => {
     const a = (name: string, eingebettet = false) => ({ name, mime: 'application/pdf', inhalt: Buffer.from(name), eingebettet });
     assert.deepEqual(anhaengeInReihenfolge({ anhaenge: [a('Z.pdf'), a('logo.png', true), a('A.pdf')] }).map((x) => x.name), ['Z.pdf', 'A.pdf']);
@@ -243,6 +253,30 @@ for (const pg of [false, true]) {
       const neuDoks = wieInDerPost((await x.d.mappen.holeMappe(r.body.neu.id)).dokumente);
       assert.deepEqual(neuDoks.map((dok) => dok.id), [an2.id, m2.id, eml2.id], 'Reihenfolge bleibt');
       assert.equal(neuDoks[2].anlageZu, m2.id);
+    });
+
+    it('„Original-E-Mail mitnehmen“ abgewählt: bleibt beim Übernehmen in der Post, fehlt im ZIP und in der E-Mail', async () => {
+      const x = await neu();
+      const a = await x.hole(await DREI());
+      const [z, an, m, eml] = wieInDerPost(a.dokumente);
+      const ziel = await x.neueMappe();
+      await x.d.post.ordneZu(a.post.id, { ziel, register: 'belege', dokumente: [z.id, an.id, m.id], originalEmail: false }, x.lena.id);
+      assert.deepEqual((await x.d.mappen.holeMappe(ziel)).dokumente.map((dok) => dok.id).sort(), [z.id, an.id, m.id].sort(), 'ohne Original-E-Mail');
+      const inPost = (await x.d.mappen.holeMappe(a.post.id)).dokumente;
+      assert.deepEqual(inPost.map((dok) => dok.id), [eml.id], 'sie bleibt in der Post');
+      assert.ok(!inPost[0].anlageZu, 'als eigenes Dokument');
+      assert.equal(inPost[0].originalEmail, true, 'Kennzeichen bleibt');
+
+      // Herunterladen „mit Anlagen“: Vorgabe mit Original-E-Mail (ZIP), abgewählt nur das Dokument.
+      const b = await x.hole({ ...(await DREI()), messageId: '<werkstatt-3@example.org>' });
+      const m2 = wieInDerPost(b.dokumente)[2];
+      const lade = async (body: Record<string, unknown>) => ((await x.alsLena('POST', '/api/dokumente/:id/herunterladen', { params: { id: m2.id }, body })) as { datei: { name: string } }).datei.name;
+      assert.match(await lade({ mitAnlagen: true }), /\.zip$/);
+      assert.equal(await lade({ mitAnlagen: true, originalEmail: false }), 'Muster.pdf');
+      // E-Mail-Versand: dieselbe Auswahl über AusgangDienst.mitAnlagen.
+      const alle = (await x.d.mappen.holeMappe(b.post.id)).dokumente;
+      assert.deepEqual(x.d.ausgang.mitAnlagen([m2], alle, true).map((dok) => dok.name), ['Muster.pdf', 'Werkstatt Unterlagen zum Auftrag.eml']);
+      assert.deepEqual(x.d.ausgang.mitAnlagen([m2], alle, true, false).map((dok) => dok.name), ['Muster.pdf']);
     });
 
     it('Trennblatt: kein Paket teilt Post aus dem Postfach (409); andere Post schon, von Hand auch die E-Mail', async () => {

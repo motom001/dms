@@ -163,13 +163,17 @@ export class PostDienst {
     const zielTyp = await this.repo.holeTyp(ziel.typId);
     if (!zielTyp) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-der-zielmappe'));
     if (zielTyp.system === 'post') throw new Fachfehler(422, t('meldungen.dienst.post-laesst-sich-nicht-2'));
-    const alle = await this.repo.listeDokumente(postId);
-    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id);
+    let alle = await this.repo.listeDokumente(postId);
+    // Original-E-Mail (#999): geht mit, außer `originalEmail: false` („Original-E-Mail mitnehmen“ abgewählt) – dann
+    // bleibt sie als eigenes Dokument in der Post. Sie enthält alle Anhänge der Mail, nicht nur die übernommenen.
+    const ohneEml = e.originalEmail === false;
+    const ids = (Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id)).filter((id) => !ohneEml || !alle.find((d) => d.id === id)?.originalEmail);
     const auswahl = ids.map((id) => alle.find((d) => d.id === id));
     if (auswahl.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
     // Anlagen (#998) wandern mit ihrem Hauptdokument; eine Anlage allein lässt sich nicht übernehmen.
     const { bewegen: dokumente, allein } = zumVerschieben(auswahl as Dokument[]);
     if (allein.length) throw new Fachfehler(422, t('meldungen.anlagen.allein', { name: allein[0].name }));
+    if (ohneEml && (await this.behalteOriginalEmails(post, dokumente, alle, von))) alle = await this.repo.listeDokumente(postId);
     const mit = mitAnlagen(dokumente, alle);
     const regs = zielTyp.register.filter((r) => r.art === 'dokumente');
     const reg = regs.find((r) => r.key === text(e.register)) ?? (e.register ? undefined : regs[0]);
@@ -205,6 +209,28 @@ export class PostDienst {
     await this.postAufgaben(post.id, von);
     protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren, aufloesenGesperrt: hinweis ? true : undefined });
     return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: false as const, ...(hinweis ? { hinweis } : {}), ...(leer.size ? { leerseiten: entfernteSeiten(leer) } : {}) };
+  }
+
+  /**
+   * „Original-E-Mail mitnehmen“ abgewählt (#999): Hängt die Original-E-Mail als Anlage an einem Dokument, das gleich
+   * übernommen wird, wird sie vorher zum eigenen Dokument der Post (wie „Zum eigenen Dokument machen“) und bleibt dort.
+   * Die übrigen Anlagen rücken auf. Gibt zurück, ob sich etwas geändert hat.
+   */
+  private async behalteOriginalEmails(post: Mappe, dokumente: Dokument[], alle: Dokument[], von: string | null): Promise<boolean> {
+    let geaendert = false;
+    for (const haupt of dokumente) {
+      const anlagen = anlagenVon(alle, haupt.id);
+      const emls = anlagen.filter((a) => a.originalEmail);
+      if (!emls.length) continue;
+      for (const eml of emls) {
+        await this.repo.setzeAnlage(eml.id, null, null);
+        await this.notiere(post.id, von, 'anlage', { text: t('meldungen.anlagen.geloest', { name: eml.name, haupt: haupt.name }), dokument: eml.name, haupt: haupt.name, geloest: true });
+      }
+      for (const [i, a] of anlagen.filter((x) => !x.originalEmail).entries()) if (a.anlageNr !== i + 1) await this.repo.setzeAnlage(a.id, haupt.id, i + 1);
+      geaendert = true;
+    }
+    if (geaendert) protokoll.modul('ablage').info('Original-E-Mail bleibt in der Post', { post: post.id });
+    return geaendert;
   }
 
   /**

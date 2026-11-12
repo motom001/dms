@@ -13,7 +13,7 @@ import type { Stufe } from '../../../shared/src/verkleinern';
 import { FassungWahl, hatArchivfassung, type Fassung } from './FassungWahl';
 import { t, tn } from '../sprache';
 import { gruppiere } from '../../../shared/src/anlagen';
-import { AnlageMarke } from './Anlagen';
+import { AnlageMarke, OriginalEmailWahl } from './Anlagen';
 
 /**
  * Mehrere Mappen per E-Mail (#151): eine E-Mail, je Mappe ihre Angaben als PDF und – wählbar – ihre
@@ -60,7 +60,10 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   }, [ids.join(','), zuViele]); // eslint-disable-line react-hooks/exhaustive-deps -- Auswahl als Text verglichen, siehe Kommentar darüber
 
   const alleDocs = (liste ?? []).flatMap((m) => m.dokumente);
-  const docs = umfang === 'alle' ? alleDocs : umfang === 'keine' ? [] : alleDocs.filter((x) => gewaehlt.has(x.id));
+  // Original-E-Mails (#999) bei „alle Dokumente“: stehen mit Kennzeichen da und lassen sich mit einem Haken abwählen.
+  const [eml, setEml] = useState(true);
+  const emails = alleDocs.filter((x) => x.originalEmail);
+  const docs = umfang === 'alle' ? alleDocs.filter((x) => eml || !x.originalEmail) : umfang === 'keine' ? [] : alleDocs.filter((x) => gewaehlt.has(x.id));
   const summe = docs.reduce((a, x) => a + x.groesse, 0);
   // Verkleinert senden (#393): die Größe danach prüft der Server vor dem Versand.
   const [klein, setKlein] = useState<Stufe | null>(null);
@@ -80,7 +83,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], mitAnlagen: umfang !== 'auswahl', stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null, fassung });
+      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], mitAnlagen: umfang !== 'auswahl', ...(umfang === 'alle' && !eml ? { originalEmail: false } : {}), stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null, fassung });
       setErgebnis(r); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -114,6 +117,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
               <label className="haken"><input type="radio" name="em-docs" checked={umfang === 'auswahl'} onChange={() => setUmfang('auswahl')} /><span>{t('ablage.emailmehrere.auswaehlen')}</span></label>
               <label className="haken"><input type="radio" name="em-docs" checked={umfang === 'keine'} onChange={() => setUmfang('keine')} /><span>{t('ablage.emailmehrere.keine-dokumente')}</span></label>
             </fieldset>
+            {umfang === 'alle' && <OriginalEmailWahl emails={emails} an={eml} setze={setEml} />}
             {umfang === 'auswahl' && (liste === null ? <p className="leise klein">{t('ablage.emailmehrere.lade-dokumente')}</p> : (
               <ul className="emailmappen">
                 {liste.map((m) => (

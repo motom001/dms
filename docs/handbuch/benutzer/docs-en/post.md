@@ -51,7 +51,7 @@ If your administrator has set up a [mailbox](https://help.ablago.app/admin/aktue
 
 #### Original email { #original-e-mail }
 
-At the very end is the email itself as `.eml`, marked **Original email** – once per post. It hangs as the last [enclosure](dokumente.md#anlagen) on the last attachment and goes along with it when you assign the post or take over that document. If the email came without attachments, it is the post's document itself. Recognition, classifying and AI never read the original email – its text is on the post already. To put it elsewhere, free it with **Make it a document of its own** or hang it elsewhere with **As enclosure of …**. Whether the original email comes along is set by your administrator on the mailbox (default: yes).
+At the very end is the email itself as `.eml`, marked **Original email** – once per post. It hangs as the last [enclosure](dokumente.md#anlagen) on the last attachment and goes along with it when you assign the post or take over that document. If the email came without attachments, it is the post's document itself. Recognition, classifying and AI never read the original email – its text is on the post already. To put it elsewhere, free it with **Make it a document of its own** or hang it elsewhere with **As enclosure of …**. When [taking over](#zuordnen), downloading "with enclosures" and [sending](versenden.md), it is listed with its label among what goes along and can be unticked there. Whether the original email comes along is set by your administrator on the mailbox (default: yes).
 
 **You split it yourself:** Ablago never turns one email into several posts by itself – a [separator sheet](#sammelscan-teilen) does not apply to the inbox either. If the attachments belong to different matters, use **Split post from here** on the first document that belongs elsewhere (see [Splitting a post from a document](#post-ab-hier-teilen)); you split a long PDF via **Pages** (see [Splitting a batch scan](#sammelscan-teilen)).
 
@@ -93,6 +93,8 @@ When you click a post in **New post**, the page **Take over document** opens –
 - **On the left** the usual views, with *New post* highlighted.
 - **In the middle** the document; if the post has several, they are shown one below the other. [Enclosures](dokumente.md#anlagen) are collapsed behind their document ("Enclosure 1 · MOT report · 2 pages") and go with it when taking over; suggestions and frames only come from main documents. At the top right you browse through *New post* with **‹ Post 1 of 3 ›**. If there is an [archive version](dokumente.md#archivfassung-pdfa) (PDF/A), **Original | PDF/A** appears above the document and the archive version is shown. At the very bottom there is the area **Drag more documents here**: what you drop there (or anywhere in the window, target *Into this post*) is added to this post as a further document.
 - **On the right** the folder the document goes into – as everywhere else with type, title (as it will be called after saving), tabs, fields and save bar. The star and **Folder ▾** work after saving.
+
+If the post came by email, the [original email](#original-e-mail) is shown with its label in the middle below the document it hangs on, and it goes into the folder too. **The original email contains all attachments of the email. If not all of them belong in this folder, free it first or delete it.** The quickest way is to untick **Take original email along** there – it then stays in the post as a document of its own.
 
 ### Where does this belong? { #wohin-gehort-das }
 

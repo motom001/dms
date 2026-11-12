@@ -57,17 +57,27 @@ export function eingangsreihenfolge<T extends AnlageTeil & { erstellt: string }>
 
 /**
  * Die Auswahl samt Anlagen: hinter jedem gewählten Hauptdokument seine Anlagen, jedes Dokument einmal. `mitAnlagen`
- * false: nur, was gewählt ist („mit Anlagen?“ beim Herunterladen und Weitergeben, Vorgabe ja).
+ * false: nur, was gewählt ist („mit Anlagen?“ beim Herunterladen und Weitergeben, Vorgabe ja). `originalEmail` false
+ * (#999): die Original-E-Mail geht nicht als Anlage mit – sie enthält alle Anhänge der Mail; ausdrücklich gewählt geht sie.
  */
-export function mitAnlagen<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[], an = true): T[] {
+export function mitAnlagen<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[], an = true, originalEmail = true): T[] {
   const erg: T[] = [];
   const drin = new Set<string>();
   const nimm = (d: T) => { if (!drin.has(d.id)) { drin.add(d.id); erg.push(d); } };
   for (const d of auswahl) {
     nimm(d);
-    if (an) for (const a of anlagenVon(alle, d.id)) nimm(a);
+    if (an) for (const a of anlagenVon(alle, d.id)) if (originalEmail || !a.originalEmail) nimm(a);
   }
   return erg;
+}
+
+/**
+ * Die Original-E-Mails (#999), die mit der Auswahl als Anlage mitgehen würden – für die Liste „Was geht mit?“ beim
+ * Übernehmen und im Dialog „mit Anlagen?“, damit man sie sieht und mit einem Klick abwählen kann.
+ */
+export function mitgehendeOriginalEmails<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[]): T[] {
+  const ids = new Set(auswahl.map((d) => d.id));
+  return mitAnlagen(auswahl, alle).filter((d) => d.originalEmail && !!d.anlageZu && !ids.has(d.id));
 }
 
 /**

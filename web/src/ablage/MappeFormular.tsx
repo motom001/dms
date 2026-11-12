@@ -66,7 +66,7 @@ const registerVon = (mappentyp: Mappentyp): Register[] => sichtbareRegister(mapp
  * diese Mappe (Dokumente und Historie wandern mit, die Post kommt in den Papierkorb) – true, wenn die Person die Post
  * löschen darf; false bleibt beim Zuordnen; undefined, solange es noch nicht feststeht.
  */
-export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, Wert>; aufloesen?: boolean }
+export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, Wert>; aufloesen?: boolean; /** Original-E-Mail (#999): false = bleibt in der Post. */ originalEmail?: false }
 
 /**
  * Lässt sich die Post beim Speichern auflösen (#936)? Nicht mit „Kopie in der Post behalten“ und nicht bei versendeten
@@ -924,7 +924,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     let leerseiten: number | undefined;
     if (!mappe && zuordnen) {
       try {
-        const r = await api.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren, aufloesen: zuordnen.aufloesen === true });
+        const r = await api.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren, aufloesen: zuordnen.aufloesen === true, ...(zuordnen.originalEmail === false ? { originalEmail: false } : {}) });
         aufgeloest = r.aufgeloest;
         leerseiten = r.leerseiten;
         if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
