@@ -179,7 +179,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Views](sichten.md) | Arrange the collections on the left in the library | Household, Business |
 | [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | Business |
 | [Automations](automatisierungen.md) | Set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task | Business, Household in expert mode |
-| [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign a to do”, “Remind”, follow-up – when they run, who gets the to do and what is asked when applying them | Business, Household in expert mode |
+| [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | Business, Household in expert mode |
 | [Users](benutzer.md) | Create users and roles | Household, Business |
 | [Encryption](verschluesselung.md) | The key for passwords and backups | Household, Business |
 | [Own organisation](organisation.md) | Name, address and controllers of your own business – kept at the organisation in the Library | Business |
