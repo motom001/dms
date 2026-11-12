@@ -1,10 +1,10 @@
 # Fassungen (#1006)
 
 **Zweck:** Wer hat wann was an den Einstellungen der Werkbank geändert – festhalten, zeigen, vergleichen,
-wiederherstellen. Ein Mechanismus und eine Tabelle (`fassungen`, Migration 103) für alle Gegenstände: Mappentypen
+wiederherstellen. Ein Mechanismus und eine Tabelle (`fassungen`, Migration 108) für alle Gegenstände: Mappentypen
 (samt Rechte-Regeln, Stempel und Erkennung am Typ), Ansichten, Nummernkreise, Stempel-Vorlagen, Postfächer,
 Paket-Einstellungen, Automatisierungen (bis #1006 eigene Tabelle `automatisierung_fassungen`) und Automatisierungsvorlagen
-(bis Migration 107 eigene Tabelle `ablaufvorlage_fassungen`). Schicht 3.
+(bis Migration 108 eigene Tabelle `ablaufvorlage_fassungen`). Schicht 3.
 
 - `fassungen.dienst.ts` – `Fassungen`: `halte` (nach dem Speichern: neue Fassung, fortgeschrieben oder nichts),
   `geloescht` (letzte Fassung mit Löschvermerk), `liste`, `vergleich`, `vorschau`, `stelleWiederHer` (Konfliktschutz

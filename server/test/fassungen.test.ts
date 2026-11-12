@@ -3,7 +3,7 @@
  * innerhalb von 10 Minuten wird zusammengefasst; Pakete, Updates und Automatisierungen erscheinen als Urheber;
  * Vergleichen, Vorschau und Wiederherstellen über das normale Speichern (Konfliktschutz #917); Löschen lässt die letzte
  * Fassung mit Löschvermerk stehen; Abgleich beim Start; in PostgreSQL in derselben Transaktion und der Umzug der
- * Automatisierungen (Migration 103).
+ * Automatisierungen (Migration 108).
  */
 import assert from 'node:assert/strict';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
@@ -285,12 +285,12 @@ describe('Fassungen (#1006): Abgleich beim Start', () => {
 });
 
 describe('Fassungen (#1006): PostgreSQL', { skip: !process.env.TEST_DATABASE_URL && 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  it('in derselben Transaktion wie die Änderung; Umzug der Automatisierungen (Migration 103)', async () => {
+  it('in derselben Transaktion wie die Änderung; Umzug der Automatisierungen (Migration 108)', async () => {
     const db = await eigeneDatenbank('fassungen', { migrieren: false });
     const sql = db.sql;
     // Bis vor 103 migrieren (Kopie der früheren Migrationen), eine Automatisierung mit zwei alten Fassungen, dann weiter.
     const frueher = mkdtempSync(join(tmpdir(), 'dms-mig-'));
-    for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '103_')) copyFileSync(join(MIGRATIONEN, f), join(frueher, f));
+    for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '108_')) copyFileSync(join(MIGRATIONEN, f), join(frueher, f));
     await migriere(sql, frueher, () => {});
     rmSync(frueher, { recursive: true, force: true });
     const [h] = await sql`SELECT id FROM haushalte LIMIT 1`;

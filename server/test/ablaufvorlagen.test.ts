@@ -305,14 +305,14 @@ if (url) {
     });
   });
 
-  describe('Fassungen in die gemeinsame Tabelle (#1006, Migration 107)', () => {
+  describe('Fassungen in die gemeinsame Tabelle (#1006, Migration 109)', () => {
     it('Änderungsverlauf aus ablaufvorlage_fassungen: Nummer, Zeit, Stand und Person bleiben; ohne Person Paket bzw. Ablago', async () => {
       const { migriere } = await import('../src/db');
       const { pgRepo } = await import('../src/repo-pg');
       const db = await eigeneDatenbank('ablaufvorlagen_fassungen', { migrieren: false });
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
-        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '107')) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '109')) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});
       } finally { rmSync(vorher, { recursive: true, force: true }); }
       const sql = db.sql;

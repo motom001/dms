@@ -55,7 +55,7 @@ const MARKE = (k: string) => `\u0000${k}\u0000`;
 /** Was ein Lauf braucht: Mappe, Person (mit Zugriff) und die Antworten. */
 interface Lauf { v: Ablaufvorlage; mappe: Mappe; typ: Mappentyp | null; person: string; z: Zugriff; empfaengerId: string | null; text: string; datum: string | null; sofort: boolean }
 
-/** Stand einer Vorlage in einer Fassung (#1006) – wie bis Migration 107 in `ablaufvorlage_fassungen`. */
+/** Stand einer Vorlage in einer Fassung (#1006) – wie bis Migration 108 in `ablaufvorlage_fassungen`. */
 const fassungsStand = (v: Ablaufvorlage) => ({ name: v.name, reihenfolge: v.reihenfolge, aktiv: v.aktiv, beschreibung: v.beschreibung, typen: v.typen, wann: v.wann, fragen: v.fragen, karten: v.karten });
 
 /** Kern-Vorgabe als Vorlage (unverändert, ohne gespeicherten Stand). */
