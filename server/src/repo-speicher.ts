@@ -614,7 +614,7 @@ export function speicherRepo(): Repo {
     },
     async holeDokument(id) { const d = dokumente.get(id); return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }; },
     async setzeDokumentErstellt(id, erstellt) { const d = dokumente.get(id); if (d) d.erstellt = erstellt; },
-    async legeDokumentAn(d) { const n = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
+    async legeDokumentAn(d) { const n: Dokument = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; delete n.leerseiten; dokumente.set(d.id, n); return kopie(n); },
     async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); },
     async versionenVon(id) { return [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x)); },
     async versionenVonDokumenten(ids) { return [...new Set(ids)].flatMap((id) => [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x))); },
@@ -630,6 +630,7 @@ export function speicherRepo(): Repo {
       const uebernehmen = neu.volltext !== undefined && neu.volltext !== null;
       texte.set(id, uebernehmen ? neu.volltext! : null);
       const d: Dokument = { ...alt, name: neu.name, mime: neu.mime, groesse: neu.groesse, sha256: neu.sha256, anzeigbar: neu.anzeigbar, erstellt: jetzt(), erstelltVon: neu.erstelltVon, herkunft: neu.herkunft, version: nummer + 1, ocr: { stand: uebernehmen ? 'fertig' : 'keiner' }, weitereSprachen: [], teilenAb: null };
+      delete d.leerseiten;
       seitenSpr.delete(id);
       dokumente.set(id, d);
       return { ...kopie(d), aeltere: versionen.get(id)!.length };
@@ -684,6 +685,12 @@ export function speicherRepo(): Repo {
       const d = dokumente.get(id);
       if (!d) return false;
       d.teilenAb = null;
+      return true;
+    },
+    async setzeLeerseiten(id, l) {
+      const d = dokumente.get(id);
+      if (!d || (l && d.sha256 !== l.sha256)) return false;
+      if (l) d.leerseiten = structuredClone(l); else delete d.leerseiten;
       return true;
     },
     async ocrZurueckstellen() {

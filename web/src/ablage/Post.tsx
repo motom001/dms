@@ -40,7 +40,7 @@ export function PostKnopf() {
  * Post aufgelöst (#936): Nach dem Speichern zeigt die Seite die nächste Post aus „Neue Post“; oben steht einmal, was
  * angelegt wurde. Gemerkt nur im Speicher der Seite – nach dem Neuladen ist der Hinweis weg.
  */
-interface Aufloesung { fuer: string; id: string; typId: string; titel: string; /** In eine bestehende Mappe (#934). */ vorhanden?: boolean }
+interface Aufloesung { fuer: string; id: string; typId: string; titel: string; /** In eine bestehende Mappe (#934). */ vorhanden?: boolean; /** Leerseiten (#997): so viele Seiten sind weggelassen. */ leerseiten?: number }
 let letzteAufloesung: Aufloesung | null = null;
 export function merkeAufloesung(x: Aufloesung) { letzteAufloesung = x; }
 
@@ -50,7 +50,8 @@ export function AufloesungHinweis({ postId }: { postId: string }) {
   useEffect(() => { if (x && letzteAufloesung === x) letzteAufloesung = null; }, [x]);
   if (!x) return null;
   const typ = d.typ(x.typId);
-  return <div className="hinweis gut" role="status"><p>{tn(x.vorhanden ? 'ablage.post.uebernommen-naechste' : 'ablage.post.aufgeloest-naechste', { typ: typ ? typName(typ) : '', link: <Link to={`/ablage/${x.typId}/${x.id}`} className="verweis">{titelOder(x.titel)}</Link> })}</p></div>;
+  return <div className="hinweis gut" role="status"><p>{tn(x.vorhanden ? 'ablage.post.uebernommen-naechste' : 'ablage.post.aufgeloest-naechste', { typ: typ ? typName(typ) : '', link: <Link to={`/ablage/${x.typId}/${x.id}`} className="verweis">{titelOder(x.titel)}</Link> })}
+    {x.leerseiten ? <> {t('ablage.leerseiten.entfernt', { anzahl: x.leerseiten })}</> : null}</p></div>;
 }
 
 /** An einer Post-Mappe: Stand, „Zuordnen …“ (öffnet die Seite „Dokument übernehmen“, #934), „Erledigt“ bzw. „Wieder neu“. */

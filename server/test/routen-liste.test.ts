@@ -12,8 +12,8 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { routen } from '../src/routen';
 
-/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern; #995: eigene Organisation lesen, setzen, übernehmen, intern; #1045: eigene Organisation anlegen, intern; #1040: Vorlagen einer Mappe und Text setzen, intern und /api/v1; #1039: Paket-Aktionen – Angebot, Start, Schritt, Abbrechen, Datei, intern und /api/v1, dazu drei Schalter der Werkbank; #565: externe Dienste, Kosten lesen und setzen, je Paket, intern; #811: Passkeys – Anmeldung (2), eigene Passkeys (6), Pflicht (2), Zurücksetzen durch die Verwaltung (2), intern; #975: Sicherung herunterladen, Datei und Metadaten, intern; #888: Sichtbarkeit verwiesener Mappen, intern). */
-const ANZAHL = 670;
+/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern; #995: eigene Organisation lesen, setzen, übernehmen, intern; #1045: eigene Organisation anlegen, intern; #1040: Vorlagen einer Mappe und Text setzen, intern und /api/v1; #1039: Paket-Aktionen – Angebot, Start, Schritt, Abbrechen, Datei, intern und /api/v1, dazu drei Schalter der Werkbank; #565: externe Dienste, Kosten lesen und setzen, je Paket, intern; #811: Passkeys – Anmeldung (2), eigene Passkeys (6), Pflicht (2), Zurücksetzen durch die Verwaltung (2), intern; #975: Sicherung herunterladen, Datei und Metadaten, intern; #888: Sichtbarkeit verwiesener Mappen, intern; #997: Leerseiten lesen, markieren, je Seite wählen, intern und /api/v1). */
+const ANZAHL = 676;
 
 /**
  * Alle Routen ohne Anmeldung (`zugang: 'offen'`) mit Grund (#1029). Eine neue offene Route oder ein Wechsel der Stufe

@@ -6,6 +6,7 @@ import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST
 import { kannSchwaerzen, type Bereich, type SchwaerzSeite } from '../../../shared/src/schwaerzen';
 import { textformen, stelleVon, wertAusText } from '../../../shared/src/uebernehmen';
 import type { WortSeite } from '../../../shared/src/archivfassung';
+import { wegfallendeSeiten, type Leerseiten } from '../../../shared/src/leerseiten';
 import { api, schwaerzBildUrl, type Bezuege, type MappeDetails, type TypVorschlaege } from '../api';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
@@ -17,6 +18,7 @@ import { t, tn } from '../sprache';
 import { Symbol } from '../Symbol';
 import { BrueckeKontext, farbeVon, setzeNutzlast, type Bruecke, type FormularAnschluss, type Marke, type Nutzlast } from './bruecke';
 import { ansichtVon } from './Dokumente';
+import { GrosseSeiteMarke, grosseSeite, MitLeerseiten, useLeerseiten } from './Leerseiten';
 import { MappeAnsicht, MappenWahl, NeueMappe } from './MappeFormular';
 import { Mehrfachauswahl } from './Mehrfachauswahl';
 import { useMappenZiel } from './NeuePost';
@@ -93,6 +95,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   // Post: in der Reihenfolge, in der sie abgelegt wurden (Seite 1 zuerst) – „Ab hier abtrennen“ meint die folgenden.
   const doks = post ? [...details.dokumente].sort((a, b) => a.erstellt.localeCompare(b.erstellt) || a.name.localeCompare(b.name)) : details.dokumente.filter((x) => x.id === dokId);
   const erkennDoks = doks.filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
+  // Leerseiten (#997): nur bei Post – die Wahl je Seite gilt sofort, gelöscht wird erst beim Übernehmen.
+  const leer = useLeerseiten(doks);
   const erkennKey = erkennDoks.map((x) => x.id).join(',');
 
   // „Wohin gehört das?“ (nur Post): Typen mit „Kann aus Post angelegt werden“, in denen ich anlegen darf (#937).
@@ -273,7 +277,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   useMappenZiel(post ? { name: titelOder(m.titel), titel: t('ablage.uebernehmen.in-diese-post'), text: t('ablage.uebernehmen.in-diese-post-text'), nimm: (x) => void hochladen(x) } : null);
 
   /** Weiter mit der nächsten Post aus „Neue Post“ (wie nach dem Speichern, #936); ohne weitere die Ansicht. */
-  async function weiter(nach?: { id: string; typId: string; titel: string; vorhanden: boolean }) {
+  async function weiter(nach?: { id: string; typId: string; titel: string; vorhanden: boolean; leerseiten?: number }) {
     // Was rechts eingetragen war, gehört zu keiner Mappe mehr – ohne Rückfrage weiter.
     loeseWache();
     await d.neuLaden();
@@ -293,7 +297,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     try {
       const r = await api.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: details.dokumente.map((x) => x.id), kopieren, aufloesen: !kopieren });
       if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
-      await weiter(r.aufgeloest ? { ...ziel, titel: r.ziel.titel ?? ziel.titel, vorhanden: true } : undefined);
+      await weiter(r.aufgeloest ? { ...ziel, titel: r.ziel.titel ?? ziel.titel, vorhanden: true, leerseiten: r.leerseiten } : undefined);
     } catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: (e as Error).message }); }
   }
   async function ohneMappe() {
@@ -377,7 +381,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
                   : t('ablage.uebernehmen.passt-eher-typ', { name: x.name, typ: d.typ(folge[x.id].typId) ? typName(d.typ(folge[x.id].typId)!) : '' })}</p>
                 <button type="button" className="knopf klein" onClick={() => void abtrennen(i)}>{t('ablage.uebernehmen.ab-hier-abtrennen')}</button>
               </div>}
-              <DokumentBlatt x={x} w={woerter[x.id]} marken={marken.filter((k) => k.dokId === x.id)} hervor={hervor} setHervor={setHervor} insAktive={insAktive} />
+              <DokumentBlatt x={x} w={woerter[x.id]} marken={marken.filter((k) => k.dokId === x.id)} hervor={hervor} setHervor={setHervor} insAktive={insAktive}
+                leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} />
             </div>
           ))}
           {post && <Ablageflaeche hochladen={(f) => void hochladen(f)} />}
@@ -539,9 +544,12 @@ function VerweisBelege({ f, liste, bezuege, marken, nehmen }: { f: Feld; liste: 
 }
 
 /** Ein Dokument in der Mitte: Seitenbilder mit Rahmen und markierbarem Text; mit PDF/A „Original | PDF/A“. */
-function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive }: {
+function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive, leer, setzeLeer }: {
   x: Dokument; w: Woerter | 'keine' | undefined; marken: Marke[]; hervor: string | null; setHervor(k: string | null): void; insAktive(n: Nutzlast, eigenesFeld?: string): void;
+  /** Leerseiten (#997): Markierung des Pakets und Wahl je Seite; null ohne. */
+  leer: Leerseiten | null; setzeLeer(l: Leerseiten | null): void;
 }) {
+  const weg = wegfallendeSeiten(leer);
   const mitArchiv = x.archivfassung?.stand === 'fertig';
   const [archiv, setArchiv] = useState(mitArchiv);
   useEffect(() => { setArchiv(mitArchiv); }, [mitArchiv]);
@@ -561,7 +569,9 @@ function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive }: {
         : seiten?.length
           ? <>
               {w !== 'keine' && !w.mitText && <p className="leise klein">{x.ocr?.stand === 'wartet' || x.ocr?.stand === 'laeuft' ? t('ablage.uebernehmen.text-kommt') : t('ablage.uebernehmen.ohne-text')}</p>}
-              {seiten.map((s, i) => <Seite key={`${i}-${archiv}`} x={x} nr={i + 1} s={s} archiv={archiv} marken={marken} hervor={hervor} setHervor={setHervor} insAktive={insAktive} />)}
+              <MitLeerseiten x={x} l={leer} darf geaendert={setzeLeer}>
+                {seiten.map((s, i) => <Seite key={`${i}-${archiv}`} x={x} nr={i + 1} s={s} archiv={archiv} marken={marken} hervor={hervor} setHervor={setHervor} insAktive={insAktive} weg={weg.includes(i + 1)} />)}
+              </MitLeerseiten>
             </>
           : ansicht
             ? <div className="dokansicht ue-ansicht">{ansicht.pdf ? <iframe src={ansicht.url} title={x.name} /> : <img src={ansicht.url} alt={x.name} />}</div>
@@ -571,8 +581,10 @@ function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive }: {
 }
 
 /** Eine Seite: Bild, darüber die Wörter (zum Markieren) und die Rahmen (zum Ziehen und Anklicken). */
-function Seite({ x, nr, s, archiv, marken, hervor, setHervor, insAktive }: {
+function Seite({ x, nr, s, archiv, marken, hervor, setHervor, insAktive, weg = false }: {
   x: Dokument; nr: number; s: SchwaerzSeite; archiv: boolean; marken: Marke[]; hervor: string | null; setHervor(k: string | null): void; insAktive(n: Nutzlast, eigenesFeld?: string): void;
+  /** Leerseite (#997): fällt beim Übernehmen weg – blass. */
+  weg?: boolean;
 }) {
   const [wahl, setWahl] = useState<{ von: number; bis: number; zieht: boolean } | null>(null);
   const prozent = (a: { x: number; y: number; b: number; h: number }) => ({ left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.b * 100}%`, height: `${a.h * 100}%` });
@@ -585,7 +597,7 @@ function Seite({ x, nr, s, archiv, marken, hervor, setHervor, insAktive }: {
     if (text.trim()) insAktive({ text });
   }
   return (
-    <figure className="ue-seite">
+    <figure className={`ue-seite ${grosseSeite(weg)}`} data-leer={weg ? 'ja' : undefined}>
       <div className={`ue-flaeche${s.breite > 1 && s.hoehe > 1 ? ' mass' : ''}`} style={s.breite > 1 && s.hoehe > 1 ? { aspectRatio: `${s.breite} / ${s.hoehe}` } : undefined}
         onPointerUp={() => { if (wahl?.zieht) fertig(); }} onPointerLeave={() => { if (wahl?.zieht) fertig(); }}>
         <img src={schwaerzBildUrl(x, nr, archiv)} alt={t('ablage.uebernehmen.seite', { nr })} loading={nr <= 2 ? 'eager' : 'lazy'} draggable={false} />
@@ -604,7 +616,7 @@ function Seite({ x, nr, s, archiv, marken, hervor, setHervor, insAktive }: {
           </span>
         ))}
       </div>
-      <figcaption className="leise klein">{t('ablage.uebernehmen.seite', { nr })}</figcaption>
+      <figcaption className="leise klein">{t('ablage.uebernehmen.seite', { nr })}<GrosseSeiteMarke weg={weg} /></figcaption>
     </figure>
   );
 }

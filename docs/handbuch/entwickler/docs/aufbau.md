@@ -224,6 +224,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `systemmappen.ts` | `PostSystemmappen` (`dienst.postSystemmappen`) | `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, Rollen, Systemkonten (#673); `SystemkontoEintrag` |
 | `eingangskanaele.ts` | `Eingangskanaele` (`dienst.eingangskanaele`) | was Eingangsordner und Postfächer brauchen (#195, #196), gleiche Dateien und `fundstellen` (#333); `Fundstelle` |
 | `foto.ts` | `PostFotos` (`dienst.postFotos`) | Post fotografieren (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen` |
+| `leerseiten.ts` | `PostLeerseiten` (`dienst.postLeerseiten`) | Leerseiten (#997): `lies`, `markiere` (nur Pakete mit `dms:leerseiten`), `waehleSeite` (nur Menschen); beim Übernehmen `plane` (vor dem Verschieben) und `lasseWeg` (neue Fassung, Original als frühere Version) |
 
 - **Tür:** `post/index.ts`; die Routen der Postfächer (`post.routen.ts`) holt nur `routen.ts` direkt. `wandleZuPost` und `ergaenzeSystemfelder` liegen seit #1073 bei den [Mappentypen](#mappentypen).
 - **Bekommt den Kern**, die [Rechteprüfung](#zugriff), [Mappentypen](#mappentypen), [Mappen](#mappen), [Dokumente](#dokumente) und die Teile dieses Ordners, `PostFotos` dazu [PDF bearbeiten](#pdf-bearbeiten). Über den Anschluss: Ereignis (`kern.ereignis`), `meldeVerknuepft`, Aufgaben, Konten, Passung, Systemausstattung, Mappen löschen und `sichereZuordnung` aus `erkennung.ts` (die Erkennung bekommt noch den ganzen Dienst und liegt darum nicht unter Schicht 3).

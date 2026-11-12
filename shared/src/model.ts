@@ -1165,6 +1165,11 @@ export interface Dokument {
    * entsperrte Fassung gibt. Nur in der Mappe (GET /mappen/{id}) und nur bei geschützten PDFs.
    */
   pdfSchutz?: import('./entsperren').PdfSchutz | null;
+  /**
+   * Leerseiten (#997): Seiten, die ein Paket mit `dms:leerseiten` als leer markiert hat, und die Wahl der Person
+   * („Doch behalten“, „Auch weglassen“). Gilt nur für die Datei mit diesem Prüfwert; fehlt, wenn nichts markiert ist.
+   */
+  leerseiten?: import('./leerseiten').Leerseiten | null;
 }
 
 /** Herkunft einer Dokumentversion (#194). */

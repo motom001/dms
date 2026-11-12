@@ -28,7 +28,7 @@ import { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVer
 import { SichtenDienst, SichtenVerwaltung, Systemsichten } from './sichten';
 import { BerechtigungenDienst } from './berechtigungen';
 import { PdfBearbeiten, PdfVerkleinern, Schwaerzen, Stempelvorlagen } from './pdf-bearbeiten';
-import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostSystemmappen } from './post';
+import { Eingangskanaele, PostAufloesen, PostDienst, PostFotos, PostLeerseiten, PostSystemmappen } from './post';
 import { AusgangDienst, AusgangEmail, AusgangExport } from './ausgang';
 import { type EreignisAufruf, VolltextAusPaketen, VolltextDienst } from './volltext';
 import { Automatisierungshilfen, EreignisseDienst } from './ereignisse/index';
@@ -177,6 +177,8 @@ export class Dienst {
   readonly postSystemmappen: PostSystemmappen;
   /** Post auflösen und abtrennen (#934, #936, #1077). */
   readonly postAufloesen: PostAufloesen;
+  /** Leerseiten markieren, wählen und beim Übernehmen weglassen (#997). */
+  readonly postLeerseiten: PostLeerseiten;
   /** Post (#192, #337, #1077): anlegen, zuordnen, automatisch zuordnen. */
   readonly post: PostDienst;
   /** Eingangskanäle (#195, #333, #1077). */
@@ -301,7 +303,7 @@ export class Dienst {
     ({ dokumente: this.dokumente, umwandlung: this.dokumentUmwandlung, archiv: this.dokumentArchiv, pdfs: this.geschuetztePdfs, fehlend: this.dateienFehlen, versionen: this.dokumentVersionen } = this.baueDokumente());
     this.suche = new SucheDienst(this.kern, this.rechtepruefung, { konten: () => this.konten });
     ({ verwalten: this.sichtenVerwaltung, systemsichten: this.systemsichten, sichten: this.sichten, berechtigungen: this.berechtigungen, ausPaketen: this.volltextAusPaketen, volltext: this.volltexte } = this.baueSichtenUndVolltext());
-    ({ stempelvorlagen: this.stempelvorlagen, pdf: this.pdfBearbeiten, verkleinern: this.pdfVerkleinern, schwaerzen: this.schwaerzen, systemmappen: this.postSystemmappen, aufloesen: this.postAufloesen,
+    ({ stempelvorlagen: this.stempelvorlagen, pdf: this.pdfBearbeiten, verkleinern: this.pdfVerkleinern, schwaerzen: this.schwaerzen, systemmappen: this.postSystemmappen, aufloesen: this.postAufloesen, leerseiten: this.postLeerseiten,
       post: this.post, eingang: this.eingangskanaele, fotos: this.postFotos, ausgang: this.ausgang, email: this.ausgangEmail, export: this.ausgangExport } = this.bauePdfPostAusgang());
     // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
     this.systemausstattung = new Systemausstattung(this.kern, {
@@ -394,12 +396,13 @@ export class Dienst {
       vorgabeAufgabenEmpfaenger: (b) => this.ohneEmpfaenger.vorgabeAufgabenEmpfaenger(b), sichereSystem: () => this.systemausstattung.sicherstellen(), konten: () => this.konten,
       systemkonten: () => this.systemkonten, automatisierungenVon: () => this.automatisierungenVon,
     });
-    const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen }, {
+    const leerseiten = new PostLeerseiten(this.kern, { rechte, historie: this.mappenHistorie, versionen: this.dokumentVersionen });
+    const aufloesen = new PostAufloesen(this.kern, { rechte, historie: this.mappenHistorie, titel: this.mappenTitel, ...doks, systemmappen, leerseiten }, {
       legePostAn: (...a) => this.post.legePostAn(...a), postAufgaben: (id, von) => this.post.postAufgaben(id, von),
       loeschPruefung: (m, typ, rueck) => this.loeschen.loeschPruefung(m, typ, rueck), loescheMappe: (id, von, z, anlass) => this.loeschen.loescheMappe(id, von, z, anlass),
     });
     const post = new PostDienst(this.kern, {
-      rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen,
+      rechte, mappentypen: this.mappentypen, historie: this.mappenHistorie, titel: this.mappenTitel, eingaben: this.mappenEingaben, ...doks, aufloesen, systemmappen, leerseiten,
     }, {
       ereignis: (art, daten, von) => this.kern.ereignis(art, daten, von), meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
       verschluessele: (k) => this.verschluessele(k), neueAufgabe: (a, typ) => this.ereignisseDienst.neueAufgabe(a, typ), leiteUm: (a) => this.vertretung.leiteUm(a),
@@ -419,7 +422,7 @@ export class Dienst {
     const exportieren = new AusgangExport(this.kern, { rechte, sichten: this.sichten, fehlend: this.dateienFehlen, ausgang, stempel: stempelvorlagen }, {
       mitnehmbar: (ich, z, ids) => this.ausgang.mitnehmbar(ich, z, ids), entsperrtZu,
     });
-    return { stempelvorlagen, pdf, verkleinern, schwaerzen, systemmappen, aufloesen, post, eingang, fotos, ausgang, email, export: exportieren };
+    return { stempelvorlagen, pdf, verkleinern, schwaerzen, systemmappen, aufloesen, leerseiten, post, eingang, fotos, ausgang, email, export: exportieren };
   }
 
   /**

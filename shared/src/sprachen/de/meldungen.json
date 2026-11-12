@@ -1950,5 +1950,18 @@
   "pakete.sicht-bedingung-op": "Bei Ansichten heißt es operator, nicht op.",
   "pakete.sicht-bedingungen-liste": "{wo}: bedingungen muss eine Liste sein.",
   "extern.pausiert": "KI-Funktionen pausiert bis {datum}: Das Monatsbudget für KI-Dienste ist erreicht. Die Verwaltung kann das Budget unter Werkbank → Systemzustand → KI-Kosten anpassen.",
-  "vollexport.nicht-enthalten-messwerte-extern": "nicht enthalten: Messwerte externer Dienste und KI-Kosten (technisch, ohne Inhalte)"
+  "vollexport.nicht-enthalten-messwerte-extern": "nicht enthalten: Messwerte externer Dienste und KI-Kosten (technisch, ohne Inhalte)",
+  "leerseiten.nur-post": "Leerseiten gibt es nur an Dokumenten in Post.",
+  "leerseiten.nur-pdf": "„{name}“ ist weder PDF noch Bild – Leerseiten gibt es nur bei PDFs, JPEG und PNG.",
+  "leerseiten.nur-pakete": "Leerseiten markieren nur Pakete; eine Person wählt je Seite „Doch behalten“ oder „Auch weglassen“.",
+  "leerseiten.ohne-recht": "Dieses Paket hat das Recht „Leere Seiten in neuer Post markieren“ (dms:leerseiten) nicht.",
+  "leerseiten.andere-datei": "Die Datei von „{name}“ hat sich inzwischen geändert – bitte die aktuelle Datei prüfen.",
+  "leerseiten.liste.liste": "seiten: Liste von Seitennummern erwartet.",
+  "leerseiten.liste.seite": "seiten: nur ganze Zahlen von 1 bis {seiten}.",
+  "leerseiten.liste.zu-viele": "seiten: zu viele Einträge.",
+  "leerseiten.wahl-nur-menschen": "Ob eine Seite bleibt oder wegfällt, wählt eine Person – Pakete markieren nur.",
+  "leerseiten.versendet": "Bei versendeten E-Mails bleiben alle Seiten.",
+  "leerseiten.weglassen-ja-nein": "weglassen: true oder false erwartet.",
+  "leerseiten.entfernt_one": "Eine leere Seite entfernt",
+  "leerseiten.entfernt_other": "{anzahl} leere Seiten entfernt"
 }

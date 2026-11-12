@@ -257,6 +257,16 @@ Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordn
 
 Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschlüsselt und werden beim Schlüsselwechsel mit umgeschlüsselt. Über die API v1 sind sie nicht lesbar; das Paket selbst bekommt sie über den Paket-Läufer. Das Protokoll vermerkt „Einstellungen von Paket … geändert (Felder …)“ – nie die Werte von Geheimnissen. Nur Administratoren sehen und ändern Einstellungen.
 
+### Beispiel: Leerseiten { #leerseiten }
+
+Das Paket **Leerseiten** prüft jede Seite neuer Post und markiert leere Seiten, z. B. die Rückseiten eines beidseitigen Scans – auch ohne Trennblätter. Fast nur Weiß, Rauschen und die Löcher eines Lochers zählen nicht als Inhalt; eine Bleistiftnotiz, ein Stempel oder Schrift, die von der Vorderseite durchscheint, schon, je nach Empfindlichkeit. Im Reiter **Einstellungen**:
+
+- **Empfindlichkeit:** **vorsichtig** (Vorgabe) markiert nur Seiten, die wirklich leer sind – eine Bleistiftnotiz oder ein kleiner Stempel lassen die Seite stehen. **normal** übersieht Rauschen und durchscheinende Schrift. **streng** markiert auch Seiten mit sehr wenig Inhalt (einzelne Striche, kleine Flecken). Im Zweifel bleibt eine Seite – lieber einmal **Auch weglassen** wählen, als etwas zu verlieren.
+- **Nur Post aus diesen Kanälen:** Vorgabe **Scan**, **Eingangsordner** und **Hochgeladen**; leer = alle Kanäle.
+- **Höchstens so viele Seiten:** Längere Dokumente prüft das Paket nicht (Zeitgrenze des Paket-Läufers).
+
+Das Paket läuft abgeschottet im Paket-Läufer, **ohne Netz**, mit den Rechten [Leere Seiten in neuer Post markieren](#recht-leerseiten), Post lesen und Dokumente lesen. Was es getan hat, steht unter **Paket-Läufer** bei den letzten Aufrufen („3 von 8 Seiten leer“). Das Paket **Trennblatt** erkennt die leere Rückseite eines Trennblatts seit seiner Version 1.1.0 mit derselben Erkennung (Stufe „vorsichtig“) und entfernt sie wie bisher gleich beim Teilen; das ist keine Doppelung, denn *Leerseiten* sieht danach nur noch die Seiten der Briefe.
+
 ## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
 
 Pakete können Aktionen ins Menü **Mappe ▾** passender Mappen bringen, z. B. **Vorlage hinzufügen** am Vertrag oder **Als bezahlt markieren** an der Rechnung. Jede Aktion nennt im Manifest, an welchen Mappentypen sie steht und **welche Rechte sie am Ende braucht**: lesen, Dokument hinzufügen, ändern, Mappen anlegen, herausgeben (wie Herunterladen, Recht E).
@@ -349,6 +359,10 @@ Will ein Update andere Adressen, fragt Ablago erneut.
 #### Hinweise an Mappen setzen { #recht-hinweise }
 
 **„Setzt Hinweise an Mappen, die es schreiben darf (z. B. „Die Positionen ergeben 118,40 €“) – nur Text, immer mit dem Namen des Pakets; Speichern hindern sie nie (dms:hinweise)“** – Seit Version 0.231. Das Paket kann an Mappen, die es [anlegen und ändern](#recht-mappen-anlegen-und-andern) darf, kurze Hinweise setzen und wieder entfernen, etwa wenn die Positionen einer Rechnung nicht zum Betrag passen. Sie stehen gelb in der Hinweiszeile über den Registern, immer mit dem Namen des Pakets davor – nie rot und nie so, dass sie wie eine Meldung von Ablago aussehen. Ablago nimmt nur Text an: kein HTML, kein Markdown, keine Links, höchstens 300 Zeichen und höchstens 3 Hinweise je Paket und Mappe. Ein Hinweis ändert die Mappe nicht (kein „zuletzt geändert“, kein Eintrag in der Historie) und hält niemanden vom Speichern ab. Entfernst du das Paket, gehen seine Hinweise mit.
+
+#### Leere Seiten in neuer Post markieren { #recht-leerseiten }
+
+**„Markiert leere Seiten in neuer Post – löscht nichts; weggelassen werden sie erst, wenn jemand die Post in eine Mappe übernimmt (dms:leerseiten)“** – Seit Version 0.255. Das Paket (z. B. *Leerseiten* aus dem Katalog) darf an Dokumenten in **Post** Seiten als leer markieren; dafür braucht es die Rechte [Mappen lesen](#recht-mappen-lesen) für Post und [Dokumente lesen](#recht-dokumente). Mehr darf es damit nicht: Es löscht keine Seite, ändert weder Datei noch Post (kein „zuletzt geändert“, kein Eintrag in der Historie) und sieht nur die Seitenbilder der Post, die es lesen darf. Die Markierung gilt nur für die Datei, die das Paket geprüft hat. Ob eine Seite wirklich wegfällt, entscheidet ein Mensch: In der Post steht je Seite **Doch behalten** bzw. **Auch weglassen**, und weggelassen wird erst beim Übernehmen in eine Mappe – mit dem Original als früherer Version (siehe [Leerseiten](https://help.ablago.app/benutzer/aktuell/post/#leerseiten) im Benutzerhandbuch). Beim automatischen Zuordnen fällt nie eine Seite weg.
 
 #### Berechnete Felder { #recht-berechnet }
 

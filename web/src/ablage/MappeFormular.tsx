@@ -913,10 +913,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setAdPositionen(null); setAdDazu([]);
     // Zuordnen (#192): Die Post gehört jetzt zu dieser neuen Mappe – bzw. wird zu ihr (#936, aufgelöst).
     let aufgeloest = false;
+    let leerseiten: number | undefined;
     if (!mappe && zuordnen) {
       try {
         const r = await api.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren, aufloesen: zuordnen.aufloesen === true });
         aufgeloest = r.aufgeloest;
+        leerseiten = r.leerseiten;
         if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
       } catch (e) { await hinweis({ titel: t('ablage.mappeformular.post-nicht-zugeordnet'), text: t('ablage.mappeformular.die-mappe-ist-angelegt', { message: (e as Error).message }) }); }
     }
@@ -938,7 +940,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     // Aufgelöst (#936): weiter mit der nächsten Post aus „Neue Post“; oben steht, was angelegt wurde.
     const naechste = aufgeloest ? await naechstePost(d.zaehler.neuePost) : undefined;
     if (naechste && d.zaehler.neuePost) {
-      merkeAufloesung({ fuer: naechste.id, id: gespeichert!.id, typId: typ.id, titel: gespeichert!.titel ?? '' });
+      merkeAufloesung({ fuer: naechste.id, id: gespeichert!.id, typId: typ.id, titel: gespeichert!.titel ?? '', leerseiten });
       geheZu(`/ablage/${d.zaehler.neuePost}/${naechste.id}/uebernehmen`);
     } else if (!mappe) geheZu(`/ablage/${sicht}/${gespeichert!.id}`);
     else setMeldung(gespeichert?.hinweis ?? (offen.length || nichtEntfernt.length ? t('ablage.mappeformular.teilweise-gespeichert') : t('ablage.mappeformular.gespeichert-2')));

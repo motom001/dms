@@ -3,6 +3,7 @@ import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, 
 import { alsText } from '../../shared/src/markdown';
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
+import { alsLeerseiten } from '../../shared/src/leerseiten';
 import { normalisiereZiele, standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallEnde, type FallOhneLeserecht, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import { istZahlvergleich, type Filter, type Klausel, type Sicht, type SichtDaten } from '../../shared/src/sichten';
 import { TAGE_JE_EINHEIT } from '../../shared/src/feldarten';
@@ -107,6 +108,8 @@ const alsDokument = (r: Zeile): Dokument => ({
   // Mehrere Sprachen (#579): weitere Sprachen und der Hinweis „Post teilen?“ aus den Seitensprachen.
   weitereSprachen: (r.weitere_sprachen as string[] | null | undefined) ?? [],
   teilenAb: r.teilen_hinweis_aus ? null : teilenAb(alsSeitensprachen(r.seitensprachen)),
+  // Leerseiten (#997): nur, wenn ein Paket oder eine Person Seiten markiert hat.
+  ...(r.leerseiten ? { leerseiten: alsLeerseiten(r.leerseiten) } : {}),
   ocr: {
     stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
     info: (r.ocr_info as string | null) ?? null,
@@ -123,7 +126,7 @@ const alsDokument = (r: Zeile): Dokument => ({
  * sein und wird nur über `volltext()`/`volltexte()` gelesen, nie in Listen.
  */
 export const DOKUMENT_SPALTEN = ['id', 'haushalt_id', 'mappe_id', 'register_key', 'name', 'mime', 'groesse', 'sha256', 'anzeigbar', 'erstellt', 'erstellt_von',
-  'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer', 'sprache', 'weitere_sprachen', 'seitensprachen', 'teilen_hinweis_aus'] as const;
+  'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer', 'sprache', 'weitere_sprachen', 'seitensprachen', 'teilen_hinweis_aus', 'leerseiten'] as const;
 /**
  * Spalten einer Mappe ohne `suchtext` (#615): Der gefaltete Suchtext (Migration 055) ist nur für die Suche da und
  * etwa so groß wie Titel und Werte zusammen – Listen und „Mappe öffnen“ lesen ihn nie.
@@ -1525,7 +1528,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
             erstellt = now(), erstellt_von = ${neu.erstelltVon}, herkunft = ${neu.herkunft}, version = ${nummer + 1},
             volltext = ${uebernehmen ? neu.volltext ?? null : null}, ocr_stand = ${uebernehmen && neu.volltext != null ? 'fertig' : 'keiner'},
             ocr_info = NULL, ocr_seiten = NULL, ocr_zeit = ${uebernehmen && neu.volltext != null ? sql`now()` : null},
-            weitere_sprachen = NULL, seitensprachen = NULL, teilen_hinweis_aus = NULL
+            weitere_sprachen = NULL, seitensprachen = NULL, teilen_hinweis_aus = NULL, leerseiten = NULL
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING ${DOK_RUECK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = ${id}) AS aeltere`;
         return alsDokument(r);
@@ -1904,6 +1907,14 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async teilenHinweisAus(id) {
       if (!istUuid(id)) return false;
       const r = await sql`UPDATE dokumente SET teilen_hinweis_aus = true WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r.count > 0;
+    },
+    async setzeLeerseiten(id, l) {
+      if (!istUuid(id)) return false;
+      // Nur, solange die Datei dieselbe ist (#997): Eine neue Fassung dazwischen setzt die Markierung zurück.
+      const r = l
+        ? await sql`UPDATE dokumente SET leerseiten = ${sql.json(l as unknown as postgres.JSONValue)} WHERE haushalt_id = ${haushaltId} AND id = ${id} AND sha256 = ${l.sha256}`
+        : await sql`UPDATE dokumente SET leerseiten = NULL WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r.count > 0;
     },
     async ocrZurueckstellen() {

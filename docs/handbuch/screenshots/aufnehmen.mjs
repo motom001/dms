@@ -779,6 +779,20 @@ async function main() {
   await s.locator('.ue-seite img').first().waitFor();
   await bild(s, 'post-zuordnen');
 
+  // Leerseiten (#997): beidseitiger Scan mit leeren Rückseiten, Seitenleiste neben dem Dokument. Markiert wird hier wie
+  // die Wahl einer Person („Auch weglassen“) – das Paket Leerseiten setzt dieselbe Markierung. Danach erledigt, damit
+  // die Zahl bei „Neue Post“ in den folgenden Bildern gleich bleibt.
+  const beidseitig = await api('POST', '/api/post', { betreff: 'Kontoauszug, beidseitig gescannt' });
+  await api('POST', `/api/mappen/${beidseitig.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kontoauszug.pdf')}&typ=application/pdf`, beispielPdf(['Kontoauszug Seite 1', '', 'Kontoauszug Seite 2', '']), true);
+  const scanDok = (await api('GET', `/api/mappen/${beidseitig.id}`)).dokumente[0];
+  for (const nr of [2, 4]) await api('PUT', `/api/dokumente/${scanDok.id}/leerseiten/${nr}`, { weglassen: true });
+  await geheZu(s, `/ablage/${neuePost}/${beidseitig.id}`);
+  await s.waitForURL(/\/uebernehmen$/);
+  await s.locator('[data-anker="leerseiten.leiste"] li[data-leer] img').first().waitFor();
+  await s.locator('.ue-seite img').first().waitFor();
+  await bild(s, 'post-leerseiten');
+  await api('PUT', `/api/mappen/${beidseitig.id}`, { werte: { stand: 'Erledigt' } });
+
   // Neue Post von überall (#193): zwei Dateien irgendwo ins Fenster ziehen → eine Post mit beiden.
   await geheZu(s, `/ablage/${vertrag.id}`);
   // Je Seite neu erzeugen: ein JSHandle gilt nur auf der Seite, auf der es entstand.

@@ -13,6 +13,8 @@ Benutzer, Rollen). Schicht 3 der Zielaufteilung – über Mappen, Dokumenten, Re
 - `eingangskanaele.ts` – `Eingangskanaele` (#195, #196, #333): `postTyp`, `notiereSystem`, gleiche Dateien und ihre
   `fundstellen`, `postMitDatei`, `demoTexterkennung`.
 - `foto.ts` – `PostFotos` (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen`.
+- `leerseiten.ts` – `PostLeerseiten` (#997): `lies`, `markiere` (nur Pakete mit `dms:leerseiten`), `waehleSeite`
+  (nur Menschen), vor dem Übernehmen `plane`, danach `lasseWeg` (neue Fassung über `DokumentVersionen.neueFassung`).
 - `index.ts` – die einzige Tür. `post.routen.ts` (Postfächer, #960) holt `routen.ts` direkt.
 
 **Abhängigkeiten**
