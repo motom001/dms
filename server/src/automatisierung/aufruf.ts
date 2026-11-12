@@ -4,6 +4,7 @@ import type postgres from 'postgres';
 import { AUFRUF_GEHEIMNIS_PRAEFIX, AUFRUF_GRENZEN, AUFRUF_KENNUNG, AUFRUF_PFAD, aufrufParameter, istAufruf, type Automatisierung, type WennAufruf } from '../../../shared/src/automatisierung';
 import { ipBereich, kuerzeIp } from '../abruf';
 import { Fachfehler } from '../fehler';
+import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../grenzen';
 import { hashe, speicherKurzzustand, type Kurzzustand } from '../kurzzustand';
 import { protokoll } from '../protokoll';
 import { istUuid } from '../repo';
@@ -23,8 +24,10 @@ import { t } from '../sprache';
  *   Server eine Signatur (kein Zeitunterschied zwischen „gibt es nicht“ und „falsch“).
  * - **Zeitfenster und Wiederholschutz:** Zeitstempel höchstens {@link AUFRUF_GRENZEN}.fensterS Sekunden daneben; jede
  *   angenommene Signatur ist so lange (doppelt) im Kurzzustand belegt – über alle Prozesse, eine zweite gleiche geht nicht.
- * - **Bremse über alle Prozesse** (Kurzzustand wie #956): je IP-Bereich (IPv4 /24, IPv6 /64), je Adresse und insgesamt –
- *   gezählt vor jeder Prüfung, für bekannte und unbekannte Adressen gleich.
+ * - **Bremse über alle Prozesse** (Kurzzustand wie #956, Grenzen in `grenzen.ts`): vorab nur je IP-Bereich (IPv4 /24,
+ *   IPv6 /64). Abgelehnte zählen je Adresse (bekannt oder nicht, als Hash) und insgesamt (Notbremse) – darüber nur noch
+ *   „bremse“, ohne Zähler und Protokoll. Angenommene zählen nur je Adresse für sich. So legt niemand ohne Geheimnis eine
+ *   Adresse oder alle zusammen still (Durchsicht Sicherheit, PR #1160); geprüft wird immer, die Prüfung ist billig.
  * - **Einheitliche Antwort:** Unbekannte Adresse, ausgeschaltete Automatisierung, falsche Signatur, alter Zeitstempel,
  *   Wiederholung – immer 401 mit demselben Text. Angenommen: 202 und nur „angenommen“, nie Daten aus der Ablage.
  * - **Parameter** nur die der Karte, nur Text, begrenzt ({@link aufrufParameter}); Größe des Rumpfs: `AUFRUF_KOERPER_MAX`.
@@ -32,10 +35,11 @@ import { t } from '../sprache';
 
 const log = protokoll.modul('automatisierung');
 
-/** Kurzzustand: Bremse je IP-Bereich, je Adresse (Hash der Kennung), insgesamt; gesehene Signaturen. */
+/** Kurzzustand: Bremse je IP-Bereich; abgelehnte je Adresse (Hash der Kennung) und insgesamt; angenommene je Adresse; gesehene Signaturen. */
 const BREMSE_BEREICH = 'aufruf-bereich';
-const BREMSE_ADRESSE = 'aufruf-adresse';
-const BREMSE_GESAMT = 'aufruf-gesamt';
+const FEHL_ADRESSE = 'aufruf-fehl-adresse';
+const FEHL_GESAMT = 'aufruf-fehl-gesamt';
+const ANGENOMMEN = 'aufruf-angenommen';
 const GESEHEN = 'aufruf-gesehen';
 const MINUTE = 60_000;
 
@@ -203,19 +207,24 @@ export class Aufrufe {
   }
 
   /**
-   * Ein Aufruf von außen. Reihenfolge: Bremse (IP-Bereich, insgesamt, Adresse) → Adresse und Automatisierung →
-   * Zeitstempel und Signatur (immer gerechnet) → Wiederholung → Parameter → auslösen. Was scheitert, ist „abgelehnt“
-   * ohne Grund nach außen; im Protokoll steht nur der Grund und die gekürzte IP, nie Kennung oder Signatur.
+   * Ein Aufruf von außen. Reihenfolge: Bremse je IP-Bereich → Adresse und Automatisierung → Zeitstempel und Signatur
+   * (immer gerechnet) → Wiederholung → Bremse für angenommene je Adresse → Parameter → auslösen. Was scheitert, ist
+   * „abgelehnt“ ohne Grund nach außen und zählt als Fehlversuch ({@link abgelehnt}); im Protokoll steht nur der Grund und
+   * die gekürzte IP, nie Kennung oder Signatur.
    */
   async annehmen(o: AufrufAnfrage): Promise<AufrufErgebnis> {
-    if (await this.gebremst(o)) return { art: 'bremse' };
+    const z = this.zustand();
+    if ((await z.zaehle(BREMSE_BEREICH, aufrufBereich(o.ip), MINUTE)).anzahl > AUFRUF_JE_BEREICH) return { art: 'bremse' };
     const g = await this.pruefe(o);
-    if (!g) return { art: 'abgelehnt' };
+    if ('grund' in g) return this.abgelehnt(o, g.grund, g.automatisierung);
     const { a, zeit, merker } = g;
     // Wiederholschutz über alle Prozesse: dieselbe Signatur nur einmal im Fenster (doppelt so lang belegt wie das Fenster).
-    if (!(await this.zustand().belege(GESEHEN, merker, 2 * AUFRUF_GRENZEN.fensterS * 1000))) {
-      log.info('Aufruf von außen abgelehnt', { grund: 'wiederholung', ip: kuerzeIp(o.ip), automatisierung: a.id });
-      return { art: 'abgelehnt' };
+    if (!(await z.belege(GESEHEN, merker, 2 * AUFRUF_GRENZEN.fensterS * 1000))) return this.abgelehnt(o, 'wiederholung', a.id);
+    // Nur gültig signierte zählen hier – ohne das Geheimnis erreicht niemand diese Grenze.
+    if ((await z.zaehle(ANGENOMMEN, hashe(o.kennung), MINUTE)).anzahl > AUFRUF_ANGENOMMEN_JE_ADRESSE) {
+      await z.loesche(GESEHEN, merker); // derselbe Aufruf darf es nach der Bremse noch einmal versuchen
+      log.info('Aufruf von außen gebremst', { grund: 'angenommen-je-adresse', automatisierung: a.id, ip: kuerzeIp(o.ip) });
+      return { art: 'bremse' };
     }
     const roh = jsonObjekt(o.rumpf);
     if (roh === null) return { art: 'inhalt' };
@@ -226,19 +235,34 @@ export class Aufrufe {
     return { art: 'angenommen' };
   }
 
-  /** Bremse über alle Prozesse, gezählt vor jeder Prüfung: je IP-Bereich, insgesamt, je Adresse (auch unbekannte, nur als Hash). */
-  private async gebremst(o: AufrufAnfrage): Promise<boolean> {
+  /**
+   * Fehlversuch: zählt insgesamt (Notbremse) und je Adresse (auch unbekannte, nur als Hash – verrät nicht, welche es
+   * gibt). Darüber „bremse“ ohne weiteren Zähler und ohne Protokoll; das Überschreiten selbst steht einmal im Protokoll.
+   * Ein gültig signierter Aufruf kommt davon unberührt weiter durch.
+   */
+  private async abgelehnt(o: AufrufAnfrage, grund: string, automatisierung?: string): Promise<AufrufErgebnis> {
     const z = this.zustand();
-    if ((await z.zaehle(BREMSE_BEREICH, aufrufBereich(o.ip), MINUTE)).anzahl > AUFRUF_GRENZEN.jeBereichJeMinute) return true;
-    if ((await z.zaehle(BREMSE_GESAMT, 'alle', MINUTE)).anzahl > AUFRUF_GRENZEN.gesamtJeMinute) return true;
-    return AUFRUF_KENNUNG.test(o.kennung) && (await z.zaehle(BREMSE_ADRESSE, hashe(o.kennung), MINUTE)).anzahl > AUFRUF_GRENZEN.jeAdresseJeMinute;
+    const gesamt = (await z.zaehle(FEHL_GESAMT, 'alle', MINUTE)).anzahl;
+    if (gesamt > AUFRUF_FEHLVERSUCHE_GESAMT) {
+      if (gesamt === AUFRUF_FEHLVERSUCHE_GESAMT + 1) log.warn('Aufrufe von außen: viele Fehlversuche, Notbremse', { anzahl: gesamt });
+      return { art: 'bremse' };
+    }
+    if (AUFRUF_KENNUNG.test(o.kennung)) {
+      const n = (await z.zaehle(FEHL_ADRESSE, hashe(o.kennung), MINUTE)).anzahl;
+      if (n > AUFRUF_FEHLVERSUCHE_JE_ADRESSE) {
+        if (n === AUFRUF_FEHLVERSUCHE_JE_ADRESSE + 1) log.info('Aufruf von außen gebremst', { grund: 'fehlversuche-je-adresse', ip: kuerzeIp(o.ip), ...(automatisierung ? { automatisierung } : {}) });
+        return { art: 'bremse' };
+      }
+    }
+    log.info('Aufruf von außen abgelehnt', { grund, ip: kuerzeIp(o.ip), ...(automatisierung ? { automatisierung } : {}) });
+    return { art: 'abgelehnt' };
   }
 
   /**
    * Adresse, Automatisierung, Zeitstempel und Signatur. Ohne Adresse oder Geheimnis rechnet der Server trotzdem eine
    * Signatur (gleiche Arbeit, Wegwerf-Geheimnis) – kein Zeitunterschied zwischen „gibt es nicht“ und „falsch“.
    */
-  private async pruefe(o: AufrufAnfrage): Promise<{ a: Automatisierung; zeit: number; merker: string } | null> {
+  private async pruefe(o: AufrufAnfrage): Promise<{ a: Automatisierung; zeit: number; merker: string } | { grund: string; automatisierung?: string }> {
     const e = AUFRUF_KENNUNG.test(o.kennung) ? await this.d.repo.finde(o.kennung) : undefined;
     const a = e ? await this.d.automatisierung(e.automatisierungId) : undefined;
     const klar = e ? this.d.entschluessele(e.geheimnis) : null;
@@ -248,8 +272,7 @@ export class Aufrufe {
     const sigOk = signaturPasst(geheimnis, zeit, o.rumpf, o.signatur ?? '');
     const bereit = !!a && !!klar && a.aktiv && !a.angehalten && istAufruf(a.wenn);
     if (bereit && zeitOk && sigOk) return { a, zeit, merker: hashe(`${o.kennung}|${zeit}|${aufrufSignatur(geheimnis, zeit, o.rumpf)}`) };
-    log.info('Aufruf von außen abgelehnt', { grund: ablehnGrund(!!e, bereit, zeitOk), ip: kuerzeIp(o.ip), ...(a ? { automatisierung: a.id } : {}) });
-    return null;
+    return { grund: ablehnGrund(!!e, bereit, zeitOk), ...(a ? { automatisierung: a.id } : {}) };
   }
 }
 

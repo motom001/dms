@@ -19,6 +19,7 @@ import { artVon, bestandAus } from '../src/geheimnisse';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherKurzzustand } from '../src/kurzzustand';
+import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../src/grenzen';
 import { aufrufZeile, notfallblattPlan } from '../src/notfallblatt';
 import { liesPaket, liesZip } from '../src/pakete';
 import { speicherRepo } from '../src/repo-speicher';
@@ -192,27 +193,60 @@ describe('Aufruf von außen: Adresse, Signatur, Bremse (#679)', () => {
     assert.equal((await motor.laeufe(a.id)).length, 1, 'nur der eine gültige Aufruf lief');
   });
 
-  it('Bremse je Adresse und je IP-Bereich – für bekannte und unbekannte Adressen gleich', async () => {
+  it('Bremse: angenommene je Adresse begrenzt, abgelehnte je Adresse und je IP-Bereich – für bekannte und unbekannte Adressen gleich', async () => {
     const { motor, lege, markus } = await aufbau();
     const a = await lege();
     const { adresse, geheimnis } = await motor.aufrufAnlegen(a.id, 'adresse', markus.id);
     const erg: string[] = [];
-    // Je Adresse: aus verschiedenen Netzen, damit die Bremse je Bereich nicht zuerst greift.
-    for (let i = 0; i < AUFRUF_GRENZEN.jeAdresseJeMinute + 1; i++) erg.push((await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, `{"stufe":${i}}`, { ip: `203.0.${i}.9` }))).art);
-    assert.deepEqual(erg.slice(0, AUFRUF_GRENZEN.jeAdresseJeMinute), Array(AUFRUF_GRENZEN.jeAdresseJeMinute).fill('angenommen'));
-    assert.equal(erg.at(-1), 'bremse');
-    // Unbekannte Adresse: dieselbe Bremse (verrät nicht, welche es gibt).
+    // Angenommene je Adresse: aus verschiedenen Netzen, damit die Bremse je Bereich nicht zuerst greift.
+    for (let i = 0; i < AUFRUF_ANGENOMMEN_JE_ADRESSE + 1; i++) erg.push((await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, `{"stufe":${i}}`, { ip: `203.0.${i}.9` }))).art);
+    assert.deepEqual(erg.slice(0, AUFRUF_ANGENOMMEN_JE_ADRESSE), Array(AUFRUF_ANGENOMMEN_JE_ADRESSE).fill('angenommen'));
+    assert.equal(erg.at(-1), 'bremse', 'angenommene weiter begrenzt');
+    // Unbekannte Adresse: Fehlversuche je Adresse gebremst wie bei bekannten (verrät nicht, welche es gibt).
     const fremd = `x/${'B'.repeat(43)}`;
     const unbekannt: string[] = [];
-    for (let i = 0; i < AUFRUF_GRENZEN.jeAdresseJeMinute + 1; i++) unbekannt.push((await motor.aufrufAnnehmen(aufruf(fremd, geheimnis, '{}', { ip: `192.0.2.${i}`, zeit: Math.floor(Date.now() / 1000) - i }))).art);
+    for (let i = 0; i < AUFRUF_FEHLVERSUCHE_JE_ADRESSE + 1; i++) unbekannt.push((await motor.aufrufAnnehmen(aufruf(fremd, geheimnis, '{}', { ip: `192.0.${i}.1`, zeit: Math.floor(Date.now() / 1000) - i }))).art);
     assert.equal(unbekannt.at(-1), 'bremse');
     assert.ok(unbekannt.slice(0, -1).every((x) => x === 'abgelehnt'));
-    // Je IP-Bereich: andere Adressen eines /24 und eines /64 zählen zusammen.
+    // Je IP-Bereich: andere Adressen eines /64 zählen zusammen – vor jeder Prüfung.
     const { motor: m2 } = await aufbau();
     const bereich: string[] = [];
-    for (let i = 0; i < AUFRUF_GRENZEN.jeBereichJeMinute + 1; i++) bereich.push((await m2.aufrufAnnehmen(aufruf(`x/${String(i).padStart(43, 'C')}`, 'g', '{}', { ip: `2001:db8:5:6:${i.toString(16)}::1` }))).art);
+    for (let i = 0; i < AUFRUF_JE_BEREICH + 1; i++) bereich.push((await m2.aufrufAnnehmen(aufruf(`x/${String(i).padStart(43, 'C')}`, 'g', '{}', { ip: `2001:db8:5:6:${i.toString(16)}::1` }))).art);
     assert.equal(bereich.at(-1), 'bremse');
     assert.ok(bereich.slice(0, -1).every((x) => x === 'abgelehnt'));
+  });
+
+  it('Fehlversuche legen nichts still: viele falsche auf die Adresse, danach geht ein richtig signierter durch', async () => {
+    const { motor, lege, markus } = await aufbau();
+    const a = await lege();
+    const { adresse, geheimnis } = await motor.aufrufAnlegen(a.id, 'adresse', markus.id);
+    const falsch: string[] = [];
+    // Wer nur die Adresse kennt: weit mehr als die Grenze je Adresse, aus vielen Netzen.
+    for (let i = 0; i < 3 * AUFRUF_FEHLVERSUCHE_JE_ADRESSE; i++) falsch.push((await motor.aufrufAnnehmen(aufruf(adresse, 'whsec_falsch', `{"stufe":${i}}`, { ip: `198.18.${i}.1` }))).art);
+    assert.ok(falsch.slice(0, AUFRUF_FEHLVERSUCHE_JE_ADRESSE).every((x) => x === 'abgelehnt'));
+    assert.ok(falsch.slice(AUFRUF_FEHLVERSUCHE_JE_ADRESSE).every((x) => x === 'bremse'), 'Fehlversuche je Adresse gebremst');
+    assert.deepEqual(await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, '{"raum":"Keller"}', { ip: '203.0.113.5' })), { art: 'angenommen' }, 'der richtige geht trotzdem');
+    await warteAufLauf(motor, a.id);
+  });
+
+  it(`Notbremse nur für Abgelehntes: ${AUFRUF_FEHLVERSUCHE_GESAMT} falsche aus vielen Netzen, danach geht ein richtig signierter durch`, async () => {
+    const { motor, lege, markus } = await aufbau();
+    const a = await lege();
+    const { adresse, geheimnis } = await motor.aufrufAnlegen(a.id, 'adresse', markus.id);
+    const arten = new Map<string, number>();
+    // Je Netz unter der Grenze je Bereich; jede Anfrage an eine andere (unbekannte) Adresse.
+    for (let i = 0; i < AUFRUF_FEHLVERSUCHE_GESAMT + 20; i++) {
+      const ip = `2001:db8:${(i >> 4).toString(16)}::${(i & 15).toString(16)}`;
+      const art = (await motor.aufrufAnnehmen(aufruf(`x/${String(i).padStart(43, 'D')}`, 'whsec_falsch', '{}', { ip }))).art;
+      arten.set(art, (arten.get(art) ?? 0) + 1);
+    }
+    assert.deepEqual(Object.fromEntries(arten), { abgelehnt: AUFRUF_FEHLVERSUCHE_GESAMT, bremse: 20 }, 'Notbremse greift für Fehlversuche');
+    // Auch Fehlversuche auf die echte Adresse bleiben gebremst …
+    assert.equal((await motor.aufrufAnnehmen(aufruf(adresse, 'whsec_falsch', '{}', { ip: '203.0.113.9' }))).art, 'bremse');
+    // … der richtig signierte kommt durch und löst aus.
+    assert.deepEqual(await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, '{"raum":"Flur"}', { ip: '203.0.113.5' })), { art: 'angenommen' });
+    const [l] = await warteAufLauf(motor, a.id);
+    assert.deepEqual(l.daten.parameter, { raum: 'Flur' });
   });
 
   it('Bremse über die Zeit: nach einer Minute wieder offen', async () => {
@@ -221,7 +255,7 @@ describe('Aufruf von außen: Adresse, Signatur, Bremse (#679)', () => {
     const a = await lege();
     const { adresse, geheimnis } = await motor.aufrufAnlegen(a.id, 'adresse', markus.id);
     const z = () => Math.floor(jetzt / 1000);
-    for (let i = 0; i < AUFRUF_GRENZEN.jeAdresseJeMinute; i++) await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, `{"stufe":${i}}`, { zeit: z(), ip: `203.0.${i}.1` }));
+    for (let i = 0; i < AUFRUF_ANGENOMMEN_JE_ADRESSE; i++) await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, `{"stufe":${i}}`, { zeit: z(), ip: `203.0.${i}.1` }));
     assert.equal((await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, '{"stufe":99}', { zeit: z(), ip: '203.0.99.1' }))).art, 'bremse');
     jetzt += 61_000;
     assert.equal((await motor.aufrufAnnehmen(aufruf(adresse, geheimnis, '{"stufe":100}', { zeit: z(), ip: '203.0.100.1' }))).art, 'angenommen');
@@ -400,10 +434,14 @@ describe('Aufruf von außen in PostgreSQL (#679)', { skip: !process.env.TEST_DAT
     assert.equal((await p1.annehmen(ruf)).art, 'angenommen');
     assert.equal((await p2.annehmen(ruf)).art, 'abgelehnt', 'dieselbe Signatur beim anderen Prozess');
     const arten: string[] = [];
-    for (let i = 0; i < AUFRUF_GRENZEN.jeAdresseJeMinute; i++) arten.push((await (i % 2 ? p1 : p2).annehmen(aufruf(`x/${kennung}`, g, `{"stufe":${i}}`, { ip: `203.0.${i}.1` }))).art);
-    assert.equal(arten.at(-1), 'bremse', 'Bremse je Adresse über beide Prozesse');
-    // Die Wiederholung oben zählt mit (gezählt wird vor jeder Prüfung): 12 Plätze, einer davon abgelehnt.
-    assert.equal(ausgeloest.length, AUFRUF_GRENZEN.jeAdresseJeMinute - 1, 'genau die angenommenen');
+    for (let i = 0; i < AUFRUF_ANGENOMMEN_JE_ADRESSE; i++) arten.push((await (i % 2 ? p1 : p2).annehmen(aufruf(`x/${kennung}`, g, `{"stufe":${i}}`, { ip: `203.0.${i}.1` }))).art);
+    assert.equal(arten.at(-1), 'bremse', 'Bremse für angenommene je Adresse über beide Prozesse');
+    // Die Wiederholung oben zählt nicht als angenommen: 12 angenommen (eins vorher, elf hier), der zwölfte hier gebremst.
+    assert.equal(ausgeloest.length, AUFRUF_ANGENOMMEN_JE_ADRESSE, 'genau die angenommenen');
+    // Fehlversuche über beide Prozesse: die Notbremse zählt gemeinsam, der richtige geht trotzdem (nach einer Minute).
+    const fehl: string[] = [];
+    for (let i = 0; i < AUFRUF_FEHLVERSUCHE_JE_ADRESSE + 1; i++) fehl.push((await (i % 2 ? p1 : p2).annehmen(aufruf(`x/${kennung}`, 'whsec_falsch', '{}', { ip: `198.18.${i}.1` }))).art);
+    assert.equal(fehl.at(-1), 'bremse', 'Fehlversuche je Adresse über beide Prozesse');
     await autos.loesche(id);
     assert.equal(await repo.hole(id), undefined, 'geht mit der Automatisierung');
     await db.ende();

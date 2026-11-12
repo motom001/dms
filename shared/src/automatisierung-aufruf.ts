@@ -12,7 +12,7 @@
 import type { Lauf } from './automatisierung';
 import { t } from './texte';
 
-/** Grenzen des Aufrufs von außen (Zahl der Parameter, Länge, Zeitfenster, Bremse). Bytes stehen in server/src/grenzen.ts. */
+/** Grenzen des Aufrufs von außen, die auch die Oberfläche kennt (Parameter, Länge, Zeitfenster, angenommene je Adresse). Bytes und die übrige Bremse stehen in server/src/grenzen.ts. */
 export const AUFRUF_GRENZEN = {
   /** Höchstens so viele Parameter je Karte (Namen) und je Aufruf (Werte). */
   parameter: 10,
@@ -22,12 +22,11 @@ export const AUFRUF_GRENZEN = {
   wert: 500,
   /** Zeitstempel darf so viele Sekunden abweichen; so lange merkt sich Ablago gesehene Signaturen (Wiederholschutz). */
   fensterS: 300,
-  /** Bremse je Adresse: Aufrufe je Minute (unter der Bremse der Automatisierung, 30 je Minute – sie hält sonst an). */
+  /**
+   * Bremse je Adresse für **angenommene** Aufrufe (gültig signiert) je Minute – unter der Bremse der Automatisierung (30
+   * Läufe je Minute, sie hält sonst an). Die Grenzen für abgelehnte Aufrufe und je IP-Bereich stehen in server/src/grenzen.ts.
+   */
   jeAdresseJeMinute: 12,
-  /** Bremse je IP-Bereich (IPv4 /24, IPv6 /64): Aufrufe je Minute, gleich ob die Adresse stimmt. */
-  jeBereichJeMinute: 30,
-  /** Notbremse für alle Adressen zusammen (viele Netze zugleich) – je Minute. */
-  gesamtJeMinute: 600,
 } as const;
 
 /** Kopf mit dem Zeitstempel (Unix-Sekunden) und Kopf mit der Signatur `v1=<hex>` – Schema des Webhooks (#627). */
