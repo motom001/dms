@@ -7,7 +7,6 @@ import { bereichName } from '../../../shared/src/werkbankansicht';
 import { api } from '../api';
 import { bereicheZuruecksetzen } from '../bereiche';
 import { ApiSchluesselBlatt } from './ApiSchluessel';
-import { WebhooksBlatt } from './Webhooks';
 import { useDaten } from '../daten';
 import { GRUNDLAGEN, leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from '../design';
 import { Link } from '../ort';
@@ -267,10 +266,6 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
               <span>{t('profil.profil.bei-aenderungen-an-meinen')}</span></label>
           : <p className="hinweis info">{t('profil.favoriten.abgeschaltet')}</p>}
       </div>
-
-      {/* Webhooks (#627): Hausautomatisierung sofort anstoßen. */}
-      <WebhooksBlatt />
-
       </>}
     </div>
   );

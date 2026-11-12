@@ -2,7 +2,7 @@
  * Passwörter und Geheimnisse gibt Ablago nie heraus (#1055).
  *
  * Der Test legt eine Ablage mit bekannten Testgeheimnissen an (Konto, Passwortfeld, E-Mail-Versand, Postfach mit
- * OAuth, Webhook, API-Schlüssel, Zwei-Faktor, Passkey, Tresor, Sitzung) und durchsucht jede Ausgabe danach – roh, Base64,
+ * OAuth, API-Schlüssel, Zwei-Faktor, Passkey, Tresor, Sitzung) und durchsucht jede Ausgabe danach – roh, Base64,
  * Base64url, URL-kodiert und hexadezimal, dazu verschlüsselte Werte (`dms1$`) und Passwort-Hashes (`scrypt$`).
  *
  * Geprüft werden alle GET-Routen der Oberfläche und der API v1 (als Person mit „Gesamte Verwaltung“ im
@@ -37,7 +37,6 @@ import { speicherRepo } from '../src/repo-speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { vollexport } from '../src/vollexport';
-import { Webhooks, speicherWebhookRepo } from '../src/webhook';
 import { Zweifaktor } from '../src/zweifaktor';
 import { Passkeys } from '../src/passkeys';
 import { Authenticator } from './hilfen-authenticator';
@@ -121,12 +120,6 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     await betrieb.laden();
     await betrieb.speichereMail({ host: 'smtp.example.org', port: 587, sicherheit: 'starttls', benutzer: 'versand@example.org', passwort: G.mailPasswort, absender: 'versand@example.org' }, lena.email);
 
-    const webhooks = new Webhooks({ repo: speicherWebhookRepo(), einstellungen, verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), zahlen: async () => ({}) as never, benutzer: async () => lena });
-    await webhooks.setzeZiele(['https://hooks.example.org'], lena.email);
-    const hook = await webhooks.lege(lena, { name: 'Zähler', url: 'https://hooks.example.org/a' });
-    G.webhook = hook.geheimnis;
-    ids.webhook = hook.id;
-
     // Postfächer (#196, #358): eins mit Passwort, eins mit OAuth (App mit Client-Geheimnis, Token wie nach der Anmeldung).
     const verschluessele = (k: string) => tresor.verschluessele(k);
     const entschluessele = (w: string) => tresor.entschluessele(w);
@@ -146,7 +139,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     ids.typ = typ.id; ids.mappe = mappe.id; ids.benutzer = lena.id;
 
     const { baueApp } = await import('../src/http');
-    app = await baueApp(d, konten, { tresor, betrieb, apiSchluessel, webhooks, einrichtung, postfaecher, postfachOAuth }) as unknown as App;
+    app = await baueApp(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth }) as unknown as App;
     const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email: lena.email, passwort: G.kontoPasswort }, headers: { 'x-dms': '1' } });
     assert.equal(r.statusCode, 200, r.body);
     cookie = ([] as string[]).concat(r.headers['set-cookie'])[0].split(';')[0];
@@ -157,7 +150,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     const z = await zweifaktor.beginne(lena);
     G.totp = (z as unknown as { geheimnis: string }).geheimnis;
 
-    alle = routen(d, konten, { tresor, betrieb, apiSchluessel, webhooks, einrichtung, postfaecher, postfachOAuth });
+    alle = routen(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth });
 
     EXPORTE = {
       vollexport: {

@@ -30,7 +30,6 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `system/` | Betrieb, Systemzustand, Anbindung, Anmeldeschutz, Eingangsordner, WebDAV, Fehlermeldungen |
 | `post/` | Postfächer und andere Eingangskanäle; seit #1077 die [Post](#post) |
 | `automatisierung/` | Automatisierungen |
-| `webhooks/` | Webhooks (Werkbank und Mein Konto) |
 | `sichten/` | Ansichten, Mappenlisten, Startseite |
 | `aufgaben/` | Aufgaben; seit #1078 die [Aufgaben](#aufgaben) |
 | `mappen/` | Mappen, Historie, Papierkorb |
@@ -885,27 +884,26 @@ Gemerkt wird je Person in ihren Einstellungen (`entdecken_rundgaenge`, `entdecke
 - **Verbund** (`Verbund` in `prozesse.ts`): `rufe` (Aufruf beim Leiter mit Ergebnis, Teilen und Fachfehlern samt Status), `melde` (an den Leiter, an alle, an die anderen), `frageAlle` (z. B. `prozess.stand`), `bereit`, `beendeAlle` (Neustart nach der Wiederherstellung, geänderte Datenbank-Anbindung, Ende des Lasttests). Der Hauptprozess reicht nur weiter (IPC mit `serialization: 'advanced'`, also auch Puffer und `Float32Array`). Mit einem Prozess erledigt `einzeln()` alles im eigenen.
 - **Was der Leiter für die anderen erledigt** (`server/src/aufteilung.ts`): Anstöße für Texterkennung, Vorschaubilder und den Ereignisverteiler gehen als Meldung an ihn – die anderen arbeiten nichts davon selbst ab (ein Verteiler ohne die Abnehmer der Automatisierungen hätte Ereignisse als verteilt markiert). Sicherung, Prüfsumme, Probe und Wiederherstellung starten, Postfach abrufen, Eingangsordner prüfen und Vorschaubilder nachholen sind Aufrufe beim Leiter; laufende Sicherungen und Wiederherstellungen spiegelt er jede Sekunde an alle, damit `laeuft()` und `aktuellerLauf()` überall ohne Warten stimmen.
 - **Paket-Läufer** genau einmal, im Leiter – er hält die API-Schlüssel der Pakete. Die anderen nutzen `Fernlaeufer` (`server/src/laeufer/fern.ts`): Aktionen, Vektoren, „Frag deine Ablage“ (Teile der Antwort kommen als Teile des Aufrufs), „Aus Dokument ausfüllen“, Übersicht. Was sie ohne Warten brauchen (welches Paket was anbietet, Dienstkonten der Pakete), schickt der Leiter bei jeder Änderung als Schnappschuss.
-- **Webhooks** bleiben, wie sie für mehrere Server gebaut sind: Nach einer Änderung zählt und stellt der Prozess zu, in dem sie passiert ist (Ausgangskorb mit Zeilensperre und Frist); die regelmäßigen Läufe hat nur der Leiter.
 - **Werkbank-Aufträge** (`Auftraege.teile`): Der Auftrag läuft im Prozess, der ihn angenommen hat. „Nur einer zugleich“ ist eine Belegung im Kurzzustand mit 60 s Frist, die der laufende Prozess jede Sekunde verlängert; den Stand schreibt er dabei mit, `stand()` liest ihn überall. Abbrechen aus einem anderen Prozess setzt einen Merker. Routen mit 202 warten mit `angemeldet()`, bis der Stand für alle sichtbar ist. Stirbt der Prozess, zeigt der Stand „Unterbrochen“.
 - **Hochgeladene Pakete** liegen bis zur Installation (30 Minuten) unter `files/hochladen/pakete/` (Archiv und Angaben, `0600`, Name aus dem Hash der Kennung) und werden beim anderen Prozess mit denselben Prüfungen neu gelesen.
 - **Eigene Änderungen der Zähler** (#742): Nach dem Hochzählen des Haushaltsstands steht der neue Stand je Person kurz im Kurzzustand (`eigene-aenderung`); ein anderer Prozess fragt das nur, wenn die Mindestgültigkeit sonst greifen würde.
 - **Einstellungen im Arbeitsspeicher** (Schlüssel der Verschlüsselung, E-Mail-Versand, OIDC, Schwelle der Zeitmessung): Jeder Prozess liest alle 2 Sekunden den Haushaltsstand `lesen`; ändert er sich, laden `Tresor.nachladen`, `Betrieb.nachladen`, `Oidc.vergiss` und `Messung.start` neu. Passen Schlüsseldatei und Fingerabdruck gerade nicht zusammen (Wechsel in einem anderen Prozess), versucht es der nächste Takt noch einmal.
-- **Je Prozess:** Überlastschutz, Arbeiter (Vorgabe geteilt durch die Zahl der Prozesse). **Geteilt** (#874): Verbindungen – `DMS_DB_VERBINDUNGEN` gilt für alle zusammen (Vorgabe `verbindungenVorgabe`: 10 + 4 je weiteren Prozess), `verbindungsaufteilung` gibt dem Leiter zuerst die 4 Verbindungen, die er dauerhaft für Sitzungssperren reserviert (`lebenszeichen`, Eingangsordner, Postfächer, Webhooks – ohne sie warteten seine Abfragen endlos, und mit ihnen alles, was die anderen bei ihm aufrufen), den Rest teilen sich alle gleich (jeder weitere mindestens 2, der Leiter insgesamt mindestens 6), zusammen höchstens `max_connections` − 10; Zwischenspeicher – `teileZwischenspeicher(anzahl)` gibt jedem Prozess `1/anzahl` der Grenzen von PDF-Anzeige, WebDAV-Stempeln und Seitenbildern. **Halde:** Jeden Prozess startet der Hauptprozess mit `--max-old-space-size` (`haldeJeProzess`: die weiteren mit 60 % ihres Anteils am Speicher, 1024–1536 MB; `haldeLeiter`, #891: der Leiter mit 512 MB mehr, weil er zusätzlich die Arbeit im Hintergrund erledigt), außer es ist schon gesetzt oder es läuft nur ein Prozess; der Hauptprozess selbst bleibt ohne Grenze. Das Startprotokoll nennt beide Werte (`haldeLeiterMb`, `haldeMb`). **Neustarts** zählt der Hauptprozess (`Verbund.neustarts()`: Anzahl und die letzten zehn mit Nummer, Code, Signal) und schickt sie mit der Liste der Prozesse an alle. Der Befehl `dms` nutzt einen gemeinsamen Schlüssel vom Hauptprozess, die Datei schreibt der Leiter. Temporäre Uploads löscht ein Prozess beim Start neben anderen nur, wenn sie älter als 6 Stunden sind.
+- **Je Prozess:** Überlastschutz, Arbeiter (Vorgabe geteilt durch die Zahl der Prozesse). **Geteilt** (#874): Verbindungen – `DMS_DB_VERBINDUNGEN` gilt für alle zusammen (Vorgabe `verbindungenVorgabe`: 10 + 4 je weiteren Prozess), `verbindungsaufteilung` gibt dem Leiter zuerst die 4 Verbindungen, die er dauerhaft für Sitzungssperren reserviert (`lebenszeichen`, Eingangsordner, Postfächer und eine Reserve seit dem Ausbau der Webhooks, #991 – ohne sie warteten seine Abfragen endlos, und mit ihnen alles, was die anderen bei ihm aufrufen), den Rest teilen sich alle gleich (jeder weitere mindestens 2, der Leiter insgesamt mindestens 6), zusammen höchstens `max_connections` − 10; Zwischenspeicher – `teileZwischenspeicher(anzahl)` gibt jedem Prozess `1/anzahl` der Grenzen von PDF-Anzeige, WebDAV-Stempeln und Seitenbildern. **Halde:** Jeden Prozess startet der Hauptprozess mit `--max-old-space-size` (`haldeJeProzess`: die weiteren mit 60 % ihres Anteils am Speicher, 1024–1536 MB; `haldeLeiter`, #891: der Leiter mit 512 MB mehr, weil er zusätzlich die Arbeit im Hintergrund erledigt), außer es ist schon gesetzt oder es läuft nur ein Prozess; der Hauptprozess selbst bleibt ohne Grenze. Das Startprotokoll nennt beide Werte (`haldeLeiterMb`, `haldeMb`). **Neustarts** zählt der Hauptprozess (`Verbund.neustarts()`: Anzahl und die letzten zehn mit Nummer, Code, Signal) und schickt sie mit der Liste der Prozesse an alle. Der Befehl `dms` nutzt einen gemeinsamen Schlüssel vom Hauptprozess, die Datei schreibt der Leiter. Temporäre Uploads löscht ein Prozess beim Start neben anderen nur, wenn sie älter als 6 Stunden sind.
 - **Systemzustand:** `frageAlle('prozess.stand')` liefert je Prozess RSS, Rechenzeit, Wartezeit der Ereignisschleife und laufende Anfragen; dazu Pss aus `/proc`. Für den Lasttest fragt `/api/werkbank/last` `prozess.last`: dasselbe plus die Wartezeit auf Verbindungen (`Poolmessung`, #874), die das einschaltet; dazu die Neustarts. `/api/werkbank/last` meldet den Arbeitsspeicher aller Prozesse zusammen (auch des Hauptprozesses) und die Wartezeit des langsamsten, je Prozess unter `engpass.speicher`. Die Grenze des Lasttests (1,5 GB) gilt seit #920 je Prozess; die Summe vergleicht er mit der Grenze × Prozesse.
 - **Lasttest-Modus:** Misst der Leiter, lauschen auch die anderen nur auf dem internen Port (`listen(0)` teilt unter `cluster` denselben Port).
 - **Tests:** `prozesse.test.ts` (Einstellung, Verbund mit echtem `cluster` über `test/hilfen-prozesse.ts`, Anstöße, Fern-Läufer, Uploads, Zähler, Aufträge, Schlüssel), `prozesse-e2e.test.ts` (ganzes Ablago mit zwei Prozessen: Startseite, Migration einmal, Systemzustand, Konsole, Auftrag, Absturz mit Neustart ohne Abmeldung, Beenden, Downgrade).
 
 ## Ereigniskatalog (#670) { #ereigniskatalog }
 
-Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), die Texte in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – Unterstrich als Bindestrich –, `gruppe.<gruppe>`). Pakete (`code.ereignisse`, genau die Einträge mit `paket: true` plus die veralteten Namen in `VERALTETE_EREIGNISSE`), Webhooks und Automatisierungen (#674) nehmen ihre Ereignisse aus diesem Katalog. **Der Kern meldet jedes Geschehen genau einmal** (#724) – mit `kern.ereignis(…)` (im Dienst `dienst.kern.ereignis(…)`) in den einen Ausgangskorb; einen zweiten Weg für Pakete gibt es nicht mehr. Die Liste zum Nachschlagen steht in der Werkbank beim Paket unter **Welche Ereignisse es gibt**.
+Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`EREIGNISKATALOG`), die Texte in `shared/src/sprachen/de/ereignisse.json` (`name.<art>`, `text.<art>` – Unterstrich als Bindestrich –, `gruppe.<gruppe>`). Pakete (`code.ereignisse`, genau die Einträge mit `paket: true` plus die veralteten Namen in `VERALTETE_EREIGNISSE`) und Automatisierungen (#674) nehmen ihre Ereignisse aus diesem Katalog. **Der Kern meldet jedes Geschehen genau einmal** (#724) – mit `kern.ereignis(…)` (im Dienst `dienst.kern.ereignis(…)`) in den einen Ausgangskorb; einen zweiten Weg für Pakete gibt es nicht mehr. Die Liste zum Nachschlagen steht in der Werkbank beim Paket unter **Welche Ereignisse es gibt**.
 
 **Regeln**
 
 - **Nur Ids, Art, Feldschlüssel und Datum** in `daten` – nie Werte, Titel oder Namen. Wer mehr wissen will, liest mit eigenen Rechten nach.
 - **Mindestens einmal, in derselben Transaktion:** `dienst.kern.ereignis(art, daten, von)` schreibt in den Ausgangskorb (Tabelle `ereignisse`, Migration 060). Läuft gerade eine Transaktion (`inTransaktion`), gehört das Ereignis zur Änderung – scheitert eines, wird beides nicht gespeichert. Jedes Ereignis hat eine feste Id; ein Abnehmer erkennt daran eine Wiederholung.
 - **Mehrere Server:** Der `Ereignisverteiler` (`server/src/ereignisse.ts`) holt offene Ereignisse mit `FOR UPDATE SKIP LOCKED` und einer Sperre (`gesperrt_bis`, 120 s). Erst wenn **alle** Abnehmer es angenommen haben, gilt ein Ereignis als verteilt; sonst Wiederholung nach 1, 5, 30, 120 und 360 Minuten, danach aufgegeben (Protokoll). Verteilte Ereignisse bleiben 7 Tage.
-- **Eine Regel für Wiederholungen:** `wiederholungNach(versuche, plan)` in `shared/src/ereignisse.ts`. `kurz` (1, 5, 30, 120, 360 Minuten) gilt für den Ausgangskorb und die Zustellung an Pakete, `lang` (30 s bis 8 Stunden, zusammen gut 22 Stunden) für Webhooks, deren Ziel im Heimnetz über Nacht aus sein kann.
-- **Abnehmer im Kern:** `automatisierungen`, `pakete` (jedes abonnierte Ereignis; landet mit fester Id je Paket in der Zustellung des Paket-Läufers, `paket_ereignisse`) und Webhooks (zählen nach Änderungen neu). **Aufträge** an genau ein Paket (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, Gruppe `auftrag`) sind kein Geschehen für andere: `dienst.ereignisseDienst.auftrag(paket, art, daten)` legt sie direkt in die Zustellung.
+- **Eine Regel für Wiederholungen:** `wiederholungNach(versuche)` in `shared/src/ereignisse.ts` (1, 5, 30, 120, 360 Minuten) gilt für den Ausgangskorb und die Zustellung an Pakete.
+- **Abnehmer im Kern:** `automatisierungen`, `pakete` (jedes abonnierte Ereignis; landet mit fester Id je Paket in der Zustellung des Paket-Läufers, `paket_ereignisse`). **Aufträge** an genau ein Paket (`datei.umwandeln`, `datei.volltext`, `datei.archivfassung`, `paket.einstellungen_geaendert`, Gruppe `auftrag`) sind kein Geschehen für andere: `dienst.ereignisseDienst.auftrag(paket, art, daten)` legt sie direkt in die Zustellung.
 - **Veraltete Namen:** `texterkennung.fertig` meldet der Kern nicht mehr. Ein Paket, das es abonniert hat, bekommt `volltext.fertig` mit `quelle: kern` unter dem alten Namen (Übergang, `VERALTETE_EREIGNISSE`, entfällt mit 1.0.0). **Alle Übergangsausnahmen** stehen mit der Version, mit der sie entfallen, in `server/src/uebergaenge.ts` (#902); `uebergaenge.test.ts` wird rot, sobald Ablago diese Version erreicht. Neue Sonderwege für alte Pakete oder Dateien nur mit Eintrag dort.
 - **Bündeln:** Einträge mit `buendelS` (heute `mappe.geaendert`, 5 s) fassen schnelle Folgen zur selben Mappe zusammen, solange das Ereignis noch nicht verteilt ist; die Feldschlüssel werden vereinigt (`mischeFelder`).
 - **Frist erreicht** genau einmal: `frist_meldungen` (Mappe, Feld, Datum, Zeitpunkt) als Primärschlüssel; Merken und Ereignis in einer Transaktion.
@@ -929,7 +927,7 @@ await dienst.kern.mitAusloeser({ art: 'automatisierung', id: regel.id, konto: sy
 
 Damit erkennt sie ihre eigenen Änderungen und kann Ketten begrenzen. Ein Paket bekommt seine eigenen Änderungen nicht gemeldet.
 
-**Neues Ereignis:** Eintrag in `EREIGNISKATALOG` (Gruppe, Felder, ggf. `paket`, `mappentyp`, `webhook`, `buendelS`), Texte in `ereignisse.json`, an der Stelle der Änderung `await this.ereignis(...)` – möglichst innerhalb der Transaktion. Soll es für Pakete abonnierbar sein, zusätzlich in `EREIGNISSE` (`shared/src/pakete.ts`) und in der Registry (`schema`, `pruefen.py`).
+**Neues Ereignis:** Eintrag in `EREIGNISKATALOG` (Gruppe, Felder, ggf. `paket`, `mappentyp`, `buendelS`), Texte in `ereignisse.json`, an der Stelle der Änderung `await this.ereignis(...)` – möglichst innerhalb der Transaktion. Soll es für Pakete abonnierbar sein, zusätzlich in `EREIGNISSE` (`shared/src/pakete.ts`) und in der Registry (`schema`, `pruefen.py`).
 
 ## Automatisierungen (#674) { #automatisierungen }
 
@@ -1005,7 +1003,6 @@ Ablago baut **von sich aus keine Verbindung** ins Internet auf. Jeder Weg nach d
 | E-Mail | Administrator richtet den Mailserver ein; Benutzer versenden | versandte Mappen und Dokumente, Tägliche Zusammenfassung (Titel, Links), Einladungen, Auskünfte | `server/src/mail.ts`, `aufgabenmail.ts` |
 | Postfach | Administrator richtet es ein | Abruf beim eigenen Mailserver | `server/src/postfach.ts`, `postfach-oauth.ts` |
 | Anmeldung über einen Anbieter | Administrator | Anmeldevorgang beim Anbieter | `server/src/oidc.ts` |
-| Webhooks | Administrator gibt Ziel frei, Benutzer legt an | nur Zahlen, signiert | `server/src/webhook.ts` |
 | Paket-Netz | Administrator bestätigt bei der Installation | nur an die Adressen aus Manifest bzw. Dienst-Adresse | Paket-Läufer, Recht `netzwerk` |
 | Abruf-Links (Auskunft) | Administrator erzeugt den Link | die Auskunft, nur nach Abrufcode | `server/src/abruf.ts` |
 
@@ -1034,121 +1031,12 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 - **Schlüssel-Stufe „nur Zähler“** (`recht = 'zaehler'`, `NUR_ZAEHLER` und `ZAEHLER_PFAD` in `apischluessel.ts`). `pruefeZugang` lässt sie nur an `GET /api/v1/ich/zaehler` durch; jede andere Route unter `/api/v1` und – ausdrücklich – jede interne Route mit einem solchen Schlüssel im Kopf bekommt `403` (`api.schluessel.nur-zaehler`), das Laufwerk ebenfalls (`webdav.ts`). „Passwörter lesen“ gibt es für diese Stufe nicht. Eine neue Schnittstelle, die API-Schlüssel annimmt, muss die Stufe genauso abweisen.
 - **Grenzen.** Der Überlastschutz (#544) zählt auch diese Anfragen. Eine Begrenzung je Schlüssel gibt es nicht; ein Abruf aus dem Zwischenspeicher kostet wenige Millisekunden. Läuft Ablago auf mehreren Servern, hat jeder seinen eigenen Zwischenspeicher (wie bei #512, höchstens 5 bzw. 30 Minuten alt) – bis dahin können zwei Server kurz verschiedene Zahlen liefern, der Stand zählt dann öfter hoch als nötig.
 
-**Weitere Zahl aufnehmen:** Feld in `Zaehlerzahlen` (`dienst.ts`) und im OpenAPI-Schema ergänzen, im Test `ZAHLEN` – und nur Zahlen. Ändert sich die Bedeutung einer vorhandenen Zahl, `v` im Hash erhöhen, damit jeder Client einmal neu liest. Der [Webhook](#webhooks) (#627) ruft `zaehlerAbruf` je Benutzer auf und meldet bei geändertem `stand`.
+**Weitere Zahl aufnehmen:** Feld in `Zaehlerzahlen` (`dienst.ts`) und im OpenAPI-Schema ergänzen, im Test `ZAHLEN` – und nur Zahlen. Ändert sich die Bedeutung einer vorhandenen Zahl, `v` im Hash erhöhen, damit jeder Client einmal neu liest.
 
-## Webhooks (#627) { #webhooks }
+## Nach außen melden { #nach-aussen-melden }
 
-Ein Webhook meldet geänderte Zahlen eines Benutzers (dieselben wie `GET /api/v1/ich/zaehler`) per `POST` an eine Adresse. Code: `server/src/webhook.ts` (Dienst `Webhooks`, `pgWebhookRepo`, `speicherWebhookRepo`), gemeinsame Typen und Regeln in `shared/src/webhook.ts`, Oberfläche in `web/src/profil/Webhooks.tsx` und `web/src/werkbank/Webhooks.tsx`, Tabellen `webhooks` und `webhook_meldungen` (Migration 058).
+Ablago meldet geänderte Zahlen **nicht** von sich aus: Clients fragen `GET /api/v1/ich/zaehler` mit `If-None-Match` ab (siehe oben). Den eigenen Zähler-Webhook (#627: `server/src/webhook.ts`, Tabellen `webhooks` und `webhook_meldungen`, Einstellung `webhook_ziele`, Werkbank → Webhooks, Mein Konto) hat #991 ausgebaut – zwei Wege für dasselbe widersprechen „gleiche Sache an einer Stelle“ (Muster C9). Migration 102 löscht Tabellen und Einstellung; alte Sicherungen spielen sich weiter ein, weil die Wiederherstellung die Migrationen danach nachholt.
 
-### Format
-
-```http
-POST /dms HTTP/1.1
-Content-Type: application/json
-User-Agent: DMS-Webhook
-X-DMS-Art: zaehler.geaendert
-X-DMS-Ereignis: 7c0e6a8e-3d1f-4f0a-9c55-2b8f0d3e4a11
-X-DMS-Zeit: 1762154102
-X-DMS-Signatur: v1=5d2f…(64 Zeichen hex)
-X-DMS-Versuch: 1
-X-DMS-Webhook: 0f8a…
-
-{"art":"zaehler.geaendert","id":"7c0e6a8e-3d1f-4f0a-9c55-2b8f0d3e4a11","zeit":"2026-11-03T07:15:02.000Z","daten":{"neuePost":2,"zuErledigen":5,"ueberfaellig":1,"stand":42,"geaendert":"2026-11-03T07:15:00.000Z"}}
-```
-
-- `art`: `zaehler.geaendert` oder `probe` („Probe senden“, gleiche `daten`). Weitere Arten (`post.neu` …) kämen als neue Werte dazu; ein Empfänger übergeht unbekannte.
-- `id`: Ereignis-Id. **Gleich bei einer Wiederholung** derselben Daten, neu, sobald sich die Daten einer schon versuchten Meldung ändern. Der Empfänger merkt sich die letzten Ids und übergeht Doppeltes.
-- `zeit`: wann die Meldung entstand; `daten.geaendert`: wann sich die Zahlen geändert haben.
-- Der Rumpf ist kompaktes JSON (`JSON.stringify`), nur ASCII-Zeichen, Schlüssel in fester Reihenfolge – `JSON.stringify(JSON.parse(rumpf)) === rumpf`. Das erlaubt die Prüfung auch dort, wo ein Rahmenwerk nur das geparste JSON hergibt (Node-RED).
-- **Nie Inhalte.** Der Test `server/test/webhook.test.ts` prüft die Schlüssel des Rumpfs und dass keine Titel, Absender oder Namen hineinrutschen.
-- Als angekommen gilt `2xx`; Weiterleitungen (`3xx`) folgt Ablago nicht (`redirect: 'manual'`), Zeitgrenze 5 s.
-
-### Signatur prüfen
-
-`X-DMS-Signatur` ist `v1=` und HMAC-SHA256 (hex) über `<X-DMS-Zeit>.<Rumpf>` mit dem Geheimnis des Webhooks (`whsec_…`, als UTF-8-Text, nicht dekodiert). Mehrere Signaturen (später beim Wechsel des Verfahrens) stehen durch Komma getrennt; eine passende genügt. Prüfe den **Rumpf als Bytes, wie er ankam**, vergleiche in konstanter Zeit und verwirf Zeiten, die mehr als 5 Minuten abweichen.
-
-**JavaScript (Node.js):**
-
-```js
-import { createHmac, timingSafeEqual } from 'node:crypto';
-import { createServer } from 'node:http';
-
-const GEHEIMNIS = process.env.DMS_WEBHOOK_GEHEIMNIS; // whsec_…
-const gesehen = new Set();
-
-function echt(kopf, rumpf) {
-  const zeit = Number(kopf['x-dms-zeit']);
-  if (!Number.isInteger(zeit) || Math.abs(Date.now() / 1000 - zeit) > 300) return false;
-  const soll = Buffer.from('v1=' + createHmac('sha256', GEHEIMNIS).update(`${zeit}.${rumpf}`).digest('hex'));
-  return String(kopf['x-dms-signatur'] ?? '').split(',').some((s) => {
-    const ist = Buffer.from(s.trim());
-    return ist.length === soll.length && timingSafeEqual(ist, soll);
-  });
-}
-
-createServer((req, res) => {
-  let rumpf = '';
-  req.on('data', (c) => { rumpf += c; });
-  req.on('end', () => {
-    if (!echt(req.headers, rumpf)) return res.writeHead(401).end();
-    res.writeHead(204).end();                      // erst bestätigen, dann arbeiten
-    const m = JSON.parse(rumpf);
-    if (gesehen.has(m.id)) return;                 // Wiederholung
-    gesehen.add(m.id);
-    console.log(m.art, m.daten.neuePost, 'neue Post');
-  });
-}).listen(8080);
-```
-
-**Python:**
-
-```python
-import hashlib, hmac, json, os, time
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
-GEHEIMNIS = os.environ["DMS_WEBHOOK_GEHEIMNIS"].encode()  # whsec_…
-gesehen = set()
-
-def echt(kopf, rumpf: bytes) -> bool:
-    try:
-        zeit = int(kopf.get("x-dms-zeit", ""))
-    except ValueError:
-        return False
-    if abs(time.time() - zeit) > 300:
-        return False
-    soll = "v1=" + hmac.new(GEHEIMNIS, f"{zeit}.".encode() + rumpf, hashlib.sha256).hexdigest()
-    return any(hmac.compare_digest(s.strip(), soll) for s in kopf.get("x-dms-signatur", "").split(","))
-
-class Empfang(BaseHTTPRequestHandler):
-    def do_POST(self):
-        rumpf = self.rfile.read(int(self.headers.get("content-length", 0)))
-        if not echt(self.headers, rumpf):
-            self.send_response(401); self.end_headers(); return
-        self.send_response(204); self.end_headers()
-        m = json.loads(rumpf)
-        if m["id"] in gesehen:
-            return
-        gesehen.add(m["id"])
-        print(m["art"], m["daten"]["neuePost"], "neue Post")
-
-HTTPServer(("", 8080), Empfang).serve_forever()
-```
-
-Im Server gibt es dieselbe Prüfung als `pruefeSignatur` (`webhook.ts`) für Tests.
-
-### Ablauf und mehrere Server
-
-- **Anstoß:** `Haushaltsstand.beiAenderung` (`zaehlerspeicher.ts`) ruft nach jeder ändernden Repo-Methode `Webhooks.anstossen()` (über `SichtenDienst.beiAenderung`, für Zahlen der Ansichten und die Termine). Nach 3 s zählt `pruefe()` für jeden Benutzer mit eingeschaltetem Webhook einmal `zaehlerAbruf` (aus dem Zwischenspeicher, meist Millisekunden). Ohne Anlass zählt der Server mit der Sperre jede Minute (Mitternacht, Fristen, Änderungen auf einem anderen Server).
-- **Ausgangskorb in der Datenbank:** `merkeStand` setzt in einer Transaktion mit Zeilensperre `webhooks.gemeldet_stand` und legt die Meldung an – oder ersetzt die Daten der offenen (höchstens eine je Webhook, eindeutiger Teilindex). So zählt jeder Stand einmal, auch wenn zwei Server gleichzeitig prüfen. Neue Meldungen sind frühestens 30 s nach dem letzten Senden (`webhooks.gesendet`) fällig – das ist das Zusammenfassen.
-- **Zustellen:** `faellige` holt Meldungen mit `FOR UPDATE SKIP LOCKED`, zählt den Versuch hoch und schiebt `faellig` um 60 s (Lease). Stirbt der Server beim Senden, holt ein anderer die Meldung danach – sie kommt dann womöglich doppelt, mit derselben Ereignis-Id (**mindestens einmal**). Ändern sich die Daten während des Sendens, schließt `zugestellt` die Meldung nicht (Ereignis-Id passt nicht mehr) und sie geht nach dem Mindestabstand erneut.
-- **Wiederholen und Aufgeben:** Wartezeiten `WEBHOOK_WARTEN_S` (30 s bis 8 h, zusammen etwa 22 h, 12 Versuche); nach dem letzten Fehlschlag `zustand = 'aufgegeben'`, Webhook aus (`abgeschaltet.grund = 'fehler'`), Protokoll, Mail an die Administratoren und – ist der Besitzer kein Administrator – auch an ihn (`anBesitzer`).
-- **Regelmäßige Läufe** (Zählen jede Minute, Zustellen alle 5 s, Aufräumen nach 7 Tagen) nur auf dem Server mit `pg_try_advisory_lock(4711197)`; der Anstoß nach einer Änderung läuft auf dem Server, auf dem sie passiert ist. Pause im Wartungsmodus und während einer Wiederherstellung.
-- **Lücke nach der Bauregel:** Der Haushaltsstand und die Zwischenspeicher der Zahlen (#512) leben je Server im Arbeitsspeicher. Eine Änderung auf Server A bemerkt Server B erst, wenn sein Zwischenspeicher abläuft (höchstens 5 bzw. 30 Minuten). Für die Richtigkeit reicht das (der Stand in der Datenbank zählt), für „sofort“ nicht immer – ein gemeinsamer Ereigniskanal ist ein eigenes Thema.
-
-### Ziele und Geheimnis
-
-- **Ziele:** `zielProblem` (`shared/src/webhook.ts`) erlaubt `https://` und `http://` nur im Heimnetz (`imHeimnetz` aus `heimnetz.ts`), keine Anmeldedaten und kein `#`. Zusätzlich muss der Ursprung in der Einstellung `webhook_ziele` stehen (Werkbank). Ein Administrator gibt mit dem Anlegen frei; vor jedem Senden prüft Ablago erneut.
-- **Geheimnis:** `whsec_` + 32 Zufallsbytes (base64url), verschlüsselt mit dem Schlüssel von Ablago in `webhooks.geheimnis`. `umschluesseln` und `verschluesselteFundstellen` (`repo-pg.ts`) nehmen die Spalte mit; in Werkbank → Verschlüsselung erscheint die Art „Webhooks“.
-- **Neue Art aufnehmen:** Wert in `WEBHOOK_EREIGNISSE` und, wo nötig, eigene Erkennung; der Rumpf behält `art`, `id`, `zeit`, `daten` – und nur Zahlen bzw. Ids.
+Wer künftig etwas nach außen melden will, nimmt eine [Automatisierung](#automatisierungen) mit der Dann-Karte „URL aufrufen“ (#671). Sie bringt ihren eigenen Schutz für Ziele mit; nichts vom alten Webhook (Ziel-Liste, Signatur, Ausgangskorb) wird dafür weiterverwendet.
 
 Mehr Hintergrund im Administratorhandbuch: [Technik](https://help.ablago.app/admin/aktuell/technik/) und [Entscheidungen](https://help.ablago.app/admin/aktuell/entscheidungen/).

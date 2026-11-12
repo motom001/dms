@@ -1,9 +1,8 @@
 /** Ereigniskatalog (#670): Ausgangskorb, Bündeln, Verteiler, Pakete nach code.mappentypen, still, Frist genau einmal. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { EREIGNISKATALOG, ereignisSchluessel, KATALOG_ARTEN, mischeFelder, WEBHOOK_KATALOG, type KatalogEreignis } from '../../shared/src/ereignisse';
+import { EREIGNISKATALOG, ereignisSchluessel, KATALOG_ARTEN, mischeFelder, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { EREIGNISSE, liesCode, MAPPEN_EREIGNISSE, type InstalliertesPaket } from '../../shared/src/pakete';
-import { WEBHOOK_EREIGNISSE } from '../../shared/src/webhook';
 import de from '../../shared/src/sprachen/de/ereignisse.json';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -51,14 +50,13 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
 }
 
 describe('Ereigniskatalog (#670): Katalog', () => {
-  it('jeder Eintrag hat Name, Text und Gruppe; Webhooks und Pakete stimmen mit dem Katalog überein', () => {
+  it('jeder Eintrag hat Name, Text und Gruppe; Pakete stimmen mit dem Katalog überein', () => {
     const texte = de as Record<string, string>;
     for (const a of KATALOG_ARTEN) {
       assert.ok(texte[`name.${ereignisSchluessel(a)}`] && texte[`text.${ereignisSchluessel(a)}`], `Texte für ${a}`);
       assert.ok(texte[`gruppe.${EREIGNISKATALOG[a].gruppe}`], `Gruppe für ${a}`);
       for (const f of EREIGNISKATALOG[a].felder) assert.doesNotMatch(f, /titel|name|wert|text/i, `${a}: nur Ids/Schlüssel/Datum (${f})`);
     }
-    assert.deepEqual([...WEBHOOK_EREIGNISSE], WEBHOOK_KATALOG);
     for (const a of MAPPEN_EREIGNISSE) assert.ok(Object.keys(EREIGNISSE).includes(a), `${a} für Pakete`);
     assert.deepEqual(mischeFelder({ felder: ['a', 'b'] }, { felder: ['b', 'c'] }).felder, ['a', 'b', 'c']);
   });

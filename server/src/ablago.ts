@@ -9,7 +9,6 @@ import { Konsolenzugang, lokaleUrl } from './konsole';
 import { Oidc } from './oidc';
 import { Eingangsordner } from './eingangsordner';
 import { Webdav } from './webdav';
-import { pgWebhookRepo, Webhooks } from './webhook';
 import { Automatisierungen, pgAutomatisierungRepo } from './automatisierung';
 // Dann-Karten „Feld ändern“ und „Aufgabe / Benachrichtigung“ (#676) melden sich beim Motor an.
 import './automatisierung-karten';
@@ -66,12 +65,12 @@ import { SprachDienst } from './sprachwahl';
 import { Sprachpakete } from './sprachpakete';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
 import { Fachfehler } from './fehler';
-import { mitSpracheVon, t, tAuto, tDe } from './sprache';
+import { t, tAuto, tDe } from './sprache';
 import { Wartung } from './wartung';
 import { Notfallzugang } from './notfall';
 import { Notfallcode } from './notfallcode';
 import type { Benutzer } from '../../shared/src/model';
-import { anVerwaltende, mailText } from './mail';
+import { anVerwaltende } from './mail';
 import { Verwaltung } from './verwaltung';
 import { arch, release, type } from 'node:os';
 import { pgDatenquelle } from './datenbankabzug';
@@ -569,26 +568,6 @@ if (paketlaeufer) wartung.beimAusschalten(() => void paketlaeufer.stelleZu());
 const systemlast = new Systemlast({ laeufer: () => laeufer.pid, postgres: process.env.DMS_VARIANTE === 'komplett', schleife: () => !!messung.auslastung.warnung() });
 systemlast.start();
 
-// Webhooks (#627): melden geänderte Zahlen eines Benutzers (wie GET /api/v1/ich/zaehler) an freigegebene Ziele.
-// Geheimnis verschlüsselt mit dem Schlüssel des DMS; regelmäßige Läufe nur auf dem Server mit der Sperre.
-let webhookSperre: Promise<boolean> | null = null;
-const webhooks = new Webhooks({
-  repo: messung.umhuelle(pgWebhookRepo(sql, cfg.haushalt), 'webhooks'),
-  einstellungen: pgEinstellungen(sql, cfg.haushalt),
-  verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w),
-  zahlen: async (b) => { const r = await dienst.sichten.zaehlerAbruf(await dienst.rechtepruefung.zugriff(b)); return { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }; },
-  benutzer: (id) => konten.benutzerMitId(id),
-  pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
-  anAdmins: anVerwaltendeVon('webhooks'),
-  anBesitzer: async (b, betreff, text) => { const m = betrieb.mailer(); if (m && b.email && !b.email.endsWith('.invalid')) { const [bt, tx] = mitSpracheVon(b, () => [mailText(betreff), mailText(text)]); await m.sende(b.email, bt, tx); } },
-  sperre: () => (webhookSperre ??= (async () => {
-    const v = await sql.reserve();
-    const [r] = await v`SELECT pg_try_advisory_lock(4711197) AS ok`;
-    if (!r.ok) { v.release(); webhookSperre = null; }
-    return r.ok as boolean;
-  })()),
-});
-dienst.sichten.beiAenderung(() => webhooks.anstossen());
 // Automatisierungen (#674): Wenn · Und · Dann unter dem Systemkonto „Automatisierung“; Läufe je Ereignis genau einmal.
 const automatisierungen = new Automatisierungen({
   dienst, repo: messung.umhuelle(pgAutomatisierungRepo(sql, cfg.haushalt), 'automatisierungen'),
@@ -639,7 +618,6 @@ const verwaltung = new Verwaltung({
 const webdav = new Webdav({ dienst, konten, schluessel: apiSchluessel, einstellungen: pgEinstellungen(sql, cfg.haushalt), adresse: () => betrieb.adresseFuerLinks(), wartung, zustand: zustandDb });
 const app = await baueApp(dienst, konten, {
   webdav,
-  webhooks,
   automatisierungen,
   pakete,
   paketlaeufer: laeufer,
@@ -781,7 +759,6 @@ if (leiter) {
   speicherplatz.start();
   await eingangsordner.start();
   postfaecher.start();
-  webhooks.start();
   // Technische Aufgaben des Admin-Kontos (#719): alle 5 Minuten prüfen, höchstens einmal am Tag gebündelt mailen.
   // Vorher die Aufgaben bei Personen ohne Leserecht abgleichen (#798: Rechte geändert, Erwähnungen, Fristen …).
   setInterval(() => {
@@ -892,7 +869,6 @@ const beenden = async () => {
   await schritt('wartung.stop', () => wartung.stop());
   await schritt('sicherung.stop', () => sicherung.stop());
   await schritt('speicherplatz.stop', () => speicherplatz.stop());
-  await schritt('webhooks.stop', () => webhooks.stop());
   await schritt('Konsole', () => leiter && konsole.entferne());
   await schritt('app.close', () => app.close());
   // Zusammenfassungen der letzten Minute (#920) noch ins Protokoll.

@@ -10,7 +10,7 @@ Die Hausautomatisierung bekommt dabei **nur Zahlen**: wie viel neue Post, wie vi
 | --- | --- |
 | **Homey Pro** | App **Ablago** – Werte am Gerät und Flow-Karten wie „Neue Post angekommen“ und „Frist wird fällig“. Anleitung im [README der Homey-App](https://github.com/motom001/dms-clients/blob/main/homey/README.md). |
 | **Home Assistant** | später ([motom001/dms-clients#3](https://github.com/motom001/dms-clients/issues/3)) |
-| Andere (Node-RED, ioBroker, eigene Skripte) | über die [Zähler-Schnittstelle](https://help.ablago.app/admin/aktuell/api/#zaehler) mit demselben Schlüssel, sofort per [Webhook](#sofort-melden-webhook) |
+| Andere (Node-RED, ioBroker, eigene Skripte) | über die [Zähler-Schnittstelle](https://help.ablago.app/admin/aktuell/api/#zaehler) mit demselben Schlüssel |
 
 Die Apps und Anbindungen liegen im Repository [motom001/dms-clients](https://github.com/motom001/dms-clients). Du brauchst keine davon – Ablago ist vollständig im Browser bedienbar.
 
@@ -37,65 +37,14 @@ Brauchst du den Schlüssel nicht mehr, löschst du ihn unter **Mein Konto → Si
 
 Die Apps fragen Ablago in einem festen Abstand ab (welcher, steht im README der App). Hat sich nichts geändert, antwortet Ablago nur mit „nichts Neues“ – das kostet praktisch nichts. Neue Post bemerkt die Hausautomatisierung also spätestens nach einem Abfrage-Abstand.
 
-Soll es **sofort** gehen, richtest du zusätzlich einen **Webhook** ein (nächster Abschnitt): Dann meldet sich Ablago selbst, wenige Sekunden nachdem neue Post da ist, und die Abfrage darf seltener laufen.
+## Abfragen und Melden { #abfragen-und-melden }
 
-## Sofort melden (Webhook) { #sofort-melden-webhook }
+Ablago trennt die beiden Richtungen:
 
-Mit einem **Webhook** meldet sich Ablago bei deiner Hausautomatisierung, sobald sich deine Zahlen ändern. Die Meldung enthält **nur die Zahlen** – dieselben wie beim Schlüssel *nur Zähler* –, nie Titel, Absender oder Inhalte.
+- **Abfragen über die Schnittstelle:** Die Hausautomatisierung holt die Zahlen selbst – mit dem Schlüssel *nur Zähler* (siehe oben). So arbeiten die Homey-App, Node-RED, ioBroker und eigene Skripte.
+- **Melden über Automatisierungen:** Soll Ablago von sich aus etwas nach außen melden, richtet das künftig ein Administrator unter **Werkbank → Automatisierungen** ein, mit der Dann-Karte **„URL aufrufen“**. Diese Karte kommt mit einer späteren Version ([#671](https://github.com/motom001/dms/issues/671)); bis dahin fragt die Hausautomatisierung ab.
 
-**Einmal vorab (Administrator):** Unter **Werkbank → Webhooks** gibt ein Administrator die Adresse der Hausautomatisierung als **Ziel** frei, z. B. `http://homey.home.arpa` oder `http://192.168.178.20:1880`. Nur an freigegebene Ziele meldet Ablago. Ohne Verschlüsselung (`http://`) geht das nur im Heimnetz; sonst braucht es `https://`.
-
-**Dann du:**
-
-1. Öffne **Mein Konto → Benachrichtigungen → Sofort melden (Webhooks)** und wähle **+ Neuer Webhook**.
-2. Gib einen **Namen** (z. B. „Node-RED“) und die **Adresse des Empfängers** ein, z. B. `http://192.168.178.20:1880/dms`.
-3. Kopiere das **Geheimnis** (es beginnt mit `whsec_`) und trag es beim Empfänger ein – es ist nur jetzt ganz zu sehen. Damit prüft der Empfänger, dass die Meldung wirklich von Ablago kommt.
-4. Gleich danach kommt eine erste Meldung mit deinen aktuellen Zahlen. Mit **Probe senden** schickst du jederzeit eine weitere; darunter siehst du, ob sie angekommen ist.
-
-Was dabei geschieht:
-
-- **Mehrere Änderungen auf einmal** – etwa 20 Briefe aus dem Scanner – kommen als **wenige Meldungen**: höchstens eine je 30 Sekunden, und die letzte hat immer den neuesten Stand.
-- **Ist die Hausautomatisierung aus**, versucht es Ablago mit wachsenden Abständen erneut, etwa einen Tag lang. Den Fehler siehst du am Webhook. Klappt es so lange nicht, schaltet Ablago den Webhook ab und sagt dir das unter Mein Konto; die Administratoren bekommen eine E-Mail. Mit **Einschalten** geht es weiter.
-- **Doppelt angekommen?** Jede Meldung hat eine **Ereignis-Id**. Kommt dieselbe Id noch einmal (etwa nach einem Neustart von Ablago), ist es eine Wiederholung und kann übergangen werden.
-
-Eine Meldung sieht so aus:
-
-```json
-{"art":"zaehler.geaendert","id":"7c0e6a8e-3d1f-4f0a-9c55-2b8f0d3e4a11","zeit":"2026-11-03T07:15:02.000Z","daten":{"neuePost":2,"zuErledigen":5,"ueberfaellig":1,"stand":42,"geaendert":"2026-11-03T07:15:00.000Z"}}
-```
-
-Bei **Probe senden** steht unter `art` der Wert `probe`.
-
-### Beispiel: Node-RED
-
-Ein kleiner Flow: Ein **http in**-Knoten nimmt die Meldung an, ein **function**-Knoten prüft die Signatur, danach kannst du verzweigen (Lampe an, Mitteilung …).
-
-1. Knoten **http in**: Methode `POST`, Adresse `/dms`. Dahinter einen Knoten **http response** mit Status `204`, damit Ablago weiß, dass die Meldung angekommen ist.
-2. Knoten **function** zwischen beide, unter **Setup → Module** das Modul `crypto` mit dem Namen `crypto` eintragen, und im Reiter **Nachricht empfangen**:
-
-    ```js
-    // Geheimnis des Webhooks, z. B. als Umgebungsvariable des Flows.
-    const geheimnis = env.get('DMS_WEBHOOK_GEHEIMNIS');
-    const zeit = msg.req.headers['x-dms-zeit'];
-    const signatur = msg.req.headers['x-dms-signatur'] || '';
-    // Das DMS schickt kompaktes JSON; JSON.stringify ergibt wieder denselben Text.
-    const rumpf = JSON.stringify(msg.payload);
-    const soll = 'v1=' + crypto.createHmac('sha256', geheimnis).update(zeit + '.' + rumpf).digest('hex');
-    const frisch = Math.abs(Date.now() / 1000 - Number(zeit)) < 300;
-    if (!frisch || signatur.length !== soll.length || !crypto.timingSafeEqual(Buffer.from(signatur), Buffer.from(soll))) {
-      msg.statusCode = 401;
-      return [null, msg];          // Ausgang 2: ablehnen
-    }
-    // Wiederholungen übergehen
-    const gesehen = flow.get('dms_ids') || [];
-    if (gesehen.includes(msg.payload.id)) return [null, msg];
-    flow.set('dms_ids', [...gesehen.slice(-50), msg.payload.id]);
-    msg.payload = msg.payload.daten;  // { neuePost, zuErledigen, ueberfaellig, stand, geaendert }
-    return [msg, msg];               // Ausgang 1: weiter im Flow, Ausgang 2: Antwort
-    ```
-
-3. Den function-Knoten auf **2 Ausgänge** stellen: Ausgang 2 an **http response**, Ausgang 1 an deine Logik, z. B. einen **switch** auf `msg.payload.neuePost > 0`.
-
-Ob eine App den Webhook schon nutzt, steht in ihrem README. Format, Köpfe und die Prüfung der Signatur in anderen Sprachen stehen im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#webhooks).
+!!! note "Kein eigener Webhook mehr unter Mein Konto"
+    Früher konnte jede Person unter **Mein Konto** einen Webhook eintragen, der ihre Zahlen sofort meldete; dazu gehörte in der Werkbank der Bereich **Webhooks** mit freigegebenen Zielen. Beides ist entfallen ([#991](https://github.com/motom001/dms/issues/991)), eingetragene Webhooks hat Ablago beim Update entfernt. Die Abfrage mit dem Schlüssel *nur Zähler* bleibt, wie sie ist.
 
 Technische Einzelheiten zur Schnittstelle stehen im [Administratorhandbuch](https://help.ablago.app/admin/aktuell/api/#zaehler).

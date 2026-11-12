@@ -2284,11 +2284,6 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           const x = umschluesseleTief(r.wert, um); zaehle(x);
           if (x.geaendert) await tx`UPDATE einstellungen SET wert = ${tx.json(x.wert as postgres.JSONValue)} WHERE haushalt_id = ${haushaltId} AND schluessel = ${r.schluessel}`;
         }
-        // Webhooks (#627): Geheimnis für die Signatur.
-        for (const r of await tx`SELECT id, geheimnis FROM webhooks WHERE haushalt_id = ${haushaltId} AND geheimnis LIKE ${muster} FOR UPDATE`) {
-          const x = umschluesseleTief(r.geheimnis as string, um); zaehle(x);
-          if (x.geaendert) await tx`UPDATE webhooks SET geheimnis = ${x.wert} WHERE id = ${r.id}`;
-        }
         for (const [k, w] of Object.entries(einstellungen)) {
           await tx`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${tx.json(w as postgres.JSONValue)})
             ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
@@ -2298,7 +2293,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
 
     async verschluesselteFundstellen() {
-      // Dieselben Stellen wie umschluesseln (#410); Benutzername für die Zwei-Faktor-Anmeldung; Webhooks (#627).
+      // Dieselben Stellen wie umschluesseln (#410); Benutzername für die Zwei-Faktor-Anmeldung.
       const muster = '%dms1$%';
       const mappen = await sql`SELECT id, titel, werte FROM mappen WHERE haushalt_id = ${haushaltId} AND werte::text LIKE ${muster}`;
       const korb = await sql`SELECT id, mappe FROM papierkorb WHERE haushalt_id = ${haushaltId} AND mappe::text LIKE ${muster}`;
@@ -2306,12 +2301,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         SELECT e.schluessel, e.wert, coalesce(nullif(b.name, ''), b.email) AS titel FROM einstellungen e
         LEFT JOIN benutzer b ON b.haushalt_id = e.haushalt_id AND (e.schluessel = 'zweifaktor_' || b.id::text OR e.schluessel = 'dokpasswoerter_' || b.id::text)
         WHERE e.haushalt_id = ${haushaltId} AND e.wert::text LIKE ${muster} ORDER BY e.schluessel`;
-      const hooks = await sql`SELECT id, name, geheimnis FROM webhooks WHERE haushalt_id = ${haushaltId} AND geheimnis LIKE ${muster} ORDER BY erstellt, id`;
       return [
         ...mappen.map((r) => ({ quelle: 'mappe' as const, schluessel: String(r.id), wert: r.werte, titel: r.titel as string })),
         ...korb.map((r) => ({ quelle: 'papierkorb' as const, schluessel: String(r.id), wert: r.mappe, titel: (r.mappe as { titel?: string }).titel ?? null })),
         ...einst.map((r) => ({ quelle: 'einstellung' as const, schluessel: r.schluessel as string, wert: r.wert, titel: (r.titel as string | null) ?? null })),
-        ...hooks.map((r) => ({ quelle: 'webhook' as const, schluessel: String(r.id), wert: r.geheimnis, titel: r.name as string })),
       ];
     },
 

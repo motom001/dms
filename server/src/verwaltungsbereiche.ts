@@ -79,7 +79,6 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/postfaecher*', 'postfaecher'),
   R('*', '/api/werkbank/eingangsordner*', 'eingangsordner'),
   R('*', '/api/werkbank/webdav', 'webdav'),
-  R('*', '/api/werkbank/webhooks*', 'webhooks'),
   R('*', '/api/werkbank/texterkennung*', 'texterkennung', 'wartung'),
   // Gleichbedeutende Wörter (#992): eigener Bereich; den Stand der Suche (mit den Gruppen) lesen beide Seiten.
   R('*', '/api/werkbank/suche/synonyme*', 'woerter'),

@@ -406,9 +406,6 @@ export class SichtenDienst {
     return fingerabdruck({ v: 1, zahlen, mappen, heute: heuteIn(), rolle: ich.rolle });
   }
 
-  /** Webhooks (#627): nach jeder Änderung, die Zahlen der Ansichten oder die Termine ändern kann. */
-  beiAenderung(f: () => void) { this.stand.beiAenderung(f); }
-
   /** Neue Post für den Benutzer (#625): Stand „Neu“ und „An“ (bis #1042 „Für“) ist er selbst oder leer; nur lesbare Post. */
   private async neuePostFuer(z: Zugriff): Promise<number> {
     const post = [...z.typen.values()].find((t) => t.system === 'post');

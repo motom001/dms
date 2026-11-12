@@ -5,8 +5,8 @@ import { t } from './sprache';
 
 /**
  * Verteiler des Ereigniskatalogs (#670, #724): **der eine Ausgangskorb** (`ereignisse`). Der Kern schreibt jedes
- * Geschehen genau einmal hinein; der Verteiler gibt es an die Abnehmer im DMS – Automatisierungen (#674), Pakete
- * (alle abonnierten Ereignisse; sie landen in der Zustellung des Paket-Läufers) und Webhooks (#627: „Zahlen neu zählen“).
+ * Geschehen genau einmal hinein; der Verteiler gibt es an die Abnehmer im DMS – Automatisierungen (#674) und Pakete
+ * (alle abonnierten Ereignisse; sie landen in der Zustellung des Paket-Läufers).
  *
  * - **Mindestens einmal:** Ein Ereignis gilt erst als verteilt, wenn **alle** Abnehmer es ohne Fehler angenommen haben.
  *   Wirft einer, kommt das Ereignis später noch einmal – an alle. Abnehmer erkennen eine Wiederholung an `e.id`.

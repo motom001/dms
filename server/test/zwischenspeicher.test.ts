@@ -76,14 +76,6 @@ describe('Lesespeicher und Zähler im Arbeitsspeicher (#741, #742)', () => {
     for (let i = 0; i < 600; i++) await zs.hole(`p${i}`, zaehle);
     assert.ok(zs.groesse <= 500, `höchstens 500 Einträge, sind ${zs.groesse}`);
   });
-
-  it('Hörer (Webhooks) laufen außerhalb der Anfrage – sie zählen frisch, ohne Mindestgültigkeit', async () => {
-    const stand = new Haushaltsstand();
-    let gesehen: unknown = 'nie';
-    stand.beiAenderung(() => { gesehen = kontext.getStore(); });
-    await kontext.run({ anfrage: 'a', db: { anzahl: 0, ms: 0 }, benutzerId: 'jonas' }, () => stand.erhoehe());
-    assert.equal(gesehen, undefined);
-  });
 });
 
 describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {

@@ -179,7 +179,6 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const meldungen = () => { if (!x.fehlermeldungen) throw new Fachfehler(404, t('meldungen.routen.gemeldete-fehler-sind-nicht')); return x.fehlermeldungen; };
   const tresor = () => { if (!x.tresor) throw new Fachfehler(404, t('meldungen.routen.die-verschluesselung-ist-nicht')); return x.tresor; };
   const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, t('meldungen.routen.api-schluessel-sind-nicht')); return x.apiSchluessel; };
-  const webhooks = () => { if (!x.webhooks) throw new Fachfehler(404, t('webhook.nicht-eingerichtet')); return x.webhooks; };
   const autos = () => { if (!x.automatisierungen) throw new Fachfehler(404, t('meldungen.routen.automatisierungen-sind-nicht')); return x.automatisierungen; };
   /**
    * ?passwoerter=anzeigen (#46): nur mit einem API-Schlüssel, der das Recht „Passwörter lesen“ hat.
@@ -353,7 +352,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     pakete, paketerstellung, entdecken, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
     abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, typName, nurSelbst,
     betrieb, region, sprachen, spracheFuer, regionStand, zusammenfassung, ocr,
-    meldungen, tresor, schluessel, webhooks, autos, passwoerterAnzeigen, verwaltungHinweis, modusSpur,
+    meldungen, tresor, schluessel, autos, passwoerterAnzeigen, verwaltungHinweis, modusSpur,
     zg, empfaengerSichtbar, leseHinweis, darf, zuletztGeoeffnet, entschluessele, mitRollen, sicherung,
     sicherungsPaket, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, auskunftZiel, loeschkonzeptQuelle, abrufTickets, abrufBremse,
     notfallblattErzeugen, notfallblattDatei, nf, abrufText, exportZiel, danachLoeschen, oidc, adresse,

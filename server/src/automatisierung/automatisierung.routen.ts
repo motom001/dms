@@ -10,7 +10,6 @@ export function automatisierungRouten(k: RoutenKontext): Route[] {
   return [
     // Eingangsordner (#195): nur sichtbar, wenn /eingang eingebunden ist.
     // WebDAV-Laufwerk (#346): an/aus (Standard aus), Adresse, Stand und letzte Zugriffe.
-    // Webhooks (#627): alle im Überblick, abschalten, löschen; freigegebene Ziele.
     // Automatisierungen (#674): nur Administratoren legen an und ändern; ausgeführt wird unter dem Systemkonto.
     { methode: 'GET', pfad: '/api/werkbank/automatisierungen', zugang: 'admin', handler: async () => ok({ ...await autos().uebersicht(), kontext: await autos().kontext(), umgezogen: await autos().umzug() }) },
     // #712: Hinweis „Erinnerungen sind umgezogen“ gelesen.

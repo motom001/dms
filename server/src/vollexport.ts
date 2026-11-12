@@ -89,8 +89,6 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   gesehen: t('meldungen.vollexport.nicht-enthalten-wann-ein'),
   zaehlerstaende: t('meldungen.vollexport.nicht-enthalten-stand-der'),
   haushaltsstand: t('meldungen.vollexport.nicht-enthalten-stand-der-2'),
-  webhooks: t('meldungen.vollexport.nicht-enthalten-webhooks-der'),
-  webhook_meldungen: t('meldungen.vollexport.nicht-enthalten-ausgangskorb-der'),
   ereignisse: t('meldungen.vollexport.nicht-enthalten-ausgangskorb-des'),
   frist_meldungen: t('meldungen.vollexport.nicht-enthalten-welche-fristen'),
   schema_migrationen: t('meldungen.vollexport.nicht-enthalten-stand-der-3'),

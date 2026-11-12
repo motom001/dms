@@ -140,8 +140,6 @@ interface Optionen {
   einbetten?: Einbetten;
   /** WebDAV-Laufwerk (#346) unter /webdav. */
   webdav?: Webdav;
-  /** Webhooks (#627). */
-  webhooks?: import('./webhook').Webhooks;
   /** Automatisierungen (#674). */
   automatisierungen?: import('./automatisierung').Automatisierungen;
   /** Überlastschutz (#544): höchstens so viele Anfragen gleichzeitig, sonst 503. */

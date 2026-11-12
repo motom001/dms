@@ -86,7 +86,7 @@ This is how the processes work together:
 - **Crashes** of a process are counted by the main process (with number and code or signal); the [load test](lasttest.md) shows them for each run, together with the kinds of errors (e.g. broken connections).
 - **When it is worth it:** only with free cores. On a computer with 2 cores (Ablago, PostgreSQL and the load share them), a second process was slower than one at level medium; at level large it moved the limit from 100 to 150 simultaneous requests. That's why `auto` takes one process with 2 cores. Details: Developer manual → Performance.
 
-**Database connections – for all together:** `DMS_DB_VERBINDUNGEN` applies to **all processes together** (#874; before: per process). Process 1 permanently holds 4 connections for locks (sign of life, intake folder, mailboxes, webhooks) and gets them first; all processes share the rest equally (each further one at least 2, process 1 at least 6 in total). Without the variable it is 10 as before with one process and 4 more for each further process (2 processes 14: process 1 has 9, process 2 has 5; 4 processes 22 instead of 40 before). If the number is too small for the processes, Ablago raises it to the minimum; if it were more than the database allows (`max_connections`, minus 10 for others), Ablago reduces it – both are written to the log.
+**Database connections – for all together:** `DMS_DB_VERBINDUNGEN` applies to **all processes together** (#874; before: per process). Process 1 permanently holds 4 connections for locks (sign of life, intake folder, mailboxes and one spare) and gets them first; all processes share the rest equally (each further one at least 2, process 1 at least 6 in total). Without the variable it is 10 as before with one process and 4 more for each further process (2 processes 14: process 1 has 9, process 2 has 5; 4 processes 22 instead of 40 before). If the number is too small for the processes, Ablago raises it to the minimum; if it were more than the database allows (`max_connections`, minus 10 for others), Ablago reduces it – both are written to the log.
 
 **Why together:** more connections don't make a database faster that shares the cores with Ablago. If more queries run at once than PostgreSQL has cores, each waits longer for computing time and for other people's locks – which hits saving in particular. With 4 processes, Ablago used to open 40 connections, on a NAS with 6 threads.
 
@@ -126,7 +126,6 @@ The filter of **Workbench → Log** lists all modules with their name – includ
 | Backup | `sicherung` | Backup, emergency sheet, restore and test |
 | Events | `ereignisse` | Distributing events to packages and automations |
 | Automations | `automatisierung` | Runs of the automations |
-| Webhooks | `webhook` | Messages to webhooks, switching off after errors |
 
 Sign-in and sign-in protection deliberately stay in one module: a block results from failed sign-in attempts – whoever looks for a block sees both together.
 

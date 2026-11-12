@@ -770,20 +770,6 @@
       "count": 1
     }
   },
-  "server/src/webhook.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
   "server/src/werkbank/werkbank.routen.ts": {
     "complexity": {
       "count": 1
@@ -1693,11 +1679,6 @@
       "count": 1
     }
   },
-  "web/src/profil/Webhooks.tsx": {
-    "ablago/bausteine": {
-      "count": 8
-    }
-  },
   "web/src/profil/Zusammenfassung.tsx": {
     "ablago/bausteine": {
       "count": 4
@@ -2085,11 +2066,6 @@
     }
   },
   "web/src/werkbank/Webdav.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/werkbank/Webhooks.tsx": {
     "ablago/bausteine": {
       "count": 3
     }

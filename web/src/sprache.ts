@@ -29,10 +29,9 @@ import spalten from '../../shared/src/sprachen/de/spalten.json';
 import suche from '../../shared/src/sprachen/de/suche.json';
 import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import volltext from '../../shared/src/sprachen/de/volltext.json';
-import webhook from '../../shared/src/sprachen/de/webhook.json';
 import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 
-const bereiche = { ablage, aehnlich, api, anmeldung, automatisierung, einrichtung, entdecken, erkennung, ereignisse, felder, fragen, konten, lasttest, mappen, mappentypen, notfall, oberflaeche, pakete, profil, spalten, suche, systemzustand, termine, volltext, webhook, werkbank };
+const bereiche = { ablage, aehnlich, api, anmeldung, automatisierung, einrichtung, entdecken, erkennung, ereignisse, felder, fragen, konten, lasttest, mappen, mappentypen, notfall, oberflaeche, pakete, profil, spalten, suche, systemzustand, termine, volltext, werkbank };
 export const t = uebersetzer(bereiche);
 
 /**

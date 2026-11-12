@@ -75,7 +75,7 @@ Beginn, Ende, Ablauf und Wiedereinstieg des Modus stehen im Protokoll, ebenso fe
 
 ## Hinweise an die Verwaltung
 
-Technische Hinweise – Sicherung, Speicherplatz, Postfächer, Webhooks, Anmeldeschutz, Pakete, Automatisierungen … – gehen per E-Mail an die Personen, die den passenden Bereich verwalten, und an alle mit „Gesamte Verwaltung“. Im Haushalt sind das meist alle, die verwalten. Außerhalb des Verwaltungsmodus sieht die Person oben nur den Hinweis „Für die Verwaltung liegt etwas an.“ mit dem Knopf **Ablago verwalten**.
+Technische Hinweise – Sicherung, Speicherplatz, Postfächer, Anmeldeschutz, Pakete, Automatisierungen … – gehen per E-Mail an die Personen, die den passenden Bereich verwalten, und an alle mit „Gesamte Verwaltung“. Im Haushalt sind das meist alle, die verwalten. Außerhalb des Verwaltungsmodus sieht die Person oben nur den Hinweis „Für die Verwaltung liegt etwas an.“ mit dem Knopf **Ablago verwalten**.
 
 ## Nach dem Update auf diese Version { #umstellung }
 

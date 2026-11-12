@@ -8,7 +8,6 @@ import { describe, it } from 'node:test';
 import { erreichteDaten } from '../../shared/src/automatisierung';
 import { EREIGNISSE } from '../../shared/src/pakete';
 import { PAKET_KATALOG, VERALTETE_EREIGNISSE, wiederholungNach } from '../../shared/src/ereignisse';
-import { WEBHOOK_WARTEN_S } from '../../shared/src/webhook';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
 import '../src/automatisierung-karten';
@@ -158,12 +157,11 @@ describe('Aufgaben mit Anlass (#724)', () => {
 });
 
 describe('Ein Ereigniskatalog, ein Ausgangskorb, eine Regel für Wiederholungen (#724)', () => {
-  it('Pakete abonnieren genau den Katalog (plus veraltete Namen); Webhooks nutzen dieselbe Regel mit langem Atem', () => {
+  it('Pakete abonnieren genau den Katalog (plus veraltete Namen); eine Regel für Wiederholungen', () => {
     assert.deepEqual(Object.keys(EREIGNISSE).sort(), [...PAKET_KATALOG, ...Object.keys(VERALTETE_EREIGNISSE)].sort());
     assert.equal(wiederholungNach(0), 60);
     assert.equal(wiederholungNach(4), 21_600);
     assert.equal(wiederholungNach(5), null, 'danach aufgegeben');
-    assert.deepEqual([...WEBHOOK_WARTEN_S], Array.from({ length: WEBHOOK_WARTEN_S.length }, (_, i) => wiederholungNach(i, 'lang')));
   });
 
   it('Dokument hochgeladen: ein Ereignis im Ausgangskorb, Pakete bekommen es mit Dateinamen über die Zustellung', async () => {

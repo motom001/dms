@@ -109,7 +109,6 @@ nav:
           - Mailboxes: postfaecher.md
           - Intake folder: eingangsordner.md
           - WebDAV drive: webdav.md
-          - Webhooks: webhooks.md
           - Text recognition and maintenance: texterkennung.md
       - Protecting your data:
           - Backup: sicherung.md
