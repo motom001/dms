@@ -61,6 +61,14 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     // Im Assistenten nur mit Passwort; OAuth richtet man danach in der Werkbank ein (#813).
     await api.mailSpeichern({ anmeldung: 'passwort', aktiv: m.aktiv, host: m.host.trim(), port: m.port, verbindung: m.verbindung, benutzer: m.benutzer.trim(), absender: m.absender.trim(), selbstsigniert: m.selbstsigniert, ...(geheim.mail ? { passwort: geheim.mail } : {}) });
   },
+  // Notfallkontakte (#812): nach dem Versand, damit die Info-Mail gleich hinausgeht. Beim Wiederholen nichts doppelt –
+  // eine Adresse, die schon eingetragen ist, wird übersprungen.
+  async notfallkontakte() {
+    const liste = holeStand().sammlung.optional.notfallkontakte ?? [];
+    if (!liste.length) return 'ausgelassen';
+    const da = new Set((await api.notfallkontakte()).kontakte.map((k) => k.email.toLowerCase()));
+    for (const k of liste) if (!da.has(k.email.trim().toLowerCase())) await api.notfallkontaktAnlegen(k);
+  },
   async beispiele() {
     if (!holeStand().sammlung.optional.beispiele) return 'ausgelassen';
     try { await api.beispiele(); } catch (e) {
@@ -120,7 +128,7 @@ export async function ausfuehren() {
     const schon = l.unterbrochen ? new Set((await api.einrichtungStand()).erledigt) : new Set<string>();
     await api.einrichtungSchritt('schluessel');
     if (!schon.has('pakete')) await api.einrichtungSchritt('pakete', !(l.pakete?.installiert.length));
-    if (!schon.has('optional')) await api.einrichtungSchritt('optional', !fertig('adresse', 'region', 'mail', 'beispiele'));
+    if (!schon.has('optional')) await api.einrichtungSchritt('optional', !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispiele'));
   } catch { /* Der Hinweis in der Übersicht ist nicht wichtig genug, um hier aufzuhalten. */ }
   setzeLauf((x) => ({ ...x, laeuft: false, fertig: true }));
 }
@@ -132,7 +140,7 @@ export function stufenZuruecksetzen(stufen: Stufe[]) {
 
 /** Welche Stufen ein Schritt des Assistenten betrifft – und umgekehrt (für „Ändern“ nach einem Fehler). */
 export const STUFEN_JE_SCHRITT = {
-  ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'beispiele'],
+  ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele'],
 } as const satisfies Record<string, readonly Stufe[]>;
 
 /** Für die Konfigurationsdatei (#806): aktueller Plan. */

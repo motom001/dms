@@ -946,6 +946,12 @@ begriffe:
     beschreibung: Ein PDF mit dem Schlüssel und einer Anleitung zur Wiederherstellung.
     einsteiger: alltag
     begegnet: admin
+  - begriff: Notfallkontakt
+    bereich: betrieb
+    beschreibung: Eine Vertrauensperson, die im Ernstfall gefragt ist. Sie steht auf dem Notfallblatt und bekommt eine kurze Info-Mail, aber keinen Zugang.
+    einsteiger: alltag
+    begegnet: admin
+    verwandt: [Notfallblatt]
   - begriff: Sicherung
     bereich: betrieb
     beschreibung: Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar.

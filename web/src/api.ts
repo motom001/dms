@@ -43,6 +43,9 @@ import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../shared/src
 import type { BudgetStand, ExternAufruf, ExternerDienst, ExternKennzahlen, KostenEinstellung } from '../../shared/src/extern';
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import type { OrganisationStand } from '../../shared/src/organisation';
+import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, NotfallMailStand } from '../../shared/src/notfallkontakte';
+/** Antwort auf eine Änderung an einem Notfallkontakt (#812). */
+export interface NotfallkontaktErgebnis { kontakt: Notfallkontakt | null; mail: NotfallMailStand | 'keine' | 'grenze' }
 
 /** Vorschläge beim Zuordnen (#336), wie GET /api/mappen/:id/erkennung sie liefert. */
 export interface ErkFund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
@@ -497,6 +500,8 @@ export interface Notfallblattstand {
   am: string | null; von: string | null; fingerabdruck: string | null; aktuell: boolean; ohneCode?: boolean; codeBenutzt?: string | null;
   /** Warum nicht aktuell: fehlt, früherer Schlüssel, noch ohne Notfallcode, Notfallcode benutzt. */
   grund?: 'fehlt' | 'schluessel' | 'ohne-code' | 'benutzt' | null;
+  /** Notfallkontakte (#812) seit dem Blatt geändert: „Notfallblatt neu ausdrucken“ (nur unter Verschlüsselung). */
+  kontakteGeaendert?: boolean;
 }
 /** Werkbank → Anmeldeschutz → Notfallzugang (#815). */
 export interface NotfallzugangStand { internet: boolean; von: string | null; am: string | null; code: { vorhanden: boolean; erstellt: string | null }; heimnetz: boolean; /** #885: nur bei heimnetz: false */ grund?: 'oeffentlich' | 'proxy' }
@@ -1038,6 +1043,12 @@ export const api = {
   setzeMerkmale: (e: Partial<Merkmale>) => anfrage<Merkmale>('PUT', '/api/werkbank/merkmale', e),
   /** Eigene Organisation (#995): Verweis auf die Mappe(n) mit dem Merkmal, Wahl für Auskünfte, Rollen, Notizen. */
   organisation: () => anfrage<OrganisationStand>('GET', '/api/werkbank/organisation'),
+  // Notfallkontakte (#812): Werkbank → Verschlüsselung, Einrichtungsassistent.
+  notfallkontakte: () => anfrage<NotfallkontakteStand>('GET', '/api/werkbank/notfallkontakte'),
+  notfallkontaktAnlegen: (e: NotfallkontaktEingabe) => anfrage<NotfallkontaktErgebnis>('POST', '/api/werkbank/notfallkontakte', e),
+  notfallkontaktAendern: (id: string, e: NotfallkontaktEingabe) => anfrage<NotfallkontaktErgebnis>('PUT', `/api/werkbank/notfallkontakte/${encodeURIComponent(id)}`, e),
+  notfallkontaktLoeschen: (id: string) => anfrage<NotfallkontaktErgebnis>('DELETE', `/api/werkbank/notfallkontakte/${encodeURIComponent(id)}`),
+  notfallkontaktErneut: (id: string) => anfrage<NotfallkontaktErgebnis>('POST', `/api/werkbank/notfallkontakte/${encodeURIComponent(id)}/erneut`),
   setzeOrganisation: (e: Record<string, unknown>) => anfrage<OrganisationStand>('PUT', '/api/werkbank/organisation', e),
   organisationUebernehmen: () => anfrage<OrganisationStand>('POST', '/api/werkbank/organisation/uebernehmen'),
   /** „Deine Organisation“ aus dem Einrichtungsassistenten (#1045). */

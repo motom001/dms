@@ -348,7 +348,7 @@ Sets which areas are on the left of the workbench – following a template ("Hou
 See also: [Workbench](#werkbank), [Overview](#ubersicht), [Business](#betrieb).
 
 <a id="tagliche-zusammenfassung"></a>**Daily summary** (*Tägliche Zusammenfassung*) · ✓ everyday word · everyone  
-An email that lists a user's open tasks once a day – only if they have some and aren't absent. Administrators switch it on under Workbench → Automations (automation “Daily summary” from the Notifications package); everyone chooses the time and weekdays under My account.  
+An email that lists a user's open tasks once a day – only if they have some and aren't absent. Administrators switch it on under Workbench → Settings → Notifications and tasks; everyone chooses the time and weekdays under My account.  
 See also: [Task](#aufgabe), [To do](#zu-erledigen).
 
 <a id="design"></a>**Design** · ✓ everyday word · administrators  
@@ -502,6 +502,10 @@ A more detailed technical log for troubleshooting.
 
 <a id="demo-daten"></a>**Demo data** (*Demo-Daten*) · ✓ everyday word · administrators  
 Generated sample folders for trying out and for load tests.
+
+<a id="notfallkontakt"></a>**Emergency contact** (*Notfallkontakt*) · ✓ everyday word · administrators  
+A person you trust who should be asked in an emergency. They appear on the emergency sheet and get a short info email, but no access.  
+See also: [Emergency sheet](#notfallblatt).
 
 <a id="notfallblatt"></a>**Emergency sheet** (*Notfallblatt*) · ✓ everyday word · administrators  
 A PDF with the key and instructions for restoring.

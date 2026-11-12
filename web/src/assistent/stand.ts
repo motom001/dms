@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { beruflichBei, type DateiFehler, type Einrichtungsplan, type Nutzung, type PlanDatenbank, type PlanOrganisation, type Planprobleme, type PlanPaket, type PlanVerbindung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
 import type { AblaufErgebnis } from '../../../shared/src/pakete';
+import type { NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
 import { t } from '../sprache';
 
@@ -19,7 +20,8 @@ export interface MailSammlung { aktiv: boolean; host: string; port: number; verb
 /** Ausführen bei „Jetzt einrichten“: in dieser Reihenfolge, jede Stufe einzeln wiederholbar. */
 // „nutzung“ vor „pakete“: Pakete schlagen bei beruflicher Nutzung eine längere Aufbewahrung vor (#1051). „organisation“
 // nach „pakete“: Den Mappentyp mit dem Merkmal „eigene Organisation“ bringt das Paket Basis mit (#1045).
-export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'beispiele', 'pakete', 'organisation'] as const;
+// „notfallkontakte“ (#812) nach „mail“: Mit eingerichtetem Versand geht die Info-Mail gleich hinaus.
+export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'notfallkontakte', 'beispiele', 'pakete', 'organisation'] as const;
 export type Stufe = (typeof STUFEN)[number];
 export interface StufeStand { zustand: 'wartet' | 'laeuft' | 'fertig' | 'ausgelassen' | 'fehler'; meldung?: string }
 export interface Lauf {
@@ -45,7 +47,8 @@ export interface Sammlung {
   /** Aus einer Datei, noch nicht bestätigt (#806). */
   paketeVorgabe: PlanPaket[] | null;
   /** beruflich: Merkmal „beruflich genutzt“ (#1032) – seit #1045 aus dem Schritt „Nutzung“, bei älteren Dateien direkt. */
-  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean };
+  /** notfallkontakte (#812): gesammelt, angelegt bei „Jetzt einrichten“ – nicht in der Konfigurationsdatei (Daten Dritter). */
+  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean; notfallkontakte?: NotfallkontaktEingabe[] };
   /** „Wofür nutzt du Ablago?“ (#1045); null = noch nicht beantwortet. */
   nutzung: Nutzung | null;
   /** „Deine Organisation“ (#1045) – nur bei beruflich und beides; null = keine. */

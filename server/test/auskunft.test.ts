@@ -299,6 +299,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-zip-'));
       const z = await d.rechtepruefung.zugriff({ id: admin.id, rolle: 'admin' });
+      // Notfallkontakte (#812, Suche nach Adresse): nur der mit der Adresse aus den aufgenommenen Mappen.
+      const ich = { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' };
+      await d.notfallkontakte.anlegen({ name: 'Max', email: 'max@example.net', telefon: '', notiz: 'Nachbar' }, ich);
+      await d.notfallkontakte.anlegen({ name: 'Bea', email: 'bea@example.net', telefon: '', notiz: '' }, ich);
       const daten = await d.datenschutzDienst.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
       assert.deepEqual(daten.gruende, ['Interne Bewertung (Art. 15 Abs. 4 DSGVO)']);
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' }, mandant: 'Hausverwaltung' });
@@ -313,6 +317,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(!zip.includes(Buffer.from('geheim-portal-123')) && !zip.includes(Buffer.from('dms1$')));
       assert.ok(!text('struktur/mappentypen.json').includes('Portal-Passwort'));
       assert.ok(!text('struktur/mappentypen.json').includes('berechtigungen'));
+      const notfall = JSON.parse(text('struktur/notfallkontakte.json')) as Array<{ email: string; notiz: string }>;
+      assert.deepEqual(notfall.map((k) => [k.email, k.notiz]), [['max@example.net', 'Nachbar']]);
       assert.ok(!text('daten/mieter.csv').includes('portal'));
       // Nur Ausgewähltes: geschwärzte Fassung statt Original, abgewählte Notiz fehlt, Bea fehlt
       const namen = [...e.keys()];

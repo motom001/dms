@@ -95,12 +95,13 @@ Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich:
 
 ![Optionales](bilder/einrichtung-optional.png)
 
-Vier gleich aufgebaute Abschnitte, ohne eigene Speichern-Knöpfe:
+Fünf gleich aufgebaute Abschnitte, ohne eigene Speichern-Knöpfe:
 
 - **Adresse von Ablago**, vorgeschlagen mit der Adresse im Browser. Feld leeren, wenn Ablago keine feste Adresse haben soll.
 - **Region:** das Bundesland für die Feiertage, anfangs *keins*. Land und Zeitzone stellst du unter [Werkbank → Einstellungen → Region](region.md) ein.
 - **Beispiele:** Beispiel-Mappentypen laden (nur ohne Pakete, die eigene Mappentypen mitbringen).
 - **E-Mail-Versand:** erst nach dem Häkchen „E-Mail-Versand jetzt einrichten“. Für den [E-Mail-Versand](e-mail-versand.md) genügen meist deine Adresse und dein Passwort; Server, Benutzer und Absender schlägt der Assistent vor und kennzeichnet sie, **Weiter** übernimmt sie in die Zusammenfassung. Eingerichtet wird der Versand erst mit **Jetzt einrichten**. Testen kannst du ihn nach der Einrichtung unter **Werkbank → E-Mail und Adresse**.
+- **Notfallkontakte:** Vertrauenspersonen für den Ernstfall, mit Name, E-Mail und wahlweise Telefon und Notiz. Sie bekommen keinen Zugang, nur eine kurze Info-Mail ohne Link, sobald der Versand eingerichtet ist, und stehen auf dem Notfallblatt unter „Wen fragen?“. Eingetragen werden sie mit **Jetzt einrichten**, später pflegst du sie unter [Werkbank → Verschlüsselung](verschluesselung.md#notfallkontakte). In der Konfigurationsdatei stehen sie bewusst nicht – es sind Daten Dritter.
 
 Alles lässt sich auch später in der Werkbank einstellen.
 

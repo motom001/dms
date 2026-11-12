@@ -12,6 +12,7 @@ import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/s
 import type { Varianten } from '../../shared/src/suche';
 import type { Seitensprache } from '../../shared/src/seitensprachen';
 import type { Leerseiten } from '../../shared/src/leerseiten';
+import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
 import { t } from './sprache';
 
 /** Seitenweises Lesen der Historie (#800). */
@@ -584,6 +585,22 @@ export interface Repo {
   loescheSynonym(id: string): Promise<boolean>;
   /** Alle Gruppen einer Quelle (Paket-Id) ersetzen – leer = entfernen. */
   setzeSynonyme(quelle: string, gruppen: string[][]): Promise<void>;
+
+  /* ---------- Notfallkontakte (#812) ---------- */
+  /** Alle Notfallkontakte der Ablage, ältester zuerst. */
+  notfallkontakte(): Promise<Notfallkontakt[]>;
+  holeNotfallkontakt(id: string): Promise<Notfallkontakt | null>;
+  /**
+   * Neuen Kontakt anlegen – nur, solange es weniger als `max` gibt; auch zwei gleichzeitige Anfragen kommen nicht
+   * darüber (PostgreSQL: Sperre je Haushalt in der Transaktion). false = Grenze erreicht.
+   */
+  legeNotfallkontaktAn(k: Notfallkontakt, max: number): Promise<boolean>;
+  /** Angaben ändern (nicht Id, Eingetragen-von, Erstellt); false, wenn es ihn nicht gibt. */
+  aendereNotfallkontakt(id: string, w: Pick<Notfallkontakt, 'name' | 'email' | 'telefon' | 'notiz' | 'antwortAn' | 'mailStand' | 'mailAm' | 'mailFehler'>): Promise<boolean>;
+  /** Stand der Info-Mail setzen (ohne `geaendert` zu berühren); false, wenn es ihn nicht (mehr) gibt. */
+  setzeNotfallkontaktMail(id: string, m: Pick<Notfallkontakt, 'mailStand' | 'mailAm' | 'mailFehler'>): Promise<boolean>;
+  /** Löschen; liefert den gelöschten Kontakt (für die Mail) oder null. */
+  loescheNotfallkontakt(id: string): Promise<Notfallkontakt | null>;
 
   /* ---------- Vektoren zu Dokumenten (#442) ---------- */
   /** Vektor eines Dokuments für ein Modell setzen bzw. ersetzen. Gibt es das Dokument nicht (mehr): false. */

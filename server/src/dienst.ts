@@ -36,6 +36,7 @@ import { type AblaufPlatzhalter, AufgabenDienst, type AufgabenTeile, AufgabenVer
 import { BeispielMappen, LoeschenDienst, type LoeschenTeile, LoeschprotokollVerwaltung, MitVerknuepften, Papierkorb } from './loeschen';
 import { AuskunftZustellen, DatenschutzDienst, type DatenschutzTeile, VollexportQuellen } from './datenschutz';
 import { WerkbankDienst } from './werkbank';
+import { NotfallkontakteDienst } from './notfallkontakte';
 import { OrganisationDienst } from './organisation';
 import { TextsatzDienst } from './textsatz';
 import { PaketAktionen } from './paketaktionen';
@@ -235,6 +236,11 @@ export class Dienst {
   readonly werkbank: WerkbankDienst;
   /** Eigene Organisation (#995): Angaben mit der festen Liste, Werkbank-Bereich, Notizen an die Verwaltung. */
   readonly organisation: OrganisationDienst;
+  private notfallkontakteDienst?: NotfallkontakteDienst;
+  /** Notfallkontakte (#812): Werkbank → Verschlüsselung, Info-Mail an Vertrauenspersonen, „Wen fragen?“ im Notfallblatt. */
+  get notfallkontakte(): NotfallkontakteDienst {
+    return this.notfallkontakteDienst ??= new NotfallkontakteDienst(this.kern, { kurzzustand: () => this.kurzzustand });
+  }
   private textsatzDienst?: TextsatzDienst;
   /** Text setzen (#1040): Brief aus einer Text-Vorlage als PDF – beim ersten Gebrauch gebaut. */
   get textsatz(): TextsatzDienst {

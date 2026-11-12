@@ -1967,5 +1967,22 @@
   "pakete.ablaufvorlage-typ": "{wo}: folder type “{typ}” is neither in the package nor in its dependencies.",
   "pakete.ablaufvorlage-feld": "{wo}: a field as recipient needs folder types (typen).",
   "pakete.ablaufvorlage-doppelt": "ablaufvorlagen: key “{k}” appears twice.",
-  "pakete.ablaufvorlage-ersetzt-doppelt": "ablaufvorlagen: “{k}” is replaced more than once."
+  "pakete.ablaufvorlage-ersetzt-doppelt": "ablaufvorlagen: “{k}” is replaced more than once.",
+  "notfallkontakte.name-leer": "Please enter a name.",
+  "notfallkontakte.name-lang": "The name may have at most 60 characters.",
+  "notfallkontakte.name-link": "The name must not contain “://”, “www.” or “@” – otherwise an email program would turn it into a link.",
+  "notfallkontakte.email": "Please enter a valid email address.",
+  "notfallkontakte.telefon-lang": "The phone number may have at most 40 characters.",
+  "notfallkontakte.notiz-lang": "The note may have at most 120 characters.",
+  "notfallkontakte.eigener-name": "The info email names you. Enter a name without “://”, “www.” and “@” in your profile.",
+  "notfallkontakte.ablage-name": "The library name contains “://”, “www.” or “@” and would appear like that in the info email. Change it first.",
+  "notfallkontakte.max": "At most {max} emergency contacts per library.",
+  "notfallkontakte.unbekannt": "This emergency contact doesn’t exist (any more).",
+  "notfallkontakte.antwort-nur-selbst": "Only the person who added the contact can switch on “Replies to my email address”.",
+  "notfallkontakte.ohne-versand": "Email sending is not set up. The info email goes out as soon as it is.",
+  "notfallkontakte.erneut-heute": "The info email to this contact has already been sent again today. Try again tomorrow.",
+  "notfallkontakte.grenze": "{max} emails to emergency contacts have already been sent today. Try again tomorrow.",
+  "notfallkontakte.mail-name": "A name for the email is missing or looks like a link (your name, the library name or the contact’s name).",
+  "notfallkontakte.vertretung": "Only someone signed in as themselves can manage emergency contacts – not while acting on someone’s behalf.",
+  "vollexport.struktur-notfallkontakte-json": "struktur/notfallkontakte.json (#812, emergency contacts)"
 }

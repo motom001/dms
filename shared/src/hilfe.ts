@@ -194,6 +194,8 @@ export const HILFE = {
   'verschluesselung.arten': admin('verschluesselung/', 'Was verschlüsselt ist', 'was-verschlusselt-ist'),
   // Notfallblatt (#106) steht seit #993 nur unter Verschlüsselung.
   'verschluesselung.notfallblatt': admin('verschluesselung/', 'Notfallblatt', 'notfallblatt'),
+  // Notfallkontakte (#812): beim Notfallblatt, für „Wen fragen?“.
+  'verschluesselung.notfallkontakte': admin('verschluesselung/', 'Notfallkontakte', 'notfallkontakte'),
   'sicherung.zeitplan': admin('sicherung/', 'Zeitplan und Aufbewahrung', 'zeitplan-und-aufbewahrung'),
   'sicherung.speicher': admin('sicherung/', 'Speicherplatz', 'speicherplatz'),
   'sicherung.ort': admin('sicherung/', 'Speicherort', 'speicherort'),

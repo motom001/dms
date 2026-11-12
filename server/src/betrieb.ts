@@ -311,10 +311,11 @@ export class Betrieb {
             ...(o?.antwortAn ? { replyTo: o.antwortAn } : {}),
             ...(o?.anhaenge?.length ? { attachments: o.anhaenge.map((a) => ({ filename: a.name, content: a.inhalt, contentType: a.mime })) } : {}),
           });
-          log.info('E-Mail verschickt', { an, betreff, ms: Date.now() - start });
+          log.info('E-Mail verschickt', { an: o?.anImProtokoll ?? an, betreff, ms: Date.now() - start });
         } catch (e) {
           const grund = e instanceof Fachfehler ? e.message : meldung(e, m.anmeldung);
-          log.error('E-Mail nicht verschickt', { an, betreff, fehler: grund });
+          // Die Meldung des Servers nennt oft den Empfänger – mit `anImProtokoll` auch dort nur so (#812).
+          log.error('E-Mail nicht verschickt', { an: o?.anImProtokoll ?? an, betreff, fehler: o?.anImProtokoll ? grund.split(an).join(o.anImProtokoll) : grund });
           throw new Error(grund);
         }
       },

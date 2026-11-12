@@ -74,7 +74,7 @@ Im Abschnitt **Notfallblatt** dieser Seite erzeugt **Notfallblatt herunterladen*
 1. **Kopf:** Logo, Name deiner Ablage, Datum und Ablago-Version.
 2. **Schlüssel:** groß in Vierergruppen zum Abtippen, dazu sein **Fingerabdruck**. Die Null ist durchgestrichen, und unter leicht verwechselbaren Zeichen (`0` und `O`, `l`, `I` und `1`, `-` und `_`) steht klein, welches gemeint ist. Einen QR-Code mit dem Schlüssel gibt es bewusst nicht – das wäre ein Weg mehr, an ihn zu kommen.
 3. **Diese Ablage:** Adresse, **Ablage-Id** und in einem Satz, wo die Sicherungen liegen – seit 0.142 auch das Ziel der [Kopie außer Haus](sicherung-ausser-haus.md) (Paket und Adresse, ohne Benutzer und Passwort).
-4. **Wen fragen?** Zeilen, in die du einträgst, wer dir im Ernstfall hilft.
+4. **Wen fragen?** Deine [Notfallkontakte](#notfallkontakte) mit Name, Telefon, E-Mail und Notiz – ohne Kontakte Zeilen, in die du von Hand einträgst, wer dir im Ernstfall hilft. Passen viele Kontakte mit langen Angaben nicht mehr auf die Seite, stehen sie auf einer zweiten Seite, und hier steht der Verweis darauf.
 5. **Etwas ist passiert?** Die Links zur Hilfeseite [Was ist dir passiert?](was-ist-passiert.md) – klickbar und immer mit `https://` ausgeschrieben: `https://help.ablago.app/notfall` (Englisch `https://help.ablago.app/emergency`) – und ein **QR-Code** dazu. Scanne ihn mit dem Handy, lies dort und arbeite parallel am Computer.
 6. **Ausgesperrt?** Der **Notfallcode**: 28 Zeichen in Vierergruppen und die Adresse deiner Ablage mit `/notfall`. Mit ihm kommst du wieder hinein, wenn du dich ausgesperrt hast – siehe [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Er ist nicht der Schlüssel und öffnet keine Sicherung.
 
@@ -101,6 +101,24 @@ Auf dem Notfallblatt steht es nicht. Für ein neues System genügt ohnehin ein n
 **Aufbewahren:** ausgedruckt an einem sicheren Ort (z. B. bei den Familienunterlagen oder im Tresor des Betriebs) oder als PDF in einem Passwortsafe – auf jeden Fall **getrennt vom NAS** und nicht neben den Sicherungen. Wer das Blatt hat, kann die Sicherungen lesen.
 
 Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel ([Schlüssel wechseln](#schlussel-wechseln)), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. Wie du sie in der [Sicherung](sicherung.md#notfallblatt) erkennst, steht dort.
+
+## Notfallkontakte
+
+Unter dem Notfallblatt trägst du **Vertrauenspersonen** ein, die im Ernstfall gefragt sind – etwa jemand aus der Familie, der beim Einrichten geholfen hat. Sie wissen dann, dass es deine Ablage gibt, **ohne dadurch Zugang zu bekommen**: kein Konto, keine Rechte, kein Link.
+
+- **Anlegen, ändern, löschen** mit **Notfallkontakt hinzufügen**, **Ändern** und **Löschen**: Name und E-Mail, dazu wahlweise Telefon und eine **Notiz** (z. B. „mein Bruder, hat beim Einrichten geholfen“). Die Notiz steht nur auf dem Notfallblatt, nie in der Mail. Höchstens **10** Kontakte je Ablage.
+- **Info-Mail:** Ablago schickt dem Kontakt eine kurze Mail, nur Text, ohne Link, ohne Anhang und ohne Adresse deiner Ablage. Sie nennt dich, den Namen der Ablage und den Kontakt, sagt, dass er **keinen Zugang** hat und dass er sich an dich wendet, wenn er nicht eingetragen sein möchte. Eine falsch eingetippte Adresse ist so ungefährlich: Wer dich nicht kennt, ignoriert die Mail.
+- **Wann eine Mail geht:** beim Anlegen, bei einer neuen Adresse (an die neue) und beim Löschen (nur, wenn der Kontakt die Info-Mail bekommen hat). Ein geänderter Name, Telefon oder Notiz verschickt nichts. **Erneut senden** geht einmal je Kontakt und Tag. Ohne eingerichteten [E-Mail-Versand](e-mail-versand.md) steht dort „Info-Mail wird verschickt, sobald E-Mail eingerichtet ist“ – Ablago holt das innerhalb weniger Minuten nach, sobald der Versand steht.
+- **Antworten an meine E-Mail-Adresse:** Mit diesem Haken (Vorgabe aus) gehen Antworten des Kontakts an deine Adresse. Ohne ihn steht deine Adresse nicht in der Mail. Einschalten kann ihn nur, wer den Kontakt eingetragen hat.
+- **Namen:** Ein Name mit `://`, `www.` oder `@` wird abgelehnt – ein Mailprogramm machte daraus sonst einen Link. Das gilt auch für deinen eigenen Namen und den Namen der Ablage, weil beide in der Mail stehen.
+- **Grenzen:** höchstens 20 dieser Mails je Ablage und Tag. Darüber lehnt Ablago Anlegen, neue Adresse und Erneut senden für heute ab. Löschen geht immer, die Mitteilung entfällt dann.
+- **Notfallblatt neu ausdrucken:** Ändern sich die Kontakte nach dem letzten Notfallblatt, erinnern beide Abschnitte daran.
+
+Pflegen darf die Kontakte, wer den Bereich **Verschlüsselung** verwaltet (oder Gesamte Verwaltung hat), nicht in einer Vertretung. Je Kontakt steht, wer ihn eingetragen hat – die Mail nennt diese Person. Im [Protokoll](fehlersuche.md#protokoll) stehen Anlegen, Ändern, Löschen und jede Info-Mail mit dem Namen des Kontakts und **gekürzter Adresse** (`j***@example.org`). Auch im [Einrichtungsassistenten](installation.md#optionales) kannst du Notfallkontakte schon eintragen.
+
+![Werkbank → Verschlüsselung, Abschnitt Notfallkontakte](bilder/werkbank-notfallkontakte.png)
+
+**Datenschutz:** Notfallkontakte sind Daten Dritter. Sie stehen in jeder [Sicherung](sicherung.md) und im [Vollexport](export.md) (`struktur/notfallkontakte.json`), im persönlichen Export der Person, die sie eingetragen hat, und in einer [Auskunft](datenschutz.md#auskunft-nach-art-15-dsgvo), wenn die Adresse des Kontakts in den aufgenommenen Mappen steht. Löschst du einen Kontakt, ist er weg; die Sicherungen behalten ihn bis zu ihrem Ablauf.
 
 ## Zustände
 

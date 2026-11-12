@@ -30,8 +30,8 @@ export interface Notfalldaten {
   fingerabdruck: string;
   /** Kopie außer Haus (#585): Paket und Adresse des Ziels – nie Zugangsdaten. */
   aussenziele?: Array<{ name: string; adresse: string | null; ziel?: string | null }>;
-  /** Notfallkontakte (#812), sobald es sie gibt: Name und wie erreichbar. Ohne: Zeilen zum Eintragen. */
-  kontakte?: Array<{ name: string; erreichbar: string }>;
+  /** Notfallkontakte (#812): Name, wie erreichbar (Telefon, E-Mail) und die Notiz. Ohne: Zeilen zum Eintragen. */
+  kontakte?: Array<{ name: string; erreichbar: string; notiz?: string }>;
   /** Notfallcode (#815): öffnet `<adresse>/notfall`, gilt einmal. Gespeichert ist nur sein Hash – er steht nur hier. */
   notfallcode?: string;
 }
@@ -61,7 +61,8 @@ export interface NotfallblattPlan {
   einleitung: string;
   schluessel: { titel: string; gruppen: Array<Array<{ zeichen: string; hilfe: string | null }>>; hinweis: string; fingerabdruckTitel: string; fingerabdruck: string; fingerabdruckHinweis: string };
   ablage: { titel: string; zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean }>; warnung: string | null };
-  fragen: { titel: string; kontakte: Array<{ name: string; erreichbar: string }>; leer: string | null };
+  /** `seite2`: Verweis, wenn die Kontakte auf eine zweite Seite ausweichen (#812). */
+  fragen: { titel: string; kontakte: Array<{ name: string; erreichbar: string; notiz?: string }>; leer: string | null; seite2: string };
   hilfe: { titel: string; text: string; links: Array<{ marke: string; url: string }>; qr: readonly string[]; qrText: string; handbuch: string };
   /** Ausgesperrt? Notfallcode und wo man ihn eingibt (#815); null ohne Code. */
   notfall: { titel: string; code: string; text: string; adresse: { text: string; link?: string } | null; hinweis: string } | null;
@@ -97,7 +98,7 @@ export function notfallblattPlan(d: Notfalldaten): NotfallblattPlan {
       ],
       warnung: ziele.length ? t('werkbank.notfallblatt.ablage.aussen.warnung') : null,
     },
-    fragen: { titel: t('werkbank.notfallblatt.fragen'), kontakte: d.kontakte ?? [], leer: d.kontakte?.length ? null : t('werkbank.notfallblatt.fragen.leer') },
+    fragen: { titel: t('werkbank.notfallblatt.fragen'), kontakte: d.kontakte ?? [], leer: d.kontakte?.length ? null : t('werkbank.notfallblatt.fragen.leer'), seite2: t('werkbank.notfallblatt.fragen.seite2') },
     hilfe: {
       titel: t('werkbank.notfallblatt.passiert'),
       text: t('werkbank.notfallblatt.passiert.text'),
