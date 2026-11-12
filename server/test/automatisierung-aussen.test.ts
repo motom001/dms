@@ -12,6 +12,8 @@ import {
   automatisierungsProbleme, bereinigeAutomatisierung, bereinigeZiele, kurzform, platzhalterErlaubt, urlProbleme, zielFuer, zielProblem,
   type AussenZiel, type DannUrl,
 } from '../../shared/src/automatisierung';
+import type { KatalogEreignis } from '../../shared/src/ereignisse';
+import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
 import '../src/automatisierung-karten';
 import {
@@ -354,6 +356,47 @@ describe('Nach außen (#671): E-Mail senden', () => {
     }
     const z = await motor.zustellungen(a.id);
     assert.ok(z.every((x) => x.zustand === 'zugestellt' && /\*\*\*@example\.org$/.test(x.ziel)), 'im Verlauf nur gekürzte Adressen');
+  });
+
+  it('An = Feld: Platzhalter mit den Rechten der auslösenden Person; ohne sie mit denen des Systemkontos (Hinweis Sicherheit)', async () => {
+    const { d, konten, motor, markus, gesendet } = await aufbau();
+    const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
+    const lena = await neu('Lena'); const jonas = await neu('Jonas');
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    const kontakt = await d.mappentypen.legeTypAn({ name: 'Kontakt', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+    const auftrag = await d.mappentypen.legeTypAn({ name: 'Auftrag', titelVorlage: '{name}', felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: kontakt.id },
+      { key: 'kontakt', label: 'Kontakt', typ: 'text', format: 'email' },
+    ] });
+    const recht = (ids: string[]): Regelwerk => ({ grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: ids }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] });
+    await d.berechtigungen.setzeBerechtigungen(kontakt.id, recht([lena.id]), true);
+    await d.berechtigungen.setzeBerechtigungen(auftrag.id, recht([lena.id, jonas.id]), true);
+    const stadtwerke = await d.mappen.legeMappeAn({ typId: kontakt.id, werte: { name: 'Stadtwerke' } }, lena.id);
+    const m = await d.mappen.legeMappeAn({ typId: auftrag.id, werte: { name: 'Strom', partner: stadtwerke.id } }, lena.id);
+    const a = await motor.lege({ name: 'Kontakt-Mail', aktiv: true, wenn: { art: 'mappe.geaendert', typ: auftrag.id },
+      dann: [{ id: 'm', art: 'email', an: [{ art: 'feld', feld: 'kontakt' }], betreff: 'Auftrag {titel} mit {partner}', text: 'Partner: {partner}' }] }, markus.id);
+    const geaendert = (von: string): KatalogEreignis => ({ id: crypto.randomUUID(), art: 'mappe.geaendert', daten: { mappe: m.id, typ: auftrag.id, felder: ['kontakt'] },
+      ausloeser: { art: 'benutzer', id: von, konto: von }, erstellt: new Date().toISOString() });
+    // Jonas darf den Auftrag bearbeiten, den Kontakt aber nicht lesen – und setzt das E-Mail-Feld auf seine Adresse.
+    await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom', partner: stadtwerke.id, kontakt: 'jonas@example.org' } }, jonas.id);
+    await motor.ereignis(geaendert(jonas.id));
+    await motor.ausleitung.zustellen();
+    assert.equal(gesendet.length, 1, JSON.stringify((await motor.laeufe(a.id)).map((l) => l.schritte)));
+    assert.equal(gesendet[0].an, 'jonas@example.org');
+    assert.doesNotMatch(gesendet[0].betreff + gesendet[0].text, /Stadtwerke/, 'Titel der verwiesenen Mappe nur für die, die sie lesen dürfen');
+    assert.equal(gesendet[0].betreff, 'Auftrag Strom mit (nicht sichtbar)');
+    // Lena darf den Kontakt lesen: ihre Änderung bringt den Titel.
+    await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom', partner: stadtwerke.id, kontakt: 'lena@example.org' } }, lena.id);
+    await motor.ereignis(geaendert(lena.id));
+    await motor.ausleitung.zustellen();
+    assert.equal(gesendet[1].an, 'lena@example.org');
+    assert.match(gesendet[1].text, /^Partner: Stadtwerke\n/);
+    // Ohne auslösende Person (hier: Lauf aus der Werkbank) mit den Rechten des Systemkontos.
+    await motor.wiedergeben(a.id, m.id, false);
+    await motor.ausleitung.zustellen();
+    assert.equal(gesendet.length, 3);
+    assert.match(gesendet[2].text, /^Partner: Stadtwerke\n/);
   });
 
   it('ohne Mailversand später noch einmal; Bremse je Automatisierung über 24 Stunden', async () => {

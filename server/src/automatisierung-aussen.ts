@@ -24,8 +24,10 @@ import { istVerschluesselt } from './tresor';
  *   geänderten Felder). Platzhalter in Parametern: bei den ersten beiden Stufen nur solche ohne Inhalt (übrige bleiben
  *   leer), Werte mit den Rechten des Systemkontos. Die Adresse selbst hat keine Platzhalter.
  * - **E-Mail senden:** je Empfänger eine Mail (nur Text) mit Hinweissatz am Ende. Platzhalter für Personen mit Konto mit
- *   deren Rechten (#795), für Adressen und E-Mail-Felder mit denen des Systemkontos. Bremse je Automatisierung und Tag
- *   sowie für alle zusammen (über alle Prozesse).
+ *   deren Rechten (#795), für feste Adressen mit denen des Systemkontos. E-Mail-Felder setzt jeder, der die Mappe
+ *   bearbeiten darf – dort mit den Rechten der auslösenden Person (geschnitten mit denen des Systemkontos), nur ohne
+ *   sie (Zeitplan, Datum, System) mit denen des Systemkontos. Bremse je Automatisierung und Tag sowie für alle
+ *   zusammen (über alle Prozesse).
  */
 const tx = uebersetzer({ automatisierung: texte });
 
@@ -102,6 +104,7 @@ DANN_AUSFUEHRER.url = async (k: DannKarte, c: KartenKontext) => {
 
 /* ---------- E-Mail senden ---------- */
 
+/** `fuer`: mit wessen Rechten (zusätzlich zu denen des Systemkontos) die Platzhalter gefüllt werden; null = nur Systemkonto. */
 interface MailZiel { an: string; fuer: string | null }
 
 /** Adressen hinter einem Eintrag in „An“: Personen mit Konto (aktiv, mit echter Adresse) bzw. Adressen. */
@@ -109,7 +112,8 @@ async function adressen(e: MailEmpfaenger, c: KartenKontext): Promise<MailZiel[]
   if (e.art === 'adresse') return istEmail(e.adresse) ? [{ an: e.adresse.trim(), fuer: null }] : [];
   if (e.art === 'feld' && c.mappe && istEmailFeld(c.typ?.felder.find((f) => f.key === e.feld))) {
     const v = c.mappe.werte[e.feld];
-    return (Array.isArray(v) ? v : [v]).filter((x): x is string => typeof x === 'string' && istEmail(x) && !istVerschluesselt(x)).map((x) => ({ an: x.trim(), fuer: null }));
+    // Wer das Feld setzt, bestimmt die Adresse: Platzhalter nicht mit mehr Rechten füllen, als die auslösende Person hat.
+    return (Array.isArray(v) ? v : [v]).filter((x): x is string => typeof x === 'string' && istEmail(x) && !istVerschluesselt(x)).map((x) => ({ an: x.trim(), fuer: c.person }));
   }
   const ids = await c.personen(e as Empfaenger);
   const erg: MailZiel[] = [];
@@ -139,7 +143,7 @@ async function empfaengerDerMail(k: DannEmail, c: KartenKontext): Promise<MailZi
 // eslint-disable-next-line no-control-regex -- Betreff als eine Zeile (keine Kopfzeilen über Platzhalter)
 const eineZeile = (s: string) => s.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, AUSSEN_GRENZEN.betreff);
 
-/** Betreff und Text je Empfänger: Personen mit Konto mit ihren Rechten (#795), Adressen mit denen des Systemkontos. */
+/** Betreff und Text je Empfänger: Personen mit Konto mit ihren Rechten (#795), Feld-Adressen mit denen der auslösenden Person, feste Adressen mit denen des Systemkontos. */
 async function mailFuer(k: DannEmail, z: MailZiel, c: KartenKontext, fuss: string) {
   const fuelle = async (text: string) => (z.fuer ? c.fuelleFuer(text, z.fuer) : { text: await c.fuelle(text), verborgen: 0 });
   const b = await fuelle(k.betreff);

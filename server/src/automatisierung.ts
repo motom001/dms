@@ -286,6 +286,11 @@ export interface KartenKontext {
   fuelleFuer(text: string, an: string | null): Promise<{ text: string; verborgen: number; mappe: boolean }>;
   /** Personen hinter einem Empfänger (aktive Benutzer). */
   personen(e: Empfaenger): Promise<string[]>;
+  /**
+   * Auslösende Person (#671): Benutzer-Id, wenn ein Mensch das Ereignis ausgelöst hat; sonst null (Zeitplan, Datum,
+   * System, Paket, Automatisierung, Probelauf). Mails an ein Feld füllen ihre Platzhalter mit deren Rechten.
+   */
+  person: string | null;
   /** Vermerk für die Historie der Mappe: „durch Automatisierung ‚…‘ (eingerichtet von …)“. */
   anlass: Record<string, unknown>;
   /** Werkbank-Rechte des Systemkontos (#677) – genau die Liste, sonst nichts; fehlt in Tests ohne Werkbank. */
@@ -1319,6 +1324,7 @@ export class Automatisierungen {
       if (!und.ok && !a.sonst.length) return await ende('unzutreffend');
       const kontext: KartenKontext = {
         dienst: this.d.dienst, z, konto, automatisierung: a, mappe, typ, daten: anlass.daten, ereignisId: o.test ? l.id : anlass.id, trocken: o.trocken, personen,
+        person: anlass.ausloeser?.art === 'benutzer' && istUuid(anlass.ausloeser.id) ? anlass.ausloeser.id : null,
         fuelle: (text) => this.fuelle(text, { a, mappe, typ, z, daten: anlass.daten, art: anlass.art }),
         fuelleFuer: async (text, an) => {
           const c = { a, mappe, typ, z, daten: anlass.daten, art: anlass.art };

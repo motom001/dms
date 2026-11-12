@@ -164,6 +164,7 @@ export function EmailKarte({ karte, wenn, typ, ohneMappe, setze, wahl }: {
         </ul>
         {karte.an.length < AUSSEN_GRENZEN.an && <Knopf groesse="klein" onClick={() => setze({ ...karte, an: [...karte.an, { art: 'person', id: '' }] })}>{t('automatisierung.ui.empfaenger.hinzu')}</Knopf>}
         <p className="leise klein">{t('automatisierung.ui.karte.dann.email.an.hilfe')}</p>
+        {karte.an.some((e) => e.art === 'feld') && <p className="leise klein">{t('automatisierung.ui.karte.dann.email.an.feld')}</p>}
       </fieldset>
       <Feld beschriftung={t('automatisierung.ui.karte.dann.email.betreff')} className="breit">
         <input value={karte.betreff} maxLength={AUSSEN_GRENZEN.betreff} onFocus={() => setFeld('betreff')} onChange={(x) => setze({ ...karte, betreff: x.target.value })} />
