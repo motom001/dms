@@ -6,6 +6,14 @@ The search field above the list searches name, identifier and pattern, the folde
 
 --8<-- "ausgeblendet-organisation.md"
 
+## How the editor is built { #aufbau-des-editors }
+
+On the right, a saved number sequence is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details → Status → Print stickers** (only for the archive number) **→ Used in**. Collapsed, each area shows a summary, such as the pattern or the next number; your device remembers what you expand. A new number sequence only has the basic details – without a jump bar.
+
+Only what is in the basic details is saved (**Save number sequence** at the bottom); an error in the pattern marks the basic details red. **Set counter** and **Stickers as PDF** take effect immediately.
+
+![The number sequence “Archive number” on the phone](bilder/werkbank-nummernkreis-handy.png){ width="320" }
+
 ## Creating {#anlegen}
 
 | Detail | Meaning |
@@ -44,7 +52,7 @@ Enter `{nummernkreis:rechnungsnummer}` in the **default value** of a text field.
 
 ## Status and counter {#stand-und-zahlerstand}
 
-The number sequence shows the **next number**, the numbers assigned last and the fields that use it. With **Set counter** you set the counter of the next number in the current period – for instance when switching from another program. This is recorded in the [log](fehlersuche.md#protokoll).
+The area *Status* shows the **next number** and the numbers assigned last, *Used in* the fields that use it. With **Set counter** you set the counter of the next number in the current period – for instance when switching from another program. This is recorded in the [log](fehlersuche.md#protokoll).
 
 Deleting only works if no field uses the number sequence any more.
 

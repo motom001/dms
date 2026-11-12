@@ -1,8 +1,8 @@
 import { feldLabel, optionText } from '../../../shared/src/beschriftung';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  AUTOMATISIERUNG_GRENZEN, automatisierungsProbleme, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, platzhalterFuer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
-  type AutomatisierungAnsicht, type AutomatisierungDaten, type DannKarte, type Empfaenger, type Fassung, type Fehlschlag, type Kontextdaten,
+  AUTOMATISIERUNG_GRENZEN, automatisierungsProblemOrte, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, platzhalterFuer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
+  type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fassung, type Fehlschlag, type Kontextdaten,
   type Lauf, type Schritt, type UndKarte, type WennKarte,
 } from '../../../shared/src/automatisierung';
 import { EREIGNISKATALOG, ereignisSchluessel, type Ereignisgruppe } from '../../../shared/src/ereignisse';
@@ -21,7 +21,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink } from '../bausteine';
+import { Bereich, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungen (#675): Mitte die Liste (Name, Kurzform, an/aus, letzter Lauf,
@@ -189,6 +189,15 @@ const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: W
       : v.art === 'paket' ? !!w && zeitplanFuerPaket(w) && (k.pakete ?? []).some((p) => p.zeitplan) : true);
 const vorratName = (v: { bereich: string; art: string }) => (v.bereich === 'wenn' ? ereignisName(v.art) : t.frei(`automatisierung.ui.karte.${v.bereich}.${v.art}`));
 
+/** Bereiche einer Automatisierung (#1000): neu Grunddaten, Wenn und Dann; gespeichert dazu Ausprobieren, Verlauf, Fassungen. */
+type AutoBereich = 'grunddaten' | 'wenn' | 'dann' | 'ausprobieren' | 'verlauf' | 'fassungen';
+function automatisierungBereiche(gespeichert: boolean): BereichListe<AutoBereich> {
+  return [
+    ['grunddaten', t('automatisierung.ui.bereich.grunddaten')], ['wenn', t('automatisierung.ui.wenn')], ['dann', t('automatisierung.ui.dann')],
+    ...(gespeichert ? [['ausprobieren', t('automatisierung.ui.wiedergeben')], ['verlauf', t('automatisierung.ui.verlauf')], ['fassungen', t('automatisierung.ui.fassungen')]] as const : []),
+  ];
+}
+
 export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; id: string }) {
   const d = useDaten();
   const neu = id === 'neu';
@@ -202,7 +211,11 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
   const [sendet, setSendet] = useState(false);
   const [vorratOffen, setVorratOffen] = useState(false);
   const [ansage, setAnsage] = useState('');
-  const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => setE(kopie(gespeichert)), liste: '/werkbank/automatisierungen' });
+  const [fehlerOrte, setFehlerOrte] = useState<Set<AutoBereich>>(new Set());
+  const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => { setE(kopie(gespeichert)); setFehlerOrte(new Set()); }, liste: '/werkbank/automatisierungen' });
+  // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; Ausprobieren, Verlauf und Fassungen erst nach dem Anlegen.
+  const liste = automatisierungBereiche(!!a);
+  const b = useBereiche(liste, 'automatisierung', a ? id : null);
   // Karten aus dem Vorrat in Wenn, Und oder Dann ziehen; Dann-Karten untereinander umsortieren.
   const ablage = useZiehen({ erlaubt: (quelle, ziel) => quelle.startsWith(`${ziel}|`), fertig: (quelle, ziel) => { const [b, art] = quelle.split('|'); if (b === ziel) fuegeHinzu(b, art); } });
   const reihe = useZiehen({
@@ -211,7 +224,11 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
   if (!k) return z.fehler ? <div className="hinweis schlecht"><p>{z.fehler}</p></div> : <p className="leise">{t('automatisierung.ui.lade')}</p>;
   if (!neu && !a) return <div className="platzhalter"><p>{t('automatisierung.nicht-gefunden')}</p></div>;
   const typ = kontextTyp(e.wenn, k.typen);
-  const probleme = automatisierungsProbleme(e, k);
+  const probleme = automatisierungsProblemOrte(e, k);
+  // Bereiche mit Fehler (#1000): vom Server gemeldet oder – bei gespeicherten Automatisierungen – schon beim Bearbeiten.
+  const hatFehler = (x: AutoBereich) => fehlerOrte.has(x) || (!neu && probleme.some((p) => p.ort === x));
+  const klappe = (x: AutoBereich) => b.klappe(x, hatFehler(x));
+  const kurzWenn = kurzform({ ...e, dann: [] }, k, ereignisName).replace(/ → .*$/, '');
   const gleiche = z.stand!.automatisierungen.filter((x) => x.ausloeser === (a?.ausloeser ?? '') && x.aktiv);
   const position = a ? gleiche.findIndex((x) => x.id === a.id) + 1 : 0;
 
@@ -228,9 +245,13 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
       const x = neu ? await api.automatisierungAnlegen(e) : await api.automatisierungAendern(a!.id, { ...e, version: a!.version });
       await z.laden();
       loeseWache();
-      if (neu) geheZu(`/werkbank/automatisierungen/${x.id}`, true);
-      setMeldung({ art: 'gut', text: t('automatisierung.ui.gespeichert') });
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+      if (neu) { b.merke(x.id); geheZu(`/werkbank/automatisierungen/${x.id}`, true); }
+      setMeldung({ art: 'gut', text: t('automatisierung.ui.gespeichert') }); setFehlerOrte(new Set());
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+      const orte = fehlerBereiche(x, liste, []);
+      setFehlerOrte(new Set(orte)); b.oeffne(orte);
+    } finally { setSendet(false); }
   };
   async function aktion(f: () => Promise<unknown>, gut: string) {
     setMeldung(undefined);
@@ -238,7 +259,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
   }
 
   return (
-    <div className="einspaltig automatisierung">
+    <div className="editorform automatisierung">
       <div className="mappenkopf">
         <p className="ueber">{t('automatisierung.ui.ueber')}</p>
         <h1>{neu ? t('automatisierung.ui.neu.titel') : a!.name} {a && <Zustandschip a={a} />}</h1>
@@ -264,72 +285,87 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
           {a && <button type="button" className="knopf klein" onClick={() => void aktion(async () => { const x = await api.automatisierungKopieren(a.id); geheZu(`/werkbank/automatisierungen/${x.id}`); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</button>}
         </div>
       </div>
+      {b.leiste(hatFehler, t('automatisierung.ui.bereiche'))}
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <Ansage text={ansage} />
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <div className="raster">
-          <label className="eigenschaft"><span>{t('automatisierung.ui.name')}</span><input id="auto-name" value={e.name} maxLength={AUTOMATISIERUNG_GRENZEN.name} onChange={(x) => setE({ ...e, name: x.target.value })} required /></label>
-          <label className="eigenschaft"><span>{t('automatisierung.ui.reihenfolge')} <small>{t('automatisierung.ui.reihenfolge.hilfe')}</small></span>
-            <input id="auto-reihenfolge" type="number" min={REIHENFOLGE.min} max={REIHENFOLGE.max} value={e.reihenfolge} onChange={(x) => setE({ ...e, reihenfolge: Number(x.target.value) })} /></label>
-          <label className="eigenschaft breit"><span>{t('automatisierung.ui.beschreibung.feld')}</span><textarea rows={2} value={e.beschreibung} onChange={(x) => setE({ ...e, beschreibung: x.target.value })} /></label>
-        </div>
-
-        <div className="zeile"><button type="button" className="textknopf klein" aria-expanded={vorratOffen} onClick={() => setVorratOffen(!vorratOffen)}>{t('automatisierung.ui.vorrat')}</button></div>
-        {vorratOffen && <Vorrat ablage={ablage} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}
-
-        <Bereichskasten titel={t('automatisierung.ui.wenn')} hinweis={t('automatisierung.ui.wenn.hinweis')} ablage={ablage.ablage('wenn')}>
-          <WennEditor w={e.wenn} k={k} setze={(w) => setE({ ...e, wenn: w })} />
-        </Bereichskasten>
-        <div className="automatisierung-pfeil" aria-hidden="true">↓</div>
-        <Bereichskasten titel={t('automatisierung.ui.und')} hinweis={e.und.karten.length ? undefined : t('automatisierung.ui.und.leer')} ablage={ablage.ablage('und')}
-          kopf={e.und.karten.length > 1 && <select aria-label={t('automatisierung.ui.und.modus')} value={e.und.modus} onChange={(x) => setE({ ...e, und: { ...e.und, modus: x.target.value as 'alle' | 'eine' } })}>
-            <option value="alle">{t('automatisierung.ui.und.alle')}</option><option value="eine">{t('automatisierung.ui.und.eine')}</option>
-          </select>}
-          fuss={<KarteHinzu bereich="und" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
-          <UndListe karten={e.und.karten} typ={typ} k={k} setze={(karten) => setE({ ...e, und: { ...e.und, karten } })} />
-        </Bereichskasten>
-        <div className="automatisierung-pfeil" aria-hidden="true">↓</div>
-        <Bereichskasten titel={t('automatisierung.ui.dann')} hinweis={e.dann.length ? undefined : t('automatisierung.ui.dann.leer')} ablage={ablage.ablage('dann')} fuss={<KarteHinzu bereich="dann" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
-          <ol className="automatisierung-karten">
-            {e.dann.map((karte, i) => (
-              <li key={karte.id} {...reihe.eintrag(karte.id)}>
-                <div className="karte-kopf">
-                  <button {...reihe.griff(karte.id, vorratName({ bereich: 'dann', art: karte.art }))} onKeyDown={(ev) => ziehTasten(ev, {
-                    hoch: i > 0 ? () => setE({ ...e, dann: umgestellt(e.dann, i, i - 1, 'vor') }) : undefined,
-                    runter: i < e.dann.length - 1 ? () => setE({ ...e, dann: umgestellt(e.dann, i, i + 1, 'nach') }) : undefined,
-                  })}><span aria-hidden="true">⠿</span></button>
-                  <button type="button" className="textknopf" aria-expanded={offenKarte === karte.id} onClick={() => setOffenKarte(offenKarte === karte.id ? null : karte.id)}>
-                    <strong>{vorratName({ bereich: 'dann', art: karte.art })}</strong> <span className="leise">{dannKurz(karte, typ, k)}</span>
-                  </button>
-                  <button type="button" className="textknopf gefahr klein" onClick={() => setE({ ...e, dann: e.dann.filter((x) => x.id !== karte.id) })}>{t('automatisierung.ui.entfernen')}</button>
-                </div>
-                {offenKarte === karte.id && <DannEditor karte={karte} typ={typ} wenn={e.wenn} k={k} eigenesPaket={a?.herkunft === 'paket' ? a.paketId ?? null : undefined} setze={(n) => setE({ ...e, dann: e.dann.map((x) => (x.id === karte.id ? n : x)) })} />}
-              </li>
-            ))}
-          </ol>
-        </Bereichskasten>
-        {probleme.length > 0 && <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul>}
-        <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0}
-          links={a && a.herkunft === 'eigen' && <Knopf art="link" className="gefahr" onClick={async () => {
-            if (await rueckfrage({ titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen'), gefahr: true })) {
-              void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht'));
-            }
-          }}>{t('automatisierung.ui.loeschen')}</Knopf>} />
+      <form id="auto-formular" className="editorform" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+        <Bereich id="grunddaten" titel={t('automatisierung.ui.bereich.grunddaten')} klappe={klappe('grunddaten')} kurz={[e.name, t('automatisierung.ui.bereich.reihenfolge', { reihenfolge: e.reihenfolge })].filter(Boolean).join(' · ')}>
+          <div className="raster">
+            <label className="eigenschaft"><span>{t('automatisierung.ui.name')}</span><input id="auto-name" value={e.name} maxLength={AUTOMATISIERUNG_GRENZEN.name} onChange={(x) => setE({ ...e, name: x.target.value })} required /></label>
+            <label className="eigenschaft"><span>{t('automatisierung.ui.reihenfolge')} <small>{t('automatisierung.ui.reihenfolge.hilfe')}</small></span>
+              <input id="auto-reihenfolge" type="number" min={REIHENFOLGE.min} max={REIHENFOLGE.max} value={e.reihenfolge} onChange={(x) => setE({ ...e, reihenfolge: Number(x.target.value) })} /></label>
+            <label className="eigenschaft breit"><span>{t('automatisierung.ui.beschreibung.feld')}</span><textarea rows={2} value={e.beschreibung} onChange={(x) => setE({ ...e, beschreibung: x.target.value })} /></label>
+          </div>
+          <Probleme liste={probleme} ort="grunddaten" />
+        </Bereich>
+        {/* Wenn mit den Und-Bedingungen (#1000): was die Automatisierung auslöst und wann sie weitermacht. */}
+        <Bereich id="wenn" titel={t('automatisierung.ui.wenn')} klappe={klappe('wenn')} kurz={kurzWenn}>
+          <div className="zeile"><Knopf art="link" groesse="klein" aria-expanded={vorratOffen} onClick={() => setVorratOffen(!vorratOffen)}>{t('automatisierung.ui.vorrat')}</Knopf></div>
+          {vorratOffen && <Vorrat ablage={ablage} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}
+          <Bereichskasten titel={t('automatisierung.ui.wenn')} hinweis={t('automatisierung.ui.wenn.hinweis')} ablage={ablage.ablage('wenn')}>
+            <WennEditor w={e.wenn} k={k} setze={(w) => setE({ ...e, wenn: w })} />
+          </Bereichskasten>
+          <div className="automatisierung-pfeil" aria-hidden="true">↓</div>
+          <Bereichskasten titel={t('automatisierung.ui.und')} hinweis={e.und.karten.length ? undefined : t('automatisierung.ui.und.leer')} ablage={ablage.ablage('und')}
+            kopf={e.und.karten.length > 1 && <select aria-label={t('automatisierung.ui.und.modus')} value={e.und.modus} onChange={(x) => setE({ ...e, und: { ...e.und, modus: x.target.value as 'alle' | 'eine' } })}>
+              <option value="alle">{t('automatisierung.ui.und.alle')}</option><option value="eine">{t('automatisierung.ui.und.eine')}</option>
+            </select>}
+            fuss={<KarteHinzu bereich="und" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
+            <UndListe karten={e.und.karten} typ={typ} k={k} setze={(karten) => setE({ ...e, und: { ...e.und, karten } })} />
+          </Bereichskasten>
+          <Probleme liste={probleme} ort="wenn" />
+        </Bereich>
+        <Bereich id="dann" titel={t('automatisierung.ui.dann')} klappe={klappe('dann')}
+          kurz={e.dann.length ? e.dann.map((x) => vorratName({ bereich: 'dann', art: x.art })).join(' · ') : t('automatisierung.ui.dann.leer')}>
+          <Bereichskasten titel={t('automatisierung.ui.dann')} hinweis={e.dann.length ? undefined : t('automatisierung.ui.dann.leer')} ablage={ablage.ablage('dann')} fuss={<KarteHinzu bereich="dann" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
+            <ol className="automatisierung-karten">
+              {e.dann.map((karte, i) => (
+                <li key={karte.id} {...reihe.eintrag(karte.id)}>
+                  <div className="karte-kopf">
+                    <button {...reihe.griff(karte.id, vorratName({ bereich: 'dann', art: karte.art }))} onKeyDown={(ev) => ziehTasten(ev, {
+                      hoch: i > 0 ? () => setE({ ...e, dann: umgestellt(e.dann, i, i - 1, 'vor') }) : undefined,
+                      runter: i < e.dann.length - 1 ? () => setE({ ...e, dann: umgestellt(e.dann, i, i + 1, 'nach') }) : undefined,
+                    })}><span aria-hidden="true">⠿</span></button>
+                    <button type="button" className="textknopf" aria-expanded={offenKarte === karte.id} onClick={() => setOffenKarte(offenKarte === karte.id ? null : karte.id)}>
+                      <strong>{vorratName({ bereich: 'dann', art: karte.art })}</strong> <span className="leise">{dannKurz(karte, typ, k)}</span>
+                    </button>
+                    <button type="button" className="textknopf gefahr klein" onClick={() => setE({ ...e, dann: e.dann.filter((x) => x.id !== karte.id) })}>{t('automatisierung.ui.entfernen')}</button>
+                  </div>
+                  {offenKarte === karte.id && <DannEditor karte={karte} typ={typ} wenn={e.wenn} k={k} eigenesPaket={a?.herkunft === 'paket' ? a.paketId ?? null : undefined} setze={(n) => setE({ ...e, dann: e.dann.map((x) => (x.id === karte.id ? n : x)) })} />}
+                </li>
+              ))}
+            </ol>
+          </Bereichskasten>
+          <Probleme liste={probleme} ort="dann" />
+        </Bereich>
       </form>
       {a && <>
-        <Wiedergeben a={a} typ={kontextTyp(a.wenn, k.typen)} nachher={() => void z.laden()} />
-        <Verlauf a={a} k={k} d={d.typ} />
-        <Fassungen a={a} k={k} nachher={() => void z.laden()} />
+        <Wiedergeben a={a} typ={kontextTyp(a.wenn, k.typen)} nachher={() => void z.laden()} klappe={klappe('ausprobieren')} />
+        <Verlauf a={a} k={k} d={d.typ} klappe={klappe('verlauf')} />
+        <Fassungen a={a} k={k} nachher={() => void z.laden()} klappe={klappe('fassungen')} />
       </>}
+      <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} formular="auto-formular"
+        meldung={meldung?.art === 'schlecht' ? meldung : undefined}
+        links={a && a.herkunft === 'eigen' && <Knopf art="link" className="gefahr" onClick={async () => {
+          if (await rueckfrage({ titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen'), gefahr: true })) {
+            void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht'));
+          }
+        }}>{t('automatisierung.ui.loeschen')}</Knopf>} />
     </div>
   );
+}
+
+/** Probleme eines Bereichs (#1000) stehen in ihm – nicht gesammelt am Ende des Formulars. */
+function Probleme({ liste, ort }: { liste: Array<{ ort: AutomatisierungOrt; text: string }>; ort: AutomatisierungOrt }) {
+  const hier = [...new Set(liste.filter((x) => x.ort === ort).map((x) => x.text))];
+  return hier.length ? <ul className="fehlertext klein">{hier.map((p) => <li key={p}>{p}</li>)}</ul> : null;
 }
 
 function Bereichskasten({ titel, hinweis, ablage, kopf, fuss, children }: { titel: string; hinweis?: string; ablage: Record<string, unknown>; kopf?: ReactNode; fuss?: ReactNode; children: ReactNode }) {
   const { className, ...rest } = ablage as { className?: string };
   return (
     <section className={`automatisierung-bereich ${className ?? ''}`} {...rest}>
-      <div className="zeile"><h2 className="h3">{titel}</h2>{kopf}</div>
+      <div className="zeile"><h3 className="h4">{titel}</h3>{kopf}</div>
       {hinweis && <p className="leise klein">{hinweis}</p>}
       {children}
       {fuss}
@@ -764,7 +800,7 @@ function Schritte({ l, a }: { l: Lauf; a: AutomatisierungAnsicht }) {
 
 const SCHRITT_ART: Record<string, string> = { ok: 'gut', fehler: 'schlecht', laeuft: 'info', nein: 'leise', uebersprungen: 'leise', offen: 'leise' };
 
-function Wiedergeben({ a, typ, nachher }: { a: AutomatisierungAnsicht; typ: Mappentyp | null; nachher: () => void }) {
+function Wiedergeben({ a, typ, nachher, klappe }: { a: AutomatisierungAnsicht; typ: Mappentyp | null; nachher: () => void; klappe: Klappe }) {
   const [mappe, setMappe] = useState('');
   const [bekannt, setBekannt] = useState<Bezuege>({});
   const [trocken, setTrocken] = useState(true);
@@ -773,8 +809,7 @@ function Wiedergeben({ a, typ, nachher }: { a: AutomatisierungAnsicht; typ: Mapp
   // Auswahl wie ein Verweisfeld (#709); vorgeschlagen werden nur Mappen, die die Automatisierung sehen darf.
   const quelle = useCallback((suche: string) => api.automatisierungTestmappen(a.id, suche), [a.id]);
   return (
-    <div className="blatt">
-      <h2 className="h3">{t('automatisierung.ui.wiedergeben')}</h2>
+    <Bereich id="ausprobieren" titel={t('automatisierung.ui.wiedergeben')} klappe={klappe}>
       <p className="leise klein">{t('automatisierung.ui.wiedergeben.text')}</p>
       <div className="zeile">
         {typ ? <div className="feld">
@@ -792,7 +827,7 @@ function Wiedergeben({ a, typ, nachher }: { a: AutomatisierungAnsicht; typ: Mapp
       </div>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {lauf && <Schritte l={lauf} a={a} />}
-    </div>
+    </Bereich>
   );
 }
 
@@ -808,7 +843,7 @@ function ausloeserText(l: Lauf): string {
  * aufgeklappt, noch nicht erreichte Karten stehen auf „wartet“. Solange der Editor offen ist, alle 2 s nachsehen
  * (mehrere Server: aus der Datenbank).
  */
-function Verlauf({ a }: { a: AutomatisierungAnsicht; k: Kontextdaten; d: unknown }) {
+function Verlauf({ a, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; d: unknown; klappe: Klappe }) {
   const d = useDaten();
   const [laeufe, setLaeufe] = useState<Lauf[] | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -836,12 +871,12 @@ function Verlauf({ a }: { a: AutomatisierungAnsicht; k: Kontextdaten; d: unknown
     };
   });
   return (
-    <div className="blatt">
-      <h2 className="h3">{t('automatisierung.ui.verlauf')}</h2>
+    <Bereich id="verlauf" titel={t('automatisierung.ui.verlauf')} klappe={klappe}
+      kurz={laufend ? t('automatisierung.ui.verlauf.laeuft') : laeufe?.length ? t('automatisierung.ui.bereich.zuletzt', { zeit: zeit(laeufe[0].gestartet) }) : t('automatisierung.ui.verlauf.leer')}>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {laufend && <p className="leise klein" role="status">{t('automatisierung.ui.verlauf.laeuft')}</p>}
       {!laeufe ? <p className="leise">{t('automatisierung.ui.lade')}</p> : !laeufe.length ? <p className="leise">{t('automatisierung.ui.verlauf.leer')}</p> : <Eintragsliste eintraege={eintraege} />}
-    </div>
+    </Bereich>
   );
 }
 
@@ -877,7 +912,7 @@ function unterschiede(alt: FassungDaten | null, neu: FassungDaten, k: Kontextdat
 }
 
 /** Änderungsverlauf (#707): Versionen wie die Historie einer Mappe; aufgeklappt Was · Vorher · Nachher und „Wiederherstellen“. */
-function Fassungen({ a, k, nachher }: { a: AutomatisierungAnsicht; k: Kontextdaten; nachher: () => void }) {
+function Fassungen({ a, k, nachher, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; nachher: () => void; klappe: Klappe }) {
   const d = useDaten();
   const [liste, setListe] = useState<Fassung[] | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -908,11 +943,10 @@ function Fassungen({ a, k, nachher }: { a: AutomatisierungAnsicht; k: Kontextdat
     };
   });
   return (
-    <div className="blatt">
-      <h2 className="h3">{t('automatisierung.ui.fassungen')}</h2>
+    <Bereich id="fassungen" titel={t('automatisierung.ui.fassungen')} klappe={klappe} kurz={t('automatisierung.ui.version', { version: a.version })}>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {!liste ? <p className="leise">{t('automatisierung.ui.lade')}</p> : <Eintragsliste eintraege={eintraege} />}
-    </div>
+    </Bereich>
   );
 }
 

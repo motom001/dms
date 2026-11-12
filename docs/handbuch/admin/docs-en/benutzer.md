@@ -4,10 +4,19 @@ Under **Workbench → Users** you decide who may sign in, with which roles – a
 
 ![A user in the workbench](bilder/werkbank-benutzer.png)
 
+## How the editor is built { #aufbau-des-editors }
+
+On the right, a user is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details → Roles and rights → Stand-in → Sign-in and security → Access**. Collapsed, each area shows a summary, such as "2 roles", "Full administration" or "stand-in: Jonas". Your device remembers what you expand, per user. For yourself, *Access* is missing as long as you are active – you can neither lock nor reproduce yourself.
+
+- **One save for everything:** **Save user** in the bar at the bottom saves name, roles, administration permission and stand-in at once; **Discard** (or Esc) takes back all changes. If one part fails – for instance because the fresh sign-in for the administration permission was cancelled – what came before is saved, and the area with the error is marked red and expanded.
+- **Takes effect immediately** whatever is an action of its own: create password link, reset two-factor and passkeys, sign out devices, give tasks to the stand-in, reproduce an error, deactivate and activate.
+
+![A user on the phone: jump bar at the top, areas collapsed](bilder/werkbank-benutzer-handy.png){ width="320" }
+
 ## Inviting users {#benutzer-einladen}
 
 1. **+ New**
-2. Enter email address and name, tick **Roles** if needed. You give a management permission afterwards on the person (only with "Full administration").
+2. Under *Basic details* enter email address and name, under *Roles and rights* tick **Roles** if needed. You give a management permission afterwards on the person (only with "Full administration").
 3. **Create and invite user** – without email sending the button is called **Create user**. **Discard draft** cancels.
 
 ![Creating a new user](bilder/werkbank-benutzer-neu.png)
@@ -38,9 +47,9 @@ With email sending, users request the link themselves. Without email sending, yo
 - You change the **name** directly on the user. Every user changes their email address themselves under My account (with their password).
     - If a **group for "Full administration"** is set under [Sign-in via a provider](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect), this permission follows the group at every sign-in via the provider: whoever is in the group gets it, whoever no longer belongs loses it (the last person keeps it). A selection of individual areas stays untouched.
 - You can only get at accounts of people who **may manage** with **"Full administration"**: password link, resetting two-factor, deactivating, deleting and "Sign in as …".
-- <span id="abwesenheit"></span>**Absence** – as under the user's "My account" (see [User manual](https://help.ablago.app/benutzer/aktuell/en/profil/#abwesenheit)): on/off, from, until, stand-in. You can enter it for others, for instance in case of illness, and hand over their tasks with **Give all open tasks to ‹stand-in›**. That is recorded in the history of their user folder. If you want to distribute them among several people, use [passing on several at once](aufgaben.md#mehrere-aufgaben-auf-einmal-weitergeben) under Workbench → Tasks (filter *Recipient*).
-- <span id="zugang-sperren"></span>**Block access** (at the very bottom) – **Deactivate user** blocks access immediately and ends all sessions, after a confirmation. The folder stays and keeps the name; it appears everywhere *in italics and struck through* (with the notice "deactivated since …" on hovering, for screen readers "(deactivated)"). All links to them (e.g. as the person responsible) stay valid.
-    - This only works if a **Stand-in** is entered and the user has **no open tasks** any more. If something is missing, the section names the reason; choosing a stand-in and handing over tasks works directly above it under *Absence*.
+- <span id="abwesenheit"></span>**Absence** – as under the user's "My account" (see [User manual](https://help.ablago.app/benutzer/aktuell/en/profil/#abwesenheit)): on/off, from, until, stand-in. It is in the area *Stand-in*. You can enter it for others, for instance in case of illness, and save it with **Save user**. **Give all open tasks to ‹stand-in›** hands over their tasks immediately – only after a changed absence has been saved. That is recorded in the history of their user folder. If you want to distribute them among several people, use [passing on several at once](aufgaben.md#mehrere-aufgaben-auf-einmal-weitergeben) under Workbench → Tasks (filter *Recipient*).
+- <span id="zugang-sperren"></span>**Block access** (area *Access*, at the very bottom) – **Deactivate user** blocks access immediately and ends all sessions, after a confirmation. The folder stays and keeps the name; it appears everywhere *in italics and struck through* (with the notice "deactivated since …" on hovering, for screen readers "(deactivated)"). All links to them (e.g. as the person responsible) stay valid.
+    - This only works if a **Stand-in** is entered and the user has **no open tasks** any more. If something is missing, the section names the reason; choosing a stand-in and handing over tasks works in the area *Stand-in*.
     - The stand-in stays entered and acts **permanently**: whatever still arises for the deactivated person (e.g. "doesn't fit" on folders they created, or a mention in an old text) goes to the stand-in.
     - **Activate user** undoes it; the section then shows since when they were deactivated.
 - **Delete invitation** only works as long as the invitation was never accepted – for instance with a mistyped address. Whoever has already signed in is deactivated instead of deleted, so that "created by" and links remain.
@@ -56,13 +65,13 @@ At least one active person who can sign in always keeps **"Full administration"*
 
 ## Sessions {#sitzungen}
 
-The user shows on which devices they are signed in – with device, browser and last activity. You end individual sessions with **Sign out**, for instance when a device got lost. If they are signed in on several devices, **Sign out everywhere** ends all sessions at once.
+The area *Sign-in and security* shows on which devices the user is signed in – with device, browser and last activity. You end individual sessions with **Sign out**, for instance when a device got lost. If they are signed in on several devices, **Sign out everywhere** ends all sessions at once.
 
 Above it, it says whether they have set up [two-factor sign-in](anmeldeschutz.md#zwei-faktor-anmeldung). **Reset** removes it, e.g. after a lost phone. Below it, it says how many [passkeys](anmeldeschutz.md#passkeys) they have; **Reset** in the block **Passkeys** removes all of them.
 
 ## What does a user see? {#was-sieht-ein-benutzer}
 
-With **Show** under *What does a user see?* you see per folder type how many folders the user may read according to the saved [permissions](berechtigungen.md), with a few examples. The person's everyday permissions always apply – in administration mode they would see everything. If you want to know *why* they see a certain folder or not, use the [test run](berechtigungen.md#testlauf) on the folder type.
+With **Show** under *What does this user see?* (area *Roles and rights*) you see per folder type how many folders the user may read according to the saved [permissions](berechtigungen.md), with a few examples. The person's everyday permissions always apply – in administration mode they would see everything. If you want to know *why* they see a certain folder or not, use the [test run](berechtigungen.md#testlauf) on the folder type.
 
 ## Reproducing errors {#fehler-nachstellen}
 
@@ -89,7 +98,7 @@ Every user has a folder of the [system folder type](mappentypen.md#systemmappent
 Besides the **system role** *Member*, which everyone has, a user can have any number of **roles** – areas of responsibility such as "Tax and finance".
 
 - **Creating, renaming, deleting roles** happens in the Library in the view *Role* – who may do this is governed by the [permissions](berechtigungen.md) on the folder type *Role* (without rules: every user). Role names are unique.
-- **Assigning** only works here in user management (ticks under *Roles*). A role's folder shows in the tab *Users* who has it.
+- **Assigning** only works here in user management (ticks under *Roles* in the area *Roles and rights*, saved with **Save user**). A role's folder shows in the tab *Users* who has it.
 - **Member** is a **system role**: it appears as a role folder, every user has it, and it can neither be renamed nor deleted. The former system role *Administrator* has been an ordinary role without members since this version – rules that name it stay valid; if you don't need it, delete it.
 - **Deleting a role** that users have: allowed – the assignment goes. If a field still links to the role (e.g. "responsible role"), this link must go first.
 - Roles can't be nested.

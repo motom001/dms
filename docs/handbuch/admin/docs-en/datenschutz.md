@@ -138,7 +138,7 @@ In the middle are all access copies with person, date and **status**:
 
 As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). Above the list is the search field (person and status, [as everywhere in the Workbench](uebersicht.md#suchen-und-filtern)), below it the tick box **Only show open ones** – it is ticked by default. Untick it to see delivered and deleted ones too. If the tick box hides something and the list is empty, Ablago says so: “No open access requests. **Show all**”. At the top right is **+ New**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
 
-If you choose an access copy, everything is in one place on the right: **Details** (person, created, response deadline, content), **Deliver …**, **Download** and **Delete** (the proof stays), the **retrieval links** with status and **Withdraw**, and the **history** – created, delivered, retrieved, wrong code. The history comes from the person's history and only contains numbers, no content.
+If you choose an access copy, everything is in one place on the right – organised like a [folder type](mappentypen.md#aufbau-des-editors), with a **jump bar** and **Expand all / Collapse all**: **Details** (person, created, response deadline, content), **Deliver** (as long as the file is available: **Deliver …**, **Download** and **Delete** – the proof stays), the **retrieval links** with status and **Withdraw** (once there are any), and the **history** – created, delivered, retrieved, wrong code. Collapsed, each area shows a summary, such as "Available until …" or "2 links"; your device remembers what you expand per access copy. With fewer than three areas (for instance for a request) they are open without a jump bar. Everything here takes effect immediately – there is nothing to save. The history comes from the person's history and only contains numbers, no content.
 
 ### Defaults for every access request { #einstellungen }
 
@@ -208,7 +208,7 @@ Only **administrators**. A permission of its own "Give access" doesn't exist (ye
 
 ## Delivering the access copy { #auskunft-zustellen }
 
-You send the finished access copy directly from Ablago – choose the access copy in the [list](#liste), on the right **Deliver …** (or straight after creating it). Two ways:
+You send the finished access copy directly from Ablago – choose the access copy in the [list](#liste), on the right in the area *Deliver* **Deliver …** (or straight after creating it; then the area is already open). Two ways:
 
 | | Retrieval link with retrieval code | ZIP by email |
 | --- | --- | --- |

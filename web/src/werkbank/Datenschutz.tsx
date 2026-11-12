@@ -24,7 +24,7 @@ import { falte } from '../../../shared/src/suche';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { FilterHaken, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, useListenSuche } from '../bausteine';
+import { Bereich, FilterHaken, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, useBereiche, useListenSuche, type BereichListe } from '../bausteine';
 import { Kopf } from './Kopf';
 
 /**
@@ -148,6 +148,17 @@ export function AuskunftRechts({ z, id }: { z: DatenschutzZustand; id?: string }
   return <AuskunftDetail key={e.id} e={e} z={z} />;
 }
 
+/** Bereiche einer Auskunft (#1000): Zustellen nur, solange die Datei bereitliegt; Links und Verlauf nur, wenn es sie gibt. */
+type AuskunftBereich = 'angaben' | 'zustellen' | 'links' | 'verlauf';
+function auskunftBereiche(e: AuskunftEintrag, links: number): BereichListe<AuskunftBereich> {
+  return [
+    ['angaben', t('werkbank.auskunft.detail.angaben')],
+    ...(e.bereit ? [['zustellen', t('werkbank.auskunft.bereich.zustellen')] as const] : []),
+    ...(links ? [['links', t('werkbank.auskunft.detail.links')] as const] : []),
+    ...(e.art === 'auskunft' ? [['verlauf', t('werkbank.auskunft.detail.verlauf')] as const] : []),
+  ];
+}
+
 function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand }) {
   const s = z.stand!;
   const d = useDaten();
@@ -155,15 +166,19 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
   const [fehler, setFehler] = useState<string>();
   const links = s.links.filter((l) => l.auskunftId === e.id);
   const b = e.bereit;
+  // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; gemerkt je Auskunft. Aus „Erzeugen → Zustellen“ steht Zustellen offen.
+  const bereiche = useBereiche(auskunftBereiche(e, links.length), 'auskunft', e.id);
+  useEffect(() => { if (zustellen && b) bereiche.oeffne(['zustellen']); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim ersten Anzeigen
   return (
-    <div className="einspaltig">
+    <div className="editorform">
       <div className="mappenkopf">
         <p className="ueber">{t('werkbank.auskunft.detail.ueber')}</p>
         <h1>{titelOder(e.titel)}</h1>
         <p><span className={`chip ${ZUSTAND_CHIP[e.zustand]}`}>{t(`werkbank.auskunft.zustand.${e.zustand}`)}</span>{e.frist && istOffen(e.zustand) && <> · <FristText frist={e.frist} /></>}</p>
       </div>
-      <section className="blatt">
-        <h2 className="h3">{t('werkbank.auskunft.detail.angaben')}</h2>
+      {bereiche.leiste(undefined, t('werkbank.auskunft.bereiche'))}
+      <Bereich id="angaben" titel={t('werkbank.auskunft.detail.angaben')} klappe={bereiche.klappe('angaben')}
+        kurz={e.mappen !== undefined ? t('werkbank.auskunft.detail.inhaltText', { mappen: t('werkbank.auskunft.liste.mappen', { anzahl: e.mappen }), dokumente: t('werkbank.auskunft.detail.dokumente', { anzahl: e.dokumente ?? 0 }) }) : zeit(e.zeit)}>
         <dl className="eigenschaften">
           {e.mappeId && <><dt>{t('werkbank.auskunft.detail.person')}</dt><dd><PersonVerweis id={e.mappeId} titel={e.titel} /></dd></>}
           <dt>{e.art === 'anfrage' ? t('werkbank.auskunft.detail.angefragt') : t('werkbank.auskunft.detail.erstellt')}</dt><dd>{zeit(e.zeit)}</dd>
@@ -171,38 +186,42 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
           {e.mappen !== undefined && <><dt>{t('werkbank.auskunft.detail.inhalt')}</dt><dd>{t('werkbank.auskunft.detail.inhaltText', { mappen: t('werkbank.auskunft.liste.mappen', { anzahl: e.mappen }), dokumente: t('werkbank.auskunft.detail.dokumente', { anzahl: e.dokumente ?? 0 }) })}{b ? `, ${groesse(b.bytes)}` : ''}{e.verschluesselt ? ` · ${t('werkbank.auskunft.detail.passwort')}` : ''}</dd></>}
         </dl>
         {e.art === 'anfrage' && <><p>{t('werkbank.auskunft.detail.anfrage')}</p>
-          <p className="knoepfe"><Link to={`/werkbank/auskuenfte/neu?mappe=${encodeURIComponent(e.mappeId ?? '')}`} className="knopf primaer">{t('werkbank.auskunft.detail.erzeugen')}</Link></p></>}
+          <p className="knoepfe"><KnopfLink to={`/werkbank/auskuenfte/neu?mappe=${encodeURIComponent(e.mappeId ?? '')}`} art="haupt">{t('werkbank.auskunft.detail.erzeugen')}</KnopfLink></p></>}
         {e.art === 'auftrag' && <p className="leise">{t('werkbank.auskunft.detail.auftrag')}</p>}
-        {e.art === 'auskunft' && (b ? <p className="leise klein">{t('werkbank.auskunft.detail.bis', { zeit: zeit(b.bis) })}</p> : <p className="leise klein">{t('werkbank.auskunft.detail.weg')}</p>)}
+        {e.art === 'auskunft' && !b && <p className="leise klein">{t('werkbank.auskunft.detail.weg')}</p>}
         {e.fristAufgabe && e.mappeId && d.typen.length > 0 && <p className="klein"><Link to={`/ablage/eingang/${e.fristAufgabe}`} className="verweis">{t('werkbank.auskunft.detail.aufgabe')}</Link></p>}
-        {fehler && <p className="fehlertext">{fehler}</p>}
-        {b && (
+      </Bereich>
+      {b && (
+        <Bereich id="zustellen" titel={t('werkbank.auskunft.bereich.zustellen')} hilfe={<Hilfe ort="werkbank.auskunft.zustellen" />} klappe={bereiche.klappe('zustellen', !!fehler)}
+          kurz={t('werkbank.auskunft.detail.bis', { zeit: zeit(b.bis) })}>
+          <p className="leise klein">{t('werkbank.auskunft.detail.bis', { zeit: zeit(b.bis) })}</p>
+          {fehler && <p className="fehlertext">{fehler}</p>}
           <p className="knoepfe">
-            <button type="button" className={`knopf${zustellen ? '' : ' primaer'}`} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>{zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}</button>
+            <Knopf art={zustellen ? 'neben' : 'haupt'} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>{zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}</Knopf>
             <a className="knopf" href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>{t('werkbank.auskunft.detail.herunterladen')}</a>
             <Knopf className="gefahr-rand" onClick={async () => {
               if (!(await rueckfrage({ titel: t('werkbank.auskunft.detail.loeschenFrage'), text: t('werkbank.auskunft.detail.loeschenText', { titel: titelOder(b.titel), zeit: zeit(b.erstellt) }), ja: t('werkbank.auskunft.detail.loeschen'), gefahr: true }))) return;
               try { await api.auskunftLoeschen(b.id); await z.laden(); } catch (x) { setFehler((x as Error).message); }
             }}>{t('werkbank.auskunft.detail.loeschen')}</Knopf>
           </p>
-        )}
-        {b && zustellen && <Zustellen a={b} s={s} nachher={z.laden} />}
-      </section>
+          {zustellen && <Zustellen a={b} s={s} nachher={z.laden} />}
+        </Bereich>
+      )}
       {links.length > 0 && (
-        <section className="blatt">
-          <h2 className="h3">{t('werkbank.auskunft.detail.links')} <Hilfe ort="werkbank.auskunft.zustellen" /></h2>
+        <Bereich id="links" titel={t('werkbank.auskunft.detail.links')} hilfe={<Hilfe ort="werkbank.auskunft.zustellen" />} klappe={bereiche.klappe('links')}
+          kurz={t('werkbank.auskunft.bereich.links.kurz', { anzahl: links.length })}>
           <ul className="auskunft-links">{links.map((l) => <LinkZeile key={l.id} l={l} nachher={z.laden} />)}</ul>
-        </section>
+        </Bereich>
       )}
       {e.art === 'auskunft' && (
-        <section className="blatt">
-          <h2 className="h3">{t('werkbank.auskunft.detail.verlauf')}</h2>
+        <Bereich id="verlauf" titel={t('werkbank.auskunft.detail.verlauf')} klappe={bereiche.klappe('verlauf')}
+          kurz={e.verlauf.length ? t('werkbank.auskunft.bereich.verlauf.kurz', { anzahl: e.verlauf.length }) : t('werkbank.auskunft.detail.verlaufLeer')}>
           {!e.verlauf.length ? <p className="leise">{t('werkbank.auskunft.detail.verlaufLeer')}</p> : (
             <ul className="stapel auskunft-verlauf">{e.verlauf.map((v, i) => (
               <li key={i} className={v.erfolg === false ? 'fehlertext' : undefined}><span className="leise klein">{zeit(v.zeit)}{v.von ? ` · ${v.von}` : ''}</span><br />{v.text}</li>
             ))}</ul>
           )}
-        </section>
+        </Bereich>
       )}
     </div>
   );

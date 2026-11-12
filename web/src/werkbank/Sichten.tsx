@@ -17,7 +17,6 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
-import { Bereich, SICHT_BEREICHE, useBereiche, type Klappe, type SichtBereich } from '../einrichtung/Bereich';
 import { elternkette, SichtBerechtigungen, SichtTestlauf } from './SichtRechte';
 import { sichtRegelProblem, sichtRegelwerkVon } from '../../../shared/src/sichtrechte';
 import { rueckfrage } from '../rueckfrage';
@@ -25,7 +24,7 @@ import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, Suchfeld, useListenSuche, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
+import { Bereich, FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
 import { paketVonSicht, paketWahl, quellenSicht } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
@@ -163,6 +162,13 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
     </>
   );
 }
+
+/** Bereiche des Ansichten-Editors (#148) in der Reihenfolge der Sprungleiste. */
+const SICHT_BEREICHE = [
+  ['grunddaten', t('mappentypen.bereich.grunddaten')], ['mappentypen', t('mappentypen.bereich.mappentypen')], ['trefferliste', t('mappentypen.bereich.trefferliste')], ['bedingungen', t('mappentypen.bereich.bedingungen')],
+  ['berechtigungen', t('mappentypen.bereich.berechtigungen')], ['testlauf', t('mappentypen.bereich.testlauf')],
+] as const;
+type SichtBereich = (typeof SICHT_BEREICHE)[number][0];
 
 const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [], trefferliste: null, berechtigungen: null, symbol: null });
 const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen, trefferliste: s.trefferliste ?? null, berechtigungen: s.berechtigungen ?? null, symbol: s.symbol ?? null, beschriftungen: s.beschriftungen ?? null });

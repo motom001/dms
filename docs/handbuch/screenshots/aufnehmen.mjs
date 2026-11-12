@@ -974,7 +974,7 @@ async function main() {
   await s.locator('#berechtigungen').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-berechtigungen');
   {
-    await s.locator('.sprungleiste').getByRole('button', { name: w('Testlauf') }).click();
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Testlauf') }).click();
     const test = s.locator('#testlauf');
     // Benutzer und Testmappe wie im Verweisfeld (#371); das Ergebnis erscheint ohne „Prüfen“.
     await test.getByLabel(w('Benutzer'), { exact: true }).fill(MITGLIED.name);
@@ -1093,7 +1093,7 @@ async function main() {
   await s.evaluate(() => { try { localStorage.removeItem('dms.typeditor.offen'); } catch { /* egal */ } });
   await geheZu(s, `/werkbank/typen/${vertrag.id}`);
   await bild(s, 'werkbank-mappentyp');
-  await s.locator('.sprungleiste').getByRole('button', { name: w('Felder') }).click();
+  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Felder') }).click();
   await s.locator('button.feldkopfknopf').filter({ hasText: 'Kündigung bis' }).click();
   await s.locator('.feldzeile.offen').scrollIntoViewIfNeeded();
   await bild(s, 'werkbank-feld');
@@ -1107,19 +1107,26 @@ async function main() {
   await bild(s, 'werkbank-typen-suche');
   await geheZu(s, `/werkbank/typen/${d.benutzerTyp.id}`);
   await bild(s, 'werkbank-systemtyp');
+  // Benutzer (#1000): Sprungleiste und Bereiche wie beim Mappentyp – bestehend zugeklappt mit Kurzinfos.
   await geheZu(s, `/werkbank/benutzer/${d.mitglied.id}`);
+  await s.locator('[data-sprungleiste]').waitFor();
   await bild(s, 'werkbank-benutzer');
   await geheZu(s, '/werkbank/benutzer/neu');
   await bild(s, 'werkbank-benutzer-neu');
   // Archivnummern (#345): Aufkleber drucken beim Nummernkreis „Archivnummer“.
+  // Seit #1000 ein Bereich: über die Sprungleiste öffnen (auf eindeutige Elemente warten, nicht auf Köpfe mit Hilfe).
   await geheZu(s, '/werkbank/nummernkreise/archivnummer');
-  await s.getByRole('heading', { name: w(/Aufkleber drucken/) }).waitFor();
-  await s.getByRole('heading', { name: w(/Aufkleber drucken/) }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Aufkleber drucken'), exact: true }).click();
+  await s.locator('#aufkleber-inhalt form').waitFor();
+  await s.locator('#aufkleber').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-aufkleber');
   // Stempel (#394): Vorlage „Kopie für …“ mit Vorschau – seit #990 aus der Liste in der Mitte geöffnet.
   await geheZu(s, '/werkbank/stempel');
   await s.locator('.spalte.liste a[href="/werkbank/stempel/kopie"]').click();
   await s.locator('.stempeleditor').waitFor();
+  // Bereiche (#1000): alle aufklappen, damit Angaben und Vorschau zu sehen sind.
+  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+  await s.locator('#stempel-name').waitFor();
   await bild(s, 'werkbank-stempel');
   // Automatisierungen (#675): Beispiel aus dem Handbuch – Vertrag „Kündigung bis“ in 30 Tagen → Aufgabe an Verantwortlich.
   // Ein Probelauf füllt den Verlauf. Bilder: Liste und Editor, aufgeklappte Dann-Karte, dunkel und am Handy.
@@ -1131,15 +1138,17 @@ async function main() {
       dann: [{ art: 'aufgabe', als: 'aufgabe', faellig: 7, empfaenger: [{ art: 'feld', feld: 'verantwortlich' }], text: 'Bitte {titel} prüfen – kündbar bis {kuendigung_bis}.' }] });
     await api('POST', `/api/werkbank/automatisierungen/${auto.id}/wiedergeben`, { mappeId: d.strom.id, trocken: true });
     await geheZu(s, `/werkbank/automatisierungen/${auto.id}`);
+    // Bereiche (#1000): erst zugeklappt nichts zu sehen – alle aufklappen.
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
     await s.locator('.automatisierung-bereich').first().waitFor();
     await bild(s, 'werkbank-automatisierungen');
     await s.locator('.automatisierung-karten .karte-kopf button[aria-expanded]').first().click();
     await s.locator('.automatisierung-karten .karte.offen').scrollIntoViewIfNeeded();
     await bild(s, 'werkbank-automatisierung-karte');
-    await s.getByRole('heading', { name: w('Verlauf'), exact: true }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await s.locator('#verlauf').evaluate((e) => e.scrollIntoView({ block: 'start' }));
     await s.locator('.automatisierung-schritte').first().waitFor({ state: 'attached' }).catch(() => null);
     // Verlauf wie die Historie (#707): den Probelauf aufklappen, damit Karte · Ergebnis · Einzelheiten zu sehen ist.
-    await s.locator(`.blatt:has(> h2:text-is("${w('Verlauf')}")) .historie summary`).first().click().catch(() => null);
+    await s.locator('#verlauf .historie summary').first().click().catch(() => null);
     await bild(s, 'werkbank-automatisierung-verlauf');
     for (const [name, schema, viewport] of [['werkbank-automatisierung-dunkel', 'dark', { width: 1440, height: 860 }], ['werkbank-automatisierung-handy', 'light', { width: 393, height: 852 }]]) {
       const handy = viewport.width < 500;
@@ -1148,8 +1157,10 @@ async function main() {
       await ka.addCookies([{ name: cn, value: cw, url: BASIS }]);
       const sa = await ka.newPage();
       await geheZu(sa, `/werkbank/automatisierungen/${auto.id}`);
-      await sa.locator('.automatisierung-bereich').first().waitFor();
-      await bild(sa, name);
+      // Dunkel ganz aufgeklappt; am Handy wie beim Mappentyp zugeklappt mit Sprungleiste und Kurzinfos (#1000).
+      if (!handy) await sa.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+      await (handy ? sa.locator('[data-sprungleiste]') : sa.locator('.automatisierung-bereich').first()).waitFor();
+      await bild(sa, name, handy ? { fullPage: true } : {});
       await ka.close();
     }
   }
@@ -1175,6 +1186,8 @@ async function main() {
     // Liste der Auskünfte (#668): die neue Auskunft wählen, rechts Zustellen.
     await geheZu(s, '/werkbank/auskuenfte');
     await s.locator('.spalte.liste .eintrag').first().click();
+    // Bereiche (#1000): „Zustellen“ über die Sprungleiste öffnen.
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Zustellen'), exact: true }).click();
     await s.getByRole('button', { name: w('Zustellen …') }).first().click();
     await s.getByRole('radio', { name: w(/Abruf-Link mit Abrufcode/) }).check();
     await s.getByRole('checkbox', { name: w(/Link per E-Mail/) }).uncheck();
@@ -1212,9 +1225,25 @@ async function main() {
   await api('PUT', '/api/werkbank/postfaecher-oauth/microsoft', { clientId: '0b5c6a1e-1234-4c8d-9e0f-5a6b7c8d9e0f', clientSecret: 'nur-fuer-bilder', tenant: 'common' });
   const pfOauth = (await api('POST', '/api/werkbank/postfaecher', { name: 'Büro', aktiv: false, server: 'outlook.office365.com', benutzer: 'buero@example.org', anmeldung: 'oauth', anbieter: 'microsoft' })).at(-1);
   await geheZu(s, `/werkbank/postfaecher/${pfOauth.id}`);
-  await s.getByRole('heading', { name: w(/Anmeldung per OAuth 2.0/) }).waitFor();
-  await s.getByRole('heading', { name: w(/Anmeldung per OAuth 2.0/) }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  // Seit #1000 ein Bereich: über die Sprungleiste öffnen (Kopf mit Hilfesymbol – auf den Inhalt warten).
+  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Anmeldung per OAuth 2.0'), exact: true }).click();
+  await s.locator('#pf-oauth-client').waitFor();
+  await s.locator('#anbieter').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-postfach-oauth');
+  // Editoren am Handy (#1000): Sprungleiste oben, Bereiche zugeklappt mit Kurzinfo – wie beim Mappentyp.
+  {
+    const kh = await browser.newContext({ viewport: { width: 393, height: 852 }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    const [cn, cw] = d.adminCookie.split('=');
+    await kh.addCookies([{ name: cn, value: cw, url: BASIS }]);
+    const sh = await kh.newPage();
+    for (const [name, pfad] of [['werkbank-benutzer-handy', `/werkbank/benutzer/${d.mitglied.id}`], ['werkbank-postfach-handy', `/werkbank/postfaecher/${pfOauth.id}`],
+      ['werkbank-nummernkreis-handy', '/werkbank/nummernkreise/archivnummer'], ['werkbank-stempel-handy', '/werkbank/stempel/kopie']]) {
+      await geheZu(sh, pfad);
+      await sh.locator('[data-sprungleiste]').waitFor();
+      await bild(sh, name, { fullPage: true });
+    }
+    await kh.close();
+  }
   await geheZu(s, '/werkbank/designs');
   await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-designs');

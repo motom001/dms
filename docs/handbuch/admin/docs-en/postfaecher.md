@@ -9,7 +9,9 @@ Ablago can **fetch one or more email mailboxes via IMAP** and take over **every 
 
 ## Setting up a mailbox { #postfach-einrichten }
 
-**Workbench → Mailboxes → + New**:
+**Workbench → Mailboxes → + New**. On the right, the mailbox is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (fetch, name, for) **→ Connection** (server to password, with **Test connection**) **→ Fetching** (folder to original email) **→ Sign-in via OAuth 2.0** (only with OAuth) **→ Status** (after creating). Collapsed, each area shows a summary, such as "Folder INBOX · every 5 minutes"; your device remembers what you expand per mailbox. **Save mailbox** at the bottom saves basic details, connection and fetching at once; if Ablago rejects a detail, its area is marked red and expanded.
+
+![A mailbox on the phone: jump bar and areas](bilder/werkbank-postfach-handy.png){ width="320" }
 
 | Detail | Meaning |
 | --- | --- |
@@ -26,7 +28,7 @@ Ablago can **fetch one or more email mailboxes via IMAP** and take over **every 
 | Only emails with attachments | others stay unchanged in the mailbox |
 | Original email as .eml | default on: the whole email is additionally attached to the post as a document |
 
-**Test connection** signs in, names the number of emails in the folder and says in case of errors what the cause is: sign-in refused, server unreachable, certificate invalid. A stored password (or the OAuth sign-in) only goes to the stored server, port and encryption: if you change one of them, enter the password anew (or save and sign in anew). **Fetch now** fetches immediately. **Remove** deletes the mailbox from Ablago after a confirmation; the emails in the mailbox stay as they are.
+**Test connection** signs in, names the number of emails in the folder and says in case of errors what the cause is: sign-in refused, server unreachable, certificate invalid. A stored password (or the OAuth sign-in) only goes to the stored server, port and encryption: if you change one of them, enter the password anew (or save and sign in anew). **Fetch now** (area *Status*) fetches immediately. **Remove mailbox** (bottom left) deletes the mailbox from Ablago after a confirmation; the emails in the mailbox stay as they are.
 
 Under *Status* are the last fetch, the emails taken over most recently with a link to the post, and errors. If fetching fails several times in a row, Ablago waits longer and longer between attempts (up to 6 hours) and writes an email to the administrators after the third error.
 
@@ -54,7 +56,7 @@ For this you need **your own app registration** at the provider – the Ablago p
 1. Under [Email and address](installation.md#e-mail-und-adresse), enter **Ablago's address** (e.g. `https://dms.example.org`). From it the **redirect URI** `https://dms.example.org/api/oauth/postfach/rueckruf` results; the workbench shows it. Signing in in the browser needs an **https address** (http only via `localhost`); without one, the **device code** works with Microsoft (see below).
 2. Create the app at the provider (guides below).
 3. **Workbench → Mailboxes → + New**: *Sign-in* **OAuth 2.0**, choose the *provider* – server, port and encryption are prefilled (`outlook.office365.com` or `imap.gmail.com`, 993, SSL/TLS). The *username* is the mailbox's email address. **Save**.
-4. Under *App at the provider*, enter **client ID** and **client secret**, for Microsoft the **tenant**, **Save app**.
+4. In the area *Sign-in via OAuth 2.0* under *App at the provider*, enter **client ID** and **client secret**, for Microsoft the **tenant**, **Save app**. The app has a save of its own because it applies to all mailboxes of this provider (and to [email sending](e-mail-versand.md)).
 5. **Sign in in the browser**: Ablago redirects you to the provider; after signing in and consenting you come back to the workbench. Or **Sign in with device code**: Ablago shows a code and an address; there you sign in on any device, and the workbench waits meanwhile.
 6. **Test connection**.
 

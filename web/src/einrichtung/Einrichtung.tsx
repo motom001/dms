@@ -32,7 +32,6 @@ import { t, t as tx, tn } from '../sprache';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../shared/src/stempel';
 import { useStempelVorlagen } from '../ablage/Stempel';
-import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
 import { FELDFORMATE, formatName, HEUTE, istFeldformat, type Feldformat } from '../../../shared/src/feldformate';
 import { abflussBestaetigen } from '../werkbank/ErkennungPaket';
@@ -42,7 +41,7 @@ import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
-import { abfangen, Knopf } from '../bausteine';
+import { abfangen, Bereich, Knopf, useBereiche, type Klappe } from '../bausteine';
 import { ArchivLeer, mitStichtag } from './ArchivLeer';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
@@ -64,6 +63,13 @@ interface EntwurfAbschnitt { _uid: string; vor: string; titel: string; eingeklap
 /** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
 type EntwurfRegister = Omit<Register, 'felder' | 'abschnitte'> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean; abschnitte?: EntwurfAbschnitt[] };
 /** Trefferliste im Entwurf (#75): Spalten als _titel usw. bzw. feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
+/** Bereiche des Mappentyp-Editors (#144) in der Reihenfolge der Sprungleiste. */
+export const TYP_BEREICHE = [
+  ['grunddaten', t('mappentypen.bereich.grunddaten')], ['felder', t('mappentypen.bereich.felder')], ['titel', t('mappentypen.bereich.titel')], ['trefferlisten', t('mappentypen.bereich.trefferlisten')],
+  ['register', t('mappentypen.bereich.register')], ['archiv', t('mappentypen.bereich.archivmodus')], ['stempel', t('mappentypen.bereich.stempel-beim-weitergeben')], ['erkennung', t('mappentypen.bereich.erkennung')], ['berechtigungen', t('mappentypen.bereich.berechtigungen')], ['testlauf', t('mappentypen.bereich.testlauf')], ['pakete', t('mappentypen.bereich.pakete')], ['ki', t('mappentypen.bereich.ki')],
+] as const;
+export type TypBereich = (typeof TYP_BEREICHE)[number][0];
+
 interface EntwurfListe { _uid: string; _neu?: boolean; key: string; name: string; spalten: string[]; standard: boolean; beschriftungen?: Trefferliste['beschriftungen'] }
 interface Entwurf {
   id: string; name: string;
@@ -211,21 +217,10 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   const [offen, setOffen] = useState<number | null>(null);
   const [ansage, setAnsage] = useState('');
 
-  // Bereiche (#144): neu = alle offen, bestehend = zu bzw. wie zuletzt auf diesem Gerät.
-  const [auf, setAuf] = useState<Set<TypBereich>>(() => {
-    const x = new Set<TypBereich>(neu ? TYP_BEREICHE.map(([k]) => k) : liesOffen(typ.id) ?? []);
-    const h = location.hash.slice(1);
-    if (TYP_BEREICHE.some(([k]) => k === h)) x.add(h as TypBereich);
-    return x;
-  });
+  // Bereiche (#144, Baustein seit #1000): neu = alle offen, bestehend = zu bzw. wie zuletzt auf diesem Gerät.
+  const bereiche = useBereiche(TYP_BEREICHE, 'typ', typ?.id ?? null);
   const [fehlerOrte, setFehlerOrte] = useState<Set<TypBereich>>(new Set());
-  const stelle = (n: Set<TypBereich>) => { if (!neu) merkeOffen(e.id, n); return n; };
-  const springe = (k: TypBereich) => setTimeout(() => document.getElementById(k)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
-  const oeffne = (ks: TypBereich[], springen = true) => {
-    setAuf((x) => stelle(new Set([...x, ...ks])));
-    if (springen && ks[0]) springe(ks[0]);
-  };
-  useEffect(() => { const h = location.hash.slice(1); if (TYP_BEREICHE.some(([k]) => k === h)) springe(h as TypBereich); }, []);
+  const oeffne = bereiche.oeffne;
   // Drag & Drop (#74): Felder umsortieren oder auf ein Feldregister ziehen; ändert nur den Entwurf.
   const zf = useZiehen({
     erlaubt: (_q, ziel, ort) => ort !== 'in' || ziel.startsWith('reg:'),
@@ -273,10 +268,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     berechtigungen: e.berechtigungen.regeln.some((r) => !!regelProblem(r, entwurfTyp)),
   };
   const hatFehler = (k: TypBereich) => fehlerOrte.has(k) || !!liveFehler[k];
-  const klappe = (k: TypBereich): Klappe => ({
-    offen: auf.has(k), fehler: hatFehler(k),
-    umschalten: () => setAuf((x) => { const n = new Set(x); if (n.has(k)) n.delete(k); else n.add(k); return stelle(n); }),
-  });
+  const klappe = (k: TypBereich): Klappe => bereiche.klappe(k, hatFehler(k));
   const unpassend = gespeichert ? d.zaehler.typen[gespeichert.id]?.unpassend ?? 0 : 0;
 
   const setzeFeld = (i: number, patch: Partial<EntwurfFeld>) => setE((x) => {
@@ -370,7 +362,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       const sauber = entwurfAus(mappentyp);
       setE(sauber); setBasis(JSON.stringify(sauber)); setStand(mappentyp.geaendert); setFehler(null); setOffen(null); setFehlerOrte(new Set());
       // Ein neuer Typ bleibt nach dem Anlegen aufgeklappt wie gerade.
-      if (neu) merkeOffen(mappentyp.id, auf);
+      if (neu) bereiche.merke(mappentyp.id);
       loeseWache();
       await d.neuLaden();
       if (neu) geheZu(`/werkbank/typen/${mappentyp.id}`);
@@ -428,15 +420,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       {gespeichert && !system && <div className="knoepfe"><Link to={`/werkbank/typen/neu?kopie=${gespeichert.id}`} className="knopf klein" title={t('mappentypen.editor.neuen-mappentyp-mit-feldern')}>{t('mappentypen.editor.mappentyp-kopieren')}</Link></div>}
       </div>
 
-      <nav className="sprungleiste" aria-label={t('mappentypen.editor.bereiche-des-mappentyps')}>
-        {TYP_BEREICHE.map(([k, name]) => (
-          <button key={k} type="button" className={`sprung${auf.has(k) ? ' an' : ''}${hatFehler(k) ? ' fehler' : ''}`} onClick={() => oeffne([k])}
-            title={hatFehler(k) ? t('mappentypen.editor.fehler', { name }) : name}>{name}{hatFehler(k) && <span className="fehlerpunkt" aria-label={t('mappentypen.editor.mit-fehler')}>!</span>}</button>
-        ))}
-        <span className="luecke" aria-hidden="true" />
-        <button type="button" className="textknopf klein" onClick={() => setAuf(stelle(auf.size === TYP_BEREICHE.length ? new Set() : new Set(TYP_BEREICHE.map(([k]) => k))))}>
-          {auf.size === TYP_BEREICHE.length ? t('mappentypen.editor.alle-zuklappen') : t('mappentypen.editor.alle-aufklappen')}</button>
-      </nav>
+      {bereiche.leiste(hatFehler, t('mappentypen.editor.bereiche-des-mappentyps'))}
 
       {system && (
         <div className="hinweis info"><p>{system === 'benutzer'

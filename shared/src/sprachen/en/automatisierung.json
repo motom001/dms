@@ -417,5 +417,9 @@
   "vorlage.ui.uebersicht_one": "{anzahl} planned run is paused.",
   "vorlage.ui.uebersicht_other": "{anzahl} planned runs are paused.",
   "vorlage.ui.uebersicht.text": "The person who set it up is deactivated or may no longer read the folder. It only runs once you resume it – with their rights at that time.",
-  "vorlage.ui.uebersicht.knopf": "To the automation templates"
+  "vorlage.ui.uebersicht.knopf": "To the automation templates",
+  "ui.bereiche": "Areas of the automation",
+  "ui.bereich.grunddaten": "Basic details",
+  "ui.bereich.reihenfolge": "Order {reihenfolge}",
+  "ui.bereich.zuletzt": "last {zeit}"
 }

@@ -6,6 +6,14 @@ Das Suchfeld über der Liste sucht in Name, Kennung und Muster, im Mappentyp und
 
 --8<-- "ausgeblendet-organisation.md"
 
+## Aufbau des Editors { #aufbau-des-editors }
+
+Ein gespeicherter Nummernkreis ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten → Stand → Aufkleber drucken** (nur bei der Archivnummer) **→ Verwendet in**. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa das Muster oder die nächste Nummer; was du aufklappst, merkt sich dein Gerät. Ein neuer Nummernkreis hat nur die Grunddaten – ohne Sprungleiste.
+
+Gespeichert wird nur, was in den Grunddaten steht (**Nummernkreis speichern** unten); ein Fehler im Muster markiert die Grunddaten rot. **Zählerstand setzen** und **Aufkleber als PDF** wirken sofort.
+
+![Der Nummernkreis „Archivnummer“ am Handy](bilder/werkbank-nummernkreis-handy.png){ width="320" }
+
 ## Anlegen
 
 | Angabe | Bedeutung |
@@ -44,7 +52,7 @@ Trage im **Standardwert** eines Textfelds `{nummernkreis:rechnungsnummer}` ein. 
 
 ## Stand und Zählerstand
 
-Beim Nummernkreis stehen die **nächste Nummer**, die zuletzt vergebenen Nummern und die Felder, die ihn verwenden. Mit **Zählerstand setzen** legst du den Zähler der nächsten Nummer im aktuellen Zeitraum fest – etwa beim Umstieg aus einem anderen Programm. Das steht im [Protokoll](fehlersuche.md#protokoll).
+Im Bereich *Stand* stehen die **nächste Nummer** und die zuletzt vergebenen Nummern, unter *Verwendet in* die Felder, die ihn verwenden. Mit **Zählerstand setzen** legst du den Zähler der nächsten Nummer im aktuellen Zeitraum fest – etwa beim Umstieg aus einem anderen Programm. Das steht im [Protokoll](fehlersuche.md#protokoll).
 
 Löschen geht nur, wenn kein Feld den Nummernkreis mehr verwendet.
 

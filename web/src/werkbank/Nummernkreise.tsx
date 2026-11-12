@@ -10,7 +10,7 @@ import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketFilter, useListenSuche } from '../bausteine';
+import { abfangen, Bereich, Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketFilter, useBereiche, useListenSuche, type BereicheZustand, type BereichListe } from '../bausteine';
 import { paketVonKreis, paketWahl, quellenKreis } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 
@@ -66,74 +66,111 @@ export function NummernkreiseListe({ z, offen, pakete = [] }: { z: NummernkreisZ
   );
 }
 
+/** Bereiche eines Nummernkreises (#1000): neu nur Grunddaten, Aufkleber nur bei der Archivnummer (#345). */
+function nummernkreisBereiche(k: NummernkreisAnsicht | undefined): BereichListe<NkBereich> {
+  if (!k) return [['grunddaten', t('werkbank.nummernkreise.bereich.grunddaten')]];
+  return [
+    ['grunddaten', t('werkbank.nummernkreise.bereich.grunddaten')], ['stand', t('werkbank.nummernkreise.stand')],
+    ...(k.schluessel === 'archivnummer' ? [['aufkleber', t('werkbank.nummernkreise.aufkleber-drucken')] as const] : []),
+    ['verwendet', t('werkbank.nummernkreise.verwendet-in')],
+  ];
+}
+type NkBereich = 'grunddaten' | 'stand' | 'aufkleber' | 'verwendet';
+
 export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; schluessel: string }) {
   const neu = schluessel === 'neu';
   const k = neu ? undefined : z.liste?.find((x) => x.schluessel === schluessel);
   const gespeichert = { schluessel: k?.schluessel ?? '', name: k?.name ?? '', muster: k?.muster ?? '{jjjj}{mm}-R{zaehler:7}', start: String(k?.start ?? 1) };
   const [e, setE] = useState(gespeichert);
-  const [zaehler, setZaehler] = useState('');
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/nummernkreise', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
+  const [speicherFehler, setSpeicherFehler] = useState(false);
+  const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/nummernkreise', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); setSpeicherFehler(false); } });
+  // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; gemerkt je Nummernkreis.
+  const b = useBereiche(nummernkreisBereiche(k), 'nummernkreis', neu ? null : schluessel);
   if (!neu && !k) return z.liste ? <div className="leer"><p>{t('werkbank.nummernkreise.diesen-nummernkreis-gibt-es')}</p></div> : <p className="leise">{t('werkbank.nummernkreise.lade')}</p>;
   const musterFehler = pruefeMuster(e.muster);
   const heute = datumIn(new Date());
   const beispiel = musterFehler ? null : formatiereNummer(e.muster, Number(e.start) || 0, heute);
   const neubeginn = neubeginnVon(e.muster);
+  // Gespeichert wird nur, was in den Grunddaten steht – ein Fehler beim Speichern gehört also dorthin.
+  const hatFehler = (x: NkBereich) => x === 'grunddaten' && (!!musterFehler || speicherFehler);
   async function tu(f: () => Promise<string>) {
     setMeldung(undefined);
     try { setMeldung({ art: 'gut', text: await f() }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
-  const speichern = async () => { setSendet(true); try { await tu(async () => {
-    const daten = { name: e.name, muster: e.muster, start: Number(e.start) };
-    z.setListe(neu ? await api.nummernkreisAnlegen({ ...daten, schluessel: e.schluessel }) : await api.nummernkreisAendern(k!.schluessel, daten));
-    if (neu) { loeseWache(); geheZu(`/werkbank/nummernkreise/${e.schluessel}`, true); }
-    return neu ? t('werkbank.nummernkreise.angelegt') : t('werkbank.nummernkreise.gespeichert-das-muster-gilt');
-  }); } finally { setSendet(false); } };
+  const speichern = async () => {
+    setSendet(true); setMeldung(undefined); setSpeicherFehler(false);
+    try {
+      const daten = { name: e.name, muster: e.muster, start: Number(e.start) };
+      z.setListe(neu ? await api.nummernkreisAnlegen({ ...daten, schluessel: e.schluessel }) : await api.nummernkreisAendern(k!.schluessel, daten));
+      // Nach dem Anlegen aufgeklappt bleiben wie gerade (wie beim Mappentyp).
+      if (neu) { b.merke(e.schluessel); loeseWache(); geheZu(`/werkbank/nummernkreise/${e.schluessel}`, true); }
+      setMeldung({ art: 'gut', text: neu ? t('werkbank.nummernkreise.angelegt') : t('werkbank.nummernkreise.gespeichert-das-muster-gilt') });
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+      setSpeicherFehler(true); b.oeffne(['grunddaten']);
+    } finally { setSendet(false); }
+  };
   const schluesselAusName = (name: string) => name.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/^(\d)/, 'n$1').slice(0, 40);
   return (
-    <div className="einspaltig">
+    <div className="editorform">
       <div className="mappenkopf">
         <p className="ueber">{t('werkbank.nummernkreise.werkbank-nummernkreis')}</p>
         <h1>{neu ? t('werkbank.nummernkreise.neuer-nummernkreis') : k!.name}</h1>
         {!neu && <p className="leise">{tn('werkbank.nummernkreise.im-standardwert-eines-textfelds', { code: <code className="mono">{t('werkbank.nummernkreise.nummernkreis', { schluessel: k!.schluessel })}</code> })}</p>}
       </div>
+      {b.leiste(hatFehler, t('werkbank.nummernkreise.bereiche'))}
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.nummernkreise.name')}</span><input id="nk-name" value={e.name} onChange={(x) => setE({ ...e, name: x.target.value, ...(neu && (!e.schluessel || e.schluessel === schluesselAusName(e.name)) ? { schluessel: schluesselAusName(x.target.value) } : {}) })} required /></label>
-          <label className="eigenschaft"><span>{tn('werkbank.nummernkreise.kennung', { klein: <small>{neu ? t('werkbank.nummernkreise.nach-dem-anlegen-fest') : t('werkbank.nummernkreise.fest')}</small> })}</span><input id="nk-schluessel" className="mono" value={e.schluessel} disabled={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></label>
-          <label className="eigenschaft breit"><span>{tn('werkbank.nummernkreise.muster', { klein: <small>{t('werkbank.nummernkreise.muster.erklaerung')}</small> })}</span>
-            <input id="nk-muster" className="mono" value={e.muster} onChange={(x) => setE({ ...e, muster: x.target.value })} required /></label>
-          <label className="eigenschaft"><span>{t('werkbank.nummernkreise.startwert')}</span><input id="nk-start" type="number" min={0} value={e.start} onChange={(x) => setE({ ...e, start: x.target.value })} /></label>
-        </div>
-        {musterFehler ? <p className="fehlertext">{musterFehler}</p> : <p className="klein">{tn('werkbank.nummernkreise.beispiel-heute-zaehler-beginnt', { code: <code className="mono">{beispiel}</code>, b: <strong>{NEUBEGINN_TEXT[neubeginn]}</strong> })}</p>}
-        <Speicherleiste ent={ent} gegenstand={t('werkbank.nummernkreise.nummernkreis-2')} sendet={sendet} ungueltig={!!musterFehler}
-          links={!neu && <Knopf art="link" className="gefahr" gesperrt={k!.verwendet.length > 0} title={k!.verwendet.length ? t('werkbank.nummernkreise.wird-noch-verwendet') : undefined}
-            onClick={async () => { if (await rueckfrage({ titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen'), gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }); }}>{t('werkbank.nummernkreise.nummernkreis-loeschen-2')}</Knopf>} />
+      <form id="nk-formular" className="editorform" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+        <Bereich id="grunddaten" titel={t('werkbank.nummernkreise.bereich.grunddaten')} klappe={b.klappe('grunddaten', hatFehler('grunddaten'))}
+          kurz={<>{e.name} · <code className="mono">{e.muster}</code></>}>
+          <div className="raster">
+            <label className="eigenschaft"><span>{t('werkbank.nummernkreise.name')}</span><input id="nk-name" value={e.name} onChange={(x) => setE({ ...e, name: x.target.value, ...(neu && (!e.schluessel || e.schluessel === schluesselAusName(e.name)) ? { schluessel: schluesselAusName(x.target.value) } : {}) })} required /></label>
+            <label className="eigenschaft"><span>{tn('werkbank.nummernkreise.kennung', { klein: <small>{neu ? t('werkbank.nummernkreise.nach-dem-anlegen-fest') : t('werkbank.nummernkreise.fest')}</small> })}</span><input id="nk-schluessel" className="mono" value={e.schluessel} disabled={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></label>
+            <label className="eigenschaft breit"><span>{tn('werkbank.nummernkreise.muster', { klein: <small>{t('werkbank.nummernkreise.muster.erklaerung')}</small> })}</span>
+              <input id="nk-muster" className="mono" value={e.muster} onChange={(x) => setE({ ...e, muster: x.target.value })} required /></label>
+            <label className="eigenschaft"><span>{t('werkbank.nummernkreise.startwert')}</span><input id="nk-start" type="number" min={0} value={e.start} onChange={(x) => setE({ ...e, start: x.target.value })} /></label>
+          </div>
+          {musterFehler ? <p className="fehlertext">{musterFehler}</p> : <p className="klein">{tn('werkbank.nummernkreise.beispiel-heute-zaehler-beginnt', { code: <code className="mono">{beispiel}</code>, b: <strong>{NEUBEGINN_TEXT[neubeginn]}</strong> })}</p>}
+        </Bereich>
       </form>
-      {!neu && <>
-        <div className="blatt">
-          <h2 className="h3">{t('werkbank.nummernkreise.stand')}</h2>
-          <p>{tn('werkbank.nummernkreise.naechste-nummer', { code: <code className="mono">{k!.naechste}</code>, span: <span className="leise klein">{t('werkbank.nummernkreise.zeitraum-zaehler', { wert: k!.zeitraum === 'immer' ? t('werkbank.nummernkreise.ohne-neubeginn') : k!.zeitraum, naechsterZaehler: k!.naechsterZaehler })}</span> })}</p>
-          {k!.zuletzt.length > 0 && <>
-            <p className="leise klein">{t('werkbank.nummernkreise.zuletzt-vergeben')}</p>
-            <ul className="stapel klein">{k!.zuletzt.map((x) => <li key={`${x.nummer}-${x.am}`}><code className="mono">{x.nummer}</code> · {zeit(x.am)}{x.mappeId && <> · <Link to={`/ablage/mappe/${x.mappeId}`} className="verweis">{t('werkbank.nummernkreise.mappe')}</Link></>}</li>)}</ul>
-          </>}
-          <form className="zeile" onSubmit={abfangen(async (x: FormEvent) => { x.preventDefault(); if (await rueckfrage({ titel: t('werkbank.nummernkreise.zaehlerstand-setzen'), text: t('werkbank.nummernkreise.die-naechste-nummer-bekommt', { zaehler }), ja: t('werkbank.nummernkreise.zaehlerstand-setzen-2') })) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k!.schluessel, Number(zaehler))); setZaehler(''); return t('werkbank.nummernkreise.zaehlerstand-gesetzt'); }); }, (text) => setMeldung({ art: 'schlecht', text }))}>
-            <label className="eigenschaft"><span>{tn('werkbank.nummernkreise.zaehlerstand-setzen-3', { klein: <small>{t('werkbank.nummernkreise.zaehler-der-naechsten-nummer')}</small> })}</span>
-              <input id="nk-zaehler" type="number" min={0} value={zaehler} onChange={(x) => setZaehler(x.target.value)} /></label>
-            <button className="knopf" disabled={zaehler === ''}>{t('werkbank.nummernkreise.setzen')}</button>
-          </form>
-        </div>
-        {k!.schluessel === 'archivnummer' && <Aufkleber naechste={k!.naechste} neuLaden={z.laden} />}
-        <div className="blatt">
-          <h2 className="h3">{t('werkbank.nummernkreise.verwendet-in')}</h2>
-          {k!.verwendet.length ? <ul className="stapel">{k!.verwendet.map((v) => <li key={`${v.typId}-${v.feldKey}`}><Link to={`/werkbank/typen/${v.typId}`} className="verweis">{v.typ}</Link> · {v.feld}</li>)}</ul>
-            : <p className="leise">{tn('werkbank.nummernkreise.noch-in-keinem-feld', { code: <code className="mono">{t('werkbank.nummernkreise.nummernkreis', { schluessel: k!.schluessel })}</code> })}</p>}
-        </div>
-      </>}
+      {k && <NummernkreisStand k={k} z={z} b={b} tu={tu} />}
+      <Speicherleiste ent={ent} gegenstand={t('werkbank.nummernkreise.nummernkreis-2')} sendet={sendet} ungueltig={!!musterFehler} formular="nk-formular"
+        links={!neu && <Knopf art="link" className="gefahr" gesperrt={k!.verwendet.length > 0} title={k!.verwendet.length ? t('werkbank.nummernkreise.wird-noch-verwendet') : undefined}
+          onClick={async () => { if (await rueckfrage({ titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen'), gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }); }}>{t('werkbank.nummernkreise.nummernkreis-loeschen-2')}</Knopf>} />
     </div>
+  );
+}
+
+/** Stand, Aufkleber und Verwendung eines gespeicherten Nummernkreises (#1000): Sofortaktionen, nicht Teil des Speicherns. */
+function NummernkreisStand({ k, z, b, tu }: { k: NummernkreisAnsicht; z: NummernkreisZustand; b: BereicheZustand<NkBereich>; tu: (f: () => Promise<string>) => Promise<void> }) {
+  const [zaehler, setZaehler] = useState('');
+  return (
+    <>
+      <Bereich id="stand" titel={t('werkbank.nummernkreise.stand')} klappe={b.klappe('stand')} kurz={<>{t('werkbank.nummernkreise.naechste', { naechste: k.naechste })}</>}>
+        <p>{tn('werkbank.nummernkreise.naechste-nummer', { code: <code className="mono">{k.naechste}</code>, span: <span className="leise klein">{t('werkbank.nummernkreise.zeitraum-zaehler', { wert: k.zeitraum === 'immer' ? t('werkbank.nummernkreise.ohne-neubeginn') : k.zeitraum, naechsterZaehler: k.naechsterZaehler })}</span> })}</p>
+        {k.zuletzt.length > 0 && <>
+          <p className="leise klein">{t('werkbank.nummernkreise.zuletzt-vergeben')}</p>
+          <ul className="stapel klein">{k.zuletzt.map((x) => <li key={`${x.nummer}-${x.am}`}><code className="mono">{x.nummer}</code> · {zeit(x.am)}{x.mappeId && <> · <Link to={`/ablage/mappe/${x.mappeId}`} className="verweis">{t('werkbank.nummernkreise.mappe')}</Link></>}</li>)}</ul>
+        </>}
+        <form className="zeile" onSubmit={abfangen(async (x: FormEvent) => { x.preventDefault(); if (await rueckfrage({ titel: t('werkbank.nummernkreise.zaehlerstand-setzen'), text: t('werkbank.nummernkreise.die-naechste-nummer-bekommt', { zaehler }), ja: t('werkbank.nummernkreise.zaehlerstand-setzen-2') })) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k.schluessel, Number(zaehler))); setZaehler(''); return t('werkbank.nummernkreise.zaehlerstand-gesetzt'); }); })}>
+          <Feld beschriftung={t('werkbank.nummernkreise.zaehlerstand-setzen-2')} hinweis={t('werkbank.nummernkreise.zaehler-der-naechsten-nummer')}>
+            <input id="nk-zaehler" type="number" min={0} value={zaehler} onChange={(x) => setZaehler(x.target.value)} /></Feld>
+          <Knopf type="submit" gesperrt={zaehler === ''}>{t('werkbank.nummernkreise.setzen')}</Knopf>
+        </form>
+      </Bereich>
+      {k.schluessel === 'archivnummer' && (
+        <Bereich id="aufkleber" titel={t('werkbank.nummernkreise.aufkleber-drucken')} hilfe={<Hilfe ort="werkbank.aufkleber" />} klappe={b.klappe('aufkleber')}>
+          <Aufkleber naechste={k.naechste} neuLaden={z.laden} />
+        </Bereich>
+      )}
+      <Bereich id="verwendet" titel={t('werkbank.nummernkreise.verwendet-in')} klappe={b.klappe('verwendet')}
+        kurz={k.verwendet.length ? t('werkbank.nummernkreise.verwendet-kurz', { anzahl: k.verwendet.length }) : t('werkbank.nummernkreise.unbenutzt')}>
+        {k.verwendet.length ? <ul className="stapel">{k.verwendet.map((v) => <li key={`${v.typId}-${v.feldKey}`}><Link to={`/werkbank/typen/${v.typId}`} className="verweis">{v.typ}</Link> · {v.feld}</li>)}</ul>
+          : <p className="leise">{tn('werkbank.nummernkreise.noch-in-keinem-feld', { code: <code className="mono">{t('werkbank.nummernkreise.nummernkreis', { schluessel: k.schluessel })}</code> })}</p>}
+      </Bereich>
+    </>
   );
 }
 
@@ -202,8 +239,7 @@ function Aufkleber({ naechste, neuLaden }: { naechste: string; neuLaden(): Promi
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
   }
   return (
-    <div className="blatt">
-      <h2 className="h3">{t('werkbank.nummernkreise.aufkleber-drucken')} <Hilfe ort="werkbank.aufkleber" /></h2>
+    <>
       <p className="leise">{tn('werkbank.nummernkreise.ein-pdf-mit-aufklebern', { code: <code className="mono">{naechste}</code> })}</p>
       <form className="raster" onSubmit={(e) => { e.preventDefault(); void los(); }}>
         <label className="eigenschaft"><span>{t('werkbank.nummernkreise.anzahl')}</span><input type="number" min={1} max={500} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></label>
@@ -213,6 +249,6 @@ function Aufkleber({ naechste, neuLaden }: { naechste: string; neuLaden(): Promi
         <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || !(Number(anzahl) >= 1 && Number(anzahl) <= 500) || !(Number(start) >= 1 && Number(start) <= felder)}>{laeuft ? t('werkbank.nummernkreise.erzeuge') : t('werkbank.nummernkreise.aufkleber-als-pdf')}</button></div>
       </form>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-    </div>
+    </>
   );
 }

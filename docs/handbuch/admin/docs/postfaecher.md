@@ -9,7 +9,9 @@ Ablago kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede 
 
 ## Postfach einrichten
 
-**Werkbank → Postfächer → + Neu**:
+**Werkbank → Postfächer → + Neu**. Rechts ist das Postfach wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Abrufen, Name, Für) **→ Verbindung** (Server bis Passwort, mit **Verbindung testen**) **→ Abholen** (Ordner bis Original-Mail) **→ Anmeldung per OAuth 2.0** (nur mit OAuth) **→ Stand** (nach dem Anlegen). Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „Ordner INBOX · alle 5 Minuten“; was du aufklappst, merkt sich dein Gerät je Postfach. **Postfach speichern** unten speichert Grunddaten, Verbindung und Abholen auf einmal; lehnt Ablago eine Angabe ab, ist ihr Bereich rot markiert und aufgeklappt.
+
+![Ein Postfach am Handy: Sprungleiste und Bereiche](bilder/werkbank-postfach-handy.png){ width="320" }
 
 | Angabe | Bedeutung |
 | --- | --- |
@@ -26,7 +28,7 @@ Ablago kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede 
 | Nur Mails mit Anhang | andere bleiben unverändert im Postfach |
 | Original-Mail als .eml | Standard ein: die ganze Mail liegt zusätzlich als Dokument an der Post |
 
-**Verbindung testen** meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. Ein gespeichertes Passwort (oder die OAuth-Anmeldung) geht dabei nur an den gespeicherten Server, Port und die gespeicherte Verschlüsselung: Änderst du eins davon, gib das Passwort neu ein (bzw. speichere und melde dich neu an). **Jetzt abrufen** holt sofort ab. **Entfernen** löscht das Postfach aus Ablago, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.
+**Verbindung testen** meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. Ein gespeichertes Passwort (oder die OAuth-Anmeldung) geht dabei nur an den gespeicherten Server, Port und die gespeicherte Verschlüsselung: Änderst du eins davon, gib das Passwort neu ein (bzw. speichere und melde dich neu an). **Jetzt abrufen** (Bereich *Stand*) holt sofort ab. **Postfach entfernen** (links unten) löscht das Postfach aus Ablago, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.
 
 Unter *Stand* stehen der letzte Abruf, die zuletzt übernommenen Mails mit Link zur Post und Fehler. Schlägt der Abruf mehrmals hintereinander fehl, wartet Ablago immer länger zwischen den Versuchen (bis 6 Stunden) und schreibt den Administratoren nach dem dritten Fehler eine Mail.
 
@@ -54,7 +56,7 @@ Dafür brauchst du eine **eigene App-Registrierung** beim Anbieter – das Ablag
 1. Unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die **Adresse von Ablago** eintragen (z. B. `https://dms.example.org`). Daraus entsteht die **Umleitungs-URI** `https://dms.example.org/api/oauth/postfach/rueckruf`; die Werkbank zeigt sie an. Die Anmeldung im Browser braucht eine **https-Adresse** (http nur über `localhost`); ohne sie geht bei Microsoft der **Gerätecode** (siehe unten).
 2. Beim Anbieter die App anlegen (Anleitungen unten).
 3. **Werkbank → Postfächer → + Neu**: *Anmeldung* **OAuth 2.0**, *Anbieter* wählen – Server, Port und Verschlüsselung sind vorbelegt (`outlook.office365.com` bzw. `imap.gmail.com`, 993, SSL/TLS). *Benutzername* ist die Mail-Adresse des Postfachs. **Speichern**.
-4. Unter *App beim Anbieter* **Client-ID** und **Client-Geheimnis** eintragen, bei Microsoft den **Mandanten**, **App speichern**.
+4. Im Bereich *Anmeldung per OAuth 2.0* unter *App beim Anbieter* **Client-ID** und **Client-Geheimnis** eintragen, bei Microsoft den **Mandanten**, **App speichern**. Die App hat ein eigenes Speichern, weil sie für alle Postfächer dieses Anbieters (und den [E-Mail-Versand](e-mail-versand.md)) gilt.
 5. **Im Browser anmelden**: Ablago leitet dich zum Anbieter; nach der Anmeldung und Zustimmung kommst du zurück in die Werkbank. Oder **Mit Gerätecode anmelden**: Ablago zeigt einen Code und eine Adresse; dort meldest du dich auf einem beliebigen Gerät an, die Werkbank wartet so lange.
 6. **Verbindung testen**.
 

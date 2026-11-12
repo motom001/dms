@@ -70,6 +70,16 @@ async function aufbau(o: Record<string, unknown> = {}) {
 const RECHNUNG: TestMail = { messageId: '<r1@example.org>', betreff: 'Ihre Rechnung 4711', datum: '2026-10-30T09:15:00Z', absenderName: 'Stadtwerke', absenderAdresse: 'rechnung@stadtwerke.example', text: 'Anbei Ihre Rechnung.', anhaenge: [{ name: 'Rechnung 4711.pdf', mime: 'application/pdf', text: '%PDF-1.4 x' }, { name: 'logo.png', mime: 'image/png', text: 'png', eingebettet: true }] };
 
 describe('Postfächer (#196)', () => {
+  it('nennt zu jedem Prüffehler den Bereich des Editors (#1000)', () => {
+    const v = (k: string) => `enc:${k}`;
+    const orte = (x: unknown) => { try { pruefePostfach(x, null, v); } catch (e) { return ((e as Fachfehler).details as { orte: string[] }).orte; } return null; };
+    assert.deepEqual(orte({ server: 'imap.x.example', benutzer: 'a', passwort: 'p' }), ['grunddaten']);
+    assert.deepEqual(orte({ name: 'X', benutzer: 'a', passwort: 'p' }), ['verbindung'], 'ohne Server');
+    assert.deepEqual(orte({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', abstand: 0, absender: 'kein adresse' }), ['abholen']);
+    assert.deepEqual(orte({ server: 'imap.x.example', abstand: 5000 })?.sort(), ['abholen', 'grunddaten', 'verbindung']);
+    assert.equal(orte({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p' }), null);
+  });
+
   it('prüft Eingaben; Passwort verschlüsselt und nie in der Ansicht', async () => {
     const v = (k: string) => `enc:${k}`;
     assert.throws(() => pruefePostfach({ name: 'X', server: 'imap.x.example', benutzer: 'a' }, null, v), (e) => e instanceof Fachfehler && /Passwort/.test(e.message));

@@ -462,10 +462,21 @@ function undProbleme(u: UndKarte, typ: Mappentyp | null, k: Kontextdaten): strin
   return p ? [p] : [];
 }
 
+/** Wo ein Problem steht – der Bereich im Editor (#1000): Grunddaten, Wenn (mit den Und-Bedingungen) oder Dann. */
+export type AutomatisierungOrt = 'grunddaten' | 'wenn' | 'dann';
+
 /** Was nicht (mehr) passt – leer, wenn die Automatisierung laufen kann. */
 export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdaten): string[] {
-  const p: string[] = [];
+  return [...new Set(automatisierungsProblemOrte(a, k).map((x) => x.text))];
+}
+
+/** Probleme samt Bereich im Editor (#1000) – so öffnet ein Fehler seinen Bereich. */
+export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextdaten): Array<{ ort: AutomatisierungOrt; text: string }> {
+  const erg: Array<{ ort: AutomatisierungOrt; text: string }> = [];
+  let ort: AutomatisierungOrt = 'grunddaten';
+  const p = { push: (...x: string[]) => { for (const text of x) erg.push({ ort, text }); } };
   if (!a.name) p.push(t('gemeinsam.automatisierung.bitte-einen-namen-angeben'));
+  ort = 'wenn';
   const w = a.wenn;
   const typ = kontextTyp(w, k.typen);
   if (w.art === 'datum') {
@@ -477,6 +488,7 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
   } else if (w.typ && !typ) p.push(t('gemeinsam.automatisierung.den-mappentyp-der-wenn'));
   else if (w.felder?.length && typ) for (const f of w.felder) if (!feldIn(typ, f)) p.push(t('gemeinsam.automatisierung.das-feld-gibt-es-2', { f, name: typ.name }));
   for (const u of a.und.karten) p.push(...undProbleme(u, typ, k));
+  ort = 'dann';
   if (!a.dann.length) p.push(t('gemeinsam.automatisierung.bitte-mindestens-eine-dann'));
   for (const d of [...a.dann, ...a.sonst]) {
     if (d.art === 'feld') {
@@ -504,7 +516,7 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
       for (const e of d.empfaenger) { const x = empfaengerProblem(e, typ, k); if (x) p.push(`„Aufgabe“: ${x}`); }
     }
   }
-  return [...new Set(p)];
+  return erg;
 }
 
 /* ---------- Kurzform ---------- */

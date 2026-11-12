@@ -36,6 +36,7 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 | `HakenFeld`, checkboxes in `FeldGruppe` | the whole row with the label is at least 44 px high; the label toggles the checkbox, too |
 | `Suchfeld`, `ListenSuche` | input like a field; “×” as a button with only a symbol; “Package” choice and `FilterHaken` at least 44 px high |
 | `Umschalter` | each choice at least 44 × 44 px |
+| `Bereich`, jump bar from `useBereiche` | jumps and the head of an area at least 44 px high; “Expand all” as a button of type link |
 
 **The rule:** touch targets never overlap – not in a row of buttons or a group of checkboxes either. Whoever uses a building block writes nothing for this; one-off solutions with `@media (pointer: coarse)` in `styles.css` are only left for places without a building block. New building blocks set their touch target in their own stylesheet, also only with `(pointer: coarse)`, so the desktop stays unchanged.
 
@@ -72,3 +73,4 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |
 | [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Search” on the start page |
+| [Areas](bausteine-bereiche.md) | The pattern “editor on the right: jump bar + areas”: jump bar with “Expand all”, areas to expand and collapse, memory per device, errors open their area |

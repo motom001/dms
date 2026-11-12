@@ -4,7 +4,7 @@ Ablago hat **kein eigenes Konto „Administrator“**. Verwalten ist ein Recht a
 
 ## Das Verwaltungsrecht { #das-verwaltungsrecht }
 
-Unter **Werkbank → Benutzer → Person** steht der Abschnitt **Verwaltung**:
+Unter **Werkbank → Benutzer → Person** steht im Bereich *Rollen und Rechte* der Abschnitt **Verwaltung**; gespeichert wird er mit **Benutzer speichern**:
 
 - **Darf Ablago verwalten** – ohne diesen Haken gibt es für die Person weder die Werkbank noch den Eintrag „Ablago verwalten“.
 - Darunter ein Baum mit den Bereichen der Werkbank, gegliedert nach den Gruppen der Leiste. Ganz oben steht **Gesamte Verwaltung**: alle Bereiche, auch solche, die in späteren Versionen dazukommen. [Nutzung](nutzung.md) steht nicht im Baum – das gehört immer zur Gesamten Verwaltung.

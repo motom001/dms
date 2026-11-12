@@ -1,0 +1,39 @@
+/* Baustein Bereiche (#1000, aus #144/#148): Sprungleiste und aufklappbare Bereiche eines Editors. Nur Werte aus tokens.css. */
+
+/* Ein Bereich ist ein Blatt; zugeklappt nur der Kopf mit Kurzinfo. */
+.bereich { scroll-margin-top: 110px; }
+.bereich.zu { gap: 4px; padding-block: 12px; }
+.bereich.mitfehler { border-color: var(--schlecht); }
+.kopf { display: flex; flex-direction: column; gap: 2px; }
+.kopf h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.titel { display: inline-flex; align-items: center; gap: 8px; }
+.knopf { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.knopf:hover { color: var(--akzent); }
+.knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; border-radius: 4px; }
+.pfeil { display: inline-block; width: 1em; color: var(--leise); transition: transform .15s; }
+.bereich:not(.zu) .pfeil { transform: rotate(90deg); }
+.kurz { margin: 0 0 0 calc(1em + 8px); font-size: calc(12.5px * var(--skala, 1)); overflow-wrap: anywhere; }
+.inhalt { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.inhalt[hidden] { display: none; }
+.text { font-size: calc(12.5px * var(--skala, 1)); max-width: 75ch; margin: 0; }
+
+/* Sprungleiste: bleibt am Desktop unter dem Kopf der Seite stehen, am Handy rollt sie mit. */
+.leiste { position: sticky; top: 52px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
+.sprung { background: var(--senke); border: 1px solid var(--linie); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: calc(12.5px * var(--skala, 1)); color: var(--tinte); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.sprung:hover { border-color: var(--linie-stark); }
+.sprung:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.sprung.an { border-color: var(--linie-stark); font-weight: 600; }
+.sprung.fehler { border-color: var(--schlecht); color: var(--schlecht); background: var(--schlecht-zart); }
+.fehlerpunkt { font-size: calc(11px * var(--skala, 1)); font-weight: 700; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--schlecht); color: var(--flaeche); text-align: center; }
+.luecke { flex: 1; }
+
+@media (max-width: 700px) { .leiste { position: static; } }
+
+/* Am Handy (#1027, D6): Sprünge und Kopf eines Bereichs mit Tippfläche von mindestens 44 px Höhe (etwas Luft, damit
+   die Sprünge zweier Zeilen sich nie berühren). */
+@media (pointer: coarse) {
+  .leiste { gap: 8px; }
+  /* Eine Pille von 46 px Höhe hat in den Ecken keine Fläche – darum kleinere Rundung und Mindestbreite. */
+  .sprung { min-height: 46px; min-width: 64px; justify-content: center; padding-inline: 12px; border-radius: 12px; }
+  .knopf { min-height: 46px; }
+}

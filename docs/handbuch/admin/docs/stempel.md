@@ -18,7 +18,9 @@ Unter **Werkbank → Stempel** stehen die Vorlagen. Am Anfang sind es fünf:
 
 ![Werkbank → Stempel](bilder/werkbank-stempel.png)
 
-Die Vorlagen stehen wie Mappentypen oder Nummernkreise **in der Mitte** – je Vorlage Name, Text mit Platzhaltern und Lage, dahinter die Mappentypen, die sie nutzen. Ein Klick öffnet die Vorlage **rechts** mit allen Angaben und der [Vorschau](#vorschau); unten speicherst oder verwirfst du die Änderungen, links unten steht **Vorlage löschen**. Mit **+ Neu** oben in der Mitte legst du eine an:
+![Eine Vorlage am Handy: Sprungleiste und Bereiche](bilder/werkbank-stempel-handy.png){ width="320" }
+
+Die Vorlagen stehen wie Mappentypen oder Nummernkreise **in der Mitte** – je Vorlage Name, Text mit Platzhaltern und Lage, dahinter die Mappentypen, die sie nutzen. Ein Klick öffnet die Vorlage **rechts**, gegliedert wie ein [Mappentyp](mappentypen.md#aufbau-des-editors): oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name und Text) **→ Aussehen → Vorschau → Verwendet in**. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „Diagonal · Rot · 70 %“; was du aufklappst, merkt sich dein Gerät je Vorlage, eine neue Vorlage ist ganz aufgeklappt. Unten speicherst oder verwirfst du alle Änderungen auf einmal, links unten steht **Vorlage löschen**; ein fehlender Name oder ein unbekannter Platzhalter markiert die Grunddaten rot. Mit **+ Neu** oben in der Mitte legst du eine an:
 
 | Angabe | Bedeutung |
 | --- | --- |
@@ -50,7 +52,7 @@ Alle Platzhalter gehen bei **Alle Seiten** wie bei **Nur die erste Seite**. Ein 
 
 ### Vorschau
 
-Unter den Angaben zeigt die Vorschau den Stempel auf vier erfundenen Beispielbelegen nebeneinander (am Handy untereinander): einer Rechnung mit Text, einer Tabelle mit Beträgen, einem farbigen Formular und einem grauen Scan eines Kassenbons. Jede Änderung an Text, Lage, Farbe, Größe, Deckkraft und „wie Tinte“ zeigt sich sofort in allen vier Bildern. Zu sehen ist Seite 1, so wie sie herausgegeben würde; bei **Alle Seiten** gilt dieselbe Einstellung für jede Seite.
+Im Bereich *Vorschau* steht der Stempel auf vier erfundenen Beispielbelegen nebeneinander (am Handy untereinander): einer Rechnung mit Text, einer Tabelle mit Beträgen, einem farbigen Formular und einem grauen Scan eines Kassenbons. Jede Änderung an Text, Lage, Farbe, Größe, Deckkraft und „wie Tinte“ zeigt sich sofort in allen vier Bildern. Zu sehen ist Seite 1, so wie sie herausgegeben würde; bei **Alle Seiten** gilt dieselbe Einstellung für jede Seite.
 
 Den Stempel kannst du direkt in der Vorschau bearbeiten:
 

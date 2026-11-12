@@ -28,3 +28,4 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 | `ZeitraumEingabe`, `ProzentEingabe` | Eingaben mit Einheit (#1035): Zahl und Einheit („3 Monate“, Einzahl/Mehrzahl), Zahl mit „%“ – im Feldrahmen oder mit eigener Beschriftung |
 | `Suchfeld`, `ListenSuche`, `FilterHaken`, `PaketFilter`, `KeineTreffer`, `Fundstellen`, `useListenSuche` | Suche (#978, #994): das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |
 | `Umschalter` | Segmentknopf (#1002): zwei bis vier gleichrangige Wahlen, genau eine an – z. B. „Fragen · Suchen“; Optionsfelder für Screenreader, Pfeiltasten |
+| `Bereich`, `useBereiche`, `fehlerBereiche` | Editor rechts (#1000): Sprungleiste mit „Alle aufklappen / Alle zuklappen“, Bereiche zum Auf- und Zuklappen (neu offen, sonst wie zuletzt auf diesem Gerät, Anker öffnet), Fehler öffnen ihren Bereich; unter drei Bereichen ohne Leiste |

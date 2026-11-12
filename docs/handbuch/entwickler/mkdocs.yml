@@ -86,6 +86,7 @@ nav:
       - Tabelle: bausteine-tabelle.md
       - Suche: bausteine-suche.md
       - Umschalter: bausteine-umschalter.md
+      - Bereiche: bausteine-bereiche.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md

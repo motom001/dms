@@ -36,6 +36,7 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 | `HakenFeld`, Haken in `FeldGruppe` | die ganze Zeile mit Beschriftung ist mindestens 44 px hoch; die Beschriftung schaltet den Haken mit |
 | `Suchfeld`, `ListenSuche` | Eingabe wie ein Feld; „×“ als Knopf nur mit Symbol; Auswahl „Paket“ und `FilterHaken` mindestens 44 px hoch |
 | `Umschalter` | jede Wahl mindestens 44 × 44 px |
+| `Bereich`, Sprungleiste aus `useBereiche` | Sprünge und Kopf eines Bereichs mindestens 44 px hoch; „Alle aufklappen“ als Knopf der Art Link |
 
 **Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `styles.css` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
 
@@ -72,3 +73,4 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |
 | [Suche](bausteine-suche.md) | Das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |
 | [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Suchen“ auf der Startseite |
+| [Bereiche](bausteine-bereiche.md) | Das Muster „Editor rechts: Sprungleiste + Bereiche“: Sprungleiste mit „Alle aufklappen“, Bereiche zum Auf- und Zuklappen, Gedächtnis je Gerät, Fehler öffnen ihren Bereich |
