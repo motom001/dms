@@ -975,6 +975,7 @@ async function main() {
   await bild(s, 'werkbank-berechtigungen');
   {
     await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Testlauf') }).click();
+    await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
     const test = s.locator('#testlauf');
     // Benutzer und Testmappe wie im Verweisfeld (#371); das Ergebnis erscheint ohne „Prüfen“.
     await test.getByLabel(w('Benutzer'), { exact: true }).fill(MITGLIED.name);
@@ -1094,6 +1095,7 @@ async function main() {
   await geheZu(s, `/werkbank/typen/${vertrag.id}`);
   await bild(s, 'werkbank-mappentyp');
   await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Felder') }).click();
+  await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
   await s.locator('button.feldkopfknopf').filter({ hasText: 'Kündigung bis' }).click();
   await s.locator('.feldzeile.offen').scrollIntoViewIfNeeded();
   await bild(s, 'werkbank-feld');
@@ -1117,6 +1119,7 @@ async function main() {
   // Seit #1000 ein Bereich: über die Sprungleiste öffnen (auf eindeutige Elemente warten, nicht auf Köpfe mit Hilfe).
   await geheZu(s, '/werkbank/nummernkreise/archivnummer');
   await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Aufkleber drucken'), exact: true }).click();
+  await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
   await s.locator('#aufkleber-inhalt form').waitFor();
   await s.locator('#aufkleber').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-aufkleber');
@@ -1188,6 +1191,7 @@ async function main() {
     await s.locator('.spalte.liste .eintrag').first().click();
     // Bereiche (#1000): „Zustellen“ über die Sprungleiste öffnen.
     await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Zustellen'), exact: true }).click();
+    await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
     await s.getByRole('button', { name: w('Zustellen …') }).first().click();
     await s.getByRole('radio', { name: w(/Abruf-Link mit Abrufcode/) }).check();
     await s.getByRole('checkbox', { name: w(/Link per E-Mail/) }).uncheck();
@@ -1227,6 +1231,7 @@ async function main() {
   await geheZu(s, `/werkbank/postfaecher/${pfOauth.id}`);
   // Seit #1000 ein Bereich: über die Sprungleiste öffnen (Kopf mit Hilfesymbol – auf den Inhalt warten).
   await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Anmeldung per OAuth 2.0'), exact: true }).click();
+  await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
   await s.locator('#pf-oauth-client').waitFor();
   await s.locator('#anbieter').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-postfach-oauth');
