@@ -288,7 +288,7 @@ describe('Werkbank-Rechte des Systemkontos (#677): genau die Tabelle', () => {
     assert.ok(typeof lf.daten.fehlermeldung === 'string');
     assert.equal((await motor.lauf(lp.id, alsPetra)).daten.text, undefined);
     assert.equal((await motor.lauf(lf.id, alsPetra)).daten.benutzer, undefined);
-    assert.ok(!JSON.stringify(await motor.laeufe(p.id, 50, alsPetra)).includes('mail.example.org'));
+    assert.ok(!JSON.stringify(await motor.laeufe(p.id, 50, alsPetra)).includes('Anmeldung bei'));
     assert.ok(!JSON.stringify(await motor.laeufe(f.id, 50, alsPetra)).includes(jonas.id));
     // Gesamtverwaltung sieht beides; gespeichert bleibt alles (Wiederholen).
     assert.equal((await motor.laeufe(p.id, 50, alsMarkus))[0].daten.text, 'Anmeldung bei mail.example.org abgelehnt');
