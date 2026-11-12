@@ -659,6 +659,22 @@ begriffe:
     nicht_verwenden: [Cronjob, Tagesereignis, Paketlauf]
     verwandt: [Paket, Berechnetes Feld, Gleich eingeschaltet]
     code: "DannKarte art: paket, zeitplan.ausgefuehrt"
+  - begriff: Sonst
+    bereich: werkbank
+    beschreibung: Vierter Bereich einer Automatisierung – Karten, die laufen, wenn die Und-Bedingungen nicht zutreffen (dieselben Karten wie bei Dann). Je Lauf läuft entweder Dann oder Sonst.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Else-Zweig, Andernfalls]
+    verwandt: [Werkbank-Karte, Automatisierungsvorlage]
+    code: sonst
+  - begriff: Werkbank-Karte
+    bereich: werkbank
+    beschreibung: Karte einer Automatisierung, die den Betrieb von Ablago betrifft statt einer Mappe – Wenn „Fehler gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ und Dann „Sicherung anstoßen“. Das Systemkonto „Automatisierung“ hat dafür genau festgelegte Werkbank-Rechte; einrichten darf sie nur, wer den Bereich selbst verwaltet.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Betriebskarte, Systemkarte]
+    verwandt: [Sonst, Sicherung]
+    code: "BETRIEB_WENN, DannKarte art: sicherung, SYSTEMKONTO_WERKBANK"
   - begriff: Automatisierungsvorlage
     bereich: werkbank
     beschreibung: Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten, fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.

@@ -1,18 +1,19 @@
 # Automatisierungen
 
-Mit einer **Automatisierung** erledigt Ablago etwas von selbst: **Wenn** etwas passiert (ein Ereignis oder ein Datum), **und** die Bedingungen stimmen, **dann** setzt es Felder oder gibt jemandem eine Aufgabe. Du findest sie unter **Werkbank → Ablage aufbauen → Automatisierungen**. Im Haushalt erscheint der Bereich im **Expertenmodus** (Werkbank → Werkbank anpassen), in Betrieben immer.
+Mit einer **Automatisierung** erledigt Ablago etwas von selbst: **Wenn** etwas passiert (ein Ereignis oder ein Datum), **und** die Bedingungen stimmen, **dann** setzt es Felder oder gibt jemandem eine Aufgabe – **sonst** auf Wunsch etwas anderes. Du findest sie unter **Werkbank → Ablage aufbauen → Automatisierungen**. Im Haushalt erscheint der Bereich im **Expertenmodus** (Werkbank → Werkbank anpassen), in Betrieben immer.
 
 ![Werkbank → Automatisierungen: Liste und Editor](bilder/werkbank-automatisierungen.png)
 
-Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“), an/aus, Nummer in der Reihenfolge und dem letzten Lauf. Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann → Ausprobieren → Verlauf → Fassungen**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn und Dann auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
+Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“), an/aus, Nummer in der Reihenfolge und dem letzten Lauf. Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann** (mit Sonst) **→ Ausprobieren → Verlauf → Fassungen**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann- und Sonst-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn, Dann und Sonst auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
 
-In *Wenn* und *Dann* baust du die Automatisierung aus Karten zusammen:
+In *Wenn* und *Dann* baust du die Automatisierung aus Karten zusammen – vier Kästen untereinander, verbunden mit Pfeilen:
 
 | Bereich | Was hinein gehört |
 |---|---|
-| **Wenn** | genau eine Karte: ein Ereignis (Mappe angelegt, gespeichert – auf Wunsch nur bei bestimmten Feldern und **auch beim Anlegen** –, Notiz, Dokument hochgeladen, Favorit geändert, Kontosperre …), **Datum erreicht** oder **Zeitplan** |
+| **Wenn** | genau eine Karte: ein Ereignis (Mappe angelegt, gespeichert – auf Wunsch nur bei bestimmten Feldern und **auch beim Anlegen** –, Notiz, Dokument hochgeladen, Favorit geändert, Kontosperre …), **Datum erreicht**, **Zeitplan** oder eine [Werkbank-Karte](#werkbank-karten) (**Fehler gemeldet**, **Protokollmeldung**, **Neue Version verfügbar**) |
 | **Und** | keine, eine oder mehrere Bedingungen: Feldwerte wie bei den [Ansichten](sichten.md), „Mappe ist in Ansicht …“, „Mappe ist Favorit von …“, Gruppen mit „alle“ oder „eine genügt“; jede Bedingung lässt sich mit **nicht** umkehren |
-| **Dann** | eine oder mehrere Karten, der Reihe nach: **Feld ändern**, **Aufgabe / Benachrichtigung**, **Tägliche Zusammenfassung senden**, **Favoriten-Änderungen melden**, **Anmeldeschutz melden**, **Danach keine weiteren Automatisierungen** |
+| **Dann** | eine oder mehrere Karten, der Reihe nach: **Feld ändern**, **Aufgabe / Benachrichtigung**, **Tägliche Zusammenfassung senden**, **Favoriten-Änderungen melden**, **Anmeldeschutz melden**, **Paket nach Zeitplan ausführen**, **Sicherung anstoßen**, **Danach keine weiteren Automatisierungen** |
+| **Sonst** | keine oder mehrere Karten wie bei Dann – sie laufen, wenn die Und-Bedingungen **nicht** zutreffen (siehe [Sonst](#sonst)) |
 
 Was man an **einer** Mappe von Hand anstößt – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage –, sind [Automatisierungsvorlagen](automatisierungsvorlagen.md). Sie laufen über denselben Motor, mit den Rechten der Person, die sie anwendet.
 
@@ -91,6 +92,7 @@ Der Vorrat zeigt nur, was zur Wenn-Karte passt: **Feld ändern** etwa nur, wenn 
 - **Favoriten-Änderungen melden** (nur mit *Favorit geändert*) gibt allen, die die Mappe als Favorit haben, die gebündelte Benachrichtigung „Geändert“ – wie bisher. **Nur an Mitglieder dieser Rollen** schränkt ein (keine Rolle = alle), **Neue Benutzer bekommen die Benachrichtigung** legt die Vorgabe fest – beides stand bis 0.256 unter Werkbank → Aufgaben ([Favoriten benachrichtigen](aufgaben.md#favoriten-benachrichtigen)). Der Schalter unter Mein Konto gilt weiter; eigene Änderungen melden nie.
 - **Anmeldeschutz melden** schickt allen, die den Anmeldeschutz verwalten, entweder die **Sammelmeldung** über die Sperren (mit *Zeitplan*, nicht je Benutzer) oder sofort eine Mail, wenn ein **Benutzerkonto gesperrt** wurde (mit *Benutzerkonto gesperrt*, je Konto höchstens einmal am Tag). Siehe [Anmeldeschutz](anmeldeschutz.md#mail-an-die-administratoren).
 - **Paket nach Zeitplan ausführen** (nur mit *Zeitplan*, nicht je Benutzer) sagt einem Paket, dass sein Zeitpunkt erreicht ist – siehe [unten](#paket-nach-zeitplan).
+- **Sicherung anstoßen** stößt eine neue Sicherung an – siehe [Werkbank-Karten](#sicherung-anstossen).
 - **Danach keine weiteren Automatisierungen** beendet die Reihe: Automatisierungen mit höherer Nummer laufen für dieses Ereignis nicht mehr (im Verlauf „Übersprungen durch …“).
 
 Automatisierungen arbeiten mit dem **Systemkonto „Automatisierung“** (Werkbank → Benutzer). Was dieses Konto nicht lesen darf, überspringt die Automatisierung; Platzhalter zeigen dann „(nicht sichtbar)“. Bei Aufgaben gelten zusätzlich die Rechte des Empfängers (siehe oben).
@@ -108,6 +110,59 @@ Manche Pakete müssen regelmäßig rechnen, weil sich ihr Ergebnis nur durch das
 - **Paket entfernt:** Die Karte läuft dann ins Leere. Die Automatisierung bleibt an und zeigt „Paket … ist nicht installiert“; im Verlauf steht der Lauf als *übersprungen* – kein Fehler, kein Hinweis auf fehlgeschlagene Läufe.
 - Jeden Lauf siehst du im **Verlauf** der Automatisierung; das Paket bekommt ihn wie jedes andere Ereignis (mit Wiederholung, falls es gerade nicht erreichbar ist).
 
+## Sonst { #sonst }
+
+Unter **Dann** steht, was passiert, wenn die Und-Bedingungen zutreffen. Unter **Sonst** kannst du Karten für den anderen Fall ablegen – dieselben Karten wie bei Dann, per Ziehen aus dem Vorrat oder mit **+ Karte**. Ohne Und-Bedingungen trifft immer alles zu; Sonst läuft dann nie.
+
+*Beispiel:* Wenn ein Vertrag gespeichert wird, **und** *Verantwortlich* ist gesetzt, **dann** Feld *Status* auf „geprüft“ – **sonst** Aufgabe an die Rolle *Verwaltung*: „Bitte {titel} eine verantwortliche Person geben.“
+
+- Je Lauf läuft genau einer der beiden Zweige; der andere steht im Verlauf als *übersprungen*. Hat eine Automatisierung keine Sonst-Karten und die Bedingungen treffen nicht zu, heißt der Lauf wie bisher *trifft nicht zu*.
+- **Danach keine weiteren Automatisierungen** wirkt auch im Sonst-Zweig.
+- Mindestens eine Dann-Karte braucht jede Automatisierung; Sonst ist freiwillig.
+
+## Werkbank-Karten { #werkbank-karten }
+
+Manches betrifft nicht eine Mappe, sondern den **Betrieb** von Ablago. Dafür gibt es drei Wenn-Karten (im Vorrat unter *Betrieb*) und eine Dann-Karte. Diese Karten haben **keine Mappe**: Als Bedingung geht nur ein Merkmal der Ablage, und eine **Aufgabe / Benachrichtigung** geht an Personen oder Rollen – sie hängt an der Benutzer-Mappe des Empfängers.
+
+Einrichten darf eine Werkbank-Karte nur, wer den passenden Bereich selbst verwalten darf: *Fehler gemeldet* den Bereich *Gemeldete Fehler*, *Protokollmeldung* das *Protokoll*, *Neue Version verfügbar* den *Systemzustand* und *Sicherung anstoßen* die *Sicherung*. Pakete bringen diese Karten nicht mit.
+
+### Fehler gemeldet { #fehler-gemeldet }
+
+Läuft, sobald jemand über **Fehler melden** einen Fehler meldet. Platzhalter: `{zeitpunkt}`, `{meldung}` (Text der Meldung) und `{gemeldet_von}`. Text und Absender sieht ein Empfänger nur, wenn er [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) verwalten darf – allen anderen zeigt Ablago „(nicht sichtbar)“. Bilder und technische Angaben der Meldung kommen nie in eine Aufgabe.
+
+*Beispiel:* Wenn **Fehler gemeldet** → Dann Aufgabe an Markus, fällig in 1 Tag: `Neue Fehlermeldung von {gemeldet_von}: {meldung}`.
+
+### Protokollmeldung { #protokollmeldung }
+
+Läuft, wenn das [Protokoll](fehlersuche.md#protokoll) eine Warnung oder einen Fehler schreibt. Du wählst die **Stufe** (*ab Warnung* oder *ab Fehler*), auf Wunsch ein **Modul** (z. B. *E-Mail*, *Sicherung*) und einen **Text**, den die Meldung enthalten soll. Platzhalter: `{zeitpunkt}`, `{stufe}`, `{modul}` und `{meldung}` – ohne Geheimnisse, wie im Protokoll; den Text sieht nur, wer das Protokoll verwalten darf.
+
+- **Höchstens ein Lauf in 15 Minuten** je Automatisierung – bei einer Störung kommt keine Flut.
+- Meldungen, die eine Automatisierung selbst auslöst (z. B. weil ihre Aufgabe nicht zugestellt werden kann), lösen keine Automatisierung aus.
+- **E-Mail gestört:** Bei Fehlern im Modul *E-Mail* kommt eine Benachrichtigung per E-Mail meist nicht an. Der Editor weist darauf hin – nimm eine **Aufgabe** oder **Benachrichtigung**: Sie steht in Ablago unter *Zu erledigen*, auch wenn der Versand gestört ist.
+
+### Neue Version verfügbar { #neue-version }
+
+Läuft, wenn es eine neue **stabile Version** von Ablago gibt. Ablago fragt dafür einmal am Tag (ab 06:00) bei GitHub nach – nur, solange eine solche Automatisierung eingeschaltet ist; dabei geht nichts aus deiner Ablage hinaus. Je Version läuft sie genau einmal. Platzhalter: `{version}` und `{installiert}`. Was neu ist, steht unter [Technik und Versionen](technik.md).
+
+### Sicherung anstoßen { #sicherung-anstossen }
+
+Die Dann-Karte stößt eine neue [Sicherung](sicherung.md) an – verschlüsselt wie *Jetzt sichern* und mit der Aufbewahrung der automatischen Sicherungen, damit die Platte nicht vollläuft. Die Automatisierung erfährt nur **angestoßen** oder **läuft schon** (dann keine zweite). Ob die Sicherung gelingt, wie groß sie ist und wo sie liegt, steht nur unter Werkbank → Sicherung; lässt sie sich gar nicht anstoßen (kein Schlüssel, zu wenig Platz, Wiederherstellung läuft), schlägt der Lauf ohne Einzelheiten fehl.
+
+### Werkbank-Rechte des Systemkontos { #werkbank-rechte }
+
+Automatisierungen laufen unter dem Systemkonto **„Automatisierung“**. Es darf die Werkbank nie betreten. Für die Werkbank-Karten hat es **genau diese Rechte** – alle übrigen Bereiche gar keine:
+
+| Bereich | darf | darf nicht |
+|---|---|---|
+| Sicherung | eine neue Sicherung **anstoßen** | Erfolg, Anzahl, Zeitplan, Speicherplatz, Speicherort sehen; Notfallblatt |
+| Wiederherstellen | – | alles |
+| Volltext | – | neu erzeugen u. Ä. |
+| Papierkorb | – | leeren, endgültig löschen |
+| Technik und Versionen | prüfen, ob eine neue Version da ist | – |
+| Gemeldete Fehler | sehen | – |
+| Protokoll | Meldungen ab einer Stufe finden | – |
+| Benutzer | nichts in der Werkbank (Benutzer sind Mappen, Rechte daran über die Rolle *Systemkonto*) | Benutzer und Rechte verwalten |
+
 ## Reihenfolge
 
 Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Nach Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
@@ -116,7 +171,7 @@ Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihre
 
 ![Verlauf mit den Schritten eines Laufs](bilder/werkbank-automatisierung-verlauf.png)
 
-- **Ausprobieren:** Mappe wählen und **Ausführen** – als wäre das Ereignis eingetreten. Die Mappe wählst du wie in einem Verweisfeld: Tippe einen Teil des Titels und klicke auf einen Treffer. Angeboten werden nur Mappen vom Mappentyp der Wenn-Karte, die das Konto „Automatisierung“ sehen darf – mit allen anderen könnte die Automatisierung ohnehin nicht laufen. Mit **Probelauf** zeigt Ablago nur, was passieren würde („Würde Aufgabe an 1 Person senden: …“), und ändert nichts.
+- **Ausprobieren:** Mappe wählen und **Ausführen** – als wäre das Ereignis eingetreten. Die Mappe wählst du wie in einem Verweisfeld: Tippe einen Teil des Titels und klicke auf einen Treffer. Angeboten werden nur Mappen vom Mappentyp der Wenn-Karte, die das Konto „Automatisierung“ sehen darf – mit allen anderen könnte die Automatisierung ohnehin nicht laufen. Mit **Probelauf** zeigt Ablago nur, was passieren würde („Würde Aufgabe an 1 Person senden: …“), und ändert nichts. Bei [Werkbank-Karten](#werkbank-karten) gibt es keine Mappe zu wählen – Ablago probiert es mit einer Beispielmeldung.
 - **Verlauf:** sieht aus wie die Historie einer Mappe: je Lauf eine Zeile mit Datum und Uhrzeit, dem Auslöser (z. B. „Mappe angelegt“, „Probelauf“, „Wiederholung“), einer Zusammenfassung, dem Ergebnis (*abgeschlossen*, *trifft nicht zu*, *übersprungen*, *fehlgeschlagen*) und der Zahl der Karten. Aufgeklappt zeigt eine Tabelle **Karte · Ergebnis · Einzelheiten**, was jede Karte getan hat; ist etwas schiefgegangen, steht der Grund bei der Karte, die gescheitert ist. Mit **Alle Einträge aufklappen** / **Alle Einträge zuklappen** siehst du alles auf einmal. Läuft die Automatisierung gerade, während der Editor offen ist, ist dieser Lauf aufgeklappt und die Karten werden **live** abgehakt; Karten, die noch nicht dran waren, stehen auf „wartet“.
 - **Fehlgeschlagene Läufe** bleiben stehen. Über der Liste der Automatisierungen steht dann zum Beispiel „1 Lauf ist fehlgeschlagen: Neue Benutzer melden, 04.11.26, 04:48“; bei mehreren Läufen zeigt **Anzeigen** nur die betroffenen Automatisierungen. **Alle wiederholen** führt sie noch einmal aus, **Nicht wiederholen** nimmt sie aus dem Hinweis – im Verlauf bleiben sie als „fehlgeschlagen – nicht wiederholt (wer, wann)“ stehen, gelöscht wird nichts. Dieselbe Wahl hast du je Lauf im aufgeklappten Verlauf. **Probeläufe** zählen nicht mit; ihr Ergebnis steht nur im Verlauf. Die [Übersicht der Werkbank](uebersicht.md) meldet fehlgeschlagene Läufe ebenfalls.
 - **Fassungen** (bis 0.254 „Änderungsverlauf“): jede gespeicherte Fassung mit Zeit, wer und was sich geändert hat („Dann: ‚Aufgabe an Markus‘ hinzugefügt“); die neueste ist mit **Aktuell** gekennzeichnet. Zwei Fassungen lassen sich vergleichen, eine frühere **wiederherstellen** – nach einer Rückfrage, die sagt, was sich ändert, wird daraus eine neue Fassung; der jetzige Stand bleibt erhalten. Passt die frühere Fassung nicht mehr (z. B. ein Feld fehlt), sagt Ablago das wie beim Speichern und stellt sie nicht wieder her. Wie das für alle Einstellungen der Werkbank gilt: [Fassungen](fassungen.md).
@@ -134,6 +189,7 @@ Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird 
 - In der Liste erkennst du sie an der Herkunft **aus Paket …**. Du kannst sie einschalten, anpassen und kopieren.
 - Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
 - Entfernst du das Paket, gehen seine Automatisierungen mit, wenn sie aus und unverändert sind.
+- [Werkbank-Karten](#werkbank-karten) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen.
 
 ### Vertretung
 

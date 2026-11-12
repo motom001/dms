@@ -64,6 +64,7 @@ import { RegionDienst } from './region';
 import { SprachDienst } from './sprachwahl';
 import { Sprachpakete } from './sprachpakete';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
+import { Betriebsmelder, systemWerkbank } from './automatisierung-werkbank';
 import { Fachfehler } from './fehler';
 import { t, tAuto, tDe } from './sprache';
 import { Wartung } from './wartung';
@@ -574,13 +575,25 @@ if (paketlaeufer) wartung.beimAusschalten(() => void paketlaeufer.stelleZu());
 const systemlast = new Systemlast({ laeufer: () => laeufer.pid, postgres: process.env.DMS_VARIANTE === 'komplett', schleife: () => !!messung.auslastung.warnung() });
 systemlast.start();
 
-// Automatisierungen (#674): Wenn · Und · Dann unter dem Systemkonto „Automatisierung“; Läufe je Ereignis genau einmal.
+// Fehlermeldungen der Benutzer (#70) – Screenshots getrennt von den Dokumenten; Ereignis „Fehler gemeldet“ (#677).
+const fehlermeldungen = new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/fehlermeldungen`));
+fehlermeldungen.beimMelden = (m) => dienst.kern.ereignis('fehler.gemeldet', { fehlermeldung: m.id, benutzer: m.benutzerId, zeitpunkt: m.erstellt }, m.benutzerId);
+// Werkbank-Rechte des Systemkontos „Automatisierung“ (#677): genau Sicherung anstoßen, neue Version, gemeldete Fehler, Protokoll.
+const systemwerkbank = systemWerkbank({ sicherung, fehlermeldungen });
+// Automatisierungen (#674): Wenn · Und · Dann · Sonst unter dem Systemkonto „Automatisierung“; Läufe je Ereignis genau einmal.
+const automatisierungRepo = messung.umhuelle(pgAutomatisierungRepo(sql, cfg.haushalt), 'automatisierungen');
 const automatisierungen = new Automatisierungen({
-  dienst, repo: messung.umhuelle(pgAutomatisierungRepo(sql, cfg.haushalt), 'automatisierungen'),
+  dienst, repo: automatisierungRepo, werkbank: systemwerkbank,
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
 });
-// Fehlermeldungen der Benutzer (#70) – Screenshots getrennt von den Dokumenten.
-const fehlermeldungen = new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/fehlermeldungen`));
+// Wenn-Karte „Protokollmeldung“ (#677): jeder Prozess meldet seine Warnungen und Fehler in den Ausgangskorb – nur solange
+// eine passende Automatisierung an ist, nie die einer Automatisierung selbst.
+const betriebsmelder = new Betriebsmelder({
+  werkbank: systemwerkbank, automatisierungen: () => automatisierungRepo.liste(),
+  ereignis: (m) => dienst.kern.ereignis('protokoll.meldung', { ...m }, null),
+  inAutomatisierung: () => dienst.kern.ausloeser(null).art === 'automatisierung',
+});
+betriebsmelder.start();
 // Technische Aufgaben (#719, #818): gebündelte Mail an die Verwaltenden je Bereich, Hinweis ohne Einzelheiten außerhalb
 // des Verwaltungsmodus. Jede Quelle liefert Punkte mit festem Schlüssel und Bereich; die Texte nur in der Mail.
 const verwaltung = new Verwaltung({

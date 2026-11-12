@@ -14,8 +14,18 @@
 
 /** Wozu ein Ereignis gehört – zugleich der Kontext einer Wenn-Karte (welche Platzhalter es gibt). */
 export type Ereignisgruppe = 'mappe' | 'zeit' | 'person' | 'benutzer' | 'verarbeitung' | 'betrieb' | 'auftrag';
-/** Gruppen, die keine Wenn-Karte sind: Betrieb (kommt mit Stufe 2) und Aufträge an ein einzelnes Paket. */
+/**
+ * Gruppen, die keine Wenn-Karte sind: Betrieb und Aufträge an ein einzelnes Paket. Aus dem Betrieb
+ * sind nur die Werkbank-Karten {@link BETRIEB_WENN} Wenn-Karten (#677) – „Sicherung fertig“ nicht (das Systemkonto darf
+ * Erfolg und Ort einer Sicherung nicht sehen).
+ */
 export const OHNE_WENN: readonly Ereignisgruppe[] = ['betrieb', 'auftrag'];
+/** Wenn-Karten aus dem Betrieb (#677): Fehler gemeldet, Protokollmeldung, neue Version. */
+export const BETRIEB_WENN = ['fehler.gemeldet', 'protokoll.meldung', 'version.neu'] as const;
+export type BetriebWenn = (typeof BETRIEB_WENN)[number];
+export const istBetriebWenn = (a: string): a is BetriebWenn => (BETRIEB_WENN as readonly string[]).includes(a);
+/** Kann das Ereignis eine Wenn-Karte sein (vor den Sonderfällen der Automatisierungen)? */
+export const wennFaehig = (a: KatalogArt) => !OHNE_WENN.includes(EREIGNISKATALOG[a].gruppe) || istBetriebWenn(a);
 
 export interface Katalogeintrag {
   gruppe: Ereignisgruppe;
@@ -64,6 +74,12 @@ export const EREIGNISKATALOG = {
   'erkennung.fertig': { gruppe: 'verarbeitung', felder: ['mappe', 'typ', 'dokument'] },
   // Betrieb
   'sicherung.fertig': { gruppe: 'betrieb', felder: ['datei', 'groesse', 'sha256', 'beginn', 'verschluesselung'], paket: true },
+  // Wenn-Karten der Werkbank (#677) – nur für Automatisierungen, nie für Pakete oder nach außen. „protokoll.meldung“ trägt
+  // ausnahmsweise den Text der Meldung (ohne Geheimnisse wie im Protokoll, gekürzt): Das Protokoll lebt nur im
+  // Arbeitsspeicher des Prozesses, der sie schrieb.
+  'fehler.gemeldet': { gruppe: 'betrieb', felder: ['fehlermeldung', 'benutzer', 'zeitpunkt'] },
+  'protokoll.meldung': { gruppe: 'betrieb', felder: ['stufe', 'modul', 'text', 'zeitpunkt'] },
+  'version.neu': { gruppe: 'betrieb', felder: ['version', 'installiert'] },
   // Aufträge an genau ein Paket (der Kern bittet ein bestimmtes Paket um etwas, #577, #614, #631, #338)
   'paket.einstellungen_geaendert': { gruppe: 'auftrag', felder: ['felder'], paket: true },
   'datei.umwandeln': { gruppe: 'auftrag', felder: ['dokument', 'mappe', 'mime', 'groesse', 'sha256'], paket: true },

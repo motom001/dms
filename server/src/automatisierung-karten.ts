@@ -1,5 +1,5 @@
 import { feldLabel } from '../../shared/src/beschriftung';
-import type { DannKarte } from '../../shared/src/automatisierung';
+import { istBetrieb, type DannKarte } from '../../shared/src/automatisierung';
 import { formatiere, tagVon, type AufgabenAnlass, type Feld } from '../../shared/src/model';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
@@ -25,6 +25,10 @@ import { t } from './sprache';
  *   über denselben Weg wie jeden Auftrag an ein Paket (Wiederholung durch den Paket-Läufer). Mitgelieferte
  *   Automatisierungen erreichen nur ihr eigenes Paket; fehlt das Paket oder abonniert es das Ereignis nicht (mehr), läuft
  *   die Karte ins Leere (übersprungen, kein Fehler). Je Automatisierung, Karte und Tag genau eine Zustellung.
+ * - **Sicherung anstoßen** (#677): über die Werkbank-Rechte des Systemkontos – Ergebnis nur „angestoßen“ oder „läuft
+ *   schon“; ob sie gelingt, wie groß sie ist und wo sie liegt, erfährt die Automatisierung nicht.
+ * - Wenn-Karten ohne Mappe aus dem Betrieb (#677): „Aufgabe / Benachrichtigung“ hängt dann an der Benutzer-Mappe des
+ *   Empfängers (wie eine Aufgabe ohne Leserecht).
  */
 const uebersetzer2 = uebersetzer({ automatisierung: texte });
 
@@ -57,7 +61,9 @@ DANN_AUSFUEHRER.feld = async (k: DannKarte, c: KartenKontext) => {
 
 DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   if (k.art !== 'aufgabe') throw new Fachfehler(500, t('meldungen.automatisierungkarten.falsche-karte'));
-  if (!c.mappe) throw new Fachfehler(422, uebersetzer2('automatisierung.karte.aufgabe.ohne-mappe'));
+  // Werkbank-Karten (#677) haben keine Mappe: Die Aufgabe kommt an die Benutzer-Mappe des Empfängers.
+  const ohneMappe = !c.mappe && istBetrieb(c.automatisierung.wenn);
+  if (!c.mappe && !ohneMappe) throw new Fachfehler(422, uebersetzer2('automatisierung.karte.aufgabe.ohne-mappe'));
   const text = (await c.fuelle(k.text)).trim();
   if (!text) throw new Fachfehler(422, uebersetzer2('automatisierung.karte.aufgabe.leer'));
   const an = [...new Set((await Promise.all(k.empfaenger.map((e) => c.personen(e)))).flat())];
@@ -87,7 +93,7 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   const aufgabenAnlass: AufgabenAnlass | null = k.als !== 'aufgabe' ? null
     : w.art === 'datum' ? { art: 'datum', feld: w.feld, wiederholung: w.wiederholung ?? null, automatisierung: auto }
       : w.art === 'post.angelegt' || istPost ? { art: 'post', automatisierung: auto }
-        : w.art === 'benutzer.abwesenheit_gesetzt' ? { art: 'abwesenheit', benutzer: c.mappe.id, automatisierung: auto } : null;
+        : w.art === 'benutzer.abwesenheit_gesetzt' && c.mappe ? { art: 'abwesenheit', benutzer: c.mappe.id, automatisierung: auto } : null;
   // „Post für dich“ (#1001, wie bis 0.256 im Kern): Wer in „An“ der Post steht, bekommt eine Aufgabe der Art „Post für
   // dich“ – je Post und Person nur eine; sie erledigt sich, sobald die Post nicht mehr neu ist oder an jemand anderen geht.
   const ausAn = aufgabenAnlass?.art === 'post' && c.mappe && k.empfaenger.some((e) => e.art === 'feld' && e.feld === 'an')
@@ -96,7 +102,7 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   // Platzhalter je Empfänger mit dessen Rechten (#795) – fürs Konto leer ist er schon oben abgefangen.
   const fuer = async (wer: string | null) => (await c.fuelleFuer(k.text, wer)).text.trim() || text;
   for (const id of an) {
-    const r = await c.dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist, postAn: ausAn.has(id) ? id : null });
+    const r = await c.dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: c.mappe?.id ?? id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist, postAn: ausAn.has(id) ? id : null });
     if (r.ohneLeserecht) ohneLeserecht++;
     if (r.vorhanden) vorhanden++;
     if (!r.an) admins++;
@@ -157,4 +163,14 @@ DANN_AUSFUEHRER.paket = async (k: DannKarte, c: KartenKontext) => {
   const id = uuidAus(`zeitplan.ausgefuehrt|${a.id}|${k.id}|${typeof c.daten.tag === 'string' ? c.daten.tag : c.ereignisId}`);
   await c.dienst.ereignisseDienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
   return uebersetzer2('automatisierung.karte.paket.ergebnis', zeile);
+};
+
+/* ---------- Werkbank (#677) ---------- */
+
+DANN_AUSFUEHRER.sicherung = async (k: DannKarte, c: KartenKontext) => {
+  if (k.art !== 'sicherung') throw new Fachfehler(500, t('meldungen.automatisierungkarten.falsche-karte'));
+  if (!c.werkbank) throw new Fachfehler(500, uebersetzer2('automatisierung.karte.sicherung.fehlt'));
+  if (c.trocken) return uebersetzer2('automatisierung.karte.sicherung.trocken');
+  const r = await c.werkbank.sicherungAnstossen(uebersetzer2('automatisierung.karte.sicherung.von', { name: c.automatisierung.name }));
+  return r === 'laeuft' ? uebersetzer2('automatisierung.karte.sicherung.laeuft') : uebersetzer2('automatisierung.karte.sicherung.angestossen');
 };

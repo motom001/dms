@@ -1,7 +1,7 @@
 /** Ereigniskatalog (#670): Ausgangskorb, Bündeln, Verteiler, Pakete nach code.mappentypen, still, Frist genau einmal. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { EREIGNISKATALOG, ereignisSchluessel, KATALOG_ARTEN, mischeFelder, type KatalogEreignis } from '../../shared/src/ereignisse';
+import { BETRIEB_WENN, EREIGNISKATALOG, ereignisSchluessel, KATALOG_ARTEN, mischeFelder, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { EREIGNISSE, liesCode, MAPPEN_EREIGNISSE, type InstalliertesPaket } from '../../shared/src/pakete';
 import de from '../../shared/src/sprachen/de/ereignisse.json';
 import { speicherDateien } from '../src/dateispeicher';
@@ -55,7 +55,12 @@ describe('Ereigniskatalog (#670): Katalog', () => {
     for (const a of KATALOG_ARTEN) {
       assert.ok(texte[`name.${ereignisSchluessel(a)}`] && texte[`text.${ereignisSchluessel(a)}`], `Texte für ${a}`);
       assert.ok(texte[`gruppe.${EREIGNISKATALOG[a].gruppe}`], `Gruppe für ${a}`);
-      for (const f of EREIGNISKATALOG[a].felder) assert.doesNotMatch(f, /titel|name|wert|text/i, `${a}: nur Ids/Schlüssel/Datum (${f})`);
+      // Einzige Ausnahme (#677): Die Protokollmeldung trägt ihren Text (ohne Geheimnisse wie im Protokoll) – das Protokoll
+      // lebt nur im Arbeitsspeicher des Prozesses, der sie schrieb. Sie geht nie an Pakete (unten) oder nach außen.
+      for (const f of EREIGNISKATALOG[a].felder) if (!(a === 'protokoll.meldung' && f === 'text')) assert.doesNotMatch(f, /titel|name|wert|text/i, `${a}: nur Ids/Schlüssel/Datum (${f})`);
+    }
+    for (const a of BETRIEB_WENN) {
+      assert.ok(!(EREIGNISKATALOG[a] as { paket?: boolean }).paket, `${a}: nur für Automatisierungen`);
     }
     for (const a of MAPPEN_EREIGNISSE) assert.ok(Object.keys(EREIGNISSE).includes(a), `${a} für Pakete`);
     assert.deepEqual(mischeFelder({ felder: ['a', 'b'] }, { felder: ['b', 'c'] }).felder, ['a', 'b', 'c']);

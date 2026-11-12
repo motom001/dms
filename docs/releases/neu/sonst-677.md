@@ -1,0 +1,5 @@
+art: minor
+
+## Neu
+
+- **Automatisierungen: Sonst und Werkbank-Karten** (#677): Unter **Sonst** stehen Karten, die laufen, wenn die Bedingungen nicht zutreffen. Neue Wenn-Karten **Fehler gemeldet**, **Protokollmeldung** (ab Warnung oder Fehler, wahlweise nur ein Modul oder ein Text, höchstens ein Lauf in 15 Minuten) und **Neue Version verfügbar** sowie die Dann-Karte **Sicherung anstoßen**. Das Systemkonto „Automatisierung“ hat dafür genau festgelegte Werkbank-Rechte (Tabelle im Handbuch); einrichten darf die Karten nur, wer den Bereich selbst verwaltet.
