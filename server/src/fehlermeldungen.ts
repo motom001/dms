@@ -46,6 +46,8 @@ function begrenze(v: unknown, tiefe = 0): unknown {
 }
 
 export class Fehlermeldungen {
+  /** Nach dem Eingang (#677): Ereignis „Fehler gemeldet“ für Automatisierungen (ablago.ts verbindet mit dem Kern). */
+  beimMelden?: (m: { id: string; benutzerId: string | null; erstellt: string }) => Promise<void>;
   constructor(private repo: FehlerRepo, private dateien: Dateispeicher) {}
 
   async melde(benutzerId: string | null, eingabe: unknown): Promise<{ id: string }> {
@@ -70,8 +72,11 @@ export class Fehlermeldungen {
     }
     const id = randomUUID();
     const angaben = begrenze(e.angaben ?? {}) as Record<string, unknown>;
-    await this.repo.lege({ id, benutzerId, erstellt: new Date().toISOString(), text, angaben, bilder, erledigt: null, erledigtVon: null });
+    const erstellt = new Date().toISOString();
+    await this.repo.lege({ id, benutzerId, erstellt, text, angaben, bilder, erledigt: null, erledigtVon: null });
     log.info('Fehlermeldung eingegangen', { id, bilder: bilder.length });
+    // Die Meldung ist gespeichert – scheitert das Ereignis, steht es nur im Protokoll.
+    await this.beimMelden?.({ id, benutzerId, erstellt }).catch((x: Error) => log.warn('Ereignis „Fehler gemeldet“ nicht ausgelöst', { fehler: x.message }));
     return { id };
   }
 

@@ -437,6 +437,10 @@ Siehe auch: [Tägliche Zusammenfassung](#tagliche-zusammenfassung).
 Eine Gruppe von Benutzern, z. B. „Eltern“. Grundlage für Berechtigungsregeln. Nicht zu verwechseln mit der Systemrolle.  
 Siehe auch: [Systemrolle](#systemrolle).
 
+<a id="sonst"></a>**Sonst** · ~ mit Erklärung · Administratoren  
+Vierter Bereich einer Automatisierung – Karten, die laufen, wenn die Und-Bedingungen nicht zutreffen (dieselben Karten wie bei Dann). Je Lauf läuft entweder Dann oder Sonst.  
+Siehe auch: [Werkbank-Karte](#werkbank-karte), [Automatisierungsvorlage](#automatisierungsvorlage).
+
 <a id="stichtag"></a>**Stichtag** · ~ mit Erklärung · Administratoren  
 Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines Jahres plus die Jahre. Ist es leer, zählt das Anlagedatum der Mappe oder, mit „läuft noch nicht ab“, die Frist beginnt erst, wenn es gefüllt ist.  
 Siehe auch: [Archivmodus](#archivmodus).
@@ -473,6 +477,10 @@ Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket), [Brief aus Vorlage](#brief-aus
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
 Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
 Siehe auch: [Werkbank](#werkbank), [Übersicht](#ubersicht), [Betrieb](#betrieb).
+
+<a id="werkbank-karte"></a>**Werkbank-Karte** · ~ mit Erklärung · Administratoren  
+Karte einer Automatisierung, die den Betrieb von Ablago betrifft statt einer Mappe – Wenn „Fehler gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ und Dann „Sicherung anstoßen“. Das Systemkonto „Automatisierung“ hat dafür genau festgelegte Werkbank-Rechte; einrichten darf sie nur, wer den Bereich selbst verwaltet.  
+Siehe auch: [Sonst](#sonst), [Sicherung](#sicherung).
 
 <a id="woran-man-ihn-erkennt"></a>**Woran man ihn erkennt** · ~ mit Erklärung · Administratoren  
 Kurzer Satz in den Grunddaten eines Mappentyps (#937, höchstens 300 Zeichen), z. B. „Enthält Rechnungsnummer, Betrag und Zahlungsziel“. Hilft der Erkennung, ein Dokument dem richtigen Mappentyp zuzuordnen. Die Beschreibung ist für Menschen, dieser Satz für die Erkennung.  
@@ -730,6 +738,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Rolle | Gruppe, Weitere Rollen | `rolle (Systemtyp), Benutzer.rollen` |
 | Rundgang | Tour, Onboarding, Tutorial | `Rundgang, rundgaenge.yaml` |
 | Sicherung | Backup (in der Oberfläche) | – |
+| Sonst | Else-Zweig, Andernfalls | `sonst` |
 | Standardwert | Defaultwert | – |
 | Stichtag | – | `stichtag` |
 | Systemmappentyp | – | `Systemtyp` |
@@ -754,6 +763,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vorlage | – | `inhalt/vorlagen/*.md` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
+| Werkbank-Karte | Betriebskarte, Systemkarte | `BETRIEB_WENN, DannKarte art: sicherung, SYSTEMKONTO_WERKBANK` |
 | Woran man ihn erkennt | – | `Mappentyp.erkennbarAn` |
 | Zeitraum | Dauer (als Feldart), Periode, Intervall | `zeitraum, Zeitraum, shared/src/feldarten.ts` |
 | Zieltyp | Zielklasse, Referenztyp | `Feld.zielTypen, Feld.gleicherTyp, Feld.zielOptional, zielOptional (Paket)` |

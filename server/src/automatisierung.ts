@@ -4,15 +4,19 @@ import {
   AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, automatisierungsProblemOrte, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
-  PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST,
+  PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST, istBetrieb, protokollPasst, PROTOKOLL_ABSTAND_MIN, BETRIEB_PLATZHALTER, SYSTEMKONTO_WERKBANK, werkbankBereiche, wennBereich, laufFuer,
 } from '../../shared/src/automatisierung';
-import { EREIGNISKATALOG, OHNE_WENN, type KatalogEreignis } from '../../shared/src/ereignisse';
+import { EREIGNISKATALOG, istBetriebWenn, wennFaehig, type KatalogEreignis } from '../../shared/src/ereignisse';
+import { darfBereich } from '../../shared/src/verwaltungsrecht';
+import type { SystemWerkbank } from './automatisierung-werkbank';
+import { eigeneVersion } from './system';
 import { tagVon, titelAus, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { postKennung, postVorlageNeu } from '../../shared/src/postfelder';
 import { heuteIn, merkmalTrifft, verschiebe, type Bedingung } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
 import texte from '../../shared/src/sprachen/de/automatisierung.json';
 import ereignisTexte from '../../shared/src/sprachen/de/ereignisse.json';
+import werkbankTexte from '../../shared/src/sprachen/de/werkbank.json';
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
 import type { PaketAutomatisierung } from './pakete';
@@ -28,7 +32,7 @@ import { liesFavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { gebietsschema } from '../../shared/src/sprache';
 
 /**
- * Motor der Automatisierungen (#674): Wenn · Und · Dann, ausgeführt unter dem Systemkonto „Automatisierung“ (#673).
+ * Motor der Automatisierungen (#674): Wenn · Und · Dann · Sonst (#677), ausgeführt unter dem Systemkonto „Automatisierung“ (#673).
  *
  * - **Auslösen:** über den Ereigniskatalog (#670, Abnehmer „automatisierungen“) und den Zeitplan „Datum in N Tagen“.
  *   Je Automatisierung und Ereignis genau **ein Lauf** (eindeutig in der Datenbank): Kommt ein Ereignis noch einmal
@@ -50,7 +54,7 @@ import { gebietsschema } from '../../shared/src/sprache';
 
 const log = protokoll.modul('automatisierung');
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
-const t = uebersetzer({ automatisierung: texte, ereignisse: ereignisTexte });
+const t = uebersetzer({ automatisierung: texte, ereignisse: ereignisTexte, werkbank: werkbankTexte });
 /** Zeitplan „Datum in N Tagen“ und Aufräumen. */
 const ZEITPLAN_MS = 60_000;
 /** Ein Lauf, der so lange auf „läuft“ steht, gehört einem Server, der dabei gestorben ist. */
@@ -275,6 +279,8 @@ export interface KartenKontext {
   personen(e: Empfaenger): Promise<string[]>;
   /** Vermerk für die Historie der Mappe: „durch Automatisierung ‚…‘ (eingerichtet von …)“. */
   anlass: Record<string, unknown>;
+  /** Werkbank-Rechte des Systemkontos (#677) – genau die Liste, sonst nichts; fehlt in Tests ohne Werkbank. */
+  werkbank?: SystemWerkbank;
 }
 /**
  * Die Karte hat nichts zu tun, weil ihr Ziel fehlt (#1082: Paket entfernt oder ohne das Ereignis) – der Schritt gilt als
@@ -294,10 +300,19 @@ export interface AutomatisierungDeps {
   /** Läuft gerade eine Wartung oder Wiederherstellung? Dann ruht der Zeitplan (der Verteiler ruht von selbst). */
   pause?: () => string | null;
   uhr?: () => number;
+  /** Werkbank-Rechte des Systemkontos (#677): Sicherung anstoßen, neue Version, gemeldete Fehler, Protokoll. */
+  werkbank?: SystemWerkbank;
 }
 
 /** Ereignis, wie der Motor es verarbeitet (aus dem Katalog oder vom Zeitplan). */
 interface Anlass { id: string; art: string; daten: Record<string, unknown>; kette: number; ausloeser?: KatalogEreignis['ausloeser'] }
+
+/**
+ * Mappe eines Anlasses: die Mappe bzw. der Benutzer (Benutzer sind Mappen). Werkbank-Karten (#677) haben keine – auch
+ * wenn „Fehler gemeldet“ die meldende Person nennt.
+ */
+const mappeVon = (anlass: Pick<Anlass, 'art' | 'daten'>): string | null => (istBetriebWenn(anlass.art) ? null
+  : typeof anlass.daten.mappe === 'string' ? anlass.daten.mappe : typeof anlass.daten.benutzer === 'string' ? anlass.daten.benutzer : null);
 
 /** Feste UUID aus einem Text (gleiche Eingabe = gleiche Id; mehrere Server legen nichts doppelt an). */
 export const uuidAus = (s: string) => { const h = createHash('sha256').update(s).digest('hex'); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`; };
@@ -370,6 +385,20 @@ function mitFassungen(repo: AutomatisierungRepo, dienst: Dienst): Automatisierun
   };
 }
 
+/** Gleicher Stand unabhängig von der Reihenfolge der Schlüssel (Wenn-Karte vor und nach dem Speichern). */
+function gleicherStand(a: unknown, b: unknown): boolean {
+  const sortiert = (w: unknown): unknown => (Array.isArray(w) ? w.map(sortiert) : w && typeof w === 'object'
+    ? Object.fromEntries(Object.entries(w as Record<string, unknown>).filter(([, v]) => v !== undefined).sort(([x], [y]) => x.localeCompare(y)).map(([k, v]) => [k, sortiert(v)])) : w);
+  return JSON.stringify(sortiert(a)) === JSON.stringify(sortiert(b));
+}
+
+/** Bringt eine mitgelieferte Automatisierung eine Werkbank-Karte mit (#677)? Dann wird sie übergangen. */
+function mitWerkbankKarte(paket: string, x: PaketAutomatisierung): boolean {
+  const ja = werkbankBereiche(bereinigeAutomatisierung({ wenn: x.wenn, dann: x.dann })).length > 0;
+  if (ja) log.warn('Mitgelieferte Automatisierung mit Werkbank-Karte übergangen', { paket, automatisierung: x.schluessel });
+  return ja;
+}
+
 /** Id einer mitgelieferten Automatisierung – nach einem Umzug (#1084, `ersetzt`) die aus der früheren Paket-Id. */
 function paketAutomatisierungId(p: InstalliertesPaket, schluessel: string, vorhanden: Automatisierung[]): string {
   return [p.id, ...(p.ersetzt ?? [])].map((k) => uuidAus(`paket|${k}|${schluessel}`)).find((k) => vorhanden.some((a) => a.id === k)) ?? uuidAus(`paket|${p.id}|${schluessel}`);
@@ -418,7 +447,8 @@ export class Automatisierungen {
       alle: async () => (await this.d.repo.liste()).map((a) => a.id),
       stelleHer: async (id, daten, o) => {
         const a = await this.gibt(id);
-        await this.aendere(id, { ...bereinigeAutomatisierung(daten), aktiv: (daten as { aktiv?: unknown }).aktiv === true, version: a.version }, o.von.id);
+        // Werkbank-Karten (#677): wie beim Speichern nur mit dem Recht am Bereich (`darf` der Person).
+        await this.aendere(id, { ...bereinigeAutomatisierung(daten), aktiv: (daten as { aktiv?: unknown }).aktiv === true, version: a.version }, o.von.id, o.darf);
       },
       kontext: async () => ({ automatisierung: await this.kontext() }),
     });
@@ -499,7 +529,8 @@ export class Automatisierungen {
     const vorhanden = (await this.d.repo.liste()).filter((a) => a.herkunft === 'paket' && a.paketId === p.id);
     const ids = new Set<string>();
     let neu = 0;
-    for (const x of liste) {
+    // Werkbank-Karten (#677) gibt es nur in selbst angelegten Automatisierungen – die Prüfung beim Installieren lehnt sie ab.
+    for (const x of liste.filter((y) => !mitWerkbankKarte(p.id, y))) {
       // Nach einem Umzug (#1084) behält eine mitgelieferte Automatisierung ihre Id aus der früheren Paket-Id.
       const id = paketAutomatisierungId(p, x.schluessel, vorhanden);
       ids.add(id);
@@ -814,9 +845,27 @@ export class Automatisierungen {
     }
   }
 
-  async lege(e: unknown, von: string | null, herkunft: Herkunft = 'eigen'): Promise<AutomatisierungAnsicht> {
+  /**
+   * Werkbank-Karten (#677): Wer eine Karte einrichtet, die einen Werkbank-Bereich berührt (Sicherung, Gemeldete Fehler,
+   * Protokoll, Systemzustand), muss diesen Bereich selbst verwalten dürfen – sonst bekäme er über das Systemkonto mehr, als er
+   * darf. Geprüft wird, was gegenüber dem bisherigen Stand dazukommt – und jede Änderung an einer Wenn-Karte der Werkbank
+   * (Art, Stufe, Modul, Text; vorher oder nachher): Sonst ließe sich etwa mit dem Filter `enthaelt` am Verlauf ablesen, ob
+   * ein Text im Protokoll stand (Sicherheit in PR #1155). Name, an/aus, Und, Dann und Sonst bleiben offen. Ohne `darf`
+   * (Pakete, Tests): keine Prüfung.
+   */
+  private pruefeBereiche(neu: AutomatisierungDaten, alt: AutomatisierungDaten | null, darf?: (bereich: string) => boolean) {
+    if (!darf) return;
+    const vorher = new Set(alt ? werkbankBereiche(alt) : []);
+    const noetig = werkbankBereiche(neu).filter((b) => !vorher.has(b));
+    if (alt && !gleicherStand(bereinigeAutomatisierung(alt).wenn, neu.wenn)) for (const b of [wennBereich(alt.wenn), wennBereich(neu.wenn)]) if (b) noetig.push(b);
+    const fehlt = noetig.find((b) => !darf(b));
+    if (fehlt) throw new Fachfehler(403, t('automatisierung.bereich.fehlt', { bereich: t.frei(`werkbank.bereich.${fehlt}.name`) }));
+  }
+
+  async lege(e: unknown, von: string | null, herkunft: Herkunft = 'eigen', darf?: (bereich: string) => boolean): Promise<AutomatisierungAnsicht> {
     if ((await this.d.repo.liste()).length >= AUTOMATISIERUNG_GRENZEN.automatisierungen) throw new Fachfehler(422, t('automatisierung.zuviele', { anzahl: AUTOMATISIERUNG_GRENZEN.automatisierungen }));
     const d = bereinigeAutomatisierung(e);
+    this.pruefeBereiche(d, null, darf);
     const roh = (e ?? {}) as Record<string, unknown>;
     if (roh.reihenfolge === undefined) d.reihenfolge = REIHENFOLGE[herkunft];
     await this.pruefe(d, { herkunft });
@@ -826,10 +875,11 @@ export class Automatisierungen {
     return this.hole(a.id);
   }
 
-  async aendere(id: string, e: unknown, von: string | null): Promise<AutomatisierungAnsicht> {
+  async aendere(id: string, e: unknown, von: string | null, darf?: (bereich: string) => boolean): Promise<AutomatisierungAnsicht> {
     const alt = await this.gibt(id);
     const roh = (e ?? {}) as Record<string, unknown>;
     const d = bereinigeAutomatisierung({ ...alt, ...roh });
+    this.pruefeBereiche(d, alt, darf);
     // Mitgeliefert (#1082): „Paket nach Zeitplan ausführen“ zeigt immer auf das eigene Paket – was auch geschickt wird.
     if (alt.herkunft === 'paket' && alt.paketId) for (const k of [...d.dann, ...d.sonst]) if (k.art === 'paket') k.paket = alt.paketId;
     await this.pruefe(d, { herkunft: alt.herkunft, paketId: alt.paketId, alt: [...alt.dann, ...alt.sonst] });
@@ -859,13 +909,18 @@ export class Automatisierungen {
   }
 
   /** Kopie als eigene Automatisierung (ausgeschaltet) – z. B. für einen zweiten Auslöser. */
-  async kopiere(id: string, von: string | null): Promise<AutomatisierungAnsicht> {
+  async kopiere(id: string, von: string | null, darf?: (bereich: string) => boolean): Promise<AutomatisierungAnsicht> {
     const a = await this.gibt(id);
-    return this.lege({ ...a, name: t('automatisierung.kopie', { name: a.name }).slice(0, AUTOMATISIERUNG_GRENZEN.name), aktiv: false, reihenfolge: a.reihenfolge }, von, 'eigen');
+    return this.lege({ ...a, name: t('automatisierung.kopie', { name: a.name }).slice(0, AUTOMATISIERUNG_GRENZEN.name), aktiv: false, reihenfolge: a.reihenfolge }, von, 'eigen', darf);
   }
 
-  async laeufe(id: string, anzahl = 50): Promise<Lauf[]> { await this.gibt(id); return this.d.repo.laeufe(id, Math.max(1, Math.min(AUTOMATISIERUNG_GRENZEN.verlauf, anzahl))); }
-  async lauf(id: string): Promise<Lauf> { const l = await this.d.repo.lauf(id); if (!l) throw new Fachfehler(404, t('automatisierung.lauf.fehlt')); return l; }
+  /** Verlauf; mit `darf` (Anfrage einer Person) ohne Lauf-Daten aus Bereichen, die sie nicht verwaltet ({@link laufFuer}). */
+  async laeufe(id: string, anzahl = 50, darf?: (bereich: string) => boolean): Promise<Lauf[]> {
+    await this.gibt(id);
+    return (await this.d.repo.laeufe(id, Math.max(1, Math.min(AUTOMATISIERUNG_GRENZEN.verlauf, anzahl)))).map((l) => laufFuer(l, darf));
+  }
+  /** Ein Lauf; ohne `darf` mit allen gespeicherten Daten (Wiederholen), mit `darf` wie {@link laufFuer}. */
+  async lauf(id: string, darf?: (bereich: string) => boolean): Promise<Lauf> { const l = await this.d.repo.lauf(id); if (!l) throw new Fachfehler(404, t('automatisierung.lauf.fehlt')); return laufFuer(l, darf); }
 
   /** Für die Werkbank-Übersicht: fehlgeschlagene Läufe und angehaltene Automatisierungen. */
   async warnungen(): Promise<{ fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: Angehalten['grund'] }>; umgezogen: { am: string; anzahl: number } | null; ohneBenachrichtigungen: boolean; ohnePostFuerDich: boolean }> {
@@ -900,6 +955,16 @@ export class Automatisierungen {
   async wiedergeben(id: string, mappeId: unknown, trocken: boolean): Promise<Lauf> {
     const a = await this.gibt(id);
     await this.pruefe(a);
+    // Werkbank-Karten (#677): ohne Mappe – mit einer Beispielmeldung (der Probelauf ruft nichts ab).
+    if (istBetrieb(a.wenn)) {
+      const w = a.wenn;
+      const zeitpunkt = this.iso();
+      const daten: Record<string, unknown> = w.art === 'fehler.gemeldet' ? { fehlermeldung: null, benutzer: null, zeitpunkt, text: t('automatisierung.test.beispiel.fehler') }
+        : w.art === 'protokoll.meldung' ? { stufe: w.stufe, modul: w.modul ?? 'system', text: [t('automatisierung.test.beispiel.protokoll'), w.enthaelt].filter(Boolean).join(': '), zeitpunkt }
+          : { version: eigeneVersion(), installiert: eigeneVersion() };
+      const l = await this.fuehreAus(a, { id: randomUUID(), art: w.art, daten, kette: 0 }, { trocken, test: true });
+      return l ?? this.lauf(id);
+    }
     if (!istUuid(mappeId)) throw new Fachfehler(422, t('automatisierung.test.mappe'));
     const k = await this.kontext();
     const typ = kontextTyp(a.wenn, k.typen);
@@ -952,10 +1017,12 @@ export class Automatisierungen {
 
   /** Abnehmer des Ereigniskatalogs: passende Automatisierungen nacheinander. Wirft nur, wenn die Datenbank streikt. */
   async ereignis(e: KatalogEreignis): Promise<void> {
-    if (!(e.art in EREIGNISKATALOG) || OHNE_WENN.includes(EREIGNISKATALOG[e.art].gruppe) || e.ausloeser?.still) return;
+    if (!(e.art in EREIGNISKATALOG) || !wennFaehig(e.art) || e.ausloeser?.still) return;
     const alle = await this.d.repo.liste();
     // „Mappe gespeichert“ mit „auch beim Anlegen“ (#1001) hört zusätzlich auf „Mappe angelegt“.
-    const liste = alle.filter((a) => a.aktiv && !a.angehalten && (a.wenn.art === e.art || (e.art === 'mappe.angelegt' && a.wenn.art === 'mappe.geaendert' && a.wenn.angelegt === true)) && this.passt(a, e));
+    let liste = alle.filter((a) => a.aktiv && !a.angehalten && (a.wenn.art === e.art || (e.art === 'mappe.angelegt' && a.wenn.art === 'mappe.geaendert' && a.wenn.angelegt === true)) && this.passt(a, e));
+    // Protokollmeldung (#677): je Automatisierung höchstens ein Lauf in der Pause – auch über mehrere Prozesse.
+    if (e.art === 'protokoll.meldung') liste = await this.ausserPause(liste);
     if (liste.length) await this.reihe(liste, { id: e.id, art: e.art, daten: e.daten, kette: e.ausloeser?.art === 'automatisierung' ? (e.ausloeser.kette ?? 1) : 0, ausloeser: e.ausloeser });
     if (e.art === 'mappe.angelegt' || e.art === 'mappe.geaendert') await this.datumImVorlauf(e, alle);
   }
@@ -983,9 +1050,17 @@ export class Automatisierungen {
     }
   }
 
+  /** Protokollmeldung (#677): ohne die, die in den letzten {@link PROTOKOLL_ABSTAND_MIN} Minuten schon liefen. */
+  private async ausserPause<T extends Automatisierung>(liste: T[]): Promise<T[]> {
+    const seit = new Date(this.jetzt() - PROTOKOLL_ABSTAND_MIN * 60_000).toISOString();
+    const frei = await Promise.all(liste.map(async (a) => !(await this.d.repo.laeufe(a.id, 5)).some((l) => !l.test && l.zustand !== 'uebersprungen' && l.gestartet >= seit)));
+    return liste.filter((_, i) => frei[i]);
+  }
+
   private passt(a: Automatisierung, e: KatalogEreignis): boolean {
     const w = a.wenn;
     if (w.art === 'datum' || w.art === 'zeitplan') return false;
+    if (istBetrieb(w)) return w.art !== 'protokoll.meldung' || protokollPasst(w, e.daten);
     if (EREIGNISKATALOG[w.art].gruppe !== 'benutzer' && w.typ && e.daten.typ !== w.typ) return false;
     if (w.art === 'mappe.geaendert' && e.art === 'mappe.geaendert' && w.felder?.length) { const g = alsListe(e.daten.felder); if (!w.felder.some((f) => g.includes(f))) return false; }
     return true;
@@ -1000,20 +1075,20 @@ export class Automatisierungen {
       if (anlass.ausloeser?.art === 'automatisierung' && anlass.ausloeser.id === a.id) continue;
       if (stopp) { await this.vermerke(a, anlass, 'uebersprungen', t('automatisierung.lauf.gestoppt', { name: stopp })); continue; }
       const l = await this.fuehreAus(a, anlass, { trocken: false, test: false });
-      if (l?.zustand === 'abgeschlossen' && l.schritte.some((s) => s.karte && s.zustand === 'ok' && a.dann.find((k) => k.id === s.karte)?.art === 'stopp')) stopp = a.name;
+      if (l?.zustand === 'abgeschlossen' && l.schritte.some((s) => s.karte && s.zustand === 'ok' && (s.teil === 'sonst' ? a.sonst : a.dann).find((k) => k.id === s.karte)?.art === 'stopp')) stopp = a.name;
     }
   }
 
   /** Lauf ohne Ausführen festhalten (übersprungen: Kette, Bremse, Stopp, keine Leserechte). */
   private async vermerke(a: Automatisierung, anlass: Anlass, zustand: LaufZustand, text: string) {
-    const mappeId = typeof anlass.daten.mappe === 'string' ? anlass.daten.mappe : typeof anlass.daten.benutzer === 'string' ? anlass.daten.benutzer : null;
+    const mappeId = mappeVon(anlass);
     await this.d.repo.beginne({ id: randomUUID(), automatisierungId: a.id, ereignisId: anlass.id, art: anlass.art, daten: anlass.daten, mappeId, zustand, trocken: false, test: false,
       schritte: [{ teil: 'wenn', zustand: 'uebersprungen', text }], fehler: null, gestartet: this.iso(), beendet: this.iso() });
   }
 
   /** Eine Automatisierung für ein Ereignis ausführen; null, wenn es dazu schon einen Lauf gibt. */
   private async fuehreAus(a: Automatisierung, anlass: Anlass, o: { trocken: boolean; test: boolean; wiederholtVon?: string }): Promise<Lauf | null> {
-    const mappeId = typeof anlass.daten.mappe === 'string' ? anlass.daten.mappe : typeof anlass.daten.benutzer === 'string' ? anlass.daten.benutzer : null;
+    const mappeId = mappeVon(anlass);
     if (!o.test) {
       if (anlass.kette >= AUTOMATISIERUNG_GRENZEN.tiefe) { await this.vermerke(a, anlass, 'uebersprungen', t('automatisierung.lauf.kette', { tiefe: AUTOMATISIERUNG_GRENZEN.tiefe })); return null; }
       const seit = new Date(this.jetzt() - 60_000).toISOString();
@@ -1029,6 +1104,8 @@ export class Automatisierungen {
       { teil: 'wenn', zustand: 'ok', text: anlass.art === 'datum' ? t('automatisierung.wenn.datum') : anlass.art === 'zeitplan' ? t('automatisierung.wenn.zeitplan') : t.frei(`ereignisse.name.${anlass.art.replace(/_/g, '-')}`) },
       { teil: 'und', zustand: 'offen' },
       ...a.dann.map((k): Schritt => ({ teil: 'dann', karte: k.id, zustand: 'offen' })),
+      // Sonst (#677): eigene Schritte – je Lauf läuft genau einer der beiden Zweige, der andere ist „übersprungen“.
+      ...a.sonst.map((k): Schritt => ({ teil: 'sonst', karte: k.id, zustand: 'offen' })),
     ];
     const l: Lauf = { id: randomUUID(), automatisierungId: a.id, ereignisId: anlass.id, art: anlass.art, daten: anlass.daten, mappeId, zustand: 'laeuft', trocken: o.trocken, test: o.test, schritte, fehler: null, gestartet: this.iso(), beendet: null, wiederholtVon: o.wiederholtVon ?? null };
     if (!(await this.d.repo.beginne(l))) return null;
@@ -1074,11 +1151,10 @@ export class Automatisierungen {
       // Und
       const und = await this.pruefeUnd(a.und.karten, a.und.modus, mappe, konto.id, personen);
       await schritt(1, { zustand: und.ok ? 'ok' : 'nein', text: und.text });
-      if (!und.ok) {
-        for (let i = 2; i < l.schritte.length; i++) l.schritte[i].zustand = 'uebersprungen';
-        return await ende('unzutreffend');
-      }
-      // Dann
+      // Dann – oder Sonst (#677), wenn die Bedingungen nicht zutreffen; ohne Sonst-Karten „trifft nicht zu“.
+      const zweig = und.ok ? 'dann' : 'sonst';
+      for (let i = 2; i < l.schritte.length; i++) if (l.schritte[i].teil !== zweig) l.schritte[i].zustand = 'uebersprungen';
+      if (!und.ok && !a.sonst.length) return await ende('unzutreffend');
       const kontext: KartenKontext = {
         dienst: this.d.dienst, z, konto, automatisierung: a, mappe, typ, daten: anlass.daten, ereignisId: o.test ? l.id : anlass.id, trocken: o.trocken, personen,
         fuelle: (text) => this.fuelle(text, { a, mappe, typ, z, daten: anlass.daten, art: anlass.art }),
@@ -1091,12 +1167,15 @@ export class Automatisierungen {
           return { text: fuer.text, verborgen: Math.max(0, fuer.verborgen - basis.verborgen), mappe: fuer.mappe };
         },
         anlass: { automatisierung: { id: a.id, name: a.name, eingerichtetVon: a.erstelltVon } },
+        werkbank: this.d.werkbank,
       };
       const begonnen = this.jetzt();
       let leer = 0;
-      for (let i = 0; i < a.dann.length; i++) {
-        const karte = a.dann[i];
-        const si = i + 2;
+      const karten = und.ok ? a.dann : a.sonst;
+      const basis = und.ok ? 2 : 2 + a.dann.length;
+      for (let i = 0; i < karten.length; i++) {
+        const karte = karten[i];
+        const si = i + basis;
         if (this.jetzt() - begonnen > AUTOMATISIERUNG_GRENZEN.laufzeitS * 1000) {
           await schritt(si, { zustand: 'fehler', text: t('automatisierung.lauf.zeit', { s: AUTOMATISIERUNG_GRENZEN.laufzeitS }) });
           return await ende('fehlgeschlagen', t('automatisierung.lauf.zeit', { s: AUTOMATISIERUNG_GRENZEN.laufzeitS }));
@@ -1114,12 +1193,12 @@ export class Automatisierungen {
           // Ziel fehlt (#1082): übersprungen, die übrigen Karten laufen weiter.
           if (x instanceof KarteLeer) { await schritt(si, { zustand: 'uebersprungen', text }); leer++; continue; }
           await schritt(si, { zustand: 'fehler', text });
-          for (let j = si + 1; j < l.schritte.length; j++) l.schritte[j].zustand = 'uebersprungen';
+          l.schritte.forEach((x, j) => { if (j > si && x.teil === zweig) x.zustand = 'uebersprungen'; });
           return await ende('fehlgeschlagen', text);
         }
       }
       // Liefen alle Karten ins Leere, ist der Lauf übersprungen (zählt nicht als Fehlschlag).
-      return await ende(leer && leer === a.dann.filter((k) => k.art !== 'stopp').length ? 'uebersprungen' : 'abgeschlossen');
+      return await ende(leer && leer === karten.filter((k) => k.art !== 'stopp').length ? 'uebersprungen' : 'abgeschlossen');
     } catch (x) {
       return ende('fehlgeschlagen', (x as Error).message);
     }
@@ -1187,6 +1266,8 @@ export class Automatisierungen {
       fest.zeitraum = fest.von && fest.bis ? t('automatisierung.platzhalter.zeitraum.von-bis', { von: fest.von, bis: fest.bis }) : fest.von ? t('automatisierung.platzhalter.zeitraum.ab', { von: fest.von })
         : fest.bis ? t('automatisierung.platzhalter.zeitraum.bis', { bis: fest.bis }) : t('automatisierung.platzhalter.zeitraum.offen');
     }
+    // Werkbank-Karten (#677): Zeitpunkt, Meldung, wer, Version – den Text der Meldung nur für Empfänger, die den Bereich verwalten.
+    if (c.art && istBetriebWenn(c.art)) for (const [k, w] of Object.entries(await this.betriebWerte(c.art, daten, empf))) { fest[k] = w.wert; if (w.verdeckt) verdeckt.add(k); }
     let verborgen = 0;
     // Post (#1042): {absender} und {fuer} gelten bis 1.0.0 als {von} und {an} (uebergaenge.ts).
     const alias = typ?.system === 'post';
@@ -1202,6 +1283,27 @@ export class Automatisierungen {
       return w;
     });
     return { text: erg, verborgen, mappe: mappeSichtbar };
+  }
+
+  /**
+   * Platzhalter der Werkbank-Karten (#677). Text und Absender einer Fehlermeldung bzw. der Text einer Protokollmeldung
+   * sieht ein Empfänger nur, wenn er „Gemeldete Fehler“ bzw. „Protokoll“ verwalten darf – sonst „(nicht sichtbar)“.
+   */
+  private async betriebWerte(art: string, daten: Record<string, unknown>, empf: Zugriff | null): Promise<Record<string, { wert: string; verdeckt?: boolean }>> {
+    const darf = (bereich: string) => !empf || darfBereich(empf.ich, bereich);
+    const leer = Object.fromEntries((BETRIEB_PLATZHALTER[art as keyof typeof BETRIEB_PLATZHALTER] ?? []).map((k) => [k, { wert: '' }]));
+    const sicht = (wert: string, sieht: boolean) => (sieht ? { wert } : { wert: t('automatisierung.platzhalter.nicht-sichtbar'), verdeckt: true });
+    if (art === 'fehler.gemeldet') {
+      const sieht = darf(SYSTEMKONTO_WERKBANK.fehlermeldung);
+      const m = sieht && typeof daten.fehlermeldung === 'string' ? await this.d.werkbank?.fehlermeldung(daten.fehlermeldung) : null;
+      const von = sieht && typeof daten.benutzer === 'string' && istUuid(daten.benutzer) ? await this.d.dienst.kern.name(daten.benutzer) : '';
+      return { ...leer, zeitpunkt: { wert: zeitpunktText(daten.zeitpunkt) }, meldung: sicht(m?.text ?? alsText(daten.text), sieht), gemeldet_von: sicht(von, sieht) };
+    }
+    if (art === 'protokoll.meldung') {
+      return { ...leer, zeitpunkt: { wert: zeitpunktText(daten.zeitpunkt) }, stufe: { wert: istStufe(daten.stufe) ? t.frei(`automatisierung.stufe.${daten.stufe}`) : '' },
+        modul: { wert: typeof daten.modul === 'string' ? t.frei(`werkbank.protokoll.modul.${daten.modul}`) : '' }, meldung: sicht(alsText(daten.text), darf(SYSTEMKONTO_WERKBANK.protokoll)) };
+    }
+    return { ...leer, version: { wert: alsText(daten.version) }, installiert: { wert: alsText(daten.installiert) } };
   }
 
   /* ---------- Zeitplan „Datum in N Tagen“ ---------- */
@@ -1244,6 +1346,7 @@ export class Automatisierungen {
         }
       }
       await this.zeitplanKarten(ort);
+      await this.versionPruefen(ort);
       await this.d.repo.raeumeAuf(AUTOMATISIERUNG_GRENZEN.verlaufTage, AUTOMATISIERUNG_GRENZEN.verlauf, HAENGT_MIN);
     })().finally(() => { this.zeitplanLauf = null; });
     return this.zeitplanLauf;
@@ -1255,6 +1358,34 @@ export class Automatisierungen {
    * (wie die Tägliche Zusammenfassung). Mehrere Server: Wer den Tag im Merker einträgt, macht den Lauf; dazu je Lauf eine
    * feste Ereignis-Id (genau einmal).
    */
+  /** Merker in den Einstellungen (mehrere Server: wer den Tag einträgt, macht den Lauf); ohne Speicher im Arbeitsspeicher. */
+  private merker(schluessel: string): Merker {
+    const einst = this.d.dienst.kern.einstellungen;
+    if (einst) return { lies: async () => { const v = await einst.lies(schluessel); return typeof v === 'string' ? v : null; }, beanspruche: async (alt, tag) => {
+      if (einst.tausche) return einst.tausche(schluessel, alt, tag);
+      if (((await einst.lies(schluessel)) ?? null) !== alt) return false;
+      await einst.schreibe(schluessel, tag); return true;
+    } };
+    return { lies: async () => this.merkerOhneSpeicher.get(schluessel) ?? null, beanspruche: async (alt, tag) => { if ((this.merkerOhneSpeicher.get(schluessel) ?? null) !== alt) return false; this.merkerOhneSpeicher.set(schluessel, tag); return true; } };
+  }
+
+  /**
+   * Wenn-Karte „Neue Version verfügbar“ (#677): einmal am Tag (ab 06:00, verpasst am selben Tag nachgeholt) fragen –
+   * nur, solange eine solche Automatisierung an ist. Je Version genau ein Ereignis (Merker `automatisierung_version`).
+   */
+  private async versionPruefen(ort: { datum: string; uhr: string }) {
+    const w = this.d.werkbank;
+    if (!w || !(await this.d.repo.liste()).some((a) => a.aktiv && !a.angehalten && a.wenn.art === 'version.neu')) return;
+    await laufeFaellige(this.merker('automatisierung_version_geprueft'), ort, { uhrzeit: '06:00', an: () => true }, async () => {
+      const neu = await w.neueVersion().catch((x: Error) => { log.info('Neue Version nicht geprüft', { fehler: x.message }); return null; });
+      if (!neu) return;
+      const gemeldet = this.merker('automatisierung_version');
+      const alt = await gemeldet.lies();
+      if (alt === neu || !(await gemeldet.beanspruche(alt, neu))) return;
+      await this.d.dienst.kern.ereignis('version.neu', { version: neu, installiert: eigeneVersion() }, null);
+    });
+  }
+
   private async zeitplanKarten(ort: { datum: string; uhr: string }) {
     const alle = (await this.d.repo.liste()).filter((a) => a.aktiv && !a.angehalten && a.wenn.art === 'zeitplan');
     if (!alle.length) return;
@@ -1263,14 +1394,7 @@ export class Automatisierungen {
     const roh = ((await einst?.lies('aufgaben_mail')) ?? {}) as { bundesland?: unknown };
     const region = einst ? liesRegion(await einst.lies('region'), roh.bundesland) : null;
     const bundesland = region ? region.bundesland : istBundesland(roh.bundesland) ? roh.bundesland : null;
-    const merker = (schluessel: string): Merker => {
-      if (einst) return { lies: async () => { const v = await einst.lies(schluessel); return typeof v === 'string' ? v : null; }, beanspruche: async (alt, tag) => {
-        if (einst.tausche) return einst.tausche(schluessel, alt, tag);
-        if (((await einst.lies(schluessel)) ?? null) !== alt) return false;
-        await einst.schreibe(schluessel, tag); return true;
-      } };
-      return { lies: async () => this.merkerOhneSpeicher.get(schluessel) ?? null, beanspruche: async (alt, tag) => { if ((this.merkerOhneSpeicher.get(schluessel) ?? null) !== alt) return false; this.merkerOhneSpeicher.set(schluessel, tag); return true; } };
-    };
+    const merker = (schluessel: string) => this.merker(schluessel);
     const takt = (uhrzeit: string, tage: number[], feiertage: boolean) => ({ uhrzeit, an: (tag: string) => tage.includes(wochentagVon(tag)) && !(feiertage && feiertagAm(tag, bundesland)) });
     // Gleiche Auslöser gemeinsam (Reihenfolge, „Danach keine weiteren …“) – je Benutzer bzw. je Tag ein Ereignis.
     const gruppen = new Map<string, Automatisierung[]>();
@@ -1305,6 +1429,11 @@ export class Automatisierungen {
 
 type WennDatum = Automatisierung['wenn'];
 type WennZeitplan = Extract<WennDatum, { art: 'zeitplan' }>;
+
+/** Werkbank-Karten (#677): Text aus dem Ereignis (sonst leer), Zeitpunkt kurz in der Sprache der Ablage, Stufe. */
+const alsText = (v: unknown) => (typeof v === 'string' ? v : '');
+const zeitpunktText = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? datumsformat(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }).format(new Date(v)) : '');
+const istStufe = (v: unknown): v is 'warn' | 'error' => v === 'warn' || v === 'error';
 
 /** Tage von `ab` (Vorgabe heute) bis zum Datum – Platzhalter {tage}; leer ohne Datum. */
 function tageBis(datum: unknown, ab = heuteIn()): number | null {

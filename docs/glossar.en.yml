@@ -283,6 +283,12 @@ begriffe:
   Paket nach Zeitplan ausführen:
     begriff: Run package on schedule
     beschreibung: Then card of an automation with the trigger "Schedule" – it tells a package that its time has been reached (e.g. "Check contracts daily" at 5 a.m.) so that it recalculates something that depends only on the date. The package works with its own rights; an automation supplied with a package only calls its own package.
+  Sonst:
+    begriff: Otherwise
+    beschreibung: Fourth area of an automation – cards that run if the And conditions are not met (the same cards as under Then). Per run either Then or Otherwise runs.
+  Werkbank-Karte:
+    begriff: Workbench card
+    beschreibung: Card of an automation that concerns the operation of Ablago instead of a folder – When "Error reported", "Log message", "New version available" and Then "Start a backup". The system account "Automation" has precisely defined Workbench permissions for them; only someone who manages the area themselves may set them up.
   Gleich eingeschaltet:
     begriff: Switched on straight away
     beschreibung: An automation supplied with a package that the package offers ticked when installing. The administrator can untick it; an update never changes on or off afterwards.

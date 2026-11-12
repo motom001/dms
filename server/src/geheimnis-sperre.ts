@@ -53,6 +53,15 @@ export function ohneGeheimnisse<T>(wert: T): T {
   return geh(wert, 0) as T;
 }
 
+/**
+ * Freitext ohne Geheimnisse (#677): verschlüsselte Werte und Passwort-Hashes aus `GEHEIM_MUSTER` werden zu „•••“ – der
+ * Rest bleibt lesbar. Für Texte, die wie das Protokoll weitergehen (Wenn-Karte „Protokollmeldung“); `ohneGeheimnisse`
+ * machte aus einem solchen Text ein Objekt.
+ */
+export function textOhneGeheimnisse(text: string): string {
+  return GEHEIM_MUSTER.reduce((t, m) => t.replace(new RegExp(m.muster.source, 'g'), '•••'), text);
+}
+
 /** Wie ein Geheimnis in einer Ausgabe auftauchen kann: roh, Base64 (mit/ohne Füllzeichen), Base64url, URL, Hex. */
 function formen(s: string): string[] {
   const b = Buffer.from(s, 'utf8');

@@ -380,6 +380,10 @@ A connected email account (IMAP) from which Ablago fetches post.
 <a id="nummernkreis"></a>**Number sequence** (*Nummernkreis*) · ✗ technical term · administrators  
 Sequential numbers following a pattern such as {jjjj}-R{zaehler:4} (giving e.g. 2026-R0001), for instance for invoice numbers.
 
+<a id="sonst"></a>**Otherwise** (*Sonst*) · ~ with explanation · administrators  
+Fourth area of an automation – cards that run if the And conditions are not met (the same cards as under Then). Per run either Then or Otherwise runs.  
+See also: [Workbench card](#werkbank-karte), [Automation template](#automatisierungsvorlage).
+
 <a id="ubersicht"></a>**Overview** (*Übersicht*) · ✓ everyday word · administrators  
 The first page of the workbench – what needs doing in Ablago right now, with notices, status and inventory.  
 See also: [Workbench](#werkbank).
@@ -488,6 +492,10 @@ An account with which someone signs in. Stored as a system folder in Ablago. Peo
 <a id="fassung"></a>**Version (of a setting)** (*Fassung*) · ~ with explanation · administrators  
 A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.  
 See also: [Version](#version), [Version of Ablago](#version-von-ablago).
+
+<a id="werkbank-karte"></a>**Workbench card** (*Werkbank-Karte*) · ~ with explanation · administrators  
+Card of an automation that concerns the operation of Ablago instead of a folder – When "Error reported", "Log message", "New version available" and Then "Start a backup". The system account "Automation" has precisely defined Workbench permissions for them; only someone who manages the area themselves may set them up.  
+See also: [Otherwise](#sonst), [Backup](#sicherung).
 
 ## Operation and security {#betrieb-und-sicherheit}
 

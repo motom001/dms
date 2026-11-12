@@ -1,18 +1,19 @@
 # Automations {#automatisierungen}
 
-With an **automation**, Ablago does something by itself: **if** something happens (an event or a date) **and** the conditions are right, **then** it sets fields or gives someone a task. You find them under **Workbench → Build the Library → Automations**. In a household the area appears in **expert mode** (Workbench → Customise workbench), in businesses always.
+With an **automation**, Ablago does something by itself: **if** something happens (an event or a date) **and** the conditions are right, **then** it sets fields or gives someone a task – **otherwise**, if you like, something else. You find them under **Workbench → Build the Library → Automations**. In a household the area appears in **expert mode** (Workbench → Customise workbench), in businesses always.
 
 ![Workbench → Automations: list and editor](bilder/werkbank-automatisierungen.png)
 
-On the left are all automations with name, short form ("If Contract: Cancel by in 30 days → task to Responsible"), on/off, number in the order and the last run. On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then → Try out → History → Versions**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When and Then at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
+On the left are all automations with name, short form ("If Contract: Cancel by in 30 days → task to Responsible"), on/off, number in the order and the last run. On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then** (with Otherwise) **→ Try out → History → Versions**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then and Otherwise cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When, Then and Otherwise at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
 
-In *When* and *Then* you build the automation from cards:
+In *When* and *Then* you build the automation from cards – four boxes one below the other, connected with arrows:
 
 | Area | What goes in |
 |---|---|
-| **If** | exactly one card: an event (folder created, saved – optionally only for certain fields and **also when created** –, note, document uploaded, favourite changed, account block …), **Date reached** or **Schedule** |
+| **If** | exactly one card: an event (folder created, saved – optionally only for certain fields and **also when created** –, note, document uploaded, favourite changed, account block …), **Date reached**, **Schedule** or a [Workbench card](#werkbank-karten) (**Error reported**, **Log message**, **New version available**) |
 | **And** | none, one or several conditions: field values as in [views](sichten.md), "Folder is in view …", "Folder is a favourite of …", groups with "all" or "one is enough"; every condition can be reversed with **not** |
-| **Then** | one or more cards, in order: **Change field**, **Task / notification**, **Send daily summary**, **Report favourite changes**, **Report sign-in protection**, **No further automations afterwards** |
+| **Then** | one or more cards, in order: **Change field**, **Task / notification**, **Send daily summary**, **Report favourite changes**, **Report sign-in protection**, **Run package on schedule**, **Start a backup**, **No further automations afterwards** |
+| **Otherwise** | none or several cards as under Then – they run if the And conditions are **not** met (see [Otherwise](#sonst)) |
 
 What you trigger by hand on **one** folder – “Assign task”, “Remind”, follow-up – are [automation templates](automatisierungsvorlagen.md). They run on the same engine, with the rights of the person who applies them.
 
@@ -91,6 +92,7 @@ The stock only shows what matches the If card: **Change field**, for instance, o
 - **Report favourite changes** (only with *Favourite changed*) gives everyone who has the folder as a favourite the bundled notification "Changed" – as before. **Only to members of these roles** narrows it down (no role = everyone), **New users get the notification** sets the default – both were under Workbench → Tasks up to 0.256 ([Notify about favourites](aufgaben.md#favoriten-benachrichtigen)). The switch under My account still applies; one's own changes are never reported.
 - **Report sign-in protection** sends everyone who manages sign-in protection either the **summary** of the blocks (with *Schedule*, not per user) or immediately an email when a **user account was blocked** (with *User account blocked*, at most once a day per account). See [Sign-in protection](anmeldeschutz.md#mail-an-die-administratoren).
 - **Run package on schedule** (only with *Schedule*, not per user) tells a package that its time has been reached – see [below](#paket-nach-zeitplan).
+- **Start a backup** starts a new backup – see [Workbench cards](#sicherung-anstossen).
 - **No further automations afterwards** ends the sequence: automations with a higher number no longer run for this event (in the run history "Skipped by …").
 
 Automations work with the **system account "Automation"** (Workbench → Users). What this account may not read, the automation skips; placeholders then show "(not visible)". For tasks, the recipient's permissions apply additionally (see above).
@@ -108,6 +110,59 @@ Some packages have to calculate regularly because their result changes only with
 - **Package removed:** the card then has nothing to run. The automation stays on and shows "Package … is not installed"; the run history lists the run as *skipped* – no error, no notice about failed runs.
 - You see every run in the automation's **run history**; the package receives it like any other event (with retries if it is not reachable at the moment).
 
+## Otherwise { #sonst }
+
+Under **Then** is what happens if the And conditions are met. Under **Otherwise** you can put cards for the other case – the same cards as under Then, dragged from the stock or with **+ Card**. Without And conditions everything always applies; Otherwise then never runs.
+
+*Example:* If a contract is saved **and** *Responsible* is set, **then** set the field *Status* to “checked” – **otherwise** a task to the role *Administration*: “Please give {titel} a responsible person.”
+
+- Per run exactly one of the two branches runs; the other appears in the run history as *skipped*. If an automation has no Otherwise cards and the conditions are not met, the run is called *doesn't apply* as before.
+- **No further automations afterwards** also works in the Otherwise branch.
+- Every automation needs at least one Then card; Otherwise is optional.
+
+## Workbench cards { #werkbank-karten }
+
+Some things do not concern a folder but the **operation** of Ablago. For these there are three If cards (in the stock under *Operations*) and one Then card. These cards have **no folder**: the only possible condition is a feature of the Library, and a **Task / notification** goes to people or roles – it is attached to the recipient's user folder.
+
+Only someone who may manage the matching area themselves may set up a Workbench card: *Error reported* needs *Reported errors*, *Log message* the *Log*, *New version available* the *System health* and *Start a backup* the *Backup*. This also applies when editing: someone who does not manage the area can change the name, on/off and the Then and Otherwise cards of an existing automation with a Workbench card, but not its If card (neither the kind nor level, module or text) – nor restore a [version](fassungen.md) that changes it. Packages do not bring these cards.
+
+### Error reported { #fehler-gemeldet }
+
+Runs as soon as someone reports an error via **Report an error**. Placeholders: `{zeitpunkt}`, `{meldung}` (text of the report) and `{gemeldet_von}`. A recipient only sees the text and sender if they may manage [Reported errors](fehlersuche.md#gemeldete-fehler) – everyone else sees “(not visible)”. Images and technical details of the report never go into a task. The **run history** also leaves out the text and the account of the reporting person as long as you do not manage Reported errors.
+
+*Example:* If **Error reported** → Then task to Markus, due in 1 day: `New error report from {gemeldet_von}: {meldung}`.
+
+### Log message { #protokollmeldung }
+
+Runs when the [log](fehlersuche.md#protokoll) writes a warning or an error. You choose the **level** (*from warning* or *from error*), optionally a **module** (e.g. *E-mail*, *Backup*) and a **text** the message has to contain. Placeholders: `{zeitpunkt}`, `{stufe}`, `{modul}` and `{meldung}` – without secrets (encrypted values and password hashes in the text become “•••”); only someone who may manage the log sees the text, as a recipient and in the **run history**.
+
+- **At most one run in 15 minutes** per automation – a disruption does not cause a flood.
+- Messages caused by an automation itself (e.g. because its task can't be delivered) do not trigger any automation.
+- **E-mail disrupted:** for errors in the *E-mail* module, a notification by e-mail usually doesn't arrive. The editor points this out – use a **task** or **notification**: it appears in Ablago under *To do* even when sending is disrupted.
+
+### New version available { #neue-version }
+
+Runs when there is a new **stable version** of Ablago. For this, Ablago asks GitHub once a day (from 06:00) – only while such an automation is switched on; nothing from your Library leaves the house. It runs exactly once per version. Placeholders: `{version}` and `{installiert}`. What's new is shown under [Technology and versions](technik.md).
+
+### Start a backup { #sicherung-anstossen }
+
+The Then card starts a new [backup](sicherung.md) – encrypted like *Back up now* and kept like the automatic backups, so the disk doesn't fill up. The automation only learns **started** or **already running** (then no second one). Whether the backup succeeds, how large it is and where it is stored is only shown under Workbench → Backup; if it can't be started at all (no key, too little space, restore running), the run fails without details.
+
+### Workbench permissions of the system account { #werkbank-rechte }
+
+Automations run under the system account **“Automation”**. It may never enter the Workbench. For the Workbench cards it has **exactly these permissions** – none at all for all other areas:
+
+| Area | may | may not |
+|---|---|---|
+| Backup | **start** a new backup | see success, number, schedule, storage space, storage location; emergency sheet |
+| Restore | – | anything |
+| Full text | – | regenerate and the like |
+| Bin | – | empty, delete permanently |
+| Technology and versions | check whether there is a new version | – |
+| Reported errors | see | – |
+| Log | find messages from a level | – |
+| Users | nothing in the Workbench (users are folders, permissions on them via the role *System account*) | manage users and permissions |
+
 ## Order {#reihenfolge}
 
 If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **By trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
@@ -116,7 +171,7 @@ If there are several automations for the same trigger, they run by their **order
 
 ![Run history with the steps of a run](bilder/werkbank-automatisierung-verlauf.png)
 
-- **Try out:** choose a folder and **Run** – as if the event had happened. You choose the folder as in a link field: type part of the title and click a hit. Only folders of the If card's folder type that the account "Automation" may see are offered – with all others the automation couldn't run anyway. With **Dry run**, Ablago only shows what would happen ("Would send task to 1 person: …") and changes nothing.
+- **Try out:** choose a folder and **Run** – as if the event had happened. You choose the folder as in a link field: type part of the title and click a hit. Only folders of the If card's folder type that the account "Automation" may see are offered – with all others the automation couldn't run anyway. With **Dry run**, Ablago only shows what would happen ("Would send task to 1 person: …") and changes nothing. With [Workbench cards](#werkbank-karten) there is no folder to choose – Ablago tries it with a sample message.
 - **Run history:** looks like a folder's history: per run one line with date and time, the trigger (e.g. "Folder created", "Dry run", "Repetition"), a summary, the result (*completed*, *doesn't apply*, *skipped*, *failed*) and the number of cards. Expanded, a table **Card · Result · Details** shows what every card did; if something went wrong, the reason is at the card that failed. With **Expand all entries** / **Collapse all entries** you see everything at once. If the automation is running right now while the editor is open, this run is expanded and the cards are ticked off **live**; cards not yet reached show "waiting".
 - **Failed runs** remain. Above the list of automations it then says, for example, "1 run has failed: Report new users, 04.11.26, 04:48"; with several runs, **Show** only shows the affected automations. **Repeat all** runs them again, **Don't repeat** removes them from the notice – in the run history they remain as "failed – not repeated (who, when)"; nothing is deleted. You have the same choice per run in the expanded run history. **Dry runs** don't count; their result is only in the run history. The [Workbench overview](uebersicht.md) also reports failed runs.
 - **Versions** (until 0.254 "Change history"): every saved version with time, who and what changed ("Then: 'Task to Markus' added"); the newest is marked **Current**. Two versions can be compared and an earlier one **restored** – after a confirmation that says what changes, it becomes a new version; the current state is kept. If the earlier version no longer fits (e.g. a field is missing), Ablago says so as when saving and does not restore it. How this works for all Workbench settings: [Versions](fassungen.md).
@@ -134,6 +189,7 @@ Packages bring **ready-made automations**, for example "MOT due soon" (package V
 - In the list you recognise them by the origin **from package …**. You can switch them on, adjust and copy them.
 - On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is. New automations from the update are offered again when updating.
 - If you remove the package, its automations go with it if they are off and unchanged.
+- Packages do not bring [Workbench cards](#werkbank-karten) – they only exist in automations you create yourself.
 
 ### Stand-in {#vertretung}
 

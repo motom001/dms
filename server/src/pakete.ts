@@ -33,6 +33,7 @@ import { bereinigeAutomatisierung, DMS_POST, undEingabeFehler, zeitplanText } fr
 import { bereinigeVorlage, istKernVorlage, KERN_VORLAGEN, karteText, vorlagenEingabeFehler, vorlagenProbleme } from '../../shared/src/ablaufvorlagen';
 import type { PaketAblaufvorlage } from './aufgaben';
 import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
+import { istBetriebWenn } from '../../shared/src/ereignisse';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
@@ -159,6 +160,15 @@ export interface PaketFeld extends Omit<Partial<Feld>, 'quelle'> { key: string; 
   quelle?: PaketTabellenquelle }
 /** Quelle einer Tabelle im Paket (#1030) – Schreibweise des Registry-Schemas (`schema/inhalt.schema.json`). */
 export interface PaketTabellenquelle { typ: string; feld: string; trefferliste?: string; neu?: string }
+/** Werkbank-Karten (#677) nur in der Werkbank: Pakete bringen weder Betriebs-Auslöser noch „Sicherung anstoßen“ mit. */
+function werkbankKartenFehler(a: Record<string, unknown>, wo: string): string[] {
+  const f: string[] = [];
+  const wenn = istObjekt(a.wenn) && typeof a.wenn.art === 'string' ? a.wenn.art : '';
+  if (istBetriebWenn(wenn)) f.push(t('meldungen.pakete.automatisierung-werkbank-wenn', { wo, art: wenn }));
+  if ((Array.isArray(a.dann) ? a.dann : []).some((k) => istObjekt(k) && k.art === 'sicherung')) f.push(t('meldungen.pakete.automatisierung-werkbank-dann', { wo }));
+  return f;
+}
+
 /** Typverweis der Quelle einer Tabelle (#1030), sonst nichts. */
 const tabellenTyp = (f: Pick<PaketFeld, 'typ' | 'quelle'>): string[] => (f.typ === 'tabelle' && f.quelle?.typ ? [str(f.quelle.typ)] : []);
 /** Die festen Ziele eines Paketfelds als Liste (#1036): `ziel` einzeln oder als Liste. */
@@ -620,6 +630,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     const empf = (Array.isArray(a.dann) ? a.dann : []).filter(istObjekt).flatMap((k) => (Array.isArray(k.empfaenger) ? k.empfaenger : [])).filter(istObjekt);
     if (istObjekt(a.wenn) && a.wenn.rolle) fehler.push(`${wo}: wenn.rolle – feste Rollen gibt es in Paketen nicht; „für jeden Benutzer“ gilt für alle aktiven Benutzer.`);
     if (empf.some((e) => e.art === 'person' || e.art === 'rolle')) fehler.push(`${wo}: feste Personen und Rollen gibt es in Paketen nicht – Empfänger aus einem Feld oder der Ersteller der Mappe.`);
+    fehler.push(...werkbankKartenFehler(a, wo));
     if (pruefeZeitplanKarten(a, wo, str(m.id), fehler)) zeitplanKarten.push(wo);
     // Und-Teil (#1108): falsch geschriebene Bedingungen sind ein Fehler – sonst liefe die Automatisierung öfter als gedacht.
     for (const grund of undEingabeFehler(a.und)) fehler.push(`${wo} „${str(a.schluessel)}“: ${grund}`);

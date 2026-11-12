@@ -274,6 +274,16 @@ async function dmsSelbst(abruf: Abruf, u: Uebersicht): Promise<Vergleich> {
   }
 }
 
+/**
+ * Gibt es eine neuere stabile Version (#677, Wenn-Karte „Neue Version verfügbar“)? Nur die Nummer des neuesten Releases
+ * („Latest“, #907), wenn sie über der installierten liegt – sonst null. Wirft, wenn GitHub nicht antwortet.
+ */
+export async function neueStabileVersion(abruf: Abruf = (url) => holeJson(url), installiert = eigeneVersion()): Promise<string | null> {
+  const r = (await abruf(`https://api.github.com/repos/${REPO}/releases/latest`)) as { tag_name?: unknown };
+  const version = typeof r?.tag_name === 'string' ? r.tag_name.replace(/^v/, '') : '';
+  return /^\d+\.\d+(\.\d+)?$/.test(version) && vergleicheVersion(version, installiert) > 0 ? version : null;
+}
+
 /** Alle Komponenten parallel abgleichen; Fehler je Komponente statt insgesamt. */
 export async function versionsabgleich(u: Uebersicht, browser: Record<string, string> = {}, abruf: Abruf = (url) => holeJson(url)): Promise<Vergleich[]> {
   const pg = 'version' in u.datenbank ? u.datenbank.version.split(' ')[0] : null;
