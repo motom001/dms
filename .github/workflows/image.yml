@@ -100,10 +100,11 @@ jobs:
       # docs/releases/neu/<name>.md mit („art: patch|minor|keine“). Dependabot ist ausgenommen.
       - name: Release-Notiz
         if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
-        env:
-          BASIS: ${{ github.event.pull_request.base.sha }}
+        # Basis ist der erste Elternteil des Merge-Refs (das aktuelle main), nicht die Basis beim letzten Push: Sonst
+        # zählen Schnipsel mit, die inzwischen auf main gekommen sind (Fund Entwicklung 08.11.2026, #952).
         run: |
-          git fetch -q --depth 1 origin "$BASIS"
+          git fetch -q --depth=2 origin "$GITHUB_SHA"
+          BASIS=$(git rev-parse HEAD^1)
           node --test .github/werkzeuge/version.test.mjs
           node .github/werkzeuge/version.mjs pruefen "$BASIS"
       - run: npm ci --no-audit --no-fund
@@ -248,10 +249,10 @@ jobs:
           node-version: 24
       - name: Bestandslisten wachsen nicht
         if: github.event_name == 'pull_request'
-        env:
-          BASIS: ${{ github.event.pull_request.base.sha }}
+        # Gegen das aktuelle main (erster Elternteil des Merge-Refs), wie bei der Release-Notiz (#952).
         run: |
-          git fetch -q --depth 1 origin "$BASIS"
+          git fetch -q --depth=2 origin "$GITHUB_SHA"
+          BASIS=$(git rev-parse HEAD^1)
           node --test .github/werkzeuge/ausnahmen-zaehlen.test.mjs
           node .github/werkzeuge/ausnahmen-zaehlen.mjs "$BASIS"
       # Feste Farben nur in web/src/tokens.css (#966); jeder Fund erscheint als Anmerkung an der Zeile.
@@ -273,10 +274,11 @@ jobs:
       # Warnungen (z. B. Komplexität über 15) nur für die geänderten Dateien – als Hinweis, sie brechen nichts.
       - name: Hinweise zu geänderten Dateien
         if: github.event_name == 'pull_request'
-        env:
-          BASIS: ${{ github.event.pull_request.base.sha }}
         shell: bash
+        # Nur die Dateien dieses Pull Requests: gegen das aktuelle main (erster Elternteil des Merge-Refs, #952).
         run: |
+          git fetch -q --depth=2 origin "$GITHUB_SHA"
+          BASIS=$(git rev-parse HEAD^1)
           mapfile -t dateien < <(git diff --name-only --diff-filter=d "$BASIS" HEAD -- 'server/src/*.ts' 'server/test/*.ts' 'web/src/*.ts' 'web/src/*.tsx' 'shared/src/*.ts')
           if [ "${#dateien[@]}" -eq 0 ]; then echo "Keine geänderten Dateien mit Hinweisen."; exit 0; fi
           npx eslint --pass-on-unpruned-suppressions --format ./.github/werkzeuge/eslint-github.mjs "${dateien[@]}"
