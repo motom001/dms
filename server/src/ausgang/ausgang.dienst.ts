@@ -233,9 +233,11 @@ export class AusgangDienst {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     const anlagen = (await this.repo.anlagenVon(id)).filter((a) => a.mappeId === d.mappeId);
-    if (!anlagen.length) return { ...(await this.dokumentFuerAusgabe(id, o)), anlagen: 0 };
+    if (!anlagen.length) return { ...(await this.dokumentFuerAusgabe(id, o)), anlagen: 0, teile: [] };
     const eintraege: ZipEintrag[] = [];
     const namen = new Set<string>();
+    // Je Anlage, was hinausging – für den Abruf in der Historie (#800): auch die Anlagen über Weg und API-Schlüssel.
+    const teile: Array<{ dokumentId: string; gestempelt: boolean; datei: string }> = [];
     let gestempelt = false;
     for (const x of [d, ...anlagen]) {
       const r = await this.dokumentFuerAusgabe(x.id, o);
@@ -245,9 +247,10 @@ export class AusgangDienst {
       for (let i = 2; namen.has(name.toLowerCase()); i++) name = `${stamm} (${i})${endung}`;
       namen.add(name.toLowerCase());
       eintraege.push({ name, groesse: r.groesse, inhalt: async () => r.inhalt });
+      if (x.id !== d.id) teile.push({ dokumentId: x.id, gestempelt: r.gestempelt, datei: name });
     }
     const name = t('meldungen.anlagen.zip-name', { name: stammUndEndung(d.name)[0] });
-    return { name, mime: 'application/zip', anzeigbar: true, groesse: zipGroesse(eintraege), inhalt: zipStrom(eintraege) as Buffer | Readable, gestempelt, verkleinert: null, anlagen: anlagen.length };
+    return { name, mime: 'application/zip', anzeigbar: true, groesse: zipGroesse(eintraege), inhalt: zipStrom(eintraege) as Buffer | Readable, gestempelt, verkleinert: null, anlagen: anlagen.length, teile };
   }
 
   /**

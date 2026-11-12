@@ -386,6 +386,25 @@ describe('Anlagen (#998): Weitergeben „mit Anlagen?“ über die Prüfstelle',
     for (const mitAnl of [true, false]) await assert.rejects(x.oberflaeche(x.jonas, 'POST', '/api/dokumente/:id/herunterladen', { params: { id: x.rechnung.id }, body: { mitAnlagen: mitAnl } }), fehler(403));
   });
 
+  it('Abruf (#800) beim ZIP „mit Anlagen“: je Anlage ein eigener Eintrag mit Weg und Name des API-Schlüssels', async () => {
+    const x = await aufbau(false, '');
+    await mitDrei(x);
+    const abrufe = async (art: 'heruntergeladen' | 'abruf_api') => (await x.repo.historie(x.post.id, { arten: [art] })).map((e) => e.daten as { dokumentId: string; weg: string; schluessel?: string; datei?: string });
+    await x.oberflaeche(x.lena, 'POST', '/api/dokumente/:id/herunterladen', { params: { id: x.rechnung.id }, body: { mitAnlagen: true } });
+    const ui = await abrufe('heruntergeladen');
+    assert.deepEqual(new Set(ui.map((e) => e.dokumentId)), new Set([x.rechnung.id, x.hu.id, x.arbeiten.id, x.teile.id]), 'Hauptdokument und alle drei Anlagen');
+    assert.ok(ui.every((e) => e.weg === 'oberflaeche' && !e.schluessel));
+    assert.equal(ui.find((e) => e.dokumentId === x.rechnung.id)?.datei, 'Werkstattrechnung mit Anlagen.zip');
+    // Mit dem API-Schlüssel eines Menschen: derselbe Weg für alle, jeweils mit dem Namen des Schlüssels.
+    await x.oberflaeche(x.lena, 'POST', '/api/dokumente/:id/herunterladen', { params: { id: x.rechnung.id }, body: { mitAnlagen: true }, apiSchluessel: { id: 'k', name: 'Skript Lena', recht: 'lesen' } } as unknown as Partial<Anfrage>);
+    const api = await abrufe('abruf_api');
+    assert.deepEqual(api.map((e) => e.dokumentId).sort(), [x.rechnung.id, x.hu.id, x.arbeiten.id, x.teile.id].sort());
+    assert.ok(api.every((e) => e.weg === 'api' && e.schluessel === 'Skript Lena'));
+    // Ohne Anlagen bleibt es beim einen Abruf des Dokuments.
+    await x.oberflaeche(x.lena, 'POST', '/api/dokumente/:id/herunterladen', { params: { id: x.brief.id }, body: { mitAnlagen: true } });
+    assert.equal((await abrufe('heruntergeladen')).filter((e) => e.dokumentId === x.brief.id).length, 1);
+  });
+
   it('E-Mail einer Mappe: gewählte Dokumente mit ihren Anlagen (Vorgabe ja), mitAnlagen=false nur das Gewählte', async () => {
     const x = await aufbau(false, '');
     await mitDrei(x);
@@ -396,6 +415,14 @@ describe('Anlagen (#998): Weitergeben „mit Anlagen?“ über die Prüfstelle',
     await x.d.ausgangEmail.versendeMappe(x.post.id, { an: 'werkstatt@example.org', betreff: 'Rechnung', dokumente: [x.rechnung.id] }, ich, mailer, z);
     await x.d.ausgangEmail.versendeMappe(x.post.id, { an: 'werkstatt@example.org', betreff: 'Rechnung', dokumente: [x.rechnung.id], mitAnlagen: false }, ich, mailer, z);
     assert.deepEqual(gesendet, [['Werkstattrechnung.pdf', 'HU-Protokoll.pdf', 'Arbeiten.pdf', 'Teilebestellung.pdf'], ['Werkstattrechnung.pdf']]);
+    // Nachweis: Der Eintrag „email“ nennt jede Anlage als Anhang, wie das Hauptdokument.
+    const mails = (await x.repo.historie(x.post.id, { arten: ['email'] })).map((e) => (e.daten as { anhaenge: Array<{ name: string }> }).anhaenge.map((y) => y.name));
+    assert.deepEqual(mails.sort((a, b) => b.length - a.length), gesendet);
+    // Mehrere Mappen (#151): ebenso – Anhänge und Eintrag je Mappe mit den Anlagen.
+    await x.d.ausgangEmail.versendeMappen({ ids: [x.post.id], an: 'werkstatt@example.org', betreff: 'Belege', angaben: false, dokumente: [x.rechnung.id] }, { ...ich, rolle: 'admin' }, z, mailer);
+    assert.deepEqual(gesendet[2], gesendet[0]);
+    const mehrere = (await x.repo.historie(x.post.id, { arten: ['email'] })).find((e) => (e.daten as { mappen?: number }).mappen === 1);
+    assert.deepEqual((mehrere?.daten as { anhaenge: Array<{ name: string }> }).anhaenge.map((y) => y.name), gesendet[0]);
   });
 });
 

@@ -82,7 +82,8 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       // „mit Anlagen?“ (#998): das Dokument und seine Anlagen als ZIP – dieselbe Prüfstelle (oben), dieselbe Mappe.
       if (e.mitAnlagen === true && !Number.isInteger(version)) {
         const r = await dienst.ausgang.dokumentMitAnlagenFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, ich: ich(a) });
-        return abgerufen(a, a.params.id, { fassung: e.fassung === 'archiv' ? 'archiv' : 'original', gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
+        // Abruf (#800) für das Hauptdokument und je Anlage – mit Weg und Name des API-Schlüssels.
+        return abgerufen(a, a.params.id, { fassung: e.fassung === 'archiv' ? 'archiv' : 'original', gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r), r.teile);
       }
       const r = await dienst.ausgang.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, version: Number.isInteger(version) ? version : undefined, ich: ich(a) });
       return abgerufen(a, a.params.id, { fassung: Number.isInteger(version) ? 'version' : e.fassung === 'archiv' ? 'archiv' : 'original', version: Number.isInteger(version) ? version : null, gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));

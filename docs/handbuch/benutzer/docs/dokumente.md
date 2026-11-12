@@ -114,7 +114,7 @@ Jeder Schritt steht in der [Historie](mappen.md) der Mappe.
 - Sie sind **Dokumente wie alle anderen**: mit [Versionen](versionen.md), Volltext und Texterkennung, Archivfassung (PDF/A), Stempel und Aufbewahrung der Mappe. Wer die Mappe sehen darf, sieht auch ihre Anlagen; es gelten dieselben Rechte.
 - **Erkennung, „Wohin gehört das?“ und KI** lesen nur das Hauptdokument – AGB, Preislisten und Protokolle stören das Auslesen nicht.
 - Die **Suche** findet auch Text in Anlagen; der Treffer nennt sie mit „in Anlage 2“.
-- **Herunterladen** und **Weitergeben** fragen **„mit Anlagen?“** – vorgewählt ist *ja*. Mit Anlagen kommt beim Herunterladen eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“, in der E-Mail hängt jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument.
+- **Herunterladen** und **Weitergeben** fragen **„mit Anlagen?“** – vorgewählt ist *ja*. Mit Anlagen kommt beim Herunterladen eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“, in der E-Mail hängt jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument. In der Historie der Mappe steht der Abruf für das Dokument und für jede Anlage einzeln (mit Weg und gegebenenfalls dem Namen des API-Schlüssels), beim Versand die E-Mail mit allen Anhängen.
 - Im [Laufwerk](laufwerk.md) stehen Anlagen gleich hinter ihrem Dokument mit dem Zusatz „– Anlage 1“.
 
 ## PDF bearbeiten
