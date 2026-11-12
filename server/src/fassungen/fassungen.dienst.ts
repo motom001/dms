@@ -121,8 +121,9 @@ export class Fassungen {
     if (!this.gegenstaende.has(art)) { await loesche(); return; }
     await this.halte(art, eintrag, repo);
     await loesche();
-    // Gibt es den Eintrag noch (z. B. ein Systemeintrag, der nicht weg darf), bleibt alles stehen.
-    if (await this.gegenstand(art).stand(eintrag, repo)) return;
+    // Gibt es den Eintrag noch (ein Systemeintrag, der nicht weg darf, oder eine Kern-Vorgabe einer Automatisierungsvorlage,
+    // die nach dem Zurücksetzen wieder gilt), kein Löschvermerk – der Stand danach wird eine Fassung, falls er sich geändert hat.
+    if (await this.gegenstand(art).stand(eintrag, repo)) { await this.halte(art, eintrag, repo); return; }
     await repo.vermerkeLoeschung(art, eintrag, { zeit: this.jetzt(), urheber: await this.ergaenzt(this.kern.urheber(), repo) });
   }
 

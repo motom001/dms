@@ -55,6 +55,9 @@ const MARKE = (k: string) => `\u0000${k}\u0000`;
 /** Was ein Lauf braucht: Mappe, Person (mit Zugriff) und die Antworten. */
 interface Lauf { v: Ablaufvorlage; mappe: Mappe; typ: Mappentyp | null; person: string; z: Zugriff; empfaengerId: string | null; text: string; datum: string | null; sofort: boolean }
 
+/** Stand einer Vorlage in einer Fassung (#1006) – wie bis Migration 107 in `ablaufvorlage_fassungen`. */
+const fassungsStand = (v: Ablaufvorlage) => ({ name: v.name, reihenfolge: v.reihenfolge, aktiv: v.aktiv, beschreibung: v.beschreibung, typen: v.typen, wann: v.wann, fragen: v.fragen, karten: v.karten });
+
 /** Kern-Vorgabe als Vorlage (unverändert, ohne gespeicherten Stand). */
 function kernStandard(k: (typeof KERN_VORLAGEN)[number]): Ablaufvorlage {
   return { ...kernVorlage(k), kennung: k, aktiv: true, herkunft: 'kern', paketId: null, version: 0, geaendert: null, geaendertVon: null };
@@ -457,12 +460,29 @@ export class MappenAblaeufe {
     return this.ansicht(kennung);
   }
 
-  async fassungen(kennung: string) { await this.vorlage(kennung); return this.repo.ablaufvorlageFassungen(kennung); }
-
-  async stelleWieder(kennung: string, version: number, von: string): Promise<AblaufvorlageAnsicht> {
-    const f = (await this.repo.ablaufvorlageFassungen(kennung)).find((x) => x.version === version);
-    if (!f) throw new Fachfehler(404, t('meldungen.fassungen.fehlt'));
-    return this.aendereVorlage(kennung, { ...f.daten, version: (await this.vorlage(kennung)).version }, von);
+  /**
+   * Fassungen (#1006): Daten und an/aus einer Vorlage – nicht Herkunft und Paket. Kern-Vorgaben haben auch unverändert
+   * einen Stand (die Auslieferung); Zurücksetzen ist darum eine Fassung, kein Löschen. Festgehalten wird über die
+   * Repo-Hülle (`fassungen/huelle.ts`), wiederhergestellt über das normale Speichern mit denselben Prüfungen.
+   */
+  fassungsGegenstand() {
+    const vorlage = async (kennung: string, repo: Repo): Promise<Ablaufvorlage | undefined> => {
+      const v = (await repo.ablaufvorlagen()).find((x) => x.kennung === kennung);
+      return v ?? (istKernVorlage(kennung) ? kernStandard(kennung) : undefined);
+    };
+    return {
+      art: 'ablaufvorlage' as const,
+      stand: async (kennung: string, repo: Repo) => {
+        const v = await vorlage(kennung, repo);
+        return v && { name: v.name, daten: fassungsStand(v) };
+      },
+      alle: async (repo: Repo) => [...new Set([...KERN_VORLAGEN, ...(await repo.ablaufvorlagen()).map((v) => v.kennung)])],
+      stelleHer: async (kennung: string, daten: unknown, o: { von: { id: string | null } }) => {
+        const alt = await this.vorlage(kennung);
+        await this.aendereVorlage(kennung, { ...(daten as object), version: alt.version }, o.von.id ?? '');
+      },
+      kontext: async () => ({ typen: await this.repo.listeTypen() }),
+    };
   }
 
   async verlauf(kennung: string, anzahl = 50): Promise<AblaufVerlauf[]> {
@@ -499,9 +519,11 @@ export class MappenAblaeufe {
     return { angehalten: (await this.repo.ablaeufe({ angehalten: true })).map((a) => ({ id: a.id, vorlage: a.vorlage, mappeId: a.mappeId, grund: a.angehalten!.grund })) };
   }
 
-  /** Vollexport: Vorlagen mit Änderungsverlauf. */
+  /** Vollexport: Vorlagen mit Änderungsverlauf – seit #1006 aus den Fassungen (auch in struktur/fassungen.json; Nummer als version). */
   async exportDaten(): Promise<unknown[]> {
-    return Promise.all((await this.vorlagen()).map(async (v) => ({ ...v, fassungen: v.version ? await this.repo.ablaufvorlageFassungen(v.kennung) : [] })));
+    return Promise.all((await this.vorlagen()).map(async (v) => ({
+      ...v, fassungen: (await this.repo.fassungen('ablaufvorlage', v.kennung)).map((f) => ({ version: f.nr, zeit: f.zeit, von: f.urheber.art === 'person' ? f.urheber.id : null, daten: f.daten })),
+    })));
   }
 
   /* ---------- Vorlagen aus Paketen ---------- */

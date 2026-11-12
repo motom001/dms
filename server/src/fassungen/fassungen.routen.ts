@@ -11,7 +11,7 @@ import type { Anfrage, Route } from '../routen';
 
 export function fassungenRouten(k: RoutenKontext): Route[] {
   const { dienst } = k;
-  const eintrag = (a: Anfrage) => a.params.id ?? a.params.schluessel ?? '';
+  const eintrag = (a: Anfrage) => a.params.id ?? a.params.schluessel ?? a.params.kennung ?? '';
   const je = (art: FassungArt): Route[] => {
     const p = `${FASSUNG_PFAD[art]}/fassungen`;
     return [

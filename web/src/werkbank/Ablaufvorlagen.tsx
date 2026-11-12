@@ -17,7 +17,7 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Umschalter, ZeitraumEingabe, type ZeitraumRoh } from '../bausteine';
+import { Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Umschalter, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungsvorlagen (#1044): Mitte alle Vorlagen (an/aus, Zahl der offenen Abläufe),
@@ -38,6 +38,8 @@ export function useAblaufvorlagen(offen: boolean) {
 export type AblaufvorlagenZustand = ReturnType<typeof useAblaufvorlagen>;
 
 const zeit = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) : '');
+/** Die Abschnitte des Editors sind nicht klappbar – Fassungen (#1006) ebenso. */
+const FEST: Klappe = { offen: true, umschalten: () => undefined, fest: true };
 const pfad = (kennung: string) => `/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}`;
 
 function Herkunft({ v }: { v: AblaufvorlageAnsicht }) {
@@ -68,6 +70,7 @@ export function AblaufvorlagenListe({ z, offen }: { z: AblaufvorlagenZustand; of
           </li>
         ))}</ul>
       )}
+      <GeloeschteEintraege art="ablaufvorlage" />
     </>
   );
 }
@@ -226,7 +229,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
         <Ausprobieren v={v} />
         <GeradeBenutzt v={v} nachher={() => void z.laden()} />
         <Verlauf v={v} />
-        <Fassungen v={v} nachher={() => void z.laden()} />
+        <Fassungen art="ablaufvorlage" eintrag={v.kennung} stand={v.version} nachher={() => z.laden()} klappe={FEST} />
       </>}
     </div>
   );
@@ -306,27 +309,6 @@ function Verlauf({ v }: { v: AblaufvorlageAnsicht }) {
       <h2 className="h3">{t('automatisierung.ui.verlauf')}</h2>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {!liste ? <p className="leise">{t('automatisierung.ui.lade')}</p> : !liste.length ? <p className="leise">{t('automatisierung.vorlage.ui.verlauf.leer')}</p> : <Eintragsliste eintraege={eintraege} />}
-    </div>
-  );
-}
-
-/** Änderungsverlauf: jede gespeicherte Fassung, mit „Wiederherstellen“. */
-function Fassungen({ v, nachher }: { v: AblaufvorlageAnsicht; nachher: () => void }) {
-  const d = useDaten();
-  const [liste, setListe] = useState<Awaited<ReturnType<typeof api.ablaufvorlageFassungen>> | null>(null);
-  const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.ablaufvorlageFassungen(v.kennung).then(setListe).catch((x) => setFehler((x as Error).message)); }, [v.kennung, v.version]);
-  const eintraege: Listeneintrag[] = (liste ?? []).map((f, i) => ({
-    id: f.version, wann: zeit(f.zeit), wer: f.von ? d.person(f.von) : t('automatisierung.vorlage.ui.fassung.ablago'),
-    was: <>{f.daten.name} · {wannText(f.daten.wann)}</>,
-    inhalt: i > 0 ? <Knopf groesse="klein" onClick={async () => { try { await api.ablaufvorlageWiederherstellen(v.kennung, f.version); nachher(); } catch (x) { setFehler((x as Error).message); } }}>{t('automatisierung.vorlage.ui.wiederherstellen')}</Knopf> : undefined,
-    mehr: t('automatisierung.vorlage.ui.fassung', { version: f.version }),
-  }));
-  return (
-    <div className="blatt">
-      <h2 className="h3">{t('automatisierung.vorlage.ui.fassungen')}</h2>
-      {fehler && <p className="fehlertext">{fehler}</p>}
-      {!liste ? <p className="leise">{t('automatisierung.ui.lade')}</p> : !liste.length ? <p className="leise">{t('automatisierung.vorlage.ui.fassungen.leer')}</p> : <Eintragsliste eintraege={eintraege} />}
     </div>
   );
 }

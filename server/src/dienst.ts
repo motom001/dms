@@ -345,9 +345,9 @@ export class Dienst {
   }
 
   /**
-   * Fassungen (#1006): Mappentypen, Ansichten, Nummernkreise und Stempel-Vorlagen hier; die übrigen melden sich selbst an.
-   * Die Repo-Hülle (`mitFassungen`, im Konstruktor) hält nach jeder Änderung an Typen, Ansichten und Nummernkreisen die
-   * Fassung fest – auf jedem Weg, auch in Transaktionen.
+   * Fassungen (#1006): Mappentypen, Ansichten, Nummernkreise, Stempel-Vorlagen und Automatisierungsvorlagen hier; die
+   * übrigen melden sich selbst an. Die Repo-Hülle (`mitFassungen`, im Konstruktor) hält nach jeder Änderung an Typen,
+   * Ansichten, Nummernkreisen und Automatisierungsvorlagen die Fassung fest – auf jedem Weg, auch in Transaktionen.
    */
   get fassungen(): Fassungen { return this.fassungenDienst ??= this.baueFassungen(); }
   private fassungenDienst?: Fassungen;
@@ -366,7 +366,7 @@ export class Dienst {
       speichereStempelVorlage: (id: string, e: Record<string, unknown>, von: string) => this.stempelvorlagen.speichereStempelVorlage(id, e, von),
       repo: () => this.kern.repo,
     };
-    for (const g of [typGegenstand(a), sichtGegenstand(a), nummernkreisGegenstand(a), stempelGegenstand(a)]) f.registriere(g);
+    for (const g of [typGegenstand(a), sichtGegenstand(a), nummernkreisGegenstand(a), stempelGegenstand(a), this.ablaeufe.fassungsGegenstand()]) f.registriere(g);
     return f;
   }
   /** Dokumente (#1075): die Klassen in dokumente/; was noch im Dienst liegt, kommt über die Anschlüsse. */

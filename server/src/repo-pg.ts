@@ -2411,36 +2411,17 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async speichereAblaufvorlage(v, von, erwartet) {
       const daten = { beschreibung: v.beschreibung, typen: v.typen, wann: v.wann, fragen: v.fragen, karten: v.karten };
-      const fassung = { name: v.name, reihenfolge: v.reihenfolge, aktiv: v.aktiv, ...daten };
-      return sql.begin(async (tx) => {
-        let version: number;
-        if (erwartet === null) {
-          const r = await tx`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, reihenfolge, daten, aktiv, herkunft, paket_id, version, geaendert_von)
-            VALUES (${haushaltId}, ${v.kennung}, ${v.name}, ${v.reihenfolge}, ${json(sql, daten)}::jsonb, ${v.aktiv}, ${v.herkunft}, ${v.paketId}, 1, ${istUuid(von) ? von : null}::uuid)
-            ON CONFLICT DO NOTHING RETURNING version`;
-          if (!r.length) return false;
-          version = 1;
-          // Eine Kennung, die es früher schon gab (Paket entfernt, Kern zurückgesetzt): der Verlauf geht weiter.
-          const [alt] = await tx`SELECT max(version)::int AS v FROM ablaufvorlage_fassungen WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung}`;
-          if (alt?.v) { version = alt.v + 1; await tx`UPDATE ablaufvorlagen SET version = ${version} WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung}`; }
-        } else {
-          const r = await tx`UPDATE ablaufvorlagen SET name = ${v.name}, reihenfolge = ${v.reihenfolge}, daten = ${json(sql, daten)}::jsonb, aktiv = ${v.aktiv},
-            herkunft = ${v.herkunft}, paket_id = ${v.paketId}, version = version + 1, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
-            WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung} AND version = ${erwartet} RETURNING version`;
-          if (!r.length) return false;
-          version = r[0].version as number;
-        }
-        await tx`INSERT INTO ablaufvorlage_fassungen (haushalt_id, kennung, version, daten, von) VALUES (${haushaltId}, ${v.kennung}, ${version}, ${json(sql, fassung)}::jsonb, ${istUuid(von) ? von : null}::uuid)
-          ON CONFLICT DO NOTHING`;
-        return true;
-      });
+      if (erwartet === null) {
+        return (await sql`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, reihenfolge, daten, aktiv, herkunft, paket_id, version, geaendert_von)
+          VALUES (${haushaltId}, ${v.kennung}, ${v.name}, ${v.reihenfolge}, ${json(sql, daten)}::jsonb, ${v.aktiv}, ${v.herkunft}, ${v.paketId}, 1, ${istUuid(von) ? von : null}::uuid)
+          ON CONFLICT DO NOTHING RETURNING version`).length > 0;
+      }
+      return (await sql`UPDATE ablaufvorlagen SET name = ${v.name}, reihenfolge = ${v.reihenfolge}, daten = ${json(sql, daten)}::jsonb, aktiv = ${v.aktiv},
+        herkunft = ${v.herkunft}, paket_id = ${v.paketId}, version = version + 1, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
+        WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung} AND version = ${erwartet} RETURNING version`).length > 0;
     },
     async loescheAblaufvorlage(kennung) {
       await sql`DELETE FROM ablaufvorlagen WHERE haushalt_id = ${haushaltId} AND kennung = ${kennung}`;
-    },
-    async ablaufvorlageFassungen(kennung) {
-      return (await sql`SELECT * FROM ablaufvorlage_fassungen WHERE haushalt_id = ${haushaltId} AND kennung = ${kennung} ORDER BY version DESC LIMIT 100`)
-        .map((r) => ({ version: Number(r.version), zeit: iso(r.zeit), von: (r.von as string | null) ?? null, daten: r.daten as AblaufvorlageDaten & { aktiv: boolean } }));
     },
     async vermerkeAblauf(e) {
       await sql`INSERT INTO ablauf_verlauf (id, haushalt_id, vorlage, mappe_id, ablauf_id, person_id, art, text, zeit)

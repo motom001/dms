@@ -2,11 +2,12 @@
  * Lesbare Änderungslisten der Fassungen (#1006): je Gegenstand eine Beschreibung aus zwei Ständen, z. B. „Feld
  * ‚Kündigungsfrist‘ hinzugefügt · ‚Betrag‘ ist kein Pflichtfeld mehr · Trefferliste ‚Standard‘: Spalte ‚Ort‘ entfernt“.
  * Kein JSON-Diff für Menschen. Für Mappentypen baut sie auf dem Typvergleich der Pakete auf (`typvergleich.ts`, #653),
- * für Automatisierungen auf ihrer Kurzform (`automatisierung.ts`).
+ * für Automatisierungen auf ihrer Kurzform (`automatisierung.ts`), für Automatisierungsvorlagen auf `ablaufvorlagen.ts`.
  *
  * Werte von Geheimnissen (Postfach-Passwort, geheime Paket-Einstellungen) stehen nie in einer Fassung; die Beschreibung
  * sagt nur „geändert“.
  */
+import { karteText, wannText as vorlageWannText, type AblaufvorlageDaten, type VorlagenKarte } from './ablaufvorlagen';
 import { dannText, kontextTyp, wennText, type AutomatisierungDaten, type DannKarte, type Kontextdaten } from './automatisierung';
 import type { Feld, Mappentyp, Register, Trefferliste } from './model';
 import { kannAusPost, SYSTEMSPALTEN, istSystemspalte } from './model';
@@ -29,6 +30,8 @@ export type PostfachStand = Record<string, unknown> & { name: string; passwortGe
 /** Paket-Einstellungen: Werte; Geheimnisse nur als `{ gesetzt: true }`. */
 export interface PaketEinstellungenStand { werte: Record<string, unknown> }
 export type AutomatisierungStand = AutomatisierungDaten & { aktiv: boolean };
+/** Automatisierungsvorlage (#1044): ihre Daten und an/aus – nicht Herkunft und Paket. */
+export type AblaufvorlageStand = AblaufvorlageDaten & { aktiv: boolean };
 
 /** Was die Beschreibung nachschlagen muss – der Server reicht es herein. */
 export interface Vergleichskontext {
@@ -40,6 +43,8 @@ export interface Vergleichskontext {
   einstellung?(schluessel: string): { name: string; geheim: boolean } | undefined;
   /** Automatisierungen: Typen, Personen, Rollen, Pakete. */
   automatisierung?: Pick<Kontextdaten, 'typen' | 'benutzer' | 'rollen' | 'pakete'>;
+  /** Automatisierungsvorlagen: Mappentypen (Felder als Empfänger). */
+  typen?: Mappentyp[];
 }
 
 const gleich = (a: unknown, b: unknown) => gleicheStaende(a ?? null, b ?? null);
@@ -69,6 +74,7 @@ export function beschreibeAenderungen(art: FassungArt, alt: unknown, neu: unknow
       case 'postfach': return beschreibePostfach(alt as PostfachStand, neu as PostfachStand);
       case 'paketeinstellungen': return beschreibePaketEinstellungen(alt as PaketEinstellungenStand, neu as PaketEinstellungenStand, k);
       case 'automatisierung': return beschreibeAutomatisierung(alt as AutomatisierungStand, neu as AutomatisierungStand, k);
+      case 'ablaufvorlage': return beschreibeAblaufvorlage(alt as AblaufvorlageStand, neu as AblaufvorlageStand, k);
       default: return [];
     }
   })();
@@ -340,5 +346,37 @@ export function beschreibeAutomatisierung(alt: AutomatisierungStand, neu: Automa
     ]),
     ...kartenSaetze('dann', alt, neu, kx),
     ...kartenSaetze('sonst', alt, neu, kx),
+  ];
+}
+
+/* ---------- Automatisierungsvorlage (#1044) ---------- */
+
+export function beschreibeAblaufvorlage(alt: AblaufvorlageStand, neu: AblaufvorlageStand, k: Vergleichskontext = {}): string[] {
+  const typen = k.typen ?? [];
+  const typ = (id: string) => k.typName?.(id) ?? typen.find((x) => x.id === id)?.name ?? id;
+  const titel = t('gemeinsam.fassungen.karten');
+  const va: VorlagenKarte[] = alt.karten ?? [], vn: VorlagenKarte[] = neu.karten ?? [];
+  const reihe = (l: VorlagenKarte[], m: VorlagenKarte[]) => l.filter((x) => m.some((y) => y.id === x.id)).map((x) => x.id).join(',');
+  const at = alt.typen ?? [], nt = neu.typen ?? [];
+  return [
+    ...saetze([
+      () => alt.name !== neu.name && t('gemeinsam.typvergleich.name', { name: alt.name, name2: neu.name }),
+      () => !gleich(alt.beschreibung || '', neu.beschreibung || '') && t('gemeinsam.typvergleich.beschreibung-geaendert'),
+      () => alt.reihenfolge !== neu.reihenfolge && t('gemeinsam.fassungen.reihenfolge', { alt: alt.reihenfolge, neu: neu.reihenfolge }),
+      () => !alt.aktiv !== !neu.aktiv && (neu.aktiv ? t('gemeinsam.fassungen.eingeschaltet') : t('gemeinsam.fassungen.ausgeschaltet')),
+    ]),
+    ...nt.filter((id) => !at.includes(id)).map((id) => t('gemeinsam.fassungen.sicht-typ-dazu', { name: typ(id) })),
+    ...at.filter((id) => !nt.includes(id)).map((id) => t('gemeinsam.fassungen.sicht-typ-weg', { name: typ(id) })),
+    ...saetze([
+      () => !gleich(alt.wann, neu.wann) && t('gemeinsam.fassungen.wann', { alt: vorlageWannText(alt.wann), neu: vorlageWannText(neu.wann) }),
+      () => !gleich([...(alt.fragen ?? [])].sort(), [...(neu.fragen ?? [])].sort()) && t('gemeinsam.fassungen.fragen'),
+    ]),
+    ...vn.flatMap((x) => {
+      const a = va.find((y) => y.id === x.id);
+      if (!a) return [t('gemeinsam.fassungen.karte-dazu', { bereich: titel, karte: karteText(x, typen) })];
+      return gleich(a, x) ? [] : [t('gemeinsam.fassungen.karte-geaendert', { bereich: titel, karte: karteText(x, typen) })];
+    }),
+    ...va.filter((x) => !vn.some((y) => y.id === x.id)).map((x) => t('gemeinsam.fassungen.karte-weg', { bereich: titel, karte: karteText(x, typen) })),
+    ...saetze([() => reihe(va, vn) !== reihe(vn, va) && t('gemeinsam.fassungen.karten-reihenfolge', { bereich: titel })]),
   ];
 }

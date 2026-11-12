@@ -3,7 +3,8 @@
 **Zweck:** Wer hat wann was an den Einstellungen der Werkbank geändert – festhalten, zeigen, vergleichen,
 wiederherstellen. Ein Mechanismus und eine Tabelle (`fassungen`, Migration 103) für alle Gegenstände: Mappentypen
 (samt Rechte-Regeln, Stempel und Erkennung am Typ), Ansichten, Nummernkreise, Stempel-Vorlagen, Postfächer,
-Paket-Einstellungen und Automatisierungen (bis #1006 eigene Tabelle `automatisierung_fassungen`). Schicht 3.
+Paket-Einstellungen, Automatisierungen (bis #1006 eigene Tabelle `automatisierung_fassungen`) und Automatisierungsvorlagen
+(bis Migration 107 eigene Tabelle `ablaufvorlage_fassungen`). Schicht 3.
 
 - `fassungen.dienst.ts` – `Fassungen`: `halte` (nach dem Speichern: neue Fassung, fortgeschrieben oder nichts),
   `geloescht` (letzte Fassung mit Löschvermerk), `liste`, `vergleich`, `vorschau`, `stelleWiederHer` (Konfliktschutz
@@ -11,9 +12,11 @@ Paket-Einstellungen und Automatisierungen (bis #1006 eigene Tabelle `automatisie
   `abgleich` (beim Start einmal je Version: was Migrationen geändert haben, wird „Update auf Ablago …“).
 - `gegenstaende.ts` – Mappentyp, Ansicht, Nummernkreis, Stempel-Vorlage (Stand lesen, alle Einträge, wiederherstellen,
   Hinweise vorher). Postfächer (`postfach.ts`), Paket-Einstellungen (`pakete.ts`) und Automatisierungen
-  (`automatisierung.ts`) melden sich selbst mit `registriere` an.
-- `huelle.ts` – Repo-Hülle: nach jeder schreibenden Methode für Typen, Ansichten und Nummernkreise die Fassung
-  festhalten, in derselben Transaktion – so sind Pakete, Umbau, Umzüge beim Start und Löschen mit abgedeckt.
+  (`automatisierung.ts`) melden sich selbst mit `registriere` an; Automatisierungsvorlagen über
+  `MappenAblaeufe.fassungsGegenstand()` (`aufgaben/ablaeufe.ts`), angemeldet im Dienst.
+- `huelle.ts` – Repo-Hülle: nach jeder schreibenden Methode für Typen, Ansichten, Nummernkreise und
+  Automatisierungsvorlagen die Fassung festhalten, in derselben Transaktion – so sind Pakete, Umbau, Umzüge beim Start
+  und Löschen mit abgedeckt.
 - `fassungen.routen.ts` – je Gegenstand unter der Adresse seines Eintrags (`FASSUNG_PFAD`), damit das Verwaltungsrecht
   des Bereichs gilt; dazu `/api/werkbank/fassungen/geloescht`.
 

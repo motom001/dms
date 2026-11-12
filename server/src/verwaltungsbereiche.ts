@@ -57,7 +57,7 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/ablaufvorlagen*', 'ablaufvorlagen'),
   R('*', '/api/werkbank/ablaeufe*', 'ablaufvorlagen'),
   // Gelöschte Einträge mit ihrer letzten Fassung (#1006): wer einen der Bereiche verwaltet – die Liste zeigt nur dessen Einträge.
-  R('GET', '/api/werkbank/fassungen/geloescht', 'typen', 'sichten', 'nummernkreise', 'stempel', 'postfaecher', 'pakete', 'automatisierungen'),
+  R('GET', '/api/werkbank/fassungen/geloescht', 'typen', 'sichten', 'nummernkreise', 'stempel', 'postfaecher', 'pakete', 'automatisierungen', 'ablaufvorlagen'),
 
   // Benutzer und Sicherheit – die Liste der Benutzer lesen auch die Testläufe der Rechte (Typen, Ansichten) und die
   // Automatisierungen; Verwaltungsrechte selbst vergibt nur „Gesamte Verwaltung“ (prüft konten.setzeVerwaltung).

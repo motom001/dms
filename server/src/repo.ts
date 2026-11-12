@@ -1,7 +1,7 @@
 import type { Aufgabe, Ausschnitt, FallEnde, FallOhneLeserecht, Dokument, DokumentVersion, Herkunft, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
-import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, AblaufvorlageDaten, MappenAblauf } from '../../shared/src/ablaufvorlagen';
+import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, MappenAblauf } from '../../shared/src/ablaufvorlagen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import type { SprachBeschriftung, Sprachtexte } from '../../shared/src/sprachpaket';
@@ -729,12 +729,14 @@ export interface Repo {
   /** Löscht ihn; true nur für den, der ihn gelöscht hat (mehrere Server: genau einer lässt ihn laufen). */
   loescheAblauf(id: string): Promise<boolean>;
 
-  /* ---------- Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Änderungsverlauf, Verlauf der Abläufe ---------- */
+  /* ---------- Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Verlauf der Abläufe ---------- */
   ablaufvorlagen(): Promise<Ablaufvorlage[]>;
-  /** Neu (`erwartet` null; false, wenn es die Kennung schon gibt) oder geändert (nur mit passender Fassung); mit Änderungsverlauf. */
+  /**
+   * Neu (`erwartet` null; false, wenn es die Kennung schon gibt) oder geändert (nur mit passender `version`). Die Fassungen
+   * (#1006) hält die Repo-Hülle fest (`fassungen/huelle.ts`), nicht das Repo.
+   */
   speichereAblaufvorlage(v: Ablaufvorlage, von: string | null, erwartet: number | null): Promise<boolean>;
   loescheAblaufvorlage(kennung: string): Promise<void>;
-  ablaufvorlageFassungen(kennung: string): Promise<Array<{ version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }>>;
   vermerkeAblauf(e: AblaufVerlauf): Promise<void>;
   ablaufVerlauf(f: { vorlage?: string; mappeId?: string; anzahl: number }): Promise<AblaufVerlauf[]>;
   /** Bremse (#1044): Einträge einer Person seit `seit` mit diesen Arten. */

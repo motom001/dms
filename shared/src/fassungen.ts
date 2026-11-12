@@ -1,6 +1,6 @@
 /**
  * Fassungen (#1006): Jedes Speichern eines Eintrags der Werkbank – Mappentyp, Ansicht, Nummernkreis, Stempel-Vorlage,
- * Postfach, Paket-Einstellungen, Automatisierung – ergibt eine Fassung: Zeitpunkt, wer (Person, Paket mit Version,
+ * Postfach, Paket-Einstellungen, Automatisierung, Automatisierungsvorlage – ergibt eine Fassung: Zeitpunkt, wer (Person, Paket mit Version,
  * Automatisierung, Update von Ablago, Ablago selbst) und der ganze Stand. Was sich geändert hat, beschreibt
  * `fassungsvergleich.ts` lesbar aus zwei Ständen – nie als JSON-Diff.
  *
@@ -9,20 +9,20 @@
 import { t } from './texte';
 
 /** Die Gegenstände mit Fassungen. Rechte-Regeln gehören zum Mappentyp bzw. zur Ansicht und stehen in deren Fassungen. */
-export const FASSUNG_ARTEN = ['typ', 'sicht', 'nummernkreis', 'stempel', 'postfach', 'paketeinstellungen', 'automatisierung'] as const;
+export const FASSUNG_ARTEN = ['typ', 'sicht', 'nummernkreis', 'stempel', 'postfach', 'paketeinstellungen', 'automatisierung', 'ablaufvorlage'] as const;
 export type FassungArt = (typeof FASSUNG_ARTEN)[number];
 /** Werkbank-Bereich je Gegenstand (#818): Fassungen sehen und wiederherstellen nur mit dem Verwaltungsrecht des Bereichs. */
 export const FASSUNG_BEREICH: Readonly<Record<FassungArt, string>> = {
-  typ: 'typen', sicht: 'sichten', nummernkreis: 'nummernkreise', stempel: 'stempel', postfach: 'postfaecher', paketeinstellungen: 'pakete', automatisierung: 'automatisierungen',
+  typ: 'typen', sicht: 'sichten', nummernkreis: 'nummernkreise', stempel: 'stempel', postfach: 'postfaecher', paketeinstellungen: 'pakete', automatisierung: 'automatisierungen', ablaufvorlage: 'ablaufvorlagen',
 };
 /**
  * Adressen der Fassungen je Gegenstand: unter der Adresse des Eintrags, damit dieselbe Zuordnung zum Bereich gilt
- * (`verwaltungsbereiche.ts`). `:id` bzw. `:schluessel` ist der Eintrag.
+ * (`verwaltungsbereiche.ts`). `:id`, `:schluessel` bzw. `:kennung` ist der Eintrag.
  */
 export const FASSUNG_PFAD: Readonly<Record<FassungArt, string>> = {
   typ: '/api/typen/:id', sicht: '/api/sichten/definitionen/:id', nummernkreis: '/api/werkbank/nummernkreise/:schluessel',
   stempel: '/api/werkbank/stempel/vorlagen/:id', postfach: '/api/werkbank/postfaecher/:id', paketeinstellungen: '/api/werkbank/pakete/:id/einstellungen',
-  automatisierung: '/api/werkbank/automatisierungen/:id',
+  automatisierung: '/api/werkbank/automatisierungen/:id', ablaufvorlage: '/api/werkbank/ablaufvorlagen/:kennung',
 };
 export const istFassungArt = (x: unknown): x is FassungArt => typeof x === 'string' && (FASSUNG_ARTEN as readonly string[]).includes(x);
 
@@ -96,7 +96,7 @@ export interface Loeschvermerk { zeit: string; urheber: Urheber }
 /** Eine Fassung, wie sie gespeichert ist (Server, Vollexport). */
 export interface GespeicherteFassung {
   art: FassungArt;
-  /** Id bzw. Kennung des Eintrags (Nummernkreise: ihre Kennung, Paket-Einstellungen: die Paket-Id). */
+  /** Id bzw. Kennung des Eintrags (Nummernkreise und Automatisierungsvorlagen: ihre Kennung, Paket-Einstellungen: die Paket-Id). */
   eintrag: string;
   /** Fortlaufend je Eintrag, ab 1. */
   nr: number;

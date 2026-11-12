@@ -99,7 +99,7 @@ import { sprache } from '../../shared/src/sprache';
 import type { Abdeckung, Sprachangabe, SprachpaketInfo } from '../../shared/src/sprachpaket';
 
 /** Adresse eines Eintrags für die Fassungen (#1006). */
-const fassungsPfad = (art: FassungArt, eintrag: string) => FASSUNG_PFAD[art].replace(/:(id|schluessel)/, encodeURIComponent(eintrag));
+const fassungsPfad = (art: FassungArt, eintrag: string) => FASSUNG_PFAD[art].replace(/:(id|schluessel|kennung)/, encodeURIComponent(eintrag));
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -870,8 +870,6 @@ export const api = {
   ablaufvorlageSchalten: (kennung: string, aktiv: boolean) => anfrage<AblaufvorlageAnsicht>('PUT', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/aktiv`, { aktiv }),
   ablaufvorlageKopieren: (kennung: string) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/kopieren`),
   ablaufvorlageZuruecksetzen: (kennung: string) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/zuruecksetzen`),
-  ablaufvorlageFassungen: (kennung: string) => anfrage<Array<{ version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }>>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/fassungen`),
-  ablaufvorlageWiederherstellen: (kennung: string, version: number) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/fassungen/${version}`),
   ablaufvorlageVerlauf: (kennung: string) => anfrage<AblaufVerlauf[]>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/verlauf`),
   ablaufvorlageBenutzt: (kennung: string) => anfrage<MappenAblauf[]>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/benutzt`),
   ablaufvorlageAusprobieren: (kennung: string, mappeId: string, e: AblaufAntworten) => anfrage<{ zeilen: string[] }>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/ausprobieren`, { ...e, mappeId }),

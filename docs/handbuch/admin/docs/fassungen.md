@@ -1,6 +1,6 @@
 # Fassungen: wer hat was geändert?
 
-Jedes Speichern in der Werkbank ergibt eine **Fassung** – bei **Mappentypen** (samt ihren Rechte-Regeln, dem Stempel und der Erkennung am Typ), **Ansichten** (samt Rechten), **Nummernkreisen**, **Stempel-Vorlagen**, **Postfächern**, den **Einstellungen eines Pakets** und **Automatisierungen**. Jede Fassung nennt, **wann** gespeichert wurde, **wer** es war und **was** sich geändert hat – in Sätzen, nicht als Technik:
+Jedes Speichern in der Werkbank ergibt eine **Fassung** – bei **Mappentypen** (samt ihren Rechte-Regeln, dem Stempel und der Erkennung am Typ), **Ansichten** (samt Rechten), **Nummernkreisen**, **Stempel-Vorlagen**, **Postfächern**, den **Einstellungen eines Pakets**, **Automatisierungen** und **Automatisierungsvorlagen**. Jede Fassung nennt, **wann** gespeichert wurde, **wer** es war und **was** sich geändert hat – in Sätzen, nicht als Technik:
 
 > Feld „Kündigungsfrist“ hinzugefügt · „Betrag“ ist kein Pflichtfeld mehr · Trefferliste „Standard“: Spalte „Ort“ entfernt
 
@@ -49,10 +49,10 @@ Hat inzwischen jemand anderes gespeichert, stellt Ablago nichts wieder her und z
 
 ## Gelöschte Einträge { #geloescht }
 
-Fassungen bleiben, solange es den Eintrag gibt. Löschst du ihn, bleibt seine **letzte Fassung mit Löschvermerk** (wann, wer) – für den Nachweis, etwa in der [Verfahrensdokumentation](verfahrensdokumentation.md). Unter der Liste der Mappentypen, Ansichten, Nummernkreise, Stempel-Vorlagen, Postfächer und Automatisierungen steht dann **Gelöscht: 2 Einträge**; aufgeklappt mit Name, Zeitpunkt und Person. Wiederherstellen lässt sich ein gelöschter Eintrag daraus nicht.
+Fassungen bleiben, solange es den Eintrag gibt. Löschst du ihn, bleibt seine **letzte Fassung mit Löschvermerk** (wann, wer) – für den Nachweis, etwa in der [Verfahrensdokumentation](verfahrensdokumentation.md). Unter der Liste der Mappentypen, Ansichten, Nummernkreise, Stempel-Vorlagen, Postfächer, Automatisierungen und Automatisierungsvorlagen steht dann **Gelöscht: 2 Einträge**; aufgeklappt mit Name, Zeitpunkt und Person. Wiederherstellen lässt sich ein gelöschter Eintrag daraus nicht.
 
 ## Rechte, Export und Sicherung { #rechte }
 
 - Fassungen sehen, vergleichen und wiederherstellen kann, wer den **Bereich** verwalten darf ([Wer darf Ablago verwalten?](verwalten.md)) – die Fassungen eines Mappentyps also, wer Mappentypen verwalten darf. Die gelöschten Einträge zeigt Ablago nur aus den Bereichen, die du verwaltest.
 - Der [Vollexport](export.md) enthält alle Fassungen samt Löschvermerken in `struktur/fassungen.json`. Die Liste im Editor zeigt die neuesten 50.
-- Die [Sicherung](sicherung.md) nimmt die Fassungen mit. Ältere Sicherungen ohne Fassungen lassen sich weiter einspielen; die Automatisierungen bringen ihre bisherigen Versionen als Fassungen mit.
+- Die [Sicherung](sicherung.md) nimmt die Fassungen mit. Ältere Sicherungen ohne Fassungen lassen sich weiter einspielen; Automatisierungen und Automatisierungsvorlagen bringen ihren bisherigen Änderungsverlauf als Fassungen mit.

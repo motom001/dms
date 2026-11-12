@@ -1,5 +1,5 @@
 /**
- * Repo-Hülle der Fassungen (#1006): Mappentypen (samt Rechte-Regeln), Ansichten und Nummernkreise ändern sich auf vielen
+ * Repo-Hülle der Fassungen (#1006): Mappentypen (samt Rechte-Regeln), Ansichten, Nummernkreise und Automatisierungsvorlagen ändern sich auf vielen
  * Wegen – Werkbank, Pakete (Installieren, Aktualisieren, Umbau, Entfernen), Umzüge beim Start, Löschen eines Typs, das
  * Verweise anderer Typen nachzieht. Statt jeden Weg einzeln anzuschließen, hält die Hülle nach jeder schreibenden
  * Methode des Repos die Fassung fest – in derselben Transaktion (auch in `transaktion`, deren Repo ebenfalls umhüllt wird).
@@ -16,10 +16,12 @@ const SCHREIBT: Readonly<Record<string, Ziel>> = {
   legeTypAn: ['typ', erstes], aendereTyp: ['typ', erstes], setzeBerechtigungen: ['typ', erstes], setzeTypSchluessel: ['typ', erstes], setzeTypKennung: ['typ', erstes],
   legeSichtAn: ['sicht', erstes], aendereSicht: ['sicht', erstes], setzeSichtOrt: ['sicht', erstes],
   speichereNummernkreis: ['nummernkreis', (a) => (a[0] as { schluessel?: unknown } | undefined)?.schluessel],
+  // Automatisierungsvorlagen (#1044): Werkbank, Pakete (anlegen, ersetzen, entfernen) und Zurücksetzen gehen alle hier durch.
+  speichereAblaufvorlage: ['ablaufvorlage', (a) => (a[0] as { kennung?: unknown } | undefined)?.kennung],
 };
 /** Löschende Methoden. */
 const LOESCHT: Readonly<Record<string, Ziel>> = {
-  loescheTyp: ['typ', erstes], loescheSicht: ['sicht', erstes], loescheNummernkreis: ['nummernkreis', erstes],
+  loescheTyp: ['typ', erstes], loescheSicht: ['sicht', erstes], loescheNummernkreis: ['nummernkreis', erstes], loescheAblaufvorlage: ['ablaufvorlage', erstes],
 };
 
 export interface FassungenHalten {

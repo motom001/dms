@@ -58,7 +58,6 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   aufgaben: t('meldungen.vollexport.daten-aufgaben-jsonl-und'),
   mappen_ablaeufe: t('meldungen.vollexport.daten-ablaeufe-jsonl-und'),
   ablaufvorlagen: t('meldungen.vollexport.struktur-ablaufvorlagen-json'),
-  ablaufvorlage_fassungen: t('meldungen.vollexport.struktur-ablaufvorlagen-json-2'),
   ablauf_verlauf: t('meldungen.vollexport.nicht-enthalten-ablauf-verlauf'),
   historie: 'daten/historie.jsonl',
   favoriten: 'daten/favoriten.csv',

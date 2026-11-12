@@ -3,7 +3,7 @@ import { volltextHerkunft } from '../../shared/src/volltext';
 import { randomUUID } from 'node:crypto';
 import { lesbar, werte } from '../../shared/src/rechte';
 import { kannTerminHaben } from '../../shared/src/fristen';
-import type { AblaufVerlauf, Ablaufvorlage, AblaufvorlageDaten, MappenAblauf } from '../../shared/src/ablaufvorlagen';
+import type { AblaufVerlauf, Ablaufvorlage, MappenAblauf } from '../../shared/src/ablaufvorlagen';
 import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
@@ -88,7 +88,6 @@ export function speicherRepo(): Repo {
   const mitMappeE = (e: MappenAblauf): MappenAblauf => ({ ...kopie(e), mappeTitel: mappen.get(e.mappeId)?.titel ?? '', typId: mappen.get(e.mappeId)?.typId });
   /** Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Änderungsverlauf, Verlauf. */
   const vorlagen = new Map<string, Ablaufvorlage>();
-  const vorlagenFassungen: Array<{ kennung: string; version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }> = [];
   let ablaufVerlauf: AblaufVerlauf[] = [];
   /** Änderungshistorie (#57). */
   const historie: Historieneintrag[] = [];
@@ -928,17 +927,10 @@ export function speicherRepo(): Repo {
     async speichereAblaufvorlage(v, von, erwartet) {
       const da = vorlagen.get(v.kennung);
       if (erwartet === null ? !!da : !da || da.version !== erwartet) return false;
-      const frueher = Math.max(0, ...vorlagenFassungen.filter((f) => f.kennung === v.kennung).map((f) => f.version));
-      const version = erwartet === null ? frueher + 1 : erwartet + 1;
-      vorlagen.set(v.kennung, { ...kopie(v), version, geaendert: jetzt(), geaendertVon: von });
-      const { beschreibung, typen, wann, fragen, karten, name, reihenfolge, aktiv } = v;
-      vorlagenFassungen.push({ kennung: v.kennung, version, zeit: jetzt(), von, daten: kopie({ name, reihenfolge, aktiv, beschreibung, typen, wann, fragen, karten }) });
+      vorlagen.set(v.kennung, { ...kopie(v), version: erwartet === null ? 1 : erwartet + 1, geaendert: jetzt(), geaendertVon: von });
       return true;
     },
     async loescheAblaufvorlage(kennung) { vorlagen.delete(kennung); },
-    async ablaufvorlageFassungen(kennung) {
-      return vorlagenFassungen.filter((f) => f.kennung === kennung).sort((a, b) => b.version - a.version).slice(0, 100).map((f) => ({ version: f.version, zeit: f.zeit, von: f.von, daten: kopie(f.daten) }));
-    },
     async vermerkeAblauf(e) { ablaufVerlauf.push({ ...kopie(e), zeit: e.zeit || jetzt() }); },
     async ablaufVerlauf(f) {
       return ablaufVerlauf.filter((e) => (!f.vorlage || e.vorlage === f.vorlage) && (!f.mappeId || e.mappeId === f.mappeId))

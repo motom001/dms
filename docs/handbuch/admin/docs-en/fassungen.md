@@ -1,6 +1,6 @@
 # Versions: who changed what?
 
-Every save in the Workbench creates a **version** – for **folder types** (with their permission rules, the stamp and recognition on the type), **views** (with permissions), **number sequences**, **stamp templates**, **mailboxes**, the **settings of a package** and **automations**. Each version says **when** it was saved, **who** it was and **what** changed – in sentences, not technical data:
+Every save in the Workbench creates a **version** – for **folder types** (with their permission rules, the stamp and recognition on the type), **views** (with permissions), **number sequences**, **stamp templates**, **mailboxes**, the **settings of a package**, **automations** and **automation templates**. Each version says **when** it was saved, **who** it was and **what** changed – in sentences, not technical data:
 
 > Field “Notice period” added · “Amount” is no longer required · Results list “Standard”: column “Place” removed
 
@@ -49,10 +49,10 @@ If someone else has saved in the meantime, Ablago restores nothing and shows the
 
 ## Deleted entries { #geloescht }
 
-Versions stay as long as the entry exists. If you delete it, its **last version with a deletion note** (when, who) remains – as a record, for example for the [procedure documentation](verfahrensdokumentation.md). Below the list of folder types, views, number sequences, stamp templates, mailboxes and automations it then says **Deleted: 2 entries**; expanded with name, time and person. A deleted entry cannot be restored from there.
+Versions stay as long as the entry exists. If you delete it, its **last version with a deletion note** (when, who) remains – as a record, for example for the [procedure documentation](verfahrensdokumentation.md). Below the list of folder types, views, number sequences, stamp templates, mailboxes, automations and automation templates it then says **Deleted: 2 entries**; expanded with name, time and person. A deleted entry cannot be restored from there.
 
 ## Permissions, export and backup { #rechte }
 
 - Whoever may administer the **area** can see, compare and restore its versions ([Who may administer Ablago?](verwalten.md)) – the versions of a folder type, for example, whoever may administer folder types. Deleted entries are only shown from the areas you administer.
 - The [full export](export.md) contains all versions including deletion notes in `struktur/fassungen.json`. The list in the editor shows the newest 50.
-- The [backup](sicherung.md) includes the versions. Older backups without versions can still be restored; automations bring their earlier versions along as versions.
+- The [backup](sicherung.md) includes the versions. Older backups without versions can still be restored; automations and automation templates bring their earlier change history along as versions.

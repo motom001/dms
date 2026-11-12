@@ -1603,7 +1603,6 @@
   "vollexport.daten-aufgaben-jsonl-und": "daten/aufgaben.jsonl und kalender/fristen.ics",
   "vollexport.daten-ablaeufe-jsonl-und": "daten/ablaeufe.jsonl (geplante Mappen-Abläufe, #1044) und kalender/fristen.ics",
   "vollexport.struktur-ablaufvorlagen-json": "struktur/ablaufvorlagen.json (#1044, Automatisierungsvorlagen)",
-  "vollexport.struktur-ablaufvorlagen-json-2": "struktur/ablaufvorlagen.json (#1044, Änderungsverlauf je Vorlage)",
   "vollexport.nicht-enthalten-ablauf-verlauf": "nicht enthalten: Verlauf der Mappen-Abläufe (#1044, Protokoll; was passiert ist, steht in der Historie der Mappe)",
   "vollexport.daten-papierkorb-dokumente-jsonl": "daten/papierkorb-dokumente.jsonl (ohne Datei)",
   "vollexport.daten-loeschprotokoll-csv-470": "daten/loeschprotokoll.csv (#470, Nachweis gelöschter Mappen und Dokumente ohne Inhalte)",

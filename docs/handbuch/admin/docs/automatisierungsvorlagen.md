@@ -37,7 +37,7 @@ Darunter:
 - **Ausprobieren:** wähle eine Mappe und die Antworten – Ablago zeigt, was passieren würde (mit deinen Rechten als Person), und wer etwas nicht sehen dürfte. Es entsteht nichts.
 - **Gerade benutzt bei:** alle offenen Abläufe der Vorlage mit Link zur Mappe, Datum und Person. Titel stehen nur bei Mappen, die du lesen darfst.
 - **Verlauf:** angewendet, geplant, gelaufen, angehalten, gelöscht, fortgesetzt – mit Zeit und Person. Er bleibt 30 Tage bzw. 200 Einträge je Vorlage.
-- **Änderungsverlauf:** jede gespeicherte Fassung, mit **Diese Fassung wiederherstellen**.
+- **Fassungen:** wer wann was geändert hat, zwei Fassungen vergleichen und eine frühere wiederherstellen – wie bei allen Einstellungen der Werkbank, siehe [Fassungen](fassungen.md). **Auf Auslieferung zurücksetzen** ist selbst eine Fassung; gelöschte eigene Vorlagen stehen mit Löschvermerk unter der Liste.
 
 ## Sicherheit
 

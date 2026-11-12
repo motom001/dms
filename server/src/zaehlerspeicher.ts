@@ -91,7 +91,7 @@ export const OHNE_FOLGEN = new Set<string>([
   'legeAuskunftLinkAn', 'auskunftLinkFehlversuch', 'auskunftLinkAbruf', 'widerrufeAuskunftLink', 'setzeFavoritBenachrichtigen',
   'merkeGesehen', 'ocrEinreihen', 'ocrSetze', 'ocrZurueckstellen', 'legeAblaufAn', 'aendereAblauf', 'loescheAblauf', 'setzeAblaufAngehalten',
   // Automatisierungsvorlagen (#1044): Vorlagen, Änderungs- und Ablaufverlauf ändern keine Zahl.
-  'ablaufvorlagen', 'speichereAblaufvorlage', 'loescheAblaufvorlage', 'ablaufvorlageFassungen', 'vermerkeAblauf', 'ablaufVerlauf', 'zaehleAblaufVerlauf', 'raeumeAblaufVerlaufAuf',
+  'ablaufvorlagen', 'speichereAblaufvorlage', 'loescheAblaufvorlage', 'vermerkeAblauf', 'ablaufVerlauf', 'zaehleAblaufVerlauf', 'raeumeAblaufVerlaufAuf',
   'legeNotizAn', 'aendereNotiz', 'loescheNotiz', 'historieSchreibe', 'historieAufraeumen', 'kuerzeVersionen',
   // Unscharfe Suche (#356): Wörterverzeichnis und gleichbedeutende Wörter ändern keine Zahlen.
   'aehnlicheWoerter', 'woerterAnzahl', 'woerterNeu', 'woerterEinarbeiten', 'synonyme', 'legeSynonymAn', 'aendereSynonym', 'loescheSynonym', 'setzeSynonyme',
