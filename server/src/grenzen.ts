@@ -50,6 +50,11 @@ export const VORSCHLAG_DATEI_MAX = 30 * MB;
 export const LOGO_MAX = MB;
 /** Einrichtungsdatei (`ablago-einrichtung.json`). */
 export const EINRICHTUNGSDATEI_MAX = 64 * KB;
+/**
+ * Aufruf von außen (#679): Rumpf höchstens – ein JSON-Objekt mit wenigen kurzen Parametern (10 × 500 Zeichen). Größere
+ * Anfragen lehnt der Server vor dem Lesen ab (413), ohne Adresse oder Signatur anzusehen.
+ */
+export const AUFRUF_KOERPER_MAX = 16 * KB;
 
 /* ---------- Pakete ---------- */
 

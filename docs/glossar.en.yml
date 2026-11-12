@@ -286,6 +286,9 @@ begriffe:
   Sonst:
     begriff: Otherwise
     beschreibung: Fourth area of an automation – cards that run if the And conditions are not met (the same cards as under Then). Per run either Then or Otherwise runs.
+  Aufruf von außen:
+    begriff: Call from outside
+    beschreibung: When card of an automation with its own address and secret – another system (monitoring, home automation) triggers it by POST with a signature. The administration creates the address explicitly; the response only says "accepted". Parameters sent along are available as placeholders, only as text. The Workbench overview and the emergency sheet list all addresses that accept calls.
   Werkbank-Karte:
     begriff: Workbench card
     beschreibung: Card of an automation that concerns the operation of Ablago instead of a folder – When "Error reported", "Log message", "New version available" and Then "Start a backup". The system account "Automation" has precisely defined Workbench permissions for them; only someone who manages the area themselves may set them up.

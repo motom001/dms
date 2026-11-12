@@ -1177,6 +1177,26 @@ async function main() {
       await ka.close();
     }
   }
+  // Aufruf von außen (#679): Karte mit Parametern, Adresse angelegt (frische Anmeldung wie in der Oberfläche), Beispiel
+  // mit curl aufgeklappt. Das Geheimnis steht nur einmal nach dem Anlegen da – auf dem Bild ist es nicht.
+  {
+    await api('POST', '/api/konto/verwaltung/bestaetigen', { passwort: ADMIN.passwort });
+    const lena = (await api('GET', '/api/benutzer')).find((b) => b.email === ADMIN.email);
+    const auf = await api('POST', '/api/werkbank/automatisierungen', { name: 'Wassermelder im Keller', aktiv: true,
+      wenn: { art: 'aufruf', parameter: ['raum', 'stufe'] },
+      dann: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: lena.id }], text: 'Wassermelder im {raum} (Stufe {stufe}) um {zeitpunkt}' }] });
+    await api('POST', `/api/werkbank/automatisierungen/${auf.id}/aufruf`, { was: 'adresse' });
+    await geheZu(s, `/werkbank/automatisierungen/${auf.id}`);
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+    const karte = s.locator('.automatisierung-bereich.aufruf');
+    await karte.waitFor();
+    await karte.locator('details summary').click();
+    // Nach dem Aufklappen springt der Fokus kurz – erst danach an die Stelle rollen.
+    await s.waitForTimeout(30);
+    // Mitte: Parameter oben (unter der Sprungleiste), darunter Adresse und Beispiel.
+    await s.locator('#aufruf-titel').evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-automatisierung-aufruf');
+  }
   // Automatisierungsvorlagen (#1044): „Erinnern“ mit Wann, Fragen und Karte; darunter „Gerade benutzt bei“ mit den
   // Erinnerungen von oben.
   await geheZu(s, '/werkbank/ablaufvorlagen/erinnern');

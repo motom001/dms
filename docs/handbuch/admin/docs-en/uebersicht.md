@@ -93,6 +93,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Reminders taken over on the update | notice | `automatisierung.umgezogen` |
 | No daily summary, favourite reports or “Post for you” without the package "Notifications" | notice | `automatisierung.ohne-benachrichtigungen` |
 | No switched-on automation “Post for you” (package older than 1.3.0 or switched off) | notice | `automatisierung.ohne-post-fuer-dich` |
+| Addresses accept [calls from outside](automatisierungen.md#aufruf-von-aussen) – with **Switch all off** instead of “Acknowledge” | notice | `automatisierung.aufrufe` |
 | CPU or memory above 90 % for 5 minutes | yellow | `auslastung` |
 | Bottleneck (waiting time, connections, workers, overload) | yellow | `engpass` |
 | Search extensions missing or in the wrong place | yellow | `erweiterungen` |

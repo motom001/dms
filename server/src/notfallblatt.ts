@@ -11,7 +11,7 @@ import { gebietsschema } from '../../shared/src/sprache';
  * Der Schlüssel steht nur hier (und in der Schlüsseldatei), nie in einer Sicherung – und nie als QR-Code.
  *
  * Aufbau: Kopf mit Logo, Name der Ablage, Datum und Version · Schlüssel groß mit Lesehilfe und Fingerabdruck ·
- * Diese Ablage (Adresse, Ablage-Id, wo die Sicherungen liegen) · Wen fragen? · Etwas ist passiert? mit Links
+ * Diese Ablage (Adresse, Ablage-Id, wo die Sicherungen liegen, Adressen für Aufrufe von außen #679) · Wen fragen? · Etwas ist passiert? mit Links
  * (immer https://) und QR-Code zur Hilfeseite, darin der Notfallcode für „Ich komme nicht mehr hinein“ (#815). Keine Pfade oder Dateinamen aus Docker oder vom NAS: Die
  * ausführliche Anleitung steht im Handbuch.
  *
@@ -34,6 +34,22 @@ export interface Notfalldaten {
   kontakte?: Array<{ name: string; erreichbar: string; notiz?: string }>;
   /** Notfallcode (#815): öffnet `<adresse>/notfall`, gilt einmal. Gespeichert ist nur sein Hash – er steht nur hier. */
   notfallcode?: string;
+  /** Aufruf von außen (#679): Adressen, die gerade Aufrufe annehmen – Name und Adresse (nie das Geheimnis). */
+  aufrufe?: Array<{ name: string; adresse: string }>;
+}
+
+/** So viele Adressen nennt das Blatt einzeln (eine Seite); die übrigen als „und N weitere“. */
+const AUFRUFE_AUF_DEM_BLATT = 5;
+
+/**
+ * Aufrufe von außen (#679) auf dem Blatt: „Name (…/api/aufruf/AbCdEfGh…)“ – die Kennung gekürzt (wiedererkennbar, und
+ * die Zeile bleibt kurz); ohne Geheimnis ist die Adresse ohnehin wertlos.
+ */
+export function aufrufZeile(liste: Array<{ name: string; adresse: string }>): string {
+  const kurz = (a: string) => { const i = a.indexOf('/api/aufruf/'); return i < 0 ? a : `…${a.slice(i, i + '/api/aufruf/'.length + 8)}…`; };
+  const teile = liste.slice(0, AUFRUFE_AUF_DEM_BLATT).map((x) => `${x.name} (${kurz(x.adresse)})`);
+  if (liste.length > AUFRUFE_AUF_DEM_BLATT) teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
+  return t('werkbank.notfallblatt.ablage.aufrufe.text', { liste: teile.join(', ') });
 }
 
 /** In Vierergruppen, gut abschreibbar; Leerzeichen zählen bei der Eingabe nicht. */
@@ -95,6 +111,8 @@ export function notfallblattPlan(d: Notfalldaten): NotfallblattPlan {
         { marke: t('werkbank.notfallblatt.ablage.adresse'), ...(adresse ?? { text: t('werkbank.notfallblatt.ablage.adresse.keine') }) },
         { marke: t('werkbank.notfallblatt.ablage.id'), text: d.haushaltId, mono: true },
         { marke: t('werkbank.notfallblatt.ablage.sicherungen'), text: ziele.length ? t('werkbank.notfallblatt.ablage.sicherungen.aussen', { ziele: ziele.join(', ') }) : t('werkbank.notfallblatt.ablage.sicherungen.text') },
+        // Aufruf von außen (#679): „diese Adressen nehmen Aufrufe an“ – nur, wenn es welche gibt.
+        ...(d.aufrufe?.length ? [{ marke: t('werkbank.notfallblatt.ablage.aufrufe'), text: aufrufZeile(d.aufrufe) }] : []),
       ],
       warnung: ziele.length ? t('werkbank.notfallblatt.ablage.aussen.warnung') : null,
     },

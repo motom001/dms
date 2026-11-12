@@ -41,6 +41,15 @@ Ablago sends **no usage data** – neither to the project nor to anyone else: no
 | **Packages with code** | only if a package needs it and you confirm it at installation | only the addresses the package states ([A package's permissions](pakete.md#recht-netzwerk-und-internet)) |
 | **Manual** | when you click **Help** or a **?** | the supplied manual under `/hilfe/` works without internet ([Help without internet](technik.md#hilfe-ohne-internet)); your browser opens links to the online manual. |
 
+### What your Library accepts from outside { #was-deine-ablage-annimmt }
+
+Without signing in, Ablago only accepts what it needs for sign-in, setup, the [retrieval link](#auskunft-erteilen) and emergency access – and the **[call from outside](automatisierungen.md#aufruf-von-aussen)**, as soon as you **explicitly create** such an address (there are none by default):
+
+- It triggers exactly one automation, only by `POST` with a signature (HMAC-SHA256 over timestamp and body, 5-minute time window, each signature once), braked per address and per network.
+- **Nothing leaves in the process:** the response only says “accepted” – no data from the Library, not even whether the address exists.
+- **Coming in** are only the parameters the card names, as text (at most 10, 500 characters each) – they end up in the texts of the Then cards and in the run history (there only for those who manage *Automations*); the log only contains their number and the shortened IP.
+- Which addresses currently accept calls is shown in the [overview](uebersicht.md) (with **Switch all off**) and on the [emergency sheet](verschluesselung.md#notfallblatt).
+
 **The online manual** at help.ablago.app is served by GitHub Pages; as with every website, GitHub sees your IP address. The manual itself loads nothing from third parties – no fonts from Google, no scripts, no badges from outside services. CI checks this with every build, for the help in the program as well.
 
 Whoever wants to tell the project that and how they use Ablago does so deliberately and themselves – via the page [Who uses Ablago?](https://github.com/motom001/dms/issues?q=label%3Anutzt-das-dms) with the form [I use Ablago](https://github.com/motom001/dms/issues/new?template=ich-nutze-das-dms.yml). Ablago reports nothing.

@@ -10,7 +10,7 @@ In *Wenn* und *Dann* baust du die Automatisierung aus Karten zusammen – vier K
 
 | Bereich | Was hinein gehört |
 |---|---|
-| **Wenn** | genau eine Karte: ein Ereignis (Mappe angelegt, gespeichert – auf Wunsch nur bei bestimmten Feldern und **auch beim Anlegen** –, Notiz, Dokument hochgeladen, Favorit geändert, Kontosperre …), **Datum erreicht**, **Zeitplan** oder eine [Werkbank-Karte](#werkbank-karten) (**Fehler gemeldet**, **Protokollmeldung**, **Neue Version verfügbar**) |
+| **Wenn** | genau eine Karte: ein Ereignis (Mappe angelegt, gespeichert – auf Wunsch nur bei bestimmten Feldern und **auch beim Anlegen** –, Notiz, Dokument hochgeladen, Favorit geändert, Kontosperre …), **Datum erreicht**, **Zeitplan**, **[Aufruf von außen](#aufruf-von-aussen)** oder eine [Werkbank-Karte](#werkbank-karten) (**Fehler gemeldet**, **Protokollmeldung**, **Neue Version verfügbar**) |
 | **Und** | keine, eine oder mehrere Bedingungen: Feldwerte wie bei den [Ansichten](sichten.md), „Mappe ist in Ansicht …“, „Mappe ist Favorit von …“, Gruppen mit „alle“ oder „eine genügt“; jede Bedingung lässt sich mit **nicht** umkehren |
 | **Dann** | eine oder mehrere Karten, der Reihe nach: **Feld ändern**, **Aufgabe / Benachrichtigung**, **Tägliche Zusammenfassung senden**, **Favoriten-Änderungen melden**, **Anmeldeschutz melden**, **Paket nach Zeitplan ausführen**, **Sicherung anstoßen**, **Danach keine weiteren Automatisierungen** |
 | **Sonst** | keine oder mehrere Karten wie bei Dann – sie laufen, wenn die Und-Bedingungen **nicht** zutreffen (siehe [Sonst](#sonst)) |
@@ -163,6 +163,71 @@ Automatisierungen laufen unter dem Systemkonto **„Automatisierung“**. Es dar
 | Protokoll | Meldungen ab einer Stufe finden | – |
 | Benutzer | nichts in der Werkbank (Benutzer sind Mappen, Rechte daran über die Rolle *Systemkonto*) | Benutzer und Rechte verwalten |
 
+## Aufruf von außen { #aufruf-von-aussen }
+
+Mit der Wenn-Karte **Aufruf von außen** stößt ein anderes System eine Automatisierung an – etwa ein Monitoring, das bei einer Störung eine [Sicherung anstößt](#sicherung-anstossen), oder die Hausautomatisierung, die Markus eine Aufgabe gibt, wenn im Keller der Wassermelder anschlägt. Dafür bekommt die Automatisierung eine **eigene Adresse** mit einem **Geheimnis**. Ein Paket braucht es dafür nicht.
+
+**Einrichten**
+
+1. Neue Automatisierung, Wenn-Karte **Aufruf von außen**. Unter **Parameter** trägst du die Namen ein, die ein Aufruf mitschicken darf, z. B. `raum, stufe` – nur Kleinbuchstaben, Ziffern und `_`, höchstens 10. In Texten stehen sie als Platzhalter bereit (`{raum}`), dazu `{zeitpunkt}` (wann aufgerufen wurde), `{heute}` und `{automatisierung}`.
+2. Dann-Karten wie gewohnt, zum Beispiel *Aufgabe / Benachrichtigung* an Markus: `Wassermelder im {raum} um {zeitpunkt}`. Die Karte hat **keine Mappe**: Als Bedingung geht nur ein Merkmal der Ablage, Empfänger sind Personen oder Rollen (wie bei den [Werkbank-Karten](#werkbank-karten)).
+3. Speichern. Erst jetzt erscheint unter der Karte **Adresse und Geheimnis** mit **Adresse anlegen**. Ablago fragt nach deinem Passwort (frische Anmeldung) und zeigt Adresse und Geheimnis. **Kopiere das Geheimnis sofort** – es steht nur dieses eine Mal vollständig da. Die Adresse siehst du jederzeit wieder.
+
+Ohne angelegte Adresse nimmt die Automatisierung nichts an; das Speichern allein öffnet keine Tür.
+
+![Wenn-Karte „Aufruf von außen“ mit Parametern, Adresse und Beispiel](bilder/werkbank-automatisierung-aufruf.png)
+
+**Aufrufen**
+
+Ein Aufruf ist ein `POST` an die Adresse mit drei Köpfen und einem Inhalt (JSON-Objekt mit den Parametern, oder leer):
+
+| Kopf | Inhalt |
+|---|---|
+| `X-DMS-Zeit` | Zeitpunkt in Sekunden seit 1970 (Unix-Zeit) |
+| `X-DMS-Signatur` | `v1=` und HMAC-SHA256 (hex) über `<X-DMS-Zeit>.<Inhalt>` mit dem Geheimnis (`whsec_…`, als Text, nicht dekodiert) |
+| `X-DMS` | `1` (wie bei jeder ändernden Anfrage an Ablago) |
+
+Das ist dasselbe Verfahren wie beim früheren Webhook – nur in die andere Richtung. Gerechnet wird über den **Inhalt, wie er gesendet wird** (Bytes); Ablago liest ihn vorher nicht um. Mit `curl` und `openssl`:
+
+```sh
+GEHEIMNIS='whsec_…'                                  # aus „Adresse anlegen“
+ADRESSE='https://ablago.example.org/api/aufruf/…'    # aus der Karte
+ZEIT=$(date +%s)
+RUMPF='{"raum":"Keller","stufe":"2"}'
+SIGNATUR=$(printf '%s.%s' "$ZEIT" "$RUMPF" | openssl dgst -sha256 -hmac "$GEHEIMNIS" | sed 's/^.* //')
+curl -X POST -H 'X-DMS: 1' -H 'Content-Type: application/json' \
+  -H "X-DMS-Zeit: $ZEIT" -H "X-DMS-Signatur: v1=$SIGNATUR" \
+  --data "$RUMPF" "$ADRESSE"
+```
+
+Die Karte zeigt dieses Beispiel unter **Beispiel mit curl** schon mit deiner Adresse und deinen Parametern.
+
+| Antwort | Bedeutung |
+|---|---|
+| `202` `{"ergebnis":"angenommen"}` | angenommen – die Automatisierung läuft gleich los. Mehr verrät die Antwort nie, auch nicht, was die Automatisierung tut. |
+| `401` | nicht angenommen – **immer dieselbe Antwort**, gleich ob es die Adresse nicht gibt, die Automatisierung aus ist, die Signatur nicht passt, der Zeitstempel mehr als 5 Minuten daneben liegt oder derselbe Aufruf schon einmal kam |
+| `422` | Signatur stimmt, aber der Inhalt ist kein JSON-Objekt |
+| `429` | zu viele Aufrufe – kurz warten |
+| `413` | Inhalt größer als 16 KB |
+| `503` | Wartung oder Wiederherstellung läuft – später noch einmal |
+
+**Schutz**
+
+- Die Adresse enthält 32 Byte Zufall und lässt sich nicht erraten. Das Geheimnis liegt [verschlüsselt](verschluesselung.md) wie alle Geheimnisse (Art *Aufrufe von außen*) und wird beim Schlüsselwechsel mit umgeschlüsselt.
+- Jede Signatur gilt **einmal**: Wer einen Aufruf mitschneidet, kann ihn nicht wiederholen. Zwei gleiche Aufrufe in derselben Sekunde mit gleichem Inhalt gelten deshalb als einer – schicke etwas Wechselndes mit, wenn das vorkommen kann.
+- **Bremse:** höchstens 12 Aufrufe je Minute und Adresse und 30 je Minute aus einem Netz (IPv4 /24, IPv6 /64) – über alle Prozesse von Ablago gezählt. Darüber gilt außerdem die Bremse jeder Automatisierung (mehr als 30 Läufe in einer Minute halten sie an).
+- **Parameter** übernimmt Ablago nur mit den Namen der Karte, nur als Text, höchstens 500 Zeichen je Wert. Sie sind nie Feldnamen und werden nie ausgeführt; alles andere im Inhalt übergeht Ablago.
+- Im **Verlauf** sieht die Parameter nur, wer *Automatisierungen* verwaltet. Im Protokoll stehen weder Adresse noch Signatur, die IP nur gekürzt.
+- **Neues Geheimnis** ersetzt das Geheimnis, **Neue Adresse** beides – das Alte gilt sofort nicht mehr. **Adresse entfernen** schließt die Tür ganz; wechselst du die Wenn-Karte oder löschst die Automatisierung, ist die Adresse ebenfalls weg. Eine **Kopie** bringt keine Adresse mit.
+- [Pakete](#aus-paketen) bringen diese Karte nicht mit.
+
+**Wo die Adressen stehen**
+
+Die [Übersicht der Werkbank](uebersicht.md) nennt jede eingeschaltete Automatisierung, die gerade Aufrufe annimmt – mit Adresse und **Alle abschalten** (ein Klick schaltet sie aus; die Adresse bleibt, nimmt aber nichts an, bis du wieder einschaltest). Das [Notfallblatt](verschluesselung.md#notfallblatt) führt sie unter *Diese Ablage* als „Aufrufe von außen“ auf.
+
+!!! note "Heimnetz"
+    Die Adresse beginnt mit der Adresse von Ablago unter Werkbank → E-Mail und Adresse. Sieht sie nach Heimnetz aus, weist die Karte darauf hin: Aufrufe kommen dann nur aus deinem eigenen Netz an – für die Hausautomatisierung zu Hause genau richtig. Von unterwegs geht es nur, wenn Ablago [von außen erreichbar](datenschutz.md#erreichbarkeit-aus-dem-internet) ist. Wer am Reverse-Proxy nur die Aufrufe nach außen geben will, gibt `/api/aufruf/` frei.
+
 ## Reihenfolge
 
 Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Nach Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
@@ -171,7 +236,7 @@ Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihre
 
 ![Verlauf mit den Schritten eines Laufs](bilder/werkbank-automatisierung-verlauf.png)
 
-- **Ausprobieren:** Mappe wählen und **Ausführen** – als wäre das Ereignis eingetreten. Die Mappe wählst du wie in einem Verweisfeld: Tippe einen Teil des Titels und klicke auf einen Treffer. Angeboten werden nur Mappen vom Mappentyp der Wenn-Karte, die das Konto „Automatisierung“ sehen darf – mit allen anderen könnte die Automatisierung ohnehin nicht laufen. Mit **Probelauf** zeigt Ablago nur, was passieren würde („Würde Aufgabe an 1 Person senden: …“), und ändert nichts. Bei [Werkbank-Karten](#werkbank-karten) gibt es keine Mappe zu wählen – Ablago probiert es mit einer Beispielmeldung.
+- **Ausprobieren:** Mappe wählen und **Ausführen** – als wäre das Ereignis eingetreten. Die Mappe wählst du wie in einem Verweisfeld: Tippe einen Teil des Titels und klicke auf einen Treffer. Angeboten werden nur Mappen vom Mappentyp der Wenn-Karte, die das Konto „Automatisierung“ sehen darf – mit allen anderen könnte die Automatisierung ohnehin nicht laufen. Mit **Probelauf** zeigt Ablago nur, was passieren würde („Würde Aufgabe an 1 Person senden: …“), und ändert nichts. Bei [Werkbank-Karten](#werkbank-karten) gibt es keine Mappe zu wählen – Ablago probiert es mit einer Beispielmeldung, beim [Aufruf von außen](#aufruf-von-aussen) mit „Beispielwert“ für jeden Parameter.
 - **Verlauf:** sieht aus wie die Historie einer Mappe: je Lauf eine Zeile mit Datum und Uhrzeit, dem Auslöser (z. B. „Mappe angelegt“, „Probelauf“, „Wiederholung“), einer Zusammenfassung, dem Ergebnis (*abgeschlossen*, *trifft nicht zu*, *übersprungen*, *fehlgeschlagen*) und der Zahl der Karten. Aufgeklappt zeigt eine Tabelle **Karte · Ergebnis · Einzelheiten**, was jede Karte getan hat; ist etwas schiefgegangen, steht der Grund bei der Karte, die gescheitert ist. Mit **Alle Einträge aufklappen** / **Alle Einträge zuklappen** siehst du alles auf einmal. Läuft die Automatisierung gerade, während der Editor offen ist, ist dieser Lauf aufgeklappt und die Karten werden **live** abgehakt; Karten, die noch nicht dran waren, stehen auf „wartet“.
 - **Fehlgeschlagene Läufe** bleiben stehen. Über der Liste der Automatisierungen steht dann zum Beispiel „1 Lauf ist fehlgeschlagen: Neue Benutzer melden, 04.11.26, 04:48“; bei mehreren Läufen zeigt **Anzeigen** nur die betroffenen Automatisierungen. **Alle wiederholen** führt sie noch einmal aus, **Nicht wiederholen** nimmt sie aus dem Hinweis – im Verlauf bleiben sie als „fehlgeschlagen – nicht wiederholt (wer, wann)“ stehen, gelöscht wird nichts. Dieselbe Wahl hast du je Lauf im aufgeklappten Verlauf. **Probeläufe** zählen nicht mit; ihr Ergebnis steht nur im Verlauf. Die [Übersicht der Werkbank](uebersicht.md) meldet fehlgeschlagene Läufe ebenfalls.
 - **Fassungen** (bis 0.254 „Änderungsverlauf“): jede gespeicherte Fassung mit Zeit, wer und was sich geändert hat („Dann: ‚Aufgabe an Markus‘ hinzugefügt“); die neueste ist mit **Aktuell** gekennzeichnet. Zwei Fassungen lassen sich vergleichen, eine frühere **wiederherstellen** – nach einer Rückfrage, die sagt, was sich ändert, wird daraus eine neue Fassung; der jetzige Stand bleibt erhalten. Passt die frühere Fassung nicht mehr (z. B. ein Feld fehlt), sagt Ablago das wie beim Speichern und stellt sie nicht wieder her. Wie das für alle Einstellungen der Werkbank gilt: [Fassungen](fassungen.md).
@@ -189,7 +254,7 @@ Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird 
 - In der Liste erkennst du sie an der Herkunft **aus Paket …**. Du kannst sie einschalten, anpassen und kopieren.
 - Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
 - Entfernst du das Paket, gehen seine Automatisierungen mit, wenn sie aus und unverändert sind.
-- [Werkbank-Karten](#werkbank-karten) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen.
+- [Werkbank-Karten](#werkbank-karten) und den [Aufruf von außen](#aufruf-von-aussen) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen.
 
 ### Vertretung
 

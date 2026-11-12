@@ -622,7 +622,9 @@ export class Dienst {
   }
 
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
-  verschluesselePaketGeheimnis(text: string): string {
+  verschluesselePaketGeheimnis(text: string): string { return this.verschluesseleGeheimnis(text); }
+  /** Ein Geheimnis mit dem Tresor verschlüsseln (Pakete; Aufruf von außen, #679) – ohne Schlüssel ein Fehler. */
+  verschluesseleGeheimnis(text: string): string {
     if (!this.tresor?.bereit) throw new Fachfehler(409, t('meldungen.dienst.fuer-geheimnisse-fehlt-der'));
     return this.tresor.verschluessele(text);
   }

@@ -290,6 +290,8 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
       aussenziele: x.sicherung ? await x.sicherung.externZiele().catch(() => []) : [],
       kontakte: kontakte.map((k) => ({ name: k.name, erreichbar: erreichbar(k), notiz: k.notiz })),
       notfallcode: await konten.neuerNotfallcode(),
+      // Aufruf von außen (#679): Adressen, die gerade Aufrufe annehmen.
+      aufrufe: x.automatisierungen ? await x.automatisierungen.aufrufListe().catch(() => []) : [],
     });
     await dienst.notfallkontakte.blattErstellt(kontakte);
     if (x.sicherung) await x.sicherung.notfallblattErstellt(von);

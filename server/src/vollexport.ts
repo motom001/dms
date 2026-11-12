@@ -48,6 +48,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   automatisierungen: t('meldungen.vollexport.struktur-automatisierungen-json-674'),
   fassungen: t('meldungen.vollexport.struktur-fassungen-json'),
   automatisierung_laeufe: t('meldungen.vollexport.nicht-enthalten-laeufe-der'),
+  automatisierung_aufrufe: t('meldungen.vollexport.nicht-enthalten-aufrufe'),
   benutzer: t('meldungen.vollexport.struktur-benutzer-json-ohne'),
   benutzer_einstellungen: t('meldungen.vollexport.struktur-benutzer-json-einstellungen'),
   mappen: t('meldungen.vollexport.daten-typ-csv-jsonl'),

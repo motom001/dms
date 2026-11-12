@@ -41,6 +41,15 @@ Ablago sendet **keine Nutzungsdaten** – weder an das Projekt noch an sonst jem
 | **Pakete mit Code** | nur, wenn ein Paket es braucht und du es bei der Installation bestätigst | nur die Adressen, die das Paket angibt ([Rechte eines Pakets](pakete.md#recht-netzwerk-und-internet)) |
 | **Handbuch** | wenn du auf **Hilfe** oder ein **?** klickst | Das mitgelieferte Handbuch unter `/hilfe/` kommt ohne Internet aus ([Hilfe ohne Internet](technik.md#hilfe-ohne-internet)); Links auf das Online-Handbuch öffnet dein Browser. |
 
+### Was deine Ablage von außen annimmt { #was-deine-ablage-annimmt }
+
+Ohne Anmeldung nimmt Ablago nur an, was es für Anmeldung, Einrichtung, den [Abruf-Link](#auskunft-erteilen) und den Notfallzugang braucht – und den **[Aufruf von außen](automatisierungen.md#aufruf-von-aussen)**, sobald du eine solche Adresse **ausdrücklich anlegst** (von Haus aus gibt es keine):
+
+- Er löst genau eine Automatisierung aus, nur per `POST` mit Signatur (HMAC-SHA256 über Zeitstempel und Inhalt, 5 Minuten Zeitfenster, jede Signatur einmal), gebremst je Adresse und je Netz.
+- **Hinaus geht dabei nichts:** Die Antwort lautet nur „angenommen“ – keine Daten aus der Ablage, auch nicht, ob es die Adresse gibt.
+- **Herein kommen** nur die Parameter, die die Karte nennt, als Text (höchstens 10, je 500 Zeichen) – sie landen in den Texten der Dann-Karten und im Verlauf (dort nur für Verwaltende von *Automatisierungen*), im Protokoll stehen nur ihre Anzahl und die gekürzte IP.
+- Welche Adressen gerade Aufrufe annehmen, zeigen die [Übersicht](uebersicht.md) (mit **Alle abschalten**) und das [Notfallblatt](verschluesselung.md#notfallblatt).
+
 **Das Online-Handbuch** unter help.ablago.app liefert GitHub Pages aus; wie bei jeder Webseite sieht GitHub dabei deine IP-Adresse. Das Handbuch selbst lädt nichts von Dritten – keine Schriften von Google, keine Skripte, keine Abzeichen von fremden Diensten. Das prüft die CI bei jedem Bau, für die Hilfe im Programm ebenso.
 
 Wer dem Projekt sagen möchte, dass und wie er Ablago nutzt, tut das bewusst und selbst – über die Mitmach-Seite [Wer nutzt Ablago?](https://github.com/motom001/dms/issues?q=label%3Anutzt-das-dms) mit dem Formular [Ich nutze Ablago](https://github.com/motom001/dms/issues/new?template=ich-nutze-das-dms.yml). Ablago meldet nichts.

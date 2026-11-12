@@ -224,6 +224,12 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         await dienst.ki.kiHinweisGelesen(); L.werkbank.info('Hinweis „Mappentypen von KI-Diensten ausschließen“ gelesen', { von: ich(a).email });
         return leer;
       }
+      // Aufruf von außen (#679): „Alle abschalten“ – die genannten Automatisierungen aus (ein Klick), für alle, die sie verwalten.
+      if (k.startsWith('automatisierung.aufrufe:')) {
+        if (!darfBereich(ich(a), 'automatisierungen') || !x.automatisierungen) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
+        await x.automatisierungen.aufrufeAbschalten(k.slice('automatisierung.aufrufe:'.length).split(','), ich(a).id);
+        return leer;
+      }
       if (!hatGesamt(ich(a))) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
       if (k === 'verwaltung.zweite-person') {
         const e = dienst.kern.einstellungen;

@@ -21,6 +21,7 @@ The section **What is encrypted** counts every kind of encrypted value – also 
 | **Sign-in via a provider (OIDC)** | the client secret under [Sign-in protection](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) |
 | **Two-factor sign-in** | the secret of every user who has set up [two-factor sign-in](anmeldeschutz.md#zwei-faktor-anmeldung) |
 | **Package settings (secrets)** | fields of type secret in the settings of [packages](pakete.md) |
+| **Calls from outside (secret for the signature)** | the secret of every address for a [call from outside](automatisierungen.md#aufruf-von-aussen); if it is not readable, choose **New secret** in the automation and enter it at the caller |
 
 If a value can't be read with the existing key, "… not readable" appears next to it; which one it is appears below under *Unreadable or unencrypted values*. If a row **Further settings** turns up, the display doesn't know this kind yet – it is still encrypted and taken along when changing; feel free to report it as a bug.
 
@@ -73,7 +74,7 @@ In the section **Emergency sheet** on this page, **Download emergency sheet** cr
 
 1. **Header:** logo, name of your Library, date and Ablago version.
 2. **Key:** large in groups of four for typing, plus its **fingerprint**. The zero is struck through, and below easily confused characters (`0` and `O`, `l`, `I` and `1`, `-` and `_`) it says in small print which one is meant. There is deliberately no QR code with the key – that would be one more way to get at it.
-3. **This Library:** address, **Library id** and, in one sentence, where the backups are – since 0.142 also the target of the [off-site copy](sicherung-ausser-haus.md) (package and address, without user and password).
+3. **This Library:** address, **Library id** and, in one sentence, where the backups are – since 0.142 also the target of the [off-site copy](sicherung-ausser-haus.md) (package and address, without user and password). If automations accept [calls from outside](automatisierungen.md#aufruf-von-aussen), **Calls from outside** is listed here with name and shortened address (up to five, then "and N more") – never the secret.
 4. **Whom to ask?** Your [emergency contacts](#notfallkontakte) with name, phone, email and note – without contacts, lines in which you enter by hand who helps you in an emergency. If many contacts with long details no longer fit on the page, they go on a second page and this section points there.
 5. **Something has happened?** The links to the help page [What has happened to you?](was-ist-passiert.md) – clickable and always written out with `https://`: `https://help.ablago.app/notfall` (English `https://help.ablago.app/emergency`) – and a **QR code** for it. Scan it with your phone, read there and work on the computer at the same time.
 6. **Locked out?** The **emergency code**: 28 characters in groups of four and your Library's address with `/notfall`. With it you get back in if you have locked yourself out – see [Getting back in with the emergency code](was-ist-passiert.md#notfallcode). It isn't the key and opens no backup.
