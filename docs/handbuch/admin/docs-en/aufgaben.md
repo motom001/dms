@@ -12,36 +12,35 @@ Tasks arise in these ways:
 | **Deadline** | before the date of a date field that is a [deadline](mappentypen.md#fristen-erinnerungen-an-datumsfeldern) – created by an automation *Date reached* | as set in the automation, e.g. the user in a field, otherwise whoever created the folder | with the button *Done*, or by itself if the date changes |
 | **Reminder** | on the chosen day after *Folder ▾ →* **Remind** on the folder | the chosen user | with the button *Done* |
 | **Stand-in** | when an [absence](benutzer.md#abwesenheit) with a stand-in is entered for a user – since version 0.177 via the [automation](automatisierungen.md) *Stand-in entered* (package Notifications or taken over on the update) | the stand-in (*Stand-in from the event*); the task is attached to the absent person's user folder | by itself as soon as the absence ends or the period or stand-in changes; or with the button *Done* |
-| **Post for you** | when a user is under *To* on new [post](https://help.ablago.app/benutzer/aktuell/en/post/) | the user under *To* | by itself as soon as the post is assigned, completed or passed on |
+| **Post for you** | when a user is under *To* on new [post](https://help.ablago.app/benutzer/aktuell/en/post/) or *To* changes – since version 0.257 via the [automation](automatisierungen.md#post-fur-dich) *Post for you* (package Notifications) | the user under *To*, their stand-in when they are away | by itself as soon as the post is assigned, completed or given to someone else |
 | **Access request** | when a person has downloaded their [access copy](datenschutz.md#auskunft-zustellen) via the retrieval link or the link was blocked after failed attempts | whoever created the link or the access copy, and whoever has the person's folder as a favourite (if the notification for the favourite is on) | with the button *Done*; as long as it is open, no second one comes for the same link |
 | **Changed** | when someone changes a folder that others have as a favourite ([favourite = subscription](https://help.ablago.app/benutzer/aktuell/en/ablage/#favoriten-als-abo)) | whoever has the folder as a favourite, may read it and hasn't switched off the notification – never whoever made the change | by itself on opening the folder, or with the button *Done*; until then it only counts up |
 
 - Recipients are always **users**, not roles – a task for everyone otherwise tends to be left lying.
 - Whoever mentions themselves gets no task; saving again creates no second one. If a mention is removed again, the task stays open; the folder's history records that it was removed.
-- The recipient themselves and administrators may **pass on**; this is recorded in the folder's history. Several at once work in [Workbench → Notifications and tasks](#mehrere-aufgaben-auf-einmal-weitergeben) and for one's own under My account → [Absence](https://help.ablago.app/benutzer/aktuell/en/profil/#abwesenheit).
+- The recipient themselves and administrators may **pass on**; this is recorded in the folder's history. Several at once work in [Workbench → Tasks](#mehrere-aufgaben-auf-einmal-weitergeben) and for one's own under My account → [Absence](https://help.ablago.app/benutzer/aktuell/en/profil/#abwesenheit).
 
-## Workbench → Notifications and tasks { #werkbank-aufgaben }
+## Workbench → Tasks { #werkbank-aufgaben }
 
-Everything around tasks and the emails about them is in one place: **Workbench → Settings → Notifications and tasks**.
+All open tasks of all users are under **Workbench → Settings → Tasks**. Who is notified when – [Daily summary](#tagliche-zusammenfassung), [favourites](#favoriten-benachrichtigen), *Post for you*, *Stand-in* – you don't set here but under [Automations](automatisierungen.md#benachrichtigungen); a sentence with a link above the list takes you there.
 
-![Workbench → Notifications and tasks](bilder/werkbank-aufgaben.png)
+![Workbench → Tasks](bilder/werkbank-aufgaben.png)
 
-In the middle at the top is the [Daily summary](#tagliche-zusammenfassung), below it all open tasks of all users with folder, kind, date and recipient. With the selection below a task you pass it on to someone else. If you choose a task, its folder appears on the right with the most important fields, **Open in the Library** and next to it **Pass on to** – like the selection in the list. Afterwards, the recipients on the right and in the list are correct immediately.
+In the middle is the list of all open tasks of all users with folder, kind, date and recipient. With the selection below a task you pass it on to someone else. If you choose a task, its folder appears on the right with the most important fields, **Open in the Library** and next to it **Pass on to** – like the selection in the list. Afterwards, the recipients on the right and in the list are correct immediately.
 
-The **filter** above the list narrows down by:
+At the top is the **search field** – it searches the folder's title and the task's text; **Esc** or **×** clear it. Below it the **filters** narrow down by:
 
 - **Recipient** – a user, *Administrators* or *absent, without a stand-in* (tasks of users who are absent or deactivated and for whom nobody is entered – otherwise they are left lying),
 - **Kind** (Doesn't fit, Mention, Assigned, Deadline …), **Folder type**,
-- **Due date** by the date of the deadline or reminder: *overdue*, *this week* (until Sunday), *later*, *without a date*,
-- text in the folder's **title** or in the task.
+- **Due date** by the date of the deadline or reminder: *overdue*, *this week* (until Sunday), *later*, *without a date*.
 
-**Show completed** switches to the most recently completed tasks. The filter is in the address – so a filtered view can be bookmarked or passed on as a link. Below it, it says how many tasks match.
+The tick **Show completed** switches to the most recently completed tasks. Search and filters are in the address – so a filtered view can be bookmarked or passed on as a link. Below them, it says how many tasks match (“12 matches”); if none matches, **Reset search and filters** resets everything.
 
 ### Passing on several tasks at once { #mehrere-aufgaben-auf-einmal-weitergeben }
 
 On holiday, illness or when responsibility changes, you redistribute many tasks in one step:
 
-1. Narrow down the list with the filter, e.g. *Recipient: Jonas*.
+1. Narrow down the list with search and filters, e.g. *Recipient: Jonas*.
 2. Tick the tasks on the left – or **Select all shown** (this only applies to those currently filtered). Next to it, it says how many are selected.
 3. In the bar above, choose a user in **Pass selected on to** and **Pass on**. A confirmation names number and target.
 
@@ -68,24 +67,35 @@ Ablago reconciles the cases after every assigning, passing on and completing, an
 
 ## Daily summary { #tagliche-zusammenfassung }
 
-Instead of sending an email with every new task, Ablago sends an overview **once a day** to everyone who has open tasks – with links to the folders. It contains the folders' titles (no documents) and goes out via the set-up [mail server](installation.md#e-mail-und-adresse); everyone unsubscribes themselves in My account; you can switch it off for everyone here.
+Instead of sending an email with every new task, Ablago sends an overview **once a day** to everyone who has open tasks – with links to the folders. It contains the folders' titles (no documents) and goes out via the set-up [mail server](installation.md#e-mail-und-adresse); everyone unsubscribes themselves in My account.
 
-- **Whether and when** it is sent you set in the automation **Daily summary** (Workbench → [Automations](automatisierungen.md#benachrichtigungen)): if card *Schedule for every user* with *Time from My account*, then card *Send daily summary*. The card's time (default 7:00, in the time zone of the [region](region.md)) applies to everyone without their own. Switching off means: switching off the automation. The package **Notifications** brings it.
-- You can **collapse** the section here with a click on the heading; Ablago remembers this for you. Below it is the warning if the summary can't be sent because email sending is off.
+Since version 0.257 there is **no section of its own under Workbench → Tasks** any more – everything is in the automation **Daily summary** (Workbench → [Automations](automatisierungen.md#benachrichtigungen), package **Notifications**):
+
+| Previously under Workbench → Tasks | Now |
+| --- | --- |
+| Whether it is sent | switch the automation on or off |
+| Default time for everyone without their own | time of the When card *Schedule for every user* (default 7:00, in the time zone of the [region](region.md)) |
+| Notice “state for public holidays” | unchanged under [Workbench → Region](region.md) |
+| **Send now** (to everyone) | **Trying out** in the automation: choose a person's user folder, **Run** – the summary goes to this person straight away (see [Trying out](automatisierungen.md#ausprobieren-verlauf-und-anderungsverlauf)) |
+| Warning “email sending is off” | notice in the [workbench overview](uebersicht.md) and under My account |
+
 - **Every user** chooses their own time (in 15-minute steps) and the **weekdays** under **My account**; without their own choice, the automation's time and **Monday to Friday** apply. They can also unsubscribe there.
 - The email comes at most once a day, at the earliest at the chosen time. If Ablago was off at that time, it comes after the start on the same day; nothing is caught up on the next day. Whoever is absent or has nothing open gets none.
 - **Public holidays** – on statutory public holidays no summary comes (everyone can deselect this in My account). Which ones these are depends on the state under [Workbench → Settings → Region](region.md); without a state there are no public holidays.
-- **Send now** sends it immediately to everyone with open tasks – regardless of time, weekday and public holiday, e.g. for trying it out.
-- The prerequisite is set-up [Email sending](installation.md#e-mail-und-adresse). If it is off, the section says "Email sending is switched off – nothing will be sent" with **Set up email**.
+- The prerequisite is set-up [Email sending](installation.md#e-mail-und-adresse).
 
-## Notifying favourites { #favoriten-benachrichtigen }
+## Notify about favourites { #favoriten-benachrichtigen }
 
-Whoever marks a folder as a **favourite** gets a notification "Changed" under *To do* when someone else changes it (see User manual, [Favourites as a subscription](https://help.ablago.app/benutzer/aktuell/en/ablage/#favoriten-als-abo)). Below the Daily summary you set for whom this exists:
+Whoever marks a folder as a **favourite** gets a notification “Changed” under *To do* when someone else changes it (see user manual, [favourites as a subscription](https://help.ablago.app/benutzer/aktuell/en/ablage/#favoriten-als-abo)). Since version 0.257 you set who gets this in the automation **Report favourite changes** (Workbench → [Automations](automatisierungen.md#benachrichtigungen), Then card *Report favourite changes*):
 
-- **Allowed** – *for everyone* (default), *only for certain roles* or *for nobody*.
-- **Only for certain roles:** at the top the system roles **Administrator** and **Member**, below them the further roles from [user management](benutzer.md). A user gets the notification if they have at least one of the chosen roles. At least one role must be chosen.
-- Whoever doesn't belong no longer sees the switch **Notify on changes** in their favourites list and under My account; under My account there is a notice instead. What they set themselves stays saved and applies again as soon as you allow the notification for them. The star itself and highlighting changed folders remain.
-- **Switched on for new users** – the default for everyone joining from now on (default: on). Existing users keep their setting.
-- **Apply default to everyone** sets the saved default for all existing users after a confirmation – also overriding what they chose under My account. Individually muted favourites stay muted.
+| Previously under Workbench → Tasks | Now in the automation |
+| --- | --- |
+| Allowed *for everyone* | no role chosen |
+| Allowed *only for certain roles* | **Only to members of these roles** – system role **Member** and the other roles from [user management](benutzer.md) |
+| Allowed *for nobody* | switch the automation off |
+| Switched on for new users | **New users get the notification** |
+| Apply default to everyone | dropped – everyone sets it themselves under My account |
 
-You collapse the section like the Daily summary with a click on the heading; the status is then shown next to it. The Daily summary doesn't show changed favourites separately – the task "Changed" is included there anyway.
+- When updating to 0.257, Ablago takes over your previous setting into this card once: *for nobody* switches the automation off; the chosen roles and the default are in the card afterwards.
+- Whoever doesn't belong – or when no automation that is switched on reaches them – doesn't see the switch **Notify about changes** in their favourites list and under My account; under My account there is a notice instead. What they set themselves stays saved. The star itself and highlighting changed folders remain.
+- The same applies to favourites on [access requests](datenschutz.md#auskunft-zustellen): a favourite only gets the task *Access request* when the notification is on for them.

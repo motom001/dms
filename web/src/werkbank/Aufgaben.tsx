@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { AUFGABENARTEN, formatiere, type Aufgabe, type Aufgabenart } from '../../../shared/src/model';
 import { FAELLIGKEITEN, filterAktiv, filterInAdresse, filtereAufgaben, type AufgabenFilter, type Faelligkeit } from '../../../shared/src/aufgabenfilter';
-import { Knopf, Suchfeld, type KnopfErgebnis } from '../bausteine';
-import { api, type MailEinstellung, type MappeDetails } from '../api';
+import { FilterHaken, KeineTreffer, ListenSuche } from '../bausteine';
+import { api, type MappeDetails } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Person } from '../Person';
 import { Listenkopf } from '../Listenkopf';
-import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { SammelHaken, SammelKopf, SammelLeiste, useSammelauswahl } from '../ablage/Sammelweitergabe';
 import { t, tn } from '../sprache';
-import { FavoritenFreigabeBlock, type FavoritenFreigabeZustand } from './Benachrichtigungen';
 import { OhneLeserechtPanel } from './OhneLeserecht';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -21,24 +18,23 @@ import { gebietsschema } from '../../../shared/src/sprache';
 export const OHNE_LESERECHT = 'ohne-leserecht';
 
 /**
- * Werkbank → Einstellungen → Aufgaben (#54, #366, #354): Mitte oben die tägliche Zusammenfassung (zuklappbar, #415)
- * und „Favoriten benachrichtigen“ (#506), darunter alle
- * Aufgaben mit Filter (in der Adresse) und Mehrfachauswahl zum gesammelten Weitergeben (#415); rechts die Mappe
- * der gewählten Aufgabe – mit „Weitergeben an“.
+ * Werkbank → Einstellungen → Aufgaben (#54, #366, #354): in der Mitte nur noch die Liste der Aufgaben (#1001) – Suchfeld
+ * oben, Filter darunter (in der Adresse), Mehrfachauswahl zum gesammelten Weitergeben (#415); rechts die Mappe der
+ * gewählten Aufgabe – mit „Weitergeben an“. Tägliche Zusammenfassung, Favoriten und „Post für dich“ stehen seit #1001
+ * nur noch unter Automatisierungen.
  */
 const datum = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
 const tag = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(gebietsschema());
 
 export function useAufgaben(aktiv: boolean, erledigt = false) {
   const [liste, setListe] = useState<Aufgabe[] | null>(null);
-  const [mail, setMail] = useState<MailEinstellung | null>(null);
   const [unlesbar, setUnlesbar] = useState<Set<string>>(new Set());
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setMail(r.mail); setUnlesbar(new Set(r.unlesbar ?? [])); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setUnlesbar(new Set(r.unlesbar ?? [])); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, [erledigt]);
   useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
-  return { liste, mail, setMail, erledigt, fehler, laden, unlesbar };
+  return { liste, erledigt, fehler, laden, unlesbar };
 }
 export type AufgabenZustand = ReturnType<typeof useAufgaben>;
 
@@ -52,7 +48,7 @@ function useOhneVertretung() {
   }, [d.personen]);
 }
 
-export function AufgabenListe({ z, filter, offen, mailAn, favoriten }: { z: AufgabenZustand; filter: AufgabenFilter; offen?: string; mailAn?: boolean; favoriten?: FavoritenFreigabeZustand }) {
+export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter: AufgabenFilter; offen?: string }) {
   const d = useDaten();
   const ohneVertretung = useOhneVertretung();
   const [fehler, setFehler] = useState<string>();
@@ -60,51 +56,52 @@ export function AufgabenListe({ z, filter, offen, mailAn, favoriten }: { z: Aufg
   const liste = filtereAufgaben(alle, filter, { jetzt: new Date(), ohneVertretung });
   const suche = filterInAdresse(filter);
   const setze = (neu: Partial<AufgabenFilter>) => geheZu(`/werkbank/aufgaben${offen ? `/${offen}` : ''}${filterInAdresse({ ...filter, ...neu })}`, true);
+  const zuruecksetzen = () => geheZu(`/werkbank/aufgaben${filterInAdresse({ erledigt: filter.erledigt })}`, true);
   const wahl = useSammelauswahl(z.erledigt ? [] : liste.map((a) => a.id));
   const titelVon = (id: string) => { const a = alle.find((x) => x.id === id); return a ? `${titelOder(a.mappeTitel)} – ${a.text}` : t('werkbank.aufgaben.aufgabe'); };
   async function weiter(a: Aufgabe, an: string) {
     setFehler(undefined);
     try { await api.aufgabeDelegieren(a.id, an); await z.laden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
   }
+  // Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ (#994, Baustein Suche #1143); Suche und Filter stehen in der Adresse.
+  const filterTeil = (
+    <>
+      <div className="filterraster">
+        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.empfaenger')}</span>
+          <select value={filter.empfaenger ?? ''} onChange={(e) => setze({ empfaenger: e.target.value || undefined })}>
+            <option value="">{t('werkbank.aufgaben.alle')}</option>
+            <option value="admins">{t('konten.verwaltende.ohneEmpfaenger')}</option>
+            <option value="ohne-vertretung">{t('werkbank.aufgaben.abwesend-ohne-vertretung')}</option>
+            {d.personen.map((p) => <option key={p.id} value={p.id}>{p.name}{p.aktiv === false ? t('werkbank.aufgaben.deaktiviert') : ''}</option>)}
+          </select></label>
+        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.art')}</span>
+          <select value={filter.art ?? ''} onChange={(e) => setze({ art: (e.target.value || undefined) as Aufgabenart | undefined })}>
+            <option value="">{t('werkbank.aufgaben.alle')}</option>
+            {Object.entries(AUFGABENARTEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select></label>
+        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.mappentyp')}</span>
+          <select value={filter.typ ?? ''} onChange={(e) => setze({ typ: e.target.value || undefined })}>
+            <option value="">{t('werkbank.aufgaben.alle')}</option>
+            {d.typen.map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}
+          </select></label>
+        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.faelligkeit')}</span>
+          <select value={filter.faellig ?? ''} onChange={(e) => setze({ faellig: (e.target.value || undefined) as Faelligkeit | undefined })}>
+            <option value="">{t('werkbank.aufgaben.alle')}</option>
+            {Object.entries(FAELLIGKEITEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select></label>
+      </div>
+      <FilterHaken an={!!filter.erledigt} setze={(an) => geheZu(`/werkbank/aufgaben${filterInAdresse({ ...filter, erledigt: an })}`, true)} anker="werkbank.aufgaben.erledigte">{t('werkbank.aufgaben.erledigte-zeigen')}</FilterHaken>
+    </>
+  );
   return (
     <>
       <Listenkopf titel={t('werkbank.bereich.aufgaben.name')} hilfe="werkbank.aufgaben" beschreibung={t('werkbank.aufgaben.unter')} />
-      <Zusammenfassung z={z} mailAn={mailAn} />
-      {favoriten && <FavoritenFreigabeBlock z={favoriten} />}
-      <section className="aufgabenfilter stapel" aria-label={t('werkbank.aufgaben.filter')}>
-        <h2 className="h3">{z.erledigt ? t('werkbank.aufgaben.erledigte-aufgaben') : t('werkbank.aufgaben.offene-aufgaben')}</h2>
-        <Suchfeld wert={filter.text ?? ''} setze={(text) => setze({ text: text || undefined })} beschriftung={t('werkbank.aufgaben.im-titel-suchen')} platzhalter={t('werkbank.aufgaben.im-titel-suchen-2')} />
-        <div className="filterraster">
-          <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.empfaenger')}</span>
-            <select value={filter.empfaenger ?? ''} onChange={(e) => setze({ empfaenger: e.target.value || undefined })}>
-              <option value="">{t('werkbank.aufgaben.alle')}</option>
-              <option value="admins">{t('konten.verwaltende.ohneEmpfaenger')}</option>
-              <option value="ohne-vertretung">{t('werkbank.aufgaben.abwesend-ohne-vertretung')}</option>
-              {d.personen.map((p) => <option key={p.id} value={p.id}>{p.name}{p.aktiv === false ? t('werkbank.aufgaben.deaktiviert') : ''}</option>)}
-            </select></label>
-          <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.art')}</span>
-            <select value={filter.art ?? ''} onChange={(e) => setze({ art: (e.target.value || undefined) as Aufgabenart | undefined })}>
-              <option value="">{t('werkbank.aufgaben.alle')}</option>
-              {Object.entries(AUFGABENARTEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select></label>
-          <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.mappentyp')}</span>
-            <select value={filter.typ ?? ''} onChange={(e) => setze({ typ: e.target.value || undefined })}>
-              <option value="">{t('werkbank.aufgaben.alle')}</option>
-              {d.typen.map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}
-            </select></label>
-          <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.faelligkeit')}</span>
-            <select value={filter.faellig ?? ''} onChange={(e) => setze({ faellig: (e.target.value || undefined) as Faelligkeit | undefined })}>
-              <option value="">{t('werkbank.aufgaben.alle')}</option>
-              {Object.entries(FAELLIGKEITEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select></label>
-        </div>
-        <label className="haken"><input type="checkbox" checked={!!filter.erledigt} onChange={(e) => geheZu(`/werkbank/aufgaben${filterInAdresse({ ...filter, erledigt: e.target.checked })}`, true)} /><span>{t('werkbank.aufgaben.erledigte-zeigen')}</span></label>
-        <p className="listenzahl leise klein" role="status">
-          {z.liste === null ? t('werkbank.aufgaben.lade') : filterAktiv(filter) ? t('werkbank.aufgaben.von-aufgaben', { anzahl: alle.length, liste: liste.length }) : t('werkbank.aufgaben.aufgaben', { anzahl: alle.length })}
-          {filterAktiv(filter) && <> · <button type="button" className="verweis" onClick={() => geheZu(`/werkbank/aufgaben${filterInAdresse({ erledigt: filter.erledigt })}`, true)}>{t('werkbank.aufgaben.filter-zuruecksetzen')}</button></>}
-        </p>
-        {!z.erledigt && <SammelKopf s={wahl} />}
-      </section>
+      {/* #1001: Zusammenfassung, Favoriten und „Post für dich“ stellt man nur noch unter Automatisierungen ein. */}
+      <p className="leise klein" data-anker="werkbank.aufgaben.automatisierungen">{tn('werkbank.aufgaben.benachrichtigungen', { link: <Link to="/werkbank/automatisierungen" className="verweis">{t('werkbank.aufgaben.benachrichtigungen.link')}</Link> })}</p>
+      <ListenSuche wert={filter.text ?? ''} setze={(text) => setze({ text: text || undefined })} beschriftung={t('werkbank.aufgaben.im-titel-suchen')} platzhalter={t('werkbank.aufgaben.im-titel-suchen-2')} anker="werkbank.aufgaben.suche"
+        treffer={z.liste === null ? null : liste.length} aktiv={filterAktiv(filter)}
+        anzahl={z.erledigt ? t('werkbank.aufgaben.erledigte', { anzahl: alle.length }) : t('werkbank.aufgaben.aufgaben', { anzahl: alle.length })} filter={filterTeil} />
+      {!z.erledigt && liste.length > 0 && <SammelKopf s={wahl} />}
       {!z.erledigt && <SammelLeiste s={wahl} titel={titelVon} erledigen nachher={async () => { await z.laden(); await d.neuLaden(); }} />}
       {(z.fehler || fehler) && <div className="hinweis schlecht"><p>{z.fehler ?? fehler}</p></div>}
       {/* #798: Aufgaben bei Personen ohne Leserecht – offen als Warnung, sonst ein leiser Link (auch zu den vergangenen). */}
@@ -113,7 +110,9 @@ export function AufgabenListe({ z, filter, offen, mailAn, favoriten }: { z: Aufg
         : <p className="leise klein"><Link to={`/werkbank/aufgaben/${OHNE_LESERECHT}${suche}`} className={`verweis${offen === OHNE_LESERECHT ? ' an' : ''}`}>{t('werkbank.ohne-leserecht.titel')}</Link></p>}
       {/* Kästchen auch am Handy sichtbar (#415) – deshalb immer „mit-auswahl“. */}
       <div className={`listenrumpf${z.erledigt ? '' : ' mit-auswahl'}`}>
-        {z.liste === null ? null : !liste.length ? <p className="leise leerliste">{alle.length ? t('werkbank.aufgaben.keine-aufgabe-passt-zum') : z.erledigt ? t('werkbank.aufgaben.noch-nichts-erledigt') : t('werkbank.aufgaben.keine-offenen-aufgaben')}</p> : (
+        {z.liste === null ? <p className="leise">{t('werkbank.aufgaben.lade')}</p>
+          : !alle.length ? <p className="leise leerliste">{z.erledigt ? t('werkbank.aufgaben.noch-nichts-erledigt') : t('werkbank.aufgaben.keine-offenen-aufgaben')}</p>
+          : !liste.length ? <KeineTreffer zuruecksetzen={zuruecksetzen} /> : (
           <ul className={`mappenliste${z.erledigt ? '' : ' sammel-liste'}`}>
             {liste.map((a) => (
               <li key={a.id} className={z.erledigt ? undefined : `mit-haken${wahl.ist(a.id) ? ' gewaehlt' : ''}`}>
@@ -136,57 +135,6 @@ export function AufgabenListe({ z, filter, offen, mailAn, favoriten }: { z: Aufg
         )}
       </div>
     </>
-  );
-}
-
-/** Tägliche Zusammenfassung (#92): Einstellungen oben in der Mitte (#366). */
-const ZUSAMMENFASSUNG_ZU = 'werkbank_zusammenfassung_zu';
-function Zusammenfassung({ z, mailAn }: { z: AufgabenZustand; mailAn?: boolean }) {
-  const d = useDaten();
-  const [e, setE] = useState<MailEinstellung>(z.mail ?? { aktiv: true, uhrzeit: '07:00', bundesland: null });
-  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const [sendet, setSendet] = useState(false);
-  useEffect(() => { if (z.mail) setE(z.mail); }, [z.mail]);
-  const ent = useEntwurf(z.mail, e, { aus: !z.mail, zuruecksetzen: () => { if (z.mail) setE(z.mail); setMeldung(undefined); } });
-  async function speichern() {
-    setSendet(true);
-    try { z.setMail(await api.aufgabenMailSpeichern(e)); setMeldung({ art: 'gut', text: t('werkbank.aufgaben.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
-  }
-  // „Jetzt senden“ (#986): Ergebnis und Fehler stehen am Knopf.
-  async function senden(): Promise<KnopfErgebnis> {
-    const r = await api.aufgabenMailSenden();
-    return { art: 'gut', text: r.verschickt ? t('werkbank.aufgaben.mails-verschickt', { anzahl: r.verschickt }) : t('werkbank.aufgaben.niemand-hat-gerade-offene') };
-  }
-  // Auf- und zuklappen (#415), je Benutzer gemerkt; zugeklappt steht der Stand in der Kopfzeile.
-  const zu = d.einstellungen[ZUSAMMENFASSUNG_ZU] === true;
-  const wirktNicht = mailAn === false;
-  const warnung = <>{tn('werkbank.aufgaben.es-wird-nichts-verschickt', { b: <strong>{t('werkbank.aufgaben.der-e-mail-versand')}</strong> })}</>;
-  return (
-    <form className="blatt sammel-zusammenfassung" id="zusammenfassung" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-      <h2 className="h3">
-        <button type="button" className="sammel-aufklapper" aria-expanded={!zu} aria-controls="zusammenfassung-inhalt"
-          onClick={() => d.setzeEinstellung(ZUSAMMENFASSUNG_ZU, zu ? null : true)}>
-          {tn('werkbank.aufgaben.taegliche-zusammenfassung', { span: <span className="sammel-pfeil" aria-hidden="true">{zu ? '▸' : '▾'}</span> })}</button>
-        {zu && <span className="leise klein sammel-stand">{t('werkbank.zusammenfassung.automatisierung.kurz')}</span>}
-      </h2>
-      {zu && wirktNicht && (
-        <div className="hinweis warn hinweiszeile"><p>{warnung}</p><Link to="/werkbank/betrieb" className="knopf klein">{t('werkbank.aufgaben.e-mail-einrichten')}</Link></div>
-      )}
-      <div id="zusammenfassung-inhalt" className="sammel-inhalt" hidden={zu}>
-      <p className="leise klein">{t('werkbank.aufgaben.statt-einer-mail-je')}</p>
-      {wirktNicht && (
-        <div className="hinweis warn hinweiszeile"><p>{warnung}</p><Link to="/werkbank/betrieb" className="knopf klein">{t('werkbank.aufgaben.e-mail-einrichten')}</Link></div>
-      )}
-      {/* #678: Ob und wann verschickt wird, steht jetzt in der Automatisierung (Paket „Benachrichtigungen“). */}
-      <div className="hinweis info hinweiszeile"><p>{t('werkbank.zusammenfassung.automatisierung')}</p><Link to="/werkbank/automatisierungen" className="knopf klein">{t('werkbank.zusammenfassung.automatisierung.knopf')}</Link></div>
-      <p className="leise klein">{e.bundesland ? t('werkbank.region.aufgaben.mit', { land: BUNDESLAENDER[e.bundesland as keyof typeof BUNDESLAENDER] ?? e.bundesland }) : t('werkbank.region.aufgaben.ohne')} <Link to="/werkbank/region">{t('werkbank.region.aufgaben.link')}</Link></p>
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe">
-        <Knopf groesse="klein" onClick={senden} laeuftText={t('werkbank.aufgaben.sendet')}>{t('werkbank.aufgaben.jetzt-senden')}</Knopf>
-      </div>
-      </div>
-      {(!zu || ent.geaendert) && <Speicherleiste ent={ent} gegenstand={t('werkbank.aufgaben.zusammenfassung')} sendet={sendet} />}
-    </form>
   );
 }
 

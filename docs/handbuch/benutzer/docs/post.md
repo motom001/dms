@@ -76,7 +76,7 @@ Kanal und *Zugeordnet zu* setzt Ablago selbst. Alles andere kannst du ändern wi
 
 ## An jemanden { #fur-jemanden }
 
-Trägst du bei **An** einen Benutzer ein, steht die Post bei ihm unter [Zu erledigen](eingang.md) mit der Aufgabe **Post für dich**. Wird sie zugeordnet, erledigt oder an jemand anderen gegeben, erledigt sich die Aufgabe von selbst. Ist der Benutzer abwesend, bekommt sie sein Vertreter.
+Trägst du bei **An** einen Benutzer ein, steht die Post bei ihm unter [Zu erledigen](eingang.md) mit der Aufgabe **Post für dich – bitte zuordnen**. Wird sie zugeordnet, erledigt oder an jemand anderen gegeben, erledigt sich die Aufgabe von selbst. Ist der Benutzer abwesend, bekommt sie sein Vertreter. Die Aufgabe legt die Automatisierung *Post für dich* an (Paket Benachrichtigungen); ist sie bei euch aus, steht neue Post nur unter **Neue Post**, nicht unter „Zu erledigen“ – frag dann deinen Administrator.
 
 ## Dokument übernehmen { #zuordnen }
 

@@ -1,7 +1,9 @@
-/** Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage (#92) und Feiertage (#94). */
+/** Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage (#92) und Feiertage (#94) – über die Automatisierung (#678, #1001). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { Aufgabenmail, pruefeZeit, wirksameZeit, MAIL_STANDARD } from '../src/aufgabenmail';
+import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
+import '../src/automatisierung-karten';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -15,9 +17,16 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 /** Berliner Ortszeit im Winter (UTC+1) als Date. */
 const berlin = (tag: string, uhr: string) => new Date(`${tag}T${uhr}:00+01:00`);
 
+/**
+ * Seit #1001 schickt nur noch die Automatisierung „Tägliche Zusammenfassung“ (Paket Benachrichtigungen): Zeitplan für
+ * jeden Benutzer, Uhrzeit aus dem Profil, Dann „Tägliche Zusammenfassung senden“. `pruefe(zeit)` lässt den Zeitplan zu
+ * dieser Zeit laufen und liefert, wie viele Mails dabei hinausgingen.
+ */
 async function aufbau() {
-  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+  const einst = speicherEinstellungen();
+  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
+  d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
@@ -26,14 +35,20 @@ async function aufbau() {
   await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, anna.id);
   await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: anna.id, text: 'Ablegen' }, anna.id);
   const an: string[] = [];
-  const einst = speicherEinstellungen();
   const mail = new Aufgabenmail({
     benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
     aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Vorgang',
-  }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas', einst);
+  }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas');
+  await konten.systemkonto('automatisierung');
+  d.systemkonten = (k) => konten.systemkonto(k);
+  d.zusammenfassungAn = (id, trocken) => mail.fuerAutomatisierung(id, trocken);
+  const uhr = { jetzt: Date.now() };
+  const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(() => uhr.jetzt), uhr: () => uhr.jetzt });
+  await motor.lege({ name: 'Tägliche Zusammenfassung', aktiv: true, wenn: { art: 'zeitplan', uhrzeit: '07:00', tage: [1, 2, 3, 4, 5], feiertage: true, jeBenutzer: true, profilzeit: true }, dann: [{ art: 'zusammenfassung' }] }, null);
+  const pruefe = async (zeit: Date) => { const vorher = an.length; uhr.jetzt = zeit.getTime(); await motor.zeitplan(); return an.length - vorher; };
   const region = new RegionDienst(einst);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-  return { konten, anna, ben, mail, an, ich, region };
+  return { konten, anna, ben, pruefe, an, ich, region };
 }
 
 describe('Tägliche Zusammenfassung je Benutzer (#92, #94)', () => {
@@ -46,38 +61,36 @@ describe('Tägliche Zusammenfassung je Benutzer (#92, #94)', () => {
   });
 
   it('schickt jedem zu seiner Uhrzeit an seinen Tagen, einmal am Tag, und holt am selben Tag nach', async () => {
-    const { konten, anna, ben, mail, an, ich } = await aufbau();
-    await mail.speichere({ uhrzeit: '07:00' });
+    const { konten, anna, ben, pruefe, an, ich } = await aufbau();
     await konten.setzeEinstellung(await ich(ben.id), 'aufgaben_mail_zeit', pruefeZeit({ uhrzeit: '18:00', tage: [1, 2, 3, 4, 5, 6] }));
     // Donnerstag, 29.10.2026
-    assert.equal(await mail.pruefe(berlin('2026-10-29', '06:59')), 0);
-    assert.equal(await mail.pruefe(berlin('2026-10-29', '07:05')), 1);
+    assert.equal(await pruefe(berlin('2026-10-29', '06:59')), 0);
+    assert.equal(await pruefe(berlin('2026-10-29', '07:05')), 1);
     assert.deepEqual(an, ['anna@example.org']);
-    assert.equal(await mail.pruefe(berlin('2026-10-29', '12:00')), 0, 'Anna nur einmal');
-    assert.equal(await mail.pruefe(berlin('2026-10-29', '21:30')), 1, 'Ben: Ablago war um 18 Uhr aus, kommt noch am selben Tag');
+    assert.equal(await pruefe(berlin('2026-10-29', '12:00')), 0, 'Anna nur einmal');
+    assert.equal(await pruefe(berlin('2026-10-29', '21:30')), 1, 'Ben: Ablago war um 18 Uhr aus, kommt noch am selben Tag');
     assert.deepEqual(an, ['anna@example.org', 'ben@example.org']);
     // Samstag: Anna (Mo–Fr) nicht, Ben (Mo–Sa) schon
-    assert.equal(await mail.pruefe(berlin('2026-10-31', '19:00')), 1);
+    assert.equal(await pruefe(berlin('2026-10-31', '19:00')), 1);
     assert.equal(an.at(-1), 'ben@example.org');
     // Kein Wochentag = praktisch aus
     await konten.setzeEinstellung(await ich(anna.id), 'aufgaben_mail_zeit', pruefeZeit({ tage: [] }));
-    assert.equal(await mail.pruefe(berlin('2026-11-02', '08:00')), 0);
+    assert.equal(await pruefe(berlin('2026-11-02', '08:00')), 0);
   });
 
   it('lässt Feiertage des Bundeslands aus der Region aus, wenn gewünscht (#94, #726)', async () => {
-    const { konten, ben, mail, an, ich, region } = await aufbau();
+    const { konten, ben, pruefe, an, ich, region } = await aufbau();
     await assert.rejects(region.speichere({ bundesland: 'XX' }), status(422));
     // Reformationstag 2025 (Freitag) gilt in Hamburg, nicht in Bayern
-    await mail.speichere({ uhrzeit: '07:00' });
     await region.speichere({ bundesland: 'BY' });
-    assert.equal(await mail.pruefe(berlin('2025-10-31', '08:00')), 2);
+    assert.equal(await pruefe(berlin('2025-10-31', '08:00')), 2);
     await region.speichere({ bundesland: 'HH' });
     an.length = 0;
-    assert.equal(await mail.pruefe(berlin('2026-12-25', '08:00')), 0, '1. Weihnachtstag (Freitag)');
+    assert.equal(await pruefe(berlin('2026-12-25', '08:00')), 0, '1. Weihnachtstag (Freitag)');
     await konten.setzeEinstellung(await ich(ben.id), 'aufgaben_mail_zeit', pruefeZeit({ feiertage: false }));
-    assert.equal(await mail.pruefe(berlin('2026-12-25', '09:00')), 1, 'Ben möchte sie auch an Feiertagen');
+    assert.equal(await pruefe(berlin('2026-12-25', '09:00')), 1, 'Ben möchte sie auch an Feiertagen');
     assert.deepEqual(an, ['ben@example.org']);
     await region.speichere({ bundesland: null });
-    assert.equal((await mail.einstellung()).bundesland, null);
+    assert.equal((await region.lies()).bundesland, null);
   });
 });

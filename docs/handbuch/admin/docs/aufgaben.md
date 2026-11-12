@@ -12,36 +12,35 @@ Aufgaben entstehen auf diesen Wegen:
 | **Frist** | vor dem Datum eines Datumsfelds, das eine [Frist](mappentypen.md#fristen-erinnerungen-an-datumsfeldern) ist – angelegt von einer Automatisierung *Datum erreicht* | wie in der Automatisierung eingestellt, z. B. der Benutzer in einem Feld, sonst wer die Mappe angelegt hat | per Knopf *Erledigt*, oder von selbst, wenn sich das Datum ändert |
 | **Erinnerung** | am gewählten Tag nach *Mappe ▾ →* **Erinnern** an der Mappe | der gewählte Benutzer | per Knopf *Erledigt* |
 | **Vertretung** | wenn für einen Benutzer eine [Abwesenheit](benutzer.md#abwesenheit) mit Vertreter eingetragen wird – seit Version 0.177 über die [Automatisierung](automatisierungen.md) *Vertretung eingetragen* (Paket Benachrichtigungen bzw. beim Update übernommen) | der Vertreter (*Vertreter aus dem Ereignis*); die Aufgabe hängt an der Benutzer-Mappe des Abwesenden | von selbst, sobald die Abwesenheit endet oder sich Zeitraum oder Vertreter ändern; oder per Knopf *Erledigt* |
-| **Post für dich** | wenn bei neuer [Post](https://help.ablago.app/benutzer/aktuell/post/) ein Benutzer unter *An* steht | der Benutzer bei *An* | von selbst, sobald die Post zugeordnet, erledigt oder weitergegeben ist |
+| **Post für dich** | wenn bei neuer [Post](https://help.ablago.app/benutzer/aktuell/post/) ein Benutzer unter *An* steht oder *An* sich ändert – seit Version 0.257 über die [Automatisierung](automatisierungen.md#post-fur-dich) *Post für dich* (Paket Benachrichtigungen) | der Benutzer bei *An*, bei Abwesenheit seine Vertretung | von selbst, sobald die Post zugeordnet, erledigt oder an jemand anderen gegeben ist |
 | **Auskunft** | wenn eine Person ihre [Auskunft](datenschutz.md#auskunft-zustellen) über den Abruf-Link heruntergeladen hat oder der Link nach Fehlversuchen gesperrt wurde | wer den Link bzw. die Auskunft erstellt hat und wer die Mappe der Person als Favorit hat (sofern die Benachrichtigung für den Favoriten an ist) | per Knopf *Erledigt*; solange sie offen ist, kommt für denselben Link keine zweite |
 | **Geändert** | wenn jemand eine Mappe ändert, die andere als Favorit haben ([Favorit = Abo](https://help.ablago.app/benutzer/aktuell/ablage/#favoriten-als-abo)) | wer die Mappe als Favorit hat, lesen darf und die Benachrichtigung nicht abgeschaltet hat – nie der, der geändert hat | von selbst beim Öffnen der Mappe, oder per Knopf *Erledigt*; bis dahin zählt sie nur hoch |
 
 - Empfänger sind immer **Benutzer**, keine Rollen – eine Aufgabe für alle bleibt sonst gern liegen.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; in der Historie der Mappe steht, dass sie entfernt wurde.
-- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe. Mehrere auf einmal gehen in [Werkbank → Benachrichtigungen und Aufgaben](#mehrere-aufgaben-auf-einmal-weitergeben) und für die eigenen unter Mein Konto → [Abwesenheit](https://help.ablago.app/benutzer/aktuell/profil/#abwesenheit).
+- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe. Mehrere auf einmal gehen in [Werkbank → Aufgaben](#mehrere-aufgaben-auf-einmal-weitergeben) und für die eigenen unter Mein Konto → [Abwesenheit](https://help.ablago.app/benutzer/aktuell/profil/#abwesenheit).
 
-## Werkbank → Benachrichtigungen und Aufgaben { #werkbank-aufgaben }
+## Werkbank → Aufgaben { #werkbank-aufgaben }
 
-Alles rund um Aufgaben und die Mails dazu steht an einer Stelle: **Werkbank → Einstellungen → Benachrichtigungen und Aufgaben**.
+Alle offenen Aufgaben aller Benutzer stehen unter **Werkbank → Einstellungen → Aufgaben**. Wer wann benachrichtigt wird – [Tägliche Zusammenfassung](#tagliche-zusammenfassung), [Favoriten](#favoriten-benachrichtigen), *Post für dich*, *Vertretung* –, stellst du nicht hier ein, sondern unter [Automatisierungen](automatisierungen.md#benachrichtigungen); ein Satz mit Link über der Liste führt dorthin.
 
-![Werkbank → Benachrichtigungen und Aufgaben](bilder/werkbank-aufgaben.png)
+![Werkbank → Aufgaben](bilder/werkbank-aufgaben.png)
 
-In der Mitte steht oben die [Tägliche Zusammenfassung](#tagliche-zusammenfassung), darunter alle offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl unter einer Aufgabe gibst du sie an jemand anderen weiter. Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern, **In der Ablage öffnen** und daneben **Weitergeben an** – wie die Auswahl in der Liste. Danach stimmen Empfänger rechts und in der Liste sofort.
+In der Mitte steht die Liste aller offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl unter einer Aufgabe gibst du sie an jemand anderen weiter. Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern, **In der Ablage öffnen** und daneben **Weitergeben an** – wie die Auswahl in der Liste. Danach stimmen Empfänger rechts und in der Liste sofort.
 
-Der **Filter** über der Liste grenzt ein nach:
+Oben steht das **Suchfeld** – es sucht im Titel der Mappe und im Text der Aufgabe, **Esc** oder **×** leeren es. Darunter grenzen die **Filter** ein nach:
 
 - **Empfänger** – ein Benutzer, *Administratoren* oder *abwesend, ohne Vertretung* (Aufgaben von Benutzern, die abwesend oder deaktiviert sind und für die niemand eingetragen ist – sie bleiben sonst liegen),
 - **Art** (Passt nicht, Erwähnung, Zugewiesen, Frist …), **Mappentyp**,
-- **Fälligkeit** nach dem Datum von Frist oder Erinnerung: *überfällig*, *diese Woche* (bis Sonntag), *später*, *ohne Datum*,
-- Text im **Titel** der Mappe oder in der Aufgabe.
+- **Fälligkeit** nach dem Datum von Frist oder Erinnerung: *überfällig*, *diese Woche* (bis Sonntag), *später*, *ohne Datum*.
 
-**Erledigte zeigen** schaltet auf die zuletzt erledigten Aufgaben um. Der Filter steht in der Adresse – so lässt sich ein gefilterter Blick als Link merken oder weitergeben. Darunter steht, wie viele Aufgaben passen.
+Der Haken **Erledigte zeigen** schaltet auf die zuletzt erledigten Aufgaben um. Suche und Filter stehen in der Adresse – so lässt sich ein gefilterter Blick als Link merken oder weitergeben. Darunter steht, wie viele Aufgaben passen („12 Treffer“); passt keine, setzt **Suche und Filter zurücksetzen** alles zurück.
 
 ### Mehrere Aufgaben auf einmal weitergeben
 
 Bei Urlaub, Krankheit oder wenn die Zuständigkeit wechselt, verteilst du viele Aufgaben in einem Schritt neu:
 
-1. Grenze die Liste mit dem Filter ein, z. B. *Empfänger: Jonas*.
+1. Grenze die Liste mit Suche und Filtern ein, z. B. *Empfänger: Jonas*.
 2. Hake die Aufgaben links an – oder **Alle angezeigten auswählen** (das gilt nur für die gerade gefilterten). Daneben steht, wie viele ausgewählt sind.
 3. In der Leiste darüber **Ausgewählte weitergeben an** einen Benutzer wählen und **Weitergeben**. Eine Rückfrage nennt Anzahl und Ziel.
 
@@ -68,24 +67,35 @@ Ablago gleicht die Fälle nach jedem Vergeben, Weitergeben und Erledigen ab und 
 
 ## Tägliche Zusammenfassung
 
-Statt bei jeder neuen Aufgabe eine E-Mail zu schicken, verschickt Ablago **einmal am Tag** eine Übersicht an jeden, der offene Aufgaben hat – mit Links zu den Mappen. Sie enthält die Titel der Mappen (keine Dokumente) und geht über den eingerichteten [Mailserver](installation.md#e-mail-und-adresse) hinaus; jeder bestellt sie in Mein Konto selbst ab, ausschalten kannst du sie hier für alle.
+Statt bei jeder neuen Aufgabe eine E-Mail zu schicken, verschickt Ablago **einmal am Tag** eine Übersicht an jeden, der offene Aufgaben hat – mit Links zu den Mappen. Sie enthält die Titel der Mappen (keine Dokumente) und geht über den eingerichteten [Mailserver](installation.md#e-mail-und-adresse) hinaus; jeder bestellt sie in Mein Konto selbst ab.
 
-- **Ob und wann** sie verschickt wird, stellst du in der Automatisierung **Tägliche Zusammenfassung** ein (Werkbank → [Automatisierungen](automatisierungen.md#benachrichtigungen)): Wenn-Karte *Zeitplan für jeden Benutzer* mit *Uhrzeit aus Mein Konto*, Dann-Karte *Tägliche Zusammenfassung senden*. Die Uhrzeit der Karte (Standard 7:00 Uhr, in der Zeitzone der [Region](region.md)) gilt für alle ohne eigene. Ausschalten heißt: die Automatisierung ausschalten. Das Paket **Benachrichtigungen** bringt sie mit.
-- Den Abschnitt hier kannst du mit einem Klick auf die Überschrift **zuklappen**; Ablago merkt sich das für dich. Darunter steht die Warnung, wenn die Zusammenfassung nicht verschickt werden kann, weil der E-Mail-Versand aus ist.
+Seit Version 0.257 gibt es dafür **keinen eigenen Abschnitt mehr unter Werkbank → Aufgaben** – alles steht in der Automatisierung **Tägliche Zusammenfassung** (Werkbank → [Automatisierungen](automatisierungen.md#benachrichtigungen), Paket **Benachrichtigungen**):
+
+| Bisher unter Werkbank → Aufgaben | Jetzt |
+| --- | --- |
+| Ob sie verschickt wird | Automatisierung ein- oder ausschalten |
+| Vorgabe-Uhrzeit für alle ohne eigene | Uhrzeit der Wenn-Karte *Zeitplan für jeden Benutzer* (Standard 7:00 Uhr, in der Zeitzone der [Region](region.md)) |
+| Hinweis „Bundesland für Feiertage“ | unverändert unter [Werkbank → Region](region.md) |
+| **Jetzt senden** (an alle) | **Ausprobieren** in der Automatisierung: Benutzer-Mappe einer Person wählen, **Ausführen** – die Zusammenfassung geht sofort an diese Person (siehe [Ausprobieren](automatisierungen.md#ausprobieren-verlauf-und-anderungsverlauf)) |
+| Warnung „E-Mail-Versand ist aus“ | Hinweis in der [Werkbank-Übersicht](uebersicht.md) und unter Mein Konto |
+
 - **Jeder Benutzer** wählt unter **Mein Konto** eine eigene Uhrzeit (im 15-Minuten-Raster) und die **Wochentage**; ohne eigene Wahl gelten die Uhrzeit der Automatisierung und **Montag bis Freitag**. Abbestellen kann er sie dort auch.
 - Die Mail kommt höchstens einmal am Tag, frühestens zur gewählten Uhrzeit. War Ablago zu dieser Zeit aus, kommt sie nach dem Start noch am selben Tag; am nächsten Tag wird nichts nachgeholt. Wer abwesend ist oder nichts offen hat, bekommt keine.
 - **Feiertage** – an gesetzlichen Feiertagen kommt keine Zusammenfassung (jeder kann das in Mein Konto abwählen). Welche das sind, richtet sich nach dem Bundesland unter [Werkbank → Einstellungen → Region](region.md); ohne Bundesland gibt es keine Feiertage.
-- **Jetzt senden** verschickt sie sofort an alle mit offenen Aufgaben – unabhängig von Uhrzeit, Wochentag und Feiertag, z. B. zum Ausprobieren.
-- Voraussetzung ist der eingerichtete [E-Mail-Versand](installation.md#e-mail-und-adresse). Ist er aus, steht im Abschnitt „E-Mail-Versand ist ausgeschaltet – es wird nichts verschickt“ mit **E-Mail einrichten**.
+- Voraussetzung ist der eingerichtete [E-Mail-Versand](installation.md#e-mail-und-adresse).
 
 ## Favoriten benachrichtigen
 
-Wer eine Mappe als **Favorit** markiert, bekommt eine Benachrichtigung „Geändert“ unter *Zu erledigen*, wenn jemand anderes sie ändert (siehe Benutzerhandbuch, [Favoriten als Abo](https://help.ablago.app/benutzer/aktuell/ablage/#favoriten-als-abo)). Unter der Täglichen Zusammenfassung legst du fest, für wen es das gibt:
+Wer eine Mappe als **Favorit** markiert, bekommt eine Benachrichtigung „Geändert“ unter *Zu erledigen*, wenn jemand anderes sie ändert (siehe Benutzerhandbuch, [Favoriten als Abo](https://help.ablago.app/benutzer/aktuell/ablage/#favoriten-als-abo)). Für wen es das gibt, stellst du seit Version 0.257 in der Automatisierung **Favoriten-Änderungen melden** ein (Werkbank → [Automatisierungen](automatisierungen.md#benachrichtigungen), Dann-Karte *Favoriten-Änderungen melden*):
 
-- **Erlaubt** – *für alle* (Standard), *nur für bestimmte Rollen* oder *für niemanden*.
-- **Nur für bestimmte Rollen:** oben die Systemrollen **Administrator** und **Mitglied**, darunter die weiteren Rollen aus der [Benutzerverwaltung](benutzer.md). Ein Benutzer bekommt die Benachrichtigung, wenn er mindestens eine der gewählten Rollen hat. Mindestens eine Rolle muss gewählt sein.
-- Wer nicht dazugehört, sieht den Schalter **Bei Änderungen benachrichtigen** in seiner Favoritenliste und unter Mein Konto nicht mehr; unter Mein Konto steht stattdessen ein Hinweis. Was er selbst eingestellt hat, bleibt gespeichert und gilt wieder, sobald du die Benachrichtigung für ihn erlaubst. Der Stern selbst und das Hervorheben geänderter Mappen bleiben.
-- **Für neue Benutzer eingeschaltet** – die Vorgabe für alle, die ab jetzt dazukommen (Standard: an). Bestehende Benutzer behalten ihre Einstellung.
-- **Vorgabe auf alle anwenden** setzt die gespeicherte Vorgabe nach einer Rückfrage bei allen bestehenden Benutzern – auch über das hinweg, was sie unter Mein Konto gewählt haben. Einzeln stumm geschaltete Favoriten bleiben stumm.
+| Bisher unter Werkbank → Aufgaben | Jetzt in der Automatisierung |
+| --- | --- |
+| Erlaubt *für alle* | keine Rolle gewählt |
+| Erlaubt *nur für bestimmte Rollen* | **Nur an Mitglieder dieser Rollen** – Systemrolle **Mitglied** und die weiteren Rollen aus der [Benutzerverwaltung](benutzer.md) |
+| Erlaubt *für niemanden* | Automatisierung ausschalten |
+| Für neue Benutzer eingeschaltet | **Neue Benutzer bekommen die Benachrichtigung** |
+| Vorgabe auf alle anwenden | entfällt – jeder stellt es unter Mein Konto selbst ein |
 
-Den Abschnitt klappst du wie die Tägliche Zusammenfassung mit einem Klick auf die Überschrift zu; daneben steht dann der Stand. Die Tägliche Zusammenfassung zeigt geänderte Favoriten nicht eigens – die Aufgabe „Geändert“ steht dort ohnehin mit.
+- Beim Update auf 0.257 übernimmt Ablago deine bisherige Einstellung einmal in diese Karte: *für niemanden* schaltet die Automatisierung aus, die gewählten Rollen und die Vorgabe stehen danach in der Karte.
+- Wer nicht dazugehört – oder wenn keine eingeschaltete Automatisierung ihn erreicht –, sieht den Schalter **Bei Änderungen benachrichtigen** in seiner Favoritenliste und unter Mein Konto nicht; unter Mein Konto steht stattdessen ein Hinweis. Was er selbst eingestellt hat, bleibt gespeichert. Der Stern selbst und das Hervorheben geänderter Mappen bleiben.
+- Dasselbe gilt für Favoriten bei [Auskünften](datenschutz.md#auskunft-zustellen): Die Aufgabe *Auskunft* bekommt ein Favorit nur, wenn die Benachrichtigung für ihn an ist.

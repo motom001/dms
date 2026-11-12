@@ -1,5 +1,5 @@
 {
-  "favoriten.abgeschaltet": "Notifications about changed favourites are switched off for you – this is set in the Workbench. Your setting stays saved and applies again as soon as it is allowed.",
+  "favoriten.abgeschaltet": "You don’t get notifications about changed favourites at the moment – the automation “Report favourite changes” decides this (Workbench → Automations). Your setting stays saved and applies again as soon as it reaches you.",
   "laufwerk.bereich": "Drive",
   "laufwerk.menue": "Connect as a drive",
   "laufwerk.lade": "Loading …",
@@ -298,7 +298,7 @@
   "zusammenfassung.gesetzliche-feiertage-in": "Public holidays in {land}.",
   "zusammenfassung.dafuer-muss-in-der": "For this, the federal state must be chosen in the Workbench.",
   "zusammenfassung.nicht-an-feiertagen": "Not on public holidays{klein}",
-  "zusammenfassung.der-e-mail-versand": "Email sending isn’t set up or is switched off right now; your setting applies as soon as it runs.",
+  "zusammenfassung.der-e-mail-versand": "Email sending or the automation “Daily summary” is not set up or switched off at the moment; your setting applies as soon as both are running.",
   "zusammenfassung.gespeichert": "Saved.",
   "zweifaktor.wiederherstellungscodes-je-einmal": "Recovery codes (each usable once)\n\n{codes}\n",
   "zweifaktor.bewahre-diese-codes-sicher": "Keep these codes safe – separately from your phone. Without your phone you can only get back in with one of them. Each code works once. They are only shown now.",

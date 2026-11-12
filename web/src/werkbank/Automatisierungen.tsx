@@ -21,7 +21,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Feld, Knopf, KnopfLink } from '../bausteine';
+import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungen (#675): Mitte die Liste (Name, Kurzform, an/aus, letzter Lauf,
@@ -471,6 +471,12 @@ function WennEditor({ w, k, setze }: { w: WennKarte; k: Kontextdaten; setze: (w:
             </div>
           </fieldset>
         )}
+        {/* #1001: „neue Post oder ‚An‘ geändert“ ist eine Karte – auch beim Anlegen auslösen. */}
+        {w.art === 'mappe.geaendert' && (
+          <HakenFeld beschriftung={t('automatisierung.ui.wenn.angelegt')} hinweis={t('automatisierung.ui.wenn.angelegt.hilfe')} className="breit">
+            <input type="checkbox" checked={w.angelegt === true} onChange={(x) => setze({ ...w, angelegt: x.target.checked || undefined })} />
+          </HakenFeld>
+        )}
       </div>
       <p className="leise klein">{w.art === 'datum' ? t('automatisierung.ui.wenn.datum.text') : w.art === 'zeitplan' ? `${zeitplanText(w)}. ${t('automatisierung.ui.wenn.zeitplan.text')}` : t.frei(`ereignisse.text.${ereignisSchluessel(w.art)}`)}</p>
     </div>
@@ -589,7 +595,8 @@ function neueDann(art: string, w?: WennKarte, k?: Kontextdaten): DannKarte {
 }
 
 function dannKurz(k: DannKarte, typ: Mappentyp | null, kx: Kontextdaten): string {
-  if (k.art === 'stopp' || k.art === 'zusammenfassung' || k.art === 'favoriten') return '';
+  if (k.art === 'favoriten') return k.rollen?.length ? t('automatisierung.ui.karte.dann.favoriten.nur', { rollen: k.rollen.map((r) => kx.rollen.find((x) => x.id === r)?.name ?? '?').join(', ') }) : '';
+  if (k.art === 'stopp' || k.art === 'zusammenfassung') return '';
   if (k.art === 'anmeldeschutz') return t.frei(`automatisierung.ui.karte.dann.anmeldeschutz.${k.was}`);
   if (k.art === 'paket') return `${kx.pakete?.find((p) => p.id === k.paket)?.name ?? k.paket}${k.aufgabe ? ` · ${k.aufgabe}` : ''}`;
   if (k.art === 'feld') return Object.entries(k.werte).map(([key, v]) => `${typ?.felder.find((f) => f.key === key)?.label ?? key} = ${String(v ?? '')}`).join(', ');
@@ -608,7 +615,24 @@ function Platzhalter({ wenn, typ, einfuegen }: { wenn: WennKarte; typ: Mappentyp
 function DannEditor({ karte, typ, wenn, k, eigenesPaket, setze }: { karte: DannKarte; typ: Mappentyp | null; wenn: WennKarte; k: Kontextdaten; eigenesPaket?: string | null; setze: (k: DannKarte) => void }) {
   if (karte.art === 'paket') return <PaketKarte karte={karte} k={k} eigenesPaket={eigenesPaket} setze={setze} />;
   if (karte.art === 'stopp') return <p className="leise klein">{t('automatisierung.ui.karte.dann.stopp.text')}</p>;
-  if (karte.art === 'zusammenfassung' || karte.art === 'favoriten') return <p className="leise klein">{t.frei(`automatisierung.ui.karte.dann.${karte.art}.text`)}</p>;
+  if (karte.art === 'zusammenfassung') return <p className="leise klein">{t('automatisierung.ui.karte.dann.zusammenfassung.text')}</p>;
+  // #1001: Wer Favoriten-Änderungen bekommt und die Vorgabe für neue Benutzer – früher unter Werkbank → Aufgaben.
+  if (karte.art === 'favoriten') return (
+    <div className="karte offen">
+      <p className="leise klein">{t('automatisierung.ui.karte.dann.favoriten.text')}</p>
+      <FeldGruppe beschriftung={t('automatisierung.ui.karte.dann.favoriten.rollen')} hinweis={t('automatisierung.ui.karte.dann.favoriten.rollen.hilfe')}>
+        {k.rollen.map((r) => (
+          <label key={r.id} className="haken"><input type="checkbox" checked={!!karte.rollen?.includes(r.id)} onChange={(x) => {
+            const neu = x.target.checked ? [...(karte.rollen ?? []), r.id] : (karte.rollen ?? []).filter((y) => y !== r.id);
+            setze({ ...karte, rollen: neu.length ? neu : undefined });
+          }} /><span>{r.name}</span></label>
+        ))}
+      </FeldGruppe>
+      <HakenFeld beschriftung={t('automatisierung.ui.karte.dann.favoriten.vorgabe')} hinweis={t('automatisierung.ui.karte.dann.favoriten.vorgabe.hilfe')}>
+        <input type="checkbox" checked={karte.vorgabe !== false} onChange={(x) => setze({ ...karte, vorgabe: x.target.checked ? undefined : false })} />
+      </HakenFeld>
+    </div>
+  );
   if (karte.art === 'anmeldeschutz') return (
     <div className="karte offen">
       <label className="eigenschaft"><span>{t('automatisierung.ui.karte.dann.anmeldeschutz.was')}</span>

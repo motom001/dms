@@ -1,6 +1,7 @@
 /**
  * Aufgaben (#54, #56, #1078 aus dienst.ts): Empfänger prüfen, @-Erwähnungen in Feldern und Notizen als Aufgaben, die
- * Freigabe „Favoriten benachrichtigen“ (#506), Aufgaben aus Automatisierungen und das Erledigen nach Anlass (#724).
+ * Aufgaben aus Automatisierungen (auch „Post für dich“, #1001) und das Erledigen nach Anlass (#724). Die Freigabe
+ * „Favoriten benachrichtigen“ (#506) steht seit #1001 in der Automatisierung.
  * Schicht 3 – bekommt den Kern, die Rechteprüfung, Mappen, Ereignisse, die Rollen (post/) und die übrigen Klassen dieses
  * Ordners (sie kennen einander über `teile`); Ereignis, Konten und die Gültigkeit der Zahlen über den Anschluss.
  */
@@ -10,12 +11,10 @@ import { Fachfehler } from '../fehler';
 import type { Kern } from '../kern';
 import type { MappenDienst, MappenHistorie } from '../mappen';
 import type { PostSystemmappen } from '../post';
-import { protokoll } from '../protokoll';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { Gueltigkeit } from '../zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
-import { type FavoritenFreigabe, freigabeZumSpeichern, liesFavoritenFreigabe } from '../../../shared/src/favoritenfreigabe';
 import { erwaehnungen } from '../../../shared/src/markdown';
 import { type Aufgabe, AUFGABE_MAX, type AufgabenAnlass, type Benutzer, type Mappentyp, type Werte } from '../../../shared/src/model';
 import type { AblaufPlatzhalter, MappenAblaeufe } from './ablaeufe';
@@ -48,6 +47,15 @@ export interface AufgabenAnschluss {
   gueltigkeit(): Gueltigkeit;
   /** Platzhalter der Automatisierungsvorlagen füllen (#1044, #795) – setzt der Motor (automatisierung.ts). */
   ablaufPlatzhalter?(): AblaufPlatzhalter | undefined;
+  /** Wer Favoriten-Änderungen bekommt (#1001) – setzt der Motor; ohne ihn alle, Vorgabe an. */
+  favoritenRegeln?(): Promise<Array<{ rollen: string[]; vorgabe: boolean }>> | undefined;
+}
+
+/** Art, Feld und Datum einer Aufgabe aus einer Automatisierung: Frist (#724), „Post für dich“ (#1001) oder Zugewiesen. */
+function artUndSchluessel(frist: { feld: string; datum: string } | null, post: string | null, datum: string | null): Pick<Aufgabe, 'art' | 'feldKey' | 'datum'> {
+  if (frist) return { art: 'frist', feldKey: frist.feld, datum: frist.datum };
+  if (post) return { art: 'post', feldKey: post, datum };
+  return { art: 'manuell', datum };
 }
 
 export class AufgabenDienst {
@@ -57,10 +65,8 @@ export class AufgabenDienst {
   private get konten() { return this.anschluss.konten(); }
   private name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
   private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private get einstellungen() { return this.kern.einstellungen; }
   private sichtbarFuer(benutzerId: string, ids: string[]) { return this.teile.rechte.sichtbarFuer(benutzerId, ids); }
   private neueAufgabe(a: Aufgabe, typ?: string) { return this.teile.ereignisse.neueAufgabe(a, typ); }
-  private listeRollen(mitKonten = false) { return this.teile.systemmappen.listeRollen(mitKonten); }
   private leiteUm(a: Aufgabe) { return this.teile.vertretung.leiteUm(a); }
   private empfaengerAufloesen(id: string | null) { return this.teile.vertretung.empfaengerAufloesen(id); }
   private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.teile.vertretung.benachrichtigeGebuendelt(...a); }
@@ -116,24 +122,6 @@ export class AufgabenDienst {
     }
   }
 
-  async favoritenFreigabe(): Promise<FavoritenFreigabe> {
-    return liesFavoritenFreigabe(await this.einstellungen?.lies('favoriten_freigabe'));
-  }
-
-  /** Für alle, je Rolle (Systemrollen und fachliche Rollen) oder gar nicht; dazu die Vorgabe für neue Benutzer. */
-  async setzeFavoritenFreigabe(eingabe: unknown, von: string) {
-    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    const f = liesFavoritenFreigabe(eingabe);
-    if (f.erlaubt === 'rollen') {
-      const bekannt = new Set((await this.listeRollen()).map((r) => r.id));
-      f.rollen = f.rollen.filter((r) => bekannt.has(r));
-      if (!f.rollen.length) throw new Fachfehler(422, t('werkbank.fehler.freigabe.rollen'));
-    }
-    await this.einstellungen.schreibe('favoriten_freigabe', freigabeZumSpeichern(f));
-    protokoll.modul('werkbank').info('Benachrichtigung für Favoriten eingestellt', { von, erlaubt: f.erlaubt, rollen: f.rollen.length, vorgabe: f.vorgabe });
-    return this.favoritenFreigabe();
-  }
-
   /**
    * Wer eine Aufgabe für den Benutzer `id` wirklich bekommt (#724, gemeinsamer Weg für Kern und Automatisierungen):
    * er selbst – abwesend oder deaktiviert sein Vertreter (`empfaengerAufloesen`); ist niemand Aktives erreichbar, die
@@ -163,7 +151,12 @@ export class AufgabenDienst {
    *   Fälligkeit, der Admin den Fall in der Werkbank.
    * - Benachrichtigungen bündeln je Automatisierung, Mappe und Empfänger (eine offene, der Text wird aktualisiert).
    */
-  async aufgabeAusAutomatisierung(e: { mappeId: string; empfaengerId: string; text: string | ((an: string | null) => Promise<string>); datum: string | null; von: string; buendeln: string | null; anlass: Record<string, unknown>; aufgabenAnlass?: AufgabenAnlass | null; frist?: { feld: string; datum: string } | null }): Promise<{ id: string; ohneLeserecht: boolean; vorhanden?: boolean; an: string | null }> {
+  async aufgabeAusAutomatisierung(e: { mappeId: string; empfaengerId: string; text: string | ((an: string | null) => Promise<string>); datum: string | null; von: string; buendeln: string | null; anlass: Record<string, unknown>; aufgabenAnlass?: AufgabenAnlass | null; frist?: { feld: string; datum: string } | null; postAn?: string | null }): Promise<{ id: string; ohneLeserecht: boolean; vorhanden?: boolean; an: string | null }> {
+    // „Post für dich“ (#1001): Schlüssel an:<Person aus „An“> wie bisher im Kern – gibt es die Aufgabe schon offen
+    // (auch eine vor dem Update angelegte oder an die Vertretung gegangene), entsteht keine zweite.
+    const postSchluessel = e.postAn ? `an:${e.postAn}` : null;
+    const schonPost = postSchluessel ? await this.offenePostAufgabe(e.mappeId, postSchluessel) : undefined;
+    if (schonPost) return { id: schonPost.id, ohneLeserecht: false, vorhanden: true, an: schonPost.empfaengerId };
     const { an, ueber } = await this.aufgabenEmpfaenger(e.empfaengerId);
     const ohneLeserecht = !!an && !(await this.sichtbarFuer(an, [e.mappeId])).has(e.mappeId);
     const text = (typeof e.text === 'string' ? e.text : await e.text(an)).slice(0, AUFGABE_MAX);
@@ -181,8 +174,7 @@ export class AufgabenDienst {
     let a: Aufgabe;
     try {
       a = await this.neueAufgabe({
-        id: randomUUID(), mappeId: e.mappeId, empfaengerId: an, art: frist ? 'frist' : 'manuell', text,
-        ...(frist ? { feldKey: frist.feld, datum: frist.datum } : { datum: e.datum }),
+        id: randomUUID(), mappeId: e.mappeId, empfaengerId: an, text, ...artUndSchluessel(frist, postSchluessel, e.datum),
         anlass: e.aufgabenAnlass ?? null,
         erstellt: '', erstelltVon: e.von, erledigt: null, erledigtVon: null,
       });
@@ -196,6 +188,11 @@ export class AufgabenDienst {
     await this.notiere(e.mappeId, e.von, 'aufgabe', { ...e.anlass, text: t('meldungen.dienst.fuer-2', { name: await this.name(an), weiter, text }), aufgabe: a.id, aufgabenart: a.art, fuer: an, aufgabentext: text });
     if (ohneLeserecht) await this.faelleNach([e.mappeId]);
     return { id: a.id, ohneLeserecht, an };
+  }
+
+  /** Offene „Post für dich“ mit diesem Schlüssel (an:<Person>) an der Post (#1001). */
+  private async offenePostAufgabe(mappeId: string, schluessel: string): Promise<Aufgabe | undefined> {
+    return (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).find((x) => x.art === 'post' && x.feldKey === schluessel);
   }
 
   /** Offene Aufgaben einer Mappe, deren Anlass `passt`, als erledigt eintragen (#724: „erledigt sich selbst“). */

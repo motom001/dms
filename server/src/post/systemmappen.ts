@@ -11,7 +11,6 @@ import type { Passung } from '../mappentypen';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
-import type { FavoritenFreigabe } from '../../../shared/src/favoritenfreigabe';
 import { abwesenheitWirkt, type Benutzer, type Kontorolle, type Mappe, type Mappentyp, type Systemkonto, verweiseVon, type Werte } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../../shared/src/systemkonten';
@@ -45,7 +44,8 @@ export interface SystemmappenAnschluss {
   ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
   meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null): Promise<void>;
   passungsAufgaben(liste: Array<{ id: string; problem: string | null }>): Promise<unknown>;
-  favoritenFreigabe(): Promise<FavoritenFreigabe>;
+  /** Vorgabe „Favoriten benachrichtigen“ für neue Benutzer (#506; seit #1001 aus der Automatisierung). */
+  favoritenVorgabe(): Promise<boolean>;
   vorgabeAufgabenEmpfaenger(b: Benutzer): Promise<unknown>;
   sichereSystem(): Promise<SystemIds>;
   konten(): KontenAnschluss | undefined;
@@ -65,7 +65,7 @@ export class PostSystemmappen {
   private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
   private meldeVerknuepft(...a: Parameters<SystemmappenAnschluss['meldeVerknuepft']>) { return this.anschluss.meldeVerknuepft(...a); }
   private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) { return this.anschluss.passungsAufgaben(liste); }
-  private favoritenFreigabe() { return this.anschluss.favoritenFreigabe(); }
+  private favoritenVorgabe() { return this.anschluss.favoritenVorgabe(); }
   private vorgabeAufgabenEmpfaenger(b: Benutzer) { return this.anschluss.vorgabeAufgabenEmpfaenger(b); }
   private sichereSystem() { return this.anschluss.sichereSystem(); }
   private zugriff(ich: Zugreifender) { return this.teile.rechte.zugriff(ich); }
@@ -99,7 +99,7 @@ export class PostSystemmappen {
     const { benutzer: typ, systemrollen } = await this.kern.system();
     const alt = await this.repo.holeMappe(b.id);
     // Neuer Benutzer (#506): Vorgabe „Favoriten benachrichtigen“ aus der Werkbank – nur, wenn sie aus ist.
-    if (!alt && b.art !== 'dienst' && !(await this.favoritenFreigabe()).vorgabe) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
+    if (!alt && b.art !== 'dienst' && !(await this.favoritenVorgabe())) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
     // #719: Der erste Mensch ohne Admin-Rechte bekommt die Aufgaben ohne Empfänger, bis die Werkbank anders wählt.
     if (!alt) await this.vorgabeAufgabenEmpfaenger(b);
     const system = new Set(systemrollen.values());

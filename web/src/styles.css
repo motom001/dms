@@ -1580,7 +1580,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 /* Werkbank → Aufgaben (#366): Filter in der Mitte. */
 .aufgabenfilter { gap: 8px; }
 .aufgabenfilter > .suche { flex: none; max-width: none; }
-.filterraster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 10px; }
+/* Auch unter dem Suchfeld (#1001, Filter der Werkbank → Aufgaben): eine ganze Zeile breit. */
+.filterraster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 10px; flex: 1 1 100%; }
 .filterraster select { width: 100%; }
 .zwischen .zusatz { text-transform: none; letter-spacing: 0; font-weight: normal; }
 /* Mitte mit Einstellungen oben (#366: Papierkorb, Aufgaben): die ganze Spalte scrollt, sonst bleibt der Liste nur ein Streifen. */

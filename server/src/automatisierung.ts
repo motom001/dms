@@ -4,7 +4,7 @@ import {
   AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fassung, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
-  PERSONEN_IM_EREIGNIS, paketKarteLeer,
+  PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST,
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, OHNE_WENN, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { tagVon, titelAus, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
@@ -23,7 +23,8 @@ import { faelligeTage, laufeFaellige, wochentagVon, zeitpunktIn, type Merker } f
 import { feiertagAm, istBundesland } from '../../shared/src/feiertage';
 import { wirksameZeit } from './aufgabenmail';
 import { istUuid } from './repo';
-import { datumsformat } from '../../shared/src/region';
+import { datumsformat, liesRegion } from '../../shared/src/region';
+import { liesFavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { gebietsschema } from '../../shared/src/sprache';
 
 /**
@@ -324,18 +325,52 @@ const UHR_FORMAT = () => datumsformat(gebietsschema(), { hour: '2-digit', minute
 
 /** Feste Id der beim Update übernommenen Vertretungs-Aufgabe (#712/#678). */
 const UMZUG_VERTRETUNG = uuidAus('umzug|vertretung');
-/** Feste Ids der beim Update übernommenen Benachrichtigungen (#678): Zusammenfassung, Favoriten, Anmeldeschutz. */
+/**
+ * Feste Ids der beim Update übernommenen Benachrichtigungen (#678): Zusammenfassung, Favoriten, Anmeldeschutz; dazu
+ * „Post für dich“ (#1001).
+ */
 const UMZUG = {
   zusammenfassung: uuidAus('umzug|zusammenfassung'), favoriten: uuidAus('umzug|favoriten'),
-  sammel: uuidAus('umzug|anmeldeschutz'), konto: uuidAus('umzug|kontosperre'),
+  sammel: uuidAus('umzug|anmeldeschutz'), konto: uuidAus('umzug|kontosperre'), post: uuidAus('umzug|post-fuer-dich'),
 } as const;
+
+/** Paket mit den mitgelieferten Benachrichtigungen (dms-registry #109, #153). */
+export const BENACHRICHTIGUNGEN_PAKET = 'benachrichtigungen';
+
+/**
+ * „Post für dich“ (#1001, dms-registry #153) – so, wie der Kern die Aufgabe bis 0.256 selbst anlegte: Wenn neue Post
+ * eingeht oder sich „An“ bzw. der Stand ändert, solange sie neu ist und jemand in „An“ steht → Aufgabe an diese Person
+ * (bei Abwesenheit an die Vertretung). Sie heißt „Post für dich“ (Art), erledigt sich, sobald die Post nicht mehr neu ist
+ * oder an jemand anderen geht, und entsteht je Post und Person nur einmal (automatisierung-karten.ts). Dieselben Karten
+ * bringt das Paket „Benachrichtigungen“ ab 1.3.0 mit (Typ `dms:post`).
+ */
+export function postFuerDichDaten(postTyp: string, texte2: { name: string; beschreibung: string; text: string }): AutomatisierungDaten {
+  return bereinigeAutomatisierung({
+    name: texte2.name, beschreibung: texte2.beschreibung,
+    wenn: { art: 'mappe.geaendert', typ: postTyp, felder: ['an', 'stand'], angelegt: true },
+    und: { modus: 'alle', karten: [
+      { art: 'bedingung', bedingung: { art: 'feld', feld: 'an', op: 'nichtLeer' } },
+      { art: 'bedingung', bedingung: { art: 'feld', feld: 'stand', op: 'einerVon', wert: { art: 'fest', wert: ['Neu'] } } },
+    ] },
+    dann: [{ id: 'p1', art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'feld', feld: 'an' }], text: texte2.text }],
+  });
+}
+
+/** Ist das „Post für dich“ – Wenn „Post angelegt oder gespeichert“ und eine Aufgabe an „An“? */
+export function istPostFuerDich(d: Pick<AutomatisierungDaten, 'wenn' | 'dann'>, postTyp: string | null): boolean {
+  const w = d.wenn;
+  return !!postTyp && w.art === 'mappe.geaendert' && w.typ === postTyp && w.angelegt === true
+    && d.dann.some((k) => k.art === 'aufgabe' && k.als === 'aufgabe' && k.empfaenger.some((e) => e.art === 'feld' && e.feld === 'an'));
+}
+
 /** Welche übernommene Benachrichtigung eine mitgelieferte Automatisierung ersetzt (nach ihrer ersten Dann-Karte). */
-function umzugFuer(d: AutomatisierungDaten): string | null {
+function umzugFuer(d: AutomatisierungDaten, postTyp: string | null = null): string | null {
   const k = d.dann[0];
   if (!k) return null;
   if (k.art === 'zusammenfassung') return UMZUG.zusammenfassung;
   if (k.art === 'favoriten') return UMZUG.favoriten;
   if (k.art === 'anmeldeschutz') return k.was === 'sammel' ? UMZUG.sammel : UMZUG.konto;
+  if (istPostFuerDich(d, postTyp)) return UMZUG.post;
   return null;
 }
 const UMZUG_IDS = new Set<string>([UMZUG_VERTRETUNG, ...Object.values(UMZUG)]);
@@ -361,6 +396,13 @@ export class Automatisierungen {
     d.dienst.ablaufPlatzhalter = (text, c, empf) => this.fuelleMit(text, { a: { name: c.name }, mappe: c.mappe, typ: c.typ, z: c.z, daten: c.daten }, empf);
     d.dienst.paketAutomatisierungen = (p, liste, ein) => this.ausPaket(p, liste, ein);
     d.dienst.typUmgebaut = (alt, neu, felder) => this.typUmgebaut(alt, neu, felder);
+    // #1001: Favoriten und Tägliche Zusammenfassung stellt man nur noch in der Automatisierung ein.
+    d.dienst.favoritenRegeln = async () => (await this.d.repo.liste()).filter((a) => a.aktiv && !a.angehalten && a.wenn.art === 'favorit.geaendert')
+      .flatMap((a) => a.dann.flatMap((k) => (k.art === 'favoriten' ? [{ rollen: k.rollen ?? [], vorgabe: k.vorgabe !== false }] : [])));
+    d.dienst.zusammenfassungVorgabe = async () => {
+      const a = (await this.d.repo.liste()).find((x) => x.aktiv && !x.angehalten && x.wenn.art === 'zeitplan' && x.wenn.jeBenutzer && x.dann.some((k) => k.art === 'zusammenfassung'));
+      return a && a.wenn.art === 'zeitplan' ? { uhrzeit: a.wenn.uhrzeit } : null;
+    };
     // Vollexport: Automatisierungen mit ihrem Änderungsverlauf (die Läufe sind Protokoll und bleiben draußen).
     d.dienst.automatisierungenExport = async () => Promise.all((await this.d.repo.liste()).map(async (a) => ({ ...a, fassungen: await this.d.repo.fassungen(a.id) })));
   }
@@ -377,6 +419,9 @@ export class Automatisierungen {
     // #712: Erinnerungen am Feld werden zu Automatisierungen – erst die Fristen übernehmen; frühere Beispiele des Kerns räumen (#883).
     void this.fristenUebernehmen().catch((e) => log.warn('Erinnerungen nicht übernommen', { fehler: (e as Error).message }))
       .then(() => this.benachrichtigungenUebernehmen()).catch((e) => log.warn('Benachrichtigungen nicht übernommen', { fehler: (e as Error).message }))
+      // #1001: „Post für dich“ und die Freigabe „Favoriten benachrichtigen“ ziehen in Automatisierungen um.
+      .then(() => this.postFuerDichUebernehmen()).catch((e) => log.warn('„Post für dich“ nicht übernommen', { fehler: (e as Error).message }))
+      .then(() => this.favoritenFreigabeUebernehmen()).catch((e) => log.warn('Freigabe „Favoriten benachrichtigen“ nicht übernommen', { fehler: (e as Error).message }))
       .then(() => this.raeumeBeispieleAuf()).catch((e) => log.warn('Frühere Beispiele nicht aufgeräumt', { fehler: (e as Error).message }));
     this.uhr ??= setInterval(() => { void this.zeitplan().catch((e) => log.error('Zeitplan fehlgeschlagen', { fehler: (e as Error).message })); }, ZEITPLAN_MS);
     this.uhr.unref?.();
@@ -426,8 +471,11 @@ export class Automatisierungen {
 
   async ausPaket(p: InstalliertesPaket, liste: PaketAutomatisierung[], ein: string[] = []): Promise<number> {
     const pakete = await this.d.dienst.kern.repo.listePakete();
+    // Post von Ablago (#1001): `dms:post` – Automatisierungen auf Post brauchen keinen eigenen Mappentyp.
+    const postTyp = (await this.d.dienst.kern.system()).post.id;
     const typId = (vw: unknown): string | null => {
       if (typeof vw !== 'string' || !vw) return null;
+      if (vw === DMS_POST) return postTyp;
       const [pk, sl] = vw.includes(':') ? vw.split(':') : [p.id, vw];
       return (pk === p.id ? p.typen[sl] : pakete.find((x) => x.id === pk)?.typen[sl]) ?? null;
     };
@@ -451,7 +499,7 @@ export class Automatisierungen {
         continue;
       }
       let aktiv = ein.includes(x.schluessel);
-      const uebernommeneId = d.wenn.art === 'datum' ? uuidAus(`frist|${d.wenn.typ}|${d.wenn.feld}`) : d.wenn.art === 'benutzer.abwesenheit_gesetzt' ? UMZUG_VERTRETUNG : umzugFuer(d);
+      const uebernommeneId = d.wenn.art === 'datum' ? uuidAus(`frist|${d.wenn.typ}|${d.wenn.feld}`) : d.wenn.art === 'benutzer.abwesenheit_gesetzt' ? UMZUG_VERTRETUNG : umzugFuer(d, postTyp);
       if (uebernommeneId) {
         const alt = await this.d.repo.hole(uebernommeneId);
         if (alt && alt.geaendertVon !== null) { log.info('Mitgelieferte Automatisierung nicht angelegt: die übernommene Erinnerung wurde geändert', { paket: p.id, automatisierung: x.schluessel, bleibt: alt.id }); continue; }
@@ -558,6 +606,60 @@ export class Automatisierungen {
     }
     await einst.schreibe('benachrichtigungen_umzug', { am: this.iso(), anzahl: neu });
     return neu;
+  }
+
+  /**
+   * „Post für dich“ → Automatisierung (#1001): Der Kern legt die Aufgabe nicht mehr selbst an; das macht die mitgelieferte
+   * Automatisierung des Pakets „Benachrichtigungen“ (ab 1.3.0). **Einmal** beim ersten Start nach dem Update (Einstellung
+   * `post_umzug`): Ist das Paket installiert, entsteht bis zu seinem Update eine eingeschaltete Automatisierung mit
+   * denselben Karten (feste Id); das Update des Pakets ersetzt sie, solange sie unverändert ist (an/aus bleibt). Ohne das
+   * Paket entsteht keine – so entschieden in #1001; die Werkbank-Übersicht weist darauf hin. Offene Aufgaben „Post für
+   * dich“ bleiben und erledigen sich wie bisher (post.dienst.ts).
+   */
+  async postFuerDichUebernehmen(): Promise<number> {
+    const einst = this.d.dienst.kern.einstellungen;
+    if (!einst || await einst.lies('post_umzug')) return 0;
+    const pakete = await this.d.dienst.kern.repo.listePakete();
+    const mitPaket = pakete.some((p) => p.id === BENACHRICHTIGUNGEN_PAKET || p.ersetzt?.includes(BENACHRICHTIGUNGEN_PAKET));
+    const postTyp = (await this.d.dienst.kern.system()).post.id;
+    const alle = await this.d.repo.liste();
+    let neu = 0;
+    if (mitPaket && !alle.some((a) => istPostFuerDich(a, postTyp))) {
+      const d = postFuerDichDaten(postTyp, { name: t('automatisierung.post.name'), beschreibung: t('automatisierung.post.beschreibung'), text: t('automatisierung.post.text') });
+      d.reihenfolge = REIHENFOLGE.eigen;
+      const a: Automatisierung = { ...d, id: UMZUG.post, aktiv: true, angehalten: null, herkunft: 'eigen', paketId: null, version: 1, erstellt: this.iso(), erstelltVon: null, geaendert: this.iso(), geaendertVon: null };
+      try { await this.d.repo.lege(a); neu++; log.info('„Post für dich“ als Automatisierung übernommen', { automatisierung: a.id }); } catch { /* ein anderer Server war schneller */ }
+    } else if (!mitPaket) log.info('„Post für dich“ entfällt: Paket „Benachrichtigungen“ nicht installiert');
+    await einst.schreibe('post_umzug', { am: this.iso(), anzahl: neu, paket: mitPaket });
+    return neu;
+  }
+
+  /**
+   * Freigabe „Favoriten benachrichtigen“ → Automatisierung (#1001): Was die Werkbank unter Aufgaben einstellte, steht
+   * danach in der Karte „Favoriten-Änderungen melden“ – „für niemanden“ schaltet die Automatisierungen aus, „nur diese
+   * Rollen“ wird ihre Rollen-Auswahl, „Vorgabe für neue Benutzer: aus“ ihre Vorgabe. Einmal, solange die Einstellung
+   * `favoriten_freigabe` noch da ist (sie fällt danach weg). Geänderte Karten gelten als vom Admin angepasst (ein
+   * Paket-Update überschreibt sie nicht).
+   */
+  async favoritenFreigabeUebernehmen(): Promise<number> {
+    const einst = this.d.dienst.kern.einstellungen;
+    const roh = await einst?.lies('favoriten_freigabe');
+    if (!einst || !roh) return 0;
+    const f = liesFavoritenFreigabe(roh);
+    const niemand = f.erlaubt === 'aus' || (f.erlaubt === 'rollen' && !f.rollen.length);
+    const konto = await this.konto().catch(() => null);
+    let n = 0;
+    for (const a of (await this.d.repo.liste()).filter((x) => x.dann.some((k) => k.art === 'favoriten'))) {
+      const dann = a.dann.map((k) => (k.art !== 'favoriten' ? k : { ...k, ...(f.erlaubt === 'rollen' && f.rollen.length ? { rollen: f.rollen } : {}), ...(f.vorgabe ? {} : { vorgabe: false }) }));
+      const geaendert = JSON.stringify(dann) !== JSON.stringify(a.dann);
+      const aktiv = niemand ? false : a.aktiv;
+      if (!geaendert && aktiv === a.aktiv) continue;
+      if (geaendert) { if (await this.d.repo.speichere(a.id, { ...a, dann, aktiv }, konto?.id ?? null, a.version)) n++; }
+      else { await this.d.repo.setze(a.id, { aktiv }); n++; }
+    }
+    await einst.schreibe('favoriten_freigabe', null);
+    log.info('Freigabe „Favoriten benachrichtigen“ in Automatisierungen übernommen', { erlaubt: f.erlaubt, rollen: f.rollen.length, vorgabe: f.vorgabe, automatisierungen: n });
+    return n;
   }
 
   /** Hinweis „umgezogen“ (#712) gelesen – verschwindet aus der Werkbank. */
@@ -760,7 +862,7 @@ export class Automatisierungen {
   async lauf(id: string): Promise<Lauf> { const l = await this.d.repo.lauf(id); if (!l) throw new Fachfehler(404, t('automatisierung.lauf.fehlt')); return l; }
 
   /** Für die Werkbank-Übersicht: fehlgeschlagene Läufe und angehaltene Automatisierungen. */
-  async warnungen(): Promise<{ fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: Angehalten['grund'] }>; umgezogen: { am: string; anzahl: number } | null; ohneBenachrichtigungen: boolean }> {
+  async warnungen(): Promise<{ fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: Angehalten['grund'] }>; umgezogen: { am: string; anzahl: number } | null; ohneBenachrichtigungen: boolean; ohnePostFuerDich: boolean }> {
     const [fehl, liste] = await Promise.all([this.d.repo.fehlgeschlagene(), this.d.repo.liste()]);
     const aktiv = liste.filter((a) => a.aktiv);
     // Was nicht mehr passt (Feld oder Ansicht gelöscht), zählt sofort – nicht erst beim nächsten Lauf.
@@ -769,7 +871,10 @@ export class Automatisierungen {
       : k && automatisierungsProbleme(a, k).length ? [{ id: a.id, name: a.name, grund: 'fehlerhaft' as const }] : []));
     // Ohne Paket „Benachrichtigungen“ (#678): Keine Automatisierung schickt die Tägliche Zusammenfassung.
     const ohneBenachrichtigungen = !liste.some((a) => a.dann.some((d) => d.art === 'zusammenfassung'));
-    return { fehlgeschlagen: new Set(fehl.map((l) => l.automatisierungId)).size, angehalten, umgezogen: await this.umzug(), ohneBenachrichtigungen };
+    // #1001: Keine Automatisierung legt „Post für dich“ an (Paket „Benachrichtigungen“ fehlt oder ist älter als 1.3.0).
+    const postTyp = (await this.d.dienst.kern.system()).post.id;
+    const ohnePostFuerDich = !liste.some((a) => a.aktiv && istPostFuerDich(a, postTyp));
+    return { fehlgeschlagen: new Set(fehl.map((l) => l.automatisierungId)).size, angehalten, umgezogen: await this.umzug(), ohneBenachrichtigungen, ohnePostFuerDich };
   }
 
   /** Nach einer Wiederherstellung: alle eingeschalteten anhalten, bis ein Admin sie wieder einschaltet. */
@@ -799,7 +904,9 @@ export class Automatisierungen {
       throw x;
     });
     if (typ && m.typId !== typ.id) throw new Fachfehler(422, t('automatisierung.test.typ', { typ: typ.name }));
-    const daten: Record<string, unknown> = { mappe: m.id, typ: m.typId, ...(a.wenn.art === 'datum' ? { feld: a.wenn.feld, datum: m.werte[a.wenn.feld] ?? null, tage: tageBis(m.werte[a.wenn.feld]) } : {}) };
+    // Zeitplan „für jeden Benutzer“ (#1001, statt „Jetzt senden“ unter Werkbank → Aufgaben): die gewählte Benutzer-Mappe ist der Benutzer des Laufs.
+    const daten: Record<string, unknown> = { mappe: m.id, typ: m.typId, ...(a.wenn.art === 'datum' ? { feld: a.wenn.feld, datum: m.werte[a.wenn.feld] ?? null, tage: tageBis(m.werte[a.wenn.feld]) } : {}),
+      ...(a.wenn.art === 'zeitplan' && a.wenn.jeBenutzer ? { benutzer: m.id } : {}) };
     const l = await this.fuehreAus(a, { id: randomUUID(), art: a.wenn.art, daten, kette: 0 }, { trocken, test: true });
     return l ?? this.lauf(id);
   }
@@ -841,7 +948,8 @@ export class Automatisierungen {
   async ereignis(e: KatalogEreignis): Promise<void> {
     if (!(e.art in EREIGNISKATALOG) || OHNE_WENN.includes(EREIGNISKATALOG[e.art].gruppe) || e.ausloeser?.still) return;
     const alle = await this.d.repo.liste();
-    const liste = alle.filter((a) => a.aktiv && !a.angehalten && a.wenn.art === e.art && this.passt(a, e));
+    // „Mappe gespeichert“ mit „auch beim Anlegen“ (#1001) hört zusätzlich auf „Mappe angelegt“.
+    const liste = alle.filter((a) => a.aktiv && !a.angehalten && (a.wenn.art === e.art || (e.art === 'mappe.angelegt' && a.wenn.art === 'mappe.geaendert' && a.wenn.angelegt === true)) && this.passt(a, e));
     if (liste.length) await this.reihe(liste, { id: e.id, art: e.art, daten: e.daten, kette: e.ausloeser?.art === 'automatisierung' ? (e.ausloeser.kette ?? 1) : 0, ausloeser: e.ausloeser });
     if (e.art === 'mappe.angelegt' || e.art === 'mappe.geaendert') await this.datumImVorlauf(e, alle);
   }
@@ -873,7 +981,7 @@ export class Automatisierungen {
     const w = a.wenn;
     if (w.art === 'datum' || w.art === 'zeitplan') return false;
     if (EREIGNISKATALOG[w.art].gruppe !== 'benutzer' && w.typ && e.daten.typ !== w.typ) return false;
-    if (w.art === 'mappe.geaendert' && w.felder?.length) { const g = alsListe(e.daten.felder); if (!w.felder.some((f) => g.includes(f))) return false; }
+    if (w.art === 'mappe.geaendert' && e.art === 'mappe.geaendert' && w.felder?.length) { const g = alsListe(e.daten.felder); if (!w.felder.some((f) => g.includes(f))) return false; }
     return true;
   }
 
@@ -1145,8 +1253,10 @@ export class Automatisierungen {
     const alle = (await this.d.repo.liste()).filter((a) => a.aktiv && !a.angehalten && a.wenn.art === 'zeitplan');
     if (!alle.length) return;
     const einst = this.d.dienst.kern.einstellungen;
+    // Feiertage nach Werkbank → Region (#726; bis dahin stand das Bundesland bei der Täglichen Zusammenfassung).
     const roh = ((await einst?.lies('aufgaben_mail')) ?? {}) as { bundesland?: unknown };
-    const bundesland = istBundesland(roh.bundesland) ? roh.bundesland : null;
+    const region = einst ? liesRegion(await einst.lies('region'), roh.bundesland) : null;
+    const bundesland = region ? region.bundesland : istBundesland(roh.bundesland) ? roh.bundesland : null;
     const merker = (schluessel: string): Merker => {
       if (einst) return { lies: async () => { const v = await einst.lies(schluessel); return typeof v === 'string' ? v : null; }, beanspruche: async (alt, tag) => {
         if (einst.tausche) return einst.tausche(schluessel, alt, tag);

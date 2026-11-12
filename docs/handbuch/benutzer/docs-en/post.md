@@ -76,7 +76,7 @@ Ablago sets channel and *Assigned to* itself. You can change everything else as 
 
 ## To someone { #fur-jemanden }
 
-If you enter a user under **To**, the post appears under [To do](eingang.md) for them with the task **Post for you**. When it is assigned, completed or given to someone else, the task completes itself. If the user is absent, their stand-in gets it.
+If you enter a user under **To**, the post appears under [To do](eingang.md) for them with the task **Post for you – please assign**. When it is assigned, completed or given to someone else, the task completes itself. If the user is absent, their stand-in gets it. The automation *Post for you* (Notifications package) creates the task; if it is switched off for you, new post only appears under **New post**, not under “To do” – ask your administrator then.
 
 ## Take over document { #zuordnen }
 

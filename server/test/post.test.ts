@@ -1,6 +1,6 @@
 /** Systemmappentyp Post (#192): anlegen, „An“ (bis #1042 „Für“), Zuordnen, Sichten, Rechte, Umstellung vom Typ E-Mail. */
 import assert from 'node:assert/strict';
-import { wieImModus } from './hilfen';
+import { postFuerDich, wieImModus } from './hilfen';
 import { describe, it } from 'node:test';
 import { POST_KANAL, POST_STAND, systemfelder } from '../../shared/src/model';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
@@ -77,21 +77,30 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(n.titel, 'Steuerbescheid');
   });
 
-  it('„An“: Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist', async () => {
-    const { d, anna, ben, B } = await aufbau();
+  it('„An“: Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist (#1001: über die Automatisierung)', async () => {
+    const { d, konten, anna, ben, B } = await aufbau();
+    // Ohne Automatisierung legt der Kern seit #1001 keine Aufgabe mehr an.
+    const ohne = await d.post.legePostAn({ betreff: 'Ohne Automatisierung', an: ben.id }, { id: anna.id, name: 'Anna' });
+    assert.equal((await d.vertretung.meineAufgaben(B)).filter((a) => a.mappeId === ohne.id).length, 0);
+    const { verteile } = await postFuerDich(d, konten);
     const m = await d.post.legePostAn({ betreff: 'Für Ben', an: ben.id }, { id: anna.id, name: 'Anna' });
+    await verteile();
     const offen = async () => (await d.vertretung.meineAufgaben(B)).filter((a) => a.art === 'post');
     assert.equal((await offen()).length, 1);
     assert.equal((await offen())[0].mappeId, m.id);
+    assert.equal((await offen())[0].text, 'Post für dich – bitte zuordnen');
     // Speichern ohne Änderung legt keine zweite an.
     await d.mappen.aendereMappe(m.id, { werte: { betreff: 'Für Ben!' } }, anna.id);
+    await verteile();
     assert.equal((await offen()).length, 1);
     // An Anna weitergeben: Bens Aufgabe erledigt, Anna hat eine.
     await d.mappen.aendereMappe(m.id, { werte: { an: anna.id } }, anna.id);
     assert.equal((await offen()).length, 0);
+    await verteile();
     assert.equal((await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 1);
     // Erledigt: keine Aufgabe mehr.
     await d.mappen.aendereMappe(m.id, { werte: { stand: POST_STAND.erledigt } }, anna.id);
+    await verteile();
     assert.equal((await d.vertretung.meineAufgaben({ id: anna.id, rolle: 'admin' })).filter((a) => a.art === 'post').length, 0);
   });
 

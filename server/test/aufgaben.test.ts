@@ -93,7 +93,7 @@ describe('Aufgaben (#54, #56)', () => {
     assert.ok((await d.mappenHistorie.historie(m.id)).some((x) => x.daten.text === 'Erwähnung von Ben in einer Notiz entfernt'));
   });
 
-  it('schickt einmal am Tag eine Zusammenfassung an alle mit offenen Aufgaben', async () => {
+  it('Zusammenfassung an jemanden mit offenen Aufgaben; abbestellt → nichts (wann: Automatisierung, zusammenfassung.test.ts)', async () => {
     const { d, konten, t, A, ben } = await aufbau();
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '11' } }, A.id);
     await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Kündigen' }, A.id);
@@ -101,16 +101,13 @@ describe('Aufgaben (#54, #56)', () => {
     const mail = new Aufgabenmail({
       benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
       aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Vorgang',
-    }, () => ({ async sende(an, betreff, text) { mails.push({ an, betreff, text }); } }), () => 'http://nas:8080', speicherEinstellungen());
-    await mail.speichere({ uhrzeit: '07:00' });
-    assert.equal(await mail.pruefe(new Date('2026-10-29T05:30:00Z')), 0, '06:30 in Berlin: noch nicht');
-    assert.equal(await mail.pruefe(new Date('2026-10-29T06:30:00Z')), 1);
-    assert.equal(await mail.pruefe(new Date('2026-10-29T09:00:00Z')), 0, 'nur einmal am Tag');
+    }, () => ({ async sende(an, betreff, text) { mails.push({ an, betreff, text }); } }), () => 'http://nas:8080');
+    assert.equal((await mail.fuerAutomatisierung(ben.id, false)).schluessel, 'gesendet');
     assert.equal(mails[0].an, 'ben@example.org');
     assert.match(mails[0].text, /11 \(Vorgang\): Kündigen\n  http:\/\/nas:8080\/ablage\/eingang\//);
     await konten.setzeEinstellung((await konten.listeBenutzer()).find((b) => b.id === ben.id)!, 'aufgaben_mail', false);
-    assert.equal(await mail.sende(), 0, 'abbestellt');
-    await assert.rejects(mail.speichere({ uhrzeit: '25:00' }), status(422));
+    assert.equal((await mail.fuerAutomatisierung(ben.id, false)).schluessel, 'abbestellt');
+    assert.equal(mails.length, 1);
   });
 });
 

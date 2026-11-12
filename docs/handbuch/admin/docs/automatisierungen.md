@@ -8,7 +8,7 @@ Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündig
 
 | Bereich | Was hinein gehört |
 |---|---|
-| **Wenn** | genau eine Karte: ein Ereignis (Mappe angelegt, gespeichert, Notiz, Dokument hochgeladen, Favorit geändert, Kontosperre …), **Datum erreicht** oder **Zeitplan** |
+| **Wenn** | genau eine Karte: ein Ereignis (Mappe angelegt, gespeichert – auf Wunsch nur bei bestimmten Feldern und **auch beim Anlegen** –, Notiz, Dokument hochgeladen, Favorit geändert, Kontosperre …), **Datum erreicht** oder **Zeitplan** |
 | **Und** | keine, eine oder mehrere Bedingungen: Feldwerte wie bei den [Ansichten](sichten.md), „Mappe ist in Ansicht …“, „Mappe ist Favorit von …“, Gruppen mit „alle“ oder „eine genügt“; jede Bedingung lässt sich mit **nicht** umkehren |
 | **Dann** | eine oder mehrere Karten, der Reihe nach: **Feld ändern**, **Aufgabe / Benachrichtigung**, **Tägliche Zusammenfassung senden**, **Favoriten-Änderungen melden**, **Anmeldeschutz melden**, **Danach keine weiteren Automatisierungen** |
 
@@ -83,9 +83,10 @@ Der Vorrat zeigt nur, was zur Wenn-Karte passt: **Feld ändern** etwa nur, wenn 
 - **Platzhalter mit den Rechten des Empfängers:** Ablago füllt den Text für jeden Empfänger einzeln – bei einer Rolle also je Person, bei einer Vertretung mit den Rechten des Vertreters. Was die Person nicht sehen darf, steht als „(nicht sichtbar)“ da, etwa der Titel eines verknüpften Kontakts. So verrät auch die Tägliche Zusammenfassung nichts. Der **Testlauf** im Editor nennt, wer etwas nicht sehen darf („Jonas darf nicht alles sehen …“).
 - **Ohne Leserecht an der Mappe** kommt die Aufgabe trotzdem an. Die Person sieht aber nur „Aufgabe zu einer Mappe, die du nicht sehen darfst – frag …“ und die Fälligkeit (bei Aufgaben zu einem Datumsfeld auch die nicht). Du findest den Fall unter [Aufgaben bei Personen ohne Leserecht](aufgaben.md#aufgaben-bei-personen-ohne-leserecht).
 - Aufgaben aus Automatisierungen verhalten sich wie die eingebauten: Ist jemand **abwesend oder deaktiviert**, geht die Aufgabe an seine **Vertretung** (in der Historie steht „weitergegeben wegen Abwesenheit …“). Gibt es keine, bekommen sie die Administratoren – der Lauf bricht nicht ab.
-- Eine Aufgabe **erledigt sich selbst**, wenn ihr Anlass wegfällt: bei **Datum erreicht**, wenn das Datum geändert oder geleert wird; bei **Neue Post**, wenn die Post zugeordnet oder erledigt ist; bei **Abwesenheit gesetzt**, wenn die Abwesenheit endet.
+- Eine Aufgabe **erledigt sich selbst**, wenn ihr Anlass wegfällt: bei **Datum erreicht**, wenn das Datum geändert oder geleert wird; bei **Neue Post** und bei *Post angelegt oder gespeichert*, wenn die Post zugeordnet oder erledigt ist; bei **Abwesenheit gesetzt**, wenn die Abwesenheit endet.
+- Geht eine Aufgabe zu einer Post an die **Person unter „An“**, ist sie eine Aufgabe **Post für dich**: je Post und Person nur eine, und sie erledigt sich auch, sobald die Post an jemand anderen geht (siehe [Post für dich](#post-fur-dich)).
 - **Tägliche Zusammenfassung senden** (nur mit *Zeitplan für jeden Benutzer*) schickt der Person ihre offenen Aufgaben per E-Mail – derselbe Inhalt wie bisher. Wer sie unter Mein Konto abbestellt hat, abwesend ist oder nichts offen hat, bekommt keine; der Verlauf nennt den Grund.
-- **Favoriten-Änderungen melden** (nur mit *Favorit geändert*) gibt allen, die die Mappe als Favorit haben, die gebündelte Benachrichtigung „Geändert“ – wie bisher. Die [Freigabe für Favoriten](aufgaben.md#favoriten-benachrichtigen) und der Schalter unter Mein Konto gelten weiter; eigene Änderungen melden nie.
+- **Favoriten-Änderungen melden** (nur mit *Favorit geändert*) gibt allen, die die Mappe als Favorit haben, die gebündelte Benachrichtigung „Geändert“ – wie bisher. **Nur an Mitglieder dieser Rollen** schränkt ein (keine Rolle = alle), **Neue Benutzer bekommen die Benachrichtigung** legt die Vorgabe fest – beides stand bis 0.256 unter Werkbank → Aufgaben ([Favoriten benachrichtigen](aufgaben.md#favoriten-benachrichtigen)). Der Schalter unter Mein Konto gilt weiter; eigene Änderungen melden nie.
 - **Anmeldeschutz melden** schickt allen, die den Anmeldeschutz verwalten, entweder die **Sammelmeldung** über die Sperren (mit *Zeitplan*, nicht je Benutzer) oder sofort eine Mail, wenn ein **Benutzerkonto gesperrt** wurde (mit *Benutzerkonto gesperrt*, je Konto höchstens einmal am Tag). Siehe [Anmeldeschutz](anmeldeschutz.md#mail-an-die-administratoren).
 - **Paket nach Zeitplan ausführen** (nur mit *Zeitplan*, nicht je Benutzer) sagt einem Paket, dass sein Zeitpunkt erreicht ist – siehe [unten](#paket-nach-zeitplan).
 - **Danach keine weiteren Automatisierungen** beendet die Reihe: Automatisierungen mit höherer Nummer laufen für dieses Ereignis nicht mehr (im Verlauf „Übersprungen durch …“).
@@ -138,9 +139,23 @@ Wird für jemanden eine **Abwesenheit mit Vertreter** eingetragen, bekommt der V
 
 ### Benachrichtigungen
 
-Die **Tägliche Zusammenfassung**, das Melden geänderter **Favoriten** und die Mails des **Anmeldeschutzes** sind Automatisierungen. Das Paket **Benachrichtigungen** bringt sie mit; im Einrichtungsassistenten ist es vorausgewählt. Ohne eine Automatisierung mit *Tägliche Zusammenfassung senden* weist die Werkbank-Übersicht darauf hin: „Keine automatischen Benachrichtigungen“ mit **Paket installieren**.
+Die **Tägliche Zusammenfassung**, das Melden geänderter **Favoriten**, die Aufgabe **Post für dich** und die Mails des **Anmeldeschutzes** sind Automatisierungen – eingestellt wird das nur hier, nicht mehr unter [Werkbank → Aufgaben](aufgaben.md#werkbank-aufgaben). Das Paket **Benachrichtigungen** bringt sie mit; im Einrichtungsassistenten ist es vorausgewählt. Ohne eine Automatisierung mit *Tägliche Zusammenfassung senden* weist die Werkbank-Übersicht darauf hin: „Keine automatischen Benachrichtigungen“ mit **Paket installieren**; fehlt nur *Post für dich* (oder ist sie aus), heißt der Hinweis „Keine Aufgabe „Post für dich““.
 
 Beim Update auf diese Fassung hat Ablago in bestehenden Ablagen **einmal** vier Automatisierungen mit den bisherigen Werten angelegt: *Tägliche Zusammenfassung* (Uhrzeit aus Mein Konto, an oder aus wie bisher), *Favoriten-Änderungen melden*, *Sammelmeldung Anmeldeschutz* und *Kontosperre sofort melden* (an, wenn die Haken im Anmeldeschutz gesetzt waren). Für Benutzer ändert sich nichts. Installierst du das Paket, gehen sie in dessen Automatisierungen auf, solange du sie nicht geändert hast.
+
+### Post für dich
+
+Steht bei neuer [Post](https://help.ablago.app/benutzer/aktuell/post/) jemand unter **An**, bekommt er die Aufgabe **Post für dich – bitte zuordnen**. Bis Version 0.256 war das fest eingebaut; seit 0.257 macht es die Automatisierung **Post für dich** aus dem Paket **Benachrichtigungen** (ab 1.3.0):
+
+| Karte | Inhalt |
+| --- | --- |
+| Wenn | *Mappe gespeichert*, Mappentyp **Post**, nur bei Änderung von **An** oder **Stand**, **auch beim Anlegen** |
+| Und | *An* ist nicht leer, *Stand* ist *Neu* |
+| Dann | *Aufgabe* an die Person in **An**, Text „Post für dich – bitte zuordnen“ |
+
+Das Verhalten ist dasselbe wie vorher: Ist die Person abwesend, geht die Aufgabe an ihre **Vertretung**. Sie **erledigt sich selbst**, sobald die Post zugeordnet oder erledigt ist oder unter *An* jemand anderes steht – der bekommt dann seine eigene. Je Post und Person gibt es **nur eine**, auch wenn die Post mehrmals gespeichert wird. Die Zahl **Neue Post** auf der Startseite zählt weiter die Post, nicht die Aufgaben – sie ändert sich nicht.
+
+**Beim Update auf 0.257:** Ist das Paket Benachrichtigungen installiert, legt Ablago **einmal** eine eingeschaltete Automatisierung *Post für dich* mit diesen Karten an; das Update des Pakets auf 1.3.0 ersetzt sie, solange du sie nicht geändert hast (an oder aus bleibt). Offene Aufgaben „Post für dich“ von vorher bleiben und erledigen sich wie bisher. **Ist das Paket nicht installiert, bekommt bei neuer Post niemand mehr diese Aufgabe** – die Werkbank-Übersicht weist darauf hin; installierst du das Paket, ist sie wieder da.
 
 ### Erinnerungen aus früheren Versionen
 

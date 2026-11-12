@@ -348,7 +348,7 @@ Sets which areas are on the left of the workbench – following a template ("Hou
 See also: [Workbench](#werkbank), [Overview](#ubersicht), [Business](#betrieb).
 
 <a id="tagliche-zusammenfassung"></a>**Daily summary** (*Tägliche Zusammenfassung*) · ✓ everyday word · everyone  
-An email that lists a user's open tasks once a day – only if they have some and aren't absent. Administrators switch it on under Workbench → Settings → Notifications and tasks; everyone chooses the time and weekdays under My account.  
+An email that lists a user's open tasks once a day – only if they have some and aren't absent. Administrators switch it on under Workbench → Automations (automation “Daily summary” from the Notifications package); everyone chooses the time and weekdays under My account.  
 See also: [Task](#aufgabe), [To do](#zu-erledigen).
 
 <a id="design"></a>**Design** · ✓ everyday word · administrators  

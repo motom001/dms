@@ -5,7 +5,7 @@ auflösen und abtrennen, Fotos als Post, die Eingangskanäle und die Mappen, die
 Benutzer, Rollen). Schicht 3 der Zielaufteilung – über Mappen, Dokumenten, Rechteprüfung und Kern.
 
 - `post.dienst.ts` – `PostDienst`: `legePostAn` (eine Transaktion #404), `ordneZu` (#192, auflösen #936),
-  `automatischZuordnen` und `automatikRueckgaengig` (#337), `postAufgaben` („Post für dich“).
+  `automatischZuordnen` und `automatikRueckgaengig` (#337), `postAufgaben` („Post für dich“ erledigen; anlegen tut sie seit #1001 die Automatisierung).
 - `aufloesen.ts` – `PostAufloesen` (#934, #936): `verschiebeInRegister`, `ebenAngelegt`, `aufloesenSperre`,
   `loesePostAuf`, `legeAbgetrenntAn`, `trennePostAb`.
 - `systemmappen.ts` – `PostSystemmappen`: `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, Rollen
@@ -30,8 +30,8 @@ Benutzer, Rollen). Schicht 3 der Zielaufteilung – über Mappen, Dokumenten, Re
 
 **Regeln**
 
-- Reihenfolge und Transaktion bleiben: `legePostAn` schreibt Mappe, Historie, Titel, „Post für dich“,
-  `post.angelegt` und die Verknüpfungen in einer Transaktion; `ordneZu` setzt Stand und Verweis vor
+- Reihenfolge und Transaktion bleiben: `legePostAn` schreibt Mappe, Historie, Titel, `post.angelegt` und die
+  Verknüpfungen in einer Transaktion (die Aufgabe „Post für dich“ kommt danach aus der Automatisierung, #1001); `ordneZu` setzt Stand und Verweis vor
   `postAufgaben`; Auflösen und automatisches Zuordnen laufen je in einer Transaktion.
 - Den Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` meldet weiter der Dienst an (letzter in der
   Reihe); er ruft `post.postAufgaben`. Ereignisse gehen über den Anschluss (Tests ersetzen `dienst.kern.ereignis`),

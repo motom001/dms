@@ -184,8 +184,9 @@ function faelle(pg: boolean) {
       }
       const { routen: r } = await import('../src/routen');
       const { d, konten } = await aufbauFristen(pg);
-      const mail = { einstellung: async () => ({ aktiv: true, uhrzeit: '07:00', bundesland: 'SN' as const }) };
-      const route = r(d, konten, { aufgabenmail: mail as never }).find((x) => x.methode === 'GET' && x.pfad === '/api/termine')!;
+      // Feiertage aus der Region (#726; seit #1001 nicht mehr über die Tägliche Zusammenfassung).
+      const region = { lies: async () => ({ land: 'DE', bundesland: 'SN' as const, zeitzone: 'Europe/Berlin' }) };
+      const route = r(d, konten, { region: region as never }).find((x) => x.methode === 'GET' && x.pfad === '/api/termine')!;
       const ich = (await konten.listeBenutzer())[0];
       const j = (await route.handler({ body: {}, params: {}, query: { von: '2027-01-01', bis: '2027-12-31' }, ip: '1', benutzer: ich })).body as Antwort;
       assert.equal(j.feiertage?.['2027-11-17'], 'Buß- und Bettag');

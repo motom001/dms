@@ -4,15 +4,16 @@
 @-Erwähnungen, Fristen, Erinnerungen und Termine, Aufgaben bei Personen ohne Leserecht und der Alltags-Benutzer für
 Aufgaben ohne Empfänger. Schicht 3 der Zielaufteilung – über Mappen, Ereignissen und Rechteprüfung.
 
-- `aufgaben.dienst.ts` – `AufgabenDienst`: `pruefeEmpfaenger`, Erwähnungen (#56, #81), Freigabe „Favoriten
-  benachrichtigen“ (#506), `aufgabenEmpfaenger` und `aufgabeAusAutomatisierung` (#676, #724), `erledigeNachAnlass`.
+- `aufgaben.dienst.ts` – `AufgabenDienst`: `pruefeEmpfaenger`, Erwähnungen (#56, #81), `aufgabenEmpfaenger` und
+  `aufgabeAusAutomatisierung` (#676, #724; „Post für dich“ #1001), `erledigeNachAnlass`.
   Dazu die gemeinsamen Typen `AufgabenTeile` und `AufgabenAnschluss`.
 - `vertretung.ts` – `AufgabenVertretung` (#77, #78, #415): Empfänger auflösen, umleiten, übergeben,
   `abwesenheitGeaendert`, vergeben, erledigen, weitergeben (auch gesammelt), gebündelt benachrichtigen, „Zu erledigen“.
 - `ohne-leserecht.ts` – `OhneLeserecht` (#798, #958): Hinweis statt Text, Fälle abgleichen, Leserecht auf Zeit.
 - `fristen.ts` – `Fristen` (#129–#133, #528, #725): Frist-Aufgaben abgleichen, „Frist erreicht“, Erinnerungen,
   Termine samt Zwischenspeicher, Folgetermin; der tägliche Lauf ruft die fälligen Mappen-Abläufe.
-- `ohne-empfaenger.ts` – `OhneEmpfaenger` (#719, #422): Alltags-Benutzer, Favoriten benachrichtigen.
+- `ohne-empfaenger.ts` – `OhneEmpfaenger` (#719, #422): Alltags-Benutzer, Favoriten benachrichtigen (wer, seit #1001
+  aus der Automatisierung „Favoriten-Änderungen melden“).
 - `ablaeufe.ts` – `MappenAblaeufe` (#1044): Automatisierungsvorlagen („Aufgabe vergeben“, „Erinnern“, aus Paketen,
   eigene) und Mappen-Abläufe – anwenden, laufen lassen mit den Rechten der Person zur Laufzeit, Werkbank.
 - `index.ts` – die einzige Tür. `aufgaben.routen.ts` (Routen, #960) holt `routen.ts` direkt.

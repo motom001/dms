@@ -145,7 +145,6 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     return e;
   };
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, t('meldungen.routen.betriebseinstellungen-sind-nicht')); return x.betrieb; };
-  const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, t('meldungen.routen.die-aufgaben-mail-ist')); return x.aufgabenmail; };
   const region = () => { if (!x.region) throw new Fachfehler(404, t('meldungen.routen.die-region-ist-nicht')); return x.region; };
   const sprachen = () => { if (!x.sprachen) throw new Fachfehler(404, t('meldungen.sprachen.nicht-eingerichtet')); return x.sprachen; };
   /** Sprache für die Oberfläche (#729): die der Person, sonst die mitgeschickte, sonst die der Installation. */
@@ -163,7 +162,9 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   });
   /** Eigene Einstellung der täglichen Zusammenfassung mit den Standards der Werkbank (#92, #94). */
   const zusammenfassung = async (i: Benutzer) => {
-    const std = x.aufgabenmail ? await x.aufgabenmail.einstellung() : MAIL_STANDARD;
+    // Standard seit #1001 aus der eingeschalteten Automatisierung (Uhrzeit ihrer Wenn-Karte), Feiertage aus der Region.
+    const vorgabe = (await dienst.zusammenfassungVorgabe?.()) ?? null;
+    const std = { aktiv: !!vorgabe, uhrzeit: vorgabe?.uhrzeit ?? MAIL_STANDARD.uhrzeit, bundesland: x.region ? (await x.region.lies()).bundesland : null };
     const e = await konten.einstellungen(i);
     const eigen = e.aufgaben_mail_zeit && typeof e.aufgaben_mail_zeit === 'object' ? e.aufgaben_mail_zeit as Partial<MailZeit> : null;
     return {
@@ -351,7 +352,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     dienst, konten, x, fotostapel, messung, system, designs, log,
     pakete, paketerstellung, entdecken, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
     abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, typName, nurSelbst,
-    betrieb, mail, region, sprachen, spracheFuer, regionStand, zusammenfassung, ocr,
+    betrieb, region, sprachen, spracheFuer, regionStand, zusammenfassung, ocr,
     meldungen, tresor, schluessel, webhooks, autos, passwoerterAnzeigen, verwaltungHinweis, modusSpur,
     zg, empfaengerSichtbar, leseHinweis, darf, zuletztGeoeffnet, entschluessele, mitRollen, sicherung,
     sicherungsPaket, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, auskunftZiel, loeschkonzeptQuelle, abrufTickets, abrufBremse,

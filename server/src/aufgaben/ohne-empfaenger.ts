@@ -10,7 +10,6 @@ import type { MappenHistorie } from '../mappen';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache';
-import { favoritenErlaubt } from '../../../shared/src/favoritenfreigabe';
 import type { Benutzer } from '../../../shared/src/model';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -38,7 +37,13 @@ export class OhneEmpfaenger {
   private persoenlichAn(benutzerId: string, schluessel: string) { return this.teile.mappen.persoenlichAn(benutzerId, schluessel); }
   private empfaengerAufloesen(id: string | null) { return this.teile.vertretung.empfaengerAufloesen(id); }
   private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.teile.vertretung.benachrichtigeGebuendelt(...a); }
-  private favoritenFreigabe() { return this.teile.aufgaben.favoritenFreigabe(); }
+  /** Regeln aus den Automatisierungen (#1001); ohne Motor: für alle, Vorgabe an. */
+  private async favoritenRegeln(): Promise<Array<{ rollen: string[]; vorgabe: boolean }>> {
+    const lies = async () => (await this.anschluss.favoritenRegeln?.()) ?? [{ rollen: [], vorgabe: true }];
+    // Einmal je Anfrage: Profil, Favoritenliste und Benachrichtigen fragen es je Person.
+    return this.kern.inEigenerTransaktion() ? lies() : [...await jeAnfrage(`${this.kennung}|favoritenregeln`, lies)];
+  }
+  private async rollenVon(benutzerId: string): Promise<string[]> { return alsListe((await this.repo.holeMappe(benutzerId))?.werte.rollen); }
 
   /** Unterscheidet zwei Dienste in derselben Anfrage (Tests mit zwei „Prozessen“). */
   private readonly kennung = randomUUID();
@@ -98,25 +103,23 @@ export class OhneEmpfaenger {
     }
   }
 
-  /** Darf dieser Benutzer bei Änderungen an Favoriten benachrichtigt werden? Rollen aus seiner Benutzer-Mappe. */
+  /**
+   * Bekommt dieser Benutzer Benachrichtigungen zu Favoriten (#506; seit #1001 aus den Automatisierungen)? Ja, wenn eine
+   * eingeschaltete Automatisierung „Favoriten-Änderungen melden“ ihn erreicht – ohne Rollen-Auswahl alle, sonst die
+   * Mitglieder der gewählten Rollen (Rollen aus seiner Benutzer-Mappe). Ohne eine solche Automatisierung niemand.
+   */
   async favoritenBenachrichtigungErlaubt(benutzerId: string): Promise<boolean> {
-    const f = await this.favoritenFreigabe();
-    if (f.erlaubt !== 'rollen') return f.erlaubt === 'alle';
-    return favoritenErlaubt(f, alsListe((await this.repo.holeMappe(benutzerId))?.werte.rollen));
+    const regeln = await this.favoritenRegeln();
+    if (regeln.some((r) => !r.rollen.length)) return true;
+    if (!regeln.length) return false;
+    const meine = new Set(await this.rollenVon(benutzerId));
+    return regeln.some((r) => r.rollen.some((x) => meine.has(x)));
   }
 
-  /** „Auf alle anwenden“: die Vorgabe für neue Benutzer bei allen bestehenden setzen; Anzahl. */
-  async favoritenVorgabeAnwenden(von: string): Promise<number> {
-    if (!this.konten?.benutzer || !this.konten.setzeEinstellung) throw new Fachfehler(404, t('meldungen.dienst.benutzerkonten-sind-nicht'));
-    const { vorgabe } = await this.favoritenFreigabe();
-    let n = 0;
-    for (const b of await this.konten.benutzer()) {
-      if (b.art === 'dienst') continue;
-      await this.konten.setzeEinstellung(b.id, 'favoriten_benachrichtigen', vorgabe ? null : false);
-      n++;
-    }
-    protokoll.modul('werkbank').info('Vorgabe für Favoriten auf alle Benutzer angewandt', { von, vorgabe, benutzer: n });
-    return n;
+  /** Vorgabe für neue Benutzer (#506, seit #1001 in der Automatisierung): an, solange keine Automatisierung „aus“ sagt. */
+  async favoritenVorgabe(): Promise<boolean> {
+    const regeln = await this.favoritenRegeln();
+    return !regeln.length || regeln.some((r) => r.vorgabe);
   }
 
   /**
@@ -125,7 +128,7 @@ export class OhneEmpfaenger {
    * („3 Änderungen von Anna und Paul seit 01.11.“); erst nach dem Öffnen der Mappe oder „Erledigt“ kommt wieder eine.
    * Eigene Änderungen benachrichtigen nie.
    */
-  async favoritenMelden(mappeId: string, von: string): Promise<number> {
+  async favoritenMelden(mappeId: string, von: string, rollen: string[] = []): Promise<number> {
     const fav = (await this.repo.favoritenDerMappe(mappeId)).filter((f) => f.benachrichtigen && f.benutzerId !== von);
     if (!fav.length) return 0;
     let n = 0;
@@ -134,6 +137,8 @@ export class OhneEmpfaenger {
       if (aktiv && !aktiv.has(benutzerId)) continue;
       if (!(await this.persoenlichAn(benutzerId, 'favoriten_benachrichtigen'))) continue;
       if (!(await this.kannLesen(benutzerId, mappeId))) continue;
+      // Nur an Mitglieder der gewählten Rollen (#1001, früher die Freigabe in der Werkbank).
+      if (rollen.length && !(await this.rollenVon(benutzerId)).some((r) => rollen.includes(r))) continue;
       n++;
       await this.benachrichtigeGebuendelt({
         empfaengerId: benutzerId, mappeId, art: 'aenderung', schluessel: 'aenderung', von,

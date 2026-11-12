@@ -111,8 +111,13 @@ describe('Favorit = Abo (#422)', () => {
     assert.deepEqual(await hervorgehoben(), [], 'im Profil abgeschaltet');
   });
 
-  it('#506: Freigabe für alle, je Rolle (Systemrolle oder fachliche Rolle) oder gar nicht; eigene Einstellung bleibt', async () => {
+  it('#506/#1001: Rollen und Vorgabe stehen in der Automatisierung; ohne sie bekommt niemand etwas', async () => {
     const { d, konten, anna, ben, carl, t, B, C, geaendert } = await aufbau();
+    // Regeln wie aus den Automatisierungen „Favoriten-Änderungen melden“ (Motor: automatisierung.ts).
+    let regeln: Array<{ rollen: string[]; vorgabe: boolean }> = [{ rollen: [], vorgabe: true }];
+    d.favoritenRegeln = async () => regeln;
+    d.ereignisse.abbestellen('favoriten');
+    d.ereignisse.abonniere('favoriten', async (e) => { if (e.art === 'favorit.geaendert') for (const r of regeln) await d.ohneEmpfaenger.favoritenMelden(String(e.daten.mappe), String(e.daten.von), r.rollen); });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, anna.id);
     await d.mappen.setzeFavorit(B, m.id, true);
     await d.mappen.setzeFavorit(C, m.id, true);
@@ -120,22 +125,18 @@ describe('Favorit = Abo (#422)', () => {
     const rollen = await d.postSystemmappen.listeRollen();
     const mitglied = rollen.find((r) => r.system && r.name === 'Mitglied')!;
     assert.ok(mitglied, 'die Systemrolle steht in der Auswahl');
-    assert.equal(rollen.some((r) => r.name === 'Administrator'), false, 'keine Systemrolle „Administrator“ mehr (#818)');
-    // Standard: für alle, wie bisher.
-    assert.deepEqual(await d.aufgaben.favoritenFreigabe(), { erlaubt: 'alle', rollen: [], vorgabe: true });
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(ben.id), true);
-    // Gar nicht: niemand wird benachrichtigt, die persönliche Einstellung bleibt gespeichert.
+    // Keine eingeschaltete Automatisierung: niemand, die persönliche Einstellung bleibt gespeichert.
     await konten.setzeEinstellung(ben, 'favoriten_benachrichtigen', null);
-    await d.aufgaben.setzeFavoritenFreigabe({ erlaubt: 'aus', vorgabe: true }, 'anna@example.org');
+    regeln = [];
     await kurz();
     await d.mappen.aendereMappe(m.id, { werte: { nr: '2' } }, anna.id);
     assert.equal((await geaendert()).length, 0);
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(ben.id), false);
-    // Je Rolle – fachliche Rolle „Buchhaltung“ nur für Carl.
+    // Nur Rolle „Buchhaltung“ – Carl.
     const rolle = await d.mappen.legeMappeAn({ typId: (await d.mappentypen.listeTypen()).find((x) => x.system === 'rolle')!.id, werte: { name: 'Buchhaltung' } }, anna.id);
     await d.postSystemmappen.setzeRollen(carl.id, [rolle.id], anna.id);
-    await d.aufgaben.setzeFavoritenFreigabe({ erlaubt: 'rollen', rollen: [rolle.id, 'gibt-es-nicht'], vorgabe: true }, 'anna@example.org');
-    assert.deepEqual((await d.aufgaben.favoritenFreigabe()).rollen, [rolle.id], 'unbekannte Rollen fallen weg');
+    regeln = [{ rollen: [rolle.id], vorgabe: true }];
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(carl.id), true);
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(anna.id), false, 'Verwalten ist keine Rolle (#818)');
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(ben.id), false);
@@ -144,27 +145,22 @@ describe('Favorit = Abo (#422)', () => {
     assert.equal((await geaendertC()).length, 1);
     assert.equal((await geaendert()).length, 0);
     // Systemrolle Mitglied: Ben wieder dabei – seine gespeicherte Einstellung greift wieder.
-    await d.aufgaben.setzeFavoritenFreigabe({ erlaubt: 'rollen', rollen: [mitglied.id], vorgabe: true }, 'anna@example.org');
+    regeln = [{ rollen: [mitglied.id], vorgabe: true }];
     await kurz();
     await d.mappen.aendereMappe(m.id, { werte: { nr: '4' } }, anna.id);
     assert.equal((await geaendert()).length, 1);
-    // Rollen ohne Auswahl: abgelehnt.
-    await assert.rejects(() => d.aufgaben.setzeFavoritenFreigabe({ erlaubt: 'rollen', rollen: [] }, 'x'), /mindestens eine Rolle/);
   });
 
-  it('#506: Vorgabe für neue Benutzer ändert keine bestehenden; „auf alle anwenden“ schon', async () => {
+  it('#506/#1001: Vorgabe für neue Benutzer aus der Automatisierung ändert keine bestehenden', async () => {
     const { d, konten, ben } = await aufbau();
     await konten.setzeEinstellung(ben, 'favoriten_benachrichtigen', null);
-    await d.aufgaben.setzeFavoritenFreigabe({ erlaubt: 'alle', vorgabe: false }, 'anna@example.org');
+    d.favoritenRegeln = async () => [{ rollen: [], vorgabe: false }];
     assert.equal((await konten.einstellungen(ben)).favoriten_benachrichtigen, undefined, 'bestehender Benutzer unverändert');
     const { benutzer: dora } = await konten.legeBenutzerAn({ email: 'dora@example.org', name: 'Dora' });
     assert.equal((await konten.einstellungen(dora)).favoriten_benachrichtigen, false, 'neuer Benutzer bekommt die Vorgabe');
-    assert.equal(await d.ohneEmpfaenger.favoritenVorgabeAnwenden('anna@example.org'), 4);
-    assert.equal((await konten.einstellungen(ben)).favoriten_benachrichtigen, false);
-    await d.aufgaben.setzeFavoritenFreigabe({ erlaubt: 'alle', vorgabe: true }, 'anna@example.org');
-    assert.equal(await d.ohneEmpfaenger.favoritenVorgabeAnwenden('anna@example.org'), 4);
-    assert.equal((await konten.einstellungen(ben)).favoriten_benachrichtigen, undefined);
-    // Standard wird nicht gespeichert.
-    assert.deepEqual(await d.aufgaben.favoritenFreigabe(), { erlaubt: 'alle', rollen: [], vorgabe: true });
+    // Eine von zwei Automatisierungen mit Vorgabe an: an.
+    d.favoritenRegeln = async () => [{ rollen: [], vorgabe: false }, { rollen: [], vorgabe: true }];
+    const { benutzer: emil } = await konten.legeBenutzerAn({ email: 'emil@example.org', name: 'Emil' });
+    assert.equal((await konten.einstellungen(emil)).favoriten_benachrichtigen, undefined);
   });
 });

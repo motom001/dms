@@ -18,7 +18,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { eigeneDatenbank } from './hilfe-db';
-import { wieImModus } from './hilfen';
+import { postFuerDich, wieImModus } from './hilfen';
 
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));
 const PDF = (x: string) => Buffer.from(`%PDF-1.4 ${x}`);
@@ -192,7 +192,7 @@ async function mitKonten() {
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
     tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!) });
-  return { d, lena, jonas, rechnung, postTyp, rufe };
+  return { d, konten, lena, jonas, rechnung, postTyp, rufe };
 }
 
 describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
@@ -244,11 +244,13 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
   });
 
   it('„Neue Post“ zählt eins weniger; „Post für dich“ ist erledigt und bleibt an der Post', async () => {
-    const { d, lena, jonas, rechnung } = await mitKonten();
+    const { d, konten, lena, jonas, rechnung } = await mitKonten();
+    const { verteile } = await postFuerDich(d, konten);
     const z = await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' });
     const sicht = (await d.systemsichten.neuePostSicht())!;
     const post = await d.post.legePostAn({ betreff: 'Für Jonas', fuer: jonas.id }, { id: lena.id, name: 'Lena' });
     await d.post.legePostAn({ betreff: 'Nächste Post' }, { id: lena.id, name: 'Lena' });
+    await verteile();
     assert.equal((await d.sichten.zaehler({ id: lena.id, rolle: 'admin' }, z)).sichten[sicht], 2);
     assert.equal((await d.vertretung.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 1);
     const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'J-1' } }, lena.id);

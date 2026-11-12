@@ -109,8 +109,9 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     const mail = new Aufgabenmail({
       benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
       aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Notiz',
-    }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas', speicherEinstellungen());
-    await mail.sende();
+    }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas');
+    for (const b of await konten.listeBenutzer()) await mail.fuerAutomatisierung(b.id, false);
+    assert.ok(an.includes('cora@example.org'));
     assert.ok(!an.includes('ben@example.org'));
 
     // Abgelaufen: die stündliche Prüfung beendet die Abwesenheit

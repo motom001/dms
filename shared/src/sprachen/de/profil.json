@@ -1,5 +1,5 @@
 {
-  "favoriten.abgeschaltet": "Die Benachrichtigung bei geänderten Favoriten ist für dich ausgeschaltet – das wird in der Werkbank festgelegt. Deine Einstellung bleibt gespeichert und gilt wieder, sobald sie erlaubt ist.",
+  "favoriten.abgeschaltet": "Benachrichtigungen bei geänderten Favoriten bekommst du gerade nicht – das legt die Automatisierung „Favoriten-Änderungen melden“ fest (Werkbank → Automatisierungen). Deine Einstellung bleibt gespeichert und gilt wieder, sobald sie dich erreicht.",
   "laufwerk.bereich": "Laufwerk",
   "laufwerk.menue": "Als Laufwerk einbinden",
   "laufwerk.lade": "Lade …",
@@ -298,7 +298,7 @@
   "zusammenfassung.gesetzliche-feiertage-in": "Gesetzliche Feiertage in {land}.",
   "zusammenfassung.dafuer-muss-in-der": "Dafür muss in der Werkbank das Bundesland gewählt sein.",
   "zusammenfassung.nicht-an-feiertagen": "Nicht an Feiertagen{klein}",
-  "zusammenfassung.der-e-mail-versand": "Der E-Mail-Versand ist gerade nicht eingerichtet oder ausgeschaltet; deine Einstellung gilt, sobald er läuft.",
+  "zusammenfassung.der-e-mail-versand": "Der E-Mail-Versand oder die Automatisierung „Tägliche Zusammenfassung“ ist gerade nicht eingerichtet oder ausgeschaltet; deine Einstellung gilt, sobald beides läuft.",
   "zusammenfassung.gespeichert": "Gespeichert.",
   "zweifaktor.wiederherstellungscodes-je-einmal": "Wiederherstellungscodes (je einmal verwendbar)\n\n{codes}\n",
   "zweifaktor.bewahre-diese-codes-sicher": "Bewahre diese Codes sicher auf – getrennt vom Handy. Ohne Handy kommst du nur mit einem davon wieder hinein. Jeder Code gilt einmal. Sie werden nur jetzt angezeigt.",

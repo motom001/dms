@@ -3,7 +3,7 @@
  * Angaben, Zielmappe, nur lesbare Mappen. Alle Briefe, Namen, Nummern und Adressen sind erfunden.
  */
 import assert from 'node:assert/strict';
-import { wieImModus } from './hilfen';
+import { postFuerDich, wieImModus } from './hilfen';
 import { describe, it } from 'node:test';
 import { artVon, eindeutigerTreffer, findeAngaben, findeMappen, istAbsenderTyp, istIban, liesFeldErkennung, vorschlaegeAus } from '../../shared/src/erkennung';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
@@ -359,7 +359,8 @@ describe('Aus Dokument ausfüllen: Texterkennung sofort (#391)', () => {
 
 describe('Erkannte Post automatisch zuordnen (#337)', () => {
   it('Standard aus; an je Mappentyp: sicher = Absender eindeutig und genau eine Zielmappe; Aufgabe mit Rückgängig', async () => {
-    const { d, A, B, anna, ben, vertrag, strom, post } = await aufbau();
+    const { d, konten, A, B, anna, ben, vertrag, strom, post } = await aufbau();
+    const { verteile } = await postFuerDich(d, konten);
     const aus = await post(BRIEF, 'Ohne Einstellung');
     assert.equal((await d.mappen.holeMappe(aus.id)).mappe.werte.stand, 'Neu', 'Standard: aus');
     const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
@@ -383,8 +384,9 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     const e = await d.erkennung.fuerBenutzer(p.id, await d.rechtepruefung.zugriff(B));
     assert.equal(e.auto?.ziel, strom.id);
 
-    // Rückgängig durch Ben: Dokument zurück, Stand neu, wieder „Post für dich“.
+    // Rückgängig durch Ben: Dokument zurück, Stand neu, wieder „Post für dich“ (#1001: über die Automatisierung).
     const r = await d.post.automatikRueckgaengig(aufgaben[0].id, B);
+    await verteile();
     assert.equal(r.dokumente, 1);
     const zurueck = (await d.mappen.holeMappe(p.id)).mappe;
     assert.equal(zurueck.werte.stand, 'Neu');

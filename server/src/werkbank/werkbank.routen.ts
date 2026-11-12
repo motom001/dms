@@ -243,7 +243,7 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
 }
 
 export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
-  const { dienst, mail, region, sprachen, regionStand } = k;
+  const { dienst, region, sprachen, regionStand } = k;
   return [
     // Region (#726): Land, Bundesland, Zeitzone an einer Stelle; Vorschau der Feiertage des laufenden Jahres.
     { methode: 'GET', pfad: '/api/werkbank/region', zugang: 'admin', handler: async () => ok(await regionStand(await region().lies())) },
@@ -257,14 +257,9 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     // Inhalte übersetzen (#732): an/aus für alle, Paket, Bestätigung des Datenabflusses bei Paketen mit Netz.
     { methode: 'GET', pfad: '/api/werkbank/uebersetzen', zugang: 'admin', handler: async () => ok(await dienst.uebersetzung.stand()) },
     { methode: 'PUT', pfad: '/api/werkbank/uebersetzen', zugang: 'admin', handler: async (a) => ok(await dienst.uebersetzung.setze(a.body)) },
-    { methode: 'PUT', pfad: '/api/werkbank/aufgaben/mail', zugang: 'admin', handler: async (a) => ok(await mail().speichere(a.body)) },
-    { methode: 'POST', pfad: '/api/werkbank/aufgaben/mail/senden', zugang: 'admin', handler: async () => ok({ verschickt: await mail().sende() }) },
-    // Favoriten benachrichtigen (#506): für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer.
+    // Tägliche Zusammenfassung und „Favoriten benachrichtigen“ stellt man seit #1001 nur in der Automatisierung ein.
     // Aufgaben ohne Empfänger gehen an einen Alltags-Benutzer (#719).
     { methode: 'GET', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async () => ok(await dienst.ohneEmpfaenger.alltagsEmpfaenger()) },
     { methode: 'PUT', pfad: '/api/werkbank/aufgaben-empfaenger', zugang: 'admin', handler: async (a) => ok(await dienst.ohneEmpfaenger.setzeAufgabenEmpfaenger(a.body, ich(a).id)) },
-    { methode: 'GET', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async () => ok({ freigabe: await dienst.aufgaben.favoritenFreigabe(), rollen: await dienst.postSystemmappen.listeRollen() }) },
-    { methode: 'PUT', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async (a) => ok({ freigabe: await dienst.aufgaben.setzeFavoritenFreigabe(a.body, ich(a).email), rollen: await dienst.postSystemmappen.listeRollen() }) },
-    { methode: 'POST', pfad: '/api/werkbank/favoriten-freigabe/anwenden', zugang: 'admin', handler: async (a) => ok({ benutzer: await dienst.ohneEmpfaenger.favoritenVorgabeAnwenden(ich(a).email) }) },
   ];
 }

@@ -371,7 +371,7 @@ This is how deadlines behave:
 - The automation checks every day at the set time (default 07:00) and when a folder is saved: if the date is already within the advance notice, the deadline comes immediately. **At most one** deadline arises per person, folder, field and date – not again after completing it either.
 - If the date is **changed or cleared**, an open deadline completes itself (with an entry in the folder's history); for the new date a new one arises at the right time.
 - Dates that are already past no longer create a deadline.
-- If the recipient may not read the folder according to the [permissions](berechtigungen.md), they still get the deadline; *Workbench → Notifications and tasks* then shows a notice.
+- If the recipient may not read the folder according to the [permissions](berechtigungen.md), they still get the deadline; *Workbench → Tasks* then shows a notice.
 - There is no additional email on the due date – the deadlines are in the daily summary.
 
 ## When a folder type changes { #wenn-sich-ein-mappentyp-andert }

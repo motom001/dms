@@ -40,6 +40,17 @@ export const AUTOMATISIERUNG_GRENZEN = {
   nachholenTage: 31,
 } as const;
 
+/**
+ * Mappentyp „Post“ von Ablago in mitgelieferten Automatisierungen (#1001): `wenn.typ: dms:post` – z. B. „Post für dich“
+ * im Paket „Benachrichtigungen“. Andere Typen von Ablago gibt es dort nicht.
+ */
+export const DMS_POST = 'dms:post';
+/**
+ * Ab dieser Version versteht Ablago in mitgelieferten Automatisierungen `wenn.typ: dms:post` und `wenn.angelegt` („auch
+ * beim Anlegen“) und legt „Post für dich“ nicht mehr selbst an (#1001). Ältere hielten eine solche Automatisierung an.
+ */
+export const DMS_POST_AUTOMATISIERUNG_AB = '0.257.0';
+
 /** Reihenfolge (1–99): kleiner = früher; Vorgaben je Herkunft. */
 export const REIHENFOLGE = { min: 1, max: 99, eigen: 50, dms: 10, paket: 30 } as const;
 
@@ -49,8 +60,11 @@ export const WENN_EREIGNISSE = KATALOG_ARTEN.filter((a) => !OHNE_WENN.includes(E
 export type WennEreignis = Exclude<{ [K in KatalogArt]: (typeof EREIGNISKATALOG)[K]['gruppe'] extends 'zaehler' | 'betrieb' | 'auftrag' ? never : K }[KatalogArt], 'frist.erreicht'>;
 
 export type WennKarte =
-  /** Ein Ereignis des Katalogs; typ = nur Mappen dieses Typs (leer = alle), felder = nur bei Änderung dieser Felder. */
-  | { art: WennEreignis; typ?: string | null; felder?: string[] }
+  /**
+   * Ein Ereignis des Katalogs; typ = nur Mappen dieses Typs (leer = alle), felder = nur bei Änderung dieser Felder.
+   * `angelegt` (#1001, nur „Mappe gespeichert“): auch beim Anlegen – „neue Post oder ‚An‘ geändert“ ist dann eine Karte.
+   */
+  | { art: WennEreignis; typ?: string | null; felder?: string[]; angelegt?: boolean }
   /**
    * „Datum erreicht“ (#724): Das Datumsfeld ist in `vorlauf` Tagen/Wochen/Monaten erreicht (0 = am Tag selbst,
    * negativ = so lange danach) – Monate sind Kalendermonate. Geprüft täglich zur Uhrzeit. `wiederholung`: Termin
@@ -108,8 +122,12 @@ export type DannKarte =
   | { id: string; art: 'aufgabe'; empfaenger: Empfaenger[]; text: string; als: 'aufgabe' | 'benachrichtigung'; faellig?: number | null }
   /** Tägliche Zusammenfassung der offenen Aufgaben an den Benutzer des Laufs senden (#678; Zeitplan „für jeden Benutzer“). */
   | { id: string; art: 'zusammenfassung' }
-  /** Favoriten-Änderungen melden: gebündelte Benachrichtigung „Geändert“ an alle, die die Mappe als Favorit haben (#678, #422). */
-  | { id: string; art: 'favoriten' }
+  /**
+   * Favoriten-Änderungen melden: gebündelte Benachrichtigung „Geändert“ an alle, die die Mappe als Favorit haben (#678, #422).
+   * Seit #1001 hier statt in der Werkbank: `rollen` = nur an Mitglieder dieser Rollen (leer = alle); `vorgabe` false =
+   * neue Benutzer haben die Benachrichtigung zunächst aus (im Profil einschaltbar).
+   */
+  | { id: string; art: 'favoriten'; rollen?: string[]; vorgabe?: boolean }
   /** Anmeldeschutz (#678, #368): `sammel` = Sammelmeldung über die Sperren vor heute, `konto` = sofort melden, dass ein Konto gesperrt ist. */
   | { id: string; art: 'anmeldeschutz'; was: 'sammel' | 'konto' }
   /**
@@ -301,6 +319,7 @@ function bereinigeWenn(e: unknown): WennKarte {
   const art = (WENN_EREIGNISSE as string[]).includes(String(x.art)) ? (x.art as WennEreignis) : 'mappe.angelegt';
   const w: WennKarte = { art, typ: id(x.typ) || null };
   if (art === 'mappe.geaendert' && Array.isArray(x.felder)) w.felder = [...new Set(x.felder.map(id).filter(Boolean))].slice(0, 50);
+  if (art === 'mappe.geaendert' && x.angelegt === true) w.angelegt = true;
   return w;
 }
 
@@ -371,11 +390,18 @@ function bereinigePaketKarte(x: Record<string, unknown>, i: number): DannKarte {
   return { id: kid, art: 'paket', paket: PAKET_ID.test(paket) ? paket : '', aufgabe: SCHLUESSEL.test(aufgabe) ? aufgabe : null };
 }
 
+/** „Favoriten-Änderungen melden“ (#1001): Rollen (ohne Dubletten, leer = alle) und Vorgabe nur, wenn aus. */
+function bereinigeFavoriten(x: Record<string, unknown>, kid: string): DannKarte {
+  const rollen = [...new Set((Array.isArray(x.rollen) ? x.rollen : []).map(id).filter(Boolean))].slice(0, 50);
+  return { id: kid, art: 'favoriten', ...(rollen.length ? { rollen } : {}), ...(x.vorgabe === false ? { vorgabe: false } : {}) };
+}
+
 function bereinigeDann(e: unknown, i: number): DannKarte | null {
   const x = (e ?? {}) as Record<string, unknown>;
   const kid = id(x.id) || `k${i + 1}`;
   if (x.art === 'stopp') return { id: kid, art: 'stopp' };
-  if (x.art === 'zusammenfassung' || x.art === 'favoriten') return { id: kid, art: x.art };
+  if (x.art === 'zusammenfassung') return { id: kid, art: x.art };
+  if (x.art === 'favoriten') return bereinigeFavoriten(x, kid);
   if (x.art === 'anmeldeschutz') return { id: kid, art: 'anmeldeschutz', was: x.was === 'konto' ? 'konto' : 'sammel' };
   if (x.art === 'feld') {
     const w = x.werte && typeof x.werte === 'object' && !Array.isArray(x.werte) ? (x.werte as Record<string, unknown>) : {};
@@ -466,6 +492,7 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
     }
     if (d.art === 'zusammenfassung' && !(w.art === 'zeitplan' && w.jeBenutzer)) p.push(t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden'));
     if (d.art === 'favoriten' && w.art !== 'favorit.geaendert') p.push(t('gemeinsam.automatisierung.favoriten-aenderungen-melden-braucht'));
+    if (d.art === 'favoriten' && d.rollen?.some((r) => !k.rollen.some((x) => x.id === r))) p.push(t('gemeinsam.automatisierung.favoriten-rolle-fehlt'));
     if (d.art === 'anmeldeschutz' && d.was === 'sammel' && !(w.art === 'zeitplan' && !w.jeBenutzer)) p.push(t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-braucht'));
     if (d.art === 'anmeldeschutz' && d.was === 'konto' && w.art !== 'benutzer.gesperrt') p.push(t('gemeinsam.automatisierung.kontosperre-melden-braucht-die'));
     // #1082: Ein entferntes Paket ist kein Problem (die Karte läuft ins Leere, s. paketKarteLeer) – nur Wenn-Karte und Wahl.
@@ -495,10 +522,11 @@ export function kurzform(a: AutomatisierungDaten, k: Pick<Kontextdaten, 'typen' 
   const wenn = w.art === 'datum'
     ? `${typ?.name ?? '?'}: ${feldIn(typ, w.feld)?.label ?? (w.feld || '?')} ${vorlaufText(w.vorlauf, w.einheit)}`
     : w.art === 'zeitplan' ? `${zeitplanText(w)}${w.jeBenutzer ? t('gemeinsam.automatisierung.fuer-jeden-benutzer', { wert: w.rolle ? t('gemeinsam.automatisierung.der-rolle', { wert: k.rollen.find((r) => r.id === w.rolle)?.name ?? '?' }) : '' }) : ''}`
-    : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${ereignisName(w.art)}`;
+    : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${w.art === 'mappe.geaendert' && w.angelegt ? t('gemeinsam.automatisierung.angelegt-oder', { wert: ereignisName(w.art) }) : ereignisName(w.art)}`;
   const wer = (e: Empfaenger) => e.art === 'person' ? k.benutzer.find((b) => b.id === e.id)?.name ?? '?' : e.art === 'rolle' ? k.rollen.find((r) => r.id === e.id)?.name ?? '?' : e.art === 'ersteller' ? 'Ersteller' : e.art === 'ereignis' ? EREIGNIS_PERSON[e.feld] ?? e.feld : feldIn(typ, e.feld)?.label ?? e.feld;
   const dann = a.dann.map((d) => d.art === 'stopp' ? t('gemeinsam.automatisierung.danach-keine-weiteren')
-    : d.art === 'zusammenfassung' ? t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden-2') : d.art === 'favoriten' ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden')
+    : d.art === 'zusammenfassung' ? t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden-2')
+    : d.art === 'favoriten' ? (d.rollen?.length ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden-an', { rollen: d.rollen.map((r) => k.rollen.find((x) => x.id === r)?.name ?? '?').join(', ') }) : t('gemeinsam.automatisierung.favoriten-aenderungen-melden'))
     : d.art === 'anmeldeschutz' ? (d.was === 'sammel' ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden') : t('gemeinsam.automatisierung.kontosperre-an-administratoren'))
     : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${d.aufgabe})` : '' })
     : d.art === 'feld' ? `${Object.keys(d.werte).map((x) => feldIn(typ, x)?.label ?? x).join(', ')} setzen`

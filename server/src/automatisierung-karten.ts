@@ -82,15 +82,21 @@ DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   const w = c.automatisierung.wenn;
   const auto = c.automatisierung.id;
   const frist = k.als === 'aufgabe' && w.art === 'datum' && typeof c.daten.datum === 'string' ? { feld: w.feld, datum: c.daten.datum } : null;
+  // Post (#1001): auch „Post angelegt oder gespeichert“ (Wenn-Karte auf den Typ Post) – die Aufgabe hängt an der neuen Post.
+  const istPost = c.typ?.system === 'post' && (w.art === 'mappe.angelegt' || w.art === 'mappe.geaendert');
   const aufgabenAnlass: AufgabenAnlass | null = k.als !== 'aufgabe' ? null
     : w.art === 'datum' ? { art: 'datum', feld: w.feld, wiederholung: w.wiederholung ?? null, automatisierung: auto }
-      : w.art === 'post.angelegt' ? { art: 'post', automatisierung: auto }
+      : w.art === 'post.angelegt' || istPost ? { art: 'post', automatisierung: auto }
         : w.art === 'benutzer.abwesenheit_gesetzt' ? { art: 'abwesenheit', benutzer: c.mappe.id, automatisierung: auto } : null;
+  // „Post für dich“ (#1001, wie bis 0.256 im Kern): Wer in „An“ der Post steht, bekommt eine Aufgabe der Art „Post für
+  // dich“ – je Post und Person nur eine; sie erledigt sich, sobald die Post nicht mehr neu ist oder an jemand anderen geht.
+  const ausAn = aufgabenAnlass?.art === 'post' && c.mappe && k.empfaenger.some((e) => e.art === 'feld' && e.feld === 'an')
+    ? new Set(await c.personen({ art: 'feld', feld: 'an' })) : new Set<string>();
   let ohneLeserecht = 0; let vorhanden = 0; let admins = 0;
   // Platzhalter je Empfänger mit dessen Rechten (#795) – fürs Konto leer ist er schon oben abgefangen.
   const fuer = async (wer: string | null) => (await c.fuelleFuer(k.text, wer)).text.trim() || text;
   for (const id of an) {
-    const r = await c.dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist });
+    const r = await c.dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: c.mappe.id, empfaengerId: id, text: fuer, datum: frist ? null : datum, von: c.konto.id, buendeln: k.als === 'benachrichtigung' ? auto : null, anlass: c.anlass, aufgabenAnlass, frist, postAn: ausAn.has(id) ? id : null });
     if (r.ohneLeserecht) ohneLeserecht++;
     if (r.vorhanden) vorhanden++;
     if (!r.an) admins++;
@@ -118,7 +124,7 @@ DANN_AUSFUEHRER.favoriten = async (k: DannKarte, c: KartenKontext) => {
   const von = typeof c.daten.von === 'string' ? c.daten.von : null;
   if (!von) return uebersetzer2('automatisierung.karte.favoriten.niemand');
   if (c.trocken) return uebersetzer2('automatisierung.karte.favoriten.trocken');
-  const n = await c.dienst.ohneEmpfaenger.favoritenMelden(c.mappe.id, von);
+  const n = await c.dienst.ohneEmpfaenger.favoritenMelden(c.mappe.id, von, k.rollen ?? []);
   return n ? uebersetzer2('automatisierung.karte.favoriten.ergebnis', { anzahl: n }) : uebersetzer2('automatisierung.karte.favoriten.niemand');
 };
 
