@@ -10,7 +10,7 @@ In *When* and *Then* you build the automation from cards – four boxes one belo
 
 | Area | What goes in |
 |---|---|
-| **If** | exactly one card: an event (folder created, saved – optionally only for certain fields and **also when created** –, note, document uploaded, favourite changed, account block …), **Date reached**, **Schedule** or a [Workbench card](#werkbank-karten) (**Error reported**, **Log message**, **New version available**) |
+| **If** | exactly one card: an event (folder created, saved – optionally only for certain fields and **also when created** –, note, document uploaded, favourite changed, account block …), **Date reached**, **Schedule**, **[Call from outside](#aufruf-von-aussen)** or a [Workbench card](#werkbank-karten) (**Error reported**, **Log message**, **New version available**) |
 | **And** | none, one or several conditions: field values as in [views](sichten.md), "Folder is in view …", "Folder is a favourite of …", groups with "all" or "one is enough"; every condition can be reversed with **not** |
 | **Then** | one or more cards, in order: **Change field**, **Task / notification**, **Send daily summary**, **Report favourite changes**, **Report sign-in protection**, **Run package on schedule**, **Start a backup**, **No further automations afterwards** |
 | **Otherwise** | none or several cards as under Then – they run if the And conditions are **not** met (see [Otherwise](#sonst)) |
@@ -163,6 +163,71 @@ Automations run under the system account **“Automation”**. It may never ente
 | Log | find messages from a level | – |
 | Users | nothing in the Workbench (users are folders, permissions on them via the role *System account*) | manage users and permissions |
 
+## Call from outside { #aufruf-von-aussen }
+
+With the If card **Call from outside**, another system triggers an automation – for example a monitoring tool that [starts a backup](#sicherung-anstossen) when something goes wrong, or the home automation that gives Markus a task when the water sensor in the cellar goes off. For this, the automation gets **its own address** with a **secret**. No package is needed.
+
+**Setting up**
+
+1. New automation, If card **Call from outside**. Under **Parameters**, enter the names a call may send, e.g. `room, level` – only lower-case letters, digits and `_`, at most 10. They are available as placeholders in texts (`{room}`), together with `{zeitpunkt}` (when the call arrived), `{heute}` and `{automatisierung}`.
+2. Then cards as usual, for example *Task / notification* to Markus: `Water sensor in the {room} at {zeitpunkt}`. The card has **no folder**: as a condition only a characteristic of the Library is possible, recipients are people or roles (as with the [Workbench cards](#werkbank-karten)).
+3. Save. Only now does **Address and secret** appear under the card, with **Create address**. Ablago asks for your password (fresh sign-in) and shows address and secret. **Copy the secret straight away** – it is shown in full only this once. You can see the address again at any time.
+
+Without a created address, the automation accepts nothing; saving alone opens no door.
+
+![If card “Call from outside” with parameters, address and example](bilder/werkbank-automatisierung-aufruf.png)
+
+**Calling**
+
+A call is a `POST` to the address with three headers and a body (JSON object with the parameters, or empty):
+
+| Header | Content |
+|---|---|
+| `X-DMS-Zeit` | time in seconds since 1970 (Unix time) |
+| `X-DMS-Signatur` | `v1=` and HMAC-SHA256 (hex) over `<X-DMS-Zeit>.<body>` with the secret (`whsec_…`, as text, not decoded) |
+| `X-DMS` | `1` (as with every changing request to Ablago) |
+
+This is the same method as the former webhook – just in the other direction. The signature is calculated over the **body as it is sent** (bytes); Ablago does not reformat it first. With `curl` and `openssl`:
+
+```sh
+SECRET='whsec_…'                                     # from "Create address"
+ADDRESS='https://ablago.example.org/api/aufruf/…'    # from the card
+TIME=$(date +%s)
+BODY='{"room":"Cellar","level":"2"}'
+SIGNATURE=$(printf '%s.%s' "$TIME" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+curl -X POST -H 'X-DMS: 1' -H 'Content-Type: application/json' \
+  -H "X-DMS-Zeit: $TIME" -H "X-DMS-Signatur: v1=$SIGNATURE" \
+  --data "$BODY" "$ADDRESS"
+```
+
+The card shows this example under **Example with curl**, already with your address and your parameters.
+
+| Response | Meaning |
+|---|---|
+| `202` `{"ergebnis":"accepted"}` | accepted – the automation starts right away. The response never reveals more, not even what the automation does. |
+| `401` | not accepted – **always the same response**, whether the address does not exist, the automation is off, the signature does not match, the timestamp is more than 5 minutes off or the same call has already arrived |
+| `422` | signature correct, but the body is not a JSON object |
+| `429` | too many calls – wait a moment |
+| `413` | body larger than 16 KB |
+| `503` | maintenance or a restore is running – try again later |
+
+**Protection**
+
+- The address contains 32 bytes of randomness and cannot be guessed. The secret is stored [encrypted](verschluesselung.md) like all secrets (type *Calls from outside*) and is re-encrypted when the key changes.
+- Each signature counts **once**: whoever records a call cannot repeat it. Two identical calls in the same second with the same body therefore count as one – send something that changes if that can happen.
+- **Brake:** at most 30 calls per minute from one network (IPv4 /24, IPv6 /64) and at most 12 accepted calls per minute per address. Rejected calls are counted separately: after 12 failed attempts per minute on one address or 600 in total, Ablago only answers further wrong ones with `429` – a correctly signed call still gets through. So whoever only knows the address can't shut it down. Ablago counts everything across all processes. On top of that, the brake of every automation applies (more than 30 runs in one minute pause it).
+- Ablago only takes **parameters** with the names of the card, only as text, at most 500 characters per value. They are never field names and are never executed; Ablago ignores everything else in the body. Parameters appear **unchanged as text** – in tasks, notifications and emails from Ablago, to all recipients. So only use parameters whose values you expect from your own system (room, level, name of a device), not free text from third parties. Emails from Ablago are plain text, Ablago turns nothing into links; some mail programs do, however, show web addresses in the text as links themselves.
+- In the **run history**, only those who manage *Automations* see the parameters. The log contains neither address nor signature, and the IP only shortened.
+- **New secret** replaces the secret, **New address** both – the old ones stop working immediately. **Remove address** closes the door completely; if you change the If card or delete the automation, the address is gone as well. A **copy** brings no address.
+- [Packages](#aus-paketen) do not bring this card.
+
+**Where the addresses are listed**
+
+The [Workbench overview](uebersicht.md) names every switched-on automation that currently accepts calls – with address and **Switch all off** (one click switches them off; the address stays but accepts nothing until you switch on again). The [emergency sheet](verschluesselung.md#notfallblatt) lists them under *This Library* as "Calls from outside".
+
+!!! note "Home network"
+    The address starts with Ablago's address under Workbench → Email and address. If it looks like a home network, the card points this out: calls then only arrive from your own network – just right for home automation. From elsewhere it only works if Ablago is [reachable from outside](datenschutz.md#erreichbarkeit-aus-dem-internet). If you only want to expose the calls at the reverse proxy, allow `/api/aufruf/`.
+
 ## Order {#reihenfolge}
 
 If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **By trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
@@ -171,7 +236,7 @@ If there are several automations for the same trigger, they run by their **order
 
 ![Run history with the steps of a run](bilder/werkbank-automatisierung-verlauf.png)
 
-- **Try out:** choose a folder and **Run** – as if the event had happened. You choose the folder as in a link field: type part of the title and click a hit. Only folders of the If card's folder type that the account "Automation" may see are offered – with all others the automation couldn't run anyway. With **Dry run**, Ablago only shows what would happen ("Would send task to 1 person: …") and changes nothing. With [Workbench cards](#werkbank-karten) there is no folder to choose – Ablago tries it with a sample message.
+- **Try out:** choose a folder and **Run** – as if the event had happened. You choose the folder as in a link field: type part of the title and click a hit. Only folders of the If card's folder type that the account "Automation" may see are offered – with all others the automation couldn't run anyway. With **Dry run**, Ablago only shows what would happen ("Would send task to 1 person: …") and changes nothing. With [Workbench cards](#werkbank-karten) there is no folder to choose – Ablago tries it with a sample message, with [Call from outside](#aufruf-von-aussen) with "Sample value" for every parameter.
 - **Run history:** looks like a folder's history: per run one line with date and time, the trigger (e.g. "Folder created", "Dry run", "Repetition"), a summary, the result (*completed*, *doesn't apply*, *skipped*, *failed*) and the number of cards. Expanded, a table **Card · Result · Details** shows what every card did; if something went wrong, the reason is at the card that failed. With **Expand all entries** / **Collapse all entries** you see everything at once. If the automation is running right now while the editor is open, this run is expanded and the cards are ticked off **live**; cards not yet reached show "waiting".
 - **Failed runs** remain. Above the list of automations it then says, for example, "1 run has failed: Report new users, 04.11.26, 04:48"; with several runs, **Show** only shows the affected automations. **Repeat all** runs them again, **Don't repeat** removes them from the notice – in the run history they remain as "failed – not repeated (who, when)"; nothing is deleted. You have the same choice per run in the expanded run history. **Dry runs** don't count; their result is only in the run history. The [Workbench overview](uebersicht.md) also reports failed runs.
 - **Versions** (until 0.254 "Change history"): every saved version with time, who and what changed ("Then: 'Task to Markus' added"); the newest is marked **Current**. Two versions can be compared and an earlier one **restored** – after a confirmation that says what changes, it becomes a new version; the current state is kept. If the earlier version no longer fits (e.g. a field is missing), Ablago says so as when saving and does not restore it. How this works for all Workbench settings: [Versions](fassungen.md).
@@ -189,7 +254,7 @@ Packages bring **ready-made automations**, for example "MOT due soon" (package V
 - In the list you recognise them by the origin **from package …**. You can switch them on, adjust and copy them.
 - On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is. New automations from the update are offered again when updating.
 - If you remove the package, its automations go with it if they are off and unchanged.
-- Packages do not bring [Workbench cards](#werkbank-karten) – they only exist in automations you create yourself.
+- Packages do not bring [Workbench cards](#werkbank-karten) or [Call from outside](#aufruf-von-aussen) – they only exist in automations you create yourself.
 
 ### Stand-in {#vertretung}
 

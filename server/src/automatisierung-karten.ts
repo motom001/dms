@@ -1,5 +1,5 @@
 import { feldLabel } from '../../shared/src/beschriftung';
-import { istBetrieb, type DannKarte } from '../../shared/src/automatisierung';
+import { istAufruf, istBetrieb, type DannKarte } from '../../shared/src/automatisierung';
 import { formatiere, tagVon, type AufgabenAnlass, type Feld } from '../../shared/src/model';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
@@ -27,8 +27,8 @@ import { t } from './sprache';
  *   die Karte ins Leere (übersprungen, kein Fehler). Je Automatisierung, Karte und Tag genau eine Zustellung.
  * - **Sicherung anstoßen** (#677): über die Werkbank-Rechte des Systemkontos – Ergebnis nur „angestoßen“ oder „läuft
  *   schon“; ob sie gelingt, wie groß sie ist und wo sie liegt, erfährt die Automatisierung nicht.
- * - Wenn-Karten ohne Mappe aus dem Betrieb (#677): „Aufgabe / Benachrichtigung“ hängt dann an der Benutzer-Mappe des
- *   Empfängers (wie eine Aufgabe ohne Leserecht).
+ * - Wenn-Karten ohne Mappe aus dem Betrieb (#677) und „Aufruf von außen“ (#679): „Aufgabe / Benachrichtigung“ hängt
+ *   dann an der Benutzer-Mappe des Empfängers (wie eine Aufgabe ohne Leserecht).
  */
 const uebersetzer2 = uebersetzer({ automatisierung: texte });
 
@@ -61,8 +61,8 @@ DANN_AUSFUEHRER.feld = async (k: DannKarte, c: KartenKontext) => {
 
 DANN_AUSFUEHRER.aufgabe = async (k: DannKarte, c: KartenKontext) => {
   if (k.art !== 'aufgabe') throw new Fachfehler(500, t('meldungen.automatisierungkarten.falsche-karte'));
-  // Werkbank-Karten (#677) haben keine Mappe: Die Aufgabe kommt an die Benutzer-Mappe des Empfängers.
-  const ohneMappe = !c.mappe && istBetrieb(c.automatisierung.wenn);
+  // Werkbank-Karten (#677) und „Aufruf von außen“ (#679) haben keine Mappe: Die Aufgabe kommt an die Benutzer-Mappe des Empfängers.
+  const ohneMappe = !c.mappe && (istBetrieb(c.automatisierung.wenn) || istAufruf(c.automatisierung.wenn));
   if (!c.mappe && !ohneMappe) throw new Fachfehler(422, uebersetzer2('automatisierung.karte.aufgabe.ohne-mappe'));
   const text = (await c.fuelle(k.text)).trim();
   if (!text) throw new Fachfehler(422, uebersetzer2('automatisierung.karte.aufgabe.leer'));

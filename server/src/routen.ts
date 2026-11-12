@@ -143,6 +143,11 @@ export interface Route {
   /** Rohdaten statt JSON (Datei-Upload) mit dieser Obergrenze in Bytes. */
   roh?: number;
   /**
+   * Körper unverändert als Puffer, gleich welcher Content-Type (auch JSON wird nicht gelesen), höchstens so viele
+   * Bytes – für Signaturen über die Bytes, wie sie ankamen (Aufruf von außen, #679).
+   */
+  rohKoerper?: number;
+  /**
    * Mit `roh`: Der Körper kommt als Strom in eine temporäre Datei (#746), `body` ist dann ein `Hochgeladen` statt eines
    * Puffers – für Dokumente bis 100 MB, die nicht ganz im Arbeitsspeicher liegen sollen.
    */

@@ -21,6 +21,7 @@ Der Abschnitt **Was verschlüsselt ist** zählt jede Art verschlüsselter Werte 
 | **Anmeldung über einen Anbieter (OIDC)** | das Client-Secret unter [Anmeldeschutz](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) |
 | **Zwei-Faktor-Anmeldung** | das Geheimnis jedes Benutzers, der die [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) eingerichtet hat |
 | **Paket-Einstellungen (Geheimnisse)** | Felder vom Typ Geheimnis in den Einstellungen von [Paketen](pakete.md) |
+| **Aufrufe von außen (Geheimnis für die Signatur)** | das Geheimnis jeder Adresse für den [Aufruf von außen](automatisierungen.md#aufruf-von-aussen); ist es nicht lesbar, in der Automatisierung **Neues Geheimnis** wählen und beim Aufrufer eintragen |
 
 Ist ein Wert mit dem vorhandenen Schlüssel nicht lesbar, steht daneben „… nicht lesbar“; welcher es ist, steht darunter unter *Nicht lesbare oder unverschlüsselte Werte*. Taucht eine Zeile **Weitere Einstellungen** auf, kennt die Anzeige diese Art noch nicht – verschlüsselt und beim Wechsel mitgenommen wird sie trotzdem; melde sie gern als Fehler.
 
@@ -73,7 +74,7 @@ Im Abschnitt **Notfallblatt** dieser Seite erzeugt **Notfallblatt herunterladen*
 
 1. **Kopf:** Logo, Name deiner Ablage, Datum und Ablago-Version.
 2. **Schlüssel:** groß in Vierergruppen zum Abtippen, dazu sein **Fingerabdruck**. Die Null ist durchgestrichen, und unter leicht verwechselbaren Zeichen (`0` und `O`, `l`, `I` und `1`, `-` und `_`) steht klein, welches gemeint ist. Einen QR-Code mit dem Schlüssel gibt es bewusst nicht – das wäre ein Weg mehr, an ihn zu kommen.
-3. **Diese Ablage:** Adresse, **Ablage-Id** und in einem Satz, wo die Sicherungen liegen – seit 0.142 auch das Ziel der [Kopie außer Haus](sicherung-ausser-haus.md) (Paket und Adresse, ohne Benutzer und Passwort).
+3. **Diese Ablage:** Adresse, **Ablage-Id** und in einem Satz, wo die Sicherungen liegen – seit 0.142 auch das Ziel der [Kopie außer Haus](sicherung-ausser-haus.md) (Paket und Adresse, ohne Benutzer und Passwort). Nehmen Automatisierungen [Aufrufe von außen](automatisierungen.md#aufruf-von-aussen) an, steht hier **Aufrufe von außen** mit Name und gekürzter Adresse (bis zu fünf, dann „und N weitere“) – nie das Geheimnis.
 4. **Wen fragen?** Deine [Notfallkontakte](#notfallkontakte) mit Name, Telefon, E-Mail und Notiz – ohne Kontakte Zeilen, in die du von Hand einträgst, wer dir im Ernstfall hilft. Passen viele Kontakte mit langen Angaben nicht mehr auf die Seite, stehen sie auf einer zweiten Seite, und hier steht der Verweis darauf.
 5. **Etwas ist passiert?** Die Links zur Hilfeseite [Was ist dir passiert?](was-ist-passiert.md) – klickbar und immer mit `https://` ausgeschrieben: `https://help.ablago.app/notfall` (Englisch `https://help.ablago.app/emergency`) – und ein **QR-Code** dazu. Scanne ihn mit dem Handy, lies dort und arbeite parallel am Computer.
 6. **Ausgesperrt?** Der **Notfallcode**: 28 Zeichen in Vierergruppen und die Adresse deiner Ablage mit `/notfall`. Mit ihm kommst du wieder hinein, wenn du dich ausgesperrt hast – siehe [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Er ist nicht der Schlüssel und öffnet keine Sicherung.

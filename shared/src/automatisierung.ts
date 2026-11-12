@@ -10,6 +10,8 @@
  * - **Sonst** (#677) – Karten, die laufen, wenn die Und-Bedingungen nicht zutreffen (dieselben Karten wie Dann).
  * - **Werkbank-Karten** (#677): Wenn „Fehler gemeldet“, „Protokollmeldung“, „neue Version“ (ohne Mappe) und Dann
  *   „Sicherung anstoßen“ – mit genau den Werkbank-Rechten des Systemkontos (`automatisierung-werkbank.ts`).
+ * - **Aufruf von außen** (#679): Wenn-Karte mit eigener Adresse und Geheimnis, Parameter als Platzhalter
+ *   (`automatisierung-aufruf.ts`).
  *
  * Gespeichert wird nur, was hier steht; `bereinigeAutomatisierung` schneidet alles andere ab. Was zu einer
  * Automatisierung nicht (mehr) passt (Mappentyp gelöscht, Feld fehlt …), meldet `automatisierungsProbleme` –
@@ -17,6 +19,7 @@
  */
 import { EREIGNISKATALOG, KATALOG_ARTEN, wennFaehig, type BetriebWenn, type KatalogArt } from './ereignisse';
 import { bereinigeBetrieb, betriebKurz, betriebPlatzhalter, betriebProbleme, istBetrieb, type WennBetrieb } from './automatisierung-werkbank';
+import { aufrufKurz, aufrufPlatzhalter, bereinigeAufruf, istAufruf, type WennAufruf } from './automatisierung-aufruf';
 import { VORLAUF_EINHEITEN, type VorlaufEinheit } from './fristen';
 import type { Feld, Mappentyp } from './model';
 import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
@@ -56,6 +59,7 @@ export const DMS_POST = 'dms:post';
 export const DMS_POST_AUTOMATISIERUNG_AB = '0.257.0';
 
 export * from './automatisierung-werkbank';
+export * from './automatisierung-aufruf';
 
 /** Reihenfolge (1–99): kleiner = früher; Vorgaben je Herkunft. */
 export const REIHENFOLGE = { min: 1, max: 99, eigen: 50, dms: 10, paket: 30 } as const;
@@ -76,6 +80,8 @@ export type WennKarte =
   | { art: WennEreignis; typ?: string | null; felder?: string[]; angelegt?: boolean }
   /** Werkbank-Karten (#677): Fehler gemeldet, Protokollmeldung, neue Version – ohne Mappe. */
   | WennBetrieb
+  /** „Aufruf von außen“ (#679): eigene Adresse mit Geheimnis; Parameter mit diesen Namen als Platzhalter – ohne Mappe. */
+  | WennAufruf
   /**
    * „Datum erreicht“ (#724): Das Datumsfeld ist in `vorlauf` Tagen/Wochen/Monaten erreicht (0 = am Tag selbst,
    * negativ = so lange danach) – Monate sind Kalendermonate. Geprüft täglich zur Uhrzeit. `wiederholung`: Termin
@@ -218,6 +224,11 @@ export interface AutomatisierungAnsicht extends Automatisierung {
   rechte?: { typId: string; typ: string; kontoId: string | null; text: string };
   /** Karten, die gerade ins Leere laufen (#1082: „Paket … ist nicht installiert“) – Hinweis, kein Fehler. */
   leer?: string[];
+  /**
+   * „Aufruf von außen“ (#679): Adresse (ohne Geheimnis), seit wann, Geheimnis seit wann; `oeffentlich` = die Adresse von
+   * Ablago sieht nach Internet aus (sonst nur im Heimnetz nutzbar). null = noch keine Adresse angelegt.
+   */
+  aufruf?: { adresse: string; erstellt: string; geheimnisSeit: string; oeffentlich: boolean } | null;
 }
 
 /* ---------- Kontext ---------- */
@@ -249,7 +260,7 @@ export function paketKarteLeer(paket: string, pakete: KontextPaket[] | undefined
 /** Mappentyp der Wenn-Karte (null = jeder Typ bzw. Benutzer bei Benutzer-Ereignissen). */
 export function kontextTyp(w: WennKarte, typen: Mappentyp[]): Mappentyp | null {
   if (w.art === 'zeitplan') return w.jeBenutzer ? typen.find((t) => t.system === 'benutzer') ?? null : null;
-  if (istBetrieb(w)) return null;
+  if (istBetrieb(w) || istAufruf(w)) return null;
   if (w.art !== 'datum' && EREIGNISKATALOG[w.art].gruppe === 'benutzer') return typen.find((t) => t.system === 'benutzer') ?? null;
   const id = w.typ;
   return id ? typen.find((t) => t.id === id) ?? null : null;
@@ -259,7 +270,8 @@ export function kontextTyp(w: WennKarte, typen: Mappentyp[]): Mappentyp | null {
 export function ausloeserSchluessel(w: WennKarte): string {
   if (w.art === 'zeitplan') return `zeitplan|${w.uhrzeit}|${w.tage.join('')}|${w.feiertage ? 'f' : ''}|${w.jeBenutzer ? `b:${w.rolle ?? ''}${w.profilzeit ? ':p' : ''}` : ''}`;
   if (w.art === 'protokoll.meldung') return `${w.art}|${w.stufe}|${w.modul ?? ''}|${w.enthaelt ?? ''}`;
-  if (istBetrieb(w)) return w.art;
+  // Aufruf von außen (#679): je Automatisierung eine eigene Adresse – der Server hängt die Id an (laufen nie gemeinsam).
+  if (istBetrieb(w) || istAufruf(w)) return w.art;
   return w.art === 'datum' ? `datum|${w.typ}|${w.feld}|${w.vorlauf}|${w.einheit}` : `${w.art}|${w.typ ?? ''}`;
 }
 
@@ -289,6 +301,7 @@ export const PLATZHALTER_FEST = ['titel', 'mappentyp', 'heute', 'automatisierung
 /** Platzhalter, die im Kontext der Wenn-Karte zur Verfügung stehen. */
 export function platzhalterFuer(w: WennKarte, typ: Mappentyp | null): Array<{ key: string; label: string }> {
   if (istBetrieb(w)) return betriebPlatzhalter(w);
+  if (istAufruf(w)) return aufrufPlatzhalter(w);
   const fest = [{ key: 'titel', label: t('gemeinsam.automatisierung.titel-der-mappe') }, { key: 'mappentyp', label: t('gemeinsam.automatisierung.mappentyp') }, { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') }, { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') }];
   if (w.art === 'datum') fest.push({ key: 'datum', label: t('gemeinsam.automatisierung.erreichtes-datum') }, { key: 'tage', label: t('gemeinsam.automatisierung.tage-bis-dahin') });
   if (w.art === 'zeitplan' && w.jeBenutzer) fest.push({ key: 'benutzer', label: t('gemeinsam.automatisierung.benutzer') });
@@ -334,7 +347,8 @@ function bereinigeWenn(e: unknown): WennKarte {
     };
   }
   // Werkbank-Karten (#677): ohne Mappentyp; „Protokollmeldung“ mit Stufe (Vorgabe Fehler), Modul und Text.
-  const betrieb = bereinigeBetrieb(x);
+  // Aufruf von außen (#679): nur die Namen der Parameter.
+  const betrieb = bereinigeBetrieb(x) ?? (x.art === 'aufruf' ? bereinigeAufruf(x) : null);
   if (betrieb) return betrieb;
   const art = (WENN_EREIGNISSE as string[]).includes(String(x.art)) ? (x.art as WennEreignis) : 'mappe.angelegt';
   const w: WennKarte = { art, typ: id(x.typ) || null };
@@ -506,10 +520,10 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
     else if (feldIn(typ, w.feld)?.typ !== 'datum') p.push(t('gemeinsam.automatisierung.das-datumsfeld-gibt-es', { feld: w.feld, name: typ.name }));
   } else if (w.art === 'zeitplan') {
     if (w.jeBenutzer && w.rolle && !k.rollen.some((r) => r.id === w.rolle)) p.push(t('gemeinsam.automatisierung.die-rolle-der-zeitplan'));
-  } else if (istBetrieb(w)) p.push(...betriebProbleme(a));
+  } else if (istBetrieb(w) || istAufruf(w)) p.push(...betriebProbleme(a));
   else if (w.typ && !typ) p.push(t('gemeinsam.automatisierung.den-mappentyp-der-wenn'));
   else if (w.felder?.length && typ) for (const f of w.felder) if (!feldIn(typ, f)) p.push(t('gemeinsam.automatisierung.das-feld-gibt-es-2', { f, name: typ.name }));
-  if (!istBetrieb(w)) for (const u of a.und.karten) p.push(...undProbleme(u, typ, k));
+  if (!istBetrieb(w) && !istAufruf(w)) for (const u of a.und.karten) p.push(...undProbleme(u, typ, k));
   ort = 'dann';
   if (!a.dann.length) p.push(t('gemeinsam.automatisierung.bitte-mindestens-eine-dann'));
   for (const d of [...a.dann, ...a.sonst]) {
@@ -561,7 +575,7 @@ export function wennText(w: WennKarte, k: Pick<Kontextdaten, 'typen' | 'rollen'>
   const typ = kontextTyp(w, k.typen);
   return w.art === 'datum'
     ? `${typ?.name ?? '?'}: ${feldIn(typ, w.feld)?.label ?? (w.feld || '?')} ${vorlaufText(w.vorlauf, w.einheit)}`
-    : istBetrieb(w) ? betriebKurz(w, ereignisName)
+    : istBetrieb(w) ? betriebKurz(w, ereignisName) : istAufruf(w) ? aufrufKurz(w)
     : w.art === 'zeitplan' ? `${zeitplanText(w)}${w.jeBenutzer ? t('gemeinsam.automatisierung.fuer-jeden-benutzer', { wert: w.rolle ? t('gemeinsam.automatisierung.der-rolle', { wert: k.rollen.find((r) => r.id === w.rolle)?.name ?? '?' }) : '' }) : ''}`
     : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${w.art === 'mappe.geaendert' && w.angelegt ? t('gemeinsam.automatisierung.angelegt-oder', { wert: ereignisName(w.art) }) : ereignisName(w.art)}`;
 }

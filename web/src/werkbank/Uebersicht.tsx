@@ -6,6 +6,7 @@ import { useHandbuch } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { sicherungsHinweise, useVerwaltetVerschluesselung } from './Sicherung';
 import { exportHinweise } from './Vollexport';
+import { AufrufeUebersicht } from './AutomatisierungAufruf';
 import { bereichPasst, GRUPPEN, type Gruppe } from '../../../shared/src/werkbankansicht';
 import { variablenHinweis } from '../../../shared/src/umgebungsvariablen';
 import { ENGPASS_VARIABLE } from '../../../shared/src/systemlast';
@@ -61,6 +62,8 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
   if (au?.ohneBenachrichtigungen) h.push({ schluessel: 'automatisierung.ohne-benachrichtigungen', art: 'info', text: <><strong>{t('automatisierung.ui.ohne-benachrichtigungen')}</strong> {t('automatisierung.ui.ohne-benachrichtigungen.text')}</>, ziel: '/werkbank/pakete', knopf: t('automatisierung.ui.ohne-benachrichtigungen.knopf') });
   // #1001: „Post für dich“ legt nur noch eine Automatisierung an – das Paket fehlt, ist älter als 1.3.0 oder sie ist aus.
   else if (au?.ohnePostFuerDich) h.push({ schluessel: 'automatisierung.ohne-post-fuer-dich', art: 'info', text: <><strong>{t('automatisierung.ui.ohne-post-fuer-dich')}</strong> {t('automatisierung.ui.ohne-post-fuer-dich.text')}</>, ziel: '/werkbank/automatisierungen', knopf: t('automatisierung.ui.uebersicht.knopf') });
+  // Aufruf von außen (#679): Adressen ohne Anmeldung – sichtbar, mit „Alle abschalten“ (ein Klick); nicht wegzuklicken.
+  if (au?.aufrufe?.length) h.push({ schluessel: `automatisierung.aufrufe:${au.aufrufe.map((x) => x.id).sort().join(',')}`, art: 'info', text: <AufrufeUebersicht liste={au.aufrufe} />, ziel: '/werkbank/automatisierungen', knopf: t('automatisierung.ui.uebersicht.knopf'), erledigen: t('automatisierung.ui.uebersicht.aufrufe.abschalten') });
   if (au?.fehlgeschlagen) h.push({ schluessel: 'automatisierung.fehlgeschlagen', art: 'warn', text: <><strong>{t('automatisierung.ui.uebersicht.fehlgeschlagen', { anzahl: au.fehlgeschlagen })}</strong> {t('automatisierung.ui.uebersicht.fehlgeschlagen.text')}</>, ziel: '/werkbank/automatisierungen', knopf: t('automatisierung.ui.uebersicht.knopf') });
   if (u.auslastung?.length) h.push({ schluessel: 'auslastung', art: 'warn', text: <><strong>{t('systemzustand.warnung.uebersicht')}</strong> {u.auslastung.map((w) => t.frei(`systemzustand.warnung.${w}`)).join(' ')}</>, ziel: '/werkbank/systemzustand#auslastung', knopf: t('systemzustand.warnung.knopf') });
   // Engpässe (#544): je mit der Umgebungsvariable, die man ändern müsste.

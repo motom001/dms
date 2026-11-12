@@ -2,7 +2,7 @@ import { feldLabel, optionText } from '../../../shared/src/beschriftung';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   AUTOMATISIERUNG_GRENZEN, automatisierungsProblemOrte, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, platzhalterFuer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
-  istBetrieb, PROTOKOLL_FILTER_MAX, PROTOKOLL_STUFEN, type WennBetrieb,
+  istBetrieb, istAufruf, PROTOKOLL_FILTER_MAX, PROTOKOLL_STUFEN, type WennBetrieb,
   type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fehlschlag, type Kontextdaten,
   type Lauf, type Schritt, type UndKarte, type WennKarte,
 } from '../../../shared/src/automatisierung';
@@ -23,6 +23,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { AufrufAdresse, AufrufParameterZeile, AufrufWenn } from './AutomatisierungAufruf';
 import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
 
 /**
@@ -31,7 +32,8 @@ import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereic
  * Karten aus dem Vorrat hineinziehen oder mit „+ Karte“ per Tastatur hinzufügen, aufklappen zum Einstellen, zuklappen
  * zur Kurzzeile. Darunter Wiedergeben (auch trocken), der Verlauf mit Live-Fortschritt und der Änderungsverlauf.
  * Sonst (#677): dieselben Karten wie Dann, wenn die Bedingungen nicht zutreffen. Werkbank-Karten (#677): Wenn „Fehler
- * gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ (ohne Mappe) und Dann „Sicherung anstoßen“.
+ * gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ (ohne Mappe) und Dann „Sicherung anstoßen“. „Aufruf von
+ * außen“ (#679): Parameter an der Karte, Adresse und Geheimnis darunter (`AutomatisierungAufruf.tsx`).
  */
 
 type Stand = { automatisierungen: AutomatisierungAnsicht[]; fehlgeschlagen: number; fehlschlaege: Fehlschlag[]; kontext: Kontextdaten; umgezogen?: { am: string; anzahl: number } | null };
@@ -50,7 +52,9 @@ export type AutomatisierungenZustand = ReturnType<typeof useAutomatisierungen>;
 /** Für die Leiste: angehaltene oder fehlerhafte Automatisierungen. */
 export const automatisierungWarnungen = (s: Stand | null) => s?.automatisierungen.filter((a) => a.aktiv && (a.angehalten || a.probleme.length)).length ?? 0;
 
-const ereignisName = (art: string) => (art === 'datum' ? t('automatisierung.wenn.datum') : art === 'zeitplan' ? t('automatisierung.wenn.zeitplan') : t.frei(`ereignisse.name.${ereignisSchluessel(art as never)}`));
+const ereignisName = (art: string) => (art === 'datum' ? t('automatisierung.wenn.datum') : art === 'zeitplan' ? t('automatisierung.wenn.zeitplan') : art === 'aufruf' ? t('automatisierung.wenn.aufruf') : t.frei(`ereignisse.name.${ereignisSchluessel(art as never)}`));
+/** Wenn-Karte ohne Mappe: Werkbank-Karten (#677) und „Aufruf von außen“ (#679). */
+const ohneMappeWenn = (w: WennKarte) => istBetrieb(w) || istAufruf(w);
 const zeit = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) : '');
 const ZUSTAND_ART: Record<string, string> = { abgeschlossen: 'gut', unzutreffend: 'leise', uebersprungen: 'leise', fehlgeschlagen: 'schlecht', laeuft: 'info', wiederholt: 'leise' };
 
@@ -176,7 +180,7 @@ const neueId = () => `k${Math.random().toString(36).slice(2, 8)}`;
 
 /** Karten im Vorrat: Art und Name; „wenn“ ersetzt die Wenn-Karte, „und“/„dann“ hängen an (Dann-Karten auch an Sonst). */
 const VORRAT: Array<{ bereich: 'wenn' | 'und' | 'dann'; art: string }> = [
-  { bereich: 'wenn', art: 'datum' }, { bereich: 'wenn', art: 'zeitplan' }, ...WENN_EREIGNISSE.map((a) => ({ bereich: 'wenn' as const, art: a })),
+  { bereich: 'wenn', art: 'datum' }, { bereich: 'wenn', art: 'zeitplan' }, { bereich: 'wenn', art: 'aufruf' }, ...WENN_EREIGNISSE.map((a) => ({ bereich: 'wenn' as const, art: a })),
   { bereich: 'und', art: 'bedingung' }, { bereich: 'und', art: 'ansicht' }, { bereich: 'und', art: 'favorit' }, { bereich: 'und', art: 'merkmal' }, { bereich: 'und', art: 'gruppe' },
   { bereich: 'dann', art: 'feld' }, { bereich: 'dann', art: 'aufgabe' },
   // #678: Benachrichtigungen – passen nur zu ihrer Wenn-Karte (Zeitplan je Benutzer, Favorit geändert, Zeitplan bzw. Kontosperre).
@@ -190,8 +194,8 @@ const VORRAT: Array<{ bereich: 'wenn' | 'und' | 'dann'; art: string }> = [
 type Zweig = 'dann' | 'sonst';
 /** Nach Wahl der Wenn-Karte nur passende Karten: „Feld ändern“ braucht einen Mappentyp, „in Ansicht“ eine Ansicht dafür. */
 const sichtenFuer = (k: Kontextdaten, typ: Mappentyp | null) => k.sichten.filter((s) => !typ || !s.typen?.length || s.typen.includes(typ.id) || s.typen.includes('*'));
-// Werkbank-Karten ohne Mappe (#677): als Bedingung nur ein Merkmal der Ablage.
-const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: WennKarte) => (w && istBetrieb(w) && ['bedingung', 'ansicht', 'favorit', 'gruppe'].includes(v.art) ? false
+// Werkbank-Karten ohne Mappe (#677) und Aufruf von außen (#679): als Bedingung nur ein Merkmal der Ablage.
+const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: WennKarte) => (w && ohneMappeWenn(w) && ['bedingung', 'ansicht', 'favorit', 'gruppe'].includes(v.art) ? false
   : v.art === 'feld' ? !!typ : v.art === 'ansicht' ? sichtenFuer(k, typ).length > 0
   : v.art === 'zusammenfassung' ? w?.art === 'zeitplan' && w.jeBenutzer : v.art === 'favoriten' ? w?.art === 'favorit.geaendert'
     : v.art === 'anmeldeschutz' ? (w?.art === 'zeitplan' && !w.jeBenutzer) || w?.art === 'benutzer.gesperrt'
@@ -312,6 +316,8 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
           <Bereichskasten hinweis={t('automatisierung.ui.wenn.hinweis')} ablage={ablage.ablage('wenn')}>
             <WennEditor w={e.wenn} k={k} setze={(w) => setE({ ...e, wenn: w })} />
           </Bereichskasten>
+          {/* Aufruf von außen (#679): Adresse und Geheimnis erst an einer gespeicherten Karte. */}
+          {istAufruf(e.wenn) && (a && istAufruf(a.wenn) ? <AufrufAdresse a={a} parameter={e.wenn.parameter} nachher={z.laden} /> : <p className="leise klein">{t('automatisierung.ui.aufruf.erst-speichern')}</p>)}
           <div className="automatisierung-pfeil" aria-hidden="true">↓</div>
           <Bereichskasten titel={t('automatisierung.ui.und')} hinweis={e.und.karten.length ? undefined : t('automatisierung.ui.und.leer')} ablage={ablage.ablage('und')}
             kopf={e.und.karten.length > 1 && <select aria-label={t('automatisierung.ui.und.modus')} value={e.und.modus} onChange={(x) => setE({ ...e, und: { ...e.und, modus: x.target.value as 'alle' | 'eine' } })}>
@@ -455,7 +461,9 @@ function neueWenn(art: string, alt: WennKarte, typ: Mappentyp | null, k: Kontext
   // Werkbank-Karten (#677): ohne Mappentyp; „Protokollmeldung“ zunächst ab Fehler, alle Module.
   if (art === 'protokoll.meldung') return { art, stufe: 'error', modul: null, enthaelt: null };
   if (istBetriebWenn(art)) return { art } as WennBetrieb;
-  return { art: art as never, typ: alt.art === 'zeitplan' || istBetrieb(alt) ? null : alt.art === 'datum' ? alt.typ : alt.typ ?? null };
+  // Aufruf von außen (#679): zunächst ohne Parameter; Adresse und Geheimnis nach dem Speichern.
+  if (art === 'aufruf') return { art: 'aufruf', parameter: [] };
+  return { art: art as never, typ: alt.art === 'zeitplan' || ohneMappeWenn(alt) ? null : alt.art === 'datum' ? alt.typ : alt.typ ?? null };
 }
 const TAG_NAMEN = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
@@ -489,7 +497,7 @@ const GRUPPEN_FOLGE: Ereignisgruppe[] = ['mappe', 'zeit', 'person', 'benutzer', 
 function WennEditor({ w, k, setze }: { w: WennKarte; k: Kontextdaten; setze: (w: WennKarte) => void }) {
   const typen = k.typen.filter((x) => x.system !== 'benutzer' && x.system !== 'rolle');
   const typ = kontextTyp(w, k.typen);
-  const benutzerGruppe = w.art === 'zeitplan' || istBetrieb(w) || (w.art !== 'datum' && EREIGNISKATALOG[w.art].gruppe === 'benutzer');
+  const benutzerGruppe = w.art === 'zeitplan' || ohneMappeWenn(w) || (w.art !== 'datum' && EREIGNISKATALOG[w.art].gruppe === 'benutzer');
   return (
     <div className="karte offen">
       <div className="raster">
@@ -497,6 +505,7 @@ function WennEditor({ w, k, setze }: { w: WennKarte; k: Kontextdaten; setze: (w:
           <select value={w.art} onChange={(x) => setze(neueWenn(x.target.value, w, typ, k))}>
             <option value="datum">{ereignisName('datum')}</option>
             <option value="zeitplan">{ereignisName('zeitplan')}</option>
+            <option value="aufruf">{ereignisName('aufruf')}</option>
             {GRUPPEN_FOLGE.map((g) => (
               <optgroup key={g} label={t.frei(`ereignisse.gruppe.${g}`)}>
                 {WENN_EREIGNISSE.filter((a) => EREIGNISKATALOG[a].gruppe === g).map((a) => <option key={a} value={a}>{ereignisName(a)}</option>)}
@@ -514,6 +523,7 @@ function WennEditor({ w, k, setze }: { w: WennKarte; k: Kontextdaten; setze: (w:
         )}
         {w.art === 'zeitplan' && <ZeitplanEditor w={w} k={k} setze={setze} />}
         {w.art === 'protokoll.meldung' && <ProtokollFilter w={w} setze={setze} />}
+        {w.art === 'aufruf' && <AufrufWenn w={w} setze={setze} />}
         {w.art === 'datum' && <>
           <label className="eigenschaft"><span>{t('automatisierung.ui.wenn.feld')}</span>
             <select value={w.feld} onChange={(x) => setze({ ...w, feld: x.target.value })}>
@@ -551,7 +561,7 @@ function WennEditor({ w, k, setze }: { w: WennKarte; k: Kontextdaten; setze: (w:
           </HakenFeld>
         )}
       </div>
-      <p className="leise klein">{w.art === 'datum' ? t('automatisierung.ui.wenn.datum.text') : w.art === 'zeitplan' ? `${zeitplanText(w)}. ${t('automatisierung.ui.wenn.zeitplan.text')}` : t.frei(`ereignisse.text.${ereignisSchluessel(w.art)}`)}</p>
+      <p className="leise klein">{w.art === 'datum' ? t('automatisierung.ui.wenn.datum.text') : w.art === 'zeitplan' ? `${zeitplanText(w)}. ${t('automatisierung.ui.wenn.zeitplan.text')}` : w.art === 'aufruf' ? t('automatisierung.ui.aufruf.text') : t.frei(`ereignisse.text.${ereignisSchluessel(w.art)}`)}</p>
     </div>
   );
 }
@@ -664,7 +674,7 @@ function EmpfaengerWahl({ e, typ, k, setze, wenn }: { e: Empfaenger; typ: Mappen
   const felder = (typ?.felder ?? []).filter((f) => f.typ === 'referenz' && ((!zieleVon(f).length && !jedeMappe(f)) || einzigesZiel(f) === benutzerTyp?.id));
   const ausEreignis = wenn ? PERSONEN_IM_EREIGNIS[wenn.art] ?? [] : [];
   // Werkbank-Karten (#677) haben keine Mappe: kein Ersteller, keine Felder.
-  const ohneMappe = !!wenn && istBetrieb(wenn);
+  const ohneMappe = !!wenn && ohneMappeWenn(wenn);
   const wert = e.art === 'feld' ? `feld:${e.feld}` : e.art === 'ereignis' ? `ereignis:${e.feld}` : e.art === 'ersteller' ? 'ersteller:' : `${e.art}:${e.id}`;
   return (
     <select aria-label={t('automatisierung.ui.empfaenger')} value={wert} onChange={(x) => {
@@ -800,7 +810,7 @@ function DannEditor({ karte, typ, wenn, k, eigenesPaket, setze }: { karte: DannK
       <label className="eigenschaft breit"><span>{t('automatisierung.ui.karte.dann.aufgabe.text')}</span>
         <textarea rows={3} value={karte.text} maxLength={AUTOMATISIERUNG_GRENZEN.text} onChange={(x) => setze({ ...karte, text: x.target.value })} /></label>
       <Platzhalter wenn={wenn} typ={typ} einfuegen={(x) => setze({ ...karte, text: karte.text + x })} />
-      <p className="leise klein">{istBetrieb(wenn) ? t('automatisierung.ui.karte.dann.aufgabe.ohne-mappe') : t('automatisierung.ui.karte.dann.aufgabe.rechte')}</p>
+      <p className="leise klein">{ohneMappeWenn(wenn) ? t('automatisierung.ui.karte.dann.aufgabe.ohne-mappe') : t('automatisierung.ui.karte.dann.aufgabe.rechte')}</p>
     </div>
   );
 }
@@ -850,7 +860,7 @@ function Schritte({ l, a }: { l: Lauf; a: AutomatisierungAnsicht }) {
   const name = (x: Schritt) => x.teil === 'dann' || x.teil === 'sonst'
     ? `${x.teil === 'sonst' ? `${t('automatisierung.ui.sonst')}: ` : ''}${vorratName({ bereich: 'dann', art: a[x.teil].find((k) => k.id === x.karte)?.art ?? 'stopp' })}`
     : t.frei(`automatisierung.ui.${x.teil}`);
-  return (
+  return (<>
     <table className="aenderungen automatisierung-schritte">
       <thead><tr><th>{t('automatisierung.ui.schritte.karte')}</th><th>{t('automatisierung.ui.schritte.ergebnis')}</th><th>{t('automatisierung.ui.schritte.einzelheiten')}</th></tr></thead>
       <tbody>{l.schritte.map((x, i) => (
@@ -861,6 +871,9 @@ function Schritte({ l, a }: { l: Lauf; a: AutomatisierungAnsicht }) {
         </tr>
       ))}</tbody>
     </table>
+    {/* Aufruf von außen (#679): mitgeschickte Parameter (nur für Verwaltende von „Automatisierungen“). */}
+    <AufrufParameterZeile l={l} />
+    </>
   );
 }
 
@@ -877,9 +890,9 @@ function Wiedergeben({ a, typ, nachher, klappe }: { a: AutomatisierungAnsicht; t
   return (
     <Bereich id="ausprobieren" titel={t('automatisierung.ui.wiedergeben')} klappe={klappe}>
       {/* Werkbank-Karten (#677): ohne Mappe, mit einer Beispielmeldung. */}
-      <p className="leise klein">{istBetrieb(a.wenn) ? t('automatisierung.ui.wiedergeben.beispiel') : t('automatisierung.ui.wiedergeben.text')}</p>
+      <p className="leise klein">{ohneMappeWenn(a.wenn) ? t('automatisierung.ui.wiedergeben.beispiel') : t('automatisierung.ui.wiedergeben.text')}</p>
       <div className="zeile">
-        {istBetrieb(a.wenn) ? null : typ ? <div className="feld">
+        {ohneMappeWenn(a.wenn) ? null : typ ? <div className="feld">
             <label htmlFor="ausprobieren-mappe" className="sr">{t('automatisierung.ui.wiedergeben.suchen')}</label>
             <MappenWahl id="ausprobieren-mappe" ziel={typ} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen
               merke={(id, x) => setBekannt((y) => ({ ...y, [id]: x }))} setze={(v) => setMappe(typeof v === 'string' ? v : '')}
@@ -887,7 +900,7 @@ function Wiedergeben({ a, typ, nachher, klappe }: { a: AutomatisierungAnsicht; t
           </div>
           : <p className="leise klein">{t('automatisierung.ui.wiedergeben.ohne-typ')}</p>}
         <label className="haken klein" title={t('automatisierung.ui.trocken.hilfe')}><input type="checkbox" checked={trocken} onChange={(x) => setTrocken(x.target.checked)} /><span>{t('automatisierung.ui.trocken')}</span></label>
-        <Knopf groesse="klein" gesperrt={!mappe && !istBetrieb(a.wenn)} onClick={async () => {
+        <Knopf groesse="klein" gesperrt={!mappe && !ohneMappeWenn(a.wenn)} onClick={async () => {
           setFehler(undefined);
           try { setLauf(await api.automatisierungWiedergeben(a.id, mappe, trocken)); nachher(); } catch (e) { setFehler((e as Error).message); }
         }}>{t('automatisierung.ui.wiedergeben.los')}</Knopf>

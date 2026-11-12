@@ -5,7 +5,10 @@ import {
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
   PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST, istBetrieb, protokollPasst, PROTOKOLL_ABSTAND_MIN, BETRIEB_PLATZHALTER, SYSTEMKONTO_WERKBANK, werkbankBereiche, wennBereich, laufFuer,
+  istAufruf,
 } from '../../shared/src/automatisierung';
+import { Aufrufe, speicherAufrufRepo, type AufrufRepo, type AufrufStand } from './automatisierung/index';
+import type { Kurzzustand } from './kurzzustand';
 import { EREIGNISKATALOG, istBetriebWenn, wennFaehig, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { darfBereich } from '../../shared/src/verwaltungsrecht';
 import type { SystemWerkbank } from './automatisierung-werkbank';
@@ -30,6 +33,7 @@ import { istUuid } from './repo';
 import { datumsformat, liesRegion } from '../../shared/src/region';
 import { liesFavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { gebietsschema } from '../../shared/src/sprache';
+import { oeffentlichErreichbar } from '../../shared/src/auskunft';
 
 /**
  * Motor der Automatisierungen (#674): Wenn · Und · Dann · Sonst (#677), ausgeführt unter dem Systemkonto „Automatisierung“ (#673).
@@ -302,6 +306,11 @@ export interface AutomatisierungDeps {
   uhr?: () => number;
   /** Werkbank-Rechte des Systemkontos (#677): Sicherung anstoßen, neue Version, gemeldete Fehler, Protokoll. */
   werkbank?: SystemWerkbank;
+  /**
+   * „Aufruf von außen“ (#679): Speicher der Adressen, Kurzzustand (Bremse, Wiederholschutz über alle Prozesse),
+   * Ver- und Entschlüsseln des Geheimnisses, Adresse von Ablago. Ohne: im Arbeitsspeicher, Tresor des Dienstes.
+   */
+  aufruf?: { repo?: AufrufRepo; zustand?: () => Kurzzustand; verschluessele?: (k: string) => string; entschluessele?: (w: string) => string | null; basis?: () => string };
 }
 
 /** Ereignis, wie der Motor es verarbeitet (aus dem Katalog oder vom Zeitplan). */
@@ -392,9 +401,13 @@ function gleicherStand(a: unknown, b: unknown): boolean {
   return JSON.stringify(sortiert(a)) === JSON.stringify(sortiert(b));
 }
 
-/** Bringt eine mitgelieferte Automatisierung eine Werkbank-Karte mit (#677)? Dann wird sie übergangen. */
+/**
+ * Bringt eine mitgelieferte Automatisierung eine Werkbank-Karte (#677) oder die Wenn-Karte „Aufruf von außen“ (#679)
+ * mit? Dann wird sie übergangen – eine Adresse ohne Anmeldung legt nur die Verwaltung selbst an.
+ */
 function mitWerkbankKarte(paket: string, x: PaketAutomatisierung): boolean {
-  const ja = werkbankBereiche(bereinigeAutomatisierung({ wenn: x.wenn, dann: x.dann })).length > 0;
+  const d = bereinigeAutomatisierung({ wenn: x.wenn, dann: x.dann });
+  const ja = werkbankBereiche(d).length > 0 || istAufruf(d.wenn);
   if (ja) log.warn('Mitgelieferte Automatisierung mit Werkbank-Karte übergangen', { paket, automatisierung: x.schluessel });
   return ja;
 }
@@ -409,8 +422,18 @@ export class Automatisierungen {
   private zeitplanLauf: Promise<void> | null = null;
   /** Merker für den Zeitplan, wenn es keinen Einstellungsspeicher gibt (Tests). */
   private merkerOhneSpeicher = new Map<string, string>();
+  /** „Aufruf von außen“ (#679): Adressen, Geheimnisse, Signatur und Bremse (`automatisierung/aufruf.ts`). */
+  readonly aufrufe: Aufrufe;
   constructor(private d: AutomatisierungDeps) {
     this.d = { ...d, repo: mitFassungen(d.repo, d.dienst) };
+    const x = d.aufruf ?? {};
+    this.aufrufe = new Aufrufe({
+      repo: x.repo ?? speicherAufrufRepo(), zustand: x.zustand ?? (() => d.dienst.kurzzustand),
+      verschluessele: x.verschluessele ?? ((k) => d.dienst.verschluesseleGeheimnis(k)), entschluessele: x.entschluessele ?? ((w) => d.dienst.entschluessele(w)),
+      basis: x.basis, uhr: d.uhr,
+      automatisierung: (id) => this.d.repo.hole(id),
+      ausloesen: (a, id, daten) => this.reihe([a], { id, art: 'aufruf', daten, kette: 0 }),
+    });
     d.dienst.automatisierungenVon = async (kontoId) => {
       const konto = await this.konto().catch(() => null);
       return konto?.id === kontoId ? (await this.d.repo.liste()).filter((a) => a.herkunft !== 'paket').map((a) => ({ id: a.id, name: a.name, ...(a.aktiv && a.angehalten ? { angehalten: true } : {}) })) : [];
@@ -763,12 +786,70 @@ export class Automatisierungen {
     // „Paket nach Zeitplan ausführen“ (#1082): Paket entfernt oder ohne das Ereignis – Hinweis, die Automatisierung bleibt an.
     const ziel = (d: DannKarte) => (d.art !== 'paket' ? '' : a.herkunft === 'paket' ? a.paketId ?? '' : d.paket);
     const leer = [...new Set(a.dann.flatMap((d) => (ziel(d) ? [paketKarteLeer(ziel(d), k.pakete)] : [])).filter((x): x is string => !!x))];
+    // Aufruf von außen (#679): Adresse ohne Geheimnis; je Automatisierung ein eigener Auslöser (laufen nie gemeinsam).
+    const aufruf = istAufruf(a.wenn) ? await this.aufrufStand(a.id) : undefined;
     return {
-      ...ohne, kurz: kurzform(a, k, (art) => (art === 'datum' ? t('automatisierung.wenn.datum') : t.frei(`ereignisse.name.${art.replace(/_/g, '-')}`))), probleme: automatisierungsProbleme(a, k), ausloeser: ausloeserSchluessel(a.wenn),
+      ...ohne, kurz: kurzform(a, k, (art) => (art === 'datum' ? t('automatisierung.wenn.datum') : t.frei(`ereignisse.name.${art.replace(/_/g, '-')}`))), probleme: automatisierungsProbleme(a, k),
+      ausloeser: istAufruf(a.wenn) ? `aufruf|${a.id}` : ausloeserSchluessel(a.wenn),
       letzterLauf: l ? { id: l.id, zustand: l.zustand, gestartet: l.gestartet, fehler: l.fehler } : null,
       ...(rechte ? { rechte } : {}),
       ...(leer.length ? { leer } : {}),
+      ...(aufruf === undefined ? {} : { aufruf }),
     };
+  }
+
+  /** Adresse eines Aufrufs von außen für die Karte (#679) – ohne Geheimnis; `oeffentlich`: Adresse von Ablago im Internet. */
+  private async aufrufStand(id: string): Promise<(AufrufStand & { oeffentlich: boolean }) | null> {
+    const s = await this.aufrufe.stand(id);
+    return s && { ...s, oeffentlich: /^https?:\/\//i.test(s.adresse) && oeffentlichErreichbar(s.adresse) };
+  }
+
+  /**
+   * Adresse anlegen oder erneuern bzw. neues Geheimnis (#679) – nur ausdrücklich über die Werkbank, nie für eine
+   * mitgelieferte Automatisierung. Das Geheimnis steht nur in dieser Antwort.
+   */
+  async aufrufAnlegen(id: string, was: unknown, von: string | null): Promise<AufrufStand & { geheimnis: string; oeffentlich: boolean }> {
+    const a = await this.gibt(id);
+    const r = await this.aufrufe.lege(a, was === 'geheimnis' ? 'geheimnis' : 'adresse', von);
+    return { ...r, oeffentlich: /^https?:\/\//i.test(r.adresse) && oeffentlichErreichbar(r.adresse) };
+  }
+
+  /**
+   * Ein Aufruf von außen (#679) – Prüfungen in {@link Aufrufe.annehmen}. In Wartung und Wiederherstellung ruht er wie
+   * der Zeitplan (503, nichts gezählt, nichts ausgelöst).
+   */
+  async aufrufAnnehmen(o: Parameters<Aufrufe['annehmen']>[0]) {
+    if (this.d.pause?.()) throw new Fachfehler(503, t('automatisierung.aufruf.pause'));
+    return this.aufrufe.annehmen(o);
+  }
+
+  /** Adresse entfernen (#679): Danach nimmt die Automatisierung keine Aufrufe mehr an, bis eine neue angelegt ist. */
+  async aufrufEntfernen(id: string): Promise<void> {
+    await this.gibt(id);
+    await this.aufrufe.entferne(id, 'von Hand');
+  }
+
+  /**
+   * Adressen, die Aufrufe von außen annehmen (#679): eingeschaltet, nicht angehalten, mit Wenn-Karte „Aufruf von außen“
+   * und angelegter Adresse – für Werkbank-Übersicht und Notfallblatt.
+   */
+  async aufrufListe(): Promise<Array<{ id: string; name: string; adresse: string }>> {
+    const [liste, autos] = await Promise.all([this.aufrufe.liste(), this.d.repo.liste()]);
+    return liste.flatMap((e) => {
+      const a = autos.find((x) => x.id === e.automatisierungId);
+      return a && a.aktiv && !a.angehalten && istAufruf(a.wenn) ? [{ id: a.id, name: a.name, adresse: e.adresse }] : [];
+    });
+  }
+
+  /**
+   * „Alle abschalten“ in der Werkbank-Übersicht (#679): die genannten Automatisierungen, die gerade Aufrufe von außen
+   * annehmen, ausschalten – ein Klick. Andere Ids übergeht es. Liefert die Zahl.
+   */
+  async aufrufeAbschalten(ids: string[], von: string | null): Promise<number> {
+    let n = 0;
+    for (const x of (await this.aufrufListe()).filter((y) => ids.includes(y.id))) { await this.schalte(x.id, false, von); n++; }
+    if (n) log.info('Aufrufe von außen abgeschaltet', { anzahl: n });
+    return n;
   }
 
   /** Mappentypen, die das Konto „Automatisierung“ überhaupt nicht lesen darf (#709). */
@@ -886,6 +967,8 @@ export class Automatisierungen {
     const version = Number(roh.version ?? alt.version);
     const aktiv = typeof roh.aktiv === 'boolean' ? roh.aktiv : alt.aktiv;
     if (!(await this.d.repo.speichere(id, { ...d, aktiv }, von, version))) throw new Fachfehler(409, t('automatisierung.konflikt'));
+    // Aufruf von außen (#679): Ist die Wenn-Karte keine mehr, gilt auch ihre Adresse nicht mehr.
+    if (istAufruf(alt.wenn) && !istAufruf(d.wenn)) await this.aufrufe.entferne(id, 'Wenn-Karte geändert');
     // Gespeichert mit gültigem Stand: „fehlerhaft“ ist damit behoben (Bremse und Wiederherstellung hebt nur „einschalten“ auf).
     if (alt.angehalten?.grund === 'fehlerhaft' || (aktiv && !alt.aktiv)) await this.d.repo.setze(id, { angehalten: null });
     return this.hole(id);
@@ -905,6 +988,7 @@ export class Automatisierungen {
     const a = await this.gibt(id);
     if (a.herkunft !== 'eigen') throw new Fachfehler(409, t('automatisierung.loeschen.herkunft'));
     await this.d.repo.loesche(id);
+    await this.aufrufe.entferne(id, 'Automatisierung gelöscht');
     log.info('Automatisierung gelöscht', { id, name: a.name });
   }
 
@@ -923,7 +1007,9 @@ export class Automatisierungen {
   async lauf(id: string, darf?: (bereich: string) => boolean): Promise<Lauf> { const l = await this.d.repo.lauf(id); if (!l) throw new Fachfehler(404, t('automatisierung.lauf.fehlt')); return laufFuer(l, darf); }
 
   /** Für die Werkbank-Übersicht: fehlgeschlagene Läufe und angehaltene Automatisierungen. */
-  async warnungen(): Promise<{ fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: Angehalten['grund'] }>; umgezogen: { am: string; anzahl: number } | null; ohneBenachrichtigungen: boolean; ohnePostFuerDich: boolean }> {
+  async warnungen(): Promise<{ fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: Angehalten['grund'] }>; umgezogen: { am: string; anzahl: number } | null; ohneBenachrichtigungen: boolean; ohnePostFuerDich: boolean;
+    /** Adressen, die gerade Aufrufe von außen annehmen (#679) – mit „Abschalten“ in der Übersicht. */
+    aufrufe: Array<{ id: string; name: string; adresse: string }> }> {
     const [fehl, liste] = await Promise.all([this.d.repo.fehlgeschlagene(), this.d.repo.liste()]);
     const aktiv = liste.filter((a) => a.aktiv);
     // Was nicht mehr passt (Feld oder Ansicht gelöscht), zählt sofort – nicht erst beim nächsten Lauf.
@@ -935,7 +1021,7 @@ export class Automatisierungen {
     // #1001: Keine Automatisierung legt „Post für dich“ an (Paket „Benachrichtigungen“ fehlt oder ist älter als 1.3.0).
     const postTyp = (await this.d.dienst.kern.system()).post.id;
     const ohnePostFuerDich = !liste.some((a) => a.aktiv && istPostFuerDich(a, postTyp));
-    return { fehlgeschlagen: new Set(fehl.map((l) => l.automatisierungId)).size, angehalten, umgezogen: await this.umzug(), ohneBenachrichtigungen, ohnePostFuerDich };
+    return { fehlgeschlagen: new Set(fehl.map((l) => l.automatisierungId)).size, angehalten, umgezogen: await this.umzug(), ohneBenachrichtigungen, ohnePostFuerDich, aufrufe: await this.aufrufListe() };
   }
 
   /** Nach einer Wiederherstellung: alle eingeschalteten anhalten, bis ein Admin sie wieder einschaltet. */
@@ -963,6 +1049,12 @@ export class Automatisierungen {
         : w.art === 'protokoll.meldung' ? { stufe: w.stufe, modul: w.modul ?? 'system', text: [t('automatisierung.test.beispiel.protokoll'), w.enthaelt].filter(Boolean).join(': '), zeitpunkt }
           : { version: eigeneVersion(), installiert: eigeneVersion() };
       const l = await this.fuehreAus(a, { id: randomUUID(), art: w.art, daten, kette: 0 }, { trocken, test: true });
+      return l ?? this.lauf(id);
+    }
+    // Aufruf von außen (#679): ohne Mappe – mit einem Beispielwert je Parameter.
+    if (istAufruf(a.wenn)) {
+      const daten = { zeitpunkt: this.iso(), parameter: Object.fromEntries(a.wenn.parameter.map((n) => [n, t('automatisierung.test.beispiel.parameter')])) };
+      const l = await this.fuehreAus(a, { id: randomUUID(), art: 'aufruf', daten, kette: 0 }, { trocken, test: true });
       return l ?? this.lauf(id);
     }
     if (!istUuid(mappeId)) throw new Fachfehler(422, t('automatisierung.test.mappe'));
@@ -1059,7 +1151,8 @@ export class Automatisierungen {
 
   private passt(a: Automatisierung, e: KatalogEreignis): boolean {
     const w = a.wenn;
-    if (w.art === 'datum' || w.art === 'zeitplan') return false;
+    // Zeitplan, Datum und Aufruf von außen (#679) löst der Motor selbst aus, nie der Ereigniskatalog.
+    if (w.art === 'datum' || w.art === 'zeitplan' || istAufruf(w)) return false;
     if (istBetrieb(w)) return w.art !== 'protokoll.meldung' || protokollPasst(w, e.daten);
     if (EREIGNISKATALOG[w.art].gruppe !== 'benutzer' && w.typ && e.daten.typ !== w.typ) return false;
     if (w.art === 'mappe.geaendert' && e.art === 'mappe.geaendert' && w.felder?.length) { const g = alsListe(e.daten.felder); if (!w.felder.some((f) => g.includes(f))) return false; }
@@ -1101,7 +1194,7 @@ export class Automatisierungen {
       }
     }
     const schritte: Schritt[] = [
-      { teil: 'wenn', zustand: 'ok', text: anlass.art === 'datum' ? t('automatisierung.wenn.datum') : anlass.art === 'zeitplan' ? t('automatisierung.wenn.zeitplan') : t.frei(`ereignisse.name.${anlass.art.replace(/_/g, '-')}`) },
+      { teil: 'wenn', zustand: 'ok', text: anlass.art === 'datum' ? t('automatisierung.wenn.datum') : anlass.art === 'zeitplan' ? t('automatisierung.wenn.zeitplan') : anlass.art === 'aufruf' ? t('automatisierung.wenn.aufruf') : t.frei(`ereignisse.name.${anlass.art.replace(/_/g, '-')}`) },
       { teil: 'und', zustand: 'offen' },
       ...a.dann.map((k): Schritt => ({ teil: 'dann', karte: k.id, zustand: 'offen' })),
       // Sonst (#677): eigene Schritte – je Lauf läuft genau einer der beiden Zweige, der andere ist „übersprungen“.
@@ -1268,11 +1361,17 @@ export class Automatisierungen {
     }
     // Werkbank-Karten (#677): Zeitpunkt, Meldung, wer, Version – den Text der Meldung nur für Empfänger, die den Bereich verwalten.
     if (c.art && istBetriebWenn(c.art)) for (const [k, w] of Object.entries(await this.betriebWerte(c.art, daten, empf))) { fest[k] = w.wert; if (w.verdeckt) verdeckt.add(k); }
+    // Aufruf von außen (#679): Zeitpunkt und die Parameter – nur Text, nie als Feld oder Code (Ersetzen in einem Durchgang).
+    if (c.art === 'aufruf') {
+      fest.zeitpunkt = zeitpunktText(daten.zeitpunkt);
+      const p = daten.parameter && typeof daten.parameter === 'object' ? daten.parameter as Record<string, unknown> : {};
+      for (const [k, w] of Object.entries(p)) if (typeof w === 'string' && !Object.hasOwn(fest, k)) fest[k] = w;
+    }
     let verborgen = 0;
     // Post (#1042): {absender} und {fuer} gelten bis 1.0.0 als {von} und {an} (uebergaenge.ts).
     const alias = typ?.system === 'post';
     const erg = text.replace(/\{([a-z][a-z0-9_]*)((?:\|[^{}|]*)*)\}/g, (ganz, key: string) => {
-      if (key in fest) { if (verdeckt.has(key)) verborgen++; return fest[key]; }
+      if (Object.hasOwn(fest, key)) { if (verdeckt.has(key)) verborgen++; return fest[key]; }
       const k = alias ? postKennung(key) : key;
       const f = typ?.felder.find((x) => x.key === k);
       if (!f || f.typ === 'passwort' || !mappe) return ganz;

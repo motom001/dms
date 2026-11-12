@@ -332,6 +332,10 @@ Eine Einstellung je Mappentyp für Aufbewahrungspflichten – mit Versionen und 
 <a id="aufbewahrung-abgelaufen"></a>**Aufbewahrung abgelaufen** · ✓ Alltagswort · Administratoren  
 Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist (Werkbank → Benutzer und Sicherheit). Früher „Darf weg“.
 
+<a id="aufruf-von-auen"></a>**Aufruf von außen** · ~ mit Erklärung · Administratoren  
+Wenn-Karte einer Automatisierung mit eigener Adresse und Geheimnis – ein anderes System (Monitoring, Hausautomatisierung) löst sie per POST mit Signatur aus. Die Verwaltung legt die Adresse ausdrücklich an; die Antwort enthält nur „angenommen“. Mitgeschickte Parameter stehen als Platzhalter bereit, nur als Text. Werkbank-Übersicht und Notfallblatt nennen alle Adressen, die Aufrufe annehmen.  
+Siehe auch: [Werkbank-Karte](#werkbank-karte), [Notfallblatt](#notfallblatt).
+
 <a id="aus-dokument-fullen"></a>**Aus Dokument füllen** · ~ mit Erklärung · Administratoren  
 Haken an einem Feld (#938, früher „Für die Erkennung nutzen“) – der Knopf „Aus Dokument ausfüllen“ darf dieses Feld aus einem Foto oder Dokument als Vorschlag füllen. Mit Art („Was steht im Feld?“) und Erkennungshinweis.  
 Siehe auch: [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen).
@@ -677,6 +681,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Archivnummer | – | `archivnummer` |
 | Aufbewahrung abgelaufen | Darf weg | – |
 | Aufgabe | Auftrag, Task, Todo | `Aufgabe, AUFGABENARTEN` |
+| Aufruf von außen | Webhook (eingehend), Trigger-URL, Endpunkt | `WennAufruf, art: aufruf, /api/aufruf/:kennung` |
 | Auftrag | Job | `Auftrag` |
 | Aus Dokument füllen | Für die Erkennung nutzen (alter Name) | `Feld.erkennung` |
 | Automatisierungsvorlage | Makro, Workflow-Vorlage, Ablaufvorlage | `Ablaufvorlage, ablaufvorlagen, inhalt.ablaufvorlagen` |

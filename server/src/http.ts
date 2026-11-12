@@ -248,7 +248,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     ziel.route({
       method: r.methode,
       url: r.pfad,
-      ...(r.roh ? { bodyLimit: r.roh } : ohneDatei),
+      ...(r.roh ? { bodyLimit: r.roh } : r.rohKoerper ? { bodyLimit: r.rohKoerper } : ohneDatei),
       ...(r.ohneHead ? { exposeHeadRoute: false } : {}),
       // Große Uploads (#683): Anmeldung und Rolle prüfen, **bevor** der Körper (bis zu 256 MB) gelesen wird –
       // sonst hält jede Anfrage ohne Anmeldung den ganzen Körper im Speicher, bis die 401 kommt.
@@ -317,7 +317,14 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     });
   };
   const alle = routen(dienst, konten, opt);
-  for (const r of alle) if (!r.strom) definiere(app, r);
+  for (const r of alle) if (!r.strom && !r.rohKoerper) definiere(app, r);
+  // Körper als Bytes, wie sie ankamen (#679: Signatur des Aufrufs von außen): eigener Bereich, in dem jeder Content-Type
+  // – auch JSON – als Puffer ankommt; die Grenze nennt die Route.
+  await app.register(async (bereich) => {
+    bereich.removeAllContentTypeParsers();
+    bereich.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, koerper, fertig) => fertig(null, koerper));
+    for (const r of alle) if (r.rohKoerper && !r.strom) definiere(bereich, r);
+  });
   // Hochladen als Strom (#746): eigener Bereich mit eigenem Parser für application/octet-stream – der Körper geht in
   // eine temporäre Datei (Prüfsumme beim Lesen), nicht in den Arbeitsspeicher. Anmeldung und Rolle prüft weiterhin
   // onRequest, bevor ein Byte gelesen wird (#683). Nach der Antwort (oder einem Abbruch) ist die Datei wieder weg.

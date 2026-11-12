@@ -4,6 +4,7 @@
  * Modell, Prüfung, Platzhalter und Kurzform; ausgeführt wird im Server (`server/src/automatisierung-werkbank.ts`).
  */
 import type { AutomatisierungDaten, Lauf } from './automatisierung';
+import { aufrufLaufFuer } from './automatisierung-aufruf';
 import { istBetriebWenn, type BetriebWenn } from './ereignisse';
 import { MODULE } from './protokollmodule';
 import { t } from './texte';
@@ -79,7 +80,7 @@ export function wennBereich(w: Pick<AutomatisierungDaten['wenn'], 'art'>): strin
 }
 
 /**
- * Was an einer Automatisierung mit Wenn-Karte ohne Mappe nicht geht (#677): Bedingungen nur auf Merkmale der Ablage,
+ * Was an einer Automatisierung mit Wenn-Karte ohne Mappe nicht geht (#677, auch „Aufruf von außen“, #679): Bedingungen nur auf Merkmale der Ablage,
  * Empfänger von Aufgaben nur Personen und Rollen.
  */
 export function betriebProbleme(a: Pick<AutomatisierungDaten, 'und' | 'dann' | 'sonst'>): string[] {
@@ -117,10 +118,11 @@ export function betriebKurz(w: WennBetrieb, ereignisName: (art: string) => strin
  * Lauf-Daten für eine Person (#677, Sicherheit in PR #1155): Den Text einer Protokollmeldung sieht nur, wer „Protokoll“
  * verwaltet, Text und Konto der meldenden Person einer Fehlermeldung nur, wer „Gemeldete Fehler“ verwaltet – wie die
  * Platzhalter {meldung} und {gemeldet_von}. Gespeichert bleibt alles, Wiederholen arbeitet mit den gespeicherten Daten.
- * Ohne `darf` (intern, Tests) unverändert.
+ * Ohne `darf` (intern, Tests) unverändert. Parameter eines Aufrufs von außen (#679) nur für „Automatisierungen“.
  */
-export function laufFuer(l: Lauf, darf?: (bereich: string) => boolean): Lauf {
-  if (!darf) return l;
+export function laufFuer(roh: Lauf, darf?: (bereich: string) => boolean): Lauf {
+  if (!darf) return roh;
+  const l = aufrufLaufFuer(roh, darf);
   const weg = l.art === 'protokoll.meldung' && !darf(SYSTEMKONTO_WERKBANK.protokoll) ? ['text']
     : l.art === 'fehler.gemeldet' && !darf(SYSTEMKONTO_WERKBANK.fehlermeldung) ? ['benutzer', 'text'] : [];
   if (!weg.some((k) => k in l.daten)) return l;

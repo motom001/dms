@@ -1026,6 +1026,9 @@ export const api = {
   automatisierungLoeschen: (id: string) => anfrage<null>('DELETE', `/api/werkbank/automatisierungen/${id}`),
   automatisierungSchalten: (id: string, aktiv: boolean) => anfrage<AutomatisierungAnsicht>('PUT', `/api/werkbank/automatisierungen/${id}/aktiv`, { aktiv }),
   automatisierungKopieren: (id: string) => anfrage<AutomatisierungAnsicht>('POST', `/api/werkbank/automatisierungen/${id}/kopieren`),
+  /** Aufruf von außen (#679): Adresse anlegen/erneuern oder neues Geheimnis – das Geheimnis steht nur in dieser Antwort. */
+  automatisierungAufruf: (id: string, was: 'adresse' | 'geheimnis') => anfrage<{ adresse: string; erstellt: string; geheimnisSeit: string; geheimnis: string; oeffentlich: boolean }>('POST', `/api/werkbank/automatisierungen/${id}/aufruf`, { was }),
+  automatisierungAufrufEntfernen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/automatisierungen/${id}/aufruf`),
   automatisierungLaeufe: (id: string) => anfrage<Lauf[]>('GET', `/api/werkbank/automatisierungen/${id}/laeufe?anzahl=30`),
   automatisierungLaufWiederholen: (laufId: string) => anfrage<Lauf>('POST', `/api/werkbank/automatisierungen/laeufe/${laufId}/wiederholen`),
   automatisierungLaufNichtWiederholen: (laufId: string) => anfrage<unknown>('POST', `/api/werkbank/automatisierungen/laeufe/${laufId}/nicht-wiederholen`),
@@ -1426,7 +1429,8 @@ export interface WerkbankUebersicht {
   /** Automatisierungen (#675): mit fehlgeschlagenen Läufen bzw. angehalten oder fehlerhaft. */
   /** Angehaltene Mappen-Abläufe (#1044). */
   ablaeufe?: { angehalten: Array<{ id: string; vorlage: string; mappeId: string; grund: string }> } | null;
-  automatisierungen?: { fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: string }>; /** Erinnerungen am Feld beim Update übernommen (#712), bis gelesen. */ umgezogen?: { am: string; anzahl: number } | null; /** Keine Automatisierung schickt die Tägliche Zusammenfassung (#678). */ ohneBenachrichtigungen?: boolean; /** Keine eingeschaltete Automatisierung legt „Post für dich“ an (#1001). */ ohnePostFuerDich?: boolean };
+  automatisierungen?: { fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: string }>; /** Erinnerungen am Feld beim Update übernommen (#712), bis gelesen. */ umgezogen?: { am: string; anzahl: number } | null; /** Keine Automatisierung schickt die Tägliche Zusammenfassung (#678). */ ohneBenachrichtigungen?: boolean; /** Keine eingeschaltete Automatisierung legt „Post für dich“ an (#1001). */ ohnePostFuerDich?: boolean;
+    /** Adressen, die gerade Aufrufe von außen annehmen (#679). */ aufrufe?: Array<{ id: string; name: string; adresse: string }> };
   /** Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind. */
   notfallzugaenge?: Array<{ id: string; name: string; erstellt: string }>;
   /** Notfallcode benutzt (#815), bis jemand den Hinweis als gelesen markiert. */

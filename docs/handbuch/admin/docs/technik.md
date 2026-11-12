@@ -47,6 +47,7 @@ Wie groß etwas höchstens sein darf. Ablago prüft jede Grenze, bevor es die Da
 | Fehlermeldung (mit Bildschirmfoto und Anhängen) | 30 MB, das Bildschirmfoto 10 MB |
 | Logo eines Designs | 1 MB |
 | Einrichtungsdatei | 64 KB |
+| [Aufruf von außen](automatisierungen.md#aufruf-von-aussen) | Inhalt 16 KB, 10 Parameter zu je 500 Zeichen; 30 Aufrufe je Minute aus einem Netz (IPv4 /24, IPv6 /64), 12 angenommene je Minute und Adresse; Fehlversuche: 12 je Minute und Adresse, 600 je Minute insgesamt |
 | Passkeys | 20 je Person, Name 60 Zeichen, Antwort des Geräts 16 KB; Anmeldung ohne E-Mail-Adresse: 20 Herausforderungen je IP-Adresse bzw. IPv6-/64 in 5 Minuten, 20 000 offene insgesamt |
 | E-Rechnung (XML als Datei oder aus dem PDF-Anhang) | 4 MB, höchstens 64 Ebenen tief, 200 000 Elemente, 500 Positionen werden übernommen; ohne DTD und Entitäten. Was darüber liegt, liest Ablago nicht als E-Rechnung |
 | Alle anderen Anfragen (Formulare, Einstellungen) | 2 MB; eine Datei nehmen sie gar nicht an |

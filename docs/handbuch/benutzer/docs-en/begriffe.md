@@ -331,6 +331,10 @@ See also: [Planned](#geplant), [Reminder](#erinnerung), [Package](#paket).
 The template under "Customise the workbench" for the self-employed and small businesses – with number sequences, archive mode, mailboxes and further areas. Its counterpart is the template "Household".  
 See also: [Customise the workbench](#werkbank-anpassen), [Household](#haushalt).
 
+<a id="aufruf-von-auen"></a>**Call from outside** (*Aufruf von außen*) · ~ with explanation · administrators  
+When card of an automation with its own address and secret – another system (monitoring, home automation) triggers it by POST with a signature. The administration creates the address explicitly; the response only says "accepted". Parameters sent along are available as placeholders, only as text. The Workbench overview and the emergency sheet list all addresses that accept calls.  
+See also: [Workbench card](#werkbank-karte), [Emergency sheet](#notfallblatt).
+
 <a id="kann-aus-post-angelegt-werden"></a>**Can be created from post** (*Kann aus Post angelegt werden*) · ~ with explanation · administrators  
 Tick in the basics of a folder type (#937). Only folder types with it can be chosen under "Where does this belong?" when a document is taken over from the post – for everyone who may create folders there. On by default for folder types with a documents tab; never for system folder types.  
 See also: [Folder type](#mappentyp), [Post](#post), [How to recognise it](#woran-man-ihn-erkennt).

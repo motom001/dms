@@ -160,11 +160,16 @@ export interface PaketFeld extends Omit<Partial<Feld>, 'quelle'> { key: string; 
   quelle?: PaketTabellenquelle }
 /** Quelle einer Tabelle im Paket (#1030) – Schreibweise des Registry-Schemas (`schema/inhalt.schema.json`). */
 export interface PaketTabellenquelle { typ: string; feld: string; trefferliste?: string; neu?: string }
-/** Werkbank-Karten (#677) nur in der Werkbank: Pakete bringen weder Betriebs-Auslöser noch „Sicherung anstoßen“ mit. */
+/**
+ * Werkbank-Karten (#677) nur in der Werkbank: Pakete bringen weder Betriebs-Auslöser noch „Sicherung anstoßen“ mit –
+ * und keinen „Aufruf von außen“ (#679).
+ */
 function werkbankKartenFehler(a: Record<string, unknown>, wo: string): string[] {
   const f: string[] = [];
   const wenn = istObjekt(a.wenn) && typeof a.wenn.art === 'string' ? a.wenn.art : '';
   if (istBetriebWenn(wenn)) f.push(t('meldungen.pakete.automatisierung-werkbank-wenn', { wo, art: wenn }));
+  // Aufruf von außen (#679): eine Adresse ohne Anmeldung legt nur die Verwaltung selbst an, nie ein Paket.
+  if (wenn === 'aufruf') f.push(t('meldungen.pakete.automatisierung-aufruf', { wo }));
   if ((Array.isArray(a.dann) ? a.dann : []).some((k) => istObjekt(k) && k.art === 'sicherung')) f.push(t('meldungen.pakete.automatisierung-werkbank-dann', { wo }));
   return f;
 }

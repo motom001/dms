@@ -2030,6 +2030,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .automatisierung-bereich { border-radius: var(--r); margin: 4px 0; }
 .automatisierung-bereich > .zeile { justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .automatisierung-bereich .h3 { margin: 0; }
+/* Aufruf von außen (#679): Beispiel mit curl umbrechen statt die Seite zu verbreitern (Handy). */
+.automatisierung-bereich.aufruf pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: calc(12px * var(--skala, 1)); background: var(--senke); padding: 8px 10px; border-radius: 6px; margin: 6px 0 0; }
 .automatisierung-pfeil { text-align: center; color: var(--leise); font-size: 1.2rem; line-height: 1; }
 .automatisierung-karten { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
 .automatisierung-karten > li, .automatisierung .karte { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 6px; padding: 6px 8px; }

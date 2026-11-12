@@ -12,7 +12,7 @@ import { ARCHIVFASSUNG_MAX_BYTES } from '../../shared/src/archivfassung';
 import { FASSUNG_MAX_BYTES, UMWANDELN_MAX_BYTES, VORSCHAUBILD_MAX_BYTES } from '../../shared/src/dateiumwandlung';
 import { CODE_MAX, PAKET_MAX } from '../../shared/src/pakete';
 import { VOLLTEXT_KOERPER_MAX, VOLLTEXT_PAKET_MAX_BYTES } from '../../shared/src/paketvolltext';
-import { AUTOMATISIERUNG_GRENZEN } from '../../shared/src/automatisierung';
+import { AUFRUF_GRENZEN, AUTOMATISIERUNG_GRENZEN } from '../../shared/src/automatisierung';
 
 /* ---------- Einheiten ---------- */
 
@@ -50,6 +50,24 @@ export const VORSCHLAG_DATEI_MAX = 30 * MB;
 export const LOGO_MAX = MB;
 /** Einrichtungsdatei (`ablago-einrichtung.json`). */
 export const EINRICHTUNGSDATEI_MAX = 64 * KB;
+/**
+ * Aufruf von außen (#679): Rumpf höchstens – ein JSON-Objekt mit wenigen kurzen Parametern (10 × 500 Zeichen). Größere
+ * Anfragen lehnt der Server vor dem Lesen ab (413), ohne Adresse oder Signatur anzusehen.
+ */
+export const AUFRUF_KOERPER_MAX = 16 * KB;
+/**
+ * Aufruf von außen (#679), Bremse über alle Prozesse (Kurzzustand), je Minute. Vorab zählt nur der IP-Bereich (IPv4 /24,
+ * IPv6 /64) jede Anfrage. Die Prüfung (eine Abfrage über einen Index und ein HMAC) ist billig, darum zählen die Grenze je
+ * Adresse und die Notbremse nur **abgelehnte** Aufrufe: Wer das Geheimnis nicht hat, kann so keine Adresse und nicht alle
+ * zusammen stilllegen (Durchsicht Sicherheit, PR #1160). Gültig signierte zählen nur gegen `AUFRUF_ANGENOMMEN_JE_ADRESSE`.
+ */
+export const AUFRUF_JE_BEREICH = 30;
+/** Abgelehnte Aufrufe je Adresse (bekannt oder nicht, als Hash der Kennung) – darüber ohne Zähler und Protokoll. */
+export const AUFRUF_FEHLVERSUCHE_JE_ADRESSE = 12;
+/** Abgelehnte Aufrufe für alle Adressen zusammen (viele Netze zugleich) – Notbremse gegen Fluten von Kurzzustand und Protokoll. */
+export const AUFRUF_FEHLVERSUCHE_GESAMT = 600;
+/** Angenommene Aufrufe je Adresse – steht in `shared/` (die Werkbank nennt die Zahl). */
+export const AUFRUF_ANGENOMMEN_JE_ADRESSE = AUFRUF_GRENZEN.jeAdresseJeMinute;
 
 /* ---------- Pakete ---------- */
 

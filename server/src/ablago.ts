@@ -10,6 +10,7 @@ import { Oidc } from './oidc';
 import { Eingangsordner } from './eingangsordner';
 import { Webdav } from './webdav';
 import { Automatisierungen, pgAutomatisierungRepo } from './automatisierung';
+import { pgAufrufRepo } from './automatisierung/index';
 // Dann-Karten „Feld ändern“ und „Aufgabe / Benachrichtigung“ (#676) melden sich beim Motor an.
 import './automatisierung-karten';
 import { einbettenAus } from './koepfe';
@@ -584,6 +585,8 @@ const systemwerkbank = systemWerkbank({ sicherung, fehlermeldungen });
 const automatisierungRepo = messung.umhuelle(pgAutomatisierungRepo(sql, cfg.haushalt), 'automatisierungen');
 const automatisierungen = new Automatisierungen({
   dienst, repo: automatisierungRepo, werkbank: systemwerkbank,
+  // Aufruf von außen (#679): Adressen in der Datenbank; Bremse und Wiederholschutz im Kurzzustand des Dienstes, Geheimnis mit dessen Tresor.
+  aufruf: { repo: pgAufrufRepo(sql, cfg.haushalt), basis: () => betrieb.adresseFuerLinks() },
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
 });
 // Wenn-Karte „Protokollmeldung“ (#677): jeder Prozess meldet seine Warnungen und Fehler in den Ausgangskorb – nur solange

@@ -14,15 +14,15 @@ const istVerschluesselt = (v: unknown): v is string => typeof v === 'string' && 
 
 export type GeheimArt =
   | 'passwortfeld' | 'papierkorb' | 'mail' | 'postfach' | 'postfach_oauth_app' | 'postfach_oauth'
-  | 'oidc' | 'zweifaktor' | 'dokpasswort' | 'paket' | 'pruefwort' | 'sonstige';
+  | 'oidc' | 'zweifaktor' | 'dokpasswort' | 'paket' | 'aufruf' | 'pruefwort' | 'sonstige';
 
 /** Wo ein verschlüsselter Wert liegt; `wert` ist der ganze gespeicherte JSON-Wert. */
 export interface Fundstelle {
-  quelle: 'mappe' | 'papierkorb' | 'einstellung';
-  /** Id der Mappe bzw. Schlüssel der Einstellung. */
+  quelle: 'mappe' | 'papierkorb' | 'einstellung' | 'aufruf';
+  /** Id der Mappe bzw. Schlüssel der Einstellung bzw. Id der Automatisierung (Aufruf von außen, #679). */
   schluessel: string;
   wert: unknown;
-  /** Titel der Mappe bzw. Name des Benutzers (Zwei-Faktor), soweit bekannt. */
+  /** Titel der Mappe bzw. Name des Benutzers (Zwei-Faktor) bzw. der Automatisierung, soweit bekannt. */
   titel?: string | null;
 }
 
@@ -40,6 +40,7 @@ export const GEHEIM_ARTEN: Record<GeheimArt, { name: string; bereich: string; wo
   zweifaktor: { name: t('meldungen.geheimnisse.zwei-faktor-anmeldung'), bereich: 'Benutzer', wo: t('meldungen.geheimnisse.unter-benutzer-zuruecksetzen-der') },
   dokpasswort: { name: t('meldungen.geheimnisse.gemerkte-passwoerter-fuer-dokumente'), bereich: 'Benutzer', wo: t('meldungen.geheimnisse.der-benutzer-loescht-sie') },
   paket: { name: t('meldungen.geheimnisse.paket-einstellungen-geheimnisse'), bereich: 'Pakete', wo: t('meldungen.geheimnisse.in-den-einstellungen-des') },
+  aufruf: { name: t('meldungen.geheimnisse.aufruf'), bereich: 'Automatisierungen', wo: t('meldungen.geheimnisse.aufruf.wo') },
   pruefwort: { name: t('meldungen.geheimnisse.pruefwort-zeigt-ob-der'), bereich: 'Verschlüsselung', wo: t('meldungen.geheimnisse.wird-mit-einem-neuen'), intern: true },
   sonstige: { name: t('meldungen.geheimnisse.weitere-einstellungen'), bereich: 'Einstellungen', wo: t('meldungen.geheimnisse.bitte-melden-diese-art') },
 };
@@ -48,6 +49,7 @@ export const GEHEIM_ARTEN: Record<GeheimArt, { name: string; bereich: string; wo
 export function artVon(f: Pick<Fundstelle, 'quelle' | 'schluessel'>): GeheimArt {
   if (f.quelle === 'mappe') return 'passwortfeld';
   if (f.quelle === 'papierkorb') return 'papierkorb';
+  if (f.quelle === 'aufruf') return 'aufruf';
   const k = f.schluessel;
   if (k === 'mail') return 'mail';
   if (k === 'postfaecher') return 'postfach';
@@ -100,6 +102,7 @@ export function bestandAus(funde: Fundstelle[], lesbar: (v: string) => boolean, 
       else if (art === 'zweifaktor') was = t('meldungen.geheimnisse.zwei-faktor-anmeldung-von', { wert: f.titel || t('meldungen.geheimnisse.einem-benutzer') });
       else if (art === 'dokpasswort') was = t('meldungen.geheimnisse.gemerktes-passwort-fuer-dokumente', { wert: f.titel || t('meldungen.geheimnisse.einem-benutzer') });
       else if (art === 'paket') was = `Paket „${f.schluessel.slice('paket:'.length)}“: ${String(w.pfad.filter((x) => typeof x === 'string' && x !== 'werte').join('.') || 'Geheimnis')}`;
+      else if (art === 'aufruf') was = t('meldungen.geheimnisse.aufruf.was', { wert: f.titel || t('meldungen.geheimnisse.ohne-namen') });
       else if (art === 'mail') was = t('meldungen.geheimnisse.passwort-des-mailservers');
       else if (art === 'passwortfeld') was = `${f.titel || t('meldungen.geheimnisse.mappe-ohne-titel')}: ${String(w.pfad.at(-1) ?? 'Passwort')}`;
       else was = `Einstellung „${f.schluessel}“`;

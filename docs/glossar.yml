@@ -667,6 +667,14 @@ begriffe:
     nicht_verwenden: [Else-Zweig, Andernfalls]
     verwandt: [Werkbank-Karte, Automatisierungsvorlage]
     code: sonst
+  - begriff: Aufruf von außen
+    bereich: werkbank
+    beschreibung: Wenn-Karte einer Automatisierung mit eigener Adresse und Geheimnis – ein anderes System (Monitoring, Hausautomatisierung) löst sie per POST mit Signatur aus. Die Verwaltung legt die Adresse ausdrücklich an; die Antwort enthält nur „angenommen“. Mitgeschickte Parameter stehen als Platzhalter bereit, nur als Text. Werkbank-Übersicht und Notfallblatt nennen alle Adressen, die Aufrufe annehmen.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Webhook (eingehend), Trigger-URL, Endpunkt]
+    verwandt: [Werkbank-Karte, Notfallblatt]
+    code: "WennAufruf, art: aufruf, /api/aufruf/:kennung"
   - begriff: Werkbank-Karte
     bereich: werkbank
     beschreibung: Karte einer Automatisierung, die den Betrieb von Ablago betrifft statt einer Mappe – Wenn „Fehler gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ und Dann „Sicherung anstoßen“. Das Systemkonto „Automatisierung“ hat dafür genau festgelegte Werkbank-Rechte; einrichten darf sie nur, wer den Bereich selbst verwaltet.

@@ -40,6 +40,8 @@ import { vollexport } from '../src/vollexport';
 import { Zweifaktor } from '../src/zweifaktor';
 import { Passkeys } from '../src/passkeys';
 import { Authenticator } from './hilfen-authenticator';
+import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
+import '../src/automatisierung-karten';
 
 type App = { inject(o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string | string[]> }>; close(): Promise<void> };
 
@@ -138,8 +140,17 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     const mappe = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Portal', pw: G.passwortfeld } }, lena.id);
     ids.typ = typ.id; ids.mappe = mappe.id; ids.benutzer = lena.id;
 
+    // Aufruf von außen (#679): Das Geheimnis steht nur in der Antwort auf „Adresse anlegen“ – nie in Liste, Export oder Verlauf.
+    await konten.systemkonto('automatisierung');
+    d.systemkonten = (k) => konten.systemkonto(k);
+    const automatisierungen = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(), aufruf: { verschluessele, entschluessele, basis: () => 'https://ablago.example.org' } });
+    const auto = await automatisierungen.lege({ name: 'Von außen', aktiv: true, wenn: { art: 'aufruf', parameter: ['raum'] },
+      dann: [{ id: 'a', art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: lena.id }], text: 'Aufruf {raum}' }] }, lena.id);
+    G.aufrufGeheimnis = (await automatisierungen.aufrufAnlegen(auto.id, 'adresse', lena.id)).geheimnis;
+    ids.automatisierung = auto.id;
+
     const { baueApp } = await import('../src/http');
-    app = await baueApp(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth }) as unknown as App;
+    app = await baueApp(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth, automatisierungen }) as unknown as App;
     const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email: lena.email, passwort: G.kontoPasswort }, headers: { 'x-dms': '1' } });
     assert.equal(r.statusCode, 200, r.body);
     cookie = ([] as string[]).concat(r.headers['set-cookie'])[0].split(';')[0];
