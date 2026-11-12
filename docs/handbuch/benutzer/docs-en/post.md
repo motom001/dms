@@ -45,7 +45,15 @@ This way you capture several letters one after another without opening a folder 
 
 ### Into Ablago by email { #per-e-mail-ins-dms }
 
-If your administrator has set up a [mailbox](https://help.ablago.app/admin/aktuell/en/postfaecher/) (e.g. `dms@…`), **you simply forward emails there** – or have invoices sent there right away. Every email becomes new post with the channel *Email*: subject, sender (under *From*) and date from the email, the attachments as documents, the text of the email on the post and, if desired, the whole email as `.eml`.
+If your administrator has set up a [mailbox](https://help.ablago.app/admin/aktuell/en/postfaecher/) (e.g. `dms@…`), **you simply forward emails there** – or have invoices sent there right away. Every email becomes **exactly one** new post with the channel *Email*: subject, sender (under *From*) and date from the email, the text of the email on the post – and **every attachment a document of its own**. Three attachments give three documents, each with its file name and **in the order in which they appear in the email** (not sorted by name). Small embedded images such as logos in the signature do not become documents.
+
+![Email with three attachments as one post, the original email at the very end](bilder/post-email-anhaenge.png)
+
+#### Original email { #original-e-mail }
+
+At the very end is the email itself as `.eml`, marked **Original email** – once per post. It hangs as the last [enclosure](dokumente.md#anlagen) on the last attachment and goes along with it when you assign the post or take over that document. If the email came without attachments, it is the post's document itself. Recognition, classifying and AI never read the original email – its text is on the post already. To put it elsewhere, free it with **Make it a document of its own** or hang it elsewhere with **As enclosure of …**. Whether the original email comes along is set by your administrator on the mailbox (default: yes).
+
+**You split it yourself:** Ablago never turns one email into several posts by itself – a [separator sheet](#sammelscan-teilen) does not apply to the inbox either. If the attachments belong to different matters, use **Split post from here** on the first document that belongs elsewhere (see [Splitting a post from a document](#post-ab-hier-teilen)); you split a long PDF via **Pages** (see [Splitting a batch scan](#sammelscan-teilen)).
 
 **Scan to email:** many scanners and multifunction devices send scans by e-mail. Enter the mailbox's address as the target – every scan becomes new post.
 
@@ -187,6 +195,10 @@ This applies at once, but nothing is deleted yet. Only when you take the post ov
 
 In the post itself (**Open as post**) the same strip appears below the document.
 
+## Splitting a post from a document { #post-ab-hier-teilen }
+
+If a post has several documents that belong to different matters (e.g. an email with an invoice and a cancellation confirmation), open the post and click **Split post from here** on the first document that belongs elsewhere. This and all following documents go to *New post* with their enclosures as a new post "… (split off)"; the documents before stay. The history of both says where they came from. For this the documents of a post always stand **as received** – for an email in the order of its attachments.
+
 ## Splitting a batch scan {#sammelscan-teilen}
 
 If you scanned several letters at once, they arrive as **one post** with a long PDF. This is how you make separate posts from it:
@@ -196,7 +208,7 @@ If you scanned several letters at once, they arrive as **one post** with a long 
 3. At the first page of each further letter, click **Split from here**. You can **delete** blank backs straight away and **rotate** crooked pages.
 4. **Apply** and confirm the question.
 
-With the package **Trennblatt** this happens by itself: a separator sheet between the letters starts a new post. With a second barcode for **enclosures** (once the package knows it), "invoice, report, work done, parts order" becomes one main document with **enclosure 1, 2, 3** in the same new post – see [Enclosures](dokumente.md#anlagen).
+With the package **Trennblatt** this happens by itself: a separator sheet between the letters starts a new post. This does not apply to the [email inbox](#per-e-mail-ins-dms) – an email stays one post, even if an attached PDF contains separator sheets. With a second barcode for **enclosures** (once the package knows it), "invoice, report, work done, parts order" becomes one main document with **enclosure 1, 2, 3** in the same new post – see [Enclosures](dokumente.md#anlagen).
 
 For each part, a **new post** with status *New* is created: subject "Batch scan (part 1)", "Batch scan (part 2)" …, date, “From” and “To” as in the original post. You can then [assign](#zuordnen) each one as usual. The original post keeps the whole PDF, is *Done* and links to the new ones under "Assigned to" – nothing is lost. At the top there is a notice with links to the new posts.
 

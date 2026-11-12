@@ -19,7 +19,7 @@ import { Symbol } from '../Symbol';
 import { BrueckeKontext, farbeVon, setzeNutzlast, type Bruecke, type FormularAnschluss, type Marke, type Nutzlast } from './bruecke';
 import { ansichtVon } from './Dokumente';
 import { AnlageMarke, anlageZeilentext } from './Anlagen';
-import { gruppiere, nurHauptdokumente } from '../../../shared/src/anlagen';
+import { eingangsreihenfolge, gruppiere, nurHauptdokumente } from '../../../shared/src/anlagen';
 import { Knopf } from '../bausteine';
 import { GrosseSeiteMarke, grosseSeite, MitLeerseiten, useLeerseiten } from './Leerseiten';
 import { MappeAnsicht, MappenWahl, NeueMappe } from './MappeFormular';
@@ -97,7 +97,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const [dokId, setDokId] = useState(() => dokumentWunsch ?? [...mitText].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0]?.id ?? details.dokumente[0]?.id);
   // Post: in der Reihenfolge, in der sie abgelegt wurden (Seite 1 zuerst) – „Ab hier abtrennen“ meint die folgenden.
   // Anlagen (#998) stehen eingeklappt hinter ihrem Hauptdokument; Erkennung, Klassifizieren und KI lesen sie nie.
-  const doks = post ? gruppiere([...details.dokumente].sort((a, b) => a.erstellt.localeCompare(b.erstellt) || a.name.localeCompare(b.name))).flatMap((g) => [g.haupt, ...g.anlagen]) : details.dokumente.filter((x) => x.id === dokId);
+  // Eingangsreihenfolge (#999): bei einer E-Mail so, wie die Anhänge in ihr stehen.
+  const doks = post ? gruppiere(eingangsreihenfolge(details.dokumente)).flatMap((g) => [g.haupt, ...g.anlagen]) : details.dokumente.filter((x) => x.id === dokId);
   const erkennDoks = nurHauptdokumente(doks).filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
   const [offeneAnlagen, setOffeneAnlagen] = useState<Set<string>>(new Set());
   // Leerseiten (#997): nur bei Post – die Wahl je Seite gilt sofort, gelöscht wird erst beim Übernehmen.

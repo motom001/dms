@@ -403,7 +403,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   const verweise = await w.oeffne('daten/verweise.csv');
   await verweise.schreibe(BOM + csvZeile(['quelle_id', 'feld', 'feld_schluessel', 'ziel_id', 'ziel_titel']));
   const dokListe = await w.oeffne('daten/dokumente.csv');
-  await dokListe.schreibe(BOM + csvZeile(['dokument_id', 'mappe_id', 'register', 'dateiname', 'typ', 'groesse', 'sha256', 'erstellt', 'erstellt_von', 'version', 'stand', 'pfad', 'fassung', 'archivfassung', 'anlage_zu', 'anlage_nr']));
+  await dokListe.schreibe(BOM + csvZeile(['dokument_id', 'mappe_id', 'register', 'dateiname', 'typ', 'groesse', 'sha256', 'erstellt', 'erstellt_von', 'version', 'stand', 'pfad', 'fassung', 'archivfassung', 'anlage_zu', 'anlage_nr', 'eingang_nr', 'original_email']));
   const notizDatei = await w.oeffne('daten/notizen.jsonl');
   const aufgabeDatei = await w.oeffne('daten/aufgaben.jsonl');
   const historieDatei = await w.oeffne('daten/historie.jsonl');
@@ -510,7 +510,9 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
           const text = texte.get(d.id);
           if (text) await w.schreibe(`${rel}.txt`, Buffer.from(text, 'utf8'));
           // Anlagen (#998): Hauptdokument und Nummer am Ende der Zeile – ältere Leser übergehen die Spalten.
-          const anlage = [d.anlageZu ?? '', d.anlageZu ? String(d.anlageNr ?? 1) : ''];
+          const anlage = [d.anlageZu ?? '', d.anlageZu ? String(d.anlageNr ?? 1) : '',
+            // E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post und Kennzeichen „Original-E-Mail“ (ja/leer).
+            d.eingangNr ? String(d.eingangNr) : '', d.originalEmail ? 'ja' : ''];
           await dokListe.schreibe(csvZeile([d.id, m.id, d.registerKey, d.name, d.mime, String(d.groesse), d.sha256, d.erstellt, d.erstelltVon ?? '', String(d.version ?? 1), 'aktuell', rel, await fassung(d, rel), await archiv(d, rel), ...anlage]));
           dokumente++;
           const vn = namen();
@@ -613,7 +615,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |
 | \`daten/verweise.csv\` | Mappe → Feld → Mappe |
-| \`daten/dokumente.csv\` | alle Dokumente und ihre älteren Versionen mit Pfad im Export; \`anlage_zu\`/\`anlage_nr\` = Hauptdokument und Nummer einer Anlage (leer bei eigenen Dokumenten) |
+| \`daten/dokumente.csv\` | alle Dokumente und ihre älteren Versionen mit Pfad im Export; \`anlage_zu\`/\`anlage_nr\` = Hauptdokument und Nummer einer Anlage (leer bei eigenen Dokumenten); \`eingang_nr\` = Platz in der Reihenfolge einer E-Mail, \`original_email\` = „ja“ bei der abgeholten E-Mail selbst |
 | \`daten/*.jsonl\` | Notizen, Aufgaben (mit Fristen), geplante Abläufe (Erinnerungen, Wiedervorlagen), Historie, Papierkorb, Vertretungen; \`favoriten.csv\` |
 | \`ablage/<Typ>/<Titel> [Id]/\` | je Mappe \`mappe.json\`, \`mappe.pdf\` und die Dokumente im Original je Register; \`.txt\` = erkannter Text; \`.fassung.pdf\` (bzw. \`.png\`, \`.jpg\`) = umgewandelte Fassung eines Pakets für Dateitypen wie TIFF; \`.pdfa.pdf\` = Archivfassung (PDF/A) eines Pakets, durchsuchbar, zum langfristigen Aufbewahren; \`Versionen/\` = ältere Versionen |
 | \`uebersicht/<typ>.pdf\` | Übersicht je Mappentyp mit allen Mappen |

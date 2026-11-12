@@ -84,7 +84,7 @@ Alle Knöpfe sind am Handy mindestens 44 Punkte groß. Muss das Dokument lange z
 
 ## Sortieren
 
-Über der Liste wählst du die Reihenfolge: **Name A–Z** (Standard), **Name Z–A**, **Neueste zuerst**, **Älteste zuerst** (nach dem Hochladen) oder **Größte zuerst**. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben.
+Über der Liste wählst du die Reihenfolge: **Name A–Z** (Standard), **Name Z–A**, **Neueste zuerst**, **Älteste zuerst** (nach dem Hochladen) oder **Größte zuerst**. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben. In einer **Post** gibt es keine Wahl: Dort stehen die Dokumente **wie eingegangen** – bei einer [E-Mail](post.md#per-e-mail-ins-dms) in der Reihenfolge ihrer Anhänge, sonst nach dem Hochladen.
 
 ## Mehrere auf einmal
 

@@ -14,16 +14,23 @@ import s from './Anlagen.module.css';
  * Rechte wie beim Hauptdokument: Wer die Mappe bearbeiten darf, ändert Anlagen; herunterladen braucht das Exportrecht.
  */
 
-/** Kennzeichen „Anlage“ – überall, wo Dokumente gelistet werden. */
-export function AnlageMarke({ d }: { d: Pick<Dokument, 'anlageZu'> }) {
+/**
+ * Kennzeichen „Anlage“ – überall, wo Dokumente gelistet werden. Die abgeholte E-Mail selbst (#999) trägt stattdessen
+ * „Original-E-Mail“, als Anlage wie als Hauptdokument (E-Mail ohne Anhänge).
+ */
+export function AnlageMarke({ d }: { d: Pick<Dokument, 'anlageZu' | 'originalEmail'> }) {
+  if (d.originalEmail) return <span className="chip" title={t('ablage.anlagen.original-email-titel')}>{t('ablage.anlagen.original-email')}</span>;
   if (!d.anlageZu) return null;
   return <span className="chip" title={t('ablage.anlagen.marke-titel')}>{t('ablage.anlagen.marke')}</span>;
 }
 
-/** „Anlage 1 · HU/AU-Protokoll · 2 Seiten“. */
+/**
+ * „Anlage 1 · HU/AU-Protokoll · 2 Seiten“. Die Original-E-Mail (#999) zählt nicht als „Anlage n“ – nur ihr Name, das
+ * Kennzeichen daneben sagt „Original-E-Mail“.
+ */
 export function anlageZeilentext(a: Dokument): string {
   const seiten = a.ocr?.seiten ? t('ablage.anlagen.seiten', { anzahl: a.ocr.seiten }) : '';
-  return [anlageText(a.anlageNr ?? 1), a.name, seiten].filter(Boolean).join(' · ');
+  return [a.originalEmail ? '' : anlageText(a.anlageNr ?? 1), a.name, seiten].filter(Boolean).join(' · ');
 }
 
 /**

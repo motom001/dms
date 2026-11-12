@@ -45,7 +45,15 @@ So erfasst du mehrere Briefe hintereinander, ohne eine Mappe zu öffnen – zuor
 
 ### Per E-Mail in Ablago { #per-e-mail-ins-dms }
 
-Hat dein Administrator ein [Postfach](https://help.ablago.app/admin/aktuell/postfaecher/) eingerichtet (z. B. `dms@…`), **leitest du Mails einfach dorthin weiter** – oder lässt Rechnungen gleich dorthin schicken. Jede Mail wird eine neue Post mit Kanal *E-Mail*: Betreff, Absender (bei *Von*) und Datum aus der Mail, die Anhänge als Dokumente, der Text der Mail an der Post und auf Wunsch die ganze Mail als `.eml`.
+Hat dein Administrator ein [Postfach](https://help.ablago.app/admin/aktuell/postfaecher/) eingerichtet (z. B. `dms@…`), **leitest du Mails einfach dorthin weiter** – oder lässt Rechnungen gleich dorthin schicken. Jede Mail wird **genau eine** neue Post mit Kanal *E-Mail*: Betreff, Absender (bei *Von*) und Datum aus der Mail, der Text der Mail an der Post – und **jeder Anhang ein eigenes Dokument**. Drei Anhänge ergeben also drei Dokumente, jedes mit seinem Dateinamen und **in der Reihenfolge, in der sie in der Mail stehen** (nicht nach Namen sortiert). Kleine eingebettete Bilder wie Logos in der Signatur werden kein Dokument.
+
+![E-Mail mit drei Anhängen als eine Post, ganz hinten die Original-E-Mail](bilder/post-email-anhaenge.png)
+
+#### Original-E-Mail { #original-e-mail }
+
+Ganz hinten steht die Mail selbst als `.eml` mit dem Kennzeichen **Original-E-Mail** – einmal je Post. Sie hängt als letzte [Anlage](dokumente.md#anlagen) am letzten Anhang und geht mit ihm mit, wenn du die Post zuordnest oder dieses Dokument übernimmst. Kam die Mail ohne Anhänge, ist sie selbst das Dokument der Post. Erkennung, Klassifizieren und KI lesen die Original-E-Mail nie – ihr Text steht ja schon an der Post. Soll sie woanders hin, machst du sie mit **Zum eigenen Dokument machen** frei oder hängst sie mit **Als Anlage an …** um. Ob die Original-E-Mail mitkommt, stellt dein Administrator am Postfach ein (Standard: ja).
+
+**Aufteilen tust du selbst:** Ablago macht aus einer Mail nie von allein mehrere Posts – auch ein [Trennblatt](#sammelscan-teilen) gilt im Postfach nicht. Gehören die Anhänge zu verschiedenen Vorgängen, nimm **Post ab hier teilen** am ersten Dokument, das woandershin gehört (siehe [Post teilen ab einem Dokument](#post-ab-hier-teilen)); ein langes PDF teilst du über **Seiten** (siehe [Sammelscan teilen](#sammelscan-teilen)).
 
 **Scan to E-Mail:** Viele Scanner und Multifunktionsgeräte schicken Scans per Mail. Trag die Adresse des Postfachs als Ziel ein – jeder Scan wird neue Post.
 
@@ -187,6 +195,10 @@ Das gilt sofort, gelöscht wird aber noch nichts. Erst wenn du die Post in eine 
 
 In der Post selbst (**Als Post öffnen**) steht dieselbe Leiste unter dem Dokument.
 
+## Post teilen ab einem Dokument { #post-ab-hier-teilen }
+
+Hat eine Post mehrere Dokumente, die zu verschiedenen Vorgängen gehören (z. B. eine Mail mit Rechnung und Kündigungsbestätigung), öffne die Post und klicke beim ersten Dokument, das woandershin gehört, auf **Post ab hier teilen**. Dieses und alle folgenden Dokumente kommen samt ihren Anlagen als neue Post „… (abgetrennt)“ nach *Neue Post*; die Dokumente davor bleiben. In der Historie beider steht, woher sie kommen. Die Dokumente einer Post stehen dafür immer **wie eingegangen** – bei einer Mail in der Reihenfolge ihrer Anhänge.
+
 ## Sammelscan teilen
 
 Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit einem langen PDF an. So machst du daraus einzelne Posts:
@@ -196,7 +208,7 @@ Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit ein
 3. Klicke bei der ersten Seite jedes weiteren Briefs auf **Teilen ab hier**. Leere Rückseiten kannst du gleich **löschen**, schiefe Seiten **drehen**.
 4. **Übernehmen** und die Rückfrage bestätigen.
 
-Mit dem Paket **Trennblatt** geht das von selbst: Ein Trennblatt zwischen den Briefen beginnt eine neue Post. Mit einem zweiten Barcode für **Anlagen** (sobald das Paket ihn kennt) wird aus „Rechnung, Protokoll, Arbeiten, Teilebestellung“ ein Hauptdokument mit **Anlage 1, 2, 3** in derselben neuen Post – siehe [Anlagen](dokumente.md#anlagen).
+Mit dem Paket **Trennblatt** geht das von selbst: Ein Trennblatt zwischen den Briefen beginnt eine neue Post. Im [E-Mail-Postfach](#per-e-mail-ins-dms) gilt das nicht – eine Mail bleibt eine Post, auch wenn ein angehängtes PDF Trennblätter enthält. Mit einem zweiten Barcode für **Anlagen** (sobald das Paket ihn kennt) wird aus „Rechnung, Protokoll, Arbeiten, Teilebestellung“ ein Hauptdokument mit **Anlage 1, 2, 3** in derselben neuen Post – siehe [Anlagen](dokumente.md#anlagen).
 
 Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil 1)“, „Sammelscan (Teil 2)“ …, Datum, „Von“ und „An“ wie bei der Ausgangspost. Jede kannst du dann wie gewohnt [zuordnen](#zuordnen). Die Ausgangspost behält das ganze PDF, ist *Erledigt* und verweist unter „Zugeordnet zu“ auf die neuen – nichts geht verloren. Oben steht ein Hinweis mit Links zu den neuen Posts.
 

@@ -639,7 +639,13 @@ export function speicherRepo(): Repo {
     },
     async holeDokument(id) { const d = dokumente.get(id); return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }; },
     async setzeDokumentErstellt(id, erstellt) { const d = dokumente.get(id); if (d) d.erstellt = erstellt; },
-    async legeDokumentAn(d) { const n: Dokument = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; delete n.leerseiten; delete n.anlageZu; delete n.anlageNr; dokumente.set(d.id, n); return kopie(n); },
+    async legeDokumentAn(d) { const n: Dokument = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; delete n.leerseiten; delete n.anlageZu; delete n.anlageNr; delete n.eingangNr; if (!n.originalEmail) delete n.originalEmail; dokumente.set(d.id, n); return kopie(n); },
+    async setzeEingang(id, x) {
+      const d = dokumente.get(id);
+      if (!d) return;
+      if (x.nr !== undefined) { if (x.nr && x.nr > 0) d.eingangNr = Math.round(x.nr); else delete d.eingangNr; }
+      if (x.originalEmail !== undefined) { if (x.originalEmail) d.originalEmail = true; else delete d.originalEmail; }
+    },
     async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); ohneHauptdokument(id); },
     async versionenVon(id) { return [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x)); },
     async versionenVonDokumenten(ids) { return [...new Set(ids)].flatMap((id) => [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x))); },

@@ -1409,6 +1409,7 @@
   "postfach.doppelt-liegen-schon-in_one": "Duplicate: {map} is already in Ablago – check before assigning.",
   "postfach.doppelt-liegen-schon-in_other": "Duplicate: {map} are already in Ablago – check before assigning.",
   "postfach.nicht-uebernommene-anhaenge": "Attachments not taken over: {abgelehnt}",
+  "postfach.paket-teilt-nicht": "No package splits post from the email inbox – one email stays one post. Split it by hand (“Pages” → split, or “Split post from here”).",
   "protokoll.debug-modus-nach-einer": "Debug-Modus nach einer Stunde automatisch ausgeschaltet",
   "protokoll.ohne-text": "(no text)",
   "proxy.automatisch-eigener-rechner-und": "automatic (own computer and private networks)",

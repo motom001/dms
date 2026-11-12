@@ -19,7 +19,8 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
 - `anlagen.ts` – `DokumentAnlagen` (#998): `liste`, `haengeAn` („Als Anlage an … hängen“), `loese` („Zum eigenen
   Dokument machen“), `sortiere`, `benenne`, `alsAnlagen` (beim Teilen einer Post, `dms:anlagen`). Mitwandern:
   `verschiebeDokument` im Repo, `loescheDokument` (Anlagen mit in den Papierkorb, beim Ersetzen `nimmAnlagenMit`),
-  Wiederherstellen im Papierkorb.
+  Wiederherstellen im Papierkorb. `alsOriginalEmail` (#999): die abgeholte E-Mail als letzte Anlage am letzten Anhang;
+  `eingangNr`/`originalEmail` setzt `ladeHoch` (intern `eingang`) und übernimmt `nimmAnlagenMit` beim Ersetzen.
 - `index.ts` – die einzige Tür. `dokumente.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 
 **Abhängigkeiten**

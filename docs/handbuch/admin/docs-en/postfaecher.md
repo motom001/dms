@@ -26,7 +26,7 @@ Ablago can **fetch one or more email mailboxes via IMAP** and take over **every 
 | Only from these senders | optional: addresses (`rechnung@stadtwerke.example`) or domains (`bank.example`, including subdomains) |
 | After taking over | **move to a folder** (default `DMS`, created), **only mark as read** or **delete** |
 | Only emails with attachments | others stay unchanged in the mailbox |
-| Original email as .eml | default on: the whole email is additionally attached to the post as a document |
+| Original email as .eml | default on: the whole email is added at the very end of the post as a document marked “Original email” |
 
 **Test connection** signs in, names the number of emails in the folder and says in case of errors what the cause is: sign-in refused, server unreachable, certificate invalid. A stored password (or the OAuth sign-in) only goes to the stored server, port and encryption: if you change one of them, enter the password anew (or save and sign in anew). **Fetch now** (area *Status*) fetches immediately. **Remove mailbox** (bottom left) deletes the mailbox from Ablago after a confirmation; the emails in the mailbox stay as they are.
 
@@ -106,7 +106,10 @@ For other providers with IMAP and OAuth 2.0 you enter the *authorization endpoin
 ## What happens when taking over { #was-beim-ubernehmen-passiert }
 
 - **Every email becomes a post**: channel *Email*, direction incoming, status *New*; subject, date and sender (name and address, under *From*) from the email; *To* from the mailbox. It was created by the *mailbox*, not by a user. The history names mailbox, sender and time.
-- **Attachments** become individual documents. Small embedded images (logos, signatures) are skipped; attached emails stay an `.eml` document.
+- **One email, one post** (since 0.262): every **attachment** becomes a document of its own with its file name, in the order of the email (MIME structure) – no sorting, no naming rule; only an equal name in the tab gets "(2)" as when uploading. Small embedded images (logos, signatures: embedded or `inline` under 100 KB) are skipped; attached emails stay an `.eml` document.
+- The **original email** (`.eml`, if switched on) comes at the very end: as the last [enclosure](https://help.ablago.app/benutzer/aktuell/dokumente/#anlagen) on the last attachment, without attachments as the post's document. It is marked "Original email", goes along when assigning and is never read by recognition, classifying or AI. A [package for the archive version](texterkennung.md#archivfassung-pdfa) makes a PDF/A of it next to it, as for every document.
+- **No splitting:** separator sheets do not apply to the inbox. Ablago lets no package split a post with channel *E-Mail* (409); packages like *Trennblatt* leave the channel out anyway. Users split it themselves – **Split post from here** or **Pages** → split.
+- Post from before 0.262 stays as it is: its `.eml` has no mark (it cannot be told apart safely from attached emails); its documents stand in the order of arrival.
 - **Duplicate attachments:** if an attachment is already in Ablago (same checksum), it is taken over anyway; the post's history says "Duplicate: "Invoice.pdf" is already in Ablago – check before assigning." Where, **Assign** shows to everyone who may read the other folder.
 - The **Email's text** appears as plain text on the post. HTML is converted into text; Ablago never loads images or other content from the internet.
 - The same limits as for uploading apply. A too-large attachment is recorded with the reason in the history; the others are taken over. If the [storage space](speicherplatz.md) limit is reached, the email stays in the mailbox.

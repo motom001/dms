@@ -17,7 +17,7 @@ export const DMS_ANLAGEN_AB = '0.263.0';
 export const ANLAGEN_MAX = 99;
 
 /** Was die Funktionen hier von einem Dokument brauchen. */
-export interface AnlageTeil { id: string; name: string; anlageZu?: string | null; anlageNr?: number | null }
+export interface AnlageTeil { id: string; name: string; anlageZu?: string | null; anlageNr?: number | null; eingangNr?: number | null; originalEmail?: boolean }
 
 /** Ist das eine Anlage (hängt an einem Hauptdokument)? */
 export const istAnlage = (d: Pick<AnlageTeil, 'anlageZu'>): boolean => !!d.anlageZu;
@@ -36,8 +36,24 @@ export function gruppiere<T extends AnlageTeil>(liste: readonly T[]): Array<{ ha
   return liste.filter((d) => !d.anlageZu || !ids.has(d.anlageZu)).map((haupt) => ({ haupt, anlagen: anlagenVon(liste, haupt.id) }));
 }
 
-/** Nur Hauptdokumente und eigene Dokumente – ohne Anlagen (für Erkennung, Klassifizieren und KI). */
-export const nurHauptdokumente = <T extends Pick<AnlageTeil, 'anlageZu'>>(liste: readonly T[]): T[] => liste.filter((d) => !d.anlageZu);
+/**
+ * Lassen Erkennung, Klassifizieren und KI dieses Dokument weg? Anlagen (#998) und die Original-E-Mail (#999) – auch dann,
+ * wenn die E-Mail ohne Anhänge selbst das Hauptdokument ist: Ihr Text steht schon als Nachricht an der Post.
+ */
+export const ohneErkennung = (d: Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>): boolean => !!d.anlageZu || !!d.originalEmail;
+
+/** Nur Hauptdokumente und eigene Dokumente – ohne Anlagen und ohne Original-E-Mail (für Erkennung, Klassifizieren und KI). */
+export const nurHauptdokumente = <T extends Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>>(liste: readonly T[]): T[] => liste.filter((d) => !ohneErkennung(d));
+
+/**
+ * Eingangsreihenfolge einer Post (#999): erst, was aus dem Postfach kam, in der Reihenfolge der E-Mail (`eingangNr`),
+ * dann alles andere nach dem Zeitpunkt des Hochladens – älteste zuerst. Keine Sortierung nach Namen. Anlagen ordnet
+ * `gruppiere` danach unter ihr Hauptdokument.
+ */
+export function eingangsreihenfolge<T extends AnlageTeil & { erstellt: string }>(liste: readonly T[]): T[] {
+  const nr = (d: T) => d.eingangNr ?? Number.MAX_SAFE_INTEGER;
+  return [...liste].sort((a, b) => nr(a) - nr(b) || a.erstellt.localeCompare(b.erstellt) || a.id.localeCompare(b.id));
+}
 
 /**
  * Die Auswahl samt Anlagen: hinter jedem gewählten Hauptdokument seine Anlagen, jedes Dokument einmal. `mitAnlagen`

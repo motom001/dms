@@ -17,7 +17,7 @@ import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { ANLAGEN_MAX, anlageName } from '../../../shared/src/anlagen';
 import { kernTyp } from '../../../shared/src/dateiumwandlung';
-import { auswahlText, type Dokument, type Historieneintrag, type Mappe, type Mappentyp, MAX_DATEIGROESSE, POST_STAND, type Register, type Werte } from '../../../shared/src/model';
+import { auswahlText, type Dokument, type Historieneintrag, type Mappe, type Mappentyp, MAX_DATEIGROESSE, POST_KANAL, POST_STAND, type Register, type Werte } from '../../../shared/src/model';
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 /** Wert eines Mehrfachverweises als Liste. */
@@ -55,6 +55,14 @@ function anlagenBeimTeilen(roh: unknown, starts: number[], laenge: number, x: { 
   if (!x.post) throw new Fachfehler(409, t('meldungen.anlagen.nur-post-teilen'));
   if (x.d.anlageZu) throw new Fachfehler(409, t('meldungen.anlagen.haupt-ist-anlage', { name: x.d.name }));
   return anlagen;
+}
+
+/**
+ * E-Mail-Postfach (#999): Eine E-Mail ist genau eine Post – Trennblätter und andere Pakete teilen sie nicht (409), nur
+ * die Person selbst („Seiten“ → teilen, „Post ab hier teilen“).
+ */
+function pruefeEmailTeilen(post: Mappe, z: Zugriff | undefined): void {
+  if (z?.paket && auswahlText(post.werte.kanal) === POST_KANAL.email) throw new Fachfehler(409, t('meldungen.postfach.paket-teilt-nicht'));
 }
 
 /** Je Abschnitt ein Puffer: je Teil (neue Post) das Hauptdokument und die Anlagen, die in diesem Teil beginnen. */
@@ -217,6 +225,7 @@ export class PdfBearbeiten {
    * die neuen.
    */
   private async teilePost(post: Mappe, typ: Mappentyp, reg: Register, d: Dokument, plan: Array<{ haupt: Buffer; anlagen: Buffer[] }>, von: string | null, z: Zugriff | undefined, was: Record<string, unknown>) {
+    pruefeEmailTeilen(post, z);
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const posten: Mappe[] = [];
     const dokumente: Dokument[] = [];

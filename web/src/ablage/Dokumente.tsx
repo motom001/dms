@@ -29,7 +29,7 @@ import { kannStempeln } from '../../../shared/src/stempel';
 import { gebietsschema, sprache } from '../../../shared/src/sprache';
 import { registerName } from '../../../shared/src/beschriftung';
 import { Knopf } from '../bausteine';
-import { anlagenVon, gruppiere } from '../../../shared/src/anlagen';
+import { anlagenVon, eingangsreihenfolge, gruppiere } from '../../../shared/src/anlagen';
 import { AlsAnlage, AnlageMarke, AnlageZeile, HerunterladenMitAnlagen } from './Anlagen';
 
 /** „Verkleinern“ (#393) erst ab dieser Größe anbieten – kleinere PDFs lohnen die Mühe kaum. */
@@ -137,13 +137,30 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const [original, setOriginal] = useState<Set<string>>(new Set());
   const offenRef = useRef<HTMLLIElement>(null);
   const sortierung = (d.einstellungen.dokumente_sortierung as Dokumentsortierung | undefined) ?? 'name';
-  const dokumente = sortiereDokumente(roh, sortierung in DOKUMENT_SORTIERUNGEN ? sortierung : 'name');
+  // Post (#999): in der Reihenfolge des Eingangs – bei einer E-Mail so, wie die Anhänge in ihr stehen; nie nach Namen.
+  const dokumente = post ? eingangsreihenfolge(roh) : sortiereDokumente(roh, sortierung in DOKUMENT_SORTIERUNGEN ? sortierung : 'name');
   // Anlagen (#998): eingeklappt unter ihrem Hauptdokument, in ihrer Reihenfolge; sortiert werden nur Hauptdokumente.
   const reihe = gruppiere(dokumente).flatMap((g) => [g.haupt, ...g.anlagen]);
   const roh0 = roh;
   const hauptVon = (x: Dokument) => (x.anlageZu ? roh.find((y) => y.id === x.anlageZu) : undefined);
   const [alsAnlage, setAlsAnlage] = useState<string>();
   const anlagenFertig = async (m?: string) => { setAlsAnlage(undefined); if (m) setPdfMeldung(m); await neuLaden?.(); };
+  // „Post ab hier teilen“ (#999): dieses Hauptdokument und alle danach (samt Anlagen) kommen als neue Post nach „Neue Post“.
+  const hauptReihe = reihe.filter((y) => !hauptVon(y) && !entfernt.includes(y.id));
+  async function postTeilenAb(x: Dokument) {
+    const ab = hauptReihe.findIndex((y) => y.id === x.id);
+    if (ab <= 0) return;
+    const weg = hauptReihe.slice(ab);
+    if (!(await rueckfrage({ titel: t('ablage.dokumente.post-teilen-ab-frage', { name: x.name }), text: t('ablage.dokumente.post-teilen-ab-text', { anzahl: weg.length }), ja: t('ablage.dokumente.post-teilen-ab') }))) return;
+    setPdfMeldung(undefined); setVersionFehler(undefined);
+    try {
+      const r = await api.postAbtrennen(x.mappeId, weg.map((y) => y.id));
+      setPdfMeldung(<>{t('ablage.dokumente.post-geteilt', { anzahl: weg.length })}{' '}<Link to={`/ablage/${r.neu.typId}/${r.neu.id}`} className="verweis">{String(r.neu.werte.betreff ?? t('ablage.dokumente.post'))}</Link></>);
+      await neuLaden?.();
+    } catch (e) { setVersionFehler((e as Error).message); }
+  }
+  const teilenAbKnopf = (x: Dokument, weg: boolean) => post && bearbeitbar && !weg && hauptReihe.findIndex((y) => y.id === x.id) > 0
+    ? <Knopf art="link" title={t('ablage.dokumente.post-teilen-ab-titel')} onClick={() => postTeilenAb(x)}>{t('ablage.dokumente.post-teilen-ab')}</Knopf> : null;
   // Leerseiten (#997): nur an der Post – Seitenleiste mit „Doch behalten“ / „Auch weglassen“.
   const leer = useLeerseiten(post ? roh : []);
   // Auswahl (#87): je Register; verschwindet mit dem Register bzw. der Mappe (eigene Instanz).
@@ -305,10 +322,12 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     onClick={() => setZusammen(zusammen ? null : { name: pdfAuswahl[0].name, entfernen: false })}>{t('ablage.dokumente.zusammenfuegen')}</button>}
                   {!nurLesen && <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>{t('ablage.dokumente.loeschen')}</button>}
                 </>}
-                <label className="sortwahl klein"><span className="leise">{t('ablage.dokumente.sortieren')}</span>
-                  <select value={sortierung} onChange={(e) => d.setzeEinstellung('dokumente_sortierung', e.target.value === 'name' ? null : e.target.value)}>
-                    {Object.entries(DOKUMENT_SORTIERUNGEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select></label>
+                {post
+                  ? <span className="sortwahl klein leise">{t('ablage.dokumente.eingangsreihenfolge')}</span>
+                  : <label className="sortwahl klein"><span className="leise">{t('ablage.dokumente.sortieren')}</span>
+                      <select value={sortierung} onChange={(e) => d.setzeEinstellung('dokumente_sortierung', e.target.value === 'name' ? null : e.target.value)}>
+                        {Object.entries(DOKUMENT_SORTIERUNGEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select></label>}
                 <Hilfe ort="dokumente.sortieren" />
               </div>
             )}
@@ -413,6 +432,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           : <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />)}
                         {bearbeitbar && !weg && !x.anlageZu && ziele.length > 0 && <Knopf art="link" aria-expanded={alsAnlage === x.id} title={t('ablage.anlagen.als-anlage-knopf-titel')}
                           onClick={() => setAlsAnlage(alsAnlage === x.id ? undefined : x.id)}>{t('ablage.anlagen.als-anlage-knopf')}</Knopf>}
+                        {teilenAbKnopf(x, weg)}
                         {!weg && mitnehmen && kannStempeln(x.mime) && typ && <button type="button" className="textknopf" aria-expanded={stempelOffen?.id === x.id && !stempelOffen.version}
                           title={t('ablage.dokumente.eine-kopie-mit-stempel')}
                           onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? t('ablage.dokumente.herunterladen-mit-stempel') : t('ablage.dokumente.mit-stempel')}</button>}
@@ -442,6 +462,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           : <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />)}
                         {bearbeitbar && !weg && !x.anlageZu && ziele.length > 0 && <Knopf art="link" aria-expanded={alsAnlage === x.id} title={t('ablage.anlagen.als-anlage-knopf-titel')}
                           onClick={() => setAlsAnlage(alsAnlage === x.id ? undefined : x.id)}>{t('ablage.anlagen.als-anlage-knopf')}</Knopf>}
+                        {teilenAbKnopf(x, weg)}
                         {!weg && mitnehmen && kannStempeln(x.mime) && typ && <button type="button" className="textknopf" aria-expanded={stempelOffen?.id === x.id && !stempelOffen.version}
                           title={t('ablage.dokumente.eine-kopie-mit-stempel')}
                           onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? t('ablage.dokumente.herunterladen-mit-stempel') : t('ablage.dokumente.mit-stempel')}</button>}

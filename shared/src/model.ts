@@ -1177,6 +1177,16 @@ export interface Dokument {
   anlageZu?: string | null;
   /** Reihenfolge der Anlage ab 1 („Anlage 1“); nur mit `anlageZu`. */
   anlageNr?: number | null;
+  /**
+   * E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (1, 2, 3 … wie die Anhänge in der E-Mail stehen);
+   * fehlt bei allem, was nicht aus dem Postfach kam. Siehe `eingangsreihenfolge` in shared/src/anlagen.ts.
+   */
+  eingangNr?: number | null;
+  /**
+   * E-Mail-Postfach (#999): Das ist die abgeholte E-Mail selbst („Original-E-Mail“, .eml) – als letzte Anlage am letzten
+   * Anhang oder, ohne Anhänge, als Hauptdokument. Erkennung, Klassifizieren und KI lassen sie weg. Fehlt sonst.
+   */
+  originalEmail?: boolean;
 }
 
 /** Herkunft einer Dokumentversion (#194). */

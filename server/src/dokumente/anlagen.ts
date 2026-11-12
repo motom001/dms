@@ -156,6 +156,18 @@ export class DokumentAnlagen {
   }
 
   /**
+   * E-Mail-Postfach (#999): die Original-E-Mail als letzte Anlage an den letzten Anhang – mit ihrem Namen (Betreff.eml),
+   * ohne eigene Historie (das Postfach hat die Dokumente schon vermerkt). Nur in derselben Mappe; sonst bleibt sie ein
+   * eigenes Dokument.
+   */
+  async alsOriginalEmail(haupt: Dokument, eml: Dokument): Promise<void> {
+    if (haupt.mappeId !== eml.mappeId || haupt.anlageZu || haupt.id === eml.id) return;
+    const nr = (await this.repo.anlagenVon(haupt.id)).length + 1;
+    if (nr > ANLAGEN_MAX) return;
+    await this.repo.setzeAnlage(eml.id, haupt.id, nr);
+  }
+
+  /**
    * Neue Dokumente als Anlagen hinter die vorhandenen (Teilen einer Post mit Anlagen, dms-registry #152): Vorgabe-Name
    * „<Name des Dokuments> – Anlage n“. Ohne eigene Historie – das Teilen schreibt sie.
    */

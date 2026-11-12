@@ -84,7 +84,7 @@ All buttons are at least 44 points large on the phone. If the document needs to 
 
 ## Sorting { #sortieren }
 
-Above the list you choose the order: **Name A–Z** (default), **Name Z–A**, **Newest first**, **Oldest first** (by upload) or **Largest first**. Names are sorted "naturally" – "Invoice 2" before "Invoice 10", regardless of upper and lower case. The choice applies to all document tabs and for you on all devices. Files not yet saved are always at the top.
+Above the list you choose the order: **Name A–Z** (default), **Name Z–A**, **Newest first**, **Oldest first** (by upload) or **Largest first**. Names are sorted "naturally" – "Invoice 2" before "Invoice 10", regardless of upper and lower case. The choice applies to all document tabs and for you on all devices. Files not yet saved are always at the top. In a **post** there is no choice: documents stand **as received** – for an [email](post.md#per-e-mail-ins-dms) in the order of its attachments, otherwise by upload.
 
 ## Several at once { #mehrere-auf-einmal }
 

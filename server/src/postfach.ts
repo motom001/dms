@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { MAX_DATEIGROESSE, NOTIZ_MAX, POST_KANAL } from '../../shared/src/model';
+import { NOTIZ_MAX, POST_KANAL } from '../../shared/src/model';
 import type { Dienst } from './dienst';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { ohne } from '../../shared/src/fassungen';
+import { legeAnhaengeAb } from './postfach-anhaenge';
 import { protokoll } from './protokoll';
 import { imapGemessen } from './externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
@@ -11,9 +12,13 @@ import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 
 /**
- * Postfächer (#196): Das DMS holt Mails per IMAP ab und macht aus jeder eine neue Post
- * (Kanal „E-Mail“). Anhänge werden Dokumente, der Text steht an der Post, wahlweise auch die
- * Original-Mail als .eml.
+ * Postfächer (#196): Das DMS holt Mails per IMAP ab und macht aus jeder genau eine neue Post
+ * (Kanal „E-Mail“). Der Text steht an der Post. Jeder Anhang wird ein eigenes Dokument, in der
+ * Reihenfolge der MIME-Struktur (#999, `eingangNr`); kleine eingebettete Bilder (Logos, Signaturen)
+ * nicht. Ganz hinten steht wahlweise (Vorgabe ja) die E-Mail selbst als .eml mit dem Kennzeichen
+ * „Original-E-Mail“: als letzte Anlage (#998) am letzten Anhang, ohne Anhänge als Hauptdokument.
+ * Geteilt wird hier nichts – Trennblätter gelten im Postfach nicht (Pakete dürfen solche Post nicht
+ * teilen, siehe pdf-bearbeiten); aufteilen tut die Person selbst („Post ab hier teilen“).
  *
  * Die Verbindung (imapflow) und das Lesen der Mail (mailparser) stecken in imap.ts hinter
  * ImapVerbinder und MailLeser – so lässt sich der Ablauf ohne Mailserver testen.
@@ -449,26 +454,9 @@ export class Postfaecher {
     return true;
   }
 
-  /** Anhänge (und wahlweise die Original-Mail) als Dokumente; Abgelehntes mit Grund in die Historie. */
-  private async ladeAnhaenge(p: Postfach, postId: string, mail: GeleseneMail, quelle: Buffer, abgelehnt: string[] = []): Promise<number> {
-    const register = (await this.d.dienst.eingangskanaele.postTyp()).register.find((r) => r.art === 'dokumente')?.key;
-    const dateien = mail.anhaenge.filter((a) => !a.eingebettet);
-    if (p.original) dateien.push({ name: `${(mail.betreff || 'Mail').replace(/[\\/:*?"<>|\r\n]+/g, ' ').slice(0, 80).trim() || 'Mail'}.eml`, mime: 'message/rfc822', inhalt: quelle, eingebettet: false });
-    let n = 0;
-    const doppelt: string[] = [];
-    for (const a of dateien) {
-      if (a.inhalt.length > MAX_DATEIGROESSE) { abgelehnt.push(`${a.name}: größer als 100 MB`); continue; }
-      if (!a.inhalt.length) { abgelehnt.push(`${a.name}: leer`); continue; }
-      try {
-        const r = await this.d.dienst.dokumente.ladeHoch(postId, { register, name: a.name, typ: a.mime }, a.inhalt, null);
-        n++;
-        // Doppelt (#333): Hinweis ohne Titel – wer die Post liest, sieht beim Zuordnen nur die Fundstellen, die er lesen darf.
-        if (r.gleicherInhalt.some((g) => g.mappeId !== postId)) doppelt.push(a.name);
-      } catch (e) { abgelehnt.push(`${a.name}: ${(e as Error).message}`); }
-    }
-    if (doppelt.length) await this.d.dienst.eingangskanaele.notiereSystem(postId, SYSTEMNAME, t('meldungen.postfach.doppelt-liegen-schon-in', { anzahl: doppelt.length, map: doppelt.map((x) => `„${x}“`).join(', ') }));
-    if (abgelehnt.length) await this.d.dienst.eingangskanaele.notiereSystem(postId, SYSTEMNAME, t('meldungen.postfach.nicht-uebernommene-anhaenge', { abgelehnt: abgelehnt.join('; ') }));
-    return n;
+  /** Anhänge (und wahlweise die Original-E-Mail) als Dokumente der Post (#999, postfach-anhaenge.ts). */
+  private ladeAnhaenge(p: Postfach, postId: string, mail: GeleseneMail, quelle: Buffer, abgelehnt: string[] = []): Promise<number> {
+    return legeAnhaengeAb(this.d.dienst, { postId, mail, quelle, original: p.original, von: SYSTEMNAME }, abgelehnt);
   }
 
   /** Nach einem Absturz: Gibt es die Post schon, die Mail nur noch wegräumen und merken. */
@@ -497,3 +485,4 @@ export class Postfaecher {
 
   get andereInstanz() { return this.gesperrt; }
 }
+

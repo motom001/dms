@@ -334,7 +334,8 @@ export const V1_TABELLE: V1[] = [
       + 'Ohne teile: neue Version des Dokuments; ist die Versionierung des Registers aus, ersetzt das Ergebnis das Dokument nur mit bestaetigt=true (sonst 409 mit rueckfrage), das bisherige kommt in den Papierkorb. '
       + 'Mit teile in einer Mappe: Teil 1 wird die neue Version, die weiteren Teile werden eigene Dokumente „Name (Teil n).pdf“ im selben Register. '
       + 'Mit teile bei Post („Post teilen nach Seitenbereichen“): je Teil eine neue Post (Stand Neu, Betreff „… (Teil n)“); die Ausgangspost behält ihr Dokument, hat Stand Erledigt und verweist auf die neuen. Texterkennung läuft für die Ergebnisse neu. '
-      + 'Anlagen (#998, z. B. Trennblatt mit zweitem Barcode): anlagen = Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt (nie am Anfang eines Teils, höchstens 99 je Teil; sonst 422). Nur bei Post (sonst 409): Jeder Teil wird eine neue Post, sein Dokument bekommt dort die Anlagen „<Name> – Anlage 1.pdf“, „– Anlage 2.pdf“ …; bei nur einem Teil behält die neue Post den Betreff. Anlagen entstehen nie in anderen Mappen. Pakete brauchen dafür das Recht dms:anlagen (sonst 403).',
+      + 'Anlagen (#998, z. B. Trennblatt mit zweitem Barcode): anlagen = Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt (nie am Anfang eines Teils, höchstens 99 je Teil; sonst 422). Nur bei Post (sonst 409): Jeder Teil wird eine neue Post, sein Dokument bekommt dort die Anlagen „<Name> – Anlage 1.pdf“, „– Anlage 2.pdf“ …; bei nur einem Teil behält die neue Post den Betreff. Anlagen entstehen nie in anderen Mappen. Pakete brauchen dafür das Recht dms:anlagen (sonst 403). '
+      + 'E-Mail-Postfach (#999): Post mit Kanal „E-Mail“ teilt kein Paket (teile oder anlagen: 409) – eine E-Mail bleibt eine Post; Menschen und API-Schlüssel von Personen dürfen.',
     intern: { methode: 'POST', pfad: '/api/dokumente/:id/seiten' }, parameter: [id('des Dokuments')], body: 'SeitenBearbeiten', antwort: 'SeitenErgebnis', status: 201,
   },
   {
@@ -622,6 +623,8 @@ const SCHEMAS: Record<string, Schema> = {
       leerseiten: { ...ref('Leerseiten'), nullable: true, description: 'Leerseiten (#997): Markierung eines Pakets und Wahl je Seite; fehlt ohne Markierung. Gilt nur, solange sha256 gleich ist.' },
       anlageZu: { ...uuid, nullable: true, description: 'Anlagen (#998): Id des Hauptdokuments, an dem dieses Dokument als Anlage hängt (gleiche Mappe, gleiches Register); fehlt bei eigenen Dokumenten' },
       anlageNr: { type: 'integer', nullable: true, description: 'Anlagen (#998): Reihenfolge ab 1 („Anlage 1“); nur mit anlageZu' },
+      eingangNr: { type: 'integer', nullable: true, description: 'E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (1, 2, 3 … wie die Anhänge in der E-Mail stehen); fehlt bei allem, was nicht aus dem Postfach kam' },
+      originalEmail: { type: 'boolean', description: 'E-Mail-Postfach (#999): die abgeholte E-Mail selbst („Original-E-Mail“, .eml) – letzte Anlage am letzten Anhang oder, ohne Anhänge, das Hauptdokument; Erkennung und KI lassen sie weg. Fehlt sonst.' },
     },
   },
   Anlagen: { type: 'object', description: 'Ein Dokument und seine Anlagen (#998)', properties: { dokument: ref('Dokument'), anlagen: { type: 'array', items: ref('Dokument'), description: 'Anlage 1 zuerst' } } },
