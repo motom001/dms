@@ -18,6 +18,9 @@ import { t, tn } from '../sprache';
 import { Symbol } from '../Symbol';
 import { BrueckeKontext, farbeVon, setzeNutzlast, type Bruecke, type FormularAnschluss, type Marke, type Nutzlast } from './bruecke';
 import { ansichtVon } from './Dokumente';
+import { AnlageMarke, anlageZeilentext } from './Anlagen';
+import { gruppiere, nurHauptdokumente } from '../../../shared/src/anlagen';
+import { Knopf } from '../bausteine';
 import { GrosseSeiteMarke, grosseSeite, MitLeerseiten, useLeerseiten } from './Leerseiten';
 import { MappeAnsicht, MappenWahl, NeueMappe } from './MappeFormular';
 import { Mehrfachauswahl } from './Mehrfachauswahl';
@@ -93,8 +96,10 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const mitText = details.dokumente.filter((x) => x.ocr?.stand === 'fertig');
   const [dokId, setDokId] = useState(() => dokumentWunsch ?? [...mitText].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0]?.id ?? details.dokumente[0]?.id);
   // Post: in der Reihenfolge, in der sie abgelegt wurden (Seite 1 zuerst) – „Ab hier abtrennen“ meint die folgenden.
-  const doks = post ? [...details.dokumente].sort((a, b) => a.erstellt.localeCompare(b.erstellt) || a.name.localeCompare(b.name)) : details.dokumente.filter((x) => x.id === dokId);
-  const erkennDoks = doks.filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
+  // Anlagen (#998) stehen eingeklappt hinter ihrem Hauptdokument; Erkennung, Klassifizieren und KI lesen sie nie.
+  const doks = post ? gruppiere([...details.dokumente].sort((a, b) => a.erstellt.localeCompare(b.erstellt) || a.name.localeCompare(b.name))).flatMap((g) => [g.haupt, ...g.anlagen]) : details.dokumente.filter((x) => x.id === dokId);
+  const erkennDoks = nurHauptdokumente(doks).filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
+  const [offeneAnlagen, setOffeneAnlagen] = useState<Set<string>>(new Set());
   // Leerseiten (#997): nur bei Post – die Wahl je Seite gilt sofort, gelöscht wird erst beim Übernehmen.
   const leer = useLeerseiten(doks);
   const erkennKey = erkennDoks.map((x) => x.id).join(',');
@@ -311,7 +316,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   useEffect(() => {
     if (!post || doks.length < 2) { setFolge({}); return; }
     let aktuell = true;
-    const mitT = doks.filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
+    const mitT = nurHauptdokumente(doks).filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
     void Promise.allSettled(mitT.map((x) => api.abgleich({ dokumente: [x.id] }))).then((rs) => {
       if (!aktuell) return;
       const je = new Map(mitT.map((x, i) => [x.id, rs[i].status === 'fulfilled' ? rs[i].value : null]));
@@ -320,6 +325,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
       const e1 = besterVon(erster);
       const n: typeof folge = {};
       for (const x of doks.slice(1)) {
+        if (x.anlageZu) continue;
         const r = je.get(x.id);
         if (!r) continue;
         const typId = r.typ?.typId && r.typ.typId !== zielId && ziele.some((z) => z.id === r.typ!.typId) ? r.typ.typId : undefined;
@@ -373,7 +379,17 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
           </div>
           <p className={`ue-meldung klein ${meldung?.art ?? ''}`} role="status" aria-live="polite">{meldung?.text ?? ''}</p>
           {!doks.length && <p className="leise">{t('ablage.uebernehmen.keine-dokumente')}</p>}
-          {doks.map((x, i) => (
+          {doks.map((x, i) => x.anlageZu ? (
+            // Anlage (#998): eingeklappt „Anlage 1 · HU/AU-Protokoll · 2 Seiten“; ein Klick zeigt sie.
+            <div key={x.id} className="ue-anlage">
+              <p className="ue-anlage-kopf">
+                <Knopf art="link" aria-expanded={offeneAnlagen.has(x.id)} onClick={() => setOffeneAnlagen((o) => { const n = new Set(o); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); return n; })}>{anlageZeilentext(x)}</Knopf>
+                <AnlageMarke d={x} /> <span className="leise klein">{t('ablage.anlagen.nicht-erkannt')}</span>
+              </p>
+              {offeneAnlagen.has(x.id) && <DokumentBlatt x={x} w={woerter[x.id]} marken={[]} hervor={hervor} setHervor={setHervor} insAktive={insAktive}
+                leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} />}
+            </div>
+          ) : (
             <div key={x.id}>
               {i > 0 && folge[x.id] && <div className="hinweis warn ue-passt" role="note">
                 <p>{folge[x.id].mappe

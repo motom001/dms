@@ -408,7 +408,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const rel = ex.pfade.dokumente.get(dok.id)!;
     assert.deepEqual(await readFile(join(ex.ordner, ...`${rel}.fassung.pdf`.split('/'))), pdf);
     const csvText = await readFile(join(ex.ordner, 'daten', 'dokumente.csv'), 'utf8');
-    assert.ok(csvText.split('\r\n')[0].endsWith(',pfad,fassung,archivfassung'));
+    assert.ok(csvText.split('\r\n')[0].endsWith(',pfad,fassung,archivfassung,anlage_zu,anlage_nr'), 'Anlagen (#998): zwei Spalten dahinter');
     const briefRel = ex.pfade.dokumente.get(brief.id)!;
     assert.deepEqual(await readFile(join(ex.ordner, ...`${briefRel}.pdfa.pdf`.split('/'))), pdfa, 'Archivfassung im Vollexport');
     assert.ok(csvText.includes(`${rel}.fassung.pdf`));

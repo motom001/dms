@@ -456,7 +456,8 @@ describe('Archivfassung (#631): Ablauf Ende zu Ende mit dem Test-Paket', () => {
       const a = await readFile(join(ex.ordner, ...`${rel}.pdfa.pdf`.split('/')));
       assert.deepEqual(a, (await x.d.dokumentArchiv.archivfassungVon(id)).inhalt);
       const csv = await readFile(join(ex.ordner, 'daten', 'dokumente.csv'), 'utf8');
-      assert.ok(csv.split('\r\n')[0].endsWith(',pfad,fassung,archivfassung'));
+      // Anlagen (#998): zwei Spalten dahinter.
+      assert.ok(csv.split('\r\n')[0].endsWith(',pfad,fassung,archivfassung,anlage_zu,anlage_nr'));
       assert.ok(csv.includes(`${rel}.pdfa.pdf`));
     } finally { await rm(ziel, { recursive: true, force: true }); }
   });

@@ -609,3 +609,22 @@ describe('Migration 067 gegen PostgreSQL (#722)', { skip: process.env.TEST_DATAB
     } finally { await db.ende(); }
   });
 });
+
+describe('WebDAV: Anlagen (#998)', () => {
+  it('Anlagen stehen im Register gleich hinter ihrem Dokument, mit Namenszusatz „– Anlage n“', async () => {
+    const { d, wd, rufe, A, v1a, anna } = await aufbau();
+    await wd.speichere({ aktiv: true }, 'admin');
+    const k = (id: string) => id.replace(/-/g, '').slice(0, 6);
+    const rechnung = (await d.kern.repo.listeDokumente(v1a.id)).find((x) => x.name === 'Rechnung.pdf')!;
+    const protokoll = (await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'Protokoll.pdf' }, PDF('p'), anna.id)).dokument;
+    const agb = (await d.dokumente.ladeHoch(v1a.id, { register: 'belege', name: 'AGB.pdf' }, PDF('a'), anna.id)).dokument;
+    await d.dokumentAnlagen.haengeAn(rechnung.id, { dokument: protokoll.id }, anna.id);
+    await d.dokumentAnlagen.haengeAn(rechnung.id, { dokument: agb.id, name: 'Rechnung – Anlage 2.pdf' }, anna.id);
+    const belege = await rufe('PROPFIND', `/webdav/Ablage/Verträge/V-1 (${k(v1a.id)})/Belege/`, { auth: A, depth: '1' });
+    assert.equal(belege.status, 207, belege.text.slice(0, 300));
+    const namen = [...belege.text.matchAll(/<D:displayname>([^<]*)<\/D:displayname>/g)].map((m) => m[1]).slice(1);
+    assert.deepEqual(namen, ['Rechnung.pdf', 'Rechnung – Anlage 1 – Protokoll.pdf', 'Rechnung – Anlage 2.pdf']);
+    const r = await rufe('GET', `/webdav/Ablage/Verträge/V-1 (${k(v1a.id)})/Belege/Rechnung – Anlage 1 – Protokoll.pdf`, { auth: A });
+    assert.equal(r.status, 200);
+  });
+});

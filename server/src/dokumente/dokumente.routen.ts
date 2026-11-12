@@ -14,10 +14,20 @@ import { FASSUNG_MAX_BYTES, VORSCHAUBILD_MAX_BYTES } from '../../../shared/src/d
 import { KOERPER_SPIELRAUM } from '../grenzen';
 import { L, ok, leer, b, quelle, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Antwort, Route } from '../routen';
+import type { Anfrage, Antwort, Route } from '../routen';
 
 export function dokumenteRouten(k: RoutenKontext): Route[] {
   const { dienst, x, weitergabe, mitnehmen, abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, zg, darf } = k;
+  /** Anlagen ändern (#998): Bearbeiten an der Mappe des Hauptdokuments; ein Paket nur mit dms:anlagen und nur in Post. */
+  const anlagenRecht = async (a: Anfrage) => {
+    const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
+    await darf(a, mappeId, 'U');
+    const z = await zg(a);
+    if (!z?.paket) return;
+    const m = await dienst.kern.repo.holeMappe(mappeId);
+    const typ = m ? await dienst.kern.repo.holeTyp(m.typId) : undefined;
+    if (!z.paket.schnittstellen?.includes('dms:anlagen') || typ?.system !== 'post') throw new Fachfehler(403, t('meldungen.anlagen.nur-pakete-mit-recht'));
+  };
   return [
     /* ---------- Dokumente ---------- */
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, strom: true, handler: async (a) => {
@@ -67,8 +77,14 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const mappeId = await dienst.rechtepruefung.mappeVon('dokument', a.params.id);
       await darf(a, mappeId, 'R');
       await mitnehmen(a, mappeId);
-      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown; fassung?: unknown };
+      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown; fassung?: unknown; mitAnlagen?: unknown };
       const version = e.version == null ? undefined : Number(e.version);
+      // „mit Anlagen?“ (#998): das Dokument und seine Anlagen als ZIP – dieselbe Prüfstelle (oben), dieselbe Mappe.
+      if (e.mitAnlagen === true && !Number.isInteger(version)) {
+        const r = await dienst.ausgang.dokumentMitAnlagenFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, ich: ich(a) });
+        // Abruf (#800) für das Hauptdokument und je Anlage – mit Weg und Name des API-Schlüssels.
+        return abgerufen(a, a.params.id, { fassung: e.fassung === 'archiv' ? 'archiv' : 'original', gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r), r.teile);
+      }
       const r = await dienst.ausgang.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, fassung: e.fassung, version: Number.isInteger(version) ? version : undefined, ich: ich(a) });
       return abgerufen(a, a.params.id, { fassung: Number.isInteger(version) ? 'version' : e.fassung === 'archiv' ? 'archiv' : 'original', version: Number.isInteger(version) ? version : null, gestempelt: r.gestempelt, datei: r.name }, ausgabeDatei(r));
     } },
@@ -251,6 +267,30 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const d = await dienst.dokumentVersionen.holeVersionZurueck(a.params.id, Number(a.params.nummer), ich(a).id);
       L.dokumente.info('Ältere Version zurückgeholt', { name: d.name, id: d.id, version: d.version, von: Number(a.params.nummer) });
       return ok(d, 201);
+    } },
+    /*
+     * Anlagen (#998): lesen mit „Lesen“, ändern mit „Bearbeiten“ an der Mappe – Anlagen liegen immer in der Mappe ihres
+     * Hauptdokuments. Pakete ändern Anlagen nur mit dem Recht dms:anlagen und nur in Post.
+     */
+    { methode: 'GET', pfad: '/api/dokumente/:id/anlagen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.dokumentAnlagen.liste(a.params.id));
+    } },
+    { methode: 'POST', pfad: '/api/dokumente/:id/anlagen', zugang: 'angemeldet', handler: async (a) => {
+      await anlagenRecht(a);
+      return ok(await dienst.dokumentAnlagen.haengeAn(a.params.id, a.body, ich(a).id), 201);
+    } },
+    { methode: 'PUT', pfad: '/api/dokumente/:id/anlagen', zugang: 'angemeldet', handler: async (a) => {
+      await anlagenRecht(a);
+      return ok(await dienst.dokumentAnlagen.sortiere(a.params.id, a.body, ich(a).id));
+    } },
+    { methode: 'PUT', pfad: '/api/dokumente/:id/anlagen/:anlage', zugang: 'angemeldet', handler: async (a) => {
+      await anlagenRecht(a);
+      return ok(await dienst.dokumentAnlagen.benenne(a.params.id, a.params.anlage, a.body, ich(a).id));
+    } },
+    { methode: 'DELETE', pfad: '/api/dokumente/:id/anlagen/:anlage', zugang: 'angemeldet', handler: async (a) => {
+      await anlagenRecht(a);
+      return ok(await dienst.dokumentAnlagen.loese(a.params.id, a.params.anlage, ich(a).id));
     } },
     /* PDF bearbeiten (#335): Seiten ansehen mit „Lesen“, bearbeiten mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten', zugang: 'angemeldet', handler: async (a) => {

@@ -90,12 +90,17 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    * Abruf in die Historie (#800): in der Oberfläche heruntergeladen oder mit einem API-Schlüssel abgerufen – erst wenn
    * die Datei fertig zum Ausliefern ist (Rechte geprüft, Stempel und Fassung gebildet), nie bei einem Fehler. Pakete
    * (Dienstkonten) lesen Dateien zur Verarbeitung in Ablago; das ist kein Abruf. Gleiche Abrufe am selben Tag fasst
-   * `notiereAbruf` zu einem Eintrag zusammen. Scheitert das Schreiben, geht die Datei nicht hinaus.
+   * `notiereAbruf` zu einem Eintrag zusammen. Scheitert das Schreiben, geht die Datei nicht hinaus. `anlagen` (#998):
+   * Dokumente, die in derselben Datei mit hinausgehen (ZIP „mit Anlagen“) – je eines ein eigener Abruf mit demselben
+   * Weg und API-Schlüssel, damit der Nachweis auch für die Anlagen zeigt, worüber sie hinausgingen.
    */
-  const abgerufen = async <T extends Antwort>(a: Anfrage, dokumentId: string, o: { fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; datei?: string }, antwort: T): Promise<T> => {
+  const abgerufen = async <T extends Antwort>(a: Anfrage, dokumentId: string, o: { fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; datei?: string }, antwort: T,
+    anlagen: ReadonlyArray<{ dokumentId: string; gestempelt?: boolean; datei?: string }> = []): Promise<T> => {
     if (a.benutzer?.art === 'dienst') return antwort;
+    const wie = { benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' as const : 'oberflaeche' as const, schluessel: a.apiSchluessel?.name ?? null };
     try {
-      await dienst.mappenHistorie.notiereAbruf({ dokumentId, benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' : 'oberflaeche', schluessel: a.apiSchluessel?.name ?? null, ...o });
+      await dienst.mappenHistorie.notiereAbruf({ dokumentId, ...wie, ...o });
+      for (const x of anlagen) await dienst.mappenHistorie.notiereAbruf({ ...wie, ...o, ...x });
     } catch (e) {
       const inhalt = antwort.datei?.inhalt;
       if (inhalt && !Buffer.isBuffer(inhalt)) (inhalt as Readable).destroy();

@@ -178,9 +178,10 @@ export class DokumenteDienst {
       if (!reg.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist'));
       return { dokument: await this.ersetzeDokument(gleich.id, { name: e.name, typ: e.typ, herkunft: e.herkunft }, ein, benutzerId), gleicherInhalt: [], version: true };
     }
+    let anlagen: string[] | undefined;
     if (gleich && art === 'ersetzen') {
       if (reg.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-2'));
-      await this.loescheDokument(gleich.id, benutzerId);
+      anlagen = (await this.loescheDokument(gleich.id, benutzerId)).anlagen;
     }
     let name = dateiname(e.name);
     if (gleich && art === 'zaehler') {
@@ -206,6 +207,8 @@ export class DokumenteDienst {
         groesse, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
       });
       if (e.erstellt) { await this.repo.setzeDokumentErstellt(dokument.id, e.erstellt); dokument.erstellt = e.erstellt; }
+      // Anlagen (#998) des ersetzten Dokuments hängen am neuen.
+      await this.uebertrageAnlagen(anlagen, dokument);
       this.danach(() => this.neueDateien([dokument]));
       // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
       let neu = dokument;
@@ -249,11 +252,19 @@ export class DokumenteDienst {
     return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
   }
 
-  async loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) {
+  /**
+   * Löschen (Papierkorb #344, Löschprotokoll #470). Anlagen (#998) gehen mit dem Hauptdokument mit – außer es wird nur
+   * ersetzt (`weg: 'ersetzt'`, die Vorgabe: Bearbeiten, Verkleinern ohne Versionierung): dann bleiben sie und stehen in
+   * `anlagen`, damit das neue Dokument sie übernimmt (`uebertrageAnlagen`).
+   */
+  async loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }): Promise<{ papierkorb: boolean; anlagen?: string[] }> {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     // Archivmodus (#212): Dokumente bleiben bis Fristende; ändern nur als neue Version.
     await this.pruefeArchivDokument(d.mappeId, 'löschen');
+    const anlagen = await this.repo.anlagenVon(id);
+    const ersetzt = (anlass.weg ?? 'ersetzt') === 'ersetzt';
+    if (!ersetzt) for (const a of anlagen) await this.loescheDokument(a.id, benutzerId, anlass);
     // Alle Versionen (#194) gehen mit.
     const aeltere = await this.repo.versionenVon(id);
     // Papierkorb (#344): eingeschaltet → das Dokument zieht samt Versionen und Volltext dorthin um.
@@ -268,6 +279,32 @@ export class DokumenteDienst {
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
     if (!korb) for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
-    return { papierkorb: korb };
+    return { papierkorb: korb, ...(ersetzt && anlagen.length ? { anlagen: anlagen.map((a) => a.id) } : {}) };
+  }
+
+  /**
+   * Anlagen (#998) nach dem Ersetzen ohne Versionierung: Die Anlagen des alten Dokuments (aus `loescheDokument`)
+   * hängen am neuen, in ihrer Reihenfolge. Nur in derselben Mappe; das neue darf selbst keine Anlage sein.
+   */
+  async uebertrageAnlagen(anlagen: string[] | undefined, neu: Dokument): Promise<void> {
+    await this.haengeUm(anlagen, neu);
+  }
+
+  /**
+   * Nach dem Ersetzen ohne Versionierung (#998): Das neue Dokument übernimmt die Anlagen des alten – und war das alte
+   * selbst eine Anlage, ist das neue es an derselben Stelle.
+   */
+  async nimmAnlagenMit(alt: Dokument, anlagen: string[] | undefined, neu: Dokument): Promise<void> {
+    await this.haengeUm(anlagen, neu);
+    if (alt.anlageZu) await this.repo.setzeAnlage(neu.id, alt.anlageZu, alt.anlageNr ?? 1);
+  }
+
+  private async haengeUm(anlagen: string[] | undefined, neu: Dokument): Promise<void> {
+    if (!anlagen?.length || neu.anlageZu) return;
+    let nr = (await this.repo.anlagenVon(neu.id)).length;
+    for (const id of anlagen) {
+      const a = await this.repo.holeDokument(id);
+      if (a && !a.anlageZu && a.mappeId === neu.mappeId) await this.repo.setzeAnlage(a.id, neu.id, ++nr);
+    }
   }
 }

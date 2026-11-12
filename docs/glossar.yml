@@ -231,6 +231,14 @@ begriffe:
     nicht_verwenden: [Warnung, Fehler, Meldung von Ablago]
     verwandt: [Berechnetes Feld, Paket]
     code: PaketHinweis, dms:hinweise
+  - begriff: Anlage
+    bereich: grundbegriffe
+    beschreibung: Ein eigenes Dokument (PDF oder Bild), das an einem Hauptdokument hängt – z. B. HU/AU-Protokoll, Auflistung der Arbeiten und Teilebestellung hinter der Werkstattrechnung als Anlage 1, 2, 3. Sie steht eingeklappt unter dem Hauptdokument, wandert mit ihm (Übernehmen, Papierkorb) und hat dieselben Rechte. Erkennung und KI lesen nur das Hauptdokument; die Suche findet Anlagen mit „in Anlage 2“.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Anhang, Beilage, Unterdokument]
+    verwandt: [Dokument, Post, Version]
+    code: Dokument.anlageZu, Dokument.anlageNr, dms:anlagen
   - begriff: Leerseite
     bereich: grundbegriffe
     beschreibung: Eine Seite in neuer Post, die ein Paket wie „Leerseiten“ als leer erkannt hat, z. B. die Rückseite eines beidseitigen Scans. Sie ist in der Seitenleiste blass („Leerseite – fällt beim Übernehmen weg“); mit „Doch behalten“ bleibt sie. Weggelassen wird sie erst beim Übernehmen in eine Mappe, das Original bleibt als frühere Version.

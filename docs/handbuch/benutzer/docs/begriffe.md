@@ -30,6 +30,10 @@ Siehe auch: [Ablage](#ablage), [Werkbank](#werkbank).
 Seite im Benutzermenü (bei der Hilfe) mit allem, was Ablago noch kann – Neues seit dem letzten Besuch, Rundgänge und alle Tipps nach Bereich. Ausgeblendete Tipps bleiben dort sichtbar.  
 Siehe auch: [Rundgang](#rundgang), [Tipp](#tipp).
 
+<a id="anlage"></a>**Anlage** · ✓ Alltagswort · alle  
+Ein eigenes Dokument (PDF oder Bild), das an einem Hauptdokument hängt – z. B. HU/AU-Protokoll, Auflistung der Arbeiten und Teilebestellung hinter der Werkstattrechnung als Anlage 1, 2, 3. Sie steht eingeklappt unter dem Hauptdokument, wandert mit ihm (Übernehmen, Papierkorb) und hat dieselben Rechte. Erkennung und KI lesen nur das Hauptdokument; die Suche findet Anlagen mit „in Anlage 2“.  
+Siehe auch: [Dokument](#dokument), [Post](#post), [Version](#version).
+
 <a id="ansicht"></a>**Ansicht** · ~ mit Erklärung · alle  
 Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Ansichten stehen im Baum links in der Ablage. Wie etwas aussieht, heißt dagegen „Darstellung“.  
 Siehe auch: [Unteransicht](#unteransicht), [Bedingung](#bedingung), [Trefferliste](#trefferliste).
@@ -673,6 +677,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Abwesenheit | – | `Abwesenheit` |
 | Administrator | Admin (in der Oberfläche) | – |
 | An (Post) | Für (als Feldname), Empfänger (als Feldname) | `an` |
+| Anlage | Anhang, Beilage, Unterdokument | `Dokument.anlageZu, Dokument.anlageNr, dms:anlagen` |
 | Anmeldung über einen Anbieter | SSO, OIDC (in der Oberfläche) | – |
 | Ansicht | Sicht, Filter, View | `Sicht` |
 | Anzeigen, wenn … | Sichtbarkeitsregel, bedingtes Feld | `anzeigen (Anzeigeregel)` |

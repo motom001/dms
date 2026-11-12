@@ -4,7 +4,7 @@
  * Mappen und Dokumente, nicht den ganzen Dienst. Die Post (neue Post, Systemmappe, Post-Aufgaben) kommt über den
  * Anschluss: post/ hängt Fotos mit `pdfVon` an, andersherum liefe es im Kreis.
  */
-import { dateiname, type DokumenteDienst, type DokumentUmwandlung, type DokumentVersionen } from '../dokumente';
+import { dateiname, type DokumentAnlagen, type DokumenteDienst, type DokumentUmwandlung, type DokumentVersionen } from '../dokumente';
 import { Fachfehler } from '../fehler';
 import { graubild } from '../graubild';
 import type { Kern, Zugriff } from '../kern';
@@ -15,6 +15,7 @@ import { protokoll } from '../protokoll';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
+import { ANLAGEN_MAX, anlageName } from '../../../shared/src/anlagen';
 import { kernTyp } from '../../../shared/src/dateiumwandlung';
 import { auswahlText, type Dokument, type Historieneintrag, type Mappe, type Mappentyp, MAX_DATEIGROESSE, POST_STAND, type Register, type Werte } from '../../../shared/src/model';
 
@@ -33,7 +34,46 @@ function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: 
 /** Die Teile, die PDF bearbeiten ruft: Rechteprüfung, Mappen (Historie, Titel, Archivmodus) und Dokumente. */
 export interface PdfTeile {
   rechte: ZugriffDienst; historie: MappenHistorie; titel: MappenTitel; archiv: MappenArchiv;
-  dokumente: DokumenteDienst; versionen: DokumentVersionen; umwandlung: DokumentUmwandlung;
+  dokumente: DokumenteDienst; versionen: DokumentVersionen; umwandlung: DokumentUmwandlung; anlagen: DokumentAnlagen;
+}
+
+/**
+ * Anlagen beim Teilen einer Post (#998, für das Trennblatt dms-registry #152): Positionen in der Seitenliste, an denen
+ * eine Anlage zum vorherigen Teil beginnt – nie am Anfang eines Teils, je Teil höchstens ANLAGEN_MAX. Leer ohne.
+ */
+/** Was in der Historie „PDF bearbeitet“ steht: Seiten vorher und nachher, gedreht, Teile und Anlagen (#998). */
+function pdfWas(name: string, seiten: Array<{ drehung?: number }>, vorher: number, starts: number[], anlagen: number[]) {
+  const gedreht = seiten.filter((s) => s.drehung).length;
+  return { dokument: name, seiten: seiten.length, vorher, ...(gedreht ? { gedreht } : {}), ...(starts.length > 1 ? { teile: starts.length } : {}), ...(anlagen.length ? { anlagen: anlagen.length } : {}) };
+}
+
+/** Anlagen beim Teilen (#998): Positionen prüfen; nur in Post, ein Paket nur mit dms:anlagen, nie an einer Anlage. */
+function anlagenBeimTeilen(roh: unknown, starts: number[], laenge: number, x: { z: Zugriff | undefined; post: boolean; d: Dokument }): number[] {
+  const anlagen = pruefeAnlagen(roh, starts, laenge);
+  if (!anlagen.length) return anlagen;
+  if (x.z?.paket && !x.z.paket.schnittstellen?.includes('dms:anlagen')) throw new Fachfehler(403, t('meldungen.anlagen.ohne-recht'));
+  if (!x.post) throw new Fachfehler(409, t('meldungen.anlagen.nur-post-teilen'));
+  if (x.d.anlageZu) throw new Fachfehler(409, t('meldungen.anlagen.haupt-ist-anlage', { name: x.d.name }));
+  return anlagen;
+}
+
+/** Je Abschnitt ein Puffer: je Teil (neue Post) das Hauptdokument und die Anlagen, die in diesem Teil beginnen. */
+async function teilplan(inhalt: Buffer, seiten: Parameters<typeof teile>[1], starts: number[], anlagen: number[]): Promise<Array<{ haupt: Buffer; anlagen: Buffer[] }>> {
+  const grenzen = [...new Set([...starts, ...anlagen])].sort((a, b) => a - b);
+  const stuecke = await teile(inhalt, seiten, grenzen);
+  return starts.map((s, i) => ({ haupt: stuecke[grenzen.indexOf(s)], anlagen: grenzen.flatMap((g, j) => (anlagen.includes(g) && g > s && g < (starts[i + 1] ?? seiten.length) ? [stuecke[j]] : [])) }));
+}
+
+export function pruefeAnlagen(roh: unknown, starts: number[], laenge: number): number[] {
+  if (roh === undefined || roh === null) return [];
+  if (!Array.isArray(roh)) throw new Fachfehler(422, t('meldungen.anlagen.positionen'));
+  const liste = [...new Set(roh.map(Number))].sort((a, b) => a - b);
+  if (liste.some((x) => !Number.isInteger(x) || x <= 0 || x >= laenge || starts.includes(x))) throw new Fachfehler(422, t('meldungen.anlagen.positionen'));
+  for (const [i, s] of starts.entries()) {
+    const bis = starts[i + 1] ?? laenge;
+    if (liste.filter((x) => x > s && x < bis).length > ANLAGEN_MAX) throw new Fachfehler(422, t('meldungen.anlagen.zu-viele', { max: ANLAGEN_MAX }));
+  }
+  return liste;
 }
 
 /** Was PDF bearbeiten außer dem Kern braucht – die Post (post/) über den Dienst, sonst liefe es im Kreis. */
@@ -139,13 +179,13 @@ export class PdfBearbeiten {
     const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
     const reg = typ?.register.find((r) => r.key === d.registerKey && r.art === 'dokumente');
     if (!m || !typ || !reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
-    const gleich = starts.length === 1 && seiten.length === info.anzahl && seiten.every((s, i) => s.nr === i + 1 && !s.drehung);
+    const anlagen = anlagenBeimTeilen(e.anlagen, starts, seiten.length, { z, post: typ.system === 'post', d });
+    const gleich = starts.length === 1 && !anlagen.length && seiten.length === info.anzahl && seiten.every((s, i) => s.nr === i + 1 && !s.drehung);
     if (gleich) throw new Fachfehler(422, t('meldungen.dienst.es-hat-sich-nichts'));
-    const teileBuf = await teile(inhalt, seiten, starts);
-    const gedreht = seiten.filter((s) => s.drehung).length;
-    const was = { dokument: d.name, seiten: seiten.length, vorher: info.anzahl, ...(gedreht ? { gedreht } : {}), ...(starts.length > 1 ? { teile: starts.length } : {}) };
+    const was = pdfWas(d.name, seiten, info.anzahl, starts, anlagen);
 
-    if (typ.system === 'post' && starts.length > 1) return this.teilePost(m, typ, reg, d, teileBuf, von, z, was);
+    if (typ.system === 'post' && (starts.length > 1 || anlagen.length)) return this.teilePost(m, typ, reg, d, await teilplan(inhalt, seiten, starts, anlagen), von, z, was);
+    const teileBuf = await teile(inhalt, seiten, starts);
 
     const korb = (await this.papierkorbTage()) > 0;
     let erstes: Dokument;
@@ -156,8 +196,10 @@ export class PdfBearbeiten {
       if (e.bestaetigt !== true) {
         throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-3', { wert: korb ? t('meldungen.dienst.das-bisherige-kommt-in') : t('meldungen.dienst.das-bisherige-ist-danach') }), { rueckfrage: true, papierkorb: korb });
       }
-      await this.loescheDokument(d.id, von);
+      const { anlagen } = await this.loescheDokument(d.id, von);
       erstes = (await this.ladeHoch(m.id, { register: reg.key, name: name1, typ: 'application/pdf', herkunft: 'bearbeitet' }, teileBuf[0], von)).dokument;
+      // Anlagen (#998) hängen am bearbeiteten Dokument; war es selbst eine Anlage, bleibt Teil 1 es.
+      await this.teile.dokumente.nimmAnlagenMit(d, anlagen, erstes);
     }
     const weitere: Dokument[] = [];
     for (const [i, b] of teileBuf.slice(1).entries()) {
@@ -168,19 +210,30 @@ export class PdfBearbeiten {
     return { dokumente: [erstes, ...weitere], posten: [] as Mappe[] };
   }
 
-  private async teilePost(post: Mappe, typ: Mappentyp, reg: Register, d: Dokument, teileBuf: Buffer[], von: string | null, z: Zugriff | undefined, was: Record<string, unknown>) {
+  /**
+   * Teilen bei Post: je Teil eine neue Post mit ihrem Dokument – und seinen Anlagen (#998, Trennblatt mit zweitem
+   * Barcode): Die Anlagen eines Teils entstehen nur in dessen neuer Post, als Anlage 1, 2 … an seinem Dokument. Ein
+   * einziger Teil mit Anlagen behält den Betreff; die Ausgangspost behält ihr Dokument, ist erledigt und verweist auf
+   * die neuen.
+   */
+  private async teilePost(post: Mappe, typ: Mappentyp, reg: Register, d: Dokument, plan: Array<{ haupt: Buffer; anlagen: Buffer[] }>, von: string | null, z: Zugriff | undefined, was: Record<string, unknown>) {
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const posten: Mappe[] = [];
     const dokumente: Dokument[] = [];
-    for (const [i, b] of teileBuf.entries()) {
+    const einer = plan.length === 1;
+    for (const [i, x] of plan.entries()) {
       // Je Teil: neue Post mit ihrem Dokument und beiden Ereignissen (post.angelegt, dokument.hochgeladen) ganz oder gar nicht (#404).
       await this.inTransaktion(async () => {
         const neu = await this.legePostAn({
-          betreff: t('meldungen.dienst.teil', { betreff, wert: i + 1 }), datum: post.werte.datum, von: post.werte.von ?? '', kanal: auswahlText(post.werte.kanal),
+          betreff: einer ? betreff : t('meldungen.dienst.teil', { betreff, wert: i + 1 }), datum: post.werte.datum, von: post.werte.von ?? '', kanal: auswahlText(post.werte.kanal),
           an: alsListe(post.werte.an)[0] ?? null,
         }, { id: von, name: '' }, z, undefined, undefined, undefined, post.werte);
-        await this.notiere(neu.id, von, 'post_geteilt', { text: t('meldungen.dienst.teil-von-aus', { wert: i + 1, teileBuf: teileBuf.length, betreff }), post: post.id, postTyp: typ.id });
-        dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
+        await this.notiere(neu.id, von, 'post_geteilt', { text: einer ? t('meldungen.anlagen.post-mit-anlagen', { betreff, anzahl: x.anlagen.length }) : t('meldungen.dienst.teil-von-aus', { wert: i + 1, teileBuf: plan.length, betreff }), post: post.id, postTyp: typ.id, ...(x.anlagen.length ? { anlagen: x.anlagen.length } : {}) });
+        const haupt = (await this.ladeHoch(neu.id, { register: reg.key, name: einer ? d.name : teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, x.haupt, von)).dokument;
+        dokumente.push(haupt);
+        const neue: Dokument[] = [];
+        for (const [j, b] of x.anlagen.entries()) neue.push((await this.ladeHoch(neu.id, { register: reg.key, name: anlageName(haupt.name, j + 1, 'anlage.pdf'), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
+        if (neue.length) dokumente.push(...(await this.teile.anlagen.alsAnlagen(haupt, neue)));
         posten.push((await this.repo.holeMappe(neu.id))!);
       });
     }

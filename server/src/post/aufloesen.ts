@@ -12,6 +12,7 @@ import type { Repo, Rueckverweis } from '../repo';
 import { t } from '../sprache';
 import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
+import { anlagenVon, mitAnlagen, zumVerschieben } from '../../../shared/src/anlagen';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, POST_STAND, type Register, type Werte } from '../../../shared/src/model';
 import { entfernteSeiten, type LeerseitenPlan, type PostLeerseiten } from './leerseiten';
@@ -52,10 +53,15 @@ export class PostAufloesen {
   private loeschPruefung(...a: Parameters<AufloesenAnschluss['loeschPruefung']>) { return this.anschluss.loeschPruefung(...a); }
   private loescheMappe(...a: Parameters<AufloesenAnschluss['loescheMappe']>) { return this.anschluss.loescheMappe(...a); }
 
-  /** Dokument in ein anderes Register (einer anderen Mappe); dort ist die Texterkennung vielleicht aus oder an. */
+  /**
+   * Dokument in ein anderes Register (einer anderen Mappe); dort ist die Texterkennung vielleicht aus oder an. Seine
+   * Anlagen (#998) wandern mit (Repo) und bekommen ebenso ihren Volltext.
+   */
   async verschiebeInRegister(d: Dokument, mappeId: string, typ: Mappentyp, registerKey: string) {
     await this.repo.verschiebeDokument(d.id, mappeId, registerKey);
-    if (VolltextDienst.volltextAn(typ, registerKey) && (d.ocr?.stand === 'keiner' || d.ocr?.stand === 'ausgelassen')) { await this.repo.ocrEinreihen([d.id]); this.ocr?.anstossen(); }
+    if (!VolltextDienst.volltextAn(typ, registerKey)) return;
+    const ohne = [d, ...(d.anlageZu ? [] : await this.repo.anlagenVon(d.id))].filter((x) => x.ocr?.stand === 'keiner' || x.ocr?.stand === 'ausgelassen');
+    if (ohne.length) { await this.repo.ocrEinreihen(ohne.map((x) => x.id)); this.ocr?.anstossen(); }
   }
 
   /**
@@ -101,12 +107,15 @@ export class PostAufloesen {
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const zielTitel = await this.titel(ziel);
     const erg = await this.inTransaktion(async () => {
+      const alle = [...dokumente, ...rest, ...(await Promise.all(dokumente.map((d) => this.repo.anlagenVon(d.id)))).flat()];
       for (const d of dokumente) {
         await this.verschiebeInRegister(d, ziel.id, zielTyp, reg!.key);
-        // Leerseiten (#997): neue Fassung ohne sie, das Original bleibt als frühere Version.
-        const plan = x.leer?.get(d.id);
-        if (plan) await this.teile.leerseiten.lasseWeg(d.id, plan, von);
-        else if (d.leerseiten) await this.teile.leerseiten.vergiss(d.id);
+        // Leerseiten (#997): neue Fassung ohne sie, das Original bleibt als frühere Version – auch an den Anlagen (#998).
+        for (const y of [d, ...anlagenVon(alle, d.id)]) {
+          const plan = x.leer?.get(y.id);
+          if (plan) await this.teile.leerseiten.lasseWeg(y.id, plan, von);
+          else if (y.leerseiten) await this.teile.leerseiten.vergiss(y.id);
+        }
       }
       // Abgetrennt: die übrigen Dokumente als neue Post in „Neue Post“, Betreff, Datum, Absender, Kanal und „Für“ wie bisher.
       const abgetrennt = rest.length ? await this.legeAbgetrenntAn(post, typ, rest, von, {
@@ -119,7 +128,7 @@ export class PostAufloesen {
       await this.postAufgaben(post.id, von);
       // Alles, was mit der Post passiert ist, steht jetzt bei der Mappe.
       const mit = await this.repo.uebertrageAnMappe(post.id, ziel.id);
-      const n = dokumente.length;
+      const n = mitAnlagen(dokumente, alle).length;
       const doks = n ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: '', name: reg!.name }) : '';
       const abg = abgetrennt ? t('meldungen.dienst.abgetrennt-als-neue-post', { anzahl: rest.length }) : '';
       await this.notiere(ziel.id, von, 'zugeordnet', {
@@ -152,7 +161,9 @@ export class PostAufloesen {
       betreff: t('meldungen.dienst.abgetrennt-betreff', { betreff }), datum: post.werte.datum, von: post.werte.von ?? '', kanal: auswahlText(post.werte.kanal),
       an: alsListe(post.werte.an)[0] ?? null,
     }, { id: von, name: '' }, undefined, undefined, undefined, undefined, post.werte);
-    for (const d of dokumente) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
+    // Anlagen (#998) wandern mit ihrem Hauptdokument.
+    for (const d of zumVerschieben(dokumente).bewegen) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
+    for (const d of zumVerschieben(dokumente).allein) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
     await this.notiere(neu.id, von, 'post_geteilt', { ...herkunft, post: post.id, postTyp: typ.id, dokumente: dokumente.length });
     await this.beruehre(neu.id, typ, von);
     return neu;
@@ -172,8 +183,12 @@ export class PostAufloesen {
     const e = (eingabe ?? {}) as Record<string, unknown>;
     const alle = await this.repo.listeDokumente(postId);
     const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
-    const weg = ids.map((id) => alle.find((d) => d.id === id));
-    if (!ids.length || weg.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
+    const auswahl = ids.map((id) => alle.find((d) => d.id === id));
+    if (!ids.length || auswahl.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
+    // Anlagen (#998) gehen mit ihrem Hauptdokument; eine Anlage allein lässt sich nicht abtrennen.
+    const { bewegen, allein } = zumVerschieben(auswahl as Dokument[]);
+    if (allein.length) throw new Fachfehler(422, t('meldungen.anlagen.allein', { name: allein[0].name }));
+    const weg = mitAnlagen(bewegen, alle);
     if (weg.length >= alle.length) throw new Fachfehler(422, t('meldungen.dienst.abtrennen-eins-bleibt'));
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
     if (z && !z.admin) {

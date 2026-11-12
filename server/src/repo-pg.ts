@@ -120,6 +120,8 @@ const alsDokument = (r: Zeile): Dokument => ({
   teilenAb: r.teilen_hinweis_aus ? null : teilenAb(alsSeitensprachen(r.seitensprachen)),
   // Leerseiten (#997): nur, wenn ein Paket oder eine Person Seiten markiert hat.
   ...(r.leerseiten ? { leerseiten: alsLeerseiten(r.leerseiten) } : {}),
+  // Anlagen (#998): nur an Anlagen.
+  ...(r.anlage_zu ? { anlageZu: r.anlage_zu as string, anlageNr: (r.anlage_nr as number | null) ?? null } : {}),
   ocr: {
     stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
     info: (r.ocr_info as string | null) ?? null,
@@ -136,7 +138,8 @@ const alsDokument = (r: Zeile): Dokument => ({
  * sein und wird nur über `volltext()`/`volltexte()` gelesen, nie in Listen.
  */
 export const DOKUMENT_SPALTEN = ['id', 'haushalt_id', 'mappe_id', 'register_key', 'name', 'mime', 'groesse', 'sha256', 'anzeigbar', 'erstellt', 'erstellt_von',
-  'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer', 'sprache', 'weitere_sprachen', 'seitensprachen', 'teilen_hinweis_aus', 'leerseiten'] as const;
+  'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer', 'sprache', 'weitere_sprachen', 'seitensprachen', 'teilen_hinweis_aus', 'leerseiten',
+  'anlage_zu', 'anlage_nr'] as const;
 /**
  * Spalten einer Mappe ohne `suchtext` (#615): Der gefaltete Suchtext (Migration 055) ist nur für die Suche da und
  * etwa so groß wie Titel und Werte zusammen – Listen und „Mappe öffnen“ lesen ihn nie.
@@ -235,6 +238,7 @@ const alsDokPapierkorb = (r: Zeile): DokumentImPapierkorb => {
   return {
     id: r.id as string, mappeId: r.mappe_id as string, registerKey: d.register_key as string, name: d.name as string, mime: d.mime as string,
     groesse: Number(d.groesse), sha256: d.sha256 as string, erstellt: iso(d.erstellt), erstelltVon: (d.erstellt_von as string | null) ?? null,
+    ...(d.anlage_zu ? { anlageZu: d.anlage_zu as string } : {}),
     versionen: Number(r.anzahl_versionen ?? 0), geloescht: iso(r.geloescht), geloeschtVon: (r.geloescht_von as string | null) ?? null,
   };
 };
@@ -1230,24 +1234,26 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       // Fundstellen im Volltext: je Mappe das Dokument mit dem besten Treffer, Wortstämme in der Sprache des Dokuments
       // (bei mehrsprachigen in der Sprache, in der die Anfrage trifft, #579).
       const a = await sql`
-        SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, dms_ausschnitt(d.sprache, d.weitere_sprachen, d.volltext, x.q, ${AUSSCHNITT}::text) AS text
+        SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, d.anlage_zu, d.anlage_nr, dms_ausschnitt(d.sprache, d.weitere_sprachen, d.volltext, x.q, ${AUSSCHNITT}::text) AS text
         FROM dokumente d CROSS JOIN LATERAL (SELECT ${anfragen.get(fund.text) ?? (await tsAnfrage(fund.text, v)).q} AS q) x
         WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[])
           AND ${SUCHINDEX} @@ x.q
         ORDER BY d.mappe_id, ts_rank(${SUCHINDEX}, x.q) DESC`;
-      for (const z of a) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: z.text as string };
+      // Anlagen (#998): Treffer mit Vermerk „in Anlage 2“.
+      const anlage = (z: Zeile) => (z.anlage_zu ? { anlage: (z.anlage_nr as number | null) ?? 1 } : {});
+      for (const z of a) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: z.text as string, ...anlage(z) };
       // Nur als Teilwort gefunden: Ausschnitt um die erste Fundstelle.
       const teil = teilwoerter(fund.text);
       const ohne = mappen.filter((m) => !ausschnitte[m.id]).map((m) => m.id);
       if (teil && ohne.length) {
         const b = await sql`
-          SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, substr(d.volltext, greatest(1, strpos(lower(d.volltext), ${teil[0]}) - 80), 240 + ${teil[0].length}) AS text
+          SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, d.anlage_zu, d.anlage_nr, substr(d.volltext, greatest(1, strpos(lower(d.volltext), ${teil[0]}) - 80), 240 + ${teil[0].length}) AS text
           FROM dokumente d
           WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${ohne}::uuid[]) AND ${teilSql('d.volltext', teil)}
           ORDER BY d.mappe_id, d.erstellt`;
         for (const z of b) {
           const t = ausschnittAus(String(z.text ?? ''), teil[0]);
-          if (t) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: t };
+          if (t) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: t, ...anlage(z) };
         }
       }
       return { gesamt: n as number, mappen, ausschnitte };
@@ -1583,7 +1589,22 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       await sql`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async verschiebeDokument(id, mappeId, registerKey) {
-      await sql`UPDATE dokumente SET mappe_id = ${mappeId}, register_key = ${registerKey} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      if (!istUuid(id)) return;
+      // Anlagen (#998) wandern mit ihrem Hauptdokument; eine Anlage allein in eine andere Mappe ist danach ein eigenes Dokument.
+      await sql`UPDATE dokumente SET mappe_id = ${mappeId}, register_key = ${registerKey} WHERE haushalt_id = ${haushaltId} AND (id = ${id} OR anlage_zu = ${id})`;
+      await sql`UPDATE dokumente d SET anlage_zu = NULL, anlage_nr = NULL WHERE d.haushalt_id = ${haushaltId} AND d.id = ${id} AND d.anlage_zu IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM dokumente h WHERE h.id = d.anlage_zu AND h.mappe_id = d.mappe_id)`;
+    },
+    async anlagenVon(id) {
+      if (!istUuid(id)) return [];
+      return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.anlage_zu = ${id} ORDER BY d.anlage_nr, d.name, d.id`).map(alsDokument);
+    },
+    async setzeAnlage(id, anlageZu, nr, name) {
+      if (!istUuid(id) || (anlageZu !== null && !istUuid(anlageZu))) return false;
+      const r = await sql`UPDATE dokumente SET anlage_zu = ${anlageZu}, anlage_nr = ${anlageZu ? nr : null} ${name !== undefined ? sql`, name = ${name}` : sql``}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r.count > 0;
     },
     async setzeFavorit(benutzerId, mappeId, an) {
       if (!istUuid(benutzerId) || !istUuid(mappeId)) return;
@@ -1800,7 +1821,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           INSERT INTO dokumente
           SELECT (jsonb_populate_record(NULL::dokumente, p.dokument || jsonb_build_object(
             'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.dokument ->> 'erstellt_von') THEN p.dokument -> 'erstellt_von' ELSE 'null'::jsonb END,
-            'archivnummer', CASE WHEN EXISTS (SELECT 1 FROM dokumente x WHERE x.haushalt_id = p.haushalt_id AND lower(x.archivnummer) = lower(p.dokument ->> 'archivnummer')) THEN 'null'::jsonb ELSE COALESCE(p.dokument -> 'archivnummer', 'null'::jsonb) END))).*
+            'archivnummer', CASE WHEN EXISTS (SELECT 1 FROM dokumente x WHERE x.haushalt_id = p.haushalt_id AND lower(x.archivnummer) = lower(p.dokument ->> 'archivnummer')) THEN 'null'::jsonb ELSE COALESCE(p.dokument -> 'archivnummer', 'null'::jsonb) END,
+            -- Anlagen (#998): wieder an ihr Hauptdokument, wenn es in derselben Mappe ist – sonst ein eigenes Dokument.
+            'anlage_zu', CASE WHEN EXISTS (SELECT 1 FROM dokumente h WHERE h.haushalt_id = p.haushalt_id AND h.id::text = p.dokument ->> 'anlage_zu' AND h.mappe_id = p.mappe_id) THEN p.dokument -> 'anlage_zu' ELSE 'null'::jsonb END,
+            'anlage_nr', CASE WHEN EXISTS (SELECT 1 FROM dokumente h WHERE h.haushalt_id = p.haushalt_id AND h.id::text = p.dokument ->> 'anlage_zu' AND h.mappe_id = p.mappe_id) THEN COALESCE(p.dokument -> 'anlage_nr', 'null'::jsonb) ELSE 'null'::jsonb END))).*
           FROM papierkorb_dokumente p WHERE p.id = ${id}`;
         await tx`
           INSERT INTO dokument_versionen

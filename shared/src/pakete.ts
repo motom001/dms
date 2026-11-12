@@ -503,6 +503,7 @@ export const SCHNITTSTELLEN = {
   'dms:klassifizieren': t('gemeinsam.pakete.mappentyp-vorschlagen'),
   'dms:hinweise': t('gemeinsam.pakete.hinweise-setzen'),
   'dms:leerseiten': t('gemeinsam.pakete.leerseiten-markieren'),
+  'dms:anlagen': t('gemeinsam.pakete.anlagen-anlegen'),
 } as const;
 export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
 /** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
@@ -514,7 +515,7 @@ export const DMS_VEKTOREN_AB = '0.120.0';
  */
 export const DMS_ANTWORTEN_AB = '0.124.0';
 /** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
-export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren', 'dms:hinweise': 'pakete.recht.hinweise', 'dms:leerseiten': 'pakete.recht.leerseiten' };
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren', 'dms:hinweise': 'pakete.recht.hinweise', 'dms:leerseiten': 'pakete.recht.leerseiten', 'dms:anlagen': 'pakete.recht.anlagen' };
 /**
  * Ab dieser Version (#585) kennt das DMS das Ereignis `sicherung.fertig` und die Schnittstelle `dms:sicherung-lesen`:
  * Ein Paket liest die verschlüsselte Sicherung in Stücken, kopiert sie außer Haus und meldet je Sicherung zurück.
@@ -725,6 +726,9 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   if (schnittstellen.includes('dms:hinweise') && !schreiben.length) fehler.push(t('gemeinsam.pakete.code-hinweise-braucht-schreiben'));
   // Leerseiten (#997): markiert nur Seiten in Post – das Paket muss Post und ihre Dokumente lesen dürfen.
   if (schnittstellen.includes('dms:leerseiten') && (dokumente === 'keine' || !lesen.some((v) => v === 'dms:post' || v === ALLE_TYPEN))) fehler.push(t('gemeinsam.pakete.code-leerseiten-braucht-post'));
+  // Anlagen (#998): legt beim Teilen einer Post Anlagen an – das Paket muss Post lesen und schreiben und Dokumente schreiben dürfen.
+  const post = (l: string[]) => l.some((v) => v === 'dms:post' || v === ALLE_TYPEN);
+  if (schnittstellen.includes('dms:anlagen') && (dokumente !== 'schreiben' || !post(lesen) || !post(schreiben))) fehler.push(t('gemeinsam.pakete.code-anlagen-braucht-post'));
   // Dateien umwandeln (#577): zuständige Dateitypen, nur mit dms:umwandeln, Lesen von Dokumenten und dem Ereignis.
   const umwandeln = liste(x.umwandeln, 'code.umwandeln').map((m) => m.toLowerCase());
   const willUmwandeln = schnittstellen.includes('dms:umwandeln');

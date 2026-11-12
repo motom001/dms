@@ -17,6 +17,7 @@ import { fortschrittText } from '../../../shared/src/auftrag';
 import type { Auftrag as HintergrundAuftrag } from '../api';
 import { t as tx, t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { AnlageMarke } from '../ablage/Anlagen';
 
 /**
  * Werkbank → Texterkennung (#45, #459): Übersicht – welches Paket die Texterkennung übernimmt, woher der Text der
@@ -392,7 +393,7 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
                 return (
                   <tr key={a.dokument.id} className={auswahl.has(a.dokument.id) ? 'an' : ''}>
                     <td><input type="checkbox" aria-label={t('werkbank.texterkennung.waehlen', { name: a.dokument.name })} checked={auswahl.has(a.dokument.id)} onChange={() => umschalten(a.dokument.id)} /></td>
-                    <td>{a.dokument.name}</td>
+                    <td>{a.dokument.name} <AnlageMarke d={a.dokument} /></td>
                     <td><Link to={`/ablage/${a.typId}/${a.dokument.mappeId}`} className="verweis">{a.mappeTitel || t('werkbank.texterkennung.ohne-titel')}</Link></td>
                     <td className="zahlzelle">{groesse(a.dokument.groesse)}</td>
                     <td>{stand === 'fertig' ? (o?.seiten ?? '–') : (o?.info || OCR_STAENDE[o?.stand ?? 'keiner'])}</td>

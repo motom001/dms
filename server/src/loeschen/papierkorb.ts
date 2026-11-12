@@ -129,15 +129,23 @@ export class Papierkorb {
     if (!(alle && ich.rolle === 'admin')) await this.pruefeRecht(z, e.mappeId, 'U');
     const typ = (await this.repo.holeTyp(x.typId))!;
     if (!typ.register.some((r) => r.key === e.registerKey && r.art === 'dokumente')) throw new Fachfehler(409, t('meldungen.dienst.das-register-gibt-es', { register: x.register }));
-    const inhalt = (await this.repo.papierkorbDokumentInhalt([id]))[0];
-    await this.repo.stelleDokumentWiederHer(id);
-    await this.notiere(e.mappeId, ich.id, 'dokument_wiederhergestellt', { dokument: e.name, register: x.register });
-    if (inhalt) await this.protokolliere(this.dokEintraege(inhalt.dokumente.slice(0, 1), { ...(await this.mappenInfo([e.mappeId], new Map()))(e.mappeId, id), schritt: 'wiederhergestellt', weg: 'dokument' }),
-      await this.loeschKontext(ich.id, { ausloeser: quelle }));
+    await this.wiederEins(e, x.register, ich, quelle);
+    // Anlagen (#998), die mit dem Hauptdokument in den Papierkorb kamen, kommen mit ihm zurück – in ihr Register.
+    const anlagen = (await this.repo.papierkorbDokumente({ mappeIds: [e.mappeId] })).filter((a) => a.anlageZu === id && a.registerKey === e.registerKey);
+    for (const a of anlagen.reverse()) await this.wiederEins(a, x.register, ich, quelle);
     await this.beruehre(e.mappeId, typ, ich.id);
-    this.neueDateien([(await this.repo.holeDokument(id))!]);
-    protokoll.modul('ablage').info('Dokument wiederhergestellt', { dokument: e.name, id, mappe: e.mappeId });
+    this.neueDateien([(await this.repo.holeDokument(id))!, ...(await this.repo.anlagenVon(id))]);
+    protokoll.modul('ablage').info('Dokument wiederhergestellt', { dokument: e.name, id, mappe: e.mappeId, anlagen: anlagen.length || undefined });
     return { dokument: (await this.repo.holeDokument(id))!, typId: x.typId };
+  }
+
+  /** Ein Dokument aus dem Papierkorb zurück: Repo, Historie, Löschprotokoll (Rechte prüft der Aufrufer). */
+  private async wiederEins(e: DokumentImPapierkorb, register: string, ich: { id: string }, quelle?: Ausloeser) {
+    const inhalt = (await this.repo.papierkorbDokumentInhalt([e.id]))[0];
+    await this.repo.stelleDokumentWiederHer(e.id);
+    await this.notiere(e.mappeId, ich.id, 'dokument_wiederhergestellt', { dokument: e.name, register });
+    if (inhalt) await this.protokolliere(this.dokEintraege(inhalt.dokumente.slice(0, 1), { ...(await this.mappenInfo([e.mappeId], new Map()))(e.mappeId, e.id), schritt: 'wiederhergestellt', weg: 'dokument' }),
+      await this.loeschKontext(ich.id, { ausloeser: quelle }));
   }
 
   /** Dokumente endgültig löschen (ohne Rechteprüfung); Archivmodus der Mappe gilt weiter. */

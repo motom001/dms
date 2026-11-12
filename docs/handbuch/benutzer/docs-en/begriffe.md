@@ -59,6 +59,10 @@ See also: [Tour](#rundgang), [Tip](#tipp).
 A file that lies in a document tab of a folder in Ablago. A file is uploaded; in Ablago it is a document. On an email it is called an attachment.  
 See also: [Version](#version).
 
+<a id="anlage"></a>**Enclosure** (*Anlage*) · ✓ everyday word · everyone  
+A document of its own (PDF or image) that belongs to a main document – e.g. the MOT report, the list of work done and the parts order behind the garage invoice as enclosure 1, 2, 3. It is shown collapsed below the main document, goes with it (taking over, bin) and has the same rights. Recognition and AI only read the main document; search finds enclosures with "in enclosure 2".  
+See also: [Document](#dokument), [Post](#post), [Version](#version).
+
 <a id="favoriten"></a>**Favourites** (*Favoriten*) · ✓ everyday word · everyone  
 Folders a user has marked with the star. The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite).
 

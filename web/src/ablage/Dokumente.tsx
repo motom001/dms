@@ -29,6 +29,8 @@ import { kannStempeln } from '../../../shared/src/stempel';
 import { gebietsschema, sprache } from '../../../shared/src/sprache';
 import { registerName } from '../../../shared/src/beschriftung';
 import { Knopf } from '../bausteine';
+import { anlagenVon, gruppiere } from '../../../shared/src/anlagen';
+import { AlsAnlage, AnlageMarke, AnlageZeile, HerunterladenMitAnlagen } from './Anlagen';
 
 /** „Verkleinern“ (#393) erst ab dieser Größe anbieten – kleinere PDFs lohnen die Mühe kaum. */
 const VERKLEINERN_AB = 500 * 1024;
@@ -136,6 +138,12 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const offenRef = useRef<HTMLLIElement>(null);
   const sortierung = (d.einstellungen.dokumente_sortierung as Dokumentsortierung | undefined) ?? 'name';
   const dokumente = sortiereDokumente(roh, sortierung in DOKUMENT_SORTIERUNGEN ? sortierung : 'name');
+  // Anlagen (#998): eingeklappt unter ihrem Hauptdokument, in ihrer Reihenfolge; sortiert werden nur Hauptdokumente.
+  const reihe = gruppiere(dokumente).flatMap((g) => [g.haupt, ...g.anlagen]);
+  const roh0 = roh;
+  const hauptVon = (x: Dokument) => (x.anlageZu ? roh.find((y) => y.id === x.anlageZu) : undefined);
+  const [alsAnlage, setAlsAnlage] = useState<string>();
+  const anlagenFertig = async (m?: string) => { setAlsAnlage(undefined); if (m) setPdfMeldung(m); await neuLaden?.(); };
   // Leerseiten (#997): nur an der Post – Seitenleiste mit „Doch behalten“ / „Auch weglassen“.
   const leer = useLeerseiten(post ? roh : []);
   // Auswahl (#87): je Register; verschwindet mit dem Register bzw. der Mappe (eigene Instanz).
@@ -198,6 +206,20 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     if (text?.id === id) { setText(null); return; }
     try { setText({ id, text: (await api.volltext(id)).text }); } catch { setText({ id, text: null }); }
   }
+
+  /** Anlage (#998): eingeklappte Zeile unter ihrem Hauptdokument; geht mit ihm, wenn es entfernt wird. */
+  const anlageZeile = (x: Dokument, haupt: Dokument) => {
+    const aWeg = entfernt.includes(x.id) || entfernt.includes(haupt.id);
+    const aSicht = ansichtVon(x, original.has(x.id));
+    const aAuf = x.id === ansicht && !aWeg;
+    return <AnlageZeile key={x.id} a={x} haupt={haupt} auf={aAuf} weg={aWeg} bearbeitbar={bearbeitbar} erste={anlagenVon(roh0, haupt.id)[0]?.id === x.id}
+      umschalten={aSicht ? () => umschalten(x) : undefined} fertig={anlagenFertig}
+      herunterladen={!aWeg && !stempelPflicht && mitnehmen ? <Herunterladen x={x} archiv={aSicht?.art === 'archiv'} /> : undefined}
+      vorschau={<div className="dokansicht" ref={aAuf ? (el) => { if (el) el.scrollIntoView({ block: 'nearest' }); } : undefined}>
+        {aSicht && <AnsichtKopf x={x} art={aSicht.art} umschalten={() => { const n = new Set(original); if (n.has(x.id)) n.delete(x.id); else n.add(x.id); setOriginal(n); }} />}
+        {aSicht?.pdf ? <iframe src={aSicht.url} title={x.name} /> : <img src={aSicht?.url ?? dokumentUrl(x.id)} alt={x.name} />}
+      </div>} />;
+  };
 
   // Die geöffnete Anzeige steht direkt unter ihrer Zeile und wird sichtbar gescrollt (#85).
   useEffect(() => {
@@ -331,8 +353,12 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                   </div>
                 </li>
               ))}
-              {dokumente.map((roh) => {
+              {reihe.map((roh) => {
                 const x = mitFrisch(roh);
+                const haupt = hauptVon(x);
+                if (haupt) return anlageZeile(x, haupt);
+                const anlagen = anlagenVon(roh0, x.id);
+                const ziele = reihe.filter((y) => !y.anlageZu && y.id !== x.id && !entfernt.includes(y.id));
                 const weg = entfernt.includes(x.id);
                 // Hinweis „Post teilen?“ (#579): nur an der Post, nur für PDFs, nur wer teilen darf – nie von selbst.
                 const teilenHinweis = post && bearbeitbar && !weg && x.mime === 'application/pdf' && !!x.teilenAb && !teilenWeg.has(x.id) && seitenOffen !== x.id;
@@ -351,6 +377,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {klickbar
                           ? <button type="button" className="textknopf" aria-expanded={auf} onClick={() => umschalten(x)}>{x.name}</button>
                           : <span className="dateiname">{x.name}</span>}
+                        <AnlageMarke d={x} />
                         <span className="leise klein">{weg ? (d.zaehler.papierkorbTage ? t('ablage.dokumente.kommt-beim-speichern-in') : t('ablage.dokumente.wird-beim-speichern-endgueltig')) : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} />
                           {(versioniert || (x.version ?? 1) > 1) && <> · <button type="button" className="textknopf klein" aria-expanded={versionenOffen === x.id} onClick={() => setVersionenOffen(versionenOffen === x.id ? undefined : x.id)}>{t('ablage.dokumente.version-2', { wert: x.version ?? 1 })}</button></>}</>}</span>
                         {!weg && (x.archivnummer || asn?.id === x.id) && (asn?.id === x.id
@@ -381,7 +408,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                             <div className="hy-schleier" aria-hidden="true" onClick={() => setMenue(undefined)} />
                             <div className="dk-blatt" role="menu" aria-label={t('ablage.dokumente.aktionen-fuer', { name: x.name })} onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) setMenue(undefined); }}>
                               <p className="dk-titel">{x.name}</p>
-                        {!weg && !stempelPflicht && mitnehmen && <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />}
+                        {!weg && !stempelPflicht && mitnehmen && (anlagen.length
+                          ? <HerunterladenMitAnlagen d={x} anzahl={anlagen.length} archiv={sicht?.art === 'archiv'} ohne={<Herunterladen x={x} archiv={sicht?.art === 'archiv'} />} />
+                          : <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />)}
+                        {bearbeitbar && !weg && !x.anlageZu && ziele.length > 0 && <Knopf art="link" aria-expanded={alsAnlage === x.id} title={t('ablage.anlagen.als-anlage-knopf-titel')}
+                          onClick={() => setAlsAnlage(alsAnlage === x.id ? undefined : x.id)}>{t('ablage.anlagen.als-anlage-knopf')}</Knopf>}
                         {!weg && mitnehmen && kannStempeln(x.mime) && typ && <button type="button" className="textknopf" aria-expanded={stempelOffen?.id === x.id && !stempelOffen.version}
                           title={t('ablage.dokumente.eine-kopie-mit-stempel')}
                           onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? t('ablage.dokumente.herunterladen-mit-stempel') : t('ablage.dokumente.mit-stempel')}</button>}
@@ -406,7 +437,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       ) : (
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={sicht!.url} target="_blank" rel="noreferrer" title={t('ablage.dokumente.in-neuem-tab-oeffnen')} aria-label={t('ablage.dokumente.in-neuem-tab-oeffnen-2', { name: x.name })}>↗</a>}
-                        {!weg && !stempelPflicht && mitnehmen && <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />}
+                        {!weg && !stempelPflicht && mitnehmen && (anlagen.length
+                          ? <HerunterladenMitAnlagen d={x} anzahl={anlagen.length} archiv={sicht?.art === 'archiv'} ohne={<Herunterladen x={x} archiv={sicht?.art === 'archiv'} />} />
+                          : <Herunterladen x={x} archiv={sicht?.art === 'archiv'} />)}
+                        {bearbeitbar && !weg && !x.anlageZu && ziele.length > 0 && <Knopf art="link" aria-expanded={alsAnlage === x.id} title={t('ablage.anlagen.als-anlage-knopf-titel')}
+                          onClick={() => setAlsAnlage(alsAnlage === x.id ? undefined : x.id)}>{t('ablage.anlagen.als-anlage-knopf')}</Knopf>}
                         {!weg && mitnehmen && kannStempeln(x.mime) && typ && <button type="button" className="textknopf" aria-expanded={stempelOffen?.id === x.id && !stempelOffen.version}
                           title={t('ablage.dokumente.eine-kopie-mit-stempel')}
                           onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? t('ablage.dokumente.herunterladen-mit-stempel') : t('ablage.dokumente.mit-stempel')}</button>}
@@ -427,8 +462,9 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       </div>
                       )}
                     </div>
+                    {alsAnlage === x.id && !weg && <AlsAnlage d={x} ziele={ziele} schliessen={() => setAlsAnlage(undefined)} fertig={anlagenFertig} />}
                     {stempelOffen?.id === x.id && !weg && (
-                      <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} schliessen={() => setStempelOffen(undefined)} />
+                      <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} anlagen={anlagen.length} schliessen={() => setStempelOffen(undefined)} />
                     )}
                     {kleinOffen === x.id && !weg && (
                       <PdfVerkleinern d={x} bearbeitbar={bearbeitbar} mitnehmen={mitnehmen} schliessen={() => setKleinOffen(undefined)}

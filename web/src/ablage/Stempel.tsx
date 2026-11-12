@@ -7,6 +7,7 @@ import {
 import { t, tn } from '../sprache';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from './StempelVorschau';
 import { api } from '../api';
+import { HakenFeld } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { VerkleinertWahl } from './VerkleinertWahl';
 import type { Stufe } from '../../../shared/src/verkleinern';
@@ -126,7 +127,9 @@ export function StempelFelder({ wahl, setze, vorlagen, pflicht, mappe, empfaenge
 }
 
 /** Dialog „Herunterladen mit Stempel“ an einem Dokument (auch für ältere Versionen). */
-export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokument; typ?: Mappentyp; mappe: string; version?: number; schliessen(): void }) {
+export function StempelDialog({ d, typ, mappe, version, anlagen = 0, schliessen }: { d: Dokument; typ?: Mappentyp; mappe: string; version?: number; /** Anlagen (#998): „mit Anlagen?“, Vorgabe ja. */ anlagen?: number; schliessen(): void }) {
+  const [mitAnlagen, setMitAnlagen] = useState(true);
+  const { zusammen, dateiname } = mitAnlagenName(d, anlagen, mitAnlagen, version);
   const vorlagen = useStempelVorlagen();
   const [wahl, setWahl] = useState<StempelWahl | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -143,7 +146,7 @@ export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokum
     if (!wahl) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), d.name, version, d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv') ? klein : null, mitArchiv ? fassung : undefined);
+      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), dateiname, version, d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv') ? klein : null, mitArchiv ? fassung : undefined, zusammen);
       setMeldung({ art: 'gut', text: t('ablage.stempel.gespeichert-die-historie-der', { name: r.name }) });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
   }
@@ -158,6 +161,7 @@ export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokum
           <StempelFelder wahl={{ ...wahl, an: true }} setze={setWahl} vorlagen={vorlagen} pflicht={pflicht} mappe={mappe} id={`stempel-${d.id}`} immer />
           {!version && <FassungWahl wert={fassung} setze={setFassung} dokumente={[d]} id={`stempel-fassung-${d.id}`} />}
           {(d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv')) && <VerkleinertWahl wert={klein} setze={setKlein} wie="herunterladen" id={`stempel-klein-${d.id}`} />}
+          <MitAnlagenWahl anzahl={version ? 0 : anlagen} an={mitAnlagen} setze={setMitAnlagen} />
           {fehler && <p className="leise klein">{fehler}</p>}
           {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
           <div className="knoepfe">
@@ -167,5 +171,21 @@ export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokum
         </div>
       )}
     </div>
+  );
+}
+
+/** Mit Anlagen (#998): zusammen als ZIP „… mit Anlagen.zip“ – nur ohne Version und nur, wenn es Anlagen gibt. */
+function mitAnlagenName(d: Dokument, anlagen: number, an: boolean, version?: number): { zusammen: boolean; dateiname: string } {
+  const zusammen = !version && anlagen > 0 && an;
+  return { zusammen, dateiname: zusammen ? t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }) : d.name };
+}
+
+/** „mit Anlagen?“ im Dialog (#998, Vorgabe ja): nur bei einem Dokument mit Anlagen. */
+function MitAnlagenWahl({ anzahl, an, setze }: { anzahl: number; an: boolean; setze(an: boolean): void }) {
+  if (!anzahl) return null;
+  return (
+    <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl })} hinweis={t('ablage.anlagen.mit-anlagen-stempel')}>
+      <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} />
+    </HakenFeld>
   );
 }

@@ -1,3 +1,4 @@
+import { gruppiere, laufwerkName } from '../../shared/src/anlagen';
 import { createHash, randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import type { Readable } from 'node:stream';
@@ -548,11 +549,15 @@ export class Webdav {
       }
       case 'register': {
         const m = await this.mappe(k.mappeId, ctx);
-        const doks = m.dokumente.filter((x) => x.registerKey === k.register.key)
+        const sortiert = m.dokumente.filter((x) => x.registerKey === k.register.key)
           .sort((x, y) => x.name.localeCompare(y.name, 'de') || x.erstellt.localeCompare(y.erstellt) || x.id.localeCompare(y.id));
+        // Anlagen (#998): gleich hinter ihrem Hauptdokument, mit Namenszusatz „– Anlage n“.
+        const doks = gruppiere(sortiert).flatMap((g) => [g.haupt, ...g.anlagen]);
         // Pflicht-Stempel (#722): Bilder kommen als PDF heraus und heißen darum auch so.
         const pflicht = doks.some((x) => x.mime !== 'application/pdf' && kannStempeln(x.mime)) && await this.pflichtMappe(k.mappeId, ctx);
-        const namen = eindeutig(doks.map((x) => ({ name: pflicht && x.mime !== 'application/pdf' && kannStempeln(x.mime) ? pdfName(x.name) : x.name, datei: true })));
+        const anzeige = (x: Dokument) => (pflicht && x.mime !== 'application/pdf' && kannStempeln(x.mime) ? pdfName(x.name) : x.name);
+        const haupt = (x: Dokument) => (x.anlageZu ? doks.find((y) => y.id === x.anlageZu) : undefined);
+        const namen = eindeutig(doks.map((x) => ({ name: haupt(x) ? laufwerkName(anzeige(haupt(x)!), { ...x, name: anzeige(x) }) : anzeige(x), datei: true })));
         const erg: Kind[] = doks.map((x, i) => ({ name: namen[i], k: { art: 'dokument', dok: x, mappeId: k.mappeId, register: k.register } }));
         const belegt = new Set(namen.map(schluessel));
         for (const s of await this.schwebende(ctx, ortVon(k)!)) if (!belegt.has(schluessel(s.name))) erg.push({ name: s.name, k: { art: 'schwebend', s } });

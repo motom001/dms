@@ -931,7 +931,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       } catch (e) { await hinweis({ titel: t('ablage.mappeformular.post-nicht-zugeordnet'), text: t('ablage.mappeformular.die-mappe-ist-angelegt', { message: (e as Error).message }) }); }
     }
     const nichtEntfernt: string[] = [];
+    // Anlagen (#998) gehen mit ihrem Hauptdokument – nur einzeln löschen, wessen Hauptdokument bleibt.
+    const mitHaupt = new Set((details?.dokumente ?? []).filter((x) => x.anlageZu && entfernt.includes(x.anlageZu)).map((x) => x.id));
     for (const id of entfernt) {
+      if (mitHaupt.has(id)) continue;
       try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);

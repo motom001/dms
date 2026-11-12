@@ -167,6 +167,7 @@ The first subject area with its own business logic in its subject folder (trial 
 |---|---|---|
 | `dokumente.dienst.ts` | `DokumenteDienst` (`dienst.dokumente`) | `ladeHoch`, `loescheDokument`, `holeDokument`, `dokumentInhalt`, `textAusDatei`, connecting text recognition and previews, `neueDateien`, `raeumeAuf`; `dateiname`, `erkenneAnzeigbar` |
 | `versionen.ts` | `DokumentVersionen` (`dienst.dokumentVersionen`) | `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion`, `versionen`, `versionInhalt`, `beruehre` |
+| `anlagen.ts` | `DokumentAnlagen` (`dienst.dokumentAnlagen`) | Enclosures (#998): `liste`, `haengeAn` (“As enclosure to …”), `loese` (“Make it a document of its own”), `sortiere`, `benenne`, `alsAnlagen` (when splitting a post); going along is done by the repo (`verschiebeDokument`), `loescheDokument` and the bin |
 | `umwandeln.ts` | `DokumentUmwandlung` (`dienst.dokumentUmwandlung`) | converting files (#577): `nachFassung`, `umwandelPaketDa`, `setzeFassung`, `fassungVon`, `umwandlungStand` |
 | `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | archive version (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `archivStand` |
 | `geschuetzte-pdf.ts` | `GeschuetztePdfs` (`dienst.geschuetztePdfs`) | protected PDFs (#827): `entsperreDokument`, `nachEntsperren`, `mitPdfSchutz` |
@@ -1009,7 +1010,7 @@ Ablago **never opens a connection** to the internet on its own. Every route to t
 | Package network | Administrator confirms on installation | only to the addresses from the manifest or service address | package runner, right `netzwerk` |
 | Retrieval links (data protection request) | Administrator creates the link | the request, only after the retrieval code | `server/src/abruf.ts` |
 
-Download (also a letter from template, #1040), email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through `dienst.ausgang.pruefeAusgang` or `dienst.ausgang.mitnehmbar`.
+Download (also a letter from template, #1040), email, export and the WebDAV drive ask one **shared checkpoint** in `server/src/ausgang/` (#723, [outgoing](#ausgang)): read and export permission per folder, through `dienst.ausgang.pruefeAusgang` or `dienst.ausgang.mitnehmbar`. "With enclosures?" (#998, default yes) only widens the selection afterwards via `dienst.ausgang.mitAnlagen` – only by enclosures of the same folder, so with the same permissions; downloading with enclosures (`dokumentMitAnlagenFuerAusgabe`) hands out each file as it would singly (stamp, archive version) and packs them into a ZIP.
 
 **Rule for new routes:** a new route to the outside needs an approved issue, is **switched off** until someone explicitly switches it on, sends as little as possible (numbers instead of content where that's enough), is listed in this table and in the overview in the administrator handbook, and is reviewed by security.
 

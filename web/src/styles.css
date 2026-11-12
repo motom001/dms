@@ -836,6 +836,7 @@ input.kurz { width: 7em; }
 .mappenleiste .aktionsmenue { margin-left: auto; }
 .anhaenge { border: 0; padding: 0; margin: 12px 0; }
 .anhaenge legend { font-weight: 600; margin-bottom: 4px; }
+.anhaenge li.eingerueckt { margin-left: 24px; } /* Anlagen (#998) unter ihrem Dokument */
 .anhaenge ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 
 /* Druckansicht / Als PDF exportieren (#58) */
@@ -1529,6 +1530,7 @@ td.umbruch { overflow-wrap: anywhere; }
 .zusammenfuegen { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px; margin: 6px 0; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); }
 .emailmappen { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
 .emailmappen ul { list-style: none; padding-left: 12px; margin: 2px 0; }
+.emailmappen li.eingerueckt { margin-left: 20px; } /* Anlagen (#998) */
 
 /* Archivnummer (#345) */
 .asnform { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
@@ -2208,6 +2210,9 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
 .ue-vorhanden { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; border-top: 1px solid var(--linie); }
 .ue-passt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 4px 0; }
 .ue-passt p { margin: 0; flex: 1 1 14rem; }
+/* Anlagen (#998): eingeklappt hinter ihrem Hauptdokument, eingerückt mit Linie links. */
+.ue-anlage { margin: 4px 0 4px 24px; border-left: 2px solid var(--linie-stark); padding-left: 10px; }
+.ue-anlage-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
 .ue-ablage { margin-top: 4px; }
 .ue-ablage-knopf { width: 100%; padding: 18px 12px; border: 2px dashed var(--linie-stark); border-radius: var(--r); background: transparent; color: var(--leise); font: inherit; cursor: pointer; }
 .ue-ablage-knopf:hover, .ue-ablage-knopf:focus-visible { border-color: var(--akzent); color: var(--akzent); }

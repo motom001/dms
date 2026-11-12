@@ -96,6 +96,27 @@ Jede Zeile hat ein Kästchen; **Alle auswählen** über der Liste wählt alle (u
 
 Die Auswahl gilt nur für das Register, in dem du gerade bist.
 
+## Anlagen { #anlagen }
+
+![Werkstattrechnung mit drei Anlagen in der Post](bilder/dokumente-anlagen.png)
+
+Manches Schreiben besteht aus einem **Hauptdokument** und **Anlagen**: die Werkstattrechnung vorn, dahinter HU/AU-Protokoll, Auflistung der Arbeiten und Teilebestellung. In Ablago ist jede Anlage ein **eigenes PDF** (oder Bild), das am Hauptdokument hängt – als **Anlage 1, 2, 3**. In Post, Mappe und auf *Dokument übernehmen* steht das Hauptdokument oben, darunter jede Anlage als eingeklappte Zeile **„Anlage 1 · HU/AU-Protokoll · 2 Seiten“**. Ein Klick darauf zeigt sie in der Vorschau. Überall, wo Dokumente gelistet werden (Papierkorb, E-Mail-Anhänge, Werkbank), trägt eine Anlage das Kennzeichen **Anlage**.
+
+- **Als Anlage an …** – an einem Dokument: Wähle das Dokument, an das es als nächste Anlage gehört (nur Dokumente derselben Mappe). Hat es selbst Anlagen, kommen sie gleich dahinter mit. Das brauchst du für Dokumente, die ohne [Trennblatt](post.md#sammelscan-teilen) hochgeladen wurden, oder zum Korrigieren.
+- **Zum eigenen Dokument machen** – an einer Anlage: Sie bleibt in Mappe und Register, hängt aber an keinem Dokument mehr; die übrigen rücken auf.
+- **Umbenennen** und **Nach oben** – der Vorgabe-Name „Werkstattrechnung – Anlage 1.pdf“ ist nur ein Vorschlag; die Reihenfolge bestimmst du selbst.
+
+Jeder Schritt steht in der [Historie](mappen.md) der Mappe.
+
+**Was mit Anlagen geschieht:**
+
+- Sie **wandern mit** ihrem Hauptdokument: beim Übernehmen von Post in eine Mappe, beim Abtrennen, in den Papierkorb und wieder heraus. Eine Anlage allein lässt sich nicht in eine andere Mappe übernehmen – mache sie dafür erst zum eigenen Dokument.
+- Sie sind **Dokumente wie alle anderen**: mit [Versionen](versionen.md), Volltext und Texterkennung, Archivfassung (PDF/A), Stempel und Aufbewahrung der Mappe. Wer die Mappe sehen darf, sieht auch ihre Anlagen; es gelten dieselben Rechte.
+- **Erkennung, „Wohin gehört das?“ und KI** lesen nur das Hauptdokument – AGB, Preislisten und Protokolle stören das Auslesen nicht.
+- Die **Suche** findet auch Text in Anlagen; der Treffer nennt sie mit „in Anlage 2“.
+- **Herunterladen** und **Weitergeben** fragen **„mit Anlagen?“** – vorgewählt ist *ja*. Mit Anlagen kommt beim Herunterladen eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“, in der E-Mail hängt jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument. In der Historie der Mappe steht der Abruf für das Dokument und für jede Anlage einzeln (mit Weg und gegebenenfalls dem Namen des API-Schlüssels), beim Versand die E-Mail mit allen Anhängen.
+- Im [Laufwerk](laufwerk.md) stehen Anlagen gleich hinter ihrem Dokument mit dem Zusatz „– Anlage 1“.
+
 ## PDF bearbeiten
 
 Schief gescannt, eine leere Rückseite zu viel, drei Briefe in einem Scan? Das richtest du direkt in Ablago – ohne anderes Programm.

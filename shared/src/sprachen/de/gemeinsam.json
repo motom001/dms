@@ -1268,5 +1268,10 @@
   "fassungen.karte-weg": "{bereich}: „{karte}“ entfernt",
   "fassungen.karte-geaendert": "{bereich}: „{karte}“ geändert",
   "fassungen.karten-reihenfolge": "{bereich}: Reihenfolge der Karten geändert",
-  "fassungen.register-geaendert": "Register „{name}“: {was} geändert"
+  "fassungen.register-geaendert": "Register „{name}“: {was} geändert",
+  "model.anlage": "Anlage",
+  "anlagen.anlage": "Anlage {nr}",
+  "anlagen.in-anlage": "in Anlage {nr}",
+  "pakete.anlagen-anlegen": "Legt beim Teilen einer Post Anlagen an – nur in den Posts, die dabei entstehen, an deren Dokument (z. B. für ein Trennblatt mit zweitem Barcode)",
+  "pakete.code-anlagen-braucht-post": "code.rechte.schnittstellen: dms:anlagen braucht code.rechte.lesen und code.rechte.schreiben mit dms:post (oder „*“) und code.rechte.dokumente: schreiben – Anlagen entstehen nur beim Teilen einer Post."
 }

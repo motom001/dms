@@ -5,3 +5,4 @@ export { DokumentUmwandlung, type UmwandelnAnschluss } from './umwandeln';
 export { DokumentArchivfassung, type ArchivfassungAnschluss } from './archivfassung';
 export { FehlendeDateien } from './fehlende-dateien';
 export { DokumentVersionen, type VersionenAnschluss } from './versionen';
+export { DokumentAnlagen, type AnlagenStand } from './anlagen';

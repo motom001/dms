@@ -803,6 +803,21 @@ async function main() {
   await bild(s, 'post-leerseiten');
   await api('PUT', `/api/mappen/${beidseitig.id}`, { werte: { stand: 'Erledigt' } });
 
+  // Anlagen (#998): Werkstattrechnung mit HU/AU-Protokoll, Arbeiten und Teilebestellung als Anlage 1–3, eingeklappt
+  // unter dem Hauptdokument in der Post. Danach erledigt, damit „Neue Post“ in den folgenden Bildern gleich bleibt.
+  const werkstatt = await api('POST', '/api/post', { betreff: 'Werkstatt Petra – Inspektion' });
+  const lade = async (name, seiten) => (await api('POST', `/api/mappen/${werkstatt.id}/dokumente?register=dokumente&name=${encodeURIComponent(name)}&typ=application/pdf`, beispielPdf(seiten), true)).dokument;
+  const haupt = await lade('Werkstattrechnung.pdf', ['Rechnung Nr. W-2026-0815']);
+  for (const [name, seiten] of [['HU-AU-Protokoll.pdf', ['HU/AU-Protokoll', 'Seite 2']], ['Arbeiten.pdf', ['Auflistung der Arbeiten']], ['Teilebestellung.pdf', ['Teilebestellung']]]) {
+    await api('POST', `/api/dokumente/${haupt.id}/anlagen`, { dokument: (await lade(name, seiten)).id });
+  }
+  await geheZu(s, `/ablage/${neuePost}/${werkstatt.id}?als=post`);
+  await s.getByRole('tab', { name: w(/^Dokumente/) }).click();
+  await s.locator('[data-anlage="3"]').waitFor();
+  await s.locator('[data-anlage="3"]').scrollIntoViewIfNeeded();
+  await bild(s, 'dokumente-anlagen');
+  await api('PUT', `/api/mappen/${werkstatt.id}`, { werte: { stand: 'Erledigt' } });
+
   // Neue Post von überall (#193): zwei Dateien irgendwo ins Fenster ziehen → eine Post mit beiden.
   await geheZu(s, `/ablage/${vertrag.id}`);
   // Je Seite neu erzeugen: ein JSHandle gilt nur auf der Seite, auf der es entstand.

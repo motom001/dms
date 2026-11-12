@@ -21,6 +21,7 @@ Besides events and the [API v1](#nutzliche-endpunkte-der-api-v1), the core offer
 | `dms:klassifizieren` | 0.226.0 | suggesting a folder type for "Where does this belong?" – from the start of the document and the list of candidates; without network access also from the types of similar documents | **[Suggest a folder type](#klassifizieren)** – call, answer, checks, similarity |
 | `dms:hinweise` | 0.231.0 | setting and removing notes on folders the package may change (e.g. “The items add up to €118.40”) – text only, with the package's name, they never stop saving | **[Calculated fields and notes](#berechnet-und-hinweise)** |
 | `dms:leerseiten` | 0.255.0 | marking blank pages of documents in new post – marking only, never deleting; needs `lesen: [dms:post]` and `dokumente: lesen` | **[Marking blank pages](#leerseiten)** |
+| `dms:anlagen` | 0.263.0 | creating enclosures when splitting a post (separator sheet with a second barcode) – only in the posts created by the split; needs `lesen` and `schreiben` with `dms:post` and `dokumente: schreiben` | **[Enclosures when splitting](#anlagen)** |
 | `dms:uebersetzen` | 0.204.0 | translating one text (field, note, full text) at the press of a button – the core reads it with the person's permissions | **[Translate content](#inhalte-ubersetzen)** – call, sections, answer, cache |
 
 ## How code runs in Ablago { #so-lauft-code-im-dms }
@@ -59,7 +60,7 @@ code:
   ```
 
 - **Documents:** `lesen` allows reading documents (file, full text, pages as images), `schreiben` additionally uploading, replacing and setting the full text. Documents only exist in folders the package may read.
-- **The core's interfaces (`schnittstellen`):** additional permissions for interfaces at which the core only stores, compares or passes on (overview: [The core's interfaces](#schnittstellen)). There are `dms:vektoren` (since 0.120.0, needs `dokumente: lesen`) – see [Vectors and similarity](#vektoren-und-ahnlichkeit) –, `dms:antworten` (since 0.124.0) – see [Answering questions](#fragen-beantworten) –, `dms:erkennen` (since 0.125.0) – see [Recognition: field description and answer](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (since 0.133.0, needs `dokumente: schreiben`) – see [Taking over text recognition](#texterkennung) –, `dms:umwandeln` (since 0.137.0, needs `dokumente: lesen`, `code.umwandeln` and the event `datei.umwandeln`) – see [Converting files](#dateien-umwandeln) –, `dms:sicherung-lesen` (since 0.142.0, needs the event `sicherung.fertig`) – see [Off-site backup](#sicherung-ausser-haus) – `dms:volltext` (since 0.145.0, needs `dokumente: lesen`, `code.volltext` and the event `datei.volltext`) – see [Supplying full text](#volltext-liefern) – `dms:uebersetzen` (since 0.204.0, needs nothing else) – see [Translate content](#inhalte-ubersetzen) – `dms:klassifizieren` (since 0.226.0, needs nothing else) – see [Suggest a folder type](#klassifizieren) – `dms:hinweise` (since 0.231.0, needs `schreiben`) – see [Calculated fields and notes](#berechnet-und-hinweise) – and `dms:leerseiten` (since 0.255.0, needs `lesen` with `dms:post` and `dokumente: lesen`) – see [Marking blank pages](#leerseiten).
+- **The core's interfaces (`schnittstellen`):** additional permissions for interfaces at which the core only stores, compares or passes on (overview: [The core's interfaces](#schnittstellen)). There are `dms:vektoren` (since 0.120.0, needs `dokumente: lesen`) – see [Vectors and similarity](#vektoren-und-ahnlichkeit) –, `dms:antworten` (since 0.124.0) – see [Answering questions](#fragen-beantworten) –, `dms:erkennen` (since 0.125.0) – see [Recognition: field description and answer](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (since 0.133.0, needs `dokumente: schreiben`) – see [Taking over text recognition](#texterkennung) –, `dms:umwandeln` (since 0.137.0, needs `dokumente: lesen`, `code.umwandeln` and the event `datei.umwandeln`) – see [Converting files](#dateien-umwandeln) –, `dms:sicherung-lesen` (since 0.142.0, needs the event `sicherung.fertig`) – see [Off-site backup](#sicherung-ausser-haus) – `dms:volltext` (since 0.145.0, needs `dokumente: lesen`, `code.volltext` and the event `datei.volltext`) – see [Supplying full text](#volltext-liefern) – `dms:uebersetzen` (since 0.204.0, needs nothing else) – see [Translate content](#inhalte-ubersetzen) – `dms:klassifizieren` (since 0.226.0, needs nothing else) – see [Suggest a folder type](#klassifizieren) – `dms:hinweise` (since 0.231.0, needs `schreiben`) – see [Calculated fields and notes](#berechnet-und-hinweise) –, `dms:leerseiten` (since 0.255.0, needs `lesen` with `dms:post` and `dokumente: lesen`) – see [Marking blank pages](#leerseiten) – and `dms:anlagen` (since 0.263.0, needs `lesen` and `schreiben` with `dms:post` and `dokumente: schreiben`) – see [Enclosures when splitting](#anlagen).
 - **File types for converting (`code.umwandeln`, since 0.137.0):** only with `dms:umwandeln` – the MIME types the package is responsible for, e.g. `[image/tiff, image/webp]`. The core reads PDF, JPEG and PNG itself; they aren't allowed here. At most 20.
 - **File types for the full text (`code.volltext`, since 0.145.0):** only with `dms:volltext` – the MIME types for which the package supplies the full text, e.g. `[message/rfc822, text/plain]`. PDF, JPEG and PNG aren't allowed. At most 40.
 - **Folder types for events (`code.mappentypen`, since 0.153.0):** required as soon as the package subscribes to one of the folder events `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` or `frist.erreicht` – and only allowed then. It contains the keys of **its own** folder types (without prefix, e.g. `[vertrag]`) and – since 0.166.0 – links to **other** folder types as in `code.rechte` (`basis:organisation`, `dms:post`) or `*` for all the package may read (only with `code.rechte.lesen: ["*"]`). The package must be allowed to read every type named. A package with this states `dms: ">=0.153.0"`, with other packages' types or `*` `dms: ">=0.166.0"`.
@@ -340,6 +341,31 @@ PUT /dokumente/{id}/leerseiten              { "sha256": "<checksum of the checke
 - **A person decides:** "Keep after all" / "Leave out too" (`PUT /dokumente/{id}/leerseiten/{nr}`) only works with a person's key with Edit on the post – packages get 403. A new detection of the same file keeps the choice.
 - **The package checks channels and status itself** (like *Trennblatt*): e.g. only post with status *New*, direction not *Outgoing*, channel from the setting. The core only checks that it is post.
 - **Detect cautiously:** rather leave a page than mark one with a pencil note – the person can always choose **Leave out too**.
+
+## Enclosures when splitting a post { #anlagen }
+
+Since Ablago 0.263.0 (dms #998) a document can have **enclosures**: documents of their own in the same folder and tab that belong to the main document (`anlageZu`, `anlageNr` on the document). A package with `dms:anlagen` may create them when **splitting a post** – for the separator sheet with a second barcode (dms-registry #152): an enclosure separator sheet starts an enclosure to the previous document.
+
+```yaml
+dms: ">=0.263.0"
+code:
+  ereignisse: [dokument.hochgeladen]
+  rechte:
+    lesen: [dms:post]
+    schreiben: [dms:post]
+    dokumente: schreiben
+    schnittstellen: [dms:anlagen]
+  netz: []
+```
+
+```text
+POST /dokumente/{id}/seiten   { "seiten": [{"nr":1}, …, {"nr":5}], "teile": [0], "anlagen": [1, 3, 4] }
+```
+
+- **`anlagen`** are positions in `seiten` (from 0, like `teile`) where an enclosure to the previous part begins. In the example: page 1 is the main document, pages 2–3 enclosure 1, page 4 enclosure 2, page 5 enclosure 3. An enclosure never begins at the start of a part (otherwise 422) – the package treats an enclosure separator sheet at the start like a normal one.
+- **Only in post, only in the new posts:** every part becomes a new post; its document gets the enclosures "<name> – Anlage 1.pdf", "– Anlage 2.pdf" … there (with only one part the new post keeps the subject). The original post keeps its original and is done. In other folders the core refuses (409); without `dms:anlagen` 403.
+- **At most 99 enclosures per part.** The package loads the pages as before via `GET /dokumente/{id}/seiten/{nr}/scan`.
+- By hand (`POST/PUT/DELETE /dokumente/{id}/anlagen…`) a package may only change enclosures with `dms:anlagen` and only in post. Recognition, classifying and AI packages never get the text of enclosures.
 
 ## Actions in the “Folder” menu { #aktionen-im-menue-mappe }
 

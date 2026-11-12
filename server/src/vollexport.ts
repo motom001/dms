@@ -403,7 +403,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   const verweise = await w.oeffne('daten/verweise.csv');
   await verweise.schreibe(BOM + csvZeile(['quelle_id', 'feld', 'feld_schluessel', 'ziel_id', 'ziel_titel']));
   const dokListe = await w.oeffne('daten/dokumente.csv');
-  await dokListe.schreibe(BOM + csvZeile(['dokument_id', 'mappe_id', 'register', 'dateiname', 'typ', 'groesse', 'sha256', 'erstellt', 'erstellt_von', 'version', 'stand', 'pfad', 'fassung', 'archivfassung']));
+  await dokListe.schreibe(BOM + csvZeile(['dokument_id', 'mappe_id', 'register', 'dateiname', 'typ', 'groesse', 'sha256', 'erstellt', 'erstellt_von', 'version', 'stand', 'pfad', 'fassung', 'archivfassung', 'anlage_zu', 'anlage_nr']));
   const notizDatei = await w.oeffne('daten/notizen.jsonl');
   const aufgabeDatei = await w.oeffne('daten/aufgaben.jsonl');
   const historieDatei = await w.oeffne('daten/historie.jsonl');
@@ -509,13 +509,15 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
           pfade.dokumente.set(d.id, rel);
           const text = texte.get(d.id);
           if (text) await w.schreibe(`${rel}.txt`, Buffer.from(text, 'utf8'));
-          await dokListe.schreibe(csvZeile([d.id, m.id, d.registerKey, d.name, d.mime, String(d.groesse), d.sha256, d.erstellt, d.erstelltVon ?? '', String(d.version ?? 1), 'aktuell', rel, await fassung(d, rel), await archiv(d, rel)]));
+          // Anlagen (#998): Hauptdokument und Nummer am Ende der Zeile – ältere Leser übergehen die Spalten.
+          const anlage = [d.anlageZu ?? '', d.anlageZu ? String(d.anlageNr ?? 1) : ''];
+          await dokListe.schreibe(csvZeile([d.id, m.id, d.registerKey, d.name, d.mime, String(d.groesse), d.sha256, d.erstellt, d.erstelltVon ?? '', String(d.version ?? 1), 'aktuell', rel, await fassung(d, rel), await archiv(d, rel), ...anlage]));
           dokumente++;
           const vn = namen();
           for (const v of versionJe.get(d.id) ?? []) {
             const vrel = `${pfad}/${regName}/Versionen/${vn(`v${v.nummer} ${v.name}`)}`;
             await w.schreibe(vrel, () => q.datei(v.sha256));
-            await dokListe.schreibe(csvZeile([d.id, m.id, d.registerKey, v.name, v.mime, String(v.groesse), v.sha256, v.erstellt, v.erstelltVon ?? '', String(v.nummer), 'aelter', vrel, await fassung(v, vrel), await archiv(v, vrel)]));
+            await dokListe.schreibe(csvZeile([d.id, m.id, d.registerKey, v.name, v.mime, String(v.groesse), v.sha256, v.erstellt, v.erstelltVon ?? '', String(v.nummer), 'aelter', vrel, await fassung(v, vrel), await archiv(v, vrel), ...anlage]));
           }
         }
         for (const n of notizJe.get(m.id) ?? []) { await notizDatei.schreibe(`${JSON.stringify(n)}\n`); zahl.notizen++; }
@@ -611,7 +613,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |
 | \`daten/verweise.csv\` | Mappe → Feld → Mappe |
-| \`daten/dokumente.csv\` | alle Dokumente und ihre älteren Versionen mit Pfad im Export |
+| \`daten/dokumente.csv\` | alle Dokumente und ihre älteren Versionen mit Pfad im Export; \`anlage_zu\`/\`anlage_nr\` = Hauptdokument und Nummer einer Anlage (leer bei eigenen Dokumenten) |
 | \`daten/*.jsonl\` | Notizen, Aufgaben (mit Fristen), geplante Abläufe (Erinnerungen, Wiedervorlagen), Historie, Papierkorb, Vertretungen; \`favoriten.csv\` |
 | \`ablage/<Typ>/<Titel> [Id]/\` | je Mappe \`mappe.json\`, \`mappe.pdf\` und die Dokumente im Original je Register; \`.txt\` = erkannter Text; \`.fassung.pdf\` (bzw. \`.png\`, \`.jpg\`) = umgewandelte Fassung eines Pakets für Dateitypen wie TIFF; \`.pdfa.pdf\` = Archivfassung (PDF/A) eines Pakets, durchsuchbar, zum langfristigen Aufbewahren; \`Versionen/\` = ältere Versionen |
 | \`uebersicht/<typ>.pdf\` | Übersicht je Mappentyp mit allen Mappen |

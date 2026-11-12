@@ -134,9 +134,12 @@ export function speicherRepo(): Repo {
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
   /** Einzelne Dokumente im Papierkorb (#344). */
   const dokKorb = new Map<string, { dokument: Dokument; text: string | null; versionen: V[]; geloescht: string; geloeschtVon: string | null }>();
+  /** Wie ON DELETE SET NULL in PostgreSQL (#998): Anlagen eines gelöschten Hauptdokuments sind danach eigene Dokumente. */
+  const ohneHauptdokument = (id: string) => { for (const d of dokumente.values()) if (d.anlageZu === id) { delete d.anlageZu; delete d.anlageNr; } };
   const alsDokEintrag = (k: { dokument: Dokument; versionen: V[]; geloescht: string; geloeschtVon: string | null }) => ({
     id: k.dokument.id, mappeId: k.dokument.mappeId, registerKey: k.dokument.registerKey, name: k.dokument.name, mime: k.dokument.mime,
     groesse: k.dokument.groesse, sha256: k.dokument.sha256, erstellt: k.dokument.erstellt, erstelltVon: k.dokument.erstelltVon,
+    ...(k.dokument.anlageZu ? { anlageZu: k.dokument.anlageZu } : {}),
     versionen: k.versionen.length, geloescht: k.geloescht, geloeschtVon: k.geloeschtVon,
   });
   const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; versionen?: Array<[string, V[]]>; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: MappenAblauf[]; geloescht: string; geloeschtVon: string | null; vorgang?: string | null; entkoppelt?: Array<{ quelleId: string; feldKey: string }> }>();
@@ -465,7 +468,7 @@ export function speicherRepo(): Repo {
         const text = texte.get(d.id)!;
         const w = [woerter(q2)[0], ...(vv[falte(woerter(q2)[0])] ?? []).map((x) => x.toLowerCase())].find((x) => text.toLowerCase().includes(x)) ?? woerter(q2)[0];
         const i = Math.max(0, text.toLowerCase().indexOf(w));
-        ausschnitte[m.id] = { dokument: d.name, text: `${text.slice(Math.max(0, i - 40), i)}${TREFFER_ANFANG}${text.slice(i, i + w.length)}${TREFFER_ENDE}${text.slice(i + w.length, i + w.length + 40)}` };
+        ausschnitte[m.id] = { dokument: d.name, text: `${text.slice(Math.max(0, i - 40), i)}${TREFFER_ANFANG}${text.slice(i, i + w.length)}${TREFFER_ENDE}${text.slice(i + w.length, i + w.length + 40)}`, ...(d.anlageZu ? { anlage: d.anlageNr ?? 1 } : {}) };
       }
       return { gesamt: o.zahl ?? alle.length, mappen: seite, ausschnitte };
     },
@@ -636,8 +639,8 @@ export function speicherRepo(): Repo {
     },
     async holeDokument(id) { const d = dokumente.get(id); return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }; },
     async setzeDokumentErstellt(id, erstellt) { const d = dokumente.get(id); if (d) d.erstellt = erstellt; },
-    async legeDokumentAn(d) { const n: Dokument = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; delete n.leerseiten; dokumente.set(d.id, n); return kopie(n); },
-    async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); },
+    async legeDokumentAn(d) { const n: Dokument = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; delete n.leerseiten; delete n.anlageZu; delete n.anlageNr; dokumente.set(d.id, n); return kopie(n); },
+    async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); ohneHauptdokument(id); },
     async versionenVon(id) { return [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x)); },
     async versionenVonDokumenten(ids) { return [...new Set(ids)].flatMap((id) => [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x))); },
     async holeVersion(id, nummer) { const v = versionen.get(id)?.find((x) => x.nummer === nummer); return v && kopie(v); },
@@ -669,7 +672,24 @@ export function speicherRepo(): Repo {
       versionen.set(id, v.slice(weg.length));
       return [...new Set(weg.map((x) => x.sha256))];
     },
-    async verschiebeDokument(id, mappeId, registerKey) { const d = dokumente.get(id); if (d) { d.mappeId = mappeId; d.registerKey = registerKey; } },
+    async verschiebeDokument(id, mappeId, registerKey) {
+      const d = dokumente.get(id);
+      if (!d) return;
+      // Anlagen (#998) wandern mit; eine Anlage allein in eine andere Mappe ist danach ein eigenes Dokument.
+      for (const x of [d, ...[...dokumente.values()].filter((y) => y.anlageZu === id)]) { x.mappeId = mappeId; x.registerKey = registerKey; }
+      if (d.anlageZu && dokumente.get(d.anlageZu)?.mappeId !== mappeId) { delete d.anlageZu; delete d.anlageNr; }
+    },
+    async anlagenVon(id) {
+      return [...dokumente.values()].filter((d) => d.anlageZu === id).sort((a, b) => (a.anlageNr ?? 0) - (b.anlageNr ?? 0) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+        .map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }));
+    },
+    async setzeAnlage(id, anlageZu, nr, name) {
+      const d = dokumente.get(id);
+      if (!d) return false;
+      if (anlageZu) { d.anlageZu = anlageZu; d.anlageNr = nr; } else { delete d.anlageZu; delete d.anlageNr; }
+      if (name !== undefined) d.name = name;
+      return true;
+    },
     async ocrEinreihen(ids) { for (const id of ids) { const d = dokumente.get(id); if (d) d.ocr = { stand: 'wartet' }; } },
     async ocrNaechster() {
       const d = [...dokumente.values()].filter((x) => x.ocr?.stand === 'wartet').sort((a, b) => a.erstellt.localeCompare(b.erstellt))[0];
@@ -1225,6 +1245,7 @@ export function speicherRepo(): Repo {
       if (!d) return;
       dokKorb.set(id, { dokument: kopie(d), text: texte.get(id) ?? null, versionen: kopie(versionen.get(id) ?? []), geloescht: jetzt(), geloeschtVon: benutzerId });
       dokumente.delete(id); versionen.delete(id); texte.delete(id);
+      ohneHauptdokument(id);
     },
     async papierkorbDokumente(f = {}) {
       return [...dokKorb.values()]
@@ -1239,7 +1260,10 @@ export function speicherRepo(): Repo {
       if (!mappen.has(k.dokument.mappeId)) throw new Error('Mappe fehlt');
       const nr = k.dokument.archivnummer?.toLowerCase();
       const belegt = !!nr && [...dokumente.values()].some((x) => x.archivnummer?.toLowerCase() === nr);
-      dokumente.set(id, { ...kopie(k.dokument), ...(belegt ? { archivnummer: null } : {}) });
+      const wieder: Dokument = { ...kopie(k.dokument), ...(belegt ? { archivnummer: null } : {}) };
+      // Anlagen (#998): wieder an ihr Hauptdokument, wenn es in derselben Mappe ist – sonst ein eigenes Dokument.
+      if (wieder.anlageZu && dokumente.get(wieder.anlageZu)?.mappeId !== wieder.mappeId) { delete wieder.anlageZu; delete wieder.anlageNr; }
+      dokumente.set(id, wieder);
       if (k.versionen.length) versionen.set(id, kopie(k.versionen));
       texte.set(id, k.text);
       dokKorb.delete(id);

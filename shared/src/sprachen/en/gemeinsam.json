@@ -1268,5 +1268,10 @@
   "fassungen.karte-weg": "{bereich}: “{karte}” removed",
   "fassungen.karte-geaendert": "{bereich}: “{karte}” changed",
   "fassungen.karten-reihenfolge": "{bereich}: order of cards changed",
-  "fassungen.register-geaendert": "Tab “{name}”: {was} changed"
+  "fassungen.register-geaendert": "Tab “{name}”: {was} changed",
+  "model.anlage": "Enclosure",
+  "anlagen.anlage": "Enclosure {nr}",
+  "anlagen.in-anlage": "in enclosure {nr}",
+  "pakete.anlagen-anlegen": "Creates enclosures when splitting a post – only in the posts created by the split, on their document (e.g. for a separator sheet with a second barcode)",
+  "pakete.code-anlagen-braucht-post": "code.rechte.schnittstellen: dms:anlagen needs code.rechte.lesen and code.rechte.schreiben with dms:post (or \"*\") and code.rechte.dokumente: schreiben – enclosures are only created when splitting a post."
 }
