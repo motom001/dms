@@ -4,7 +4,7 @@ import {
   AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, automatisierungsProblemOrte, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
-  PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST, istBetrieb, protokollPasst, PROTOKOLL_ABSTAND_MIN, BETRIEB_PLATZHALTER, SYSTEMKONTO_WERKBANK, werkbankBereiche,
+  PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST, istBetrieb, protokollPasst, PROTOKOLL_ABSTAND_MIN, BETRIEB_PLATZHALTER, SYSTEMKONTO_WERKBANK, werkbankBereiche, wennBereich, laufFuer,
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, istBetriebWenn, wennFaehig, type KatalogEreignis } from '../../shared/src/ereignisse';
 import { darfBereich } from '../../shared/src/verwaltungsrecht';
@@ -385,6 +385,13 @@ function mitFassungen(repo: AutomatisierungRepo, dienst: Dienst): Automatisierun
   };
 }
 
+/** Gleicher Stand unabhängig von der Reihenfolge der Schlüssel (Wenn-Karte vor und nach dem Speichern). */
+function gleicherStand(a: unknown, b: unknown): boolean {
+  const sortiert = (w: unknown): unknown => (Array.isArray(w) ? w.map(sortiert) : w && typeof w === 'object'
+    ? Object.fromEntries(Object.entries(w as Record<string, unknown>).filter(([, v]) => v !== undefined).sort(([x], [y]) => x.localeCompare(y)).map(([k, v]) => [k, sortiert(v)])) : w);
+  return JSON.stringify(sortiert(a)) === JSON.stringify(sortiert(b));
+}
+
 /** Bringt eine mitgelieferte Automatisierung eine Werkbank-Karte mit (#677)? Dann wird sie übergangen. */
 function mitWerkbankKarte(paket: string, x: PaketAutomatisierung): boolean {
   const ja = werkbankBereiche(bereinigeAutomatisierung({ wenn: x.wenn, dann: x.dann })).length > 0;
@@ -440,7 +447,8 @@ export class Automatisierungen {
       alle: async () => (await this.d.repo.liste()).map((a) => a.id),
       stelleHer: async (id, daten, o) => {
         const a = await this.gibt(id);
-        await this.aendere(id, { ...bereinigeAutomatisierung(daten), aktiv: (daten as { aktiv?: unknown }).aktiv === true, version: a.version }, o.von.id);
+        // Werkbank-Karten (#677): wie beim Speichern nur mit dem Recht am Bereich (`darf` der Person).
+        await this.aendere(id, { ...bereinigeAutomatisierung(daten), aktiv: (daten as { aktiv?: unknown }).aktiv === true, version: a.version }, o.von.id, o.darf);
       },
       kontext: async () => ({ automatisierung: await this.kontext() }),
     });
@@ -840,12 +848,17 @@ export class Automatisierungen {
   /**
    * Werkbank-Karten (#677): Wer eine Karte einrichtet, die einen Werkbank-Bereich berührt (Sicherung, Gemeldete Fehler,
    * Protokoll, Systemzustand), muss diesen Bereich selbst verwalten dürfen – sonst bekäme er über das Systemkonto mehr, als er
-   * darf. Geprüft wird nur, was gegenüber dem bisherigen Stand dazukommt. Ohne `darf` (Pakete, Tests): keine Prüfung.
+   * darf. Geprüft wird, was gegenüber dem bisherigen Stand dazukommt – und jede Änderung an einer Wenn-Karte der Werkbank
+   * (Art, Stufe, Modul, Text; vorher oder nachher): Sonst ließe sich etwa mit dem Filter `enthaelt` am Verlauf ablesen, ob
+   * ein Text im Protokoll stand (Sicherheit in PR #1155). Name, an/aus, Und, Dann und Sonst bleiben offen. Ohne `darf`
+   * (Pakete, Tests): keine Prüfung.
    */
   private pruefeBereiche(neu: AutomatisierungDaten, alt: AutomatisierungDaten | null, darf?: (bereich: string) => boolean) {
     if (!darf) return;
     const vorher = new Set(alt ? werkbankBereiche(alt) : []);
-    const fehlt = werkbankBereiche(neu).find((b) => !vorher.has(b) && !darf(b));
+    const noetig = werkbankBereiche(neu).filter((b) => !vorher.has(b));
+    if (alt && !gleicherStand(bereinigeAutomatisierung(alt).wenn, neu.wenn)) for (const b of [wennBereich(alt.wenn), wennBereich(neu.wenn)]) if (b) noetig.push(b);
+    const fehlt = noetig.find((b) => !darf(b));
     if (fehlt) throw new Fachfehler(403, t('automatisierung.bereich.fehlt', { bereich: t.frei(`werkbank.bereich.${fehlt}.name`) }));
   }
 
@@ -901,8 +914,13 @@ export class Automatisierungen {
     return this.lege({ ...a, name: t('automatisierung.kopie', { name: a.name }).slice(0, AUTOMATISIERUNG_GRENZEN.name), aktiv: false, reihenfolge: a.reihenfolge }, von, 'eigen', darf);
   }
 
-  async laeufe(id: string, anzahl = 50): Promise<Lauf[]> { await this.gibt(id); return this.d.repo.laeufe(id, Math.max(1, Math.min(AUTOMATISIERUNG_GRENZEN.verlauf, anzahl))); }
-  async lauf(id: string): Promise<Lauf> { const l = await this.d.repo.lauf(id); if (!l) throw new Fachfehler(404, t('automatisierung.lauf.fehlt')); return l; }
+  /** Verlauf; mit `darf` (Anfrage einer Person) ohne Lauf-Daten aus Bereichen, die sie nicht verwaltet ({@link laufFuer}). */
+  async laeufe(id: string, anzahl = 50, darf?: (bereich: string) => boolean): Promise<Lauf[]> {
+    await this.gibt(id);
+    return (await this.d.repo.laeufe(id, Math.max(1, Math.min(AUTOMATISIERUNG_GRENZEN.verlauf, anzahl)))).map((l) => laufFuer(l, darf));
+  }
+  /** Ein Lauf; ohne `darf` mit allen gespeicherten Daten (Wiederholen), mit `darf` wie {@link laufFuer}. */
+  async lauf(id: string, darf?: (bereich: string) => boolean): Promise<Lauf> { const l = await this.d.repo.lauf(id); if (!l) throw new Fachfehler(404, t('automatisierung.lauf.fehlt')); return laufFuer(l, darf); }
 
   /** Für die Werkbank-Übersicht: fehlgeschlagene Läufe und angehaltene Automatisierungen. */
   async warnungen(): Promise<{ fehlgeschlagen: number; angehalten: Array<{ id: string; name: string; grund: Angehalten['grund'] }>; umgezogen: { am: string; anzahl: number } | null; ohneBenachrichtigungen: boolean; ohnePostFuerDich: boolean }> {

@@ -124,17 +124,17 @@ Under **Then** is what happens if the And conditions are met. Under **Otherwise*
 
 Some things do not concern a folder but the **operation** of Ablago. For these there are three If cards (in the stock under *Operations*) and one Then card. These cards have **no folder**: the only possible condition is a feature of the Library, and a **Task / notification** goes to people or roles – it is attached to the recipient's user folder.
 
-Only someone who may manage the matching area themselves may set up a Workbench card: *Error reported* needs *Reported errors*, *Log message* the *Log*, *New version available* the *System health* and *Start a backup* the *Backup*. Packages do not bring these cards.
+Only someone who may manage the matching area themselves may set up a Workbench card: *Error reported* needs *Reported errors*, *Log message* the *Log*, *New version available* the *System health* and *Start a backup* the *Backup*. This also applies when editing: someone who does not manage the area can change the name, on/off and the Then and Otherwise cards of an existing automation with a Workbench card, but not its If card (neither the kind nor level, module or text) – nor restore a [version](fassungen.md) that changes it. Packages do not bring these cards.
 
 ### Error reported { #fehler-gemeldet }
 
-Runs as soon as someone reports an error via **Report an error**. Placeholders: `{zeitpunkt}`, `{meldung}` (text of the report) and `{gemeldet_von}`. A recipient only sees the text and sender if they may manage [Reported errors](fehlersuche.md#gemeldete-fehler) – everyone else sees “(not visible)”. Images and technical details of the report never go into a task.
+Runs as soon as someone reports an error via **Report an error**. Placeholders: `{zeitpunkt}`, `{meldung}` (text of the report) and `{gemeldet_von}`. A recipient only sees the text and sender if they may manage [Reported errors](fehlersuche.md#gemeldete-fehler) – everyone else sees “(not visible)”. Images and technical details of the report never go into a task. The **run history** also leaves out the text and the account of the reporting person as long as you do not manage Reported errors.
 
 *Example:* If **Error reported** → Then task to Markus, due in 1 day: `New error report from {gemeldet_von}: {meldung}`.
 
 ### Log message { #protokollmeldung }
 
-Runs when the [log](fehlersuche.md#protokoll) writes a warning or an error. You choose the **level** (*from warning* or *from error*), optionally a **module** (e.g. *E-mail*, *Backup*) and a **text** the message has to contain. Placeholders: `{zeitpunkt}`, `{stufe}`, `{modul}` and `{meldung}` – without secrets, as in the log; only someone who may manage the log sees the text.
+Runs when the [log](fehlersuche.md#protokoll) writes a warning or an error. You choose the **level** (*from warning* or *from error*), optionally a **module** (e.g. *E-mail*, *Backup*) and a **text** the message has to contain. Placeholders: `{zeitpunkt}`, `{stufe}`, `{modul}` and `{meldung}` – without secrets (encrypted values and password hashes in the text become “•••”); only someone who may manage the log sees the text, as a recipient and in the **run history**.
 
 - **At most one run in 15 minutes** per automation – a disruption does not cause a flood.
 - Messages caused by an automation itself (e.g. because its task can't be delivered) do not trigger any automation.

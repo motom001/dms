@@ -23,6 +23,7 @@
  */
 import { PROTOKOLL_ABSTAND_MIN, PROTOKOLL_TEXT_MAX, protokollPasst, SYSTEMKONTO_WERKBANK, type Automatisierung, type SystemkontoHandlung } from '../../shared/src/automatisierung';
 import { Fachfehler } from './fehler';
+import { textOhneGeheimnisse } from './geheimnis-sperre';
 import { protokoll as dasProtokoll, type Eintrag, type Protokoll } from './protokoll';
 import type { Sicherung } from './sicherung';
 import { neueStabileVersion } from './system';
@@ -114,12 +115,15 @@ export class Betriebsmelder {
   }
   stop() { this.abo?.(); this.abo = null; if (this.uhr) clearInterval(this.uhr); this.uhr = null; }
 
-  /** Aus dem Protokoll (synchron, darf nie werfen): nur merken – gesendet wird außerhalb der Anfrage. */
+  /**
+   * Aus dem Protokoll (synchron, darf nie werfen): nur merken – gesendet wird außerhalb der Anfrage. Der Text ohne
+   * Geheimnisse (erst bereinigen, dann kürzen – sonst bliebe ein angeschnittenes Geheimnis stehen).
+   */
   merke(e: Eintrag) {
     if (NIE.has(e.modul) || this.schlange.length >= SCHLANGE_MAX) return;
     if (e.stufe !== 'warn' && e.stufe !== 'error' && e.stufe !== 'fatal') return;
     try { if (this.o.inAutomatisierung()) return; } catch { return; }
-    this.schlange.push({ stufe: e.stufe === 'warn' ? 'warn' : 'error', modul: e.modul, text: e.text.slice(0, PROTOKOLL_TEXT_MAX), zeitpunkt: e.zeit });
+    this.schlange.push({ stufe: e.stufe === 'warn' ? 'warn' : 'error', modul: e.modul, text: textOhneGeheimnisse(e.text).slice(0, PROTOKOLL_TEXT_MAX), zeitpunkt: e.zeit });
   }
 
   private async aktive(): Promise<Automatisierung[]> {

@@ -124,17 +124,17 @@ Unter **Dann** steht, was passiert, wenn die Und-Bedingungen zutreffen. Unter **
 
 Manches betrifft nicht eine Mappe, sondern den **Betrieb** von Ablago. Dafür gibt es drei Wenn-Karten (im Vorrat unter *Betrieb*) und eine Dann-Karte. Diese Karten haben **keine Mappe**: Als Bedingung geht nur ein Merkmal der Ablage, und eine **Aufgabe / Benachrichtigung** geht an Personen oder Rollen – sie hängt an der Benutzer-Mappe des Empfängers.
 
-Einrichten darf eine Werkbank-Karte nur, wer den passenden Bereich selbst verwalten darf: *Fehler gemeldet* den Bereich *Gemeldete Fehler*, *Protokollmeldung* das *Protokoll*, *Neue Version verfügbar* den *Systemzustand* und *Sicherung anstoßen* die *Sicherung*. Pakete bringen diese Karten nicht mit.
+Einrichten darf eine Werkbank-Karte nur, wer den passenden Bereich selbst verwalten darf: *Fehler gemeldet* den Bereich *Gemeldete Fehler*, *Protokollmeldung* das *Protokoll*, *Neue Version verfügbar* den *Systemzustand* und *Sicherung anstoßen* die *Sicherung*. Das gilt auch beim Bearbeiten: Wer den Bereich nicht verwaltet, kann bei einer bestehenden Automatisierung mit Werkbank-Karte Name, an/aus und die Dann- und Sonst-Karten ändern, aber nicht die Wenn-Karte (weder die Art noch Stufe, Modul oder Text) – und auch keine [Fassung](fassungen.md) wiederherstellen, die sie ändert. Pakete bringen diese Karten nicht mit.
 
 ### Fehler gemeldet { #fehler-gemeldet }
 
-Läuft, sobald jemand über **Fehler melden** einen Fehler meldet. Platzhalter: `{zeitpunkt}`, `{meldung}` (Text der Meldung) und `{gemeldet_von}`. Text und Absender sieht ein Empfänger nur, wenn er [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) verwalten darf – allen anderen zeigt Ablago „(nicht sichtbar)“. Bilder und technische Angaben der Meldung kommen nie in eine Aufgabe.
+Läuft, sobald jemand über **Fehler melden** einen Fehler meldet. Platzhalter: `{zeitpunkt}`, `{meldung}` (Text der Meldung) und `{gemeldet_von}`. Text und Absender sieht ein Empfänger nur, wenn er [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) verwalten darf – allen anderen zeigt Ablago „(nicht sichtbar)“. Bilder und technische Angaben der Meldung kommen nie in eine Aufgabe. Auch im **Verlauf** fehlen Text und Konto der meldenden Person, solange du Gemeldete Fehler nicht verwaltest.
 
 *Beispiel:* Wenn **Fehler gemeldet** → Dann Aufgabe an Markus, fällig in 1 Tag: `Neue Fehlermeldung von {gemeldet_von}: {meldung}`.
 
 ### Protokollmeldung { #protokollmeldung }
 
-Läuft, wenn das [Protokoll](fehlersuche.md#protokoll) eine Warnung oder einen Fehler schreibt. Du wählst die **Stufe** (*ab Warnung* oder *ab Fehler*), auf Wunsch ein **Modul** (z. B. *E-Mail*, *Sicherung*) und einen **Text**, den die Meldung enthalten soll. Platzhalter: `{zeitpunkt}`, `{stufe}`, `{modul}` und `{meldung}` – ohne Geheimnisse, wie im Protokoll; den Text sieht nur, wer das Protokoll verwalten darf.
+Läuft, wenn das [Protokoll](fehlersuche.md#protokoll) eine Warnung oder einen Fehler schreibt. Du wählst die **Stufe** (*ab Warnung* oder *ab Fehler*), auf Wunsch ein **Modul** (z. B. *E-Mail*, *Sicherung*) und einen **Text**, den die Meldung enthalten soll. Platzhalter: `{zeitpunkt}`, `{stufe}`, `{modul}` und `{meldung}` – ohne Geheimnisse (verschlüsselte Werte und Passwort-Hashes im Text werden zu „•••“); den Text sieht nur, wer das Protokoll verwalten darf, im Empfang wie im **Verlauf**.
 
 - **Höchstens ein Lauf in 15 Minuten** je Automatisierung – bei einer Störung kommt keine Flut.
 - Meldungen, die eine Automatisierung selbst auslöst (z. B. weil ihre Aufgabe nicht zugestellt werden kann), lösen keine Automatisierung aus.

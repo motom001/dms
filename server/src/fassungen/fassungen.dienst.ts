@@ -35,6 +35,8 @@ export interface Wiederherstellen {
   doppelteBestaetigt: boolean;
   /** Paket-Einstellungen (#444): eine Dienst-Adresse bestätigen. */
   adresseBestaetigt: boolean;
+  /** Verwaltet die Person den Bereich? Für Prüfungen wie beim Speichern (Werkbank-Karten der Automatisierungen, #677). */
+  darf?: (bereich: string) => boolean;
 }
 
 /** Ein Gegenstand mit Fassungen. */
@@ -192,7 +194,8 @@ export class Fassungen {
    * Fassung `nr` wiederherstellen: nur auf dem Stand, den die Person gesehen hat (`stand`, #917), über das normale
    * Speichern des Gegenstands; das Ergebnis ist eine neue Fassung mit Verweis auf `nr`.
    */
-  async stelleWiederHer(art: FassungArt, eintrag: string, nr: number, eingabe: unknown, von: Wiederherstellen['von']): Promise<FassungsListe> {
+  async stelleWiederHer(art: FassungArt, eintrag: string, nr: number, eingabe: unknown, wer: Wiederherstellen['von'] & Pick<Wiederherstellen, 'darf'>): Promise<FassungsListe> {
+    const { darf, ...von } = wer;
     const g = this.gegenstand(art);
     const f = await this.fassung(art, eintrag, nr);
     const e = (eingabe ?? {}) as Record<string, unknown>;
@@ -202,7 +205,7 @@ export class Fassungen {
     if (!jetzt) throw new Fachfehler(409, t('meldungen.fassungen.geloescht'));
     if (gleich(jetzt.daten, f.daten)) throw new Fachfehler(409, t('meldungen.fassungen.schon-aktuell'));
     await this.kern.mitFassungsKontext({ wiederhergestellt: nr }, async () => {
-      await g.stelleHer(eintrag, structuredClone(f.daten), { von, bestaetigt: e.bestaetigt === true, doppelteBestaetigt: e.doppelteBestaetigt === true, adresseBestaetigt: e.adresseBestaetigt === true });
+      await g.stelleHer(eintrag, structuredClone(f.daten), { von, bestaetigt: e.bestaetigt === true, doppelteBestaetigt: e.doppelteBestaetigt === true, adresseBestaetigt: e.adresseBestaetigt === true, darf });
       // Gegenstände ohne eigenen Haken: sicher festhalten (gleicher Vorgang → dieselbe Fassung).
       await this.halte(art, eintrag);
     });

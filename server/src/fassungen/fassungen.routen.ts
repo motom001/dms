@@ -23,7 +23,7 @@ export function fassungenRouten(k: RoutenKontext): Route[] {
       { methode: 'GET', pfad: `${p}/:nr`, zugang: 'admin', handler: async (a) => ok(await dienst.fassungen.vorschau(art, eintrag(a), Number(a.params.nr))) },
       { methode: 'POST', pfad: `${p}/:nr/wiederherstellen`, zugang: 'admin', handler: async (a) => {
         const b = ich(a);
-        return ok(await dienst.fassungen.stelleWiederHer(art, eintrag(a), Number(a.params.nr), a.body, { id: b.id, email: b.email ?? null }));
+        return ok(await dienst.fassungen.stelleWiederHer(art, eintrag(a), Number(a.params.nr), a.body, { id: b.id, email: b.email ?? null, darf: (bereich) => darfBereich(b, bereich) }));
       } },
     ];
   };

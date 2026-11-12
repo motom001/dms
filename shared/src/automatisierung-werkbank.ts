@@ -3,7 +3,7 @@
  * (ohne Mappe) und Dann „Sicherung anstoßen“ – dazu die festen Werkbank-Rechte des Systemkontos „Automatisierung“.
  * Modell, Prüfung, Platzhalter und Kurzform; ausgeführt wird im Server (`server/src/automatisierung-werkbank.ts`).
  */
-import type { AutomatisierungDaten } from './automatisierung';
+import type { AutomatisierungDaten, Lauf } from './automatisierung';
 import { istBetriebWenn, type BetriebWenn } from './ereignisse';
 import { MODULE } from './protokollmodule';
 import { t } from './texte';
@@ -66,11 +66,16 @@ export function bereinigeBetrieb(x: Record<string, unknown>): WennBetrieb | null
 /** Welche Werkbank-Bereiche eine Automatisierung berührt (#677): Wer sie einrichtet, muss sie selbst verwalten dürfen. */
 export function werkbankBereiche(d: Pick<AutomatisierungDaten, 'wenn' | 'dann' | 'sonst'>): string[] {
   const b = new Set<string>();
-  const wenn: Partial<Record<string, string>> = { 'fehler.gemeldet': SYSTEMKONTO_WERKBANK.fehlermeldung, 'protokoll.meldung': SYSTEMKONTO_WERKBANK.protokoll, 'version.neu': SYSTEMKONTO_WERKBANK.neueVersion };
-  const w = wenn[d.wenn.art];
+  const w = wennBereich(d.wenn);
   if (w) b.add(w);
   if ([...d.dann, ...d.sonst].some((k) => k.art === 'sicherung')) b.add(SYSTEMKONTO_WERKBANK.sicherungAnstossen);
   return [...b];
+}
+
+/** Der Werkbank-Bereich einer Wenn-Karte (#677) – null, wenn sie keine Werkbank-Karte ist. */
+export function wennBereich(w: Pick<AutomatisierungDaten['wenn'], 'art'>): string | null {
+  const wenn: Partial<Record<string, string>> = { 'fehler.gemeldet': SYSTEMKONTO_WERKBANK.fehlermeldung, 'protokoll.meldung': SYSTEMKONTO_WERKBANK.protokoll, 'version.neu': SYSTEMKONTO_WERKBANK.neueVersion };
+  return wenn[w.art] ?? null;
 }
 
 /**
@@ -106,4 +111,18 @@ export function betriebKurz(w: WennBetrieb, ereignisName: (art: string) => strin
   if (w.art !== 'protokoll.meldung') return ereignisName(w.art);
   const filter = [w.modul, w.enthaelt ? `„${w.enthaelt}“` : ''].filter(Boolean).join(', ');
   return `${ereignisName(w.art)} ${t.frei(`gemeinsam.automatisierung.ab-${w.stufe}`)}${filter ? ` (${filter})` : ''}`;
+}
+
+/**
+ * Lauf-Daten für eine Person (#677, Sicherheit in PR #1155): Den Text einer Protokollmeldung sieht nur, wer „Protokoll“
+ * verwaltet, Text und Konto der meldenden Person einer Fehlermeldung nur, wer „Gemeldete Fehler“ verwaltet – wie die
+ * Platzhalter {meldung} und {gemeldet_von}. Gespeichert bleibt alles, Wiederholen arbeitet mit den gespeicherten Daten.
+ * Ohne `darf` (intern, Tests) unverändert.
+ */
+export function laufFuer(l: Lauf, darf?: (bereich: string) => boolean): Lauf {
+  if (!darf) return l;
+  const weg = l.art === 'protokoll.meldung' && !darf(SYSTEMKONTO_WERKBANK.protokoll) ? ['text']
+    : l.art === 'fehler.gemeldet' && !darf(SYSTEMKONTO_WERKBANK.fehlermeldung) ? ['benutzer', 'text'] : [];
+  if (!weg.some((k) => k in l.daten)) return l;
+  return { ...l, daten: Object.fromEntries(Object.entries(l.daten).filter(([k]) => !weg.includes(k))) };
 }

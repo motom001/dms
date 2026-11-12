@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  automatisierungsProbleme, bereinigeAutomatisierung, DANN_ARTEN, kurzform, platzhalterFuer, protokollPasst, SYSTEMKONTO_WERKBANK, WENN_EREIGNISSE, werkbankBereiche,
+  automatisierungsProbleme, bereinigeAutomatisierung, DANN_ARTEN, kurzform, platzhalterFuer, PROTOKOLL_TEXT_MAX, protokollPasst, SYSTEMKONTO_WERKBANK, WENN_EREIGNISSE, werkbankBereiche,
   type WennKarte,
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, PAKET_KATALOG, type KatalogEreignis } from '../../shared/src/ereignisse';
@@ -240,6 +240,62 @@ describe('Werkbank-Rechte des Systemkontos (#677): genau die Tabelle', () => {
     await assert.rejects(motor.kopiere(a.id, markus.id, nurAutos), (e: Fachfehler) => e.status === 403);
   });
 
+  it('Wenn-Karte der Werkbank ändern braucht den Bereich – auch bei Bestehenden; Name, an/aus, Dann und Sonst bleiben offen (PR #1155)', async () => {
+    const { markus, motor, d } = await aufbau();
+    const nurAutos = (b: string) => b === 'automatisierungen';
+    const a = await motor.lege({ name: 'Mail gestört', aktiv: false, wenn: { art: 'protokoll.meldung', stufe: 'error', modul: 'mail', enthaelt: 'SMTP' },
+      dann: [{ id: 'a', art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: markus.id }], text: '{meldung}' }] }, markus.id, 'eigen', () => true);
+    const wenn = (await motor.hole(a.id)).wenn;
+    // Offen: Name, Beschreibung, Dann und Sonst, an/aus – und dieselbe Wenn-Karte unverändert mitgeschickt.
+    let b = await motor.aendere(a.id, { name: 'Mail (neu)', wenn: { ...wenn }, sonst: [{ id: 's', art: 'stopp' }], version: a.version }, markus.id, nurAutos);
+    assert.equal(b.name, 'Mail (neu)');
+    assert.equal((await motor.schalte(a.id, true, markus.id)).aktiv, true);
+    b = await motor.hole(a.id);
+    // Gesperrt: Filter (Text, Modul, Stufe) und Art der Wenn-Karte – auch weg von der Werkbank.
+    for (const w of [{ ...wenn, enthaelt: 'Passwort' }, { ...wenn, modul: 'sicherung' }, { ...wenn, stufe: 'warn' }, { art: 'fehler.gemeldet' }, { art: 'zeitplan', uhrzeit: '03:00', tage: [1] }]) {
+      await assert.rejects(motor.aendere(a.id, { wenn: w, version: b.version }, markus.id, nurAutos), (e: Fachfehler) => e.status === 403 && /„Protokoll“|„Gemeldete Fehler“/.test(e.message), JSON.stringify(w));
+    }
+    // Wer das Protokoll verwaltet, darf den Filter ändern.
+    const mitProtokoll = (x: string) => x === 'automatisierungen' || x === 'protokoll';
+    // (als andere Person gespeichert, damit es eine eigene Fassung wird)
+    await d.kern.mitFassungsKontext({ urheber: { art: 'person', id: 'katrin' } }, () => motor.aendere(a.id, { wenn: { ...wenn, enthaelt: 'TLS' }, version: b.version }, markus.id, mitProtokoll));
+    // Auch eine Fassung (#1006), die die Wenn-Karte ändert, stellt nur her, wer den Bereich verwaltet.
+    const liste = await d.fassungen.liste('automatisierung', a.id);
+    const alte = liste.fassungen.at(-1)!.nr;
+    await assert.rejects(d.fassungen.stelleWiederHer('automatisierung', a.id, alte, { stand: liste.stand }, { id: markus.id, email: null, darf: nurAutos }), (e: Fachfehler) => e.status === 403);
+    await d.fassungen.stelleWiederHer('automatisierung', a.id, alte, { stand: liste.stand }, { id: markus.id, email: null, darf: mitProtokoll });
+    const w2 = (await motor.hole(a.id)).wenn;
+    assert.equal(w2.art === 'protokoll.meldung' ? w2.enthaelt : null, 'SMTP');
+  });
+
+  it('Verlauf: Text der Protokollmeldung und Konto der Fehlermeldung nur mit dem Bereich (zwei Admins, PR #1155)', async () => {
+    const { markus, jonas, konten, motor, fehlermeldungen, verteile } = await aufbau({ verteiler: true });
+    const { benutzer: petra } = await konten.legeBenutzerAn({ email: 'petra@example.org', name: 'Petra', verwaltung: ['automatisierungen'] }, markus.id);
+    const alsMarkus = (b: string) => darfBereich(markus, b);
+    const alsPetra = (b: string) => darfBereich(petra, b);
+    assert.ok(alsMarkus('protokoll') && alsMarkus('fehlermeldungen') && alsPetra('automatisierungen') && !alsPetra('protokoll') && !alsPetra('fehlermeldungen'));
+    const stopp = [{ id: 's', art: 'stopp' }];
+    const p = await motor.lege({ name: 'Protokoll', aktiv: true, wenn: { art: 'protokoll.meldung', stufe: 'warn' }, dann: stopp }, markus.id);
+    const f = await motor.lege({ name: 'Fehler', aktiv: true, wenn: { art: 'fehler.gemeldet' }, dann: stopp }, markus.id);
+    await motor.ereignis(ereignis('protokoll.meldung', { stufe: 'error', modul: 'mail', text: 'Anmeldung bei mail.example.org abgelehnt', zeitpunkt: new Date().toISOString() }));
+    await fehlermeldungen.melde(jonas.id, { text: 'Die Vorschau bleibt leer.' });
+    await verteile();
+    const [lp] = await motor.laeufe(p.id, 50, alsPetra);
+    const [lf] = await motor.laeufe(f.id, 50, alsPetra);
+    assert.equal(lp.daten.text, undefined, 'kein Text ohne Protokoll');
+    assert.equal(lp.daten.modul, 'mail');
+    assert.equal(lf.daten.benutzer, undefined, 'kein Konto ohne Gemeldete Fehler');
+    assert.ok(typeof lf.daten.fehlermeldung === 'string');
+    assert.equal((await motor.lauf(lp.id, alsPetra)).daten.text, undefined);
+    assert.equal((await motor.lauf(lf.id, alsPetra)).daten.benutzer, undefined);
+    assert.ok(!JSON.stringify(await motor.laeufe(p.id, 50, alsPetra)).includes('mail.example.org'));
+    assert.ok(!JSON.stringify(await motor.laeufe(f.id, 50, alsPetra)).includes(jonas.id));
+    // Gesamtverwaltung sieht beides; gespeichert bleibt alles (Wiederholen).
+    assert.equal((await motor.laeufe(p.id, 50, alsMarkus))[0].daten.text, 'Anmeldung bei mail.example.org abgelehnt');
+    assert.equal((await motor.laeufe(f.id, 50, alsMarkus))[0].daten.benutzer, jonas.id);
+    assert.equal((await motor.lauf(lf.id)).daten.benutzer, jonas.id);
+  });
+
   it('Pakete bringen keine Werkbank-Karten mit', () => {
     const archiv = (autos: string) => zipPuffer([
       { name: 'manifest.yaml', daten: Buffer.from('schema: 1\nid: betrieb\nname: Betrieb\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.231.0"\ninhalt:\n  automatisierungen: inhalt/automatisierungen.yaml\n') },
@@ -314,6 +370,26 @@ describe('Wenn-Karte „Protokollmeldung“ (#677)', () => {
       await verteile();
       assert.equal((await motor.laeufe(a.id)).length, 2);
     } finally { melder.stop(); }
+  });
+
+  it('Text ohne Geheimnisse: verschlüsselte Werte und Passwort-Hashes werden zu „•••“, erst dann gekürzt (PR #1155)', async () => {
+    const zeit = { jetzt: Date.parse('2026-11-12T10:00:00Z') };
+    const { markus, motor, repo, werkbank } = await aufbau({ uhr: () => zeit.jetzt });
+    await motor.lege({ name: 'Alles', aktiv: true, wenn: { art: 'protokoll.meldung', stufe: 'warn' }, dann: [{ id: 's', art: 'stopp' }] }, markus.id);
+    const gesendet: string[] = [];
+    const melder = new Betriebsmelder({ werkbank, automatisierungen: () => repo.liste(), inAutomatisierung: () => false, uhr: () => zeit.jetzt, ereignis: async (m) => { gesendet.push(m.text); } });
+    const geheim = 'dms1$abcdefgh12345678:ijklmnop87654321';
+    const hash = 'scrypt$16384$8$1$c2FsenNhbHo=$aGFzaGhhc2hoYXNo';
+    const eintrag = (text: string) => ({ nr: 1, zeit: new Date(zeit.jetzt).toISOString(), stufe: 'error', modul: 'mail', text }) as Eintrag;
+    melder.merke(eintrag(`Start abgebrochen: ${geheim} und ${hash}`));
+    assert.equal(await melder.sende(), 1);
+    // Am Ende der Grenze angeschnitten bliebe ein Teil des Geheimnisses stehen – deshalb erst bereinigen, dann kürzen.
+    zeit.jetzt += 16 * 60_000;
+    melder.merke(eintrag(`${'x'.repeat(PROTOKOLL_TEXT_MAX - 20)}${geheim}`));
+    assert.equal(await melder.sende(), 1);
+    assert.equal(gesendet[0], 'Start abgebrochen: ••• und •••');
+    assert.equal(gesendet[1], `${'x'.repeat(PROTOKOLL_TEXT_MAX - 20)}•••`);
+    for (const x of gesendet) assert.ok(!x.includes('abcdefgh') && !x.includes('c2FsenNhbHo'), x);
   });
 
   it('ohne passende eingeschaltete Automatisierung kein Ereignis', async () => {
