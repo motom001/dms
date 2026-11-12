@@ -999,6 +999,9 @@ const inhalt = (s: string | 'binaer') => (s === 'binaer'
   ? { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } }
   : { 'application/json': { schema: ref(s) } });
 
+/** `info.version` der Beschreibung ohne Anmeldung (#1067): nur die Version der API, nicht die von Ablago. */
+export const API_VERSION_OHNE_ANMELDUNG = '1';
+
 export function openapi(version: string, serverUrl?: string): Schema {
   const paths: Record<string, Record<string, Schema>> = {};
   for (const e of V1_TABELLE) {
